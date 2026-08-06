@@ -227,7 +227,7 @@ function CaseCompletenessPanel({ caseId }: { caseId: number }) {
                 size="sm"
                 variant="outline"
                 className="text-[10px] h-7 text-emerald-400 border-emerald-400/30 hover:bg-emerald-500/10 shrink-0"
-                onClick={() => navigate('/benefits-navigator')}
+                onClick={() => navigate('/benefits')}
               >
                 Match Benefits
               </Button>

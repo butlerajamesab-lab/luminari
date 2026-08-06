@@ -7,6 +7,7 @@ const ATLAS_API_BASE_URL = (
   process.env.ATLAS_BASE_URL ||
   "https://atlas-streaming-engine.onrender.com"
 ).replace(/\/$/, "");
+const ATLAS_REQUEST_TIMEOUT_MS = 5_000;
 
 type ProxyOptions = {
   method?: "GET" | "POST";
@@ -17,6 +18,7 @@ async function proxyAtlas(path: string, options: ProxyOptions = {}) {
   const method = options.method ?? "GET";
   const response = await fetch(`${ATLAS_API_BASE_URL}${path}`, {
     method,
+    signal: AbortSignal.timeout(ATLAS_REQUEST_TIMEOUT_MS),
     headers: {
       Accept: "application/json",
       ...(options.body ? { "Content-Type": "application/json" } : {}),

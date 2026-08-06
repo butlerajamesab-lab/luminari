@@ -29,9 +29,39 @@ import { useState, useCallback, useMemo } from "react";
 import { useCase } from "@/contexts/CaseContext";
 import { usePlainText } from "@/hooks/usePlainText";
 import { getFromParam, buildFromParam } from "@/lib/buildFromParam";
+import { getAuthenticatedRequestHeaders } from "@/lib/session-token";
 import { formatQuoteForReadAloud, formatClaimForReadAloud, formatDocumentPurposeForReadAloud } from "@/lib/forensicReadAloud";
 import AnnotatedText from "@/components/AnnotatedText";
 import type { AnnotationEntity, AnnotationQuote, AnnotationCorrelation } from "@/components/AnnotatedText";
+
+function isProtectedDocumentUrl(value: string): boolean {
+  const parsed = new URL(value, window.location.origin);
+  return (
+    parsed.origin === window.location.origin &&
+    /^\/api\/cases\/\d+\/documents\/file$/.test(parsed.pathname)
+  );
+}
+
+async function resolveDocumentSourceUrl(
+  value: string,
+  options?: { download?: boolean },
+): Promise<string> {
+  const parsed = new URL(value, window.location.origin);
+  if (!isProtectedDocumentUrl(parsed.toString())) return parsed.toString();
+
+  parsed.searchParams.set("response", "json");
+  if (options?.download) parsed.searchParams.set("download", "1");
+  const headers = await getAuthenticatedRequestHeaders();
+  const response = await fetch(parsed.toString(), {
+    headers,
+    credentials: "include",
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || typeof payload.url !== "string") {
+    throw new Error(payload.error || "Protected document access failed");
+  }
+  return payload.url;
+}
 
 // Lazy tab content — only fetches when the tab is active
 function QuotesTab({ docId }: { docId: number }) {
@@ -157,6 +187,7 @@ export default function DocumentDetail() {
   const docId = parseInt(params.id || "0");
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("text");
+  const [documentAction, setDocumentAction] = useState<"download" | "source" | null>(null);
   const utils = trpc.useUtils();
   const plainify = usePlainText();
   const { currentCaseId } = useCase();
@@ -273,18 +304,48 @@ export default function DocumentDetail() {
     onError: (err) => toast.error(err.message),
   });
 
-  const handleDownload = useCallback(() => {
-    if (doc?.s3Url) {
+  const handleDownload = useCallback(async () => {
+    if (!doc?.s3Url || documentAction) return;
+    setDocumentAction("download");
+    try {
+      const sourceUrl = isProtectedDocumentUrl(doc.s3Url)
+        ? await resolveDocumentSourceUrl(doc.s3Url, { download: true })
+        : doc.s3Url;
       const a = document.createElement("a");
-      a.href = doc.s3Url;
+      a.href = sourceUrl;
       a.download = doc.filename;
       a.target = "_blank";
       a.rel = "noopener noreferrer";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Document download failed");
+    } finally {
+      setDocumentAction(null);
     }
-  }, [doc]);
+  }, [doc, documentAction]);
+
+  const handleOpenSource = useCallback(async () => {
+    if (!doc?.s3Url || documentAction) return;
+    const sourceWindow = window.open("", "_blank");
+    if (!sourceWindow) {
+      toast.error("Allow pop-ups to open the protected source document");
+      return;
+    }
+    sourceWindow.opener = null;
+    sourceWindow.document.title = "Opening protected document";
+    sourceWindow.document.body.textContent = "Opening protected document…";
+    setDocumentAction("source");
+    try {
+      sourceWindow.location.href = await resolveDocumentSourceUrl(doc.s3Url);
+    } catch (error) {
+      sourceWindow.close();
+      toast.error(error instanceof Error ? error.message : "Protected document access failed");
+    } finally {
+      setDocumentAction(null);
+    }
+  }, [doc, documentAction]);
 
   if (isLoading) {
     return <div className="space-y-4">{[1,2,3].map(i => <div key={i} className="h-24 bg-muted/50 rounded-md animate-pulse" />)}</div>;
@@ -389,17 +450,15 @@ export default function DocumentDetail() {
             {reanalyze.isPending ? "Re-analyzing..." : "Re-analyze"}
           </Button>
           {doc.s3Url && (
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={handleDownload}>
-              <Download className="h-3.5 w-3.5" />
-              Download
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={handleDownload} disabled={documentAction !== null}>
+              {documentAction === "download" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+              {documentAction === "download" ? "Preparing…" : "Download"}
             </Button>
           )}
           {doc.s3Url && (
-            <Button variant="outline" size="sm" className="gap-1.5" asChild>
-              <a href={doc.s3Url} target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="h-3.5 w-3.5" />
-                Source
-              </a>
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={handleOpenSource} disabled={documentAction !== null}>
+              {documentAction === "source" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ExternalLink className="h-3.5 w-3.5" />}
+              {documentAction === "source" ? "Opening…" : "Source"}
             </Button>
           )}
         </div>
@@ -747,6 +806,7 @@ export default function DocumentDetail() {
         open={resolutionModal?.type === 'uploadReplace'}
         onClose={() => setResolutionModal(null)}
         documentId={docId}
+        caseId={doc.caseId}
         documentName={doc?.filename || ''}
         onSuccess={() => {
           utils.documents.get.invalidate();

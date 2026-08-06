@@ -7,6 +7,7 @@ import { Upload as UploadIcon, FileText, CheckCircle, XCircle, X, Loader2, Alert
 import { useState, useCallback, useRef } from "react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import { getAuthenticatedRequestHeaders } from "@/lib/session-token";
 import {
   Dialog,
   DialogContent,
@@ -15,6 +16,15 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+
+type PreservationReceipt = {
+  artifact_id: string;
+  case_uuid: string;
+  intake_session_id: string;
+  receipt_hash: string;
+  preservation_state: "preserved";
+  replayed: boolean;
+};
 
 type UploadResult = {
   filename: string;
@@ -28,6 +38,7 @@ type UploadResult = {
   replacedDocId?: number;
   /** Info about the resolved original that was overridden */
   resolvedOriginal?: { documentId: number; resolution: string; status: string };
+  receipt?: PreservationReceipt;
 };
 
 type UploadSummary = {
@@ -36,6 +47,7 @@ type UploadSummary = {
   duplicates: number;
   errors: number;
   overrides: number;
+  preserved: number;
   caseDocumentCount: number;
   caseId: number;
 };
@@ -154,7 +166,12 @@ function FileRowStatus({ result }: { result: UploadResult }) {
       return (
         <div className="flex items-center gap-1.5">
           <CheckCircle className="h-4 w-4 text-emerald-400 shrink-0" />
-          <span className="text-[10px] text-emerald-400 font-medium">New Document Created</span>
+          <span className="text-[10px] text-emerald-400 font-medium">New Document Preserved</span>
+          {result.receipt && (
+            <span className="text-[9px] text-muted-foreground" title={result.receipt.receipt_hash}>
+              receipt {result.receipt.receipt_hash.slice(0, 10)}
+            </span>
+          )}
         </div>
       );
     case "duplicate":
@@ -162,7 +179,7 @@ function FileRowStatus({ result }: { result: UploadResult }) {
         <div className="flex items-center gap-1.5">
           <Link2 className="h-4 w-4 text-cyan-400 shrink-0" />
           <span className="text-[10px] text-cyan-400 font-medium">
-            Duplicate Linked{result.linkedToId ? ` to Document ID ${result.linkedToId}` : ""}
+            Duplicate Preserved{result.linkedToId ? ` as Document ID ${result.linkedToId}` : ""}
           </span>
           {result.resolvedOriginal && (
             <span className="text-[10px] text-amber-400">
@@ -249,7 +266,6 @@ export default function Upload() {
   const [summary, setSummary] = useState<UploadSummary | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const utils = trpc.useUtils();
-  const analyzeAll = trpc.documents.analyzeAll.useMutation();
 
   const handleFiles = useCallback((newFiles: FileList | File[]) => {
     const arr = Array.from(newFiles);
@@ -319,7 +335,7 @@ export default function Upload() {
 
     const batches = buildUploadBatches(files);
     let completed = 0;
-    let lastSummary: UploadSummary | null = null;
+    let aggregateSummary: UploadSummary | null = null;
 
     // ── Create server-side upload session for multi-batch persistence ──
     let sessionId: number | null = null;
@@ -355,9 +371,11 @@ export default function Upload() {
       ));
 
       try {
+        const headers = await getAuthenticatedRequestHeaders();
         const res = await fetch("/api/upload", {
           method: "POST",
           body: formData,
+          headers,
           credentials: "include",
         });
 
@@ -389,17 +407,36 @@ export default function Upload() {
           throw new Error(data.error || "Upload failed");
         }
 
-        // Capture summary from last batch
+        // Aggregate every server-receipted batch into one tranche summary.
         if (data.summary) {
-          lastSummary = data.summary;
+          const batchSummary = data.summary as UploadSummary;
+          aggregateSummary = aggregateSummary
+            ? {
+                total: aggregateSummary.total + batchSummary.total,
+                uploaded: aggregateSummary.uploaded + batchSummary.uploaded,
+                duplicates: aggregateSummary.duplicates + batchSummary.duplicates,
+                errors: aggregateSummary.errors + batchSummary.errors,
+                overrides: aggregateSummary.overrides + batchSummary.overrides,
+                preserved: aggregateSummary.preserved + batchSummary.preserved,
+                caseDocumentCount: batchSummary.caseDocumentCount,
+                caseId: batchSummary.caseId,
+              }
+            : batchSummary;
         }
 
         // Mark results with explicit status differentiation
         setResults(prev => prev.map((r, idx) => {
-          const batchPos = batch.indices.indexOf(idx);
+            const batchPos = batch.indices.indexOf(idx);
           if (batchPos >= 0) {
             const docResult = data.documents?.[batchPos];
             if (docResult?.error) return { ...r, status: "error", error: docResult.error };
+            if (!docResult?.receipt || docResult.receipt.preservation_state !== "preserved") {
+              return {
+                ...r,
+                status: "error",
+                error: "Server did not return a preservation receipt",
+              };
+            }
             if (docResult?.status === "duplicate") {
               return {
                 ...r,
@@ -408,6 +445,7 @@ export default function Upload() {
                 id: docResult.id,
                 linkedToId: docResult.id,
                 resolvedOriginal: docResult.resolvedOriginal,
+                receipt: docResult.receipt,
               };
             }
             // Scoped override: resolved/failed doc was replaced
@@ -418,9 +456,10 @@ export default function Upload() {
                 id: docResult.id,
                 message: docResult.message,
                 replacedDocId: docResult.replacedDocId,
+                receipt: docResult.receipt,
               };
             }
-            return { ...r, status: "done", id: docResult?.id };
+            return { ...r, status: "done", id: docResult.id, receipt: docResult.receipt };
           }
           return r;
         }));
@@ -460,19 +499,11 @@ export default function Upload() {
     utils.cases.stats.invalidate();
 
     // Show blocking summary modal
-    if (lastSummary) {
-      setSummary(lastSummary);
+    if (aggregateSummary) {
+      setSummary(aggregateSummary);
       setShowSummary(true);
     } else {
-      toast.success(`Upload complete: ${files.length} file(s) processed`);
-    }
-
-    // Auto-trigger analysis for uploaded documents
-    try {
-      await analyzeAll.mutateAsync({ caseId: currentCaseId });
-      toast.info("AI analysis started — documents will be processed in the background.");
-    } catch {
-      // Non-critical — user can trigger manually
+      toast.error("No files were preserved. Review the upload errors and try again.");
     }
   };
 
@@ -490,7 +521,7 @@ export default function Upload() {
     );
   }
 
-  const totalDone = results.filter(r => r.status === "done").length;
+  const totalDone = results.filter(r => r.status === "done" || r.status === "replaced").length;
   const totalDuplicates = results.filter(r => r.status === "duplicate").length;
   const totalErrors = results.filter(r => r.status === "error").length;
   const uploadFinished = !uploading && results.length > 0 && results.every(r => r.status !== "pending" && r.status !== "uploading");
@@ -561,7 +592,7 @@ export default function Upload() {
               <Button
                 size="sm"
                 onClick={startUpload}
-                disabled={uploading || results.every(r => r.status === "done" || r.status === "duplicate")}
+                disabled={uploading || results.every(r => r.status === "done" || r.status === "duplicate" || r.status === "replaced")}
                 className="gap-2"
               >
                 {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UploadIcon className="h-3.5 w-3.5" />}
@@ -651,9 +682,16 @@ export default function Upload() {
                 <div className={`flex items-center justify-between p-2.5 rounded-md ${summary.uploaded > 0 ? "bg-emerald-500/10" : "bg-muted/50"}`}>
                   <span className="text-sm text-muted-foreground flex items-center gap-2">
                     <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
-                    New Documents Created
+                    New Documents Preserved
                   </span>
                   <span className={`text-sm font-bold ${summary.uploaded > 0 ? "text-emerald-400" : "text-foreground"}`}>{summary.uploaded}</span>
+                </div>
+                <div className="flex items-center justify-between p-2.5 rounded-md bg-primary/5">
+                  <span className="text-sm text-muted-foreground flex items-center gap-2">
+                    <Shield className="h-3.5 w-3.5 text-primary" />
+                    Preservation Receipts
+                  </span>
+                  <span className="text-sm font-bold text-primary">{summary.preserved}</span>
                 </div>
                 <div className={`flex items-center justify-between p-2.5 rounded-md ${summary.duplicates > 0 ? "bg-cyan-500/10" : "bg-muted/50"}`}>
                   <span className="text-sm text-muted-foreground flex items-center gap-2">

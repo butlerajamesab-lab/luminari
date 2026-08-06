@@ -13,6 +13,7 @@
  */
 
 import { trpc } from "@/lib/trpc";
+import { getAuthenticatedRequestHeaders } from "@/lib/session-token";
 import { useCase } from "@/contexts/CaseContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +49,8 @@ export interface ReplaceDocumentModalV2Props {
   documentId: number;
   /** The document filename (for display) */
   documentName: string;
+  /** Case containing the document; falls back to the active case context */
+  caseId?: number;
   /** Optional callback after successful replacement */
   onSuccess?: (result: { replacementDocumentId: number }) => void;
 }
@@ -56,10 +59,12 @@ export default function ReplaceDocumentModalV2({
   open,
   onClose,
   documentId,
+  caseId,
   documentName,
   onSuccess,
 }: ReplaceDocumentModalV2Props) {
   const { currentCaseId } = useCase();
+  const effectiveCaseId = caseId ?? currentCaseId;
   const utils = trpc.useUtils();
 
   // ── Local State ──
@@ -82,8 +87,8 @@ export default function ReplaceDocumentModalV2({
 
   // ── Snapshot Lifecycle ──
   const { data: lifecycle } = trpc.snapshots.lifecycle.useQuery(
-    { caseId: currentCaseId! },
-    { enabled: !!currentCaseId && open, refetchInterval: 5000 }
+    { caseId: effectiveCaseId! },
+    { enabled: !!effectiveCaseId && open, refetchInterval: 5000 }
   );
 
   const isSealed = lifecycle?.hasSnapshot && lifecycle?.status === "sealed";
@@ -93,28 +98,42 @@ export default function ReplaceDocumentModalV2({
 
   // ── Replacement Candidates ──
   const { data: docs } = trpc.documents.list.useQuery(
-    { caseId: currentCaseId! },
-    { enabled: !!currentCaseId && open }
+    { caseId: effectiveCaseId! },
+    { enabled: !!effectiveCaseId && open }
   );
 
   const replacementCandidates = useMemo(() => {
     if (!docs) return [];
     return docs.filter((d) => {
       const res = (d as any).documentResolution;
-      return (!res || res === "active") && d.status === "ready" && d.id !== documentId;
+      return (
+        (!res || res === "active") &&
+        d.status === "ready" &&
+        d.id !== documentId &&
+        snapshotId !== null &&
+        d.snapshotId === snapshotId
+      );
     });
-  }, [docs, documentId]);
+  }, [docs, documentId, snapshotId]);
 
   // ── Mutations ──
   const replaceMutation = trpc.documents.replaceDocument.useMutation({
     onSuccess: (data) => {
-      toast.success(`Document superseded → linked to replacement #${data.replacementDocumentId}`);
+      if (data.receipt?.preservation_state !== "preserved") {
+        toast.error("Existing replacement was not confirmed by a preservation receipt");
+        return;
+      }
+      toast.success(
+        `Preserved replacement #${data.replacement_document_id} — receipt ${data.receipt.receipt_hash.slice(0, 12)}…`
+      );
       invalidateAll();
-      onSuccess?.({ replacementDocumentId: data.replacementDocumentId });
+      onSuccess?.({ replacementDocumentId: data.replacement_document_id });
       onClose();
     },
     onError: (err) => toast.error(err.message),
   });
+
+  const replacementBusy = uploading || replaceMutation.isPending;
 
   const invalidateAll = useCallback(() => {
     utils.documents.list.invalidate();
@@ -127,7 +146,7 @@ export default function ReplaceDocumentModalV2({
 
   // ── Handlers ──
   const handleSelectReplace = () => {
-    if (!replacementDocId) return;
+    if (!replacementDocId || replacementBusy) return;
     replaceMutation.mutate({
       originalDocumentId: documentId,
       replacementDocumentId: parseInt(replacementDocId),
@@ -136,22 +155,54 @@ export default function ReplaceDocumentModalV2({
   };
 
   const handleUploadReplace = async () => {
-    if (!replaceFile) return;
+    if (!replaceFile || replacementBusy) return;
     setUploading(true);
     try {
       const formData = new FormData();
       formData.append("file", replaceFile);
+      const headers = await getAuthenticatedRequestHeaders();
       const res = await fetch(`/api/upload/replace/${documentId}`, {
         method: "POST",
+        headers,
         body: formData,
         credentials: "include",
       });
-      const data = await res.json();
+      const contentType = res.headers.get("content-type") ?? "";
+      let data: Record<string, any> = {};
+      let invalidResponse = !contentType.includes("application/json");
+      if (!invalidResponse) {
+        const responseText = await res.text();
+        try {
+          const parsed = responseText ? JSON.parse(responseText) : null;
+          if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+            data = parsed;
+          } else {
+            invalidResponse = true;
+          }
+        } catch {
+          invalidResponse = true;
+        }
+      }
       if (!res.ok) {
-        throw new Error(data.error || data.message || "Replacement upload failed");
+        const message =
+          typeof data.error === "string"
+            ? data.error
+            : typeof data.message === "string"
+              ? data.message
+              : null;
+        throw new Error(
+          message ||
+            `Replacement upload failed (${res.status}${res.statusText ? ` ${res.statusText}` : ""})`
+        );
+      }
+      if (invalidResponse) {
+        throw new Error("Replacement upload returned an invalid response");
+      }
+      if (data.receipt?.preservation_state !== "preserved") {
+        throw new Error("Replacement was not confirmed by a preservation receipt");
       }
       toast.success(
-        `Replaced document #${documentId} → new document #${data.newDocumentId} — extraction queued`
+        `Preserved replacement #${data.newDocumentId} — receipt ${String(data.receipt.receipt_hash).slice(0, 12)}…`
       );
       invalidateAll();
       onSuccess?.({ replacementDocumentId: data.newDocumentId });
@@ -164,6 +215,7 @@ export default function ReplaceDocumentModalV2({
   };
 
   const handleFileSelect = () => {
+    if (replacementBusy) return;
     const input = document.createElement("input");
     input.type = "file";
     input.accept =
@@ -176,7 +228,7 @@ export default function ReplaceDocumentModalV2({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+    <Dialog open={open} onOpenChange={(o) => !o && !replacementBusy && onClose()}>
       <DialogContent className="sm:max-w-lg" data-testid="replace-document-modal-v2">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-cyan-300">
@@ -390,7 +442,8 @@ export default function ReplaceDocumentModalV2({
                   <div className="p-2.5 rounded-md bg-muted/30 border border-border/50">
                     <p className="text-[10px] text-muted-foreground">
                       The uploaded file will create a new document, supersede the original, link the
-                      replacement chain, log an audit entry, and trigger extraction automatically.
+                      replacement chain, and return an immutable preservation receipt. Content
+                      extraction is a separate, explicitly tracked step.
                     </p>
                   </div>
                 </>
@@ -399,13 +452,13 @@ export default function ReplaceDocumentModalV2({
 
             {/* ── Footer Actions ── */}
             <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={onClose}>
+              <Button variant="outline" onClick={onClose} disabled={replacementBusy}>
                 Cancel
               </Button>
               {mode === "select" ? (
                 <Button
                   className="gap-2 bg-cyan-600 hover:bg-cyan-700 text-white"
-                  disabled={!replacementDocId || replaceMutation.isPending}
+                  disabled={!replacementDocId || replacementBusy}
                   onClick={handleSelectReplace}
                 >
                   {replaceMutation.isPending ? (
@@ -418,7 +471,7 @@ export default function ReplaceDocumentModalV2({
               ) : (
                 <Button
                   className="gap-2 bg-cyan-600 hover:bg-cyan-700 text-white"
-                  disabled={!replaceFile || uploading}
+                  disabled={!replaceFile || replacementBusy}
                   onClick={handleUploadReplace}
                 >
                   {uploading ? (

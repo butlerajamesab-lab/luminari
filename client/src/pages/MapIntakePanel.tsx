@@ -119,11 +119,11 @@ export default function MapIntakePanel({
     setInitiating(true);
     try {
       const result = await initFromMap.mutateAsync({ lat, lng, radiusKm: 50 });
-      toast.success("Intake session created");
+      toast.success("Intake session started");
       // Navigate to guided intake with the session context
-      onNavigate(`/guided-intake?mapSession=${result.sessionId}&state=${detectedState ?? ""}`);
+      onNavigate(`/guided-intake?mapSession=${result.session_id}&state=${detectedState ?? ""}`);
     } catch (err: any) {
-      toast.error(err.message || "Failed to initialize intake session");
+      toast.error(err.message || "Failed to start intake session");
     } finally {
       setInitiating(false);
     }
@@ -177,7 +177,7 @@ export default function MapIntakePanel({
             )}
             <div style={{ fontFamily: fontMono, fontSize: 9, color: lh.muted, marginTop: 2 }}>
               {lat.toFixed(4)}, {lng.toFixed(4)}
-              {suggestions && ` · ${suggestions.resourceCount} resources nearby`}
+              {suggestions && ` · ${suggestions.resource_count} resources nearby`}
             </div>
           </div>
           <button
@@ -199,18 +199,18 @@ export default function MapIntakePanel({
           <div style={{ padding: 24, textAlign: "center" }}>
             <Loader2 size={20} color={lh.gold} style={{ animation: "spin 1s linear infinite" }} />
             <p style={{ fontFamily: fontMono, fontSize: 10, color: lh.muted, marginTop: 8 }}>
-              Analyzing geographic context...
+              Applying geographic intake rules...
             </p>
           </div>
         )}
 
-        {/* Suggested Pipelines */}
+        {/* Matched Intake Paths */}
         {!suggestionsLoading && pipelines.length > 0 && (
           <div style={{ padding: "12px 16px", borderBottom: `1px solid ${lh.cardBorder}` }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
               <Target size={12} color={lh.gold} />
               <span style={{ fontFamily: fontMono, fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: lh.gold }}>
-                Suggested Pipelines
+                Matched Intake Paths
               </span>
               <span style={{ fontFamily: fontMono, fontSize: 9, color: lh.muted }}>
                 ({pipelines.length})
@@ -381,7 +381,7 @@ export default function MapIntakePanel({
         <div style={{ padding: "10px 16px", display: "flex", alignItems: "flex-start", gap: 8 }}>
           <Lock size={10} color={lh.muted} style={{ flexShrink: 0, marginTop: 2 }} />
           <span style={{ fontFamily: fontMono, fontSize: 9, color: lh.muted, lineHeight: 1.5 }}>
-            Pattern signals are aggregated. No individual case data is exposed.
+            Regional counts are aggregated. No individual case data is exposed.
           </span>
         </div>
       </div>
@@ -416,12 +416,12 @@ export default function MapIntakePanel({
           {initiating ? (
             <>
               <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />
-              Initializing Session...
+              Starting Session...
             </>
           ) : (
             <>
               <Zap size={14} />
-              Initialize Intake Session
+              Start Intake Session
               <ArrowRight size={14} />
             </>
           )}

@@ -6,7 +6,7 @@
  */
 
 import { Express, Request, Response } from "express";
-import { sdk } from "./_core/sdk";
+import { authenticateRequestUser } from "./_core/request-auth";
 import { generateBundleBuffer } from "./bundle-generator";
 import { logAudit } from "./db";
 
@@ -16,7 +16,7 @@ export function registerBundleDownloadRoute(app: Express) {
       // Authenticate — the bundle is personalized with the user's Luminari URL
       let user;
       try {
-        user = await sdk.authenticateRequest(req);
+        user = await authenticateRequestUser(req, res);
       } catch {
         res.status(401).json({ error: "Unauthorized — please log in first" });
         return;

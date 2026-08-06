@@ -1,3 +1,5 @@
+import { authenticatedFetch } from "@/lib/session-token";
+
 export interface AtlasHealth {
   status?: string;
   service?: string;
@@ -45,7 +47,11 @@ async function readAtlasResponse<T>(response: Response): Promise<T> {
 
     if (contentType.includes("application/json") && body) {
       try {
-        const parsed = JSON.parse(body) as { error?: unknown; message?: unknown; detail?: unknown };
+        const parsed = JSON.parse(body) as {
+          error?: unknown;
+          message?: unknown;
+          detail?: unknown;
+        };
         const parsedDetail = parsed.error ?? parsed.message ?? parsed.detail;
         if (typeof parsedDetail === "string") {
           detail = parsedDetail;
@@ -55,7 +61,9 @@ async function readAtlasResponse<T>(response: Response): Promise<T> {
       }
     }
 
-    throw new Error(`Atlas request failed (${response.status} ${response.statusText})${detail ? `: ${detail}` : ""}`);
+    throw new Error(
+      `Atlas request failed (${response.status} ${response.statusText})${detail ? `: ${detail}` : ""}`,
+    );
   }
 
   if (!body) {
@@ -63,18 +71,22 @@ async function readAtlasResponse<T>(response: Response): Promise<T> {
   }
 
   if (!contentType.includes("application/json")) {
-    throw new Error(`Atlas returned non-JSON response (${response.status} ${response.statusText}): ${body.slice(0, 240).trim()}`);
+    throw new Error(
+      `Atlas returned non-JSON response (${response.status} ${response.statusText}): ${body.slice(0, 240).trim()}`,
+    );
   }
 
   try {
     return JSON.parse(body) as T;
   } catch (error) {
-    throw new Error(`Atlas returned invalid JSON (${response.status} ${response.statusText}): ${(error as Error).message}`);
+    throw new Error(
+      `Atlas returned invalid JSON (${response.status} ${response.statusText}): ${(error as Error).message}`,
+    );
   }
 }
 
 async function atlasFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`/api/atlas${path}`, {
+  const response = await authenticatedFetch(`/api/atlas${path}`, {
     ...init,
     headers: {
       Accept: "application/json",
@@ -94,8 +106,11 @@ export function getAtlasCatalog(): Promise<AtlasCatalog> {
   return atlasFetch<AtlasCatalog>("/catalog");
 }
 
-export function populateAtlasStreams(streamIds?: string[]): Promise<AtlasPopulationResult> {
-  const body = streamIds && streamIds.length > 0 ? { stream_ids: streamIds } : {};
+export function populateAtlasStreams(
+  streamIds?: string[],
+): Promise<AtlasPopulationResult> {
+  const body =
+    streamIds && streamIds.length > 0 ? { stream_ids: streamIds } : {};
 
   return atlasFetch<AtlasPopulationResult>("/populate", {
     method: "POST",

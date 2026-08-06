@@ -2,14 +2,33 @@ import { useState, useCallback, useRef } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
-  Upload, FileUp, CheckCircle2, AlertCircle, ArrowLeft,
-  FileText, Users, Clock, StickyNote, Download, Loader2,
+  Upload,
+  FileUp,
+  CheckCircle2,
+  AlertCircle,
+  ArrowLeft,
+  FileText,
+  Users,
+  Clock,
+  StickyNote,
+  Download,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  authenticatedFetch,
+  downloadAuthenticatedFile,
+} from "@/lib/session-token";
 
 interface BundleManifest {
   bundleVersion: string;
@@ -26,7 +45,12 @@ interface BundleManifest {
   };
   timeline: unknown[];
   people: unknown[];
-  attachments: { id: string; filename: string; size: number; mimeType: string }[];
+  attachments: {
+    id: string;
+    filename: string;
+    size: number;
+    mimeType: string;
+  }[];
   evidenceNotes: unknown[];
   advocateInfo?: { name?: string; organization?: string };
 }
@@ -38,13 +62,24 @@ interface BackupFile {
 
 interface SyncResult {
   success: boolean;
+  completion_state: "preserved" | "partial";
   caseId: number;
+  snapshotId: number;
+  case_uuid: string;
+  intake_session_id: string;
+  document_failures: Array<{
+    filename: string;
+    sha256: string;
+    legacy_document_id: number | null;
+    failure_code: string;
+    commit_state: "rejected" | "uncertain";
+  }>;
   summary: {
     caseName: string;
     domain: string;
     pipelineType: string;
     documentsUploaded: number;
-    documentsQueued: number;
+    documentsPreserved: number;
     eventsCreated: number;
     entitiesCreated: number;
     checklistItemsGenerated: number;
@@ -64,36 +99,40 @@ export default function ImportBundle() {
   const [result, setResult] = useState<SyncResult | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleFileSelect = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
 
-    setParseError(null);
-    setResult(null);
-    setUploadError(null);
+      setParseError(null);
+      setResult(null);
+      setUploadError(null);
 
-    try {
-      const text = await file.text();
-      const parsed = JSON.parse(text) as BackupFile;
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text) as BackupFile;
 
-      if (!parsed.manifest?.caseContext?.name) {
-        throw new Error("Invalid bundle file — missing case context");
+        if (!parsed.manifest?.caseContext?.name) {
+          throw new Error("Invalid bundle file — missing case context");
+        }
+        if (!parsed.manifest?.bundleVersion) {
+          throw new Error("Invalid bundle file — missing version");
+        }
+
+        setBackup(parsed);
+        toast.success("Bundle loaded successfully");
+      } catch (err: unknown) {
+        const msg =
+          err instanceof Error ? err.message : "Failed to parse bundle file";
+        setParseError(msg);
+        toast.error(msg);
       }
-      if (!parsed.manifest?.bundleVersion) {
-        throw new Error("Invalid bundle file — missing version");
-      }
 
-      setBackup(parsed);
-      toast.success("Bundle loaded successfully");
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to parse bundle file";
-      setParseError(msg);
-      toast.error(msg);
-    }
-
-    // Reset input so same file can be re-selected
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  }, []);
+      // Reset input so same file can be re-selected
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    },
+    [],
+  );
 
   const handleUpload = useCallback(async () => {
     if (!backup) return;
@@ -114,17 +153,21 @@ export default function ImportBundle() {
         const bytes = new Uint8Array(binary.length);
         for (let j = 0; j < binary.length; j++) bytes[j] = binary.charCodeAt(j);
 
-        const att = backup.manifest.attachments.find(a => a.id === id);
+        const att = backup.manifest.attachments.find((a) => a.id === id);
         const filename = att?.filename || `file-${id}`;
         const mimeType = att?.mimeType || "application/octet-stream";
 
-        formData.append("files", new Blob([bytes], { type: mimeType }), filename);
+        formData.append(
+          "files",
+          new Blob([bytes], { type: mimeType }),
+          filename,
+        );
         setUploadProgress(20 + Math.round((i / fileEntries.length) * 50));
       }
 
       setUploadProgress(75);
 
-      const response = await fetch("/api/bundle-sync", {
+      const response = await authenticatedFetch("/api/bundle-sync", {
         method: "POST",
         body: formData,
         credentials: "include",
@@ -136,7 +179,11 @@ export default function ImportBundle() {
       if (response.ok && data.success) {
         setResult(data as SyncResult);
         setUploadProgress(100);
-        toast.success(`Case "${data.summary.caseName}" created successfully!`);
+        if (data.completion_state === "preserved") {
+          toast.success(`Case "${data.summary.caseName}" created with preservation receipts.`);
+        } else {
+          toast.warning(`Case "${data.summary.caseName}" was created with document preservation failures.`);
+        }
       } else {
         throw new Error(data.error || "Upload failed");
       }
@@ -151,20 +198,26 @@ export default function ImportBundle() {
 
   const manifest = backup?.manifest;
   const fileCount = manifest?.attachments?.length || 0;
-  const totalSize = manifest?.attachments?.reduce((sum, a) => sum + a.size, 0) || 0;
+  const totalSize =
+    manifest?.attachments?.reduce((sum, a) => sum + a.size, 0) || 0;
 
   return (
     <div className="min-h-screen bg-background">
       <div className="container max-w-3xl py-8">
         {/* Header */}
         <div className="flex items-center gap-3 mb-8">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/welcome")}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/welcome")}
+          >
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
             <h1 className="text-2xl font-bold">Import Offline Bundle</h1>
             <p className="text-muted-foreground text-sm">
-              Upload a .luminari backup file created with the offline intake tool
+              Upload a .luminari backup file created with the offline intake
+              tool
             </p>
           </div>
         </div>
@@ -177,7 +230,8 @@ export default function ImportBundle() {
                 <div>
                   <p className="font-medium text-destructive">Login Required</p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    You need to be logged in to import a bundle. The case will be created under your account.
+                    You need to be logged in to import a bundle. The case will
+                    be created under your account.
                   </p>
                 </div>
               </div>
@@ -192,33 +246,66 @@ export default function ImportBundle() {
               <div className="flex items-start gap-3">
                 <CheckCircle2 className="h-6 w-6 text-green-500 shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <h3 className="font-semibold text-lg text-green-400">Import Successful</h3>
+                  <h3 className="font-semibold text-lg text-green-400">
+                    Import Successful
+                  </h3>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Case "{result.summary.caseName}" has been created and documents are being analyzed.
+                    Case "{result.summary.caseName}" has been created and its
+                    uploaded documents have preservation receipts.
                   </p>
                   <div className="grid grid-cols-2 gap-3 mt-4">
                     <div className="bg-background/50 rounded-lg p-3 text-center">
-                      <div className="text-xl font-bold text-primary">{result.summary.documentsUploaded}</div>
-                      <div className="text-xs text-muted-foreground">Documents</div>
+                      <div className="text-xl font-bold text-primary">
+                        {result.summary.documentsUploaded}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Documents
+                      </div>
                     </div>
                     <div className="bg-background/50 rounded-lg p-3 text-center">
-                      <div className="text-xl font-bold text-primary">{result.summary.eventsCreated}</div>
-                      <div className="text-xs text-muted-foreground">Timeline Events</div>
+                      <div className="text-xl font-bold text-primary">
+                        {result.summary.eventsCreated}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Timeline Events
+                      </div>
                     </div>
                     <div className="bg-background/50 rounded-lg p-3 text-center">
-                      <div className="text-xl font-bold text-primary">{result.summary.entitiesCreated}</div>
-                      <div className="text-xs text-muted-foreground">People</div>
+                      <div className="text-xl font-bold text-primary">
+                        {result.summary.entitiesCreated}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        People
+                      </div>
                     </div>
                     <div className="bg-background/50 rounded-lg p-3 text-center">
-                      <div className="text-xl font-bold text-primary">{result.summary.checklistItemsGenerated}</div>
-                      <div className="text-xs text-muted-foreground">Checklist Items</div>
+                      <div className="text-xl font-bold text-primary">
+                        {result.summary.checklistItemsGenerated}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Checklist Items
+                      </div>
                     </div>
                   </div>
-                  {result.warnings.length > 0 && (
+                   {result.warnings.length > 0 && (
                     <div className="mt-3 text-xs text-yellow-400">
-                      {result.warnings.map((w, i) => <p key={i}>{w}</p>)}
+                      {result.warnings.map((w, i) => (
+                        <p key={i}>{w}</p>
+                      ))}
                     </div>
-                  )}
+                   )}
+                   {result.document_failures.length > 0 && (
+                     <div className="mt-3 rounded-md border border-yellow-500/30 bg-yellow-500/5 p-3 text-xs text-yellow-300">
+                       <p className="font-medium">
+                         {result.document_failures.length} document(s) did not receive preservation receipts.
+                       </p>
+                       {result.document_failures.map((failure) => (
+                         <p key={`${failure.filename}-${failure.sha256}`} className="mt-1 break-all">
+                           {failure.filename}: {failure.failure_code} ({failure.commit_state})
+                         </p>
+                       ))}
+                     </div>
+                   )}
                   <div className="flex gap-3 mt-4">
                     <Button onClick={() => navigate(`/guide/${result.caseId}`)}>
                       Open Case Dashboard
@@ -242,7 +329,8 @@ export default function ImportBundle() {
                 Select Bundle File
               </CardTitle>
               <CardDescription>
-                Choose a .luminari file from your device. These files are created by the offline intake tool.
+                Choose a .luminari file from your device. These files are
+                created by the offline intake tool.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -290,23 +378,32 @@ export default function ImportBundle() {
               <CardContent>
                 <div className="space-y-4">
                   <div>
-                    <h4 className="text-sm font-medium text-muted-foreground mb-1">Case Name</h4>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-1">
+                      Case Name
+                    </h4>
                     <p className="font-semibold">{manifest.caseContext.name}</p>
                   </div>
 
                   <div className="flex flex-wrap gap-2">
-                    <Badge variant="secondary">{manifest.caseContext.primaryDomain}</Badge>
-                    {manifest.caseContext.additionalDomains.map(d => (
-                      <Badge key={d} variant="outline">{d}</Badge>
+                    <Badge variant="secondary">
+                      {manifest.caseContext.primaryDomain}
+                    </Badge>
+                    {manifest.caseContext.additionalDomains.map((d) => (
+                      <Badge key={d} variant="outline">
+                        {d}
+                      </Badge>
                     ))}
                   </div>
 
                   {manifest.advocateInfo?.name && (
                     <div>
-                      <h4 className="text-sm font-medium text-muted-foreground mb-1">Advocate</h4>
+                      <h4 className="text-sm font-medium text-muted-foreground mb-1">
+                        Advocate
+                      </h4>
                       <p className="text-sm">
                         {manifest.advocateInfo.name}
-                        {manifest.advocateInfo.organization && ` (${manifest.advocateInfo.organization})`}
+                        {manifest.advocateInfo.organization &&
+                          ` (${manifest.advocateInfo.organization})`}
                       </p>
                     </div>
                   )}
@@ -314,13 +411,21 @@ export default function ImportBundle() {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div className="bg-muted/50 rounded-lg p-3 text-center">
                       <Clock className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-                      <div className="text-lg font-bold">{manifest.timeline.length}</div>
-                      <div className="text-xs text-muted-foreground">Events</div>
+                      <div className="text-lg font-bold">
+                        {manifest.timeline.length}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Events
+                      </div>
                     </div>
                     <div className="bg-muted/50 rounded-lg p-3 text-center">
                       <Users className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-                      <div className="text-lg font-bold">{manifest.people.length}</div>
-                      <div className="text-xs text-muted-foreground">People</div>
+                      <div className="text-lg font-bold">
+                        {manifest.people.length}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        People
+                      </div>
                     </div>
                     <div className="bg-muted/50 rounded-lg p-3 text-center">
                       <FileText className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
@@ -329,17 +434,24 @@ export default function ImportBundle() {
                     </div>
                     <div className="bg-muted/50 rounded-lg p-3 text-center">
                       <StickyNote className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-                      <div className="text-lg font-bold">{manifest.evidenceNotes.length}</div>
+                      <div className="text-lg font-bold">
+                        {manifest.evidenceNotes.length}
+                      </div>
                       <div className="text-xs text-muted-foreground">Notes</div>
                     </div>
                   </div>
 
                   {fileCount > 0 && (
                     <div>
-                      <h4 className="text-sm font-medium text-muted-foreground mb-2">Attached Files</h4>
+                      <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                        Attached Files
+                      </h4>
                       <div className="space-y-1">
-                        {manifest.attachments.map(a => (
-                          <div key={a.id} className="flex items-center justify-between text-sm py-1 px-2 rounded bg-muted/30">
+                        {manifest.attachments.map((a) => (
+                          <div
+                            key={a.id}
+                            className="flex items-center justify-between text-sm py-1 px-2 rounded bg-muted/30"
+                          >
                             <span className="truncate">{a.filename}</span>
                             <span className="text-muted-foreground text-xs shrink-0 ml-2">
                               {(a.size / 1024).toFixed(0)} KB
@@ -355,8 +467,13 @@ export default function ImportBundle() {
 
                   <div className="text-xs text-muted-foreground space-y-1">
                     <p>Bundle version: {manifest.bundleVersion}</p>
-                    <p>Created: {new Date(manifest.createdAt).toLocaleString()}</p>
-                    <p>Last updated: {new Date(manifest.updatedAt).toLocaleString()}</p>
+                    <p>
+                      Created: {new Date(manifest.createdAt).toLocaleString()}
+                    </p>
+                    <p>
+                      Last updated:{" "}
+                      {new Date(manifest.updatedAt).toLocaleString()}
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -368,8 +485,12 @@ export default function ImportBundle() {
                 {uploading && (
                   <div className="mb-4">
                     <div className="flex justify-between text-sm mb-1">
-                      <span className="text-muted-foreground">Uploading...</span>
-                      <span className="text-muted-foreground">{uploadProgress}%</span>
+                      <span className="text-muted-foreground">
+                        Uploading...
+                      </span>
+                      <span className="text-muted-foreground">
+                        {uploadProgress}%
+                      </span>
                     </div>
                     <Progress value={uploadProgress} />
                   </div>
@@ -407,10 +528,11 @@ export default function ImportBundle() {
                   )}
                 </Button>
 
-                <p className="text-xs text-muted-foreground text-center mt-3">
-                  This will create a new case with all the data from the bundle.
-                  Documents will be automatically queued for analysis.
-                </p>
+                 <p className="text-xs text-muted-foreground text-center mt-3">
+                   This will create a new case with all the data from the bundle.
+                   Each accepted document must receive an immutable preservation receipt; content
+                   extraction remains a separate, explicitly tracked step.
+                 </p>
               </CardContent>
             </Card>
           </>
@@ -425,16 +547,28 @@ export default function ImportBundle() {
                 <div>
                   <h3 className="font-medium">Need an offline intake form?</h3>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Download the offline intake bundle to collect case information without internet access.
-                    The bundle works on any device with a web browser.
+                    Download the offline intake bundle to collect case
+                    information without internet access. The bundle works on any
+                    device with a web browser.
                   </p>
                   <Button
                     variant="outline"
                     size="sm"
                     className="mt-3"
-                    onClick={() => {
-                      window.open("/api/bundle/download", "_blank");
-                      toast.info("Downloading offline intake bundle...");
+                    onClick={async () => {
+                      try {
+                        await downloadAuthenticatedFile(
+                          "/api/bundle/download",
+                          "luminari-intake.html",
+                        );
+                        toast.success("Downloaded offline intake bundle");
+                      } catch (error) {
+                        toast.error(
+                          error instanceof Error
+                            ? error.message
+                            : "Bundle download failed",
+                        );
+                      }
                     }}
                   >
                     <Download className="h-4 w-4 mr-2" />

@@ -14,6 +14,7 @@ const DEFAULT_DOCUMENT_BUCKET = "case-documents";
 const SUPABASE_KEY_SCHEME = "supabase://";
 const SIGNED_URL_TTL_SECONDS = 15 * 60;
 const CASE_DOCUMENT_PATH_PATTERN = /^cases\/\d+\/documents\//;
+const CONTENT_ADDRESSED_DOCUMENT_PATH_PATTERN = /^cases\/\d+\/documents\/by-sha256\/[0-9a-f]{64}$/;
 
 let supabase_storage_client: SupabaseClient | null = null;
 let supabase_storage_client_key = "";
@@ -141,6 +142,21 @@ async function supabase_storage_put(
     });
 
   if (error) {
+    const status_code = String((error as { statusCode?: string | number }).statusCode ?? "");
+    const already_exists = status_code === "409" || /already exists|duplicate/i.test(error.message);
+
+    // A full-hash object path is the idempotency key. If a prior request wrote
+    // the object but failed before committing its database receipt, verify the
+    // private object still exists and allow the database replay to recover it.
+    if (already_exists && CONTENT_ADDRESSED_DOCUMENT_PATH_PATTERN.test(object_path)) {
+      const probe = await client.storage
+        .from(config.bucket)
+        .createSignedUrl(object_path, 60);
+      if (!probe.error && probe.data?.signedUrl) {
+        return { key: to_supabase_key(config.bucket, object_path), url: "" };
+      }
+    }
+
     throw new Error(`Supabase document upload failed: ${error.message}`);
   }
 
@@ -154,6 +170,7 @@ async function supabase_storage_put(
 
 async function supabase_storage_get(
   storage_key: string,
+  options?: { download_filename?: string },
 ): Promise<StorageResult> {
   const config = get_supabase_storage_config();
   const client = get_supabase_storage_client(config);
@@ -167,7 +184,9 @@ async function supabase_storage_get(
 
   const { data, error } = await client.storage
     .from(parsed_key.bucket)
-    .createSignedUrl(parsed_key.object_path, SIGNED_URL_TTL_SECONDS);
+    .createSignedUrl(parsed_key.object_path, SIGNED_URL_TTL_SECONDS, {
+      download: options?.download_filename,
+    });
 
   if (error || !data?.signedUrl) {
     throw new Error(
@@ -319,9 +338,12 @@ export async function storagePut(
   return forge_storage_put(rel_key, data, content_type);
 }
 
-export async function storageGet(rel_key: string): Promise<StorageResult> {
+export async function storageGet(
+  rel_key: string,
+  options?: { download_filename?: string },
+): Promise<StorageResult> {
   if (is_supabase_storage_key(rel_key)) {
-    return supabase_storage_get(rel_key);
+    return supabase_storage_get(rel_key, options);
   }
   return forge_storage_get(rel_key);
 }

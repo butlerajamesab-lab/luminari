@@ -1,5 +1,5 @@
 import { trpc } from "@/lib/trpc";
-import { supabase } from "@/lib/supabase";
+import { getAuthenticatedRequestHeaders } from "@/lib/session-token";
 import { UNAUTHED_ERR_MSG } from '@shared/const';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpLink, TRPCClientError } from "@trpc/client";
@@ -95,69 +95,15 @@ queryClient.getMutationCache().subscribe(event => {
   }
 });
 
-// Helper: get a fresh Supabase session token, refreshing if expiring soon
-async function with_timeout<T>(promise: Promise<T>, timeout_ms: number, label: string): Promise<T> {
-  let timeout: ReturnType<typeof setTimeout> | undefined;
-  const timeout_promise = new Promise<never>((_resolve, reject) => {
-    timeout = setTimeout(() => reject(new Error(`${label} timed out after ${timeout_ms}ms`)), timeout_ms);
-  });
-  try {
-    return await Promise.race([promise, timeout_promise]);
-  } finally {
-    if (timeout) clearTimeout(timeout);
-  }
-}
-
-async function getFreshSessionToken(): Promise<string | null> {
-  try {
-    const { data: sessionData } = await with_timeout(
-      supabase.auth.getSession(),
-      3_000,
-      "Supabase session lookup",
-    );
-    const token = sessionData.session?.access_token ?? null;
-
-    if (!token) {
-      console.warn('[AUTH] No active Supabase session — user may need to log in again');
-      return null;
-    }
-
-    // Proactively refresh if token expires within 60 seconds
-    const expiresAt = sessionData.session?.expires_at;
-    const nowSecs = Math.floor(Date.now() / 1000);
-    if (expiresAt && expiresAt - nowSecs < 60) {
-      console.log('[AUTH] Token expiring soon, refreshing...');
-      const { data: refreshData, error } = await with_timeout(
-        supabase.auth.refreshSession(),
-        5_000,
-        "Supabase session refresh",
-      );
-      if (error) {
-        console.warn('[AUTH] Session refresh failed:', error.message);
-        return token; // Fall back to existing token
-      }
-      return refreshData.session?.access_token ?? token;
-    }
-
-    return token;
-  } catch (err) {
-    console.warn('[AUTH] Error getting session token:', err);
-    return null;
-  }
-}
-
 const trpcClient = trpc.createClient({
   links: [
     httpLink({
       url: "/api/trpc",
       transformer: superjson,
       async fetch(input, init) {
-        const headers = new Headers(init?.headers);
-        const sessionToken = await getFreshSessionToken();
+        const headers = await getAuthenticatedRequestHeaders(init?.headers);
 
-        if (sessionToken) {
-          headers.set("x-lighthouse-supabase-session", sessionToken);
-        } else {
+        if (!headers.has("x-lighthouse-supabase-session")) {
           console.warn('[AUTH] tRPC call proceeding without auth token — expect 10001 if route is protected');
         }
 

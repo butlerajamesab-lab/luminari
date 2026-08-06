@@ -1,11 +1,31 @@
 import { useCase } from "@/contexts/CaseContext";
 import { trpc } from "@/lib/trpc";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
-import { FileText, Users, Clock, Network, Loader2, ExternalLink, Printer, Download, HardDrive, FileJson, Globe, Shield } from "lucide-react";
+import {
+  FileText,
+  Users,
+  Clock,
+  Network,
+  Loader2,
+  ExternalLink,
+  Printer,
+  Download,
+  HardDrive,
+  FileJson,
+  Globe,
+  Shield,
+} from "lucide-react";
 import { useState, useRef, useCallback } from "react";
 import { toast } from "sonner";
+import { authenticatedFetch } from "@/lib/session-token";
 
 export default function Exports() {
   const { currentCaseId, currentCase } = useCase();
@@ -15,84 +35,98 @@ export default function Exports() {
 
   const { data: stats } = trpc.cases.stats.useQuery(
     { caseId: currentCaseId! },
-    { enabled: !!currentCaseId }
+    { enabled: !!currentCaseId },
   );
 
-  const handleExport = useCallback(async (exportType: string) => {
-    if (!currentCaseId) return;
-    setGenerating(exportType);
-    try {
-      const url = `/api/export/${exportType}?caseId=${currentCaseId}`;
+  const handleExport = useCallback(
+    async (exportType: string) => {
+      if (!currentCaseId) return;
+      setGenerating(exportType);
+      try {
+        const url = `/api/export/${exportType}?caseId=${currentCaseId}`;
 
-      const response = await fetch(url, { credentials: "same-origin" });
+        const response = await authenticatedFetch(url);
 
-      if (!response.ok) {
-        const errText = await response.text();
-        let errMsg = "Export failed";
-        try {
-          const errJson = JSON.parse(errText);
-          errMsg = errJson.error || errMsg;
-        } catch { errMsg = errText || errMsg; }
-        throw new Error(errMsg);
-      }
-
-      const html = await response.text();
-      const blob = new Blob([html], { type: "text/html; charset=utf-8" });
-      const blobUrl = URL.createObjectURL(blob);
-
-      const newWindow = window.open(blobUrl, "_blank");
-
-      if (!newWindow) {
-        toast.info("Popup blocked — opening report inline. Use the Print button below.");
-        if (iframeRef.current) {
-          iframeRef.current.srcdoc = html;
-          iframeRef.current.style.display = "block";
-          iframeRef.current.scrollIntoView({ behavior: "smooth" });
+        if (!response.ok) {
+          const errText = await response.text();
+          let errMsg = "Export failed";
+          try {
+            const errJson = JSON.parse(errText);
+            errMsg = errJson.error || errMsg;
+          } catch {
+            errMsg = errText || errMsg;
+          }
+          throw new Error(errMsg);
         }
-      } else {
-        toast.success("Report opened. Use the Print button in the report to save as PDF.");
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+
+        const html = await response.text();
+        const blob = new Blob([html], { type: "text/html; charset=utf-8" });
+        const blobUrl = URL.createObjectURL(blob);
+
+        const newWindow = window.open(blobUrl, "_blank");
+
+        if (!newWindow) {
+          toast.info(
+            "Popup blocked — opening report inline. Use the Print button below.",
+          );
+          if (iframeRef.current) {
+            iframeRef.current.srcdoc = html;
+            iframeRef.current.style.display = "block";
+            iframeRef.current.scrollIntoView({ behavior: "smooth" });
+          }
+        } else {
+          toast.success(
+            "Report opened. Use the Print button in the report to save as PDF.",
+          );
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+        }
+      } catch (err: any) {
+        toast.error(err.message || "Export failed");
+      } finally {
+        setTimeout(() => setGenerating(null), 1000);
       }
-    } catch (err: any) {
-      toast.error(err.message || "Export failed");
-    } finally {
-      setTimeout(() => setGenerating(null), 1000);
-    }
-  }, [currentCaseId]);
+    },
+    [currentCaseId],
+  );
 
-  const handleDownload = useCallback(async (exportType: string, filename: string) => {
-    if (!currentCaseId) return;
-    setGenerating(exportType);
-    try {
-      const url = `/api/export/${exportType}?caseId=${currentCaseId}`;
-      const response = await fetch(url, { credentials: "same-origin" });
+  const handleDownload = useCallback(
+    async (exportType: string, filename: string) => {
+      if (!currentCaseId) return;
+      setGenerating(exportType);
+      try {
+        const url = `/api/export/${exportType}?caseId=${currentCaseId}`;
+        const response = await authenticatedFetch(url);
 
-      if (!response.ok) {
-        const errText = await response.text();
-        let errMsg = "Export failed";
-        try {
-          const errJson = JSON.parse(errText);
-          errMsg = errJson.error || errMsg;
-        } catch { errMsg = errText || errMsg; }
-        throw new Error(errMsg);
+        if (!response.ok) {
+          const errText = await response.text();
+          let errMsg = "Export failed";
+          try {
+            const errJson = JSON.parse(errText);
+            errMsg = errJson.error || errMsg;
+          } catch {
+            errMsg = errText || errMsg;
+          }
+          throw new Error(errMsg);
+        }
+
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+        toast.success(`Downloaded ${filename}`);
+      } catch (err: any) {
+        toast.error(err.message || "Download failed");
+      } finally {
+        setTimeout(() => setGenerating(null), 1000);
       }
-
-      const blob = await response.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = blobUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
-      toast.success(`Downloaded ${filename}`);
-    } catch (err: any) {
-      toast.error(err.message || "Download failed");
-    } finally {
-      setTimeout(() => setGenerating(null), 1000);
-    }
-  }, [currentCaseId]);
+    },
+    [currentCaseId],
+  );
 
   const handlePrintInline = useCallback(() => {
     if (iframeRef.current?.contentWindow) {
@@ -104,7 +138,9 @@ export default function Exports() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <p className="text-muted-foreground">Select a case first</p>
-        <Button variant="outline" onClick={() => setLocation("/cases")}>Manage Cases</Button>
+        <Button variant="outline" onClick={() => setLocation("/cases")}>
+          Manage Cases
+        </Button>
       </div>
     );
   }
@@ -115,7 +151,8 @@ export default function Exports() {
     {
       id: "case-brief",
       title: "Case Brief",
-      description: "Executive summary with key findings, evidence chains, timeline, and full citation table.",
+      description:
+        "Executive summary with key findings, evidence chains, timeline, and full citation table.",
       icon: FileText,
       stats: `${stats?.findings ?? 0} findings, ${stats?.documents ?? 0} documents`,
       color: "text-blue-400",
@@ -123,7 +160,8 @@ export default function Exports() {
     {
       id: "entity-report",
       title: "Entity Report",
-      description: "People, organizations, and their roles — with relationships and source citations.",
+      description:
+        "People, organizations, and their roles — with relationships and source citations.",
       icon: Users,
       stats: `${stats?.entities ?? 0} entities tracked`,
       color: "text-emerald-400",
@@ -131,7 +169,8 @@ export default function Exports() {
     {
       id: "timeline-report",
       title: "Timeline Report",
-      description: "Chronological events from all documents with source citations.",
+      description:
+        "Chronological events from all documents with source citations.",
       icon: Clock,
       stats: `${stats?.events ?? 0} events documented`,
       color: "text-amber-400",
@@ -139,7 +178,8 @@ export default function Exports() {
     {
       id: "relationship-report",
       title: "Relationship Report",
-      description: "Documented connections between entities with evidence for each.",
+      description:
+        "Documented connections between entities with evidence for each.",
       icon: Network,
       stats: `${stats?.relationships ?? 0} relationships mapped`,
       color: "text-purple-400",
@@ -149,9 +189,12 @@ export default function Exports() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Export Evidence</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          Export Evidence
+        </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Generate reports, download offline bundles, or export raw data for sovereign access.
+          Generate reports, download offline bundles, or export raw data for
+          sovereign access.
         </p>
       </div>
 
@@ -159,10 +202,13 @@ export default function Exports() {
       <div>
         <div className="flex items-center gap-2 mb-4">
           <Shield className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-semibold text-foreground">Sovereign Export</h2>
+          <h2 className="text-lg font-semibold text-foreground">
+            Sovereign Export
+          </h2>
         </div>
         <p className="text-sm text-muted-foreground mb-4">
-          Download your entire case as a self-contained file. No internet, no platform dependency, no capture risk. These files work forever.
+          Download your entire case as a self-contained file. No internet, no
+          platform dependency, no capture risk. These files work forever.
         </p>
         <div className="grid gap-4 md:grid-cols-2">
           {/* HTML Bundle */}
@@ -173,22 +219,37 @@ export default function Exports() {
                   <HardDrive className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <CardTitle className="text-base">Offline HTML Bundle</CardTitle>
-                  <p className="text-xs text-muted-foreground mt-0.5">Single .html file — opens in any browser</p>
+                  <CardTitle className="text-base">
+                    Offline HTML Bundle
+                  </CardTitle>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Single .html file — opens in any browser
+                  </p>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
               <CardDescription className="text-sm mb-3">
-                Complete case with all findings, timeline, entities, quotes, claims, correlations, and signal flags. Includes search, collapsible sections, and print-to-PDF. <strong>Zero internet required.</strong>
+                Complete case with all findings, timeline, entities, quotes,
+                claims, correlations, and signal flags. Includes search,
+                collapsible sections, and print-to-PDF.{" "}
+                <strong>Zero internet required.</strong>
               </CardDescription>
               <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
                 <Globe className="h-3.5 w-3.5" />
-                <span>Works offline in Chrome, Firefox, Safari, Edge — any device, any OS</span>
+                <span>
+                  Works offline in Chrome, Firefox, Safari, Edge — any device,
+                  any OS
+                </span>
               </div>
               <Button
                 className="gap-2 w-full"
-                onClick={() => handleDownload("full-bundle", `Luminari_${caseName}_Bundle.html`)}
+                onClick={() =>
+                  handleDownload(
+                    "full-bundle",
+                    `Luminari_${caseName}_Bundle.html`,
+                  )
+                }
                 disabled={generating === "full-bundle"}
               >
                 {generating === "full-bundle" ? (
@@ -209,22 +270,34 @@ export default function Exports() {
                   <FileJson className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <CardTitle className="text-base">Full JSON Data Export</CardTitle>
-                  <p className="text-xs text-muted-foreground mt-0.5">Structured data — portable and importable</p>
+                  <CardTitle className="text-base">
+                    Full JSON Data Export
+                  </CardTitle>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Structured data — portable and importable
+                  </p>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
               <CardDescription className="text-sm mb-3">
-                Complete structured data dump: documents, quotes, entities, claims, findings, events, relationships, correlations, signal flags, and entity roles. <strong>Import into any system.</strong>
+                Complete structured data dump: documents, quotes, entities,
+                claims, findings, events, relationships, correlations, signal
+                flags, and entity roles.{" "}
+                <strong>Import into any system.</strong>
               </CardDescription>
               <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
                 <Shield className="h-3.5 w-3.5" />
-                <span>Your data, your format — no vendor lock-in, no platform dependency</span>
+                <span>
+                  Your data, your format — no vendor lock-in, no platform
+                  dependency
+                </span>
               </div>
               <Button
                 className="gap-2 w-full"
-                onClick={() => handleDownload("json-dump", `Luminari_${caseName}_Data.json`)}
+                onClick={() =>
+                  handleDownload("json-dump", `Luminari_${caseName}_Data.json`)
+                }
                 disabled={generating === "json-dump"}
               >
                 {generating === "json-dump" ? (
@@ -241,10 +314,15 @@ export default function Exports() {
 
       {/* ─── COURT-READY REPORTS ─── */}
       <div>
-        <h2 className="text-lg font-semibold text-foreground mb-4">Court-Ready Reports</h2>
+        <h2 className="text-lg font-semibold text-foreground mb-4">
+          Court-Ready Reports
+        </h2>
         <div className="grid gap-4 md:grid-cols-2">
           {exportTypes.map((exp) => (
-            <Card key={exp.id} className="hover:border-primary/30 transition-colors">
+            <Card
+              key={exp.id}
+              className="hover:border-primary/30 transition-colors"
+            >
               <CardHeader>
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
@@ -252,12 +330,16 @@ export default function Exports() {
                   </div>
                   <div>
                     <CardTitle className="text-base">{exp.title}</CardTitle>
-                    <p className="text-xs text-muted-foreground mt-0.5">{exp.stats}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {exp.stats}
+                    </p>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-sm mb-4">{exp.description}</CardDescription>
+                <CardDescription className="text-sm mb-4">
+                  {exp.description}
+                </CardDescription>
                 <Button
                   variant="outline"
                   size="sm"
@@ -281,8 +363,10 @@ export default function Exports() {
       <Card className="border-dashed">
         <CardContent className="p-6 text-center">
           <p className="text-sm text-muted-foreground">
-            All reports include exhibit numbering, citation tables, chain-of-custody metadata, and professional formatting.
-            Sovereign exports contain your complete case data with no external dependencies.
+            All reports include exhibit numbering, citation tables,
+            chain-of-custody metadata, and professional formatting. Sovereign
+            exports contain your complete case data with no external
+            dependencies.
           </p>
         </CardContent>
       </Card>
@@ -302,7 +386,10 @@ export default function Exports() {
             size="sm"
             className="gap-2 shadow-lg"
             onClick={handlePrintInline}
-            style={{ display: iframeRef.current?.style.display === "block" ? "flex" : "none" }}
+            style={{
+              display:
+                iframeRef.current?.style.display === "block" ? "flex" : "none",
+            }}
           >
             <Printer className="h-3.5 w-3.5" />
             Print / Save PDF

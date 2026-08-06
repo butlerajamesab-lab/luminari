@@ -988,6 +988,32 @@
     let exactPoints = [];
     let exactRequestSequence = 0;
     let exactReloadTimer = null;
+    const CIVIC_MAP_INTAKE_REQUEST = "luminari:civic-map:intake-request";
+
+    function hasFiniteMapCoordinates(lat, lng) {
+      return (
+        Number.isFinite(lat) &&
+        Number.isFinite(lng) &&
+        lat >= -90 &&
+        lat <= 90 &&
+        lng >= -180 &&
+        lng <= 180
+      );
+    }
+
+    function requestMapIntake(entryKind, lat, lng) {
+      if (!["jurisdiction", "resource"].includes(entryKind)) return;
+      if (!hasFiniteMapCoordinates(lat, lng)) return;
+      window.parent.postMessage(
+        {
+          type: CIVIC_MAP_INTAKE_REQUEST,
+          entryKind,
+          lat,
+          lng,
+        },
+        window.location.origin
+      );
+    }
 
     const map = L.map("map", {
       zoomControl: true,
@@ -1299,6 +1325,9 @@
             <a class="action primary" href="/resources?${directoryParams.toString()}">
               Open ${escapeHtml(meta.name)} resources
             </a>
+            <button class="action" id="jurisdictionIntakeAction" type="button">
+              Start intake from ${escapeHtml(meta.name)}
+            </button>
           </div>
         </section>
         <div class="honesty-note">
@@ -1306,6 +1335,15 @@
           address has real coordinates.
         </div>
       `;
+      document
+        .getElementById("jurisdictionIntakeAction")
+        ?.addEventListener("click", () =>
+          requestMapIntake(
+            "jurisdiction",
+            Number(meta.coordinates[0]),
+            Number(meta.coordinates[1])
+          )
+        );
       document.getElementById("sidebar").classList.add("open");
     }
 
@@ -1332,7 +1370,13 @@
           `<strong>${escapeHtml(point.resource_name)}</strong><br>Exact public site`,
           { className: "map-tooltip", direction: "top", offset: [0, -18] }
         );
-        marker.on("click", () => openResource(point.resource_entity_id));
+        marker.on("click", () =>
+          openResource(point.resource_entity_id, {
+            lat: latitude,
+            lng: longitude,
+            manual_map_eligible: point.manual_map_eligible,
+          })
+        );
         marker.addTo(exactLayer);
       }
 
@@ -1419,7 +1463,7 @@
       ].filter(Boolean).join(", ");
     }
 
-    async function openResource(resourceEntityId) {
+    async function openResource(resourceEntityId, candidate = null) {
       selectedResource = resourceEntityId;
       updateBrowserState();
       document.getElementById("sidebarEyebrow").textContent =
@@ -1438,7 +1482,7 @@
         if (!response.ok || !payload.ok) {
           throw new Error(payload.error || "Resource detail failed");
         }
-        renderResource(payload.resource);
+        renderResource(payload.resource, candidate);
       } catch (error) {
         console.error("Civic Map resource detail failed", error);
         document.getElementById("sidebarTitle").textContent =
@@ -1448,7 +1492,7 @@
       }
     }
 
-    function renderResource(resource) {
+    function renderResource(resource, candidate = null) {
       const location = Array.isArray(resource.locations)
         ? resource.locations[0]
         : null;
@@ -1464,6 +1508,9 @@
       const directoryParams = new URLSearchParams();
       if (state) directoryParams.set("jurisdiction", state);
       directoryParams.set("query", resource.resource_name);
+      const canStartMapIntake =
+        candidate?.manual_map_eligible === true &&
+        hasFiniteMapCoordinates(candidate.lat, candidate.lng);
 
       document.getElementById("sidebarEyebrow").textContent =
         "Exact public site";
@@ -1508,9 +1555,19 @@
           <div class="actions">
             ${actions.join("")}
             <a class="action" href="/resources?${directoryParams.toString()}">Open in Directory</a>
+            ${canStartMapIntake ? `
+              <button class="action primary" id="resourceIntakeAction" type="button">
+                Start intake from this resource
+              </button>
+            ` : ""}
           </div>
         </section>
       `;
+      document
+        .getElementById("resourceIntakeAction")
+        ?.addEventListener("click", () =>
+          requestMapIntake("resource", candidate.lat, candidate.lng)
+        );
     }
 
     function detailRow(label, value) {

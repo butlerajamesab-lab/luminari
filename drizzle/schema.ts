@@ -25,6 +25,18 @@ const integer_text = customType<{ data: number; driverData: string }>({
   },
 });
 
+const integer_boolean = customType<{ data: boolean; driverData: number }>({
+  dataType() {
+    return "integer";
+  },
+  toDriver(value) {
+    return value ? 1 : 0;
+  },
+  fromDriver(value) {
+    return Number(value) === 1;
+  },
+});
+
 // -----------------------------------------------------------------------------
 // Auto-generated Drizzle schema for the Luminari Lighthouse Supabase Postgres DB.
 // Source of truth: lighthouse_schema_grouped.json (116 Postgres tables).
@@ -3190,21 +3202,20 @@ export type RelationshipEvidence = typeof relationshipEvidence.$inferSelect;
 
 export const signalFlags = pgTable("signal_flags", {
   id: serial("id").primaryKey(),
-  caseId: integer("caseId").notNull(),
-  documentId: integer("documentId").notNull(),
-  flagType: varchar("flagType", { length: 64 }).notNull(),
+  caseId: integer("case_id"),
+  documentId: integer("document_id"),
+  flagType: text("flag_type"),
   description: text("description"),
-  quoteId: integer("quoteId"),
-  // Engine version stamping (Gate 4)
-  engineVersion: varchar("engineVersion", { length: 256 }).notNull(),
-  // Lane ID denormalization (Gate 5)
-  laneId: varchar("laneId", { length: 256 }).notNull(),
-  // Snapshot versioning (Gate 6)
-  snapshotId: integer("snapshotId").notNull(),
+  quoteId: integer("quote_id"),
+  // These two live legacy columns are timestamptz despite their historical
+  // names. Preserve the database contract; callers must not reinterpret them.
+  engineVersion: timestamp("engine_version", { withTimezone: true, mode: "string" }),
+  laneId: timestamp("lane_id", { withTimezone: true, mode: "string" }),
+  snapshotId: integer("snapshot_id"),
   // Sunam gate status (Signal Flow Engine)
-  sunamStatus: pgEnum("signal_flags_sunam_status_enum", ["pending", "approved", "rejected", "deferred"])("sunamStatus").default("pending").notNull(),
+  sunamStatus: text("sunam_status").$type<"pending" | "approved" | "rejected" | "deferred">(),
   // Confidence score from gate decision
-  confidenceScore: numeric("confidenceScore", { precision: 5, scale: 2 }).default("0"),
+  confidenceScore: text("confidence_score"),
 }, (table) => [
   index("idx_flags_case").on(table.caseId),
   index("idx_flags_doc").on(table.documentId),
@@ -3460,14 +3471,14 @@ export type Phase2StructuredNote = typeof phase2StructuredNotes.$inferSelect;
 
 export const checklistItems = pgTable("checklist_items", {
   id: serial("id").primaryKey(),
-  caseId: integer("caseId").notNull(),
-  label: varchar("label", { length: 512 }).notNull(),
+  caseId: integer("case_id"),
+  label: text("label"),
   description: text("description"),
-  priority: pgEnum("checklist_items_priority_enum", ["critical", "important", "helpful"])("priority").default("important").notNull(),
-  checked: boolean("checked").default(false).notNull(),
-  checkedAt: bigint("checkedAt", { mode: "number" }),
-  sortOrder: integer("sort_order").default(0).notNull(),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull(),
+  priority: text("priority").$type<"critical" | "important" | "helpful">(),
+  checked: integer_boolean("checked"),
+  checkedAt: bigint("checked_at", { mode: "number" }),
+  sortOrder: integer("sort_order"),
+  createdAt: bigint("created_at", { mode: "number" }),
 }, (table) => [
   index("idx_checklist_case").on(table.caseId),
 ]);
@@ -3509,16 +3520,16 @@ export type PipelineEvent = typeof pipelineEvents.$inferSelect;
 
 export const shareLinks = pgTable("share_links", {
   id: serial("id").primaryKey(),
-  caseId: integer("caseId").notNull(),
-  createdBy: integer("createdBy").notNull(),
+  caseId: integer("case_id").notNull(),
+  createdBy: integer("created_by").notNull(),
   token: varchar("token", { length: 128 }).notNull().unique(),
   label: varchar("label", { length: 256 }), // e.g., "For my attorney", "Legal aid review"
-  permissions: pgEnum("share_links_permissions_enum", ["read_only", "read_export"])("permissions").default("read_only").notNull(),
-  expiresAt: bigint("expiresAt", { mode: "number" }).notNull(),
-  revokedAt: bigint("revokedAt", { mode: "number" }),
-  lastAccessedAt: bigint("lastAccessedAt", { mode: "number" }),
-  accessCount: integer("accessCount").default(0).notNull(),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull(),
+  permissions: text("permissions").$type<"read_only" | "read_export">().default("read_only").notNull(),
+  expiresAt: bigint("expires_at", { mode: "number" }).notNull(),
+  revokedAt: bigint("revoked_at", { mode: "number" }),
+  lastAccessedAt: bigint("last_accessed_at", { mode: "number" }),
+  accessCount: integer("access_count").default(0).notNull(),
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
 }, (table) => [
   uniqueIndex("idx_share_token").on(table.token),
   index("idx_share_case").on(table.caseId),

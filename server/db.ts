@@ -546,8 +546,9 @@ export async function createCase(userId: number, name: string, description?: str
   const now = Date.now();
   // Normalize domain: lowercase and trim to prevent silent mismatches
   const normalizedDomain = domain ? domain.toLowerCase().trim() : null;
-  const [result] = await db.insert(cases).values({ userId, name, description: description ?? null, domain: normalizedDomain, container: container ?? null, pipelineType: pipelineType ?? null, createdAt: now, updatedAt: now });
-  return result.insertId;
+  const [result] = await db.insert(cases).values({ userId, name, description: description ?? null, domain: normalizedDomain, container: container ?? null, pipelineType: pipelineType ?? null, createdAt: now, updatedAt: now }).returning({ id: cases.id });
+  if (!result?.id) throw new Error("case_not_persisted");
+  return result.id;
 }
 
 export async function updateCaseDomainContainer(id: number, userId: number, data: { domain?: string; container?: string }) {
@@ -3024,9 +3025,10 @@ export async function performDuplicateOverride(
 }
 
 /**
- * Check if a document is eligible for scoped replacement override.
- * Returns the document if eligible, null otherwise.
- * Eligible: failed_permanent status OR documentResolution IN (corrupted, excluded, superseded).
+ * Check if a document is eligible for an intentional replacement upload.
+ * Active, failed, corrupted, and excluded documents may be superseded while
+ * their snapshot is open. An already-superseded document cannot be replaced
+ * again because its lineage has already advanced.
  */
 export async function checkReplacementEligibility(
   documentId: number,
@@ -3036,10 +3038,8 @@ export async function checkReplacementEligibility(
     return { eligible: false, reason: 'Document not found' };
   }
   const resolution = (doc as any).documentResolution ?? 'active';
-  const isFailedPermanent = doc.status === 'failed_permanent';
-  const isResolved = ['corrupted', 'excluded', 'superseded'].includes(resolution);
-  if (!isFailedPermanent && !isResolved) {
-    return { eligible: false, reason: `Document is active and not failed — not eligible for replacement` };
+  if (resolution === 'superseded') {
+    return { eligible: false, reason: 'Document has already been superseded' };
   }
   return { eligible: true, document: doc };
 }
@@ -3066,9 +3066,15 @@ export async function getChecklistItems(caseId: number) {
   return db.select().from(checklistItems).where(eq(checklistItems.caseId, caseId)).orderBy(checklistItems.sortOrder);
 }
 
-export async function toggleChecklistItem(itemId: number, checked: boolean) {
-  await db.update(checklistItems).set({ checked, checkedAt: checked ? Date.now() : null }).where(eq(checklistItems.id, itemId));
-  return { success: true };
+export async function toggleChecklistItem(itemId: number, caseId: number, checked: boolean) {
+  const [updated] = await db.update(checklistItems)
+    .set({ checked, checkedAt: checked ? Date.now() : null })
+    .where(and(
+      eq(checklistItems.id, itemId),
+      eq(checklistItems.caseId, caseId),
+    ))
+    .returning({ id: checklistItems.id });
+  return updated ? { success: true } : null;
 }
 
 // ─── User Feedback Helpers ───
@@ -3147,7 +3153,7 @@ export async function createShareLink(data: {
   expiresAt: number;
 }) {
   const now = Date.now();
-  const result = await db.insert(shareLinks).values({
+  const [result] = await db.insert(shareLinks).values({
     caseId: data.caseId,
     createdBy: data.createdBy,
     token: data.token,
@@ -3156,8 +3162,9 @@ export async function createShareLink(data: {
     expiresAt: data.expiresAt,
     accessCount: 0,
     createdAt: now,
-  }).$returningId();
-  return { id: result[0].id, token: data.token };
+  }).returning({ id: shareLinks.id });
+  if (!result?.id) throw new Error("share_link_not_persisted");
+  return { id: result.id, token: data.token };
 }
 
 export async function getShareLinkByToken(token: string) {
@@ -5019,8 +5026,9 @@ export async function createMapIntakeSession(data: {
     radiusKm: data.radiusKm ?? 50,
     createdAt: now,
     updatedAt: now,
-  });
-  return { id: result.insertId, createdAt: now };
+  }).returning({ id: mapIntakeSessions.id });
+  if (!result?.id) throw new Error("map_intake_session_not_persisted");
+  return { id: result.id, createdAt: now };
 }
 
 /** Get a map intake session by ID (with ownership check) */
@@ -5043,9 +5051,15 @@ export async function listActiveMapIntakeSessions(userId: number) {
 
 /** Complete a map intake session (link to case) */
 export async function completeMapIntakeSession(sessionId: number, userId: number, caseId: number) {
-  await db.update(mapIntakeSessions)
+  const [updated] = await db.update(mapIntakeSessions)
     .set({ status: "completed", caseId, updatedAt: Date.now() })
-    .where(and(eq(mapIntakeSessions.id, sessionId), eq(mapIntakeSessions.userId, userId)));
+    .where(and(
+      eq(mapIntakeSessions.id, sessionId),
+      eq(mapIntakeSessions.userId, userId),
+      eq(mapIntakeSessions.status, "active"),
+    ))
+    .returning({ id: mapIntakeSessions.id });
+  return Boolean(updated);
 }
 
 /** Expire old active sessions (> 24 hours) */

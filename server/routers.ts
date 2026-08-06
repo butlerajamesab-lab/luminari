@@ -50,6 +50,12 @@ import { fullRegistryBatchIngest } from "./full-registry-batch-ingest";
 import { scaledRegistryIngest } from "./scaled-registry-ingest";
 import { fullIntegrationTest } from "./full-integration-test";
 import { activationOutputs, signalFlags, signalRegistry, patternOutputs, strategyOutputs, proceduralOutputs } from "../drizzle/schema";
+import {
+  createCaseWithIntakeSpine,
+  preserveDocumentInIntakeSpine,
+  resolveCaseIntakeSpine,
+} from "./intake-spine-runtime";
+import { storageGet } from "./storage";
 
 // Note: governance router is imported above in the meaning-layer section
 
@@ -512,7 +518,16 @@ const casesRouter = router({
   create: protectedProcedure
     .input(z.object({ name: z.string().min(1), description: z.string().optional(), domain: z.string().optional(), container: z.string().optional(), pipelineType: z.string().optional() }))
     .mutation(async ({ ctx, input }) => {
-      const id = await db_helpers.createCase(ctx.user.id, input.name, input.description, input.domain, input.container, input.pipelineType);
+      const created = await createCaseWithIntakeSpine({
+        owner_user_id: ctx.user.id,
+        name: input.name,
+        description: input.description,
+        domain: input.domain,
+        container: input.container,
+        pipeline_type: input.pipelineType,
+        entry_channel: input.pipelineType ? "guided_intake" : "case_workspace",
+      });
+      const id = created.id;
       await db_helpers.logAudit({ caseId: id, userId: ctx.user.id, action: "create_case", targetType: "case", targetId: id, details: { domain: input.domain, container: input.container, pipelineType: input.pipelineType } });
       // Log pipeline analytics event
       if (input.pipelineType) {
@@ -526,7 +541,11 @@ const casesRouter = router({
           await db_helpers.createChecklistItems(id, items);
         }
       }
-      return { id };
+      return {
+        id,
+        case_uuid: created.case_uuid,
+        intake_session_id: created.intake_session_id,
+      };
     }),
 
   update: protectedProcedure
@@ -974,10 +993,66 @@ const documentsRouter = router({
     .mutation(async ({ ctx, input }) => {
       const originalDoc = await db_helpers.verifyDocumentOwnership(input.originalDocumentId, ctx.user.id);
       await db_helpers.verifyCaseWriteAccess(originalDoc.caseId, ctx.user.id);
-      // Gate enforcement: snapshot must be open
-      if (originalDoc.snapshotId) await assertSnapshotMutationAllowed(originalDoc.snapshotId, 'replaceDocument');
-      await db_helpers.replaceDocument(input.originalDocumentId, input.replacementDocumentId, ctx.user.id, input.reason);
-      return { success: true, original_document_id: input.originalDocumentId, replacement_document_id: input.replacementDocumentId };
+      const replacementDoc = await db_helpers.verifyDocumentOwnership(
+        input.replacementDocumentId,
+        ctx.user.id,
+      );
+      if (originalDoc.caseId !== replacementDoc.caseId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Original and replacement documents must belong to the same case",
+        });
+      }
+      if (
+        !originalDoc.snapshotId ||
+        replacementDoc.snapshotId !== originalDoc.snapshotId
+      ) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Original and replacement documents must belong to the same open snapshot",
+        });
+      }
+      await assertSnapshotMutationAllowed(originalDoc.snapshotId, "replaceDocument");
+      if (
+        !replacementDoc.filename ||
+        !replacementDoc.mimeType ||
+        replacementDoc.fileSize === null ||
+        !replacementDoc.sha256Hash ||
+        !replacementDoc.s3Key
+      ) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Replacement document is missing immutable preservation metadata",
+        });
+      }
+
+      // This probe establishes current addressability. The runtime separately
+      // requires the selected document's earlier sealed preservation receipt;
+      // neither check claims to rehash stored bytes or verify content truth.
+      await storageGet(replacementDoc.s3Key);
+      const receipt = await preserveDocumentInIntakeSpine({
+        legacy_case_id: originalDoc.caseId,
+        owner_user_id: ctx.user.id,
+        entry_channel: "evidence_existing_replacement",
+        source_label: `Existing document replacement for ${originalDoc.filename ?? input.originalDocumentId}`,
+        legacy_document_id: replacementDoc.id,
+        snapshot_id: originalDoc.snapshotId,
+        filename: replacementDoc.filename,
+        mime_type: replacementDoc.mimeType,
+        byte_size: replacementDoc.fileSize,
+        sha256: replacementDoc.sha256Hash,
+        storage_key: replacementDoc.s3Key,
+        replaces_legacy_document_id: originalDoc.id,
+        replacement_reason: input.reason,
+        preservation_mode: "existing_receipted_document",
+        storage_addressability_verified: true,
+      });
+      return {
+        success: true,
+        original_document_id: input.originalDocumentId,
+        replacement_document_id: input.replacementDocumentId,
+        receipt,
+      };
     }),
 
   markCorrupted: protectedProcedure
@@ -2887,7 +2962,15 @@ const checklistRouter = router({
     .mutation(async ({ ctx, input }) => {
       const c = await db_helpers.getCase(input.caseId, ctx.user.id);
       if (!c) throw new TRPCError({ code: "NOT_FOUND" });
-      return db_helpers.toggleChecklistItem(input.itemId, input.checked);
+      const updated = await db_helpers.toggleChecklistItem(
+        input.itemId,
+        input.caseId,
+        input.checked,
+      );
+      if (!updated) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Checklist item not found for this case" });
+      }
+      return updated;
     }),
   generate: protectedProcedure
     .input(z.object({ caseId: z.number(), pipelineType: z.string() }))
@@ -2983,6 +3066,12 @@ const shareRouter = router({
       // Verify user owns this case
       const caseData = await db_helpers.getCase(input.caseId, ctx.user.id);
       if (!caseData) throw new TRPCError({ code: "NOT_FOUND", message: "Case not found" });
+      const spine = await resolveCaseIntakeSpine({
+        legacy_case_id: input.caseId,
+        owner_user_id: ctx.user.id,
+        entry_channel: "advocate_sharing",
+        source_label: caseData.name || `Lighthouse case ${input.caseId}`,
+      });
       const token = randomBytes(32).toString("hex");
       const expiresAt = Date.now() + input.expiresInDays * 24 * 60 * 60 * 1000;
       const result = await db_helpers.createShareLink({
@@ -2993,7 +3082,13 @@ const shareRouter = router({
         permissions: input.permissions,
         expiresAt,
       });
-      return { id: result.id, token: result.token, expiresAt };
+      return {
+        id: result.id,
+        token: result.token,
+        expiresAt,
+        case_uuid: spine.case_uuid,
+        intake_session_id: spine.intake_session_id,
+      };
     }),
 
   list: protectedProcedure
@@ -3029,6 +3124,7 @@ const shareRouter = router({
         ...data,
         permissions: link.permissions,
         expires_at: link.expiresAt,
+        expiresAt: link.expiresAt,
         label: link.label,
       };
     }),
@@ -3240,7 +3336,15 @@ const caseTemplatesRouter = router({
       const template = CASE_TEMPLATES.find(t => t.id === input.templateId);
       if (!template) throw new TRPCError({ code: "NOT_FOUND", message: "Template not found" });
       const caseName = input.customName || template.name;
-      const caseId = await db_helpers.createCase(ctx.user.id, caseName, template.description, template.domain, undefined, template.pipelineType);
+      const created = await createCaseWithIntakeSpine({
+        owner_user_id: ctx.user.id,
+        name: caseName,
+        description: template.description,
+        domain: template.domain,
+        pipeline_type: template.pipelineType,
+        entry_channel: "case_template",
+      });
+      const caseId = created.id;
       // Auto-generate document checklist
       const { getChecklistForPipeline } = await import("./document-checklists");
       const items = getChecklistForPipeline(template.pipelineType);
@@ -3249,7 +3353,12 @@ const caseTemplatesRouter = router({
       }
       // Log pipeline event
       await db_helpers.logPipelineEvent(ctx.user.id, template.pipelineType, "direct_create");
-      return { id: caseId, name: caseName };
+      return {
+        id: caseId,
+        name: caseName,
+        case_uuid: created.case_uuid,
+        intake_session_id: created.intake_session_id,
+      };
     }),
 });
 
@@ -3335,14 +3444,15 @@ const testScenariosRouter = router({
 
       // 1. Create the case
       const caseName = input.customCaseName || `[TEST] ${bundle.scenarioName}`;
-      const caseId = await db_helpers.createCase(
-        ctx.user.id,
-        caseName,
-        `Test scenario: ${bundle.description}`,
-        bundle.pipelineType,
-        undefined,
-        bundle.pipelineType,
-      );
+      const created = await createCaseWithIntakeSpine({
+        owner_user_id: ctx.user.id,
+        name: caseName,
+        description: `Test scenario: ${bundle.description}`,
+        domain: bundle.pipelineType,
+        pipeline_type: bundle.pipelineType,
+        entry_channel: "test_scenario",
+      });
+      const caseId = created.id;
 
       // 2. Auto-generate document checklist
       const { getChecklistForPipeline } = await import("./document-checklists");
@@ -3738,13 +3848,17 @@ const lensesRouter = router({
     .query(async ({ ctx, input }) => {
       await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
 
-      const { activateLensesWithResolution, mapSignalFlags, getCachedRegistry } = await import("./lens-engine");
+      const { activateLensesWithResolution, mapSignalFlags, getCachedRegistry, getLensRegistryLoadStatus } = await import("./lens-engine");
       const { resolveCanonical } = await import("./pipeline-resolver");
 
       // Verify registries are loaded
       const cached = getCachedRegistry();
       if (!cached) {
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Lens registry not loaded." });
+        const status = getLensRegistryLoadStatus();
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: `Lens registry unavailable: ${status.errors.join(" ") || "not loaded"}`,
+        });
       }
 
       // T1. Load case metadata
@@ -3791,10 +3905,14 @@ const lensesRouter = router({
       await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
 
       // Validate lens IDs against registry
-      const { getCachedRegistry } = await import("./lens-engine");
+      const { getCachedRegistry, getLensRegistryLoadStatus } = await import("./lens-engine");
       const cached = getCachedRegistry();
       if (!cached) {
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Lens registry not loaded." });
+        const status = getLensRegistryLoadStatus();
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: `Lens registry unavailable: ${status.errors.join(" ") || "not loaded"}`,
+        });
       }
 
       const allLenses = [...cached.registry.structural_lenses, ...cached.registry.domain_lenses, ...cached.registry.interpretive_lenses];
@@ -3823,10 +3941,10 @@ const lensesRouter = router({
    */
   registryInfo: protectedProcedure
     .query(async () => {
-      const { getCachedRegistry } = await import("./lens-engine");
+      const { getCachedRegistry, getLensRegistryLoadStatus } = await import("./lens-engine");
       const cached = getCachedRegistry();
       if (!cached) {
-        return { loaded: false as const };
+        return { loaded: false as const, errors: getLensRegistryLoadStatus().errors };
       }
 
       const { registry, hash } = cached;
@@ -3857,12 +3975,16 @@ const lensesRouter = router({
     .query(async ({ ctx, input }) => {
       await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
 
-      const { activateLensesWithResolutionAndTrace, mapSignalFlags, getCachedRegistry } = await import("./lens-engine");
+      const { activateLensesWithResolutionAndTrace, mapSignalFlags, getCachedRegistry, getLensRegistryLoadStatus } = await import("./lens-engine");
       const { resolveCanonical } = await import("./pipeline-resolver");
 
       const cached = getCachedRegistry();
       if (!cached) {
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Lens registry not loaded." });
+        const status = getLensRegistryLoadStatus();
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: `Lens registry unavailable: ${status.errors.join(" ") || "not loaded"}`,
+        });
       }
 
       const caseRow = await db_helpers.getCaseInternal(input.caseId);

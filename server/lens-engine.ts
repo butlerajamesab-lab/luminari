@@ -264,6 +264,7 @@ export function mapSignalFlags(flagTypes: string[]): EvidenceSignal[] {
 /** Cached registry instance. Null until first load. */
 let cachedRegistry: LensRegistry | null = null;
 let cachedRegistryHash: string | null = null;
+let lastRegistryLoadErrors: string[] = [];
 
 function normalizeLensRegistry(registry: LensRegistry): LensRegistry {
   return {
@@ -288,6 +289,7 @@ export function computeRegistryHash(registry: LensRegistry): string {
     ...registry.domain_lenses,
     ...registry.interpretive_lenses,
   ];
+
   // Deterministic: sort by lens_id, then stringify
   const sorted = allLenses
     .slice()
@@ -317,6 +319,32 @@ export function validateRegistry(registry: LensRegistry): string[] {
     ...registry.domain_lenses,
     ...registry.interpretive_lenses,
   ];
+
+  if (allLenses.length === 0) {
+    errors.push("Registry contains no lens definitions.");
+  }
+
+  for (const lens of allLenses) {
+    if (!lens || typeof lens !== "object") {
+      errors.push("Registry contains a non-object lens definition.");
+      continue;
+    }
+    if (!lens.lens_id || typeof lens.lens_id !== "string") {
+      errors.push("Lens definition is missing a string 'lens_id'.");
+    }
+    if (!lens.label || typeof lens.label !== "string") {
+      errors.push(`Lens '${lens.lens_id || "unknown"}' is missing a string 'label'.`);
+    }
+    if (!lens.description || typeof lens.description !== "string") {
+      errors.push(`Lens '${lens.lens_id || "unknown"}' is missing a string 'description'.`);
+    }
+    if (!Number.isFinite(lens.priority)) {
+      errors.push(`Lens '${lens.lens_id || "unknown"}' is missing a numeric 'priority'.`);
+    }
+    if (!lens.activation_rules || typeof lens.activation_rules !== "object" || Array.isArray(lens.activation_rules)) {
+      errors.push(`Lens '${lens.lens_id || "unknown"}' has invalid 'activation_rules'; expected an object.`);
+    }
+  }
 
   // Check for duplicate lens_ids
   const idSet = new Set<string>();
@@ -450,7 +478,11 @@ export function loadLensRegistry(registryData?: LensRegistry): {
   data = normalizeLensRegistry(data);
 
   const errors = validateRegistry(data);
+  lastRegistryLoadErrors = errors.slice();
   if (errors.length > 0) {
+    // A rejected reload must never leave a previously cached registry active.
+    cachedRegistry = null;
+    cachedRegistryHash = null;
     return { registry: data, hash: "", errors };
   }
 
@@ -469,12 +501,23 @@ export function getCachedRegistry(): { registry: LensRegistry; hash: string } | 
   return { registry: cachedRegistry, hash: cachedRegistryHash };
 }
 
+export function getLensRegistryLoadStatus(): {
+  loaded: boolean;
+  errors: string[];
+} {
+  return {
+    loaded: Boolean(cachedRegistry && cachedRegistryHash),
+    errors: lastRegistryLoadErrors.slice(),
+  };
+}
+
 /**
  * Clear the cached registry (for testing).
  */
 export function clearRegistryCache(): void {
   cachedRegistry = null;
   cachedRegistryHash = null;
+  lastRegistryLoadErrors = [];
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

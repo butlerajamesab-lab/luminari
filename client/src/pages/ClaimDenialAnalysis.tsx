@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'wouter';
+import { useCase } from '@/contexts/CaseContext';
 import { trpc } from '@/lib/trpc';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,13 +9,21 @@ import { Input } from '@/components/ui/input';
 
 export default function ClaimDenialAnalysis() {
   const { caseId } = useParams<{ caseId: string }>();
+  const { currentCaseId, setCurrentCaseId } = useCase();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
 
-  const numCaseId = caseId ? parseInt(caseId) : 0;
+  const numCaseId = caseId ? parseInt(caseId) : currentCaseId ?? 0;
+
+  useEffect(() => {
+    if (Number.isInteger(numCaseId) && numCaseId > 0 && numCaseId !== currentCaseId) {
+      setCurrentCaseId(numCaseId);
+    }
+  }, [currentCaseId, numCaseId, setCurrentCaseId]);
+
   const { data: denials = [], isLoading } = trpc.analyze.getClaimDenialAnalysis.useQuery(
     { caseId: numCaseId },
-    { enabled: !!caseId }
+    { enabled: numCaseId > 0 }
   );
 
   // Extract unique categories

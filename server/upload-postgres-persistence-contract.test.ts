@@ -7,6 +7,9 @@ import {
   corpusSnapshots,
   documents,
   pipelineEvents,
+  checklistItems,
+  shareLinks,
+  signalFlags,
   uploadSessions,
 } from "../drizzle/schema";
 
@@ -83,6 +86,51 @@ describe("document upload PostgreSQL persistence contract", () => {
       updatedAt: "updated_at",
     });
     expect(columns.id.getSQLType()).toBe("serial");
+  });
+
+  it("maps checklist, advocate sharing, and lens flags to live snake_case columns", () => {
+    expect(physical_column_names(getTableColumns(checklistItems))).toEqual({
+      id: "id",
+      caseId: "case_id",
+      label: "label",
+      description: "description",
+      priority: "priority",
+      checked: "checked",
+      checkedAt: "checked_at",
+      sortOrder: "sort_order",
+      createdAt: "created_at",
+    });
+    expect(getTableColumns(checklistItems).checked.getSQLType()).toBe("integer");
+    expect(getTableColumns(checklistItems).checked.mapToDriverValue(true)).toBe(1);
+    expect(getTableColumns(checklistItems).checked.mapFromDriverValue(0)).toBe(false);
+
+    expect(physical_column_names(getTableColumns(shareLinks))).toEqual({
+      id: "id",
+      caseId: "case_id",
+      createdBy: "created_by",
+      token: "token",
+      label: "label",
+      permissions: "permissions",
+      expiresAt: "expires_at",
+      revokedAt: "revoked_at",
+      lastAccessedAt: "last_accessed_at",
+      accessCount: "access_count",
+      createdAt: "created_at",
+    });
+
+    expect(physical_column_names(getTableColumns(signalFlags))).toEqual({
+      id: "id",
+      caseId: "case_id",
+      documentId: "document_id",
+      flagType: "flag_type",
+      description: "description",
+      quoteId: "quote_id",
+      engineVersion: "engine_version",
+      laneId: "lane_id",
+      snapshotId: "snapshot_id",
+      sunamStatus: "sunam_status",
+      confidenceScore: "confidence_score",
+    });
   });
 
   it("maps documents to the integer-id legacy Lighthouse contract", () => {
@@ -193,6 +241,18 @@ describe("document upload PostgreSQL persistence contract", () => {
 
     expect(document_insert).toContain('status: "uploaded"');
     expect(document_insert).toContain('documentResolution: "active"');
+  });
+
+  it("uses PostgreSQL RETURNING for case and share-link identities", () => {
+    const case_insert = function_source("createCase", "updateCaseDomainContainer");
+    const share_insert = function_source("createShareLink", "getShareLinkByToken");
+
+    expect(case_insert).toContain(".returning({ id: cases.id })");
+    expect(share_insert).toContain(".returning({ id: shareLinks.id })");
+    for (const source of [case_insert, share_insert]) {
+      expect(source).not.toContain("$returningId");
+      expect(source).not.toContain("insertId");
+    }
   });
 
   it("uses integer case ids when filtering the live documents table", () => {

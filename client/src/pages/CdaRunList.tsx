@@ -30,10 +30,22 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { downloadAuthenticatedFile } from "@/lib/session-token";
 
-const STATUS_CONFIG: Record<string, { icon: React.ElementType; color: string; label: string }> = {
-  complete: { icon: CheckCircle2, color: "text-emerald-400", label: "Complete" },
-  incomplete: { icon: AlertTriangle, color: "text-amber-400", label: "Incomplete" },
+const STATUS_CONFIG: Record<
+  string,
+  { icon: React.ElementType; color: string; label: string }
+> = {
+  complete: {
+    icon: CheckCircle2,
+    color: "text-emerald-400",
+    label: "Complete",
+  },
+  incomplete: {
+    icon: AlertTriangle,
+    color: "text-amber-400",
+    label: "Incomplete",
+  },
   error: { icon: XCircle, color: "text-red-400", label: "Error" },
   created: { icon: Clock, color: "text-muted-foreground", label: "Created" },
   validating: { icon: Loader2, color: "text-blue-400", label: "Validating" },
@@ -41,14 +53,38 @@ const STATUS_CONFIG: Record<string, { icon: React.ElementType; color: string; la
 
 function getStatusConfig(status: string) {
   if (status.startsWith("error_at_")) {
-    return { icon: XCircle, color: "text-red-400", label: `Error at ${status.replace("error_at_", "")}` };
+    return {
+      icon: XCircle,
+      color: "text-red-400",
+      label: `Error at ${status.replace("error_at_", "")}`,
+    };
   }
   // Running stages
-  const runningStages = ["classifying", "extracting", "normalizing", "parsing_denial", "parsing_policy", "linking", "comparing", "detecting_contradictions", "generating_artifacts"];
+  const runningStages = [
+    "classifying",
+    "extracting",
+    "normalizing",
+    "parsing_denial",
+    "parsing_policy",
+    "linking",
+    "comparing",
+    "detecting_contradictions",
+    "generating_artifacts",
+  ];
   if (runningStages.includes(status)) {
-    return { icon: Loader2, color: "text-blue-400", label: status.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) };
+    return {
+      icon: Loader2,
+      color: "text-blue-400",
+      label: status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+    };
   }
-  return STATUS_CONFIG[status] ?? { icon: Clock, color: "text-muted-foreground", label: status };
+  return (
+    STATUS_CONFIG[status] ?? {
+      icon: Clock,
+      color: "text-muted-foreground",
+      label: status,
+    }
+  );
 }
 
 export default function CdaRunList() {
@@ -59,11 +95,19 @@ export default function CdaRunList() {
     refetchInterval: 10_000,
   });
 
-  const handleDownload = (runId: number, e: React.MouseEvent) => {
+  const handleDownload = async (runId: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    const url = `/api/cda/export/${runId}`;
-    window.open(url, "_blank");
-    toast.info(`Downloading CDA run #${runId} bundle.`);
+    try {
+      await downloadAuthenticatedFile(
+        `/api/cda/export/${runId}`,
+        `luminari-cda-run-${runId}.zip`,
+      );
+      toast.success(`Downloaded CDA run #${runId} bundle.`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "CDA download failed",
+      );
+    }
   };
 
   if (isLoading) {
@@ -90,9 +134,15 @@ export default function CdaRunList() {
         <div className="border border-dashed border-border rounded-lg p-12 text-center">
           <FileSearch className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
           <p className="text-muted-foreground text-sm">
-            No CDA runs yet. Runs are created when you trigger a Claim Denial Analysis from the case documents.
+            No CDA runs yet. Runs are created when you trigger a Claim Denial
+            Analysis from the case documents.
           </p>
-          <Button variant="outline" size="sm" className="gap-1.5 mt-4" onClick={() => setLocation("/documents")}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 mt-4"
+            onClick={() => setLocation("/documents")}
+          >
             <FileSearch className="h-3.5 w-3.5" /> View Documents
           </Button>
         </div>
@@ -127,8 +177,11 @@ export default function CdaRunList() {
               const sc = getStatusConfig(run.status);
               const StatusIcon = sc.icon;
               const flags = (run.activeFailureFlags as string[] | null) ?? [];
-              const isRunning = !["complete", "incomplete", "error"].includes(run.status) && !run.status.startsWith("error_at_");
-              const isComplete = run.status === "complete" || run.status === "incomplete";
+              const isRunning =
+                !["complete", "incomplete", "error"].includes(run.status) &&
+                !run.status.startsWith("error_at_");
+              const isComplete =
+                run.status === "complete" || run.status === "incomplete";
 
               return (
                 <TableRow
@@ -142,7 +195,9 @@ export default function CdaRunList() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <StatusIcon className={`h-4 w-4 ${sc.color} ${isRunning ? "animate-spin" : ""}`} />
+                      <StatusIcon
+                        className={`h-4 w-4 ${sc.color} ${isRunning ? "animate-spin" : ""}`}
+                      />
                       <span className="text-sm">{sc.label}</span>
                     </div>
                   </TableCell>

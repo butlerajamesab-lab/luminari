@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { useCase } from "@/contexts/CaseContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,7 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Play, Search, Download } from "lucide-react";
 
 export function ExtractionDashboard() {
-  const [caseId, setCaseId] = useState<number>(7); // Default to case 7 for testing
+  const { currentCaseId } = useCase();
+  const caseId = currentCaseId ?? 0;
   const [selectedDocId, setSelectedDocId] = useState<number | null>(null);
   const [entitySearch, setEntitySearch] = useState("");
   const [entityTypeFilter, setEntityTypeFilter] = useState<string>("");

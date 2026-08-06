@@ -41,7 +41,6 @@ import Welcome from "./pages/Welcome";
 import Intake from "./pages/Intake";
 import Case from "./pages/Case";
 import GuidedIntake from "./pages/GuidedIntake";
-import GuidedIntakeNew from "./pages/GuidedIntakeNew";
 import BenefitsNavigator from "./pages/BenefitsNavigator";
 import GuidedDashboard from "./pages/GuidedDashboard";
 import SharedCaseView from "./pages/SharedCaseView";
@@ -215,8 +214,8 @@ function App() {
                 <Route path="/welcome" component={Welcome} />
                 <Route path="/intake"><ValidationRouteWrapper><Intake /></ValidationRouteWrapper></Route>
                 <Route path="/case/:id"><ValidationRouteWrapper><Case /></ValidationRouteWrapper></Route>
-                <Route path="/luminari-intake" component={GuidedIntakeNew} />
-                <Route path="/guided-intake" component={GuidedIntakeNew} />
+                <Route path="/luminari-intake" component={GuidedIntake} />
+                <Route path="/guided-intake" component={GuidedIntake} />
                 <Route path="/benefits" component={BenefitsNavigator} />
                 <Route path="/my-applications" component={MyApplications} />
                 <Route path="/discover" component={DiscoverBenefits} />
@@ -271,6 +270,7 @@ function App() {
                 <Route path="/proof-frameworks" component={ProofFrameworks} />
                 <Route path="/claim-elements" component={ClaimElements} />
                 <Route path="/claim-denial-analysis" component={ClaimDenialAnalysis} />
+                <Route path="/case/:caseId/claim-denial" component={ClaimDenialAnalysis} />
                 <Route path="/investigation-guidance" component={InvestigationGuidance} />
                 <Route path="/command-board" component={CommandBoard} />
                 <Route path="/admin/knowledge-population" component={KnowledgePopulation} />

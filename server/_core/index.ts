@@ -21,6 +21,11 @@ import { docket_router } from "../routes/docket";
 import { prism_verification_router } from "../routes/prism-verification-router";
 import { invite_redemption_router } from "../routes/invite-redemption-router";
 import { registerUploadRoute } from "../upload-route";
+import { registerDocketUploadRoute } from "../docket-upload-route";
+import { registerExportRoute } from "../export-route";
+import { registerCdaExportRoute } from "../cda-export-route";
+import { registerBundleDownloadRoute } from "../bundle-download-route";
+import { registerBundleSyncRoute } from "../bundle-sync";
 import { registerExecutorRoutes } from "../executor-routes";
 import { loadPipelineRegistry } from "../pipeline-resolver";
 import { loadLensRegistry } from "../lens-engine";
@@ -135,6 +140,11 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
   app.use(sessionMiddleware);
+  registerDocketUploadRoute(app);
+  registerExportRoute(app);
+  registerCdaExportRoute(app);
+  registerBundleDownloadRoute(app);
+  registerBundleSyncRoute(app);
   app.use("/api/invites", invite_redemption_router);
   app.use(
     "/api/trpc",
@@ -169,16 +179,24 @@ async function startServer() {
   app.use("/api/system", requireExpressAdmin, systemVisibilityRouter);
   app.use("/api/conveyor", requireExpressAdmin, conveyorRouter);
   app.use("/api/civic-map", civicMapRouter);
+  app.use("/api/atlas/populate", requireExpressAdmin);
+  app.use("/api/atlas/bridge-drain", requireExpressAdmin);
   app.use("/api/atlas", atlasProxyRouter);
   app.use("/api/ingestion-control", requireExpressAdmin);
   app.use("/api/ingestion-control", ingestion_control_read_cache_router);
   app.use("/api/ingestion-control", substrate_readiness_router);
   app.use("/api/ingestion-control", ingestion_control_rest_router);
+  app.use("/api/docket/warm-state", requireExpressAdmin);
+  app.use("/api/docket/warm-next-batch", requireExpressAdmin);
   app.use("/api/docket", docket_router);
   app.use("/api/prism", prism_verification_router);
   registerUploadRoute(app);
   app.use("/api/executor", requireExpressAdmin);
   registerExecutorRoutes(app);
+
+  app.use("/api", (_req, res) => {
+    res.status(404).json({ ok: false, error: "api_route_not_found" });
+  });
 
   if (process.env.NODE_ENV === "development") await setupVite(app, server);
   else serveStatic(app);
@@ -199,7 +217,20 @@ async function startServer() {
     console.log(`[Startup] Supabase project: ${SUPABASE_PROJECT}`);
     console.log("[Startup] Runtime fingerprint", runtime_fingerprint);
     try { loadPipelineRegistry(); console.log("[Startup] Pipeline registry loaded"); } catch (e) { console.error("[Startup] Pipeline registry error:", e); }
-    try { loadLensRegistry(); console.log("[Startup] Lens registry loaded"); } catch (e) { console.error("[Startup] Lens registry error:", e); }
+    try {
+      const lens_registry_result = loadLensRegistry();
+      if (lens_registry_result.errors.length > 0) {
+        console.error("[Startup] Lens registry rejected", {
+          errors: lens_registry_result.errors,
+        });
+      } else {
+        console.log("[Startup] Lens registry loaded", {
+          hash: lens_registry_result.hash,
+        });
+      }
+    } catch (e) {
+      console.error("[Startup] Lens registry error:", e);
+    }
     void run_rosetta_control_repair_from_environment().catch(error => {
       console.error("[RosettaControlRepair] failed", error);
     });

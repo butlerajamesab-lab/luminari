@@ -16,7 +16,7 @@
 
 import type { Express, Request, Response } from "express";
 import { createHash } from "crypto";
-import { sdk } from "./_core/sdk";
+import { authenticateRequestUser } from "./_core/request-auth";
 import { getRun } from "./cda-db";
 import { buildRunBundle } from "./cda-bundle";
 import { packageBundleZip } from "./cda-bundle-zip";
@@ -27,7 +27,7 @@ export function registerCdaExportRoute(app: Express): void {
       // ── 1. Authenticate ──
       let user;
       try {
-        user = await sdk.authenticateRequest(req);
+        user = await authenticateRequestUser(req, res);
       } catch {
         res.status(401).json({ error: "Authentication required" });
         return;

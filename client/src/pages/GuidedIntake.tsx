@@ -8,10 +8,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
-  ArrowLeft, ArrowRight, Send, Loader2, Sparkles,
+  ArrowLeft, ArrowRight, Send, Loader2,
   CheckCircle2, ChevronRight, Target, Shield,
   Heart, Volume2, VolumeX, AlertCircle, Lightbulb,
-  RefreshCw, MessageCircle, Zap, MapPin,
+  RefreshCw, MessageCircle, MapPin,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -187,6 +187,7 @@ export default function GuidedIntake() {
   const autoDetect = trpc.intake.autoDetect.useMutation();
   const smartDetect = trpc.intake.smartDetect.useMutation();
   const createCase = trpc.cases.create.useMutation();
+  const completeMapSession = trpc.lighthouse.mapIntake.completeSession.useMutation();
   const logEvent = trpc.analytics.logEvent.useMutation();
 
   // Pre-populate from map session context
@@ -342,7 +343,7 @@ export default function GuidedIntake() {
     }
   };
 
-  // Handle "Tell me more" — run smart detection with LLM
+  // Handle "Tell me more" with the expanded deterministic rule pass.
   const handleSmartDetect = async () => {
     const combinedText = Object.values(answers).join(". ");
     if (!combinedText.trim()) return;
@@ -354,7 +355,7 @@ export default function GuidedIntake() {
       setDetectResult(result);
       setPhase("suggestions");
     } catch {
-      toast.error("Smart detection failed. Using standard detection instead.");
+      toast.error("Expanded rule matching failed. Using standard matching instead.");
     } finally {
       setIsSmartDetecting(false);
     }
@@ -384,6 +385,17 @@ export default function GuidedIntake() {
         domain: CATEGORY_LABELS[suggestion.category]?.label || suggestion.category,
         pipelineType: suggestion.pipeline_id,
       });
+
+      if (mapSessionIdNum && !Number.isNaN(mapSessionIdNum)) {
+        try {
+          await completeMapSession.mutateAsync({
+            sessionId: mapSessionIdNum,
+            caseId: result.id,
+          });
+        } catch {
+          toast.warning("Case created, but its Civic Map session could not be marked complete.");
+        }
+      }
 
       logEvent.mutate({ pipelineType: suggestion.pipeline_id, eventType: "guided_intake_complete" });
       toast.success("Your case has been created. Let's start gathering your documents.");
@@ -459,8 +471,8 @@ export default function GuidedIntake() {
         <div className="flex items-center gap-3">
           {isDetecting && (
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Sparkles className="h-3.5 w-3.5 text-primary animate-pulse" />
-              <span className="hidden sm:inline">Analyzing...</span>
+              <RefreshCw className="h-3.5 w-3.5 text-primary animate-spin" />
+              <span className="hidden sm:inline">Matching rules...</span>
             </div>
           )}
         </div>
@@ -618,7 +630,7 @@ export default function GuidedIntake() {
               {!currentQuestion && answeredCount > 0 && (
                 <div className="text-center py-8 space-y-4">
                   <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                    <Sparkles className="h-6 w-6 text-primary" />
+                    <CheckCircle2 className="h-6 w-6 text-primary" />
                   </div>
                   <div>
                     <p className="text-sm font-medium text-foreground">
@@ -661,7 +673,7 @@ export default function GuidedIntake() {
                 </p>
               </div>
 
-              {/* Smart detect option */}
+              {/* Expanded deterministic rule pass */}
               {!useSmartDetect && answeredCount >= 1 && (
                 <div className="flex justify-center">
                   <Button
@@ -672,9 +684,9 @@ export default function GuidedIntake() {
                     disabled={isSmartDetecting}
                   >
                     {isSmartDetecting ? (
-                      <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Deep analyzing...</>
+                      <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Checking more rules...</>
                     ) : (
-                      <><Zap className="h-3.5 w-3.5" /> Use AI for deeper analysis</>
+                      <><Target className="h-3.5 w-3.5" /> Check more matching rules</>
                     )}
                   </Button>
                 </div>
@@ -717,7 +729,7 @@ export default function GuidedIntake() {
               {detectResult && detectResult.category_affinity.length > 0 && (
                 <div className="rounded-lg border border-border/30 bg-card/30 p-4">
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-3">
-                    Category Analysis
+                    Category Rule Matches
                   </p>
                   <div className="space-y-2">
                     {detectResult.category_affinity.slice(0, 3).map((cat) => {

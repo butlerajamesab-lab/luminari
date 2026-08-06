@@ -91,7 +91,7 @@ export default function AdminTestScenarios() {
         description: `${data.documentsUploaded}/${data.documentsTotal} documents uploaded and queued for analysis`,
         action: {
           label: "Open Case",
-          onClick: () => navigate(`/cases/${data.caseId}`),
+          onClick: () => navigate(`/guide/${data.caseId}`),
         },
       });
     },

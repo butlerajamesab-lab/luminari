@@ -1,8 +1,15 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
+import { authenticatedFetch as fetch } from "@/lib/session-token";
 
 interface Activation {
   id: number;
@@ -15,12 +22,23 @@ interface Activation {
 }
 
 interface SystemStats {
-  signals: { pending: number; approved: number; rejected: number; deferred: number; total: number };
+  signals: {
+    pending: number;
+    approved: number;
+    rejected: number;
+    deferred: number;
+    total: number;
+  };
   registry: number;
   patterns: number;
   strategies: number;
   procedures: number;
-  activations: { pending: number; in_progress: number; completed: number; total: number };
+  activations: {
+    pending: number;
+    in_progress: number;
+    completed: number;
+    total: number;
+  };
   timestamp: string;
 }
 
@@ -37,7 +55,7 @@ export function ActivationControl() {
     try {
       const response = await fetch("/api/trpc/system.stats");
       const data = await response.json();
-      
+
       if (data.result?.data) {
         setStats(data.result.data);
       }
@@ -51,7 +69,7 @@ export function ActivationControl() {
     try {
       const response = await fetch("/api/trpc/activation.getAll");
       const data = await response.json();
-      
+
       if (data.result?.data) {
         setActivations(data.result.data);
         setLastUpdated(new Date());
@@ -62,7 +80,7 @@ export function ActivationControl() {
     } finally {
       setLoading(false);
     }
-    
+
     // Also fetch stats
     await fetchStats();
   };
@@ -76,7 +94,7 @@ export function ActivationControl() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ clusterId }),
       });
-      
+
       const data = await response.json();
       if (data.result?.data?.success) {
         await fetchActivations();
@@ -97,7 +115,7 @@ export function ActivationControl() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ clusterId }),
       });
-      
+
       const data = await response.json();
       if (data.result?.data?.success) {
         await fetchActivations();
@@ -167,14 +185,22 @@ export function ActivationControl() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold mb-2">Activation Control</h1>
-            <p className="text-gray-600">Manage and execute procedural activations</p>
+            <p className="text-gray-600">
+              Manage and execute procedural activations
+            </p>
           </div>
           <div className="flex flex-col items-end gap-2">
             <div className="flex items-center gap-2">
-              <div className={`h-3 w-3 rounded-full ${isLive ? "bg-green-500" : "bg-gray-400"}`} />
-              <span className="text-sm font-medium">{isLive ? "Live" : "Updating..."}</span>
+              <div
+                className={`h-3 w-3 rounded-full ${isLive ? "bg-green-500" : "bg-gray-400"}`}
+              />
+              <span className="text-sm font-medium">
+                {isLive ? "Live" : "Updating..."}
+              </span>
             </div>
-            <p className="text-xs text-gray-500">Last updated: {formatTime(lastUpdated)}</p>
+            <p className="text-xs text-gray-500">
+              Last updated: {formatTime(lastUpdated)}
+            </p>
           </div>
         </div>
       </div>
@@ -187,7 +213,9 @@ export function ActivationControl() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.signals.total}</div>
-              <p className="text-xs text-gray-500 mt-1">Approved: {stats.signals.approved}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Approved: {stats.signals.approved}
+              </p>
             </CardContent>
           </Card>
           <Card>
@@ -231,8 +259,12 @@ export function ActivationControl() {
               <CardTitle className="text-sm font-medium">Activations</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.activations.total}</div>
-              <p className="text-xs text-gray-500 mt-1">Pending: {stats.activations.pending}</p>
+              <div className="text-2xl font-bold">
+                {stats.activations.total}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Pending: {stats.activations.pending}
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -241,7 +273,9 @@ export function ActivationControl() {
       {activations.length === 0 ? (
         <Card>
           <CardContent className="pt-6">
-            <p className="text-center text-gray-500">No activations available</p>
+            <p className="text-center text-gray-500">
+              No activations available
+            </p>
           </CardContent>
         </Card>
       ) : (
@@ -251,11 +285,15 @@ export function ActivationControl() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-lg">{activation.clusterId}</CardTitle>
+                    <CardTitle className="text-lg">
+                      {activation.clusterId}
+                    </CardTitle>
                     <CardDescription>Cluster ID</CardDescription>
                   </div>
                   <div className="flex gap-2">
-                    <Badge className={getProcedureColor(activation.procedureType)}>
+                    <Badge
+                      className={getProcedureColor(activation.procedureType)}
+                    >
                       {activation.procedureType}
                     </Badge>
                     <Badge className={getStatusColor(activation.status)}>

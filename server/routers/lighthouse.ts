@@ -860,7 +860,10 @@ const mapIntakeRouter = router({
       const session = await db.getMapIntakeSession(input.sessionId, ctx.user.id);
       if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "Session not found" });
       if (session.status !== "active") throw new TRPCError({ code: "BAD_REQUEST", message: "Session is not active" });
-      await db.completeMapIntakeSession(input.sessionId, ctx.user.id, input.caseId);
+      const ownedCase = await db.getCase(input.caseId, ctx.user.id);
+      if (!ownedCase) throw new TRPCError({ code: "NOT_FOUND", message: "Case not found" });
+      const completed = await db.completeMapIntakeSession(input.sessionId, ctx.user.id, input.caseId);
+      if (!completed) throw new TRPCError({ code: "CONFLICT", message: "Intake session is no longer active" });
       return { success: true };
     }),
 

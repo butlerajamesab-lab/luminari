@@ -4,13 +4,40 @@ import { getLoginUrl } from "@/const";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import {
-  Scale, BookOpen, Users, Shield, Search, MapPin, Eye,
-  Landmark, FileText, ArrowRight, ChevronRight, ExternalLink,
-  Filter, Loader2, Building2, Globe, AlertTriangle, Gavel,
-  GitCompare, ScrollText, ChevronDown, ChevronUp, Link2,
-  Plus, Send, X, Clock, CheckCircle2, XCircle, MessageSquare, Radio,
+  Scale,
+  BookOpen,
+  Users,
+  Shield,
+  Search,
+  MapPin,
+  Eye,
+  Landmark,
+  FileText,
+  ArrowRight,
+  ChevronRight,
+  ExternalLink,
+  Filter,
+  Loader2,
+  Building2,
+  Globe,
+  AlertTriangle,
+  Gavel,
+  GitCompare,
+  ScrollText,
+  ChevronDown,
+  ChevronUp,
+  Link2,
+  Plus,
+  Send,
+  X,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  MessageSquare,
+  Radio,
 } from "lucide-react";
 import { toast } from "sonner";
+import { authenticatedFetch } from "@/lib/session-token";
 import { VoiceReadout } from "@/components/VoiceReadout";
 import { DocketBillDetailWorkspace } from "@/components/DocketBillDetailWorkspace";
 
@@ -23,7 +50,8 @@ import { DocketBillDetailWorkspace } from "@/components/DocketBillDetailWorkspac
 // ── Design tokens ─────────────────────────────────────────────────────
 const dk = {
   bg: "#0f1114",
-  bgGrad: "radial-gradient(ellipse at 50% 0%, rgba(56,100,160,0.06) 0%, rgba(15,17,20,0) 70%)",
+  bgGrad:
+    "radial-gradient(ellipse at 50% 0%, rgba(56,100,160,0.06) 0%, rgba(15,17,20,0) 70%)",
   slate: "#1a1e24",
   slateMid: "#232830",
   slateLight: "#2d333b",
@@ -138,14 +166,23 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 
 // ── Submit a Law Modal ──────────────────────────────────────────────
 
-function SubmitLawModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+function SubmitLawModal({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
   const { user } = useAuth();
   const [lawTitle, setLawTitle] = useState("");
   const [jurisdiction, setJurisdiction] = useState("");
   const [jurisdictionLevel, setJurisdictionLevel] = useState<string>("federal");
   const [referenceUrl, setReferenceUrl] = useState("");
   const [notes, setNotes] = useState("");
-  const [uploadedFile, setUploadedFile] = useState<{ url: string; fileName: string } | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<{
+    url: string;
+    fileName: string;
+  } | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -161,7 +198,7 @@ function SubmitLawModal({ open, onClose }: { open: boolean; onClose: () => void 
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const resp = await fetch("/api/docket/upload", {
+      const resp = await authenticatedFetch("/api/docket/upload", {
         method: "POST",
         body: formData,
       });
@@ -184,8 +221,12 @@ function SubmitLawModal({ open, onClose }: { open: boolean; onClose: () => void 
   const submitMut = trpc.docket.submissions.create.useMutation({
     onSuccess: () => {
       toast.success("Submission received. We'll review and analyze it.");
-      setLawTitle(""); setJurisdiction(""); setJurisdictionLevel("federal");
-      setReferenceUrl(""); setNotes(""); setUploadedFile(null);
+      setLawTitle("");
+      setJurisdiction("");
+      setJurisdictionLevel("federal");
+      setReferenceUrl("");
+      setNotes("");
+      setUploadedFile(null);
       onClose();
     },
     onError: (err) => toast.error(err.message),
@@ -193,99 +234,200 @@ function SubmitLawModal({ open, onClose }: { open: boolean; onClose: () => void 
 
   if (!open) return null;
 
-  const canSubmit = lawTitle.trim().length > 0 && jurisdiction.trim().length > 0;
+  const canSubmit =
+    lawTitle.trim().length > 0 && jurisdiction.trim().length > 0;
 
   return (
-    <div style={{
-      position: "fixed", inset: 0, zIndex: 1000,
-      background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      padding: "1rem",
-    }} onClick={onClose}>
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 1000,
+        background: "rgba(0,0,0,0.65)",
+        backdropFilter: "blur(4px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "1rem",
+      }}
+      onClick={onClose}
+    >
       <div
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
         style={{
-          background: dk.slate, border: `1px solid ${dk.rule}`,
-          borderRadius: "12px", maxWidth: 560, width: "100%",
-          maxHeight: "90vh", overflow: "auto",
+          background: dk.slate,
+          border: `1px solid ${dk.rule}`,
+          borderRadius: "12px",
+          maxWidth: 560,
+          width: "100%",
+          maxHeight: "90vh",
+          overflow: "auto",
         }}
       >
         {/* Modal header */}
-        <div style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "1.25rem 1.5rem", borderBottom: `1px solid ${dk.rule}`,
-        }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "1.25rem 1.5rem",
+            borderBottom: `1px solid ${dk.rule}`,
+          }}
+        >
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <Send size={18} style={{ color: dk.steel }} />
-            <h2 style={{ fontFamily: fontSerif, fontSize: "1.25rem", fontWeight: 600, color: dk.paper, margin: 0 }}>
+            <h2
+              style={{
+                fontFamily: fontSerif,
+                fontSize: "1.25rem",
+                fontWeight: 600,
+                color: dk.paper,
+                margin: 0,
+              }}
+            >
               Submit a Law for Analysis
             </h2>
           </div>
-          <button onClick={onClose} style={{
-            background: "none", border: "none", cursor: "pointer", color: dk.muted, padding: "0.25rem",
-          }}>
+          <button
+            onClick={onClose}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: dk.muted,
+              padding: "0.25rem",
+            }}
+          >
             <X size={18} />
           </button>
         </div>
 
         {/* Form */}
-        <div style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
-          <p style={{ fontFamily: fontSans, fontSize: "0.85rem", color: dk.muted, lineHeight: 1.6, margin: 0 }}>
-            Submit a law, ordinance, or proposal for structural analysis. Our team will review it and add it to the Docket Room.
+        <div
+          style={{
+            padding: "1.5rem",
+            display: "flex",
+            flexDirection: "column",
+            gap: "1rem",
+          }}
+        >
+          <p
+            style={{
+              fontFamily: fontSans,
+              fontSize: "0.85rem",
+              color: dk.muted,
+              lineHeight: 1.6,
+              margin: 0,
+            }}
+          >
+            Submit a law, ordinance, or proposal for structural analysis. Our
+            team will review it and add it to the Docket Room.
           </p>
 
           {/* Law Title */}
           <div>
-            <label style={{ fontFamily: fontMono, fontSize: "0.7rem", color: dk.muted, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: "0.35rem" }}>
+            <label
+              style={{
+                fontFamily: fontMono,
+                fontSize: "0.7rem",
+                color: dk.muted,
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                display: "block",
+                marginBottom: "0.35rem",
+              }}
+            >
               Law / Proposal Title *
             </label>
             <input
               value={lawTitle}
-              onChange={e => setLawTitle(e.target.value)}
+              onChange={(e) => setLawTitle(e.target.value)}
               placeholder="e.g., Seattle Tenant Relocation Assistance Ordinance"
               style={{
-                width: "100%", padding: "0.6rem 0.75rem",
-                background: dk.bg, border: `1px solid ${dk.rule}`, borderRadius: "6px",
-                color: dk.paper, fontFamily: fontSans, fontSize: "0.9rem",
+                width: "100%",
+                padding: "0.6rem 0.75rem",
+                background: dk.bg,
+                border: `1px solid ${dk.rule}`,
+                borderRadius: "6px",
+                color: dk.paper,
+                fontFamily: fontSans,
+                fontSize: "0.9rem",
                 outline: "none",
               }}
-              onFocus={e => e.currentTarget.style.borderColor = dk.steel}
-              onBlur={e => e.currentTarget.style.borderColor = dk.rule}
+              onFocus={(e) => (e.currentTarget.style.borderColor = dk.steel)}
+              onBlur={(e) => (e.currentTarget.style.borderColor = dk.rule)}
             />
           </div>
 
           {/* Jurisdiction */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "0.75rem",
+            }}
+          >
             <div>
-              <label style={{ fontFamily: fontMono, fontSize: "0.7rem", color: dk.muted, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: "0.35rem" }}>
+              <label
+                style={{
+                  fontFamily: fontMono,
+                  fontSize: "0.7rem",
+                  color: dk.muted,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  display: "block",
+                  marginBottom: "0.35rem",
+                }}
+              >
                 Jurisdiction *
               </label>
               <input
                 value={jurisdiction}
-                onChange={e => setJurisdiction(e.target.value)}
+                onChange={(e) => setJurisdiction(e.target.value)}
                 placeholder="e.g., Washington, Federal"
                 style={{
-                  width: "100%", padding: "0.6rem 0.75rem",
-                  background: dk.bg, border: `1px solid ${dk.rule}`, borderRadius: "6px",
-                  color: dk.paper, fontFamily: fontSans, fontSize: "0.9rem",
+                  width: "100%",
+                  padding: "0.6rem 0.75rem",
+                  background: dk.bg,
+                  border: `1px solid ${dk.rule}`,
+                  borderRadius: "6px",
+                  color: dk.paper,
+                  fontFamily: fontSans,
+                  fontSize: "0.9rem",
                   outline: "none",
                 }}
-                onFocus={e => e.currentTarget.style.borderColor = dk.steel}
-                onBlur={e => e.currentTarget.style.borderColor = dk.rule}
+                onFocus={(e) => (e.currentTarget.style.borderColor = dk.steel)}
+                onBlur={(e) => (e.currentTarget.style.borderColor = dk.rule)}
               />
             </div>
             <div>
-              <label style={{ fontFamily: fontMono, fontSize: "0.7rem", color: dk.muted, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: "0.35rem" }}>
+              <label
+                style={{
+                  fontFamily: fontMono,
+                  fontSize: "0.7rem",
+                  color: dk.muted,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  display: "block",
+                  marginBottom: "0.35rem",
+                }}
+              >
                 Level *
               </label>
               <select
                 value={jurisdictionLevel}
-                onChange={e => setJurisdictionLevel(e.target.value)}
+                onChange={(e) => setJurisdictionLevel(e.target.value)}
                 style={{
-                  width: "100%", padding: "0.6rem 0.75rem",
-                  background: dk.bg, border: `1px solid ${dk.rule}`, borderRadius: "6px",
-                  color: dk.paper, fontFamily: fontSans, fontSize: "0.9rem",
-                  outline: "none", cursor: "pointer",
+                  width: "100%",
+                  padding: "0.6rem 0.75rem",
+                  background: dk.bg,
+                  border: `1px solid ${dk.rule}`,
+                  borderRadius: "6px",
+                  color: dk.paper,
+                  fontFamily: fontSans,
+                  fontSize: "0.9rem",
+                  outline: "none",
+                  cursor: "pointer",
                 }}
               >
                 <option value="federal">Federal</option>
@@ -299,27 +441,52 @@ function SubmitLawModal({ open, onClose }: { open: boolean; onClose: () => void 
 
           {/* Reference URL */}
           <div>
-            <label style={{ fontFamily: fontMono, fontSize: "0.7rem", color: dk.muted, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: "0.35rem" }}>
+            <label
+              style={{
+                fontFamily: fontMono,
+                fontSize: "0.7rem",
+                color: dk.muted,
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                display: "block",
+                marginBottom: "0.35rem",
+              }}
+            >
               Reference URL (optional)
             </label>
             <input
               value={referenceUrl}
-              onChange={e => setReferenceUrl(e.target.value)}
+              onChange={(e) => setReferenceUrl(e.target.value)}
               placeholder="https://congress.gov/bill/..."
               style={{
-                width: "100%", padding: "0.6rem 0.75rem",
-                background: dk.bg, border: `1px solid ${dk.rule}`, borderRadius: "6px",
-                color: dk.paper, fontFamily: fontSans, fontSize: "0.9rem",
+                width: "100%",
+                padding: "0.6rem 0.75rem",
+                background: dk.bg,
+                border: `1px solid ${dk.rule}`,
+                borderRadius: "6px",
+                color: dk.paper,
+                fontFamily: fontSans,
+                fontSize: "0.9rem",
                 outline: "none",
               }}
-              onFocus={e => e.currentTarget.style.borderColor = dk.steel}
-              onBlur={e => e.currentTarget.style.borderColor = dk.rule}
+              onFocus={(e) => (e.currentTarget.style.borderColor = dk.steel)}
+              onBlur={(e) => (e.currentTarget.style.borderColor = dk.rule)}
             />
           </div>
 
           {/* File Upload */}
           <div>
-            <label style={{ fontFamily: fontMono, fontSize: "0.7rem", color: dk.muted, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: "0.35rem" }}>
+            <label
+              style={{
+                fontFamily: fontMono,
+                fontSize: "0.7rem",
+                color: dk.muted,
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                display: "block",
+                marginBottom: "0.35rem",
+              }}
+            >
               Attach Document (optional)
             </label>
             <input
@@ -330,18 +497,44 @@ function SubmitLawModal({ open, onClose }: { open: boolean; onClose: () => void 
               style={{ display: "none" }}
             />
             {uploadedFile ? (
-              <div style={{
-                display: "flex", alignItems: "center", gap: "0.5rem",
-                padding: "0.5rem 0.75rem",
-                background: dk.bg, border: `1px solid ${dk.steelBorder}`, borderRadius: "6px",
-              }}>
-                <FileText size={14} style={{ color: dk.steel, flexShrink: 0 }} />
-                <span style={{ fontFamily: fontSans, fontSize: "0.85rem", color: dk.paper, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  padding: "0.5rem 0.75rem",
+                  background: dk.bg,
+                  border: `1px solid ${dk.steelBorder}`,
+                  borderRadius: "6px",
+                }}
+              >
+                <FileText
+                  size={14}
+                  style={{ color: dk.steel, flexShrink: 0 }}
+                />
+                <span
+                  style={{
+                    fontFamily: fontSans,
+                    fontSize: "0.85rem",
+                    color: dk.paper,
+                    flex: 1,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
                   {uploadedFile.fileName}
                 </span>
                 <button
                   onClick={() => setUploadedFile(null)}
-                  style={{ background: "none", border: "none", cursor: "pointer", color: dk.muted, padding: "0.15rem", flexShrink: 0 }}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    color: dk.muted,
+                    padding: "0.15rem",
+                    flexShrink: 0,
+                  }}
                   title="Remove file"
                 >
                   <X size={14} />
@@ -352,18 +545,29 @@ function SubmitLawModal({ open, onClose }: { open: boolean; onClose: () => void 
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
                 style={{
-                  display: "flex", alignItems: "center", gap: "0.5rem",
-                  width: "100%", padding: "0.6rem 0.75rem",
-                  background: dk.bg, border: `1px dashed ${dk.rule}`, borderRadius: "6px",
-                  color: dk.muted, fontFamily: fontSans, fontSize: "0.85rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  width: "100%",
+                  padding: "0.6rem 0.75rem",
+                  background: dk.bg,
+                  border: `1px dashed ${dk.rule}`,
+                  borderRadius: "6px",
+                  color: dk.muted,
+                  fontFamily: fontSans,
+                  fontSize: "0.85rem",
                   cursor: uploading ? "not-allowed" : "pointer",
                   transition: "all 0.15s",
                 }}
               >
                 {uploading ? (
-                  <><Loader2 size={14} className="animate-spin" /> Uploading...</>
+                  <>
+                    <Loader2 size={14} className="animate-spin" /> Uploading...
+                  </>
                 ) : (
-                  <><Plus size={14} /> Upload PDF, DOCX, or TXT (max 16MB)</>
+                  <>
+                    <Plus size={14} /> Upload PDF, DOCX, or TXT (max 16MB)
+                  </>
                 )}
               </button>
             )}
@@ -371,22 +575,38 @@ function SubmitLawModal({ open, onClose }: { open: boolean; onClose: () => void 
 
           {/* Notes */}
           <div>
-            <label style={{ fontFamily: fontMono, fontSize: "0.7rem", color: dk.muted, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: "0.35rem" }}>
+            <label
+              style={{
+                fontFamily: fontMono,
+                fontSize: "0.7rem",
+                color: dk.muted,
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                display: "block",
+                marginBottom: "0.35rem",
+              }}
+            >
               Why does this matter? (optional)
             </label>
             <textarea
               value={notes}
-              onChange={e => setNotes(e.target.value)}
+              onChange={(e) => setNotes(e.target.value)}
               placeholder="Context about why this law should be analyzed..."
               rows={3}
               style={{
-                width: "100%", padding: "0.6rem 0.75rem",
-                background: dk.bg, border: `1px solid ${dk.rule}`, borderRadius: "6px",
-                color: dk.paper, fontFamily: fontSans, fontSize: "0.9rem",
-                outline: "none", resize: "vertical",
+                width: "100%",
+                padding: "0.6rem 0.75rem",
+                background: dk.bg,
+                border: `1px solid ${dk.rule}`,
+                borderRadius: "6px",
+                color: dk.paper,
+                fontFamily: fontSans,
+                fontSize: "0.9rem",
+                outline: "none",
+                resize: "vertical",
               }}
-              onFocus={e => e.currentTarget.style.borderColor = dk.steel}
-              onBlur={e => e.currentTarget.style.borderColor = dk.rule}
+              onFocus={(e) => (e.currentTarget.style.borderColor = dk.steel)}
+              onBlur={(e) => (e.currentTarget.style.borderColor = dk.rule)}
             />
           </div>
 
@@ -406,18 +626,27 @@ function SubmitLawModal({ open, onClose }: { open: boolean; onClose: () => void 
             }}
             disabled={!canSubmit || submitMut.isPending}
             style={{
-              display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "0.5rem",
               padding: "0.7rem 1.5rem",
               background: canSubmit ? dk.steel : dk.slateLight,
               color: canSubmit ? "#fff" : dk.muted,
-              border: "none", borderRadius: "6px",
-              fontFamily: fontMono, fontSize: "0.8rem",
+              border: "none",
+              borderRadius: "6px",
+              fontFamily: fontMono,
+              fontSize: "0.8rem",
               cursor: canSubmit ? "pointer" : "not-allowed",
               transition: "all 0.15s",
               opacity: submitMut.isPending ? 0.7 : 1,
             }}
           >
-            {submitMut.isPending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+            {submitMut.isPending ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Send size={14} />
+            )}
             {submitMut.isPending ? "Submitting..." : "Submit for Analysis"}
           </button>
         </div>
@@ -429,57 +658,109 @@ function SubmitLawModal({ open, onClose }: { open: boolean; onClose: () => void 
 // ── My Submissions Panel ────────────────────────────────────────────
 
 function MySubmissions() {
-  const { data: submissions, isLoading } = trpc.docket.submissions.mine.useQuery();
+  const { data: submissions, isLoading } =
+    trpc.docket.submissions.mine.useQuery();
 
   if (isLoading) return null;
   if (!submissions || submissions.length === 0) return null;
 
   const statusIcon = (s: string) => {
     switch (s) {
-      case "pending": return <Clock size={13} style={{ color: dk.amber }} />;
-      case "in_review": return <Eye size={13} style={{ color: dk.steelBright }} />;
-      case "published": return <CheckCircle2 size={13} style={{ color: dk.green }} />;
-      case "rejected": return <XCircle size={13} style={{ color: dk.red }} />;
-      default: return <Clock size={13} style={{ color: dk.muted }} />;
+      case "pending":
+        return <Clock size={13} style={{ color: dk.amber }} />;
+      case "in_review":
+        return <Eye size={13} style={{ color: dk.steelBright }} />;
+      case "published":
+        return <CheckCircle2 size={13} style={{ color: dk.green }} />;
+      case "rejected":
+        return <XCircle size={13} style={{ color: dk.red }} />;
+      default:
+        return <Clock size={13} style={{ color: dk.muted }} />;
     }
   };
 
   const statusLabel = (s: string) => {
     switch (s) {
-      case "pending": return "Pending Review";
-      case "in_review": return "Under Review";
-      case "published": return "Published";
-      case "rejected": return "Not Added";
-      default: return s;
+      case "pending":
+        return "Pending Review";
+      case "in_review":
+        return "Under Review";
+      case "published":
+        return "Published";
+      case "rejected":
+        return "Not Added";
+      default:
+        return s;
     }
   };
 
   return (
-    <div style={{
-      background: dk.cardBg, border: `1px solid ${dk.cardBorder}`,
-      borderRadius: "8px", padding: "1rem 1.25rem", marginBottom: "1.5rem",
-    }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem" }}>
+    <div
+      style={{
+        background: dk.cardBg,
+        border: `1px solid ${dk.cardBorder}`,
+        borderRadius: "8px",
+        padding: "1rem 1.25rem",
+        marginBottom: "1.5rem",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "0.5rem",
+          marginBottom: "0.75rem",
+        }}
+      >
         <MessageSquare size={14} style={{ color: dk.steel }} />
-        <span style={{ fontFamily: fontMono, fontSize: "0.72rem", color: dk.steel, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+        <span
+          style={{
+            fontFamily: fontMono,
+            fontSize: "0.72rem",
+            color: dk.steel,
+            textTransform: "uppercase",
+            letterSpacing: "0.08em",
+          }}
+        >
           Your Submissions ({submissions.length})
         </span>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
         {submissions.map((sub: any) => (
-          <div key={sub.id} style={{
-            display: "flex", alignItems: "center", gap: "0.75rem",
-            padding: "0.5rem 0.75rem",
-            background: dk.slateMid, borderRadius: "6px",
-          }}>
+          <div
+            key={sub.id}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.75rem",
+              padding: "0.5rem 0.75rem",
+              background: dk.slateMid,
+              borderRadius: "6px",
+            }}
+          >
             {statusIcon(sub.status)}
-            <span style={{ fontFamily: fontSans, fontSize: "0.85rem", color: dk.paper, flex: 1 }}>
+            <span
+              style={{
+                fontFamily: fontSans,
+                fontSize: "0.85rem",
+                color: dk.paper,
+                flex: 1,
+              }}
+            >
               {sub.lawTitle}
             </span>
-            <span style={{
-              fontFamily: fontMono, fontSize: "0.65rem",
-              color: sub.status === "published" ? dk.green : sub.status === "rejected" ? dk.red : dk.muted,
-            }}>
+            <span
+              style={{
+                fontFamily: fontMono,
+                fontSize: "0.65rem",
+                color:
+                  sub.status === "published"
+                    ? dk.green
+                    : sub.status === "rejected"
+                      ? dk.red
+                      : dk.muted,
+              }}
+            >
               {statusLabel(sub.status)}
             </span>
           </div>
@@ -488,7 +769,6 @@ function MySubmissions() {
     </div>
   );
 }
-
 
 // ── LegiScan Docket Bill Feed ───────────────────────────────────────
 
@@ -575,27 +855,87 @@ type docket_warm_batch_payload = {
 };
 
 const docket_states = [
-  "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
-  "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
-  "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
-  "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
-  "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY",
+  "AL",
+  "AK",
+  "AZ",
+  "AR",
+  "CA",
+  "CO",
+  "CT",
+  "DE",
+  "FL",
+  "GA",
+  "HI",
+  "ID",
+  "IL",
+  "IN",
+  "IA",
+  "KS",
+  "KY",
+  "LA",
+  "ME",
+  "MD",
+  "MA",
+  "MI",
+  "MN",
+  "MS",
+  "MO",
+  "MT",
+  "NE",
+  "NV",
+  "NH",
+  "NJ",
+  "NM",
+  "NY",
+  "NC",
+  "ND",
+  "OH",
+  "OK",
+  "OR",
+  "PA",
+  "RI",
+  "SC",
+  "SD",
+  "TN",
+  "TX",
+  "UT",
+  "VT",
+  "VA",
+  "WA",
+  "WV",
+  "WI",
+  "WY",
   "DC",
 ];
 
 function DocketBillFeed() {
+  const { user } = useAuth();
+  const can_warm_cache = user?.role === "admin";
   const [selected_state, set_selected_state] = useState("WA");
-  const [state_data, set_state_data] = useState<docket_state_payload | null>(null);
+  const [state_data, set_state_data] = useState<docket_state_payload | null>(
+    null,
+  );
   const [state_error, set_state_error] = useState<string | null>(null);
   const [state_loading, set_state_loading] = useState(false);
-  const [selected_bill_id, set_selected_bill_id] = useState<number | null>(null);
-  const [bill_detail, set_bill_detail] = useState<docket_bill_detail_payload | null>(null);
-  const [bill_detail_error, set_bill_detail_error] = useState<string | null>(null);
+  const [selected_bill_id, set_selected_bill_id] = useState<number | null>(
+    null,
+  );
+  const [bill_detail, set_bill_detail] =
+    useState<docket_bill_detail_payload | null>(null);
+  const [bill_detail_error, set_bill_detail_error] = useState<string | null>(
+    null,
+  );
   const [bill_detail_loading, set_bill_detail_loading] = useState(false);
-  const [cache_statuses, set_cache_statuses] = useState<docket_cache_status[]>([]);
-  const [cache_status_error, set_cache_status_error] = useState<string | null>(null);
+  const [cache_statuses, set_cache_statuses] = useState<docket_cache_status[]>(
+    [],
+  );
+  const [cache_status_error, set_cache_status_error] = useState<string | null>(
+    null,
+  );
   const [cache_status_loading, set_cache_status_loading] = useState(false);
-  const [warm_results, set_warm_results] = useState<docket_warm_batch_result[]>([]);
+  const [warm_results, set_warm_results] = useState<docket_warm_batch_result[]>(
+    [],
+  );
   const [warm_error, set_warm_error] = useState<string | null>(null);
   const [warm_loading, set_warm_loading] = useState(false);
 
@@ -611,16 +951,22 @@ function DocketBillFeed() {
       set_bill_detail_error(null);
 
       try {
-        const response = await fetch(`/api/docket/state?state=${encodeURIComponent(selected_state)}`, {
-          signal: controller.signal,
-        });
-        const payload = await response.json().catch(() => ({
+        const response = await authenticatedFetch(
+          `/api/docket/state?state=${encodeURIComponent(selected_state)}`,
+          {
+            signal: controller.signal,
+          },
+        );
+        const payload = (await response.json().catch(() => ({
           ok: false,
           message: `api_docket_state_failed_http_${response.status}`,
-        })) as docket_state_payload;
+        }))) as docket_state_payload;
 
         if (!response.ok || !payload.ok) {
-          throw new Error(payload.message || `api_docket_state_failed_http_${response.status}`);
+          throw new Error(
+            payload.message ||
+              `api_docket_state_failed_http_${response.status}`,
+          );
         }
 
         set_state_data(payload);
@@ -647,14 +993,16 @@ function DocketBillFeed() {
     set_bill_detail_loading(true);
 
     try {
-      const response = await fetch(`/api/docket/bill/${bill_id}`);
-      const payload = await response.json().catch(() => ({
+      const response = await authenticatedFetch(`/api/docket/bill/${bill_id}`);
+      const payload = (await response.json().catch(() => ({
         ok: false,
         message: `api_docket_bill_failed_http_${response.status}`,
-      })) as docket_bill_detail_payload;
+      }))) as docket_bill_detail_payload;
 
       if (!response.ok || !payload.ok) {
-        throw new Error(payload.message || `api_docket_bill_failed_http_${response.status}`);
+        throw new Error(
+          payload.message || `api_docket_bill_failed_http_${response.status}`,
+        );
       }
 
       set_bill_detail(payload);
@@ -670,19 +1018,25 @@ function DocketBillFeed() {
     set_cache_status_error(null);
 
     try {
-      const response = await fetch("/api/docket/cache-status");
-      const payload = await response.json().catch(() => ({
+      const response = await authenticatedFetch("/api/docket/cache-status");
+      const payload = (await response.json().catch(() => ({
         ok: false,
         message: `api_docket_cache_status_failed_http_${response.status}`,
-      })) as docket_cache_status_payload;
+      }))) as docket_cache_status_payload;
 
       if (!response.ok || !payload.ok) {
-        throw new Error(payload.error || payload.message || `api_docket_cache_status_failed_http_${response.status}`);
+        throw new Error(
+          payload.error ||
+            payload.message ||
+            `api_docket_cache_status_failed_http_${response.status}`,
+        );
       }
 
       set_cache_statuses(payload.states ?? []);
     } catch (error: any) {
-      set_cache_status_error(error?.message || "api_docket_cache_status_failed");
+      set_cache_status_error(
+        error?.message || "api_docket_cache_status_failed",
+      );
     } finally {
       set_cache_status_loading(false);
     }
@@ -697,27 +1051,33 @@ function DocketBillFeed() {
     set_warm_error(null);
 
     try {
-      const response = await fetch("/api/docket/warm-state", {
+      const response = await authenticatedFetch("/api/docket/warm-state", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ state: selected_state }),
       });
-      const payload = await response.json().catch(() => ({
+      const payload = (await response.json().catch(() => ({
         ok: false,
         message: `api_docket_warm_state_failed_http_${response.status}`,
-      })) as docket_warm_state_payload;
+      }))) as docket_warm_state_payload;
 
       if (!response.ok || !payload.ok) {
-        throw new Error(payload.error || payload.message || `api_docket_warm_state_failed_http_${response.status}`);
+        throw new Error(
+          payload.error ||
+            payload.message ||
+            `api_docket_warm_state_failed_http_${response.status}`,
+        );
       }
 
-      set_warm_results([{
-        state: payload.state || selected_state,
-        ok: true,
-        bill_count: payload.bill_count ?? 0,
-        source: payload.source || "unknown",
-        fetched_at: payload.fetched_at || null,
-      }]);
+      set_warm_results([
+        {
+          state: payload.state || selected_state,
+          ok: true,
+          bill_count: payload.bill_count ?? 0,
+          source: payload.source || "unknown",
+          fetched_at: payload.fetched_at || null,
+        },
+      ]);
       await refresh_cache_status();
     } catch (error: any) {
       set_warm_error(error?.message || "api_docket_warm_state_failed");
@@ -731,18 +1091,22 @@ function DocketBillFeed() {
     set_warm_error(null);
 
     try {
-      const response = await fetch("/api/docket/warm-next-batch", {
+      const response = await authenticatedFetch("/api/docket/warm-next-batch", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ limit: 5 }),
       });
-      const payload = await response.json().catch(() => ({
+      const payload = (await response.json().catch(() => ({
         ok: false,
         message: `api_docket_warm_next_batch_failed_http_${response.status}`,
-      })) as docket_warm_batch_payload;
+      }))) as docket_warm_batch_payload;
 
       if (!response.ok || !payload.ok) {
-        throw new Error(payload.error || payload.message || `api_docket_warm_next_batch_failed_http_${response.status}`);
+        throw new Error(
+          payload.error ||
+            payload.message ||
+            `api_docket_warm_next_batch_failed_http_${response.status}`,
+        );
       }
 
       set_warm_results(payload.results ?? []);
@@ -755,52 +1119,267 @@ function DocketBillFeed() {
   };
 
   const bills = state_data?.bills ?? [];
-  const selected_cache_status = cache_statuses.find(status => status.state === selected_state);
+  const selected_cache_status = cache_statuses.find(
+    (status) => status.state === selected_state,
+  );
 
   return (
-    <div style={{ background: dk.sectionBg, border: `1px solid ${dk.steelBorder}`, borderRadius: "8px", padding: "1rem 1.25rem", marginBottom: "1.5rem" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap", marginBottom: "0.75rem" }}>
+    <div
+      style={{
+        background: dk.sectionBg,
+        border: `1px solid ${dk.steelBorder}`,
+        borderRadius: "8px",
+        padding: "1rem 1.25rem",
+        marginBottom: "1.5rem",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "1rem",
+          flexWrap: "wrap",
+          marginBottom: "0.75rem",
+        }}
+      >
         <div>
-          <div style={{ fontFamily: fontMono, fontSize: "0.75rem", color: dk.steelBright, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase" }}>live_bill_feed</div>
-          <p style={{ fontFamily: fontSans, fontSize: "0.82rem", color: dk.muted, margin: "0.25rem 0 0" }}>backend_cache_source_only_no_vendor_frontend_calls</p>
+          <div
+            style={{
+              fontFamily: fontMono,
+              fontSize: "0.75rem",
+              color: dk.steelBright,
+              fontWeight: 700,
+              letterSpacing: "0.04em",
+              textTransform: "uppercase",
+            }}
+          >
+            live_bill_feed
+          </div>
+          <p
+            style={{
+              fontFamily: fontSans,
+              fontSize: "0.82rem",
+              color: dk.muted,
+              margin: "0.25rem 0 0",
+            }}
+          >
+            backend_cache_source_only_no_vendor_frontend_calls
+          </p>
         </div>
-        <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: fontMono, fontSize: "0.72rem", color: dk.muted }}>
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem",
+            fontFamily: fontMono,
+            fontSize: "0.72rem",
+            color: dk.muted,
+          }}
+        >
           selected_state
-          <select value={selected_state} onChange={event => set_selected_state(event.target.value)} style={{ background: dk.slate, border: `1px solid ${dk.rule}`, borderRadius: "6px", color: dk.paper, fontFamily: fontMono, fontSize: "0.78rem", padding: "0.35rem 0.5rem" }}>
-            {docket_states.map(state => <option key={state} value={state}>{state}</option>)}
+          <select
+            value={selected_state}
+            onChange={(event) => set_selected_state(event.target.value)}
+            style={{
+              background: dk.slate,
+              border: `1px solid ${dk.rule}`,
+              borderRadius: "6px",
+              color: dk.paper,
+              fontFamily: fontMono,
+              fontSize: "0.78rem",
+              padding: "0.35rem 0.5rem",
+            }}
+          >
+            {docket_states.map((state) => (
+              <option key={state} value={state}>
+                {state}
+              </option>
+            ))}
           </select>
         </label>
       </div>
 
-      <div style={{ background: dk.bg, border: `1px solid ${dk.rule}`, borderRadius: "8px", padding: "0.85rem", marginBottom: "0.9rem" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: "0.75rem", flexWrap: "wrap", marginBottom: "0.65rem" }}>
+      <div
+        style={{
+          background: dk.bg,
+          border: `1px solid ${dk.rule}`,
+          borderRadius: "8px",
+          padding: "0.85rem",
+          marginBottom: "0.9rem",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: "0.75rem",
+            flexWrap: "wrap",
+            marginBottom: "0.65rem",
+          }}
+        >
           <div>
-            <div style={{ fontFamily: fontMono, fontSize: "0.72rem", color: dk.copper, fontWeight: 700 }}>docket_cache_control</div>
-            <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>selected_state {selected_state}</div>
+            <div
+              style={{
+                fontFamily: fontMono,
+                fontSize: "0.72rem",
+                color: dk.copper,
+                fontWeight: 700,
+              }}
+            >
+              docket_cache_control
+            </div>
+            <div
+              style={{
+                fontFamily: fontMono,
+                fontSize: "0.68rem",
+                color: dk.muted,
+              }}
+            >
+              selected_state {selected_state}
+            </div>
           </div>
           <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-            <button type="button" onClick={warm_selected_state} disabled={warm_loading} style={{ background: dk.copperSoft, border: `1px solid ${dk.copper}`, borderRadius: "6px", color: dk.paper, cursor: warm_loading ? "wait" : "pointer", fontFamily: fontMono, fontSize: "0.68rem", padding: "0.4rem 0.55rem" }}>warm_selected_state</button>
-            <button type="button" onClick={refresh_cache_status} disabled={cache_status_loading} style={{ background: dk.slate, border: `1px solid ${dk.rule}`, borderRadius: "6px", color: dk.paper, cursor: cache_status_loading ? "wait" : "pointer", fontFamily: fontMono, fontSize: "0.68rem", padding: "0.4rem 0.55rem" }}>refresh_cache_status</button>
-            <button type="button" onClick={warm_next_batch} disabled={warm_loading} style={{ background: dk.steelSoft, border: `1px solid ${dk.steelBorder}`, borderRadius: "6px", color: dk.paper, cursor: warm_loading ? "wait" : "pointer", fontFamily: fontMono, fontSize: "0.68rem", padding: "0.4rem 0.55rem" }}>warm_next_batch</button>
+            {can_warm_cache && (
+              <button
+                type="button"
+                onClick={warm_selected_state}
+                disabled={warm_loading}
+                style={{
+                  background: dk.copperSoft,
+                  border: `1px solid ${dk.copper}`,
+                  borderRadius: "6px",
+                  color: dk.paper,
+                  cursor: warm_loading ? "wait" : "pointer",
+                  fontFamily: fontMono,
+                  fontSize: "0.68rem",
+                  padding: "0.4rem 0.55rem",
+                }}
+              >
+                warm_selected_state
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={refresh_cache_status}
+              disabled={cache_status_loading}
+              style={{
+                background: dk.slate,
+                border: `1px solid ${dk.rule}`,
+                borderRadius: "6px",
+                color: dk.paper,
+                cursor: cache_status_loading ? "wait" : "pointer",
+                fontFamily: fontMono,
+                fontSize: "0.68rem",
+                padding: "0.4rem 0.55rem",
+              }}
+            >
+              refresh_cache_status
+            </button>
+            {can_warm_cache && (
+              <button
+                type="button"
+                onClick={warm_next_batch}
+                disabled={warm_loading}
+                style={{
+                  background: dk.steelSoft,
+                  border: `1px solid ${dk.steelBorder}`,
+                  borderRadius: "6px",
+                  color: dk.paper,
+                  cursor: warm_loading ? "wait" : "pointer",
+                  fontFamily: fontMono,
+                  fontSize: "0.68rem",
+                  padding: "0.4rem 0.55rem",
+                }}
+              >
+                warm_next_batch
+              </button>
+            )}
           </div>
         </div>
-        {cache_status_loading ? <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>loading_cache_status</div> : cache_status_error ? <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.red }}>cache_status_error {cache_status_error}</div> : selected_cache_status ? (
-          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>
+        {cache_status_loading ? (
+          <div
+            style={{
+              fontFamily: fontMono,
+              fontSize: "0.68rem",
+              color: dk.muted,
+            }}
+          >
+            loading_cache_status
+          </div>
+        ) : cache_status_error ? (
+          <div
+            style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.red }}
+          >
+            cache_status_error {cache_status_error}
+          </div>
+        ) : selected_cache_status ? (
+          <div
+            style={{
+              display: "flex",
+              gap: "0.75rem",
+              flexWrap: "wrap",
+              fontFamily: fontMono,
+              fontSize: "0.68rem",
+              color: dk.muted,
+            }}
+          >
             <span>has_cache {String(selected_cache_status.has_cache)}</span>
             <span>is_fresh {String(selected_cache_status.is_fresh)}</span>
             <span>bill_count {selected_cache_status.bill_count}</span>
-            <span>session_id {selected_cache_status.session_id ?? "unknown"}</span>
-            <span>fetched_at {selected_cache_status.fetched_at ?? "unknown"}</span>
-            <span>age_minutes {selected_cache_status.age_minutes ?? "unknown"}</span>
-            {selected_cache_status.session_title && <span>session_title {selected_cache_status.session_title}</span>}
+            <span>
+              session_id {selected_cache_status.session_id ?? "unknown"}
+            </span>
+            <span>
+              fetched_at {selected_cache_status.fetched_at ?? "unknown"}
+            </span>
+            <span>
+              age_minutes {selected_cache_status.age_minutes ?? "unknown"}
+            </span>
+            {selected_cache_status.session_title && (
+              <span>session_title {selected_cache_status.session_title}</span>
+            )}
           </div>
-        ) : <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>cache_status_unavailable</div>}
-        {warm_error && <div style={{ marginTop: "0.55rem", fontFamily: fontMono, fontSize: "0.68rem", color: dk.red }}>warm_error {warm_error}</div>}
+        ) : (
+          <div
+            style={{
+              fontFamily: fontMono,
+              fontSize: "0.68rem",
+              color: dk.muted,
+            }}
+          >
+            cache_status_unavailable
+          </div>
+        )}
+        {warm_error && (
+          <div
+            style={{
+              marginTop: "0.55rem",
+              fontFamily: fontMono,
+              fontSize: "0.68rem",
+              color: dk.red,
+            }}
+          >
+            warm_error {warm_error}
+          </div>
+        )}
         {warm_results.length > 0 && (
-          <div style={{ display: "grid", gap: "0.35rem", marginTop: "0.65rem" }}>
-            {warm_results.map(result => (
-              <div key={`${result.state}_${result.source}_${result.fetched_at ?? "none"}`} style={{ fontFamily: fontMono, fontSize: "0.66rem", color: result.ok ? dk.cream : dk.red }}>
-                state {result.state} ok {String(result.ok)} bill_count {result.bill_count} source {result.source} fetched_at {result.fetched_at ?? "unknown"}{result.error ? ` error ${result.error}` : ""}
+          <div
+            style={{ display: "grid", gap: "0.35rem", marginTop: "0.65rem" }}
+          >
+            {warm_results.map((result) => (
+              <div
+                key={`${result.state}_${result.source}_${result.fetched_at ?? "none"}`}
+                style={{
+                  fontFamily: fontMono,
+                  fontSize: "0.66rem",
+                  color: result.ok ? dk.cream : dk.red,
+                }}
+              >
+                state {result.state} ok {String(result.ok)} bill_count{" "}
+                {result.bill_count} source {result.source} fetched_at{" "}
+                {result.fetched_at ?? "unknown"}
+                {result.error ? ` error ${result.error}` : ""}
               </div>
             ))}
           </div>
@@ -808,40 +1387,165 @@ function DocketBillFeed() {
       </div>
 
       {state_loading ? (
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: dk.muted, fontFamily: fontMono, fontSize: "0.75rem" }}><Loader2 size={14} className="animate-spin" /> loading_state_bills</div>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem",
+            color: dk.muted,
+            fontFamily: fontMono,
+            fontSize: "0.75rem",
+          }}
+        >
+          <Loader2 size={14} className="animate-spin" /> loading_state_bills
+        </div>
       ) : state_error ? (
-        <div style={{ color: dk.red, fontFamily: fontMono, fontSize: "0.75rem" }}>error {state_error}</div>
+        <div
+          style={{ color: dk.red, fontFamily: fontMono, fontSize: "0.75rem" }}
+        >
+          error {state_error}
+        </div>
       ) : state_data ? (
         <>
-          <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", fontFamily: fontMono, fontSize: "0.7rem", color: dk.muted, marginBottom: "0.85rem" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: "1rem",
+              flexWrap: "wrap",
+              fontFamily: fontMono,
+              fontSize: "0.7rem",
+              color: dk.muted,
+              marginBottom: "0.85rem",
+            }}
+          >
             <span>source {state_data.source || "unknown"}</span>
             <span>fetched_at {state_data.fetched_at || "unknown"}</span>
             <span>bill_count {state_data.bill_count ?? bills.length}</span>
             <span>session_id {state_data.session_id ?? "unknown"}</span>
-            {state_data.session_title && <span>session_title {state_data.session_title}</span>}
+            {state_data.session_title && (
+              <span>session_title {state_data.session_title}</span>
+            )}
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "0.75rem" }}>
-            {bills.map(bill => {
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+              gap: "0.75rem",
+            }}
+          >
+            {bills.map((bill) => {
               const bill_url = bill.source_url || bill.url;
               return (
-                <button key={bill.bill_id} onClick={() => load_bill_detail(bill.bill_id)} style={{ textAlign: "left", background: dk.cardBg, border: `1px solid ${selected_bill_id === bill.bill_id ? dk.steel : dk.cardBorder}`, borderRadius: "8px", padding: "0.85rem", cursor: "pointer" }}>
-                  <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.steelBright, marginBottom: "0.35rem" }}>bill_id {bill.bill_id} · number {bill.number || "unknown"}</div>
-                  <div style={{ fontFamily: fontSerif, fontSize: "1rem", color: dk.paper, lineHeight: 1.25, marginBottom: "0.5rem" }}>{bill.title || "title_unavailable"}</div>
-                  <div style={{ display: "grid", gap: "0.25rem", fontFamily: fontMono, fontSize: "0.66rem", color: dk.muted }}>
+                <button
+                  key={bill.bill_id}
+                  onClick={() => load_bill_detail(bill.bill_id)}
+                  style={{
+                    textAlign: "left",
+                    background: dk.cardBg,
+                    border: `1px solid ${selected_bill_id === bill.bill_id ? dk.steel : dk.cardBorder}`,
+                    borderRadius: "8px",
+                    padding: "0.85rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontFamily: fontMono,
+                      fontSize: "0.68rem",
+                      color: dk.steelBright,
+                      marginBottom: "0.35rem",
+                    }}
+                  >
+                    bill_id {bill.bill_id} · number {bill.number || "unknown"}
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: fontSerif,
+                      fontSize: "1rem",
+                      color: dk.paper,
+                      lineHeight: 1.25,
+                      marginBottom: "0.5rem",
+                    }}
+                  >
+                    {bill.title || "title_unavailable"}
+                  </div>
+                  <div
+                    style={{
+                      display: "grid",
+                      gap: "0.25rem",
+                      fontFamily: fontMono,
+                      fontSize: "0.66rem",
+                      color: dk.muted,
+                    }}
+                  >
                     <span>status {bill.status ?? "unknown"}</span>
                     <span>status_date {bill.status_date || "unknown"}</span>
-                    <span>last_action_date {bill.last_action_date || "unknown"}</span>
+                    <span>
+                      last_action_date {bill.last_action_date || "unknown"}
+                    </span>
                     <span>last_action {bill.last_action || "unknown"}</span>
-                    {bill_url && <span>source_url <a href={bill_url} target="_blank" rel="noopener noreferrer" onClick={event => event.stopPropagation()} style={{ color: dk.steelBright }}>{bill_url}</a></span>}
+                    {bill_url && (
+                      <span>
+                        source_url{" "}
+                        <a
+                          href={bill_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(event) => event.stopPropagation()}
+                          style={{ color: dk.steelBright }}
+                        >
+                          {bill_url}
+                        </a>
+                      </span>
+                    )}
                   </div>
                 </button>
               );
             })}
           </div>
           {selected_bill_id && (
-            <div style={{ marginTop: "1rem", background: dk.slate, border: `1px solid ${dk.rule}`, borderRadius: "8px", padding: "0.85rem" }}>
-              <div style={{ fontFamily: fontMono, fontSize: "0.72rem", color: dk.steelBright, marginBottom: "0.5rem" }}>bill_detail_click_through bill_id {selected_bill_id}</div>
-              {bill_detail_loading ? <div style={{ fontFamily: fontMono, fontSize: "0.72rem", color: dk.muted }}>loading_bill_detail</div> : bill_detail_error ? <div style={{ fontFamily: fontMono, fontSize: "0.72rem", color: dk.red }}>error {bill_detail_error}</div> : bill_detail ? <DocketBillDetailWorkspace payload={bill_detail} /> : null}
+            <div
+              style={{
+                marginTop: "1rem",
+                background: dk.slate,
+                border: `1px solid ${dk.rule}`,
+                borderRadius: "8px",
+                padding: "0.85rem",
+              }}
+            >
+              <div
+                style={{
+                  fontFamily: fontMono,
+                  fontSize: "0.72rem",
+                  color: dk.steelBright,
+                  marginBottom: "0.5rem",
+                }}
+              >
+                bill_detail_click_through bill_id {selected_bill_id}
+              </div>
+              {bill_detail_loading ? (
+                <div
+                  style={{
+                    fontFamily: fontMono,
+                    fontSize: "0.72rem",
+                    color: dk.muted,
+                  }}
+                >
+                  loading_bill_detail
+                </div>
+              ) : bill_detail_error ? (
+                <div
+                  style={{
+                    fontFamily: fontMono,
+                    fontSize: "0.72rem",
+                    color: dk.red,
+                  }}
+                >
+                  error {bill_detail_error}
+                </div>
+              ) : bill_detail ? (
+                <DocketBillDetailWorkspace payload={bill_detail} />
+              ) : null}
             </div>
           )}
         </>
@@ -855,58 +1559,95 @@ function DocketBillFeed() {
 function LegistarLiveFeed({ keyword }: { keyword?: string }) {
   const { data, isLoading } = trpc.docket.legistarFeed.useQuery(
     { keyword, top: 6 },
-    { refetchInterval: 5 * 60 * 1000 } // refresh every 5 minutes
+    { refetchInterval: 5 * 60 * 1000 }, // refresh every 5 minutes
   );
   const [collapsed, setCollapsed] = useState(false);
 
   const formatDate = (d: string | null) => {
     if (!d) return null;
-    return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    return new Date(d).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
   };
 
   const statusColor = (status: string) => {
-    if (status.toLowerCase().includes("passed") || status.toLowerCase().includes("adopted")) return dk.green;
-    if (status.toLowerCase().includes("agenda") || status.toLowerCase().includes("ready")) return dk.copper;
+    if (
+      status.toLowerCase().includes("passed") ||
+      status.toLowerCase().includes("adopted")
+    )
+      return dk.green;
+    if (
+      status.toLowerCase().includes("agenda") ||
+      status.toLowerCase().includes("ready")
+    )
+      return dk.copper;
     if (status.toLowerCase().includes("committee")) return dk.steel;
     return dk.muted;
   };
 
   return (
-    <div style={{
-      background: dk.sectionBg,
-      border: `1px solid ${dk.steelBorder}`,
-      borderRadius: "8px",
-      overflow: "hidden",
-      marginBottom: "1.5rem",
-    }}>
+    <div
+      style={{
+        background: dk.sectionBg,
+        border: `1px solid ${dk.steelBorder}`,
+        borderRadius: "8px",
+        overflow: "hidden",
+        marginBottom: "1.5rem",
+      }}
+    >
       {/* Header */}
       <button
         onClick={() => setCollapsed(!collapsed)}
         style={{
-          display: "flex", alignItems: "center", gap: "0.75rem",
-          width: "100%", padding: "0.85rem 1.25rem",
-          background: "transparent", border: "none", cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          gap: "0.75rem",
+          width: "100%",
+          padding: "0.85rem 1.25rem",
+          background: "transparent",
+          border: "none",
+          cursor: "pointer",
           textAlign: "left",
         }}
       >
-        <div style={{
-          width: 28, height: 28, borderRadius: "6px",
-          background: dk.steelSoft,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          flexShrink: 0,
-        }}>
+        <div
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: "6px",
+            background: dk.steelSoft,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
+        >
           <Radio size={14} style={{ color: dk.steelBright }} />
         </div>
         <div style={{ flex: 1 }}>
-          <span style={{
-            fontFamily: fontMono, fontSize: "0.75rem",
-            color: dk.steelBright, fontWeight: 600,
-            letterSpacing: "0.04em", textTransform: "uppercase",
-          }}>
+          <span
+            style={{
+              fontFamily: fontMono,
+              fontSize: "0.75rem",
+              color: dk.steelBright,
+              fontWeight: 600,
+              letterSpacing: "0.04em",
+              textTransform: "uppercase",
+            }}
+          >
             Seattle City Council — Live Legislative Feed
           </span>
           {data && !isLoading && (
-            <span style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted, marginLeft: "0.75rem" }}>
+            <span
+              style={{
+                fontFamily: fontMono,
+                fontSize: "0.68rem",
+                color: dk.muted,
+                marginLeft: "0.75rem",
+              }}
+            >
               {data.matters.length} recent matters
               {keyword && ` matching "${keyword}"`}
               {" · "}
@@ -914,26 +1655,65 @@ function LegistarLiveFeed({ keyword }: { keyword?: string }) {
             </span>
           )}
         </div>
-        {collapsed ? <ChevronDown size={14} style={{ color: dk.muted }} /> : <ChevronUp size={14} style={{ color: dk.muted }} />}
+        {collapsed ? (
+          <ChevronDown size={14} style={{ color: dk.muted }} />
+        ) : (
+          <ChevronUp size={14} style={{ color: dk.muted }} />
+        )}
       </button>
 
       {!collapsed && (
-        <div style={{ borderTop: `1px solid ${dk.rule}`, padding: "0.75rem 1.25rem" }}>
+        <div
+          style={{
+            borderTop: `1px solid ${dk.rule}`,
+            padding: "0.75rem 1.25rem",
+          }}
+        >
           {isLoading ? (
-            <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", padding: "0.5rem 0", color: dk.muted }}>
+            <div
+              style={{
+                display: "flex",
+                gap: "0.5rem",
+                alignItems: "center",
+                padding: "0.5rem 0",
+                color: dk.muted,
+              }}
+            >
               <Loader2 size={14} className="animate-spin" />
-              <span style={{ fontFamily: fontMono, fontSize: "0.75rem" }}>Fetching from Seattle Legistar...</span>
+              <span style={{ fontFamily: fontMono, fontSize: "0.75rem" }}>
+                Fetching from Seattle Legistar...
+              </span>
             </div>
           ) : data?.error ? (
-            <p style={{ fontFamily: fontMono, fontSize: "0.75rem", color: dk.red, padding: "0.5rem 0" }}>
+            <p
+              style={{
+                fontFamily: fontMono,
+                fontSize: "0.75rem",
+                color: dk.red,
+                padding: "0.5rem 0",
+              }}
+            >
               ⚠ {data.error}
             </p>
           ) : data?.matters.length === 0 ? (
-            <p style={{ fontFamily: fontMono, fontSize: "0.75rem", color: dk.muted, padding: "0.5rem 0" }}>
+            <p
+              style={{
+                fontFamily: fontMono,
+                fontSize: "0.75rem",
+                color: dk.muted,
+                padding: "0.5rem 0",
+              }}
+            >
               No recent matters found{keyword ? ` for "${keyword}"` : ""}.
             </p>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.5rem",
+              }}
+            >
               {data?.matters.map((m: any) => (
                 <a
                   key={m.id}
@@ -941,7 +1721,9 @@ function LegistarLiveFeed({ keyword }: { keyword?: string }) {
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
-                    display: "flex", alignItems: "flex-start", gap: "0.75rem",
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: "0.75rem",
                     padding: "0.65rem 0.85rem",
                     background: dk.cardBg,
                     border: `1px solid ${dk.cardBorder}`,
@@ -949,42 +1731,123 @@ function LegistarLiveFeed({ keyword }: { keyword?: string }) {
                     textDecoration: "none",
                     transition: "border-color 0.15s",
                   }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = dk.steel}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = dk.cardBorder}
+                  onMouseEnter={(e) =>
+                    ((e.currentTarget as HTMLElement).style.borderColor =
+                      dk.steel)
+                  }
+                  onMouseLeave={(e) =>
+                    ((e.currentTarget as HTMLElement).style.borderColor =
+                      dk.cardBorder)
+                  }
                 >
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.2rem" }}>
-                      <span style={{
-                        fontFamily: fontMono, fontSize: "0.65rem",
-                        padding: "0.1rem 0.4rem", borderRadius: "3px",
-                        background: `${statusColor(m.status)}22`,
-                        color: statusColor(m.status),
-                        border: `1px solid ${statusColor(m.status)}44`,
-                        flexShrink: 0,
-                      }}>{m.status}</span>
-                      <span style={{ fontFamily: fontMono, fontSize: "0.65rem", color: dk.muted }}>{m.file}</span>
-                      <span style={{ fontFamily: fontMono, fontSize: "0.65rem", color: dk.muted }}>{m.type}</span>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        flexWrap: "wrap",
+                        marginBottom: "0.2rem",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontFamily: fontMono,
+                          fontSize: "0.65rem",
+                          padding: "0.1rem 0.4rem",
+                          borderRadius: "3px",
+                          background: `${statusColor(m.status)}22`,
+                          color: statusColor(m.status),
+                          border: `1px solid ${statusColor(m.status)}44`,
+                          flexShrink: 0,
+                        }}
+                      >
+                        {m.status}
+                      </span>
+                      <span
+                        style={{
+                          fontFamily: fontMono,
+                          fontSize: "0.65rem",
+                          color: dk.muted,
+                        }}
+                      >
+                        {m.file}
+                      </span>
+                      <span
+                        style={{
+                          fontFamily: fontMono,
+                          fontSize: "0.65rem",
+                          color: dk.muted,
+                        }}
+                      >
+                        {m.type}
+                      </span>
                     </div>
-                    <p style={{
-                      fontFamily: fontSans, fontSize: "0.82rem", color: dk.cream,
-                      margin: 0, lineHeight: 1.4,
-                      overflow: "hidden", textOverflow: "ellipsis",
-                      display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
-                    }}>{m.title}</p>
-                    <div style={{ display: "flex", gap: "1rem", marginTop: "0.3rem", flexWrap: "wrap" }}>
-                      <span style={{ fontFamily: fontMono, fontSize: "0.65rem", color: dk.muted }}>
-                        <Building2 size={10} style={{ display: "inline", marginRight: "0.25rem" }} />
+                    <p
+                      style={{
+                        fontFamily: fontSans,
+                        fontSize: "0.82rem",
+                        color: dk.cream,
+                        margin: 0,
+                        lineHeight: 1.4,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                      }}
+                    >
+                      {m.title}
+                    </p>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "1rem",
+                        marginTop: "0.3rem",
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontFamily: fontMono,
+                          fontSize: "0.65rem",
+                          color: dk.muted,
+                        }}
+                      >
+                        <Building2
+                          size={10}
+                          style={{ display: "inline", marginRight: "0.25rem" }}
+                        />
                         {m.body}
                       </span>
                       {m.introDate && (
-                        <span style={{ fontFamily: fontMono, fontSize: "0.65rem", color: dk.muted }}>
-                          <Clock size={10} style={{ display: "inline", marginRight: "0.25rem" }} />
+                        <span
+                          style={{
+                            fontFamily: fontMono,
+                            fontSize: "0.65rem",
+                            color: dk.muted,
+                          }}
+                        >
+                          <Clock
+                            size={10}
+                            style={{
+                              display: "inline",
+                              marginRight: "0.25rem",
+                            }}
+                          />
                           Intro: {formatDate(m.introDate)}
                         </span>
                       )}
                     </div>
                   </div>
-                  <ExternalLink size={12} style={{ color: dk.muted, flexShrink: 0, marginTop: "0.25rem" }} />
+                  <ExternalLink
+                    size={12}
+                    style={{
+                      color: dk.muted,
+                      flexShrink: 0,
+                      marginTop: "0.25rem",
+                    }}
+                  />
                 </a>
               ))}
             </div>
@@ -1012,10 +1875,13 @@ function DocketList({ onSelect }: { onSelect: (id: number) => void }) {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  const queryInput = useMemo(() => ({
-    search: debouncedSearch || undefined,
-    jurisdictionLevel: (filterLevel || undefined) as any,
-  }), [debouncedSearch, filterLevel]);
+  const queryInput = useMemo(
+    () => ({
+      search: debouncedSearch || undefined,
+      jurisdictionLevel: (filterLevel || undefined) as any,
+    }),
+    [debouncedSearch, filterLevel],
+  );
 
   const { data: entries, isLoading } = trpc.docket.list.useQuery(queryInput);
   const { data: stats } = trpc.docket.stats.useQuery();
@@ -1023,121 +1889,191 @@ function DocketList({ onSelect }: { onSelect: (id: number) => void }) {
   return (
     <div style={{ minHeight: "100vh", background: dk.bg }}>
       {/* Header */}
-      <div style={{
-        background: dk.bgGrad,
-        borderBottom: `1px solid ${dk.rule}`,
-        padding: "3rem 0 2rem",
-      }}>
+      <div
+        style={{
+          background: dk.bgGrad,
+          borderBottom: `1px solid ${dk.rule}`,
+          padding: "3rem 0 2rem",
+        }}
+      >
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 1.5rem" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.75rem",
+              marginBottom: "0.5rem",
+            }}
+          >
             <Gavel size={28} style={{ color: dk.steel }} />
-            <h1 style={{
-              fontFamily: fontSerif,
-              fontSize: "2.25rem",
-              fontWeight: 600,
-              color: dk.paper,
-              letterSpacing: "-0.02em",
-              margin: 0,
-            }}>
+            <h1
+              style={{
+                fontFamily: fontSerif,
+                fontSize: "2.25rem",
+                fontWeight: 600,
+                color: dk.paper,
+                letterSpacing: "-0.02em",
+                margin: 0,
+              }}
+            >
               The Docket Room
             </h1>
           </div>
-          <p style={{
-            fontFamily: fontSans,
-            fontSize: "0.95rem",
-            color: dk.muted,
-            maxWidth: 600,
-            lineHeight: 1.6,
-            margin: "0.5rem 0 0",
-          }}>
-            Structural analysis of laws and proposals. Reveals mechanics, actors, and documented facts.
+          <p
+            style={{
+              fontFamily: fontSans,
+              fontSize: "0.95rem",
+              color: dk.muted,
+              maxWidth: 600,
+              lineHeight: 1.6,
+              margin: "0.5rem 0 0",
+            }}
+          >
+            Structural analysis of laws and proposals. Reveals mechanics,
+            actors, and documented facts.
             <br />
-            <span style={{ fontStyle: "italic", color: dk.steel, opacity: 0.7 }}>
-              Reveal structure. Interpret nothing. Judge nothing. Persuade no one.
+            <span
+              style={{ fontStyle: "italic", color: dk.steel, opacity: 0.7 }}
+            >
+              Reveal structure. Interpret nothing. Judge nothing. Persuade no
+              one.
             </span>
           </p>
 
-          <div style={{
-            display: "grid",
-            gap: "0.75rem",
-            marginTop: "1.5rem",
-            padding: "1rem",
-            background: dk.sectionBg,
-            border: `1px solid ${dk.steelBorder}`,
-            borderRadius: "8px",
-          }}>
-            {DOCKET_ROOM_STRATEGY.map(item => (
+          <div
+            style={{
+              display: "grid",
+              gap: "0.75rem",
+              marginTop: "1.5rem",
+              padding: "1rem",
+              background: dk.sectionBg,
+              border: `1px solid ${dk.steelBorder}`,
+              borderRadius: "8px",
+            }}
+          >
+            {DOCKET_ROOM_STRATEGY.map((item) => (
               <div key={item.label}>
-                <div style={{
-                  fontFamily: fontMono,
-                  fontSize: "0.72rem",
-                  color: dk.steelBright,
-                  fontWeight: 700,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.04em",
-                  marginBottom: "0.25rem",
-                }}>{item.label}</div>
-                <p style={{
-                  fontFamily: fontSans,
-                  fontSize: "0.82rem",
-                  color: dk.cream,
-                  lineHeight: 1.55,
-                  whiteSpace: "pre-line",
-                  margin: 0,
-                }}>{item.text}</p>
+                <div
+                  style={{
+                    fontFamily: fontMono,
+                    fontSize: "0.72rem",
+                    color: dk.steelBright,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.04em",
+                    marginBottom: "0.25rem",
+                  }}
+                >
+                  {item.label}
+                </div>
+                <p
+                  style={{
+                    fontFamily: fontSans,
+                    fontSize: "0.82rem",
+                    color: dk.cream,
+                    lineHeight: 1.55,
+                    whiteSpace: "pre-line",
+                    margin: 0,
+                  }}
+                >
+                  {item.text}
+                </p>
               </div>
             ))}
           </div>
 
           {/* Stats bar */}
           {stats && (
-            <div style={{
-              display: "flex", gap: "2rem", marginTop: "1.5rem",
-              fontFamily: fontMono, fontSize: "0.8rem", color: dk.muted,
-              flexWrap: "wrap",
-            }}>
-              <span><strong style={{ color: dk.paper }}>{stats.total}</strong> entries analyzed</span>
+            <div
+              style={{
+                display: "flex",
+                gap: "2rem",
+                marginTop: "1.5rem",
+                fontFamily: fontMono,
+                fontSize: "0.8rem",
+                color: dk.muted,
+                flexWrap: "wrap",
+              }}
+            >
+              <span>
+                <strong style={{ color: dk.paper }}>{stats.total}</strong>{" "}
+                entries analyzed
+              </span>
               {Object.entries(stats.byLevel || {}).map(([level, count]) => (
                 <span key={level}>
-                  <strong style={{ color: dk.steelBright }}>{count as number}</strong> {JURISDICTION_LEVEL_LABELS[level] || level}
+                  <strong style={{ color: dk.steelBright }}>
+                    {count as number}
+                  </strong>{" "}
+                  {JURISDICTION_LEVEL_LABELS[level] || level}
                 </span>
               ))}
             </div>
           )}
 
           {/* Search bar + Submit button */}
-          <div style={{
-            display: "flex", gap: "0.75rem", marginTop: "1.25rem",
-            alignItems: "center",
-          }}>
-            <div style={{
-              flex: 1, position: "relative",
-            }}>
-              <Search size={15} style={{
-                position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)",
-                color: dk.muted, pointerEvents: "none",
-              }} />
+          <div
+            style={{
+              display: "flex",
+              gap: "0.75rem",
+              marginTop: "1.25rem",
+              alignItems: "center",
+            }}
+          >
+            <div
+              style={{
+                flex: 1,
+                position: "relative",
+              }}
+            >
+              <Search
+                size={15}
+                style={{
+                  position: "absolute",
+                  left: "0.75rem",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  color: dk.muted,
+                  pointerEvents: "none",
+                }}
+              />
               <input
                 ref={searchRef}
                 value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search by title, jurisdiction, or keyword..."
                 style={{
-                  width: "100%", padding: "0.6rem 0.75rem 0.6rem 2.25rem",
-                  background: dk.slate, border: `1px solid ${dk.rule}`, borderRadius: "6px",
-                  color: dk.paper, fontFamily: fontSans, fontSize: "0.9rem",
-                  outline: "none", transition: "border-color 0.15s",
+                  width: "100%",
+                  padding: "0.6rem 0.75rem 0.6rem 2.25rem",
+                  background: dk.slate,
+                  border: `1px solid ${dk.rule}`,
+                  borderRadius: "6px",
+                  color: dk.paper,
+                  fontFamily: fontSans,
+                  fontSize: "0.9rem",
+                  outline: "none",
+                  transition: "border-color 0.15s",
                 }}
-                onFocus={e => e.currentTarget.style.borderColor = dk.steel}
-                onBlur={e => e.currentTarget.style.borderColor = dk.rule}
+                onFocus={(e) => (e.currentTarget.style.borderColor = dk.steel)}
+                onBlur={(e) => (e.currentTarget.style.borderColor = dk.rule)}
               />
               {searchTerm && (
                 <button
-                  onClick={() => { setSearchTerm(""); searchRef.current?.focus(); }}
+                  onClick={() => {
+                    setSearchTerm("");
+                    searchRef.current?.focus();
+                  }}
                   style={{
-                    position: "absolute", right: "0.5rem", top: "50%", transform: "translateY(-50%)",
-                    background: "none", border: "none", cursor: "pointer", color: dk.muted,
-                    padding: "0.2rem", display: "flex", alignItems: "center",
+                    position: "absolute",
+                    right: "0.5rem",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    color: dk.muted,
+                    padding: "0.2rem",
+                    display: "flex",
+                    alignItems: "center",
                   }}
                 >
                   <X size={14} />
@@ -1154,15 +2090,28 @@ function DocketList({ onSelect }: { onSelect: (id: number) => void }) {
                 setShowSubmitModal(true);
               }}
               style={{
-                display: "flex", alignItems: "center", gap: "0.4rem",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.4rem",
                 padding: "0.6rem 1rem",
-                background: dk.steelSoft, border: `1px solid ${dk.steelBorder}`,
-                borderRadius: "6px", cursor: "pointer",
-                color: dk.steelBright, fontFamily: fontMono, fontSize: "0.8rem",
-                whiteSpace: "nowrap", transition: "all 0.15s",
+                background: dk.steelSoft,
+                border: `1px solid ${dk.steelBorder}`,
+                borderRadius: "6px",
+                cursor: "pointer",
+                color: dk.steelBright,
+                fontFamily: fontMono,
+                fontSize: "0.8rem",
+                whiteSpace: "nowrap",
+                transition: "all 0.15s",
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = dk.steel; e.currentTarget.style.color = "#fff"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = dk.steelSoft; e.currentTarget.style.color = dk.steelBright; }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = dk.steel;
+                e.currentTarget.style.color = "#fff";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = dk.steelSoft;
+                e.currentTarget.style.color = dk.steelBright;
+              }}
             >
               <Plus size={14} />
               Submit a Law
@@ -1172,14 +2121,24 @@ function DocketList({ onSelect }: { onSelect: (id: number) => void }) {
       </div>
 
       {/* Filter bar */}
-      <div style={{
-        maxWidth: 1100, margin: "0 auto", padding: "1rem 1.5rem",
-        display: "flex", alignItems: "center", gap: "0.75rem",
-        flexWrap: "wrap",
-      }}>
+      <div
+        style={{
+          maxWidth: 1100,
+          margin: "0 auto",
+          padding: "1rem 1.5rem",
+          display: "flex",
+          alignItems: "center",
+          gap: "0.75rem",
+          flexWrap: "wrap",
+        }}
+      >
         <Filter size={14} style={{ color: dk.muted }} />
-        <span style={{ fontFamily: fontMono, fontSize: "0.75rem", color: dk.muted }}>Level:</span>
-        {["", "federal", "state", "county", "city", "tribal"].map(level => (
+        <span
+          style={{ fontFamily: fontMono, fontSize: "0.75rem", color: dk.muted }}
+        >
+          Level:
+        </span>
+        {["", "federal", "state", "county", "city", "tribal"].map((level) => (
           <button
             key={level}
             onClick={() => setFilterLevel(level)}
@@ -1200,12 +2159,19 @@ function DocketList({ onSelect }: { onSelect: (id: number) => void }) {
         ))}
         {(debouncedSearch || filterLevel) && (
           <button
-            onClick={() => { setSearchTerm(""); setFilterLevel(""); }}
+            onClick={() => {
+              setSearchTerm("");
+              setFilterLevel("");
+            }}
             style={{
-              fontFamily: fontMono, fontSize: "0.7rem",
-              padding: "0.25rem 0.6rem", borderRadius: "4px",
-              border: `1px solid ${dk.red}44`, background: `${dk.red}11`,
-              color: dk.red, cursor: "pointer",
+              fontFamily: fontMono,
+              fontSize: "0.7rem",
+              padding: "0.25rem 0.6rem",
+              borderRadius: "4px",
+              border: `1px solid ${dk.red}44`,
+              background: `${dk.red}11`,
+              color: dk.red,
+              cursor: "pointer",
               marginLeft: "auto",
             }}
           >
@@ -1225,31 +2191,52 @@ function DocketList({ onSelect }: { onSelect: (id: number) => void }) {
       </div>
 
       {/* Seattle Legistar Live Feed */}
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 1.5rem 1.5rem" }}>
+      <div
+        style={{ maxWidth: 1100, margin: "0 auto", padding: "0 1.5rem 1.5rem" }}
+      >
         <LegistarLiveFeed keyword={debouncedSearch || undefined} />
       </div>
 
       {/* Entry cards */}
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 1.5rem 3rem" }}>
+      <div
+        style={{ maxWidth: 1100, margin: "0 auto", padding: "0 1.5rem 3rem" }}
+      >
         {isLoading ? (
-          <div style={{ textAlign: "center", padding: "4rem 0", color: dk.muted }}>
-            <Loader2 size={24} className="animate-spin" style={{ margin: "0 auto 1rem" }} />
-            <p style={{ fontFamily: fontMono, fontSize: "0.85rem" }}>Loading docket entries...</p>
+          <div
+            style={{ textAlign: "center", padding: "4rem 0", color: dk.muted }}
+          >
+            <Loader2
+              size={24}
+              className="animate-spin"
+              style={{ margin: "0 auto 1rem" }}
+            />
+            <p style={{ fontFamily: fontMono, fontSize: "0.85rem" }}>
+              Loading docket entries...
+            </p>
           </div>
         ) : !entries || entries.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "4rem 0", color: dk.muted }}>
+          <div
+            style={{ textAlign: "center", padding: "4rem 0", color: dk.muted }}
+          >
             <Gavel size={32} style={{ margin: "0 auto 1rem", opacity: 0.3 }} />
             <p style={{ fontFamily: fontSans, fontSize: "0.95rem" }}>
-              {debouncedSearch ? `No entries matching "${debouncedSearch}"` : "No entries found."}
+              {debouncedSearch
+                ? `No entries matching "${debouncedSearch}"`
+                : "No entries found."}
             </p>
             {debouncedSearch && (
               <button
                 onClick={() => setSearchTerm("")}
                 style={{
-                  fontFamily: fontMono, fontSize: "0.8rem",
-                  padding: "0.4rem 1rem", borderRadius: "4px",
-                  border: `1px solid ${dk.rule}`, background: dk.slateMid,
-                  color: dk.muted, cursor: "pointer", marginTop: "0.5rem",
+                  fontFamily: fontMono,
+                  fontSize: "0.8rem",
+                  padding: "0.4rem 1rem",
+                  borderRadius: "4px",
+                  border: `1px solid ${dk.rule}`,
+                  background: dk.slateMid,
+                  color: dk.muted,
+                  cursor: "pointer",
+                  marginTop: "0.5rem",
                 }}
               >
                 Clear search
@@ -1257,9 +2244,14 @@ function DocketList({ onSelect }: { onSelect: (id: number) => void }) {
             )}
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}
+          >
             {entries.map((entry: any) => {
-              const statusInfo = STATUS_LABELS[entry.status] || { label: entry.status, color: dk.muted };
+              const statusInfo = STATUS_LABELS[entry.status] || {
+                label: entry.status,
+                color: dk.muted,
+              };
               return (
                 <button
                   key={entry.id}
@@ -1277,72 +2269,132 @@ function DocketList({ onSelect }: { onSelect: (id: number) => void }) {
                     width: "100%",
                     transition: "all 0.15s",
                   }}
-                  onMouseEnter={e => {
-                    (e.currentTarget as HTMLElement).style.borderColor = dk.steel;
-                    (e.currentTarget as HTMLElement).style.background = dk.slateMid;
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor =
+                      dk.steel;
+                    (e.currentTarget as HTMLElement).style.background =
+                      dk.slateMid;
                   }}
-                  onMouseLeave={e => {
-                    (e.currentTarget as HTMLElement).style.borderColor = dk.cardBorder;
-                    (e.currentTarget as HTMLElement).style.background = dk.cardBg;
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor =
+                      dk.cardBorder;
+                    (e.currentTarget as HTMLElement).style.background =
+                      dk.cardBg;
                   }}
                 >
-                  <div style={{
-                    width: 40, height: 40, borderRadius: "8px",
-                    background: dk.steelSoft,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    flexShrink: 0, marginTop: "0.1rem",
-                  }}>
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: "8px",
+                      background: dk.steelSoft,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                      marginTop: "0.1rem",
+                    }}
+                  >
                     <Scale size={18} style={{ color: dk.steelBright }} />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
-                      <h3 style={{
-                        fontFamily: fontSerif,
-                        fontSize: "1.15rem",
-                        fontWeight: 600,
-                        color: dk.paper,
-                        margin: 0,
-                      }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <h3
+                        style={{
+                          fontFamily: fontSerif,
+                          fontSize: "1.15rem",
+                          fontWeight: 600,
+                          color: dk.paper,
+                          margin: 0,
+                        }}
+                      >
                         {entry.title}
                       </h3>
-                      <span style={{
-                        fontFamily: fontMono,
-                        fontSize: "0.65rem",
-                        padding: "0.15rem 0.5rem",
-                        borderRadius: "3px",
-                        background: `${statusInfo.color}22`,
-                        color: statusInfo.color,
-                        border: `1px solid ${statusInfo.color}44`,
-                      }}>
+                      <span
+                        style={{
+                          fontFamily: fontMono,
+                          fontSize: "0.65rem",
+                          padding: "0.15rem 0.5rem",
+                          borderRadius: "3px",
+                          background: `${statusInfo.color}22`,
+                          color: statusInfo.color,
+                          border: `1px solid ${statusInfo.color}44`,
+                        }}
+                      >
                         {statusInfo.label}
                       </span>
                     </div>
-                    <div style={{
-                      display: "flex", gap: "1rem", marginTop: "0.5rem",
-                      fontFamily: fontMono, fontSize: "0.72rem", color: dk.muted,
-                      flexWrap: "wrap",
-                    }}>
-                      <span style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "1rem",
+                        marginTop: "0.5rem",
+                        fontFamily: fontMono,
+                        fontSize: "0.72rem",
+                        color: dk.muted,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <span
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.3rem",
+                        }}
+                      >
                         <Globe size={11} />
                         {entry.jurisdiction}
                       </span>
-                      <span style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                      <span
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.3rem",
+                        }}
+                      >
                         <Landmark size={11} />
-                        {JURISDICTION_LEVEL_LABELS[entry.jurisdictionLevel] || entry.jurisdictionLevel}
+                        {JURISDICTION_LEVEL_LABELS[entry.jurisdictionLevel] ||
+                          entry.jurisdictionLevel}
                       </span>
-                      <span style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                      <span
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.3rem",
+                        }}
+                      >
                         <ScrollText size={11} />
                         {LAW_TYPE_LABELS[entry.lawType] || entry.lawType}
                       </span>
                       {entry.dateEnacted && (
-                        <span style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                        <span
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.3rem",
+                          }}
+                        >
                           <Gavel size={11} />
                           Enacted {entry.dateEnacted}
                         </span>
                       )}
                     </div>
                   </div>
-                  <ChevronRight size={18} style={{ color: dk.muted, flexShrink: 0, marginTop: "0.5rem" }} />
+                  <ChevronRight
+                    size={18}
+                    style={{
+                      color: dk.muted,
+                      flexShrink: 0,
+                      marginTop: "0.5rem",
+                    }}
+                  />
                 </button>
               );
             })}
@@ -1350,55 +2402,90 @@ function DocketList({ onSelect }: { onSelect: (id: number) => void }) {
         )}
       </div>
       {/* Submit Law Modal */}
-      <SubmitLawModal open={showSubmitModal} onClose={() => setShowSubmitModal(false)} />
+      <SubmitLawModal
+        open={showSubmitModal}
+        onClose={() => setShowSubmitModal(false)}
+      />
     </div>
   );
 }
 
 // ── Collapsible Section ──────────────────────────────────────────────
 
-function Section({ id, children, defaultOpen = true }: { id: string; children: React.ReactNode; defaultOpen?: boolean }) {
+function Section({
+  id,
+  children,
+  defaultOpen = true,
+}: {
+  id: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
   const [open, setOpen] = useState(defaultOpen);
   const Icon = SECTION_ICONS[id] || BookOpen;
   const label = SECTION_LABELS[id] || id;
 
   return (
-    <div style={{
-      background: dk.sectionBg,
-      border: `1px solid ${dk.cardBorder}`,
-      borderRadius: "8px",
-      overflow: "hidden",
-      marginBottom: "1rem",
-    }}>
+    <div
+      style={{
+        background: dk.sectionBg,
+        border: `1px solid ${dk.cardBorder}`,
+        borderRadius: "8px",
+        overflow: "hidden",
+        marginBottom: "1rem",
+      }}
+    >
       <button
         onClick={() => setOpen(!open)}
         style={{
-          display: "flex", alignItems: "center", gap: "0.75rem",
-          width: "100%", padding: "1rem 1.25rem",
-          background: "transparent", border: "none", cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          gap: "0.75rem",
+          width: "100%",
+          padding: "1rem 1.25rem",
+          background: "transparent",
+          border: "none",
+          cursor: "pointer",
           textAlign: "left",
         }}
       >
-        <div style={{
-          width: 32, height: 32, borderRadius: "6px",
-          background: dk.steelSoft,
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
+        <div
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: "6px",
+            background: dk.steelSoft,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
           <Icon size={16} style={{ color: dk.steelBright }} />
         </div>
-        <span style={{
-          fontFamily: fontSerif,
-          fontSize: "1.1rem",
-          fontWeight: 600,
-          color: dk.paper,
-          flex: 1,
-        }}>
+        <span
+          style={{
+            fontFamily: fontSerif,
+            fontSize: "1.1rem",
+            fontWeight: 600,
+            color: dk.paper,
+            flex: 1,
+          }}
+        >
           {label}
         </span>
-        {open ? <ChevronUp size={16} style={{ color: dk.muted }} /> : <ChevronDown size={16} style={{ color: dk.muted }} />}
+        {open ? (
+          <ChevronUp size={16} style={{ color: dk.muted }} />
+        ) : (
+          <ChevronDown size={16} style={{ color: dk.muted }} />
+        )}
       </button>
       {open && (
-        <div style={{ padding: "0 1.25rem 1.25rem", borderTop: `1px solid ${dk.rule}` }}>
+        <div
+          style={{
+            padding: "0 1.25rem 1.25rem",
+            borderTop: `1px solid ${dk.rule}`,
+          }}
+        >
           {children}
         </div>
       )}
@@ -1414,22 +2501,45 @@ function DocketDetail({ id, onBack }: { id: number; onBack: () => void }) {
 
   if (isLoading) {
     return (
-      <div style={{ minHeight: "100vh", background: dk.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <Loader2 size={24} className="animate-spin" style={{ color: dk.steel }} />
+      <div
+        style={{
+          minHeight: "100vh",
+          background: dk.bg,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Loader2
+          size={24}
+          className="animate-spin"
+          style={{ color: dk.steel }}
+        />
       </div>
     );
   }
 
   if (!data) {
     return (
-      <div style={{ minHeight: "100vh", background: dk.bg, padding: "4rem", textAlign: "center", color: dk.muted }}>
+      <div
+        style={{
+          minHeight: "100vh",
+          background: dk.bg,
+          padding: "4rem",
+          textAlign: "center",
+          color: dk.muted,
+        }}
+      >
         Entry not found.
       </div>
     );
   }
 
   const { entry, actors, impacts, sources } = data;
-  const statusInfo = STATUS_LABELS[entry.status] || { label: entry.status, color: dk.muted };
+  const statusInfo = STATUS_LABELS[entry.status] || {
+    label: entry.status,
+    color: dk.muted,
+  };
 
   // Group actors by type
   const actorsByType: Record<string, typeof actors> = {};
@@ -1450,79 +2560,122 @@ function DocketDetail({ id, onBack }: { id: number; onBack: () => void }) {
   return (
     <div style={{ minHeight: "100vh", background: dk.bg }}>
       {/* Header */}
-      <div style={{
-        background: dk.bgGrad,
-        borderBottom: `1px solid ${dk.rule}`,
-        padding: "2rem 0 2rem",
-      }}>
+      <div
+        style={{
+          background: dk.bgGrad,
+          borderBottom: `1px solid ${dk.rule}`,
+          padding: "2rem 0 2rem",
+        }}
+      >
         <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 1.5rem" }}>
           <button
             onClick={onBack}
             style={{
-              fontFamily: fontMono, fontSize: "0.75rem", color: dk.steel,
-              background: "transparent", border: "none", cursor: "pointer",
-              display: "flex", alignItems: "center", gap: "0.3rem",
-              marginBottom: "1rem", padding: 0,
+              fontFamily: fontMono,
+              fontSize: "0.75rem",
+              color: dk.steel,
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.3rem",
+              marginBottom: "1rem",
+              padding: 0,
             }}
           >
             <ArrowRight size={12} style={{ transform: "rotate(180deg)" }} />
             Back to Docket Room
           </button>
 
-          <h1 style={{
-            fontFamily: fontSerif,
-            fontSize: "1.85rem",
-            fontWeight: 600,
-            color: dk.paper,
-            letterSpacing: "-0.02em",
-            margin: "0 0 0.75rem",
-            lineHeight: 1.3,
-          }}>
+          <h1
+            style={{
+              fontFamily: fontSerif,
+              fontSize: "1.85rem",
+              fontWeight: 600,
+              color: dk.paper,
+              letterSpacing: "-0.02em",
+              margin: "0 0 0.75rem",
+              lineHeight: 1.3,
+            }}
+          >
             {entry.title}
           </h1>
 
-          <div style={{
-            display: "flex", gap: "0.75rem", flexWrap: "wrap",
-            fontFamily: fontMono, fontSize: "0.72rem",
-          }}>
-            <span style={{
-              padding: "0.2rem 0.6rem", borderRadius: "3px",
-              background: `${statusInfo.color}22`, color: statusInfo.color,
-              border: `1px solid ${statusInfo.color}44`,
-            }}>
+          <div
+            style={{
+              display: "flex",
+              gap: "0.75rem",
+              flexWrap: "wrap",
+              fontFamily: fontMono,
+              fontSize: "0.72rem",
+            }}
+          >
+            <span
+              style={{
+                padding: "0.2rem 0.6rem",
+                borderRadius: "3px",
+                background: `${statusInfo.color}22`,
+                color: statusInfo.color,
+                border: `1px solid ${statusInfo.color}44`,
+              }}
+            >
               {statusInfo.label}
             </span>
-            <span style={{
-              padding: "0.2rem 0.6rem", borderRadius: "3px",
-              background: dk.steelSoft, color: dk.steelBright,
-              border: `1px solid ${dk.steelBorder}`,
-            }}>
-              {JURISDICTION_LEVEL_LABELS[entry.jurisdictionLevel] || entry.jurisdictionLevel}
+            <span
+              style={{
+                padding: "0.2rem 0.6rem",
+                borderRadius: "3px",
+                background: dk.steelSoft,
+                color: dk.steelBright,
+                border: `1px solid ${dk.steelBorder}`,
+              }}
+            >
+              {JURISDICTION_LEVEL_LABELS[entry.jurisdictionLevel] ||
+                entry.jurisdictionLevel}
             </span>
-            <span style={{
-              padding: "0.2rem 0.6rem", borderRadius: "3px",
-              background: dk.steelSoft, color: dk.cream,
-              border: `1px solid ${dk.rule}`,
-            }}>
+            <span
+              style={{
+                padding: "0.2rem 0.6rem",
+                borderRadius: "3px",
+                background: dk.steelSoft,
+                color: dk.cream,
+                border: `1px solid ${dk.rule}`,
+              }}
+            >
               {entry.jurisdiction}
             </span>
-            <span style={{
-              padding: "0.2rem 0.6rem", borderRadius: "3px",
-              background: dk.copperSoft, color: dk.copper,
-              border: `1px solid rgba(210,153,34,0.25)`,
-            }}>
+            <span
+              style={{
+                padding: "0.2rem 0.6rem",
+                borderRadius: "3px",
+                background: dk.copperSoft,
+                color: dk.copper,
+                border: `1px solid rgba(210,153,34,0.25)`,
+              }}
+            >
               {LAW_TYPE_LABELS[entry.lawType] || entry.lawType}
             </span>
           </div>
 
           {/* Date row */}
-          <div style={{
-            display: "flex", gap: "1.5rem", marginTop: "0.75rem",
-            fontFamily: fontMono, fontSize: "0.72rem", color: dk.muted,
-          }}>
-            {entry.dateIntroduced && <span>Introduced: {entry.dateIntroduced}</span>}
+          <div
+            style={{
+              display: "flex",
+              gap: "1.5rem",
+              marginTop: "0.75rem",
+              fontFamily: fontMono,
+              fontSize: "0.72rem",
+              color: dk.muted,
+            }}
+          >
+            {entry.dateIntroduced && (
+              <span>Introduced: {entry.dateIntroduced}</span>
+            )}
             {entry.dateEnacted && <span>Enacted: {entry.dateEnacted}</span>}
-            {entry.dateEffective && <span>Effective: {entry.dateEffective}</span>}
+            {entry.dateEffective && (
+              <span>Effective: {entry.dateEffective}</span>
+            )}
           </div>
 
           {/* Voice Readout */}
@@ -1535,7 +2688,9 @@ function DocketDetail({ id, onBack }: { id: number; onBack: () => void }) {
                   (entry.keyChanges as string[] | null)?.length
                     ? `Key changes: ${(entry.keyChanges as string[]).join(". ")}`
                     : "",
-                ].filter(Boolean).join(" ")}
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
                 label="Read this entry aloud"
                 className="text-xs"
               />
@@ -1543,50 +2698,98 @@ function DocketDetail({ id, onBack }: { id: number; onBack: () => void }) {
           )}
 
           {/* LumenSend Action Buttons */}
-          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginTop: "1rem" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: "0.5rem",
+              flexWrap: "wrap",
+              marginTop: "1rem",
+            }}
+          >
             <button
-              onClick={() => navigateTo(`/lumensend?type=inquiry&context=docket_entry&contextId=${entry.id}&state=${entry.jurisdiction || ''}`)}
+              onClick={() =>
+                navigateTo(
+                  `/lumensend?type=inquiry&context=docket_entry&contextId=${entry.id}&state=${entry.jurisdiction || ""}`,
+                )
+              }
               style={{
-                display: "inline-flex", alignItems: "center", gap: "0.4rem",
-                fontFamily: fontMono, fontSize: "0.72rem",
-                padding: "0.35rem 0.75rem", borderRadius: "4px",
-                background: "rgba(210,153,34,0.12)", color: dk.copper,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.4rem",
+                fontFamily: fontMono,
+                fontSize: "0.72rem",
+                padding: "0.35rem 0.75rem",
+                borderRadius: "4px",
+                background: "rgba(210,153,34,0.12)",
+                color: dk.copper,
                 border: `1px solid rgba(210,153,34,0.3)`,
-                cursor: "pointer", transition: "all 0.15s",
+                cursor: "pointer",
+                transition: "all 0.15s",
               }}
-              onMouseEnter={e => { (e.target as HTMLElement).style.background = "rgba(210,153,34,0.22)"; }}
-              onMouseLeave={e => { (e.target as HTMLElement).style.background = "rgba(210,153,34,0.12)"; }}
+              onMouseEnter={(e) => {
+                (e.target as HTMLElement).style.background =
+                  "rgba(210,153,34,0.22)";
+              }}
+              onMouseLeave={(e) => {
+                (e.target as HTMLElement).style.background =
+                  "rgba(210,153,34,0.12)";
+              }}
             >
               <Send size={11} />
               Write to Legislator
             </button>
             <button
-              onClick={() => navigateTo(`/lumensend?type=complaint&context=docket_entry&contextId=${entry.id}&state=${entry.jurisdiction || ''}`)}
+              onClick={() =>
+                navigateTo(
+                  `/lumensend?type=complaint&context=docket_entry&contextId=${entry.id}&state=${entry.jurisdiction || ""}`,
+                )
+              }
               style={{
-                display: "inline-flex", alignItems: "center", gap: "0.4rem",
-                fontFamily: fontMono, fontSize: "0.72rem",
-                padding: "0.35rem 0.75rem", borderRadius: "4px",
-                background: dk.steelSoft, color: dk.steelBright,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.4rem",
+                fontFamily: fontMono,
+                fontSize: "0.72rem",
+                padding: "0.35rem 0.75rem",
+                borderRadius: "4px",
+                background: dk.steelSoft,
+                color: dk.steelBright,
                 border: `1px solid ${dk.steelBorder}`,
-                cursor: "pointer", transition: "all 0.15s",
+                cursor: "pointer",
+                transition: "all 0.15s",
               }}
-              onMouseEnter={e => { (e.target as HTMLElement).style.background = dk.steelBorder; }}
-              onMouseLeave={e => { (e.target as HTMLElement).style.background = dk.steelSoft; }}
+              onMouseEnter={(e) => {
+                (e.target as HTMLElement).style.background = dk.steelBorder;
+              }}
+              onMouseLeave={(e) => {
+                (e.target as HTMLElement).style.background = dk.steelSoft;
+              }}
             >
               <Send size={11} />
               File Public Comment
             </button>
           </div>
 
-          <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginTop: "0.5rem" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: "1rem",
+              flexWrap: "wrap",
+              marginTop: "0.5rem",
+            }}
+          >
             {entry.primarySourceUrl && (
               <a
                 href={entry.primarySourceUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
-                  display: "inline-flex", alignItems: "center", gap: "0.3rem",
-                  fontFamily: fontMono, fontSize: "0.72rem", color: dk.steel,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.3rem",
+                  fontFamily: fontMono,
+                  fontSize: "0.72rem",
+                  color: dk.steel,
                   textDecoration: "none",
                 }}
               >
@@ -1600,8 +2803,12 @@ function DocketDetail({ id, onBack }: { id: number; onBack: () => void }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
-                  display: "inline-flex", alignItems: "center", gap: "0.3rem",
-                  fontFamily: fontMono, fontSize: "0.72rem", color: dk.copper,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.3rem",
+                  fontFamily: fontMono,
+                  fontSize: "0.72rem",
+                  color: dk.copper,
                   textDecoration: "none",
                 }}
               >
@@ -1615,34 +2822,49 @@ function DocketDetail({ id, onBack }: { id: number; onBack: () => void }) {
 
       {/* Sections */}
       <div style={{ maxWidth: 900, margin: "0 auto", padding: "1.5rem" }}>
-
         {/* 1. Plain-Language Summary */}
         <Section id="summary" defaultOpen={true}>
           <div style={{ paddingTop: "1rem" }}>
             {entry.summary && (
-              <p style={{
-                fontFamily: fontSans, fontSize: "0.92rem", color: dk.cream,
-                lineHeight: 1.75, margin: "0 0 1rem",
-                whiteSpace: "pre-wrap",
-              }}>
+              <p
+                style={{
+                  fontFamily: fontSans,
+                  fontSize: "0.92rem",
+                  color: dk.cream,
+                  lineHeight: 1.75,
+                  margin: "0 0 1rem",
+                  whiteSpace: "pre-wrap",
+                }}
+              >
                 {entry.summary}
               </p>
             )}
             {(entry.keyChanges as string[] | null)?.length ? (
               <div>
-                <h4 style={{
-                  fontFamily: fontMono, fontSize: "0.75rem", color: dk.muted,
-                  textTransform: "uppercase", letterSpacing: "0.05em",
-                  margin: "1rem 0 0.5rem",
-                }}>
+                <h4
+                  style={{
+                    fontFamily: fontMono,
+                    fontSize: "0.75rem",
+                    color: dk.muted,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    margin: "1rem 0 0.5rem",
+                  }}
+                >
                   Key Changes
                 </h4>
                 <ul style={{ margin: 0, paddingLeft: "1.25rem" }}>
                   {(entry.keyChanges as string[]).map((change, i) => (
-                    <li key={i} style={{
-                      fontFamily: fontSans, fontSize: "0.88rem", color: dk.cream,
-                      lineHeight: 1.65, marginBottom: "0.4rem",
-                    }}>
+                    <li
+                      key={i}
+                      style={{
+                        fontFamily: fontSans,
+                        fontSize: "0.88rem",
+                        color: dk.cream,
+                        lineHeight: 1.65,
+                        marginBottom: "0.4rem",
+                      }}
+                    >
                       {change}
                     </li>
                   ))}
@@ -1656,51 +2878,97 @@ function DocketDetail({ id, onBack }: { id: number; onBack: () => void }) {
         <Section id="actors" defaultOpen={true}>
           <div style={{ paddingTop: "1rem" }}>
             {Object.keys(actorsByType).length === 0 ? (
-              <p style={{ fontFamily: fontMono, fontSize: "0.8rem", color: dk.muted, fontStyle: "italic" }}>
+              <p
+                style={{
+                  fontFamily: fontMono,
+                  fontSize: "0.8rem",
+                  color: dk.muted,
+                  fontStyle: "italic",
+                }}
+              >
                 No actors documented for this entry.
               </p>
             ) : (
               Object.entries(actorsByType).map(([type, typeActors]) => (
                 <div key={type} style={{ marginBottom: "1.25rem" }}>
-                  <h4 style={{
-                    fontFamily: fontMono, fontSize: "0.72rem", color: dk.steel,
-                    textTransform: "uppercase", letterSpacing: "0.05em",
-                    margin: "0 0 0.5rem",
-                    display: "flex", alignItems: "center", gap: "0.4rem",
-                  }}>
+                  <h4
+                    style={{
+                      fontFamily: fontMono,
+                      fontSize: "0.72rem",
+                      color: dk.steel,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                      margin: "0 0 0.5rem",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.4rem",
+                    }}
+                  >
                     <Users size={12} />
                     {ACTOR_TYPE_LABELS[type] || type}
-                    <span style={{ color: dk.muted }}>({typeActors.length})</span>
+                    <span style={{ color: dk.muted }}>
+                      ({typeActors.length})
+                    </span>
                   </h4>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "0.4rem",
+                    }}
+                  >
                     {typeActors.map((actor: any) => (
-                      <div key={actor.id} style={{
-                        padding: "0.6rem 0.85rem",
-                        background: dk.slate,
-                        borderRadius: "6px",
-                        border: `1px solid ${dk.rule}`,
-                      }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
-                          <span style={{
-                            fontFamily: fontSans, fontSize: "0.88rem", fontWeight: 500, color: dk.paper,
-                          }}>
+                      <div
+                        key={actor.id}
+                        style={{
+                          padding: "0.6rem 0.85rem",
+                          background: dk.slate,
+                          borderRadius: "6px",
+                          border: `1px solid ${dk.rule}`,
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.5rem",
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontFamily: fontSans,
+                              fontSize: "0.88rem",
+                              fontWeight: 500,
+                              color: dk.paper,
+                            }}
+                          >
                             {actor.actorName}
                           </span>
                           {actor.affiliation && (
-                            <span style={{
-                              fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted,
-                              padding: "0.1rem 0.4rem", borderRadius: "3px",
-                              background: "rgba(255,255,255,0.04)",
-                            }}>
+                            <span
+                              style={{
+                                fontFamily: fontMono,
+                                fontSize: "0.68rem",
+                                color: dk.muted,
+                                padding: "0.1rem 0.4rem",
+                                borderRadius: "3px",
+                                background: "rgba(255,255,255,0.04)",
+                              }}
+                            >
                               {actor.affiliation}
                             </span>
                           )}
                         </div>
                         {actor.role && (
-                          <p style={{
-                            fontFamily: fontSans, fontSize: "0.8rem", color: dk.muted,
-                            margin: "0.25rem 0 0",
-                          }}>
+                          <p
+                            style={{
+                              fontFamily: fontSans,
+                              fontSize: "0.8rem",
+                              color: dk.muted,
+                              margin: "0.25rem 0 0",
+                            }}
+                          >
                             {actor.role}
                           </p>
                         )}
@@ -1710,8 +2978,13 @@ function DocketDetail({ id, onBack }: { id: number; onBack: () => void }) {
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{
-                              fontFamily: fontMono, fontSize: "0.65rem", color: dk.steel,
-                              textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "0.2rem",
+                              fontFamily: fontMono,
+                              fontSize: "0.65rem",
+                              color: dk.steel,
+                              textDecoration: "none",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "0.2rem",
                               marginTop: "0.2rem",
                             }}
                           >
@@ -1731,51 +3004,98 @@ function DocketDetail({ id, onBack }: { id: number; onBack: () => void }) {
         <Section id="impacts" defaultOpen={true}>
           <div style={{ paddingTop: "1rem" }}>
             {Object.keys(impactsByCat).length === 0 ? (
-              <p style={{ fontFamily: fontMono, fontSize: "0.8rem", color: dk.muted, fontStyle: "italic" }}>
+              <p
+                style={{
+                  fontFamily: fontMono,
+                  fontSize: "0.8rem",
+                  color: dk.muted,
+                  fontStyle: "italic",
+                }}
+              >
                 No impacts documented for this entry.
               </p>
             ) : (
               Object.entries(impactsByCat).map(([cat, catImpacts]) => (
                 <div key={cat} style={{ marginBottom: "1.25rem" }}>
-                  <h4 style={{
-                    fontFamily: fontMono, fontSize: "0.72rem", color: dk.copper,
-                    textTransform: "uppercase", letterSpacing: "0.05em",
-                    margin: "0 0 0.5rem",
-                    display: "flex", alignItems: "center", gap: "0.4rem",
-                  }}>
+                  <h4
+                    style={{
+                      fontFamily: fontMono,
+                      fontSize: "0.72rem",
+                      color: dk.copper,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                      margin: "0 0 0.5rem",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.4rem",
+                    }}
+                  >
                     <Shield size={12} />
                     {IMPACT_CAT_LABELS[cat] || cat}
-                    <span style={{ color: dk.muted }}>({catImpacts.length})</span>
+                    <span style={{ color: dk.muted }}>
+                      ({catImpacts.length})
+                    </span>
                   </h4>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "0.4rem",
+                    }}
+                  >
                     {catImpacts.map((impact: any) => (
-                      <div key={impact.id} style={{
-                        padding: "0.6rem 0.85rem",
-                        background: dk.slate,
-                        borderRadius: "6px",
-                        border: `1px solid ${dk.rule}`,
-                      }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
-                          <span style={{
-                            fontFamily: fontSans, fontSize: "0.88rem", fontWeight: 500, color: dk.paper,
-                          }}>
+                      <div
+                        key={impact.id}
+                        style={{
+                          padding: "0.6rem 0.85rem",
+                          background: dk.slate,
+                          borderRadius: "6px",
+                          border: `1px solid ${dk.rule}`,
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.5rem",
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontFamily: fontSans,
+                              fontSize: "0.88rem",
+                              fontWeight: 500,
+                              color: dk.paper,
+                            }}
+                          >
                             {impact.affectedEntity}
                           </span>
                           {impact.scope && (
-                            <span style={{
-                              fontFamily: fontMono, fontSize: "0.68rem", color: dk.teal,
-                              padding: "0.1rem 0.4rem", borderRadius: "3px",
-                              background: "rgba(57,210,192,0.08)",
-                            }}>
+                            <span
+                              style={{
+                                fontFamily: fontMono,
+                                fontSize: "0.68rem",
+                                color: dk.teal,
+                                padding: "0.1rem 0.4rem",
+                                borderRadius: "3px",
+                                background: "rgba(57,210,192,0.08)",
+                              }}
+                            >
                               {impact.scope}
                             </span>
                           )}
                         </div>
                         {impact.impactDescription && (
-                          <p style={{
-                            fontFamily: fontSans, fontSize: "0.82rem", color: dk.cream,
-                            margin: "0.3rem 0 0", lineHeight: 1.6,
-                          }}>
+                          <p
+                            style={{
+                              fontFamily: fontSans,
+                              fontSize: "0.82rem",
+                              color: dk.cream,
+                              margin: "0.3rem 0 0",
+                              lineHeight: 1.6,
+                            }}
+                          >
                             {impact.impactDescription}
                           </p>
                         )}
@@ -1791,20 +3111,60 @@ function DocketDetail({ id, onBack }: { id: number; onBack: () => void }) {
         {/* 4. Implementation Dock */}
         <Section id="implementation" defaultOpen={false}>
           <div style={{ paddingTop: "1rem" }}>
-            <JsonArrayList label="Implementing Agencies" items={entry.implementationAgencies as string[] | null} icon={Building2} color={dk.green} />
-            <JsonArrayList label="Administrative Steps" items={entry.adminSteps as string[] | null} icon={FileText} color={dk.steelBright} />
-            <JsonArrayList label="Compliance Obligations" items={entry.complianceObligations as string[] | null} icon={Shield} color={dk.copper} />
-            <JsonArrayList label="Rollout Timeline" items={entry.rolloutTimeline as string[] | null} icon={ScrollText} color={dk.teal} />
+            <JsonArrayList
+              label="Implementing Agencies"
+              items={entry.implementationAgencies as string[] | null}
+              icon={Building2}
+              color={dk.green}
+            />
+            <JsonArrayList
+              label="Administrative Steps"
+              items={entry.adminSteps as string[] | null}
+              icon={FileText}
+              color={dk.steelBright}
+            />
+            <JsonArrayList
+              label="Compliance Obligations"
+              items={entry.complianceObligations as string[] | null}
+              icon={Shield}
+              color={dk.copper}
+            />
+            <JsonArrayList
+              label="Rollout Timeline"
+              items={entry.rolloutTimeline as string[] | null}
+              icon={ScrollText}
+              color={dk.teal}
+            />
           </div>
         </Section>
 
         {/* 5. Loophole Lantern */}
         <Section id="loopholes" defaultOpen={false}>
           <div style={{ paddingTop: "1rem" }}>
-            <JsonArrayList label="Structural Exemptions" items={entry.structuralExemptions as string[] | null} icon={AlertTriangle} color={dk.amber} />
-            <JsonArrayList label="Enforcement Gaps" items={entry.enforcementGaps as string[] | null} icon={Eye} color={dk.red} />
-            <JsonArrayList label="Reporting Gaps" items={entry.reportingGaps as string[] | null} icon={FileText} color={dk.red} />
-            <JsonArrayList label="Delegated Authority / Carve-outs" items={entry.delegatedAuthority as string[] | null} icon={Gavel} color={dk.purple} />
+            <JsonArrayList
+              label="Structural Exemptions"
+              items={entry.structuralExemptions as string[] | null}
+              icon={AlertTriangle}
+              color={dk.amber}
+            />
+            <JsonArrayList
+              label="Enforcement Gaps"
+              items={entry.enforcementGaps as string[] | null}
+              icon={Eye}
+              color={dk.red}
+            />
+            <JsonArrayList
+              label="Reporting Gaps"
+              items={entry.reportingGaps as string[] | null}
+              icon={FileText}
+              color={dk.red}
+            />
+            <JsonArrayList
+              label="Delegated Authority / Carve-outs"
+              items={entry.delegatedAuthority as string[] | null}
+              icon={Gavel}
+              color={dk.purple}
+            />
           </div>
         </Section>
 
@@ -1814,29 +3174,59 @@ function DocketDetail({ id, onBack }: { id: number; onBack: () => void }) {
             {/* Similar Laws */}
             {(entry.similarLaws as any[] | null)?.length ? (
               <div style={{ marginBottom: "1.25rem" }}>
-                <h4 style={{
-                  fontFamily: fontMono, fontSize: "0.72rem", color: dk.teal,
-                  textTransform: "uppercase", letterSpacing: "0.05em",
-                  margin: "0 0 0.5rem",
-                }}>
+                <h4
+                  style={{
+                    fontFamily: fontMono,
+                    fontSize: "0.72rem",
+                    color: dk.teal,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    margin: "0 0 0.5rem",
+                  }}
+                >
                   Similar Laws in Other Jurisdictions
                 </h4>
                 {(entry.similarLaws as any[]).map((law, i) => (
-                  <div key={i} style={{
-                    padding: "0.5rem 0.85rem", marginBottom: "0.4rem",
-                    background: dk.slate, borderRadius: "6px", border: `1px solid ${dk.rule}`,
-                  }}>
-                    <span style={{ fontFamily: fontSans, fontSize: "0.85rem", fontWeight: 500, color: dk.paper }}>
+                  <div
+                    key={i}
+                    style={{
+                      padding: "0.5rem 0.85rem",
+                      marginBottom: "0.4rem",
+                      background: dk.slate,
+                      borderRadius: "6px",
+                      border: `1px solid ${dk.rule}`,
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontFamily: fontSans,
+                        fontSize: "0.85rem",
+                        fontWeight: 500,
+                        color: dk.paper,
+                      }}
+                    >
                       {law.title}
                     </span>
-                    <span style={{
-                      fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted,
-                      marginLeft: "0.5rem",
-                    }}>
+                    <span
+                      style={{
+                        fontFamily: fontMono,
+                        fontSize: "0.68rem",
+                        color: dk.muted,
+                        marginLeft: "0.5rem",
+                      }}
+                    >
                       ({law.jurisdiction})
                     </span>
                     {law.note && (
-                      <p style={{ fontFamily: fontSans, fontSize: "0.78rem", color: dk.cream, margin: "0.2rem 0 0", lineHeight: 1.5 }}>
+                      <p
+                        style={{
+                          fontFamily: fontSans,
+                          fontSize: "0.78rem",
+                          color: dk.cream,
+                          margin: "0.2rem 0 0",
+                          lineHeight: 1.5,
+                        }}
+                      >
                         {law.note}
                       </p>
                     )}
@@ -1848,29 +3238,59 @@ function DocketDetail({ id, onBack }: { id: number; onBack: () => void }) {
             {/* Historical Precedents */}
             {(entry.historicalPrecedents as any[] | null)?.length ? (
               <div style={{ marginBottom: "1.25rem" }}>
-                <h4 style={{
-                  fontFamily: fontMono, fontSize: "0.72rem", color: dk.purple,
-                  textTransform: "uppercase", letterSpacing: "0.05em",
-                  margin: "0 0 0.5rem",
-                }}>
+                <h4
+                  style={{
+                    fontFamily: fontMono,
+                    fontSize: "0.72rem",
+                    color: dk.purple,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    margin: "0 0 0.5rem",
+                  }}
+                >
                   Historical Precedents
                 </h4>
                 {(entry.historicalPrecedents as any[]).map((p, i) => (
-                  <div key={i} style={{
-                    padding: "0.5rem 0.85rem", marginBottom: "0.4rem",
-                    background: dk.slate, borderRadius: "6px", border: `1px solid ${dk.rule}`,
-                  }}>
-                    <span style={{ fontFamily: fontSans, fontSize: "0.85rem", fontWeight: 500, color: dk.paper }}>
+                  <div
+                    key={i}
+                    style={{
+                      padding: "0.5rem 0.85rem",
+                      marginBottom: "0.4rem",
+                      background: dk.slate,
+                      borderRadius: "6px",
+                      border: `1px solid ${dk.rule}`,
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontFamily: fontSans,
+                        fontSize: "0.85rem",
+                        fontWeight: 500,
+                        color: dk.paper,
+                      }}
+                    >
                       {p.title}
                     </span>
-                    <span style={{
-                      fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted,
-                      marginLeft: "0.5rem",
-                    }}>
+                    <span
+                      style={{
+                        fontFamily: fontMono,
+                        fontSize: "0.68rem",
+                        color: dk.muted,
+                        marginLeft: "0.5rem",
+                      }}
+                    >
                       ({p.year})
                     </span>
                     {p.note && (
-                      <p style={{ fontFamily: fontSans, fontSize: "0.78rem", color: dk.cream, margin: "0.2rem 0 0", lineHeight: 1.5 }}>
+                      <p
+                        style={{
+                          fontFamily: fontSans,
+                          fontSize: "0.78rem",
+                          color: dk.cream,
+                          margin: "0.2rem 0 0",
+                          lineHeight: 1.5,
+                        }}
+                      >
                         {p.note}
                       </p>
                     )}
@@ -1880,7 +3300,12 @@ function DocketDetail({ id, onBack }: { id: number; onBack: () => void }) {
             ) : null}
 
             {/* Implementation Variations */}
-            <JsonArrayList label="Implementation Variations" items={entry.implementationVariations as string[] | null} icon={GitCompare} color={dk.steelBright} />
+            <JsonArrayList
+              label="Implementation Variations"
+              items={entry.implementationVariations as string[] | null}
+              icon={GitCompare}
+              color={dk.steelBright}
+            />
           </div>
         </Section>
 
@@ -1888,38 +3313,75 @@ function DocketDetail({ id, onBack }: { id: number; onBack: () => void }) {
         <Section id="sources" defaultOpen={false}>
           <div style={{ paddingTop: "1rem" }}>
             {sources.length === 0 ? (
-              <p style={{ fontFamily: fontMono, fontSize: "0.8rem", color: dk.muted, fontStyle: "italic" }}>
+              <p
+                style={{
+                  fontFamily: fontMono,
+                  fontSize: "0.8rem",
+                  color: dk.muted,
+                  fontStyle: "italic",
+                }}
+              >
                 No sources documented for this entry.
               </p>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.4rem",
+                }}
+              >
                 {sources.map((src: any) => (
-                  <div key={src.id} style={{
-                    padding: "0.6rem 0.85rem",
-                    background: dk.slate,
-                    borderRadius: "6px",
-                    border: `1px solid ${dk.rule}`,
-                  }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
-                      <span style={{
-                        fontFamily: fontMono, fontSize: "0.65rem",
-                        padding: "0.1rem 0.4rem", borderRadius: "3px",
-                        background: dk.steelSoft, color: dk.steelBright,
-                        textTransform: "uppercase",
-                      }}>
+                  <div
+                    key={src.id}
+                    style={{
+                      padding: "0.6rem 0.85rem",
+                      background: dk.slate,
+                      borderRadius: "6px",
+                      border: `1px solid ${dk.rule}`,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontFamily: fontMono,
+                          fontSize: "0.65rem",
+                          padding: "0.1rem 0.4rem",
+                          borderRadius: "3px",
+                          background: dk.steelSoft,
+                          color: dk.steelBright,
+                          textTransform: "uppercase",
+                        }}
+                      >
                         {src.sourceType.replace(/_/g, " ")}
                       </span>
-                      <span style={{
-                        fontFamily: fontSans, fontSize: "0.85rem", fontWeight: 500, color: dk.paper,
-                      }}>
+                      <span
+                        style={{
+                          fontFamily: fontSans,
+                          fontSize: "0.85rem",
+                          fontWeight: 500,
+                          color: dk.paper,
+                        }}
+                      >
                         {src.title}
                       </span>
                     </div>
                     {src.citation && (
-                      <p style={{
-                        fontFamily: fontMono, fontSize: "0.72rem", color: dk.muted,
-                        margin: "0.2rem 0 0",
-                      }}>
+                      <p
+                        style={{
+                          fontFamily: fontMono,
+                          fontSize: "0.72rem",
+                          color: dk.muted,
+                          margin: "0.2rem 0 0",
+                        }}
+                      >
                         {src.citation}
                       </p>
                     )}
@@ -1929,12 +3391,20 @@ function DocketDetail({ id, onBack }: { id: number; onBack: () => void }) {
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{
-                          fontFamily: fontMono, fontSize: "0.65rem", color: dk.steel,
-                          textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "0.2rem",
+                          fontFamily: fontMono,
+                          fontSize: "0.65rem",
+                          color: dk.steel,
+                          textDecoration: "none",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "0.2rem",
                           marginTop: "0.2rem",
                         }}
                       >
-                        <ExternalLink size={9} /> {src.url.length > 60 ? src.url.substring(0, 60) + "..." : src.url}
+                        <ExternalLink size={9} />{" "}
+                        {src.url.length > 60
+                          ? src.url.substring(0, 60) + "..."
+                          : src.url}
                       </a>
                     )}
                   </div>
@@ -1945,11 +3415,17 @@ function DocketDetail({ id, onBack }: { id: number; onBack: () => void }) {
         </Section>
 
         {/* Principle reminder footer */}
-        <div style={{
-          textAlign: "center", padding: "2rem 0 1rem",
-          fontFamily: fontMono, fontSize: "0.72rem", color: dk.muted,
-          fontStyle: "italic", opacity: 0.6,
-        }}>
+        <div
+          style={{
+            textAlign: "center",
+            padding: "2rem 0 1rem",
+            fontFamily: fontMono,
+            fontSize: "0.72rem",
+            color: dk.muted,
+            fontStyle: "italic",
+            opacity: 0.6,
+          }}
+        >
           Reveal structure. Interpret nothing. Judge nothing. Persuade no one.
         </div>
       </div>
@@ -1959,7 +3435,12 @@ function DocketDetail({ id, onBack }: { id: number; onBack: () => void }) {
 
 // ── Helper: render a JSON string[] as a labeled list ─────────────────
 
-function JsonArrayList({ label, items, icon: Icon, color }: {
+function JsonArrayList({
+  label,
+  items,
+  icon: Icon,
+  color,
+}: {
   label: string;
   items: string[] | null;
   icon: any;
@@ -1968,21 +3449,34 @@ function JsonArrayList({ label, items, icon: Icon, color }: {
   if (!items || items.length === 0) return null;
   return (
     <div style={{ marginBottom: "1.25rem" }}>
-      <h4 style={{
-        fontFamily: fontMono, fontSize: "0.72rem", color,
-        textTransform: "uppercase", letterSpacing: "0.05em",
-        margin: "0 0 0.5rem",
-        display: "flex", alignItems: "center", gap: "0.4rem",
-      }}>
+      <h4
+        style={{
+          fontFamily: fontMono,
+          fontSize: "0.72rem",
+          color,
+          textTransform: "uppercase",
+          letterSpacing: "0.05em",
+          margin: "0 0 0.5rem",
+          display: "flex",
+          alignItems: "center",
+          gap: "0.4rem",
+        }}
+      >
         <Icon size={12} />
         {label}
       </h4>
       <ul style={{ margin: 0, paddingLeft: "1.25rem" }}>
         {items.map((item, i) => (
-          <li key={i} style={{
-            fontFamily: fontSans, fontSize: "0.85rem", color: dk.cream,
-            lineHeight: 1.6, marginBottom: "0.3rem",
-          }}>
+          <li
+            key={i}
+            style={{
+              fontFamily: fontSans,
+              fontSize: "0.85rem",
+              color: dk.cream,
+              lineHeight: 1.6,
+              marginBottom: "0.3rem",
+            }}
+          >
             {item}
           </li>
         ))}

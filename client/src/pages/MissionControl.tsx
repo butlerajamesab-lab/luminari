@@ -39,56 +39,6 @@ import { FlagQueuePanel } from "@/components/FlagQueuePanel";
 import { FlagButton } from "@/components/FlagButton";
 import { MissionControlSchemaLedgerPanel } from "@/components/mission/MissionControlSchemaLedgerPanel";
 
-type DatabaseDiagnosticContract = {
-  ok: boolean;
-  database: string;
-  database_url: string;
-  database_version: string | null;
-  public_tables: number | null;
-  db_diagnostic: { tables: { total: number | null }; views: { total: number | null }; foreign_keys: { total: number | null }; errors: Array<{ code: string; message: string }> };
-  supabase_project: string;
-  timestamp: string;
-};
-
-const diagnostic_required_fields = ["database", "database_url", "database_version", "public_tables", "db_diagnostic", "supabase_project", "timestamp"] as const;
-
-function isDatabaseDiagnosticContract(value: unknown): value is DatabaseDiagnosticContract {
-  if (!value || typeof value !== "object") return false;
-  return diagnostic_required_fields.every((field) => field in value);
-}
-
-function useDatabaseDiagnostic() {
-  const [data, setData] = useState<DatabaseDiagnosticContract | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const load = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch("/api/db-diagnostic", { cache: "no-store" });
-      const payload = await response.json();
-      if (!isDatabaseDiagnosticContract(payload)) {
-        setError(`diagnostic_contract_mismatch: expected ${diagnostic_required_fields.join(", ")}`);
-        return;
-      }
-      setData(payload);
-      setError(response.ok ? null : payload.error?.message ?? "database_diagnostic_failed");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    load();
-    const timer = window.setInterval(load, 60000);
-    return () => window.clearInterval(timer);
-  }, []);
-
-  return { data, error, isLoading, refetch: load };
-}
-
 import { CommitToCase } from "@/components/CommitToCase";
 import { PatternRegistryPanel } from "@/components/mission/PatternRegistryPanel";
 import { StrategyPathsPanel } from "@/components/mission/StrategyPathsPanel";
@@ -235,7 +185,9 @@ function SystemHealthPanel() {
   const { data, isLoading, refetch } = trpc.adminDashboard.systemHealth.useQuery(undefined, {
     refetchInterval: 30000,
   });
-  const diagnostic = useDatabaseDiagnostic();
+  const diagnostic = trpc.system.health.useQuery(undefined, {
+    refetchInterval: 60000,
+  });
 
   if (isLoading || diagnostic.isLoading) return <PanelSkeleton />;
   if (!data) return <PanelEmpty label="No health data available" />;
@@ -247,7 +199,10 @@ function SystemHealthPanel() {
           <Server className="h-5 w-5 text-emerald-400" />
           System Health
         </h3>
-        <Button variant="ghost" size="sm" onClick={() => refetch()}>
+        <Button variant="ghost" size="sm" onClick={() => {
+          refetch();
+          diagnostic.refetch();
+        }}>
           <RefreshCw className="h-3 w-3 mr-1" /> Refresh
         </Button>
       </div>
@@ -260,7 +215,7 @@ function SystemHealthPanel() {
             <div><span className="text-muted-foreground">Public tables</span><div>{diagnostic.data?.public_tables ?? "unavailable"}</div></div>
             <div><span className="text-muted-foreground">Supabase project</span><div className="font-mono text-xs">{diagnostic.data?.supabase_project ?? "unknown"}</div></div>
           </div>
-          {diagnostic.error && <div className="mt-3 text-xs text-red-300">{diagnostic.error}</div>}
+          {diagnostic.error && <div className="mt-3 text-xs text-red-300">{diagnostic.error.message}</div>}
         </CardContent>
       </Card>
 

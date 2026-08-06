@@ -109,7 +109,7 @@ const allMenuItems = [
     section: "Admin",
     items: [
       { icon: Activity, label: "Mission Control", path: "/mission-control" },
-      { icon: Crown, label: "Sovereign Control", path: "/sovereign" },
+      { icon: Crown, label: "Sovereign Control", path: "/sovereign-control" },
       { icon: Wrench, label: "Case Repair", path: "/repair" },
       { icon: BarChart3, label: "Pipeline Analytics", path: "/admin/analytics" },
       { icon: MessageSquare, label: "Feedback Dashboard", path: "/admin/feedback" },

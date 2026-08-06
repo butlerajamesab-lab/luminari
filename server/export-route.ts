@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import { sdk } from "./_core/sdk";
+import { authenticateRequestUser } from "./_core/request-auth";
 import * as dbHelpers from "./db";
 import { db } from "./db";
 import { documents, entities, quotes, claims, findings, events, relationships, signalFlags, documentCorrelations } from "../drizzle/schema";
@@ -52,7 +52,7 @@ export function registerExportRoute(app: Express) {
     try {
       let user;
       try {
-        user = await sdk.authenticateRequest(req);
+        user = await authenticateRequestUser(req, res);
       } catch {
         res.status(401).json({ error: "Unauthorized" });
         return;

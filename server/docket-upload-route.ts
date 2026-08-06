@@ -10,7 +10,7 @@ import type { Express, Request, Response } from "express";
 import multer from "multer";
 import { storagePut } from "./storage";
 import { nanoid } from "nanoid";
-import { sdk } from "./_core/sdk";
+import { authenticateRequestUser } from "./_core/request-auth";
 
 const ALLOWED_MIME_TYPES = [
   "application/pdf",
@@ -39,7 +39,7 @@ export function registerDocketUploadRoute(app: Express) {
       // Authenticate
       let user;
       try {
-        user = await sdk.authenticateRequest(req);
+        user = await authenticateRequestUser(req, res);
       } catch {
         res.status(401).json({ error: "Unauthorized" });
         return;

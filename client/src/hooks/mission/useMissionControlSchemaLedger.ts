@@ -1,10 +1,16 @@
 import { useEffect, useState } from "react";
-import { MissionControlPayload, normalizeMissionControlPayload } from "./missionControlPayload";
+import {
+  MissionControlPayload,
+  normalizeMissionControlPayload,
+} from "./missionControlPayload";
+import { authenticatedFetch } from "@/lib/session-token";
 
 const SCHEMA_LEDGER_ENDPOINT = "/api/system/schema";
 
 async function fetchMissionControlPayload(): Promise<MissionControlPayload> {
-  const response = await fetch(SCHEMA_LEDGER_ENDPOINT, { cache: "no-store" });
+  const response = await authenticatedFetch(SCHEMA_LEDGER_ENDPOINT, {
+    cache: "no-store",
+  });
   if (!response.ok) {
     throw new Error(`schema_ledger_fetch_failed_${response.status}`);
   }
@@ -12,7 +18,9 @@ async function fetchMissionControlPayload(): Promise<MissionControlPayload> {
 }
 
 export function useMissionControlSchemaLedger() {
-  const [payload, setPayload] = useState<MissionControlPayload>(normalizeMissionControlPayload({}));
+  const [payload, setPayload] = useState<MissionControlPayload>(
+    normalizeMissionControlPayload({}),
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

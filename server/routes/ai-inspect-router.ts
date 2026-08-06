@@ -84,8 +84,8 @@ export const ROUTE_TABLE: ReadonlyArray<{ path: string; component_slug: string }
   { path: "/welcome", component_slug: "welcome" },
   { path: "/intake", component_slug: "intake" },
   { path: "/case/:id", component_slug: "case" },
-  { path: "/luminari-intake", component_slug: "guided_intake_new" },
-  { path: "/guided-intake", component_slug: "guided_intake_new" },
+  { path: "/luminari-intake", component_slug: "guided_intake" },
+  { path: "/guided-intake", component_slug: "guided_intake" },
   { path: "/benefits", component_slug: "benefits_navigator" },
   { path: "/my-applications", component_slug: "my_applications" },
   { path: "/discover", component_slug: "discover_benefits" },
@@ -531,22 +531,24 @@ router.get("/page/benefits", async (_req: Request, res: Response) => {
 
 router.get("/page/guided-intake", async (_req: Request, res: Response) => {
   setCache(res, "live");
-  const [intakeRecordsCount, entryRunsCount, mapIntakeSessionsCount] = await Promise.all([
-    countTable("intake_records"),
-    countTable("entry_runs"),
+  const [intakeSessionsCount, intakeArtifactsCount, layerRunsCount, mapIntakeSessionsCount] = await Promise.all([
+    countTable("intake_sessions"),
+    countTable("intake_artifacts"),
+    countTable("intake_layer_runs"),
     countTable("map_intake_sessions"),
   ]);
   res.json({
     route: "/guided-intake",
     title: "Guided Intake",
-    component_slug: "guided_intake_new",
-    primary_namespace: PAGE_TO_NAMESPACE.guided_intake_new,
+    component_slug: "guided_intake",
+    primary_namespace: PAGE_TO_NAMESPACE.guided_intake,
     status: "live",
     last_checked: now(),
-    data_source: "live — intake_records, entry_runs, map_intake_sessions",
+    data_source: "live — Universal Intake Spine plus map_intake_sessions handoff",
     sections: [
-      { name: "Problem Framing", counts: { intakeRecords: intakeRecordsCount } },
-      { name: "Entry Runs", counts: { total: entryRunsCount } },
+      { name: "Intake Sessions", counts: { total: intakeSessionsCount } },
+      { name: "Preserved Artifacts", counts: { total: intakeArtifactsCount } },
+      { name: "Layer Receipts", counts: { total: layerRunsCount } },
       { name: "Map Intake Sessions", counts: { total: mapIntakeSessionsCount } },
     ],
   });

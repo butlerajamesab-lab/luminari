@@ -14,7 +14,7 @@
  *
  * RULES:
  *   - GET only. No POST, no mutations, no writes.
- *   - No auth required. Structural metadata only — no PII, no raw records.
+ *   - The canonical server mounts this namespace behind administrator auth.
  *   - Every DB query is wrapped. Failures surface explicitly.
  *   - No secrets exposed. No service_role keys, no JWT secrets.
  *
@@ -26,6 +26,10 @@
  */
 import express, { Request, Response } from "express";
 import { getPool } from "../db";
+import {
+  PLATFORM_ROUTE_INVENTORY_SHA256,
+  PLATFORM_ROUTE_PATHS,
+} from "../../shared/platform-route-manifest";
 
 const router = express.Router();
 
@@ -101,114 +105,47 @@ router.get("/health", async (_req: Request, res: Response) => {
 router.get("/routes", async (_req: Request, res: Response) => {
   cacheStatic(res);
 
-  // Frontend routes (from App.tsx — canonical list)
-  const frontend_routes = [
-    { path: "/", component_slug: "home", layer: "L0" },
-    { path: "/welcome", component_slug: "welcome", layer: "L0" },
-    { path: "/login", component_slug: "login", layer: "L0" },
-    { path: "/intake", component_slug: "intake", layer: "L0" },
-    { path: "/luminari-intake", component_slug: "guided_intake_new", layer: "L0" },
-    { path: "/guided-intake", component_slug: "guided_intake_new", layer: "L0" },
-    { path: "/case/:id", component_slug: "case", layer: "L1" },
-    { path: "/cases", component_slug: "cases", layer: "L1" },
-    { path: "/documents", component_slug: "documents", layer: "L1" },
-    { path: "/document/:id", component_slug: "document_detail", layer: "L1" },
-    { path: "/entities", component_slug: "entities", layer: "L1" },
-    { path: "/entity/:id", component_slug: "entity_detail", layer: "L1" },
-    { path: "/findings", component_slug: "findings", layer: "L1" },
-    { path: "/timeline", component_slug: "timeline", layer: "L1" },
-    { path: "/narrative", component_slug: "statement_of_facts", layer: "L1" },
-    { path: "/patterns", component_slug: "patterns", layer: "L1" },
-    { path: "/mission-control", component_slug: "mission_control", layer: "L2" },
-    { path: "/lighthouse", component_slug: "lighthouse", layer: "L2" },
-    { path: "/civic-map", component_slug: "civic_map", layer: "L2" },
-    { path: "/legal-library", component_slug: "legal_library", layer: "L2" },
-    { path: "/signal-registry", component_slug: "signal_registry", layer: "L2" },
-    { path: "/enforcement-intel", component_slug: "enforcement_intel", layer: "L2" },
-    { path: "/enforcement-pathway", component_slug: "enforcement_pathway", layer: "L2" },
-    { path: "/agency-metrics", component_slug: "agency_metrics", layer: "L2" },
-    { path: "/civil-gideon", component_slug: "civil_gideon", layer: "L2" },
-    { path: "/benefits", component_slug: "benefits_navigator", layer: "L2" },
-    { path: "/my-applications", component_slug: "my_applications", layer: "L2" },
-    { path: "/discover", component_slug: "discover_benefits", layer: "L2" },
-    { path: "/categories", component_slug: "category_explorer", layer: "L2" },
-    { path: "/category/:categoryId", component_slug: "category_landing", layer: "L2" },
-    { path: "/doctrine-graph", component_slug: "doctrine_graph", layer: "L2" },
-    { path: "/barriers", component_slug: "litigation_barriers", layer: "L2" },
-    { path: "/contradiction-scoring", component_slug: "contradiction_scoring", layer: "L2" },
-    { path: "/deadline-calculator", component_slug: "deadline_calculator", layer: "L2" },
-    { path: "/investigation-workflow", component_slug: "investigation_workflow", layer: "L2" },
-    { path: "/investigation-guidance", component_slug: "investigation_guidance", layer: "L2" },
-    { path: "/proof-frameworks", component_slug: "proof_frameworks", layer: "L2" },
-    { path: "/claim-elements", component_slug: "claim_elements", layer: "L2" },
-    { path: "/claim-denial-analysis", component_slug: "claim_denial_analysis", layer: "L2" },
-    { path: "/filing-generator", component_slug: "filing_generator", layer: "L2" },
-    { path: "/docket", component_slug: "docket_room", layer: "L2" },
-    { path: "/docket/:slug", component_slug: "docket_room", layer: "L2" },
-    { path: "/lumensend", component_slug: "lumen_send", layer: "L2" },
-    { path: "/viewfinder", component_slug: "anomaly_viewfinder", layer: "L2" },
-    { path: "/mental-health", component_slug: "mental_health", layer: "L2" },
-    { path: "/command-board", component_slug: "command_board", layer: "L2" },
-    { path: "/resolve", component_slug: "case_resolution_lens", layer: "L2" },
-    { path: "/diagnostics", component_slug: "structural_diagnostics_lens", layer: "L2" },
-    { path: "/mudroom", component_slug: "mudroom", layer: "L2" },
-    { path: "/workshop", component_slug: "workshop_floor", layer: "L2" },
-    { path: "/workbench/:caseId", component_slug: "workbench_dashboard", layer: "L2" },
-    { path: "/workbench", component_slug: "workbench_dashboard", layer: "L2" },
-    { path: "/evidence-lab", component_slug: "evidence_lab", layer: "L2" },
-    { path: "/guide/:caseId", component_slug: "guided_dashboard", layer: "L1" },
-    { path: "/shared/:token", component_slug: "shared_case_view", layer: "L1" },
-    { path: "/presentations", component_slug: "presentations", layer: "L1" },
-    { path: "/presentations/:id", component_slug: "presentation_editor", layer: "L1" },
-    { path: "/extraction", component_slug: "extraction_dashboard", layer: "L3" },
-    { path: "/architecture-map", component_slug: "architecture_map", layer: "L3" },
-    { path: "/architecture", component_slug: "architecture_map", layer: "L3" },
-    { path: "/sovereign-control", component_slug: "sovereign_control", layer: "L3" },
-    { path: "/admin/feedback", component_slug: "admin_feedback", layer: "L3" },
-    { path: "/admin/analytics", component_slug: "admin_analytics", layer: "L3" },
-    { path: "/admin/users", component_slug: "admin_users", layer: "L3" },
-    { path: "/admin/test-scenarios", component_slug: "admin_test_scenarios", layer: "L3" },
-    { path: "/admin/resource-verification", component_slug: "resource_verification", layer: "L3" },
-    { path: "/admin/knowledge-population", component_slug: "knowledge_population", layer: "L3" },
-    { path: "/invite/:token", component_slug: "invite_landing", layer: "L0" },
-    { path: "/templates", component_slug: "case_templates", layer: "L1" },
-    { path: "/import-bundle", component_slug: "import_bundle", layer: "L1" },
-    { path: "/upload", component_slug: "upload", layer: "L0" },
-    { path: "/spine-viewer", component_slug: "spine_viewer", layer: "L3" },
-    { path: "/provenance", component_slug: "provenance", layer: "L3" },
-    { path: "/provenance/:id", component_slug: "provenance_history", layer: "L3" },
-    { path: "/exports", component_slug: "exports", layer: "L3" },
-    { path: "/network-graph", component_slug: "network_graph", layer: "L2" },
-    { path: "/action-path", component_slug: "action_path", layer: "L2" },
-    { path: "/activation-control", component_slug: "activation_control", layer: "L3" },
-    { path: "/control-room", component_slug: "control_room", layer: "L3" },
-    { path: "/shop-office", component_slug: "shop_office", layer: "L2" },
-    { path: "/business-analytics", component_slug: "business_analytics", layer: "L3" },
-    { path: "/resource-directory", component_slug: "resource_directory", layer: "L2" },
-    { path: "/foia-tracking", component_slug: "foia_tracking", layer: "L2" },
-  ];
+  const frontend_routes = PLATFORM_ROUTE_PATHS.map(path => ({
+    path,
+    component_slug: "registered_in_client_app",
+    layer: "surface",
+  }));
 
   // Backend API mounts
   const backend_mounts = [
-    { method: "USE", path: "/api/trpc", source: "appRouter (tRPC)" },
-    { method: "USE", path: "/api/ai", source: "aiInspectRouter" },
-    { method: "USE", path: "/api/system", source: "systemVisibilityRouter" },
-    { method: "GET", path: "/api/health", source: "inline health check" },
-    { method: "POST", path: "/api/stripe/webhook", source: "stripe-webhook" },
-    { method: "POST", path: "/api/upload", source: "upload-route" },
-    { method: "POST", path: "/api/docket-upload", source: "docket-upload-route" },
-    { method: "GET", path: "/api/export/*", source: "export-route" },
-    { method: "GET", path: "/api/cda-export/*", source: "cda-export-route" },
-    { method: "POST", path: "/api/bundle-sync", source: "bundle-sync" },
-    { method: "GET", path: "/api/bundle-download/*", source: "bundle-download-route" },
-    { method: "USE", path: "/api/executor/*", source: "executor-routes" },
-    { method: "USE", path: "/api/ui-editor/*", source: "ui-editor/routes" },
-    { method: "USE", path: "/api/healer/*", source: "healer-routes" },
+    { method: "USE", path: "/api/trpc", source: "appRouter", access: "procedure_defined" },
+    { method: "USE", path: "/api/invites", source: "invite_redemption_router", access: "token_bound" },
+    { method: "GET", path: "/api/health", source: "livenessPayload", access: "public" },
+    { method: "GET", path: "/api/runtime-build", source: "runtime_fingerprint", access: "public" },
+    { method: "GET", path: "/api/db-diagnostic", source: "bounded_legacy_stub", access: "closed" },
+    { method: "GET", path: "/api/system/health", source: "bounded_legacy_stub", access: "closed" },
+    { method: "USE", path: "/api/ai", source: "aiInspectRouter", access: "public_read_only" },
+    { method: "USE", path: "/api/system", source: "systemVisibilityRouter", access: "admin" },
+    { method: "USE", path: "/api/conveyor", source: "conveyorRouter", access: "admin" },
+    { method: "USE", path: "/api/civic-map", source: "civicMapRouter", access: "public_read_only" },
+    { method: "USE", path: "/api/atlas", source: "atlasProxyRouter", access: "public_read_admin_write" },
+    { method: "USE", path: "/api/ingestion-control", source: "ingestion_control_routers", access: "admin" },
+    { method: "USE", path: "/api/docket", source: "docket_router", access: "public_read_admin_warm" },
+    { method: "USE", path: "/api/prism", source: "prism_verification_router", access: "public_read_only" },
+    { method: "POST", path: "/api/upload", source: "upload-route", access: "authenticated_case_owner" },
+    { method: "POST", path: "/api/docket/upload", source: "docket-upload-route", access: "authenticated" },
+    { method: "GET", path: "/api/export/:type", source: "export-route", access: "authenticated_case_access" },
+    { method: "GET", path: "/api/cda/export/:runId", source: "cda-export-route", access: "authenticated_owner" },
+    { method: "POST", path: "/api/bundle-sync", source: "bundle-sync", access: "authenticated" },
+    { method: "GET", path: "/api/bundle/download", source: "bundle-download-route", access: "authenticated" },
+    { method: "USE", path: "/api/executor", source: "executor-routes", access: "admin" },
+    { method: "POST", path: "/api/stripe/webhook", source: "disabled_stub", access: "closed" },
   ];
 
   res.json({
     timestamp: now(),
-    frontend: { total: frontend_routes.length, routes: frontend_routes },
+    frontend: {
+      total: frontend_routes.length,
+      declaration_count: 107,
+      duplicate_paths: ["/"],
+      inventory_sha256: PLATFORM_ROUTE_INVENTORY_SHA256,
+      routes: frontend_routes,
+    },
     backend: { total: backend_mounts.length, mounts: backend_mounts },
   });
 });

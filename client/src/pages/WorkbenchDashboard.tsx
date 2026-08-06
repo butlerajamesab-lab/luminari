@@ -2591,7 +2591,7 @@ function CaseLinkPanel({ caseId }: { caseId: number }) {
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {(links.data || []).map((link: any) => {
               const isExpired = link.expiresAt && link.expiresAt < Date.now();
-              const shareUrl = `${window.location.origin}/shared-case/${link.token}`;
+              const shareUrl = `${window.location.origin}/shared/${link.token}`;
               return (
                 <div key={link.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px", background: wb.bg, borderRadius: 6, border: `1px solid ${wb.cardBorder}` }}>
                   <div style={{ flex: 1 }}>
