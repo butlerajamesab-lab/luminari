@@ -3,9 +3,11 @@ import { randomUUID } from "node:crypto";
 import { query_with_diagnostics } from "./db";
 import { process_legislative_version } from "./civic-genome-legislative-version-pipeline";
 
-const DEFAULT_POLL_INTERVAL_MS = 10_000;
-const MIN_POLL_INTERVAL_MS = 5_000;
-const MAX_POLL_INTERVAL_MS = 300_000;
+const DEFAULT_POLL_INTERVAL_MS = 1_000;
+const MIN_POLL_INTERVAL_MS = 250;
+const MAX_POLL_INTERVAL_MS = 60_000;
+const DEFAULT_CONCURRENCY = 8;
+const MAX_CONCURRENCY = 32;
 const QUEUE_LEASE_MINUTES = 60;
 const UNKNOWN_FAILURE_LIMIT = 5;
 
@@ -36,13 +38,28 @@ const queue_worker_id = [
   randomUUID(),
 ].join(":");
 
+function bounded_integer(input: string | undefined, fallback: number, minimum: number, maximum: number): number {
+  const parsed = Number.parseInt(input ?? "", 10);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.max(minimum, Math.min(maximum, parsed));
+}
+
 function bounded_poll_interval(): number {
-  const parsed = Number.parseInt(
-    process.env.LEGISLATIVE_VERSION_QUEUE_POLL_MS ?? "",
-    10,
+  return bounded_integer(
+    process.env.LEGISLATIVE_VERSION_QUEUE_POLL_MS,
+    DEFAULT_POLL_INTERVAL_MS,
+    MIN_POLL_INTERVAL_MS,
+    MAX_POLL_INTERVAL_MS,
   );
-  if (!Number.isFinite(parsed)) return DEFAULT_POLL_INTERVAL_MS;
-  return Math.max(MIN_POLL_INTERVAL_MS, Math.min(MAX_POLL_INTERVAL_MS, parsed));
+}
+
+function bounded_concurrency(): number {
+  return bounded_integer(
+    process.env.LEGISLATIVE_VERSION_QUEUE_CONCURRENCY,
+    DEFAULT_CONCURRENCY,
+    1,
+    MAX_CONCURRENCY,
+  );
 }
 
 function queue_enabled(): boolean {
@@ -137,7 +154,7 @@ async function reconcile_completed_jobs(): Promise<void> {
   );
 }
 
-async function claim_next_job(): Promise<legislative_version_queue_job | null> {
+async function claim_jobs(limit: number): Promise<legislative_version_queue_job[]> {
   const result = await query_with_diagnostics<legislative_version_queue_job>(
     `with candidate as (
        select queue.queue_id
@@ -159,7 +176,7 @@ async function claim_next_job(): Promise<legislative_version_queue_job | null> {
           and version.processing_state not in ('verified')
         order by queue.priority, queue.created_at, queue.queue_id
         for update of queue skip locked
-        limit 1
+        limit $3::integer
      )
      update public.civic_genome_legislative_version_queue queue
         set queue_state = 'submitted',
@@ -179,14 +196,14 @@ async function claim_next_job(): Promise<legislative_version_queue_job | null> {
                 version.document_family,
                 version.version_type,
                 queue.attempt_count`,
-    [queue_worker_id, QUEUE_LEASE_MINUTES],
+    [queue_worker_id, QUEUE_LEASE_MINUTES, limit],
     {
       label: "legislative_version_queue_claim",
       pool_acquire_timeout_ms: 1_000,
       query_timeout_ms: 5_000,
     },
   );
-  return result.rows[0] ?? null;
+  return result.rows;
 }
 
 async function mark_job_completed(input: {
@@ -318,8 +335,8 @@ export async function run_legislative_version_queue_cycle(): Promise<void> {
   queue_cycle_running = true;
   try {
     await reconcile_completed_jobs();
-    const job = await claim_next_job();
-    if (job) await process_legislative_version_job(job);
+    const jobs = await claim_jobs(bounded_concurrency());
+    await Promise.all(jobs.map(job => process_legislative_version_job(job)));
   } catch (error) {
     console.error("[LegislativeVersionQueue] cycle_failed", {
       error_class: error instanceof Error ? error.name : "unknown",
@@ -334,9 +351,11 @@ export function start_legislative_version_queue_worker(): void {
   if (queue_timer || !queue_enabled()) return;
   queue_stopped = false;
   const interval_ms = bounded_poll_interval();
+  const concurrency = bounded_concurrency();
   console.log("[LegislativeVersionQueue] started", {
     worker_id: queue_worker_id,
     interval_ms,
+    concurrency,
     lease_minutes: QUEUE_LEASE_MINUTES,
   });
   void run_legislative_version_queue_cycle();
