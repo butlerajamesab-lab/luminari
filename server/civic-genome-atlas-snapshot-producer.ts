@@ -131,8 +131,12 @@ function enrich_bill_component(
     },
   ]);
 
+  const {
+    component_hash: _stale_component_hash,
+    ...component_without_hash
+  } = component;
   const basis = component_hash_basis({
-    ...component,
+    ...component_without_hash,
     value,
     source_bindings,
     source_verification,
