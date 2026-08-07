@@ -467,10 +467,10 @@ export default function Upload() {
       toast.success(`Upload complete: ${files.length} file(s) processed`);
     }
 
-    // Auto-trigger analysis for uploaded documents
+    // Auto-trigger deterministic processing for newly uploaded documents.
     try {
       await analyzeAll.mutateAsync({ caseId: currentCaseId });
-      toast.info("AI analysis started — documents will be processed in the background.");
+      toast.info("Deterministic document processing queued — supported extractors will process available content in the background.");
     } catch {
       // Non-critical — user can trigger manually
     }
@@ -500,7 +500,7 @@ export default function Upload() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Upload Evidence</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Drag files or click to select. Supports PDF, images, audio, and video.
+          Drag files or click to select. Any file type can be preserved as evidence; supported extractors process available content downstream.
         </p>
       </div>
 
@@ -535,12 +535,11 @@ export default function Upload() {
           type="file"
           multiple
           className="hidden"
-          accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.mp4,.mov,.webm,.mp3,.wav,.ogg,.m4a"
           onChange={(e) => e.target.files && handleFiles(e.target.files)}
         />
         <UploadIcon className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
         <p className="text-sm text-foreground font-medium">Drop files here or click to browse</p>
-        <p className="text-xs text-muted-foreground mt-1">PDF, images, audio, video — up to 100MB each</p>
+        <p className="text-xs text-muted-foreground mt-1">Any file type — up to 100MB each</p>
       </div>
 
       {/* File List */}
