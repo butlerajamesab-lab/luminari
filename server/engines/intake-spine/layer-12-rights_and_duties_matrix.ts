@@ -17,6 +17,12 @@ export interface ClaimCandidate {
   candidate_id: string;
   claim_type_id: string;
   claim_type_name: string;
+  /** The specific entity this candidate is bound to. Elements are evaluated only against this entity's evidence. */
+  subject_entity_id: string;
+  /** Relationship IDs that triggered this candidate (bound to subject) */
+  triggering_relationship_ids: string[];
+  /** Transition IDs that triggered this candidate (bound to subject) */
+  triggering_transition_ids: string[];
   triggering_facts: TriggeringFact[];
   matching_rule: string;
   required_elements: RequiredElement[];
@@ -229,93 +235,121 @@ export function processLayer12(input: Layer12Input): EngineResult<ClaimCandidate
   const candidates: ClaimCandidate[] = [];
   const normalizedJurisdiction = input.jurisdiction.toLowerCase().trim();
 
-  for (const claimDef of CLAIM_TYPE_REGISTRY) {
-        // Check jurisdiction applicability
-    // Federal claims are available everywhere, but state-specific claims require matching jurisdiction
-    const jurisdictionMatch = claimDef.jurisdictions.includes(normalizedJurisdiction);
-    if (!jurisdictionMatch) continue;
+  // SUBJECT-BOUND evaluation: iterate per entity, find relationships/transitions
+  // for THAT entity, evaluate elements only against that entity's evidence.
+  // This prevents Person A's relationship from combining with Person B's transition.
+  for (const entity of input.entities) {
+    // Skip non-person entities (orgs, addresses, contacts can't be claim subjects)
+    if (entity.type !== 'person') continue;
 
-        // Check if triggering relationship exists (required if declared)
-    let hasRelationship = true;
-    if (claimDef.triggering_relationship) {
-      hasRelationship = input.relationships.some(r => r.type === claimDef.triggering_relationship);
-      if (!hasRelationship) continue; // Required relationship missing — skip
-    }
-    // Check if triggering transition exists (required if declared)
-    let hasTransition = true;
-    let triggeringTransition: StateTransition | undefined;
-    if (claimDef.triggering_transition) {
-      triggeringTransition = input.transitions.find(t => t.to_state === claimDef.triggering_transition);
-      hasTransition = !!triggeringTransition;
-      if (!hasTransition) continue; // Required transition missing — skip
-    }
+    // Find relationships involving this entity
+    const entityRelationships = input.relationships.filter(
+      r => r.entity_a_id === entity.entity_id || r.entity_b_id === entity.entity_id
+    );
 
-    // Evaluate elements
-    const satisfiedElements: string[] = [];
-    const missingElements: string[] = [];
-    const requiredElements: RequiredElement[] = [];
+    // Find transitions attributed to this entity
+    const entityTransitions = input.transitions.filter(
+      t => t.entity_id === entity.entity_id
+    );
 
-    for (const elem of claimDef.required_elements) {
-      const satisfied = evaluateElement(elem.name, input);
-      requiredElements.push({
-        element_name: elem.name,
-        element_description: elem.description,
-        satisfied,
-        evidence_source: satisfied ? 'structured_evidence' : undefined,
-      });
-      if (satisfied) {
-        satisfiedElements.push(elem.name);
-      } else {
-        missingElements.push(elem.name);
+    for (const claimDef of CLAIM_TYPE_REGISTRY) {
+      // Check jurisdiction applicability
+      const jurisdictionMatch = claimDef.jurisdictions.includes(normalizedJurisdiction);
+      if (!jurisdictionMatch) continue;
+
+      // Check if triggering relationship exists FOR THIS ENTITY
+      let matchingRelationship: Relationship | undefined;
+      if (claimDef.triggering_relationship) {
+        matchingRelationship = entityRelationships.find(r => r.type === claimDef.triggering_relationship);
+        if (!matchingRelationship) continue; // This entity lacks the required relationship
       }
-    }
 
-    // Build triggering facts
-    const triggeringFacts: TriggeringFact[] = [];
-    if (hasRelationship && claimDef.triggering_relationship) {
-      const rel = input.relationships.find(r => r.type === claimDef.triggering_relationship);
-      if (rel) {
+      // Check if triggering transition exists FOR THIS ENTITY
+      let matchingTransition: StateTransition | undefined;
+      if (claimDef.triggering_transition) {
+        matchingTransition = entityTransitions.find(t => t.to_state === claimDef.triggering_transition);
+        if (!matchingTransition) continue; // This entity lacks the required transition
+      }
+
+      // Evaluate elements ONLY against this entity's evidence
+      const entityBoundInput: Layer12Input = {
+        ...input,
+        relationships: entityRelationships,
+        transitions: entityTransitions,
+      };
+
+      const satisfiedElements: string[] = [];
+      const missingElements: string[] = [];
+      const requiredElements: RequiredElement[] = [];
+
+      for (const elem of claimDef.required_elements) {
+        const satisfied = evaluateElement(elem.name, entityBoundInput);
+        requiredElements.push({
+          element_name: elem.name,
+          element_description: elem.description,
+          satisfied,
+          evidence_source: satisfied ? 'structured_evidence' : undefined,
+        });
+        if (satisfied) {
+          satisfiedElements.push(elem.name);
+        } else {
+          missingElements.push(elem.name);
+        }
+      }
+
+      // Build triggering facts
+      const triggeringFacts: TriggeringFact[] = [];
+      const triggeringRelationshipIds: string[] = [];
+      const triggeringTransitionIds: string[] = [];
+
+      if (matchingRelationship) {
         triggeringFacts.push({
           fact_description: `${claimDef.triggering_relationship} relationship detected`,
-          source_relationship_id: rel.relationship_id,
+          source_relationship_id: matchingRelationship.relationship_id,
+          source_entity_id: entity.entity_id,
         });
+        triggeringRelationshipIds.push(matchingRelationship.relationship_id);
       }
-    }
-    if (triggeringTransition) {
-      triggeringFacts.push({
-        fact_description: `${triggeringTransition.to_state} transition detected`,
-        source_transition_id: triggeringTransition.transition_id,
+      if (matchingTransition) {
+        triggeringFacts.push({
+          fact_description: `${matchingTransition.to_state} transition detected`,
+          source_transition_id: matchingTransition.transition_id,
+          source_entity_id: entity.entity_id,
+        });
+        triggeringTransitionIds.push(matchingTransition.transition_id);
+      }
+
+      // Determine applicability status
+      let status: ClaimCandidate['applicability_status'] = 'candidate';
+      if (input.filing_date && matchingTransition?.transition_date && claimDef.sol_days) {
+        const eventDate = new Date(matchingTransition.transition_date);
+        const filingDate = new Date(input.filing_date);
+        const daysSince = Math.round((filingDate.getTime() - eventDate.getTime()) / (24 * 3600 * 1000));
+        if (daysSince > claimDef.sol_days) {
+          status = 'expired';
+        }
+      }
+
+      // Candidate ID is now bound to subject + claim type + jurisdiction
+      candidates.push({
+        candidate_id: `cand_${computeHash(`${entity.entity_id}|${claimDef.id}|${input.jurisdiction}`)}`.substring(0, 16),
+        claim_type_id: claimDef.id,
+        claim_type_name: claimDef.name,
+        subject_entity_id: entity.entity_id,
+        triggering_relationship_ids: triggeringRelationshipIds,
+        triggering_transition_ids: triggeringTransitionIds,
+        triggering_facts: triggeringFacts,
+        matching_rule: `claim_registry:${claimDef.id}`,
+        required_elements: requiredElements,
+        missing_elements: missingElements,
+        satisfied_elements: satisfiedElements,
+        jurisdiction: input.jurisdiction,
+        statute_of_limitations_days: claimDef.sol_days,
+        effective_date: null, // Would come from governed Rosetta/procedural registry in production
+        authoritative_source: claimDef.authoritative_source,
+        applicability_status: status,
       });
     }
-
-    // Determine applicability status
-    let status: ClaimCandidate['applicability_status'] = 'candidate';
-    if (!jurisdictionMatch) {
-      status = 'jurisdiction_mismatch';
-    } else if (input.filing_date && triggeringTransition?.transition_date && claimDef.sol_days) {
-      const eventDate = new Date(triggeringTransition.transition_date);
-      const filingDate = new Date(input.filing_date);
-      const daysSince = Math.round((filingDate.getTime() - eventDate.getTime()) / (24 * 3600 * 1000));
-      if (daysSince > claimDef.sol_days) {
-        status = 'expired';
-      }
-    }
-
-    candidates.push({
-      candidate_id: `cand_${computeHash(`${claimDef.id}|${input.jurisdiction}`)}`.substring(0, 16),
-      claim_type_id: claimDef.id,
-      claim_type_name: claimDef.name,
-      triggering_facts: triggeringFacts,
-      matching_rule: `claim_registry:${claimDef.id}`,
-      required_elements: requiredElements,
-      missing_elements: missingElements,
-      satisfied_elements: satisfiedElements,
-      jurisdiction: input.jurisdiction,
-      statute_of_limitations_days: claimDef.sol_days,
-      effective_date: null, // Would come from Rosetta in production
-      authoritative_source: claimDef.authoritative_source,
-      applicability_status: status,
-    });
   }
 
   const sorted = candidates.sort((a, b) => a.candidate_id.localeCompare(b.candidate_id));

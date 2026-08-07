@@ -145,17 +145,19 @@ async function parsePdf(
   bytes: Buffer,
   artifact_key: string
 ): Promise<{ text: string; spans: TextSpan[] }> {
-  const pdfParse = (await import('pdf-parse')).default;
-  const result = await pdfParse(bytes);
+  // pdf-parse 2.4.5 uses class-based API:
+  // new PDFParse({ data }) → getText() → destroy()
+  const { PDFParse } = await import('pdf-parse');
+  const parser = new PDFParse({ data: new Uint8Array(bytes) });
+  const result = await parser.getText();
+  await parser.destroy();
 
   const spans: TextSpan[] = [];
   let offset = 0;
 
-  // pdf-parse separates pages with form-feed characters
-  const pageTexts = result.text.split(/\f/);
-
-  for (let pageIdx = 0; pageIdx < pageTexts.length; pageIdx++) {
-    const pageText = pageTexts[pageIdx];
+  // getText() returns { pages: [{num, text}], text: string, total: number }
+  for (let pageIdx = 0; pageIdx < result.pages.length; pageIdx++) {
+    const pageText = result.pages[pageIdx].text;
     const paragraphs = pageText.split(/\n\n+/);
 
     for (let paraIdx = 0; paraIdx < paragraphs.length; paraIdx++) {
@@ -198,21 +200,31 @@ async function parseDocx(
   const xmlContent = await docXml.async('string');
 
   // Extract text from XML paragraph elements (<w:p>...</w:p>)
+  // Parse text/tab/break tokens in XML DOCUMENT ORDER.
+  // <w:t> = text content, <w:tab/> = tab, <w:br/> = line break
+  // These must be processed as they appear in the XML, not post-hoc.
   const paragraphs: string[] = [];
   const pRegex = /<w:p[^>]*>([\s\S]*?)<\/w:p>/g;
-  const tRegex = /<w:t[^>]*>([\s\S]*?)<\/w:t>/g;
+  // Token regex matches text runs, tabs, and breaks in document order
+  const tokenRegex = /<w:t[^>]*>([\s\S]*?)<\/w:t>|<w:tab\s*\/>|<w:br\s*\/>/g;
 
   let pMatch: RegExpExecArray | null;
   while ((pMatch = pRegex.exec(xmlContent)) !== null) {
     const pContent = pMatch[1];
     let paraText = '';
-    let tMatch: RegExpExecArray | null;
-    tRegex.lastIndex = 0;
-    while ((tMatch = tRegex.exec(pContent)) !== null) {
-      paraText += decodeXmlEntities(tMatch[1]);
+    let tokenMatch: RegExpExecArray | null;
+    tokenRegex.lastIndex = 0;
+    while ((tokenMatch = tokenRegex.exec(pContent)) !== null) {
+      const fullMatch = tokenMatch[0];
+      if (fullMatch.startsWith('<w:t')) {
+        // Text run — decode XML entities
+        paraText += decodeXmlEntities(tokenMatch[1]);
+      } else if (fullMatch.includes('w:tab')) {
+        paraText += '\t';
+      } else if (fullMatch.includes('w:br')) {
+        paraText += '\n';
+      }
     }
-    // Handle Word tab characters (<w:tab/>) and line breaks (<w:br/>)
-    paraText = paraText.replace(/<w:tab\/>/g, '\t').replace(/<w:br\/>/g, '\n');
     if (paraText.trim().length > 0) {
       paragraphs.push(paraText);
     }

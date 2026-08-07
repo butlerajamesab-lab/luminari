@@ -20,11 +20,41 @@ export function canonicalStringify(val: unknown): string {
 
 /**
  * SHA-256 hash of the canonical JSON representation.
- * Used for input_hash and output_hash computation.
+ * Used for output_hash computation and data identity.
  */
 export function computeHash(val: unknown): string {
   const canonical = canonicalStringify(val);
   return crypto.createHash('sha256').update(canonical, 'utf-8').digest('hex');
+}
+
+/**
+ * Compute the execution-contract input_hash.
+ * 
+ * The live unique identity for a sealed layer run is:
+ *   session + layer_name + layer_version + input_hash
+ * 
+ * Therefore input_hash must include the full execution envelope so that
+ * changing ONLY a rule version produces a different run identity:
+ *   canonical_input + layer_version + rule_version + rule_manifest_hash + parser_version + canonicalization_version
+ * 
+ * This prevents collisions when the same data is re-processed with updated rules.
+ */
+export function computeExecutionHash(envelope: {
+  canonical_input: unknown;
+  layer_version: string;
+  rule_version: string;
+  rule_manifest_hash?: string;
+  parser_version: string;
+  canonicalization_version: string;
+}): string {
+  return computeHash({
+    canonical_input: envelope.canonical_input,
+    layer_version: envelope.layer_version,
+    rule_version: envelope.rule_version,
+    rule_manifest_hash: envelope.rule_manifest_hash || null,
+    parser_version: envelope.parser_version,
+    canonicalization_version: envelope.canonicalization_version,
+  });
 }
 
 // ─── Engine Contract Types ───────────────────────────────────────────────────
@@ -69,4 +99,8 @@ export type FactStatus =
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-export const CANONICALIZATION_VERSION = '2.0.0';
+/**
+ * Named canonicalizer matching the live intake_layer_runs contract.
+ * NOT a bare semver — the live spine accepts these exact strings.
+ */
+export const CANONICALIZATION_VERSION = 'luminari.intake.canonical-json.v2';
