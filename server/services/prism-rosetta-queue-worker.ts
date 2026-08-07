@@ -76,6 +76,19 @@ function safe_error_code(error: unknown): string {
     .slice(0, 256) || "unknown_queue_failure";
 }
 
+function known_transient_failure_class(error_code: string): string | null {
+  if (/^prism_rosetta_source_snapshot_timeout:\d+$/.test(error_code)) {
+    return "timeout";
+  }
+  if (error_code.includes("_pool_acquire_timed_out_after_")) {
+    return "pool_acquire_timeout";
+  }
+  if (error_code.includes("_query_timed_out_after_")) {
+    return "query_timeout";
+  }
+  return null;
+}
+
 function deterministic_contract_failure(error_code: string): boolean {
   return [
     "prism_rosetta_assembly_",
@@ -96,8 +109,11 @@ export function classify_prism_queue_failure(input: {
 }): prism_queue_failure_decision {
   const error_code = safe_error_code(input.error);
   const failure_number = input.prior_attempt_count + 1;
-  let failure_class = "unknown";
-  let terminal = deterministic_contract_failure(error_code);
+  const known_transient_class = known_transient_failure_class(error_code);
+  let failure_class = known_transient_class ?? "unknown";
+  let terminal = known_transient_class
+    ? false
+    : deterministic_contract_failure(error_code);
 
   if (input.error instanceof PrismBoundaryError) {
     failure_class = input.error.failure_class;
@@ -106,7 +122,11 @@ export function classify_prism_queue_failure(input: {
       "request_id_conflict",
       "permanent_upstream",
     ].includes(input.error.failure_class);
-  } else if (!terminal && failure_number >= UNKNOWN_FAILURE_LIMIT) {
+  } else if (
+    known_transient_class === null
+    && !terminal
+    && failure_number >= UNKNOWN_FAILURE_LIMIT
+  ) {
     terminal = true;
   }
 
