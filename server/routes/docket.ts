@@ -19,6 +19,7 @@ const warm_next_batch_default_limit = 5;
 const warm_next_batch_max_limit = 10;
 
 export const docket_router = Router();
+const state_refresh_in_flight = new Map<string, Promise<void>>();
 
 type docket_state_cache_row = {
   id?: string;
@@ -59,7 +60,7 @@ type civic_genome_projection_status =
   | {
       ok: true;
       projected: false;
-      reason: "cache_fresh_no_projection";
+      reason: "cache_fresh_no_projection" | "cache_stale_refreshing";
     };
 
 type docket_state_refresh_result = {
@@ -378,6 +379,34 @@ const serialize_error = (error: unknown): string => {
   return "unknown_docket_room_error";
 };
 
+const schedule_state_refresh = (state: string): void => {
+  if (state_refresh_in_flight.has(state)) return;
+
+  const refresh = refresh_state_cache(state)
+    .then(result => {
+      console.log("[Docket] background_state_refresh_completed", {
+        state,
+        source: result.source,
+        bill_count: result.row.bill_count,
+        fetched_at: result.row.fetched_at,
+        projection_state: result.civic_genome_projection.projected ? "projected" : "not_projected",
+      });
+    })
+    .catch(error => {
+      console.error("[Docket] background_state_refresh_failed", {
+        state,
+        error: serialize_error(error),
+      });
+    })
+    .finally(() => {
+      if (state_refresh_in_flight.get(state) === refresh) {
+        state_refresh_in_flight.delete(state);
+      }
+    });
+
+  state_refresh_in_flight.set(state, refresh);
+};
+
 docket_router.get("/jurisdictions", (_req, res) => {
   return res.json({
     ok: true,
@@ -484,8 +513,32 @@ docket_router.post("/warm-next-batch", async (req, res) => {
 docket_router.get("/state", async (req, res) => {
   try {
     const state = normalize_state_code(req.query.state);
-    const refreshed = await refresh_state_cache(state);
+    const cached = await read_state_cache(state);
 
+    if (cached) {
+      const fresh = is_fresh(cached.fetched_at);
+      if (!fresh) schedule_state_refresh(state);
+
+      return res.json({
+        ok: true,
+        source: fresh ? "cache" : "cache_stale_refreshing",
+        state,
+        session_id: cached.session_id,
+        session_title: cached.session_title,
+        bill_count: cached.bill_count,
+        fetched_at: cached.fetched_at,
+        civic_genome_projection: {
+          ok: true,
+          projected: false,
+          reason: fresh ? "cache_fresh_no_projection" : "cache_stale_refreshing",
+        },
+        bills: cached.bills,
+      });
+    }
+
+    // No cached source exists. The first acquisition must still retrieve the
+    // official provider list; subsequent reads become cache-first immediately.
+    const refreshed = await refresh_state_cache(state);
     return res.json({
       ok: true,
       source: refreshed.source,

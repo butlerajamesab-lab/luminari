@@ -23,6 +23,7 @@ import { get_genome_bill_by_source_id } from "../civic-genome-source-id";
 import { project_docket_cache_to_civic_genome } from "../civic-genome-projection";
 import { resolve_or_assemble_docket_bill } from "../civic-genome-single-bill-assembly";
 import { process_docket_bill_through_rosetta_and_genome } from "../civic-genome-rosetta-extraction";
+import { ingest_docket_bill_to_rosetta_source as create_rosetta_source_handoff } from "../civic-genome-rosetta-source-ingestion";
 import {
   get_latest_rosetta_law_view_by_source_document,
   get_rosetta_law_view_by_extraction_run,
@@ -68,9 +69,11 @@ export const civicGenomeRouter = router({
     .input(z.object({ source_bill_id: source_bill_id_param }))
     .mutation(async ({ input }) => resolve_or_assemble_docket_bill(input.source_bill_id)),
 
+  // This action is deliberately source-only. The UI label is "Create Rosetta
+  // source handoff"; it must not synchronously run extraction + Genome assembly.
   ingest_docket_bill_to_rosetta_source: adminProcedure
     .input(z.object({ source_bill_id: source_bill_id_param }))
-    .mutation(async ({ input }) => process_rosetta_pipeline_once(input.source_bill_id)),
+    .mutation(async ({ input }) => create_rosetta_source_handoff(input.source_bill_id)),
 
   process_docket_bill_through_rosetta: adminProcedure
     .input(z.object({ source_bill_id: source_bill_id_param }))
