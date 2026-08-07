@@ -1,0 +1,36 @@
+name: Lighthouse Case Contract
+
+on:
+  pull_request:
+    paths:
+      - "server/db.ts"
+      - "server/db-legacy.ts"
+      - "server/case-contract-compat.ts"
+      - "server/case-contract-compat.test.ts"
+      - "supabase/migrations/20260807053653_restore_case_identity_bridge_contract.sql"
+      - "supabase/verification/20260807053653_restore_case_identity_bridge_contract_verify.sql"
+      - ".github/workflows/lighthouse-case-contract.yml"
+  push:
+    branches: [main]
+    paths:
+      - "server/db.ts"
+      - "server/db-legacy.ts"
+      - "server/case-contract-compat.ts"
+      - "server/case-contract-compat.test.ts"
+      - "supabase/migrations/20260807053653_restore_case_identity_bridge_contract.sql"
+      - "supabase/verification/20260807053653_restore_case_identity_bridge_contract_verify.sql"
+      - ".github/workflows/lighthouse-case-contract.yml"
+
+jobs:
+  case-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm exec vitest run server/case-contract-compat.test.ts
+      - run: pnpm run build
