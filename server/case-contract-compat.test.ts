@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 const facade = readFileSync(new URL("./db.ts", import.meta.url), "utf8");
 const compat = readFileSync(new URL("./case-contract-compat.ts", import.meta.url), "utf8");
 const migration = readFileSync(
-  new URL("../supabase/migrations/20260807053000_restore_case_identity_bridge_contract.sql", import.meta.url),
+  new URL("../supabase/migrations/20260807053653_restore_case_identity_bridge_contract.sql", import.meta.url),
   "utf8",
 );
 
