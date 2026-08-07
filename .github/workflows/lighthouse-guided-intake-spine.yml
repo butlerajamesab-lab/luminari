@@ -6,8 +6,8 @@ on:
       - "client/src/pages/GuidedIntake.tsx"
       - "client/src/pages/GuidedIntakeNew.tsx"
       - "server/guided-intake-spine-binding.test.ts"
-      - "supabase/migrations/20260807055000_bind_cases_to_universal_intake_spine.sql"
-      - "supabase/verification/20260807055000_bind_cases_to_universal_intake_spine_verify.sql"
+      - "supabase/migrations/20260807055726_bind_cases_to_universal_intake_spine.sql"
+      - "supabase/verification/20260807055726_bind_cases_to_universal_intake_spine_verify.sql"
       - ".github/workflows/lighthouse-guided-intake-spine.yml"
   push:
     branches: [main]
@@ -15,8 +15,8 @@ on:
       - "client/src/pages/GuidedIntake.tsx"
       - "client/src/pages/GuidedIntakeNew.tsx"
       - "server/guided-intake-spine-binding.test.ts"
-      - "supabase/migrations/20260807055000_bind_cases_to_universal_intake_spine.sql"
-      - "supabase/verification/20260807055000_bind_cases_to_universal_intake_spine_verify.sql"
+      - "supabase/migrations/20260807055726_bind_cases_to_universal_intake_spine.sql"
+      - "supabase/verification/20260807055726_bind_cases_to_universal_intake_spine_verify.sql"
       - ".github/workflows/lighthouse-guided-intake-spine.yml"
 
 jobs:

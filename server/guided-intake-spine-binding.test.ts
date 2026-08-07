@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 const routedSurface = readFileSync(new URL("../client/src/pages/GuidedIntakeNew.tsx", import.meta.url), "utf8");
 const guidedIntake = readFileSync(new URL("../client/src/pages/GuidedIntake.tsx", import.meta.url), "utf8");
 const migration = readFileSync(
-  new URL("../supabase/migrations/20260807055000_bind_cases_to_universal_intake_spine.sql", import.meta.url),
+  new URL("../supabase/migrations/20260807055726_bind_cases_to_universal_intake_spine.sql", import.meta.url),
   "utf8",
 );
 
