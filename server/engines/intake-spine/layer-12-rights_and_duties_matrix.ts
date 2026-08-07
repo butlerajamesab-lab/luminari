@@ -63,6 +63,13 @@ export const LAYER_VERSION = '2.0.0';
 export const RULE_VERSION = '2.0.0';
 
 /**
+ * Hash of the rule manifest for this layer.
+ * MANDATORY for governed engines. The orchestrator MUST fail closed if this is missing.
+ * Changing rule code without changing this hash is a contract violation.
+ */
+export const RULE_MANIFEST_HASH = computeHash({ layer: 'rights_and_duties_matrix', rule_version: RULE_VERSION, claim_count: 8, source: 'fixture_starter_rules' });
+
+/**
  * Claim Type Registry
  * 
  * This is the declared, versioned registry of claim types.
@@ -242,10 +249,19 @@ export function processLayer12(input: Layer12Input): EngineResult<ClaimCandidate
     // Skip non-person entities (orgs, addresses, contacts can't be claim subjects)
     if (entity.type !== 'person') continue;
 
-    // Find relationships involving this entity
-    const entityRelationships = input.relationships.filter(
-      r => r.entity_a_id === entity.entity_id || r.entity_b_id === entity.entity_id
-    );
+    // Find relationships involving this entity WHERE the entity is in the SUBJECT role
+    // (employee, tenant, insured, complainant, debtor, client)
+    // A person who is the EMPLOYER side cannot qualify as the employee subject.
+    const entityRelationships = input.relationships.filter(r => {
+      if (r.entity_a_id === entity.entity_id) {
+        // Entity is in position A — check if role_a is the subject role
+        return isSubjectRole(r.role_a);
+      } else if (r.entity_b_id === entity.entity_id) {
+        // Entity is in position B — check if role_b is the subject role
+        return isSubjectRole(r.role_b);
+      }
+      return false;
+    });
 
     // Find transitions attributed to this entity
     const entityTransitions = input.transitions.filter(
@@ -414,4 +430,20 @@ function evaluateElement(elementName: string, input: Layer12Input): boolean {
     default:
       return false;
   }
+}
+
+// ─── Role Validation ─────────────────────────────────────────────────────────
+
+/**
+ * Subject roles are the subordinate/affected party in a relationship.
+ * Only these roles can be claim subjects.
+ * A person who is the 'employer', 'landlord', 'insurer', 'agency', or 'creditor'
+ * cannot qualify as the employee/tenant/insured/complainant/debtor subject.
+ */
+const SUBJECT_ROLES = new Set([
+  'employee', 'tenant', 'insured', 'complainant', 'debtor', 'client', 'family_member', 'party'
+]);
+
+function isSubjectRole(role: string): boolean {
+  return SUBJECT_ROLES.has(role);
 }

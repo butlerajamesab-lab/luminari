@@ -31,6 +31,13 @@ export const LAYER_VERSION = '2.0.0';
 export const RULE_VERSION = '2.0.0';
 
 /**
+ * Hash of the rule manifest for this layer.
+ * MANDATORY for governed engines. The orchestrator MUST fail closed if this is missing.
+ * Changing rule code without changing this hash is a contract violation.
+ */
+export const RULE_MANIFEST_HASH = computeHash({ layer: 'pattern_registry', rule_version: RULE_VERSION, rule_count: 4 });
+
+/**
  * Pattern Rule Manifest
  * 
  * Each rule declares:

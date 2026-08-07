@@ -34,6 +34,13 @@ export const LAYER_VERSION = '2.0.0';
 export const RULE_VERSION = '2.0.0';
 
 /**
+ * Hash of the rule manifest for this layer.
+ * MANDATORY for governed engines. The orchestrator MUST fail closed if this is missing.
+ * Changing rule code without changing this hash is a contract violation.
+ */
+export const RULE_MANIFEST_HASH = computeHash({ layer: 'state_timeline', rule_version: RULE_VERSION, vocabulary_count: 12 });
+
+/**
  * State-change verb vocabulary.
  * Each entry maps a verb/phrase to a to_state.
  * from_state is NEVER inferred — only populated if explicitly stated in source.

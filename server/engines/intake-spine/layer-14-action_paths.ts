@@ -6,6 +6,8 @@ import { StateTransition } from './layer-9-state_timeline';
 
 export interface ActionPath {
   path_id: string;
+  /** The entity this action path is bound to (from the claim candidate) */
+  subject_entity_id: string;
   claim_type_id: string;
   claim_type_name: string;
   /**
@@ -38,6 +40,13 @@ export interface Layer14Input {
 
 export const LAYER_VERSION = '2.0.0';
 export const RULE_VERSION = '2.0.0';
+
+/**
+ * Hash of the rule manifest for this layer.
+ * MANDATORY for governed engines. The orchestrator MUST fail closed if this is missing.
+ * Changing rule code without changing this hash is a contract violation.
+ */
+export const RULE_MANIFEST_HASH = computeHash({ layer: 'action_paths', rule_version: RULE_VERSION, venue_count: 8, source: 'fixture_starter_rules' });
 
 // ─── Engine ──────────────────────────────────────────────────────────────────
 
@@ -120,7 +129,8 @@ export function processLayer14(input: Layer14Input): EngineResult<ActionPath[]> 
     }
 
     paths.push({
-      path_id: `path_${computeHash(`${candidate.claim_type_id}|${input.filing_date}`)}`.substring(0, 16),
+      path_id: `path_${computeHash(`${candidate.subject_entity_id}|${candidate.claim_type_id}|${input.filing_date}`)}`.substring(0, 16),
+      subject_entity_id: candidate.subject_entity_id,
       claim_type_id: candidate.claim_type_id,
       claim_type_name: candidate.claim_type_name,
       elements_satisfied,

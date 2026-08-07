@@ -43,7 +43,7 @@ export function computeExecutionHash(envelope: {
   canonical_input: unknown;
   layer_version: string;
   rule_version: string;
-  rule_manifest_hash?: string;
+  rule_manifest_hash: string;
   parser_version: string;
   canonicalization_version: string;
 }): string {
@@ -51,7 +51,7 @@ export function computeExecutionHash(envelope: {
     canonical_input: envelope.canonical_input,
     layer_version: envelope.layer_version,
     rule_version: envelope.rule_version,
-    rule_manifest_hash: envelope.rule_manifest_hash || null,
+    rule_manifest_hash: envelope.rule_manifest_hash,
     parser_version: envelope.parser_version,
     canonicalization_version: envelope.canonicalization_version,
   });

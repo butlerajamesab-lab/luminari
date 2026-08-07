@@ -20,6 +20,14 @@ export interface Relationship {
   entity_b_id: string;
   type: RelationshipType;
   direction: 'a_to_b' | 'b_to_a' | 'bidirectional';
+  /**
+   * Semantic roles derived from type + direction.
+   * For employer_employee with direction b_to_a: role_a = 'employee', role_b = 'employer'
+   * For employer_employee with direction a_to_b: role_a = 'employer', role_b = 'employee'
+   * Layer 12 uses these to verify a person is on the correct SIDE of the relationship.
+   */
+  role_a: string;
+  role_b: string;
   source_artifact_key: string;
   source_span_text: string;
   marker_text: string;
@@ -35,6 +43,13 @@ export interface Layer7Input {
 
 export const LAYER_VERSION = '2.0.0';
 export const RULE_VERSION = '2.0.0';
+
+/**
+ * Hash of the rule manifest for this layer.
+ * MANDATORY for governed engines. The orchestrator MUST fail closed if this is missing.
+ * Changing rule code without changing this hash is a contract violation.
+ */
+export const RULE_MANIFEST_HASH = computeHash({ layer: 'relationship_graph', rule_version: RULE_VERSION, marker_count: 18, marker_types: ['employer_employee','landlord_tenant','agency_complainant','insurer_insured','creditor_debtor','legal_representative_client','family','opposing_party'] });
 
 /**
  * Relationship markers with their types and directionality.
@@ -167,12 +182,15 @@ export function processLayer7(input: Layer7Input): EngineResult<Relationship[]> 
               
               if (!seen.has(relKey) && !seen.has(relKeyReverse)) {
                 seen.add(relKey);
+                const roles = getSemanticRoles(marker.type, marker.direction);
                 relationships.push({
                   relationship_id: `rel_${computeHash(relKey)}`.substring(0, 12),
                   entity_a_id: firstEntity.entity.entity_id,
                   entity_b_id: secondEntity.entity.entity_id,
                   type: marker.type,
                   direction: marker.direction,
+                  role_a: roles.role_a,
+                  role_b: roles.role_b,
                   source_artifact_key: artifact.artifact_key,
                   source_span_text: spanText,
                   marker_text: markerMatch[0],
@@ -202,4 +220,37 @@ export function processLayer7(input: Layer7Input): EngineResult<Relationship[]> 
     unresolved_dependencies: unresolved,
     is_sealed: false,
   };
+}
+
+// ─── Semantic Role Resolution ────────────────────────────────────────────────
+
+/**
+ * Derives semantic roles from relationship type and direction.
+ * 
+ * Convention: for directional relationships, the "subject" role is the
+ * subordinate/affected party (employee, tenant, insured, complainant, debtor).
+ * 
+ * direction 'a_to_b' means: entity_a is the AUTHORITY, entity_b is the SUBJECT
+ * direction 'b_to_a' means: entity_a is the SUBJECT, entity_b is the AUTHORITY
+ * direction 'bidirectional' means: both have the same role
+ */
+function getSemanticRoles(type: RelationshipType, direction: 'a_to_b' | 'b_to_a' | 'bidirectional'): { role_a: string; role_b: string } {
+  const ROLE_MAP: Record<RelationshipType, { authority: string; subject: string }> = {
+    employer_employee: { authority: 'employer', subject: 'employee' },
+    landlord_tenant: { authority: 'landlord', subject: 'tenant' },
+    agency_complainant: { authority: 'agency', subject: 'complainant' },
+    insurer_insured: { authority: 'insurer', subject: 'insured' },
+    creditor_debtor: { authority: 'creditor', subject: 'debtor' },
+    legal_representative_client: { authority: 'representative', subject: 'client' },
+    family: { authority: 'family_member', subject: 'family_member' },
+    opposing_party: { authority: 'party', subject: 'party' },
+  };
+  const roles = ROLE_MAP[type];
+  if (direction === 'a_to_b') {
+    return { role_a: roles.authority, role_b: roles.subject };
+  } else if (direction === 'b_to_a') {
+    return { role_a: roles.subject, role_b: roles.authority };
+  } else {
+    return { role_a: roles.subject, role_b: roles.subject };
+  }
 }
