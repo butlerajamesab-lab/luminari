@@ -27,6 +27,7 @@ import { loadPipelineRegistry } from "../pipeline-resolver";
 import { loadLensRegistry } from "../lens-engine";
 import { serveStatic, setupVite } from "./vite";
 import { livenessPayload, SUPABASE_PROJECT } from "./health-diagnostics";
+import { getPool } from "../db";
 import { initializeScheduler } from "../ingestion/scheduler";
 import { run_with_database_request_context } from "../db-request-context";
 import { run_rosetta_control_repair_from_environment } from "../civic-genome-rosetta-control-repair";
@@ -116,12 +117,43 @@ function registerSlowRequestDiagnostics(app: express.Express) {
   });
 }
 
+async function buildAdminDatabaseDiagnostic() {
+  const pool = getPool();
+  const [version_result, table_result, view_result, fk_result] = await Promise.all([
+    pool.query("select version() as version"),
+    pool.query("select count(*)::int as total from information_schema.tables where table_schema = 'public' and table_type = 'BASE TABLE'"),
+    pool.query("select count(*)::int as total from information_schema.views where table_schema = 'public'"),
+    pool.query(`select count(*)::int as total
+      from information_schema.table_constraints
+      where table_schema = 'public' and constraint_type = 'FOREIGN KEY'`),
+  ]);
+
+  const database_version = String(version_result.rows[0]?.version ?? "").split(" ").slice(0, 2).join(" ") || null;
+  const public_tables = Number(table_result.rows[0]?.total ?? 0);
+  const views = Number(view_result.rows[0]?.total ?? 0);
+  const foreign_keys = Number(fk_result.rows[0]?.total ?? 0);
+
+  return {
+    ok: true,
+    database: "connected",
+    database_url: process.env.DATABASE_URL ? "configured" : "missing",
+    database_version,
+    public_tables,
+    db_diagnostic: {
+      tables: { total: public_tables },
+      views: { total: views },
+      foreign_keys: { total: foreign_keys },
+      errors: [],
+    },
+    supabase_project: SUPABASE_PROJECT,
+    timestamp: new Date().toISOString(),
+  };
+}
+
 async function startServer() {
   const app = express();
   const server = createServer(app);
 
-  // Start timing before any route-specific or body-parsing work so slow uploads,
-  // parse failures, and prematurely closed requests remain observable.
   registerSlowRequestDiagnostics(app);
   app.use((req, _res, next) => {
     run_with_database_request_context({
@@ -154,20 +186,36 @@ async function startServer() {
     res.json({ ok: true, ...runtime_fingerprint });
   });
 
-  // Deep schema inventories and pool diagnostics previously exposed table,
-  // view, foreign-key, route, and connection-state data without authentication.
-  // The administrative diagnostic remains available through the admin-only
-  // tRPC `system.health` procedure. Legacy public endpoints fail closed.
-  app.get(["/api/db-diagnostic", "/api/system/health"], (_req, res) => {
+  // Mission Control depends on a deep database diagnostic. Keep the endpoint,
+  // but require administrator authentication instead of making it public.
+  app.get("/api/db-diagnostic", requireExpressAdmin, async (_req, res) => {
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
-    res.status(404).json({
-      ok: false,
-      error: "diagnostic_not_public",
-    });
+    try {
+      res.json(await buildAdminDatabaseDiagnostic());
+    } catch (error) {
+      res.status(503).json({
+        ok: false,
+        database: "unreachable",
+        database_url: process.env.DATABASE_URL ? "configured" : "missing",
+        database_version: null,
+        public_tables: null,
+        db_diagnostic: {
+          tables: { total: null },
+          views: { total: null },
+          foreign_keys: { total: null },
+          errors: [{ code: "database_diagnostic_failed", message: error instanceof Error ? error.message.slice(0, 300) : String(error).slice(0, 300) }],
+        },
+        supabase_project: SUPABASE_PROJECT,
+        timestamp: new Date().toISOString(),
+      });
+    }
   });
 
-  app.use("/api/ai", aiInspectRouter);
+  // System visibility is read-only structural metadata, but it is operational
+  // data and therefore remains admin-only in production.
   app.use("/api/system", requireExpressAdmin, systemVisibilityRouter);
+
+  app.use("/api/ai", aiInspectRouter);
   app.use("/api/conveyor", requireExpressAdmin, conveyorRouter);
   app.use("/api/civic-map", civicMapRouter);
   app.use("/api/atlas", atlasProxyRouter);
