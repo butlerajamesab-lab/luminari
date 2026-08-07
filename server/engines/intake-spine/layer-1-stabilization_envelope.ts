@@ -1,55 +1,61 @@
-import { computeHash, EngineResult } from './utils';
+import { computeHash, EngineResult, UnresolvedDependency, CANONICALIZATION_VERSION } from './utils';
 
 export interface StabilizationInput {
-  urgent_matters: string[];
-  deadlines: Array<{
-    description: string;
-    date: string;
-    days_out: number;
-  }>;
-  irreversible_events: string[];
-  at_risk_services: string[];
+  urgent_situation?: string;
+  deadlines: Array<{ description: string; date: string; is_irreversible: boolean }>;
+  essential_services_at_risk: string[];
   evidence_to_preserve: string[];
   communication_limits: string[];
   support_people: string[];
-  next_action: string;
-  can_wait: string[];
+  least_burdensome_action?: string;
+  what_can_wait: string[];
 }
 
-export interface StabilizationOutput {
-  checkpoint_key: string;
-  snapshot: StabilizationInput;
+export interface StabilizationSnapshot {
+  deadlines_sorted: Array<{ description: string; date: string; is_irreversible: boolean; days_from_now: number | null }>;
+  irreversible_events: Array<{ description: string; date: string }>;
+  at_risk_services: string[];
+  preservation_actions: string[];
 }
 
-export const LAYER_VERSION = '1.0.0';
-export const RULE_VERSION = '1.0.0';
+export const LAYER_VERSION = '2.0.0';
+export const RULE_VERSION = '2.0.0';
 
-export function processLayer1(input: StabilizationInput): EngineResult<StabilizationOutput> {
-  const input_hash = computeHash(input);
-  
-  // Deterministic Logic: Pure structured capture with date-proximity sorting.
-  const sortedDeadlines = [...input.deadlines].sort((a, b) => {
-    return new Date(a.date).getTime() - new Date(b.date).getTime();
-  });
+export function processLayer1(input: StabilizationInput, as_of: string): EngineResult<StabilizationSnapshot> {
+  const input_hash = computeHash({ input, as_of });
+  const unresolved: UnresolvedDependency[] = [];
+  const asOfDate = new Date(as_of);
 
-  const data: StabilizationOutput = {
-    checkpoint_key: `stab_${input_hash.substring(0, 8)}`,
-    snapshot: {
-      ...input,
-      deadlines: sortedDeadlines,
-    },
+  const deadlines_sorted = input.deadlines
+    .map(d => {
+      const deadlineDate = new Date(d.date);
+      const days = isNaN(deadlineDate.getTime()) ? null : Math.round((deadlineDate.getTime() - asOfDate.getTime()) / (24 * 3600 * 1000));
+      return { ...d, days_from_now: days };
+    })
+    .sort((a, b) => {
+      if (a.days_from_now === null && b.days_from_now === null) return 0;
+      if (a.days_from_now === null) return 1;
+      if (b.days_from_now === null) return -1;
+      return a.days_from_now - b.days_from_now;
+    });
+
+  const data: StabilizationSnapshot = {
+    deadlines_sorted,
+    irreversible_events: input.deadlines.filter(d => d.is_irreversible).map(d => ({ description: d.description, date: d.date })),
+    at_risk_services: input.essential_services_at_risk,
+    preservation_actions: input.evidence_to_preserve,
   };
 
-  const output_hash = computeHash(data);
-
   return {
+    layer_name: 'stabilization_envelope',
     layer_version: LAYER_VERSION,
     rule_version: RULE_VERSION,
-    canonicalization_version: '1.0.0',
+    parser_version: 'N/A',
+    canonicalization_version: CANONICALIZATION_VERSION,
     input_hash,
-    output_hash,
+    output_hash: computeHash(data),
     data,
-    unresolved_dependencies: [],
+    unresolved_dependencies: unresolved,
     is_sealed: false,
   };
 }

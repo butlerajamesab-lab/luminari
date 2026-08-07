@@ -1,62 +1,103 @@
-import { computeHash, EngineResult } from './utils';
-import { ParsedArtifact } from './parsing-substrate';
+import { computeHash, EngineResult, FactStatus, UnresolvedDependency, CANONICALIZATION_VERSION } from './utils';
+import { ParsedArtifact, TextSpan } from './parsing-substrate';
 
 export interface ChronologyEvent {
-  date: string;
-  source_artifact_id: string;
-  source_context: string;
+  event_id: string;
+  date: string | null;
+  date_precision: 'exact' | 'month' | 'year' | 'unknown';
   event_text: string;
-  actor: string | 'unknown';
-  verification_state: 'user_reported' | 'document_stated';
+  actor: string | null;
+  source_artifact_key: string;
+  source_span_offset: number;
+  verification_status: FactStatus;
 }
 
-export const LAYER_VERSION = '1.0.0';
-export const RULE_VERSION = '1.0.0';
+export interface Layer4Input {
+  artifacts: ParsedArtifact[];
+}
 
-// Simple regex for dates: YYYY-MM-DD or MM/DD/YYYY
-const DATE_REGEX = /(\d{4}-\d{2}-\d{2})|(\d{1,2}\/\d{1,2}\/\d{4})/g;
+export const LAYER_VERSION = '2.0.0';
+export const RULE_VERSION = '2.0.0';
 
-export function processLayer4(artifacts: ParsedArtifact[]): EngineResult<ChronologyEvent[]> {
-  const input_hash = computeHash(artifacts.map(a => a.sha256));
+const DATE_PATTERNS: Array<{ regex: RegExp; precision: 'exact' | 'month' | 'year' }> = [
+  { regex: /\b((?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4})\b/gi, precision: 'exact' },
+  { regex: /\b(\d{1,2}\/\d{1,2}\/\d{4})\b/g, precision: 'exact' },
+  { regex: /\b(\d{4}-\d{2}-\d{2})\b/g, precision: 'exact' },
+  { regex: /\b((?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4})\b/gi, precision: 'month' },
+];
+
+export function processLayer4(input: Layer4Input): EngineResult<ChronologyEvent[]> {
+  const input_hash = computeHash({ artifacts: input.artifacts.map(a => a.raw_bytes_sha256) });
+  const unresolved: UnresolvedDependency[] = [];
   const events: ChronologyEvent[] = [];
 
-  for (const artifact of artifacts) {
-    const text = artifact.extracted_text;
-    let match;
-    while ((match = DATE_REGEX.exec(text)) !== null) {
-      const date = match[0];
-      const index = match.index;
-      const context = text.substring(Math.max(0, index - 50), Math.min(text.length, index + 100));
-      
-      events.push({
-        date,
-        source_artifact_id: artifact.artifact_key,
-        source_context: context.trim(),
-        event_text: context.trim(), // In a real engine, this would be more refined
-        actor: 'unknown',
-        verification_state: 'document_stated'
-      });
+  for (const artifact of input.artifacts) {
+    if (artifact.extraction_status !== 'success') {
+      unresolved.push({ field: `artifact:${artifact.artifact_key}`, reason: artifact.extraction_status === 'unsupported_format' ? 'unsupported_format' : 'incomplete' });
+      continue;
+    }
+    for (const span of artifact.spans) {
+      for (const dp of DATE_PATTERNS) {
+        dp.regex.lastIndex = 0;
+        let match: RegExpExecArray | null;
+        while ((match = dp.regex.exec(span.text)) !== null) {
+          const dateStr = normalizeDate(match[1]);
+          const sentenceContext = extractSentenceContext(span.text, match.index);
+          const actor = extractActor(sentenceContext);
+          events.push({
+            event_id: `evt_${computeHash(`${artifact.artifact_key}|${span.start_offset}|${match.index}`)}`.substring(0, 16),
+            date: dateStr,
+            date_precision: dp.precision,
+            event_text: sentenceContext,
+            actor,
+            source_artifact_key: artifact.artifact_key,
+            source_span_offset: span.start_offset + match.index,
+            verification_status: 'document_stated',
+          });
+        }
+      }
     }
   }
 
-  // Deterministic sorting
-  events.sort((a, b) => {
-    const dateA = new Date(a.date).getTime();
-    const dateB = new Date(b.date).getTime();
-    if (dateA !== dateB) return dateA - dateB;
-    return a.source_artifact_id.localeCompare(b.source_artifact_id);
+  const sorted = events.sort((a, b) => {
+    if (!a.date && !b.date) return a.event_id.localeCompare(b.event_id);
+    if (!a.date) return 1;
+    if (!b.date) return -1;
+    return a.date.localeCompare(b.date);
   });
-
-  const output_hash = computeHash(events);
+  const output_hash = computeHash(sorted);
 
   return {
+    layer_name: 'chronology_reconstruction',
     layer_version: LAYER_VERSION,
     rule_version: RULE_VERSION,
-    canonicalization_version: '1.0.0',
+    parser_version: 'N/A',
+    canonicalization_version: CANONICALIZATION_VERSION,
     input_hash,
     output_hash,
-    data: events,
-    unresolved_dependencies: [],
-    is_sealed: false
+    data: sorted,
+    unresolved_dependencies: unresolved,
+    is_sealed: false,
   };
+}
+
+function normalizeDate(dateStr: string): string | null {
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return null;
+    return d.toISOString().split('T')[0];
+  } catch { return null; }
+}
+
+function extractSentenceContext(text: string, position: number): string {
+  const before = text.lastIndexOf('.', position);
+  const after = text.indexOf('.', position);
+  const start = before >= 0 ? before + 1 : 0;
+  const end = after >= 0 ? after + 1 : text.length;
+  return text.substring(start, end).trim();
+}
+
+function extractActor(sentence: string): string | null {
+  const actorMatch = sentence.match(/\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)\b/);
+  return actorMatch ? actorMatch[1] : null;
 }

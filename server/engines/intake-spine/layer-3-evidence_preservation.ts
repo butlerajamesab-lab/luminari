@@ -1,52 +1,55 @@
-import { computeHash, EngineResult } from './utils';
+import crypto from 'crypto';
+import { computeHash, EngineResult, UnresolvedDependency, CANONICALIZATION_VERSION } from './utils';
 import { ArtifactRecord } from './layer-2-raw_intake_capture';
 
-export interface PreservationInput {
-  record: ArtifactRecord;
-  actual_bytes: Buffer | null;
-}
-
-export interface PreservationOutput {
+export interface PreservationResult {
   artifact_key: string;
-  artifact_status: 'preserved' | 'quarantined' | 'referenced_missing';
+  stored_sha256: string;
+  verified_sha256: string;
+  integrity_status: 'preserved' | 'quarantined' | 'referenced_missing';
   verification_timestamp: string;
 }
 
-export const LAYER_VERSION = '1.0.0';
-export const RULE_VERSION = '1.0.0';
+export const LAYER_VERSION = '2.0.0';
+export const RULE_VERSION = '2.0.0';
 
-export function processLayer3(input: PreservationInput): EngineResult<PreservationOutput> {
-  const input_hash = computeHash({
-    artifact_key: input.record.artifact_key,
-    expected_sha256: input.record.sha256,
-    has_bytes: !!input.actual_bytes
-  });
+export function processLayer3(input: { record: ArtifactRecord; actual_bytes: Buffer | null }, as_of: string): EngineResult<PreservationResult> {
+  const input_hash = computeHash({ artifact_key: input.record.artifact_key, stored_sha256: input.record.sha256, as_of });
+  const unresolved: UnresolvedDependency[] = [];
 
-  let status: 'preserved' | 'quarantined' | 'referenced_missing';
+  let integrity_status: PreservationResult['integrity_status'];
+  let verified_sha256: string;
 
   if (!input.actual_bytes) {
-    status = 'referenced_missing';
+    integrity_status = 'referenced_missing';
+    verified_sha256 = '';
+    unresolved.push({ field: 'actual_bytes', reason: 'referenced_missing', detail: 'Artifact bytes not available for verification' });
   } else {
-    const actual_sha256 = computeHash(input.actual_bytes.toString('binary'));
-    status = actual_sha256 === input.record.sha256 ? 'preserved' : 'quarantined';
+    verified_sha256 = crypto.createHash('sha256').update(input.actual_bytes).digest('hex');
+    integrity_status = verified_sha256 === input.record.sha256 ? 'preserved' : 'quarantined';
+    if (integrity_status === 'quarantined') {
+      unresolved.push({ field: 'sha256', reason: 'contradicted', detail: `Stored: ${input.record.sha256}, Verified: ${verified_sha256}` });
+    }
   }
 
-  const data: PreservationOutput = {
+  const data: PreservationResult = {
     artifact_key: input.record.artifact_key,
-    artifact_status: status,
-    verification_timestamp: new Date('2026-08-07T00:00:00Z').toISOString() // Deterministic for engine
+    stored_sha256: input.record.sha256,
+    verified_sha256,
+    integrity_status,
+    verification_timestamp: as_of,
   };
 
-  const output_hash = computeHash(data);
-
   return {
+    layer_name: 'evidence_preservation',
     layer_version: LAYER_VERSION,
     rule_version: RULE_VERSION,
-    canonicalization_version: '1.0.0',
+    parser_version: 'N/A',
+    canonicalization_version: CANONICALIZATION_VERSION,
     input_hash,
-    output_hash,
+    output_hash: computeHash(data),
     data,
-    unresolved_dependencies: [],
-    is_sealed: false
+    unresolved_dependencies: unresolved,
+    is_sealed: false,
   };
 }

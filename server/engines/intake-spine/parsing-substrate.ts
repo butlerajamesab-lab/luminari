@@ -1,70 +1,268 @@
-import { computeHash } from './utils';
+import crypto from 'crypto';
 
-export interface ParsedArtifact {
-  artifact_key: string;
-  sha256: string;
-  mime_type: string;
-  extracted_text: string;
-  spans: TextSpan[];
-  extraction_status: 'success' | 'unsupported_format' | 'failed';
-}
+// ─── Types ───────────────────────────────────────────────────────────────────
 
 export interface TextSpan {
   text: string;
-  offset: number;
-  length: number;
-  metadata?: Record<string, any>;
+  start_offset: number;
+  end_offset: number;
+  page?: number;
+  paragraph_index?: number;
+  source_artifact_key: string;
 }
+
+export interface ParsedArtifact {
+  artifact_key: string;
+  /** SHA-256 of the raw bytes (not canonical JSON — actual binary hash) */
+  raw_bytes_sha256: string;
+  mime_type: string;
+  byte_size: number;
+  extracted_text: string;
+  spans: TextSpan[];
+  extraction_status: 'success' | 'unsupported_format' | 'extraction_failed';
+  extraction_error?: string;
+  parser_version: string;
+  rule_version: string;
+}
+
+// ─── Constants ───────────────────────────────────────────────────────────────
+
+export const PARSER_VERSION = '2.0.0';
+export const RULE_VERSION = '2.0.0';
+
+// ─── Core Parser ─────────────────────────────────────────────────────────────
 
 /**
  * Shared Parsing Substrate
- * artifact bytes -> MIME validation -> deterministic parser -> canonical extracted text/spans
+ * 
+ * Accepts raw artifact bytes and produces a canonical parsed representation.
+ * This is the ONLY place document parsing happens. All downstream layers
+ * consume this output — they never independently parse source bytes.
+ * 
+ * Contract: same bytes + same mime_type + same parser_version → identical output
  */
 export async function parseArtifact(
   artifact_key: string,
   bytes: Buffer,
-  mime_type: string
+  declared_mime_type: string
 ): Promise<ParsedArtifact> {
-  const sha256 = computeHash(bytes.toString('binary'));
-  let extracted_text = '';
-  let status: 'success' | 'unsupported_format' | 'failed' = 'success';
+  // SHA-256 over exact raw bytes — not canonical JSON, not UTF-8 conversion
+  const raw_bytes_sha256 = crypto.createHash('sha256').update(bytes).digest('hex');
+  const byte_size = bytes.length;
+
+  // Validate MIME from magic bytes (not trusting declared type alone)
+  const detected_mime = detectMimeFromBytes(bytes);
+  const effective_mime = detected_mime || declared_mime_type;
 
   try {
-    if (mime_type === 'application/pdf') {
-      // In a real environment, we'd use pdf-parse. 
-      // For this implementation, we'll simulate or use available tools.
-      // Note: pdf-parse is requested in the spec.
-      extracted_text = await simulatePdfParse(bytes);
-    } else if (mime_type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-      // DOCX: ZIP/XML extraction
-      extracted_text = await simulateDocxParse(bytes);
-    } else if (mime_type.startsWith('text/')) {
-      extracted_text = bytes.toString('utf-8');
-    } else {
-      status = 'unsupported_format';
-      extracted_text = 'unsupported_format';
+    if (effective_mime === 'application/pdf') {
+      const result = await parsePdf(bytes, artifact_key);
+      return {
+        artifact_key,
+        raw_bytes_sha256,
+        mime_type: effective_mime,
+        byte_size,
+        extracted_text: result.text,
+        spans: result.spans,
+        extraction_status: 'success',
+        parser_version: PARSER_VERSION,
+        rule_version: RULE_VERSION,
+      };
     }
-  } catch (error) {
-    status = 'failed';
-    extracted_text = 'extraction_failed';
+
+    if (effective_mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+      const result = await parseDocx(bytes, artifact_key);
+      return {
+        artifact_key,
+        raw_bytes_sha256,
+        mime_type: effective_mime,
+        byte_size,
+        extracted_text: result.text,
+        spans: result.spans,
+        extraction_status: 'success',
+        parser_version: PARSER_VERSION,
+        rule_version: RULE_VERSION,
+      };
+    }
+
+    if (effective_mime.startsWith('text/')) {
+      const text = bytes.toString('utf-8');
+      const spans: TextSpan[] = text.split('\n').map((line, i, arr) => {
+        const start = arr.slice(0, i).join('\n').length + (i > 0 ? 1 : 0);
+        return {
+          text: line,
+          start_offset: start,
+          end_offset: start + line.length,
+          paragraph_index: i,
+          source_artifact_key: artifact_key,
+        };
+      }).filter(s => s.text.trim().length > 0);
+
+      return {
+        artifact_key,
+        raw_bytes_sha256,
+        mime_type: effective_mime,
+        byte_size,
+        extracted_text: text,
+        spans,
+        extraction_status: 'success',
+        parser_version: PARSER_VERSION,
+        rule_version: RULE_VERSION,
+      };
+    }
+
+    // Unsupported format — preserve honestly
+    return {
+      artifact_key,
+      raw_bytes_sha256,
+      mime_type: effective_mime,
+      byte_size,
+      extracted_text: '',
+      spans: [],
+      extraction_status: 'unsupported_format',
+      parser_version: PARSER_VERSION,
+      rule_version: RULE_VERSION,
+    };
+  } catch (error: any) {
+    return {
+      artifact_key,
+      raw_bytes_sha256,
+      mime_type: effective_mime,
+      byte_size,
+      extracted_text: '',
+      spans: [],
+      extraction_status: 'extraction_failed',
+      extraction_error: error?.message || 'unknown error',
+      parser_version: PARSER_VERSION,
+      rule_version: RULE_VERSION,
+    };
+  }
+}
+
+// ─── PDF Parser ──────────────────────────────────────────────────────────────
+
+async function parsePdf(
+  bytes: Buffer,
+  artifact_key: string
+): Promise<{ text: string; spans: TextSpan[] }> {
+  const pdfParse = (await import('pdf-parse')).default;
+  const result = await pdfParse(bytes);
+
+  const spans: TextSpan[] = [];
+  let offset = 0;
+
+  // pdf-parse separates pages with form-feed characters
+  const pageTexts = result.text.split(/\f/);
+
+  for (let pageIdx = 0; pageIdx < pageTexts.length; pageIdx++) {
+    const pageText = pageTexts[pageIdx];
+    const paragraphs = pageText.split(/\n\n+/);
+
+    for (let paraIdx = 0; paraIdx < paragraphs.length; paraIdx++) {
+      const para = paragraphs[paraIdx].trim();
+      if (para.length === 0) continue;
+
+      const paraStart = result.text.indexOf(para, offset);
+      const start = paraStart >= 0 ? paraStart : offset;
+
+      spans.push({
+        text: para,
+        start_offset: start,
+        end_offset: start + para.length,
+        page: pageIdx + 1,
+        paragraph_index: paraIdx,
+        source_artifact_key: artifact_key,
+      });
+
+      offset = start + para.length;
+    }
   }
 
-  return {
-    artifact_key,
-    sha256,
-    mime_type,
-    extracted_text,
-    spans: [], // Basic implementation returns empty spans for now
-    extraction_status: status,
-  };
+  return { text: result.text, spans };
 }
 
-async function simulatePdfParse(bytes: Buffer): Promise<string> {
-  // Placeholder for pdf-parse integration
-  return bytes.toString('utf-8').replace(/[^\x20-\x7E\n]/g, ''); 
+// ─── DOCX Parser ─────────────────────────────────────────────────────────────
+
+async function parseDocx(
+  bytes: Buffer,
+  artifact_key: string
+): Promise<{ text: string; spans: TextSpan[] }> {
+  const JSZip = (await import('jszip')).default;
+  const zip = await JSZip.loadAsync(bytes);
+
+  const docXml = zip.file('word/document.xml');
+  if (!docXml) {
+    throw new Error('DOCX missing word/document.xml');
+  }
+
+  const xmlContent = await docXml.async('string');
+
+  // Extract text from XML paragraph elements (<w:p>...</w:p>)
+  const paragraphs: string[] = [];
+  const pRegex = /<w:p[^>]*>([\s\S]*?)<\/w:p>/g;
+  const tRegex = /<w:t[^>]*>([\s\S]*?)<\/w:t>/g;
+
+  let pMatch: RegExpExecArray | null;
+  while ((pMatch = pRegex.exec(xmlContent)) !== null) {
+    const pContent = pMatch[1];
+    let paraText = '';
+    let tMatch: RegExpExecArray | null;
+    tRegex.lastIndex = 0;
+    while ((tMatch = tRegex.exec(pContent)) !== null) {
+      paraText += tMatch[1];
+    }
+    if (paraText.trim().length > 0) {
+      paragraphs.push(paraText);
+    }
+  }
+
+  const fullText = paragraphs.join('\n');
+  const spans: TextSpan[] = [];
+  let offset = 0;
+
+  for (let i = 0; i < paragraphs.length; i++) {
+    const para = paragraphs[i];
+    spans.push({
+      text: para,
+      start_offset: offset,
+      end_offset: offset + para.length,
+      paragraph_index: i,
+      source_artifact_key: artifact_key,
+    });
+    offset += para.length + 1;
+  }
+
+  return { text: fullText, spans };
 }
 
-async function simulateDocxParse(bytes: Buffer): Promise<string> {
-  // Placeholder for docx extraction logic
-  return "Extracted DOCX content";
+// ─── MIME Detection ──────────────────────────────────────────────────────────
+
+function detectMimeFromBytes(bytes: Buffer): string | null {
+  if (bytes.length < 4) return null;
+
+  // PDF: starts with %PDF
+  if (bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46) {
+    return 'application/pdf';
+  }
+
+  // ZIP (DOCX, XLSX, etc.): starts with PK\x03\x04
+  if (bytes[0] === 0x50 && bytes[1] === 0x4B && bytes[2] === 0x03 && bytes[3] === 0x04) {
+    // Check for DOCX by looking for word/ in the ZIP directory
+    const headerStr = bytes.toString('binary', 0, Math.min(bytes.length, 4000));
+    if (headerStr.includes('word/document.xml') || headerStr.includes('word/')) {
+      return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    }
+    return 'application/zip';
+  }
+
+  // Plain text heuristic: first 512 bytes are all printable ASCII/UTF-8
+  const sample = bytes.slice(0, Math.min(512, bytes.length));
+  const isPrintable = sample.every((b: number) =>
+    (b >= 0x20 && b <= 0x7E) || b === 0x0A || b === 0x0D || b === 0x09
+  );
+  if (isPrintable) {
+    return 'text/plain';
+  }
+
+  return null;
 }
