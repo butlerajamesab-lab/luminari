@@ -1,0 +1,34 @@
+name: Lighthouse Guided Intake Spine
+
+on:
+  pull_request:
+    paths:
+      - "client/src/pages/GuidedIntake.tsx"
+      - "client/src/pages/GuidedIntakeNew.tsx"
+      - "server/guided-intake-spine-binding.test.ts"
+      - "supabase/migrations/20260807055000_bind_cases_to_universal_intake_spine.sql"
+      - "supabase/verification/20260807055000_bind_cases_to_universal_intake_spine_verify.sql"
+      - ".github/workflows/lighthouse-guided-intake-spine.yml"
+  push:
+    branches: [main]
+    paths:
+      - "client/src/pages/GuidedIntake.tsx"
+      - "client/src/pages/GuidedIntakeNew.tsx"
+      - "server/guided-intake-spine-binding.test.ts"
+      - "supabase/migrations/20260807055000_bind_cases_to_universal_intake_spine.sql"
+      - "supabase/verification/20260807055000_bind_cases_to_universal_intake_spine_verify.sql"
+      - ".github/workflows/lighthouse-guided-intake-spine.yml"
+
+jobs:
+  guided-intake-spine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm exec vitest run server/guided-intake-spine-binding.test.ts
+      - run: pnpm run build
