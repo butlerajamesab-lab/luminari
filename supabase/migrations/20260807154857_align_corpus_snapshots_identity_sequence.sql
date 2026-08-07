@@ -3,6 +3,8 @@ declare
   v_max_id bigint;
   v_sequence_name text;
 begin
+  lock table public.corpus_snapshots in share row exclusive mode;
+
   select coalesce(max(id), 0)
     into v_max_id
     from public.corpus_snapshots;
