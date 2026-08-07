@@ -2,8 +2,10 @@
 //
 // The 5k+ line helper implementation is preserved byte-for-byte in
 // db-legacy.ts. Only the case/intake seams that straddle the legacy integer
-// case identity and the Universal Intake Spine UUID identity are overridden
-// here. Explicit exports take precedence over the export-star surface.
+// case identity and the Universal Intake Spine UUID identity, plus live
+// legacy-table read contracts whose Drizzle declarations have drifted from
+// production Postgres, are overridden here. Explicit exports take precedence
+// over the export-star surface.
 
 export * from "./db-legacy";
 export {
@@ -13,3 +15,24 @@ export {
   getCaseNarrative,
   upsertCaseNarrative,
 } from "./case-contract-compat";
+export {
+  getSnapshot,
+  getOpenSnapshot,
+  getLatestSnapshot,
+  listEntities,
+  getEntity,
+  getQuotesForDocument,
+  getQuotesForCase,
+  listClaims,
+  getClaimsForDocument,
+  getEntityRolesForDocument,
+  listRelationships,
+  getRelationshipsForEntity,
+  listRelationshipsEnriched,
+  listCorrelations,
+  listCorrelationsEnriched,
+  listFindings,
+  listFindingsEnriched,
+  listSignalFlags,
+  listSignalFlagsEnriched,
+} from "./case-runtime-read-compat";
