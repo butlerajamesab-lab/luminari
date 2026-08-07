@@ -5,6 +5,7 @@ const PROTECTED_REST_PREFIXES = [
   "/api/system",
   "/api/atlas",
   "/api/ingestion-control",
+  "/api/upload",
 ] as const;
 
 let installed = false;

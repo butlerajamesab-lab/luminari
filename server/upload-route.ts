@@ -4,7 +4,7 @@ import { createHash } from "crypto";
 import { isSupabaseStorageKey, storageGet, storagePut } from "./storage";
 import { nanoid } from "nanoid";
 import * as dbHelpers from "./db";
-import { sdk } from "./_core/sdk";
+import { createContext, require_resolved_user } from "./_core/context";
 import { db } from "./db";
 import { documents } from "../drizzle/schema";
 import { and, eq, sql } from "drizzle-orm";
@@ -43,15 +43,22 @@ function resolvePersistedDocumentUrl(
     : storedObject.url;
 }
 
+async function authenticateCurrentRequest(req: Request, res: Response) {
+  try {
+    const ctx = await createContext({ req, res } as any);
+    return await require_resolved_user(ctx);
+  } catch {
+    return null;
+  }
+}
+
 export function registerUploadRoute(app: Express) {
   // Private case documents are exposed only through this authenticated bridge.
   // Existing Forge/CloudFront documents retain their historical direct URLs.
   app.get("/api/cases/:caseId/documents/file", async (req: Request, res: Response) => {
     try {
-      let user;
-      try {
-        user = await sdk.authenticateRequest(req);
-      } catch {
+      const user = await authenticateCurrentRequest(req, res);
+      if (!user) {
         res.status(401).json({ error: "Unauthorized" });
         return;
       }
@@ -95,11 +102,8 @@ export function registerUploadRoute(app: Express) {
 
   app.post("/api/upload", upload.array("files", MAX_BATCH_SIZE), async (req: Request, res: Response) => {
     try {
-      // Authenticate
-      let user;
-      try {
-        user = await sdk.authenticateRequest(req);
-      } catch {
+      const user = await authenticateCurrentRequest(req, res);
+      if (!user) {
         res.status(401).json({ error: "Unauthorized" });
         return;
       }
@@ -341,11 +345,8 @@ export function registerUploadRoute(app: Express) {
   // Performs scoped duplicate override: supersedes original, creates new doc, links chain.
   app.post("/api/upload/replace/:documentId", upload.single("file"), async (req: Request, res: Response) => {
     try {
-      // Authenticate
-      let user;
-      try {
-        user = await sdk.authenticateRequest(req);
-      } catch {
+      const user = await authenticateCurrentRequest(req, res);
+      if (!user) {
         res.status(401).json({ error: "Unauthorized" });
         return;
       }
