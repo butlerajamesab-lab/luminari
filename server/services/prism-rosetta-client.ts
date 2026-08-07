@@ -18,7 +18,7 @@ import {
 
 const PRISM_REQUEST_TIMEOUT_MS = 8_000;
 const PRISM_MAX_ATTEMPTS = 3;
-const PRISM_MAX_REQUEST_BYTES = 2 * 1024 * 1024;
+const PRISM_MAX_REQUEST_BYTES = 4 * 1024 * 1024;
 
 function classify_http_failure(status: number): PrismBoundaryError["failure_class"] {
   if (status === 401 || status === 403) return "authentication";
