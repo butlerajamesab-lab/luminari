@@ -27,9 +27,17 @@ for (const field of forbidden_liveness) {
 }
 if (diagnostic.includes('supabaseProject')) fail('stub camelCase supabaseProject must fail contract check');
 for (const field of required_diagnostic) if (!diagnostic.includes(field)) fail(`diagnostic field missing: ${field}`);
-if (!index.includes('app.get(["/api/db-diagnostic", "/api/system/health"]')) fail('legacy deep diagnostic routes must be explicitly closed');
-if (!index.includes('diagnostic_not_public')) fail('closed diagnostic routes must return a bounded public-safe error');
-if (index.includes('sendDatabaseDiagnostic')) fail('Express entrypoint must not expose the deep diagnostic sender');
+
+// Deep diagnostics are required by the existing Mission Control UI, but they
+// must remain behind the canonical administrator boundary. Public liveness
+// stays separate at /api/health.
+if (!index.includes('app.get("/api/db-diagnostic", requireExpressAdmin')) fail('/api/db-diagnostic must be restored behind requireExpressAdmin');
+if (!index.includes('buildAdminDatabaseDiagnostic()')) fail('/api/db-diagnostic must use the bounded administrator diagnostic builder');
+if (index.includes('app.get("/api/db-diagnostic", async')) fail('/api/db-diagnostic must not be mounted without an administrator gate');
+if (!index.includes('app.use("/api/system", requireExpressAdmin, systemVisibilityRouter)')) fail('/api/system visibility routes must require an administrator');
+if (index.includes('app.use("/api/system", systemVisibilityRouter)')) fail('/api/system must not be mounted without an administrator gate');
+if (index.includes('diagnostic_not_public')) fail('legacy 404-only diagnostic stub must not replace the authenticated Mission Control contract');
+if (index.includes('sendDatabaseDiagnostic')) fail('Express entrypoint must not expose the legacy deep diagnostic sender');
 if (!systemRouter.includes('health: adminProcedure.query(() => getDatabaseDiagnostic())')) fail('deep tRPC diagnostic must require adminProcedure');
 if (systemRouter.includes('health: publicProcedure.query(() => getDatabaseDiagnostic())')) fail('deep tRPC diagnostic must not use publicProcedure');
 
@@ -47,8 +55,6 @@ if (!context.includes('process.env.NODE_ENV !== "production"')) fail('inspection
 if (!context.includes('process.env.LIGHTHOUSE_INSPECTION_MODE === "true"')) fail('non-production inspection identity requires an explicit server-only flag');
 
 if (!index.includes('import { requireExpressAdmin } from "./express-admin-middleware"')) fail('Express administrator middleware must be imported');
-if (!index.includes('app.use("/api/system", requireExpressAdmin, systemVisibilityRouter)')) fail('/api/system visibility routes must require an administrator');
-if (index.includes('app.use("/api/system", systemVisibilityRouter)')) fail('/api/system must not be mounted without an administrator gate');
 if (!expressAdmin.includes('resolve_user_for_procedure')) fail('Express administrator gate must resolve the canonical runtime user');
 if (!expressAdmin.includes('user.role !== "admin"')) fail('Express administrator gate must enforce the admin role');
 if (!expressAdmin.includes('status(401)') || !expressAdmin.includes('status(403)') || !expressAdmin.includes('status(503)')) fail('Express administrator gate must fail closed for missing, forbidden, and unavailable auth states');
