@@ -16,7 +16,7 @@ import {
   PrismBoundaryError,
 } from "./prism-verification-client";
 
-const PRISM_REQUEST_TIMEOUT_MS = 8_000;
+const PRISM_REQUEST_TIMEOUT_MS = 60_000;
 const PRISM_MAX_ATTEMPTS = 3;
 const PRISM_MAX_REQUEST_BYTES = 4 * 1024 * 1024;
 
