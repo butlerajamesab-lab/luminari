@@ -40,6 +40,50 @@ describe("Prism Rosetta verification queue", () => {
     });
   });
 
+  it("keeps Rosetta source-snapshot timeouts retryable even after repeated attempts", () => {
+    const decision = classify_prism_queue_failure({
+      error: new Error("prism_rosetta_source_snapshot_timeout:8000"),
+      prior_attempt_count: 8,
+      receipt_count: 12,
+    });
+    expect(decision).toMatchObject({
+      queue_state: "receipt_partial",
+      failure_class: "timeout",
+      error_code: "prism_rosetta_source_snapshot_timeout:8000",
+      terminal: false,
+      retry_delay_seconds: 3_600,
+    });
+  });
+
+  it("keeps bounded database pressure retryable instead of declaring semantic failure", () => {
+    const pool = classify_prism_queue_failure({
+      error: new Error(
+        "prism_rosetta_load_structural_peer_traits_pool_acquire_timed_out_after_1000ms",
+      ),
+      prior_attempt_count: 9,
+      receipt_count: 1,
+    });
+    const query = classify_prism_queue_failure({
+      error: new Error(
+        "prism_rosetta_load_structural_peer_traits_query_timed_out_after_10000ms",
+      ),
+      prior_attempt_count: 9,
+      receipt_count: 0,
+    });
+    expect(pool).toMatchObject({
+      queue_state: "receipt_partial",
+      failure_class: "pool_acquire_timeout",
+      terminal: false,
+      retry_delay_seconds: 3_600,
+    });
+    expect(query).toMatchObject({
+      queue_state: "degraded",
+      failure_class: "query_timeout",
+      terminal: false,
+      retry_delay_seconds: 3_600,
+    });
+  });
+
   it("fails closed for receipt validation and identity conflicts", () => {
     const validation = classify_prism_queue_failure({
       error: new PrismBoundaryError(
