@@ -238,8 +238,8 @@ function matchSequence(
     time_span_days = Math.round((d2.getTime() - d1.getTime()) / (24 * 3600 * 1000));
     if (time_span_days > rule.time_window_days) return null; // Outside window
   }
-  // If dates are missing, we cannot verify the time window — mark as unresolved
-  // but still report the structural match
+  // If dates are missing, we CANNOT confirm a bounded temporal match
+  if (!firstDate || !lastDate) return null; // Missing dates = unresolved, not a valid match
 
   // Check corroboration threshold
   const sourceArtifacts = new Set<string>();

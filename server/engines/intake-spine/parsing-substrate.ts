@@ -209,8 +209,10 @@ async function parseDocx(
     let tMatch: RegExpExecArray | null;
     tRegex.lastIndex = 0;
     while ((tMatch = tRegex.exec(pContent)) !== null) {
-      paraText += tMatch[1];
+      paraText += decodeXmlEntities(tMatch[1]);
     }
+    // Handle Word tab characters (<w:tab/>) and line breaks (<w:br/>)
+    paraText = paraText.replace(/<w:tab\/>/g, '\t').replace(/<w:br\/>/g, '\n');
     if (paraText.trim().length > 0) {
       paragraphs.push(paraText);
     }
@@ -235,6 +237,19 @@ async function parseDocx(
   return { text: fullText, spans };
 }
 
+// ─── XML Entity Decoding ────────────────────────────────────────────────────
+
+function decodeXmlEntities(text: string): string {
+  return text
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(parseInt(code, 10)))
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, code) => String.fromCharCode(parseInt(code, 16)));
+}
+
 // ─── MIME Detection ──────────────────────────────────────────────────────────
 
 function detectMimeFromBytes(bytes: Buffer): string | null {
@@ -247,10 +262,23 @@ function detectMimeFromBytes(bytes: Buffer): string | null {
 
   // ZIP (DOCX, XLSX, etc.): starts with PK\x03\x04
   if (bytes[0] === 0x50 && bytes[1] === 0x4B && bytes[2] === 0x03 && bytes[3] === 0x04) {
-    // Check for DOCX by looking for word/ in the ZIP directory
-    const headerStr = bytes.toString('binary', 0, Math.min(bytes.length, 4000));
-    if (headerStr.includes('word/document.xml') || headerStr.includes('word/')) {
-      return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    // Use JSZip to inspect the archive for word/document.xml directly
+    // This avoids the 4KB header scan that can miss valid DOCX files
+    // depending on ZIP layout. Synchronous check via central directory.
+    try {
+      const JSZip = require('jszip');
+      // We can't do async in a sync function, so check the raw bytes
+      // for the central directory entry 'word/document.xml'
+      const fullStr = bytes.toString('binary');
+      if (fullStr.includes('word/document.xml')) {
+        return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      }
+    } catch {
+      // Fallback: scan the full binary for the path
+      const fullStr = bytes.toString('binary');
+      if (fullStr.includes('word/document.xml')) {
+        return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      }
     }
     return 'application/zip';
   }

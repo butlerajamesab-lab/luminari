@@ -230,17 +230,17 @@ function matchCascadeSequence(
     if (!found) return null;
   }
 
-  // Check time window
+  // Check time window — BOTH dates must be present for a confirmed bounded cascade
   const firstDate = steps[0].date;
   const lastDate = steps[steps.length - 1].date;
-  let time_span_days: number | null = null;
 
-  if (firstDate && lastDate) {
-    const d1 = new Date(firstDate);
-    const d2 = new Date(lastDate);
-    time_span_days = Math.round((d2.getTime() - d1.getTime()) / (24 * 3600 * 1000));
-    if (time_span_days > rule.max_window_days) return null;
-  }
+  // Missing dates = cannot confirm bounded temporal match
+  if (!firstDate || !lastDate) return null;
+
+  const d1 = new Date(firstDate);
+  const d2 = new Date(lastDate);
+  const time_span_days = Math.round((d2.getTime() - d1.getTime()) / (24 * 3600 * 1000));
+  if (time_span_days > rule.max_window_days) return null;
 
   const source_artifacts = Array.from(new Set(matchedTransitions.map(t => t.source_artifact_key))).sort();
 
@@ -248,11 +248,26 @@ function matchCascadeSequence(
 }
 
 function checkCausalLanguage(transitions: StateTransition[]): boolean {
-  // Check if any of the source texts contain explicit causal language
-  for (const t of transitions) {
-    for (const pattern of CAUSAL_PATTERNS) {
-      if (pattern.test(t.source_text)) {
-        return true;
+  // Causal language must appear in a sentence that REFERENCES BOTH transitions.
+  // A phrase like "because of" in one transition's text alone doesn't prove
+  // it connects transition A to transition B.
+  if (transitions.length < 2) return false;
+
+  // Collect all state names involved
+  const stateNames = transitions.map(t => t.to_state.replace(/_/g, ' '));
+
+  // Check if any single text span contains a causal phrase AND references
+  // at least one other transition's state
+  for (let i = 0; i < transitions.length; i++) {
+    const text = transitions[i].source_text.toLowerCase();
+    const hasCausalPhrase = CAUSAL_PATTERNS.some(p => p.test(text));
+    if (!hasCausalPhrase) continue;
+
+    // Check if this text also mentions another transition's state
+    for (let j = 0; j < stateNames.length; j++) {
+      if (j === i && text.includes(stateNames[j])) continue; // Same transition
+      if (j !== i && text.includes(stateNames[j])) {
+        return true; // Causal phrase + reference to other transition = stated causation
       }
     }
   }

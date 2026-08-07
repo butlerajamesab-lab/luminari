@@ -64,9 +64,10 @@ const PERSON_PATTERNS = [
 
 // Organization patterns
 const ORG_PATTERNS = [
-  /\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s+(?:Inc\.|LLC|Corp\.|Corporation|Company|Co\.))\b/g,
-  /\b(Department\s+of\s+[A-Z][a-z]+(?:\s+[A-Z]?[a-z]+)*)\b/g,
-  /\b(Office\s+of\s+[A-Z][a-z]+(?:\s+[A-Z]?[a-z]+)*)\b/g,
+  /\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s+(?:Inc\.|LLC|Corp\.|Corporation|Company|Co\.))/g,
+  // Department/Office patterns: stop at prepositions, dates, lowercase words that aren't part of the name
+  /\b(Department\s+of\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)(?=\s+(?:on|in|at|for|from|to|by|with|about|the|a|an|\d)|[,.]|$)/g,
+  /\b(Office\s+of\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)(?=\s+(?:on|in|at|for|from|to|by|with|about|the|a|an|\d)|[,.]|$)/g,
   /\b([A-Z]{2,}(?:\s+[A-Z]{2,})*)\b/g, // Acronyms like DSHS, EEOC, HUD
 ];
 

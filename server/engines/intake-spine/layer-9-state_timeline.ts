@@ -139,21 +139,34 @@ export function processLayer9(input: Layer9Input): EngineResult<StateTransition[
         const match = vocab.pattern.exec(spanText);
         if (!match) continue;
 
-        // Find the nearest entity to this state change in the span
-        let nearestEntity: Entity | null = null;
-        let minDistance = Infinity;
+        // Entity and transition must share a SENTENCE (bounded by periods/newlines).
+        // If multiple entities appear in the same sentence, emit unresolved.
+        const sentStart = Math.max(spanText.lastIndexOf('.', match.index), spanText.lastIndexOf('\n', match.index)) + 1;
+        const sentEndIdx = spanText.indexOf('.', match.index);
+        const sentEnd = sentEndIdx >= 0 ? sentEndIdx : spanText.length;
+        const sentence = spanText.substring(sentStart, sentEnd);
+
+        // Find entities mentioned in THIS sentence
+        const entitiesInSentence: Entity[] = [];
         for (const entity of entitiesInSpan) {
-          const nameInSpan = spanText.indexOf(entity.raw_mentions[0]?.raw_text || entity.canonical_name);
-          if (nameInSpan >= 0) {
-            const dist = Math.abs(nameInSpan - match.index);
-            if (dist < minDistance) {
-              minDistance = dist;
-              nearestEntity = entity;
-            }
+          const rawText = entity.raw_mentions[0]?.raw_text || entity.canonical_name;
+          if (sentence.toLowerCase().includes(rawText.toLowerCase())) {
+            entitiesInSentence.push(entity);
           }
         }
 
-        if (!nearestEntity) continue;
+        if (entitiesInSentence.length === 0) continue; // No entity in same sentence
+        if (entitiesInSentence.length > 1) {
+          // Multiple entities in same sentence — ambiguous attribution
+          unresolved.push({
+            field: `transition:${vocab.to_state}`,
+            reason: 'unresolved',
+            detail: `Multiple entities in sentence: ${entitiesInSentence.map(e => e.canonical_name).join(', ')}. Cannot determine which entity transitioned.`,
+          });
+          continue;
+        }
+
+        const nearestEntity = entitiesInSentence[0];
 
         // Extract date from the same span (if present)
         let transitionDate: string | null = null;

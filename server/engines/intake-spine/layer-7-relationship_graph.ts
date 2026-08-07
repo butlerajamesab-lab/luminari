@@ -150,21 +150,33 @@ export function processLayer7(input: Layer7Input): EngineResult<Relationship[]> 
           for (const marker of RELATIONSHIP_MARKERS) {
             const markerMatch = marker.pattern.exec(contextText);
             if (markerMatch) {
-              const relKey = `${entA.entity.entity_id}|${entB.entity.entity_id}|${marker.type}`;
-              const relKeyReverse = `${entB.entity.entity_id}|${entA.entity.entity_id}|${marker.type}`;
+              // Determine direction from textual position:
+              // Entity appearing BEFORE the marker in text = entity_a
+              // Entity appearing AFTER the marker in text = entity_b
+              // This ensures grammatical ordering determines relationship direction
+              const markerPosInContext = markerMatch.index;
+              const entARelPos = entA.position - contextStart;
+              const entBRelPos = entB.position - contextStart;
+              
+              // First entity textually = entity_a, second = entity_b
+              const firstEntity = entARelPos <= entBRelPos ? entA : entB;
+              const secondEntity = entARelPos <= entBRelPos ? entB : entA;
+
+              const relKey = `${firstEntity.entity.entity_id}|${secondEntity.entity.entity_id}|${marker.type}`;
+              const relKeyReverse = `${secondEntity.entity.entity_id}|${firstEntity.entity.entity_id}|${marker.type}`;
               
               if (!seen.has(relKey) && !seen.has(relKeyReverse)) {
                 seen.add(relKey);
                 relationships.push({
                   relationship_id: `rel_${computeHash(relKey)}`.substring(0, 12),
-                  entity_a_id: entA.entity.entity_id,
-                  entity_b_id: entB.entity.entity_id,
+                  entity_a_id: firstEntity.entity.entity_id,
+                  entity_b_id: secondEntity.entity.entity_id,
                   type: marker.type,
                   direction: marker.direction,
                   source_artifact_key: artifact.artifact_key,
                   source_span_text: spanText,
                   marker_text: markerMatch[0],
-                  marker_offset: span.start_offset + contextStart + markerMatch.index,
+                  marker_offset: span.start_offset + contextStart + markerPosInContext,
                 });
               }
               break; // One relationship type per pair per span

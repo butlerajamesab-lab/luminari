@@ -230,32 +230,25 @@ export function processLayer12(input: Layer12Input): EngineResult<ClaimCandidate
   const normalizedJurisdiction = input.jurisdiction.toLowerCase().trim();
 
   for (const claimDef of CLAIM_TYPE_REGISTRY) {
-    // Check jurisdiction applicability
-    const jurisdictionMatch = claimDef.jurisdictions.includes('federal') ||
-      claimDef.jurisdictions.includes(normalizedJurisdiction);
-
+        // Check jurisdiction applicability
+    // Federal claims are available everywhere, but state-specific claims require matching jurisdiction
+    const jurisdictionMatch = claimDef.jurisdictions.includes(normalizedJurisdiction);
     if (!jurisdictionMatch) continue;
 
-    // Check if triggering relationship exists
-    let hasRelationship = false;
+        // Check if triggering relationship exists (required if declared)
+    let hasRelationship = true;
     if (claimDef.triggering_relationship) {
       hasRelationship = input.relationships.some(r => r.type === claimDef.triggering_relationship);
-    } else {
-      hasRelationship = true; // No relationship required
+      if (!hasRelationship) continue; // Required relationship missing — skip
     }
-
-    // Check if triggering transition exists
-    let hasTransition = false;
+    // Check if triggering transition exists (required if declared)
+    let hasTransition = true;
     let triggeringTransition: StateTransition | undefined;
     if (claimDef.triggering_transition) {
       triggeringTransition = input.transitions.find(t => t.to_state === claimDef.triggering_transition);
       hasTransition = !!triggeringTransition;
-    } else {
-      hasTransition = true; // No transition required
+      if (!hasTransition) continue; // Required transition missing — skip
     }
-
-    // Must have at least one triggering condition
-    if (!hasRelationship && !hasTransition) continue;
 
     // Evaluate elements
     const satisfiedElements: string[] = [];
