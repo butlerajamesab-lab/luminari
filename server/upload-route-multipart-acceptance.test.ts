@@ -5,7 +5,8 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 
 const state = vi.hoisted(() => ({
   select_queue: [] as Array<Array<Record<string, unknown>>>,
-  authenticate_request: vi.fn(),
+  create_context: vi.fn(),
+  require_resolved_user: vi.fn(),
   storage_put: vi.fn(),
   storage_get: vi.fn(),
   is_supabase_storage_key: vi.fn(),
@@ -24,10 +25,9 @@ const state = vi.hoisted(() => ({
   check_replacement_eligibility: vi.fn(),
 }));
 
-vi.mock("./_core/sdk", () => ({
-  sdk: {
-    authenticateRequest: state.authenticate_request,
-  },
+vi.mock("./_core/context", () => ({
+  createContext: state.create_context,
+  require_resolved_user: state.require_resolved_user,
 }));
 
 vi.mock("./storage", () => ({
@@ -74,6 +74,9 @@ async function post_file(contents: string, filename = "proof.txt") {
   return fetch(`${base_url}/api/upload`, {
     method: "POST",
     body: form,
+    headers: {
+      "x-lighthouse-supabase-session": "test-supabase-session",
+    },
   });
 }
 
@@ -99,7 +102,19 @@ afterAll(async () => {
 beforeEach(() => {
   vi.clearAllMocks();
   state.select_queue.length = 0;
-  state.authenticate_request.mockResolvedValue({ id: 9 });
+  state.create_context.mockImplementation(async ({ req, res }) => ({
+    req,
+    res,
+    user: null,
+    auth: {
+      auth_status: "authenticated_profile_resolved",
+      supabase_user_id: "test-supabase-user",
+      supabase_email: "test@example.invalid",
+      profile_resolution_status: "resolved",
+      profile_resolution_error: null,
+    },
+  }));
+  state.require_resolved_user.mockResolvedValue({ id: 9 });
   state.get_open_snapshot.mockResolvedValue({ id: 77, caseId: 44, status: "open" });
   state.create_corpus_snapshot.mockResolvedValue({ id: 77 });
   state.get_snapshot.mockResolvedValue({ id: 77, caseId: 44, status: "open" });
@@ -121,7 +136,7 @@ beforeEach(() => {
 
 describe("authenticated multipart document upload", () => {
   it("rejects unauthenticated uploads before ownership, storage, or persistence", async () => {
-    state.authenticate_request.mockRejectedValue(new Error("missing_session"));
+    state.require_resolved_user.mockRejectedValue(new Error("missing_session"));
 
     const response = await post_file("unauthorized payload");
 
@@ -130,6 +145,22 @@ describe("authenticated multipart document upload", () => {
     expect(state.storage_put).not.toHaveBeenCalled();
     expect(state.create_document).not.toHaveBeenCalled();
     expect(state.create_upload_session).not.toHaveBeenCalled();
+  });
+
+  it("resolves uploads through the current Lighthouse request-auth context", async () => {
+    state.select_queue.push(
+      [{ id: 44, userId: 9 }],
+      [],
+      [{ count: 1 }],
+    );
+
+    const response = await post_file("current auth payload", "current-auth.txt");
+
+    expect(response.status).toBe(200);
+    expect(state.create_context).toHaveBeenCalledTimes(1);
+    const contextInput = state.create_context.mock.calls[0]?.[0];
+    expect(contextInput.req.headers["x-lighthouse-supabase-session"]).toBe("test-supabase-session");
+    expect(state.require_resolved_user).toHaveBeenCalledTimes(1);
   });
 
   it("rejects a case not owned by the authenticated user", async () => {
