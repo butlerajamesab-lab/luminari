@@ -22,9 +22,21 @@ describe("protected REST and Atlas service boundary", () => {
     expect(protectedRest).toContain('"/api/system"');
     expect(protectedRest).toContain('"/api/atlas"');
     expect(protectedRest).toContain('"/api/ingestion-control"');
+    expect(protectedRest).toContain('"/api/upload"');
+    expect(protectedRest).toContain('"/api/cases"');
     expect(protectedRest).toContain("url.origin !== window.location.origin");
     expect(protectedRest).toContain("getAuthenticatedRequestHeaders");
     expect(sessionToken).toContain('headers.set("x-lighthouse-supabase-session"');
+  });
+
+  it("retrieves private evidence source links through authenticated fetch rather than bare navigation", () => {
+    expect(protectedRest).toContain("isPrivateDocumentBridgeUrl");
+    expect(protectedRest).toContain('/^\\/api\\/cases\\/\\d+\\/documents\\/file$/');
+    expect(protectedRest).toContain('document.addEventListener(\n    "click"');
+    expect(protectedRest).toContain("event.preventDefault()");
+    expect(protectedRest).toContain("redirect: \"follow\"");
+    expect(protectedRest).toContain("response.blob()");
+    expect(protectedRest).toContain("blob.size === 0");
   });
 
   it("keeps Atlas health public while gating all operational routes", () => {
