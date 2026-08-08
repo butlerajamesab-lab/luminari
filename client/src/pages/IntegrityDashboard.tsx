@@ -50,6 +50,11 @@ export default function IntegrityDashboard() {
 
   // ── Data Queries ──
 
+  const { data: intakeIntegrity, isLoading: intakeIntegrityLoading } = trpc.analyze.getIntakeIntegrityProjection.useQuery(
+    { caseId: currentCaseId! },
+    { enabled: !!currentCaseId, refetchInterval: 5000 }
+  );
+
   const { data: lifecycle, isLoading: lifecycleLoading } = trpc.snapshots.lifecycle.useQuery(
     { caseId: currentCaseId! },
     { enabled: !!currentCaseId, refetchInterval: 5000 }
@@ -66,10 +71,9 @@ export default function IntegrityDashboard() {
   );
 
   const isSealed = lifecycle?.hasSnapshot && lifecycle?.status === "sealed";
-  const isOpen = lifecycle?.hasSnapshot && lifecycle?.status === "open";
   const snapshotId = lifecycle?.hasSnapshot ? lifecycle.snapshotId : null;
 
-  // ── Categorized Document Buckets ──
+  // ── Categorized Legacy Document Buckets ──
 
   const categorized = useMemo(() => {
     if (!docs) return null;
@@ -79,7 +83,7 @@ export default function IntegrityDashboard() {
     });
     const inSnapshot = snapshotId
       ? allActive.filter(d => d.snapshotId === snapshotId)
-      : allActive;
+      : [];
 
     const failedPermanent = inSnapshot.filter(d => d.status === "failed_permanent");
     const errorRetryable = inSnapshot.filter(d => d.status === "error");
@@ -87,7 +91,7 @@ export default function IntegrityDashboard() {
     const excluded = (resolvedDocs || []).filter(d => (d as any).documentResolution === "excluded");
     const superseded = (resolvedDocs || []).filter(d => (d as any).documentResolution === "superseded");
 
-    // Blocking = active + failed (these are the ones blocking the gate)
+    // Blocking here is intentionally legacy snapshot/extraction state only.
     const blocking = [...failedPermanent, ...errorRetryable];
 
     return {
@@ -101,9 +105,6 @@ export default function IntegrityDashboard() {
       totalResolved: (resolvedDocs || []).length,
     };
   }, [docs, resolvedDocs, snapshotId]);
-
-  // Replacement candidates: active docs with status=ready
-
 
   // Search filter for the active tab
   const filterBySearch = useCallback((items: any[]) => {
@@ -150,8 +151,6 @@ export default function IntegrityDashboard() {
     onError: (err) => toast.error(err.message),
   });
 
-
-
   // ── Handlers ──
 
   const handleRetry = useCallback(
@@ -183,8 +182,35 @@ export default function IntegrityDashboard() {
   }
 
   const isLoading = lifecycleLoading || docsLoading;
+  const canonicalState = intakeIntegrity?.projection_state;
+  const canonicalBlocked = canonicalState === "blocked";
+  const canonicalVerified = canonicalState === "verified";
 
-  // ── Gate Impact Summary ──
+  const canonicalStateLabel = canonicalState === "verified"
+    ? "Verified"
+    : canonicalState === "blocked"
+      ? "Blocked"
+      : canonicalState === "partial"
+        ? "Partial"
+        : canonicalState === "not_run"
+          ? "Not run"
+          : canonicalState === "no_evidence"
+            ? "No evidence"
+            : "Loading";
+
+  const canonicalStateDescription = canonicalState === "verified"
+    ? "Every registered Intake source artifact has a sealed Layer 3 evidence-preservation receipt and verified SHA-256 match."
+    : canonicalState === "blocked"
+      ? "At least one sealed Layer 3 result is quarantined or references missing bytes. Integrity is not satisfied."
+      : canonicalState === "partial"
+        ? "Layer 3 has verified only part of the registered Intake source-artifact population. Integrity remains incomplete."
+        : canonicalState === "not_run"
+          ? "Evidence is registered, but current-contract Layer 3 evidence preservation has not been executed. Zero errors is not treated as health."
+          : canonicalState === "no_evidence"
+            ? "No Intake source artifacts are registered for this case, so evidence integrity has no population to evaluate."
+            : "Loading the receipt-bound Intake evidence-preservation state.";
+
+  // ── Legacy Gate Impact Summary ──
 
   const gateImpact = useMemo(() => {
     if (!lifecycle?.hasSnapshot) return null;
@@ -341,18 +367,18 @@ export default function IntegrityDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold tracking-tight flex items-center gap-2">
-            {categorized && categorized.blocking.length > 0 ? (
+            {canonicalBlocked ? (
               <ShieldAlert className="h-5 w-5 text-red-400" />
-            ) : (
+            ) : canonicalVerified ? (
               <ShieldCheck className="h-5 w-5 text-emerald-400" />
+            ) : (
+              <Shield className="h-5 w-5 text-muted-foreground" />
             )}
             Integrity & Resolutions
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {lifecycle?.hasSnapshot
-              ? `Snapshot #${snapshotId} — ${lifecycle.status?.toUpperCase()}`
-              : "No active snapshot"}
-            {isSealed && " (read-only)"}
+            Canonical Intake Layer 3: {canonicalStateLabel}
+            {lifecycle?.hasSnapshot ? ` · Legacy snapshot #${snapshotId} ${lifecycle.status?.toUpperCase()}` : " · Legacy snapshot not active"}
           </p>
         </div>
         {!isSealed && (
@@ -363,22 +389,119 @@ export default function IntegrityDashboard() {
         )}
       </div>
 
-      {/* Section 2: Gate Impact Summary */}
+      {/* Canonical Universal Intake Spine Layer 3 */}
+      <Card className={canonicalBlocked
+        ? "border-red-500/30 bg-red-950/10"
+        : canonicalVerified
+          ? "border-emerald-500/30 bg-emerald-950/10"
+          : "border-border bg-muted/10"}
+      >
+        <CardContent className="p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3 min-w-0">
+              {intakeIntegrityLoading ? (
+                <Loader2 className="h-5 w-5 mt-0.5 animate-spin text-muted-foreground shrink-0" />
+              ) : canonicalBlocked ? (
+                <ShieldAlert className="h-5 w-5 mt-0.5 text-red-400 shrink-0" />
+              ) : canonicalVerified ? (
+                <ShieldCheck className="h-5 w-5 mt-0.5 text-emerald-400 shrink-0" />
+              ) : (
+                <Shield className="h-5 w-5 mt-0.5 text-muted-foreground shrink-0" />
+              )}
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-sm font-semibold">Canonical evidence preservation</h2>
+                  <Badge variant="outline" className="text-[10px]">{canonicalStateLabel}</Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                  {canonicalStateDescription}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {intakeIntegrity && (
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-4">
+              <div className="rounded-md border border-border/50 bg-background/40 p-2.5">
+                <p className="text-lg font-semibold">{intakeIntegrity.source_artifact_count}</p>
+                <p className="text-[10px] text-muted-foreground">Registered sources</p>
+              </div>
+              <div className="rounded-md border border-border/50 bg-background/40 p-2.5">
+                <p className="text-lg font-semibold">{intakeIntegrity.projected_artifact_count}</p>
+                <p className="text-[10px] text-muted-foreground">Layer 3 receipts</p>
+              </div>
+              <div className="rounded-md border border-border/50 bg-background/40 p-2.5">
+                <p className="text-lg font-semibold">{intakeIntegrity.preserved_count}</p>
+                <p className="text-[10px] text-muted-foreground">Preserved</p>
+              </div>
+              <div className="rounded-md border border-border/50 bg-background/40 p-2.5">
+                <p className="text-lg font-semibold">{intakeIntegrity.quarantined_count}</p>
+                <p className="text-[10px] text-muted-foreground">Quarantined</p>
+              </div>
+              <div className="rounded-md border border-border/50 bg-background/40 p-2.5">
+                <p className="text-lg font-semibold">{intakeIntegrity.referenced_missing_count}</p>
+                <p className="text-[10px] text-muted-foreground">Referenced missing</p>
+              </div>
+            </div>
+          )}
+
+          {intakeIntegrity && intakeIntegrity.artifacts.length > 0 && (
+            <div className="mt-4 space-y-1.5">
+              {intakeIntegrity.artifacts.map((artifact) => (
+                <div key={artifact.artifact_id} className="flex items-center gap-2 rounded-md border border-border/40 bg-background/30 px-2.5 py-2 text-xs">
+                  <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <span className="truncate flex-1">{artifact.filename || artifact.artifact_key}</span>
+                  <Badge variant="outline" className="text-[9px] shrink-0">
+                    {artifact.integrity_status ?? "not_run"}
+                  </Badge>
+                  {artifact.receipt_hash && (
+                    <code className="hidden md:block text-[9px] text-muted-foreground shrink-0">
+                      {artifact.receipt_hash.slice(0, 12)}…
+                    </code>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <div>
+        <h2 className="text-sm font-medium">Legacy snapshot processing state</h2>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          These extraction and resolution controls are preserved for the legacy snapshot workflow. They do not substitute for the receipt-bound Intake Layer 3 result above.
+        </p>
+      </div>
+
+      {/* Legacy Gate Impact Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {/* Active Errors Blocking */}
-        <Card className={`${categorized && categorized.blocking.length > 0 ? "border-red-500/30 bg-red-950/10" : "border-emerald-500/30 bg-emerald-950/10"}`}>
+        <Card className={!lifecycle?.hasSnapshot
+          ? "border-border bg-muted/10"
+          : categorized && categorized.blocking.length > 0
+            ? "border-red-500/30 bg-red-950/10"
+            : "border-emerald-500/30 bg-emerald-950/10"}
+        >
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <AlertTriangle className={`h-4 w-4 ${categorized && categorized.blocking.length > 0 ? "text-red-400" : "text-emerald-400"}`} />
+              <AlertTriangle className={`h-4 w-4 ${
+                !lifecycle?.hasSnapshot
+                  ? "text-muted-foreground"
+                  : categorized && categorized.blocking.length > 0
+                    ? "text-red-400"
+                    : "text-emerald-400"
+              }`} />
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Active Errors</span>
             </div>
             <p className="text-2xl font-bold">
-              {categorized?.blocking.length ?? 0}
+              {lifecycle?.hasSnapshot ? categorized?.blocking.length ?? 0 : "—"}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              {categorized && categorized.blocking.length > 0
-                ? "blocking extraction integrity"
-                : "no active integrity issues"}
+              {!lifecycle?.hasSnapshot
+                ? "not evaluated — no active legacy snapshot"
+                : categorized && categorized.blocking.length > 0
+                  ? "blocking legacy extraction"
+                  : "no active legacy extraction errors observed"}
             </p>
             {gateImpact?.breakdown && gateImpact.breakdown.total > 0 && (
               <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
@@ -404,7 +527,7 @@ export default function IntegrityDashboard() {
               {categorized?.totalResolved ?? 0}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              documents resolved (not blocking)
+              legacy documents resolved (not blocking)
             </p>
             {gateImpact?.resolution && gateImpact.resolution.totalResolved > 0 && (
               <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
@@ -428,10 +551,10 @@ export default function IntegrityDashboard() {
             </p>
             <p className="text-xs text-muted-foreground mt-1">
               {lifecycle?.hasSnapshot && (lifecycle as any).extractionIntegrity === false
-                ? "extraction integrity incomplete"
+                ? "legacy extraction integrity incomplete"
                 : lifecycle?.hasSnapshot && (lifecycle as any).extractionIntegrity === true
-                  ? "extraction integrity passed"
-                  : "no active snapshot"}
+                  ? "legacy extraction integrity passed"
+                  : "not evaluated — no active legacy snapshot"}
             </p>
             {gateImpact?.reasons?.extraction && (lifecycle as any).extractionIntegrity === false && (
               <p className="text-xs text-red-400/80 mt-2 truncate">
@@ -460,11 +583,11 @@ export default function IntegrityDashboard() {
         </Card>
       )}
 
-      {/* Section 1 + 3: Tabbed Document Lists */}
+      {/* Legacy Tabbed Document Lists */}
       <Card>
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Documents</CardTitle>
+            <CardTitle className="text-base">Legacy Snapshot Documents</CardTitle>
             <Input
               placeholder="Search documents..."
               value={search}
@@ -517,11 +640,17 @@ export default function IntegrityDashboard() {
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 </div>
+              ) : !lifecycle?.hasSnapshot ? (
+                <div className="flex flex-col items-center py-8 gap-2">
+                  <Shield className="h-8 w-8 text-muted-foreground" />
+                  <p className="text-sm font-medium">Legacy extraction gate not evaluated.</p>
+                  <p className="text-xs text-muted-foreground">No active legacy snapshot exists. This state is neutral, not healthy.</p>
+                </div>
               ) : categorized && categorized.blocking.length === 0 ? (
                 <div className="flex flex-col items-center py-8 gap-2">
                   <CheckCircle2 className="h-8 w-8 text-emerald-400" />
-                  <p className="text-sm font-medium text-emerald-200">No active integrity issues.</p>
-                  <p className="text-xs text-muted-foreground">All active documents have been successfully extracted or resolved.</p>
+                  <p className="text-sm font-medium text-emerald-200">No active legacy extraction errors in this snapshot.</p>
+                  <p className="text-xs text-muted-foreground">This statement applies only to the active legacy snapshot and does not replace Intake Layer 3 verification.</p>
                 </div>
               ) : (
                 <div className="divide-y divide-border">
@@ -537,7 +666,7 @@ export default function IntegrityDashboard() {
               {categorized && categorized.failedPermanent.length === 0 ? (
                 <div className="flex flex-col items-center py-8 gap-2">
                   <CheckCircle2 className="h-6 w-6 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">No permanently failed documents.</p>
+                  <p className="text-sm text-muted-foreground">No permanently failed documents in the active legacy snapshot.</p>
                 </div>
               ) : (
                 <div className="divide-y divide-border">
@@ -553,7 +682,7 @@ export default function IntegrityDashboard() {
               {categorized && categorized.errorRetryable.length === 0 ? (
                 <div className="flex flex-col items-center py-8 gap-2">
                   <CheckCircle2 className="h-6 w-6 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">No auto-recoverable errors.</p>
+                  <p className="text-sm text-muted-foreground">No auto-recoverable errors in the active legacy snapshot.</p>
                 </div>
               ) : (
                 <div className="divide-y divide-border">
@@ -569,7 +698,7 @@ export default function IntegrityDashboard() {
               {categorized && categorized.totalResolved === 0 ? (
                 <div className="flex flex-col items-center py-8 gap-2">
                   <Info className="h-6 w-6 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">No resolved documents.</p>
+                  <p className="text-sm text-muted-foreground">No resolved legacy documents.</p>
                 </div>
               ) : (
                 <>
