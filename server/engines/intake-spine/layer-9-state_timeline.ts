@@ -27,8 +27,8 @@ export interface Layer9Input {
   artifacts: ParsedArtifact[];
 }
 
-export const LAYER_VERSION = '2.1.0';
-export const RULE_VERSION = '2.1.0';
+export const LAYER_VERSION = '2.2.0';
+export const RULE_VERSION = '2.2.0';
 
 type StateRule = {
   regex: { source: string; flags: string };
@@ -36,10 +36,16 @@ type StateRule = {
   domain: string;
 };
 
+type DateRule = {
+  regex: { source: string; flags: string };
+  format: 'month_day_year' | 'us_numeric' | 'iso_date';
+};
+
 export const RULE_MANIFEST: {
   state_rules: StateRule[];
-  date_patterns: Array<{ source: string; flags: string }>;
+  date_rules: DateRule[];
   attribution_scope: 'sentence';
+  mention_binding: 'exact_extracted_mention_offsets_only';
   ambiguous_entity_policy: 'unresolved';
   missing_date_policy: 'null';
   from_state_policy: 'null_without_explicit_prior_state_rule';
@@ -70,35 +76,50 @@ export const RULE_MANIFEST: {
     { regex: { source: '\\bfiled (?:a )?(?:law)?suit\\b', flags: 'gi' }, to_state: 'lawsuit_filed', domain: 'legal' },
     { regex: { source: '\\bcharge(?:d)? (?:was )?filed\\b', flags: 'gi' }, to_state: 'charge_filed', domain: 'legal' },
   ],
-  date_patterns: [
-    { source: '\\b((?:January|February|March|April|May|June|July|August|September|October|November|December)\\s+\\d{1,2},?\\s+\\d{4})\\b', flags: 'i' },
-    { source: '\\b(\\d{1,2}\\/\\d{1,2}\\/\\d{4})\\b', flags: '' },
-    { source: '\\b(\\d{4}-\\d{2}-\\d{2})\\b', flags: '' },
+  date_rules: [
+    {
+      regex: { source: '\\b((?:January|February|March|April|May|June|July|August|September|October|November|December)\\s+\\d{1,2},?\\s+\\d{4})\\b', flags: 'i' },
+      format: 'month_day_year',
+    },
+    { regex: { source: '\\b(\\d{1,2}\\/\\d{1,2}\\/\\d{4})\\b', flags: '' }, format: 'us_numeric' },
+    { regex: { source: '\\b(\\d{4}-\\d{2}-\\d{2})\\b', flags: '' }, format: 'iso_date' },
   ],
   attribution_scope: 'sentence',
+  mention_binding: 'exact_extracted_mention_offsets_only',
   ambiguous_entity_policy: 'unresolved',
   missing_date_policy: 'null',
   from_state_policy: 'null_without_explicit_prior_state_rule',
 };
 
 export const RULE_MANIFEST_HASH = computeRuleManifestHash(RULE_MANIFEST);
-
-const STATE_RULES = RULE_MANIFEST.state_rules.map(rule => ({
-  ...rule,
-  pattern: regexFromManifest(rule.regex),
-}));
-const DATE_PATTERNS = RULE_MANIFEST.date_patterns.map(regexFromManifest);
+const STATE_RULES = RULE_MANIFEST.state_rules.map(rule => ({ ...rule, pattern: regexFromManifest(rule.regex) }));
+const DATE_RULES = RULE_MANIFEST.date_rules.map(rule => ({ ...rule, pattern: regexFromManifest(rule.regex) }));
 
 export function processLayer9(input: Layer9Input): EngineResult<StateTransition[]> {
+  const artifacts = [...input.artifacts].sort((a, b) => a.artifact_key.localeCompare(b.artifact_key));
+  const parser_version = parserVersion(artifacts);
   const input_hash = computeHash({
-    entities: input.entities.map(e => e.entity_id).sort(),
-    artifacts: input.artifacts.map(a => a.raw_bytes_sha256).sort(),
+    entity_ids: input.entities.map(entity => entity.entity_id).sort(),
+    artifacts: artifacts.map(artifact => ({
+      artifact_key: artifact.artifact_key,
+      raw_bytes_sha256: artifact.raw_bytes_sha256,
+      parser_version: artifact.parser_version,
+      extraction_status: artifact.extraction_status,
+      parsed_output_hash: computeHash({ extracted_text: artifact.extracted_text, spans: artifact.spans }),
+    })),
   });
   const unresolved: UnresolvedDependency[] = [];
   const transitions = new Map<string, StateTransition>();
 
-  for (const artifact of [...input.artifacts].sort((a, b) => a.artifact_key.localeCompare(b.artifact_key))) {
-    if (artifact.extraction_status !== 'success') continue;
+  for (const artifact of artifacts) {
+    if (artifact.extraction_status !== 'success') {
+      unresolved.push({
+        field: `artifact:${artifact.artifact_key}`,
+        reason: artifact.extraction_status === 'unsupported_format' ? 'unsupported_format' : 'incomplete',
+        detail: `State-timeline extraction skipped artifact state ${artifact.extraction_status}`,
+      });
+      continue;
+    }
 
     for (const span of [...artifact.spans].sort((a, b) => a.start_offset - b.start_offset)) {
       for (const rule of STATE_RULES) {
@@ -114,7 +135,6 @@ export function processLayer9(input: Layer9Input): EngineResult<StateTransition[
             span.start_offset,
             bounds.start,
             bounds.end,
-            sentence,
           );
 
           if (entities.length === 0) continue;
@@ -122,7 +142,7 @@ export function processLayer9(input: Layer9Input): EngineResult<StateTransition[
             unresolved.push({
               field: `transition:${rule.to_state}:${artifact.artifact_key}:${sentenceAbsoluteOffset}`,
               reason: 'unresolved',
-              detail: `Multiple entities occur in the bounded sentence: ${entities.map(e => e.canonical_name).sort().join(', ')}`,
+              detail: `Multiple entities occur in the bounded sentence: ${entities.map(entity => entity.canonical_name).sort().join(', ')}`,
             });
             continue;
           }
@@ -158,7 +178,7 @@ export function processLayer9(input: Layer9Input): EngineResult<StateTransition[
     layer_name: 'state_timeline',
     layer_version: LAYER_VERSION,
     rule_version: RULE_VERSION,
-    parser_version: 'N/A',
+    parser_version,
     canonicalization_version: CANONICALIZATION_VERSION,
     input_hash,
     output_hash: computeHash(data),
@@ -192,7 +212,6 @@ function entitiesMentionedInSentence(
   spanStartOffset: number,
   sentenceStart: number,
   sentenceEnd: number,
-  sentence: string,
 ): Entity[] {
   const absoluteStart = spanStartOffset + sentenceStart;
   const absoluteEnd = spanStartOffset + sentenceEnd;
@@ -204,27 +223,51 @@ function entitiesMentionedInSentence(
       if (mention.span_offset >= absoluteStart && mention.span_offset < absoluteEnd) {
         matches.set(entity.entity_id, entity);
       }
-      if (mention.raw_text && sentence.toLowerCase().includes(mention.raw_text.toLowerCase())) {
-        matches.set(entity.entity_id, entity);
-      }
     }
   }
   return Array.from(matches.values()).sort((a, b) => a.entity_id.localeCompare(b.entity_id));
 }
 
 function extractDate(sentence: string): string | null {
-  for (const pattern of DATE_PATTERNS) {
-    pattern.lastIndex = 0;
-    const match = pattern.exec(sentence);
+  for (const rule of DATE_RULES) {
+    rule.pattern.lastIndex = 0;
+    const match = rule.pattern.exec(sentence);
     if (!match) continue;
-    const normalized = normalizeDate(match[1]);
+    const normalized = normalizeDate(match[1], rule.format);
     if (normalized) return normalized;
   }
   return null;
 }
 
-function normalizeDate(dateStr: string): string | null {
-  const d = new Date(dateStr);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toISOString().split('T')[0];
+function normalizeDate(value: string, format: DateRule['format']): string | null {
+  const trimmed = value.replace(',', '').trim();
+  let year: number;
+  let month: number;
+  let day: number;
+
+  if (format === 'iso_date') {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
+    if (!match) return null;
+    year = Number(match[1]); month = Number(match[2]); day = Number(match[3]);
+  } else if (format === 'us_numeric') {
+    const match = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(trimmed);
+    if (!match) return null;
+    month = Number(match[1]); day = Number(match[2]); year = Number(match[3]);
+  } else {
+    const monthNames = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+    const parts = trimmed.split(/\s+/);
+    month = monthNames.indexOf(parts[0].toLowerCase()) + 1;
+    day = Number(parts[1]);
+    year = Number(parts[2]);
+  }
+
+  if (![year, month, day].every(Number.isInteger)) return null;
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return null;
+  return date.toISOString().slice(0, 10);
+}
+
+function parserVersion(artifacts: ParsedArtifact[]): string {
+  const versions = Array.from(new Set(artifacts.map(artifact => artifact.parser_version))).sort();
+  return versions.length === 0 ? 'N/A' : versions.join('|');
 }
