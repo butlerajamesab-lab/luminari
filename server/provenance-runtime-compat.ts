@@ -221,7 +221,7 @@ export async function createFinding(f: CreateFindingInput): Promise<number> {
       f.description,
       f.significance ?? null,
       JSON.stringify(claim_ids),
-      f.confidence ?? "preliminary",
+      f.confidence ?? null,
       now,
       f.findingEvidentiaryWeight ?? "note_signal",
       provenance_status,
