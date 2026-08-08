@@ -3,6 +3,9 @@ import { z } from 'zod';
 import { getPool } from '../db';
 import * as db_helpers from '../db';
 import { execute_intake_spine_session } from '../intake-spine-orchestrator';
+import { read_canonical_case_layer_outputs } from '../intake-case-layer-reader';
+import type { VerificationRecord } from '../engines/intake-spine/layer-5-verification_gate';
+import type { ClaimCandidate } from '../engines/intake-spine/layer-12-rights_and_duties_matrix';
 
 const SHA256_RE = /^[0-9a-f]{64}$/;
 
@@ -123,7 +126,70 @@ export const analyzeRouter = router({
     }),
 
   /**
-   * 1. CLAIM ELEMENTS - Extract and analyze claim structure
+   * Case-bound verification is a Universal Intake Spine Layer 5 projection.
+   * It is not silently converted into a legacy narrative finding. The endpoint
+   * preserves the exact verification record, source refs, receipt, and session
+   * identity so the Findings surface can distinguish verification from findings.
+   */
+  getIntakeVerificationProjection: protectedProcedure
+    .input(z.object({ caseId: z.number().int().positive() }))
+    .query(async ({ ctx, input }) => {
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      const projection = await read_canonical_case_layer_outputs<VerificationRecord[]>(
+        input.caseId,
+        'verification_gate',
+      );
+
+      return {
+        projection_state: projection.state,
+        outputs: projection.outputs.map(output => ({
+          intake_session_id: output.intake_session_id,
+          layer_run_id: output.layer_run_id,
+          layer_version: output.layer_version,
+          rule_version: output.rule_version,
+          input_hash: output.input_hash,
+          output_hash: output.output_hash,
+          receipt_hash: output.receipt_hash,
+          unresolved_dependencies: output.unresolved_dependencies,
+          records: output.data,
+        })),
+      };
+    }),
+
+  /**
+   * Case-bound claim applicability comes from Universal Intake Spine Layer 12.
+   * These are governed structural candidates only: candidate_unverified remains
+   * visible and every required element stays unresolved until the downstream
+   * claim-proof system evaluates it.
+   */
+  getIntakeClaimCandidateProjection: protectedProcedure
+    .input(z.object({ caseId: z.number().int().positive() }))
+    .query(async ({ ctx, input }) => {
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      const projection = await read_canonical_case_layer_outputs<ClaimCandidate[]>(
+        input.caseId,
+        'rights_and_duties_matrix',
+      );
+
+      return {
+        projection_state: projection.state,
+        outputs: projection.outputs.map(output => ({
+          intake_session_id: output.intake_session_id,
+          layer_run_id: output.layer_run_id,
+          layer_version: output.layer_version,
+          rule_version: output.rule_version,
+          input_hash: output.input_hash,
+          output_hash: output.output_hash,
+          receipt_hash: output.receipt_hash,
+          unresolved_dependencies: output.unresolved_dependencies,
+          candidates: output.data,
+        })),
+      };
+    }),
+
+  /**
+   * 1. CLAIM ELEMENTS - Legacy compatibility endpoint.
+   * Case-bound applicability now comes from getIntakeClaimCandidateProjection.
    */
   getClaimElements: publicProcedure
     .input(z.object({ caseId: z.number() }))
