@@ -3,6 +3,10 @@ import { z } from 'zod';
 import { getPool } from '../db';
 import * as db_helpers from '../db';
 import { execute_intake_spine_session } from '../intake-spine-orchestrator';
+import {
+  get_intake_spine_case_layer_projections,
+  INTAKE_SPINE_LAYER_NAMES,
+} from '../intake-spine-case-projection';
 
 const SHA256_RE = /^[0-9a-f]{64}$/;
 
@@ -120,6 +124,21 @@ export const analyzeRouter = router({
             ? row.latest_receipt_hash
             : null,
       }));
+    }),
+
+  /**
+   * Read the latest sealed canonical output for one Intake Spine layer without
+   * copying it into legacy case tables. This keeps layer ownership intact while
+   * allowing existing case surfaces to render the canonical result directly.
+   */
+  getIntakeSpineLayerProjection: protectedProcedure
+    .input(z.object({
+      caseId: z.number().int().positive(),
+      layerName: z.enum(INTAKE_SPINE_LAYER_NAMES),
+    }))
+    .query(async ({ ctx, input }) => {
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      return get_intake_spine_case_layer_projections(input.caseId, input.layerName);
     }),
 
   /**
