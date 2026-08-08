@@ -1,9 +1,9 @@
 /**
  * Batch Provenance Re-Run Processor
- * 
- * Sequential processing of all unsupported findings through the document-scoped
- * matching pipeline. No parallel execution. No cross-document widening.
- * Abortable mid-run. Partial completion remains valid.
+ *
+ * Sequential processing of all unsupported findings through the deterministic
+ * claim-matching pipeline. No parallel execution. Abortable mid-run. Partial
+ * completion remains valid and every terminal state is persisted explicitly.
  */
 import * as db from "./db";
 import { matchClaimsToFinding } from "./claim-backfill";
@@ -44,33 +44,32 @@ export async function startBatchRerun(userId: number): Promise<{ batchId: number
     throw new Error("A batch re-run is already in progress (ID: " + existing.id + ")");
   }
 
-  // Fetch all eligible findings (unsupported, not synthesis, not rerun_error from a previous batch)
+  // Fetch all eligible findings. Valid synthesis records are intentionally not
+  // part of the re-run queue; rerun_error remains eligible for recovery.
   const unsupported = await db.listUnsupportedFindings();
-  // Filter to only unsupported (not unsupported_synthesis)
-  const eligible = unsupported.filter(f => f.provenanceStatus === "unsupported" || f.provenanceStatus === "rerun_error");
+  const eligible = unsupported.filter(f =>
+    f.provenanceStatus === "unsupported" || f.provenanceStatus === "rerun_error"
+  );
 
   if (eligible.length === 0) {
     throw new Error("No unsupported findings to process");
   }
 
   // Sort by createdAt ASC (oldest first)
-  eligible.sort((a, b) => a.createdAt - b.createdAt);
+  eligible.sort((a, b) => a.createdAt - b.createdAt || a.id - b.id);
 
   // Create batch run record
   const batchId = await db.createBatchRun(userId, eligible.length);
   activeBatchId = batchId;
 
   // Process in background (non-blocking)
-  processBatch(batchId, userId, eligible.map((f) => f.id)).catch(err => {
+  processBatch(batchId, userId, eligible.map((f) => f.id)).catch(async err => {
     console.error(`[BatchRerun] Fatal error in batch ${batchId}:`, err);
-    db.updateBatchProgress(batchId, {}).then(() => {
-      // Mark as error if not already completed/aborted
-      db.getBatchRunById(batchId).then(run => {
-        if (run && run.status === "running") {
-          db.abortBatchRun(batchId);
-        }
-      });
-    });
+    try {
+      await db.failBatchRun(batchId);
+    } catch (statusErr) {
+      console.error(`[BatchRerun] Failed to persist fatal state for batch ${batchId}:`, statusErr);
+    }
     activeBatchId = null;
     clearAbortFlag(batchId);
   });
@@ -88,12 +87,14 @@ export async function resumeBatchRerun(batchId: number, userId: number): Promise
     throw new Error("Can only resume aborted or errored batch runs");
   }
 
-  // Get all unsupported findings, filter to those after lastProcessedFindingId
   const unsupported = await db.listUnsupportedFindings();
-  const eligible = unsupported.filter(f => f.provenanceStatus === "unsupported" || f.provenanceStatus === "rerun_error");
-  eligible.sort((a, b) => a.createdAt - b.createdAt);
+  const eligible = unsupported.filter(f =>
+    f.provenanceStatus === "unsupported" || f.provenanceStatus === "rerun_error"
+  );
+  eligible.sort((a, b) => a.createdAt - b.createdAt || a.id - b.id);
 
-  // Filter to only findings not yet processed (after lastProcessedFindingId)
+  // Preserve the historical continuation rule: records with a sequence ID at or
+  // below the last processed ID are not replayed in the same batch record.
   const remaining = run.lastProcessedFindingId
     ? eligible.filter((f) => f.id > run.lastProcessedFindingId!)
     : eligible;
@@ -102,20 +103,26 @@ export async function resumeBatchRerun(batchId: number, userId: number): Promise
     throw new Error("No remaining findings to process");
   }
 
-  // Reset batch to running
-  await db.updateBatchProgress(batchId, {});
-  const { batchRerunRuns } = await import("../drizzle/schema");
-  const { eq } = await import("drizzle-orm");
-  await db.db.update(batchRerunRuns).set({
-    status: "running",
-    totalFindings: run.processedCount + remaining.length,
-  }).where(eq(batchRerunRuns.id, batchId));
-
+  const resumedTotal = run.processedCount + remaining.length;
+  await db.resumeBatchRun(batchId, resumedTotal);
   activeBatchId = batchId;
 
   // Process in background
-  processBatch(batchId, userId, remaining.map((f) => f.id), run.processedCount, run.resolvedCount, run.errorCount, run.fallbackUsageCount).catch(err => {
+  processBatch(
+    batchId,
+    userId,
+    remaining.map((f) => f.id),
+    run.processedCount,
+    run.resolvedCount,
+    run.errorCount,
+    run.fallbackUsageCount,
+  ).catch(async err => {
     console.error(`[BatchRerun] Fatal error resuming batch ${batchId}:`, err);
+    try {
+      await db.failBatchRun(batchId);
+    } catch (statusErr) {
+      console.error(`[BatchRerun] Failed to persist fatal resume state for batch ${batchId}:`, statusErr);
+    }
     activeBatchId = null;
     clearAbortFlag(batchId);
   });
@@ -139,6 +146,7 @@ async function processBatch(
   let resolvedCount = startResolved;
   let errorCount = startErrors;
   let fallbackUsageCount = startFallbackUsage;
+  const totalFindings = startProcessed + findingIds.length;
 
   console.log(`[BatchRerun] Starting batch ${batchId}: ${findingIds.length} findings to process`);
 
@@ -152,27 +160,31 @@ async function processBatch(
       return;
     }
 
-    const previousStatus = await processSingleFinding(batchId, findingId, userId);
+    const outcome = await processSingleFinding(batchId, findingId, userId);
     processedCount++;
 
-    if (previousStatus === "resolved") {
+    if (outcome === "resolved") {
       resolvedCount++;
-    } else if (previousStatus === "error") {
+    } else if (outcome === "error") {
       errorCount++;
     }
 
-    // Check if fallback was triggered
+    // Check if fallback was triggered from the now-persisted finding state.
     const detail = await db.getFindingMatchDetail(findingId);
     if (detail?.finding.fallbackTriggered) {
       fallbackUsageCount++;
     }
+
+    // Every not-resolved/non-error item remains unsupported, whether it has
+    // already been processed or is still waiting in this batch.
+    const stillUnsupported = Math.max(totalFindings - resolvedCount - errorCount, 0);
 
     // Update progress after each finding
     await db.updateBatchProgress(batchId, {
       processedCount,
       resolvedCount,
       errorCount,
-      stillUnsupported: findingIds.length + startProcessed - processedCount - resolvedCount - errorCount + startResolved + startErrors,
+      stillUnsupported,
       lastProcessedFindingId: findingId,
       fallbackUsageCount,
     });
@@ -186,15 +198,16 @@ async function processBatch(
 }
 
 /**
- * Process a single finding through the document-scoped matching pipeline.
- * Returns "resolved" if newly linked, "error" if failed, "unsupported" if still unlinked.
+ * Process a single finding through the deterministic case-scoped matching
+ * pipeline. Returns "resolved" if newly linked, "error" if processing failed,
+ * and "unsupported" if it remains unlinked.
  */
 async function processSingleFinding(
   batchId: number,
   findingId: number,
   userId: number,
 ): Promise<"resolved" | "error" | "unsupported"> {
-  let finding: { id: number; caseId: any; provenanceStatus: string | null; fallbackTriggered: boolean | null; [key: string]: any } | null = null;
+  let finding: { id: number; caseId: number; provenanceStatus: string; fallbackTriggered: boolean; [key: string]: any } | null = null;
   try {
     const detail = await db.getFindingMatchDetail(findingId);
     if (!detail) {
@@ -205,28 +218,35 @@ async function processSingleFinding(
     finding = detail.finding;
     const previousStatus = finding.provenanceStatus;
 
-    // Gather candidate claims for this finding (document-scoped)
+    // Candidate claims remain bounded to the same case as the finding. Their
+    // source document IDs stay attached so the matcher can use exact document
+    // references when they are present in the finding text.
     const candidateClaims = detail.candidateClaims.map((c: any) => ({
-      id: c.id,
+      id: String(c.id),
       claimText: c.claimText,
       claimType: c.claimType,
-      documentId: c.documentId,
+      documentId: c.documentId === null || c.documentId === undefined ? null : String(c.documentId),
     }));
 
-    // Run document-scoped matching
     const result = await matchClaimsToFinding(
-      { id: finding.id, title: finding.title, description: finding.description, findingType: finding.findingType },
+      {
+        id: finding.id,
+        title: finding.title,
+        description: finding.description,
+        findingType: finding.findingType,
+      },
       candidateClaims,
     );
 
-    // Determine outcome
-    let newStatus: string;
+    let newStatus: "linked" | "unsupported";
     if (result.matchedIds.length > 0) {
-      // Successfully linked
-      await db.updateFindingClaimIds(findingId, result.matchedIds as unknown as number[]);
+      const matchedClaimIds = result.matchedIds.map(value => Number(value));
+      if (matchedClaimIds.some(value => !Number.isSafeInteger(value) || value <= 0)) {
+        throw new Error(`invalid_matched_claim_id:${result.matchedIds.join(",")}`);
+      }
+      await db.updateFindingClaimIds(findingId, matchedClaimIds);
       newStatus = "linked";
     } else {
-      // Still unsupported after re-run
       newStatus = "unsupported";
       await db.updateFindingMatchMetadata(findingId, {
         candidateClaimCount: candidateClaims.length,
@@ -259,19 +279,10 @@ async function processSingleFinding(
     return newStatus === "linked" ? "resolved" : "unsupported";
   } catch (err) {
     console.error(`[BatchRerun] Error processing finding ${findingId}:`, err);
+    const message = err instanceof Error ? err.message : String(err);
 
-    // Mark finding as rerun_error
     try {
-      const { findings: findingsTable } = await import("../drizzle/schema");
-      const { eq } = await import("drizzle-orm");
-      await db.db.update(findingsTable).set({
-        provenanceStatus: "rerun_error",
-        matchMetadata: {
-          batchRerunId: batchId,
-          error: err instanceof Error ? err.message : String(err),
-          errorAt: Date.now(),
-        },
-      }).where(eq(findingsTable.id, findingId));
+      await db.markFindingRerunError(findingId, batchId, message);
 
       // Write error audit log only if we loaded the finding (have caseId)
       if (finding) {
@@ -282,16 +293,16 @@ async function processSingleFinding(
           targetType: "finding",
           targetId: findingId,
           details: {
-            previousStatus: "unsupported",
+            previousStatus: finding.provenanceStatus ?? "unsupported",
             newStatus: "rerun_error",
             batchId,
             error: true,
-            message: err instanceof Error ? err.message : String(err),
+            message,
           },
         });
       }
     } catch (logErr) {
-      console.error(`[BatchRerun] Failed to log error for finding ${findingId}:`, logErr);
+      console.error(`[BatchRerun] Failed to persist/log error for finding ${findingId}:`, logErr);
     }
 
     return "error";
