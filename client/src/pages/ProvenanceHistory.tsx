@@ -62,6 +62,7 @@ export default function ProvenanceHistory() {
     return {
       totalRuns: allRuns.length,
       completedRuns: completedRuns.length,
+      comparableRuns: comparableRuns.length,
       totalResolved: completedRuns.reduce((sum, run) => sum + run.resolvedCount, 0),
       resolveRateDelta,
       fallbackRateDelta,
@@ -160,7 +161,7 @@ export default function ProvenanceHistory() {
         </Card>
       </div>
 
-      {trends.completedRuns < 2 && trends.totalRuns > 0 && (
+      {trends.comparableRuns < 2 && trends.totalRuns > 0 && (
         <Card className="border-dashed border-border bg-muted/10">
           <CardContent className="p-3 text-xs text-muted-foreground">
             Trend deltas are not evaluated yet. At least two completed batch runs with nonzero finding populations are required; running, aborted, and errored passes are never substituted.
