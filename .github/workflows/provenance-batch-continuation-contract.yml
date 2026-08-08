@@ -1,0 +1,38 @@
+name: Provenance Batch Continuation Contract
+
+on:
+  pull_request:
+    paths:
+      - "server/batch-rerun.ts"
+      - "server/provenance-runtime-compat.ts"
+      - "server/provenance-drift-runtime-compat.ts"
+      - "server/provenance-batch-finding-compat.ts"
+      - "server/provenance-batch-runtime-compat.ts"
+      - "server/provenance-batch-continuation.contract.test.ts"
+      - "server/db.ts"
+      - ".github/workflows/provenance-batch-continuation-contract.yml"
+  push:
+    branches: [main]
+    paths:
+      - "server/batch-rerun.ts"
+      - "server/provenance-runtime-compat.ts"
+      - "server/provenance-drift-runtime-compat.ts"
+      - "server/provenance-batch-finding-compat.ts"
+      - "server/provenance-batch-runtime-compat.ts"
+      - "server/provenance-batch-continuation.contract.test.ts"
+      - "server/db.ts"
+      - ".github/workflows/provenance-batch-continuation-contract.yml"
+
+jobs:
+  provenance-batch-continuation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm exec vitest run server/provenance-batch-continuation.contract.test.ts
+      - run: pnpm run build
