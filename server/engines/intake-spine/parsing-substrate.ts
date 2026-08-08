@@ -1,6 +1,5 @@
 import crypto from 'crypto';
-
-// ─── Types ───────────────────────────────────────────────────────────────────
+import { computeRuleManifestHash } from './utils';
 
 export interface TextSpan {
   text: string;
@@ -13,8 +12,9 @@ export interface TextSpan {
 
 export interface ParsedArtifact {
   artifact_key: string;
-  /** SHA-256 of the raw bytes (not canonical JSON — actual binary hash) */
   raw_bytes_sha256: string;
+  declared_mime_type: string;
+  detected_mime_type: string | null;
   mime_type: string;
   byte_size: number;
   extracted_text: string;
@@ -23,286 +23,268 @@ export interface ParsedArtifact {
   extraction_error?: string;
   parser_version: string;
   rule_version: string;
+  parser_rule_manifest_hash: string;
 }
 
-// ─── Constants ───────────────────────────────────────────────────────────────
+export const PDF_PARSE_VERSION = '2.4.5';
+export const JSZIP_VERSION = '3.10.1';
+export const PARSER_VERSION = `luminari.intake.parser.v2.1.0+pdf-parse@${PDF_PARSE_VERSION}+jszip@${JSZIP_VERSION}`;
+export const RULE_VERSION = '2.1.0';
 
-export const PARSER_VERSION = '2.0.0';
-export const RULE_VERSION = '2.0.0';
+export const PARSER_RULE_MANIFEST = {
+  mime_detection: {
+    pdf_magic: [0x25, 0x50, 0x44, 0x46],
+    zip_magic: [0x50, 0x4b, 0x03, 0x04],
+    docx_required_entries: ['[Content_Types].xml', 'word/document.xml'],
+    text_probe_bytes: 4096,
+    text_encoding: 'utf-8-fatal',
+    disallowed_text_controls: 'u0000-u0008,u000b,u000c,u000e-u001f',
+  },
+  pdf: {
+    dependency: `pdf-parse@${PDF_PARSE_VERSION}`,
+    api: 'new PDFParse({data}) -> getText() -> destroy()',
+    paragraph_separator: '\\n\\n+',
+  },
+  docx: {
+    dependency: `jszip@${JSZIP_VERSION}`,
+    document_entry: 'word/document.xml',
+    paragraph_tag: 'w:p',
+    token_order: ['w:t', 'w:tab', 'w:br', 'w:cr'],
+    paragraph_separator: '\\n',
+  },
+  unsupported_format_policy: 'preserve_with_unsupported_format',
+  extraction_failure_policy: 'preserve_with_extraction_failed',
+} as const;
 
-// ─── Core Parser ─────────────────────────────────────────────────────────────
+export const PARSER_RULE_MANIFEST_HASH = computeRuleManifestHash(PARSER_RULE_MANIFEST);
 
-/**
- * Shared Parsing Substrate
- * 
- * Accepts raw artifact bytes and produces a canonical parsed representation.
- * This is the ONLY place document parsing happens. All downstream layers
- * consume this output — they never independently parse source bytes.
- * 
- * Contract: same bytes + same mime_type + same parser_version → identical output
- */
 export async function parseArtifact(
   artifact_key: string,
   bytes: Buffer,
-  declared_mime_type: string
+  declared_mime_type: string,
 ): Promise<ParsedArtifact> {
-  // SHA-256 over exact raw bytes — not canonical JSON, not UTF-8 conversion
   const raw_bytes_sha256 = crypto.createHash('sha256').update(bytes).digest('hex');
   const byte_size = bytes.length;
+  const normalizedDeclaredMime = declared_mime_type.trim().toLowerCase() || 'application/octet-stream';
+  const detected_mime_type = await detectMimeFromBytes(bytes);
+  const effective_mime = detected_mime_type || normalizedDeclaredMime;
 
-  // Validate MIME from magic bytes (not trusting declared type alone)
-  const detected_mime = detectMimeFromBytes(bytes);
-  const effective_mime = detected_mime || declared_mime_type;
+  const base = {
+    artifact_key,
+    raw_bytes_sha256,
+    declared_mime_type: normalizedDeclaredMime,
+    detected_mime_type,
+    mime_type: effective_mime,
+    byte_size,
+    parser_version: PARSER_VERSION,
+    rule_version: RULE_VERSION,
+    parser_rule_manifest_hash: PARSER_RULE_MANIFEST_HASH,
+  };
 
   try {
     if (effective_mime === 'application/pdf') {
       const result = await parsePdf(bytes, artifact_key);
       return {
-        artifact_key,
-        raw_bytes_sha256,
-        mime_type: effective_mime,
-        byte_size,
+        ...base,
         extracted_text: result.text,
         spans: result.spans,
         extraction_status: 'success',
-        parser_version: PARSER_VERSION,
-        rule_version: RULE_VERSION,
       };
     }
 
     if (effective_mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
       const result = await parseDocx(bytes, artifact_key);
       return {
-        artifact_key,
-        raw_bytes_sha256,
-        mime_type: effective_mime,
-        byte_size,
+        ...base,
         extracted_text: result.text,
         spans: result.spans,
         extraction_status: 'success',
-        parser_version: PARSER_VERSION,
-        rule_version: RULE_VERSION,
       };
     }
 
     if (effective_mime.startsWith('text/')) {
-      const text = bytes.toString('utf-8');
-      const spans: TextSpan[] = text.split('\n').map((line, i, arr) => {
-        const start = arr.slice(0, i).join('\n').length + (i > 0 ? 1 : 0);
-        return {
-          text: line,
-          start_offset: start,
-          end_offset: start + line.length,
-          paragraph_index: i,
-          source_artifact_key: artifact_key,
-        };
-      }).filter(s => s.text.trim().length > 0);
-
+      const text = decodeUtf8(bytes);
       return {
-        artifact_key,
-        raw_bytes_sha256,
-        mime_type: effective_mime,
-        byte_size,
+        ...base,
         extracted_text: text,
-        spans,
+        spans: textLineSpans(text, artifact_key),
         extraction_status: 'success',
-        parser_version: PARSER_VERSION,
-        rule_version: RULE_VERSION,
       };
     }
 
-    // Unsupported format — preserve honestly
     return {
-      artifact_key,
-      raw_bytes_sha256,
-      mime_type: effective_mime,
-      byte_size,
+      ...base,
       extracted_text: '',
       spans: [],
       extraction_status: 'unsupported_format',
-      parser_version: PARSER_VERSION,
-      rule_version: RULE_VERSION,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     return {
-      artifact_key,
-      raw_bytes_sha256,
-      mime_type: effective_mime,
-      byte_size,
+      ...base,
       extracted_text: '',
       spans: [],
       extraction_status: 'extraction_failed',
-      extraction_error: error?.message || 'unknown error',
-      parser_version: PARSER_VERSION,
-      rule_version: RULE_VERSION,
+      extraction_error: error instanceof Error ? error.message : 'unknown_extraction_error',
     };
   }
 }
 
-// ─── PDF Parser ──────────────────────────────────────────────────────────────
-
 async function parsePdf(
   bytes: Buffer,
-  artifact_key: string
+  artifact_key: string,
 ): Promise<{ text: string; spans: TextSpan[] }> {
-  // pdf-parse 2.4.5 uses class-based API:
-  // new PDFParse({ data }) → getText() → destroy()
   const { PDFParse } = await import('pdf-parse');
   const parser = new PDFParse({ data: new Uint8Array(bytes) });
-  const result = await parser.getText();
-  await parser.destroy();
+  try {
+    const result = await parser.getText();
+    const fullText = result.text || '';
+    const spans: TextSpan[] = [];
+    let searchOffset = 0;
 
-  const spans: TextSpan[] = [];
-  let offset = 0;
-
-  // getText() returns { pages: [{num, text}], text: string, total: number }
-  for (let pageIdx = 0; pageIdx < result.pages.length; pageIdx++) {
-    const pageText = result.pages[pageIdx].text;
-    const paragraphs = pageText.split(/\n\n+/);
-
-    for (let paraIdx = 0; paraIdx < paragraphs.length; paraIdx++) {
-      const para = paragraphs[paraIdx].trim();
-      if (para.length === 0) continue;
-
-      const paraStart = result.text.indexOf(para, offset);
-      const start = paraStart >= 0 ? paraStart : offset;
-
-      spans.push({
-        text: para,
-        start_offset: start,
-        end_offset: start + para.length,
-        page: pageIdx + 1,
-        paragraph_index: paraIdx,
-        source_artifact_key: artifact_key,
-      });
-
-      offset = start + para.length;
+    for (let pageIdx = 0; pageIdx < result.pages.length; pageIdx++) {
+      const page = result.pages[pageIdx];
+      const pageText = page.text || '';
+      const paragraphs = pageText.split(/\n\n+/);
+      for (let paraIdx = 0; paraIdx < paragraphs.length; paraIdx++) {
+        const para = paragraphs[paraIdx].trim();
+        if (!para) continue;
+        const located = fullText.indexOf(para, searchOffset);
+        if (located < 0) {
+          throw new Error(`pdf_span_alignment_failed:page=${pageIdx + 1}:paragraph=${paraIdx}`);
+        }
+        spans.push({
+          text: para,
+          start_offset: located,
+          end_offset: located + para.length,
+          page: typeof page.num === 'number' ? page.num : pageIdx + 1,
+          paragraph_index: paraIdx,
+          source_artifact_key: artifact_key,
+        });
+        searchOffset = located + para.length;
+      }
     }
+    return { text: fullText, spans };
+  } finally {
+    await parser.destroy();
   }
-
-  return { text: result.text, spans };
 }
-
-// ─── DOCX Parser ─────────────────────────────────────────────────────────────
 
 async function parseDocx(
   bytes: Buffer,
-  artifact_key: string
+  artifact_key: string,
 ): Promise<{ text: string; spans: TextSpan[] }> {
   const JSZip = (await import('jszip')).default;
-  const zip = await JSZip.loadAsync(bytes);
-
+  const zip = await JSZip.loadAsync(bytes, { checkCRC32: true });
   const docXml = zip.file('word/document.xml');
-  if (!docXml) {
-    throw new Error('DOCX missing word/document.xml');
-  }
+  if (!docXml) throw new Error('docx_missing_word_document_xml');
 
   const xmlContent = await docXml.async('string');
-
-  // Extract text from XML paragraph elements (<w:p>...</w:p>)
-  // Parse text/tab/break tokens in XML DOCUMENT ORDER.
-  // <w:t> = text content, <w:tab/> = tab, <w:br/> = line break
-  // These must be processed as they appear in the XML, not post-hoc.
   const paragraphs: string[] = [];
-  const pRegex = /<w:p[^>]*>([\s\S]*?)<\/w:p>/g;
-  // Token regex matches text runs, tabs, and breaks in document order
-  const tokenRegex = /<w:t[^>]*>([\s\S]*?)<\/w:t>|<w:tab\s*\/>|<w:br\s*\/>/g;
+  const paragraphRegex = /<w:p(?:\s[^>]*)?>([\s\S]*?)<\/w:p>/g;
+  const tokenRegex = /<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>|<w:tab\s*\/>|<w:br(?:\s[^>]*)?\s*\/>|<w:cr\s*\/>/g;
 
-  let pMatch: RegExpExecArray | null;
-  while ((pMatch = pRegex.exec(xmlContent)) !== null) {
-    const pContent = pMatch[1];
-    let paraText = '';
-    let tokenMatch: RegExpExecArray | null;
+  let paragraphMatch: RegExpExecArray | null;
+  while ((paragraphMatch = paragraphRegex.exec(xmlContent)) !== null) {
+    let paragraphText = '';
     tokenRegex.lastIndex = 0;
-    while ((tokenMatch = tokenRegex.exec(pContent)) !== null) {
-      const fullMatch = tokenMatch[0];
-      if (fullMatch.startsWith('<w:t')) {
-        // Text run — decode XML entities
-        paraText += decodeXmlEntities(tokenMatch[1]);
-      } else if (fullMatch.includes('w:tab')) {
-        paraText += '\t';
-      } else if (fullMatch.includes('w:br')) {
-        paraText += '\n';
-      }
+    let tokenMatch: RegExpExecArray | null;
+    while ((tokenMatch = tokenRegex.exec(paragraphMatch[1])) !== null) {
+      const token = tokenMatch[0];
+      if (token.startsWith('<w:t')) paragraphText += decodeXmlEntities(tokenMatch[1] || '');
+      else if (token.startsWith('<w:tab')) paragraphText += '\t';
+      else paragraphText += '\n';
     }
-    if (paraText.trim().length > 0) {
-      paragraphs.push(paraText);
-    }
+    if (paragraphText.trim()) paragraphs.push(paragraphText);
   }
 
-  const fullText = paragraphs.join('\n');
+  const text = paragraphs.join('\n');
   const spans: TextSpan[] = [];
   let offset = 0;
-
   for (let i = 0; i < paragraphs.length; i++) {
-    const para = paragraphs[i];
+    const paragraph = paragraphs[i];
     spans.push({
-      text: para,
+      text: paragraph,
       start_offset: offset,
-      end_offset: offset + para.length,
+      end_offset: offset + paragraph.length,
       paragraph_index: i,
       source_artifact_key: artifact_key,
     });
-    offset += para.length + 1;
+    offset += paragraph.length + (i < paragraphs.length - 1 ? 1 : 0);
   }
-
-  return { text: fullText, spans };
+  return { text, spans };
 }
-
-// ─── XML Entity Decoding ────────────────────────────────────────────────────
 
 function decodeXmlEntities(text: string): string {
   return text
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, code) => String.fromCodePoint(parseInt(code, 16)))
+    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(parseInt(code, 10)))
     .replace(/&quot;/g, '"')
     .replace(/&apos;/g, "'")
-    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(parseInt(code, 10)))
-    .replace(/&#x([0-9a-fA-F]+);/g, (_, code) => String.fromCharCode(parseInt(code, 16)));
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&');
 }
 
-// ─── MIME Detection ──────────────────────────────────────────────────────────
+async function detectMimeFromBytes(bytes: Buffer): Promise<string | null> {
+  if (bytes.length < 4) return detectTextMime(bytes);
 
-function detectMimeFromBytes(bytes: Buffer): string | null {
-  if (bytes.length < 4) return null;
-
-  // PDF: starts with %PDF
-  if (bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46) {
+  if (matchesMagic(bytes, PARSER_RULE_MANIFEST.mime_detection.pdf_magic)) {
     return 'application/pdf';
   }
 
-  // ZIP (DOCX, XLSX, etc.): starts with PK\x03\x04
-  if (bytes[0] === 0x50 && bytes[1] === 0x4B && bytes[2] === 0x03 && bytes[3] === 0x04) {
-    // Use JSZip to inspect the archive for word/document.xml directly
-    // This avoids the 4KB header scan that can miss valid DOCX files
-    // depending on ZIP layout. Synchronous check via central directory.
+  if (matchesMagic(bytes, PARSER_RULE_MANIFEST.mime_detection.zip_magic)) {
+    const JSZip = (await import('jszip')).default;
     try {
-      const JSZip = require('jszip');
-      // We can't do async in a sync function, so check the raw bytes
-      // for the central directory entry 'word/document.xml'
-      const fullStr = bytes.toString('binary');
-      if (fullStr.includes('word/document.xml')) {
-        return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-      }
+      const zip = await JSZip.loadAsync(bytes);
+      const hasDocxEntries = PARSER_RULE_MANIFEST.mime_detection.docx_required_entries.every(entry => Boolean(zip.file(entry)));
+      return hasDocxEntries
+        ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        : 'application/zip';
     } catch {
-      // Fallback: scan the full binary for the path
-      const fullStr = bytes.toString('binary');
-      if (fullStr.includes('word/document.xml')) {
-        return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-      }
+      // ZIP magic is source truth even when the central directory is damaged.
+      // Parsing is unsupported here; preservation remains intact.
+      return 'application/zip';
     }
-    return 'application/zip';
   }
 
-  // Plain text heuristic: first 512 bytes are all printable ASCII/UTF-8
-  const sample = bytes.slice(0, Math.min(512, bytes.length));
-  const isPrintable = sample.every((b: number) =>
-    (b >= 0x20 && b <= 0x7E) || b === 0x0A || b === 0x0D || b === 0x09
-  );
-  if (isPrintable) {
+  return detectTextMime(bytes);
+}
+
+function detectTextMime(bytes: Buffer): string | null {
+  const sample = bytes.subarray(0, Math.min(PARSER_RULE_MANIFEST.mime_detection.text_probe_bytes, bytes.length));
+  try {
+    const decoded = new TextDecoder('utf-8', { fatal: true }).decode(sample);
+    if (/[ --]/.test(decoded)) return null;
     return 'text/plain';
+  } catch {
+    return null;
   }
+}
 
-  return null;
+function matchesMagic(bytes: Buffer, magic: readonly number[]): boolean {
+  return magic.every((value, index) => bytes[index] === value);
+}
+
+function decodeUtf8(bytes: Buffer): string {
+  return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+}
+
+function textLineSpans(text: string, artifact_key: string): TextSpan[] {
+  const spans: TextSpan[] = [];
+  let offset = 0;
+  const lines = text.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.trim()) {
+      spans.push({
+        text: line,
+        start_offset: offset,
+        end_offset: offset + line.length,
+        paragraph_index: i,
+        source_artifact_key: artifact_key,
+      });
+    }
+    offset += line.length + (i < lines.length - 1 ? 1 : 0);
+  }
+  return spans;
 }
