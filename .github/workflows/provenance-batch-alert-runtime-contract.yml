@@ -7,7 +7,7 @@ on:
       - "server/provenance-batch-alert-runtime.contract.test.ts"
       - "server/provenance-alerting.ts"
       - "server/db.ts"
-      - "supabase/migrations/20260808200500_repair_provenance_batch_alert_runtime.sql"
+      - "supabase/migrations/20260808200840_repair_provenance_batch_alert_runtime.sql"
       - ".github/workflows/provenance-batch-alert-runtime-contract.yml"
   push:
     branches: [main]
@@ -16,7 +16,7 @@ on:
       - "server/provenance-batch-alert-runtime.contract.test.ts"
       - "server/provenance-alerting.ts"
       - "server/db.ts"
-      - "supabase/migrations/20260808200500_repair_provenance_batch_alert_runtime.sql"
+      - "supabase/migrations/20260808200840_repair_provenance_batch_alert_runtime.sql"
       - ".github/workflows/provenance-batch-alert-runtime-contract.yml"
 
 jobs:

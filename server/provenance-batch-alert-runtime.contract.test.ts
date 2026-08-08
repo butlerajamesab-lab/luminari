@@ -8,7 +8,7 @@ const batch = readFileSync(resolve(here, "provenance-batch-runtime-compat.ts"), 
 const facade = readFileSync(resolve(here, "db.ts"), "utf8");
 const alerting = readFileSync(resolve(here, "provenance-alerting.ts"), "utf8");
 const migration = readFileSync(
-  resolve(here, "../supabase/migrations/20260808200500_repair_provenance_batch_alert_runtime.sql"),
+  resolve(here, "../supabase/migrations/20260808200840_repair_provenance_batch_alert_runtime.sql"),
   "utf8",
 );
 
