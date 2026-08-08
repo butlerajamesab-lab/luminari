@@ -1,0 +1,1 @@
+Live test findings preserved for repair continuity. Canonical execution remains Universal Intake Spine; legacy analysis controls are being removed or relabeled so they cannot masquerade as canonical Intake.

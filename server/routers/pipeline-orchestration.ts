@@ -2,25 +2,23 @@ import { z } from "zod";
 import { protectedProcedure, router } from "../_core/trpc";
 import { db } from "../db";
 import { eq, and, desc } from "drizzle-orm";
+import { engineRunsCanonical as engineRuns } from "../engine-runs-schema";
 import {
-  engineRuns, cases,
   strategyMatterProfile, strategyFactMatrix, strategyClaimCandidates,
   strategyViabilityAssessment, strategyDeadlineEngine,
   strategyElementFactLinks, strategyMissingEvidenceTasks, strategyPaths,
   assemblyFilingPackets, assemblyGeneratedSections,
-  patternAggregationRuns, patternFeedbackLoop,
+  patternFeedbackLoop,
 } from "../../drizzle/schema";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PIPELINE ORCHESTRATION — Cross-Engine Coordination
 //
-// Provides a unified view of engine runs, pipeline status,
-// and cross-engine data flow.
+// This is downstream orchestration. It is not the Universal Intake Spine and
+// must not be presented as the canonical intake/reconstruction action.
 // ═══════════════════════════════════════════════════════════════════════════
 
 export const pipelineOrchestrationRouter = router({
-
-  // ─── Get Engine Runs for a Case ─────────────────────────────────────
   getEngineRuns: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ input }) => {
@@ -29,11 +27,9 @@ export const pipelineOrchestrationRouter = router({
         .orderBy(desc(engineRuns.createdAt));
     }),
 
-  // ─── Get Full Pipeline Status ───────────────────────────────────────
   getPipelineStatus: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ input }) => {
-      // Strategy Engine status
       const matterProfiles = await db.select().from(strategyMatterProfile)
         .where(eq(strategyMatterProfile.caseId, input.caseId));
       const latestProfile = matterProfiles[0];
@@ -51,9 +47,9 @@ export const pipelineOrchestrationRouter = router({
           .where(and(eq(strategyFactMatrix.caseId, input.caseId), eq(strategyFactMatrix.matterProfileId, latestProfile.id)));
         factCount = facts.length;
 
-        const cands = await db.select().from(strategyClaimCandidates)
+        const candidates = await db.select().from(strategyClaimCandidates)
           .where(and(eq(strategyClaimCandidates.caseId, input.caseId), eq(strategyClaimCandidates.matterProfileId, latestProfile.id)));
-        candidateCount = cands.length;
+        candidateCount = candidates.length;
 
         const assessments = await db.select().from(strategyViabilityAssessment)
           .where(eq(strategyViabilityAssessment.caseId, input.caseId));
@@ -76,23 +72,17 @@ export const pipelineOrchestrationRouter = router({
         pathCount = paths.length;
       }
 
-      // Assembly Engine status
       const packets = await db.select().from(assemblyFilingPackets)
         .where(eq(assemblyFilingPackets.caseId, input.caseId));
 
       let sectionCount = 0;
-      for (const p of packets) {
+      for (const packet of packets) {
         const sections = await db.select().from(assemblyGeneratedSections)
-          .where(eq(assemblyGeneratedSections.packetId, p.id));
+          .where(eq(assemblyGeneratedSections.packetId, packet.id));
         sectionCount += sections.length;
       }
 
-      // Pattern Engine status
       const feedback = await db.select().from(patternFeedbackLoop);
-      const caseFeedback = feedback.filter((f: any) => {
-        // Check if any strategy path for this case has feedback
-        return true; // simplified — all feedback is relevant
-      });
 
       return {
         strategy_engine: {
@@ -108,21 +98,33 @@ export const pipelineOrchestrationRouter = router({
             S7_missingEvidence: taskCount > 0,
             S8_strategyPaths: pathCount > 0,
           },
-          counts: { facts: factCount, candidates: candidateCount, assessments: assessmentCount, deadlines: deadlineCount, links: linkCount, tasks: taskCount, paths: pathCount },
+          counts: {
+            facts: factCount,
+            candidates: candidateCount,
+            assessments: assessmentCount,
+            deadlines: deadlineCount,
+            links: linkCount,
+            tasks: taskCount,
+            paths: pathCount,
+          },
         },
         assembly_engine: {
           status: packets.length > 0 ? "initialized" : "not_started",
           packet_count: packets.length,
           sectionCount,
-          packets: packets.map((p: any) => ({ id: p.id, name: p.packetName, type: p.packetType, status: p.packetStatus })),
+          packets: packets.map((packet: any) => ({
+            id: packet.id,
+            name: packet.packetName,
+            type: packet.packetType,
+            status: packet.packetStatus,
+          })),
         },
         pattern_engine: {
-          feedback_count: caseFeedback.length,
+          feedback_count: feedback.length,
         },
       };
     }),
 
-  // ─── Get Latest Engine Run ──────────────────────────────────────────
   getLatestRun: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ input }) => {
@@ -133,14 +135,16 @@ export const pipelineOrchestrationRouter = router({
       return run ?? null;
     }),
 
-  // ─── Cancel Engine Run ──────────────────────────────────────────────
   cancelRun: protectedProcedure
     .input(z.object({ runId: z.number() }))
     .mutation(async ({ input }) => {
-      await db.update(engineRuns).set({
-        runStatus: "cancelled" as any,
-        completedAt: Date.now(),
-      }).where(eq(engineRuns.id, input.runId));
+      await db.update(engineRuns)
+        .set({
+          runStatus: "cancelled",
+          status: "cancelled",
+          completedAt: Date.now(),
+        })
+        .where(eq(engineRuns.id, input.runId));
       return { success: true };
     }),
 });
