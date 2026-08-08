@@ -42,3 +42,10 @@ export {
   getRelationshipsForEntityEnriched,
 } from "./case-runtime-intake-compat";
 export { listEvents } from "./case-runtime-chronology-compat";
+export {
+  createFinding,
+  listUnsupportedFindings,
+  getProvenanceDrilldownMetrics,
+  updateFindingClaimIds,
+  updateFindingMatchMetadata,
+} from "./provenance-runtime-compat";
