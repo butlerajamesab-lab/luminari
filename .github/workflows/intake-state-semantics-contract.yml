@@ -1,0 +1,36 @@
+name: Intake State Semantics Contract
+
+on:
+  pull_request:
+    paths:
+      - "server/intake-case-integrity-projection.ts"
+      - "server/routers/analyze.ts"
+      - "client/src/pages/IntegrityDashboard.tsx"
+      - "client/src/pages/Provenance.tsx"
+      - "server/intake-integrity-projection.contract.test.ts"
+      - "server/provenance-integrity-state-semantics.contract.test.ts"
+      - ".github/workflows/intake-state-semantics-contract.yml"
+  push:
+    branches: [main]
+    paths:
+      - "server/intake-case-integrity-projection.ts"
+      - "server/routers/analyze.ts"
+      - "client/src/pages/IntegrityDashboard.tsx"
+      - "client/src/pages/Provenance.tsx"
+      - "server/intake-integrity-projection.contract.test.ts"
+      - "server/provenance-integrity-state-semantics.contract.test.ts"
+      - ".github/workflows/intake-state-semantics-contract.yml"
+
+jobs:
+  state-semantics:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm exec vitest run server/intake-integrity-projection.contract.test.ts server/provenance-integrity-state-semantics.contract.test.ts
+      - run: pnpm run build
