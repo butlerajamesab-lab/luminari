@@ -51,8 +51,7 @@ export default function Timeline() {
         <CardContent className="p-3 text-xs text-muted-foreground flex items-start gap-2">
           <ShieldCheck className="h-4 w-4 mt-0.5 shrink-0" />
           <p>
-            Existing timeline events are preserved unchanged and displayed here as reported facts.
-            Confirmation, corroboration, dispute status, and stronger source confidence require linked evidence.
+            When a sealed Universal Intake Spine chronology receipt exists, this page preserves its source-bound verification state and exact source references. Legacy timeline events remain reported facts until a governed source-linked chronology supersedes that projection.
           </p>
         </CardContent>
       </Card>
@@ -76,7 +75,7 @@ export default function Timeline() {
           <CardContent className="p-8 flex flex-col items-center gap-4 text-center">
             <Clock className="h-10 w-10 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">
-              No chronology events yet. Upload and analyze documents to populate the factual record.
+              No chronology events yet. Preserve evidence and run the Universal Intake Spine to populate the source-bound factual record.
             </p>
             <div className="flex gap-2 mt-2">
               <Button variant="outline" size="sm" onClick={() => setLocation("/upload")} className="gap-1.5 text-xs">
