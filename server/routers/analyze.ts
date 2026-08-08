@@ -4,6 +4,7 @@ import { getPool } from '../db';
 import * as db_helpers from '../db';
 import { execute_intake_spine_session } from '../intake-spine-orchestrator';
 import { read_canonical_case_layer_outputs } from '../intake-case-layer-reader';
+import { read_case_intake_integrity_projection } from '../intake-case-integrity-projection';
 import type { VerificationRecord } from '../engines/intake-spine/layer-5-verification_gate';
 import type { ClaimCandidate } from '../engines/intake-spine/layer-12-rights_and_duties_matrix';
 import type { ActionPath } from '../engines/intake-spine/layer-14-action_paths';
@@ -124,6 +125,19 @@ export const analyzeRouter = router({
             ? row.latest_receipt_hash
             : null,
       }));
+    }),
+
+  /**
+   * Canonical evidence-integrity posture comes from Universal Intake Spine
+   * Layer 3. Zero errors without an eligible sealed Layer 3 execution is not a
+   * successful integrity result; the projection reports no_evidence, not_run,
+   * partial, verified, or blocked explicitly.
+   */
+  getIntakeIntegrityProjection: protectedProcedure
+    .input(z.object({ caseId: z.number().int().positive() }))
+    .query(async ({ ctx, input }) => {
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      return read_case_intake_integrity_projection(input.caseId);
     }),
 
   /**
