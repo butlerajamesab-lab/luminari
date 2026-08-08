@@ -6,11 +6,18 @@
  * cooldown per alert type prevents spam.
  */
 
-import { db } from "./db";
-import { provenanceAlertEvents } from "../drizzle/schema";
-import { eq, and, gt } from "drizzle-orm";
-import { getProvenanceDrilldownMetrics } from "./db";
+import {
+  createProvenanceAlertEvent,
+  getProvenanceDrilldownMetrics,
+  isProvenanceAlertInCooldown,
+  listProvenanceAlertEvents,
+} from "./db";
 import { notifyOwner } from "./_core/notification";
+import type {
+  ProvenanceAlertEventCompat,
+  ProvenanceAlertMetrics,
+  ProvenanceAlertType,
+} from "./provenance-alert-runtime-compat";
 
 // ─── Constants ───
 
@@ -18,65 +25,47 @@ const COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 hours
 const UNSUPPORTED_RATE_THRESHOLD = 5; // percentage
 const COVERAGE_THRESHOLD = 90; // percentage
 
-type AlertType = "PROVENANCE_DRIFT" | "PROVENANCE_COVERAGE_DROP";
-
 // ─── Cooldown Check ───
 
-async function isInCooldown(alertType: AlertType): Promise<boolean> {
-  const now = Date.now();
-  const [recent] = await db
-    .select()
-    .from(provenanceAlertEvents)
-    .where(
-      and(
-        eq(provenanceAlertEvents.alertType, alertType),
-        gt(provenanceAlertEvents.cooldownUntil, now)
-      )
-    )
-    .limit(1);
-  return !!recent;
+async function isInCooldown(alertType: ProvenanceAlertType): Promise<boolean> {
+  return isProvenanceAlertInCooldown(alertType, Date.now());
 }
 
 // ─── Log Alert Event ───
 
 async function logAlertEvent(
-  alertType: AlertType,
-  metrics: {
-    coverage: number;
-    unsupportedRate: number;
-    fallbackRate: number;
-    totalFindings: number;
-    unsupportedCount: number;
-    batchId?: number;
-  },
-  notificationSent: boolean
+  alertType: ProvenanceAlertType,
+  metrics: ProvenanceAlertMetrics,
+  notificationSent: boolean,
 ): Promise<number> {
-  const [result] = await db.insert(provenanceAlertEvents).values({
+  const now = Date.now();
+  return createProvenanceAlertEvent({
     alertType,
     metrics,
-    cooldownUntil: Date.now() + COOLDOWN_MS,
+    cooldownUntil: now + COOLDOWN_MS,
     notificationSent,
-    createdAt: Date.now(),
+    createdAt: now,
   });
-  return result.insertId;
 }
 
 // ─── Core: Check Thresholds and Alert ───
 
 export async function checkProvenanceThresholds(caseId?: number): Promise<{
   checked: boolean;
-  alerts: Array<{ type: AlertType; sent: boolean; reason: string }>;
+  alerts: Array<{ type: ProvenanceAlertType; sent: boolean; reason: string }>;
 }> {
   const m = await getProvenanceDrilldownMetrics(caseId);
 
+  // No population means there is no provenance rate to evaluate. The check ran,
+  // but no alert event is fabricated from an empty denominator.
   if (m.totalFindings === 0) {
     return { checked: true, alerts: [] };
   }
 
   const coverage = 100 - m.unsupportedRate; // coverage = 100% - unsupported%
-  const alerts: Array<{ type: AlertType; sent: boolean; reason: string }> = [];
+  const alerts: Array<{ type: ProvenanceAlertType; sent: boolean; reason: string }> = [];
 
-  const metricsPayload = {
+  const metricsPayload: ProvenanceAlertMetrics = {
     coverage,
     unsupportedRate: m.unsupportedRate,
     fallbackRate: m.fallbackUsageRate,
@@ -165,13 +154,6 @@ export async function checkProvenanceThresholds(caseId?: number): Promise<{
 
 // ─── List Alert History ───
 
-export async function listAlertEvents(limit = 20): Promise<ProvenanceAlertEvent[]> {
-  const { desc } = await import("drizzle-orm");
-  return db
-    .select()
-    .from(provenanceAlertEvents)
-    .orderBy(desc(provenanceAlertEvents.createdAt))
-    .limit(limit);
+export async function listAlertEvents(limit = 20): Promise<ProvenanceAlertEventCompat[]> {
+  return listProvenanceAlertEvents(limit);
 }
-
-type ProvenanceAlertEvent = typeof provenanceAlertEvents.$inferSelect;
