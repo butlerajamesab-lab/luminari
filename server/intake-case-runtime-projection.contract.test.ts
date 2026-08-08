@@ -34,8 +34,8 @@ describe("Universal Intake Spine case runtime projection", () => {
 
   it("preserves the migration fallback but never falls through once a canonical layer output exists", () => {
     expect(compatibility).toContain('projection.state === "canonical_projection"');
-    expect(compatibility).toContain("return projection.entities");
-    expect(compatibility).toContain("return projection.relationships");
+    expect(compatibility).toContain("return projection.entities.map(externalize_entity)");
+    expect(compatibility).toContain("return projection.relationships.map(externalize_relationship)");
     expect(compatibility).toContain("return list_legacy_entities_runtime(caseId)");
     expect(compatibility).toContain("return list_legacy_relationships_runtime(caseId)");
   });
@@ -47,8 +47,15 @@ describe("Universal Intake Spine case runtime projection", () => {
     expect(dbFacade).toContain('from "./case-runtime-intake-compat"');
   });
 
+  it("keeps Intake-owned projection metadata snake_case at the API boundary", () => {
+    expect(compatibility).toContain("canonical_entity_id");
+    expect(compatibility).toContain("canonical_relationship_id");
+    expect(compatibility).toContain("canonical_receipt_hashes");
+    expect(compatibility).toContain("projection_source");
+  });
+
   it("keeps projected graph evidence on the canonical source-span path instead of querying a nonexistent legacy row", () => {
-    expect(graph).toContain('relationship?.projectionSource !== "universal_intake_spine"');
+    expect(graph).toContain('relationship?.projection_source !== "universal_intake_spine"');
     expect(graph).toContain("selectedLink.relId > 0");
     expect(graph).toContain("projectedLinkEvidence ?? legacyLinkEvidence");
     expect(graph).not.toContain("identified by AI analysis");
