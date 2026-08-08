@@ -18,6 +18,48 @@ export interface UnsupportedFindingSummary {
   documentLabels: string[];
 }
 
+export interface FindingMatchDetailCompat {
+  finding: {
+    id: number;
+    caseId: number;
+    findingType: string;
+    title: string;
+    description: string;
+    significance: string | null;
+    claimIds: number[];
+    confidence: string;
+    createdAt: number;
+    findingEvidentiaryWeight: string;
+    evidentiaryWeight: string;
+    provenanceStatus: string;
+    provenanceAttempted: boolean;
+    candidateClaimCount: number;
+    fallbackTriggered: boolean;
+    matchAttemptTimestamp: number | null;
+    matchMetadata: Record<string, unknown> | null;
+    laneId: string | null;
+    snapshotId: number | null;
+  };
+  candidateClaims: Array<{
+    id: string;
+    claimText: string;
+    claimType: string | null;
+    documentId: string | null;
+    documentLabel: string;
+  }>;
+  matchMetadata: Record<string, unknown> | null;
+  auditLog: Array<{
+    id: number;
+    userId: number;
+    caseId: number;
+    actionType: string;
+    targetType: string;
+    targetId: number;
+    details: Record<string, unknown> | null;
+    createdAt: number;
+  }>;
+}
+
 type CreateFindingInput = {
   caseId: number;
   findingType: string;
@@ -60,10 +102,52 @@ function parse_json_array(value: unknown): number[] {
   }
 }
 
+function parse_json_object(value: unknown): Record<string, unknown> | null {
+  if (value === null || value === undefined || value === "") return null;
+  if (typeof value === "object" && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+  try {
+    const parsed = JSON.parse(String(value));
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? parsed as Record<string, unknown>
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 function derive_document_display_label(filename: string | null | undefined): string {
   if (!filename) return "Unknown Document";
   const match = filename.match(/EFTA[- _]?\d+/i);
   return match ? match[0].toUpperCase().replace(/[_ ]/g, "-") : filename;
+}
+
+function map_finding_detail_row(row: any): FindingMatchDetailCompat["finding"] {
+  const evidentiaryWeight = String(row.finding_evidentiary_weight ?? "note_signal");
+  return {
+    id: as_number(row.id),
+    caseId: as_number(row.case_id),
+    findingType: String(row.finding_type ?? "unknown"),
+    title: String(row.title ?? ""),
+    description: String(row.description ?? ""),
+    significance: row.significance === null || row.significance === undefined
+      ? null
+      : String(row.significance),
+    claimIds: parse_json_array(row.claim_ids),
+    confidence: String(row.confidence ?? "unresolved"),
+    createdAt: as_number(row.created_at),
+    findingEvidentiaryWeight: evidentiaryWeight,
+    evidentiaryWeight,
+    provenanceStatus: String(row.provenance_status ?? "unsupported"),
+    provenanceAttempted: as_number(row.provenance_attempted) === 1,
+    candidateClaimCount: as_number(row.candidate_claim_count),
+    fallbackTriggered: as_number(row.fallback_triggered) === 1,
+    matchAttemptTimestamp: as_nullable_number(row.match_attempt_timestamp),
+    matchMetadata: parse_json_object(row.match_metadata),
+    laneId: row.lane_id === null || row.lane_id === undefined ? null : String(row.lane_id),
+    snapshotId: as_nullable_number(row.snapshot_id),
+  };
 }
 
 /**
@@ -71,9 +155,10 @@ function derive_document_display_label(filename: string | null | undefined): str
  *
  * Production Postgres preserves the historical MySQL boolean representation:
  * provenance_attempted and fallback_triggered are INTEGER 0/1 columns, while
- * the legacy Drizzle declaration presents them as booleans. Direct SQL here is
- * deliberate: it preserves the live schema without mutating historical data or
- * relying on PostgreSQL to compare/assign INTEGER and BOOLEAN values.
+ * the legacy Drizzle declaration presents them as booleans. claim_ids and
+ * match_metadata are persisted JSON text. Direct SQL here is deliberate: it
+ * preserves the live schema without mutating historical data or relying on
+ * incompatible PostgreSQL/Drizzle type assumptions.
  */
 export async function listUnsupportedFindings(caseId?: number): Promise<UnsupportedFindingSummary[]> {
   const result = await getPool().query(
@@ -92,7 +177,7 @@ export async function listUnsupportedFindings(caseId?: number): Promise<Unsuppor
        f.match_attempt_timestamp,
        f.created_at
      from public.findings f
-     where f.provenance_status in ('unsupported', 'unsupported_synthesis')
+     where f.provenance_status in ('unsupported', 'unsupported_synthesis', 'rerun_error')
        and f.provenance_attempted = 1
        and ($1::integer is null or f.case_id = $1)
      order by f.created_at desc nulls last, f.id desc`,
@@ -148,7 +233,7 @@ export async function getProvenanceDrilldownMetrics(caseId?: number) {
     `select
        count(*)::int as total_findings,
        count(*) filter (
-         where provenance_status in ('unsupported', 'unsupported_synthesis')
+         where provenance_status in ('unsupported', 'unsupported_synthesis', 'rerun_error')
        )::int as unsupported_count,
        count(*) filter (
          where provenance_status = 'unsupported_synthesis'
@@ -175,6 +260,69 @@ export async function getProvenanceDrilldownMetrics(caseId?: number) {
       ? Math.round((total_candidates / total) * 100) / 100
       : 0,
     fallbackUsageRate: total > 0 ? Math.round((fallback_used / total) * 10000) / 100 : 0,
+  };
+}
+
+/**
+ * Retrieve the legacy finding plus case-scoped candidate claims and immutable
+ * provenance audit entries without asking the drifted Drizzle findings model to
+ * decode INTEGER booleans or TEXT-backed JSON as native Postgres values.
+ */
+export async function getFindingMatchDetail(findingId: number): Promise<FindingMatchDetailCompat | null> {
+  const findingResult = await getPool().query(
+    `select id, case_id, finding_type, title, description, significance,
+            claim_ids, confidence, created_at, finding_evidentiary_weight,
+            provenance_status, provenance_attempted, candidate_claim_count,
+            fallback_triggered, match_attempt_timestamp, match_metadata,
+            lane_id, snapshot_id
+       from public.findings
+      where id = $1
+      limit 1`,
+    [findingId],
+  );
+  if (findingResult.rows.length === 0) return null;
+
+  const finding = map_finding_detail_row(findingResult.rows[0]);
+
+  const claimsResult = await getPool().query(
+    `select c.id, c.claim_text, c.claim_type, c.document_id, d.filename
+       from public.claims c
+       left join public.documents d on d.id = c.document_id
+      where c.case_id = $1
+      order by c.id`,
+    [finding.caseId],
+  );
+  const candidateClaims = claimsResult.rows.map((row: any) => ({
+    id: String(row.id),
+    claimText: String(row.claim_text ?? ""),
+    claimType: row.claim_type === null || row.claim_type === undefined ? null : String(row.claim_type),
+    documentId: row.document_id === null || row.document_id === undefined ? null : String(row.document_id),
+    documentLabel: derive_document_display_label(row.filename),
+  }));
+
+  const auditResult = await getPool().query(
+    `select id, user_id, case_id, action_type, target_type, target_id, details, created_at
+       from public.provenance_audit_logs
+      where target_id = $1
+      order by created_at desc, id desc`,
+    [findingId],
+  );
+  const auditLog = auditResult.rows.map((row: any) => ({
+    id: as_number(row.id),
+    userId: as_number(row.user_id),
+    caseId: as_number(row.case_id),
+    actionType: String(row.action_type ?? ""),
+    targetType: String(row.target_type ?? ""),
+    targetId: as_number(row.target_id),
+    details: parse_json_object(row.details),
+    createdAt: as_number(row.created_at),
+  }));
+
+  return {
+    finding,
+    candidateClaims,
+    matchMetadata: finding.matchMetadata,
+    auditLog,
   };
 }
 
@@ -269,6 +417,28 @@ export async function updateFindingMatchMetadata(findingId: number, meta: {
       meta.fallbackTriggered ? 1 : 0,
       Date.now(),
       JSON.stringify(meta.matchMetadata),
+    ],
+  );
+}
+
+export async function markFindingRerunError(
+  findingId: number,
+  batchId: number,
+  errorMessage: string,
+) {
+  const now = Date.now();
+  await getPool().query(
+    `update public.findings
+        set provenance_status = 'rerun_error',
+            provenance_attempted = 1,
+            match_attempt_timestamp = $3,
+            match_metadata = $4
+      where id = $1`,
+    [
+      findingId,
+      batchId,
+      now,
+      JSON.stringify({ batchRerunId: batchId, error: errorMessage, errorAt: now }),
     ],
   );
 }
