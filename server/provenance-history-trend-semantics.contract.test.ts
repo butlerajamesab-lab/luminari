@@ -22,6 +22,12 @@ describe("provenance history trend semantics", () => {
     expect(history).toContain(">N/A</p>");
   });
 
+  it("explains N/A until two completed non-empty runs are comparable", () => {
+    expect(history).toContain("comparableRuns: comparableRuns.length");
+    expect(history).toContain("trends.comparableRuns < 2 && trends.totalRuns > 0");
+    expect(history).toContain("At least two completed batch runs with nonzero finding populations are required");
+  });
+
   it("keeps incomplete passes visible without using them as trend observations", () => {
     expect(history).toContain("All batch passes remain visible; trend deltas use completed, non-empty runs only.");
     expect(history).toContain("running, aborted, and errored passes are never substituted");
