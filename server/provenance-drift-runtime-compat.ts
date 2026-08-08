@@ -50,6 +50,7 @@ function claim_id_count(value: unknown): number | null {
  * Empty populations are not 100% coverage. They are not evaluated, so ratio
  * metrics are null. If a linked finding contains malformed claim_ids JSON, the
  * average-claims metric is also null and measurementState becomes incomplete.
+ * A rerun_error is unresolved provenance state, not successful coverage.
  */
 export async function getProvenanceDriftMetrics(
   caseId?: number,
@@ -111,7 +112,7 @@ export async function getProvenanceDriftMetrics(
         linkedClaimTotal += count;
         linkedClaimRows += 1;
       }
-    } else if (status === "unsupported") {
+    } else if (status === "unsupported" || status === "rerun_error") {
       unsupported += 1;
       existing.unsupported += 1;
     }
