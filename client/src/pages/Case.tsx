@@ -32,6 +32,7 @@ import {
   Phone,
   AlertTriangle,
   MessageSquare,
+  Shield,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -57,12 +58,18 @@ export default function Case() {
   const { user } = useAuth();
   const [noteInput, setNoteInput] = useState("");
   const [isAddingNote, setIsAddingNote] = useState(false);
+  const caseId = parseInt(id || "0", 10);
 
   const caseQuery = trpc.luminari.getCase.useQuery(
-    { case_id: parseInt(id || "0", 10) },
+    { case_id: caseId },
     { enabled: !!id && !!user }
   );
 
+  const intakeStatusQuery = trpc.analyze.getIntakeSpineStatus.useQuery(
+    { caseId },
+    { enabled: !!id && !!user && Number.isFinite(caseId) && caseId > 0 }
+  );
+  const runIntakeSpineMutation = trpc.analyze.runIntakeSpine.useMutation();
   const addNoteMutation = trpc.luminari.addNote.useMutation();
   const recordActionMutation = trpc.luminari.recordAction.useMutation();
 
@@ -101,6 +108,36 @@ export default function Case() {
     }
   };
 
+  const handleRunIntakeSpine = async () => {
+    if (!caseQuery.data || !id) return;
+
+    const jurisdiction =
+      (caseQuery.data as any)?.registry?.jurisdiction?.code ||
+      (caseQuery.data as any)?.registry?.jurisdiction?.abbreviation ||
+      (caseQuery.data as any)?.registry?.jurisdiction?.name;
+
+    if (!jurisdiction) {
+      toast.error("A jurisdiction is required before Intake Spine execution.");
+      return;
+    }
+
+    const asOf = new Date().toISOString().slice(0, 10);
+
+    try {
+      const result = await runIntakeSpineMutation.mutateAsync({
+        caseId,
+        jurisdiction: String(jurisdiction),
+        asOf,
+      });
+      toast.success(
+        `Intake Spine sealed ${result.receipts.length} layer receipt${result.receipts.length === 1 ? "" : "s"}.`
+      );
+      await intakeStatusQuery.refetch();
+    } catch (error: any) {
+      toast.error(error?.message || "Intake Spine execution failed.");
+    }
+  };
+
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -133,6 +170,10 @@ export default function Case() {
   }
 
   const { case: caseData, registry } = caseQuery.data;
+  const liveIntakeSession = intakeStatusQuery.data?.find(
+    (session) => session.session_type === "live" && session.entry_channel === "upload"
+  );
+  const asOf = new Date().toISOString().slice(0, 10);
 
   return (
     <div className="min-h-screen bg-background">
@@ -164,6 +205,79 @@ export default function Case() {
 
       {/* Main content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+        {/* Governed Intake Spine control */}
+        <Card className="border-primary/30">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5" />
+              Universal Intake Spine
+            </CardTitle>
+            <CardDescription>
+              Evidence is preserved first. Analysis runs only when you start it explicitly, against the preserved source bytes and declared rule versions.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {intakeStatusQuery.isLoading ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Reading Intake Spine state…
+              </div>
+            ) : liveIntakeSession ? (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                <div>
+                  <p className="text-muted-foreground">Preserved sources</p>
+                  <p className="font-semibold text-base">{liveIntakeSession.source_artifact_count}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Layer runs</p>
+                  <p className="font-semibold text-base">{liveIntakeSession.layer_run_count}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Sealed receipts</p>
+                  <p className="font-semibold text-base">{liveIntakeSession.sealed_layer_run_count}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">As-of boundary</p>
+                  <p className="font-semibold">{asOf}</p>
+                </div>
+              </div>
+            ) : (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  No live upload-backed Intake Spine session is registered for this case yet.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {liveIntakeSession?.latest_receipt_hash && (
+              <div className="rounded-md border border-border/50 bg-muted/30 p-3">
+                <p className="text-xs text-muted-foreground mb-1">Latest sealed receipt</p>
+                <code className="text-[10px] break-all">{liveIntakeSession.latest_receipt_hash}</code>
+              </div>
+            )}
+
+            <Button
+              onClick={handleRunIntakeSpine}
+              disabled={
+                runIntakeSpineMutation.isPending ||
+                !liveIntakeSession ||
+                liveIntakeSession.source_artifact_count === 0
+              }
+              className="w-full"
+            >
+              {runIntakeSpineMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Running deterministic Intake Spine…
+                </>
+              ) : (
+                "Run Intake Spine"
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+
         {/* Critical signals */}
         {registry.signals && registry.signals.length > 0 && (
           <div className="space-y-3">
