@@ -50,3 +50,14 @@ export {
   updateFindingMatchMetadata,
 } from "./provenance-runtime-compat";
 export { getProvenanceDriftMetrics } from "./provenance-drift-runtime-compat";
+export {
+  createBatchRun,
+  getActiveBatchRun,
+  getBatchRunById,
+  updateBatchProgress,
+  completeBatchRun,
+  abortBatchRun,
+  getLatestBatchRun,
+  listBatchRuns,
+  expireStaleBatchRuns,
+} from "./provenance-batch-runtime-compat";
