@@ -49,3 +49,4 @@ export {
   updateFindingClaimIds,
   updateFindingMatchMetadata,
 } from "./provenance-runtime-compat";
+export { getProvenanceDriftMetrics } from "./provenance-drift-runtime-compat";
