@@ -1,8 +1,127 @@
-import { router, publicProcedure } from '../_core/trpc';
+import { router, protectedProcedure, publicProcedure } from '../_core/trpc';
 import { z } from 'zod';
 import { getPool } from '../db';
+import * as db_helpers from '../db';
+import { execute_intake_spine_session } from '../intake-spine-orchestrator';
+
+const SHA256_RE = /^[0-9a-f]{64}$/;
 
 export const analyzeRouter = router({
+  /**
+   * Execute the governed Universal Intake Spine for the one live upload session
+   * bound to this case. Preservation remains separate; this is an explicit
+   * analysis action.
+   */
+  runIntakeSpine: protectedProcedure
+    .input(z.object({
+      caseId: z.number().int().positive(),
+      jurisdiction: z.string().trim().min(1).max(32),
+      asOf: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      intakeSessionId: z.string().uuid().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await db_helpers.verifyCaseWriteAccess(input.caseId, ctx.user.id);
+      const pool = getPool();
+
+      const session_result = await pool.query<{
+        intake_session_id: string;
+      }>(
+        `select s.intake_session_id::text
+           from public.intake_sessions s
+           join public.case_intake_links cil
+             on cil.intake_session_id = s.intake_session_id
+           join public.case_identity_bridge cib
+             on cib.case_uuid = cil.case_uuid
+          where cib.legacy_case_id = $1
+            and s.session_type = 'live'
+            and s.entry_channel = 'upload'
+            and ($2::uuid is null or s.intake_session_id = $2::uuid)
+          order by s.created_at asc`,
+        [input.caseId, input.intakeSessionId ?? null],
+      );
+
+      if (session_result.rows.length === 0) {
+        throw new Error('intake_spine_runtime_live_upload_session_not_found');
+      }
+      if (session_result.rows.length > 1 && !input.intakeSessionId) {
+        throw new Error('intake_spine_runtime_multiple_live_upload_sessions_require_explicit_session_id');
+      }
+
+      return execute_intake_spine_session({
+        intake_session_id: session_result.rows[0].intake_session_id,
+        jurisdiction: input.jurisdiction,
+        as_of: input.asOf,
+      });
+    }),
+
+  /**
+   * Truthful runtime state for the case's Intake Spine sessions. The UI can use
+   * this instead of inferring health from legacy document-analysis status.
+   */
+  getIntakeSpineStatus: protectedProcedure
+    .input(z.object({ caseId: z.number().int().positive() }))
+    .query(async ({ ctx, input }) => {
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      const { rows } = await getPool().query<{
+        intake_session_id: string;
+        session_type: string;
+        entry_channel: string;
+        source_label: string | null;
+        session_status: string;
+        completion_state: string;
+        created_at: string;
+        source_artifact_count: string | number;
+        layer_run_count: string | number;
+        sealed_layer_run_count: string | number;
+        latest_receipt_hash: string | null;
+      }>(
+        `select
+           s.intake_session_id::text,
+           s.session_type,
+           s.entry_channel,
+           s.source_label,
+           s.session_status,
+           s.completion_state,
+           s.created_at::text,
+           count(distinct ia.artifact_id) filter (where ia.artifact_type = 'source_document') as source_artifact_count,
+           count(distinct ilr.layer_run_id) as layer_run_count,
+           count(distinct ilr.layer_run_id) filter (where ilr.is_sealed = true) as sealed_layer_run_count,
+           (array_agg(ilr.receipt_hash order by ilr.sealed_at desc nulls last)
+             filter (where ilr.receipt_hash ~ '^[0-9a-f]{64}$'))[1] as latest_receipt_hash
+         from public.intake_sessions s
+         join public.case_intake_links cil
+           on cil.intake_session_id = s.intake_session_id
+         join public.case_identity_bridge cib
+           on cib.case_uuid = cil.case_uuid
+         left join public.intake_artifacts ia
+           on ia.intake_session_id = s.intake_session_id
+         left join public.intake_layer_runs ilr
+           on ilr.intake_session_id = s.intake_session_id
+        where cib.legacy_case_id = $1
+        group by s.intake_session_id, s.session_type, s.entry_channel, s.source_label,
+                 s.session_status, s.completion_state, s.created_at
+        order by s.created_at asc`,
+        [input.caseId],
+      );
+
+      return rows.map(row => ({
+        intake_session_id: row.intake_session_id,
+        session_type: row.session_type,
+        entry_channel: row.entry_channel,
+        source_label: row.source_label,
+        session_status: row.session_status,
+        completion_state: row.completion_state,
+        created_at: row.created_at,
+        source_artifact_count: Number(row.source_artifact_count),
+        layer_run_count: Number(row.layer_run_count),
+        sealed_layer_run_count: Number(row.sealed_layer_run_count),
+        latest_receipt_hash:
+          row.latest_receipt_hash && SHA256_RE.test(row.latest_receipt_hash)
+            ? row.latest_receipt_hash
+            : null,
+      }));
+    }),
+
   /**
    * 1. CLAIM ELEMENTS - Extract and analyze claim structure
    */
