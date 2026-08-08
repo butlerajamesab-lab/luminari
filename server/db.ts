@@ -10,11 +10,11 @@
 export * from "./db-legacy";
 export {
   createCase,
-  getCaseTimelineData,
   getCaseNarrative,
   upsertCaseNarrative,
 } from "./case-contract-compat";
 export { getCaseStats } from "./case-stats-intake-compat";
+export { getCaseTimelineData } from "./case-timeline-intake-compat";
 export {
   getSnapshot,
   getOpenSnapshot,
