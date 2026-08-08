@@ -6,6 +6,7 @@ import { execute_intake_spine_session } from '../intake-spine-orchestrator';
 import { read_canonical_case_layer_outputs } from '../intake-case-layer-reader';
 import type { VerificationRecord } from '../engines/intake-spine/layer-5-verification_gate';
 import type { ClaimCandidate } from '../engines/intake-spine/layer-12-rights_and_duties_matrix';
+import type { ActionPath } from '../engines/intake-spine/layer-14-action_paths';
 
 const SHA256_RE = /^[0-9a-f]{64}$/;
 
@@ -183,6 +184,37 @@ export const analyzeRouter = router({
           receipt_hash: output.receipt_hash,
           unresolved_dependencies: output.unresolved_dependencies,
           candidates: output.data,
+        })),
+      };
+    }),
+
+  /**
+   * Case-bound procedural possibilities come from Universal Intake Spine Layer 14.
+   * The engine deliberately does not rank or recommend paths. Candidate status,
+   * incomplete footholds, unresolved facts, appeal routes, and every governed
+   * source receipt remain visible to the caller.
+   */
+  getIntakeActionPathProjection: protectedProcedure
+    .input(z.object({ caseId: z.number().int().positive() }))
+    .query(async ({ ctx, input }) => {
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      const projection = await read_canonical_case_layer_outputs<ActionPath[]>(
+        input.caseId,
+        'action_paths',
+      );
+
+      return {
+        projection_state: projection.state,
+        outputs: projection.outputs.map(output => ({
+          intake_session_id: output.intake_session_id,
+          layer_run_id: output.layer_run_id,
+          layer_version: output.layer_version,
+          rule_version: output.rule_version,
+          input_hash: output.input_hash,
+          output_hash: output.output_hash,
+          receipt_hash: output.receipt_hash,
+          unresolved_dependencies: output.unresolved_dependencies,
+          paths: output.data,
         })),
       };
     }),
