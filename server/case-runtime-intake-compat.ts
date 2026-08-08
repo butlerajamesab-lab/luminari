@@ -24,20 +24,103 @@ import {
   project_case_relationships,
 } from "./intake-case-runtime-projection";
 
+function externalize_entity(entity: any) {
+  const {
+    canonicalEntityId,
+    canonicalOutputHashes,
+    canonicalReceiptHashes,
+    projectionSource,
+    ...legacy_shape
+  } = entity;
+  return {
+    ...legacy_shape,
+    canonical_entity_id: canonicalEntityId,
+    canonical_output_hashes: canonicalOutputHashes,
+    canonical_receipt_hashes: canonicalReceiptHashes,
+    projection_source: projectionSource,
+  };
+}
+
+function externalize_entity_role(role: any) {
+  const {
+    canonicalArtifactKey,
+    canonicalSpanOffset,
+    projectionSource,
+    ...legacy_shape
+  } = role;
+  return {
+    ...legacy_shape,
+    canonical_artifact_key: canonicalArtifactKey,
+    canonical_span_offset: canonicalSpanOffset,
+    projection_source: projectionSource,
+  };
+}
+
+function externalize_relationship_evidence(evidence: any) {
+  const {
+    canonicalArtifactKey,
+    canonicalMarkerText,
+    canonicalMarkerOffset,
+    projectionSource,
+    ...legacy_shape
+  } = evidence;
+  return {
+    ...legacy_shape,
+    canonical_artifact_key: canonicalArtifactKey,
+    canonical_marker_text: canonicalMarkerText,
+    canonical_marker_offset: canonicalMarkerOffset,
+    projection_source: projectionSource,
+  };
+}
+
+function externalize_relationship(relationship: any) {
+  const {
+    canonicalRelationshipId,
+    canonicalOutputHashes,
+    canonicalReceiptHashes,
+    projectionSource,
+    evidence,
+    backingEvidence,
+    ...legacy_shape
+  } = relationship;
+  const external_evidence = Array.isArray(evidence)
+    ? evidence.map(externalize_relationship_evidence)
+    : [];
+  return {
+    ...legacy_shape,
+    canonical_relationship_id: canonicalRelationshipId,
+    canonical_output_hashes: canonicalOutputHashes,
+    canonical_receipt_hashes: canonicalReceiptHashes,
+    projection_source: projectionSource,
+    evidence: external_evidence,
+    backingEvidence: Array.isArray(backingEvidence)
+      ? backingEvidence.map(externalize_relationship_evidence)
+      : external_evidence,
+  };
+}
+
 /**
  * Compatibility boundary between the UUID/receipt-based Universal Intake Spine
  * and the existing integer case workspace API. Canonical Intake outputs win
  * only when a sealed layer-execution receipt exists for the relevant surface.
  * Otherwise the pre-cutover Lighthouse read remains available during migration.
+ *
+ * Existing legacy compatibility fields retain their historical UI casing. Any
+ * metadata introduced by the Intake projection is emitted in snake_case.
  */
 export async function listEntities(caseId: number) {
   const projection = await project_case_entities(caseId);
-  if (projection.state === "canonical_projection") return projection.entities;
+  if (projection.state === "canonical_projection") {
+    return projection.entities.map(externalize_entity);
+  }
   return list_legacy_entities_runtime(caseId);
 }
 
 export async function getEntity(id: number) {
-  if (is_intake_projection_id(id)) return get_projected_entity(id);
+  if (is_intake_projection_id(id)) {
+    const entity = await get_projected_entity(id);
+    return entity ? externalize_entity(entity) : null;
+  }
   return get_legacy_entity_runtime(id);
 }
 
@@ -55,30 +138,34 @@ export async function verifyEntityOwnership(entityId: number, userId: number) {
   if (!entity) {
     throw new TRPCError({ code: "NOT_FOUND", message: "Entity not found" });
   }
-  return entity;
+  return externalize_entity(entity);
 }
 
 export async function getEntityRolesForEntity(entityId: number) {
   if (!is_intake_projection_id(entityId)) return get_legacy_entity_roles(entityId);
   const roles = await get_projected_entity_roles(entityId);
-  return roles ?? [];
+  return (roles ?? []).map(externalize_entity_role);
 }
 
 export async function listRelationships(caseId: number) {
   const projection = await project_case_relationships(caseId);
-  if (projection.state === "canonical_projection") return projection.relationships;
+  if (projection.state === "canonical_projection") {
+    return projection.relationships.map(externalize_relationship);
+  }
   return list_legacy_relationships_runtime(caseId);
 }
 
 export async function getRelationshipsForEntity(entityId: number) {
   if (!is_intake_projection_id(entityId)) return get_legacy_relationships_for_entity(entityId);
   const relationships = await get_projected_relationships_for_entity(entityId);
-  return relationships ?? [];
+  return (relationships ?? []).map(externalize_relationship);
 }
 
 export async function listRelationshipsEnriched(caseId: number) {
   const projection = await project_case_relationships(caseId);
-  if (projection.state === "canonical_projection") return projection.relationships;
+  if (projection.state === "canonical_projection") {
+    return projection.relationships.map(externalize_relationship);
+  }
   return list_legacy_relationships_enriched_runtime(caseId);
 }
 
@@ -87,5 +174,5 @@ export async function getRelationshipsForEntityEnriched(entityId: number) {
     return get_legacy_relationships_for_entity_enriched(entityId);
   }
   const relationships = await get_projected_relationships_for_entity_enriched(entityId);
-  return relationships ?? [];
+  return (relationships ?? []).map(externalize_relationship);
 }
