@@ -34,13 +34,14 @@ export interface StabilizationSnapshot {
   what_can_wait: string[];
 }
 
-export const LAYER_VERSION = '2.1.0';
-export const RULE_VERSION = '2.1.0';
+export const LAYER_VERSION = '2.2.0';
+export const RULE_VERSION = '2.2.0';
 
 export const RULE_MANIFEST = {
   deadline_sort: ['days_from_now_asc_nulls_last', 'date_asc', 'description_asc'],
   day_distance_basis: 'utc_calendar_date_difference',
   invalid_deadline_date_policy: 'unresolved_days_null',
+  missing_stabilization_field_policy: 'preserve_null_or_empty_and_mark_unresolved',
   set_like_fields_sorted: [
     'essential_services_at_risk',
     'evidence_to_preserve',
@@ -73,6 +74,22 @@ export function processLayer1(
   };
   const input_hash = computeHash({ input: normalizedInput, as_of: asOfDate });
   const unresolved: UnresolvedDependency[] = [];
+
+  if (!normalizedInput.urgent_situation) {
+    unresolved.push({ field: 'urgent_situation', reason: 'incomplete', detail: 'No immediate concern has been captured for this intake session.' });
+  }
+  if (normalizedInput.deadlines.length === 0) {
+    unresolved.push({ field: 'deadlines', reason: 'incomplete', detail: 'No deadline inventory has been captured; this does not mean no deadline exists.' });
+  }
+  if (normalizedInput.essential_services_at_risk.length === 0) {
+    unresolved.push({ field: 'essential_services_at_risk', reason: 'incomplete', detail: 'Essential-service risk has not been assessed.' });
+  }
+  if (normalizedInput.evidence_to_preserve.length === 0) {
+    unresolved.push({ field: 'evidence_to_preserve', reason: 'incomplete', detail: 'Evidence-preservation priorities have not been assessed.' });
+  }
+  if (!normalizedInput.least_burdensome_action) {
+    unresolved.push({ field: 'least_burdensome_action', reason: 'incomplete', detail: 'The least-burdensome next stabilizing action has not been captured.' });
+  }
 
   const deadlines_sorted = normalizedInput.deadlines
     .map(deadline => {
