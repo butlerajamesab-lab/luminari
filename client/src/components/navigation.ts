@@ -65,6 +65,11 @@ export const LENS_OPTIONS: readonly UserLens[] = [
   "admin",
 ] as const;
 
+export const caseWorkspaceItems: NavItem[] = [
+  { icon: Layers, label: "Control Room", path: "/control-room" },
+  { icon: LayoutDashboard, label: "Case Overview", path: "/" },
+];
+
 export const investigateItems: NavItem[] = [
   { icon: Upload, label: "Upload Evidence", path: "/upload" },
   { icon: FileText, label: "Documents", path: "/documents" },
@@ -165,7 +170,7 @@ export const accountItems: NavItem[] = [
 ];
 
 export const mobilePrimaryItems: NavItem[] = [
-  { icon: LayoutDashboard, label: "Overview", path: "/" },
+  { ...caseWorkspaceItems[1], label: "Overview" },
   { icon: FileText, label: "Docs", path: "/documents" },
   { icon: Lightbulb, label: "Findings", path: "/findings" },
   { icon: MessageSquare, label: "Ask", path: "/chat" },
@@ -175,13 +180,18 @@ export const LENS_VISIBILITY: Record<UserLens, readonly string[]> = {
   guide: ["investigate", "act", "platform"],
   advocate: ["investigate", "analyze", "act", "observe", "platform"],
   professional: ["investigate", "analyze", "strategize", "act", "observe", "platform"],
-  admin: ["investigate", "analyze", "strategize", "act", "observe", "platform", "admin"],
+  admin: ["investigate", "analyze", "strategize", "act", "observe", "platform"],
 };
 
-export function getNavSectionsForLens(lens: UserLens): NavSection[] {
+/**
+ * A lens changes the workflow detail exposed to the person. Administrative
+ * authority is a permission concern, not a lens concern, so it is appended only
+ * when the authenticated user is actually allowed to see administrator tools.
+ */
+export function getNavSectionsForLens(lens: UserLens, includeAdmin = false): NavSection[] {
   const visibleIds = LENS_VISIBILITY[lens];
   const sections = allNavSections.filter((section) => visibleIds.includes(section.id));
-  return visibleIds.includes("admin") ? [...sections, adminSection] : sections;
+  return includeAdmin ? [...sections, adminSection] : sections;
 }
 
 export function isUserLens(value: string | null): value is UserLens {
