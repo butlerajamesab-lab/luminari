@@ -36,6 +36,32 @@ export interface legacy_timeline_event {
   document_id?: string | number | null;
 }
 
+export interface intake_chronology_event {
+  event_id: string;
+  date: string | null;
+  date_precision: "exact" | "month" | "year" | "unknown";
+  event_text: string;
+  actor: string | null;
+  source_artifact_key: string;
+  source_span_offset: number;
+  verification_status:
+    | "user_reported"
+    | "document_stated"
+    | "supported_by_one_source"
+    | "supported_by_multiple_sources"
+    | "contradicted"
+    | "disputed"
+    | "incomplete"
+    | "unresolved"
+    | "referenced_missing";
+}
+
+export interface intake_chronology_projection_context {
+  intake_session_id: string;
+  receipt_hash: string | null;
+  output_hash: string | null;
+}
+
 export interface chronology_timeline_record {
   chronology_event_id: string;
   event_date: string | null;
@@ -85,6 +111,58 @@ export function project_legacy_event_to_chronology(
     source_references: build_source_references(event),
     source_confidence_level: "reported",
     fact_status: "reported",
+  };
+}
+
+function map_intake_date_precision(
+  value: intake_chronology_event["date_precision"],
+): chronology_date_precision {
+  if (value === "exact") return "exact_date";
+  return value;
+}
+
+function map_intake_fact_status(
+  value: intake_chronology_event["verification_status"],
+): chronology_fact_status {
+  if (value === "supported_by_multiple_sources") return "corroborated";
+  if (value === "contradicted" || value === "disputed") return "disputed";
+  if (value === "incomplete" || value === "unresolved" || value === "referenced_missing") return "unknown";
+  return "reported";
+}
+
+function map_intake_source_confidence(
+  value: intake_chronology_event["verification_status"],
+): chronology_source_confidence {
+  if (value === "supported_by_multiple_sources") return "independently_corroborated";
+  return "reported";
+}
+
+/**
+ * Project a sealed Universal Intake Spine chronology event directly into the
+ * existing timeline view without rewriting it into public.events.
+ */
+export function project_intake_event_to_chronology(
+  event: intake_chronology_event,
+  context: intake_chronology_projection_context,
+): chronology_timeline_record {
+  const source_references = [
+    `intake_session:${context.intake_session_id}`,
+    `artifact:${event.source_artifact_key}`,
+    `source_offset:${event.source_span_offset}`,
+  ];
+  if (context.receipt_hash) source_references.push(`receipt:${context.receipt_hash}`);
+  if (context.output_hash) source_references.push(`output:${context.output_hash}`);
+
+  return {
+    chronology_event_id: `intake-${context.intake_session_id}-${event.event_id}`,
+    event_date: event.date,
+    event_date_precision: map_intake_date_precision(event.date_precision),
+    observed_event: event.event_text,
+    event_type: event.verification_status,
+    location: null,
+    source_references,
+    source_confidence_level: map_intake_source_confidence(event.verification_status),
+    fact_status: map_intake_fact_status(event.verification_status),
   };
 }
 
