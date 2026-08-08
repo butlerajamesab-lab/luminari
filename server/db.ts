@@ -41,3 +41,4 @@ export {
   listRelationshipsEnriched,
   getRelationshipsForEntityEnriched,
 } from "./case-runtime-intake-compat";
+export { listEvents } from "./case-runtime-chronology-compat";
