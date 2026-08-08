@@ -10,6 +10,7 @@ export type chronology_date_precision =
 export type chronology_source_confidence =
   | "unknown"
   | "reported"
+  | "source_bound"
   | "direct_observation"
   | "contemporaneous_record"
   | "independently_corroborated"
@@ -17,9 +18,17 @@ export type chronology_source_confidence =
 
 export type chronology_fact_status =
   | "reported"
+  | "user_reported"
+  | "document_stated"
+  | "supported_by_one_source"
+  | "supported_by_multiple_sources"
   | "corroborated"
   | "confirmed"
+  | "contradicted"
   | "disputed"
+  | "incomplete"
+  | "unresolved"
+  | "referenced_missing"
   | "superseded"
   | "unknown";
 
@@ -34,6 +43,12 @@ export interface legacy_timeline_event {
   location?: string | null;
   documentId?: string | number | null;
   document_id?: string | number | null;
+  projection_source?: string | null;
+  canonical_event_id?: string | null;
+  canonical_date_precision?: "exact" | "month" | "year" | "unknown" | null;
+  canonical_verification_status?: string | null;
+  canonical_source_artifact_key?: string | null;
+  canonical_source_span_offset?: number | null;
 }
 
 export interface chronology_timeline_record {
@@ -47,6 +62,18 @@ export interface chronology_timeline_record {
   source_confidence_level: chronology_source_confidence;
   fact_status: chronology_fact_status;
 }
+
+const INTAKE_FACT_STATUSES = new Set<chronology_fact_status>([
+  "user_reported",
+  "document_stated",
+  "supported_by_one_source",
+  "supported_by_multiple_sources",
+  "contradicted",
+  "disputed",
+  "incomplete",
+  "unresolved",
+  "referenced_missing",
+]);
 
 function build_observed_event(event: legacy_timeline_event): string {
   const title = event.title.trim();
@@ -64,16 +91,55 @@ function build_source_references(event: legacy_timeline_event): string[] {
   return [...source_references];
 }
 
+function project_intake_event_to_chronology(
+  event: legacy_timeline_event,
+): chronology_timeline_record {
+  const event_date = event.dateOccurred ?? event.date_occurred ?? null;
+  const precision: chronology_date_precision = event.canonical_date_precision === "exact"
+    ? "exact_date"
+    : event.canonical_date_precision ?? "unknown";
+  const status = event.canonical_verification_status as chronology_fact_status | null | undefined;
+  const fact_status = status && INTAKE_FACT_STATUSES.has(status) ? status : "unresolved";
+  const source_references = new Set<string>();
+  const document_id = event.documentId ?? event.document_id;
+  if (document_id !== undefined && document_id !== null) {
+    source_references.add(`document:${document_id}`);
+  }
+  if (event.canonical_source_artifact_key) {
+    source_references.add(`artifact:${event.canonical_source_artifact_key}`);
+  }
+  if (event.canonical_source_span_offset !== undefined && event.canonical_source_span_offset !== null) {
+    source_references.add(`source_offset:${event.canonical_source_span_offset}`);
+  }
+  source_references.add(`intake_event:${event.canonical_event_id ?? event.id}`);
+
+  return {
+    chronology_event_id: event.canonical_event_id ?? String(event.id),
+    event_date,
+    event_date_precision: precision,
+    observed_event: build_observed_event(event),
+    event_type: event.eventType ?? event.event_type ?? "source_document_event",
+    location: event.location ?? null,
+    source_references: [...source_references],
+    source_confidence_level: "source_bound",
+    fact_status,
+  };
+}
+
 /**
- * Read-only compatibility projection for the existing events timeline.
+ * Read-only compatibility projection for both case-runtime generations.
  *
- * Existing events remain persisted exactly where they are. The projection never
- * upgrades an event to confirmed fact; it enters the reconstruction view as a
- * reported event until source-linked chronology persistence is available.
+ * Sealed Universal Intake Spine chronology output keeps its exact source-bound
+ * verification status. Older legacy events remain reported rather than being
+ * silently upgraded by the presentation layer.
  */
 export function project_legacy_event_to_chronology(
   event: legacy_timeline_event,
 ): chronology_timeline_record {
+  if (event.projection_source === "universal_intake_spine") {
+    return project_intake_event_to_chronology(event);
+  }
+
   const event_date = event.dateOccurred ?? event.date_occurred ?? null;
   return {
     chronology_event_id: `legacy-event-${event.id}`,

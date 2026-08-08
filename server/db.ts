@@ -10,25 +10,20 @@
 export * from "./db-legacy";
 export {
   createCase,
-  getCaseStats,
-  getCaseTimelineData,
   getCaseNarrative,
   upsertCaseNarrative,
 } from "./case-contract-compat";
+export { getCaseStats } from "./case-stats-intake-compat";
+export { getCaseTimelineData } from "./case-timeline-intake-compat";
 export {
   getSnapshot,
   getOpenSnapshot,
   getLatestSnapshot,
-  listEntities,
-  getEntity,
   getQuotesForDocument,
   getQuotesForCase,
   listClaims,
   getClaimsForDocument,
   getEntityRolesForDocument,
-  listRelationships,
-  getRelationshipsForEntity,
-  listRelationshipsEnriched,
   listCorrelations,
   listCorrelationsEnriched,
   listFindings,
@@ -36,3 +31,14 @@ export {
   listSignalFlags,
   listSignalFlagsEnriched,
 } from "./case-runtime-read-compat";
+export {
+  listEntities,
+  getEntity,
+  verifyEntityOwnership,
+  getEntityRolesForEntity,
+  listRelationships,
+  getRelationshipsForEntity,
+  listRelationshipsEnriched,
+  getRelationshipsForEntityEnriched,
+} from "./case-runtime-intake-compat";
+export { listEvents } from "./case-runtime-chronology-compat";

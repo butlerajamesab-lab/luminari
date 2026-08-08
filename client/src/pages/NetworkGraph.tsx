@@ -60,13 +60,23 @@ export default function NetworkGraph() {
     { enabled: !!currentCaseId }
   );
 
-  // Fetch evidence for selected link
-  const { data: linkEvidence, isLoading: evidenceLoading } = trpc.relationships.evidence.useQuery(
-    { relationshipId: selectedLink?.relId ?? 0 },
-    { enabled: !!selectedLink?.relId }
-  );
+  const projectedLinkEvidence = useMemo(() => {
+    if (!selectedLink || !relationships) return null;
+    const relationship = relationships.find((row) => row.id === selectedLink.relId) as any;
+    if (relationship?.projection_source !== "universal_intake_spine") return null;
+    return relationship.evidence ?? relationship.backingEvidence ?? [];
+  }, [relationships, selectedLink]);
 
-  // Resize observer
+  // Legacy relationships continue to use the established evidence endpoint.
+  // Canonical Intake Spine relationships already carry exact source-span evidence
+  // in their sealed case projection and must not be looked up as legacy rows.
+  const { data: legacyLinkEvidence, isLoading: legacyEvidenceLoading } = trpc.relationships.evidence.useQuery(
+    { relationshipId: selectedLink?.relId ?? 0 },
+    { enabled: !!selectedLink?.relId && selectedLink.relId > 0 && projectedLinkEvidence === null }
+  );
+  const linkEvidence = projectedLinkEvidence ?? legacyLinkEvidence;
+  const evidenceLoading = projectedLinkEvidence === null && legacyEvidenceLoading;
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -82,7 +92,6 @@ export default function NetworkGraph() {
     return () => observer.disconnect();
   }, []);
 
-  // Build graph data
   const graphData = useMemo(() => {
     if (!entities || !relationships) return { nodes: [], links: [] };
 
@@ -179,7 +188,7 @@ export default function NetworkGraph() {
             <Network className="h-10 w-10 text-muted-foreground" />
             <div>
               <p className="text-sm text-muted-foreground">
-                No network data yet. Upload and analyze documents to build the relationship graph.
+                No source-bound relationship graph is projected yet. Preserve evidence and run the Universal Intake Spine to build entities and explicit relationships.
               </p>
               <p className="text-xs text-muted-foreground mt-2">
                 {entities?.length || 0} entities, {relationships?.length || 0} relationships
@@ -192,7 +201,6 @@ export default function NetworkGraph() {
         </Card>
       ) : (
         <div className="relative">
-          {/* Graph */}
           <Card className="overflow-hidden">
             <div ref={containerRef} className="w-full" style={{ height: "calc(100vh - 220px)", minHeight: 500 }}>
               <ForceGraph2D
@@ -205,11 +213,9 @@ export default function NetworkGraph() {
                 nodeColor={(node: any) => node.color}
                 nodeRelSize={5}
                 linkColor={(link: any) => {
-                  // Highlight selected link
                   if (selectedLink && (link as GraphLink).relId === selectedLink.relId) {
                     return "rgba(96, 165, 250, 0.8)";
                   }
-                  // Highlight links with evidence
                   if ((link as GraphLink).evidenceCount && (link as GraphLink).evidenceCount! > 0) {
                     return "rgba(148, 163, 184, 0.5)";
                   }
@@ -224,7 +230,7 @@ export default function NetworkGraph() {
                 linkLabel={(link: any) => {
                   const l = link as GraphLink;
                   const evCount = l.evidenceCount || 0;
-                  return `${l.label}${evCount > 0 ? ` (${evCount} quote${evCount !== 1 ? 's' : ''})` : ''}`;
+                  return `${l.label}${evCount > 0 ? ` (${evCount} source span${evCount !== 1 ? 's' : ''})` : ''}`;
                 }}
                 onNodeClick={handleNodeClick}
                 onLinkClick={handleLinkClick}
@@ -233,21 +239,16 @@ export default function NetworkGraph() {
                   const label = node.name;
                   const fontSize = Math.max(10 / globalScale, 2);
                   ctx.font = `${fontSize}px Inter, sans-serif`;
-                  
                   const radius = Math.sqrt(node.val) * 2.5;
                   ctx.beginPath();
                   ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI);
                   ctx.fillStyle = node.color;
                   ctx.fill();
-                  
-                  // Selected ring
                   if (selectedNode && selectedNode.id === node.id) {
                     ctx.strokeStyle = "#ffffff";
                     ctx.lineWidth = 2 / globalScale;
                     ctx.stroke();
                   }
-                  
-                  // Label
                   if (globalScale > 0.8 || (selectedNode && selectedNode.id === node.id)) {
                     ctx.textAlign = "center";
                     ctx.textBaseline = "top";
@@ -257,28 +258,20 @@ export default function NetworkGraph() {
                 }}
                 linkCanvasObjectMode={() => "after"}
                 linkCanvasObject={(link: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
-                  // Draw evidence count badge on links that have evidence
                   const l = link as GraphLink;
                   if (!l.evidenceCount || l.evidenceCount === 0) return;
-                  
                   const src = link.source;
                   const tgt = link.target;
                   if (!src || !tgt || typeof src.x !== 'number') return;
-                  
                   const midX = (src.x + tgt.x) / 2;
                   const midY = (src.y + tgt.y) / 2;
-                  
                   const fontSize = Math.max(8 / globalScale, 2);
                   ctx.font = `bold ${fontSize}px Inter, sans-serif`;
-                  
-                  // Badge background
                   const badgeRadius = Math.max(6 / globalScale, 2);
                   ctx.beginPath();
                   ctx.arc(midX, midY, badgeRadius, 0, 2 * Math.PI);
                   ctx.fillStyle = selectedLink?.relId === l.relId ? "rgba(96, 165, 250, 0.9)" : "rgba(148, 163, 184, 0.6)";
                   ctx.fill();
-                  
-                  // Badge text
                   ctx.textAlign = "center";
                   ctx.textBaseline = "middle";
                   ctx.fillStyle = "#ffffff";
@@ -291,7 +284,6 @@ export default function NetworkGraph() {
             </div>
           </Card>
 
-          {/* Node Info Panel */}
           {selectedNode && (
             <Card className="absolute top-4 right-4 w-72 z-10 bg-background/95 backdrop-blur-sm border-primary/30">
               <CardContent className="p-4">
@@ -327,11 +319,9 @@ export default function NetworkGraph() {
             </Card>
           )}
 
-          {/* Edge Evidence Panel */}
           {selectedLink && (
             <Card className="absolute top-4 right-4 w-80 max-h-[calc(100vh-280px)] z-10 bg-background/95 backdrop-blur-sm border-primary/30 overflow-hidden flex flex-col">
               <CardContent className="p-4 flex flex-col gap-3 overflow-hidden">
-                {/* Header */}
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Connection Evidence</p>
@@ -350,7 +340,6 @@ export default function NetworkGraph() {
                   </Button>
                 </div>
 
-                {/* Description */}
                 {selectedLink.description && (
                   <div className="bg-muted/50 rounded-md p-2.5">
                     <p className="text-xs text-muted-foreground leading-relaxed">{selectedLink.description}</p>
@@ -358,12 +347,11 @@ export default function NetworkGraph() {
                   </div>
                 )}
 
-                {/* Evidence Quotes */}
                 <div className="flex-1 overflow-y-auto min-h-0">
                   <div className="flex items-center gap-1.5 mb-2">
                     <Quote className="h-3 w-3 text-primary" />
                     <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                      Backing Quotes
+                      Backing Evidence
                     </p>
                   </div>
 
@@ -374,13 +362,11 @@ export default function NetworkGraph() {
                     </div>
                   ) : linkEvidence && linkEvidence.length > 0 ? (
                     <div className="space-y-2">
-                      {linkEvidence.map((ev) => (
+                      {linkEvidence.map((ev: any) => (
                         <div key={ev.id} className="bg-card border border-border rounded-md p-2.5">
-                          {/* Quote text */}
                           <p className="text-xs leading-relaxed italic text-foreground/90">
                             &ldquo;{ev.quoteText}&rdquo;
                           </p>
-                          {/* Source attribution */}
                           <div className="flex items-center gap-1.5 mt-2 flex-wrap">
                             <FileText className="h-3 w-3 text-muted-foreground shrink-0" />
                             <span className="text-[10px] text-muted-foreground truncate">
@@ -404,7 +390,6 @@ export default function NetworkGraph() {
                               </Badge>
                             )}
                           </div>
-                          {/* Explanation */}
                           {ev.explanation && (
                             <p className="text-[10px] text-muted-foreground mt-1.5 leading-relaxed">
                               {ev.explanation}
@@ -417,10 +402,7 @@ export default function NetworkGraph() {
                   ) : (
                     <div className="text-center py-4">
                       <p className="text-xs text-muted-foreground">
-                        No backing quotes stored for this connection.
-                      </p>
-                      <p className="text-[10px] text-muted-foreground mt-1">
-                        The relationship was identified by AI analysis but individual quote links were not preserved.
+                        No backing source spans are available for this connection.
                       </p>
                     </div>
                   )}

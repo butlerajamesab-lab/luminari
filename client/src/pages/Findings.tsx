@@ -8,7 +8,7 @@ import { useLocation } from "wouter";
 import {
   Lightbulb, Flag, Link2, FileCheck, FileWarning,
   FileText, Quote, ExternalLink, ChevronDown, ChevronUp,
-  ArrowRight, BookOpen, Search, Upload, Send,
+  ArrowRight, BookOpen, Search, Upload, Send, ShieldCheck,
 } from "lucide-react";
 import ReadAloud from "@/components/ReadAloud";
 import PageReadAloud from "@/components/PageReadAloud";
@@ -133,7 +133,7 @@ function ProvenanceBlock({ evidence, onNavigate }: {
   );
 }
 
-/*/* ── Enriched Findings Tab ── */
+/* ── Enriched Findings Tab ── */
 function FindingsTab({ caseId }: { caseId: number }) {
   const { data: findings, isLoading } = trpc.findings.listEnriched.useQuery({ caseId });
   const { data: lifecycle } = trpc.snapshots.lifecycle.useQuery({ caseId });
@@ -145,7 +145,6 @@ function FindingsTab({ caseId }: { caseId: number }) {
 
   if (isLoading) return <Skeleton />;
   if (!findings || findings.length === 0) {
-    // Phase 5: Snapshot-aware zero-state message
     const isOpen = lifecycle?.hasSnapshot && lifecycle.status === 'open';
     const extractionRunning = isOpen && lifecycle.stages?.extraction?.status === 'running';
     const claimBuildRunning = isOpen && lifecycle.stages?.claimBuild?.status === 'running';
@@ -153,13 +152,13 @@ function FindingsTab({ caseId }: { caseId: number }) {
     const reanalysisRunning = extractionRunning || claimBuildRunning;
     let message: string;
     if (reanalysisRunning) {
-      message = "Reanalysis in progress. Findings will appear after extraction and claim build complete.";
+      message = "Legacy snapshot reanalysis is in progress. Canonical Intake verification remains a separate record.";
     } else if (correlationPending) {
-      message = "Findings pending correlation build for this snapshot.";
+      message = "Legacy findings are pending correlation build for this snapshot.";
     } else if (!lifecycle?.hasSnapshot) {
-      message = "No snapshot exists. Upload evidence and run extraction to begin.";
+      message = "No legacy findings snapshot exists. Use Verification for the canonical Intake Spine evidence posture.";
     } else {
-      message = "No findings yet. Upload and analyze documents to generate findings.";
+      message = "No legacy findings are projected for this case. This does not imply that canonical verification is empty.";
     }
     return <Empty icon={<Lightbulb className="h-10 w-10 text-muted-foreground" />} text={message} />;
   }
@@ -180,7 +179,6 @@ function FindingsTab({ caseId }: { caseId: number }) {
 
   return (
     <div className="space-y-3">
-      {/* Gate E: Search + Filter bar */}
       <div className="relative mb-2">
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <input
@@ -204,58 +202,51 @@ function FindingsTab({ caseId }: { caseId: number }) {
       </div>
 
       <p className="text-[11px] text-muted-foreground">
-        Only claims from <span className="text-primary">sworn testimony</span>, <span className="text-primary">court filings</span>, and <span className="text-primary">discovery disclosures</span> generate Findings. All other sources produce Notes/Signals only.
+        Legacy findings gate: only claims from <span className="text-primary">sworn testimony</span>, <span className="text-primary">court filings</span>, and <span className="text-primary">discovery disclosures</span> become legacy Findings. Universal Intake verification is shown separately and is not silently recast as a finding.
       </p>
 
-      {shown.map((f) => {
-        const hasEvidence = f.backingEvidence && f.backingEvidence.length > 0;
-
-        return (
-          <Card key={f.id} className={f.evidentiaryWeight === "finding" ? "border-emerald-500/20" : "border-amber-500/10"}>
-            <CardContent className="p-4">
-              {/* Header row */}
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-medium text-foreground">{plainify(f.title)}</h3>
-                  <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{plainify(f.description)}</p>
-                  {f.significance && <p className="text-xs text-primary/80 mt-1">{plainify(f.significance)}</p>}
-                </div>
-                <WeightBadge weight={f.evidentiaryWeight} />
+      {shown.map((f) => (
+        <Card key={f.id} className={f.evidentiaryWeight === "finding" ? "border-emerald-500/20" : "border-amber-500/10"}>
+          <CardContent className="p-4">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-medium text-foreground">{plainify(f.title)}</h3>
+                <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{plainify(f.description)}</p>
+                {f.significance && <p className="text-xs text-primary/80 mt-1">{plainify(f.significance)}</p>}
               </div>
+              <WeightBadge weight={f.evidentiaryWeight} />
+            </div>
 
-              {/* Metadata row */}
-              <div className="flex items-center justify-between mt-3">
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="text-[10px] capitalize">{f.confidence}</Badge>
-                  <Badge variant="outline" className="text-[10px] capitalize">{f.findingType.replace(/_/g, " ")}</Badge>
-                  {f.provenanceStatus === "unsupported" && (
-                    <Badge variant="outline" className="text-[10px] text-amber-400 border-amber-500/30">Unlinked</Badge>
-                  )}
-                  <button
-                    className="inline-flex items-center gap-1 text-[10px] text-amber-400/70 hover:text-amber-400 transition-colors"
-                    onClick={() => setLocation(`/lumensend?type=demand&context=finding`)}
-                    title="Draft a letter based on this finding"
-                  >
-                    <Send className="w-3 h-3" />
-                    LumenSend
-                  </button>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <CommitToCase type="finding" itemId={f.id} />
-                  <FlagArea location="findings" targetId={f.id} targetType="finding" message={`Review finding: ${f.title}`} />
-                  <ReadAloud
-                    text={`${f.evidentiaryWeight === "finding" ? "Finding" : "Note"}. ${f.title}. ${f.description}`}
-                    forensicText={formatFindingForReadAloud({ title: f.title, description: f.description, significance: f.significance || undefined, evidentiaryWeight: f.evidentiaryWeight, findingType: f.findingType, confidence: f.confidence }, {})}
-                  />
-                </div>
+            <div className="flex items-center justify-between mt-3">
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="text-[10px] capitalize">{f.confidence}</Badge>
+                <Badge variant="outline" className="text-[10px] capitalize">{f.findingType.replace(/_/g, " ")}</Badge>
+                {f.provenanceStatus === "unsupported" && (
+                  <Badge variant="outline" className="text-[10px] text-amber-400 border-amber-500/30">Unlinked</Badge>
+                )}
+                <button
+                  className="inline-flex items-center gap-1 text-[10px] text-amber-400/70 hover:text-amber-400 transition-colors"
+                  onClick={() => setLocation(`/lumensend?type=demand&context=finding`)}
+                  title="Draft a letter based on this finding"
+                >
+                  <Send className="w-3 h-3" />
+                  LumenSend
+                </button>
               </div>
+              <div className="flex items-center gap-1.5">
+                <CommitToCase type="finding" itemId={f.id} />
+                <FlagArea location="findings" targetId={f.id} targetType="finding" message={`Review finding: ${f.title}`} />
+                <ReadAloud
+                  text={`${f.evidentiaryWeight === "finding" ? "Finding" : "Note"}. ${f.title}. ${f.description}`}
+                  forensicText={formatFindingForReadAloud({ title: f.title, description: f.description, significance: f.significance || undefined, evidentiaryWeight: f.evidentiaryWeight, findingType: f.findingType, confidence: f.confidence }, {})}
+                />
+              </div>
+            </div>
 
-              {/* Inline provenance — always visible, no toggle needed */}
-              <ProvenanceBlock evidence={f.backingEvidence} onNavigate={setLocation} />
-            </CardContent>
-          </Card>
-        );
-      })}
+            <ProvenanceBlock evidence={f.backingEvidence} onNavigate={setLocation} />
+          </CardContent>
+        </Card>
+      ))}
       {visible < filtered.length && (
         <Button variant="outline" className="w-full" onClick={() => setVisible(v => v + 15)}>
           Show more ({filtered.length - visible} remaining)
@@ -316,7 +307,6 @@ function FlagsTab({ caseId }: { caseId: number }) {
                     <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{plainify(f.description)}</p>
                   )}
 
-                  {/* Inline quote preview */}
                   {hasQuote && !isExpanded && (
                     <button
                       onClick={() => toggleExpand(f.id)}
@@ -328,7 +318,6 @@ function FlagsTab({ caseId }: { caseId: number }) {
                     </button>
                   )}
 
-                  {/* Expanded quote */}
                   {isExpanded && hasQuote && (
                     <div className="mt-2 bg-muted/30 border border-border/50 rounded-md p-2.5 space-y-1.5">
                       <div className="flex items-center gap-2">
@@ -416,7 +405,6 @@ function CorrelationsTab({ caseId }: { caseId: number }) {
                     <p className="text-xs text-muted-foreground leading-relaxed">{plainify(c.description)}</p>
                   )}
 
-                  {/* Connected documents */}
                   <div className="flex items-center gap-2 flex-wrap">
                     {srcDoc && (
                       <button
@@ -439,7 +427,6 @@ function CorrelationsTab({ caseId }: { caseId: number }) {
                     )}
                   </div>
 
-                  {/* Shared identifiers */}
                   {shared && shared.length > 0 && (
                     <div className="flex items-center gap-1 flex-wrap">
                       <span className="text-[10px] text-muted-foreground">Shared:</span>
@@ -501,13 +488,156 @@ function Empty({ icon, text }: { icon: React.ReactNode; text: string }) {
   );
 }
 
+function VerificationTab({ caseId }: { caseId: number }) {
+  const projection = trpc.analyze.getIntakeVerificationProjection.useQuery(
+    { caseId },
+    { retry: false },
+  );
+
+  if (projection.isLoading) return <Skeleton />;
+  if (projection.error) {
+    return (
+      <Card className="border-red-500/30">
+        <CardContent className="p-5 text-sm text-red-300">
+          Canonical verification projection is unavailable: {projection.error.message}
+        </CardContent>
+      </Card>
+    );
+  }
+  if (projection.data?.projection_state !== "canonical_projection") {
+    return (
+      <Empty
+        icon={<ShieldCheck className="h-10 w-10 text-muted-foreground" />}
+        text="No sealed Layer 5 verification projection exists yet. Preserve evidence and run the Universal Intake Spine to create a source-bound verification record."
+      />
+    );
+  }
+
+  const records = projection.data.outputs.flatMap(output =>
+    output.records.map(record => ({
+      ...record,
+      intake_session_id: output.intake_session_id,
+      receipt_hash: output.receipt_hash,
+      output_hash: output.output_hash,
+      layer_version: output.layer_version,
+      rule_version: output.rule_version,
+    })),
+  );
+  const unresolved = projection.data.outputs.flatMap(output => output.unresolved_dependencies);
+
+  if (records.length === 0) {
+    return (
+      <Card className="border-dashed">
+        <CardContent className="p-6 space-y-3 text-center">
+          <ShieldCheck className="h-9 w-9 text-muted-foreground mx-auto" />
+          <div>
+            <p className="text-sm font-medium">Verification completed with zero fact records</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Zero is preserved as a completed result; it is not presented as proof that no facts exist.
+            </p>
+          </div>
+          {unresolved.length > 0 && (
+            <div className="rounded-md border border-amber-500/20 bg-amber-500/5 p-3 text-left">
+              <p className="text-[10px] uppercase tracking-wider text-amber-300 mb-1">Unresolved dependencies</p>
+              {unresolved.map((dependency: any, index: number) => (
+                <p key={index} className="text-xs text-muted-foreground">{dependency.field}: {dependency.detail || dependency.reason}</p>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <Card className="border-primary/20 bg-primary/[0.025]">
+        <CardContent className="p-4 text-xs text-muted-foreground">
+          Verification records are evidence posture, not legal conclusions and not legacy narrative findings. Each state below is reproduced from the sealed Layer 5 output and remains bound to its source artifacts and receipt.
+        </CardContent>
+      </Card>
+
+      {records.map((record, index) => {
+        const [entityId, attribute, applicableTime] = record.fact_key.split("|");
+        const contradiction = record.verification_state === "contradicted" || record.contradiction_refs.length > 0;
+        return (
+          <Card key={`${record.intake_session_id}:${record.output_hash}:${record.fact_key}:${index}`} className={contradiction ? "border-red-500/25" : "border-border"}>
+            <CardContent className="p-4 space-y-3">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium">{attribute?.replace(/_/g, " ") || "Verified fact"}</p>
+                  <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground">
+                    <code>{entityId || record.fact_key}</code>
+                    {applicableTime && applicableTime !== "TIMELESS" && <span>· {applicableTime}</span>}
+                  </div>
+                </div>
+                <Badge variant="outline" className={contradiction ? "text-red-300 border-red-400/30" : "text-cyan-300 border-cyan-400/30"}>
+                  {record.verification_state.replace(/_/g, " ")}
+                </Badge>
+              </div>
+
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">Source statements</p>
+                <div className="space-y-1.5">
+                  {record.source_refs.map((source: any, sourceIndex: number) => (
+                    <div key={`${source.artifact_key}:${source.span_offset}:${sourceIndex}`} className="rounded-md bg-muted/20 border border-border/50 p-2.5">
+                      <p className="text-xs break-words">{source.value_stated}</p>
+                      <div className="mt-1 text-[10px] text-muted-foreground">
+                        <code className="break-all">{source.artifact_key}</code> · offset {source.span_offset}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {record.contradiction_refs.length > 0 && (
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-red-300 mb-1.5">Contradiction records</p>
+                  <div className="space-y-1.5">
+                    {record.contradiction_refs.map((conflict: any, conflictIndex: number) => (
+                      <div key={conflictIndex} className="rounded-md border border-red-500/20 bg-red-500/5 p-2.5 text-xs">
+                        <div><code className="break-all">{conflict.artifact_key_a}</code>: {conflict.value_a}</div>
+                        <div className="my-1 text-red-300">≠</div>
+                        <div><code className="break-all">{conflict.artifact_key_b}</code>: {conflict.value_b}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <details className="rounded-md border border-border/50 p-2.5 text-xs">
+                <summary className="cursor-pointer text-muted-foreground">Deterministic receipt</summary>
+                <div className="mt-2 space-y-1 text-[10px]">
+                  <div><span className="text-muted-foreground">Fact key:</span> <code className="break-all">{record.fact_key}</code></div>
+                  <div><span className="text-muted-foreground">Session:</span> <code className="break-all">{record.intake_session_id}</code></div>
+                  <div><span className="text-muted-foreground">Receipt:</span> <code className="break-all">{record.receipt_hash}</code></div>
+                  <div><span className="text-muted-foreground">Output:</span> <code className="break-all">{record.output_hash}</code></div>
+                  <div><span className="text-muted-foreground">Versions:</span> {record.layer_version} / {record.rule_version}</div>
+                </div>
+              </details>
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
+  );
+}
+
 /* ─── Main Page ─── */
 export default function Findings() {
   const { currentCaseId } = useCase();
   const [, setLocation] = useLocation();
-  const [activeTab, setActiveTab] = useState("findings");
+  const [activeTab, setActiveTab] = useState("verification");
 
-  // Full findings data for read-aloud (also used for count)
+  const { data: verificationProjection } = trpc.analyze.getIntakeVerificationProjection.useQuery(
+    { caseId: currentCaseId! },
+    { enabled: !!currentCaseId, retry: false },
+  );
+  const verificationCount = verificationProjection?.outputs.reduce(
+    (total, output) => total + output.records.length,
+    0,
+  ) ?? 0;
+
   const { data: findingsData } = trpc.findings.list.useQuery(
     { caseId: currentCaseId! },
     { enabled: !!currentCaseId }
@@ -536,11 +666,10 @@ export default function Findings() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Findings & Intelligence</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          AI-extracted findings, signal flags, and cross-document correlations — gated by evidentiary weight
+          Deterministic verification records, legacy findings, signal flags, and correlations remain separately classified and source-bound.
         </p>
       </div>
 
-      {/* Page-level Read Aloud for all findings */}
       {findingsData && findingsData.length > 0 && (
         <PageReadAloud
           text={findingsData.map(f => `${f.evidentiaryWeight === "finding" ? "Finding" : "Note"}. ${f.title}. ${f.description}`).join(" Next. ")}
@@ -550,10 +679,14 @@ export default function Findings() {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
+        <TabsList className="flex-wrap h-auto">
+          <TabsTrigger value="verification" className="gap-1.5">
+            <ShieldCheck className="h-3.5 w-3.5" />
+            Verification ({verificationCount})
+          </TabsTrigger>
           <TabsTrigger value="findings" className="gap-1.5">
             <Lightbulb className="h-3.5 w-3.5" />
-            Findings ({findings ?? 0})
+            Legacy Findings ({findings ?? 0})
           </TabsTrigger>
           <TabsTrigger value="flags" className="gap-1.5">
             <Flag className="h-3.5 w-3.5" />
@@ -564,6 +697,10 @@ export default function Findings() {
             Correlations ({correlations ?? 0})
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="verification" className="mt-4">
+          {activeTab === "verification" && <VerificationTab caseId={currentCaseId} />}
+        </TabsContent>
 
         <TabsContent value="findings" className="mt-4">
           {activeTab === "findings" && <FindingsTab caseId={currentCaseId} />}
@@ -578,19 +715,17 @@ export default function Findings() {
         </TabsContent>
       </Tabs>
 
-      {/* Missing Records — domain obligation gap analysis */}
       <MissingRecordsSection caseId={currentCaseId} />
 
-      {/* Enforcement Intelligence Cross-Link */}
       <div className="mt-4">
         <EnforcementSuggestions caseId={currentCaseId} />
       </div>
       <NextStepBar
-        context="Findings reviewed. Commit key findings to your case, then validate your claim elements."
+        context="Verification and findings reviewed. Preserve their distinct states, then inspect governed claim candidates and procedural paths."
         steps={[
-          { label: "Validate Claim", href: "/claim-validation", icon: "shield", variant: "primary", description: "Check which elements you can prove" },
-          { label: "Claim Elements", href: "/claim-elements", icon: "file", description: "See what each claim type requires" },
-          { label: "Control Room", href: "/control-room", icon: "map", description: "Review your committed case state" },
+          { label: "Claim Elements", href: "/claim-elements", icon: "file", variant: "primary", description: "Inspect case candidates and required elements" },
+          { label: "Provenance", href: "/provenance", icon: "gavel", description: "Trace receipts and source support" },
+          { label: "Control Room", href: "/control-room", icon: "map", description: "Review the current case state" },
         ]}
       />
     </div>
