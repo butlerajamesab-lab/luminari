@@ -2187,10 +2187,17 @@ function ResumeCard({
 }) {
   const { data: stats } = trpc.cases.stats.useQuery({ caseId: caseData.id });
   const { data: lifecycle } = trpc.snapshots.lifecycle.useQuery({ caseId: caseData.id });
+  const { data: intakeStatus } = trpc.analyze.getIntakeSpineStatus.useQuery(
+    { caseId: caseData.id },
+    { retry: false },
+  );
 
   const docCount = stats?.documents ?? 0;
   const findingCount = stats?.findings ?? 0;
   const hasSnapshot = !!lifecycle?.hasSnapshot;
+  const hasIntakeExecution = (intakeStatus ?? []).some(
+    (session) => session.session_type === "live" && session.layer_run_count > 0,
+  );
 
   let step = 0;
   let stepLabel = "Upload Documents";
@@ -2198,8 +2205,13 @@ function ResumeCard({
 
   if (docCount > 0 && findingCount === 0) {
     step = 1;
-    stepLabel = "Analyze Evidence";
-    stepIcon = <Sparkles className="h-3.5 w-3.5 text-amber-400" />;
+    stepLabel = "Open Intake Spine";
+    stepIcon = <Shield className="h-3.5 w-3.5 text-primary" />;
+  }
+  if (hasIntakeExecution && findingCount === 0) {
+    step = 2;
+    stepLabel = "Review Spine Receipts";
+    stepIcon = <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />;
   } else if (findingCount > 0 && !hasSnapshot) {
     step = 2;
     stepLabel = "Review Findings";
@@ -2210,7 +2222,7 @@ function ResumeCard({
     stepIcon = <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />;
   }
 
-  const steps = ["Upload", "Analyze", "Review", "Act"];
+  const steps = ["Upload", "Intake", "Review", "Act"];
   const timeAgo = getTimeAgo(caseData.updatedAt);
 
   return (

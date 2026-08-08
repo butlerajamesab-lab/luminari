@@ -509,7 +509,7 @@ export default function Documents() {
                     ) : (
                       <Shield className="h-3.5 w-3.5" />
                     )}
-                    Run Analysis
+                    Run Claim Denial Analysis
                   </Button>
                 </div>
               </div>
@@ -820,7 +820,7 @@ export default function Documents() {
               ) : (
                 <Shield className="h-4 w-4" />
               )}
-              {startCdaRun.isPending ? "Starting..." : "Run Analysis"}
+              {startCdaRun.isPending ? "Starting..." : "Run Claim Denial Analysis"}
             </Button>
           </DialogFooter>
         </DialogContent>

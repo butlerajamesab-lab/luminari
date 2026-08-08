@@ -474,7 +474,7 @@ export default function Upload() {
     // Preservation and semantic analysis are separate governed stages.
     // Upload success must never be converted into an analysis failure by the retired legacy pipeline.
     if (preservedCount > 0) {
-      toast.info("Upload preserved. Run Analysis when you're ready; unsupported formats remain preserved without becoming extraction errors.");
+      toast.info("Upload preserved. Open the Universal Intake Spine when you are ready to declare the jurisdiction and rule-date boundary.");
     } else {
       toast.error("Upload failed: no files were preserved.");
     }

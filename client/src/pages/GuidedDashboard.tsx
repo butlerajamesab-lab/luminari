@@ -24,6 +24,7 @@ import { MissingRecordsSection } from "@/components/MissingRecords";
 import { EnforcementSuggestions } from "@/components/EnforcementSuggestions";
 import { EnforcementNextSteps, CaseEnforcementNextSteps } from "@/components/EnforcementNextSteps";
 import { SupportRecommendations } from "@/components/SupportRecommendations";
+import { IntakeSpineControl } from "@/components/lighthouse/IntakeSpineControl";
 import { toast } from "sonner";
 
 /** Step indicator component */
@@ -79,8 +80,7 @@ function GuidedUploadSection({ caseId, onUploadComplete }: { caseId: number; onU
 
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Upload any documents related to your situation. The engine will read through them, 
-            find important details, and identify any contradictions or patterns.
+            Upload any documents related to your situation. Lighthouse preserves the original source first. Nothing is reconstructed until you explicitly run the Universal Intake Spine.
           </p>
           <div className="flex items-center gap-2 text-[10px] text-muted-foreground/70">
             <Shield className="h-3 w-3" />
@@ -155,8 +155,7 @@ function NarrativeFindings({ caseId }: { caseId: number }) {
         <CardContent className="p-5 text-center space-y-2">
           <Lightbulb className="h-8 w-8 text-muted-foreground mx-auto" />
           <p className="text-sm text-muted-foreground">
-            No findings yet. Once you upload and analyze documents, 
-            the engine will identify important patterns and contradictions.
+            No findings yet. Preserved evidence must pass through an explicit Universal Intake Spine execution before downstream findings can be reviewed.
           </p>
         </CardContent>
       </Card>
@@ -293,20 +292,26 @@ function ActionPath({ caseId }: { caseId: number }) {
   const { data: findings } = trpc.findings.listEnriched.useQuery({ caseId });
   const { data: docs } = trpc.documents.list.useQuery({ caseId });
   const { data: lifecycle } = trpc.snapshots.lifecycle.useQuery({ caseId });
+  const { data: intakeStatus } = trpc.analyze.getIntakeSpineStatus.useQuery({ caseId });
 
   const docCount = docs?.length || 0;
   const findingCount = findings?.length || 0;
   const hasSnapshot = lifecycle?.hasSnapshot;
   const isSealed = lifecycle?.status === "sealed";
+  const liveUploadSession = intakeStatus?.find(
+    (session) => session.session_type === "live" && session.entry_channel === "upload",
+  );
+  const intakeLayerRunCount = liveUploadSession?.layer_run_count ?? 0;
+  const sealedReceiptCount = liveUploadSession?.sealed_layer_run_count ?? 0;
 
   // Determine current step
   let currentStep = 0;
   if (docCount > 0) currentStep = 1;
-  if (hasSnapshot && lifecycle?.stages?.extraction?.status === "complete") currentStep = 2;
+  if (intakeLayerRunCount > 0) currentStep = 2;
   if (findingCount > 0) currentStep = 3;
   if (isSealed) currentStep = 4;
 
-  const steps = ["Upload", "Analyze", "Review", "Export"];
+  const steps = ["Upload", "Intake Spine", "Review", "Export"];
 
   return (
     <Card>
@@ -331,30 +336,16 @@ function ActionPath({ caseId }: { caseId: number }) {
               </Button>
             </div>
           )}
-          {currentStep === 1 && (
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
-              <Sparkles className="h-5 w-5 text-primary shrink-0" />
-              <div>
-                <p className="text-xs font-medium text-foreground">Ready to analyze</p>
-                <p className="text-[10px] text-muted-foreground">
-                  {docCount} document{docCount !== 1 ? "s" : ""} uploaded. Go to Documents to start analysis.
-                </p>
-              </div>
-              <Button size="sm" className="shrink-0 ml-auto" onClick={() => setLocation("/documents")}>
-                Analyze
-              </Button>
-            </div>
-          )}
+          {docCount > 0 && <IntakeSpineControl caseId={caseId} />}
           {currentStep === 2 && (
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
-              <Lightbulb className="h-5 w-5 text-amber-400 shrink-0" />
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+              <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />
               <div>
-                <p className="text-xs font-medium text-foreground">Analysis in progress</p>
+                <p className="text-xs font-medium text-foreground">Intake Spine receipts sealed</p>
                 <p className="text-[10px] text-muted-foreground">
-                  The engine is reading through your documents. Findings will appear soon.
+                  {sealedReceiptCount} deterministic receipt{sealedReceiptCount === 1 ? "" : "s"} recorded. Downstream findings remain separately reviewable.
                 </p>
               </div>
-              <Loader2 className="h-4 w-4 animate-spin text-amber-400 shrink-0 ml-auto" />
             </div>
           )}
           {currentStep >= 3 && (
@@ -604,8 +595,8 @@ export default function GuidedDashboard() {
                 caseId={caseId}
                 onUploadComplete={() => {
                   setUploadDone(true);
-                  toast.success("Great work! Your documents are ready for analysis.", {
-                    description: "You can always upload more later from the Documents page.",
+                  toast.success("Your documents are preserved for the Intake Spine.", {
+                    description: "You can always upload more later without starting reconstruction.",
                     duration: 5000,
                   });
                 }}
@@ -626,10 +617,10 @@ export default function GuidedDashboard() {
                     <Button
                       size="sm"
                       className="gap-1.5 flex-1"
-                      onClick={() => setLocation("/documents")}
+                      onClick={() => document.getElementById(`intake-spine-control-${caseId}`)?.scrollIntoView({ behavior: "smooth", block: "center" })}
                     >
-                      <Sparkles className="h-3.5 w-3.5" />
-                      Start Analysis
+                      <Shield className="h-3.5 w-3.5" />
+                      Open Intake Spine
                     </Button>
                     <Button
                       variant="outline"

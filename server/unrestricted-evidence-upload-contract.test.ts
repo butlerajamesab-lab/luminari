@@ -30,7 +30,7 @@ describe("unrestricted evidence upload boundary", () => {
     expect(upload_route).not.toContain("enqueueDocument(");
     expect(upload_page).not.toContain("analyzeAll.mutateAsync");
     expect(upload_page).toContain("preservedCount > 0");
-    expect(upload_page).toContain("Upload preserved. Run Analysis when you're ready");
+    expect(upload_page).toContain("Upload preserved. Open the Universal Intake Spine");
     expect(upload_page).not.toContain("AI analysis started");
   });
 });

@@ -344,8 +344,15 @@ function MobileLayout({ children }: { children: React.ReactNode }) {
     { caseId: currentCaseId! },
     { enabled: !!currentCaseId }
   );
+  const intakeStatusQuery = trpc.analyze.getIntakeSpineStatus.useQuery(
+    { caseId: currentCaseId! },
+    { enabled: !!currentCaseId, retry: false }
+  );
   const caseStats = caseStatsQuery.data ?? null;
   const lifecycle = lifecycleQuery.data ?? null;
+  const hasIntakeExecution = (intakeStatusQuery.data ?? []).some(
+    (session) => session.session_type === "live" && session.layer_run_count > 0,
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -371,6 +378,7 @@ function MobileLayout({ children }: { children: React.ReactNode }) {
           docCount={caseStats.documents}
           findingCount={caseStats.findings}
           hasSnapshot={!!lifecycle?.hasSnapshot}
+          hasIntakeExecution={hasIntakeExecution}
           onNavigate={setLocation}
         />
       )}
@@ -392,12 +400,14 @@ function MobileJourneyBanner({
   docCount,
   findingCount,
   hasSnapshot,
+  hasIntakeExecution,
   onNavigate,
 }: {
   caseId: number;
   docCount: number;
   findingCount: number;
   hasSnapshot: boolean;
+  hasIntakeExecution: boolean;
   onNavigate: (path: string) => void;
 }) {
   let step = 0;
@@ -405,7 +415,11 @@ function MobileJourneyBanner({
 
   if (docCount > 0 && findingCount === 0) {
     step = 1;
-    stepLabel = "Analyze Evidence";
+    stepLabel = "Open Intake Spine";
+  }
+  if (hasIntakeExecution && findingCount === 0) {
+    step = 2;
+    stepLabel = "Review Spine Receipts";
   } else if (findingCount > 0 && !hasSnapshot) {
     step = 2;
     stepLabel = "Review Findings";
@@ -414,7 +428,7 @@ function MobileJourneyBanner({
     stepLabel = "Export & Act";
   }
 
-  const steps = ["Upload", "Analyze", "Review", "Act"];
+  const steps = ["Upload", "Intake", "Review", "Act"];
 
   return (
     <div
@@ -723,7 +737,14 @@ function DesktopLayoutContent({
     { caseId: currentCaseId! },
     { enabled: !!currentCaseId }
   );
+  const intakeStatusQuery2 = trpc.analyze.getIntakeSpineStatus.useQuery(
+    { caseId: currentCaseId! },
+    { enabled: !!currentCaseId, retry: false }
+  );
   const caseStats = caseStatsQuery2.data ?? null;
+  const hasIntakeExecution = (intakeStatusQuery2.data ?? []).some(
+    (session) => session.session_type === "live" && session.layer_run_count > 0,
+  );
 
   // Ctrl+K keyboard shortcut for jurisdiction search
   useEffect(() => {
@@ -998,6 +1019,7 @@ function DesktopLayoutContent({
             docCount={caseStats.documents}
             findingCount={caseStats.findings}
             hasSnapshot={!!lifecycle?.hasSnapshot}
+            hasIntakeExecution={hasIntakeExecution}
             onNavigate={setLocation}
           />
         )}
@@ -1013,12 +1035,14 @@ function DesktopJourneyBanner({
   docCount,
   findingCount,
   hasSnapshot,
+  hasIntakeExecution,
   onNavigate,
 }: {
   caseId: number;
   docCount: number;
   findingCount: number;
   hasSnapshot: boolean;
+  hasIntakeExecution: boolean;
   onNavigate: (path: string) => void;
 }) {
   let step = 0;
@@ -1027,8 +1051,13 @@ function DesktopJourneyBanner({
 
   if (docCount > 0 && findingCount === 0) {
     step = 1;
-    label = "Analyze Evidence";
-    desc = "Run analysis to extract findings from your documents";
+    label = "Open Intake Spine";
+    desc = "Run governed reconstruction against preserved evidence";
+  }
+  if (hasIntakeExecution && findingCount === 0) {
+    step = 2;
+    label = "Review Spine Receipts";
+    desc = "Inspect sealed deterministic receipts and downstream projections";
   } else if (findingCount > 0 && !hasSnapshot) {
     step = 2;
     label = "Review Findings";
@@ -1041,7 +1070,7 @@ function DesktopJourneyBanner({
 
   const steps = [
     { label: "Upload", icon: Upload },
-    { label: "Analyze", icon: FileSearch },
+    { label: "Intake", icon: Shield },
     { label: "Review", icon: Lightbulb },
     { label: "Act", icon: ArrowRight },
   ];
