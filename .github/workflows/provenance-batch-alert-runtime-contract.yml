@@ -1,0 +1,34 @@
+name: Provenance Batch Alert Runtime Contract
+
+on:
+  pull_request:
+    paths:
+      - "server/provenance-batch-runtime-compat.ts"
+      - "server/provenance-batch-alert-runtime.contract.test.ts"
+      - "server/provenance-alerting.ts"
+      - "server/db.ts"
+      - "supabase/migrations/20260808200500_repair_provenance_batch_alert_runtime.sql"
+      - ".github/workflows/provenance-batch-alert-runtime-contract.yml"
+  push:
+    branches: [main]
+    paths:
+      - "server/provenance-batch-runtime-compat.ts"
+      - "server/provenance-batch-alert-runtime.contract.test.ts"
+      - "server/provenance-alerting.ts"
+      - "server/db.ts"
+      - "supabase/migrations/20260808200500_repair_provenance_batch_alert_runtime.sql"
+      - ".github/workflows/provenance-batch-alert-runtime-contract.yml"
+
+jobs:
+  provenance-batch-alert-runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm exec vitest run server/provenance-batch-alert-runtime.contract.test.ts
+      - run: pnpm run build
