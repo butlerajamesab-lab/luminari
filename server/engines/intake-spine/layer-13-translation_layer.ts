@@ -1,4 +1,9 @@
-import { computeHash, EngineResult, CANONICALIZATION_VERSION } from './utils';
+import {
+  computeHash,
+  computeRuleManifestHash,
+  EngineResult,
+  CANONICALIZATION_VERSION,
+} from './utils';
 import { ChronologyEvent } from './layer-4-chronology_reconstruction';
 import { Entity } from './layer-6-entity_registry';
 import { ClaimCandidate } from './layer-12-rights_and_duties_matrix';
@@ -10,33 +15,67 @@ export interface TranslationOutput {
   gap_summaries: string[];
 }
 
-export const LAYER_VERSION = '2.0.0';
-export const RULE_VERSION = '2.0.0';
+export const LAYER_VERSION = '2.1.0';
+export const RULE_VERSION = '2.1.0';
 
-export function processLayer13(input: { events: ChronologyEvent[]; entities: Entity[]; claims: ClaimCandidate[] }): EngineResult<TranslationOutput> {
+export const RULE_MANIFEST = {
+  timeline_template: 'On {date}, {actor}: {event_text} (Source: {source_artifact_key})',
+  entity_template: '{canonical_name} ({type}) — source artifacts: {artifact_keys}',
+  claim_template: 'CANDIDATE — NOT YET LEGALLY EVALUATED: {claim_type_name} ({jurisdiction}). Structural rule: {matching_rule}. Required elements still unresolved: {unresolved_elements}.',
+  gap_template: 'For {claim_type_name}: downstream claim/proof evaluation is still required for {unresolved_elements}.',
+  missing_actor_token: '[actor unknown]',
+  no_unresolved_elements_token: '[no governed element records bound]',
+} as const;
+
+export const RULE_MANIFEST_HASH = computeRuleManifestHash(RULE_MANIFEST);
+
+export function processLayer13(input: {
+  events: ChronologyEvent[];
+  entities: Entity[];
+  claims: ClaimCandidate[];
+}): EngineResult<TranslationOutput> {
+  const events = [...input.events].sort((a, b) => a.event_id.localeCompare(b.event_id));
+  const entities = [...input.entities].sort((a, b) => a.entity_id.localeCompare(b.entity_id));
+  const claims = [...input.claims].sort((a, b) => a.candidate_id.localeCompare(b.candidate_id));
   const input_hash = computeHash({
-    events: input.events.map(e => e.event_id),
-    entities: input.entities.map(e => e.entity_id),
-    claims: input.claims.map(c => c.candidate_id),
+    event_ids: events.map(event => event.event_id),
+    entity_ids: entities.map(entity => entity.entity_id),
+    claim_candidate_ids: claims.map(claim => claim.candidate_id),
   });
 
-  const timeline_summary = input.events
-    .filter(e => e.date)
-    .map(e => `On ${e.date}, ${e.actor || '[actor unknown]'}: ${e.event_text} (Source: ${e.source_artifact_key})`);
+  const timeline_summary = events
+    .filter(event => event.date)
+    .map(event => render(RULE_MANIFEST.timeline_template, {
+      date: event.date as string,
+      actor: event.actor || RULE_MANIFEST.missing_actor_token,
+      event_text: event.event_text,
+      source_artifact_key: event.source_artifact_key,
+    }));
 
-  const entity_summary = input.entities.map(e =>
-    `${e.canonical_name} (${e.type}) — mentioned in ${e.raw_mentions.length} location(s): ${e.raw_mentions.map(m => m.artifact_key).join(', ')}`
-  );
+  const entity_summary = entities.map(entity => render(RULE_MANIFEST.entity_template, {
+    canonical_name: entity.canonical_name,
+    type: entity.type,
+    artifact_keys: Array.from(new Set(entity.raw_mentions.map(mention => mention.artifact_key))).sort().join(', '),
+  }));
 
-  const claim_summaries = input.claims.map(c =>
-    `CANDIDATE: ${c.claim_type_name} (${c.jurisdiction}) — ${c.satisfied_elements.length} of ${c.required_elements.length} elements satisfied. Missing: ${c.missing_elements.join(', ') || 'none'}. Source: ${c.authoritative_source}`
-  );
+  const claim_summaries = claims.map(claim => render(RULE_MANIFEST.claim_template, {
+    claim_type_name: claim.claim_type_name,
+    jurisdiction: claim.jurisdiction,
+    matching_rule: claim.matching_rule,
+    unresolved_elements: claim.unresolved_elements.join(', ') || RULE_MANIFEST.no_unresolved_elements_token,
+  }));
 
-  const gap_summaries = input.claims
-    .filter(c => c.missing_elements.length > 0)
-    .map(c => `For ${c.claim_type_name}: missing evidence for ${c.missing_elements.join(', ')}`);
+  const gap_summaries = claims.map(claim => render(RULE_MANIFEST.gap_template, {
+    claim_type_name: claim.claim_type_name,
+    unresolved_elements: claim.unresolved_elements.join(', ') || RULE_MANIFEST.no_unresolved_elements_token,
+  }));
 
-  const data: TranslationOutput = { timeline_summary, entity_summary, claim_summaries, gap_summaries };
+  const data: TranslationOutput = {
+    timeline_summary,
+    entity_summary,
+    claim_summaries,
+    gap_summaries,
+  };
 
   return {
     layer_name: 'translation_layer',
@@ -50,4 +89,11 @@ export function processLayer13(input: { events: ChronologyEvent[]; entities: Ent
     unresolved_dependencies: [],
     is_sealed: false,
   };
+}
+
+function render(template: string, values: Record<string, string>): string {
+  return Object.entries(values).reduce(
+    (result, [key, value]) => result.split(`{${key}}`).join(value),
+    template,
+  );
 }
