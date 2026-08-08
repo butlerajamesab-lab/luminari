@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { IntakeSpineControl } from "@/components/lighthouse/IntakeSpineControl";
 import {
   Collapsible,
   CollapsibleContent,
@@ -373,7 +374,7 @@ function StrategyPathsPanel({ caseId }: { caseId: number }) {
           <div className="text-center py-8 text-muted-foreground">
             <Target className="h-8 w-8 mx-auto mb-2 opacity-40" />
             <p className="text-sm">No strategy paths generated yet.</p>
-            <p className="text-xs mt-1">Run the analysis pipeline to generate strategy recommendations.</p>
+            <p className="text-xs mt-1">Run the Universal Intake Spine first. Strategy remains a separately named downstream tool.</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -941,7 +942,7 @@ function KeyFindingsPanel({ caseId }: { caseId: number }) {
           <div className="text-center py-6 text-muted-foreground">
             <Search className="h-8 w-8 mx-auto mb-2 opacity-40" />
             <p className="text-sm">No findings extracted yet.</p>
-            <p className="text-xs mt-1">Upload evidence and run the analysis pipeline.</p>
+            <p className="text-xs mt-1">Preserve evidence, then explicitly run the Universal Intake Spine.</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -1007,64 +1008,6 @@ function KeyFindingsPanel({ caseId }: { caseId: number }) {
   );
 }
 
-/* ─── Canonical Intake Spine handoff ─── */
-function IntakeSpineTrigger({ caseId }: { caseId: number }) {
-  const [, navigate] = useLocation();
-  const status = trpc.analyze.getIntakeSpineStatus.useQuery(
-    { caseId },
-    { refetchInterval: 15_000, retry: false },
-  );
-  const liveSession = status.data?.find(
-    (session) => session.session_type === "live" && session.entry_channel === "upload",
-  );
-  const sourceCount = liveSession?.source_artifact_count ?? 0;
-  const sealedCount = liveSession?.sealed_layer_run_count ?? 0;
-
-  return (
-    <Card className="border-primary/25">
-      <CardContent className="pt-4 pb-4">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-          <Button
-            onClick={() => navigate(`/case/${caseId}`)}
-            className="shrink-0 gap-2"
-            size="sm"
-          >
-            <Shield className="h-4 w-4" />
-            Open Intake Spine
-          </Button>
-
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium">Canonical case analysis</span>
-              <Badge variant="outline" className="text-[10px] border-primary/30 text-primary">
-                governed
-              </Badge>
-            </div>
-            <p className="mt-1 text-[11px] text-muted-foreground">
-              Analysis executes only through the Universal Intake Spine against preserved source bytes and declared rule versions. Strategy, assembly, and pattern engines remain separately named downstream tools.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3 text-[10px] text-muted-foreground shrink-0">
-            {status.isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : status.error ? (
-              <span className="text-red-400">Status unavailable</span>
-            ) : liveSession ? (
-              <>
-                <span>{sourceCount} preserved source{sourceCount === 1 ? "" : "s"}</span>
-                <span>{sealedCount}/14 sealed</span>
-              </>
-            ) : (
-              <span>No live upload session</span>
-            )}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
 /* ─── Main Control Room Page ─── */
 export default function ControlRoom() {
   const { currentCaseId, currentCase } = useCase();
@@ -1109,8 +1052,8 @@ export default function ControlRoom() {
         </div>
       </div>
 
-      {/* Pipeline Trigger */}
-      <IntakeSpineTrigger caseId={caseId} />
+      {/* Canonical governed execution control */}
+      <IntakeSpineControl caseId={caseId} />
 
       <Separator />
 

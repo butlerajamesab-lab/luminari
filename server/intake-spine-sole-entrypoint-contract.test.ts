@@ -8,15 +8,47 @@ function read_repo_file(relative_path: string): string {
 
 describe("Universal Intake Spine canonical execution boundary", () => {
   const control_room = read_repo_file("../client/src/pages/ControlRoom.tsx");
+  const intake_spine_control = read_repo_file("../client/src/components/lighthouse/IntakeSpineControl.tsx");
+  const guided_dashboard = read_repo_file("../client/src/pages/GuidedDashboard.tsx");
+  const dashboard_layout = read_repo_file("../client/src/components/DashboardLayout.tsx");
+  const upload_page = read_repo_file("../client/src/pages/Upload.tsx");
+  const documents_page = read_repo_file("../client/src/pages/Documents.tsx");
   const upload_route = read_repo_file("./upload-route.ts");
 
   it("does not let Control Room masquerade downstream engines as canonical case analysis", () => {
-    expect(control_room).toContain("trpc.analyze.getIntakeSpineStatus.useQuery");
-    expect(control_room).toContain("Open Intake Spine");
-    expect(control_room).toContain("Strategy, assembly, and pattern engines remain separately named downstream tools");
+    expect(control_room).toContain("<IntakeSpineControl caseId={caseId} />");
+    expect(control_room).toContain("Strategy remains a separately named downstream tool");
     expect(control_room).not.toContain("incidentDate: Date.now()");
     expect(control_room).not.toContain('jurisdiction: "federal"');
     expect(control_room).not.toContain("async function runPipeline()");
+  });
+
+  it("exposes one real governed control with declared execution inputs", () => {
+    expect(intake_spine_control).toContain("trpc.analyze.getIntakeSpineStatus.useQuery");
+    expect(intake_spine_control).toContain("trpc.analyze.runIntakeSpine.useMutation");
+    expect(intake_spine_control).toContain("Declared jurisdiction");
+    expect(intake_spine_control).toContain("Lighthouse does not infer it");
+    expect(intake_spine_control).toContain("Rule as-of date");
+    expect(intake_spine_control).toContain("Run Universal Intake Spine");
+    expect(intake_spine_control).not.toContain('jurisdiction: "federal"');
+    expect(intake_spine_control).not.toContain("14 sealed");
+  });
+
+  it("replaces generic case-facing analysis prompts while retaining specifically named downstream tools", () => {
+    expect(guided_dashboard).toContain("<IntakeSpineControl caseId={caseId} />");
+    expect(guided_dashboard).toContain('["Upload", "Intake Spine", "Review", "Export"]');
+    expect(guided_dashboard).not.toContain("Ready to analyze");
+    expect(guided_dashboard).not.toContain("Start Analysis");
+    expect(guided_dashboard).not.toContain("Go to Documents to start analysis");
+
+    expect(dashboard_layout).toContain('["Upload", "Intake", "Review", "Act"]');
+    expect(dashboard_layout).not.toContain("Analyze Evidence");
+    expect(dashboard_layout).not.toContain("Run analysis to extract findings from your documents");
+
+    expect(upload_page).toContain("Open the Universal Intake Spine");
+    expect(upload_page).not.toContain("Run Analysis when you're ready");
+    expect(documents_page).toContain("Run Claim Denial Analysis");
+    expect(documents_page).not.toMatch(/>\s*Run Analysis\s*</);
   });
 
   it("keeps both new and replacement uploads on the preservation side of the boundary", () => {
