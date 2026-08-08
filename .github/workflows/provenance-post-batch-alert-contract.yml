@@ -1,0 +1,30 @@
+name: Provenance Post Batch Alert Contract
+
+on:
+  pull_request:
+    paths:
+      - "server/batch-rerun.ts"
+      - "server/provenance-alerting.ts"
+      - "server/provenance-post-batch-alert.contract.test.ts"
+      - ".github/workflows/provenance-post-batch-alert-contract.yml"
+  push:
+    branches: [main]
+    paths:
+      - "server/batch-rerun.ts"
+      - "server/provenance-alerting.ts"
+      - "server/provenance-post-batch-alert.contract.test.ts"
+      - ".github/workflows/provenance-post-batch-alert-contract.yml"
+
+jobs:
+  provenance-post-batch-alert:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm exec vitest run server/provenance-post-batch-alert.contract.test.ts
+      - run: pnpm run build

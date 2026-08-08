@@ -50,7 +50,10 @@ async function logAlertEvent(
 
 // ─── Core: Check Thresholds and Alert ───
 
-export async function checkProvenanceThresholds(caseId?: number): Promise<{
+export async function checkProvenanceThresholds(
+  caseId?: number,
+  batchId?: number,
+): Promise<{
   checked: boolean;
   alerts: Array<{ type: ProvenanceAlertType; sent: boolean; reason: string }>;
 }> {
@@ -71,6 +74,7 @@ export async function checkProvenanceThresholds(caseId?: number): Promise<{
     fallbackRate: m.fallbackUsageRate,
     totalFindings: m.totalFindings,
     unsupportedCount: m.unsupportedCount,
+    ...(batchId === undefined ? {} : { batchId }),
   };
 
   // Check PROVENANCE_DRIFT: unsupported rate > 5%
@@ -91,6 +95,7 @@ export async function checkProvenanceThresholds(caseId?: number): Promise<{
             `• Fallback rate: ${m.fallbackUsageRate}%`,
             `• Total findings: ${m.totalFindings}`,
             `• Unsupported count: ${m.unsupportedCount}`,
+            ...(batchId === undefined ? [] : [`• Completed batch: #${batchId}`]),
             ``,
             `Action: Review unsupported findings in Provenance Drill-Down.`,
           ].join("\n"),
@@ -129,6 +134,7 @@ export async function checkProvenanceThresholds(caseId?: number): Promise<{
             `• Fallback rate: ${m.fallbackUsageRate}%`,
             `• Total findings: ${m.totalFindings}`,
             `• Unsupported count: ${m.unsupportedCount}`,
+            ...(batchId === undefined ? [] : [`• Completed batch: #${batchId}`]),
             ``,
             `Action: Run batch re-matching or review claim extraction pipeline.`,
           ].join("\n"),
