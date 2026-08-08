@@ -249,7 +249,6 @@ export default function Upload() {
   const [summary, setSummary] = useState<UploadSummary | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const utils = trpc.useUtils();
-  const analyzeAll = trpc.documents.analyzeAll.useMutation();
 
   const handleFiles = useCallback((newFiles: FileList | File[]) => {
     const arr = Array.from(newFiles);
@@ -467,13 +466,9 @@ export default function Upload() {
       toast.success(`Upload complete: ${files.length} file(s) processed`);
     }
 
-    // Auto-trigger deterministic processing for newly uploaded documents.
-    try {
-      await analyzeAll.mutateAsync({ caseId: currentCaseId });
-      toast.info("Deterministic document processing queued — supported extractors will process available content in the background.");
-    } catch {
-      // Non-critical — user can trigger manually
-    }
+    // Preservation and semantic analysis are separate governed stages.
+    // Upload success must never be converted into an analysis failure by the retired legacy pipeline.
+    toast.info("Upload preserved. Run Analysis when you're ready; unsupported formats remain preserved without becoming extraction errors.");
   };
 
   const handleSummaryClose = () => {
