@@ -43,8 +43,8 @@ export interface Layer7Input {
   artifacts: ParsedArtifact[];
 }
 
-export const LAYER_VERSION = '2.1.0';
-export const RULE_VERSION = '2.1.0';
+export const LAYER_VERSION = '2.2.0';
+export const RULE_VERSION = '2.2.0';
 
 type MarkerDirection = 'a_to_b' | 'b_to_a' | 'bidirectional';
 type MarkerManifestRow = {
@@ -53,16 +53,12 @@ type MarkerManifestRow = {
   direction: MarkerDirection;
 };
 
-/**
- * Exact rule data consumed below. A regex, direction, role, or context-window
- * change changes this manifest hash even when RULE_VERSION is accidentally left
- * untouched; the replay identity therefore still changes.
- */
 export const RULE_MANIFEST: {
   context_chars: number;
   first_marker_per_pair_per_span: boolean;
   markers: MarkerManifestRow[];
   role_map: Record<RelationshipType, { authority: string; subject: string }>;
+  mention_binding: 'exact_extracted_mention_offsets_only';
 } = {
   context_chars: 20,
   first_marker_per_pair_per_span: true,
@@ -96,10 +92,10 @@ export const RULE_MANIFEST: {
     family: { authority: 'family_member', subject: 'family_member' },
     opposing_party: { authority: 'party', subject: 'party' },
   },
+  mention_binding: 'exact_extracted_mention_offsets_only',
 };
 
 export const RULE_MANIFEST_HASH = computeRuleManifestHash(RULE_MANIFEST);
-
 const RELATIONSHIP_MARKERS = RULE_MANIFEST.markers.map(row => ({
   pattern: regexFromManifest(row.regex),
   type: row.type,
@@ -107,9 +103,17 @@ const RELATIONSHIP_MARKERS = RULE_MANIFEST.markers.map(row => ({
 }));
 
 export function processLayer7(input: Layer7Input): EngineResult<Relationship[]> {
+  const artifacts = [...input.artifacts].sort((a, b) => a.artifact_key.localeCompare(b.artifact_key));
+  const parser_version = parserVersion(artifacts);
   const input_hash = computeHash({
-    entities: input.entities.map(e => e.entity_id).sort(),
-    artifacts: input.artifacts.map(a => a.raw_bytes_sha256).sort(),
+    entity_ids: input.entities.map(entity => entity.entity_id).sort(),
+    artifacts: artifacts.map(artifact => ({
+      artifact_key: artifact.artifact_key,
+      raw_bytes_sha256: artifact.raw_bytes_sha256,
+      parser_version: artifact.parser_version,
+      extraction_status: artifact.extraction_status,
+      parsed_output_hash: computeHash({ extracted_text: artifact.extracted_text, spans: artifact.spans }),
+    })),
   });
   const unresolved: UnresolvedDependency[] = [];
 
@@ -119,7 +123,7 @@ export function processLayer7(input: Layer7Input): EngineResult<Relationship[]> 
       layer_name: 'relationship_graph',
       layer_version: LAYER_VERSION,
       rule_version: RULE_VERSION,
-      parser_version: 'N/A',
+      parser_version,
       canonicalization_version: CANONICALIZATION_VERSION,
       input_hash,
       output_hash: computeHash(data),
@@ -132,27 +136,34 @@ export function processLayer7(input: Layer7Input): EngineResult<Relationship[]> 
   }
 
   const relationshipMap = new Map<string, Relationship>();
-
-  for (const artifact of [...input.artifacts].sort((a, b) => a.artifact_key.localeCompare(b.artifact_key))) {
-    if (artifact.extraction_status !== 'success') continue;
+  for (const artifact of artifacts) {
+    if (artifact.extraction_status !== 'success') {
+      unresolved.push({
+        field: `artifact:${artifact.artifact_key}`,
+        reason: artifact.extraction_status === 'unsupported_format' ? 'unsupported_format' : 'incomplete',
+        detail: `Relationship extraction skipped artifact state ${artifact.extraction_status}`,
+      });
+      continue;
+    }
 
     for (const span of [...artifact.spans].sort((a, b) => a.start_offset - b.start_offset)) {
       const spanText = span.text;
-      const entitiesInSpan: Array<{ entity: Entity; position: number }> = [];
+      const entitiesInSpan: Array<{ entity: Entity; position: number; mention_text: string }> = [];
 
       for (const entity of input.entities) {
-        const positions: number[] = [];
-        for (const mention of entity.raw_mentions) {
-          if (mention.artifact_key !== artifact.artifact_key) continue;
-          if (mention.span_offset >= span.start_offset && mention.span_offset < span.end_offset) {
-            positions.push(mention.span_offset - span.start_offset);
-          }
-        }
-        const rawText = entity.raw_mentions[0]?.raw_text || entity.canonical_name;
-        const nameIdx = rawText ? spanText.indexOf(rawText) : -1;
-        if (nameIdx >= 0) positions.push(nameIdx);
-        if (positions.length > 0) {
-          entitiesInSpan.push({ entity, position: Math.min(...positions) });
+        const mentions = entity.raw_mentions
+          .filter(mention =>
+            mention.artifact_key === artifact.artifact_key &&
+            mention.span_offset >= span.start_offset &&
+            mention.span_offset < span.end_offset,
+          )
+          .sort((a, b) => a.span_offset - b.span_offset || a.raw_text.localeCompare(b.raw_text));
+        if (mentions.length > 0) {
+          entitiesInSpan.push({
+            entity,
+            position: mentions[0].span_offset - span.start_offset,
+            mention_text: mentions[0].raw_text,
+          });
         }
       }
 
@@ -163,10 +174,8 @@ export function processLayer7(input: Layer7Input): EngineResult<Relationship[]> 
         for (let j = i + 1; j < entitiesInSpan.length; j++) {
           const first = entitiesInSpan[i];
           const second = entitiesInSpan[j];
-          const startPos = first.position;
-          const endPos = second.position + (second.entity.raw_mentions[0]?.raw_text || second.entity.canonical_name).length;
-          const contextStart = Math.max(0, startPos - RULE_MANIFEST.context_chars);
-          const contextEnd = Math.min(spanText.length, endPos + RULE_MANIFEST.context_chars);
+          const contextStart = Math.max(0, first.position - RULE_MANIFEST.context_chars);
+          const contextEnd = Math.min(spanText.length, second.position + second.mention_text.length + RULE_MANIFEST.context_chars);
           const contextText = spanText.substring(contextStart, contextEnd);
 
           for (const marker of RELATIONSHIP_MARKERS) {
@@ -197,9 +206,7 @@ export function processLayer7(input: Layer7Input): EngineResult<Relationship[]> 
               const sourceKey = `${sourceRef.artifact_key}|${sourceRef.marker_offset}`;
               if (!existing.source_refs.some(ref => `${ref.artifact_key}|${ref.marker_offset}` === sourceKey)) {
                 existing.source_refs.push(sourceRef);
-                existing.source_refs.sort((a, b) =>
-                  a.artifact_key.localeCompare(b.artifact_key) || a.marker_offset - b.marker_offset,
-                );
+                existing.source_refs.sort((a, b) => a.artifact_key.localeCompare(b.artifact_key) || a.marker_offset - b.marker_offset);
               }
             } else {
               relationshipMap.set(relationship_id, {
@@ -226,12 +233,12 @@ export function processLayer7(input: Layer7Input): EngineResult<Relationship[]> 
     layer_name: 'relationship_graph',
     layer_version: LAYER_VERSION,
     rule_version: RULE_VERSION,
-    parser_version: 'N/A',
+    parser_version,
     canonicalization_version: CANONICALIZATION_VERSION,
     input_hash,
     output_hash: computeHash(data),
     data,
-    unresolved_dependencies: unresolved,
+    unresolved_dependencies: unresolved.sort((a, b) => a.field.localeCompare(b.field)),
     is_sealed: false,
   };
 }
@@ -271,6 +278,10 @@ function canonicalizeRelationshipEndpoints(
     if (role_a === roles.authority && role_b === roles.subject) direction = 'a_to_b';
     else if (role_b === roles.authority && role_a === roles.subject) direction = 'b_to_a';
   }
-
   return { entity_a_id, entity_b_id, role_a, role_b, direction };
+}
+
+function parserVersion(artifacts: ParsedArtifact[]): string {
+  const versions = Array.from(new Set(artifacts.map(artifact => artifact.parser_version))).sort();
+  return versions.length === 0 ? 'N/A' : versions.join('|');
 }
