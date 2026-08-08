@@ -23,59 +23,23 @@ import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
 import {
   LayoutDashboard,
-  FileText,
-  Users,
-  Clock,
-  Shield,
-  Network,
   LogOut,
   PanelLeft,
   Scale,
-  Upload,
   Briefcase,
   ChevronDown,
   ChevronRight,
   Lightbulb,
-  MessageSquare,
-  Download,
-  Wrench,
-  FileSearch,
   Lock,
   ShieldAlert,
-  AlertTriangle,
   Heart,
   ArrowRight,
   Sparkles,
   CheckCircle2,
-  BarChart3,
-  Presentation,
-  UserCog,
-  FlaskConical,
-  ClipboardList,
-  ScrollText,
-  Rocket,
-  Lamp,
-  MapPin,
   Eye,
-  Gavel,
-  Send,
-  BookOpen,
-  Library,
-  Brain,
   Layers,
-  RadioTower,
-  Ban,
-  GitBranch,
-  Timer,
-  ListChecks,
-  Route as RouteIcon,
-  Map,
-  FileCheck,
-  Compass,
-  Target,
-  Terminal,
-  DoorOpen,
-  ShieldCheck,
+  Shield,
+  Upload,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { CSSProperties, useCallback, useEffect, useRef, useState } from "react";
@@ -87,127 +51,25 @@ import MobileBottomNav from "./MobileBottomNav";
 import PlainLanguageToggle from "./PlainLanguageToggle";
 import { NotificationBell } from "./NotificationBell";
 import { resetTour } from "./OnboardingTour";
+import {
+  allNavSections,
+  adminSection,
+  investigateItems,
+  getNavSectionsForLens,
+  LENS_OPTIONS,
+  type NavItem,
+  type NavSection,
+  type UserLens,
+} from "./navigation";
 
-/* ─── Navigation Structure ─── */
-
-type NavItem = { icon: any; label: string; path: string; requiresSealed?: boolean };
-type NavSection = {
-  id: string;
-  label: string;
-  items: NavItem[];
-  defaultOpen?: boolean;
-  labelColor?: string;
-};
-
-/* ─── Workflow Stage Items ─── */
-
-const investigateItems: NavItem[] = [
-  { icon: Upload, label: "Upload Evidence", path: "/upload" },
-  { icon: FileText, label: "Documents", path: "/documents" },
-  { icon: Users, label: "Entities", path: "/entities" },
-  { icon: Clock, label: "Timeline", path: "/timeline" },
-  { icon: Network, label: "Network Graph", path: "/network" },
-  { icon: Lightbulb, label: "Findings", path: "/findings" },
-  { icon: MessageSquare, label: "Ask the Evidence", path: "/chat" },
-  { icon: AlertTriangle, label: "Extraction Failures", path: "/extraction-failures" },
-  { icon: Shield, label: "Audit Trail", path: "/audit" },
-  { icon: ShieldAlert, label: "Integrity Dashboard", path: "/integrity" },
-];
-
-const analyzeItems: NavItem[] = [
-  { icon: Target, label: "Claim Elements", path: "/claim-elements" },
-  { icon: Scale, label: "Proof Frameworks", path: "/proof-frameworks" },
-  { icon: BarChart3, label: "Contradiction Scoring", path: "/contradiction-scoring" },
-  { icon: Ban, label: "Litigation Barriers", path: "/barriers" },
-  { icon: GitBranch, label: "Doctrine Graph", path: "/doctrine-graph" },
-  { icon: FileSearch, label: "Claim Denial Analysis", path: "/cda" },
-  { icon: Shield, label: "Provenance Drill-Down", path: "/provenance" },
-  { icon: RadioTower, label: "Signal Registry", path: "/signal-registry" },
-];
-
-const strategizeItems: NavItem[] = [
-  { icon: Compass, label: "Case Resolution", path: "/resolve" },
-  { icon: Layers, label: "Structural Diagnostics", path: "/diagnostics" },
-  { icon: Terminal, label: "Command Board", path: "/command-board" },
-  { icon: RouteIcon, label: "Enforcement Pathway", path: "/enforcement-pathway" },
-  { icon: ListChecks, label: "Investigation Workflow", path: "/investigation-workflow" },
-  { icon: Timer, label: "Deadline Calculator", path: "/deadline-calculator" },
-  { icon: Shield, label: "Enforcement Intel", path: "/enforcement-intel" },
-  { icon: Compass, label: "Investigation Guidance", path: "/investigation-guidance" },
-  { icon: Map, label: "Architecture Map", path: "/architecture-map" },
-];
-
-const actItems: NavItem[] = [
-  { icon: FileCheck, label: "Filing Generator", path: "/filing-generator" },
-  { icon: FileSearch, label: "Templates", path: "/templates" },
-  { icon: Send, label: "LumenSend", path: "/lumensend" },
-  { icon: ClipboardList, label: "FOIA Tracker", path: "/foia" },
-  { icon: ScrollText, label: "Statement of Facts", path: "/narrative" },
-  { icon: Download, label: "Export Reports", path: "/exports" },
-  { icon: Presentation, label: "Presentations", path: "/presentations" },
-];
-
-const observeItems: NavItem[] = [
-  { icon: Eye, label: "Pattern Viewfinder", path: "/viewfinder" },
-  { icon: Network, label: "Cross-Case Patterns", path: "/patterns" },
-  { icon: BarChart3, label: "Agency Metrics", path: "/agency-metrics" },
-  { icon: Gavel, label: "Docket Room", path: "/docket" },
-  { icon: GitBranch, label: "Living Civic Genome", path: "/civic-genome" },
-];
-
-const platformItems: NavItem[] = [
-  { icon: DoorOpen, label: "Mudroom", path: "/mudroom" },
-  { icon: Wrench, label: "Workshop Floor", path: "/workshop" },
-  { icon: Lamp, label: "The Lighthouse", path: "/lighthouse" },
-  { icon: Compass, label: "Pipeline Explorer", path: "/categories" },
-  { icon: MapPin, label: "Civic Map", path: "/civic-map" },
-  { icon: Library, label: "Legal Library", path: "/legal-library" },
-  { icon: BookOpen, label: "Civil Gideon", path: "/civil-gideon" },
-  { icon: Brain, label: "Mental Health System", path: "/mental-health" },
-];
-
-const adminItems: NavItem[] = [
-  { icon: Wrench, label: "Case Repair", path: "/repair" },
-  { icon: BarChart3, label: "Pipeline Analytics", path: "/admin/analytics" },
-  { icon: BarChart3, label: "Business Analytics", path: "/business-analytics" },
-  { icon: MessageSquare, label: "Feedback Dashboard", path: "/admin/feedback" },
-  { icon: UserCog, label: "User Management", path: "/admin/users" },
-  { icon: FlaskConical, label: "Test Scenarios", path: "/admin/test-scenarios" },
-  { icon: Rocket, label: "Mission Control", path: "/mission-control" },
-  { icon: Shield, label: "Sovereign Control", path: "/sovereign-control" },
-  { icon: ShieldCheck, label: "Resource Verification", path: "/admin/resource-verification" },
-];
-
-/** All workflow sections — used for lens filtering */
-const allNavSections: NavSection[] = [
-  { id: "investigate", label: "Investigate", items: investigateItems, defaultOpen: true },
-  { id: "analyze", label: "Analyze", items: analyzeItems, defaultOpen: false },
-  { id: "strategize", label: "Strategize", items: strategizeItems, defaultOpen: false },
-  { id: "act", label: "Act", items: actItems, defaultOpen: false },
-  { id: "observe", label: "Observe", items: observeItems, defaultOpen: false },
-  { id: "platform", label: "Platform", items: platformItems, defaultOpen: false },
-];
-
-const adminSection: NavSection = {
-  id: "admin", label: "Admin", items: adminItems, defaultOpen: false, labelColor: "text-destructive/70",
-};
-
-/** User lens definitions — which workflow stages are visible for each lens */
-export type UserLens = "guide" | "advocate" | "professional" | "admin";
-
-const LENS_VISIBILITY: Record<UserLens, string[]> = {
-  guide: ["investigate", "act", "platform"],
-  advocate: ["investigate", "analyze", "act", "observe", "platform"],
-  professional: ["investigate", "analyze", "strategize", "act", "observe", "platform"],
-  admin: ["investigate", "analyze", "strategize", "act", "observe", "platform", "admin"],
-};
+export type { UserLens } from "./navigation";
 
 const LENS_KEY = "luminari-user-lens";
 
 function getStoredLens(): UserLens {
   try {
     const saved = localStorage.getItem(LENS_KEY);
-    if (saved && ["guide", "advocate", "professional", "admin"].includes(saved)) {
+    if (saved && LENS_OPTIONS.includes(saved as UserLens)) {
       return saved as UserLens;
     }
   } catch {}
@@ -217,13 +79,6 @@ function getStoredLens(): UserLens {
 function setStoredLens(lens: UserLens) {
   try { localStorage.setItem(LENS_KEY, lens); } catch {}
 }
-
-/** Filter navSections based on the active lens */
-function getNavSectionsForLens(lens: UserLens): NavSection[] {
-  const visibleIds = LENS_VISIBILITY[lens];
-  return allNavSections.filter(s => visibleIds.includes(s.id));
-}
-
 
 /* ─── Collapsible State Persistence ─── */
 
@@ -332,7 +187,7 @@ function MobileLayout({ children }: { children: React.ReactNode }) {
   const [location, setLocation] = useLocation();
   const { currentCase, currentCaseId } = useCase();
 
-  const allMenuItems = [...investigateItems, ...analyzeItems, ...strategizeItems, ...actItems, ...observeItems, ...platformItems];
+  const allMenuItems = allNavSections.flatMap(section => section.items);
   const activeMenuItem = allMenuItems.find((item) => item.path === location);
 
   // Stats for guided journey step detection
@@ -682,7 +537,7 @@ function DesktopLayoutContent({
 
   // User lens state
   const [activeLens, setActiveLens] = useState<UserLens>(getStoredLens);
-  const visibleSections = getNavSectionsForLens(activeLens);
+  const visibleSections = getNavSectionsForLens(activeLens).filter(section => section.id !== "admin");
   const handleLensChange = useCallback((lens: UserLens) => {
     setActiveLens(lens);
     setStoredLens(lens);
@@ -938,7 +793,7 @@ function DesktopLayoutContent({
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-44">
-                  {(["guide", "advocate", "professional", "admin"] as UserLens[]).map((lens) => (
+                  {LENS_OPTIONS.map((lens) => (
                     <DropdownMenuItem
                       key={lens}
                       onClick={() => handleLensChange(lens)}
