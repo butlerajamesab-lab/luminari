@@ -318,6 +318,7 @@ export default function Upload() {
 
     const batches = buildUploadBatches(files);
     let completed = 0;
+    let preservedCount = 0;
     let lastSummary: UploadSummary | null = null;
 
     // ── Create server-side upload session for multi-batch persistence ──
@@ -391,6 +392,10 @@ export default function Upload() {
         // Capture summary from last batch
         if (data.summary) {
           lastSummary = data.summary;
+          preservedCount +=
+            Number(data.summary.uploaded ?? 0) +
+            Number(data.summary.duplicates ?? 0) +
+            Number(data.summary.overrides ?? 0);
         }
 
         // Mark results with explicit status differentiation
@@ -462,13 +467,17 @@ export default function Upload() {
     if (lastSummary) {
       setSummary(lastSummary);
       setShowSummary(true);
-    } else {
-      toast.success(`Upload complete: ${files.length} file(s) processed`);
+    } else if (preservedCount > 0) {
+      toast.success(`Upload complete: ${preservedCount} file(s) preserved or linked`);
     }
 
     // Preservation and semantic analysis are separate governed stages.
     // Upload success must never be converted into an analysis failure by the retired legacy pipeline.
-    toast.info("Upload preserved. Run Analysis when you're ready; unsupported formats remain preserved without becoming extraction errors.");
+    if (preservedCount > 0) {
+      toast.info("Upload preserved. Run Analysis when you're ready; unsupported formats remain preserved without becoming extraction errors.");
+    } else {
+      toast.error("Upload failed: no files were preserved.");
+    }
   };
 
   const handleSummaryClose = () => {

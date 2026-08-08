@@ -10,7 +10,6 @@ import { documents } from "../drizzle/schema";
 import { and, eq, sql } from "drizzle-orm";
 import { cases } from "../drizzle/schema";
 import { ENGINE_VERSION } from "../shared/const";
-import { enqueueDocument } from "./analysis-pipeline";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -218,9 +217,6 @@ export function registerUploadRoute(app: Express) {
               );
 
               if (overrideResult.overridden) {
-                // Trigger re-extraction on the new document
-                enqueueDocument(overrideResult.newDocumentId, caseId, snapshotId);
-
                 await dbHelpers.incrementUploadSessionCounter(sessionId, "completedFiles");
                 results.push({
                   id: overrideResult.newDocumentId,
@@ -228,7 +224,7 @@ export function registerUploadRoute(app: Express) {
                   fileType,
                   sha256Hash,
                   status: "uploaded",
-                  message: `Replaced resolved document "${existing.filename}" (ID: ${existing.id}, resolution: ${existingResolution}) — extraction re-queued`,
+                  message: `Replaced resolved document "${existing.filename}" (ID: ${existing.id}, resolution: ${existingResolution}) — evidence preserved for explicit Intake Spine execution`,
                   replacedDocId: existing.id,
                 });
                 continue;
@@ -441,16 +437,13 @@ export function registerUploadRoute(app: Express) {
         return;
       }
 
-      // Trigger extraction on the new document
-      enqueueDocument(overrideResult.newDocumentId, caseId, snapshotId);
-
       res.json({
         success: true,
         originalDocumentId: documentId,
         newDocumentId: overrideResult.newDocumentId,
         filename: file.originalname,
         sha256Hash,
-        message: `Replaced document #${documentId} ("${originalDoc.filename}") — extraction queued`,
+        message: `Replaced document #${documentId} ("${originalDoc.filename}") — evidence preserved for explicit Intake Spine execution`,
       });
     } catch (err: any) {
       console.error("[Upload] Replace route error:", err);

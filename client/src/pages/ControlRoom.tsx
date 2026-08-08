@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Progress } from "@/components/ui/progress";
 import {
   Collapsible,
   CollapsibleContent,
@@ -22,7 +21,6 @@ import {
   Shield,
   ChevronDown,
   ChevronRight,
-  Play,
   Loader2,
   ExternalLink,
   Download,
@@ -50,9 +48,6 @@ import {
   Sparkles,
   Radio,
 } from "lucide-react";
-
-/* ─── Types ─── */
-type PipelineStage = "idle" | "viability" | "strategy" | "assembly" | "pattern" | "complete" | "error";
 
 /* ─── Case Completeness Panel ─── */
 function CaseCompletenessPanel({ caseId }: { caseId: number }) {
@@ -1012,188 +1007,59 @@ function KeyFindingsPanel({ caseId }: { caseId: number }) {
   );
 }
 
-/* ─── Pipeline Trigger + Progress ─── */
-function PipelineTrigger({ caseId }: { caseId: number }) {
-  const [stage, setStage] = useState<PipelineStage>("idle");
-  const [error, setError] = useState<string | null>(null);
-
-  const utils = trpc.useUtils();
-
-  // Pipeline status polling
-  const { data: pipelineStatus } = trpc.pipeline.getPipelineStatus.useQuery(
-    { case_id: caseId },
-    { refetchInterval: stage !== "idle" && stage !== "complete" && stage !== "error" ? 3000 : 30000 }
+/* ─── Canonical Intake Spine handoff ─── */
+function IntakeSpineTrigger({ caseId }: { caseId: number }) {
+  const [, navigate] = useLocation();
+  const status = trpc.analyze.getIntakeSpineStatus.useQuery(
+    { caseId },
+    { refetchInterval: 15_000, retry: false },
   );
-
-  // Mutations for each engine
-  const viabilityMut = trpc.viabilityEngine.runFullPipeline.useMutation();
-  const strategyMut = trpc.strategyEngine.runFullPipeline.useMutation();
-  const patternMut = trpc.patternEngine.runFullAggregation.useMutation();
-
-  // Also need assembly init mutation
-  const assemblyInitMut = trpc.assemblyEngine.initializePacket.useMutation();
-
-  const isRunning = stage !== "idle" && stage !== "complete" && stage !== "error";
-
-  async function runPipeline() {
-    setStage("viability");
-    setError(null);
-
-    try {
-      // Stage 1: Viability
-      toast.info("Running Viability Engine...");
-      await viabilityMut.mutateAsync({ caseId, incidentDate: Date.now(), jurisdiction: "federal" });
-
-      // Stage 2: Strategy
-      setStage("strategy");
-      toast.info("Running Strategy Engine...");
-      await strategyMut.mutateAsync({ case_id: caseId });
-
-      // Stage 3: Assembly — initialize a filing packet if none exists
-      setStage("assembly");
-      toast.info("Running Assembly Engine...");
-      try {
-        await assemblyInitMut.mutateAsync({
-          caseId,
-          packetName: "Auto-generated Filing Packet",
-          packetType: "complaint",
-        });
-      } catch {
-        // Packet may already exist — that's fine
-      }
-
-      // Stage 4: Pattern
-      setStage("pattern");
-      toast.info("Running Pattern Aggregation...");
-      await patternMut.mutateAsync({ caseIds: [caseId] });
-
-      setStage("complete");
-      toast.success("Full pipeline complete!");
-
-      // Invalidate all queries
-      utils.cases.stats.invalidate({ case_id: caseId });
-      utils.strategyEngine.getStrategyPaths.invalidate({ case_id: caseId });
-      utils.strategyEngine.getDeadlines.invalidate({ case_id: caseId });
-      utils.assemblyEngine.getPackets.invalidate({ case_id: caseId });
-      utils.patternEngine.getSystemicInferences.invalidate();
-      utils.patternEngine.getEntityClusters.invalidate();
-      utils.patternEngine.getConductClusters.invalidate();
-      utils.patternEngine.getCaseLinks.invalidate();
-      utils.pipeline.getPipelineStatus.invalidate({ case_id: caseId });
-    } catch (err: any) {
-      setStage("error");
-      setError(err.message || "Pipeline failed");
-      toast.error(`Pipeline error: ${err.message || "Unknown error"}`);
-    }
-  }
-
-  const stageLabels: Record<PipelineStage, string> = {
-    idle: "Ready",
-    viability: "Viability Engine",
-    strategy: "Strategy Engine",
-    assembly: "Case Assembly",
-    pattern: "Pattern Aggregation",
-    complete: "Complete",
-    error: "Error",
-  };
-
-  const stageProgress: Record<PipelineStage, number> = {
-    idle: 0,
-    viability: 25,
-    strategy: 50,
-    assembly: 75,
-    pattern: 90,
-    complete: 100,
-    error: 0,
-  };
+  const liveSession = status.data?.find(
+    (session) => session.session_type === "live" && session.entry_channel === "upload",
+  );
+  const sourceCount = liveSession?.source_artifact_count ?? 0;
+  const sealedCount = liveSession?.sealed_layer_run_count ?? 0;
 
   return (
-    <Card>
+    <Card className="border-primary/25">
       <CardContent className="pt-4 pb-4">
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           <Button
-            onClick={runPipeline}
-            disabled={isRunning}
-            className="shrink-0"
+            onClick={() => navigate(`/case/${caseId}`)}
+            className="shrink-0 gap-2"
             size="sm"
           >
-            {isRunning ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Running...
-              </>
-            ) : stage === "complete" ? (
-              <>
-                <CheckCircle2 className="h-4 w-4 mr-2" />
-                Run Again
-              </>
-            ) : stage === "error" ? (
-              <>
-                <XCircle className="h-4 w-4 mr-2" />
-                Retry
-              </>
-            ) : (
-              <>
-                <Play className="h-4 w-4 mr-2" />
-                Run Analysis
-              </>
-            )}
+            <Shield className="h-4 w-4" />
+            Open Intake Spine
           </Button>
 
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-medium">
-                {stageLabels[stage]}
-              </span>
-              {isRunning && (
-                <span className="text-[10px] text-muted-foreground">
-                  {stageProgress[stage]}%
-                </span>
-              )}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium">Canonical case analysis</span>
+              <Badge variant="outline" className="text-[10px] border-primary/30 text-primary">
+                governed
+              </Badge>
             </div>
-            <Progress value={stageProgress[stage]} className="h-1.5" />
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Analysis executes only through the Universal Intake Spine against preserved source bytes and declared rule versions. Strategy, assembly, and pattern engines remain separately named downstream tools.
+            </p>
           </div>
 
-          {/* Stage indicators */}
-          <div className="flex items-center gap-1 shrink-0">
-            {(["viability", "strategy", "assembly", "pattern"] as const).map((s) => {
-              const stageIdx = ["viability", "strategy", "assembly", "pattern"].indexOf(s);
-              const currentIdx = ["viability", "strategy", "assembly", "pattern"].indexOf(stage as any);
-              const isDone = stage === "complete" || (currentIdx > stageIdx);
-              const isCurrent = stage === s;
-
-              return (
-                <div
-                  key={s}
-                  className={`h-2 w-2 rounded-full transition-colors ${
-                    isDone
-                      ? "bg-emerald-400"
-                      : isCurrent
-                        ? "bg-primary animate-pulse"
-                        : "bg-muted-foreground/20"
-                  }`}
-                  title={stageLabels[s]}
-                />
-              );
-            })}
+          <div className="flex items-center gap-3 text-[10px] text-muted-foreground shrink-0">
+            {status.isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : status.error ? (
+              <span className="text-red-400">Status unavailable</span>
+            ) : liveSession ? (
+              <>
+                <span>{sourceCount} preserved source{sourceCount === 1 ? "" : "s"}</span>
+                <span>{sealedCount}/14 sealed</span>
+              </>
+            ) : (
+              <span>No live upload session</span>
+            )}
           </div>
         </div>
-
-        {error && (
-          <p className="text-xs text-destructive mt-2">{error}</p>
-        )}
-
-        {/* Pipeline history summary */}
-        {pipelineStatus && (
-          <div className="flex items-center gap-3 mt-3 pt-3 border-t border-border/30">
-            <Activity className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-            <span className="text-[10px] text-muted-foreground">
-              Strategy: {pipelineStatus.strategyEngine?.status || "—"} ·
-              Assembly: {pipelineStatus.assemblyEngine?.status || "—"} ·
-              Pattern: {pipelineStatus.patternEngine?.feedbackCount ?? 0} feedback entries
-            </span>
-          </div>
-        )}
       </CardContent>
     </Card>
   );
@@ -1244,7 +1110,7 @@ export default function ControlRoom() {
       </div>
 
       {/* Pipeline Trigger */}
-      <PipelineTrigger caseId={caseId} />
+      <IntakeSpineTrigger caseId={caseId} />
 
       <Separator />
 

@@ -22,12 +22,15 @@ describe("unrestricted evidence upload boundary", () => {
     expect(upload_route).toContain("fileSize: 100 * 1024 * 1024");
   });
 
-  it("keeps upload authentication, hashing, case ownership, and downstream processing intact", () => {
+  it("keeps authentication, hashing, and case ownership while preserving analysis separation", () => {
     expect(upload_route).toContain("authenticateCurrentRequest");
     expect(upload_route).toContain('createHash("sha256")');
     expect(upload_route).toContain("eq(cases.userId, user.id)");
-    expect(upload_page).toContain("analyzeAll.mutateAsync");
-    expect(upload_page).toContain("Deterministic document processing queued");
+    expect(upload_route).not.toContain('from "./analysis-pipeline"');
+    expect(upload_route).not.toContain("enqueueDocument(");
+    expect(upload_page).not.toContain("analyzeAll.mutateAsync");
+    expect(upload_page).toContain("preservedCount > 0");
+    expect(upload_page).toContain("Upload preserved. Run Analysis when you're ready");
     expect(upload_page).not.toContain("AI analysis started");
   });
 });
