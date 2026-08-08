@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowRight, CheckCircle2, Clock, AlertTriangle, Scale, Building2, Shield, ShoppingCart, ArrowLeft, Wrench } from "lucide-react";
 import { useLocation } from "wouter";
 import { CommitToCase } from "@/components/CommitToCase";
+import { CaseActionPaths } from "@/components/CaseActionPaths";
 import { safeArray, safeObject, safeText } from "@/lib/data-guard";
 
 const agencyIcons: Record<string, React.ReactNode> = {
@@ -53,200 +54,203 @@ export default function EnforcementPathway() {
   const [, navigate] = useLocation();
   return (
     <div className="space-y-6">
-      {/* Back nav */}
       <div className="flex items-center justify-between">
-        <button onClick={() => navigate("/architecture")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+        <button onClick={() => navigate("/architecture-map")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="h-3.5 w-3.5" /> Architecture Map
         </button>
         <button onClick={() => navigate("/workshop?from=Enforcement+Pathway&layer=%2Fenforcement-pathway")} className="flex items-center gap-1.5 text-sm text-emerald-400 hover:text-emerald-300 transition-colors">
           <Wrench className="h-3.5 w-3.5" /> Open in Workshop
         </button>
       </div>
-      {/* Header */}
+
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Enforcement Pathway Models</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Enforcement Pathways</h1>
         <p className="text-muted-foreground mt-1">
-          {allPathways.isLoading ? "not_loaded" : allPathwayRows.length} enforcement pathway models across federal and state agencies. Select by agency, claim type, or pipeline category.
+          Case-bound procedural candidates and the global pathway reference library are shown separately. A reference model does not establish case applicability.
         </p>
       </div>
 
-      {/* Selector */}
-      <Card className="border-0 bg-card/50">
-        <CardContent className="p-4">
-          <Tabs value={mode} onValueChange={v => setMode(v as typeof mode)}>
-            <TabsList className="mb-3">
-              <TabsTrigger value="agency">By Agency</TabsTrigger>
-              <TabsTrigger value="claim">By Claim Type</TabsTrigger>
-              <TabsTrigger value="pipeline">By Pipeline</TabsTrigger>
-            </TabsList>
+      <CaseActionPaths />
 
-            <TabsContent value="agency">
-              <div className="flex gap-2">
-                {["EEOC", "HUD", "OSHA", "FTC"].map(a => (
-                  <Button key={a} variant={selectedAgency === a ? "default" : "outline"} size="sm" onClick={() => setSelectedAgency(a)} className="gap-1.5">
-                    {agencyIcons[a]} {a}
-                  </Button>
-                ))}
-              </div>
-            </TabsContent>
+      <section className="space-y-5 border-t border-border/60 pt-6">
+        <div>
+          <h2 className="text-lg font-semibold">Global Enforcement Pathway Reference Library</h2>
+          <p className="text-xs text-muted-foreground mt-1">
+            {allPathways.isLoading ? "Reference models not loaded yet." : `${allPathwayRows.length} reference pathway models across federal and state agencies.`} Browse by agency, claim type, or pipeline category without converting a global model into a case conclusion.
+          </p>
+        </div>
 
-            <TabsContent value="claim">
-              <Select value={selectedClaim} onValueChange={setSelectedClaim}>
-                <SelectTrigger className="w-[300px]"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {["discrimination", "retaliation", "harassment", "housing_discrimination", "fair_housing", "workplace_safety", "whistleblower", "consumer_fraud", "deceptive_practices", "unfair_business"].map(c => (
-                    <SelectItem key={c} value={c}>{c.replace(/_/g, " ")}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </TabsContent>
-
-            <TabsContent value="pipeline">
-              <Select value={selectedPipeline} onValueChange={setSelectedPipeline}>
-                <SelectTrigger className="w-[300px]"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {["workplace", "civil_rights", "housing", "employment", "consumer", "safety", "discrimination", "retaliation", "whistleblower", "fraud", "deceptive_practices"].map(p => (
-                    <SelectItem key={p} value={p}>{p.replace(/_/g, " ")}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-
-      {/* Pathway Results */}
-      {pathway.isLoading && <p className="text-muted-foreground">Loading enforcement pathway...</p>}
-      {/* All Pathways from Database */}
-      {allPathwayRows.length > 0 && (
         <Card className="border-0 bg-card/50">
-          <CardHeader>
-            <CardTitle className="text-lg">All Enforcement Pathways ({allPathwayRows.length})</CardTitle>
-            <CardDescription>Complete database of enforcement pathway models including state labor boards</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-2 max-h-[500px] overflow-y-auto">
-              {allPathwayRows.map((p: any) => (
-                <div key={p.id} className="p-3 rounded-lg border border-border/30 bg-muted/20 hover:bg-muted/40 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-sm truncate">{p.agencyName}</h4>
-                      <p className="text-xs text-muted-foreground mt-0.5">{p.pathwayType} · {p.jurisdiction} · {p.filingDeadline || 'No deadline'}</p>
-                    </div>
-                    <CommitToCase type="proceduralPath" pathLabel={p.agencyName} pathId={p.id} label="Use" size="sm" />
-                  </div>
+          <CardContent className="p-4">
+            <Tabs value={mode} onValueChange={v => setMode(v as typeof mode)}>
+              <TabsList className="mb-3">
+                <TabsTrigger value="agency">By Agency</TabsTrigger>
+                <TabsTrigger value="claim">By Claim Type</TabsTrigger>
+                <TabsTrigger value="pipeline">By Pipeline</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="agency">
+                <div className="flex gap-2 flex-wrap">
+                  {["EEOC", "HUD", "OSHA", "FTC"].map(a => (
+                    <Button key={a} variant={selectedAgency === a ? "default" : "outline"} size="sm" onClick={() => setSelectedAgency(a)} className="gap-1.5">
+                      {agencyIcons[a]} {a}
+                    </Button>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </TabsContent>
+
+              <TabsContent value="claim">
+                <Select value={selectedClaim} onValueChange={setSelectedClaim}>
+                  <SelectTrigger className="w-[300px] max-w-full"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {["discrimination", "retaliation", "harassment", "housing_discrimination", "fair_housing", "workplace_safety", "whistleblower", "consumer_fraud", "deceptive_practices", "unfair_business"].map(c => (
+                      <SelectItem key={c} value={c}>{c.replace(/_/g, " ")}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </TabsContent>
+
+              <TabsContent value="pipeline">
+                <Select value={selectedPipeline} onValueChange={setSelectedPipeline}>
+                  <SelectTrigger className="w-[300px] max-w-full"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {["workplace", "civil_rights", "housing", "employment", "consumer", "safety", "discrimination", "retaliation", "whistleblower", "fraud", "deceptive_practices"].map(p => (
+                      <SelectItem key={p} value={p}>{p.replace(/_/g, " ")}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
-      )}
 
-      {pathwayRows.length > 0 ? (
-        <div className="space-y-6">
-          {matchedBy !== "all" && (
-            <p className="text-sm text-muted-foreground">
-              Matched by <Badge variant="outline" className="text-xs ml-1">{matchedBy}</Badge> — {pathwayRows.length} pathway{pathwayRows.length !== 1 ? "s" : ""} found
-            </p>
-          )}
+        {pathway.isLoading && <p className="text-muted-foreground">Loading reference pathway...</p>}
 
-          {pathwayRows.map((pw: any) => (
-            <Card key={pw.agencyShort} className={`border ${agencyColors[pw.agencyShort] || "border-border/30"}`}>
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-muted/50">{agencyIcons[pw.agencyShort] || <Scale className="h-5 w-5" />}</div>
-                  <div>
-                    <CardTitle className="text-lg">{pw.modelName}</CardTitle>
-                    <CardDescription className="flex items-center gap-2 mt-0.5">
-                      <Badge variant="outline" className="text-xs">{pw.agencyShort}</Badge>
-                      <span>{modelTypeLabels[pw.modelType] || pw.modelType}</span>
-                    </CardDescription>
-                  </div>
-                </div>
-                <p className="text-sm text-muted-foreground mt-2">{pw.description}</p>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Step-by-Step Process */}
-                <div>
-                  <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wider">Process Steps</h3>
-                  <div className="space-y-0">
-                    {safeArray<any>(pw.steps).map((step: any, i: number) => (
-                      <div key={step.step} className="flex gap-3">
-                        {/* Vertical connector */}
-                        <div className="flex flex-col items-center">
-                          <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center text-xs font-bold text-primary shrink-0">
-                            {step.step}
-                          </div>
-                          {i < safeArray(pw.steps).length - 1 && <div className="w-px flex-1 bg-border/50 my-1" />}
-                        </div>
-                        {/* Step content */}
-                        <div className="pb-4 flex-1">
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-medium">{step.name}</h4>
-                            <Badge variant="outline" className="text-xs text-muted-foreground">
-                              <Clock className="h-3 w-3 mr-1" />{step.typicalDuration}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground mt-1">{step.description}</p>
-                          <div className="mt-1.5 flex items-start gap-1.5">
-                            <ArrowRight className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
-                            <p className="text-xs text-primary/80">{step.userAction}</p>
-                          </div>
-                        </div>
+        {allPathwayRows.length > 0 && (
+          <Card className="border-0 bg-card/50">
+            <CardHeader>
+              <CardTitle className="text-lg">All Reference Pathways ({allPathwayRows.length})</CardTitle>
+              <CardDescription>Global procedural models. Add one to the case only as a user-selected reference; that action does not make it a governed Layer 14 case path.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-2 max-h-[500px] overflow-y-auto">
+                {allPathwayRows.map((p: any) => (
+                  <div key={p.id} className="p-3 rounded-lg border border-border/30 bg-muted/20 hover:bg-muted/40 transition-colors">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-sm truncate">{p.agencyName}</h4>
+                        <p className="text-xs text-muted-foreground mt-0.5">{p.pathwayType} · {p.jurisdiction} · {p.filingDeadline || 'No deadline declared'}</p>
                       </div>
-                    ))}
+                      <CommitToCase type="proceduralPath" pathLabel={p.agencyName} pathId={p.id} label="Add Reference" size="sm" />
+                    </div>
                   </div>
-                </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-                {/* Key Deadlines */}
-                <div className="grid md:grid-cols-2 gap-4">
+        {pathwayRows.length > 0 ? (
+          <div className="space-y-6">
+            {matchedBy !== "all" && (
+              <p className="text-sm text-muted-foreground">
+                Reference filter matched by <Badge variant="outline" className="text-xs ml-1">{matchedBy}</Badge> — {pathwayRows.length} model{pathwayRows.length !== 1 ? "s" : ""} found
+              </p>
+            )}
+
+            {pathwayRows.map((pw: any) => (
+              <Card key={pw.agencyShort} className={`border ${agencyColors[pw.agencyShort] || "border-border/30"}`}>
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-muted/50">{agencyIcons[pw.agencyShort] || <Scale className="h-5 w-5" />}</div>
+                    <div>
+                      <CardTitle className="text-lg">{pw.modelName}</CardTitle>
+                      <CardDescription className="flex items-center gap-2 mt-0.5">
+                        <Badge variant="outline" className="text-xs">{pw.agencyShort}</Badge>
+                        <span>{modelTypeLabels[pw.modelType] || pw.modelType}</span>
+                      </CardDescription>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-2">{pw.description}</p>
+                </CardHeader>
+                <CardContent className="space-y-6">
                   <div>
-                    <h3 className="text-sm font-semibold mb-2 text-muted-foreground uppercase tracking-wider">Key Deadlines</h3>
-                    <div className="space-y-1.5">
-                      {safeArray<string>(pw.keyDeadlines).map((d: string, i: number) => (
-                        <div key={i} className="flex items-start gap-2 text-sm">
-                          <AlertTriangle className="h-3.5 w-3.5 text-amber-400 mt-0.5 shrink-0" />
-                          <span>{d}</span>
+                    <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wider">Reference Process Steps</h3>
+                    <div className="space-y-0">
+                      {safeArray<any>(pw.steps).map((step: any, i: number) => (
+                        <div key={step.step} className="flex gap-3">
+                          <div className="flex flex-col items-center">
+                            <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center text-xs font-bold text-primary shrink-0">
+                              {step.step}
+                            </div>
+                            {i < safeArray(pw.steps).length - 1 && <div className="w-px flex-1 bg-border/50 my-1" />}
+                          </div>
+                          <div className="pb-4 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="font-medium">{step.name}</h4>
+                              <Badge variant="outline" className="text-xs text-muted-foreground">
+                                <Clock className="h-3 w-3 mr-1" />{step.typicalDuration}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">{step.description}</p>
+                            <div className="mt-1.5 flex items-start gap-1.5">
+                              <ArrowRight className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
+                              <p className="text-xs text-primary/80">Reference action: {step.userAction}</p>
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  <div>
-                    <h3 className="text-sm font-semibold mb-2 text-muted-foreground uppercase tracking-wider">Typical Outcomes</h3>
-                    <div className="space-y-1.5">
-                      {safeArray<string>(pw.typicalOutcomes).map((o: string, i: number) => (
-                        <div key={i} className="flex items-start gap-2 text-sm">
-                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 mt-0.5 shrink-0" />
-                          <span>{o}</span>
-                        </div>
-                      ))}
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <h3 className="text-sm font-semibold mb-2 text-muted-foreground uppercase tracking-wider">Reference Deadlines</h3>
+                      <div className="space-y-1.5">
+                        {safeArray<string>(pw.keyDeadlines).map((d: string, i: number) => (
+                          <div key={i} className="flex items-start gap-2 text-sm">
+                            <AlertTriangle className="h-3.5 w-3.5 text-amber-400 mt-0.5 shrink-0" />
+                            <span>{d}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="text-sm font-semibold mb-2 text-muted-foreground uppercase tracking-wider">Recorded Outcomes</h3>
+                      <div className="space-y-1.5">
+                        {safeArray<string>(pw.typicalOutcomes).map((o: string, i: number) => (
+                          <div key={i} className="flex items-start gap-2 text-sm">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 mt-0.5 shrink-0" />
+                            <span>{o}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Success Rate */}
-                <div className="p-3 rounded-lg bg-muted/30 border border-border/20">
-                  <p className="text-sm"><span className="font-medium">Historical success rate:</span> {pw.successRate}</p>
-                </div>
+                  <div className="p-3 rounded-lg bg-muted/30 border border-border/20">
+                    <p className="text-sm"><span className="font-medium">Historical reference rate:</span> {pw.successRate}</p>
+                    <p className="text-[10px] text-muted-foreground mt-1">This population-level reference is not a prediction for the selected case.</p>
+                  </div>
 
-                {/* Commit to Case */}
-                <div className="flex justify-end pt-1">
-                  <CommitToCase
-                    type="proceduralPath"
-                    pathLabel={pw.modelName}
-                    pathId={pw.id}
-                    label="Set as My Strategy"
-                    size="sm"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : !pathway.isLoading ? (
-        <Card className="py-12 text-center"><p className="text-muted-foreground">empty</p></Card>
-      ) : null}
+                  <div className="flex justify-end pt-1">
+                    <CommitToCase
+                      type="proceduralPath"
+                      pathLabel={pw.modelName}
+                      pathId={pw.id}
+                      label="Stage Reference"
+                      size="sm"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : !pathway.isLoading ? (
+          <Card className="py-12 text-center"><p className="text-muted-foreground">No reference model matched the selected filter.</p></Card>
+        ) : null}
+      </section>
     </div>
   );
 }
