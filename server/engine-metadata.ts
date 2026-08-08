@@ -20,15 +20,14 @@
  */
 
 import { db } from "./db";
-import { engineRuns, engineRegistry } from "../drizzle/schema";
+import { engineRegistry } from "../drizzle/schema";
+import { engineRunsCanonical as engineRuns } from "./engine-runs-schema";
 import { sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { persistEngineOutputs } from "./engine-output-persist";
 import type { OutputRefs } from "./output-refs";
 import { assertOutputRefsFormat } from "./output-refs";
 import { logConduitEvent } from "./metadata-conduit";
-
-// ─── Status Contract ───
 
 const VALID_STATUSES = ["pending", "running", "success", "failed", "unknown"] as const;
 type EngineRunStatus = (typeof VALID_STATUSES)[number];
@@ -43,19 +42,16 @@ function assertStatus(s: string): EngineRunStatus {
 /**
  * Builds the status fields for any engine_runs UPDATE or INSERT.
  * Guarantees status === engineRunStatus at every write.
- * This is the ONLY way to set status on engine_runs.
  */
 function syncStatus(s: string): { runStatus: EngineRunStatus; status: EngineRunStatus } {
   const validated = assertStatus(s);
   return { runStatus: validated, status: validated };
 }
 
-// ─── Types ───
-
 interface EngineRunConfig {
   engineId: string;
   caseId: number;
-  userId?: number;
+  userId?: number | string;
   runType?: "full_pipeline" | "viability_only" | "strategy_only" | "assembly_only" | "pattern_only";
   snapshotId?: number;
 }
@@ -68,13 +64,6 @@ interface EngineRunResult {
   error?: string;
 }
 
-// ─── Core Wrapper ───
-
-/**
- * extractOutputRefs now receives (result, runId) and returns Promise<OutputRefs>.
- * The runId is passed so the engine can embed it in meta.run_id and trace_path.
- * If extractOutputRefs is not provided, output_refs will be null.
- */
 export async function wrapEngineExecution<T>(
   config: EngineRunConfig,
   engineFn: () => Promise<T>,
@@ -83,7 +72,6 @@ export async function wrapEngineExecution<T>(
   const runId = `run_${config.engineId}_${Date.now()}_${randomUUID().slice(0, 8)}`;
   const now = Date.now();
 
-  // Step 1: Insert pending run (status synced via syncStatus)
   await db.insert(engineRuns).values({
     runId,
     caseId: config.caseId,
@@ -99,13 +87,11 @@ export async function wrapEngineExecution<T>(
     createdAt: now,
   });
 
-  // Step 2: Transition to running (status synced via syncStatus)
   await db.update(engineRuns)
     .set({ ...syncStatus("running"), currentStage: "executing" })
     .where(sql`run_id = ${runId}`);
 
   try {
-    // Step 3: Validate gate BEFORE execution
     const gateResult = await validateGate(config.engineId);
 
     if (!gateResult.pass) {
@@ -119,40 +105,35 @@ export async function wrapEngineExecution<T>(
         })
         .where(sql`run_id = ${runId}`);
 
-      return { runId, engineId: config.engineId, status: "failed" as EngineRunStatus, outputRefs: null, error: gateResult.reason };
+      return { runId, engineId: config.engineId, status: "failed", outputRefs: null, error: gateResult.reason };
     }
 
-    // Step 4: Execute engine function
     const result = await engineFn();
 
-    // Step 5: Extract and validate output references (new object format)
     let outputRefs: OutputRefs | null = null;
     if (extractOutputRefs) {
       outputRefs = await extractOutputRefs(result, runId);
-      // Validate format — throws if invalid
       assertOutputRefsFormat(outputRefs);
     }
 
-    // Step 6: Mark success (status synced via syncStatus)
     await db.update(engineRuns)
       .set({
         ...syncStatus("success"),
         currentStage: "done",
-        outputRefs: outputRefs,
+        outputRefs,
         completedAt: Date.now(),
       })
       .where(sql`run_id = ${runId}`);
 
-    console.log(`[EngineMetadata] ${config.engineId} run ${runId} → success. OutputRefs: ${outputRefs ? 'present' : 'null'}`);
+    console.log(`[EngineMetadata] ${config.engineId} run ${runId} → success. OutputRefs: ${outputRefs ? "present" : "null"}`);
 
-    // Step 7: Log conduit event for governance
     await logConduitEvent({
-      eventType: 'ENGINE_RUN',
+      eventType: "ENGINE_RUN",
       engineId: config.engineId,
       runId,
       snapshotId: config.snapshotId,
       metadata: {
-        status: 'success',
+        status: "success",
         case_id: config.caseId,
         has_output_refs: !!outputRefs,
         tables: outputRefs?.meta?.tables ?? [],
@@ -160,22 +141,18 @@ export async function wrapEngineExecution<T>(
       },
     });
 
-    // Step 8: Persist outputs to backbone tables (after success, before snapshot seal)
     if (outputRefs) {
       try {
         const persistResult = await persistEngineOutputs(runId);
-    // @ts-ignore
+        // @ts-ignore — legacy persist result shape
         console.log(`[EngineMetadata] ${config.engineId} run ${runId} → backbone persist: ${persistResult.persisted} persisted, ${persistResult?.skipped ?? 0} skipped`);
       } catch (persistErr: any) {
-        // Non-fatal: log but do not fail the run
         console.error(`[EngineMetadata] ${config.engineId} run ${runId} → backbone persist error:`, persistErr?.message || persistErr);
       }
     }
 
-    return { runId, engineId: config.engineId, status: "success" as EngineRunStatus, outputRefs };
-
+    return { runId, engineId: config.engineId, status: "success", outputRefs };
   } catch (err: any) {
-    // Step 8: Mark failed (status synced via syncStatus)
     const errorMsg = err?.message || String(err);
     await db.update(engineRuns)
       .set({
@@ -188,20 +165,17 @@ export async function wrapEngineExecution<T>(
 
     console.error(`[EngineMetadata] ${config.engineId} run ${runId} → failed:`, errorMsg);
 
-    // Log failure conduit event
     await logConduitEvent({
-      eventType: 'ENGINE_RUN',
+      eventType: "ENGINE_RUN",
       engineId: config.engineId,
       runId,
       snapshotId: config.snapshotId,
-      metadata: { status: 'failed', case_id: config.caseId, error: errorMsg },
-    }).catch(() => {}); // non-fatal
+      metadata: { status: "failed", case_id: config.caseId, error: errorMsg },
+    }).catch(() => {});
 
-    return { runId, engineId: config.engineId, status: "failed" as EngineRunStatus, outputRefs: null, error: errorMsg };
+    return { runId, engineId: config.engineId, status: "failed", outputRefs: null, error: errorMsg };
   }
 }
-
-// ─── Snapshot Binding ───
 
 export async function bindRunToSnapshot(runId: string, snapshotId: number): Promise<void> {
   await db.update(engineRuns)
@@ -209,8 +183,6 @@ export async function bindRunToSnapshot(runId: string, snapshotId: number): Prom
     .where(sql`run_id = ${runId}`);
   console.log(`[EngineMetadata] Bound run ${runId} to snapshot ${snapshotId}`);
 }
-
-// ─── Validation Gate ───
 
 async function validateGate(engineId: string): Promise<{ pass: boolean; reason?: string }> {
   const [rows] = await db.execute(
@@ -230,18 +202,14 @@ async function validateGate(engineId: string): Promise<{ pass: boolean; reason?:
   return { pass: true };
 }
 
-// ─── Public Validation Gate (for external use) ───
-
 export async function runValidationGate(engineId: string): Promise<{ pass: boolean; reason?: string }> {
   return validateGate(engineId);
 }
 
-// ─── Query Helpers ───
-
 export async function getLatestRun(engineId?: string): Promise<any> {
-  let query = `SELECT run_id, engine_id, status, output_refs, snapshot_id, startedAt, completedAt FROM engine_runs ORDER BY createdAt DESC LIMIT 1`;
+  let query = `SELECT run_id, engine_id, status, output_refs, snapshot_id, started_at, completed_at FROM engine_runs ORDER BY created_at DESC LIMIT 1`;
   if (engineId) {
-    query = `SELECT run_id, engine_id, status, output_refs, snapshot_id, startedAt, completedAt FROM engine_runs WHERE engine_id = '${engineId}' ORDER BY createdAt DESC LIMIT 1`;
+    query = `SELECT run_id, engine_id, status, output_refs, snapshot_id, started_at, completed_at FROM engine_runs WHERE engine_id = '${engineId.replaceAll("'", "''")}' ORDER BY created_at DESC LIMIT 1`;
   }
   const [rows] = await db.execute(sql.raw(query));
   return (rows as unknown as any[])[0] || null;
@@ -249,13 +217,11 @@ export async function getLatestRun(engineId?: string): Promise<any> {
 
 export async function getRunsByCase(caseId: number): Promise<any[]> {
   const [rows] = await db.execute(
-    sql`SELECT run_id, engine_id, status, output_refs, snapshot_id, startedAt, completedAt 
-        FROM engine_runs WHERE caseId = ${caseId} ORDER BY createdAt DESC`
+    sql`SELECT run_id, engine_id, status, output_refs, snapshot_id, started_at, completed_at
+        FROM engine_runs WHERE case_id = ${caseId} ORDER BY created_at DESC`
   );
   return rows as unknown as any[];
 }
-
-// ─── Exported Constants ───
 
 export { VALID_STATUSES, syncStatus };
 export type { EngineRunStatus, EngineRunConfig, EngineRunResult };
