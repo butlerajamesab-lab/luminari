@@ -60,11 +60,22 @@ export default function NetworkGraph() {
     { enabled: !!currentCaseId }
   );
 
-  // Fetch evidence for selected link
-  const { data: linkEvidence, isLoading: evidenceLoading } = trpc.relationships.evidence.useQuery(
+  const projectedLinkEvidence = useMemo(() => {
+    if (!selectedLink || !relationships) return null;
+    const relationship = relationships.find((row) => row.id === selectedLink.relId) as any;
+    if (relationship?.projectionSource !== "universal_intake_spine") return null;
+    return relationship.evidence ?? relationship.backingEvidence ?? [];
+  }, [relationships, selectedLink]);
+
+  // Legacy relationships continue to use the established evidence endpoint.
+  // Canonical Intake Spine relationships already carry exact source-span evidence
+  // in their sealed case projection and must not be looked up as legacy rows.
+  const { data: legacyLinkEvidence, isLoading: legacyEvidenceLoading } = trpc.relationships.evidence.useQuery(
     { relationshipId: selectedLink?.relId ?? 0 },
-    { enabled: !!selectedLink?.relId }
+    { enabled: !!selectedLink?.relId && selectedLink.relId > 0 && projectedLinkEvidence === null }
   );
+  const linkEvidence = projectedLinkEvidence ?? legacyLinkEvidence;
+  const evidenceLoading = projectedLinkEvidence === null && legacyEvidenceLoading;
 
   // Resize observer
   useEffect(() => {
@@ -224,7 +235,7 @@ export default function NetworkGraph() {
                 linkLabel={(link: any) => {
                   const l = link as GraphLink;
                   const evCount = l.evidenceCount || 0;
-                  return `${l.label}${evCount > 0 ? ` (${evCount} quote${evCount !== 1 ? 's' : ''})` : ''}`;
+                  return `${l.label}${evCount > 0 ? ` (${evCount} source span${evCount !== 1 ? 's' : ''})` : ''}`;
                 }}
                 onNodeClick={handleNodeClick}
                 onLinkClick={handleLinkClick}
@@ -358,12 +369,12 @@ export default function NetworkGraph() {
                   </div>
                 )}
 
-                {/* Evidence Quotes */}
+                {/* Evidence Source Spans */}
                 <div className="flex-1 overflow-y-auto min-h-0">
                   <div className="flex items-center gap-1.5 mb-2">
                     <Quote className="h-3 w-3 text-primary" />
                     <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                      Backing Quotes
+                      Backing Evidence
                     </p>
                   </div>
 
@@ -374,9 +385,9 @@ export default function NetworkGraph() {
                     </div>
                   ) : linkEvidence && linkEvidence.length > 0 ? (
                     <div className="space-y-2">
-                      {linkEvidence.map((ev) => (
+                      {linkEvidence.map((ev: any) => (
                         <div key={ev.id} className="bg-card border border-border rounded-md p-2.5">
-                          {/* Quote text */}
+                          {/* Exact source text */}
                           <p className="text-xs leading-relaxed italic text-foreground/90">
                             &ldquo;{ev.quoteText}&rdquo;
                           </p>
@@ -417,10 +428,7 @@ export default function NetworkGraph() {
                   ) : (
                     <div className="text-center py-4">
                       <p className="text-xs text-muted-foreground">
-                        No backing quotes stored for this connection.
-                      </p>
-                      <p className="text-[10px] text-muted-foreground mt-1">
-                        The relationship was identified by AI analysis but individual quote links were not preserved.
+                        No backing source spans are available for this connection.
                       </p>
                     </div>
                   )}
