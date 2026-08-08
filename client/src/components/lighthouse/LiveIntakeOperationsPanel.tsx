@@ -63,12 +63,13 @@ export function LiveIntakeOperationsPanel() {
     );
   }
 
-  const data = status.data;
-  const session = data?.session;
-  const latest = data?.latestSealedRun;
-  const artifactCount = data?.artifactCount ?? 0;
-  const layerRunCount = data?.layerRunCount ?? 0;
-  const sealedRunCount = data?.sealedRunCount ?? 0;
+  const sessions = status.data ?? [];
+  const liveSession = sessions.find(
+    (session) => session.session_type === "live" && session.entry_channel === "upload",
+  );
+  const artifactCount = liveSession?.source_artifact_count ?? 0;
+  const layerRunCount = liveSession?.layer_run_count ?? 0;
+  const sealedRunCount = liveSession?.sealed_layer_run_count ?? 0;
   const complete = sealedRunCount >= 14;
 
   return (
@@ -99,14 +100,18 @@ export function LiveIntakeOperationsPanel() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-xs">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            <div><span className="text-slate-500">Legacy case ID:</span> <span className="font-mono text-slate-300">{currentCaseId}</span></div>
-            <div><span className="text-slate-500">Session:</span> <span className="font-mono text-slate-300 break-all">{session?.intake_session_id ?? "none"}</span></div>
-            <div><span className="text-slate-500">Session type:</span> <span className="text-slate-300">{session?.session_type ?? "—"}</span></div>
-            <div><span className="text-slate-500">Entry channel:</span> <span className="text-slate-300">{session?.entry_channel ?? "—"}</span></div>
-            <div><span className="text-slate-500">Session status:</span> <span className="text-slate-300">{session?.session_status ?? "—"}</span></div>
-            <div><span className="text-slate-500">Completion state:</span> <span className="text-slate-300">{session?.completion_state ?? "—"}</span></div>
-          </div>
+          {liveSession ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <div><span className="text-slate-500">Legacy case ID:</span> <span className="font-mono text-slate-300">{currentCaseId}</span></div>
+              <div><span className="text-slate-500">Session:</span> <span className="font-mono text-slate-300 break-all">{liveSession.intake_session_id}</span></div>
+              <div><span className="text-slate-500">Session type:</span> <span className="text-slate-300">{liveSession.session_type}</span></div>
+              <div><span className="text-slate-500">Entry channel:</span> <span className="text-slate-300">{liveSession.entry_channel}</span></div>
+              <div><span className="text-slate-500">Session status:</span> <span className="text-slate-300">{liveSession.session_status}</span></div>
+              <div><span className="text-slate-500">Completion state:</span> <span className="text-slate-300">{liveSession.completion_state}</span></div>
+            </div>
+          ) : (
+            <div className="text-slate-500">No live upload-backed Intake Spine session is registered for this case.</div>
+          )}
         </CardContent>
       </Card>
 
@@ -120,17 +125,13 @@ export function LiveIntakeOperationsPanel() {
       <Card className="border-slate-800/70 bg-slate-950/30">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm flex items-center gap-2">
-            {latest ? <CheckCircle2 className="h-4 w-4 text-emerald-400" /> : <Clock className="h-4 w-4 text-slate-500" />}
+            {liveSession?.latest_receipt_hash ? <CheckCircle2 className="h-4 w-4 text-emerald-400" /> : <Clock className="h-4 w-4 text-slate-500" />}
             Latest sealed receipt
           </CardTitle>
         </CardHeader>
         <CardContent className="text-xs space-y-2">
-          {latest ? (
-            <>
-              <div><span className="text-slate-500">Layer:</span> <span className="text-slate-300">{latest.layer_name}</span></div>
-              <div><span className="text-slate-500">Run:</span> <span className="font-mono text-slate-300 break-all">{latest.layer_run_id}</span></div>
-              <div><span className="text-slate-500">Receipt hash:</span> <span className="font-mono text-slate-300 break-all">{latest.receipt_hash ?? "—"}</span></div>
-            </>
+          {liveSession?.latest_receipt_hash ? (
+            <div><span className="text-slate-500">Receipt hash:</span> <span className="font-mono text-slate-300 break-all">{liveSession.latest_receipt_hash}</span></div>
           ) : (
             <div className="flex items-center gap-2 text-slate-500">
               <Database className="h-4 w-4" /> No live layer receipt has been sealed for this case yet.
