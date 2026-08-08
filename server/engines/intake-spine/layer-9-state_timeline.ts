@@ -1,211 +1,159 @@
-import { computeHash, EngineResult, FactStatus, UnresolvedDependency, CANONICALIZATION_VERSION } from './utils';
+import {
+  computeHash,
+  computeRuleManifestHash,
+  EngineResult,
+  FactStatus,
+  regexFromManifest,
+  UnresolvedDependency,
+  CANONICALIZATION_VERSION,
+} from './utils';
 import { Entity } from './layer-6-entity_registry';
-import { ParsedArtifact, TextSpan } from './parsing-substrate';
-import { VerificationRecord } from './layer-5-verification_gate';
-
-// ─── Types ───────────────────────────────────────────────────────────────────
+import { ParsedArtifact } from './parsing-substrate';
 
 export interface StateTransition {
   transition_id: string;
   entity_id: string;
-  /**
-   * from_state is ONLY populated if the source text explicitly states
-   * the prior state. If the text says "was terminated" without stating
-   * "was employed," from_state is null — NOT inferred.
-   */
   from_state: string | null;
   to_state: string;
-  transition_date: string | null; // ISO date, null if not explicitly dated
+  transition_date: string | null;
   source_artifact_key: string;
   source_span_offset: number;
-  source_text: string; // verbatim text containing the transition
+  source_text: string;
   verification_status: FactStatus;
 }
 
 export interface Layer9Input {
   entities: Entity[];
   artifacts: ParsedArtifact[];
-  verification_records: VerificationRecord[];
 }
 
-// ─── Constants ───────────────────────────────────────────────────────────────
+export const LAYER_VERSION = '2.1.0';
+export const RULE_VERSION = '2.1.0';
 
-export const LAYER_VERSION = '2.0.0';
-export const RULE_VERSION = '2.0.0';
-
-/**
- * Hash of the rule manifest for this layer.
- * MANDATORY for governed engines. The orchestrator MUST fail closed if this is missing.
- * Changing rule code without changing this hash is a contract violation.
- */
-export const RULE_MANIFEST_HASH = computeHash({ layer: 'state_timeline', rule_version: RULE_VERSION, vocabulary_count: 12 });
-
-/**
- * State-change verb vocabulary.
- * Each entry maps a verb/phrase to a to_state.
- * from_state is NEVER inferred — only populated if explicitly stated in source.
- * 
- * This vocabulary is the versioned rule set (R in Y = F_v(X,R)).
- */
-const STATE_CHANGE_VOCABULARY: Array<{
-  pattern: RegExp;
+type StateRule = {
+  regex: { source: string; flags: string };
   to_state: string;
   domain: string;
-}> = [
-  // Employment
-  { pattern: /\b(?:was |been |got )?terminated\b/i, to_state: 'terminated', domain: 'employment' },
-  { pattern: /\b(?:was |been |got )?fired\b/i, to_state: 'terminated', domain: 'employment' },
-  { pattern: /\b(?:was |been |got )?laid off\b/i, to_state: 'laid_off', domain: 'employment' },
-  { pattern: /\bresigned\b/i, to_state: 'resigned', domain: 'employment' },
-  { pattern: /\b(?:was |been |got )?hired\b/i, to_state: 'employed', domain: 'employment' },
-  { pattern: /\b(?:was |been |got )?promoted\b/i, to_state: 'promoted', domain: 'employment' },
-  { pattern: /\b(?:was |been |got )?demoted\b/i, to_state: 'demoted', domain: 'employment' },
-  { pattern: /\b(?:was |been |got )?suspended\b/i, to_state: 'suspended', domain: 'employment' },
+};
 
-  // Housing
-  { pattern: /\b(?:was |been |got )?evicted\b/i, to_state: 'evicted', domain: 'housing' },
-  { pattern: /\beviction notice\b/i, to_state: 'eviction_notice_served', domain: 'housing' },
-  { pattern: /\bmoved in\b/i, to_state: 'housed', domain: 'housing' },
-  { pattern: /\blease (?:was )?(?:signed|executed)\b/i, to_state: 'lease_active', domain: 'housing' },
-  { pattern: /\blease (?:was )?terminated\b/i, to_state: 'lease_terminated', domain: 'housing' },
+export const RULE_MANIFEST: {
+  state_rules: StateRule[];
+  date_patterns: Array<{ source: string; flags: string }>;
+  attribution_scope: 'sentence';
+  ambiguous_entity_policy: 'unresolved';
+  missing_date_policy: 'null';
+  from_state_policy: 'null_without_explicit_prior_state_rule';
+} = {
+  state_rules: [
+    { regex: { source: '\\b(?:was |been |got )?terminated\\b', flags: 'gi' }, to_state: 'terminated', domain: 'employment' },
+    { regex: { source: '\\b(?:was |been |got )?fired\\b', flags: 'gi' }, to_state: 'terminated', domain: 'employment' },
+    { regex: { source: '\\b(?:was |been |got )?laid off\\b', flags: 'gi' }, to_state: 'laid_off', domain: 'employment' },
+    { regex: { source: '\\bresigned\\b', flags: 'gi' }, to_state: 'resigned', domain: 'employment' },
+    { regex: { source: '\\b(?:was |been |got )?hired\\b', flags: 'gi' }, to_state: 'employed', domain: 'employment' },
+    { regex: { source: '\\b(?:was |been |got )?promoted\\b', flags: 'gi' }, to_state: 'promoted', domain: 'employment' },
+    { regex: { source: '\\b(?:was |been |got )?demoted\\b', flags: 'gi' }, to_state: 'demoted', domain: 'employment' },
+    { regex: { source: '\\b(?:was |been |got )?suspended\\b', flags: 'gi' }, to_state: 'suspended', domain: 'employment' },
+    { regex: { source: '\\b(?:was |been |got )?evicted\\b', flags: 'gi' }, to_state: 'evicted', domain: 'housing' },
+    { regex: { source: '\\beviction notice\\b', flags: 'gi' }, to_state: 'eviction_notice_served', domain: 'housing' },
+    { regex: { source: '\\bmoved in\\b', flags: 'gi' }, to_state: 'housed', domain: 'housing' },
+    { regex: { source: '\\blease (?:was )?(?:signed|executed)\\b', flags: 'gi' }, to_state: 'lease_active', domain: 'housing' },
+    { regex: { source: '\\blease (?:was )?terminated\\b', flags: 'gi' }, to_state: 'lease_terminated', domain: 'housing' },
+    { regex: { source: '\\b(?:was |been |got )?(?:benefits? )?denied\\b', flags: 'gi' }, to_state: 'denied', domain: 'benefits' },
+    { regex: { source: '\\b(?:was |been |got )?(?:benefits? )?approved\\b', flags: 'gi' }, to_state: 'approved', domain: 'benefits' },
+    { regex: { source: '\\b(?:benefits? )?(?:was |were |been )?terminated\\b', flags: 'gi' }, to_state: 'benefits_terminated', domain: 'benefits' },
+    { regex: { source: '\\bappealed\\b', flags: 'gi' }, to_state: 'appealed', domain: 'benefits' },
+    { regex: { source: '\\bapplied (?:for)\\b', flags: 'gi' }, to_state: 'applied', domain: 'benefits' },
+    { regex: { source: '\\bclaim (?:was |been )?denied\\b', flags: 'gi' }, to_state: 'claim_denied', domain: 'insurance' },
+    { regex: { source: '\\bclaim (?:was |been )?filed\\b', flags: 'gi' }, to_state: 'claim_filed', domain: 'insurance' },
+    { regex: { source: '\\bpolicy (?:was |been )?cancelled\\b', flags: 'gi' }, to_state: 'policy_cancelled', domain: 'insurance' },
+    { regex: { source: '\\bfiled (?:a )?complaint\\b', flags: 'gi' }, to_state: 'complaint_filed', domain: 'legal' },
+    { regex: { source: '\\bfiled (?:a )?(?:law)?suit\\b', flags: 'gi' }, to_state: 'lawsuit_filed', domain: 'legal' },
+    { regex: { source: '\\bcharge(?:d)? (?:was )?filed\\b', flags: 'gi' }, to_state: 'charge_filed', domain: 'legal' },
+  ],
+  date_patterns: [
+    { source: '\\b((?:January|February|March|April|May|June|July|August|September|October|November|December)\\s+\\d{1,2},?\\s+\\d{4})\\b', flags: 'i' },
+    { source: '\\b(\\d{1,2}\\/\\d{1,2}\\/\\d{4})\\b', flags: '' },
+    { source: '\\b(\\d{4}-\\d{2}-\\d{2})\\b', flags: '' },
+  ],
+  attribution_scope: 'sentence',
+  ambiguous_entity_policy: 'unresolved',
+  missing_date_policy: 'null',
+  from_state_policy: 'null_without_explicit_prior_state_rule',
+};
 
-  // Benefits
-  { pattern: /\b(?:was |been |got )?(?:benefits? )?denied\b/i, to_state: 'denied', domain: 'benefits' },
-  { pattern: /\b(?:was |been |got )?(?:benefits? )?approved\b/i, to_state: 'approved', domain: 'benefits' },
-  { pattern: /\b(?:benefits? )?(?:was |were |been )?terminated\b/i, to_state: 'benefits_terminated', domain: 'benefits' },
-  { pattern: /\bappealed\b/i, to_state: 'appealed', domain: 'benefits' },
-  { pattern: /\bapplied (?:for)\b/i, to_state: 'applied', domain: 'benefits' },
+export const RULE_MANIFEST_HASH = computeRuleManifestHash(RULE_MANIFEST);
 
-  // Insurance
-  { pattern: /\bclaim (?:was |been )?denied\b/i, to_state: 'claim_denied', domain: 'insurance' },
-  { pattern: /\bclaim (?:was |been )?filed\b/i, to_state: 'claim_filed', domain: 'insurance' },
-  { pattern: /\bpolicy (?:was |been )?cancelled\b/i, to_state: 'policy_cancelled', domain: 'insurance' },
+const STATE_RULES = RULE_MANIFEST.state_rules.map(rule => ({
+  ...rule,
+  pattern: regexFromManifest(rule.regex),
+}));
+const DATE_PATTERNS = RULE_MANIFEST.date_patterns.map(regexFromManifest);
 
-  // Legal
-  { pattern: /\bfiled (?:a )?complaint\b/i, to_state: 'complaint_filed', domain: 'legal' },
-  { pattern: /\bfiled (?:a )?(?:law)?suit\b/i, to_state: 'lawsuit_filed', domain: 'legal' },
-  { pattern: /\bcharged? (?:was )?filed\b/i, to_state: 'charge_filed', domain: 'legal' },
-];
-
-// Date patterns for extracting transition dates
-const DATE_PATTERNS = [
-  /\b((?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4})\b/gi,
-  /\b(\d{1,2}\/\d{1,2}\/\d{4})\b/g,
-  /\b(\d{4}-\d{2}-\d{2})\b/g,
-];
-
-// ─── Engine ──────────────────────────────────────────────────────────────────
-
-/**
- * Layer 9: State Timeline
- * 
- * Tracks state changes for each entity over time.
- * CRITICAL: from_state is ONLY populated if the source text explicitly
- * states the prior state. "Was terminated" → to_state: terminated, from_state: null.
- * "Was terminated from his position as manager" → to_state: terminated, from_state: null
- * (being a manager is a role, not a state in our vocabulary).
- * 
- * Only "was employed and then terminated" → from_state: employed, to_state: terminated.
- */
 export function processLayer9(input: Layer9Input): EngineResult<StateTransition[]> {
   const input_hash = computeHash({
-    entities: input.entities.map(e => e.entity_id),
-    artifacts: input.artifacts.map(a => a.raw_bytes_sha256),
-    verification: input.verification_records.map(v => v.fact_key),
+    entities: input.entities.map(e => e.entity_id).sort(),
+    artifacts: input.artifacts.map(a => a.raw_bytes_sha256).sort(),
   });
   const unresolved: UnresolvedDependency[] = [];
+  const transitions = new Map<string, StateTransition>();
 
-  const transitions: StateTransition[] = [];
-
-  for (const artifact of input.artifacts) {
+  for (const artifact of [...input.artifacts].sort((a, b) => a.artifact_key.localeCompare(b.artifact_key))) {
     if (artifact.extraction_status !== 'success') continue;
 
-    for (const span of artifact.spans) {
-      const spanText = span.text;
+    for (const span of [...artifact.spans].sort((a, b) => a.start_offset - b.start_offset)) {
+      for (const rule of STATE_RULES) {
+        rule.pattern.lastIndex = 0;
+        let match: RegExpExecArray | null;
+        while ((match = rule.pattern.exec(span.text)) !== null) {
+          const bounds = sentenceBounds(span.text, match.index);
+          const sentence = span.text.substring(bounds.start, bounds.end).trim();
+          const sentenceAbsoluteOffset = span.start_offset + bounds.start;
+          const entities = entitiesMentionedInSentence(
+            input.entities,
+            artifact.artifact_key,
+            span.start_offset,
+            bounds.start,
+            bounds.end,
+            sentence,
+          );
 
-      // Find entities mentioned in this span
-      const entitiesInSpan: Entity[] = [];
-      for (const entity of input.entities) {
-        for (const mention of entity.raw_mentions) {
-          if (mention.artifact_key === artifact.artifact_key) {
-            // Check if mention is in this span
-            if (mention.span_offset >= span.start_offset && mention.span_offset < span.end_offset) {
-              if (!entitiesInSpan.includes(entity)) entitiesInSpan.push(entity);
-            }
+          if (entities.length === 0) continue;
+          if (entities.length > 1) {
+            unresolved.push({
+              field: `transition:${rule.to_state}:${artifact.artifact_key}:${sentenceAbsoluteOffset}`,
+              reason: 'unresolved',
+              detail: `Multiple entities occur in the bounded sentence: ${entities.map(e => e.canonical_name).sort().join(', ')}`,
+            });
+            continue;
           }
-        }
-        // Also check by name in span text
-        if (spanText.includes(entity.raw_mentions[0]?.raw_text || '') && !entitiesInSpan.includes(entity)) {
-          entitiesInSpan.push(entity);
-        }
-      }
 
-      // For each state-change pattern found in this span
-      for (const vocab of STATE_CHANGE_VOCABULARY) {
-        vocab.pattern.lastIndex = 0;
-        const match = vocab.pattern.exec(spanText);
-        if (!match) continue;
+          const entity = entities[0];
+          const transitionDate = extractDate(sentence);
+          const transition_id = `trans_${computeHash({
+            entity_id: entity.entity_id,
+            to_state: rule.to_state,
+            artifact_key: artifact.artifact_key,
+            sentence_offset: sentenceAbsoluteOffset,
+            marker_offset: sentenceAbsoluteOffset + (match.index - bounds.start),
+          }).substring(0, 16)}`;
 
-        // Entity and transition must share a SENTENCE (bounded by periods/newlines).
-        // If multiple entities appear in the same sentence, emit unresolved.
-        const sentStart = Math.max(spanText.lastIndexOf('.', match.index), spanText.lastIndexOf('\n', match.index)) + 1;
-        const sentEndIdx = spanText.indexOf('.', match.index);
-        const sentEnd = sentEndIdx >= 0 ? sentEndIdx : spanText.length;
-        const sentence = spanText.substring(sentStart, sentEnd);
-
-        // Find entities mentioned in THIS sentence
-        const entitiesInSentence: Entity[] = [];
-        for (const entity of entitiesInSpan) {
-          const rawText = entity.raw_mentions[0]?.raw_text || entity.canonical_name;
-          if (sentence.toLowerCase().includes(rawText.toLowerCase())) {
-            entitiesInSentence.push(entity);
-          }
-        }
-
-        if (entitiesInSentence.length === 0) continue; // No entity in same sentence
-        if (entitiesInSentence.length > 1) {
-          // Multiple entities in same sentence — ambiguous attribution
-          unresolved.push({
-            field: `transition:${vocab.to_state}`,
-            reason: 'unresolved',
-            detail: `Multiple entities in sentence: ${entitiesInSentence.map(e => e.canonical_name).join(', ')}. Cannot determine which entity transitioned.`,
+          transitions.set(transition_id, {
+            transition_id,
+            entity_id: entity.entity_id,
+            from_state: null,
+            to_state: rule.to_state,
+            transition_date: transitionDate,
+            source_artifact_key: artifact.artifact_key,
+            source_span_offset: sentenceAbsoluteOffset,
+            source_text: sentence,
+            verification_status: 'document_stated',
           });
-          continue;
         }
-
-        const nearestEntity = entitiesInSentence[0];
-
-        // Extract date from the same span (if present)
-        let transitionDate: string | null = null;
-        for (const datePattern of DATE_PATTERNS) {
-          datePattern.lastIndex = 0;
-          const dateMatch = datePattern.exec(spanText);
-          if (dateMatch) {
-            transitionDate = normalizeDate(dateMatch[1]);
-            break;
-          }
-        }
-
-        // from_state is null — we do NOT infer prior state
-        transitions.push({
-          transition_id: `trans_${computeHash(`${nearestEntity.entity_id}|${vocab.to_state}|${span.start_offset}`)}`.substring(0, 16),
-          entity_id: nearestEntity.entity_id,
-          from_state: null, // NEVER inferred
-          to_state: vocab.to_state,
-          transition_date: transitionDate,
-          source_artifact_key: artifact.artifact_key,
-          source_span_offset: span.start_offset,
-          source_text: spanText,
-          verification_status: 'document_stated',
-        });
       }
     }
   }
 
-  // Sort for deterministic output
-  const sorted = transitions.sort((a, b) => a.transition_id.localeCompare(b.transition_id));
-  const output_hash = computeHash(sorted);
-
+  const data = Array.from(transitions.values()).sort((a, b) => a.transition_id.localeCompare(b.transition_id));
   return {
     layer_name: 'state_timeline',
     layer_version: LAYER_VERSION,
@@ -213,21 +161,70 @@ export function processLayer9(input: Layer9Input): EngineResult<StateTransition[
     parser_version: 'N/A',
     canonicalization_version: CANONICALIZATION_VERSION,
     input_hash,
-    output_hash,
-    data: sorted,
-    unresolved_dependencies: unresolved,
+    output_hash: computeHash(data),
+    data,
+    unresolved_dependencies: unresolved.sort((a, b) => a.field.localeCompare(b.field)),
     is_sealed: false,
   };
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+function sentenceBounds(text: string, position: number): { start: number; end: number } {
+  let start = 0;
+  for (let i = position - 1; i >= 0; i--) {
+    if (text[i] === '.' || text[i] === '!' || text[i] === '?' || text[i] === '\n') {
+      start = i + 1;
+      break;
+    }
+  }
+  let end = text.length;
+  for (let i = position; i < text.length; i++) {
+    if (text[i] === '.' || text[i] === '!' || text[i] === '?' || text[i] === '\n') {
+      end = i + 1;
+      break;
+    }
+  }
+  return { start, end };
+}
+
+function entitiesMentionedInSentence(
+  entities: Entity[],
+  artifactKey: string,
+  spanStartOffset: number,
+  sentenceStart: number,
+  sentenceEnd: number,
+  sentence: string,
+): Entity[] {
+  const absoluteStart = spanStartOffset + sentenceStart;
+  const absoluteEnd = spanStartOffset + sentenceEnd;
+  const matches = new Map<string, Entity>();
+
+  for (const entity of entities) {
+    for (const mention of entity.raw_mentions) {
+      if (mention.artifact_key !== artifactKey) continue;
+      if (mention.span_offset >= absoluteStart && mention.span_offset < absoluteEnd) {
+        matches.set(entity.entity_id, entity);
+      }
+      if (mention.raw_text && sentence.toLowerCase().includes(mention.raw_text.toLowerCase())) {
+        matches.set(entity.entity_id, entity);
+      }
+    }
+  }
+  return Array.from(matches.values()).sort((a, b) => a.entity_id.localeCompare(b.entity_id));
+}
+
+function extractDate(sentence: string): string | null {
+  for (const pattern of DATE_PATTERNS) {
+    pattern.lastIndex = 0;
+    const match = pattern.exec(sentence);
+    if (!match) continue;
+    const normalized = normalizeDate(match[1]);
+    if (normalized) return normalized;
+  }
+  return null;
+}
 
 function normalizeDate(dateStr: string): string | null {
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return null;
-    return d.toISOString().split('T')[0];
-  } catch {
-    return null;
-  }
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString().split('T')[0];
 }
