@@ -1,0 +1,28 @@
+name: Provenance History Trend Semantics
+
+on:
+  pull_request:
+    paths:
+      - "client/src/pages/ProvenanceHistory.tsx"
+      - "server/provenance-history-trend-semantics.contract.test.ts"
+      - ".github/workflows/provenance-history-trend-semantics.yml"
+  push:
+    branches: [main]
+    paths:
+      - "client/src/pages/ProvenanceHistory.tsx"
+      - "server/provenance-history-trend-semantics.contract.test.ts"
+      - ".github/workflows/provenance-history-trend-semantics.yml"
+
+jobs:
+  provenance-history-trends:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm exec vitest run server/provenance-history-trend-semantics.contract.test.ts
+      - run: pnpm run build
