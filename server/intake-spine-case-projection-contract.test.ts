@@ -10,6 +10,7 @@ describe("Universal Intake Spine case projection boundary", () => {
   const adapter = read_repo_file("./intake-spine-case-projection.ts");
   const analyze_router = read_repo_file("./routers/analyze.ts");
   const timeline = read_repo_file("../client/src/pages/Timeline.tsx");
+  const entities = read_repo_file("../client/src/pages/Entities.tsx");
   const chronology_projection = read_repo_file("../client/src/lib/chronologyProjection.ts");
 
   it("reads sealed canonical layer outputs without mutating legacy case tables", () => {
@@ -43,5 +44,13 @@ describe("Universal Intake Spine case projection boundary", () => {
     expect(chronology_projection).toContain("source_offset:");
     expect(chronology_projection).toContain("receipt:");
     expect(chronology_projection).toContain("output:");
+  });
+
+  it("renders the sealed Intake entity registry without fabricating legacy entity ids", () => {
+    expect(entities).toContain("trpc.analyze.getIntakeSpineLayerProjection.useQuery");
+    expect(entities).toContain('layerName: "entity_registry"');
+    expect(entities).toContain("legacyId: null");
+    expect(entities).toContain("Canonical read-only projection; no legacy entity record has been fabricated.");
+    expect(entities).not.toContain("No entities identified yet. Upload and analyze documents first.");
   });
 });
