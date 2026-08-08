@@ -43,6 +43,8 @@ import {
   Rocket,
   ShieldCheck,
   Briefcase,
+  Globe,
+  LayoutDashboard,
 } from "lucide-react";
 
 export type NavItem = { icon: any; label: string; path: string; requiresSealed?: boolean };
@@ -53,6 +55,15 @@ export type NavSection = {
   defaultOpen?: boolean;
   labelColor?: string;
 };
+
+export type UserLens = "guide" | "advocate" | "professional" | "admin";
+
+export const LENS_OPTIONS: readonly UserLens[] = [
+  "guide",
+  "advocate",
+  "professional",
+  "admin",
+] as const;
 
 export const investigateItems: NavItem[] = [
   { icon: Upload, label: "Upload Evidence", path: "/upload" },
@@ -114,6 +125,7 @@ export const platformItems: NavItem[] = [
   { icon: Lamp, label: "The Lighthouse", path: "/lighthouse" },
   { icon: Compass, label: "Pipeline Explorer", path: "/categories" },
   { icon: MapPin, label: "Civic Map", path: "/civic-map" },
+  { icon: Globe, label: "Resource Directory", path: "/resource-directory" },
   { icon: Library, label: "Legal Library", path: "/legal-library" },
   { icon: BookOpen, label: "Civil Gideon", path: "/civil-gideon" },
   { icon: Brain, label: "Mental Health System", path: "/mental-health" },
@@ -151,3 +163,27 @@ export const adminSection: NavSection = {
 export const accountItems: NavItem[] = [
   { icon: Briefcase, label: "My Cases", path: "/cases" },
 ];
+
+export const mobilePrimaryItems: NavItem[] = [
+  { icon: LayoutDashboard, label: "Overview", path: "/" },
+  { icon: FileText, label: "Docs", path: "/documents" },
+  { icon: Lightbulb, label: "Findings", path: "/findings" },
+  { icon: MessageSquare, label: "Ask", path: "/chat" },
+];
+
+export const LENS_VISIBILITY: Record<UserLens, readonly string[]> = {
+  guide: ["investigate", "act", "platform"],
+  advocate: ["investigate", "analyze", "act", "observe", "platform"],
+  professional: ["investigate", "analyze", "strategize", "act", "observe", "platform"],
+  admin: ["investigate", "analyze", "strategize", "act", "observe", "platform", "admin"],
+};
+
+export function getNavSectionsForLens(lens: UserLens): NavSection[] {
+  const visibleIds = LENS_VISIBILITY[lens];
+  const sections = allNavSections.filter((section) => visibleIds.includes(section.id));
+  return visibleIds.includes("admin") ? [...sections, adminSection] : sections;
+}
+
+export function isUserLens(value: string | null): value is UserLens {
+  return !!value && LENS_OPTIONS.includes(value as UserLens);
+}
