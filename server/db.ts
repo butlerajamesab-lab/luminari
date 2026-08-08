@@ -67,3 +67,8 @@ export {
   listBatchRuns,
   expireStaleBatchRuns,
 } from "./provenance-batch-runtime-compat";
+export {
+  isProvenanceAlertInCooldown,
+  createProvenanceAlertEvent,
+  listProvenanceAlertEvents,
+} from "./provenance-alert-runtime-compat";

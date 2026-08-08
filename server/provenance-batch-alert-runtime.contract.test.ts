@@ -7,6 +7,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const batch = readFileSync(resolve(here, "provenance-batch-runtime-compat.ts"), "utf8");
 const facade = readFileSync(resolve(here, "db.ts"), "utf8");
 const alerting = readFileSync(resolve(here, "provenance-alerting.ts"), "utf8");
+const alertCompat = readFileSync(resolve(here, "provenance-alert-runtime-compat.ts"), "utf8");
 const migration = readFileSync(
   resolve(here, "../supabase/migrations/20260808200840_repair_provenance_batch_alert_runtime.sql"),
   "utf8",
@@ -22,8 +23,12 @@ describe("provenance batch and alert persistence contract", () => {
     expect(migration).not.toContain('add column if not exists "completedAt"');
   });
 
-  it("creates the alert table that the existing provenance alerting module already owns", () => {
-    expect(alerting).toContain("provenanceAlertEvents");
+  it("creates the alert table and routes alerting through its explicit Postgres compatibility owner", () => {
+    expect(alerting).toContain("createProvenanceAlertEvent");
+    expect(alerting).toContain("isProvenanceAlertInCooldown");
+    expect(alerting).toContain("listProvenanceAlertEvents");
+    expect(alertCompat).toContain("from public.provenance_alert_events");
+    expect(alertCompat).toContain("insert into public.provenance_alert_events");
     expect(migration).toContain("create table if not exists public.provenance_alert_events");
     expect(migration).toContain("PROVENANCE_DRIFT");
     expect(migration).toContain("PROVENANCE_COVERAGE_DROP");
