@@ -1,7 +1,11 @@
-import { computeHash, EngineResult, UnresolvedDependency, CANONICALIZATION_VERSION } from './utils';
+import {
+  computeHash,
+  computeRuleManifestHash,
+  EngineResult,
+  UnresolvedDependency,
+  CANONICALIZATION_VERSION,
+} from './utils';
 import { StateTransition } from './layer-9-state_timeline';
-
-// ─── Types ───────────────────────────────────────────────────────────────────
 
 export interface DetectedPattern {
   pattern_id: string;
@@ -9,133 +13,101 @@ export interface DetectedPattern {
   rule_id: string;
   matching_entities: string[];
   matching_transitions: MatchingTransition[];
-  time_span_days: number | null;
+  time_span_days: number;
   source_artifacts: string[];
-  confidence_basis: string; // Explains WHY this matched — not a probability
+  match_basis: string;
 }
 
 export interface MatchingTransition {
   transition_id: string;
   to_state: string;
-  date: string | null;
-  role_in_pattern: string; // e.g., "triggering_complaint", "adverse_action"
+  date: string;
+  role_in_pattern: string;
 }
 
 export interface Layer10Input {
   transitions: StateTransition[];
 }
 
-// ─── Constants ───────────────────────────────────────────────────────────────
+export const LAYER_VERSION = '2.1.0';
+export const RULE_VERSION = '2.1.0';
 
-export const LAYER_VERSION = '2.0.0';
-export const RULE_VERSION = '2.0.0';
-
-/**
- * Hash of the rule manifest for this layer.
- * MANDATORY for governed engines. The orchestrator MUST fail closed if this is missing.
- * Changing rule code without changing this hash is a contract violation.
- */
-export const RULE_MANIFEST_HASH = computeHash({ layer: 'pattern_registry', rule_version: RULE_VERSION, rule_count: 4 });
-
-/**
- * Pattern Rule Manifest
- * 
- * Each rule declares:
- * - required_sequence: ordered list of transition states that must occur
- * - time_window_days: maximum days between first and last transition
- * - min_corroboration: minimum number of source artifacts supporting the pattern
- * - same_entity: whether all transitions must involve the same entity
- * 
- * This manifest IS the versioned rule set. Changing it changes rule_version.
- */
 export interface PatternRule {
   rule_id: string;
   pattern_type: string;
   description: string;
   required_sequence: Array<{ to_state: string; role: string }>;
   time_window_days: number;
-  min_corroboration: number;
+  min_independent_source_artifacts: number;
   same_entity: boolean;
 }
 
-const PATTERN_RULES: PatternRule[] = [
-  {
-    rule_id: 'retaliation_v1',
-    pattern_type: 'retaliation_structural_match',
-    description: 'Protected activity followed by adverse action within time window',
-    required_sequence: [
-      { to_state: 'complaint_filed', role: 'triggering_protected_activity' },
-      { to_state: 'terminated', role: 'adverse_action' },
-    ],
-    time_window_days: 90,
-    min_corroboration: 2, // Both transitions must have source evidence
-    same_entity: true,
-  },
-  {
-    rule_id: 'retaliation_charge_v1',
-    pattern_type: 'retaliation_structural_match',
-    description: 'Charge filed followed by adverse action within time window',
-    required_sequence: [
-      { to_state: 'charge_filed', role: 'triggering_protected_activity' },
-      { to_state: 'terminated', role: 'adverse_action' },
-    ],
-    time_window_days: 90,
-    min_corroboration: 2,
-    same_entity: true,
-  },
-  {
-    rule_id: 'constructive_eviction_v1',
-    pattern_type: 'constructive_eviction_structural_match',
-    description: 'Complaint followed by lease termination or eviction',
-    required_sequence: [
-      { to_state: 'complaint_filed', role: 'habitability_complaint' },
-      { to_state: 'eviction_notice_served', role: 'retaliatory_action' },
-    ],
-    time_window_days: 60,
-    min_corroboration: 2,
-    same_entity: true,
-  },
-  {
-    rule_id: 'benefits_churning_v1',
-    pattern_type: 'benefits_churning_structural_match',
-    description: 'Repeated approval/denial cycle (2+ cycles)',
-    required_sequence: [
-      { to_state: 'approved', role: 'initial_approval' },
-      { to_state: 'benefits_terminated', role: 'first_termination' },
-      { to_state: 'approved', role: 'reapproval' },
-      { to_state: 'benefits_terminated', role: 'second_termination' },
-    ],
-    time_window_days: 730, // 2 years
-    min_corroboration: 3,
-    same_entity: true,
-  },
-];
+/** Exact rule data consumed by this engine. */
+export const RULE_MANIFEST: { rules: PatternRule[]; missing_date_policy: 'unresolved_no_match' } = {
+  rules: [
+    {
+      rule_id: 'retaliation_v1',
+      pattern_type: 'retaliation_structural_match',
+      description: 'Protected complaint activity followed by termination within the declared window',
+      required_sequence: [
+        { to_state: 'complaint_filed', role: 'triggering_protected_activity' },
+        { to_state: 'terminated', role: 'adverse_action' },
+      ],
+      time_window_days: 90,
+      min_independent_source_artifacts: 2,
+      same_entity: true,
+    },
+    {
+      rule_id: 'retaliation_charge_v1',
+      pattern_type: 'retaliation_structural_match',
+      description: 'Charge filed followed by termination within the declared window',
+      required_sequence: [
+        { to_state: 'charge_filed', role: 'triggering_protected_activity' },
+        { to_state: 'terminated', role: 'adverse_action' },
+      ],
+      time_window_days: 90,
+      min_independent_source_artifacts: 2,
+      same_entity: true,
+    },
+    {
+      rule_id: 'constructive_eviction_v1',
+      pattern_type: 'constructive_eviction_structural_match',
+      description: 'Complaint followed by eviction notice within the declared window',
+      required_sequence: [
+        { to_state: 'complaint_filed', role: 'habitability_complaint' },
+        { to_state: 'eviction_notice_served', role: 'retaliatory_action' },
+      ],
+      time_window_days: 60,
+      min_independent_source_artifacts: 2,
+      same_entity: true,
+    },
+    {
+      rule_id: 'benefits_churning_v1',
+      pattern_type: 'benefits_churning_structural_match',
+      description: 'Repeated approval and termination sequence',
+      required_sequence: [
+        { to_state: 'approved', role: 'initial_approval' },
+        { to_state: 'benefits_terminated', role: 'first_termination' },
+        { to_state: 'approved', role: 'reapproval' },
+        { to_state: 'benefits_terminated', role: 'second_termination' },
+      ],
+      time_window_days: 730,
+      min_independent_source_artifacts: 3,
+      same_entity: true,
+    },
+  ],
+  missing_date_policy: 'unresolved_no_match',
+};
 
-// ─── Engine ──────────────────────────────────────────────────────────────────
+export const RULE_MANIFEST_HASH = computeRuleManifestHash(RULE_MANIFEST);
 
-/**
- * Layer 10: Pattern Registry
- * 
- * Detects recurring sequences in the state timeline that match declared
- * pattern rules. A pattern match requires:
- * 1. ALL transitions in the required_sequence present
- * 2. In the correct temporal order
- * 3. Within the declared time window
- * 4. Meeting the minimum corroboration threshold
- * 5. Same entity (if required by rule)
- * 
- * CRITICAL: Pattern type names use "structural_match" — NOT "retaliation"
- * alone, because temporal sequence does not prove intent or causation.
- * The pattern is a structural observation, not a legal conclusion.
- * 
- * Protected-class membership is NEVER derived from names, photos, addresses,
- * or proxies. It must be user-declared or explicitly stated in source material.
- */
 export function processLayer10(input: Layer10Input): EngineResult<DetectedPattern[]> {
-  const input_hash = computeHash(input);
+  const transitions = [...input.transitions].sort((a, b) => a.transition_id.localeCompare(b.transition_id));
+  const input_hash = computeHash({ transitions });
   const unresolved: UnresolvedDependency[] = [];
 
-  if (input.transitions.length === 0) {
+  if (transitions.length === 0) {
+    const data: DetectedPattern[] = [];
     return {
       layer_name: 'pattern_registry',
       layer_version: LAYER_VERSION,
@@ -143,47 +115,50 @@ export function processLayer10(input: Layer10Input): EngineResult<DetectedPatter
       parser_version: 'N/A',
       canonicalization_version: CANONICALIZATION_VERSION,
       input_hash,
-      output_hash: computeHash([]),
-      data: [],
+      output_hash: computeHash(data),
+      data,
       unresolved_dependencies: [{ field: 'transitions', reason: 'incomplete', detail: 'No state transitions to analyze' }],
       is_sealed: false,
     };
   }
 
-  // Group transitions by entity
   const byEntity = new Map<string, StateTransition[]>();
-  for (const t of input.transitions) {
-    const list = byEntity.get(t.entity_id) || [];
-    list.push(t);
-    byEntity.set(t.entity_id, list);
+  for (const transition of transitions) {
+    const list = byEntity.get(transition.entity_id) || [];
+    list.push(transition);
+    byEntity.set(transition.entity_id, list);
   }
 
   const patterns: DetectedPattern[] = [];
 
-  for (const rule of PATTERN_RULES) {
-    if (rule.same_entity) {
-      // Check each entity's transitions against this rule
-      for (const [entityId, entityTransitions] of byEntity.entries()) {
-        const match = matchSequence(entityTransitions, rule);
-        if (match) {
-          patterns.push({
-            pattern_id: `pat_${computeHash(`${rule.rule_id}|${entityId}`)}`.substring(0, 16),
-            pattern_type: rule.pattern_type,
-            rule_id: rule.rule_id,
-            matching_entities: [entityId],
-            matching_transitions: match.transitions,
-            time_span_days: match.time_span_days,
-            source_artifacts: match.source_artifacts,
-            confidence_basis: `Rule ${rule.rule_id}: all ${rule.required_sequence.length} required transitions found in order within ${rule.time_window_days}-day window, ${match.source_artifacts.length} corroborating sources`,
-          });
-        }
+  for (const rule of RULE_MANIFEST.rules) {
+    if (!rule.same_entity) continue;
+    for (const [entityId, entityTransitions] of Array.from(byEntity.entries()).sort((a, b) => a[0].localeCompare(b[0]))) {
+      const result = matchSequence(entityTransitions, rule);
+      if (result.status === 'unresolved') {
+        unresolved.push({
+          field: `pattern:${rule.rule_id}:${entityId}`,
+          reason: 'unresolved',
+          detail: result.detail,
+        });
+        continue;
       }
+      if (result.status !== 'match') continue;
+
+      patterns.push({
+        pattern_id: `pat_${computeHash({ rule_id: rule.rule_id, entity_id: entityId, transitions: result.transitions.map(t => t.transition_id) }).substring(0, 16)}`,
+        pattern_type: rule.pattern_type,
+        rule_id: rule.rule_id,
+        matching_entities: [entityId],
+        matching_transitions: result.transitions,
+        time_span_days: result.time_span_days,
+        source_artifacts: result.source_artifacts,
+        match_basis: `All ${rule.required_sequence.length} declared transitions occur in order within ${rule.time_window_days} days and are distributed across ${result.source_artifacts.length} independent source artifacts. This is a structural match, not a finding of motive or causation.`,
+      });
     }
   }
 
-  const sorted = patterns.sort((a, b) => a.pattern_id.localeCompare(b.pattern_id));
-  const output_hash = computeHash(sorted);
-
+  const data = patterns.sort((a, b) => a.pattern_id.localeCompare(b.pattern_id));
   return {
     layer_name: 'pattern_registry',
     layer_version: LAYER_VERSION,
@@ -191,75 +166,66 @@ export function processLayer10(input: Layer10Input): EngineResult<DetectedPatter
     parser_version: 'N/A',
     canonicalization_version: CANONICALIZATION_VERSION,
     input_hash,
-    output_hash,
-    data: sorted,
-    unresolved_dependencies: unresolved,
+    output_hash: computeHash(data),
+    data,
+    unresolved_dependencies: unresolved.sort((a, b) => a.field.localeCompare(b.field)),
     is_sealed: false,
   };
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+type SequenceResult =
+  | { status: 'no_match' }
+  | { status: 'unresolved'; detail: string }
+  | { status: 'match'; transitions: MatchingTransition[]; time_span_days: number; source_artifacts: string[] };
 
-function matchSequence(
-  transitions: StateTransition[],
-  rule: PatternRule
-): { transitions: MatchingTransition[]; time_span_days: number | null; source_artifacts: string[] } | null {
-  // Sort transitions by date (null dates go to end)
+function matchSequence(transitions: StateTransition[], rule: PatternRule): SequenceResult {
   const sorted = [...transitions].sort((a, b) => {
-    if (!a.transition_date && !b.transition_date) return 0;
+    if (!a.transition_date && !b.transition_date) return a.transition_id.localeCompare(b.transition_id);
     if (!a.transition_date) return 1;
     if (!b.transition_date) return -1;
-    return a.transition_date.localeCompare(b.transition_date);
+    return a.transition_date.localeCompare(b.transition_date) || a.transition_id.localeCompare(b.transition_id);
   });
 
-  // Try to find all required transitions in order
-  const matched: MatchingTransition[] = [];
+  const matchedTransitions: StateTransition[] = [];
   let searchFrom = 0;
-
   for (const required of rule.required_sequence) {
-    let found = false;
+    let found: StateTransition | undefined;
+    let foundIndex = -1;
     for (let i = searchFrom; i < sorted.length; i++) {
       if (sorted[i].to_state === required.to_state) {
-        matched.push({
-          transition_id: sorted[i].transition_id,
-          to_state: sorted[i].to_state,
-          date: sorted[i].transition_date,
-          role_in_pattern: required.role,
-        });
-        searchFrom = i + 1;
-        found = true;
+        found = sorted[i];
+        foundIndex = i;
         break;
       }
     }
-    if (!found) return null; // Required transition not found
+    if (!found) return { status: 'no_match' };
+    matchedTransitions.push(found);
+    searchFrom = foundIndex + 1;
   }
 
-  // Check time window
-  const firstDate = matched[0].date;
-  const lastDate = matched[matched.length - 1].date;
-  let time_span_days: number | null = null;
-
-  if (firstDate && lastDate) {
-    const d1 = new Date(firstDate);
-    const d2 = new Date(lastDate);
-    time_span_days = Math.round((d2.getTime() - d1.getTime()) / (24 * 3600 * 1000));
-    if (time_span_days > rule.time_window_days) return null; // Outside window
+  if (matchedTransitions.some(t => !t.transition_date)) {
+    return { status: 'unresolved', detail: 'Required transition sequence exists, but one or more transition dates are missing so the bounded temporal rule cannot be evaluated.' };
   }
-  // If dates are missing, we CANNOT confirm a bounded temporal match
-  if (!firstDate || !lastDate) return null; // Missing dates = unresolved, not a valid match
 
-  // Check corroboration threshold
-  const sourceArtifacts = new Set<string>();
-  for (const t of sorted) {
-    if (matched.find(m => m.transition_id === t.transition_id)) {
-      sourceArtifacts.add(t.source_artifact_key);
-    }
+  const firstDate = matchedTransitions[0].transition_date as string;
+  const lastDate = matchedTransitions[matchedTransitions.length - 1].transition_date as string;
+  const time_span_days = Math.round((new Date(lastDate).getTime() - new Date(firstDate).getTime()) / (24 * 3600 * 1000));
+  if (time_span_days < 0 || time_span_days > rule.time_window_days) return { status: 'no_match' };
+
+  const source_artifacts = Array.from(new Set(matchedTransitions.map(t => t.source_artifact_key))).sort();
+  if (source_artifacts.length < rule.min_independent_source_artifacts) {
+    return {
+      status: 'unresolved',
+      detail: `Required transition sequence exists, but only ${source_artifacts.length} independent source artifact(s) support it; rule requires ${rule.min_independent_source_artifacts}.`,
+    };
   }
-  if (sourceArtifacts.size < rule.min_corroboration) return null;
 
-  return {
-    transitions: matched,
-    time_span_days,
-    source_artifacts: Array.from(sourceArtifacts).sort(),
-  };
+  const projected: MatchingTransition[] = matchedTransitions.map((transition, index) => ({
+    transition_id: transition.transition_id,
+    to_state: transition.to_state,
+    date: transition.transition_date as string,
+    role_in_pattern: rule.required_sequence[index].role,
+  }));
+
+  return { status: 'match', transitions: projected, time_span_days, source_artifacts };
 }
