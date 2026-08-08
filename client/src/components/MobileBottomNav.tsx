@@ -17,14 +17,55 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import {
   accountItems,
+  caseWorkspaceItems,
   getNavSectionsForLens,
   isUserLens,
   LENS_OPTIONS,
   mobilePrimaryItems,
+  type NavItem,
   type UserLens,
 } from "./navigation";
 
 const LENS_KEY = "luminari-user-lens";
+
+function MobileMenuItems({
+  items,
+  sectionId,
+  location,
+  onNavigate,
+}: {
+  items: NavItem[];
+  sectionId: string;
+  location: string;
+  onNavigate: (path: string) => void;
+}) {
+  return (
+    <div className="space-y-0.5">
+      {items.map((item) => {
+        const isActive = location === item.path || location.startsWith(`${item.path}/`);
+        return (
+          <button
+            key={`${sectionId}:${item.path}`}
+            onClick={() => onNavigate(item.path)}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors text-left ${
+              isActive
+                ? "bg-primary/10 text-primary"
+                : "text-foreground hover:bg-accent active:bg-accent"
+            }`}
+          >
+            <item.icon
+              className={`h-4 w-4 shrink-0 ${
+                isActive ? "text-primary" : "text-muted-foreground"
+              }`}
+            />
+            <span className="text-sm flex-1">{item.label}</span>
+            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50" />
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function MobileBottomNav() {
   const [location, setLocation] = useLocation();
@@ -50,8 +91,8 @@ export default function MobileBottomNav() {
   }, []);
 
   const visibleSections = useMemo(
-    () => getNavSectionsForLens(activeLens),
-    [activeLens],
+    () => getNavSectionsForLens(activeLens, user?.role === "admin"),
+    [activeLens, user?.role],
   );
 
   const handleLensChange = (lens: UserLens) => {
@@ -127,36 +168,29 @@ export default function MobileBottomNav() {
           </SheetHeader>
 
           <div className="overflow-y-auto flex-1 -mx-4 px-4">
+            <div className="mb-4">
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5 px-1">
+                Case Workspace
+              </p>
+              <MobileMenuItems
+                items={caseWorkspaceItems}
+                sectionId="case_workspace"
+                location={location}
+                onNavigate={handleNavigate}
+              />
+            </div>
+
             {visibleSections.map((section) => (
               <div key={section.id} className="mb-4">
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5 px-1">
                   {section.label}
                 </p>
-                <div className="space-y-0.5">
-                  {section.items.map((item) => {
-                    const isActive =
-                      location === item.path || location.startsWith(`${item.path}/`);
-                    return (
-                      <button
-                        key={`${section.id}:${item.path}`}
-                        onClick={() => handleNavigate(item.path)}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors text-left ${
-                          isActive
-                            ? "bg-primary/10 text-primary"
-                            : "text-foreground hover:bg-accent active:bg-accent"
-                        }`}
-                      >
-                        <item.icon
-                          className={`h-4 w-4 shrink-0 ${
-                            isActive ? "text-primary" : "text-muted-foreground"
-                          }`}
-                        />
-                        <span className="text-sm flex-1">{item.label}</span>
-                        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50" />
-                      </button>
-                    );
-                  })}
-                </div>
+                <MobileMenuItems
+                  items={section.items}
+                  sectionId={section.id}
+                  location={location}
+                  onNavigate={handleNavigate}
+                />
               </div>
             ))}
 
@@ -164,31 +198,12 @@ export default function MobileBottomNav() {
               <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5 px-1">
                 Account
               </p>
-              <div className="space-y-0.5">
-                {accountItems.map((item) => {
-                  const isActive =
-                    location === item.path || location.startsWith(`${item.path}/`);
-                  return (
-                    <button
-                      key={`account:${item.path}`}
-                      onClick={() => handleNavigate(item.path)}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors text-left ${
-                        isActive
-                          ? "bg-primary/10 text-primary"
-                          : "text-foreground hover:bg-accent active:bg-accent"
-                      }`}
-                    >
-                      <item.icon
-                        className={`h-4 w-4 shrink-0 ${
-                          isActive ? "text-primary" : "text-muted-foreground"
-                        }`}
-                      />
-                      <span className="text-sm flex-1">{item.label}</span>
-                      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50" />
-                    </button>
-                  );
-                })}
-              </div>
+              <MobileMenuItems
+                items={accountItems}
+                sectionId="account"
+                location={location}
+                onNavigate={handleNavigate}
+              />
             </div>
 
             <div className="mb-4">
