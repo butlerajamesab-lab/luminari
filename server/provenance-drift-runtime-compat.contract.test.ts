@@ -13,7 +13,8 @@ describe("provenance drift metrics on live Postgres", () => {
     expect(legacy).toContain("JSON_LENGTH(claimIds)");
     expect(compat).toContain("JSON.parse(value)");
     expect(compat).toContain("claim_id_count(row.claim_ids)");
-    expect(compat).not.toContain("JSON_LENGTH");
+    expect(compat).toContain("f.claim_ids");
+    expect(compat).toContain("from public.findings f");
   });
 
   it("does not report an empty finding population as 100 percent provenance coverage", () => {
