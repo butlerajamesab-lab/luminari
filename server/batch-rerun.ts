@@ -130,6 +130,21 @@ export async function resumeBatchRerun(batchId: number, userId: number): Promise
   return { totalRemaining: remaining.length };
 }
 
+async function runCompletedBatchAlertCheck(batchId: number) {
+  try {
+    // Dynamic import keeps notification governance outside the batch processor's
+    // module-initialization path while making the documented post-pipeline hook
+    // automatic for every successfully completed batch.
+    const { checkProvenanceThresholds } = await import("./provenance-alerting");
+    const result = await checkProvenanceThresholds(undefined, batchId);
+    console.log(`[BatchRerun] Post-batch provenance threshold check ${batchId}: ${result.alerts.length} alert(s)`);
+  } catch (err) {
+    // Alert persistence/notification failure must never rewrite an already
+    // completed deterministic batch into an error or aborted state.
+    console.error(`[BatchRerun] Post-batch provenance threshold check failed for ${batchId}:`, err);
+  }
+}
+
 /**
  * Sequential batch processor. Processes one finding at a time.
  */
@@ -195,6 +210,7 @@ async function processBatch(
   await db.completeBatchRun(batchId);
   activeBatchId = null;
   clearAbortFlag(batchId);
+  await runCompletedBatchAlertCheck(batchId);
 }
 
 /**
