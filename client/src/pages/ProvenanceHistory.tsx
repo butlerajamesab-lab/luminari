@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,39 +18,53 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 
+function formatPercent(value: unknown): string {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? `${parsed.toFixed(2)}%` : "—";
+}
+
+function formatRuntime(value: number | null | undefined): string {
+  if (value === null || value === undefined) return "—";
+  return value < 60000
+    ? `${Math.round(value / 1000)}s`
+    : `${Math.floor(value / 60000)}m ${Math.round((value % 60000) / 1000)}s`;
+}
+
 export default function ProvenanceHistory() {
   const [, setLocation] = useLocation();
   const { data: batchRuns, isLoading } = trpc.provenance.listBatchRuns.useQuery({ limit: 50 });
   const { data: alertHistory } = trpc.provenance.alertHistory.useQuery({ limit: 20 });
 
-  // ─── Trend Calculations ───
+  // Trend deltas are comparisons between completed, non-empty runs only.
+  // Running, aborted, and errored passes remain visible in the history table but
+  // cannot be treated as comparable completed observations.
   const trends = useMemo(() => {
-    if (!batchRuns || batchRuns.length < 2) return null;
+    const allRuns = [...(batchRuns ?? [])].sort((a, b) =>
+      a.startedAt - b.startedAt || a.id - b.id,
+    );
+    const completedRuns = allRuns.filter(run => run.status === "completed");
+    const comparableRuns = completedRuns.filter(run => run.totalFindings > 0);
+    const comparisonPair = comparableRuns.slice(-2);
 
-    const sorted = [...batchRuns].sort((a, b) => a.startedAt - b.startedAt);
-    const latest = sorted[sorted.length - 1];
-    const previous = sorted[sorted.length - 2];
+    let resolveRateDelta: number | null = null;
+    let fallbackRateDelta: number | null = null;
 
-    const latestResolveRate = latest.totalFindings > 0
-      ? (latest.resolvedCount / latest.totalFindings) * 100
-      : 0;
-    const previousResolveRate = previous.totalFindings > 0
-      ? (previous.resolvedCount / previous.totalFindings) * 100
-      : 0;
-
-    const latestFallbackRate = latest.totalFindings > 0
-      ? ((latest.fallbackUsageCount ?? 0) / latest.totalFindings) * 100
-      : 0;
-    const previousFallbackRate = previous.totalFindings > 0
-      ? ((previous.fallbackUsageCount ?? 0) / previous.totalFindings) * 100
-      : 0;
+    if (comparisonPair.length === 2) {
+      const [previous, latest] = comparisonPair;
+      const latestResolveRate = (latest.resolvedCount / latest.totalFindings) * 100;
+      const previousResolveRate = (previous.resolvedCount / previous.totalFindings) * 100;
+      const latestFallbackRate = ((latest.fallbackUsageCount ?? 0) / latest.totalFindings) * 100;
+      const previousFallbackRate = ((previous.fallbackUsageCount ?? 0) / previous.totalFindings) * 100;
+      resolveRateDelta = latestResolveRate - previousResolveRate;
+      fallbackRateDelta = latestFallbackRate - previousFallbackRate;
+    }
 
     return {
-      resolveRateDelta: latestResolveRate - previousResolveRate,
-      fallbackRateDelta: latestFallbackRate - previousFallbackRate,
-      runtimeDelta: (latest.runtimeMs ?? 0) - (previous.runtimeMs ?? 0),
-      totalRuns: sorted.length,
-      totalResolved: sorted.reduce((s, r) => s + r.resolvedCount, 0),
+      totalRuns: allRuns.length,
+      completedRuns: completedRuns.length,
+      totalResolved: completedRuns.reduce((sum, run) => sum + run.resolvedCount, 0),
+      resolveRateDelta,
+      fallbackRateDelta,
     };
   }, [batchRuns]);
 
@@ -80,29 +94,37 @@ export default function ProvenanceHistory() {
               Batch History
             </h1>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Operational trend data across all batch re-run passes
+              All batch passes remain visible; trend deltas use completed, non-empty runs only.
             </p>
           </div>
         </div>
       </div>
 
       {/* Trend Summary Cards */}
-      {trends && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="border-border/50">
-            <CardContent className="p-4">
-              <p className="text-2xl font-bold text-foreground">{trends.totalRuns}</p>
-              <p className="text-[10px] text-muted-foreground">Total Batch Runs</p>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50">
-            <CardContent className="p-4">
-              <p className="text-2xl font-bold text-emerald-400">{trends.totalResolved}</p>
-              <p className="text-[10px] text-muted-foreground">Total Findings Resolved</p>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50">
-            <CardContent className="p-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <Card className="border-border/50">
+          <CardContent className="p-4">
+            <p className="text-2xl font-bold text-foreground">{trends.totalRuns}</p>
+            <p className="text-[10px] text-muted-foreground">Recorded Batch Runs</p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50">
+          <CardContent className="p-4">
+            <p className="text-2xl font-bold text-foreground">{trends.completedRuns}</p>
+            <p className="text-[10px] text-muted-foreground">Completed Runs</p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50">
+          <CardContent className="p-4">
+            <p className="text-2xl font-bold text-emerald-400">{trends.totalResolved}</p>
+            <p className="text-[10px] text-muted-foreground">Resolved Results — Completed Runs</p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50">
+          <CardContent className="p-4">
+            {trends.resolveRateDelta === null ? (
+              <p className="text-2xl font-bold text-muted-foreground">N/A</p>
+            ) : (
               <div className="flex items-center gap-1.5">
                 <p className="text-2xl font-bold text-foreground">
                   {trends.resolveRateDelta >= 0 ? "+" : ""}{trends.resolveRateDelta.toFixed(1)}%
@@ -111,11 +133,17 @@ export default function ProvenanceHistory() {
                   ? <TrendingUp className="h-4 w-4 text-emerald-400" />
                   : <TrendingDown className="h-4 w-4 text-red-400" />}
               </div>
-              <p className="text-[10px] text-muted-foreground">Resolve Rate Δ (last 2 runs)</p>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50">
-            <CardContent className="p-4">
+            )}
+            <p className="text-[10px] text-muted-foreground">
+              Resolve Rate Δ — Last 2 Completed Runs
+            </p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50">
+          <CardContent className="p-4">
+            {trends.fallbackRateDelta === null ? (
+              <p className="text-2xl font-bold text-muted-foreground">N/A</p>
+            ) : (
               <div className="flex items-center gap-1.5">
                 <p className="text-2xl font-bold text-foreground">
                   {trends.fallbackRateDelta >= 0 ? "+" : ""}{trends.fallbackRateDelta.toFixed(1)}%
@@ -124,10 +152,20 @@ export default function ProvenanceHistory() {
                   ? <TrendingDown className="h-4 w-4 text-emerald-400" />
                   : <TrendingUp className="h-4 w-4 text-amber-400" />}
               </div>
-              <p className="text-[10px] text-muted-foreground">Fallback Rate Δ (last 2 runs)</p>
-            </CardContent>
-          </Card>
-        </div>
+            )}
+            <p className="text-[10px] text-muted-foreground">
+              Fallback Rate Δ — Last 2 Completed Runs
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {trends.completedRuns < 2 && trends.totalRuns > 0 && (
+        <Card className="border-dashed border-border bg-muted/10">
+          <CardContent className="p-3 text-xs text-muted-foreground">
+            Trend deltas are not evaluated yet. At least two completed batch runs with nonzero finding populations are required; running, aborted, and errored passes are never substituted.
+          </CardContent>
+        </Card>
       )}
 
       {/* Batch Runs Table */}
@@ -150,7 +188,7 @@ export default function ProvenanceHistory() {
                   <tr className="border-b border-border/50 text-muted-foreground">
                     <th className="px-4 py-2 text-left font-medium">ID</th>
                     <th className="px-4 py-2 text-left font-medium">Started</th>
-                    <th className="px-4 py-2 text-left font-medium">Completed</th>
+                    <th className="px-4 py-2 text-left font-medium">Terminal</th>
                     <th className="px-4 py-2 text-left font-medium">Status</th>
                     <th className="px-4 py-2 text-right font-medium">Total</th>
                     <th className="px-4 py-2 text-right font-medium">Resolved</th>
@@ -163,13 +201,9 @@ export default function ProvenanceHistory() {
                 <tbody>
                   {batchRuns.map((run) => {
                     const fallbackRate = run.totalFindings > 0
-                      ? Math.round(((run.fallbackUsageCount ?? 0) / run.totalFindings) * 100)
-                      : 0;
-                    const runtimeStr = run.runtimeMs
-                      ? run.runtimeMs < 60000
-                        ? `${Math.round(run.runtimeMs / 1000)}s`
-                        : `${Math.floor(run.runtimeMs / 60000)}m ${Math.round((run.runtimeMs % 60000) / 1000)}s`
+                      ? `${Math.round(((run.fallbackUsageCount ?? 0) / run.totalFindings) * 100)}%`
                       : "—";
+                    const terminalAt = run.completedAt ?? run.abortedAt ?? null;
 
                     return (
                       <tr key={run.id} className="border-b border-border/30 hover:bg-muted/30 transition-colors">
@@ -178,7 +212,7 @@ export default function ProvenanceHistory() {
                           {new Date(run.startedAt).toLocaleString()}
                         </td>
                         <td className="px-4 py-2.5 text-muted-foreground">
-                          {run.completedAt ? new Date(run.completedAt).toLocaleString() : "—"}
+                          {terminalAt !== null ? new Date(terminalAt).toLocaleString() : "—"}
                         </td>
                         <td className="px-4 py-2.5">
                           <StatusBadge status={run.status} />
@@ -187,10 +221,10 @@ export default function ProvenanceHistory() {
                         <td className="px-4 py-2.5 text-right font-mono text-emerald-400">{run.resolvedCount}</td>
                         <td className="px-4 py-2.5 text-right font-mono text-amber-400">{run.stillUnsupported}</td>
                         <td className="px-4 py-2.5 text-right font-mono text-red-400">{run.errorCount}</td>
-                        <td className="px-4 py-2.5 text-right font-mono text-purple-400">{fallbackRate}%</td>
+                        <td className="px-4 py-2.5 text-right font-mono text-purple-400">{fallbackRate}</td>
                         <td className="px-4 py-2.5 text-right text-muted-foreground flex items-center justify-end gap-1">
                           <Clock className="h-3 w-3" />
-                          {runtimeStr}
+                          {formatRuntime(run.runtimeMs)}
                         </td>
                       </tr>
                     );
@@ -214,7 +248,7 @@ export default function ProvenanceHistory() {
           {(!alertHistory || alertHistory.length === 0) ? (
             <div className="p-8 text-center text-muted-foreground text-sm flex flex-col items-center gap-2">
               <BellOff className="h-5 w-5" />
-              No alerts triggered. Thresholds: unsupported rate &gt; 5%, coverage &lt; 90%.
+              No persisted provenance alert events. Thresholds: unsupported rate &gt; 5%, coverage &lt; 90%.
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -223,6 +257,7 @@ export default function ProvenanceHistory() {
                   <tr className="border-b border-border/50 text-muted-foreground">
                     <th className="px-4 py-2 text-left font-medium">Type</th>
                     <th className="px-4 py-2 text-left font-medium">Triggered</th>
+                    <th className="px-4 py-2 text-left font-medium">Batch</th>
                     <th className="px-4 py-2 text-right font-medium">Coverage</th>
                     <th className="px-4 py-2 text-right font-medium">Unsupported %</th>
                     <th className="px-4 py-2 text-right font-medium">Fallback %</th>
@@ -233,6 +268,7 @@ export default function ProvenanceHistory() {
                 <tbody>
                   {alertHistory.map((alert) => {
                     const m = alert.metrics as any;
+                    const batchId = Number(m?.batchId);
                     return (
                       <tr key={alert.id} className="border-b border-border/30 hover:bg-muted/30 transition-colors">
                         <td className="px-4 py-2.5">
@@ -247,19 +283,22 @@ export default function ProvenanceHistory() {
                         <td className="px-4 py-2.5 text-muted-foreground">
                           {new Date(alert.createdAt).toLocaleString()}
                         </td>
+                        <td className="px-4 py-2.5 font-mono text-muted-foreground">
+                          {Number.isSafeInteger(batchId) && batchId > 0 ? `#${batchId}` : "Manual / unspecified"}
+                        </td>
                         <td className="px-4 py-2.5 text-right font-mono text-foreground">
-                          {m?.coverage?.toFixed(2) ?? "—"}%
+                          {formatPercent(m?.coverage)}
                         </td>
                         <td className="px-4 py-2.5 text-right font-mono text-amber-400">
-                          {m?.unsupportedRate?.toFixed(2) ?? "—"}%
+                          {formatPercent(m?.unsupportedRate)}
                         </td>
                         <td className="px-4 py-2.5 text-right font-mono text-purple-400">
-                          {m?.fallbackRate?.toFixed(2) ?? "—"}%
+                          {formatPercent(m?.fallbackRate)}
                         </td>
                         <td className="px-4 py-2.5">
                           {alert.notificationSent
                             ? <Badge variant="outline" className="text-[9px] text-emerald-400 border-emerald-400/30">Sent</Badge>
-                            : <Badge variant="outline" className="text-[9px] text-red-400 border-red-400/30">Failed</Badge>}
+                            : <Badge variant="outline" className="text-[9px] text-muted-foreground border-border">Not sent</Badge>}
                         </td>
                         <td className="px-4 py-2.5 text-muted-foreground">
                           {new Date(alert.cooldownUntil).toLocaleString()}
