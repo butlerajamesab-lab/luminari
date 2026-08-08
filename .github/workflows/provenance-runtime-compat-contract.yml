@@ -1,0 +1,30 @@
+name: Provenance Runtime Compatibility Contract
+
+on:
+  pull_request:
+    paths:
+      - "server/provenance-runtime-compat.ts"
+      - "server/provenance-runtime-compat.contract.test.ts"
+      - "server/db.ts"
+      - ".github/workflows/provenance-runtime-compat-contract.yml"
+  push:
+    branches: [main]
+    paths:
+      - "server/provenance-runtime-compat.ts"
+      - "server/provenance-runtime-compat.contract.test.ts"
+      - "server/db.ts"
+      - ".github/workflows/provenance-runtime-compat-contract.yml"
+
+jobs:
+  provenance-runtime-compat:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm exec vitest run server/provenance-runtime-compat.contract.test.ts
+      - run: pnpm run build
