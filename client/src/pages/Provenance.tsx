@@ -38,7 +38,7 @@ export default function Provenance() {
     { enabled: true }
   );
 
-  const { data: metrics } = trpc.provenance.metrics.useQuery(
+  const { data: metrics, isLoading: metricsLoading } = trpc.provenance.metrics.useQuery(
     { caseId: currentCaseId ?? undefined },
     { enabled: true }
   );
@@ -143,6 +143,9 @@ export default function Provenance() {
     );
   }
 
+  const totalFindings = metrics?.totalFindings;
+  const provenanceLoading = isLoading || metricsLoading;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -152,7 +155,7 @@ export default function Provenance() {
           Provenance Drill-Down
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Classify, resolve, and audit unsupported findings to increase provenance coverage.
+          Audits source linkage for the legacy findings population. Zero findings and unrun analysis are never treated as verified provenance.
         </p>
         <div className="flex items-center gap-2 mt-2">
           <Link href="/provenance/history">
@@ -200,42 +203,67 @@ export default function Provenance() {
 
       {/* ── Metrics Header ── */}
       {metrics && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <MetricCard
+            label="Total Findings"
+            value={metrics.totalFindings}
+            color={metrics.totalFindings > 0 ? "text-blue-400" : "text-muted-foreground"}
+          />
           <MetricCard
             label="Unsupported Findings"
             value={metrics.unsupportedCount}
-            color={metrics.unsupportedCount === 0 ? "text-emerald-400" : "text-amber-400"}
+            color={metrics.totalFindings === 0 ? "text-muted-foreground" : metrics.unsupportedCount === 0 ? "text-emerald-400" : "text-amber-400"}
           />
           <MetricCard
             label="Unsupported Rate"
-            value={`${metrics.unsupportedRate}%`}
-            color={metrics.unsupportedRate <= 5 ? "text-emerald-400" : metrics.unsupportedRate <= 15 ? "text-amber-400" : "text-red-400"}
+            value={metrics.totalFindings === 0 ? "N/A" : `${metrics.unsupportedRate}%`}
+            color={metrics.totalFindings === 0 ? "text-muted-foreground" : metrics.unsupportedRate <= 5 ? "text-emerald-400" : metrics.unsupportedRate <= 15 ? "text-amber-400" : "text-red-400"}
           />
           <MetricCard
             label="Avg Candidates Evaluated"
-            value={metrics.avgCandidateClaimsEvaluated}
-            color="text-blue-400"
+            value={metrics.totalFindings === 0 ? "N/A" : metrics.avgCandidateClaimsEvaluated}
+            color={metrics.totalFindings === 0 ? "text-muted-foreground" : "text-blue-400"}
           />
           <MetricCard
             label="Fallback Usage Rate"
-            value={`${metrics.fallbackUsageRate}%`}
-            color="text-purple-400"
+            value={metrics.totalFindings === 0 ? "N/A" : `${metrics.fallbackUsageRate}%`}
+            color={metrics.totalFindings === 0 ? "text-muted-foreground" : "text-purple-400"}
           />
         </div>
       )}
 
       {/* ── Findings Table ── */}
-      {isLoading ? (
+      {provenanceLoading ? (
         <div className="space-y-2">
           {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
         </div>
+      ) : totalFindings === 0 ? (
+        <Card className="border-border bg-muted/10">
+          <CardContent className="p-8 text-center">
+            <Shield className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+            <h3 className="font-medium text-foreground">No finding population to evaluate</h3>
+            <p className="text-sm text-muted-foreground mt-1 max-w-xl mx-auto">
+              This case currently has zero legacy findings. Provenance review has not produced a successful result because there are no findings to test for source linkage.
+            </p>
+          </CardContent>
+        </Card>
+      ) : totalFindings === undefined ? (
+        <Card className="border-border bg-muted/10">
+          <CardContent className="p-8 text-center">
+            <AlertTriangle className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+            <h3 className="font-medium text-foreground">Provenance state unavailable</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              The finding population could not be established, so provenance health is not inferred.
+            </p>
+          </CardContent>
+        </Card>
       ) : !findings || findings.length === 0 ? (
         <Card className="border-emerald-500/30 bg-emerald-500/5">
           <CardContent className="p-8 text-center">
             <CheckCircle className="h-10 w-10 text-emerald-400 mx-auto mb-3" />
-            <h3 className="font-medium text-foreground">All findings have provenance</h3>
+            <h3 className="font-medium text-foreground">All existing findings have provenance</h3>
             <p className="text-sm text-muted-foreground mt-1">
-              No unsupported findings remain. Provenance coverage is at target.
+              {totalFindings} finding{totalFindings === 1 ? "" : "s"} exist and none remain in an unsupported provenance state.
             </p>
           </CardContent>
         </Card>
