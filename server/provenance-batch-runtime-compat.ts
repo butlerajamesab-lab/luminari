@@ -150,6 +150,30 @@ export async function updateBatchProgress(id: number, data: {
   );
 }
 
+/**
+ * Move an aborted/error batch back to running without using the drifted Drizzle
+ * batch table. Terminal timestamps are cleared because the same batch record is
+ * active again; the original started_at is preserved as the batch's identity
+ * anchor rather than fabricating a new start time.
+ */
+export async function resumeBatchRun(id: number, totalFindings: number) {
+  const result = await getPool().query(
+    `update public.batch_rerun_runs
+        set status = 'running',
+            total_findings = $2,
+            completed_at = null,
+            aborted_at = null,
+            runtime_ms = null
+      where id = $1
+        and status in ('aborted', 'error')
+      returning id`,
+    [id, totalFindings],
+  );
+  if (result.rows.length !== 1) {
+    throw new Error(`batch_rerun_not_resumable:${id}`);
+  }
+}
+
 export async function completeBatchRun(id: number) {
   const run = await getBatchRunById(id);
   if (!run) return;
@@ -159,6 +183,7 @@ export async function completeBatchRun(id: number) {
     `update public.batch_rerun_runs
         set status = 'completed',
             completed_at = $2,
+            aborted_at = null,
             runtime_ms = $3,
             still_unsupported = greatest(total_findings - resolved_count - error_count, 0)
       where id = $1`,
@@ -175,6 +200,25 @@ export async function abortBatchRun(id: number) {
     `update public.batch_rerun_runs
         set status = 'aborted',
             aborted_at = $2,
+            completed_at = null,
+            runtime_ms = $3,
+            still_unsupported = greatest(total_findings - resolved_count - error_count, 0)
+      where id = $1`,
+    [id, now, runtimeMs],
+  );
+}
+
+/** Fatal processor failure is not a user abort. Keep those states distinct. */
+export async function failBatchRun(id: number) {
+  const run = await getBatchRunById(id);
+  if (!run) return;
+  const now = Date.now();
+  const runtimeMs = Math.max(0, now - run.startedAt);
+  await getPool().query(
+    `update public.batch_rerun_runs
+        set status = 'error',
+            completed_at = $2,
+            aborted_at = null,
             runtime_ms = $3,
             still_unsupported = greatest(total_findings - resolved_count - error_count, 0)
       where id = $1`,
@@ -209,6 +253,7 @@ export async function expireStaleBatchRuns(thresholdMs = 30 * 60 * 1000): Promis
     `update public.batch_rerun_runs
         set status = 'error',
             completed_at = $1,
+            aborted_at = null,
             runtime_ms = greatest($1 - started_at, 0),
             still_unsupported = greatest(total_findings - resolved_count - error_count, 0)
       where status = 'running'
