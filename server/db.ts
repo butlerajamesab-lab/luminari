@@ -49,14 +49,20 @@ export {
   updateFindingClaimIds,
   updateFindingMatchMetadata,
 } from "./provenance-runtime-compat";
+export {
+  getFindingMatchDetail,
+  markFindingRerunError,
+} from "./provenance-batch-finding-compat";
 export { getProvenanceDriftMetrics } from "./provenance-drift-runtime-compat";
 export {
   createBatchRun,
   getActiveBatchRun,
   getBatchRunById,
   updateBatchProgress,
+  resumeBatchRun,
   completeBatchRun,
   abortBatchRun,
+  failBatchRun,
   getLatestBatchRun,
   listBatchRuns,
   expireStaleBatchRuns,
