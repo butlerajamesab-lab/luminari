@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Network, ChevronDown, ChevronRight, ExternalLink, Users, Building2, FileX, AlertTriangle, Scale, ShieldAlert, Loader2 } from "lucide-react";
 import { useLocation } from "wouter";
+import { caseWorkspacePath } from "@/lib/caseNavigation";
 
 const PATTERN_TYPE_META: Record<string, { label: string; icon: React.ComponentType<{ className?: string }>; color: string; bgColor: string }> = {
   entity_recurrence: { label: "Entity Recurrence", icon: Users, color: "text-blue-400", bgColor: "bg-blue-500/10" },
@@ -46,7 +47,7 @@ function RelatedCasesPanel({ patternId, patternDescription }: { patternId: numbe
       {relatedCases.map((c) => (
         <button
           key={c.caseId}
-          onClick={() => navigate(`/case/${c.caseId}`)}
+          onClick={() => navigate(caseWorkspacePath(c.caseId))}
           className="w-full flex items-center justify-between p-2 rounded-md hover:bg-muted/50 transition-colors text-left group"
         >
           <div className="flex items-center gap-2 min-w-0">

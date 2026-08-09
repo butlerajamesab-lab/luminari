@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
 import { useLocation, useParams } from "wouter";
+import { caseWorkspacePath } from "@/lib/caseNavigation";
 import { ArrowLeft, FileText, Quote, AlertTriangle, Users, ExternalLink, Shield, RefreshCw, Loader2, Download, Ban, FileX, Link2, ChevronDown } from "lucide-react";
 import ReplaceDocumentModalV2 from "@/components/ReplaceDocumentModalV2";
 import ReadAloud from "@/components/ReadAloud";
@@ -231,7 +232,7 @@ export default function DocumentDetail() {
   if (!doc) return <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4"><p className="text-muted-foreground">Document not found</p><Button variant="outline" onClick={handleBack}>Back to Documents</Button></div>;
 
   const statusColor = doc.status === "ready" ? "bg-emerald-400" : doc.status === "analyzing" ? "bg-amber-400" : doc.status === "extracting" ? "bg-blue-400" : doc.status === "error" ? "bg-red-400" : "bg-muted-foreground";
-  const openIntakeSpine = () => setLocation(`/case/${doc.caseId}`);
+  const openIntakeSpine = () => setLocation(caseWorkspacePath(doc.caseId));
 
   return (
     <div className="space-y-6">

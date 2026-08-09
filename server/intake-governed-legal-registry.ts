@@ -91,17 +91,27 @@ export async function load_governed_legal_registry(): Promise<governed_legal_reg
       order by claim_type, jurisdiction, id
     `),
     pool.query(`
-      select id, workflow_key, workflow_name, issue_types, primary_agency,
-             initial_deadline_rule, entry_forms, exhaustion_required,
+      select id,
+             'workflow_' || id::text as workflow_key,
+             title as workflow_name,
+             issue_types, primary_agency,
+             initial_deadline_rule, entry_forms,
+             null::integer as exhaustion_required,
              appeal_chain, remedies
       from public.workflow_master
-      where coalesce(is_active, 1) = 1
-      order by workflow_key, id
+      where lower(coalesce(workflow_status, 'active')) = 'active'
+      order by id
     `),
     pool.query(`
-      select id, workflow_id, step_number, step_order, action, owner,
-             due_rule, required_document, output, escalation_if_failed
+      select id, workflow_id, step_number, step_order,
+             action_description as action,
+             null::text as owner,
+             deadline_rule as due_rule,
+             null::text as required_document,
+             null::text as output,
+             null::text as escalation_if_failed
       from public.workflow_steps
+      where workflow_id is not null
       order by workflow_id, coalesce(step_order, step_number, id), id
     `),
   ]);

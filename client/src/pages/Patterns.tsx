@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Network, ChevronDown, ChevronRight, ExternalLink, Users, Building2, FileX, AlertTriangle, Scale, ShieldAlert, Calendar } from "lucide-react";
 import { useLocation } from "wouter";
+import { caseWorkspacePath } from "@/lib/caseNavigation";
 import PatternTrendChart from "@/components/PatternTrendChart";
 
 const PATTERN_TYPE_META: Record<string, { label: string; icon: React.ComponentType<{ className?: string }>; color: string; bgColor: string; borderColor: string }> = {
@@ -118,7 +119,7 @@ function PatternDetailCard({ pattern }: {
                     key={c.caseId}
                     onClick={(e) => {
                       e.stopPropagation();
-                      navigate(`/case/${c.caseId}`);
+                      navigate(caseWorkspacePath(c.caseId));
                     }}
                     className="w-full flex items-center justify-between p-2 rounded-md hover:bg-muted/50 transition-colors text-left group"
                   >
