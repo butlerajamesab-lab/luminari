@@ -85,6 +85,12 @@ async function post_replacement(contents: string, document_id = 812, filename = 
   });
 }
 
+function rolled_back_replacement_error(message: string): Error {
+  return Object.assign(new Error(message), {
+    replacementPersistenceOutcome: "rolled_back",
+  });
+}
+
 beforeAll(async () => {
   const app = express();
   registerUploadRoute(app);
@@ -367,7 +373,7 @@ describe("atomic replacement upload", () => {
       [],
     );
     state.create_and_supersede_document_atomic.mockRejectedValue(
-      new Error("supersession transaction rejected"),
+      rolled_back_replacement_error("supersession transaction rejected"),
     );
 
     const response = await post_replacement("rollback replacement");
@@ -429,6 +435,26 @@ describe("atomic replacement upload", () => {
     expect(state.storage_delete).not.toHaveBeenCalled();
   });
 
+  it("retains evidence when an ambiguous COMMIT is not visible to the first reconciliation read", async () => {
+    state.select_queue.push(
+      [{ id: 44, userId: 9 }],
+      [],
+    );
+    state.create_and_supersede_document_atomic.mockRejectedValue(
+      new Error("connection lost while COMMIT was being processed"),
+    );
+    state.find_committed_document_replacement.mockResolvedValue(null);
+
+    const response = await post_replacement("commit still completing");
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({
+      error: "Replacement commit status could not be verified; uploaded evidence was retained",
+    });
+    expect(state.find_committed_document_replacement).toHaveBeenCalledTimes(1);
+    expect(state.storage_delete).not.toHaveBeenCalled();
+  });
+
   it("does not start persistence or compensation when storage upload fails", async () => {
     state.select_queue.push(
       [{ id: 44, userId: 9 }],
@@ -452,7 +478,7 @@ describe("atomic replacement upload", () => {
       [],
     );
     state.create_and_supersede_document_atomic.mockRejectedValue(
-      new Error("supersession transaction rejected"),
+      rolled_back_replacement_error("supersession transaction rejected"),
     );
     state.storage_delete.mockRejectedValue(new Error("storage unavailable"));
 

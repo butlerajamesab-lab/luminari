@@ -2862,6 +2862,23 @@ export async function replaceDocument(
 }
 
 /**
+ * Marker returned only when the replacement transaction callback failed and
+ * Drizzle subsequently completed ROLLBACK. Errors raised while COMMIT is being
+ * acknowledged (or while ROLLBACK itself is failing) deliberately remain
+ * unmarked because their durable database outcome is not known.
+ */
+export class ReplacementPersistenceRolledBackError extends Error {
+  readonly replacementPersistenceOutcome = 'rolled_back';
+  readonly cause: unknown;
+
+  constructor(cause: unknown) {
+    super(cause instanceof Error ? cause.message : 'Replacement persistence rolled back');
+    this.name = 'ReplacementPersistenceRolledBackError';
+    this.cause = cause;
+  }
+}
+
+/**
  * Create a replacement document and supersede its original in one database
  * transaction. The original document and any bound snapshot are locked while
  * their mutability is revalidated, closing the gap between upload preflight
@@ -2885,6 +2902,7 @@ export async function createAndSupersedeDocumentAtomic(
   reason: string,
 ): Promise<number> {
   const replacementDocumentId = await db.transaction(async (tx: any) => {
+    try {
     const [original] = await tx.select()
       .from(documents)
       .where(eq(documents.id, originalDocumentId))
@@ -2986,6 +3004,9 @@ export async function createAndSupersedeDocumentAtomic(
     await insertSerializedAuditEntry(tx, auditEntry);
 
     return Number(inserted.id);
+    } catch (error) {
+      throw new ReplacementPersistenceRolledBackError(error);
+    }
   });
 
   return replacementDocumentId;
@@ -2994,8 +3015,11 @@ export async function createAndSupersedeDocumentAtomic(
 /**
  * Reconcile an ambiguous transaction result on a separate pool round-trip.
  * A connection can disappear after PostgreSQL commits but before the client
- * receives COMMIT acknowledgement. The caller must not delete evidence bytes
- * until this query proves that no committed replacement points at them.
+ * receives COMMIT acknowledgement. A positive result proves that the
+ * replacement committed. A negative result is not proof of rollback while the
+ * original COMMIT may still be completing, so it must never authorize deleting
+ * evidence unless the persistence error carries the explicit rolled-back
+ * marker above.
  */
 export async function findCommittedDocumentReplacement(
   originalDocumentId: number,

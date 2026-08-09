@@ -367,6 +367,12 @@ export function registerUploadRoute(app: Express) {
           "Explicit replacement upload registered with the Universal Intake Spine",
         );
       } catch (persistenceError) {
+        const persistenceWasRolledBack =
+          typeof persistenceError === "object" &&
+          persistenceError !== null &&
+          "replacementPersistenceOutcome" in persistenceError &&
+          persistenceError.replacementPersistenceOutcome === "rolled_back";
+
         // COMMIT acknowledgement can be lost after PostgreSQL has durably
         // committed. Reconcile on a separate pool round-trip before deleting
         // bytes that a committed replacement may already reference.
@@ -391,6 +397,15 @@ export function registerUploadRoute(app: Express) {
 
         if (committedReplacementId !== null) {
           newDocumentId = committedReplacementId;
+        } else if (!persistenceWasRolledBack) {
+          console.error(
+            `[Upload] Replacement COMMIT outcome remains ambiguous for key=${s3Key}; retaining bytes`,
+          );
+          const ambiguousCommitError = new Error(
+            "Replacement commit status could not be verified; uploaded evidence was retained",
+          ) as Error & { cause?: unknown };
+          ambiguousCommitError.cause = persistenceError;
+          throw ambiguousCommitError;
         } else {
           try {
             await storageDelete(s3Key);

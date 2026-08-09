@@ -228,6 +228,8 @@ describe("document upload PostgreSQL persistence contract", () => {
       "await assertDocumentSnapshotMutable(documentId)",
     );
     expect(replacement).toContain("db.transaction(async (tx: any)");
+    expect(replacement).toContain("new ReplacementPersistenceRolledBackError(error)");
+    expect(db_source).toContain("replacementPersistenceOutcome = 'rolled_back'");
     expect(replacement).toContain(".for('update')");
     expect(replacement).toContain(".for('share')");
     expect(replacement).toContain("await tx.insert(documents)");
@@ -244,6 +246,8 @@ describe("document upload PostgreSQL persistence contract", () => {
     expect(upload_route).toContain(
       "await dbHelpers.findCommittedDocumentReplacement(",
     );
+    expect(upload_route).toContain('persistenceError.replacementPersistenceOutcome === "rolled_back"');
+    expect(upload_route).toContain("else if (!persistenceWasRolledBack)");
     expect(upload_route.indexOf("findCommittedDocumentReplacement")).toBeLessThan(
       upload_route.indexOf("storageDelete(s3Key)"),
     );
