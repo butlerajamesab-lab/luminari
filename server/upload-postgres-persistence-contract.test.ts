@@ -215,6 +215,14 @@ describe("document upload PostgreSQL persistence contract", () => {
       "createChecklistItems",
     );
     const upload_route = read_source("./upload-route.ts");
+    const audit_helpers = db_source.slice(
+      db_source.indexOf("const ZERO_AUDIT_HASH"),
+      db_source.indexOf("// ─── Corpus Snapshots"),
+    );
+    const reconciliation = function_source(
+      "findCommittedDocumentReplacement",
+      "markDocumentCorrupted",
+    );
 
     expect(eligibility).toContain(
       "await assertDocumentSnapshotMutable(documentId)",
@@ -224,9 +232,20 @@ describe("document upload PostgreSQL persistence contract", () => {
     expect(replacement).toContain(".for('share')");
     expect(replacement).toContain("await tx.insert(documents)");
     expect(replacement).toContain("await tx.update(documents)");
-    expect(replacement).toContain("await tx.insert(auditTrail)");
+    expect(replacement).toContain("await insertSerializedAuditEntry(tx, auditEntry)");
+    expect(audit_helpers).toContain("pg_advisory_xact_lock");
+    expect(audit_helpers).toContain("orderBy(desc(auditTrail.id))");
+    expect(audit_helpers).not.toContain("lastAuditHash");
+    expect(reconciliation).toContain("original.replaced_by_document_id");
+    expect(reconciliation).toContain("replacement.s3_key = $3");
     expect(upload_route).toContain(
       "await dbHelpers.createAndSupersedeDocumentAtomic(",
+    );
+    expect(upload_route).toContain(
+      "await dbHelpers.findCommittedDocumentReplacement(",
+    );
+    expect(upload_route.indexOf("findCommittedDocumentReplacement")).toBeLessThan(
+      upload_route.indexOf("storageDelete(s3Key)"),
     );
     expect(upload_route).toContain("await storageDelete(s3Key)");
   });
