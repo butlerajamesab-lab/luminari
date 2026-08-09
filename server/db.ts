@@ -72,3 +72,21 @@ export {
   createProvenanceAlertEvent,
   listProvenanceAlertEvents,
 } from "./provenance-alert-runtime-compat";
+export {
+  createBenefitApplication,
+  listBenefitApplications,
+  getBenefitApplication,
+  updateBenefitApplicationStatus,
+  updateBenefitApplicationNotes,
+  updateBenefitApplicationDeadline,
+  markDocumentSubmitted,
+  deleteBenefitApplication,
+  getUpcomingBenefitDeadlines,
+  getBenefitApplicationSummary,
+} from "./benefit-applications-live-compat";
+export {
+  getActionPathsByPipeline,
+  getActionPathsByPipelines,
+  getActionPathById,
+  listAllActionPaths,
+} from "./enforcement-action-paths-live-compat";
