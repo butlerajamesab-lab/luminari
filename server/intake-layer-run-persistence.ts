@@ -1,10 +1,12 @@
 import { getPool } from "./db";
 
 const SHA256_RE = /^[0-9a-f]{64}$/;
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export type intake_layer_execution_persistence_input = {
   intake_session_id: string;
+  execution_lease_token: string;
   layer_name: string;
   layer_version: string;
   rule_version: string;
@@ -26,29 +28,34 @@ export type intake_layer_execution_persistence_result = {
 };
 
 function require_nonempty(value: string, field: string): void {
-  if (!value.trim()) throw new Error(`intake_layer_execution_${field}_required`);
+  if (!value.trim())
+    throw new Error(`intake_layer_execution_${field}_required`);
 }
 
 function require_sha256(value: string, field: string): void {
-  if (!SHA256_RE.test(value)) throw new Error(`intake_layer_execution_${field}_invalid_sha256`);
+  if (!SHA256_RE.test(value))
+    throw new Error(`intake_layer_execution_${field}_invalid_sha256`);
 }
 
 function require_uuid(value: string, field: string): void {
-  if (!UUID_RE.test(value)) throw new Error(`intake_layer_execution_${field}_invalid_uuid`);
+  if (!UUID_RE.test(value))
+    throw new Error(`intake_layer_execution_${field}_invalid_uuid`);
 }
 
 /**
  * Persist one deterministic Universal Intake Spine layer execution.
  *
- * This adapter intentionally exposes only the v3 registration contract. v3
- * re-canonicalizes the execution envelope and output data inside PostgreSQL,
- * verifies both hashes, then extends the sealed receipt chain. Runtime callers
- * must not bypass that proof by writing intake_layer_runs directly.
+ * This adapter intentionally exposes only the v4 registration contract. v4
+ * fences the write with the active execution lease, then delegates to v3 to
+ * re-canonicalize the execution envelope and output data inside PostgreSQL,
+ * verify both hashes, and extend the sealed receipt chain. Runtime callers
+ * must not bypass either proof by writing intake_layer_runs directly.
  */
 export async function register_intake_layer_execution(
   input: intake_layer_execution_persistence_input,
 ): Promise<intake_layer_execution_persistence_result> {
   require_uuid(input.intake_session_id, "session_id");
+  require_uuid(input.execution_lease_token, "execution_lease_token");
   require_nonempty(input.layer_name, "layer_name");
   require_nonempty(input.layer_version, "layer_version");
   require_nonempty(input.rule_version, "rule_version");
@@ -63,9 +70,12 @@ export async function register_intake_layer_execution(
 
   const input_refs = input.input_refs ?? [];
   const unresolved_dependencies = input.unresolved_dependencies ?? [];
-  if (!Array.isArray(input_refs)) throw new Error("intake_layer_execution_input_refs_must_be_array");
+  if (!Array.isArray(input_refs))
+    throw new Error("intake_layer_execution_input_refs_must_be_array");
   if (!Array.isArray(unresolved_dependencies)) {
-    throw new Error("intake_layer_execution_unresolved_dependencies_must_be_array");
+    throw new Error(
+      "intake_layer_execution_unresolved_dependencies_must_be_array",
+    );
   }
 
   const result = await getPool().query<{
@@ -79,7 +89,7 @@ export async function register_intake_layer_execution(
        registered_receipt_hash,
        registered_output_artifact_id::text,
        reused_existing
-     from public.register_intake_layer_execution_v3(
+     from public.register_intake_layer_execution_v4(
        $1::uuid,
        $2::text,
        $3::text,
@@ -91,7 +101,8 @@ export async function register_intake_layer_execution(
        $9::jsonb,
        $10::text,
        $11::jsonb,
-       $12::jsonb
+       $12::jsonb,
+       $13::uuid
      )`,
     [
       input.intake_session_id,
@@ -106,13 +117,18 @@ export async function register_intake_layer_execution(
       input.output_hash,
       input_refs,
       unresolved_dependencies,
+      input.execution_lease_token,
     ],
   );
 
   const row = result.rows[0];
-  if (!row) throw new Error("intake_layer_execution_registration_returned_no_row");
+  if (!row)
+    throw new Error("intake_layer_execution_registration_returned_no_row");
   require_uuid(row.registered_layer_run_id, "registered_layer_run_id");
-  require_uuid(row.registered_output_artifact_id, "registered_output_artifact_id");
+  require_uuid(
+    row.registered_output_artifact_id,
+    "registered_output_artifact_id",
+  );
   require_sha256(row.registered_receipt_hash, "registered_receipt_hash");
 
   return {
