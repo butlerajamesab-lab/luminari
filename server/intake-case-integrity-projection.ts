@@ -7,6 +7,7 @@ import {
 } from "./intake-case-layer-reader";
 import { computeHash } from "./engines/intake-spine/utils";
 import type { PreservationResult } from "./engines/intake-spine/layer-3-evidence_preservation";
+import { derive_raw_artifact_key } from "./engines/intake-spine/layer-2-raw_intake_capture";
 
 const SHA256_RE = /^[0-9a-f]{64}$/;
 const PRESERVATION_STATES = new Set<PreservationResult["integrity_status"]>([
@@ -112,6 +113,8 @@ export async function read_case_intake_integrity_projection(
        select
          lr.*,
          source_ref.value ->> 'artifact_id' as source_artifact_id,
+         source_ref.value ->> 'artifact_key' as source_ref_artifact_key,
+         source_ref.value ->> 'sha256' as source_ref_sha256,
          row_number() over (
            partition by source_ref.value ->> 'artifact_id'
            order by lr.sealed_at desc nulls last,
@@ -142,6 +145,8 @@ export async function read_case_intake_integrity_projection(
        s.sha256 as source_sha256,
        s.artifact_status as source_artifact_status,
        p.layer_run_id::text,
+       p.source_ref_artifact_key,
+       p.source_ref_sha256,
        p.layer_name,
        p.layer_version,
        p.rule_version,
@@ -169,15 +174,32 @@ export async function read_case_intake_integrity_projection(
          else null
        end
      order by s.intake_session_id, s.artifact_key, s.artifact_id`,
-    [case_id, INTAKE_EXECUTION_CONTRACT_VERSION, INTAKE_CANONICALIZATION_VERSION],
+    [
+      case_id,
+      INTAKE_EXECUTION_CONTRACT_VERSION,
+      INTAKE_CANONICALIZATION_VERSION,
+    ],
   );
 
-  const artifacts: IntakeIntegrityArtifactRecord[] = result.rows.map((row: any) => {
+  return project_intake_integrity_rows(result.rows);
+}
+
+/**
+ * Deterministically validate and project the SQL result. This stays separate
+ * from the database read so the exact receipt-bound behavior can be exercised
+ * with production-shaped rows and tamper cases.
+ */
+export function project_intake_integrity_rows(
+  rows: readonly any[],
+): IntakeIntegrityProjection {
+  const artifacts: IntakeIntegrityArtifactRecord[] = rows.map((row: any) => {
     if (!row.layer_run_id) {
       return {
         artifact_id: String(row.artifact_id),
         intake_session_id: String(row.intake_session_id),
-        legacy_document_id: normalize_legacy_document_id(row.metadata?.legacy_document_id),
+        legacy_document_id: normalize_legacy_document_id(
+          row.metadata?.legacy_document_id,
+        ),
         artifact_key: String(row.artifact_key),
         filename: row.filename ?? null,
         mime_type: row.mime_type ?? null,
@@ -203,56 +225,135 @@ export async function read_case_intake_integrity_projection(
     const metadata = row.output_metadata ?? {};
 
     if (!row.receipt_hash || !SHA256_RE.test(row.receipt_hash)) {
-      integrity_failure(`Layer 3 run ${row.layer_run_id} has no valid receipt hash`);
+      integrity_failure(
+        `Layer 3 run ${row.layer_run_id} has no valid receipt hash`,
+      );
     }
-    if (!row.output_artifact_id
-        || row.output_artifact_type !== "intake_layer_output"
-        || row.output_artifact_status !== "preserved") {
-      integrity_failure(`Layer 3 run ${row.layer_run_id} is missing its preserved canonical output artifact`);
+    if (
+      !row.output_artifact_id ||
+      row.output_artifact_type !== "intake_layer_output" ||
+      row.output_artifact_status !== "preserved"
+    ) {
+      integrity_failure(
+        `Layer 3 run ${row.layer_run_id} is missing its preserved canonical output artifact`,
+      );
     }
-    if (receipt.output_artifact_id !== row.output_artifact_id
-        || output_refs.length !== 1
-        || String(output_refs[0]?.artifact_id ?? "") !== row.output_artifact_id) {
-      integrity_failure(`Layer 3 run ${row.layer_run_id} output identity mismatch`);
+    if (
+      receipt.output_artifact_id !== row.output_artifact_id ||
+      output_refs.length !== 1 ||
+      String(output_refs[0]?.artifact_id ?? "") !== row.output_artifact_id
+    ) {
+      integrity_failure(
+        `Layer 3 run ${row.layer_run_id} output identity mismatch`,
+      );
     }
-    if (metadata.execution_contract_version !== INTAKE_EXECUTION_CONTRACT_VERSION
-        || metadata.canonicalization_version !== INTAKE_CANONICALIZATION_VERSION
-        || metadata.layer_name !== row.layer_name
-        || metadata.layer_version !== row.layer_version
-        || metadata.rule_version !== row.rule_version
-        || metadata.output_hash !== row.output_hash) {
-      integrity_failure(`Layer 3 run ${row.layer_run_id} output metadata differs from the sealed execution contract`);
+    if (
+      metadata.execution_contract_version !==
+        INTAKE_EXECUTION_CONTRACT_VERSION ||
+      metadata.canonicalization_version !== INTAKE_CANONICALIZATION_VERSION ||
+      metadata.layer_name !== row.layer_name ||
+      metadata.layer_version !== row.layer_version ||
+      metadata.rule_version !== row.rule_version ||
+      metadata.output_hash !== row.output_hash
+    ) {
+      integrity_failure(
+        `Layer 3 run ${row.layer_run_id} output metadata differs from the sealed execution contract`,
+      );
     }
     if (!Object.prototype.hasOwnProperty.call(metadata, "data")) {
-      integrity_failure(`Layer 3 run ${row.layer_run_id} has no canonical output data`);
+      integrity_failure(
+        `Layer 3 run ${row.layer_run_id} has no canonical output data`,
+      );
     }
 
     let recomputed_output_hash: string;
     try {
       recomputed_output_hash = computeHash(metadata.data);
     } catch (error) {
-      integrity_failure(`Layer 3 run ${row.layer_run_id} output cannot be canonically hashed`, error);
+      integrity_failure(
+        `Layer 3 run ${row.layer_run_id} output cannot be canonically hashed`,
+        error,
+      );
     }
     if (recomputed_output_hash !== row.output_hash) {
-      integrity_failure(`Layer 3 run ${row.layer_run_id} output hash does not match preserved data`);
+      integrity_failure(
+        `Layer 3 run ${row.layer_run_id} output hash does not match preserved data`,
+      );
     }
 
     const data = metadata.data as Partial<PreservationResult>;
-    if (data.artifact_key !== row.artifact_key) {
-      integrity_failure(`Layer 3 run ${row.layer_run_id} points to the wrong source artifact`);
+    if (!row.source_sha256 || !SHA256_RE.test(row.source_sha256)) {
+      integrity_failure(
+        `Source artifact ${row.artifact_id} has no valid SHA-256 identity`,
+      );
     }
-    if (!data.integrity_status || !PRESERVATION_STATES.has(data.integrity_status)) {
-      integrity_failure(`Layer 3 run ${row.layer_run_id} has an invalid integrity status`);
+    if (row.artifact_key !== `sha256:${row.source_sha256}`) {
+      integrity_failure(
+        `Source artifact ${row.artifact_id} registration key differs from its SHA-256 identity`,
+      );
     }
-    if (row.source_sha256 && SHA256_RE.test(row.source_sha256)
-        && data.stored_sha256 !== row.source_sha256) {
-      integrity_failure(`Layer 3 run ${row.layer_run_id} stored hash differs from source registration`);
+    if (
+      row.source_ref_artifact_key !== row.artifact_key ||
+      row.source_ref_sha256 !== row.source_sha256
+    ) {
+      integrity_failure(
+        `Layer 3 run ${row.layer_run_id} source reference differs from source registration`,
+      );
+    }
+    const expected_layer_artifact_key = derive_raw_artifact_key(
+      row.source_sha256,
+    );
+    if (data.artifact_key !== expected_layer_artifact_key) {
+      integrity_failure(
+        `Layer 3 run ${row.layer_run_id} points to the wrong source artifact`,
+      );
+    }
+    if (
+      !data.integrity_status ||
+      !PRESERVATION_STATES.has(data.integrity_status)
+    ) {
+      integrity_failure(
+        `Layer 3 run ${row.layer_run_id} has an invalid integrity status`,
+      );
+    }
+    if (data.stored_sha256 !== row.source_sha256) {
+      integrity_failure(
+        `Layer 3 run ${row.layer_run_id} stored hash differs from source registration`,
+      );
+    }
+    if (
+      data.integrity_status === "preserved" &&
+      data.verified_sha256 !== row.source_sha256
+    ) {
+      integrity_failure(
+        `Layer 3 run ${row.layer_run_id} verified hash differs from source registration`,
+      );
+    }
+    if (
+      data.integrity_status === "quarantined" &&
+      (!data.verified_sha256 ||
+        !SHA256_RE.test(data.verified_sha256) ||
+        data.verified_sha256 === row.source_sha256)
+    ) {
+      integrity_failure(
+        `Layer 3 run ${row.layer_run_id} has an invalid quarantined verification hash`,
+      );
+    }
+    if (
+      data.integrity_status === "referenced_missing" &&
+      data.verified_sha256 !== null
+    ) {
+      integrity_failure(
+        `Layer 3 run ${row.layer_run_id} has an invalid missing-source verification hash`,
+      );
     }
 
     return {
       artifact_id: String(row.artifact_id),
       intake_session_id: String(row.intake_session_id),
-      legacy_document_id: normalize_legacy_document_id(row.metadata?.legacy_document_id),
+      legacy_document_id: normalize_legacy_document_id(
+        row.metadata?.legacy_document_id,
+      ),
       artifact_key: String(row.artifact_key),
       filename: row.filename ?? null,
       mime_type: row.mime_type ?? null,
@@ -273,11 +374,19 @@ export async function read_case_intake_integrity_projection(
   });
 
   const source_artifact_count = artifacts.length;
-  const projected = artifacts.filter(artifact => artifact.layer_run_id !== null);
+  const projected = artifacts.filter(
+    (artifact) => artifact.layer_run_id !== null,
+  );
   const projected_artifact_count = projected.length;
-  const preserved_count = projected.filter(artifact => artifact.integrity_status === "preserved").length;
-  const quarantined_count = projected.filter(artifact => artifact.integrity_status === "quarantined").length;
-  const referenced_missing_count = projected.filter(artifact => artifact.integrity_status === "referenced_missing").length;
+  const preserved_count = projected.filter(
+    (artifact) => artifact.integrity_status === "preserved",
+  ).length;
+  const quarantined_count = projected.filter(
+    (artifact) => artifact.integrity_status === "quarantined",
+  ).length;
+  const referenced_missing_count = projected.filter(
+    (artifact) => artifact.integrity_status === "referenced_missing",
+  ).length;
   const unresolved_dependency_count = projected.reduce(
     (sum, artifact) => sum + artifact.unresolved_dependencies.length,
     0,
@@ -286,8 +395,10 @@ export async function read_case_intake_integrity_projection(
   let projection_state: IntakeIntegrityProjectionState;
   if (source_artifact_count === 0) projection_state = "no_evidence";
   else if (projected_artifact_count === 0) projection_state = "not_run";
-  else if (quarantined_count > 0 || referenced_missing_count > 0) projection_state = "blocked";
-  else if (projected_artifact_count < source_artifact_count) projection_state = "partial";
+  else if (quarantined_count > 0 || referenced_missing_count > 0)
+    projection_state = "blocked";
+  else if (projected_artifact_count < source_artifact_count)
+    projection_state = "partial";
   else projection_state = "verified";
 
   return {
