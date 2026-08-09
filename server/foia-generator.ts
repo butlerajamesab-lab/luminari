@@ -541,7 +541,7 @@ export async function generateFoiaRequest(
           title: "Cross-Case Pattern Detected",
           message: `${patternResult.totalRegistered} new systemic pattern(s) identified from FOIA request generation.`,
           metadata: { caseId, foiaRequestId: requestId, ...patternResult.results },
-          linkUrl: `/case/${caseId}`,
+          linkUrl: `/guide/${caseId}`,
         });
       } catch (notifErr) {
         console.warn("[FOIA] Pattern notification failed (non-blocking):", notifErr);
