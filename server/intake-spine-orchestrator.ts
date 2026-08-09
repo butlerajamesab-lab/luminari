@@ -212,6 +212,44 @@ export async function finalize_intake_spine_session_if_unchanged(
   }
 }
 
+export async function acquire_intake_spine_execution_lock(
+  pool: Pick<ReturnType<typeof getPool>, 'connect'>,
+  intake_session_id: string,
+): Promise<() => Promise<void>> {
+  const client = await pool.connect();
+  const lock_key = `luminari:intake-spine-execution:${intake_session_id}`;
+  let acquired = false;
+  let released = false;
+  try {
+    const lock_result = await client.query<{ acquired: boolean }>(
+      `select pg_try_advisory_lock(hashtextextended($1::text, 0)) as acquired`,
+      [lock_key],
+    );
+    acquired = lock_result.rows[0]?.acquired === true;
+    if (!acquired) {
+      throw new Error('intake_spine_orchestrator_execution_already_in_progress');
+    }
+  } catch (error) {
+    client.release();
+    throw error;
+  }
+
+  return async () => {
+    if (released) return;
+    released = true;
+    try {
+      if (acquired) {
+        await client.query(
+          `select pg_advisory_unlock(hashtextextended($1::text, 0))`,
+          [lock_key],
+        );
+      }
+    } finally {
+      client.release();
+    }
+  };
+}
+
 /**
  * Execute a real Universal Intake Spine session against preserved source bytes.
  *
@@ -230,6 +268,11 @@ export async function execute_intake_spine_session(
   if (!jurisdiction) throw new Error('intake_spine_orchestrator_jurisdiction_required');
 
   const pool = getPool();
+  const release_execution_lock = await acquire_intake_spine_execution_lock(
+    pool,
+    request.intake_session_id,
+  );
+  try {
   const session_result = await pool.query<session_row>(
     `select
        s.intake_session_id::text,
@@ -616,6 +659,9 @@ export async function execute_intake_spine_session(
       action_paths: l14Persisted.output_hash,
     },
   };
+  } finally {
+    await release_execution_lock();
+  }
 }
 
 async function persist_layer<T>(input: {
