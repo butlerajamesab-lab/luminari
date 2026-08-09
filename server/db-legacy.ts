@@ -359,21 +359,37 @@ export async function upsertUser(data: {
 }
 
 // ─── Audit Trail Helpers ───
-let lastAuditHash = "0000000000000000000000000000000000000000000000000000000000000000";
+const ZERO_AUDIT_HASH = "0000000000000000000000000000000000000000000000000000000000000000";
+const AUDIT_HASH_CHAIN_LOCK_ID = 76004003;
 
-export async function logAudit(entry: {
+type AuditEntryInput = {
   caseId?: number;
   userId?: number;
   action: string;
   targetType?: string;
   targetId?: number;
   details?: Record<string, unknown>;
-}) {
+};
+
+async function insertSerializedAuditEntry(tx: any, entry: AuditEntryInput): Promise<string> {
+  // The chain is global, so its predecessor must be selected under one
+  // database-visible lock shared by every server process and every audit
+  // writer. A process-local tip can fork as soon as requests overlap or the
+  // service runs more than one instance.
+  await tx.execute(sql`select pg_advisory_xact_lock(${AUDIT_HASH_CHAIN_LOCK_ID})`);
+  const [previous] = await tx.select({ hash: auditTrail.hash })
+    .from(auditTrail)
+    .orderBy(desc(auditTrail.id))
+    .limit(1);
+
   const now = Date.now();
-  const payload = JSON.stringify({ ...entry, createdAt: now, previousHash: lastAuditHash });
+  const payload = JSON.stringify({
+    ...entry,
+    createdAt: now,
+    previousHash: previous?.hash ?? ZERO_AUDIT_HASH,
+  });
   const hash = createHash("sha256").update(payload).digest("hex");
-  lastAuditHash = hash;
-  await db.insert(auditTrail).values({
+  await tx.insert(auditTrail).values({
     caseId: entry.caseId ?? null,
     userId: entry.userId ?? null,
     action: entry.action,
@@ -384,6 +400,10 @@ export async function logAudit(entry: {
     createdAt: now,
   });
   return hash;
+}
+
+export async function logAudit(entry: AuditEntryInput) {
+  return db.transaction(async (tx: any) => insertSerializedAuditEntry(tx, entry));
 }
 
 // ─── Corpus Snapshots (Gate 6) ───
@@ -2864,8 +2884,6 @@ export async function createAndSupersedeDocumentAtomic(
   userId: number,
   reason: string,
 ): Promise<number> {
-  let committedAuditHash: string | null = null;
-
   const replacementDocumentId = await db.transaction(async (tx: any) => {
     const [original] = await tx.select()
       .from(documents)
@@ -2949,7 +2967,6 @@ export async function createAndSupersedeDocumentAtomic(
       resolutionReason: reason,
     }).where(eq(documents.id, originalDocumentId));
 
-    const now = Date.now();
     const auditEntry = {
       caseId: original.caseId,
       userId,
@@ -2966,27 +2983,40 @@ export async function createAndSupersedeDocumentAtomic(
         snapshotId: original.snapshotId,
       },
     };
-    const payload = JSON.stringify({
-      ...auditEntry,
-      createdAt: now,
-      previousHash: lastAuditHash,
-    });
-    const auditHash = createHash('sha256').update(payload).digest('hex');
-
-    await tx.insert(auditTrail).values({
-      ...auditEntry,
-      hash: auditHash,
-      createdAt: now,
-    });
-    committedAuditHash = auditHash;
+    await insertSerializedAuditEntry(tx, auditEntry);
 
     return Number(inserted.id);
   });
 
-  // Advance the process-local compatibility chain only after PostgreSQL has
-  // committed. A rollback therefore cannot poison the next audit hash.
-  if (committedAuditHash) lastAuditHash = committedAuditHash;
   return replacementDocumentId;
+}
+
+/**
+ * Reconcile an ambiguous transaction result on a separate pool round-trip.
+ * A connection can disappear after PostgreSQL commits but before the client
+ * receives COMMIT acknowledgement. The caller must not delete evidence bytes
+ * until this query proves that no committed replacement points at them.
+ */
+export async function findCommittedDocumentReplacement(
+  originalDocumentId: number,
+  caseId: number,
+  storageKey: string,
+): Promise<number | null> {
+  const result = await getPool().query(
+    `select replacement.id
+       from public.documents original
+       join public.documents replacement
+         on replacement.id = original.replaced_by_document_id
+      where original.id = $1
+        and original.case_id = $2
+        and original.document_resolution = 'superseded'
+        and replacement.case_id = $2
+        and replacement.s3_key = $3
+        and replacement.document_resolution = 'active'
+      limit 1`,
+    [originalDocumentId, caseId, storageKey],
+  );
+  return result.rows[0]?.id == null ? null : Number(result.rows[0].id);
 }
 
 /**
