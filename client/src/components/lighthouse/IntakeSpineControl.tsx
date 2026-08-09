@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { AlertCircle, CheckCircle2, Loader2, Shield, Upload } from "lucide-react";
 import { toast } from "sonner";
@@ -28,7 +28,6 @@ export function IntakeSpineControl({
   const [, setLocation] = useLocation();
   const [jurisdiction, setJurisdiction] = useState("");
   const [asOf, setAsOf] = useState(currentLocalDate);
-  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
 
   const status = trpc.analyze.getIntakeSpineStatus.useQuery(
     { caseId },
@@ -36,31 +35,9 @@ export function IntakeSpineControl({
   );
   const runIntakeSpine = trpc.analyze.runIntakeSpine.useMutation();
 
-  const liveUploadSessions = useMemo(
-    () =>
-      (status.data ?? []).filter(
-        (session) => session.session_type === "live" && session.entry_channel === "upload",
-      ),
-    [status.data],
+  const selectedSession = (status.data ?? []).find(
+    (session) => session.session_type === "live" && session.entry_channel === "upload",
   );
-
-  useEffect(() => {
-    if (liveUploadSessions.length === 1) {
-      setSelectedSessionId(liveUploadSessions[0].intake_session_id);
-      return;
-    }
-
-    if (
-      selectedSessionId &&
-      !liveUploadSessions.some((session) => session.intake_session_id === selectedSessionId)
-    ) {
-      setSelectedSessionId(null);
-    }
-  }, [liveUploadSessions, selectedSessionId]);
-
-  const selectedSession =
-    liveUploadSessions.find((session) => session.intake_session_id === selectedSessionId) ??
-    (liveUploadSessions.length === 1 ? liveUploadSessions[0] : null);
   const canRun =
     !!selectedSession &&
     selectedSession.registered_source_count > 0 &&
@@ -131,7 +108,7 @@ export function IntakeSpineControl({
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>Intake Spine status is unavailable.</AlertDescription>
           </Alert>
-        ) : liveUploadSessions.length === 0 ? (
+        ) : !selectedSession ? (
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
@@ -144,27 +121,7 @@ export function IntakeSpineControl({
           </Alert>
         ) : (
           <>
-            {liveUploadSessions.length > 1 && (
-              <div className="space-y-1.5">
-                <Label htmlFor={`intake-session-${caseId}`}>Live evidence session</Label>
-                <select
-                  id={`intake-session-${caseId}`}
-                  value={selectedSessionId ?? ""}
-                  onChange={(event) => setSelectedSessionId(event.target.value || null)}
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
-                >
-                  <option value="">Select a session</option>
-                  {liveUploadSessions.map((session) => (
-                    <option key={session.intake_session_id} value={session.intake_session_id}>
-                      {session.source_label || session.intake_session_id} · {session.registered_source_count} source{session.registered_source_count === 1 ? "" : "s"}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {selectedSession && (
-              <div className="grid grid-cols-2 gap-3 rounded-md border border-border/60 bg-muted/20 p-3 text-xs sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 rounded-md border border-border/60 bg-muted/20 p-3 text-xs sm:grid-cols-4">
                 <div>
                   <p className="text-muted-foreground">Registered sources</p>
                   <p className="text-lg font-semibold">{selectedSession.registered_source_count}</p>
@@ -181,8 +138,7 @@ export function IntakeSpineControl({
                   <p className="text-muted-foreground">Sealed receipts</p>
                   <p className="text-lg font-semibold">{selectedSession.sealed_layer_run_count}</p>
                 </div>
-              </div>
-            )}
+            </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
