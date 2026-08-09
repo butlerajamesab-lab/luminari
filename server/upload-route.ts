@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import multer from "multer";
 import { createHash } from "crypto";
-import { isSupabaseStorageKey, storageGet, storagePut } from "./storage";
+import { isSupabaseStorageKey, storageDelete, storageGet, storagePut } from "./storage";
 import { nanoid } from "nanoid";
 import * as dbHelpers from "./db";
 import { createContext, require_resolved_user } from "./_core/context";
@@ -348,28 +348,45 @@ export function registerUploadRoute(app: Express) {
       const s3Key = storedObject.key;
       const s3Url = resolvePersistedDocumentUrl(caseId, storedObject);
 
-      const newDocumentId = await dbHelpers.createDocument({
-        caseId,
-        filename: file.originalname,
-        fileType,
-        mimeType: file.mimetype,
-        fileSize: file.size,
-        s3Key,
-        s3Url,
-        sha256Hash,
-        snapshotId: null,
-      });
-      await dbHelpers.replaceDocument(
-        documentId,
-        Number(newDocumentId),
-        user.id,
-        "Explicit replacement upload registered with the Universal Intake Spine",
-      );
+      let newDocumentId: number;
+      try {
+        newDocumentId = await dbHelpers.createAndSupersedeDocumentAtomic(
+          documentId,
+          {
+            caseId,
+            filename: file.originalname,
+            fileType,
+            mimeType: file.mimetype,
+            fileSize: file.size,
+            s3Key,
+            s3Url,
+            sha256Hash,
+            snapshotId: null,
+          },
+          user.id,
+          "Explicit replacement upload registered with the Universal Intake Spine",
+        );
+      } catch (persistenceError) {
+        try {
+          await storageDelete(s3Key);
+        } catch (cleanupError) {
+          console.error(
+            `[Upload] Replacement persistence and storage compensation both failed for key=${s3Key}:`,
+            cleanupError,
+          );
+          const compensationError = new Error(
+            "Replacement persistence failed and uploaded object cleanup also failed",
+          ) as Error & { cause?: unknown };
+          compensationError.cause = persistenceError;
+          throw compensationError;
+        }
+        throw persistenceError;
+      }
 
       res.json({
         success: true,
         originalDocumentId: documentId,
-        newDocumentId: Number(newDocumentId),
+        newDocumentId,
         filename: file.originalname,
         sha256Hash,
         message: `Replaced document #${documentId} ("${originalDoc.filename}") — source registered for explicit Intake Spine execution`,
