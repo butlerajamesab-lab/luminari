@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { AlertCircle, CheckCircle2, Loader2, Shield, Upload } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+  RefreshCw,
+  Shield,
+  Upload,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { trpc } from "@/lib/trpc";
@@ -8,7 +15,13 @@ import { cn } from "@/lib/utils";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -36,7 +49,8 @@ export function IntakeSpineControl({
   const runIntakeSpine = trpc.analyze.runIntakeSpine.useMutation();
 
   const selectedSession = (status.data ?? []).find(
-    (session) => session.session_type === "live" && session.entry_channel === "upload",
+    (session) =>
+      session.session_type === "live" && session.entry_channel === "upload",
   );
   const canRun =
     !!selectedSession &&
@@ -48,11 +62,15 @@ export function IntakeSpineControl({
 
   const handleRun = async () => {
     if (!selectedSession || selectedSession.registered_source_count === 0) {
-      toast.error("Register at least one source before Intake Spine execution.");
+      toast.error(
+        "Register at least one source before Intake Spine execution.",
+      );
       return;
     }
     if (selectedSession.blocked_source_count > 0) {
-      toast.error("Resolve blocked source integrity before Intake Spine execution.");
+      toast.error(
+        "Resolve blocked source integrity before Intake Spine execution.",
+      );
       return;
     }
     if (!jurisdiction.trim()) {
@@ -81,19 +99,27 @@ export function IntakeSpineControl({
   };
 
   return (
-    <Card id={`intake-spine-control-${caseId}`} className={cn("border-primary/30", className)}>
+    <Card
+      id={`intake-spine-control-${caseId}`}
+      className={cn("border-primary/30", className)}
+    >
       <CardHeader className="pb-3">
         <div className="flex flex-wrap items-center gap-2">
           <CardTitle className="flex items-center gap-2 text-base">
             <Shield className="h-5 w-5 text-primary" />
             Universal Intake Spine
           </CardTitle>
-          <Badge variant="outline" className="border-primary/30 text-primary text-[10px]">
+          <Badge
+            variant="outline"
+            className="border-primary/30 text-primary text-[10px]"
+          >
             deterministic · governed
           </Badge>
         </div>
         <CardDescription>
-          Uploaded bytes are registered first. Preservation verification and reconstruction run together only when you explicitly start the governed execution with declared jurisdiction and rule-date inputs.
+          Uploaded bytes are registered first. Preservation verification and
+          reconstruction run together only when you explicitly start the
+          governed execution with declared jurisdiction and rule-date inputs.
         </CardDescription>
       </CardHeader>
 
@@ -106,14 +132,45 @@ export function IntakeSpineControl({
         ) : status.error ? (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>Intake Spine status is unavailable.</AlertDescription>
+            <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
+              <span>
+                Canonical Intake Spine status could not be read. No evidence or
+                execution state was changed.
+                <span className="ml-1 font-mono text-[10px]">
+                  INTAKE_STATUS_READ
+                </span>
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                disabled={status.isFetching}
+                onClick={() => void status.refetch()}
+              >
+                <RefreshCw
+                  className={cn(
+                    "h-3.5 w-3.5",
+                    status.isFetching && "animate-spin",
+                  )}
+                />
+                Retry Status
+              </Button>
+            </AlertDescription>
           </Alert>
         ) : !selectedSession ? (
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
-              <span>No live upload-backed Intake Spine session is registered for this case.</span>
-              <Button variant="outline" size="sm" className="gap-2" onClick={() => setLocation("/upload")}>
+              <span>
+                No live upload-backed Intake Spine session is registered for
+                this case.
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={() => setLocation("/upload")}
+              >
                 <Upload className="h-3.5 w-3.5" />
                 Upload Evidence
               </Button>
@@ -122,27 +179,38 @@ export function IntakeSpineControl({
         ) : (
           <>
             <div className="grid grid-cols-2 gap-3 rounded-md border border-border/60 bg-muted/20 p-3 text-xs sm:grid-cols-4">
-                <div>
-                  <p className="text-muted-foreground">Registered sources</p>
-                  <p className="text-lg font-semibold">{selectedSession.registered_source_count}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Preserved sources</p>
-                  <p className="text-lg font-semibold">{selectedSession.preserved_source_count}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Governed layers</p>
-                  <p className="text-lg font-semibold">{selectedSession.sealed_layer_name_count}/{selectedSession.required_layer_count}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Sealed receipts</p>
-                  <p className="text-lg font-semibold">{selectedSession.sealed_layer_run_count}</p>
-                </div>
+              <div>
+                <p className="text-muted-foreground">Registered sources</p>
+                <p className="text-lg font-semibold">
+                  {selectedSession.registered_source_count}
+                </p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Preserved sources</p>
+                <p className="text-lg font-semibold">
+                  {selectedSession.preserved_source_count}
+                </p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Governed layers</p>
+                <p className="text-lg font-semibold">
+                  {selectedSession.sealed_layer_name_count}/
+                  {selectedSession.required_layer_count}
+                </p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Sealed receipts</p>
+                <p className="text-lg font-semibold">
+                  {selectedSession.sealed_layer_run_count}
+                </p>
+              </div>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor={`intake-jurisdiction-${caseId}`}>Declared jurisdiction</Label>
+                <Label htmlFor={`intake-jurisdiction-${caseId}`}>
+                  Declared jurisdiction
+                </Label>
                 <Input
                   id={`intake-jurisdiction-${caseId}`}
                   value={jurisdiction}
@@ -150,21 +218,31 @@ export function IntakeSpineControl({
                   placeholder="e.g. WA, Federal, Tribal jurisdiction"
                   autoComplete="off"
                 />
-                <p className="text-[10px] text-muted-foreground">Required input; Lighthouse does not infer it.</p>
+                <p className="text-[10px] text-muted-foreground">
+                  Required input; Lighthouse does not infer it.
+                </p>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor={`intake-as-of-${caseId}`}>Rule as-of date</Label>
+                <Label htmlFor={`intake-as-of-${caseId}`}>
+                  Rule as-of date
+                </Label>
                 <Input
                   id={`intake-as-of-${caseId}`}
                   type="date"
                   value={asOf}
                   onChange={(event) => setAsOf(event.target.value)}
                 />
-                <p className="text-[10px] text-muted-foreground">Visible execution boundary for versioned rules.</p>
+                <p className="text-[10px] text-muted-foreground">
+                  Visible execution boundary for versioned rules.
+                </p>
               </div>
             </div>
 
-            <Button className="w-full gap-2" disabled={!canRun} onClick={handleRun}>
+            <Button
+              className="w-full gap-2"
+              disabled={!canRun}
+              onClick={handleRun}
+            >
               {runIntakeSpine.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : selectedSession?.execution_complete ? (
@@ -172,13 +250,19 @@ export function IntakeSpineControl({
               ) : (
                 <Shield className="h-4 w-4" />
               )}
-              {runIntakeSpine.isPending ? "Running deterministic Intake Spine…" : "Run Universal Intake Spine"}
+              {runIntakeSpine.isPending
+                ? "Running deterministic Intake Spine…"
+                : "Run Universal Intake Spine"}
             </Button>
 
             {selectedSession?.latest_receipt_hash && (
               <div className="rounded-md border border-border/50 bg-muted/20 p-3">
-                <p className="mb-1 text-[10px] text-muted-foreground">Latest sealed receipt</p>
-                <code className="block break-all text-[10px]">{selectedSession.latest_receipt_hash}</code>
+                <p className="mb-1 text-[10px] text-muted-foreground">
+                  Latest sealed receipt
+                </p>
+                <code className="block break-all text-[10px]">
+                  {selectedSession.latest_receipt_hash}
+                </code>
               </div>
             )}
           </>
