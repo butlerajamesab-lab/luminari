@@ -8,6 +8,7 @@ const state = vi.hoisted(() => ({
   create_context: vi.fn(),
   require_resolved_user: vi.fn(),
   storage_put: vi.fn(),
+  storage_delete: vi.fn(),
   storage_get: vi.fn(),
   is_supabase_storage_key: vi.fn(),
   create_upload_session: vi.fn(),
@@ -18,6 +19,7 @@ const state = vi.hoisted(() => ({
   log_audit: vi.fn(),
   log_pipeline_event_by_case: vi.fn(),
   check_replacement_eligibility: vi.fn(),
+  create_and_supersede_document_atomic: vi.fn(),
 }));
 
 vi.mock("./_core/context", () => ({
@@ -27,6 +29,7 @@ vi.mock("./_core/context", () => ({
 
 vi.mock("./storage", () => ({
   storagePut: state.storage_put,
+  storageDelete: state.storage_delete,
   storageGet: state.storage_get,
   isSupabaseStorageKey: state.is_supabase_storage_key,
 }));
@@ -47,6 +50,7 @@ vi.mock("./db", () => ({
   logAudit: state.log_audit,
   logPipelineEventByCase: state.log_pipeline_event_by_case,
   checkReplacementEligibility: state.check_replacement_eligibility,
+  createAndSupersedeDocumentAtomic: state.create_and_supersede_document_atomic,
 }));
 
 import { registerUploadRoute } from "./upload-route";
@@ -59,6 +63,18 @@ async function post_file(contents: string, filename = "proof.txt") {
   form.set("caseId", "44");
   form.append("files", new Blob([contents], { type: "text/plain" }), filename);
   return fetch(`${base_url}/api/upload`, {
+    method: "POST",
+    body: form,
+    headers: {
+      "x-lighthouse-supabase-session": "test-supabase-session",
+    },
+  });
+}
+
+async function post_replacement(contents: string, document_id = 812, filename = "replacement.txt") {
+  const form = new FormData();
+  form.append("file", new Blob([contents], { type: "text/plain" }), filename);
+  return fetch(`${base_url}/api/upload/replace/${document_id}`, {
     method: "POST",
     body: form,
     headers: {
@@ -113,8 +129,20 @@ beforeEach(() => {
     key: "supabase:case-documents/cases/44/proof.txt",
     url: "https://storage.invalid/private-object",
   });
+  state.storage_delete.mockResolvedValue(undefined);
   state.storage_get.mockResolvedValue({ url: "https://storage.invalid/signed-object" });
   state.is_supabase_storage_key.mockReturnValue(true);
+  state.check_replacement_eligibility.mockResolvedValue({
+    eligible: true,
+    document: {
+      id: 812,
+      caseId: 44,
+      filename: "original.txt",
+      documentResolution: "active",
+      snapshotId: null,
+    },
+  });
+  state.create_and_supersede_document_atomic.mockResolvedValue(9002);
 });
 
 describe("authenticated multipart document upload", () => {
@@ -276,5 +304,114 @@ describe("authenticated multipart document upload", () => {
     expect(state.log_audit).not.toHaveBeenCalled();
     expect(state.increment_upload_session_counter).toHaveBeenCalledWith(501, "duplicateFiles");
     expect(state.finalize_upload_session).toHaveBeenCalledWith(501);
+  });
+});
+
+describe("atomic replacement upload", () => {
+  it("rejects immutable originals before writing replacement bytes", async () => {
+    state.check_replacement_eligibility.mockResolvedValue({
+      eligible: false,
+      reason: "[GATE_SEALED_MUTATION] Snapshot v1 (ID: 77) is sealed.",
+    });
+
+    const response = await post_replacement("sealed replacement");
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({
+      error: "[GATE_SEALED_MUTATION] Snapshot v1 (ID: 77) is sealed.",
+    });
+    expect(state.storage_put).not.toHaveBeenCalled();
+    expect(state.create_and_supersede_document_atomic).not.toHaveBeenCalled();
+  });
+
+  it("creates and supersedes through one persistence transaction", async () => {
+    const contents = "atomic replacement payload";
+    const expected_hash = createHash("sha256").update(contents).digest("hex");
+    state.select_queue.push(
+      [{ id: 44, userId: 9 }],
+      [],
+    );
+
+    const response = await post_replacement(contents);
+    const body = await response.json() as Record<string, unknown>;
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      success: true,
+      originalDocumentId: 812,
+      newDocumentId: 9002,
+      filename: "replacement.txt",
+      sha256Hash: expected_hash,
+    });
+    expect(state.create_and_supersede_document_atomic).toHaveBeenCalledWith(
+      812,
+      expect.objectContaining({
+        caseId: 44,
+        filename: "replacement.txt",
+        sha256Hash: expected_hash,
+        s3Key: "supabase:case-documents/cases/44/proof.txt",
+        snapshotId: null,
+      }),
+      9,
+      "Explicit replacement upload registered with the Universal Intake Spine",
+    );
+    expect(state.storage_delete).not.toHaveBeenCalled();
+  });
+
+  it("removes uploaded bytes when the database transaction rolls back", async () => {
+    state.select_queue.push(
+      [{ id: 44, userId: 9 }],
+      [],
+    );
+    state.create_and_supersede_document_atomic.mockRejectedValue(
+      new Error("supersession transaction rejected"),
+    );
+
+    const response = await post_replacement("rollback replacement");
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({
+      error: "supersession transaction rejected",
+    });
+    expect(state.storage_delete).toHaveBeenCalledWith(
+      "supabase:case-documents/cases/44/proof.txt",
+    );
+    expect(state.create_document).not.toHaveBeenCalled();
+  });
+
+  it("does not start persistence or compensation when storage upload fails", async () => {
+    state.select_queue.push(
+      [{ id: 44, userId: 9 }],
+      [],
+    );
+    state.storage_put.mockRejectedValue(new Error("storage upload unavailable"));
+
+    const response = await post_replacement("storage failure replacement");
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({
+      error: "storage upload unavailable",
+    });
+    expect(state.create_and_supersede_document_atomic).not.toHaveBeenCalled();
+    expect(state.storage_delete).not.toHaveBeenCalled();
+  });
+
+  it("reports a failed compensation instead of silently leaving an orphan", async () => {
+    state.select_queue.push(
+      [{ id: 44, userId: 9 }],
+      [],
+    );
+    state.create_and_supersede_document_atomic.mockRejectedValue(
+      new Error("supersession transaction rejected"),
+    );
+    state.storage_delete.mockRejectedValue(new Error("storage unavailable"));
+
+    const response = await post_replacement("cleanup failure replacement");
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({
+      error: "Replacement persistence failed and uploaded object cleanup also failed",
+    });
+    expect(state.storage_delete).toHaveBeenCalledTimes(1);
   });
 });
