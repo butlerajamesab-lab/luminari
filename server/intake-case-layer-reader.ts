@@ -49,6 +49,8 @@ export async function read_canonical_case_layer_outputs<T>(
          join public.case_intake_links cil on cil.case_uuid = cib.case_uuid
          join public.intake_sessions s on s.intake_session_id = cil.intake_session_id
         where cib.legacy_case_id = $1
+          and cil.is_primary = true
+          and cil.link_type = 'primary_projection'
           and s.session_type = 'live'
           and s.entry_channel = 'upload'
           and s.completion_state = 'governed_execution_complete'
