@@ -136,6 +136,7 @@ export type intake_spine_orchestration_result = {
 
 type session_row = {
   intake_session_id: string;
+  session_row_version: string;
   owner_user_id: number | null;
   session_type: string;
   entry_channel: string;
@@ -171,6 +172,46 @@ type persisted_dependency = {
   output_hash: string;
 };
 
+export async function finalize_intake_spine_session_if_unchanged(
+  pool: Pick<ReturnType<typeof getPool>, 'query'>,
+  input: {
+    intake_session_id: string;
+    session_row_version: string;
+    jurisdiction: string;
+    as_of: string;
+    required_layer_count: number;
+    sealed_receipt_count: number;
+  },
+): Promise<void> {
+  const completion_result = await pool.query(
+    `update public.intake_sessions
+        set completion_state = 'governed_execution_complete',
+            metadata = coalesce(metadata, '{}'::jsonb) || jsonb_build_object(
+              'last_governed_execution', jsonb_build_object(
+                'jurisdiction', $2::text,
+                'rule_as_of', $3::text,
+                'required_layer_count', $4::integer,
+                'sealed_receipt_count', $5::integer
+              )
+            ),
+            updated_at = now()
+      where intake_session_id = $1::uuid
+        and xmin::text = $6::text
+      returning intake_session_id`,
+    [
+      input.intake_session_id,
+      input.jurisdiction,
+      input.as_of,
+      input.required_layer_count,
+      input.sealed_receipt_count,
+      input.session_row_version,
+    ],
+  );
+  if (completion_result.rowCount !== 1) {
+    throw new Error('intake_spine_orchestrator_session_changed_during_execution');
+  }
+}
+
 /**
  * Execute a real Universal Intake Spine session against preserved source bytes.
  *
@@ -192,6 +233,7 @@ export async function execute_intake_spine_session(
   const session_result = await pool.query<session_row>(
     `select
        s.intake_session_id::text,
+       s.xmin::text as session_row_version,
        s.owner_user_id,
        s.session_type,
        s.entry_channel,
@@ -204,12 +246,16 @@ export async function execute_intake_spine_session(
        cil.case_uuid::text,
        cib.legacy_case_id
      from public.intake_sessions s
-     left join public.case_intake_links cil
+     join public.case_intake_links cil
        on cil.intake_session_id = s.intake_session_id
+      and cil.is_primary = true
+      and cil.link_type = 'primary_projection'
      left join public.case_identity_bridge cib
        on cib.case_uuid = cil.case_uuid
      where s.intake_session_id = $1::uuid
-     order by cil.is_primary desc, cil.created_at asc
+       and s.session_type = 'live'
+       and s.entry_channel = 'upload'
+     order by cil.created_at asc
      limit 1`,
     [request.intake_session_id],
   );
@@ -537,21 +583,14 @@ export async function execute_intake_spine_session(
     dependency_key: 'action_paths',
   });
 
-  await pool.query(
-    `update public.intake_sessions
-        set completion_state = 'governed_execution_complete',
-            metadata = coalesce(metadata, '{}'::jsonb) || jsonb_build_object(
-              'last_governed_execution', jsonb_build_object(
-                'jurisdiction', $2::text,
-                'rule_as_of', $3::text,
-                'required_layer_count', $4::integer,
-                'sealed_receipt_count', $5::integer
-              )
-            ),
-            updated_at = now()
-      where intake_session_id = $1::uuid`,
-    [session.intake_session_id, jurisdiction, as_of, INTAKE_SPINE_LAYER_NAMES.length, receipts.length],
-  );
+  await finalize_intake_spine_session_if_unchanged(pool, {
+    intake_session_id: session.intake_session_id,
+    session_row_version: session.session_row_version,
+    jurisdiction,
+    as_of,
+    required_layer_count: INTAKE_SPINE_LAYER_NAMES.length,
+    sealed_receipt_count: receipts.length,
+  });
 
   return {
     intake_session_id: session.intake_session_id,
