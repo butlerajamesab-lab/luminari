@@ -15,6 +15,7 @@ export {
 } from "./case-contract-compat";
 export { getCaseStats } from "./case-stats-intake-compat";
 export { getCaseTimelineData } from "./case-timeline-intake-compat";
+export { addChatMessage, getChatHistory } from "./chat-runtime-compat";
 export {
   getSnapshot,
   getOpenSnapshot,
@@ -36,6 +37,8 @@ export {
   getEntity,
   verifyEntityOwnership,
   getEntityRolesForEntity,
+  getGovernedEntityRolesForDocument,
+  getGovernedDocumentProjection,
   listRelationships,
   getRelationshipsForEntity,
   listRelationshipsEnriched,

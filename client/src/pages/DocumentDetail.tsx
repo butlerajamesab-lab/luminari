@@ -27,7 +27,6 @@ import ReadAloud from "@/components/ReadAloud";
 import PageReadAloud from "@/components/PageReadAloud";
 import { toast } from "sonner";
 import { useState, useCallback, useMemo } from "react";
-import { useCase } from "@/contexts/CaseContext";
 import { usePlainText } from "@/hooks/usePlainText";
 import { getFromParam } from "@/lib/buildFromParam";
 import { formatQuoteForReadAloud, formatClaimForReadAloud, formatDocumentPurposeForReadAloud } from "@/lib/forensicReadAloud";
@@ -44,7 +43,7 @@ function QuotesTab({ docId }: { docId: number }) {
     return (
       <Card className="border-dashed">
         <CardContent className="p-8 text-center">
-          <p className="text-sm text-muted-foreground">No quotes extracted yet</p>
+          <p className="text-sm text-muted-foreground">No document-level quote records are available.</p>
         </CardContent>
       </Card>
     );
@@ -89,7 +88,7 @@ function ClaimsTab({ docId }: { docId: number }) {
     return (
       <Card className="border-dashed">
         <CardContent className="p-8 text-center">
-          <p className="text-sm text-muted-foreground">No claims extracted yet</p>
+          <p className="text-sm text-muted-foreground">No document-level claim records are available.</p>
         </CardContent>
       </Card>
     );
@@ -115,7 +114,7 @@ function ClaimsTab({ docId }: { docId: number }) {
   );
 }
 
-function EntitiesTab({ docId }: { docId: number }) {
+function EntitiesTab({ docId, governed }: { docId: number; governed: boolean }) {
   const { data: entityRoles, isLoading } = trpc.documents.entityRoles.useQuery({ documentId: docId });
   const [, setLocation] = useLocation();
 
@@ -125,7 +124,11 @@ function EntitiesTab({ docId }: { docId: number }) {
     return (
       <Card className="border-dashed">
         <CardContent className="p-8 text-center">
-          <p className="text-sm text-muted-foreground">No entities identified yet</p>
+          <p className="text-sm text-muted-foreground">
+            {governed
+              ? "The governed entity projection completed with zero source mentions for this document."
+              : "No document-level entity records are available."}
+          </p>
         </CardContent>
       </Card>
     );
@@ -138,7 +141,12 @@ function EntitiesTab({ docId }: { docId: number }) {
           <CardContent className="p-3 flex items-center justify-between">
             <div>
               <p className="text-sm font-medium">{er.entityName ?? `Entity ${er.entityId}`}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{er.entityType && <span className="capitalize">{er.entityType} · </span>}Role: {er.role}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {er.entityType && <span className="capitalize">{er.entityType} · </span>}
+                {(er as any).projection_source === "universal_intake_spine"
+                  ? `Governed source mention at offset ${(er as any).canonical_span_offset}`
+                  : `Role: ${er.role}`}
+              </p>
             </div>
             <Button variant="ghost" size="sm">View</Button>
           </CardContent>
@@ -155,7 +163,6 @@ export default function DocumentDetail() {
   const [activeTab, setActiveTab] = useState("text");
   const utils = trpc.useUtils();
   const plainify = usePlainText();
-  const { currentCaseId } = useCase();
 
   const [resolutionModal, setResolutionModal] = useState<{ type: 'corrupted' | 'excluded' | 'uploadReplace' } | null>(null);
   const [resolutionReason, setResolutionReason] = useState("");
@@ -232,6 +239,9 @@ export default function DocumentDetail() {
   if (!doc) return <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4"><p className="text-muted-foreground">Document not found</p><Button variant="outline" onClick={handleBack}>Back to Documents</Button></div>;
 
   const statusColor = doc.status === "ready" ? "bg-emerald-400" : doc.status === "analyzing" ? "bg-amber-400" : doc.status === "extracting" ? "bg-blue-400" : doc.status === "error" ? "bg-red-400" : "bg-muted-foreground";
+  const governedDocumentProcessed = doc.governedProjection.projection_state === "canonical_projection"
+    && doc.governedProjection.source_bound
+    && doc.governedProjection.processing_state === "governed_execution_complete";
   const openIntakeSpine = () => setLocation(caseWorkspacePath(doc.caseId));
 
   return (
@@ -244,6 +254,7 @@ export default function DocumentDetail() {
             <div className="flex items-center gap-1.5"><div className={`h-2 w-2 rounded-full ${statusColor}`} /><span className="text-[10px] text-muted-foreground capitalize">{doc.status}</span></div>
             <span className="text-[10px] text-muted-foreground font-mono">{doc.sha256Hash.slice(0, 16)}...</span>
             {doc.documentType && <Badge variant="outline" className="text-[10px]">{doc.documentType}</Badge>}
+            {governedDocumentProcessed && <Badge variant="outline" className="text-[10px] border-cyan-500/30 text-cyan-300">Governed processing complete</Badge>}
             {(doc as any).documentResolution && (doc as any).documentResolution !== 'active' && (
               <Badge className={`text-[10px] ${(doc as any).documentResolution === 'superseded' ? 'bg-blue-500/20 text-blue-300 border-blue-500/30' : (doc as any).documentResolution === 'corrupted' ? 'bg-red-500/20 text-red-300 border-red-500/30' : 'bg-amber-500/20 text-amber-300 border-amber-500/30'}`}>{(doc as any).documentResolution}</Badge>
             )}
@@ -261,7 +272,7 @@ export default function DocumentDetail() {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={openIntakeSpine}><Shield className="h-3.5 w-3.5" />Run Intake Spine</Button>
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={openIntakeSpine}><Shield className="h-3.5 w-3.5" />Review Spine Receipts</Button>
           {doc.s3Url && <Button variant="outline" size="sm" className="gap-1.5" onClick={handleDownload}><Download className="h-3.5 w-3.5" />Download</Button>}
           {doc.s3Url && <Button variant="outline" size="sm" className="gap-1.5" asChild><a href={doc.s3Url} target="_blank" rel="noopener noreferrer"><ExternalLink className="h-3.5 w-3.5" />Source</a></Button>}
         </div>
@@ -302,12 +313,30 @@ export default function DocumentDetail() {
           {doc.textContent ? (
             <Card><CardHeader className="pb-2 flex flex-row items-center justify-between"><CardTitle className="text-sm font-medium text-muted-foreground">Extracted Text</CardTitle><ReadAloud text={doc.textContent} label="Read Full Text" /></CardHeader><CardContent className="p-4 pt-0"><AnnotatedText text={doc.textContent} entities={docEntities} quotes={docQuotes} correlations={docCorrelations} onEntityClick={handleEntityClick} onQuoteClick={handleQuoteClick} onCorrelationClick={handleCorrelationClick} /></CardContent></Card>
           ) : (
-            <Card className="border-dashed"><CardContent className="p-8 text-center"><p className="text-sm text-muted-foreground">{doc.status === "extracting" ? <span className="flex items-center justify-center gap-2"><Loader2 className="h-4 w-4 animate-spin" />Text extraction in progress...</span> : doc.status === "analyzing" ? <span className="flex items-center justify-center gap-2"><Loader2 className="h-4 w-4 animate-spin" />Analysis in progress...</span> : "No text content extracted"}</p></CardContent></Card>
+            <Card className="border-dashed">
+              <CardContent className="p-8 text-center">
+                {governedDocumentProcessed ? (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Governed processing completed</p>
+                    <p className="text-sm text-muted-foreground">
+                      This engine version retained receipt-bound projection records, including source offsets where present, but not a full-text document projection. No text has been reconstructed or invented here.
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {doc.governedProjection.entity_count} entities across {doc.governedProjection.mention_count} source mentions
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    {doc.status === "extracting" ? <span className="flex items-center justify-center gap-2"><Loader2 className="h-4 w-4 animate-spin" />Text extraction in progress...</span> : doc.status === "analyzing" ? <span className="flex items-center justify-center gap-2"><Loader2 className="h-4 w-4 animate-spin" />Analysis in progress...</span> : "No full-text document projection is available."}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
           )}
         </TabsContent>
         <TabsContent value="quotes" className="mt-4">{activeTab === "quotes" && <QuotesTab docId={docId} />}</TabsContent>
         <TabsContent value="claims" className="mt-4">{activeTab === "claims" && <ClaimsTab docId={docId} />}</TabsContent>
-        <TabsContent value="entities" className="mt-4">{activeTab === "entities" && <EntitiesTab docId={docId} />}</TabsContent>
+        <TabsContent value="entities" className="mt-4">{activeTab === "entities" && <EntitiesTab docId={docId} governed={governedDocumentProcessed} />}</TabsContent>
       </Tabs>
 
       <Dialog open={resolutionModal?.type === 'corrupted'} onOpenChange={(open) => { if (!open) setResolutionModal(null); }}>

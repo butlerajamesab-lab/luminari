@@ -28,6 +28,7 @@ import { formExtractionRouter } from "./form-extraction-router";
 import { phoenixRouter } from "./routers/phoenix";
 import { sunamRouter } from "./routers/sunam";
 import { analyzeRouter } from "./routers/analyze";
+import { read_canonical_case_layer_outputs } from "./intake-case-layer-reader";
 import { adminMaintenanceRouter } from "./routers/admin-maintenance";
 import { publicAdminMaintenanceRouter } from "./routers/public-admin-maintenance";
 import { streamRegisterRouter } from "./routers/stream-register";
@@ -600,7 +601,8 @@ const documentsRouter = router({
     .input(z.object({ id: z.number() }))
     .query(async ({ ctx, input }) => {
       const doc = await db_helpers.verifyDocumentOwnership(input.id, ctx.user.id);
-      return doc;
+      const governedProjection = await db_helpers.getGovernedDocumentProjection(doc.caseId, input.id);
+      return { ...doc, governedProjection };
     }),
 
   quotes: protectedProcedure
@@ -620,7 +622,9 @@ const documentsRouter = router({
   entityRoles: protectedProcedure
     .input(z.object({ documentId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await db_helpers.verifyDocumentOwnership(input.documentId, ctx.user.id);
+      const doc = await db_helpers.verifyDocumentOwnership(input.documentId, ctx.user.id);
+      const governed = await db_helpers.getGovernedEntityRolesForDocument(doc.caseId, input.documentId);
+      if (governed !== null) return governed;
       return db_helpers.getEntityRolesForDocument(input.documentId);
     }),
 
@@ -923,19 +927,30 @@ const chatRouter = router({
       // Deterministic structured query interface
       const stats = await db_helpers.getCaseStats(input.caseId);
       const recentDocs = await db_helpers.listDocuments(input.caseId);
-      const recentFindings = await db_helpers.listFindings(input.caseId);
+      const verificationProjection = await read_canonical_case_layer_outputs<Array<{
+        fact_key: string;
+        verification_state: string;
+        source_refs?: unknown[];
+      }>>(input.caseId, "verification_gate");
+      const verificationRecords = verificationProjection.outputs.flatMap(output => output.data);
+      const verificationDependencyCount = verificationProjection.outputs.reduce(
+        (total, output) => total + output.unresolved_dependencies.length,
+        0,
+      );
 
       const msg = input.message.toLowerCase();
       let assistantContent: string;
 
       if (msg.includes("finding") || msg.includes("what did you find") || msg.includes("what's wrong") || msg.includes("issues")) {
-        if (recentFindings.length === 0) {
-          assistantContent = "No findings have been generated yet. Upload your documents and run the analysis to identify key issues.";
+        if (verificationProjection.state !== "canonical_projection") {
+          assistantContent = "No eligible sealed verification projection is available for this case. The workspace cannot report governed fact verification from an unsealed or missing result.";
+        } else if (verificationRecords.length === 0) {
+          assistantContent = `The sealed verification projection completed with zero fact records.${verificationDependencyCount > 0 ? ` It retained ${verificationDependencyCount} unresolved dependenc${verificationDependencyCount === 1 ? "y" : "ies"}.` : ""}`;
         } else {
-          const findingList = recentFindings.slice(0, 10).map((f: any, i: number) =>
-            `${i + 1}. ${f.title}: ${f.description}`
+          const findingList = verificationRecords.slice(0, 10).map((record, i) =>
+            `${i + 1}. ${record.fact_key} — ${record.verification_state} (${record.source_refs?.length ?? 0} source reference${record.source_refs?.length === 1 ? "" : "s"})`
           ).join("\n");
-          assistantContent = `Your case has ${recentFindings.length} finding${recentFindings.length === 1 ? "" : "s"}:\n\n${findingList}`;
+          assistantContent = `The sealed verification projection contains ${verificationRecords.length} fact record${verificationRecords.length === 1 ? "" : "s"}:\n\n${findingList}`;
         }
       } else if (msg.includes("document") || msg.includes("evidence") || msg.includes("file") || msg.includes("upload")) {
         if (recentDocs.length === 0) {
@@ -947,11 +962,11 @@ const chatRouter = router({
           assistantContent = `Your case has ${recentDocs.length} document${recentDocs.length === 1 ? "" : "s"}:\n\n${docList}`;
         }
       } else if (msg.includes("next step") || msg.includes("what should i do") || msg.includes("action") || msg.includes("what now")) {
-        assistantContent = "To see your recommended next steps, go to the Action Path section of your case. It will show you concrete actions based on your findings, prioritized by urgency.";
+        assistantContent = "Open Action Paths to review any governed procedural candidates. If the required claim and authority inputs are unresolved, the workspace preserves that gap instead of inventing or ranking a next step.";
       } else if (msg.includes("timeline") || msg.includes("when") || msg.includes("date") || msg.includes("chronolog")) {
-        assistantContent = "Your case timeline is available in the Timeline view. It shows all events extracted from your documents in chronological order.";
+        assistantContent = "Open Timeline to review any governed chronology events currently projected from the sealed Intake Spine output.";
       } else if (msg.includes("status") || msg.includes("summary") || msg.includes("overview")) {
-        assistantContent = `Case overview: ${(stats as any).documentCount || 0} documents uploaded, ${(stats as any).findingCount || 0} findings identified, ${(stats as any).entityCount || 0} entities detected.`;
+        assistantContent = `Case overview: ${(stats as any).documents || 0} source-bound documents, ${(stats as any).findings || 0} sealed verification records, ${(stats as any).entities || 0} governed entities.`;
       } else {
         assistantContent = "I can help you understand your case data. Try asking about:\n\n\u2022 Your findings (\"What did you find?\")\n\u2022 Your documents (\"What evidence do I have?\")\n\u2022 Next steps (\"What should I do?\")\n\u2022 Timeline (\"When did things happen?\")\n\u2022 Case status (\"Give me an overview\")";
       }
@@ -2556,7 +2571,7 @@ const caseNarrativeRouter = router({
   generate: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      await db_helpers.verifyCaseWriteAccess(input.caseId, ctx.user.id);
       const { generateNarrative } = await import("./narrative-generator");
       return generateNarrative(input.caseId, ctx.user.id);
     }),

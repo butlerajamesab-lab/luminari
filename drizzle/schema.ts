@@ -208,7 +208,7 @@ export type CollaboratorAccessLevel = typeof COLLABORATOR_ACCESS_LEVELS[number];
 
 export type NarrativeSourceEntry = {
   type: "event" | "quote" | "claim" | "finding" | "foia_request";
-  id: number;
+  id: number | string;
   label: string;
   documentId?: number;
   documentName?: string;
@@ -10474,4 +10474,3 @@ export const foiaTrackerRequests = pgTable("foia_tracker_requests", {
 
 export type FoiaTrackerRequest = typeof foiaTrackerRequests.$inferSelect;
 export type InsertFoiaTrackerRequest = typeof foiaTrackerRequests.$inferInsert;
-

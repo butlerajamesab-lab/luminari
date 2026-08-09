@@ -1,10 +1,9 @@
 /**
  * Narrative Generator — Session 6
  *
- * Assembles a chronological Statement of Facts from structured evidence
- * (events, quotes, claims, findings, FOIA requests) using deterministic
- * chronological assembly. Each paragraph in the output is anchored to
- * source evidence via a sourceMap.
+ * Assembles a chronological Statement of Facts from the receipt-bound
+ * governed chronology projection using deterministic chronological assembly.
+ * Each paragraph is anchored to canonical source identity via a sourceMap.
  *
  * Architecture:
  * T1. Timeline assembly: getCaseTimelineData(caseId) → TimelineItem[]
@@ -18,7 +17,7 @@
  * - No LLM calls — purely mechanical chronological assembly
  * - Source map must reference actual evidence IDs
  * - Undated items grouped separately at end
- * - Staleness detection via timelineItemCount comparison
+ * - Staleness detection via timeline count plus sealed output/receipt hashes
  */
 
 import { getCaseTimelineData, upsertCaseNarrative, getCaseNarrative, parseDateToSortKey, listSignalFlags, getCaseInternal } from "./db";
@@ -28,6 +27,7 @@ import { db } from "./db";
 import { cases } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 import type { LensContext, ActivatedLens } from "./lens-engine";
+import { getCaseChronologyProjectionState } from "./case-runtime-chronology-compat";
 
 // ─── Types ───
 
@@ -50,6 +50,67 @@ export interface NarrativeGenerationResult {
 export interface NarrativeParagraph {
   text: string;
   sourceRefs: number[]; // indices into the timeline items array
+}
+
+export type ChronologyProvenance = {
+  canonical_output_hashes: string[];
+  canonical_receipt_hashes: string[];
+};
+
+function normalized_hashes(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(value
+    .filter(hash => typeof hash === "string" && /^[0-9a-f]{64}$/.test(hash))
+    .map(String))]
+    .sort();
+}
+
+export function chronologyProvenanceFromItems(items: TimelineItem[]): ChronologyProvenance {
+  const governed = items as Array<TimelineItem & {
+    canonical_output_hashes?: unknown;
+    canonical_receipt_hashes?: unknown;
+  }>;
+  return {
+    canonical_output_hashes: normalized_hashes(
+      governed.flatMap(item => normalized_hashes(item.canonical_output_hashes)),
+    ),
+    canonical_receipt_hashes: normalized_hashes(
+      governed.flatMap(item => normalized_hashes(item.canonical_receipt_hashes)),
+    ),
+  };
+}
+
+export function chronologyProvenanceFromSourceMap(sourceMap: unknown): ChronologyProvenance {
+  const entries = Array.isArray(sourceMap) ? sourceMap : [];
+  const sources = entries.flatMap(entry =>
+    entry && typeof entry === "object" && Array.isArray((entry as any).sources)
+      ? (entry as any).sources
+      : []
+  );
+  return {
+    canonical_output_hashes: normalized_hashes(
+      sources.flatMap(source => normalized_hashes(source?.canonical_output_hashes)),
+    ),
+    canonical_receipt_hashes: normalized_hashes(
+      sources.flatMap(source => normalized_hashes(source?.canonical_receipt_hashes)),
+    ),
+  };
+}
+
+export function chronologyProvenanceMatches(
+  stored: ChronologyProvenance,
+  current: ChronologyProvenance,
+): boolean {
+  if (
+    stored.canonical_output_hashes.length === 0
+    || stored.canonical_receipt_hashes.length === 0
+    || current.canonical_output_hashes.length === 0
+    || current.canonical_receipt_hashes.length === 0
+  ) {
+    return false;
+  }
+  return JSON.stringify(stored.canonical_output_hashes) === JSON.stringify(current.canonical_output_hashes)
+    && JSON.stringify(stored.canonical_receipt_hashes) === JSON.stringify(current.canonical_receipt_hashes);
 }
 
 // ─── T2. Timeline Grouping ───
@@ -152,7 +213,7 @@ export function buildNarrativePrompt(
  * Each DateGroup becomes one paragraph combining all items in that group.
  * Undated items become a "Background" paragraph.
  */
-function generateParagraphsFromGroups(
+export function generateParagraphsFromGroups(
   groups: DateGroup[],
   items: TimelineItem[],
 ): NarrativeParagraph[] {
@@ -180,9 +241,10 @@ function generateParagraphsFromGroups(
       if (idx >= 0) sourceRefs.push(idx);
 
       // Build sentence for this item
+      const canonical_id = String(item.id);
       const sourcePart = item.documentName
-        ? ` (Source: ${item.documentName}, ${item.type} #${idx})`
-        : ` (${item.type} #${idx})`;
+        ? ` (Source span · ${item.documentName}; governed chronology event ${canonical_id})`
+        : ` (Governed chronology event ${canonical_id})`;
 
       sentences.push(`${item.label}.${sourcePart}`);
     }
@@ -259,6 +321,28 @@ export function buildSourceMap(
           id: item.id,
           label: item.label,
         };
+        const governed_item = item as TimelineItem & {
+          canonical_source_artifact_key?: string | null;
+          canonical_source_span_offset?: number | null;
+          canonical_output_hashes?: unknown;
+          canonical_receipt_hashes?: unknown;
+        };
+        const governed_entry = entry as NarrativeSourceEntry & {
+          canonical_source_artifact_key?: string;
+          canonical_source_span_offset?: number;
+          canonical_output_hashes?: string[];
+          canonical_receipt_hashes?: string[];
+        };
+        if (governed_item.canonical_source_artifact_key) {
+          governed_entry.canonical_source_artifact_key = governed_item.canonical_source_artifact_key;
+        }
+        if (typeof governed_item.canonical_source_span_offset === "number") {
+          governed_entry.canonical_source_span_offset = governed_item.canonical_source_span_offset;
+        }
+        const output_hashes = normalized_hashes(governed_item.canonical_output_hashes);
+        const receipt_hashes = normalized_hashes(governed_item.canonical_receipt_hashes);
+        if (output_hashes.length > 0) governed_entry.canonical_output_hashes = output_hashes;
+        if (receipt_hashes.length > 0) governed_entry.canonical_receipt_hashes = receipt_hashes;
         if (item.documentId != null) entry.documentId = item.documentId;
         if (item.documentName != null) entry.documentName = item.documentName;
         if (item.page != null) entry.page = item.page;
@@ -287,9 +371,12 @@ export async function generateNarrative(
   const items = await getCaseTimelineData(caseId);
 
   if (items.length === 0) {
+    const chronology = await getCaseChronologyProjectionState(caseId);
     return {
       success: false,
-      error: "No evidence found for this case. Upload and analyze documents first.",
+      error: chronology.projection_state === "canonical_projection"
+        ? "The governed chronology projection completed with zero events. No Statement of Facts was generated, and no facts were inferred."
+        : "No eligible sealed governed chronology projection is available. No Statement of Facts was generated, and no facts were inferred.",
     };
   }
 
@@ -340,9 +427,11 @@ export async function checkNarrativeStaleness(caseId: number): Promise<{
   currentItemCount: number;
   narrativeItemCount: number | null;
   narrative: Awaited<ReturnType<typeof getCaseNarrative>>;
+  provenanceChanged: boolean;
 }> {
   const narrative = await getCaseNarrative(caseId);
   const items = await getCaseTimelineData(caseId);
+  const currentProvenance = chronologyProvenanceFromItems(items);
 
   if (!narrative) {
     return {
@@ -350,13 +439,18 @@ export async function checkNarrativeStaleness(caseId: number): Promise<{
       currentItemCount: items.length,
       narrativeItemCount: null,
       narrative: null,
+      provenanceChanged: true,
     };
   }
 
+  const storedProvenance = chronologyProvenanceFromSourceMap(narrative.sourceMap);
+  const provenanceMatches = chronologyProvenanceMatches(storedProvenance, currentProvenance);
+
   return {
-    isStale: items.length !== narrative.timelineItemCount,
+    isStale: items.length !== narrative.timelineItemCount || !provenanceMatches,
     currentItemCount: items.length,
     narrativeItemCount: narrative.timelineItemCount,
     narrative,
+    provenanceChanged: !provenanceMatches,
   };
 }

@@ -27,6 +27,12 @@ function loadStateFile<T>(stateCode: string, suffix: string): T | null {
 import { geocodeAddress, geocodeRegion, getStateCentroid, STATE_CENTROIDS, REGION_CENTROIDS } from "../geocoding";
 import { buildMapLayers, clearMapCaches, invalidateGeocodeLookup, type MapLayersResponse } from "../civic-map";
 import { buildMapIntakeContext, detectStateFromCoordinates, suggestPipelines, findNearbyResources, findNearbySignals, partitionResources } from "../map-intake";
+import {
+  create_live_spotlight_item,
+  delete_live_spotlight_item,
+  list_live_spotlight_items,
+  update_live_spotlight_item,
+} from "../lighthouse-community-live-compat";
 
 /** Haversine distance in km between two lat/lng points */
 function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -118,7 +124,7 @@ const spotlightRouter = router({
   list: publicProcedure
     .input(z.object({ activeOnly: z.boolean().default(true) }).optional())
     .query(async ({ input }) => {
-      return db.listSpotlightItems(input?.activeOnly ?? true);
+      return list_live_spotlight_items(input?.activeOnly ?? true);
     }),
 
   /** Admin: create a spotlight item */
@@ -136,7 +142,7 @@ const spotlightRouter = router({
       endDate: z.number().optional(),
     }))
     .mutation(async ({ input }) => {
-      const id = await db.createSpotlightItem(input);
+      const id = await create_live_spotlight_item(input);
       return { id };
     }),
 
@@ -157,7 +163,7 @@ const spotlightRouter = router({
     }))
     .mutation(async ({ input }) => {
       const { id, ...data } = input;
-      await db.updateSpotlightItem(id, data);
+      await update_live_spotlight_item(id, data);
       return { success: true };
     }),
 
@@ -165,7 +171,7 @@ const spotlightRouter = router({
   delete: adminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      await db.deleteSpotlightItem(input.id);
+      await delete_live_spotlight_item(input.id);
       return { success: true };
     }),
 });

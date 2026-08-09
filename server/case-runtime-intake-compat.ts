@@ -5,8 +5,10 @@ import {
 } from "./db-legacy";
 import {
   decode_intake_projection_case_id,
+  get_governed_document_projection,
   get_projected_entity,
   get_projected_entity_roles,
+  get_projected_entity_roles_for_document,
   get_projected_relationships_for_entity,
   get_projected_relationships_for_entity_enriched,
   is_intake_projection_id,
@@ -51,6 +53,8 @@ function externalize_relationship_evidence(evidence: any) {
     canonicalArtifactKey,
     canonicalMarkerText,
     canonicalMarkerOffset,
+    canonicalIntakeSessionId,
+    sourceArtifactStatus,
     projectionSource,
     ...legacy_shape
   } = evidence;
@@ -59,6 +63,8 @@ function externalize_relationship_evidence(evidence: any) {
     canonical_artifact_key: canonicalArtifactKey,
     canonical_marker_text: canonicalMarkerText,
     canonical_marker_offset: canonicalMarkerOffset,
+    canonical_intake_session_id: canonicalIntakeSessionId,
+    source_artifact_status: sourceArtifactStatus,
     projection_source: projectionSource,
   };
 }
@@ -136,6 +142,20 @@ export async function getEntityRolesForEntity(entityId: number) {
   if (!is_intake_projection_id(entityId)) return [];
   const roles = await get_projected_entity_roles(entityId);
   return (roles ?? []).map(externalize_entity_role);
+}
+
+/**
+ * A null result means no canonical entity projection owns this case yet, so a
+ * pre-cutover caller may still consult its legacy read model. Once a canonical
+ * projection exists, an empty array is an authoritative completed-zero result.
+ */
+export async function getGovernedEntityRolesForDocument(caseId: number, documentId: number) {
+  const roles = await get_projected_entity_roles_for_document(caseId, documentId);
+  return roles === null ? null : roles.map(externalize_entity_role);
+}
+
+export async function getGovernedDocumentProjection(caseId: number, documentId: number) {
+  return get_governed_document_projection(caseId, documentId);
 }
 
 export async function listRelationships(caseId: number) {

@@ -360,28 +360,38 @@ async function loadPrograms(): Promise<WorldObject[]> {
     });
   }
 
-  // --- registry_programs (3,405 rows) ---
+  // registry_programs is a legacy live table. Its published program fields are
+  // unsuffixed; jurisdiction_id_rp remains only as a compatibility fallback.
   const [regProgRows] = await pool.query(`
-    select id, jurisdiction_id_rp, category_rp, name_rp, agency_rp, eligibility_rp, contact_rp, website_rp, apply_notes_rp
+    select
+      id,
+      coalesce(nullif(jurisdiction_id, ''), jurisdiction_id_rp) as jurisdiction_id,
+      category,
+      name,
+      agency,
+      eligibility,
+      contact,
+      website,
+      apply_notes
     from registry_programs
   `) as any;
   for (const r of regProgRows) {
     nodes.push({
       id: `reg_program_${r.id}`,
       type: 'program',
-      jurisdiction: safeText(r.jurisdiction_id_rp, 'unknown'),
-      domain: safeText(r.category_rp, 'general'),
+      jurisdiction: safeText(r.jurisdiction_id, 'unknown'),
+      domain: safeText(r.category, 'general'),
       source_table: 'registry_programs',
       source_id: String(r.id),
       metadata: {
-        name: r.name_rp,
-        category: r.category_rp,
-        agency_name: r.agency_rp,
-        eligibility: r.eligibility_rp,
-        contact: r.contact_rp,
-        website: r.website_rp,
-        apply_notes: r.apply_notes_rp,
-        phone: r.contact_rp,
+        name: r.name,
+        category: r.category,
+        agency_name: r.agency,
+        eligibility: r.eligibility,
+        contact: r.contact,
+        website: r.website,
+        apply_notes: r.apply_notes,
+        phone: r.contact,
       },
     });
   }
@@ -575,27 +585,38 @@ async function loadAgencies(): Promise<WorldObject[]> {
   }
 
   const [escRows] = await pool.query(`
-    select id, escalation_name, jurisdiction, metadata, created_at
+    select
+      uuid,
+      issue_type,
+      initial_route,
+      secondary_route,
+      federal_escalation,
+      civil_escalation,
+      federal_agencies,
+      related_statutes,
+      verification_status,
+      created_at
     from escalation_registry
   `) as any;
 
   for (const r of escRows) {
-    const domain = metadataValue(r.metadata, ['domain', 'case_type', 'category'], 'escalation');
     nodes.push({
-      id: `escalation_${r.id}`,
+      id: `escalation_${r.uuid}`,
       type: 'agency',
-      jurisdiction: safeText(r.jurisdiction, 'unknown'),
-      domain: safeText(domain, 'escalation'),
+      jurisdiction: 'unknown',
+      domain: 'escalation',
       source_table: 'escalation_registry',
-      source_id: String(r.id),
+      source_id: String(r.uuid),
       metadata: {
-        name: r.escalation_name,
-        trigger_condition: metadataValue(r.metadata, ['trigger_condition', 'trigger', 'condition'], null),
-        escalation_path: metadataValue(r.metadata, ['escalation_path', 'pathway', 'path'], null),
-        deadline_days: metadataValue(r.metadata, ['deadline_days', 'deadline'], null),
-        agency_name: metadataValue(r.metadata, ['agency_name', 'agency', 'issuing_agency'], null),
-        jurisdiction_id: r.jurisdiction,
-        raw_metadata: r.metadata,
+        name: r.issue_type,
+        issue_type: r.issue_type,
+        initial_route: r.initial_route,
+        secondary_route: r.secondary_route,
+        federal_escalation: r.federal_escalation,
+        civil_escalation: r.civil_escalation,
+        federal_agencies: r.federal_agencies,
+        related_statutes: r.related_statutes,
+        verification_status: r.verification_status,
         created_at: r.created_at,
       },
     });
@@ -608,7 +629,22 @@ async function loadWorkflows(): Promise<WorldObject[]> {
   const nodes: WorldObject[] = [];
 
   const [stepRows] = await pool.query(`
-    select id, workflow_id, step_order, title, step_type, decision_logic, metadata, source_url, created_at
+    select
+      id,
+      workflow_id,
+      coalesce(step_order, step_number) as step_order,
+      coalesce(title, action_description) as title,
+      coalesce(step_type, action_type) as step_type,
+      description,
+      required_inputs,
+      decision_logic,
+      next_step_on_success,
+      next_step_on_failure,
+      estimated_days,
+      deadline_rule,
+      warnings,
+      metadata,
+      created_at
     from workflow_steps
   `) as any;
 
@@ -629,8 +665,15 @@ async function loadWorkflows(): Promise<WorldObject[]> {
         title: r.title,
         step_name: r.title,
         step_type: r.step_type,
+        description: r.description,
+        required_inputs: r.required_inputs,
         decision_logic: r.decision_logic,
-        source_url: r.source_url,
+        next_step_on_success: r.next_step_on_success,
+        next_step_on_failure: r.next_step_on_failure,
+        estimated_days: r.estimated_days,
+        deadline_rule: r.deadline_rule,
+        warnings: r.warnings,
+        source_url: null,
         jurisdiction_id: jurisdiction,
         raw_metadata: r.metadata,
         created_at: r.created_at,
@@ -639,7 +682,21 @@ async function loadWorkflows(): Promise<WorldObject[]> {
   }
 
   const [remedyRows] = await pool.query(`
-    select id, template_id, template_name, template_type, claim_type, jurisdiction, template_text, metadata, source_url, created_at
+    select
+      id,
+      template_id,
+      template_name,
+      template_type,
+      claim_type,
+      jurisdiction,
+      template_body,
+      placeholder_fields,
+      governing_law,
+      difficulty_level,
+      usage_count,
+      success_rate,
+      is_active,
+      created_at
     from remedy_templates
   `) as any;
 
@@ -657,10 +714,15 @@ async function loadWorkflows(): Promise<WorldObject[]> {
         name: r.template_name,
         template_type: r.template_type,
         claim_type: r.claim_type,
-        template_text: r.template_text,
-        source_url: r.source_url,
+        template_text: r.template_body,
+        placeholder_fields: r.placeholder_fields,
+        governing_law: r.governing_law,
+        difficulty_level: r.difficulty_level,
+        usage_count: r.usage_count,
+        success_rate: r.success_rate,
+        is_active: r.is_active,
+        source_url: null,
         jurisdiction_id: r.jurisdiction,
-        raw_metadata: r.metadata,
         created_at: r.created_at,
       },
     });

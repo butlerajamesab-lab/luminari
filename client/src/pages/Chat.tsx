@@ -55,7 +55,7 @@ export default function Chat() {
           Ask the Evidence
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Ask questions about your case. Every response cites specific documents and quotes.
+          Ask structured questions about the preserved case data currently available to this workspace.
         </p>
       </div>
 
