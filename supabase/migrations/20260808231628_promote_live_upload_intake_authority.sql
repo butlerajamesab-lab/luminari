@@ -1,3 +1,4 @@
+-- Production ledger version: 20260808231628.
 -- Make the live case-upload session the sole runtime authority for Lighthouse.
 -- Fixture/case-create sessions remain immutable history, but they cannot own
 -- the case projection once real evidence has been registered.

@@ -17,7 +17,7 @@ describe("Lighthouse intake runtime topology cutover", () => {
   const chronologyProjection = read("server/case-runtime-chronology-compat.ts");
   const home = read("client/src/pages/Home.tsx");
   const controlRoom = read("client/src/pages/ControlRoom.tsx");
-  const migration = read("supabase/migrations/20260808164500_promote_live_upload_intake_authority.sql");
+  const migration = read("supabase/migrations/20260808231628_promote_live_upload_intake_authority.sql");
 
   it("removes legacy intake executors and routes from the runtime", () => {
     for (const path of [
