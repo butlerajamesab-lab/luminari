@@ -2233,7 +2233,7 @@ export default function Lighthouse() {
                 <span style={{ fontFamily: fontMono, fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase" as const, color: lh.gold }}>The Engine</span>
               </div>
               <p style={{ fontFamily: fontSans, fontSize: 13, color: lh.muted, lineHeight: 1.6 }}>
-                Upload documents. The engine reads them, extracts entities, surfaces patterns, and builds a forensic timeline — automatically.
+                Register exact source documents, then explicitly run the governed Intake Spine to verify preservation and reconstruct receipt-bound entities, patterns, and chronology.
               </p>
             </div>
             <div>

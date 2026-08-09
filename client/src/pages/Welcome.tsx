@@ -2186,7 +2186,6 @@ function ResumeCard({
   onNavigate: (path: string) => void;
 }) {
   const { data: stats } = trpc.cases.stats.useQuery({ caseId: caseData.id });
-  const { data: lifecycle } = trpc.snapshots.lifecycle.useQuery({ caseId: caseData.id });
   const { data: intakeStatus } = trpc.analyze.getIntakeSpineStatus.useQuery(
     { caseId: caseData.id },
     { retry: false },
@@ -2194,9 +2193,8 @@ function ResumeCard({
 
   const docCount = stats?.documents ?? 0;
   const findingCount = stats?.findings ?? 0;
-  const hasSnapshot = !!lifecycle?.hasSnapshot;
   const hasIntakeExecution = (intakeStatus ?? []).some(
-    (session) => session.session_type === "live" && session.layer_run_count > 0,
+    (session) => session.session_type === "live" && session.execution_complete,
   );
 
   let step = 0;
@@ -2212,11 +2210,11 @@ function ResumeCard({
     step = 2;
     stepLabel = "Review Spine Receipts";
     stepIcon = <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />;
-  } else if (findingCount > 0 && !hasSnapshot) {
+  } else if (findingCount > 0 && !hasIntakeExecution) {
     step = 2;
     stepLabel = "Review Findings";
     stepIcon = <Lightbulb className="h-3.5 w-3.5 text-primary" />;
-  } else if (findingCount > 0 && hasSnapshot) {
+  } else if (findingCount > 0 && hasIntakeExecution) {
     step = 3;
     stepLabel = "Export & Act";
     stepIcon = <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />;

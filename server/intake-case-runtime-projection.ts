@@ -93,7 +93,7 @@ type CanonicalRelationship = {
   source_refs: CanonicalRelationshipSourceRef[];
 };
 
-export type CaseRuntimeProjectionState = "legacy_fallback" | "canonical_projection";
+export type CaseRuntimeProjectionState = "not_projected" | "canonical_projection";
 
 export type ProjectedEntity = {
   id: number;
@@ -227,7 +227,11 @@ async function load_latest_case_layer_rows(case_id: number, layer_name: string):
        select cil.intake_session_id, cil.link_type, cil.is_primary
          from public.case_identity_bridge cib
          join public.case_intake_links cil on cil.case_uuid = cib.case_uuid
+         join public.intake_sessions s on s.intake_session_id = cil.intake_session_id
         where cib.legacy_case_id = $1
+          and s.session_type = 'live'
+          and s.entry_channel = 'upload'
+          and s.completion_state = 'governed_execution_complete'
      ), ranked as (
        select
          ls.link_type,
@@ -355,7 +359,7 @@ async function load_case_layer_outputs<T>(
   const latest_rows = await load_latest_case_layer_rows(case_id, layer_name);
   const eligible_rows = latest_rows.filter(row_is_projection_eligible);
   if (eligible_rows.length === 0) {
-    return { state: "legacy_fallback", outputs: [] };
+    return { state: "not_projected", outputs: [] };
   }
   return {
     state: "canonical_projection",
@@ -374,10 +378,17 @@ async function load_case_source_artifacts(case_id: number): Promise<SourceArtifa
        a.metadata
      from public.case_identity_bridge cib
      join public.case_intake_links cil on cil.case_uuid = cib.case_uuid
+     join public.intake_sessions s on s.intake_session_id = cil.intake_session_id
      join public.intake_artifacts a on a.intake_session_id = cil.intake_session_id
+     join public.documents d
+       on coalesce(a.metadata ->> 'legacy_document_id', '') ~ '^[0-9]+$'
+      and d.id = (a.metadata ->> 'legacy_document_id')::integer
      where cib.legacy_case_id = $1
+       and s.session_type = 'live'
+       and s.entry_channel = 'upload'
        and a.artifact_type = 'source_document'
        and a.artifact_status = 'preserved'
+       and coalesce(d.document_resolution, 'active') = 'active'
      order by a.artifact_key, a.artifact_id`,
     [case_id],
   );
@@ -495,9 +506,9 @@ export async function project_case_entities(case_id: number): Promise<{
   source_artifacts: Map<string, SourceArtifactRow[]>;
 }> {
   const layer = await load_case_layer_outputs<CanonicalEntity[]>(case_id, "entity_registry");
-  if (layer.state === "legacy_fallback") {
+  if (layer.state === "not_projected") {
     return {
-      state: "legacy_fallback",
+      state: "not_projected",
       entities: [],
       canonical_entities: [],
       source_artifacts: new Map(),
@@ -673,8 +684,8 @@ export async function project_case_relationships(case_id: number): Promise<{
   relationships: ProjectedRelationship[];
 }> {
   const relationship_layer = await load_case_layer_outputs<CanonicalRelationship[]>(case_id, "relationship_graph");
-  if (relationship_layer.state === "legacy_fallback") {
-    return { state: "legacy_fallback", relationships: [] };
+  if (relationship_layer.state === "not_projected") {
+    return { state: "not_projected", relationships: [] };
   }
 
   const entity_projection = await project_case_entities(case_id);

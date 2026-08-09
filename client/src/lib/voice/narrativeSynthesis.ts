@@ -155,10 +155,10 @@ export function synthesizeCaseNarration(
   }
 
   // Section 6: Snapshot Status
-  if (input.snapshot) {
-    const snapshotText = `Data snapshot ${input.snapshot.id} is ${input.snapshot.status}.`;
-    sections.push({ label: "Snapshot", text: snapshotText, itemCount: 1 });
-    textParts.push(snapshotText);
+  if (input.intakeExecution) {
+    const executionText = `Governed Intake Spine session ${input.intakeExecution.id} is ${input.intakeExecution.status.replace(/_/g, " ")}.`;
+    sections.push({ label: "Intake execution", text: executionText, itemCount: 1 });
+    textParts.push(executionText);
   }
 
   // Completion marker

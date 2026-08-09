@@ -2,21 +2,18 @@
  * Bundle Sync Endpoint — POST /api/bundle-sync
  *
  * Accepts an offline intake bundle manifest (JSON) + file attachments (multipart),
- * creates a case, populates pre-extracted timeline/entities, uploads documents to S3,
- * and enqueues them for the analysis pipeline.
+ * creates a case, preserves declared timeline/entities as import context, and
+ * registers uploaded source documents with the Universal Intake Spine.
  *
  * T1. Authenticate user via session cookie
  * T2. Parse multipart form: manifest JSON + file blobs
  * T3. Validate manifest against schema
  * T4. Create case from caseContext
- * T5. Create corpus snapshot for the new case
- * T6. Upload each attachment to S3, create document records
- * T7. Pre-populate timeline events from manifest
- * T8. Pre-populate entities from manifest people
- * T9. Auto-generate document checklist for primary pipeline type
- * T10. Enqueue all documents for analysis
- * T11. Log audit trail entry
- * T12. Return case ID + sync summary
+ * T5. Upload each attachment to S3 and register its exact bytes
+ * T6. Preserve declared timeline/people as import context in the audit record
+ * T7. Generate the domain document checklist
+ * T8. Leave governed Intake Spine execution explicit
+ * T9. Return case ID + registration summary
  */
 
 import { Express, Request, Response } from "express";
@@ -26,9 +23,7 @@ import { nanoid } from "nanoid";
 import { sdk } from "./_core/sdk";
 import * as dbHelpers from "./db";
 import { storagePut } from "./storage";
-import { enqueueDocument } from "./analysis-pipeline";
 import { getChecklistForPipeline } from "./document-checklists";
-import { ENGINE_VERSION } from "../shared/const";
 import {
   BundleManifest,
   validateManifest,
@@ -120,16 +115,9 @@ export function registerBundleSyncRoute(app: Express) {
         pipelineType,
       );
 
-      // T5. Create corpus snapshot
-      const snapshotResult = await dbHelpers.createCorpusSnapshot({
-        caseId,
-        engineVersion: ENGINE_VERSION,
-        documentIds: [],
-        documentHashes: {},
-      });
-      const snapshotId = snapshotResult.id;
-
-      // T6. Upload attachments to S3 and create document records
+      // T5. Upload attachments and create active source records. The document
+      // trigger binds every exact-byte artifact to the case's sole live/upload
+      // Intake Spine session; no legacy corpus snapshot is created.
       const uploadedDocs: { docId: number; filename: string; sha256: string }[] = [];
       const attachmentMap = new Map(manifest.attachments.map(a => [a.filename, a]));
 
@@ -150,7 +138,7 @@ export function registerBundleSyncRoute(app: Express) {
           s3Key,
           s3Url,
           sha256Hash: sha256,
-          snapshotId,
+          snapshotId: null,
         });
 
         uploadedDocs.push({ docId, filename: file.originalname, sha256 });
@@ -170,61 +158,20 @@ export function registerBundleSyncRoute(app: Express) {
         }
       }
 
-      // Update snapshot manifest with uploaded document IDs and hashes
-      const docIds = uploadedDocs.map(d => d.docId);
-      const docHashes: Record<string, string> = {};
-      for (const d of uploadedDocs) {
-        docHashes[String(d.docId)] = d.sha256;
-      }
-      if (docIds.length > 0) {
-        await dbHelpers.updateSnapshotManifest(snapshotId, docIds, docHashes);
-      }
+      // T6. Manifest timeline and people remain declared import context. They
+      // are not injected into legacy projections as if the governed layers had
+      // reconstructed them from source evidence.
 
-      // T7. Pre-populate timeline events
-      const laneId = `bundle-sync-${caseId}`;
-      let eventsCreated = 0;
-      for (const entry of manifest.timeline) {
-        await dbHelpers.createEvent({
-          caseId,
-          eventType: "incident", // Default type for bundle-originated events
-          title: entry.title,
-          description: entry.description,
-          dateOccurred: entry.date,
-          datePrecision: entry.date.length === 10 ? "exact" : "approximate",
-          engineVersion: `bundle-intake-v${manifest.bundleVersion}`,
-          laneId,
-          snapshotId,
-        });
-        eventsCreated++;
-      }
-
-      // T8. Pre-populate entities from people
-      let entitiesCreated = 0;
-      for (const person of manifest.people) {
-        await dbHelpers.findOrCreateEntity(
-          caseId,
-          person.name,
-          "person",
-          `${person.role}: ${person.relationship}${person.contact ? ` (Contact: ${person.contact})` : ""}`,
-          `bundle-intake-v${manifest.bundleVersion}`,
-          laneId,
-          snapshotId,
-        );
-        entitiesCreated++;
-      }
-
-      // T9. Auto-generate document checklist
+      // T7. Generate document checklist
       const checklistItems = getChecklistForPipeline(pipelineType);
       if (checklistItems.length > 0) {
         await dbHelpers.createChecklistItems(caseId, checklistItems);
       }
 
-      // T10. Enqueue all documents for analysis
-      for (const doc of uploadedDocs) {
-        enqueueDocument(doc.docId, caseId, snapshotId);
-      }
+      // T8. The document insert trigger registers each source artifact. The
+      // governed Intake Spine remains the sole explicit execution control.
 
-      // T11. Audit trail
+      // Preserve the complete declared context as structured audit data.
       await dbHelpers.logAudit({
         caseId,
         userId: user.id,
@@ -240,27 +187,26 @@ export function registerBundleSyncRoute(app: Express) {
           timelineEntries: manifest.timeline.length,
           peopleEntries: manifest.people.length,
           evidenceNotes: manifest.evidenceNotes.length,
+          declaredTimeline: manifest.timeline,
+          declaredPeople: manifest.people,
           hasAdvocate: !!manifest.advocateInfo?.name,
           manifestHash: manifest.manifestHash,
         },
       });
 
-      // Log pipeline event
-      await dbHelpers.logPipelineEvent(user.id, pipelineType, "intake_complete");
-
-      // T12. Return sync summary
+      // T9. Return source-registration summary
       res.json({
         success: true,
         caseId,
-        snapshotId,
+        intakeStatus: "evidence_registered",
         summary: {
           caseName: ctx.name,
           domain: domainLabel,
           pipelineType,
           documentsUploaded: uploadedDocs.length,
-          documentsQueued: uploadedDocs.length,
-          eventsCreated,
-          entitiesCreated,
+          documentsRegistered: uploadedDocs.length,
+          timelineContextRegistered: manifest.timeline.length,
+          peopleContextRegistered: manifest.people.length,
           checklistItemsGenerated: checklistItems.length,
         },
         warnings: validation.warnings,

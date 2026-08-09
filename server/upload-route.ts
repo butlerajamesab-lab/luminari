@@ -9,7 +9,6 @@ import { db } from "./db";
 import { documents } from "../drizzle/schema";
 import { and, eq, sql } from "drizzle-orm";
 import { cases } from "../drizzle/schema";
-import { ENGINE_VERSION } from "../shared/const";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -128,19 +127,6 @@ export function registerUploadRoute(app: Express) {
         return;
       }
 
-      // ── Gate 6: Resolve or create open snapshot for this case ──
-      let snapshot = await dbHelpers.getOpenSnapshot(caseId);
-      if (!snapshot) {
-        const created = await dbHelpers.createCorpusSnapshot({
-          caseId,
-          engineVersion: ENGINE_VERSION,
-          documentIds: [],
-          documentHashes: {},
-        });
-        snapshot = await dbHelpers.getSnapshot(created.id);
-      }
-      const snapshotId = snapshot?.id || 0;
-
       // ── Server-side batch cap enforcement ──
       if (files.length > MAX_BATCH_SIZE) {
         res.status(400).json({
@@ -187,51 +173,9 @@ export function registerUploadRoute(app: Express) {
             .where(and(eq(documents.sha256Hash, sha256Hash), eq(documents.caseId, caseId)));
 
           if (existing) {
-            // ── Duplicate → Replacement Conversion (Scoped Override) ──
-            // Deterministic rule: if existing doc is resolved (corrupted/excluded/superseded)
-            // OR failed_permanent, convert duplicate into replacement override.
             const existingResolution = (existing as any).documentResolution ?? "active";
             const isFailedPermanent = existing.status === "failed_permanent";
             const isResolved = ["corrupted", "excluded", "superseded"].includes(existingResolution);
-            if (isFailedPermanent || isResolved) {
-              const suffix = nanoid(8);
-              const requestedStorageKey = `cases/${caseId}/documents/${sha256Hash.slice(0, 8)}-${suffix}-${file.originalname}`;
-              const storedObject = await storagePut(requestedStorageKey, file.buffer, file.mimetype);
-              const overrideS3Key = storedObject.key;
-              const overrideS3Url = resolvePersistedDocumentUrl(caseId, storedObject);
-
-              const overrideResult = await dbHelpers.performDuplicateOverride(
-                existing.id,
-                {
-                  caseId,
-                  filename: file.originalname,
-                  fileType,
-                  mimeType: file.mimetype,
-                  fileSize: file.size,
-                  s3Key: overrideS3Key,
-                  s3Url: overrideS3Url,
-                  sha256Hash,
-                  snapshotId,
-                },
-                user.id,
-              );
-
-              if (overrideResult.overridden) {
-                await dbHelpers.incrementUploadSessionCounter(sessionId, "completedFiles");
-                results.push({
-                  id: overrideResult.newDocumentId,
-                  filename: file.originalname,
-                  fileType,
-                  sha256Hash,
-                  status: "uploaded",
-                  message: `Replaced resolved document "${existing.filename}" (ID: ${existing.id}, resolution: ${existingResolution}) — evidence preserved for explicit Intake Spine execution`,
-                  replacedDocId: existing.id,
-                });
-                continue;
-              }
-              // If override criteria not met (e.g. sealed snapshot), fall through to normal duplicate rejection
-            }
-
             await dbHelpers.incrementUploadSessionCounter(sessionId, "duplicateFiles");
             results.push({
               id: existing.id,
@@ -267,7 +211,7 @@ export function registerUploadRoute(app: Express) {
             s3Key,
             s3Url,
             sha256Hash,
-            snapshotId,
+            snapshotId: null,
           });
 
           // Log audit
@@ -302,8 +246,7 @@ export function registerUploadRoute(app: Express) {
       }
 
       // ── Post-upload integrity check ──
-      const overrideCount = results.filter(r => r.status === "uploaded" && (r as any).replacedDocId).length;
-      const successCount = results.filter(r => r.status === "uploaded").length - overrideCount;
+      const successCount = results.filter(r => r.status === "uploaded").length;
       const duplicateCount = results.filter(r => r.status === "duplicate").length;
       const errorCount = results.filter(r => r.error).length;
 
@@ -325,7 +268,6 @@ export function registerUploadRoute(app: Express) {
           uploaded: successCount,
           duplicates: duplicateCount,
           errors: errorCount,
-          overrides: overrideCount,
           caseDocumentCount: dbCount?.count ?? 0,
           caseId,
         },
@@ -337,8 +279,8 @@ export function registerUploadRoute(app: Express) {
   });
 
   // ── Scoped Replacement Upload: POST /api/upload/replace/:documentId ──
-  // Accepts a single file upload targeting a specific resolved/failed document.
-  // Performs scoped duplicate override: supersedes original, creates new doc, links chain.
+  // Accepts a single replacement upload, supersedes the original, creates the
+  // canonical source registration, and links the immutable replacement chain.
   app.post("/api/upload/replace/:documentId", upload.single("file"), async (req: Request, res: Response) => {
     try {
       const user = await authenticateCurrentRequest(req, res);
@@ -378,14 +320,6 @@ export function registerUploadRoute(app: Express) {
         return;
       }
 
-      // Resolve or create open snapshot
-      let snapshot = await dbHelpers.getOpenSnapshot(caseId);
-      if (!snapshot) {
-        res.status(400).json({ error: "No open snapshot available — cannot replace in sealed state" });
-        return;
-      }
-      const snapshotId = snapshot.id;
-
       // Compute SHA-256
       const sha256Hash = createHash("sha256").update(file.buffer).digest("hex");
       const fileType = classifyFileType(file.mimetype);
@@ -397,15 +331,14 @@ export function registerUploadRoute(app: Express) {
           eq(documents.sha256Hash, sha256Hash),
           eq(documents.caseId, caseId),
         ));
-      if (hashConflict && hashConflict.id !== documentId) {
-        const conflictResolution = (hashConflict as any).documentResolution ?? "active";
-        if (conflictResolution === "active" && hashConflict.status !== "failed_permanent") {
-          res.status(409).json({
-            error: "DUPLICATE_ACTIVE",
-            message: `This file matches active document "${hashConflict.filename}" (ID: ${hashConflict.id}). Cannot replace — hash belongs to a different active document.`,
-          });
-          return;
-        }
+      if (hashConflict) {
+        res.status(409).json({
+          error: hashConflict.id === documentId ? "SAME_CONTENT" : "DUPLICATE_SOURCE",
+          message: hashConflict.id === documentId
+            ? "The replacement bytes are identical to the document being replaced."
+            : `This file already exists as "${hashConflict.filename}" (ID: ${hashConflict.id}). Select that document as the replacement instead.`,
+        });
+        return;
       }
 
       // Upload to the configured document storage backend.
@@ -415,35 +348,31 @@ export function registerUploadRoute(app: Express) {
       const s3Key = storedObject.key;
       const s3Url = resolvePersistedDocumentUrl(caseId, storedObject);
 
-      // Perform scoped override
-      const overrideResult = await dbHelpers.performDuplicateOverride(
+      const newDocumentId = await dbHelpers.createDocument({
+        caseId,
+        filename: file.originalname,
+        fileType,
+        mimeType: file.mimetype,
+        fileSize: file.size,
+        s3Key,
+        s3Url,
+        sha256Hash,
+        snapshotId: null,
+      });
+      await dbHelpers.replaceDocument(
         documentId,
-        {
-          caseId,
-          filename: file.originalname,
-          fileType,
-          mimeType: file.mimetype,
-          fileSize: file.size,
-          s3Key,
-          s3Url,
-          sha256Hash,
-          snapshotId,
-        },
+        Number(newDocumentId),
         user.id,
+        "Explicit replacement upload registered with the Universal Intake Spine",
       );
-
-      if (!overrideResult.overridden) {
-        res.status(400).json({ error: overrideResult.reason });
-        return;
-      }
 
       res.json({
         success: true,
         originalDocumentId: documentId,
-        newDocumentId: overrideResult.newDocumentId,
+        newDocumentId: Number(newDocumentId),
         filename: file.originalname,
         sha256Hash,
-        message: `Replaced document #${documentId} ("${originalDoc.filename}") — evidence preserved for explicit Intake Spine execution`,
+        message: `Replaced document #${documentId} ("${originalDoc.filename}") — source registered for explicit Intake Spine execution`,
       });
     } catch (err: any) {
       console.error("[Upload] Replace route error:", err);

@@ -188,8 +188,6 @@ export default function DocumentDetail() {
   const handleQuoteClick = useCallback((quoteId: number) => { setActiveTab("quotes"); toast.info(`Navigated to Quotes tab — Quote #${quoteId}`); }, []);
   const handleCorrelationClick = useCallback(() => { setLocation("/findings"); toast.info("Navigated to Findings → Correlations tab"); }, [setLocation]);
 
-  const { data: lifecycle } = trpc.snapshots.lifecycle.useQuery({ caseId: currentCaseId! }, { enabled: !!currentCaseId, refetchInterval: 5000 });
-  const isSealed = lifecycle?.hasSnapshot && lifecycle?.status === 'sealed';
   const { data: replacementChain } = trpc.documents.replacementChain.useQuery({ documentId: docId }, { enabled: !!docId });
 
   const markCorruptedMutation = trpc.documents.markCorrupted.useMutation({
@@ -199,7 +197,7 @@ export default function DocumentDetail() {
       setResolutionReason('');
       utils.documents.get.invalidate();
       utils.documents.list.invalidate();
-      utils.snapshots.lifecycle.invalidate();
+      utils.analyze.getIntakeIntegrityProjection.invalidate();
     },
     onError: (err) => toast.error(err.message),
   });
@@ -211,7 +209,7 @@ export default function DocumentDetail() {
       setResolutionReason('');
       utils.documents.get.invalidate();
       utils.documents.list.invalidate();
-      utils.snapshots.lifecycle.invalidate();
+      utils.analyze.getIntakeIntegrityProjection.invalidate();
     },
     onError: (err) => toast.error(err.message),
   });
@@ -253,7 +251,7 @@ export default function DocumentDetail() {
         <div className="flex items-center gap-2">
           {(!(doc as any).documentResolution || (doc as any).documentResolution === 'active') && (
             <DropdownMenu>
-              <DropdownMenuTrigger asChild><Button variant="outline" size="sm" className="gap-1.5" disabled={!!isSealed}><Shield className="h-3.5 w-3.5" />Resolution<ChevronDown className="h-3 w-3 opacity-60" /></Button></DropdownMenuTrigger>
+              <DropdownMenuTrigger asChild><Button variant="outline" size="sm" className="gap-1.5"><Shield className="h-3.5 w-3.5" />Resolution<ChevronDown className="h-3 w-3 opacity-60" /></Button></DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuItem onClick={() => { setResolutionModal({ type: 'corrupted' }); setResolutionReason(''); }} className="gap-2"><FileX className="h-4 w-4 text-red-400" /><div><p className="font-medium text-red-300">Mark Corrupted</p><p className="text-[10px] text-muted-foreground">Remove from active corpus</p></div></DropdownMenuItem>
                 <DropdownMenuItem onClick={() => { setResolutionModal({ type: 'excluded' }); setResolutionReason(''); }} className="gap-2"><Ban className="h-4 w-4 text-amber-400" /><div><p className="font-medium text-amber-300">Mark Excluded</p><p className="text-[10px] text-muted-foreground">Exclude from analysis</p></div></DropdownMenuItem>
@@ -312,14 +310,14 @@ export default function DocumentDetail() {
       </Tabs>
 
       <Dialog open={resolutionModal?.type === 'corrupted'} onOpenChange={(open) => { if (!open) setResolutionModal(null); }}>
-        <DialogContent className="sm:max-w-md"><DialogHeader><DialogTitle className="flex items-center gap-2 text-red-300"><FileX className="h-5 w-5" />Mark as Corrupted</DialogTitle><DialogDescription>This removes <strong>{doc.filename}</strong> from the active corpus. It will no longer block extraction integrity or gate progression.</DialogDescription></DialogHeader><div className="space-y-3 py-2"><div><label className="text-xs font-medium text-muted-foreground">Reason (minimum 10 characters)</label><Textarea value={resolutionReason} onChange={(e) => setResolutionReason(e.target.value)} placeholder="Describe why this document is corrupted..." className="mt-1.5" rows={3} /><p className="text-[10px] text-muted-foreground mt-1">{resolutionReason.trim().length}/10 characters minimum</p></div></div><DialogFooter className="gap-2"><Button variant="outline" onClick={() => setResolutionModal(null)}>Cancel</Button><Button variant="destructive" disabled={resolutionReason.trim().length < 10 || markCorruptedMutation.isPending} onClick={() => markCorruptedMutation.mutate({ documentId: docId, reason: resolutionReason.trim() })} className="gap-2">{markCorruptedMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileX className="h-4 w-4" />}Mark Corrupted</Button></DialogFooter></DialogContent>
+        <DialogContent className="sm:max-w-md"><DialogHeader><DialogTitle className="flex items-center gap-2 text-red-300"><FileX className="h-5 w-5" />Mark as Corrupted</DialogTitle><DialogDescription>This removes <strong>{doc.filename}</strong> from the active source set. It will no longer block canonical preservation integrity.</DialogDescription></DialogHeader><div className="space-y-3 py-2"><div><label className="text-xs font-medium text-muted-foreground">Reason (minimum 10 characters)</label><Textarea value={resolutionReason} onChange={(e) => setResolutionReason(e.target.value)} placeholder="Describe why this document is corrupted..." className="mt-1.5" rows={3} /><p className="text-[10px] text-muted-foreground mt-1">{resolutionReason.trim().length}/10 characters minimum</p></div></div><DialogFooter className="gap-2"><Button variant="outline" onClick={() => setResolutionModal(null)}>Cancel</Button><Button variant="destructive" disabled={resolutionReason.trim().length < 10 || markCorruptedMutation.isPending} onClick={() => markCorruptedMutation.mutate({ documentId: docId, reason: resolutionReason.trim() })} className="gap-2">{markCorruptedMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileX className="h-4 w-4" />}Mark Corrupted</Button></DialogFooter></DialogContent>
       </Dialog>
 
       <Dialog open={resolutionModal?.type === 'excluded'} onOpenChange={(open) => { if (!open) setResolutionModal(null); }}>
-        <DialogContent className="sm:max-w-md"><DialogHeader><DialogTitle className="flex items-center gap-2 text-amber-300"><Ban className="h-5 w-5" />Mark as Excluded</DialogTitle><DialogDescription>This excludes <strong>{doc.filename}</strong> from analysis. It will no longer block extraction integrity or gate progression.</DialogDescription></DialogHeader><div className="space-y-3 py-2"><div><label className="text-xs font-medium text-muted-foreground">Reason (minimum 10 characters)</label><Textarea value={resolutionReason} onChange={(e) => setResolutionReason(e.target.value)} placeholder="Describe why this document should be excluded..." className="mt-1.5" rows={3} /><p className="text-[10px] text-muted-foreground mt-1">{resolutionReason.trim().length}/10 characters minimum</p></div></div><DialogFooter className="gap-2"><Button variant="outline" onClick={() => setResolutionModal(null)}>Cancel</Button><Button className="gap-2 bg-amber-600 hover:bg-amber-700 text-white" disabled={resolutionReason.trim().length < 10 || markExcludedMutation.isPending} onClick={() => markExcludedMutation.mutate({ documentId: docId, reason: resolutionReason.trim() })}>{markExcludedMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />}Mark Excluded</Button></DialogFooter></DialogContent>
+        <DialogContent className="sm:max-w-md"><DialogHeader><DialogTitle className="flex items-center gap-2 text-amber-300"><Ban className="h-5 w-5" />Mark as Excluded</DialogTitle><DialogDescription>This excludes <strong>{doc.filename}</strong> from governed execution while preserving the audit chain.</DialogDescription></DialogHeader><div className="space-y-3 py-2"><div><label className="text-xs font-medium text-muted-foreground">Reason (minimum 10 characters)</label><Textarea value={resolutionReason} onChange={(e) => setResolutionReason(e.target.value)} placeholder="Describe why this document should be excluded..." className="mt-1.5" rows={3} /><p className="text-[10px] text-muted-foreground mt-1">{resolutionReason.trim().length}/10 characters minimum</p></div></div><DialogFooter className="gap-2"><Button variant="outline" onClick={() => setResolutionModal(null)}>Cancel</Button><Button className="gap-2 bg-amber-600 hover:bg-amber-700 text-white" disabled={resolutionReason.trim().length < 10 || markExcludedMutation.isPending} onClick={() => markExcludedMutation.mutate({ documentId: docId, reason: resolutionReason.trim() })}>{markExcludedMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />}Mark Excluded</Button></DialogFooter></DialogContent>
       </Dialog>
 
-      <ReplaceDocumentModalV2 open={resolutionModal?.type === 'uploadReplace'} onClose={() => setResolutionModal(null)} documentId={docId} documentName={doc?.filename || ''} onSuccess={() => { utils.documents.get.invalidate(); utils.documents.list.invalidate(); utils.snapshots.lifecycle.invalidate(); }} />
+      <ReplaceDocumentModalV2 open={resolutionModal?.type === 'uploadReplace'} onClose={() => setResolutionModal(null)} documentId={docId} documentName={doc?.filename || ''} onSuccess={() => { utils.documents.get.invalidate(); utils.documents.list.invalidate(); utils.analyze.getIntakeIntegrityProjection.invalidate(); }} />
     </div>
   );
 }

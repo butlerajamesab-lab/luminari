@@ -85,7 +85,6 @@ const ENDPOINTS_TO_TEST = {
     "GET /contradiction-scoring",
     "GET /litigation-barriers",
     "GET /doctrine-graph",
-    "GET /claim-denial-analysis",
     "GET /provenance-drill-down",
     "GET /signal-registry",
   ],

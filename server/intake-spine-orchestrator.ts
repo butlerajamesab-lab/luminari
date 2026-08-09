@@ -71,6 +71,23 @@ import {
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const SHA256_RE = /^[0-9a-f]{64}$/;
 
+export const INTAKE_SPINE_LAYER_NAMES = Object.freeze([
+  'stabilization_envelope',
+  'raw_intake_capture',
+  'evidence_preservation',
+  'chronology_reconstruction',
+  'verification_gate',
+  'entity_registry',
+  'relationship_graph',
+  'power_dynamics_registry',
+  'state_timeline',
+  'pattern_registry',
+  'cascade_registry',
+  'rights_and_duties_matrix',
+  'translation_layer',
+  'action_paths',
+] as const);
+
 export type intake_spine_orchestration_request = {
   intake_session_id: string;
   as_of: string;
@@ -203,21 +220,25 @@ export async function execute_intake_spine_session(
 
   const artifact_result = await pool.query<source_artifact_row>(
     `select
-       artifact_id::text,
-       artifact_key,
-       filename,
-       mime_type,
-       byte_size,
-       sha256,
-       storage_bucket,
-       storage_object_path,
-       artifact_status,
-       availability,
-       metadata
-     from public.intake_artifacts
-     where intake_session_id = $1::uuid
-       and artifact_type = 'source_document'
-     order by artifact_key, artifact_id`,
+       ia.artifact_id::text,
+       ia.artifact_key,
+       ia.filename,
+       ia.mime_type,
+       ia.byte_size,
+       ia.sha256,
+       ia.storage_bucket,
+       ia.storage_object_path,
+       ia.artifact_status,
+       ia.availability,
+       ia.metadata
+     from public.intake_artifacts ia
+     join public.documents d
+       on coalesce(ia.metadata ->> 'legacy_document_id', '') ~ '^[0-9]+$'
+      and d.id = (ia.metadata ->> 'legacy_document_id')::integer
+     where ia.intake_session_id = $1::uuid
+       and ia.artifact_type = 'source_document'
+       and coalesce(d.document_resolution, 'active') = 'active'
+     order by ia.artifact_key, ia.artifact_id`,
     [request.intake_session_id],
   );
   const source_artifacts = artifact_result.rows;
@@ -515,6 +536,22 @@ export async function execute_intake_spine_session(
     dependencies,
     dependency_key: 'action_paths',
   });
+
+  await pool.query(
+    `update public.intake_sessions
+        set completion_state = 'governed_execution_complete',
+            metadata = coalesce(metadata, '{}'::jsonb) || jsonb_build_object(
+              'last_governed_execution', jsonb_build_object(
+                'jurisdiction', $2::text,
+                'rule_as_of', $3::text,
+                'required_layer_count', $4::integer,
+                'sealed_receipt_count', $5::integer
+              )
+            ),
+            updated_at = now()
+      where intake_session_id = $1::uuid`,
+    [session.intake_session_id, jurisdiction, as_of, INTAKE_SPINE_LAYER_NAMES.length, receipts.length],
+  );
 
   return {
     intake_session_id: session.intake_session_id,

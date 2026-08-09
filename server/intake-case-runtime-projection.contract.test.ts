@@ -32,12 +32,13 @@ describe("Universal Intake Spine case runtime projection", () => {
     expect(projection).toContain("recomputed_output_hash !== row.output_hash");
   });
 
-  it("preserves the migration fallback but never falls through once a canonical layer output exists", () => {
+  it("fails closed instead of falling through to legacy runtime tables", () => {
     expect(compatibility).toContain('projection.state === "canonical_projection"');
     expect(compatibility).toContain("return projection.entities.map(externalize_entity)");
     expect(compatibility).toContain("return projection.relationships.map(externalize_relationship)");
-    expect(compatibility).toContain("return list_legacy_entities_runtime(caseId)");
-    expect(compatibility).toContain("return list_legacy_relationships_runtime(caseId)");
+    expect(compatibility).not.toContain("list_legacy_entities_runtime");
+    expect(compatibility).not.toContain("list_legacy_relationships_runtime");
+    expect(compatibility).toContain("return []");
   });
 
   it("routes entity ownership through the case bridge for projected identities", () => {

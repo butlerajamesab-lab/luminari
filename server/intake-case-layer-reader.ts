@@ -47,7 +47,11 @@ export async function read_canonical_case_layer_outputs<T>(
        select cil.intake_session_id
          from public.case_identity_bridge cib
          join public.case_intake_links cil on cil.case_uuid = cib.case_uuid
+         join public.intake_sessions s on s.intake_session_id = cil.intake_session_id
         where cib.legacy_case_id = $1
+          and s.session_type = 'live'
+          and s.entry_channel = 'upload'
+          and s.completion_state = 'governed_execution_complete'
      ), ranked as (
        select lr.*,
               row_number() over (

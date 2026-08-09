@@ -136,7 +136,6 @@ function ProvenanceBlock({ evidence, onNavigate }: {
 /* ── Enriched Findings Tab ── */
 function FindingsTab({ caseId }: { caseId: number }) {
   const { data: findings, isLoading } = trpc.findings.listEnriched.useQuery({ caseId });
-  const { data: lifecycle } = trpc.snapshots.lifecycle.useQuery({ caseId });
   const [visible, setVisible] = useState(15);
   const [filter, setFilter] = useState<"all" | "finding" | "note_signal">("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -145,22 +144,7 @@ function FindingsTab({ caseId }: { caseId: number }) {
 
   if (isLoading) return <Skeleton />;
   if (!findings || findings.length === 0) {
-    const isOpen = lifecycle?.hasSnapshot && lifecycle.status === 'open';
-    const extractionRunning = isOpen && lifecycle.stages?.extraction?.status === 'running';
-    const claimBuildRunning = isOpen && lifecycle.stages?.claimBuild?.status === 'running';
-    const correlationPending = isOpen && lifecycle.stages?.correlation?.status !== 'complete';
-    const reanalysisRunning = extractionRunning || claimBuildRunning;
-    let message: string;
-    if (reanalysisRunning) {
-      message = "Legacy snapshot reanalysis is in progress. Canonical Intake verification remains a separate record.";
-    } else if (correlationPending) {
-      message = "Legacy findings are pending correlation build for this snapshot.";
-    } else if (!lifecycle?.hasSnapshot) {
-      message = "No legacy findings snapshot exists. Use Verification for the canonical Intake Spine evidence posture.";
-    } else {
-      message = "No legacy findings are projected for this case. This does not imply that canonical verification is empty.";
-    }
-    return <Empty icon={<Lightbulb className="h-10 w-10 text-muted-foreground" />} text={message} />;
+    return <Empty icon={<Lightbulb className="h-10 w-10 text-muted-foreground" />} text="No narrative findings are committed for this case. Review the receipt-bound Verification projection for the governed Intake Spine evidence posture." />;
   }
 
   const searched = findings.filter(f => {

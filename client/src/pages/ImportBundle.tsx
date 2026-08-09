@@ -44,9 +44,9 @@ interface SyncResult {
     domain: string;
     pipelineType: string;
     documentsUploaded: number;
-    documentsQueued: number;
-    eventsCreated: number;
-    entitiesCreated: number;
+    documentsRegistered: number;
+    timelineContextRegistered: number;
+    peopleContextRegistered: number;
     checklistItemsGenerated: number;
   };
   warnings: string[];
@@ -194,7 +194,7 @@ export default function ImportBundle() {
                 <div className="flex-1">
                   <h3 className="font-semibold text-lg text-green-400">Import Successful</h3>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Case "{result.summary.caseName}" has been created and documents are being analyzed.
+                    Case "{result.summary.caseName}" has been created and exact source bytes are registered. Run the governed Intake Spine explicitly when you are ready.
                   </p>
                   <div className="grid grid-cols-2 gap-3 mt-4">
                     <div className="bg-background/50 rounded-lg p-3 text-center">
@@ -202,12 +202,12 @@ export default function ImportBundle() {
                       <div className="text-xs text-muted-foreground">Documents</div>
                     </div>
                     <div className="bg-background/50 rounded-lg p-3 text-center">
-                      <div className="text-xl font-bold text-primary">{result.summary.eventsCreated}</div>
-                      <div className="text-xs text-muted-foreground">Timeline Events</div>
+                      <div className="text-xl font-bold text-primary">{result.summary.timelineContextRegistered}</div>
+                      <div className="text-xs text-muted-foreground">Timeline Context</div>
                     </div>
                     <div className="bg-background/50 rounded-lg p-3 text-center">
-                      <div className="text-xl font-bold text-primary">{result.summary.entitiesCreated}</div>
-                      <div className="text-xs text-muted-foreground">People</div>
+                      <div className="text-xl font-bold text-primary">{result.summary.peopleContextRegistered}</div>
+                      <div className="text-xs text-muted-foreground">People Context</div>
                     </div>
                     <div className="bg-background/50 rounded-lg p-3 text-center">
                       <div className="text-xl font-bold text-primary">{result.summary.checklistItemsGenerated}</div>
@@ -409,7 +409,7 @@ export default function ImportBundle() {
 
                 <p className="text-xs text-muted-foreground text-center mt-3">
                   This will create a new case with all the data from the bundle.
-                  Documents will be automatically queued for analysis.
+                  Documents will be registered as source evidence; governed reconstruction remains an explicit action.
                 </p>
               </CardContent>
             </Card>

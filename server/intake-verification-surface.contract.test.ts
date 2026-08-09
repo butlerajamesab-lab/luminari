@@ -18,7 +18,8 @@ describe("Intake verification presentation contract", () => {
   it("does not silently reclassify verification records as legacy findings", () => {
     expect(findings).toContain("Legacy Findings");
     expect(findings).toContain("Universal Intake verification is shown separately");
-    expect(findings).toContain("No legacy findings are projected for this case");
+    expect(findings).toContain("not silently recast as a finding");
+    expect(findings).toContain("No narrative findings are committed for this case");
   });
 
   it("removes legacy AI attribution from the current Findings header", () => {

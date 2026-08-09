@@ -754,7 +754,7 @@ export async function createDocument(doc: {
   s3Key: string;
   s3Url: string;
   sha256Hash: string;
-  snapshotId: number;
+  snapshotId: number | null;
 }) {
   const [inserted] = await db.insert(documents).values({
     ...doc,
@@ -3026,7 +3026,8 @@ export async function performDuplicateOverride(
 /**
  * Check if a document is eligible for scoped replacement override.
  * Returns the document if eligible, null otherwise.
- * Eligible: failed_permanent status OR documentResolution IN (corrupted, excluded, superseded).
+ * Eligible: any document that has not already been superseded. Replacement is
+ * an explicit user action and is independent from the retired extraction state.
  */
 export async function checkReplacementEligibility(
   documentId: number,
@@ -3036,10 +3037,8 @@ export async function checkReplacementEligibility(
     return { eligible: false, reason: 'Document not found' };
   }
   const resolution = (doc as any).documentResolution ?? 'active';
-  const isFailedPermanent = doc.status === 'failed_permanent';
-  const isResolved = ['corrupted', 'excluded', 'superseded'].includes(resolution);
-  if (!isFailedPermanent && !isResolved) {
-    return { eligible: false, reason: `Document is active and not failed — not eligible for replacement` };
+  if (resolution === 'superseded') {
+    return { eligible: false, reason: 'Document is already superseded' };
   }
   return { eligible: true, document: doc };
 }

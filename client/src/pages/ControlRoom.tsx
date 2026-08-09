@@ -11,7 +11,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { toast } from "sonner";
 import { useState, useMemo, useEffect } from "react";
 import { useLocation } from "wouter";
 import {
@@ -24,16 +23,12 @@ import {
   ChevronRight,
   Loader2,
   ExternalLink,
-  Download,
-  Send,
-  Edit,
   Target,
   Scale,
   Timer,
   Zap,
   Network,
   Eye,
-  TrendingUp,
   BarChart3,
   Layers,
   Activity,
@@ -273,12 +268,12 @@ function EvidenceSummaryPanel({ caseId }: { caseId: number }) {
   }
 
   const metrics = [
-    { label: "Documents", value: stats?.documents ?? 0, icon: FileText, path: "/documents" },
+    { label: "Registered Sources", value: stats?.documents ?? 0, icon: FileText, path: "/documents" },
     { label: "Entities", value: stats?.entities ?? 0, icon: Users, path: "/entities" },
     { label: "Events", value: stats?.events ?? 0, icon: Clock, path: "/timeline" },
-    { label: "Findings", value: stats?.findings ?? 0, icon: Lightbulb, path: "/findings" },
-    { label: "Signal Flags", value: stats?.signalFlags ?? 0, icon: AlertTriangle, path: "/integrity" },
-    { label: "Quotes", value: stats?.quotes ?? 0, icon: Scale, path: "/chat" },
+    { label: "Verification Records", value: stats?.findings ?? 0, icon: Shield, path: "/findings" },
+    { label: "Structural Signals", value: stats?.signalFlags ?? 0, icon: AlertTriangle, path: "/viewfinder" },
+    { label: "Claim Candidates", value: stats?.claims ?? 0, icon: Scale, path: "/claim-elements" },
   ];
 
   return (
@@ -315,22 +310,37 @@ function EvidenceSummaryPanel({ caseId }: { caseId: number }) {
 
 /* ─── Strategy Paths Panel ─── */
 function StrategyPathsPanel({ caseId }: { caseId: number }) {
-  const { data: paths, isLoading } = trpc.strategyEngine.getStrategyPaths.useQuery(
-    { case_id: caseId },
-    { refetchInterval: 15000 }
+  const actionPathProjection = trpc.analyze.getIntakeActionPathProjection.useQuery(
+    { caseId },
+    { refetchInterval: 15000, retry: false }
   );
+  const isLoading = actionPathProjection.isLoading;
+  const paths = useMemo(() => (actionPathProjection.data?.outputs ?? []).flatMap(output =>
+    output.paths.map(path => ({
+      ...path,
+      id: path.path_id,
+      pathLabel: path.workflow_name,
+      pathStatus: path.status,
+      recommendedForum: path.filing_destination,
+      patternConfidence: null,
+      estimatedStrength: null,
+      patternNotes: path.authority,
+    })),
+  ), [actionPathProjection.data]);
 
-  const [expandedPath, setExpandedPath] = useState<number | null>(null);
+  const [expandedPath, setExpandedPath] = useState<string | null>(null);
 
-  // Load element-fact links and missing evidence for expanded detail
-  const { data: elementLinks } = trpc.strategyEngine.getElementFactLinks.useQuery(
-    { case_id: caseId },
-    { enabled: expandedPath !== null }
-  );
-  const { data: missingEvidence } = trpc.strategyEngine.getMissingEvidenceTasks.useQuery(
-    { case_id: caseId },
-    { enabled: expandedPath !== null }
-  );
+  const expanded = paths.find(path => path.id === expandedPath);
+  const elementLinks = (expanded?.prerequisites ?? []).map((elementName, index) => ({
+    id: `${expanded?.id}:prerequisite:${index}`,
+    elementName,
+    supportStrength: null,
+  }));
+  const missingEvidence = (expanded?.unresolved_facts ?? []).map((description, index) => ({
+    id: `${expanded?.id}:unresolved:${index}`,
+    description,
+    priority: "unresolved",
+  }));
 
   if (isLoading) {
     return (
@@ -352,9 +362,7 @@ function StrategyPathsPanel({ caseId }: { caseId: number }) {
     );
   }
 
-  const sortedPaths = [...(paths ?? [])].sort(
-    (a, b) => Number(b.estimatedStrength ?? 0) - Number(a.estimatedStrength ?? 0)
-  );
+  const sortedPaths = [...paths].sort((a, b) => a.path_id.localeCompare(b.path_id));
 
   return (
     <Card className="col-span-1 lg:col-span-2">
@@ -373,17 +381,13 @@ function StrategyPathsPanel({ caseId }: { caseId: number }) {
         {sortedPaths.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <Target className="h-8 w-8 mx-auto mb-2 opacity-40" />
-            <p className="text-sm">No strategy paths generated yet.</p>
-            <p className="text-xs mt-1">Run the Universal Intake Spine first. Strategy remains a separately named downstream tool.</p>
+            <p className="text-sm">No governed action paths yet.</p>
+            <p className="text-xs mt-1">Run the Universal Intake Spine to produce unranked Layer 14 candidates.</p>
           </div>
         ) : (
           <div className="space-y-2">
             {sortedPaths.map((path) => {
               const isExpanded = expandedPath === path.id;
-              const strengthPct = Math.round(Number(path.estimatedStrength ?? 0));
-              const patternBoost = path.patternConfidence
-                ? Math.round(Number(path.patternConfidence))
-                : null;
 
               return (
                 <Collapsible
@@ -416,18 +420,12 @@ function StrategyPathsPanel({ caseId }: { caseId: number }) {
                           <div className="flex items-center gap-4 text-[11px] text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <Scale className="h-3 w-3" />
-                              Strength: <strong className="text-foreground">{strengthPct}%</strong>
+                              Candidate · unranked
                             </span>
                             {path.recommendedForum && (
                               <span className="flex items-center gap-1">
                                 <Shield className="h-3 w-3" />
                                 {path.recommendedForum}
-                              </span>
-                            )}
-                            {patternBoost !== null && patternBoost > 0 && (
-                              <span className="flex items-center gap-1 text-emerald-400">
-                                <TrendingUp className="h-3 w-3" />
-                                +{patternBoost}% pattern confidence
                               </span>
                             )}
                           </div>
@@ -437,20 +435,18 @@ function StrategyPathsPanel({ caseId }: { caseId: number }) {
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <div className="ml-11 mt-1 p-3 rounded-lg bg-muted/20 border border-border/30 space-y-3">
-                      {/* Claim elements */}
+                          {/* Governed prerequisites */}
                       {elementLinks && elementLinks.length > 0 && (
                         <div>
                           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
-                            Claim Elements
+                            Governed prerequisites
                           </p>
                           <div className="space-y-1">
                             {elementLinks.slice(0, 5).map((link: any) => (
                               <div key={link.id} className="flex items-center gap-2 text-xs">
                                 <CheckCircle2 className="h-3 w-3 text-emerald-400 shrink-0" />
                                 <span className="truncate">{link.elementName}</span>
-                                <span className="text-muted-foreground ml-auto shrink-0">
-                                  {link.supportStrength ? `${Math.round(link.supportStrength * 100)}%` : "—"}
-                                </span>
+                                <span className="text-muted-foreground ml-auto shrink-0">required</span>
                               </div>
                             ))}
                           </div>
@@ -460,7 +456,7 @@ function StrategyPathsPanel({ caseId }: { caseId: number }) {
                       {missingEvidence && missingEvidence.length > 0 && (
                         <div>
                           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
-                            Evidence Gaps
+                            Unresolved facts
                           </p>
                           <div className="space-y-1">
                             {missingEvidence.slice(0, 3).map((task: any) => (
@@ -475,11 +471,11 @@ function StrategyPathsPanel({ caseId }: { caseId: number }) {
                           </div>
                         </div>
                       )}
-                      {/* Summary */}
+                          {/* Authority */}
                       {path.patternNotes && (
                         <div>
                           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                            Pattern Notes
+                            Authority
                           </p>
                           <p className="text-xs text-muted-foreground leading-relaxed">
                             {path.patternNotes}
@@ -500,23 +496,24 @@ function StrategyPathsPanel({ caseId }: { caseId: number }) {
 
 /* ─── Deadlines Panel ─── */
 function DeadlinesPanel({ caseId }: { caseId: number }) {
-  const { data: strategyDeadlines, isLoading: strategyLoading } = trpc.strategyEngine.getDeadlines.useQuery(
-    { case_id: caseId },
-    { refetchInterval: 30000 }
+  const actionPathProjection = trpc.analyze.getIntakeActionPathProjection.useQuery(
+    { caseId },
+    { refetchInterval: 30000, retry: false }
   );
-  const { data: proceduralDeadlines, isLoading: proceduralLoading } = trpc.case_state.get_procedural_deadlines.useQuery(
-    { case_id: caseId },
-    { refetchInterval: 60000 }
-  );
-
-  const isLoading = strategyLoading && proceduralLoading;
-
-  // Use strategy engine deadlines if available, otherwise fall back to procedural timelines
-  const deadlines = (strategyDeadlines && strategyDeadlines.length > 0)
-    ? strategyDeadlines
-    : (proceduralDeadlines ?? []);
-
-  const isFromProceduralTimelines = (!strategyDeadlines || strategyDeadlines.length === 0) && (proceduralDeadlines?.length ?? 0) > 0;
+  const isLoading = actionPathProjection.isLoading;
+  const deadlines = useMemo(() => (actionPathProjection.data?.outputs ?? []).flatMap(output =>
+    output.paths.flatMap(path => path.deadline_candidates.map((deadline, index) => ({
+      id: `${path.path_id}:${deadline.registry_id}:${index}`,
+      deadlineDate: null as string | null,
+      claimType: path.claim_type_name,
+      deadlineType: deadline.deadline_days === null
+        ? "Rule requires a confirmed triggering date"
+        : `${deadline.deadline_days} days from the governed trigger`,
+      description: deadline.deadline_description,
+      specialConsiderations: deadline.source_citation,
+      tollingApplied: false,
+    }))),
+  ), [actionPathProjection.data]);
 
   if (isLoading) {
     return (
@@ -570,9 +567,7 @@ function DeadlinesPanel({ caseId }: { caseId: number }) {
             Deadlines
           </CardTitle>
           <div className="flex items-center gap-1.5">
-            {isFromProceduralTimelines && (
-              <Badge variant="secondary" className="text-[9px] opacity-70">from rules</Badge>
-            )}
+            <Badge variant="secondary" className="text-[9px] opacity-70">Layer 14 candidates</Badge>
             <Badge variant="outline" className="text-[10px]">
               {sortedDeadlines.length}
             </Badge>
@@ -583,7 +578,7 @@ function DeadlinesPanel({ caseId }: { caseId: number }) {
         {sortedDeadlines.length === 0 ? (
           <div className="text-center py-6 text-muted-foreground">
             <Timer className="h-8 w-8 mx-auto mb-2 opacity-40" />
-            <p className="text-sm">No deadlines computed yet.</p>
+            <p className="text-sm">No governed deadline candidates yet.</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -676,10 +671,22 @@ function LegistarEventsWidget() {
 /* ─── Next Actions Panel ─── */
 function NextActionsPanel({ caseId }: { caseId: number }) {
   const [, navigate] = useLocation();
-  const { data: packets, isLoading } = trpc.assemblyEngine.getPackets.useQuery(
-    { case_id: caseId },
-    { refetchInterval: 15000 }
+  const projection = trpc.analyze.getIntakeActionPathProjection.useQuery(
+    { caseId },
+    { refetchInterval: 15000, retry: false }
   );
+  const isLoading = projection.isLoading;
+  const packets = useMemo(() => (projection.data?.outputs ?? []).flatMap(output =>
+    output.paths.flatMap(path => path.next_steps.map(step => ({
+      id: `${path.path_id}:${step.step_number}`,
+      packetName: step.action,
+      packetType: path.workflow_name,
+      forum: path.filing_destination,
+      packetStatus: path.confirmation_state,
+      owner: step.owner,
+      dueRule: step.due_rule,
+    }))),
+  ), [projection.data]);
 
   if (isLoading) {
     return (
@@ -710,16 +717,16 @@ function NextActionsPanel({ caseId }: { caseId: number }) {
             Next Actions
           </CardTitle>
           <Badge variant="outline" className="text-[10px]">
-            {packets?.length ?? 0} packet{(packets?.length ?? 0) !== 1 ? "s" : ""}
+            {packets.length} action{packets.length !== 1 ? "s" : ""}
           </Badge>
         </div>
       </CardHeader>
       <CardContent>
-        {!packets || packets.length === 0 ? (
+        {packets.length === 0 ? (
           <div className="text-center py-6 text-muted-foreground">
             <Zap className="h-8 w-8 mx-auto mb-2 opacity-40" />
-            <p className="text-sm">No filing packets generated yet.</p>
-            <p className="text-xs mt-1">Run the pipeline to generate filings.</p>
+            <p className="text-sm">No governed next actions yet.</p>
+            <p className="text-xs mt-1">Run the Universal Intake Spine to produce Layer 14 action candidates.</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -732,14 +739,14 @@ function NextActionsPanel({ caseId }: { caseId: number }) {
                   <div className="min-w-0">
                     <p className="text-xs font-medium truncate">{pkt.packetName || pkt.packetType}</p>
                     <p className="text-[10px] text-muted-foreground mt-0.5">
-                      {pkt.forum || "General"} · {pkt.packetStatus || "draft"}
+                      {pkt.forum || pkt.packetType} · {pkt.owner || "owner unresolved"}
                     </p>
                   </div>
                   <Badge
-                    variant={pkt.packetStatus === "finalized" ? "default" : "outline"}
+                    variant="outline"
                     className="text-[9px] shrink-0"
                   >
-                    {pkt.packetStatus || "draft"}
+                    {pkt.packetStatus.replace(/_/g, " ")}
                   </Badge>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -747,29 +754,12 @@ function NextActionsPanel({ caseId }: { caseId: number }) {
                     variant="outline"
                     size="sm"
                     className="h-6 text-[10px] px-2"
-                    onClick={() => navigate("/filing-generator")}
+                    onClick={() => navigate("/claim-elements")}
                   >
-                    <Edit className="h-3 w-3 mr-1" />
-                    Edit
+                    <ExternalLink className="h-3 w-3 mr-1" />
+                    View governed path
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-6 text-[10px] px-2"
-                    onClick={() => toast.info("Download feature coming soon")}
-                  >
-                    <Download className="h-3 w-3 mr-1" />
-                    Export
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-6 text-[10px] px-2"
-                    onClick={() => navigate("/lumensend")}
-                  >
-                    <Send className="h-3 w-3 mr-1" />
-                    Send
-                  </Button>
+                  {pkt.dueRule && <span className="text-[9px] text-muted-foreground">{pkt.dueRule}</span>}
                 </div>
               </div>
             ))}
@@ -783,10 +773,21 @@ function NextActionsPanel({ caseId }: { caseId: number }) {
 /* ─── Pattern Signals Panel ─── */
 function PatternSignalsPanel({ caseId }: { caseId: number }) {
   const [, navigate] = useLocation();
-  const { data: inferences, isLoading: infLoading } = trpc.patternEngine.getSystemicInferences.useQuery();
-  const { data: entityClusters } = trpc.patternEngine.getEntityClusters.useQuery();
-  const { data: conductClusters } = trpc.patternEngine.getConductClusters.useQuery();
-  const { data: caseLinks } = trpc.patternEngine.getCaseLinks.useQuery({});
+  const projection = trpc.analyze.getIntakeStructuralSignalProjection.useQuery(
+    { caseId },
+    { refetchInterval: 30000, retry: false },
+  );
+  const infLoading = projection.isLoading;
+  const patterns = (projection.data?.pattern_outputs ?? []).flatMap(output => output.patterns);
+  const cascades = (projection.data?.cascade_outputs ?? []).flatMap(output => output.cascades);
+  const inferences = patterns.map(pattern => ({
+    id: pattern.pattern_id,
+    inferenceText: pattern.match_basis,
+    confidenceScore: null,
+  }));
+  const entityClusters: any[] = [];
+  const conductClusters = cascades;
+  const caseLinks: any[] = [];
 
   if (infLoading) {
     return (
@@ -838,7 +839,7 @@ function PatternSignalsPanel({ caseId }: { caseId: number }) {
           <div className="text-center py-6 text-muted-foreground">
             <Eye className="h-8 w-8 mx-auto mb-2 opacity-40" />
             <p className="text-sm">No pattern signals detected yet.</p>
-            <p className="text-xs mt-1">Run the full pipeline to detect cross-case patterns.</p>
+            <p className="text-xs mt-1">Run the Universal Intake Spine to execute Layers 10 and 11.</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -846,19 +847,19 @@ function PatternSignalsPanel({ caseId }: { caseId: number }) {
             <div className="grid grid-cols-4 gap-2">
               <div className="p-2 rounded-lg bg-muted/40 text-center">
                 <p className="text-lg font-semibold">{entityCount}</p>
-                <p className="text-[9px] text-muted-foreground">Entity Clusters</p>
+                <p className="text-[9px] text-muted-foreground">Entity clusters</p>
               </div>
               <div className="p-2 rounded-lg bg-muted/40 text-center">
                 <p className="text-lg font-semibold">{conductCount}</p>
-                <p className="text-[9px] text-muted-foreground">Conduct Clusters</p>
+                <p className="text-[9px] text-muted-foreground">Cascade chains</p>
               </div>
               <div className="p-2 rounded-lg bg-muted/40 text-center">
                 <p className="text-lg font-semibold">{linkCount}</p>
-                <p className="text-[9px] text-muted-foreground">Case Links</p>
+                <p className="text-[9px] text-muted-foreground">Cross-case links</p>
               </div>
               <div className="p-2 rounded-lg bg-muted/40 text-center">
                 <p className="text-lg font-semibold">{inferenceCount}</p>
-                <p className="text-[9px] text-muted-foreground">Inferences</p>
+                <p className="text-[9px] text-muted-foreground">Pattern matches</p>
               </div>
             </div>
 
@@ -866,7 +867,7 @@ function PatternSignalsPanel({ caseId }: { caseId: number }) {
             {inferences && inferences.length > 0 && (
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
-                  Systemic Inferences
+                  Deterministic structural matches
                 </p>
                 <div className="space-y-1.5">
                   {inferences.slice(0, 4).map((inf: any) => (
@@ -894,13 +895,31 @@ function PatternSignalsPanel({ caseId }: { caseId: number }) {
   );
 }
 
-/* ─── Key Findings Panel ─── */
+/* ─── Receipt-bound Verification Panel ─── */
 function KeyFindingsPanel({ caseId }: { caseId: number }) {
   const [, navigate] = useLocation();
-  const { data: findings, isLoading } = trpc.findings.listEnriched.useQuery(
-    { case_id: caseId },
-    { refetchInterval: 30000 }
+  const projection = trpc.analyze.getIntakeVerificationProjection.useQuery(
+    { caseId },
+    { refetchInterval: 30000, retry: false }
   );
+  const isLoading = projection.isLoading;
+  const findings = useMemo(() => (projection.data?.outputs ?? []).flatMap(output =>
+    output.records.map(record => {
+      const [, attribute] = record.fact_key.split("|");
+      return {
+        id: `${output.output_hash}:${record.fact_key}`,
+        title: (attribute || record.fact_key).replace(/_/g, " "),
+        description: record.fact_key,
+        severity: record.verification_state === "contradicted"
+          ? "critical"
+          : record.verification_state === "disputed" ? "high" : null,
+        backingEvidence: record.source_refs,
+        provenanceStatus: "linked",
+        verificationState: record.verification_state,
+        receiptHash: output.receipt_hash,
+      };
+    }),
+  ), [projection.data]);
 
   if (isLoading) {
     return (
@@ -908,7 +927,7 @@ function KeyFindingsPanel({ caseId }: { caseId: number }) {
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
             <Search className="h-4 w-4 text-primary" />
-            Key Findings
+            Verification Records
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -930,7 +949,7 @@ function KeyFindingsPanel({ caseId }: { caseId: number }) {
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
             <Search className="h-4 w-4 text-primary" />
-            Key Findings
+            Verification Records
           </CardTitle>
           <Badge variant="outline" className="text-[10px]">
             {(findings ?? []).length} total
@@ -941,8 +960,8 @@ function KeyFindingsPanel({ caseId }: { caseId: number }) {
         {topFindings.length === 0 ? (
           <div className="text-center py-6 text-muted-foreground">
             <Search className="h-8 w-8 mx-auto mb-2 opacity-40" />
-            <p className="text-sm">No findings extracted yet.</p>
-            <p className="text-xs mt-1">Preserve evidence, then explicitly run the Universal Intake Spine.</p>
+            <p className="text-sm">No governed verification records yet.</p>
+            <p className="text-xs mt-1">Register evidence, then explicitly run the Universal Intake Spine.</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -957,7 +976,7 @@ function KeyFindingsPanel({ caseId }: { caseId: number }) {
                     <Lightbulb className="h-3 w-3 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium truncate">{f.title || f.description || "Finding"}</p>
+                    <p className="text-xs font-medium truncate">{f.title || "Verification record"}</p>
                     <div className="flex items-center gap-2 mt-0.5">
                       {f.severity && (
                         <Badge
@@ -970,7 +989,7 @@ function KeyFindingsPanel({ caseId }: { caseId: number }) {
                       {f.backingEvidence && f.backingEvidence.length > 0 && (
                         <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
                           <BookOpen className="h-2.5 w-2.5" />
-                          {f.backingEvidence.length} source{f.backingEvidence.length !== 1 ? "s" : ""}
+                          {f.backingEvidence.length} source statement{f.backingEvidence.length !== 1 ? "s" : ""}
                         </span>
                       )}
                       {f.provenanceStatus && (
@@ -982,7 +1001,7 @@ function KeyFindingsPanel({ caseId }: { caseId: number }) {
                           ) : (
                             <AlertTriangle className="h-2.5 w-2.5" />
                           )}
-                          {f.provenanceStatus}
+                          {f.verificationState.replace(/_/g, " ")}
                         </span>
                       )}
                     </div>
@@ -998,7 +1017,7 @@ function KeyFindingsPanel({ caseId }: { caseId: number }) {
                 className="w-full text-xs text-muted-foreground"
                 onClick={() => navigate("/findings")}
               >
-                View all {(findings ?? []).length} findings
+                View all {(findings ?? []).length} verification records
               </Button>
             )}
           </div>

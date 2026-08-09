@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 
-import { getPool, listEvents as list_legacy_events } from "./db-legacy";
+import { getPool } from "./db-legacy";
 import { computeHash } from "./engines/intake-spine/utils";
 
 const EXECUTION_CONTRACT_VERSION = "luminari.intake.layer-execution.v1";
@@ -30,7 +30,7 @@ function as_array(value: unknown): any[] {
 }
 
 async function load_canonical_chronology_outputs(case_id: number): Promise<{
-  state: "legacy_fallback" | "canonical_projection";
+  state: "not_projected" | "canonical_projection";
   outputs: Array<{
     layer_run_id: string;
     output_hash: string;
@@ -44,7 +44,11 @@ async function load_canonical_chronology_outputs(case_id: number): Promise<{
        select cil.intake_session_id
          from public.case_identity_bridge cib
          join public.case_intake_links cil on cil.case_uuid = cib.case_uuid
+         join public.intake_sessions s on s.intake_session_id = cil.intake_session_id
         where cib.legacy_case_id = $1
+          and s.session_type = 'live'
+          and s.entry_channel = 'upload'
+          and s.completion_state = 'governed_execution_complete'
      ), ranked as (
        select lr.*,
               row_number() over (
@@ -91,7 +95,7 @@ async function load_canonical_chronology_outputs(case_id: number): Promise<{
       && row.receipt?.execution_contract_version === EXECUTION_CONTRACT_VERSION
       && row.canonicalization_version === CANONICALIZATION_VERSION,
   );
-  if (eligible.length === 0) return { state: "legacy_fallback", outputs: [] };
+  if (eligible.length === 0) return { state: "not_projected", outputs: [] };
 
   const outputs = eligible.map((row: any) => {
     const metadata = row.metadata ?? {};
@@ -144,10 +148,17 @@ async function load_source_document_bindings(case_id: number) {
     `select a.artifact_key, a.filename, a.metadata
        from public.case_identity_bridge cib
        join public.case_intake_links cil on cil.case_uuid = cib.case_uuid
+       join public.intake_sessions s on s.intake_session_id = cil.intake_session_id
        join public.intake_artifacts a on a.intake_session_id = cil.intake_session_id
+       join public.documents d
+         on coalesce(a.metadata ->> 'legacy_document_id', '') ~ '^[0-9]+$'
+        and d.id = (a.metadata ->> 'legacy_document_id')::integer
       where cib.legacy_case_id = $1
+        and s.session_type = 'live'
+        and s.entry_channel = 'upload'
         and a.artifact_type = 'source_document'
         and a.artifact_status = 'preserved'
+        and coalesce(d.document_resolution, 'active') = 'active'
       order by a.artifact_key, a.artifact_id`,
     [case_id],
   );
@@ -199,7 +210,7 @@ function merge_chronology(outputs: Array<{ data: ChronologyEvent[] }>): Chronolo
 
 export async function listEvents(caseId: number) {
   const canonical = await load_canonical_chronology_outputs(caseId);
-  if (canonical.state === "legacy_fallback") return list_legacy_events(caseId);
+  if (canonical.state === "not_projected") return [];
 
   const bindings = await load_source_document_bindings(caseId);
   const output_hashes = [...new Set(canonical.outputs.map(output => output.output_hash))].sort();
