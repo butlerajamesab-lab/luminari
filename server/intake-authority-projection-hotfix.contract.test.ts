@@ -39,7 +39,7 @@ describe("authoritative Intake projection hotfix", () => {
 
   it("invalidates the governed session when a document is physically deleted", () => {
     const deletionMigration = read(
-      "supabase/migrations/20260809045844_invalidate_intake_projection_on_document_delete.sql",
+      "supabase/migrations/20260809051313_invalidate_intake_projection_on_document_delete.sql",
     );
     const authorityMigration = read(
       "supabase/migrations/20260808231628_promote_live_upload_intake_authority.sql",
