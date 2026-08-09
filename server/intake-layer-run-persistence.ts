@@ -43,6 +43,19 @@ function require_uuid(value: string, field: string): void {
 }
 
 /**
+ * node-postgres encodes JavaScript arrays as PostgreSQL array literals. Every
+ * value crossing a ::jsonb parameter must therefore be serialized explicitly;
+ * otherwise input_refs and unresolved_dependencies arrive as invalid JSON.
+ */
+function to_postgres_json(value: unknown, field: string): string {
+  const rendered = JSON.stringify(value);
+  if (rendered === undefined) {
+    throw new Error(`intake_layer_execution_${field}_not_json_serializable`);
+  }
+  return rendered;
+}
+
+/**
  * Persist one deterministic Universal Intake Spine layer execution.
  *
  * This adapter intentionally exposes only the v4 registration contract. v4
@@ -111,12 +124,12 @@ export async function register_intake_layer_execution(
       input.rule_version,
       input.parser_version,
       input.rule_manifest_hash,
-      input.execution_envelope,
+      to_postgres_json(input.execution_envelope, "execution_envelope"),
       input.input_hash,
-      input.output_data ?? null,
+      to_postgres_json(input.output_data ?? null, "output_data"),
       input.output_hash,
-      input_refs,
-      unresolved_dependencies,
+      to_postgres_json(input_refs, "input_refs"),
+      to_postgres_json(unresolved_dependencies, "unresolved_dependencies"),
       input.execution_lease_token,
     ],
   );

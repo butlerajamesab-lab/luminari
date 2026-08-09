@@ -3521,16 +3521,16 @@ export type PipelineEvent = typeof pipelineEvents.$inferSelect;
 
 export const shareLinks = pgTable("share_links", {
   id: serial("id").primaryKey(),
-  caseId: integer("caseId").notNull(),
-  createdBy: integer("createdBy").notNull(),
+  caseId: integer("case_id").notNull(),
+  createdBy: integer("created_by").notNull(),
   token: varchar("token", { length: 128 }).notNull().unique(),
-  label: varchar("label", { length: 256 }), // e.g., "For my attorney", "Legal aid review"
-  permissions: pgEnum("share_links_permissions_enum", ["read_only", "read_export"])("permissions").default("read_only").notNull(),
-  expiresAt: bigint("expiresAt", { mode: "number" }).notNull(),
-  revokedAt: bigint("revokedAt", { mode: "number" }),
-  lastAccessedAt: bigint("lastAccessedAt", { mode: "number" }),
-  accessCount: integer("accessCount").default(0).notNull(),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull(),
+  label: varchar("label", { length: 256 }),
+  permissions: text("permissions").$type<"read_only" | "read_export">().default("read_only").notNull(),
+  expiresAt: bigint("expires_at", { mode: "number" }).notNull(),
+  revokedAt: bigint("revoked_at", { mode: "number" }),
+  lastAccessedAt: bigint("last_accessed_at", { mode: "number" }),
+  accessCount: integer("access_count").default(0).notNull(),
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
 }, (table) => [
   uniqueIndex("idx_share_token").on(table.token),
   index("idx_share_case").on(table.caseId),
@@ -3542,14 +3542,14 @@ export type ShareLink = typeof shareLinks.$inferSelect;
 
 export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),
-  userId: integer("userId").notNull(),
-  type: varchar("type", { length: 50 }).notNull(), // share_accessed, extraction_complete, new_findings, case_status, feedback_response, share_expiring
+  userId: integer("user_id").notNull(),
+  type: varchar("type", { length: 50 }).notNull(),
   title: varchar("title", { length: 255 }).notNull(),
   message: text("message").notNull(),
-  metadata: jsonb("metadata").$type<Record<string, any>>(), // caseId, documentId, shareLinkId, etc.
-  linkUrl: varchar("linkUrl", { length: 500 }), // in-app URL to navigate to
-  readAt: bigint("readAt", { mode: "number" }),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull(),
+  metadata: jsonb("metadata").$type<Record<string, any>>(),
+  linkUrl: varchar("link_url", { length: 500 }),
+  readAt: bigint("read_at", { mode: "number" }),
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
 }, (table) => [
   index("idx_notif_user").on(table.userId),
   index("idx_notif_user_read").on(table.userId, table.readAt),
@@ -3593,18 +3593,18 @@ export type InviteRedemption = typeof inviteRedemptions.$inferSelect;
 
 export const missingRecords = pgTable("missing_records", {
   id: serial("id").primaryKey(),
-  caseId: integer("caseId").notNull(),
-  domain: varchar("domain", { length: 64 }).notNull(),
-  recordType: varchar("recordType", { length: 128 }).notNull(),
-  label: varchar("label", { length: 256 }).notNull(),
+  caseId: integer("case_id").notNull(),
+  domain: text("domain").notNull(),
+  recordType: text("record_type").notNull(),
+  label: text("label").notNull(),
   description: text("description").notNull(),
-  legalBasis: text("legalBasis"),
-  severity: pgEnum("missing_records_severity_enum", ["critical", "important", "helpful"])("severity").notNull(),
-  agencyType: varchar("agencyType", { length: 256 }),
-  foiaEligible: boolean("foiaEligible").default(false).notNull(),
-  status: pgEnum("missing_records_missing_record_status_enum", ["detected", "acknowledged", "requested", "received", "not_applicable"])("missingRecordStatus").default("detected").notNull(),
-  detectedAt: bigint("detectedAt", { mode: "number" }).notNull(),
-  updatedAt: bigint("updatedAt", { mode: "number" }).notNull(),
+  legalBasis: text("legal_basis"),
+  severity: text("severity").$type<"critical" | "important" | "helpful">().notNull(),
+  agencyType: text("agency_type"),
+  foiaEligible: boolean_integer("foia_eligible").default(false).notNull(),
+  status: text("missing_record_status").$type<"detected" | "acknowledged" | "requested" | "received" | "not_applicable">().default("detected").notNull(),
+  detectedAt: bigint("detected_at", { mode: "number" }).notNull(),
+  updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
 }, (table) => [
   index("idx_missing_records_case").on(table.caseId),
   index("idx_missing_records_domain").on(table.domain),
@@ -3684,52 +3684,44 @@ export type InsertFoiaAgencyRecord = typeof foiaAgencyRecords.$inferInsert;
 
 export const foiaRequests = pgTable("foia_requests", {
   id: serial("id").primaryKey(),
-  caseId: integer("caseId").notNull(),
-  userId: integer("userId").notNull(),
-  missingRecordId: integer("missingRecordId").notNull(), // FK → missing_records.id
-  agencyId: integer("agencyId"), // FK → foia_agencies.id (null if no AKB match)
-  statuteId: integer("statuteId"), // FK → foia_statutes.id (null if no AKB match)
-  // Request metadata
+  caseId: integer("case_id").notNull(),
+  userId: integer("user_id").notNull(),
+  missingRecordId: integer("missing_record_id").notNull(),
+  agencyId: integer("agency_id"),
+  statuteId: integer("statute_id"),
   domain: varchar("domain", { length: 64 }).notNull(),
-  recordType: varchar("recordType", { length: 128 }).notNull(),
-  stateCode: varchar("stateCode", { length: 8 }).default("WA").notNull(),
-  // Request fingerprint — deterministic hash for cross-request analytics
-  requestFingerprint: varchar("requestFingerprint", { length: 128 }).notNull(),
-  // Letter content
-  letterContent: text("letterContent").notNull(),
-  // Requester info (populated from user profile + case context)
-  requesterName: varchar("requesterName", { length: 256 }),
-  requesterAddress: text("requesterAddress"),
-  requesterEmail: varchar("requesterEmail", { length: 320 }),
-  requesterPhone: varchar("requesterPhone", { length: 32 }),
-  // Agency target info (denormalized for letter generation)
-  agencyName: varchar("agencyName", { length: 256 }),
-  agencyAddress: text("agencyAddress"),
-  agencyEmail: varchar("agencyEmail", { length: 320 }),
-  // Status tracking
-  status: pgEnum("foia_requests_foia_request_status_enum", [
-    "draft",        // Generated, awaiting user review
-    "ready",        // User reviewed and approved
-    "submitted",    // User reports they've sent it
-    "acknowledged", // Agency acknowledged receipt
-    "in_processing",// Agency is processing
-    "records_produced", // Records received
-    "partial_denial",   // Some records withheld
-    "denied",       // Full denial
-    "appeal_prepared",  // Appeal letter generated
-    "appeal_submitted", // Appeal sent
-    "closed",       // Resolved
-  ])("foiaRequestStatus").default("draft").notNull(),
-  // Gating metadata — why the system recommended this request
-  gatingReason: text("gatingReason"), // JSON: { criteria_met, case_stage, severity_threshold }
-  warmHandoff: boolean("warmHandoff").default(false).notNull(), // true if system recommends human advocate
-  warmHandoffReason: text("warmHandoffReason"),
-  // Timing
-  createdAt: bigint("createdAt", { mode: "number" }).notNull(),
-  updatedAt: bigint("updatedAt", { mode: "number" }).notNull(),
-  submittedAt: bigint("submittedAt", { mode: "number" }),
-  responseDueAt: bigint("responseDueAt", { mode: "number" }), // calculated from statute deadline
-  responseReceivedAt: bigint("responseReceivedAt", { mode: "number" }),
+  recordType: varchar("record_type", { length: 128 }).notNull(),
+  stateCode: varchar("state_code", { length: 8 }).default("WA").notNull(),
+  requestFingerprint: varchar("request_fingerprint", { length: 128 }).notNull(),
+  letterContent: text("letter_content").notNull(),
+  requesterName: varchar("requester_name", { length: 256 }),
+  requesterAddress: text("requester_address"),
+  requesterEmail: varchar("requester_email", { length: 320 }),
+  requesterPhone: varchar("requester_phone", { length: 32 }),
+  agencyName: varchar("agency_name", { length: 256 }),
+  agencyAddress: text("agency_address"),
+  agencyEmail: varchar("agency_email", { length: 320 }),
+  status: text("foia_request_status").$type<
+    "draft" |
+    "ready" |
+    "submitted" |
+    "acknowledged" |
+    "in_processing" |
+    "records_produced" |
+    "partial_denial" |
+    "denied" |
+    "appeal_prepared" |
+    "appeal_submitted" |
+    "closed"
+  >().default("draft").notNull(),
+  gatingReason: text("gating_reason"),
+  warmHandoff: boolean("warm_handoff").default(false).notNull(),
+  warmHandoffReason: text("warm_handoff_reason"),
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
+  updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
+  submittedAt: bigint("submitted_at", { mode: "number" }),
+  responseDueAt: bigint("response_due_at", { mode: "number" }),
+  responseReceivedAt: bigint("response_received_at", { mode: "number" }),
 }, (table) => [
   index("idx_foia_req_case").on(table.caseId),
   index("idx_foia_req_user").on(table.userId),
