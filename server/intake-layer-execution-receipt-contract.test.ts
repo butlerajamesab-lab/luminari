@@ -9,6 +9,10 @@ const crossRuntimeMigration = readFileSync(
   "supabase/migrations/20260807205321_intake_layer_execution_cross_runtime_proof_v3.sql",
   "utf8",
 );
+const sealedRunImmutabilityMigration = readFileSync(
+  "supabase/migrations/20260809153413_lock_sealed_intake_layer_runs.sql",
+  "utf8",
+);
 const verification = readFileSync(
   "supabase/verification/20260807205321_intake_layer_execution_cross_runtime_proof_v3_verify.sql",
   "utf8",
@@ -42,5 +46,20 @@ describe("Universal Intake Spine generic layer execution receipt contract", () =
     expect(verification).toContain("idempotent database replay failed");
     expect(verification).toContain("1e03aed2220164ee94794f8141eaa11abfbfb204e72d2a984e8200b3f6fdbd79");
     expect(verification).toContain("cross-runtime canonical mismatch was not rejected");
+  });
+
+  it("source-controls sealed layer-run immutability for replay parity", () => {
+    expect(sealedRunImmutabilityMigration).toContain(
+      "luminari_reject_sealed_intake_layer_run_mutation",
+    );
+    expect(sealedRunImmutabilityMigration).toContain("if old.is_sealed then");
+    expect(sealedRunImmutabilityMigration).toMatch(
+      /before update or delete on public\.intake_layer_runs/i,
+    );
+    expect(sealedRunImmutabilityMigration).toContain("security invoker");
+    expect(sealedRunImmutabilityMigration).toContain("set search_path = ''");
+    expect(sealedRunImmutabilityMigration).toContain(
+      "supersession requires insertion",
+    );
   });
 });
