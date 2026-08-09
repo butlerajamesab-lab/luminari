@@ -17,7 +17,7 @@ function read_source(relative_path: string): string {
   );
 }
 
-const db_source = read_source("./db.ts");
+const db_source = read_source("./db-legacy.ts");
 
 function function_source(name: string, next_name: string): string {
   const start = db_source.indexOf(`export async function ${name}`);
@@ -197,7 +197,6 @@ describe("document upload PostgreSQL persistence contract", () => {
 
   it("uses integer case ids when filtering the live documents table", () => {
     for (const source of [
-      read_source("./analysis-pipeline.ts"),
       read_source("./routers/assembly-engine.ts"),
       read_source("./routers/case-repair.ts"),
       read_source("./services/form-extraction-service.ts"),

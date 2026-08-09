@@ -28,7 +28,6 @@ import CdaRunList from "./pages/CdaRunList";
 import CdaRunDetail from "./pages/CdaRunDetail";
 import Provenance from "./pages/Provenance";
 import ProvenanceHistory from "./pages/ProvenanceHistory";
-import SpineViewer from "./pages/SpineViewer";
 import ExtractionFailures from "./pages/ExtractionFailures";
 import IntegrityDashboard from "./pages/IntegrityDashboard";
 import GlobalUploadIndicator from "./components/GlobalUploadIndicator";
@@ -93,7 +92,6 @@ import ArchitectureMap from "./pages/ArchitectureMap";
 import FilingGenerator from "./pages/FilingGenerator";
 import ProofFrameworks from "./pages/ProofFrameworks";
 import ClaimElements from "./pages/ClaimElements";
-import ClaimDenialAnalysis from "./pages/ClaimDenialAnalysis";
 import InvestigationGuidance from "./pages/InvestigationGuidance";
 import CommandBoard from "./pages/CommandBoard";
 import ControlRoom from "./pages/ControlRoom";
@@ -111,7 +109,6 @@ import SovereignControl from "./pages/SovereignControl";
 import ingestion_control from "./pages/ingestion_control";
 import GovernanceDashboard from "./pages/GovernanceDashboard";
 import Verify from "./pages/Verify";
-import ExtractionDashboard from "./pages/ExtractionDashboard";
 import BusinessAnalytics from "./pages/BusinessAnalytics";
 
 /**
@@ -190,13 +187,11 @@ function DashboardRouter() {
         <Route path="/provenance/history" component={ProvenanceHistory} />
         <Route path="/extraction-failures" component={ExtractionFailures} />
         <Route path="/integrity" component={IntegrityDashboard} />
-        <Route path="/spine/:caseId/:snapshotId" component={SpineViewer} />
         <Route path="/foia" component={FoiaTracking} />
         <Route path="/narrative" component={StatementOfFacts} />
         <Route path="/patterns" component={Patterns} />
         <Route path="/presentations" component={Presentations} />
         <Route path="/presentations/:id" component={PresentationEditor} />
-        <Route path="/extraction" component={ExtractionDashboard} />
         <Route component={NotFound} />
       </Switch>
     </DashboardLayout>
@@ -270,7 +265,6 @@ function App() {
                 <Route path="/filing-generator" component={FilingGenerator} />
                 <Route path="/proof-frameworks" component={ProofFrameworks} />
                 <Route path="/claim-elements" component={ClaimElements} />
-                <Route path="/claim-denial-analysis" component={ClaimDenialAnalysis} />
                 <Route path="/investigation-guidance" component={InvestigationGuidance} />
                 <Route path="/command-board" component={CommandBoard} />
                 <Route path="/admin/knowledge-population" component={KnowledgePopulation} />

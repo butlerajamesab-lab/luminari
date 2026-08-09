@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useLocation } from "wouter";
-import { Upload as UploadIcon, FileText, CheckCircle, XCircle, X, Loader2, AlertTriangle, Lock, Shield, Clock, Timer, Link2, Info, RefreshCw } from "lucide-react";
+import { Upload as UploadIcon, FileText, CheckCircle, XCircle, X, Loader2, AlertTriangle, Lock, Shield, Clock, Timer, Link2, Info } from "lucide-react";
 import { useState, useCallback, useRef } from "react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
@@ -18,15 +18,12 @@ import {
 
 type UploadResult = {
   filename: string;
-  status: "pending" | "uploading" | "done" | "error" | "duplicate" | "replaced";
+  status: "pending" | "uploading" | "done" | "error" | "duplicate";
   error?: string;
   message?: string;
   id?: number;
   /** The existing document ID this file was linked to (server-side dedup) */
   linkedToId?: number;
-  /** When a resolved/failed doc was overridden, the new document ID */
-  replacedDocId?: number;
-  /** Info about the resolved original that was overridden */
   resolvedOriginal?: { documentId: number; resolution: string; status: string };
 };
 
@@ -35,7 +32,6 @@ type UploadSummary = {
   uploaded: number;
   duplicates: number;
   errors: number;
-  overrides: number;
   caseDocumentCount: number;
   caseId: number;
 };
@@ -154,7 +150,7 @@ function FileRowStatus({ result }: { result: UploadResult }) {
       return (
         <div className="flex items-center gap-1.5">
           <CheckCircle className="h-4 w-4 text-emerald-400 shrink-0" />
-          <span className="text-[10px] text-emerald-400 font-medium">New Document Created</span>
+          <span className="text-[10px] text-emerald-400 font-medium">Source Registered</span>
         </div>
       );
     case "duplicate":
@@ -162,22 +158,13 @@ function FileRowStatus({ result }: { result: UploadResult }) {
         <div className="flex items-center gap-1.5">
           <Link2 className="h-4 w-4 text-cyan-400 shrink-0" />
           <span className="text-[10px] text-cyan-400 font-medium">
-            Duplicate Linked{result.linkedToId ? ` to Document ID ${result.linkedToId}` : ""}
+            Duplicate Rejected{result.linkedToId ? ` — already Document ID ${result.linkedToId}` : ""}
           </span>
           {result.resolvedOriginal && (
             <span className="text-[10px] text-amber-400">
-              (original was {result.resolvedOriginal.resolution} — sealed snapshot blocked override)
+              (existing source is {result.resolvedOriginal.resolution}; use explicit replacement with different bytes)
             </span>
           )}
-        </div>
-      );
-    case "replaced":
-      return (
-        <div className="flex items-center gap-1.5">
-          <RefreshCw className="h-4 w-4 text-emerald-400 shrink-0" />
-          <span className="text-[10px] text-emerald-400 font-medium">
-            Override: Replaced resolved doc{result.replacedDocId ? ` #${result.replacedDocId}` : ""}
-          </span>
         </div>
       );
     case "error":
@@ -318,7 +305,7 @@ export default function Upload() {
 
     const batches = buildUploadBatches(files);
     let completed = 0;
-    let preservedCount = 0;
+        let registeredCount = 0;
     let lastSummary: UploadSummary | null = null;
 
     // ── Create server-side upload session for multi-batch persistence ──
@@ -392,10 +379,9 @@ export default function Upload() {
         // Capture summary from last batch
         if (data.summary) {
           lastSummary = data.summary;
-          preservedCount +=
+          registeredCount +=
             Number(data.summary.uploaded ?? 0) +
-            Number(data.summary.duplicates ?? 0) +
-            Number(data.summary.overrides ?? 0);
+            Number(data.summary.duplicates ?? 0);
         }
 
         // Mark results with explicit status differentiation
@@ -412,16 +398,6 @@ export default function Upload() {
                 id: docResult.id,
                 linkedToId: docResult.id,
                 resolvedOriginal: docResult.resolvedOriginal,
-              };
-            }
-            // Scoped override: resolved/failed doc was replaced
-            if (docResult?.status === "uploaded" && docResult?.message?.startsWith("Replaced resolved")) {
-              return {
-                ...r,
-                status: "replaced",
-                id: docResult.id,
-                message: docResult.message,
-                replacedDocId: docResult.replacedDocId,
               };
             }
             return { ...r, status: "done", id: docResult?.id };
@@ -467,16 +443,14 @@ export default function Upload() {
     if (lastSummary) {
       setSummary(lastSummary);
       setShowSummary(true);
-    } else if (preservedCount > 0) {
-      toast.success(`Upload complete: ${preservedCount} file(s) preserved or linked`);
+    } else if (registeredCount > 0) {
+      toast.success(`Upload complete: ${registeredCount} source file(s) registered or already present`);
     }
 
-    // Preservation and semantic analysis are separate governed stages.
-    // Upload success must never be converted into an analysis failure by the retired legacy pipeline.
-    if (preservedCount > 0) {
-      toast.info("Upload preserved. Open the Universal Intake Spine when you are ready to declare the jurisdiction and rule-date boundary.");
+    if (registeredCount > 0) {
+      toast.info("Sources registered. Open the Universal Intake Spine when you are ready to verify preservation and run governed reconstruction.");
     } else {
-      toast.error("Upload failed: no files were preserved.");
+      toast.error("Upload failed: no source files were registered.");
     }
   };
 
@@ -504,7 +478,7 @@ export default function Upload() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Upload Evidence</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Drag files or click to select. Any file type can be preserved as evidence; supported extractors process available content downstream.
+          Drag files or click to select. Upload registers exact source bytes; governed preservation verification and reconstruction run only when explicitly started.
         </p>
       </div>
 
@@ -654,26 +628,17 @@ export default function Upload() {
                 <div className={`flex items-center justify-between p-2.5 rounded-md ${summary.uploaded > 0 ? "bg-emerald-500/10" : "bg-muted/50"}`}>
                   <span className="text-sm text-muted-foreground flex items-center gap-2">
                     <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
-                    New Documents Created
+                    New Sources Registered
                   </span>
                   <span className={`text-sm font-bold ${summary.uploaded > 0 ? "text-emerald-400" : "text-foreground"}`}>{summary.uploaded}</span>
                 </div>
                 <div className={`flex items-center justify-between p-2.5 rounded-md ${summary.duplicates > 0 ? "bg-cyan-500/10" : "bg-muted/50"}`}>
                   <span className="text-sm text-muted-foreground flex items-center gap-2">
                     <Link2 className="h-3.5 w-3.5 text-cyan-400" />
-                    Duplicates Linked
+                    Duplicates Already Registered
                   </span>
                   <span className={`text-sm font-bold ${summary.duplicates > 0 ? "text-cyan-400" : "text-foreground"}`}>{summary.duplicates}</span>
                 </div>
-                {(summary.overrides ?? 0) > 0 && (
-                  <div className="flex items-center justify-between p-2.5 rounded-md bg-teal-500/10">
-                    <span className="text-sm text-muted-foreground flex items-center gap-2">
-                      <RefreshCw className="h-3.5 w-3.5 text-teal-400" />
-                      Resolved Docs Overridden
-                    </span>
-                    <span className="text-sm font-bold text-teal-400">{summary.overrides}</span>
-                  </div>
-                )}
                 <div className={`flex items-center justify-between p-2.5 rounded-md ${summary.errors > 0 ? "bg-red-500/10" : "bg-muted/50"}`}>
                   <span className="text-sm text-muted-foreground flex items-center gap-2">
                     <XCircle className="h-3.5 w-3.5 text-red-400" />

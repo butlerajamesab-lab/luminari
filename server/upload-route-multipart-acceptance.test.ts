@@ -10,10 +10,6 @@ const state = vi.hoisted(() => ({
   storage_put: vi.fn(),
   storage_get: vi.fn(),
   is_supabase_storage_key: vi.fn(),
-  enqueue_document: vi.fn(),
-  get_open_snapshot: vi.fn(),
-  create_corpus_snapshot: vi.fn(),
-  get_snapshot: vi.fn(),
   create_upload_session: vi.fn(),
   get_upload_session: vi.fn(),
   increment_upload_session_counter: vi.fn(),
@@ -21,7 +17,6 @@ const state = vi.hoisted(() => ({
   create_document: vi.fn(),
   log_audit: vi.fn(),
   log_pipeline_event_by_case: vi.fn(),
-  perform_duplicate_override: vi.fn(),
   check_replacement_eligibility: vi.fn(),
 }));
 
@@ -36,10 +31,6 @@ vi.mock("./storage", () => ({
   isSupabaseStorageKey: state.is_supabase_storage_key,
 }));
 
-vi.mock("./analysis-pipeline", () => ({
-  enqueueDocument: state.enqueue_document,
-}));
-
 vi.mock("./db", () => ({
   db: {
     select: vi.fn(() => ({
@@ -48,9 +39,6 @@ vi.mock("./db", () => ({
       })),
     })),
   },
-  getOpenSnapshot: state.get_open_snapshot,
-  createCorpusSnapshot: state.create_corpus_snapshot,
-  getSnapshot: state.get_snapshot,
   createUploadSession: state.create_upload_session,
   getUploadSession: state.get_upload_session,
   incrementUploadSessionCounter: state.increment_upload_session_counter,
@@ -58,7 +46,6 @@ vi.mock("./db", () => ({
   createDocument: state.create_document,
   logAudit: state.log_audit,
   logPipelineEventByCase: state.log_pipeline_event_by_case,
-  performDuplicateOverride: state.perform_duplicate_override,
   checkReplacementEligibility: state.check_replacement_eligibility,
 }));
 
@@ -115,9 +102,6 @@ beforeEach(() => {
     },
   }));
   state.require_resolved_user.mockResolvedValue({ id: 9 });
-  state.get_open_snapshot.mockResolvedValue({ id: 77, caseId: 44, status: "open" });
-  state.create_corpus_snapshot.mockResolvedValue({ id: 77 });
-  state.get_snapshot.mockResolvedValue({ id: 77, caseId: 44, status: "open" });
   state.create_upload_session.mockResolvedValue(501);
   state.get_upload_session.mockResolvedValue({ id: 501, caseId: 44, userId: 9 });
   state.increment_upload_session_counter.mockResolvedValue(undefined);
@@ -125,7 +109,6 @@ beforeEach(() => {
   state.create_document.mockResolvedValue(9001);
   state.log_audit.mockResolvedValue(undefined);
   state.log_pipeline_event_by_case.mockResolvedValue(undefined);
-  state.perform_duplicate_override.mockResolvedValue({ overridden: false });
   state.storage_put.mockResolvedValue({
     key: "supabase:case-documents/cases/44/proof.txt",
     url: "https://storage.invalid/private-object",
@@ -199,7 +182,6 @@ describe("authenticated multipart document upload", () => {
       uploaded: 1,
       duplicates: 0,
       errors: 0,
-      overrides: 0,
       caseDocumentCount: 1,
       caseId: 44,
     });
@@ -230,7 +212,7 @@ describe("authenticated multipart document upload", () => {
       s3Key: "supabase:case-documents/cases/44/proof.txt",
       s3Url: "/api/cases/44/documents/file?key=supabase%3Acase-documents%2Fcases%2F44%2Fproof.txt",
       sha256Hash: expected_hash,
-      snapshotId: 77,
+      snapshotId: null,
     }));
     expect(state.log_audit).toHaveBeenCalledWith(expect.objectContaining({
       caseId: 44,
@@ -277,7 +259,6 @@ describe("authenticated multipart document upload", () => {
       uploaded: 0,
       duplicates: 1,
       errors: 0,
-      overrides: 0,
       caseDocumentCount: 1,
       caseId: 44,
     });

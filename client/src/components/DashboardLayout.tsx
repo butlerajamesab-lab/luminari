@@ -195,18 +195,13 @@ function MobileLayout({ children }: { children: React.ReactNode }) {
     { caseId: currentCaseId! },
     { enabled: !!currentCaseId }
   );
-  const lifecycleQuery = trpc.snapshots.lifecycle.useQuery(
-    { caseId: currentCaseId! },
-    { enabled: !!currentCaseId }
-  );
   const intakeStatusQuery = trpc.analyze.getIntakeSpineStatus.useQuery(
     { caseId: currentCaseId! },
     { enabled: !!currentCaseId, retry: false }
   );
   const caseStats = caseStatsQuery.data ?? null;
-  const lifecycle = lifecycleQuery.data ?? null;
   const hasIntakeExecution = (intakeStatusQuery.data ?? []).some(
-    (session) => session.session_type === "live" && session.layer_run_count > 0,
+    (session) => session.session_type === "live" && session.execution_complete,
   );
 
   return (
@@ -232,7 +227,6 @@ function MobileLayout({ children }: { children: React.ReactNode }) {
           caseId={currentCaseId}
           docCount={caseStats.documents}
           findingCount={caseStats.findings}
-          hasSnapshot={!!lifecycle?.hasSnapshot}
           hasIntakeExecution={hasIntakeExecution}
           onNavigate={setLocation}
         />
@@ -254,14 +248,12 @@ function MobileJourneyBanner({
   caseId,
   docCount,
   findingCount,
-  hasSnapshot,
   hasIntakeExecution,
   onNavigate,
 }: {
   caseId: number;
   docCount: number;
   findingCount: number;
-  hasSnapshot: boolean;
   hasIntakeExecution: boolean;
   onNavigate: (path: string) => void;
 }) {
@@ -275,10 +267,10 @@ function MobileJourneyBanner({
   if (hasIntakeExecution && findingCount === 0) {
     step = 2;
     stepLabel = "Review Spine Receipts";
-  } else if (findingCount > 0 && !hasSnapshot) {
+  } else if (findingCount > 0 && !hasIntakeExecution) {
     step = 2;
     stepLabel = "Review Findings";
-  } else if (findingCount > 0 && hasSnapshot) {
+  } else if (findingCount > 0 && hasIntakeExecution) {
     step = 3;
     stepLabel = "Export & Act";
   }
@@ -327,7 +319,7 @@ function CollapsibleNavSection({
   location,
   setLocation,
   isCollapsed,
-  snapshotStatus,
+  intakeExecutionComplete,
 }: {
   section: NavSection;
   isOpen: boolean;
@@ -335,7 +327,7 @@ function CollapsibleNavSection({
   location: string;
   setLocation: (path: string) => void;
   isCollapsed: boolean;
-  snapshotStatus: string | null;
+  intakeExecutionComplete: boolean;
 }) {
   const hasActiveItem = section.items.some(
     item => location === item.path || location.startsWith(item.path + "/")
@@ -376,8 +368,8 @@ function CollapsibleNavSection({
       {/* Section items — shown when open or sidebar collapsed (icon mode) */}
       {(isOpen || isCollapsed) && section.items.map((item) => {
         const isActive = location === item.path || location.startsWith(item.path + "/");
-        const needsSealed = (item as any).requiresSealed;
-        const isDisabled = needsSealed && snapshotStatus === 'open';
+        const needsGovernedExecution = (item as any).requiresSealed;
+        const isDisabled = needsGovernedExecution && !intakeExecutionComplete;
 
         if (isDisabled) {
           return (
@@ -395,7 +387,7 @@ function CollapsibleNavSection({
                   </SidebarMenuButton>
                 </TooltipTrigger>
                 <TooltipContent side="right">
-                  <p className="text-xs">Available after snapshot is sealed.</p>
+                  <p className="text-xs">Available after a governed Intake Spine execution completes.</p>
                 </TooltipContent>
               </Tooltip>
             </SidebarMenuItem>
@@ -582,12 +574,6 @@ function DesktopLayoutContent({
   // Live data queries
   const casesQuery = trpc.cases.list.useQuery();
   const cases = casesQuery.data ?? [];
-  const lifecycleQuery2 = trpc.snapshots.lifecycle.useQuery(
-    { caseId: currentCaseId! },
-    { enabled: !!currentCaseId }
-  );
-  const lifecycle = lifecycleQuery2.data ?? null;
-  const snapshotStatus = lifecycle?.status ?? null;
   const caseStatsQuery2 = trpc.cases.stats.useQuery(
     { caseId: currentCaseId! },
     { enabled: !!currentCaseId }
@@ -598,7 +584,7 @@ function DesktopLayoutContent({
   );
   const caseStats = caseStatsQuery2.data ?? null;
   const hasIntakeExecution = (intakeStatusQuery2.data ?? []).some(
-    (session) => session.session_type === "live" && session.layer_run_count > 0,
+    (session) => session.session_type === "live" && session.execution_complete,
   );
 
   // Ctrl+K keyboard shortcut for jurisdiction search
@@ -754,7 +740,7 @@ function DesktopLayoutContent({
                 location={location}
                 setLocation={setLocation}
                 isCollapsed={isCollapsed}
-                snapshotStatus={snapshotStatus}
+                intakeExecutionComplete={hasIntakeExecution}
               />
             ))}
 
@@ -766,7 +752,7 @@ function DesktopLayoutContent({
               location={location}
               setLocation={setLocation}
               isCollapsed={isCollapsed}
-              snapshotStatus={snapshotStatus}
+              intakeExecutionComplete={hasIntakeExecution}
             />
           </SidebarContent>
 
@@ -873,7 +859,6 @@ function DesktopLayoutContent({
             caseId={currentCaseId}
             docCount={caseStats.documents}
             findingCount={caseStats.findings}
-            hasSnapshot={!!lifecycle?.hasSnapshot}
             hasIntakeExecution={hasIntakeExecution}
             onNavigate={setLocation}
           />
@@ -889,14 +874,12 @@ function DesktopJourneyBanner({
   caseId,
   docCount,
   findingCount,
-  hasSnapshot,
   hasIntakeExecution,
   onNavigate,
 }: {
   caseId: number;
   docCount: number;
   findingCount: number;
-  hasSnapshot: boolean;
   hasIntakeExecution: boolean;
   onNavigate: (path: string) => void;
 }) {
@@ -913,11 +896,11 @@ function DesktopJourneyBanner({
     step = 2;
     label = "Review Spine Receipts";
     desc = "Inspect sealed deterministic receipts and downstream projections";
-  } else if (findingCount > 0 && !hasSnapshot) {
+  } else if (findingCount > 0 && !hasIntakeExecution) {
     step = 2;
     label = "Review Findings";
-    desc = "Review extracted findings and create a snapshot";
-  } else if (findingCount > 0 && hasSnapshot) {
+    desc = "Review receipt-bound verification records";
+  } else if (findingCount > 0 && hasIntakeExecution) {
     step = 3;
     label = "Export & Act";
     desc = "Export reports and take action on your findings";

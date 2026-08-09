@@ -286,8 +286,6 @@ export function computeGateStage(input: GateStageInput): GateStageResult {
  * which snapshot states and gate stages permit it.
  */
 export const GATED_ACTIONS = [
-  'analyzeNewUploads',
-  'retryFailedDocuments',
   'runCorrelation',
   'runFindings',
   'sealSnapshot',
@@ -295,7 +293,6 @@ export const GATED_ACTIONS = [
   'runProvenanceDrilldown',
   'runPhase2Analysis',
   'runCDA',
-  'fullSnapshotRebuild',
 ] as const;
 
 export type GatedAction = typeof GATED_ACTIONS[number];
@@ -325,16 +322,6 @@ interface ActionPermission {
  *  - CDA is independent of snapshot stage (operates on document text).
  */
 const PERMISSION_MATRIX: Record<GatedAction, ActionPermission> = {
-  analyzeNewUploads: {
-    allowedStatuses: ['open'],
-    allowedStages: ['EXTRACTION'],
-    description: 'Queue uploaded documents for extraction. Requires open snapshot at EXTRACTION stage.',
-  },
-  retryFailedDocuments: {
-    allowedStatuses: ['open'],
-    allowedStages: ['EXTRACTION'],
-    description: 'Retry auto-recoverable extraction failures. Requires open snapshot at EXTRACTION stage.',
-  },
   runCorrelation: {
     allowedStatuses: ['open'],
     allowedStages: ['CORRELATION', 'READY_TO_SEAL'],
@@ -369,11 +356,6 @@ const PERMISSION_MATRIX: Record<GatedAction, ActionPermission> = {
     allowedStatuses: ['open', 'sealed'],
     allowedStages: null,
     description: 'Run Claim Denial Analysis. Independent of snapshot stage — operates on document text.',
-  },
-  fullSnapshotRebuild: {
-    allowedStatuses: ['open', 'sealed'],
-    allowedStages: null,
-    description: 'Full snapshot rebuild. Creates new open snapshot. Allowed from any state with explicit confirmation.',
   },
 };
 
@@ -515,7 +497,7 @@ export function assertWorkerScoped(job: Partial<WorkerJobScope>): asserts job is
     throw new GateError(
       GATE_ERROR_CODES.WORKER_UNSCOPED,
       `Worker job missing required scope fields: ${missing.join(', ')}. All jobs must include documentId, caseId, snapshotId, and laneId.`,
-      'enqueueDocument' as GatedAction,
+      'runPhase2Analysis',
       'open',
       'EXTRACTION',
     );

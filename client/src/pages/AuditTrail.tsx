@@ -8,6 +8,24 @@ import { useLocation } from "wouter";
 import { Shield, Clock, Search, Filter, Upload } from "lucide-react";
 import { useState, useMemo } from "react";
 
+const RETIRED_RUNTIME_ACTIONS = new Set([
+  "trigger_analysis",
+  "trigger_reanalysis",
+  "trigger_batch_reanalysis",
+  "analyze_new_uploads",
+  "full_snapshot_rebuild",
+]);
+
+function formatDetails(details: unknown): string {
+  if (details === null || details === undefined) return "";
+  if (typeof details === "string") return details;
+  try {
+    return JSON.stringify(details, null, 2);
+  } catch {
+    return "Unrenderable structured audit details";
+  }
+}
+
 export default function AuditTrail() {
   const { currentCaseId } = useCase();
   const [, setLocation] = useLocation();
@@ -35,7 +53,7 @@ export default function AuditTrail() {
         const q = searchQuery.toLowerCase();
         const matchAction = entry.action.toLowerCase().includes(q);
         const matchTarget = `${entry.targetType} #${entry.targetId}`.toLowerCase().includes(q);
-        const matchDetails = entry.details ? String(entry.details).toLowerCase().includes(q) : false;
+        const matchDetails = entry.details ? formatDetails(entry.details).toLowerCase().includes(q) : false;
         if (!matchAction && !matchTarget && !matchDetails) return false;
       }
       return true;
@@ -113,7 +131,7 @@ export default function AuditTrail() {
           <CardContent className="p-8 flex flex-col items-center gap-4 text-center">
             <Shield className="h-10 w-10 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">No audit entries yet</p>
-            <p className="text-xs text-muted-foreground/70">Upload and analyze documents to start building the audit trail.</p>
+            <p className="text-xs text-muted-foreground/70">Upload evidence or run the governed Intake Spine to start building the audit trail.</p>
             <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setLocation("/upload")}>
               <Upload className="h-3.5 w-3.5" /> Upload Evidence
             </Button>
@@ -145,14 +163,17 @@ export default function AuditTrail() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className="text-[10px]">{entry.action}</Badge>
+                    {RETIRED_RUNTIME_ACTIONS.has(entry.action) && (
+                      <Badge variant="outline" className="border-amber-500/30 text-[9px] text-amber-400">historical · retired runtime</Badge>
+                    )}
                     <span className="text-xs text-muted-foreground">
                       {entry.targetType} #{entry.targetId}
                     </span>
                   </div>
                   {entry.details != null && (
-                    <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
-                      {String(entry.details)}
-                    </p>
+                    <pre className="mt-1 max-h-24 overflow-auto whitespace-pre-wrap break-words font-mono text-[10px] text-muted-foreground">
+                      {formatDetails(entry.details)}
+                    </pre>
                   )}
                 </div>
                 <div className="flex items-center gap-1 text-[10px] text-muted-foreground shrink-0">

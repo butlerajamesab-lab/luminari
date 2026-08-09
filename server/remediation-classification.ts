@@ -21,7 +21,6 @@
  */
 
 import * as db from "./db";
-import { classifyExtractionFailure } from "./extraction-recovery";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 

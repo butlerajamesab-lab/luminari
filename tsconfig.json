@@ -1,7 +1,6 @@
 {
   "include": [
     "server/akb-lookup.ts",
-    "server/analysis-pipeline.ts",
     "server/autonomous-healer.ts",
     "server/batch-rerun.ts",
     "server/benefits-discovery.ts",

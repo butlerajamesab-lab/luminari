@@ -10,7 +10,6 @@
  */
 
 import * as dbHelpers from "./db";
-import { getQueueStatus } from "./analysis-pipeline";
 import {
   computeGateStage,
   assertAllowed,
@@ -71,7 +70,6 @@ export async function buildGateStageInput(caseId: number, snapshotId: number): P
 
   const stats = await dbHelpers.getCaseStats(caseId);
   const correlations = await dbHelpers.listCorrelations(caseId);
-  const queueStatus = getQueueStatus();
 
   return {
     snapshotStatus: snapshot.status as "open" | "sealed",
@@ -93,8 +91,8 @@ export async function buildGateStageInput(caseId: number, snapshotId: number): P
     correlationRunCompleted: correlations.length > 0,
     totalFindings: stats.findings,
     findingsRunCompleted: stats.findings > 0,
-    activeWorkerJobs: queueStatus.processingCount > 0 ? 1 : 0,
-    isQueueProcessing: queueStatus.processingCount > 0,
+    activeWorkerJobs: extractingDocuments > 0 ? 1 : 0,
+    isQueueProcessing: extractingDocuments > 0,
   };
 }
 

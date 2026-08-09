@@ -25,6 +25,7 @@ export type IntakeIntegrityProjectionState =
 export type IntakeIntegrityArtifactRecord = {
   artifact_id: string;
   intake_session_id: string;
+  legacy_document_id: number | null;
   artifact_key: string;
   filename: string | null;
   mime_type: string | null;
@@ -84,7 +85,10 @@ export async function read_case_intake_integrity_projection(
        select cil.intake_session_id
          from public.case_identity_bridge cib
          join public.case_intake_links cil on cil.case_uuid = cib.case_uuid
+         join public.intake_sessions s on s.intake_session_id = cil.intake_session_id
         where cib.legacy_case_id = $1
+          and s.session_type = 'live'
+          and s.entry_channel = 'upload'
      ), source_artifacts as (
        select
          ia.artifact_id,
@@ -93,10 +97,15 @@ export async function read_case_intake_integrity_projection(
          ia.filename,
          ia.mime_type,
          ia.sha256,
-         ia.artifact_status
+         ia.artifact_status,
+         ia.metadata
        from linked_sessions ls
        join public.intake_artifacts ia on ia.intake_session_id = ls.intake_session_id
+       join public.documents d
+         on coalesce(ia.metadata ->> 'legacy_document_id', '') ~ '^[0-9]+$'
+        and d.id = (ia.metadata ->> 'legacy_document_id')::integer
       where ia.artifact_type = 'source_document'
+        and coalesce(d.document_resolution, 'active') = 'active'
      ), ranked_preservation as (
        select
          lr.*,
@@ -124,6 +133,7 @@ export async function read_case_intake_integrity_projection(
      select
        s.artifact_id::text,
        s.intake_session_id::text,
+       s.metadata,
        s.artifact_key,
        s.filename,
        s.mime_type,
@@ -165,6 +175,7 @@ export async function read_case_intake_integrity_projection(
       return {
         artifact_id: String(row.artifact_id),
         intake_session_id: String(row.intake_session_id),
+        legacy_document_id: normalize_legacy_document_id(row.metadata?.legacy_document_id),
         artifact_key: String(row.artifact_key),
         filename: row.filename ?? null,
         mime_type: row.mime_type ?? null,
@@ -239,6 +250,7 @@ export async function read_case_intake_integrity_projection(
     return {
       artifact_id: String(row.artifact_id),
       intake_session_id: String(row.intake_session_id),
+      legacy_document_id: normalize_legacy_document_id(row.metadata?.legacy_document_id),
       artifact_key: String(row.artifact_key),
       filename: row.filename ?? null,
       mime_type: row.mime_type ?? null,
@@ -286,4 +298,9 @@ export async function read_case_intake_integrity_projection(
     unresolved_dependency_count,
     artifacts,
   };
+}
+
+function normalize_legacy_document_id(value: unknown): number | null {
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
 }

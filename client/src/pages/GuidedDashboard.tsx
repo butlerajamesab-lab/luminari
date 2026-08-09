@@ -291,18 +291,16 @@ function ActionPath({ caseId }: { caseId: number }) {
   const [, setLocation] = useLocation();
   const { data: findings } = trpc.findings.listEnriched.useQuery({ caseId });
   const { data: docs } = trpc.documents.list.useQuery({ caseId });
-  const { data: lifecycle } = trpc.snapshots.lifecycle.useQuery({ caseId });
   const { data: intakeStatus } = trpc.analyze.getIntakeSpineStatus.useQuery({ caseId });
 
   const docCount = docs?.length || 0;
   const findingCount = findings?.length || 0;
-  const hasSnapshot = lifecycle?.hasSnapshot;
-  const isSealed = lifecycle?.status === "sealed";
   const liveUploadSession = intakeStatus?.find(
     (session) => session.session_type === "live" && session.entry_channel === "upload",
   );
   const intakeLayerRunCount = liveUploadSession?.layer_run_count ?? 0;
   const sealedReceiptCount = liveUploadSession?.sealed_layer_run_count ?? 0;
+  const isSealed = liveUploadSession?.execution_complete ?? false;
 
   // Determine current step
   let currentStep = 0;

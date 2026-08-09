@@ -17,7 +17,11 @@ describe("Universal Intake Spine canonical execution boundary", () => {
 
   it("does not let Control Room masquerade downstream engines as canonical case analysis", () => {
     expect(control_room).toContain("<IntakeSpineControl caseId={caseId} />");
-    expect(control_room).toContain("Strategy remains a separately named downstream tool");
+    expect(control_room).toContain("Layer 14 candidates");
+    expect(control_room).toContain("getIntakeActionPathProjection");
+    expect(control_room).toContain("getIntakeStructuralSignalProjection");
+    expect(control_room).not.toContain("trpc.findings.listEnriched");
+    expect(control_room).not.toContain("trpc.strategyEngine.getStrategyPaths");
     expect(control_room).not.toContain("incidentDate: Date.now()");
     expect(control_room).not.toContain('jurisdiction: "federal"');
     expect(control_room).not.toContain("async function runPipeline()");
@@ -51,9 +55,11 @@ describe("Universal Intake Spine canonical execution boundary", () => {
     expect(documents_page).not.toMatch(/>\s*Run Analysis\s*</);
   });
 
-  it("keeps both new and replacement uploads on the preservation side of the boundary", () => {
+  it("keeps both new and replacement uploads on the registration side of the boundary", () => {
     expect(upload_route).not.toContain('from "./analysis-pipeline"');
     expect(upload_route).not.toContain("enqueueDocument(");
-    expect(upload_route).toContain("evidence preserved for explicit Intake Spine execution");
+    expect(upload_route).toContain("source registered for explicit Intake Spine execution");
+    expect(upload_route).toContain("snapshotId: null");
+    expect(upload_route).not.toContain("performDuplicateOverride");
   });
 });

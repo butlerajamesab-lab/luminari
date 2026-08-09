@@ -36,8 +36,8 @@ export interface CaseNarrationInput {
     findingEligible: number;
     signalOnly: number;
   };
-  snapshot: {
-    id: number;
+  intakeExecution: {
+    id: string;
     status: string;
   } | null;
 }
@@ -101,7 +101,7 @@ function cleanNumber(val: unknown): number | null {
 /**
  * T1. getCaseNarrationInput
  *
- * Fetches case, signals, patterns, claims, and snapshot data
+ * Fetches case, signals, patterns, and governed Intake Spine data
  * via tRPC client and returns a normalized, validated object.
  *
  * @param trpcClient - The tRPC client (passed in to avoid import coupling)
@@ -112,18 +112,20 @@ export async function getCaseNarrationInput(
     cases: { get: { query: (input: { id: number }) => Promise<any> } };
     flags: { list: { query: (input: { caseId: number }) => Promise<any[]> } };
     patterns: { forCase: { query: (input: { caseId: number }) => Promise<any[]> } };
-    snapshots: { list: { query: (input: { caseId: number }) => Promise<any[]> } };
-    findings: { list: { query: (input: { caseId: number }) => Promise<any[]> } };
+    analyze: {
+      getIntakeSpineStatus: { query: (input: { caseId: number }) => Promise<any[]> };
+      getIntakeVerificationProjection: { query: (input: { caseId: number }) => Promise<any> };
+    };
   },
   caseId: number
 ): Promise<CaseNarrationInput> {
   // Fetch all data in parallel — read-only queries
-  const [caseData, signalFlags, patterns, snapshots, findings] = await Promise.allSettled([
+  const [caseData, signalFlags, patterns, intakeStatuses, verification] = await Promise.allSettled([
     trpcClient.cases.get.query({ id: caseId }),
     trpcClient.flags.list.query({ caseId }),
     trpcClient.patterns.forCase.query({ caseId }),
-    trpcClient.snapshots.list.query({ caseId }),
-    trpcClient.findings.list.query({ caseId }),
+    trpcClient.analyze.getIntakeSpineStatus.query({ caseId }),
+    trpcClient.analyze.getIntakeVerificationProjection.query({ caseId }),
   ]);
 
   // Gate: case data is the minimum requirement
@@ -136,7 +138,7 @@ export async function getCaseNarrationInput(
       patterns: [],
       deadlines: [],
       claimsSummary: { total: 0, findingEligible: 0, signalOnly: 0 },
-      snapshot: null,
+      intakeExecution: null,
     };
   }
 
@@ -201,12 +203,13 @@ export async function getCaseNarrationInput(
     }
   }
 
-  // Claims summary — derive from findings since claims are per-document
+  // Evidence summary — derive from receipt-bound verification records.
   let claimsSummary = { total: 0, findingEligible: 0, signalOnly: 0 };
-  if (findings.status === "fulfilled" && Array.isArray(findings.value)) {
-    const total = findings.value.length;
-    const findingEligible = findings.value.filter(
-      (f: any) => f?.evidentiaryWeight === "finding" || f?.evidentiaryWeight === "finding_eligible"
+  if (verification.status === "fulfilled" && Array.isArray(verification.value?.outputs)) {
+    const records = verification.value.outputs.flatMap((output: any) => output.records ?? []);
+    const total = records.length;
+    const findingEligible = records.filter(
+      (record: any) => record?.verification_state === "supported_by_multiple_sources"
     ).length;
     claimsSummary = {
       total,
@@ -215,16 +218,16 @@ export async function getCaseNarrationInput(
     };
   }
 
-  // Latest complete snapshot
-  let snapshot: CaseNarrationInput["snapshot"] = null;
-  if (snapshots.status === "fulfilled" && Array.isArray(snapshots.value)) {
-    const complete = snapshots.value
-      .filter((s: any) => s?.status === "complete" || s?.snapshotStatus === "complete")
-      .sort((a: any, b: any) => (b.id ?? 0) - (a.id ?? 0));
+  // Latest complete governed execution.
+  let intakeExecution: CaseNarrationInput["intakeExecution"] = null;
+  if (intakeStatuses.status === "fulfilled" && Array.isArray(intakeStatuses.value)) {
+    const complete = intakeStatuses.value
+      .filter((session: any) => session?.execution_complete === true)
+      .sort((a: any, b: any) => String(b.created_at ?? "").localeCompare(String(a.created_at ?? "")));
     if (complete.length > 0) {
-      snapshot = {
-        id: complete[0].id,
-        status: cleanString(complete[0].status) || cleanString(complete[0].snapshotStatus) || "complete",
+      intakeExecution = {
+        id: String(complete[0].intake_session_id),
+        status: cleanString(complete[0].completion_state) || "governed_execution_complete",
       };
     }
   }
@@ -261,7 +264,7 @@ export async function getCaseNarrationInput(
     patterns: normalizedPatterns,
     deadlines,
     claimsSummary,
-    snapshot,
+    intakeExecution,
   };
 }
 

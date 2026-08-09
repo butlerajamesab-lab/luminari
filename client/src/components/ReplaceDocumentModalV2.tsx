@@ -6,9 +6,8 @@
  *               Documents list overflow menu, Upload duplicate confirmation.
  *
  * Features:
- * - Snapshot state pre-check (SEALED blocks modal with deterministic banner)
  * - Dual-mode: Select Existing Document OR Upload Replacement File
- * - Displays Snapshot ID, status, and GateStage
+ * - Preserves the immutable replacement chain and canonical source registration
  * - Consistent behavior regardless of navigation origin
  */
 
@@ -33,8 +32,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Replace, Upload, RefreshCw, FileText, Loader2,
-  XCircle, Link2, Shield, ShieldAlert, Lock, AlertTriangle,
+  Replace, Upload, FileText, Loader2,
+  XCircle, Link2,
 } from "lucide-react";
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { toast } from "sonner";
@@ -80,17 +79,6 @@ export default function ReplaceDocumentModalV2({
     }
   }, [open]);
 
-  // ── Snapshot Lifecycle ──
-  const { data: lifecycle } = trpc.snapshots.lifecycle.useQuery(
-    { caseId: currentCaseId! },
-    { enabled: !!currentCaseId && open, refetchInterval: 5000 }
-  );
-
-  const isSealed = lifecycle?.hasSnapshot && lifecycle?.status === "sealed";
-  const isOpen = lifecycle?.hasSnapshot && lifecycle?.status === "open";
-  const snapshotId = lifecycle?.hasSnapshot ? lifecycle.snapshotId : null;
-  const gateStage = lifecycle?.hasSnapshot ? (lifecycle as any).currentStage : null;
-
   // ── Replacement Candidates ──
   const { data: docs } = trpc.documents.list.useQuery(
     { caseId: currentCaseId! },
@@ -101,7 +89,7 @@ export default function ReplaceDocumentModalV2({
     if (!docs) return [];
     return docs.filter((d) => {
       const res = (d as any).documentResolution;
-      return (!res || res === "active") && d.status === "ready" && d.id !== documentId;
+      return (!res || res === "active") && d.id !== documentId;
     });
   }, [docs, documentId]);
 
@@ -120,9 +108,9 @@ export default function ReplaceDocumentModalV2({
     utils.documents.list.invalidate();
     utils.documents.get.invalidate();
     utils.documents.listResolved.invalidate();
-    utils.documents.reanalyzeScopeSummary.invalidate();
     utils.documents.replacementChain.invalidate();
-    utils.snapshots.lifecycle.invalidate();
+    utils.analyze.getIntakeSpineStatus.invalidate();
+    utils.analyze.getIntakeIntegrityProjection.invalidate();
   }, [utils]);
 
   // ── Handlers ──
@@ -151,7 +139,7 @@ export default function ReplaceDocumentModalV2({
         throw new Error(data.error || data.message || "Replacement upload failed");
       }
       toast.success(
-        `Replaced document #${documentId} → new document #${data.newDocumentId} — extraction queued`
+        `Replaced document #${documentId} → new document #${data.newDocumentId} — source registered`
       );
       invalidateAll();
       onSuccess?.({ replacementDocumentId: data.newDocumentId });
@@ -166,8 +154,6 @@ export default function ReplaceDocumentModalV2({
   const handleFileSelect = () => {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept =
-      ".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.mp4,.mov,.webm,.mp3,.wav,.ogg,.m4a";
     input.onchange = (e) => {
       const f = (e.target as HTMLInputElement).files?.[0];
       if (f) setReplaceFile(f);
@@ -189,53 +175,7 @@ export default function ReplaceDocumentModalV2({
           </DialogDescription>
         </DialogHeader>
 
-        {/* ── Snapshot State Banner ── */}
-        <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted/30 border border-border/50">
-          <Shield className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-          <div className="flex-1 text-xs text-muted-foreground">
-            {snapshotId ? (
-              <span>
-                Snapshot <span className="font-mono">#{snapshotId}</span>
-                {" · "}
-                <span className={isSealed ? "text-red-400 font-medium" : "text-emerald-400 font-medium"}>
-                  {isSealed ? "SEALED" : "OPEN"}
-                </span>
-                {gateStage && (
-                  <>
-                    {" · "}
-                    <span className="text-muted-foreground">Stage: {gateStage}</span>
-                  </>
-                )}
-              </span>
-            ) : (
-              <span>No active snapshot</span>
-            )}
-          </div>
-        </div>
-
-        {/* ── SEALED State Block ── */}
-        {isSealed ? (
-          <div className="space-y-3">
-            <div className="flex items-start gap-3 p-4 rounded-md bg-red-950/20 border border-red-500/30">
-              <Lock className="h-5 w-5 text-red-400 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-red-300">
-                  Snapshot sealed. Replacement requires new snapshot version.
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  The current snapshot is sealed and immutable. To replace documents, create a new
-                  snapshot version first.
-                </p>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={onClose}>
-                Close
-              </Button>
-            </DialogFooter>
-          </div>
-        ) : (
-          <>
+        <>
             {/* ── Mode Tabs ── */}
             <div className="flex gap-1 p-0.5 rounded-md bg-muted/50">
               <button
@@ -270,7 +210,7 @@ export default function ReplaceDocumentModalV2({
                     {replacementCandidates.length === 0 ? (
                       <div className="mt-1.5 p-3 rounded-md border border-dashed border-muted-foreground/30 text-center">
                         <p className="text-xs text-muted-foreground">
-                          No ready documents available as replacements.
+                          No active documents available as replacements.
                         </p>
                         <Button
                           variant="outline"
@@ -285,7 +225,7 @@ export default function ReplaceDocumentModalV2({
                     ) : (
                       <Select value={replacementDocId} onValueChange={setReplacementDocId}>
                         <SelectTrigger className="mt-1.5">
-                          <SelectValue placeholder="Choose a ready document..." />
+                          <SelectValue placeholder="Choose an active document..." />
                         </SelectTrigger>
                         <SelectContent>
                           {replacementCandidates.map((d) => (
@@ -390,7 +330,7 @@ export default function ReplaceDocumentModalV2({
                   <div className="p-2.5 rounded-md bg-muted/30 border border-border/50">
                     <p className="text-[10px] text-muted-foreground">
                       The uploaded file will create a new document, supersede the original, link the
-                      replacement chain, log an audit entry, and trigger extraction automatically.
+                      replacement chain, log an audit entry, and register the new source with the Universal Intake Spine. Governed execution remains explicit.
                     </p>
                   </div>
                 </>
@@ -431,7 +371,6 @@ export default function ReplaceDocumentModalV2({
               )}
             </DialogFooter>
           </>
-        )}
       </DialogContent>
     </Dialog>
   );

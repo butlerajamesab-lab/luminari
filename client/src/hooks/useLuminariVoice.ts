@@ -125,8 +125,10 @@ export function useLuminariVoice(): UseLuminariVoiceReturn {
           cases: { get: { query: (input: { id: number }) => trpcClient.cases.get.fetch(input) } },
           flags: { list: { query: (input: { caseId: number }) => trpcClient.flags.list.fetch(input) } },
           patterns: { forCase: { query: (input: { caseId: number }) => trpcClient.patterns.forCase.fetch(input) } },
-          snapshots: { list: { query: (input: { caseId: number }) => trpcClient.snapshots.list.fetch(input) } },
-          findings: { list: { query: (input: { caseId: number }) => trpcClient.findings.list.fetch(input) } },
+          analyze: {
+            getIntakeSpineStatus: { query: (input: { caseId: number }) => trpcClient.analyze.getIntakeSpineStatus.fetch(input) },
+            getIntakeVerificationProjection: { query: (input: { caseId: number }) => trpcClient.analyze.getIntakeVerificationProjection.fetch(input) },
+          },
         };
 
         if (target.type === "case") {

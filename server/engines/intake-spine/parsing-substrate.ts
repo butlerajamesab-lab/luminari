@@ -28,8 +28,8 @@ export interface ParsedArtifact {
 
 export const PDF_PARSE_VERSION = '2.4.5';
 export const JSZIP_VERSION = '3.10.1';
-export const PARSER_VERSION = `luminari.intake.parser.v2.1.0+pdf-parse@${PDF_PARSE_VERSION}+jszip@${JSZIP_VERSION}`;
-export const RULE_VERSION = '2.1.0';
+export const PARSER_VERSION = `luminari.intake.parser.v2.1.1+pdf-parse@${PDF_PARSE_VERSION}+jszip@${JSZIP_VERSION}`;
+export const RULE_VERSION = '2.1.1';
 
 export const PARSER_RULE_MANIFEST = {
   mime_detection: {
@@ -181,7 +181,7 @@ async function parseDocx(
   const xmlContent = await docXml.async('string');
   const paragraphs: string[] = [];
   const paragraphRegex = /<w:p(?:\s[^>]*)?>([\s\S]*?)<\/w:p>/g;
-  const tokenRegex = /<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>|<w:tab\s*\/>|<w:br(?:\s[^>]*)?\s*\/>|<w:cr\s*\/>/g;
+  const tokenRegex = /<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>|<w:tab(?:\s[^>]*)?\s*\/>|<w:br(?:\s[^>]*)?\s*\/>|<w:cr(?:\s[^>]*)?\s*\/>/g;
 
   let paragraphMatch: RegExpExecArray | null;
   while ((paragraphMatch = paragraphRegex.exec(xmlContent)) !== null) {
@@ -190,8 +190,8 @@ async function parseDocx(
     let tokenMatch: RegExpExecArray | null;
     while ((tokenMatch = tokenRegex.exec(paragraphMatch[1])) !== null) {
       const token = tokenMatch[0];
-      if (token.startsWith('<w:t')) paragraphText += decodeXmlEntities(tokenMatch[1] || '');
-      else if (token.startsWith('<w:tab')) paragraphText += '\t';
+      if (token.startsWith('<w:tab')) paragraphText += '\t';
+      else if (/^<w:t(?:\s|>)/.test(token)) paragraphText += decodeXmlEntities(tokenMatch[1] || '');
       else paragraphText += '\n';
     }
     if (paragraphText.trim()) paragraphs.push(paragraphText);

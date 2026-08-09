@@ -63,14 +63,19 @@ export function IntakeSpineControl({
     (liveUploadSessions.length === 1 ? liveUploadSessions[0] : null);
   const canRun =
     !!selectedSession &&
-    selectedSession.source_artifact_count > 0 &&
+    selectedSession.registered_source_count > 0 &&
+    selectedSession.blocked_source_count === 0 &&
     jurisdiction.trim().length > 0 &&
     asOf.length > 0 &&
     !runIntakeSpine.isPending;
 
   const handleRun = async () => {
-    if (!selectedSession || selectedSession.source_artifact_count === 0) {
-      toast.error("Preserve at least one source before Intake Spine execution.");
+    if (!selectedSession || selectedSession.registered_source_count === 0) {
+      toast.error("Register at least one source before Intake Spine execution.");
+      return;
+    }
+    if (selectedSession.blocked_source_count > 0) {
+      toast.error("Resolve blocked source integrity before Intake Spine execution.");
       return;
     }
     if (!jurisdiction.trim()) {
@@ -111,7 +116,7 @@ export function IntakeSpineControl({
           </Badge>
         </div>
         <CardDescription>
-          Evidence is preserved first. Reconstruction runs only when you explicitly start it against declared jurisdiction and rule-date inputs.
+          Uploaded bytes are registered first. Preservation verification and reconstruction run together only when you explicitly start the governed execution with declared jurisdiction and rule-date inputs.
         </CardDescription>
       </CardHeader>
 
@@ -141,7 +146,7 @@ export function IntakeSpineControl({
           <>
             {liveUploadSessions.length > 1 && (
               <div className="space-y-1.5">
-                <Label htmlFor={`intake-session-${caseId}`}>Preserved source session</Label>
+                <Label htmlFor={`intake-session-${caseId}`}>Live evidence session</Label>
                 <select
                   id={`intake-session-${caseId}`}
                   value={selectedSessionId ?? ""}
@@ -151,7 +156,7 @@ export function IntakeSpineControl({
                   <option value="">Select a session</option>
                   {liveUploadSessions.map((session) => (
                     <option key={session.intake_session_id} value={session.intake_session_id}>
-                      {session.source_label || session.intake_session_id} · {session.source_artifact_count} source{session.source_artifact_count === 1 ? "" : "s"}
+                      {session.source_label || session.intake_session_id} · {session.registered_source_count} source{session.registered_source_count === 1 ? "" : "s"}
                     </option>
                   ))}
                 </select>
@@ -159,14 +164,18 @@ export function IntakeSpineControl({
             )}
 
             {selectedSession && (
-              <div className="grid grid-cols-3 gap-3 rounded-md border border-border/60 bg-muted/20 p-3 text-xs">
+              <div className="grid grid-cols-2 gap-3 rounded-md border border-border/60 bg-muted/20 p-3 text-xs sm:grid-cols-4">
                 <div>
-                  <p className="text-muted-foreground">Preserved sources</p>
-                  <p className="text-lg font-semibold">{selectedSession.source_artifact_count}</p>
+                  <p className="text-muted-foreground">Registered sources</p>
+                  <p className="text-lg font-semibold">{selectedSession.registered_source_count}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Layer runs</p>
-                  <p className="text-lg font-semibold">{selectedSession.layer_run_count}</p>
+                  <p className="text-muted-foreground">Preserved sources</p>
+                  <p className="text-lg font-semibold">{selectedSession.preserved_source_count}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Governed layers</p>
+                  <p className="text-lg font-semibold">{selectedSession.sealed_layer_name_count}/{selectedSession.required_layer_count}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Sealed receipts</p>
@@ -202,7 +211,7 @@ export function IntakeSpineControl({
             <Button className="w-full gap-2" disabled={!canRun} onClick={handleRun}>
               {runIntakeSpine.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
-              ) : selectedSession && selectedSession.sealed_layer_run_count > 0 ? (
+              ) : selectedSession?.execution_complete ? (
                 <CheckCircle2 className="h-4 w-4" />
               ) : (
                 <Shield className="h-4 w-4" />

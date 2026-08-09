@@ -67,10 +67,12 @@ export function LiveIntakeOperationsPanel() {
   const liveSession = sessions.find(
     (session) => session.session_type === "live" && session.entry_channel === "upload",
   );
-  const artifactCount = liveSession?.source_artifact_count ?? 0;
-  const layerRunCount = liveSession?.layer_run_count ?? 0;
+  const registeredSourceCount = liveSession?.registered_source_count ?? 0;
+  const preservedSourceCount = liveSession?.preserved_source_count ?? 0;
   const sealedRunCount = liveSession?.sealed_layer_run_count ?? 0;
-  const complete = sealedRunCount >= 14;
+  const sealedLayerCount = liveSession?.sealed_layer_name_count ?? 0;
+  const requiredLayerCount = liveSession?.required_layer_count ?? 0;
+  const complete = liveSession?.execution_complete ?? false;
 
   return (
     <div className="space-y-5">
@@ -95,7 +97,7 @@ export function LiveIntakeOperationsPanel() {
           <CardTitle className="text-sm flex items-center justify-between gap-3">
             <span>{currentCase?.name ?? `Case #${currentCaseId}`}</span>
             <Badge variant="outline" className={complete ? "border-emerald-700/40 text-emerald-300" : "border-amber-700/40 text-amber-300"}>
-              {complete ? "14/14 sealed" : `${sealedRunCount}/14 sealed`}
+              {complete ? `${requiredLayerCount}/${requiredLayerCount} layers sealed` : `${sealedLayerCount}/${requiredLayerCount} layers sealed`}
             </Badge>
           </CardTitle>
         </CardHeader>
@@ -116,10 +118,10 @@ export function LiveIntakeOperationsPanel() {
       </Card>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Metric label="Preserved sources" value={artifactCount} />
-        <Metric label="Layer runs" value={layerRunCount} />
+        <Metric label="Registered sources" value={registeredSourceCount} />
+        <Metric label="Preserved sources" value={preservedSourceCount} />
         <Metric label="Sealed receipts" value={sealedRunCount} />
-        <Metric label="Remaining layers" value={Math.max(0, 14 - sealedRunCount)} />
+        <Metric label="Remaining layers" value={Math.max(0, requiredLayerCount - sealedLayerCount)} />
       </div>
 
       <Card className="border-slate-800/70 bg-slate-950/30">

@@ -141,7 +141,6 @@ router.get("/routes", async (_req: Request, res: Response) => {
     { path: "/investigation-guidance", component_slug: "investigation_guidance", layer: "L2" },
     { path: "/proof-frameworks", component_slug: "proof_frameworks", layer: "L2" },
     { path: "/claim-elements", component_slug: "claim_elements", layer: "L2" },
-    { path: "/claim-denial-analysis", component_slug: "claim_denial_analysis", layer: "L2" },
     { path: "/filing-generator", component_slug: "filing_generator", layer: "L2" },
     { path: "/docket", component_slug: "docket_room", layer: "L2" },
     { path: "/docket/:slug", component_slug: "docket_room", layer: "L2" },
@@ -160,7 +159,6 @@ router.get("/routes", async (_req: Request, res: Response) => {
     { path: "/shared/:token", component_slug: "shared_case_view", layer: "L1" },
     { path: "/presentations", component_slug: "presentations", layer: "L1" },
     { path: "/presentations/:id", component_slug: "presentation_editor", layer: "L1" },
-    { path: "/extraction", component_slug: "extraction_dashboard", layer: "L3" },
     { path: "/architecture-map", component_slug: "architecture_map", layer: "L3" },
     { path: "/architecture", component_slug: "architecture_map", layer: "L3" },
     { path: "/sovereign-control", component_slug: "sovereign_control", layer: "L3" },
@@ -174,7 +172,6 @@ router.get("/routes", async (_req: Request, res: Response) => {
     { path: "/templates", component_slug: "case_templates", layer: "L1" },
     { path: "/import-bundle", component_slug: "import_bundle", layer: "L1" },
     { path: "/upload", component_slug: "upload", layer: "L0" },
-    { path: "/spine-viewer", component_slug: "spine_viewer", layer: "L3" },
     { path: "/provenance", component_slug: "provenance", layer: "L3" },
     { path: "/provenance/:id", component_slug: "provenance_history", layer: "L3" },
     { path: "/exports", component_slug: "exports", layer: "L3" },
@@ -413,7 +410,6 @@ router.get("/ui-bindings", async (_req: Request, res: Response) => {
     { page: "/patterns", component_slug: "patterns", queries: ["patterns.list"], tables: ["patterns", "pattern_occurrences", "pattern_types"] },
     { page: "/network-graph", component_slug: "network_graph", queries: ["entities.graph"], tables: ["entities", "relationships", "relationship_evidence"] },
     { page: "/provenance", component_slug: "provenance", queries: ["provenance.list"], tables: ["provenance_audit_logs"] },
-    { page: "/spine-viewer", component_slug: "spine_viewer", queries: ["spine.export"], tables: ["corpus_snapshots"] },
   ];
 
   res.json({

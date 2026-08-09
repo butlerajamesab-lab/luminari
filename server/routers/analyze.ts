@@ -1,11 +1,13 @@
-import { router, protectedProcedure, publicProcedure } from '../_core/trpc';
+import { router, protectedProcedure } from '../_core/trpc';
 import { z } from 'zod';
 import { getPool } from '../db';
 import * as db_helpers from '../db';
-import { execute_intake_spine_session } from '../intake-spine-orchestrator';
+import { execute_intake_spine_session, INTAKE_SPINE_LAYER_NAMES } from '../intake-spine-orchestrator';
 import { read_canonical_case_layer_outputs } from '../intake-case-layer-reader';
 import { read_case_intake_integrity_projection } from '../intake-case-integrity-projection';
 import type { VerificationRecord } from '../engines/intake-spine/layer-5-verification_gate';
+import type { DetectedPattern } from '../engines/intake-spine/layer-10-pattern_registry';
+import type { CascadeChain } from '../engines/intake-spine/layer-11-cascade_registry';
 import type { ClaimCandidate } from '../engines/intake-spine/layer-12-rights_and_duties_matrix';
 import type { ActionPath } from '../engines/intake-spine/layer-14-action_paths';
 
@@ -52,11 +54,27 @@ export const analyzeRouter = router({
         throw new Error('intake_spine_runtime_multiple_live_upload_sessions_require_explicit_session_id');
       }
 
-      return execute_intake_spine_session({
+      const result = await execute_intake_spine_session({
         intake_session_id: session_result.rows[0].intake_session_id,
         jurisdiction: input.jurisdiction,
         as_of: input.asOf,
       });
+      await db_helpers.logAudit({
+        caseId: input.caseId,
+        userId: ctx.user.id,
+        action: 'run_intake_spine',
+        targetType: 'case',
+        targetId: input.caseId,
+        details: {
+          intake_session_id: result.intake_session_id,
+          jurisdiction: input.jurisdiction.trim().toUpperCase(),
+          rule_as_of: input.asOf,
+          source_artifact_count: result.source_artifact_count,
+          sealed_receipt_count: result.receipts.length,
+          receipt_hashes: result.receipts.map(receipt => receipt.receipt_hash),
+        },
+      });
+      return result;
     }),
 
   /**
@@ -78,6 +96,7 @@ export const analyzeRouter = router({
         source_artifact_count: string | number;
         layer_run_count: string | number;
         sealed_layer_run_count: string | number;
+        sealed_layer_names: string[] | null;
         latest_receipt_hash: string | null;
       }>(
         `select
@@ -88,9 +107,19 @@ export const analyzeRouter = router({
            s.session_status,
            s.completion_state,
            s.created_at::text,
-           count(distinct ia.artifact_id) filter (where ia.artifact_type = 'source_document') as source_artifact_count,
+           count(distinct ia.artifact_id) filter (
+             where ia.artifact_type = 'source_document'
+               and coalesce(d.document_resolution, 'active') = 'active'
+           ) as source_artifact_count,
            count(distinct ilr.layer_run_id) as layer_run_count,
            count(distinct ilr.layer_run_id) filter (where ilr.is_sealed = true) as sealed_layer_run_count,
+           array_agg(distinct ilr.layer_name order by ilr.layer_name) filter (
+             where ilr.run_status = 'completed'
+               and ilr.is_sealed = true
+               and ilr.receipt ->> 'receipt_type' = 'layer_execution'
+               and ilr.receipt ->> 'execution_contract_version' = 'luminari.intake.layer-execution.v1'
+               and ilr.canonicalization_version = 'luminari.intake.canonical-json.v2'
+           ) as sealed_layer_names,
            (array_agg(ilr.receipt_hash order by ilr.sealed_at desc nulls last)
              filter (where ilr.receipt_hash ~ '^[0-9a-f]{64}$'))[1] as latest_receipt_hash
          from public.intake_sessions s
@@ -100,16 +129,32 @@ export const analyzeRouter = router({
            on cib.case_uuid = cil.case_uuid
          left join public.intake_artifacts ia
            on ia.intake_session_id = s.intake_session_id
+         left join public.documents d
+           on coalesce(ia.metadata ->> 'legacy_document_id', '') ~ '^[0-9]+$'
+          and d.id = (ia.metadata ->> 'legacy_document_id')::integer
          left join public.intake_layer_runs ilr
            on ilr.intake_session_id = s.intake_session_id
         where cib.legacy_case_id = $1
+          and s.session_type = 'live'
+          and s.entry_channel = 'upload'
         group by s.intake_session_id, s.session_type, s.entry_channel, s.source_label,
                  s.session_status, s.completion_state, s.created_at
         order by s.created_at asc`,
         [input.caseId],
       );
 
-      return rows.map(row => ({
+      const integrity = await read_case_intake_integrity_projection(input.caseId);
+      return rows.map(row => {
+        const session_artifacts = integrity.artifacts.filter(
+          artifact => artifact.intake_session_id === row.intake_session_id,
+        );
+        const sealed_layer_names = (row.sealed_layer_names ?? [])
+          .filter((name): name is string => typeof name === 'string')
+          .filter(name => (INTAKE_SPINE_LAYER_NAMES as readonly string[]).includes(name));
+        const missing_layer_names = INTAKE_SPINE_LAYER_NAMES.filter(
+          name => !sealed_layer_names.includes(name),
+        );
+        return ({
         intake_session_id: row.intake_session_id,
         session_type: row.session_type,
         entry_channel: row.entry_channel,
@@ -118,13 +163,28 @@ export const analyzeRouter = router({
         completion_state: row.completion_state,
         created_at: row.created_at,
         source_artifact_count: Number(row.source_artifact_count),
+        registered_source_count: session_artifacts.length,
+        preserved_source_count: session_artifacts.filter(artifact => artifact.integrity_status === 'preserved').length,
+        blocked_source_count: session_artifacts.filter(artifact =>
+          artifact.integrity_status === 'quarantined' || artifact.integrity_status === 'referenced_missing'
+        ).length,
         layer_run_count: Number(row.layer_run_count),
         sealed_layer_run_count: Number(row.sealed_layer_run_count),
+        sealed_layer_name_count: sealed_layer_names.length,
+        sealed_layer_names,
+        required_layer_count: INTAKE_SPINE_LAYER_NAMES.length,
+        missing_layer_names,
+        execution_complete:
+          row.completion_state === 'governed_execution_complete'
+          && session_artifacts.length > 0
+          && session_artifacts.every(artifact => artifact.integrity_status === 'preserved')
+          && missing_layer_names.length === 0,
         latest_receipt_hash:
           row.latest_receipt_hash && SHA256_RE.test(row.latest_receipt_hash)
             ? row.latest_receipt_hash
             : null,
-      }));
+        });
+      });
     }),
 
   /**
@@ -233,155 +293,35 @@ export const analyzeRouter = router({
       };
     }),
 
-  /**
-   * 1. CLAIM ELEMENTS - Legacy compatibility endpoint.
-   * Case-bound applicability now comes from getIntakeClaimCandidateProjection.
-   */
-  getClaimElements: publicProcedure
-    .input(z.object({ caseId: z.number() }))
-    .query(async ({ input }) => {
-      const { rows } = await getPool().query(
-        `SELECT id, claim_type, element_name, element_value, evidence_id, created_at 
-         FROM claims WHERE case_id = $1 ORDER BY created_at DESC`,
-        [input.caseId]
-      );
-      return rows || [];
-    }),
-
-  /**
-   * 2. PROOF FRAMEWORKS - Legal proof requirements
-   */
-  getProofFrameworks: publicProcedure
-    .input(z.object({ caseId: z.number() }))
-    .query(async ({ input }) => {
-      const { rows } = await getPool().query(
-        `SELECT wf.id, wf.workflow_name, wf.proof_standard, wf.required_elements, wf.evidence_threshold
-         FROM workflows wf
-         JOIN cases c ON c.domain = wf.domain
-         WHERE c.id = $1 LIMIT 10`,
-        [input.caseId]
-      );
-      return rows || [];
-    }),
-
-  /**
-   * 3. CONTRADICTION SCORING - Detect contradictions in evidence
-   */
-  getContradictionScores: publicProcedure
-    .input(z.object({ caseId: z.number() }))
-    .query(async ({ input }) => {
-      const { rows } = await getPool().query(
-        `SELECT id, finding_id, contradiction_type, severity, evidence_ids, score, created_at
-         FROM findings WHERE case_id = $1 AND finding_type = 'contradiction' ORDER BY score DESC`,
-        [input.caseId]
-      );
-      return rows || [];
-    }),
-
-  /**
-   * 4. LITIGATION BARRIERS - Identify legal obstacles
-   */
-  getLitigationBarriers: publicProcedure
-    .input(z.object({ caseId: z.number() }))
-    .query(async ({ input }) => {
-      const { rows } = await getPool().query(
-        `SELECT ab.id, ab.barrier_name, ab.barrier_type, ab.legal_basis, ab.mitigation_strategy, ab.severity
-         FROM accountability_paths ap
-         JOIN (SELECT id, barrier_name, barrier_type, legal_basis, mitigation_strategy, severity FROM accountability_legal_hooks) ab 
-         ON ap.id = ab.id
-         WHERE ap.case_id = $1 ORDER BY ab.severity DESC`,
-        [input.caseId]
-      );
-      return rows || [];
-    }),
-
-  /**
-   * 5. DOCTRINE GRAPH - Map legal doctrine connections
-   */
-  getDoctrineGraph: publicProcedure
-    .input(z.object({ caseId: z.number() }))
-    .query(async ({ input }) => {
-      const { rows } = await getPool().query(
-        `SELECT ssl.id, ssl.signal_id, ssl.statute_id, ssl.connection_type, ssl.relevance_score
-         FROM signal_statute_links ssl
-         JOIN signal_flags sf ON ssl.signal_id = sf.id
-         WHERE sf.case_id = $1 ORDER BY ssl.relevance_score DESC`,
-        [input.caseId]
-      );
-      return rows || [];
-    }),
-
-  /**
-   * 6. CLAIM DENIAL ANALYSIS - Analyze denial patterns
-   */
-  getClaimDenialAnalysis: publicProcedure
-    .input(z.object({ caseId: z.number() }))
-    .query(async ({ input }) => {
-      const { rows } = await getPool().query(
-        `SELECT id, denial_reason, denial_category, evidence_supporting, evidence_contradicting, pattern_match, created_at
-         FROM findings WHERE case_id = $1 AND finding_type = 'denial_analysis' ORDER BY created_at DESC`,
-        [input.caseId]
-      );
-      return rows || [];
-    }),
-
-  /**
-   * 7. PROVENANCE DRILL-DOWN - Trace evidence origin
-   */
-  getProvenanceDrillDown: publicProcedure
-    .input(z.object({ caseId: z.number() }))
-    .query(async ({ input }) => {
-      const { rows } = await getPool().query(
-        `SELECT d.id, d.filename, d.source, d.upload_date, d.document_type, 
-                COUNT(e.id) as evidence_count, COUNT(f.id) as finding_count
-         FROM documents d
-         LEFT JOIN evidence e ON d.id = e.document_id
-         LEFT JOIN findings f ON e.id = f.evidence_id
-         WHERE d.case_id = $1 GROUP BY d.id ORDER BY d.upload_date DESC`,
-        [input.caseId]
-      );
-      return rows || [];
-    }),
-
-  /**
-   * 8. SIGNAL REGISTRY - Master signal catalog
-   */
-  getSignalRegistry: publicProcedure.query(async () => {
-    const { rows } = await getPool().query(
-      `SELECT id, signal_type, domain, trigger_patterns, severity, explanation, created_at
-       FROM signal_flags GROUP BY signal_type ORDER BY created_at DESC LIMIT 100`
-    );
-    return rows || [];
-  }),
-
-  /**
-   * Get all analysis data for a case (summary)
-   */
-  getCaseSummary: publicProcedure
-    .input(z.object({ caseId: z.number() }))
-    .query(async ({ input }) => {
-      const { rows: claimCount } = await getPool().query(
-        `SELECT COUNT(*) as count FROM claims WHERE case_id = $1`,
-        [input.caseId]
-      );
-      const { rows: finding_count } = await getPool().query(
-        `SELECT COUNT(*) as count FROM findings WHERE case_id = $1`,
-        [input.caseId]
-      );
-      const { rows: signalCount } = await getPool().query(
-        `SELECT COUNT(*) as count FROM signal_flags WHERE case_id = $1`,
-        [input.caseId]
-      );
-      const { rows: documentCount } = await getPool().query(
-        `SELECT COUNT(*) as count FROM documents WHERE case_id = $1`,
-        [input.caseId]
-      );
+  /** Receipt-bound structural pattern and cascade signals from Layers 10/11. */
+  getIntakeStructuralSignalProjection: protectedProcedure
+    .input(z.object({ caseId: z.number().int().positive() }))
+    .query(async ({ ctx, input }) => {
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      const [patterns, cascades] = await Promise.all([
+        read_canonical_case_layer_outputs<DetectedPattern[]>(input.caseId, 'pattern_registry'),
+        read_canonical_case_layer_outputs<CascadeChain[]>(input.caseId, 'cascade_registry'),
+      ]);
 
       return {
-        claim_elements: claimCount[0]?.count || 0,
-        findings: finding_count[0]?.count || 0,
-        signals: signalCount[0]?.count || 0,
-        documents: documentCount[0]?.count || 0,
+        projection_state:
+          patterns.state === 'canonical_projection' && cascades.state === 'canonical_projection'
+            ? 'canonical_projection' as const
+            : 'not_projected' as const,
+        pattern_outputs: patterns.outputs.map(output => ({
+          intake_session_id: output.intake_session_id,
+          output_hash: output.output_hash,
+          receipt_hash: output.receipt_hash,
+          unresolved_dependencies: output.unresolved_dependencies,
+          patterns: output.data,
+        })),
+        cascade_outputs: cascades.outputs.map(output => ({
+          intake_session_id: output.intake_session_id,
+          output_hash: output.output_hash,
+          receipt_hash: output.receipt_hash,
+          unresolved_dependencies: output.unresolved_dependencies,
+          cascades: output.data,
+        })),
       };
     }),
 });

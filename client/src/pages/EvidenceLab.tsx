@@ -74,7 +74,7 @@ export default function EvidenceLab() {
       id: "upload",
       icon: Upload,
       title: "Document Upload",
-      description: "Upload documents, PDFs, images, and records. The engine extracts entities, events, and claims automatically.",
+      description: "Register exact source documents, then explicitly run the governed Intake Spine to reconstruct receipt-bound entities, chronology, and claim candidates.",
       href: "/upload",
       color: lb.purple,
       requiresCase: true,
@@ -215,7 +215,7 @@ export default function EvidenceLab() {
           Where you examine the facts.
         </p>
         <p style={{ fontFamily: fontSans, fontSize: 14, color: lb.muted, lineHeight: 1.6, maxWidth: 600 }}>
-          Upload documents, extract entities and events, build timelines, and map evidence to proof frameworks. 
+          Register source evidence, explicitly run governed reconstruction, review receipt-bound projections, and map evidence to proof frameworks.
           The forensic core of the platform.
         </p>
       </div>

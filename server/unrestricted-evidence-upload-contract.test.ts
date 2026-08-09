@@ -29,8 +29,9 @@ describe("unrestricted evidence upload boundary", () => {
     expect(upload_route).not.toContain('from "./analysis-pipeline"');
     expect(upload_route).not.toContain("enqueueDocument(");
     expect(upload_page).not.toContain("analyzeAll.mutateAsync");
-    expect(upload_page).toContain("preservedCount > 0");
-    expect(upload_page).toContain("Upload preserved. Open the Universal Intake Spine");
+    expect(upload_page).toContain("registeredCount > 0");
+    expect(upload_page).toContain("Sources registered. Open the Universal Intake Spine");
+    expect(upload_page).not.toContain("Upload preserved");
     expect(upload_page).not.toContain("AI analysis started");
   });
 });

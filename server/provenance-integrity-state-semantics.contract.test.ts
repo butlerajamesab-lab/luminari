@@ -22,16 +22,16 @@ describe("truthful provenance and integrity state semantics", () => {
     expect(provenance).toContain('value={metrics.totalFindings === 0 ? "N/A"');
   });
 
-  it("does not turn an absent legacy snapshot into a green integrity state", () => {
-    expect(integrity).toContain("not evaluated — no active legacy snapshot");
-    expect(integrity).toContain("This state is neutral, not healthy");
+  it("does not substitute legacy snapshot health for canonical intake integrity", () => {
+    expect(integrity).toContain("No legacy snapshot state was substituted");
+    expect(integrity).toContain('projection.projection_state === "not_run"');
     expect(integrity).not.toContain("no active integrity issues");
   });
 
   it("requires canonical Layer 3 state before showing canonical verification", () => {
-    expect(integrity).toContain('canonicalState === "verified"');
-    expect(integrity).toContain('canonicalState === "not_run"');
-    expect(integrity).toContain("Zero errors is not treated as health");
-    expect(integrity).toContain("Every registered Intake source artifact has a sealed Layer 3 evidence-preservation receipt");
+    expect(integrity).toContain('projection.projection_state === "not_run"');
+    expect(integrity).toContain('projection.projection_state === "blocked"');
+    expect(integrity).toContain("Preservation verified");
+    expect(integrity).toContain("pendingCount");
   });
 });

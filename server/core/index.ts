@@ -11,7 +11,6 @@ import { registerExportRoute } from "../export-route";
 import { registerCdaExportRoute } from "../cda-export-route";
 import { registerBundleSyncRoute } from "../bundle-sync";
 import { registerBundleDownloadRoute } from "../bundle-download-route";
-import { reconcileOnStartup } from "../analysis-pipeline";
 import { expireStaleUploadSessions } from "../db";
 import { startDeadlineScheduler } from "../deadline-scheduler";
 import { initializeScheduler } from "../ingestion/scheduler";
@@ -117,8 +116,6 @@ async function startServer() {
 
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
-    // Run startup reconciliation for stuck documents (non-blocking)
-    reconcileOnStartup().catch(err => console.error("[Startup] Reconciliation error:", err));
     // Expire stale upload sessions on startup (non-blocking)
     // DISABLED FOR TESTING - Database not connected
     // expireStaleUploadSessions().catch(err => console.error("[Startup] Upload session expiration error:", err));

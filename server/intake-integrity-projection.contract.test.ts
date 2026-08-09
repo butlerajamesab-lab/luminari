@@ -45,7 +45,8 @@ describe("Universal Intake Spine evidence-integrity projection", () => {
     expect(analyze).toContain("getIntakeIntegrityProjection");
     expect(analyze).toContain("read_case_intake_integrity_projection");
     expect(integrity).toContain("trpc.analyze.getIntakeIntegrityProjection.useQuery");
-    expect(integrity).toContain("Canonical evidence preservation");
-    expect(integrity).toContain("They do not substitute for the receipt-bound Intake Layer 3 result above");
+    expect(integrity).toContain("Receipt-bound Universal Intake Spine Layer 3 state");
+    expect(integrity).toContain("No legacy snapshot state was substituted");
+    expect(integrity).not.toContain("snapshotLifecycle");
   });
 });

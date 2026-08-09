@@ -22,11 +22,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useLocation } from "wouter";
 import {
-  ArrowLeft, AlertTriangle, FileText, RotateCcw,
+  ArrowLeft, AlertTriangle, FileText,
   Loader2, MoreVertical, Eye, Ban, FileX, Replace, Shield,
   CheckCircle2, Upload, ChevronRight,
 } from "lucide-react";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import ReplaceDocumentModalV2 from "@/components/ReplaceDocumentModalV2";
 
@@ -51,27 +51,27 @@ export default function ExtractionFailures() {
     { enabled: !!currentCaseId }
   );
 
-  // Gate: snapshot lifecycle for sealed check
-  const { data: lifecycle } = trpc.snapshots.lifecycle.useQuery(
+  const { data: intakeIntegrity, isLoading: integrityLoading } = trpc.analyze.getIntakeIntegrityProjection.useQuery(
     { caseId: currentCaseId! },
     { enabled: !!currentCaseId, refetchInterval: 5000 }
   );
-  const isSealed = lifecycle?.hasSnapshot && lifecycle?.status === "sealed";
-  const snapshotId = lifecycle?.hasSnapshot ? lifecycle.snapshotId : null;
 
-  // Filter to active + failed docs in the active snapshot
+  const integrityByDocumentId = useMemo(() => new Map(
+    (intakeIntegrity?.artifacts ?? [])
+      .filter(artifact => artifact.legacy_document_id !== null)
+      .map(artifact => [artifact.legacy_document_id!, artifact]),
+  ), [intakeIntegrity]);
+
+  // Canonical Layer 3 exceptions only. Legacy analyzer errors are historical
+  // state and are not a second evidence-integrity authority.
   const failedDocs = useMemo(() => {
     if (!docs) return [];
     return docs.filter((d) => {
       const isActive = (d as any).documentResolution === "active" || !(d as any).documentResolution;
-      const isFailed = d.status === "error" || d.status === "failed_permanent";
-      // If there's an active snapshot, only show docs in that snapshot
-      if (snapshotId) {
-        return isActive && isFailed && d.snapshotId === snapshotId;
-      }
-      return isActive && isFailed;
+      const integrityStatus = integrityByDocumentId.get(d.id)?.integrity_status;
+      return isActive && (integrityStatus === "quarantined" || integrityStatus === "referenced_missing");
     });
-  }, [docs, snapshotId]);
+  }, [docs, integrityByDocumentId]);
 
 
   // Search filter
@@ -81,20 +81,13 @@ export default function ExtractionFailures() {
     return failedDocs.filter(
       (d) =>
         d.filename.toLowerCase().includes(q) ||
-        d.errorMessage?.toLowerCase().includes(q)
+        integrityByDocumentId.get(d.id)?.unresolved_dependencies.some(dependency =>
+          JSON.stringify(dependency).toLowerCase().includes(q)
+        )
     );
-  }, [failedDocs, search]);
+  }, [failedDocs, search, integrityByDocumentId]);
 
   // ── Mutations ──
-
-  const retryMutation = trpc.documents.analyze.useMutation({
-    onSuccess: () => {
-      toast.success("Document queued for retry");
-      utils.documents.list.invalidate();
-      utils.snapshots.lifecycle.invalidate();
-    },
-    onError: (err) => toast.error(err.message),
-  });
 
   const markCorruptedMutation = trpc.documents.markCorrupted.useMutation({
     onSuccess: (_, vars) => {
@@ -102,8 +95,7 @@ export default function ExtractionFailures() {
       setModal({ type: "none" });
       setReason("");
       utils.documents.list.invalidate();
-      utils.snapshots.lifecycle.invalidate();
-      utils.documents.reanalyzeScopeSummary.invalidate();
+      utils.analyze.getIntakeIntegrityProjection.invalidate();
     },
     onError: (err) => toast.error(err.message),
   });
@@ -114,19 +106,10 @@ export default function ExtractionFailures() {
       setModal({ type: "none" });
       setReason("");
       utils.documents.list.invalidate();
-      utils.snapshots.lifecycle.invalidate();
-      utils.documents.reanalyzeScopeSummary.invalidate();
+      utils.analyze.getIntakeIntegrityProjection.invalidate();
     },
     onError: (err) => toast.error(err.message),
   });
-
-
-  const handleRetry = useCallback(
-    (docId: number, caseId: number) => {
-      retryMutation.mutate({ documentId: docId, caseId });
-    },
-    [retryMutation]
-  );
 
   const handleSubmitCorrupted = () => {
     if (modal.type !== "corrupted") return;
@@ -166,12 +149,10 @@ export default function ExtractionFailures() {
         <div className="flex-1">
           <h1 className="text-xl font-semibold tracking-tight flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-red-400" />
-            Extraction Failure Inspector
+            Evidence Integrity Exceptions
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {failedDocs.length} active failed document{failedDocs.length !== 1 ? "s" : ""}
-            {snapshotId ? ` in snapshot #${snapshotId}` : ""}
-            {isSealed ? " (sealed — mutations blocked)" : ""}
+            {failedDocs.length} blocked canonical source{failedDocs.length !== 1 ? "s" : ""}
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={() => setLocation("/upload")} className="gap-1.5">
@@ -180,29 +161,30 @@ export default function ExtractionFailures() {
         </Button>
       </div>
 
-      {/* Gate info banner */}
-      {lifecycle?.hasSnapshot && lifecycle.extractionIntegrity === false && (
+      {intakeIntegrity?.projection_state === "blocked" && (
         <Card className="border-red-500/30 bg-red-950/20">
           <CardContent className="p-3 flex items-center gap-3">
             <AlertTriangle className="h-4 w-4 text-red-400 shrink-0" />
             <div className="text-sm text-red-200/80 flex-1">
-              <strong>Extraction integrity incomplete.</strong> These active errors block downstream
-              stages (Claim Build, Correlation, Findings, Seal). Resolve each document by retrying,
-              replacing, or marking as corrupted/excluded.
+              <strong>Canonical preservation is blocked.</strong> These source-byte verification
+              exceptions block governed downstream projections. Replace the source or explicitly
+              resolve it as corrupted/excluded.
             </div>
           </CardContent>
         </Card>
       )}
 
       {/* Empty state */}
-      {!isLoading && failedDocs.length === 0 && (
+      {!isLoading && !integrityLoading && failedDocs.length === 0 && (
         <Card className="border-emerald-500/30 bg-emerald-950/20">
           <CardContent className="p-6 flex flex-col items-center gap-3 text-center">
             <CheckCircle2 className="h-8 w-8 text-emerald-400" />
             <div>
-              <p className="text-sm font-medium text-emerald-200">No active extraction failures</p>
+              <p className="text-sm font-medium text-emerald-200">No canonical integrity exceptions</p>
               <p className="text-xs text-muted-foreground mt-1">
-                All active documents have been successfully extracted or resolved.
+                {intakeIntegrity?.projection_state === "not_run"
+                  ? "Sources are registered; preservation verification will occur in the explicit governed Intake Spine run."
+                  : "All projected source artifacts are preservation-verified or explicitly resolved."}
               </p>
             </div>
             <Button variant="outline" size="sm" onClick={() => setLocation("/documents")}>
@@ -219,7 +201,7 @@ export default function ExtractionFailures() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by filename or error message..."
+            placeholder="Search by filename or integrity exception..."
             className="pl-9"
           />
         </div>
@@ -292,22 +274,6 @@ export default function ExtractionFailures() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-1 shrink-0">
-                  {/* Quick retry button */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    disabled={!!isSealed || retryMutation.isPending}
-                    onClick={() => handleRetry(doc.id, doc.caseId)}
-                    title="Retry extraction"
-                  >
-                    {retryMutation.isPending && retryMutation.variables?.documentId === doc.id ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <RotateCcw className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-
                   {/* More actions dropdown */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -317,23 +283,10 @@ export default function ExtractionFailures() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-56">
                       <DropdownMenuItem
-                        onClick={() => handleRetry(doc.id, doc.caseId)}
-                        disabled={!!isSealed}
-                        className="gap-2"
-                      >
-                        <RotateCcw className="h-4 w-4 text-blue-400" />
-                        <div>
-                          <p className="font-medium">Retry Extraction</p>
-                          <p className="text-[10px] text-muted-foreground">Re-queue for extraction</p>
-                        </div>
-                      </DropdownMenuItem>
-
-                      <DropdownMenuItem
                         onClick={() => {
                           setModal({ type: "replace", docId: doc.id, docName: doc.filename });
                           setReason("");
                         }}
-                        disabled={!!isSealed}
                         className="gap-2"
                       >
                         <Replace className="h-4 w-4 text-cyan-400" />
@@ -350,7 +303,6 @@ export default function ExtractionFailures() {
                           setModal({ type: "corrupted", docId: doc.id, docName: doc.filename });
                           setReason("");
                         }}
-                        disabled={!!isSealed}
                         className="gap-2"
                       >
                         <FileX className="h-4 w-4 text-red-400" />
@@ -365,7 +317,6 @@ export default function ExtractionFailures() {
                           setModal({ type: "excluded", docId: doc.id, docName: doc.filename });
                           setReason("");
                         }}
-                        disabled={!!isSealed}
                         className="gap-2"
                       >
                         <Ban className="h-4 w-4 text-amber-400" />
@@ -424,7 +375,7 @@ export default function ExtractionFailures() {
             </DialogTitle>
             <DialogDescription>
               This removes <strong>{modal.type === "corrupted" ? modal.docName : ""}</strong> from
-              the active corpus. It will no longer block extraction integrity or gate progression.
+              the active source set. It will no longer block canonical preservation integrity.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
@@ -480,7 +431,7 @@ export default function ExtractionFailures() {
             </DialogTitle>
             <DialogDescription>
               This excludes <strong>{modal.type === "excluded" ? modal.docName : ""}</strong> from
-              analysis. It will no longer block extraction integrity or gate progression.
+              governed execution. It will no longer participate in canonical projections.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
@@ -528,8 +479,8 @@ export default function ExtractionFailures() {
         documentName={modal.type === "replace" ? modal.docName : ""}
         onSuccess={() => {
           utils.documents.list.invalidate();
-          utils.snapshots.lifecycle.invalidate();
-          utils.documents.reanalyzeScopeSummary.invalidate();
+          utils.analyze.getIntakeIntegrityProjection.invalidate();
+          utils.analyze.getIntakeSpineStatus.invalidate();
         }}
       />
 
@@ -575,7 +526,6 @@ function MetadataModal({
             <MetaRow label="Status" value={doc.status} />
             <MetaRow label="Resolution" value={(doc as any).documentResolution ?? "active"} />
             <MetaRow label="SHA-256" value={doc.sha256Hash} mono />
-            <MetaRow label="Snapshot ID" value={doc.snapshotId ? `#${doc.snapshotId}` : "—"} />
             <MetaRow label="Retry Count" value={String(doc.retryCount)} />
             <MetaRow label="Page Count" value={doc.pageCount ? String(doc.pageCount) : "—"} />
             <MetaRow label="Created" value={new Date(doc.createdAt).toLocaleString()} />

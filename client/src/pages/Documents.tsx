@@ -21,9 +21,9 @@ import {
 } from "@/components/ui/dialog";
 import { useLocation } from "wouter";
 import {
-  FileText, Image, Video, Music, Upload, Search, File, RefreshCw,
-  Loader2, AlertTriangle, CheckSquare, Square, Shield, XCircle,
-  ChevronDown, ChevronRight, Zap, RotateCcw, Hammer, MoreVertical, Replace, Eye,
+  FileText, Image, Video, Music, Upload, Search, File,
+  Loader2, CheckSquare, Square, Shield, XCircle,
+  MoreVertical, Replace, Eye,
 } from "lucide-react";
 import ReplaceDocumentModalV2 from "@/components/ReplaceDocumentModalV2";
 import {
@@ -46,6 +46,11 @@ const fileTypeIcon: Record<string, typeof FileText> = {
 };
 
 const statusColor: Record<string, string> = {
+  registered: "bg-blue-400",
+  preserved: "bg-emerald-400",
+  quarantined: "bg-red-500",
+  referenced_missing: "bg-red-500",
+  unregistered: "bg-amber-400",
   uploaded: "bg-muted-foreground",
   extracting: "bg-blue-400",
   analyzing: "bg-amber-400",
@@ -62,78 +67,6 @@ function formatBytes(bytes: number) {
 }
 
 type CdaRole = "policy" | "denial" | "claim_summary" | null;
-
-function QueueStatusBanner() {
-  const { currentCaseId } = useCase();
-  const { data: queueStatus } = trpc.documents.queueStatus.useQuery(
-    { caseId: currentCaseId ?? undefined },
-    { refetchInterval: 3000 }
-  );
-
-  if (!queueStatus) return null;
-  const {
-    queueDepth, activeWorkers, isProcessing, retryingCount,
-    autoRecoverableCount, manualReuploadCount, systemErrorCount,
-    processingRate,
-  } = queueStatus;
-
-  const hasFailures = (autoRecoverableCount ?? 0) > 0 || (manualReuploadCount ?? 0) > 0 || (systemErrorCount ?? 0) > 0;
-  if (!isProcessing && queueDepth === 0 && retryingCount === 0 && !hasFailures) return null;
-
-  return (
-    <Card className="border-blue-500/30 bg-blue-950/20">
-      <CardContent className="p-3">
-        <div className="flex items-center gap-3">
-          {isProcessing ? (
-            <Loader2 className="h-4 w-4 text-blue-400 animate-spin shrink-0" />
-          ) : (
-            <RefreshCw className="h-4 w-4 text-blue-400 shrink-0" />
-          )}
-          <div className="flex-1">
-            <p className="text-sm text-blue-200/90 font-medium">
-              {isProcessing
-                ? `Processing ${activeWorkers} at a time. ${queueDepth} remaining.`
-                : "Queue idle"}
-            </p>
-            <div className="flex items-center gap-4 mt-1 flex-wrap">
-              <span className="text-[10px] text-muted-foreground">
-                Queue: {queueDepth}
-              </span>
-              <span className="text-[10px] text-muted-foreground">
-                Active: {activeWorkers}
-              </span>
-              {retryingCount > 0 && (
-                <span className="text-[10px] text-orange-400">
-                  Retrying: {retryingCount}
-                </span>
-              )}
-              {(autoRecoverableCount ?? 0) > 0 && (
-                <span className="text-[10px] text-orange-400">
-                  Auto-Recoverable: {autoRecoverableCount}
-                </span>
-              )}
-              {(manualReuploadCount ?? 0) > 0 && (
-                <span className="text-[10px] text-red-400">
-                  Manual Re-Upload: {manualReuploadCount}
-                </span>
-              )}
-              {(systemErrorCount ?? 0) > 0 && (
-                <span className="text-[10px] text-amber-400">
-                  System Errors: {systemErrorCount}
-                </span>
-              )}
-              {processingRate > 0 && (
-                <span className="text-[10px] text-muted-foreground">
-                  Rate: {processingRate} docs/min
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
 
 export default function Documents() {
   const { currentCaseId } = useCase();
@@ -156,90 +89,11 @@ export default function Documents() {
     { caseId: currentCaseId! },
     { enabled: !!currentCaseId }
   );
-
-  // Reanalyze scope summary
-  const { data: scopeSummary } = trpc.documents.reanalyzeScopeSummary.useQuery(
-    { caseId: currentCaseId! },
-    { enabled: !!currentCaseId }
-  );
-
-  // Gate Schema: snapshot lifecycle for action gating
-  const { data: lifecycle } = trpc.snapshots.lifecycle.useQuery(
+  const { data: intakeIntegrity } = trpc.analyze.getIntakeIntegrityProjection.useQuery(
     { caseId: currentCaseId! },
     { enabled: !!currentCaseId, refetchInterval: 5000 }
   );
-  const isSnapshotSealed = lifecycle?.hasSnapshot && lifecycle?.status === 'sealed';
-
-  // Full rebuild confirmation modal
-  const [showRebuildModal, setShowRebuildModal] = useState(false);
   const [replaceTarget, setReplaceTarget] = useState<{ id: number; name: string } | null>(null);
-
-  // A) Analyze New Uploads Only
-  const analyzeNewUploads = trpc.documents.analyzeNewUploads.useMutation({
-    onSuccess: (data) => {
-      toast.success(`${data.totalQueued} new upload${data.totalQueued !== 1 ? 's' : ''} queued for analysis`);
-      utils.documents.list.invalidate();
-      utils.documents.reanalyzeScopeSummary.invalidate();
-    },
-    onError: (err) => toast.error(err.message),
-  });
-
-  // B) Retry Failed Only
-  const retryFailedOnly = trpc.documents.retryFailedOnly.useMutation({
-    onSuccess: (data) => {
-      if (data.totalQueued === 0) {
-        toast.info('No retryable failures found');
-      } else {
-        toast.success(`${data.totalQueued} failed document${data.totalQueued !== 1 ? 's' : ''} queued for retry${data.snapshotCreated ? ' (new snapshot created)' : ''}`);
-      }
-      utils.documents.list.invalidate();
-      utils.documents.reanalyzeScopeSummary.invalidate();
-      utils.cases.ingestionAudit.invalidate();
-    },
-    onError: (err) => toast.error(err.message),
-  });
-
-  // C) Full Snapshot Rebuild
-  const fullRebuild = trpc.documents.fullSnapshotRebuild.useMutation({
-    onSuccess: (data) => {
-      const passed = data.toneReports.filter((r: any) => r.report.passed).length;
-      const failed = data.toneReports.length - passed;
-      if (failed === 0) {
-        toast.success(`Full rebuild complete — all ${data.totalDocs} documents passed tone validation`);
-      } else {
-        toast.warning(`Full rebuild complete — ${passed}/${data.totalDocs} passed, ${failed} with violations`);
-      }
-      setShowRebuildModal(false);
-      utils.documents.list.invalidate();
-      utils.documents.reanalyzeScopeSummary.invalidate();
-    },
-    onError: (err) => { toast.error(err.message); setShowRebuildModal(false); },
-  });
-
-  // Legacy mutations kept for backward compatibility
-  const retryAll = trpc.documents.analyzeAll.useMutation({
-    onSuccess: (data) => {
-      toast.success(`${data.queued} document${data.queued !== 1 ? "s" : ""} queued for analysis`);
-      utils.documents.list.invalidate();
-    },
-    onError: (err) => toast.error(err.message),
-  });
-
-  const reanalyzeAll = trpc.documents.reanalyzeAll.useMutation({
-    onSuccess: (data) => {
-      const passed = data.toneReports.filter((r: any) => r.report.passed).length;
-      const failed = data.toneReports.length - passed;
-      if (failed === 0) {
-        toast.success(`Batch re-analysis complete — all ${data.totalDocs} documents passed tone validation`);
-      } else {
-        toast.warning(`Batch re-analysis complete — ${passed}/${data.totalDocs} passed, ${failed} with violations`);
-      }
-      utils.documents.list.invalidate();
-    },
-    onError: (err) => toast.error(err.message),
-  });
-
-  const isAnyActionPending = analyzeNewUploads.isPending || retryFailedOnly.isPending || fullRebuild.isPending;
 
   const startCdaRun = trpc.cda.startRun.useMutation({
     onSuccess: (data) => {
@@ -263,10 +117,11 @@ export default function Documents() {
     return docs.filter(d => d.filename.toLowerCase().includes(q) || d.documentType?.toLowerCase().includes(q));
   }, [docs, search]);
 
-  const errorCount = useMemo(() => {
-    if (!docs) return 0;
-    return docs.filter(d => d.status === "error" || d.status === "uploaded").length;
-  }, [docs]);
+  const intakeArtifactByDocumentId = useMemo(() => new Map(
+    (intakeIntegrity?.artifacts ?? [])
+      .filter(artifact => artifact.legacy_document_id !== null)
+      .map(artifact => [artifact.legacy_document_id!, artifact]),
+  ), [intakeIntegrity]);
 
   // CDA role assignment helpers
   const assignRole = useCallback((docId: number, role: CdaRole) => {
@@ -322,8 +177,8 @@ export default function Documents() {
 
   const readyDocs = useMemo(() => {
     if (!docs) return [];
-    return docs.filter(d => d.status === "ready");
-  }, [docs]);
+    return docs.filter(d => intakeArtifactByDocumentId.get(d.id)?.integrity_status === "preserved");
+  }, [docs, intakeArtifactByDocumentId]);
 
   if (!currentCaseId) {
     return (
@@ -342,85 +197,11 @@ export default function Documents() {
           <p className="text-sm text-muted-foreground mt-1">{filtered.length} document{filtered.length !== 1 ? "s" : ""}</p>
         </div>
         <div className="flex items-center gap-2">
-          {/* Reanalyze Intent Separation — Three Scoped Actions */}
           {docs && docs.length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  disabled={isAnyActionPending || !!isSnapshotSealed}
-                  className="gap-2"
-                  title={isSnapshotSealed ? 'Snapshot is sealed — mutations blocked' : undefined}
-                >
-                  {isAnyActionPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <RefreshCw className="h-4 w-4" />
-                  )}
-                  {isSnapshotSealed ? 'Sealed' : isAnyActionPending ? 'Processing...' : 'Analyze'}
-                  <ChevronDown className="h-3.5 w-3.5 opacity-60" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-80">
-                <DropdownMenuItem
-                  onClick={() => analyzeNewUploads.mutate({ caseId: currentCaseId! })}
-                  disabled={!scopeSummary?.analyzeNewUploads}
-                  className="flex-col items-start gap-1 py-2.5"
-                >
-                  <div className="flex items-center gap-2 w-full">
-                    <Zap className="h-4 w-4 text-blue-400 shrink-0" />
-                    <span className="font-medium">Analyze New Uploads</span>
-                    {scopeSummary && (
-                      <Badge variant="outline" className="ml-auto text-[10px]">
-                        {scopeSummary.analyzeNewUploads}
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-[11px] text-muted-foreground pl-6">
-                    Process newly uploaded documents only. Does not touch existing results.
-                  </p>
-                </DropdownMenuItem>
-
-                <DropdownMenuItem
-                  onClick={() => retryFailedOnly.mutate({ caseId: currentCaseId! })}
-                  disabled={!scopeSummary?.retryFailed}
-                  className="flex-col items-start gap-1 py-2.5"
-                >
-                  <div className="flex items-center gap-2 w-full">
-                    <RotateCcw className="h-4 w-4 text-amber-400 shrink-0" />
-                    <span className="font-medium">Retry Failed Documents</span>
-                    {scopeSummary && (
-                      <Badge variant="outline" className="ml-auto text-[10px] border-amber-500/50 text-amber-300">
-                        {scopeSummary.retryFailed}
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-[11px] text-muted-foreground pl-6">
-                    Retry auto-recoverable failures only. Non-retryable errors are skipped.
-                  </p>
-                </DropdownMenuItem>
-
-                <DropdownMenuSeparator />
-
-                <DropdownMenuItem
-                  onClick={() => setShowRebuildModal(true)}
-                  className="flex-col items-start gap-1 py-2.5"
-                >
-                  <div className="flex items-center gap-2 w-full">
-                    <Hammer className="h-4 w-4 text-red-400 shrink-0" />
-                    <span className="font-medium text-red-300">Full Snapshot Rebuild</span>
-                    {scopeSummary && (
-                      <Badge variant="outline" className="ml-auto text-[10px] border-red-500/50 text-red-300">
-                        {scopeSummary.fullRebuild}
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-[11px] text-muted-foreground pl-6">
-                    Re-extract all documents and rebuild correlations/findings. Requires confirmation.
-                  </p>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button variant="outline" onClick={() => setLocation("/control-room")} className="gap-2">
+              <Shield className="h-4 w-4" />
+              Universal Intake Spine
+            </Button>
           )}
 
           {/* CDA Mode Toggle */}
@@ -451,9 +232,6 @@ export default function Documents() {
           </Button>
         </div>
       </div>
-
-      {/* Queue Visibility Banner */}
-      <QueueStatusBanner />
 
       {/* CDA Role Assignment Banner */}
       {cdaMode && (
@@ -518,108 +296,15 @@ export default function Documents() {
         </Card>
       )}
 
-      {/* Scope Summary Banner */}
-      {scopeSummary && (scopeSummary.processingFailed > 0 || scopeSummary.analyzeNewUploads > 0) && (
-        <Card className="border-amber-500/50 bg-amber-950/20">
-          <CardContent className="p-3 flex items-center gap-3">
-            <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0" />
-            <div className="text-sm text-amber-200/80 flex-1 space-y-1">
-              {scopeSummary.analyzeNewUploads > 0 && (
-                <p>
-                  <strong className="text-blue-300">{scopeSummary.analyzeNewUploads}</strong> new upload{scopeSummary.analyzeNewUploads !== 1 ? 's' : ''} awaiting analysis.
-                </p>
-              )}
-              {scopeSummary.processingFailed > 0 && (
-                <p>
-                  <button
-                    onClick={() => setLocation('/extraction-failures')}
-                    className="inline-flex items-center gap-1 text-amber-200 hover:text-amber-100 underline underline-offset-2 decoration-amber-500/50 hover:decoration-amber-400 transition-colors font-bold"
-                  >
-                    Extraction Failures: {scopeSummary.processingFailed}
-                    <ChevronRight className="h-3 w-3" />
-                  </button>
-                  {' — '}
-                  {scopeSummary.retryFailed > 0 && (
-                    <span className="text-orange-300">{scopeSummary.retryFailed} auto-recoverable</span>
-                  )}
-                  {scopeSummary.retryFailed > 0 && scopeSummary.retryFailedNonRetryable > 0 && ', '}
-                  {scopeSummary.retryFailedNonRetryable > 0 && (
-                    <span className="text-red-300">{scopeSummary.retryFailedNonRetryable} manual re-upload</span>
-                  )}
-                </p>
-              )}
-              {scopeSummary.validComplete > 0 && (
-                <p className="text-emerald-300/80">
-                  Valid Complete: {scopeSummary.validComplete}
-                </p>
-              )}
-            </div>
+      {intakeIntegrity && intakeIntegrity.source_artifact_count > 0 && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="p-3 text-sm text-muted-foreground">
+            <strong className="text-foreground">Canonical source state:</strong>{' '}
+            {intakeIntegrity.source_artifact_count} registered, {intakeIntegrity.preserved_count} preservation-verified.
+            {intakeIntegrity.projection_state === 'not_run' && ' Start the governed Universal Intake Spine from Control Room when the jurisdiction and rule date are known.'}
           </CardContent>
         </Card>
       )}
-
-      {/* Full Rebuild Confirmation Modal */}
-      <Dialog open={showRebuildModal} onOpenChange={setShowRebuildModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-300">
-              <Hammer className="h-5 w-5" />
-              Full Snapshot Rebuild
-            </DialogTitle>
-            <DialogDescription>
-              This will re-extract and rebuild all documents, correlations, and findings from scratch.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-3 py-2">
-            <div className="p-3 rounded-md bg-muted/30 space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Documents to process</span>
-                <span className="font-medium">{scopeSummary?.fullRebuild ?? '—'}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Currently valid</span>
-                <span className="font-medium text-emerald-400">{scopeSummary?.validComplete ?? '—'}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Currently failed</span>
-                <span className="font-medium text-amber-400">{scopeSummary?.processingFailed ?? '—'}</span>
-              </div>
-            </div>
-
-            <div className="p-3 rounded-md border border-red-500/20 bg-red-950/10 space-y-1">
-              <p className="text-xs text-red-300 font-medium">Warning</p>
-              <p className="text-xs text-muted-foreground">
-                This will consume significant provider capacity. Existing correlations and findings
-                will be cleared and regenerated. This action cannot be undone.
-              </p>
-            </div>
-          </div>
-
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setShowRebuildModal(false)}
-              disabled={fullRebuild.isPending}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => fullRebuild.mutate({ caseId: currentCaseId!, confirmed: true })}
-              disabled={fullRebuild.isPending}
-              className="gap-2"
-            >
-              {fullRebuild.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Hammer className="h-4 w-4" />
-              )}
-              {fullRebuild.isPending ? 'Rebuilding...' : 'Confirm Full Rebuild'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -649,7 +334,9 @@ export default function Documents() {
           {filtered.map((doc) => {
             const Icon = fileTypeIcon[doc.fileType] || File;
             const currentRole = roleAssignments[doc.id] ?? null;
-            const isReady = doc.status === "ready";
+            const intakeArtifact = intakeArtifactByDocumentId.get(doc.id);
+            const intakeStatus = intakeArtifact?.integrity_status ?? intakeArtifact?.source_artifact_status ?? "unregistered";
+            const isReady = intakeStatus === "preserved";
 
             return (
               <Card
@@ -718,9 +405,9 @@ export default function Documents() {
                         {(doc as any).documentResolution}
                       </Badge>
                     )}
-                    <div className={`h-2 w-2 rounded-full ${statusColor[doc.status] || "bg-muted-foreground"}`} />
+                    <div className={`h-2 w-2 rounded-full ${statusColor[intakeStatus] || "bg-muted-foreground"}`} />
                     <Badge variant="outline" className="text-[10px] capitalize">
-                      {doc.status}
+                      {intakeStatus.replace(/_/g, " ")}
                     </Badge>
                     {!cdaMode && (
                       <div onClick={(e) => e.stopPropagation()}>
@@ -834,8 +521,8 @@ export default function Documents() {
         documentName={replaceTarget?.name ?? ''}
         onSuccess={() => {
           utils.documents.list.invalidate();
-          utils.snapshots.lifecycle.invalidate();
-          utils.documents.reanalyzeScopeSummary.invalidate();
+          utils.analyze.getIntakeSpineStatus.invalidate();
+          utils.analyze.getIntakeIntegrityProjection.invalidate();
         }}
       />
     </div>
