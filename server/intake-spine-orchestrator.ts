@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { getPool } from './db';
 import { register_intake_layer_execution } from './intake-layer-run-persistence';
 import { load_governed_legal_registry } from './intake-governed-legal-registry';
@@ -136,6 +136,7 @@ export type intake_spine_orchestration_result = {
 
 type session_row = {
   intake_session_id: string;
+  session_row_version: string;
   owner_user_id: number | null;
   session_type: string;
   entry_channel: string;
@@ -171,12 +172,158 @@ type persisted_dependency = {
   output_hash: string;
 };
 
+type persist_layer_input<T> = {
+  session_id: string;
+  result: EngineResult<T>;
+  rule_manifest_hash: string;
+  canonical_input: Record<string, unknown>;
+  input_refs: unknown[];
+  receipts: intake_spine_execution_receipt[];
+  dependencies: Map<string, persisted_dependency>;
+  dependency_key?: string;
+};
+
+export async function finalize_intake_spine_session_if_unchanged(
+  pool: Pick<ReturnType<typeof getPool>, 'query'>,
+  input: {
+    intake_session_id: string;
+    session_row_version: string;
+    jurisdiction: string;
+    as_of: string;
+    required_layer_count: number;
+    sealed_receipt_count: number;
+    execution_lease_token: string;
+  },
+): Promise<void> {
+  const completion_result = await pool.query<{ completed: boolean }>(
+    `select public.complete_intake_spine_execution_v1(
+       $1::uuid,
+       $2::text,
+       $3::uuid,
+       $4::text,
+       $5::text,
+       $6::integer,
+       $7::integer
+     ) as completed`,
+    [
+      input.intake_session_id,
+      input.session_row_version,
+      input.execution_lease_token,
+      input.jurisdiction,
+      input.as_of,
+      input.required_layer_count,
+      input.sealed_receipt_count,
+    ],
+  );
+  if (completion_result.rows[0]?.completed !== true) {
+    throw new Error(
+      'intake_spine_orchestrator_session_changed_during_execution',
+    );
+  }
+}
+
+export type intake_spine_execution_lease = {
+  lease_token: string;
+  assert_active: () => void;
+  release: () => Promise<void>;
+};
+
+const INTAKE_SPINE_EXECUTION_LEASE_SECONDS = 120;
+const INTAKE_SPINE_EXECUTION_HEARTBEAT_MS = 30_000;
+
+export async function acquire_intake_spine_execution_lease(
+  pool: Pick<ReturnType<typeof getPool>, 'query'>,
+  intake_session_id: string,
+  options: {
+    lease_token?: string;
+    lease_seconds?: number;
+    heartbeat_interval_ms?: number;
+  } = {},
+): Promise<intake_spine_execution_lease> {
+  const lease_token = options.lease_token ?? randomUUID();
+  const lease_seconds =
+    options.lease_seconds ?? INTAKE_SPINE_EXECUTION_LEASE_SECONDS;
+  const heartbeat_interval_ms =
+    options.heartbeat_interval_ms ?? INTAKE_SPINE_EXECUTION_HEARTBEAT_MS;
+  const acquisition_result = await pool.query<{ acquired: boolean }>(
+    `select public.acquire_intake_spine_execution_lease_v1(
+       $1::uuid,
+       $2::uuid,
+       $3::integer
+     ) as acquired`,
+    [intake_session_id, lease_token, lease_seconds],
+  );
+  if (acquisition_result.rows[0]?.acquired !== true) {
+    throw new Error('intake_spine_orchestrator_execution_already_in_progress');
+  }
+
+  let active = true;
+  let released = false;
+  let heartbeat_in_flight = false;
+  const heartbeat = async () => {
+    if (!active || released || heartbeat_in_flight) return;
+    heartbeat_in_flight = true;
+    try {
+      const renewal_result = await pool.query<{ renewed: boolean }>(
+        `select public.renew_intake_spine_execution_lease_v1(
+           $1::uuid,
+           $2::uuid,
+           $3::integer
+         ) as renewed`,
+        [intake_session_id, lease_token, lease_seconds],
+      );
+      if (renewal_result.rows[0]?.renewed !== true) active = false;
+    } catch (error) {
+      console.error('[IntakeSpine] execution lease heartbeat failed', {
+        intake_session_id,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    } finally {
+      heartbeat_in_flight = false;
+    }
+  };
+  const heartbeat_timer = setInterval(
+    () => void heartbeat(),
+    heartbeat_interval_ms,
+  );
+  heartbeat_timer.unref?.();
+
+  return {
+    lease_token,
+    assert_active: () => {
+      if (!active || released) {
+        throw new Error('intake_spine_orchestrator_execution_lease_lost');
+      }
+    },
+    release: async () => {
+      if (released) return;
+      released = true;
+      active = false;
+      clearInterval(heartbeat_timer);
+      try {
+        await pool.query(
+          `select public.release_intake_spine_execution_lease_v1(
+             $1::uuid,
+             $2::uuid
+           )`,
+          [intake_session_id, lease_token],
+        );
+      } catch (error) {
+        console.error('[IntakeSpine] execution lease release failed', {
+          intake_session_id,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    },
+  };
+}
+
 /**
  * Execute a real Universal Intake Spine session against preserved source bytes.
  *
  * This function is deliberately not wired to upload triggers. Preservation is
  * immediate; analysis remains an explicit governed action. Every persisted
- * output passes through register_intake_layer_execution_v3, which independently
+ * output passes through register_intake_layer_execution_v4, which independently
  * re-canonicalizes the execution envelope and output inside PostgreSQL.
  */
 export async function execute_intake_spine_session(
@@ -189,9 +336,15 @@ export async function execute_intake_spine_session(
   if (!jurisdiction) throw new Error('intake_spine_orchestrator_jurisdiction_required');
 
   const pool = getPool();
+  const execution_lease = await acquire_intake_spine_execution_lease(
+    pool,
+    request.intake_session_id,
+  );
+  try {
   const session_result = await pool.query<session_row>(
     `select
        s.intake_session_id::text,
+       s.xmin::text as session_row_version,
        s.owner_user_id,
        s.session_type,
        s.entry_channel,
@@ -204,12 +357,16 @@ export async function execute_intake_spine_session(
        cil.case_uuid::text,
        cib.legacy_case_id
      from public.intake_sessions s
-     left join public.case_intake_links cil
+     join public.case_intake_links cil
        on cil.intake_session_id = s.intake_session_id
+      and cil.is_primary = true
+      and cil.link_type = 'primary_projection'
      left join public.case_identity_bridge cib
        on cib.case_uuid = cil.case_uuid
      where s.intake_session_id = $1::uuid
-     order by cil.is_primary desc, cil.created_at asc
+       and s.session_type = 'live'
+       and s.entry_channel = 'upload'
+     order by cil.created_at asc
      limit 1`,
     [request.intake_session_id],
   );
@@ -247,10 +404,14 @@ export async function execute_intake_spine_session(
   const governed = await load_governed_legal_registry();
   const receipts: intake_spine_execution_receipt[] = [];
   const dependencies = new Map<string, persisted_dependency>();
+  const persist_execution_layer = <T>(input: persist_layer_input<T>) => {
+    execution_lease.assert_active();
+    return persist_layer(input, execution_lease.lease_token);
+  };
 
   const stabilization_input = read_stabilization_input(session);
   const l1 = processLayer1(stabilization_input, as_of);
-  await persist_layer({
+  await persist_execution_layer({
     session_id: session.intake_session_id,
     result: l1,
     rule_manifest_hash: L1_RULE_HASH,
@@ -286,7 +447,7 @@ export async function execute_intake_spine_session(
       declared_mime_type,
       entry_channel: session.entry_channel,
     }, seen_hashes);
-    const l2Persisted = await persist_layer({
+    const l2Persisted = await persist_execution_layer({
       session_id: session.intake_session_id,
       result: l2,
       rule_manifest_hash: L2_RULE_HASH,
@@ -313,7 +474,7 @@ export async function execute_intake_spine_session(
     seen_hashes.push(source.verified_sha256);
 
     const l3 = processLayer3({ record: l2.data, actual_bytes: source.bytes }, as_of);
-    const l3Persisted = await persist_layer({
+    const l3Persisted = await persist_execution_layer({
       session_id: session.intake_session_id,
       result: l3,
       rule_manifest_hash: L3_RULE_HASH,
@@ -364,7 +525,7 @@ export async function execute_intake_spine_session(
   const parser_refs = source_receipts.map(dependency_ref);
 
   const l4 = processLayer4({ artifacts: parsed_artifacts });
-  const l4Persisted = await persist_layer({
+  const l4Persisted = await persist_execution_layer({
     session_id: session.intake_session_id,
     result: l4,
     rule_manifest_hash: L4_RULE_HASH,
@@ -376,7 +537,7 @@ export async function execute_intake_spine_session(
   });
 
   const l6 = processLayer6({ artifacts: parsed_artifacts });
-  const l6Persisted = await persist_layer({
+  const l6Persisted = await persist_execution_layer({
     session_id: session.intake_session_id,
     result: l6,
     rule_manifest_hash: L6_RULE_HASH,
@@ -388,7 +549,7 @@ export async function execute_intake_spine_session(
   });
 
   const l7 = processLayer7({ entities: l6.data, artifacts: parsed_artifacts });
-  const l7Persisted = await persist_layer({
+  const l7Persisted = await persist_execution_layer({
     session_id: session.intake_session_id,
     result: l7,
     rule_manifest_hash: L7_RULE_HASH,
@@ -403,7 +564,7 @@ export async function execute_intake_spine_session(
   });
 
   const l9 = processLayer9({ entities: l6.data, artifacts: parsed_artifacts });
-  const l9Persisted = await persist_layer({
+  const l9Persisted = await persist_execution_layer({
     session_id: session.intake_session_id,
     result: l9,
     rule_manifest_hash: L9_RULE_HASH,
@@ -418,7 +579,7 @@ export async function execute_intake_spine_session(
   });
 
   const l5 = processLayer5({ transitions: l9.data, relationships: l7.data });
-  const l5Persisted = await persist_layer({
+  const l5Persisted = await persist_execution_layer({
     session_id: session.intake_session_id,
     result: l5,
     rule_manifest_hash: L5_RULE_HASH,
@@ -433,7 +594,7 @@ export async function execute_intake_spine_session(
   });
 
   const l8 = processLayer8({ relationships: l7.data });
-  const l8Persisted = await persist_layer({
+  const l8Persisted = await persist_execution_layer({
     session_id: session.intake_session_id,
     result: l8,
     rule_manifest_hash: L8_RULE_HASH,
@@ -445,7 +606,7 @@ export async function execute_intake_spine_session(
   });
 
   const l10 = processLayer10({ transitions: l9.data });
-  const l10Persisted = await persist_layer({
+  const l10Persisted = await persist_execution_layer({
     session_id: session.intake_session_id,
     result: l10,
     rule_manifest_hash: L10_RULE_HASH,
@@ -457,7 +618,7 @@ export async function execute_intake_spine_session(
   });
 
   const l11 = processLayer11({ transitions: l9.data });
-  const l11Persisted = await persist_layer({
+  const l11Persisted = await persist_execution_layer({
     session_id: session.intake_session_id,
     result: l11,
     rule_manifest_hash: L11_RULE_HASH,
@@ -478,7 +639,7 @@ export async function execute_intake_spine_session(
     governed_registry: governed.manifest,
     governed_registry_hash: governed.rule_manifest_hash,
   });
-  const l12Persisted = await persist_layer({
+  const l12Persisted = await persist_execution_layer({
     session_id: session.intake_session_id,
     result: l12,
     rule_manifest_hash: l12RuleHash,
@@ -502,7 +663,7 @@ export async function execute_intake_spine_session(
   });
 
   const l13 = processLayer13({ events: l4.data, entities: l6.data, claims: l12.data });
-  const l13Persisted = await persist_layer({
+  const l13Persisted = await persist_execution_layer({
     session_id: session.intake_session_id,
     result: l13,
     rule_manifest_hash: L13_RULE_HASH,
@@ -523,7 +684,7 @@ export async function execute_intake_spine_session(
     governed_registry: governed.manifest,
     governed_registry_hash: governed.rule_manifest_hash,
   });
-  const l14Persisted = await persist_layer({
+  const l14Persisted = await persist_execution_layer({
     session_id: session.intake_session_id,
     result: l14,
     rule_manifest_hash: l14RuleHash,
@@ -537,21 +698,16 @@ export async function execute_intake_spine_session(
     dependency_key: 'action_paths',
   });
 
-  await pool.query(
-    `update public.intake_sessions
-        set completion_state = 'governed_execution_complete',
-            metadata = coalesce(metadata, '{}'::jsonb) || jsonb_build_object(
-              'last_governed_execution', jsonb_build_object(
-                'jurisdiction', $2::text,
-                'rule_as_of', $3::text,
-                'required_layer_count', $4::integer,
-                'sealed_receipt_count', $5::integer
-              )
-            ),
-            updated_at = now()
-      where intake_session_id = $1::uuid`,
-    [session.intake_session_id, jurisdiction, as_of, INTAKE_SPINE_LAYER_NAMES.length, receipts.length],
-  );
+  execution_lease.assert_active();
+  await finalize_intake_spine_session_if_unchanged(pool, {
+    intake_session_id: session.intake_session_id,
+    session_row_version: session.session_row_version,
+    jurisdiction,
+    as_of,
+    required_layer_count: INTAKE_SPINE_LAYER_NAMES.length,
+    sealed_receipt_count: receipts.length,
+    execution_lease_token: execution_lease.lease_token,
+  });
 
   return {
     intake_session_id: session.intake_session_id,
@@ -577,18 +733,15 @@ export async function execute_intake_spine_session(
       action_paths: l14Persisted.output_hash,
     },
   };
+  } finally {
+    await execution_lease.release();
+  }
 }
 
-async function persist_layer<T>(input: {
-  session_id: string;
-  result: EngineResult<T>;
-  rule_manifest_hash: string;
-  canonical_input: Record<string, unknown>;
-  input_refs: unknown[];
-  receipts: intake_spine_execution_receipt[];
-  dependencies: Map<string, persisted_dependency>;
-  dependency_key?: string;
-}): Promise<persisted_dependency> {
+async function persist_layer<T>(
+  input: persist_layer_input<T>,
+  execution_lease_token: string,
+): Promise<persisted_dependency> {
   if (!SHA256_RE.test(input.rule_manifest_hash)) {
     throw new Error(`intake_spine_orchestrator_rule_manifest_hash_invalid:${input.result.layer_name}`);
   }
@@ -608,6 +761,7 @@ async function persist_layer<T>(input: {
 
   const persisted = await register_intake_layer_execution({
     intake_session_id: input.session_id,
+    execution_lease_token,
     layer_name: input.result.layer_name,
     layer_version: input.result.layer_version,
     rule_version: input.result.rule_version,
@@ -737,3 +891,4 @@ function text_or_undefined(value: unknown): string | undefined {
 function unique_sorted(values: string[]): string[] {
   return Array.from(new Set(values.map(value => value.trim()).filter(Boolean))).sort();
 }
+

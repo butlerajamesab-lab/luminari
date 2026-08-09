@@ -359,21 +359,37 @@ export async function upsertUser(data: {
 }
 
 // ─── Audit Trail Helpers ───
-let lastAuditHash = "0000000000000000000000000000000000000000000000000000000000000000";
+const ZERO_AUDIT_HASH = "0000000000000000000000000000000000000000000000000000000000000000";
+const AUDIT_HASH_CHAIN_LOCK_ID = 76004003;
 
-export async function logAudit(entry: {
+type AuditEntryInput = {
   caseId?: number;
   userId?: number;
   action: string;
   targetType?: string;
   targetId?: number;
   details?: Record<string, unknown>;
-}) {
+};
+
+async function insertSerializedAuditEntry(tx: any, entry: AuditEntryInput): Promise<string> {
+  // The chain is global, so its predecessor must be selected under one
+  // database-visible lock shared by every server process and every audit
+  // writer. A process-local tip can fork as soon as requests overlap or the
+  // service runs more than one instance.
+  await tx.execute(sql`select pg_advisory_xact_lock(${AUDIT_HASH_CHAIN_LOCK_ID})`);
+  const [previous] = await tx.select({ hash: auditTrail.hash })
+    .from(auditTrail)
+    .orderBy(desc(auditTrail.id))
+    .limit(1);
+
   const now = Date.now();
-  const payload = JSON.stringify({ ...entry, createdAt: now, previousHash: lastAuditHash });
+  const payload = JSON.stringify({
+    ...entry,
+    createdAt: now,
+    previousHash: previous?.hash ?? ZERO_AUDIT_HASH,
+  });
   const hash = createHash("sha256").update(payload).digest("hex");
-  lastAuditHash = hash;
-  await db.insert(auditTrail).values({
+  await tx.insert(auditTrail).values({
     caseId: entry.caseId ?? null,
     userId: entry.userId ?? null,
     action: entry.action,
@@ -384,6 +400,10 @@ export async function logAudit(entry: {
     createdAt: now,
   });
   return hash;
+}
+
+export async function logAudit(entry: AuditEntryInput) {
+  return db.transaction(async (tx: any) => insertSerializedAuditEntry(tx, entry));
 }
 
 // ─── Corpus Snapshots (Gate 6) ───
@@ -2842,6 +2862,188 @@ export async function replaceDocument(
 }
 
 /**
+ * Marker returned only when the replacement transaction callback failed and
+ * Drizzle subsequently completed ROLLBACK. Errors raised while COMMIT is being
+ * acknowledged (or while ROLLBACK itself is failing) deliberately remain
+ * unmarked because their durable database outcome is not known.
+ */
+export class ReplacementPersistenceRolledBackError extends Error {
+  readonly replacementPersistenceOutcome = 'rolled_back';
+  readonly cause: unknown;
+
+  constructor(cause: unknown) {
+    super(cause instanceof Error ? cause.message : 'Replacement persistence rolled back');
+    this.name = 'ReplacementPersistenceRolledBackError';
+    this.cause = cause;
+  }
+}
+
+/**
+ * Create a replacement document and supersede its original in one database
+ * transaction. The original document and any bound snapshot are locked while
+ * their mutability is revalidated, closing the gap between upload preflight
+ * and persistence. Storage is intentionally handled by the caller because it
+ * is an external system and must be compensated if this transaction fails.
+ */
+export async function createAndSupersedeDocumentAtomic(
+  originalDocumentId: number,
+  replacement: {
+    caseId: number;
+    filename: string;
+    fileType: string;
+    mimeType: string;
+    fileSize: number;
+    s3Key: string;
+    s3Url: string;
+    sha256Hash: string;
+    snapshotId: number | null;
+  },
+  userId: number,
+  reason: string,
+): Promise<number> {
+  const replacementDocumentId = await db.transaction(async (tx: any) => {
+    try {
+    const [original] = await tx.select()
+      .from(documents)
+      .where(eq(documents.id, originalDocumentId))
+      .for('update');
+
+    if (!original) {
+      throw new TRPCError({ code: 'NOT_FOUND', message: `Original document ${originalDocumentId} not found` });
+    }
+
+    // Serialize replacement registrations for the case. This keeps two
+    // concurrent replacement requests from both passing the in-transaction
+    // hash and eligibility checks.
+    await tx.select({ id: cases.id })
+      .from(cases)
+      .where(eq(cases.id, original.caseId))
+      .for('update');
+
+    const originalResolution = original.documentResolution ?? 'active';
+    if (originalResolution === 'superseded') {
+      throw new TRPCError({ code: 'BAD_REQUEST', message: 'Original document is already superseded' });
+    }
+    if (original.caseId !== replacement.caseId) {
+      throw new TRPCError({ code: 'BAD_REQUEST', message: 'Original and replacement documents must belong to the same case' });
+    }
+
+    if (original.snapshotId) {
+      const [snapshot] = await tx.select({
+        id: corpusSnapshots.id,
+        version: corpusSnapshots.version,
+        status: corpusSnapshots.status,
+      })
+        .from(corpusSnapshots)
+        .where(eq(corpusSnapshots.id, original.snapshotId))
+        .for('share');
+
+      if (snapshot?.status === 'sealed') {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: `[GATE_SEALED_MUTATION] Snapshot v${snapshot.version} (ID: ${snapshot.id}) is sealed. Replacement is rejected before the original can be superseded.`,
+        });
+      }
+    }
+
+    const [hashConflict] = await tx.select({
+      id: documents.id,
+      filename: documents.filename,
+    })
+      .from(documents)
+      .where(and(
+        eq(documents.caseId, original.caseId),
+        eq(documents.sha256Hash, replacement.sha256Hash),
+      ))
+      .limit(1);
+
+    if (hashConflict) {
+      const sameContent = hashConflict.id === originalDocumentId;
+      throw new TRPCError({
+        code: 'CONFLICT',
+        message: sameContent
+          ? 'The replacement bytes are identical to the document being replaced.'
+          : `This file already exists as "${hashConflict.filename}" (ID: ${hashConflict.id}).`,
+      });
+    }
+
+    const [inserted] = await tx.insert(documents).values({
+      ...replacement,
+      status: 'uploaded',
+      retryCount: 0,
+      documentResolution: 'active',
+      createdAt: Date.now(),
+    }).returning({ id: documents.id });
+
+    if (!inserted) {
+      throw new Error('Replacement document insert did not return an id');
+    }
+
+    await tx.update(documents).set({
+      documentResolution: 'superseded',
+      replacedByDocumentId: inserted.id,
+      resolutionReason: reason,
+    }).where(eq(documents.id, originalDocumentId));
+
+    const auditEntry = {
+      caseId: original.caseId,
+      userId,
+      action: 'document_resolution_superseded',
+      targetType: 'document',
+      targetId: originalDocumentId,
+      details: {
+        previousResolution: originalResolution,
+        newResolution: 'superseded',
+        reason,
+        replacedByDocumentId: inserted.id,
+        sha256Hash: original.sha256Hash,
+        filename: original.filename,
+        snapshotId: original.snapshotId,
+      },
+    };
+    await insertSerializedAuditEntry(tx, auditEntry);
+
+    return Number(inserted.id);
+    } catch (error) {
+      throw new ReplacementPersistenceRolledBackError(error);
+    }
+  });
+
+  return replacementDocumentId;
+}
+
+/**
+ * Reconcile an ambiguous transaction result on a separate pool round-trip.
+ * A connection can disappear after PostgreSQL commits but before the client
+ * receives COMMIT acknowledgement. A positive result proves that the
+ * replacement committed. A negative result is not proof of rollback while the
+ * original COMMIT may still be completing, so it must never authorize deleting
+ * evidence unless the persistence error carries the explicit rolled-back
+ * marker above.
+ */
+export async function findCommittedDocumentReplacement(
+  originalDocumentId: number,
+  caseId: number,
+  storageKey: string,
+): Promise<number | null> {
+  const result = await getPool().query(
+    `select replacement.id
+       from public.documents original
+       join public.documents replacement
+         on replacement.id = original.replaced_by_document_id
+      where original.id = $1
+        and original.case_id = $2
+        and original.document_resolution = 'superseded'
+        and replacement.case_id = $2
+        and replacement.s3_key = $3
+        and replacement.document_resolution = 'active'
+      limit 1`,
+    [originalDocumentId, caseId, storageKey],
+  );
+  return result.rows[0]?.id == null ? null : Number(result.rows[0].id);
+}
+
+/**
  * T3. Mark a document as corrupted with a mandatory reason.
  */
 export async function markDocumentCorrupted(
@@ -3039,6 +3241,17 @@ export async function checkReplacementEligibility(
   const resolution = (doc as any).documentResolution ?? 'active';
   if (resolution === 'superseded') {
     return { eligible: false, reason: 'Document is already superseded' };
+  }
+  try {
+    // This preflight prevents storing replacement bytes for an original that
+    // is already immutable. The atomic persistence helper repeats the check
+    // under row locks to close the race with snapshot sealing.
+    await assertDocumentSnapshotMutable(documentId);
+  } catch (error: any) {
+    return {
+      eligible: false,
+      reason: error?.message ?? 'Document is bound to an immutable snapshot',
+    };
   }
   return { eligible: true, document: doc };
 }

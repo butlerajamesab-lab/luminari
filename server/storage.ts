@@ -178,6 +178,26 @@ async function supabase_storage_get(
   return { key: storage_key, url: data.signedUrl };
 }
 
+async function supabase_storage_delete(storage_key: string): Promise<void> {
+  const config = get_supabase_storage_config();
+  const client = get_supabase_storage_client(config);
+  const parsed_key = parse_supabase_key(storage_key);
+
+  if (parsed_key.bucket !== config.bucket) {
+    throw new Error(
+      `Supabase document key references unexpected bucket: ${parsed_key.bucket}`,
+    );
+  }
+
+  const { error } = await client.storage
+    .from(parsed_key.bucket)
+    .remove([parsed_key.object_path]);
+
+  if (error) {
+    throw new Error(`Supabase document deletion failed: ${error.message}`);
+  }
+}
+
 function get_forge_storage_config(): ForgeStorageConfig {
   // Preserve the existing Forge configuration for every non-case-document
   // caller. Only the case document namespace is routed to Supabase.
@@ -288,6 +308,13 @@ async function forge_storage_get(rel_key: string): Promise<StorageResult> {
   };
 }
 
+async function forge_storage_delete(rel_key: string): Promise<void> {
+  // The legacy Forge proxy has no DELETE endpoint. Overwriting an unreferenced
+  // failed-upload key with a tombstone removes the source bytes while
+  // preserving a deterministic cleanup marker.
+  await forge_storage_put(rel_key, "", "application/x-tombstone");
+}
+
 export function get_document_storage_mode(): StorageMode {
   return resolve_case_document_storage_mode();
 }
@@ -324,4 +351,12 @@ export async function storageGet(rel_key: string): Promise<StorageResult> {
     return supabase_storage_get(rel_key);
   }
   return forge_storage_get(rel_key);
+}
+
+export async function storageDelete(storage_key: string): Promise<void> {
+  if (is_supabase_storage_key(storage_key)) {
+    await supabase_storage_delete(storage_key);
+    return;
+  }
+  await forge_storage_delete(storage_key);
 }
