@@ -204,4 +204,30 @@ describe("document upload PostgreSQL persistence contract", () => {
       expect(source).not.toContain("eq(documents.caseId, String(");
     }
   });
+
+  it("persists replacement creation, supersession, and audit in one locked transaction", () => {
+    const replacement = function_source(
+      "createAndSupersedeDocumentAtomic",
+      "markDocumentCorrupted",
+    );
+    const eligibility = function_source(
+      "checkReplacementEligibility",
+      "createChecklistItems",
+    );
+    const upload_route = read_source("./upload-route.ts");
+
+    expect(eligibility).toContain(
+      "await assertDocumentSnapshotMutable(documentId)",
+    );
+    expect(replacement).toContain("db.transaction(async (tx: any)");
+    expect(replacement).toContain(".for('update')");
+    expect(replacement).toContain(".for('share')");
+    expect(replacement).toContain("await tx.insert(documents)");
+    expect(replacement).toContain("await tx.update(documents)");
+    expect(replacement).toContain("await tx.insert(auditTrail)");
+    expect(upload_route).toContain(
+      "await dbHelpers.createAndSupersedeDocumentAtomic(",
+    );
+    expect(upload_route).toContain("await storageDelete(s3Key)");
+  });
 });
