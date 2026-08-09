@@ -40,6 +40,8 @@ export const analyzeRouter = router({
            join public.case_identity_bridge cib
              on cib.case_uuid = cil.case_uuid
           where cib.legacy_case_id = $1
+            and cil.is_primary = true
+            and cil.link_type = 'primary_projection'
             and s.session_type = 'live'
             and s.entry_channel = 'upload'
             and ($2::uuid is null or s.intake_session_id = $2::uuid)
@@ -50,10 +52,6 @@ export const analyzeRouter = router({
       if (session_result.rows.length === 0) {
         throw new Error('intake_spine_runtime_live_upload_session_not_found');
       }
-      if (session_result.rows.length > 1 && !input.intakeSessionId) {
-        throw new Error('intake_spine_runtime_multiple_live_upload_sessions_require_explicit_session_id');
-      }
-
       const result = await execute_intake_spine_session({
         intake_session_id: session_result.rows[0].intake_session_id,
         jurisdiction: input.jurisdiction,
@@ -135,6 +133,8 @@ export const analyzeRouter = router({
          left join public.intake_layer_runs ilr
            on ilr.intake_session_id = s.intake_session_id
         where cib.legacy_case_id = $1
+          and cil.is_primary = true
+          and cil.link_type = 'primary_projection'
           and s.session_type = 'live'
           and s.entry_channel = 'upload'
         group by s.intake_session_id, s.session_type, s.entry_channel, s.source_label,
