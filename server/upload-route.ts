@@ -367,20 +367,46 @@ export function registerUploadRoute(app: Express) {
           "Explicit replacement upload registered with the Universal Intake Spine",
         );
       } catch (persistenceError) {
+        // COMMIT acknowledgement can be lost after PostgreSQL has durably
+        // committed. Reconcile on a separate pool round-trip before deleting
+        // bytes that a committed replacement may already reference.
+        let committedReplacementId: number | null;
         try {
-          await storageDelete(s3Key);
-        } catch (cleanupError) {
-          console.error(
-            `[Upload] Replacement persistence and storage compensation both failed for key=${s3Key}:`,
-            cleanupError,
+          committedReplacementId = await dbHelpers.findCommittedDocumentReplacement(
+            documentId,
+            caseId,
+            s3Key,
           );
-          const compensationError = new Error(
-            "Replacement persistence failed and uploaded object cleanup also failed",
+        } catch (reconciliationError) {
+          console.error(
+            `[Upload] Replacement commit status is ambiguous for key=${s3Key}; retaining bytes:`,
+            reconciliationError,
+          );
+          const ambiguousCommitError = new Error(
+            "Replacement commit status could not be verified; uploaded evidence was retained",
           ) as Error & { cause?: unknown };
-          compensationError.cause = persistenceError;
-          throw compensationError;
+          ambiguousCommitError.cause = persistenceError;
+          throw ambiguousCommitError;
         }
-        throw persistenceError;
+
+        if (committedReplacementId !== null) {
+          newDocumentId = committedReplacementId;
+        } else {
+          try {
+            await storageDelete(s3Key);
+          } catch (cleanupError) {
+            console.error(
+              `[Upload] Replacement persistence and storage compensation both failed for key=${s3Key}:`,
+              cleanupError,
+            );
+            const compensationError = new Error(
+              "Replacement persistence failed and uploaded object cleanup also failed",
+            ) as Error & { cause?: unknown };
+            compensationError.cause = persistenceError;
+            throw compensationError;
+          }
+          throw persistenceError;
+        }
       }
 
       res.json({
