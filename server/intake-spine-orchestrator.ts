@@ -1,95 +1,95 @@
-import { createHash, randomUUID } from "node:crypto";
-import { getPool } from "./db";
-import { register_intake_layer_execution } from "./intake-layer-run-persistence";
-import { load_governed_legal_registry } from "./intake-governed-legal-registry";
-import { read_intake_source_artifact_bytes } from "./intake-source-bytes";
+import { createHash, randomUUID } from 'node:crypto';
+import { getPool } from './db';
+import { register_intake_layer_execution } from './intake-layer-run-persistence';
+import { load_governed_legal_registry } from './intake-governed-legal-registry';
+import { read_intake_source_artifact_bytes } from './intake-source-bytes';
 import {
   CANONICALIZATION_VERSION,
   computeExecutionHash,
   computeHash,
   EngineResult,
-} from "./engines/intake-spine/utils";
+} from './engines/intake-spine/utils';
 import {
   parseArtifact,
   PARSER_RULE_MANIFEST_HASH,
-} from "./engines/intake-spine/parsing-substrate";
+} from './engines/intake-spine/parsing-substrate';
 import {
   processLayer1,
   RULE_MANIFEST_HASH as L1_RULE_HASH,
   StabilizationInput,
-} from "./engines/intake-spine/layer-1-stabilization_envelope";
+} from './engines/intake-spine/layer-1-stabilization_envelope';
 import {
   processLayer2,
   RULE_MANIFEST_HASH as L2_RULE_HASH,
-} from "./engines/intake-spine/layer-2-raw_intake_capture";
+} from './engines/intake-spine/layer-2-raw_intake_capture';
 import {
   processLayer3,
   RULE_MANIFEST_HASH as L3_RULE_HASH,
-} from "./engines/intake-spine/layer-3-evidence_preservation";
+} from './engines/intake-spine/layer-3-evidence_preservation';
 import {
   processLayer4,
   RULE_MANIFEST_HASH as L4_RULE_HASH,
-} from "./engines/intake-spine/layer-4-chronology_reconstruction";
+} from './engines/intake-spine/layer-4-chronology_reconstruction';
 import {
   processLayer5,
   RULE_MANIFEST_HASH as L5_RULE_HASH,
-} from "./engines/intake-spine/layer-5-verification_gate";
+} from './engines/intake-spine/layer-5-verification_gate';
 import {
   processLayer6,
   RULE_MANIFEST_HASH as L6_RULE_HASH,
-} from "./engines/intake-spine/layer-6-entity_registry";
+} from './engines/intake-spine/layer-6-entity_registry';
 import {
   processLayer7,
   RULE_MANIFEST_HASH as L7_RULE_HASH,
-} from "./engines/intake-spine/layer-7-relationship_graph";
+} from './engines/intake-spine/layer-7-relationship_graph';
 import {
   processLayer8,
   RULE_MANIFEST_HASH as L8_RULE_HASH,
-} from "./engines/intake-spine/layer-8-power_dynamics_registry";
+} from './engines/intake-spine/layer-8-power_dynamics_registry';
 import {
   processLayer9,
   RULE_MANIFEST_HASH as L9_RULE_HASH,
-} from "./engines/intake-spine/layer-9-state_timeline";
+} from './engines/intake-spine/layer-9-state_timeline';
 import {
   processLayer10,
   RULE_MANIFEST_HASH as L10_RULE_HASH,
-} from "./engines/intake-spine/layer-10-pattern_registry";
+} from './engines/intake-spine/layer-10-pattern_registry';
 import {
   processLayer11,
   RULE_MANIFEST_HASH as L11_RULE_HASH,
-} from "./engines/intake-spine/layer-11-cascade_registry";
+} from './engines/intake-spine/layer-11-cascade_registry';
 import {
   processLayer12,
   computeLayer12ExecutionRuleManifestHash,
-} from "./engines/intake-spine/layer-12-rights_and_duties_matrix";
+} from './engines/intake-spine/layer-12-rights_and_duties_matrix';
 import {
   processLayer13,
   RULE_MANIFEST_HASH as L13_RULE_HASH,
-} from "./engines/intake-spine/layer-13-translation_layer";
+} from './engines/intake-spine/layer-13-translation_layer';
 import {
   processLayer14,
   computeLayer14ExecutionRuleManifestHash,
-} from "./engines/intake-spine/layer-14-action_paths";
+} from './engines/intake-spine/layer-14-action_paths';
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const SHA256_RE = /^[0-9a-f]{64}$/;
 
 export const INTAKE_SPINE_LAYER_NAMES = Object.freeze([
-  "stabilization_envelope",
-  "raw_intake_capture",
-  "evidence_preservation",
-  "chronology_reconstruction",
-  "verification_gate",
-  "entity_registry",
-  "relationship_graph",
-  "power_dynamics_registry",
-  "state_timeline",
-  "pattern_registry",
-  "cascade_registry",
-  "rights_and_duties_matrix",
-  "translation_layer",
-  "action_paths",
+  'stabilization_envelope',
+  'raw_intake_capture',
+  'evidence_preservation',
+  'chronology_reconstruction',
+  'verification_gate',
+  'entity_registry',
+  'relationship_graph',
+  'power_dynamics_registry',
+  'state_timeline',
+  'pattern_registry',
+  'cascade_registry',
+  'rights_and_duties_matrix',
+  'translation_layer',
+  'action_paths',
 ] as const);
 
 export type intake_spine_orchestration_request = {
@@ -188,7 +188,7 @@ type persist_layer_input<T> = {
 };
 
 export async function finalize_intake_spine_session_if_unchanged(
-  pool: Pick<ReturnType<typeof getPool>, "query">,
+  pool: Pick<ReturnType<typeof getPool>, 'query'>,
   input: {
     intake_session_id: string;
     session_row_version: string;
@@ -221,7 +221,7 @@ export async function finalize_intake_spine_session_if_unchanged(
   );
   if (completion_result.rows[0]?.completed !== true) {
     throw new Error(
-      "intake_spine_orchestrator_session_changed_during_execution",
+      'intake_spine_orchestrator_session_changed_during_execution',
     );
   }
 }
@@ -236,7 +236,7 @@ const INTAKE_SPINE_EXECUTION_LEASE_SECONDS = 120;
 const INTAKE_SPINE_EXECUTION_HEARTBEAT_MS = 30_000;
 
 export async function acquire_intake_spine_execution_lease(
-  pool: Pick<ReturnType<typeof getPool>, "query">,
+  pool: Pick<ReturnType<typeof getPool>, 'query'>,
   intake_session_id: string,
   options: {
     lease_token?: string;
@@ -258,7 +258,7 @@ export async function acquire_intake_spine_execution_lease(
     [intake_session_id, lease_token, lease_seconds],
   );
   if (acquisition_result.rows[0]?.acquired !== true) {
-    throw new Error("intake_spine_orchestrator_execution_already_in_progress");
+    throw new Error('intake_spine_orchestrator_execution_already_in_progress');
   }
 
   let active = true;
@@ -278,7 +278,7 @@ export async function acquire_intake_spine_execution_lease(
       );
       if (renewal_result.rows[0]?.renewed !== true) active = false;
     } catch (error) {
-      console.error("[IntakeSpine] execution lease heartbeat failed", {
+      console.error('[IntakeSpine] execution lease heartbeat failed', {
         intake_session_id,
         error: error instanceof Error ? error.message : String(error),
       });
@@ -296,7 +296,7 @@ export async function acquire_intake_spine_execution_lease(
     lease_token,
     assert_active: () => {
       if (!active || released) {
-        throw new Error("intake_spine_orchestrator_execution_lease_lost");
+        throw new Error('intake_spine_orchestrator_execution_lease_lost');
       }
     },
     release: async () => {
@@ -313,7 +313,7 @@ export async function acquire_intake_spine_execution_lease(
           [intake_session_id, lease_token],
         );
       } catch (error) {
-        console.error("[IntakeSpine] execution lease release failed", {
+        console.error('[IntakeSpine] execution lease release failed', {
           intake_session_id,
           error: error instanceof Error ? error.message : String(error),
         });
@@ -334,12 +334,12 @@ export async function execute_intake_spine_session(
   request: intake_spine_orchestration_request,
 ): Promise<intake_spine_orchestration_result> {
   if (!UUID_RE.test(request.intake_session_id))
-    throw new Error("intake_spine_orchestrator_invalid_session_id");
+    throw new Error('intake_spine_orchestrator_invalid_session_id');
   const as_of = normalize_date_only(request.as_of);
-  if (!as_of) throw new Error("intake_spine_orchestrator_invalid_as_of");
+  if (!as_of) throw new Error('intake_spine_orchestrator_invalid_as_of');
   const jurisdiction = request.jurisdiction.trim().toUpperCase();
   if (!jurisdiction)
-    throw new Error("intake_spine_orchestrator_jurisdiction_required");
+    throw new Error('intake_spine_orchestrator_jurisdiction_required');
 
   const pool = getPool();
   const execution_lease = await acquire_intake_spine_execution_lease(
@@ -378,11 +378,11 @@ export async function execute_intake_spine_session(
     );
     const session = session_result.rows[0];
     if (!session)
-      throw new Error("intake_spine_orchestrator_session_not_found");
-    if (session.privacy_mode !== "private")
-      throw new Error("intake_spine_orchestrator_private_session_required");
-    if (session.session_status === "deleted")
-      throw new Error("intake_spine_orchestrator_deleted_session");
+      throw new Error('intake_spine_orchestrator_session_not_found');
+    if (session.privacy_mode !== 'private')
+      throw new Error('intake_spine_orchestrator_private_session_required');
+    if (session.session_status === 'deleted')
+      throw new Error('intake_spine_orchestrator_deleted_session');
 
     const artifact_result = await pool.query<source_artifact_row>(
       `select
@@ -409,7 +409,7 @@ export async function execute_intake_spine_session(
     );
     const source_artifacts = artifact_result.rows;
     if (source_artifacts.length === 0)
-      throw new Error("intake_spine_orchestrator_no_source_artifacts");
+      throw new Error('intake_spine_orchestrator_no_source_artifacts');
 
     const governed = await load_governed_legal_registry();
     const receipts: intake_spine_execution_receipt[] = [];
@@ -431,7 +431,7 @@ export async function execute_intake_spine_session(
       },
       input_refs: [
         {
-          type: "intake_session",
+          type: 'intake_session',
           intake_session_id: session.intake_session_id,
         },
       ],
@@ -463,8 +463,8 @@ export async function execute_intake_spine_session(
       });
 
       const declared_mime_type =
-        artifact.mime_type?.trim().toLowerCase() || "application/octet-stream";
-      const filename = artifact.filename || "";
+        artifact.mime_type?.trim().toLowerCase() || 'application/octet-stream';
+      const filename = artifact.filename || '';
       const l2 = processLayer2(
         {
           filename,
@@ -490,7 +490,7 @@ export async function execute_intake_spine_session(
         },
         input_refs: [
           {
-            type: "source_artifact",
+            type: 'source_artifact',
             artifact_id: artifact.artifact_id,
             artifact_key: artifact.artifact_key,
             sha256: source.verified_sha256,
@@ -521,7 +521,7 @@ export async function execute_intake_spine_session(
         input_refs: [
           dependency_ref(l2Persisted),
           {
-            type: "source_artifact",
+            type: 'source_artifact',
             artifact_id: artifact.artifact_id,
             artifact_key: artifact.artifact_key,
             sha256: source.verified_sha256,
@@ -579,7 +579,7 @@ export async function execute_intake_spine_session(
       input_refs: parser_refs,
       receipts,
       dependencies,
-      dependency_key: "chronology_reconstruction",
+      dependency_key: 'chronology_reconstruction',
     });
 
     const l6 = processLayer6({ artifacts: parsed_artifacts });
@@ -591,7 +591,7 @@ export async function execute_intake_spine_session(
       input_refs: parser_refs,
       receipts,
       dependencies,
-      dependency_key: "entity_registry",
+      dependency_key: 'entity_registry',
     });
 
     const l7 = processLayer7({
@@ -609,7 +609,7 @@ export async function execute_intake_spine_session(
       input_refs: [dependency_ref(l6Persisted), ...parser_refs],
       receipts,
       dependencies,
-      dependency_key: "relationship_graph",
+      dependency_key: 'relationship_graph',
     });
 
     const l9 = processLayer9({
@@ -627,7 +627,7 @@ export async function execute_intake_spine_session(
       input_refs: [dependency_ref(l6Persisted), ...parser_refs],
       receipts,
       dependencies,
-      dependency_key: "state_timeline",
+      dependency_key: 'state_timeline',
     });
 
     const l5 = processLayer5({ transitions: l9.data, relationships: l7.data });
@@ -642,7 +642,7 @@ export async function execute_intake_spine_session(
       input_refs: [dependency_ref(l7Persisted), dependency_ref(l9Persisted)],
       receipts,
       dependencies,
-      dependency_key: "verification_gate",
+      dependency_key: 'verification_gate',
     });
 
     const l8 = processLayer8({ relationships: l7.data });
@@ -656,7 +656,7 @@ export async function execute_intake_spine_session(
       input_refs: [dependency_ref(l7Persisted)],
       receipts,
       dependencies,
-      dependency_key: "power_dynamics_registry",
+      dependency_key: 'power_dynamics_registry',
     });
 
     const l10 = processLayer10({ transitions: l9.data });
@@ -668,7 +668,7 @@ export async function execute_intake_spine_session(
       input_refs: [dependency_ref(l9Persisted)],
       receipts,
       dependencies,
-      dependency_key: "pattern_registry",
+      dependency_key: 'pattern_registry',
     });
 
     const l11 = processLayer11({ transitions: l9.data });
@@ -680,7 +680,7 @@ export async function execute_intake_spine_session(
       input_refs: [dependency_ref(l9Persisted)],
       receipts,
       dependencies,
-      dependency_key: "cascade_registry",
+      dependency_key: 'cascade_registry',
     });
 
     const l12RuleHash = computeLayer12ExecutionRuleManifestHash(
@@ -715,7 +715,7 @@ export async function execute_intake_spine_session(
       ],
       receipts,
       dependencies,
-      dependency_key: "rights_and_duties_matrix",
+      dependency_key: 'rights_and_duties_matrix',
     });
 
     const l13 = processLayer13({
@@ -739,7 +739,7 @@ export async function execute_intake_spine_session(
       ],
       receipts,
       dependencies,
-      dependency_key: "translation_layer",
+      dependency_key: 'translation_layer',
     });
 
     const l14RuleHash = computeLayer14ExecutionRuleManifestHash(
@@ -761,7 +761,7 @@ export async function execute_intake_spine_session(
       input_refs: [dependency_ref(l12Persisted)],
       receipts,
       dependencies,
-      dependency_key: "action_paths",
+      dependency_key: 'action_paths',
     });
 
     execution_lease.assert_active();
@@ -781,10 +781,10 @@ export async function execute_intake_spine_session(
       legacy_case_id: session.legacy_case_id,
       source_artifact_count: source_artifacts.length,
       parsed_artifact_count: parsed_artifacts.filter(
-        (parsed) => parsed.extraction_status === "success",
+        (parsed) => parsed.extraction_status === 'success',
       ).length,
       unsupported_or_failed_artifact_count: parsed_artifacts.filter(
-        (parsed) => parsed.extraction_status !== "success",
+        (parsed) => parsed.extraction_status !== 'success',
       ).length,
       governed_legal_registry_hash: governed.rule_manifest_hash,
       execution_order: receipts.map((receipt) => receipt.layer_name),
@@ -878,7 +878,7 @@ function dependency_ref(
   dependency: persisted_dependency,
 ): Record<string, unknown> {
   return {
-    type: "layer_execution",
+    type: 'layer_execution',
     layer_name: dependency.layer_name,
     layer_run_id: dependency.layer_run_id,
     output_artifact_id: dependency.output_artifact_id,
@@ -891,7 +891,7 @@ function normalize_byte_size(
   value: string | number | null,
   artifact_id: string,
 ): number {
-  const parsed = typeof value === "number" ? value : Number(value);
+  const parsed = typeof value === 'number' ? value : Number(value);
   if (!Number.isSafeInteger(parsed) || parsed < 0) {
     throw new Error(
       `intake_spine_orchestrator_invalid_byte_size:${artifact_id}`,
@@ -938,59 +938,59 @@ function canonical_stabilization_input(
 
 function read_stabilization_input(session: session_row): StabilizationInput {
   const metadata =
-    session.metadata && typeof session.metadata === "object"
+    session.metadata && typeof session.metadata === 'object'
       ? session.metadata
       : {};
-  const stabilization = metadata["stabilization"];
+  const stabilization = metadata['stabilization'];
   const source =
     stabilization &&
-    typeof stabilization === "object" &&
+    typeof stabilization === 'object' &&
     !Array.isArray(stabilization)
       ? (stabilization as Record<string, unknown>)
       : {};
 
   return {
     urgent_situation:
-      text_or_undefined(source["urgent_situation"]) ||
+      text_or_undefined(source['urgent_situation']) ||
       session.user_selected_immediate_issue ||
       undefined,
-    deadlines: deadline_array(source["deadlines"]),
+    deadlines: deadline_array(source['deadlines']),
     essential_services_at_risk: string_array(
-      source["essential_services_at_risk"],
+      source['essential_services_at_risk'],
     ),
-    evidence_to_preserve: string_array(source["evidence_to_preserve"]),
-    communication_limits: string_array(source["communication_limits"]),
-    support_people: string_array(source["support_people"]),
+    evidence_to_preserve: string_array(source['evidence_to_preserve']),
+    communication_limits: string_array(source['communication_limits']),
+    support_people: string_array(source['support_people']),
     least_burdensome_action: text_or_undefined(
-      source["least_burdensome_action"],
+      source['least_burdensome_action'],
     ),
-    what_can_wait: string_array(source["what_can_wait"]),
+    what_can_wait: string_array(source['what_can_wait']),
   };
 }
 
-function deadline_array(value: unknown): StabilizationInput["deadlines"] {
+function deadline_array(value: unknown): StabilizationInput['deadlines'] {
   if (!Array.isArray(value)) return [];
   return value.flatMap((item) => {
-    if (!item || typeof item !== "object" || Array.isArray(item)) return [];
+    if (!item || typeof item !== 'object' || Array.isArray(item)) return [];
     const row = item as Record<string, unknown>;
-    const description = text_or_undefined(row["description"]);
-    const date = text_or_undefined(row["date"]);
-    if (!description || !date || typeof row["is_irreversible"] !== "boolean")
+    const description = text_or_undefined(row['description']);
+    const date = text_or_undefined(row['date']);
+    if (!description || !date || typeof row['is_irreversible'] !== 'boolean')
       return [];
-    return [{ description, date, is_irreversible: row["is_irreversible"] }];
+    return [{ description, date, is_irreversible: row['is_irreversible'] }];
   });
 }
 
 function string_array(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value
-    .filter((item): item is string => typeof item === "string")
+    .filter((item): item is string => typeof item === 'string')
     .map((item) => item.trim())
     .filter(Boolean);
 }
 
 function text_or_undefined(value: unknown): string | undefined {
-  if (typeof value !== "string") return undefined;
+  if (typeof value !== 'string') return undefined;
   const trimmed = value.trim();
   return trimmed || undefined;
 }
