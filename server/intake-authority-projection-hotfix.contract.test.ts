@@ -41,6 +41,9 @@ describe("authoritative Intake projection hotfix", () => {
     const deletionMigration = read(
       "supabase/migrations/20260809051313_invalidate_intake_projection_on_document_delete.sql",
     );
+    const activeDeletionMigration = read(
+      "supabase/migrations/20260809052815_restrict_document_delete_intake_invalidation_to_active.sql",
+    );
     const authorityMigration = read(
       "supabase/migrations/20260808231628_promote_live_upload_intake_authority.sql",
     );
@@ -51,6 +54,9 @@ describe("authoritative Intake projection hotfix", () => {
     );
     expect(deletionMigration).toContain("after delete on public.documents");
     expect(deletionMigration).toContain("when (old.case_id is not null)");
+    expect(activeDeletionMigration).toContain(
+      "coalesce(old.document_resolution, 'active') = 'active'",
+    );
     expect(authorityMigration).toContain(
       "perform pg_advisory_xact_lock(76004002, p_legacy_case_id)",
     );
