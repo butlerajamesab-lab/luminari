@@ -229,6 +229,8 @@ async function load_latest_case_layer_rows(case_id: number, layer_name: string):
          join public.case_intake_links cil on cil.case_uuid = cib.case_uuid
          join public.intake_sessions s on s.intake_session_id = cil.intake_session_id
         where cib.legacy_case_id = $1
+          and cil.is_primary = true
+          and cil.link_type = 'primary_projection'
           and s.session_type = 'live'
           and s.entry_channel = 'upload'
           and s.completion_state = 'governed_execution_complete'
@@ -384,6 +386,8 @@ async function load_case_source_artifacts(case_id: number): Promise<SourceArtifa
        on coalesce(a.metadata ->> 'legacy_document_id', '') ~ '^[0-9]+$'
       and d.id = (a.metadata ->> 'legacy_document_id')::integer
      where cib.legacy_case_id = $1
+       and cil.is_primary = true
+       and cil.link_type = 'primary_projection'
        and s.session_type = 'live'
        and s.entry_channel = 'upload'
        and a.artifact_type = 'source_document'
