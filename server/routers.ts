@@ -3446,7 +3446,7 @@ function buildDshsOfficeProofPayload(rows: any[], endpoint = "benefitsDshsOffice
 async function selectDshsOfficeRows() {
   try {
     return await proofRestSelect("normalized_civic_resource", {
-      select: "*,api_source_registry!inner(source_key,name)",
+      select: "*,api_source_registry!inner(source_key,source_name)",
       "api_source_registry.source_key": "eq.wa_dshs_office_locator",
       resource_type: "eq.benefits_office",
       latitude: "not.is.null",

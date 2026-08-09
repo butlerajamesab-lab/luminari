@@ -201,8 +201,8 @@ export async function searchRuntimeStatutes(opts: LegalRuntimeSearch) {
   params.push(limit, offset);
   const where = filters.length ? `where ${filters.join(" and ")}` : "";
   return fallbackList([
-    { sql: `select * from public.v_paginated_statutes ${where} order by created_at desc limit $${params.length - 1} offset $${params.length}`, params },
-    { sql: `select id, citation, short_title, jurisdiction, domains, effective_date, last_amended, summary, verbatim_key_text, source_url, enforcement_agency, statute_of_limitations, verification_status, title, statute_text, metadata, created_at from public.legal_statutes ${where} order by created_at desc limit $${params.length - 1} offset $${params.length}`, params },
+    { sql: `select id, citation, short_title, jurisdiction, domains, effective_date, last_amended, summary, verbatim_key_text, source_url, enforcement_agency, statute_of_limitations, verification_status, title, statute_text, metadata, created_at from public.legal_statutes ${where} order by created_at desc limit ${params.length - 1} offset ${params.length}`, params },
+    { sql: `select * from public.v_paginated_statutes ${where} order by created_at desc limit ${params.length - 1} offset ${params.length}`, params },
   ]).then((items) => items.map(normalizeStatuteRow));
 }
 
@@ -229,8 +229,8 @@ export async function searchRuntimeCaseLaw(opts: LegalRuntimeSearch) {
   params.push(limit, offset);
   const where = filters.length ? `where ${filters.join(" and ")}` : "";
   return fallbackList([
-    { sql: `select * from public.v_runtime_case_law ${where} order by created_at desc limit $${params.length - 1} offset $${params.length}`, params },
-    { sql: `select id, citation, case_name, jurisdiction, domains, year_decided, court, summary, key_quotes, source_url, title, opinion_text, metadata, created_at from public.legal_case_law ${where} order by created_at desc limit $${params.length - 1} offset $${params.length}`, params },
+    { sql: `select id, citation, case_name, jurisdiction, domains, year_decided, court, summary, key_quotes, source_url, title, opinion_text, metadata, created_at from public.legal_case_law ${where} order by created_at desc limit ${params.length - 1} offset ${params.length}`, params },
+    { sql: `select * from public.v_runtime_case_law ${where} order by created_at desc limit ${params.length - 1} offset ${params.length}`, params },
   ]).then((items) => items.map(jsonDomains));
 }
 
