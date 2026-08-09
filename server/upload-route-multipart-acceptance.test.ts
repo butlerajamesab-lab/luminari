@@ -20,6 +20,7 @@ const state = vi.hoisted(() => ({
   log_pipeline_event_by_case: vi.fn(),
   check_replacement_eligibility: vi.fn(),
   create_and_supersede_document_atomic: vi.fn(),
+  find_committed_document_replacement: vi.fn(),
 }));
 
 vi.mock("./_core/context", () => ({
@@ -51,6 +52,7 @@ vi.mock("./db", () => ({
   logPipelineEventByCase: state.log_pipeline_event_by_case,
   checkReplacementEligibility: state.check_replacement_eligibility,
   createAndSupersedeDocumentAtomic: state.create_and_supersede_document_atomic,
+  findCommittedDocumentReplacement: state.find_committed_document_replacement,
 }));
 
 import { registerUploadRoute } from "./upload-route";
@@ -143,6 +145,7 @@ beforeEach(() => {
     },
   });
   state.create_and_supersede_document_atomic.mockResolvedValue(9002);
+  state.find_committed_document_replacement.mockResolvedValue(null);
 });
 
 describe("authenticated multipart document upload", () => {
@@ -377,6 +380,53 @@ describe("atomic replacement upload", () => {
       "supabase:case-documents/cases/44/proof.txt",
     );
     expect(state.create_document).not.toHaveBeenCalled();
+  });
+
+  it("keeps committed evidence when COMMIT acknowledgement is lost", async () => {
+    state.select_queue.push(
+      [{ id: 44, userId: 9 }],
+      [],
+    );
+    state.create_and_supersede_document_atomic.mockRejectedValue(
+      new Error("connection lost after commit"),
+    );
+    state.find_committed_document_replacement.mockResolvedValue(9002);
+
+    const response = await post_replacement("committed replacement");
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      success: true,
+      originalDocumentId: 812,
+      newDocumentId: 9002,
+    });
+    expect(state.find_committed_document_replacement).toHaveBeenCalledWith(
+      812,
+      44,
+      "supabase:case-documents/cases/44/proof.txt",
+    );
+    expect(state.storage_delete).not.toHaveBeenCalled();
+  });
+
+  it("retains evidence when commit reconciliation is unavailable", async () => {
+    state.select_queue.push(
+      [{ id: 44, userId: 9 }],
+      [],
+    );
+    state.create_and_supersede_document_atomic.mockRejectedValue(
+      new Error("connection lost during commit"),
+    );
+    state.find_committed_document_replacement.mockRejectedValue(
+      new Error("reconciliation database unavailable"),
+    );
+
+    const response = await post_replacement("ambiguous replacement");
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({
+      error: "Replacement commit status could not be verified; uploaded evidence was retained",
+    });
+    expect(state.storage_delete).not.toHaveBeenCalled();
   });
 
   it("does not start persistence or compensation when storage upload fails", async () => {
