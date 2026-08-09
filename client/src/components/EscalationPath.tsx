@@ -17,7 +17,7 @@ interface EscalationPathProps {
 }
 
 export function EscalationPath({ domain, jurisdiction, className }: EscalationPathProps) {
-  const { data: escalations, isLoading, error } = trpc.registry.getEscalationPath.useQuery({
+  const { data: escalationResult, isLoading, error } = trpc.registry.getEscalationPath.useQuery({
     domain,
     jurisdiction,
   });
@@ -26,18 +26,36 @@ export function EscalationPath({ domain, jurisdiction, className }: EscalationPa
     return <div className="animate-pulse h-40 bg-gray-200 rounded" />;
   }
 
-  if (error || !escalations || escalations.length === 0) {
+  if (error || !escalationResult) {
+    return (
+      <div className="flex items-center gap-2 text-red-600 text-sm p-4 bg-red-50 rounded">
+        <AlertCircle className="w-4 h-4" />
+        Failed to load escalation-path availability
+      </div>
+    );
+  }
+
+  if (!escalationResult.available) {
+    return (
+      <div className="flex items-start gap-2 text-amber-700 text-sm p-4 bg-amber-50 rounded">
+        <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+        <span>{escalationResult.message}</span>
+      </div>
+    );
+  }
+
+  if (escalationResult.paths.length === 0) {
     return (
       <div className="flex items-center gap-2 text-gray-500 text-sm p-4 bg-gray-50 rounded">
         <AlertCircle className="w-4 h-4" />
-        No escalation paths defined for this domain
+        No escalation rows are available
       </div>
     );
   }
 
   return (
     <div className={`space-y-4 ${className}`}>
-      {escalations.map((escalation) => (
+      {escalationResult.paths.map((escalation) => (
         <EscalationCard key={escalation.id} escalation={escalation} />
       ))}
     </div>
@@ -184,12 +202,20 @@ export function DomainProfile({ domain, jurisdiction, className }: DomainProfile
       )}
 
       {/* Escalation Paths */}
-      {profile.escalations.length > 0 && (
+      {!profile.availability.escalations.available ? (
+        <div>
+          <h3 className="text-xl font-semibold mb-4">Escalation Paths</h3>
+          <div className="flex items-start gap-2 text-amber-700 text-sm p-4 bg-amber-50 rounded">
+            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+            <span>{profile.availability.escalations.message}</span>
+          </div>
+        </div>
+      ) : profile.escalations.length > 0 ? (
         <div>
           <h3 className="text-xl font-semibold mb-4">Escalation Paths</h3>
           <EscalationPath domain={domain} jurisdiction={jurisdiction} />
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

@@ -130,6 +130,7 @@ export const analyzeRouter = router({
          left join public.documents d
            on coalesce(ia.metadata ->> 'legacy_document_id', '') ~ '^[0-9]+$'
           and d.id = (ia.metadata ->> 'legacy_document_id')::integer
+          and d.case_id = cib.legacy_case_id
          left join public.intake_layer_runs ilr
            on ilr.intake_session_id = s.intake_session_id
         where cib.legacy_case_id = $1
@@ -185,6 +186,36 @@ export const analyzeRouter = router({
             : null,
         });
       });
+    }),
+
+  /**
+   * Canonical relationship state is receipt-bound even when the governed
+   * result contains zero explicit relationships. Consumers must not turn that
+   * completed-zero state back into an upload or rerun prompt.
+   */
+  getIntakeRelationshipProjection: protectedProcedure
+    .input(z.object({ caseId: z.number().int().positive() }))
+    .query(async ({ ctx, input }) => {
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      const projection = await read_canonical_case_layer_outputs<Array<Record<string, unknown>>>(
+        input.caseId,
+        'relationship_graph',
+      );
+
+      return {
+        projection_state: projection.state,
+        outputs: projection.outputs.map(output => ({
+          intake_session_id: output.intake_session_id,
+          layer_run_id: output.layer_run_id,
+          layer_version: output.layer_version,
+          rule_version: output.rule_version,
+          input_hash: output.input_hash,
+          output_hash: output.output_hash,
+          receipt_hash: output.receipt_hash,
+          unresolved_dependencies: output.unresolved_dependencies,
+          relationships: output.data,
+        })),
+      };
     }),
 
   /**

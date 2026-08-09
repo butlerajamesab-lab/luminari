@@ -29,7 +29,7 @@ import { useLocation } from "wouter";
 
 // Source type icons and colors
 const SOURCE_CONFIG: Record<string, { icon: typeof FileText; color: string; label: string }> = {
-  event: { icon: Calendar, color: "text-blue-400", label: "Event" },
+  event: { icon: Calendar, color: "text-blue-400", label: "Governed chronology event" },
   quote: { icon: Quote, color: "text-amber-400", label: "Quote" },
   claim: { icon: BookOpen, color: "text-emerald-400", label: "Claim" },
   finding: { icon: Lightbulb, color: "text-purple-400", label: "Finding" },
@@ -38,11 +38,14 @@ const SOURCE_CONFIG: Record<string, { icon: typeof FileText; color: string; labe
 
 /** Source reference badge with tooltip */
 function SourceBadge({ source, onNavigate }: {
-  source: { type: string; id: number; label: string; documentId?: number; documentName?: string; page?: number; date?: string };
+  source: { type: string; id: number | string; label: string; documentId?: number; documentName?: string; page?: number; date?: string };
   onNavigate: (path: string) => void;
 }) {
   const config = SOURCE_CONFIG[source.type] || { icon: FileText, color: "text-muted-foreground", label: source.type };
   const Icon = config.icon;
+  const citationLabel = source.type === "event"
+    ? (source.documentName ? `Source span · ${source.documentName}` : "Governed source event")
+    : `${config.label} #${source.id}`;
 
   const handleClick = () => {
     if (source.documentId) {
@@ -64,7 +67,7 @@ function SourceBadge({ source, onNavigate }: {
           className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-muted/50 hover:bg-muted transition-colors cursor-pointer border border-border/50"
         >
           <Icon className={`w-3 h-3 ${config.color}`} />
-          <span className="text-muted-foreground">{config.label} #{source.id}</span>
+          <span className="text-muted-foreground">{citationLabel}</span>
         </button>
       </TooltipTrigger>
       <TooltipContent side="top" className="max-w-xs">
@@ -85,7 +88,7 @@ function SourceBadge({ source, onNavigate }: {
 /** Paragraph with inline source references */
 function NarrativeParagraph({ text, sources, paragraphIndex, onNavigate }: {
   text: string;
-  sources: { type: string; id: number; label: string; documentId?: number; documentName?: string; page?: number; date?: string }[];
+  sources: { type: string; id: number | string; label: string; documentId?: number; documentName?: string; page?: number; date?: string }[];
   paragraphIndex: number;
   onNavigate: (path: string) => void;
 }) {
@@ -126,7 +129,7 @@ function TimelinePreview({ caseId }: { caseId: number }) {
       >
         <div className="flex items-center gap-2">
           <Clock className="w-4 h-4 text-muted-foreground" />
-          <span className="text-sm font-medium">Evidence Timeline Preview</span>
+          <span className="text-sm font-medium">Governed Chronology Preview</span>
         </div>
         {expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
       </button>
@@ -140,7 +143,7 @@ function TimelinePreview({ caseId }: { caseId: number }) {
           ) : data ? (
             <div className="space-y-3">
               <p className="text-xs text-muted-foreground">
-                {data.totalCount} evidence items across {data.groups.length} date groups
+                {data.total_count} governed events across {data.groups.length} date groups
               </p>
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {data.groups.map((group: any, gi: number) => (
@@ -170,7 +173,7 @@ function TimelinePreview({ caseId }: { caseId: number }) {
               </div>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground py-2">No timeline data available.</p>
+            <p className="text-sm text-muted-foreground py-2">No governed chronology events are available.</p>
           )}
         </CardContent>
       )}
@@ -197,7 +200,7 @@ export default function StatementOfFacts() {
   const generateMutation = trpc.caseNarrative.generate.useMutation({
     onSuccess: (result) => {
       if (result.success) {
-        toast.success(`Statement of Facts generated from ${result.timelineItemCount} evidence items.`);
+        toast.success(`Statement of Facts generated from ${result.timelineItemCount} governed chronology events.`);
         narrativeQuery.refetch();
         stalenessQuery.refetch();
       } else {
@@ -255,7 +258,7 @@ export default function StatementOfFacts() {
             Statement of Facts
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Chronological narrative reconstructed from case evidence
+            Deterministic narrative assembled only from receipt-bound Intake Spine chronology
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -308,7 +311,7 @@ export default function StatementOfFacts() {
           <CardContent className="py-3 px-4 flex items-center gap-3">
             <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
             <div className="flex-1 text-sm">
-              <span className="font-medium text-amber-400">New evidence has been added since this narrative was generated.</span>
+              <span className="font-medium text-amber-400">The governed chronology has changed since this narrative was generated.</span>
               <span className="text-muted-foreground ml-1">
                 ({staleness?.narrativeItemCount} items at generation, {staleness?.currentItemCount} now).
               </span>
@@ -349,11 +352,11 @@ export default function StatementOfFacts() {
                 Statement of Facts — {currentCase?.name}
               </CardTitle>
               <Badge variant="outline" className="text-xs">
-                {narrative.timelineItemCount} sources
+                {narrative.timelineItemCount} governed events
               </Badge>
             </div>
             <CardDescription>
-              Generated {new Date(narrative.generatedAt).toLocaleString()}
+              Deterministically assembled {new Date(narrative.generatedAt).toLocaleString()}
             </CardDescription>
           </CardHeader>
           <Separator />
@@ -414,9 +417,8 @@ export default function StatementOfFacts() {
             <div>
               <p className="font-medium">No Statement of Facts yet</p>
               <p className="text-sm text-muted-foreground mt-1">
-                Generate a chronological narrative from your case evidence.
-                The system will assemble events, quotes, claims, findings, and FOIA requests
-                into a structured statement with source references.
+                Generate a deterministic chronological narrative from the governed Intake Spine chronology.
+                Each included event remains tied to its canonical source artifact and sealed output receipt.
               </p>
             </div>
             <Button onClick={handleGenerate} disabled={isGenerating}>
@@ -440,9 +442,9 @@ export default function StatementOfFacts() {
       {narrative && (
         <Card className="border-border/50">
           <CardContent className="py-3 px-4">
-            <p className="text-xs font-medium text-muted-foreground mb-2">Source Legend</p>
+            <p className="text-xs font-medium text-muted-foreground mb-2">Citation Legend</p>
             <div className="flex flex-wrap gap-3">
-              {Object.entries(SOURCE_CONFIG).map(([key, config]) => {
+              {Object.entries(SOURCE_CONFIG).filter(([key]) => key === "event").map(([key, config]) => {
                 const Icon = config.icon;
                 return (
                   <div key={key} className="flex items-center gap-1 text-xs text-muted-foreground">

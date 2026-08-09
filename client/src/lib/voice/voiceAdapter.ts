@@ -187,21 +187,10 @@ export async function getCaseNarrationInput(
     }
   }
 
-  // Extract deadlines from findings (findings with deadline-related types)
+  // Deadline narration remains empty until a source-bound governed deadline
+  // projection is part of this adapter contract. Do not infer legal deadlines
+  // from narrative findings or from an undeclared parallel query.
   const deadlines: DeadlineItem[] = [];
-  if (findings.status === "fulfilled" && Array.isArray(findings.value)) {
-    for (const f of findings.value) {
-      if (!f) continue;
-      // Only extract actual deadline references
-      if (f.findingType === "deadline" || f.findingType === "statute_of_limitations") {
-        const desc = cleanString(f.title) || cleanString(f.description);
-        const date = cleanString(f.dateReferenced) || cleanString(f.date);
-        if (desc && date) {
-          deadlines.push({ description: desc, date });
-        }
-      }
-    }
-  }
 
   // Evidence summary — derive from receipt-bound verification records.
   let claimsSummary = { total: 0, findingEligible: 0, signalOnly: 0 };

@@ -7,9 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  AlertTriangle, FileText, Users, Clock, Building2, Shield, Zap,
+  AlertTriangle, FileText, Clock, Building2, Shield, Zap,
   ChevronDown, ChevronUp, Eye, ArrowLeft, Wrench
 } from "lucide-react";
 import { useLocation } from "wouter";
@@ -75,9 +74,9 @@ export default function InvestigationWorkflow() {
       </div>
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Investigation Workflow Generator</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Investigation Workflow</h1>
         <p className="text-muted-foreground mt-1">
-          Generate structured investigation workflows from case context — immediate actions, records to request, witness targets, timeline tasks, agency steps, and risk flags.
+          Load deterministic workflow steps and supporting records from the live source registries.
         </p>
       </div>
 
@@ -85,7 +84,7 @@ export default function InvestigationWorkflow() {
       <Card className="border-0 bg-card/50">
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Case Context</CardTitle>
-          <CardDescription>Provide case parameters to generate a tailored investigation workflow</CardDescription>
+          <CardDescription>Choose the exact source context to load; unsupported sections remain explicitly unavailable.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid md:grid-cols-3 gap-4">
@@ -112,15 +111,11 @@ export default function InvestigationWorkflow() {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Not specified</SelectItem>
-                  {agencies.data && (agencies.data as any[]).map((a: any) => (
-                    <SelectItem key={a.id} value={a.agencyName}>{a.agencyName}</SelectItem>
+                  {agencies.data?.map((a) => (
+                    <SelectItem key={a.id} value={a.agencyShort}>
+                      {a.agencyName}{a.agencyShort ? ` (${a.agencyShort})` : ""}
+                    </SelectItem>
                   ))}
-                  {!agencies.data && <>
-                    <SelectItem value="EEOC">EEOC</SelectItem>
-                    <SelectItem value="HUD">HUD</SelectItem>
-                    <SelectItem value="OSHA">OSHA</SelectItem>
-                    <SelectItem value="FTC">FTC</SelectItem>
-                  </>}
                 </SelectContent>
               </Select>
             </div>
@@ -143,116 +138,92 @@ export default function InvestigationWorkflow() {
 
             <div className="flex items-end">
               <Button onClick={() => setGenerated(true)} className="w-full gap-2">
-                <Zap className="h-4 w-4" /> Generate Workflow
+                <Zap className="h-4 w-4" /> Load Source Workflow
               </Button>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Generated Workflow */}
-      {workflow.isLoading && <p className="text-muted-foreground">Generating investigation workflow...</p>}
-      {workflow.data && generated && (
+      {/* Source workflow */}
+      {workflow.isLoading && <p className="text-muted-foreground">Loading source workflow...</p>}
+      {workflow.error && (
+        <Card className="border-red-500/30 bg-red-500/5">
+          <CardContent className="p-4 text-sm text-red-300">
+            The source workflow could not be loaded: {workflow.error.message}
+          </CardContent>
+        </Card>
+      )}
+
+      {workflow.data && generated && workflow.data.availability.status === "unavailable" && (
+        <Card className="border-amber-500/30 bg-amber-500/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <AlertTriangle className="h-4 w-4 text-amber-400" />
+              Source-bound workflow unavailable
+            </CardTitle>
+            <CardDescription>{workflow.data.availability.reason}</CardDescription>
+          </CardHeader>
+          {workflow.data.availableWorkflows.length > 0 && (
+            <CardContent className="pt-0">
+              <p className="mb-2 text-xs text-muted-foreground">
+                Available source workflows and their exact claim keys:
+              </p>
+              <div className="space-y-2">
+                {workflow.data.availableWorkflows.map(sourceWorkflow => (
+                  <div key={sourceWorkflow.id} className="rounded-md border border-border/30 bg-muted/20 p-3">
+                    <p className="text-sm font-medium">{sourceWorkflow.title}</p>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {sourceWorkflow.issueTypes.map(issueType => (
+                        <Badge key={issueType} variant="outline" className="text-xs">{issueType}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          )}
+        </Card>
+      )}
+
+      {workflow.data && generated && workflow.data.availability.status === "available" && (
         <div className="space-y-4">
-          {/* Metadata Banner */}
+          <Card className="border-emerald-500/20 bg-emerald-500/5">
+            <CardContent className="p-4">
+              <p className="text-sm font-medium">{workflow.data.selectedWorkflow?.title}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Live source: workflow_master / workflow_steps
+                {workflow.data.selectedWorkflow?.primaryAgency
+                  ? ` · ${workflow.data.selectedWorkflow.primaryAgency}`
+                  : ""}
+              </p>
+            </CardContent>
+          </Card>
+
           <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
             <Badge variant="outline">{workflow.data.metadata.weakJointsConsidered} weak joints considered</Badge>
             <Badge variant="outline">{workflow.data.metadata.signalsConsidered} signals considered</Badge>
             <Badge variant="outline">{workflow.data.metadata.contradictionTemplatesConsidered} contradiction templates</Badge>
+            <Badge variant="outline">{workflow.data.metadata.proofFrameworksConsidered} proof frameworks</Badge>
             <Badge variant="outline">{workflow.data.metadata.barriersConsidered} barriers considered</Badge>
+            <Badge variant="outline">{workflow.data.metadata.claimElementsConsidered} claim elements</Badge>
           </div>
 
-          {/* 1. Immediate Actions */}
-          <CollapsibleSection title="Immediate Actions" icon={<AlertTriangle className="h-4 w-4 text-red-400" />} count={workflow.data.workflow.immediateActions.length}>
-            <div className="space-y-2">
-              {workflow.data.workflow.immediateActions.map((a: any, i: number) => (
-                <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-border/20">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${a.priority === 1 ? "bg-red-500/20 text-red-400" : "bg-amber-500/20 text-amber-400"}`}>
-                    {a.priority}
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-sm">{a.action}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{a.reason}</p>
-                    <Badge variant="outline" className="text-xs mt-1"><Clock className="h-3 w-3 mr-1" />{a.deadline}</Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CollapsibleSection>
-
-          {/* 2. Records to Request */}
-          <CollapsibleSection title="Records to Request" icon={<FileText className="h-4 w-4 text-blue-400" />} count={workflow.data.workflow.recordsToRequest.length} defaultOpen={false}>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border/50 text-muted-foreground">
-                    <th className="text-left py-2 pr-3">Source</th>
-                    <th className="text-left py-2 px-3">Record Type</th>
-                    <th className="text-left py-2 px-3">Reason</th>
-                    <th className="text-left py-2 pl-3">Method</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {workflow.data.workflow.recordsToRequest.map((r: any, i: number) => (
-                    <tr key={i} className="border-b border-border/20">
-                      <td className="py-2 pr-3 font-medium">{r.source}</td>
-                      <td className="py-2 px-3">{r.recordType}</td>
-                      <td className="py-2 px-3 text-muted-foreground">{r.reason}</td>
-                      <td className="py-2 pl-3"><Badge variant="outline" className="text-xs">{r.method}</Badge></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CollapsibleSection>
-
-          {/* 3. Witness Targets */}
-          <CollapsibleSection title="Witness Targets" icon={<Users className="h-4 w-4 text-purple-400" />} count={workflow.data.workflow.witnessTargets.length} defaultOpen={false}>
-            <div className="space-y-2">
-              {workflow.data.workflow.witnessTargets.map((w: any, i: number) => (
-                <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-border/20">
-                  <Users className="h-4 w-4 text-purple-400 mt-0.5 shrink-0" />
-                  <div>
-                    <p className="font-medium text-sm">{w.category}</p>
-                    <p className="text-xs text-muted-foreground">{w.description}</p>
-                    <p className="text-xs text-purple-400/80 mt-0.5">{w.purpose}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CollapsibleSection>
-
-          {/* 4. Timeline Tasks */}
-          <CollapsibleSection title="Investigation Timeline" icon={<Clock className="h-4 w-4 text-cyan-400" />} count={workflow.data.workflow.timelineTasks.length} defaultOpen={false}>
-            <div className="space-y-0">
-              {workflow.data.workflow.timelineTasks.map((t: any, i: number) => (
-                <div key={i} className="flex gap-3">
-                  <div className="flex flex-col items-center">
-                    <div className="w-3 h-3 rounded-full bg-cyan-500/30 border border-cyan-500/50 shrink-0 mt-1.5" />
-                    {i < workflow.data!.workflow.timelineTasks.length - 1 && <div className="w-px flex-1 bg-border/50 my-1" />}
-                  </div>
-                  <div className="pb-3">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-xs">{t.phase}</Badge>
-                      <span className="text-xs text-muted-foreground">{t.duration}</span>
-                    </div>
-                    <p className="text-sm mt-0.5">{t.task}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CollapsibleSection>
-
-          {/* 5. Agency Steps */}
-          {workflow.data.workflow.agencySteps.length > 0 && (
-            <CollapsibleSection title="Agency Filing Steps" icon={<Building2 className="h-4 w-4 text-amber-400" />} count={workflow.data.workflow.agencySteps.length} defaultOpen={false}>
+          {workflow.data.workflow.immediateActions.length > 0 && (
+            <CollapsibleSection title="Source Eligibility Steps" icon={<AlertTriangle className="h-4 w-4 text-amber-400" />} count={workflow.data.workflow.immediateActions.length}>
               <div className="space-y-2">
-                {workflow.data.workflow.agencySteps.map((s: any, i: number) => (
-                  <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-border/20">
-                    <Badge variant="outline" className="text-xs shrink-0">{s.agency}</Badge>
+                {workflow.data.workflow.immediateActions.map((action, index) => (
+                  <div key={index} className="flex items-start gap-3 rounded-lg border border-border/20 bg-muted/30 p-3">
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-xs font-bold text-amber-400">
+                      {action.priority}
+                    </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium">{s.step}</p>
-                      <p className="text-xs text-amber-400/80 mt-0.5">Deadline: {s.deadline}</p>
+                      <p className="text-sm font-medium">{action.action}</p>
+                      {action.reason && <p className="mt-0.5 text-xs text-muted-foreground">{action.reason}</p>}
+                      <Badge variant="outline" className="mt-1 text-xs">
+                        <Clock className="mr-1 h-3 w-3" />
+                        {action.deadlineText ?? "Deadline unavailable in source"}
+                      </Badge>
                     </div>
                   </div>
                 ))}
@@ -260,41 +231,141 @@ export default function InvestigationWorkflow() {
             </CollapsibleSection>
           )}
 
-          {/* 6. Risk Flags */}
-          {workflow.data.workflow.riskFlags.length > 0 && (
-            <CollapsibleSection title="Risk Flags" icon={<Shield className="h-4 w-4 text-red-400" />} count={workflow.data.workflow.riskFlags.length} defaultOpen={false}>
+          {workflow.data.workflow.recordsToRequest.length > 0 && (
+            <CollapsibleSection title="Source Evidence Inputs" icon={<FileText className="h-4 w-4 text-blue-400" />} count={workflow.data.workflow.recordsToRequest.length} defaultOpen={false}>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border/50 text-muted-foreground">
+                      <th className="py-2 pr-3 text-left">Source</th>
+                      <th className="px-3 py-2 text-left">Evidence type</th>
+                      <th className="py-2 pl-3 text-left">Source description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {workflow.data.workflow.recordsToRequest.map((record, index) => (
+                      <tr key={index} className="border-b border-border/20">
+                        <td className="py-2 pr-3 font-medium">{record.source}</td>
+                        <td className="px-3 py-2">{record.recordType}</td>
+                        <td className="py-2 pl-3 text-muted-foreground">{record.reason ?? "Not specified in source"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CollapsibleSection>
+          )}
+
+          {workflow.data.workflow.timelineTasks.length > 0 && (
+            <CollapsibleSection title="Source Workflow Steps" icon={<Clock className="h-4 w-4 text-cyan-400" />} count={workflow.data.workflow.timelineTasks.length} defaultOpen={false}>
+              <div className="space-y-0">
+                {workflow.data.workflow.timelineTasks.map((task, index) => (
+                  <div key={index} className="flex gap-3">
+                    <div className="flex flex-col items-center">
+                      <div className="mt-1.5 h-3 w-3 shrink-0 rounded-full border border-cyan-500/50 bg-cyan-500/30" />
+                      {index < workflow.data.workflow.timelineTasks.length - 1 && <div className="my-1 w-px flex-1 bg-border/50" />}
+                    </div>
+                    <div className="pb-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="outline" className="text-xs">{task.phase}</Badge>
+                        {task.durationText && <span className="text-xs text-muted-foreground">{task.durationText}</span>}
+                      </div>
+                      <p className="mt-0.5 text-sm">{task.task}</p>
+                      {task.description && <p className="mt-0.5 text-xs text-muted-foreground">{task.description}</p>}
+                      {task.deadlineText && (
+                        <p className="mt-1 text-xs text-amber-300">Source deadline text: {task.deadlineText}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CollapsibleSection>
+          )}
+
+          {workflow.data.workflow.agencySteps.length > 0 && (
+            <CollapsibleSection title="Source Agency Steps" icon={<Building2 className="h-4 w-4 text-amber-400" />} count={workflow.data.workflow.agencySteps.length} defaultOpen={false}>
               <div className="space-y-2">
-                {workflow.data.workflow.riskFlags.map((r: any, i: number) => (
-                  <div key={i} className="p-3 rounded-lg bg-red-500/5 border border-red-500/20">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Badge variant="outline" className="text-xs bg-red-500/10 text-red-400 border-red-500/30">{r.type}</Badge>
+                {workflow.data.workflow.agencySteps.map((step, index) => (
+                  <div key={index} className="flex items-start gap-3 rounded-lg border border-border/20 bg-muted/30 p-3">
+                    {step.agency && <Badge variant="outline" className="shrink-0 text-xs">{step.agency}</Badge>}
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{step.step}</p>
+                      {step.description && <p className="mt-0.5 text-xs text-muted-foreground">{step.description}</p>}
+                      <p className="mt-1 text-xs text-amber-300">
+                        {step.deadlineText
+                          ? `Source deadline text: ${step.deadlineText}`
+                          : "Deadline unavailable in source"}
+                      </p>
                     </div>
-                    <p className="text-sm">{r.flag}</p>
-                    <p className="text-xs text-muted-foreground mt-1">Mitigation: {r.mitigation}</p>
                   </div>
                 ))}
               </div>
             </CollapsibleSection>
           )}
 
-          {/* 7. Signal Watch List */}
+          {workflow.data.deadlineSources.length > 0 && (
+            <CollapsibleSection title="Agency Deadline Sources" icon={<Building2 className="h-4 w-4 text-amber-400" />} count={workflow.data.deadlineSources.length} defaultOpen={false}>
+              <div className="space-y-2">
+                {workflow.data.deadlineSources.map(deadline => (
+                  <div key={deadline.formId} className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-medium">{deadline.formName}</p>
+                      {deadline.agencyShort && <Badge variant="outline" className="text-xs">{deadline.agencyShort}</Badge>}
+                      <Badge variant="outline" className="text-xs">source text only</Badge>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">{deadline.filingDeadlineText}</p>
+                    {deadline.sourceUrl && (
+                      <a className="mt-2 inline-block text-xs text-cyan-400 hover:text-cyan-300" href={deadline.sourceUrl} target="_blank" rel="noreferrer">
+                        Open source
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CollapsibleSection>
+          )}
+
+          <Card className="border-amber-500/20 bg-amber-500/5">
+            <CardContent className="space-y-2 p-4 text-xs text-muted-foreground">
+              <p>{workflow.data.sectionAvailability.deadlineCalculations.reason}</p>
+              <p>{workflow.data.sectionAvailability.witnessTargets.reason}</p>
+            </CardContent>
+          </Card>
+
+          {workflow.data.workflow.riskFlags.length > 0 && (
+            <CollapsibleSection title="Source Risk Flags" icon={<Shield className="h-4 w-4 text-red-400" />} count={workflow.data.workflow.riskFlags.length} defaultOpen={false}>
+              <div className="space-y-2">
+                {workflow.data.workflow.riskFlags.map((risk, index) => (
+                  <div key={index} className="rounded-lg border border-red-500/20 bg-red-500/5 p-3">
+                    <div className="mb-1 flex flex-wrap items-center gap-2">
+                      <Badge variant="outline" className="border-red-500/30 bg-red-500/10 text-xs text-red-400">{risk.type}</Badge>
+                      {risk.severity && <Badge variant="outline" className="text-xs">{risk.severity}</Badge>}
+                    </div>
+                    <p className="text-sm">{risk.flag}</p>
+                    {risk.mitigation && <p className="mt-1 text-xs text-muted-foreground">Source note: {risk.mitigation}</p>}
+                  </div>
+                ))}
+              </div>
+            </CollapsibleSection>
+          )}
+
           {workflow.data.workflow.signalWatchList.length > 0 && (
             <CollapsibleSection title="Signal Watch List" icon={<Eye className="h-4 w-4 text-emerald-400" />} count={workflow.data.workflow.signalWatchList.length} defaultOpen={false}>
               <div className="space-y-2">
-                {workflow.data.workflow.signalWatchList.map((s: any, i: number) => (
-                  <div key={i} className="p-3 rounded-lg bg-muted/30 border border-border/20">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium text-sm">{s.signalType.replace(/_/g, " ")}</span>
-                      <Badge variant="outline" className={`text-xs ${severityBadge[s.severity]}`}>{s.severity}</Badge>
+                {workflow.data.workflow.signalWatchList.map((signal, index) => (
+                  <div key={index} className="rounded-lg border border-border/20 bg-muted/30 p-3">
+                    <div className="mb-1 flex items-center gap-2">
+                      <span className="text-sm font-medium">{signal.signalType.replace(/_/g, " ")}</span>
+                      <Badge variant="outline" className={`text-xs ${severityBadge[signal.severity] ?? ""}`}>{signal.severity}</Badge>
                     </div>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {(s.triggerPatterns as string[])?.slice(0, 4).map((p: string, j: number) => (
-                        <Badge key={j} variant="outline" className="text-xs">{p}</Badge>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {signal.triggerPatterns.slice(0, 4).map(pattern => (
+                        <Badge key={pattern} variant="outline" className="text-xs">{pattern}</Badge>
                       ))}
                     </div>
-                    {s.nextSteps && (
+                    {signal.nextSteps.length > 0 && (
                       <div className="mt-2 text-xs text-muted-foreground">
-                        Next: {(s.nextSteps as string[]).join(" → ")}
+                        Source next steps: {signal.nextSteps.join(" → ")}
                       </div>
                     )}
                   </div>

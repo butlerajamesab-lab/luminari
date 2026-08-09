@@ -79,7 +79,7 @@ export async function read_case_intake_integrity_projection(
 ): Promise<IntakeIntegrityProjection> {
   const result = await getPool().query(
     `with linked_sessions as (
-       select cil.intake_session_id
+       select cil.intake_session_id, cib.legacy_case_id
          from public.case_identity_bridge cib
          join public.case_intake_links cil on cil.case_uuid = cib.case_uuid
          join public.intake_sessions s on s.intake_session_id = cil.intake_session_id
@@ -103,6 +103,7 @@ export async function read_case_intake_integrity_projection(
        join public.documents d
          on coalesce(ia.metadata ->> 'legacy_document_id', '') ~ '^[0-9]+$'
         and d.id = (ia.metadata ->> 'legacy_document_id')::integer
+        and d.case_id = ls.legacy_case_id
       where ia.artifact_type = 'source_document'
         and coalesce(d.document_resolution, 'active') = 'active'
      ), ranked_preservation as (

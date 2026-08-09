@@ -106,12 +106,12 @@ const DESKS: Desk[] = [
     id: "deadlines",
     icon: CalendarClock,
     title: "Deadline Calculator",
-    metaphor: "Know your time limits",
-    description: "Calculate statutes of limitations, filing deadlines, response windows, and appeal periods. Never miss a critical date.",
+    metaphor: "Check the source record",
+    description: "Review source-bound agency filing-deadline records. Missing operative values stay unavailable so the workspace never guesses a legal date.",
     href: "/deadline-calculator",
     color: so.red,
     requiresCase: false,
-    capabilities: ["SOL calculator", "Filing deadlines", "Response windows", "Appeal periods"],
+    capabilities: ["Agency forms", "Source deadline text", "Authority links", "Missing-value safety"],
   },
   {
     id: "presentations",
@@ -131,23 +131,26 @@ export default function ShopOffice() {
   const [, navigate] = useLocation();
   const { cases: userCases, currentCase, currentCaseId, setCurrentCaseId, isLoading: casesLoading } = useCase();
   const hasCase = !!userCases?.length;
+  const hasActiveCase = !!currentCase;
   const caseId = currentCase?.id;
   const showNoActiveCase = isAuthenticated && !casesLoading && hasCase && !currentCase && currentCaseId !== null;
 
-  // Fetch FOIA stats if case active
-  const foiaQuery = trpc.workbench.overview.useQuery(
+  // Shop Office uses the integer case workspace contract. The UUID Workbench
+  // overview is a separate surface and must not be used as a silent stats
+  // fallback here.
+  const foiaQuery = trpc.foiaRequests.caseSummary.useQuery(
     { caseId: caseId! },
     { enabled: !!caseId }
   );
-  const counts = foiaQuery.data?.counts;
+  const foiaRequestCount = foiaQuery.data?.total ?? 0;
 
   const handleDeskClick = (desk: Desk) => {
     if (!isAuthenticated) {
       window.location.href = getLoginUrl();
       return;
     }
-    if (desk.requiresCase && !hasCase) {
-      navigate("/welcome");
+    if (desk.requiresCase && !hasActiveCase) {
+      navigate(hasCase ? "/cases" : "/welcome");
       return;
     }
     navigate(desk.href);
@@ -249,21 +252,19 @@ export default function ShopOffice() {
       )}
 
       {/* ── Quick Stats ── */}
-      {counts && (
+      {hasActiveCase && foiaRequestCount > 0 && (
         <div style={{
           maxWidth: 900, margin: "0 auto", padding: "0 24px 24px",
           display: "flex", gap: 16, flexWrap: "wrap",
         }}>
-          {counts.foiaRequests > 0 && (
-            <div style={{
-              display: "flex", alignItems: "center", gap: 6,
-              fontFamily: fontMono, fontSize: 11,
-            }}>
-              <FolderOpen size={12} color={so.amber} />
-              <span style={{ color: so.cream }}>{counts.foiaRequests}</span>
-              <span style={{ color: so.muted, fontSize: 9, textTransform: "uppercase", letterSpacing: "0.06em" }}>FOIA Requests</span>
-            </div>
-          )}
+          <div style={{
+            display: "flex", alignItems: "center", gap: 6,
+            fontFamily: fontMono, fontSize: 11,
+          }}>
+            <FolderOpen size={12} color={so.amber} />
+            <span style={{ color: so.cream }}>{foiaRequestCount}</span>
+            <span style={{ color: so.muted, fontSize: 9, textTransform: "uppercase", letterSpacing: "0.06em" }}>FOIA Requests</span>
+          </div>
         </div>
       )}
 
@@ -299,7 +300,7 @@ export default function ShopOffice() {
               }}>
                 <desk.icon size={20} color={desk.color} />
               </div>
-              {desk.requiresCase && !hasCase && (
+              {desk.requiresCase && !hasActiveCase && (
                 <span style={{
                   fontFamily: fontMono, fontSize: 8, color: so.muted,
                   background: "rgba(255,255,255,0.04)", padding: "2px 6px", borderRadius: 100,
@@ -348,13 +349,13 @@ export default function ShopOffice() {
         justifyContent: "center",
         gap: 12,
       }}>
-        <Button variant="outline" size="sm" onClick={() => navigate("/filing-generator")} className="text-xs">
+        <Button variant="outline" size="sm" onClick={() => handleDeskClick(DESKS[0])} className="text-xs">
           <Gavel className="h-3.5 w-3.5 mr-1.5" /> New Filing
         </Button>
-        <Button variant="outline" size="sm" onClick={() => navigate("/lumensend")} className="text-xs">
+        <Button variant="outline" size="sm" onClick={() => handleDeskClick(DESKS[1])} className="text-xs">
           <Send className="h-3.5 w-3.5 mr-1.5" /> Send Letter
         </Button>
-        <Button variant="outline" size="sm" onClick={() => navigate("/foia")} className="text-xs">
+        <Button variant="outline" size="sm" onClick={() => handleDeskClick(DESKS[2])} className="text-xs">
           <FolderOpen className="h-3.5 w-3.5 mr-1.5" /> FOIA Request
         </Button>
         <Button variant="outline" size="sm" onClick={() => navigate("/deadline-calculator")} className="text-xs">

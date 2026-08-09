@@ -1,7 +1,14 @@
 import { z } from "zod";
 import { publicProcedure, router } from "../_core/trpc";
 import { db, getPool } from "../db";
-import { desc, eq, sql, like, count } from "drizzle-orm";
+import { eq, count } from "drizzle-orm";
+import {
+  find_live_filing_template,
+  get_live_filing_template,
+  get_live_investigation_guidance,
+  list_live_filing_templates,
+  list_live_investigation_guidance,
+} from "../architecture-map-live-read-compat";
 import {
   proofFrameworks,
   claimElementMatrix,
@@ -48,6 +55,53 @@ async function count_public_table(table_name: string): Promise<number> {
   }
 }
 
+function parseProofList(value: unknown): string[] {
+  if (Array.isArray(value)) return value.filter(v => v != null).map(String);
+  if (typeof value !== "string" || value.trim() === "") return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed.filter(v => v != null).map(String) : parsed == null ? [] : [String(parsed)];
+  } catch {
+    return [value.trim()];
+  }
+}
+
+function proofTime(value: unknown): number | string | null {
+  if (value == null) return null;
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === "number") return value;
+  if (typeof value === "string" && /^\d+$/.test(value)) {
+    const parsed = Number(value);
+    return Number.isSafeInteger(parsed) ? parsed : value;
+  }
+  return String(value);
+}
+
+function mapProofFramework(row: Record<string, any>) {
+  return {
+    id: Number(row.id),
+    claimType: String(row.claim_type ?? ""),
+    domain: String(row.domain ?? ""),
+    elementsOfProof: parseProofList(row.elements_of_proof),
+    burdenOfProof: row.burden_of_proof == null ? null : String(row.burden_of_proof),
+    standardOfReview: row.standard_of_review == null ? null : String(row.standard_of_review),
+    requiredCausation: row.required_causation == null ? null : String(row.required_causation),
+    typicalEvidence: parseProofList(row.typical_evidence),
+    commonDefenses: parseProofList(row.common_defenses),
+    keyPrecedents: parseProofList(row.key_precedents),
+    notes: row.notes == null ? null : String(row.notes),
+    createdAt: proofTime(row.created_at),
+    updatedAt: proofTime(row.updated_at),
+  };
+}
+
+const proofFrameworkProjection = `
+  select id, claim_type, domain, elements_of_proof, burden_of_proof,
+         standard_of_review, required_causation, typical_evidence,
+         common_defenses, key_precedents, notes, created_at, updated_at
+    from public.proof_frameworks
+`;
+
 export const architectureMapRouter = router({
   // ═══════════════════════════════════════════════════
   // PROOF FRAMEWORKS
@@ -55,24 +109,36 @@ export const architectureMapRouter = router({
   listProofFrameworks: publicProcedure
     .input(z.object({ domain: z.string().optional(), search: z.string().optional() }).optional())
     .query(async ({ input }) => {
-      let q = db.select().from(proofFrameworks);
-      if (input?.domain) q = q.where(eq(proofFrameworks.domain, input.domain)) as any;
-      if (input?.search) q = q.where(like(proofFrameworks.claimType, `%${input.search}%`)) as any;
-      return q.orderBy(proofFrameworks.domain, proofFrameworks.claimType);
+      const { rows } = await getPool().query(
+        `${proofFrameworkProjection}
+         where ($1::text is null or domain = $1)
+           and ($2::text is null or claim_type ilike '%' || $2 || '%')
+         order by domain, claim_type, id`,
+        [input?.domain ?? null, input?.search ?? null],
+      );
+      return rows.map(mapProofFramework);
     }),
 
   getProofFramework: publicProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
-      const [row] = await db.select().from(proofFrameworks).where(eq(proofFrameworks.id, input.id));
-      return row ?? null;
+      const { rows } = await getPool().query(
+        `${proofFrameworkProjection} where id = $1 limit 1`,
+        [input.id],
+      );
+      return rows[0] == null ? null : mapProofFramework(rows[0]);
     }),
 
   getProofByClaimType: publicProcedure
     .input(z.object({ claimType: z.string() }))
     .query(async ({ input }) => {
-      const rows = await db.select().from(proofFrameworks).where(like(proofFrameworks.claimType, `%${input.claimType}%`));
-      return rows;
+      const { rows } = await getPool().query(
+        `${proofFrameworkProjection}
+         where claim_type ilike '%' || $1 || '%'
+         order by domain, claim_type, id`,
+        [input.claimType],
+      );
+      return rows.map(mapProofFramework);
     }),
 
   // ═══════════════════════════════════════════════════
@@ -101,17 +167,16 @@ export const architectureMapRouter = router({
   listInvestigationGuidance: publicProcedure
     .input(z.object({ agencyShort: z.string().optional(), pipelineCategory: z.string().optional() }).optional())
     .query(async ({ input }) => {
-      let q = db.select().from(investigationGuidance);
-      if (input?.agencyShort) q = q.where(eq(investigationGuidance.agencyShort, input.agencyShort)) as any;
-      if (input?.pipelineCategory) q = q.where(eq(investigationGuidance.pipelineCategory, input.pipelineCategory)) as any;
-      return q.orderBy(investigationGuidance.agency, investigationGuidance.claimType);
+      return list_live_investigation_guidance({
+        agencyShort: input?.agencyShort,
+        pipelineCategory: input?.pipelineCategory,
+      });
     }),
 
   getInvestigationGuidance: publicProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
-      const [row] = await db.select().from(investigationGuidance).where(eq(investigationGuidance.id, input.id));
-      return row ?? null;
+      return get_live_investigation_guidance(input.id);
     }),
 
   // ═══════════════════════════════════════════════════
@@ -120,32 +185,27 @@ export const architectureMapRouter = router({
   listFilingTemplates: publicProcedure
     .input(z.object({ agencyShort: z.string().optional(), pipelineCategory: z.string().optional() }).optional())
     .query(async ({ input }) => {
-      let q = db.select().from(filingGenerator);
-      if (input?.agencyShort) q = q.where(eq(filingGenerator.agencyShort, input.agencyShort)) as any;
-      if (input?.pipelineCategory) q = q.where(eq(filingGenerator.pipelineCategory, input.pipelineCategory)) as any;
-      return q.orderBy(filingGenerator.agency, filingGenerator.claimType);
+      return list_live_filing_templates({
+        agencyShort: input?.agencyShort,
+        pipelineCategory: input?.pipelineCategory,
+      });
     }),
 
   getFilingTemplate: publicProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
-      const [row] = await db.select().from(filingGenerator).where(eq(filingGenerator.id, input.id));
-      return row ?? null;
+      return get_live_filing_template(input.id);
     }),
 
   getFilingReadiness: publicProcedure
     .input(z.object({ claimType: z.string(), agencyShort: z.string() }))
     .query(async ({ input }) => {
-      const templates = await db.select().from(filingGenerator)
-        .where(eq(filingGenerator.agencyShort, input.agencyShort));
-      
-      const matching = templates.filter((t: any) => 
-        t.claimType.toLowerCase().includes(input.claimType.toLowerCase())
+      const template = await find_live_filing_template(
+        input.claimType,
+        input.agencyShort,
       );
+      if (!template) return { ready: false, template: null, message: "No filing template found for this claim type and agency." };
 
-      if (matching.length === 0) return { ready: false, template: null, message: "No filing template found for this claim type and agency." };
-
-      const template = matching[0];
       return {
         ready: true,
         template,

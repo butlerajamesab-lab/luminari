@@ -1,55 +1,40 @@
 import { useState } from "react";
-import { trpc } from "@/lib/trpc";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useLocation } from "wouter";
+import { AlertTriangle, ArrowLeft, Database, FileText, Scale, Wrench } from "lucide-react";
+
+import { CaseActionPaths } from "@/components/CaseActionPaths";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowRight, CheckCircle2, Clock, AlertTriangle, Scale, Building2, Shield, ShoppingCart, ArrowLeft, Wrench } from "lucide-react";
-import { useLocation } from "wouter";
-import { CommitToCase } from "@/components/CommitToCase";
-import { CaseActionPaths } from "@/components/CaseActionPaths";
 import { safeArray, safeObject, safeText } from "@/lib/data-guard";
-
-const agencyIcons: Record<string, React.ReactNode> = {
-  EEOC: <Scale className="h-5 w-5" />,
-  HUD: <Building2 className="h-5 w-5" />,
-  OSHA: <Shield className="h-5 w-5" />,
-  FTC: <ShoppingCart className="h-5 w-5" />,
-};
-
-const agencyColors: Record<string, string> = {
-  EEOC: "border-blue-500/30 bg-blue-500/5",
-  HUD: "border-purple-500/30 bg-purple-500/5",
-  OSHA: "border-amber-500/30 bg-amber-500/5",
-  FTC: "border-emerald-500/30 bg-emerald-500/5",
-};
-
-const modelTypeLabels: Record<string, string> = {
-  charge: "Charge-Based Model",
-  adjudication: "Administrative Adjudication",
-  inspection: "Regulatory Inspection",
-  oversight: "Market Oversight",
-};
+import { trpc } from "@/lib/trpc";
 
 export default function EnforcementPathway() {
   const [mode, setMode] = useState<"agency" | "claim" | "pipeline">("agency");
-  const [selectedAgency, setSelectedAgency] = useState("EEOC");
-  const [selectedClaim, setSelectedClaim] = useState("discrimination");
-  const [selectedPipeline, setSelectedPipeline] = useState("civil_rights");
+  const [selectedAgency, setSelectedAgency] = useState("");
+  const [selectedClaim, setSelectedClaim] = useState("");
+  const [selectedPipeline, setSelectedPipeline] = useState("");
 
-  const queryInput = mode === "agency"
+  const queryInput = mode === "agency" && selectedAgency
     ? { agencyShort: selectedAgency }
-    : mode === "claim"
+    : mode === "claim" && selectedClaim
       ? { claimType: selectedClaim }
-      : { pipelineCategory: selectedPipeline };
+      : mode === "pipeline" && selectedPipeline
+        ? { pipelineCategory: selectedPipeline }
+        : {};
 
   const pathway = trpc.enforcementIntel.getEnforcementPathway.useQuery(queryInput);
-  const allPathways = trpc.enforcementIntel.listAllPathways.useQuery();
-  const allPathwayRows = safeArray<any>(allPathways.data);
   const pathwayData = safeObject<any>(pathway.data);
+  const availability = safeObject<any>(pathwayData.availability);
+  const filterOptions = safeObject<any>(pathwayData.filterOptions);
   const pathwayRows = safeArray<any>(pathwayData.pathways);
-  const matchedBy = safeText(pathwayData.matchedBy, "unavailable");
+  const agencyOptions = safeArray<string>(filterOptions.agencyShorts);
+  const claimOptions = safeArray<string>(filterOptions.claimTypes);
+  const pipelineOptions = safeArray<string>(filterOptions.pipelineCategories);
+  const matchedBy = safeText(pathwayData.matchedBy, "none");
+  const totalSourceRows = Number(pathwayData.totalSourceRows ?? 0);
 
   const [, navigate] = useLocation();
   return (
@@ -66,7 +51,7 @@ export default function EnforcementPathway() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Enforcement Pathways</h1>
         <p className="text-muted-foreground mt-1">
-          Case-bound procedural candidates and the global pathway reference library are shown separately. A reference model does not establish case applicability.
+          Case-bound procedural candidates and the global pathway catalog are shown separately. A reference model does not establish case applicability. These source rows are not case-specific legal instructions or deadline calculations.
         </p>
       </div>
 
@@ -76,13 +61,15 @@ export default function EnforcementPathway() {
         <div>
           <h2 className="text-lg font-semibold">Global Enforcement Pathway Reference Library</h2>
           <p className="text-xs text-muted-foreground mt-1">
-            {allPathways.isLoading ? "Reference models not loaded yet." : `${allPathwayRows.length} reference pathway models across federal and state agencies.`} Browse by agency, claim type, or pipeline category without converting a global model into a case conclusion.
+            {pathway.isLoading
+              ? "Source records not loaded yet."
+              : `${totalSourceRows} exact live source rows available.`}
           </p>
         </div>
 
         <Card className="border-0 bg-card/50">
           <CardContent className="p-4">
-            <Tabs value={mode} onValueChange={v => setMode(v as typeof mode)}>
+            <Tabs value={mode} onValueChange={value => setMode(value as typeof mode)}>
               <TabsList className="mb-3">
                 <TabsTrigger value="agency">By Agency</TabsTrigger>
                 <TabsTrigger value="claim">By Claim Type</TabsTrigger>
@@ -90,166 +77,137 @@ export default function EnforcementPathway() {
               </TabsList>
 
               <TabsContent value="agency">
-                <div className="flex gap-2 flex-wrap">
-                  {["EEOC", "HUD", "OSHA", "FTC"].map(a => (
-                    <Button key={a} variant={selectedAgency === a ? "default" : "outline"} size="sm" onClick={() => setSelectedAgency(a)} className="gap-1.5">
-                      {agencyIcons[a]} {a}
+                {agencyOptions.length > 0 ? (
+                  <div className="flex gap-2 flex-wrap">
+                    <Button variant={selectedAgency === "" ? "default" : "outline"} size="sm" onClick={() => setSelectedAgency("")}>
+                      All recorded agencies
                     </Button>
-                  ))}
-                </div>
+                    {agencyOptions.map(agency => (
+                      <Button key={agency} variant={selectedAgency === agency ? "default" : "outline"} size="sm" onClick={() => setSelectedAgency(agency)}>
+                        {agency}
+                      </Button>
+                    ))}
+                  </div>
+                ) : <p className="text-sm text-muted-foreground">No explicit agency-short association is stored for these source rows.</p>}
               </TabsContent>
 
               <TabsContent value="claim">
-                <Select value={selectedClaim} onValueChange={setSelectedClaim}>
-                  <SelectTrigger className="w-[300px] max-w-full"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {["discrimination", "retaliation", "harassment", "housing_discrimination", "fair_housing", "workplace_safety", "whistleblower", "consumer_fraud", "deceptive_practices", "unfair_business"].map(c => (
-                      <SelectItem key={c} value={c}>{c.replace(/_/g, " ")}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {claimOptions.length > 0 ? (
+                  <Select value={selectedClaim || "__all"} onValueChange={value => setSelectedClaim(value === "__all" ? "" : value)}>
+                    <SelectTrigger className="w-[360px] max-w-full"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__all">All recorded claim types</SelectItem>
+                      {claimOptions.map(claim => <SelectItem key={claim} value={claim}>{claim.replace(/_/g, " ")}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                ) : <p className="text-sm text-muted-foreground">No claim-type tags are stored for these source rows.</p>}
               </TabsContent>
 
               <TabsContent value="pipeline">
-                <Select value={selectedPipeline} onValueChange={setSelectedPipeline}>
-                  <SelectTrigger className="w-[300px] max-w-full"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {["workplace", "civil_rights", "housing", "employment", "consumer", "safety", "discrimination", "retaliation", "whistleblower", "fraud", "deceptive_practices"].map(p => (
-                      <SelectItem key={p} value={p}>{p.replace(/_/g, " ")}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {pipelineOptions.length > 0 ? (
+                  <Select value={selectedPipeline || "__all"} onValueChange={value => setSelectedPipeline(value === "__all" ? "" : value)}>
+                    <SelectTrigger className="w-[360px] max-w-full"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__all">All recorded pipeline categories</SelectItem>
+                      {pipelineOptions.map(category => <SelectItem key={category} value={category}>{category.replace(/_/g, " ")}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                ) : <p className="text-sm text-muted-foreground">No pipeline-category associations are stored for these source rows.</p>}
               </TabsContent>
             </Tabs>
           </CardContent>
         </Card>
 
-        {pathway.isLoading && <p className="text-muted-foreground">Loading reference pathway...</p>}
+        {pathway.isLoading && <p className="text-muted-foreground">Loading exact live source rows...</p>}
 
-        {allPathwayRows.length > 0 && (
-          <Card className="border-0 bg-card/50">
-            <CardHeader>
-              <CardTitle className="text-lg">All Reference Pathways ({allPathwayRows.length})</CardTitle>
-              <CardDescription>Global procedural models. Add one to the case only as a user-selected reference; that action does not make it a governed Layer 14 case path.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-2 max-h-[500px] overflow-y-auto">
-                {allPathwayRows.map((p: any) => (
-                  <div key={p.id} className="p-3 rounded-lg border border-border/30 bg-muted/20 hover:bg-muted/40 transition-colors">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-sm truncate">{p.agencyName}</h4>
-                        <p className="text-xs text-muted-foreground mt-0.5">{p.pathwayType} · {p.jurisdiction} · {p.filingDeadline || 'No deadline declared'}</p>
-                      </div>
-                      <CommitToCase type="proceduralPath" pathLabel={p.agencyName} pathId={p.id} label="Add Reference" size="sm" />
-                    </div>
-                  </div>
-                ))}
-              </div>
+        {!pathway.isLoading && safeText(availability.status) === "unavailable" && (
+          <Card className="border-amber-500/30 bg-amber-500/5">
+            <CardContent className="py-8 text-center">
+              <AlertTriangle className="h-5 w-5 text-amber-400 mx-auto mb-2" />
+              <p className="text-sm font-medium">Pathway reference unavailable</p>
+              <p className="text-xs text-muted-foreground mt-1">{safeText(availability.reason, "No exact live source row matched this filter.")}</p>
             </CardContent>
           </Card>
         )}
 
-        {pathwayRows.length > 0 ? (
-          <div className="space-y-6">
-            {matchedBy !== "all" && (
-              <p className="text-sm text-muted-foreground">
-                Reference filter matched by <Badge variant="outline" className="text-xs ml-1">{matchedBy}</Badge> — {pathwayRows.length} model{pathwayRows.length !== 1 ? "s" : ""} found
-              </p>
-            )}
+        {pathwayRows.length > 0 && (
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Filter state <Badge variant="outline" className="text-xs ml-1">{matchedBy}</Badge> — {pathwayRows.length} source row{pathwayRows.length === 1 ? "" : "s"}
+            </p>
 
-            {pathwayRows.map((pw: any) => (
-              <Card key={pw.agencyShort} className={`border ${agencyColors[pw.agencyShort] || "border-border/30"}`}>
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-muted/50">{agencyIcons[pw.agencyShort] || <Scale className="h-5 w-5" />}</div>
-                    <div>
-                      <CardTitle className="text-lg">{pw.modelName}</CardTitle>
-                      <CardDescription className="flex items-center gap-2 mt-0.5">
-                        <Badge variant="outline" className="text-xs">{pw.agencyShort}</Badge>
-                        <span>{modelTypeLabels[pw.modelType] || pw.modelType}</span>
-                      </CardDescription>
+            <div className="grid gap-4 max-h-[760px] overflow-y-auto pr-1">
+              {pathwayRows.map((record: any) => (
+                <Card key={safeText(record.id)} className="border border-border/30">
+                  <CardHeader>
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-muted/50"><Scale className="h-5 w-5" /></div>
+                      <div className="min-w-0 flex-1">
+                        <CardTitle className="text-lg">{safeText(record.pathwayName, "Unnamed source record")}</CardTitle>
+                        <CardDescription className="flex items-center gap-2 mt-1 flex-wrap">
+                          {safeText(record.agencyShort) && <Badge variant="outline">{safeText(record.agencyShort)}</Badge>}
+                          {safeText(record.jurisdiction) && <span>{safeText(record.jurisdiction)}</span>}
+                          {safeText(record.domain) && <span>· {safeText(record.domain)}</span>}
+                        </CardDescription>
+                      </div>
                     </div>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-2">{pw.description}</p>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div>
-                    <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wider">Reference Process Steps</h3>
-                    <div className="space-y-0">
-                      {safeArray<any>(pw.steps).map((step: any, i: number) => (
-                        <div key={step.step} className="flex gap-3">
-                          <div className="flex flex-col items-center">
-                            <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center text-xs font-bold text-primary shrink-0">
-                              {step.step}
-                            </div>
-                            {i < safeArray(pw.steps).length - 1 && <div className="w-px flex-1 bg-border/50 my-1" />}
-                          </div>
-                          <div className="pb-4 flex-1">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <h4 className="font-medium">{step.name}</h4>
-                              <Badge variant="outline" className="text-xs text-muted-foreground">
-                                <Clock className="h-3 w-3 mr-1" />{step.typicalDuration}
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-muted-foreground mt-1">{step.description}</p>
-                            <div className="mt-1.5 flex items-start gap-1.5">
-                              <ArrowRight className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
-                              <p className="text-xs text-primary/80">Reference action: {step.userAction}</p>
-                            </div>
-                          </div>
+                    {safeText(record.description) && <p className="text-sm text-muted-foreground mt-2">{safeText(record.description)}</p>}
+                  </CardHeader>
+
+                  <CardContent className="space-y-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Recorded claim tags</h3>
+                        <div className="flex gap-1.5 flex-wrap">
+                          {safeArray<string>(record.claimTypes).length > 0
+                            ? safeArray<string>(record.claimTypes).map(tag => <Badge key={tag} variant="secondary">{tag.replace(/_/g, " ")}</Badge>)
+                            : <span className="text-xs text-muted-foreground">None stored</span>}
                         </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <h3 className="text-sm font-semibold mb-2 text-muted-foreground uppercase tracking-wider">Reference Deadlines</h3>
-                      <div className="space-y-1.5">
-                        {safeArray<string>(pw.keyDeadlines).map((d: string, i: number) => (
-                          <div key={i} className="flex items-start gap-2 text-sm">
-                            <AlertTriangle className="h-3.5 w-3.5 text-amber-400 mt-0.5 shrink-0" />
-                            <span>{d}</span>
-                          </div>
-                        ))}
+                      </div>
+                      <div>
+                        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Recorded pipeline tags</h3>
+                        <div className="flex gap-1.5 flex-wrap">
+                          {safeArray<string>(record.pipelineCategories).length > 0
+                            ? safeArray<string>(record.pipelineCategories).map(tag => <Badge key={tag} variant="secondary">{tag.replace(/_/g, " ")}</Badge>)
+                            : <span className="text-xs text-muted-foreground">None stored</span>}
+                        </div>
                       </div>
                     </div>
 
-                    <div>
-                      <h3 className="text-sm font-semibold mb-2 text-muted-foreground uppercase tracking-wider">Recorded Outcomes</h3>
-                      <div className="space-y-1.5">
-                        {safeArray<string>(pw.typicalOutcomes).map((o: string, i: number) => (
-                          <div key={i} className="flex items-start gap-2 text-sm">
-                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 mt-0.5 shrink-0" />
-                            <span>{o}</span>
-                          </div>
-                        ))}
+                    <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+                      <div className="flex items-start gap-2">
+                        {record.sourcePending ? <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 shrink-0" /> : <Database className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />}
+                        <div>
+                          <p className="text-sm font-medium">Source text only</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {record.sourcePending
+                              ? "The catalog marks this record as pending source verification."
+                              : "No procedural or deadline inference is added to this stored record."}
+                          </p>
+                          {safeText(record.sourceFile) && (
+                            <p className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1">
+                              <FileText className="h-3 w-3" /> {safeText(record.sourceFile)}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="p-3 rounded-lg bg-muted/30 border border-border/20">
-                    <p className="text-sm"><span className="font-medium">Historical reference rate:</span> {pw.successRate}</p>
-                    <p className="text-[10px] text-muted-foreground mt-1">This population-level reference is not a prediction for the selected case.</p>
-                  </div>
+                    <div className="flex items-center justify-between gap-3 border-t border-border/40 pt-3">
+                      <p className="text-xs text-muted-foreground">
+                        Case-reference staging is unavailable for UUID catalog records.
+                      </p>
+                      <Button type="button" variant="outline" size="sm" disabled>
+                        Add Reference
+                      </Button>
+                    </div>
 
-                  <div className="flex justify-end pt-1">
-                    <CommitToCase
-                      type="proceduralPath"
-                      pathLabel={pw.modelName}
-                      pathId={pw.id}
-                      label="Stage Reference"
-                      size="sm"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
-        ) : !pathway.isLoading ? (
-          <Card className="py-12 text-center"><p className="text-muted-foreground">No reference model matched the selected filter.</p></Card>
-        ) : null}
+        )}
       </section>
     </div>
   );

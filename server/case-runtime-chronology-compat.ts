@@ -155,13 +155,14 @@ async function load_source_document_bindings(case_id: number) {
        join public.documents d
          on coalesce(a.metadata ->> 'legacy_document_id', '') ~ '^[0-9]+$'
         and d.id = (a.metadata ->> 'legacy_document_id')::integer
+        and d.case_id = cib.legacy_case_id
       where cib.legacy_case_id = $1
         and cil.is_primary = true
         and cil.link_type = 'primary_projection'
         and s.session_type = 'live'
         and s.entry_channel = 'upload'
         and a.artifact_type = 'source_document'
-        and a.artifact_status = 'preserved'
+        and a.artifact_status in ('registered', 'preserved')
         and coalesce(d.document_resolution, 'active') = 'active'
       order by a.artifact_key, a.artifact_id`,
     [case_id],
@@ -210,6 +211,23 @@ function merge_chronology(outputs: Array<{ data: ChronologyEvent[] }>): Chronolo
       || left.source_span_offset - right.source_span_offset
       || left.event_id.localeCompare(right.event_id),
   );
+}
+
+export async function getCaseChronologyProjectionState(caseId: number): Promise<{
+  projection_state: "not_projected" | "canonical_projection";
+  event_count: number;
+  canonical_output_hashes: string[];
+  canonical_receipt_hashes: string[];
+}> {
+  const canonical = await load_canonical_chronology_outputs(caseId);
+  return {
+    projection_state: canonical.state,
+    event_count: canonical.state === "canonical_projection"
+      ? merge_chronology(canonical.outputs).length
+      : 0,
+    canonical_output_hashes: [...new Set(canonical.outputs.map(output => output.output_hash))].sort(),
+    canonical_receipt_hashes: [...new Set(canonical.outputs.map(output => output.receipt_hash))].sort(),
+  };
 }
 
 export async function listEvents(caseId: number) {

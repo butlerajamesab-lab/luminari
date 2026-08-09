@@ -17,22 +17,56 @@ import {
   detectedSignals,
   dataStreamRegistry,
 } from "../../drizzle/schema";
-import mysql from "mysql2/promise";
 import { enrichSignalWithInterpretation, loadInterpretationPack, getCategoryContext } from "../ingestion/interpretation-layer";
+import { query_with_diagnostics } from "../db-legacy";
 
-// graph_edges table is created via SQL, not in Drizzle schema
-// Use raw queries for graph operations
-async function getDbConnection() {
-  return mysql.createConnection({
-      host: "gateway04.us-east-1.prod.aws.tidbcloud.com",
-      port: 4000,
-      user: "2jhK1AfHyk6mXSq.root",
-      password: "2k5Lq94U8voiLkatA3uZ",
-      database: "luminari_registry",
-      ssl: {
-        rejectUnauthorized: true,
-      },
-    });
+function as_string_array(value: unknown): string[] {
+  if (Array.isArray(value)) return value.map(String);
+  if (typeof value !== "string" || value.trim() === "") return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed.map(String) : [value];
+  } catch {
+    return [value];
+  }
+}
+
+async function load_institution_registry_snapshot(): Promise<{
+  agencies: any[];
+  signals: any[];
+  barriers: any[];
+}> {
+  const { rows } = await query_with_diagnostics<{
+    agencies: any[];
+    signals: any[];
+    barriers: any[];
+  }>(
+    `select
+       coalesce((
+         select jsonb_agg(to_jsonb(a) order by a.id)
+         from (
+           select id, statute, agency, agency_short, domain
+           from public.agency_authority_map
+         ) a
+       ), '[]'::jsonb) as agencies,
+       coalesce((
+         select jsonb_agg(to_jsonb(s) order by s.id)
+         from (
+           select id, signal_type, explanation
+           from public.signal_registry
+         ) s
+       ), '[]'::jsonb) as signals,
+       coalesce((
+         select jsonb_agg(to_jsonb(b) order by b.id)
+         from (
+           select id, barrier_type, description
+           from public.litigation_barriers
+         ) b
+       ), '[]'::jsonb) as barriers`,
+    [],
+    { label: "dual_lens_institution_registry_snapshot" },
+  );
+  return rows[0] ?? { agencies: [], signals: [], barriers: [] };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -494,7 +528,13 @@ export const dualLensRouter = router({
       domain: z.string().optional(),
     }))
     .query(async ({ input }) => {
-      const allDoctrines = await db.select().from(doctrineRegistry);
+      const { rows: allDoctrines } = await query_with_diagnostics<any>(
+        `select id, name, description, primary_cases, domains, added_by, created_at, updated_at
+           from public.doctrine_registry
+          order by name asc, id asc`,
+        [],
+        { label: "dual_lens_doctrine_clusters" },
+      );
 
       // Group by first domain
       const clusters: Record<string, {
@@ -504,24 +544,20 @@ export const dualLensRouter = router({
       }> = {};
 
       for (const d of allDoctrines) {
-        const cat = (d.domains && d.domains.length > 0) ? d.domains[0] : "general";
+        const domains = as_string_array(d.domains);
+        const cat = domains[0] ?? "general";
         if (!clusters[cat]) {
           clusters[cat] = { category: cat, count: 0, doctrines: [] };
         }
         clusters[cat].count++;
-        clusters[cat].doctrines.push(d);
+        clusters[cat].doctrines.push({ ...d, domains });
       }
-
-      // Get graph edges for doctrine connections (raw SQL - table not in Drizzle schema)
-      const conn = await getDbConnection();
-      const [edgeRows] = await conn.query("SELECT * FROM graph_edges WHERE sourceNode LIKE 'DOC-%'") as any;
-      await conn.end();
-      const edges = edgeRows as any[];
 
       return {
         clusters: Object.values(clusters).sort((a, b) => b.count - a.count),
         total_doctrines: allDoctrines.length,
-        doctrine_edges: edges.length,
+        doctrine_edges: 0,
+        doctrine_edges_available: false,
       };
     }),
 
@@ -533,32 +569,30 @@ export const dualLensRouter = router({
       domain: z.string().optional(),
     }))
     .query(async ({ input }) => {
-      const agencies = await db.select().from(agencyAuthorityMap);
-      const signals = await db.select().from(signalRegistry);
-      const barriers = await db.select().from(litigationBarriers);
+      const { agencies, signals, barriers } = await load_institution_registry_snapshot();
 
       // Build institution profiles
       const institutions = agencies.map((a: any) => {
         const agencyText = (a.agency ?? "").toLowerCase();
         const relatedSignals = signals.filter((s: any) => {
-          const text = [s.signalType, s.explanation].join(" ").toLowerCase();
+          const text = [s.signal_type, s.explanation].join(" ").toLowerCase();
           return agencyText.split(" ").some((w: string) => w.length > 3 && text.includes(w));
         });
         const relatedBarriers = barriers.filter((b: any) => {
-          const text = [b.barrierType, b.description].join(" ").toLowerCase();
+          const text = [b.barrier_type, b.description].join(" ").toLowerCase();
           return agencyText.split(" ").some((w: string) => w.length > 3 && text.includes(w));
         });
 
         return {
           id: a.id,
           agency: a.agency,
-          agency_short: a.agencyShort,
+          agency_short: a.agency_short,
           domain: a.domain,
           signal_count: relatedSignals.length,
           barrier_count: relatedBarriers.length,
           issue_score: relatedSignals.length + relatedBarriers.length * 2,
         };
-      }).filter((i: any) => i.issueScore > 0).sort((a: any, b: any) => b.issueScore - a.issueScore);
+      }).filter((i: any) => i.issue_score > 0).sort((a: any, b: any) => b.issue_score - a.issue_score);
 
       return {
         institutions: institutions.slice(0, 20),
@@ -670,30 +704,13 @@ export const dualLensRouter = router({
       nodeType: z.enum(["claim", "proof", "barrier", "agency", "action", "pattern", "doctrine", "statute", "case"]),
     }))
     .query(async ({ input }) => {
-      // Find edges from this node (raw SQL - table not in Drizzle schema)
-      const conn = await getDbConnection();
-      const [outRows] = await conn.query(
-        "SELECT * FROM graph_edges WHERE sourceNode = ?", [input.nodeId]
-      ) as any;
-      const [inRows] = await conn.query(
-        "SELECT * FROM graph_edges WHERE targetNode = ?", [input.nodeId]
-      ) as any;
-      await conn.end();
-
       return {
         node_id: input.nodeId,
         node_type: input.nodeType,
-        outgoing: (outRows as any[]).map((e: any) => ({
-          target_id: e.targetNode,
-          relationship: e.relationshipType,
-          label: e.sourceReference,
-        })),
-        incoming: (inRows as any[]).map((e: any) => ({
-          source_id: e.sourceNode,
-          relationship: e.relationshipType,
-          label: e.sourceReference,
-        })),
-        total_connections: outRows.length + inRows.length,
+        outgoing: [],
+        incoming: [],
+        total_connections: 0,
+        graph_available: false,
       };
     }),
 
@@ -926,41 +943,64 @@ export const dualLensRouter = router({
    * Get summary stats for the dual-lens dashboard.
    */
   stats: publicProcedure.query(async () => {
-    const [claimCount] = await db.select({ c: sql<number>`count(*)` }).from(strategyClaimCatalog);
-    const [proofCount] = await db.select({ c: sql<number>`count(*)` }).from(proofFrameworks);
-    const [barrierCount] = await db.select({ c: sql<number>`count(*)` }).from(litigationBarriers);
-    const [agencyCount] = await db.select({ c: sql<number>`count(*)` }).from(agencyAuthorityMap);
-    const [workflowCount] = await db.select({ c: sql<number>`count(*)` }).from(workflowMaster);
-    const [deadlineCount] = await db.select({ c: sql<number>`count(*)` }).from(deadlineRules);
-    const [doctrineCount] = await db.select({ c: sql<number>`count(*)` }).from(doctrineRegistry);
-    const [signalCount] = await db.select({ c: sql<number>`count(*)` }).from(signalRegistry);
-    const [courtCount] = await db.select({ c: sql<number>`count(*)` }).from(courtDirectory);
-    const conn = await getDbConnection();
-    const [edgeRows] = await conn.query("SELECT COUNT(*) as c FROM graph_edges") as any;
-    await conn.end();
-    const edgeCount = { c: (edgeRows as any[])[0]?.c ?? 0 };
-
-    // Live signals count
-    const [liveSignalCount] = await db.select({ c: sql<number>`count(*)` }).from(detectedSignals).where(isNotNull(detectedSignals.signalId));
+    const { rows } = await query_with_diagnostics<{
+      claim_count: number;
+      proof_count: number;
+      barrier_count: number;
+      agency_count: number;
+      workflow_count: number;
+      deadline_count: number;
+      doctrine_count: number;
+      signal_count: number;
+      court_count: number;
+      live_signal_count: number;
+    }>(
+      `select
+         (select count(*)::int from public.strategy_claim_catalog) as claim_count,
+         (select count(*)::int from public.proof_frameworks) as proof_count,
+         (select count(*)::int from public.litigation_barriers) as barrier_count,
+         (select count(*)::int from public.agency_authority_map) as agency_count,
+         (select count(*)::int from public.workflow_master) as workflow_count,
+         (select count(*)::int from public.deadline_rules) as deadline_count,
+         (select count(*)::int from public.doctrine_registry) as doctrine_count,
+         (select count(*)::int from public.signal_registry) as signal_count,
+         (select count(*)::int from public.court_directory) as court_count,
+         (select count(*)::int from public.detected_signals where signal_id is not null) as live_signal_count`,
+      [],
+      { label: "dual_lens_stats" },
+    );
+    const counts = rows[0] ?? {
+      claim_count: 0,
+      proof_count: 0,
+      barrier_count: 0,
+      agency_count: 0,
+      workflow_count: 0,
+      deadline_count: 0,
+      doctrine_count: 0,
+      signal_count: 0,
+      court_count: 0,
+      live_signal_count: 0,
+    };
 
     return {
       case_resolution: {
-        claims: Number(claimCount.c),
-        proof_frameworks: Number(proofCount.c),
-        barriers: Number(barrierCount.c),
-        agencies: Number(agencyCount.c),
-        workflows: Number(workflowCount.c),
-        deadlines: Number(deadlineCount.c),
-        courts: Number(courtCount.c),
+        claims: Number(counts.claim_count),
+        proof_frameworks: Number(counts.proof_count),
+        barriers: Number(counts.barrier_count),
+        agencies: Number(counts.agency_count),
+        workflows: Number(counts.workflow_count),
+        deadlines: Number(counts.deadline_count),
+        courts: Number(counts.court_count),
       },
       structural_diagnostics: {
-        doctrines: Number(doctrineCount.c),
-        signals: Number(signalCount.c),
-        barriers: Number(barrierCount.c),
-        detected_signals: Number(liveSignalCount.c),
+        doctrines: Number(counts.doctrine_count),
+        signals: Number(counts.signal_count),
+        barriers: Number(counts.barrier_count),
+        detected_signals: Number(counts.live_signal_count),
       },
       graph: {
-        edges: Number(edgeCount.c),
+        edges: 0,
+        available: false,
       },
     };
   }),

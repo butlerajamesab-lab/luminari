@@ -42,6 +42,16 @@ interface GraphLink {
   evidenceCount?: number;
 }
 
+function dependencyLabel(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (!value || typeof value !== "object") return String(value ?? "Unspecified dependency");
+  const record = value as Record<string, unknown>;
+  for (const key of ["message", "reason", "dependency", "code", "type"]) {
+    if (typeof record[key] === "string" && record[key]) return String(record[key]);
+  }
+  return "Unresolved governed dependency";
+}
+
 export default function NetworkGraph() {
   const { currentCaseId } = useCase();
   const [, setLocation] = useLocation();
@@ -51,14 +61,24 @@ export default function NetworkGraph() {
   const [selectedLink, setSelectedLink] = useState<GraphLink | null>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 500 });
 
-  const { data: entities } = trpc.entities.list.useQuery(
+  const { data: entities, isLoading: entitiesLoading } = trpc.entities.list.useQuery(
     { caseId: currentCaseId! },
     { enabled: !!currentCaseId }
   );
-  const { data: relationships } = trpc.relationships.list.useQuery(
+  const { data: relationships, isLoading: relationshipsLoading } = trpc.relationships.list.useQuery(
     { caseId: currentCaseId! },
     { enabled: !!currentCaseId }
   );
+  const { data: relationshipProjection, isLoading: projectionLoading } = trpc.analyze.getIntakeRelationshipProjection.useQuery(
+    { caseId: currentCaseId! },
+    { enabled: !!currentCaseId }
+  );
+
+  const relationshipDependencies = useMemo<string[]>(() => {
+    const outputs = (relationshipProjection?.outputs ?? []) as Array<{ unresolved_dependencies?: unknown[] }>;
+    const dependencies = outputs.flatMap(output => output.unresolved_dependencies ?? []);
+    return [...new Set<string>(dependencies.map(dependencyLabel))].sort();
+  }, [relationshipProjection]);
 
   const projectedLinkEvidence = useMemo(() => {
     if (!selectedLink || !relationships) return null;
@@ -90,7 +110,7 @@ export default function NetworkGraph() {
     });
     observer.observe(container);
     return () => observer.disconnect();
-  }, []);
+  }, [entitiesLoading, relationshipsLoading, projectionLoading, entities?.length]);
 
   const graphData = useMemo(() => {
     if (!entities || !relationships) return { nodes: [], links: [] };
@@ -154,7 +174,10 @@ export default function NetworkGraph() {
     );
   }
 
-  const hasData = entities && entities.length > 0 && relationships && relationships.length > 0;
+  const hasEntities = (entities?.length ?? 0) > 0;
+  const hasRelationships = (relationships?.length ?? 0) > 0;
+  const projectionComplete = relationshipProjection?.projection_state === "canonical_projection";
+  const graphLoading = entitiesLoading || relationshipsLoading || projectionLoading;
 
   return (
     <div className="space-y-4">
@@ -163,10 +186,10 @@ export default function NetworkGraph() {
           <h1 className="text-2xl font-semibold tracking-tight">Network Graph</h1>
           <p className="text-sm text-muted-foreground mt-1">
             {entities?.length || 0} entities, {relationships?.length || 0} connections
-            {hasData && <span className="ml-2 text-xs">&mdash; click edges to see backing evidence</span>}
+            {hasRelationships && <span className="ml-2 text-xs">&mdash; click edges to see backing evidence</span>}
           </p>
         </div>
-        {hasData && (
+        {hasEntities && (
           <div className="flex items-center gap-2 flex-wrap">
             {Object.entries(entityTypeColors).map(([type, color]) => {
               const count = entities?.filter(e => e.type === type).length || 0;
@@ -182,25 +205,63 @@ export default function NetworkGraph() {
         )}
       </div>
 
-      {!hasData ? (
+      {graphLoading ? (
+        <Card className="border-dashed">
+          <CardContent className="p-8 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Loading governed graph projection...
+          </CardContent>
+        </Card>
+      ) : !hasEntities ? (
         <Card className="border-dashed">
           <CardContent className="p-8 flex flex-col items-center gap-4 text-center">
             <Network className="h-10 w-10 text-muted-foreground" />
             <div>
               <p className="text-sm text-muted-foreground">
-                No source-bound relationship graph is projected yet. Preserve evidence and run the Universal Intake Spine to build entities and explicit relationships.
+                {projectionComplete
+                  ? "The governed graph projection completed with zero source-bound entities and zero explicit relationships."
+                  : "No eligible sealed relationship projection is available for this case yet."}
               </p>
               <p className="text-xs text-muted-foreground mt-2">
                 {entities?.length || 0} entities, {relationships?.length || 0} relationships
               </p>
             </div>
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setLocation("/upload")}>
-              <Upload className="h-3.5 w-3.5" /> Upload Evidence
-            </Button>
+            {!projectionComplete && (
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setLocation("/upload")}>
+                <Upload className="h-3.5 w-3.5" /> Upload Evidence
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (
-        <div className="relative">
+        <>
+          {!hasRelationships && (
+            <Card className="border-cyan-500/20 bg-cyan-950/10">
+              <CardContent className="p-4 space-y-2">
+                <div className="flex items-start gap-3">
+                  <Network className="h-4 w-4 text-cyan-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium">
+                      {projectionComplete ? "Governed relationship projection completed" : "Entities projected; relationship projection pending"}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {projectionComplete
+                        ? `${entities?.length ?? 0} source-bound entities were identified and the sealed relationship layer recorded zero explicit relationships. The entities remain visible below as isolated nodes.`
+                        : `${entities?.length ?? 0} source-bound entities are available, but there is no eligible sealed relationship output yet.`}
+                    </p>
+                  </div>
+                </div>
+                {relationshipDependencies.length > 0 && (
+                  <div className="pl-7">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Unresolved dependencies</p>
+                    <ul className="mt-1 space-y-0.5 text-xs text-muted-foreground list-disc list-inside">
+                      {relationshipDependencies.slice(0, 3).map(dependency => <li key={dependency}>{dependency}</li>)}
+                    </ul>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+          <div className="relative">
           <Card className="overflow-hidden">
             <div ref={containerRef} className="w-full" style={{ height: "calc(100vh - 220px)", minHeight: 500 }}>
               <ForceGraph2D
@@ -410,7 +471,8 @@ export default function NetworkGraph() {
               </CardContent>
             </Card>
           )}
-        </div>
+          </div>
+        </>
       )}
     </div>
   );

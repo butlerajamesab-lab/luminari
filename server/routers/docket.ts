@@ -16,10 +16,21 @@
 import { z } from "zod";
 import { router, publicProcedure, protectedProcedure, adminProcedure } from "../_core/trpc";
 import { TRPCError } from "@trpc/server";
-import * as docket_db from "../docket-db";
-import { notifyOwner } from "../_core/notification";
+import {
+  create_live_docket_entry,
+  delete_live_docket_entry,
+  get_live_docket_entry,
+  get_live_docket_entry_by_slug,
+  get_live_docket_stats,
+  list_live_docket_entries,
+  update_live_docket_entry,
+} from "../docket-live-read-compat";
 
 // ─── Input Schemas ───
+
+const docketDateInput = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, {
+  message: "Expected an ISO calendar date (YYYY-MM-DD)",
+});
 
 const docketEntryInput = z.object({
   slug: z.string().min(1).max(256),
@@ -29,9 +40,9 @@ const docketEntryInput = z.object({
   jurisdictionLevel: z.enum(["federal", "state", "county", "city", "tribal"]),
   lawType: z.enum(["statute", "ordinance", "regulation", "executive_order", "ballot_measure", "proposed_bill", "constitutional_amendment"]),
   status: z.enum(["enacted", "proposed", "repealed", "amended", "under_review"]),
-  dateIntroduced: z.string().optional(),
-  dateEnacted: z.string().optional(),
-  dateEffective: z.string().optional(),
+  dateIntroduced: docketDateInput.optional(),
+  dateEnacted: docketDateInput.optional(),
+  dateEffective: docketDateInput.optional(),
   summary: z.string().optional(),
   keyChanges: z.array(z.string()).optional(),
   implementationAgencies: z.array(z.string()).optional(),
@@ -83,6 +94,26 @@ const sourceInput = z.object({
   note: z.string().optional(),
 });
 
+const liveDocketEntryId = z.string().uuid();
+
+const docketSubmissionAvailability = {
+  available: false,
+  state: "unavailable" as const,
+  reason: "docket_submissions_table_not_established" as const,
+  tableEstablished: false,
+  canSubmit: false,
+  canReview: false,
+  message:
+    "Docket submissions are unavailable because submission storage has not been established.",
+};
+
+function throwDocketComponentUnavailable(component: string): never {
+  throw new TRPCError({
+    code: "PRECONDITION_FAILED",
+    message: `${component} is unavailable because its live storage has not been established.`,
+  });
+}
+
 // ─── Router ───
 
 export const docketRouter = router({
@@ -98,21 +129,19 @@ export const docketRouter = router({
       offset: z.number().min(0).default(0),
     }).optional())
     .query(async ({ input }) => {
-      return docket_db.listDocketEntries(input);
+      return list_live_docket_entries(input ?? {});
     }),
 
   /** Search actors by name across all docket entries */
   searchActors: publicProcedure
     .input(z.object({ term: z.string().min(1) }))
-    .query(async ({ input }) => {
-      return docket_db.searchActorsByName(input.term);
-    }),
+    .query(async () => []),
 
   /** Get a single docket entry by ID */
   getById: publicProcedure
-    .input(z.object({ id: z.number() }))
+    .input(z.object({ id: liveDocketEntryId }))
     .query(async ({ input }) => {
-      const entry = await docket_db.getDocketEntry(input.id);
+      const entry = await get_live_docket_entry(input.id);
       if (!entry) throw new TRPCError({ code: "NOT_FOUND", message: "Docket entry not found" });
       return entry;
     }),
@@ -121,46 +150,59 @@ export const docketRouter = router({
   getBySlug: publicProcedure
     .input(z.object({ slug: z.string() }))
     .query(async ({ input }) => {
-      const entry = await docket_db.getDocketEntryBySlug(input.slug);
+      const entry = await get_live_docket_entry_by_slug(input.slug);
       if (!entry) throw new TRPCError({ code: "NOT_FOUND", message: "Docket entry not found" });
       return entry;
     }),
 
   /** Get full analysis (entry + actors + impacts + sources) */
   getFullAnalysis: publicProcedure
-    .input(z.object({ id: z.number() }))
+    .input(z.object({ id: liveDocketEntryId }))
     .query(async ({ input }) => {
-      const analysis = await docket_db.getFullDocketAnalysis(input.id);
-      if (!analysis) throw new TRPCError({ code: "NOT_FOUND", message: "Docket entry not found" });
-      return analysis;
+      const entry = await get_live_docket_entry(input.id);
+      if (!entry) throw new TRPCError({ code: "NOT_FOUND", message: "Docket entry not found" });
+      return {
+        entry,
+        actors: [],
+        impacts: [],
+        sources: [],
+        componentAvailability: {
+          actors: false,
+          impacts: false,
+          sources: false,
+        },
+      };
     }),
 
   /** Get docket statistics */
   stats: publicProcedure.query(async () => {
-    return docket_db.getDocketStats();
+    return get_live_docket_stats();
   }),
 
   /** Create a new docket entry (admin only) */
   create: adminProcedure
     .input(docketEntryInput)
     .mutation(async ({ input }) => {
-      const now = Date.now();
-      const id = await docket_db.createDocketEntry({
-        ...input,
-        createdAt: now,
-        updatedAt: now,
-      });
+      const id = await create_live_docket_entry(input);
       return { id };
     }),
 
   /** Update a docket entry (admin only) */
   update: adminProcedure
-    .input(z.object({ id: z.number() }).merge(docketEntryInput.partial()))
+    .input(z.object({ id: liveDocketEntryId }).merge(docketEntryInput.partial()))
     .mutation(async ({ input }) => {
       const { id, ...data } = input;
-      const existing = await docket_db.getDocketEntry(id);
-      if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
-      await docket_db.updateDocketEntry(id, data);
+      const updated = await update_live_docket_entry(id, data);
+      if (!updated) throw new TRPCError({ code: "NOT_FOUND" });
+      return { success: true };
+    }),
+
+  /** Delete a docket entry from the live registry (admin only) */
+  delete: adminProcedure
+    .input(z.object({ id: liveDocketEntryId }))
+    .mutation(async ({ input }) => {
+      const deleted = await delete_live_docket_entry(input.id);
+      if (!deleted) throw new TRPCError({ code: "NOT_FOUND" });
       return { success: true };
     }),
 
@@ -172,108 +214,54 @@ export const docketRouter = router({
       impacts: z.array(impactInput),
       sources: z.array(sourceInput),
     }))
-    .mutation(async ({ input }) => {
-      const now = Date.now();
-
-      // Check if slug already exists
-      const existing = await docket_db.getDocketEntryBySlug(input.entry.slug);
-      if (existing) {
-        // Update existing entry
-        await docket_db.updateDocketEntry(existing.id, input.entry);
-        await docket_db.deleteActorsForDocket(existing.id);
-        await docket_db.deleteImpactsForDocket(existing.id);
-        await docket_db.deleteSourcesForDocket(existing.id);
-
-        if (input.actors.length > 0) {
-          await docket_db.bulkCreateActors(input.actors.map(a => ({ ...a, docketId: existing.id, createdAt: now })));
-        }
-        if (input.impacts.length > 0) {
-          await docket_db.bulkCreateImpacts(input.impacts.map(i => ({ ...i, docketId: existing.id, createdAt: now })));
-        }
-        if (input.sources.length > 0) {
-          await docket_db.bulkCreateSources(input.sources.map(s => ({ ...s, docketId: existing.id, createdAt: now })));
-        }
-
-        return { id: existing.id, updated: true };
-      }
-
-      // Create new entry
-      const id = await docket_db.createDocketEntry({
-        ...input.entry,
-        createdAt: now,
-        updatedAt: now,
-      });
-
-      if (input.actors.length > 0) {
-        await docket_db.bulkCreateActors(input.actors.map(a => ({ ...a, docketId: id, createdAt: now })));
-      }
-      if (input.impacts.length > 0) {
-        await docket_db.bulkCreateImpacts(input.impacts.map(i => ({ ...i, docketId: id, createdAt: now })));
-      }
-      if (input.sources.length > 0) {
-        await docket_db.bulkCreateSources(input.sources.map(s => ({ ...s, docketId: id, createdAt: now })));
-      }
-
-      return { id, updated: false };
-    }),
+    .mutation(async () =>
+      throwDocketComponentUnavailable("Full docket analysis seeding"),
+    ),
 
   // ─── Actor sub-routes ───
 
   actors: router({
     list: publicProcedure
-      .input(z.object({ docketId: z.number() }))
-      .query(async ({ input }) => {
-        return docket_db.listActorsForDocket(input.docketId);
-      }),
+      .input(z.object({ docketId: liveDocketEntryId }))
+      .query(async () => []),
 
     create: adminProcedure
-      .input(z.object({ docketId: z.number() }).merge(actorInput))
-      .mutation(async ({ input }) => {
-        const { docketId, ...data } = input;
-        const id = await docket_db.createDocketActor({ ...data, docketId, createdAt: Date.now() });
-        return { id };
-      }),
+      .input(z.object({ docketId: liveDocketEntryId }).merge(actorInput))
+      .mutation(async () => throwDocketComponentUnavailable("Docket actors")),
   }),
 
   // ─── Impact sub-routes ───
 
   impacts: router({
     list: publicProcedure
-      .input(z.object({ docketId: z.number() }))
-      .query(async ({ input }) => {
-        return docket_db.listImpactsForDocket(input.docketId);
-      }),
+      .input(z.object({ docketId: liveDocketEntryId }))
+      .query(async () => []),
 
     create: adminProcedure
-      .input(z.object({ docketId: z.number() }).merge(impactInput))
-      .mutation(async ({ input }) => {
-        const { docketId, ...data } = input;
-        const id = await docket_db.createDocketImpact({ ...data, docketId, createdAt: Date.now() });
-        return { id };
-      }),
+      .input(z.object({ docketId: liveDocketEntryId }).merge(impactInput))
+      .mutation(async () => throwDocketComponentUnavailable("Docket impacts")),
   }),
 
   // ─── Source sub-routes ───
 
   sources: router({
     list: publicProcedure
-      .input(z.object({ docketId: z.number() }))
-      .query(async ({ input }) => {
-        return docket_db.listSourcesForDocket(input.docketId);
-      }),
+      .input(z.object({ docketId: liveDocketEntryId }))
+      .query(async () => []),
 
     create: adminProcedure
-      .input(z.object({ docketId: z.number() }).merge(sourceInput))
-      .mutation(async ({ input }) => {
-        const { docketId, ...data } = input;
-        const id = await docket_db.createDocketSource({ ...data, docketId, createdAt: Date.now() });
-        return { id };
-      }),
+      .input(z.object({ docketId: liveDocketEntryId }).merge(sourceInput))
+      .mutation(async () => throwDocketComponentUnavailable("Docket sources")),
   }),
 
   // ─── Submission sub-routes ───
 
   submissions: router({
+    /** Explicit storage readiness for all submission UI surfaces. */
+    availability: publicProcedure.query(
+      async () => docketSubmissionAvailability,
+    ),
+
     /** Submit a law for analysis (authenticated users) */
     create: protectedProcedure
       .input(z.object({
@@ -285,33 +273,9 @@ export const docketRouter = router({
         fileName: z.string().max(512).optional(),
         notes: z.string().max(2000).optional(),
       }))
-      .mutation(async ({ ctx, input }) => {
-        const now = Date.now();
-        const id = await docket_db.createDocketSubmission({
-          userId: ctx.user.id,
-          userName: ctx.user.name ?? undefined,
-          userEmail: ctx.user.email ?? undefined,
-          lawTitle: input.lawTitle,
-          jurisdiction: input.jurisdiction,
-          jurisdictionLevel: input.jurisdictionLevel,
-          referenceUrl: input.referenceUrl,
-          fileUrl: input.fileUrl,
-          fileName: input.fileName,
-          notes: input.notes,
-          status: "pending",
-          createdAt: now,
-          updatedAt: now,
-        });
-
-        // Notify owner of new submission
-        const fileNote = input.fileName ? ` [Attached: ${input.fileName}]` : "";
-        await notifyOwner({
-          title: "New Docket Room Submission",
-          content: `${ctx.user.name ?? "A user"} submitted "${input.lawTitle}" (${input.jurisdiction}, ${input.jurisdictionLevel}) for analysis.${fileNote}`,
-        }).catch(() => {});
-
-        return { id };
-      }),
+      .mutation(async () =>
+        throwDocketComponentUnavailable("Docket submissions"),
+      ),
 
     /** List current user's submissions */
     mine: protectedProcedure
@@ -319,13 +283,7 @@ export const docketRouter = router({
         limit: z.number().min(1).max(50).default(20),
         offset: z.number().min(0).default(0),
       }).optional())
-      .query(async ({ ctx, input }) => {
-        return docket_db.listDocketSubmissions({
-          userId: ctx.user.id,
-          limit: input?.limit,
-          offset: input?.offset,
-        });
-      }),
+      .query(async () => []),
 
     /** List all submissions (admin only) */
     listAll: adminProcedure
@@ -334,9 +292,7 @@ export const docketRouter = router({
         limit: z.number().min(1).max(100).default(50),
         offset: z.number().min(0).default(0),
       }).optional())
-      .query(async ({ input }) => {
-        return docket_db.listDocketSubmissions(input);
-      }),
+      .query(async () => []),
 
     /** Update submission status (admin only) */
     updateStatus: adminProcedure
@@ -344,18 +300,11 @@ export const docketRouter = router({
         id: z.number(),
         status: z.enum(["pending", "in_review", "published", "rejected"]),
         adminNotes: z.string().optional(),
-        docketEntryId: z.number().optional(),
+        docketEntryId: liveDocketEntryId.optional(),
       }))
-      .mutation(async ({ input }) => {
-        const existing = await docket_db.getDocketSubmission(input.id);
-        if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
-        await docket_db.updateDocketSubmission(input.id, {
-          status: input.status,
-          adminNotes: input.adminNotes,
-          docketEntryId: input.docketEntryId,
-        });
-        return { success: true };
-      }),
+      .mutation(async () =>
+        throwDocketComponentUnavailable("Docket submissions"),
+      ),
   }),
 
   /**

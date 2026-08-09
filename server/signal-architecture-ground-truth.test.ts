@@ -13,7 +13,10 @@ describe("canonical three-domain signal architecture", () => {
   const identity_projection = read_repo_file(
     "../supabase/migrations/20260731192928_atlas_observation_identity_projection.sql",
   );
-  const router = read_repo_file("./routers/enforcement-intel.ts");
+  const root_router = read_repo_file("./routers.ts");
+  const production_router = read_repo_file("./routers/enforcement-intelligence.ts");
+  const compatibility_router = read_repo_file("./routers/enforcement-intel.ts");
+  const read_model = read_repo_file("./signal-architecture-read-model.ts");
   const page = read_repo_file("../client/src/pages/SignalRegistry.tsx");
 
   it("keeps all three source domains in separate canonical stores", () => {
@@ -75,15 +78,26 @@ describe("canonical three-domain signal architecture", () => {
     expect(identity_projection).toContain(
       "count(distinct public.lighthouse_atlas_event_identity_hash_v1",
     );
-    expect(router).toContain("atlas_unique_observation_count");
-    expect(router).toContain("atlas_replay_observation_count");
+    expect(read_model).toContain("atlas_unique_observation_count");
+    expect(read_model).toContain("atlas_replay_observation_count");
   });
 
-  it("protects intake detail on the cross-system runtime surface", () => {
-    expect(router).toContain("get_signal_architecture: protectedProcedure");
-    expect(router).toContain('const is_intake = row.domain_code === "case_intake"');
-    expect(router).toContain('title: is_intake ? "Case-intake breakpoint"');
-    expect(router).toContain("Individual intake details are restricted");
+  it("mounts the protected procedure from the active production router", () => {
+    expect(root_router).toContain('import { enforcementIntelligenceRouter } from "./routers/enforcement-intelligence"');
+    expect(root_router).toContain("enforcementIntel: enforcementIntelligenceRouter");
+    expect(production_router).toContain("get_signal_architecture: protectedProcedure");
+    expect(production_router).toContain("read_signal_architecture");
+    expect(compatibility_router).toContain("read_signal_architecture");
+    expect(production_router).not.toContain("v_signal_architecture_summary");
+    expect(compatibility_router).not.toContain("v_signal_architecture_summary");
+  });
+
+  it("excludes intake rows from the global recent-record read model", () => {
+    expect(read_model).toContain("where domain_code <> 'case_intake'");
+    expect(read_model).toContain('row.domain_code !== "case_intake"');
+    expect(read_model).not.toContain('"Case-intake breakpoint"');
+    expect(read_model.match(/pool\.query/g)).toHaveLength(1);
+    expect(read_model).not.toContain("Promise.all");
   });
 
   it("renders the canonical architecture instead of the mixed legacy registry", () => {

@@ -1,6 +1,5 @@
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
-import { useAuth } from "@/core/hooks/useAuth";
 import { Link } from "wouter";
 
 const c = {
@@ -22,22 +21,29 @@ function urgencyColor(urgency: string) {
     case "critical": return { bg: c.redBg, border: c.redBorder, text: c.red, label: "CRITICAL" };
     case "warning": return { bg: c.goldBg, border: c.goldBorder, text: c.gold, label: "WARNING" };
     case "safe": return { bg: c.greenBg, border: c.greenBorder, text: c.green, label: "SAFE" };
-    default: return { bg: c.purpleBg, border: c.purpleBorder, text: c.purple, label: "NO DEADLINE" };
+    case "no_deadline": return { bg: c.purpleBg, border: c.purpleBorder, text: c.purple, label: "NO DEADLINE" };
+    default: return { bg: c.purpleBg, border: c.purpleBorder, text: c.purple, label: "UNAVAILABLE" };
   }
 }
 
+function localTodayDateOnly() {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 export default function DeadlineCalculator() {
-  const { isAuthenticated } = useAuth();
   const [incidentDate, setIncidentDate] = useState("");
   const [selectedAgency, setSelectedAgency] = useState<string>("");
   const agencies = trpc.enforcementIntel.listAgencies.useQuery();
+  const today = useMemo(localTodayDateOnly, []);
 
-  const { data: deadlines, isLoading } = trpc.enforcementIntel.calculateDeadline.useQuery(
-    { incidentDate, agencyShort: selectedAgency || undefined },
+  const { data: deadlines, isLoading, isError, error } = trpc.enforcementIntel.calculateDeadline.useQuery(
+    { incidentDate, asOfDate: today, agencyShort: selectedAgency || undefined },
     { enabled: !!incidentDate }
   );
-
-  const today = useMemo(() => new Date().toISOString().split("T")[0], []);
 
   return (
     <div style={{ minHeight: "100vh", background: c.bg, color: c.paper }}>
@@ -55,7 +61,7 @@ export default function DeadlineCalculator() {
             Filing Deadline Calculator
           </h1>
           <p style={{ fontSize: 12, color: c.muted, margin: "2px 0 0 0" }}>
-            Compute remaining days for agency complaint filings based on incident date
+            Check source-bound agency filing-deadline records without guessing missing legal rules
           </p>
         </div>
       </div>
@@ -100,16 +106,17 @@ export default function DeadlineCalculator() {
                 }}
               >
                 <option value="">All Agencies</option>
-                {agencies.data && agencies.data.map((a: any) => (
-                  <option key={a.id} value={a.agencyName}>{a.agencyName}</option>
+                {agencies.data?.map((a: any) => (
+                  <option key={a.id} value={a.agencyShort}>
+                    {a.agencyName}{a.agencyShort ? ` (${a.agencyShort})` : ""}
+                  </option>
                 ))}
-                {!agencies.data && <>
-                  <option value="EEOC">EEOC</option>
-                  <option value="HUD">HUD</option>
-                  <option value="OSHA">OSHA</option>
-                  <option value="FTC">FTC</option>
-                </>}
               </select>
+              {agencies.isError && (
+                <p style={{ fontSize: 11, color: c.red, marginTop: 6 }}>
+                  Agency choices are unavailable. You may still check the complete governed catalog.
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -122,18 +129,51 @@ export default function DeadlineCalculator() {
           }}>
             <div style={{ fontSize: 36, marginBottom: 12 }}>⏱</div>
             <p style={{ color: c.muted, fontSize: 14 }}>
-              Enter an incident date above to calculate filing deadlines across all agencies
+              Enter an incident date to check the governed agency deadline catalog
             </p>
           </div>
         )}
 
         {incidentDate && isLoading && (
           <div style={{ textAlign: "center", padding: 48, color: c.muted }}>
-            Calculating deadlines...
+            Checking source-bound deadline records...
           </div>
         )}
 
-        {deadlines && deadlines.length > 0 && (
+        {incidentDate && !isLoading && isError && (
+          <div style={{
+            background: c.surface, border: `1px solid ${c.redBorder}`, borderRadius: 12,
+            padding: 32, textAlign: "center",
+          }}>
+            <p style={{ color: c.red, fontSize: 14, fontWeight: 600, margin: 0 }}>
+              Deadline catalog unavailable
+            </p>
+            <p style={{ color: c.muted, fontSize: 12, lineHeight: 1.6, margin: "8px auto 0", maxWidth: 680 }}>
+              No conclusion can be drawn from this failed lookup. Confirm any filing date directly with controlling authority or qualified counsel.
+            </p>
+            {error?.message && (
+              <p style={{ color: c.dim, fontSize: 10, margin: "8px auto 0", maxWidth: 680 }}>
+                {error.message}
+              </p>
+            )}
+          </div>
+        )}
+
+        {incidentDate && !isLoading && !isError && deadlines && deadlines.length === 0 && (
+          <div style={{
+            background: c.surface, border: `1px solid ${c.purpleBorder}`, borderRadius: 12,
+            padding: 32, textAlign: "center",
+          }}>
+            <p style={{ color: c.paper, fontSize: 14, fontWeight: 600, margin: 0 }}>
+              No verified operative day value is available for this selection
+            </p>
+            <p style={{ color: c.muted, fontSize: 12, lineHeight: 1.6, margin: "8px auto 0", maxWidth: 680 }}>
+              The catalog does not contain a source-bound structured deadline that can be calculated safely. No deadline has been inferred from agency names or hard-coded defaults.
+            </p>
+          </div>
+        )}
+
+        {!isError && deadlines && deadlines.length > 0 && (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {deadlines.map((d, i) => {
               const uc = urgencyColor(d.urgency);
@@ -172,7 +212,24 @@ export default function DeadlineCalculator() {
 
                   {/* Deadline Details */}
                   <div style={{ padding: 20 }}>
-                    {d.noDeadline ? (
+                    {d.calculationState === "source_text_only" ? (
+                      <div style={{
+                        background: c.purpleBg, border: `1px solid ${c.purpleBorder}`,
+                        borderRadius: 8, padding: 16,
+                      }}>
+                        <p style={{ color: c.purple, fontSize: 14, fontWeight: 600, margin: 0 }}>
+                          Deadline text is present, but no structured day value is verified
+                        </p>
+                        <p style={{ color: c.muted, fontSize: 12, margin: "6px 0 0 0", lineHeight: 1.6 }}>
+                          {d.filingDeadlineText}
+                        </p>
+                        {d.sourceUrl && (
+                          <a href={d.sourceUrl} target="_blank" rel="noopener noreferrer" style={{ color: c.teal, fontSize: 12, display: "inline-block", marginTop: 8 }}>
+                            Open agency source
+                          </a>
+                        )}
+                      </div>
+                    ) : d.noDeadline ? (
                       <div style={{
                         background: c.purpleBg, border: `1px solid ${c.purpleBorder}`,
                         borderRadius: 8, padding: 16, textAlign: "center",
@@ -269,7 +326,7 @@ export default function DeadlineCalculator() {
                     )}
 
                     {/* Timeline Bar */}
-                    {!d.noDeadline && d.primaryDeadlineDays && d.primaryDaysRemaining !== null && (
+                    {d.calculationState === "calculated" && d.primaryDeadlineDays && d.primaryDaysRemaining !== null && (
                       <div style={{ marginTop: 16 }}>
                         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: c.dim, marginBottom: 4 }}>
                           <span>Incident: {d.incidentDate}</span>
@@ -297,17 +354,19 @@ export default function DeadlineCalculator() {
                     )}
 
                     {/* Raw filing deadline text */}
-                    <div style={{
-                      marginTop: 12, padding: "8px 12px", background: c.surfaceAlt,
-                      borderRadius: 6, border: `1px solid ${c.border}`,
-                    }}>
-                      <span style={{ color: c.dim, fontSize: 10, fontFamily: fontMono, textTransform: "uppercase" }}>
-                        Official Filing Deadline
-                      </span>
-                      <p style={{ color: c.muted, fontSize: 12, margin: "4px 0 0 0", lineHeight: 1.5 }}>
-                        {d.filingDeadlineText}
-                      </p>
-                    </div>
+                    {d.calculationState !== "source_text_only" && d.filingDeadlineText && (
+                      <div style={{
+                        marginTop: 12, padding: "8px 12px", background: c.surfaceAlt,
+                        borderRadius: 6, border: `1px solid ${c.border}`,
+                      }}>
+                        <span style={{ color: c.dim, fontSize: 10, fontFamily: fontMono, textTransform: "uppercase" }}>
+                          Source Filing-Deadline Text
+                        </span>
+                        <p style={{ color: c.muted, fontSize: 12, margin: "4px 0 0 0", lineHeight: 1.5 }}>
+                          {d.filingDeadlineText}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -322,10 +381,9 @@ export default function DeadlineCalculator() {
             border: `1px solid ${c.border}`, borderRadius: 8,
           }}>
             <p style={{ color: c.dim, fontSize: 11, margin: 0, lineHeight: 1.6 }}>
-              <strong style={{ color: c.gold }}>Disclaimer:</strong> These calculations are estimates based on standard federal filing deadlines.
-              Actual deadlines may vary based on state deferral agreements, tolling provisions, equitable exceptions,
-              and specific circumstances. Consult with a qualified attorney for precise deadline determinations.
-              Extended deadlines may apply in deferral states or under specific conditions noted above.
+              <strong style={{ color: c.gold }}>Deadline safety:</strong> A date is calculated only when the catalog supplies a structured operative value and source context.
+              Missing values remain unavailable; the application does not substitute standard agency-name defaults.
+              Tolling, forum, notice, jurisdiction, and case-specific trigger rules may change an actual deadline. Confirm any filing date with controlling authority or qualified counsel.
             </p>
           </div>
         )}

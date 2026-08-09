@@ -4,15 +4,15 @@
  */
 import { router, publicProcedure } from "../_core/trpc";
 import { z } from "zod";
-import mysql from "mysql2/promise";
-import { db, pool } from "../db";
+import { query_with_diagnostics } from "../db";
 import {
-  formsRegistry,
-  agenciesRegistry,
-  escalationRegistry,
-  mentalHealthResources,
-} from "../../drizzle/schema";
-import { eq, and, like } from "drizzle-orm";
+  get_live_registry_agency,
+  get_live_registry_form,
+  list_live_escalation_paths,
+  list_live_registry_agencies,
+  list_live_registry_forms,
+  mental_health_resources_unavailable,
+} from "../registry-live-read-compat";
 
 console.log("🔥 REGISTRY ROUTER LOADED");
 
@@ -28,13 +28,10 @@ export const registryRouter = router({
       jurisdiction: z.string().optional(),
     }))
     .query(async ({ input }) => {
-      const conditions: ReturnType<typeof eq>[] = [
-        eq(formsRegistry.isActive, true),
-      ];
-      if (input.domain) conditions.push(eq(formsRegistry.domain, input.domain as any));
-      if (input.jurisdiction) conditions.push(eq(formsRegistry.jurisdiction, input.jurisdiction));
-
-      return await db.select().from(formsRegistry).where(and(...conditions));
+      return list_live_registry_forms({
+        domain: input.domain,
+        jurisdiction: input.jurisdiction,
+      });
     }),
 
   /**
@@ -46,28 +43,19 @@ export const registryRouter = router({
       domain: z.string().optional(),
     }))
     .query(async ({ input }) => {
-      const conditions: ReturnType<typeof eq>[] = [
-        like(formsRegistry.formName, `%${input.query}%`) as any,
-        eq(formsRegistry.isActive, true),
-      ];
-      if (input.domain) conditions.push(eq(formsRegistry.domain, input.domain as any));
-
-      return await db.select().from(formsRegistry).where(and(...conditions));
+      return list_live_registry_forms({
+        search: input.query,
+        domain: input.domain,
+      });
     }),
 
   /**
    * Get a specific form by ID
    */
   getFormById: publicProcedure
-    .input(z.object({ formId: z.string() }))
+    .input(z.object({ formId: z.string().uuid() }))
     .query(async ({ input }) => {
-      const form = await db
-        .select()
-        .from(formsRegistry)
-        .where(eq(formsRegistry.id, input.formId))
-        .limit(1);
-
-      return form[0] || null;
+      return get_live_registry_form(input.formId);
     }),
 
   // ─── Agencies Queries ───
@@ -81,28 +69,20 @@ export const registryRouter = router({
       jurisdiction: z.string().optional(),
     }))
     .query(async ({ input }) => {
-      const conditions: ReturnType<typeof eq>[] = [
-        eq(agenciesRegistry.officialStatus, "active"),
-      ];
-      if (input.domain) conditions.push(eq(agenciesRegistry.domain, input.domain as any));
-      if (input.jurisdiction) conditions.push(eq(agenciesRegistry.jurisdiction, input.jurisdiction));
-
-      return await db.select().from(agenciesRegistry).where(and(...conditions));
+      return list_live_registry_agencies({
+        domain: input.domain,
+        jurisdiction: input.jurisdiction,
+      });
     }),
 
   /**
    * Get a specific agency by ID
    */
   getAgencyById: publicProcedure
-    .input(z.object({ agencyId: z.string() }))
+    .input(z.object({ agencyId: z.string().nullish() }))
     .query(async ({ input }) => {
-      const agency = await db
-        .select()
-        .from(agenciesRegistry)
-        .where(eq(agenciesRegistry.id, input.agencyId))
-        .limit(1);
-
-      return agency[0] || null;
+      if (!input.agencyId) return null;
+      return get_live_registry_agency(input.agencyId);
     }),
 
   /**
@@ -111,15 +91,7 @@ export const registryRouter = router({
   getFormsByAgency: publicProcedure
     .input(z.object({ agencyId: z.string() }))
     .query(async ({ input }) => {
-      return await db
-        .select()
-        .from(formsRegistry)
-        .where(
-          and(
-            eq(formsRegistry.agencyId, input.agencyId),
-            eq(formsRegistry.isActive, true)
-          )
-        );
+      return list_live_registry_forms({ agencyId: input.agencyId });
     }),
 
   // ─── Escalation Queries ───
@@ -133,12 +105,11 @@ export const registryRouter = router({
       domain: z.string().optional(),
     }))
     .query(async ({ input }) => {
-      const conditions: ReturnType<typeof eq>[] = [
-        eq(escalationRegistry.fromAgencyId, input.agencyId),
-      ];
-      if (input.domain) conditions.push(eq(escalationRegistry.domain, input.domain as any));
-
-      return await db.select().from(escalationRegistry).where(and(...conditions));
+      return list_live_escalation_paths({
+        agencyId: input.agencyId,
+        direction: "from",
+        domain: input.domain,
+      });
     }),
 
   /**
@@ -150,12 +121,11 @@ export const registryRouter = router({
       domain: z.string().optional(),
     }))
     .query(async ({ input }) => {
-      const conditions: ReturnType<typeof eq>[] = [
-        eq(escalationRegistry.toAgencyId, input.agencyId),
-      ];
-      if (input.domain) conditions.push(eq(escalationRegistry.domain, input.domain as any));
-
-      return await db.select().from(escalationRegistry).where(and(...conditions));
+      return list_live_escalation_paths({
+        agencyId: input.agencyId,
+        direction: "to",
+        domain: input.domain,
+      });
     }),
 
   /**
@@ -167,12 +137,10 @@ export const registryRouter = router({
       jurisdiction: z.string().optional(),
     }))
     .query(async ({ input }) => {
-      const conditions: ReturnType<typeof eq>[] = [
-        eq(escalationRegistry.domain, input.domain as any),
-      ];
-      if (input.jurisdiction) conditions.push(eq(escalationRegistry.jurisdiction, input.jurisdiction));
-
-      return await db.select().from(escalationRegistry).where(and(...conditions));
+      return list_live_escalation_paths({
+        domain: input.domain,
+        jurisdiction: input.jurisdiction,
+      });
     }),
 
   // ─── Mental Health Resources Queries ───
@@ -186,14 +154,10 @@ export const registryRouter = router({
       jurisdiction: z.string().optional(),
     }))
     .query(async ({ input }) => {
-      const conditions: ReturnType<typeof eq>[] = [];
-      if (input.resourceType) conditions.push(eq(mentalHealthResources.resourceType, input.resourceType as any));
-      if (input.jurisdiction) conditions.push(eq(mentalHealthResources.jurisdiction, input.jurisdiction));
-
-      if (conditions.length === 0) {
-        return await db.select().from(mentalHealthResources);
-      }
-      return await db.select().from(mentalHealthResources).where(and(...conditions));
+      return {
+        ...mental_health_resources_unavailable,
+        requestedFilters: input,
+      };
     }),
 
   /**
@@ -205,12 +169,10 @@ export const registryRouter = router({
       jurisdiction: z.string().optional(),
     }))
     .query(async ({ input }) => {
-      const conditions: ReturnType<typeof eq>[] = [
-        like(mentalHealthResources.resourceName, `%${input.query}%`) as any,
-      ];
-      if (input.jurisdiction) conditions.push(eq(mentalHealthResources.jurisdiction, input.jurisdiction));
-
-      return await db.select().from(mentalHealthResources).where(and(...conditions));
+      return {
+        ...mental_health_resources_unavailable,
+        requestedFilters: input,
+      };
     }),
 
   /**
@@ -219,13 +181,11 @@ export const registryRouter = router({
   getMentalHealthResourceById: publicProcedure
     .input(z.object({ resourceId: z.string() }))
     .query(async ({ input }) => {
-      const resource = await db
-        .select()
-        .from(mentalHealthResources)
-        .where(eq(mentalHealthResources.id, input.resourceId))
-        .limit(1);
-
-      return resource[0] || null;
+      return {
+        ...mental_health_resources_unavailable,
+        resource: null,
+        requestedResourceId: input.resourceId,
+      };
     }),
 
   // ─── Composite Queries ───
@@ -239,198 +199,180 @@ export const registryRouter = router({
       jurisdiction: z.string().optional(),
     }))
     .query(async ({ input }) => {
-      const agencyConditions: ReturnType<typeof eq>[] = [
-        eq(agenciesRegistry.officialStatus, "active"),
-        eq(agenciesRegistry.domain, input.domain as any),
-      ];
-      if (input.jurisdiction) agencyConditions.push(eq(agenciesRegistry.jurisdiction, input.jurisdiction));
-
-      const formConditions: ReturnType<typeof eq>[] = [
-        eq(formsRegistry.isActive, true),
-        eq(formsRegistry.domain, input.domain as any),
-      ];
-      if (input.jurisdiction) formConditions.push(eq(formsRegistry.jurisdiction, input.jurisdiction));
-
-      const escalationConditions: ReturnType<typeof eq>[] = [
-        eq(escalationRegistry.domain, input.domain as any),
-      ];
-      if (input.jurisdiction) escalationConditions.push(eq(escalationRegistry.jurisdiction, input.jurisdiction));
-
       const [agencies, forms, escalations] = await Promise.all([
-        db.select().from(agenciesRegistry).where(and(...agencyConditions)),
-        db.select().from(formsRegistry).where(and(...formConditions)),
-        db.select().from(escalationRegistry).where(and(...escalationConditions)),
+        list_live_registry_agencies({
+          domain: input.domain,
+          jurisdiction: input.jurisdiction,
+        }),
+        list_live_registry_forms({
+          domain: input.domain,
+          jurisdiction: input.jurisdiction,
+        }),
+        list_live_escalation_paths({
+          domain: input.domain,
+          jurisdiction: input.jurisdiction,
+        }),
       ]);
+
+      const escalationPaths = escalations.paths;
 
       return {
         domain: input.domain,
         jurisdiction: input.jurisdiction || "NATIONAL",
         agencies,
         forms,
-        escalations,
+        escalations: escalationPaths,
         summary: {
+          agencyCount: agencies.length,
+          formCount: forms.length,
+          escalationCount: escalationPaths.length,
           agency_count: agencies.length,
           form_count: forms.length,
-          escalation_count: escalations.length,
+          escalation_count: escalationPaths.length,
+        },
+        availability: {
+          forms: { available: true, source: "forms_registry" },
+          agencies: { available: true, source: "agencies_registry" },
+          escalations: {
+            available: escalations.available,
+            state: escalations.state,
+            reason: escalations.reason,
+            message: escalations.message,
+            source: "escalation_registry",
+            jurisdictionFilterAvailable: false,
+            domainFilterAvailable: false,
+          },
         },
       };
     }),
 
   /**
-   * Get all workflows (from workflow_pipeline table)
-   * Raw data - no mapping
+   * Get canonical workflows from the production Supabase registry.
    */
   getWorkflows: publicProcedure
     .query(async () => {
-      const connection = await mysql.createConnection({
-        host: "gateway04.us-east-1.prod.aws.tidbcloud.com",
-        port: 4000,
-        user: "2jhK1AfHyk6mXSq.root",
-        password: "2k5Lq94U8voiLkatA3uZ",
-        database: "luminari_registry",
-        ssl: { rejectUnauthorized: true },
-      });
-
-      try {
-        const [workflows] = await connection.query(
-          `SELECT * FROM workflow_pipeline LIMIT 50`
-        );
-        return workflows;
-      } finally {
-        await connection.end();
-      }
+      const result = await query_with_diagnostics(
+        `select * from public.workflow_master order by title, id limit 50`,
+        [],
+        { label: "registry_workflow_master" },
+      );
+      return result.rows;
     }),
 
   /**
-   * Get all workflow steps
-   * Raw data - no mapping
+   * Get canonical workflow steps from the production Supabase registry.
    */
   getWorkflowSteps: publicProcedure
     .query(async () => {
-      const connection = await mysql.createConnection({
-        host: "gateway04.us-east-1.prod.aws.tidbcloud.com",
-        port: 4000,
-        user: "2jhK1AfHyk6mXSq.root",
-        password: "2k5Lq94U8voiLkatA3uZ",
-        database: "luminari_registry",
-        ssl: { rejectUnauthorized: true },
-      });
-
-      try {
-        const [steps] = await connection.query(
-          `SELECT * FROM workflow_step LIMIT 50`
-        );
-        return steps;
-      } finally {
-        await connection.end();
-      }
+      const result = await query_with_diagnostics(
+        `select * from public.workflow_steps
+          order by workflow_id, coalesce(step_order, step_number, 0), id
+          limit 50`,
+        [],
+        { label: "registry_workflow_steps" },
+      );
+      return result.rows;
     }),
 
   /**
-   * Get all accountability routes
-   * Raw data - no mapping
+   * Get canonical escalation/accountability routes.
    */
   getAccountabilityPaths: publicProcedure
     .query(async () => {
-      const connection = await mysql.createConnection({
-        host: "gateway04.us-east-1.prod.aws.tidbcloud.com",
-        port: 4000,
-        user: "2jhK1AfHyk6mXSq.root",
-        password: "2k5Lq94U8voiLkatA3uZ",
-        database: "luminari_registry",
-        ssl: { rejectUnauthorized: true },
-      });
-
-      try {
-        const [paths] = await connection.query(
-          `SELECT * FROM accountability_route LIMIT 50`
-        );
-        return paths;
-      } finally {
-        await connection.end();
-      }
+      const result = await query_with_diagnostics(
+        `select * from public.escalation_routes order by workflow_id, id limit 50`,
+        [],
+        { label: "registry_escalation_routes" },
+      );
+      return result.rows;
     }),
 
   /**
-   * Get all legal statutes
-   * Raw data - no mapping
+   * Get canonical legal statutes.
    */
   getStatutes: publicProcedure
     .query(async () => {
-      const connection = await mysql.createConnection({
-        host: "gateway04.us-east-1.prod.aws.tidbcloud.com",
-        port: 4000,
-        user: "2jhK1AfHyk6mXSq.root",
-        password: "2k5Lq94U8voiLkatA3uZ",
-        database: "luminari_registry",
-        ssl: { rejectUnauthorized: true },
-      });
-
-      try {
-        const [statutes] = await connection.query(
-          `SELECT * FROM legal_statutes LIMIT 50`
-        );
-        return statutes;
-      } finally {
-        await connection.end();
-      }
+      const result = await query_with_diagnostics(
+        `select * from public.legal_statutes order by id limit 50`,
+        [],
+        { label: "registry_legal_statutes" },
+      );
+      return result.rows;
     }),
 
   /**
-   * Get all resources for the Resource Directory
-   * Inline connection - no modules, no abstraction
+   * Get bounded resource projections from the canonical Supabase registry.
    */
   getResources: publicProcedure
     .query(async () => {
       try {
-        // Query agency_forms (canonical table)
-        const [forms] = await pool.query(
-          `SELECT id, formName as name, pipelineCategory as domain, agency as jurisdiction, link as url, filingDeadline
-           FROM agency_forms
-           LIMIT 100`
-        ) as any[];
-
-        // Query unified_resources for mental health resources
-        const [mentalHealth] = await pool.query(
-          `SELECT id, name, category as type, jurisdictionId as jurisdiction, phone, website, description as services_provided
-           FROM unified_resources
-           WHERE category = 'mental_behavioral_health'
-           LIMIT 100`
-        ) as any[];
-
-        // Query registry_programs for agencies (oversight bodies)
-        const [agencies] = await pool.query(
-          `SELECT id, name_rp as name, category_rp as domain, agency_rp as jurisdiction, NULL as contact_methods, website_rp as website, agency_rp as description
-           FROM registry_programs
-           LIMIT 100`
-        ) as any[];
+        const result = await query_with_diagnostics<{
+          forms: any[];
+          mental_health: any[];
+          agencies: any[];
+        }>(
+          `select
+             coalesce((
+               select jsonb_agg(to_jsonb(f) order by f.agency, f.form_name, f.id)
+                 from (
+                   select id, form_name, pipeline_category, agency, link, filing_deadline
+                     from public.agency_forms
+                    order by agency, form_name, id
+                    limit 100
+                 ) f
+             ), '[]'::jsonb) as forms,
+             coalesce((
+               select jsonb_agg(to_jsonb(r) order by r.name, r.id)
+                 from (
+                   select id, name, category, resource_type, state_code,
+                          jurisdiction_id, phone, website, description
+                     from public.unified_resources
+                    where category = 'mental_behavioral_health'
+                    order by name, id
+                    limit 100
+                 ) r
+             ), '[]'::jsonb) as mental_health,
+             coalesce((
+               select jsonb_agg(to_jsonb(p) order by p.name, p.id)
+                 from (
+                   select id, name, category, agency, jurisdiction_id,
+                          contact_phone_norm, website, apply_notes
+                     from public.registry_programs
+                    order by name, id
+                    limit 100
+                 ) p
+             ), '[]'::jsonb) as agencies`,
+          [],
+          { label: "registry_resources_snapshot" },
+        );
+        const snapshot = result.rows[0] ?? { forms: [], mental_health: [], agencies: [] };
 
         return {
-          agencies: (agencies as any[]).map((a: any) => ({
+          agencies: snapshot.agencies.map((a: any) => ({
             id: a.id,
             name: a.name,
-            domain: a.domain || 'general',
-            jurisdiction: a.jurisdiction || 'WA',
-            phone: null,
+            domain: a.category || 'general',
+            jurisdiction: a.jurisdiction_id || a.agency || 'NATIONAL',
+            phone: a.contact_phone_norm,
             website: a.website,
-            description: a.description,
+            description: a.apply_notes || a.agency,
           })),
-          forms: (forms as any[]).map((f: any) => ({
+          forms: snapshot.forms.map((f: any) => ({
             id: f.id,
-            name: f.name,
-            domain: f.domain || 'general',
-            jurisdiction: f.jurisdiction || 'WA',
-            url: f.url,
-            description: f.filingDeadline ? `Deadline: ${f.filingDeadline}` : "No deadline specified",
+            name: f.form_name,
+            domain: f.pipeline_category || 'general',
+            jurisdiction: f.agency || 'NATIONAL',
+            url: f.link,
+            description: f.filing_deadline ? `Deadline: ${f.filing_deadline}` : "No deadline specified",
           })),
-          mental_health: (mentalHealth as any[]).map((r: any) => ({
+          mental_health: snapshot.mental_health.map((r: any) => ({
             id: r.id,
             name: r.name,
-            type: r.type,
-            jurisdiction: r.jurisdiction,
-            phone: null,
+            type: r.category || r.resource_type,
+            jurisdiction: r.state_code || r.jurisdiction_id,
+            phone: r.phone,
             website: r.website,
-            description: r.services_provided || '',
+            description: r.description || '',
             availability: "Check website",
           })),
         };

@@ -65,8 +65,8 @@ function SimulatorTab() {
     return [
       { label: "Jurisdictions", value: stats.data.jurisdictions, icon: Globe, color: "text-blue-500" },
       { label: "Node Timelines", value: stats.data.nodeTimelines, icon: GitBranch, color: "text-purple-500" },
-      { label: "Timeline Events", value: stats.data.timelineEvents, icon: Clock, color: "text-amber-500" },
-      { label: "Timeline Edges", value: stats.data.timelineEdges, icon: ArrowRight, color: "text-cyan-500" },
+      { label: "Timeline Events", value: stats.data.timelineEvents, unavailable: stats.data.availability.timelineEvents === "table_unavailable", icon: Clock, color: "text-amber-500" },
+      { label: "Timeline Edges", value: stats.data.timelineEdges, unavailable: stats.data.availability.timelineEdges === "table_unavailable", icon: ArrowRight, color: "text-cyan-500" },
       { label: "Workflows", value: stats.data.workflows, icon: Workflow, color: "text-green-500" },
       { label: "Workflow Steps", value: stats.data.workflowSteps, icon: Layers, color: "text-emerald-500" },
       { label: "Evidence Profiles", value: stats.data.evidenceProfiles, icon: Shield, color: "text-indigo-500" },
@@ -85,7 +85,7 @@ function SimulatorTab() {
             <BarChart3 className="h-5 w-5 text-primary" />
             Procedural Engine Coverage
           </CardTitle>
-          <CardDescription>Real-time data counts across the procedural engine's 11 core tables</CardDescription>
+          <CardDescription>Live relation counts; storage that is not established is marked N/A.</CardDescription>
         </CardHeader>
         <CardContent>
           {stats.isLoading ? (
@@ -100,7 +100,9 @@ function SimulatorTab() {
                 <div key={s.label} className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
                   <s.icon className={`h-5 w-5 ${s.color} shrink-0`} />
                   <div className="min-w-0">
-                    <div className="text-xl font-bold tabular-nums">{Number(s.value).toLocaleString()}</div>
+                    <div className="text-xl font-bold tabular-nums">
+                      {s.unavailable ? "N/A" : Number(s.value).toLocaleString()}
+                    </div>
                     <div className="text-xs text-muted-foreground truncate">{s.label}</div>
                   </div>
                 </div>
@@ -288,11 +290,16 @@ function JurisdictionCard({ jurisdiction: j, typeColors }: { jurisdiction: any; 
 
 function TimelineTab() {
   const [eventTypeFilter, setEventTypeFilter] = useState<string>("all");
+  const stats = trpc.proceduralEngine.getProceduralStats.useQuery();
   const events = trpc.proceduralEngine.listTimelineEvents.useQuery(
     eventTypeFilter !== "all" ? { eventType: eventTypeFilter as any } : undefined
   );
   const edges = trpc.proceduralEngine.getTimelineEdges.useQuery();
   const nodes = trpc.proceduralEngine.listNodeTimeline.useQuery();
+  const eventsUnavailable =
+    stats.data?.availability.timelineEvents === "table_unavailable";
+  const edgesUnavailable =
+    stats.data?.availability.timelineEdges === "table_unavailable";
 
   const eventTypeColors: Record<string, string> = {
     court_decision: "bg-blue-500/10 text-blue-500",
@@ -309,7 +316,7 @@ function TimelineTab() {
     <div className="space-y-6 mt-4">
       <div className="grid grid-cols-3 gap-3">
         <Card className="p-4">
-          <div className="text-2xl font-bold">{events.data?.length ?? "—"}</div>
+          <div className="text-2xl font-bold">{eventsUnavailable ? "N/A" : events.data?.length ?? "—"}</div>
           <div className="text-xs text-muted-foreground">Timeline Events</div>
         </Card>
         <Card className="p-4">
@@ -317,7 +324,7 @@ function TimelineTab() {
           <div className="text-xs text-muted-foreground">Node Timelines</div>
         </Card>
         <Card className="p-4">
-          <div className="text-2xl font-bold">{edges.data?.length ?? "—"}</div>
+          <div className="text-2xl font-bold">{edgesUnavailable ? "N/A" : edges.data?.length ?? "—"}</div>
           <div className="text-xs text-muted-foreground">Timeline Edges</div>
         </Card>
       </div>
@@ -345,8 +352,10 @@ function TimelineTab() {
         <CardContent>
           {events.isLoading ? (
             <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-16 rounded bg-muted animate-pulse" />)}</div>
+          ) : eventsUnavailable ? (
+            <p className="text-center text-muted-foreground py-8">Timeline event storage is not established.</p>
           ) : !events.data?.length ? (
-            <p className="text-center text-muted-foreground py-8">No timeline events found</p>
+            <p className="text-center text-muted-foreground py-8">No timeline events found.</p>
           ) : (
             <div className="space-y-2">
               {safeArray<any>(events.data).map((e: any) => (
@@ -371,7 +380,16 @@ function TimelineTab() {
         </CardContent>
       </Card>
 
-      {safeArray(edges.data).length > 0 && (
+      {edgesUnavailable ? (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Timeline Edges</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-center text-muted-foreground py-4">Timeline-edge storage is not established.</p>
+          </CardContent>
+        </Card>
+      ) : safeArray(edges.data).length > 0 && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">Timeline Edges</CardTitle>

@@ -134,11 +134,29 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   under_review: { label: "Under Review", color: dk.purple },
 };
 
+type DocketSubmissionAvailability = {
+  available: boolean;
+  state: "unavailable";
+  reason: "docket_submissions_table_not_established";
+  tableEstablished: boolean;
+  canSubmit: boolean;
+  canReview: boolean;
+  message: string;
+};
+
 // ── Docket List View ─────────────────────────────────────────────────
 
 // ── Submit a Law Modal ──────────────────────────────────────────────
 
-function SubmitLawModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+function SubmitLawModal({
+  open,
+  onClose,
+  availability,
+}: {
+  open: boolean;
+  onClose: () => void;
+  availability?: DocketSubmissionAvailability;
+}) {
   const { user } = useAuth();
   const [lawTitle, setLawTitle] = useState("");
   const [jurisdiction, setJurisdiction] = useState("");
@@ -150,6 +168,7 @@ function SubmitLawModal({ open, onClose }: { open: boolean; onClose: () => void 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (availability?.canSubmit !== true) return;
     const file = e.target.files?.[0];
     if (!file) return;
     const maxSize = 16 * 1024 * 1024;
@@ -180,20 +199,18 @@ function SubmitLawModal({ open, onClose }: { open: boolean; onClose: () => void 
     }
   };
 
-  const utils = trpc.useUtils();
   const submitMut = trpc.docket.submissions.create.useMutation({
-    onSuccess: () => {
-      toast.success("Submission received. We'll review and analyze it.");
-      setLawTitle(""); setJurisdiction(""); setJurisdictionLevel("federal");
-      setReferenceUrl(""); setNotes(""); setUploadedFile(null);
-      onClose();
-    },
     onError: (err) => toast.error(err.message),
   });
 
   if (!open) return null;
 
-  const canSubmit = lawTitle.trim().length > 0 && jurisdiction.trim().length > 0;
+  const submissionReady =
+    availability?.available === true && availability.canSubmit === true;
+  const canSubmit =
+    submissionReady &&
+    lawTitle.trim().length > 0 &&
+    jurisdiction.trim().length > 0;
 
   return (
     <div style={{
@@ -233,6 +250,21 @@ function SubmitLawModal({ open, onClose }: { open: boolean; onClose: () => void 
           <p style={{ fontFamily: fontSans, fontSize: "0.85rem", color: dk.muted, lineHeight: 1.6, margin: 0 }}>
             Submit a law, ordinance, or proposal for structural analysis. Our team will review it and add it to the Docket Room.
           </p>
+
+          {!submissionReady && (
+            <div style={{
+              padding: "0.75rem",
+              background: `${dk.amber}11`,
+              border: `1px solid ${dk.amber}44`,
+              borderRadius: "6px",
+              color: dk.amber,
+              fontFamily: fontSans,
+              fontSize: "0.82rem",
+              lineHeight: 1.5,
+            }}>
+              {availability?.message ?? "Checking submission storage availability."}
+            </div>
+          )}
 
           {/* Law Title */}
           <div>
@@ -350,13 +382,13 @@ function SubmitLawModal({ open, onClose }: { open: boolean; onClose: () => void 
             ) : (
               <button
                 onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
+                disabled={uploading || !submissionReady}
                 style={{
                   display: "flex", alignItems: "center", gap: "0.5rem",
                   width: "100%", padding: "0.6rem 0.75rem",
                   background: dk.bg, border: `1px dashed ${dk.rule}`, borderRadius: "6px",
                   color: dk.muted, fontFamily: fontSans, fontSize: "0.85rem",
-                  cursor: uploading ? "not-allowed" : "pointer",
+                  cursor: uploading || !submissionReady ? "not-allowed" : "pointer",
                   transition: "all 0.15s",
                 }}
               >
@@ -393,6 +425,12 @@ function SubmitLawModal({ open, onClose }: { open: boolean; onClose: () => void 
           {/* Submit */}
           <button
             onClick={() => {
+              if (!submissionReady) {
+                toast.error(
+                  availability?.message ?? "Submission intake is unavailable.",
+                );
+                return;
+              }
               if (!canSubmit) return;
               submitMut.mutate({
                 lawTitle: lawTitle.trim(),
@@ -418,7 +456,11 @@ function SubmitLawModal({ open, onClose }: { open: boolean; onClose: () => void 
             }}
           >
             {submitMut.isPending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-            {submitMut.isPending ? "Submitting..." : "Submit for Analysis"}
+            {!submissionReady
+              ? "Submission Intake Unavailable"
+              : submitMut.isPending
+                ? "Submitting..."
+                : "Submit for Analysis"}
           </button>
         </div>
       </div>
@@ -428,9 +470,35 @@ function SubmitLawModal({ open, onClose }: { open: boolean; onClose: () => void 
 
 // ── My Submissions Panel ────────────────────────────────────────────
 
-function MySubmissions() {
-  const { data: submissions, isLoading } = trpc.docket.submissions.mine.useQuery();
+function MySubmissions({
+  availability,
+}: {
+  availability?: DocketSubmissionAvailability;
+}) {
+  const submissionReady = availability?.available === true;
+  const { data: submissions, isLoading } = trpc.docket.submissions.mine.useQuery(
+    undefined,
+    { enabled: submissionReady },
+  );
 
+  if (availability && !availability.available) {
+    return (
+      <div style={{
+        background: `${dk.amber}0d`,
+        border: `1px solid ${dk.amber}33`,
+        borderRadius: "8px",
+        padding: "0.85rem 1rem",
+        marginBottom: "1.5rem",
+        color: dk.amber,
+        fontFamily: fontSans,
+        fontSize: "0.82rem",
+        lineHeight: 1.5,
+      }}>
+        <AlertTriangle size={14} style={{ display: "inline", marginRight: "0.4rem" }} />
+        {availability.message}
+      </div>
+    );
+  }
   if (isLoading) return null;
   if (!submissions || submissions.length === 0) return null;
 
@@ -997,7 +1065,7 @@ function LegistarLiveFeed({ keyword }: { keyword?: string }) {
 
 // ── Docket List View ─────────────────────────────────────────────────
 
-function DocketList({ onSelect }: { onSelect: (id: number) => void }) {
+function DocketList({ onSelect }: { onSelect: (id: string) => void }) {
   const { user } = useAuth();
   const [, navigate] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
@@ -1019,6 +1087,9 @@ function DocketList({ onSelect }: { onSelect: (id: number) => void }) {
 
   const { data: entries, isLoading } = trpc.docket.list.useQuery(queryInput);
   const { data: stats } = trpc.docket.stats.useQuery();
+  const { data: submissionAvailability } =
+    trpc.docket.submissions.availability.useQuery();
+  const submissionReady = submissionAvailability?.canSubmit === true;
 
   return (
     <div style={{ minHeight: "100vh", background: dk.bg }}>
@@ -1146,6 +1217,7 @@ function DocketList({ onSelect }: { onSelect: (id: number) => void }) {
             </div>
             <button
               onClick={() => {
+                if (!submissionReady) return;
                 if (!user) {
                   toast.info("Sign in to submit a law for analysis.");
                   window.location.href = getLoginUrl();
@@ -1153,21 +1225,39 @@ function DocketList({ onSelect }: { onSelect: (id: number) => void }) {
                 }
                 setShowSubmitModal(true);
               }}
+              disabled={!submissionReady}
+              title={
+                submissionReady
+                  ? "Submit a law for analysis"
+                  : submissionAvailability?.message ?? "Checking submission availability"
+              }
               style={{
                 display: "flex", alignItems: "center", gap: "0.4rem",
                 padding: "0.6rem 1rem",
                 background: dk.steelSoft, border: `1px solid ${dk.steelBorder}`,
-                borderRadius: "6px", cursor: "pointer",
-                color: dk.steelBright, fontFamily: fontMono, fontSize: "0.8rem",
+                borderRadius: "6px", cursor: submissionReady ? "pointer" : "not-allowed",
+                color: submissionReady ? dk.steelBright : dk.muted, fontFamily: fontMono, fontSize: "0.8rem",
                 whiteSpace: "nowrap", transition: "all 0.15s",
+                opacity: submissionReady ? 1 : 0.7,
               }}
               onMouseEnter={e => { e.currentTarget.style.background = dk.steel; e.currentTarget.style.color = "#fff"; }}
               onMouseLeave={e => { e.currentTarget.style.background = dk.steelSoft; e.currentTarget.style.color = dk.steelBright; }}
             >
               <Plus size={14} />
-              Submit a Law
+              {submissionReady ? "Submit a Law" : "Submission Unavailable"}
             </button>
           </div>
+          {submissionAvailability && !submissionAvailability.available && (
+            <div style={{
+              marginTop: "0.6rem",
+              color: dk.amber,
+              fontFamily: fontSans,
+              fontSize: "0.78rem",
+            }}>
+              <AlertTriangle size={12} style={{ display: "inline", marginRight: "0.35rem" }} />
+              {submissionAvailability.message}
+            </div>
+          )}
         </div>
       </div>
 
@@ -1216,7 +1306,7 @@ function DocketList({ onSelect }: { onSelect: (id: number) => void }) {
 
       {/* My Submissions (if logged in) */}
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 1.5rem" }}>
-        {user && <MySubmissions />}
+        {user && <MySubmissions availability={submissionAvailability} />}
       </div>
 
       {/* LegiScan Docket Bill Feed */}
@@ -1258,7 +1348,7 @@ function DocketList({ onSelect }: { onSelect: (id: number) => void }) {
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-            {entries.map((entry: any) => {
+            {entries.map((entry) => {
               const statusInfo = STATUS_LABELS[entry.status] || { label: entry.status, color: dk.muted };
               return (
                 <button
@@ -1350,7 +1440,11 @@ function DocketList({ onSelect }: { onSelect: (id: number) => void }) {
         )}
       </div>
       {/* Submit Law Modal */}
-      <SubmitLawModal open={showSubmitModal} onClose={() => setShowSubmitModal(false)} />
+      <SubmitLawModal
+        open={showSubmitModal}
+        onClose={() => setShowSubmitModal(false)}
+        availability={submissionAvailability}
+      />
     </div>
   );
 }
@@ -1408,7 +1502,7 @@ function Section({ id, children, defaultOpen = true }: { id: string; children: R
 
 // ── Docket Detail View ───────────────────────────────────────────────
 
-function DocketDetail({ id, onBack }: { id: number; onBack: () => void }) {
+function DocketDetail({ id, onBack }: { id: string; onBack: () => void }) {
   const [, navigateTo] = useLocation();
   const { data, isLoading } = trpc.docket.getFullAnalysis.useQuery({ id });
 
@@ -1428,7 +1522,7 @@ function DocketDetail({ id, onBack }: { id: number; onBack: () => void }) {
     );
   }
 
-  const { entry, actors, impacts, sources } = data;
+  const { entry, actors, impacts, sources, componentAvailability } = data;
   const statusInfo = STATUS_LABELS[entry.status] || { label: entry.status, color: dk.muted };
 
   // Group actors by type
@@ -1657,7 +1751,9 @@ function DocketDetail({ id, onBack }: { id: number; onBack: () => void }) {
           <div style={{ paddingTop: "1rem" }}>
             {Object.keys(actorsByType).length === 0 ? (
               <p style={{ fontFamily: fontMono, fontSize: "0.8rem", color: dk.muted, fontStyle: "italic" }}>
-                No actors documented for this entry.
+                {componentAvailability.actors
+                  ? "No actors documented for this entry."
+                  : "Actor-ledger storage is not established for this registry."}
               </p>
             ) : (
               Object.entries(actorsByType).map(([type, typeActors]) => (
@@ -1732,7 +1828,9 @@ function DocketDetail({ id, onBack }: { id: number; onBack: () => void }) {
           <div style={{ paddingTop: "1rem" }}>
             {Object.keys(impactsByCat).length === 0 ? (
               <p style={{ fontFamily: fontMono, fontSize: "0.8rem", color: dk.muted, fontStyle: "italic" }}>
-                No impacts documented for this entry.
+                {componentAvailability.impacts
+                  ? "No impacts documented for this entry."
+                  : "Impact-grid storage is not established for this registry."}
               </p>
             ) : (
               Object.entries(impactsByCat).map(([cat, catImpacts]) => (
@@ -1889,7 +1987,9 @@ function DocketDetail({ id, onBack }: { id: number; onBack: () => void }) {
           <div style={{ paddingTop: "1rem" }}>
             {sources.length === 0 ? (
               <p style={{ fontFamily: fontMono, fontSize: "0.8rem", color: dk.muted, fontStyle: "italic" }}>
-                No sources documented for this entry.
+                {componentAvailability.sources
+                  ? "No sources documented for this entry."
+                  : "Source-ledger storage is not established for this registry."}
               </p>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
@@ -1994,7 +2094,7 @@ function JsonArrayList({ label, items, icon: Icon, color }: {
 // ── Main Component ───────────────────────────────────────────────────
 
 export default function DocketRoom() {
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   if (selectedId !== null) {
     return <DocketDetail id={selectedId} onBack={() => setSelectedId(null)} />;
