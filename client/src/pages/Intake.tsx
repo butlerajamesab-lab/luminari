@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useLocation, useSearch } from "wouter";
+import { caseWorkspacePath } from "@/lib/caseNavigation";
 import { useAuth } from "@/core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -164,7 +165,6 @@ export default function Intake() {
   const createCase = trpc.cases.create.useMutation();
   const logEvent = trpc.analytics.logEvent.useMutation();
   const jurisdictionsQuery = trpc.luminari.jurisdictions.useQuery();
-  const processIntake = trpc.luminari.processIntake.useMutation();
 
   const [selectedJurisdiction, setSelectedJurisdiction] = useState<number | null>(null);
   const [showJurisdictionStep, setShowJurisdictionStep] = useState(false);
@@ -267,20 +267,19 @@ export default function Intake() {
       };
       const category = categoryMap[situationId] || "other";
       
-      // Call luminari processIntake
-      const result = await processIntake.mutateAsync({
-        jurisdiction_id: selectedJurisdiction,
-        category,
-        intake_answers: {
-          situation: situationId,
-          plan,
-          messages: messages.filter((m) => m.role === "user").map((m) => m.content),
-        },
+      const userMessages = messages
+        .filter((message) => message.role === "user")
+        .map((message) => message.content);
+      const result = await createCase.mutateAsync({
+        name: plan.caseName,
+        description: userMessages.join("\n\n") || plan.caseDescription,
+        domain: category,
+        pipelineType: situationId,
       });
       
       logEvent.mutate({ pipelineType: situationId, eventType: "intake_complete" });
       toast.success("Your case has been created. Let's look at your options.");
-      setLocation(`/case/${result.case.id}`);
+      setLocation(caseWorkspacePath(result.id));
     } catch (err: any) {
       toast.error(err.message || "Could not create the case. Please try again.");
       setIsCreating(false);
