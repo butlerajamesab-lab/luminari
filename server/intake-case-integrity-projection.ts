@@ -56,10 +56,6 @@ export type IntakeIntegrityProjection = {
   artifacts: IntakeIntegrityArtifactRecord[];
 };
 
-function as_array(value: unknown): any[] {
-  return Array.isArray(value) ? value : [];
-}
-
 function integrity_failure(message: string, cause?: unknown): never {
   throw new TRPCError({
     code: "INTERNAL_SERVER_ERROR",
@@ -151,6 +147,7 @@ export async function read_case_intake_integrity_projection(
        p.layer_version,
        p.rule_version,
        p.input_hash,
+       p.input_refs,
        p.output_hash,
        p.output_refs,
        p.unresolved_dependencies,
@@ -219,9 +216,31 @@ export function project_intake_integrity_rows(
       };
     }
 
-    const output_refs = as_array(row.output_refs);
-    const unresolved_dependencies = as_array(row.unresolved_dependencies);
-    const receipt = row.receipt ?? {};
+    if (!Array.isArray(row.input_refs)) {
+      integrity_failure(
+        `Layer 3 run ${row.layer_run_id} input references are not an array`,
+      );
+    }
+    if (!Array.isArray(row.output_refs)) {
+      integrity_failure(
+        `Layer 3 run ${row.layer_run_id} output references are not an array`,
+      );
+    }
+    if (!Array.isArray(row.unresolved_dependencies)) {
+      integrity_failure(
+        `Layer 3 run ${row.layer_run_id} unresolved dependencies are not an array`,
+      );
+    }
+
+    const input_refs = row.input_refs;
+    const output_refs = row.output_refs;
+    const unresolved_dependencies = row.unresolved_dependencies;
+    const receipt =
+      row.receipt &&
+      typeof row.receipt === "object" &&
+      !Array.isArray(row.receipt)
+        ? row.receipt
+        : {};
     const metadata = row.output_metadata ?? {};
 
     if (!row.receipt_hash || !SHA256_RE.test(row.receipt_hash)) {
@@ -229,6 +248,24 @@ export function project_intake_integrity_rows(
         `Layer 3 run ${row.layer_run_id} has no valid receipt hash`,
       );
     }
+    validate_receipt_bound_collection(
+      row.layer_run_id,
+      "input references",
+      input_refs,
+      receipt.input_refs_hash,
+    );
+    validate_receipt_bound_collection(
+      row.layer_run_id,
+      "output references",
+      output_refs,
+      receipt.output_refs_hash,
+    );
+    validate_receipt_bound_collection(
+      row.layer_run_id,
+      "unresolved dependencies",
+      unresolved_dependencies,
+      receipt.unresolved_dependencies_hash,
+    );
     if (
       !row.output_artifact_id ||
       row.output_artifact_type !== "intake_layer_output" ||
@@ -292,14 +329,6 @@ export function project_intake_integrity_rows(
         `Source artifact ${row.artifact_id} registration key differs from its SHA-256 identity`,
       );
     }
-    if (
-      row.source_ref_artifact_key !== row.artifact_key ||
-      row.source_ref_sha256 !== row.source_sha256
-    ) {
-      integrity_failure(
-        `Layer 3 run ${row.layer_run_id} source reference differs from source registration`,
-      );
-    }
     const expected_layer_artifact_key = derive_raw_artifact_key(
       row.source_sha256,
     );
@@ -345,6 +374,39 @@ export function project_intake_integrity_rows(
     ) {
       integrity_failure(
         `Layer 3 run ${row.layer_run_id} has an invalid missing-source verification hash`,
+      );
+    }
+
+    const source_refs = input_refs.filter(
+      (ref: any) =>
+        ref && typeof ref === "object" && ref.type === "source_artifact",
+    );
+    if (
+      source_refs.length !== 1 ||
+      String(source_refs[0]?.artifact_id ?? "") !== String(row.artifact_id) ||
+      source_refs[0]?.artifact_key !== row.source_ref_artifact_key ||
+      source_refs[0]?.sha256 !== row.source_ref_sha256
+    ) {
+      integrity_failure(
+        `Layer 3 run ${row.layer_run_id} source reference projection differs from sealed inputs`,
+      );
+    }
+    if (row.source_ref_artifact_key !== row.artifact_key) {
+      integrity_failure(
+        `Layer 3 run ${row.layer_run_id} source reference key differs from source registration`,
+      );
+    }
+
+    // The source-reference key always names the registered artifact. Its hash
+    // names the bytes supplied to Layer 3: the registered hash when preserved
+    // or missing, and the independently verified digest when quarantined.
+    const expected_source_ref_sha256 =
+      data.integrity_status === "quarantined"
+        ? data.verified_sha256
+        : row.source_sha256;
+    if (row.source_ref_sha256 !== expected_source_ref_sha256) {
+      integrity_failure(
+        `Layer 3 run ${row.layer_run_id} source reference hash differs from its preservation state`,
       );
     }
 
@@ -411,6 +473,34 @@ export function project_intake_integrity_rows(
     unresolved_dependency_count,
     artifacts,
   };
+}
+
+function validate_receipt_bound_collection(
+  layer_run_id: unknown,
+  label: string,
+  value: unknown[],
+  sealed_hash: unknown,
+): void {
+  if (typeof sealed_hash !== "string" || !SHA256_RE.test(sealed_hash)) {
+    integrity_failure(
+      `Layer 3 run ${layer_run_id} has no valid sealed ${label} hash`,
+    );
+  }
+
+  let recomputed_hash: string;
+  try {
+    recomputed_hash = computeHash(value);
+  } catch (error) {
+    integrity_failure(
+      `Layer 3 run ${layer_run_id} ${label} cannot be canonically hashed`,
+      error,
+    );
+  }
+  if (recomputed_hash !== sealed_hash) {
+    integrity_failure(
+      `Layer 3 run ${layer_run_id} ${label} differ from the sealed receipt`,
+    );
+  }
 }
 
 function normalize_legacy_document_id(value: unknown): number | null {
