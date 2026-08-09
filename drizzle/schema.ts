@@ -25,6 +25,18 @@ const integer_text = customType<{ data: number; driverData: string }>({
   },
 });
 
+const boolean_integer = customType<{ data: boolean; driverData: number }>({
+  dataType() {
+    return "integer";
+  },
+  toDriver(value) {
+    return value ? 1 : 0;
+  },
+  fromDriver(value) {
+    return Number(value) !== 0;
+  },
+});
+
 // -----------------------------------------------------------------------------
 // Auto-generated Drizzle schema for the Luminari Lighthouse Supabase Postgres DB.
 // Source of truth: lighthouse_schema_grouped.json (116 Postgres tables).
@@ -1454,18 +1466,18 @@ export type CivilGideonDirectory = typeof civilGideonDirectory.$inferSelect;
 export type InsertCivilGideonDirectory = typeof civilGideonDirectory.$inferInsert;
 
 export const claimElementMatrix = pgTable("claim_element_matrix", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  claimType: text("claimType").notNull(),
+  id: serial("id").primaryKey(),
+  claimType: text("claim_type"),
   domain: text("domain"),
-  elementName: text("elementName").notNull(),
-  elementDescription: text("elementDescription"),
-  elementOrder: integer("elementOrder"),
-  evidenceTypes: jsonb("evidenceTypes"),
-  strengthIndicators: jsonb("strengthIndicators"),
-  commonWeaknesses: jsonb("commonWeaknesses"),
-  relatedAgency: text("relatedAgency"),
-  createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
-  updatedAt: timestamp("updatedAt", { withTimezone: true }),
+  elementName: text("element_name"),
+  elementDescription: text("element_description"),
+  elementOrder: integer("element_order"),
+  evidenceTypes: json_text("evidence_types"),
+  strengthIndicators: json_text("strength_indicators"),
+  commonWeaknesses: json_text("common_weaknesses"),
+  relatedAgency: text("related_agency"),
+  createdAt: integer("created_at"),
+  updatedAt: integer("updated_at"),
 });
 
 export type ClaimElement = typeof claimElementMatrix.$inferSelect;
@@ -3460,14 +3472,14 @@ export type Phase2StructuredNote = typeof phase2StructuredNotes.$inferSelect;
 
 export const checklistItems = pgTable("checklist_items", {
   id: serial("id").primaryKey(),
-  caseId: integer("caseId").notNull(),
-  label: varchar("label", { length: 512 }).notNull(),
+  caseId: integer("case_id").notNull(),
+  label: text("label").notNull(),
   description: text("description"),
-  priority: pgEnum("checklist_items_priority_enum", ["critical", "important", "helpful"])("priority").default("important").notNull(),
-  checked: boolean("checked").default(false).notNull(),
-  checkedAt: bigint("checkedAt", { mode: "number" }),
+  priority: text("priority").$type<"critical" | "important" | "helpful">().default("important").notNull(),
+  checked: boolean_integer("checked").default(false).notNull(),
+  checkedAt: bigint("checked_at", { mode: "number" }),
   sortOrder: integer("sort_order").default(0).notNull(),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull(),
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
 }, (table) => [
   index("idx_checklist_case").on(table.caseId),
 ]);
@@ -10470,3 +10482,4 @@ export const foiaTrackerRequests = pgTable("foia_tracker_requests", {
 
 export type FoiaTrackerRequest = typeof foiaTrackerRequests.$inferSelect;
 export type InsertFoiaTrackerRequest = typeof foiaTrackerRequests.$inferInsert;
+
