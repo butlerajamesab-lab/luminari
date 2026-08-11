@@ -16,7 +16,6 @@ function isDatabaseDiagnosticRequest(req: Request): boolean {
 }
 
 function sendDatabaseDiagnosticAuthFailure(
-  req: Request,
   res: Response,
   status: 401 | 403 | 503,
   code: "authentication_required" | "administrator_required" | "authentication_temporarily_unavailable"
@@ -53,7 +52,7 @@ export const requireExpressAdmin: RequestHandler = async (
 
     if (!user) {
       if (isDatabaseDiagnosticRequest(req)) {
-        return sendDatabaseDiagnosticAuthFailure(req, res, 401, "authentication_required");
+        return sendDatabaseDiagnosticAuthFailure(res, 401, "authentication_required");
       }
       return res.status(401).json({
         ok: false,
@@ -63,7 +62,7 @@ export const requireExpressAdmin: RequestHandler = async (
 
     if (user.role !== "admin") {
       if (isDatabaseDiagnosticRequest(req)) {
-        return sendDatabaseDiagnosticAuthFailure(req, res, 403, "administrator_required");
+        return sendDatabaseDiagnosticAuthFailure(res, 403, "administrator_required");
       }
       return res.status(403).json({
         ok: false,
@@ -80,7 +79,7 @@ export const requireExpressAdmin: RequestHandler = async (
       error_class: classifyAuthGateError(error),
     });
     if (isDatabaseDiagnosticRequest(req)) {
-      return sendDatabaseDiagnosticAuthFailure(req, res, 503, "authentication_temporarily_unavailable");
+      return sendDatabaseDiagnosticAuthFailure(res, 503, "authentication_temporarily_unavailable");
     }
     return res.status(503).json({
       ok: false,
