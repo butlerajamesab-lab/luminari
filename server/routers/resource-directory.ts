@@ -2,10 +2,10 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { publicProcedure, router } from "../_core/trpc";
 import {
-  getResourceDirectoryDetail,
-  getResourceDirectorySummary,
-  searchResourceDirectory,
-} from "../services/resource-directory";
+  getPublishableResourceDirectoryDetail,
+  getPublishableResourceDirectorySummary,
+  searchPublishableResourceDirectory,
+} from "../services/resource-directory-publishable";
 
 const searchInput = z
   .object({
@@ -24,11 +24,11 @@ const searchInput = z
 
 export const resourceDirectoryRouter = router({
   summary: publicProcedure.query(async () => {
-    return getResourceDirectorySummary();
+    return getPublishableResourceDirectorySummary();
   }),
 
   search: publicProcedure.input(searchInput).query(async ({ input }) => {
-    return searchResourceDirectory(input ?? {});
+    return searchPublishableResourceDirectory(input ?? {});
   }),
 
   detail: publicProcedure
@@ -43,7 +43,9 @@ export const resourceDirectoryRouter = router({
       })
     )
     .query(async ({ input }) => {
-      const resource = await getResourceDirectoryDetail(input.resourceEntityId);
+      const resource = await getPublishableResourceDirectoryDetail(
+        input.resourceEntityId
+      );
       if (!resource) {
         throw new TRPCError({
           code: "NOT_FOUND",
