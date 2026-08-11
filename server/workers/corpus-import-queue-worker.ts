@@ -38,7 +38,7 @@ function sleep(ms: number) {
 
 // Guards against the esbuild-bundle false-positive: when this module is inlined
 // into dist/index.js, import.meta.url and process.argv[1] both resolve to
-// dist/index.js, so a bare `import.meta.url === \`file://${process.argv[1]}\``
+// dist/index.js, so a bare `import.meta.url === `file://${process.argv[1]}``
 // check would return true and start the worker loop inside the server bundle.
 // The basename check ensures the loop only starts when the file is invoked
 // directly as a standalone worker script named corpus-import-queue-worker*.
@@ -302,4 +302,24 @@ if (is_direct_worker_entry()) {
     console.error(JSON.stringify({ success: false, error: "corpus_import_queue_worker_crashed", message: error?.message ?? String(error) }));
     process.exit(1);
   });
+}
+
+// The mounted ingestion-control REST router imports this worker module on every
+// production boot. Resume only an explicitly queued/running fresh rebuild; do
+// not create work implicitly and do not enter the historical worker loop.
+if (process.env.NODE_ENV === "production" && !is_direct_worker_entry()) {
+  setTimeout(() => {
+    void import("../services/fresh-corpus-reconciliation-v1")
+      .then(({ resumeFreshCorpusRebuildFromDatabase }) =>
+        resumeFreshCorpusRebuildFromDatabase({ batchSize: 6, maxBatches: 40 }))
+      .then(result => {
+        if ((result as any)?.status !== "idle") console.log("[FreshCorpusRebuild] mounted_worker_resume", result);
+      })
+      .catch(error => {
+        console.error("[FreshCorpusRebuild] mounted_worker_resume_failed", {
+          error_class: error instanceof Error ? error.name : "unknown",
+          error_message: error instanceof Error ? error.message.slice(0, 500) : String(error).slice(0, 500),
+        });
+      });
+  }, 15_000);
 }
