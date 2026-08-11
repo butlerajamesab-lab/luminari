@@ -1,7 +1,9 @@
 -- Lighthouse currentness contract for Atlas Domain 3 signal projections.
 --
--- Atlas candidate versions are retained as history. Lighthouse must expose one
--- current row per semantic pattern while preserving every superseded version.
+-- live_data_signals is append-only except for the explicit is_current bit.
+-- Historical records are never rewritten to attach newer metadata. Semantic
+-- currentness is therefore expressed with is_current plus an append-only
+-- transition ledger; new Atlas-projected records carry Atlas version identity.
 
 alter table public.live_data_signals
   add column if not exists atlas_candidate_id uuid,
@@ -39,44 +41,35 @@ as $$
   )
 $$;
 
-update public.live_data_signals
-   set atlas_semantic_key = public.live_data_signal_semantic_key_v1(
-     detection_rule_id,
-     signal_type,
-     primary_stream_id,
-     jurisdiction_id,
-     title
-   )
- where atlas_semantic_key is null;
-
+-- Existing immutable signal records retain their original columns. Collapse
+-- only the mutable currentness bit by recomputing semantic identity at read
+-- time from the immutable record itself.
 with ranked as (
   select
     live_data_signal_id,
-    atlas_semantic_key,
     row_number() over (
-      partition by atlas_semantic_key
+      partition by public.live_data_signal_semantic_key_v1(
+        detection_rule_id,
+        signal_type,
+        primary_stream_id,
+        jurisdiction_id,
+        title
+      )
       order by created_at desc, detected_at desc, live_data_signal_id desc
-    ) as current_rank,
-    lag(live_data_signal_id) over (
-      partition by atlas_semantic_key
-      order by created_at asc, detected_at asc, live_data_signal_id asc
-    ) as prior_signal_id
+    ) as current_rank
   from public.live_data_signals
 )
 update public.live_data_signals signal
-   set is_current = (ranked.current_rank = 1),
-       supersedes_id = ranked.prior_signal_id
+   set is_current = (ranked.current_rank = 1)
   from ranked
- where ranked.live_data_signal_id = signal.live_data_signal_id;
-
-alter table public.live_data_signals
-  alter column atlas_semantic_key set not null;
+ where ranked.live_data_signal_id = signal.live_data_signal_id
+   and signal.is_current is distinct from (ranked.current_rank = 1);
 
 alter table public.live_data_signals
   drop constraint if exists live_data_signals_atlas_semantic_key_check;
 alter table public.live_data_signals
   add constraint live_data_signals_atlas_semantic_key_check
-  check (atlas_semantic_key ~ '^[0-9a-f]{64}$');
+  check (atlas_semantic_key is null or atlas_semantic_key ~ '^[0-9a-f]{64}$');
 
 alter table public.live_data_signals
   drop constraint if exists live_data_signals_atlas_candidate_hash_check;
@@ -84,24 +77,47 @@ alter table public.live_data_signals
   add constraint live_data_signals_atlas_candidate_hash_check
   check (atlas_candidate_hash is null or atlas_candidate_hash ~ '^[0-9a-f]{64}$');
 
-create unique index if not exists live_data_signals_one_current_semantic_idx
+create unique index if not exists live_data_signals_one_current_atlas_semantic_idx
   on public.live_data_signals (atlas_semantic_key)
-  where is_current;
+  where is_current and atlas_semantic_key is not null;
 
-create index if not exists live_data_signals_semantic_history_idx
+create index if not exists live_data_signals_atlas_semantic_history_idx
   on public.live_data_signals (
     atlas_semantic_key,
     is_current,
     created_at desc,
     live_data_signal_id
-  );
+  )
+  where atlas_semantic_key is not null;
 
 comment on column public.live_data_signals.atlas_candidate_id is
-  'Atlas candidate version identity supplied by the canonical Atlas bridge.';
+  'Atlas candidate version identity supplied by the canonical Atlas bridge for v2 projections.';
 comment on column public.live_data_signals.atlas_candidate_hash is
-  'Atlas content/version hash for this projected candidate version.';
+  'Atlas content/version hash supplied by the canonical Atlas bridge for v2 projections.';
 comment on column public.live_data_signals.atlas_semantic_key is
-  'Stable semantic pattern identity used to retain history while exposing one current projection.';
+  'Stable semantic pattern identity supplied by Atlas for v2 projections; legacy immutable rows remain null.';
+
+create table if not exists public.live_data_signal_semantic_transition_v1 (
+  transition_id uuid primary key default gen_random_uuid(),
+  semantic_key text not null check (semantic_key ~ '^[0-9a-f]{64}$'),
+  previous_live_data_signal_id uuid references public.live_data_signals(live_data_signal_id),
+  current_live_data_signal_id uuid not null references public.live_data_signals(live_data_signal_id),
+  atlas_candidate_id uuid,
+  atlas_candidate_hash text check (atlas_candidate_hash is null or atlas_candidate_hash ~ '^[0-9a-f]{64}$'),
+  transition_reason text not null check (transition_reason in ('new_version','reactivated_version')),
+  transition_hash text not null check (transition_hash ~ '^[0-9a-f]{64}$'),
+  transitioned_at timestamptz not null default now()
+);
+
+create index if not exists live_data_signal_semantic_transition_key_idx
+  on public.live_data_signal_semantic_transition_v1 (
+    semantic_key,
+    transitioned_at desc,
+    transition_id
+  );
+
+revoke all on public.live_data_signal_semantic_transition_v1
+  from public, anon, authenticated;
 
 create or replace function public.register_live_data_signal_v1(p_record jsonb)
 returns uuid
@@ -120,6 +136,8 @@ declare
   v_atlas_candidate_hash text;
   v_semantic_key text;
   v_supplied_semantic_key text;
+  v_transition_reason text;
+  v_transition_hash text;
 begin
   if coalesce(p_record->>'signal_type','')=''
      or coalesce(p_record->>'title','')=''
@@ -177,6 +195,8 @@ begin
 
   v_input_hash := public.signal_architecture_hash_v1(p_record - 'created_at');
 
+  -- Atlas v2 projections are content-addressed by Atlas candidate version.
+  -- This removes detector-run timestamps from downstream identity.
   if v_atlas_candidate_hash is not null then
     v_hash := public.signal_architecture_hash_v1(jsonb_build_object(
       'projection_contract','atlas_domain3_candidate_projection_v2',
@@ -188,6 +208,7 @@ begin
       'engine_version',p_record->>'engine_version'
     ));
   else
+    -- Compatibility path for older authorized writers.
     v_hash := public.signal_architecture_hash_v1(jsonb_build_object(
       'domain','live_data',
       'signal_type',p_record->>'signal_type',
@@ -218,10 +239,18 @@ begin
    where signal_hash = v_hash
    limit 1;
 
+  -- Semantic matching covers both immutable legacy rows (which have no stored
+  -- atlas_semantic_key) and v2 rows.
   select live_data_signal_id
     into v_prior_current_id
     from public.live_data_signals
-   where atlas_semantic_key = v_semantic_key
+   where public.live_data_signal_semantic_key_v1(
+           detection_rule_id,
+           signal_type,
+           primary_stream_id,
+           jurisdiction_id,
+           title
+         ) = v_semantic_key
      and is_current is true
      and (v_existing_id is null or live_data_signal_id <> v_existing_id)
    order by created_at desc, live_data_signal_id desc
@@ -229,22 +258,37 @@ begin
    for update;
 
   if v_prior_current_id is not null then
+    -- is_current is the one mutable field explicitly permitted by the
+    -- append-only signal architecture guard.
     update public.live_data_signals
        set is_current = false
      where live_data_signal_id = v_prior_current_id;
   end if;
 
   if v_existing_id is not null then
+    -- Exact replay/reactivation never rewrites immutable signal evidence.
     update public.live_data_signals
-       set is_current = true,
-           supersedes_id = coalesce(v_prior_current_id, supersedes_id),
-           atlas_candidate_id = coalesce(v_atlas_candidate_id, atlas_candidate_id),
-           atlas_candidate_hash = coalesce(v_atlas_candidate_hash, atlas_candidate_hash),
-           atlas_semantic_key = v_semantic_key,
-           input_hash = v_input_hash,
-           source_freshness_at = (p_record->>'source_freshness_at')::timestamptz,
-           governance_status = coalesce(nullif(p_record->>'governance_status',''),'observation_candidate')
+       set is_current = true
      where live_data_signal_id = v_existing_id;
+
+    if v_prior_current_id is not null then
+      v_transition_reason := 'reactivated_version';
+      v_transition_hash := public.signal_architecture_hash_v1(jsonb_build_object(
+        'semantic_key',v_semantic_key,
+        'previous_live_data_signal_id',v_prior_current_id,
+        'current_live_data_signal_id',v_existing_id,
+        'atlas_candidate_id',v_atlas_candidate_id,
+        'atlas_candidate_hash',v_atlas_candidate_hash,
+        'transition_reason',v_transition_reason
+      ));
+      insert into public.live_data_signal_semantic_transition_v1(
+        semantic_key,previous_live_data_signal_id,current_live_data_signal_id,
+        atlas_candidate_id,atlas_candidate_hash,transition_reason,transition_hash
+      ) values (
+        v_semantic_key,v_prior_current_id,v_existing_id,
+        v_atlas_candidate_id,v_atlas_candidate_hash,v_transition_reason,v_transition_hash
+      );
+    end if;
     return v_existing_id;
   end if;
 
@@ -286,6 +330,25 @@ begin
     v_semantic_key
   )
   returning live_data_signal_id into v_signal_id;
+
+  if v_prior_current_id is not null then
+    v_transition_reason := 'new_version';
+    v_transition_hash := public.signal_architecture_hash_v1(jsonb_build_object(
+      'semantic_key',v_semantic_key,
+      'previous_live_data_signal_id',v_prior_current_id,
+      'current_live_data_signal_id',v_signal_id,
+      'atlas_candidate_id',v_atlas_candidate_id,
+      'atlas_candidate_hash',v_atlas_candidate_hash,
+      'transition_reason',v_transition_reason
+    ));
+    insert into public.live_data_signal_semantic_transition_v1(
+      semantic_key,previous_live_data_signal_id,current_live_data_signal_id,
+      atlas_candidate_id,atlas_candidate_hash,transition_reason,transition_hash
+    ) values (
+      v_semantic_key,v_prior_current_id,v_signal_id,
+      v_atlas_candidate_id,v_atlas_candidate_hash,v_transition_reason,v_transition_hash
+    );
+  end if;
 
   return v_signal_id;
 end
