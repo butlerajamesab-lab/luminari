@@ -7,13 +7,15 @@ function source(path: string): string {
 }
 
 describe("v3.13 Resource Directory source contracts", () => {
-  it("uses the dedicated canonical directory API instead of World Index nodes", () => {
+  it("uses the governed publishable resource projection instead of one hard-coded source lane", () => {
     const page = source("client/src/pages/ResourceDirectory.tsx");
     const embeddedDirectory = source(
       "client/src/components/ResourceDirectory.tsx"
     );
     const router = source("server/routers/resource-directory.ts");
-    const service = source("server/services/resource-directory.ts");
+    const service = source(
+      "server/services/resource-directory-publishable.ts"
+    );
     const appRouter = source("server/routers.ts");
 
     expect(page).toContain("trpc.resourceDirectory.summary");
@@ -28,31 +30,53 @@ describe("v3.13 Resource Directory source contracts", () => {
       "const RESOURCES:"
     );
 
-    expect(router).toContain("searchResourceDirectory");
-    expect(router).toContain("getResourceDirectorySummary");
+    expect(router).toContain("searchPublishableResourceDirectory");
+    expect(router).toContain("getPublishableResourceDirectorySummary");
     expect(appRouter).toContain(
       "resourceDirectory: resourceDirectoryRouter"
     );
 
-    expect(service).toContain("state_directory_logical_record");
     expect(service).toContain("luminari_resource_entities");
+    expect(service).toContain("promotion_status = 'review_ready'");
+    expect(service).toContain("verification_status = 'source_attached'");
+    expect(service).toContain("promotion_status = 'promoted'");
+    expect(service).toContain("verification_status = 'verified'");
+    expect(service).toContain("v_luminari_resource_source_candidates");
     expect(service).toContain(
       "v_luminari_resource_contact_points_current_v3_13"
     );
     expect(service).toContain(
       "v_luminari_resource_locations_current_v3_13"
     );
+    expect(service).not.toContain(
+      'const DIRECTORY_SOURCE_TABLE = "state_directory_logical_record"'
+    );
   });
 
   it("keeps searches paginated and bounded to one public query", () => {
     const router = source("server/routers/resource-directory.ts");
-    const service = source("server/services/resource-directory.ts");
+    const service = source(
+      "server/services/resource-directory-publishable.ts"
+    );
 
     expect(router).toContain("max(60)");
-    expect(service).toContain("limit $5");
-    expect(service).toContain("offset $6");
+    expect(service).toContain("limit $4 offset $5");
     expect(service).toContain("'total', (select count(*)::int from filtered)");
     expect(service).not.toContain("Promise.all");
+  });
+
+  it("separates substrate, candidates, canonical entities, and public projection counts", () => {
+    const service = source(
+      "server/services/resource-directory-publishable.ts"
+    );
+    expect(service).toContain("'unified_resource_rows'");
+    expect(service).toContain("'candidate_rows'");
+    expect(service).toContain("'canonical_entity_rows'");
+    expect(service).toContain("'publishable_rows'");
+    expect(service).toContain("'state_directory_raw_source_rows'");
+    expect(service).toContain(
+      "luminari_resource_directory_publishable_v3_13"
+    );
   });
 
   it("publishes explicit reviewed contact corrections without mutating source contacts", () => {
