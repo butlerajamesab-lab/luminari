@@ -41,4 +41,47 @@ export const ingestionControlRouter = router({
       const result = await get_corpus_import_queue_row(input);
       return runtime_response(result, { data: result, availability: result.success ? "available" : "unavailable" });
     }),
+
+  /**
+   * Fresh-start registry/backbone reconciliation. This path intentionally does
+   * not execute the historical corpus conveyor. Storage remains source evidence;
+   * typed candidates and dedupe identities are rebuilt into new v1 relations.
+   */
+  queue_fresh_corpus_rebuild: adminProcedure
+    .input(z.object({
+      reason: z.string().max(240).optional(),
+      scope_note: z.string().max(1000).optional(),
+    }).optional())
+    .mutation(async ({ input }) => {
+      const { queueFreshCorpusRebuild } = await import("../services/fresh-corpus-reconciliation-v1");
+      const result = await queueFreshCorpusRebuild({
+        requested_from: "mission_control_admin",
+        reason: input?.reason ?? "fresh_start_dedupe_reconciliation",
+        scope_note: input?.scope_note ?? null,
+        source_buckets: ["State Enriched Registry bucket", "Everything backbone related"],
+      });
+      return runtime_response(result, { data: result, availability: "available" });
+    }),
+
+  run_fresh_corpus_rebuild_batch: adminProcedure
+    .input(z.object({
+      run_id: z.string().uuid(),
+      limit: z.number().int().min(1).max(20).default(6),
+    }))
+    .mutation(async ({ input }) => {
+      const { runFreshCorpusRebuildBatch } = await import("../services/fresh-corpus-reconciliation-v1");
+      const result = await runFreshCorpusRebuildBatch(input.run_id, input.limit);
+      return runtime_response(result, { data: result, availability: "available" });
+    }),
+
+  get_fresh_corpus_rebuild_status: adminProcedure
+    .input(z.object({ run_id: z.string().uuid().optional() }).optional())
+    .query(async ({ input }) => {
+      const { getFreshCorpusRebuildStatus } = await import("../services/fresh-corpus-reconciliation-v1");
+      const result = await getFreshCorpusRebuildStatus(input?.run_id);
+      return runtime_response(result as Record<string, any>, {
+        data: result,
+        availability: (result as any)?.status === "not_started" ? "empty" : "available",
+      });
+    }),
 });
