@@ -16,6 +16,9 @@ export type RelationshipType =
   | 'insurer_insured'
   | 'creditor_debtor'
   | 'legal_representative_client'
+  | 'caregiver_recipient'
+  | 'facility_resident'
+  | 'authorized_representative_subject'
   | 'family'
   | 'opposing_party';
 
@@ -43,8 +46,8 @@ export interface Layer7Input {
   artifacts: ParsedArtifact[];
 }
 
-export const LAYER_VERSION = '2.2.0';
-export const RULE_VERSION = '2.2.0';
+export const LAYER_VERSION = '2.3.0';
+export const RULE_VERSION = '2.3.0';
 
 type MarkerDirection = 'a_to_b' | 'b_to_a' | 'bidirectional';
 type MarkerManifestRow = {
@@ -60,7 +63,7 @@ export const RULE_MANIFEST: {
   role_map: Record<RelationshipType, { authority: string; subject: string }>;
   mention_binding: 'exact_extracted_mention_offsets_only';
 } = {
-  context_chars: 20,
+  context_chars: 32,
   first_marker_per_pair_per_span: true,
   markers: [
     { regex: { source: 'employed by', flags: 'i' }, type: 'employer_employee', direction: 'b_to_a' },
@@ -73,10 +76,20 @@ export const RULE_MANIFEST: {
     { regex: { source: 'filed (?:a )?complaint (?:with|against)', flags: 'i' }, type: 'agency_complainant', direction: 'b_to_a' },
     { regex: { source: 'represented by', flags: 'i' }, type: 'legal_representative_client', direction: 'b_to_a' },
     { regex: { source: 'attorney for', flags: 'i' }, type: 'legal_representative_client', direction: 'a_to_b' },
+    { regex: { source: '(?:is |was )?(?:the )?caregiver for', flags: 'i' }, type: 'caregiver_recipient', direction: 'a_to_b' },
+    { regex: { source: '(?:cares|cared|caring) for', flags: 'i' }, type: 'caregiver_recipient', direction: 'a_to_b' },
+    { regex: { source: 'provid(?:e|es|ed|ing) care for', flags: 'i' }, type: 'caregiver_recipient', direction: 'a_to_b' },
+    { regex: { source: 'cared for by', flags: 'i' }, type: 'caregiver_recipient', direction: 'b_to_a' },
+    { regex: { source: '(?:is |was )?(?:a )?resident (?:at|of)', flags: 'i' }, type: 'facility_resident', direction: 'b_to_a' },
+    { regex: { source: '(?:resides|resided|lives|lived|stays|stayed) at', flags: 'i' }, type: 'facility_resident', direction: 'b_to_a' },
+    { regex: { source: '(?:admitted|transferred) to', flags: 'i' }, type: 'facility_resident', direction: 'b_to_a' },
+    { regex: { source: 'authorized representative for', flags: 'i' }, type: 'authorized_representative_subject', direction: 'a_to_b' },
+    { regex: { source: '(?:holds |has )?(?:a )?power of attorney for', flags: 'i' }, type: 'authorized_representative_subject', direction: 'a_to_b' },
     { regex: { source: 'married to', flags: 'i' }, type: 'family', direction: 'bidirectional' },
     { regex: { source: 'spouse', flags: 'i' }, type: 'family', direction: 'bidirectional' },
     { regex: { source: 'child of', flags: 'i' }, type: 'family', direction: 'b_to_a' },
     { regex: { source: 'parent of', flags: 'i' }, type: 'family', direction: 'a_to_b' },
+    { regex: { source: '(?:daughter|son|mother|father|sister|brother) of', flags: 'i' }, type: 'family', direction: 'bidirectional' },
     { regex: { source: 'insured by', flags: 'i' }, type: 'insurer_insured', direction: 'b_to_a' },
     { regex: { source: 'policy(?:holder)? (?:with|of)', flags: 'i' }, type: 'insurer_insured', direction: 'b_to_a' },
     { regex: { source: 'owes money to', flags: 'i' }, type: 'creditor_debtor', direction: 'b_to_a' },
@@ -89,6 +102,9 @@ export const RULE_MANIFEST: {
     insurer_insured: { authority: 'insurer', subject: 'insured' },
     creditor_debtor: { authority: 'creditor', subject: 'debtor' },
     legal_representative_client: { authority: 'representative', subject: 'client' },
+    caregiver_recipient: { authority: 'caregiver', subject: 'care_recipient' },
+    facility_resident: { authority: 'facility', subject: 'resident' },
+    authorized_representative_subject: { authority: 'authorized_representative', subject: 'represented_person' },
     family: { authority: 'family_member', subject: 'family_member' },
     opposing_party: { authority: 'party', subject: 'party' },
   },
