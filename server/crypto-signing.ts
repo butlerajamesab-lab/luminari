@@ -3,53 +3,25 @@
  *
  * Provides Ed25519 asymmetric key management, signing, and verification
  * for sealed corpus snapshots.
- *
- * Architecture:
- * - Single keypair per deployment environment (not per-tenant)
- * - Private key stored in SNAPSHOT_SIGNING_KEY env variable (PEM format)
- * - If no key is configured, a transient keypair is generated at startup
- *   (suitable for development; production must set the env variable)
- * - Public key exposed via API for offline verification
- * - Signatures cover: deterministic manifest hash of snapshot content
- *
- * Signing flow:
- * 1. Snapshot is sealed (status → 'sealed')
- * 2. Deterministic manifest hash is computed from snapshot metadata + document hashes
- * 3. Manifest hash is signed with Ed25519 private key
- * 4. Signature, algorithm, and public key fingerprint are stored on the snapshot row
- *
- * Verification flow:
- * 1. Recompute deterministic manifest hash from current snapshot data
- * 2. Verify Ed25519 signature against the public key
- * 3. Compare stored fingerprint against current public key fingerprint
  */
 
-import { createHash, generateKeyPairSync, sign, verify, createPublicKey, createPrivateKey, KeyObject } from "crypto";
+import { createHash, sign, verify, createPublicKey, createPrivateKey, KeyObject } from "crypto";
 import { canonicalStringify, sha256 } from "./export-manifest";
-
-// ─── Key Management ───
 
 let _privateKey: KeyObject | null = null;
 let _publicKey: KeyObject | null = null;
 let _publicKeyPem: string = "";
 let _publicKeyFingerprint: string = "";
 
-/**
- * Normalize a PEM string that may have been mangled by environment variable storage.
- * Handles: missing newlines, concatenated headers, whitespace issues.
- */
 function normalizePem(raw: string): string {
-  // If it already has proper newlines and structure, return as-is
   const trimmed = raw.trim();
   if (trimmed.startsWith("-----BEGIN") && trimmed.includes("\n")) {
-    // Quick validation: try to split and check structure
     const lines = trimmed.split("\n").map(l => l.trim()).filter(Boolean);
     if (lines.length >= 3 && lines[0].startsWith("-----BEGIN") && lines[lines.length - 1].startsWith("-----END")) {
       return lines.join("\n") + "\n";
     }
   }
 
-  // Extract the base64 body between PEM headers
   const beginMatch = trimmed.match(/-----BEGIN ([A-Z ]+)-----/);
   const endMatch = trimmed.match(/-----END ([A-Z ]+)-----/);
   if (!beginMatch || !endMatch) {
@@ -59,32 +31,16 @@ function normalizePem(raw: string): string {
   const label = beginMatch[1];
   const beginHeader = `-----BEGIN ${label}-----`;
   const endHeader = `-----END ${label}-----`;
-
-  // Strip headers and extract base64 content
   let body = trimmed
     .replace(beginHeader, "")
     .replace(endHeader, "")
     .replace(/\s/g, "");
 
-  // If there are duplicate keys concatenated, take only the last one (most recent)
-  // Ed25519 PKCS#8 private keys are exactly 48 bytes = 64 base64 chars
-  if (body.length > 64) {
-    // Take the last 64 chars as the valid key body
-    body = body.slice(-64);
-  }
-
-  // Reconstruct proper PEM with 64-char line wrapping
+  if (body.length > 64) body = body.slice(-64);
   const wrapped = body.match(/.{1,64}/g)?.join("\n") ?? body;
   return `${beginHeader}\n${wrapped}\n${endHeader}\n`;
 }
 
-/**
- * Initialize the signing keypair.
- * - SNAPSHOT_SIGNING_KEY env must be set (PEM-encoded PKCS#8 Ed25519 private key).
- * - If not present, the server will fail fast at startup.
- *
- * This function is idempotent — subsequent calls return the cached keypair.
- */
 export function initSigningKeys(): { publicKeyPem: string; fingerprint: string } {
   if (_privateKey && _publicKey) {
     return { publicKeyPem: _publicKeyPem, fingerprint: _publicKeyFingerprint };
@@ -93,17 +49,14 @@ export function initSigningKeys(): { publicKeyPem: string; fingerprint: string }
   const rawEnvKey = process.env.SNAPSHOT_SIGNING_KEY;
   if (!rawEnvKey) {
     throw new Error(
-      "[Gate 9] FATAL: SNAPSHOT_SIGNING_KEY environment variable is not set. "
-      + "The server cannot start without a stable Ed25519 signing key. "
-      + "Generate one with: node -e \"const c=require('crypto');console.log(c.generateKeyPairSync('ed25519').privateKey.export({type:'pkcs8',format:'pem'}))\" "
-      + "and set it in your environment or secrets manager."
+      "[Gate 9] FATAL: SNAPSHOT_SIGNING_KEY environment variable is not set. " +
+      "The server cannot start without a stable Ed25519 signing key. " +
+      "Generate one with: node -e \"const c=require('crypto');console.log(c.generateKeyPairSync('ed25519').privateKey.export({type:'pkcs8',format:'pem'}))\" " +
+      "and set it in your environment or secrets manager."
     );
   }
 
-  // Normalize PEM: env vars may strip newlines. Reconstruct proper PEM format.
   const envKey = normalizePem(rawEnvKey);
-
-  // Import from environment (PEM-encoded PKCS#8 private key)
   _privateKey = createPrivateKey({
     key: envKey,
     format: "pem",
@@ -119,45 +72,21 @@ export function initSigningKeys(): { publicKeyPem: string; fingerprint: string }
   return { publicKeyPem: _publicKeyPem, fingerprint: _publicKeyFingerprint };
 }
 
-/**
- * Get the public key in PEM format.
- */
 export function getPublicKeyPem(): string {
   initSigningKeys();
   return _publicKeyPem;
 }
 
-/**
- * Get the SHA-256 fingerprint of the public key (DER-encoded SPKI).
- */
 export function getPublicKeyFingerprint(): string {
   initSigningKeys();
   return _publicKeyFingerprint;
 }
 
-/**
- * Export the private key PEM (for testing/backup only — never expose via API).
- */
 export function getPrivateKeyPemForTesting(): string {
   initSigningKeys();
   return _privateKey!.export({ type: "pkcs8", format: "pem" }) as string;
 }
 
-// ─── Deterministic Manifest Hash ───
-
-/**
- * Compute the deterministic manifest hash for a snapshot.
- *
- * The hash covers:
- * - snapshotId
- * - snapshotVersion
- * - engineVersion
- * - documentIds (sorted)
- * - documentHashes (sorted by key)
- *
- * All fields are serialized using canonical JSON (sorted keys, no whitespace)
- * and then SHA-256 hashed.
- */
 export interface SnapshotSigningPayload {
   snapshotId: number;
   snapshotVersion: number;
@@ -166,24 +95,72 @@ export interface SnapshotSigningPayload {
   documentHashes: Record<string, string>;
 }
 
-export function computeManifestHash(payload: SnapshotSigningPayload): string {
-  // Normalize: sort documentIds, documentHashes keys are sorted by canonicalStringify
+/**
+ * Governance snapshots historically used the generic snapshot signer with a
+ * chain-root payload instead of document identities. Keep that historical
+ * calling contract explicit and deterministic rather than silently defaulting
+ * arbitrary malformed snapshot payloads.
+ */
+export type GovernanceChainSigningPayload = {
+  snapshotId: `gov-snapshot-${number}`;
+  documentHashes: { chainRoot: string };
+};
+
+function normalizeSigningPayload(payload: SnapshotSigningPayload | GovernanceChainSigningPayload): SnapshotSigningPayload {
+  if (
+    typeof payload.snapshotId === "number"
+    && Number.isSafeInteger(payload.snapshotId)
+    && payload.snapshotId >= 0
+    && "snapshotVersion" in payload
+    && Number.isSafeInteger(payload.snapshotVersion)
+    && payload.snapshotVersion >= 1
+    && "engineVersion" in payload
+    && typeof payload.engineVersion === "string"
+    && payload.engineVersion.trim().length > 0
+    && "documentIds" in payload
+    && Array.isArray(payload.documentIds)
+    && payload.documentIds.every(id => Number.isSafeInteger(id) && id >= 0)
+    && payload.documentHashes
+    && typeof payload.documentHashes === "object"
+  ) {
+    return payload;
+  }
+
+  if (
+    typeof payload.snapshotId === "string"
+    && /^gov-snapshot-[1-9][0-9]*$/.test(payload.snapshotId)
+    && payload.documentHashes
+    && typeof payload.documentHashes.chainRoot === "string"
+    && /^[0-9a-f]{64}$/.test(payload.documentHashes.chainRoot)
+  ) {
+    const sequence = Number(payload.snapshotId.slice("gov-snapshot-".length));
+    if (!Number.isSafeInteger(sequence) || sequence <= 0) {
+      throw new Error("[Gate 9] Governance snapshot sequence is outside the deterministic signing range");
+    }
+    return {
+      snapshotId: sequence,
+      snapshotVersion: 1,
+      engineVersion: "governance-log-chain-v1",
+      documentIds: [],
+      documentHashes: { chainRoot: payload.documentHashes.chainRoot },
+    };
+  }
+
+  throw new Error("[Gate 9] Snapshot signing payload does not satisfy the canonical or governance-chain contract");
+}
+
+export function computeManifestHash(payload: SnapshotSigningPayload | GovernanceChainSigningPayload): string {
+  const canonicalPayload = normalizeSigningPayload(payload);
   const normalized = {
-    snapshotId: payload.snapshotId,
-    snapshotVersion: payload.snapshotVersion,
-    engineVersion: payload.engineVersion,
-    documentIds: [...payload.documentIds].sort((a, b) => a - b),
-    documentHashes: payload.documentHashes, // canonicalStringify handles key sorting
+    snapshotId: canonicalPayload.snapshotId,
+    snapshotVersion: canonicalPayload.snapshotVersion,
+    engineVersion: canonicalPayload.engineVersion,
+    documentIds: [...canonicalPayload.documentIds].sort((a, b) => a - b),
+    documentHashes: canonicalPayload.documentHashes,
   };
   return sha256(canonicalStringify(normalized));
 }
 
-// ─── Signing ───
-
-/**
- * Sign a manifest hash with the Ed25519 private key.
- * Returns the signature as a hex-encoded string.
- */
 export function signManifestHash(manifestHash: string): string {
   initSigningKeys();
   const data = Buffer.from(manifestHash, "utf-8");
@@ -191,12 +168,7 @@ export function signManifestHash(manifestHash: string): string {
   return signature.toString("hex");
 }
 
-/**
- * Sign a snapshot's manifest and return all signing metadata.
- *
- * This is the main entry point called during snapshot sealing.
- */
-export function signSnapshot(payload: SnapshotSigningPayload): {
+export function signSnapshot(payload: SnapshotSigningPayload | GovernanceChainSigningPayload): {
   manifestHash: string;
   signature: string;
   signatureAlgorithm: string;
@@ -214,16 +186,6 @@ export function signSnapshot(payload: SnapshotSigningPayload): {
   };
 }
 
-// ─── Verification ───
-
-/**
- * Verify a snapshot signature.
- *
- * @param manifestHash - The recomputed manifest hash
- * @param signatureHex - The stored hex-encoded signature
- * @param publicKeyPem - The public key PEM to verify against (optional; uses current key if not provided)
- * @returns true if the signature is valid
- */
 export function verifySignature(
   manifestHash: string,
   signatureHex: string,
@@ -235,16 +197,9 @@ export function verifySignature(
 
   const data = Buffer.from(manifestHash, "utf-8");
   const signature = Buffer.from(signatureHex, "hex");
-
   return verify(null, data, pubKey, signature);
 }
 
-/**
- * Full verification of a snapshot: recompute manifest hash, verify signature,
- * and check fingerprint consistency.
- *
- * Returns a structured verification result.
- */
 export interface VerificationResult {
   valid: boolean;
   manifestHashMatch: boolean;
@@ -258,7 +213,7 @@ export interface VerificationResult {
 }
 
 export function verifySnapshot(
-  payload: SnapshotSigningPayload,
+  payload: SnapshotSigningPayload | GovernanceChainSigningPayload,
   storedSignature: string,
   storedFingerprint: string,
   storedAlgorithm: string
@@ -308,7 +263,7 @@ export function verifySnapshot(
 
   return {
     valid,
-    manifestHashMatch: signatureValid, // If signature verifies, the hash implicitly matches
+    manifestHashMatch: signatureValid,
     signatureValid,
     fingerprintMatch,
     recomputedManifestHash: recomputedHash,
@@ -319,11 +274,6 @@ export function verifySnapshot(
   };
 }
 
-// ─── Reset (for testing only) ───
-
-/**
- * Reset the cached keypair. Used only in tests to simulate key rotation.
- */
 export function _resetKeysForTesting(): void {
   _privateKey = null;
   _publicKey = null;
