@@ -35,8 +35,8 @@ export interface Layer6Input {
   artifacts: ParsedArtifact[];
 }
 
-export const LAYER_VERSION = '2.2.0';
-export const RULE_VERSION = '2.2.0';
+export const LAYER_VERSION = '2.3.0';
+export const RULE_VERSION = '2.3.0';
 
 const ADDRESS_STATE_ABBREVIATIONS: Record<string, string> = {
   wa: 'washington', ca: 'california', or: 'oregon', ny: 'new york', tx: 'texas',
@@ -50,15 +50,32 @@ const ORGANIZATION_TOKEN_STOPLIST = [
   'DATE', 'TIME', 'SUBJECT', 'NOTE', 'NOTES', 'BENEFIT', 'BENEFITS',
 ] as const;
 
+const PERSON_LEADING_STOPLIST = [
+  'Whether', 'Then', 'This', 'That', 'These', 'Those', 'When', 'Where', 'Why', 'How',
+  'What', 'Which', 'While', 'After', 'Before', 'Because', 'Although', 'Since', 'Until',
+] as const;
+
 export const RULE_MANIFEST = {
   person_patterns: [
     { source: '\\b(Mr\\.|Mrs\\.|Ms\\.|Dr\\.|Prof\\.)\\s+([A-Z][a-z]+(?:\\s+[A-Z][a-z]+){1,3})\\b', flags: 'g' },
     { source: '\\b([A-Z][a-z]+\\s+[A-Z][a-z]+)\\b(?=\\s+(?:was|is|has been|filed|stated|reported|testified|claimed))', flags: 'g' },
   ],
+  ambiguous_name_patterns: [
+    {
+      source: '\\b([A-Z][a-z]{2,})\\b(?=\\s+(?:is|was|has|had|said|reported|stated|called|emailed|texted|visited|lives|lived|resides|resided|needs|needed|receives|received|requested|asked|wants|wanted|cares|cared)\\b)',
+      flags: 'g',
+    },
+    {
+      source: '\\b(?:for|with|about|regarding|involving)\\s+([A-Z][a-z]{2,})\\b',
+      flags: 'g',
+    },
+    { source: '\\b([A-Z][a-z]{2,})[’\\\']s\\b', flags: 'g' },
+  ],
   organization_patterns: [
     { source: '\\b([A-Z][a-z]+(?:\\s+[A-Z][a-z]+)*\\s+(?:Inc\\.|LLC|Corp\\.|Corporation|Company|Co\\.))', flags: 'g' },
     { source: '\\b(Department\\s+of\\s+[A-Z][a-z]+(?:\\s+[A-Z][a-z]+)*)(?=\\s+(?:on|in|at|for|from|to|by|with|about|the|a|an|\\d)|[,.]|$)', flags: 'g' },
     { source: '\\b(Office\\s+of\\s+[A-Z][a-z]+(?:\\s+[A-Z][a-z]+)*)(?=\\s+(?:on|in|at|for|from|to|by|with|about|the|a|an|\\d)|[,.]|$)', flags: 'g' },
+    { source: '\\b([A-Z][A-Za-z]+(?:\\s+[A-Z][A-Za-z]+){0,4}\\s+(?:Home|Hospital|Center|Centre|Clinic|Facility|Council|Program|Services|Healthcare|Care|Foundation|Association|Agency|Authority|School|University|College|Bank|Insurance|Farm))\\b', flags: 'g' },
     { source: '\\b([A-Z]{2,}(?:\\s+[A-Z]{2,})*)\\b', flags: 'g' },
   ],
   address_pattern: {
@@ -69,6 +86,8 @@ export const RULE_MANIFEST = {
   email_pattern: { source: '\\b([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,})\\b', flags: 'g' },
   address_state_abbreviations: ADDRESS_STATE_ABBREVIATIONS,
   organization_token_stoplist: ORGANIZATION_TOKEN_STOPLIST,
+  person_leading_stoplist: PERSON_LEADING_STOPLIST,
+  ambiguous_name_type: 'unknown',
   organization_abbreviation_expansion: false,
   exact_normalized_match_auto_merge: true,
   levenshtein_review_threshold: 2,
@@ -78,11 +97,13 @@ export const RULE_MANIFEST = {
 export const RULE_MANIFEST_HASH = computeRuleManifestHash(RULE_MANIFEST);
 
 const PERSON_PATTERNS = RULE_MANIFEST.person_patterns.map(regexFromManifest);
+const AMBIGUOUS_NAME_PATTERNS = RULE_MANIFEST.ambiguous_name_patterns.map(regexFromManifest);
 const ORG_PATTERNS = RULE_MANIFEST.organization_patterns.map(regexFromManifest);
 const ADDRESS_PATTERN = regexFromManifest(RULE_MANIFEST.address_pattern);
 const PHONE_PATTERN = regexFromManifest(RULE_MANIFEST.phone_pattern);
 const EMAIL_PATTERN = regexFromManifest(RULE_MANIFEST.email_pattern);
 const ORGANIZATION_STOPLIST = new Set<string>(RULE_MANIFEST.organization_token_stoplist);
+const PERSON_PREFIX_STOPLIST = new Set<string>(RULE_MANIFEST.person_leading_stoplist);
 
 export function processLayer6(input: Layer6Input): EngineResult<Entity[]> {
   const artifacts = [...input.artifacts].sort((a, b) => a.artifact_key.localeCompare(b.artifact_key));
@@ -115,7 +136,18 @@ export function processLayer6(input: Layer6Input): EngineResult<Entity[]> {
       let match: RegExpExecArray | null;
       while ((match = pattern.exec(text)) !== null) {
         const rawName = match[0].replace(/^(Mr\.|Mrs\.|Ms\.|Dr\.|Prof\.)\s+/, '');
+        if (isExcludedPersonMention(rawName)) continue;
         addEntity(entityMap, rawName, 'person', artifact.artifact_key, match.index);
+      }
+    }
+
+    for (const pattern of AMBIGUOUS_NAME_PATTERNS) {
+      pattern.lastIndex = 0;
+      let match: RegExpExecArray | null;
+      while ((match = pattern.exec(text)) !== null) {
+        const rawName = match[1];
+        if (!rawName || isExcludedPersonMention(rawName)) continue;
+        addEntity(entityMap, rawName, 'unknown', artifact.artifact_key, match.index + match[0].indexOf(rawName));
       }
     }
 
@@ -192,6 +224,11 @@ export function processLayer6(input: Layer6Input): EngineResult<Entity[]> {
 
 export function isExcludedOrganizationToken(rawName: string): boolean {
   return ORGANIZATION_STOPLIST.has(rawName.trim().replace(/\s+/g, ' ').toUpperCase());
+}
+
+export function isExcludedPersonMention(rawName: string): boolean {
+  const first = rawName.trim().split(/\s+/)[0] || '';
+  return PERSON_PREFIX_STOPLIST.has(first);
 }
 
 function normalizeEntityName(name: string, type: EntityType): string {
