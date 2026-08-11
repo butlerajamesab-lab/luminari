@@ -24,8 +24,8 @@ export interface Layer4Input {
   artifacts: ParsedArtifact[];
 }
 
-export const LAYER_VERSION = '2.1.0';
-export const RULE_VERSION = '2.1.0';
+export const LAYER_VERSION = '2.2.0';
+export const RULE_VERSION = '2.2.0';
 
 type DateRule = {
   regex: { source: string; flags: string };
@@ -37,6 +37,7 @@ export const RULE_MANIFEST: {
   date_rules: DateRule[];
   actor_subject_regex: { source: string; flags: string };
   sentence_boundaries: string[];
+  excluded_non_event_sentence_patterns: Array<{ source: string; flags: string; reason: string }>;
   unsupported_artifact_policy: 'unresolved_skip';
 } = {
   date_rules: [
@@ -58,12 +59,33 @@ export const RULE_MANIFEST: {
     flags: '',
   },
   sentence_boundaries: ['.', '!', '?', '\\n'],
+  excluded_non_event_sentence_patterns: [
+    {
+      source: '^\\s*(?:then\\s+)?add\\s+(?:a\\s+)?(?:short\\s+)?summary\\b',
+      flags: 'i',
+      reason: 'editorial_instruction_not_event',
+    },
+    {
+      source: '^\\s*this\\s+(?:packet|document|summary|thread)\\s+(?:documents|summarizes|covers|spans)\\b',
+      flags: 'i',
+      reason: 'document_summary_not_event',
+    },
+    {
+      source: '\\b(?:the\\s+)?thread\\s+spans\\s+[A-Z][a-z]+\\s+\\d{4}\\s+through\\s+[A-Z][a-z]+\\s+\\d{4}\\b',
+      flags: 'i',
+      reason: 'date_range_summary_not_event',
+    },
+  ],
   unsupported_artifact_policy: 'unresolved_skip',
 };
 
 export const RULE_MANIFEST_HASH = computeRuleManifestHash(RULE_MANIFEST);
 const DATE_RULES = RULE_MANIFEST.date_rules.map(rule => ({ ...rule, regex: regexFromManifest(rule.regex) }));
 const ACTOR_SUBJECT_PATTERN = regexFromManifest(RULE_MANIFEST.actor_subject_regex);
+const EXCLUDED_NON_EVENT_PATTERNS = RULE_MANIFEST.excluded_non_event_sentence_patterns.map(rule => ({
+  ...rule,
+  regex: regexFromManifest(rule),
+}));
 
 export function processLayer4(input: Layer4Input): EngineResult<ChronologyEvent[]> {
   const artifacts = [...input.artifacts].sort((a, b) => a.artifact_key.localeCompare(b.artifact_key));
@@ -106,6 +128,7 @@ export function processLayer4(input: Layer4Input): EngineResult<ChronologyEvent[
           }
           const bounds = sentenceBounds(span.text, match.index);
           const event_text = span.text.substring(bounds.start, bounds.end).trim();
+          if (isDeclaredNonEventSentence(event_text)) continue;
           const actorMatch = ACTOR_SUBJECT_PATTERN.exec(event_text);
           ACTOR_SUBJECT_PATTERN.lastIndex = 0;
           const actor = actorMatch ? actorMatch[1] : null;
@@ -150,6 +173,14 @@ export function processLayer4(input: Layer4Input): EngineResult<ChronologyEvent[
     unresolved_dependencies: unresolved.sort((a, b) => a.field.localeCompare(b.field)),
     is_sealed: false,
   };
+}
+
+export function isDeclaredNonEventSentence(text: string): boolean {
+  for (const rule of EXCLUDED_NON_EVENT_PATTERNS) {
+    rule.regex.lastIndex = 0;
+    if (rule.regex.test(text)) return true;
+  }
+  return false;
 }
 
 function sentenceBounds(text: string, position: number): { start: number; end: number } {
