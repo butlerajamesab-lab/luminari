@@ -11,6 +11,35 @@ function classifyAuthGateError(error: unknown): string {
   return typeof error;
 }
 
+function isDatabaseDiagnosticRequest(req: Request): boolean {
+  return req.path === "/api/db-diagnostic" || req.originalUrl.split("?", 1)[0] === "/api/db-diagnostic";
+}
+
+function sendDatabaseDiagnosticAuthFailure(
+  req: Request,
+  res: Response,
+  status: 401 | 403 | 503,
+  code: "authentication_required" | "administrator_required" | "authentication_temporarily_unavailable"
+) {
+  return res.status(status).json({
+    ok: false,
+    database: "unknown",
+    database_url: "unknown",
+    database_version: null,
+    public_tables: null,
+    db_diagnostic: {
+      tables: { total: null },
+      views: { total: null },
+      foreign_keys: { total: null },
+      errors: [{ code, message: code }],
+    },
+    supabase_project: "unknown",
+    timestamp: new Date().toISOString(),
+    error: { code, message: code },
+    diagnostic_state: "auth_gate_failed",
+  });
+}
+
 export const requireExpressAdmin: RequestHandler = async (
   req: Request,
   res: Response,
@@ -23,6 +52,9 @@ export const requireExpressAdmin: RequestHandler = async (
     const user = await resolve_user_for_procedure(ctx);
 
     if (!user) {
+      if (isDatabaseDiagnosticRequest(req)) {
+        return sendDatabaseDiagnosticAuthFailure(req, res, 401, "authentication_required");
+      }
       return res.status(401).json({
         ok: false,
         error: "authentication_required",
@@ -30,6 +62,9 @@ export const requireExpressAdmin: RequestHandler = async (
     }
 
     if (user.role !== "admin") {
+      if (isDatabaseDiagnosticRequest(req)) {
+        return sendDatabaseDiagnosticAuthFailure(req, res, 403, "administrator_required");
+      }
       return res.status(403).json({
         ok: false,
         error: "administrator_required",
@@ -44,6 +79,9 @@ export const requireExpressAdmin: RequestHandler = async (
       path: req.path,
       error_class: classifyAuthGateError(error),
     });
+    if (isDatabaseDiagnosticRequest(req)) {
+      return sendDatabaseDiagnosticAuthFailure(req, res, 503, "authentication_temporarily_unavailable");
+    }
     return res.status(503).json({
       ok: false,
       error: "authentication_temporarily_unavailable",
