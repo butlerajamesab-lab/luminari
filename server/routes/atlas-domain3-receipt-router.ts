@@ -144,12 +144,15 @@ atlas_domain3_receipt_router.post("/streams", async (req, res) => {
   try {
     await require_atlas_bridge_token(bridge_token);
     const result = await query_with_diagnostics<atlas_stream_runtime_snapshot_receipt>(
-      `select receipt.status,
-              receipt.streams_registered,
-              receipt.snapshot_hash,
-              receipt.observed_at,
-              receipt.registered_at
-         from public.register_atlas_stream_runtime_snapshot_v1($1::jsonb) receipt`,
+      `with registered as (
+         select public.register_atlas_stream_runtime_snapshot_v1($1::jsonb) as receipt
+       )
+       select receipt->>'status' as status,
+              coalesce((receipt->>'streams_registered')::integer, 0) as streams_registered,
+              receipt->>'snapshot_hash' as snapshot_hash,
+              receipt->>'observed_at' as observed_at,
+              receipt->>'registered_at' as registered_at
+         from registered`,
       [JSON.stringify(req.body)],
       {
         label: "atlas_stream_runtime_snapshot",
