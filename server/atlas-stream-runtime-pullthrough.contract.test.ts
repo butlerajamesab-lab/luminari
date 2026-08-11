@@ -15,6 +15,13 @@ describe('Atlas stream/runtime downstream projection', () => {
     expect(unifiedRouter).toContain('get_canonical_atlas_stream_summary');
   });
 
+  it('extracts the JSONB registration receipt explicitly instead of treating JSONB as a composite row', () => {
+    expect(route).toContain("register_atlas_stream_runtime_snapshot_v1($1::jsonb) as receipt");
+    expect(route).toContain("receipt->>'status' as status");
+    expect(route).toContain("receipt->>'snapshot_hash' as snapshot_hash");
+    expect(route).not.toContain('select receipt.status');
+  });
+
   it('keeps Atlas canonical ownership explicit while projecting runtime details', () => {
     for (const field of [
       'stream_id',
