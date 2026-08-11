@@ -33,6 +33,7 @@ import { run_with_database_request_context } from "../db-request-context";
 import { run_rosetta_control_repair_from_environment } from "../civic-genome-rosetta-control-repair";
 import { run_prism_rosetta_activation_from_environment } from "../services/prism-rosetta-startup-activation";
 import { run_civic_genome_external_snapshot_proof_from_environment } from "../civic-genome-external-snapshot-startup-proof";
+import "../services/fresh-state-enrichment-reconciliation-v1";
 
 const runtime_fingerprint = Object.freeze({
   render_git_commit: process.env.RENDER_GIT_COMMIT || null,
@@ -186,8 +187,6 @@ async function startServer() {
     res.json({ ok: true, ...runtime_fingerprint });
   });
 
-  // Mission Control depends on a deep database diagnostic. Keep the endpoint,
-  // but require administrator authentication instead of making it public.
   app.get("/api/db-diagnostic", requireExpressAdmin, async (_req, res) => {
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
     try {
@@ -211,10 +210,7 @@ async function startServer() {
     }
   });
 
-  // System visibility is read-only structural metadata, but it is operational
-  // data and therefore remains admin-only in production.
   app.use("/api/system", requireExpressAdmin, systemVisibilityRouter);
-
   app.use("/api/ai", aiInspectRouter);
   app.use("/api/conveyor", requireExpressAdmin, conveyorRouter);
   app.use("/api/civic-map", civicMapRouter);
