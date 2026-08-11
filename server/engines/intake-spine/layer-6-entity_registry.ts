@@ -35,13 +35,20 @@ export interface Layer6Input {
   artifacts: ParsedArtifact[];
 }
 
-export const LAYER_VERSION = '2.1.0';
-export const RULE_VERSION = '2.1.0';
+export const LAYER_VERSION = '2.2.0';
+export const RULE_VERSION = '2.2.0';
 
 const ADDRESS_STATE_ABBREVIATIONS: Record<string, string> = {
   wa: 'washington', ca: 'california', or: 'oregon', ny: 'new york', tx: 'texas',
   fl: 'florida', il: 'illinois', pa: 'pennsylvania', oh: 'ohio', az: 'arizona',
 };
+
+const ORGANIZATION_TOKEN_STOPLIST = [
+  'AND', 'OR', 'THE', 'FROM', 'TO', 'CC', 'BCC', 'RE', 'FW', 'FWD',
+  'PDF', 'JPEG', 'JPG', 'PNG', 'DOCX', 'CSV', 'TXT', 'HTML',
+  'SMS', 'MMS', 'EMAIL', 'ATTACHMENT', 'ATTACHMENTS', 'PAGE', 'PAGES',
+  'DATE', 'TIME', 'SUBJECT', 'NOTE', 'NOTES', 'BENEFIT', 'BENEFITS',
+] as const;
 
 export const RULE_MANIFEST = {
   person_patterns: [
@@ -61,6 +68,7 @@ export const RULE_MANIFEST = {
   phone_pattern: { source: '\\b(\\(?\\d{3}\\)?[-.\\s]?\\d{3}[-.\\s]?\\d{4})\\b', flags: 'g' },
   email_pattern: { source: '\\b([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,})\\b', flags: 'g' },
   address_state_abbreviations: ADDRESS_STATE_ABBREVIATIONS,
+  organization_token_stoplist: ORGANIZATION_TOKEN_STOPLIST,
   organization_abbreviation_expansion: false,
   exact_normalized_match_auto_merge: true,
   levenshtein_review_threshold: 2,
@@ -74,6 +82,7 @@ const ORG_PATTERNS = RULE_MANIFEST.organization_patterns.map(regexFromManifest);
 const ADDRESS_PATTERN = regexFromManifest(RULE_MANIFEST.address_pattern);
 const PHONE_PATTERN = regexFromManifest(RULE_MANIFEST.phone_pattern);
 const EMAIL_PATTERN = regexFromManifest(RULE_MANIFEST.email_pattern);
+const ORGANIZATION_STOPLIST = new Set<string>(RULE_MANIFEST.organization_token_stoplist);
 
 export function processLayer6(input: Layer6Input): EngineResult<Entity[]> {
   const artifacts = [...input.artifacts].sort((a, b) => a.artifact_key.localeCompare(b.artifact_key));
@@ -115,7 +124,7 @@ export function processLayer6(input: Layer6Input): EngineResult<Entity[]> {
       let match: RegExpExecArray | null;
       while ((match = pattern.exec(text)) !== null) {
         const rawName = match[1];
-        if (!rawName || rawName.length <= 2) continue;
+        if (!rawName || rawName.length <= 2 || isExcludedOrganizationToken(rawName)) continue;
         addEntity(entityMap, rawName, 'organization', artifact.artifact_key, match.index);
       }
     }
@@ -179,6 +188,10 @@ export function processLayer6(input: Layer6Input): EngineResult<Entity[]> {
     unresolved_dependencies: unresolved.sort((a, b) => a.field.localeCompare(b.field)),
     is_sealed: false,
   };
+}
+
+export function isExcludedOrganizationToken(rawName: string): boolean {
+  return ORGANIZATION_STOPLIST.has(rawName.trim().replace(/\s+/g, ' ').toUpperCase());
 }
 
 function normalizeEntityName(name: string, type: EntityType): string {
