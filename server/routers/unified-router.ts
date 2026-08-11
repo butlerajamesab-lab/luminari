@@ -1,13 +1,13 @@
 import { z } from "zod";
 import { publicProcedure, router } from "../_core/trpc";
 import {
-  get_unified_ingestion_metrics,
-  get_unified_ingestion_summary,
-} from "../unified-queries";
-import {
   get_canonical_live_signal_summary,
   get_canonical_live_signals,
 } from "../canonical-live-signal-queries";
+import {
+  get_canonical_atlas_stream_metrics,
+  get_canonical_atlas_stream_summary,
+} from "../canonical-atlas-stream-queries";
 
 const signal_input = z.object({
   stream_id: z.string().optional(),
@@ -45,10 +45,15 @@ export const unifiedRouter = router({
       status: input?.status,
     })),
 
+  /**
+   * Stream/runtime state is owned by Atlas and projected into Lighthouse DB.
+   * Mission Control remains an observer and does not infer runtime state from
+   * the older local data_stream_registry scheduler.
+   */
   get_unified_ingestion_metrics: publicProcedure
     .input(stream_input)
-    .query(({ input }) => get_unified_ingestion_metrics(input ?? {})),
+    .query(({ input }) => get_canonical_atlas_stream_metrics(input ?? {})),
 
   get_unified_ingestion_summary: publicProcedure
-    .query(() => get_unified_ingestion_summary()),
+    .query(() => get_canonical_atlas_stream_summary()),
 });
