@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { router, publicProcedure } from "../_core/trpc";
 import { getPool } from "../db";
+import {
+  get_canonical_live_signal_summary,
+  get_canonical_live_signals,
+} from "../canonical-live-signal-queries";
 
 const toMillis = (value: Date | string | number | null | undefined): number | null => {
   if (value == null) return null;
@@ -13,25 +17,15 @@ const oneDayAgoIso = () => new Date(Date.now() - 86_400_000).toISOString();
 const oneDayAgoMillis = () => Date.now() - 86_400_000;
 const oneWeekAgoMillis = () => Date.now() - 604_800_000;
 
-const NORMALIZED_SIGNAL_CATEGORY_SQL = `CASE
-  WHEN COALESCE(signal_type, 'unknown') ~ '^(contradiction|inconsistency|missing_evidence)_[0-9]+$'
-    THEN regexp_replace(COALESCE(signal_type, 'unknown'), '_[0-9]+$', '')
-  ELSE COALESCE(signal_type, 'unknown')
-END`;
-
 const getCount = async (query: string, params: unknown[] = []): Promise<number> => {
   const { rows } = await getPool().query(query, params);
   return Number(rows[0]?.cnt ?? 0);
 };
 
-/* ─── Public read-only Mission Control dashboard ─── */
+/* Public read-only Mission Control dashboard. */
 export const adminDashboardRouter = router({
-  /* ── Panel 1: System Health ── */
   systemHealth: publicProcedure.query(async () => {
     const oneDayAgo = oneDayAgoIso();
-
-    // Mission Control mounts several read models together. Keep each model's
-    // internal reads sequential so first paint cannot consume the entire pool.
     const totalRuns = await getCount(`SELECT COUNT(*)::int AS cnt FROM pipeline_runs`);
     const recentRuns = await getCount(`SELECT COUNT(*)::int AS cnt FROM pipeline_runs WHERE started_at >= $1`, [oneDayAgo]);
     const failedRuns = await getCount(`SELECT COUNT(*)::int AS cnt FROM pipeline_runs WHERE status = 'failed' AND started_at >= $1`, [oneDayAgo]);
@@ -75,7 +69,6 @@ export const adminDashboardRouter = router({
     };
   }),
 
-  /* ── Panel 3: Case Activity ── */
   caseActivity: publicProcedure.query(async () => {
     const oneDayAgo = oneDayAgoMillis();
     const oneWeekAgo = oneWeekAgoMillis();
@@ -113,45 +106,38 @@ export const adminDashboardRouter = router({
     };
   }),
 
-  /* ── Panel 4: Structural Signals (aggregated) ── */
+  /* Current Atlas Domain 3 signals only. Legacy detected_signals stay historical. */
   structuralSignals: publicProcedure.query(async () => {
-    const severityRows = await getPool().query(
-      `SELECT severity::text AS severity, COUNT(*)::int AS cnt
-       FROM detected_signals
-       GROUP BY severity::text
-       ORDER BY cnt DESC`
-    );
-    const categoryRows = await getPool().query(
-      `SELECT ${NORMALIZED_SIGNAL_CATEGORY_SQL} AS category, COUNT(*)::int AS cnt
-       FROM detected_signals
-       GROUP BY ${NORMALIZED_SIGNAL_CATEGORY_SQL}
-       ORDER BY cnt DESC, category`
-    );
-    const criticalRows = await getPool().query(
-      `SELECT id::text, case_id::text, COALESCE(signal_description, signal_type, 'Detected signal') AS title,
-              severity::text AS severity, ${NORMALIZED_SIGNAL_CATEGORY_SQL} AS category, created_at
-       FROM detected_signals
-       WHERE severity::text IN ('high', 'critical')
-       ORDER BY created_at DESC
-       LIMIT 10`
-    );
-    const totalSignals = await getCount(`SELECT COUNT(*)::int AS cnt FROM detected_signals`);
+    const [summary, critical] = await Promise.all([
+      get_canonical_live_signal_summary(),
+      get_canonical_live_signals({ limit: 100 }),
+    ]);
 
-    const bySeverity = severityRows.rows.map((row: any) => ({ severity: row.severity, count: Number(row.cnt ?? 0) }));
-    const byCategory = categoryRows.rows.map((row: any) => ({ category: row.category, count: Number(row.cnt ?? 0) }));
-    const criticalFindings = criticalRows.rows.map((row: any) => {
-      const createdAt = toMillis(row.created_at) ?? Date.now();
-      return {
-        id: row.id,
-        case_id: row.case_id,
-        caseId: row.case_id,
-        title: row.title,
-        severity: row.severity,
-        category: row.category,
-        created_at: createdAt,
-        createdAt,
-      };
-    });
+    const bySeverity = Object.entries(summary.by_severity)
+      .map(([severity, count]) => ({ severity, count }))
+      .sort((a, b) => b.count - a.count || a.severity.localeCompare(b.severity));
+    const byCategory = Object.entries(summary.by_stream)
+      .map(([category, count]) => ({ category, count }))
+      .sort((a, b) => b.count - a.count || a.category.localeCompare(b.category));
+    const criticalFindings = critical
+      .filter(signal => signal.severity_level === "high" || signal.severity_level === "critical")
+      .slice(0, 10)
+      .map(signal => ({
+        id: signal.signal_id,
+        case_id: null,
+        caseId: null,
+        title: signal.title,
+        severity: signal.severity_level,
+        category: signal.signal_type,
+        created_at: signal.detected_at ?? Date.now(),
+        createdAt: signal.detected_at ?? Date.now(),
+        stream_id: signal.stream_id,
+        rule_id: signal.detection_rule_id,
+        rule_version: signal.detection_rule_version,
+        engine_id: signal.engine_id,
+        engine_version: signal.engine_version,
+        signal_hash: signal.signal_hash,
+      }));
 
     return {
       by_severity: bySeverity,
@@ -160,12 +146,14 @@ export const adminDashboardRouter = router({
       byCategory,
       critical_findings: criticalFindings,
       criticalFindings,
-      total_findings: totalSignals,
-      totalFindings: totalSignals,
+      total_findings: summary.total_signals,
+      totalFindings: summary.total_signals,
+      source_relation: summary.source_relation,
+      contract_version: summary.contract_version,
+      legacy_archived: summary.legacy_archived,
     };
   }),
 
-  /* ── Panel 5: Work Queue ── */
   workQueue: publicProcedure.query(async () => {
     const runningRows = await getPool().query(
       `SELECT id::text, case_id::text, COALESCE(ruleset_version, 'pipeline_run') AS run_type,
@@ -213,36 +201,26 @@ export const adminDashboardRouter = router({
     };
   }),
 
-  /* ── Findings drill-through by severity ── */
   findingsBySeverity: publicProcedure
     .input(z.object({ severity: z.string().optional() }))
     .query(async ({ input }) => {
-      const params: unknown[] = [];
-      let whereClause = "";
-      if (input.severity) {
-        params.push(input.severity);
-        whereClause = `WHERE severity::text = $1`;
-      }
-
-      const { rows } = await getPool().query(
-        `SELECT id::text, case_id::text, COALESCE(signal_description, signal_type, 'Detected signal') AS title,
-                severity::text AS severity, ${NORMALIZED_SIGNAL_CATEGORY_SQL} AS category, created_at
-         FROM detected_signals
-         ${whereClause}
-         ORDER BY created_at DESC
-         LIMIT 50`,
-        params
-      );
-
-      return rows.map((row: any) => ({
-        id: row.id,
-        case_id: row.case_id,
-        caseId: row.case_id,
-        title: row.title,
-        severity: row.severity,
-        category: row.category,
-        created_at: toMillis(row.created_at) ?? Date.now(),
-        createdAt: toMillis(row.created_at) ?? Date.now(),
+      const rows = await get_canonical_live_signals({
+        severity: input.severity,
+        limit: 50,
+      });
+      return rows.map(signal => ({
+        id: signal.signal_id,
+        case_id: null,
+        caseId: null,
+        title: signal.title,
+        severity: signal.severity_level,
+        category: signal.signal_type,
+        created_at: signal.detected_at ?? Date.now(),
+        createdAt: signal.detected_at ?? Date.now(),
+        stream_id: signal.stream_id,
+        rule_id: signal.detection_rule_id,
+        engine_version: signal.engine_version,
+        signal_hash: signal.signal_hash,
       }));
     }),
 });

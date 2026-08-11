@@ -1,34 +1,28 @@
 /**
  * Signal Governance tRPC Router
- * 
- * Exposes the governance layer to the frontend:
- * - Signal dashboard (ranked by confidence, severity, source, timestamp)
- * - Signal audit trail (generation steps, factor breakdown)
- * - Escalation summary (tier counts)
- * - Confidence factors reference
- * - Dataset provenance
- * 
- * NOTE: DB tables use two naming conventions:
- *   - Old tables (confidence_factors, signal_explanations_extended): snake_case columns
- *   - New tables (escalation_thresholds): camelCase columns
+ *
+ * Current governed signal presentation reads the canonical three-domain
+ * architecture. Legacy detected_signals/live_signals remain historical evidence
+ * and are never presented as current Atlas-derived signals.
  */
 
 import { z } from "zod";
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import {
-  getSignalDashboard,
   getSignalAuditTrail,
   getEscalationSummary,
   getProvenance,
-  calculateSignalConfidence,
 } from "../signal-governance";
 import { db } from "../db";
 import { sql } from "drizzle-orm";
-import { get_unified_signal_summary, get_unified_signals } from "../unified-queries";
+import {
+  get_canonical_live_signal_summary,
+  get_canonical_live_signals,
+} from "../canonical-live-signal-queries";
 
 export const signalGovernanceRouter = router({
   /**
-   * Signal Dashboard — ranked list of governed signals
+   * Signal Dashboard — current canonical Atlas Domain 3 signal population.
    */
   dashboard: publicProcedure
     .input(z.object({
@@ -41,26 +35,39 @@ export const signalGovernanceRouter = router({
       offset: z.number().min(0).optional(),
     }).optional())
     .query(async ({ input }) => {
-      const signals = await get_unified_signals({
+      const signals = await get_canonical_live_signals({
         stream_id: input?.datasetId,
         severity: input?.severityLevel,
         limit: input?.limit,
         offset: input?.offset,
       });
-      const summary = await get_unified_signal_summary({
+      const summary = await get_canonical_live_signal_summary({
         stream_id: input?.datasetId,
         severity: input?.severityLevel,
       });
+      const minConfidence = input?.minConfidence == null
+        ? null
+        : input.minConfidence > 1
+          ? input.minConfidence / 100
+          : input.minConfidence;
+      const filteredSignals = minConfidence == null
+        ? signals
+        : signals.filter(signal => signal.confidence_score >= minConfidence);
+
       return {
-        signals,
+        signals: filteredSignals,
         summary,
         total: summary.total_signals,
         total_active: summary.total_active,
+        contract_version: "signal_architecture_ground_truth_v1",
+        source_relation: "public.live_data_signals",
       };
     }),
 
   /**
-   * Signal Audit Trail — full generation log for a specific signal
+   * Legacy audit trail endpoint remains available for historical signal IDs.
+   * Canonical live-data signals expose their source refs/rule/engine/hash fields
+   * directly in dashboard records.
    */
   auditTrail: publicProcedure
     .input(z.object({ signalId: z.string() }))
@@ -68,27 +75,13 @@ export const signalGovernanceRouter = router({
       return getSignalAuditTrail(input.signalId);
     }),
 
-  /**
-   * Escalation Summary — count of signals per escalation tier
-   */
   escalationSummary: publicProcedure
-    .query(async () => {
-      return getEscalationSummary();
-    }),
+    .query(async () => getEscalationSummary()),
 
-  /**
-   * Dataset Provenance — source metadata for a dataset
-   */
   provenance: protectedProcedure
     .input(z.object({ datasetId: z.string() }))
-    .query(async ({ input }) => {
-      return getProvenance(input.datasetId);
-    }),
+    .query(async ({ input }) => getProvenance(input.datasetId)),
 
-  /**
-   * Confidence Factors — reference data for the scoring model
-   * Uses snake_case column names from actual DB
-   */
   confidenceFactors: protectedProcedure
     .query(async () => {
       const rows = await db.execute(
@@ -104,10 +97,6 @@ export const signalGovernanceRouter = router({
       }));
     }),
 
-  /**
-   * Escalation Thresholds — tier definitions
-   * Uses camelCase column names (newly created table)
-   */
   escalationThresholds: publicProcedure
     .query(async () => {
       const rows = await db.execute(
@@ -123,10 +112,6 @@ export const signalGovernanceRouter = router({
       }));
     }),
 
-  /**
-   * Extended Templates — signal explanation templates with confidence requirements
-   * Uses snake_case column names from actual DB
-   */
   templates: protectedProcedure
     .input(z.object({
       signalType: z.string().optional(),
