@@ -35,15 +35,16 @@ export function useMissionControlData() {
   const triggerMutation = trpc.ingestion.triggerIngestion.useMutation();
   const toggleMutation = trpc.ingestion.toggleDataset.useMutation();
 
-  // Knowledge Ingestion Browse — deferred; these were firing multiple large browse reads on first paint.
-  const jurisdictions = trpc.knowledgeIngestion.getJurisdictions.useQuery(undefined, DEFERRED_ARRAY_QUERY_OPTIONS as any);
-  const domains = trpc.knowledgeIngestion.getDomains.useQuery(undefined, DEFERRED_ARRAY_QUERY_OPTIONS as any);
-  const statutes = trpc.knowledgeIngestion.browseStatutes.useQuery({}, DEFERRED_OBJECT_QUERY_OPTIONS as any);
-  const caseLaw = trpc.knowledgeIngestion.browseCaseLaw.useQuery({}, DEFERRED_OBJECT_QUERY_OPTIONS as any);
-  const agencies = trpc.knowledgeIngestion.browseAgencies.useQuery({}, DEFERRED_OBJECT_QUERY_OPTIONS as any);
-  const courts = trpc.knowledgeIngestion.browseCourts.useQuery({}, DEFERRED_OBJECT_QUERY_OPTIONS as any);
-  const targets = trpc.knowledgeIngestion.browseAdvocacyTargets.useQuery({}, DEFERRED_OBJECT_QUERY_OPTIONS as any);
-  const formulas = trpc.knowledgeIngestion.browseSettlementFormulas.useQuery({}, DEFERRED_OBJECT_QUERY_OPTIONS as any);
+  // Knowledge Backbone Explorer — deferred until the panel is opened. These are
+  // PostgreSQL-native live reads; bulk-ingestion procedures remain under knowledgeIngestion.
+  const jurisdictions = trpc.knowledgeBackbone.getJurisdictions.useQuery(undefined, DEFERRED_ARRAY_QUERY_OPTIONS as any);
+  const domains = trpc.knowledgeBackbone.getDomains.useQuery(undefined, DEFERRED_ARRAY_QUERY_OPTIONS as any);
+  const statutes = trpc.knowledgeBackbone.browseStatutes.useQuery({}, DEFERRED_OBJECT_QUERY_OPTIONS as any);
+  const caseLaw = trpc.knowledgeBackbone.browseCaseLaw.useQuery({}, DEFERRED_OBJECT_QUERY_OPTIONS as any);
+  const agencies = trpc.knowledgeBackbone.browseAgencies.useQuery({}, DEFERRED_OBJECT_QUERY_OPTIONS as any);
+  const courts = trpc.knowledgeBackbone.browseCourts.useQuery({}, DEFERRED_OBJECT_QUERY_OPTIONS as any);
+  const targets = trpc.knowledgeBackbone.browseAdvocacyTargets.useQuery({}, DEFERRED_OBJECT_QUERY_OPTIONS as any);
+  const formulas = trpc.knowledgeBackbone.browseSettlementFormulas.useQuery({}, DEFERRED_OBJECT_QUERY_OPTIONS as any);
 
   // Signal Governance
   const escalationSummary = trpc.signalGovernance.escalationSummary.useQuery({ limit: 20 }, HOT_PATH_QUERY_OPTIONS);
@@ -127,7 +128,7 @@ export function useMissionControlData() {
     triggerMutation,
     toggleMutation,
 
-    // Knowledge Ingestion Browse
+    // Knowledge Backbone Browse
     jurisdictions,
     domains,
     statutes,
