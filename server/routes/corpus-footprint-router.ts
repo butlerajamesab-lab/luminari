@@ -4,6 +4,7 @@ import { getPool } from "../db";
 export const corpus_footprint_router = Router();
 
 const FOOTPRINT_CONTRACT = "luminari_corpus_footprint_v1";
+const FULL_ATOMIC_ENGINE = "fresh_atomic_corpus_v1.0.0";
 
 corpus_footprint_router.get("/", async (_req, res) => {
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
@@ -14,10 +15,11 @@ corpus_footprint_router.get("/", async (_req, res) => {
         select run_id::text,engine_version,status,artifact_count,atomic_record_count,origin_count,
                started_at,completed_at,receipt_hash,result_json
           from public.luminari_corpus_atomic_run_v1
-         where status in ('completed','completed_with_failures')
+         where engine_version=$1
+           and status in ('completed','completed_with_failures')
          order by completed_at desc nulls last,started_at desc
          limit 1
-      `),
+      `, [FULL_ATOMIC_ENGINE]),
       pool.query(`
         select count(*)::bigint as typed_candidates,
                count(*) filter(where candidate_type='resource')::bigint as resource_candidates,
