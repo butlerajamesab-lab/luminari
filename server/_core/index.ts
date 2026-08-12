@@ -35,6 +35,7 @@ import { run_prism_rosetta_activation_from_environment } from "../services/prism
 import { run_civic_genome_external_snapshot_proof_from_environment } from "../civic-genome-external-snapshot-startup-proof";
 import "../services/fresh-state-enrichment-reconciliation-v1";
 import "../services/fresh-corpus-atomic-startup";
+import "../services/fresh-corpus-atomic-sql-recovery-startup";
 
 const runtime_fingerprint = Object.freeze({
   render_git_commit: process.env.RENDER_GIT_COMMIT || null,
