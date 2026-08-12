@@ -15,6 +15,7 @@ import { conveyorRouter } from "../routes/conveyor-router";
 import { civicMapRouter } from "../routes/civic-map-router";
 import { atlasProxyRouter } from "../routes/atlas-proxy-router";
 import { atlas_domain3_receipt_router } from "../routes/atlas-domain3-receipt-router";
+import { corpus_footprint_router } from "../routes/corpus-footprint-router";
 import { ingestion_control_read_cache_router } from "../routes/ingestion_control_read_cache_router";
 import { ingestion_control_rest_router } from "../routes/ingestion_control_router";
 import { substrate_readiness_router } from "../routes/substrate_readiness_router";
@@ -211,6 +212,7 @@ async function startServer() {
     }
   });
 
+  app.use("/api/corpus-footprint", requireExpressAdmin, corpus_footprint_router);
   app.use("/api/system", requireExpressAdmin, systemVisibilityRouter);
   app.use("/api/ai", aiInspectRouter);
   app.use("/api/conveyor", requireExpressAdmin, conveyorRouter);
