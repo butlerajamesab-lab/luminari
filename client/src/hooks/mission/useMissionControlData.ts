@@ -18,10 +18,93 @@ const DEFERRED_OBJECT_QUERY_OPTIONS = {
   placeholderData: null,
 } as const;
 
+/**
+ * These relations are produced by reform-package runtime activity. They are
+ * history/memory outputs, not seed knowledge inputs, so an empty relation is a
+ * truthful "no runtime event yet" state rather than a knowledge-coverage gap.
+ */
+const RUNTIME_DERIVED_KNOWLEDGE_TABLES = new Set([
+  "reform_package_versions",
+  "reform_strategy_memory",
+]);
+
+export function normalizeKnowledgePopulationForMissionControl(input: any) {
+  const sourceTables = Array.isArray(input?.tables) ? input.tables : [];
+  const runtimeDerivedTables = sourceTables.filter((table: any) =>
+    RUNTIME_DERIVED_KNOWLEDGE_TABLES.has(String(table?.name ?? "")),
+  );
+  const tables = sourceTables.filter((table: any) =>
+    !RUNTIME_DERIVED_KNOWLEDGE_TABLES.has(String(table?.name ?? "")),
+  );
+
+  const totalPopulated = tables.reduce(
+    (sum: number, table: any) => sum + Number(table?.count ?? 0),
+    0,
+  );
+  const totalTarget = tables.reduce(
+    (sum: number, table: any) => sum + Number(table?.target ?? 0),
+    0,
+  );
+  const boundedSeedRows = tables.reduce((sum: number, table: any) => {
+    const count = Math.max(0, Number(table?.count ?? 0));
+    const target = Math.max(0, Number(table?.target ?? 0));
+    return sum + Math.min(count, target);
+  }, 0);
+  const overallCoverage = totalTarget > 0
+    ? Math.min(100, Math.round((boundedSeedRows / totalTarget) * 100))
+    : 0;
+  const rawSeedSaturation = totalTarget > 0
+    ? Math.round((totalPopulated / totalTarget) * 100)
+    : 0;
+  const criticallyLow = tables
+    .filter((table: any) => Number(table?.count ?? 0) === 0)
+    .map((table: any) => String(table?.label ?? table?.name ?? ""));
+  const underPopulated = tables
+    .filter((table: any) => Number(table?.count ?? 0) > 0 && Number(table?.coverage ?? 0) < 25)
+    .map((table: any) => String(table?.label ?? table?.name ?? ""));
+
+  return {
+    ...(input ?? {}),
+    tables,
+    summary: {
+      ...(input?.summary ?? {}),
+      totalPopulated,
+      totalTableRows: totalPopulated,
+      total_table_rows: totalPopulated,
+      totalTarget,
+      overallCoverage,
+      overall_coverage: overallCoverage,
+      rawSeedSaturation,
+      raw_seed_saturation: rawSeedSaturation,
+      boundedSeedRows,
+      bounded_seed_rows: boundedSeedRows,
+      coverageBasis: "bounded_seed_threshold",
+      coverage_basis: "bounded_seed_threshold",
+      criticallyLow,
+      critically_low: criticallyLow,
+      underPopulated,
+      under_populated: underPopulated,
+      runtimeDerivedTables: runtimeDerivedTables.map((table: any) => ({
+        name: String(table?.name ?? ""),
+        label: String(table?.label ?? table?.name ?? ""),
+        count: Number(table?.count ?? 0),
+        state: Number(table?.count ?? 0) > 0 ? "runtime_history_present" : "no_runtime_history_yet",
+      })),
+      runtime_derived_tables: runtimeDerivedTables.map((table: any) => String(table?.name ?? "")),
+    },
+  };
+}
+
 export function useMissionControlData() {
   // System Health & Operations — keep only the top-level boot panels hot.
   const systemHealth = trpc.adminDashboard.systemHealth.useQuery(undefined, HOT_PATH_QUERY_OPTIONS);
-  const knowledgePopulation = trpc.knowledgeIngestion.populationStats.useQuery(undefined, HOT_PATH_QUERY_OPTIONS);
+  const knowledgePopulation = trpc.knowledgeIngestion.populationStats.useQuery(
+    undefined,
+    {
+      ...HOT_PATH_QUERY_OPTIONS,
+      select: normalizeKnowledgePopulationForMissionControl,
+    } as any,
+  );
   const caseActivity = trpc.adminDashboard.caseActivity.useQuery(undefined, HOT_PATH_QUERY_OPTIONS);
   const structuralSignals = trpc.adminDashboard.structuralSignals.useQuery(undefined, HOT_PATH_QUERY_OPTIONS);
   const workQueue = trpc.adminDashboard.workQueue.useQuery(undefined, HOT_PATH_QUERY_OPTIONS);
