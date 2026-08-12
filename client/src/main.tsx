@@ -146,6 +146,60 @@ async function getFreshSessionToken(): Promise<string | null> {
   }
 }
 
+/**
+ * Plain same-origin fetches do not pass through the tRPC link. Mission Control
+ * uses several protected REST diagnostics, so forward the same Supabase
+ * session header to a narrow allowlist of administrator REST surfaces. Never
+ * attach the token to another origin.
+ */
+const nativeFetch = globalThis.fetch.bind(globalThis);
+const AUTHENTICATED_REST_PREFIXES = [
+  "/api/db-diagnostic",
+  "/api/system/",
+  "/api/conveyor/",
+  "/api/ingestion-control/",
+  "/api/executor/",
+] as const;
+
+function requestUrl(input: RequestInfo | URL): URL | null {
+  try {
+    const raw = typeof input === "string"
+      ? input
+      : input instanceof URL
+        ? input.href
+        : input.url;
+    return new URL(raw, window.location.origin);
+  } catch {
+    return null;
+  }
+}
+
+function shouldForwardSupabaseSession(input: RequestInfo | URL): boolean {
+  const url = requestUrl(input);
+  if (!url || url.origin !== window.location.origin) return false;
+  return AUTHENTICATED_REST_PREFIXES.some(prefix =>
+    prefix.endsWith("/") ? url.pathname.startsWith(prefix) : url.pathname === prefix,
+  );
+}
+
+globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+  if (!shouldForwardSupabaseSession(input)) {
+    return nativeFetch(input, init);
+  }
+
+  const headers = new Headers(init?.headers);
+  if (!headers.has("x-lighthouse-supabase-session")) {
+    const sessionToken = await getFreshSessionToken();
+    if (sessionToken) headers.set("x-lighthouse-supabase-session", sessionToken);
+  }
+
+  return nativeFetch(input, {
+    ...(init ?? {}),
+    headers,
+    credentials: "include",
+  });
+};
+
 const trpcClient = trpc.createClient({
   links: [
     httpLink({
