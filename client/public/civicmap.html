@@ -1030,29 +1030,52 @@
         zoomControl: true,
         minZoom: 2,
         worldCopyJump: true,
+        preferCanvas: true,
       }).setView([38.5, -96.5], 4);
 
-      L.tileLayer(
+      const tiles = L.tileLayer(
         "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
         {
           attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
           subdomains: "abcd",
           maxZoom: 19,
+          crossOrigin: true,
         }
       ).addTo(map);
 
       coverageLayer = L.layerGroup().addTo(map);
       exactLayer = L.layerGroup().addTo(map);
 
+      // Unconditional invalidateSize passes to fix the tile "jigsaw"
+      // scramble that appears on iOS Safari (and sometimes desktop) when
+      // Leaflet computes its pixel origin before layout has fully settled.
+      // ResizeObserver alone is not enough: on mobile the container size
+      // often never changes after init, so the observer never fires.
+      const forceInvalidate = () => {
+        if (!map) return;
+        map.invalidateSize({ pan: false, debounceMoveend: true });
+      };
+      requestAnimationFrame(forceInvalidate);
+      setTimeout(forceInvalidate, 100);
+      setTimeout(forceInvalidate, 400);
+      setTimeout(forceInvalidate, 1000);
+      tiles.once("load", forceInvalidate);
+
       // Self-heal tile alignment if the iframe/container is resized later
-      // (sidebar toggles, window resize, devtools open, etc.).
+      // (sidebar toggles, window resize, devtools open, orientation change).
       if (typeof ResizeObserver !== "undefined") {
-        new ResizeObserver(() => {
-          if (map) map.invalidateSize();
-        }).observe(container);
+        new ResizeObserver(forceInvalidate).observe(container);
       }
-      window.addEventListener("resize", () => {
-        if (map) map.invalidateSize();
+      window.addEventListener("resize", forceInvalidate);
+      window.addEventListener("orientationchange", () =>
+        setTimeout(forceInvalidate, 200)
+      );
+      // iOS Safari fires pageshow when returning via back/forward cache; the
+      // map's cached pixel origin can be stale.
+      window.addEventListener("pageshow", forceInvalidate);
+      // If the tab is backgrounded then re-shown, force a repaint.
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) forceInvalidate();
       });
 
       map.on("moveend zoomend", scheduleExactReload);
