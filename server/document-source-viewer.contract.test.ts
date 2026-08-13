@@ -14,6 +14,19 @@ describe("case source viewer contract", () => {
     expect(detail_source).toContain("file_type={doc.fileType}");
   });
 
+  it("resolves private source access through authenticated fetch before native rendering", () => {
+    const hook_source = read("client/src/hooks/use_private_source_access.ts");
+    const viewer_source = read("client/src/components/Source_viewer.tsx");
+
+    expect(hook_source).toContain("fetch(source_url");
+    expect(hook_source).toContain('credentials: "include"');
+    expect(hook_source).toContain('redirect: "follow"');
+    expect(hook_source).toContain("const final_url = response.url");
+    expect(hook_source).toContain("response.body?.cancel()");
+    expect(viewer_source).toContain("use_private_source_access");
+    expect(viewer_source).toContain("src={access_url}");
+  });
+
   it("renders browser-native evidence families and preserves unsupported sources", () => {
     const viewer_source = read("client/src/components/Source_viewer.tsx");
     expect(viewer_source).toContain('preview_kind === "pdf"');
