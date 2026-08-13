@@ -979,8 +979,27 @@
       WY: { name: "Wyoming", coordinates: [43.0, -107.5] },
     };
 
+    // Map ?layer= shorthand aliases to category IDs so links like
+    // civicmap.html?layer=dshs_offices activate the correct category.
+    const LAYER_TO_CATEGORY = {
+      dshs_offices: "healthcare",
+      food_banks: "food_nutrition",
+      legal_aid: "legal_civil_rights",
+      shelters: "housing",
+      tribal_offices: "tribal",
+      veterans_services: "veterans",
+      crisis_lines: "safety_crisis",
+      employment: "employment_labor",
+      disability: "disability",
+      cash_assistance: "cash_assistance",
+      utilities: "utilities",
+    };
+
     const params = new URLSearchParams(window.location.search);
-    let activeCategory = params.get("category") || "";
+    const layerParam = params.get("layer");
+    let activeCategory =
+      params.get("category") ||
+      (layerParam ? (LAYER_TO_CATEGORY[layerParam] ?? "") : "");
     let selectedJurisdiction = params.get("jurisdiction") || "";
     let selectedResource = params.get("resource") || "";
     let coverage = null;
@@ -989,23 +1008,57 @@
     let exactRequestSequence = 0;
     let exactReloadTimer = null;
 
-    const map = L.map("map", {
-      zoomControl: true,
-      minZoom: 2,
-      worldCopyJump: true,
-    }).setView([38.5, -96.5], 4);
+    // Leaflet cannot measure a zero-height container. Because civicmap.html
+    // is rendered inside an iframe that uses flexbox to size itself, the
+    // container can still be 0px on the first paint. Initializing Leaflet
+    // then produces scrambled "jigsaw" tile offsets. Defer the whole init
+    // until the container has real dimensions, then set up layers,
+    // listeners, and the first data load.
+    let map = null;
+    let coverageLayer = null;
+    let exactLayer = null;
+    let mapReady = false;
 
-    L.tileLayer(
-      "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-      {
-        attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
-        subdomains: "abcd",
-        maxZoom: 19,
+    function initMap() {
+      const container = document.getElementById("map");
+      if (!container || container.offsetHeight < 10 || container.offsetWidth < 10) {
+        requestAnimationFrame(initMap);
+        return;
       }
-    ).addTo(map);
 
-    const coverageLayer = L.layerGroup().addTo(map);
-    const exactLayer = L.layerGroup().addTo(map);
+      map = L.map("map", {
+        zoomControl: true,
+        minZoom: 2,
+        worldCopyJump: true,
+      }).setView([38.5, -96.5], 4);
+
+      L.tileLayer(
+        "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+        {
+          attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
+          subdomains: "abcd",
+          maxZoom: 19,
+        }
+      ).addTo(map);
+
+      coverageLayer = L.layerGroup().addTo(map);
+      exactLayer = L.layerGroup().addTo(map);
+
+      // Self-heal tile alignment if the iframe/container is resized later
+      // (sidebar toggles, window resize, devtools open, etc.).
+      if (typeof ResizeObserver !== "undefined") {
+        new ResizeObserver(() => {
+          if (map) map.invalidateSize();
+        }).observe(container);
+      }
+      window.addEventListener("resize", () => {
+        if (map) map.invalidateSize();
+      });
+
+      map.on("moveend zoomend", scheduleExactReload);
+      mapReady = true;
+      loadCoverage();
+    }
 
     function escapeHtml(value) {
       return String(value ?? "").replace(/[&<>'"]/g, (character) => ({
@@ -1106,6 +1159,11 @@
           selectCategory(button.dataset.category || "");
         });
       });
+
+      // Re-apply activeCategory after the key/options are re-rendered so a
+      // preselected value from ?category= or ?layer= isn't clobbered.
+      const sel = document.getElementById("categorySelect");
+      if (sel && activeCategory) sel.value = activeCategory;
     }
 
     function updateDirectoryLink(jurisdiction) {
@@ -1596,15 +1654,14 @@
       renderCategoryKey();
       renderCoverage();
       loadExactPoints();
-      map.flyTo([38.5, -96.5], 4, { duration: 0.8 });
+      if (map) map.flyTo([38.5, -96.5], 4, { duration: 0.8 });
     });
 
     document.getElementById("sidebarClose").addEventListener("click", () => {
       document.getElementById("sidebar").classList.remove("open");
     });
 
-    map.on("moveend zoomend", scheduleExactReload);
-    loadCoverage();
+    requestAnimationFrame(initMap);
   </script>
 </body>
 </html>
