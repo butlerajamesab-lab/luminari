@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
-import { AlertTriangle, Download, ExternalLink, FileText } from "lucide-react";
+import { AlertTriangle, Download, ExternalLink, FileText, Loader2, RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { use_private_source_access } from "@/hooks/use_private_source_access";
 
 type preview_kind = "pdf" | "image" | "video" | "audio" | "text" | "unsupported";
 
@@ -51,6 +52,12 @@ export default function Source_viewer({
     () => resolve_preview_kind(normalized_mime_type, normalized_file_type, extension),
     [normalized_mime_type, normalized_file_type, extension],
   );
+  const {
+    access_url,
+    access_error,
+    is_resolving,
+    retry_access,
+  } = use_private_source_access(preview_kind === "unsupported" ? null : source_url);
 
   if (!source_url) {
     return (
@@ -95,30 +102,51 @@ export default function Source_viewer({
         {source_actions}
       </CardHeader>
       <CardContent className="p-0 border-t border-border/40 bg-black/10">
-        {load_error && (
+        {preview_kind !== "unsupported" && is_resolving && (
+          <div className="p-8 min-h-[220px] flex items-center justify-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Resolving authenticated source access…
+          </div>
+        )}
+
+        {preview_kind !== "unsupported" && access_error && !is_resolving && (
+          <div className="m-4 p-4 rounded-lg border border-red-500/30 bg-red-500/10 flex items-start gap-3">
+            <AlertTriangle className="h-4 w-4 text-red-400 mt-0.5 shrink-0" />
+            <div className="text-sm flex-1">
+              <p className="font-medium text-red-200">Source access could not be resolved.</p>
+              <p className="text-xs text-muted-foreground mt-1">{access_error}</p>
+              <Button variant="outline" size="sm" className="gap-1.5 mt-3" onClick={retry_access}>
+                <RefreshCw className="h-3.5 w-3.5" />
+                Retry source access
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {load_error && access_url && (
           <div className="m-4 p-4 rounded-lg border border-amber-500/30 bg-amber-500/10 flex items-start gap-3">
             <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 shrink-0" />
             <div className="text-sm">
               <p className="font-medium text-amber-200">The browser could not render this source inline.</p>
               <p className="text-xs text-muted-foreground mt-1">
-                The preserved source is still available through Open source or Download above.
+                The exact source is still available through Open source or Download above.
               </p>
             </div>
           </div>
         )}
 
-        {preview_kind === "pdf" && (
+        {access_url && preview_kind === "pdf" && (
           <iframe
-            src={source_url}
+            src={access_url}
             title={`Source PDF: ${filename}`}
             className="w-full min-h-[72vh] bg-white"
           />
         )}
 
-        {preview_kind === "image" && (
+        {access_url && preview_kind === "image" && (
           <div className="flex items-center justify-center p-4 min-h-[320px]">
             <img
-              src={source_url}
+              src={access_url}
               alt={filename}
               className="max-w-full max-h-[75vh] object-contain rounded-md"
               onError={() => set_load_error(true)}
@@ -126,10 +154,10 @@ export default function Source_viewer({
           </div>
         )}
 
-        {preview_kind === "video" && (
+        {access_url && preview_kind === "video" && (
           <div className="flex items-center justify-center p-4 bg-black min-h-[320px]">
             <video
-              src={source_url}
+              src={access_url}
               controls
               playsInline
               preload="metadata"
@@ -141,10 +169,10 @@ export default function Source_viewer({
           </div>
         )}
 
-        {preview_kind === "audio" && (
+        {access_url && preview_kind === "audio" && (
           <div className="p-6 min-h-[180px] flex items-center justify-center">
             <audio
-              src={source_url}
+              src={access_url}
               controls
               preload="metadata"
               className="w-full max-w-3xl"
@@ -155,9 +183,9 @@ export default function Source_viewer({
           </div>
         )}
 
-        {preview_kind === "text" && (
+        {access_url && preview_kind === "text" && (
           <iframe
-            src={source_url}
+            src={access_url}
             title={`Source text: ${filename}`}
             sandbox=""
             className="w-full min-h-[65vh] bg-white"
