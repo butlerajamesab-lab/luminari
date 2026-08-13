@@ -85,8 +85,10 @@ export {
   markDocumentSubmitted,
   deleteBenefitApplication,
   getUpcomingBenefitDeadlines,
-  getBenefitApplicationSummary,
 } from "./benefit-applications-live-compat";
+export {
+  get_benefit_application_summary as getBenefitApplicationSummary,
+} from "./benefit-application-summary-compat";
 export {
   getActionPathsByPipeline,
   getActionPathsByPipelines,
