@@ -32,6 +32,7 @@ import { getFromParam } from "@/lib/buildFromParam";
 import { formatQuoteForReadAloud, formatClaimForReadAloud, formatDocumentPurposeForReadAloud } from "@/lib/forensicReadAloud";
 import AnnotatedText from "@/components/AnnotatedText";
 import type { AnnotationEntity, AnnotationQuote, AnnotationCorrelation } from "@/components/AnnotatedText";
+import Source_viewer from "@/components/Source_viewer";
 
 function QuotesTab({ docId }: { docId: number }) {
   const { data: quotes, isLoading } = trpc.documents.quotes.useQuery({ documentId: docId });
@@ -278,8 +279,15 @@ export default function DocumentDetail() {
         </div>
       </div>
 
+      <Source_viewer
+        source_url={doc.s3Url}
+        filename={doc.filename}
+        mime_type={doc.mimeType}
+        file_type={doc.fileType}
+      />
+
       {(doc as any).documentResolution && (doc as any).documentResolution !== 'active' && (
-        <Card className={`${(doc as any).documentResolution === 'superseded' ? 'border-blue-500/30 bg-blue-950/20' : (doc as any).documentResolution === 'corrupted' ? 'border-red-500/30 bg-red-950/20' : 'border-amber-500/30 bg-amber-950/20'}`}>
+        <Card className={`${(doc as any).documentResolution === 'superseded' ? 'border-blue-500/30 bg-blue-950/20' : (doc as any).documentResolution === 'corrupted' ? 'border-red-500/30 bg-red-950/20' : 'border-amber-500/20 bg-amber-950/20'}`}>
           <CardContent className="p-3 flex items-start gap-3">
             {(doc as any).documentResolution === 'superseded' ? <Link2 className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" /> : (doc as any).documentResolution === 'corrupted' ? <FileX className="h-4 w-4 text-red-400 shrink-0 mt-0.5" /> : <Ban className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />}
             <div className="text-xs flex-1 space-y-1">
