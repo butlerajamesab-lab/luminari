@@ -260,7 +260,7 @@ function ProgramCard({
                 className="w-full text-xs border-primary/30 text-primary hover:bg-primary/10"
               >
                 <Plus className="w-3.5 h-3.5 mr-1.5" />
-                Track This Application
+                Track This Program or Resource
               </Button>
             )}
             {isTracked && (

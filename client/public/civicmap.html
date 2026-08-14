@@ -1029,7 +1029,9 @@
       map = L.map("map", {
         zoomControl: true,
         minZoom: 2,
-        worldCopyJump: true,
+        worldCopyJump: false,
+        maxBounds: [[-85, -180], [85, 180]],
+        maxBoundsViscosity: 1,
         preferCanvas: true,
       }).setView([38.5, -96.5], 4);
 
@@ -1039,6 +1041,7 @@
           attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
           subdomains: "abcd",
           maxZoom: 19,
+          noWrap: true,
           crossOrigin: true,
         }
       ).addTo(map);
@@ -1422,13 +1425,18 @@
     async function loadExactPoints() {
       const sequence = ++exactRequestSequence;
       const bounds = map.getBounds();
+      const north = Math.min(85, bounds.getNorth());
+      const south = Math.max(-85, bounds.getSouth());
+      const east = Math.min(180, bounds.getEast());
+      const west = Math.max(-180, bounds.getWest());
       try {
         const response = await fetch(
-          `/api/civic-map/bounds?north=${encodeURIComponent(bounds.getNorth())}` +
-          `&south=${encodeURIComponent(bounds.getSouth())}` +
-          `&east=${encodeURIComponent(bounds.getEast())}` +
-          `&west=${encodeURIComponent(bounds.getWest())}` +
-          "&limit=1200"
+          `/api/civic-map/bounds?north=${encodeURIComponent(north)}` +
+          `&south=${encodeURIComponent(south)}` +
+          `&east=${encodeURIComponent(east)}` +
+          `&west=${encodeURIComponent(west)}` +
+          "&limit=1200",
+          { cache: "no-store", headers: { Accept: "application/json" } }
         );
         const payload = await response.json();
         if (sequence !== exactRequestSequence) return;
@@ -1601,7 +1609,10 @@
 
     async function loadCoverage() {
       try {
-        const response = await fetch("/api/civic-map/coverage");
+        const response = await fetch("/api/civic-map/coverage", {
+          cache: "no-store",
+          headers: { Accept: "application/json" },
+        });
         const payload = await response.json();
         if (!response.ok || !payload.ok || !payload.coverage) {
           throw new Error(payload.error || "Coverage request failed");

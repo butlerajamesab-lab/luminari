@@ -494,7 +494,7 @@ function ApplicationCard({ app, onRefetch }: { app: any; onRefetch: () => void }
                   className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg bg-blue-500/15 text-blue-300 hover:bg-blue-500/25 transition-colors border border-blue-500/20"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
-                  Open Application
+                  Open Program or Resource
                 </a>
               )}
             </div>

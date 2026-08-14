@@ -17,14 +17,19 @@ describe("case source viewer contract", () => {
   it("resolves private source access through authenticated fetch before native rendering", () => {
     const hook_source = read("client/src/hooks/use_private_source_access.ts");
     const viewer_source = read("client/src/components/Source_viewer.tsx");
+    const detail_source = read("client/src/pages/DocumentDetail.tsx");
 
-    expect(hook_source).toContain("fetch(source_url");
+    expect(hook_source).toContain('bridge_url.searchParams.set("access", "json")');
+    expect(hook_source).toContain("fetch(bridge_url.href");
     expect(hook_source).toContain('credentials: "include"');
-    expect(hook_source).toContain('redirect: "follow"');
-    expect(hook_source).toContain("const final_url = response.url");
-    expect(hook_source).toContain("response.body?.cancel()");
+    expect(hook_source).toContain("await response.json()");
+    expect(hook_source).toContain("const final_url = payload.url");
     expect(viewer_source).toContain("use_private_source_access");
     expect(viewer_source).toContain("src={access_url}");
+    expect(viewer_source).toContain("href={access_url}");
+    expect(viewer_source).not.toContain("href={source_url}");
+    expect(detail_source).toContain("documentAccessUrl");
+    expect(detail_source).not.toContain("href={doc.s3Url}");
   });
 
   it("renders browser-native evidence families and preserves unsupported sources", () => {

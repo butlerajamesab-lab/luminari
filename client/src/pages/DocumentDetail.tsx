@@ -33,6 +33,7 @@ import { formatQuoteForReadAloud, formatClaimForReadAloud, formatDocumentPurpose
 import AnnotatedText from "@/components/AnnotatedText";
 import type { AnnotationEntity, AnnotationQuote, AnnotationCorrelation } from "@/components/AnnotatedText";
 import Source_viewer from "@/components/Source_viewer";
+import { use_private_source_access } from "@/hooks/use_private_source_access";
 
 function QuotesTab({ docId }: { docId: number }) {
   const { data: quotes, isLoading } = trpc.documents.quotes.useQuery({ documentId: docId });
@@ -175,6 +176,8 @@ export default function DocumentDetail() {
   };
 
   const { data: doc, isLoading } = trpc.documents.get.useQuery({ id: docId }, { enabled: !!docId });
+  const { access_url: documentAccessUrl, is_resolving: isResolvingDocumentAccess } =
+    use_private_source_access(doc?.s3Url);
   const { data: annotationQuotes } = trpc.documents.quotes.useQuery({ documentId: docId }, { enabled: !!docId && activeTab === "text" });
   const { data: annotationEntityRoles } = trpc.documents.entityRoles.useQuery({ documentId: docId }, { enabled: !!docId && activeTab === "text" });
   const caseId = doc?.caseId;
@@ -224,9 +227,9 @@ export default function DocumentDetail() {
   });
 
   const handleDownload = useCallback(() => {
-    if (doc?.s3Url) {
+    if (documentAccessUrl && doc) {
       const a = document.createElement("a");
-      a.href = doc.s3Url;
+      a.href = documentAccessUrl;
       a.download = doc.filename;
       a.target = "_blank";
       a.rel = "noopener noreferrer";
@@ -234,7 +237,7 @@ export default function DocumentDetail() {
       a.click();
       document.body.removeChild(a);
     }
-  }, [doc]);
+  }, [doc, documentAccessUrl]);
 
   if (isLoading) return <div className="space-y-4">{[1,2,3].map(i => <div key={i} className="h-24 bg-muted/50 rounded-md animate-pulse" />)}</div>;
   if (!doc) return <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4"><p className="text-muted-foreground">Document not found</p><Button variant="outline" onClick={handleBack}>Back to Documents</Button></div>;
@@ -274,8 +277,8 @@ export default function DocumentDetail() {
             </DropdownMenu>
           )}
           <Button variant="outline" size="sm" className="gap-1.5" onClick={openIntakeSpine}><Shield className="h-3.5 w-3.5" />Review Spine Receipts</Button>
-          {doc.s3Url && <Button variant="outline" size="sm" className="gap-1.5" onClick={handleDownload}><Download className="h-3.5 w-3.5" />Download</Button>}
-          {doc.s3Url && <Button variant="outline" size="sm" className="gap-1.5" asChild><a href={doc.s3Url} target="_blank" rel="noopener noreferrer"><ExternalLink className="h-3.5 w-3.5" />Source</a></Button>}
+          {doc.s3Url && <Button variant="outline" size="sm" className="gap-1.5" onClick={handleDownload} disabled={!documentAccessUrl || isResolvingDocumentAccess}><Download className="h-3.5 w-3.5" />Download</Button>}
+          {doc.s3Url && <Button variant="outline" size="sm" className="gap-1.5" disabled={!documentAccessUrl || isResolvingDocumentAccess} asChild={Boolean(documentAccessUrl)}>{documentAccessUrl ? <a href={documentAccessUrl} target="_blank" rel="noopener noreferrer"><ExternalLink className="h-3.5 w-3.5" />Source</a> : <span><ExternalLink className="h-3.5 w-3.5" />Source</span>}</Button>}
         </div>
       </div>
 

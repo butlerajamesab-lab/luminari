@@ -3359,7 +3359,7 @@ export async function createShareLink(data: {
   expiresAt: number;
 }) {
   const now = Date.now();
-  const result = await db.insert(shareLinks).values({
+  const [result] = await db.insert(shareLinks).values({
     caseId: data.caseId,
     createdBy: data.createdBy,
     token: data.token,
@@ -3368,8 +3368,9 @@ export async function createShareLink(data: {
     expiresAt: data.expiresAt,
     accessCount: 0,
     createdAt: now,
-  }).$returningId();
-  return { id: result[0].id, token: data.token };
+  }).returning({ id: shareLinks.id });
+  if (!result) throw new Error("share_link_insert_returned_no_row");
+  return { id: result.id, token: data.token };
 }
 
 export async function getShareLinkByToken(token: string) {

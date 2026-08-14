@@ -21,18 +21,21 @@ export function use_private_source_access(source_url: string | null | undefined)
     set_access_error(null);
     set_is_resolving(true);
 
-    void fetch(source_url, {
+    const bridge_url = new URL(source_url, window.location.origin);
+    bridge_url.searchParams.set("access", "json");
+
+    void fetch(bridge_url.href, {
       method: "GET",
       credentials: "include",
       redirect: "follow",
       signal: controller.signal,
     }).then(async response => {
       if (!response.ok) throw new Error(`Source access failed with HTTP ${response.status}`);
-      const final_url = response.url;
-      if (!final_url || final_url === new URL(source_url, window.location.origin).href) {
+      const payload = await response.json() as { url?: string };
+      const final_url = payload.url;
+      if (!final_url) {
         throw new Error("Private source bridge did not return a storage access URL");
       }
-      await response.body?.cancel().catch(() => undefined);
       if (!disposed) set_access_url(final_url);
     }).catch(error => {
       if (controller.signal.aborted || disposed) return;

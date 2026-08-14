@@ -254,11 +254,11 @@ export const caseStateRouter = router({
     }),
 
   commit_statute: protectedProcedure
-    .input(z.object({ case_id: z.number(), statute_id: z.number() }))
+    .input(z.object({ case_id: z.number(), statute_id: z.union([z.number(), z.string().min(1)]) }))
     .mutation(async ({ ctx, input }) => {
       await verify_case_ownership(input.case_id, ctx.user.id);
       const state = await get_or_create_case_state(input.case_id, ctx.user.id);
-      const current = (state.committedStatuteIds as number[]) || [];
+      const current = (state.committedStatuteIds as Array<number | string>) || [];
       if (!current.includes(input.statute_id)) {
         await db.update(caseState)
           .set({ committedStatuteIds: [...current, input.statute_id], updatedAt: Date.now() })
