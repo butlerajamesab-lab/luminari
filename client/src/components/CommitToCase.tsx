@@ -46,7 +46,7 @@ type CommitType =
 type CommitToCaseProps = {
   type: CommitType;
   // For item-based commits (finding, barrier, benefit, signal, statute, foia, filing)
-  itemId?: number;
+  itemId?: number | string;
   // For signal commits
   signalType?: "structural" | "evidentiary" | "pattern" | "resource";
   // For procedural path commits
@@ -149,27 +149,28 @@ export function CommitToCase({
   }
 
   function doCommit(caseId: number) {
+    const numericItemId = typeof itemId === "number" ? itemId : Number(itemId);
     switch (type) {
       case "finding":
-        commit_finding.mutate({ case_id: caseId, finding_id: itemId! });
+        commit_finding.mutate({ case_id: caseId, finding_id: numericItemId });
         break;
       case "barrier":
-        commit_barrier.mutate({ case_id: caseId, barrier_id: itemId! });
+        commit_barrier.mutate({ case_id: caseId, barrier_id: numericItemId });
         break;
       case "benefit":
-        commit_benefit.mutate({ case_id: caseId, benefit_id: itemId! });
+        commit_benefit.mutate({ case_id: caseId, benefit_id: numericItemId });
         break;
       case "signal":
-        commit_signal.mutate({ case_id: caseId, signal_id: itemId!, signal_type: signalType });
+        commit_signal.mutate({ case_id: caseId, signal_id: numericItemId, signal_type: signalType });
         break;
       case "statute":
         commit_statute.mutate({ case_id: caseId, statute_id: itemId! });
         break;
       case "foia":
-        commit_foia.mutate({ case_id: caseId, foia_id: itemId! });
+        commit_foia.mutate({ case_id: caseId, foia_id: numericItemId });
         break;
       case "filing":
-        commit_filing.mutate({ case_id: caseId, filing_id: itemId! });
+        commit_filing.mutate({ case_id: caseId, filing_id: numericItemId });
         break;
       case "proceduralPath":
         commit_path.mutate({ case_id: caseId, path_id: pathId, path_label: pathLabel!, deadlines: deadlines?.map((deadline) => ({ label: deadline.label, date: deadline.date, days_remaining: deadline.daysRemaining, critical: deadline.critical })) });
