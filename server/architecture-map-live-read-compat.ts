@@ -168,7 +168,20 @@ export async function list_live_filing_templates(
     [options.agencyShort ?? null, options.pipelineCategory ?? null],
     { label: "architecture_live_filing_templates" },
   );
-  return rows.map(map_filing_template);
+  const templates = rows.map(map_filing_template);
+  const seen = new Set<string>();
+  return templates.filter((template) => {
+    const semantic_key = [
+      template.agencyShort,
+      template.claimType,
+      template.formName,
+      template.formNumber ?? "",
+      template.jurisdiction ?? "",
+    ].map((value) => String(value ?? "").trim().toLowerCase()).join("\u001f");
+    if (seen.has(semantic_key)) return false;
+    seen.add(semantic_key);
+    return true;
+  });
 }
 
 export async function get_live_filing_template(id: number) {
