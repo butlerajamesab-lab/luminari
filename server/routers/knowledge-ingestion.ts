@@ -762,8 +762,8 @@ export const knowledgeIngestionRouter = router({
       search: z.string().optional(),
       jurisdiction: z.string().optional(),
       domain: z.string().optional(),
-      limit: z.number().min(1).max(100).default(25),
-      offset: z.number().min(0).default(0),
+      limit: z.number().int().min(1).max(100).default(25),
+      offset: z.number().int().min(0).default(0),
     }))
     .query(async ({ input }) => {
       const conditions: string[] = [];
@@ -782,8 +782,8 @@ export const knowledgeIngestionRouter = router({
       search: z.string().optional(),
       jurisdiction: z.string().optional(),
       domain: z.string().optional(),
-      limit: z.number().min(1).max(100).default(25),
-      offset: z.number().min(0).default(0),
+      limit: z.number().int().min(1).max(100).default(25),
+      offset: z.number().int().min(0).default(0),
     }))
     .query(async ({ input }) => {
       const conditions: string[] = [];
@@ -801,8 +801,8 @@ export const knowledgeIngestionRouter = router({
     .input(z.object({
       search: z.string().optional(),
       jurisdiction: z.string().optional(),
-      limit: z.number().min(1).max(100).default(25),
-      offset: z.number().min(0).default(0),
+      limit: z.number().int().min(1).max(100).default(25),
+      offset: z.number().int().min(0).default(0),
     }))
     .query(async ({ input }) => {
       const conditions: string[] = [];
@@ -821,8 +821,8 @@ export const knowledgeIngestionRouter = router({
       search: z.string().optional(),
       jurisdiction: z.string().optional(),
       courtType: z.string().optional(),
-      limit: z.number().min(1).max(100).default(25),
-      offset: z.number().min(0).default(0),
+      limit: z.number().int().min(1).max(100).default(25),
+      offset: z.number().int().min(0).default(0),
     }))
     .query(async ({ input }) => {
       const conditions: string[] = [];
@@ -840,8 +840,8 @@ export const knowledgeIngestionRouter = router({
     .input(z.object({
       search: z.string().optional(),
       targetType: z.string().optional(),
-      limit: z.number().min(1).max(100).default(25),
-      offset: z.number().min(0).default(0),
+      limit: z.number().int().min(1).max(100).default(25),
+      offset: z.number().int().min(0).default(0),
     }))
     .query(async ({ input }) => {
       const conditions: string[] = [];
@@ -859,8 +859,8 @@ export const knowledgeIngestionRouter = router({
     .input(z.object({
       search: z.string().optional(),
       claimType: z.string().optional(),
-      limit: z.number().min(1).max(100).default(25),
-      offset: z.number().min(0).default(0),
+      limit: z.number().int().min(1).max(100).default(25),
+      offset: z.number().int().min(0).default(0),
     }))
     .query(async ({ input }) => {
       const conditions: string[] = [];
