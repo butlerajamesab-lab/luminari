@@ -771,9 +771,9 @@ export const knowledgeIngestionRouter = router({
       if (input.jurisdiction) conditions.push(`jurisdiction = '${input.jurisdiction.replace(/'/g, "''")}' `);
       if (input.domain) conditions.push(`domains LIKE '%${input.domain.replace(/'/g, "''")}%'`);
       const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-      const [rows] = await db.execute(sql.raw(`SELECT id, jurisdiction, citation, title, summary, domains, source_url, created_at FROM legal_statutes ${where} ORDER BY created_at DESC LIMIT ${input.limit} OFFSET ${input.offset}`));
-      const [countRows] = await db.execute(sql.raw(`SELECT COUNT(*) as cnt FROM legal_statutes ${where}`));
-      return { rows: rows as unknown as unknown as any[], total: Number((countRows as unknown as any[])[0]?.cnt ?? 0) };
+      const { rows } = await getPool().query(`SELECT id, jurisdiction, citation, title, summary, domains, source_url, created_at FROM legal_statutes ${where} ORDER BY created_at DESC LIMIT ${input.limit} OFFSET ${input.offset}`);
+      const { rows: countRows } = await getPool().query(`SELECT COUNT(*) as cnt FROM legal_statutes ${where}`);
+      return { rows, total: Number((countRows[0] as any)?.cnt ?? 0) };
     }),
 
   /** Browse case law with optional search & jurisdiction filter */
@@ -791,9 +791,9 @@ export const knowledgeIngestionRouter = router({
       if (input.jurisdiction) conditions.push(`jurisdiction = '${input.jurisdiction.replace(/'/g, "''")}' `);
       if (input.domain) conditions.push(`domains LIKE '%${input.domain.replace(/'/g, "''")}%'`);
       const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-      const [rows] = await db.execute(sql.raw(`SELECT id, case_name, citation, jurisdiction, court, summary, year_decided, key_quotes, domains, created_at FROM legal_case_law ${where} ORDER BY created_at DESC LIMIT ${input.limit} OFFSET ${input.offset}`));
-      const [countRows] = await db.execute(sql.raw(`SELECT COUNT(*) as cnt FROM legal_case_law ${where}`));
-      return { rows: rows as unknown as unknown as any[], total: Number((countRows as unknown as any[])[0]?.cnt ?? 0) };
+      const { rows } = await getPool().query(`SELECT id, case_name, citation, jurisdiction, court, summary, year_decided, key_quotes, domains, created_at FROM legal_case_law ${where} ORDER BY created_at DESC LIMIT ${input.limit} OFFSET ${input.offset}`);
+      const { rows: countRows } = await getPool().query(`SELECT COUNT(*) as cnt FROM legal_case_law ${where}`);
+      return { rows, total: Number((countRows[0] as any)?.cnt ?? 0) };
     }),
 
   /** Browse agency authorities — primary source: agencies_registry (20 real agencies with contact info) */
@@ -810,9 +810,9 @@ export const knowledgeIngestionRouter = router({
       if (input.jurisdiction) conditions.push(`jurisdiction = '${input.jurisdiction.replace(/'/g, "''")}'`);
       const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-      const [rows] = await db.execute(sql.raw(`SELECT id, agency_name, jurisdiction, metadata, created_at FROM agencies_registry ${where} ORDER BY agency_name ASC LIMIT ${input.limit} OFFSET ${input.offset}`));
-      const [countRows] = await db.execute(sql.raw(`SELECT COUNT(*) as cnt FROM agencies_registry ${where}`));
-      return { rows: rows as unknown as any[], total: Number((countRows as unknown as any[])[0]?.cnt ?? 0) };
+      const { rows } = await getPool().query(`SELECT id, agency_name, jurisdiction, metadata, created_at FROM agencies_registry ${where} ORDER BY agency_name ASC LIMIT ${input.limit} OFFSET ${input.offset}`);
+      const { rows: countRows } = await getPool().query(`SELECT COUNT(*) as cnt FROM agencies_registry ${where}`);
+      return { rows, total: Number((countRows[0] as any)?.cnt ?? 0) };
     }),
 
   /** Browse court directory */
@@ -830,9 +830,9 @@ export const knowledgeIngestionRouter = router({
       if (input.search) conditions.push(`(agency_name_rob LIKE '%${input.search.replace(/'/g, "''")}%' OR function_rob LIKE '%${input.search.replace(/'/g, "''")}%')`);
       if (input.courtType) conditions.push(`function_rob LIKE '%${input.courtType.replace(/'/g, "''")}%'`);
       const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-      const [rows] = await db.execute(sql.raw(`SELECT id, agency_name_rob AS court_name, function_rob AS court_type, contact_rob AS filing_portal, pathway_rob AS escalation_path, statute_of_limitations_rob AS sol, created_at_rob AS created_at FROM registry_oversight_bodies ${where} ORDER BY created_at_rob DESC LIMIT ${input.limit} OFFSET ${input.offset}`));
-      const [countRows] = await db.execute(sql.raw(`SELECT COUNT(*) as cnt FROM registry_oversight_bodies ${where}`));
-      return { rows: rows as unknown as unknown as any[], total: Number((countRows as unknown as any[])[0]?.cnt ?? 0) };
+      const { rows } = await getPool().query(`SELECT id, agency_name_rob AS court_name, function_rob AS court_type, contact_rob AS filing_portal, pathway_rob AS escalation_path, statute_of_limitations_rob AS sol, created_at_rob AS created_at FROM registry_oversight_bodies ${where} ORDER BY created_at_rob DESC LIMIT ${input.limit} OFFSET ${input.offset}`);
+      const { rows: countRows } = await getPool().query(`SELECT COUNT(*) as cnt FROM registry_oversight_bodies ${where}`);
+      return { rows, total: Number((countRows[0] as any)?.cnt ?? 0) };
     }),
 
   /** Browse advocacy targets */
@@ -849,9 +849,9 @@ export const knowledgeIngestionRouter = router({
       if (input.search) conditions.push(`(name_rp LIKE '%${input.search.replace(/'/g, "''")}%' OR agency_rp LIKE '%${input.search.replace(/'/g, "''")}%' OR eligibility_rp LIKE '%${input.search.replace(/'/g, "''")}%')`);
       if (input.targetType) conditions.push(`category_rp LIKE '%${input.targetType.replace(/'/g, "''")}%'`);
       const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-      const [rows] = await db.execute(sql.raw(`SELECT id, name_rp AS target_name, category_rp AS target_type, jurisdiction_id_rp AS jurisdiction, contact_rp AS contact_info, created_at_rp AS created_at FROM registry_programs ${where} ORDER BY created_at_rp DESC LIMIT ${input.limit} OFFSET ${input.offset}`));
-      const [countRows] = await db.execute(sql.raw(`SELECT COUNT(*) as cnt FROM registry_programs ${where}`));
-      return { rows: rows as unknown as unknown as any[], total: Number((countRows as unknown as any[])[0]?.cnt ?? 0) };
+      const { rows } = await getPool().query(`SELECT id, name_rp AS target_name, category_rp AS target_type, jurisdiction_id_rp AS jurisdiction, contact_rp AS contact_info, created_at_rp AS created_at FROM registry_programs ${where} ORDER BY created_at_rp DESC LIMIT ${input.limit} OFFSET ${input.offset}`);
+      const { rows: countRows } = await getPool().query(`SELECT COUNT(*) as cnt FROM registry_programs ${where}`);
+      return { rows, total: Number((countRows[0] as any)?.cnt ?? 0) };
     }),
 
   /** Browse settlement formulas */
@@ -868,14 +868,14 @@ export const knowledgeIngestionRouter = router({
       if (input.search) conditions.push(`(formula_name LIKE '%${input.search.replace(/'/g, "''")}%' OR claim_type LIKE '%${input.search.replace(/'/g, "''")}%' OR notes LIKE '%${input.search.replace(/'/g, "''")}%')`);
       if (input.claimType) conditions.push(`claim_type = '${input.claimType.replace(/'/g, "''")}' `);
       const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-      const [rows] = await db.execute(sql.raw(`SELECT formula_id AS id, formula_name, claim_type, jurisdiction, formula_expression AS base_multiplier, notes AS description, created_at FROM settlement_formulas ${where} ORDER BY created_at DESC LIMIT ${input.limit} OFFSET ${input.offset}`));
-      const [countRows] = await db.execute(sql.raw(`SELECT COUNT(*) as cnt FROM settlement_formulas ${where}`));
-      return { rows: rows as unknown as unknown as any[], total: Number((countRows as unknown as any[])[0]?.cnt ?? 0) };
+      const { rows } = await getPool().query(`SELECT formula_id AS id, formula_name, claim_type, jurisdiction, formula_expression AS base_multiplier, notes AS description, created_at FROM settlement_formulas ${where} ORDER BY created_at DESC LIMIT ${input.limit} OFFSET ${input.offset}`);
+      const { rows: countRows } = await getPool().query(`SELECT COUNT(*) as cnt FROM settlement_formulas ${where}`);
+      return { rows, total: Number((countRows[0] as any)?.cnt ?? 0) };
     }),
 
   /** Get distinct jurisdictions across all knowledge tables */
   getJurisdictions: protectedProcedure.query(async () => {
-    const [rows] = await db.execute(sql.raw(`
+    const { rows } = await getPool().query(`
       SELECT DISTINCT jurisdiction FROM (
         SELECT jurisdiction FROM legal_statutes
         UNION SELECT jurisdiction FROM legal_case_law
@@ -883,7 +883,7 @@ export const knowledgeIngestionRouter = router({
       ) AS all_jurisdictions
       WHERE jurisdiction IS NOT NULL AND jurisdiction != '' AND jurisdiction NOT IN ('state')
       ORDER BY jurisdiction
-    `));
+    `);
     // Normalize: convert j_xxx IDs to Title Case labels, deduplicate
     const stateMap: Record<string, string> = {
       j_alaska: 'Alaska', j_american_samoa: 'American Samoa', j_arizona: 'Arizona',
@@ -906,7 +906,7 @@ export const knowledgeIngestionRouter = router({
     };
     const seen = new Set<string>();
     const result: string[] = [];
-    for (const r of rows as unknown as any[]) {
+    for (const r of rows as any[]) {
       const raw: string = r.jurisdiction;
       const normalized = stateMap[raw.toLowerCase()] ?? (raw === 'federal' || raw === 'Federal' ? 'Federal' : raw);
       if (!seen.has(normalized)) { seen.add(normalized); result.push(normalized); }
@@ -916,12 +916,12 @@ export const knowledgeIngestionRouter = router({
 
   /** Get distinct domains across statutes and case law */
   getDomains: protectedProcedure.query(async () => {
-    const [rows] = await db.execute(sql.raw(`
+    const { rows } = await getPool().query(`
       SELECT DISTINCT domains FROM legal_statutes WHERE domains IS NOT NULL
       UNION SELECT DISTINCT domains FROM legal_case_law WHERE domains IS NOT NULL
-    `));
+    `);
     const domainSet = new Set<string>();
-    for (const r of rows as unknown as any[]) {
+    for (const r of rows as any[]) {
       try {
         const parsed = typeof r.domains === 'string' ? JSON.parse(r.domains) : r.domains;
         if (Array.isArray(parsed)) parsed.forEach((d: string) => domainSet.add(d));

@@ -58,7 +58,11 @@ async function loadJurisdictions(): Promise<WorldObject[]> {
       from luminari_resource_entities e
       left join luminari_resource_publication_resolutions p
         on p.resource_entity_id = e.resource_entity_id
-      where e.source_table = 'state_directory_logical_record'
+      where (
+        e.provenance_status IN ('review_ready', 'source_attached', 'staging')
+        OR e.promotion_status = 'promoted'
+        OR e.verification_status IN ('verified', 'verified_source', 'verified-source')
+      )
         and coalesce(p.publication_status, 'active') = 'active'
         and e.state is not null
       union
@@ -207,7 +211,11 @@ async function loadPrograms(): Promise<WorldObject[]> {
       on c.resource_entity_id = e.resource_entity_id
     left join preferred_locations l
       on l.resource_entity_id = e.resource_entity_id
-    where e.source_table = 'state_directory_logical_record'
+    where (
+      e.provenance_status IN ('review_ready', 'source_attached', 'staging')
+      OR e.promotion_status = 'promoted'
+      OR e.verification_status IN ('verified', 'verified_source', 'verified-source')
+    )
       and coalesce(p.publication_status, 'active') = 'active'
   `) as any;
 

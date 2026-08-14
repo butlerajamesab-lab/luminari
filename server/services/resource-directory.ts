@@ -1,7 +1,14 @@
 import { getPool } from "../db";
 
-const DIRECTORY_SOURCE_TABLE = "state_directory_logical_record";
 const SUMMARY_CACHE_MS = 5 * 60 * 1000;
+
+// Governed publishable gate: entities that are publication-eligible regardless of source lane.
+// Matches: review_ready/source_attached/staging provenance OR promoted/verified/verified-source status.
+const GOVERNED_PUBLISHABLE_GATE = `(
+  e.provenance_status IN ('review_ready', 'source_attached', 'staging')
+  OR e.promotion_status = 'promoted'
+  OR e.verification_status IN ('verified', 'verified_source', 'verified-source')
+)`;
 
 export interface ResourceDirectorySearchInput {
   query?: string;
@@ -71,7 +78,7 @@ export async function getResourceDirectorySummary(options?: {
         from public.luminari_resource_entities e
         left join public.luminari_resource_publication_resolutions p
           on p.resource_entity_id = e.resource_entity_id
-        where e.source_table = $1
+        where ${GOVERNED_PUBLISHABLE_GATE}
       ),
       category_rows as (
         select
@@ -170,7 +177,6 @@ export async function getResourceDirectorySummary(options?: {
         )
       ) as payload
     `,
-    [DIRECTORY_SOURCE_TABLE]
   );
 
   const value = rows[0]?.payload ?? {
@@ -223,30 +229,30 @@ export async function searchResourceDirectory(
         from public.luminari_resource_entities e
         left join public.luminari_resource_publication_resolutions p
           on p.resource_entity_id = e.resource_entity_id
-        where e.source_table = $1
+        where ${GOVERNED_PUBLISHABLE_GATE}
       ),
       filtered as (
         select c.*
         from corpus c
         where c.publication_status = 'active'
-          and ($2::text is null or c.state = $2)
-          and ($3::text is null or c.resource_category = $3)
+          and ($1::text is null or c.state = $1)
+          and ($2::text is null or c.resource_category = $2)
           and (
-            $4::text is null
-            or c.resource_name ilike '%' || $4 || '%'
-            or c.source_resource_name ilike '%' || $4 || '%'
-            or coalesce(c.description, '') ilike '%' || $4 || '%'
-            or coalesce(c.eligibility_summary, '') ilike '%' || $4 || '%'
-            or coalesce(c.apply_notes, '') ilike '%' || $4 || '%'
+            $3::text is null
+            or c.resource_name ilike '%' || $3 || '%'
+            or c.source_resource_name ilike '%' || $3 || '%'
+            or coalesce(c.description, '') ilike '%' || $3 || '%'
+            or coalesce(c.eligibility_summary, '') ilike '%' || $3 || '%'
+            or coalesce(c.apply_notes, '') ilike '%' || $3 || '%'
             or array_to_string(
               coalesce(c.service_categories, array[]::text[]),
               ' '
-            ) ilike '%' || $4 || '%'
+            ) ilike '%' || $3 || '%'
             or exists (
               select 1
               from public.v_luminari_resource_contact_points_current_v3_13 cp
               where cp.resource_entity_id = c.resource_entity_id
-                and cp.contact_value ilike '%' || $4 || '%'
+                and cp.contact_value ilike '%' || $3 || '%'
             )
           )
       ),
@@ -257,13 +263,13 @@ export async function searchResourceDirectory(
           case when publication_status = 'active' then 0 else 1 end,
           resource_name,
           resource_entity_id
-        limit $5
-        offset $6
+        limit $4
+        offset $5
       )
       select jsonb_build_object(
         'total', (select count(*)::int from filtered),
-        'limit', $5::int,
-        'offset', $6::int,
+        'limit', $4::int,
+        'offset', $5::int,
         'items', coalesce(
           (
             select jsonb_agg(item.payload order by item.sort_status, item.sort_name)
@@ -379,7 +385,6 @@ export async function searchResourceDirectory(
       ) as payload
     `,
     [
-      DIRECTORY_SOURCE_TABLE,
       jurisdiction,
       category,
       query,
@@ -432,7 +437,7 @@ export async function getResourceDirectoryDetail(resourceEntityId: string) {
         left join public.luminari_resource_publication_resolutions p
           on p.resource_entity_id = e.resource_entity_id
         where e.resource_entity_id = $1::uuid
-          and e.source_table = $2
+          and ${GOVERNED_PUBLISHABLE_GATE}
           and coalesce(p.publication_status, 'active') = 'active'
         limit 1
       )
@@ -503,7 +508,7 @@ export async function getResourceDirectoryDetail(resourceEntityId: string) {
         limit 1
       ) location_resolution on true
     `,
-    [resourceEntityId, DIRECTORY_SOURCE_TABLE]
+    [resourceEntityId]
   );
 
   return rows[0]?.payload ?? null;
@@ -541,18 +546,17 @@ export async function getResourceDirectoryMapPoints(
         on e.resource_entity_id = l.resource_entity_id
       left join public.luminari_resource_publication_resolutions p
         on p.resource_entity_id = e.resource_entity_id
-      where e.source_table = $1
+      where ${GOVERNED_PUBLISHABLE_GATE}
         and coalesce(p.publication_status, 'active') = 'active'
         and l.manual_map_eligible is true
         and l.latitude is not null
         and l.longitude is not null
-        and l.latitude between $2 and $3
-        and l.longitude between $4 and $5
+        and l.latitude between $1 and $2
+        and l.longitude between $3 and $4
       order by e.resource_name, l.location_id
-      limit $6
+      limit $5
     `,
     [
-      DIRECTORY_SOURCE_TABLE,
       input.south,
       input.north,
       input.west,
