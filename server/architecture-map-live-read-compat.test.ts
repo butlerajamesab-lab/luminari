@@ -120,6 +120,40 @@ describe("architecture-map exact-live read compatibility", () => {
     expect(sql).not.toContain("requiredFields");
   });
 
+  it("collapses repeated source rows that describe the same filing template", async () => {
+    const template = {
+      claim_type: "Wage theft",
+      jurisdiction: "Federal",
+      pipeline_category: "employment",
+      agency: "Department of Labor",
+      agency_short: "DOL",
+      form_name: "Wage complaint",
+      form_number: "WH-3",
+      filing_link: "https://example.gov/file",
+      filing_deadline: "Two years",
+      required_fields: "[]",
+      required_evidence: "[]",
+      recommended_attachments: "[]",
+      submission_methods: "[]",
+      expected_timeline: null,
+      intake_warnings: "[]",
+      priority_flags: "[]",
+      next_steps: "[]",
+      notes: null,
+      created_at: 1776197586298,
+      updated_at: null,
+    };
+    query_with_diagnostics_mock.mockResolvedValue({
+      rows: [{ ...template, id: 2 }, { ...template, id: 7 }, { ...template, id: 12 }],
+      rowCount: 3,
+    });
+
+    const rows = await list_live_filing_templates({ agencyShort: "DOL" });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.id).toBe(2);
+  });
+
   it("matches filing readiness by normalized exact claim type", async () => {
     query_with_diagnostics_mock.mockResolvedValue({ rows: [], rowCount: 0 });
 
