@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 51014)
-Total output lines: 5533
-
 // @ts-nocheck — restored legacy helper surface has pre-existing schema type drift; runtime auth helpers below use explicit snake_case SQL.
 import { eq, and, desc, asc, sql, inArray, lte, lt, gt, not } from "drizzle-orm";
 import { compareDateOccurred, normalizeDateForSort, isPreModernDate } from "./date-normalizer";
@@ -2645,7 +2642,110 @@ export async function getIngestionAudit(caseId: number): Promise<IngestionAuditR
 
   // 4. Duplicates linked — sessions that recorded at least 1 duplicate
   const duplicatesLinked = sessions
-    .…1014 tokens truncated…: Date.now(),
+    .filter(s => s.duplicateFiles > 0)
+    .map(s => ({
+      sessionId: s.id,
+      count: s.duplicateFiles,
+    }));
+
+  // 5. Failed uploads — sessions with failedFiles > 0
+  const failedUploads = sessions
+    .filter(s => s.failedFiles > 0)
+    .map(s => ({
+      sessionId: s.id,
+      totalFiles: s.totalFiles,
+      failedFiles: s.failedFiles,
+      status: s.status,
+      createdAt: s.createdAt,
+    }));
+
+  // 6. Expired uploads — sessions with status "expired"
+  //    Unprocessed files = totalFiles - completedFiles - duplicateFiles - failedFiles
+  const expiredUploads = sessions
+    .filter(s => s.status === "expired")
+    .map(s => {
+      const unprocessedFiles = Math.max(0, s.totalFiles - s.completedFiles - s.duplicateFiles - s.failedFiles);
+      return {
+        sessionId: s.id,
+        totalFiles: s.totalFiles,
+        completedFiles: s.completedFiles,
+        failedFiles: s.failedFiles,
+        duplicateFiles: s.duplicateFiles,
+        unprocessedFiles,
+        status: s.status,
+        createdAt: s.createdAt,
+        updatedAt: s.updatedAt,
+      };
+    });
+
+  // 7. Extraction failures — scoped to upload-session-created documents only
+  //    We only consider documents that were created through upload sessions (limited to completedFiles count)
+  const extractionFailures = documentsCreated
+    .filter(d => d.status === "error" || d.status === "failed_permanent")
+    .map(d => ({
+      id: d.id,
+      filename: d.filename,
+      fileType: d.fileType,
+      status: d.status,
+      errorMessage: null as string | null, // detail from documentsCreated doesn't carry errorMessage
+      retryCount: 0,
+      createdAt: d.createdAt,
+    }));
+
+  // Enrich extraction failures with error details from DB
+  if (extractionFailures.length > 0) {
+    const failedDocIds = extractionFailures.map(ef => ef.id);
+    const failedDocs = await db.select({
+      id: documents.id,
+      errorMessage: documents.errorMessage,
+      retryCount: documents.retryCount,
+    }).from(documents).where(inArray(documents.id, failedDocIds));
+    const failedMap = new Map(failedDocs.map(d => [d.id, d]));
+    for (const ef of extractionFailures) {
+      const detail = failedMap.get(ef.id);
+      if (detail) {
+        ef.errorMessage = detail.errorMessage;
+        ef.retryCount = detail.retryCount;
+      }
+    }
+  }
+
+  // 8. Missing documents computation (scope-isolated):
+  //    Per session: missingCount = totalFiles - completedFiles - duplicateFiles - failedFiles
+  //    For expired sessions, the unprocessed portion is already counted under expiredUnprocessed,
+  //    so expired sessions don't double-count.
+  //    For non-expired terminal sessions: missing = totalFiles - completedFiles - duplicateFiles - failedFiles
+  const terminalStatuses = ["complete", "failed"];
+  const missingDocuments = sessions
+    .filter(s => terminalStatuses.includes(s.status))
+    .map(s => {
+      const accounted = s.completedFiles + s.duplicateFiles + s.failedFiles;
+      const missingCount = Math.max(0, s.totalFiles - accounted);
+      return {
+        sessionId: s.id,
+        missingCount,
+        totalFiles: s.totalFiles,
+        completedFiles: s.completedFiles,
+        duplicateFiles: s.duplicateFiles,
+        failedFiles: s.failedFiles,
+        status: s.status,
+        createdAt: s.createdAt,
+      };
+    })
+    .filter(s => s.missingCount > 0);
+
+  // 9. Summary totals — ALL derived from upload session counters
+  const totalIntendedFiles = sessions.reduce((sum, s) => sum + s.totalFiles, 0);
+  const totalDocumentsCreated = sessions.reduce((sum, s) => sum + s.completedFiles, 0);
+  const totalDuplicatesLinked = sessions.reduce((sum, s) => sum + s.duplicateFiles, 0);
+  const totalFailedFiles = sessions.reduce((sum, s) => sum + s.failedFiles, 0);
+  const totalExpiredUnprocessed = expiredUploads.reduce((sum, e) => sum + e.unprocessedFiles, 0);
+  const totalExtractionFailures = extractionFailures.length;
+  const totalMissing = missingDocuments.reduce((sum, s) => sum + s.missingCount, 0);
+
+  return {
+    caseId,
+    generatedAt: Date.now(),
     intendedUploads,
     documentsCreated,
     duplicatesLinked,
