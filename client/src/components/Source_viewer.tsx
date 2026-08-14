@@ -57,7 +57,7 @@ export default function Source_viewer({
     access_error,
     is_resolving,
     retry_access,
-  } = use_private_source_access(preview_kind === "unsupported" ? null : source_url);
+  } = use_private_source_access(source_url);
 
   if (!source_url) {
     return (
@@ -75,17 +75,17 @@ export default function Source_viewer({
 
   const source_actions = (
     <div className="flex flex-wrap items-center gap-2">
-      <Button variant="outline" size="sm" className="gap-1.5" asChild>
-        <a href={source_url} target="_blank" rel="noopener noreferrer">
+      <Button variant="outline" size="sm" className="gap-1.5" disabled={!access_url} asChild={Boolean(access_url)}>
+        {access_url ? <a href={access_url} target="_blank" rel="noopener noreferrer">
           <ExternalLink className="h-3.5 w-3.5" />
           Open source
-        </a>
+        </a> : <span><ExternalLink className="h-3.5 w-3.5" />Open source</span>}
       </Button>
-      <Button variant="outline" size="sm" className="gap-1.5" asChild>
-        <a href={source_url} download={filename} target="_blank" rel="noopener noreferrer">
+      <Button variant="outline" size="sm" className="gap-1.5" disabled={!access_url} asChild={Boolean(access_url)}>
+        {access_url ? <a href={access_url} download={filename} target="_blank" rel="noopener noreferrer">
           <Download className="h-3.5 w-3.5" />
           Download
-        </a>
+        </a> : <span><Download className="h-3.5 w-3.5" />Download</span>}
       </Button>
     </div>
   );
@@ -102,14 +102,14 @@ export default function Source_viewer({
         {source_actions}
       </CardHeader>
       <CardContent className="p-0 border-t border-border/40 bg-black/10">
-        {preview_kind !== "unsupported" && is_resolving && (
+        {is_resolving && (
           <div className="p-8 min-h-[220px] flex items-center justify-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
             Resolving authenticated source access…
           </div>
         )}
 
-        {preview_kind !== "unsupported" && access_error && !is_resolving && (
+        {access_error && !is_resolving && (
           <div className="m-4 p-4 rounded-lg border border-red-500/30 bg-red-500/10 flex items-start gap-3">
             <AlertTriangle className="h-4 w-4 text-red-400 mt-0.5 shrink-0" />
             <div className="text-sm flex-1">
