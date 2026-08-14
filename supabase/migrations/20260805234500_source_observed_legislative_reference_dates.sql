@@ -27,21 +27,26 @@ begin
     'public.register_docket_legislative_version_spine(integer,boolean)'::regprocedure
   ) into v_definition;
 
-  if v_definition not like '%provider_date = excluded.provider_date,%' then
+  if v_definition like
+     '%provider_date = coalesce(excluded.provider_date, docket_bill_source_document.provider_date),%' then
+    -- The production function already preserves an observed reference date when
+    -- the provider omits its date. Treat the migration as an idempotent replay.
+    null;
+  elsif v_definition like '%provider_date = excluded.provider_date,%' then
+    v_updated := replace(
+      v_definition,
+      'provider_date = excluded.provider_date,',
+      'provider_date = coalesce(excluded.provider_date, docket_bill_source_document.provider_date),'
+    );
+
+    if v_updated = v_definition then
+      raise exception 'source_reference_date_registration_guard_not_replaced';
+    end if;
+
+    execute v_updated;
+  else
     raise exception 'source_reference_date_expected_registration_function_missing';
   end if;
-
-  v_updated := replace(
-    v_definition,
-    'provider_date = excluded.provider_date,',
-    'provider_date = coalesce(excluded.provider_date, docket_bill_source_document.provider_date),'
-  );
-
-  if v_updated = v_definition then
-    raise exception 'source_reference_date_registration_guard_not_replaced';
-  end if;
-
-  execute v_updated;
 end;
 $migration$;
 
