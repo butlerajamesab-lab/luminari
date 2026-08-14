@@ -91,6 +91,10 @@ export function registerUploadRoute(app: Express) {
 
       const { url } = await storageGet(documentRow.s3Key);
       res.setHeader("Cache-Control", "private, no-store");
+      if (req.query.access === "json") {
+        res.json({ url });
+        return;
+      }
       res.redirect(302, url);
     } catch (err: any) {
       console.error("[Upload] Document download bridge error:", err);
