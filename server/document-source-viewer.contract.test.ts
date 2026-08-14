@@ -18,11 +18,11 @@ describe("case source viewer contract", () => {
     const hook_source = read("client/src/hooks/use_private_source_access.ts");
     const viewer_source = read("client/src/components/Source_viewer.tsx");
 
-    expect(hook_source).toContain("fetch(source_url");
+    expect(hook_source).toContain('bridge_url.searchParams.set("access", "json")');
+    expect(hook_source).toContain("fetch(bridge_url.href");
     expect(hook_source).toContain('credentials: "include"');
-    expect(hook_source).toContain('redirect: "follow"');
-    expect(hook_source).toContain("const final_url = response.url");
-    expect(hook_source).toContain("response.body?.cancel()");
+    expect(hook_source).toContain("await response.json()");
+    expect(hook_source).toContain("const final_url = payload.url");
     expect(viewer_source).toContain("use_private_source_access");
     expect(viewer_source).toContain("src={access_url}");
   });
