@@ -195,6 +195,14 @@ describe("document upload PostgreSQL persistence contract", () => {
     expect(document_insert).toContain('documentResolution: "active"');
   });
 
+  it("uses PostgreSQL RETURNING when creating advocate share links", () => {
+    const share_insert = function_source("createShareLink", "getShareLinkByToken");
+
+    expect(share_insert).toContain(".returning({ id: shareLinks.id })");
+    expect(share_insert).not.toContain("$returningId");
+    expect(share_insert).not.toContain("insertId");
+  });
+
   it("uses integer case ids when filtering the live documents table", () => {
     for (const source of [
       read_source("./routers/assembly-engine.ts"),
