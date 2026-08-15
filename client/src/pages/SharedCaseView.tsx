@@ -35,6 +35,7 @@ export default function SharedCaseView() {
   if (error) {
     const isExpired = error.message.includes("expired");
     const isRevoked = error.message.includes("revoked");
+    const isMissing = error.message.includes("not found") || error.message.includes("invalid");
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Card className="max-w-md w-full mx-4">
@@ -48,14 +49,16 @@ export default function SharedCaseView() {
             )}
             <div>
               <h2 className="text-lg font-semibold">
-                {isExpired ? "Link Expired" : isRevoked ? "Access Revoked" : "Link Not Found"}
+                {isExpired ? "Link Expired" : isRevoked ? "Access Revoked" : isMissing ? "Link Not Found" : "Shared Case Unavailable"}
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
                 {isExpired
                   ? "This share link has expired. Please ask the case owner to create a new one."
                   : isRevoked
                   ? "The case owner has revoked access to this link."
-                  : "This share link is invalid or no longer exists."}
+                  : isMissing
+                  ? "This share link is invalid or no longer exists."
+                  : "The link is valid, but Lighthouse could not load the shared case data. Please ask the case owner to try again."}
               </p>
             </div>
           </CardContent>
