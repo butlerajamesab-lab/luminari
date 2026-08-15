@@ -201,6 +201,11 @@ async function claim_jobs(limit: number): Promise<legislative_version_queue_job[
            on version.bill_version_id = queue.bill_version_id
          join public.docket_bill_source_document document
            on document.source_document_key = version.source_document_key
+        where queue.attempt_count > 0
+           or (
+             queue.queue_state = 'degraded'
+             and queue.next_attempt_at > now()
+           )
         group by split_part(lower(document.source_url), '/', 3)
      ), candidate as (
        select queue.queue_id
@@ -209,7 +214,7 @@ async function claim_jobs(limit: number): Promise<legislative_version_queue_job[
            on version.bill_version_id = queue.bill_version_id
          join public.docket_bill_source_document document
            on document.source_document_key = version.source_document_key
-         join host_activity source_host
+         left join host_activity source_host
            on source_host.source_host = split_part(lower(document.source_url), '/', 3)
          cross join lateral (
            select not exists (
