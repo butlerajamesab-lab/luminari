@@ -242,7 +242,7 @@ export default function MissionControlContainmentShell() {
                 <div className="grid grid-cols-2 gap-3">
                   <MetricCard label="Cases" value={caseActivity.data?.cases?.total ?? 0} icon={<FileText className="h-4 w-4" />} />
                   <MetricCard label="Documents" value={caseActivity.data?.documents?.total ?? 0} icon={<BookOpen className="h-4 w-4" />} tone="blue" />
-                  <MetricCard label="Findings" value={caseActivity.data?.findings?.total ?? 0} icon={<Search className="h-4 w-4" />} tone="warning" />
+                  <MetricCard label="Verification Records" value={caseActivity.data?.findings?.total ?? 0} icon={<Search className="h-4 w-4" />} tone="warning" />
                   <MetricCard label="Users" value={caseActivity.data?.users?.total ?? 0} icon={<Shield className="h-4 w-4" />} tone="ok" />
                 </div>
               )}
@@ -255,11 +255,11 @@ export default function MissionControlContainmentShell() {
               {!overviewRequested ? deferred("Structural-signal aggregation remains deferred on first paint.") : structuralSignals.isFetching ? <PanelSkeleton /> : structuralSignals.error ? <PanelEmpty label={`Structural signal error: ${structuralSignals.error.message}`} /> : (
                 <div className="space-y-4">
                   <div className="grid grid-cols-3 gap-3">
-                    <MetricCard label="Total" value={structuralSignals.data?.totalFindings ?? structuralSignals.data?.total_findings ?? 0} icon={<Shield className="h-4 w-4" />} tone="warning" />
+                    <MetricCard label="Total Signals" value={structuralSignals.data?.totalFindings ?? structuralSignals.data?.total_findings ?? 0} icon={<Shield className="h-4 w-4" />} tone="warning" />
                     <MetricCard label="Severity" value={bySeverity.length} icon={<AlertTriangle className="h-4 w-4" />} tone="blue" />
                     <MetricCard label="Types" value={byCategory.length} icon={<Database className="h-4 w-4" />} tone="blue" />
                   </div>
-                  {criticalFindings.length > 0 && <div className="text-xs text-red-400">{criticalFindings.length} high-confidence findings require review.</div>}
+                  {criticalFindings.length > 0 && <div className="text-xs text-red-400">{criticalFindings.length} high-priority Atlas signals require review.</div>}
                 </div>
               )}
             </CardContent>
