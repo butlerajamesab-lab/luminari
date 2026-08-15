@@ -3,6 +3,7 @@ import { run_rosetta_generation_activation_from_environment } from "../civic-gen
 import { start_rosetta_generation_activation_queue_worker } from "../civic-genome-rosetta-generation-queue-worker";
 import { start_docket_bill_activation_queue_worker } from "../docket-jurisdiction-activation-queue-worker";
 import { activate_prism_for_rosetta_assembly } from "./prism-rosetta-activation";
+import { run_prism_problem_handoff_from_environment } from "./prism-problem-intake-startup";
 import { start_prism_rosetta_queue_worker } from "./prism-rosetta-queue-worker";
 
 export async function run_prism_rosetta_activation_from_environment(): Promise<void> {
@@ -10,6 +11,15 @@ export async function run_prism_rosetta_activation_from_environment(): Promise<v
   start_rosetta_generation_activation_queue_worker();
   start_legislative_version_queue_worker();
   start_docket_bill_activation_queue_worker();
+
+  // Problem-instance handoff is an independent Prism intake lane. It begins
+  // automatically and does not wait for a Rosetta assembly or a manual button.
+  void run_prism_problem_handoff_from_environment().catch(error => {
+    console.error("[PrismProblemHandoff] startup failed", {
+      error_class: error instanceof Error ? error.name : "unknown",
+      error_message: error instanceof Error ? error.message : "unknown",
+    });
+  });
 
   // An explicitly configured Rosetta generation is assembled first. The queue
   // workers are already running, so the resulting completed assembly is claimed
