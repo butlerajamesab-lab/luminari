@@ -21,6 +21,7 @@ const OFFICIAL_HTML_EXTRACTOR_VERSION = "official-legislative-version-html-strip
 const PDF_EXTRACTOR_VERSION = `pdf-parse-${PDF_PARSE_VERSION}-legislative-version-v1`;
 const CA_PDF_EXTRACTOR_VERSION = `ca-official-legislative-version-pdf-v1+${PDF_EXTRACTOR_VERSION}`;
 const MAX_SOURCE_BYTES = 25 * 1024 * 1024;
+const SOURCE_FETCH_TIMEOUT_MS = 30_000;
 const ROSETTA_CORPUS_NAME = "Lighthouse Docket Legislative Versions";
 const ROSETTA_CORPUS_TYPE = "legislative_version";
 
@@ -99,11 +100,24 @@ async function fetch_bytes(
   url: string,
   required = true,
 ): Promise<{ bytes: Buffer; content_type: string | null } | null> {
-  const response = await fetch(url, {
-    method: "GET",
-    redirect: "follow",
-    headers: { accept: "application/pdf,text/html;q=0.9,*/*;q=0.1" },
-  });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: "GET",
+      redirect: "follow",
+      headers: { accept: "application/pdf,text/html;q=0.9,*/*;q=0.1" },
+      signal: AbortSignal.timeout(SOURCE_FETCH_TIMEOUT_MS),
+    });
+  } catch (error) {
+    const source_host = new URL(url).hostname.toLowerCase();
+    const cause = error instanceof Error && error.cause && typeof error.cause === "object"
+      && "code" in error.cause
+      ? String(error.cause.code)
+      : error instanceof Error
+        ? error.name
+        : "unknown";
+    throw new Error(`legislative_version_source_fetch_network_failed:${source_host}:${cause}`);
+  }
   if (!response.ok) {
     if (!required) return null;
     throw new Error(`legislative_version_source_fetch_failed:${response.status}`);

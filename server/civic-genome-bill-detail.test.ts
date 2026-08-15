@@ -25,12 +25,18 @@ describe("Civic Genome Prism trait projection", () => {
       })
       .mockResolvedValueOnce({
         rows: [{
-          bill_version_id: "version-current",
-          source_document_key: "legi-snapshot-current",
-          version_type: "enrolled",
-          source_document_id: 369,
-          extraction_run_id: "run-current",
-          processing_state: "verified_with_findings",
+          current_bill_version_id: "version-current",
+          current_source_document_key: "legi-snapshot-current",
+          current_version_type: "enrolled",
+          current_source_document_id: 369,
+          current_extraction_run_id: "run-current",
+          current_processing_state: "verified_with_findings",
+          published_bill_version_id: "version-current",
+          published_source_document_key: "legi-snapshot-current",
+          published_version_type: "enrolled",
+          published_source_document_id: 369,
+          published_extraction_run_id: "run-current",
+          published_processing_state: "verified_with_findings",
         }],
       })
       .mockResolvedValueOnce({
@@ -77,6 +83,8 @@ describe("Civic Genome Prism trait projection", () => {
     expect(query.mock.calls[3]?.[1]).toEqual([genome_bill_id, 369]);
     expect(current_version_query).toContain("order by stage_rank desc");
     expect(result?.current_version?.source_document_id).toBe(369);
+    expect(result?.published_version?.source_document_id).toBe(369);
+    expect(result?.structural_dna.snapshot_state).toBe("current");
     expect(result?.structural_dna.validation_summary).toMatchObject({
       contradicted: 1,
       supported: 0,
@@ -88,5 +96,43 @@ describe("Civic Genome Prism trait projection", () => {
   it("returns null when the Genome bill does not exist", async () => {
     query.mockResolvedValueOnce({ rows: [] });
     await expect(get_civic_genome_bill_detail(genome_bill_id)).resolves.toBeNull();
+  });
+
+  it("shows the latest verified structural snapshot without labeling it current", async () => {
+    query
+      .mockResolvedValueOnce({
+        rows: [{
+          genome_bill_id,
+          family_id: "11111111-1111-4111-8111-111111111111",
+        }],
+      })
+      .mockResolvedValueOnce({
+        rows: [{
+          current_bill_version_id: "version-current",
+          current_source_document_key: "text:1944851:3408779",
+          current_version_type: "chaptered",
+          current_source_document_id: null,
+          current_extraction_run_id: null,
+          current_processing_state: "registered",
+          published_bill_version_id: "version-published",
+          published_source_document_key: "amendment:1944851:273729",
+          published_version_type: "house_amendment",
+          published_source_document_id: 4725,
+          published_extraction_run_id: "7023",
+          published_processing_state: "verified_with_findings",
+        }],
+      })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ signature_json: {} }] })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const result = await get_civic_genome_bill_detail(genome_bill_id);
+
+    expect(result?.current_version?.source_document_id).toBeNull();
+    expect(result?.published_version?.source_document_id).toBe(4725);
+    expect(result?.structural_dna.snapshot_state).toBe("previous_verified");
+    expect(query.mock.calls[2]?.[1]).toEqual([genome_bill_id, 4725]);
+    expect(query.mock.calls[3]?.[1]).toEqual([genome_bill_id, 4725]);
   });
 });

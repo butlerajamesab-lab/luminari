@@ -211,6 +211,7 @@ export async function get_civic_genome_operating_contracts(): Promise<civic_geno
 
 export type civic_genome_rosetta_pipeline_state =
   | "not_handed_off"
+  | "current_pending"
   | "waiting_for_extraction"
   | "ready_for_assembly"
   | "assembled"
@@ -220,12 +221,20 @@ export type civic_genome_rosetta_pipeline_state =
 export type civic_genome_rosetta_pipeline_status = {
   source_bill_id: number;
   genome_bill_id: string | null;
+  current_version_type: string | null;
+  current_processing_state: string | null;
   source_document_id: number | null;
   extraction_run_id: number | null;
   run_status: string | null;
   provenance_state: string | null;
   object_count: number;
   coverage: Record<string, number>;
+  published_version_type: string | null;
+  published_processing_state: string | null;
+  published_source_document_id: number | null;
+  published_extraction_run_id: number | null;
+  published_provenance_state: string | null;
+  published_object_count: number;
   can_assemble: boolean;
   contract_state: civic_genome_rosetta_pipeline_state;
   contract_message: string;
@@ -240,41 +249,109 @@ function valid_rosetta_output(view: civic_genome_rosetta_law_view): boolean {
 export async function get_civic_genome_rosetta_pipeline_status(
   source_bill_id: number,
 ): Promise<civic_genome_rosetta_pipeline_status> {
-  const [bill, current_version_result] = await Promise.all([
+  const [bill, version_selection_result] = await Promise.all([
     get_genome_bill_by_source_id(source_bill_id),
-    getPool().query<{ rosetta_source_document_id: number | null }>(
-      `select rosetta_source_document_id::integer as rosetta_source_document_id
-         from public.civic_genome_bill_version
-        where source_bill_id = $1
-        order by stage_rank desc, provider_sequence desc, updated_at desc
-        limit 1`,
+    getPool().query<{
+      current_version_type: string | null;
+      current_processing_state: string | null;
+      current_source_document_id: number | null;
+      published_version_type: string | null;
+      published_processing_state: string | null;
+      published_source_document_id: number | null;
+      published_extraction_run_id: string | null;
+    }>(
+      `with current_version as (
+         select version_type,
+                processing_state,
+                rosetta_source_document_id,
+                rosetta_extraction_run_id
+           from public.civic_genome_bill_version
+          where source_bill_id = $1
+          order by stage_rank desc, provider_sequence desc, updated_at desc
+          limit 1
+       ), published_version as (
+         select version_type,
+                processing_state,
+                rosetta_source_document_id,
+                rosetta_extraction_run_id
+           from public.civic_genome_bill_version
+          where source_bill_id = $1
+            and processing_state in ('verified', 'verified_with_findings')
+            and rosetta_source_document_id is not null
+            and assembly_run_id is not null
+          order by stage_rank desc, provider_sequence desc, updated_at desc
+          limit 1
+       )
+       select current.version_type as current_version_type,
+              current.processing_state as current_processing_state,
+              current.rosetta_source_document_id::integer as current_source_document_id,
+              published.version_type as published_version_type,
+              published.processing_state as published_processing_state,
+              published.rosetta_source_document_id::integer as published_source_document_id,
+              published.rosetta_extraction_run_id as published_extraction_run_id
+         from current_version current
+         full join published_version published on true`,
       [source_bill_id],
     ),
   ]);
-  const current_version = current_version_result.rows[0] ?? null;
-  const rosetta_result = await (
-    current_version
-      ? current_version.rosetta_source_document_id == null
+  const version_selection = version_selection_result.rows[0] ?? null;
+  const current_source_document_id = version_selection?.current_source_document_id ?? null;
+  const published_source_document_id = version_selection?.published_source_document_id ?? null;
+  const [rosetta_result, published_rosetta_result] = await Promise.all([
+    (
+      version_selection
+      ? current_source_document_id == null
         ? Promise.resolve(null)
-        : get_latest_rosetta_law_view_by_source_document(current_version.rosetta_source_document_id)
+        : get_latest_rosetta_law_view_by_source_document(current_source_document_id)
       : get_latest_rosetta_law_view_by_document_identifier(String(source_bill_id))
-  )
-    .then(view => ({ view, error: null }))
-    .catch(error => ({
-      view: null,
-      error: error instanceof Error ? error.message : "unknown_rosetta_contract_error",
-    }));
+    )
+      .then(view => ({ view, error: null }))
+      .catch(error => ({
+        view: null,
+        error: error instanceof Error ? error.message : "unknown_rosetta_contract_error",
+      })),
+    published_source_document_id == null
+      || published_source_document_id === current_source_document_id
+      ? Promise.resolve({ view: null, error: null })
+      : get_latest_rosetta_law_view_by_source_document(published_source_document_id)
+        .then(view => ({ view, error: null }))
+        .catch(error => ({
+          view: null,
+          error: error instanceof Error ? error.message : "unknown_published_rosetta_contract_error",
+        })),
+  ]);
+
+  const current_version_fields = {
+    current_version_type: version_selection?.current_version_type ?? null,
+    current_processing_state: version_selection?.current_processing_state ?? null,
+  };
+  const published_view = published_source_document_id === current_source_document_id
+    ? rosetta_result.view
+    : published_rosetta_result.view;
+  const published_fields = {
+    published_version_type: version_selection?.published_version_type ?? null,
+    published_processing_state: version_selection?.published_processing_state ?? null,
+    published_source_document_id,
+    published_extraction_run_id: published_view?.extraction_run_id
+      ?? (version_selection?.published_extraction_run_id
+        ? Number(version_selection.published_extraction_run_id)
+        : null),
+    published_provenance_state: published_view?.law_view.provenanceState ?? null,
+    published_object_count: published_view?.law_view.objects.length ?? 0,
+  };
 
   if (rosetta_result.error) {
     return {
       source_bill_id,
       genome_bill_id: bill?.genome_bill_id ?? null,
+      ...current_version_fields,
       source_document_id: null,
       extraction_run_id: null,
       run_status: null,
       provenance_state: null,
       object_count: 0,
       coverage: {},
+      ...published_fields,
       can_assemble: false,
       contract_state: "contract_error",
       contract_message: "Rosetta's exact law-view export could not be observed.",
@@ -283,15 +360,34 @@ export async function get_civic_genome_rosetta_pipeline_status(
 
   const view = rosetta_result.view;
   if (!view) {
+    if (published_source_document_id != null) {
+      return {
+        source_bill_id,
+        genome_bill_id: bill?.genome_bill_id ?? null,
+        ...current_version_fields,
+        source_document_id: null,
+        extraction_run_id: null,
+        run_status: null,
+        provenance_state: null,
+        object_count: 0,
+        coverage: {},
+        ...published_fields,
+        can_assemble: false,
+        contract_state: "current_pending",
+        contract_message: `The current ${version_selection?.current_version_type ?? "bill"} source is processing automatically. The latest verified ${version_selection?.published_version_type ?? "prior"} snapshot remains published until it completes.`,
+      };
+    }
     return {
       source_bill_id,
       genome_bill_id: bill?.genome_bill_id ?? null,
+      ...current_version_fields,
       source_document_id: null,
       extraction_run_id: null,
       run_status: null,
       provenance_state: null,
       object_count: 0,
       coverage: {},
+      ...published_fields,
       can_assemble: false,
       contract_state: "not_handed_off",
       contract_message: "No exact Rosetta source document exists for this Docket bill.",
@@ -315,8 +411,14 @@ export async function get_civic_genome_rosetta_pipeline_status(
   }
 
   const run_status = view.run_status?.toLowerCase() ?? null;
-  const state: civic_genome_rosetta_pipeline_state = assembled
+  const current_is_verified = version_selection?.current_processing_state === "verified"
+    || version_selection?.current_processing_state === "verified_with_findings";
+  const prior_snapshot_available = published_source_document_id != null
+    && published_source_document_id !== current_source_document_id;
+  const state: civic_genome_rosetta_pipeline_state = assembled && current_is_verified
     ? "assembled"
+    : prior_snapshot_available
+      ? "current_pending"
     : output_is_valid && bill
       ? "ready_for_assembly"
       : run_status === "completed" || run_status === "failed"
@@ -324,6 +426,8 @@ export async function get_civic_genome_rosetta_pipeline_status(
         : "waiting_for_extraction";
   const message = state === "assembled"
     ? "This exact completed Rosetta run is already assembled."
+    : state === "current_pending"
+      ? `The current ${version_selection?.current_version_type ?? "bill"} source is processing automatically. The latest verified ${version_selection?.published_version_type ?? "prior"} snapshot remains published until it completes.`
     : state === "ready_for_assembly"
       ? "A completed, provenance-valid Rosetta run is ready for deterministic assembly."
       : state === "blocked"
@@ -333,6 +437,7 @@ export async function get_civic_genome_rosetta_pipeline_status(
   return {
     source_bill_id,
     genome_bill_id: bill?.genome_bill_id ?? null,
+    ...current_version_fields,
     source_document_id: view.source_document_id,
     extraction_run_id: view.extraction_run_id,
     run_status: view.run_status,
@@ -342,6 +447,7 @@ export async function get_civic_genome_rosetta_pipeline_status(
       Object.entries(view.law_view.coverage)
         .filter((entry): entry is [string, number] => typeof entry[1] === "number"),
     ),
+    ...published_fields,
     can_assemble: state === "ready_for_assembly",
     contract_state: state,
     contract_message: message,

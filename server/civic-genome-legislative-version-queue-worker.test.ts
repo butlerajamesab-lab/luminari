@@ -17,6 +17,7 @@ import {
   classify_legislative_version_failure,
   legislative_version_retry_delay_seconds,
   process_legislative_version_job,
+  run_legislative_version_queue_cycle,
 } from "./civic-genome-legislative-version-queue-worker";
 
 const job = {
@@ -108,6 +109,20 @@ describe("legislative version queue", () => {
     expect(query).toHaveBeenCalledTimes(1);
     expect(String(query.mock.calls[0][0])).toContain("queue_state = 'completed'");
     expect(query.mock.calls[0][1][0]).toBe(job.queue_id);
+  });
+
+  it("prioritizes current versions and cools a failing source host without blocking other legislatures", async () => {
+    await run_legislative_version_queue_cycle();
+
+    const claim_sql = query.mock.calls
+      .map(call => String(call[0]))
+      .find(sql => sql.includes("for update of queue skip locked"));
+    expect(claim_sql).toContain("currency.is_current desc");
+    expect(claim_sql).toContain("with host_activity as");
+    expect(claim_sql).toContain("source_host.last_attempt_at asc nulls first");
+    expect(claim_sql).toContain("source_host.blocked_until");
+    expect(claim_sql).toContain("split_part(lower(document.source_url), '/', 3)");
+    expect(claim_sql).toContain("version.processing_state not in ('verified', 'verified_with_findings')");
   });
 
   it("preserves queue and version failure receipts", async () => {
