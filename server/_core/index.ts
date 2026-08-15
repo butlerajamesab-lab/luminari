@@ -34,6 +34,7 @@ import { run_with_database_request_context } from "../db-request-context";
 import { run_rosetta_control_repair_from_environment } from "../civic-genome-rosetta-control-repair";
 import { run_prism_rosetta_activation_from_environment } from "../services/prism-rosetta-startup-activation";
 import { run_civic_genome_external_snapshot_proof_from_environment } from "../civic-genome-external-snapshot-startup-proof";
+import { start_docket_state_cache_warmer } from "../docket-state-cache-warmer";
 import "../services/fresh-state-enrichment-reconciliation-v1";
 import "../services/fresh-corpus-atomic-startup";
 import "../services/fresh-corpus-atomic-sql-recovery-startup";
@@ -248,6 +249,7 @@ async function startServer() {
     console.log(`Luminari server running on http://localhost:${port}/`);
     console.log(`[Startup] Supabase project: ${SUPABASE_PROJECT}`);
     console.log("[Startup] Runtime fingerprint", runtime_fingerprint);
+    start_docket_state_cache_warmer(port);
     try { loadPipelineRegistry(); console.log("[Startup] Pipeline registry loaded"); } catch (e) { console.error("[Startup] Pipeline registry error:", e); }
     try { loadLensRegistry(); console.log("[Startup] Lens registry loaded"); } catch (e) { console.error("[Startup] Lens registry error:", e); }
     void run_rosetta_control_repair_from_environment().catch(error => {
