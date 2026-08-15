@@ -41,6 +41,9 @@ describe("fresh corpus reconciliation v1", () => {
     expect(service).toContain("skipped_exact_duplicate");
     expect(service).toContain("preserved_derivative_not_reingested");
     expect(service).toContain("derivative_artifact_not_primitive_source");
+    expect(service).toContain("fresh_duplicate_preserved");
+    expect(service).toContain("fresh_derivative_preserved");
+    expect(service).toContain("fresh_source_disposition");
   });
 
   it("fails closed on jurisdiction and strong-identifier collisions", () => {

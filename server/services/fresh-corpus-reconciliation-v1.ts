@@ -1015,6 +1015,15 @@ async function processArtifact(runId: string, artifact: SourceArtifact): Promise
 
   if (artifact.exact_duplicate_of) {
     const receipt = sha256(stable({ runId, artifact: artifact.artifact_key, exact_duplicate_of: artifact.exact_duplicate_of, status: "skipped_exact_duplicate" }));
+    await pool.query(`update public.luminari_corpus_source_artifact_v1
+      set extraction_status='fresh_duplicate_preserved',
+          observed_at=now(),
+          metadata=metadata||jsonb_build_object(
+            'fresh_source_disposition','exact_duplicate_preserved',
+            'exact_duplicate_of',$2,
+            'fresh_parser_version',$3
+          )
+      where artifact_key=$1`, [artifact.artifact_key, artifact.exact_duplicate_of, FRESH_CORPUS_PARSER_VERSION]);
     await pool.query(`update public.luminari_corpus_rebuild_artifact_v1 set status='skipped_exact_duplicate',completed_at=now(),receipt_hash=$3,result_json=$4::jsonb where run_id=$1 and artifact_key=$2`,
       [runId, artifact.artifact_key, receipt, JSON.stringify({ exact_duplicate_of: artifact.exact_duplicate_of })]);
     return;
@@ -1022,6 +1031,14 @@ async function processArtifact(runId: string, artifact: SourceArtifact): Promise
 
   if (artifact.artifact_role === "derivative_sql_artifact" || artifact.artifact_role === "derivative_bundle_artifact") {
     const receipt = sha256(stable({ runId, artifact: artifact.artifact_key, status: "preserved_derivative_not_reingested" }));
+    await pool.query(`update public.luminari_corpus_source_artifact_v1
+      set extraction_status='fresh_derivative_preserved',
+          observed_at=now(),
+          metadata=metadata||jsonb_build_object(
+            'fresh_source_disposition','derivative_preserved_not_reingested',
+            'fresh_parser_version',$2
+          )
+      where artifact_key=$1`, [artifact.artifact_key, FRESH_CORPUS_PARSER_VERSION]);
     await pool.query(`update public.luminari_corpus_rebuild_artifact_v1 set status='preserved_derivative',completed_at=now(),receipt_hash=$3,result_json=$4::jsonb where run_id=$1 and artifact_key=$2`,
       [runId, artifact.artifact_key, receipt, JSON.stringify({ reason: "derivative_artifact_not_primitive_source" })]);
     return;
