@@ -93,3 +93,4 @@ export {
   getActionPathById,
   listAllActionPaths,
 } from "./enforcement-action-paths-live-compat";
+export { getSharedCaseData } from "./shared-case-runtime-compat";
