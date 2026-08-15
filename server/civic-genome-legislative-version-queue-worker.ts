@@ -10,6 +10,7 @@ const DEFAULT_CONCURRENCY = 8;
 const MAX_CONCURRENCY = 32;
 const QUEUE_LEASE_MINUTES = 60;
 const UNKNOWN_FAILURE_LIMIT = 5;
+const RECONCILE_BATCH_SIZE = 100;
 
 export type legislative_version_queue_job = {
   queue_id: string;
@@ -132,20 +133,30 @@ export function classify_legislative_version_failure(input: {
 
 async function reconcile_completed_jobs(): Promise<void> {
   await query_with_diagnostics(
-    `update public.civic_genome_legislative_version_queue queue
+    `with candidate as (
+       select queue.queue_id,
+              version.updated_at as version_updated_at
+         from public.civic_genome_legislative_version_queue queue
+         join public.civic_genome_bill_version version
+           on version.bill_version_id = queue.bill_version_id
+        where version.assembly_run_id is not null
+          and version.processing_state in ('assembled', 'verification_partial', 'verified')
+          and queue.queue_state <> 'completed'
+        order by queue.updated_at, queue.queue_id
+        for update of queue skip locked
+        limit $1::integer
+     )
+     update public.civic_genome_legislative_version_queue queue
         set queue_state = 'completed',
-            completed_at = coalesce(queue.completed_at, version.updated_at),
+            completed_at = coalesce(queue.completed_at, candidate.version_updated_at),
             locked_at = null,
             locked_by = null,
             last_failure_class = null,
             last_error_code = null,
             updated_at = now()
-       from public.civic_genome_bill_version version
-      where version.bill_version_id = queue.bill_version_id
-        and version.assembly_run_id is not null
-        and version.processing_state in ('assembled', 'verification_partial', 'verified')
-        and queue.queue_state <> 'completed'`,
-    [],
+       from candidate
+      where queue.queue_id = candidate.queue_id`,
+    [RECONCILE_BATCH_SIZE],
     {
       label: "legislative_version_queue_reconcile_completed",
       pool_acquire_timeout_ms: 1_000,
