@@ -11,6 +11,9 @@ const MAX_CONCURRENCY = 32;
 const QUEUE_LEASE_MINUTES = 60;
 const UNKNOWN_FAILURE_LIMIT = 5;
 const RECONCILE_BATCH_SIZE = 100;
+const DEFAULT_RECONCILE_INTERVAL_MS = 60_000;
+const MIN_RECONCILE_INTERVAL_MS = 10_000;
+const MAX_RECONCILE_INTERVAL_MS = 15 * 60_000;
 
 export type legislative_version_queue_job = {
   queue_id: string;
@@ -33,6 +36,7 @@ export type legislative_version_failure_decision = {
 let queue_timer: NodeJS.Timeout | null = null;
 let queue_cycle_running = false;
 let queue_stopped = false;
+let next_reconcile_at_ms = 0;
 const queue_worker_id = [
   process.env.RENDER_SERVICE_ID ?? "lighthouse",
   process.pid,
@@ -51,6 +55,15 @@ function bounded_poll_interval(): number {
     DEFAULT_POLL_INTERVAL_MS,
     MIN_POLL_INTERVAL_MS,
     MAX_POLL_INTERVAL_MS,
+  );
+}
+
+function bounded_reconcile_interval(): number {
+  return bounded_integer(
+    process.env.LEGISLATIVE_VERSION_QUEUE_RECONCILE_MS,
+    DEFAULT_RECONCILE_INTERVAL_MS,
+    MIN_RECONCILE_INTERVAL_MS,
+    MAX_RECONCILE_INTERVAL_MS,
   );
 }
 
@@ -163,6 +176,13 @@ async function reconcile_completed_jobs(): Promise<void> {
       query_timeout_ms: 5_000,
     },
   );
+}
+
+async function reconcile_completed_jobs_if_due(): Promise<void> {
+  const now_ms = Date.now();
+  if (now_ms < next_reconcile_at_ms) return;
+  next_reconcile_at_ms = now_ms + bounded_reconcile_interval();
+  await reconcile_completed_jobs();
 }
 
 async function claim_jobs(limit: number): Promise<legislative_version_queue_job[]> {
@@ -385,7 +405,7 @@ export async function run_legislative_version_queue_cycle(): Promise<void> {
   if (queue_cycle_running || queue_stopped) return;
   queue_cycle_running = true;
   try {
-    await reconcile_completed_jobs();
+    await reconcile_completed_jobs_if_due();
     const jobs = await claim_jobs(bounded_concurrency());
     await Promise.all(jobs.map(job => process_legislative_version_job(job)));
   } catch (error) {
@@ -403,9 +423,11 @@ export function start_legislative_version_queue_worker(): void {
   queue_stopped = false;
   const interval_ms = bounded_poll_interval();
   const concurrency = bounded_concurrency();
+  const reconcile_interval_ms = bounded_reconcile_interval();
   console.log("[LegislativeVersionQueue] started", {
     worker_id: queue_worker_id,
     interval_ms,
+    reconcile_interval_ms,
     concurrency,
     lease_minutes: QUEUE_LEASE_MINUTES,
   });
