@@ -18,6 +18,7 @@ export type CanonicalCaseLayerOutput<T> = {
   receipt_hash: string;
   completed_at: string | Date | null;
   unresolved_dependencies: any[];
+  projection_current: boolean;
   data: T;
 };
 
@@ -53,7 +54,6 @@ export async function read_canonical_case_layer_outputs<T>(
           and cil.link_type = 'primary_projection'
           and s.session_type = 'live'
           and s.entry_channel = 'upload'
-          and s.completion_state = 'governed_execution_complete'
      ), ranked as (
        select lr.*,
               row_number() over (
@@ -84,11 +84,13 @@ export async function read_canonical_case_layer_outputs<T>(
        r.receipt_hash,
        r.canonicalization_version,
        r.completed_at,
+       s.completion_state,
        a.artifact_id::text as output_artifact_id,
        a.artifact_type,
        a.artifact_status,
        a.metadata
      from ranked r
+     join public.intake_sessions s on s.intake_session_id = r.intake_session_id
      left join public.intake_artifacts a
        on a.artifact_id = case
          when coalesce(r.receipt ->> 'output_artifact_id', '') ~
@@ -161,6 +163,7 @@ export async function read_canonical_case_layer_outputs<T>(
       receipt_hash: String(row.receipt_hash),
       completed_at: row.completed_at ?? null,
       unresolved_dependencies: as_array(row.unresolved_dependencies),
+      projection_current: row.completion_state === "governed_execution_complete",
       data: metadata.data as T,
     };
   });

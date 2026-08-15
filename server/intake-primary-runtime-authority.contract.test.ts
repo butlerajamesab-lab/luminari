@@ -21,4 +21,12 @@ describe("Lighthouse primary intake runtime authority", () => {
     expect(control).not.toContain("Select a session");
     expect(control).not.toContain("liveUploadSessions.length > 1");
   });
+
+  it("reuses the case's declared governed boundary after evidence changes", () => {
+    expect(analyze).toContain("last_governed_jurisdiction");
+    expect(analyze).toContain("last_governed_rule_as_of");
+    expect(analyze).toContain("projection_invalidated_at");
+    expect(control).toContain("selectedSession?.last_governed_jurisdiction");
+    expect(control).toContain("Prior sealed results remain available");
+  });
 });

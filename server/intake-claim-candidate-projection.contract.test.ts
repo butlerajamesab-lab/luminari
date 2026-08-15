@@ -14,6 +14,8 @@ describe("case-bound claim candidate projection", () => {
     expect(reader).toContain("public.case_intake_links");
     expect(reader).toContain("lr.run_status = 'completed'");
     expect(reader).toContain("lr.is_sealed = true");
+    expect(reader).not.toContain("s.completion_state = 'governed_execution_complete'");
+    expect(reader).toContain("projection_current");
   });
 
   it("recomputes the canonical output hash before exposing layer data", () => {

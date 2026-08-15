@@ -96,6 +96,9 @@ export const analyzeRouter = router({
         sealed_layer_run_count: string | number;
         sealed_layer_names: string[] | null;
         latest_receipt_hash: string | null;
+        last_governed_jurisdiction: string | null;
+        last_governed_rule_as_of: string | null;
+        projection_invalidated_at: string | null;
       }>(
         `select
            s.intake_session_id::text,
@@ -119,7 +122,10 @@ export const analyzeRouter = router({
                and ilr.canonicalization_version = 'luminari.intake.canonical-json.v2'
            ) as sealed_layer_names,
            (array_agg(ilr.receipt_hash order by ilr.sealed_at desc nulls last)
-             filter (where ilr.receipt_hash ~ '^[0-9a-f]{64}$'))[1] as latest_receipt_hash
+             filter (where ilr.receipt_hash ~ '^[0-9a-f]{64}$'))[1] as latest_receipt_hash,
+           s.metadata #>> '{last_governed_execution,jurisdiction}' as last_governed_jurisdiction,
+           s.metadata #>> '{last_governed_execution,rule_as_of}' as last_governed_rule_as_of,
+           s.metadata ->> 'runtime_projection_invalidated_at' as projection_invalidated_at
          from public.intake_sessions s
          join public.case_intake_links cil
            on cil.intake_session_id = s.intake_session_id
@@ -139,7 +145,7 @@ export const analyzeRouter = router({
           and s.session_type = 'live'
           and s.entry_channel = 'upload'
         group by s.intake_session_id, s.session_type, s.entry_channel, s.source_label,
-                 s.session_status, s.completion_state, s.created_at
+                 s.session_status, s.completion_state, s.created_at, s.metadata
         order by s.created_at asc`,
         [input.caseId],
       );
@@ -184,6 +190,9 @@ export const analyzeRouter = router({
           row.latest_receipt_hash && SHA256_RE.test(row.latest_receipt_hash)
             ? row.latest_receipt_hash
             : null,
+        last_governed_jurisdiction: row.last_governed_jurisdiction,
+        last_governed_rule_as_of: row.last_governed_rule_as_of,
+        projection_invalidated_at: row.projection_invalidated_at,
         });
       });
     }),
