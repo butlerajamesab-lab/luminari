@@ -197,7 +197,8 @@ export async function get_civic_genome_bill_detail(
           limit 1
        ) prism on true
        where trait.genome_bill_id = $1
-         and ($2::bigint is null or trait.source_document_id = $2::bigint)
+         and $2::bigint is not null
+         and trait.source_document_id = $2::bigint
        order by trait.trait_class, trait.trait_key, trait.trait_fingerprint`,
       [genome_bill_id, current_version?.source_document_id ?? null],
     ),
@@ -205,9 +206,11 @@ export async function get_civic_genome_bill_detail(
       `select *
          from public.civic_genome_assembly_run
         where genome_bill_id = $1
+          and $2::bigint is not null
+          and source_document_id = $2::bigint
         order by created_at desc, assembly_run_id desc
         limit 25`,
-      [genome_bill_id],
+      [genome_bill_id, current_version?.source_document_id ?? null],
     ),
     pool.query<{ signature_json: Record<string, unknown> }>(
       `select signature_json

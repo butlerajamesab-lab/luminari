@@ -85,24 +85,3 @@ export const ingestionControlRouter = router({
       });
     }),
 });
-
-// A queued rebuild is an explicit control-plane request stored in Postgres.
-// Production startup only resumes that request; it never creates one implicitly.
-// This makes deploy/restart safe while allowing a bounded run to continue after
-// Render replaces an instance.
-if (process.env.NODE_ENV === "production") {
-  setTimeout(() => {
-    void import("../services/fresh-corpus-reconciliation-v1")
-      .then(({ resumeFreshCorpusRebuildFromDatabase }) =>
-        resumeFreshCorpusRebuildFromDatabase({ batchSize: 6, maxBatches: 40 }))
-      .then(result => {
-        if ((result as any)?.status !== "idle") console.log("[FreshCorpusRebuild] startup_resume", result);
-      })
-      .catch(error => {
-        console.error("[FreshCorpusRebuild] startup_resume_failed", {
-          error_class: error instanceof Error ? error.name : "unknown",
-          error_message: error instanceof Error ? error.message.slice(0, 500) : String(error).slice(0, 500),
-        });
-      });
-  }, 15_000);
-}

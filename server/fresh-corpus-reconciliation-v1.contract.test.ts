@@ -60,12 +60,12 @@ describe("fresh corpus reconciliation v1", () => {
     expect(service).toContain("batchSize ?? 6");
   });
 
-  it("only resumes an explicitly queued production rebuild", () => {
+  it("automatically reconciles source and parser changes without an operator button", () => {
     expect(router).toContain("queue_fresh_corpus_rebuild");
     expect(router).toContain("get_fresh_corpus_rebuild_status");
-    expect(router).toContain("resumeFreshCorpusRebuildFromDatabase");
-    expect(router).toContain("never creates one implicitly");
-    const startupTail = router.slice(router.indexOf("if (process.env.NODE_ENV"));
-    expect(startupTail).not.toContain("queueFreshCorpusRebuild(");
+    expect(service).toContain("reconcileFreshCorpusAutomatically");
+    expect(service).toContain("source_changes_detected");
+    expect(service).toContain("parser_version_changed");
+    expect(service).toContain("syncFreshCorpusSourceManifest");
   });
 });

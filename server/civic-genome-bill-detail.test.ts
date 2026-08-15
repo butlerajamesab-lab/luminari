@@ -71,7 +71,10 @@ describe("Civic Genome Prism trait projection", () => {
     expect(trait_query).toContain("lighthouse_prism_verification_receipts");
     expect(trait_query).toContain("independent_source_replay");
     expect(trait_query).toContain("trait.source_document_id = $2::bigint");
+    expect(trait_query).toContain("$2::bigint is not null");
     expect(query.mock.calls[2]?.[1]).toEqual([genome_bill_id, 369]);
+    expect(query.mock.calls[3]?.[0]).toContain("source_document_id = $2::bigint");
+    expect(query.mock.calls[3]?.[1]).toEqual([genome_bill_id, 369]);
     expect(current_version_query).toContain("order by stage_rank desc");
     expect(result?.current_version?.source_document_id).toBe(369);
     expect(result?.structural_dna.validation_summary).toMatchObject({

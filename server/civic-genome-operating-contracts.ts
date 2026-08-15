@@ -2,6 +2,7 @@ import { getPool } from "./db";
 import { get_genome_bill_by_source_id } from "./civic-genome-source-id";
 import {
   get_latest_rosetta_law_view_by_document_identifier,
+  get_latest_rosetta_law_view_by_source_document,
   type civic_genome_rosetta_law_view,
 } from "./civic-genome-rosetta-contract";
 import { get_kaleidoscope_civic_genome_contract } from "./civic-genome-kaleidoscope-contract";
@@ -239,15 +240,30 @@ function valid_rosetta_output(view: civic_genome_rosetta_law_view): boolean {
 export async function get_civic_genome_rosetta_pipeline_status(
   source_bill_id: number,
 ): Promise<civic_genome_rosetta_pipeline_status> {
-  const [bill, rosetta_result] = await Promise.all([
+  const [bill, current_version_result] = await Promise.all([
     get_genome_bill_by_source_id(source_bill_id),
-    get_latest_rosetta_law_view_by_document_identifier(String(source_bill_id))
-      .then(view => ({ view, error: null }))
-      .catch(error => ({
-        view: null,
-        error: error instanceof Error ? error.message : "unknown_rosetta_contract_error",
-      })),
+    getPool().query<{ rosetta_source_document_id: number | null }>(
+      `select rosetta_source_document_id::integer as rosetta_source_document_id
+         from public.civic_genome_bill_version
+        where source_bill_id = $1
+        order by stage_rank desc, provider_sequence desc, updated_at desc
+        limit 1`,
+      [source_bill_id],
+    ),
   ]);
+  const current_version = current_version_result.rows[0] ?? null;
+  const rosetta_result = await (
+    current_version
+      ? current_version.rosetta_source_document_id == null
+        ? Promise.resolve(null)
+        : get_latest_rosetta_law_view_by_source_document(current_version.rosetta_source_document_id)
+      : get_latest_rosetta_law_view_by_document_identifier(String(source_bill_id))
+  )
+    .then(view => ({ view, error: null }))
+    .catch(error => ({
+      view: null,
+      error: error instanceof Error ? error.message : "unknown_rosetta_contract_error",
+    }));
 
   if (rosetta_result.error) {
     return {
