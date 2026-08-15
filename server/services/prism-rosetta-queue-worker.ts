@@ -13,6 +13,9 @@ const MAX_POLL_INTERVAL_MS = 300_000;
 const QUEUE_LEASE_MINUTES = 60;
 const UNKNOWN_FAILURE_LIMIT = 5;
 const RECONCILE_BATCH_SIZE = 100;
+const DEFAULT_RECONCILE_INTERVAL_MS = 60_000;
+const MIN_RECONCILE_INTERVAL_MS = 10_000;
+const MAX_RECONCILE_INTERVAL_MS = 15 * 60_000;
 
 export type prism_rosetta_queue_state =
   | "eligible"
@@ -43,19 +46,35 @@ export type prism_queue_failure_decision = {
 let queue_timer: NodeJS.Timeout | null = null;
 let queue_cycle_running = false;
 let queue_stopped = false;
+let next_reconcile_at_ms = 0;
 const queue_worker_id = [
   process.env.RENDER_SERVICE_ID ?? "lighthouse",
   process.pid,
   randomUUID(),
 ].join(":");
 
+function bounded_integer(input: string | undefined, fallback: number, minimum: number, maximum: number): number {
+  const parsed = Number.parseInt(input ?? "", 10);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.max(minimum, Math.min(maximum, parsed));
+}
+
 function bounded_poll_interval(): number {
-  const parsed = Number.parseInt(
-    process.env.PRISM_ROSETTA_QUEUE_POLL_MS ?? "",
-    10,
+  return bounded_integer(
+    process.env.PRISM_ROSETTA_QUEUE_POLL_MS,
+    DEFAULT_POLL_INTERVAL_MS,
+    MIN_POLL_INTERVAL_MS,
+    MAX_POLL_INTERVAL_MS,
   );
-  if (!Number.isFinite(parsed)) return DEFAULT_POLL_INTERVAL_MS;
-  return Math.max(MIN_POLL_INTERVAL_MS, Math.min(MAX_POLL_INTERVAL_MS, parsed));
+}
+
+function bounded_reconcile_interval(): number {
+  return bounded_integer(
+    process.env.PRISM_ROSETTA_QUEUE_RECONCILE_MS,
+    DEFAULT_RECONCILE_INTERVAL_MS,
+    MIN_RECONCILE_INTERVAL_MS,
+    MAX_RECONCILE_INTERVAL_MS,
+  );
 }
 
 function queue_enabled(): boolean {
@@ -182,6 +201,13 @@ async function reconcile_completed_jobs(): Promise<void> {
       query_timeout_ms: 5_000,
     },
   );
+}
+
+async function reconcile_completed_jobs_if_due(): Promise<void> {
+  const now_ms = Date.now();
+  if (now_ms < next_reconcile_at_ms) return;
+  next_reconcile_at_ms = now_ms + bounded_reconcile_interval();
+  await reconcile_completed_jobs();
 }
 
 async function claim_next_job(): Promise<prism_rosetta_queue_job | null> {
@@ -379,7 +405,7 @@ async function run_queue_cycle(): Promise<void> {
   if (queue_cycle_running || queue_stopped) return;
   queue_cycle_running = true;
   try {
-    await reconcile_completed_jobs();
+    await reconcile_completed_jobs_if_due();
     const job = await claim_next_job();
     if (job) await process_job(job);
   } catch (error) {
@@ -401,9 +427,11 @@ export function start_prism_rosetta_queue_worker(): void {
   }
   queue_stopped = false;
   const interval_ms = bounded_poll_interval();
+  const reconcile_interval_ms = bounded_reconcile_interval();
   console.log("[PrismRosettaQueue] started", {
     worker_id: queue_worker_id,
     interval_ms,
+    reconcile_interval_ms,
     lease_minutes: QUEUE_LEASE_MINUTES,
     rule_set_id: PRISM_ROSETTA_RULE_SET_ID,
     rule_set_version: PRISM_ROSETTA_RULE_SET_VERSION,
