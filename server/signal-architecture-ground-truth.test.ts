@@ -13,6 +13,9 @@ describe("canonical three-domain signal architecture", () => {
   const identity_projection = read_repo_file(
     "../supabase/migrations/20260731192928_atlas_observation_identity_projection.sql",
   );
+  const semantic_identity_v2 = read_repo_file(
+    "../supabase/migrations/20260815091332_live_data_signal_entity_aware_semantic_identity_v2.sql",
+  );
   const root_router = read_repo_file("./routers.ts");
   const production_router = read_repo_file("./routers/enforcement-intelligence.ts");
   const compatibility_router = read_repo_file("./routers/enforcement-intel.ts");
@@ -80,6 +83,17 @@ describe("canonical three-domain signal architecture", () => {
     );
     expect(read_model).toContain("atlas_unique_observation_count");
     expect(read_model).toContain("atlas_replay_observation_count");
+  });
+
+  it("uses the same entity-aware semantic identity as Atlas without rewriting history", () => {
+    expect(semantic_identity_v2).toContain("live_data_signal_semantic_key_v2");
+    expect(semantic_identity_v2).toContain("p_entity_ids text[]");
+    expect(semantic_identity_v2).toContain("atlas.propublica_unresolved_filing_metadata_rate");
+    expect(semantic_identity_v2).toContain("string_agg(value, chr(30) order by value)");
+    expect(semantic_identity_v2).toContain("v_supplied_semantic_key <> v_semantic_key");
+    expect(semantic_identity_v2).toContain("public.live_data_signal_semantic_key_v2(");
+    expect(semantic_identity_v2).not.toMatch(/update\s+public\.live_data_signals\s+set\s+atlas_semantic_key/i);
+    expect(semantic_identity_v2).toContain("preserving immutable v1 historical records");
   });
 
   it("mounts the protected procedure from the active production router", () => {
