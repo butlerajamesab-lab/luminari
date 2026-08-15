@@ -22,6 +22,7 @@ const PDF_EXTRACTOR_VERSION = `pdf-parse-${PDF_PARSE_VERSION}-legislative-versio
 const CA_PDF_EXTRACTOR_VERSION = `ca-official-legislative-version-pdf-v1+${PDF_EXTRACTOR_VERSION}`;
 const MAX_SOURCE_BYTES = 25 * 1024 * 1024;
 const SOURCE_FETCH_TIMEOUT_MS = 30_000;
+const ROSETTA_REQUEST_TIMEOUT_MS = 60_000;
 const ROSETTA_CORPUS_NAME = "Lighthouse Docket Legislative Versions";
 const ROSETTA_CORPUS_TYPE = "legislative_version";
 
@@ -100,38 +101,55 @@ async function fetch_bytes(
   url: string,
   required = true,
 ): Promise<{ bytes: Buffer; content_type: string | null } | null> {
-  let response: Response;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), SOURCE_FETCH_TIMEOUT_MS);
   try {
-    response = await fetch(url, {
+    const response = await fetch(url, {
       method: "GET",
       redirect: "follow",
       headers: { accept: "application/pdf,text/html;q=0.9,*/*;q=0.1" },
-      signal: AbortSignal.timeout(SOURCE_FETCH_TIMEOUT_MS),
+      signal: controller.signal,
     });
+    if (!response.ok) {
+      if (!required) return null;
+      throw new Error(`legislative_version_source_fetch_failed:${response.status}`);
+    }
+    const content_length = Number(response.headers.get("content-length") ?? 0);
+    if (Number.isFinite(content_length) && content_length > MAX_SOURCE_BYTES) {
+      throw new Error("legislative_version_source_exceeds_max_bytes");
+    }
+    const bytes = Buffer.from(await response.arrayBuffer());
+    if (bytes.length === 0) throw new Error("legislative_version_source_empty");
+    if (bytes.length > MAX_SOURCE_BYTES) {
+      throw new Error("legislative_version_source_exceeds_max_bytes");
+    }
+    return { bytes, content_type: response.headers.get("content-type") };
   } catch (error) {
+    if (
+      error instanceof Error
+      && error.message.startsWith("legislative_version_")
+    ) {
+      throw error;
+    }
+    if (!required) return null;
     const source_host = new URL(url).hostname.toLowerCase();
+    if (controller.signal.aborted) {
+      throw new Error(
+        `legislative_version_source_fetch_timeout:${source_host}:${SOURCE_FETCH_TIMEOUT_MS}`,
+      );
+    }
     const cause = error instanceof Error && error.cause && typeof error.cause === "object"
       && "code" in error.cause
       ? String(error.cause.code)
       : error instanceof Error
         ? error.name
         : "unknown";
-    throw new Error(`legislative_version_source_fetch_network_failed:${source_host}:${cause}`);
+    throw new Error(
+      `legislative_version_source_fetch_network_failed:${source_host}:${cause}`,
+    );
+  } finally {
+    clearTimeout(timeout);
   }
-  if (!response.ok) {
-    if (!required) return null;
-    throw new Error(`legislative_version_source_fetch_failed:${response.status}`);
-  }
-  const content_length = Number(response.headers.get("content-length") ?? 0);
-  if (Number.isFinite(content_length) && content_length > MAX_SOURCE_BYTES) {
-    throw new Error("legislative_version_source_exceeds_max_bytes");
-  }
-  const bytes = Buffer.from(await response.arrayBuffer());
-  if (bytes.length === 0) throw new Error("legislative_version_source_empty");
-  if (bytes.length > MAX_SOURCE_BYTES) {
-    throw new Error("legislative_version_source_exceeds_max_bytes");
-  }
-  return { bytes, content_type: response.headers.get("content-type") };
 }
 
 function derive_wa_official_html_url(pdf_url: string): string | null {
@@ -214,18 +232,52 @@ async function rosetta_request(
   headers.set("accept", "application/json");
   headers.set("content-type", "application/json");
 
-  const response = await fetch(`${base_url}/rest/v1/${path}`, {
-    ...init,
-    headers,
-  });
-  if (!response.ok) {
-    const preview = (await response.text()).slice(0, 1_000);
-    throw new Error(`legislative_version_rosetta_request_failed:${response.status}:${preview}`);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), ROSETTA_REQUEST_TIMEOUT_MS);
+  try {
+    const response = await fetch(`${base_url}/rest/v1/${path}`, {
+      ...init,
+      headers,
+      signal: controller.signal,
+    });
+    const response_body = response.status === 204 ? "" : await response.text();
+    if (!response.ok) {
+      throw new Error(
+        `legislative_version_rosetta_request_failed:${response.status}:${response_body.slice(0, 1_000)}`,
+      );
+    }
+    if (response.status === 204) return [];
+
+    let payload: unknown;
+    try {
+      payload = JSON.parse(response_body);
+    } catch {
+      throw new Error("invalid_legislative_version_rosetta_response_json");
+    }
+    if (!Array.isArray(payload)) {
+      throw new Error("invalid_legislative_version_rosetta_response");
+    }
+    return payload as rosetta_row[];
+  } catch (error) {
+    if (
+      error instanceof Error
+      && (
+        error.message.startsWith("legislative_version_rosetta_request_failed:")
+        || error.message.startsWith("invalid_legislative_version_rosetta_response")
+      )
+    ) {
+      throw error;
+    }
+    if (controller.signal.aborted) {
+      throw new Error(
+        `legislative_version_rosetta_request_timeout:${ROSETTA_REQUEST_TIMEOUT_MS}`,
+      );
+    }
+    const cause = error instanceof Error ? error.name : "unknown";
+    throw new Error(`legislative_version_rosetta_request_network_failed:${cause}`);
+  } finally {
+    clearTimeout(timeout);
   }
-  if (response.status === 204) return [];
-  const payload: unknown = await response.json();
-  if (!Array.isArray(payload)) throw new Error("invalid_legislative_version_rosetta_response");
-  return payload as rosetta_row[];
 }
 
 async function ensure_rosetta_corpus(): Promise<number> {
@@ -404,31 +456,65 @@ async function invoke_rosetta_extraction(
     accept: "application/json",
     "content-type": "application/json",
   });
-  const response = await fetch(`${base_url}/rest/v1/rpc/run_rosetta_v3_extraction`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      p_source_document_id: source_document_id,
-      p_source_text: source.source_text,
-      p_expected_source_content_hash: source.source_content_hash,
-      p_source_url: source.source_url,
-      p_source_version: source.source_version,
-      p_media_type: source.media_type,
-      p_source_byte_hash: source.source_byte_hash,
-      p_source_provider_hash: source.provider_hash,
-      p_reference_date: reference_date,
-      p_text_extractor_version: source.extractor_version,
-      p_source_metadata: source.source_metadata,
-    }),
-  });
-  if (!response.ok) {
-    const preview = (await response.text()).slice(0, 1_000);
-    throw new Error(`legislative_version_rosetta_extraction_failed:${response.status}:${preview}`);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), ROSETTA_REQUEST_TIMEOUT_MS);
+  try {
+    const response = await fetch(`${base_url}/rest/v1/rpc/run_rosetta_v3_extraction`, {
+      method: "POST",
+      headers,
+      signal: controller.signal,
+      body: JSON.stringify({
+        p_source_document_id: source_document_id,
+        p_source_text: source.source_text,
+        p_expected_source_content_hash: source.source_content_hash,
+        p_source_url: source.source_url,
+        p_source_version: source.source_version,
+        p_media_type: source.media_type,
+        p_source_byte_hash: source.source_byte_hash,
+        p_source_provider_hash: source.provider_hash,
+        p_reference_date: reference_date,
+        p_text_extractor_version: source.extractor_version,
+        p_source_metadata: source.source_metadata,
+      }),
+    });
+    const response_body = await response.text();
+    if (!response.ok) {
+      throw new Error(
+        `legislative_version_rosetta_extraction_failed:${response.status}:${response_body.slice(0, 1_000)}`,
+      );
+    }
+
+    let payload: unknown;
+    try {
+      payload = JSON.parse(response_body);
+    } catch {
+      throw new Error("invalid_legislative_version_extraction_receipt_json");
+    }
+    const receipt = Array.isArray(payload) ? payload[0] : payload;
+    if (!as_record(receipt)) {
+      throw new Error("invalid_legislative_version_extraction_receipt");
+    }
+    return receipt as unknown as rosetta_extraction_receipt;
+  } catch (error) {
+    if (
+      error instanceof Error
+      && (
+        error.message.startsWith("legislative_version_rosetta_extraction_failed:")
+        || error.message.startsWith("invalid_legislative_version_extraction_receipt")
+      )
+    ) {
+      throw error;
+    }
+    if (controller.signal.aborted) {
+      throw new Error(
+        `legislative_version_rosetta_extraction_timeout:${ROSETTA_REQUEST_TIMEOUT_MS}`,
+      );
+    }
+    const cause = error instanceof Error ? error.name : "unknown";
+    throw new Error(`legislative_version_rosetta_extraction_network_failed:${cause}`);
+  } finally {
+    clearTimeout(timeout);
   }
-  const payload: unknown = await response.json();
-  const receipt = Array.isArray(payload) ? payload[0] : payload;
-  if (!as_record(receipt)) throw new Error("invalid_legislative_version_extraction_receipt");
-  return receipt as unknown as rosetta_extraction_receipt;
 }
 
 async function record_source_ingested(
