@@ -1890,7 +1890,7 @@ const shareRouter = router({
       return {
         ...data,
         permissions: link.permissions,
-        expires_at: link.expiresAt,
+        expiresAt: link.expiresAt,
         label: link.label,
       };
     }),
