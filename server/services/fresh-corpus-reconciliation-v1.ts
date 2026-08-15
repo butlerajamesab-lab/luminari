@@ -1063,7 +1063,7 @@ async function processArtifact(runId: string, artifact: SourceArtifact): Promise
       set content_sha256=$2,extracted_text_sha256=$3,extraction_status='fresh_parsed',observed_at=now(),metadata=metadata || $4::jsonb
       where artifact_key=$1`, [artifact.artifact_key, contentSha256, textSha256, JSON.stringify({ fresh_parser_version: FRESH_CORPUS_PARSER_VERSION })]);
     await pool.query(`update public.luminari_corpus_rebuild_artifact_v1
-      set status='completed',content_sha256=$3,extracted_text_sha256=$4,candidate_count=$5,error_message=null,completed_at=now(),receipt_hash=$6,result_json=$7::jsonb
+      set status='completed',content_sha256=$3,extracted_text_sha256=$4,candidate_count=$5,error_message=null,completed_at=now(),receipt_hash=$6,result_json=result_json||$7::jsonb
       where run_id=$1 and artifact_key=$2`, [runId, artifact.artifact_key, contentSha256, textSha256, candidatesGenerated, receiptHash,
       JSON.stringify({
         candidates_generated: candidatesGenerated,
@@ -1076,7 +1076,7 @@ async function processArtifact(runId: string, artifact: SourceArtifact): Promise
     const message = error instanceof Error ? error.message : String(error);
     const receiptHash = sha256(stable({ run_id: runId, artifact_key: artifact.artifact_key, status: "failed", error: message.slice(0, 500) }));
     await pool.query(`update public.luminari_corpus_source_artifact_v1 set extraction_status='fresh_parse_failed',observed_at=now() where artifact_key=$1`, [artifact.artifact_key]);
-    await pool.query(`update public.luminari_corpus_rebuild_artifact_v1 set status='failed',error_message=$3,completed_at=now(),receipt_hash=$4,result_json=$5::jsonb where run_id=$1 and artifact_key=$2`,
+    await pool.query(`update public.luminari_corpus_rebuild_artifact_v1 set status='failed',error_message=$3,completed_at=now(),receipt_hash=$4,result_json=result_json||$5::jsonb where run_id=$1 and artifact_key=$2`,
       [runId, artifact.artifact_key, message.slice(0, 1000), receiptHash, JSON.stringify({ error_class: error instanceof Error ? error.name : "unknown" })]);
   }
 }

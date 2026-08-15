@@ -66,6 +66,7 @@ describe("fresh corpus reconciliation v1", () => {
     expect(service).toContain("xlsx_streamed_row_preserved_v3");
     expect(service).toContain("workbook_chunks_committed");
     expect(service).toContain("lease_heartbeat_at");
+    expect(service).toContain("result_json=result_json||$7::jsonb");
     expect(service).toContain("header_row");
     expect(service).toContain("row_role");
     expect(service).toContain("immutable_workbook_plus_decoded_cells");
