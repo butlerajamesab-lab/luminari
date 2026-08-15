@@ -70,6 +70,7 @@ import docket_room_page from "./pages/DocketRoom";
 import CivicGenome from "./pages/CivicGenome";
 import LumenSend from "./pages/LumenSend";
 import LegalLibrary from "./pages/LegalLibrary";
+import MobileBottomNav from "./components/MobileBottomNav";
 import AgencyMetrics from "./pages/AgencyMetrics";
 import CivilGideon from "./pages/CivilGideon";
 import native_nations_hub_page from "./pages/NativeNationsHub";
@@ -284,6 +285,7 @@ function App() {
                 <Route path="/business-analytics" component={BusinessAnalytics} />
                 <Route><DashboardRouter /></Route>
               </Switch>
+              <MobileBottomNav />
               <GlobalUploadIndicator />
               <LuminariHelper />
             </CaseProvider>
