@@ -5,12 +5,12 @@ import { describe, expect, it } from "vitest";
 const migration_root = path.resolve(process.cwd(), "supabase/migrations");
 
 const forbidden_rosetta_ownership = [
-  /create\s+or\s+replace\s+function\s+public\.run_rosetta_v3_extraction\b/i,
+  /create\s+(?:or\s+replace\s+)?function\s+public\.run_rosetta_v3_extraction\b/i,
   /create\s+(?:table\s+if\s+not\s+exists\s+|table\s+)public\.rosetta_structural_repair_queue\b/i,
   /create\s+(?:table\s+if\s+not\s+exists\s+|table\s+)public\.rosetta_canonical_clause\b/i,
   /create\s+(?:table\s+if\s+not\s+exists\s+|table\s+)public\.rosetta_clause_occurrence\b/i,
-  /create\s+or\s+replace\s+function\s+public\.rosetta_reconcile_structural_correctness\b/i,
-  /create\s+or\s+replace\s+function\s+public\.rosetta_v\d+_.*(?:extract|reconcil|canonical_output)\b/i,
+  /create\s+(?:or\s+replace\s+)?function\s+public\.rosetta_reconcile_structural_correctness\b/i,
+  /create\s+(?:or\s+replace\s+)?function\s+public\.rosetta_v\d+_.*(?:extract|reconcil|canonical_output)\b/i,
 ];
 
 describe("Civic Genome / Rosetta ownership boundary", () => {
