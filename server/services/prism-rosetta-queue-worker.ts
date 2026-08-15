@@ -12,6 +12,7 @@ const MIN_POLL_INTERVAL_MS = 5_000;
 const MAX_POLL_INTERVAL_MS = 300_000;
 const QUEUE_LEASE_MINUTES = 60;
 const UNKNOWN_FAILURE_LIMIT = 5;
+const RECONCILE_BATCH_SIZE = 100;
 
 export type prism_rosetta_queue_state =
   | "eligible"
@@ -147,23 +148,34 @@ export function classify_prism_queue_failure(input: {
 
 async function reconcile_completed_jobs(): Promise<void> {
   await query_with_diagnostics(
-    `update public.civic_genome_prism_verification_queue queue
+    `with candidate as (
+       select queue.queue_id,
+              verification.receipt_count,
+              verification.completed_at
+         from public.civic_genome_prism_verification_queue queue
+         join public.civic_genome_prism_verification_run verification
+           on queue.assembly_run_id = verification.assembly_run_id
+          and queue.prism_rule_set_id = verification.prism_rule_set_id
+          and queue.prism_rule_set_version = verification.prism_rule_set_version
+        where verification.receipt_count = verification.expected_trait_count
+          and verification.expected_trait_count = queue.expected_trait_count
+          and queue.queue_state <> 'completed'
+        order by queue.updated_at, queue.queue_id
+        for update of queue skip locked
+        limit $1::integer
+     )
+     update public.civic_genome_prism_verification_queue queue
         set queue_state = 'completed',
-            receipt_count = verification.receipt_count,
-            completed_at = verification.completed_at,
+            receipt_count = candidate.receipt_count,
+            completed_at = candidate.completed_at,
             locked_at = null,
             locked_by = null,
             last_failure_class = null,
             last_error_code = null,
             updated_at = now()
-       from public.civic_genome_prism_verification_run verification
-      where queue.assembly_run_id = verification.assembly_run_id
-        and queue.prism_rule_set_id = verification.prism_rule_set_id
-        and queue.prism_rule_set_version = verification.prism_rule_set_version
-        and verification.receipt_count = verification.expected_trait_count
-        and verification.expected_trait_count = queue.expected_trait_count
-        and queue.queue_state <> 'completed'`,
-    [],
+       from candidate
+      where queue.queue_id = candidate.queue_id`,
+    [RECONCILE_BATCH_SIZE],
     {
       label: "prism_rosetta_queue_reconcile_completed",
       pool_acquire_timeout_ms: 1_000,
