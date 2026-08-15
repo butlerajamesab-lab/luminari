@@ -7,7 +7,7 @@ MIGRATION_ROOT = Path("supabase/migrations")
 
 FORBIDDEN = {
     "canonical_producer": re.compile(
-        r"create\s+or\s+replace\s+function\s+public\.run_rosetta_v3_extraction\b",
+        r"create\s+(?:or\s+replace\s+)?function\s+public\.run_rosetta_v3_extraction\b",
         re.IGNORECASE,
     ),
     "structural_repair_queue": re.compile(
@@ -23,11 +23,11 @@ FORBIDDEN = {
         re.IGNORECASE,
     ),
     "reconciliation_producer": re.compile(
-        r"create\s+or\s+replace\s+function\s+public\.rosetta_reconcile_structural_correctness\b",
+        r"create\s+(?:or\s+replace\s+)?function\s+public\.rosetta_reconcile_structural_correctness\b",
         re.IGNORECASE,
     ),
     "versioned_rosetta_engine": re.compile(
-        r"create\s+or\s+replace\s+function\s+public\.rosetta_v\d+_.*(?:extract|reconcil|canonical_output)\b",
+        r"create\s+(?:or\s+replace\s+)?function\s+public\.rosetta_v\d+_.*(?:extract|reconcil|canonical_output)\b",
         re.IGNORECASE,
     ),
 }
