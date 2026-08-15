@@ -68,7 +68,7 @@ const source_id_from_bill = (bill: { source_bill_id?: unknown; structural_dna_js
 
 const contract_state_color = (state: string) => {
   if (["active", "assembled", "completed", "operational", "ready", "ready_for_assembly"].includes(state)) return p.green;
-  if (["available_unbound", "in_progress", "waiting"].includes(state)) return "#e6ba66";
+  if (["available_unbound", "current_pending", "in_progress", "waiting"].includes(state)) return "#e6ba66";
   if (["blocked", "contract_error", "error", "unavailable"].includes(state)) return "#ef8b8b";
   return p.muted;
 };
@@ -140,6 +140,9 @@ export default function CivicGenomePage() {
   const traits = bill_detail.data?.structural_dna.traits ?? [];
   const validation_summary = bill_detail.data?.structural_dna.validation_summary;
   const assembly_runs = bill_detail.data?.structural_dna.assembly_runs ?? [];
+  const structural_snapshot_state = bill_detail.data?.structural_dna.snapshot_state ?? "unavailable";
+  const current_version = bill_detail.data?.current_version ?? null;
+  const published_version = bill_detail.data?.published_version ?? null;
   const family_assignment = bill_detail.data?.family_assignment ?? null;
   const grouped_traits = useMemo(() => {
     const groups = new Map<string, typeof traits>();
@@ -283,10 +286,10 @@ export default function CivicGenomePage() {
             {[
               { label: "Docket source", value: String(rosetta_pipeline.data.source_bill_id), detail: "Exact source identifier" },
               { label: "Genome record", value: rosetta_pipeline.data.genome_bill_id ? "Bound" : "Not assembled", detail: rosetta_pipeline.data.genome_bill_id ?? "No Genome UUID" },
-              { label: "Rosetta source", value: rosetta_pipeline.data.source_document_id ? "Bound" : "Not ingested", detail: rosetta_pipeline.data.source_document_id ? `document ${rosetta_pipeline.data.source_document_id}` : "No source document" },
-              { label: "Extraction", value: rosetta_pipeline.data.run_status ?? "Not started", detail: rosetta_pipeline.data.extraction_run_id ? `run ${rosetta_pipeline.data.extraction_run_id}` : "No extraction run" },
-              { label: "Provenance", value: rosetta_pipeline.data.provenance_state ?? "Not observed", detail: `${rosetta_pipeline.data.object_count ?? 0} Rosetta objects reported` },
-              { label: "Publication", value: rosetta_pipeline.data.contract_state === "assembled" ? "Published" : "Processing", detail: rosetta_pipeline.data.contract_state === "assembled" ? "Current snapshot decomposed and verified" : "Automatic pipeline is resolving this snapshot" },
+              { label: "Current source", value: rosetta_pipeline.data.source_document_id ? "Bound" : rosetta_pipeline.data.current_version_type ? "Queued" : "Not observed", detail: rosetta_pipeline.data.source_document_id ? `document ${rosetta_pipeline.data.source_document_id}` : rosetta_pipeline.data.current_version_type ? `${rosetta_pipeline.data.current_version_type} · ${rosetta_pipeline.data.current_processing_state ?? "registered"}` : "No source version observed" },
+              { label: "Current extraction", value: rosetta_pipeline.data.run_status ?? (rosetta_pipeline.data.current_version_type ? "Pending" : "Not started"), detail: rosetta_pipeline.data.extraction_run_id ? `run ${rosetta_pipeline.data.extraction_run_id}` : "Automatic worker owns this transition" },
+              { label: "Current provenance", value: rosetta_pipeline.data.provenance_state ?? "Pending", detail: `${rosetta_pipeline.data.object_count ?? 0} current-version Rosetta objects reported` },
+              { label: "Publication", value: rosetta_pipeline.data.contract_state === "assembled" ? "Published" : rosetta_pipeline.data.published_source_document_id ? "Available" : "Processing", detail: rosetta_pipeline.data.contract_state === "assembled" ? "Current snapshot decomposed and verified" : rosetta_pipeline.data.published_source_document_id ? `Latest verified ${rosetta_pipeline.data.published_version_type ?? "prior"} snapshot · document ${rosetta_pipeline.data.published_source_document_id}` : "Automatic pipeline is resolving this snapshot" },
             ].map(stage => <div key={stage.label} style={{ background: p.soft, border: `1px solid ${p.border}`, borderRadius: 8, padding: ".7rem" }}>
               <div style={{ fontFamily: mono, color: p.muted, fontSize: ".58rem", textTransform: "uppercase" }}>{stage.label}</div>
               <div style={{ fontFamily: sans, color: stage.value === "Ready" || stage.value === "Bound" ? p.green : p.paper, fontWeight: 650, fontSize: ".82rem", marginTop: ".25rem" }}>{stage.value}</div>
@@ -338,7 +341,7 @@ export default function CivicGenomePage() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: ".75rem", flexWrap: "wrap" }}>
               <div>
                 <div style={{ fontFamily: mono, fontSize: ".68rem", color: p.green }}>CURRENT SNAPSHOT VALIDATION</div>
-                <div style={{ marginTop: ".25rem", color: p.muted, fontFamily: sans, fontSize: ".72rem" }}>{bill_detail.data?.current_version ? `${bill_detail.data.current_version.version_type} · ${bill_detail.data.current_version.processing_state}` : "Current version not observed"}</div>
+                <div style={{ marginTop: ".25rem", color: p.muted, fontFamily: sans, fontSize: ".72rem" }}>{current_version ? `${current_version.version_type} · ${current_version.processing_state}` : "Current version not observed"}</div>
               </div>
               <button type="button" onClick={() => set_defects_only(value => !value)} style={{ background: defects_only ? p.green_soft : p.soft, border: `1px solid ${defects_only ? p.green : p.border}`, color: defects_only ? p.green : p.muted, borderRadius: 8, padding: ".5rem .7rem", fontFamily: mono, fontSize: ".62rem", cursor: "pointer" }}>{defects_only ? "Show all metadata" : "Show defects only"}</button>
             </div>
@@ -349,6 +352,7 @@ export default function CivicGenomePage() {
               <Metric label="Duplicates" value={validation_summary?.duplicates ?? "—"}/>
               <Metric label="Missing section" value={validation_summary?.missing_section ?? "—"}/>
             </div>
+            {structural_snapshot_state === "previous_verified" && published_version && <div style={{ marginTop: ".7rem", padding: ".65rem .75rem", border: `1px solid ${p.green}`, borderRadius: 8, background: p.green_soft, color: p.paper, fontFamily: sans, fontSize: ".75rem", lineHeight: 1.45 }}>The current {current_version?.version_type ?? "bill"} source is processing automatically. Structural DNA and verification below remain available from the latest verified {published_version.version_type} snapshot; they are not being presented as current-version results.</div>}
           </section>
           <section style={panel}>
             <div style={{ display: "flex", alignItems: "center", gap: ".5rem", fontFamily: mono, color: p.green, fontSize: ".7rem", marginBottom: ".75rem" }}><Braces size={15}/> Structural DNA</div>

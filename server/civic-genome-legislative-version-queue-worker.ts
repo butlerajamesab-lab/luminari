@@ -156,11 +156,44 @@ async function reconcile_completed_jobs(): Promise<void> {
 
 async function claim_jobs(limit: number): Promise<legislative_version_queue_job[]> {
   const result = await query_with_diagnostics<legislative_version_queue_job>(
-    `with candidate as (
+    `with host_activity as (
+       select split_part(lower(document.source_url), '/', 3) as source_host,
+              max(queue.updated_at) filter (
+                where queue.attempt_count > 0
+              ) as last_attempt_at,
+              max(queue.next_attempt_at) filter (
+                where queue.queue_state = 'degraded'
+                  and queue.next_attempt_at > now()
+              ) as blocked_until
+         from public.civic_genome_legislative_version_queue queue
+         join public.civic_genome_bill_version version
+           on version.bill_version_id = queue.bill_version_id
+         join public.docket_bill_source_document document
+           on document.source_document_key = version.source_document_key
+        group by split_part(lower(document.source_url), '/', 3)
+     ), candidate as (
        select queue.queue_id
          from public.civic_genome_legislative_version_queue queue
          join public.civic_genome_bill_version version
            on version.bill_version_id = queue.bill_version_id
+         join public.docket_bill_source_document document
+           on document.source_document_key = version.source_document_key
+         join host_activity source_host
+           on source_host.source_host = split_part(lower(document.source_url), '/', 3)
+         cross join lateral (
+           select not exists (
+             select 1
+               from public.civic_genome_bill_version newer
+              where newer.genome_bill_id = version.genome_bill_id
+                and (
+                  newer.stage_rank > version.stage_rank
+                  or (
+                    newer.stage_rank = version.stage_rank
+                    and newer.provider_sequence > version.provider_sequence
+                  )
+                )
+           ) as is_current
+         ) currency
         where queue.next_attempt_at <= now()
           and (
             queue.queue_state in ('eligible', 'degraded')
@@ -173,8 +206,15 @@ async function claim_jobs(limit: number): Promise<legislative_version_queue_job[
             queue.locked_at is null
             or queue.locked_at < now() - make_interval(mins => $2::integer)
           )
-          and version.processing_state not in ('verified')
-        order by queue.priority, queue.created_at, queue.queue_id
+          and version.processing_state not in ('verified', 'verified_with_findings')
+          and coalesce(source_host.blocked_until, '-infinity'::timestamptz) <= now()
+        order by source_host.last_attempt_at asc nulls first,
+                 case when queue.priority < 0 then 0 else 1 end,
+                 currency.is_current desc,
+                 case when currency.is_current then version.stage_rank else 0 end desc,
+                 queue.priority,
+                 queue.created_at,
+                 queue.queue_id
         for update of queue skip locked
         limit $3::integer
      )

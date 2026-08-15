@@ -147,7 +147,15 @@ describe("Civic Genome operating contracts", () => {
   });
 
   it("resolves the newest version by its exact Rosetta source document", async () => {
-    query.mockResolvedValueOnce({ rows: [{ rosetta_source_document_id: 44 }] });
+    query.mockResolvedValueOnce({ rows: [{
+      current_version_type: "chaptered",
+      current_processing_state: "verified",
+      current_source_document_id: 44,
+      published_version_type: "chaptered",
+      published_processing_state: "verified",
+      published_source_document_id: 44,
+      published_extraction_run_id: "11",
+    }] });
     get_rosetta_view.mockResolvedValue(completed_view());
 
     await get_civic_genome_rosetta_pipeline_status(2093644);
@@ -157,12 +165,25 @@ describe("Civic Genome operating contracts", () => {
     expect(query.mock.calls[0]?.[0]).toContain("order by stage_rank desc");
   });
 
-  it("does not substitute an older legacy run while the current version is pending", async () => {
-    query.mockResolvedValueOnce({ rows: [{ rosetta_source_document_id: null }] });
+  it("keeps the prior verified snapshot explicitly published while the current version is pending", async () => {
+    query.mockResolvedValueOnce({ rows: [{
+      current_version_type: "chaptered",
+      current_processing_state: "registered",
+      current_source_document_id: null,
+      published_version_type: "house_amendment",
+      published_processing_state: "verified_with_findings",
+      published_source_document_id: 44,
+      published_extraction_run_id: "11",
+    }] });
+    get_rosetta_view.mockResolvedValue(completed_view());
 
     const result = await get_civic_genome_rosetta_pipeline_status(2093644);
 
-    expect(get_rosetta_view).not.toHaveBeenCalled();
-    expect(result.contract_state).toBe("not_handed_off");
+    expect(get_rosetta_view).toHaveBeenCalledWith(44);
+    expect(result.source_document_id).toBeNull();
+    expect(result.published_source_document_id).toBe(44);
+    expect(result.published_version_type).toBe("house_amendment");
+    expect(result.contract_state).toBe("current_pending");
+    expect(result.contract_message).toContain("remains published");
   });
 });

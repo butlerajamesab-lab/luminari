@@ -79,17 +79,21 @@ export type family_assignment_status = {
   latest_resolution: persisted_family_resolution | null;
 };
 
+export type civic_genome_version_snapshot = {
+  bill_version_id: string;
+  source_document_key: string;
+  version_type: string;
+  source_document_id: number | null;
+  extraction_run_id: string | null;
+  processing_state: string;
+};
+
 export type civic_genome_bill_detail = {
   bill: GenomeBill;
-  current_version: {
-    bill_version_id: string;
-    source_document_key: string;
-    version_type: string;
-    source_document_id: number | null;
-    extraction_run_id: string | null;
-    processing_state: string;
-  } | null;
+  current_version: civic_genome_version_snapshot | null;
+  published_version: civic_genome_version_snapshot | null;
   structural_dna: {
+    snapshot_state: "current" | "previous_verified" | "unavailable";
     traits: persisted_genome_trait[];
     assembly_runs: persisted_genome_assembly_run[];
     validation_summary: {
@@ -114,25 +118,86 @@ export async function get_civic_genome_bill_detail(
   const bill = bill_result.rows[0];
   if (!bill) return null;
 
-  const current_version_result = await pool.query<{
-    bill_version_id: string;
-    source_document_key: string;
-    version_type: string;
-    source_document_id: number | null;
-    extraction_run_id: string | null;
-    processing_state: string;
+  const version_selection_result = await pool.query<{
+    current_bill_version_id: string | null;
+    current_source_document_key: string | null;
+    current_version_type: string | null;
+    current_source_document_id: number | null;
+    current_extraction_run_id: string | null;
+    current_processing_state: string | null;
+    published_bill_version_id: string | null;
+    published_source_document_key: string | null;
+    published_version_type: string | null;
+    published_source_document_id: number | null;
+    published_extraction_run_id: string | null;
+    published_processing_state: string | null;
   }>(
-    `select bill_version_id, source_document_key, version_type,
-            rosetta_source_document_id::integer as source_document_id,
-            rosetta_extraction_run_id as extraction_run_id,
-            processing_state
-       from public.civic_genome_bill_version
-      where genome_bill_id = $1
-      order by stage_rank desc, provider_sequence desc, updated_at desc
-      limit 1`,
+    `with current_version as (
+       select bill_version_id, source_document_key, version_type,
+              rosetta_source_document_id, rosetta_extraction_run_id,
+              processing_state
+         from public.civic_genome_bill_version
+        where genome_bill_id = $1
+        order by stage_rank desc, provider_sequence desc, updated_at desc
+        limit 1
+     ), published_version as (
+       select bill_version_id, source_document_key, version_type,
+              rosetta_source_document_id, rosetta_extraction_run_id,
+              processing_state
+         from public.civic_genome_bill_version
+        where genome_bill_id = $1
+          and processing_state in ('verified', 'verified_with_findings')
+          and rosetta_source_document_id is not null
+          and assembly_run_id is not null
+        order by stage_rank desc, provider_sequence desc, updated_at desc
+        limit 1
+     )
+     select current.bill_version_id as current_bill_version_id,
+            current.source_document_key as current_source_document_key,
+            current.version_type as current_version_type,
+            current.rosetta_source_document_id::integer as current_source_document_id,
+            current.rosetta_extraction_run_id as current_extraction_run_id,
+            current.processing_state as current_processing_state,
+            published.bill_version_id as published_bill_version_id,
+            published.source_document_key as published_source_document_key,
+            published.version_type as published_version_type,
+            published.rosetta_source_document_id::integer as published_source_document_id,
+            published.rosetta_extraction_run_id as published_extraction_run_id,
+            published.processing_state as published_processing_state
+       from current_version current
+       full join published_version published on true`,
     [genome_bill_id],
   );
-  const current_version = current_version_result.rows[0] ?? null;
+  const version_selection = version_selection_result.rows[0] ?? null;
+  const current_version: civic_genome_version_snapshot | null = version_selection?.current_bill_version_id
+    ? {
+      bill_version_id: version_selection.current_bill_version_id,
+      source_document_key: version_selection.current_source_document_key ?? "",
+      version_type: version_selection.current_version_type ?? "unknown",
+      source_document_id: version_selection.current_source_document_id,
+      extraction_run_id: version_selection.current_extraction_run_id,
+      processing_state: version_selection.current_processing_state ?? "registered",
+    }
+    : null;
+  const published_version: civic_genome_version_snapshot | null = version_selection?.published_bill_version_id
+    ? {
+      bill_version_id: version_selection.published_bill_version_id,
+      source_document_key: version_selection.published_source_document_key ?? "",
+      version_type: version_selection.published_version_type ?? "unknown",
+      source_document_id: version_selection.published_source_document_id,
+      extraction_run_id: version_selection.published_extraction_run_id,
+      processing_state: version_selection.published_processing_state ?? "verified",
+    }
+    : null;
+  const display_version = current_version?.processing_state === "verified"
+    || current_version?.processing_state === "verified_with_findings"
+    ? current_version
+    : published_version;
+  const snapshot_state = display_version == null
+    ? "unavailable"
+    : display_version.bill_version_id === current_version?.bill_version_id
+      ? "current"
+      : "previous_verified";
 
   const [traits_result, runs_result, family_result, resolution_result] = await Promise.all([
     pool.query<persisted_genome_trait>(
@@ -200,7 +265,7 @@ export async function get_civic_genome_bill_detail(
          and $2::bigint is not null
          and trait.source_document_id = $2::bigint
        order by trait.trait_class, trait.trait_key, trait.trait_fingerprint`,
-      [genome_bill_id, current_version?.source_document_id ?? null],
+      [genome_bill_id, display_version?.source_document_id ?? null],
     ),
     pool.query<persisted_genome_assembly_run>(
       `select *
@@ -210,7 +275,7 @@ export async function get_civic_genome_bill_detail(
           and source_document_id = $2::bigint
         order by created_at desc, assembly_run_id desc
         limit 25`,
-      [genome_bill_id, current_version?.source_document_id ?? null],
+      [genome_bill_id, display_version?.source_document_id ?? null],
     ),
     pool.query<{ signature_json: Record<string, unknown> }>(
       `select signature_json
@@ -266,7 +331,9 @@ export async function get_civic_genome_bill_detail(
   return {
     bill,
     current_version,
+    published_version,
     structural_dna: {
+      snapshot_state,
       traits: current_traits,
       assembly_runs: runs_result.rows,
       validation_summary,
