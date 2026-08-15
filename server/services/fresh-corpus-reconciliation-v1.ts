@@ -1117,6 +1117,8 @@ async function finalizeIdentities(runId: string): Promise<{ identities: number; 
     const key = `${row.candidate_type}|${row.state_code ?? row.jurisdiction ?? "UNRESOLVED"}|${row.normalized_name_key}`;
     const group = groups.get(key) ?? []; group.push(row); groups.set(key, group);
   }
+  const identityRows: Array<Record<string, unknown>> = [];
+  const evidenceRows: Array<Record<string, unknown>> = [];
   let identities = 0; let unresolved = 0;
   for (const [groupKey, group] of groups) {
     const jurisdictionConflict = group.some(row => row.jurisdiction_resolution_state === "conflict");
@@ -1135,17 +1137,86 @@ async function finalizeIdentities(runId: string): Promise<{ identities: number; 
       observed_domains: domains.sort(), observed_phones: phones.sort(),
       resolution_reason: jurisdictionConflict ? "jurisdiction_conflict" : hasStrongDisagreement ? "strong_identifier_disagreement" : strongIdentifier ? "shared_or_unique_strong_identifier" : "normalized_name_plus_jurisdiction",
     };
-    await pool.query(`insert into public.luminari_corpus_identity_v1(identity_key,identity_type,jurisdiction,state_code,canonical_name,normalized_name_key,strong_identifier_key,resolution_state,candidate_count,canonical_payload,first_run_id,latest_run_id)
-      values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb,$11,$11)
-      on conflict(identity_key) do update set canonical_name=excluded.canonical_name,strong_identifier_key=excluded.strong_identifier_key,resolution_state=excluded.resolution_state,candidate_count=excluded.candidate_count,canonical_payload=excluded.canonical_payload,latest_run_id=excluded.latest_run_id,updated_at=now()`,
-      [identityKey, group[0].candidate_type, group[0].jurisdiction, group[0].state_code, canonicalName, group[0].normalized_name_key, strongIdentifier, resolutionState, group.length, JSON.stringify(canonicalPayload), runId]);
+    identityRows.push({
+      identity_key: identityKey,
+      identity_type: group[0].candidate_type,
+      jurisdiction: group[0].jurisdiction,
+      state_code: group[0].state_code,
+      canonical_name: canonicalName,
+      normalized_name_key: group[0].normalized_name_key,
+      strong_identifier_key: strongIdentifier,
+      resolution_state: resolutionState,
+      candidate_count: group.length,
+      canonical_payload: canonicalPayload,
+      run_id: runId,
+    });
     for (const row of group) {
       const basis = resolutionState === "unresolved_conflict" ? "name_jurisdiction_conflict_preserved" : sharedDomain ? "shared_website_domain" : sharedPhone ? "shared_phone" : strongIdentifier ? "name_jurisdiction_plus_strong_identifier" : "normalized_name_plus_jurisdiction";
       const strength = resolutionState === "unresolved_conflict" ? "conflict" : sharedDomain || sharedPhone ? "strong" : "medium";
-      await pool.query(`insert into public.luminari_corpus_identity_evidence_v1(identity_key,candidate_key,match_basis,match_strength) values($1,$2,$3,$4) on conflict do nothing`, [identityKey, row.candidate_key, basis, strength]);
-      await pool.query(`update public.luminari_corpus_candidate_v1 set candidate_state=$2 where candidate_key=$1`, [row.candidate_key, resolutionState === "resolved" ? "identity_bound" : "identity_conflict"]);
+      evidenceRows.push({
+        identity_key: identityKey,
+        candidate_key: row.candidate_key,
+        match_basis: basis,
+        match_strength: strength,
+        candidate_state: resolutionState === "resolved" ? "identity_bound" : "identity_conflict",
+      });
     }
     identities += 1; if (resolutionState !== "resolved") unresolved += 1;
+  }
+
+  // The former one-identity-plus-two-queries-per-candidate loop required
+  // thousands of database round trips after a large workbook had already
+  // parsed successfully. Bounded set-based writes keep sealing idempotent and
+  // resumable without turning finalization into a query-timeout bottleneck.
+  const identityChunkSize = 200;
+  for (let offset = 0; offset < identityRows.length; offset += identityChunkSize) {
+    const chunk = identityRows.slice(offset, offset + identityChunkSize);
+    await pool.query(`with source_rows as (
+        select * from jsonb_to_recordset($1::jsonb) as x(
+          identity_key text,identity_type text,jurisdiction text,state_code text,canonical_name text,
+          normalized_name_key text,strong_identifier_key text,resolution_state text,candidate_count integer,
+          canonical_payload jsonb,run_id uuid
+        )
+      )
+      insert into public.luminari_corpus_identity_v1(
+        identity_key,identity_type,jurisdiction,state_code,canonical_name,normalized_name_key,strong_identifier_key,
+        resolution_state,candidate_count,canonical_payload,first_run_id,latest_run_id
+      )
+      select identity_key,identity_type,jurisdiction,state_code,canonical_name,normalized_name_key,strong_identifier_key,
+             resolution_state,candidate_count,canonical_payload,run_id,run_id
+      from source_rows
+      on conflict(identity_key) do update set
+        canonical_name=excluded.canonical_name,
+        strong_identifier_key=excluded.strong_identifier_key,
+        resolution_state=excluded.resolution_state,
+        candidate_count=excluded.candidate_count,
+        canonical_payload=excluded.canonical_payload,
+        latest_run_id=excluded.latest_run_id,
+        updated_at=now()`, [JSON.stringify(chunk)]);
+    await pool.query(`update public.luminari_corpus_rebuild_run_v1
+      set result_json=result_json||jsonb_build_object('identity_groups_committed',$2::int,'identity_groups_total',$3::int)
+      where run_id=$1`, [runId, Math.min(offset + chunk.length, identityRows.length), identityRows.length]);
+  }
+
+  const evidenceChunkSize = 400;
+  for (let offset = 0; offset < evidenceRows.length; offset += evidenceChunkSize) {
+    const chunk = evidenceRows.slice(offset, offset + evidenceChunkSize);
+    await pool.query(`with source_rows as (
+        select * from jsonb_to_recordset($1::jsonb) as x(
+          identity_key text,candidate_key text,match_basis text,match_strength text,candidate_state text
+        )
+      ), evidence_insert as (
+        insert into public.luminari_corpus_identity_evidence_v1(identity_key,candidate_key,match_basis,match_strength)
+        select identity_key,candidate_key,match_basis,match_strength from source_rows
+        on conflict do nothing
+      )
+      update public.luminari_corpus_candidate_v1 candidate
+         set candidate_state=source_rows.candidate_state
+        from source_rows
+       where candidate.candidate_key=source_rows.candidate_key`, [JSON.stringify(chunk)]);
+    await pool.query(`update public.luminari_corpus_rebuild_run_v1
+      set result_json=result_json||jsonb_build_object('identity_evidence_committed',$2::int,'identity_evidence_total',$3::int)
+      where run_id=$1`, [runId, Math.min(offset + chunk.length, evidenceRows.length), evidenceRows.length]);
   }
   return { identities, unresolved };
 }
