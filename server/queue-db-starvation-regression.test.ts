@@ -18,15 +18,21 @@ describe("queue database starvation guard", () => {
     expect(queue_guard).toContain("queue_query_circuit_opened");
   });
 
-  it("keeps legislative completion reconciliation bounded and lock-safe", () => {
+  it("keeps legislative completion reconciliation bounded, lock-safe, and slower than claims", () => {
     expect(legislative_worker).toContain("const RECONCILE_BATCH_SIZE = 100");
+    expect(legislative_worker).toContain("const DEFAULT_RECONCILE_INTERVAL_MS = 60_000");
+    expect(legislative_worker).toContain("LEGISLATIVE_VERSION_QUEUE_RECONCILE_MS");
+    expect(legislative_worker).toContain("reconcile_completed_jobs_if_due");
     expect(legislative_worker).toContain("for update of queue skip locked");
     expect(legislative_worker).toContain("limit $1::integer");
     expect(legislative_worker).toContain("[RECONCILE_BATCH_SIZE]");
   });
 
-  it("keeps Prism completion reconciliation bounded and lock-safe", () => {
+  it("keeps Prism completion reconciliation bounded, lock-safe, and slower than claims", () => {
     expect(prism_worker).toContain("const RECONCILE_BATCH_SIZE = 100");
+    expect(prism_worker).toContain("const DEFAULT_RECONCILE_INTERVAL_MS = 60_000");
+    expect(prism_worker).toContain("PRISM_ROSETTA_QUEUE_RECONCILE_MS");
+    expect(prism_worker).toContain("reconcile_completed_jobs_if_due");
     expect(prism_worker).toContain("for update of queue skip locked");
     expect(prism_worker).toContain("limit $1::integer");
     expect(prism_worker).toContain("[RECONCILE_BATCH_SIZE]");
