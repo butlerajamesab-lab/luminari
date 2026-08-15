@@ -820,8 +820,28 @@ async function insertCandidates(candidates: Candidate[]): Promise<{ inserted: nu
 async function processArtifact(runId: string, artifact: SourceArtifact): Promise<void> {
   const pool = getPool();
   const startedAt = new Date().toISOString();
-  await pool.query(`insert into public.luminari_corpus_rebuild_artifact_v1(run_id,artifact_key,status,attempt_count,started_at)
-    values($1,$2,'running',1,$3) on conflict(run_id,artifact_key) do update set status='running',attempt_count=luminari_corpus_rebuild_artifact_v1.attempt_count+1,started_at=$3,error_message=null`, [runId, artifact.artifact_key, startedAt]);
+  const claim = await pool.query(`insert into public.luminari_corpus_rebuild_artifact_v1(run_id,artifact_key,status,attempt_count,started_at)
+    values($1,$2,'running',1,$3)
+    on conflict(run_id,artifact_key) do update
+      set status='running',
+          attempt_count=luminari_corpus_rebuild_artifact_v1.attempt_count+1,
+          started_at=$3,
+          completed_at=null,
+          error_message=null,
+          receipt_hash=null,
+          result_json='{}'::jsonb
+      where (
+        luminari_corpus_rebuild_artifact_v1.status='failed'
+        and luminari_corpus_rebuild_artifact_v1.attempt_count<2
+      ) or (
+        luminari_corpus_rebuild_artifact_v1.status='running'
+        and luminari_corpus_rebuild_artifact_v1.started_at < now()-interval '30 minutes'
+      )
+    returning artifact_key`, [runId, artifact.artifact_key, startedAt]);
+  // More than one process can observe the same unclaimed artifact during a
+  // rolling deploy. Only the transaction that inserted or reclaimed the
+  // receipt may parse and publish it; every other contender exits cleanly.
+  if (claim.rowCount === 0) return;
 
   if (artifact.exact_duplicate_of) {
     const receipt = sha256(stable({ runId, artifact: artifact.artifact_key, exact_duplicate_of: artifact.exact_duplicate_of, status: "skipped_exact_duplicate" }));
@@ -879,7 +899,11 @@ async function nextArtifacts(runId: string, limit: number): Promise<SourceArtifa
       from public.luminari_corpus_source_artifact_v1 a
       left join public.luminari_corpus_rebuild_artifact_v1 r on r.run_id=$1 and r.artifact_key=a.artifact_key
      where a.storage_state='active'
-       and (r.artifact_key is null or (r.status='failed' and r.attempt_count < 2))
+       and (
+         r.artifact_key is null
+         or (r.status='failed' and r.attempt_count < 2)
+         or (r.status='running' and r.started_at < now()-interval '30 minutes')
+       )
      order by case a.artifact_role
        when 'state_enrichment_source' then 1 when 'state_resource_directory_source' then 2 when 'state_registry_source' then 3
        when 'structured_backbone_source' then 4 when 'structured_workbook_source' then 5 else 6 end,
@@ -938,13 +962,17 @@ async function finalizeIdentities(runId: string): Promise<{ identities: number; 
 
 async function finalizeRun(runId: string): Promise<void> {
   const pool = getPool();
-  const identities = await finalizeIdentities(runId);
   const statusResult = await pool.query(`select status,count(*)::int as n from public.luminari_corpus_rebuild_artifact_v1 where run_id=$1 group by status order by status`, [runId]);
+  const statusCounts = Object.fromEntries(statusResult.rows.map(row => [row.status, Number(row.n)]));
+  const failed = Number(statusCounts.failed ?? 0);
+  const nonterminal = Number(statusCounts.running ?? 0);
+  if (nonterminal > 0) {
+    throw new Error(`fresh_corpus_nonterminal_artifacts:${nonterminal}`);
+  }
+  const identities = await finalizeIdentities(runId);
   const candidateResult = await pool.query(`select count(*)::int as n,count(*) filter(where jurisdiction_resolution_state='conflict')::int as jurisdiction_conflicts from public.luminari_corpus_candidate_v1 where run_id=$1`, [runId]);
   const artifactResult = await pool.query(`select count(*)::int as n from public.luminari_corpus_source_artifact_v1 where storage_state='active'`, []);
   const receiptRows = await pool.query(`select artifact_key,status,receipt_hash from public.luminari_corpus_rebuild_artifact_v1 where run_id=$1 order by artifact_key`, [runId]);
-  const statusCounts = Object.fromEntries(statusResult.rows.map(row => [row.status, Number(row.n)]));
-  const failed = Number(statusCounts.failed ?? 0);
   const candidateCount = Number(candidateResult.rows[0]?.n ?? 0);
   const jurisdictionConflicts = Number(candidateResult.rows[0]?.jurisdiction_conflicts ?? 0);
   const receiptHash = sha256(stable({ engine_version: FRESH_CORPUS_ENGINE_VERSION, run_id: runId,
@@ -960,7 +988,16 @@ export async function runFreshCorpusRebuildBatch(runId: string, limit = 8): Prom
   const boundedLimit = Math.max(1, Math.min(20, Math.floor(limit)));
   const artifacts = await nextArtifacts(runId, boundedLimit);
   for (const artifact of artifacts) await processArtifact(runId, artifact);
-  const remainingResult = await pool.query(`select count(*)::int as n from public.luminari_corpus_source_artifact_v1 a left join public.luminari_corpus_rebuild_artifact_v1 r on r.run_id=$1 and r.artifact_key=a.artifact_key where a.storage_state='active' and (r.artifact_key is null or (r.status='failed' and r.attempt_count<2))`, [runId]);
+  const remainingResult = await pool.query(`select count(*)::int as n
+    from public.luminari_corpus_source_artifact_v1 a
+    left join public.luminari_corpus_rebuild_artifact_v1 r
+      on r.run_id=$1 and r.artifact_key=a.artifact_key
+    where a.storage_state='active'
+      and (
+        r.artifact_key is null
+        or r.status='running'
+        or (r.status='failed' and r.attempt_count<2)
+      )`, [runId]);
   const remaining = Number(remainingResult.rows[0]?.n ?? 0);
   if (remaining === 0) { await finalizeRun(runId); return { processed: artifacts.length, remaining, finalized: true }; }
   return { processed: artifacts.length, remaining, finalized: false };
@@ -984,9 +1021,24 @@ export async function queueFreshCorpusRebuild(
 ): Promise<{ run_id: string; status: string; manifest_sync: Record<string, unknown> }> {
   const pool = getPool();
   const manifestSync = options.manifestSync ?? await syncFreshCorpusSourceManifest();
-  const active = await pool.query(`select run_id,status from public.luminari_corpus_rebuild_run_v1 where engine_version=$1 and status in ('queued','running') order by started_at desc limit 1`, [FRESH_CORPUS_ENGINE_VERSION]);
-  if (active.rows[0]) return { run_id: active.rows[0].run_id, status: active.rows[0].status, manifest_sync: manifestSync };
-  const result = await pool.query(`insert into public.luminari_corpus_rebuild_run_v1(engine_version,scope,status) values($1,$2::jsonb,'queued') returning run_id,status`, [FRESH_CORPUS_ENGINE_VERSION, JSON.stringify({ ...scope, manifest_sync: manifestSync, parser_version: FRESH_CORPUS_PARSER_VERSION })]);
+  const result = await pool.query(`with queue_lock as materialized (
+      select pg_advisory_xact_lock(hashtext('fresh_corpus_rebuild:'||$1))
+    ), active as materialized (
+      select run_id,status
+      from public.luminari_corpus_rebuild_run_v1,queue_lock
+      where engine_version=$1 and status in ('queued','running')
+      order by started_at desc
+      limit 1
+    ), inserted as (
+      insert into public.luminari_corpus_rebuild_run_v1(engine_version,scope,status)
+      select $1,$2::jsonb,'queued' from queue_lock
+      where not exists(select 1 from active)
+      returning run_id,status
+    )
+    select run_id,status from inserted
+    union all
+    select run_id,status from active
+    limit 1`, [FRESH_CORPUS_ENGINE_VERSION, JSON.stringify({ ...scope, manifest_sync: manifestSync, parser_version: FRESH_CORPUS_PARSER_VERSION })]);
   return { run_id: result.rows[0].run_id, status: result.rows[0].status, manifest_sync: manifestSync };
 }
 
@@ -1025,8 +1077,13 @@ export async function reconcileFreshCorpusAutomatically(
   const pool = getPool();
   const manifestSync = await syncFreshCorpusSourceManifest();
   const latest = await pool.query(`
-    select run_id,status,artifact_count,result_json->>'parser_version' as parser_version
-      from public.luminari_corpus_rebuild_run_v1
+    select r.run_id,r.status,r.artifact_count,r.result_json->>'parser_version' as parser_version,
+           (select count(*)::int
+              from public.luminari_corpus_rebuild_artifact_v1 a
+             where a.run_id=r.run_id
+               and a.status not in ('completed','failed','skipped_exact_duplicate','preserved_derivative'))
+             as nonterminal_count
+      from public.luminari_corpus_rebuild_run_v1 r
      where engine_version=$1 and status in ('completed','completed_with_failures')
      order by completed_at desc nulls last,started_at desc
      limit 1
@@ -1038,6 +1095,7 @@ export async function reconcileFreshCorpusAutomatically(
   const requiresReplay = !latestRun
     || latestRun.parser_version !== FRESH_CORPUS_PARSER_VERSION
     || Number(latestRun.artifact_count ?? 0) !== activeArtifacts
+    || Number(latestRun.nonterminal_count ?? 0) > 0
     || newOrChanged > 0
     || newlyMissing > 0;
 
@@ -1049,6 +1107,8 @@ export async function reconcileFreshCorpusAutomatically(
         ? "no_completed_fresh_corpus_run"
         : latestRun.parser_version !== FRESH_CORPUS_PARSER_VERSION
           ? "parser_version_changed"
+          : Number(latestRun.nonterminal_count ?? 0) > 0
+            ? "nonterminal_artifact_receipts"
           : "source_changes_detected",
       source_buckets: ["State Enriched Registry bucket", "Everything backbone related"],
     }, { manifestSync });

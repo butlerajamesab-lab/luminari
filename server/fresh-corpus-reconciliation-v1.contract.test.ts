@@ -68,4 +68,13 @@ describe("fresh corpus reconciliation v1", () => {
     expect(service).toContain("parser_version_changed");
     expect(service).toContain("syncFreshCorpusSourceManifest");
   });
+
+  it("claims artifacts once and refuses to finalize nonterminal receipts", () => {
+    expect(service).toContain("if (claim.rowCount === 0) return");
+    expect(service).toContain("fresh_corpus_nonterminal_artifacts");
+    expect(service).toContain("or r.status='running'");
+    expect(service).toContain("nonterminal_count");
+    expect(service).toContain("nonterminal_artifact_receipts");
+    expect(service).toContain("pg_advisory_xact_lock");
+  });
 });
