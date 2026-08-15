@@ -119,6 +119,8 @@ describe("legislative version queue", () => {
       .find(sql => sql.includes("with host_activity as"));
     expect(claim_sql).toContain("currency.is_current desc");
     expect(claim_sql).toContain("with host_activity as");
+    expect(claim_sql).toContain("where queue.attempt_count > 0");
+    expect(claim_sql).toContain("left join host_activity source_host");
     expect(claim_sql).toContain("source_host.last_attempt_at asc nulls first");
     expect(claim_sql).toContain("source_host.blocked_until");
     expect(claim_sql).toContain("split_part(lower(document.source_url), '/', 3)");
