@@ -10,6 +10,7 @@ describe("shared case live-schema compatibility", () => {
 
     expect(source).toContain("finding_evidentiary_weight");
     expect(source).toContain("event_date");
+    expect(source).toContain("case_id::text = $1::text");
     expect(source).toContain("quote_text");
     expect(source).not.toContain("findings.evidentiaryWeight");
     expect(source).not.toContain("events.dateOccurred");
