@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/core/hooks/useAuth";
 import { CommitToCase } from "@/components/CommitToCase";
 import { useLocation } from "wouter";
@@ -95,13 +95,66 @@ const DOMAIN_COLORS: Record<string, string> = {
   tribal: "#d97706", utilities: "#64748b", tax: "#475569", voting: "#7c3aed", other: "#6b7280",
 };
 
+function LibraryPager({
+  offset,
+  pageSize,
+  returned,
+  loading,
+  onPage,
+}: {
+  offset: number;
+  pageSize: number;
+  returned: number;
+  loading: boolean;
+  onPage: (offset: number) => void;
+}) {
+  if (offset === 0 && returned < pageSize) return null;
+  const first = returned > 0 ? offset + 1 : 0;
+  const last = offset + returned;
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "20px 0 8px" }}>
+      <button
+        type="button"
+        disabled={offset === 0 || loading}
+        onClick={() => onPage(Math.max(0, offset - pageSize))}
+        style={{ border: `1px solid ${ll.cardBorder}`, background: ll.cardBg, color: ll.paper, borderRadius: 6, padding: "8px 14px", cursor: offset === 0 ? "not-allowed" : "pointer", opacity: offset === 0 ? 0.45 : 1 }}
+      >
+        Previous {pageSize}
+      </button>
+      <span style={{ fontFamily: fontMono, fontSize: 11, color: ll.muted }}>
+        Showing {first.toLocaleString()}–{last.toLocaleString()}
+      </span>
+      <button
+        type="button"
+        disabled={returned < pageSize || loading}
+        onClick={() => onPage(offset + pageSize)}
+        style={{ border: `1px solid ${ll.purpleBorder}`, background: ll.cardBg, color: ll.purple, borderRadius: 6, padding: "8px 14px", cursor: returned < pageSize ? "not-allowed" : "pointer", opacity: returned < pageSize ? 0.45 : 1 }}
+      >
+        Next {pageSize}
+      </button>
+    </div>
+  );
+}
+
 export default function LegalLibrary() {
+  const PAGE_SIZE = 100;
   const { isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDomain, setSelectedDomain] = useState<string>("");
   const [selectedJurisdiction, setSelectedJurisdiction] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"statutes" | "case_law" | "enforcement" | "contradictions">("statutes");
+  const [statuteOffset, setStatuteOffset] = useState(0);
+  const [caseLawOffset, setCaseLawOffset] = useState(0);
+  const [enforcementOffset, setEnforcementOffset] = useState(0);
+  const [contradictionOffset, setContradictionOffset] = useState(0);
+
+  useEffect(() => {
+    setStatuteOffset(0);
+    setCaseLawOffset(0);
+    setEnforcementOffset(0);
+    setContradictionOffset(0);
+  }, [searchQuery, selectedDomain, selectedJurisdiction]);
 
   // Fetch stats
   const statsQuery = trpc.legalLibrary.stats.useQuery();
@@ -113,6 +166,8 @@ export default function LegalLibrary() {
       query: searchQuery || undefined,
       domain: selectedDomain || undefined,
       jurisdiction: selectedJurisdiction || undefined,
+      limit: PAGE_SIZE,
+      offset: statuteOffset,
     },
     { enabled: activeTab === "statutes" }
   );
@@ -123,13 +178,15 @@ export default function LegalLibrary() {
       query: searchQuery || undefined,
       domain: selectedDomain || undefined,
       jurisdiction: selectedJurisdiction || undefined,
+      limit: PAGE_SIZE,
+      offset: caseLawOffset,
     },
     { enabled: activeTab === "case_law" }
   );
 
   // List contradictions
   const contradictions = trpc.legalLibrary.listContradictions.useQuery(
-    { domain: selectedDomain || undefined },
+    { domain: selectedDomain || undefined, jurisdiction: selectedJurisdiction || undefined, limit: PAGE_SIZE, offset: contradictionOffset },
     { enabled: activeTab === "contradictions" }
   );
 
@@ -138,6 +195,8 @@ export default function LegalLibrary() {
     {
       domain: selectedDomain || undefined,
       jurisdiction: selectedJurisdiction || undefined,
+      limit: PAGE_SIZE,
+      offset: enforcementOffset,
     },
     { enabled: activeTab === "enforcement" }
   );
@@ -350,6 +409,7 @@ export default function LegalLibrary() {
               {searchStatutes.data?.map((s: any) => (
                 <StatuteCard key={s.id} statute={s} navigate={navigate} />
               ))}
+              <LibraryPager offset={statuteOffset} pageSize={PAGE_SIZE} returned={searchStatutes.data?.length ?? 0} loading={searchStatutes.isFetching} onPage={setStatuteOffset} />
             </div>
           )}
 
@@ -373,6 +433,7 @@ export default function LegalLibrary() {
               {searchCaseLaw.data?.map((c: any) => (
                 <CaseLawCard key={c.id} caseLaw={c} navigate={navigate} />
               ))}
+              <LibraryPager offset={caseLawOffset} pageSize={PAGE_SIZE} returned={searchCaseLaw.data?.length ?? 0} loading={searchCaseLaw.isFetching} onPage={setCaseLawOffset} />
             </div>
           )}
 
@@ -396,6 +457,7 @@ export default function LegalLibrary() {
               {enforcement.data?.map((e: any) => (
                 <EnforcementCard key={e.id} record={e} />
               ))}
+              <LibraryPager offset={enforcementOffset} pageSize={PAGE_SIZE} returned={enforcement.data?.length ?? 0} loading={enforcement.isFetching} onPage={setEnforcementOffset} />
             </div>
           )}
 
@@ -432,6 +494,7 @@ export default function LegalLibrary() {
               {contradictions.data?.map((c: any) => (
                 <ContradictionCard key={c.id} contradiction={c} />
               ))}
+              <LibraryPager offset={contradictionOffset} pageSize={PAGE_SIZE} returned={contradictions.data?.length ?? 0} loading={contradictions.isFetching} onPage={setContradictionOffset} />
             </div>
           )}
         </div>
