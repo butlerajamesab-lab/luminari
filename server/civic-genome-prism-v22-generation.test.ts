@@ -15,8 +15,8 @@ const contract = readFileSync(
   join(process.cwd(), "server", "services", "prism-verification-contract.ts"),
   "utf8",
 );
-const wrapper = readFileSync(
-  join(process.cwd(), "server", "services", "prism-rosetta-contract-v2.ts"),
+const legacyWrapper = readFileSync(
+  join(process.cwd(), "server", "services", "prism-rosetta-contract-v22.ts"),
   "utf8",
 );
 const queue = readFileSync(
@@ -25,14 +25,13 @@ const queue = readFileSync(
 );
 
 describe("Prism Rosetta 2.2 Civic Genome generation", () => {
-  it("pins one governed 2.2 contract across active Lighthouse boundaries", () => {
-    for (const source of [contract, wrapper]) {
-      expect(source).toContain('PRISM_ROSETTA_ENGINE_VERSION = "2.2.0"');
-      expect(source).toContain('PRISM_ROSETTA_RULE_SET_VERSION = "2.2.0"');
-      expect(source).toContain(
-        "16cbe6d89170a5e21efab3cdbac25c7ef01cea7a482f2e9b701967adf6cf1b00",
-      );
-    }
+  it("preserves the governed 2.2 contract as a replayable legacy generation", () => {
+    expect(legacyWrapper).toContain('PRISM_ROSETTA_ENGINE_VERSION = "2.2.0"');
+    expect(legacyWrapper).toContain('PRISM_ROSETTA_RULE_SET_VERSION = "2.2.0"');
+    expect(legacyWrapper).toContain(
+      "16cbe6d89170a5e21efab3cdbac25c7ef01cea7a482f2e9b701967adf6cf1b00",
+    );
+    expect(contract).toContain('PRISM_ROSETTA_ENGINE_VERSION = "2.3.0"');
     expect(queue).toContain('from "./prism-rosetta-contract-v2"');
   });
 

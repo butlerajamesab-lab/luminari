@@ -78,7 +78,9 @@ describe("Civic Genome Prism trait projection", () => {
     expect(trait_query).toContain("independent_source_replay");
     expect(trait_query).toContain("trait.source_document_id = $2::bigint");
     expect(trait_query).toContain("$2::bigint is not null");
-    expect(query.mock.calls[2]?.[1]).toEqual([genome_bill_id, 369]);
+    expect(trait_query).toContain("trait.extraction_run_id = $3::text");
+    expect(trait_query).toContain("$3::text is not null");
+    expect(query.mock.calls[2]?.[1]).toEqual([genome_bill_id, 369, "run-current"]);
     expect(query.mock.calls[3]?.[0]).toContain("source_document_id = $2::bigint");
     expect(query.mock.calls[3]?.[1]).toEqual([genome_bill_id, 369]);
     expect(current_version_query).toContain("order by stage_rank desc");
@@ -132,7 +134,7 @@ describe("Civic Genome Prism trait projection", () => {
     expect(result?.current_version?.source_document_id).toBeNull();
     expect(result?.published_version?.source_document_id).toBe(4725);
     expect(result?.structural_dna.snapshot_state).toBe("previous_verified");
-    expect(query.mock.calls[2]?.[1]).toEqual([genome_bill_id, 4725]);
+    expect(query.mock.calls[2]?.[1]).toEqual([genome_bill_id, 4725, "7023"]);
     expect(query.mock.calls[3]?.[1]).toEqual([genome_bill_id, 4725]);
   });
 });

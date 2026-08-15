@@ -264,8 +264,14 @@ export async function get_civic_genome_bill_detail(
        where trait.genome_bill_id = $1
          and $2::bigint is not null
          and trait.source_document_id = $2::bigint
+         and $3::text is not null
+         and trait.extraction_run_id = $3::text
        order by trait.trait_class, trait.trait_key, trait.trait_fingerprint`,
-      [genome_bill_id, display_version?.source_document_id ?? null],
+      [
+        genome_bill_id,
+        display_version?.source_document_id ?? null,
+        display_version?.extraction_run_id ?? null,
+      ],
     ),
     pool.query<persisted_genome_assembly_run>(
       `select *

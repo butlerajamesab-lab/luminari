@@ -42,6 +42,11 @@ type PeerTraitRow = {
   normalized_value_json: unknown;
 };
 
+type RosettaDocumentContextRow = {
+  document_family: string;
+  adopted: boolean | null;
+};
+
 function required_environment(name: string): string {
   const value = process.env[name]?.trim();
   if (!value) throw new Error(`missing_${name.toLowerCase()}`);
@@ -161,12 +166,49 @@ async function load_peer_traits(
   return result.rows;
 }
 
+async function load_document_context(
+  request: RosettaBindingRequest,
+): Promise<RosettaDocumentContextRow> {
+  const result = await query_with_diagnostics<RosettaDocumentContextRow>(
+    `select version.document_family, document.adopted
+       from public.civic_genome_bill_version version
+       join public.docket_bill_source_document document
+         on document.source_document_key = version.source_document_key
+      where version.genome_bill_id = $1::uuid
+        and version.assembly_run_id = $2::uuid
+        and version.rosetta_source_document_id = $3
+        and version.rosetta_extraction_run_id = $4
+      limit 2`,
+    [
+      request.rosetta_binding.genome_bill_id,
+      request.rosetta_binding.assembly_run_id,
+      request.rosetta_binding.source_document_id,
+      request.rosetta_binding.extraction_run_id,
+    ],
+    {
+      label: "prism_rosetta_load_document_context",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 10_000,
+    },
+  );
+  if (result.rows.length !== 1) {
+    throw new Error("prism_rosetta_document_context_not_unique");
+  }
+  const row = result.rows[0];
+  if (!row.document_family ||
+      (row.adopted !== null && typeof row.adopted !== "boolean")) {
+    throw new Error("prism_rosetta_document_context_invalid");
+  }
+  return row;
+}
+
 export async function enrich_rosetta_binding_request(
   request: RosettaBindingRequest,
 ): Promise<DeepRosettaBindingRequest> {
-  const [source_snapshot, peer_rows] = await Promise.all([
+  const [source_snapshot, peer_rows, document_context] = await Promise.all([
     load_rosetta_source_snapshot(request),
     load_peer_traits(request),
+    load_document_context(request),
   ]);
   const current = peer_rows.find((row) => row.trait_id === request.subject_id);
   if (!current || !is_record(current.normalized_value_json)) {
@@ -180,6 +222,7 @@ export async function enrich_rosetta_binding_request(
     ...request,
     requested_checks: DEEP_VERIFICATION_CHECKS,
     source_snapshot,
+    document_context,
     trait_payload,
     trait_payload_hash: sha256_hex(canonical_json(trait_payload)),
     peer_traits: peer_rows.map((row) => ({

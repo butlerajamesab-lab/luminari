@@ -7,11 +7,11 @@ export const PRISM_RULE_SET_VERSION = "1.0.0";
 export const PRISM_RULE_SET_HASH =
   "298eaf14df23f17c07dbc253fb6a2abe2f55ac9425942a46ab08f6bdd05401b0";
 
-export const PRISM_ROSETTA_ENGINE_VERSION = "2.2.0";
+export const PRISM_ROSETTA_ENGINE_VERSION = "2.3.0";
 export const PRISM_ROSETTA_RULE_SET_ID = "prism-rosetta-structural-binding";
-export const PRISM_ROSETTA_RULE_SET_VERSION = "2.2.0";
+export const PRISM_ROSETTA_RULE_SET_VERSION = "2.3.0";
 export const PRISM_ROSETTA_RULE_SET_HASH =
-  "16cbe6d89170a5e21efab3cdbac25c7ef01cea7a482f2e9b701967adf6cf1b00";
+  "5be83f4d0d341685b244cc0d47126293f28072eabf02fc1b4e5b2d0bd41fd157";
 
 const hash_schema = z.string().regex(/^[a-f0-9]{64}$/i);
 
@@ -142,6 +142,11 @@ export const rosetta_source_snapshot_schema = z.object({
   source_content_hash: hash_schema,
 }).strict();
 
+export const rosetta_document_context_schema = z.object({
+  document_family: z.string().trim().min(1).max(128),
+  adopted: z.boolean().nullable(),
+}).strict();
+
 export const rosetta_peer_trait_schema = z.object({
   trait_id: z.string().uuid(),
   trait_class: rosetta_trait_class_schema,
@@ -156,6 +161,7 @@ export const rosetta_peer_trait_schema = z.object({
 export const deep_rosetta_binding_request_schema = rosetta_binding_request_schema.extend({
   requested_checks: z.array(rosetta_required_check_schema).length(10),
   source_snapshot: rosetta_source_snapshot_schema,
+  document_context: rosetta_document_context_schema,
   trait_payload: z.record(z.unknown()),
   trait_payload_hash: hash_schema,
   peer_traits: z.array(rosetta_peer_trait_schema).min(1).max(4096),
