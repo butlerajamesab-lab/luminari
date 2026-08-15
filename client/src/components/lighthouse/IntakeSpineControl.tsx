@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import {
   AlertCircle,
@@ -52,6 +52,14 @@ export function IntakeSpineControl({
     (session) =>
       session.session_type === "live" && session.entry_channel === "upload",
   );
+  useEffect(() => {
+    if (!jurisdiction && selectedSession?.last_governed_jurisdiction) {
+      setJurisdiction(selectedSession.last_governed_jurisdiction);
+    }
+    if (selectedSession?.last_governed_rule_as_of) {
+      setAsOf(selectedSession.last_governed_rule_as_of);
+    }
+  }, [selectedSession?.intake_session_id]);
   const canRun =
     !!selectedSession &&
     selectedSession.registered_source_count > 0 &&
@@ -219,7 +227,7 @@ export function IntakeSpineControl({
                   autoComplete="off"
                 />
                 <p className="text-[10px] text-muted-foreground">
-                  Required input; Lighthouse does not infer it.
+                  Inherited from the case's last governed execution. Change it only when the case jurisdiction changes.
                 </p>
               </div>
               <div className="space-y-1.5">
@@ -255,6 +263,14 @@ export function IntakeSpineControl({
                 : "Run Universal Intake Spine"}
             </Button>
 
+            {selectedSession?.projection_invalidated_at && (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  A newer source was added after the last governed execution. Prior sealed results remain available, but rerun the Intake Spine to include the current evidence set.
+                </AlertDescription>
+              </Alert>
+            )}
             {selectedSession?.latest_receipt_hash && (
               <div className="rounded-md border border-border/50 bg-muted/20 p-3">
                 <p className="mb-1 text-[10px] text-muted-foreground">
