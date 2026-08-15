@@ -127,7 +127,7 @@ Full automatic publication remains a required follow-on gate: quality evaluation
 
 ### Workbook preservation and routing
 
-Every XLSX row now produces a typed source candidate with its verbatim cell map, sheet name, row number, parser rule, destination, and routing state.
+Every nonempty XLSX row now produces a typed source candidate with its immutable workbook hash, decoded cell map, sheet and row locator, parser rule, destination, and routing state. Preamble and header rows are retained as `workbook_context`; formulas, cell type/style metadata, and duplicate header names remain traceable. The parser has no 100,000-row cutoff and commits candidates in heartbeat-protected batches, so a large authored workbook can resume idempotently without being flattened, silently truncated, or mistaken for an absent source.
 
 | Workbook sheet family | Type | Destination |
 |---|---|---|
