@@ -3,8 +3,8 @@ import JSZip from "jszip";
 import { getPool } from "../db";
 import { SUPABASE_PROJECT } from "../_core/health-diagnostics";
 
-export const FRESH_CORPUS_ENGINE_VERSION = "fresh_corpus_reconciliation_v1.0.0";
-export const FRESH_CORPUS_PARSER_VERSION = "fresh_registry_typed_parser_v1.0.0";
+export const FRESH_CORPUS_ENGINE_VERSION = "fresh_corpus_reconciliation_v1.1.0";
+export const FRESH_CORPUS_PARSER_VERSION = "fresh_registry_typed_parser_v1.1.0";
 
 const STATE_NAMES: Record<string, string> = {
   Alabama: "AL", Alaska: "AK", Arizona: "AZ", Arkansas: "AR", California: "CA",
@@ -50,6 +50,41 @@ const SECTION_CATEGORY: Array<[RegExp, string]> = [
 ];
 
 const IDENTITY_TYPES = new Set(["resource", "organization", "agency", "legislator", "advocacy_target", "enforcement_pathway"]);
+
+type WorkbookSheetRoute = {
+  candidateType: string;
+  targetSurface: string;
+  routingState: "routed" | "review_required";
+};
+
+/**
+ * The backbone workbook is a multi-domain source package. A row that is not a
+ * public resource is still authoritative source material and must be routed,
+ * never discarded as a failed resource candidate.
+ */
+export function workbookSheetRoute(sheetName: string): WorkbookSheetRoute {
+  const sheet = sheetName.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  if (/^(wa_resource_directory|federal_resource_directory|national_hotline|clean_partial_program|substrate_az_program)$/.test(sheet)) {
+    return { candidateType: "resource", targetSurface: "resource_directory", routingState: "routed" };
+  }
+  if (sheet === "wa_oversight_body") return { candidateType: "oversight_body", targetSurface: "enforcement_intelligence", routingState: "routed" };
+  if (sheet === "coalition_agency") return { candidateType: "agency", targetSurface: "atlas", routingState: "routed" };
+  if (/^(pass3_key_contact|substrate_state_contact)$/.test(sheet)) return { candidateType: "contact_record", targetSurface: "population_engine", routingState: "routed" };
+  if (sheet === "address_audit_org") return { candidateType: "resource_contact_audit", targetSurface: "resource_directory_review", routingState: "routed" };
+  if (/^(tribal_data_row|alaska_tribal_tables|tribal_national_matrix)$/.test(sheet)) return { candidateType: "tribal_governance_record", targetSurface: "population_engine", routingState: "routed" };
+  if (sheet === "advocacy_target") return { candidateType: "advocacy_target", targetSurface: "atlas", routingState: "routed" };
+  if (sheet === "advocacy_policy_domain") return { candidateType: "policy_domain", targetSurface: "atlas", routingState: "routed" };
+  if (sheet === "coalition_network") return { candidateType: "relationship_record", targetSurface: "atlas", routingState: "routed" };
+  if (sheet === "federal_agency_2025_status") return { candidateType: "agency_status", targetSurface: "atlas", routingState: "routed" };
+  if (sheet === "federal_enforcement_pathway") return { candidateType: "enforcement_pathway", targetSurface: "prism", routingState: "routed" };
+  if (sheet === "pattern_registry") return { candidateType: "policy_pattern", targetSurface: "kaleidoscope", routingState: "routed" };
+  if (sheet === "strategy_path") return { candidateType: "strategy_path", targetSurface: "kaleidoscope", routingState: "routed" };
+  if (sheet === "pressure_indicator") return { candidateType: "pressure_indicator", targetSurface: "atlas", routingState: "routed" };
+  if (sheet === "platform_spec_master") return { candidateType: "platform_specification", targetSurface: "platform_control_plane", routingState: "routed" };
+  if (sheet === "substrate_county_override") return { candidateType: "jurisdiction_override", targetSurface: "population_engine", routingState: "routed" };
+  if (sheet === "substrate_state_card") return { candidateType: "jurisdiction_profile", targetSurface: "population_engine", routingState: "routed" };
+  return { candidateType: "workbook_record", targetSurface: "operator_review", routingState: "review_required" };
+}
 
 type SourceArtifact = {
   artifact_key: string;
@@ -318,8 +353,13 @@ function candidate(ctx: ParseContext, input: Omit<Candidate, "candidate_key" | "
     payload: input.payload,
   };
   const candidateHash = sha256(stable(material));
+  const candidateKey = sha256(stable({
+    run_id: ctx.runId,
+    candidate_hash: candidateHash,
+    parser_version: FRESH_CORPUS_PARSER_VERSION,
+  }));
   return {
-    candidate_key: candidateHash,
+    candidate_key: candidateKey,
     run_id: ctx.runId,
     artifact_key: ctx.artifact.artifact_key,
     candidate_type: input.candidate_type,
@@ -357,12 +397,47 @@ function normalizeLabel(value: string): string {
   return value.toLowerCase().replace(/[:：]+$/, "").replace(/\s+/g, " ").trim();
 }
 
+/**
+ * Preserve Word table-cell boundaries long enough to recover label/value
+ * pairs. Calling compact() on the whole line first turns tabs into spaces and
+ * irreversibly merges cells.
+ */
+export function docxStructuredCellsToLines(rawLine: string): string[] {
+  const cells = rawLine.split(/\t+/).map(compact).filter(Boolean);
+  if (cells.length <= 1) return cells;
+  const lines: string[] = [];
+  let index = 0;
+  if (!RESOURCE_LABELS.has(normalizeLabel(cells[0])) && !/^([^:：]{2,80})[:：]/.test(cells[0])) {
+    lines.push(cells[0]);
+    index = 1;
+  }
+  while (index < cells.length) {
+    const cell = cells[index];
+    if (RESOURCE_LABELS.has(normalizeLabel(cell))) {
+      const next = cells[index + 1];
+      if (next && !RESOURCE_LABELS.has(normalizeLabel(next))) {
+        lines.push(`${cell}: ${next}`);
+        index += 2;
+      } else {
+        lines.push(cell);
+        index += 1;
+      }
+    } else {
+      lines.push(cell);
+      index += 1;
+    }
+  }
+  return lines;
+}
+
 function parseResourceCandidates(ctx: ParseContext): Candidate[] {
   const rawLines = ctx.text.split(/\r?\n/);
-  const lines = rawLines.map(compact);
+  const lineRecords = rawLines.flatMap((rawLine, sourceIndex) =>
+    docxStructuredCellsToLines(rawLine).map(text => ({ text, sourceLine: sourceIndex + 1 })));
+  const lines = lineRecords.map(record => record.text);
   const out: Candidate[] = [];
   let section = "document_start";
-  let current: { title: string; start: number; fields: Record<string, string>; sourceLines: string[]; section: string } | null = null;
+  let current: { title: string; start: number; end: number; fields: Record<string, string>; sourceLines: string[]; section: string } | null = null;
 
   const flush = () => {
     if (!current) return;
@@ -371,11 +446,11 @@ function parseResourceCandidates(ctx: ParseContext): Candidate[] {
     const hasContact = Boolean(fields.phone || fields.website_url || fields.email || fields.address || fields.filing_portal);
     const title = compact(current.title).replace(/\s+\[(?:[A-Z0-9_-]+)\]\s+(?:VERIFIED|UNVERIFIED.*)$/i, "").replace(/\s+(?:VERIFIED|UNVERIFIED.*)$/i, "").trim();
     const malformedTitle = !title || /^(field|information|program|organization|phone|website|eligibility|address|notes)$/i.test(title);
-    if (!malformedTitle && fieldCount >= 2 && (hasContact || fields.eligibility_summary || fields.description)) {
+    if (!malformedTitle && fieldCount >= 1 && (hasContact || fields.eligibility_summary || fields.description)) {
       const excerpt = current.sourceLines.join("\n").slice(0, 8000);
       out.push(candidate(ctx, {
         candidate_type: "resource",
-        source_locator: `lines:${current.start}-${current.start + current.sourceLines.length - 1}`,
+        source_locator: `lines:${current.start}-${current.end}`,
         section_name: current.section,
         name: title.slice(0, 500),
         organization_name: title.slice(0, 500),
@@ -394,13 +469,14 @@ function parseResourceCandidates(ctx: ParseContext): Candidate[] {
           artifact_role: ctx.artifact.artifact_role,
           verified_marker: /\bVERIFIED\b/i.test(current.title),
           parser_rule: "typed_label_value_resource_block",
+          source_preservation: fieldCount === 1 ? "sparse_typed_record_preserved" : "typed_record_preserved",
         },
         excerptForJurisdiction: `${title}\n${fields.address ?? ""}\n${excerpt.slice(0, 800)}`,
       }));
       if (fields.statutory_authority) {
         out.push(candidate(ctx, {
           candidate_type: "legal_authority",
-          source_locator: `lines:${current.start}-${current.start + current.sourceLines.length - 1}:statutory_authority`,
+          source_locator: `lines:${current.start}-${current.end}:statutory_authority`,
           section_name: current.section,
           name: nullable(fields.statutory_authority, 500), organization_name: title,
           category: "legal_authority", layer: inferLayer(current.section), phone: null, email: null, website_url: null, address: null,
@@ -415,6 +491,7 @@ function parseResourceCandidates(ctx: ParseContext): Candidate[] {
 
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i];
+    const sourceLine = lineRecords[i].sourceLine;
     if (!line) continue;
     if (/^LAYER\s+\d+/i.test(line)) { flush(); section = line; continue; }
     if (/^(FOOD|HEALTH|HOUSING|DOMESTIC|LEGAL|CASH|UTILIT|TRIBAL|LABOR|IMMIGRATION|DISABILITY|MENTAL)/i.test(line) && isSectionHeading(line)) {
@@ -437,11 +514,12 @@ function parseResourceCandidates(ctx: ParseContext): Candidate[] {
         let j = i + 1;
         while (j < lines.length && !lines[j]) j += 1;
         if (j < lines.length && !RESOURCE_LABELS.has(normalizeLabel(lines[j])) && !isSectionHeading(lines[j])) {
-          value = lines[j]; i = j;
+          value = lines[j]; current.end = lineRecords[j].sourceLine; i = j;
         }
       }
       if (value) current.fields[key] = current.fields[key] ? `${current.fields[key]} | ${value}` : value;
       current.sourceLines.push(`${labelRaw}: ${value}`);
+      current.end = Math.max(current.end, sourceLine);
       continue;
     }
 
@@ -452,9 +530,12 @@ function parseResourceCandidates(ctx: ParseContext): Candidate[] {
     const titleCandidate = !isSectionHeading(line) && line.length >= 4 && line.length <= 300
       && (RESOURCE_LABELS.has(normalizeLabel(nextNonEmpty)) || /^[^:]{4,240}\s+\[[A-Z0-9_-]+\]\s+(?:VERIFIED|UNVERIFIED)/i.test(line));
     if (titleCandidate) {
-      flush(); current = { title: line, start: i + 1, fields: {}, sourceLines: [line], section }; continue;
+      flush(); current = { title: line, start: sourceLine, end: sourceLine, fields: {}, sourceLines: [line], section }; continue;
     }
-    if (current && !isSectionHeading(line) && current.sourceLines.length < 30) current.sourceLines.push(line);
+    if (current && !isSectionHeading(line) && current.sourceLines.length < 30) {
+      current.sourceLines.push(line);
+      current.end = Math.max(current.end, sourceLine);
+    }
   }
   flush();
   return out;
@@ -620,23 +701,53 @@ function parseCsvCandidates(ctx: ParseContext): Candidate[] {
   return out;
 }
 
-function xlsxCandidate(ctx: ParseContext, row: { sheet: string; row: number; values: Record<string, string> }): Candidate | null {
+function xlsxCandidate(ctx: ParseContext, row: { sheet: string; row: number; values: Record<string, string> }): Candidate {
   const normalized: Record<string, string> = {};
   for (const [key, value] of Object.entries(row.values)) normalized[key.toLowerCase().replace(/[^a-z0-9]+/g, "_")] = value;
-  const name = nullable(normalized.resource_name || normalized.program || normalized.organization || normalized.name || normalized.agency, 500);
-  if (!name) return null;
+  const route = workbookSheetRoute(row.sheet);
+  const firstSourceValue = Object.values(row.values).find(value => compact(value));
+  const name = nullable(
+    normalized.resource_name
+      || normalized.program
+      || normalized.organization
+      || normalized.organization_name
+      || normalized.name
+      || normalized.agency
+      || normalized.agency_name
+      || normalized.full_entity_name
+      || normalized.target_name
+      || normalized.title
+      || normalized.label
+      || normalized.policy_domain
+      || normalized.pattern_name
+      || normalized.strategy_name
+      || firstSourceValue
+      || `${row.sheet} row ${row.row}`,
+    500,
+  );
   return candidate(ctx, {
-    candidate_type: "resource", source_locator: `xlsx:${row.sheet}:row:${row.row}`, section_name: row.sheet,
+    candidate_type: route.candidateType, source_locator: `xlsx:${row.sheet}:row:${row.row}`, section_name: row.sheet,
     name, organization_name: nullable(normalized.organization || normalized.agency || name, 500),
-    category: nullable(normalized.category || normalized.resource_type || row.sheet, 160), layer: "backbone_workbook",
+    category: nullable(normalized.category || normalized.resource_type || route.candidateType || row.sheet, 160), layer: "backbone_workbook",
     phone: nullable(normalized.phone || normalized.contact_phone, 1000), email: nullable(normalized.email || normalized.contact_email, 1000),
     website_url: nullable(normalized.website || normalized.website_url || normalized.url, 2000),
     address: nullable(normalized.address || normalized.address_line1, 2000),
     eligibility_summary: nullable(normalized.eligibility || normalized.eligibility_summary, 5000),
     apply_notes: nullable(normalized.apply_notes || normalized.notes || normalized.application, 5000),
     description: nullable(normalized.description || normalized.what_it_does_for_people, 5000),
-    raw_excerpt: stable(row.values).slice(0, 8000), payload: { row: row.values, sheet: row.sheet, parser_rule: "xlsx_header_row_resource" },
-    excerptForJurisdiction: `${normalized.state || normalized.state_code || normalized.jurisdiction || ""} ${name} ${normalized.address || ""}`,
+    raw_excerpt: stable(row.values).slice(0, 8000),
+    payload: {
+      row: row.values,
+      sheet: row.sheet,
+      workbook_row: row.row,
+      parser_rule: "xlsx_header_row_preserved_v2",
+      route_type: route.candidateType,
+      target_surface: route.targetSurface,
+      routing_state: route.routingState,
+      source_preservation: "verbatim_cell_map",
+    },
+    excerptForJurisdiction: `${normalized.state || normalized.state_code || normalized.jurisdiction || ""} ${name} ${normalized.address || ""} ${stable(row.values)}`,
+    candidateState: route.candidateType === "resource" ? "unresolved" : "typed_preserved",
   });
 }
 
@@ -658,7 +769,7 @@ async function parseArtifact(ctx: ParseContext, buffer: Buffer): Promise<Candida
   if (ext === ".csv") return parseCsvCandidates(ctx);
   if (ext === ".xlsx") {
     const rows = await parseXlsxRows(buffer);
-    return rows.map(row => xlsxCandidate(ctx, row)).filter((item): item is Candidate => Boolean(item));
+    return rows.map(row => xlsxCandidate(ctx, row));
   }
   if (ext === ".docx" || ext === ".md" || ext === ".txt") {
     const candidates = [
@@ -767,7 +878,8 @@ async function nextArtifacts(runId: string, limit: number): Promise<SourceArtifa
            a.jurisdiction_hint,a.semantic_family,a.generation_label,a.exact_duplicate_of
       from public.luminari_corpus_source_artifact_v1 a
       left join public.luminari_corpus_rebuild_artifact_v1 r on r.run_id=$1 and r.artifact_key=a.artifact_key
-     where r.artifact_key is null or (r.status='failed' and r.attempt_count < 2)
+     where a.storage_state='active'
+       and (r.artifact_key is null or (r.status='failed' and r.attempt_count < 2))
      order by case a.artifact_role
        when 'state_enrichment_source' then 1 when 'state_resource_directory_source' then 2 when 'state_registry_source' then 3
        when 'structured_backbone_source' then 4 when 'structured_workbook_source' then 5 else 6 end,
@@ -829,7 +941,7 @@ async function finalizeRun(runId: string): Promise<void> {
   const identities = await finalizeIdentities(runId);
   const statusResult = await pool.query(`select status,count(*)::int as n from public.luminari_corpus_rebuild_artifact_v1 where run_id=$1 group by status order by status`, [runId]);
   const candidateResult = await pool.query(`select count(*)::int as n,count(*) filter(where jurisdiction_resolution_state='conflict')::int as jurisdiction_conflicts from public.luminari_corpus_candidate_v1 where run_id=$1`, [runId]);
-  const artifactResult = await pool.query(`select count(*)::int as n from public.luminari_corpus_source_artifact_v1`, []);
+  const artifactResult = await pool.query(`select count(*)::int as n from public.luminari_corpus_source_artifact_v1 where storage_state='active'`, []);
   const receiptRows = await pool.query(`select artifact_key,status,receipt_hash from public.luminari_corpus_rebuild_artifact_v1 where run_id=$1 order by artifact_key`, [runId]);
   const statusCounts = Object.fromEntries(statusResult.rows.map(row => [row.status, Number(row.n)]));
   const failed = Number(statusCounts.failed ?? 0);
@@ -848,18 +960,34 @@ export async function runFreshCorpusRebuildBatch(runId: string, limit = 8): Prom
   const boundedLimit = Math.max(1, Math.min(20, Math.floor(limit)));
   const artifacts = await nextArtifacts(runId, boundedLimit);
   for (const artifact of artifacts) await processArtifact(runId, artifact);
-  const remainingResult = await pool.query(`select count(*)::int as n from public.luminari_corpus_source_artifact_v1 a left join public.luminari_corpus_rebuild_artifact_v1 r on r.run_id=$1 and r.artifact_key=a.artifact_key where r.artifact_key is null or (r.status='failed' and r.attempt_count<2)`, [runId]);
+  const remainingResult = await pool.query(`select count(*)::int as n from public.luminari_corpus_source_artifact_v1 a left join public.luminari_corpus_rebuild_artifact_v1 r on r.run_id=$1 and r.artifact_key=a.artifact_key where a.storage_state='active' and (r.artifact_key is null or (r.status='failed' and r.attempt_count<2))`, [runId]);
   const remaining = Number(remainingResult.rows[0]?.n ?? 0);
   if (remaining === 0) { await finalizeRun(runId); return { processed: artifacts.length, remaining, finalized: true }; }
   return { processed: artifacts.length, remaining, finalized: false };
 }
 
-export async function queueFreshCorpusRebuild(scope: Record<string, unknown> = {}): Promise<{ run_id: string; status: string }> {
+export async function syncFreshCorpusSourceManifest(): Promise<Record<string, unknown>> {
+  const result = await getPool().query(`select public.sync_luminari_corpus_source_manifest_v2() as receipt`);
+  return result.rows[0]?.receipt ?? {
+    contract: "fresh_corpus_continuous_manifest_v2",
+    storage_objects: 0,
+    active_manifest_artifacts: 0,
+    new_or_changed_artifacts: 0,
+    newly_missing_artifacts: 0,
+    pending_extraction_artifacts: 0,
+  };
+}
+
+export async function queueFreshCorpusRebuild(
+  scope: Record<string, unknown> = {},
+  options: { manifestSync?: Record<string, unknown> } = {},
+): Promise<{ run_id: string; status: string; manifest_sync: Record<string, unknown> }> {
   const pool = getPool();
+  const manifestSync = options.manifestSync ?? await syncFreshCorpusSourceManifest();
   const active = await pool.query(`select run_id,status from public.luminari_corpus_rebuild_run_v1 where engine_version=$1 and status in ('queued','running') order by started_at desc limit 1`, [FRESH_CORPUS_ENGINE_VERSION]);
-  if (active.rows[0]) return { run_id: active.rows[0].run_id, status: active.rows[0].status };
-  const result = await pool.query(`insert into public.luminari_corpus_rebuild_run_v1(engine_version,scope,status) values($1,$2::jsonb,'queued') returning run_id,status`, [FRESH_CORPUS_ENGINE_VERSION, JSON.stringify(scope)]);
-  return { run_id: result.rows[0].run_id, status: result.rows[0].status };
+  if (active.rows[0]) return { run_id: active.rows[0].run_id, status: active.rows[0].status, manifest_sync: manifestSync };
+  const result = await pool.query(`insert into public.luminari_corpus_rebuild_run_v1(engine_version,scope,status) values($1,$2::jsonb,'queued') returning run_id,status`, [FRESH_CORPUS_ENGINE_VERSION, JSON.stringify({ ...scope, manifest_sync: manifestSync, parser_version: FRESH_CORPUS_PARSER_VERSION })]);
+  return { run_id: result.rows[0].run_id, status: result.rows[0].status, manifest_sync: manifestSync };
 }
 
 export async function getFreshCorpusRebuildStatus(runId?: string) {
@@ -889,4 +1017,49 @@ export async function resumeFreshCorpusRebuildFromDatabase(options: { batchSize?
     await new Promise(resolve => setTimeout(resolve, 250));
   }
   return { status: "yielded", run_id: runId, processed };
+}
+
+export async function reconcileFreshCorpusAutomatically(
+  options: { batchSize?: number; maxBatches?: number } = {},
+) {
+  const pool = getPool();
+  const manifestSync = await syncFreshCorpusSourceManifest();
+  const latest = await pool.query(`
+    select run_id,status,artifact_count,result_json->>'parser_version' as parser_version
+      from public.luminari_corpus_rebuild_run_v1
+     where engine_version=$1 and status in ('completed','completed_with_failures')
+     order by completed_at desc nulls last,started_at desc
+     limit 1
+  `, [FRESH_CORPUS_ENGINE_VERSION]);
+  const latestRun = latest.rows[0];
+  const newOrChanged = Number(manifestSync.new_or_changed_artifacts ?? 0);
+  const newlyMissing = Number(manifestSync.newly_missing_artifacts ?? 0);
+  const activeArtifacts = Number(manifestSync.active_manifest_artifacts ?? 0);
+  const requiresReplay = !latestRun
+    || latestRun.parser_version !== FRESH_CORPUS_PARSER_VERSION
+    || Number(latestRun.artifact_count ?? 0) !== activeArtifacts
+    || newOrChanged > 0
+    || newlyMissing > 0;
+
+  let queued: Awaited<ReturnType<typeof queueFreshCorpusRebuild>> | null = null;
+  if (requiresReplay) {
+    queued = await queueFreshCorpusRebuild({
+      requested_from: "automatic_storage_manifest_reconciliation",
+      reason: !latestRun
+        ? "no_completed_fresh_corpus_run"
+        : latestRun.parser_version !== FRESH_CORPUS_PARSER_VERSION
+          ? "parser_version_changed"
+          : "source_changes_detected",
+      source_buckets: ["State Enriched Registry bucket", "Everything backbone related"],
+    }, { manifestSync });
+  }
+
+  const resumed = await resumeFreshCorpusRebuildFromDatabase(options);
+  return {
+    status: resumed.status,
+    manifest_sync: manifestSync,
+    replay_required: requiresReplay,
+    queued,
+    rebuild: resumed,
+  };
 }

@@ -7,11 +7,12 @@ const route = readFileSync(join(process.cwd(), "server/routes/ingestion_control_
 const index = readFileSync(join(process.cwd(), "server/_core/index.ts"), "utf8");
 
 describe("fresh corpus startup resume", () => {
-  it("hangs the resume hook from the mounted production ingestion-control import chain", () => {
+  it("hangs automatic reconciliation from the mounted production import chain", () => {
     expect(index).toContain('from "../routes/ingestion_control_router"');
     expect(route).toContain('from "../workers/corpus-import-queue-worker"');
-    expect(worker).toContain("resumeFreshCorpusRebuildFromDatabase");
-    expect(worker).toContain("mounted_worker_resume");
+    expect(worker).toContain("reconcileFreshCorpusAutomatically");
+    expect(worker).toContain("automatic_reconciliation");
+    expect(worker).toContain("FRESH_CORPUS_RECONCILIATION_INTERVAL_MS");
   });
 
   it("does not start the historical infinite worker loop inside the server bundle", () => {
@@ -19,9 +20,9 @@ describe("fresh corpus startup resume", () => {
     expect(worker).toContain("if (is_direct_worker_entry())");
   });
 
-  it("only resumes database-declared work", () => {
+  it("automatically queues source or parser changes without starting the legacy loop", () => {
     const tail = worker.slice(worker.indexOf("The mounted ingestion-control REST router"));
-    expect(tail).not.toContain("queueFreshCorpusRebuild");
-    expect(tail).toContain("resumeFreshCorpusRebuildFromDatabase");
+    expect(tail).toContain("reconcileFreshCorpusAutomatically");
+    expect(tail).not.toContain("corpus_import_queue_worker_loop()");
   });
 });

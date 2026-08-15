@@ -305,21 +305,34 @@ if (is_direct_worker_entry()) {
 }
 
 // The mounted ingestion-control REST router imports this worker module on every
-// production boot. Resume only an explicitly queued/running fresh rebuild; do
-// not create work implicitly and do not enter the historical worker loop.
+// production boot. Keep Storage and the immutable source manifest reconciled,
+// automatically queue a replay when source or parser state changes, and resume
+// bounded work without entering the historical infinite worker loop. This is
+// the canonical startup hook so tRPC route imports cannot create duplicate
+// timers or duplicate runs.
 if (process.env.NODE_ENV === "production" && !is_direct_worker_entry()) {
-  setTimeout(() => {
+  let automaticReconciliationRunning = false;
+  const reconcile = () => {
+    if (automaticReconciliationRunning) return;
+    automaticReconciliationRunning = true;
     void import("../services/fresh-corpus-reconciliation-v1")
-      .then(({ resumeFreshCorpusRebuildFromDatabase }) =>
-        resumeFreshCorpusRebuildFromDatabase({ batchSize: 6, maxBatches: 40 }))
+      .then(({ reconcileFreshCorpusAutomatically }) =>
+        reconcileFreshCorpusAutomatically({ batchSize: 4, maxBatches: 40 }))
       .then(result => {
-        if ((result as any)?.status !== "idle") console.log("[FreshCorpusRebuild] mounted_worker_resume", result);
+        console.log("[FreshCorpusRebuild] automatic_reconciliation", result);
       })
       .catch(error => {
-        console.error("[FreshCorpusRebuild] mounted_worker_resume_failed", {
+        console.error("[FreshCorpusRebuild] automatic_reconciliation_failed", {
           error_class: error instanceof Error ? error.name : "unknown",
           error_message: error instanceof Error ? error.message.slice(0, 500) : String(error).slice(0, 500),
         });
-      });
-  }, 15_000);
+      })
+      .finally(() => { automaticReconciliationRunning = false; });
+  };
+  const intervalMs = Math.max(
+    60_000,
+    Math.min(60 * 60_000, Number(process.env.FRESH_CORPUS_RECONCILIATION_INTERVAL_MS ?? 300_000)),
+  );
+  setTimeout(reconcile, 15_000).unref();
+  setInterval(reconcile, intervalMs).unref();
 }

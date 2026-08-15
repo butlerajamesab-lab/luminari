@@ -20,6 +20,7 @@ vi.mock("./civic-genome-source-id", () => ({
 
 vi.mock("./civic-genome-rosetta-contract", () => ({
   get_latest_rosetta_law_view_by_document_identifier: get_rosetta_view,
+  get_latest_rosetta_law_view_by_source_document: get_rosetta_view,
 }));
 
 import {
@@ -62,6 +63,7 @@ function completed_view() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  query.mockResolvedValue({ rows: [] });
   get_bill.mockResolvedValue({ genome_bill_id });
 });
 
@@ -142,5 +144,25 @@ describe("Civic Genome operating contracts", () => {
     const result = await get_civic_genome_rosetta_pipeline_status(2093644);
     expect(result.contract_state).toBe("contract_error");
     expect(result.can_assemble).toBe(false);
+  });
+
+  it("resolves the newest version by its exact Rosetta source document", async () => {
+    query.mockResolvedValueOnce({ rows: [{ rosetta_source_document_id: 44 }] });
+    get_rosetta_view.mockResolvedValue(completed_view());
+
+    await get_civic_genome_rosetta_pipeline_status(2093644);
+
+    expect(get_rosetta_view).toHaveBeenCalledWith(44);
+    expect(query.mock.calls[0]?.[0]).toContain("civic_genome_bill_version");
+    expect(query.mock.calls[0]?.[0]).toContain("order by stage_rank desc");
+  });
+
+  it("does not substitute an older legacy run while the current version is pending", async () => {
+    query.mockResolvedValueOnce({ rows: [{ rosetta_source_document_id: null }] });
+
+    const result = await get_civic_genome_rosetta_pipeline_status(2093644);
+
+    expect(get_rosetta_view).not.toHaveBeenCalled();
+    expect(result.contract_state).toBe("not_handed_off");
   });
 });
