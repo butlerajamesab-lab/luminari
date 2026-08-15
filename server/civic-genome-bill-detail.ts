@@ -81,9 +81,24 @@ export type family_assignment_status = {
 
 export type civic_genome_bill_detail = {
   bill: GenomeBill;
+  current_version: {
+    bill_version_id: string;
+    source_document_key: string;
+    version_type: string;
+    source_document_id: number | null;
+    extraction_run_id: string | null;
+    processing_state: string;
+  } | null;
   structural_dna: {
     traits: persisted_genome_trait[];
     assembly_runs: persisted_genome_assembly_run[];
+    validation_summary: {
+      supported: number;
+      contradicted: number;
+      unresolved: number;
+      duplicates: number;
+      missing_section: number;
+    };
   };
   family_assignment: family_assignment_status;
 };
@@ -98,6 +113,26 @@ export async function get_civic_genome_bill_detail(
   );
   const bill = bill_result.rows[0];
   if (!bill) return null;
+
+  const current_version_result = await pool.query<{
+    bill_version_id: string;
+    source_document_key: string;
+    version_type: string;
+    source_document_id: number | null;
+    extraction_run_id: string | null;
+    processing_state: string;
+  }>(
+    `select bill_version_id, source_document_key, version_type,
+            rosetta_source_document_id::integer as source_document_id,
+            rosetta_extraction_run_id as extraction_run_id,
+            processing_state
+       from public.civic_genome_bill_version
+      where genome_bill_id = $1
+      order by stage_rank desc, provider_sequence desc, updated_at desc
+      limit 1`,
+    [genome_bill_id],
+  );
+  const current_version = current_version_result.rows[0] ?? null;
 
   const [traits_result, runs_result, family_result, resolution_result] = await Promise.all([
     pool.query<persisted_genome_trait>(
@@ -162,8 +197,9 @@ export async function get_civic_genome_bill_detail(
           limit 1
        ) prism on true
        where trait.genome_bill_id = $1
+         and ($2::bigint is null or trait.source_document_id = $2::bigint)
        order by trait.trait_class, trait.trait_key, trait.trait_fingerprint`,
-      [genome_bill_id],
+      [genome_bill_id, current_version?.source_document_id ?? null],
     ),
     pool.query<persisted_genome_assembly_run>(
       `select *
@@ -200,11 +236,37 @@ export async function get_civic_genome_bill_detail(
       ? "unresolved"
       : "provisional";
 
+  const current_traits = traits_result.rows;
+  const duplicate_keys = new Map<string, number>();
+  for (const trait of current_traits) {
+    const key = `${trait.trait_class}\u001f${trait.content_hash}`;
+    duplicate_keys.set(key, (duplicate_keys.get(key) ?? 0) + 1);
+  }
+  const validation_summary = current_traits.reduce((summary, trait) => {
+    const contradictions = Array.isArray(trait.prism_contradictions) ? trait.prism_contradictions : [];
+    const unresolved = Array.isArray(trait.prism_unresolved_conditions) ? trait.prism_unresolved_conditions : [];
+    const missing = Array.isArray(trait.prism_missing_evidence) ? trait.prism_missing_evidence : [];
+    const proof_entries = [...contradictions, ...unresolved, ...missing]
+      .filter((entry): entry is Record<string, unknown> => Boolean(entry) && typeof entry === "object" && !Array.isArray(entry));
+    const missing_section = proof_entries.some(entry =>
+      entry.source_section == null
+      && (entry.source_offset_start != null || entry.source_offset_end != null));
+    if (contradictions.length > 0 || trait.prism_verification_status === "contradicted") summary.contradicted += 1;
+    else if (unresolved.length > 0 || missing.length > 0) summary.unresolved += 1;
+    else if (trait.prism_verification_status) summary.supported += 1;
+    if (missing_section) summary.missing_section += 1;
+    return summary;
+  }, { supported: 0, contradicted: 0, unresolved: 0, duplicates: 0, missing_section: 0 });
+  validation_summary.duplicates = [...duplicate_keys.values()]
+    .reduce((count, occurrences) => count + Math.max(0, occurrences - 1), 0);
+
   return {
     bill,
+    current_version,
     structural_dna: {
-      traits: traits_result.rows,
+      traits: current_traits,
       assembly_runs: runs_result.rows,
+      validation_summary,
     },
     family_assignment: {
       status: assignment_status,
