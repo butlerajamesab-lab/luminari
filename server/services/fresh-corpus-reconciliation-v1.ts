@@ -3,8 +3,8 @@ import JSZip from "jszip";
 import { getPool } from "../db";
 import { SUPABASE_PROJECT } from "../_core/health-diagnostics";
 
-export const FRESH_CORPUS_ENGINE_VERSION = "fresh_corpus_reconciliation_v1.1.0";
-export const FRESH_CORPUS_PARSER_VERSION = "fresh_registry_typed_parser_v1.1.0";
+export const FRESH_CORPUS_ENGINE_VERSION = "fresh_corpus_reconciliation_v1.2.0";
+export const FRESH_CORPUS_PARSER_VERSION = "fresh_registry_typed_parser_v1.2.0";
 
 const STATE_NAMES: Record<string, string> = {
   Alabama: "AL", Alaska: "AK", Arizona: "AZ", Arkansas: "AR", California: "CA",
@@ -246,7 +246,113 @@ function xmlCellText(xml: string): string {
   return decodeXmlEntities(xml.replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim();
 }
 
-async function parseXlsxRows(buffer: Buffer): Promise<Array<{ sheet: string; row: number; values: Record<string, string> }>> {
+export type XlsxSourceRow = {
+  sheet: string;
+  row: number;
+  header_row: number;
+  row_role: "preamble" | "header" | "data";
+  columns: string[];
+  header_keys: string[];
+  values: Record<string, string>;
+  cells: Array<{
+    reference: string;
+    type: string | null;
+    style: string | null;
+    value: string;
+    formula: string | null;
+  }>;
+};
+
+type ParsedXlsxRow = {
+  row: number;
+  values: string[];
+  cells: XlsxSourceRow["cells"];
+};
+
+function uniqueWorkbookHeaders(values: string[]): { columns: string[]; keys: string[] } {
+  const columns = values.map((value, index) => compact(value) || `column_${index + 1}`);
+  const seen = new Map<string, number>();
+  const keys = columns.map((column, index) => {
+    const base = column || `column_${index + 1}`;
+    const count = (seen.get(base) ?? 0) + 1;
+    seen.set(base, count);
+    return count === 1 ? base : `${base}__${count}`;
+  });
+  return { columns, keys };
+}
+
+function parseXlsxRowXml(xml: string, shared: string[], fallbackRow: number): ParsedXlsxRow | null {
+  const rowNumber = Number(xml.match(/<row\b[^>]*\br="(\d+)"/)?.[1] ?? fallbackRow);
+  const values: string[] = [];
+  const cells: XlsxSourceRow["cells"] = [];
+  for (const cell of xml.matchAll(/<c\b([^>]*)>([\s\S]*?)<\/c>/g)) {
+    const attrs = cell[1];
+    const body = cell[2];
+    const reference = attrs.match(/\br="([A-Z]+\d+)"/)?.[1] ?? `A${rowNumber}`;
+    const columnReference = reference.match(/^([A-Z]+)/)?.[1] ?? "A";
+    let index = 0;
+    for (const char of columnReference) index = index * 26 + char.charCodeAt(0) - 64;
+    index -= 1;
+    const type = attrs.match(/\bt="([^"]+)"/)?.[1] ?? null;
+    const style = attrs.match(/\bs="([^"]+)"/)?.[1] ?? null;
+    const raw = body.match(/<v>([\s\S]*?)<\/v>/)?.[1] ?? body.match(/<is>([\s\S]*?)<\/is>/)?.[1] ?? "";
+    const value = type === "s" ? shared[Number(raw)] ?? "" : type === "inlineStr" ? xmlCellText(raw) : decodeXmlEntities(raw).trim();
+    const formulaXml = body.match(/<f(?:\s[^>]*)?>([\s\S]*?)<\/f>/)?.[1];
+    const formula = formulaXml === undefined ? null : decodeXmlEntities(formulaXml).trim();
+    values[index] = value;
+    cells.push({ reference, type, style, value, formula });
+  }
+  return cells.some(cell => compact(cell.value) || cell.formula) ? { row: rowNumber, values, cells } : null;
+}
+
+async function forEachWorksheetXmlRow(
+  entry: JSZip.JSZipObject,
+  shared: string[],
+  consume: (row: ParsedXlsxRow) => Promise<void>,
+): Promise<void> {
+  let carry = "";
+  let fallbackRow = 0;
+  const processChunk = async (rawChunk: Buffer) => {
+    carry += rawChunk.toString("utf8");
+    let rowEnd = carry.indexOf("</row>");
+    while (rowEnd >= 0) {
+      const throughRow = carry.slice(0, rowEnd + "</row>".length);
+      carry = carry.slice(rowEnd + "</row>".length);
+      const rowStart = throughRow.lastIndexOf("<row");
+      if (rowStart >= 0) {
+        fallbackRow += 1;
+        const parsed = parseXlsxRowXml(throughRow.slice(rowStart), shared, fallbackRow);
+        if (parsed) await consume(parsed);
+      }
+      rowEnd = carry.indexOf("</row>");
+    }
+    // XML outside the next row carries no source cell content. Keeping only
+    // the possible partial row prevents a large worksheet from accumulating.
+    const partialRow = carry.lastIndexOf("<row");
+    if (partialRow > 0) carry = carry.slice(partialRow);
+    else if (partialRow < 0 && carry.length > 4096) carry = carry.slice(-4096);
+  };
+  await new Promise<void>((resolve, reject) => {
+    const stream = entry.internalStream("nodebuffer");
+    let processing = Promise.resolve();
+    let failed = false;
+    stream.on("data", chunk => {
+      stream.pause();
+      processing = processing
+        .then(() => processChunk(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)))
+        .then(() => { if (!failed) stream.resume(); })
+        .catch(error => { failed = true; reject(error); });
+    });
+    stream.on("error", error => { failed = true; reject(error); });
+    stream.on("end", () => { processing.then(() => { if (!failed) resolve(); }, reject); });
+    stream.resume();
+  });
+}
+
+export async function forEachXlsxRow(
+  buffer: Buffer,
+  consume: (row: XlsxSourceRow) => Promise<void> | void,
+): Promise<number> {
   const zip = await JSZip.loadAsync(buffer);
   const sharedXml = await zip.file("xl/sharedStrings.xml")?.async("text");
   const shared: string[] = [];
@@ -255,7 +361,7 @@ async function parseXlsxRows(buffer: Buffer): Promise<Array<{ sheet: string; row
   }
   const workbookXml = await zip.file("xl/workbook.xml")?.async("text");
   const relsXml = await zip.file("xl/_rels/workbook.xml.rels")?.async("text");
-  if (!workbookXml || !relsXml) return [];
+  if (!workbookXml || !relsXml) return 0;
   const relationships = new Map<string, string>();
   for (const rel of relsXml.matchAll(/<Relationship\b[^>]*Id="([^"]+)"[^>]*Target="([^"]+)"[^>]*\/?\s*>/g)) {
     relationships.set(rel[1], rel[2].replace(/^\//, ""));
@@ -266,38 +372,53 @@ async function parseXlsxRows(buffer: Buffer): Promise<Array<{ sheet: string; row
     if (!target) continue;
     sheets.push({ name: decodeXmlEntities(sheet[1]), path: target.startsWith("xl/") ? target : `xl/${target.replace(/^\.\//, "")}` });
   }
-  const result: Array<{ sheet: string; row: number; values: Record<string, string> }> = [];
+  let emitted = 0;
   for (const sheet of sheets) {
-    const xml = await zip.file(sheet.path)?.async("text");
-    if (!xml) continue;
-    const rows: string[][] = [];
-    for (const rowMatch of xml.matchAll(/<row\b[^>]*r="(\d+)"[^>]*>([\s\S]*?)<\/row>/g)) {
-      const cells: string[] = [];
-      for (const cell of rowMatch[2].matchAll(/<c\b([^>]*)>([\s\S]*?)<\/c>/g)) {
-        const attrs = cell[1];
-        const body = cell[2];
-        const ref = attrs.match(/\br="([A-Z]+)\d+"/)?.[1] ?? "A";
-        let index = 0;
-        for (const char of ref) index = index * 26 + char.charCodeAt(0) - 64;
-        index -= 1;
-        const type = attrs.match(/\bt="([^"]+)"/)?.[1] ?? "";
-        const raw = body.match(/<v>([\s\S]*?)<\/v>/)?.[1] ?? body.match(/<is>([\s\S]*?)<\/is>/)?.[1] ?? "";
-        let value = type === "s" ? shared[Number(raw)] ?? "" : type === "inlineStr" ? xmlCellText(raw) : decodeXmlEntities(raw).trim();
-        cells[index] = value;
-      }
-      rows.push(cells);
-      if (rows.length >= 100_000) break;
-    }
-    const headerIndex = rows.findIndex(row => row.filter(Boolean).length >= 2);
-    if (headerIndex < 0) continue;
-    const headers = rows[headerIndex].map((value, index) => compact(value) || `column_${index + 1}`);
-    for (let i = headerIndex + 1; i < rows.length; i += 1) {
+    const entry = zip.file(sheet.path);
+    if (!entry) continue;
+    let header: { row: ParsedXlsxRow; columns: string[]; keys: string[] } | null = null;
+    const pending: ParsedXlsxRow[] = [];
+    const emit = async (parsed: ParsedXlsxRow, rowRole: XlsxSourceRow["row_role"]) => {
+      if (!header) throw new Error("xlsx_header_not_resolved");
       const values: Record<string, string> = {};
-      rows[i].forEach((value, index) => { if (compact(value)) values[headers[index] ?? `column_${index + 1}`] = compact(value); });
-      if (Object.keys(values).length) result.push({ sheet: sheet.name, row: i + 1, values });
-    }
+      parsed.values.forEach((value, index) => {
+        if (!compact(value)) return;
+        const key = rowRole === "data" ? header?.keys[index] ?? `column_${index + 1}` : `column_${index + 1}`;
+        values[key] = value;
+      });
+      await consume({
+        sheet: sheet.name,
+        row: parsed.row,
+        header_row: header.row.row,
+        row_role: rowRole,
+        columns: header.columns,
+        header_keys: header.keys,
+        values,
+        cells: parsed.cells,
+      });
+      emitted += 1;
+    };
+    const resolveHeader = async (selected: ParsedXlsxRow) => {
+      const resolved = uniqueWorkbookHeaders(selected.values);
+      header = { row: selected, columns: resolved.columns, keys: resolved.keys };
+      for (const preamble of pending) {
+        await emit(preamble, preamble === selected ? "header" : preamble.row < selected.row ? "preamble" : "data");
+      }
+      pending.length = 0;
+    };
+    await forEachWorksheetXmlRow(entry, shared, async parsed => {
+      if (header) {
+        await emit(parsed, "data");
+        return;
+      }
+      pending.push(parsed);
+      const populatedCells = parsed.values.filter(value => compact(value)).length;
+      if (populatedCells >= 2) await resolveHeader(parsed);
+      else if (pending.length >= 256) await resolveHeader(pending[0]);
+    });
+    if (!header && pending.length) await resolveHeader(pending[0]);
   }
-  return result;
+  return emitted;
 }
 
 function inferCategory(section: string | null, text: string): string | null {
@@ -691,7 +812,7 @@ function parseCsvCandidates(ctx: ParseContext): Candidate[] {
   const headers = parseCsvLine(lines[0]).map(header => compact(header).toLowerCase().replace(/[^a-z0-9]+/g, "_"));
   const type = artifactStructuredType(ctx.artifact);
   const out: Candidate[] = [];
-  for (let i = 1; i < lines.length && i <= 100_000; i += 1) {
+  for (let i = 1; i < lines.length; i += 1) {
     const values = parseCsvLine(lines[i]);
     const record: Record<string, unknown> = {};
     headers.forEach((header, index) => { if (header) record[header] = compact(values[index]); });
@@ -701,10 +822,13 @@ function parseCsvCandidates(ctx: ParseContext): Candidate[] {
   return out;
 }
 
-function xlsxCandidate(ctx: ParseContext, row: { sheet: string; row: number; values: Record<string, string> }): Candidate {
+function xlsxCandidate(ctx: ParseContext, row: XlsxSourceRow): Candidate {
   const normalized: Record<string, string> = {};
   for (const [key, value] of Object.entries(row.values)) normalized[key.toLowerCase().replace(/[^a-z0-9]+/g, "_")] = value;
-  const route = workbookSheetRoute(row.sheet);
+  const sheetRoute = workbookSheetRoute(row.sheet);
+  const route = row.row_role === "data"
+    ? sheetRoute
+    : { candidateType: "workbook_context", targetSurface: sheetRoute.targetSurface, routingState: "routed" as const };
   const firstSourceValue = Object.values(row.values).find(value => compact(value));
   const name = nullable(
     normalized.resource_name
@@ -740,14 +864,19 @@ function xlsxCandidate(ctx: ParseContext, row: { sheet: string; row: number; val
       row: row.values,
       sheet: row.sheet,
       workbook_row: row.row,
-      parser_rule: "xlsx_header_row_preserved_v2",
+      header_row: row.header_row,
+      row_role: row.row_role,
+      columns: row.columns,
+      header_keys: row.header_keys,
+      cells: row.cells,
+      parser_rule: "xlsx_streamed_row_preserved_v3",
       route_type: route.candidateType,
       target_surface: route.targetSurface,
       routing_state: route.routingState,
-      source_preservation: "verbatim_cell_map",
+      source_preservation: "immutable_workbook_plus_decoded_cells",
     },
     excerptForJurisdiction: `${normalized.state || normalized.state_code || normalized.jurisdiction || ""} ${name} ${normalized.address || ""} ${stable(row.values)}`,
-    candidateState: route.candidateType === "resource" ? "unresolved" : "typed_preserved",
+    candidateState: row.row_role === "data" && route.candidateType === "resource" ? "unresolved" : "typed_preserved",
   });
 }
 
@@ -767,10 +896,7 @@ async function parseArtifact(ctx: ParseContext, buffer: Buffer): Promise<Candida
   if (ctx.artifact.artifact_role === "derivative_sql_artifact" || ctx.artifact.artifact_role === "derivative_bundle_artifact") return [];
   if (ext === ".json" || ext === ".jsonl" || (ctx.artifact.mimetype === "binary/octet-stream" && /jsonl|legislator/i.test(ctx.artifact.object_name))) return parseJsonCandidates(ctx);
   if (ext === ".csv") return parseCsvCandidates(ctx);
-  if (ext === ".xlsx") {
-    const rows = await parseXlsxRows(buffer);
-    return rows.map(row => xlsxCandidate(ctx, row));
-  }
+  if (ext === ".xlsx") throw new Error("xlsx_requires_bounded_batch_parser");
   if (ext === ".docx" || ext === ".md" || ext === ".txt") {
     const candidates = [
       ...parseResourceCandidates(ctx),
@@ -817,11 +943,55 @@ async function insertCandidates(candidates: Candidate[]): Promise<{ inserted: nu
   return { inserted: Number(result.rows[0]?.inserted ?? 0), idempotent: Number(result.rows[0]?.idempotent ?? 0) };
 }
 
+async function insertXlsxCandidates(
+  ctx: ParseContext,
+  buffer: Buffer,
+  chunkSize = 250,
+): Promise<{ generated: number; inserted: number; idempotent: number; candidateHashes: string[]; chunks: number }> {
+  const pool = getPool();
+  const boundedChunkSize = Math.max(25, Math.min(500, Math.floor(chunkSize)));
+  const candidateHashes: string[] = [];
+  let chunk: Candidate[] = [];
+  let generated = 0;
+  let inserted = 0;
+  let idempotent = 0;
+  let chunks = 0;
+
+  const flush = async () => {
+    if (!chunk.length) return;
+    const current = chunk;
+    chunk = [];
+    const result = await insertCandidates(current);
+    inserted += result.inserted;
+    idempotent += result.idempotent;
+    chunks += 1;
+    await pool.query(`update public.luminari_corpus_rebuild_artifact_v1
+      set started_at=clock_timestamp(),
+          result_json=result_json||jsonb_build_object(
+            'lease_heartbeat_at',clock_timestamp(),
+            'workbook_rows_processed',$3::int,
+            'workbook_chunks_committed',$4::int
+          )
+      where run_id=$1 and artifact_key=$2 and status='running'`,
+    [ctx.runId, ctx.artifact.artifact_key, generated, chunks]);
+  };
+
+  await forEachXlsxRow(buffer, async row => {
+    const parsed = xlsxCandidate(ctx, row);
+    candidateHashes.push(parsed.candidate_hash);
+    chunk.push(parsed);
+    generated += 1;
+    if (chunk.length >= boundedChunkSize) await flush();
+  });
+  await flush();
+  return { generated, inserted, idempotent, candidateHashes, chunks };
+}
+
 async function processArtifact(runId: string, artifact: SourceArtifact): Promise<void> {
   const pool = getPool();
   const startedAt = new Date().toISOString();
-  const claim = await pool.query(`insert into public.luminari_corpus_rebuild_artifact_v1(run_id,artifact_key,status,attempt_count,started_at)
-    values($1,$2,'running',1,$3)
+  const claim = await pool.query(`insert into public.luminari_corpus_rebuild_artifact_v1(run_id,artifact_key,status,attempt_count,started_at,result_json)
+    values($1,$2,'running',1,$3,jsonb_build_object('attempt_started_at',$3::timestamptz,'lease_heartbeat_at',$3::timestamptz))
     on conflict(run_id,artifact_key) do update
       set status='running',
           attempt_count=luminari_corpus_rebuild_artifact_v1.attempt_count+1,
@@ -829,7 +999,7 @@ async function processArtifact(runId: string, artifact: SourceArtifact): Promise
           completed_at=null,
           error_message=null,
           receipt_hash=null,
-          result_json='{}'::jsonb
+          result_json=jsonb_build_object('attempt_started_at',$3::timestamptz,'lease_heartbeat_at',$3::timestamptz)
       where (
         luminari_corpus_rebuild_artifact_v1.status='failed'
         and luminari_corpus_rebuild_artifact_v1.attempt_count<2
@@ -867,11 +1037,25 @@ async function processArtifact(runId: string, artifact: SourceArtifact): Promise
     else text = buffer.toString("utf8");
     const textSha256 = sha256(text);
     const ctx: ParseContext = { runId, artifact, contentSha256, text };
-    const candidates = await parseArtifact(ctx, buffer);
-    const insertResult = await insertCandidates(candidates);
+    let candidatesGenerated = 0;
+    let candidateHashes: string[] = [];
+    let workbookChunks = 0;
+    let insertResult: { inserted: number; idempotent: number };
+    if (ext === ".xlsx") {
+      const workbook = await insertXlsxCandidates(ctx, buffer);
+      candidatesGenerated = workbook.generated;
+      candidateHashes = workbook.candidateHashes;
+      workbookChunks = workbook.chunks;
+      insertResult = { inserted: workbook.inserted, idempotent: workbook.idempotent };
+    } else {
+      const candidates = await parseArtifact(ctx, buffer);
+      candidatesGenerated = candidates.length;
+      candidateHashes = candidates.map(item => item.candidate_hash);
+      insertResult = await insertCandidates(candidates);
+    }
     const receiptMaterial = {
       run_id: runId, artifact_key: artifact.artifact_key, content_sha256: contentSha256,
-      extracted_text_sha256: textSha256, candidate_hashes: candidates.map(item => item.candidate_hash).sort(),
+      extracted_text_sha256: textSha256, candidate_hashes: candidateHashes.sort(),
       parser_version: FRESH_CORPUS_PARSER_VERSION,
     };
     const receiptHash = sha256(stable(receiptMaterial));
@@ -880,8 +1064,14 @@ async function processArtifact(runId: string, artifact: SourceArtifact): Promise
       where artifact_key=$1`, [artifact.artifact_key, contentSha256, textSha256, JSON.stringify({ fresh_parser_version: FRESH_CORPUS_PARSER_VERSION })]);
     await pool.query(`update public.luminari_corpus_rebuild_artifact_v1
       set status='completed',content_sha256=$3,extracted_text_sha256=$4,candidate_count=$5,error_message=null,completed_at=now(),receipt_hash=$6,result_json=$7::jsonb
-      where run_id=$1 and artifact_key=$2`, [runId, artifact.artifact_key, contentSha256, textSha256, candidates.length, receiptHash,
-      JSON.stringify({ candidates_generated: candidates.length, inserted: insertResult.inserted, idempotent: insertResult.idempotent, parser_version: FRESH_CORPUS_PARSER_VERSION })]);
+      where run_id=$1 and artifact_key=$2`, [runId, artifact.artifact_key, contentSha256, textSha256, candidatesGenerated, receiptHash,
+      JSON.stringify({
+        candidates_generated: candidatesGenerated,
+        inserted: insertResult.inserted,
+        idempotent: insertResult.idempotent,
+        parser_version: FRESH_CORPUS_PARSER_VERSION,
+        ...(ext === ".xlsx" ? { workbook_chunks_committed: workbookChunks, bounded_batch_insert: true } : {}),
+      })]);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     const receiptHash = sha256(stable({ run_id: runId, artifact_key: artifact.artifact_key, status: "failed", error: message.slice(0, 500) }));

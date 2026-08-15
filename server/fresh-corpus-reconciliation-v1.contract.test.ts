@@ -60,6 +60,22 @@ describe("fresh corpus reconciliation v1", () => {
     expect(service).toContain("batchSize ?? 6");
   });
 
+  it("streams every workbook row through bounded, heartbeat-protected batches", () => {
+    expect(service).toContain("forEachXlsxRow");
+    expect(service).toContain("insertXlsxCandidates");
+    expect(service).toContain("xlsx_streamed_row_preserved_v3");
+    expect(service).toContain("workbook_chunks_committed");
+    expect(service).toContain("lease_heartbeat_at");
+    expect(service).toContain("header_row");
+    expect(service).toContain("row_role");
+    expect(service).toContain("immutable_workbook_plus_decoded_cells");
+    expect(service).toContain("formula");
+    expect(service).toContain('candidateType: "workbook_context"');
+    expect(service).toContain("bounded_batch_insert: true");
+    expect(service).not.toContain("rows.length >= 100_000");
+    expect(service).not.toContain("i <= 100_000");
+  });
+
   it("automatically reconciles source and parser changes without an operator button", () => {
     expect(router).toContain("queue_fresh_corpus_rebuild");
     expect(router).toContain("get_fresh_corpus_rebuild_status");
