@@ -409,7 +409,7 @@ function CaseActivityPanel() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <MetricCard label="Total Cases" value={data.cases.total.toString()} icon={<FileText className="h-4 w-4" />} color="violet" />
         <MetricCard label="Documents" value={data.documents.total.toLocaleString()} icon={<BookOpen className="h-4 w-4" />} color="blue" />
-        <MetricCard label="Findings" value={data.findings.total.toLocaleString()} icon={<Search className="h-4 w-4" />} color="amber" />
+        <MetricCard label="Verification Records" value={data.findings.total.toLocaleString()} icon={<Search className="h-4 w-4" />} color="amber" />
         <MetricCard label="Users" value={data.users.total.toString()} icon={<Users className="h-4 w-4" />} color="emerald" />
       </div>
 
@@ -422,7 +422,7 @@ function CaseActivityPanel() {
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div className="flex justify-between"><span className="text-muted-foreground">New cases</span><span className="font-mono">{data.cases.today}</span></div>
             <div className="flex justify-between"><span className="text-muted-foreground">Uploads</span><span className="font-mono">{data.documents.today}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Findings</span><span className="font-mono">{data.findings.today}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Verifications</span><span className="font-mono">{data.findings.today}</span></div>
             <div className="flex justify-between"><span className="text-muted-foreground">New users</span><span className="font-mono">{data.users.today}</span></div>
           </div>
         </CardContent>
@@ -485,9 +485,9 @@ function StructuralSignalsPanel() {
             selectedSeverity === null ? "ring-amber-400/40" : "ring-transparent hover:ring-amber-400/20"
           }`}
           onClick={() => setSelectedSeverity(null)}
-          title="Show all findings"
+          title="Show all structural signals"
         >
-          <MetricCard label="Total Findings" value={data.totalFindings.toLocaleString()} icon={<Eye className="h-4 w-4" />} color="amber" />
+          <MetricCard label="Total Signals" value={data.totalFindings.toLocaleString()} icon={<Eye className="h-4 w-4" />} color="amber" />
         </div>
         {data.bySeverity.map((s) => (
           <div
@@ -510,7 +510,7 @@ function StructuralSignalsPanel() {
         ))}
       </div>
 
-      {/* Drill-through findings list */}
+      {/* Drill-through structural-signal list */}
       {selectedSeverity !== null && (
         <Card className={`bg-card/50 ${
           selectedSeverity === "strong" ? "border-red-500/30" : selectedSeverity === "moderate" ? "border-orange-500/30" : "border-yellow-500/30"
@@ -520,7 +520,7 @@ function StructuralSignalsPanel() {
               <AlertTriangle className={`h-3.5 w-3.5 ${
                 selectedSeverity === "strong" ? "text-red-400" : selectedSeverity === "moderate" ? "text-orange-400" : "text-yellow-400"
               }`} />
-              {selectedSeverity} findings
+              {selectedSeverity} signals
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -529,14 +529,14 @@ function StructuralSignalsPanel() {
                 <Loader2 className="h-3 w-3 animate-spin" /> Loading findings...
               </div>
             ) : !drillData || drillData.length === 0 ? (
-              <p className="text-xs text-muted-foreground py-2">No findings at this severity level.</p>
+              <p className="text-xs text-muted-foreground py-2">No structural signals at this severity level.</p>
             ) : (
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {drillData.map((f) => (
                   <div key={f.id} className="text-xs space-y-0.5 border-b border-border/30 pb-1.5 last:border-0">
                     <div className="font-medium truncate">{f.title}</div>
                     <div className="flex items-center gap-2 text-muted-foreground">
-                      <span>Case #{f.caseId}</span>
+                      <span>Atlas-wide signal</span>
                       <span className="capitalize text-[10px] px-1.5 py-0.5 rounded bg-muted">{(f.category ?? "unknown").replace(/_/g, " ")}</span>
                       <span>{formatTimeAgo(f.createdAt)}</span>
                     </div>
@@ -554,7 +554,7 @@ function StructuralSignalsPanel() {
           <span
             key={c.category}
             className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border border-border/50 bg-card/60 text-muted-foreground cursor-default hover:border-border transition-colors"
-            title={`${c.count} ${(c.category ?? 'unknown').replace(/_/g, ' ')} findings`}
+            title={`${c.count} ${(c.category ?? 'unknown').replace(/_/g, ' ')} structural signals`}
           >
             <span className="capitalize">{(c.category ?? 'unknown').replace(/_/g, ' ')}</span>
             <span className="font-mono text-[10px] text-foreground/70 ml-0.5">{c.count}</span>
@@ -579,11 +579,11 @@ function StructuralSignalsPanel() {
         </CardContent>
       </Card>
 
-      {/* Critical Findings (when no filter active) */}
+      {/* High-priority structural signals (when no filter active) */}
       {!selectedSeverity && data.criticalFindings.length > 0 && (
         <Card className="bg-card/50 border-red-500/20">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-red-400">High-Confidence Findings</CardTitle>
+            <CardTitle className="text-sm font-medium text-red-400">High-Priority Structural Signals</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
@@ -591,7 +591,7 @@ function StructuralSignalsPanel() {
                 <div key={f.id} className="text-xs space-y-0.5">
                   <div className="font-medium truncate">{f.title}</div>
                   <div className="flex items-center gap-2 text-muted-foreground">
-                    <span>Case #{f.caseId}</span>
+                    <span>Atlas-wide signal</span>
                     <span>{formatTimeAgo(f.createdAt)}</span>
                   </div>
                 </div>
