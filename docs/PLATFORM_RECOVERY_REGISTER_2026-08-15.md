@@ -144,6 +144,12 @@ Every nonempty XLSX row now produces a typed source candidate with its immutable
 | County overrides/state cards | jurisdiction types | Population Engine |
 | Unknown sheet | `workbook_record` | Operator review, source preserved |
 
+### Live workbook recovery receipt
+
+The production v1.2 replay completed automatically for all 154 active source artifacts with receipt `7da268f8e2f457c37af1ca7f7d298b828b96e55bd0d802b271b3f0f58bee8495`. The 4.3 MB authored workbook produced 37,969 persisted row candidates across 181 sheets in 152 heartbeat-protected batches, including 3,701 rows carrying address values. The complete run contains 45,865 candidates, 2,851 resolved-or-flagged identities, and 557 explicit unresolved items; no source artifact failed.
+
+Preservation is now proven, but surface binding is not complete. Of the workbook rows, 35,322 are intentionally retained as `workbook_record` in the operator-review lane, including 3,646 rows with address values. Those records must be routed using the workbook's own schema and promotion-map tables, then exposed through paginated source/provenance views. They must not be deleted, treated as missing, or blindly published one-for-one.
+
 ## Prioritized remaining repairs
 
 ### P0 — Data recovery and truthfulness
