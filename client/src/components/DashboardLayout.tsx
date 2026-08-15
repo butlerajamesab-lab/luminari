@@ -47,7 +47,6 @@ import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from "./DashboardLayoutSkeleton";
 import { Button } from "./ui/button";
 import { trpc } from "@/lib/trpc";
-import MobileBottomNav from "./MobileBottomNav";
 import PlainLanguageToggle from "./PlainLanguageToggle";
 import { NotificationBell } from "./NotificationBell";
 import { resetTour } from "./OnboardingTour";
@@ -237,8 +236,6 @@ function MobileLayout({ children }: { children: React.ReactNode }) {
         {children}
       </main>
 
-      {/* Bottom navigation */}
-      <MobileBottomNav />
     </div>
   );
 }

@@ -254,7 +254,7 @@ const adminDashboardRouter = router({
     };
   }),
   caseActivity: publicProcedure.query(async () => {
-    const [cases, documents, findings] = await Promise.all([countTable("cases"), countTable("documents"), countTable("findings")]);
+    const [cases, documents, findings] = await Promise.all([countTable("cases"), countTable("documents"), countTable("intake_verification_records")]);
     return { cases: { total: cases, today: 0 }, documents: { total: documents, today: 0 }, findings: { total: findings, today: 0 }, users: { total: 1, today: 0 }, recentCases: [] };
   }),
   structuralSignals: publicProcedure.query(async () => {

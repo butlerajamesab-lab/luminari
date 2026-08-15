@@ -78,8 +78,11 @@ export const adminDashboardRouter = router({
     const casesThisWeek = await getCount(`SELECT COUNT(*)::int AS cnt FROM cases WHERE created_at >= $1`, [oneWeekAgo]);
     const totalDocs = await getCount(`SELECT COUNT(*)::int AS cnt FROM documents`);
     const docsToday = await getCount(`SELECT COUNT(*)::int AS cnt FROM documents WHERE created_at >= $1`, [oneDayAgo]);
-    const totalFindings = await getCount(`SELECT COUNT(*)::int AS cnt FROM findings`);
-    const findingsToday = await getCount(`SELECT COUNT(*)::int AS cnt FROM findings WHERE created_at >= $1`, [oneDayAgo]);
+    // The case UI exposes governed verification records. The legacy `findings`
+    // table also contains unsupported and orphaned historical projections, so
+    // counting it here makes Mission Control disagree with every case view.
+    const totalFindings = await getCount(`SELECT COUNT(*)::int AS cnt FROM intake_verification_records`);
+    const findingsToday = await getCount(`SELECT COUNT(*)::int AS cnt FROM intake_verification_records WHERE created_at >= $1`, [oneDayAgo]);
     const totalUsers = await getCount(`SELECT COUNT(*)::int AS cnt FROM users`);
     const usersToday = await getCount(`SELECT COUNT(*)::int AS cnt FROM users WHERE created_at >= $1`, [oneDayAgo]);
     const recentCasesRows = await getPool().query(

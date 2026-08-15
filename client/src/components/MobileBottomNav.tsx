@@ -108,9 +108,15 @@ export default function MobileBottomNav() {
     setMoreOpen(false);
   };
 
+  // This is the persistent case workspace control. Public/non-case pages do
+  // not get case actions, but once a case is selected the control stays
+  // available across every route, including pages outside DashboardLayout.
+  if (!currentCase) return null;
+
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-t border-border safe-area-bottom">
+      <div className="h-14 md:hidden" aria-hidden="true" />
+      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-t border-border safe-area-bottom">
         <div className="flex items-stretch justify-around h-14">
           {mobilePrimaryItems.map((tab) => {
             const isActive = location === tab.path;
