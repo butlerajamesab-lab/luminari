@@ -28,7 +28,11 @@ export async function getSharedCaseData(caseId: number) {
     pool.query(`select id, quote_text, page_number, document_id, context from public.quotes where case_id = $1 order by id`, [caseId]),
     pool.query(`select id, claim_text, claim_type, evidentiary_weight from public.claims where case_id = $1 order by id`, [caseId]),
     pool.query(`select id, title, description, finding_evidentiary_weight from public.findings where case_id = $1 order by id`, [caseId]),
-    pool.query(`select id, event_type, event_date, description from public.events where case_id = $1 order by event_date nulls last, id`, [caseId]),
+    // `events.case_id` belongs to the newer UUID case namespace while public
+    // share links still reference the legacy integer case id. Compare through
+    // text so legacy shares safely return no UUID-only events instead of
+    // raising PostgreSQL's "uuid = integer" operator error.
+    pool.query(`select id, event_type, event_date, description from public.events where case_id::text = $1::text order by event_date nulls last, id`, [caseId]),
     pool.query(`select id, flag_type, description from public.signal_flags where case_id = $1 order by id`, [caseId]),
     pool.query(`select id, correlation_type from public.document_correlations where case_id = $1 order by id`, [caseId]),
   ]);
