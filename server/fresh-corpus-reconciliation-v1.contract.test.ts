@@ -94,4 +94,13 @@ describe("fresh corpus reconciliation v1", () => {
     expect(service).toContain("nonterminal_artifact_receipts");
     expect(service).toContain("pg_advisory_xact_lock");
   });
+
+  it("seals identities with bounded set-based writes", () => {
+    expect(service).toContain("identityChunkSize = 200");
+    expect(service).toContain("evidenceChunkSize = 400");
+    expect(service).toContain("identity_groups_committed");
+    expect(service).toContain("identity_evidence_committed");
+    expect(service).toContain("jsonb_to_recordset($1::jsonb)");
+    expect(service).not.toContain("values($1,$2,$3,$4) on conflict do nothing");
+  });
 });
