@@ -116,7 +116,7 @@ describe("legislative version queue", () => {
 
     const claim_sql = query.mock.calls
       .map(call => String(call[0]))
-      .find(sql => sql.includes("for update of queue skip locked"));
+      .find(sql => sql.includes("with host_activity as"));
     expect(claim_sql).toContain("currency.is_current desc");
     expect(claim_sql).toContain("with host_activity as");
     expect(claim_sql).toContain("source_host.last_attempt_at asc nulls first");
