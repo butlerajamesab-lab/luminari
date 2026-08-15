@@ -97,7 +97,7 @@ export default function CivicGenomePage() {
   const numeric_source_bill_id = source_bill_id ? Number(source_bill_id) : null;
   const valid_source_bill_id = numeric_source_bill_id !== null && Number.isSafeInteger(numeric_source_bill_id) && numeric_source_bill_id > 0;
   const [query, set_query] = useState(source_bill_id ?? "");
-  const [operation_message, set_operation_message] = useState<string | null>(null);
+  const [defects_only, set_defects_only] = useState(false);
 
   const auth_identity = trpc.auth.me.useQuery();
   const is_admin = isAuthenticated && auth_identity.data?.role === "admin";
@@ -130,38 +130,6 @@ export default function CivicGenomePage() {
     { family_id: family_id ?? "00000000-0000-0000-0000-000000000000", limit: 30 },
     { enabled: Boolean(family_id), ...stable_read_options },
   );
-  const refresh_selected_record = async () => {
-    await Promise.all([
-      operating_contracts.refetch(),
-      bill_lookup.refetch(),
-      rosetta_pipeline.refetch(),
-      bill_detail.refetch(),
-      family.refetch(),
-      family_bills.refetch(),
-      events.refetch(),
-      lineage.refetch(),
-      momentum.refetch(),
-    ]);
-  };
-  const assemble_docket_cache = trpc.civicGenome.resolve_or_assemble_docket_bill.useMutation({
-    onSuccess: async result => {
-      if (!result.ok) return;
-      set_operation_message("The Docket record is now represented in the Civic Genome.");
-      await refresh_selected_record();
-    },
-  });
-  const ingest_rosetta_source = trpc.civicGenome.ingest_docket_bill_to_rosetta_source.useMutation({
-    onSuccess: async () => {
-      set_operation_message("Rosetta accepted the exact Docket source handoff. Extraction status is shown below.");
-      await refresh_selected_record();
-    },
-  });
-  const assemble_rosetta_dna = trpc.civicGenome.assemble_rosetta_structural_dna.useMutation({
-    onSuccess: async () => {
-      set_operation_message("Admissible Rosetta structural DNA was assembled and family resolution was refreshed.");
-      await refresh_selected_record();
-    },
-  });
 
   const family_items = safeArray<NonNullable<typeof families.data>[number]>(families.data);
   const family_bill_items = safeArray<NonNullable<typeof family_bills.data>[number]>(family_bills.data);
@@ -170,13 +138,20 @@ export default function CivicGenomePage() {
   const momentum_items = safeArray<NonNullable<typeof momentum.data>[number]>(momentum.data);
   const recent_events = useMemo(() => event_items.slice(0, 12), [event_items]);
   const traits = bill_detail.data?.structural_dna.traits ?? [];
+  const validation_summary = bill_detail.data?.structural_dna.validation_summary;
   const assembly_runs = bill_detail.data?.structural_dna.assembly_runs ?? [];
   const family_assignment = bill_detail.data?.family_assignment ?? null;
   const grouped_traits = useMemo(() => {
     const groups = new Map<string, typeof traits>();
-    for (const trait of traits) groups.set(trait.trait_class, [...(groups.get(trait.trait_class) ?? []), trait]);
+    const visible_traits = defects_only
+      ? traits.filter(trait =>
+          (trait.prism_contradictions?.length ?? 0) > 0
+          || (trait.prism_missing_evidence?.length ?? 0) > 0
+          || (trait.prism_unresolved_conditions?.length ?? 0) > 0)
+      : traits;
+    for (const trait of visible_traits) groups.set(trait.trait_class, [...(groups.get(trait.trait_class) ?? []), trait]);
     return [...groups.entries()];
-  }, [traits]);
+  }, [defects_only, traits]);
   const panel = { background: p.panel, border: `1px solid ${p.border}`, borderRadius: 12, padding: "1rem" } as const;
   const contracts = useMemo(() => {
     const observed_contracts = safeArray<operating_contract>(operating_contracts.data?.contracts);
@@ -244,34 +219,6 @@ export default function CivicGenomePage() {
     const value = query.trim();
     if (value) window.location.assign(`/civic-genome/bill/${encodeURIComponent(value)}`);
   };
-  const assemble_selected = () => {
-    if (valid_source_bill_id && numeric_source_bill_id !== null) {
-      set_operation_message(null);
-      assemble_docket_cache.mutate({ source_bill_id: numeric_source_bill_id });
-    }
-  };
-  const ingest_selected_to_rosetta = () => {
-    if (valid_source_bill_id && numeric_source_bill_id !== null && is_admin) {
-      set_operation_message(null);
-      ingest_rosetta_source.mutate({ source_bill_id: numeric_source_bill_id });
-    }
-  };
-  const assemble_selected_rosetta_dna = () => {
-    const pipeline = rosetta_pipeline.data;
-    if (
-      !is_admin
-      || !pipeline?.can_assemble
-      || !pipeline.genome_bill_id
-      || !pipeline.source_document_id
-    ) return;
-    set_operation_message(null);
-    assemble_rosetta_dna.mutate({
-      genome_bill_id: pipeline.genome_bill_id,
-      source_document_id: pipeline.source_document_id,
-      ...(pipeline.extraction_run_id ? { extraction_run_id: pipeline.extraction_run_id } : {}),
-    });
-  };
-
   return <div style={{ minHeight: "100vh", background: `radial-gradient(circle at 50% 0%,rgba(89,216,156,.09),transparent 38%),${p.bg}`, color: p.paper, padding: "clamp(1rem,3vw,2rem)" }}>
     <div style={{ maxWidth: 1500, margin: "0 auto" }}>
       <header style={{ borderBottom: `1px solid ${p.border}`, paddingBottom: "1.25rem", marginBottom: "1.25rem" }}>
@@ -327,11 +274,11 @@ export default function CivicGenomePage() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: ".75rem", flexWrap: "wrap", marginBottom: ".75rem" }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: ".5rem", fontFamily: mono, color: p.green, fontSize: ".7rem" }}><GitBranch size={15}/> Exact bill pipeline</div>
-            <p style={{ margin: ".35rem 0 0", color: p.muted, fontFamily: sans, fontSize: ".78rem" }}>Docket source {source_bill_id} · administrative operations preserve service ownership.</p>
+            <p style={{ margin: ".35rem 0 0", color: p.muted, fontFamily: sans, fontSize: ".78rem" }}>Docket source {source_bill_id} · decomposition, verification, and publication run automatically for every admissible source snapshot.</p>
           </div>
           <span style={{ fontFamily: mono, color: p.muted, fontSize: ".61rem" }}>{is_admin ? "authenticated administrator" : "read boundary"}</span>
         </div>
-        {auth_loading || auth_identity.isLoading ? <Empty>Checking administrative access…</Empty> : !is_admin ? <Empty>Sign in as an administrator to inspect the exact Rosetta handoff and run controlled assembly operations.</Empty> : rosetta_pipeline.isLoading ? <Empty>Reading the exact Docket-to-Rosetta pipeline…</Empty> : rosetta_pipeline.error ? <Empty>Pipeline lookup failed: {rosetta_pipeline.error.message}</Empty> : rosetta_pipeline.data ? <>
+        {auth_loading || auth_identity.isLoading ? <Empty>Checking pipeline visibility…</Empty> : !is_admin ? <Empty>The source text and published analytical objects remain available below. Detailed processing receipts are restricted to operators.</Empty> : rosetta_pipeline.isLoading ? <Empty>Reading the automatic Docket-to-Rosetta pipeline…</Empty> : rosetta_pipeline.error ? <Empty>Pipeline lookup failed: {rosetta_pipeline.error.message}</Empty> : rosetta_pipeline.data ? <>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: ".6rem" }}>
             {[
               { label: "Docket source", value: String(rosetta_pipeline.data.source_bill_id), detail: "Exact source identifier" },
@@ -339,7 +286,7 @@ export default function CivicGenomePage() {
               { label: "Rosetta source", value: rosetta_pipeline.data.source_document_id ? "Bound" : "Not ingested", detail: rosetta_pipeline.data.source_document_id ? `document ${rosetta_pipeline.data.source_document_id}` : "No source document" },
               { label: "Extraction", value: rosetta_pipeline.data.run_status ?? "Not started", detail: rosetta_pipeline.data.extraction_run_id ? `run ${rosetta_pipeline.data.extraction_run_id}` : "No extraction run" },
               { label: "Provenance", value: rosetta_pipeline.data.provenance_state ?? "Not observed", detail: `${rosetta_pipeline.data.object_count ?? 0} Rosetta objects reported` },
-              { label: "Assembly gate", value: rosetta_pipeline.data.can_assemble ? "Ready" : "Closed", detail: rosetta_pipeline.data.can_assemble ? "Completed Rosetta run available" : "No completed, admissible run" },
+              { label: "Publication", value: rosetta_pipeline.data.contract_state === "assembled" ? "Published" : "Processing", detail: rosetta_pipeline.data.contract_state === "assembled" ? "Current snapshot decomposed and verified" : "Automatic pipeline is resolving this snapshot" },
             ].map(stage => <div key={stage.label} style={{ background: p.soft, border: `1px solid ${p.border}`, borderRadius: 8, padding: ".7rem" }}>
               <div style={{ fontFamily: mono, color: p.muted, fontSize: ".58rem", textTransform: "uppercase" }}>{stage.label}</div>
               <div style={{ fontFamily: sans, color: stage.value === "Ready" || stage.value === "Bound" ? p.green : p.paper, fontWeight: 650, fontSize: ".82rem", marginTop: ".25rem" }}>{stage.value}</div>
@@ -351,18 +298,7 @@ export default function CivicGenomePage() {
             <div style={{ color: p.muted, fontFamily: sans, fontSize: ".75rem", lineHeight: 1.45, marginTop: ".3rem" }}>{rosetta_pipeline.data.contract_message}</div>
             {rosetta_pipeline.data.coverage != null && <details style={{ marginTop: ".45rem" }}><summary style={{ cursor: "pointer", color: p.green, fontFamily: mono, fontSize: ".61rem" }}>Rosetta layer coverage</summary><Value value={rosetta_pipeline.data.coverage}/></details>}
           </div>
-          <div style={{ display: "flex", gap: ".6rem", flexWrap: "wrap", marginTop: ".75rem" }}>
-            <button onClick={ingest_selected_to_rosetta} disabled={ingest_rosetta_source.isPending || Boolean(rosetta_pipeline.data.source_document_id)} style={{ background: p.green_soft, border: `1px solid ${rosetta_pipeline.data.source_document_id ? p.border : p.green}`, color: rosetta_pipeline.data.source_document_id ? p.muted : p.green, borderRadius: 8, padding: ".6rem .85rem", fontFamily: mono, fontSize: ".67rem", cursor: ingest_rosetta_source.isPending ? "wait" : rosetta_pipeline.data.source_document_id ? "not-allowed" : "pointer" }}>
-              {ingest_rosetta_source.isPending ? "Creating exact handoff…" : rosetta_pipeline.data.source_document_id ? "Rosetta source already bound" : "Create Rosetta source handoff"}
-            </button>
-            <button onClick={assemble_selected_rosetta_dna} disabled={assemble_rosetta_dna.isPending || !rosetta_pipeline.data.can_assemble || !rosetta_pipeline.data.genome_bill_id || !rosetta_pipeline.data.source_document_id} style={{ background: p.green_soft, border: `1px solid ${rosetta_pipeline.data.can_assemble ? p.green : p.border}`, color: rosetta_pipeline.data.can_assemble ? p.green : p.muted, borderRadius: 8, padding: ".6rem .85rem", fontFamily: mono, fontSize: ".67rem", cursor: assemble_rosetta_dna.isPending ? "wait" : rosetta_pipeline.data.can_assemble ? "pointer" : "not-allowed" }}>
-              {assemble_rosetta_dna.isPending ? "Assembling admissible DNA…" : "Assemble admissible Rosetta DNA"}
-            </button>
-          </div>
-          {!rosetta_pipeline.data.can_assemble && <p style={{ margin: ".55rem 0 0", fontFamily: sans, color: p.muted, fontSize: ".72rem" }}>Assembly remains disabled until Rosetta reports a completed, admissible extraction run for this exact source document.</p>}
-          {operation_message && <p style={{ margin: ".55rem 0 0", fontFamily: mono, color: p.green, fontSize: ".65rem" }}>{operation_message}</p>}
-          {ingest_rosetta_source.error && <p style={{ margin: ".55rem 0 0", fontFamily: mono, color: "#ef8b8b", fontSize: ".65rem" }}>Rosetta handoff failed: {ingest_rosetta_source.error.message}</p>}
-          {assemble_rosetta_dna.error && <p style={{ margin: ".55rem 0 0", fontFamily: mono, color: "#ef8b8b", fontSize: ".65rem" }}>Structural DNA assembly failed: {assemble_rosetta_dna.error.message}</p>}
+          <p style={{ margin: ".65rem 0 0", fontFamily: sans, color: p.muted, fontSize: ".72rem" }}>No operator action is required. Transient failures retry automatically; permanent failures are retained for operator repair without weakening the authoritative source record.</p>
         </> : <Empty>No pipeline record was returned. No Rosetta binding or assembly state is inferred.</Empty>}
       </section>}
 
@@ -375,12 +311,10 @@ export default function CivicGenomePage() {
         <button onClick={() => bill_lookup.refetch()} disabled={bill_lookup.isFetching} style={{ background: p.green_soft, border: `1px solid ${p.green}`, color: p.green, borderRadius: 8, padding: ".6rem .85rem", fontFamily: mono, fontSize: ".7rem", cursor: bill_lookup.isFetching ? "wait" : "pointer" }}>{bill_lookup.isFetching ? "Retrying…" : "Retry genome lookup"}</button>
         <details style={{ marginTop: ".7rem" }}><summary style={{ cursor: "pointer", color: p.muted, fontFamily: mono, fontSize: ".62rem" }}>Technical detail</summary><div style={{ marginTop: ".35rem", color: p.muted, fontFamily: mono, fontSize: ".62rem", overflowWrap: "anywhere" }}>{bill_lookup.error.message}</div></details>
       </div> : !selected ? <div style={panel}>
-        <h2 style={{ fontFamily: serif, marginTop: 0 }}>Not assembled yet</h2><p style={{ color: p.muted, fontFamily: sans, lineHeight: 1.6 }}>No Civic Genome record currently exists for this Docket bill. The official Docket record remains intact and no relationship has been invented.</p>
-        <button onClick={assemble_selected} disabled={assemble_docket_cache.isPending || !is_admin} style={{ background: p.green_soft, border: `1px solid ${is_admin ? p.green : p.border}`, color: is_admin ? p.green : p.muted, borderRadius: 8, padding: ".6rem .85rem", fontFamily: mono, fontSize: ".7rem", cursor: assemble_docket_cache.isPending ? "wait" : is_admin ? "pointer" : "not-allowed" }}>{assemble_docket_cache.isPending ? "Assembling from Docket cache…" : is_admin ? "Assemble from Docket cache" : "Administrator sign-in required"}</button>
-        {assemble_docket_cache.error && <p style={{ color: p.muted, fontFamily: mono, fontSize: ".68rem" }}>Assembly failed: {assemble_docket_cache.error.message}</p>}
+        <h2 style={{ fontFamily: serif, marginTop: 0 }}>Automatic processing pending</h2><p style={{ color: p.muted, fontFamily: sans, lineHeight: 1.6 }}>No Civic Genome record is published for this Docket bill yet. Ingestion automatically queues Rosetta decomposition and Prism verification; no button press is required. The tracked Docket source remains intact while processing completes.</p>
       </div> : <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,280px),1fr))", gap: "1rem", alignItems: "start" }}>
         <aside style={{ display: "grid", gap: ".8rem" }}>
-          <section style={panel}><div style={{ fontFamily: mono, fontSize: ".68rem", color: p.green }}>SELECTED BILL</div><h2 style={{ fontFamily: serif, margin: ".45rem 0", fontSize: "1.45rem" }}>{selected.source_bill_number}</h2><div style={{ fontFamily: sans, lineHeight: 1.5 }}>{selected.source_bill_title || "Untitled bill"}</div><div style={{ display: "grid", gap: ".35rem", fontFamily: mono, color: p.muted, fontSize: ".66rem", marginTop: ".75rem" }}><span>{selected.state_code} · {selected.session_key}</span><span>status {selected.bill_status || "unknown"}</span><span>position {selected.current_state_position}</span><span>last action {date(selected.last_action_at)}</span></div>{selected.source_bill_url && <a href={selected.source_bill_url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", marginTop: ".75rem", color: p.green, fontFamily: mono, fontSize: ".66rem" }}>Official source</a>}</section>
+          <section style={panel}><div style={{ fontFamily: mono, fontSize: ".68rem", color: p.green }}>SELECTED BILL</div><h2 style={{ fontFamily: serif, margin: ".45rem 0", fontSize: "1.45rem" }}>{selected.source_bill_number}</h2><div style={{ fontFamily: sans, lineHeight: 1.5 }}>{selected.source_bill_title || "Untitled bill"}</div><div style={{ display: "grid", gap: ".35rem", fontFamily: mono, color: p.muted, fontSize: ".66rem", marginTop: ".75rem" }}><span>{selected.state_code} · {selected.session_key}</span><span>status {selected.bill_status || "unknown"}</span><span>position {selected.current_state_position}</span><span>last action {date(selected.last_action_at)}</span></div>{selected.source_bill_url && <a href={selected.source_bill_url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", marginTop: ".75rem", color: p.green, fontFamily: mono, fontSize: ".66rem" }}>Tracked source</a>}<p style={{ margin: ".7rem 0 0", color: p.muted, fontFamily: sans, fontSize: ".7rem", lineHeight: 1.45 }}>Source snapshots are authoritative artifacts. Rosetta decomposition and Prism verification are derived metadata and may carry explicit defects.</p></section>
           <section style={panel}>
             <div style={{ fontFamily: mono, fontSize: ".68rem", color: p.green, marginBottom: ".6rem" }}>FAMILY</div>
             <div style={{ fontFamily: serif, fontSize: "1.25rem" }}>{family.data?.family_label || "Unassigned"}</div>
@@ -401,8 +335,24 @@ export default function CivicGenomePage() {
 
         <main style={{ display: "grid", gap: ".8rem" }}>
           <section style={panel}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: ".75rem", flexWrap: "wrap" }}>
+              <div>
+                <div style={{ fontFamily: mono, fontSize: ".68rem", color: p.green }}>CURRENT SNAPSHOT VALIDATION</div>
+                <div style={{ marginTop: ".25rem", color: p.muted, fontFamily: sans, fontSize: ".72rem" }}>{bill_detail.data?.current_version ? `${bill_detail.data.current_version.version_type} · ${bill_detail.data.current_version.processing_state}` : "Current version not observed"}</div>
+              </div>
+              <button type="button" onClick={() => set_defects_only(value => !value)} style={{ background: defects_only ? p.green_soft : p.soft, border: `1px solid ${defects_only ? p.green : p.border}`, color: defects_only ? p.green : p.muted, borderRadius: 8, padding: ".5rem .7rem", fontFamily: mono, fontSize: ".62rem", cursor: "pointer" }}>{defects_only ? "Show all metadata" : "Show defects only"}</button>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(105px,1fr))", gap: ".5rem", marginTop: ".7rem" }}>
+              <Metric label="Supported" value={validation_summary?.supported ?? "—"}/>
+              <Metric label="Contradicted" value={validation_summary?.contradicted ?? "—"}/>
+              <Metric label="Unresolved" value={validation_summary?.unresolved ?? "—"}/>
+              <Metric label="Duplicates" value={validation_summary?.duplicates ?? "—"}/>
+              <Metric label="Missing section" value={validation_summary?.missing_section ?? "—"}/>
+            </div>
+          </section>
+          <section style={panel}>
             <div style={{ display: "flex", alignItems: "center", gap: ".5rem", fontFamily: mono, color: p.green, fontSize: ".7rem", marginBottom: ".75rem" }}><Braces size={15}/> Structural DNA</div>
-            {bill_detail.isLoading ? <Empty>Loading persisted structural DNA…</Empty> : bill_detail.error ? <Empty>Structural DNA lookup failed: {bill_detail.error.message}</Empty> : grouped_traits.length ? <div style={{ display: "grid", gap: ".8rem" }}>{grouped_traits.map(([trait_class, class_traits]) => <div key={trait_class}><div style={{ fontFamily: mono, color: p.green, fontSize: ".66rem", textTransform: "uppercase", marginBottom: ".45rem" }}>{trait_class}</div><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: ".55rem" }}>{class_traits.map(trait => <article key={trait.trait_id} style={{ background: p.soft, border: `1px solid ${p.border}`, borderRadius: 8, padding: ".75rem" }}><div style={{ fontFamily: sans, fontWeight: 650, fontSize: ".82rem" }}>{trait.trait_key}</div><div style={{ fontFamily: mono, fontSize: ".61rem", color: p.muted, marginTop: ".3rem" }}>{trait.verification_state} · confidence {score(trait.confidence_score)}</div><Value value={trait.normalized_value_json}/><PrismProof trait={trait}/><div style={{ fontFamily: mono, fontSize: ".58rem", color: p.muted, marginTop: ".55rem", overflowWrap: "anywhere" }}>object {trait.source_object_id}{trait.source_block_id ? ` · block ${trait.source_block_id}` : ""}<br/>hash {trait.content_hash}</div></article>)}</div></div>)}</div> : <Empty>No Rosetta structural traits have been assembled for this bill yet.</Empty>}
+            {bill_detail.isLoading ? <Empty>Loading persisted structural DNA…</Empty> : bill_detail.error ? <Empty>Structural DNA lookup failed: {bill_detail.error.message}</Empty> : grouped_traits.length ? <div style={{ display: "grid", gap: ".8rem" }}>{grouped_traits.map(([trait_class, class_traits]) => <div key={trait_class}><div style={{ fontFamily: mono, color: p.green, fontSize: ".66rem", textTransform: "uppercase", marginBottom: ".45rem" }}>{trait_class}</div><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: ".55rem" }}>{class_traits.map(trait => <article key={trait.trait_id} style={{ background: p.soft, border: `1px solid ${p.border}`, borderRadius: 8, padding: ".75rem" }}><div style={{ fontFamily: sans, fontWeight: 650, fontSize: ".82rem" }}>{trait.trait_key}</div><div style={{ fontFamily: mono, fontSize: ".61rem", color: p.muted, marginTop: ".3rem" }}>{trait.verification_state} · replay confidence {score(trait.confidence_score)}</div><Value value={trait.normalized_value_json}/><PrismProof trait={trait}/><div style={{ fontFamily: mono, fontSize: ".58rem", color: p.muted, marginTop: ".55rem", overflowWrap: "anywhere" }}>object {trait.source_object_id}{trait.source_block_id ? ` · block ${trait.source_block_id}` : ""}<br/>hash {trait.content_hash}</div></article>)}</div></div>)}</div> : <Empty>No Rosetta structural traits have been assembled for this bill yet.</Empty>}
           </section>
 
           <section style={panel}><div style={{ display: "flex", alignItems: "center", gap: ".5rem", fontFamily: mono, color: p.green, fontSize: ".7rem", marginBottom: ".75rem" }}><ShieldCheck size={15}/> Assembly history</div>{assembly_runs.length ? <div style={{ display: "grid", gap: ".55rem" }}>{assembly_runs.map(run => <div key={run.assembly_run_id} style={{ background: p.soft, borderRadius: 8, padding: ".7rem" }}><div style={{ display: "flex", justifyContent: "space-between", gap: ".75rem", flexWrap: "wrap" }}><span style={{ fontFamily: mono, color: p.green, fontSize: ".65rem" }}>{run.verification_state} · {run.run_status}</span><span style={{ fontFamily: mono, color: p.muted, fontSize: ".61rem" }}>{run.completed_at ? new Date(run.completed_at).toLocaleString() : "not completed"}</span></div><div style={{ fontFamily: mono, color: p.muted, fontSize: ".61rem", marginTop: ".4rem", overflowWrap: "anywhere" }}>traits {run.trait_count} · engine {run.engine_version} · rule {run.rule_version}<br/>input {run.input_hash}<br/>output {run.output_hash}</div></div>)}</div> : <Empty>No assembly runs have been persisted for this bill.</Empty>}</section>

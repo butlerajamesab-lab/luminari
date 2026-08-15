@@ -43,6 +43,12 @@ function text(value: unknown): string | null {
   return null;
 }
 
+function verification_label(value: string | null | undefined): string {
+  if (value === "supported_by_one_source") return "supported by replayed source snapshot";
+  if (value === "independent_authoritative_source_not_supplied") return "no second corroborating source attached";
+  return value ?? "not observed";
+}
+
 function Finding({ entry, tone }: { entry: ProofEntry; tone: "pass" | "fail" | "open" }) {
   const title = text(entry.check)
     ?? text(entry.finding)
@@ -54,7 +60,7 @@ function Finding({ entry, tone }: { entry: ProofEntry; tone: "pass" | "fail" | "
   const observed = text(entry.observed);
   const color = tone === "fail" ? colors.red : tone === "open" ? colors.amber : colors.green;
   return <div style={{ borderLeft: `2px solid ${color}`, padding: ".42rem .55rem", background: colors.soft, borderRadius: 6 }}>
-    <div style={{ color, fontFamily: mono, fontSize: ".58rem", overflowWrap: "anywhere" }}>{title}</div>
+    <div style={{ color, fontFamily: mono, fontSize: ".58rem", overflowWrap: "anywhere" }}>{verification_label(title)}</div>
     {quote && <blockquote style={{ margin: ".42rem 0 0", color: colors.paper, fontFamily: sans, fontSize: ".69rem", lineHeight: 1.45, whiteSpace: "pre-wrap" }}>{quote}</blockquote>}
     {(entry.source_section || entry.source_offset_start || entry.source_offset_end) && <div style={{ marginTop: ".35rem", color: colors.muted, fontFamily: mono, fontSize: ".54rem" }}>
       {text(entry.source_section) ?? "section not observed"}
@@ -98,7 +104,7 @@ export function PrismProof({ trait }: { trait: PrismProofTrait }) {
   const unresolved = entries(trait.prism_unresolved_conditions);
   const scope = trait.prism_proof_scope === "independent_source_replay"
     ? "Independent deterministic source replay"
-    : "Legacy binding integrity only";
+    : "Binding continuity verified; independent corroboration not evaluated";
   const status_color = contradictions.length > 0
     ? colors.red
     : missing.length > 0 || unresolved.length > 0
@@ -118,7 +124,7 @@ export function PrismProof({ trait }: { trait: PrismProofTrait }) {
           ["completed", trait.prism_bound_at ? new Date(trait.prism_bound_at).toLocaleString() : null],
         ].map(([label, value]) => <div key={label ?? "field"} style={{ background: colors.soft, borderRadius: 6, padding: ".42rem" }}>
           <div style={{ color: colors.muted, fontFamily: mono, fontSize: ".5rem", textTransform: "uppercase" }}>{label}</div>
-          <div style={{ color: colors.paper, fontFamily: mono, fontSize: ".55rem", marginTop: ".2rem", overflowWrap: "anywhere" }}>{value ?? "not observed"}</div>
+          <div style={{ color: colors.paper, fontFamily: mono, fontSize: ".55rem", marginTop: ".2rem", overflowWrap: "anywhere" }}>{label === "result" ? verification_label(value) : value ?? "not observed"}</div>
         </div>)}
       </div>
 

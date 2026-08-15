@@ -25,6 +25,16 @@ describe("Civic Genome Prism trait projection", () => {
       })
       .mockResolvedValueOnce({
         rows: [{
+          bill_version_id: "version-current",
+          source_document_key: "legi-snapshot-current",
+          version_type: "enrolled",
+          source_document_id: 369,
+          extraction_run_id: "run-current",
+          processing_state: "verified_with_findings",
+        }],
+      })
+      .mockResolvedValueOnce({
+        rows: [{
           trait_id: "0311ab58-e12c-4d41-8034-2a191b88792a",
           genome_bill_id,
           verification_state: "Rosetta confirmed · Prism contradicted",
@@ -45,7 +55,8 @@ describe("Civic Genome Prism trait projection", () => {
 
     const result = await get_civic_genome_bill_detail(genome_bill_id);
     const trait = result?.structural_dna.traits[0];
-    const trait_query = query.mock.calls[1]?.[0] as string;
+    const current_version_query = query.mock.calls[1]?.[0] as string;
+    const trait_query = query.mock.calls[2]?.[0] as string;
 
     expect(trait?.rosetta_verification_state).toBe("confirmed");
     expect(trait?.prism_verification_status).toBe("contradicted");
@@ -59,6 +70,16 @@ describe("Civic Genome Prism trait projection", () => {
     expect(trait_query).toContain("civic_genome_prism_verification_binding");
     expect(trait_query).toContain("lighthouse_prism_verification_receipts");
     expect(trait_query).toContain("independent_source_replay");
+    expect(trait_query).toContain("trait.source_document_id = $2::bigint");
+    expect(query.mock.calls[2]?.[1]).toEqual([genome_bill_id, 369]);
+    expect(current_version_query).toContain("order by stage_rank desc");
+    expect(result?.current_version?.source_document_id).toBe(369);
+    expect(result?.structural_dna.validation_summary).toMatchObject({
+      contradicted: 1,
+      supported: 0,
+      unresolved: 0,
+      duplicates: 0,
+    });
   });
 
   it("returns null when the Genome bill does not exist", async () => {
