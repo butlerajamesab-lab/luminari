@@ -208,8 +208,8 @@ async function claim_jobs(limit: number): Promise<legislative_version_queue_job[
           )
           and version.processing_state not in ('verified', 'verified_with_findings')
           and coalesce(source_host.blocked_until, '-infinity'::timestamptz) <= now()
-        order by source_host.last_attempt_at asc nulls first,
-                 case when queue.priority < 0 then 0 else 1 end,
+        order by case when queue.priority < 0 then 0 else 1 end,
+                 source_host.last_attempt_at asc nulls first,
                  currency.is_current desc,
                  case when currency.is_current then version.stage_rank else 0 end desc,
                  queue.priority,

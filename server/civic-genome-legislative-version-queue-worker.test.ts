@@ -123,6 +123,8 @@ describe("legislative version queue", () => {
     expect(claim_sql).toContain("source_host.blocked_until");
     expect(claim_sql).toContain("split_part(lower(document.source_url), '/', 3)");
     expect(claim_sql).toContain("version.processing_state not in ('verified', 'verified_with_findings')");
+    expect(claim_sql.indexOf("case when queue.priority < 0 then 0 else 1 end"))
+      .toBeLessThan(claim_sql.indexOf("source_host.last_attempt_at asc nulls first"));
   });
 
   it("preserves queue and version failure receipts", async () => {
