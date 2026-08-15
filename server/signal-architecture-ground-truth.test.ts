@@ -16,6 +16,10 @@ describe("canonical three-domain signal architecture", () => {
   const semantic_identity_v2 = read_repo_file(
     "../supabase/migrations/20260815091332_live_data_signal_entity_aware_semantic_identity_v2.sql",
   );
+  const retirement = read_repo_file(
+    "../supabase/migrations/20260815092436_live_data_signal_retirement_receipts.sql",
+  );
+  const atlas_receipt_router = read_repo_file("./routes/atlas-domain3-receipt-router.ts");
   const root_router = read_repo_file("./routers.ts");
   const production_router = read_repo_file("./routers/enforcement-intelligence.ts");
   const compatibility_router = read_repo_file("./routers/enforcement-intel.ts");
@@ -94,6 +98,19 @@ describe("canonical three-domain signal architecture", () => {
     expect(semantic_identity_v2).toContain("public.live_data_signal_semantic_key_v2(");
     expect(semantic_identity_v2).not.toMatch(/update\s+public\.live_data_signals\s+set\s+atlas_semantic_key/i);
     expect(semantic_identity_v2).toContain("preserving immutable v1 historical records");
+  });
+
+  it("retires only the exact current Atlas projection and preserves an append-only receipt", () => {
+    expect(retirement).toContain("live_data_signal_retirement_receipt_v1");
+    expect(retirement).toContain("retire_live_data_signal_transport_receipt_v1");
+    expect(retirement).toContain("and s.atlas_candidate_id = v_candidate_id");
+    expect(retirement).toContain("and s.atlas_candidate_hash = v_candidate_hash");
+    expect(retirement).toContain("set is_current = false");
+    expect(retirement).not.toMatch(/delete\s+from\s+public\.live_data_signals/i);
+    expect(retirement).toContain("guard_signal_architecture_immutable_v1");
+    expect(atlas_receipt_router).toContain('post("/retirement"');
+    expect(atlas_receipt_router).toContain("retire_live_data_signal_transport_receipt_v1");
+    expect(atlas_receipt_router).toContain("live_data_signal_write");
   });
 
   it("mounts the protected procedure from the active production router", () => {

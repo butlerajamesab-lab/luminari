@@ -10,6 +10,16 @@ type live_data_signal_transport_receipt = {
   registered_at: string | Date;
 };
 
+type live_data_signal_retirement_receipt = {
+  retirement_receipt_id: string;
+  live_data_signal_id: string;
+  semantic_key: string;
+  retirement_hash: string;
+  status: string;
+  retired_at: string | Date;
+  registered_at: string | Date;
+};
+
 type atlas_stream_runtime_snapshot_receipt = {
   status: string;
   streams_registered: number;
@@ -122,6 +132,76 @@ atlas_domain3_receipt_router.post("/receipt", async (req, res) => {
       ok: false,
       error: "live_data_signal_registration_failed",
     });
+  }
+});
+
+/**
+ * Negative-currentness receipt. Atlas may call this only after a complete,
+ * non-truncated governed replay proves that a previously current candidate is
+ * no longer present. History is retained; only is_current changes.
+ */
+atlas_domain3_receipt_router.post("/retirement", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+
+  const bridge_token = req.get(TOKEN_HEADER)?.trim() ?? "";
+  if (bridge_token.length < 32) {
+    return res.status(401).json({ ok: false, error: "signal_bridge_authentication_failed" });
+  }
+  if (!is_record(req.body)) {
+    return res.status(400).json({ ok: false, error: "live_data_signal_retirement_record_required" });
+  }
+
+  try {
+    const result = await query_with_diagnostics<live_data_signal_retirement_receipt>(
+      `with authorized as (
+         select private.require_signal_bridge_token_v1(
+           $1::text,
+           'live_data_signal_write'::text
+         )
+       )
+       select receipt.retirement_receipt_id::text,
+              receipt.live_data_signal_id::text,
+              receipt.semantic_key,
+              receipt.retirement_hash,
+              receipt.status,
+              receipt.retired_at,
+              receipt.registered_at
+         from authorized
+         cross join lateral public.retire_live_data_signal_transport_receipt_v1(
+           $2::jsonb
+         ) receipt`,
+      [bridge_token, JSON.stringify(req.body)],
+      {
+        label: "atlas_domain3_retirement",
+        pool_acquire_timeout_ms: 2_000,
+        query_timeout_ms: 10_000,
+      },
+    );
+
+    const receipt = result.rows[0];
+    if (!receipt || !receipt.retirement_receipt_id || !receipt.live_data_signal_id || !receipt.retirement_hash) {
+      return res.status(500).json({ ok: false, error: "live_data_signal_retirement_receipt_incomplete" });
+    }
+    return res.status(200).json({
+      ok: true,
+      retirement_receipt_id: receipt.retirement_receipt_id,
+      live_data_signal_id: receipt.live_data_signal_id,
+      semantic_key: receipt.semantic_key,
+      retirement_hash: receipt.retirement_hash,
+      status: receipt.status,
+      retired_at: new Date(receipt.retired_at).toISOString(),
+      registered_at: new Date(receipt.registered_at).toISOString(),
+    });
+  } catch (error) {
+    if (is_authentication_error(error)) {
+      return res.status(401).json({ ok: false, error: "signal_bridge_authentication_failed" });
+    }
+    const candidate = error as { code?: string; name?: string };
+    console.error("[AtlasDomain3Retirement] registration_failed", {
+      error_code: candidate?.code ?? "unknown",
+      error_class: candidate?.name ?? "unknown",
+    });
+    return res.status(500).json({ ok: false, error: "live_data_signal_retirement_failed" });
   }
 });
 
