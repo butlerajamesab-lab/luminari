@@ -1,11 +1,11 @@
 /**
  * Sunam Service-Only Tools
- * 
- * This is the RESTRICTED tool set visible to Sunam
- * Sunam can ONLY see and use these 15 tools
- * 
+ *
+ * This is the RESTRICTED tool set visible to Sunam.
+ * Sunam can only use the governed service tools declared here.
+ *
  * System tools (streams, engines, UI, SQL) remain in SUNAM_TOOLS
- * but are NOT exposed to Sunam's LLM context
+ * but are NOT exposed to Sunam's LLM context.
  */
 
 export const SUNAM_SERVICE_ONLY_TOOLS = [
@@ -144,13 +144,53 @@ export const SUNAM_SERVICE_ONLY_TOOLS = [
     type: "function" as const,
     function: {
       name: "get_signals",
-      description: "Get all signals for a jurisdiction.",
+      description: "Get canonical signals through the governed signal service.",
       parameters: {
         type: "object",
         properties: {
-          jurisdiction_id: { type: "number", description: "The jurisdiction ID" },
+          stream_id: { type: "string", description: "Optional source stream ID" },
+          status: { type: "string", description: "Optional signal status" },
+          severity: { type: "string", description: "Optional signal severity" },
+          limit: { type: "number", description: "Maximum rows to return (default 50)" },
         },
-        required: ["jurisdiction_id"],
+        additionalProperties: false,
+      },
+    },
+  },
+
+  // ── Whole-Corpus Civic Objects (Read) ──
+  {
+    type: "function" as const,
+    function: {
+      name: "get_civic_object_state",
+      description: "Get the current typed Lighthouse civic-object universe and per-class counts. Uses the governed whole-corpus read model; no direct SQL access.",
+      parameters: {
+        type: "object",
+        properties: {},
+        additionalProperties: false,
+      },
+    },
+  },
+
+  {
+    type: "function" as const,
+    function: {
+      name: "search_civic_objects",
+      description: "Search current typed civic objects across resources, programs, legal authorities, workflows, agencies, oversight, contacts, jurisdiction/tribal records, case-supporting objects, and policy context. Policy context is not a canonical signal.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "Optional text search" },
+          jurisdiction: { type: "string", description: "Optional state/territory or jurisdiction filter" },
+          object_classes: {
+            type: "array",
+            items: { type: "string" },
+            description: "Optional exact object classes to include",
+          },
+          ready_only: { type: "boolean", description: "Return only typed-ready objects" },
+          limit: { type: "number", description: "Maximum results; service caps at 200" },
+          offset: { type: "number", description: "Pagination offset" },
+        },
         additionalProperties: false,
       },
     },
@@ -257,7 +297,7 @@ export const SUNAM_SERVICE_ONLY_TOOLS = [
     type: "function" as const,
     function: {
       name: "get_system_state",
-      description: "Get current system state and diagnostics.",
+      description: "Get current system state and diagnostics, including whole-corpus civic-object visibility.",
       parameters: {
         type: "object",
         properties: {},
