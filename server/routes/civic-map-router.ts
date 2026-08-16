@@ -2,8 +2,9 @@ import express, { Request, Response } from "express";
 import {
   getResourceDirectoryDetail,
   getResourceDirectoryMapPoints,
-  getResourceDirectorySummary,
+  getResourceDirectorySummary as getStrictGeographySummary,
 } from "../services/resource-directory";
+import { getPublishableResourceDirectorySummary } from "../services/resource-directory-publishable";
 
 export const civicMapRouter = express.Router();
 
@@ -56,15 +57,28 @@ function parseBounds(req: Request) {
   return { north, south, east, west, valid };
 }
 
+async function getBreadthPreservingCoverage() {
+  const [breadth, strict] = await Promise.all([
+    getPublishableResourceDirectorySummary() as Promise<Record<string, unknown>>,
+    getStrictGeographySummary() as Promise<Record<string, unknown>>,
+  ]);
+
+  return {
+    ...breadth,
+    verified_physical_sites: strict.verified_physical_sites ?? 0,
+    exact_mappable_resources: strict.exact_mappable_resources ?? 0,
+    geography_source: "reviewed_v3_13_locations",
+    coverage_source: "breadth_preserving_resource_directory_v3",
+  };
+}
+
 civicMapRouter.get("/health", async (_req: Request, res: Response) => {
   try {
-    const summary = (await getResourceDirectorySummary({
-      bypassCache: true,
-    })) as Record<string, unknown>;
+    const summary = await getBreadthPreservingCoverage();
     res.setHeader("Cache-Control", "no-store");
     return res.json({
       ok: true,
-      source: "resource_directory_v3_13",
+      source: "breadth_preserving_resource_directory_v3",
       corpus_resources: summary.total_resources ?? 0,
       jurisdictions: summary.jurisdiction_count ?? 0,
       resources_with_location_context:
@@ -80,14 +94,14 @@ civicMapRouter.get("/health", async (_req: Request, res: Response) => {
 
 civicMapRouter.get("/coverage", async (_req: Request, res: Response) => {
   try {
-    const summary = await getResourceDirectorySummary();
+    const summary = await getBreadthPreservingCoverage();
     res.setHeader(
       "Cache-Control",
       "public, max-age=60, stale-while-revalidate=300"
     );
     return res.json({
       ok: true,
-      source: "resource_directory_v3_13",
+      source: "breadth_preserving_resource_directory_v3",
       coverage: summary,
     });
   } catch (error) {
@@ -121,7 +135,7 @@ async function sendPoints(req: Request, res: Response) {
     );
     return res.json({
       ok: true,
-      source: "resource_directory_v3_13_exact_public_sites",
+      source: "reviewed_v3_13_exact_public_sites",
       count: points.length,
       points,
     });
