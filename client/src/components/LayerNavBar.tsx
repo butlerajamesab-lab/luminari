@@ -1,6 +1,6 @@
 /**
- * LayerNavBar — shared top navigation strip for the 8 Explore Layer pages.
- * Shows "← Architecture Map" (left) and "⚒ Open in Workshop" (right).
+ * LayerNavBar — shared top navigation strip for the Explore Layer pages.
+ * Architecture Map remains the local parent; Dashboard is the global escape.
  * Used by: LegalLibrary, DoctrineGraph, EnforcementIntel, SignalRegistry,
  *           LitigationBarriers, ContradictionScoring, EnforcementPathway,
  *           InvestigationWorkflow
@@ -23,7 +23,9 @@ export function LayerNavBar({ label, route, style }: LayerNavBarProps) {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
+    gap: 10,
     marginBottom: 20,
+    flexWrap: "wrap",
     ...style,
   };
 
@@ -43,13 +45,27 @@ export function LayerNavBar({ label, route, style }: LayerNavBarProps) {
 
   return (
     <div style={base}>
-      <button
-        style={{ ...btnBase, color: "#94a3b8", border: "1px solid rgba(148,163,184,0.2)" }}
-        onClick={() => navigate("/architecture")}
-        title="Back to Architecture Map"
-      >
-        ← Architecture Map
-      </button>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <button
+          style={{ ...btnBase, color: "#94a3b8", border: "1px solid rgba(148,163,184,0.2)" }}
+          onClick={() => navigate("/architecture")}
+          title="Back to Architecture Map"
+        >
+          ← Architecture Map
+        </button>
+        <button
+          style={{
+            ...btnBase,
+            color: "#67e8f9",
+            background: "rgba(34,211,238,0.07)",
+            border: "1px solid rgba(34,211,238,0.25)",
+          }}
+          onClick={() => navigate("/mission-control")}
+          title="Return to Dashboard / Mission Control"
+        >
+          ⌂ Dashboard
+        </button>
+      </div>
       <button
         style={{
           ...btnBase,
