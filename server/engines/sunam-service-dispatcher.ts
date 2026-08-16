@@ -1,6 +1,6 @@
 /**
  * Sunam Service Layer Tool Dispatcher
- * 
+ *
  * Routes Sunam service tool calls to backend services
  * No direct SQL - all operations through service layer
  */
@@ -39,7 +39,6 @@ export async function dispatchServiceTool(
         if (!caseData) {
           return { success: false, error: `Case ${args.case_id} not found` };
         }
-        // Enrich with registry context
         const context = await matchingService.getCaseWithContext(args.case_id);
         return { success: true, result: context };
       }
@@ -85,6 +84,32 @@ export async function dispatchServiceTool(
       }
 
       case "get_entities": {
+        const mode = String(args.mode ?? "registry");
+
+        if (mode === "civic_state") {
+          const snapshot = await civicObjectService.getCivicObjectState();
+          return { success: true, result: snapshot };
+        }
+
+        if (mode === "civic_search") {
+          const result = await civicObjectService.searchCivicObjects({
+            query: args.query,
+            jurisdiction: args.jurisdiction,
+            objectClasses: args.object_classes,
+            readyOnly: args.ready_only,
+            limit: args.limit,
+            offset: args.offset,
+          });
+          return { success: true, result };
+        }
+
+        if (args.jurisdiction_id == null) {
+          return {
+            success: false,
+            error: "get_entities mode=registry requires jurisdiction_id; use mode=civic_state or mode=civic_search for the whole-corpus substrate",
+          };
+        }
+
         const entities = await registryService.getEntities(
           args.jurisdiction_id
         );
@@ -101,7 +126,8 @@ export async function dispatchServiceTool(
         return { success: true, result: { signals, total: signals.length } };
       }
 
-      // ── Whole-Corpus Civic Objects (Read) ──
+      // Explicit aliases are retained for non-LLM/internal callers. Sunam's restricted
+      // visible contract uses the backward-compatible get_entities modes above.
       case "get_civic_object_state": {
         const snapshot = await civicObjectService.getCivicObjectState();
         return { success: true, result: snapshot };
