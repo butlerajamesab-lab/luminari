@@ -55,6 +55,49 @@ async function count_public_table(table_name: string): Promise<number> {
   }
 }
 
+async function read_current_substrate_snapshot() {
+  try {
+    const result = await getPool().query(
+      `select public.get_lighthouse_civic_object_snapshot_v1() as snapshot`,
+    );
+    const snapshot = result.rows[0]?.snapshot ?? {};
+    const byClass = Array.isArray(snapshot.by_class) ? snapshot.by_class : [];
+    return {
+      availability: "available",
+      source: "get_lighthouse_civic_object_snapshot_v1",
+      generatedAt: snapshot.generated_at ?? null,
+      totalCurrentObjects: Number(snapshot.total_current_objects ?? 0),
+      typedReady: Number(snapshot.typed_ready ?? 0),
+      jurisdictionReady: Number(snapshot.jurisdiction_ready ?? 0),
+      withAccessPoint: Number(snapshot.with_access_point ?? 0),
+      directAccessReady: Number(snapshot.direct_access_ready ?? 0),
+      unresolvedOrHeld: Number(snapshot.unresolved_or_held ?? 0),
+      objectClasses: byClass.map((row: Record<string, unknown>) => ({
+        objectClass: String(row.object_class ?? "unknown"),
+        targetSurface: String(row.target_surface ?? "unrouted"),
+        objectCount: Number(row.object_count ?? 0),
+        typedReadyCount: Number(row.typed_ready_count ?? 0),
+        jurisdictionReadyCount: Number(row.jurisdiction_ready_count ?? 0),
+        directAccessReadyCount: Number(row.direct_access_ready_count ?? 0),
+        unresolvedOrHeldCount: Number(row.unresolved_or_held_count ?? 0),
+      })),
+    };
+  } catch {
+    return {
+      availability: "unavailable",
+      source: "get_lighthouse_civic_object_snapshot_v1",
+      generatedAt: null,
+      totalCurrentObjects: 0,
+      typedReady: 0,
+      jurisdictionReady: 0,
+      withAccessPoint: 0,
+      directAccessReady: 0,
+      unresolvedOrHeld: 0,
+      objectClasses: [],
+    };
+  }
+}
+
 function parseProofList(value: unknown): string[] {
   if (Array.isArray(value)) return value.filter(v => v != null).map(String);
   if (typeof value !== "string" || value.trim() === "") return [];
@@ -220,6 +263,11 @@ export const architectureMapRouter = router({
   // ARCHITECTURE MAP — SYSTEM OVERVIEW
   // ═══════════════════════════════════════════════════
   getArchitectureOverview: publicProcedure.query(async () => {
+    // This is a live current-object substrate readout. It is intentionally
+    // separate from the eight governed seed layers below so broad corpus
+    // records cannot inflate or redefine legal-layer completion.
+    const currentSubstratePromise = read_current_substrate_snapshot();
+
     // Count records in every configured seed/library table to build the architecture map.
     // These counts measure seed coverage, not national corpus completion.
     const [
@@ -289,6 +337,7 @@ export const architectureMapRouter = router({
       db.select({ c: count() }).from(registryWorkflows).then((r: any[]) => r[0]?.c ?? 0),
       count_public_table("contacts"),
     ]);
+    const currentSubstrate = await currentSubstratePromise;
 
     // Build the 8-layer architecture
     const layers = [
@@ -440,12 +489,14 @@ export const architectureMapRouter = router({
       summary: {
         totalRecords,
         totalTables,
+        totalLayers: layers.length,
         total_layers: layers.length,
         populatedLayers,
         seedCoveragePercent,
         completion_percent: seedCoveragePercent,
         completion_label: "Seed coverage",
         completion_caveat: "Configured seed-layer coverage only. Not national/full-corpus completion.",
+        currentSubstrate,
       },
     };
   }),
