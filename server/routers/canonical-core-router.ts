@@ -25,6 +25,7 @@ import {
   readCurrentGraphNodePage,
   readCurrentUnresolvedRelationshipPage,
 } from "../services/current-corpus-page-reader";
+import { readCurrentLegalExplorer } from "../services/legal-explorer-current";
 import { reconnectAllSectors } from "../services/knowledge-reconnect";
 
 export const canonicalCoreRouter = router({
@@ -105,6 +106,21 @@ export const canonicalCoreRouter = router({
       offset: z.number().int().min(0).default(0),
     }).optional())
     .query(async ({ input }) => readCurrentUnresolvedRelationshipPage(input ?? {})),
+
+  /**
+   * Whole current legal/civic explorer. The returned node array is only the
+   * working rendering window. `totals`, `node_type_counts`, and filters expose
+   * the full current universe, while older governed legal reference libraries
+   * remain explicitly typed and preserved alongside it.
+   */
+  legalExplorer: publicProcedure
+    .input(z.object({
+      query: z.string().trim().max(240).optional(),
+      jurisdiction: z.string().trim().max(80).optional(),
+      nodeTypes: z.array(z.string().trim().max(80)).max(40).optional(),
+      limit: z.number().int().min(40).max(400).default(220),
+    }).optional())
+    .query(async ({ input }) => readCurrentLegalExplorer(input ?? {})),
 
   /**
    * Current legal-authority universe. Legal authorities are not forcibly
