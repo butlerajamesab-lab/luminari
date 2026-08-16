@@ -296,6 +296,15 @@ export async function get_unified_ingestion_metrics(input: { stream_id?: string 
   return rows_from_result<Record<string, unknown>>(result).map(normalize_stream);
 }
 
+async function get_current_domain3_signal_count(): Promise<number> {
+  try {
+    const result = await pool.query(`SELECT count(*)::text AS cnt FROM public.live_data_signals WHERE is_current`);
+    return to_number(rows_from_result<{ cnt: string }>(result)[0]?.cnt, 0);
+  } catch {
+    return 0;
+  }
+}
+
 export async function get_unified_ingestion_summary() {
   const streams = await get_unified_ingestion_metrics();
   const by_type: Record<string, number> = {};
@@ -307,13 +316,19 @@ export async function get_unified_ingestion_summary() {
     by_domain[domain] = (by_domain[domain] ?? 0) + 1;
   }
 
+  const legacy_stream_signal_counter_sum = streams.reduce((sum, stream) => sum + stream.signals_generated, 0);
+  const canonical_live_data_signals = await get_current_domain3_signal_count();
+
   return {
     total_streams: streams.length,
     enabled_streams: streams.filter((stream) => stream.enabled).length,
     disabled_streams: streams.filter((stream) => !stream.enabled).length,
     auto_disabled_streams: streams.filter((stream) => stream.auto_disabled).length,
     total_records_ingested: streams.reduce((sum, stream) => sum + stream.records_ingested, 0),
-    total_signals_generated: streams.reduce((sum, stream) => sum + stream.signals_generated, 0),
+    total_signals_generated: canonical_live_data_signals,
+    canonical_live_data_signals,
+    legacy_stream_signal_counter_sum,
+    signal_counter_semantics: "total_signals_generated is the current canonical Domain 3 output count; legacy per-stream signal counters are retained separately because some Atlas bridge counters mirror records/events rather than qualified signals",
     total_failures: streams.reduce((sum, stream) => sum + stream.failure_count, 0),
     by_type,
     by_domain,
@@ -325,7 +340,19 @@ export async function get_unified_signals(input: UnifiedSignalsInput = {}): Prom
   return (await query_unified_signal_rows(input, true)).map(normalize_signal);
 }
 
-export async function get_unified_signal_summary(input: Omit<UnifiedSignalsInput, "limit" | "offset"> = {}) {
+async function get_lighthouse_data_visibility(): Promise<unknown> {
+  try {
+    const result = await pool.query(`SELECT public.fetch_lighthouse_data_visibility_v1() AS visibility`);
+    return rows_from_result<{ visibility: unknown }>(result)[0]?.visibility ?? null;
+  } catch (error) {
+    return {
+      available: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+async function get_legacy_filtered_signal_summary(input: Omit<UnifiedSignalsInput, "limit" | "offset">) {
   const signals = (await query_unified_signal_rows(input, false)).map(normalize_signal);
   const by_status: Record<string, number> = {};
   const by_severity: Record<string, number> = {};
@@ -339,6 +366,7 @@ export async function get_unified_signal_summary(input: Omit<UnifiedSignalsInput
   }
 
   return {
+    summary_contract: "legacy_detected_signals_filtered",
     total_signals: signals.length,
     total_active: signals.filter((signal) => signal.active).length,
     active_signals: signals.filter((signal) => signal.active).length,
@@ -348,6 +376,75 @@ export async function get_unified_signal_summary(input: Omit<UnifiedSignalsInput
     by_status,
     by_severity,
     by_stream,
+    generated_at: Date.now(),
+  };
+}
+
+export async function get_unified_signal_summary(input: Omit<UnifiedSignalsInput, "limit" | "offset"> = {}) {
+  if (input.stream_id || input.status || input.severity) {
+    return get_legacy_filtered_signal_summary(input);
+  }
+
+  const [counts_result, severity_result, stream_result, data_visibility] = await Promise.all([
+    pool.query(`SELECT
+      (SELECT count(*) FROM public.intake_signals WHERE is_current)::text AS domain1_current,
+      (SELECT count(*) FROM public.intake_signals WHERE NOT is_current)::text AS domain1_history,
+      (SELECT count(*) FROM public.legal_patterns WHERE is_current)::text AS domain2_current,
+      (SELECT count(*) FROM public.legal_patterns WHERE NOT is_current)::text AS domain2_history,
+      (SELECT count(*) FROM public.live_data_signals WHERE is_current)::text AS domain3_current,
+      (SELECT count(*) FROM public.live_data_signals WHERE NOT is_current)::text AS domain3_history,
+      (SELECT count(*) FROM public.signal_convergences WHERE is_current)::text AS convergence_current,
+      (SELECT count(*) FROM public.signal_convergences WHERE NOT is_current)::text AS convergence_history,
+      (SELECT count(*) FROM public.detected_signals)::text AS legacy_detected_rows`),
+    pool.query(`SELECT coalesce(severity, 'unknown') AS severity, count(*)::text AS cnt
+      FROM public.live_data_signals WHERE is_current GROUP BY coalesce(severity, 'unknown') ORDER BY severity`),
+    pool.query(`SELECT coalesce(primary_stream_id, 'unknown') AS stream_id, count(*)::text AS cnt
+      FROM public.live_data_signals WHERE is_current GROUP BY coalesce(primary_stream_id, 'unknown') ORDER BY cnt DESC, stream_id`),
+    get_lighthouse_data_visibility(),
+  ]);
+
+  const counts = rows_from_result<Record<string, unknown>>(counts_result)[0] ?? {};
+  const domain1_current = to_number(counts.domain1_current, 0);
+  const domain2_current = to_number(counts.domain2_current, 0);
+  const domain3_current = to_number(counts.domain3_current, 0);
+  const canonical_source_domain_outputs = domain1_current + domain2_current + domain3_current;
+  const by_severity: Record<string, number> = {};
+  const by_stream: Record<string, number> = {};
+
+  for (const row of rows_from_result<{ severity: string; cnt: string }>(severity_result)) {
+    by_severity[row.severity] = to_number(row.cnt, 0);
+  }
+  for (const row of rows_from_result<{ stream_id: string; cnt: string }>(stream_result)) {
+    by_stream[row.stream_id] = to_number(row.cnt, 0);
+  }
+
+  return {
+    summary_contract: "canonical_three_domain_signals_v1",
+    total_signals: canonical_source_domain_outputs,
+    total_active: canonical_source_domain_outputs,
+    active_signals: canonical_source_domain_outputs,
+    pending_signals: 0,
+    approved_signals: 0,
+    rejected_signals: 0,
+    by_status: { canonical_current: canonical_source_domain_outputs },
+    by_severity,
+    by_stream,
+    by_domain: {
+      case_intake_signals: domain1_current,
+      legal_patterns: domain2_current,
+      live_data_signals: domain3_current,
+    },
+    domain1_current,
+    domain1_history: to_number(counts.domain1_history, 0),
+    domain2_current,
+    domain2_history: to_number(counts.domain2_history, 0),
+    domain3_current,
+    domain3_history: to_number(counts.domain3_history, 0),
+    convergence_current: to_number(counts.convergence_current, 0),
+    convergence_history: to_number(counts.convergence_history, 0),
+    legacy_detected_signal_rows: to_number(counts.legacy_detected_rows, 0),
+    legacy_detected_signal_status: "quarantined_not_canonical_signal_total",
+    data_visibility,
     generated_at: Date.now(),
   };
 }
