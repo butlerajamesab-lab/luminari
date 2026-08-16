@@ -15,6 +15,7 @@ const {
 vi.mock("./civic-genome-rosetta-contract", () => ({
   get_rosetta_law_view_by_extraction_run: get_view_by_run,
   get_latest_rosetta_law_view_by_source_document: get_view_by_document,
+  ROSETTA_HANDOFF_STRUCTURAL_REPRESENTATION_V2: "rosetta-civic-genome-handoff-v2",
 }));
 
 vi.mock("./db", () => ({
@@ -50,6 +51,8 @@ function law_view() {
     confidence_threshold: 1,
     created_at: "2026-07-23T00:00:00.000Z",
     completed_at: "2026-07-23T00:01:00.000Z",
+    handoff_contract_version: null,
+    structural_representations: [],
     engine_version: rosetta_engine_version,
     rule_set_version: rosetta_rule_set_version,
     rule_manifest_hash,
@@ -241,6 +244,45 @@ describe("Rosetta -> Civic Genome assembly activation", () => {
       source_document_id: 7,
       extraction_run_id: 42,
     })).rejects.toThrow("rosetta_object_source_span_missing");
+    expect(query).not.toHaveBeenCalled();
+  });
+
+  it("rejects invalid span ranges and hashes before persistence", async () => {
+    const zero_length = law_view();
+    zero_length.law_view.objects[0].metadata = {
+      source_span: {
+        char_offset_start: 100,
+        char_offset_end: 100,
+        block_content_hash: "7".repeat(64),
+      },
+    };
+    get_view_by_run.mockResolvedValue(zero_length);
+    await expect(assemble_rosetta_structural_dna({ genome_bill_id, source_document_id: 7, extraction_run_id: 42 }))
+      .rejects.toThrow("rosetta_object_source_span_invalid");
+
+    const fractional = law_view();
+    fractional.law_view.objects[0].metadata = {
+      source_span: {
+        char_offset_start: 100.5,
+        char_offset_end: 240,
+        block_content_hash: "7".repeat(64),
+      },
+    };
+    get_view_by_run.mockResolvedValue(fractional);
+    await expect(assemble_rosetta_structural_dna({ genome_bill_id, source_document_id: 7, extraction_run_id: 42 }))
+      .rejects.toThrow("rosetta_object_source_span_invalid");
+
+    const bad_hash = law_view();
+    bad_hash.law_view.objects[0].metadata = {
+      source_span: {
+        char_offset_start: 100,
+        char_offset_end: 240,
+        block_content_hash: "not-a-sha256",
+      },
+    };
+    get_view_by_run.mockResolvedValue(bad_hash);
+    await expect(assemble_rosetta_structural_dna({ genome_bill_id, source_document_id: 7, extraction_run_id: 42 }))
+      .rejects.toThrow("rosetta_object_source_span_invalid");
     expect(query).not.toHaveBeenCalled();
   });
 
