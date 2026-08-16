@@ -8,6 +8,7 @@
 // over the export-star surface.
 
 export * from "./db-legacy";
+export { db } from "./db-execute-compat";
 export {
   createCase,
   getCaseNarrative,
