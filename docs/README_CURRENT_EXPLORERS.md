@@ -1,0 +1,1 @@
+Explorer rollout sequence: establish whole-universe read contracts first; then migrate each sparse consumer surface independently. UI rendering windows must remain navigational windows over the full corpus and graph, never implicit completion boundaries.
