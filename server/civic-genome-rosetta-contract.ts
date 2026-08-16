@@ -9,6 +9,7 @@ const rosetta_layers: RosettaLayer[] = [
   "definition",
 ];
 const ROSETTA_CONTRACT_TIMEOUT_MS = 8_000;
+export const ROSETTA_HANDOFF_STRUCTURAL_REPRESENTATION_V2 = "rosetta-civic-genome-handoff-v2";
 
 type rosetta_export_row = {
   extraction_run_id: number;
@@ -25,6 +26,8 @@ type rosetta_export_row = {
   objects: unknown;
   coverage: unknown;
   provenance_state: ProvenanceState;
+  handoff_contract_version?: unknown;
+  structural_representations?: unknown;
   engine_version?: unknown;
   rule_set_version?: unknown;
   rule_manifest_hash?: unknown;
@@ -40,6 +43,19 @@ type rosetta_export_row = {
   source_provider_hash?: unknown;
 };
 
+export type civic_genome_rosetta_structural_representation = {
+  key: string;
+  representation_type: string;
+  source_object_type: string;
+  source_object_id: string;
+  source_block_id: string | null;
+  extraction_run_id: string;
+  normalized_value: unknown;
+  confidence: number;
+  confirmed: boolean;
+  metadata?: Record<string, unknown>;
+};
+
 export type civic_genome_rosetta_law_view = {
   extraction_run_id: number;
   source_document_id: number;
@@ -52,6 +68,8 @@ export type civic_genome_rosetta_law_view = {
   confidence_threshold: number;
   created_at: string | null;
   completed_at: string | null;
+  handoff_contract_version: string | null;
+  structural_representations: civic_genome_rosetta_structural_representation[];
   engine_version: string | null;
   rule_set_version: string | null;
   rule_manifest_hash: string | null;
@@ -129,6 +147,47 @@ function normalize_object(value: unknown): RosettaLawObject {
   };
 }
 
+function normalize_structural_representation(value: unknown): civic_genome_rosetta_structural_representation {
+  if (!is_record(value)) {
+    throw new Error("invalid_rosetta_structural_representation");
+  }
+
+  const key = value.key;
+  const representation_type = value.representation_type;
+  const source_object_type = value.source_object_type;
+  const source_object_id = value.source_object_id;
+  const source_block_id = value.source_block_id;
+  const extraction_run_id = value.extraction_run_id;
+  const confidence = Number(value.confidence);
+
+  if (
+    typeof key !== "string"
+    || typeof representation_type !== "string"
+    || source_object_type !== "rosetta_structural_representation"
+    || typeof source_object_id !== "string"
+    || !(source_block_id === null || typeof source_block_id === "string")
+    || typeof extraction_run_id !== "string"
+    || !Number.isFinite(confidence)
+    || confidence < 0
+    || confidence > 1
+  ) {
+    throw new Error("invalid_rosetta_structural_representation_contract");
+  }
+
+  return {
+    key,
+    representation_type,
+    source_object_type,
+    source_object_id,
+    source_block_id,
+    extraction_run_id,
+    normalized_value: value.normalized_value,
+    confidence,
+    confirmed: value.confirmed === true,
+    metadata: is_record(value.metadata) ? value.metadata : undefined,
+  };
+}
+
 function normalize_coverage(value: unknown): Partial<Record<RosettaLayer, number>> {
   if (!is_record(value)) {
     return {};
@@ -149,8 +208,12 @@ function normalize_export_row(row: rosetta_export_row): civic_genome_rosetta_law
   if (!Array.isArray(row.objects)) {
     throw new Error("invalid_rosetta_objects_payload");
   }
+  if (row.structural_representations !== undefined && !Array.isArray(row.structural_representations)) {
+    throw new Error("invalid_rosetta_structural_representations_payload");
+  }
 
   const objects = row.objects.map(normalize_object);
+  const structural_representations = (row.structural_representations ?? []).map(normalize_structural_representation);
   const coverage = normalize_coverage(row.coverage);
 
   return {
@@ -165,6 +228,8 @@ function normalize_export_row(row: rosetta_export_row): civic_genome_rosetta_law
     confidence_threshold: Number(row.confidence_threshold),
     created_at: row.created_at,
     completed_at: row.completed_at,
+    handoff_contract_version: nullable_string(row.handoff_contract_version),
+    structural_representations,
     engine_version: nullable_string(row.engine_version),
     rule_set_version: nullable_string(row.rule_set_version),
     rule_manifest_hash: nullable_string(row.rule_manifest_hash),
