@@ -9,6 +9,7 @@ import * as registryService from "../services/registryService";
 import * as caseService from "../services/caseService";
 import * as matchingService from "../services/matchingService";
 import * as luminariContextService from "../services/luminariContextService";
+import * as civicObjectService from "../services/civic-object-service";
 import { get_unified_signals } from "../unified-queries";
 
 export interface DispatchResult {
@@ -100,6 +101,24 @@ export async function dispatchServiceTool(
         return { success: true, result: { signals, total: signals.length } };
       }
 
+      // ── Whole-Corpus Civic Objects (Read) ──
+      case "get_civic_object_state": {
+        const snapshot = await civicObjectService.getCivicObjectState();
+        return { success: true, result: snapshot };
+      }
+
+      case "search_civic_objects": {
+        const result = await civicObjectService.searchCivicObjects({
+          query: args.query,
+          jurisdiction: args.jurisdiction,
+          objectClasses: args.object_classes,
+          readyOnly: args.ready_only,
+          limit: args.limit,
+          offset: args.offset,
+        });
+        return { success: true, result };
+      }
+
       // ── Validation (Write) ──
       case "record_validation": {
         await luminariContextService.recordValidationResult(args.case_id, {
@@ -181,7 +200,7 @@ export async function dispatchServiceTool(
 
       // ── System State (Read) ──
       case "get_system_state": {
-        // Return basic system state
+        const civic_object_state = await civicObjectService.getCivicObjectState();
         return {
           success: true,
           result: {
@@ -189,6 +208,7 @@ export async function dispatchServiceTool(
             sunam_connected: true,
             service_layer_active: true,
             sql_access_disabled: true,
+            civic_object_state,
           },
         };
       }
