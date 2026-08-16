@@ -20,6 +20,11 @@ import {
   getCurrentSystemSummary,
   getCurrentUnresolvedRelationships,
 } from "../services/current-canonical-state";
+import {
+  readCurrentGraphEdgePage,
+  readCurrentGraphNodePage,
+  readCurrentUnresolvedRelationshipPage,
+} from "../services/current-corpus-page-reader";
 import { reconnectAllSectors } from "../services/knowledge-reconnect";
 
 export const canonicalCoreRouter = router({
@@ -35,6 +40,9 @@ export const canonicalCoreRouter = router({
     return getCurrentCanonicalState();
   }),
 
+  // Compatibility samples retained for existing Mission Control consumers.
+  // These limits are response-window limits only and must never be interpreted
+  // as the size of the canonical graph universe.
   graphNodes: publicProcedure
     .input(z.object({
       limit: z.number().int().min(1).max(200).default(20),
@@ -65,16 +73,49 @@ export const canonicalCoreRouter = router({
     }),
 
   /**
-   * Current legal-authority catalog. These are legal authorities, not all
-   * doctrines. The endpoint is bounded so Doctrine/Legal explorer pages can
-   * expose the current corpus without trying to render thousands of graph
-   * nodes at once on mobile.
+   * Whole-universe graph node reader. `limit` controls only one transport
+   * window. `total` always describes the full filtered universe, and every
+   * row remains reachable through offset/search/type filters.
+   */
+  graphNodePage: publicProcedure
+    .input(z.object({
+      nodeType: z.string().trim().max(80).optional(),
+      query: z.string().trim().max(240).optional(),
+      limit: z.number().int().min(1).max(250).default(100),
+      offset: z.number().int().min(0).default(0),
+    }).optional())
+    .query(async ({ input }) => readCurrentGraphNodePage(input ?? {})),
+
+  /** Whole-universe graph edge reader; transport windows do not cap discovery. */
+  graphEdgePage: publicProcedure
+    .input(z.object({
+      edgeType: z.string().trim().max(80).optional(),
+      nodeId: z.string().trim().max(180).optional(),
+      semanticOnly: z.boolean().default(false),
+      limit: z.number().int().min(1).max(250).default(100),
+      offset: z.number().int().min(0).default(0),
+    }).optional())
+    .query(async ({ input }) => readCurrentGraphEdgePage(input ?? {})),
+
+  /** Whole unresolved declaration universe, page-by-page, never silently dropped. */
+  unresolvedRelationshipPage: publicProcedure
+    .input(z.object({
+      relationshipType: z.string().trim().max(80).optional(),
+      limit: z.number().int().min(1).max(250).default(100),
+      offset: z.number().int().min(0).default(0),
+    }).optional())
+    .query(async ({ input }) => readCurrentUnresolvedRelationshipPage(input ?? {})),
+
+  /**
+   * Current legal-authority universe. Legal authorities are not forcibly
+   * relabeled as doctrines. The page size is a transport/rendering window;
+   * `total` is the complete filtered universe and all rows remain reachable.
    */
   legalAuthorities: publicProcedure
     .input(z.object({
       query: z.string().trim().max(240).optional(),
       jurisdiction: z.string().trim().max(80).optional(),
-      limit: z.number().int().min(1).max(200).default(100),
+      limit: z.number().int().min(1).max(250).default(100),
       offset: z.number().int().min(0).default(0),
     }).optional())
     .query(async ({ input }) => {
@@ -120,6 +161,7 @@ export const canonicalCoreRouter = router({
         offset: value.offset ?? 0,
         items: result.rows.map(({ filtered_total: _filteredTotal, ...row }) => row),
         catalog: "current_legal_authority_catalog_v2",
+        window_only: true,
       };
     }),
 
