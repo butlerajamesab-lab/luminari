@@ -42,6 +42,7 @@ export interface UnifiedStreamMetric {
   parser_mode: string | null;
   records_ingested: number;
   signals_generated: number;
+  legacy_signals_generated_counter: number;
   last_ingested_at: number | null;
   last_run_status: string | null;
   last_success_at: number | null;
@@ -195,7 +196,7 @@ function normalize_stream(row: Record<string, unknown>): UnifiedStreamMetric {
   const auto_disabled = to_bool(row.auto_disabled);
   const last_ingested_at = to_timestamp(row.last_ingested_at);
   const records_ingested = to_number(row.records_ingested, 0);
-  const signals_generated = to_number(row.signals_generated, 0);
+  const legacy_signals_generated_counter = to_number(row.signals_generated, 0);
   const failure_count = to_number(row.failure_count, 0);
   const consecutive_failures = to_number(row.consecutive_failures, 0);
   const health_status = auto_disabled
@@ -226,7 +227,8 @@ function normalize_stream(row: Record<string, unknown>): UnifiedStreamMetric {
     post_processing_engine_name: row.post_processing_engine_name === null || row.post_processing_engine_name === undefined ? null : String(row.post_processing_engine_name),
     parser_mode: row.parser_mode === null || row.parser_mode === undefined ? null : String(row.parser_mode),
     records_ingested,
-    signals_generated,
+    signals_generated: 0,
+    legacy_signals_generated_counter,
     last_ingested_at,
     last_run_status: row.last_run_status === null || row.last_run_status === undefined ? null : String(row.last_run_status),
     last_success_at: to_timestamp(row.last_success_at),
@@ -293,7 +295,25 @@ export async function get_unified_ingestion_metrics(input: { stream_id?: string 
     params,
   );
 
-  return rows_from_result<Record<string, unknown>>(result).map(normalize_stream);
+  const metrics = rows_from_result<Record<string, unknown>>(result).map(normalize_stream);
+  try {
+    const canonical_result = await pool.query(
+      `SELECT coalesce(primary_stream_id, 'unknown') AS stream_id, count(*)::text AS cnt
+       FROM public.live_data_signals
+       WHERE is_current
+       GROUP BY coalesce(primary_stream_id, 'unknown')`,
+    );
+    const canonical_by_stream: Record<string, number> = {};
+    for (const row of rows_from_result<{ stream_id: string; cnt: string }>(canonical_result)) {
+      canonical_by_stream[row.stream_id] = to_number(row.cnt, 0);
+    }
+    return metrics.map((metric) => ({
+      ...metric,
+      signals_generated: canonical_by_stream[metric.stream_id] ?? 0,
+    }));
+  } catch {
+    return metrics;
+  }
 }
 
 async function get_current_domain3_signal_count(): Promise<number> {
@@ -316,7 +336,7 @@ export async function get_unified_ingestion_summary() {
     by_domain[domain] = (by_domain[domain] ?? 0) + 1;
   }
 
-  const legacy_stream_signal_counter_sum = streams.reduce((sum, stream) => sum + stream.signals_generated, 0);
+  const legacy_stream_signal_counter_sum = streams.reduce((sum, stream) => sum + stream.legacy_signals_generated_counter, 0);
   const canonical_live_data_signals = await get_current_domain3_signal_count();
 
   return {
@@ -328,7 +348,7 @@ export async function get_unified_ingestion_summary() {
     total_signals_generated: canonical_live_data_signals,
     canonical_live_data_signals,
     legacy_stream_signal_counter_sum,
-    signal_counter_semantics: "total_signals_generated is the current canonical Domain 3 output count; legacy per-stream signal counters are retained separately because some Atlas bridge counters mirror records/events rather than qualified signals",
+    signal_counter_semantics: "total_signals_generated and each stream's signals_generated reflect current canonical Domain 3 outputs; legacy per-stream counters are preserved as legacy_signals_generated_counter because some Atlas bridge counters mirror records/events rather than qualified signals",
     total_failures: streams.reduce((sum, stream) => sum + stream.failure_count, 0),
     by_type,
     by_domain,
