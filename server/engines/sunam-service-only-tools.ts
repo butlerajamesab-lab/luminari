@@ -75,7 +75,7 @@ export const SUNAM_SERVICE_ONLY_TOOLS = [
     },
   },
 
-  // ── Registry Data (Read) ──
+  // ── Registry / Whole-Corpus Data (Read) ──
   {
     type: "function" as const,
     function: {
@@ -128,13 +128,27 @@ export const SUNAM_SERVICE_ONLY_TOOLS = [
     type: "function" as const,
     function: {
       name: "get_entities",
-      description: "Get all entities for a jurisdiction.",
+      description: "Governed entity/civic-object reader. mode=registry preserves the existing jurisdiction registry behavior. mode=civic_state returns the current whole-corpus civic-object state. mode=civic_search performs bounded typed search across resources, programs, legal authorities, workflows, agencies, oversight, contacts, jurisdiction/tribal records, case-supporting objects, and policy context. Policy context is not a canonical signal.",
       parameters: {
         type: "object",
         properties: {
-          jurisdiction_id: { type: "number", description: "The jurisdiction ID" },
+          mode: {
+            type: "string",
+            enum: ["registry", "civic_state", "civic_search"],
+            description: "Read mode. Defaults to registry when jurisdiction_id is provided; use civic_state or civic_search for the whole-corpus substrate.",
+          },
+          jurisdiction_id: { type: "number", description: "Legacy registry jurisdiction ID, used by mode=registry" },
+          query: { type: "string", description: "Optional text query for mode=civic_search" },
+          jurisdiction: { type: "string", description: "Optional state/territory or jurisdiction filter for mode=civic_search" },
+          object_classes: {
+            type: "array",
+            items: { type: "string" },
+            description: "Optional exact civic-object classes for mode=civic_search",
+          },
+          ready_only: { type: "boolean", description: "Return only typed-ready objects for mode=civic_search" },
+          limit: { type: "number", description: "Maximum civic search results; service caps at 200" },
+          offset: { type: "number", description: "Civic search pagination offset" },
         },
-        required: ["jurisdiction_id"],
         additionalProperties: false,
       },
     },
@@ -152,44 +166,6 @@ export const SUNAM_SERVICE_ONLY_TOOLS = [
           status: { type: "string", description: "Optional signal status" },
           severity: { type: "string", description: "Optional signal severity" },
           limit: { type: "number", description: "Maximum rows to return (default 50)" },
-        },
-        additionalProperties: false,
-      },
-    },
-  },
-
-  // ── Whole-Corpus Civic Objects (Read) ──
-  {
-    type: "function" as const,
-    function: {
-      name: "get_civic_object_state",
-      description: "Get the current typed Lighthouse civic-object universe and per-class counts. Uses the governed whole-corpus read model; no direct SQL access.",
-      parameters: {
-        type: "object",
-        properties: {},
-        additionalProperties: false,
-      },
-    },
-  },
-
-  {
-    type: "function" as const,
-    function: {
-      name: "search_civic_objects",
-      description: "Search current typed civic objects across resources, programs, legal authorities, workflows, agencies, oversight, contacts, jurisdiction/tribal records, case-supporting objects, and policy context. Policy context is not a canonical signal.",
-      parameters: {
-        type: "object",
-        properties: {
-          query: { type: "string", description: "Optional text search" },
-          jurisdiction: { type: "string", description: "Optional state/territory or jurisdiction filter" },
-          object_classes: {
-            type: "array",
-            items: { type: "string" },
-            description: "Optional exact object classes to include",
-          },
-          ready_only: { type: "boolean", description: "Return only typed-ready objects" },
-          limit: { type: "number", description: "Maximum results; service caps at 200" },
-          offset: { type: "number", description: "Pagination offset" },
         },
         additionalProperties: false,
       },
@@ -297,7 +273,7 @@ export const SUNAM_SERVICE_ONLY_TOOLS = [
     type: "function" as const,
     function: {
       name: "get_system_state",
-      description: "Get current system state and diagnostics, including whole-corpus civic-object visibility.",
+      description: "Get current system state and diagnostics.",
       parameters: {
         type: "object",
         properties: {},
