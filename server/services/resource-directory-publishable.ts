@@ -2,6 +2,6 @@ export {
   getPublishableResourceDirectoryDetail,
   getPublishableResourceDirectorySummary,
   searchPublishableResourceDirectory,
-} from "./resource-directory-fresh-snapshot";
+} from "./resource-directory-current-corpus";
 
-export type { PublishableResourceDirectorySearchInput } from "./resource-directory-fresh-snapshot";
+export type { PublishableResourceDirectorySearchInput } from "./resource-directory-current-corpus";
