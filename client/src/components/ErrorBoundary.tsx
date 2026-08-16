@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { AlertTriangle, RotateCcw, Home } from "lucide-react";
+import { AlertTriangle, RotateCcw, Home, LayoutDashboard } from "lucide-react";
 import { Component, ReactNode } from "react";
 
 interface Props {
@@ -54,7 +54,7 @@ class ErrorBoundary extends Component<Props, State> {
 
             <h2 className="text-xl font-semibold mb-2">Something went wrong</h2>
             <p className="text-muted-foreground text-center mb-6">
-              An unexpected error occurred. This has been logged. Please try reloading the page.
+              An unexpected error occurred. This has been logged. You can return to Dashboard without re-entering the failed page.
             </p>
 
             {this.state.error?.message && (
@@ -65,7 +65,20 @@ class ErrorBoundary extends Component<Props, State> {
               </div>
             )}
 
-            <div className="flex gap-3">
+            <div className="flex flex-wrap justify-center gap-3">
+              <button
+                onClick={() => {
+                  window.location.href = "/mission-control";
+                }}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2 rounded-lg",
+                  "bg-primary text-primary-foreground",
+                  "hover:opacity-90 cursor-pointer"
+                )}
+              >
+                <LayoutDashboard size={16} />
+                Dashboard
+              </button>
               <button
                 onClick={() => {
                   window.location.href = "/";
@@ -77,14 +90,14 @@ class ErrorBoundary extends Component<Props, State> {
                 )}
               >
                 <Home size={16} />
-                Go Home
+                Home
               </button>
               <button
                 onClick={() => window.location.reload()}
                 className={cn(
-                  "flex items-center gap-2 px-4 py-2 rounded-lg",
-                  "bg-primary text-primary-foreground",
-                  "hover:opacity-90 cursor-pointer"
+                  "flex items-center gap-2 px-4 py-2 rounded-lg border border-border",
+                  "bg-background text-foreground",
+                  "hover:bg-muted cursor-pointer"
                 )}
               >
                 <RotateCcw size={16} />
