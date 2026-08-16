@@ -19,6 +19,10 @@ const queueMigration = readFileSync(
   join(root, "supabase", "migrations", "20260815194348_civic_genome_rosetta_generation_upgrade_queue.sql"),
   "utf8",
 );
+const manifestIdentityMigration = readFileSync(
+  join(root, "supabase", "migrations", "20260816002920_civic_genome_rosetta_generation_upgrade_manifest_identity_v1.sql"),
+  "utf8",
+);
 const convergenceMigration = readFileSync(
   join(root, "supabase", "migrations", "20260816002307_civic_genome_rosetta_generation_target_v1.sql"),
   "utf8",
@@ -42,10 +46,20 @@ describe("Civic Genome Rosetta current-generation convergence", () => {
     expect(worker).toContain("rosetta_upgrade_source_identity_not_unique");
   });
 
+  it("treats engine, rule set, and rule manifest as one indivisible generation identity", () => {
+    expect(worker).toContain("binding.rosetta_rule_manifest_hash is distinct from $3");
+    expect(worker).toContain("queued.target_rule_manifest_hash = $3");
+    expect(worker).toContain("target_rule_manifest_hash\n         ) do nothing");
+    expect(worker).toContain("receipt.rule_manifest_hash !== job.target_rule_manifest_hash");
+    expect(manifestIdentityMigration).toContain("alter column target_rule_manifest_hash set not null");
+    expect(manifestIdentityMigration).toContain("unique (\n    source_document_id,\n    target_engine_version,\n    target_rule_set_version,\n    target_rule_manifest_hash\n  )");
+  });
+
   it("fails replay acceptance unless Rosetta returns the exact queued generation and a complete admissible handoff", () => {
     expect(worker).toContain('receipt.replay_contract !== "rosetta-exact-source-current-generation-replay-v1"');
     expect(worker).toContain("receipt.engine_version !== job.target_engine_version");
     expect(worker).toContain("receipt.rule_set_version !== job.target_rule_set_version");
+    expect(worker).toContain("receipt.rule_manifest_hash !== job.target_rule_manifest_hash");
     expect(worker).toContain('receipt.run_status !== "completed"');
     expect(worker).toContain('receipt.admissibility_state !== "admissible"');
     expect(worker).toContain('receipt.provenance_state !== "complete"');
@@ -63,11 +77,13 @@ describe("Civic Genome Rosetta current-generation convergence", () => {
     expect(completeIndex).toBeGreaterThan(versionIndex);
   });
 
-  it("uses a durable fail-closed retry/dead-letter queue", () => {
+  it("uses bounded parallelism plus a durable fail-closed retry/dead-letter queue", () => {
     expect(queueMigration).toContain("queue_state in ('eligible','running','retry','completed','dead_letter')");
     expect(worker).toContain("MAX_ATTEMPTS = 5");
-    expect(worker).toContain('dead_letter ? "dead_letter" : "retry"');
+    expect(worker).toContain("MAX_JOBS_PER_CYCLE = 3");
     expect(worker).toContain("for update skip locked");
+    expect(worker).toContain("await Promise.all(jobs.map(job => process_rosetta_generation_upgrade_job(job)))");
+    expect(worker).toContain('dead_letter ? "dead_letter" : "retry"');
   });
 
   it("derives Lighthouse convergence from the generation receipt actually observed from Rosetta", () => {
