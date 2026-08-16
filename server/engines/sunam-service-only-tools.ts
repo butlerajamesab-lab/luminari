@@ -1,11 +1,11 @@
 /**
  * Sunam Service-Only Tools
- * 
- * This is the RESTRICTED tool set visible to Sunam
- * Sunam can ONLY see and use these 15 tools
- * 
+ *
+ * This is the RESTRICTED tool set visible to Sunam.
+ * Sunam can only use the governed service tools declared here.
+ *
  * System tools (streams, engines, UI, SQL) remain in SUNAM_TOOLS
- * but are NOT exposed to Sunam's LLM context
+ * but are NOT exposed to Sunam's LLM context.
  */
 
 export const SUNAM_SERVICE_ONLY_TOOLS = [
@@ -75,7 +75,7 @@ export const SUNAM_SERVICE_ONLY_TOOLS = [
     },
   },
 
-  // ── Registry Data (Read) ──
+  // ── Registry / Whole-Corpus Data (Read) ──
   {
     type: "function" as const,
     function: {
@@ -128,13 +128,27 @@ export const SUNAM_SERVICE_ONLY_TOOLS = [
     type: "function" as const,
     function: {
       name: "get_entities",
-      description: "Get all entities for a jurisdiction.",
+      description: "Governed entity/civic-object reader. mode=registry preserves the existing jurisdiction registry behavior. mode=civic_state returns the current whole-corpus civic-object state. mode=civic_search performs bounded typed search across resources, programs, legal authorities, workflows, agencies, oversight, contacts, jurisdiction/tribal records, case-supporting objects, and policy context. Policy context is not a canonical signal.",
       parameters: {
         type: "object",
         properties: {
-          jurisdiction_id: { type: "number", description: "The jurisdiction ID" },
+          mode: {
+            type: "string",
+            enum: ["registry", "civic_state", "civic_search"],
+            description: "Read mode. Defaults to registry when jurisdiction_id is provided; use civic_state or civic_search for the whole-corpus substrate.",
+          },
+          jurisdiction_id: { type: "number", description: "Legacy registry jurisdiction ID, used by mode=registry" },
+          query: { type: "string", description: "Optional text query for mode=civic_search" },
+          jurisdiction: { type: "string", description: "Optional state/territory or jurisdiction filter for mode=civic_search" },
+          object_classes: {
+            type: "array",
+            items: { type: "string" },
+            description: "Optional exact civic-object classes for mode=civic_search",
+          },
+          ready_only: { type: "boolean", description: "Return only typed-ready objects for mode=civic_search" },
+          limit: { type: "number", description: "Maximum civic search results; service caps at 200" },
+          offset: { type: "number", description: "Civic search pagination offset" },
         },
-        required: ["jurisdiction_id"],
         additionalProperties: false,
       },
     },
@@ -144,13 +158,15 @@ export const SUNAM_SERVICE_ONLY_TOOLS = [
     type: "function" as const,
     function: {
       name: "get_signals",
-      description: "Get all signals for a jurisdiction.",
+      description: "Get canonical signals through the governed signal service.",
       parameters: {
         type: "object",
         properties: {
-          jurisdiction_id: { type: "number", description: "The jurisdiction ID" },
+          stream_id: { type: "string", description: "Optional source stream ID" },
+          status: { type: "string", description: "Optional signal status" },
+          severity: { type: "string", description: "Optional signal severity" },
+          limit: { type: "number", description: "Maximum rows to return (default 50)" },
         },
-        required: ["jurisdiction_id"],
         additionalProperties: false,
       },
     },
