@@ -36,7 +36,7 @@ interface Connection {
 
 const LAYER_ROUTES: Record<string, string> = {
   statutes: "/legal-library",
-  case_law: "/doctrine-graph",
+  case_law: "/legal-library",
   claim_elements: "/litigation-barriers",
   proof_frameworks: "/enforcement-intel",
   enforcement: "/enforcement-pathway",
@@ -44,6 +44,20 @@ const LAYER_ROUTES: Record<string, string> = {
   investigation: "/investigation-workflow",
   intelligence: "/signal-registry",
 };
+
+const TARGET_SURFACE_ROUTES: Record<string, string> = {
+  resource_directory: "/resources",
+  legal_library: "/legal-library",
+  workflow_and_accountability: "/enforcement-pathway",
+  signal_context: "/viewfinder",
+  case_workspace: "/workbench",
+  operator_context: "/architecture-map",
+  typed_corpus: "/civic-legal-explorer",
+};
+
+function targetSurfaceRoute(targetSurface: unknown) {
+  return TARGET_SURFACE_ROUTES[String(targetSurface ?? "")] ?? "/civic-legal-explorer";
+}
 
 function layerRoute(layer: Layer) {
   return LAYER_ROUTES[layer.id] ?? "/architecture";
@@ -160,6 +174,8 @@ export default function ArchitectureMap() {
 
   const { layers, connections, summary } = data as any;
   const seedCoveragePercent = summary.seedCoveragePercent ?? summary.completionPercent ?? 0;
+  const totalLayers = summary.totalLayers ?? summary.total_layers ?? layers.length;
+  const currentSubstrate = summary.currentSubstrate;
 
   const toggleLayer = (id: string) => {
     setExpandedLayers(prev => {
@@ -176,8 +192,66 @@ export default function ArchitectureMap() {
           <Layers className="h-6 w-6 text-blue-400" />
           <h1 className="text-2xl font-bold text-white">Library Architecture Map</h1>
         </div>
-        <p className="text-sm text-muted-foreground">Structural blueprint of Luminari's configured legal-intelligence seed layers. Eight layers, {fmt(summary.totalTables)} source tables/views, {fmt(summary.totalRecords)} currently wired records.</p>
+        <p className="text-sm text-muted-foreground">Structural blueprint of Luminari's configured legal-intelligence seed layers, with the live current-object substrate reported separately. {fmt(totalLayers)} layers, {fmt(summary.totalTables)} source tables/views, {fmt(summary.totalRecords)} currently wired seed records.</p>
       </div>
+
+      {currentSubstrate?.availability === "available" && (
+        <Card className="border-cyan-400/20 bg-cyan-400/5">
+          <CardHeader className="pb-3">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <CardTitle className="text-base text-cyan-100">Current Node Substrate</CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">Live source-reconciled civic objects and their intended UI surfaces. These counts do not inflate the governed legal seed layers below.</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" className="text-xs" onClick={() => navigate("/civic-legal-explorer")}>Civic/Legal Explorer</Button>
+                <Button variant="outline" size="sm" className="text-xs" onClick={() => navigate("/resources")}>Resource Directory</Button>
+                <Button variant="outline" size="sm" className="text-xs" onClick={() => navigate("/viewfinder")}>Anomaly Viewfinder</Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+              {[
+                ["Current objects", currentSubstrate.totalCurrentObjects],
+                ["Typed ready", currentSubstrate.typedReady],
+                ["Jurisdiction ready", currentSubstrate.jurisdictionReady],
+                ["Access point", currentSubstrate.withAccessPoint],
+                ["Direct access", currentSubstrate.directAccessReady],
+                ["Unresolved / held", currentSubstrate.unresolvedOrHeld],
+              ].map(([label, value]) => (
+                <div key={String(label)} className="rounded-lg border border-white/10 bg-black/10 p-3">
+                  <div className="text-lg font-bold text-cyan-100">{fmt(Number(value))}</div>
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+                </div>
+              ))}
+            </div>
+            <details className="rounded-lg border border-white/10 bg-black/10">
+              <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-cyan-100">
+                Route all {fmt(currentSubstrate.objectClasses?.length ?? 0)} current object classes
+              </summary>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 p-3 pt-1">
+                {(currentSubstrate.objectClasses ?? []).map((row: any) => (
+                  <div key={`${row.objectClass}:${row.targetSurface}`} className="rounded-md border border-white/10 bg-white/[0.025] p-2.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="text-xs font-medium text-white break-words">{String(row.objectClass).replace(/_/g, " ")}</div>
+                      <div className="font-mono text-xs text-cyan-200 shrink-0">{fmt(row.objectCount)}</div>
+                    </div>
+                    <button
+                      type="button"
+                      className="mt-1 text-left text-[10px] text-cyan-200 hover:text-cyan-100"
+                      onClick={() => navigate(targetSurfaceRoute(row.targetSurface))}
+                    >
+                      → {String(row.targetSurface).replace(/_/g, " ")}
+                    </button>
+                    <div className="mt-1 text-[9px] text-white/40">{fmt(row.typedReadyCount)} typed · {fmt(row.jurisdictionReadyCount)} jurisdiction-ready</div>
+                  </div>
+                ))}
+              </div>
+            </details>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="border-amber-400/20 bg-amber-400/5">
         <CardContent className="p-4 flex gap-3">
@@ -190,10 +264,10 @@ export default function ArchitectureMap() {
       </Card>
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <Card className="border-white/10"><CardContent className="p-4 text-center"><div className="text-2xl font-bold text-white">{summary.totalLayers}</div><div className="text-xs text-muted-foreground">Layers</div></CardContent></Card>
+        <Card className="border-white/10"><CardContent className="p-4 text-center"><div className="text-2xl font-bold text-white">{totalLayers}</div><div className="text-xs text-muted-foreground">Layers</div></CardContent></Card>
         <Card className="border-white/10"><CardContent className="p-4 text-center"><div className="text-2xl font-bold text-white">{summary.totalTables}</div><div className="text-xs text-muted-foreground">Source Tables</div></CardContent></Card>
         <Card className="border-white/10"><CardContent className="p-4 text-center"><div className="text-2xl font-bold text-blue-400">{fmt(summary.totalRecords)}</div><div className="text-xs text-muted-foreground">Wired Records</div></CardContent></Card>
-        <Card className="border-white/10"><CardContent className="p-4 text-center"><div className="text-2xl font-bold text-emerald-400">{summary.populatedLayers}/{summary.totalLayers}</div><div className="text-xs text-muted-foreground">Seeded Layers</div></CardContent></Card>
+        <Card className="border-white/10"><CardContent className="p-4 text-center"><div className="text-2xl font-bold text-emerald-400">{summary.populatedLayers}/{totalLayers}</div><div className="text-xs text-muted-foreground">Seeded Layers</div></CardContent></Card>
         <Card className="border-white/10"><CardContent className="p-4 text-center"><div className="text-2xl font-bold text-amber-400">{seedCoveragePercent}%</div><div className="text-xs text-muted-foreground">Seed Coverage</div></CardContent></Card>
       </div>
 

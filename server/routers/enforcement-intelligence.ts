@@ -205,6 +205,8 @@ export const enforcementIntelligenceRouter = router({
 
   // ═══ Doctrine Graph ═══
   listDoctrines: publicProcedure.query(async () => {
+    // Intentionally unbounded: doctrine_registry is the governed semantic
+    // universe for this surface. UI pagination must never become a data cap.
     const { rows } = await getPool().query(`
       select
         id,
@@ -268,6 +270,8 @@ export const enforcementIntelligenceRouter = router({
     }),
 
   getDoctrineGraph: publicProcedure.query(async () => {
+    // Read every governed doctrine and every explicit doctrine edge. Broader
+    // civic graph nodes belong to canonicalCore.legalExplorer, not here.
     const [doctrineResult, edgeResult] = await Promise.all([
       getPool().query(`
         select

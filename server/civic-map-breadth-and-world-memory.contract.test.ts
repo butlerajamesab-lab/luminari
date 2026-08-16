@@ -38,7 +38,7 @@ describe("Civic Map breadth restoration and World Index memory safety", () => {
 
   it("uses breadth for Civic Map coverage but keeps strict reviewed geocodes", () => {
     expect(civicMap).toContain('getPublishableResourceDirectorySummary');
-    expect(civicMap).toContain('getStrictGeographySummary');
+    expect(civicMap).toContain('getReviewedMapSiteCounts');
     expect(civicMap).toContain('breadth_preserving_resource_directory_v3');
     expect(civicMap).toContain('reviewed_v3_13_exact_public_sites');
     expect(civicMap).toContain('getResourceDirectoryMapPoints');

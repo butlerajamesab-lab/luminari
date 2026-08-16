@@ -103,6 +103,11 @@ civicMapRouter.get("/health", async (_req: Request, res: Response) => {
     return res.json({
       ok: true,
       source: "breadth_preserving_resource_directory_v3",
+      directory_records:
+        summary.total_directory_records ?? summary.total_resources ?? 0,
+      direct_resources: summary.direct_resource_count ?? 0,
+      programs: summary.program_count ?? 0,
+      // Compatibility alias for older health consumers.
       corpus_resources: summary.total_resources ?? 0,
       jurisdictions: summary.jurisdiction_count ?? 0,
       resources_with_location_context:

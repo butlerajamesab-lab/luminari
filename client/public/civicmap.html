@@ -789,7 +789,7 @@
       <div class="brand-mark" aria-hidden="true">⌖</div>
       <div>
         <strong>Civic Map</strong>
-        <small>Resource Directory geography</small>
+        <small>Resource and program geography</small>
       </div>
     </div>
     <label class="search">
@@ -811,22 +811,31 @@
       <div class="eyebrow">Complete collection</div>
       <h1 class="panel-title">Help across every jurisdiction</h1>
       <p class="panel-copy">
-        Coverage circles are jurisdiction summaries, not resource addresses.
+        Coverage circles summarize Resource Directory records, including
+        direct resources and programs; they are not resource addresses.
         Exact-site pins appear only after a real public location has genuine
         coordinates.
       </p>
       <div class="stats">
         <div class="stat">
           <strong id="resourceTotal">—</strong>
-          <span id="resourceTotalLabel">resources shown</span>
+          <span id="resourceTotalLabel">records shown</span>
         </div>
         <div class="stat">
           <strong id="jurisdictionTotal">—</strong>
           <span>jurisdictions</span>
         </div>
         <div class="stat">
+          <strong id="directResourceTotal">—</strong>
+          <span>direct resources</span>
+        </div>
+        <div class="stat">
+          <strong id="programTotal">—</strong>
+          <span>programs</span>
+        </div>
+        <div class="stat">
           <strong id="locationTotal">—</strong>
-          <span>location-context resources</span>
+          <span>location-context records</span>
         </div>
         <div class="stat">
           <strong id="verifiedSiteTotal">—</strong>
@@ -842,12 +851,12 @@
     <section class="panel-section">
       <label class="field-label" for="categorySelect">View one need</label>
       <select class="category-select" id="categorySelect">
-        <option value="">All resource categories</option>
+        <option value="">All directory categories</option>
       </select>
       <div class="legend">
         <div class="legend-row">
           <span class="legend-coverage">ST</span>
-          <span>Aggregate coverage and resource count</span>
+          <span>Aggregate directory-record coverage</span>
           <strong class="legend-count" id="coverageLegendCount">—</strong>
         </div>
         <div class="legend-row">
@@ -866,7 +875,7 @@
     </section>
   </aside>
 
-  <main id="map" aria-label="Map of Resource Directory coverage"></main>
+  <main id="map" aria-label="Map of Resource Directory record coverage"></main>
 
   <aside class="sidebar" id="sidebar" aria-live="polite">
     <div class="sidebar-head">
@@ -1151,11 +1160,13 @@
       const rows = Array.isArray(coverage?.categories)
         ? coverage.categories
         : [];
-      const allCount = Number(coverage?.active_resources || 0);
+      const allCount = Number(
+        coverage?.active_directory_records ?? coverage?.active_resources ?? 0
+      );
       const entries = [
         {
           id: "",
-          label: "All active resources",
+          label: "All directory records",
           count: allCount,
           color: "#e2e8f0",
         },
@@ -1231,7 +1242,7 @@
         .getElementById("jurisdictionSearch")
         .value.trim()
         .toLowerCase();
-      let shownResources = 0;
+      let shownRecords = 0;
       let shownJurisdictions = 0;
 
       for (const row of coverageRows) {
@@ -1246,7 +1257,7 @@
           continue;
         }
 
-        shownResources += count;
+        shownRecords += count;
         shownJurisdictions += 1;
         const size = markerSize(count);
         const selected = row.code === selectedJurisdiction ? " selected" : "";
@@ -1259,11 +1270,11 @@
         const marker = L.marker(meta.coordinates, {
           icon,
           keyboard: true,
-          title: `${meta.name}: ${formatCount(count)} resources`,
+          title: `${meta.name}: ${formatCount(count)} directory records`,
           zIndexOffset: row.code === selectedJurisdiction ? 500 : 0,
         });
         marker.bindTooltip(
-          `<strong>${escapeHtml(meta.name)}</strong><br>${formatCount(count)} ${activeCategory ? escapeHtml(categoryLabel(activeCategory).toLowerCase()) : "resources"}`,
+          `<strong>${escapeHtml(meta.name)}</strong><br>${formatCount(count)} ${activeCategory ? escapeHtml(categoryLabel(activeCategory).toLowerCase()) : "directory records"}`,
           { className: "map-tooltip", direction: "top", offset: [0, -12] }
         );
         marker.on("click", () => openJurisdiction(row.code));
@@ -1271,11 +1282,11 @@
       }
 
       document.getElementById("resourceTotal").textContent =
-        formatCount(shownResources);
+        formatCount(shownRecords);
       document.getElementById("resourceTotalLabel").textContent =
         activeCategory
           ? `${categoryLabel(activeCategory)} shown`
-          : "resources shown";
+          : "records shown";
       document.getElementById("jurisdictionTotal").textContent =
         formatCount(shownJurisdictions);
       renderCoverageList(query);
@@ -1326,6 +1337,8 @@
       });
 
       const count = visibleCount(row);
+      const directResourceCount = Number(row.direct_resource_count || 0);
+      const programCount = Number(row.program_count || 0);
       const categoryRows = Object.entries(row.categories || {})
         .map(([category, categoryCount]) => ({
           category,
@@ -1349,8 +1362,9 @@
         <section class="detail-section">
           <div class="stat" style="display:inline-block;min-width:138px;">
             <strong>${formatCount(count)}</strong>
-            <span>${activeCategory ? escapeHtml(categoryLabel(activeCategory)) : "directory resources"}</span>
+            <span>${activeCategory ? escapeHtml(categoryLabel(activeCategory)) : "directory records"}</span>
           </div>
+          ${activeCategory ? "" : `<p class="detail-copy" style="margin:10px 0 0;">${formatCount(directResourceCount)} direct resources · ${formatCount(programCount)} programs</p>`}
         </section>
         <section class="detail-section">
           <div class="detail-heading">What this map means</div>
@@ -1381,7 +1395,7 @@
         <section class="detail-section">
           <div class="actions">
             <a class="action primary" href="/resources?${directoryParams.toString()}">
-              Open ${escapeHtml(meta.name)} resources
+              Open ${escapeHtml(meta.name)} directory
             </a>
           </div>
         </section>
@@ -1446,7 +1460,7 @@
         exactPoints = Array.isArray(payload.points) ? payload.points : [];
         renderExactPoints();
         setStatus(
-          `${formatCount(coverage?.total_resources)} directory resources · ` +
+          `${formatCount(coverage?.total_directory_records ?? coverage?.total_resources)} directory records · ` +
           `${formatCount(coverage?.exact_mappable_resources)} exact geocoded sites`
         );
       } catch (error) {
@@ -1624,12 +1638,18 @@
 
         document.getElementById("locationTotal").textContent =
           formatCount(coverage.resources_with_locations);
+        document.getElementById("directResourceTotal").textContent =
+          formatCount(coverage.direct_resource_count);
+        document.getElementById("programTotal").textContent =
+          formatCount(coverage.program_count);
         document.getElementById("verifiedSiteTotal").textContent =
           formatCount(coverage.verified_physical_sites);
         document.getElementById("exactTotal").textContent =
           formatCount(coverage.exact_mappable_resources);
         document.getElementById("coverageLegendCount").textContent =
-          formatCount(coverage.active_resources);
+          formatCount(
+            coverage.active_directory_records ?? coverage.active_resources
+          );
         document.getElementById("exactLegendCount").textContent =
           formatCount(coverage.exact_mappable_resources);
 

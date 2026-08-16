@@ -242,12 +242,17 @@ export async function getPublishableResourceDirectorySummary() {
        order by count desc,id
     `),
     pool.query(`
-      select code,count(*)::int as count,
+      select code,
+             sum(category_count)::int as count,
+             sum(direct_resource_count)::int as direct_resource_count,
+             sum(program_count)::int as program_count,
              jsonb_object_agg(category_key,category_count order by category_key) as categories
         from (
           select upper(coalesce(state_code,jurisdiction)) as code,
                  coalesce(nullif(category,''),nullif(layer,''),object_class,'general_resource') as category_key,
-                 count(*)::int as category_count
+                 count(*)::int as category_count,
+                 count(*) filter(where object_class='resource')::int as direct_resource_count,
+                 count(*) filter(where object_class='program')::int as program_count
             from ${DIRECTORY_VIEW}
            where coalesce(state_code,jurisdiction) is not null
            group by 1,2
@@ -260,6 +265,11 @@ export async function getPublishableResourceDirectorySummary() {
 
   const totals = totalsResult.rows[0] ?? {};
   return {
+    // total_resources/active_resources remain as compatibility aliases for
+    // existing Resource Directory consumers. Civic Map uses the explicit
+    // directory-record names so programs are never mislabeled as resources.
+    total_directory_records: finiteNumber(totals.total_resources),
+    active_directory_records: finiteNumber(totals.total_resources),
     total_resources: finiteNumber(totals.total_resources),
     active_resources: finiteNumber(totals.total_resources),
     inactive_resources: 0,
@@ -275,8 +285,14 @@ export async function getPublishableResourceDirectorySummary() {
     program_count: finiteNumber(totals.program_count),
     person_facing_ready_count: finiteNumber(totals.person_facing_ready_count),
     source_preserved_pending_count: finiteNumber(totals.source_preserved_pending_count),
-    categories: categoriesResult.rows.map((row) => ({ id: String(row.id), count: finiteNumber(row.count) })),
-    jurisdictions: jurisdictionsResult.rows.map((row) => ({ code: String(row.code), count: finiteNumber(row.count), categories: row.categories ?? {} })),
+    categories: categoriesResult.rows.map((row: Record<string, unknown>) => ({ id: String(row.id), count: finiteNumber(row.count) })),
+    jurisdictions: jurisdictionsResult.rows.map((row: Record<string, unknown>) => ({
+      code: String(row.code),
+      count: finiteNumber(row.count),
+      direct_resource_count: finiteNumber(row.direct_resource_count),
+      program_count: finiteNumber(row.program_count),
+      categories: row.categories ?? {},
+    })),
     source_lanes: [{ id: "whole_corpus_current", count: finiteNumber(totals.total_resources) }],
     current_snapshot: {
       snapshot_id: "current-resource-program-catalog-v4",

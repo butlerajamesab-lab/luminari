@@ -34,15 +34,33 @@ describe("current whole-universe legal explorer", () => {
     expect(router).toContain("limit: z.number().int().min(40).max(400).default(220)");
   });
 
-  it("renders current types, references, and explicit window-versus-universe language", () => {
+  it("keeps the whole-universe reader available without routing it into Doctrine", () => {
     const page = read("client/src/pages/DoctrineGraph.tsx");
-    expect(page).toContain("Legal & Doctrine Graph Explorer");
+    expect(page).toContain("Doctrine Graph Explorer");
+    expect(page).toContain("trpc.enforcementIntel.getDoctrineGraph.useQuery");
+    expect(page).toContain("const doctrineList = graphData?.doctrines");
+    expect(page).toContain("no hard-coded doctrine ceiling");
+    expect(page).not.toContain("trpc.canonicalCore.legalExplorer.useQuery");
+    expect(page).not.toContain("Current Civic/Legal Catalog");
+    expect(page).not.toContain("Search law, agencies, workflows, programs, resources");
+  });
+
+  it("preserves the whole-universe UI on its own route", () => {
+    const page = read("client/src/pages/CivicLegalExplorer.tsx");
+    const app = read("client/src/App.tsx");
+    const navigation = read("client/src/components/navigation.ts");
+    const visibility = read("server/routes/system-visibility-router.ts");
+    const inspection = read("server/routes/ai-inspect-router.ts");
+
+    expect(page).toContain("Civic/Legal Graph Explorer");
     expect(page).toContain("trpc.canonicalCore.legalExplorer.useQuery");
-    expect(page).toContain("window ≠ universe");
     expect(page).toContain("Current Civic/Legal Catalog");
-    expect(page).toContain("Doctrine Registry");
-    expect(page).toContain("Case Law Reference Library");
-    expect(page).toContain("Litigation Barriers & Weak Joints");
-    expect(page).toContain("Search law, agencies, workflows, programs, resources");
+    expect(page).toContain("window ≠ universe");
+    expect(app).toContain('path="/civic-legal-explorer"');
+    expect(navigation).toContain('path: "/civic-legal-explorer"');
+    expect(visibility).toContain('queries: ["canonicalCore.legalExplorer"]');
+    expect(visibility).toContain('"v_lighthouse_graph_nodes_v1", "v_lighthouse_graph_edges_v2"');
+    expect(inspection).toContain('civic_legal_explorer: "canonicalCore"');
+    expect(inspection).toContain('doctrine_graph: "enforcementIntel"');
   });
 });
