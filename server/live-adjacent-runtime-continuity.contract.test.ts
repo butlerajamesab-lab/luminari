@@ -37,13 +37,18 @@ describe("live adjacent runtime continuity", () => {
     expect(source).not.toContain('"pipelineType" =');
   });
 
-  it("queries full legal tables before compatibility views missing metadata", () => {
+  it("queries current reconciled legal authority objects before legacy compatibility rows", () => {
     const source = read("server/legal-library-runtime-db.ts");
-    expect(source.indexOf("from public.legal_statutes ${where}")).toBeLessThan(source.indexOf("from public.v_paginated_statutes ${where}"));
-    expect(source.indexOf("from public.legal_case_law ${where}")).toBeLessThan(source.indexOf("from public.v_runtime_case_law ${where}"));
+    expect(source).toContain("public.v_lighthouse_legal_authority_catalog_v2");
+    expect(source).toContain("public.luminari_corpus_candidate_v1");
+    expect(source).toContain("'runtime_source','current_corpus'");
+    expect(source.indexOf("public.v_lighthouse_legal_authority_catalog_v2")).toBeLessThan(source.indexOf("from public.legal_statutes l"));
+    expect(source.indexOf("const CURRENT_CASE_CTE")).toBeLessThan(source.indexOf("from public.legal_case_law l"));
+    expect(source).not.toContain("from public.v_paginated_statutes ${where}");
+    expect(source).not.toContain("from public.v_runtime_case_law ${where}");
   });
 
-  it("binds statute and case-law pagination parameters in primary queries", async () => {
+  it("binds statute and case-law pagination parameters in the current-corpus union query", async () => {
     query.mockResolvedValue({ rows: [] });
 
     await searchRuntimeStatutes({});
@@ -61,38 +66,22 @@ describe("live adjacent runtime continuity", () => {
     );
   });
 
-  it("retains the same bind markers when legal compatibility fallbacks are reached", async () => {
-    query
-      .mockRejectedValueOnce(new Error('column "metadata" does not exist'))
-      .mockResolvedValueOnce({ rows: [] });
+  it("uses one deterministic current-plus-legacy query per legal search with stable bind markers", async () => {
+    query.mockResolvedValue({ rows: [] });
 
     await searchRuntimeStatutes({ jurisdiction: "WA", limit: 10, offset: 5 });
-
-    expect(query).toHaveBeenNthCalledWith(
-      1,
-      expect.stringContaining("limit $2 offset $3"),
-      ["WA", 10, 5],
-    );
-    expect(query).toHaveBeenNthCalledWith(
-      2,
+    expect(query).toHaveBeenCalledTimes(1);
+    expect(query).toHaveBeenCalledWith(
       expect.stringContaining("limit $2 offset $3"),
       ["WA", 10, 5],
     );
 
     query.mockReset();
-    query
-      .mockRejectedValueOnce(new Error('column "metadata" does not exist'))
-      .mockResolvedValueOnce({ rows: [] });
+    query.mockResolvedValue({ rows: [] });
 
     await searchRuntimeCaseLaw({ court: "9th", limit: 10, offset: 5 });
-
-    expect(query).toHaveBeenNthCalledWith(
-      1,
-      expect.stringContaining("limit $2 offset $3"),
-      ["%9th%", 10, 5],
-    );
-    expect(query).toHaveBeenNthCalledWith(
-      2,
+    expect(query).toHaveBeenCalledTimes(1);
+    expect(query).toHaveBeenCalledWith(
       expect.stringContaining("limit $2 offset $3"),
       ["%9th%", 10, 5],
     );
