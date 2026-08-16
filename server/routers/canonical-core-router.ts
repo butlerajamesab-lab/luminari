@@ -25,6 +25,7 @@ import {
   readCurrentGraphNodePage,
   readCurrentUnresolvedRelationshipPage,
 } from "../services/current-corpus-page-reader";
+import { readCurrentDiscoveryFacts } from "../services/current-discovery-facts";
 import { readCurrentLegalExplorer } from "../services/legal-explorer-current";
 import { reconnectAllSectors } from "../services/knowledge-reconnect";
 
@@ -73,11 +74,6 @@ export const canonicalCoreRouter = router({
       return getCurrentUnresolvedRelationships(input ?? {});
     }),
 
-  /**
-   * Whole-universe graph node reader. `limit` controls only one transport
-   * window. `total` always describes the full filtered universe, and every
-   * row remains reachable through offset/search/type filters.
-   */
   graphNodePage: publicProcedure
     .input(z.object({
       nodeType: z.string().trim().max(80).optional(),
@@ -87,7 +83,6 @@ export const canonicalCoreRouter = router({
     }).optional())
     .query(async ({ input }) => readCurrentGraphNodePage(input ?? {})),
 
-  /** Whole-universe graph edge reader; transport windows do not cap discovery. */
   graphEdgePage: publicProcedure
     .input(z.object({
       edgeType: z.string().trim().max(80).optional(),
@@ -98,7 +93,6 @@ export const canonicalCoreRouter = router({
     }).optional())
     .query(async ({ input }) => readCurrentGraphEdgePage(input ?? {})),
 
-  /** Whole unresolved declaration universe, page-by-page, never silently dropped. */
   unresolvedRelationshipPage: publicProcedure
     .input(z.object({
       relationshipType: z.string().trim().max(80).optional(),
@@ -107,12 +101,6 @@ export const canonicalCoreRouter = router({
     }).optional())
     .query(async ({ input }) => readCurrentUnresolvedRelationshipPage(input ?? {})),
 
-  /**
-   * Whole current legal/civic explorer. The returned node array is only the
-   * working rendering window. `totals`, `node_type_counts`, and filters expose
-   * the full current universe, while older governed legal reference libraries
-   * remain explicitly typed and preserved alongside it.
-   */
   legalExplorer: publicProcedure
     .input(z.object({
       query: z.string().trim().max(240).optional(),
@@ -122,11 +110,16 @@ export const canonicalCoreRouter = router({
     }).optional())
     .query(async ({ input }) => readCurrentLegalExplorer(input ?? {})),
 
-  /**
-   * Current legal-authority universe. Legal authorities are not forcibly
-   * relabeled as doctrines. The page size is a transport/rendering window;
-   * `total` is the complete filtered universe and all rows remain reachable.
-   */
+  discoveryFacts: publicProcedure
+    .input(z.object({
+      query: z.string().trim().max(240).optional(),
+      category: z.string().trim().max(160).optional(),
+      jurisdiction: z.string().trim().max(80).optional(),
+      limit: z.number().int().min(1).max(100).default(60),
+      offset: z.number().int().min(0).max(100_000).default(0),
+    }).optional())
+    .query(async ({ input }) => readCurrentDiscoveryFacts(input ?? {})),
+
   legalAuthorities: publicProcedure
     .input(z.object({
       query: z.string().trim().max(240).optional(),
@@ -181,7 +174,6 @@ export const canonicalCoreRouter = router({
       };
     }),
 
-  /** Current whole-corpus object counts, explicitly separate from legacy seed tables. */
   currentObjectCounts: publicProcedure.query(async () => {
     const result = await getPool().query(`
       select object_class,count(*)::int as count
