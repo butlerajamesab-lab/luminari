@@ -1,52 +1,50 @@
 /**
- * Canonical Core Router — tRPC endpoints for the knowledge core
+ * Canonical Core Router — current Lighthouse truth surface.
  *
- * Provides:
- * - canonicalCore.health → Full table-level health check
- * - canonicalCore.summary → High-level system summary counts
- * - canonicalCore.pipelineState → Pipeline execution history
- * - canonicalCore.finalize → Manual finalization trigger (admin only)
+ * Mission Control must read the current reconciled civic-object universe,
+ * not legacy registry tables or manual world-node bookkeeping.
  */
 
 import { z } from "zod";
 import { router, publicProcedure, protectedProcedure } from "../_core/trpc";
 import {
-  getCanonicalCoreHealth,
   getPipelineCompletionState,
   finalizePipelineRun,
 } from "../services/canonical-core";
-import { getSystemSummary } from "../services/unified-access";
+import {
+  getCurrentCanonicalCoreHealth,
+  getCurrentCanonicalState,
+  getCurrentGraphNodes,
+  getCurrentSystemSummary,
+} from "../services/current-canonical-state";
 import { reconnectAllSectors } from "../services/knowledge-reconnect";
 
 export const canonicalCoreRouter = router({
-  /**
-   * health — Returns row counts for all canonical tables
-   * Used by Mission Control to reflect true system state
-   */
   health: publicProcedure.query(async () => {
-    return getCanonicalCoreHealth();
+    return getCurrentCanonicalCoreHealth();
   }),
 
-  /**
-   * summary — Returns high-level system summary counts
-   * Used by Mission Control dashboard cards
-   */
   summary: publicProcedure.query(async () => {
-    return getSystemSummary();
+    return getCurrentSystemSummary();
   }),
 
-  /**
-   * pipelineState — Returns pipeline execution history
-   * Used by Pipeline Analytics and Mission Control
-   */
+  currentState: publicProcedure.query(async () => {
+    return getCurrentCanonicalState();
+  }),
+
+  graphNodes: publicProcedure
+    .input(z.object({
+      limit: z.number().int().min(1).max(200).default(20),
+      nodeType: z.string().trim().max(80).optional(),
+    }).optional())
+    .query(async ({ input }) => {
+      return getCurrentGraphNodes(input ?? {});
+    }),
+
   pipelineState: publicProcedure.query(async () => {
     return getPipelineCompletionState();
   }),
 
-  /**
-   * finalize — Manual pipeline finalization (admin only)
-   * Allows admin to record a pipeline completion event
-   */
   finalize: protectedProcedure
     .input(
       z.object({
@@ -67,10 +65,6 @@ export const canonicalCoreRouter = router({
       });
     }),
 
-  /**
-   * reconnect — Populate empty knowledge sectors from canonical registry data
-   * Section 9: Reconnects empty tables by deriving data from populated ones
-   */
   reconnect: protectedProcedure.mutation(async () => {
     return reconnectAllSectors();
   }),
