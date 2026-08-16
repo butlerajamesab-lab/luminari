@@ -1,13 +1,14 @@
 /**
  * World Router
- * Single tRPC endpoint that returns the unified World Index.
- * No filtering logic here — consumers filter client-side.
+ * Bounded current-corpus projection for web clients.
+ * The complete civic-object universe remains in Postgres; this endpoint must
+ * never materialize the entire platform into one Node heap.
  */
 import { router, publicProcedure } from "../_core/trpc";
-import { get_cached_world_index } from "../services/world-index-cache";
+import { getBoundedWorldIndex } from "../services/world-index-bounded";
 
 export const worldRouter = router({
   getIndex: publicProcedure.query(async () => {
-    return get_cached_world_index();
+    return getBoundedWorldIndex();
   }),
 });
