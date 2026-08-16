@@ -68,11 +68,16 @@ function resolve_assembly_contract(view: civic_genome_rosetta_law_view): assembl
 function assert_source_span(metadata: Record<string, unknown> | undefined, prefix: string): void {
   const source_span = metadata?.source_span;
   if (!is_record(source_span)) throw new Error(`${prefix}_source_span_missing`);
+  const start = source_span.char_offset_start;
+  const end = source_span.char_offset_end;
+  const blockHash = source_span.block_content_hash;
   if (
-    typeof source_span.char_offset_start !== "number"
-    || typeof source_span.char_offset_end !== "number"
-    || typeof source_span.block_content_hash !== "string"
-    || source_span.char_offset_end < source_span.char_offset_start
+    !Number.isInteger(start)
+    || !Number.isInteger(end)
+    || (start as number) < 0
+    || (end as number) <= (start as number)
+    || typeof blockHash !== "string"
+    || !/^[a-f0-9]{64}$/i.test(blockHash)
   ) {
     throw new Error(`${prefix}_source_span_invalid`);
   }
