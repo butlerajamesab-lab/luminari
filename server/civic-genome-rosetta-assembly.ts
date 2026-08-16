@@ -186,7 +186,18 @@ async function bind_source_identity(
        rosetta_rule_manifest_hash, rosetta_configuration_hash,
        rosetta_output_content_hash
      ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
-     on conflict (source_document_id) do nothing`,
+     on conflict (source_document_id) do update set
+       genome_bill_id = excluded.genome_bill_id,
+       source_identity_hash = excluded.source_identity_hash,
+       source_content_hash = excluded.source_content_hash,
+       source_url = excluded.source_url,
+       source_version = excluded.source_version,
+       rosetta_engine_version = excluded.rosetta_engine_version,
+       rosetta_rule_set_version = excluded.rosetta_rule_set_version,
+       rosetta_rule_manifest_hash = excluded.rosetta_rule_manifest_hash,
+       rosetta_configuration_hash = excluded.rosetta_configuration_hash,
+       rosetta_output_content_hash = excluded.rosetta_output_content_hash,
+       updated_at = now()`,
     [
       view.source_document_id,
       genome_bill_id,
@@ -271,8 +282,7 @@ export async function assemble_rosetta_structural_dna(
     media_type: view.media_type,
   };
   const source_identity_hash = view.source_identity_hash as string;
-  const source_receipt = {
-    handoff_contract_version: view.handoff_contract_version,
+  const legacy_source_receipt = {
     engine_version: view.engine_version,
     rule_set_version: view.rule_set_version,
     rule_manifest_hash: view.rule_manifest_hash,
@@ -284,6 +294,10 @@ export async function assemble_rosetta_structural_dna(
     output_content_hash: view.output_content_hash,
     source_url: view.source_url,
     source_version: view.source_version,
+  };
+  const source_receipt = {
+    handoff_contract_version: view.handoff_contract_version,
+    ...legacy_source_receipt,
   };
   const objects_by_id = new Map(
     view.law_view.objects.map(object => [object.sourceObjectId, object]),
@@ -366,10 +380,7 @@ export async function assemble_rosetta_structural_dna(
   const legacy_input = {
     genome_bill_id: request.genome_bill_id,
     source_identity,
-    source_receipt: {
-      ...source_receipt,
-      handoff_contract_version: undefined,
-    },
+    source_receipt: legacy_source_receipt,
     extraction_run_id: view.extraction_run_id,
     run_version: view.run_version,
     law_view: view.law_view,
