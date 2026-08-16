@@ -6,7 +6,6 @@ import {
   createEnforcementRecord, getEnforcementRecordById,
   createWeakJoint, getWeakJointById,
   createContradiction, getContradictionById,
-  getLegalLibraryStats,
   getClausesByStatuteId, getStatuteWithClauses, searchEnrichedStatutes,
 } from "../legal-library-db";
 import {
@@ -15,6 +14,7 @@ import {
   searchRuntimeEnforcement,
   searchRuntimeWeakJoints,
   listRuntimeContradictions,
+  getRuntimeLegalLibraryStats,
 } from "../legal-library-runtime-db";
 import { LEGAL_DOMAINS, type LegalDomain } from "../../drizzle/schema";
 
@@ -23,11 +23,11 @@ const castDomains = (d: string[]) => d as LegalDomain[];
 const legalRecordId = z.string().uuid();
 
 export const legalLibraryRouter = router({
-  // ─── Stats (canonical tables only) ───
+  // ─── Stats (current corpus first, legacy compatibility preserved) ───
   stats: publicProcedure
     .input(z.object({ jurisdiction: z.string().optional() }).optional())
     .query(async ({ input }) => {
-      return getLegalLibraryStats(input?.jurisdiction);
+      return getRuntimeLegalLibraryStats(input?.jurisdiction);
     }),
 
   // ─── Statutes ───
@@ -243,17 +243,20 @@ export const legalLibraryRouter = router({
       const id = await createContradiction({ ...input, domains: castDomains(input.domains), addedBy: ctx.user.name ?? ctx.user.open_id ?? "" } as any);
       return { id };
     }),
+
   // ─── Statute Clauses (X-Ray) ───
   getStatuteWithClauses: publicProcedure
     .input(z.object({ statuteId: legalRecordId }))
     .query(async ({ input }) => {
       return getStatuteWithClauses(input.statuteId);
     }),
+
   getClausesByStatuteId: publicProcedure
     .input(z.object({ statuteId: z.number() }))
     .query(async ({ input }) => {
       return getClausesByStatuteId(input.statuteId);
     }),
+
   searchEnrichedStatutes: publicProcedure
     .input(z.object({
       domain: domainEnum.optional(),
