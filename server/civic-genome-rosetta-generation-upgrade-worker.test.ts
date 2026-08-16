@@ -20,7 +20,7 @@ const queueMigration = readFileSync(
   "utf8",
 );
 const convergenceMigration = readFileSync(
-  join(root, "supabase", "migrations", "20260816002000_civic_genome_rosetta_generation_target_v1.sql"),
+  join(root, "supabase", "migrations", "20260816002307_civic_genome_rosetta_generation_target_v1.sql"),
   "utf8",
 );
 
@@ -75,6 +75,7 @@ describe("Civic Genome Rosetta current-generation convergence", () => {
     expect(convergenceMigration).not.toContain("repeat('0',64)");
     expect(convergenceMigration).toContain("binding.rosetta_engine_version=target.engine_version");
     expect(convergenceMigration).toContain("binding.rosetta_rule_manifest_hash=target.rule_manifest_hash");
+    expect(convergenceMigration).toContain("target.rule_manifest_hash target_rule_manifest_hash");
     expect(targetSync).toContain("fetch_rosetta_current_generation");
     expect(targetSync).toContain("on conflict (target_name) do update");
   });
