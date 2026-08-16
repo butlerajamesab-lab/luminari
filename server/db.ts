@@ -8,6 +8,7 @@
 // over the export-star surface.
 
 export * from "./db-legacy";
+export { db } from "./db-execute-compat";
 export {
   createCase,
   getCaseNarrative,
@@ -56,6 +57,7 @@ export {
   getFindingMatchDetail,
   markFindingRerunError,
 } from "./provenance-batch-finding-compat";
+export { getProvenanceDrilldownMetrics as getProvenanceDrilldownMetricsCompat } from "./provenance-runtime-compat";
 export { getProvenanceDriftMetrics } from "./provenance-drift-runtime-compat";
 export {
   createBatchRun,
