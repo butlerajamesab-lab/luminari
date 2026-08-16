@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { publicProcedure, router } from "../_core/trpc";
+import { getLiveAnomalyViewfinderStates } from "../services/anomaly-viewfinder-live";
 import {
   getPublishableResourceDirectoryDetail,
   getPublishableResourceDirectorySummary,
@@ -29,6 +30,10 @@ export const resourceDirectoryRouter = router({
 
   search: publicProcedure.input(searchInput).query(async ({ input }) => {
     return searchPublishableResourceDirectory(input ?? {});
+  }),
+
+  viewfinderStates: publicProcedure.query(async () => {
+    return getLiveAnomalyViewfinderStates();
   }),
 
   detail: publicProcedure
