@@ -71,8 +71,6 @@ select
   'civic-genome-rosetta-generation-convergence-v1'::text contract,
   target.engine_version target_engine_version,
   target.rule_set_version target_rule_set_version,
-  target.rule_manifest_hash target_rule_manifest_hash,
-  target.observed_at target_observed_at,
   coalesce(current_counts.current_source_backed_versions,0) current_source_backed_versions,
   coalesce(current_counts.current_generation_binding_count,0) current_generation_binding_count,
   coalesce(current_counts.missing_binding_count,0) missing_binding_count,
@@ -89,7 +87,9 @@ select
     and coalesce(queue_counts.running_count,0)=0
     and coalesce(queue_counts.retry_count,0)=0
     and coalesce(queue_counts.dead_letter_count,0)=0
-  ) converged
+  ) converged,
+  target.rule_manifest_hash target_rule_manifest_hash,
+  target.observed_at target_observed_at
 from target
 left join current_counts on true
 left join queue_counts on true;
@@ -99,6 +99,6 @@ revoke all on public.v_civic_genome_rosetta_generation_convergence_v1 from publi
 comment on table public.civic_genome_rosetta_generation_target is
   'Latest Rosetta current-generation receipt actually observed by Lighthouse. No placeholder row is created; absence means the target has not been observed and convergence cannot be asserted.';
 comment on view public.v_civic_genome_rosetta_generation_convergence_v1 is
-  'Dynamic convergence receipt. Compares every current source-backed Civic Genome version and the durable upgrade queue against the latest current-generation receipt actually observed from Rosetta.';
+  'Dynamic convergence receipt. Existing columns remain positional-compatible; appended fields expose the exact Rosetta manifest and observation time used as the target.';
 
 commit;
