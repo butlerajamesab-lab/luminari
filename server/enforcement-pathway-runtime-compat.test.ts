@@ -17,7 +17,7 @@ import {
 function source_rows(): EnforcementPathwaySourceRows {
   return {
     pathways: [{
-      id: "519931a8-a3f3-49fc-b5db-f90c18d62f91",
+      id: "corpus:519931a8-a3f3-49fc-b5db-f90c18d62f91",
       pathway_id: "fed_source_001",
       pathway_name: "EEOC",
       jurisdiction: "federal",
@@ -66,6 +66,7 @@ describe("source-bound enforcement pathway compatibility", () => {
         claimType: null,
         pipelineCategory: null,
       },
+      sourceContract: "current_civic_object_enforcement_pathways_v1",
       pathways: [{
         pathwayId: "fed_source_001",
         pathwayName: "EEOC",
@@ -129,7 +130,22 @@ describe("source-bound enforcement pathway compatibility", () => {
     expect(filtered.pathways).toEqual([]);
   });
 
-  it("takes one pool snapshot using exact live table columns", async () => {
+  it("bounds the returned payload while preserving total current-corpus count", () => {
+    const rows = source_rows();
+    rows.pathways = Array.from({ length: 250 }, (_, index) => ({
+      ...rows.pathways[0],
+      id: `corpus:${index}`,
+      pathway_id: `path-${index}`,
+      pathway_name: `Path ${index}`,
+    }));
+    const all = build_enforcement_pathway_dto({}, rows);
+    expect(all.totalSourceRows).toBe(250);
+    expect(all.matchedSourceRows).toBe(250);
+    expect(all.returnedSourceRows).toBe(200);
+    expect(all.pathways).toHaveLength(200);
+  });
+
+  it("takes one pool snapshot from current reconciled civic objects and exact candidate payloads", async () => {
     const source = source_rows();
     query.mockResolvedValueOnce({
       rows: [{ pathways: source.pathways, agency_forms: source.agencyForms }],
@@ -140,10 +156,13 @@ describe("source-bound enforcement pathway compatibility", () => {
     expect(result.pathways).toHaveLength(1);
     expect(query).toHaveBeenCalledTimes(1);
     const sql = String(query.mock.calls[0][0]);
-    expect(sql).toContain("from public.enforcement_pathway_models");
+    expect(sql).toContain("from public.v_lighthouse_civic_object_current_v1");
+    expect(sql).toContain("object_class = 'enforcement_pathway'");
+    expect(sql).toContain("public.luminari_corpus_candidate_v1");
+    expect(sql).toContain("p.candidate_hash = c.source_candidate_hash");
+    expect(sql).toContain("p.artifact_key = c.artifact_key");
     expect(sql).toContain("from public.agency_forms");
-    expect(sql).toContain("'pathway_id', pathway_id");
-    expect(sql).toContain("'agency_short', agency_short");
+    expect(sql).not.toContain("from public.enforcement_pathway_models");
     expect(sql).not.toMatch(/\b(?:insert|update|delete|alter|create)\b/i);
   });
 
