@@ -25,6 +25,9 @@ export type CurrentCanonicalState = {
   graph_nodes: number;
   graph_object_nodes: number;
   graph_edges: number;
+  structural_graph_edges: number;
+  semantic_graph_edges: number;
+  unresolved_relationships: number;
   graph_node_types: Record<string, number>;
   graph_edge_types: Record<string, number>;
   legacy_manual_world_nodes: number;
@@ -41,7 +44,7 @@ function n(value: unknown): number {
 
 export async function getCurrentCanonicalState(): Promise<CurrentCanonicalState> {
   const result = await getPool().query(
-    `select public.get_lighthouse_canonical_state_v1() as state`,
+    `select public.get_lighthouse_canonical_state_v2() as state`,
   );
   return (result.rows[0]?.state ?? {}) as CurrentCanonicalState;
 }
@@ -70,7 +73,9 @@ export async function getCurrentCanonicalCoreHealth() {
     { table: "source_artifacts", category: "substrate", count: n(state.source_artifacts) },
     { table: "candidate_records", category: "substrate", count: n(state.candidate_records) },
     { table: "current_civic_objects", category: "substrate", count: n(state.current_civic_objects) },
-    { table: "derived_graph_edges", category: "graph", count: n(state.graph_edges) },
+    { table: "structural_graph_edges", category: "graph", count: n(state.structural_graph_edges) },
+    { table: "semantic_graph_edges", category: "graph", count: n(state.semantic_graph_edges) },
+    { table: "unresolved_relationships", category: "graph", count: n(state.unresolved_relationships) },
   ];
   const tables = [...substrate, ...nodeTypes];
 
@@ -85,6 +90,9 @@ export async function getCurrentCanonicalCoreHealth() {
     candidateRecords: n(state.candidate_records),
     graphNodes: n(state.graph_nodes),
     graphEdges: n(state.graph_edges),
+    structuralGraphEdges: n(state.structural_graph_edges),
+    semanticGraphEdges: n(state.semantic_graph_edges),
+    unresolvedRelationships: n(state.unresolved_relationships),
     unresolvedOrHeld: n(state.unresolved_or_held),
   };
 }
@@ -116,6 +124,9 @@ export async function getCurrentSystemSummary() {
     pipelineEvents: 0,
     graphNodes: n(state.graph_nodes),
     graphEdges: n(state.graph_edges),
+    structuralGraphEdges: n(state.structural_graph_edges),
+    semanticGraphEdges: n(state.semantic_graph_edges),
+    unresolvedRelationships: n(state.unresolved_relationships),
     sourceArtifacts: n(state.source_artifacts),
     candidateRecords: n(state.candidate_records),
     unresolvedOrHeld: n(state.unresolved_or_held),
@@ -140,6 +151,76 @@ export async function getCurrentGraphNodes(input: { limit?: number; nodeType?: s
        ${where}
       order by case when node_origin='civic_object' then 0 else 1 end, node_type, label, node_id
       limit $${params.length}`,
+    params,
+  );
+  return result.rows;
+}
+
+export async function getCurrentGraphEdges(input: {
+  limit?: number;
+  edgeType?: string;
+  nodeId?: string;
+  semanticOnly?: boolean;
+} = {}) {
+  const limit = Math.min(Math.max(Number(input.limit ?? 40), 1), 200);
+  const params: unknown[] = [];
+  const conditions: string[] = [];
+
+  if (input.edgeType?.trim()) {
+    params.push(input.edgeType.trim());
+    conditions.push(`e.edge_type = $${params.length}`);
+  }
+  if (input.nodeId?.trim()) {
+    params.push(input.nodeId.trim());
+    conditions.push(`(e.from_node_id = $${params.length} or e.to_node_id = $${params.length})`);
+  }
+
+  const sourceView = input.semanticOnly
+    ? "public.v_lighthouse_graph_relationship_edges_v1"
+    : "public.v_lighthouse_graph_edges_v2";
+  const where = conditions.length > 0 ? `where ${conditions.join(" and ")}` : "";
+  params.push(limit);
+
+  const result = await getPool().query(
+    `select
+       e.edge_id,e.from_node_id,e.to_node_id,e.edge_type,e.evidence_state,e.evidence_hash,e.metadata,
+       f.label as from_label,f.node_type as from_node_type,
+       t.label as to_label,t.node_type as to_node_type
+     from ${sourceView} e
+     left join public.v_lighthouse_graph_nodes_v1 f on f.node_id = e.from_node_id
+     left join public.v_lighthouse_graph_nodes_v1 t on t.node_id = e.to_node_id
+     ${where}
+     order by e.edge_type,coalesce(f.label,e.from_node_id),coalesce(t.label,e.to_node_id),e.edge_id
+     limit $${params.length}`,
+    params,
+  );
+  return result.rows;
+}
+
+export async function getCurrentUnresolvedRelationships(input: {
+  limit?: number;
+  relationshipType?: string;
+} = {}) {
+  const limit = Math.min(Math.max(Number(input.limit ?? 40), 1), 200);
+  const params: unknown[] = [];
+  const conditions: string[] = [];
+  if (input.relationshipType?.trim()) {
+    params.push(input.relationshipType.trim());
+    conditions.push(`u.intended_edge_type = $${params.length}`);
+  }
+  const where = conditions.length > 0 ? `where ${conditions.join(" and ")}` : "";
+  params.push(limit);
+
+  const result = await getPool().query(
+    `select
+       u.declaration_id,u.from_node_id,u.intended_edge_type,u.source_field,u.target_reference,
+       u.resolution_state,u.target_match_count,u.evidence_hash,u.metadata,
+       f.label as from_label,f.node_type as from_node_type
+     from public.v_lighthouse_graph_unresolved_relationships_v1 u
+     left join public.v_lighthouse_graph_nodes_v1 f on f.node_id = u.from_node_id
+     ${where}
+     order by u.resolution_state,u.intended_edge_type,coalesce(f.label,u.from_node_id),u.target_reference
+     limit $${params.length}`,
     params,
   );
   return result.rows;

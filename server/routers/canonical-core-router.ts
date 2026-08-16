@@ -14,8 +14,10 @@ import {
 import {
   getCurrentCanonicalCoreHealth,
   getCurrentCanonicalState,
+  getCurrentGraphEdges,
   getCurrentGraphNodes,
   getCurrentSystemSummary,
+  getCurrentUnresolvedRelationships,
 } from "../services/current-canonical-state";
 import { reconnectAllSectors } from "../services/knowledge-reconnect";
 
@@ -39,6 +41,26 @@ export const canonicalCoreRouter = router({
     }).optional())
     .query(async ({ input }) => {
       return getCurrentGraphNodes(input ?? {});
+    }),
+
+  graphEdges: publicProcedure
+    .input(z.object({
+      limit: z.number().int().min(1).max(200).default(40),
+      edgeType: z.string().trim().max(80).optional(),
+      nodeId: z.string().trim().max(180).optional(),
+      semanticOnly: z.boolean().default(false),
+    }).optional())
+    .query(async ({ input }) => {
+      return getCurrentGraphEdges(input ?? {});
+    }),
+
+  unresolvedRelationships: publicProcedure
+    .input(z.object({
+      limit: z.number().int().min(1).max(200).default(40),
+      relationshipType: z.string().trim().max(80).optional(),
+    }).optional())
+    .query(async ({ input }) => {
+      return getCurrentUnresolvedRelationships(input ?? {});
     }),
 
   pipelineState: publicProcedure.query(async () => {
