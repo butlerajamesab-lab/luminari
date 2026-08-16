@@ -28,23 +28,8 @@ export async function sync_rosetta_generation_target_once(): Promise<void> {
   try {
     const generation = await fetch_rosetta_current_generation();
     await query_with_diagnostics(
-      `insert into public.civic_genome_rosetta_generation_target (
-         target_name, contract, engine_version, rule_set_version,
-         rule_manifest_hash, observed_at, updated_at
-       ) values ('current',$1,$2,$3,$4,now(),now())
-       on conflict (target_name) do update set
-         contract=excluded.contract,
-         engine_version=excluded.engine_version,
-         rule_set_version=excluded.rule_set_version,
-         rule_manifest_hash=excluded.rule_manifest_hash,
-         observed_at=excluded.observed_at,
-         updated_at=now()`,
-      [
-        generation.contract,
-        generation.engine_version,
-        generation.rule_set_version,
-        generation.rule_manifest_hash,
-      ],
+      "select public.civic_genome_observe_rosetta_generation_target_v1($1,$2,$3,$4) as receipt",
+      [generation.contract, generation.engine_version, generation.rule_set_version, generation.rule_manifest_hash],
       {
         label: "rosetta_generation_target_sync",
         pool_acquire_timeout_ms: 1_000,
@@ -67,9 +52,7 @@ export function start_rosetta_generation_target_sync(): void {
   const delay = interval_ms();
   console.log("[RosettaGenerationTarget] started", { interval_ms: delay });
   void sync_rosetta_generation_target_once();
-  timer = setInterval(() => {
-    void sync_rosetta_generation_target_once();
-  }, delay);
+  timer = setInterval(() => void sync_rosetta_generation_target_once(), delay);
   timer.unref?.();
 }
 
