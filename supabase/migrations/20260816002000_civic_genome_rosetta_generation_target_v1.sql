@@ -15,35 +15,6 @@ alter table public.civic_genome_rosetta_generation_target enable row level secur
 revoke all on public.civic_genome_rosetta_generation_target from public, anon, authenticated;
 grant select, insert, update on public.civic_genome_rosetta_generation_target to service_role;
 
-insert into public.civic_genome_rosetta_generation_target (
-  target_name,
-  contract,
-  engine_version,
-  rule_set_version,
-  rule_manifest_hash,
-  observed_at,
-  updated_at
-)
-select
-  'current',
-  'rosetta-current-generation-v1',
-  'rosetta-v3-deterministic-sql-2.5.3',
-  'rosetta-five-layer-structural-correctness-2.5.3',
-  coalesce(
-    (
-      select binding.rosetta_rule_manifest_hash
-      from public.civic_genome_rosetta_generation_binding binding
-      where binding.rosetta_engine_version='rosetta-v3-deterministic-sql-2.5.3'
-        and binding.rosetta_rule_set_version='rosetta-five-layer-structural-correctness-2.5.3'
-      order by binding.observed_at desc
-      limit 1
-    ),
-    repeat('0',64)
-  ),
-  now(),
-  now()
-on conflict (target_name) do nothing;
-
 create or replace view public.v_civic_genome_rosetta_generation_convergence_v1
 with (security_invoker=true) as
 with target as (
@@ -126,8 +97,8 @@ left join queue_counts on true;
 revoke all on public.v_civic_genome_rosetta_generation_convergence_v1 from public,anon,authenticated;
 
 comment on table public.civic_genome_rosetta_generation_target is
-  'Latest Rosetta current-generation receipt observed by Lighthouse. This is synchronization state only; Rosetta remains the authority for engine/rule/manifest selection.';
+  'Latest Rosetta current-generation receipt actually observed by Lighthouse. No placeholder row is created; absence means the target has not been observed and convergence cannot be asserted.';
 comment on view public.v_civic_genome_rosetta_generation_convergence_v1 is
-  'Dynamic convergence receipt. Compares every current source-backed Civic Genome version and the durable upgrade queue against the latest current-generation receipt observed from Rosetta.';
+  'Dynamic convergence receipt. Compares every current source-backed Civic Genome version and the durable upgrade queue against the latest current-generation receipt actually observed from Rosetta.';
 
 commit;
