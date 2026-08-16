@@ -2,9 +2,9 @@ import express, { Request, Response } from "express";
 import {
   getResourceDirectoryDetail,
   getResourceDirectoryMapPoints,
-  getResourceDirectorySummary as getStrictGeographySummary,
 } from "../services/resource-directory";
 import { getPublishableResourceDirectorySummary } from "../services/resource-directory-publishable";
+import { getPool } from "../db";
 
 export const civicMapRouter = express.Router();
 
@@ -57,16 +57,40 @@ function parseBounds(req: Request) {
   return { north, south, east, west, valid };
 }
 
+async function getReviewedMapSiteCounts() {
+  const result = await getPool().query(`
+    select
+      count(distinct resource_entity_id) filter (
+        where manual_map_eligible is true
+      )::int as verified_physical_sites,
+      count(distinct resource_entity_id) filter (
+        where manual_map_eligible is true
+          and latitude is not null
+          and longitude is not null
+      )::int as exact_mappable_resources
+    from public.v_luminari_resource_locations_current_v3_13
+  `);
+  return result.rows[0] ?? {
+    verified_physical_sites: 0,
+    exact_mappable_resources: 0,
+  };
+}
+
 async function getBreadthPreservingCoverage() {
-  const [breadth, strict] = await Promise.all([
+  // The jurisdiction coverage layer is canonical whole-corpus breadth. Do not
+  // block it on the legacy resource-entity summary, which performs much
+  // heavier joins and can cause the public map's primary coverage request to
+  // be aborted before any circles render. Exact physical-site counts are a
+  // separate, intentionally stricter projection.
+  const [breadth, mapSites] = await Promise.all([
     getPublishableResourceDirectorySummary() as Promise<Record<string, unknown>>,
-    getStrictGeographySummary() as Promise<Record<string, unknown>>,
+    getReviewedMapSiteCounts(),
   ]);
 
   return {
     ...breadth,
-    verified_physical_sites: strict.verified_physical_sites ?? 0,
-    exact_mappable_resources: strict.exact_mappable_resources ?? 0,
+    verified_physical_sites: Number(mapSites.verified_physical_sites ?? 0),
+    exact_mappable_resources: Number(mapSites.exact_mappable_resources ?? 0),
     geography_source: "reviewed_v3_13_locations",
     coverage_source: "breadth_preserving_resource_directory_v3",
   };
