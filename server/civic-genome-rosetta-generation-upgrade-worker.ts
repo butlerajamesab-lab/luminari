@@ -10,6 +10,7 @@ const MAX_POLL_INTERVAL_MS = 300_000;
 const QUEUE_LEASE_MINUTES = 30;
 const MAX_ATTEMPTS = 5;
 const DISCOVERY_BATCH_SIZE = 25;
+const MAX_JOBS_PER_CYCLE = 3;
 const ROSETTA_REQUEST_TIMEOUT_MS = 120_000;
 
 const worker_id = [
@@ -23,7 +24,7 @@ let timer: NodeJS.Timeout | null = null;
 let cycle_running = false;
 let stopped = false;
 
-type current_generation = {
+export type current_generation = {
   contract: string;
   engine_version: string;
   rule_set_version: string;
@@ -37,8 +38,6 @@ type discovery_candidate = {
   source_identity_hash: string | null;
   source_content_hash: string | null;
   source_version: string | null;
-  binding_engine_version: string | null;
-  binding_rule_set_version: string | null;
 };
 
 type upgrade_job = {
@@ -48,14 +47,13 @@ type upgrade_job = {
   source_identity_hash: string;
   target_engine_version: string;
   target_rule_set_version: string;
-  target_rule_manifest_hash: string | null;
+  target_rule_manifest_hash: string;
   attempt_count: number;
 };
 
 type replay_receipt = {
   extraction_run_id: number;
   source_document_id: number;
-  source_identity_hash?: string;
   engine_version: string;
   rule_set_version: string;
   rule_manifest_hash: string;
@@ -64,9 +62,7 @@ type replay_receipt = {
   run_status: string;
   admissibility_state: string;
   provenance_state?: string;
-  published_object_count?: number;
   replay_contract?: string;
-  current_generation?: current_generation;
 };
 
 function required_environment(name: string): string {
@@ -76,7 +72,9 @@ function required_environment(name: string): string {
 }
 
 function safe_error_code(error: unknown): string {
-  const raw = error instanceof Error ? error.message : "unknown_rosetta_generation_upgrade_failure";
+  const raw = error instanceof Error
+    ? error.message
+    : "unknown_rosetta_generation_upgrade_failure";
   return raw.replace(/[^a-zA-Z0-9:_-]/g, "_").slice(0, 256)
     || "unknown_rosetta_generation_upgrade_failure";
 }
@@ -97,15 +95,20 @@ function worker_enabled(): boolean {
   return process.env.NODE_ENV === "production";
 }
 
-export function rosetta_generation_upgrade_retry_delay_seconds(prior_attempt_count: number): number {
+export function rosetta_generation_upgrade_retry_delay_seconds(
+  prior_attempt_count: number,
+): number {
   const exponent = Math.max(0, Math.min(7, prior_attempt_count));
   return Math.min(3_600, 30 * (2 ** exponent));
 }
 
-async function rosetta_rpc<T>(name: string, body: Record<string, unknown> = {}): Promise<T> {
+async function rosetta_rpc<T>(
+  name: string,
+  body: Record<string, unknown> = {},
+): Promise<T> {
   const base_url = required_environment("ROSETTA_SUPABASE_URL");
-  const service_role_key = required_environment("ROSETTA_SUPABASE_SERVICE_ROLE_KEY");
-  const headers = create_rosetta_supabase_headers(service_role_key, {
+  const key = required_environment("ROSETTA_SUPABASE_SERVICE_ROLE_KEY");
+  const headers = create_rosetta_supabase_headers(key, {
     accept: "application/json",
     "content-type": "application/json",
   });
@@ -135,8 +138,8 @@ async function rosetta_rpc<T>(name: string, body: Record<string, unknown> = {}):
 
 async function rosetta_select<T>(path: string): Promise<T[]> {
   const base_url = required_environment("ROSETTA_SUPABASE_URL");
-  const service_role_key = required_environment("ROSETTA_SUPABASE_SERVICE_ROLE_KEY");
-  const headers = create_rosetta_supabase_headers(service_role_key, { accept: "application/json" });
+  const key = required_environment("ROSETTA_SUPABASE_SERVICE_ROLE_KEY");
+  const headers = create_rosetta_supabase_headers(key, { accept: "application/json" });
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 30_000);
   try {
@@ -166,7 +169,7 @@ export async function fetch_rosetta_current_generation(): Promise<current_genera
     generation?.contract !== "rosetta-current-generation-v1"
     || !generation.engine_version
     || !generation.rule_set_version
-    || !generation.rule_manifest_hash
+    || !/^[0-9a-f]{64}$/.test(generation.rule_manifest_hash)
   ) {
     throw new Error("rosetta_current_generation_receipt_invalid");
   }
@@ -198,7 +201,9 @@ async function resolve_source_identity(candidate: discovery_candidate): Promise<
   return rows[0].source_identity_hash;
 }
 
-async function discover_candidates(generation: current_generation): Promise<discovery_candidate[]> {
+async function discover_candidates(
+  generation: current_generation,
+): Promise<discovery_candidate[]> {
   const result = await query_with_diagnostics<discovery_candidate>(
     `with ranked as (
        select version.*,
@@ -215,10 +220,14 @@ async function discover_candidates(generation: current_generation): Promise<disc
             version.genome_bill_id::text,
             version.rosetta_source_document_id::integer as source_document_id,
             binding.source_identity_hash,
-            coalesce(binding.source_content_hash, nullif(version.receipt_json->>'source_content_hash','')) as source_content_hash,
-            coalesce(binding.source_version, nullif(version.receipt_json->>'source_version','')) as source_version,
-            binding.rosetta_engine_version as binding_engine_version,
-            binding.rosetta_rule_set_version as binding_rule_set_version
+            coalesce(
+              binding.source_content_hash,
+              nullif(version.receipt_json->>'source_content_hash','')
+            ) as source_content_hash,
+            coalesce(
+              binding.source_version,
+              nullif(version.receipt_json->>'source_version','')
+            ) as source_version
        from ranked version
        left join public.civic_genome_rosetta_source_binding binding
          on binding.source_document_id = version.rosetta_source_document_id
@@ -228,6 +237,7 @@ async function discover_candidates(generation: current_generation): Promise<disc
           binding.source_document_id is null
           or binding.rosetta_engine_version is distinct from $1
           or binding.rosetta_rule_set_version is distinct from $2
+          or binding.rosetta_rule_manifest_hash is distinct from $3
         )
         and not exists (
           select 1
@@ -235,13 +245,19 @@ async function discover_candidates(generation: current_generation): Promise<disc
            where queued.source_document_id = version.rosetta_source_document_id
              and queued.target_engine_version = $1
              and queued.target_rule_set_version = $2
+             and queued.target_rule_manifest_hash = $3
         )
       order by version.stage_rank desc,
                version.provider_sequence desc,
                version.created_at desc,
                version.bill_version_id desc
-      limit $3`,
-    [generation.engine_version, generation.rule_set_version, DISCOVERY_BATCH_SIZE],
+      limit $4`,
+    [
+      generation.engine_version,
+      generation.rule_set_version,
+      generation.rule_manifest_hash,
+      DISCOVERY_BATCH_SIZE,
+    ],
     {
       label: "rosetta_generation_upgrade_discovery",
       pool_acquire_timeout_ms: 1_000,
@@ -271,7 +287,12 @@ export async function discover_rosetta_generation_upgrades(): Promise<number> {
            next_attempt_at,
            updated_at
          ) values ($1::uuid,$2::bigint,$3,$4,$5,$6,'eligible',now(),now())
-         on conflict (source_document_id,target_engine_version,target_rule_set_version) do nothing`,
+         on conflict (
+           source_document_id,
+           target_engine_version,
+           target_rule_set_version,
+           target_rule_manifest_hash
+         ) do nothing`,
         [
           candidate.genome_bill_id,
           candidate.source_document_id,
@@ -346,6 +367,16 @@ async function claim_next_job(): Promise<upgrade_job | null> {
   return result.rows[0] ?? null;
 }
 
+async function claim_job_batch(): Promise<upgrade_job[]> {
+  const jobs: upgrade_job[] = [];
+  for (let index = 0; index < MAX_JOBS_PER_CYCLE; index += 1) {
+    const job = await claim_next_job();
+    if (!job) break;
+    jobs.push(job);
+  }
+  return jobs;
+}
+
 async function replay_job(job: upgrade_job): Promise<replay_receipt> {
   const receipt = await rosetta_rpc<replay_receipt>(
     "rosetta_replay_source_identity_current_v1",
@@ -359,7 +390,7 @@ async function replay_job(job: upgrade_job): Promise<replay_receipt> {
     || receipt.source_document_id !== job.source_document_id
     || receipt.engine_version !== job.target_engine_version
     || receipt.rule_set_version !== job.target_rule_set_version
-    || (job.target_rule_manifest_hash && receipt.rule_manifest_hash !== job.target_rule_manifest_hash)
+    || receipt.rule_manifest_hash !== job.target_rule_manifest_hash
     || receipt.run_status !== "completed"
     || receipt.admissibility_state !== "admissible"
     || receipt.provenance_state !== "complete"
@@ -472,7 +503,10 @@ async function mark_failed(job: upgrade_job, error: unknown): Promise<void> {
     `update public.civic_genome_rosetta_generation_upgrade_queue
         set queue_state=$2,
             attempt_count=attempt_count+1,
-            next_attempt_at=case when $2='retry' then now()+make_interval(secs=>$3::integer) else next_attempt_at end,
+            next_attempt_at=case
+              when $2='retry' then now()+make_interval(secs=>$3::integer)
+              else next_attempt_at
+            end,
             locked_at=null,
             locked_by=null,
             last_error_code=$4,
@@ -496,7 +530,9 @@ async function mark_failed(job: upgrade_job, error: unknown): Promise<void> {
   );
 }
 
-export async function process_rosetta_generation_upgrade_job(job: upgrade_job): Promise<void> {
+export async function process_rosetta_generation_upgrade_job(
+  job: upgrade_job,
+): Promise<void> {
   try {
     const receipt = await replay_job(job);
     const assembly = await assemble_rosetta_and_resolve_family({
@@ -514,6 +550,7 @@ export async function process_rosetta_generation_upgrade_job(job: upgrade_job): 
       assembly_run_id: assembly.assembly_run_id,
       target_engine_version: job.target_engine_version,
       target_rule_set_version: job.target_rule_set_version,
+      target_rule_manifest_hash: job.target_rule_manifest_hash,
     });
   } catch (error) {
     await mark_failed(job, error);
@@ -531,8 +568,10 @@ export async function run_rosetta_generation_upgrade_cycle(): Promise<void> {
   cycle_running = true;
   try {
     await discover_rosetta_generation_upgrades();
-    const job = await claim_next_job();
-    if (job) await process_rosetta_generation_upgrade_job(job);
+    const jobs = await claim_job_batch();
+    if (jobs.length) {
+      await Promise.all(jobs.map(job => process_rosetta_generation_upgrade_job(job)));
+    }
   } catch (error) {
     console.error("[RosettaGenerationUpgrade] cycle_failed", {
       error_code: safe_error_code(error),
@@ -551,6 +590,7 @@ export function start_rosetta_generation_upgrade_worker(): void {
     interval_ms,
     max_attempts: MAX_ATTEMPTS,
     discovery_batch_size: DISCOVERY_BATCH_SIZE,
+    max_jobs_per_cycle: MAX_JOBS_PER_CYCLE,
   });
   void run_rosetta_generation_upgrade_cycle();
   timer = setInterval(() => {
