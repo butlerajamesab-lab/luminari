@@ -31,6 +31,8 @@ type PathwayDto = {
   createdAt: string | null;
 };
 
+const MAX_RETURNED_PATHWAYS = 200;
+
 function object_value(value: unknown): Record<string, unknown> {
   return value != null && typeof value === "object" && !Array.isArray(value)
     ? value as Record<string, unknown>
@@ -50,7 +52,11 @@ function text_list(value: unknown): string[] {
       .filter((entry): entry is string => entry != null);
   }
   const text = text_value(value);
-  return text == null ? [] : [text];
+  if (text == null) return [];
+  if (text.includes(";")) {
+    return text.split(";").map(entry => entry.trim()).filter(Boolean);
+  }
+  return [text];
 }
 
 function unique_sorted(values: string[]): string[] {
@@ -163,10 +169,11 @@ export function build_enforcement_pathway_dto(
 ) {
   const allPathways = rows.pathways.map(row => map_pathway(row, rows.agencyForms));
   const filter = requested_filter(input);
-  const pathways = filter == null
+  const matchingPathways = filter == null
     ? allPathways
     : allPathways.filter(pathway => pathway_matches(pathway, filter));
-  const status: SourceState = pathways.length > 0
+  const pathways = matchingPathways.slice(0, MAX_RETURNED_PATHWAYS);
+  const status: SourceState = matchingPathways.length > 0
     ? "source_text_only"
     : "unavailable";
 
@@ -180,8 +187,8 @@ export function build_enforcement_pathway_dto(
         : "Only stored source text is available; no deadline, action, outcome, penalty, or success-rate claim is calculated or endorsed.",
     },
     matchedBy: filter == null
-      ? pathways.length > 0 ? "all" as const : "none" as const
-      : pathways.length > 0 ? filter.key : "none" as const,
+      ? matchingPathways.length > 0 ? "all" as const : "none" as const
+      : matchingPathways.length > 0 ? filter.key : "none" as const,
     requested: {
       agencyShort: text_value(input.agencyShort),
       claimType: text_value(input.claimType),
@@ -197,45 +204,143 @@ export function build_enforcement_pathway_dto(
       ),
     },
     totalSourceRows: allPathways.length,
+    matchedSourceRows: matchingPathways.length,
+    returnedSourceRows: pathways.length,
+    returnLimit: MAX_RETURNED_PATHWAYS,
+    sourceContract: "current_civic_object_enforcement_pathways_v1",
     pathways,
   };
 }
 
 /**
- * Takes one pool lease and returns one exact live-table snapshot. Filtering and
- * camel-case projection happen after the snapshot so every returned field can
- * be traced to the same read without procedural inference or fallback maps.
+ * Current-corpus enforcement read.
+ *
+ * Every returned field is projected from the current reconciled civic object
+ * plus the exact source-candidate payload for that object's candidate hash and
+ * artifact. The query intentionally does not promote complaint text into
+ * calculated deadlines, remedies, success rates, or case-specific advice.
  */
 export async function read_enforcement_pathways(input: EnforcementPathwayInput) {
   const { rows } = await getPool().query(`
+    with current_objects as materialized (
+      select
+        civic_object_uid,
+        object_ref,
+        source_candidate_hash,
+        artifact_key,
+        source_locator,
+        source_content_sha256,
+        parser_version,
+        jurisdiction,
+        state_code,
+        category,
+        description,
+        website_url,
+        filing_portal_url,
+        data_state,
+        reconciled_at,
+        name
+      from public.v_lighthouse_civic_object_current_v1
+      where object_class = 'enforcement_pathway'
+    ), candidate_payloads as materialized (
+      select distinct on (p.candidate_hash, p.artifact_key)
+        p.candidate_hash,
+        p.artifact_key,
+        p.payload
+      from public.luminari_corpus_candidate_v1 p
+      join (
+        select distinct source_candidate_hash, artifact_key
+        from current_objects
+      ) c
+        on c.source_candidate_hash = p.candidate_hash
+       and c.artifact_key = p.artifact_key
+      order by p.candidate_hash, p.artifact_key, p.created_at desc
+    ), source_rows as (
+      select
+        c.*,
+        coalesce(p.payload->'row', p.payload->'record', '{}'::jsonb) as source_record
+      from current_objects c
+      left join candidate_payloads p
+        on p.candidate_hash = c.source_candidate_hash
+       and p.artifact_key = c.artifact_key
+    )
     select coalesce((
              select jsonb_agg(
                       jsonb_build_object(
-                        'id', id,
-                        'pathway_id', pathway_id,
-                        'pathway_name', pathway_name,
-                        'jurisdiction', jurisdiction,
-                        'domain', domain,
-                        'description', description,
+                        'id', civic_object_uid,
+                        'pathway_id', coalesce(
+                          nullif(source_record->>'pathway_id',''),
+                          nullif(source_record->>'fep_uuid',''),
+                          object_ref
+                        ),
+                        'pathway_name', coalesce(
+                          nullif(source_record->>'oversight_body',''),
+                          nullif(source_record->>'pathway_name',''),
+                          nullif(source_record->>'agency',''),
+                          nullif(source_record->>'name',''),
+                          nullif(name,''),
+                          'Unnamed source record'
+                        ),
+                        'jurisdiction', coalesce(
+                          nullif(state_code,''),
+                          nullif(jurisdiction,''),
+                          nullif(source_record->>'jurisdiction_name',''),
+                          nullif(source_record->>'jurisdiction','')
+                        ),
+                        'domain', coalesce(
+                          nullif(source_record->>'entity_type',''),
+                          nullif(source_record->>'model_type',''),
+                          nullif(source_record->>'domains',''),
+                          nullif(source_record->>'domain',''),
+                          nullif(category,'')
+                        ),
+                        'description', coalesce(
+                          nullif(source_record->>'what_to_report',''),
+                          nullif(source_record->>'description',''),
+                          nullif(description,'')
+                        ),
                         'metadata', jsonb_build_object(
-                          'source_pending', metadata->'source_pending',
-                          'source_file', metadata->'source_file',
-                          'source_sha256', metadata->'source_sha256',
-                          'source_url', metadata->'source_url',
+                          'source_pending', data_state <> 'current_typed',
+                          'source_file', artifact_key,
+                          'source_sha256', source_content_sha256,
+                          'source_url', coalesce(
+                            nullif(source_record->>'source_url',''),
+                            nullif(website_url,''),
+                            nullif(filing_portal_url,'')
+                          ),
+                          'source_locator', source_locator,
+                          'parser_version', parser_version,
                           'original_record', jsonb_build_object(
-                            'agency', metadata#>'{original_record,agency}',
-                            'agency_short', metadata#>'{original_record,agency_short}',
-                            'claim_types', metadata#>'{original_record,claim_types}',
-                            'pipeline_category', metadata#>'{original_record,pipeline_category}',
-                            'pipeline_categories', metadata#>'{original_record,pipeline_categories}'
+                            'agency', coalesce(
+                              source_record->'agency',
+                              source_record->'oversight_body'
+                            ),
+                            'agency_short', source_record->'agency_short',
+                            'claim_types', source_record->'claim_types',
+                            'pipeline_category', source_record->'pipeline_category',
+                            'pipeline_categories', source_record->'pipeline_categories'
                           )
                         ),
-                        'source_url', source_url,
-                        'created_at', created_at
+                        'source_url', coalesce(
+                          nullif(source_record->>'source_url',''),
+                          nullif(website_url,''),
+                          nullif(filing_portal_url,'')
+                        ),
+                        'created_at', reconciled_at
                       )
-                      order by pathway_name, id
+                      order by
+                        coalesce(nullif(state_code,''), nullif(jurisdiction,''), ''),
+                        coalesce(
+                          nullif(source_record->>'oversight_body',''),
+                          nullif(source_record->>'pathway_name',''),
+                          nullif(source_record->>'agency',''),
+                          nullif(source_record->>'name',''),
+                          nullif(name,''),
+                          object_ref
+                        ),
+                        object_ref
                     )
-               from public.enforcement_pathway_models
+               from source_rows
            ), '[]'::jsonb) as pathways,
            coalesce((
              select jsonb_agg(
