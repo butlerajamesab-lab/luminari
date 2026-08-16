@@ -8,8 +8,8 @@ export type PublishableResourceDirectorySearchInput = {
   offset?: number;
 };
 
-const PROJECTION_CONTRACT = "lighthouse_resource_directory_whole_corpus_v2";
-const DIRECTORY_VIEW = "public.v_lighthouse_resource_directory_whole_corpus_v2";
+const PROJECTION_CONTRACT = "lighthouse_resource_directory_breadth_v3";
+const DIRECTORY_VIEW = "public.v_lighthouse_resource_directory_breadth_v3";
 
 function finiteNumber(value: unknown, fallback = 0) {
   const parsed = Number(value ?? fallback);
@@ -21,9 +21,12 @@ function uniqueStrings(values: Array<string | null | undefined>) {
 }
 
 function sourceReference(row: any) {
-  return row?.run_id && row?.source_candidate_hash
-    ? `whole_corpus:${row.run_id}:${row.source_candidate_hash}`
-    : null;
+  if (row?.run_id && row?.source_candidate_hash) {
+    return `whole_corpus:${row.run_id}:${row.source_candidate_hash}`;
+  }
+  if (row?.source_locator) return `catalog:${row.source_locator}`;
+  if (row?.source_lane && row?.source_id) return `${row.source_lane}:${row.source_id}`;
+  return row?.resource_record_uid ?? null;
 }
 
 function contactsFor(row: any) {
@@ -77,12 +80,13 @@ function mapResourceRow(row: any) {
   const category = row.ui_category ?? "general_resource";
   const state = row.state_code ?? null;
   const jurisdiction = row.jurisdiction ?? state ?? null;
+  const current = row.publication_lane === "whole_corpus_current";
   const mapped = {
     resource_entity_id: String(row.resource_entity_id),
-    canonical_id: String(row.source_candidate_hash),
-    source_family_key: row.current_run_role ?? "whole_corpus",
-    source_table: "v_lighthouse_resource_directory_whole_corpus_v2",
-    source_pk: String(row.object_ref),
+    canonical_id: String(row.source_candidate_hash ?? row.resource_record_uid),
+    source_family_key: row.source_lane ?? row.current_run_role ?? "resource_catalog",
+    source_table: DIRECTORY_VIEW,
+    source_pk: String(row.object_ref ?? row.resource_record_uid),
     source_hash: row.source_candidate_hash ?? null,
     resource_name: String(row.name ?? row.organization_name ?? "[unnamed]"),
     source_resource_name: String(row.name ?? row.organization_name ?? "[unnamed]"),
@@ -97,15 +101,16 @@ function mapResourceRow(row: any) {
     eligibility_summary: row.eligibility_summary ?? null,
     apply_notes: row.apply_notes ?? null,
     service_categories: uniqueStrings([category, row.category, row.object_class]),
-    verification_status: "source_attached",
-    promotion_status: "whole_corpus_current",
+    verification_status: row.data_state ?? "source_attached",
+    promotion_status: current ? "whole_corpus_current" : "legacy_catalog_preserved",
     provenance_status: "source_preserved",
     publication_status: "active" as const,
     publication_source_reference: sourceReference(row),
-    publication_review_note:
-      "Current source-authored civic object recovered from the preserved Lighthouse corpus. Source attachment preserves provenance; it is not an independent re-verification of every underlying fact.",
+    publication_review_note: current
+      ? "Current source-authored civic object recovered from the preserved Lighthouse corpus. Source attachment preserves provenance; it is not an independent re-verification of every underlying fact."
+      : "Preserved pre-existing Lighthouse resource/program catalog record retained for breadth continuity. The newer reconciliation layer enriches this record but does not suppress it.",
     projection_contract: PROJECTION_CONTRACT,
-    catalog_kind: row.catalog_kind ?? null,
+    catalog_kind: row.catalog_kind ?? row.source_lane ?? null,
     object_class: row.object_class ?? null,
     object_ref: row.object_ref ?? null,
     artifact_key: row.artifact_key ?? null,
@@ -124,6 +129,10 @@ function mapResourceRow(row: any) {
     deadline: row.deadline ?? null,
     hours: row.hours ?? null,
     languages: row.languages ?? null,
+    source_lane: row.source_lane ?? null,
+    publication_lane: row.publication_lane ?? null,
+    exact_match_record_count: finiteNumber(row.exact_match_record_count, 1),
+    corroborating_lane_count: finiteNumber(row.corroborating_lane_count, 1),
   };
 
   return {
@@ -144,7 +153,7 @@ function mapResourceRow(row: any) {
           location_kind: "jurisdiction_coverage",
           map_eligible: false,
           source_reference: sourceReference(row),
-          review_note: "No source-attached physical address is represented for this civic object.",
+          review_note: "No source-attached physical address is represented for this catalog record.",
           review_version: PROJECTION_CONTRACT,
         },
   };
@@ -157,21 +166,21 @@ async function getWholeCorpusState() {
 
 export async function getPublishableResourceDirectorySummary() {
   const pool = getPool();
-  const [state, totalsResult, categoriesResult, jurisdictionsResult] = await Promise.all([
+  const [state, totalsResult, categoriesResult, jurisdictionsResult, lanesResult] = await Promise.all([
     getWholeCorpusState(),
     pool.query(`
       select count(*)::int as total_resources,
              count(*) filter(where phone is not null)::int
                + count(*) filter(where email is not null)::int
-               + count(*) filter(where website_url is not null)::int
-               + count(*) filter(where filing_portal_url is not null and filing_portal_url is distinct from website_url)::int as contact_count,
-             count(*) filter(where phone is not null or email is not null or website_url is not null or filing_portal_url is not null)::int as resources_with_contacts,
+               + count(*) filter(where website_url is not null)::int as contact_count,
+             count(*) filter(where phone is not null or email is not null or website_url is not null)::int as resources_with_contacts,
              count(*) filter(where address is not null)::int as location_count,
              count(*) filter(where address is not null)::int as resources_with_locations,
              count(distinct coalesce(state_code,jurisdiction))::int as jurisdiction_count,
              count(*) filter(where object_class='resource')::int as direct_resource_count,
              count(*) filter(where object_class='program')::int as program_count,
-             count(*) filter(where legacy_identity_preserved)::int as legacy_identity_preserved_count
+             count(*) filter(where legacy_identity_preserved)::int as legacy_identity_preserved_count,
+             count(*) filter(where corroborating_lane_count > 1)::int as cross_lane_corroborated_count
         from ${DIRECTORY_VIEW}
     `),
     pool.query(`select ui_category as id,count(*)::int as count from ${DIRECTORY_VIEW} group by ui_category order by count desc,id`),
@@ -187,6 +196,7 @@ export async function getPublishableResourceDirectorySummary() {
        group by code
        order by code
     `),
+    pool.query(`select source_lane,count(*)::int as count from ${DIRECTORY_VIEW} group by source_lane order by count desc,source_lane`),
   ]);
 
   const totals = totalsResult.rows[0] ?? {};
@@ -205,14 +215,16 @@ export async function getPublishableResourceDirectorySummary() {
     direct_resource_count: finiteNumber(totals.direct_resource_count),
     program_count: finiteNumber(totals.program_count),
     legacy_identity_preserved_count: finiteNumber(totals.legacy_identity_preserved_count),
+    cross_lane_corroborated_count: finiteNumber(totals.cross_lane_corroborated_count),
     categories: categoriesResult.rows.map((row) => ({ id: String(row.id), count: finiteNumber(row.count) })),
     jurisdictions: jurisdictionsResult.rows.map((row) => ({ code: String(row.code), count: finiteNumber(row.count), categories: row.categories ?? {} })),
+    source_lanes: lanesResult.rows.map((row) => ({ id: String(row.source_lane), count: finiteNumber(row.count) })),
     current_snapshot: {
-      snapshot_id: "whole-corpus-current-v2",
-      snapshot_version: "whole_corpus_resource_directory_v2",
+      snapshot_id: "breadth-preserving-resource-directory-v3",
+      snapshot_version: PROJECTION_CONTRACT,
       receipt_hash: null,
       activated_at: null,
-      source_quality_lanes: ["fresh_corpus_current", "state_enrichment_current"],
+      source_quality_lanes: lanesResult.rows.map((row) => String(row.source_lane)),
       held_identity_conflicts: finiteNumber((state as any)?.unresolved_or_held),
     },
     whole_corpus_state: state,
@@ -248,11 +260,9 @@ export async function searchPublishableResourceDirectory(input: PublishableResou
       or coalesce(phone,'') ilike ${p}
       or coalesce(email,'') ilike ${p}
       or coalesce(website_url,'') ilike ${p}
-      or coalesce(filing_portal,'') ilike ${p}
       or coalesce(address,'') ilike ${p}
-      or coalesce(statutory_authority,'') ilike ${p}
       or coalesce(category,'') ilike ${p}
-      or coalesce(section_name,'') ilike ${p}
+      or coalesce(source_lane,'') ilike ${p}
     )`);
   }
 
@@ -272,8 +282,8 @@ export async function searchPublishableResourceDirectory(input: PublishableResou
     offset,
     items: rowsResult.rows.map(mapResourceRow),
     current_snapshot: {
-      snapshot_id: "whole-corpus-current-v2",
-      snapshot_version: "whole_corpus_resource_directory_v2",
+      snapshot_id: "breadth-preserving-resource-directory-v3",
+      snapshot_version: PROJECTION_CONTRACT,
       receipt_hash: null,
     },
     projection_contract: PROJECTION_CONTRACT,
@@ -287,46 +297,56 @@ export async function getPublishableResourceDirectoryDetail(resourceEntityId: st
   const row = result.rows[0];
   if (!row) return null;
 
-  const [candidateResult, artifactResult, qualityResult] = await Promise.all([
-    pool.query(`
-      select c.candidate_key,c.run_id::text,c.artifact_key,c.candidate_type,c.source_locator,c.jurisdiction,c.state_code,
-             c.section_name,c.name,c.organization_name,c.category,c.layer,c.phone,c.email,c.website_url,c.address,
-             c.eligibility_summary,c.apply_notes,c.description,left(c.raw_excerpt,5000) as raw_excerpt,
-             c.parser_version,c.candidate_hash,c.source_content_sha256,c.jurisdiction_resolution_state,c.candidate_state,c.payload
-        from public.luminari_corpus_candidate_v1 c
-       where c.candidate_key=$1
-       limit 1
-    `, [row.object_ref]),
-    pool.query(`
-      select artifact_key,bucket_id,object_name,artifact_role,jurisdiction_hint,semantic_family,generation_label,
-             exact_duplicate_of,content_sha256,extracted_text_sha256,extraction_status,byte_size,mimetype,
-             storage_created_at,storage_updated_at,observed_at
-        from public.luminari_corpus_source_artifact_v1
-       where artifact_key=$1
-       limit 1
-    `, [row.artifact_key]),
-    pool.query(`
-      select q.candidate_key,q.run_id::text,q.quality_version,q.artifact_key,q.source_locator,q.effective_name,
-             q.state_code,q.jurisdiction,q.category,q.source_priority,q.quality_state,q.quality_reasons,q.evaluated_at
-        from public.luminari_corpus_resource_quality_v1 q
-       where q.candidate_key=$1
-       order by q.evaluated_at desc,q.quality_version
-       limit 100
-    `, [row.object_ref]),
-  ]);
+  const current = row.publication_lane === "whole_corpus_current";
+  const [candidateResult, artifactResult, qualityResult] = current
+    ? await Promise.all([
+        pool.query(`
+          select c.candidate_key,c.run_id::text,c.artifact_key,c.candidate_type,c.source_locator,c.jurisdiction,c.state_code,
+                 c.section_name,c.name,c.organization_name,c.category,c.layer,c.phone,c.email,c.website_url,c.address,
+                 c.eligibility_summary,c.apply_notes,c.description,left(c.raw_excerpt,5000) as raw_excerpt,
+                 c.parser_version,c.candidate_hash,c.source_content_sha256,c.jurisdiction_resolution_state,c.candidate_state,c.payload
+            from public.luminari_corpus_candidate_v1 c
+           where c.candidate_key=$1
+           limit 1
+        `, [row.object_ref]),
+        pool.query(`
+          select artifact_key,bucket_id,object_name,artifact_role,jurisdiction_hint,semantic_family,generation_label,
+                 exact_duplicate_of,content_sha256,extracted_text_sha256,extraction_status,byte_size,mimetype,
+                 storage_created_at,storage_updated_at,observed_at
+            from public.luminari_corpus_source_artifact_v1
+           where artifact_key=$1
+           limit 1
+        `, [row.artifact_key]),
+        pool.query(`
+          select q.candidate_key,q.run_id::text,q.quality_version,q.artifact_key,q.source_locator,q.effective_name,
+                 q.state_code,q.jurisdiction,q.category,q.source_priority,q.quality_state,q.quality_reasons,q.evaluated_at
+            from public.luminari_corpus_resource_quality_v1 q
+           where q.candidate_key=$1
+           order by q.evaluated_at desc,q.quality_version
+           limit 100
+        `, [row.object_ref]),
+      ])
+    : [{ rows: [] }, { rows: [] }, { rows: [] }] as any;
 
   return {
     ...mapResourceRow(row),
     identity: {
-      identity_key: row.legacy_identity_key ?? row.source_candidate_hash,
-      resolution_state: row.legacy_identity_preserved ? "snapshot_identity_preserved" : "source_object_deterministic",
-      candidate_count: 1,
-      candidate_keys: [row.object_ref],
-      source_artifacts: [row.artifact_key],
-      identity_receipt_hash: row.source_candidate_hash,
+      identity_key: row.legacy_identity_key ?? row.source_candidate_hash ?? row.resource_record_uid,
+      resolution_state: current
+        ? row.legacy_identity_preserved ? "snapshot_identity_preserved" : "source_object_deterministic"
+        : "legacy_catalog_identity_preserved",
+      candidate_count: current ? 1 : 0,
+      candidate_keys: current ? [row.object_ref] : [],
+      source_artifacts: current && row.artifact_key ? [row.artifact_key] : [],
+      identity_receipt_hash: row.source_candidate_hash ?? null,
       legacy_identity_preserved: Boolean(row.legacy_identity_preserved),
+      exact_match_record_count: finiteNumber(row.exact_match_record_count, 1),
+      corroborating_lane_count: finiteNumber(row.corroborating_lane_count, 1),
     },
     provenance: {
+      publication_lane: row.publication_lane,
+      source_lane: row.source_lane,
+      resource_record_uid: row.resource_record_uid,
       run_id: row.run_id,
       run_role: row.current_run_role,
       engine_version: row.current_run_engine_version,
@@ -335,12 +355,13 @@ export async function getPublishableResourceDirectoryDetail(resourceEntityId: st
       source_candidate_hash: row.source_candidate_hash,
       parser_version: row.parser_version,
       field_provenance: row.field_provenance ?? {},
-      reconciled_at: row.reconciled_at,
+      source_created_at: row.source_created_at,
     },
     source_candidates: candidateResult.rows,
     source_artifacts: artifactResult.rows,
     quality_receipts: qualityResult.rows,
-    source_notice:
-      "This directory entry is projected from a current, provenance-bound civic object in the preserved Lighthouse corpus. Unresolved/conflicted objects remain outside the person-facing directory.",
+    source_notice: current
+      ? "This directory entry is projected from a current, provenance-bound civic object in the preserved Lighthouse corpus."
+      : "This directory entry is a preserved pre-existing Lighthouse resource/program catalog record retained for breadth continuity while identity/corroboration is reconciled across lanes.",
   };
 }
