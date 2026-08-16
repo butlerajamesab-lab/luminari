@@ -27,9 +27,28 @@ export async function sync_rosetta_generation_target_once(): Promise<void> {
   running = true;
   try {
     const generation = await fetch_rosetta_current_generation();
+    const validation_test_name = (generation as unknown as { validation_test_name?: unknown }).validation_test_name;
+    const promoted_at = (generation as unknown as { promoted_at?: unknown }).promoted_at;
+    if (typeof validation_test_name !== "string" || validation_test_name.trim().length === 0) {
+      throw new Error("rosetta_current_generation_validation_contract_missing");
+    }
+    if (
+      typeof promoted_at !== "string"
+      || !Number.isFinite(Date.parse(promoted_at))
+    ) {
+      throw new Error("rosetta_current_generation_promotion_receipt_missing");
+    }
+
     await query_with_diagnostics(
-      "select public.civic_genome_observe_rosetta_generation_target_v1($1,$2,$3,$4) as receipt",
-      [generation.contract, generation.engine_version, generation.rule_set_version, generation.rule_manifest_hash],
+      "select public.civic_genome_observe_rosetta_generation_target_v1($1,$2,$3,$4,$5,$6::timestamptz) as receipt",
+      [
+        generation.contract,
+        generation.engine_version,
+        generation.rule_set_version,
+        generation.rule_manifest_hash,
+        validation_test_name,
+        promoted_at,
+      ],
       {
         label: "rosetta_generation_target_sync",
         pool_acquire_timeout_ms: 1_000,
