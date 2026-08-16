@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -7,189 +7,202 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
   ArrowLeft,
-  Lightbulb,
-  Share2,
-  Copy,
+  ChevronLeft,
   ChevronRight,
   ExternalLink,
+  FileCheck2,
+  Globe2,
+  Lightbulb,
+  Loader2,
   Phone,
-  Heart,
-  Sparkles,
-  RefreshCw,
   Search,
+  Share2,
+  Sparkles,
+  X,
 } from "lucide-react";
 
-export default function DiscoverBenefits() {
+const PAGE_SIZE = 60;
 
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [expandedSpotlight, setExpandedSpotlight] = useState<string | null>(null);
+function fmt(value: unknown) {
+  const number = Number(value ?? 0);
+  return Number.isFinite(number) ? number.toLocaleString() : "0";
+}
 
-  // Fetch daily spotlight
-  const { data: dailyFeed, isLoading: dailyLoading } = trpc.discovery.daily.useQuery();
+function label(value: string | null | undefined) {
+  if (!value) return "Uncategorized";
+  return value
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+}
 
-  // Fetch all categories
-  const { data: categories } = trpc.discovery.categories.useQuery();
+function iconFor(category: string | null | undefined) {
+  const value = String(category ?? "").toLowerCase();
+  if (value.includes("food")) return "🍎";
+  if (value.includes("health")) return "🏥";
+  if (value.includes("housing")) return "🏠";
+  if (value.includes("disability")) return "♿";
+  if (value.includes("tribal")) return "🪶";
+  if (value.includes("legal") || value.includes("rights")) return "⚖️";
+  if (value.includes("employment") || value.includes("labor")) return "💼";
+  if (value.includes("crisis") || value.includes("violence")) return "🛟";
+  if (value.includes("veteran")) return "🎖️";
+  if (value.includes("cash") || value.includes("benefit")) return "💵";
+  return "💡";
+}
 
-  // Fetch category spotlight when selected
-  const { data: categoryFeed } = trpc.discovery.byCategory.useQuery(
-    { category: selectedCategory! },
-    { enabled: !!selectedCategory }
+function FactActions({ fact }: { fact: any }) {
+  return (
+    <div className="mt-3 flex flex-wrap gap-2">
+      {fact.phone && (
+        <a
+          href={`tel:${String(fact.phone).replace(/[^0-9+]/g, "")}`}
+          className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-3 py-1.5 text-xs font-semibold text-emerald-200"
+        >
+          <Phone className="h-3.5 w-3.5" />
+          {fact.phone}
+        </a>
+      )}
+      {fact.website && (
+        <a
+          href={fact.website}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 rounded-full border border-sky-400/25 bg-sky-400/10 px-3 py-1.5 text-xs font-semibold text-sky-200"
+        >
+          <ExternalLink className="h-3.5 w-3.5" />
+          Website
+        </a>
+      )}
+    </div>
   );
+}
 
-  // Fetch all spotlights for browsing
-  const { data: allSpotlights } = trpc.discovery.all.useQuery();
+export default function DiscoverBenefits() {
+  const [queryDraft, setQueryDraft] = useState("");
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("");
+  const [jurisdiction, setJurisdiction] = useState("");
+  const [page, setPage] = useState(0);
+  const [expandedFact, setExpandedFact] = useState<string | null>(null);
+  const [showAllCategories, setShowAllCategories] = useState(false);
 
-  // Filter spotlights by category
-  const filteredSpotlights = selectedCategory
-    ? allSpotlights?.filter((s: any) => s.category === selectedCategory)
-    : allSpotlights;
+  const discovery = trpc.canonicalCore.discoveryFacts.useQuery({
+    query: query || undefined,
+    category: category || undefined,
+    jurisdiction: jurisdiction || undefined,
+    limit: PAGE_SIZE,
+    offset: page * PAGE_SIZE,
+  });
 
-  const handleShare = async (programId: string, headline: string) => {
-    const shareText = `Did you know? ${headline}\n\n— Shared via Luminari Benefits Navigator`;
+  const data = discovery.data as any;
+  const items = (Array.isArray(data?.items) ? data.items : []) as any[];
+  const categories = (Array.isArray(data?.categories) ? data.categories : []) as Array<{ category: string; count: number }>;
+  const visibleCategories = showAllCategories ? categories : categories.slice(0, 28);
+  const totalPages = Math.max(1, Math.ceil(Number(data?.total ?? 0) / PAGE_SIZE));
+  const daily = data?.daily ?? null;
+  const hasFilters = Boolean(query || category || jurisdiction);
 
+  const sourceSummary = useMemo(() => {
+    if (!data?.summary) return [];
+    return [
+      ["Current facts", data.summary.total],
+      ["Verified", data.summary.verified],
+      ["Jurisdictions", data.summary.jurisdictions],
+      ["Source lanes", data.summary.source_lanes],
+    ];
+  }, [data]);
+
+  function submitSearch(event: FormEvent) {
+    event.preventDefault();
+    setPage(0);
+    setQuery(queryDraft.trim());
+  }
+
+  function clearFilters() {
+    setQueryDraft("");
+    setQuery("");
+    setCategory("");
+    setJurisdiction("");
+    setPage(0);
+  }
+
+  async function shareFact(fact: any) {
+    const text = `Did you know? ${fact.title}\n\n${fact.body || ""}${fact.phone ? `\n\nPhone: ${fact.phone}` : ""}${fact.website ? `\n\n${fact.website}` : ""}\n\n— Shared via Luminari`;
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: "Did You Know?",
-          text: shareText,
-        });
-      } catch {
-        // User cancelled or share failed, fall back to clipboard
-        await copyToClipboard(shareText);
-      }
-    } else {
-      await copyToClipboard(shareText);
+        await navigator.share({ title: "Did You Know?", text });
+        return;
+      } catch {}
     }
-  };
-
-  const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      toast.success("Copied to clipboard", {
-        description: "Share this with someone who might need it.",
-      });
+      toast.success("Copied to clipboard");
     } catch {
-      toast.error("Couldn't copy", {
-        description: "Try selecting and copying the text manually.",
-      });
+      toast.error("Could not copy this fact");
     }
-  };
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
-      {/* Header */}
-      <header className="border-b border-white/10 bg-slate-950/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container max-w-5xl py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/">
+    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-100">
+      <header className="sticky top-0 z-30 border-b border-white/10 bg-slate-950/90 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+          <div className="flex min-w-0 items-center gap-2">
+            <Link href="/lighthouse">
               <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white">
-                <ArrowLeft className="w-4 h-4 mr-1" />
-                Back
+                <ArrowLeft className="mr-1 h-4 w-4" /> Lighthouse
               </Button>
             </Link>
             <div className="h-5 w-px bg-white/10" />
-            <div className="flex items-center gap-2">
-              <Lightbulb className="w-5 h-5 text-amber-400" />
-              <h1 className="text-lg font-semibold text-white">Did You Know?</h1>
-            </div>
+            <Lightbulb className="h-5 w-5 shrink-0 text-amber-400" />
+            <h1 className="truncate text-base font-semibold sm:text-lg">Did You Know?</h1>
           </div>
-          <div className="flex items-center gap-2">
-            <Link href="/benefits">
-              <Button variant="outline" size="sm" className="text-slate-300 border-white/10 hover:bg-white/5">
-                <Search className="w-4 h-4 mr-1" />
-                Search Benefits
-              </Button>
-            </Link>
-          </div>
+          <Link href="/resources">
+            <Button variant="outline" size="sm" className="border-white/10 text-slate-300 hover:bg-white/5">
+              <Search className="mr-1 h-4 w-4" /> Resources
+            </Button>
+          </Link>
         </div>
       </header>
 
-      <main className="container max-w-5xl py-8 space-y-10">
-        {/* Daily Spotlight — The Hero */}
+      <main className="mx-auto max-w-7xl space-y-10 px-4 py-8 sm:px-6">
         <section>
-          <div className="flex items-center gap-2 mb-4">
-            <Sparkles className="w-5 h-5 text-amber-400" />
-            <h2 className="text-sm font-medium text-amber-400 uppercase tracking-wider">Today's Spotlight</h2>
+          <div className="mb-4 flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-amber-400" />
+            <h2 className="text-xs font-bold uppercase tracking-[0.22em] text-amber-400">Current corpus spotlight</h2>
           </div>
 
-          {dailyLoading ? (
-            <Card className="bg-gradient-to-br from-amber-950/40 to-slate-900 border-amber-500/20">
-              <CardContent className="p-8">
-                <div className="animate-pulse space-y-4">
-                  <div className="h-6 bg-white/10 rounded w-3/4" />
-                  <div className="h-4 bg-white/10 rounded w-full" />
-                  <div className="h-4 bg-white/10 rounded w-5/6" />
-                </div>
+          {discovery.isLoading ? (
+            <Card className="border-amber-500/20 bg-amber-950/20">
+              <CardContent className="grid min-h-48 place-items-center p-8">
+                <Loader2 className="h-7 w-7 animate-spin text-amber-300" />
               </CardContent>
             </Card>
-          ) : dailyFeed ? (
-            <Card className="bg-gradient-to-br from-amber-950/40 to-slate-900 border-amber-500/20 overflow-hidden">
+          ) : daily ? (
+            <Card className="overflow-hidden border-amber-500/20 bg-gradient-to-br from-amber-950/35 to-slate-900">
               <CardContent className="p-0">
-                <div className="p-8 pb-6">
+                <div className="p-6 sm:p-8">
                   <div className="flex items-start gap-4">
-                    <div className="text-4xl flex-shrink-0">{dailyFeed.spotlight.icon}</div>
-                    <div className="flex-1 min-w-0">
-                      <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 mb-3">
-                        Did You Know?
-                      </Badge>
-                      <h3 className="text-xl md:text-2xl font-bold text-white mb-3 leading-tight">
-                        {dailyFeed.spotlight.headline}
-                      </h3>
-                      <p className="text-slate-300 text-base leading-relaxed mb-4">
-                        {dailyFeed.spotlight.explanation}
-                      </p>
-
-                      {dailyFeed.spotlight.common_misconception && (
-                        <div className="bg-white/5 rounded-lg p-4 mb-4 border border-white/10">
-                          <p className="text-sm text-slate-400">
-                            <span className="text-amber-400 font-medium">Common misconception: </span>
-                            {dailyFeed.spotlight.common_misconception}
-                          </p>
-                        </div>
-                      )}
-
-                      <div className="bg-emerald-950/30 rounded-lg p-4 border border-emerald-500/20">
-                        <p className="text-sm font-medium text-emerald-400 mb-1">What to do right now:</p>
-                        <p className="text-sm text-slate-300">{dailyFeed.spotlight.action_step}</p>
-                        {dailyFeed.spotlight.action_contact && (
-                          <div className="mt-2 flex items-center gap-2">
-                            {dailyFeed.spotlight.action_contact.startsWith("http") ? (
-                              <a
-                                href={dailyFeed.spotlight.action_contact}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-sm text-emerald-400 hover:text-emerald-300 underline"
-                              >
-                                <ExternalLink className="w-3 h-3" />
-                                Visit website
-                              </a>
-                            ) : (
-                              <a
-                                href={`tel:${dailyFeed.spotlight.action_contact.replace(/[^0-9+]/g, "")}`}
-                                className="inline-flex items-center gap-1 text-sm text-emerald-400 hover:text-emerald-300 underline"
-                              >
-                                <Phone className="w-3 h-3" />
-                                {dailyFeed.spotlight.action_contact}
-                              </a>
-                            )}
-                          </div>
-                        )}
+                    <div className="text-4xl">{iconFor(daily.category)}</div>
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-3 flex flex-wrap items-center gap-2">
+                        <Badge className="border-amber-500/30 bg-amber-500/20 text-amber-200">Did You Know?</Badge>
+                        <Badge variant="outline" className="border-white/10 text-slate-400">{label(daily.category)}</Badge>
+                        {daily.jurisdiction_code && <Badge variant="outline" className="border-white/10 text-slate-400">{daily.jurisdiction_code}</Badge>}
+                      </div>
+                      <h3 className="text-xl font-bold leading-tight text-white sm:text-2xl">{daily.title}</h3>
+                      <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-300 sm:text-base">{daily.body}</p>
+                      <FactActions fact={daily} />
+                      <div className="mt-4 flex flex-wrap items-center gap-2 text-[10px] text-slate-500">
+                        <span className="inline-flex items-center gap-1"><FileCheck2 className="h-3 w-3" /> {daily.verification_status || "source attached"}</span>
+                        <span>Source lane: {daily.source_lane || "unknown"}</span>
                       </div>
                     </div>
                   </div>
                 </div>
-
-                {/* Share bar */}
-                <div className="border-t border-white/10 px-8 py-3 bg-white/[0.02] flex items-center justify-between">
-                  <p className="text-xs text-slate-500">Know someone who could use this?</p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-slate-400 hover:text-amber-400"
-                    onClick={() => handleShare(dailyFeed.spotlight.program_id, dailyFeed.spotlight.headline)}
-                  >
-                    <Share2 className="w-4 h-4 mr-1" />
-                    Share This
+                <div className="flex items-center justify-between border-t border-white/10 bg-white/[0.02] px-6 py-3 sm:px-8">
+                  <p className="text-xs text-slate-500">Source-backed current discovery candidate</p>
+                  <Button variant="ghost" size="sm" onClick={() => shareFact(daily)} className="text-slate-400 hover:text-amber-300">
+                    <Share2 className="mr-1 h-4 w-4" /> Share
                   </Button>
                 </div>
               </CardContent>
@@ -197,149 +210,126 @@ export default function DiscoverBenefits() {
           ) : null}
         </section>
 
-        {/* Category Grid */}
+        <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {sourceSummary.map(([name, value]) => (
+            <div key={String(name)} className="rounded-xl border border-white/10 bg-white/[0.035] p-4">
+              <div className="font-mono text-2xl font-bold text-white">{fmt(value)}</div>
+              <div className="mt-1 text-[11px] text-slate-500">{String(name)}</div>
+            </div>
+          ))}
+        </section>
+
         <section>
-          <h2 className="text-sm font-medium text-slate-400 uppercase tracking-wider mb-4">Browse by Category</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          <form onSubmit={submitSearch} className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-slate-950/60 p-3 sm:flex-row">
+            <label className="flex min-w-0 flex-1 items-center gap-2 rounded-xl bg-white/[0.04] px-4">
+              <Search className="h-4 w-4 text-amber-300" />
+              <input
+                value={queryDraft}
+                onChange={(event) => setQueryDraft(event.target.value)}
+                placeholder="Search all current facts, services, organizations, benefits…"
+                className="h-11 w-full bg-transparent text-sm outline-none placeholder:text-slate-600"
+              />
+            </label>
+            <input
+              value={jurisdiction}
+              onChange={(event) => { setJurisdiction(event.target.value.toUpperCase()); setPage(0); }}
+              placeholder="State / territory"
+              className="h-11 rounded-xl border border-white/10 bg-slate-900 px-3 text-sm outline-none"
+            />
+            <button type="submit" className="h-11 rounded-xl bg-amber-400 px-5 text-sm font-bold text-slate-950">Search</button>
+            {hasFilters && (
+              <button type="button" onClick={clearFilters} className="grid h-11 w-11 place-items-center rounded-xl border border-white/10 text-slate-400"><X className="h-4 w-4" /></button>
+            )}
+          </form>
+        </section>
+
+        <section>
+          <div className="mb-4 flex items-end justify-between gap-3">
+            <div>
+              <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Browse current categories</h2>
+              <p className="mt-1 text-sm text-slate-500">Raw source categories are preserved rather than collapsed into the old 17-category static list.</p>
+            </div>
+            <span className="font-mono text-xs text-amber-300">{fmt(categories.length)} categories</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
             <button
-              onClick={() => setSelectedCategory(null)}
-              className={`rounded-xl p-3 text-center transition-all border ${
-                !selectedCategory
-                  ? "bg-white/10 border-white/20 text-white"
-                  : "bg-white/[0.03] border-white/5 text-slate-400 hover:bg-white/5 hover:text-white"
-              }`}
+              onClick={() => { setCategory(""); setPage(0); }}
+              className={`rounded-xl border p-3 text-left ${!category ? "border-amber-300/40 bg-amber-400/10" : "border-white/10 bg-white/[0.025]"}`}
             >
-              <div className="text-2xl mb-1">✨</div>
-              <div className="text-xs font-medium">All</div>
-              <div className="text-[10px] text-slate-500">{allSpotlights?.length || 0}</div>
+              <div className="text-xl">✨</div>
+              <div className="mt-1 text-xs font-semibold">All current facts</div>
+              <div className="mt-1 font-mono text-[10px] text-slate-500">{fmt(data?.summary?.total)}</div>
             </button>
-            {categories?.map((cat: any) => (
+            {visibleCategories.map((entry) => (
               <button
-                key={cat.category}
-                onClick={() => setSelectedCategory(cat.category === selectedCategory ? null : cat.category)}
-                className={`rounded-xl p-3 text-center transition-all border ${
-                  selectedCategory === cat.category
-                    ? "bg-white/10 border-white/20 text-white"
-                    : "bg-white/[0.03] border-white/5 text-slate-400 hover:bg-white/5 hover:text-white"
-                }`}
+                key={entry.category}
+                onClick={() => { setCategory(category === entry.category ? "" : entry.category); setPage(0); }}
+                className={`rounded-xl border p-3 text-left ${category === entry.category ? "border-amber-300/40 bg-amber-400/10" : "border-white/10 bg-white/[0.025] hover:bg-white/[0.05]"}`}
               >
-                <div className="text-2xl mb-1">{cat.icon}</div>
-                <div className="text-xs font-medium truncate">{cat.label}</div>
-                <div className="text-[10px] text-slate-500">{cat.count} facts</div>
+                <div className="text-xl">{iconFor(entry.category)}</div>
+                <div className="mt-1 truncate text-xs font-semibold">{label(entry.category)}</div>
+                <div className="mt-1 font-mono text-[10px] text-slate-500">{fmt(entry.count)}</div>
               </button>
             ))}
           </div>
+          {categories.length > 28 && (
+            <button onClick={() => setShowAllCategories((value) => !value)} className="mt-3 rounded-lg border border-white/10 px-3 py-2 text-xs text-slate-400 hover:bg-white/5">
+              {showAllCategories ? "Show top categories" : `Show all ${fmt(categories.length)} categories`}
+            </button>
+          )}
         </section>
 
-        {/* Spotlight Cards */}
         <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-medium text-slate-400 uppercase tracking-wider">
-              {selectedCategory
-                ? `${categories?.find((c: any) => c.category === selectedCategory)?.label || "Category"} Programs`
-                : "All Programs"}
-            </h2>
-            <span className="text-xs text-slate-500">{filteredSpotlights?.length || 0} programs</span>
+          <div className="mb-4 flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
+            <div>
+              <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-amber-300">Current discovery results</h2>
+              <h3 className="mt-1 text-2xl font-semibold text-white">{fmt(data?.total)} matching facts</h3>
+              <p className="mt-1 text-xs text-slate-500">Showing a {PAGE_SIZE}-record transport window. Paging reaches the full filtered universe.</p>
+            </div>
+            <div className="text-xs text-slate-500">Page {page + 1} of {totalPages}</div>
           </div>
 
-          <div className="space-y-4">
-            {filteredSpotlights?.map((spotlight: any) => {
-              const isExpanded = expandedSpotlight === spotlight.program_id;
+          {discovery.error && (
+            <div className="rounded-xl border border-rose-400/25 bg-rose-400/5 p-5 text-sm text-rose-200">
+              Current discovery facts could not load: {discovery.error.message}
+            </div>
+          )}
+
+          <div className="space-y-3">
+            {items.map((fact) => {
+              const expanded = expandedFact === fact.fact_id;
               return (
-                <Card
-                  key={spotlight.program_id}
-                  className="bg-slate-900/50 border-white/5 hover:border-white/10 transition-all overflow-hidden"
-                >
+                <Card key={fact.fact_id} className="overflow-hidden border-white/5 bg-slate-900/50 hover:border-white/10">
                   <CardContent className="p-0">
-                    {/* Collapsed view */}
                     <button
-                      onClick={() => setExpandedSpotlight(isExpanded ? null : spotlight.program_id)}
-                      className="w-full text-left p-5 flex items-start gap-4"
+                      onClick={() => setExpandedFact(expanded ? null : fact.fact_id)}
+                      className="flex w-full items-start gap-3 p-5 text-left"
                     >
-                      <div className="text-2xl flex-shrink-0 mt-0.5">{spotlight.icon}</div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-base font-semibold text-white mb-1 leading-snug">
-                          {spotlight.headline}
-                        </h3>
-                        {!isExpanded && (
-                          <p className="text-sm text-slate-400 line-clamp-2">{spotlight.explanation}</p>
-                        )}
+                      <div className="text-2xl">{iconFor(fact.category)}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1 flex flex-wrap gap-1.5">
+                          <Badge variant="outline" className="border-white/10 text-[9px] text-slate-400">{label(fact.category)}</Badge>
+                          {fact.jurisdiction_code && <Badge variant="outline" className="border-white/10 text-[9px] text-slate-400">{fact.jurisdiction_code}</Badge>}
+                          {fact.verification_status && <Badge variant="outline" className="border-emerald-400/20 text-[9px] text-emerald-300">{fact.verification_status}</Badge>}
+                        </div>
+                        <h4 className="text-sm font-semibold leading-snug text-white sm:text-base">{fact.title}</h4>
+                        {!expanded && <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-400">{fact.body}</p>}
                       </div>
-                      <ChevronRight
-                        className={`w-5 h-5 text-slate-500 flex-shrink-0 mt-1 transition-transform ${
-                          isExpanded ? "rotate-90" : ""
-                        }`}
-                      />
+                      <ChevronRight className={`mt-1 h-4 w-4 shrink-0 text-slate-600 transition-transform ${expanded ? "rotate-90" : ""}`} />
                     </button>
-
-                    {/* Expanded view */}
-                    {isExpanded && (
-                      <div className="px-5 pb-5 pt-0 ml-12">
-                        <p className="text-sm text-slate-300 leading-relaxed mb-4">
-                          {spotlight.explanation}
-                        </p>
-
-                        {spotlight.common_misconception && (
-                          <div className="bg-white/5 rounded-lg p-3 mb-4 border border-white/10">
-                            <p className="text-xs text-slate-400">
-                              <span className="text-amber-400 font-medium">Common misconception: </span>
-                              {spotlight.common_misconception}
-                            </p>
-                          </div>
-                        )}
-
-                        <div className="bg-emerald-950/30 rounded-lg p-3 mb-4 border border-emerald-500/20">
-                          <p className="text-xs font-medium text-emerald-400 mb-1">What to do right now:</p>
-                          <p className="text-xs text-slate-300">{spotlight.action_step}</p>
-                          {spotlight.action_contact && (
-                            <div className="mt-2">
-                              {spotlight.action_contact.startsWith("http") ? (
-                                <a
-                                  href={spotlight.action_contact}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 underline"
-                                >
-                                  <ExternalLink className="w-3 h-3" />
-                                  Visit website
-                                </a>
-                              ) : (
-                                <a
-                                  href={`tel:${spotlight.action_contact.replace(/[^0-9+]/g, "")}`}
-                                  className="inline-flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 underline"
-                                >
-                                  <Phone className="w-3 h-3" />
-                                  {spotlight.action_contact}
-                                </a>
-                              )}
-                            </div>
-                          )}
+                    {expanded && (
+                      <div className="border-t border-white/5 px-5 pb-5 pt-4 sm:ml-11">
+                        <p className="whitespace-pre-wrap text-sm leading-6 text-slate-300">{fact.body}</p>
+                        <FactActions fact={fact} />
+                        <div className="mt-4 grid gap-1 text-[10px] text-slate-500 sm:grid-cols-2">
+                          <div>Source lane: <code>{fact.source_lane || "unknown"}</code></div>
+                          <div>Source ID: <code className="break-all">{fact.source_id || "unknown"}</code></div>
+                          <div>Fact type: <code>{fact.fact_type || "unknown"}</code></div>
+                          <div>Priority: <code>{fact.display_priority ?? "—"}</code></div>
                         </div>
-
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-slate-400 hover:text-amber-400 h-8 text-xs"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleShare(spotlight.program_id, spotlight.headline);
-                            }}
-                          >
-                            <Share2 className="w-3 h-3 mr-1" />
-                            Share
-                          </Button>
-                          <Link href={`/benefits?search=${encodeURIComponent(spotlight.program_id)}`}>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-slate-400 hover:text-emerald-400 h-8 text-xs"
-                            >
-                              <Search className="w-3 h-3 mr-1" />
-                              Full Details
-                            </Button>
-                          </Link>
-                        </div>
+                        <Button variant="ghost" size="sm" onClick={() => shareFact(fact)} className="mt-3 h-8 text-xs text-slate-400 hover:text-amber-300">
+                          <Share2 className="mr-1 h-3.5 w-3.5" /> Share this fact
+                        </Button>
                       </div>
                     )}
                   </CardContent>
@@ -347,26 +337,31 @@ export default function DiscoverBenefits() {
               );
             })}
           </div>
+
+          <div className="mt-6 flex items-center justify-between gap-3">
+            <Button
+              variant="outline"
+              disabled={page === 0 || discovery.isFetching}
+              onClick={() => setPage((value) => Math.max(0, value - 1))}
+              className="border-white/10"
+            >
+              <ChevronLeft className="mr-1 h-4 w-4" /> Previous
+            </Button>
+            <span className="text-xs text-slate-500">{fmt(page * PAGE_SIZE + 1)}–{fmt(Math.min((page + 1) * PAGE_SIZE, Number(data?.total ?? 0)))}</span>
+            <Button
+              variant="outline"
+              disabled={page + 1 >= totalPages || discovery.isFetching}
+              onClick={() => setPage((value) => value + 1)}
+              className="border-white/10"
+            >
+              Next <ChevronRight className="ml-1 h-4 w-4" />
+            </Button>
+          </div>
         </section>
 
-        {/* Bottom CTA */}
-        <section className="text-center py-8">
-          <div className="bg-slate-900/50 rounded-2xl border border-white/5 p-8">
-            <Heart className="w-8 h-8 text-rose-400 mx-auto mb-3" />
-            <h3 className="text-lg font-semibold text-white mb-2">Know someone who needs help?</h3>
-            <p className="text-sm text-slate-400 mb-4 max-w-md mx-auto">
-              Share any of these programs with someone who might benefit. Sometimes the biggest barrier
-              is just not knowing the help exists.
-            </p>
-            <div className="flex items-center justify-center gap-3">
-              <Link href="/benefits">
-                <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                  <Search className="w-4 h-4 mr-2" />
-                  Find Benefits for Your Situation
-                </Button>
-              </Link>
-            </div>
-          </div>
+        <section className="rounded-2xl border border-white/10 bg-white/[0.025] p-5 text-xs leading-5 text-slate-500">
+          <div className="flex items-center gap-2 text-slate-300"><Globe2 className="h-4 w-4" /> Current source-bound discovery</div>
+          <p className="mt-2">This page now reads <code>v_lighthouse_did_you_know_candidates_v1</code>. The previous 45 static spotlights remain preserved in the application as a legacy/reference collection but no longer define the visible universe.</p>
         </section>
       </main>
     </div>
