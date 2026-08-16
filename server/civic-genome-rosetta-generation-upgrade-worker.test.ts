@@ -27,6 +27,14 @@ const convergenceMigration = readFileSync(
   join(root, "supabase", "migrations", "20260816002307_civic_genome_rosetta_generation_target_v1.sql"),
   "utf8",
 );
+const targetFence = readFileSync(
+  join(root, "supabase", "migrations", "20260816042731_civic_genome_rosetta_generation_target_fence_v2.sql"),
+  "utf8",
+);
+const transactionFence = readFileSync(
+  join(root, "supabase", "migrations", "20260816042900_civic_genome_rosetta_generation_transaction_fence_v2.sql"),
+  "utf8",
+);
 
 describe("Civic Genome Rosetta current-generation convergence", () => {
   it("requests current generation and exact-source replay from Rosetta without owning extraction semantics", () => {
@@ -46,13 +54,17 @@ describe("Civic Genome Rosetta current-generation convergence", () => {
     expect(worker).toContain("rosetta_upgrade_source_identity_not_unique");
   });
 
-  it("treats engine, rule set, and rule manifest as one indivisible generation identity", () => {
+  it("binds generation identity to engine rule manifest validation contract and monotonic promotion receipt", () => {
     expect(worker).toContain("binding.rosetta_rule_manifest_hash is distinct from $3");
     expect(worker).toContain("queued.target_rule_manifest_hash = $3");
-    expect(worker).toContain("target_rule_manifest_hash\n         ) do nothing");
     expect(worker).toContain("receipt.rule_manifest_hash !== job.target_rule_manifest_hash");
     expect(manifestIdentityMigration).toContain("alter column target_rule_manifest_hash set not null");
-    expect(manifestIdentityMigration).toContain("unique (\n    source_document_id,\n    target_engine_version,\n    target_rule_set_version,\n    target_rule_manifest_hash\n  )");
+    expect(targetFence).toContain("target_validation_test_name");
+    expect(targetFence).toContain("target_promoted_at");
+    expect(targetFence).toContain("if p_promoted_at < v_current.promoted_at then");
+    expect(targetSync).toContain("validation_test_name");
+    expect(targetSync).toContain("promoted_at");
+    expect(targetSync).toContain("$6::timestamptz");
   });
 
   it("fails replay acceptance unless Rosetta returns the exact queued generation and a complete admissible handoff", () => {
@@ -66,7 +78,7 @@ describe("Civic Genome Rosetta current-generation convergence", () => {
     expect(worker).toContain("rosetta_generation_upgrade_replay_receipt_rejected");
   });
 
-  it("assembles only after Rosetta replay and advances the current bill-version receipt in the same worker path", () => {
+  it("assembles only after Rosetta replay and leaves activation protected by database target fences", () => {
     const replayIndex = worker.indexOf("const receipt = await replay_job(job)");
     const assemblyIndex = worker.indexOf("const assembly = await assemble_rosetta_and_resolve_family", replayIndex);
     const versionIndex = worker.indexOf("await update_current_version_receipt", assemblyIndex);
@@ -75,6 +87,9 @@ describe("Civic Genome Rosetta current-generation convergence", () => {
     expect(assemblyIndex).toBeGreaterThan(replayIndex);
     expect(versionIndex).toBeGreaterThan(assemblyIndex);
     expect(completeIndex).toBeGreaterThan(versionIndex);
+    expect(transactionFence).toContain("civic_genome_guard_rosetta_assembly_target_v1");
+    expect(transactionFence).toContain("civic_genome_guard_rosetta_generation_upgrade_version_v1");
+    expect(transactionFence).toContain("for share");
   });
 
   it("uses bounded parallelism plus a durable fail-closed retry/dead-letter queue", () => {
@@ -84,6 +99,7 @@ describe("Civic Genome Rosetta current-generation convergence", () => {
     expect(worker).toContain("for update skip locked");
     expect(worker).toContain("await Promise.all(jobs.map(job => process_rosetta_generation_upgrade_job(job)))");
     expect(worker).toContain('dead_letter ? "dead_letter" : "retry"');
+    expect(transactionFence).toContain("civic_genome_guard_rosetta_upgrade_queue_claim_v1");
   });
 
   it("derives Lighthouse convergence from the generation receipt actually observed from Rosetta", () => {
@@ -93,7 +109,8 @@ describe("Civic Genome Rosetta current-generation convergence", () => {
     expect(convergenceMigration).toContain("binding.rosetta_rule_manifest_hash=target.rule_manifest_hash");
     expect(convergenceMigration).toContain("target.rule_manifest_hash target_rule_manifest_hash");
     expect(targetSync).toContain("fetch_rosetta_current_generation");
-    expect(targetSync).toContain("on conflict (target_name) do update");
+    expect(targetSync).toContain("civic_genome_observe_rosetta_generation_target_v1");
+    expect(targetSync).not.toContain("on conflict (target_name) do update");
   });
 
   it("starts target observation and upgrade processing with the other Rosetta/Prism workers", () => {

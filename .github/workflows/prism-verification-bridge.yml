@@ -27,6 +27,8 @@ jobs:
           server/services/prism-problem-intake-client.test.ts
           server/civic-genome-legislative-version-spine.test.ts
           server/civic-genome-legislative-version-queue-worker.test.ts
+          server/civic-genome-rosetta-generation-upgrade-worker.test.ts
+          server/civic-genome-rosetta-target-supersession.test.ts
           server/docket-jurisdiction-activation-queue-worker.test.ts
           server/docket-jurisdiction-rosetta-activation-contract.test.ts
           server/docket-cache-first-rosetta-handoff.test.ts

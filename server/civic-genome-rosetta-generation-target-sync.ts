@@ -27,23 +27,27 @@ export async function sync_rosetta_generation_target_once(): Promise<void> {
   running = true;
   try {
     const generation = await fetch_rosetta_current_generation();
+    const validation_test_name = (generation as unknown as { validation_test_name?: unknown }).validation_test_name;
+    const promoted_at = (generation as unknown as { promoted_at?: unknown }).promoted_at;
+    if (typeof validation_test_name !== "string" || validation_test_name.trim().length === 0) {
+      throw new Error("rosetta_current_generation_validation_contract_missing");
+    }
+    if (
+      typeof promoted_at !== "string"
+      || !Number.isFinite(Date.parse(promoted_at))
+    ) {
+      throw new Error("rosetta_current_generation_promotion_receipt_missing");
+    }
+
     await query_with_diagnostics(
-      `insert into public.civic_genome_rosetta_generation_target (
-         target_name, contract, engine_version, rule_set_version,
-         rule_manifest_hash, observed_at, updated_at
-       ) values ('current',$1,$2,$3,$4,now(),now())
-       on conflict (target_name) do update set
-         contract=excluded.contract,
-         engine_version=excluded.engine_version,
-         rule_set_version=excluded.rule_set_version,
-         rule_manifest_hash=excluded.rule_manifest_hash,
-         observed_at=excluded.observed_at,
-         updated_at=now()`,
+      "select public.civic_genome_observe_rosetta_generation_target_v1($1,$2,$3,$4,$5,$6::timestamptz) as receipt",
       [
         generation.contract,
         generation.engine_version,
         generation.rule_set_version,
         generation.rule_manifest_hash,
+        validation_test_name,
+        promoted_at,
       ],
       {
         label: "rosetta_generation_target_sync",
@@ -67,9 +71,7 @@ export function start_rosetta_generation_target_sync(): void {
   const delay = interval_ms();
   console.log("[RosettaGenerationTarget] started", { interval_ms: delay });
   void sync_rosetta_generation_target_once();
-  timer = setInterval(() => {
-    void sync_rosetta_generation_target_once();
-  }, delay);
+  timer = setInterval(() => void sync_rosetta_generation_target_once(), delay);
   timer.unref?.();
 }
 
