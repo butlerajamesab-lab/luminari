@@ -166,6 +166,7 @@ function DashboardRouter() {
     <DashboardLayout>
       <SovereignHeader />
       <Switch>
+        <Route path="/dashboard" component={Home} />
         <Route path="/" component={Home} />
         <Route path="/control-room" component={ControlRoom} />
         <Route path="/cases/:id/control-room" component={ControlRoom} />
@@ -233,6 +234,7 @@ function App() {
                 <Route path="/mission-control" component={MissionControlShell} />
                 <Route path="/sovereign-control" component={SovereignControl} />
                 <Route path="/ingestion-control" component={ingestion_control} />
+                <Route path="/dashboard"><DashboardRouter /></Route>
                 <Route path="/" component={HomeOrWelcome} />
                 <Route path="/lighthouse" component={Lighthouse} />
                 <Route path="/civic-map" component={CivicMap} />

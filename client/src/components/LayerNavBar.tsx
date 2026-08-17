@@ -60,8 +60,8 @@ export function LayerNavBar({ label, route, style }: LayerNavBarProps) {
             background: "rgba(34,211,238,0.07)",
             border: "1px solid rgba(34,211,238,0.25)",
           }}
-          onClick={() => navigate("/mission-control")}
-          title="Return to Dashboard / Mission Control"
+          onClick={() => navigate("/dashboard")}
+          title="Return to Dashboard"
         >
           ⌂ Dashboard
         </button>
