@@ -18,6 +18,13 @@
 import { db } from "./db";
 import { sql } from "drizzle-orm";
 
+function rowsFromExecuteResult(result: unknown): any[] {
+  const nativeRows = (result as { rows?: unknown })?.rows;
+  if (Array.isArray(nativeRows)) return nativeRows;
+  if (Array.isArray(result) && Array.isArray(result[0])) return result[0];
+  return [];
+}
+
 // ─── Types ──────────────────────────────────────────────────────
 
 export interface ConfidenceFactor {
@@ -140,10 +147,10 @@ async function loadFactors(): Promise<ConfidenceFactor[]> {
 
 async function loadTiers(): Promise<EscalationTier[]> {
   if (cachedTiers && Date.now() - cacheTimestamp < CACHE_TTL) return cachedTiers;
-  const rows = await db.execute(
+  const result = await db.execute(
     sql`SELECT * FROM escalation_thresholds ORDER BY min_score DESC`
   );
-  cachedTiers = (rows as any)[0].map((r: any) => ({
+  cachedTiers = rowsFromExecuteResult(result).map((r: any) => ({
     tierName: r.tier_name,
     minScore: r.min_score,
     maxScore: r.max_score,
@@ -621,14 +628,15 @@ export async function getEscalationSummary(): Promise<Array<{
   const results = [];
 
   for (const tier of tiers) {
-    const rows = await db.execute(
+    const result = await db.execute(
       sql`SELECT COUNT(*) as cnt FROM detected_signals
           WHERE escalation_status = ${tier.tierName}`
     );
+    const [countRow] = rowsFromExecuteResult(result);
     results.push({
       tierName: tier.tierName,
       action: tier.action,
-      signalCount: (rows as any)[0][0].cnt,
+      signalCount: Number(countRow?.cnt ?? 0),
       autoEscalate: tier.autoEscalate,
     });
   }
