@@ -100,15 +100,15 @@ export const signalGovernanceRouter = router({
   escalationThresholds: publicProcedure
     .query(async () => {
       const rows = await db.execute(
-        sql`SELECT * FROM escalation_thresholds ORDER BY minScore DESC`
+        sql`SELECT * FROM escalation_thresholds ORDER BY min_score DESC`
       );
       return (rows as any)[0].map((r: any) => ({
-        tierName: r.tierName,
-        minScore: r.minScore,
-        maxScore: r.maxScore,
+        tierName: r.tier_name,
+        minScore: r.min_score,
+        maxScore: r.max_score,
         action: r.action,
-        notifyRoles: typeof r.notifyRoles === "string" ? JSON.parse(r.notifyRoles) : (r.notifyRoles || []),
-        autoEscalate: Boolean(r.autoEscalate),
+        notifyRoles: typeof r.notify_roles === "string" ? JSON.parse(r.notify_roles) : (r.notify_roles || []),
+        autoEscalate: Boolean(r.auto_escalate),
       }));
     }),
 

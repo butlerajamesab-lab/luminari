@@ -72,6 +72,7 @@ export const adminDashboardRouter = router({
   caseActivity: publicProcedure.query(async () => {
     const oneDayAgo = oneDayAgoMillis();
     const oneWeekAgo = oneWeekAgoMillis();
+    const oneDayAgoTimestamp = oneDayAgoIso();
 
     const totalCases = await getCount(`SELECT COUNT(*)::int AS cnt FROM cases`);
     const casesToday = await getCount(`SELECT COUNT(*)::int AS cnt FROM cases WHERE created_at >= $1`, [oneDayAgo]);
@@ -82,7 +83,13 @@ export const adminDashboardRouter = router({
     // table also contains unsupported and orphaned historical projections, so
     // counting it here makes Mission Control disagree with every case view.
     const totalFindings = await getCount(`SELECT COUNT(*)::int AS cnt FROM intake_verification_records`);
-    const findingsToday = await getCount(`SELECT COUNT(*)::int AS cnt FROM intake_verification_records WHERE created_at >= $1`, [oneDayAgo]);
+    // Legacy case, document, and user timestamps are epoch-millisecond bigint
+    // columns. Intake verification uses timestamptz and therefore needs an ISO
+    // cutoff instead of the shared bigint cutoff.
+    const findingsToday = await getCount(
+      `SELECT COUNT(*)::int AS cnt FROM intake_verification_records WHERE created_at >= $1`,
+      [oneDayAgoTimestamp],
+    );
     const totalUsers = await getCount(`SELECT COUNT(*)::int AS cnt FROM users`);
     const usersToday = await getCount(`SELECT COUNT(*)::int AS cnt FROM users WHERE created_at >= $1`, [oneDayAgo]);
     const recentCasesRows = await getPool().query(

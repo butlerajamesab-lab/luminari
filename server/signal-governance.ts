@@ -11,9 +11,8 @@
  * This layer governs interpretation, confidence scoring, and provenance tracking.
  * It does NOT modify the signal detection logic itself.
  * 
- * NOTE: The DB tables use two naming conventions:
- *   - Old tables (detected_signals, confidence_factors, etc.): snake_case columns
- *   - New tables (escalation_thresholds, knowledge_*): camelCase columns
+ * NOTE: Governance tables retain their declared SQL column names. Public
+ * TypeScript return values are normalized to camelCase at this boundary.
  */
 
 import { db } from "./db";
@@ -142,15 +141,15 @@ async function loadFactors(): Promise<ConfidenceFactor[]> {
 async function loadTiers(): Promise<EscalationTier[]> {
   if (cachedTiers && Date.now() - cacheTimestamp < CACHE_TTL) return cachedTiers;
   const rows = await db.execute(
-    sql`SELECT * FROM escalation_thresholds ORDER BY minScore DESC`
+    sql`SELECT * FROM escalation_thresholds ORDER BY min_score DESC`
   );
   cachedTiers = (rows as any)[0].map((r: any) => ({
-    tierName: r.tierName,
-    minScore: r.minScore,
-    maxScore: r.maxScore,
+    tierName: r.tier_name,
+    minScore: r.min_score,
+    maxScore: r.max_score,
     action: r.action,
-    notifyRoles: typeof r.notifyRoles === "string" ? JSON.parse(r.notifyRoles) : (r.notifyRoles || []),
-    autoEscalate: Boolean(r.autoEscalate),
+    notifyRoles: typeof r.notify_roles === "string" ? JSON.parse(r.notify_roles) : (r.notify_roles || []),
+    autoEscalate: Boolean(r.auto_escalate),
   }));
   return cachedTiers!;
 }
