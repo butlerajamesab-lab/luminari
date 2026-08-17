@@ -20,6 +20,13 @@ import {
   get_canonical_live_signals,
 } from "../canonical-live-signal-queries";
 
+function rowsFromExecuteResult(result: unknown): any[] {
+  const nativeRows = (result as { rows?: unknown })?.rows;
+  if (Array.isArray(nativeRows)) return nativeRows;
+  if (Array.isArray(result) && Array.isArray(result[0])) return result[0];
+  return [];
+}
+
 export const signalGovernanceRouter = router({
   /**
    * Signal Dashboard — current canonical Atlas Domain 3 signal population.
@@ -99,10 +106,10 @@ export const signalGovernanceRouter = router({
 
   escalationThresholds: publicProcedure
     .query(async () => {
-      const rows = await db.execute(
+      const result = await db.execute(
         sql`SELECT * FROM escalation_thresholds ORDER BY min_score DESC`
       );
-      return (rows as any)[0].map((r: any) => ({
+      return rowsFromExecuteResult(result).map((r: any) => ({
         tierName: r.tier_name,
         minScore: r.min_score,
         maxScore: r.max_score,

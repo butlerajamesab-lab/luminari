@@ -50,4 +50,29 @@ describe("Mission Control runtime data boundaries", () => {
       );
     }
   });
+
+  it("normalizes PostgreSQL execute results before reading escalation rows", () => {
+    const router = read("server/routers/signal-governance.ts");
+    const service = read("server/signal-governance.ts");
+
+    for (const source of [router, service]) {
+      expect(source).toContain(
+        "const nativeRows = (result as { rows?: unknown })?.rows",
+      );
+      expect(source).toContain("if (Array.isArray(nativeRows)) return nativeRows");
+      expect(source).toContain("rowsFromExecuteResult(result)");
+    }
+
+    const escalationSummary = service.slice(
+      service.indexOf("export async function getEscalationSummary"),
+      service.indexOf("function parseDetectedSignal"),
+    );
+    expect(escalationSummary).toContain(
+      "const [countRow] = rowsFromExecuteResult(result)",
+    );
+    expect(escalationSummary).toContain(
+      "signalCount: Number(countRow?.cnt ?? 0)",
+    );
+    expect(escalationSummary).not.toContain("(rows as any)[0]");
+  });
 });
