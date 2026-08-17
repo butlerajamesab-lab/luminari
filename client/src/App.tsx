@@ -10,6 +10,7 @@ import { CaseProvider, useCase } from "./contexts/CaseContext";
 import { PlainLanguageProvider } from "./contexts/PlainLanguageContext";
 import DashboardLayout from "./components/DashboardLayout";
 import Home from "./pages/Home";
+import PlatformDashboard from "./pages/PlatformDashboard";
 import Cases from "./pages/Cases";
 import Documents from "./pages/Documents";
 import DocumentDetail from "./pages/DocumentDetail";
@@ -166,7 +167,8 @@ function DashboardRouter() {
     <DashboardLayout>
       <SovereignHeader />
       <Switch>
-        <Route path="/dashboard" component={Home} />
+        <Route path="/dashboard" component={PlatformDashboard} />
+        <Route path="/case-overview" component={Home} />
         <Route path="/" component={Home} />
         <Route path="/control-room" component={ControlRoom} />
         <Route path="/cases/:id/control-room" component={ControlRoom} />
@@ -235,6 +237,7 @@ function App() {
                 <Route path="/sovereign-control" component={SovereignControl} />
                 <Route path="/ingestion-control" component={ingestion_control} />
                 <Route path="/dashboard"><DashboardRouter /></Route>
+                <Route path="/case-overview"><DashboardRouter /></Route>
                 <Route path="/" component={HomeOrWelcome} />
                 <Route path="/lighthouse" component={Lighthouse} />
                 <Route path="/civic-map" component={CivicMap} />

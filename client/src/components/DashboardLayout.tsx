@@ -679,7 +679,7 @@ function DesktopLayoutContent({
                         key={c.id}
                         onClick={() => {
                           setCurrentCaseId(c.id);
-                          setLocation("/dashboard");
+                          setLocation("/case-overview");
                         }}
                         className={`cursor-pointer ${c.id === currentCaseId ? "bg-accent" : ""}`}
                       >
@@ -717,8 +717,8 @@ function DesktopLayoutContent({
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  onClick={() => setLocation("/dashboard")}
-                  isActive={location === "/dashboard"}
+                  onClick={() => setLocation("/case-overview")}
+                  isActive={location === "/case-overview" || location === "/"}
                   tooltip="Case Overview"
                 >
                   <LayoutDashboard className="h-4 w-4" />
