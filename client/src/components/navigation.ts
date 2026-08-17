@@ -67,7 +67,7 @@ export const LENS_OPTIONS: readonly UserLens[] = [
 
 export const caseWorkspaceItems: NavItem[] = [
   { icon: Layers, label: "Control Room", path: "/control-room" },
-  { icon: LayoutDashboard, label: "Case Overview", path: "/dashboard" },
+  { icon: LayoutDashboard, label: "Case Overview", path: "/case-overview" },
 ];
 
 export const investigateItems: NavItem[] = [

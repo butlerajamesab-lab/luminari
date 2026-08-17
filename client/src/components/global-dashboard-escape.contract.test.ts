@@ -2,20 +2,26 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 
 describe("global dashboard escape", () => {
-  it("mounts the canonical Dashboard inside the left-rail layout", () => {
+  it("keeps the platform Dashboard distinct from Case Overview", () => {
     const app = readFileSync("client/src/App.tsx", "utf8");
+    const catalog = readFileSync("client/src/pages/PlatformDashboard.tsx", "utf8");
     const layout = readFileSync("client/src/components/DashboardLayout.tsx", "utf8");
     const navigation = readFileSync("client/src/components/navigation.ts", "utf8");
 
     expect(app).toContain('<Route path="/dashboard"><DashboardRouter /></Route>');
-    expect(app).toContain('<Route path="/dashboard" component={Home} />');
-    expect(layout).toContain('setLocation("/dashboard")');
+    expect(app).toContain('<Route path="/dashboard" component={PlatformDashboard} />');
+    expect(app).toContain('<Route path="/case-overview" component={Home} />');
+    expect(app).not.toContain('<Route path="/dashboard" component={Home} />');
+    expect(layout).toContain('setLocation("/case-overview")');
     expect(navigation).toContain(
-      '{ icon: LayoutDashboard, label: "Case Overview", path: "/dashboard" }',
+      '{ icon: LayoutDashboard, label: "Case Overview", path: "/case-overview" }',
     );
     expect(navigation).toContain(
       '{ icon: Rocket, label: "Mission Control", path: "/mission-control" }',
     );
+    expect(catalog).toContain("[...allNavSections, adminSection]");
+    expect(catalog).toContain('navigate("/case-overview")');
+    expect(catalog).toContain("Case Overview is a separate case surface.");
   });
 
   it("keeps Dashboard reachable from shared layer headers", () => {
