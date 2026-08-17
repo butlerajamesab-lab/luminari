@@ -75,7 +75,7 @@ export function LuminariHelper() {
 
   if (!user) return null;
 
-  const onDashboard = location === "/mission-control" || location.startsWith("/mission-control/");
+  const onDashboard = location === "/dashboard";
 
   return (
     <>
@@ -83,10 +83,10 @@ export function LuminariHelper() {
           shells, so Dashboard stays reachable even when a page has no local nav. */}
       {!onDashboard && (
         <button
-          onClick={() => navigate("/mission-control")}
+          onClick={() => navigate("/dashboard")}
           className="fixed bottom-6 right-20 z-50 flex h-12 items-center gap-2 rounded-full border border-cyan-400/25 bg-slate-950/95 px-3 text-cyan-200 shadow-lg backdrop-blur transition hover:border-cyan-300/50 hover:bg-slate-900"
-          aria-label="Return to Dashboard / Mission Control"
-          title="Return to Dashboard / Mission Control"
+          aria-label="Return to Dashboard"
+          title="Return to Dashboard"
         >
           <LayoutDashboard className="h-5 w-5" />
           <span className="hidden sm:inline text-xs font-semibold">Dashboard</span>

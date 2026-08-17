@@ -68,7 +68,7 @@ class ErrorBoundary extends Component<Props, State> {
             <div className="flex flex-wrap justify-center gap-3">
               <button
                 onClick={() => {
-                  window.location.href = "/mission-control";
+                  window.location.href = "/dashboard";
                 }}
                 className={cn(
                   "flex items-center gap-2 px-4 py-2 rounded-lg",
