@@ -84,8 +84,10 @@ export function sort_docket_warm_candidates(
     .sort((a, b) => {
       if (a.has_cache !== b.has_cache) return a.has_cache ? 1 : -1;
       if (a.has_cache && b.has_cache) {
-        const age_order = fetched_at_ms(a.fetched_at) - fetched_at_ms(b.fetched_at);
-        if (age_order !== 0) return age_order;
+        const a_fetched_at = fetched_at_ms(a.fetched_at);
+        const b_fetched_at = fetched_at_ms(b.fetched_at);
+        if (a_fetched_at < b_fetched_at) return -1;
+        if (a_fetched_at > b_fetched_at) return 1;
       }
       return a.state.localeCompare(b.state);
     });
