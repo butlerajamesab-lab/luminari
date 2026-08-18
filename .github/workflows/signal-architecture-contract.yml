@@ -4,8 +4,11 @@ on:
   pull_request:
     paths:
       - "supabase/migrations/20260731185401_signal_architecture_ground_truth.sql"
+      - "supabase/migrations/20260818084500_prism_domain2_legal_pattern_pullthrough.sql"
+      - "supabase/migrations/20260818090000_domain2_current_prism_generation.sql"
       - "server/routers/enforcement-intel.ts"
       - "server/signal-architecture-ground-truth.test.ts"
+      - "server/signal-domain2-prism-currentness.test.ts"
       - "client/src/pages/SignalRegistry.tsx"
       - ".github/workflows/signal-architecture-contract.yml"
   push:
@@ -13,8 +16,11 @@ on:
       - main
     paths:
       - "supabase/migrations/20260731185401_signal_architecture_ground_truth.sql"
+      - "supabase/migrations/20260818084500_prism_domain2_legal_pattern_pullthrough.sql"
+      - "supabase/migrations/20260818090000_domain2_current_prism_generation.sql"
       - "server/routers/enforcement-intel.ts"
       - "server/signal-architecture-ground-truth.test.ts"
+      - "server/signal-domain2-prism-currentness.test.ts"
       - "client/src/pages/SignalRegistry.tsx"
       - ".github/workflows/signal-architecture-contract.yml"
 
@@ -33,6 +39,9 @@ jobs:
           cache: npm
       - run: npm install --legacy-peer-deps
       - name: Run focused boundary contracts
-        run: npx vitest run server/signal-architecture-ground-truth.test.ts
+        run: >-
+          npx vitest run
+          server/signal-architecture-ground-truth.test.ts
+          server/signal-domain2-prism-currentness.test.ts
       - name: Verify formatting
         run: git diff --check
