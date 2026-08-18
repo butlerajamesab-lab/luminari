@@ -12,6 +12,10 @@ const MIN_POLL_INTERVAL_MS = 5_000;
 const MAX_POLL_INTERVAL_MS = 300_000;
 const QUEUE_LEASE_MINUTES = 60;
 const UNKNOWN_FAILURE_LIMIT = 5;
+const RECONCILE_BATCH_SIZE = 100;
+const DEFAULT_RECONCILE_INTERVAL_MS = 60_000;
+const MIN_RECONCILE_INTERVAL_MS = 10_000;
+const MAX_RECONCILE_INTERVAL_MS = 15 * 60_000;
 
 export type prism_rosetta_queue_state =
   | "eligible"
@@ -42,19 +46,35 @@ export type prism_queue_failure_decision = {
 let queue_timer: NodeJS.Timeout | null = null;
 let queue_cycle_running = false;
 let queue_stopped = false;
+let next_reconcile_at_ms = 0;
 const queue_worker_id = [
   process.env.RENDER_SERVICE_ID ?? "lighthouse",
   process.pid,
   randomUUID(),
 ].join(":");
 
+function bounded_integer(input: string | undefined, fallback: number, minimum: number, maximum: number): number {
+  const parsed = Number.parseInt(input ?? "", 10);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.max(minimum, Math.min(maximum, parsed));
+}
+
 function bounded_poll_interval(): number {
-  const parsed = Number.parseInt(
-    process.env.PRISM_ROSETTA_QUEUE_POLL_MS ?? "",
-    10,
+  return bounded_integer(
+    process.env.PRISM_ROSETTA_QUEUE_POLL_MS,
+    DEFAULT_POLL_INTERVAL_MS,
+    MIN_POLL_INTERVAL_MS,
+    MAX_POLL_INTERVAL_MS,
   );
-  if (!Number.isFinite(parsed)) return DEFAULT_POLL_INTERVAL_MS;
-  return Math.max(MIN_POLL_INTERVAL_MS, Math.min(MAX_POLL_INTERVAL_MS, parsed));
+}
+
+function bounded_reconcile_interval(): number {
+  return bounded_integer(
+    process.env.PRISM_ROSETTA_QUEUE_RECONCILE_MS,
+    DEFAULT_RECONCILE_INTERVAL_MS,
+    MIN_RECONCILE_INTERVAL_MS,
+    MAX_RECONCILE_INTERVAL_MS,
+  );
 }
 
 function queue_enabled(): boolean {
@@ -147,29 +167,47 @@ export function classify_prism_queue_failure(input: {
 
 async function reconcile_completed_jobs(): Promise<void> {
   await query_with_diagnostics(
-    `update public.civic_genome_prism_verification_queue queue
+    `with candidate as (
+       select queue.queue_id,
+              verification.receipt_count,
+              verification.completed_at
+         from public.civic_genome_prism_verification_queue queue
+         join public.civic_genome_prism_verification_run verification
+           on queue.assembly_run_id = verification.assembly_run_id
+          and queue.prism_rule_set_id = verification.prism_rule_set_id
+          and queue.prism_rule_set_version = verification.prism_rule_set_version
+        where verification.receipt_count = verification.expected_trait_count
+          and verification.expected_trait_count = queue.expected_trait_count
+          and queue.queue_state <> 'completed'
+        order by queue.updated_at, queue.queue_id
+        for update of queue skip locked
+        limit $1::integer
+     )
+     update public.civic_genome_prism_verification_queue queue
         set queue_state = 'completed',
-            receipt_count = verification.receipt_count,
-            completed_at = verification.completed_at,
+            receipt_count = candidate.receipt_count,
+            completed_at = candidate.completed_at,
             locked_at = null,
             locked_by = null,
             last_failure_class = null,
             last_error_code = null,
             updated_at = now()
-       from public.civic_genome_prism_verification_run verification
-      where queue.assembly_run_id = verification.assembly_run_id
-        and queue.prism_rule_set_id = verification.prism_rule_set_id
-        and queue.prism_rule_set_version = verification.prism_rule_set_version
-        and verification.receipt_count = verification.expected_trait_count
-        and verification.expected_trait_count = queue.expected_trait_count
-        and queue.queue_state <> 'completed'`,
-    [],
+       from candidate
+      where queue.queue_id = candidate.queue_id`,
+    [RECONCILE_BATCH_SIZE],
     {
       label: "prism_rosetta_queue_reconcile_completed",
       pool_acquire_timeout_ms: 1_000,
       query_timeout_ms: 5_000,
     },
   );
+}
+
+async function reconcile_completed_jobs_if_due(): Promise<void> {
+  const now_ms = Date.now();
+  if (now_ms < next_reconcile_at_ms) return;
+  next_reconcile_at_ms = now_ms + bounded_reconcile_interval();
+  await reconcile_completed_jobs();
 }
 
 async function claim_next_job(): Promise<prism_rosetta_queue_job | null> {
@@ -256,11 +294,6 @@ async function mark_job_completed(input: {
   job: prism_rosetta_queue_job;
   receipt_count: number;
 }): Promise<void> {
-  if (input.receipt_count !== input.job.expected_trait_count) {
-    throw new Error(
-      `prism_rosetta_queue_receipt_count_mismatch:${input.job.expected_trait_count}:${input.receipt_count}`,
-    );
-  }
   await query_with_diagnostics(
     `update public.civic_genome_prism_verification_queue
         set queue_state = 'completed',
@@ -322,12 +355,53 @@ async function mark_job_failed(input: {
   );
 }
 
+async function fail_job_for_processing_error(
+  job: prism_rosetta_queue_job,
+  error: unknown,
+): Promise<void> {
+  const receipt_count = await observed_receipt_count(job).catch(() => job.receipt_count);
+  const decision = classify_prism_queue_failure({
+    error,
+    prior_attempt_count: job.attempt_count,
+    receipt_count,
+  });
+  await mark_job_failed({ job, decision, receipt_count });
+  console.error("[PrismRosettaQueue] failed", {
+    queue_id: job.queue_id,
+    assembly_run_id: job.assembly_run_id,
+    genome_bill_id: job.genome_bill_id,
+    expected_trait_count: job.expected_trait_count,
+    receipt_count,
+    queue_state: decision.queue_state,
+    failure_class: decision.failure_class,
+    error_code: decision.error_code,
+    retry_delay_seconds: decision.retry_delay_seconds,
+  });
+}
+
 async function process_job(job: prism_rosetta_queue_job): Promise<void> {
+  let result: Awaited<ReturnType<typeof activate_prism_for_rosetta_assembly>>;
   try {
-    const result = await activate_prism_for_rosetta_assembly({
+    result = await activate_prism_for_rosetta_assembly({
       genome_bill_id: job.genome_bill_id,
       assembly_run_id: job.assembly_run_id,
     });
+  } catch (error) {
+    await fail_job_for_processing_error(job, error);
+    return;
+  }
+
+  if (result.receipt_count !== job.expected_trait_count) {
+    await fail_job_for_processing_error(
+      job,
+      new Error(
+        `prism_rosetta_queue_receipt_count_mismatch:${job.expected_trait_count}:${result.receipt_count}`,
+      ),
+    );
+    return;
+  }
+
+  try {
     await mark_job_completed({
       job,
       receipt_count: result.receipt_count,
@@ -342,23 +416,15 @@ async function process_job(job: prism_rosetta_queue_job): Promise<void> {
       replayed: result.replayed,
     });
   } catch (error) {
-    const receipt_count = await observed_receipt_count(job).catch(() => job.receipt_count);
-    const decision = classify_prism_queue_failure({
-      error,
-      prior_attempt_count: job.attempt_count,
-      receipt_count,
-    });
-    await mark_job_failed({ job, decision, receipt_count });
-    console.error("[PrismRosettaQueue] failed", {
+    // Verification already produced the exact expected receipt population.
+    // A queue-ledger completion write failure is bookkeeping, not evidence that
+    // the verification failed. The bounded reconciler will close the queue row.
+    console.error("[PrismRosettaQueue] completion_deferred", {
       queue_id: job.queue_id,
       assembly_run_id: job.assembly_run_id,
       genome_bill_id: job.genome_bill_id,
-      expected_trait_count: job.expected_trait_count,
-      receipt_count,
-      queue_state: decision.queue_state,
-      failure_class: decision.failure_class,
-      error_code: decision.error_code,
-      retry_delay_seconds: decision.retry_delay_seconds,
+      receipt_count: result.receipt_count,
+      error_code: safe_error_code(error),
     });
   }
 }
@@ -367,7 +433,7 @@ async function run_queue_cycle(): Promise<void> {
   if (queue_cycle_running || queue_stopped) return;
   queue_cycle_running = true;
   try {
-    await reconcile_completed_jobs();
+    await reconcile_completed_jobs_if_due();
     const job = await claim_next_job();
     if (job) await process_job(job);
   } catch (error) {
@@ -389,9 +455,11 @@ export function start_prism_rosetta_queue_worker(): void {
   }
   queue_stopped = false;
   const interval_ms = bounded_poll_interval();
+  const reconcile_interval_ms = bounded_reconcile_interval();
   console.log("[PrismRosettaQueue] started", {
     worker_id: queue_worker_id,
     interval_ms,
+    reconcile_interval_ms,
     lease_minutes: QUEUE_LEASE_MINUTES,
     rule_set_id: PRISM_ROSETTA_RULE_SET_ID,
     rule_set_version: PRISM_ROSETTA_RULE_SET_VERSION,

@@ -8,6 +8,7 @@
 // over the export-star surface.
 
 export * from "./db-legacy";
+export { query_with_diagnostics } from "./queue-db-diagnostics";
 export { db } from "./db-execute-compat";
 export {
   createCase,
