@@ -5,6 +5,8 @@ import { sort_docket_warm_candidates } from "./docket-state-cache-warmer";
 const docketRoute = readFileSync(new URL("./routes/docket.ts", import.meta.url), "utf8");
 const genomeRouter = readFileSync(new URL("./routers/civic-genome-router.ts", import.meta.url), "utf8");
 const docketWarmer = readFileSync(new URL("./docket-state-cache-warmer.ts", import.meta.url), "utf8");
+const docketVerifiedEnrichment = readFileSync(new URL("./docket-verified-enrichment.ts", import.meta.url), "utf8");
+const docketWorkspace = readFileSync(new URL("../client/src/components/DocketBillDetailWorkspace.tsx", import.meta.url), "utf8");
 
 function between(source: string, start: string, end: string): string {
   const startIndex = source.indexOf(start);
@@ -96,6 +98,25 @@ describe("Docket cache-first and Rosetta source-handoff boundaries", () => {
     expect(docketWarmer).toContain("const WARM_STATE_DELAY_MS = 750");
     expect(docketWarmer).toContain("await sleep(WARM_STATE_DELAY_MS)");
     expect(docketWarmer).toContain('recovery_order: "missing_then_oldest_stale"');
+  });
+
+  it("surfaces only persisted Prism amendment-disposition conflicts as verified Docket enrichment", () => {
+    expect(docketVerifiedEnrichment).toContain("public.docket_bill_source_document");
+    expect(docketVerifiedEnrichment).toContain("public.civic_genome_bill_version");
+    expect(docketVerifiedEnrichment).toContain("public.civic_genome_prism_verification_binding");
+    expect(docketVerifiedEnrichment).toContain("public.lighthouse_prism_verification_receipts");
+    expect(docketVerifiedEnrichment).toContain("amendment_disposition_matches_source");
+    expect(docketVerifiedEnrichment).toContain('source: "persisted_prism_verification_receipts"');
+    expect(docketVerifiedEnrichment).toContain('label: "docket_verified_amendment_disposition_conflicts"');
+    expect(genomeRouter).toContain("get_docket_verified_enrichment: publicProcedure");
+  });
+
+  it("keeps verified Docket enrichment visibly separate from raw provider metadata", () => {
+    expect(docketWorkspace).toContain("Verified enrichment · amendment disposition conflicts");
+    expect(docketWorkspace).toContain("Raw provider metadata remains unchanged below");
+    expect(docketWorkspace).toContain("never overwrites raw provider metadata");
+    expect(docketWorkspace).toContain("Open verified amendment source");
+    expect(docketWorkspace).toContain("prism_verification_receipt_id");
   });
 
   it("keeps the Rosetta source-handoff button source-only", () => {
