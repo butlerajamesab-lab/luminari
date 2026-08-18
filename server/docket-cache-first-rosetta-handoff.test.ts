@@ -53,8 +53,16 @@ describe("Docket cache-first and Rosetta source-handoff boundaries", () => {
     expect(ordered.map(row => row.state)).toEqual(["AK", "NY", "CA", "WA"]);
   });
 
-  it("automatic recovery selects from cache status and warms exact states", () => {
+  it("automatic recovery reconciles cache membership against production Postgres", () => {
     expect(docketWarmer).toContain("/api/docket/cache-status");
+    expect(docketWarmer).toContain("payload.ttl_hours");
+    expect(docketWarmer).toContain("from public.docket_bill_state_cache");
+    expect(docketWarmer).toContain("where state = any($1::text[])");
+    expect(docketWarmer).toContain('label: "docket_state_cache_warmer_cache_rows"');
+    expect(docketWarmer).toContain('status_source: "database_reconciled"');
+  });
+
+  it("automatic recovery warms exact states with the existing provider spacing", () => {
     expect(docketWarmer).toContain("sort_docket_warm_candidates(cache_states)");
     expect(docketWarmer).toContain("/api/docket/warm-state");
     expect(docketWarmer).not.toContain("/api/docket/warm-next-batch");

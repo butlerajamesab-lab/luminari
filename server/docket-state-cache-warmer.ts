@@ -1,3 +1,5 @@
+import { query_with_diagnostics } from "./db";
+
 const DEFAULT_INTERVAL_MS = 15 * 60 * 1000;
 const MIN_INTERVAL_MS = 5 * 60 * 1000;
 const MAX_INTERVAL_MS = 24 * 60 * 60 * 1000;
@@ -17,6 +19,11 @@ type docket_cache_status_row = {
   has_cache: boolean;
   fetched_at: string | null;
   is_fresh: boolean;
+};
+
+type docket_cache_database_row = {
+  state: string;
+  fetched_at: string | Date | null;
 };
 
 function bounded_integer(
@@ -69,6 +76,13 @@ function fetched_at_ms(value: string | null): number {
   return Number.isFinite(parsed) ? parsed : Number.NEGATIVE_INFINITY;
 }
 
+function normalized_fetched_at(value: string | Date | null): string | null {
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value !== "string" || !value.trim()) return null;
+  const parsed = new Date(value);
+  return Number.isFinite(parsed.getTime()) ? parsed.toISOString() : null;
+}
+
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -114,6 +128,11 @@ async function read_cache_status(
   port: number,
   signal: AbortSignal,
 ): Promise<docket_cache_status_row[]> {
+  // The HTTP status surface remains the canonical source for configured
+  // jurisdictions and TTL policy. Its historical bulk PostgREST row lookup can
+  // under-report cached rows, so the automatic recovery worker reconciles the
+  // actual cache membership/fetched_at values from the same production Postgres
+  // database before selecting work.
   const response = await fetch(`http://127.0.0.1:${port}/api/docket/cache-status`, {
     method: "GET",
     headers: {
@@ -130,15 +149,44 @@ async function read_cache_status(
     throw new Error(message);
   }
 
-  return payload.states
+  const configured_states = payload.states
     .filter((row): row is Record<string, unknown> => Boolean(row) && typeof row === "object" && !Array.isArray(row))
-    .map(row => ({
-      state: String(row.state ?? "").trim().toUpperCase(),
-      has_cache: row.has_cache === true,
-      fetched_at: typeof row.fetched_at === "string" ? row.fetched_at : null,
-      is_fresh: row.is_fresh === true,
-    }))
-    .filter(row => /^[A-Z]{2}$/.test(row.state));
+    .map(row => String(row.state ?? "").trim().toUpperCase())
+    .filter(state => /^[A-Z]{2}$/.test(state));
+
+  const ttl_hours = Number(payload.ttl_hours);
+  if (!Number.isFinite(ttl_hours) || ttl_hours <= 0) {
+    throw new Error("docket_state_cache_status_invalid_ttl");
+  }
+
+  const cache_rows = await query_with_diagnostics<docket_cache_database_row>(
+    `select state, fetched_at
+       from public.docket_bill_state_cache
+      where state = any($1::text[])`,
+    [configured_states],
+    {
+      label: "docket_state_cache_warmer_cache_rows",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 5_000,
+    },
+  );
+  const cache_by_state = new Map(
+    cache_rows.rows.map(row => [String(row.state).toUpperCase(), normalized_fetched_at(row.fetched_at)]),
+  );
+  const now_ms = Date.now();
+  const ttl_ms = ttl_hours * 60 * 60 * 1000;
+
+  return configured_states.map(state => {
+    const has_cache = cache_by_state.has(state);
+    const fetched_at = cache_by_state.get(state) ?? null;
+    const fetched_ms = fetched_at ? new Date(fetched_at).getTime() : Number.NaN;
+    return {
+      state,
+      has_cache,
+      fetched_at,
+      is_fresh: has_cache && Number.isFinite(fetched_ms) && now_ms - fetched_ms < ttl_ms,
+    };
+  });
 }
 
 async function warm_state(
@@ -207,6 +255,7 @@ export async function run_docket_state_cache_warmer_cycle(port: number): Promise
     const successful_count = results.filter(result => result.ok).length;
     console.log("[DocketCacheWarmer] cycle_succeeded", {
       limit,
+      status_source: "database_reconciled",
       selected_states: states_to_warm.map(row => row.state),
       missing_selected: states_to_warm.filter(row => !row.has_cache).length,
       stale_selected: states_to_warm.filter(row => row.has_cache).length,
