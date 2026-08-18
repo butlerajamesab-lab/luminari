@@ -116,9 +116,11 @@ describe("legislative version queue", () => {
 
     const claim_sql = query.mock.calls
       .map(call => String(call[0]))
-      .find(sql => sql.includes("for update of queue skip locked"));
+      .find(sql => sql.includes("with host_activity as"));
     expect(claim_sql).toContain("currency.is_current desc");
     expect(claim_sql).toContain("with host_activity as");
+    expect(claim_sql).toContain("where queue.attempt_count > 0");
+    expect(claim_sql).toContain("left join host_activity source_host");
     expect(claim_sql).toContain("source_host.last_attempt_at asc nulls first");
     expect(claim_sql).toContain("source_host.blocked_until");
     expect(claim_sql).toContain("split_part(lower(document.source_url), '/', 3)");
@@ -127,7 +129,7 @@ describe("legislative version queue", () => {
       .toBeLessThan(claim_sql.indexOf("source_host.last_attempt_at asc nulls first"));
   });
 
-  it("preserves queue and version failure receipts", async () => {
+  it("preserves queue and version failure receipts for real pipeline failures", async () => {
     process_version.mockRejectedValue(new Error("legislative_version_source_fetch_failed:503"));
 
     await process_legislative_version_job(job);
@@ -138,5 +140,15 @@ describe("legislative version queue", () => {
     expect(query.mock.calls[0][1][2]).toBe("transient");
     expect(query.mock.calls[0][1][3]).toBe("legislative_version_source_fetch_failed:503");
     expect(String(query.mock.calls[1][0])).toContain("processing_state = 'failed'");
+  });
+
+  it("does not mark an assembled bill failed when only completion bookkeeping fails", async () => {
+    query.mockRejectedValueOnce(new Error("legislative_version_queue_complete query timed out after 5000ms"));
+
+    await expect(process_legislative_version_job(job)).resolves.toBeUndefined();
+
+    expect(process_version).toHaveBeenCalledTimes(1);
+    expect(query).toHaveBeenCalledTimes(1);
+    expect(query.mock.calls.some(call => String(call[0]).includes("processing_state = 'failed'"))).toBe(false);
   });
 });
