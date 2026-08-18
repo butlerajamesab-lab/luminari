@@ -41,6 +41,14 @@ describe("Docket cache-first and Rosetta source-handoff boundaries", () => {
     expect(docketRoute).toContain("state_refresh_in_flight.delete(state)");
   });
 
+  it("keeps automatic recovery on the same canonical eight-hour cache TTL", () => {
+    expect(docketRoute).toContain("const cache_ttl_ms = 8 * 60 * 60 * 1000");
+    expect(docketWarmer).toContain("const STATE_CACHE_TTL_MS = 8 * 60 * 60 * 1000");
+    expect(docketWarmer).toContain("now_ms - fetched_ms < STATE_CACHE_TTL_MS");
+    expect(docketWarmer).not.toContain("payload.ttl_hours");
+    expect(docketWarmer).not.toContain("docket_state_cache_status_invalid_ttl");
+  });
+
   it("prioritizes uncached jurisdictions before stale cached jurisdictions", () => {
     const ordered = sort_docket_warm_candidates([
       { state: "WA", has_cache: true, fetched_at: "2026-08-17T00:00:00Z", is_fresh: false },
@@ -55,7 +63,6 @@ describe("Docket cache-first and Rosetta source-handoff boundaries", () => {
 
   it("automatic recovery reconciles cache membership against production Postgres", () => {
     expect(docketWarmer).toContain("/api/docket/cache-status");
-    expect(docketWarmer).toContain("payload.ttl_hours");
     expect(docketWarmer).toContain("from public.docket_bill_state_cache");
     expect(docketWarmer).toContain("where state = any($1::text[])");
     expect(docketWarmer).toContain('label: "docket_state_cache_warmer_cache_rows"');
