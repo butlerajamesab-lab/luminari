@@ -222,16 +222,13 @@ $$;
 comment on function public.promote_live_upload_intake_authority_v1(integer, boolean) is
   'Promotes the case live-upload Intake Spine session to sole runtime authority, preserves cases.pipeline_type as pipeline_key, and invalidates stale governed projections when the active evidence set changes.';
 
--- Backfill the exact card identity onto all existing case-linked live sessions.
--- Historical receipts remain immutable. Only a currently-primary upload session
--- with a completed projection is marked for a governed rerun when the routing
--- identity is newly attached or corrected.
+-- Backfill routing identity only. Existing governed execution receipts are not
+-- invalidated here because pipeline_key is not yet an input to the 14-layer
+-- execution contract. A future versioned Layer 14 integration may invalidate
+-- deliberately when this routing context becomes part of the execution hash.
 with linked as (
   select
     s.intake_session_id,
-    s.entry_channel,
-    s.completion_state,
-    cil.is_primary,
     nullif(btrim(c.pipeline_type), '') as pipeline_key
   from public.intake_sessions s
   join public.case_intake_links cil
@@ -245,28 +242,11 @@ with linked as (
     and coalesce(s.metadata ->> 'pipeline_key', '') is distinct from nullif(btrim(c.pipeline_type), '')
 )
 update public.intake_sessions s
-   set completion_state = case
-         when linked.is_primary
-          and linked.entry_channel = 'upload'
-          and linked.completion_state = 'governed_execution_complete'
-           then 'evidence_registered'
-         else s.completion_state
-       end,
-       metadata = coalesce(s.metadata, '{}'::jsonb)
+   set metadata = coalesce(s.metadata, '{}'::jsonb)
          || jsonb_build_object(
               'pipeline_key', linked.pipeline_key,
               'pipeline_key_source', 'cases.pipeline_type'
-            )
-         || case
-              when linked.is_primary
-               and linked.entry_channel = 'upload'
-               and linked.completion_state = 'governed_execution_complete'
-                then jsonb_build_object(
-                  'runtime_projection_invalidated_at', now(),
-                  'runtime_projection_invalidation_reason', 'pipeline_identity_bound'
-                )
-              else '{}'::jsonb
-            end,
+            ),
        updated_at = now()
   from linked
  where s.intake_session_id = linked.intake_session_id;
