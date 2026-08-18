@@ -1,8 +1,10 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { sort_docket_warm_candidates } from "./docket-state-cache-warmer";
 
 const docketRoute = readFileSync(new URL("./routes/docket.ts", import.meta.url), "utf8");
 const genomeRouter = readFileSync(new URL("./routers/civic-genome-router.ts", import.meta.url), "utf8");
+const docketWarmer = readFileSync(new URL("./docket-state-cache-warmer.ts", import.meta.url), "utf8");
 
 function between(source: string, start: string, end: string): string {
   const startIndex = source.indexOf(start);
@@ -37,6 +39,26 @@ describe("Docket cache-first and Rosetta source-handoff boundaries", () => {
     expect(docketRoute).toContain("if (state_refresh_in_flight.has(state)) return");
     expect(docketRoute).toContain("state_refresh_in_flight.set(state, refresh)");
     expect(docketRoute).toContain("state_refresh_in_flight.delete(state)");
+  });
+
+  it("prioritizes uncached jurisdictions before stale cached jurisdictions", () => {
+    const ordered = sort_docket_warm_candidates([
+      { state: "WA", has_cache: true, fetched_at: "2026-08-17T00:00:00Z", is_fresh: false },
+      { state: "CA", has_cache: true, fetched_at: "2026-08-10T00:00:00Z", is_fresh: false },
+      { state: "NY", has_cache: false, fetched_at: null, is_fresh: false },
+      { state: "AK", has_cache: false, fetched_at: null, is_fresh: false },
+      { state: "OR", has_cache: true, fetched_at: "2026-08-18T03:00:00Z", is_fresh: true },
+    ]);
+
+    expect(ordered.map(row => row.state)).toEqual(["AK", "NY", "CA", "WA"]);
+  });
+
+  it("automatic recovery selects from cache status and warms exact states", () => {
+    expect(docketWarmer).toContain("/api/docket/cache-status");
+    expect(docketWarmer).toContain("sort_docket_warm_candidates(cache_states)");
+    expect(docketWarmer).toContain("/api/docket/warm-state");
+    expect(docketWarmer).not.toContain("/api/docket/warm-next-batch");
+    expect(docketWarmer).toContain('recovery_order: "missing_then_oldest_stale"');
   });
 
   it("keeps the Rosetta source-handoff button source-only", () => {
