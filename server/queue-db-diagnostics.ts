@@ -36,11 +36,16 @@ function queue_managed_label(label: string): boolean {
   ].some(prefix => label.startsWith(prefix));
 }
 
+function server_timeout_managed_label(label: string): boolean {
+  return queue_managed_label(label) || label.startsWith("canonical_core_");
+}
+
 /**
  * Circuit breaking is intentionally limited to cycle-level claim/reconcile work.
- * Completion/failure writes still receive PostgreSQL statement_timeout protection,
- * but never receive a synthetic circuit-open error inside a successfully processed
- * job. This prevents a DB backoff from being misclassified as a pipeline failure.
+ * Completion/failure writes and canonical-core reads still receive PostgreSQL
+ * statement_timeout protection, but never receive a synthetic circuit-open
+ * error. This prevents DB backoff state from being misclassified as pipeline
+ * failure or from turning an ordinary Mission Control read into queue state.
  */
 function circuit_guarded_label(label: string): boolean {
   return queue_managed_label(label)
@@ -103,7 +108,7 @@ export async function query_with_diagnostics<T = any>(
   options: query_diagnostics_options = {},
 ): Promise<{ rows: T[]; rowCount: number | null }> {
   const label = options.label ?? "db_query";
-  if (!queue_managed_label(label)) {
+  if (!server_timeout_managed_label(label)) {
     return legacy_query_with_diagnostics<T>(text, values, options);
   }
 

@@ -1,4 +1,4 @@
-import { getPool } from "../db";
+import { query_with_diagnostics } from "../db";
 
 export type CurrentCanonicalState = {
   contract: string;
@@ -37,16 +37,40 @@ export type CurrentCanonicalState = {
   generated_at: string;
 };
 
+const CANONICAL_CORE_QUERY_TIMEOUT_MS = 7_000;
+const CANONICAL_CORE_POOL_ACQUIRE_TIMEOUT_MS = 1_000;
+let current_canonical_state_in_flight: Promise<CurrentCanonicalState> | null = null;
+
 function n(value: unknown): number {
   const parsed = Number(value ?? 0);
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-export async function getCurrentCanonicalState(): Promise<CurrentCanonicalState> {
-  const result = await getPool().query(
+async function load_current_canonical_state(): Promise<CurrentCanonicalState> {
+  const result = await query_with_diagnostics<{ state: CurrentCanonicalState }>(
     `select public.get_lighthouse_canonical_state_v2() as state`,
+    [],
+    {
+      label: "canonical_core_current_state",
+      pool_acquire_timeout_ms: CANONICAL_CORE_POOL_ACQUIRE_TIMEOUT_MS,
+      query_timeout_ms: CANONICAL_CORE_QUERY_TIMEOUT_MS,
+    },
   );
   return (result.rows[0]?.state ?? {}) as CurrentCanonicalState;
+}
+
+export async function getCurrentCanonicalState(): Promise<CurrentCanonicalState> {
+  if (current_canonical_state_in_flight) return current_canonical_state_in_flight;
+
+  const active_request = load_current_canonical_state();
+  current_canonical_state_in_flight = active_request;
+  try {
+    return await active_request;
+  } finally {
+    if (current_canonical_state_in_flight === active_request) {
+      current_canonical_state_in_flight = null;
+    }
+  }
 }
 
 function categoryForNodeType(nodeType: string): string {
@@ -145,13 +169,18 @@ export async function getCurrentGraphNodes(input: { limit?: number; nodeType?: s
     where = `where node_type = $${params.length}`;
   }
   params.push(limit);
-  const result = await getPool().query(
+  const result = await query_with_diagnostics(
     `select node_id,node_type,label,jurisdiction_code,node_origin,node_state,object_ref,artifact_key,source_locator,source_content_sha256,source_candidate_hash,metadata
        from public.v_lighthouse_graph_nodes_v1
        ${where}
       order by case when node_origin='civic_object' then 0 else 1 end, node_type, label, node_id
       limit $${params.length}`,
     params,
+    {
+      label: "canonical_core_graph_nodes",
+      pool_acquire_timeout_ms: CANONICAL_CORE_POOL_ACQUIRE_TIMEOUT_MS,
+      query_timeout_ms: CANONICAL_CORE_QUERY_TIMEOUT_MS,
+    },
   );
   return result.rows;
 }
@@ -181,7 +210,7 @@ export async function getCurrentGraphEdges(input: {
   const where = conditions.length > 0 ? `where ${conditions.join(" and ")}` : "";
   params.push(limit);
 
-  const result = await getPool().query(
+  const result = await query_with_diagnostics(
     `select
        e.edge_id,e.from_node_id,e.to_node_id,e.edge_type,e.evidence_state,e.evidence_hash,e.metadata,
        f.label as from_label,f.node_type as from_node_type,
@@ -193,6 +222,11 @@ export async function getCurrentGraphEdges(input: {
      order by e.edge_type,coalesce(f.label,e.from_node_id),coalesce(t.label,e.to_node_id),e.edge_id
      limit $${params.length}`,
     params,
+    {
+      label: "canonical_core_graph_edges",
+      pool_acquire_timeout_ms: CANONICAL_CORE_POOL_ACQUIRE_TIMEOUT_MS,
+      query_timeout_ms: CANONICAL_CORE_QUERY_TIMEOUT_MS,
+    },
   );
   return result.rows;
 }
@@ -211,7 +245,7 @@ export async function getCurrentUnresolvedRelationships(input: {
   const where = conditions.length > 0 ? `where ${conditions.join(" and ")}` : "";
   params.push(limit);
 
-  const result = await getPool().query(
+  const result = await query_with_diagnostics(
     `select
        u.declaration_id,u.from_node_id,u.intended_edge_type,u.source_field,u.target_reference,
        u.resolution_state,u.target_match_count,u.evidence_hash,u.metadata,
@@ -222,6 +256,11 @@ export async function getCurrentUnresolvedRelationships(input: {
      order by u.resolution_state,u.intended_edge_type,coalesce(f.label,u.from_node_id),u.target_reference
      limit $${params.length}`,
     params,
+    {
+      label: "canonical_core_unresolved_relationships",
+      pool_acquire_timeout_ms: CANONICAL_CORE_POOL_ACQUIRE_TIMEOUT_MS,
+      query_timeout_ms: CANONICAL_CORE_QUERY_TIMEOUT_MS,
+    },
   );
   return result.rows;
 }
