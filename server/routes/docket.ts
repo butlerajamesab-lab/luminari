@@ -11,6 +11,7 @@ import {
   project_docket_cache_to_civic_genome,
   type civic_genome_projection_result,
 } from "../civic-genome-projection";
+import { query_with_diagnostics } from "../db";
 
 const cache_ttl_ms = 8 * 60 * 60 * 1000;
 const bill_detail_cache_ttl_ms = 24 * 60 * 60 * 1000;
@@ -30,6 +31,10 @@ type docket_state_cache_row = {
   bill_count: number;
   fetched_at: string;
   source: string;
+};
+
+type docket_state_cache_database_row = Omit<docket_state_cache_row, "fetched_at"> & {
+  fetched_at: string | Date;
 };
 
 type docket_bill_detail_cache_row = {
@@ -169,22 +174,22 @@ const read_state_cache = async (state: string): Promise<docket_state_cache_row |
 };
 
 const read_all_state_cache = async (): Promise<docket_state_cache_row[]> => {
-  const response = await fetch(
-    supabase_cache_url("docket_bill_state_cache", {
-      state: `in.(${LEGISCAN_ROLLOUT_STATES.join(",")})`,
-      select: "*",
-    }),
+  const result = await query_with_diagnostics<docket_state_cache_database_row>(
+    `select id, state, session_id, session_title, bills, bill_count, fetched_at, source
+       from public.docket_bill_state_cache
+      where state = any($1::text[])`,
+    [LEGISCAN_ROLLOUT_STATES],
     {
-      method: "GET",
-      headers: supabase_cache_headers(),
+      label: "docket_state_cache_status_rows",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 5_000,
     },
   );
 
-  if (!response.ok) {
-    throw new Error(`supabase_cache_request_failed_http_${response.status}`);
-  }
-
-  return (await response.json()) as docket_state_cache_row[];
+  return result.rows.map(row => ({
+    ...row,
+    fetched_at: row.fetched_at instanceof Date ? row.fetched_at.toISOString() : row.fetched_at,
+  }));
 };
 
 const upsert_state_cache = async (row: docket_state_cache_row): Promise<void> => {
@@ -422,6 +427,7 @@ docket_router.get("/cache-status", async (_req, res) => {
 
     return res.json({
       ok: true,
+      status_source: "production_database",
       states: LEGISCAN_ROLLOUT_STATES.map(state => format_cache_status(state, rows_by_state.get(state) ?? null)),
     });
   } catch (error) {

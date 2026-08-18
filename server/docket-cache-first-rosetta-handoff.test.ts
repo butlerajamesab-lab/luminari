@@ -41,6 +41,26 @@ describe("Docket cache-first and Rosetta source-handoff boundaries", () => {
     expect(docketRoute).toContain("state_refresh_in_flight.delete(state)");
   });
 
+  it("reports bulk cache status from production Postgres truth", () => {
+    const bulkRead = between(
+      docketRoute,
+      "const read_all_state_cache = async",
+      "const upsert_state_cache = async",
+    );
+    const cacheStatus = between(
+      docketRoute,
+      'docket_router.get("/cache-status"',
+      'docket_router.post("/warm-state"',
+    );
+
+    expect(docketRoute).toContain('import { query_with_diagnostics } from "../db"');
+    expect(bulkRead).toContain("from public.docket_bill_state_cache");
+    expect(bulkRead).toContain("where state = any($1::text[])");
+    expect(bulkRead).toContain('label: "docket_state_cache_status_rows"');
+    expect(bulkRead).not.toContain('supabase_cache_url("docket_bill_state_cache"');
+    expect(cacheStatus).toContain('status_source: "production_database"');
+  });
+
   it("keeps automatic recovery on the same canonical eight-hour cache TTL", () => {
     expect(docketRoute).toContain("const cache_ttl_ms = 8 * 60 * 60 * 1000");
     expect(docketWarmer).toContain("const STATE_CACHE_TTL_MS = 8 * 60 * 60 * 1000");
