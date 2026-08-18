@@ -58,6 +58,8 @@ describe("Docket cache-first and Rosetta source-handoff boundaries", () => {
     expect(docketWarmer).toContain("sort_docket_warm_candidates(cache_states)");
     expect(docketWarmer).toContain("/api/docket/warm-state");
     expect(docketWarmer).not.toContain("/api/docket/warm-next-batch");
+    expect(docketWarmer).toContain("const WARM_STATE_DELAY_MS = 750");
+    expect(docketWarmer).toContain("await sleep(WARM_STATE_DELAY_MS)");
     expect(docketWarmer).toContain('recovery_order: "missing_then_oldest_stale"');
   });
 
