@@ -21,8 +21,17 @@ describe("pipeline-specific dossier continuity", () => {
     );
     expect(migration).toContain("'pipeline_key', v_pipeline_key");
     expect(migration).toContain("'pipeline_key_source', 'cases.pipeline_type'");
-    expect(migration).toContain("'pipeline_identity_bound'");
     expect(migration).not.toMatch(/set\s+user_selected_immediate_issue\s*=/i);
+  });
+
+  it("backfills routing identity without invalidating existing sealed execution", () => {
+    expect(migration).toContain(
+      "pipeline_key is not yet an input to the 14-layer",
+    );
+    expect(migration).not.toContain("pipeline_identity_bound");
+    expect(migration).not.toMatch(
+      /with linked as[\s\S]*?update public\.intake_sessions s[\s\S]*?set completion_state\s*=/i,
+    );
   });
 
   it("keeps existing legacy action paths authoritative when they exist", () => {
