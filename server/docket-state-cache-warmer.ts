@@ -8,6 +8,7 @@ const MAX_BATCH_SIZE = 10;
 const INITIAL_DELAY_MS = 30_000;
 const REQUEST_TIMEOUT_MS = 180_000;
 const WARM_STATE_DELAY_MS = 750;
+const STATE_CACHE_TTL_MS = 8 * 60 * 60 * 1000;
 
 let interval_timer: NodeJS.Timeout | null = null;
 let initial_timer: NodeJS.Timeout | null = null;
@@ -128,11 +129,11 @@ async function read_cache_status(
   port: number,
   signal: AbortSignal,
 ): Promise<docket_cache_status_row[]> {
-  // The HTTP status surface remains the canonical source for configured
-  // jurisdictions and TTL policy. Its historical bulk PostgREST row lookup can
-  // under-report cached rows, so the automatic recovery worker reconciles the
-  // actual cache membership/fetched_at values from the same production Postgres
-  // database before selecting work.
+  // The HTTP status surface remains the canonical configured-jurisdiction list.
+  // Its historical bulk PostgREST row lookup can under-report cached rows, so
+  // the automatic recovery worker reconciles actual cache membership/fetched_at
+  // from the same production Postgres database before selecting work. Freshness
+  // uses the same existing eight-hour policy declared in server/routes/docket.ts.
   const response = await fetch(`http://127.0.0.1:${port}/api/docket/cache-status`, {
     method: "GET",
     headers: {
@@ -154,11 +155,6 @@ async function read_cache_status(
     .map(row => String(row.state ?? "").trim().toUpperCase())
     .filter(state => /^[A-Z]{2}$/.test(state));
 
-  const ttl_hours = Number(payload.ttl_hours);
-  if (!Number.isFinite(ttl_hours) || ttl_hours <= 0) {
-    throw new Error("docket_state_cache_status_invalid_ttl");
-  }
-
   const cache_rows = await query_with_diagnostics<docket_cache_database_row>(
     `select state, fetched_at
        from public.docket_bill_state_cache
@@ -174,7 +170,6 @@ async function read_cache_status(
     cache_rows.rows.map(row => [String(row.state).toUpperCase(), normalized_fetched_at(row.fetched_at)]),
   );
   const now_ms = Date.now();
-  const ttl_ms = ttl_hours * 60 * 60 * 1000;
 
   return configured_states.map(state => {
     const has_cache = cache_by_state.has(state);
@@ -184,7 +179,9 @@ async function read_cache_status(
       state,
       has_cache,
       fetched_at,
-      is_fresh: has_cache && Number.isFinite(fetched_ms) && now_ms - fetched_ms < ttl_ms,
+      is_fresh: has_cache
+        && Number.isFinite(fetched_ms)
+        && now_ms - fetched_ms < STATE_CACHE_TTL_MS,
     };
   });
 }
@@ -256,6 +253,7 @@ export async function run_docket_state_cache_warmer_cycle(port: number): Promise
     console.log("[DocketCacheWarmer] cycle_succeeded", {
       limit,
       status_source: "database_reconciled",
+      state_cache_ttl_ms: STATE_CACHE_TTL_MS,
       selected_states: states_to_warm.map(row => row.state),
       missing_selected: states_to_warm.filter(row => !row.has_cache).length,
       stale_selected: states_to_warm.filter(row => row.has_cache).length,
@@ -292,6 +290,7 @@ export function start_docket_state_cache_warmer(port: number): void {
     batch_size: limit,
     initial_delay_ms: INITIAL_DELAY_MS,
     per_state_delay_ms: WARM_STATE_DELAY_MS,
+    state_cache_ttl_ms: STATE_CACHE_TTL_MS,
     recovery_order: "missing_then_oldest_stale",
   });
 
