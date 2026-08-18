@@ -6,9 +6,11 @@ on:
       - "supabase/migrations/20260731185401_signal_architecture_ground_truth.sql"
       - "supabase/migrations/20260818084500_prism_domain2_legal_pattern_pullthrough.sql"
       - "supabase/migrations/20260818090000_domain2_current_prism_generation.sql"
+      - "supabase/migrations/20260818095500_signal_architecture_runtime_projection_truth.sql"
       - "server/routers/enforcement-intel.ts"
       - "server/signal-architecture-ground-truth.test.ts"
       - "server/signal-domain2-prism-currentness.test.ts"
+      - "server/signal-architecture-runtime-observability-current.test.ts"
       - "client/src/pages/SignalRegistry.tsx"
       - ".github/workflows/signal-architecture-contract.yml"
   push:
@@ -18,9 +20,11 @@ on:
       - "supabase/migrations/20260731185401_signal_architecture_ground_truth.sql"
       - "supabase/migrations/20260818084500_prism_domain2_legal_pattern_pullthrough.sql"
       - "supabase/migrations/20260818090000_domain2_current_prism_generation.sql"
+      - "supabase/migrations/20260818095500_signal_architecture_runtime_projection_truth.sql"
       - "server/routers/enforcement-intel.ts"
       - "server/signal-architecture-ground-truth.test.ts"
       - "server/signal-domain2-prism-currentness.test.ts"
+      - "server/signal-architecture-runtime-observability-current.test.ts"
       - "client/src/pages/SignalRegistry.tsx"
       - ".github/workflows/signal-architecture-contract.yml"
 
@@ -43,5 +47,6 @@ jobs:
           npx vitest run
           server/signal-architecture-ground-truth.test.ts
           server/signal-domain2-prism-currentness.test.ts
+          server/signal-architecture-runtime-observability-current.test.ts
       - name: Verify formatting
         run: git diff --check
