@@ -19,6 +19,9 @@ describe("canonical three-domain signal architecture", () => {
   const retirement = read_repo_file(
     "../supabase/migrations/20260815092436_live_data_signal_retirement_receipts.sql",
   );
+  const prism_domain2 = read_repo_file(
+    "../supabase/migrations/20260818084500_prism_domain2_legal_pattern_pullthrough.sql",
+  );
   const atlas_receipt_router = read_repo_file("./routes/atlas-domain3-receipt-router.ts");
   const root_router = read_repo_file("./routers.ts");
   const production_router = read_repo_file("./routers/enforcement-intelligence.ts");
@@ -69,6 +72,34 @@ describe("canonical three-domain signal architecture", () => {
     expect(migration).toContain("alter table public.live_data_signals enable row level security");
     expect(migration).toContain("alter table public.signal_convergences enable row level security");
     expect(migration).toContain("grant execute on function public.register_live_data_signal_v1(jsonb) to service_role");
+  });
+
+  it("pulls only persisted Prism contradictions into existing Domain 2 legal patterns", () => {
+    expect(prism_domain2).toContain("private.project_prism_legal_patterns_v1");
+    expect(prism_domain2).toContain("public.civic_genome_prism_verification_run");
+    expect(prism_domain2).toContain("public.civic_genome_prism_verification_binding");
+    expect(prism_domain2).toContain("public.lighthouse_prism_verification_receipts");
+    expect(prism_domain2).toContain("public.register_legal_pattern_v1(v_record)");
+    expect(prism_domain2).toContain("'verification_state', 'contradicted'");
+    expect(prism_domain2).toContain("amendment_disposition_matches_source");
+    expect(prism_domain2).toContain("override_exception_marker_present");
+    expect(prism_domain2).toContain("workflow_modal_polarity_matches");
+    expect(prism_domain2).toContain("defined_term_bound_to_definition");
+  });
+
+  it("keeps Prism Domain 2 pull-through out of Atlas and convergence ownership", () => {
+    expect(prism_domain2).not.toContain("public.live_data_signals");
+    expect(prism_domain2).not.toContain("register_live_data_signal_v1");
+    expect(prism_domain2).not.toContain("public.signal_convergences");
+    expect(prism_domain2).not.toContain("register_signal_convergence_v1");
+    expect(prism_domain2).toContain("does not infer motive, wrongdoing, beneficiary identity, or external influence");
+  });
+
+  it("does not erase a completed Prism run if derived Domain 2 projection fails", () => {
+    expect(prism_domain2).toContain("after insert on public.civic_genome_prism_verification_run");
+    expect(prism_domain2).toContain("exception when others then");
+    expect(prism_domain2).toContain("prism_domain2_legal_pattern_projection_failed");
+    expect(prism_domain2).toContain("a replay/backfill can repair it");
   });
 
   it("keeps legacy mixed rows and raw Atlas observations explicitly noncanonical", () => {
