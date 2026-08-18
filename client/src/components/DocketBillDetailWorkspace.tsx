@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { trpc } from "@/lib/trpc";
 
 type bill_detail_payload = {
   source?: string;
@@ -106,6 +107,16 @@ function Section({ title, items, empty_text, render_item }: {
 export function DocketBillDetailWorkspace({ payload }: { payload: bill_detail_payload }) {
   const [show_raw, set_show_raw] = useState(false);
   const bill = is_record(payload.bill) ? payload.bill : {};
+  const raw_bill_id = first_value(bill, ["bill_id", "id"]);
+  const numeric_bill_id = typeof raw_bill_id === "number" || typeof raw_bill_id === "string"
+    ? Number(raw_bill_id)
+    : null;
+  const valid_bill_id = numeric_bill_id !== null && Number.isSafeInteger(numeric_bill_id) && numeric_bill_id > 0;
+  const verified_enrichment = trpc.civicGenome.get_docket_verified_enrichment.useQuery(
+    { source_bill_id: numeric_bill_id ?? 0 },
+    { enabled: valid_bill_id, retry: false, refetchOnWindowFocus: false },
+  );
+  const disposition_conflicts = verified_enrichment.data?.amendment_disposition_conflicts ?? [];
 
   const normalized = useMemo(() => ({
     bill_id: first_value(bill, ["bill_id", "id"]),
@@ -161,6 +172,41 @@ export function DocketBillDetailWorkspace({ payload }: { payload: bill_detail_pa
         <Field label="Change hash" value={normalized.change_hash} />
       </div>
 
+      {disposition_conflicts.length > 0 && (
+        <section style={{ background: palette.copper_soft, border: `1px solid ${palette.copper}`, borderRadius: 8, padding: "0.85rem" }}>
+          <div style={{ fontFamily: font_mono, fontSize: "0.7rem", color: palette.copper, fontWeight: 700, textTransform: "uppercase", marginBottom: "0.45rem" }}>
+            Verified enrichment · amendment disposition conflicts
+          </div>
+          <div style={{ fontFamily: font_sans, fontSize: "0.78rem", color: palette.cream, lineHeight: 1.5, marginBottom: "0.7rem" }}>
+            Raw provider metadata remains unchanged below. Persisted Prism verification found that the official amendment source states a different disposition than the provider metadata for {disposition_conflicts.length} amendment{disposition_conflicts.length === 1 ? "" : "s"}.
+          </div>
+          <div style={{ display: "grid", gap: "0.55rem" }}>
+            {disposition_conflicts.map(conflict => (
+              <div key={`${conflict.amendment_id}:${conflict.prism_verification_receipt_id}`} style={{ background: palette.bg, border: `1px solid ${palette.rule}`, borderRadius: 6, padding: "0.65rem" }}>
+                <div style={{ fontFamily: font_sans, fontSize: "0.82rem", color: palette.paper, fontWeight: 700 }}>
+                  Amendment {conflict.amendment_id}{conflict.description ? ` · ${conflict.description}` : ""}
+                </div>
+                <div style={{ display: "flex", gap: "0.55rem", flexWrap: "wrap", marginTop: "0.4rem", fontFamily: font_mono, fontSize: "0.64rem" }}>
+                  <span style={{ color: palette.red }}>provider: {conflict.provider_observed_disposition ?? (conflict.provider_adopted ? "adopted" : "not_adopted")}</span>
+                  <span style={{ color: palette.green }}>official source: {conflict.verified_source_disposition ?? "unresolved"}</span>
+                  <span style={{ color: palette.copper }}>Prism: {conflict.verification_status}</span>
+                </div>
+                <div style={{ marginTop: "0.35rem", fontFamily: font_mono, fontSize: "0.6rem", color: palette.muted, overflowWrap: "anywhere" }}>
+                  receipt {conflict.prism_verification_receipt_id}
+                </div>
+                {conflict.source_url && <a href={conflict.source_url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", marginTop: "0.4rem", color: palette.steel, fontFamily: font_mono, fontSize: "0.65rem" }}>Open verified amendment source</a>}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {verified_enrichment.isError && valid_bill_id && (
+        <div style={{ background: palette.slate, border: `1px solid ${palette.rule}`, borderRadius: 8, padding: "0.7rem", fontFamily: font_sans, fontSize: "0.76rem", color: palette.muted }}>
+          Verified enrichment is temporarily unavailable. Raw official-provider detail remains available below and has not been modified.
+        </div>
+      )}
+
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "0.75rem" }}>
         <Section title="Legislative history" items={normalized.history} empty_text="No actions returned" />
         <Section title="Sponsors" items={normalized.sponsors} empty_text="No sponsors returned" />
@@ -174,7 +220,7 @@ export function DocketBillDetailWorkspace({ payload }: { payload: bill_detail_pa
       </div>
 
       <div style={{ background: palette.copper_soft, border: `1px solid ${palette.copper}`, borderRadius: 8, padding: "0.75rem", fontFamily: font_sans, fontSize: "0.78rem", color: palette.cream, lineHeight: 1.45 }}>
-        Official bill detail is shown above exactly as returned by the cached LegiScan detail request. Rosetta analysis and Civic Genome relationships remain separate until verified enrichment records exist for this bill.
+        Official bill detail is shown above exactly as returned by the cached LegiScan detail request. Verified Civic Genome / Prism enrichment, when present, is displayed separately and never overwrites raw provider metadata.
       </div>
 
       <button type="button" onClick={() => set_show_raw(value => !value)} style={{ justifySelf: "start", background: palette.slate_mid, border: `1px solid ${palette.rule}`, borderRadius: 6, color: palette.muted, cursor: "pointer", fontFamily: font_mono, fontSize: "0.66rem", padding: "0.4rem 0.55rem" }}>
