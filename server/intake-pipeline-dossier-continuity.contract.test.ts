@@ -9,7 +9,7 @@ const read = (path: string) => readFileSync(resolve(repo, path), "utf8");
 
 describe("pipeline-specific dossier continuity", () => {
   const migration = read(
-    "supabase/migrations/20260818233000_bind_pipeline_identity_to_intake_spine.sql",
+    "supabase/migrations/20260818235451_bind_pipeline_identity_to_intake_spine.sql",
   );
   const action_paths = read("server/enforcement-action-paths-live-compat.ts");
 
