@@ -5,6 +5,7 @@ const DEFAULT_BATCH_SIZE = 5;
 const MAX_BATCH_SIZE = 10;
 const INITIAL_DELAY_MS = 30_000;
 const REQUEST_TIMEOUT_MS = 180_000;
+const WARM_STATE_DELAY_MS = 750;
 
 let interval_timer: NodeJS.Timeout | null = null;
 let initial_timer: NodeJS.Timeout | null = null;
@@ -66,6 +67,10 @@ function fetched_at_ms(value: string | null): number {
   if (!value) return Number.NEGATIVE_INFINITY;
   const parsed = new Date(value).getTime();
   return Number.isFinite(parsed) ? parsed : Number.NEGATIVE_INFINITY;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 /**
@@ -177,7 +182,8 @@ export async function run_docket_state_cache_warmer_cycle(port: number): Promise
     const states_to_warm = candidates.slice(0, limit);
     const results: Array<{ state: string; ok: boolean; source?: string; error?: string }> = [];
 
-    for (const candidate of states_to_warm) {
+    for (let index = 0; index < states_to_warm.length; index += 1) {
+      const candidate = states_to_warm[index];
       try {
         const payload = await warm_state(port, candidate.state, controller.signal);
         results.push({
@@ -191,6 +197,10 @@ export async function run_docket_state_cache_warmer_cycle(port: number): Promise
           ok: false,
           error: safe_error(error),
         });
+      }
+
+      if (index < states_to_warm.length - 1) {
+        await sleep(WARM_STATE_DELAY_MS);
       }
     }
 
@@ -232,6 +242,7 @@ export function start_docket_state_cache_warmer(port: number): void {
     interval_ms: cadence_ms,
     batch_size: limit,
     initial_delay_ms: INITIAL_DELAY_MS,
+    per_state_delay_ms: WARM_STATE_DELAY_MS,
     recovery_order: "missing_then_oldest_stale",
   });
 
