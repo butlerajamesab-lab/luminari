@@ -11,9 +11,9 @@ const canonical = read("server/services/current-canonical-state.ts");
 describe("Mission Control canonical-core read boundary", () => {
   it("filters action bindings before winner ranking without changing the service-role boundary", () => {
     const predicate = migration.indexOf("where b.action_key = p_action_key");
-    const winnerFilter = migration.indexOf("where binding_rank = 1");
+    const winner_filter = migration.indexOf("where binding_rank = 1");
     expect(predicate).toBeGreaterThanOrEqual(0);
-    expect(winnerFilter).toBeGreaterThan(predicate);
+    expect(winner_filter).toBeGreaterThan(predicate);
     expect(migration).toContain("security definer");
     expect(migration).toContain("from public, anon, authenticated");
     expect(migration).toContain("to service_role");
