@@ -36,6 +36,7 @@ import {
   get_civic_genome_operating_contracts,
   get_civic_genome_rosetta_pipeline_status,
 } from "../civic-genome-operating-contracts";
+import { get_docket_verified_enrichment } from "../docket-verified-enrichment";
 
 const uuid_param = z.string().uuid();
 const source_bill_id_param = z.coerce.number().int().positive();
@@ -148,6 +149,10 @@ export const civicGenomeRouter = router({
   get_bill_by_source_id: publicProcedure
     .input(z.object({ source_bill_id: source_bill_id_param }))
     .query(async ({ input }) => get_genome_bill_by_source_id(input.source_bill_id)),
+
+  get_docket_verified_enrichment: publicProcedure
+    .input(z.object({ source_bill_id: source_bill_id_param }))
+    .query(async ({ input }) => get_docket_verified_enrichment(input.source_bill_id)),
 
   list_events: publicProcedure
     .input(z.object({
