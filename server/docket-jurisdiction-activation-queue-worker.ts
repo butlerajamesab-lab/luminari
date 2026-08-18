@@ -422,24 +422,44 @@ async function mark_job_failed(input: {
 export async function process_docket_bill_activation_job(
   job: docket_bill_activation_job,
 ): Promise<void> {
+  let receipt: docket_bill_activation_receipt;
   try {
     await ensure_civic_genome_bill_ready(job);
     const bill = await get_bill(job.source_bill_id);
     await cache_bill_detail(job.source_bill_id, bill);
-    const receipt = await register_legislative_versions(job.source_bill_id);
-    await mark_job_terminal({
-      job,
-      queue_state: receipt.registered_document_count > 0
-        ? "completed"
-        : "source_unavailable",
-      receipt,
-    });
+    receipt = await register_legislative_versions(job.source_bill_id);
   } catch (error) {
     const decision = classify_docket_bill_activation_failure({
       error,
       prior_attempt_count: job.attempt_count,
     });
     await mark_job_failed({ job, decision });
+    return;
+  }
+
+  const queue_state = receipt.registered_document_count > 0
+    ? "completed" as const
+    : "source_unavailable" as const;
+  try {
+    await mark_job_terminal({
+      job,
+      queue_state,
+      receipt,
+    });
+  } catch (error) {
+    // The provider fetch, cache write and version-spine registration already
+    // succeeded. A terminal queue-ledger write failure is bookkeeping only;
+    // leaving the lease in place allows the existing stale-lease retry path to
+    // replay the idempotent registration rather than inventing a false failure.
+    console.error("[DocketJurisdictionActivation] completion_deferred", {
+      queue_id: job.queue_id,
+      source_bill_id: job.source_bill_id,
+      state: job.state,
+      intended_queue_state: queue_state,
+      genome_bill_id: receipt.genome_bill_id,
+      registered_document_count: receipt.registered_document_count,
+      error_code: safe_error_code(error),
+    });
   }
 }
 

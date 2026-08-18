@@ -166,4 +166,23 @@ describe("Docket jurisdiction activation queue", () => {
     expect(failure_call?.[1]?.[2]).toBe("transient");
     expect(failure_call?.[1]?.[3]).toBe("projection_database_unavailable");
   });
+
+  it("does not invent a failure after provider/cache/version registration already succeeded", async () => {
+    query.mockImplementation(async (sql: string, _params: unknown[], options?: { label?: string }) => {
+      if (sql.includes("select exists")) return { rows: [{ ready: true }] };
+      if (sql.includes("register_docket_legislative_version_spine")) {
+        return { rows: [{ receipt: registration_receipt }] };
+      }
+      if (options?.label === "docket_bill_activation_queue_terminal") {
+        throw new Error("docket_bill_activation_queue_terminal query timed out after 5000ms");
+      }
+      return { rows: [] };
+    });
+
+    await expect(process_docket_bill_activation_job(job)).resolves.toBeUndefined();
+
+    expect(get_bill).toHaveBeenCalledTimes(1);
+    expect(query.mock.calls.some(call => call[2]?.label === "docket_bill_activation_queue_fail")).toBe(false);
+    expect(query.mock.calls.some(call => call[2]?.label === "docket_bill_activation_queue_terminal")).toBe(true);
+  });
 });
