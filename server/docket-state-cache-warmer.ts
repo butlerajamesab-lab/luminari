@@ -5,11 +5,19 @@ const DEFAULT_BATCH_SIZE = 5;
 const MAX_BATCH_SIZE = 10;
 const INITIAL_DELAY_MS = 30_000;
 const REQUEST_TIMEOUT_MS = 180_000;
+const WARM_STATE_DELAY_MS = 750;
 
 let interval_timer: NodeJS.Timeout | null = null;
 let initial_timer: NodeJS.Timeout | null = null;
 let cycle_running = false;
 let stopped = false;
+
+type docket_cache_status_row = {
+  state: string;
+  has_cache: boolean;
+  fetched_at: string | null;
+  is_fresh: boolean;
+};
 
 function bounded_integer(
   input: string | undefined,
@@ -55,6 +63,110 @@ function safe_error(error: unknown): string {
     : "unknown_docket_state_cache_warmer_failure";
 }
 
+function fetched_at_ms(value: string | null): number {
+  if (!value) return Number.NEGATIVE_INFINITY;
+  const parsed = new Date(value).getTime();
+  return Number.isFinite(parsed) ? parsed : Number.NEGATIVE_INFINITY;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Recovery order is coverage-first, then freshness:
+ * 1. jurisdictions with no cache at all;
+ * 2. cached-but-stale jurisdictions, oldest observation first;
+ * 3. state code as a deterministic tie-breaker.
+ *
+ * Fresh jurisdictions are never selected by the automatic recovery loop.
+ */
+export function sort_docket_warm_candidates(
+  states: docket_cache_status_row[],
+): docket_cache_status_row[] {
+  return states
+    .filter(row => row.is_fresh !== true)
+    .sort((a, b) => {
+      if (a.has_cache !== b.has_cache) return a.has_cache ? 1 : -1;
+      if (a.has_cache && b.has_cache) {
+        const a_fetched_at = fetched_at_ms(a.fetched_at);
+        const b_fetched_at = fetched_at_ms(b.fetched_at);
+        if (a_fetched_at < b_fetched_at) return -1;
+        if (a_fetched_at > b_fetched_at) return 1;
+      }
+      return a.state.localeCompare(b.state);
+    });
+}
+
+async function parse_json_response(
+  response: Response,
+  error_code: string,
+): Promise<Record<string, unknown>> {
+  const body = await response.text();
+  try {
+    return body ? JSON.parse(body) as Record<string, unknown> : {};
+  } catch {
+    throw new Error(`${error_code}_invalid_json_http_${response.status}`);
+  }
+}
+
+async function read_cache_status(
+  port: number,
+  signal: AbortSignal,
+): Promise<docket_cache_status_row[]> {
+  const response = await fetch(`http://127.0.0.1:${port}/api/docket/cache-status`, {
+    method: "GET",
+    headers: {
+      accept: "application/json",
+      "x-request-id": "docket-state-cache-warmer-status",
+    },
+    signal,
+  });
+  const payload = await parse_json_response(response, "docket_state_cache_status");
+  if (!response.ok || payload.ok !== true || !Array.isArray(payload.states)) {
+    const message = typeof payload.message === "string"
+      ? payload.message
+      : `docket_state_cache_status_http_${response.status}`;
+    throw new Error(message);
+  }
+
+  return payload.states
+    .filter((row): row is Record<string, unknown> => Boolean(row) && typeof row === "object" && !Array.isArray(row))
+    .map(row => ({
+      state: String(row.state ?? "").trim().toUpperCase(),
+      has_cache: row.has_cache === true,
+      fetched_at: typeof row.fetched_at === "string" ? row.fetched_at : null,
+      is_fresh: row.is_fresh === true,
+    }))
+    .filter(row => /^[A-Z]{2}$/.test(row.state));
+}
+
+async function warm_state(
+  port: number,
+  state: string,
+  signal: AbortSignal,
+): Promise<Record<string, unknown>> {
+  const response = await fetch(`http://127.0.0.1:${port}/api/docket/warm-state`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-request-id": `docket-state-cache-warmer-${state.toLowerCase()}`,
+    },
+    body: JSON.stringify({ state }),
+    signal,
+  });
+  const payload = await parse_json_response(response, "docket_state_cache_warm_state");
+  if (!response.ok || payload.ok !== true) {
+    const message = typeof payload.error === "string"
+      ? payload.error
+      : typeof payload.message === "string"
+        ? payload.message
+        : `docket_state_cache_warm_state_http_${response.status}`;
+    throw new Error(message);
+  }
+  return payload;
+}
+
 export async function run_docket_state_cache_warmer_cycle(port: number): Promise<void> {
   if (cycle_running || stopped) return;
   cycle_running = true;
@@ -65,37 +177,42 @@ export async function run_docket_state_cache_warmer_cycle(port: number): Promise
   const started_at = Date.now();
 
   try {
-    const response = await fetch(`http://127.0.0.1:${port}/api/docket/warm-next-batch`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-request-id": "docket-state-cache-warmer",
-      },
-      body: JSON.stringify({ limit }),
-      signal: controller.signal,
-    });
+    const cache_states = await read_cache_status(port, controller.signal);
+    const candidates = sort_docket_warm_candidates(cache_states);
+    const states_to_warm = candidates.slice(0, limit);
+    const results: Array<{ state: string; ok: boolean; source?: string; error?: string }> = [];
 
-    const body = await response.text();
-    let payload: Record<string, unknown> = {};
-    try {
-      payload = body ? JSON.parse(body) as Record<string, unknown> : {};
-    } catch {
-      throw new Error(`docket_state_cache_warmer_invalid_json_http_${response.status}`);
+    for (let index = 0; index < states_to_warm.length; index += 1) {
+      const candidate = states_to_warm[index];
+      try {
+        const payload = await warm_state(port, candidate.state, controller.signal);
+        results.push({
+          state: candidate.state,
+          ok: true,
+          source: typeof payload.source === "string" ? payload.source : undefined,
+        });
+      } catch (error) {
+        results.push({
+          state: candidate.state,
+          ok: false,
+          error: safe_error(error),
+        });
+      }
+
+      if (index < states_to_warm.length - 1) {
+        await sleep(WARM_STATE_DELAY_MS);
+      }
     }
 
-    if (!response.ok || payload.ok !== true) {
-      const message = typeof payload.error === "string"
-        ? payload.error
-        : typeof payload.message === "string"
-          ? payload.message
-          : `docket_state_cache_warmer_http_${response.status}`;
-      throw new Error(message);
-    }
-
+    const successful_count = results.filter(result => result.ok).length;
     console.log("[DocketCacheWarmer] cycle_succeeded", {
       limit,
-      warmed_count: Number(payload.warmed_count ?? 0),
-      remaining_count: Number(payload.remaining_count ?? 0),
+      selected_states: states_to_warm.map(row => row.state),
+      missing_selected: states_to_warm.filter(row => !row.has_cache).length,
+      stale_selected: states_to_warm.filter(row => row.has_cache).length,
+      warmed_count: successful_count,
+      failed_count: results.length - successful_count,
+      remaining_count: Math.max(0, candidates.length - successful_count),
       duration_ms: Date.now() - started_at,
     });
   } catch (error) {
@@ -125,6 +242,8 @@ export function start_docket_state_cache_warmer(port: number): void {
     interval_ms: cadence_ms,
     batch_size: limit,
     initial_delay_ms: INITIAL_DELAY_MS,
+    per_state_delay_ms: WARM_STATE_DELAY_MS,
+    recovery_order: "missing_then_oldest_stale",
   });
 
   initial_timer = setTimeout(() => {
