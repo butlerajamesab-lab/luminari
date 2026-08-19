@@ -1,3 +1,4 @@
+import { reconcile_current_authoritative_legacy_rosetta_timeouts } from "../civic-genome-current-authoritative-timeout-reconciliation";
 import { start_civic_genome_final_source_reconciliation_worker } from "../civic-genome-final-source-reconciliation-worker";
 import { start_legislative_version_queue_worker } from "../civic-genome-legislative-version-queue-worker";
 import { run_rosetta_generation_activation_from_environment } from "../civic-genome-rosetta-generation-activation";
@@ -14,6 +15,16 @@ export async function run_prism_rosetta_activation_from_environment(): Promise<v
   start_rosetta_generation_activation_queue_worker();
   start_rosetta_generation_target_sync();
   start_rosetta_generation_upgrade_worker();
+
+  try {
+    await reconcile_current_authoritative_legacy_rosetta_timeouts();
+  } catch (error) {
+    console.error("[CurrentAuthoritativeRosettaRecovery] startup_failed", {
+      error_class: error instanceof Error ? error.name : "unknown",
+      error_message: error instanceof Error ? error.message : "unknown",
+    });
+  }
+
   start_legislative_version_queue_worker();
   start_docket_bill_activation_queue_worker();
   start_civic_genome_final_source_reconciliation_worker();

@@ -22,7 +22,7 @@ const PDF_EXTRACTOR_VERSION = `pdf-parse-${PDF_PARSE_VERSION}-legislative-versio
 const CA_PDF_EXTRACTOR_VERSION = `ca-official-legislative-version-pdf-v1+${PDF_EXTRACTOR_VERSION}`;
 const MAX_SOURCE_BYTES = 25 * 1024 * 1024;
 const SOURCE_FETCH_TIMEOUT_MS = 30_000;
-const ROSETTA_REQUEST_TIMEOUT_MS = 60_000;
+const ROSETTA_REQUEST_TIMEOUT_MS = 150_000;
 const ROSETTA_CORPUS_NAME = "Lighthouse Docket Legislative Versions";
 const ROSETTA_CORPUS_TYPE = "legislative_version";
 
