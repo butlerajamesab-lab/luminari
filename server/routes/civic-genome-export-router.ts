@@ -2,6 +2,7 @@ import { Router, type Response } from "express";
 import { getPool } from "../db";
 import { get_civic_genome_bill_detail } from "../civic-genome-bill-detail";
 import { get_genome_bill_by_source_id } from "../civic-genome-source-id";
+import { render_civic_genome_human_report, type civic_genome_report_mode } from "../civic-genome-human-report";
 import {
   get_genome_family,
   get_genome_stats,
@@ -15,6 +16,7 @@ export const civic_genome_export_router = Router();
 
 const EXPORT_CONTRACT = "civic-genome-json-export-v1";
 const MULTI_EXPORT_LIMIT = 100;
+const NO_SECOND_SOURCE_CONDITION = "independent_authoritative_source_not_supplied";
 
 function positive_integer(value: unknown): number | null {
   const parsed = Number(value);
@@ -39,6 +41,47 @@ function send_json_attachment(res: Response, filename: string, payload: unknown)
   res.setHeader("Content-Disposition", `attachment; filename=\"${safe_filename(filename)}.json\"`);
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
   res.send(JSON.stringify(payload, null, 2));
+}
+
+function send_html_attachment(res: Response, filename: string, payload: string) {
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.setHeader("Content-Disposition", `attachment; filename=\"${safe_filename(filename)}.html\"`);
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+  res.send(payload);
+}
+
+function proof_item_label(value: unknown): string | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const entry = value as Record<string, unknown>;
+  for (const field of [entry.check, entry.finding, entry.requirement, entry.condition]) {
+    if (typeof field === "string" && field.length > 0) return field;
+  }
+  return null;
+}
+
+function proof_entries(value: unknown): Record<string, unknown>[] {
+  return Array.isArray(value)
+    ? value.filter((entry): entry is Record<string, unknown> => Boolean(entry) && typeof entry === "object" && !Array.isArray(entry))
+    : [];
+}
+
+function human_report_validation_summary(traits: unknown[]) {
+  return traits.reduce((summary, value) => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return summary;
+    const trait = value as Record<string, unknown>;
+    const contradictions = proof_entries(trait.prism_contradictions);
+    const missing = proof_entries(trait.prism_missing_evidence);
+    const unresolved = proof_entries(trait.prism_unresolved_conditions)
+      .filter(entry => proof_item_label(entry) !== NO_SECOND_SOURCE_CONDITION);
+    const prism_status = typeof trait.prism_verification_status === "string"
+      ? trait.prism_verification_status
+      : null;
+
+    if (contradictions.length > 0 || prism_status === "contradicted") summary.contradicted += 1;
+    else if (missing.length > 0 || unresolved.length > 0) summary.unresolved += 1;
+    else if (prism_status) summary.supported += 1;
+    return summary;
+  }, { supported: 0, contradicted: 0, unresolved: 0 });
 }
 
 async function build_single_bill_export(source_bill_id: number) {
@@ -114,6 +157,61 @@ async function build_single_bill_export(source_bill_id: number) {
     interpretation: "This is a source-preserving Civic Genome export. Historical versions and receipts are preserved as history; export does not re-run or mutate Rosetta, Prism, Docket, or Civic Genome state.",
   };
 }
+
+async function send_human_bill_report(
+  res: Response,
+  source_bill_id: number,
+  mode: civic_genome_report_mode,
+) {
+  const payload = await build_single_bill_export(source_bill_id);
+  if (!payload) return res.status(404).json({ ok: false, error: "civic_genome_bill_not_found" });
+
+  const selected = payload.bill_detail.bill;
+  const human_validation = human_report_validation_summary(payload.bill_detail.structural_dna.traits);
+  const human_payload = {
+    ...payload,
+    bill_detail: {
+      ...payload.bill_detail,
+      structural_dna: {
+        ...payload.bill_detail.structural_dna,
+        validation_summary: {
+          ...payload.bill_detail.structural_dna.validation_summary,
+          ...human_validation,
+        },
+      },
+    },
+  };
+  const report = await render_civic_genome_human_report(human_payload, mode);
+  return send_html_attachment(
+    res,
+    `civic-genome-${source_bill_id}-${selected.state_code ?? "state"}-${selected.source_bill_number ?? "bill"}-${mode}`,
+    report,
+  );
+}
+
+civic_genome_export_router.get("/bill/:source_bill_id/summary", async (req, res) => {
+  const source_bill_id = positive_integer(req.params.source_bill_id);
+  if (!source_bill_id) return res.status(400).json({ ok: false, error: "invalid_source_bill_id" });
+
+  try {
+    return await send_human_bill_report(res, source_bill_id, "summary");
+  } catch (error) {
+    console.error("[CivicGenomeExport] summary report failed", { source_bill_id, error });
+    return res.status(500).json({ ok: false, error: "civic_genome_summary_report_failed" });
+  }
+});
+
+civic_genome_export_router.get("/bill/:source_bill_id/detailed", async (req, res) => {
+  const source_bill_id = positive_integer(req.params.source_bill_id);
+  if (!source_bill_id) return res.status(400).json({ ok: false, error: "invalid_source_bill_id" });
+
+  try {
+    return await send_human_bill_report(res, source_bill_id, "detailed");
+  } catch (error) {
+    console.error("[CivicGenomeExport] detailed report failed", { source_bill_id, error });
+    return res.status(500).json({ ok: false, error: "civic_genome_detailed_report_failed" });
+  }
+});
 
 civic_genome_export_router.get("/bill/:source_bill_id", async (req, res) => {
   const source_bill_id = positive_integer(req.params.source_bill_id);
