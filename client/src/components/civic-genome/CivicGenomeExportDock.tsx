@@ -1,4 +1,5 @@
 import { Download } from "lucide-react";
+import { useLocation } from "wouter";
 
 const mono = "'IBM Plex Mono', monospace";
 
@@ -24,8 +25,8 @@ function export_link(href: string, label: string) {
 }
 
 export function CivicGenomeExportDock() {
-  if (typeof window === "undefined") return null;
-  const match = window.location.pathname.match(/^\/civic-genome(?:\/bill\/(\d+))?\/?$/);
+  const [location] = useLocation();
+  const match = location.match(/^\/civic-genome(?:\/bill\/(\d+))?\/?$/);
   if (!match) return null;
 
   const source_bill_id = match[1] ?? null;
