@@ -16,6 +16,7 @@ export const civic_genome_export_router = Router();
 
 const EXPORT_CONTRACT = "civic-genome-json-export-v1";
 const MULTI_EXPORT_LIMIT = 100;
+const NO_SECOND_SOURCE_CONDITION = "independent_authoritative_source_not_supplied";
 
 function positive_integer(value: unknown): number | null {
   const parsed = Number(value);
@@ -47,6 +48,40 @@ function send_html_attachment(res: Response, filename: string, payload: string) 
   res.setHeader("Content-Disposition", `attachment; filename=\"${safe_filename(filename)}.html\"`);
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
   res.send(payload);
+}
+
+function proof_item_label(value: unknown): string | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const entry = value as Record<string, unknown>;
+  for (const field of [entry.check, entry.finding, entry.requirement, entry.condition]) {
+    if (typeof field === "string" && field.length > 0) return field;
+  }
+  return null;
+}
+
+function proof_entries(value: unknown): Record<string, unknown>[] {
+  return Array.isArray(value)
+    ? value.filter((entry): entry is Record<string, unknown> => Boolean(entry) && typeof entry === "object" && !Array.isArray(entry))
+    : [];
+}
+
+function human_report_validation_summary(traits: unknown[]) {
+  return traits.reduce((summary, value) => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return summary;
+    const trait = value as Record<string, unknown>;
+    const contradictions = proof_entries(trait.prism_contradictions);
+    const missing = proof_entries(trait.prism_missing_evidence);
+    const unresolved = proof_entries(trait.prism_unresolved_conditions)
+      .filter(entry => proof_item_label(entry) !== NO_SECOND_SOURCE_CONDITION);
+    const prism_status = typeof trait.prism_verification_status === "string"
+      ? trait.prism_verification_status
+      : null;
+
+    if (contradictions.length > 0 || prism_status === "contradicted") summary.contradicted += 1;
+    else if (missing.length > 0 || unresolved.length > 0) summary.unresolved += 1;
+    else if (prism_status) summary.supported += 1;
+    return summary;
+  }, { supported: 0, contradicted: 0, unresolved: 0 });
 }
 
 async function build_single_bill_export(source_bill_id: number) {
@@ -132,7 +167,21 @@ async function send_human_bill_report(
   if (!payload) return res.status(404).json({ ok: false, error: "civic_genome_bill_not_found" });
 
   const selected = payload.bill_detail.bill;
-  const report = await render_civic_genome_human_report(payload, mode);
+  const human_validation = human_report_validation_summary(payload.bill_detail.structural_dna.traits);
+  const human_payload = {
+    ...payload,
+    bill_detail: {
+      ...payload.bill_detail,
+      structural_dna: {
+        ...payload.bill_detail.structural_dna,
+        validation_summary: {
+          ...payload.bill_detail.structural_dna.validation_summary,
+          ...human_validation,
+        },
+      },
+    },
+  };
+  const report = await render_civic_genome_human_report(human_payload, mode);
   return send_html_attachment(
     res,
     `civic-genome-${source_bill_id}-${selected.state_code ?? "state"}-${selected.source_bill_number ?? "bill"}-${mode}`,
