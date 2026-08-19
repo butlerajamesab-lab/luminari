@@ -5,7 +5,8 @@ import { describe, expect, it } from "vitest";
 const root = process.cwd();
 const route = readFileSync(join(root, "server", "routes", "civic-genome-export-router.ts"), "utf8");
 const index = readFileSync(join(root, "server", "_core", "index.ts"), "utf8");
-const page = readFileSync(join(root, "client", "src", "pages", "CivicGenome.tsx"), "utf8");
+const main = readFileSync(join(root, "client", "src", "main.tsx"), "utf8");
+const dock = readFileSync(join(root, "client", "src", "components", "civic-genome", "CivicGenomeExportDock.tsx"), "utf8");
 
 describe("Civic Genome JSON export", () => {
   it("exposes real attachment endpoints rather than clipboard-only output", () => {
@@ -37,12 +38,13 @@ describe("Civic Genome JSON export", () => {
     expect(route).toContain('max_limit: MULTI_EXPORT_LIMIT');
   });
 
-  it("mounts the export route and surfaces both download controls in Civic Genome", () => {
+  it("mounts the export route and surfaces both download controls on Civic Genome routes", () => {
     expect(index).toContain('civic_genome_export_router');
     expect(index).toContain('app.use("/api/civic-genome/export", civic_genome_export_router)');
-    expect(page).toContain('/api/civic-genome/export/current?limit=100');
-    expect(page).toContain('/api/civic-genome/export/bill/${encodeURIComponent(source_bill_id)}');
-    expect(page).toContain('Export current 100');
-    expect(page).toContain('Export bill JSON');
+    expect(main).toContain('CivicGenomeExportDock');
+    expect(dock).toContain('/api/civic-genome/export/current?limit=100');
+    expect(dock).toContain('/api/civic-genome/export/bill/${encodeURIComponent(source_bill_id)}');
+    expect(dock).toContain('Export current 100');
+    expect(dock).toContain('Export bill JSON');
   });
 });
