@@ -1,0 +1,108 @@
+name: Patch Rosetta generation identity resolution
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Apply exact fail-closed resolver patch
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('server/civic-genome-rosetta-generation-upgrade-worker.ts')
+          text = path.read_text()
+          old = '''async function resolve_source_identity(candidate: discovery_candidate): Promise<string> {
+            if (candidate.source_identity_hash) return candidate.source_identity_hash;
+            if (!candidate.source_content_hash || !candidate.source_version) {
+              throw new Error("rosetta_upgrade_source_receipt_incomplete");
+            }
+
+            const query = new URLSearchParams({
+              select: "source_identity_hash,source_content_hash,source_version",
+              source_document_id: `eq.${candidate.source_document_id}`,
+              source_content_hash: `eq.${candidate.source_content_hash}`,
+              source_version: `eq.${candidate.source_version}`,
+              limit: "2",
+            });
+          '''
+          new = '''async function resolve_source_identity(candidate: discovery_candidate): Promise<string> {
+            if (candidate.source_identity_hash) return candidate.source_identity_hash;
+            if (!candidate.source_version) {
+              throw new Error("rosetta_upgrade_source_receipt_incomplete");
+            }
+
+            const query_params: Record<string, string> = {
+              select: "source_identity_hash,source_content_hash,source_version",
+              source_document_id: `eq.${candidate.source_document_id}`,
+              source_version: `eq.${candidate.source_version}`,
+              limit: "2",
+            };
+            if (candidate.source_content_hash) {
+              query_params.source_content_hash = `eq.${candidate.source_content_hash}`;
+            }
+            const query = new URLSearchParams(query_params);
+          '''
+          if old not in text:
+              raise SystemExit('expected resolver block not found; refusing patch')
+          if text.count(old) != 1:
+              raise SystemExit('resolver block not unique; refusing patch')
+          path.write_text(text.replace(old, new, 1))
+          PY
+      - name: Add resolver contract test
+        run: |
+          cat > server/civic-genome-rosetta-generation-identity-resolution.test.ts <<'EOF'
+          import { readFileSync } from "node:fs";
+          import { describe, expect, it } from "vitest";
+
+          const source = readFileSync(
+            new URL("./civic-genome-rosetta-generation-upgrade-worker.ts", import.meta.url),
+            "utf8",
+          );
+
+          describe("Rosetta generation identity resolution", () => {
+            it("requires source version but permits a missing Lighthouse content hash", () => {
+              expect(source).toContain("if (!candidate.source_version)");
+              expect(source).not.toContain("if (!candidate.source_content_hash || !candidate.source_version)");
+              expect(source).toContain("source_version: `eq.${candidate.source_version}`");
+            });
+
+            it("retains content-hash matching whenever Lighthouse has the hash", () => {
+              expect(source).toContain("if (candidate.source_content_hash)");
+              expect(source).toContain("query_params.source_content_hash = `eq.${candidate.source_content_hash}`");
+            });
+
+            it("retains the exact-one-row fail-closed identity gate", () => {
+              expect(source).toContain("rows.length !== 1");
+              expect(source).toContain("rosetta_upgrade_source_identity_not_unique");
+            });
+          });
+          EOF
+      - name: Verify bounded worker contract
+        run: |
+          pnpm install --no-frozen-lockfile
+          pnpm exec vitest run server/civic-genome-rosetta-generation-upgrade-worker.test.ts server/civic-genome-rosetta-generation-identity-resolution.test.ts
+          pnpm run build
+      - name: Commit patch and self-delete workflow
+        run: |
+          git rm .github/workflows/patch-rosetta-identity-resolution-temp.yml
+          git add server/civic-genome-rosetta-generation-upgrade-worker.ts server/civic-genome-rosetta-generation-identity-resolution.test.ts
+          git diff --cached --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Resolve Rosetta generation identity from preserved source version'
+          git push origin HEAD:main
