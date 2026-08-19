@@ -1,4 +1,8 @@
 import { Router, type Response } from "express";
+import {
+  civic_genome_meaningful_unresolved,
+  civic_genome_prism_display,
+} from "@shared/civic-genome-prism-presentation";
 import { getPool } from "../db";
 import { get_civic_genome_bill_detail } from "../civic-genome-bill-detail";
 import { get_genome_bill_by_source_id } from "../civic-genome-source-id";
@@ -16,7 +20,8 @@ export const civic_genome_export_router = Router();
 
 const EXPORT_CONTRACT = "civic-genome-json-export-v1";
 const MULTI_EXPORT_LIMIT = 100;
-const NO_SECOND_SOURCE_CONDITION = "independent_authoritative_source_not_supplied";
+
+type json_record = Record<string, unknown>;
 
 function positive_integer(value: unknown): number | null {
   const parsed = Number(value);
@@ -50,38 +55,96 @@ function send_html_attachment(res: Response, filename: string, payload: string) 
   res.send(payload);
 }
 
-function proof_item_label(value: unknown): string | null {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  const entry = value as Record<string, unknown>;
-  for (const field of [entry.check, entry.finding, entry.requirement, entry.condition]) {
-    if (typeof field === "string" && field.length > 0) return field;
-  }
-  return null;
+function as_record(value: unknown): json_record | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as json_record
+    : null;
 }
 
-function proof_entries(value: unknown): Record<string, unknown>[] {
+function as_records(value: unknown): json_record[] {
   return Array.isArray(value)
-    ? value.filter((entry): entry is Record<string, unknown> => Boolean(entry) && typeof entry === "object" && !Array.isArray(entry))
+    ? value.filter((entry): entry is json_record => Boolean(entry) && typeof entry === "object" && !Array.isArray(entry))
     : [];
+}
+
+function string_value(value: unknown): string | null {
+  return typeof value === "string" && value.trim().length > 0 ? value : null;
 }
 
 function human_report_validation_summary(traits: unknown[]) {
   return traits.reduce((summary, value) => {
-    if (!value || typeof value !== "object" || Array.isArray(value)) return summary;
-    const trait = value as Record<string, unknown>;
-    const contradictions = proof_entries(trait.prism_contradictions);
-    const missing = proof_entries(trait.prism_missing_evidence);
-    const unresolved = proof_entries(trait.prism_unresolved_conditions)
-      .filter(entry => proof_item_label(entry) !== NO_SECOND_SOURCE_CONDITION);
-    const prism_status = typeof trait.prism_verification_status === "string"
-      ? trait.prism_verification_status
-      : null;
-
-    if (contradictions.length > 0 || prism_status === "contradicted") summary.contradicted += 1;
-    else if (missing.length > 0 || unresolved.length > 0) summary.unresolved += 1;
-    else if (prism_status) summary.supported += 1;
+    const trait = as_record(value);
+    if (!trait) return summary;
+    const display = civic_genome_prism_display(trait);
+    if (display.tone === "finding") summary.contradicted += 1;
+    else if (display.tone === "open" || display.tone === "neutral") summary.unresolved += 1;
+    else if (display.tone === "supported") summary.supported += 1;
     return summary;
   }, { supported: 0, contradicted: 0, unresolved: 0 });
+}
+
+function humanize_report_payload(payload: unknown): json_record {
+  // JSON round-trip intentionally mirrors the technical export boundary: it
+  // converts pg Date values to the same ISO strings a downloaded JSON receipt
+  // carries, without altering the canonical records in memory or storage.
+  const clone = JSON.parse(JSON.stringify(payload)) as json_record;
+  const detail = as_record(clone.bill_detail);
+  const bill = as_record(detail?.bill);
+  const bill_structural = as_record(bill?.structural_dna_json);
+  const procedural = as_record(bill?.procedural_lifecycle_json);
+  const structural_dna = as_record(detail?.structural_dna);
+  const traits = as_records(structural_dna?.traits);
+
+  if (bill) {
+    const action = string_value(bill_structural?.source_last_action)
+      ?? string_value(procedural?.last_action);
+    const action_date = string_value(bill_structural?.source_last_action_date)
+      ?? string_value(procedural?.last_action_date)
+      ?? string_value(bill.last_action_at)?.slice(0, 10)
+      ?? null;
+    if (action) {
+      bill.last_action_at = action_date ? `${action} (${action_date})` : action;
+    }
+  }
+
+  for (const trait of traits) {
+    const display = civic_genome_prism_display(trait);
+    if (trait.prism_verification_status === "contradicted") {
+      trait.prism_verification_status = display.token;
+    }
+    trait.prism_unresolved_conditions = civic_genome_meaningful_unresolved(
+      trait.prism_unresolved_conditions,
+    );
+  }
+
+  if (structural_dna) {
+    structural_dna.validation_summary = {
+      ...(as_record(structural_dna.validation_summary) ?? {}),
+      ...human_report_validation_summary(traits),
+    };
+  }
+
+  for (const event of as_records(clone.bill_events)) {
+    if (event.event_at == null && event.event_timestamp != null) {
+      event.event_at = event.event_timestamp;
+    }
+  }
+
+  return clone;
+}
+
+function humanize_report_headings(report: string): string {
+  // Only replace renderer-owned markup. Do not perform a global text
+  // substitution that could alter the embedded authoritative source copy.
+  return report
+    .replaceAll(
+      '<span class="label">Did not carry into final bill</span>',
+      '<span class="label">Prism verification findings</span>',
+    )
+    .replaceAll(
+      "<h4>Did not carry into final bill ·",
+      "<h4>Prism verification findings ·",
+    );
 }
 
 async function build_single_bill_export(source_bill_id: number) {
@@ -167,21 +230,10 @@ async function send_human_bill_report(
   if (!payload) return res.status(404).json({ ok: false, error: "civic_genome_bill_not_found" });
 
   const selected = payload.bill_detail.bill;
-  const human_validation = human_report_validation_summary(payload.bill_detail.structural_dna.traits);
-  const human_payload = {
-    ...payload,
-    bill_detail: {
-      ...payload.bill_detail,
-      structural_dna: {
-        ...payload.bill_detail.structural_dna,
-        validation_summary: {
-          ...payload.bill_detail.structural_dna.validation_summary,
-          ...human_validation,
-        },
-      },
-    },
-  };
-  const report = await render_civic_genome_human_report(human_payload, mode);
+  const human_payload = humanize_report_payload(payload);
+  const report = humanize_report_headings(
+    await render_civic_genome_human_report(human_payload, mode),
+  );
   return send_html_attachment(
     res,
     `civic-genome-${source_bill_id}-${selected.state_code ?? "state"}-${selected.source_bill_number ?? "bill"}-${mode}`,

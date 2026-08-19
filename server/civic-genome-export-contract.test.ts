@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 const root = process.cwd();
 const route = readFileSync(join(root, "server", "routes", "civic-genome-export-router.ts"), "utf8");
 const humanReport = readFileSync(join(root, "server", "civic-genome-human-report.ts"), "utf8");
+const prismPresentation = readFileSync(join(root, "shared", "civic-genome-prism-presentation.ts"), "utf8");
 const index = readFileSync(join(root, "server", "_core", "index.ts"), "utf8");
 const main = readFileSync(join(root, "client", "src", "main.tsx"), "utf8");
 const dock = readFileSync(join(root, "client", "src", "components", "civic-genome", "CivicGenomeExportDock.tsx"), "utf8");
@@ -45,21 +46,35 @@ describe("Civic Genome export contract", () => {
     expect(humanReport).toContain('source_byte_hash');
     expect(humanReport).toContain('source_identity_hash');
     expect(humanReport).toContain('Official legislative source verified');
-    expect(humanReport).toContain('Language did not carry into final bill');
     expect(humanReport).toContain('does not re-run analysis');
     expect(humanReport).not.toMatch(/delete\s+from/i);
     expect(humanReport).not.toMatch(/update\s+public\./i);
     expect(humanReport).not.toMatch(/insert\s+into\s+public\./i);
   });
 
+  it("classifies human Prism results without inventing a final-bill comparison", () => {
+    expect(prismPresentation).toContain('label: "Technical verification finding"');
+    expect(prismPresentation).toContain('label: "Amendment not adopted"');
+    expect(prismPresentation).toContain('label: "Amendment disposition conflict"');
+    expect(route).toContain('humanize_report_headings');
+    expect(route).toContain('Prism verification findings');
+    expect(route).toContain('civic_genome_prism_display');
+    expect(prismProof).toContain('Prism verification findings');
+    expect(prismProof).toContain('civic_genome_prism_display');
+    expect(prismProof).not.toContain('language did not carry into final bill');
+  });
+
   it("does not present absence of a second source as a legislative verification gap", () => {
     expect(prismProof).toContain('Official legislative source verified; binding continuity verified');
-    expect(prismProof).toContain('language did not carry into final bill');
     expect(prismProof).toContain('.filter(entry => proof_title(entry) !== "independent_authoritative_source_not_supplied")');
-    expect(humanReport).toContain('NO_SECOND_SOURCE_CONDITION');
-    expect(humanReport).toContain('meaningful_unresolved');
-    expect(route).toContain('human_report_validation_summary');
-    expect(route).toContain('.filter(entry => proof_item_label(entry) !== NO_SECOND_SOURCE_CONDITION)');
+    expect(prismPresentation).toContain('NO_SECOND_SOURCE_CONDITION');
+    expect(prismPresentation).toContain('civic_genome_meaningful_unresolved');
+    expect(route).toContain('civic_genome_meaningful_unresolved');
+  });
+
+  it("normalizes report dates through the same JSON boundary as the technical export", () => {
+    expect(route).toContain('JSON.parse(JSON.stringify(payload))');
+    expect(route).toContain('event.event_at = event.event_timestamp');
   });
 
   it("bounds the multi-bill proof export and exposes direct source bill IDs", () => {
