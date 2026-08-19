@@ -9,6 +9,7 @@ import App from "./App";
 import { getLoginUrl } from "./const";
 import { initializeValidationSession } from "./_core/validation-session";
 import { ClickToReadProvider } from "./contexts/ClickToReadContext";
+import { CivicGenomeExportDock } from "./components/civic-genome/CivicGenomeExportDock";
 import "./index.css";
 
 // Initialize validation session for /intake and /case/:id routes
@@ -260,6 +261,7 @@ function AppWithProviders() {
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <ClickToReadProvider>
           <App />
+          <CivicGenomeExportDock />
         </ClickToReadProvider>
       </trpc.Provider>
     </QueryClientProvider>
