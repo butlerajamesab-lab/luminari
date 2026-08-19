@@ -193,7 +193,10 @@ async function reconcile_completed_jobs_if_due(): Promise<void> {
 
 async function claim_jobs(limit: number): Promise<legislative_version_queue_job[]> {
   const result = await query_with_diagnostics<legislative_version_queue_job>(
-    `with host_activity as (
+    `with current_sessions as (
+       select distinct state, session_id::text as session_key
+         from public.docket_bill_state_cache
+     ), host_activity as (
        select split_part(lower(document.source_url), '/', 3) as source_host,
               max(queue.updated_at) filter (
                 where queue.attempt_count > 0
@@ -218,8 +221,13 @@ async function claim_jobs(limit: number): Promise<legislative_version_queue_job[
          from public.civic_genome_legislative_version_queue queue
          join public.civic_genome_bill_version version
            on version.bill_version_id = queue.bill_version_id
+         join public.civic_genome_bill bill
+           on bill.genome_bill_id = version.genome_bill_id
          join public.docket_bill_source_document document
            on document.source_document_key = version.source_document_key
+         left join current_sessions current_session
+           on current_session.state = bill.state_code
+          and current_session.session_key = bill.session_key
          left join host_activity source_host
            on source_host.source_host = split_part(lower(document.source_url), '/', 3)
          cross join lateral (
@@ -251,8 +259,9 @@ async function claim_jobs(limit: number): Promise<legislative_version_queue_job[
           and version.processing_state not in ('verified', 'verified_with_findings')
           and coalesce(source_host.blocked_until, '-infinity'::timestamptz) <= now()
         order by case when queue.priority < 0 then 0 else 1 end,
-                 source_host.last_attempt_at asc nulls first,
+                 (current_session.state is not null) desc,
                  currency.is_current desc,
+                 source_host.last_attempt_at asc nulls first,
                  case when currency.is_current then version.stage_rank else 0 end desc,
                  queue.priority,
                  queue.created_at,
@@ -415,10 +424,6 @@ export async function process_legislative_version_job(
       assembly_run_id: result.assembly.assembly_run_id,
     });
   } catch (error) {
-    // The underlying pipeline already assembled successfully. A queue-ledger
-    // completion write failure must never rewrite that bill version as failed.
-    // The bounded reconciler will observe the assembly receipt and finish the
-    // queue row after the database circuit recovers.
     console.error("[LegislativeVersionQueue] completion_deferred", {
       queue_id: job.queue_id,
       bill_version_id: job.bill_version_id,
@@ -457,6 +462,7 @@ export function start_legislative_version_queue_worker(): void {
     reconcile_interval_ms,
     concurrency,
     lease_minutes: QUEUE_LEASE_MINUTES,
+    priority_scope: "current_docket_session_then_latest_version_then_host_fairness",
   });
   void run_legislative_version_queue_cycle();
   queue_timer = setInterval(() => {
