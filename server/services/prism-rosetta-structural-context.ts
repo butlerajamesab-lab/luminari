@@ -9,6 +9,8 @@ import {
 } from "./prism-verification-contract";
 
 const ROSETTA_SOURCE_TIMEOUT_MS = 8_000;
+const ASSEMBLY_CONTEXT_CACHE_TTL_MS = 5 * 60_000;
+const ASSEMBLY_CONTEXT_CACHE_MAX_ENTRIES = 16;
 const DEEP_VERIFICATION_CHECKS = [
   "verify_identity_chain",
   "verify_hash_chain",
@@ -47,6 +49,19 @@ type RosettaDocumentContextRow = {
   adopted: boolean | null;
 };
 
+type RosettaAssemblyVerificationContext = {
+  source_snapshot: RosettaSourceSnapshotRow;
+  peer_rows: PeerTraitRow[];
+  document_context: RosettaDocumentContextRow;
+};
+
+type AssemblyContextCacheEntry = {
+  expires_at_ms: number;
+  value: Promise<RosettaAssemblyVerificationContext>;
+};
+
+const assembly_context_cache = new Map<string, AssemblyContextCacheEntry>();
+
 function required_environment(name: string): string {
   const value = process.env[name]?.trim();
   if (!value) throw new Error(`missing_${name.toLowerCase()}`);
@@ -55,6 +70,40 @@ function required_environment(name: string): string {
 
 function is_record(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+export function rosetta_assembly_context_cache_key(
+  request: RosettaBindingRequest,
+): string {
+  return sha256_hex(canonical_json({
+    genome_bill_id: request.rosetta_binding.genome_bill_id,
+    assembly_run_id: request.rosetta_binding.assembly_run_id,
+    source_document_id: request.rosetta_binding.source_document_id,
+    extraction_run_id: request.rosetta_binding.extraction_run_id,
+    assembly_input_hash: request.rosetta_binding.assembly_input_hash,
+    assembly_output_hash: request.rosetta_binding.assembly_output_hash,
+    rosetta_source_identity_hash:
+      request.rosetta_binding.rosetta_source_identity_hash,
+    rosetta_source_content_hash:
+      request.rosetta_binding.rosetta_source_content_hash,
+    rosetta_output_content_hash:
+      request.rosetta_binding.rosetta_output_content_hash,
+    rosetta_rule_manifest_hash:
+      request.rosetta_binding.rosetta_rule_manifest_hash,
+    rosetta_configuration_hash:
+      request.rosetta_binding.rosetta_configuration_hash,
+  }));
+}
+
+function prune_assembly_context_cache(now_ms: number): void {
+  for (const [key, entry] of assembly_context_cache.entries()) {
+    if (entry.expires_at_ms <= now_ms) assembly_context_cache.delete(key);
+  }
+  while (assembly_context_cache.size >= ASSEMBLY_CONTEXT_CACHE_MAX_ENTRIES) {
+    const oldest_key = assembly_context_cache.keys().next().value as string | undefined;
+    if (!oldest_key) break;
+    assembly_context_cache.delete(oldest_key);
+  }
 }
 
 async function load_rosetta_source_snapshot(
@@ -202,30 +251,82 @@ async function load_document_context(
   return row;
 }
 
-export async function enrich_rosetta_binding_request(
+async function load_assembly_verification_context(
   request: RosettaBindingRequest,
-): Promise<DeepRosettaBindingRequest> {
-  const [source_snapshot, peer_rows, document_context] = await Promise.all([
+): Promise<RosettaAssemblyVerificationContext> {
+  const key = rosetta_assembly_context_cache_key(request);
+  const now_ms = Date.now();
+  const cached = assembly_context_cache.get(key);
+  if (cached && cached.expires_at_ms > now_ms) {
+    assembly_context_cache.delete(key);
+    assembly_context_cache.set(key, cached);
+    return cached.value;
+  }
+  if (cached) assembly_context_cache.delete(key);
+  prune_assembly_context_cache(now_ms);
+
+  const value = Promise.all([
     load_rosetta_source_snapshot(request),
     load_peer_traits(request),
     load_document_context(request),
-  ]);
-  const current = peer_rows.find((row) => row.trait_id === request.subject_id);
+  ]).then(([source_snapshot, peer_rows, document_context]) => ({
+    source_snapshot,
+    peer_rows,
+    document_context,
+  }));
+  assembly_context_cache.set(key, {
+    expires_at_ms: now_ms + ASSEMBLY_CONTEXT_CACHE_TTL_MS,
+    value,
+  });
+  try {
+    return await value;
+  } catch (error) {
+    const current = assembly_context_cache.get(key);
+    if (current?.value === value) assembly_context_cache.delete(key);
+    throw error;
+  }
+}
+
+function validate_request_against_context(
+  request: RosettaBindingRequest,
+  context: RosettaAssemblyVerificationContext,
+): PeerTraitRow {
+  if (
+    context.source_snapshot.source_content_hash.toLowerCase()
+      !== request.rosetta_binding.rosetta_source_content_hash.toLowerCase()
+  ) {
+    throw new Error("prism_rosetta_cached_source_binding_hash_mismatch");
+  }
+  if (
+    context.source_snapshot.source_identity_hash.toLowerCase()
+      !== request.rosetta_binding.rosetta_source_identity_hash.toLowerCase()
+  ) {
+    throw new Error("prism_rosetta_cached_source_identity_mismatch");
+  }
+  const current = context.peer_rows.find((row) => row.trait_id === request.subject_id);
   if (!current || !is_record(current.normalized_value_json)) {
     throw new Error("prism_rosetta_current_trait_payload_missing");
   }
   if (current.source_object_id !== request.rosetta_binding.source_object_id) {
     throw new Error("prism_rosetta_current_trait_object_mismatch");
   }
-  const trait_payload = current.normalized_value_json;
+  return current;
+}
+
+export async function enrich_rosetta_binding_request(
+  request: RosettaBindingRequest,
+): Promise<DeepRosettaBindingRequest> {
+  const context = await load_assembly_verification_context(request);
+  const current = validate_request_against_context(request, context);
+  const trait_payload = current.normalized_value_json as Record<string, unknown>;
   return deep_rosetta_binding_request_schema.parse({
     ...request,
     requested_checks: DEEP_VERIFICATION_CHECKS,
-    source_snapshot,
-    document_context,
+    source_snapshot: context.source_snapshot,
+    document_context: context.document_context,
     trait_payload,
     trait_payload_hash: sha256_hex(canonical_json(trait_payload)),
-    peer_traits: peer_rows.map((row) => ({
+    peer_traits: context.peer_rows.map((row) => ({
       trait_id: row.trait_id,
       trait_class: row.trait_class,
       trait_key: row.trait_key,
