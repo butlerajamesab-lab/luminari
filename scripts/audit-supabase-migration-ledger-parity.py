@@ -136,7 +136,7 @@ EXPECTED_NEW = {
     "20260818090000",
     "20260818095500",
     "20260818210000",
-    "20260818233000",
+    "20260818235451",
 }
 
 remote_versions = {line.strip() for line in REMOTE_FIXTURE.read_text(encoding="utf-8").splitlines() if line.strip()} | RECORDED_AFTER_FIXTURE
