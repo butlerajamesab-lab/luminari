@@ -43,6 +43,14 @@ function text(value: unknown): string | null {
   return null;
 }
 
+function proof_title(entry: ProofEntry): string {
+  return text(entry.check)
+    ?? text(entry.finding)
+    ?? text(entry.requirement)
+    ?? text(entry.condition)
+    ?? "Recorded proof item";
+}
+
 function verification_label(value: string | null | undefined): string {
   if (value === "supported_by_one_source") return "official legislative source verified";
   if (value === "independent_authoritative_source_not_supplied") return "official legislative source verified";
@@ -51,11 +59,7 @@ function verification_label(value: string | null | undefined): string {
 }
 
 function Finding({ entry, tone }: { entry: ProofEntry; tone: "pass" | "fail" | "open" }) {
-  const title = text(entry.check)
-    ?? text(entry.finding)
-    ?? text(entry.requirement)
-    ?? text(entry.condition)
-    ?? "Recorded proof item";
+  const title = proof_title(entry);
   const quote = text(entry.source_quote);
   const expected = text(entry.expected);
   const observed = text(entry.observed);
@@ -102,7 +106,8 @@ export function PrismProof({ trait }: { trait: PrismProofTrait }) {
   const supported = entries(trait.prism_supported_findings);
   const contradictions = entries(trait.prism_contradictions);
   const missing = entries(trait.prism_missing_evidence);
-  const unresolved = entries(trait.prism_unresolved_conditions);
+  const unresolved = entries(trait.prism_unresolved_conditions)
+    .filter(entry => proof_title(entry) !== "independent_authoritative_source_not_supplied");
   const scope = trait.prism_proof_scope === "independent_source_replay"
     ? "Independent deterministic source replay"
     : "Official legislative source verified; binding continuity verified";
