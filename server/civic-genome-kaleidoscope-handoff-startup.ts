@@ -58,8 +58,9 @@ export function civic_genome_kaleidoscope_handoff_configuration_from_environment
  * Normal deployments leave the family/as-of pair empty. When configured,
  * Lighthouse builds one immutable family snapshot through the established
  * repeatable-read read-only producer and sends it to Kaleidoscope for
- * authenticated validation. The receiver must return a deterministic
- * validated-unbound receipt with no persistence and no projection execution.
+ * authenticated validation and declared-rule verification mapping. A bounded
+ * complete snapshot may receive an accepted transient binding receipt, but the
+ * receiver must still report no persistence and no projection execution.
  * Neither the snapshot payload nor the shared secret is logged.
  */
 export async function run_civic_genome_kaleidoscope_handoff_from_environment(): Promise<void> {
@@ -104,6 +105,8 @@ export async function run_civic_genome_kaleidoscope_handoff_from_environment(): 
     binding_state: receipt.binding_state,
     binding_errors: receipt.binding_errors,
     verification_mapping_state: receipt.verification_mapping_state,
+    verification_mapping_rule_id: receipt.verification_mapping_rule_id,
+    verification_mapping_rule_version: receipt.verification_mapping_rule_version,
     authenticated: receipt.authenticated,
     persisted: receipt.persisted,
     projection_executed: receipt.projection_executed,
