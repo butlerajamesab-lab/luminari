@@ -21,6 +21,7 @@ import { ingestion_control_rest_router } from "../routes/ingestion_control_route
 import { substrate_readiness_router } from "../routes/substrate_readiness_router";
 import { docket_router } from "../routes/docket";
 import { prism_verification_router } from "../routes/prism-verification-router";
+import { civic_genome_export_router } from "../routes/civic-genome-export-router";
 import { invite_redemption_router } from "../routes/invite-redemption-router";
 import { registerUploadRoute } from "../upload-route";
 import { registerExecutorRoutes } from "../executor-routes";
@@ -227,6 +228,7 @@ async function startServer() {
   app.use("/api/ingestion-control", ingestion_control_rest_router);
   app.use("/api/docket", docket_router);
   app.use("/api/prism", prism_verification_router);
+  app.use("/api/civic-genome/export", civic_genome_export_router);
   registerUploadRoute(app);
   app.use("/api/executor", requireExpressAdmin);
   registerExecutorRoutes(app);
