@@ -31,9 +31,10 @@ describe("Civic Genome JSON export", () => {
     expect(route).not.toMatch(/insert\s+into\s+public\./i);
   });
 
-  it("bounds the multi-bill proof export without truncating individual JSON records", () => {
+  it("bounds the multi-bill proof export and exposes direct source bill IDs", () => {
     expect(route).toContain('const MULTI_EXPORT_LIMIT = 100;');
-    expect(route).toContain('returned_bill_count: bills.length');
+    expect(route).toContain('source_bill_id: source_bill_id_from_bill(bill)');
+    expect(route).toContain('returned_bill_count: export_bills.length');
     expect(route).toContain('total_bill_count: stats.total_bills');
     expect(route).toContain('max_limit: MULTI_EXPORT_LIMIT');
   });
