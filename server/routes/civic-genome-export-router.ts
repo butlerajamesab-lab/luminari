@@ -67,6 +67,10 @@ function as_records(value: unknown): json_record[] {
     : [];
 }
 
+function string_value(value: unknown): string | null {
+  return typeof value === "string" && value.trim().length > 0 ? value : null;
+}
+
 function human_report_validation_summary(traits: unknown[]) {
   return traits.reduce((summary, value) => {
     const trait = as_record(value);
@@ -85,8 +89,23 @@ function humanize_report_payload(payload: unknown): json_record {
   // carries, without altering the canonical records in memory or storage.
   const clone = JSON.parse(JSON.stringify(payload)) as json_record;
   const detail = as_record(clone.bill_detail);
+  const bill = as_record(detail?.bill);
+  const bill_structural = as_record(bill?.structural_dna_json);
+  const procedural = as_record(bill?.procedural_lifecycle_json);
   const structural_dna = as_record(detail?.structural_dna);
   const traits = as_records(structural_dna?.traits);
+
+  if (bill) {
+    const action = string_value(bill_structural?.source_last_action)
+      ?? string_value(procedural?.last_action);
+    const action_date = string_value(bill_structural?.source_last_action_date)
+      ?? string_value(procedural?.last_action_date)
+      ?? string_value(bill.last_action_at)?.slice(0, 10)
+      ?? null;
+    if (action) {
+      bill.last_action_at = action_date ? `${action} (${action_date})` : action;
+    }
+  }
 
   for (const trait of traits) {
     const display = civic_genome_prism_display(trait);
