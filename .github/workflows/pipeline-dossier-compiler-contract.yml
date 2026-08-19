@@ -1,0 +1,35 @@
+name: Pipeline dossier compiler contract
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/lib/pipeline-dossier-review-compiler.mjs'
+      - 'scripts/compile-pipeline-dossier-review.mjs'
+      - 'scripts/pipeline-dossier-review-compiler.test.mjs'
+      - '.github/workflows/pipeline-dossier-compiler-contract.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: pipeline-dossier-compiler-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compiler-contract:
+    name: Fail-closed compiler contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Run pipeline dossier compiler contract
+        run: npx vitest run scripts/pipeline-dossier-review-compiler.test.mjs
