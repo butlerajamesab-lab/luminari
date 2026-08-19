@@ -7,6 +7,7 @@ const supersession=readFileSync(join(root,"supabase","migrations","2026081600442
 const targetFence=readFileSync(join(root,"supabase","migrations","20260816042731_civic_genome_rosetta_generation_target_fence_v2.sql"),"utf8");
 const transactionFence=readFileSync(join(root,"supabase","migrations","20260816042900_civic_genome_rosetta_generation_transaction_fence_v2.sql"),"utf8");
 const satisfiedReconciliation=readFileSync(join(root,"supabase","migration_sources","civic_genome_rosetta_satisfied_upgrade_reconciliation_v1.sql"),"utf8");
+const satisfiedReconciliationLedger=readFileSync(join(root,"supabase","migrations","20260819103927_civic_genome_rosetta_satisfied_upgrade_reconciliation_v1.sql"),"utf8");
 const sync=readFileSync(join(root,"server","civic-genome-rosetta-generation-target-sync.ts"),"utf8");
 
 function satisfiedSegment():string{
@@ -65,6 +66,10 @@ describe("Rosetta target supersession",()=>{
   expect(sync).toContain("validation_test_name");
   expect(sync).toContain("promoted_at");
   expect(sync).not.toContain("insert into public.civic_genome_rosetta_generation_target");
+ });
+
+ it("keeps the reviewed source byte-identical to the production ledger migration",()=>{
+  expect(satisfiedReconciliationLedger).toBe(satisfiedReconciliation);
  });
 
  it("preserves the six-field monotonic target fence in the satisfied-work reconciliation",()=>{
