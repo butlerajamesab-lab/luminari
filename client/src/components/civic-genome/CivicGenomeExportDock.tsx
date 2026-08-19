@@ -32,7 +32,7 @@ export function CivicGenomeExportDock() {
   const source_bill_id = match[1] ?? null;
 
   return <div
-    aria-label="Civic Genome exports"
+    aria-label="Civic Genome reports and technical data"
     style={{
       position: "fixed",
       right: "max(1rem, env(safe-area-inset-right))",
@@ -45,10 +45,22 @@ export function CivicGenomeExportDock() {
       maxWidth: "calc(100vw - 2rem)",
     }}
   >
-    {export_link("/api/civic-genome/export/current?limit=100", "Export current 100")}
-    {source_bill_id && export_link(
-      `/api/civic-genome/export/bill/${encodeURIComponent(source_bill_id)}`,
-      "Export bill JSON",
+    {source_bill_id ? <>
+      {export_link(
+        `/api/civic-genome/export/bill/${encodeURIComponent(source_bill_id)}/summary`,
+        "Summary report",
+      )}
+      {export_link(
+        `/api/civic-genome/export/bill/${encodeURIComponent(source_bill_id)}/detailed`,
+        "Detailed report",
+      )}
+      {export_link(
+        `/api/civic-genome/export/bill/${encodeURIComponent(source_bill_id)}`,
+        "Technical JSON",
+      )}
+    </> : export_link(
+      "/api/civic-genome/export/current?limit=100",
+      "Technical data · current 100",
     )}
   </div>;
 }
