@@ -7,6 +7,8 @@ import {
   CIVIC_GENOME_KALEIDOSCOPE_DELIVERY_CONTRACT_VERSION,
   CIVIC_GENOME_KALEIDOSCOPE_DELIVERY_PATH,
   CIVIC_GENOME_KALEIDOSCOPE_SOURCE_SCHEMA_ID,
+  CIVIC_GENOME_KALEIDOSCOPE_VERIFICATION_MAPPING_RULE_ID,
+  CIVIC_GENOME_KALEIDOSCOPE_VERIFICATION_MAPPING_RULE_VERSION,
   build_civic_genome_kaleidoscope_delivery_body_v1,
   deliver_civic_genome_snapshot_to_kaleidoscope_v1,
   sign_civic_genome_kaleidoscope_delivery_v1,
@@ -85,7 +87,7 @@ function receipt_for(snapshot: civic_genome_external_snapshot_v1, overrides: Rec
   const basis: Record<string, unknown> = {
     delivery_contract_id: CIVIC_GENOME_KALEIDOSCOPE_DELIVERY_CONTRACT_ID,
     delivery_contract_version: CIVIC_GENOME_KALEIDOSCOPE_DELIVERY_CONTRACT_VERSION,
-    validation_state: "validated_unbound",
+    validation_state: "validated_bound",
     authenticated: true,
     auth_scheme: CIVIC_GENOME_KALEIDOSCOPE_AUTH_SCHEME,
     key_id: KEY_ID,
@@ -100,12 +102,11 @@ function receipt_for(snapshot: civic_genome_external_snapshot_v1, overrides: Rec
     source_completeness_state: snapshot.completeness_state,
     binding_id: "kcg-binding-proof",
     binding_hash: HASH2,
-    binding_state: "unresolved",
-    binding_errors: [
-      "source_snapshot_validated_not_persisted",
-      "verification_mapping_rule_not_declared",
-    ],
-    verification_mapping_state: "unmapped_source_native",
+    binding_state: "accepted",
+    binding_errors: [],
+    verification_mapping_state: "mapped_by_declared_rule",
+    verification_mapping_rule_id: CIVIC_GENOME_KALEIDOSCOPE_VERIFICATION_MAPPING_RULE_ID,
+    verification_mapping_rule_version: CIVIC_GENOME_KALEIDOSCOPE_VERIFICATION_MAPPING_RULE_VERSION,
     persisted: false,
     projection_executed: false,
     no_mutation: true,
@@ -123,8 +124,9 @@ function receipt_for(snapshot: civic_genome_external_snapshot_v1, overrides: Rec
 }
 
 describe("Civic Genome authenticated Kaleidoscope handoff", () => {
-  it("signs the canonical delivery body deterministically", () => {
+  it("signs the v1.1 canonical delivery body deterministically", () => {
     const body = build_civic_genome_kaleidoscope_delivery_body_v1(source_snapshot());
+    expect(body.delivery_contract_version).toBe("1.1.0");
     const first = sign_civic_genome_kaleidoscope_delivery_v1(body, KEY_ID, SECRET);
     const second = sign_civic_genome_kaleidoscope_delivery_v1(
       JSON.parse(JSON.stringify(body)),
@@ -135,7 +137,7 @@ describe("Civic Genome authenticated Kaleidoscope handoff", () => {
     expect(first).toMatch(/^[0-9a-f]{64}$/);
   });
 
-  it("delivers one snapshot and accepts only a validated-unbound no-write receipt", async () => {
+  it("accepts a declared-rule mapped transient binding and still forbids persistence", async () => {
     const snapshot = source_snapshot();
     let observed_headers: Record<string, string> | null = null;
     const receipt = await deliver_civic_genome_snapshot_to_kaleidoscope_v1({
@@ -154,10 +156,57 @@ describe("Civic Genome authenticated Kaleidoscope handoff", () => {
     });
     expect(observed_headers?.["x-kaleidoscope-key-id"]).toBe(KEY_ID);
     expect(observed_headers?.["x-kaleidoscope-signature"]).toMatch(/^[0-9a-f]{64}$/);
-    expect(receipt.validation_state).toBe("validated_unbound");
-    expect(receipt.binding_state).toBe("unresolved");
+    expect(receipt.validation_state).toBe("validated_bound");
+    expect(receipt.binding_state).toBe("accepted");
+    expect(receipt.verification_mapping_state).toBe("mapped_by_declared_rule");
+    expect(receipt.binding_errors).toEqual([]);
     expect(receipt.persisted).toBe(false);
     expect(receipt.projection_executed).toBe(false);
+  });
+
+  it("accepts a mapped but unresolved receipt only for declared source-snapshot blockers", async () => {
+    const snapshot = source_snapshot();
+    const receipt = await deliver_civic_genome_snapshot_to_kaleidoscope_v1({
+      snapshot,
+      url: `https://kaleidoscope.example${CIVIC_GENOME_KALEIDOSCOPE_DELIVERY_PATH}`,
+      key_id: KEY_ID,
+      secret: SECRET,
+      fetcher: async () => ({
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify(receipt_for(snapshot, {
+          validation_state: "validated_unbound",
+          binding_state: "unresolved",
+          binding_errors: ["source_snapshot_has_unresolved_conditions"],
+        })),
+      }),
+    });
+    expect(receipt.validation_state).toBe("validated_unbound");
+    expect(receipt.binding_state).toBe("unresolved");
+    expect(receipt.binding_errors).toEqual(["source_snapshot_has_unresolved_conditions"]);
+    expect(receipt.persisted).toBe(false);
+  });
+
+  it("rejects an unmapped receiver response on the v1.1 path", async () => {
+    const snapshot = source_snapshot();
+    await expect(deliver_civic_genome_snapshot_to_kaleidoscope_v1({
+      snapshot,
+      url: `https://kaleidoscope.example${CIVIC_GENOME_KALEIDOSCOPE_DELIVERY_PATH}`,
+      key_id: KEY_ID,
+      secret: SECRET,
+      fetcher: async () => ({
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify(receipt_for(snapshot, {
+          validation_state: "validated_unbound",
+          binding_state: "unresolved",
+          binding_errors: ["verification_mapping_rule_not_declared"],
+          verification_mapping_state: "unmapped_source_native",
+          verification_mapping_rule_id: null,
+          verification_mapping_rule_version: null,
+        })),
+      }),
+    })).rejects.toThrow(/verification_mapping_state_mismatch/);
   });
 
   it("rejects a receiver response that claims persistence", async () => {

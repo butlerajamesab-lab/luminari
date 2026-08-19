@@ -8,7 +8,10 @@ import {
 
 export const CIVIC_GENOME_KALEIDOSCOPE_DELIVERY_CONTRACT_ID =
   "kaleidoscope.civic_genome_snapshot_delivery.v1" as const;
-export const CIVIC_GENOME_KALEIDOSCOPE_DELIVERY_CONTRACT_VERSION = "1.0.0" as const;
+export const CIVIC_GENOME_KALEIDOSCOPE_DELIVERY_CONTRACT_VERSION = "1.1.0" as const;
+export const CIVIC_GENOME_KALEIDOSCOPE_VERIFICATION_MAPPING_RULE_ID =
+  "kaleidoscope.civic_genome_verification_mapping" as const;
+export const CIVIC_GENOME_KALEIDOSCOPE_VERIFICATION_MAPPING_RULE_VERSION = "1.0.0" as const;
 export const CIVIC_GENOME_KALEIDOSCOPE_SOURCE_SCHEMA_ID =
   "https://luminari.org/civic-genome/contracts/external-snapshot.v1.schema.json" as const;
 export const CIVIC_GENOME_KALEIDOSCOPE_DELIVERY_PATH =
@@ -16,6 +19,10 @@ export const CIVIC_GENOME_KALEIDOSCOPE_DELIVERY_PATH =
 export const CIVIC_GENOME_KALEIDOSCOPE_AUTH_SCHEME = "hmac-sha256" as const;
 
 const HEX64 = /^[0-9a-f]{64}$/;
+const ALLOWED_UNBOUND_ERRORS = new Set([
+  "source_snapshot_not_bounded_complete",
+  "source_snapshot_has_unresolved_conditions",
+]);
 
 export type civic_genome_kaleidoscope_delivery_body_v1 = {
   delivery_contract_id: typeof CIVIC_GENOME_KALEIDOSCOPE_DELIVERY_CONTRACT_ID;
@@ -29,7 +36,7 @@ export type civic_genome_kaleidoscope_delivery_body_v1 = {
 export type civic_genome_kaleidoscope_delivery_receipt_v1 = {
   delivery_contract_id: typeof CIVIC_GENOME_KALEIDOSCOPE_DELIVERY_CONTRACT_ID;
   delivery_contract_version: typeof CIVIC_GENOME_KALEIDOSCOPE_DELIVERY_CONTRACT_VERSION;
-  validation_state: "validated_unbound";
+  validation_state: "validated_bound" | "validated_unbound";
   authenticated: true;
   auth_scheme: typeof CIVIC_GENOME_KALEIDOSCOPE_AUTH_SCHEME;
   key_id: string;
@@ -44,9 +51,11 @@ export type civic_genome_kaleidoscope_delivery_receipt_v1 = {
   source_completeness_state: string;
   binding_id: string;
   binding_hash: string;
-  binding_state: "unresolved";
+  binding_state: "accepted" | "unresolved";
   binding_errors: string[];
-  verification_mapping_state: "unmapped_source_native";
+  verification_mapping_state: "mapped_by_declared_rule";
+  verification_mapping_rule_id: typeof CIVIC_GENOME_KALEIDOSCOPE_VERIFICATION_MAPPING_RULE_ID;
+  verification_mapping_rule_version: typeof CIVIC_GENOME_KALEIDOSCOPE_VERIFICATION_MAPPING_RULE_VERSION;
   persisted: false;
   projection_executed: false;
   no_mutation: true;
@@ -163,10 +172,37 @@ function delivery_receipt_hash_basis(
     binding_state: row.binding_state,
     binding_errors: [...(Array.isArray(row.binding_errors) ? row.binding_errors : [])].sort(),
     verification_mapping_state: row.verification_mapping_state,
+    verification_mapping_rule_id: row.verification_mapping_rule_id,
+    verification_mapping_rule_version: row.verification_mapping_rule_version,
     persisted: row.persisted,
     projection_executed: row.projection_executed,
     no_mutation: row.no_mutation,
   };
+}
+
+function assert_binding_state(row: Record<string, unknown>, binding_errors: string[]): void {
+  if (row.verification_mapping_state !== "mapped_by_declared_rule") {
+    fail("verification_mapping_state_mismatch");
+  }
+  if (row.verification_mapping_rule_id !== CIVIC_GENOME_KALEIDOSCOPE_VERIFICATION_MAPPING_RULE_ID) {
+    fail("verification_mapping_rule_id_mismatch");
+  }
+  if (row.verification_mapping_rule_version
+      !== CIVIC_GENOME_KALEIDOSCOPE_VERIFICATION_MAPPING_RULE_VERSION) {
+    fail("verification_mapping_rule_version_mismatch");
+  }
+
+  if (row.validation_state === "validated_bound") {
+    if (row.binding_state !== "accepted") fail("validated_bound_requires_accepted_binding");
+    if (binding_errors.length !== 0) fail("accepted_binding_cannot_have_errors");
+    return;
+  }
+  if (row.validation_state !== "validated_unbound") fail("validation_state_mismatch");
+  if (row.binding_state !== "unresolved") fail("validated_unbound_requires_unresolved_binding");
+  if (binding_errors.length === 0) fail("unresolved_binding_requires_errors");
+  for (const error of binding_errors) {
+    if (!ALLOWED_UNBOUND_ERRORS.has(error)) fail(`unexpected_binding_error:${error}`);
+  }
 }
 
 export function assert_civic_genome_kaleidoscope_delivery_receipt_v1(
@@ -181,7 +217,6 @@ export function assert_civic_genome_kaleidoscope_delivery_receipt_v1(
   if (row.delivery_contract_version !== CIVIC_GENOME_KALEIDOSCOPE_DELIVERY_CONTRACT_VERSION) {
     fail("delivery_contract_version_mismatch");
   }
-  if (row.validation_state !== "validated_unbound") fail("validation_state_mismatch");
   boolean_literal(row.authenticated, true, "authenticated");
   if (row.auth_scheme !== CIVIC_GENOME_KALEIDOSCOPE_AUTH_SCHEME) fail("auth_scheme_mismatch");
   if (row.key_id !== key_id) fail("key_id_mismatch");
@@ -204,20 +239,10 @@ export function assert_civic_genome_kaleidoscope_delivery_receipt_v1(
   if (row.source_completeness_state !== source.completeness_state) {
     fail("source_completeness_state_mismatch");
   }
-  if (row.binding_state !== "unresolved") fail("binding_state_must_remain_unresolved");
-  if (row.verification_mapping_state !== "unmapped_source_native") {
-    fail("verification_mapping_state_mismatch");
-  }
   const binding_errors = Array.isArray(row.binding_errors)
     ? row.binding_errors.map((entry, index) => text(entry, `binding_errors_${index}`)).sort()
     : fail("binding_errors_must_be_array");
-  const required_errors = [
-    "source_snapshot_validated_not_persisted",
-    "verification_mapping_rule_not_declared",
-  ];
-  if (canonicalSerialize(binding_errors) !== canonicalSerialize(required_errors)) {
-    fail("binding_errors_mismatch");
-  }
+  assert_binding_state(row, binding_errors);
   boolean_literal(row.persisted, false, "persisted");
   boolean_literal(row.projection_executed, false, "projection_executed");
   boolean_literal(row.no_mutation, true, "no_mutation");
