@@ -8,6 +8,7 @@ import {
   list_genome_bills,
   list_genome_events,
   list_momentum_snapshots,
+  type GenomeBill,
 } from "../civic-genome-db";
 
 export const civic_genome_export_router = Router();
@@ -18,6 +19,11 @@ const MULTI_EXPORT_LIMIT = 100;
 function positive_integer(value: unknown): number | null {
   const parsed = Number(value);
   return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+function source_bill_id_from_bill(bill: GenomeBill): number | null {
+  const value = bill.structural_dna_json?.source_bill_id;
+  return positive_integer(value);
 }
 
 function safe_filename(value: unknown): string {
@@ -139,6 +145,10 @@ civic_genome_export_router.get("/current", async (req, res) => {
       get_genome_stats(),
       list_genome_bills({ limit, offset }),
     ]);
+    const export_bills = bills.map(bill => ({
+      source_bill_id: source_bill_id_from_bill(bill),
+      ...bill,
+    }));
 
     const payload = {
       export_type: "civic_genome_current_proof_export",
@@ -146,14 +156,14 @@ civic_genome_export_router.get("/current", async (req, res) => {
       exported_at: new Date().toISOString(),
       interpretation: "Each returned row is a Civic Genome bill record as currently stored. This export is read-only and does not replay historical failures or mutate any upstream owner.",
       total_bill_count: stats.total_bills,
-      returned_bill_count: bills.length,
+      returned_bill_count: export_bills.length,
       offset,
       limit,
       max_limit: MULTI_EXPORT_LIMIT,
-      bills,
+      bills: export_bills,
     };
 
-    return send_json_attachment(res, `civic-genome-current-${offset}-${offset + bills.length}`, payload);
+    return send_json_attachment(res, `civic-genome-current-${offset}-${offset + export_bills.length}`, payload);
   } catch (error) {
     console.error("[CivicGenomeExport] current export failed", { limit, offset, error });
     return res.status(500).json({ ok: false, error: "civic_genome_current_export_failed" });
