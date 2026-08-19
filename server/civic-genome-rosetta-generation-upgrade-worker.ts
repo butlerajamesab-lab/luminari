@@ -11,7 +11,7 @@ const QUEUE_LEASE_MINUTES = 30;
 const MAX_ATTEMPTS = 5;
 const DISCOVERY_BATCH_SIZE = 25;
 const MAX_JOBS_PER_CYCLE = 3;
-const ROSETTA_REQUEST_TIMEOUT_MS = 120_000;
+const ROSETTA_REQUEST_TIMEOUT_MS = 150_000;
 
 const worker_id = [
   process.env.RENDER_SERVICE_ID ?? "lighthouse",
@@ -213,7 +213,10 @@ async function discover_candidates(
   generation: current_generation,
 ): Promise<discovery_candidate[]> {
   const result = await query_with_diagnostics<discovery_candidate>(
-    `with ranked as (
+    `with current_sessions as (
+       select distinct state, session_id::text as session_key
+         from public.docket_bill_state_cache
+     ), ranked as (
        select version.*,
               row_number() over (
                 partition by version.genome_bill_id
@@ -223,6 +226,11 @@ async function discover_candidates(
                          version.bill_version_id desc
               ) as rn
          from public.civic_genome_bill_version version
+         join public.civic_genome_bill bill
+           on bill.genome_bill_id = version.genome_bill_id
+         join current_sessions current_session
+           on current_session.state = bill.state_code
+          and current_session.session_key = bill.session_key
      )
      select version.bill_version_id::text,
             version.genome_bill_id::text,
@@ -330,9 +338,17 @@ export async function discover_rosetta_generation_upgrades(): Promise<number> {
 
 async function claim_next_job(): Promise<upgrade_job | null> {
   const result = await query_with_diagnostics<upgrade_job>(
-    `with candidate as (
+    `with current_sessions as (
+       select distinct state, session_id::text as session_key
+         from public.docket_bill_state_cache
+     ), candidate as (
        select queue.upgrade_id
          from public.civic_genome_rosetta_generation_upgrade_queue queue
+         join public.civic_genome_bill bill
+           on bill.genome_bill_id = queue.genome_bill_id
+         join current_sessions current_session
+           on current_session.state = bill.state_code
+          and current_session.session_key = bill.session_key
         where queue.next_attempt_at <= now()
           and queue.attempt_count < $2::integer
           and (
@@ -347,7 +363,7 @@ async function claim_next_job(): Promise<upgrade_job | null> {
             or queue.locked_at < now() - make_interval(mins => $3::integer)
           )
         order by queue.created_at, queue.upgrade_id
-        for update skip locked
+        for update of queue skip locked
         limit 1
      )
      update public.civic_genome_rosetta_generation_upgrade_queue queue
@@ -599,6 +615,7 @@ export function start_rosetta_generation_upgrade_worker(): void {
     max_attempts: MAX_ATTEMPTS,
     discovery_batch_size: DISCOVERY_BATCH_SIZE,
     max_jobs_per_cycle: MAX_JOBS_PER_CYCLE,
+    scope: "current_docket_sessions_latest_version_only",
   });
   void run_rosetta_generation_upgrade_cycle();
   timer = setInterval(() => {

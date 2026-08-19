@@ -46,6 +46,25 @@ describe("Civic Genome Rosetta current-generation convergence", () => {
     expect(worker).not.toContain('"run_rosetta_v3_extraction"');
   });
 
+  it("discovers and claims only latest versions from current Docket sessions", () => {
+    expect(worker).toContain("select distinct state, session_id::text as session_key");
+    expect(worker).toContain("current_session.state = bill.state_code");
+    expect(worker).toContain("current_session.session_key = bill.session_key");
+    expect(worker).toContain("row_number() over");
+    expect(worker).toContain("where version.rn = 1");
+    expect(worker).toContain('scope: "current_docket_sessions_latest_version_only"');
+    const claimStart = worker.indexOf("async function claim_next_job");
+    expect(claimStart).toBeGreaterThanOrEqual(0);
+    const claimSource = worker.slice(claimStart, worker.indexOf("async function claim_job_batch", claimStart));
+    expect(claimSource).toContain("join public.civic_genome_bill bill");
+    expect(claimSource).toContain("join current_sessions current_session");
+  });
+
+  it("keeps the exact-source replay request bounded above the observed Rosetta tail", () => {
+    expect(worker).toContain("const ROSETTA_REQUEST_TIMEOUT_MS = 150_000");
+    expect(worker).not.toContain("const ROSETTA_REQUEST_TIMEOUT_MS = 120_000");
+  });
+
   it("recovers a missing downstream source binding only from an exact preserved Rosetta source receipt", () => {
     expect(worker).toContain("source_content_hash: `eq.${candidate.source_content_hash}`");
     expect(worker).toContain("source_version: `eq.${candidate.source_version}`");
@@ -96,7 +115,7 @@ describe("Civic Genome Rosetta current-generation convergence", () => {
     expect(queueMigration).toContain("queue_state in ('eligible','running','retry','completed','dead_letter')");
     expect(worker).toContain("MAX_ATTEMPTS = 5");
     expect(worker).toContain("MAX_JOBS_PER_CYCLE = 3");
-    expect(worker).toContain("for update skip locked");
+    expect(worker).toContain("for update of queue skip locked");
     expect(worker).toContain("await Promise.all(jobs.map(job => process_rosetta_generation_upgrade_job(job)))");
     expect(worker).toContain('dead_letter ? "dead_letter" : "retry"');
     expect(transactionFence).toContain("civic_genome_guard_rosetta_upgrade_queue_claim_v1");
