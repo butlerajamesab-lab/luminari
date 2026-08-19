@@ -1,3 +1,5 @@
+import { civic_genome_prism_display } from "@shared/civic-genome-prism-presentation";
+
 type ProofEntry = Record<string, unknown>;
 
 type PrismProofTrait = {
@@ -54,7 +56,7 @@ function proof_title(entry: ProofEntry): string {
 function verification_label(value: string | null | undefined): string {
   if (value === "supported_by_one_source") return "official legislative source verified";
   if (value === "independent_authoritative_source_not_supplied") return "official legislative source verified";
-  if (value === "contradicted") return "language did not carry into final bill";
+  if (value === "contradicted") return "technical verification finding";
   return value ?? "not observed";
 }
 
@@ -111,11 +113,14 @@ export function PrismProof({ trait }: { trait: PrismProofTrait }) {
   const scope = trait.prism_proof_scope === "independent_source_replay"
     ? "Independent deterministic source replay"
     : "Official legislative source verified; binding continuity verified";
-  const status_color = contradictions.length > 0
+  const display = civic_genome_prism_display(trait);
+  const status_color = display.tone === "finding"
     ? colors.red
-    : missing.length > 0 || unresolved.length > 0
+    : display.tone === "open"
       ? colors.amber
-      : colors.green;
+      : display.tone === "supported"
+        ? colors.green
+        : colors.muted;
 
   return <details style={{ marginTop: ".7rem", borderTop: `1px solid ${colors.border}`, paddingTop: ".55rem" }}>
     <summary style={{ cursor: "pointer", color: status_color, fontFamily: mono, fontSize: ".61rem" }}>
@@ -124,17 +129,17 @@ export function PrismProof({ trait }: { trait: PrismProofTrait }) {
     <div style={{ marginTop: ".55rem" }}>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: ".4rem" }}>
         {[
-          ["result", trait.prism_verification_status],
+          ["result", display.label],
           ["engine", trait.prism_engine_version],
           ["rule", trait.prism_rule_set_version],
           ["completed", trait.prism_bound_at ? new Date(trait.prism_bound_at).toLocaleString() : null],
         ].map(([label, value]) => <div key={label ?? "field"} style={{ background: colors.soft, borderRadius: 6, padding: ".42rem" }}>
           <div style={{ color: colors.muted, fontFamily: mono, fontSize: ".5rem", textTransform: "uppercase" }}>{label}</div>
-          <div style={{ color: colors.paper, fontFamily: mono, fontSize: ".55rem", marginTop: ".2rem", overflowWrap: "anywhere" }}>{label === "result" ? verification_label(value) : value ?? "not observed"}</div>
+          <div style={{ color: colors.paper, fontFamily: mono, fontSize: ".55rem", marginTop: ".2rem", overflowWrap: "anywhere" }}>{value ?? "not observed"}</div>
         </div>)}
       </div>
 
-      <Section title="Did not carry into final bill" values={contradictions} tone="fail"/>
+      <Section title="Prism verification findings" values={contradictions} tone="fail"/>
       <Section title="Missing evidence" values={missing} tone="open"/>
       <Section title="Unresolved conditions" values={unresolved} tone="open"/>
       <Section title="Supported checks" values={supported} tone="pass"/>
