@@ -44,8 +44,9 @@ function text(value: unknown): string | null {
 }
 
 function verification_label(value: string | null | undefined): string {
-  if (value === "supported_by_one_source") return "supported by replayed source snapshot";
-  if (value === "independent_authoritative_source_not_supplied") return "no second corroborating source attached";
+  if (value === "supported_by_one_source") return "official legislative source verified";
+  if (value === "independent_authoritative_source_not_supplied") return "official legislative source verified";
+  if (value === "contradicted") return "language did not carry into final bill";
   return value ?? "not observed";
 }
 
@@ -104,7 +105,7 @@ export function PrismProof({ trait }: { trait: PrismProofTrait }) {
   const unresolved = entries(trait.prism_unresolved_conditions);
   const scope = trait.prism_proof_scope === "independent_source_replay"
     ? "Independent deterministic source replay"
-    : "Binding continuity verified; independent corroboration not evaluated";
+    : "Official legislative source verified; binding continuity verified";
   const status_color = contradictions.length > 0
     ? colors.red
     : missing.length > 0 || unresolved.length > 0
@@ -128,7 +129,7 @@ export function PrismProof({ trait }: { trait: PrismProofTrait }) {
         </div>)}
       </div>
 
-      <Section title="Contradictions" values={contradictions} tone="fail"/>
+      <Section title="Did not carry into final bill" values={contradictions} tone="fail"/>
       <Section title="Missing evidence" values={missing} tone="open"/>
       <Section title="Unresolved conditions" values={unresolved} tone="open"/>
       <Section title="Supported checks" values={supported} tone="pass"/>
