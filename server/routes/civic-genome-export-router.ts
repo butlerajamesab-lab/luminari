@@ -55,7 +55,7 @@ async function build_single_bill_export(source_bill_id: number) {
       `select *
          from public.bill_lineage_edge
         where from_bill_id = $1 or to_bill_id = $1
-        order by observed_at desc, created_at desc, edge_id desc`,
+        order by created_at desc, lineage_edge_id desc`,
       [bill.genome_bill_id],
     ),
     pool.query(
@@ -119,7 +119,7 @@ civic_genome_export_router.get("/bill/:source_bill_id", async (req, res) => {
     const selected = payload.bill_detail.bill;
     return send_json_attachment(
       res,
-      `civic-genome-${source_bill_id}-${selected.state_code ?? "state"}-${selected.bill_number ?? "bill"}`,
+      `civic-genome-${source_bill_id}-${selected.state_code ?? "state"}-${selected.source_bill_number ?? "bill"}`,
       payload,
     );
   } catch (error) {
