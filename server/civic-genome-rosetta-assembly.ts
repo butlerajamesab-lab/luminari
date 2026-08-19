@@ -12,6 +12,9 @@ export const ROSETTA_GENOME_ENGINE_VERSION = "rosetta-genome-assembly-v1";
 export const ROSETTA_GENOME_RULE_VERSION = "rosetta-five-layer-trait-map-v1";
 export const ROSETTA_GENOME_STRUCTURAL_ENGINE_VERSION = "rosetta-genome-assembly-v2";
 export const ROSETTA_GENOME_STRUCTURAL_RULE_VERSION = "rosetta-five-layer-plus-structural-evidence-v2";
+export const ROSETTA_V2511_ENGINE_VERSION = "rosetta-v3-deterministic-sql-2.5.11";
+export const ROSETTA_V2511_RULE_SET_VERSION = "rosetta-five-layer-structural-correctness-2.5.11";
+export const ROSETTA_V2511_RULE_MANIFEST_HASH = "3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639";
 
 export type rosetta_genome_assembly_request = {
   genome_bill_id: string;
@@ -45,6 +48,22 @@ function is_record(value: unknown): value is Record<string, unknown> {
 function verification_state(view: civic_genome_rosetta_law_view): "complete" | "partial" {
   const covered = Object.values(view.law_view.coverage).filter(value => value === 1).length;
   return view.law_view.provenanceState === "complete" && covered === 5 ? "complete" : "partial";
+}
+
+export function is_v2511_marked_full_text_reprint_handoff(
+  view: civic_genome_rosetta_law_view,
+): boolean {
+  return view.handoff_contract_version === ROSETTA_HANDOFF_STRUCTURAL_REPRESENTATION_V2
+    && view.document_type === "bill_amendment"
+    && view.engine_version === ROSETTA_V2511_ENGINE_VERSION
+    && view.rule_set_version === ROSETTA_V2511_RULE_SET_VERSION
+    && view.rule_manifest_hash === ROSETTA_V2511_RULE_MANIFEST_HASH
+    && view.run_status?.toLowerCase() === "completed"
+    && view.admissibility_state === "admissible"
+    && view.law_view.provenanceState === "complete"
+    && verification_state(view) === "complete"
+    && view.law_view.objects.length === 0
+    && view.structural_representations.length === 0;
 }
 
 function resolve_assembly_contract(view: civic_genome_rosetta_law_view): assembly_contract {
@@ -121,21 +140,27 @@ function assert_view_identity(
     throw new Error("rosetta_five_layer_coverage_not_terminal");
   }
   if (view.law_view.objects.length === 0) {
-    if (!contract.structural_evidence || view.structural_representations.length === 0) {
-      throw new Error("rosetta_completed_run_has_no_operative_or_structural_evidence");
-    }
-    if (view.document_type !== "bill_amendment") {
-      throw new Error("rosetta_zero_operative_objects_only_allowed_for_structural_amendment_handoff");
-    }
-    for (const representation of view.structural_representations) {
-      if (representation.representation_type !== "source_stated_amendment_operation") {
-        throw new Error("rosetta_zero_operative_objects_has_unsupported_structural_representation");
+    if (view.structural_representations.length === 0) {
+      if (!is_v2511_marked_full_text_reprint_handoff(view)) {
+        throw new Error("rosetta_completed_run_has_no_operative_or_structural_evidence");
       }
-      if (!is_record(representation.normalized_value)) {
-        throw new Error("rosetta_amendment_structural_representation_invalid");
+    } else {
+      if (!contract.structural_evidence) {
+        throw new Error("rosetta_completed_run_has_no_operative_or_structural_evidence");
       }
-      if (representation.normalized_value.operative_effect_applied !== false) {
-        throw new Error("rosetta_amendment_structural_representation_applies_operative_effect");
+      if (view.document_type !== "bill_amendment") {
+        throw new Error("rosetta_zero_operative_objects_only_allowed_for_structural_amendment_handoff");
+      }
+      for (const representation of view.structural_representations) {
+        if (representation.representation_type !== "source_stated_amendment_operation") {
+          throw new Error("rosetta_zero_operative_objects_has_unsupported_structural_representation");
+        }
+        if (!is_record(representation.normalized_value)) {
+          throw new Error("rosetta_amendment_structural_representation_invalid");
+        }
+        if (representation.normalized_value.operative_effect_applied !== false) {
+          throw new Error("rosetta_amendment_structural_representation_applies_operative_effect");
+        }
       }
     }
   }
