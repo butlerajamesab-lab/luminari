@@ -35,8 +35,12 @@ describe("Rosetta structural representation handoff", () => {
     expect(assembly).toContain("rosetta_structural_representation_leaked_into_operative_objects");
   });
 
-  it("allows zero operative traits only for explicit non-operative amendment evidence", () => {
+  it("allows zero operative traits only for governed non-operative amendment evidence", () => {
     expect(assembly).toContain("rosetta_completed_run_has_no_operative_or_structural_evidence");
+    expect(assembly).toContain("is_v2511_marked_full_text_reprint_handoff(view)");
+    expect(assembly).toContain('ROSETTA_V2511_ENGINE_VERSION = "rosetta-v3-deterministic-sql-2.5.11"');
+    expect(assembly).toContain('ROSETTA_V2511_RULE_SET_VERSION = "rosetta-five-layer-structural-correctness-2.5.11"');
+    expect(assembly).toContain('ROSETTA_V2511_RULE_MANIFEST_HASH = "3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639"');
     expect(assembly).toContain("rosetta_zero_operative_objects_only_allowed_for_structural_amendment_handoff");
     expect(assembly).toContain('representation.representation_type !== "source_stated_amendment_operation"');
     expect(assembly).toContain("representation.normalized_value.operative_effect_applied !== false");
