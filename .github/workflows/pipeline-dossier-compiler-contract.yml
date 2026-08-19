@@ -6,7 +6,7 @@ on:
     paths:
       - 'scripts/lib/pipeline-dossier-review-compiler.mjs'
       - 'scripts/compile-pipeline-dossier-review.mjs'
-      - 'scripts/pipeline-dossier-review-compiler.test.mjs'
+      - 'server/pipeline-dossier-review-compiler.test.mjs'
       - '.github/workflows/pipeline-dossier-compiler-contract.yml'
   workflow_dispatch:
 
@@ -32,4 +32,4 @@ jobs:
         run: npm install --legacy-peer-deps
 
       - name: Run pipeline dossier compiler contract
-        run: npx vitest run scripts/pipeline-dossier-review-compiler.test.mjs
+        run: npx vitest run server/pipeline-dossier-review-compiler.test.mjs
