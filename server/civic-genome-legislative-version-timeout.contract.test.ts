@@ -26,11 +26,12 @@ describe("legislative version external request bounds", () => {
     expect(source_fetch).toContain("legislative_version_source_fetch_timeout");
   });
 
-  it("bounds Rosetta metadata and extraction calls through complete JSON reads", () => {
+  it("bounds Rosetta metadata and extraction calls above the observed current-engine tail", () => {
     const metadata = function_source("rosetta_request", "ensure_rosetta_corpus");
     const extraction = function_source("invoke_rosetta_extraction", "record_source_ingested");
 
-    expect(pipeline).toContain("const ROSETTA_REQUEST_TIMEOUT_MS = 60_000");
+    expect(pipeline).toContain("const ROSETTA_REQUEST_TIMEOUT_MS = 150_000");
+    expect(pipeline).not.toContain("const ROSETTA_REQUEST_TIMEOUT_MS = 60_000");
     for (const source of [metadata, extraction]) {
       expect(source).toContain("const controller = new AbortController()");
       expect(source).toContain("await response.text()");
