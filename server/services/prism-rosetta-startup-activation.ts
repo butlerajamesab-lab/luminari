@@ -1,3 +1,4 @@
+import { start_civic_genome_final_source_reconciliation_worker } from "../civic-genome-final-source-reconciliation-worker";
 import { start_legislative_version_queue_worker } from "../civic-genome-legislative-version-queue-worker";
 import { run_rosetta_generation_activation_from_environment } from "../civic-genome-rosetta-generation-activation";
 import { start_rosetta_generation_activation_queue_worker } from "../civic-genome-rosetta-generation-queue-worker";
@@ -15,9 +16,8 @@ export async function run_prism_rosetta_activation_from_environment(): Promise<v
   start_rosetta_generation_upgrade_worker();
   start_legislative_version_queue_worker();
   start_docket_bill_activation_queue_worker();
+  start_civic_genome_final_source_reconciliation_worker();
 
-  // Problem-instance handoff is an independent Prism intake lane. It begins
-  // automatically and does not wait for a Rosetta assembly or a manual button.
   void run_prism_problem_handoff_from_environment().catch(error => {
     console.error("[PrismProblemHandoff] startup failed", {
       error_class: error instanceof Error ? error.name : "unknown",
@@ -25,9 +25,6 @@ export async function run_prism_rosetta_activation_from_environment(): Promise<v
     });
   });
 
-  // An explicitly configured Rosetta generation is assembled first. The queue
-  // workers are already running, so the resulting completed assembly is claimed
-  // through the normal Prism queue rather than a parallel verification path.
   await run_rosetta_generation_activation_from_environment();
 
   const genome_bill_id = process.env.PRISM_ROSETTA_ACTIVATION_GENOME_BILL_ID?.trim();

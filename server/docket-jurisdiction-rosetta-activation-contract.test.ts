@@ -14,6 +14,7 @@ describe("Docket jurisdiction to Rosetta activation contract", () => {
     "../supabase/migrations/20260806185000_docket_activation_projection_chamber_continuity.sql",
   );
   const activation_worker = read_repo_file("./docket-jurisdiction-activation-queue-worker.ts");
+  const final_source_worker = read_repo_file("./civic-genome-final-source-reconciliation-worker.ts");
   const version_worker = read_repo_file("./civic-genome-legislative-version-queue-worker.ts");
   const startup = read_repo_file("./services/prism-rosetta-startup-activation.ts");
 
@@ -64,8 +65,28 @@ describe("Docket jurisdiction to Rosetta activation contract", () => {
     expect(version_worker).not.toContain("limit 1");
   });
 
-  it("starts the pre-Rosetta activation worker with the existing downstream workers", () => {
+  it("rechecks only current-session enacted bills that still lack an authoritative final text", () => {
+    expect(final_source_worker).toContain("bill.current_state_position = 'enacted'");
+    expect(final_source_worker).toContain("state_cache.session_id::text = bill.session_key");
+    expect(final_source_worker).toContain("lower(version.version_type) in ('enrolled', 'chaptered')");
+    expect(final_source_worker).toContain("detail.fetched_at < now() - make_interval(hours => $1::integer)");
+    expect(final_source_worker).toContain("DEFAULT_SOURCE_FRESHNESS_HOURS = 24");
+    expect(final_source_worker).toContain("DEFAULT_BATCH_SIZE = 4");
+  });
+
+  it("refreshes the canonical Docket detail cache and relies on the existing version trigger", () => {
+    expect(final_source_worker).toContain("public.docket_bill_detail_cache");
+    expect(final_source_worker).toContain("legiscan_get_bill_final_source_reconciliation");
+    expect(final_source_worker).toContain("await get_bill(candidate.source_bill_id)");
+    expect(final_source_worker).not.toContain("invoke_rosetta_extraction");
+    expect(final_source_worker).not.toContain("submit_prism_verification_request");
+    expect(final_source_worker).not.toMatch(/delete\s+from/i);
+    expect(final_source_worker).not.toMatch(/truncate/i);
+  });
+
+  it("starts the pre-Rosetta and final-source workers with the existing downstream workers", () => {
     expect(startup).toContain("start_docket_bill_activation_queue_worker");
+    expect(startup).toContain("start_civic_genome_final_source_reconciliation_worker");
     expect(startup).toContain("start_legislative_version_queue_worker");
     expect(startup).toContain("start_prism_rosetta_queue_worker");
   });
@@ -74,6 +95,7 @@ describe("Docket jurisdiction to Rosetta activation contract", () => {
     expect(migration).toContain("'source_unavailable'");
     expect(activation_worker).toContain("registered_document_count > 0");
     expect(activation_worker).toContain("source_unavailable");
+    expect(final_source_worker).toContain("official_final_source_not_yet_available");
     expect(migration).not.toMatch(/delete\s+from\s+public\.docket_bill_source_document/i);
     expect(migration).not.toMatch(/truncate/i);
     expect(continuity_migration).not.toMatch(/delete\s+from/i);
