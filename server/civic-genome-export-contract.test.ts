@@ -37,7 +37,7 @@ describe("Civic Genome export contract", () => {
     expect(route).toContain('civic_genome_export_router.get("/bill/:source_bill_id/summary"');
     expect(route).toContain('civic_genome_export_router.get("/bill/:source_bill_id/detailed"');
     expect(route).toContain('text/html; charset=utf-8');
-    expect(route).toContain('render_civic_genome_human_report(payload, mode)');
+    expect(route).toContain('render_civic_genome_human_report(human_payload, mode)');
     expect(humanReport).toContain('source_document_content');
     expect(humanReport).toContain('source_text');
     expect(humanReport).toContain('Full source text used by Rosetta');
@@ -58,6 +58,8 @@ describe("Civic Genome export contract", () => {
     expect(prismProof).toContain('.filter(entry => proof_title(entry) !== "independent_authoritative_source_not_supplied")');
     expect(humanReport).toContain('NO_SECOND_SOURCE_CONDITION');
     expect(humanReport).toContain('meaningful_unresolved');
+    expect(route).toContain('human_report_validation_summary');
+    expect(route).toContain('.filter(entry => proof_item_label(entry) !== NO_SECOND_SOURCE_CONDITION)');
   });
 
   it("bounds the multi-bill proof export and exposes direct source bill IDs", () => {
