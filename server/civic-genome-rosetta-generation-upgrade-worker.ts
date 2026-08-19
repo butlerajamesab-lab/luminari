@@ -178,15 +178,23 @@ export async function fetch_rosetta_current_generation(): Promise<current_genera
 
 async function resolve_source_identity(candidate: discovery_candidate): Promise<string> {
   if (candidate.source_identity_hash) return candidate.source_identity_hash;
-  if (!candidate.source_content_hash || !candidate.source_version) {
+  if (!candidate.source_version) {
     throw new Error("rosetta_upgrade_source_receipt_incomplete");
   }
 
+  const source_filters = candidate.source_content_hash
+    ? {
+        source_document_id: `eq.${candidate.source_document_id}`,
+        source_content_hash: `eq.${candidate.source_content_hash}`,
+        source_version: `eq.${candidate.source_version}`,
+      }
+    : {
+        source_document_id: `eq.${candidate.source_document_id}`,
+        source_version: `eq.${candidate.source_version}`,
+      };
   const query = new URLSearchParams({
     select: "source_identity_hash,source_content_hash,source_version",
-    source_document_id: `eq.${candidate.source_document_id}`,
-    source_content_hash: `eq.${candidate.source_content_hash}`,
-    source_version: `eq.${candidate.source_version}`,
+    ...source_filters,
     limit: "2",
   });
   const rows = await rosetta_select<{
