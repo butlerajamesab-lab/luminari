@@ -9,6 +9,7 @@ const transactionFence=readFileSync(join(root,"supabase","migrations","202608160
 const satisfiedReconciliation=readFileSync(join(root,"supabase","migration_sources","civic_genome_rosetta_satisfied_upgrade_reconciliation_v1.sql"),"utf8");
 const satisfiedReconciliationLedger=readFileSync(join(root,"supabase","migrations","20260819103927_civic_genome_rosetta_satisfied_upgrade_reconciliation_v1.sql"),"utf8");
 const v22Recovery=readFileSync(join(root,"supabase","migration_sources","civic_genome_rosetta_v22_terminal_recovery_sweep_v1.sql"),"utf8");
+const v22RecoveryLedger=readFileSync(join(root,"supabase","migrations","20260819110102_civic_genome_rosetta_v22_terminal_recovery_sweep_v1.sql"),"utf8");
 const sync=readFileSync(join(root,"server","civic-genome-rosetta-generation-target-sync.ts"),"utf8");
 
 function satisfiedSegment():string{
@@ -135,6 +136,10 @@ describe("Rosetta target supersession",()=>{
   expect(satisfiedReconciliation).not.toMatch(/update\s+public\.civic_genome_bill_version/i);
   expect(satisfiedReconciliation).not.toMatch(/update\s+public\.civic_genome_rosetta_source_binding/i);
   expect(satisfiedReconciliation).not.toMatch(/update\s+public\.civic_genome_assembly_run/i);
+ });
+
+ it("keeps the obsolete v2.2 recovery source byte-identical to the production ledger migration",()=>{
+  expect(v22RecoveryLedger).toBe(v22Recovery);
  });
 
  it("gates the obsolete v2.2 terminal recovery sweep to the exact current Rosetta 2.5.11 generation",()=>{
