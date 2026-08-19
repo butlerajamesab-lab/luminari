@@ -111,22 +111,31 @@ describe("legislative version queue", () => {
     expect(query.mock.calls[0][1][0]).toBe(job.queue_id);
   });
 
-  it("prioritizes current versions and cools a failing source host without blocking other legislatures", async () => {
+  it("prioritizes current Docket sessions, then current versions, while preserving source-host backpressure", async () => {
     await run_legislative_version_queue_cycle();
 
     const claim_sql = query.mock.calls
       .map(call => String(call[0]))
-      .find(sql => sql.includes("with host_activity as"));
+      .find(sql => sql.includes("with current_sessions as"));
+    expect(claim_sql).toBeTruthy();
+    expect(claim_sql).toContain("select distinct state, session_id::text as session_key");
+    expect(claim_sql).toContain("join public.civic_genome_bill bill");
+    expect(claim_sql).toContain("left join current_sessions current_session");
+    expect(claim_sql).toContain("current_session.state = bill.state_code");
+    expect(claim_sql).toContain("current_session.session_key = bill.session_key");
+    expect(claim_sql).toContain("(current_session.state is not null) desc");
     expect(claim_sql).toContain("currency.is_current desc");
-    expect(claim_sql).toContain("with host_activity as");
-    expect(claim_sql).toContain("where queue.attempt_count > 0");
-    expect(claim_sql).toContain("left join host_activity source_host");
     expect(claim_sql).toContain("source_host.last_attempt_at asc nulls first");
     expect(claim_sql).toContain("source_host.blocked_until");
     expect(claim_sql).toContain("split_part(lower(document.source_url), '/', 3)");
     expect(claim_sql).toContain("version.processing_state not in ('verified', 'verified_with_findings')");
-    expect(claim_sql.indexOf("case when queue.priority < 0 then 0 else 1 end"))
-      .toBeLessThan(claim_sql.indexOf("source_host.last_attempt_at asc nulls first"));
+
+    const currentSessionOrder = claim_sql.indexOf("(current_session.state is not null) desc");
+    const currentVersionOrder = claim_sql.indexOf("currency.is_current desc");
+    const hostFairnessOrder = claim_sql.indexOf("source_host.last_attempt_at asc nulls first");
+    expect(currentSessionOrder).toBeGreaterThanOrEqual(0);
+    expect(currentVersionOrder).toBeGreaterThan(currentSessionOrder);
+    expect(hostFairnessOrder).toBeGreaterThan(currentVersionOrder);
   });
 
   it("preserves queue and version failure receipts for real pipeline failures", async () => {
