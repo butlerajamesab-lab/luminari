@@ -1,0 +1,18 @@
+# Luminari Lighthouse
+
+> Luminari Lighthouse is a deterministic civic information environment for exploring legislation, public resources, source-bound provenance, Civic Genome lineage, and verified structural signals. Public browsing does not imply authority to mutate canonical records.
+
+## Public civic surfaces
+
+- [Lighthouse community hub](https://lighthouse.columbiacitycustomllc.com/lighthouse): public orientation, community resources, rights information, and civic navigation.
+- [Docket Room](https://lighthouse.columbiacitycustomllc.com/docket): current legislative records and source-bound bill navigation.
+- [Living Civic Genome](https://lighthouse.columbiacitycustomllc.com/civic-genome): legislative families, lineage, events, momentum, structural DNA, and provenance.
+- [Civic Map](https://lighthouse.columbiacitycustomllc.com/civic-map): geographic civic-resource and public-system exploration.
+- [Viewfinder](https://lighthouse.columbiacitycustomllc.com/viewfinder): governed anomaly and structural-signal presentation.
+- [Resource Directory](https://lighthouse.columbiacitycustomllc.com/resource-directory): public resource navigation.
+
+## Ownership boundaries
+
+Rosetta owns deterministic law decomposition and source receipts. Civic Genome owns legislative identity, version lineage, families, events, and structural traits. Prism owns deterministic verification receipts. Atlas owns signal correlation. Kaleidoscope owns state-response projection. Lighthouse presents governed outputs without silently overwriting upstream truth.
+
+Authenticated case, upload, administrative, and canonical-write surfaces remain separately authorized. Agents and crawlers should not infer write authority from access to public pages.
