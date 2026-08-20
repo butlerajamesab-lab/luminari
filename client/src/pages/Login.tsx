@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { supabase } from "@/lib/supabase";
 
 const DEFAULT_POST_LOGIN_PATH = "/sovereign-control";
+const PUBLIC_ENTRY_PATH = "/lighthouse";
 
 function getSafeRedirectPath(): string {
   if (typeof window === "undefined") return DEFAULT_POST_LOGIN_PATH;
@@ -20,12 +21,24 @@ function getSafeRedirectPath(): string {
   return redirect;
 }
 
+function isInteractiveLoginRequested(): boolean {
+  if (typeof window === "undefined") return false;
+  return new URLSearchParams(window.location.search).get("interactive") === "1";
+}
+
 export default function Login() {
   const [, navigate] = useLocation();
+  const interactiveLogin = isInteractiveLoginRequested();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!interactiveLogin) {
+      navigate(PUBLIC_ENTRY_PATH, { replace: true });
+    }
+  }, [interactiveLogin, navigate]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +55,10 @@ export default function Login() {
 
     navigate(getSafeRedirectPath(), { replace: true });
   };
+
+  // The default login route is now a public-entry bridge. The credential form
+  // only renders when a user explicitly chose a sign-in action.
+  if (!interactiveLogin) return null;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-950">
