@@ -41,10 +41,14 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: (failureCount, error) => {
+        // Don't retry on cancel errors or auth errors
         if (error instanceof TRPCClientError) {
           if (error.message === UNAUTHED_ERR_MSG) return false;
           if (error.message?.includes('cancel')) return false;
         }
+        // Replaying database saturation multiplies pressure on the same pool
+        // and keeps read-only screens in a misleading loading state. Surface
+        // the first bounded failure and let the user retry deliberately.
         if (is_non_retryable_runtime_error(error)) return false;
         return failureCount < 2;
       },
@@ -56,11 +60,13 @@ const queryClient = new QueryClient({
   },
 });
 
+// Suppress benign AbortError / cancel errors from crashing the app
 window.addEventListener('error', (event) => {
   if (event.error?.message?.includes('cancel') || event.error?.name === 'AbortError') {
     event.preventDefault();
     console.warn('[Suppressed] Benign abort/cancel error:', event.error?.message);
   }
+  // TEMPORARY: Suppress auth errors
   if (event.error?.message?.includes('UNAUTHORIZED') || event.error?.message?.includes('Unauthorized')) {
     event.preventDefault();
     console.warn('[Suppressed] Auth error:', event.error?.message);
@@ -76,6 +82,7 @@ window.addEventListener('unhandledrejection', (event) => {
 });
 
 const redirectToLoginIfUnauthorized = (error: unknown) => {
+  // TEMPORARY: OAuth disabled - no redirects
   return;
 };
 
@@ -83,6 +90,7 @@ queryClient.getQueryCache().subscribe(event => {
   if (event.type === "updated" && event.action.type === "error") {
     const error = event.query.state.error;
     redirectToLoginIfUnauthorized(error);
+    // Don't log cancel/abort errors as they're benign
     if (error?.message?.includes('cancel') || error?.name === 'AbortError') return;
     console.error("[API Query Error]", error);
   }
@@ -92,11 +100,13 @@ queryClient.getMutationCache().subscribe(event => {
   if (event.type === "updated" && event.action.type === "error") {
     const error = event.mutation.state.error;
     redirectToLoginIfUnauthorized(error);
+    // Don't log cancel/abort errors as they're benign
     if (error?.message?.includes('cancel') || error?.name === 'AbortError') return;
     console.error("[API Mutation Error]", error);
   }
 });
 
+// Helper: get a fresh Supabase session token, refreshing if expiring soon
 async function with_timeout<T>(promise: Promise<T>, timeout_ms: number, label: string): Promise<T> {
   let timeout: ReturnType<typeof setTimeout> | undefined;
   const timeout_promise = new Promise<never>((_resolve, reject) => {
@@ -123,6 +133,7 @@ async function getFreshSessionToken(): Promise<string | null> {
       return null;
     }
 
+    // Proactively refresh if token expires within 60 seconds
     const expiresAt = sessionData.session?.expires_at;
     const nowSecs = Math.floor(Date.now() / 1000);
     if (expiresAt && expiresAt - nowSecs < 60) {
@@ -134,7 +145,7 @@ async function getFreshSessionToken(): Promise<string | null> {
       );
       if (error) {
         console.warn('[AUTH] Session refresh failed:', error.message);
-        return token;
+        return token; // Fall back to existing token
       }
       return refreshData.session?.access_token ?? token;
     }
@@ -146,6 +157,12 @@ async function getFreshSessionToken(): Promise<string | null> {
   }
 }
 
+/**
+ * Plain same-origin fetches do not pass through the tRPC link. Mission Control
+ * uses several protected REST diagnostics, so forward the same Supabase
+ * session header to a narrow allowlist of administrator REST surfaces. Never
+ * attach the token to another origin.
+ */
 const nativeFetch = globalThis.fetch.bind(globalThis);
 const AUTHENTICATED_REST_PREFIXES = [
   "/api/db-diagnostic",
