@@ -114,6 +114,27 @@ export type PrismRosettaActivationResult = {
   replayed: boolean;
 };
 
+export class PrismRosettaPartialActivationError extends Error {
+  readonly expected_trait_count: number;
+  readonly receipt_count: number;
+  readonly new_submission_count: number;
+  readonly remaining_trait_count: number;
+
+  constructor(input: {
+    expected_trait_count: number;
+    receipt_count: number;
+    new_submission_count: number;
+    remaining_trait_count: number;
+  }) {
+    super("prism_rosetta_queue_batch_yield");
+    this.name = "PrismRosettaPartialActivationError";
+    this.expected_trait_count = input.expected_trait_count;
+    this.receipt_count = input.receipt_count;
+    this.new_submission_count = input.new_submission_count;
+    this.remaining_trait_count = input.remaining_trait_count;
+  }
+}
+
 function is_record(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -705,6 +726,7 @@ async function persist_run(input: {
 export async function activate_prism_for_rosetta_assembly(input: {
   genome_bill_id: string;
   assembly_run_id?: string;
+  max_new_submissions?: number;
 }): Promise<PrismRosettaActivationResult> {
   const lighthouse_commit = process.env.RENDER_GIT_COMMIT?.trim();
   if (!lighthouse_commit || !/^[a-f0-9]{7,64}$/i.test(lighthouse_commit)) {
@@ -713,24 +735,60 @@ export async function activate_prism_for_rosetta_assembly(input: {
   const assembly = await load_assembly(input);
   const traits = await load_traits(assembly);
   const existing_receipts = await load_existing_binding_receipts(assembly);
-  const receipts = await map_bounded(
-    traits,
+  const prepared_requests = traits.map((trait) => {
+    const request = build_rosetta_binding_request({
+      assembly,
+      trait,
+      lighthouse_commit,
+    });
+    const existing_receipt = existing_receipts.get(trait.trait_id);
+    if (existing_receipt?.request_id === request.request_id) {
+      return {
+        trait,
+        request,
+        existing_receipt,
+      };
+    }
+    return {
+      trait,
+      request,
+      existing_receipt: null,
+    };
+  });
+  const pending_requests = prepared_requests.filter(
+    (entry) => entry.existing_receipt === null,
+  );
+  const max_new_submissions = typeof input.max_new_submissions === "number"
+    && Number.isInteger(input.max_new_submissions)
+    && input.max_new_submissions >= 0
+    ? input.max_new_submissions
+    : pending_requests.length;
+  const pending_batch = pending_requests.slice(0, max_new_submissions);
+  const reused_receipts = prepared_requests.flatMap((entry) =>
+    entry.existing_receipt ? [entry.existing_receipt] : []
+  );
+  const new_receipts = await map_bounded(
+    pending_batch,
     PRISM_CONCURRENCY,
-    async (trait) => {
-      const request = build_rosetta_binding_request({
+    async ({ trait, request }) => {
+      const receipt = await submit_rosetta_prism_request(request);
+      await persist_binding({
         assembly,
         trait,
-        lighthouse_commit,
+        receipt,
       });
-      const existing_receipt = existing_receipts.get(trait.trait_id);
-      if (existing_receipt?.request_id === request.request_id) {
-        return existing_receipt;
-      }
-      const receipt = await submit_rosetta_prism_request(request);
-      await persist_binding({ assembly, trait, receipt });
       return receipt;
     },
   );
+  const receipts = [...reused_receipts, ...new_receipts];
+  if (pending_batch.length < pending_requests.length) {
+    throw new PrismRosettaPartialActivationError({
+      expected_trait_count: assembly.trait_count,
+      receipt_count: receipts.length,
+      new_submission_count: pending_batch.length,
+      remaining_trait_count: pending_requests.length - pending_batch.length,
+    });
+  }
   if (receipts.length !== assembly.trait_count) {
     throw new Error("prism_rosetta_receipt_count_mismatch");
   }

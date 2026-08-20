@@ -1,5 +1,6 @@
 import { readFileSync } from "fs";
 import { describe, expect, it } from "vitest";
+import { PrismRosettaPartialActivationError } from "./prism-rosetta-activation";
 import { PrismBoundaryError } from "./prism-verification-client";
 import {
   classify_prism_queue_failure,
@@ -82,6 +83,31 @@ describe("Prism Rosetta verification queue", () => {
       terminal: false,
       retry_delay_seconds: 3_600,
     });
+  });
+
+  it("treats bounded queue yields as partial progress, not a failure spiral", () => {
+    process.env.PRISM_ROSETTA_QUEUE_BATCH_YIELD_RETRY_SECONDS = "17";
+    try {
+      const decision = classify_prism_queue_failure({
+        error: new PrismRosettaPartialActivationError({
+          expected_trait_count: 1_312,
+          receipt_count: 394,
+          new_submission_count: 24,
+          remaining_trait_count: 918,
+        }),
+        prior_attempt_count: 13,
+        receipt_count: 394,
+      });
+      expect(decision).toMatchObject({
+        queue_state: "receipt_partial",
+        failure_class: "bounded_partial",
+        error_code: "prism_rosetta_queue_batch_yield",
+        terminal: false,
+        retry_delay_seconds: 17,
+      });
+    } finally {
+      delete process.env.PRISM_ROSETTA_QUEUE_BATCH_YIELD_RETRY_SECONDS;
+    }
   });
 
   it("fails closed for receipt validation and identity conflicts", () => {
