@@ -25,10 +25,12 @@ describe("current whole-universe legal explorer", () => {
   it("exposes a bounded rendering window while preserving full-universe counts", () => {
     const service = read("server/services/legal-explorer-current.ts");
     const router = read("server/routers/canonical-core-router.ts");
+    expect(service).toContain("getCurrentCanonicalState");
     expect(service).toContain("filtered_current_nodes");
     expect(service).toContain("graph_nodes_all_types");
     expect(service).toContain("default_current_explorer_nodes");
     expect(service).toContain("row_number() over(partition by f.node_type");
+    expect(service).not.toMatch(/from public\.v_lighthouse_graph_nodes_v1\s+group by node_type/);
     expect(router).toContain("legalExplorer: publicProcedure");
     expect(router).toContain("readCurrentLegalExplorer");
     expect(router).toContain("limit: z.number().int().min(40).max(400).default(220)");
