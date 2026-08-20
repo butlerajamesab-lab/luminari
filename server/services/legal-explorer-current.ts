@@ -1,4 +1,5 @@
 import { getPool } from "../db";
+import { getCurrentCanonicalState } from "./current-canonical-state";
 
 export type CurrentLegalExplorerInput = {
   query?: string;
@@ -40,13 +41,8 @@ export async function readCurrentLegalExplorer(input: CurrentLegalExplorerInput 
   const query = input.query?.trim() || null;
   const jurisdiction = input.jurisdiction?.trim().toUpperCase() || null;
 
-  const [typeCountsResult, doctrineResult, doctrineEdgeResult, caseLawResult, barrierResult, weakJointResult, referenceCountResult] = await Promise.all([
-    pool.query(`
-      select node_type,count(*)::int as count
-        from public.v_lighthouse_graph_nodes_v1
-       group by node_type
-       order by count desc,node_type
-    `),
+  const [canonicalState, doctrineResult, doctrineEdgeResult, caseLawResult, barrierResult, weakJointResult, referenceCountResult] = await Promise.all([
+    getCurrentCanonicalState(),
     pool.query(`
       select id::text,name,description,primary_cases,domains,added_by,created_at,updated_at
         from public.doctrine_registry
@@ -151,7 +147,7 @@ export async function readCurrentLegalExplorer(input: CurrentLegalExplorerInput 
   }
 
   const typeCounts = Object.fromEntries(
-    typeCountsResult.rows.map((row) => [String(row.node_type), Number(row.count ?? 0)]),
+    Object.entries(canonicalState.graph_node_types ?? {}).map(([nodeType, count]) => [nodeType, Number(count ?? 0)]),
   );
   const defaultCurrentTotal = DEFAULT_NODE_TYPES.reduce(
     (sum, nodeType) => sum + Number(typeCounts[nodeType] ?? 0),
@@ -174,7 +170,7 @@ export async function readCurrentLegalExplorer(input: CurrentLegalExplorerInput 
       window_only: true,
     },
     totals: {
-      graph_nodes_all_types: typeCountsResult.rows.reduce((sum, row) => sum + Number(row.count ?? 0), 0),
+      graph_nodes_all_types: Number(canonicalState.graph_nodes ?? 0),
       default_current_explorer_nodes: defaultCurrentTotal,
       selected_current_explorer_nodes: selectedCurrentTotal,
       filtered_current_nodes: filteredTotal,
