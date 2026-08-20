@@ -277,6 +277,7 @@ export default function CivicLegalExplorer() {
   const [activeType, setActiveType] = useState("all");
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [showAllLoaded, setShowAllLoaded] = useState(false);
+  const [showGraphWindow, setShowGraphWindow] = useState(false);
 
   const explorerQuery = trpc.canonicalCore.legalExplorer.useQuery({
     query: search || undefined,
@@ -326,10 +327,10 @@ export default function CivicLegalExplorer() {
       <header style={{ marginBottom: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <Network size={23} color={c.purple} />
-          <h1 style={{ color: c.paper, fontFamily: fontSerif, fontSize: 28, margin: 0 }}>Civic/Legal Graph Explorer</h1>
+          <h1 style={{ color: c.paper, fontFamily: fontSerif, fontSize: 28, margin: 0 }}>Civic/Legal Explorer</h1>
         </div>
         <p style={{ color: c.muted, maxWidth: 850, fontSize: 13, lineHeight: 1.6, margin: "8px 0 0" }}>
-          The full current civic/legal universe is discoverable here without redefining the Doctrine Graph. The working diagram renders a bounded neighborhood for performance; totals and filters describe the complete current universe, while governed reference libraries remain preserved below.
+          The full current civic/legal universe is discoverable here without redefining the Doctrine Graph. This surface is catalog-first; the bounded relationship diagram stays collapsed until it is useful.
         </p>
       </header>
 
@@ -398,18 +399,34 @@ export default function CivicLegalExplorer() {
             })}
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: selectedNode ? "minmax(0,1fr) minmax(260px,340px)" : "1fr", gap: 12, alignItems: "start" }}>
+          <div style={{ display: "grid", gridTemplateColumns: selectedNode && showGraphWindow ? "minmax(0,1fr) minmax(260px,340px)" : "1fr", gap: 12, alignItems: "start" }}>
             <section style={{ border: `1px solid ${c.cardBorder}`, borderRadius: 12, background: "rgba(0,0,0,.28)", overflow: "hidden" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "10px 12px", borderBottom: `1px solid ${c.cardBorder}` }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "10px 12px", borderBottom: `1px solid ${c.cardBorder}`, flexWrap: "wrap" }}>
                 <div>
                   <div style={{ color: c.paper, fontWeight: 700, fontSize: 13 }}>Working graph window</div>
                   <div style={{ color: c.muted, fontSize: 10 }}>
                     {fmt(working.nodes.length)} rendered nodes · {fmt(working.edges.length)} rendered edges · {fmt(data.totals?.filtered_current_nodes)} current nodes match this filter
                   </div>
                 </div>
-                <span style={{ color: c.amber, fontSize: 10, fontFamily: fontMono }}>window ≠ universe</span>
+                <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                  <span style={{ color: c.amber, fontSize: 10, fontFamily: fontMono }}>window ≠ universe</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowGraphWindow((value) => !value)}
+                    style={{ border: `1px solid ${c.cardBorder}`, background: c.cardBg, color: c.paper, borderRadius: 7, padding: "6px 9px", cursor: "pointer", fontSize: 10, fontFamily: fontMono }}
+                  >
+                    {showGraphWindow ? "Hide graph window" : "Show graph window"}
+                  </button>
+                </div>
               </div>
-              <div style={{ overflowX: "auto" }}>
+              {!showGraphWindow && (
+                <div style={{ padding: 12, color: c.muted, fontSize: 11, lineHeight: 1.5 }}>
+                  Graph window collapsed by default. Use the catalog below for discovery, then open the graph only when tracing a local relationship neighborhood.
+                </div>
+              )}
+              {showGraphWindow && (
+                <>
+                  <div style={{ overflowX: "auto" }}>
                 <svg viewBox="0 0 1200 720" style={{ width: "100%", minWidth: 720, display: "block", background: "radial-gradient(circle at center,rgba(168,85,247,.07),transparent 55%)" }}>
                   {working.edges.map((edge) => {
                     const a = positions[edge.source];
@@ -439,14 +456,16 @@ export default function CivicLegalExplorer() {
                   })}
                 </svg>
               </div>
-              <div style={{ display: "flex", gap: 9, flexWrap: "wrap", padding: 10, borderTop: `1px solid ${c.cardBorder}` }}>
-                {Object.entries(NODE_TYPES).slice(0, 16).map(([type, info]) => (
-                  <span key={type} style={{ display: "inline-flex", gap: 4, alignItems: "center", color: c.muted, fontSize: 9 }}><i style={{ width: 6, height: 6, borderRadius: "50%", background: info.color }} />{info.label}</span>
-                ))}
-              </div>
+                  <div style={{ display: "flex", gap: 9, flexWrap: "wrap", padding: 10, borderTop: `1px solid ${c.cardBorder}` }}>
+                    {Object.entries(NODE_TYPES).slice(0, 16).map(([type, info]) => (
+                      <span key={type} style={{ display: "inline-flex", gap: 4, alignItems: "center", color: c.muted, fontSize: 9 }}><i style={{ width: 6, height: 6, borderRadius: "50%", background: info.color }} />{info.label}</span>
+                    ))}
+                  </div>
+                </>
+              )}
             </section>
 
-            {selectedNode && (
+            {selectedNode && showGraphWindow && (
               <aside style={{ border: `1px solid ${c.cardBorder}`, borderRadius: 12, background: c.cardBg, padding: 14, position: "sticky", top: 12 }}>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   <span style={{ width: 9, height: 9, borderRadius: "50%", background: nodeTypeInfo(selectedNode.type).color }} />
@@ -485,7 +504,7 @@ export default function CivicLegalExplorer() {
               {currentCatalog.map((row: any) => {
                 const info = nodeTypeInfo(String(row.node_type));
                 return (
-                  <button key={row.node_id} onClick={() => setSelectedNodeId(String(row.node_id))} style={{ textAlign: "left", background: c.cardBg, border: `1px solid ${c.cardBorder}`, borderRadius: 9, padding: 11, cursor: "pointer" }}>
+                  <button key={row.node_id} onClick={() => { setSelectedNodeId(String(row.node_id)); setShowGraphWindow(true); }} style={{ textAlign: "left", background: c.cardBg, border: `1px solid ${c.cardBorder}`, borderRadius: 9, padding: 11, cursor: "pointer" }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                       <span style={{ color: info.color, fontFamily: fontMono, fontSize: 9 }}>{info.label}</span>
                       <span style={{ color: c.muted, fontSize: 9 }}>{row.jurisdiction_code || "—"}</span>

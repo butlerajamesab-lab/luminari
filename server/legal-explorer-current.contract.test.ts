@@ -47,17 +47,21 @@ describe("current whole-universe legal explorer", () => {
     expect(page).not.toContain("Search law, agencies, workflows, programs, resources");
   });
 
-  it("preserves the whole-universe UI on its own route", () => {
+  it("preserves the whole-universe UI on its own catalog-first route", () => {
     const page = read("client/src/pages/CivicLegalExplorer.tsx");
     const app = read("client/src/App.tsx");
     const navigation = read("client/src/components/navigation.ts");
     const visibility = read("server/routes/system-visibility-router.ts");
     const inspection = read("server/routes/ai-inspect-router.ts");
 
-    expect(page).toContain("Civic/Legal Graph Explorer");
+    expect(page).toContain("Civic/Legal Explorer");
+    expect(page).toContain("catalog-first");
     expect(page).toContain("trpc.canonicalCore.legalExplorer.useQuery");
     expect(page).toContain("Current Civic/Legal Catalog");
+    expect(page).toContain("Graph window collapsed by default");
+    expect(page).toContain("Show graph window");
     expect(page).toContain("window ≠ universe");
+    expect(page).not.toContain("Legal & Doctrine Graph Explorer");
     expect(app).toContain('path="/civic-legal-explorer"');
     expect(navigation).toContain('path: "/civic-legal-explorer"');
     expect(visibility).toContain('queries: ["canonicalCore.legalExplorer"]');
