@@ -4,13 +4,21 @@ import { UNAUTHED_ERR_MSG } from '@shared/const';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpLink, TRPCClientError } from "@trpc/client";
 import { createRoot } from "react-dom/client";
+import type { ComponentType } from "react";
 import superjson from "superjson";
-import App from "./App";
 import { getLoginUrl } from "./const";
 import { initializeValidationSession } from "./_core/validation-session";
 import { ClickToReadProvider } from "./contexts/ClickToReadContext";
 import { CivicGenomeExportDock } from "./components/civic-genome/CivicGenomeExportDock";
 import "./index.css";
+
+async function loadRuntimeApp(): Promise<ComponentType> {
+  const pathname = window.location.pathname;
+  if (pathname === "/civic-genome" || pathname.startsWith("/civic-genome/")) {
+    return (await import("./CivicGenomePublicApp")).default;
+  }
+  return (await import("./App")).default;
+}
 
 // Initialize validation session for /intake and /case/:id routes
 initializeValidationSession().catch(console.error);
@@ -255,12 +263,12 @@ const trpcClient = trpc.createClient({
   ],
 });
 
-function AppWithProviders() {
+function AppWithProviders({ RuntimeApp }: { RuntimeApp: ComponentType }) {
   return (
     <QueryClientProvider client={queryClient}>
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <ClickToReadProvider>
-          <App />
+          <RuntimeApp />
           <CivicGenomeExportDock />
         </ClickToReadProvider>
       </trpc.Provider>
@@ -268,4 +276,11 @@ function AppWithProviders() {
   );
 }
 
-createRoot(document.getElementById("root")!).render(<AppWithProviders />);
+async function bootstrap() {
+  const RuntimeApp = await loadRuntimeApp();
+  createRoot(document.getElementById("root")!).render(<AppWithProviders RuntimeApp={RuntimeApp} />);
+}
+
+bootstrap().catch(error => {
+  console.error("[Bootstrap] Failed to load Luminari application shell", error);
+});

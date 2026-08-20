@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /case/
+Disallow: /cases
+Disallow: /documents
+Disallow: /upload
+Disallow: /mission-control
+Disallow: /sovereign-control
+Disallow: /ingestion-control
+Disallow: /workbench
