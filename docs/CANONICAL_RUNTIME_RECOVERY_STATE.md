@@ -12,12 +12,12 @@ Current entrypoint:
 
 Currently mounted:
 
-- lighthouseGateRouter
-- ai-inspect-router
+- appRouter through `/api/trpc`
+- administrator-gated `/api/system` diagnostics
 
 Current mode:
 
-- controlled gate / inspection runtime
+- active Lighthouse runtime with administrator-gated diagnostics
 
 Not currently mounted:
 

@@ -9,7 +9,6 @@ import { requireExpressAdmin } from "./express-admin-middleware";
 import { notificationRuntimeTrpcMiddleware } from "./notification-runtime-trpc-middleware";
 import { requireAdminForServiceTrpcOperations } from "./trpc-service-admin-middleware";
 import { sessionMiddleware } from "./session-middleware";
-import { aiInspectRouter } from "../routes/ai-inspect-router";
 import { systemVisibilityRouter } from "../routes/system-visibility-router";
 import { conveyorRouter } from "../routes/conveyor-router";
 import { civicMapRouter } from "../routes/civic-map-router";
@@ -217,7 +216,6 @@ async function startServer() {
 
   app.use("/api/corpus-footprint", requireExpressAdmin, corpus_footprint_router);
   app.use("/api/system", requireExpressAdmin, systemVisibilityRouter);
-  app.use("/api/ai", aiInspectRouter);
   app.use("/api/conveyor", requireExpressAdmin, conveyorRouter);
   app.use("/api/civic-map", civicMapRouter);
   app.use("/api/atlas", atlasProxyRouter);

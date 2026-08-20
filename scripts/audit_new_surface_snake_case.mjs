@@ -41,7 +41,7 @@ const ignore_tokens = new Set([
   "ReactNode", "ReturnType", "Record", "Array", "String", "Boolean", "Promise", "Number", "Date", "Error", "Object", "URL",
   "Router", "ENV", "Link", "Route", "Switch", "Shield", "Lock", "EyeOff", "ArrowRight", "ArrowLeft", "AlertTriangle", "BookOpen", "Globe2", "GitBranch", "FileText", "MapPin", "Scale",
   "useAuth", "useRoute", "useLocation", "useEffect", "useState", "createClient", "createServer", "createExpressMiddleware",
-  "appRouter", "createContext", "sessionMiddleware", "aiInspectRouter", "systemVisibilityRouter", "conveyorRouter", "civicMapRouter", "atlasProxyRouter", "ingestionControlRestRouter",
+  "appRouter", "createContext", "sessionMiddleware", "systemVisibilityRouter", "conveyorRouter", "civicMapRouter", "atlasProxyRouter", "ingestionControlRestRouter",
   "registerExecutorRoutes", "loadPipelineRegistry", "loadLensRegistry", "serveStatic", "setupVite", "isAuthenticated", "isArray",
   "borderRadius", "fontFamily", "fontSize", "gridTemplateColumns", "justifyContent", "letterSpacing", "lineHeight", "marginBottom", "marginTop", "maxWidth", "minHeight", "placeItems", "textDecoration", "textTransform", "alignItems", "paddingLeft", "paddingTop", "borderTop", "borderBottom", "borderCollapse", "flexWrap", "fontWeight", "minWidth", "overflowX", "textAlign", "verticalAlign", "wordBreak", "backgroundColor",
   "HomeOrWelcome", "DashboardRouter", "NotFound", "DocketRoom", "NativeNationsHub", "RecognitionAtlas", "RecognitionAtlasTribe", "RecognitionAtlasLayer", "RecognitionGideon",

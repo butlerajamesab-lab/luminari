@@ -83,7 +83,6 @@ import MentalHealth from "./pages/MentalHealth";
 import CategoryLanding from "./pages/CategoryLanding";
 import CategoryExplorer from "./pages/CategoryExplorer";
 import DoctrineGraph from "./pages/DoctrineGraph";
-import CivicLegalExplorer from "./pages/CivicLegalExplorer";
 import LitigationBarriers from "./pages/LitigationBarriers";
 import SignalRegistry from "./pages/SignalRegistry";
 import EnforcementIntel from "./pages/EnforcementIntel";
@@ -259,7 +258,6 @@ function App() {
                 <Route path="/categories" component={CategoryExplorer} />
                 <Route path="/category/:categoryId" component={CategoryLanding} />
                 <Route path="/doctrine-graph" component={DoctrineGraph} />
-                <Route path="/civic-legal-explorer" component={CivicLegalExplorer} />
                 <Route path="/barriers" component={LitigationBarriers} />
                 <Route path="/litigation-barriers" component={LitigationBarriers} />
                 <Route path="/signal-registry" component={SignalRegistry} />

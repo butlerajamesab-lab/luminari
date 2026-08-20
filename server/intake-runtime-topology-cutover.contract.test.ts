@@ -40,10 +40,8 @@ describe("Lighthouse intake runtime topology cutover", () => {
   });
 
   it("does not advertise retired intake routes through runtime manifests", () => {
-    const runtimeManifests = [
-      read("server/routes/ai-inspect-router.ts"),
-      read("server/routes/system-visibility-router.ts"),
-    ].join("\n");
+    expect(existsSync(resolve(repo, "server/routes/ai-inspect-router.ts"))).toBe(false);
+    const runtimeManifests = read("server/routes/system-visibility-router.ts");
     for (const retiredRouteDeclaration of [
       'path: "/claim-denial-analysis"',
       'path: "/extraction"',

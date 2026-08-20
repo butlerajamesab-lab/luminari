@@ -27,12 +27,13 @@ The goal is:
 
 Currently mounted:
 
-- lighthouseGateRouter
-- ai-inspect-router
+- server/_core/index.ts production runtime
+- appRouter through `/api/trpc`
+- administrator-gated `/api/system` diagnostics
 
 Current runtime mode:
 
-- controlled gate / inspection runtime
+- active Lighthouse runtime with administrator-gated diagnostics
 
 Not mounted:
 
