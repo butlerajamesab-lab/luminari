@@ -1,6 +1,9 @@
 import { randomUUID } from "crypto";
 import { query_with_diagnostics } from "../db";
-import { activate_prism_for_rosetta_assembly } from "./prism-rosetta-activation";
+import {
+  PrismRosettaPartialActivationError,
+  activate_prism_for_rosetta_assembly,
+} from "./prism-rosetta-activation";
 import {
   PRISM_ROSETTA_RULE_SET_ID,
   PRISM_ROSETTA_RULE_SET_VERSION,
@@ -16,6 +19,12 @@ const RECONCILE_BATCH_SIZE = 100;
 const DEFAULT_RECONCILE_INTERVAL_MS = 60_000;
 const MIN_RECONCILE_INTERVAL_MS = 10_000;
 const MAX_RECONCILE_INTERVAL_MS = 15 * 60_000;
+const DEFAULT_QUEUE_MAX_NEW_SUBMISSIONS = 24;
+const MIN_QUEUE_MAX_NEW_SUBMISSIONS = 1;
+const MAX_QUEUE_MAX_NEW_SUBMISSIONS = 500;
+const DEFAULT_QUEUE_BATCH_YIELD_RETRY_SECONDS = 30;
+const MIN_QUEUE_BATCH_YIELD_RETRY_SECONDS = 5;
+const MAX_QUEUE_BATCH_YIELD_RETRY_SECONDS = 300;
 
 export type prism_rosetta_queue_state =
   | "eligible"
@@ -77,6 +86,24 @@ function bounded_reconcile_interval(): number {
   );
 }
 
+function bounded_queue_max_new_submissions(): number {
+  return bounded_integer(
+    process.env.PRISM_ROSETTA_QUEUE_MAX_NEW_SUBMISSIONS,
+    DEFAULT_QUEUE_MAX_NEW_SUBMISSIONS,
+    MIN_QUEUE_MAX_NEW_SUBMISSIONS,
+    MAX_QUEUE_MAX_NEW_SUBMISSIONS,
+  );
+}
+
+function bounded_queue_batch_yield_retry_seconds(): number {
+  return bounded_integer(
+    process.env.PRISM_ROSETTA_QUEUE_BATCH_YIELD_RETRY_SECONDS,
+    DEFAULT_QUEUE_BATCH_YIELD_RETRY_SECONDS,
+    MIN_QUEUE_BATCH_YIELD_RETRY_SECONDS,
+    MAX_QUEUE_BATCH_YIELD_RETRY_SECONDS,
+  );
+}
+
 function queue_enabled(): boolean {
   const configured = process.env.PRISM_ROSETTA_QUEUE_ENABLED?.trim().toLowerCase();
   if (configured === "false") return false;
@@ -129,6 +156,15 @@ export function classify_prism_queue_failure(input: {
 }): prism_queue_failure_decision {
   const error_code = safe_error_code(input.error);
   const failure_number = input.prior_attempt_count + 1;
+  if (input.error instanceof PrismRosettaPartialActivationError) {
+    return {
+      queue_state: "receipt_partial",
+      failure_class: "bounded_partial",
+      error_code,
+      retry_delay_seconds: bounded_queue_batch_yield_retry_seconds(),
+      terminal: false,
+    };
+  }
   const known_transient_class = known_transient_failure_class(error_code);
   let failure_class = known_transient_class ?? "unknown";
   let terminal = known_transient_class
@@ -385,6 +421,7 @@ async function process_job(job: prism_rosetta_queue_job): Promise<void> {
     result = await activate_prism_for_rosetta_assembly({
       genome_bill_id: job.genome_bill_id,
       assembly_run_id: job.assembly_run_id,
+      max_new_submissions: bounded_queue_max_new_submissions(),
     });
   } catch (error) {
     await fail_job_for_processing_error(job, error);
@@ -456,10 +493,12 @@ export function start_prism_rosetta_queue_worker(): void {
   queue_stopped = false;
   const interval_ms = bounded_poll_interval();
   const reconcile_interval_ms = bounded_reconcile_interval();
+  const max_new_submissions = bounded_queue_max_new_submissions();
   console.log("[PrismRosettaQueue] started", {
     worker_id: queue_worker_id,
     interval_ms,
     reconcile_interval_ms,
+    max_new_submissions,
     lease_minutes: QUEUE_LEASE_MINUTES,
     rule_set_id: PRISM_ROSETTA_RULE_SET_ID,
     rule_set_version: PRISM_ROSETTA_RULE_SET_VERSION,
