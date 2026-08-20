@@ -89,7 +89,6 @@ export const analyzeItems: NavItem[] = [
   { icon: BarChart3, label: "Contradiction Scoring", path: "/contradiction-scoring" },
   { icon: Ban, label: "Litigation Barriers", path: "/barriers" },
   { icon: GitBranch, label: "Doctrine Graph", path: "/doctrine-graph" },
-  { icon: Network, label: "Civic/Legal Explorer", path: "/civic-legal-explorer" },
   { icon: FileSearch, label: "Claim Denial Analysis", path: "/cda" },
   { icon: Shield, label: "Provenance Drill-Down", path: "/provenance" },
   { icon: RadioTower, label: "Signal Registry", path: "/signal-registry" },

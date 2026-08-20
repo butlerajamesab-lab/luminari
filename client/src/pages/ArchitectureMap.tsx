@@ -52,11 +52,11 @@ const TARGET_SURFACE_ROUTES: Record<string, string> = {
   signal_context: "/viewfinder",
   case_workspace: "/workbench",
   operator_context: "/architecture-map",
-  typed_corpus: "/civic-legal-explorer",
+  typed_corpus: "/architecture-map",
 };
 
 function targetSurfaceRoute(targetSurface: unknown) {
-  return TARGET_SURFACE_ROUTES[String(targetSurface ?? "")] ?? "/civic-legal-explorer";
+  return TARGET_SURFACE_ROUTES[String(targetSurface ?? "")] ?? "/architecture-map";
 }
 
 function layerRoute(layer: Layer) {
@@ -204,7 +204,6 @@ export default function ArchitectureMap() {
                 <p className="text-xs text-muted-foreground mt-1">Live source-reconciled civic objects and their intended UI surfaces. These counts do not inflate the governed legal seed layers below.</p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm" className="text-xs" onClick={() => navigate("/civic-legal-explorer")}>Civic/Legal Explorer</Button>
                 <Button variant="outline" size="sm" className="text-xs" onClick={() => navigate("/resources")}>Resource Directory</Button>
                 <Button variant="outline" size="sm" className="text-xs" onClick={() => navigate("/viewfinder")}>Anomaly Viewfinder</Button>
               </div>

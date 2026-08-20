@@ -420,7 +420,6 @@ export default function DoctrineGraph() {
         </p>
         <nav aria-label="Related legal surfaces" style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 14 }}>
           {[
-            ["Full civic/legal universe", "/civic-legal-explorer"],
             ["Legal Library", "/legal-library"],
             ["Litigation Barriers", "/litigation-barriers"],
             ["Enforcement Pathways", "/enforcement-pathway"],

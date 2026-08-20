@@ -271,7 +271,7 @@ export const enforcementIntelligenceRouter = router({
 
   getDoctrineGraph: publicProcedure.query(async () => {
     // Read every governed doctrine and every explicit doctrine edge. Broader
-    // civic graph nodes belong to canonicalCore.legalExplorer, not here.
+    // civic graph nodes stay in bounded canonical-core corpus readers, not here.
     const [doctrineResult, edgeResult] = await Promise.all([
       getPool().query(`
         select

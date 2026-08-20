@@ -26,7 +26,6 @@ import {
   readCurrentUnresolvedRelationshipPage,
 } from "../services/current-corpus-page-reader";
 import { readCurrentDiscoveryFacts } from "../services/current-discovery-facts";
-import { readCurrentLegalExplorer } from "../services/legal-explorer-current";
 import { reconnectAllSectors } from "../services/knowledge-reconnect";
 
 export const canonicalCoreRouter = router({
@@ -101,15 +100,6 @@ export const canonicalCoreRouter = router({
     }).optional())
     .query(async ({ input }) => readCurrentUnresolvedRelationshipPage(input ?? {})),
 
-  legalExplorer: publicProcedure
-    .input(z.object({
-      query: z.string().trim().max(240).optional(),
-      jurisdiction: z.string().trim().max(80).optional(),
-      nodeTypes: z.array(z.string().trim().max(80)).max(40).optional(),
-      limit: z.number().int().min(40).max(400).default(220),
-    }).optional())
-    .query(async ({ input }) => readCurrentLegalExplorer(input ?? {})),
-
   discoveryFacts: publicProcedure
     .input(z.object({
       query: z.string().trim().max(240).optional(),
@@ -128,6 +118,7 @@ export const canonicalCoreRouter = router({
       offset: z.number().int().min(0).default(0),
     }).optional())
     .query(async ({ input }) => {
+      // Paged reader: total reports the complete filtered universe; items are one response window.
       const value = input ?? { limit: 100, offset: 0 };
       const params: unknown[] = [];
       const where: string[] = ["legal_catalog_ready is true"];

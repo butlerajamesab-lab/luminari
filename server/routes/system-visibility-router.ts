@@ -1,20 +1,20 @@
 /**
  * ============================================================
- * LUMINARI — BUILDER VISIBILITY LAYER
+ * LUMINARI — SYSTEM VISIBILITY LAYER
  *
- * Deterministic, read-only introspection layer.
- * Allows GPTs, backend assistants, developers, auditors, and
- * runtime diagnostics to safely inspect Lighthouse architecture
- * without touching production logic or mutating data.
+ * Deterministic, read-only administrator diagnostic layer.
+ * Allows authenticated administrators and runtime diagnostics to inspect
+ * Lighthouse architecture without touching production logic or mutating data.
  *
  * MOUNT:
  *   server/_core/index.ts:
  *     import { systemVisibilityRouter } from "../routes/system-visibility-router";
- *     app.use("/api/system", systemVisibilityRouter);
+ *     app.use("/api/system", requireExpressAdmin, systemVisibilityRouter);
  *
  * RULES:
  *   - GET only. No POST, no mutations, no writes.
- *   - No auth required. Structural metadata only — no PII, no raw records.
+ *   - Administrator auth required at the Express mount.
+ *   - Structural metadata only — no PII, no raw records.
  *   - Every DB query is wrapped. Failures surface explicitly.
  *   - No secrets exposed. No service_role keys, no JWT secrets.
  *
@@ -134,7 +134,6 @@ router.get("/routes", async (_req: Request, res: Response) => {
     { path: "/categories", component_slug: "category_explorer", layer: "L2" },
     { path: "/category/:categoryId", component_slug: "category_landing", layer: "L2" },
     { path: "/doctrine-graph", component_slug: "doctrine_graph", layer: "L2" },
-    { path: "/civic-legal-explorer", component_slug: "civic_legal_explorer", layer: "L2" },
     { path: "/barriers", component_slug: "litigation_barriers", layer: "L2" },
     { path: "/contradiction-scoring", component_slug: "contradiction_scoring", layer: "L2" },
     { path: "/deadline-calculator", component_slug: "deadline_calculator", layer: "L2" },
@@ -189,7 +188,6 @@ router.get("/routes", async (_req: Request, res: Response) => {
   // Backend API mounts
   const backend_mounts = [
     { method: "USE", path: "/api/trpc", source: "appRouter (tRPC)" },
-    { method: "USE", path: "/api/ai", source: "aiInspectRouter" },
     { method: "USE", path: "/api/system", source: "systemVisibilityRouter" },
     { method: "GET", path: "/api/health", source: "inline health check" },
     { method: "POST", path: "/api/stripe/webhook", source: "stripe-webhook" },
@@ -398,7 +396,6 @@ router.get("/ui-bindings", async (_req: Request, res: Response) => {
     { page: "/resources", component_slug: "resource_directory", queries: ["resourceDirectory.summary", "resourceDirectory.search", "resourceDirectory.detail"], tables: ["v_lighthouse_resource_program_catalog_v2", "luminari_civic_object_reconciliation_v1", "luminari_corpus_candidate_v1"] },
     { page: "/legal-library", component_slug: "legal_library", queries: ["canonicalCore.legalLibrary"], tables: ["legal_enforcement_records", "claim_validation_rules_v2", "remedy_feasibility_rules_v2"] },
     { page: "/doctrine-graph", component_slug: "doctrine_graph", queries: ["enforcementIntel.getDoctrineGraph"], tables: ["doctrine_registry", "doctrine_graph_edges"] },
-    { page: "/civic-legal-explorer", component_slug: "civic_legal_explorer", queries: ["canonicalCore.legalExplorer"], tables: ["v_lighthouse_graph_nodes_v1", "v_lighthouse_graph_edges_v2", "doctrine_registry", "legal_case_law", "litigation_barriers", "legal_weak_joints"] },
     { page: "/signal-registry", component_slug: "signal_registry", queries: ["signalExtraction.list", "signalExtraction.stats"], tables: ["detected_signals", "signal_flags", "signal_registry"] },
     { page: "/enforcement-intel", component_slug: "enforcement_intel", queries: ["canonicalCore.enforcementAgencies"], tables: ["legal_enforcement_records"] },
     { page: "/benefits", component_slug: "benefits_navigator", queries: ["benefits.list", "benefits.eligibility"], tables: ["government_benefits", "benefit_applications"] },

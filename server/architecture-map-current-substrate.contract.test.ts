@@ -20,7 +20,8 @@ describe("Architecture Map current substrate", () => {
     expect(page).toContain("Current Node Substrate");
     expect(page).toContain("do not inflate the governed legal seed layers");
     expect(page).toContain("currentSubstrate.objectClasses");
-    expect(page).toContain('navigate("/civic-legal-explorer")');
+    expect(page).not.toContain('navigate("/civic-legal-explorer")');
+    expect(page).toContain('typed_corpus: "/architecture-map"');
     expect(page).toContain('navigate("/resources")');
     expect(page).toContain('navigate("/viewfinder")');
     expect(page).toContain("TARGET_SURFACE_ROUTES");

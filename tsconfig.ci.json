@@ -5,7 +5,6 @@
     "server/routes/civic-map-router.ts",
     "server/routes/conveyor-router.ts",
     "server/routes/system-visibility-router.ts",
-    "server/routes/ai-inspect-router.ts",
     "server/routers.ts",
     "server/db.ts",
     "drizzle/schema.ts"
