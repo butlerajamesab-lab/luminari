@@ -17,6 +17,9 @@ async function loadRuntimeApp(): Promise<ComponentType> {
   if (pathname === "/civic-genome" || pathname.startsWith("/civic-genome/")) {
     return (await import("./CivicGenomePublicApp")).default;
   }
+  if (pathname === "/docket" || pathname.startsWith("/docket/")) {
+    return (await import("./DocketPublicApp")).default;
+  }
   return (await import("./App")).default;
 }
 
