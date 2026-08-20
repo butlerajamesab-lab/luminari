@@ -60,7 +60,9 @@ describe("Civic Genome Prism Rosetta stale-context supersession", () => {
   });
 
   it("ships a post-migration verification query for the stale-context invariant", () => {
+    expect(verification).toContain("unresolved_supersession_target_count");
     expect(verification).toContain("unresolved_stale_context_count");
+    expect(verification).toContain("safe_supersession_target_count");
     expect(verification).toContain("superseded_queue_count");
     expect(verification).toContain("supersession_receipt_count");
     expect(verification).toContain("prism_rosetta_document_context_not_unique");

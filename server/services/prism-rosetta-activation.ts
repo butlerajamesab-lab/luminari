@@ -4,6 +4,7 @@ import {
   PRISM_ROSETTA_RULE_SET_ID,
   PRISM_ROSETTA_RULE_SET_VERSION,
   canonical_json,
+  prism_receipt_schema,
   rosetta_binding_request_schema,
   sha256_hex,
   type PrismReceipt,
@@ -60,6 +61,26 @@ type TraitRow = {
   engine_version: string;
   rule_version: string;
   content_hash: string;
+};
+
+type ExistingBindingReceiptRow = {
+  trait_id: string;
+  verification_receipt_id: string;
+  request_id: string;
+  prism_engine_version: string;
+  rule_set_id: string;
+  rule_set_version: string;
+  rule_set_hash: string;
+  input_hash: string;
+  output_hash: string;
+  status: string;
+  supported_findings: unknown[];
+  contradictions: unknown[];
+  missing_evidence: unknown[];
+  unresolved_conditions: unknown[];
+  cited_evidence_identifiers: string[];
+  deterministic_replay_key: string;
+  completion_timestamp: string;
 };
 
 type SourceTrace = {
@@ -382,6 +403,76 @@ async function load_traits(assembly: AssemblyRow): Promise<TraitRow[]> {
   return result.rows;
 }
 
+async function load_existing_binding_receipts(
+  assembly: AssemblyRow,
+): Promise<Map<string, PrismReceipt>> {
+  const result = await query_with_diagnostics<ExistingBindingReceiptRow>(
+    `select binding.trait_id::text,
+            receipt.prism_verification_receipt_id::text as verification_receipt_id,
+            receipt.request_id,
+            receipt.prism_engine_version,
+            receipt.rule_set_id,
+            receipt.rule_set_version,
+            receipt.rule_set_hash,
+            receipt.input_hash,
+            receipt.output_hash,
+            receipt.verification_status as status,
+            receipt.supported_findings,
+            receipt.contradictions,
+            receipt.missing_evidence,
+            receipt.unresolved_conditions,
+            receipt.cited_evidence_identifiers,
+            receipt.deterministic_replay_key,
+            to_char(
+              receipt.prism_completion_timestamp at time zone 'UTC',
+              'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'
+            ) as completion_timestamp
+       from public.civic_genome_prism_verification_binding binding
+       join public.lighthouse_prism_verification_receipts receipt
+         on receipt.request_id = binding.request_id
+        and receipt.prism_verification_receipt_id = binding.prism_verification_receipt_id
+        and receipt.rule_set_id = binding.prism_rule_set_id
+        and receipt.rule_set_version = binding.prism_rule_set_version
+      where binding.assembly_run_id = $1::uuid
+        and binding.prism_rule_set_id = $2
+        and binding.prism_rule_set_version = $3
+      order by binding.trait_id`,
+    [
+      assembly.assembly_run_id,
+      PRISM_ROSETTA_RULE_SET_ID,
+      PRISM_ROSETTA_RULE_SET_VERSION,
+    ],
+    {
+      label: "prism_rosetta_load_existing_binding_receipts",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 10_000,
+    },
+  );
+  const receipts = new Map<string, PrismReceipt>();
+  for (const row of result.rows) {
+    receipts.set(row.trait_id, prism_receipt_schema.parse({
+      verification_receipt_id: row.verification_receipt_id,
+      request_id: row.request_id,
+      prism_engine_version: row.prism_engine_version,
+      rule_set_id: row.rule_set_id,
+      rule_set_version: row.rule_set_version,
+      rule_set_hash: row.rule_set_hash,
+      input_hash: row.input_hash,
+      output_hash: row.output_hash,
+      status: row.status,
+      supported_findings: row.supported_findings,
+      contradictions: row.contradictions,
+      missing_evidence: row.missing_evidence,
+      unresolved_conditions: row.unresolved_conditions,
+      cited_evidence_identifiers: row.cited_evidence_identifiers,
+      deterministic_replay_key: row.deterministic_replay_key,
+      completion_timestamp: row.completion_timestamp,
+      idempotency_reused: true,
+    }));
+  }
+  return receipts;
+}
+
 async function map_bounded<T, R>(
   items: T[],
   limit: number,
@@ -621,6 +712,7 @@ export async function activate_prism_for_rosetta_assembly(input: {
   }
   const assembly = await load_assembly(input);
   const traits = await load_traits(assembly);
+  const existing_receipts = await load_existing_binding_receipts(assembly);
   const receipts = await map_bounded(
     traits,
     PRISM_CONCURRENCY,
@@ -630,6 +722,10 @@ export async function activate_prism_for_rosetta_assembly(input: {
         trait,
         lighthouse_commit,
       });
+      const existing_receipt = existing_receipts.get(trait.trait_id);
+      if (existing_receipt?.request_id === request.request_id) {
+        return existing_receipt;
+      }
       const receipt = await submit_rosetta_prism_request(request);
       await persist_binding({ assembly, trait, receipt });
       return receipt;

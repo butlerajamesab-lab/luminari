@@ -21,4 +21,20 @@ describe("PRISM 2.2 bounded runtime pressure", () => {
     expect(client).toContain("const PRISM_MAX_ATTEMPTS = 3;");
     expect(client).toContain("const PRISM_MAX_REQUEST_BYTES = 4 * 1024 * 1024;");
   });
+
+  it("reuses locally persisted trait receipts before calling Prism again", () => {
+    const load_position = activation.indexOf(
+      "const existing_receipts = await load_existing_binding_receipts(assembly);",
+    );
+    const submit_position = activation.indexOf(
+      "const receipt = await submit_rosetta_prism_request(request);",
+    );
+    expect(activation).toContain("prism_rosetta_load_existing_binding_receipts");
+    expect(activation).toContain("existing_receipts.get(trait.trait_id)");
+    expect(activation).toContain(
+      "if (existing_receipt?.request_id === request.request_id)",
+    );
+    expect(load_position).toBeGreaterThan(-1);
+    expect(submit_position).toBeGreaterThan(load_position);
+  });
 });
