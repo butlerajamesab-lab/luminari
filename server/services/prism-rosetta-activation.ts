@@ -742,12 +742,17 @@ export async function activate_prism_for_rosetta_assembly(input: {
       lighthouse_commit,
     });
     const existing_receipt = existing_receipts.get(trait.trait_id);
+    if (existing_receipt?.request_id === request.request_id) {
+      return {
+        trait,
+        request,
+        existing_receipt,
+      };
+    }
     return {
       trait,
       request,
-      existing_receipt: existing_receipt?.request_id === request.request_id
-        ? existing_receipt
-        : null,
+      existing_receipt: null,
     };
   });
   const pending_requests = prepared_requests.filter(
