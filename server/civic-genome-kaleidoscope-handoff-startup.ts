@@ -59,8 +59,9 @@ export function civic_genome_kaleidoscope_handoff_configuration_from_environment
  * Lighthouse builds one immutable family snapshot through the established
  * repeatable-read read-only producer and sends it to Kaleidoscope for
  * authenticated validation and declared-rule verification mapping. A bounded
- * complete snapshot may receive an accepted transient binding receipt, but the
- * receiver must still report no persistence and no projection execution.
+ * complete snapshot may receive an accepted binding and, when Kaleidoscope's
+ * independently governed persistence gate is ready, durable snapshot storage.
+ * Canonical projection execution remains forbidden by this handoff contract.
  * Neither the snapshot payload nor the shared secret is logged.
  */
 export async function run_civic_genome_kaleidoscope_handoff_from_environment(): Promise<void> {
@@ -108,8 +109,16 @@ export async function run_civic_genome_kaleidoscope_handoff_from_environment(): 
     verification_mapping_rule_id: receipt.verification_mapping_rule_id,
     verification_mapping_rule_version: receipt.verification_mapping_rule_version,
     authenticated: receipt.authenticated,
+    persistence_state: receipt.persistence_state,
     persisted: receipt.persisted,
+    target_schema: receipt.target_schema,
+    source_binding_id: receipt.source_binding_id,
+    state_snapshot_id: receipt.state_snapshot_id,
+    state_component_count: receipt.state_component_count,
+    source_artifact_count: receipt.source_artifact_count,
+    database_write_count: receipt.database_write_count,
+    idempotent_reuse: receipt.idempotent_reuse,
+    persistence_errors: receipt.persistence_errors,
     projection_executed: receipt.projection_executed,
-    database_write_count: 0,
   });
 }
