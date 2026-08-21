@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  CIVIC_GENOME_EXTERNAL_FAMILY_CURRENT_CURSOR_SQL,
   CIVIC_GENOME_EXTERNAL_FAMILY_DATASET_SQL,
   build_civic_genome_family_snapshot_v1,
+  produce_current_civic_genome_family_snapshot_v1,
   produce_civic_genome_family_snapshot_v1,
   type civic_genome_external_family_dataset_v1,
 } from "./civic-genome-external-snapshot-producer";
@@ -222,5 +224,69 @@ describe("Civic Genome external snapshot producer", () => {
     expect(statements[0].toLowerCase()).toContain("repeatable read read only");
     expect(statements.at(-1)?.toLowerCase()).toBe("commit");
     expect(statements.join("\n")).not.toMatch(/\b(insert|update|delete|truncate|drop|alter|create)\b/i);
+  });
+
+  it("raises a stale handoff as-of floor to the current source cursor in one read-only snapshot", async () => {
+    const statements: Array<{ statement: string; values?: unknown[] }> = [];
+    const current_as_of = "2026-08-03T22:30:00.000Z";
+    const client = {
+      async query<T>(statement: string, values?: unknown[]) {
+        statements.push({ statement, values });
+        if (statement === CIVIC_GENOME_EXTERNAL_FAMILY_CURRENT_CURSOR_SQL) {
+          return { rows: [{ as_of: current_as_of }] as T[] };
+        }
+        if (statement === CIVIC_GENOME_EXTERNAL_FAMILY_DATASET_SQL) {
+          return { rows: [{ dataset: fixture() }] as T[] };
+        }
+        return { rows: [] as T[] };
+      },
+      release() {},
+    };
+    const pool = { async connect() { return client; } };
+
+    const snapshot = await produce_current_civic_genome_family_snapshot_v1({
+      family_id: FAMILY_ID,
+      as_of_floor: "2026-08-03T22:24:00.000Z",
+      source_commit_sha: options.source_commit_sha,
+    }, { pool });
+
+    expect(snapshot.as_of).toBe(current_as_of);
+    expect(statements[0]?.statement.toLowerCase()).toContain("repeatable read read only");
+    expect(statements[1]).toEqual({
+      statement: CIVIC_GENOME_EXTERNAL_FAMILY_CURRENT_CURSOR_SQL,
+      values: [FAMILY_ID],
+    });
+    expect(statements[2]).toEqual({
+      statement: CIVIC_GENOME_EXTERNAL_FAMILY_DATASET_SQL,
+      values: [FAMILY_ID, current_as_of],
+    });
+    expect(statements.at(-1)?.statement.toLowerCase()).toBe("commit");
+    expect(statements.map(row => row.statement).join("\n")).not.toMatch(
+      /\b(insert|update|delete|truncate|drop|alter|create)\b/i,
+    );
+  });
+
+  it("preserves a configured as-of floor that is already current", async () => {
+    const current_as_of = "2026-08-03T22:01:51.000Z";
+    const client = {
+      async query<T>(statement: string) {
+        if (statement === CIVIC_GENOME_EXTERNAL_FAMILY_CURRENT_CURSOR_SQL) {
+          return { rows: [{ as_of: current_as_of }] as T[] };
+        }
+        if (statement === CIVIC_GENOME_EXTERNAL_FAMILY_DATASET_SQL) {
+          return { rows: [{ dataset: fixture() }] as T[] };
+        }
+        return { rows: [] as T[] };
+      },
+      release() {},
+    };
+    const pool = { async connect() { return client; } };
+    const snapshot = await produce_current_civic_genome_family_snapshot_v1({
+      family_id: FAMILY_ID,
+      as_of_floor: options.as_of,
+      source_commit_sha: options.source_commit_sha,
+    }, { pool });
+
+    expect(snapshot.as_of).toBe(options.as_of);
   });
 });
