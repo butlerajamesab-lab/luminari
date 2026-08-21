@@ -2403,6 +2403,7 @@ export default function Welcome() {
   const { user } = useAuth();
   const { cases } = useCase();
   const [activeTab, setActiveTab] = useState<"guided" | "direct">("guided");
+  const [showPipelineCatalog, setShowPipelineCatalog] = useState(false);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [creatingPipeline, setCreatingPipeline] = useState<string | null>(null);
 
@@ -2530,7 +2531,10 @@ export default function Welcome() {
           <div className="flex justify-center">
             <div className="inline-flex rounded-lg border border-border/50 bg-card/30 p-1 gap-1">
               <button
-                onClick={() => setActiveTab("guided")}
+                onClick={() => {
+                  setActiveTab("guided");
+                  setShowPipelineCatalog(false);
+                }}
                 className={`px-4 py-2.5 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
                   activeTab === "guided"
                     ? "bg-primary text-primary-foreground shadow-sm"
@@ -2541,7 +2545,10 @@ export default function Welcome() {
                 <span>I Need Help</span>
               </button>
               <button
-                onClick={() => setActiveTab("direct")}
+                onClick={() => {
+                  setActiveTab("direct");
+                  setShowPipelineCatalog(true);
+                }}
                 className={`px-4 py-2.5 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
                   activeTab === "direct"
                     ? "bg-primary text-primary-foreground shadow-sm"
@@ -2620,29 +2627,51 @@ export default function Welcome() {
             </div>
           )}
 
-          {/* Pipeline categories */}
-          <div className="space-y-6">
-            {CATEGORIES.map((category, idx) => (
-              <CategorySection
-                key={category.id}
-                category={category}
-                mode={activeTab}
-                hoveredId={hoveredId}
-                setHoveredId={setHoveredId}
-                onIntakeClick={handleIntakeClick}
-                onDirectPipeline={handleDirectPipeline}
-                creatingPipeline={creatingPipeline}
-                defaultExpanded={idx === 0}
-              />
-            ))}
-          </div>
+          {activeTab === "guided" && (
+            <div className="flex justify-center">
+              <button
+                type="button"
+                onClick={() => setShowPipelineCatalog((visible) => !visible)}
+                aria-expanded={showPipelineCatalog}
+                aria-controls="pipeline-catalog"
+                className="inline-flex items-center gap-2 rounded-lg border border-border/50 px-3.5 py-2 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
+              >
+                <Briefcase className="h-3.5 w-3.5" />
+                {showPipelineCatalog ? "Hide detailed paths" : "Browse a specific issue or service"}
+                <ChevronRight className={`h-3.5 w-3.5 transition-transform ${showPipelineCatalog ? "rotate-90" : ""}`} />
+              </button>
+            </div>
+          )}
 
-          {/* Stats footer */}
-          <div className="text-center pt-2">
-            <p className="text-xs text-muted-foreground/50">
-              {ALL_PIPELINES.length} specialized pipelines across {CATEGORIES.length} categories
-            </p>
-          </div>
+          {(activeTab === "direct" || showPipelineCatalog) && (
+            <section id="pipeline-catalog" className="space-y-6" aria-label="Specialized intake paths">
+              {activeTab === "guided" && (
+                <p className="text-center text-xs text-muted-foreground max-w-xl mx-auto">
+                  Choose a detailed path only if you already know what kind of help you need.
+                </p>
+              )}
+              <div key={activeTab} className="space-y-6">
+                {CATEGORIES.map((category, idx) => (
+                  <CategorySection
+                    key={category.id}
+                    category={category}
+                    mode={activeTab}
+                    hoveredId={hoveredId}
+                    setHoveredId={setHoveredId}
+                    onIntakeClick={handleIntakeClick}
+                    onDirectPipeline={handleDirectPipeline}
+                    creatingPipeline={creatingPipeline}
+                    defaultExpanded={activeTab === "direct" && idx === 0}
+                  />
+                ))}
+              </div>
+              <div className="text-center pt-2">
+                <p className="text-xs text-muted-foreground/50">
+                  {ALL_PIPELINES.length} specialized pipelines across {CATEGORIES.length} categories
+                </p>
+              </div>
+            </section>
+          )}
 
           {/* Offline Intake Bundle */}
           <div className="flex items-center justify-center gap-3 pt-4">
