@@ -54,6 +54,11 @@ describe("Civic Map breadth restoration and World Index memory safety", () => {
     expect(boundedWorld).toContain('complete civic-object universe remains in Postgres');
   });
 
+  it("preserves workbook context in the corpus without publishing it as public World Index nodes", () => {
+    expect(boundedWorld.match(/coalesce\(category, ''\) <> 'workbook_context'/g)?.length).toBeGreaterThanOrEqual(2);
+    expect(boundedWorld).toContain('Workbook-context rows are preserved in the canonical corpus but excluded from public World Index presentation');
+  });
+
   it("records the exact production migration versions", () => {
     expect(parity).toContain('"20260816120146"');
     expect(parity).toContain('"20260816120403"');

@@ -27,6 +27,14 @@ describe("Lighthouse primary intake runtime authority", () => {
     expect(analyze).toContain("last_governed_rule_as_of");
     expect(analyze).toContain("projection_invalidated_at");
     expect(control).toContain("selectedSession?.last_governed_jurisdiction");
-    expect(control).toContain("Prior sealed results remain available");
+    expect(control).toContain("New documents were added after the last review");
+  });
+
+  it("keeps governed execution explicit while presenting the primary action in user language", () => {
+    expect(control).toContain("runIntakeSpine.mutateAsync");
+    expect(control).toContain("Review My Evidence");
+    expect(control).toContain("Case settings & audit details");
+    expect(control).not.toContain("Run Universal Intake Spine");
+    expect(control).not.toContain("INTAKE_STATUS_READ");
   });
 });

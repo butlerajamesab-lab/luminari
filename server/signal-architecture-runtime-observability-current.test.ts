@@ -38,4 +38,10 @@ describe("signal architecture current runtime observability", () => {
     expect(page).toContain("get_signal_architecture.useQuery");
     expect(page).toContain("Unique Atlas observations");
   });
+
+  it("does not present an empty promoted intake-signal store as empty case intake", () => {
+    expect(page).toContain("Promoted Case Intake Signals");
+    expect(page).toContain("Intake sessions, uploaded documents, preserved evidence, and case reviews are tracked separately");
+    expect(page).toContain('isCaseIntake ? "promoted" : "current"');
+  });
 });
