@@ -45,6 +45,7 @@ export async function getBoundedWorldIndex() {
       select object_class, count(*)::int as count
       from public.v_lighthouse_civic_object_current_v1
       where typed_ready
+        and coalesce(category, '') <> 'workbook_context'
       group by object_class
       order by count desc, object_class
     `),
@@ -81,6 +82,7 @@ export async function getBoundedWorldIndex() {
         from public.v_lighthouse_civic_object_current_v1
         where typed_ready
           and object_class = any($1::text[])
+          and coalesce(category, '') <> 'workbook_context'
       )
       select *
       from ranked
@@ -179,7 +181,7 @@ export async function getBoundedWorldIndex() {
       max_nodes: MAX_NODES,
       truncated: totalAvailable > nodes.length,
       class_counts: classCounts,
-      note: "The complete civic-object universe remains in Postgres. This endpoint returns a bounded representative page so the web process does not materialize tens of thousands of objects into one Node heap.",
+      note: "The complete civic-object universe remains in Postgres. This endpoint returns a bounded representative page so the web process does not materialize tens of thousands of objects into one Node heap. Workbook-context rows are preserved in the canonical corpus but excluded from public World Index presentation.",
     },
   };
 }
