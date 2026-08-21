@@ -1,6 +1,6 @@
 import type { PoolClient } from "pg";
 import { getPool } from "./db";
-import { resolveFamily } from "./civic-genome/assembly-engine";
+import { resolveFamily, stableStringify } from "./civic-genome/assembly-engine";
 import type {
   CivicGenomeFamily,
   CivicGenomeTrait,
@@ -65,11 +65,13 @@ type persisted_trait = {
   trait_fingerprint: string;
 };
 
-type candidate_row = persisted_trait & {
+export type CivicGenomeCandidateFamilyRow = {
   family_id: string;
   family_key: string;
   policy_domain: string;
 };
+
+export type CivicGenomeCandidateTraitRow = persisted_trait & CivicGenomeCandidateFamilyRow;
 
 async function refresh_family_rollup(
   client: PoolClient,
@@ -153,6 +155,53 @@ const to_trait = (row: persisted_trait): CivicGenomeTrait => ({
   traitFingerprint: row.trait_fingerprint,
 });
 
+/**
+ * Reconstructs the complete candidate universe from lightweight family rows and
+ * full traits only for families with at least one exact confirmed-trait match.
+ *
+ * A family with no exact normalized-trait match has the resolver's fixed
+ * policy-domain-only score (0.25) and zero shared traits. Keeping that family
+ * as an empty placeholder therefore preserves candidate count, deterministic
+ * tie-breaking, and unresolved-candidate receipts without transferring its
+ * unrelated trait payload through the pooled application connection.
+ */
+export function materialize_civic_genome_family_candidates(
+  family_rows: CivicGenomeCandidateFamilyRow[],
+  trait_rows: CivicGenomeCandidateTraitRow[],
+): CivicGenomeFamily[] {
+  const candidates = new Map<string, CivicGenomeFamily>();
+  for (const row of family_rows) {
+    candidates.set(row.family_id, {
+      familyId: row.family_id,
+      familyKey: row.family_key,
+      policyDomain: row.policy_domain,
+      confirmedTraits: [],
+    });
+  }
+
+  for (const row of trait_rows) {
+    const family = candidates.get(row.family_id);
+    if (!family) throw new Error("civic_genome_candidate_trait_without_family_metadata");
+    family.confirmedTraits.push(to_trait(row));
+  }
+
+  return [...candidates.values()].sort((left, right) => left.familyId.localeCompare(right.familyId));
+}
+
+function build_exact_confirmed_trait_matches(
+  confirmed_traits: CivicGenomeTrait[],
+): Array<{ trait_key: string; normalized_value_json: unknown }> {
+  const matches = new Map<string, { trait_key: string; normalized_value_json: unknown }>();
+  for (const trait of confirmed_traits) {
+    const key = `${trait.traitKey}\u0000${stableStringify(trait.normalizedValue)}`;
+    matches.set(key, {
+      trait_key: trait.traitKey,
+      normalized_value_json: trait.normalizedValue,
+    });
+  }
+  return [...matches.values()];
+}
+
 export async function resolve_civic_genome_family(
   genome_bill_id: string,
 ): Promise<family_resolution_result> {
@@ -210,36 +259,68 @@ export async function resolve_civic_genome_family_with_client(
     });
   }
 
-  const candidate_result = await client.query<candidate_row>(
-    `select family.family_id, family.family_key, family.policy_domain,
-            trait.trait_id, trait.genome_bill_id, trait.trait_class,
-            trait.trait_key, trait.normalized_value_json,
-            trait.source_object_type, trait.source_object_id,
-            trait.source_block_id, trait.extraction_run_id,
-            trait.confidence_score, trait.signal_status,
-            trait.trait_fingerprint
+  const candidate_family_result = await client.query<CivicGenomeCandidateFamilyRow>(
+    `select family.family_id, family.family_key, family.policy_domain
        from public.civic_genome_family family
        join public.civic_genome_bill bill on bill.family_id = family.family_id
        join public.civic_genome_trait trait on trait.genome_bill_id = bill.genome_bill_id
       where family.policy_domain = $1
         and family.family_id <> $2
         and trait.signal_status = 'confirmed'
-      order by family.family_id, trait.trait_fingerprint`,
+      group by family.family_id, family.family_key, family.policy_domain
+      order by family.family_id`,
     [bill.policy_domain, bill.family_id],
   );
 
-  const grouped = new Map<string, CivicGenomeFamily>();
-  for (const row of candidate_result.rows) {
-    const family = grouped.get(row.family_id) ?? {
-      familyId: row.family_id,
-      familyKey: row.family_key,
-      policyDomain: row.policy_domain,
-      confirmedTraits: [],
-    };
-    family.confirmedTraits.push(to_trait(row));
-    grouped.set(row.family_id, family);
-  }
-  const candidates = [...grouped.values()].sort((left, right) => left.familyId.localeCompare(right.familyId));
+  const exact_confirmed_trait_matches = build_exact_confirmed_trait_matches(confirmed_traits);
+  const candidate_trait_result = await client.query<CivicGenomeCandidateTraitRow>(
+    `with input_traits as materialized (
+       select distinct input.trait_key, input.normalized_value_json
+       from jsonb_to_recordset($3::jsonb) as input(
+         trait_key text,
+         normalized_value_json jsonb
+       )
+     ), matching_families as materialized (
+       select candidate_family.family_id
+       from input_traits source_trait
+       join public.civic_genome_trait candidate_trait
+         on candidate_trait.trait_key = source_trait.trait_key
+        and jsonb_hash_extended(candidate_trait.normalized_value_json, 0)
+            = jsonb_hash_extended(source_trait.normalized_value_json, 0)
+        and candidate_trait.normalized_value_json = source_trait.normalized_value_json
+        and candidate_trait.signal_status = 'confirmed'
+       join public.civic_genome_bill candidate_bill
+         on candidate_bill.genome_bill_id = candidate_trait.genome_bill_id
+       join public.civic_genome_family candidate_family
+         on candidate_family.family_id = candidate_bill.family_id
+       where candidate_family.policy_domain = $1
+         and candidate_family.family_id <> $2
+       group by candidate_family.family_id
+       having count(distinct (candidate_trait.trait_key, candidate_trait.normalized_value_json)) > 0
+     )
+     select family.family_id, family.family_key, family.policy_domain,
+            trait.trait_id, trait.genome_bill_id, trait.trait_class,
+            trait.trait_key, trait.normalized_value_json,
+            trait.source_object_type, trait.source_object_id,
+            trait.source_block_id, trait.extraction_run_id,
+            trait.confidence_score, trait.signal_status,
+            trait.trait_fingerprint
+       from matching_families matching_family
+       join public.civic_genome_family family on family.family_id = matching_family.family_id
+       join public.civic_genome_bill candidate_bill on candidate_bill.family_id = family.family_id
+       join public.civic_genome_trait trait on trait.genome_bill_id = candidate_bill.genome_bill_id
+      where trait.signal_status = 'confirmed'
+      order by family.family_id, trait.trait_fingerprint`,
+    [
+      bill.policy_domain,
+      bill.family_id,
+      JSON.stringify(exact_confirmed_trait_matches),
+    ],
+  );
+  const candidates = materialize_civic_genome_family_candidates(
+    candidate_family_result.rows,
+    candidate_trait_result.rows,
+  );
 
   const resolution = resolveFamily(
     bill.policy_domain,
