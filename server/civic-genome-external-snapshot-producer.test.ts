@@ -266,6 +266,15 @@ describe("Civic Genome external snapshot producer", () => {
     );
   });
 
+  it("uses a database-derived millisecond ceiling for a microsecond source cursor", () => {
+    expect(CIVIC_GENOME_EXTERNAL_FAMILY_CURRENT_CURSOR_SQL).toContain(
+      "date_trunc('milliseconds', current_cursor.as_of)",
+    );
+    expect(CIVIC_GENOME_EXTERNAL_FAMILY_CURRENT_CURSOR_SQL).toContain(
+      "interval '1 millisecond'",
+    );
+  });
+
   it("preserves a configured as-of floor that is already current", async () => {
     const current_as_of = "2026-08-03T22:01:51.000Z";
     const client = {
