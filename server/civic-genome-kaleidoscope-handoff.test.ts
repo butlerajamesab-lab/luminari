@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "fs";
 import { computeCanonicalHash } from "./lib/determinism";
 import type { civic_genome_external_snapshot_v1 } from "./civic-genome-external-snapshot-contract";
 import {
@@ -134,6 +135,15 @@ function receipt_for(snapshot: civic_genome_external_snapshot_v1, overrides: Rec
 }
 
 describe("Civic Genome authenticated Kaleidoscope handoff", () => {
+  it("wires the bounded handoff runner into production startup", () => {
+    const index = readFileSync(new URL("./_core/index.ts", import.meta.url), "utf8");
+    expect(index).toContain(
+      'import { run_civic_genome_kaleidoscope_handoff_from_environment } from "../civic-genome-kaleidoscope-handoff-startup";',
+    );
+    expect(index).toContain("void run_civic_genome_kaleidoscope_handoff_from_environment().catch");
+    expect(index).toContain("[CivicGenomeKaleidoscopeHandoff] failed");
+  });
+
   it("signs the v1.1 canonical delivery body deterministically", () => {
     const body = build_civic_genome_kaleidoscope_delivery_body_v1(source_snapshot());
     expect(body.delivery_contract_version).toBe("1.1.0");
