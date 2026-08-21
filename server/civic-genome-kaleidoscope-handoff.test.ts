@@ -107,14 +107,24 @@ function receipt_for(snapshot: civic_genome_external_snapshot_v1, overrides: Rec
     verification_mapping_state: "mapped_by_declared_rule",
     verification_mapping_rule_id: CIVIC_GENOME_KALEIDOSCOPE_VERIFICATION_MAPPING_RULE_ID,
     verification_mapping_rule_version: CIVIC_GENOME_KALEIDOSCOPE_VERIFICATION_MAPPING_RULE_VERSION,
+    persistence_state: "disabled_no_write",
     persisted: false,
     projection_executed: false,
+    target_schema: "kaleidoscope",
+    source_binding_id: null,
+    state_snapshot_id: null,
+    state_component_count: 0,
+    source_artifact_count: 0,
+    database_write_count: 0,
+    idempotent_reuse: false,
+    persistence_errors: [],
     no_mutation: true,
     ...overrides,
   };
   const receipt_hash = computeCanonicalHash({
     ...basis,
     binding_errors: [...basis.binding_errors as string[]].sort(),
+    persistence_errors: [...basis.persistence_errors as string[]].sort(),
   });
   return {
     ...basis,
@@ -137,7 +147,7 @@ describe("Civic Genome authenticated Kaleidoscope handoff", () => {
     expect(first).toMatch(/^[0-9a-f]{64}$/);
   });
 
-  it("accepts a declared-rule mapped transient binding and still forbids persistence", async () => {
+  it("accepts a declared-rule mapped receipt when persistence is governed but disabled", async () => {
     const snapshot = source_snapshot();
     let observed_headers: Record<string, string> | null = null;
     const receipt = await deliver_civic_genome_snapshot_to_kaleidoscope_v1({
@@ -160,7 +170,67 @@ describe("Civic Genome authenticated Kaleidoscope handoff", () => {
     expect(receipt.binding_state).toBe("accepted");
     expect(receipt.verification_mapping_state).toBe("mapped_by_declared_rule");
     expect(receipt.binding_errors).toEqual([]);
+    expect(receipt.persistence_state).toBe("disabled_no_write");
     expect(receipt.persisted).toBe(false);
+    expect(receipt.database_write_count).toBe(0);
+    expect(receipt.projection_executed).toBe(false);
+  });
+
+  it("accepts a governed durable snapshot persistence receipt without authorizing projection", async () => {
+    const snapshot = source_snapshot();
+    const receipt = await deliver_civic_genome_snapshot_to_kaleidoscope_v1({
+      snapshot,
+      url: `https://kaleidoscope.example${CIVIC_GENOME_KALEIDOSCOPE_DELIVERY_PATH}`,
+      key_id: KEY_ID,
+      secret: SECRET,
+      fetcher: async () => ({
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify(receipt_for(snapshot, {
+          persistence_state: "persisted",
+          persisted: true,
+          source_binding_id: "11111111-1111-4111-8111-111111111111",
+          state_snapshot_id: "22222222-2222-4222-8222-222222222222",
+          state_component_count: snapshot.component_count,
+          database_write_count: 5,
+        })),
+      }),
+    });
+    expect(receipt.validation_state).toBe("validated_bound");
+    expect(receipt.binding_state).toBe("accepted");
+    expect(receipt.persistence_state).toBe("persisted");
+    expect(receipt.persisted).toBe(true);
+    expect(receipt.state_component_count).toBe(snapshot.component_count);
+    expect(receipt.database_write_count).toBe(5);
+    expect(receipt.source_artifact_count).toBe(0);
+    expect(receipt.projection_executed).toBe(false);
+  });
+
+  it("accepts an idempotently reused durable snapshot receipt", async () => {
+    const snapshot = source_snapshot();
+    const receipt = await deliver_civic_genome_snapshot_to_kaleidoscope_v1({
+      snapshot,
+      url: `https://kaleidoscope.example${CIVIC_GENOME_KALEIDOSCOPE_DELIVERY_PATH}`,
+      key_id: KEY_ID,
+      secret: SECRET,
+      fetcher: async () => ({
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify(receipt_for(snapshot, {
+          persistence_state: "existing_persistence_reused",
+          persisted: true,
+          source_binding_id: "11111111-1111-4111-8111-111111111111",
+          state_snapshot_id: "22222222-2222-4222-8222-222222222222",
+          state_component_count: snapshot.component_count,
+          database_write_count: 0,
+          idempotent_reuse: true,
+        })),
+      }),
+    });
+    expect(receipt.persistence_state).toBe("existing_persistence_reused");
+    expect(receipt.persisted).toBe(true);
+    expect(receipt.database_write_count).toBe(0);
+    expect(receipt.idempotent_reuse).toBe(true);
     expect(receipt.projection_executed).toBe(false);
   });
 
@@ -178,12 +248,14 @@ describe("Civic Genome authenticated Kaleidoscope handoff", () => {
           validation_state: "validated_unbound",
           binding_state: "unresolved",
           binding_errors: ["source_snapshot_has_unresolved_conditions"],
+          persistence_state: "binding_unresolved_not_persisted",
         })),
       }),
     });
     expect(receipt.validation_state).toBe("validated_unbound");
     expect(receipt.binding_state).toBe("unresolved");
     expect(receipt.binding_errors).toEqual(["source_snapshot_has_unresolved_conditions"]);
+    expect(receipt.persistence_state).toBe("binding_unresolved_not_persisted");
     expect(receipt.persisted).toBe(false);
   });
 
@@ -204,12 +276,13 @@ describe("Civic Genome authenticated Kaleidoscope handoff", () => {
           verification_mapping_state: "unmapped_source_native",
           verification_mapping_rule_id: null,
           verification_mapping_rule_version: null,
+          persistence_state: "binding_unresolved_not_persisted",
         })),
       }),
     })).rejects.toThrow(/verification_mapping_state_mismatch/);
   });
 
-  it("rejects a receiver response that claims persistence", async () => {
+  it("rejects an internally inconsistent persistence claim", async () => {
     const snapshot = source_snapshot();
     await expect(deliver_civic_genome_snapshot_to_kaleidoscope_v1({
       snapshot,
@@ -219,9 +292,28 @@ describe("Civic Genome authenticated Kaleidoscope handoff", () => {
       fetcher: async () => ({
         ok: true,
         status: 200,
-        text: async () => JSON.stringify(receipt_for(snapshot, { persisted: true })),
+        text: async () => JSON.stringify(receipt_for(snapshot, {
+          persisted: true,
+        })),
       }),
-    })).rejects.toThrow(/persisted_mismatch/);
+    })).rejects.toThrow(/persisted_state_mismatch/);
+  });
+
+  it("still rejects any receiver response that claims projection execution", async () => {
+    const snapshot = source_snapshot();
+    await expect(deliver_civic_genome_snapshot_to_kaleidoscope_v1({
+      snapshot,
+      url: `https://kaleidoscope.example${CIVIC_GENOME_KALEIDOSCOPE_DELIVERY_PATH}`,
+      key_id: KEY_ID,
+      secret: SECRET,
+      fetcher: async () => ({
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify(receipt_for(snapshot, {
+          projection_executed: true,
+        })),
+      }),
+    })).rejects.toThrow(/projection_executed_mismatch/);
   });
 
   it("requires a complete environment set and preserves the exact as-of time", () => {
