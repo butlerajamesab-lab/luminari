@@ -208,6 +208,14 @@ export default function SignalRegistry() {
           const meta = domain_meta[domain.domain_code as keyof typeof domain_meta];
           const Icon = meta?.icon ?? BookOpen;
           const color = meta?.color ?? palette.text;
+          const isCaseIntake = domain.domain_code === "case_intake";
+          const displayLabel = isCaseIntake
+            ? "Promoted Case Intake Signals"
+            : domain.domain_label;
+          const displayDescription = isCaseIntake
+            ? "Promoted case breakpoints only. Intake sessions, uploaded documents, preserved evidence, and case reviews are tracked separately and are not counted here."
+            : domain.description;
+
           return (
             <article
               key={domain.domain_code}
@@ -226,19 +234,21 @@ export default function SignalRegistry() {
                     <div style={{ color, fontSize: 11, textTransform: "uppercase", letterSpacing: 1 }}>
                       {meta?.short_label ?? "Domain"}
                     </div>
-                    <h2 style={{ margin: "2px 0 0", fontSize: 18 }}>{domain.domain_label}</h2>
+                    <h2 style={{ margin: "2px 0 0", fontSize: 18 }}>{displayLabel}</h2>
                   </div>
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <div style={{ fontSize: 24, fontWeight: 750, color }}>
                     {format_number(domain.current_record_count)}
                   </div>
-                  <div style={{ color: palette.muted, fontSize: 11 }}>current</div>
+                  <div style={{ color: palette.muted, fontSize: 11 }}>
+                    {isCaseIntake ? "promoted" : "current"}
+                  </div>
                 </div>
               </div>
 
               <p style={{ color: palette.muted, lineHeight: 1.55, minHeight: 66 }}>
-                {domain.description}
+                {displayDescription}
               </p>
 
               <div style={detail_row_style}>
@@ -311,7 +321,7 @@ export default function SignalRegistry() {
                     padding: "14px 18px",
                     borderBottom: `1px solid ${palette.border}`,
                     display: "grid",
-                    gridTemplateColumns: "minmax(170px, 0.8fr) minmax(260px, 2fr) minmax(150px, 0.7fr)",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
                     gap: 16,
                     alignItems: "start",
                   }}
@@ -326,7 +336,7 @@ export default function SignalRegistry() {
                     <div style={{ color: palette.muted, lineHeight: 1.45, fontSize: 13 }}>
                       {record.description}
                     </div>
-                    <div style={{ display: "flex", gap: 12, marginTop: 7, color: palette.muted, fontSize: 11 }}>
+                    <div style={{ display: "flex", gap: 12, marginTop: 7, color: palette.muted, fontSize: 11, flexWrap: "wrap" }}>
                       {record.jurisdiction_id && (
                         <span style={{ display: "flex", gap: 4 }}>
                           <MapPin size={12} /> {record.jurisdiction_id}
@@ -335,7 +345,7 @@ export default function SignalRegistry() {
                       {record.entity_resolution_status && (
                         <span>entity: {record.entity_resolution_status}</span>
                       )}
-                      {record.source_reference && <span>source: {record.source_reference}</span>}
+                      {record.source_reference && <span style={{ overflowWrap: "anywhere" }}>source: {record.source_reference}</span>}
                     </div>
                   </div>
                   <div style={{ textAlign: "right", fontSize: 12 }}>
