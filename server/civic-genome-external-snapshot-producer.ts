@@ -99,9 +99,18 @@ where f.family_id = $1::uuid
  * records selected below.  This cursor is the latest source-write timestamp
  * among exactly that material.  It is deliberately data-derived rather than
  * a wall-clock timestamp: unchanged source state therefore resolves to the
- * same immutable snapshot identity on a later startup.
+ * same immutable snapshot identity on a later startup. PostgreSQL preserves
+ * microseconds while node-postgres materializes timestamps as millisecond
+ * Dates, so the database returns a millisecond-safe ceiling rather than a
+ * value that could be rounded down before the source-row visibility check.
  */
 export const CIVIC_GENOME_EXTERNAL_FAMILY_CURRENT_CURSOR_SQL = `
+select case
+  when current_cursor.as_of = date_trunc('milliseconds', current_cursor.as_of)
+    then current_cursor.as_of
+  else date_trunc('milliseconds', current_cursor.as_of) + interval '1 millisecond'
+end as as_of
+from (
 select greatest(
   f.created_at,
   f.updated_at,
@@ -160,6 +169,7 @@ select greatest(
 ) as as_of
 from public.civic_genome_family f
 where f.family_id = $1::uuid
+) current_cursor
 `;
 
 type record_value = Record<string, unknown>;
