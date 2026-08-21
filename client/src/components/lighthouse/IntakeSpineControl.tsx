@@ -31,6 +31,23 @@ function currentLocalDate(): string {
   return localTime.toISOString().slice(0, 10);
 }
 
+function IntakeMetric({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number;
+}) {
+  return (
+    <div className="rounded-md border border-border/60 bg-muted/20 p-3">
+      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-1 text-lg font-semibold">{value}</p>
+    </div>
+  );
+}
+
 export function IntakeSpineControl({
   caseId,
   className,
@@ -52,6 +69,7 @@ export function IntakeSpineControl({
     (session) =>
       session.session_type === "live" && session.entry_channel === "upload",
   );
+
   useEffect(() => {
     if (!jurisdiction && selectedSession?.last_governed_jurisdiction) {
       setJurisdiction(selectedSession.last_governed_jurisdiction);
@@ -60,6 +78,7 @@ export function IntakeSpineControl({
       setAsOf(selectedSession.last_governed_rule_as_of);
     }
   }, [selectedSession?.intake_session_id]);
+
   const canRun =
     !!selectedSession &&
     selectedSession.registered_source_count > 0 &&
@@ -70,23 +89,25 @@ export function IntakeSpineControl({
 
   const handleRun = async () => {
     if (!selectedSession || selectedSession.registered_source_count === 0) {
-      toast.error(
-        "Register at least one source before Intake Spine execution.",
-      );
+      toast.error("Add at least one document before reviewing your evidence.");
       return;
     }
     if (selectedSession.blocked_source_count > 0) {
       toast.error(
-        "Resolve blocked source integrity before Intake Spine execution.",
+        "One or more documents need attention before the evidence review can continue.",
       );
       return;
     }
     if (!jurisdiction.trim()) {
-      toast.error("Declare the jurisdiction before Intake Spine execution.");
+      toast.error(
+        "Confirm the case jurisdiction under Case settings before reviewing your evidence.",
+      );
       return;
     }
     if (!asOf) {
-      toast.error("Declare the rule as-of date before Intake Spine execution.");
+      toast.error(
+        "Confirm the review date under Case settings before reviewing your evidence.",
+      );
       return;
     }
 
@@ -98,11 +119,11 @@ export function IntakeSpineControl({
         asOf,
       });
       toast.success(
-        `Intake Spine sealed ${result.receipts.length} deterministic receipt${result.receipts.length === 1 ? "" : "s"}.`,
+        `Evidence review completed with ${result.receipts.length} sealed audit receipt${result.receipts.length === 1 ? "" : "s"}.`,
       );
       await status.refetch();
     } catch (error: any) {
-      toast.error(error?.message || "Intake Spine execution failed.");
+      toast.error(error?.message || "Evidence review could not be completed.");
     }
   };
 
@@ -115,19 +136,19 @@ export function IntakeSpineControl({
         <div className="flex flex-wrap items-center gap-2">
           <CardTitle className="flex items-center gap-2 text-base">
             <Shield className="h-5 w-5 text-primary" />
-            Universal Intake Spine
+            Review your evidence
           </CardTitle>
           <Badge
             variant="outline"
             className="border-primary/30 text-primary text-[10px]"
           >
-            deterministic · governed
+            private · preserved
           </Badge>
         </div>
         <CardDescription>
-          Uploaded bytes are registered first. Preservation verification and
-          reconstruction run together only when you explicitly start the
-          governed execution with declared jurisdiction and rule-date inputs.
+          Lighthouse keeps your original uploads intact. When you are ready,
+          review the preserved evidence so the case can organize what you have,
+          what may still be missing, and what comes next.
         </CardDescription>
       </CardHeader>
 
@@ -135,18 +156,15 @@ export function IntakeSpineControl({
         {status.isLoading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Reading canonical Intake Spine state…
+            Checking your evidence…
           </div>
         ) : status.error ? (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
               <span>
-                Canonical Intake Spine status could not be read. No evidence or
-                execution state was changed.
-                <span className="ml-1 font-mono text-[10px]">
-                  INTAKE_STATUS_READ
-                </span>
+                We could not read the current evidence status. Nothing was
+                changed.
               </span>
               <Button
                 variant="outline"
@@ -161,18 +179,20 @@ export function IntakeSpineControl({
                     status.isFetching && "animate-spin",
                   )}
                 />
-                Retry Status
+                Try Again
               </Button>
             </AlertDescription>
           </Alert>
         ) : !selectedSession ? (
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
-              <span>
-                No live upload-backed Intake Spine session is registered for
-                this case.
-              </span>
+          <div className="rounded-lg border border-border/60 bg-muted/20 p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-medium">Start with what you have.</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  No documents have been added to this case yet. One document is
+                  enough to begin.
+                </p>
+              </div>
               <Button
                 variant="outline"
                 size="sm"
@@ -180,71 +200,52 @@ export function IntakeSpineControl({
                 onClick={() => setLocation("/upload")}
               >
                 <Upload className="h-3.5 w-3.5" />
-                Upload Evidence
+                Add Documents
               </Button>
-            </AlertDescription>
-          </Alert>
+            </div>
+          </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-3 rounded-md border border-border/60 bg-muted/20 p-3 text-xs sm:grid-cols-4">
-              <div>
-                <p className="text-muted-foreground">Registered sources</p>
-                <p className="text-lg font-semibold">
-                  {selectedSession.registered_source_count}
-                </p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Preserved sources</p>
-                <p className="text-lg font-semibold">
-                  {selectedSession.preserved_source_count}
-                </p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Governed layers</p>
-                <p className="text-lg font-semibold">
-                  {selectedSession.sealed_layer_name_count}/
-                  {selectedSession.required_layer_count}
-                </p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Sealed receipts</p>
-                <p className="text-lg font-semibold">
-                  {selectedSession.sealed_layer_run_count}
-                </p>
-              </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <IntakeMetric
+                label="Documents received"
+                value={selectedSession.registered_source_count}
+              />
+              <IntakeMetric
+                label="Safely preserved"
+                value={selectedSession.preserved_source_count}
+              />
+              <IntakeMetric
+                label="Evidence review"
+                value={
+                  selectedSession.execution_complete
+                    ? "Complete"
+                    : `${selectedSession.sealed_layer_name_count}/${selectedSession.required_layer_count}`
+                }
+              />
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor={`intake-jurisdiction-${caseId}`}>
-                  Declared jurisdiction
-                </Label>
-                <Input
-                  id={`intake-jurisdiction-${caseId}`}
-                  value={jurisdiction}
-                  onChange={(event) => setJurisdiction(event.target.value)}
-                  placeholder="e.g. WA, Federal, Tribal jurisdiction"
-                  autoComplete="off"
-                />
-                <p className="text-[10px] text-muted-foreground">
-                  Inherited from the case's last governed execution. Change it only when the case jurisdiction changes.
-                </p>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor={`intake-as-of-${caseId}`}>
-                  Rule as-of date
-                </Label>
-                <Input
-                  id={`intake-as-of-${caseId}`}
-                  type="date"
-                  value={asOf}
-                  onChange={(event) => setAsOf(event.target.value)}
-                />
-                <p className="text-[10px] text-muted-foreground">
-                  Visible execution boundary for versioned rules.
-                </p>
-              </div>
-            </div>
+            {selectedSession.blocked_source_count > 0 && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  {selectedSession.blocked_source_count} document
+                  {selectedSession.blocked_source_count === 1 ? " needs" : "s need"}
+                  {" "}attention before the evidence review can continue. Your
+                  original uploads remain preserved.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {selectedSession.projection_invalidated_at && (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  New documents were added after the last review. Review the
+                  evidence again to include the current document set.
+                </AlertDescription>
+              </Alert>
+            )}
 
             <Button
               className="w-full gap-2"
@@ -253,34 +254,104 @@ export function IntakeSpineControl({
             >
               {runIntakeSpine.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
-              ) : selectedSession?.execution_complete ? (
+              ) : selectedSession.execution_complete ? (
                 <CheckCircle2 className="h-4 w-4" />
               ) : (
                 <Shield className="h-4 w-4" />
               )}
               {runIntakeSpine.isPending
-                ? "Running deterministic Intake Spine…"
-                : "Run Universal Intake Spine"}
+                ? "Reviewing preserved evidence…"
+                : selectedSession.execution_complete
+                  ? "Review Evidence Again"
+                  : "Review My Evidence"}
             </Button>
 
-            {selectedSession?.projection_invalidated_at && (
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  A newer source was added after the last governed execution. Prior sealed results remain available, but rerun the Intake Spine to include the current evidence set.
-                </AlertDescription>
-              </Alert>
+            {!jurisdiction.trim() && (
+              <p className="text-xs text-amber-300">
+                Confirm the case jurisdiction below before starting the review.
+              </p>
             )}
-            {selectedSession?.latest_receipt_hash && (
-              <div className="rounded-md border border-border/50 bg-muted/20 p-3">
-                <p className="mb-1 text-[10px] text-muted-foreground">
-                  Latest sealed receipt
+
+            <details
+              className="rounded-md border border-border/60 bg-muted/10"
+              open={!jurisdiction.trim()}
+            >
+              <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-muted-foreground">
+                Case settings & audit details
+              </summary>
+              <div className="space-y-4 border-t border-border/50 p-3">
+                <p className="text-[11px] leading-relaxed text-muted-foreground">
+                  These settings preserve the exact jurisdiction and rule date
+                  used for a reproducible review. Most people will not need to
+                  change them after the first review.
                 </p>
-                <code className="block break-all text-[10px]">
-                  {selectedSession.latest_receipt_hash}
-                </code>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor={`intake-jurisdiction-${caseId}`}>
+                      Case jurisdiction
+                    </Label>
+                    <Input
+                      id={`intake-jurisdiction-${caseId}`}
+                      value={jurisdiction}
+                      onChange={(event) => setJurisdiction(event.target.value)}
+                      placeholder="e.g. WA, Federal, Tribal jurisdiction"
+                      autoComplete="off"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor={`intake-as-of-${caseId}`}>
+                      Review rules as of
+                    </Label>
+                    <Input
+                      id={`intake-as-of-${caseId}`}
+                      type="date"
+                      value={asOf}
+                      onChange={(event) => setAsOf(event.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-[11px] text-muted-foreground sm:grid-cols-4">
+                  <div>
+                    <span className="block">Review layers</span>
+                    <strong className="text-foreground">
+                      {selectedSession.sealed_layer_name_count}/
+                      {selectedSession.required_layer_count}
+                    </strong>
+                  </div>
+                  <div>
+                    <span className="block">Audit receipts</span>
+                    <strong className="text-foreground">
+                      {selectedSession.sealed_layer_run_count}
+                    </strong>
+                  </div>
+                  <div>
+                    <span className="block">Session status</span>
+                    <strong className="text-foreground">
+                      {selectedSession.session_status}
+                    </strong>
+                  </div>
+                  <div>
+                    <span className="block">Completion</span>
+                    <strong className="text-foreground">
+                      {selectedSession.completion_state}
+                    </strong>
+                  </div>
+                </div>
+
+                {selectedSession.latest_receipt_hash && (
+                  <div className="rounded-md border border-border/50 bg-muted/20 p-3">
+                    <p className="mb-1 text-[10px] text-muted-foreground">
+                      Latest audit receipt
+                    </p>
+                    <code className="block break-all text-[10px]">
+                      {selectedSession.latest_receipt_hash}
+                    </code>
+                  </div>
+                )}
               </div>
-            )}
+            </details>
           </>
         )}
       </CardContent>
