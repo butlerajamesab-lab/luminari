@@ -1,0 +1,24 @@
+{
+  "receipt_id": "signal_architecture_production_replay_receipt_20260821",
+  "database_project": "Lighthouse",
+  "canonical_source_migration": "20260818095500_signal_architecture_runtime_projection_truth.sql",
+  "canonical_source_pr": 474,
+  "canonical_semantic_change": "v_signal_architecture_integrity reads Atlas operator totals and freshness from atlas_stream_runtime_projection_v1",
+  "production_replays": [
+    {
+      "ledger_version": "20260821230907",
+      "ledger_name": "signal_architecture_runtime_projection_truth",
+      "statement_relation": "exact idempotent replay of canonical source migration"
+    },
+    {
+      "ledger_version": "20260821233424",
+      "ledger_name": "reconcile_signal_architecture_runtime_projection_truth",
+      "statement_relation": "exact idempotent replay of canonical source migration"
+    }
+  ],
+  "canonical_data_mutation": false,
+  "atlas_observation_mutation": false,
+  "signal_mutation": false,
+  "source_control_policy": "Do not add duplicate clean-build migrations for production-only idempotent replay ledger entries. Preserve the canonical source migration once and record replay provenance separately.",
+  "observed_at_utc": "2026-08-21T23:34:24Z"
+}
