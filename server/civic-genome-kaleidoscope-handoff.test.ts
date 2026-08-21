@@ -144,6 +144,20 @@ describe("Civic Genome authenticated Kaleidoscope handoff", () => {
     expect(index).toContain("[CivicGenomeKaleidoscopeHandoff] failed");
   });
 
+  it("keeps startup handoff single-flight and retries transient receiver restarts", () => {
+    const startup = readFileSync(
+      new URL("./civic-genome-kaleidoscope-handoff-startup.ts", import.meta.url),
+      "utf8",
+    );
+    expect(startup).toContain("civic_genome_kaleidoscope_handoff_in_flight");
+    expect(startup).toContain("civic_genome_kaleidoscope_handoff_completed_key");
+    expect(startup).toContain("HANDOFF_RETRY_DELAYS_MS");
+    expect(startup).toContain("joined in-flight startup handoff");
+    expect(startup).toContain("skipped already-completed startup handoff");
+    expect(startup).toContain("receiver_http_503");
+    expect(startup).toContain("receiver_http_504");
+  });
+
   it("signs the v1.1 canonical delivery body deterministically", () => {
     const body = build_civic_genome_kaleidoscope_delivery_body_v1(source_snapshot());
     expect(body.delivery_contract_version).toBe("1.1.0");
