@@ -45,10 +45,18 @@ export async function run_civic_genome_atlas_handoff_from_environment(
 ) {
   const configuration = civic_genome_atlas_handoff_configuration_from_environment(environment);
   if (!configuration) return null;
+  const source_commit_sha = process.env.RENDER_GIT_COMMIT ?? null;
+
+  console.log("[CivicGenomeAtlasHandoff] started", {
+    family_id: configuration.family_id,
+    as_of: configuration.as_of,
+    source_commit_sha,
+  });
+
   const snapshot = await produce_civic_genome_atlas_family_snapshot_v1({
     family_id: configuration.family_id,
     as_of: configuration.as_of,
-    source_commit_sha: process.env.RENDER_GIT_COMMIT ?? null,
+    source_commit_sha,
     generated_at: new Date().toISOString(),
   });
   return deliver_civic_genome_snapshot_to_atlas_v1({
