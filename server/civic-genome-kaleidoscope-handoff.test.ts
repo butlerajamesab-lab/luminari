@@ -156,6 +156,10 @@ describe("Civic Genome authenticated Kaleidoscope handoff", () => {
     expect(startup).toContain("skipped already-completed startup handoff");
     expect(startup).toContain("receiver_http_503");
     expect(startup).toContain("receiver_http_504");
+    expect(startup).toContain("produce_current_civic_genome_family_snapshot_v1");
+    expect(startup).toContain("as_of_floor: configuration.as_of");
+    expect(startup).toContain("configured_as_of");
+    expect(startup).toContain("effective_as_of: snapshot.as_of");
   });
 
   it("signs the v1.1 canonical delivery body deterministically", () => {
