@@ -17,6 +17,13 @@ export async function run_civic_genome_prism_snapshot_handoff_from_environment()
   if (!as_of || !Number.isFinite(Date.parse(as_of))) {
     throw new Error("prism_civic_genome_snapshot_as_of_missing");
   }
+
+  console.log("[PrismCivicGenomeSnapshot] started", {
+    family_id,
+    as_of,
+    source_commit_sha,
+  });
+
   const generated_at = new Date().toISOString();
   const first = await produce_civic_genome_family_snapshot_v1({
     family_id,
