@@ -1,4 +1,4 @@
-import { produce_civic_genome_family_snapshot_v1 } from "./civic-genome-external-snapshot-producer";
+import { produce_current_civic_genome_family_snapshot_v1 } from "./civic-genome-external-snapshot-producer";
 import { deliver_civic_genome_snapshot_to_kaleidoscope_v1 } from "./civic-genome-kaleidoscope-handoff";
 
 const FAMILY_ENV = "CIVIC_GENOME_KALEIDOSCOPE_HANDOFF_FAMILY_ID";
@@ -127,13 +127,17 @@ async function deliver_civic_genome_snapshot_to_kaleidoscope_with_bounded_retry(
  * Optional bounded authenticated handoff.
  *
  * Normal deployments leave the family/as-of pair empty. When configured,
- * Lighthouse builds one immutable family snapshot through the established
- * repeatable-read read-only producer and sends it to Kaleidoscope for
- * authenticated validation and declared-rule verification mapping. A bounded
- * complete snapshot may receive an accepted binding and, when Kaleidoscope's
- * independently governed persistence gate is ready, durable snapshot storage.
- * Canonical projection execution remains forbidden by this handoff contract.
- * Neither the snapshot payload nor the shared secret is logged.
+ * Lighthouse treats the configured as-of as a lower bound and resolves the
+ * current data-derived source cursor in the producer's same repeatable-read,
+ * read-only transaction. This prevents a later canonical family update from
+ * making an otherwise valid current handoff look absent, without using a
+ * wall-clock snapshot timestamp. Lighthouse then sends the immutable snapshot
+ * to Kaleidoscope for authenticated validation and declared-rule verification
+ * mapping. A bounded complete snapshot may receive an accepted binding and,
+ * when Kaleidoscope's independently governed persistence gate is ready,
+ * durable snapshot storage. Canonical projection execution remains forbidden
+ * by this handoff contract. Neither the snapshot payload nor the shared secret
+ * is logged.
  */
 export async function run_civic_genome_kaleidoscope_handoff_from_environment(): Promise<void> {
   const configuration = civic_genome_kaleidoscope_handoff_configuration_from_environment();
@@ -142,7 +146,7 @@ export async function run_civic_genome_kaleidoscope_handoff_from_environment(): 
   if (civic_genome_kaleidoscope_handoff_completed_key === configuration_key) {
     console.log("[CivicGenomeKaleidoscopeHandoff] skipped already-completed startup handoff", {
       family_id: configuration.family_id,
-      as_of: configuration.as_of,
+      configured_as_of: configuration.as_of,
       target_origin: new URL(configuration.url).origin,
       key_id: configuration.key_id,
     });
@@ -151,7 +155,7 @@ export async function run_civic_genome_kaleidoscope_handoff_from_environment(): 
   if (civic_genome_kaleidoscope_handoff_in_flight?.key === configuration_key) {
     console.log("[CivicGenomeKaleidoscopeHandoff] joined in-flight startup handoff", {
       family_id: configuration.family_id,
-      as_of: configuration.as_of,
+      configured_as_of: configuration.as_of,
       target_origin: new URL(configuration.url).origin,
       key_id: configuration.key_id,
     });
@@ -175,14 +179,14 @@ async function run_civic_genome_kaleidoscope_handoff_once(
   const source_commit_sha = process.env.RENDER_GIT_COMMIT?.trim() || null;
   console.log("[CivicGenomeKaleidoscopeHandoff] started", {
     family_id: configuration.family_id,
-    as_of: configuration.as_of,
+    configured_as_of: configuration.as_of,
     target_origin: new URL(configuration.url).origin,
     key_id: configuration.key_id,
   });
 
-  const snapshot = await produce_civic_genome_family_snapshot_v1({
+  const snapshot = await produce_current_civic_genome_family_snapshot_v1({
     family_id: configuration.family_id,
-    as_of: configuration.as_of,
+    as_of_floor: configuration.as_of,
     source_commit_sha,
     generated_at: new Date().toISOString(),
   });
@@ -195,7 +199,8 @@ async function run_civic_genome_kaleidoscope_handoff_once(
 
   console.log("[CivicGenomeKaleidoscopeHandoff] completed", {
     family_id: configuration.family_id,
-    as_of: configuration.as_of,
+    configured_as_of: configuration.as_of,
+    effective_as_of: snapshot.as_of,
     source_commit_sha,
     source_snapshot_id: receipt.source_snapshot_id,
     source_snapshot_hash: receipt.source_snapshot_hash,
