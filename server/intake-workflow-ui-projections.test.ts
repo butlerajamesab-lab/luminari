@@ -11,6 +11,15 @@ const migration = readFileSync(
   ),
   "utf8",
 );
+const hardening = readFileSync(
+  fileURLToPath(
+    new URL(
+      "../supabase/migrations/20260821234800_harden_intake_routing_verification_predicate_v1.sql",
+      import.meta.url,
+    ),
+  ),
+  "utf8",
+);
 
 describe("governed intake and workflow UI projections", () => {
   it("projects existing reviewed route and situation-action truth instead of inventing a new router", () => {
@@ -21,14 +30,21 @@ describe("governed intake and workflow UI projections", () => {
   });
 
   it("preserves fail-visible verification and routing state", () => {
-    expect(migration).toContain("verification_status");
-    expect(migration).toContain("is_user_routable");
-    expect(migration).toContain("partial_review");
-    expect(migration).toContain("verified_routable");
+    for (const source of [migration, hardening]) {
+      expect(source).toContain("verification_status");
+      expect(source).toContain("is_user_routable");
+      expect(source).toContain("not like '%unverified%'");
+      expect(source).toContain("not like '%partial%'");
+      expect(source).toContain("unverified_reference_only");
+      expect(source).toContain("partial_review");
+      expect(source).toContain("verified_routable");
+    }
     expect(migration).toContain("workflow_route_state");
   });
 
   it("is projection-only", () => {
-    expect(migration).not.toMatch(/\b(insert|update|delete|truncate)\b/i);
+    for (const source of [migration, hardening]) {
+      expect(source).not.toMatch(/\b(insert|update|delete|truncate)\b/i);
+    }
   });
 });
