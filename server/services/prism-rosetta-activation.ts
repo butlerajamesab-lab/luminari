@@ -14,7 +14,7 @@ import { submit_rosetta_prism_request } from "./prism-rosetta-client";
 
 export const LIGHTHOUSE_PRISM_ROSETTA_RUNTIME_VERSION =
   "lighthouse-prism-rosetta-v1";
-const PRISM_CONCURRENCY = 2;
+const PRISM_CONCURRENCY = 1;
 
 type AssemblyRow = {
   assembly_run_id: string;

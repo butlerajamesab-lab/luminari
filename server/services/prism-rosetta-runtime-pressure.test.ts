@@ -15,20 +15,20 @@ const queue_worker = readFileSync(
 );
 
 describe("PRISM 2.2 bounded runtime pressure", () => {
-  it("limits concurrent deep verification requests to two", () => {
-    expect(activation).toContain("const PRISM_CONCURRENCY = 2;");
+  it("limits concurrent deep verification requests to one", () => {
+    expect(activation).toContain("const PRISM_CONCURRENCY = 1;");
     expect(activation).toContain("PRISM_CONCURRENCY,");
   });
 
-  it("allows the deep verification endpoint up to sixty seconds per attempt", () => {
+  it("allows the deep verification endpoint up to sixty seconds with one attempt", () => {
     expect(client).toContain("const PRISM_REQUEST_TIMEOUT_MS = 60_000;");
-    expect(client).toContain("const PRISM_MAX_ATTEMPTS = 3;");
+    expect(client).toContain("const PRISM_MAX_ATTEMPTS = 1;");
     expect(client).toContain("const PRISM_MAX_REQUEST_BYTES = 4 * 1024 * 1024;");
   });
 
   it("caps new Prism submissions per queue activation pass", () => {
     expect(queue_worker).toContain(
-      "const DEFAULT_QUEUE_MAX_NEW_SUBMISSIONS = 24;",
+      "const DEFAULT_QUEUE_MAX_NEW_SUBMISSIONS = 1;",
     );
     expect(queue_worker).toContain(
       "process.env.PRISM_ROSETTA_QUEUE_MAX_NEW_SUBMISSIONS",
