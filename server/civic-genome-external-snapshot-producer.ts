@@ -94,6 +94,74 @@ where f.family_id = $1::uuid
   and f.updated_at <= $2::timestamptz
 `;
 
+/**
+ * The bounded external snapshot includes the current family row plus the
+ * records selected below.  This cursor is the latest source-write timestamp
+ * among exactly that material.  It is deliberately data-derived rather than
+ * a wall-clock timestamp: unchanged source state therefore resolves to the
+ * same immutable snapshot identity on a later startup.
+ */
+export const CIVIC_GENOME_EXTERNAL_FAMILY_CURRENT_CURSOR_SQL = `
+select greatest(
+  f.created_at,
+  f.updated_at,
+  (
+    select max(greatest(b.created_at, b.updated_at))
+    from public.civic_genome_bill b
+    where b.family_id = f.family_id
+  ),
+  (
+    select max(greatest(t.created_at, t.updated_at))
+    from public.civic_genome_trait t
+    join public.civic_genome_bill b on b.genome_bill_id = t.genome_bill_id
+    where b.family_id = f.family_id
+  ),
+  (
+    select max(pvb.created_at)
+    from public.civic_genome_prism_verification_binding pvb
+    join public.civic_genome_trait t on t.trait_id = pvb.trait_id
+    join public.civic_genome_bill b on b.genome_bill_id = t.genome_bill_id
+    where b.family_id = f.family_id
+  ),
+  (
+    select max(e.created_at)
+    from public.civic_genome_event e
+    where e.family_id = f.family_id
+  ),
+  (
+    select max(le.created_at)
+    from public.bill_lineage_edge le
+    where le.family_id = f.family_id
+  ),
+  (
+    select max(greatest(r.created_at, r.updated_at))
+    from public.civic_genome_relationship r
+    where r.family_id = f.family_id
+  ),
+  (
+    select max(greatest(mc.created_at, mc.observed_at))
+    from public.civic_genome_momentum_component mc
+    where mc.family_id = f.family_id
+  ),
+  (
+    select max(greatest(
+      ms.created_at,
+      ms.snapshot_date::timestamp at time zone 'UTC'
+    ))
+    from public.family_momentum_snapshot ms
+    where ms.family_id = f.family_id
+  ),
+  (
+    select max(greatest(u.created_at, u.updated_at, u.observed_at))
+    from public.civic_genome_unresolved_family_candidate u
+    join public.civic_genome_bill b on b.genome_bill_id = u.genome_bill_id
+    where b.family_id = f.family_id
+  )
+) as as_of
+from public.civic_genome_family f
+where f.family_id = $1::uuid
+`;
+
 type record_value = Record<string, unknown>;
 
 export type civic_genome_external_family_dataset_v1 = {
@@ -114,6 +182,19 @@ export type civic_genome_external_snapshot_build_options_v1 = {
   generated_at?: string;
   source_commit_sha?: string | null;
   prior_snapshot_hash?: string | null;
+};
+
+/**
+ * The startup handoff may retain a configured historical lower bound, while
+ * still requiring a snapshot that can represent the current canonical family
+ * state.  The producer raises that floor to the current source cursor inside
+ * its single repeatable-read transaction when necessary.
+ */
+export type civic_genome_external_current_snapshot_build_options_v1 = Omit<
+  civic_genome_external_snapshot_build_options_v1,
+  "as_of"
+> & {
+  as_of_floor: string;
 };
 
 type query_result<T> = { rows: T[] };
@@ -152,6 +233,17 @@ function iso(value: string, label: string): string {
   const parsed = new Date(value);
   if (!Number.isFinite(parsed.getTime())) fail(`${label} must be an ISO timestamp`);
   return parsed.toISOString();
+}
+
+function iso_value(value: unknown, label: string): string {
+  if (value instanceof Date) return iso(value.toISOString(), label);
+  const candidate = text(value);
+  if (!candidate) fail(`${label} must be an ISO timestamp`);
+  return iso(candidate, label);
+}
+
+function later_iso(left: string, right: string): string {
+  return new Date(left).getTime() >= new Date(right).getTime() ? left : right;
 }
 
 function hex64(value: unknown): string | null {
@@ -646,33 +738,40 @@ export function build_civic_genome_family_snapshot_v1(
   });
 }
 
-export async function produce_civic_genome_family_snapshot_v1(
-  options: civic_genome_external_snapshot_build_options_v1,
-  dependencies: { pool?: query_pool } = {},
+async function produce_civic_genome_family_snapshot_from_transaction_v1(
+  client: query_client,
+  options: Omit<civic_genome_external_snapshot_build_options_v1, "as_of">,
+  as_of: string,
 ): Promise<civic_genome_external_snapshot_v1> {
-  const as_of = iso(options.as_of, "as_of");
+  const result = await client.query<{ dataset: unknown }>(
+    CIVIC_GENOME_EXTERNAL_FAMILY_DATASET_SQL,
+    [options.family_id, as_of],
+  );
+  const dataset_row = result.rows[0];
+  if (!dataset_row) {
+    fail("family was not found or as_of precedes the current canonical record state");
+  }
+  const dataset = parse_dataset(dataset_row.dataset);
+  return build_civic_genome_family_snapshot_v1(dataset, {
+    ...options,
+    as_of,
+  });
+}
+
+async function within_civic_genome_external_snapshot_transaction<T>(
+  dependencies: { pool?: query_pool },
+  operation: (client: query_client) => Promise<T>,
+): Promise<T> {
   const pool = dependencies.pool ?? getPool();
   const client = await pool.connect();
   let transaction_started = false;
   try {
     await client.query("begin transaction isolation level repeatable read read only");
     transaction_started = true;
-    const result = await client.query<{ dataset: unknown }>(
-      CIVIC_GENOME_EXTERNAL_FAMILY_DATASET_SQL,
-      [options.family_id, as_of],
-    );
-    const dataset_row = result.rows[0];
-    if (!dataset_row) {
-      fail("family was not found or as_of precedes the current canonical record state");
-    }
-    const dataset = parse_dataset(dataset_row.dataset);
-    const snapshot = build_civic_genome_family_snapshot_v1(dataset, {
-      ...options,
-      as_of,
-    });
+    const result = await operation(client);
     await client.query("commit");
     transaction_started = false;
-    return snapshot;
+    return result;
   } catch (error) {
     if (transaction_started) {
       try {
@@ -685,6 +784,41 @@ export async function produce_civic_genome_family_snapshot_v1(
   } finally {
     client.release();
   }
+}
+
+export async function produce_civic_genome_family_snapshot_v1(
+  options: civic_genome_external_snapshot_build_options_v1,
+  dependencies: { pool?: query_pool } = {},
+): Promise<civic_genome_external_snapshot_v1> {
+  const as_of = iso(options.as_of, "as_of");
+  const { as_of: _as_of, ...build_options } = options;
+  return within_civic_genome_external_snapshot_transaction(dependencies, client =>
+    produce_civic_genome_family_snapshot_from_transaction_v1(client, build_options, as_of),
+  );
+}
+
+/**
+ * Produces an immutable snapshot at the current canonical source cursor.  A
+ * configured floor is retained when it is newer, but a stale configured time
+ * never causes a current family row to be misclassified as absent.
+ */
+export async function produce_current_civic_genome_family_snapshot_v1(
+  options: civic_genome_external_current_snapshot_build_options_v1,
+  dependencies: { pool?: query_pool } = {},
+): Promise<civic_genome_external_snapshot_v1> {
+  const as_of_floor = iso(options.as_of_floor, "as_of_floor");
+  const { as_of_floor: _as_of_floor, ...build_options } = options;
+  return within_civic_genome_external_snapshot_transaction(dependencies, async client => {
+    const cursor_result = await client.query<{ as_of: unknown }>(
+      CIVIC_GENOME_EXTERNAL_FAMILY_CURRENT_CURSOR_SQL,
+      [options.family_id],
+    );
+    const cursor_row = cursor_result.rows[0];
+    if (!cursor_row) fail("family was not found");
+    const current_as_of = iso_value(cursor_row.as_of, "current canonical snapshot cursor");
+    const as_of = later_iso(as_of_floor, current_as_of);
+    return produce_civic_genome_family_snapshot_from_transaction_v1(client, build_options, as_of);
+  });
 }
 
 export function summarize_civic_genome_external_snapshot_v1(snapshot: civic_genome_external_snapshot_v1) {
