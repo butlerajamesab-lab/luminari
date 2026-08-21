@@ -23,6 +23,16 @@ const ALLOWED_UNBOUND_ERRORS = new Set([
   "source_snapshot_not_bounded_complete",
   "source_snapshot_has_unresolved_conditions",
 ]);
+const ALLOWED_NONPERSISTED_STATES = new Set([
+  "transient_validation_only",
+  "binding_unresolved_not_persisted",
+  "disabled_no_write",
+  "enabled_missing_database_credentials",
+]);
+const ALLOWED_PERSISTED_STATES = new Set([
+  "persisted",
+  "existing_persistence_reused",
+]);
 
 export type civic_genome_kaleidoscope_delivery_body_v1 = {
   delivery_contract_id: typeof CIVIC_GENOME_KALEIDOSCOPE_DELIVERY_CONTRACT_ID;
@@ -56,8 +66,23 @@ export type civic_genome_kaleidoscope_delivery_receipt_v1 = {
   verification_mapping_state: "mapped_by_declared_rule";
   verification_mapping_rule_id: typeof CIVIC_GENOME_KALEIDOSCOPE_VERIFICATION_MAPPING_RULE_ID;
   verification_mapping_rule_version: typeof CIVIC_GENOME_KALEIDOSCOPE_VERIFICATION_MAPPING_RULE_VERSION;
-  persisted: false;
+  persistence_state:
+    | "transient_validation_only"
+    | "binding_unresolved_not_persisted"
+    | "disabled_no_write"
+    | "enabled_missing_database_credentials"
+    | "persisted"
+    | "existing_persistence_reused";
+  persisted: boolean;
   projection_executed: false;
+  target_schema: "kaleidoscope";
+  source_binding_id: string | null;
+  state_snapshot_id: string | null;
+  state_component_count: number;
+  source_artifact_count: number;
+  database_write_count: number;
+  idempotent_reuse: boolean;
+  persistence_errors: string[];
   no_mutation: true;
   delivery_receipt_id: string;
   delivery_receipt_hash: string;
@@ -95,6 +120,11 @@ function text(value: unknown, label: string): string {
   return value;
 }
 
+function nullable_text(value: unknown, label: string): string | null {
+  if (value === null) return null;
+  return text(value, label);
+}
+
 function hex64(value: unknown, label: string): string {
   const candidate = text(value, label);
   if (!HEX64.test(candidate)) fail(`${label}_must_be_sha256`);
@@ -104,6 +134,23 @@ function hex64(value: unknown, label: string): string {
 function boolean_literal<T extends boolean>(value: unknown, expected: T, label: string): T {
   if (value !== expected) fail(`${label}_mismatch`);
   return expected;
+}
+
+function boolean_value(value: unknown, label: string): boolean {
+  if (typeof value !== "boolean") fail(`${label}_must_be_boolean`);
+  return value;
+}
+
+function nonnegative_integer(value: unknown, label: string): number {
+  if (typeof value !== "number" || !Number.isInteger(value) || value < 0) {
+    fail(`${label}_must_be_nonnegative_integer`);
+  }
+  return value;
+}
+
+function text_array(value: unknown, label: string): string[] {
+  if (!Array.isArray(value)) fail(`${label}_must_be_array`);
+  return value.map((entry, index) => text(entry, `${label}_${index}`)).sort();
 }
 
 function delivery_signature_basis(
@@ -174,8 +221,17 @@ function delivery_receipt_hash_basis(
     verification_mapping_state: row.verification_mapping_state,
     verification_mapping_rule_id: row.verification_mapping_rule_id,
     verification_mapping_rule_version: row.verification_mapping_rule_version,
+    persistence_state: row.persistence_state,
     persisted: row.persisted,
     projection_executed: row.projection_executed,
+    target_schema: row.target_schema,
+    source_binding_id: row.source_binding_id,
+    state_snapshot_id: row.state_snapshot_id,
+    state_component_count: row.state_component_count,
+    source_artifact_count: row.source_artifact_count,
+    database_write_count: row.database_write_count,
+    idempotent_reuse: row.idempotent_reuse,
+    persistence_errors: [...(Array.isArray(row.persistence_errors) ? row.persistence_errors : [])].sort(),
     no_mutation: row.no_mutation,
   };
 }
@@ -202,6 +258,58 @@ function assert_binding_state(row: Record<string, unknown>, binding_errors: stri
   if (binding_errors.length === 0) fail("unresolved_binding_requires_errors");
   for (const error of binding_errors) {
     if (!ALLOWED_UNBOUND_ERRORS.has(error)) fail(`unexpected_binding_error:${error}`);
+  }
+}
+
+function assert_persistence_state(
+  row: Record<string, unknown>,
+  source: civic_genome_external_snapshot_v1,
+): void {
+  const persistence_state = text(row.persistence_state, "persistence_state");
+  const persisted = boolean_value(row.persisted, "persisted");
+  boolean_literal(row.projection_executed, false, "projection_executed");
+  boolean_literal(row.no_mutation, true, "no_mutation");
+  if (row.target_schema !== "kaleidoscope") fail("target_schema_mismatch");
+
+  const source_binding_id = nullable_text(row.source_binding_id, "source_binding_id");
+  const state_snapshot_id = nullable_text(row.state_snapshot_id, "state_snapshot_id");
+  const state_component_count = nonnegative_integer(row.state_component_count, "state_component_count");
+  const source_artifact_count = nonnegative_integer(row.source_artifact_count, "source_artifact_count");
+  const database_write_count = nonnegative_integer(row.database_write_count, "database_write_count");
+  const idempotent_reuse = boolean_value(row.idempotent_reuse, "idempotent_reuse");
+  const persistence_errors = text_array(row.persistence_errors, "persistence_errors");
+
+  if (source_artifact_count !== 0) fail("source_artifact_count_must_remain_zero");
+
+  if (persisted) {
+    if (!ALLOWED_PERSISTED_STATES.has(persistence_state)) fail("persisted_state_mismatch");
+    if (row.binding_state !== "accepted") fail("persistence_requires_accepted_binding");
+    if (source_binding_id === null) fail("persisted_requires_source_binding_id");
+    if (state_snapshot_id === null) fail("persisted_requires_state_snapshot_id");
+    if (state_component_count !== source.component_count) fail("persisted_component_count_mismatch");
+    if (persistence_errors.length !== 0) fail("persisted_receipt_cannot_have_errors");
+    if (persistence_state === "existing_persistence_reused") {
+      if (database_write_count !== 0) fail("reused_persistence_requires_zero_writes");
+      if (!idempotent_reuse) fail("reused_persistence_requires_idempotent_reuse");
+    } else {
+      if (database_write_count === 0) fail("new_persistence_requires_database_write");
+      if (idempotent_reuse) fail("new_persistence_cannot_claim_idempotent_reuse");
+    }
+    return;
+  }
+
+  if (!ALLOWED_NONPERSISTED_STATES.has(persistence_state)) fail("nonpersisted_state_mismatch");
+  if (source_binding_id !== null || state_snapshot_id !== null) {
+    fail("nonpersisted_receipt_cannot_claim_database_ids");
+  }
+  if (state_component_count !== 0 || database_write_count !== 0 || idempotent_reuse) {
+    fail("nonpersisted_receipt_cannot_claim_database_effects");
+  }
+  if (row.binding_state === "unresolved" && persistence_state !== "binding_unresolved_not_persisted") {
+    fail("unresolved_binding_persistence_state_mismatch");
+  }
+  if (row.binding_state === "accepted" && persistence_state === "binding_unresolved_not_persisted") {
+    fail("accepted_binding_persistence_state_mismatch");
   }
 }
 
@@ -239,13 +347,9 @@ export function assert_civic_genome_kaleidoscope_delivery_receipt_v1(
   if (row.source_completeness_state !== source.completeness_state) {
     fail("source_completeness_state_mismatch");
   }
-  const binding_errors = Array.isArray(row.binding_errors)
-    ? row.binding_errors.map((entry, index) => text(entry, `binding_errors_${index}`)).sort()
-    : fail("binding_errors_must_be_array");
+  const binding_errors = text_array(row.binding_errors, "binding_errors");
   assert_binding_state(row, binding_errors);
-  boolean_literal(row.persisted, false, "persisted");
-  boolean_literal(row.projection_executed, false, "projection_executed");
-  boolean_literal(row.no_mutation, true, "no_mutation");
+  assert_persistence_state(row, source);
   hex64(row.binding_hash, "binding_hash");
 
   const observed_receipt_hash = hex64(row.delivery_receipt_hash, "delivery_receipt_hash");
@@ -258,6 +362,7 @@ export function assert_civic_genome_kaleidoscope_delivery_receipt_v1(
     ...row,
     key_id,
     binding_errors,
+    persistence_errors: text_array(row.persistence_errors, "persistence_errors"),
   } as civic_genome_kaleidoscope_delivery_receipt_v1;
 }
 
