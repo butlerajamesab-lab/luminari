@@ -167,6 +167,22 @@ describe("document upload PostgreSQL persistence contract", () => {
     expect(static_fallback_index).toBeGreaterThan(registration_index);
   });
 
+  it("expires stale sessions at production startup and keeps terminal sessions out of the active runtime view", () => {
+    const entrypoint_source = read_source("./_core/index.ts");
+    const migration_source = read_source(
+      "../supabase/migrations/20260822002000_fix_runtime_active_uploads_lifecycle_v1.sql",
+    );
+
+    expect(entrypoint_source).toContain(
+      'import { expireStaleUploadSessions, getPool } from "../db";',
+    );
+    expect(entrypoint_source).toContain("void expireStaleUploadSessions().catch(error => {");
+    expect(migration_source).toContain("with (security_invoker = true)");
+    expect(migration_source).toContain("session_status in ('uploading', 'processing')");
+    expect(migration_source).toContain("updated_at >= ((extract(epoch from now()) * 1000)::bigint - 3600000)");
+    expect(migration_source).not.toContain("grant select");
+  });
+
   it("uses PostgreSQL RETURNING for every upload-path identity", () => {
     const snapshot_insert = function_source(
       "createCorpusSnapshot",

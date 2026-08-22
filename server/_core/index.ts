@@ -28,7 +28,7 @@ import { loadPipelineRegistry } from "../pipeline-resolver";
 import { loadLensRegistry } from "../lens-engine";
 import { serveStatic, setupVite } from "./vite";
 import { livenessPayload, SUPABASE_PROJECT } from "./health-diagnostics";
-import { getPool } from "../db";
+import { expireStaleUploadSessions, getPool } from "../db";
 import { initializeScheduler } from "../ingestion/scheduler";
 import { run_with_database_request_context } from "../db-request-context";
 import { run_rosetta_control_repair_from_environment } from "../civic-genome-rosetta-control-repair";
@@ -251,6 +251,9 @@ async function startServer() {
     console.log(`[Startup] Supabase project: ${SUPABASE_PROJECT}`);
     console.log("[Startup] Runtime fingerprint", runtime_fingerprint);
     start_docket_state_cache_warmer(port);
+    void expireStaleUploadSessions().catch(error => {
+      console.error("[Upload Lifecycle] startup expiration failed", error);
+    });
     try { loadPipelineRegistry(); console.log("[Startup] Pipeline registry loaded"); } catch (e) { console.error("[Startup] Pipeline registry error:", e); }
     try { loadLensRegistry(); console.log("[Startup] Lens registry loaded"); } catch (e) { console.error("[Startup] Lens registry error:", e); }
     void run_rosetta_control_repair_from_environment().catch(error => {
