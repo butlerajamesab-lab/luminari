@@ -74,7 +74,7 @@ export const registryRouter = router({
     }))
     .query(async ({ input }) => {
       const conditions: string[] = [];
-      const params: unknown[] = [];
+      const params: any[] = [];
       const bind = (value: unknown) => {
         params.push(value);
         return `$${params.length}`;
@@ -295,7 +295,7 @@ export const registryRouter = router({
     }))
     .query(async ({ input }) => {
       const conditions: string[] = [];
-      const params: unknown[] = [];
+      const params: any[] = [];
       const bind = (value: unknown) => {
         params.push(value);
         return `$${params.length}`;
@@ -404,7 +404,7 @@ export const issueReportsRouter = router({
     }))
     .query(async ({ input }) => {
       const conditions: string[] = [];
-      const params: unknown[] = [];
+      const params: any[] = [];
       const bind = (value: unknown) => {
         params.push(value);
         return `$${params.length}`;
