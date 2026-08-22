@@ -58,6 +58,14 @@ const URGENCY_META: Record<string, { label: string; color: string; bgColor: stri
   when_ready: { label: "When Ready", color: "text-blue-300", bgColor: "bg-blue-500/15 border-blue-500/30" },
 };
 
+function normalizeRegistryWebsite(value?: string | null) {
+  const trimmed = value?.trim();
+  if (!trimmed) return null;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (/^www\./i.test(trimmed)) return `https://${trimmed}`;
+  return null;
+}
+
 /* ─── Program Card Component ─── */
 
 function ProgramCard({
@@ -900,6 +908,10 @@ export default function BenefitsNavigator() {
     return results;
   }, [matchResults, selectedCategories, searchQuery]);
 
+  const registryProgramRows = registryPrograms?.programs ?? [];
+  const registryProgramTotal = registryPrograms?.total ?? 0;
+  const showRegistryRows = filteredResults.length === 0 || showRegistryExtra;
+
   const matchedProgramIds = useMemo(() => {
     if (!filteredResults) return [];
     return filteredResults.map((m: any) => m.program.id);
@@ -1113,10 +1125,14 @@ export default function BenefitsNavigator() {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-sm font-semibold text-foreground">
-                  {filteredResults.length} program{filteredResults.length !== 1 ? "s" : ""} found
+                  {filteredResults.length > 0
+                    ? `${filteredResults.length} program${filteredResults.length !== 1 ? "s" : ""} found`
+                    : `${registryProgramTotal} jurisdiction registry program${registryProgramTotal !== 1 ? "s" : ""} found`}
                 </h2>
                 <p className="text-xs text-muted-foreground">
-                  Sorted by relevance to your situation
+                  {filteredResults.length > 0
+                    ? "Sorted by relevance to your situation"
+                    : `Showing canonical registry results for ${selectedState || detectedState || "your selected jurisdiction"}`}
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -1197,7 +1213,7 @@ export default function BenefitsNavigator() {
               ))}
             </div>
 
-            {filteredResults.length === 0 && (
+            {filteredResults.length === 0 && registryProgramRows.length === 0 && (
               <div className="text-center py-12">
                 <HelpCircle className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
                 <p className="text-sm text-muted-foreground">
@@ -1206,45 +1222,66 @@ export default function BenefitsNavigator() {
               </div>
             )}
 
+            {filteredResults.length === 0 && registryProgramRows.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                No guided matches were returned, so the jurisdiction registry results are shown below.
+              </p>
+            )}
+
             {/* Registry Supplemental Programs */}
-            {registryPrograms && registryPrograms.length > 0 && (
+            {registryProgramRows.length > 0 && (
               <div className="mt-2">
-                <button
-                  onClick={() => setShowRegistryExtra((v) => !v)}
-                  className="flex items-center gap-2 text-xs text-primary/70 hover:text-primary transition-colors mb-2"
-                >
-                  <ArrowRight className="w-3.5 h-3.5" />
-                  {showRegistryExtra ? "Hide" : "Also see"} {registryPrograms.length} more programs in the full registry
-                </button>
-                {showRegistryExtra && (
+                {filteredResults.length > 0 && (
+                  <button
+                    onClick={() => setShowRegistryExtra((v) => !v)}
+                    className="flex items-center gap-2 text-xs text-primary/70 hover:text-primary transition-colors mb-2"
+                  >
+                    <ArrowRight className="w-3.5 h-3.5" />
+                    {showRegistryExtra ? "Hide" : "Also see"} {registryProgramTotal} programs in the jurisdiction registry
+                  </button>
+                )}
+                {showRegistryRows && (
                   <div className="space-y-2">
-                    {registryPrograms.map((p: any) => (
-                      <div key={p.id} className="p-3 rounded-lg bg-card/30 border border-border/30 hover:border-border/60 transition-colors">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium text-foreground/90 leading-tight">{p.name}</p>
-                            {p.agency_name && <p className="text-xs text-muted-foreground mt-0.5">{p.agency_name}</p>}
-                            {p.description && <p className="text-xs text-muted-foreground/70 mt-1 line-clamp-2">{p.description}</p>}
-                          </div>
-                          <div className="flex flex-col items-end gap-1 shrink-0">
-                            {p.jurisdiction_id && (
-                              <Badge variant="outline" className="text-[10px] px-1.5 py-0">{p.jurisdiction_id}</Badge>
-                            )}
-                            {p.apply_url && (
-                              <a
-                                href={p.apply_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="inline-flex items-center gap-1 text-[10px] text-primary hover:text-primary/80"
-                              >
-                                Apply <ExternalLink className="w-2.5 h-2.5" />
-                              </a>
-                            )}
+                    {registryProgramRows.map((p: any) => {
+                      const registryWebsite = normalizeRegistryWebsite(p.website);
+                      return (
+                        <div key={p.id} className="p-3 rounded-lg bg-card/30 border border-border/30 hover:border-border/60 transition-colors">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-foreground/90 leading-tight">{p.name}</p>
+                              {p.agency && <p className="text-xs text-muted-foreground mt-0.5">{p.agency}</p>}
+                              {(p.eligibility || p.apply_notes) && (
+                                <p className="text-xs text-muted-foreground/70 mt-1 line-clamp-2">
+                                  {p.eligibility || p.apply_notes}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex flex-col items-end gap-1 shrink-0">
+                              {(p.state_code || p.jurisdiction_name || p.jurisdiction_id) && (
+                                <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                                  {p.state_code || p.jurisdiction_name || p.jurisdiction_id}
+                                </Badge>
+                              )}
+                              {registryWebsite ? (
+                                <a
+                                  href={registryWebsite}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="inline-flex items-center gap-1 text-[10px] text-primary hover:text-primary/80"
+                                >
+                                  Visit website <ExternalLink className="w-2.5 h-2.5" />
+                                </a>
+                              ) : (
+                                <span className="text-[10px] text-muted-foreground">
+                                  No verified external link available
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
