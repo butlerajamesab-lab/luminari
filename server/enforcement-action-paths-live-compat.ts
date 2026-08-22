@@ -208,6 +208,10 @@ async function select_reviewed_dossier_action_paths(
          source_table_index
        from public.v_lighthouse_reviewed_action_route_current_v1
        where situation_key = $1
+         and lower(coalesce(verification_status, '')) like '%verified%'
+         and lower(coalesce(verification_status, '')) not like '%unverified%'
+         and lower(coalesce(verification_status, '')) not like '%partial%'
+         and coalesce(filing_or_complaint_url, phone, email, website) is not null
        order by source_page nulls last, source_table_index nulls last, action_key`,
       [pipeline_type],
     ),
