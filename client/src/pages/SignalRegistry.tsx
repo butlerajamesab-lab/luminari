@@ -170,8 +170,10 @@ export default function SignalRegistry() {
                   integrity.live_data_signal_count,
               )}
             </div>
-            <div style={metric_label_style}>Canonical source-domain outputs</div>
-            <div style={metric_note_style}>Separated by source ownership</div>
+            <div style={metric_label_style}>Governed source-domain records</div>
+            <div style={metric_note_style}>
+              Domain 3: {format_number(integrity.live_data_candidate_count)} candidates · {format_number(integrity.live_data_promoted_count)} promoted signals
+            </div>
           </div>
         </div>
         <div style={metric_card_style}>
@@ -209,11 +211,16 @@ export default function SignalRegistry() {
           const Icon = meta?.icon ?? BookOpen;
           const color = meta?.color ?? palette.text;
           const isCaseIntake = domain.domain_code === "case_intake";
+          const isLiveData = domain.domain_code === "live_data";
           const displayLabel = isCaseIntake
             ? "Promoted Case Intake Signals"
+            : isLiveData
+              ? "Atlas Domain 3 Records"
             : domain.domain_label;
           const displayDescription = isCaseIntake
             ? "Promoted case breakpoints only. Intake sessions, uploaded documents, preserved evidence, and case reviews are tracked separately and are not counted here."
+            : isLiveData
+              ? `${format_number(integrity.live_data_candidate_count)} governed observation candidates and ${format_number(integrity.live_data_promoted_count)} promoted canonical signals projected from Atlas. Candidates are not findings.`
             : domain.description;
 
           return (
@@ -294,7 +301,7 @@ export default function SignalRegistry() {
           }}
         >
           <div>
-            <h2 style={{ margin: 0, fontSize: 19 }}>Recent canonical outputs</h2>
+            <h2 style={{ margin: 0, fontSize: 19 }}>Recent governed domain records</h2>
             <p style={{ margin: "5px 0 0", color: palette.muted, fontSize: 13 }}>
               Individual intake details are redacted on this cross-system surface.
             </p>

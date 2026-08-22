@@ -1937,11 +1937,18 @@ function SignalGovernancePanel() {
       {/* Signal Dashboard Table */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Shield className="h-4 w-4 text-primary" />
-            Governed Signals
-            {dashboard && <Badge variant="secondary" className="text-xs">{dashboard.total ?? dashboard.signals?.length ?? 0}</Badge>}
-          </CardTitle>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Shield className="h-4 w-4 text-primary" />
+              Governed observation candidates
+              {dashboard && <Badge variant="secondary" className="text-xs">{dashboard.total ?? dashboard.signals?.length ?? 0}</Badge>}
+            </CardTitle>
+            <Link href="/integrity-review">
+              <Button variant="outline" size="sm" className="h-7 text-xs">
+                Integrity Review <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+              </Button>
+            </Link>
+          </div>
         </CardHeader>
         <CardContent>
           {dashLoading ? (
@@ -1949,8 +1956,8 @@ function SignalGovernancePanel() {
           ) : !dashboard || !dashboard.signals || dashboard.signals.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Shield className="h-8 w-8 mx-auto mb-2 opacity-40" />
-              <p className="text-sm">No governed signals yet.</p>
-              <p className="text-xs mt-1">Signals will appear here after a successful ingestion run.</p>
+              <p className="text-sm">No governed observation candidates yet.</p>
+              <p className="text-xs mt-1">Atlas candidates will appear here after deterministic derivation and bridge persistence.</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -1967,8 +1974,8 @@ function SignalGovernancePanel() {
                         <Badge className={`text-[10px] ${severityColors[sig.severity_level] || ""}`}>
                           {sig.severity_level}
                         </Badge>
-                        <Badge variant="outline" className={`text-[10px] ${tierColors[sig.escalation_tier] || ""}`}>
-                          {(sig.escalation_tier || "").replace(/_/g, " ")}
+                        <Badge variant="outline" className="text-[10px]">
+                          {(sig.governance_status || "observation_candidate").replace(/_/g, " ")}
                         </Badge>
                       </div>
                       <p className="text-xs text-muted-foreground line-clamp-2">{sig.explanation}</p>
@@ -1980,11 +1987,11 @@ function SignalGovernancePanel() {
                     </div>
                     <div className="text-right flex-shrink-0">
                       <div className={`text-lg font-bold ${
-                        sig.confidence_score >= 85 ? "text-red-400" :
-                        sig.confidence_score >= 70 ? "text-orange-400" :
-                        sig.confidence_score >= 51 ? "text-yellow-400" : "text-slate-400"
+                        sig.confidence_score >= 0.85 ? "text-red-400" :
+                        sig.confidence_score >= 0.70 ? "text-orange-400" :
+                        sig.confidence_score >= 0.51 ? "text-yellow-400" : "text-slate-400"
                       }`}>
-                        {sig.confidence_score}
+                        {Math.round(sig.confidence_score * 100)}%
                       </div>
                       <div className="text-[10px] text-muted-foreground">confidence</div>
                     </div>
