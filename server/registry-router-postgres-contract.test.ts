@@ -39,6 +39,15 @@ describe("jurisdiction-aware registry query contract", () => {
     );
   });
 
+  it("renders the canonical registry response envelope and fails closed on bad links", () => {
+    expect(benefitsSource).toContain("registryPrograms?.programs ?? []");
+    expect(benefitsSource).toContain("registryPrograms?.total ?? 0");
+    expect(benefitsSource).not.toContain("registryPrograms.length");
+    expect(benefitsSource).not.toContain("registryPrograms.map");
+    expect(benefitsSource).toContain("normalizeRegistryWebsite");
+    expect(benefitsSource).toContain("No verified external link available");
+  });
+
   it("keeps jurisdiction filters bound instead of interpolated", () => {
     expect(registrySource).toContain(
       'conditions.push(`j.abbreviation = ${bind(input.stateCode.toUpperCase())}`)',
