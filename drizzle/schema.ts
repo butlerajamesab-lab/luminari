@@ -3848,7 +3848,7 @@ export type InsertLighthouseSuggestion = typeof lighthouseSuggestions.$inferInse
 
 export const lighthouseSuggestionVotes = pgTable("lighthouse_suggestion_votes", {
   id: serial("id").primaryKey(),
-  suggestionId: integer("suggestionId").notNull(), // FK → lighthouse_suggestions.id
+  suggestionId: integer("suggestionId").notNull().references(() => lighthouseSuggestions.id, { onDelete: "cascade" }),
   userId: integer("userId").notNull(), // FK → users.id
   createdAt: bigint("createdAt", { mode: "number" }).notNull(),
 }, (table) => [
