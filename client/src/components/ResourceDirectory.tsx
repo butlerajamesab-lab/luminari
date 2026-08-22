@@ -30,6 +30,8 @@ type CompactResource = {
 
 type CompactSearchResponse = {
   total: number;
+  total_is_exact: boolean;
+  has_more: boolean;
   items: CompactResource[];
 };
 
@@ -102,7 +104,7 @@ function phoneHref(value: string): string | null {
 
 function websiteHref(value: string): string | null {
   const match = value.match(
-    /https?:\/\/[^\s·|]+|(?:www\.)?[a-z0-9][a-z0-9.-]*\.[a-z]{2,}(?:\/[^\s·|]*)?/i
+    /https?:\/\/[^\s·|]+|(?:www\.)?[a-z0-9][a-z0-9.-]*\.[a-z]{2,}(?:\/[^\s·|]*)?/i,
   )?.[0];
   if (!match) return null;
   const candidate = /^https?:\/\//i.test(match) ? match : `https://${match}`;
@@ -139,7 +141,7 @@ export function ResourceDirectory({
       enabled: expanded,
       staleTime: 5 * 60 * 1000,
       refetchOnWindowFocus: false,
-    }
+    },
   );
   const result = directoryQuery.data as CompactSearchResponse | undefined;
 
@@ -162,8 +164,10 @@ export function ResourceDirectory({
           <span className="text-sm font-semibold">Resource Directory</span>
           <span className="text-xs text-muted-foreground">
             {expanded && result
-              ? `${result.total.toLocaleString()} matches`
-              : "v3.13 collection"}
+              ? result.total_is_exact
+                ? `${result.total.toLocaleString()} matches`
+                : `${result.total.toLocaleString()}+ matches`
+              : "current collection"}
           </span>
         </div>
         {expanded ? (
@@ -190,12 +194,12 @@ export function ResourceDirectory({
 
           {result?.items.map((resource) => {
             const phone = resource.contacts.find((contact) =>
-              ["phone", "hotline"].includes(contact.contact_type.toLowerCase())
+              ["phone", "hotline"].includes(contact.contact_type.toLowerCase()),
             );
             const website = resource.contacts.find((contact) =>
               ["website", "portal", "filing_portal"].includes(
-                contact.contact_type.toLowerCase()
-              )
+                contact.contact_type.toLowerCase(),
+              ),
             );
             const callHref = phone ? phoneHref(phone.contact_value) : null;
             const visitHref = website
@@ -252,8 +256,8 @@ export function ResourceDirectory({
 
           {result && result.items.length === 0 && (
             <p className="rounded-md border border-border/40 p-3 text-xs text-muted-foreground">
-              No exact pipeline match. Open the full collection to search
-              across every category.
+              No exact pipeline match. Open the full collection to search across
+              every category.
             </p>
           )}
 
