@@ -899,7 +899,8 @@ select
   (select count(*) from public.live_data_signals where is_current and governance_status = 'observation_candidate')::bigint
     as live_data_candidate_count,
   (select count(*) from public.live_data_signals where is_current and governance_status = 'promoted')::bigint
-    as live_data_promoted_count;
+    as live_data_promoted_count
+from atlas_counts a;
 
 -- Extend the existing detail payload with the immutable Atlas projection state.
 create or replace function public.integrity_candidate_detail_v1(p_candidate_id uuid)
