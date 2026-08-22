@@ -1,3 +1,4 @@
+-- Verify the Atlas-to-Lighthouse projection, evidence, and routing gates.
 do $$
 declare
   v_unprojected bigint;
