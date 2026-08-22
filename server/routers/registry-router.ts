@@ -74,24 +74,28 @@ export const registryRouter = router({
     }))
     .query(async ({ input }) => {
       const conditions: string[] = [];
-      const params: any[] = [];
+      const params: unknown[] = [];
+      const bind = (value: unknown) => {
+        params.push(value);
+        return `$${params.length}`;
+      };
 
       const q = `%${input.query}%`;
-      conditions.push(`(p.name_rp LIKE ? OR p.agency_rp LIKE ? OR p.eligibility_rp LIKE ? OR p.category_rp LIKE ?)`);
-      params.push(q, q, q, q);
+      conditions.push(
+        `(p.name_rp ILIKE ${bind(q)} OR p.agency_rp ILIKE ${bind(q)} OR p.eligibility_rp ILIKE ${bind(q)} OR p.category_rp ILIKE ${bind(q)})`,
+      );
 
       if (input.stateCode) {
-        // Match by jurisdiction abbreviation
-        conditions.push(`j.abbreviation = ?`);
-        params.push(input.stateCode.toUpperCase());
+        conditions.push(`j.abbreviation = ${bind(input.stateCode.toUpperCase())}`);
       }
       if (input.category) {
-        conditions.push(`p.category_rp LIKE ?`);
-        params.push(`%${input.category}%`);
+        conditions.push(`p.category_rp ILIKE ${bind(`%${input.category}%`)}`);
       }
 
-      const where = `WHERE ${conditions.join(' AND ')}`;
-      const [rows] = await pool.query(
+      const where = `WHERE ${conditions.join(" AND ")}`;
+      const limitPlaceholder = `$${params.length + 1}`;
+      const offsetPlaceholder = `$${params.length + 2}`;
+      const rowsResult = await pool.query(
         `SELECT p.id, p.name_rp AS name, p.agency_rp AS agency, p.category_rp AS category,
                 p.eligibility_rp AS eligibility, p.contact_rp AS contact, p.website_rp AS website,
                 p.apply_notes_rp AS apply_notes, p.jurisdiction_id_rp AS jurisdiction_id,
@@ -100,20 +104,21 @@ export const registryRouter = router({
          LEFT JOIN registry_jurisdictions j ON p.jurisdiction_id_rp = j.id
          ${where}
          ORDER BY p.name_rp
-         LIMIT ? OFFSET ?`,
-        [...params, input.limit, input.offset]
+         LIMIT ${limitPlaceholder} OFFSET ${offsetPlaceholder}`,
+        [...params, input.limit, input.offset],
       );
-      const [countRows] = await pool.query(
+      const countResult = await pool.query(
         `SELECT COUNT(*) as total FROM registry_programs p
          LEFT JOIN registry_jurisdictions j ON p.jurisdiction_id_rp = j.id
          ${where}`,
-        params
+        params,
       );
       return {
-        programs: rows as any[],
-        total: Number((countRows as any[])[0]?.total ?? 0),
+        programs: rowsResult.rows as any[],
+        total: Number(countResult.rows[0]?.total ?? 0),
       };
     }),
+
 
   /**
    * Program → Agency → Enforcement Chain
@@ -127,70 +132,67 @@ export const registryRouter = router({
   getProgramChain: publicProcedure
     .input(z.object({ programId: z.string() }))
     .query(async ({ input }) => {
-      // 1. Get the program
-      const [progRows] = await pool.query(
+      const programResult = await pool.query(
         `SELECT p.id, p.name_rp AS name, p.agency_rp AS agency, p.category_rp AS category,
                 p.eligibility_rp AS eligibility, p.contact_rp AS contact, p.website_rp AS website,
                 p.apply_notes_rp AS apply_notes, p.jurisdiction_id_rp AS jurisdiction_id,
                 j.abbreviation AS state_code, j.name AS jurisdiction_name
          FROM registry_programs p
          LEFT JOIN registry_jurisdictions j ON p.jurisdiction_id_rp = j.id
-         WHERE p.id = ?`,
-        [input.programId]
+         WHERE p.id = $1`,
+        [input.programId],
       );
-      const program = (progRows as any[])[0];
+      const program = programResult.rows[0];
       if (!program) throw new TRPCError({ code: "NOT_FOUND", message: "Program not found" });
 
-      // 2. Get oversight bodies in the same jurisdiction
-      const [oversightRows] = await pool.query(
+      const oversightResult = await pool.query(
         `SELECT ob.id, ob.agency_name_rob AS agency_name, ob.function_rob AS function,
                 ob.statute_of_limitations_rob AS statute_of_limitations,
                 ob.contact_rob AS contact, ob.pathway_rob AS pathway, ob.escalation_rob AS escalation,
                 ob.jurisdiction_id_rob AS jurisdiction_id
          FROM registry_oversight_bodies ob
-         WHERE ob.jurisdiction_id_rob = ?
+         WHERE ob.jurisdiction_id_rob = $1
          ORDER BY ob.agency_name_rob`,
-        [program.jurisdiction_id]
+        [program.jurisdiction_id],
       );
 
-      // 3. Get related workflows for the jurisdiction
-      const [workflowRows] = await pool.query(
+      const workflowResult = await pool.query(
         `SELECT id, workflow_type_rw AS workflow_type, primary_statutes_rw AS primary_statutes,
                 steps_rw AS steps, deadlines_rw AS deadlines, escalation_paths_rw AS escalation_paths
          FROM registry_workflows
-         WHERE jurisdiction_id_rw = ?
+         WHERE jurisdiction_id_rw = $1
          ORDER BY workflow_type_rw`,
-        [program.jurisdiction_id]
+        [program.jurisdiction_id],
       );
 
-      // 4. Get cross-avenue programs (same category, same jurisdiction)
-      const [crossRows] = await pool.query(
+      const relatedResult = await pool.query(
         `SELECT p2.id, p2.name_rp AS name, p2.agency_rp AS agency, p2.category_rp AS category,
                 p2.contact_rp AS contact, p2.website_rp AS website
          FROM registry_programs p2
-         WHERE p2.jurisdiction_id_rp = ?
-           AND p2.category_rp = ?
-           AND p2.id != ?
+         WHERE p2.jurisdiction_id_rp = $1
+           AND p2.category_rp = $2
+           AND p2.id != $3
          ORDER BY p2.name_rp
          LIMIT 10`,
-        [program.jurisdiction_id, program.category, input.programId]
+        [program.jurisdiction_id, program.category, input.programId],
       );
 
       return {
         program,
-        oversight_bodies: oversightRows as any[],
-        workflows: workflowRows as any[],
-        related_programs: crossRows as any[],
+        oversight_bodies: oversightResult.rows as any[],
+        workflows: workflowResult.rows as any[],
+        related_programs: relatedResult.rows as any[],
         chain: {
           program: program.name,
           jurisdiction: program.jurisdiction_name || program.jurisdiction_id,
           state_code: program.state_code,
-          oversight_count: (oversightRows as any[]).length,
-          workflow_count: (workflowRows as any[]).length,
-          related_program_count: (crossRows as any[]).length,
+          oversight_count: oversightResult.rows.length,
+          workflow_count: workflowResult.rows.length,
+          related_program_count: relatedResult.rows.length,
         },
       };
     }),
+
 
   /**
    * Cross-Avenue Discovery
@@ -228,16 +230,17 @@ export const registryRouter = router({
       const adjacent = ADJACENT_CATEGORIES[input.category] || [];
       if (adjacent.length === 0) return { programs: [], adjacent_categories: [] };
 
-      const placeholders = adjacent.map(() => '?').join(', ');
+      const placeholders = adjacent.map((_, index) => `${index + 1}`).join(', ');
       const params: any[] = [...adjacent];
 
       let stateFilter = '';
       if (input.stateCode) {
-        stateFilter = `AND j.abbreviation = ?`;
         params.push(input.stateCode.toUpperCase());
+        stateFilter = `AND j.abbreviation = ${params.length}`;
       }
 
-      const [rows] = await pool.query(
+      const limitPlaceholder = `${params.length + 1}`;
+      const rowsResult = await pool.query(
         `SELECT p.id, p.name_rp AS name, p.agency_rp AS agency, p.category_rp AS category,
                 p.eligibility_rp AS eligibility, p.contact_rp AS contact, p.website_rp AS website,
                 p.apply_notes_rp AS apply_notes, j.abbreviation AS state_code, j.name AS jurisdiction_name
@@ -246,12 +249,12 @@ export const registryRouter = router({
          WHERE p.category_rp IN (${placeholders})
          ${stateFilter}
          ORDER BY p.category_rp, p.name_rp
-         LIMIT ?`,
-        [...params, input.limit]
+         LIMIT ${limitPlaceholder}`,
+        [...params, input.limit],
       );
 
       return {
-        programs: rows as any[],
+        programs: rowsResult.rows as any[],
         adjacent_categories: adjacent,
       };
     }),
@@ -292,19 +295,25 @@ export const registryRouter = router({
     }))
     .query(async ({ input }) => {
       const conditions: string[] = [];
-      const params: any[] = [];
+      const params: unknown[] = [];
+      const bind = (value: unknown) => {
+        params.push(value);
+        return `$${params.length}`;
+      };
 
       const q = `%${input.query}%`;
-      conditions.push(`(ob.agency_name_rob LIKE ? OR ob.function_rob LIKE ? OR ob.pathway_rob LIKE ?)`);
-      params.push(q, q, q);
+      conditions.push(
+        `(ob.agency_name_rob ILIKE ${bind(q)} OR ob.function_rob ILIKE ${bind(q)} OR ob.pathway_rob ILIKE ${bind(q)})`,
+      );
 
       if (input.stateCode) {
-        conditions.push(`j.abbreviation = ?`);
-        params.push(input.stateCode.toUpperCase());
+        conditions.push(`j.abbreviation = ${bind(input.stateCode.toUpperCase())}`);
       }
 
-      const where = `WHERE ${conditions.join(' AND ')}`;
-      const [rows] = await pool.query(
+      const where = `WHERE ${conditions.join(" AND ")}`;
+      const limitPlaceholder = `$${params.length + 1}`;
+      const offsetPlaceholder = `$${params.length + 2}`;
+      const rowsResult = await pool.query(
         `SELECT ob.id, ob.agency_name_rob AS agency_name, ob.function_rob AS function,
                 ob.statute_of_limitations_rob AS statute_of_limitations,
                 ob.contact_rob AS contact, ob.pathway_rob AS pathway, ob.escalation_rob AS escalation,
@@ -313,20 +322,21 @@ export const registryRouter = router({
          LEFT JOIN registry_jurisdictions j ON ob.jurisdiction_id_rob = j.id
          ${where}
          ORDER BY ob.agency_name_rob
-         LIMIT ? OFFSET ?`,
-        [...params, input.limit, input.offset]
+         LIMIT ${limitPlaceholder} OFFSET ${offsetPlaceholder}`,
+        [...params, input.limit, input.offset],
       );
-      const [countRows] = await pool.query(
+      const countResult = await pool.query(
         `SELECT COUNT(*) as total FROM registry_oversight_bodies ob
          LEFT JOIN registry_jurisdictions j ON ob.jurisdiction_id_rob = j.id
          ${where}`,
-        params
+        params,
       );
       return {
-        bodies: rows as any[],
-        total: Number((countRows as any[])[0]?.total ?? 0),
+        bodies: rowsResult.rows as any[],
+        total: Number(countResult.rows[0]?.total ?? 0),
       };
     }),
+
 
   getSignals: publicProcedure
     .input(z.object({
@@ -348,7 +358,6 @@ export const registryRouter = router({
  * Admins can view and resolve flags in Mission Control.
  */
 export const issueReportsRouter = router({
-  /** Submit a new flag/report */
   report: publicProcedure
     .input(z.object({
       targetType: z.enum(["program", "signal", "finding", "kb_table", "oversight_body", "workflow", "area", "other"]),
@@ -356,7 +365,6 @@ export const issueReportsRouter = router({
       targetLabel: z.string().optional(),
       issueType: z.enum(["incorrect_data", "broken_link", "missing_info", "duplicate", "other"]).default("incorrect_data"),
       description: z.string().max(2000).optional(),
-      // Geographic area flagging
       areaName: z.string().max(255).optional(),
       stateCode: z.string().max(10).optional(),
       lat: z.number().optional(),
@@ -367,7 +375,7 @@ export const issueReportsRouter = router({
       const user = (ctx as any).user;
       await pool.query(
         `INSERT INTO issue_reports (target_type, target_id, target_label, issue_type, description, reporter_id, reporter_name, status, area_name, state_code, lat, lng, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, 'open', ?, ?, ?, ?, ?, ?)`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7, 'open', $8, $9, $10, $11, $12, $13)`,
         [
           input.targetType,
           input.targetId,
@@ -382,12 +390,11 @@ export const issueReportsRouter = router({
           input.lng ?? null,
           now,
           now,
-        ]
+        ],
       );
       return { success: true };
     }),
 
-  /** List all flags (admin use) */
   listOpen: publicProcedure
     .input(z.object({
       status: z.enum(["open", "reviewed", "resolved", "dismissed", "all"]).default("open"),
@@ -397,37 +404,40 @@ export const issueReportsRouter = router({
     }))
     .query(async ({ input }) => {
       const conditions: string[] = [];
-      const params: any[] = [];
+      const params: unknown[] = [];
+      const bind = (value: unknown) => {
+        params.push(value);
+        return `$${params.length}`;
+      };
       if (input.status !== "all") {
-        conditions.push("status = ?");
-        params.push(input.status);
+        conditions.push(`status = ${bind(input.status)}`);
       }
       if (input.targetType) {
-        conditions.push("target_type = ?");
-        params.push(input.targetType);
+        conditions.push(`target_type = ${bind(input.targetType)}`);
       }
       const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
-      const [rows] = await pool.query(
-        `SELECT * FROM issue_reports ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-        [...params, input.limit, input.offset]
+      const limitPlaceholder = `$${params.length + 1}`;
+      const offsetPlaceholder = `$${params.length + 2}`;
+      const rowsResult = await pool.query(
+        `SELECT * FROM issue_reports ${where} ORDER BY created_at DESC LIMIT ${limitPlaceholder} OFFSET ${offsetPlaceholder}`,
+        [...params, input.limit, input.offset],
       );
-      const [countRows] = await pool.query(
+      const countResult = await pool.query(
         `SELECT COUNT(*) as total FROM issue_reports ${where}`,
-        params
+        params,
       );
       return {
-        reports: rows as any[],
-        total: Number((countRows as any[])[0]?.total ?? 0),
+        reports: rowsResult.rows as any[],
+        total: Number(countResult.rows[0]?.total ?? 0),
       };
     }),
 
-  /** Get summary counts for the Mission Control flag queue */
   summary: publicProcedure.query(async () => {
-    const [rows] = await pool.query(
-      `SELECT status, COUNT(*) as cnt FROM issue_reports GROUP BY status`
+    const result = await pool.query(
+      `SELECT status, COUNT(*) as cnt FROM issue_reports GROUP BY status`,
     );
     const counts: Record<string, number> = {};
-    for (const row of rows as any[]) {
+    for (const row of result.rows as any[]) {
       counts[row.status] = Number(row.cnt);
     }
     return {
@@ -439,7 +449,6 @@ export const issueReportsRouter = router({
     };
   }),
 
-  /** Resolve or dismiss a flag */
   resolve: publicProcedure
     .input(z.object({
       id: z.number(),
@@ -448,8 +457,8 @@ export const issueReportsRouter = router({
     }))
     .mutation(async ({ input }) => {
       await pool.query(
-        `UPDATE issue_reports SET status = ?, resolution_note = ?, updated_at = ? WHERE id = ?`,
-        [input.status, input.note ?? null, Date.now(), input.id]
+        `UPDATE issue_reports SET status = $1, resolution_note = $2, updated_at = $3 WHERE id = $4`,
+        [input.status, input.note ?? null, Date.now(), input.id],
       );
       return { success: true };
     }),
