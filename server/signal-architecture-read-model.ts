@@ -137,6 +137,8 @@ export async function read_signal_architecture(limit: number) {
       intake_signal_count: to_count(integrity.intake_signal_count),
       legal_pattern_count: to_count(integrity.legal_pattern_count),
       live_data_signal_count: to_count(integrity.live_data_signal_count),
+      live_data_candidate_count: to_count(integrity.live_data_candidate_count),
+      live_data_promoted_count: to_count(integrity.live_data_promoted_count),
       convergence_count: to_count(integrity.convergence_count),
       latest_atlas_observation_at:
         integrity.latest_atlas_observation_at == null

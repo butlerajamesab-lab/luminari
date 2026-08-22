@@ -32,6 +32,7 @@ export type CanonicalLiveSignal = {
   supporting_statistics: unknown;
   evidence_refs: unknown;
   source_freshness_at: number | null;
+  record_kind: "observation_candidate" | "promoted_signal" | "governed_domain_record";
 };
 
 export type CanonicalLiveSignalInput = {
@@ -82,6 +83,11 @@ function normalize(row: any): CanonicalLiveSignal {
     supporting_statistics: row.supporting_statistics,
     evidence_refs: row.evidence_refs,
     source_freshness_at: to_timestamp(row.source_freshness_at),
+    record_kind: row.governance_status === "observation_candidate"
+      ? "observation_candidate"
+      : row.governance_status === "promoted"
+        ? "promoted_signal"
+        : "governed_domain_record",
   };
 }
 
@@ -173,6 +179,8 @@ export async function get_canonical_live_signal_summary(input: Omit<CanonicalLiv
     active_signals: signals.filter(signal => signal.active).length,
     pending_signals: signals.filter(signal => signal.governance_status === "observation_candidate").length,
     approved_signals: signals.filter(signal => signal.governance_status === "promoted").length,
+    observation_candidate_count: signals.filter(signal => signal.record_kind === "observation_candidate").length,
+    promoted_signal_count: signals.filter(signal => signal.record_kind === "promoted_signal").length,
     rejected_signals: 0,
     by_status,
     by_severity,

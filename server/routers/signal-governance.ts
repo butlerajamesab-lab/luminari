@@ -29,7 +29,8 @@ function rowsFromExecuteResult(result: unknown): any[] {
 
 export const signalGovernanceRouter = router({
   /**
-   * Signal Dashboard — current canonical Atlas Domain 3 signal population.
+   * Signal Dashboard — current governed Atlas Domain 3 records. Observation
+   * candidates and promoted canonical signals remain explicitly distinct.
    */
   dashboard: publicProcedure
     .input(z.object({

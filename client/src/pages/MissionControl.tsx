@@ -1,9962 +1,2456 @@
-// @ts-nocheck â€” pre-existing type drift, to be resolved in UI type alignment pass
-import { useEffect, useState } from "react";
-import { useCase } from "@/contexts/CaseContext";
-import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
-import { trpc } from "@/lib/trpc";
-import { useLocation } from "wouter";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Activity, Database, BarChart3, AlertTriangle, Clock, CheckCircle2,
-  XCircle, Loader2, Server, Users, FileText, Search, TrendingUp,
-  Zap, Shield, Eye, BookOpen, RefreshCw, ExternalLink,
-  DoorOpen, Wrench, Lamp, Upload, ArrowLeft,
-  Radio, Play, Pause, Trash2, Plus, Globe, MapPin,
-  Network, GitBranch, ArrowUpRight, ChevronRight, Gauge,
-  Route, Target, BarChart, Siren, Building2, Send, Scale, Landmark,
-  Calculator, ScrollText, DollarSign, Hash,  Brain, FileOutput, Handshake, Download,
-  Microscope, ClipboardCheck, Gavel, Map as MapIcon, Layers,
-  Megaphone, Binoculars, Milestone,
-  History, GitCompareArrows, FileDown, RotateCcw,
-  HeartPulse, Grid3X3,
-  Flame, Link2, Radar, MessageSquare,
-  Fingerprint, Building, ShieldAlert, AlertOctagon,
-  FlaskConical, Newspaper, FolderArchive, Share2,
-  Scan, Bell, Waypoints, Factory, SearchCode,
-  Flag, ArrowRight,
-} from "lucide-react";
-import { Link } from "wouter";
-import { useMissionControlData } from "@/hooks/mission/useMissionControlData";
-import { MetadataHealthPanel, PipelineIntegrityPanel, ExportReadinessPanel } from "@/components/ConduitPanels";
-import { TabGate, PanelGate, PanelActivationSummary } from "@/components/PanelGate";
-import { shouldRenderPanel } from "@/lib/panelRegistry";
-import { StreamUploader } from "@/components/StreamUploader";
-import { CanonicalSpineDashboard } from "@/components/CanonicalSpineDashboard";
-import { FlagQueuePanel } from "@/components/FlagQueuePanel";
-import { FlagButton } from "@/components/FlagButton";
-import { MissionControlSchemaLedgerPanel } from "@/components/mission/MissionControlSchemaLedgerPanel";
-
-type DatabaseDiagnosticContract = {
-  ok: boolean;
-  database: string;
-  database_url: string;
-  database_version: string | null;
-  public_tables: number | null;
-  db_diagnostic: { tables: { total: number | null }; views: { total: number | null }; foreign_keys: { total: number | null }; errors: Array<{ code: string; message: string }> };
-  supabase_project: string;
-  timestamp: string;
-};
-
-const diagnostic_required_fields = ["database", "database_url", "database_version", "public_tables", "db_diagnostic", "supabase_project", "timestamp"] as const;
-
-function isDatabaseDiagnosticContract(value: unknown): value is DatabaseDiagnosticContract {
-  if (!value || typeof value !== "object") return false;
-  return diagnostic_required_fields.every((field) => field in value);
-}
-
-function useDatabaseDiagnostic() {
-  const [data, setData] = useState<DatabaseDiagnosticContract | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const load = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch("/api/db-diagnostic", { cache: "no-store" });
-      const payload = await response.json();
-      if (!isDatabaseDiagnosticContract(payload)) {
-        setError(`diagnostic_contract_mismatch: expected ${diagnostic_required_fields.join(", ")}`);
-        return;
-      }
-      setData(payload);
-      setError(response.ok ? null : payload.error?.message ?? "database_diagnostic_failed");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    load();
-    const timer = window.setInterval(load, 60000);
-    return () => window.clearInterval(timer);
-  }, []);
-
-  return { data, error, isLoading, refetch: load };
-}
-
-import { CommitToCase } from "@/components/CommitToCase";
-import { PatternRegistryPanel } from "@/components/mission/PatternRegistryPanel";
-import { StrategyPathsPanel } from "@/components/mission/StrategyPathsPanel";
-import { OutcomesPanel } from "@/components/mission/OutcomesPanel";
-import { SignalLineagePanel } from "@/components/lighthouse/SignalLineagePanel";
-import { GateReviewPanel } from "@/components/lighthouse/GateReviewPanel";
-import { PatternRegistryPanel as LighthousePatternRegistryPanel } from "@/components/lighthouse/PatternRegistryPanel";
-import { TrendPressurePanel as LighthouseTrendPressurePanel } from "@/components/lighthouse/TrendPressurePanel";
-import { StrategyProjectionPanel } from "@/components/lighthouse/StrategyProjectionPanel";
-import { PipelineHealthPanel } from "@/components/lighthouse/PipelineHealthPanel";
-import { LiveIntakeOperationsPanel } from "@/components/lighthouse/LiveIntakeOperationsPanel";
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   LUMINARI â€” MISSION CONTROL (Admin Operational Dashboard)
-   Canonical Core orchestration root + preserved Registry/Alpha Lake tab
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
-
-/* â”€â”€ Canonical Core Health Panel â”€â”€ */
-function CanonicalCorePanel() {
-  const { data: health, isLoading: healthLoading } = trpc.canonicalCore.health.useQuery(undefined, {
-    refetchInterval: 60000,
-  });
-  const { data: summary, isLoading: summaryLoading } = trpc.canonicalCore.summary.useQuery(undefined, {
-    refetchInterval: 60000,
-  });
-  const { data: pipelineState } = trpc.canonicalCore.pipelineState.useQuery(undefined, {
-    refetchInterval: 60000,
-  });
-
-  if (healthLoading || summaryLoading) return <PanelSkeleton />;
-  if (!health || !summary) return <PanelEmpty label="Canonical core unavailable" />;
-
-  const categories = health.tables.reduce((acc: Record<string, { populated: number; empty: number; total: number }>, t) => {
-    if (!acc[t.category]) acc[t.category] = { populated: 0, empty: 0, total: 0 };
-    acc[t.category].total++;
-    if (t.count > 0) acc[t.category].populated++;
-    else acc[t.category].empty++;
-    return acc;
-  }, {});
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <Database className="h-5 w-5 text-primary" />
-          Canonical Knowledge Core
-        </h3>
-        <Badge variant="outline" className="text-xs">
-          {health.totalRecords.toLocaleString()} records Â· {health.populatedTables} tables populated
-        </Badge>
-      </div>
-
-      {/* Key Counts */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <MetricCard label="Jurisdictions" value={String(summary.jurisdictions)} icon={<Globe className="h-4 w-4" />} color="blue" />
-        <MetricCard label="Programs" value={String(summary.programs)} icon={<FileText className="h-4 w-4" />} color="emerald" />
-        <MetricCard label="Agencies" value={String(summary.oversightBodies)} icon={<Building2 className="h-4 w-4" />} color="violet" />
-        <MetricCard label="Live Signals" value={String(summary.liveSignals)} icon={<Radio className="h-4 w-4" />} color="orange" />
-        <MetricCard label="Cases" value={String(summary.cases)} icon={<Search className="h-4 w-4" />} color="blue" />
-      </div>
-
-      {/* Category Breakdown */}
-      <Card className="bg-card/50">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Table Health by Category</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            {Object.entries(categories).map(([cat, stats]) => (
-              <div key={cat} className="flex items-center justify-between text-xs p-2 rounded bg-muted/30">
-                <span className="capitalize text-muted-foreground">{cat}</span>
-                <span className="font-mono">
-                  <span className="text-emerald-400">{stats.populated}</span>
-                  <span className="text-muted-foreground">/</span>
-                  <span>{stats.total}</span>
-                </span>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Pipeline State */}
-      {pipelineState && pipelineState.ingestRunSummary.length > 0 && (
-        <Card className="bg-card/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Pipeline Completion</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-1">
-              {pipelineState.ingestRunSummary.map((run) => (
-                <div key={run.datasetId} className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">{run.datasetId}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono">{run.totalRecords.toLocaleString()} records</span>
-                    <Badge variant={run.lastStatus === 'completed' ? 'default' : 'secondary'} className="text-[10px]">
-                      {run.lastStatus || 'unknown'}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Empty Tables Warning */}
-      {health.emptyTables > 0 && (
-        <div className="text-xs text-muted-foreground flex items-center gap-1">
-          <AlertTriangle className="h-3 w-3 text-amber-400" />
-          {health.emptyTables} canonical tables are empty â€” run ingestion or knowledge population to fill them.
-        </div>
-      )}
-    </div>
-  );
-}
-
-function formatUptime(seconds: number): string {
-  const d = Math.floor(seconds / 86400);
-  const h = Math.floor((seconds % 86400) / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  if (d > 0) return `${d}d ${h}h ${m}m`;
-  if (h > 0) return `${h}h ${m}m`;
-  return `${m}m`;
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(0)} MB`;
-}
-
-function formatTimeAgo(ts: number): string {
-  const diff = Date.now() - ts;
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
-}
-
-/* â”€â”€ Panel 1: System Health â”€â”€ */
-function SystemHealthPanel() {
-  const { data, isLoading, refetch } = trpc.adminDashboard.systemHealth.useQuery(undefined, {
-    refetchInterval: 30000,
-  });
-  const diagnostic = useDatabaseDiagnostic();
-
-  if (isLoading || diagnostic.isLoading) return <PanelSkeleton />;
-  if (!data) return <PanelEmpty label="No health data available" />;
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <Server className="h-5 w-5 text-emerald-400" />
-          System Health
-        </h3>
-        <Button variant="ghost" size="sm" onClick={() => refetch()}>
-          <RefreshCw className="h-3 w-3 mr-1" /> Refresh
-        </Button>
-      </div>
-
-      <Card className="bg-card/50">
-        <CardContent className="pt-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm">
-            <div><span className="text-muted-foreground">Database</span><div className={diagnostic.data?.database === "connected" ? "text-emerald-400" : "text-red-400"}>{diagnostic.data?.database ?? "unknown"}</div></div>
-            <div><span className="text-muted-foreground">Database URL</span><div>{diagnostic.data?.database_url ?? "unknown"}</div></div>
-            <div><span className="text-muted-foreground">Public tables</span><div>{diagnostic.data?.public_tables ?? "unavailable"}</div></div>
-            <div><span className="text-muted-foreground">Supabase project</span><div className="font-mono text-xs">{diagnostic.data?.supabase_project ?? "unknown"}</div></div>
-          </div>
-          {diagnostic.error && <div className="mt-3 text-xs text-red-300">{diagnostic.error}</div>}
-        </CardContent>
-      </Card>
-
-      <MissionControlSchemaLedgerPanel />
-
-      {/* Server Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <MetricCard label="Uptime" value={formatUptime(data.serverUptime)} icon={<Clock className="h-4 w-4" />} color="emerald" />
-        <MetricCard label="Memory (Heap)" value={formatBytes(data.memoryUsage.heapUsed)} icon={<Zap className="h-4 w-4" />} color="blue" />
-        <MetricCard label="Runs (24h)" value={data.last24h.total.toString()} icon={<Activity className="h-4 w-4" />} color="violet" />
-        <MetricCard
-          label="Success Rate"
-          value={`${data.last24h.successRate}%`}
-          icon={data.last24h.successRate >= 90 ? <CheckCircle2 className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
-          color={data.last24h.successRate >= 90 ? "emerald" : "orange"}
-        />
-      </div>
-
-      {/* Engine Run Breakdown */}
-      <Card className="bg-card/50">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Engine Activity (24h)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-            <StatusBadge label="Completed" count={data.last24h.completed} variant="success" />
-            <StatusBadge label="Failed" count={data.last24h.failed} variant="destructive" />
-            <StatusBadge label="Running" count={data.last24h.running} variant="running" />
-          </div>
-          {data.engineBreakdown.length > 0 && (
-            <div className="mt-3 space-y-1">
-              {data.engineBreakdown.map((e) => (
-                <div key={e.type} className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground capitalize">{(e.type ?? "unknown").replace(/_/g, " ")}</span>
-                  <span className="font-mono">{e.count}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-/* â”€â”€ Panel 2: Knowledge Population â”€â”€ */
-function KnowledgePopulationPanel({ onNavigateToKB }: { onNavigateToKB?: () => void }) {
-  const { data, isLoading } = trpc.knowledgeIngestion.populationStats.useQuery(undefined, {
-    refetchInterval: 60000,
-  });
-  const [, navigate] = useLocation();
-
-  if (isLoading) return <PanelSkeleton />;
-  if (!data) return <PanelEmpty label="No population data" />;
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <Database className="h-5 w-5 text-blue-400" />
-          Knowledge Backbone
-        </h3>
-        <div className="flex items-center gap-1">
-          {onNavigateToKB && (
-            <Button variant="ghost" size="sm" onClick={onNavigateToKB} title="Open KB Explorer">
-              <BookOpen className="h-3 w-3 mr-1" /> Explore
-            </Button>
-          )}
-          <Button variant="ghost" size="sm" onClick={() => navigate("/admin/knowledge-population")}>
-            <ExternalLink className="h-3 w-3 mr-1" /> Manage
-          </Button>
-        </div>
-      </div>
-
-      {/* Summary */}
-      <div className="grid grid-cols-3 gap-3">
-        <MetricCard label="Total Records" value={data.summary.totalPopulated.toLocaleString()} icon={<BookOpen className="h-4 w-4" />} color="blue" />
-        <MetricCard
-          label="Coverage"
-          value={`${data.summary.overallCoverage}%`}
-          icon={<BarChart3 className="h-4 w-4" />}
-          color={data.summary.overallCoverage >= 50 ? "emerald" : data.summary.overallCoverage >= 25 ? "yellow" : "red"}
-        />
-        <MetricCard label="Empty Tables" value={data.summary.criticallyLow.length.toString()} icon={<AlertTriangle className="h-4 w-4" />} color={data.summary.criticallyLow.length > 0 ? "red" : "emerald"} />
-      </div>
-
-      {/* Table List */}
-      <Card className="bg-card/50">
-        <CardContent className="pt-4">
-          <div className="space-y-2">
-            {data.tables.map((t) => (
-              <div key={t.name} className="flex items-center justify-between text-sm group hover:bg-muted/20 rounded px-1 -mx-1 transition-colors cursor-default">
-                <span className={t.count === 0 ? "text-red-400" : "text-muted-foreground"}>{t.label}</span>
-                <div className="flex items-center gap-1.5">
-                  <span className="font-mono text-xs">{t.count.toLocaleString()}</span>
-                  <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full ${
-                        t.coverage === 0 ? "bg-red-500" : t.coverage < 25 ? "bg-orange-500" : t.coverage < 75 ? "bg-blue-500" : "bg-emerald-500"
-                      }`}
-                      style={{ width: `${Math.min(t.coverage, 100)}%` }}
-                    />
-                  </div>
-                  <FlagButton
-                    targetType="kb_table"
-                    targetId={t.name}
-                    targetLabel={t.label}
-                    iconOnly
-                    className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                  />
-                  {onNavigateToKB && (
-                    <button
-                      onClick={onNavigateToKB}
-                      title={`Open ${t.label} in KB Explorer`}
-                      className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded hover:bg-primary/20 text-primary"
-                    >
-                      <ArrowRight className="h-3 w-3" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-/* â”€â”€ Panel 3: Case Activity â”€â”€ */
-function CaseActivityPanel() {
-  const { data, isLoading } = trpc.adminDashboard.caseActivity.useQuery(undefined, {
-    refetchInterval: 30000,
-  });
-
-  if (isLoading) return <PanelSkeleton />;
-  if (!data) return <PanelEmpty label="No case data" />;
-
-  return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-semibold flex items-center gap-2">
-        <FileText className="h-5 w-5 text-violet-400" />
-        Case Activity
-      </h3>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <MetricCard label="Total Cases" value={data.cases.total.toString()} icon={<FileText className="h-4 w-4" />} color="violet" />
-        <MetricCard label="Documents" value={data.documents.total.toLocaleString()} icon={<BookOpen className="h-4 w-4" />} color="blue" />
-        <MetricCard label="Verification Records" value={data.findings.total.toLocaleString()} icon={<Search className="h-4 w-4" />} color="amber" />
-        <MetricCard label="Users" value={data.users.total.toString()} icon={<Users className="h-4 w-4" />} color="emerald" />
-      </div>
-
-      {/* Today's Activity */}
-      <Card className="bg-card/50">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Today</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">New cases</span><span className="font-mono">{data.cases.today}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Uploads</span><span className="font-mono">{data.documents.today}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Verifications</span><span className="font-mono">{data.findings.today}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">New users</span><span className="font-mono">{data.users.today}</span></div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Recent Cases */}
-      {data.recentCases.length > 0 && (
-        <Card className="bg-card/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Recent Cases</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-1.5">
-              {data.recentCases.slice(0, 5).map((c) => (
-                <div key={c.id} className="flex items-center justify-between text-xs">
-                  <span className="truncate max-w-[200px]">{c.name}</span>
-                  <span className="text-muted-foreground">{formatTimeAgo(c.createdAt)}</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
-
-/* â”€â”€ Panel 4: Structural Signals â”€â”€ */
-function StructuralSignalsPanel() {
-  const { data, isLoading } = trpc.adminDashboard.structuralSignals.useQuery(undefined, {
-    refetchInterval: 60000,
-  });
-  const [selectedSeverity, setSelectedSeverity] = useState<string | null>(null);
-  const { data: drillData, isLoading: drillLoading } = trpc.adminDashboard.findingsBySeverity.useQuery(
-    { severity: selectedSeverity ?? undefined },
-    { enabled: selectedSeverity !== null }
-  );
-
-  if (isLoading) return <PanelSkeleton />;
-  if (!data) return <PanelEmpty label="No signal data" />;
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <Shield className="h-5 w-5 text-amber-400" />
-          Structural Signals
-        </h3>
-        {selectedSeverity && (
-          <Button variant="ghost" size="sm" onClick={() => setSelectedSeverity(null)}>
-            <XCircle className="h-3 w-3 mr-1" /> Clear filter
-          </Button>
-        )}
-      </div>
-
-      {/* Severity metric cards â€” clickable for drill-through */}
-      <div className="grid grid-cols-3 gap-3">
-        <div
-          className={`cursor-pointer rounded-lg ring-2 transition-all ${
-            selectedSeverity === null ? "ring-amber-400/40" : "ring-transparent hover:ring-amber-400/20"
-          }`}
-          onClick={() => setSelectedSeverity(null)}
-          title="Show all structural signals"
-        >
-          <MetricCard label="Total Signals" value={data.totalFindings.toLocaleString()} icon={<Eye className="h-4 w-4" />} color="amber" />
-        </div>
-        {data.bySeverity.map((s) => (
-          <div
-            key={s.severity}
-            className={`cursor-pointer rounded-lg ring-2 transition-all ${
-              selectedSeverity === s.severity
-                ? s.severity === "strong" ? "ring-red-400/60" : s.severity === "moderate" ? "ring-orange-400/60" : "ring-yellow-400/60"
-                : "ring-transparent hover:ring-border"
-            }`}
-            onClick={() => setSelectedSeverity(selectedSeverity === s.severity ? null : (s.severity ?? null))}
-            title={`Click to filter by ${s.severity} severity`}
-          >
-            <MetricCard
-              label={s.severity ?? "unknown"}
-              value={s.count.toString()}
-              icon={<AlertTriangle className="h-4 w-4" />}
-              color={s.severity === "strong" ? "red" : s.severity === "moderate" ? "orange" : "yellow"}
-            />
-          </div>
-        ))}
-      </div>
-
-      {/* Drill-through structural-signal list */}
-      {selectedSeverity !== null && (
-        <Card className={`bg-card/50 ${
-          selectedSeverity === "strong" ? "border-red-500/30" : selectedSeverity === "moderate" ? "border-orange-500/30" : "border-yellow-500/30"
-        }`}>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium capitalize flex items-center gap-2">
-              <AlertTriangle className={`h-3.5 w-3.5 ${
-                selectedSeverity === "strong" ? "text-red-400" : selectedSeverity === "moderate" ? "text-orange-400" : "text-yellow-400"
-              }`} />
-              {selectedSeverity} signals
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {drillLoading ? (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
-                <Loader2 className="h-3 w-3 animate-spin" /> Loading findings...
-              </div>
-            ) : !drillData || drillData.length === 0 ? (
-              <p className="text-xs text-muted-foreground py-2">No structural signals at this severity level.</p>
-            ) : (
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {drillData.map((f) => (
-                  <div key={f.id} className="text-xs space-y-0.5 border-b border-border/30 pb-1.5 last:border-0">
-                    <div className="font-medium truncate">{f.title}</div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <span>Atlas-wide signal</span>
-                      <span className="capitalize text-[10px] px-1.5 py-0.5 rounded bg-muted">{(f.category ?? "unknown").replace(/_/g, " ")}</span>
-                      <span>{formatTimeAgo(f.createdAt)}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Drill-through: findings by type as clickable chips */}
-      <div className="flex flex-wrap gap-1.5">
-        {data.byCategory.map((c) => (
-          <span
-            key={c.category}
-            className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border border-border/50 bg-card/60 text-muted-foreground cursor-default hover:border-border transition-colors"
-            title={`${c.count} ${(c.category ?? 'unknown').replace(/_/g, ' ')} structural signals`}
-          >
-            <span className="capitalize">{(c.category ?? 'unknown').replace(/_/g, ' ')}</span>
-            <span className="font-mono text-[10px] text-foreground/70 ml-0.5">{c.count}</span>
-          </span>
-        ))}
-      </div>
-
-      {/* By Category */}
-      <Card className="bg-card/50">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">By Type</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-1.5">
-            {data.byCategory.map((c) => (
-              <div key={c.category} className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground capitalize">{(c.category ?? "unknown").replace(/_/g, " ")}</span>
-                <span className="font-mono text-xs">{c.count}</span>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* High-priority structural signals (when no filter active) */}
-      {!selectedSeverity && data.criticalFindings.length > 0 && (
-        <Card className="bg-card/50 border-red-500/20">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-red-400">High-Priority Structural Signals</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {data.criticalFindings.slice(0, 5).map((f) => (
-                <div key={f.id} className="text-xs space-y-0.5">
-                  <div className="font-medium truncate">{f.title}</div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <span>Atlas-wide signal</span>
-                    <span>{formatTimeAgo(f.createdAt)}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
-
-/* â”€â”€ Panel 5: Work Queue â”€â”€ */
-function WorkQueuePanel() {
-  const { data, isLoading, refetch } = trpc.adminDashboard.workQueue.useQuery(undefined, {
-    refetchInterval: 15000,
-  });
-
-  if (isLoading) return <PanelSkeleton />;
-  if (!data) return <PanelEmpty label="No queue data" />;
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <Activity className="h-5 w-5 text-cyan-400" />
-          Work Queue
-        </h3>
-        <Button variant="ghost" size="sm" onClick={() => refetch()}>
-          <RefreshCw className="h-3 w-3 mr-1" /> Refresh
-        </Button>
-      </div>
-
-      {/* Running */}
-      {data.running.length > 0 ? (
-        <Card className="bg-card/50 border-blue-500/20">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-blue-400 flex items-center gap-1">
-              <Loader2 className="h-3 w-3 animate-spin" /> Running ({data.running.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {data.running.map((r) => (
-                <div key={r.id} className="flex items-center justify-between text-xs">
-                  <div>
-                    <span className="font-medium capitalize">{(r.runType ?? "unknown").replace(/_/g, " ")}</span>
-                    <span className="text-muted-foreground ml-2">Case #{r.caseId}</span>
-                  </div>
-                  <span className="text-muted-foreground">{formatTimeAgo(r.createdAt)}</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card className="bg-card/50">
-          <CardContent className="pt-4 text-center text-sm text-muted-foreground">
-            <CheckCircle2 className="h-5 w-5 mx-auto mb-1 text-emerald-400" />
-            No active runs
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Failed */}
-      {data.failed.length > 0 && (
-        <Card className="bg-card/50 border-red-500/20">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-red-400 flex items-center gap-1">
-              <XCircle className="h-3 w-3" /> Failed ({data.failed.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {data.failed.map((r) => (
-                <div key={r.id} className="text-xs space-y-0.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium capitalize">{(r.runType ?? "unknown").replace(/_/g, " ")}</span>
-                    <span className="text-muted-foreground">Case #{r.caseId}</span>
-                  </div>
-                  {r.errorMessage && (
-                    <div className="text-red-400/70 truncate">{r.errorMessage}</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Recently Completed */}
-      {data.recentlyCompleted.length > 0 && (
-        <Card className="bg-card/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-emerald-400">Recently Completed</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-1.5">
-              {data.recentlyCompleted.slice(0, 5).map((r) => (
-                <div key={r.id} className="flex items-center justify-between text-xs">
-                  <span className="capitalize">{(r.runType ?? "unknown").replace(/_/g, " ")}</span>
-                  <span className="text-muted-foreground">Case #{r.caseId} Â· {r.completedAt ? formatTimeAgo(r.completedAt) : "â€”"}</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
-
-/* â”€â”€ Panel 5: Engine Status (Operating Model) â”€â”€ */
-function EngineStatusPanel() {
-  const { data: sunamStatus } = trpc.system.stats.useQuery(undefined, {
-    refetchInterval: 10000,
-  });
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <Gauge className="h-5 w-5 text-purple-400" />
-          Engine Authority Model
-        </h3>
-      </div>
-
-      {/* Operating Model */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Autonomous Continuous */}
-        <Card className="bg-emerald-500/5 border-emerald-500/20">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-emerald-400 flex items-center gap-1.5">
-              <Zap className="h-3.5 w-3.5" /> Autonomous (Continuous)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-xs space-y-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Pattern Engine</span>
-                <Badge variant="outline" className="text-emerald-400 border-emerald-500/30">Active</Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Trend Engine</span>
-                <Badge variant="outline" className="text-emerald-400 border-emerald-500/30">Active</Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Outcome Engine</span>
-                <Badge variant="outline" className="text-emerald-400 border-emerald-500/30">Active</Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Autonomous Draft */}
-        <Card className="bg-blue-500/5 border-blue-500/20">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-blue-400 flex items-center gap-1.5">
-              <FileOutput className="h-3.5 w-3.5" /> Autonomous (Draft Only)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-xs space-y-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Strategy Engine</span>
-                <Badge variant="outline" className="text-blue-400 border-blue-500/30">Draft</Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Procedural Engine</span>
-                <Badge variant="outline" className="text-blue-400 border-blue-500/30">Draft</Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Viability Engine</span>
-                <Badge variant="outline" className="text-blue-400 border-blue-500/30">Draft</Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Procedural Path Engine</span>
-                <Badge variant="outline" className="text-blue-400 border-blue-500/30">Draft</Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Human Required */}
-        <Card className="bg-amber-500/5 border-amber-500/20">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-amber-400 flex items-center gap-1.5">
-              <Shield className="h-3.5 w-3.5" /> Sovereign Approval Required
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-xs space-y-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Assembly Engine</span>
-                <Badge variant="outline" className="text-amber-400 border-amber-500/30">Approval</Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Campaign Engine</span>
-                <Badge variant="outline" className="text-amber-400 border-amber-500/30">Approval</Badge>
-              </div>
-            </div>
-            <Button size="sm" variant="outline" className="w-full mt-2 text-xs" asChild>
-              <Link href="/sovereign-control">
-                <Shield className="h-3 w-3 mr-1" /> Go to Sovereign Control
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Sunam Status */}
-      {sunamStatus && (
-        <Card className="bg-card/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
-              <Radio className="h-3.5 w-3.5 text-cyan-400" /> Sunam Autonomous Backfill
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-              <div>
-                <span className="text-muted-foreground block mb-1">Signals Pending</span>
-                <span className="font-mono text-lg">{sunamStatus.signals?.pending || 0}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground block mb-1">Approved</span>
-                <span className="font-mono text-lg text-emerald-400">{sunamStatus.signals?.approved || 0}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground block mb-1">Rejected</span>
-                <span className="font-mono text-lg text-red-400">{sunamStatus.signals?.rejected || 0}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground block mb-1">Total Registry</span>
-                <span className="font-mono text-lg">{sunamStatus.registry || 0}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
-
-/* â”€â”€ Shared Components â”€â”€ */
-function MetricCard({ label, value, icon, color }: { label: string; value: string; icon: React.ReactNode; color: string }) {
-  const colorMap: Record<string, string> = {
-    emerald: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
-    blue: "text-blue-400 bg-blue-500/10 border-blue-500/20",
-    violet: "text-violet-400 bg-violet-500/10 border-violet-500/20",
-    amber: "text-amber-400 bg-amber-500/10 border-amber-500/20",
-    red: "text-red-400 bg-red-500/10 border-red-500/20",
-    orange: "text-orange-400 bg-orange-500/10 border-orange-500/20",
-    yellow: "text-yellow-400 bg-yellow-500/10 border-yellow-500/20",
-    cyan: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20",
-  };
-  const cls = colorMap[color] ?? colorMap.blue;
-
-  return (
-    <div className={`rounded-lg border p-3 ${cls}`}>
-      <div className="flex items-center gap-1.5 mb-1 opacity-70">{icon}<span className="text-xs">{label}</span></div>
-      <div className="text-xl font-bold font-mono">{value}</div>
-    </div>
-  );
-}
-
-function StatusBadge({ label, count, variant }: { label: string; count: number; variant: "success" | "destructive" | "running" }) {
-  const cls = variant === "success" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-    : variant === "destructive" ? "bg-red-500/10 text-red-400 border-red-500/20"
-    : "bg-blue-500/10 text-blue-400 border-blue-500/20";
-  return (
-    <div className={`rounded-md border px-3 py-2 text-center ${cls}`}>
-      <div className="text-lg font-bold font-mono">{count}</div>
-      <div className="text-xs opacity-70">{label}</div>
-    </div>
-  );
-}
-
-function PanelSkeleton() {
-  return (
-    <div className="space-y-3 animate-pulse">
-      <div className="h-6 bg-muted rounded w-1/3" />
-      <div className="grid grid-cols-2 gap-3">
-        {[1, 2, 3, 4].map((i) => <div key={i} className="h-16 bg-muted rounded-lg" />)}
-      </div>
-      <div className="h-32 bg-muted rounded-lg" />
-    </div>
-  );
-}
-
-function PanelEmpty({ label }: { label: string }) {
-  return (
-    <div className="flex items-center justify-center h-32 text-sm text-muted-foreground">
-      {label}
-    </div>
-  );
-}
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   LEGACY REGISTRY VIEW (preserved from original Mission Control)
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
-
-function LegacyRegistryView() {
-  const { data: registryStats } = trpc.registry.stats.useQuery(undefined, {
-    retry: false,
-    refetchOnWindowFocus: false,
-  });
-
-  return (
-    <div className="space-y-6">
-      <div className="text-center py-8">
-        <h3 className="text-xl font-semibold mb-2">Registry & Alpha Lake</h3>
-        <p className="text-muted-foreground text-sm max-w-lg mx-auto">
-          The original Mission Control cork-board interface. State registry data, schema validation,
-          and Alpha Lake document generation tools.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <MetricCard label="States Built" value={registryStats?.totalStates?.toString() ?? "9"} icon={<TrendingUp className="h-4 w-4" />} color="emerald" />
-        <MetricCard label="Programs" value={registryStats?.totalPrograms?.toLocaleString() ?? "828"} icon={<BookOpen className="h-4 w-4" />} color="blue" />
-        <MetricCard label="Oversight Bodies" value={registryStats?.totalOversight?.toString() ?? "233"} icon={<Shield className="h-4 w-4" />} color="violet" />
-        <MetricCard label="Tests Passing" value={registryStats?.totalTests?.toLocaleString() ?? "4,605"} icon={<CheckCircle2 className="h-4 w-4" />} color="emerald" />
-      </div>
-
-      <Card className="bg-card/50">
-        <CardContent className="pt-6 text-center text-sm text-muted-foreground">
-          <p>The full cork-board Registry and Alpha Lake document generation interface has been preserved.</p>
-          <p className="mt-1">Access the detailed state-by-state registry, schema validation, and document templates through the dedicated Registry pages.</p>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   MAIN COMPONENT
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
-
-/* â”€â”€ Panel: Live Data Ingestion â”€â”€ */
-/** Per-dataset row with run status polling to disable Ingest button */
-function DatasetRow({ ds, triggerMutation, toggleMutation }: {
-  ds: { stream_id: string; stream_name: string; enabled: boolean; update_frequency: string; jurisdiction: string | null; domain: string | null; records_ingested: number; last_ingested_at: number | null };
-  triggerMutation: { mutate: (input: { datasetId: string; maxRecords?: number }) => void; isPending: boolean };
-  toggleMutation: { mutate: (input: { datasetId: string; enabled: boolean }) => void };
-}) {
-  const runStatus = trpc.ingestion.datasetRunStatus.useQuery(
-    { datasetId: ds.stream_id },
-    { refetchInterval: 3000 } // Poll every 3s while visible
-  );
-
-  const isRunning = runStatus.data?.running ?? false;
-  const isQueued = runStatus.data?.queued ?? false;
-  const isBusy = isRunning || isQueued || triggerMutation.isPending;
-
-  return (
-    <div className="rounded-lg border border-border/50 p-4 flex items-center justify-between">
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="font-medium truncate">{ds.stream_name}</span>
-          <Badge variant="outline" className={ds.enabled ? "text-emerald-400 border-emerald-400/30" : "text-muted-foreground border-border"}>
-            {ds.enabled ? "Active" : "Paused"}
-          </Badge>
-          <Badge variant="outline" className="text-cyan-400 border-cyan-400/30">{ds.update_frequency}</Badge>
-          {isRunning && (
-            <Badge variant="outline" className="text-amber-400 border-amber-400/30 animate-pulse">
-              <Loader2 className="h-3 w-3 animate-spin mr-1" /> Running
-            </Badge>
-          )}
-          {isQueued && (
-            <Badge variant="outline" className="text-purple-400 border-purple-400/30">
-              <Clock className="h-3 w-3 mr-1" /> Queued
-            </Badge>
-          )}
-        </div>
-        <div className="text-xs text-muted-foreground mt-1 flex items-center gap-3">
-          <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {ds.jurisdiction ?? "â€”"}</span>
-          <span>{ds.domain ?? "â€”"}</span>
-          <span>{(ds.records_ingested ?? 0).toLocaleString()} records</span>
-          {ds.last_ingested_at && <span>Last: {formatTimeAgo(ds.last_ingested_at)}</span>}
-        </div>
-      </div>
-      <div className="flex items-center gap-2 ml-4">
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => triggerMutation.mutate({ datasetId: ds.stream_id, maxRecords: 5000 })}
-          disabled={isBusy}
-          title={isRunning ? "Ingestion is running" : isQueued ? "Ingestion is queued" : "Start ingestion"}
-        >
-          {isBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
-          {isRunning ? "Running..." : isQueued ? "Queued" : "Ingest"}
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => toggleMutation.mutate({ datasetId: ds.stream_id, enabled: !ds.enabled })}
-        >
-          {ds.enabled ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-function IngestionPanel() {
-  const datasets = trpc.unified.get_unified_ingestion_metrics.useQuery({});
-  const runs = trpc.ingestion.listRuns.useQuery({ limit: 10 });
-  const signals = trpc.unified.get_unified_signals.useQuery({ limit: 20 });
-  const signalStats = trpc.unified.get_unified_signal_summary.useQuery({});
-  const signal_cards = trpc.ingestion.list_signal_intelligence_cards.useQuery({
-    limit: 25,
-    include_excluded: false,
-  });
-  const signal_card_summary = trpc.ingestion.get_signal_intelligence_summary.useQuery();
-  const schedulerStatus = trpc.ingestion.getSchedulerStatus.useQuery();
-  const atlasCatalog = trpc.ingestion.get_atlas_public_stream_catalog.useQuery();
-
-  const seedAtlasMutation = trpc.ingestion.seed_atlas_population_streams.useMutation({
-    onSuccess: () => {
-      datasets.refetch();
-      schedulerStatus.refetch();
-      atlasCatalog.refetch();
-    },
-  });
-
-  const seedMutation = trpc.ingestion.seedDefaultDatasets.useMutation({
-    onSuccess: () => {
-      datasets.refetch();
-      schedulerStatus.refetch();
-    },
-  });
-  const triggerMutation = trpc.ingestion.triggerIngestion.useMutation({
-    onSuccess: () => {
-      runs.refetch();
-      signals.refetch();
-      signalStats.refetch();
-      signal_cards.refetch();
-      signal_card_summary.refetch();
-      datasets.refetch();
-    },
-  });
-  const toggleMutation = trpc.ingestion.toggleDataset.useMutation({
-    onSuccess: () => {
-      datasets.refetch();
-      schedulerStatus.refetch();
-    },
-  });
-
-  const severityColor: Record<string, string> = {
-    critical: "text-red-400 bg-red-400/10 border-red-400/30",
-    high: "text-orange-400 bg-orange-400/10 border-orange-400/30",
-    medium: "text-yellow-400 bg-yellow-400/10 border-yellow-400/30",
-    low: "text-blue-400 bg-blue-400/10 border-blue-400/30",
-  };
-
-  return (
-    <div className="space-y-6">
-      {/* Row 1: Scheduler Status + Signal Stats */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <Radio className="h-5 w-5 text-cyan-400" />
-                Ingestion Scheduler
-              </h3>
-              <div className="flex gap-2 flex-wrap justify-end">
-                <Button
-                  size="sm"
-                  onClick={() => seedAtlasMutation.mutate({})}
-                  disabled={seedAtlasMutation.isPending}
-                  title="Register the curated Atlas public stream catalog"
-                >
-                  {seedAtlasMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Globe className="h-3.5 w-3.5" />}
-                  Populate Atlas Streams
-                </Button>
-                {(!datasets.data || datasets.data.length === 0) && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => seedMutation.mutate()}
-                    disabled={seedMutation.isPending}
-                  >
-                    {seedMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
-                    Seed WA Datasets
-                  </Button>
-                )}
-              </div>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
-              <div className="rounded-lg border border-border/50 p-3">
-                <div className="text-xs text-muted-foreground flex items-center gap-1"><Database className="h-3 w-3" /> Registered</div>
-                <div className="text-xl font-bold text-cyan-400">{datasets.data?.length ?? 0}</div>
-              </div>
-              <div className="rounded-lg border border-border/50 p-3">
-                <div className="text-xs text-muted-foreground flex items-center gap-1"><Radio className="h-3 w-3" /> Scheduled</div>
-                <div className="text-xl font-bold text-emerald-400">{schedulerStatus.data?.activeJobs?.length ?? 0}</div>
-              </div>
-              <div className="rounded-lg border border-border/50 p-3">
-                <div className="text-xs text-muted-foreground flex items-center gap-1"><Activity className="h-3 w-3" /> Running</div>
-                <div className="text-xl font-bold text-amber-400">{schedulerStatus.data?.runningIngestions?.length ?? 0}</div>
-              </div>
-              <div className="rounded-lg border border-border/50 p-3">
-                <div className="text-xs text-muted-foreground flex items-center gap-1"><Globe className="h-3 w-3" /> Atlas Catalog</div>
-                <div className="text-xl font-bold text-blue-400">{atlasCatalog.data?.total_streams ?? 0}</div>
-              </div>
-              <div className="rounded-lg border border-border/50 p-3 md:col-span-2">
-                <div className="text-xs text-muted-foreground flex items-center gap-1"><Layers className="h-3 w-3" /> Public Stream Domains</div>
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {atlasCatalog.data?.by_domain && Object.entries(atlasCatalog.data.by_domain).slice(0, 5).map(([domain, count]) => (
-                    <Badge key={domain} variant="outline" className="text-xs">{domain}: {String(count)}</Badge>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
-              <Zap className="h-5 w-5 text-amber-400" />
-              Live Signal Summary
-            </h3>
-            {signal_card_summary.data?.configured === true && signal_card_summary.data.source_status === "ok" ? (
-              <div className="space-y-3 mb-4">
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="rounded-lg border border-border/50 p-3">
-                    <div className="text-xs text-muted-foreground">Production Cards</div>
-                    <div className="text-xl font-bold text-amber-400">{signal_card_summary.data.production_cards ?? 0}</div>
-                  </div>
-                  <div className="rounded-lg border border-border/50 p-3">
-                    <div className="text-xs text-muted-foreground">Total Cards</div>
-                    <div className="text-xl font-bold text-cyan-400">{signal_card_summary.data.total_cards ?? 0}</div>
-                  </div>
-                  <div className="rounded-lg border border-border/50 p-3">
-                    <div className="text-xs text-muted-foreground">Excluded</div>
-                    <div className="text-xl font-bold text-muted-foreground">{signal_card_summary.data.excluded_cards ?? 0}</div>
-                  </div>
-                </div>
-                <div className="rounded-lg border border-border/50 p-3">
-                  <div className="text-xs text-muted-foreground">By Severity</div>
-                  <div className="flex gap-2 mt-1 flex-wrap">
-                    {Object.entries(signal_card_summary.data.by_severity ?? {}).map(([severity, count]) => (
-                      <Badge key={severity} variant="outline" className={severityColor[severity] ?? ""}>{severity}: {String(count)}</Badge>
-                    ))}
-                    {Object.keys(signal_card_summary.data.by_severity ?? {}).length === 0 && (
-                      <span className="text-xs text-muted-foreground">No Atlas cards yet</span>
-                    )}
-                  </div>
-                </div>
-                <div className="rounded-lg border border-border/50 p-3">
-                  <div className="text-xs text-muted-foreground">Signal Families</div>
-                  <div className="flex gap-2 mt-1 flex-wrap">
-                    {Object.entries(signal_card_summary.data.by_signal_family ?? {}).slice(0, 8).map(([signal_family, count]) => (
-                      <Badge key={signal_family} variant="outline" className="text-cyan-400 border-cyan-400/30">{signal_family}: {String(count)}</Badge>
-                    ))}
-                  </div>
-                </div>
-                <div className="rounded-lg border border-border/50 p-3">
-                  <div className="text-xs text-muted-foreground">Canonical Codes</div>
-                  <div className="flex gap-2 mt-1 flex-wrap">
-                    {Object.entries(signal_card_summary.data.by_canonical_signal_code ?? {}).slice(0, 8).map(([canonical_signal_code, count]) => (
-                      <Badge key={canonical_signal_code} variant="outline" className="text-blue-400 border-blue-400/30">{canonical_signal_code}: {String(count)}</Badge>
-                    ))}
-                  </div>
-                </div>
-                <div className="rounded-lg border border-border/50 p-3">
-                  <div className="text-xs text-muted-foreground">Verification Status</div>
-                  <div className="flex gap-2 mt-1 flex-wrap">
-                    {Object.entries(signal_card_summary.data.by_verification_status ?? {}).map(([verification_status, count]) => (
-                      <Badge key={verification_status} variant="outline" className="text-emerald-400 border-emerald-400/30">{verification_status}: {String(count)}</Badge>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="rounded-lg border border-border/50 p-3">
-                  <div className="text-xs text-muted-foreground">Active Signals</div>
-                  <div className="text-xl font-bold text-amber-400">{signalStats.data?.totalActive ?? 0}</div>
-                  <div className="text-xl font-bold text-amber-400">{signalStats.data?.total_active ?? 0}</div>
-                </div>
-                <div className="rounded-lg border border-border/50 p-3">
-                  <div className="text-xs text-muted-foreground">By Severity</div>
-                  <div className="flex gap-2 mt-1 flex-wrap">
-                    {signalStats.data?.by_severity && Object.entries(signalStats.data.by_severity).map(([sev, cnt]) => (
-                      <Badge key={sev} variant="outline" className={severityColor[sev] ?? ""}>{sev}: {String(cnt)}</Badge>
-                    ))}
-                    {(!signalStats.data?.by_severity || Object.keys(signalStats.data.by_severity).length === 0) && (
-                      <span className="text-xs text-muted-foreground">No signals yet</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Row 2: Dataset Registry */}
-      <Card>
-        <CardContent className="pt-6">
-          <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
-            <Globe className="h-5 w-5 text-emerald-400" />
-            Dataset Registry
-          </h3>
-          {datasets.isLoading ? (
-            <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading...</div>
-          ) : !datasets.data || datasets.data.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Database className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>No datasets registered yet.</p>
-              <p className="text-sm mt-1">Click "Populate Atlas Streams" to add the curated federal, state, and municipal public stream catalog.</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {datasets.data.map((ds) => (
-                <DatasetRow
-                  key={ds.stream_id}
-                  ds={ds}
-                  triggerMutation={triggerMutation}
-                  toggleMutation={toggleMutation}
-                />
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Row 3: Recent Runs + Live Signals */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardContent className="pt-6">
-            <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
-              <Clock className="h-5 w-5 text-blue-400" />
-              Recent Ingestion Runs
-            </h3>
-            {runs.isLoading ? (
-              <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading...</div>
-            ) : !runs.data || runs.data.length === 0 ? (
-              <div className="text-center py-6 text-muted-foreground">
-                <Clock className="h-6 w-6 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">No ingestion runs yet. Seed datasets and trigger an ingestion.</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {runs.data.map((run) => (
-                  <div key={run.id} className="rounded-lg border border-border/50 p-3 flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">{run.datasetId}</span>
-                        <Badge variant="outline" className={
-                          run.status === "completed" ? "text-emerald-400 border-emerald-400/30" :
-                          run.status === "failed" ? "text-red-400 border-red-400/30" :
-                          run.status === "running" ? "text-amber-400 border-amber-400/30" :
-                          run.status === "api_unavailable" ? "text-orange-400 border-orange-400/30" :
-                          run.status === "partial" ? "text-blue-400 border-blue-400/30" :
-                          "text-muted-foreground border-border"
-                        }>
-                          {run.status === "running" && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
-                          {run.status === "api_unavailable" ? "API Unavailable" : run.status === "partial" ? "Partial" : run.status}
-                        </Badge>
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {run.startTime ? new Date(run.startTime).toLocaleString() : "â€”"} Â· {run.recordsProcessed ?? 0} processed Â· {run.signals_generated ?? 0} signals
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
-              <AlertTriangle className="h-5 w-5 text-amber-400" />
-              Live Signals Detected
-            </h3>
-            {signal_cards.data?.cards && signal_cards.data.cards.length > 0 ? (
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {signal_cards.data.cards.map((card) => (
-                  <div
-                    key={card.signal_id ?? `${card.source_table}:${card.source_record_id}`}
-                    className={`rounded-lg border p-3 ${card.exclude_from_production ? "border-orange-400/40 bg-orange-400/10 opacity-75" : severityColor[card.severity ?? ""] ?? "border-border/50"}`}
-                  >
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {card.severity && (
-                        <Badge variant="outline" className={severityColor[card.severity] ?? ""}>{card.severity}</Badge>
-                      )}
-                      {card.canonical_signal_code && (
-                        <Badge variant="outline" className="text-blue-400 border-blue-400/30">{card.canonical_signal_code}</Badge>
-                      )}
-                      {card.signal_family && (
-                        <Badge variant="outline" className="text-cyan-400 border-cyan-400/30">{card.signal_family}</Badge>
-                      )}
-                      {card.verification_status && (
-                        <Badge variant="outline" className="text-emerald-400 border-emerald-400/30">{card.verification_status}</Badge>
-                      )}
-                      {card.record_origin && (
-                        <Badge variant="outline" className="text-violet-400 border-violet-400/30">{card.record_origin}</Badge>
-                      )}
-                      {card.exclude_from_production && (
-                        <Badge variant="outline" className="text-orange-400 border-orange-400/30">excluded</Badge>
-                      )}
-                      <span className="text-sm font-medium truncate">
-                        {card.display_title ?? card.canonical_signal_name ?? card.raw_signal_type ?? card.signal_id}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                      {card.display_summary ?? "No Atlas summary available."}
-                    </p>
-                    <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2 flex-wrap">
-                      {card.jurisdiction_raw_value && <span>{card.jurisdiction_raw_value}</span>}
-                      {card.geography_key && <span>{card.geography_key}</span>}
-                      {card.confidence_score !== null && card.confidence_score !== undefined && (
-                        <span>Confidence: {(Number(card.confidence_score) * 100).toFixed(0)}%</span>
-                      )}
-                      {card.severity_score !== null && card.severity_score !== undefined && (
-                        <span>Severity score: {Number(card.severity_score).toFixed(2)}</span>
-                      )}
-                      {card.detected_at && <span>{new Date(card.detected_at).toLocaleDateString()}</span>}
-                      {card.quarantine_reason && <span>Quarantine: {card.quarantine_reason}</span>}
-                    </div>
-                    {card.source_url && (
-                      <a href={card.source_url} target="_blank" rel="noreferrer" className="text-xs text-primary inline-flex items-center gap-1 mt-2">
-                        Source <ExternalLink className="h-3 w-3" />
-                      </a>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : signals.isLoading || signal_cards.isLoading ? (
-              <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading...</div>
-            ) : !signals.data || signals.data.length === 0 ? (
-              <div className="text-center py-6 text-muted-foreground">
-                <Zap className="h-6 w-6 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">No live signals yet. Run an ingestion to detect patterns.</p>
-              </div>
-            ) : (
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {signals.data.map((sig) => {
-                  const entityTypeColorMap: Record<string, string> = {
-                    corporation: "text-blue-400 border-blue-500/30 bg-blue-500/10",
-                    organization: "text-purple-400 border-purple-500/30 bg-purple-500/10",
-                    government_agency: "text-amber-400 border-amber-500/30 bg-amber-500/10",
-                    nonprofit: "text-green-400 border-green-500/30 bg-green-500/10",
-                    landlord_entity: "text-orange-400 border-orange-500/30 bg-orange-500/10",
-                    contractor_business: "text-cyan-400 border-cyan-500/30 bg-cyan-500/10",
-                    financial_institution: "text-emerald-400 border-emerald-500/30 bg-emerald-500/10",
-                    telecom_company: "text-indigo-400 border-indigo-500/30 bg-indigo-500/10",
-                    media_company: "text-pink-400 border-pink-500/30 bg-pink-500/10",
-                    individual_person: "text-gray-400 border-gray-500/30 bg-gray-500/10",
-                    unknown: "text-gray-500 border-gray-600/30 bg-gray-600/10",
-                  };
-                  const entityTypeLabel: Record<string, string> = {
-                    corporation: "Corporation",
-                    organization: "Organization",
-                    government_agency: "Government Agency",
-                    nonprofit: "Nonprofit",
-                    landlord_entity: "Landlord/Property",
-                    contractor_business: "Contractor",
-                    financial_institution: "Financial Institution",
-                    telecom_company: "Telecom",
-                    media_company: "Media/Tech",
-                    individual_person: "Individual",
-                    unknown: "Unknown",
-                  };
-                  // Signal type classification for visual differentiation
-                  const signalTypeConfig: Record<string, { label: string; icon: string; color: string }> = {
-                    repeat_entity: { label: "Entity", icon: "\u{1F3E2}", color: "text-blue-400" },
-                    frequency_spike: { label: "Sector", icon: "\u{1F4CA}", color: "text-amber-400" },
-                    geographic_cluster: { label: "Location", icon: "\u{1F4CD}", color: "text-emerald-400" },
-                    status_delay: { label: "Status", icon: "\u23F3", color: "text-orange-400" },
-                    trend_anomaly: { label: "Trend", icon: "\u{1F4C8}", color: "text-purple-400" },
-                  };
-                  const isRepeatEntity = sig.signal_type === "repeat_entity";
-                  const isFrequencySpike = sig.signal_type === "frequency_spike";
-                  const displayName = isRepeatEntity
-                    ? ((sig as any).canonicalEntityName || sig.title.replace(/^Repeat (Company|Agency|Entity):\s*/, "").replace(/^Repeat Entity:\s*/, ""))
-                    : sig.title;
-                  const entType = (sig as any).entityType;
-                  const entRole = (sig as any).entityRole as string | null;
-                  const entConfidence = (sig as any).entityConfidenceScore;
-                  const roleConf = (sig as any).roleConfidence;
-                  const aliases = (sig as any).entityAliasesJson as string[] | null;
-                  const roleLabel = entRole === "business" || entRole === "respondent" ? "Company" : entRole === "agency" ? "Agency" : entRole === "organization" ? "Organization" : null;
-                  const stConfig = signalTypeConfig[sig.signal_type] ?? { label: sig.signal_type, icon: "\u26A0\uFE0F", color: "text-gray-400" };
-
-                  return (
-                    <div key={sig.id} className={`rounded-lg border p-3 ${severityColor[sig.severity_level] ?? "border-border/50"}`}>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <Badge variant="outline" className={severityColor[sig.severity_level] ?? ""}>{sig.severity}</Badge>
-                        {/* Signal type badge â€” always shown */}
-                        <Badge variant="outline" className={`text-[10px] ${stConfig.color} border-current/30`}>
-                          {stConfig.label}
-                        </Badge>
-                        {isRepeatEntity && entType && (
-                          <Badge variant="outline" className={`text-[10px] ${entityTypeColorMap[entType] || ""}`}>
-                            {entityTypeLabel[entType] || entType}
-                          </Badge>
-                        )}
-                        {isRepeatEntity && roleLabel && (
-                          <span className="text-[10px] text-muted-foreground font-medium">{roleLabel}:</span>
-                        )}
-                        <span className="text-sm font-medium truncate">
-                          {displayName}
-                        </span>
-                      </div>
-                      {isRepeatEntity && aliases && aliases.length > 0 && (
-                        <div className="text-[10px] text-muted-foreground mt-1">
-                          Also known as: {aliases.join(", ")}
-                        </div>
-                      )}
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{sig.explanation}</p>
-                      <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2 flex-wrap">
-                        <span>{sig.jurisdiction}</span>
-                        <span>\u00B7</span>
-                        <span>Confidence: {(Number(sig.confidence_score) * 100).toFixed(0)}%</span>
-                        {isRepeatEntity && entConfidence && (
-                          <>
-                            <span>\u00B7</span>
-                            <span>Entity Score: {(Number(entConfidence) * 100).toFixed(0)}%</span>
-                          </>
-                        )}
-                        {isRepeatEntity && roleConf && (
-                          <>
-                            <span>\u00B7</span>
-                            <span>Role: {(Number(roleConf) * 100).toFixed(0)}%</span>
-                          </>
-                        )}
-                        <span>\u00B7</span>
-                        <span>{sig.detected_at ? new Date(sig.detected_at).toLocaleDateString() : "â€”"}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-}
-
-/* â”€â”€ Knowledge Backbone Explorer Panel â”€â”€ */
-function KnowledgeExplorerPanel() {
-  const [activeTab, setActiveTab] = useState("statutes");
-  const [search, setSearch] = useState("");
-  const [jurisdiction, setJurisdiction] = useState("");
-  const [page, setPage] = useState(0);
-  const [selectedRow, setSelectedRow] = useState<string | null>(null);
-
-  const jurisdictions = trpc.knowledgeIngestion.getJurisdictions.useQuery();
-  const domains = trpc.knowledgeIngestion.getDomains.useQuery();
-
-  const statutes = trpc.knowledgeIngestion.browseStatutes.useQuery(
-    { search: search || undefined, jurisdiction: jurisdiction || undefined, limit: 15, offset: page * 15 },
-    { enabled: activeTab === "statutes" }
-  );
-  const caseLaw = trpc.knowledgeIngestion.browseCaseLaw.useQuery(
-    { search: search || undefined, jurisdiction: jurisdiction || undefined, limit: 15, offset: page * 15 },
-    { enabled: activeTab === "caseLaw" }
-  );
-  const agencies = trpc.knowledgeIngestion.browseAgencies.useQuery(
-    { search: search || undefined, jurisdiction: jurisdiction || undefined, limit: 15, offset: page * 15 },
-    { enabled: activeTab === "agencies" }
-  );
-  const courts = trpc.knowledgeIngestion.browseCourts.useQuery(
-    { search: search || undefined, jurisdiction: jurisdiction || undefined, limit: 15, offset: page * 15 },
-    { enabled: activeTab === "courts" }
-  );
-  const targets = trpc.knowledgeIngestion.browseAdvocacyTargets.useQuery(
-    { search: search || undefined, limit: 15, offset: page * 15 },
-    { enabled: activeTab === "targets" }
-  );
-  const formulas = trpc.knowledgeIngestion.browseSettlementFormulas.useQuery(
-    { search: search || undefined, limit: 15, offset: page * 15 },
-    { enabled: activeTab === "formulas" }
-  );
-
-  const tabConfig = [
-    { key: "statutes", label: "Statutes", icon: <BookOpen className="h-3.5 w-3.5" /> },
-    { key: "caseLaw", label: "Case Law", icon: <Scale className="h-3.5 w-3.5" /> },
-    { key: "agencies", label: "Agencies", icon: <Building2 className="h-3.5 w-3.5" /> },
-    { key: "courts", label: "Courts", icon: <Landmark className="h-3.5 w-3.5" /> },
-    { key: "targets", label: "Advocacy Targets", icon: <Target className="h-3.5 w-3.5" /> },
-    { key: "formulas", label: "Settlement Formulas", icon: <Calculator className="h-3.5 w-3.5" /> },
-  ];
-
-  const activeData = activeTab === "statutes" ? statutes : activeTab === "caseLaw" ? caseLaw : activeTab === "agencies" ? agencies : activeTab === "courts" ? courts : activeTab === "targets" ? targets : formulas;
-  const rows = activeData.data?.rows ?? [];
-  const total = activeData.data?.total ?? 0;
-  const totalPages = Math.ceil(total / 15);
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <Database className="h-5 w-5 text-cyan-400" />
-          Knowledge Backbone Explorer
-        </h3>
-        <Badge variant="outline" className="text-cyan-400 border-cyan-400/30">{total.toLocaleString()} results</Badge>
-      </div>
-
-      {/* Category tabs */}
-      <div className="flex flex-wrap gap-1.5">
-        {tabConfig.map(t => (
-          <Button key={t.key} size="sm" variant={activeTab === t.key ? "default" : "outline"}
-            onClick={() => { setActiveTab(t.key); setPage(0); }} className="gap-1.5 text-xs">
-            {t.icon} {t.label}
-          </Button>
-        ))}
-      </div>
-
-      {/* Search + Filter */}
-      <div className="flex gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input className="w-full pl-9 pr-3 py-2 rounded-md border border-border bg-background text-sm"
-            placeholder={`Search ${tabConfig.find(t => t.key === activeTab)?.label ?? ''}...`}
-            value={search} onChange={e => { setSearch(e.target.value); setPage(0); }} />
-        </div>
-        {(activeTab !== "targets" && activeTab !== "formulas") && (
-          <select className="px-3 py-2 rounded-md border border-border bg-background text-sm min-w-[120px]"
-            value={jurisdiction} onChange={e => { setJurisdiction(e.target.value); setPage(0); }}>
-            <option value="">All Jurisdictions</option>
-            {(jurisdictions.data ?? []).map(j => <option key={j} value={j}>{j}</option>)}
-          </select>
-        )}
-      </div>
-
-      {/* Results */}
-      <Card className="bg-card/50">
-        <CardContent className="pt-4">
-          {activeData.isLoading ? (
-            <div className="flex items-center justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-          ) : rows.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground text-sm">No records found</div>
-          ) : (
-            <div className="space-y-2">
-              {rows.map((r: any, i: number) => {
-                const rowKey = String(r.id ?? r.case_id ?? r.court_id ?? r.target_id ?? i);
-                const isOpen = selectedRow === rowKey;
-                return (
-                  <div key={rowKey}
-                    onClick={() => setSelectedRow(isOpen ? null : rowKey)}
-                    className={`rounded-lg border p-3 cursor-pointer transition-all ${
-                      isOpen ? "border-cyan-500/40 bg-cyan-500/5" : "border-border/50 hover:bg-accent/30"
-                    }`}>
-                    {/* Statutes */}
-                    {activeTab === "statutes" && (
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm">{r.title}</span>
-                          <Badge variant="outline" className="text-xs">{r.jurisdiction}</Badge>
-                          <Badge variant="outline" className="text-xs text-blue-400 border-blue-400/30">{r.sourceType}</Badge>
-                          <ChevronRight className={`h-3.5 w-3.5 ml-auto text-muted-foreground transition-transform ${isOpen ? "rotate-90" : ""}`} />
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-1">{r.citation}</div>
-                        {!isOpen && r.summary && <div className="text-xs text-muted-foreground mt-1 line-clamp-2">{r.summary}</div>}
-                        {isOpen && (
-                          <div className="mt-3 pt-3 border-t border-border/50 space-y-2" onClick={e => e.stopPropagation()}>
-                            {r.summary && <p className="text-xs text-foreground/80 leading-relaxed">{r.summary}</p>}
-                            {r.effectiveDate && <div className="text-xs text-muted-foreground">Effective: {r.effectiveDate}</div>}
-                            {r.source_url && (
-                              <a href={r.source_url} target="_blank" rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-xs text-cyan-400 hover:underline">
-                                <ExternalLink className="h-3 w-3" /> View Full Statute
-                              </a>
-                            )}
-                            <div className="pt-2 border-t border-border/30">
-                              <CommitToCase type="statute" itemId={r.id} label="Attach to Case" size="sm" variant="outline" />
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    {/* Case Law */}
-                    {activeTab === "caseLaw" && (
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm">{r.caseName}</span>
-                          <Badge variant="outline" className="text-xs">{r.jurisdiction}</Badge>
-                          {r.significance && <Badge variant="outline" className="text-xs text-amber-400 border-amber-400/30">{r.significance}</Badge>}
-                          <ChevronRight className={`h-3.5 w-3.5 ml-auto text-muted-foreground transition-transform ${isOpen ? "rotate-90" : ""}`} />
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-1">{r.citation} {r.court && `â€” ${r.court}`}</div>
-                        {!isOpen && r.summary && <div className="text-xs text-muted-foreground mt-1 line-clamp-2">{r.summary}</div>}
-                        {isOpen && (
-                          <div className="mt-3 pt-3 border-t border-border/50 space-y-3" onClick={e => e.stopPropagation()}>
-                            {r.holding && (
-                              <div>
-                                <div className="text-[10px] font-mono text-cyan-400 uppercase tracking-wider mb-1">Holding</div>
-                                <p className="text-xs text-foreground/90 leading-relaxed">{r.holding}</p>
-                              </div>
-                            )}
-                            {r.summary && !r.holding && <p className="text-xs text-foreground/80 leading-relaxed">{r.summary}</p>}
-                            {r.statutesInterpreted && (
-                              <div>
-                                <div className="text-[10px] font-mono text-amber-400 uppercase tracking-wider mb-1">Statutes Interpreted</div>
-                                <div className="flex flex-wrap gap-1">
-                                  {(Array.isArray(r.statutesInterpreted) ? r.statutesInterpreted : [r.statutesInterpreted]).map((s: string, si: number) => (
-                                    <Badge key={si} variant="outline" className="text-[10px] text-amber-300 border-amber-400/30">{s}</Badge>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                            {r.domains && (
-                              <div>
-                                <div className="text-[10px] font-mono text-violet-400 uppercase tracking-wider mb-1">Domains</div>
-                                <div className="flex flex-wrap gap-1">
-                                  {(Array.isArray(r.domains) ? r.domains : [r.domains]).map((d: string, di: number) => (
-                                    <Badge key={di} variant="outline" className="text-[10px] text-violet-300 border-violet-400/30 capitalize">{d.replace(/_/g, ' ')}</Badge>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                            {r.subsequentHistory && (
-                              <div>
-                                <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-1">Subsequent History</div>
-                                <p className="text-xs text-muted-foreground leading-relaxed">{r.subsequentHistory}</p>
-                              </div>
-                            )}
-                            {r.source_url && (
-                              <a href={r.source_url} target="_blank" rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-xs text-cyan-400 hover:underline">
-                                <ExternalLink className="h-3 w-3" /> Full Opinion
-                              </a>
-                            )}
-                            <div className="pt-2 border-t border-border/30">
-                              <CommitToCase type="statute" itemId={r.case_id ?? r.id} label="Attach to Case" size="sm" variant="outline" />
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    {/* Agencies */}
-                    {activeTab === "agencies" && (
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm">{r.agencyName}</span>
-                          <Badge variant="outline" className="text-xs">{r.jurisdiction}</Badge>
-                          <Badge variant="outline" className="text-xs text-violet-400 border-violet-400/30">{r.authorityType}</Badge>
-                          <ChevronRight className={`h-3.5 w-3.5 ml-auto text-muted-foreground transition-transform ${isOpen ? "rotate-90" : ""}`} />
-                        </div>
-                        {!isOpen && r.filingUrl && <div className="text-xs text-cyan-400 mt-1 truncate">{r.filingUrl}</div>}
-                        {isOpen && (
-                          <div className="mt-3 pt-3 border-t border-border/50 space-y-2" onClick={e => e.stopPropagation()}>
-                            {r.description && <p className="text-xs text-foreground/80 leading-relaxed">{r.description}</p>}
-                            <div className="grid grid-cols-1 gap-y-1.5">
-                              {r.phone && (
-                                <div className="flex items-center gap-2">
-                                  <span className="text-[10px] font-mono text-muted-foreground w-14">Phone</span>
-                                  <a href={`tel:${r.phone}`} className="text-xs text-emerald-400 hover:underline">{r.phone}</a>
-                                </div>
-                              )}
-                              {r.email && (
-                                <div className="flex items-center gap-2">
-                                  <span className="text-[10px] font-mono text-muted-foreground w-14">Email</span>
-                                  <a href={`mailto:${r.email}`} className="text-xs text-cyan-400 hover:underline truncate">{r.email}</a>
-                                </div>
-                              )}
-                              {r.address && (
-                                <div className="flex items-start gap-2">
-                                  <span className="text-[10px] font-mono text-muted-foreground w-14 mt-0.5">Address</span>
-                                  <span className="text-xs text-foreground/80">{r.address}</span>
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex gap-3 flex-wrap">
-                              {r.filingUrl && (
-                                <a href={r.filingUrl} target="_blank" rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 text-xs text-cyan-400 hover:underline">
-                                  <ExternalLink className="h-3 w-3" /> File Complaint
-                                </a>
-                              )}
-                              {r.websiteUrl && (
-                                <a href={r.websiteUrl} target="_blank" rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 text-xs text-blue-400 hover:underline">
-                                  <ExternalLink className="h-3 w-3" /> Website
-                                </a>
-                              )}
-                            </div>
-                            <div className="pt-2 border-t border-border/30">
-                              <CommitToCase type="benefit" itemId={r.id} label="Attach Agency to Case" size="sm" variant="outline" />
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    {/* Courts */}
-                    {activeTab === "courts" && (
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm">{r.court_name}</span>
-                          <Badge variant="outline" className="text-xs">{r.jurisdiction}</Badge>
-                          <Badge variant="outline" className="text-xs text-emerald-400 border-emerald-400/30">{r.court_type}</Badge>
-                          {r.efiling && <Badge variant="outline" className="text-xs text-cyan-400 border-cyan-400/30">E-Filing</Badge>}
-                          <ChevronRight className={`h-3.5 w-3.5 ml-auto text-muted-foreground transition-transform ${isOpen ? "rotate-90" : ""}`} />
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-1">{r.court_id} â€” Filing fee: ${r.filing_fee ?? 'N/A'}</div>
-                        {isOpen && (
-                          <div className="mt-3 pt-3 border-t border-border/50 space-y-2" onClick={e => e.stopPropagation()}>
-                            <div className="grid grid-cols-1 gap-y-1.5">
-                              {r.phone && (
-                                <div className="flex items-center gap-2">
-                                  <span className="text-[10px] font-mono text-muted-foreground w-14">Phone</span>
-                                  <a href={`tel:${r.phone}`} className="text-xs text-emerald-400 hover:underline">{r.phone}</a>
-                                </div>
-                              )}
-                              {r.address && (
-                                <div className="flex items-start gap-2">
-                                  <span className="text-[10px] font-mono text-muted-foreground w-14 mt-0.5">Address</span>
-                                  <span className="text-xs text-foreground/80">{r.address}</span>
-                                </div>
-                              )}
-                              {r.hours && (
-                                <div className="flex items-center gap-2">
-                                  <span className="text-[10px] font-mono text-muted-foreground w-14">Hours</span>
-                                  <span className="text-xs text-foreground/80">{r.hours}</span>
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex gap-3 flex-wrap">
-                              {r.efiling_url && (
-                                <a href={r.efiling_url} target="_blank" rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 text-xs text-cyan-400 hover:underline">
-                                  <ExternalLink className="h-3 w-3" /> E-File Here
-                                </a>
-                              )}
-                              {r.website && (
-                                <a href={r.website} target="_blank" rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 text-xs text-blue-400 hover:underline">
-                                  <ExternalLink className="h-3 w-3" /> Court Website
-                                </a>
-                              )}
-                            </div>
-                            <div className="pt-2 border-t border-border/30">
-                              <CommitToCase type="filing" itemId={r.id} label="Add Court to Case" size="sm" variant="outline" />
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    {/* Advocacy Targets */}
-                    {activeTab === "targets" && (
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm">{r.target_name}</span>
-                          <Badge variant="outline" className="text-xs">{r.target_type}</Badge>
-                          <Badge variant="outline" className="text-xs">{r.jurisdiction}</Badge>
-                          <ChevronRight className={`h-3.5 w-3.5 ml-auto text-muted-foreground transition-transform ${isOpen ? "rotate-90" : ""}`} />
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-1">Influence: {r.influence_score ?? 'N/A'} | Responsiveness: {r.responsiveness_score ?? 'N/A'}</div>
-                        {isOpen && (
-                          <div className="mt-3 pt-3 border-t border-border/50 space-y-2" onClick={e => e.stopPropagation()}>
-                            {r.notes && <p className="text-xs text-foreground/80 leading-relaxed">{r.notes}</p>}
-                            <div className="grid grid-cols-1 gap-y-1.5">
-                              {r.email && (
-                                <div className="flex items-center gap-2">
-                                  <span className="text-[10px] font-mono text-muted-foreground w-14">Email</span>
-                                  <a href={`mailto:${r.email}`} className="text-xs text-cyan-400 hover:underline truncate">{r.email}</a>
-                                </div>
-                              )}
-                              {r.phone && (
-                                <div className="flex items-center gap-2">
-                                  <span className="text-[10px] font-mono text-muted-foreground w-14">Phone</span>
-                                  <a href={`tel:${r.phone}`} className="text-xs text-emerald-400 hover:underline">{r.phone}</a>
-                                </div>
-                              )}
-                              {r.office_address && (
-                                <div className="flex items-start gap-2">
-                                  <span className="text-[10px] font-mono text-muted-foreground w-14 mt-0.5">Office</span>
-                                  <span className="text-xs text-foreground/80">{r.office_address}</span>
-                                </div>
-                              )}
-                            </div>
-                            {r.website_url && (
-                              <a href={r.website_url} target="_blank" rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-xs text-blue-400 hover:underline">
-                                <ExternalLink className="h-3 w-3" /> Website
-                              </a>
-                            )}
-                            <div className="pt-2 border-t border-border/30">
-                              <CommitToCase type="benefit" itemId={r.target_id ?? r.id} label="Attach Target to Case" size="sm" variant="outline" />
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    {/* Settlement Formulas */}
-                    {activeTab === "formulas" && (
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm">{r.formulaName}</span>
-                          <Badge variant="outline" className="text-xs">{r.claimType}</Badge>
-                          <Badge variant="outline" className="text-xs">{r.jurisdiction}</Badge>
-                          <ChevronRight className={`h-3.5 w-3.5 ml-auto text-muted-foreground transition-transform ${isOpen ? "rotate-90" : ""}`} />
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-1">Base multiplier: {r.baseMultiplier ?? 'N/A'}</div>
-                        {!isOpen && r.description && <div className="text-xs text-muted-foreground mt-1 line-clamp-2">{r.description}</div>}
-                        {isOpen && (
-                          <div className="mt-3 pt-3 border-t border-border/50 space-y-2" onClick={e => e.stopPropagation()}>
-                            {r.description && <p className="text-xs text-foreground/80 leading-relaxed">{r.description}</p>}
-                            {r.formula && (
-                              <div>
-                                <div className="text-[10px] font-mono text-amber-400 uppercase tracking-wider mb-1">Formula</div>
-                                <code className="text-xs text-amber-300 bg-amber-500/10 px-2 py-1 rounded block">{r.formula}</code>
-                              </div>
-                            )}
-                            <div className="flex gap-4 text-xs">
-                              {r.minMultiplier != null && <div><span className="text-muted-foreground">Min: </span><span>{r.minMultiplier}x</span></div>}
-                              {r.maxMultiplier != null && <div><span className="text-muted-foreground">Max: </span><span>{r.maxMultiplier}x</span></div>}
-                              {r.confidenceThreshold != null && <div><span className="text-muted-foreground">Confidence: </span><span>{r.confidenceThreshold}%</span></div>}
-                            </div>
-                            {r.source_url && (
-                              <a href={r.source_url} target="_blank" rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-xs text-cyan-400 hover:underline">
-                                <ExternalLink className="h-3 w-3" /> Source
-                              </a>
-                            )}
-                            <div className="pt-2 border-t border-border/30">
-                              <CommitToCase type="statute" itemId={r.id} label="Apply Formula to Case" size="sm" variant="outline" />
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/50">
-              <span className="text-xs text-muted-foreground">Page {page + 1} of {totalPages}</span>
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" disabled={page === 0} onClick={() => setPage(p => p - 1)}>Prev</Button>
-                <Button size="sm" variant="outline" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>Next</Button>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-/* â”€â”€ Signal Governance Panel â”€â”€ */
-function SignalGovernancePanel() {
-  const [selectedSignalId, setSelectedSignalId] = useState<string | null>(null);
-  const [severityFilter, setSeverityFilter] = useState<string>("");
-  const [tierFilter, setTierFilter] = useState<string>("");
-
-  const { data: dashboard, isLoading: dashLoading } = trpc.signalGovernance.dashboard.useQuery(
-    {
-      severityLevel: severityFilter || undefined,
-      escalationTier: tierFilter || undefined,
-      governedOnly: true,
-      limit: 50,
-    },
-    { refetchInterval: 15000 }
-  );
-  const { data: escalation, isLoading: escLoading } = trpc.signalGovernance.escalationSummary.useQuery(
-    undefined, { refetchInterval: 30000 }
-  );
-  const { data: thresholds } = trpc.signalGovernance.escalationThresholds.useQuery();
-  const { data: auditTrail } = trpc.signalGovernance.auditTrail.useQuery(
-    { signalId: selectedSignalId! },
-    { enabled: !!selectedSignalId }
-  );
-
-  const tierColors: Record<string, string> = {
-    leadership_alert: "bg-red-500/20 text-red-400 border-red-500/30",
-    enforcement_escalation: "bg-orange-500/20 text-orange-400 border-orange-500/30",
-    standard_reporting: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-    analyst_review: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-    monitoring_only: "bg-slate-500/20 text-slate-400 border-slate-500/30",
-  };
-
-  const severityColors: Record<string, string> = {
-    critical: "bg-red-500/20 text-red-300",
-    high: "bg-orange-500/20 text-orange-300",
-    medium: "bg-yellow-500/20 text-yellow-300",
-    low: "bg-emerald-500/20 text-emerald-300",
-  };
-
-  return (
-    <div className="space-y-6">
-      {/* Escalation Tier Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-        {escLoading ? (
-          Array.from({ length: 5 }).map((_, i) => (
-            <Card key={i}><CardContent className="pt-4 pb-3"><div className="h-12 animate-pulse bg-muted rounded" /></CardContent></Card>
-          ))
-        ) : (
-          (thresholds || []).map((tier: any) => {
-            const count = (escalation || []).find((e: any) => e.tierName === tier.tierName)?.signalCount ?? 0;
-            return (
-              <Card key={tier.tierName} className={`border ${tierColors[tier.tierName] || "border-border"} cursor-pointer transition-all hover:scale-[1.02]`}
-                onClick={() => setTierFilter(tierFilter === tier.tierName ? "" : tier.tierName)}>
-                <CardContent className="pt-4 pb-3">
-                  <div className="text-2xl font-bold">{count}</div>
-                  <div className="text-xs font-medium mt-1 capitalize">
-                    {tier.tierName.replace(/_/g, " ")}
-                  </div>
-                  <div className="text-[10px] text-muted-foreground mt-0.5">
-                    {tier.minScore}â€“{tier.maxScore} confidence
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })
-        )}
-      </div>
-
-      {/* Filters */}
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">Severity:</span>
-          {["critical", "high", "medium", "low"].map(s => (
-            <Badge key={s} variant="outline"
-              className={`cursor-pointer text-xs ${severityFilter === s ? severityColors[s] : "opacity-50"}`}
-              onClick={() => setSeverityFilter(severityFilter === s ? "" : s)}>
-              {s}
-            </Badge>
-          ))}
-        </div>
-        {(severityFilter || tierFilter) && (
-          <Button variant="ghost" size="sm" className="text-xs h-6" onClick={() => { setSeverityFilter(""); setTierFilter(""); }}>
-            Clear filters
-          </Button>
-        )}
-      </div>
-
-      {/* Signal Dashboard Table */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Shield className="h-4 w-4 text-primary" />
-            Governed Signals
-            {dashboard && <Badge variant="secondary" className="text-xs">{dashboard.total ?? dashboard.signals?.length ?? 0}</Badge>}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {dashLoading ? (
-            <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-14 animate-pulse bg-muted rounded" />)}</div>
-          ) : !dashboard || !dashboard.signals || dashboard.signals.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Shield className="h-8 w-8 mx-auto mb-2 opacity-40" />
-              <p className="text-sm">No governed signals yet.</p>
-              <p className="text-xs mt-1">Signals will appear here after a successful ingestion run.</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {(dashboard.signals || []).map((sig: any) => (
-                <div key={sig.signal_id}
-                  className={`p-3 rounded-lg border transition-all cursor-pointer hover:bg-accent/30 ${
-                    selectedSignalId === sig.signal_id ? "ring-1 ring-primary bg-accent/20" : "bg-card/50"
-                  }`}
-                  onClick={() => setSelectedSignalId(selectedSignalId === sig.signal_id ? null : sig.signal_id)}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-sm truncate">{sig.title}</span>
-                        <Badge className={`text-[10px] ${severityColors[sig.severity_level] || ""}`}>
-                          {sig.severity_level}
-                        </Badge>
-                        <Badge variant="outline" className={`text-[10px] ${tierColors[sig.escalation_tier] || ""}`}>
-                          {(sig.escalation_tier || "").replace(/_/g, " ")}
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground line-clamp-2">{sig.explanation}</p>
-                      <div className="flex items-center gap-3 mt-1.5 text-[10px] text-muted-foreground">
-                        <span className="flex items-center gap-1"><Globe className="h-3 w-3" />{sig.stream_id}</span>
-                        <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{sig.jurisdiction}</span>
-                        <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{sig.detected_at ? new Date(sig.detected_at).toLocaleString() : ""}</span>
-                      </div>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <div className={`text-lg font-bold ${
-                        sig.confidence_score >= 85 ? "text-red-400" :
-                        sig.confidence_score >= 70 ? "text-orange-400" :
-                        sig.confidence_score >= 51 ? "text-yellow-400" : "text-slate-400"
-                      }`}>
-                        {sig.confidence_score}
-                      </div>
-                      <div className="text-[10px] text-muted-foreground">confidence</div>
-                    </div>
-                  </div>
-
-                  {/* Expanded Audit Trail */}
-                  {selectedSignalId === sig.signal_id && auditTrail && (
-                    <div className="mt-3 pt-3 border-t border-border/50">
-                      <h4 className="text-xs font-semibold mb-2 flex items-center gap-1">
-                        <Eye className="h-3 w-3" /> Generation Audit Trail
-                      </h4>
-                      {(!auditTrail.generationLog || auditTrail.generationLog.length === 0) ? (
-                        <p className="text-xs text-muted-foreground">No audit trail recorded for this signal.</p>
-                      ) : (
-                        <div className="space-y-2">
-                          {auditTrail.generationLog.map((entry: any, idx: number) => (
-                            <div key={idx} className="text-xs bg-background/50 rounded p-2 border border-border/30">
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="font-medium capitalize">{(entry.stepName || "").replace(/_/g, " ")}</span>
-                                <span className="text-muted-foreground">{entry.createdAt ? new Date(entry.createdAt).toLocaleTimeString() : ""}</span>
-                              </div>
-                              {entry.templateUsed && <div className="text-muted-foreground">Template: {entry.templateUsed}</div>}
-                              {entry.verificationResult && (
-                                <div className="mt-1">
-                                  <Badge variant="outline" className="text-[10px]">
-                                    {entry.verificationResult}
-                                  </Badge>
-                                </div>
-                              )}
-                              {entry.factorBreakdown && Array.isArray(entry.factorBreakdown) && (
-                                <div className="mt-1 grid grid-cols-2 gap-1">
-                                  {entry.factorBreakdown.map((fb: any, fi: number) => (
-                                    <div key={fi} className="flex justify-between text-[10px]">
-                                      <span className="text-muted-foreground capitalize">{(fb.factorName || "").replace(/_/g, " ")}</span>
-                                      <span className="font-mono">{fb.weightedScore?.toFixed(1) ?? fb.rawScore?.toFixed(1) ?? "â€”"}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Confidence Factors Reference */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <BarChart3 className="h-4 w-4 text-primary" />
-            Confidence Scoring Model
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {(thresholds || []).map((tier: any) => (
-              <div key={tier.tierName} className={`p-3 rounded-lg border ${tierColors[tier.tierName] || "border-border"}`}>
-                <div className="font-medium text-sm capitalize mb-1">{tier.tierName.replace(/_/g, " ")}</div>
-                <div className="text-xs text-muted-foreground">{tier.action}</div>
-                <div className="text-[10px] mt-1">Score range: {tier.minScore}â€“{tier.maxScore}</div>
-                {tier.autoEscalate && <Badge className="text-[10px] mt-1 bg-red-500/20 text-red-300">Auto-escalate</Badge>}
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   PATTERN REGISTRY PANEL
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
-
-/* PatternRegistryPanel moved to components/mission/PatternRegistryPanel.tsx */
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   TREND & PRESSURE ENGINE PANEL
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
-
-function TrendPressurePanel() {
-  const summary = trpc.trendEngine.missionControlSummary.useQuery();
-  const dashboard = trpc.trendEngine.dashboard.useQuery();
-  const alertRules = trpc.trendEngine.alertRules.useQuery();
-  const updateAll = trpc.trendEngine.updateAll.useMutation({
-    onSuccess: () => {
-      summary.refetch();
-      dashboard.refetch();
-    },
-  });
-  const utils = trpc.useUtils();
-
-  const s = summary.data;
-  const trends = dashboard.data?.trends || [];
-
-  const classificationColors: Record<string, string> = {
-    critical: "bg-red-500/10 text-red-400 border-red-500/30",
-    accelerating: "bg-orange-500/10 text-orange-400 border-orange-500/30",
-    emerging: "bg-yellow-500/10 text-yellow-400 border-yellow-500/30",
-    stable: "bg-blue-500/10 text-blue-400 border-blue-500/30",
-    declining: "bg-green-500/10 text-green-400 border-green-500/30",
-  };
-
-  const momentumIcons: Record<string, string> = {
-    rising: "\u2191",
-    falling: "\u2193",
-    plateau: "\u2192",
-  };
-
-  return (
-    <div className="space-y-6">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card className="border-red-500/30">
-          <CardContent className="pt-4 pb-3 text-center">
-            <div className="text-2xl font-bold text-red-400">{s?.criticalCount ?? 0}</div>
-            <div className="text-xs text-muted-foreground">Critical</div>
-          </CardContent>
-        </Card>
-        <Card className="border-orange-500/30">
-          <CardContent className="pt-4 pb-3 text-center">
-            <div className="text-2xl font-bold text-orange-400">{s?.acceleratingCount ?? 0}</div>
-            <div className="text-xs text-muted-foreground">Accelerating</div>
-          </CardContent>
-        </Card>
-        <Card className="border-yellow-500/30">
-          <CardContent className="pt-4 pb-3 text-center">
-            <div className="text-2xl font-bold text-yellow-400">{s?.emergingCount ?? 0}</div>
-            <div className="text-xs text-muted-foreground">Emerging</div>
-          </CardContent>
-        </Card>
-        <Card className="border-blue-500/30">
-          <CardContent className="pt-4 pb-3 text-center">
-            <div className="text-2xl font-bold text-blue-400">{s?.avgPressure ?? 0}</div>
-            <div className="text-xs text-muted-foreground">Avg Pressure</div>
-          </CardContent>
-        </Card>
-        <Card className="border-purple-500/30">
-          <CardContent className="pt-4 pb-3 text-center">
-            <div className="text-2xl font-bold text-purple-400">{s?.maxPressure ?? 0}</div>
-            <div className="text-xs text-muted-foreground">Max Pressure</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex gap-3">
-        <Button
-          size="sm"
-          onClick={() => updateAll.mutate()}
-          disabled={updateAll.isPending}
-          className="gap-1.5"
-        >
-          {updateAll.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-          Update All Trends
-        </Button>
-      </div>
-
-      {/* Top Critical/Accelerating */}
-      {s?.topCritical && s.topCritical.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-red-400" />
-              Critical & Accelerating Trends
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {s.topCritical.map((t: any) => (
-                <div key={t.trend_id} className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
-                  <div className="flex items-center gap-3">
-                    <Badge className={classificationColors[t.trend_classification] || ""}>
-                      {t.trend_classification}
-                    </Badge>
-                    <span className="text-sm font-medium">{t.pattern_name || t.pattern_type || "Unknown"}</span>
-                  </div>
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                    <span>Pressure: <span className="font-mono font-bold text-foreground">{t.pressure_index}</span></span>
-                    <span>Growth: <span className="font-mono">{t.growth_rate_30d}%</span></span>
-                    <span>{momentumIcons[t.momentum_direction] || "\u2192"} {t.momentum_direction}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* All Trends Table */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Gauge className="h-4 w-4" />
-            All Trends ({dashboard.data?.total ?? 0})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {trends.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Gauge className="h-8 w-8 mx-auto mb-2 opacity-40" />
-              <p className="text-sm">No trends calculated yet.</p>
-              <p className="text-xs mt-1">Click "Update All Trends" to analyze active patterns.</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b text-left text-muted-foreground">
-                    <th className="pb-2 font-medium">Pattern</th>
-                    <th className="pb-2 font-medium">Classification</th>
-                    <th className="pb-2 font-medium">Pressure</th>
-                    <th className="pb-2 font-medium">Momentum</th>
-                    <th className="pb-2 font-medium">Growth 7d</th>
-                    <th className="pb-2 font-medium">Growth 30d</th>
-                    <th className="pb-2 font-medium">Signals</th>
-                    <th className="pb-2 font-medium">Geo Spread</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {trends.map((t: any) => (
-                    <tr key={t.trend_id} className="border-b border-border/50 hover:bg-muted/20">
-                      <td className="py-2 font-medium">{t.pattern_name || t.pattern_type || "â€”"}</td>
-                      <td className="py-2">
-                        <Badge className={classificationColors[t.trend_classification] || ""}>
-                          {t.trend_classification}
-                        </Badge>
-                      </td>
-                      <td className="py-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
-                            <div
-                              className={`h-full rounded-full ${
-                                Number(t.pressure_index) >= 85 ? "bg-red-500" :
-                                Number(t.pressure_index) >= 70 ? "bg-orange-500" :
-                                Number(t.pressure_index) >= 50 ? "bg-yellow-500" : "bg-blue-500"
-                              }`}
-                              style={{ width: `${Math.min(Number(t.pressure_index), 100)}%` }}
-                            />
-                          </div>
-                          <span className="font-mono text-xs">{t.pressure_index}</span>
-                        </div>
-                      </td>
-                      <td className="py-2 text-xs">
-                        {momentumIcons[t.momentum_direction] || "\u2192"} {t.momentum_direction}
-                      </td>
-                      <td className="py-2 font-mono text-xs">{t.growth_rate_7d}%</td>
-                      <td className="py-2 font-mono text-xs">{t.growth_rate_30d}%</td>
-                      <td className="py-2 font-mono text-xs">{t.current_signal_count}</td>
-                      <td className="py-2 font-mono text-xs">{t.current_geographic_spread}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Recent Alerts */}
-      {s?.recentAlerts && s.recentAlerts.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-yellow-400" />
-              Recent Pressure Alerts
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {s.recentAlerts.map((a: any, i: number) => (
-                <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
-                  <div className="flex items-center gap-3">
-                    <Badge variant={a.alert_level === "critical" ? "destructive" : "outline"}>
-                      {a.alert_level}
-                    </Badge>
-                    <span className="text-sm">{a.pattern_name || a.pattern_type || "Unknown"}</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                    <span>Pressure: {a.pressure_index}</span>
-                    <span>{a.snapshot_date}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Alert Rules */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Shield className="h-4 w-4" />
-            Alert Rules ({alertRules.data?.length ?? 0})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {(alertRules.data || []).length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">No alert rules configured.</p>
-          ) : (
-            <div className="space-y-1.5">
-              {(alertRules.data || []).map((rule: any) => (
-                <div key={rule.rule_id} className="flex items-center justify-between p-2 rounded bg-muted/20 text-xs">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-[10px]">{rule.alert_severity}</Badge>
-                    <span className="font-medium">{rule.rule_name}</span>
-                  </div>
-                  <span className="text-muted-foreground">
-                    {rule.condition_type} {rule.threshold_direction} {rule.threshold_value}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   STRATEGY PATHFINDING PANEL
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
-/* StrategyPathsPanel moved to components/mission/StrategyPathsPanel.tsx */
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   OUTCOMES & EFFECTIVENESS PANEL
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
-/* OutcomesPanel moved to components/mission/OutcomesPanel.tsx */
-
-// â”€â”€â”€ Feedback Scheduler Section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function FeedbackSchedulerSection() {
-  const feedbackQ = trpc.operationalWorkflow.feedbackLogs.useQuery();
-  const triggerMut = trpc.operationalWorkflow.triggerFeedback.useMutation();
-  const utils = trpc.useUtils();
-
-  const logs = feedbackQ.data?.logs || [];
-
-  const handleTrigger = async () => {
-    await triggerMut.mutateAsync();
-    utils.operationalWorkflow.feedbackLogs.invalidate();
-  };
-
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <RefreshCw className="h-4 w-4" />
-            Feedback Learning Loop
-          </CardTitle>
-          <Button variant="outline" size="sm" onClick={handleTrigger} disabled={triggerMut.isPending}>
-            {triggerMut.isPending ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5 mr-1.5" />}
-            Run Now
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {logs.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">No feedback cycles recorded yet. The scheduler runs every 6 hours automatically.</p>
-        ) : (
-          <div className="space-y-3">
-            {logs.slice(0, 10).map((log: any, i: number) => (
-              <div key={i} className="flex items-center gap-3 p-3 rounded-lg border bg-card/50">
-                <div className={`w-2 h-2 rounded-full ${log.status === 'completed' ? 'bg-green-400' : log.status === 'failed' ? 'bg-red-400' : 'bg-yellow-400'}`} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono text-muted-foreground">
-                      {log.runAt ? new Date(log.runAt).toLocaleString() : 'Unknown'}
-                    </span>
-                    <Badge variant="outline" className="text-[10px]">{log.status || 'completed'}</Badge>
-                  </div>
-                  <div className="flex gap-4 mt-1 text-xs text-muted-foreground">
-                    <span>Patterns: {log.patternsProcessed ?? 0}</span>
-                    <span>Strategies: {log.strategiesUpdated ?? 0}</span>
-                    <span>Signals: {log.signalsChanged ?? 0}</span>
-                    {log.duration && <span>{log.duration}ms</span>}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-// â”€â”€â”€ Intervention Dashboard Panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function InterventionDashboardPanel() {
-  const dashQ = trpc.interventionNetwork.dashboard.useQuery();
-  const summaryQ = trpc.interventionNetwork.missionControlSummary.useQuery();
-
-  const dash = dashQ.data;
-  const summary = summaryQ.data;
-  const endpoints = dash?.endpoints || [];
-  const recentSubmissions = dash?.recentSubmissions || [];
-
-  if (dashQ.isLoading) return <PanelSkeleton />;
-
-  return (
-    <div className="space-y-6">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <MetricCard label="Total Endpoints" value={summary?.totalEndpoints ?? dash?.summary?.totalEndpoints ?? 0} />
-        <MetricCard label="Total Submissions" value={summary?.totalSubmissions ?? dash?.summary?.totalSubmissions ?? 0} />
-        <MetricCard label="Pending" value={summary?.pendingSubmissions ?? dash?.summary?.pendingSubmissions ?? 0} />
-        <MetricCard label="Active Investigations" value={summary?.activeInvestigations ?? dash?.summary?.activeInvestigations ?? 0} />
-      </div>
-
-      {/* Two-column: Endpoints + Recent Submissions */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Authority Endpoints */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Building2 className="h-4 w-4" /> Authority Endpoints ({endpoints.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {endpoints.length > 0 ? (
-              <div className="space-y-2">
-                {endpoints.slice(0, 10).map((ep: any) => (
-                  <div key={ep.endpoint_id} className="flex items-center justify-between p-2.5 rounded-lg border bg-muted/20">
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium truncate">{ep.agency_abbreviation || ep.agency_name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {ep.intervention_type} Â· Level {ep.escalation_level} Â· {ep.jurisdiction_scope}
-                      </div>
-                    </div>
-                    {ep.website_url && (
-                      <a href={ep.website_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground">
-                        <ExternalLink className="h-3.5 w-3.5" />
-                      </a>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <PanelEmpty label="No intervention endpoints configured." />
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Recent Submissions */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Send className="h-4 w-4" /> Recent Submissions ({recentSubmissions.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {recentSubmissions.length > 0 ? (
-              <div className="space-y-2">
-                {recentSubmissions.slice(0, 10).map((sub: any) => {
-                  const statusColor = sub.response_status === "closed" ? "text-green-500" : sub.response_status === "investigation_open" ? "text-cyan-500" : sub.response_status === "submitted" ? "text-amber-500" : "text-muted-foreground";
-                  return (
-                    <div key={sub.submission_id} className="flex items-center justify-between p-2.5 rounded-lg border bg-muted/20">
-                      <div className="min-w-0">
-                        <div className="text-sm font-medium truncate">{sub.agency_name || sub.endpoint_id}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {sub.action_type} Â· <span className={statusColor}>{sub.response_status}</span>
-                        </div>
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {sub.submission_date ? new Date(sub.submission_date).toLocaleDateString() : ""}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <PanelEmpty label="No submissions recorded yet." />
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Escalation Rules Summary */}
-      {summary?.escalationRuleCount !== undefined && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <Siren className="h-5 w-5 text-red-500" />
-              <div>
-                <div className="text-sm font-medium">Escalation Rules Active</div>
-                <div className="text-xs text-muted-foreground">
-                  {summary.escalationRuleCount} rules configured across {summary.jurisdictionCount ?? 0} jurisdictions
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
-
-// â”€â”€â”€ Policy Impact Panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function PolicyImpactPanel() {
-  const dashQ = trpc.policyImpact.dashboard.useQuery();
-  const timelineQ = trpc.policyImpact.timeline.useQuery();
-
-  const dash = dashQ.data;
-  const timeline = timelineQ.data || [];
-
-  if (dashQ.isLoading) return <PanelSkeleton />;
-
-  return (
-    <div className="space-y-6">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <MetricCard label="Policy Events" value={dash?.totalEvents ?? 0} />
-        <MetricCard label="Impacts Measured" value={dash?.totalImpacts ?? 0} />
-        <MetricCard label="Positive Impacts" value={dash?.positiveImpacts ?? 0} />
-        <MetricCard label="Negative Impacts" value={dash?.negativeImpacts ?? 0} />
-      </div>
-
-      {/* Two-column: Recent Events + Timeline */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Policy Events */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Landmark className="h-4 w-4" /> Recent Policy Events
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {(dash?.recentEvents || []).length > 0 ? (
-              <div className="space-y-2">
-                {(dash?.recentEvents || []).slice(0, 8).map((evt: any) => (
-                  <div key={evt.policy_id} className="p-2.5 rounded-lg border bg-muted/20">
-                    <div className="text-sm font-medium">{evt.policy_name}</div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {evt.policy_type} Â· {evt.jurisdiction || "Federal"}
-                      {evt.effective_date && ` Â· Effective: ${new Date(evt.effective_date).toLocaleDateString()}`}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <PanelEmpty label="No policy events recorded." />
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Policy Trend Overlay */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" /> Policy Trend Overlay
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {timeline.length > 0 ? (
-              <div className="space-y-3">
-                {timeline.slice(0, 8).map((item: any, i: number) => {
-                  const impactColor = item.impact_direction === "positive" ? "text-green-500 bg-green-500/10 border-green-500/20"
-                    : item.impact_direction === "negative" ? "text-red-500 bg-red-500/10 border-red-500/20"
-                    : "text-muted-foreground bg-muted/20 border-border";
-                  return (
-                    <div key={item.policy_id || i} className="flex items-start gap-3">
-                      <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium">{item.policy_name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {item.effective_date ? new Date(item.effective_date).toLocaleDateString() : ""}
-                          {item.affected_pattern_count !== undefined && ` Â· ${item.affected_pattern_count} patterns affected`}
-                        </div>
-                        {item.impact_direction && (
-                          <Badge variant="outline" className={`mt-1 text-[10px] ${impactColor}`}>
-                            {item.impact_direction} impact ({item.signal_change_pct ?? 0}%)
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <PanelEmpty label="No policy-trend correlations measured yet. Record policy events and measure their impact on patterns." />
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Impact Correlation Summary */}
-      {dash?.topCorrelations && dash.topCorrelations.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Scale className="h-4 w-4" /> Top Policy-Pattern Correlations
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {dash.topCorrelations.slice(0, 6).map((corr: any, i: number) => (
-                <div key={i} className="flex items-center justify-between p-2.5 rounded-lg border bg-muted/20">
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium">{corr.policy_name} â†’ {corr.pattern_type}</div>
-                    <div className="text-xs text-muted-foreground">{corr.jurisdiction}</div>
-                  </div>
-                  <Badge variant="outline" className={corr.correlation_strength > 0.6 ? "text-green-500" : "text-amber-500"}>
-                    {(corr.correlation_strength * 100).toFixed(0)}% correlation
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
-
-// â”€â”€â”€ Remedy Templates Panel â”€â”€â”€
-function RemedyTemplatesPanel() {
-  const dashQ = trpc.remedyTemplate.dashboard.useQuery();
-  const missionQ = trpc.remedyTemplate.missionControlSummary.useQuery();
-  const queueQ = trpc.remedyTemplate.queueStatus.useQuery();
-  const calcDashQ = trpc.settlementCalculator.dashboard.useQuery();
-  const processQueueMut = trpc.remedyTemplate.processQueue.useMutation();
-
-  const dash = dashQ.data as any;
-  const mission = missionQ.data as any;
-  const queue = queueQ.data as any;
-  const calcDash = calcDashQ.data as any;
-
-  if (dashQ.isLoading || calcDashQ.isLoading) return <PanelSkeleton />;
-  if (!dash && !calcDash) return <PanelEmpty label="Remedy Templates" />;
-
-  return (
-    <div className="space-y-6">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <MetricCard label="Templates" value={String(dash?.totalTemplates ?? mission?.totalTemplates ?? 0)} icon={<ScrollText className="h-3.5 w-3.5" />} color="violet" />
-        <MetricCard label="Generated Docs" value={String(dash?.totalGenerated ?? mission?.totalGenerated ?? 0)} icon={<FileText className="h-3.5 w-3.5" />} color="blue" />
-        <MetricCard label="Settlement Formulas" value={String(calcDash?.totalFormulas ?? 0)} icon={<Calculator className="h-3.5 w-3.5" />} color="amber" />
-        <MetricCard label="Calculations Run" value={String(calcDash?.totalCalculations ?? 0)} icon={<DollarSign className="h-3.5 w-3.5" />} color="emerald" />
-      </div>
-
-      {/* Avg Settlement + Effectiveness Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {calcDash?.avgSettlement > 0 && (
-          <MetricCard label="Avg Settlement" value={`$${Math.round(calcDash.avgSettlement).toLocaleString()}`} icon={<DollarSign className="h-3.5 w-3.5" />} color="amber" />
-        )}
-        {mission?.avgEffectiveness > 0 && (
-          <MetricCard label="Avg Effectiveness" value={`${(mission.avgEffectiveness * 100).toFixed(0)}%`} icon={<Target className="h-3.5 w-3.5" />} color="emerald" />
-        )}
-        {mission?.pendingInQueue > 0 && (
-          <MetricCard label="Queue Pending" value={String(mission.pendingInQueue)} icon={<Clock className="h-3.5 w-3.5" />} color="yellow" />
-        )}
-      </div>
-
-      {/* Queue Status + Process Button */}
-      {queue && (
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm">Document Generation Queue</CardTitle>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => processQueueMut.mutate({})}
-                disabled={processQueueMut.isPending || (queue.pending === 0 && queue.processing === 0)}
-              >
-                {processQueueMut.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Play className="h-3 w-3 mr-1" />}
-                Process Queue
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-4 gap-4 text-center">
-              <div>
-                <div className="text-2xl font-bold text-yellow-500">{queue.pending}</div>
-                <div className="text-xs text-muted-foreground">Pending</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-blue-500">{queue.processing}</div>
-                <div className="text-xs text-muted-foreground">Processing</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-green-500">{queue.completed}</div>
-                <div className="text-xs text-muted-foreground">Completed</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-red-500">{queue.failed}</div>
-                <div className="text-xs text-muted-foreground">Failed</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Most-Used Templates */}
-      {dash?.topTemplates && dash.topTemplates.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Most-Used Templates</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {dash.topTemplates.map((t: any) => (
-                <div key={t.templateId} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
-                  <div className="flex-1 min-w-0">
-                    <span className="text-sm font-medium block truncate">{t.templateName}</span>
-                    <span className="text-xs text-muted-foreground capitalize">{(t.claimType || "").replace(/_/g, " ")} â€¢ {t.jurisdiction}</span>
-                  </div>
-                  <div className="flex gap-2 items-center">
-                    <Badge variant="secondary">{t.usageCount} uses</Badge>
-                    {t.successRate != null && (
-                      <Badge variant={t.successRate >= 0.7 ? "default" : "secondary"} className="text-xs">
-                        {(t.successRate * 100).toFixed(0)}%
-                      </Badge>
-                    )}
-                    <Badge variant="outline" className="text-xs capitalize">{t.difficultyLevel}</Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Template Coverage by Claim Type */}
-        {dash?.templatesByClaim && dash.templatesByClaim.length > 0 && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Template Coverage by Claim Type</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {dash.templatesByClaim.map((ct: any) => (
-                  <div key={ct.claimType} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
-                    <span className="text-sm font-medium capitalize">{(ct.claimType || "").replace(/_/g, " ")}</span>
-                    <Badge variant="secondary">{ct.count} templates</Badge>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Jurisdiction Coverage */}
-        {dash?.templatesByJurisdiction && dash.templatesByJurisdiction.length > 0 && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Jurisdiction Coverage</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {dash.templatesByJurisdiction.map((j: any) => (
-                  <div key={j.jurisdiction} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
-                    <span className="text-sm font-medium">{j.jurisdiction}</span>
-                    <Badge variant="secondary">{j.count} templates</Badge>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Settlement Formula Coverage */}
-        {calcDash?.claimTypeBreakdown && calcDash.claimTypeBreakdown.length > 0 && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Settlement Formula Coverage</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {calcDash.claimTypeBreakdown.map((ct: any) => (
-                  <div key={ct.claimType} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
-                    <span className="text-sm font-medium capitalize">{(ct.claimType || "").replace(/_/g, " ")}</span>
-                    <div className="flex gap-2">
-                      <Badge variant="secondary">{ct.count} formulas</Badge>
-                      {ct.avgAmount > 0 && (
-                        <Badge variant="outline">${Math.round(ct.avgAmount).toLocaleString()} avg</Badge>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Jurisdiction Formula Coverage */}
-        {calcDash?.jurisdictionCoverage && calcDash.jurisdictionCoverage.length > 0 && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Formula Jurisdiction Coverage</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {calcDash.jurisdictionCoverage.map((j: any) => (
-                  <div key={j.jurisdiction} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
-                    <span className="text-sm font-medium">{j.jurisdiction}</span>
-                    <Badge variant="secondary">{j.formulaCount} formulas</Badge>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      {/* Template Type Distribution */}
-      {dash?.templatesByType && dash.templatesByType.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Template Type Distribution</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-3">
-              {dash.templatesByType.map((tt: any) => (
-                <div key={tt.type} className="flex items-center gap-2 rounded-lg border border-border/50 px-3 py-2">
-                  <span className="text-sm font-medium capitalize">{(tt.type || "").replace(/_/g, " ")}</span>
-                  <Badge variant="secondary" className="text-xs">{tt.count}</Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Recent Generated Documents */}
-      {dash?.recentDocs && dash.recentDocs.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Recently Generated Documents</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {dash.recentDocs.map((doc: any) => (
-                <div key={doc.docId} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
-                  <div>
-                    <span className="text-sm font-medium">{doc.templateName || doc.templateId}</span>
-                    {doc.createdAt && (
-                      <span className="text-xs text-muted-foreground ml-2">
-                        {new Date(doc.createdAt).toLocaleDateString()}
-                      </span>
-                    )}
-                  </div>
-                  <Badge variant={doc.status === "approved" ? "default" : "secondary"}>{doc.status}</Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Recent Calculations */}
-      {calcDash?.recentCalculations && calcDash.recentCalculations.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Recent Settlement Calculations</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {calcDash.recentCalculations.map((calc: any) => (
-                <div key={calc.calcId} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
-                  <div>
-                    <span className="text-sm font-medium">{calc.formulaName}</span>
-                    <span className="text-xs text-muted-foreground ml-2 capitalize">{(calc.claimType || "").replace(/_/g, " ")} â€¢ {calc.jurisdiction}</span>
-                  </div>
-                  <Badge variant="default" className="font-mono">${Math.round(calc.calculatedAmount).toLocaleString()}</Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
-
-// â”€â”€â”€ Memory Strategy Metrics Panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function MemoryStrategyMetricsPanel() {
-  const metricsQ = trpc.memoryOverlay.missionControlMetrics.useQuery();
-  const m = metricsQ.data;
-
-  if (metricsQ.isLoading) return <PanelSkeleton />;
-  if (!m) return <PanelEmpty label="No memory strategy data available" />;
-
-  const reliColor = (r: string) => r === "high" ? "text-green-400" : r === "medium" ? "text-amber-400" : "text-red-400";
-  const reliBg = (r: string) => r === "high" ? "bg-green-500/10 border-green-500/20" : r === "medium" ? "bg-amber-500/10 border-amber-500/20" : "bg-red-500/10 border-red-500/20";
-
-  return (
-    <div className="space-y-6">
-      {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <Brain className="h-5 w-5 text-purple-400" />
-              <div>
-                <p className="text-2xl font-bold text-foreground">{m.totalMemories}</p>
-                <p className="text-xs text-muted-foreground">Total Memory Records</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <TrendingUp className="h-5 w-5 text-green-400" />
-              <div>
-                <p className="text-2xl font-bold text-foreground">{Math.round(m.overallAvgScore)}%</p>
-                <p className="text-xs text-muted-foreground">Overall Avg Success Score</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <BarChart className="h-5 w-5 text-cyan-400" />
-              <div>
-                <p className="text-2xl font-bold text-foreground">{m.totalSummaries}</p>
-                <p className="text-xs text-muted-foreground">Aggregated Summaries</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Top Strategies by Pattern */}
-      {m.topStrategiesByPattern.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Route className="h-4 w-4 text-purple-400" />
-              Top Strategies by Pattern
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {m.topStrategiesByPattern.map((s: any, i: number) => (
-                <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-foreground">{s.strategyName}</p>
-                    <p className="text-xs text-muted-foreground">{s.patternType}</p>
-                  </div>
-                  <div className="flex items-center gap-4 text-xs">
-                    <span className="text-green-400 font-mono font-semibold">{Math.round(s.avgSuccessScore)}%</span>
-                    <span className="text-muted-foreground font-mono">n={s.sampleSize}</span>
-                    <Badge variant="outline" className={`text-[10px] ${reliBg(s.reliability)} ${reliColor(s.reliability)}`}>
-                      {s.reliability}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Top Jurisdictions */}
-        {m.topJurisdictions.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Globe className="h-4 w-4 text-teal-400" />
-                Top Jurisdictions
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {m.topJurisdictions.map((j: any, i: number) => (
-                  <div key={i} className="flex items-center justify-between p-2 rounded bg-muted/20">
-                    <span className="text-sm font-mono font-medium text-foreground">{j.jurisdiction}</span>
-                    <div className="flex items-center gap-3 text-xs">
-                      <span className="text-teal-400 font-mono">{Math.round(j.avgScore)}% avg</span>
-                      <span className="text-muted-foreground font-mono">n={j.totalSamples}</span>
-                      <Badge variant="outline" className={`text-[10px] ${reliBg(j.reliability)} ${reliColor(j.reliability)}`}>
-                        {j.reliability}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Declining Strategies */}
-        {m.decliningStrategies.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-red-400" />
-                Declining Strategies
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {m.decliningStrategies.map((s: any, i: number) => (
-                  <div key={i} className="flex items-center justify-between p-2 rounded bg-red-500/5 border border-red-500/10">
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{s.strategyName}</p>
-                      <p className="text-xs text-muted-foreground">{s.patternType}</p>
-                    </div>
-                    <div className="flex items-center gap-3 text-xs">
-                      <span className="text-red-400 font-mono font-semibold">{Math.round(s.avgSuccessScore)}%</span>
-                      <span className="text-muted-foreground font-mono">n={s.sampleSize}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      {/* Low Confidence Recommendations */}
-      {m.lowConfidenceRecommendations.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Eye className="h-4 w-4 text-amber-400" />
-              Low-Confidence Recommendations (Analyst Review Needed)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {m.lowConfidenceRecommendations.map((r: any, i: number) => (
-                <div key={i} className="flex items-center justify-between p-2 rounded bg-amber-500/5 border border-amber-500/10">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-foreground">{r.strategyName}</p>
-                    <p className="text-xs text-muted-foreground">{r.patternType} Â· {r.jurisdiction}</p>
-                  </div>
-                  <div className="flex items-center gap-3 text-xs">
-                    <span className="text-amber-400 font-mono">{Math.round(r.avgSuccessScore)}%</span>
-                    <Badge variant="outline" className="text-[10px] bg-red-500/10 border-red-500/20 text-red-400">
-                      n={r.sampleSize} â€” low confidence
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
-
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// REFORM PROPOSALS PANEL
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-function ReformProposalsPanel() {
-  const dashQ = trpc.reformPackage.dashboard.useQuery();
-  const generateMut = trpc.reformPackage.generate.useMutation({
-    onSuccess: () => dashQ.refetch(),
-  });
-  const updateStatusMut = trpc.reformPackage.updateStatus.useMutation({
-    onSuccess: () => { dashQ.refetch(); if (selectedPkg) detailQ.refetch(); },
-  });
-  const regenerateMut = trpc.reformPackage.regenerate.useMutation({
-    onSuccess: () => { dashQ.refetch(); versionsQ.refetch(); },
-  });
-  const [selectedPkg, setSelectedPkg] = useState<string | null>(null);
-  const [detailTab, setDetailTab] = useState<"overview" | "sections" | "versions" | "exports" | "memory">("overview");
-  const detailQ = trpc.reformPackage.detail.useQuery(
-    { packageId: selectedPkg ?? "" },
-    { enabled: !!selectedPkg }
-  );
-  const [exportFormat, setExportFormat] = useState<"markdown" | "html" | "json">("markdown");
-  const exportQ = trpc.reformPackage.export.useQuery(
-    { packageId: selectedPkg ?? "", format: exportFormat },
-    { enabled: !!selectedPkg && detailTab === "exports" }
-  );
-  const versionsQ = trpc.reformPackage.versions.useQuery(
-    { packageId: selectedPkg ?? "" },
-    { enabled: !!selectedPkg && detailTab === "versions" }
-  );
-  const exportHistoryQ = trpc.reformPackage.exportHistory.useQuery(
-    { packageId: selectedPkg ?? "" },
-    { enabled: !!selectedPkg && detailTab === "exports" }
-  );
-  const memoryQ = trpc.reformPackage.strategyMemory.useQuery(
-    { packageId: selectedPkg ?? "" },
-    { enabled: !!selectedPkg && detailTab === "memory" }
-  );
-
-  const dash = dashQ.data;
-  const statusColors: Record<string, string> = {
-    draft: "bg-zinc-500/20 text-zinc-400",
-    review: "bg-amber-500/20 text-amber-400",
-    submitted: "bg-blue-500/20 text-blue-400",
-    under_consideration: "bg-violet-500/20 text-violet-400",
-    adopted: "bg-emerald-500/20 text-emerald-400",
-    rejected: "bg-red-500/20 text-red-400",
-  };
-
-  const handleExportDownload = () => {
-    if (exportQ.data?.content) {
-      const blob = new Blob([exportQ.data.content], { type: exportQ.data.mimeType || "text/plain" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = exportQ.data.filename || `reform-package-${selectedPkg}.${exportFormat === "json" ? "json" : exportFormat === "html" ? "html" : "md"}`;
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-  };
-
-  if (dashQ.isLoading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
-
-  return (
-    <div className="space-y-6">
-      {/* Summary Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <MetricCard label="Total Packages" value={String(dash?.totalPackages ?? dash?.total ?? 0)} icon={<FileOutput className="h-3.5 w-3.5" />} color="violet" />
-        <MetricCard label="In Review" value={String(dash?.byStatus?.review ?? 0)} icon={<Eye className="h-3.5 w-3.5" />} color="amber" />
-        <MetricCard label="Submitted" value={String(dash?.byStatus?.submitted ?? 0)} icon={<Send className="h-3.5 w-3.5" />} color="blue" />
-        <MetricCard label="Adopted" value={String(dash?.byStatus?.adopted ?? 0)} icon={<CheckCircle2 className="h-3.5 w-3.5" />} color="emerald" />
-      </div>
-
-      {/* Package List */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <FileOutput className="h-4 w-4" /> Reform Packages
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {(dash?.packages?.length ?? dash?.recentPackages?.length ?? 0) === 0 ? (
-            <div className="text-center py-8 text-muted-foreground text-sm">
-              <FileOutput className="h-8 w-8 mx-auto mb-2 opacity-40" />
-              <p>No reform packages generated yet.</p>
-              <p className="text-xs mt-1">Generate packages from the Workbench Strategy Review panel.</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {(dash?.packages ?? dash?.recentPackages ?? []).map((pkg: any) => (
-                <div
-                  key={pkg.packageId}
-                  className={`p-3 rounded-lg border cursor-pointer transition-colors hover:bg-accent/50 ${
-                    selectedPkg === pkg.packageId ? "border-primary bg-accent/30" : "border-border"
-                  }`}
-                  onClick={() => { setSelectedPkg(pkg.packageId); setDetailTab("overview"); }}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm">{pkg.title || pkg.packageId}</span>
-                      <Badge className={`text-[10px] ${statusColors[pkg.status] ?? "bg-zinc-500/20 text-zinc-400"}`}>
-                        {pkg.status?.replace(/_/g, " ")}
-                      </Badge>
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      {pkg.createdAt ? new Date(Number(pkg.createdAt)).toLocaleDateString() : ""}
-                    </span>
-                  </div>
-                  {pkg.patternId && (
-                    <p className="text-xs text-muted-foreground mt-1">Pattern: {pkg.patternId}</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Detail Panel with Tabs */}
-      {selectedPkg && detailQ.data && (
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <ScrollText className="h-4 w-4" /> {detailQ.data.title || "Package Detail"}
-                <Badge className={`text-[10px] ${statusColors[detailQ.data.status] ?? ""}`}>
-                  {detailQ.data.status?.replace(/_/g, " ")}
-                </Badge>
-              </CardTitle>
-              <div className="flex items-center gap-1">
-                <Button size="sm" variant="ghost" onClick={() => regenerateMut.mutate({ packageId: selectedPkg })} disabled={regenerateMut.isPending}>
-                  <RotateCcw className="h-3.5 w-3.5 mr-1" /> {regenerateMut.isPending ? "Regenerating..." : "Regenerate"}
-                </Button>
-                <Button size="sm" variant="ghost" onClick={() => setSelectedPkg(null)}>
-                  <XCircle className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </div>
-            {/* Sub-tabs */}
-            <div className="flex gap-1 mt-3">
-              {(["overview", "sections", "versions", "exports", "memory"] as const).map(t => (
-                <Button key={t} size="sm" variant={detailTab === t ? "default" : "outline"} onClick={() => setDetailTab(t)} className="text-xs capitalize">
-                  {t === "overview" ? <Eye className="h-3 w-3 mr-1" /> : t === "sections" ? <BookOpen className="h-3 w-3 mr-1" /> : t === "versions" ? <History className="h-3 w-3 mr-1" /> : t === "exports" ? <FileDown className="h-3 w-3 mr-1" /> : <Brain className="h-3 w-3 mr-1" />}
-                  {t}
-                </Button>
-              ))}
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Overview Tab */}
-            {detailTab === "overview" && (
-              <>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div><span className="text-muted-foreground">Package ID:</span> <span className="ml-1 font-mono text-xs">{detailQ.data.packageId}</span></div>
-                  <div><span className="text-muted-foreground">Pattern:</span> <span className="ml-1">{detailQ.data.patternId}</span></div>
-                  <div><span className="text-muted-foreground">Jurisdiction:</span> <span className="ml-1">{detailQ.data.jurisdiction}</span></div>
-                  <div><span className="text-muted-foreground">Reform Type:</span> <span className="ml-1">{detailQ.data.reformType?.replace(/_/g, " ")}</span></div>
-                  {detailQ.data.submittedTo && <div><span className="text-muted-foreground">Submitted To:</span> <span className="ml-1">{detailQ.data.submittedTo}</span></div>}
-                  {detailQ.data.adoptedDate && <div><span className="text-muted-foreground">Adopted:</span> <span className="ml-1">{new Date(detailQ.data.adoptedDate).toLocaleDateString()}</span></div>}
-                  {detailQ.data.signalReductionPct != null && <div><span className="text-muted-foreground">Signal Reduction:</span> <span className="ml-1">{detailQ.data.signalReductionPct}%</span></div>}
-                </div>
-                {/* Executive Summary */}
-                {detailQ.data.executiveSummary && (
-                  <div className="p-3 rounded-lg bg-muted/30 border">
-                    <h4 className="text-xs font-semibold text-muted-foreground mb-2">Executive Summary</h4>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      {Object.entries(detailQ.data.executiveSummary).map(([k, v]: [string, any]) => (
-                        <div key={k}><span className="text-muted-foreground">{k.replace(/([A-Z])/g, " $1").trim()}:</span> <span className="ml-1">{typeof v === "string" ? v : JSON.stringify(v)}</span></div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {/* Status Actions */}
-                <div className="flex items-center gap-2 pt-2">
-                  {detailQ.data.status === "draft" && (
-                    <Button size="sm" variant="outline" onClick={() => updateStatusMut.mutate({ packageId: selectedPkg, newStatus: "review" })} disabled={updateStatusMut.isPending}>
-                      <Eye className="h-3.5 w-3.5 mr-1" /> Move to Review
-                    </Button>
-                  )}
-                  {detailQ.data.status === "review" && (
-                    <Button size="sm" variant="outline" onClick={() => updateStatusMut.mutate({ packageId: selectedPkg, newStatus: "submitted" })} disabled={updateStatusMut.isPending}>
-                      <Send className="h-3.5 w-3.5 mr-1" /> Mark Submitted
-                    </Button>
-                  )}
-                  {detailQ.data.status === "submitted" && (
-                    <Button size="sm" variant="outline" onClick={() => updateStatusMut.mutate({ packageId: selectedPkg, newStatus: "under_consideration" })} disabled={updateStatusMut.isPending}>
-                      <Scale className="h-3.5 w-3.5 mr-1" /> Under Consideration
-                    </Button>
-                  )}
-                  {detailQ.data.status === "under_consideration" && (
-                    <Button size="sm" variant="outline" className="border-emerald-500/50" onClick={() => updateStatusMut.mutate({ packageId: selectedPkg, newStatus: "adopted" })} disabled={updateStatusMut.isPending}>
-                      <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Mark Adopted
-                    </Button>
-                  )}
-                </div>
-              </>
-            )}
-
-            {/* Sections Tab */}
-            {detailTab === "sections" && (
-              <div className="space-y-3">
-                {[
-                  { key: "evidenceSection", label: "Evidence of the Problem", icon: <Microscope className="h-3.5 w-3.5" /> },
-                  { key: "rootCauseSection", label: "Root Cause Analysis", icon: <Search className="h-3.5 w-3.5" /> },
-                  { key: "interventionHistorySection", label: "Intervention History", icon: <Activity className="h-3.5 w-3.5" /> },
-                  { key: "recommendedReformsSection", label: "Recommended Reforms", icon: <Gavel className="h-3.5 w-3.5" /> },
-                  { key: "implementationRoadmapSection", label: "Implementation Roadmap", icon: <MapIcon className="h-3.5 w-3.5" /> },
-                  { key: "supportingDataSection", label: "Supporting Data", icon: <Database className="h-3.5 w-3.5" /> },
-                ].map(({ key, label, icon }) => {
-                  const section = (detailQ.data as any)?.[key];
-                  if (!section || (typeof section === "object" && Object.keys(section).length === 0)) return null;
-                  return (
-                    <div key={key} className="p-3 rounded-lg bg-muted/30 border">
-                      <h4 className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1">{icon} {label}</h4>
-                      {typeof section === "object" ? (
-                        <div className="space-y-1 text-sm">
-                          {Object.entries(section).map(([sk, sv]: [string, any]) => (
-                            <div key={sk}>
-                              <span className="text-muted-foreground">{sk.replace(/([A-Z])/g, " $1").trim()}:</span>{" "}
-                              <span>{Array.isArray(sv) ? (sv.length > 0 ? `${sv.length} items` : "None") : typeof sv === "object" ? JSON.stringify(sv) : String(sv)}</span>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-sm whitespace-pre-wrap">{String(section)}</p>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Versions Tab */}
-            {detailTab === "versions" && (
-              <div className="space-y-3">
-                {versionsQ.isLoading ? (
-                  <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-                ) : (versionsQ.data?.length ?? 0) === 0 ? (
-                  <div className="text-center py-6 text-muted-foreground text-sm">
-                    <History className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                    <p>No version history yet.</p>
-                    <p className="text-xs mt-1">Versions are created automatically when status changes or regeneration occurs.</p>
-                  </div>
-                ) : (
-                  versionsQ.data?.map((v: any) => (
-                    <div key={v.id} className="p-3 rounded-lg border border-border">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Badge className="bg-violet-500/20 text-violet-400 text-[10px]">v{v.versionNumber}</Badge>
-                          <span className="text-sm">{v.changeSummary || "Snapshot"}</span>
-                        </div>
-                        <span className="text-xs text-muted-foreground">{new Date(v.createdAt).toLocaleString()}</span>
-                      </div>
-                      {v.createdBy && <p className="text-xs text-muted-foreground mt-1">By: {v.createdBy}</p>}
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-
-            {/* Exports Tab */}
-            {detailTab === "exports" && (
-              <div className="space-y-4">
-                {/* Export Actions */}
-                <div className="flex items-center gap-2">
-                  {(["markdown", "html", "json"] as const).map(fmt => (
-                    <Button key={fmt} size="sm" variant={exportFormat === fmt ? "default" : "outline"} onClick={() => setExportFormat(fmt)} className="text-xs">
-                      {fmt === "markdown" ? <FileText className="h-3 w-3 mr-1" /> : fmt === "html" ? <Globe className="h-3 w-3 mr-1" /> : <Database className="h-3 w-3 mr-1" />}
-                      {fmt.toUpperCase()}
-                    </Button>
-                  ))}
-                  <Button size="sm" variant="outline" onClick={handleExportDownload} disabled={!exportQ.data?.content || exportQ.isLoading}>
-                    <Download className="h-3.5 w-3.5 mr-1" /> {exportQ.isLoading ? "Loading..." : "Download"}
-                  </Button>
-                </div>
-
-                {/* Export Preview */}
-                {exportQ.data?.content && (
-                  <div className="p-3 rounded-lg bg-muted/30 border max-h-64 overflow-y-auto">
-                    <pre className="text-xs whitespace-pre-wrap font-mono">{exportQ.data.content.substring(0, 2000)}{exportQ.data.content.length > 2000 ? "\n..." : ""}</pre>
-                  </div>
-                )}
-
-                {/* Export History */}
-                <div>
-                  <h4 className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1"><History className="h-3.5 w-3.5" /> Export History</h4>
-                  {exportHistoryQ.isLoading ? (
-                    <div className="flex justify-center py-4"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>
-                  ) : (exportHistoryQ.data?.length ?? 0) === 0 ? (
-                    <p className="text-sm text-muted-foreground">No exports recorded yet.</p>
-                  ) : (
-                    <div className="space-y-1">
-                      {exportHistoryQ.data?.map((e: any) => (
-                        <div key={e.id} className="flex items-center justify-between p-2 rounded border border-border text-xs">
-                          <div className="flex items-center gap-2">
-                            <Badge className="bg-blue-500/20 text-blue-400 text-[10px]">{e.exportFormat}</Badge>
-                            {e.fileSize && <span className="text-muted-foreground">{(e.fileSize / 1024).toFixed(1)} KB</span>}
-                          </div>
-                          <span className="text-muted-foreground">{new Date(e.createdAt).toLocaleString()}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Strategy Memory Tab */}
-            {detailTab === "memory" && (
-              <div className="space-y-3">
-                {memoryQ.isLoading ? (
-                  <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-                ) : (memoryQ.data?.length ?? 0) === 0 ? (
-                  <div className="text-center py-6 text-muted-foreground text-sm">
-                    <Brain className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                    <p>No strategy actions recorded yet.</p>
-                    <p className="text-xs mt-1">Actions are recorded when packages are generated, exported, or status-changed.</p>
-                  </div>
-                ) : (
-                  memoryQ.data?.map((m: any) => (
-                    <div key={m.id} className="p-3 rounded-lg border border-border">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Badge className={`text-[10px] ${
-                            m.actionType === "generate_package" ? "bg-emerald-500/20 text-emerald-400" :
-                            m.actionType === "export_package" ? "bg-blue-500/20 text-blue-400" :
-                            m.actionType === "regenerate_package" ? "bg-violet-500/20 text-violet-400" :
-                            "bg-zinc-500/20 text-zinc-400"
-                          }`}>
-                            {m.actionType?.replace(/_/g, " ")}
-                          </Badge>
-                          {m.effectivenessScore != null && (
-                            <span className="text-xs">Effectiveness: {m.effectivenessScore}%</span>
-                          )}
-                        </div>
-                        <span className="text-xs text-muted-foreground">{new Date(m.createdAt).toLocaleString()}</span>
-                      </div>
-                      {m.outcomeFeedback && <p className="text-xs text-muted-foreground mt-1">{m.outcomeFeedback}</p>}
-                      {m.actionData && typeof m.actionData === "object" && Object.keys(m.actionData).length > 0 && (
-                        <p className="text-xs text-muted-foreground mt-1 font-mono">{JSON.stringify(m.actionData)}</p>
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
-
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// COALITIONS PANEL
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-function CoalitionsPanel() {
-  const dashQ = trpc.coalitionAdvocacy.dashboard.useQuery();
-  const [selectedDomain, setSelectedDomain] = useState<string>("");
-  const escalationQ = trpc.coalitionAdvocacy.escalationRoutes.useQuery(
-    { domain: selectedDomain || undefined },
-    { enabled: true }
-  );
-  const [selectedJurisdiction, setSelectedJurisdiction] = useState<string>("");
-  const deadlineQ = trpc.coalitionAdvocacy.deadlineRules.useQuery(
-    { jurisdiction: selectedJurisdiction || undefined },
-    { enabled: true }
-  );
-  const [activeSection, setActiveSection] = useState<"dashboard" | "escalation" | "deadlines">("dashboard");
-
-  const dash = dashQ.data;
-
-  if (dashQ.isLoading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
-
-  return (
-    <div className="space-y-6">
-      {/* Section Tabs */}
-      <div className="flex gap-2">
-        {(["dashboard", "escalation", "deadlines"] as const).map(s => (
-          <Button
-            key={s}
-            size="sm"
-            variant={activeSection === s ? "default" : "outline"}
-            onClick={() => setActiveSection(s)}
-            className="capitalize"
-          >
-            {s === "dashboard" ? <Handshake className="h-3.5 w-3.5 mr-1" /> : s === "escalation" ? <Route className="h-3.5 w-3.5 mr-1" /> : <Clock className="h-3.5 w-3.5 mr-1" />}
-            {s === "deadlines" ? "Deadline Rules" : s === "escalation" ? "Escalation Routes" : "Coalition Dashboard"}
-          </Button>
-        ))}
-      </div>
-
-      {/* Dashboard Section */}
-      {activeSection === "dashboard" && (
-        <>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <MetricCard label="Active Coalitions" value={String(dash?.activeCoalitions ?? 0)} icon={<Handshake className="h-3.5 w-3.5" />} color="violet" />
-            <MetricCard label="Advocacy Targets" value={String(dash?.totalTargets ?? 0)} icon={<Target className="h-3.5 w-3.5" />} color="blue" />
-            <MetricCard label="Outcomes Recorded" value={String(dash?.totalOutcomes ?? 0)} icon={<CheckCircle2 className="h-3.5 w-3.5" />} color="emerald" />
-            <MetricCard label="Avg Impact" value={`${dash?.avgImpact ?? 0}%`} icon={<TrendingUp className="h-3.5 w-3.5" />} color="amber" />
-          </div>
-
-          {/* Recent Coalitions */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Handshake className="h-4 w-4" /> Recent Coalitions
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {(dash?.recentCoalitions?.length ?? 0) === 0 ? (
-                <div className="text-center py-8 text-muted-foreground text-sm">
-                  <Handshake className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                  <p>No coalitions activated yet.</p>
-                  <p className="text-xs mt-1">Activate coalitions from the Workbench Strategy Review panel.</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {dash?.recentCoalitions?.map((c: any, i: number) => (
-                    <div key={i} className="p-3 rounded-lg border border-border">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-sm">{c.coalitionName || c.coalitionId}</span>
-                        <Badge className="text-[10px] bg-violet-500/20 text-violet-400">{c.status}</Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Pattern: {c.patternId} Â· Action: {c.actionType?.replace(/_/g, " ")}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </>
-      )}
-
-      {/* Escalation Routes Section */}
-      {activeSection === "escalation" && (
-        <>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">Filter by domain:</span>
-            {["", "employment", "housing", "benefits", "civil_rights", "disability", "consumer"].map(d => (
-              <Button
-                key={d}
-                size="sm"
-                variant={selectedDomain === d ? "default" : "outline"}
-                onClick={() => setSelectedDomain(d)}
-                className="text-xs capitalize"
-              >
-                {d || "All"}
-              </Button>
-            ))}
-          </div>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Route className="h-4 w-4" /> Escalation Route Catalog ({escalationQ.data?.length ?? 0} routes)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {escalationQ.isLoading ? (
-                <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin" /></div>
-              ) : (
-                <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                  {escalationQ.data?.map((r: any) => (
-                    <div key={r.routeId} className="p-3 rounded-lg border border-border hover:bg-accent/30 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs text-muted-foreground">{r.routeId}</span>
-                          <span className="font-medium text-sm">{r.claimType?.replace(/_/g, " ")}</span>
-                        </div>
-                        <Badge className="text-[10px] bg-blue-500/20 text-blue-400 capitalize">{r.domain?.replace(/_/g, " ")}</Badge>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 mt-2 text-xs text-muted-foreground">
-                        <div><span className="font-medium">Primary:</span> {r.primaryAgency}</div>
-                        {r.secondaryAgency && <div><span className="font-medium">Secondary:</span> {r.secondaryAgency}</div>}
-                        {r.courtLevel && <div><span className="font-medium">Court:</span> {r.courtLevel}</div>}
-                        {r.appealBody && <div><span className="font-medium">Appeal:</span> {r.appealBody}</div>}
-                        {r.oversightBody && <div><span className="font-medium">Oversight:</span> {r.oversightBody}</div>}
-                      </div>
-                      {r.advocacyOrganizations?.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {r.advocacyOrganizations.map((org: string, i: number) => (
-                            <Badge key={i} variant="outline" className="text-[10px]">{org}</Badge>
-                          ))}
-                        </div>
-                      )}
-                      <div className="flex gap-3 mt-2">
-                        {r.mediaEscalationPossible && <Badge className="text-[10px] bg-amber-500/20 text-amber-400">Media Escalation</Badge>}
-                        {r.policyEscalationPossible && <Badge className="text-[10px] bg-violet-500/20 text-violet-400">Policy Escalation</Badge>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </>
-      )}
-
-      {/* Deadline Rules Section */}
-      {activeSection === "deadlines" && (
-        <>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">Filter by jurisdiction:</span>
-            {["", "Federal", "Washington", "California"].map(j => (
-              <Button
-                key={j}
-                size="sm"
-                variant={selectedJurisdiction === j ? "default" : "outline"}
-                onClick={() => setSelectedJurisdiction(j)}
-                className="text-xs"
-              >
-                {j || "All"}
-              </Button>
-            ))}
-          </div>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Clock className="h-4 w-4" /> Deadline Rule Catalog ({deadlineQ.data?.length ?? 0} rules)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {deadlineQ.isLoading ? (
-                <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin" /></div>
-              ) : (
-                <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                  {deadlineQ.data?.map((r: any) => (
-                    <div key={r.ruleId} className="p-3 rounded-lg border border-border hover:bg-accent/30 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs text-muted-foreground">{r.ruleId}</span>
-                          <span className="font-medium text-sm">{r.claimType?.replace(/_/g, " ")}</span>
-                        </div>
-                        <Badge className={`text-[10px] ${
-                          r.jurisdiction === "Federal" ? "bg-blue-500/20 text-blue-400" :
-                          r.jurisdiction === "Washington" ? "bg-emerald-500/20 text-emerald-400" :
-                          "bg-amber-500/20 text-amber-400"
-                        }`}>{r.jurisdiction}</Badge>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 mt-2 text-xs text-muted-foreground">
-                        {r.statuteOfLimitations && <div><span className="font-medium">SOL:</span> {r.statuteOfLimitations}</div>}
-                        {r.administrativeFilingDeadline && <div><span className="font-medium">Admin Filing:</span> {r.administrativeFilingDeadline}</div>}
-                        {r.appealDeadline && <div><span className="font-medium">Appeal:</span> {r.appealDeadline}</div>}
-                        {r.documentDeadline && <div><span className="font-medium">Document:</span> {r.documentDeadline}</div>}
-                        {r.sourceStatute && <div className="col-span-2"><span className="font-medium">Source:</span> {r.sourceStatute}</div>}
-                      </div>
-                      {r.tollingConditions && (
-                        <p className="text-xs text-muted-foreground mt-1"><span className="font-medium">Tolling:</span> {r.tollingConditions}</p>
-                      )}
-                      {r.exceptions && (
-                        <p className="text-xs text-muted-foreground mt-1"><span className="font-medium">Exceptions:</span> {r.exceptions}</p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </>
-      )}
-    </div>
-  );
-}
-
-// â”€â”€â”€ Evidence Lab Panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function EvidenceLabPanel({ onNavigateTo }: { onNavigateTo?: (tab: string) => void }) {
-  const dashboard = trpc.evidenceConfidence.dashboard.useQuery();
-  const claimTypes = trpc.evidenceConfidence.claimTypes.useQuery();
-  const [selectedClaim, setSelectedClaim] = useState<string | null>(null);
-  const [evidenceInput, setEvidenceInput] = useState("");
-  const [analysisResult, setAnalysisResult] = useState<any>(null);
-  const analyzeMut = trpc.evidenceConfidence.analyze.useMutation({
-    onSuccess: (data) => setAnalysisResult(data),
-  });
-  const ruleDetail = trpc.evidenceConfidence.ruleDetail.useQuery(
-    { claimType: selectedClaim || "" },
-    { enabled: !!selectedClaim }
-  );
-
-  const handleAnalyze = () => {
-    if (!selectedClaim) return;
-    const evidenceItems = evidenceInput.split("\n").filter(Boolean).map(line => {
-      const parts = line.split("|").map(s => s.trim());
-      return {
-        type: parts[0] || line.trim(),
-        source: (parts[1] as any) || "other",
-        has_contradictions: parts[2] === "contradicted",
-        corroborated: parts[2] === "corroborated",
-      };
-    });
-    analyzeMut.mutate({ claimType: selectedClaim, evidence: evidenceItems });
-  };
-
-  const scoreColor = (score: number) =>
-    score >= 80 ? "text-emerald-400" : score >= 50 ? "text-amber-400" : "text-red-400";
-  const levelBadge = (level: string) =>
-    level === "high" ? "bg-emerald-500/20 text-emerald-300" :
-    level === "medium" ? "bg-amber-500/20 text-amber-300" :
-    "bg-red-500/20 text-red-300";
-  return (
-    <div className="space-y-6">
-      {/* Pass-through navigation */}
-      {onNavigateTo && (
-        <div className="flex gap-2 flex-wrap pb-1 border-b border-slate-800">
-          <span className="text-xs text-slate-500 self-center mr-1">Continue to:</span>
-          <Button size="sm" variant="outline" className="text-xs h-7 gap-1 border-slate-700" onClick={() => onNavigateTo("claim-validation")}>
-            <ArrowRight className="h-3 w-3" /> Claim Validation
-          </Button>
-          <Button size="sm" variant="outline" className="text-xs h-7 gap-1 border-slate-700" onClick={() => onNavigateTo("remedy-feasibility")}>
-            <ArrowRight className="h-3 w-3" /> Remedy Feasibility
-          </Button>
-        </div>
-      )}
-      {/* Dashboard Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-slate-900/50 border-slate-700/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Total Rules</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{dashboard.data?.totalRules || 0}</div>
-          </CardContent>
-        </Card>
-        {dashboard.data?.claimTypesByDomain && Object.entries(dashboard.data.claimTypesByDomain).map(([domain, count]) => (
-          <Card key={domain} className="bg-slate-900/50 border-slate-700/50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-400 capitalize">{domain}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-cyan-400">{count as number}</div>
-              <p className="text-xs text-slate-500">claim types</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Analysis Tool */}
-      <Card className="bg-slate-900/50 border-slate-700/50">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Microscope className="h-5 w-5 text-cyan-400" /> Evidence Confidence Analyzer
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm text-slate-400 block mb-1">Claim Type</label>
-              <select
-                className="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white text-sm"
-                value={selectedClaim || ""}
-                onChange={(e) => setSelectedClaim(e.target.value || null)}
-              >
-                <option value="">Select claim type...</option>
-                {(claimTypes.data || []).map(ct => (
-                  <option key={ct} value={ct}>{ct.replace(/_/g, " ")}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-sm text-slate-400 block mb-1">Evidence (one per line: type | source | status)</label>
-              <textarea
-                className="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white text-sm h-24"
-                placeholder={"witness_testimony | third_party | corroborated\nemployment_records | employer\ndiscriminatory_statement | first_party"}
-                value={evidenceInput}
-                onChange={(e) => setEvidenceInput(e.target.value)}
-              />
-            </div>
-          </div>
-          <Button
-            onClick={handleAnalyze}
-            disabled={!selectedClaim || !evidenceInput || analyzeMut.isPending}
-            className="bg-cyan-600 hover:bg-cyan-700"
-          >
-            {analyzeMut.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Microscope className="h-4 w-4 mr-2" />}
-            Analyze Evidence Confidence
-          </Button>
-
-          {/* Rule Detail */}
-          {ruleDetail.data && (
-            <div className="bg-slate-800/50 rounded-lg p-4 space-y-2">
-              <h4 className="text-sm font-semibold text-slate-300">Rule: {ruleDetail.data.claimType}</h4>
-              <div className="grid grid-cols-3 gap-3 text-xs">
-                <div>
-                  <span className="text-slate-500">Required:</span>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {(ruleDetail.data.requiredEvidence || []).map((e: string) => (
-                      <Badge key={e} className="bg-red-500/20 text-red-300 text-xs">{e}</Badge>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <span className="text-slate-500">Supporting:</span>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {(ruleDetail.data.supportingEvidence || []).map((e: string) => (
-                      <Badge key={e} className="bg-blue-500/20 text-blue-300 text-xs">{e}</Badge>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <span className="text-slate-500">Alternative:</span>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {(ruleDetail.data.alternativeEvidence || []).map((e: string) => (
-                      <Badge key={e} className="bg-purple-500/20 text-purple-300 text-xs">{e}</Badge>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Analysis Result */}
-          {analysisResult && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card className="bg-slate-800/50 border-slate-700/50">
-                  <CardContent className="pt-4 text-center">
-                    <div className={`text-4xl font-bold ${scoreColor(analysisResult.confidence.score)}`}>
-                      {analysisResult.confidence.score}
-                    </div>
-                    <Badge className={`mt-2 ${levelBadge(analysisResult.confidence.level)}`}>
-                      {analysisResult.confidence.level.toUpperCase()} CONFIDENCE
-                    </Badge>
-                  </CardContent>
-                </Card>
-                <Card className="bg-slate-800/50 border-slate-700/50">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm text-slate-400">Strategy Path</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-lg font-semibold text-white capitalize">
-                      {analysisResult.strategyPath.primaryPath.replace(/_/g, " ")}
-                    </div>
-                    <p className="text-xs text-slate-500">{analysisResult.strategyPath.timelineEstimate}</p>
-                    <p className="text-xs text-slate-500">Success: {analysisResult.strategyPath.successProbability}</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-slate-800/50 border-slate-700/50">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm text-slate-400">Remedy</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-sm font-semibold text-white">
-                      {analysisResult.remedy.recommendation}
-                    </div>
-                    <p className="text-xs text-slate-500 mt-1">{analysisResult.remedy.strategy}</p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Adjustments */}
-              {analysisResult.confidence.adjustments.length > 0 && (
-                <Card className="bg-slate-800/50 border-slate-700/50">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm text-slate-400">Score Adjustments</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-1">
-                      {analysisResult.confidence.adjustments.map((adj: any, i: number) => (
-                        <div key={i} className="flex justify-between text-xs">
-                          <span className="text-slate-300">{adj.reason}</span>
-                          <span className={adj.delta >= 0 ? "text-emerald-400" : "text-red-400"}>
-                            {adj.delta >= 0 ? "+" : ""}{adj.delta}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Evidence Gaps */}
-              {analysisResult.confidence.evidenceGaps.length > 0 && (
-                <Card className="bg-slate-800/50 border-slate-700/50">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm text-slate-400">Evidence Gaps</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                      {analysisResult.confidence.evidenceGaps.map((gap: string) => (
-                        <Badge key={gap} className="bg-amber-500/20 text-amber-300">{gap}</Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-// â”€â”€â”€ Claim Validation Panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function ClaimValidationPanel({ onNavigateTo }: { onNavigateTo?: (tab: string) => void }) {
-  const dashboard = trpc.claimValidation.dashboard.useQuery();
-  const claimTypes = trpc.claimValidation.claimTypes.useQuery();
-  const [selectedClaims, setSelectedClaims] = useState<string[]>([]);
-  const [evidenceInput, setEvidenceInput] = useState("");
-  const [validationResult, setValidationResult] = useState<any>(null);
-  const analyzeMut = trpc.claimValidation.analyzeCase.useMutation({
-    onSuccess: (data) => setValidationResult(data),
-  });
-
-  const toggleClaim = (ct: string) => {
-    setSelectedClaims(prev =>
-      prev.includes(ct) ? prev.filter(c => c !== ct) : [...prev, ct]
-    );
-  };
-
-  const handleValidate = () => {
-    if (selectedClaims.length === 0) return;
-    const evidenceItems = evidenceInput.split("\n").filter(Boolean).map(line => ({
-      type: line.trim(),
-    }));
-    analyzeMut.mutate({ claimTypes: selectedClaims, evidence: evidenceItems });
-  };
-
-  const statusColor = (status: string) =>
-    status === "COMPLETE" ? "bg-emerald-500/20 text-emerald-300" :
-    status === "PARTIAL" ? "bg-amber-500/20 text-amber-300" :
-    "bg-red-500/20 text-red-300";
-
-  return (
-    <div className="space-y-6">
-      {/* Pass-through navigation */}
-      {onNavigateTo && (
-        <div className="flex gap-2 flex-wrap pb-1 border-b border-slate-800">
-          <span className="text-xs text-slate-500 self-center mr-1">Continue to:</span>
-          <Button size="sm" variant="outline" className="text-xs h-7 gap-1 border-slate-700" onClick={() => onNavigateTo("procedural-paths")}>
-            <ArrowRight className="h-3 w-3" /> Procedural Paths
-          </Button>
-          <Button size="sm" variant="outline" className="text-xs h-7 gap-1 border-slate-700" onClick={() => onNavigateTo("evidence-lab")}>
-            <ArrowRight className="h-3 w-3" /> Evidence Lab
-          </Button>
-          <Button size="sm" variant="outline" className="text-xs h-7 gap-1 border-slate-700" onClick={() => onNavigateTo("remedy-feasibility")}>
-            <ArrowRight className="h-3 w-3" /> Remedy Feasibility
-          </Button>
-        </div>
-      )}
-      {/* Dashboard Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-slate-900/50 border-slate-700/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Total Rules</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{dashboard.data?.totalRules || 0}</div>
-          </CardContent>
-        </Card>
-        <Card className="bg-slate-900/50 border-slate-700/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Claim Types</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-cyan-400">{dashboard.data?.totalClaimTypes || 0}</div>
-          </CardContent>
-        </Card>
-        <Card className="bg-slate-900/50 border-slate-700/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Avg Elements/Claim</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-400">{dashboard.data?.avgElementsPerClaim || 0}</div>
-          </CardContent>
-        </Card>
-        {dashboard.data?.claimTypesByDomain && (
-          <Card className="bg-slate-900/50 border-slate-700/50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-400">Domains</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-1">
-                {Object.entries(dashboard.data.claimTypesByDomain).map(([domain, count]) => (
-                  <div key={domain} className="flex justify-between text-xs">
-                    <span className="text-slate-300 capitalize">{domain}</span>
-                    <span className="text-white font-medium">{count as number}</span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      {/* Validation Tool */}
-      <Card className="bg-slate-900/50 border-slate-700/50">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <ClipboardCheck className="h-5 w-5 text-purple-400" /> Claim Element Validator
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm text-slate-400 block mb-1">Select Claim Types (click to toggle)</label>
-              <div className="flex flex-wrap gap-1 max-h-48 overflow-y-auto bg-slate-800 rounded p-2">
-                {(claimTypes.data || []).map(ct => (
-                  <Badge
-                    key={ct}
-                    className={`cursor-pointer text-xs ${
-                      selectedClaims.includes(ct)
-                        ? "bg-purple-600 text-white"
-                        : "bg-slate-700 text-slate-300 hover:bg-slate-600"
-                    }`}
-                    onClick={() => toggleClaim(ct)}
-                  >
-                    {ct.replace(/_/g, " ")}
-                  </Badge>
-                ))}
-              </div>
-              {selectedClaims.length > 0 && (
-                <p className="text-xs text-purple-400 mt-1">{selectedClaims.length} selected</p>
-              )}
-            </div>
-            <div>
-              <label className="text-sm text-slate-400 block mb-1">Evidence Types (one per line)</label>
-              <textarea
-                className="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white text-sm h-48"
-                placeholder={"witness_testimony\nemployment_records\ndiscriminatory_statement\ncomparator_evidence"}
-                value={evidenceInput}
-                onChange={(e) => setEvidenceInput(e.target.value)}
-              />
-            </div>
-          </div>
-          <Button
-            onClick={handleValidate}
-            disabled={selectedClaims.length === 0 || !evidenceInput || analyzeMut.isPending}
-            className="bg-purple-600 hover:bg-purple-700"
-          >
-            {analyzeMut.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <ClipboardCheck className="h-4 w-4 mr-2" />}
-            Validate Claims
-          </Button>
-
-          {/* Validation Results */}
-          {validationResult && (
-            <div className="space-y-4">
-              {/* Strongest Claim */}
-              {validationResult.strongestClaim && (
-                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3">
-                  <div className="text-sm text-emerald-300 font-semibold">Strongest Claim</div>
-                  <div className="text-white capitalize">
-                    {validationResult.strongestClaim.claimType.replace(/_/g, " ")} â€” {validationResult.strongestClaim.completionPercentage}% complete
-                  </div>
-                </div>
-              )}
-
-              {/* Per-claim results */}
-              {Object.entries(validationResult.validationResults).map(([ct, result]: [string, any]) => (
-                <Card key={ct} className="bg-slate-800/50 border-slate-700/50">
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm text-white capitalize">{ct.replace(/_/g, " ")}</CardTitle>
-                      <div className="flex items-center gap-2">
-                        <Badge className={statusColor(result.validationStatus)}>{result.validationStatus}</Badge>
-                        <span className="text-xs text-slate-400">{result.completionPercentage}%</span>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {result.elements.map((el: any, i: number) => (
-                        <div key={i} className="flex items-start gap-2 text-xs">
-                          {el.status === "SATISFIED" ? (
-                            <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
-                          ) : (
-                            <XCircle className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
-                          )}
-                          <div>
-                            <span className="text-slate-200 font-medium">{el.elementName.replace(/_/g, " ")}</span>
-                            {el.elementDescription && (
-                              <span className="text-slate-500 ml-1">â€” {el.elementDescription}</span>
-                            )}
-                            {el.evidenceUsed.length > 0 && (
-                              <div className="flex gap-1 mt-0.5">
-                                {el.evidenceUsed.map((e: string) => (
-                                  <Badge key={e} className="bg-emerald-500/20 text-emerald-300 text-[10px]">{e}</Badge>
-                                ))}
-                              </div>
-                            )}
-                            {el.failureMessage && (
-                              <p className="text-red-400 mt-0.5">{el.failureMessage}</p>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <p className="text-xs text-slate-400 mt-3 italic">{result.nextSteps}</p>
-                  </CardContent>
-                </Card>
-              ))}
-
-              {/* Recommended Actions */}
-              {validationResult.recommendedActions.length > 0 && (
-                <Card className="bg-slate-800/50 border-slate-700/50">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm text-slate-400">Recommended Actions</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-1">
-                      {validationResult.recommendedActions.map((action: string, i: number) => (
-                        <li key={i} className="text-xs text-slate-300 flex items-start gap-2">
-                          <ChevronRight className="h-3 w-3 text-cyan-400 shrink-0 mt-0.5" />
-                          {action}
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Evidence Gaps */}
-              {validationResult.evidenceGaps.length > 0 && (
-                <Card className="bg-slate-800/50 border-slate-700/50">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm text-slate-400">Evidence Gaps Across All Claims</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                      {validationResult.evidenceGaps.map((gap: string) => (
-                        <Badge key={gap} className="bg-amber-500/20 text-amber-300">{gap}</Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-// â”€â”€â”€ Remedy Feasibility Panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function RemedyFeasibilityPanel({ onNavigateTo }: { onNavigateTo?: (tab: string) => void }) {
-  const dashboard = trpc.remedyFeasibility.dashboard.useQuery();
-  const strategies = trpc.remedyFeasibility.strategies.useQuery();
-  const [selectedStrategy, setSelectedStrategy] = useState("");
-  const [evidenceScore, setEvidenceScore] = useState(60);
-  const [budget, setBudget] = useState(1000);
-  const [timeDays, setTimeDays] = useState(180);
-  const [hasAttorney, setHasAttorney] = useState(false);
-  const [prereqInput, setPrereqInput] = useState("");
-  const [assessResult, setAssessResult] = useState<any>(null);
-  const [compareResult, setCompareResult] = useState<any>(null);
-  const [selectedStrategies, setSelectedStrategies] = useState<string[]>([]);
-
-  const assessMut = trpc.remedyFeasibility.assess.useMutation({
-    onSuccess: (data) => setAssessResult(data),
-  });
-  const compareMut = trpc.remedyFeasibility.compare.useMutation({
-    onSuccess: (data) => setCompareResult(data),
-  });
-
-  const handleAssess = () => {
-    if (!selectedStrategy) return;
-    const prereqs = prereqInput.split("\n").filter(Boolean).map(s => s.trim());
-    assessMut.mutate({
-      strategyType: selectedStrategy,
-      evidenceScore,
-      resources: { budget, timeAvailableDays: timeDays, hasAttorney, prerequisitesMet: prereqs },
-    });
-  };
-
-  const handleCompare = () => {
-    if (selectedStrategies.length < 2) return;
-    const prereqs = prereqInput.split("\n").filter(Boolean).map(s => s.trim());
-    compareMut.mutate({
-      strategyTypes: selectedStrategies,
-      evidenceScore,
-      resources: { budget, timeAvailableDays: timeDays, hasAttorney, prerequisitesMet: prereqs },
-    });
-  };
-
-  const toggleCompareStrategy = (st: string) => {
-    setSelectedStrategies(prev =>
-      prev.includes(st) ? prev.filter(s => s !== st) : [...prev, st]
-    );
-  };
-
-  const scoreColor = (score: number) =>
-    score >= 70 ? "text-emerald-400" : score >= 50 ? "text-amber-400" : "text-red-400";
-
-  const complexityBadge = (level: string) =>
-    level === "low" ? "bg-emerald-500/20 text-emerald-300" :
-    level === "medium" ? "bg-amber-500/20 text-amber-300" :
-    "bg-red-500/20 text-red-300";
-  /* â”€â”€ Jurisdiction-Specific Feasibility Card â”€â”€ */
-  function JurisdictionFeasibilityCard() {
-    const { currentCaseId } = useCase();
-    const { data: fullData, isLoading: fullLoading } = trpc.case_state.get_remedy_full.useQuery(
-      { case_id: currentCaseId! },
-      { enabled: !!currentCaseId }
-    );
-    if (!currentCaseId) return null;
-    return (
-      <Card className="bg-slate-900/50 border-slate-700/50">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-cyan-400" />
-            Jurisdiction-Specific Feasibility
-            {fullData && (
-              <Badge className="ml-auto text-xs bg-cyan-500/20 text-cyan-300 border-cyan-500/30">
-                {fullData.isFallback ? `Fallback: ${fullData.jurisdiction}` : fullData.jurisdiction}
-              </Badge>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {fullLoading ? (
-            <div className="space-y-2">{[0,1,2,3,4].map(i => <div key={i} className="h-12 bg-muted animate-pulse rounded" />)}</div>
-          ) : !fullData || fullData.strategies.length === 0 ? (
-            <p className="text-xs text-slate-500 text-center py-4">No jurisdiction data â€” commit a jurisdiction to your case first.</p>
-          ) : (
-            <div className="space-y-3">
-              {fullData.strategies.map((s: any) => (
-                <div key={s.strategyType} className="rounded-lg border border-slate-700 bg-slate-800/40 p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-white capitalize">{s.strategyType.replace(/_/g, " ")}</span>
-                    <div className="flex items-center gap-2">
-                      <Badge className="text-xs bg-emerald-500/20 text-emerald-300">{s.costRange}</Badge>
-                      <Badge className="text-xs bg-purple-500/20 text-purple-300">{s.timeEstimate}</Badge>
-                    </div>
-                  </div>
-                  {s.prerequisites?.length > 0 && (
-                    <div className="mb-1.5">
-                      <p className="text-[10px] text-slate-500 uppercase tracking-wide mb-1">Prerequisites</p>
-                      <div className="flex flex-wrap gap-1">
-                        {s.prerequisites.map((p: string, i: number) => (
-                          <span key={i} className="text-[10px] bg-slate-700/60 text-slate-300 rounded px-1.5 py-0.5">{p}</span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {s.riskFlags?.length > 0 && (
-                    <div>
-                      <p className="text-[10px] text-slate-500 uppercase tracking-wide mb-1">Risk Flags</p>
-                      <div className="flex flex-wrap gap-1">
-                        {s.riskFlags.map((r: string, i: number) => (
-                          <span key={i} className="text-[10px] bg-red-900/40 text-red-300 rounded px-1.5 py-0.5">{r}</span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    );
-  }
-  return (
-    <div className="space-y-6">
-      {/* Pass-through navigation */}
-      {onNavigateTo && (
-        <div className="flex gap-2 flex-wrap pb-1 border-b border-slate-800">
-          <span className="text-xs text-slate-500 self-center mr-1">Continue to:</span>
-          <Button size="sm" variant="outline" className="text-xs h-7 gap-1 border-slate-700" onClick={() => onNavigateTo("remedy-templates")}>
-            <ArrowRight className="h-3 w-3" /> Remedy Templates
-          </Button>
-          <Button size="sm" variant="outline" className="text-xs h-7 gap-1 border-slate-700" onClick={() => onNavigateTo("procedural-paths")}>
-            <ArrowRight className="h-3 w-3" /> Procedural Paths
-          </Button>
-          <Button size="sm" variant="outline" className="text-xs h-7 gap-1 border-slate-700" onClick={() => onNavigateTo("claim-validation")}>
-            <ArrowRight className="h-3 w-3" /> Claim Validation
-          </Button>
-        </div>
-      )}
-      {/* Dashboard Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-slate-900/50 border-slate-700/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Strategy Rules</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{dashboard.data?.totalRules || 0}</div>
-          </CardContent>
-        </Card>
-        <Card className="bg-slate-900/50 border-slate-700/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Avg Cost</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-cyan-400">${dashboard.data?.avgCost || 0}</div>
-          </CardContent>
-        </Card>
-        <Card className="bg-slate-900/50 border-slate-700/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Avg Time (days)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-400">{dashboard.data?.avgTimeDays || 0}</div>
-          </CardContent>
-        </Card>
-        <Card className="bg-slate-900/50 border-slate-700/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Pro Se / Attorney</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-sm">
-              <span className="text-emerald-400 font-bold">{dashboard.data?.proSeCount || 0}</span>
-              <span className="text-slate-500"> pro se / </span>
-              <span className="text-amber-400 font-bold">{dashboard.data?.attorneyRequiredCount || 0}</span>
-              <span className="text-slate-500"> attorney</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Assess Tool */}
-      <Card className="bg-slate-900/50 border-slate-700/50">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Gavel className="h-5 w-5 text-amber-400" /> Feasibility Assessment
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-3">
-              <div>
-                <label className="text-sm text-slate-400 block mb-1">Strategy Type</label>
-                <select
-                  className="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white text-sm"
-                  value={selectedStrategy}
-                  onChange={(e) => setSelectedStrategy(e.target.value)}
-                >
-                  <option value="">Select strategy...</option>
-                  {(strategies.data || []).map(st => (
-                    <option key={st} value={st}>{st.replace(/_/g, " ")}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-sm text-slate-400 block mb-1">Evidence Confidence Score: {evidenceScore}</label>
-                <input type="range" min={0} max={100} value={evidenceScore} onChange={e => setEvidenceScore(Number(e.target.value))} className="w-full" />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-sm text-slate-400 block mb-1">Budget ($)</label>
-                  <input type="number" className="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white text-sm" value={budget} onChange={e => setBudget(Number(e.target.value))} />
-                </div>
-                <div>
-                  <label className="text-sm text-slate-400 block mb-1">Time (days)</label>
-                  <input type="number" className="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white text-sm" value={timeDays} onChange={e => setTimeDays(Number(e.target.value))} />
-                </div>
-              </div>
-              <label className="flex items-center gap-2 text-sm text-slate-300">
-                <input type="checkbox" checked={hasAttorney} onChange={e => setHasAttorney(e.target.checked)} />
-                Has Attorney Access
-              </label>
-            </div>
-            <div>
-              <label className="text-sm text-slate-400 block mb-1">Prerequisites Met (one per line)</label>
-              <textarea
-                className="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white text-sm h-40"
-                placeholder={"statute_of_limitations_met\njurisdiction_established\nexhaustion_complete"}
-                value={prereqInput}
-                onChange={(e) => setPrereqInput(e.target.value)}
-              />
-            </div>
-          </div>
-          <Button onClick={handleAssess} disabled={!selectedStrategy || assessMut.isPending} className="bg-amber-600 hover:bg-amber-700">
-            {assessMut.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Gavel className="h-4 w-4 mr-2" />}
-            Assess Feasibility
-          </Button>
-
-          {assessResult && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card className="bg-slate-800/50 border-slate-700/50">
-                  <CardContent className="pt-4 text-center">
-                    <div className={`text-4xl font-bold ${scoreColor(assessResult.feasibilityScore.overall)}`}>
-                      {assessResult.feasibilityScore.overall}
-                    </div>
-                    <Badge className={`mt-2 ${assessResult.viable ? "bg-emerald-500/20 text-emerald-300" : "bg-red-500/20 text-red-300"}`}>
-                      {assessResult.viable ? "VIABLE" : "NOT VIABLE"}
-                    </Badge>
-                  </CardContent>
-                </Card>
-                <Card className="bg-slate-800/50 border-slate-700/50">
-                  <CardHeader className="pb-2"><CardTitle className="text-sm text-slate-400">Score Breakdown</CardTitle></CardHeader>
-                  <CardContent className="space-y-1">
-                    <div className="flex justify-between text-xs"><span className="text-slate-300">Evidence</span><span className={scoreColor(assessResult.feasibilityScore.evidenceAdequacy)}>{assessResult.feasibilityScore.evidenceAdequacy}</span></div>
-                    <div className="flex justify-between text-xs"><span className="text-slate-300">Cost</span><span className={scoreColor(assessResult.feasibilityScore.costFeasibility)}>{assessResult.feasibilityScore.costFeasibility}</span></div>
-                    <div className="flex justify-between text-xs"><span className="text-slate-300">Time</span><span className={scoreColor(assessResult.feasibilityScore.timeFeasibility)}>{assessResult.feasibilityScore.timeFeasibility}</span></div>
-                    <div className="flex justify-between text-xs"><span className="text-slate-300">Prerequisites</span><span className={scoreColor(assessResult.feasibilityScore.prerequisiteCompletion)}>{assessResult.feasibilityScore.prerequisiteCompletion}</span></div>
-                  </CardContent>
-                </Card>
-                <Card className="bg-slate-800/50 border-slate-700/50">
-                  <CardHeader className="pb-2"><CardTitle className="text-sm text-slate-400">Resources</CardTitle></CardHeader>
-                  <CardContent className="space-y-1 text-xs">
-                    <div className="flex justify-between"><span className="text-slate-300">Est. Cost</span><span className="text-white">${assessResult.resourceRequirements.estimatedCost}</span></div>
-                    <div className="flex justify-between"><span className="text-slate-300">Filing Fee</span><span className="text-white">${assessResult.resourceRequirements.filingFee}</span></div>
-                    <div className="flex justify-between"><span className="text-slate-300">Time</span><span className="text-white">{assessResult.resourceRequirements.estimatedTimeDays} days</span></div>
-                    <div className="flex justify-between"><span className="text-slate-300">Complexity</span><Badge className={complexityBadge(assessResult.complexityLevel)}>{assessResult.complexityLevel}</Badge></div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {assessResult.unmetPrerequisites.length > 0 && (
-                <Card className="bg-slate-800/50 border-slate-700/50">
-                  <CardHeader className="pb-2"><CardTitle className="text-sm text-slate-400">Unmet Prerequisites</CardTitle></CardHeader>
-                  <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                      {assessResult.unmetPrerequisites.map((p: string) => (
-                        <Badge key={p} className="bg-red-500/20 text-red-300">{p.replace(/_/g, " ")}</Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {assessResult.riskFlags.length > 0 && (
-                <Card className="bg-slate-800/50 border-slate-700/50">
-                  <CardHeader className="pb-2"><CardTitle className="text-sm text-slate-400">Risk Flags</CardTitle></CardHeader>
-                  <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                      {assessResult.riskFlags.map((f: string) => (
-                        <Badge key={f} className="bg-amber-500/20 text-amber-300">{f.replace(/_/g, " ")}</Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {assessResult.recommendedAlternative && (
-                <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-3">
-                  <span className="text-sm text-cyan-300">Recommended Alternative: </span>
-                  <span className="text-white font-semibold capitalize">{assessResult.recommendedAlternative.replace(/_/g, " ")}</span>
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Compare Tool */}
-      <Card className="bg-slate-900/50 border-slate-700/50">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Scale className="h-5 w-5 text-cyan-400" /> Strategy Comparison
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <label className="text-sm text-slate-400 block mb-1">Select strategies to compare (click to toggle)</label>
-            <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto bg-slate-800 rounded p-2">
-              {(strategies.data || []).map(st => (
-                <Badge
-                  key={st}
-                  className={`cursor-pointer text-xs ${selectedStrategies.includes(st) ? "bg-amber-600 text-white" : "bg-slate-700 text-slate-300 hover:bg-slate-600"}`}
-                  onClick={() => toggleCompareStrategy(st)}
-                >
-                  {st.replace(/_/g, " ")}
-                </Badge>
-              ))}
-            </div>
-            {selectedStrategies.length > 0 && <p className="text-xs text-amber-400 mt-1">{selectedStrategies.length} selected</p>}
-          </div>
-          <Button onClick={handleCompare} disabled={selectedStrategies.length < 2 || compareMut.isPending} className="bg-cyan-600 hover:bg-cyan-700">
-            {compareMut.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Scale className="h-4 w-4 mr-2" />}
-            Compare Strategies
-          </Button>
-
-          {compareResult && (
-            <div className="space-y-4">
-              <div className="bg-slate-800/50 rounded-lg p-3">
-                <p className="text-sm text-slate-300">{compareResult.summary}</p>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {compareResult.bestOption && (
-                  <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3">
-                    <div className="text-xs text-emerald-400">Best Overall</div>
-                    <div className="text-white font-semibold capitalize">{compareResult.bestOption.strategyType.replace(/_/g, " ")}</div>
-                    <div className="text-xs text-slate-400">Score: {compareResult.bestOption.feasibilityScore.overall}</div>
-                  </div>
-                )}
-                {compareResult.cheapestOption && (
-                  <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-3">
-                    <div className="text-xs text-cyan-400">Cheapest</div>
-                    <div className="text-white font-semibold capitalize">{compareResult.cheapestOption.strategyType.replace(/_/g, " ")}</div>
-                    <div className="text-xs text-slate-400">${compareResult.cheapestOption.resourceRequirements.estimatedCost}</div>
-                  </div>
-                )}
-                {compareResult.fastestOption && (
-                  <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-3">
-                    <div className="text-xs text-purple-400">Fastest</div>
-                    <div className="text-white font-semibold capitalize">{compareResult.fastestOption.strategyType.replace(/_/g, " ")}</div>
-                    <div className="text-xs text-slate-400">{compareResult.fastestOption.resourceRequirements.estimatedTimeDays} days</div>
-                  </div>
-                )}
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="border-b border-slate-700">
-                      <th className="text-left py-2 text-slate-400">Strategy</th>
-                      <th className="text-center py-2 text-slate-400">Score</th>
-                      <th className="text-center py-2 text-slate-400">Viable</th>
-                      <th className="text-center py-2 text-slate-400">Cost</th>
-                      <th className="text-center py-2 text-slate-400">Time</th>
-                      <th className="text-center py-2 text-slate-400">Complexity</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {compareResult.strategies.map((s: any) => (
-                      <tr key={s.strategyType} className="border-b border-slate-800">
-                        <td className="py-2 text-white capitalize">{s.strategyType.replace(/_/g, " ")}</td>
-                        <td className={`py-2 text-center font-bold ${scoreColor(s.feasibilityScore.overall)}`}>{s.feasibilityScore.overall}</td>
-                        <td className="py-2 text-center">{s.viable ? <CheckCircle2 className="h-4 w-4 text-emerald-400 inline" /> : <XCircle className="h-4 w-4 text-red-400 inline" />}</td>
-                        <td className="py-2 text-center text-slate-300">${s.resourceRequirements.estimatedCost}</td>
-                        <td className="py-2 text-center text-slate-300">{s.resourceRequirements.estimatedTimeDays}d</td>
-                        <td className="py-2 text-center"><Badge className={complexityBadge(s.complexityLevel)}>{s.complexityLevel}</Badge></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-/// â”€â”€â”€ Procedural Paths Panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function ProceduralPathsPanel({ onNavigateTo }: { onNavigateTo?: (tab: string) => void }) {
-  const dashboard = trpc.proceduralPathEngine.dashboard.useQuery();
-  const claimTypes = trpc.proceduralPathEngine.claimTypes.useQuery();
-  const [selectedClaim, setSelectedClaim] = useState("");
-  const [selectedJurisdiction, setSelectedJurisdiction] = useState("");
-  const [pathResult, setPathResult] = useState<any>(null);
-
-  const jurisdictions = trpc.proceduralPathEngine.jurisdictions.useQuery(
-    { claimType: selectedClaim },
-    { enabled: !!selectedClaim }
-  );
-
-  const pathQuery = trpc.proceduralPathEngine.resolve.useQuery(
-    { claimType: selectedClaim, jurisdiction: selectedJurisdiction },
-    { enabled: !!selectedClaim && !!selectedJurisdiction, onSuccess: (data: any) => setPathResult(data) }
-  );
-
-  const urgencyColor = (urgency: string) =>
-    urgency === "critical" ? "bg-red-500/20 text-red-300" :
-    urgency === "important" ? "bg-amber-500/20 text-amber-300" :
-    "bg-slate-500/20 text-slate-300";
-
-  return (
-    <div className="space-y-6">
-      {/* Pass-through navigation */}
-      {onNavigateTo && (
-        <div className="flex gap-2 flex-wrap pb-1 border-b border-slate-800">
-          <span className="text-xs text-slate-500 self-center mr-1">Continue to:</span>
-          <Button size="sm" variant="outline" className="text-xs h-7 gap-1 border-slate-700" onClick={() => onNavigateTo("claim-validation")}>
-            <ArrowRight className="h-3 w-3" /> Claim Validation
-          </Button>
-          <Button size="sm" variant="outline" className="text-xs h-7 gap-1 border-slate-700" onClick={() => onNavigateTo("remedy-feasibility")}>
-            <ArrowRight className="h-3 w-3" /> Remedy Feasibility
-          </Button>
-          <Button size="sm" variant="outline" className="text-xs h-7 gap-1 border-slate-700" onClick={() => onNavigateTo("remedy-templates")}>
-            <ArrowRight className="h-3 w-3" /> Remedy Templates
-          </Button>
-        </div>
-      )}
-      {/* Dashboard Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-slate-900/50 border-slate-700/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Total Paths</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{dashboard.data?.totalPaths || 0}</div>
-          </CardContent>
-        </Card>
-        <Card className="bg-slate-900/50 border-slate-700/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Total Steps</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-cyan-400">{dashboard.data?.totalSteps || 0}</div>
-          </CardContent>
-        </Card>
-        <Card className="bg-slate-900/50 border-slate-700/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Claim Types</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-400">{dashboard.data?.claimTypeCount || 0}</div>
-          </CardContent>
-        </Card>
-        <Card className="bg-slate-900/50 border-slate-700/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Jurisdictions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-amber-400">{dashboard.data?.jurisdictionCount || 0}</div>
-            {dashboard.data?.claimTypesByJurisdiction && (
-              <div className="mt-1 space-y-0.5">
-                {Object.entries(dashboard.data.claimTypesByJurisdiction).map(([j, cnt]) => (
-                  <div key={j} className="flex justify-between text-xs">
-                    <span className="text-slate-400 capitalize">{j}</span>
-                    <span className="text-slate-300">{cnt as number} types</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Path Explorer */}
-      <Card className="bg-slate-900/50 border-slate-700/50">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <MapIcon className="h-5 w-5 text-emerald-400" /> Procedural Path Explorer
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm text-slate-400 block mb-1">Claim Type</label>
-              <select
-                className="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white text-sm"
-                value={selectedClaim}
-                onChange={(e) => { setSelectedClaim(e.target.value); setSelectedJurisdiction(""); setPathResult(null); }}
-              >
-                <option value="">Select claim type...</option>
-                {(claimTypes.data || []).map(ct => (
-                  <option key={ct} value={ct}>{ct.replace(/_/g, " ")}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-sm text-slate-400 block mb-1">Jurisdiction</label>
-              <select
-                className="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white text-sm"
-                value={selectedJurisdiction}
-                onChange={(e) => setSelectedJurisdiction(e.target.value)}
-                disabled={!selectedClaim}
-              >
-                <option value="">Select jurisdiction...</option>
-                {(jurisdictions.data || []).map(j => (
-                  <option key={j} value={j}>{j}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {pathQuery.isLoading && <div className="flex items-center gap-2 text-slate-400"><Loader2 className="h-4 w-4 animate-spin" /> Loading path...</div>}
-
-          {pathResult && pathResult.steps.length > 0 && (
-            <div className="space-y-4">
-              {/* Timeline Summary */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card className="bg-slate-800/50 border-slate-700/50">
-                  <CardContent className="pt-4 text-center">
-                    <div className="text-3xl font-bold text-white">{pathResult.totalSteps}</div>
-                    <div className="text-xs text-slate-400">Total Steps</div>
-                  </CardContent>
-                </Card>
-                <Card className="bg-slate-800/50 border-slate-700/50">
-                  <CardContent className="pt-4 text-center">
-                    <div className="text-3xl font-bold text-cyan-400">{pathResult.timeline.totalDurationDays}</div>
-                    <div className="text-xs text-slate-400">Est. Days</div>
-                  </CardContent>
-                </Card>
-                <Card className="bg-slate-800/50 border-slate-700/50">
-                  <CardContent className="pt-4 text-center">
-                    <div className="text-3xl font-bold text-amber-400">${pathResult.timeline.totalFilingFees}</div>
-                    <div className="text-xs text-slate-400">Total Filing Fees</div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Critical Deadlines */}
-              {pathResult.criticalDeadlines.length > 0 && (
-                <Card className="bg-slate-800/50 border-slate-700/50">
-                  <CardHeader className="pb-2"><CardTitle className="text-sm text-slate-400">Critical Deadlines</CardTitle></CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {pathResult.criticalDeadlines.map((d: any, i: number) => (
-                        <div key={i} className="flex items-center justify-between text-xs">
-                          <span className="text-slate-300">{d.stepName}</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-white font-bold">{d.deadlineDays} days</span>
-                            <Badge className={urgencyColor(d.urgency)}>{d.urgency}</Badge>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Steps */}
-              <Card className="bg-slate-800/50 border-slate-700/50">
-                <CardHeader className="pb-2"><CardTitle className="text-sm text-slate-400">Procedural Steps</CardTitle></CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {pathResult.steps.map((step: any, i: number) => (
-                      <div key={i} className="border-l-2 border-cyan-500/30 pl-4 pb-3">
-                        <div className="flex items-center gap-2">
-                          <Badge className="bg-cyan-500/20 text-cyan-300 text-xs">Step {step.stepNumber}</Badge>
-                          <span className="text-white font-medium text-sm">{step.stepName}</span>
-                        </div>
-                        {step.stepDescription && <p className="text-xs text-slate-400 mt-1">{step.stepDescription}</p>}
-                        <div className="flex flex-wrap gap-3 mt-2 text-xs">
-                          {step.responsibleAgency && <span className="text-slate-300"><Building2 className="h-3 w-3 inline mr-1" />{step.responsibleAgency}</span>}
-                          {step.estimatedDurationDays > 0 && <span className="text-slate-300"><Clock className="h-3 w-3 inline mr-1" />{step.estimatedDurationDays} days</span>}
-                          {step.filingFee > 0 && <span className="text-slate-300"><DollarSign className="h-3 w-3 inline mr-1" />${step.filingFee}</span>}
-                          {step.deadlineDays && <span className="text-red-300"><AlertTriangle className="h-3 w-3 inline mr-1" />Deadline: {step.deadlineDays}d</span>}
-                          {step.formNumber && <span className="text-purple-300"><FileText className="h-3 w-3 inline mr-1" />{step.formNumber}</span>}
-                        </div>
-                        {step.requiredDocuments.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {step.requiredDocuments.map((doc: string) => (
-                              <Badge key={doc} className="bg-slate-700/50 text-slate-300 text-[10px]">{doc.replace(/_/g, " ")}</Badge>
-                            ))}
-                          </div>
-                        )}
-                        {step.nextStep && <div className="text-xs text-slate-500 mt-1">Next: {step.nextStep}{step.alternativeStep ? ` | Alt: ${step.alternativeStep}` : ""}</div>}
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {pathResult && pathResult.steps.length === 0 && (
-            <div className="text-center py-8 text-slate-500">No procedural path found for this claim type and jurisdiction.</div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-// â”€â”€â”€ Hardening Pipeline Panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function HardeningPipelinePanel() {
-  const dashboard = trpc.systemHardeningPipeline.dashboard.useQuery();
-  const ecClaimTypes = trpc.evidenceConfidence.claimTypes.useQuery();
-  const strategies = trpc.remedyFeasibility.strategies.useQuery();
-  const ppClaimTypes = trpc.proceduralPathEngine.claimTypes.useQuery();
-
-  const [claimType, set_claim_type] = useState("");
-  const [jurisdiction, setJurisdiction] = useState("");
-  const [strategyType, setStrategyType] = useState("");
-  const [evidenceInput, setEvidenceInput] = useState("");
-  const [budget, setBudget] = useState(1000);
-  const [timeDays, setTimeDays] = useState(180);
-  const [hasAttorney, setHasAttorney] = useState(false);
-  const [prereqInput, setPrereqInput] = useState("");
-  const [pipelineResult, setPipelineResult] = useState<any>(null);
-
-  const jurisdictions = trpc.proceduralPathEngine.jurisdictions.useQuery(
-    { claimType },
-    { enabled: !!claimType }
-  );
-
-  const executeMut = trpc.systemHardeningPipeline.execute.useMutation({
-    onSuccess: (data) => setPipelineResult(data),
-  });
-
-  const handleExecute = () => {
-    if (!claimType || !jurisdiction || !strategyType) return;
-    const evidence = evidenceInput.split("\n").filter(Boolean).map(line => {
-      const parts = line.split("|").map(s => s.trim());
-      return {
-        type: parts[0] || "",
-        source: parts[1] || undefined,
-        description: parts[2] || undefined,
-      };
-    });
-    const prereqs = prereqInput.split("\n").filter(Boolean).map(s => s.trim());
-    executeMut.mutate({
-      caseId: "pipeline-test-" + Date.now(),
-      claimType,
-      jurisdiction,
-      strategyType,
-      evidence,
-      resources: { budget, timeAvailableDays: timeDays, hasAttorney, prerequisitesMet: prereqs },
-    });
-  };
-
-  const verdictColor = (verdict: string) =>
-    verdict === "PROCEED" ? "bg-emerald-500/20 text-emerald-300" :
-    verdict === "CAUTION" ? "bg-amber-500/20 text-amber-300" :
-    verdict === "INVESTIGATE" ? "bg-cyan-500/20 text-cyan-300" :
-    "bg-red-500/20 text-red-300";
-
-  const scoreColor = (score: number) =>
-    score >= 70 ? "text-emerald-400" : score >= 50 ? "text-amber-400" : "text-red-400";
-
-  return (
-    <div className="space-y-6">
-      {/* Dashboard Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-slate-900/50 border-slate-700/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Pipeline Runs</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{dashboard.data?.totalRuns || 0}</div>
-          </CardContent>
-        </Card>
-        <Card className="bg-slate-900/50 border-slate-700/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Avg Confidence</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${scoreColor(dashboard.data?.avgConfidenceScore || 0)}`}>
-              {dashboard.data?.avgConfidenceScore || 0}
-            </div>
-          </CardContent>
-        </Card>
-        {dashboard.data?.verdictDistribution && Object.keys(dashboard.data.verdictDistribution).length > 0 && (
-          <Card className="bg-slate-900/50 border-slate-700/50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-400">Verdicts</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-1">
-                {Object.entries(dashboard.data.verdictDistribution).map(([v, cnt]) => (
-                  <div key={v} className="flex justify-between text-xs">
-                    <Badge className={verdictColor(v)}>{v}</Badge>
-                    <span className="text-white font-medium">{cnt as number}</span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      {/* Pipeline Executor */}
-      <Card className="bg-slate-900/50 border-slate-700/50">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Layers className="h-5 w-5 text-purple-400" /> System Hardening Pipeline
-          </CardTitle>
-          <p className="text-xs text-slate-400">Runs all four engines in sequence: Evidence Confidence â†’ Claim Validation â†’ Remedy Feasibility â†’ Procedural Path</p>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="text-sm text-slate-400 block mb-1">Claim Type</label>
-              <select className="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white text-sm" value={claimType} onChange={e => { set_claim_type(e.target.value); setJurisdiction(""); }}>
-                <option value="">Select...</option>
-                {(ecClaimTypes.data || []).map(ct => <option key={ct} value={ct}>{ct.replace(/_/g, " ")}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="text-sm text-slate-400 block mb-1">Jurisdiction</label>
-              <select className="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white text-sm" value={jurisdiction} onChange={e => setJurisdiction(e.target.value)} disabled={!claimType}>
-                <option value="">Select...</option>
-                {(jurisdictions.data || []).map(j => <option key={j} value={j}>{j}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="text-sm text-slate-400 block mb-1">Strategy Type</label>
-              <select className="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white text-sm" value={strategyType} onChange={e => setStrategyType(e.target.value)}>
-                <option value="">Select...</option>
-                {(strategies.data || []).map(st => <option key={st} value={st}>{st.replace(/_/g, " ")}</option>)}
-              </select>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm text-slate-400 block mb-1">Evidence (type | source | description, one per line)</label>
-              <textarea
-                className="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white text-sm h-28"
-                placeholder={"witness_testimony | third_party | Coworker saw incident\nemployment_records | employer\ndiscriminatory_statement | first_party"}
-                value={evidenceInput}
-                onChange={e => setEvidenceInput(e.target.value)}
-              />
-            </div>
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-sm text-slate-400 block mb-1">Budget ($)</label>
-                  <input type="number" className="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white text-sm" value={budget} onChange={e => setBudget(Number(e.target.value))} />
-                </div>
-                <div>
-                  <label className="text-sm text-slate-400 block mb-1">Time (days)</label>
-                  <input type="number" className="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white text-sm" value={timeDays} onChange={e => setTimeDays(Number(e.target.value))} />
-                </div>
-              </div>
-              <label className="flex items-center gap-2 text-sm text-slate-300">
-                <input type="checkbox" checked={hasAttorney} onChange={e => setHasAttorney(e.target.checked)} />
-                Has Attorney Access
-              </label>
-              <div>
-                <label className="text-sm text-slate-400 block mb-1">Prerequisites Met</label>
-                <textarea className="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white text-sm h-16" placeholder={"statute_of_limitations_met\njurisdiction_established"} value={prereqInput} onChange={e => setPrereqInput(e.target.value)} />
-              </div>
-            </div>
-          </div>
-          <Button onClick={handleExecute} disabled={!claimType || !jurisdiction || !strategyType || !evidenceInput || executeMut.isPending} className="bg-purple-600 hover:bg-purple-700">
-            {executeMut.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Layers className="h-4 w-4 mr-2" />}
-            Execute Pipeline
-          </Button>
-
-          {pipelineResult && (
-            <div className="space-y-4">
-              {/* Verdict Banner */}
-              <div className={`rounded-lg p-4 border ${pipelineResult.synthesis.verdict === "PROCEED" ? "bg-emerald-500/10 border-emerald-500/30" : pipelineResult.synthesis.verdict === "CAUTION" ? "bg-amber-500/10 border-amber-500/30" : pipelineResult.synthesis.verdict === "INVESTIGATE" ? "bg-cyan-500/10 border-cyan-500/30" : "bg-red-500/10 border-red-500/30"}`}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Badge className={verdictColor(pipelineResult.synthesis.verdict)}>{pipelineResult.synthesis.verdict}</Badge>
-                    <span className={`text-3xl font-bold ml-3 ${scoreColor(pipelineResult.synthesis.weightedTotal)}`}>{pipelineResult.synthesis.weightedTotal}/100</span>
-                  </div>
-                  {pipelineResult.viableStrategy && (
-                    <div className="text-right">
-                      <div className="text-xs text-slate-400">Viable Strategy</div>
-                      <div className="text-white font-semibold capitalize">{pipelineResult.viableStrategy.replace(/_/g, " ")}</div>
-                    </div>
-                  )}
-                </div>
-                <p className="text-sm text-slate-300 mt-2">{pipelineResult.synthesis.explanation}</p>
-              </div>
-
-              {/* Engine Scores */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card className="bg-slate-800/50 border-slate-700/50">
-                  <CardHeader className="pb-2"><CardTitle className="text-sm text-slate-400">Evidence Confidence (40%)</CardTitle></CardHeader>
-                  <CardContent className="text-center">
-                    <div className={`text-3xl font-bold ${scoreColor(pipelineResult.synthesis.evidenceScore)}`}>{pipelineResult.synthesis.evidenceScore}</div>
-                  </CardContent>
-                </Card>
-                <Card className="bg-slate-800/50 border-slate-700/50">
-                  <CardHeader className="pb-2"><CardTitle className="text-sm text-slate-400">Claim Validation (30%)</CardTitle></CardHeader>
-                  <CardContent className="text-center">
-                    <div className={`text-3xl font-bold ${scoreColor(pipelineResult.synthesis.validationScore)}`}>{pipelineResult.synthesis.validationScore}</div>
-                  </CardContent>
-                </Card>
-                <Card className="bg-slate-800/50 border-slate-700/50">
-                  <CardHeader className="pb-2"><CardTitle className="text-sm text-slate-400">Remedy Feasibility (30%)</CardTitle></CardHeader>
-                  <CardContent className="text-center">
-                    <div className={`text-3xl font-bold ${scoreColor(pipelineResult.synthesis.feasibilityScore)}`}>{pipelineResult.synthesis.feasibilityScore}</div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Required Next Actions */}
-              {pipelineResult.requiredNextActions.length > 0 && (
-                <Card className="bg-slate-800/50 border-slate-700/50">
-                  <CardHeader className="pb-2"><CardTitle className="text-sm text-slate-400">Required Next Actions</CardTitle></CardHeader>
-                  <CardContent>
-                    <ul className="space-y-1">
-                      {pipelineResult.requiredNextActions.map((action: string, i: number) => (
-                        <li key={i} className="text-xs text-slate-300 flex items-start gap-2">
-                          <ChevronRight className="h-3 w-3 text-cyan-400 shrink-0 mt-0.5" />
-                          {action}
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Risk Flags */}
-              {pipelineResult.riskFlags.length > 0 && (
-                <Card className="bg-slate-800/50 border-slate-700/50">
-                  <CardHeader className="pb-2"><CardTitle className="text-sm text-slate-400">Risk Flags</CardTitle></CardHeader>
-                  <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                      {pipelineResult.riskFlags.map((f: string) => (
-                        <Badge key={f} className="bg-red-500/20 text-red-300">{f.replace(/_/g, " ")}</Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Alternative Strategies */}
-              {pipelineResult.alternativeStrategies.length > 0 && (
-                <Card className="bg-slate-800/50 border-slate-700/50">
-                  <CardHeader className="pb-2"><CardTitle className="text-sm text-slate-400">Alternative Strategies</CardTitle></CardHeader>
-                  <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                      {pipelineResult.alternativeStrategies.map((s: string) => (
-                        <Badge key={s} className="bg-cyan-500/20 text-cyan-300 capitalize">{s.replace(/_/g, " ")}</Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   COALITION INTELLIGENCE PANEL â€” Session 60
-   Unified search across legislators, agencies, advocacy orgs, media
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
-function CoalitionIntelPanel() {
-  const dashQ = trpc.coalitionIntelligence.dashboard.useQuery();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [entityFilter, setEntityFilter] = useState<string>("");
-  const [jurisdictionFilter, setJurisdictionFilter] = useState<string>("");
-  const [domainFilter, setDomainFilter] = useState<string>("");
-  const [activeView, setActiveView] = useState<"dashboard" | "search" | "readiness">("dashboard");
-  const [selectedEntity, setSelectedEntity] = useState<{ id: string; type: string } | null>(null);
-
-  const searchQ = trpc.coalitionIntelligence.search.useQuery(
-    {
-      query: searchQuery || undefined,
-      entityTypes: entityFilter ? [entityFilter as any] : undefined,
-      jurisdiction: jurisdictionFilter || undefined,
-      domains: domainFilter ? [domainFilter] : undefined,
-      limit: 30,
-    },
-    { enabled: activeView === "search" }
-  );
-
-  const readinessQ = trpc.coalitionIntelligence.assessReadiness.useQuery(
-    {
-      jurisdiction: jurisdictionFilter || "federal",
-      domains: domainFilter ? [domainFilter] : ["employment"],
-    },
-    { enabled: activeView === "readiness" }
-  );
-
-  const legDetailQ = trpc.coalitionIntelligence.legislatorDetail.useQuery(
-    { id: selectedEntity?.id || "" },
-    { enabled: !!selectedEntity && selectedEntity.type === "legislator" }
-  );
-  const agDetailQ = trpc.coalitionIntelligence.agencyDetail.useQuery(
-    { id: selectedEntity?.id || "" },
-    { enabled: !!selectedEntity && selectedEntity.type === "agency" }
-  );
-  const orgDetailQ = trpc.coalitionIntelligence.advocacyOrgDetail.useQuery(
-    { id: selectedEntity?.id || "" },
-    { enabled: !!selectedEntity && selectedEntity.type === "advocacy_org" }
-  );
-  const medDetailQ = trpc.coalitionIntelligence.mediaDetail.useQuery(
-    { id: selectedEntity?.id || "" },
-    { enabled: !!selectedEntity && selectedEntity.type === "media" }
-  );
-
-  const dash = dashQ.data;
-  if (dashQ.isLoading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
-
-  const entityTypeColors: Record<string, string> = {
-    legislator: "bg-blue-500/20 text-blue-400",
-    agency: "bg-emerald-500/20 text-emerald-400",
-    advocacy_org: "bg-violet-500/20 text-violet-400",
-    media: "bg-amber-500/20 text-amber-400",
-  };
-  const entityTypeLabels: Record<string, string> = {
-    legislator: "Legislator", agency: "Agency", advocacy_org: "Advocacy Org", media: "Media",
-  };
-
-  const detail = selectedEntity?.type === "legislator" ? legDetailQ.data
-    : selectedEntity?.type === "agency" ? agDetailQ.data
-    : selectedEntity?.type === "advocacy_org" ? orgDetailQ.data
-    : selectedEntity?.type === "media" ? medDetailQ.data : null;
-
-  return (
-    <div className="space-y-6">
-      {/* View Tabs */}
-      <div className="flex gap-2">
-        {(["dashboard", "search", "readiness"] as const).map(v => (
-          <Button key={v} size="sm" variant={activeView === v ? "default" : "outline"}
-            onClick={() => { setActiveView(v); setSelectedEntity(null); }} className="capitalize">
-            {v === "dashboard" ? <BarChart3 className="h-3.5 w-3.5 mr-1" /> : v === "search" ? <Search className="h-3.5 w-3.5 mr-1" /> : <Shield className="h-3.5 w-3.5 mr-1" />}
-            {v === "readiness" ? "Coalition Readiness" : v === "search" ? "Entity Search" : "Intel Dashboard"}
-          </Button>
-        ))}
-      </div>
-
-      {/* Dashboard View */}
-      {activeView === "dashboard" && (
-        <>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <MetricCard label="Legislators" value={String(dash?.totalLegislators ?? 0)} icon={<Landmark className="h-3.5 w-3.5" />} color="blue" />
-            <MetricCard label="Agencies" value={String(dash?.totalAgencies ?? 0)} icon={<Building2 className="h-3.5 w-3.5" />} color="emerald" />
-            <MetricCard label="Advocacy Orgs" value={String(dash?.totalAdvocacyOrgs ?? 0)} icon={<Handshake className="h-3.5 w-3.5" />} color="violet" />
-            <MetricCard label="Media Contacts" value={String(dash?.totalMedia ?? 0)} icon={<Megaphone className="h-3.5 w-3.5" />} color="amber" />
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Jurisdiction Breakdown */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Globe className="h-4 w-4" /> By Jurisdiction
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {Object.entries(dash?.byJurisdiction ?? {}).map(([j, c]) => (
-                    <div key={j} className="flex items-center justify-between p-2 rounded border border-border">
-                      <span className="text-sm capitalize">{j}</span>
-                      <Badge variant="outline" className="font-mono">{String(c)}</Badge>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Top Domains */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Target className="h-4 w-4" /> Top Issue Domains
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-1.5">
-                  {(dash?.topDomains ?? []).slice(0, 10).map((d: any) => (
-                    <div key={d.domain} className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">{d.domain}</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-24 h-1.5 rounded-full bg-muted overflow-hidden">
-                          <div className="h-full bg-primary rounded-full" style={{ width: `${Math.min(100, (d.count / ((dash?.topDomains?.[0]?.count || 1))) * 100)}%` }} />
-                        </div>
-                        <span className="text-xs font-mono text-muted-foreground w-6 text-right">{d.count}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </>
-      )}
-
-      {/* Search View */}
-      {activeView === "search" && (
-        <>
-          <div className="flex flex-wrap gap-3 items-center">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input className="w-full pl-9 pr-3 py-2 rounded-md border border-border bg-background text-sm"
-                placeholder="Search legislators, agencies, orgs, media..."
-                value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
-            </div>
-            <select className="px-3 py-2 rounded-md border border-border bg-background text-sm"
-              value={entityFilter} onChange={e => setEntityFilter(e.target.value)}>
-              <option value="">All Types</option>
-              <option value="legislator">Legislators</option>
-              <option value="agency">Agencies</option>
-              <option value="advocacy_org">Advocacy Orgs</option>
-              <option value="media">Media</option>
-            </select>
-            <select className="px-3 py-2 rounded-md border border-border bg-background text-sm"
-              value={jurisdictionFilter} onChange={e => setJurisdictionFilter(e.target.value)}>
-              <option value="">All Jurisdictions</option>
-              <option value="federal">Federal</option>
-              <option value="state">State</option>
-              <option value="National">National</option>
-            </select>
-            <select className="px-3 py-2 rounded-md border border-border bg-background text-sm"
-              value={domainFilter} onChange={e => setDomainFilter(e.target.value)}>
-              <option value="">All Domains</option>
-              {["employment", "housing", "civil_rights", "disability", "consumer", "veterans", "immigration", "healthcare", "education"].map(d => (
-                <option key={d} value={d}>{d.replace(/_/g, " ")}</option>
-              ))}
-            </select>
-          </div>
-
-          {searchQ.isLoading ? (
-            <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-              {(searchQ.data ?? []).map((e: any) => (
-                <div key={e.id} className="p-3 rounded-lg border border-border hover:border-primary/40 cursor-pointer transition-colors"
-                  onClick={() => setSelectedEntity({ id: e.id, type: e.entityType })}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-medium text-sm">{e.name}</span>
-                    <Badge className={`text-[10px] ${entityTypeColors[e.entityType] || ""}`}>
-                      {entityTypeLabels[e.entityType] || e.entityType}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground">{e.subtitle}</p>
-                  <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1"><Gauge className="h-3 w-3" /> {e.influenceScore}</span>
-                    {e.state && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {e.state}</span>}
-                    {e.domains?.length > 0 && <span>{e.domains.slice(0, 2).join(", ")}</span>}
-                  </div>
-                </div>
-              ))}
-              {(searchQ.data ?? []).length === 0 && (
-                <div className="col-span-2 text-center py-8 text-muted-foreground text-sm">
-                  <Binoculars className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                  <p>No entities found. Try adjusting your search filters.</p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Entity Detail Modal */}
-          {selectedEntity && detail && (
-            <Card className="border-primary/30">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    {selectedEntity.type === "legislator" ? <Landmark className="h-4 w-4" /> : selectedEntity.type === "agency" ? <Building2 className="h-4 w-4" /> : selectedEntity.type === "advocacy_org" ? <Handshake className="h-4 w-4" /> : <Megaphone className="h-4 w-4" />}
-                    {(detail as any).name}
-                  </CardTitle>
-                  <Button size="sm" variant="ghost" onClick={() => setSelectedEntity(null)}>
-                    <XCircle className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  {Object.entries(detail as any).filter(([k]) => !['id', 'isActive', 'isVerified'].includes(k)).map(([k, v]) => {
-                    if (v === null || v === undefined) return null;
-                    const label = k.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase());
-                    const val = Array.isArray(v) ? (v as any[]).join(", ") : typeof v === "object" ? JSON.stringify(v) : String(v);
-                    if (!val || val === '{}' || val === '[]') return null;
-                    return (
-                      <div key={k}>
-                        <span className="text-xs text-muted-foreground">{label}</span>
-                        <p className="text-sm mt-0.5 break-words">{val}</p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </>
-      )}
-
-      {/* Readiness View */}
-      {activeView === "readiness" && (
-        <>
-          <div className="flex gap-3 items-center">
-            <select className="px-3 py-2 rounded-md border border-border bg-background text-sm"
-              value={jurisdictionFilter} onChange={e => setJurisdictionFilter(e.target.value)}>
-              <option value="federal">Federal</option>
-              <option value="state">State</option>
-            </select>
-            <select className="px-3 py-2 rounded-md border border-border bg-background text-sm"
-              value={domainFilter} onChange={e => setDomainFilter(e.target.value)}>
-              {["employment", "housing", "civil_rights", "disability", "consumer", "veterans", "immigration"].map(d => (
-                <option key={d} value={d}>{d.replace(/_/g, " ")}</option>
-              ))}
-            </select>
-          </div>
-
-          {readinessQ.isLoading ? (
-            <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-          ) : readinessQ.data ? (
-            <div className="space-y-6">
-              {/* Overall Score */}
-              <Card className="border-primary/30">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-lg font-bold">Coalition Readiness Score</h3>
-                      <p className="text-sm text-muted-foreground">For {readinessQ.data.jurisdiction} / {readinessQ.data.domains.join(", ")}</p>
-                    </div>
-                    <div className={`text-4xl font-bold font-mono ${
-                      readinessQ.data.overallReadinessScore >= 70 ? "text-emerald-400" :
-                      readinessQ.data.overallReadinessScore >= 40 ? "text-amber-400" : "text-red-400"
-                    }`}>
-                      {readinessQ.data.overallReadinessScore}%
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Breakdown */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <MetricCard label="Aligned Legislators" value={`${readinessQ.data.legislators.aligned}/${readinessQ.data.legislators.total}`} icon={<Landmark className="h-3.5 w-3.5" />} color="blue" />
-                <MetricCard label="Relevant Agencies" value={`${readinessQ.data.agencies.relevant}/${readinessQ.data.agencies.total}`} icon={<Building2 className="h-3.5 w-3.5" />} color="emerald" />
-                <MetricCard label="Willing Orgs" value={`${readinessQ.data.advocacyOrgs.willing}/${readinessQ.data.advocacyOrgs.total}`} icon={<Handshake className="h-3.5 w-3.5" />} color="violet" />
-                <MetricCard label="Relevant Media" value={`${readinessQ.data.media.relevant}/${readinessQ.data.media.total}`} icon={<Megaphone className="h-3.5 w-3.5" />} color="amber" />
-              </div>
-
-              {/* Gaps and Strengths */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm flex items-center gap-2 text-red-400">
-                      <AlertTriangle className="h-4 w-4" /> Gaps
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {readinessQ.data.gaps.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No gaps identified.</p>
-                    ) : (
-                      <ul className="space-y-1.5">
-                        {readinessQ.data.gaps.map((g: string, i: number) => (
-                          <li key={i} className="text-sm flex items-start gap-2">
-                            <XCircle className="h-3.5 w-3.5 text-red-400 mt-0.5 shrink-0" />
-                            {g}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm flex items-center gap-2 text-emerald-400">
-                      <CheckCircle2 className="h-4 w-4" /> Strengths
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {readinessQ.data.strengths.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No strengths identified yet.</p>
-                    ) : (
-                      <ul className="space-y-1.5">
-                        {readinessQ.data.strengths.map((s: string, i: number) => (
-                          <li key={i} className="text-sm flex items-start gap-2">
-                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 mt-0.5 shrink-0" />
-                            {s}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          ) : null}
-        </>
-      )}
-    </div>
-  );
-}
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   CAMPAIGN ENGINE PANEL â€” Session 60
-   6-stage campaign pipeline with auto-creation, timeline, actions, outcomes
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
-function CampaignEnginePanel() {
-  const dashQ = trpc.campaignEngine.dashboard.useQuery();
-  const stagesQ = trpc.campaignEngine.stages.useQuery();
-  const [activeView, setActiveView] = useState<"dashboard" | "campaigns" | "detail">("dashboard");
-  const [selectedCampaignId, setSelectedCampaignId] = useState<string>("");
-
-  const campaignsQ = trpc.campaignEngine.list.useQuery(undefined, { enabled: activeView === "campaigns" || activeView === "dashboard" });
-  const detailQ = trpc.campaignEngine.detail.useQuery(
-    { id: selectedCampaignId },
-    { enabled: !!selectedCampaignId && activeView === "detail" }
-  );
-
-  const autoCreateMut = trpc.campaignEngine.autoCreate.useMutation({
-    onSuccess: () => { dashQ.refetch(); campaignsQ.refetch(); },
-  });
-  const advanceStageMut = trpc.campaignEngine.advanceStage.useMutation({
-    onSuccess: () => { detailQ.refetch(); dashQ.refetch(); campaignsQ.refetch(); },
-  });
-
-  const dash = dashQ.data;
-  const stages = stagesQ.data ?? [];
-
-  if (dashQ.isLoading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
-
-  const stageColors: Record<number, string> = {
-    1: "bg-blue-500", 2: "bg-violet-500", 3: "bg-amber-500",
-    4: "bg-emerald-500", 5: "bg-orange-500", 6: "bg-green-500",
-  };
-  const stageTextColors: Record<number, string> = {
-    1: "text-blue-400", 2: "text-violet-400", 3: "text-amber-400",
-    4: "text-emerald-400", 5: "text-orange-400", 6: "text-green-400",
-  };
-
-  return (
-    <div className="space-y-6">
-      {/* View Tabs */}
-      <div className="flex gap-2">
-        {(["dashboard", "campaigns"] as const).map(v => (
-          <Button key={v} size="sm" variant={activeView === v ? "default" : "outline"}
-            onClick={() => { setActiveView(v); setSelectedCampaignId(""); }} className="capitalize">
-            {v === "dashboard" ? <BarChart3 className="h-3.5 w-3.5 mr-1" /> : <Megaphone className="h-3.5 w-3.5 mr-1" />}
-            {v === "dashboard" ? "Campaign Dashboard" : "All Campaigns"}
-          </Button>
-        ))}
-        {activeView === "detail" && (
-          <Button size="sm" variant="default" className="capitalize">
-            <Eye className="h-3.5 w-3.5 mr-1" /> Campaign Detail
-          </Button>
-        )}
-        <div className="flex-1" />
-        <Button size="sm" variant="outline" onClick={() => autoCreateMut.mutate()}
-          disabled={autoCreateMut.isPending} className="gap-1.5">
-          {autoCreateMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
-          Auto-Create from Critical Patterns
-        </Button>
-      </div>
-
-      {/* Dashboard View */}
-      {activeView === "dashboard" && (
-        <>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <MetricCard label="Total Campaigns" value={String(dash?.totalCampaigns ?? 0)} icon={<Megaphone className="h-3.5 w-3.5" />} color="blue" />
-            <MetricCard label="Total Actions" value={String(dash?.totalActions ?? 0)} icon={<Zap className="h-3.5 w-3.5" />} color="violet" />
-            <MetricCard label="Outcomes" value={String(dash?.totalOutcomes ?? 0)} icon={<CheckCircle2 className="h-3.5 w-3.5" />} color="emerald" />
-            <MetricCard label="Avg Impact" value={`${dash?.averageImpactIndex ?? 0}`} icon={<TrendingUp className="h-3.5 w-3.5" />} color="amber" />
-          </div>
-
-          {/* 6-Stage Pipeline Overview */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Milestone className="h-4 w-4" /> 6-Stage Campaign Pipeline
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-1">
-                {stages.map((s: any) => {
-                  const count = (dash?.byStage ?? {})[s.number] ?? 0;
-                  return (
-                    <div key={s.number} className="flex-1 text-center">
-                      <div className={`h-2 rounded-full ${stageColors[s.number] || 'bg-muted'} ${count > 0 ? 'opacity-100' : 'opacity-30'}`} />
-                      <p className={`text-xs mt-1 font-medium ${stageTextColors[s.number] || ''}`}>{s.name}</p>
-                      <p className="text-xs text-muted-foreground">{count} campaign{count !== 1 ? 's' : ''}</p>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Recent Campaigns */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Megaphone className="h-4 w-4" /> Recent Campaigns
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {(dash?.recentCampaigns?.length ?? 0) === 0 ? (
-                <div className="text-center py-8 text-muted-foreground text-sm">
-                  <Megaphone className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                  <p>No campaigns yet. Click "Auto-Create from Critical Patterns" to begin.</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {dash?.recentCampaigns?.slice(0, 5).map((c: any) => (
-                    <div key={c.id} className="p-3 rounded-lg border border-border hover:border-primary/40 cursor-pointer transition-colors"
-                      onClick={() => { setSelectedCampaignId(c.id); setActiveView("detail"); }}>
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-sm">{c.name}</span>
-                        <div className="flex items-center gap-2">
-                          <Badge className={`text-[10px] ${stageColors[c.currentStage] || 'bg-muted'}/20 ${stageTextColors[c.currentStage] || ''}`}>
-                            Stage {c.currentStage}: {stages.find((s: any) => s.number === c.currentStage)?.name || ''}
-                          </Badge>
-                          <Badge variant="outline" className="text-[10px]">{c.status}</Badge>
-                        </div>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {c.jurisdiction} Â· Impact: {c.impactIndex}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </>
-      )}
-
-      {/* All Campaigns View */}
-      {activeView === "campaigns" && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Megaphone className="h-4 w-4" /> All Campaigns
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {campaignsQ.isLoading ? (
-              <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-            ) : (campaignsQ.data ?? []).length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground text-sm">
-                <Megaphone className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                <p>No campaigns found.</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border text-xs text-muted-foreground">
-                      <th className="text-left py-2 px-2">Name</th>
-                      <th className="text-left py-2 px-2">Jurisdiction</th>
-                      <th className="text-center py-2 px-2">Stage</th>
-                      <th className="text-center py-2 px-2">Impact</th>
-                      <th className="text-center py-2 px-2">Status</th>
-                      <th className="text-right py-2 px-2">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(campaignsQ.data ?? []).map((c: any) => (
-                      <tr key={c.id} className="border-b border-border/50 hover:bg-muted/30 cursor-pointer"
-                        onClick={() => { setSelectedCampaignId(c.id); setActiveView("detail"); }}>
-                        <td className="py-2 px-2 font-medium">{c.name}</td>
-                        <td className="py-2 px-2 text-muted-foreground">{c.jurisdiction}</td>
-                        <td className="py-2 px-2 text-center">
-                          <Badge className={`text-[10px] ${stageColors[c.currentStage] || 'bg-muted'}/20 ${stageTextColors[c.currentStage] || ''}`}>
-                            {c.currentStage}
-                          </Badge>
-                        </td>
-                        <td className="py-2 px-2 text-center font-mono">{c.impactIndex}</td>
-                        <td className="py-2 px-2 text-center">
-                          <Badge variant="outline" className="text-[10px]">{c.status}</Badge>
-                        </td>
-                        <td className="py-2 px-2 text-right">
-                          <Button size="sm" variant="ghost" className="h-6 text-xs gap-1">
-                            <Eye className="h-3 w-3" /> View
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Campaign Detail View */}
-      {activeView === "detail" && selectedCampaignId && (
-        <>
-          <Button size="sm" variant="ghost" onClick={() => { setActiveView("campaigns"); setSelectedCampaignId(""); }} className="gap-1.5">
-            <ArrowLeft className="h-3.5 w-3.5" /> Back to Campaigns
-          </Button>
-
-          {detailQ.isLoading ? (
-            <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
-          ) : detailQ.data ? (
-            <div className="space-y-6">
-              {/* Campaign Header */}
-              <Card className="border-primary/30">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h3 className="text-lg font-bold">{detailQ.data.campaign.name}</h3>
-                      <p className="text-sm text-muted-foreground mt-0.5">{detailQ.data.campaign.description}</p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold font-mono">{detailQ.data.campaign.impactIndex}</div>
-                      <p className="text-xs text-muted-foreground">Impact Index</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1"><Globe className="h-3.5 w-3.5" /> {detailQ.data.campaign.jurisdiction}</span>
-                    <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> Started: {new Date(detailQ.data.campaign.startedAt).toLocaleDateString()}</span>
-                    <Badge variant="outline">{detailQ.data.campaign.status}</Badge>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* 6-Stage Timeline */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Milestone className="h-4 w-4" /> Campaign Timeline
-                    </CardTitle>
-                    {detailQ.data.campaign.currentStage < 6 && (
-                      <Button size="sm" variant="outline" className="gap-1.5 text-xs"
-                        onClick={() => advanceStageMut.mutate({ campaignId: selectedCampaignId })}
-                        disabled={advanceStageMut.isPending}>
-                        {advanceStageMut.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <ChevronRight className="h-3 w-3" />}
-                        Advance to Stage {detailQ.data.campaign.currentStage + 1}
-                      </Button>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="relative">
-                    {/* Timeline line */}
-                    <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-border" />
-                    <div className="space-y-4">
-                      {stages.map((s: any) => {
-                        const histEntry = detailQ.data!.campaign.stageHistory.find((h: any) => h.stage === s.number);
-                        const isCurrent = s.number === detailQ.data!.campaign.currentStage;
-                        const isCompleted = histEntry?.completedAt;
-                        const isFuture = s.number > detailQ.data!.campaign.currentStage;
-                        return (
-                          <div key={s.number} className="relative pl-10">
-                            <div className={`absolute left-2.5 w-3 h-3 rounded-full border-2 ${
-                              isCompleted ? 'bg-emerald-500 border-emerald-500' :
-                              isCurrent ? `${stageColors[s.number]} border-current animate-pulse` :
-                              'bg-muted border-border'
-                            }`} />
-                            <div className={`p-3 rounded-lg border ${isCurrent ? 'border-primary/40 bg-primary/5' : 'border-border'} ${isFuture ? 'opacity-50' : ''}`}>
-                              <div className="flex items-center justify-between">
-                                <span className={`font-medium text-sm ${isCurrent ? stageTextColors[s.number] : ''}`}>
-                                  Stage {s.number}: {s.name}
-                                </span>
-                                {isCompleted && <Badge className="text-[10px] bg-emerald-500/20 text-emerald-400">Completed</Badge>}
-                                {isCurrent && !isCompleted && <Badge className="text-[10px] bg-blue-500/20 text-blue-400">Current</Badge>}
-                              </div>
-                              <p className="text-xs text-muted-foreground mt-0.5">{s.description}</p>
-                              {histEntry && (
-                                <div className="flex gap-4 mt-1 text-xs text-muted-foreground">
-                                  <span>Entered: {new Date(histEntry.enteredAt).toLocaleDateString()}</span>
-                                  {histEntry.completedAt && <span>Completed: {new Date(histEntry.completedAt).toLocaleDateString()}</span>}
-                                  {histEntry.notes && <span>Notes: {histEntry.notes}</span>}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Members and Targets */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Users className="h-4 w-4" /> Coalition Members ({detailQ.data.members.length})
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {detailQ.data.members.length === 0 ? (
-                      <p className="text-sm text-muted-foreground text-center py-4">No members yet.</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {detailQ.data.members.map((m: any) => (
-                          <div key={m.id} className="p-2 rounded border border-border">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-medium">{m.memberName}</span>
-                              <Badge variant="outline" className="text-[10px]">{m.memberType}</Badge>
-                            </div>
-                            <p className="text-xs text-muted-foreground">Role: {m.roleInCoalition} Â· Commitment: {m.commitmentLevel}</p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Target className="h-4 w-4" /> Campaign Targets ({detailQ.data.targets.length})
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {detailQ.data.targets.length === 0 ? (
-                      <p className="text-sm text-muted-foreground text-center py-4">No targets yet.</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {detailQ.data.targets.map((t: any) => (
-                          <div key={t.id} className="p-2 rounded border border-border">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-medium">{t.targetName}</span>
-                              <Badge variant="outline" className="text-[10px]">{t.priority}</Badge>
-                            </div>
-                            <p className="text-xs text-muted-foreground">{t.targetType} Â· Status: {t.outreachStatus || 'pending'}</p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Actions Log */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Zap className="h-4 w-4" /> Action Log ({detailQ.data.actions.length})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {detailQ.data.actions.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-4">No actions recorded.</p>
-                  ) : (
-                    <div className="space-y-1.5">
-                      {detailQ.data.actions.slice(0, 15).map((a: any) => (
-                        <div key={a.id} className="flex items-center justify-between p-2 rounded border border-border/50">
-                          <div className="flex items-center gap-2">
-                            <Badge className={`text-[10px] ${stageColors[a.stageNumber] || 'bg-muted'}/20 ${stageTextColors[a.stageNumber] || ''}`}>
-                              S{a.stageNumber}
-                            </Badge>
-                            <span className="text-sm">{a.action}</span>
-                          </div>
-                          <span className="text-xs text-muted-foreground">{new Date(a.date).toLocaleDateString()}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Outcomes */}
-              {detailQ.data.outcomes.length > 0 && (
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4" /> Outcomes ({detailQ.data.outcomes.length})
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {detailQ.data.outcomes.map((o: any) => (
-                        <div key={o.id} className="p-3 rounded border border-emerald-500/20 bg-emerald-500/5">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium">{o.result}</span>
-                            <span className="text-xs font-mono text-emerald-400">Impact: {o.impactScore}</span>
-                          </div>
-                          {o.notes && <p className="text-xs text-muted-foreground mt-1">{o.notes}</p>}
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground text-sm">Campaign not found.</div>
-          )}
-        </>
-      )}
-    </div>
-  );
-}
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   Knowledge Health Panel â€” Freshness Monitoring
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
-function KnowledgeHealthPanel() {
-  const records = trpc.knowledgeHealth.freshnessRecords.useQuery();
-  const summary = trpc.knowledgeHealth.freshnessSummary.useQuery();
-  const runCheck = trpc.knowledgeHealth.runFreshnessCheck.useMutation({
-    onSuccess: () => {
-      records.refetch();
-      summary.refetch();
-    },
-  });
-  const initFreshness = trpc.knowledgeHealth.initializeFreshness.useMutation({
-    onSuccess: () => {
-      records.refetch();
-      summary.refetch();
-    },
-  });
-
-  const getStatusBadge = (score: number) => {
-    if (score >= 80) return { label: "Healthy", color: "text-emerald-400 border-emerald-400/30 bg-emerald-400/10" };
-    if (score >= 50) return { label: "Aging", color: "text-amber-400 border-amber-400/30 bg-amber-400/10" };
-    return { label: "Stale", color: "text-red-400 border-red-400/30 bg-red-400/10" };
-  };
-
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return "text-emerald-400";
-    if (score >= 50) return "text-amber-400";
-    return "text-red-400";
-  };
-
-  return (
-    <div className="space-y-6">
-      {/* Summary Cards */}
-      {summary.data && (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <Card className="bg-card/50">
-            <CardContent className="pt-4 pb-3 text-center">
-              <div className="text-2xl font-bold">{summary.data.totalTables}</div>
-              <div className="text-xs text-muted-foreground">Tables Tracked</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-card/50">
-            <CardContent className="pt-4 pb-3 text-center">
-              <div className="text-2xl font-bold text-emerald-400">{summary.data.healthyCount}</div>
-              <div className="text-xs text-muted-foreground">Healthy</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-card/50">
-            <CardContent className="pt-4 pb-3 text-center">
-              <div className="text-2xl font-bold text-amber-400">{summary.data.agingCount}</div>
-              <div className="text-xs text-muted-foreground">Aging</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-card/50">
-            <CardContent className="pt-4 pb-3 text-center">
-              <div className="text-2xl font-bold text-red-400">{summary.data.staleCount}</div>
-              <div className="text-xs text-muted-foreground">Stale</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-card/50">
-            <CardContent className="pt-4 pb-3 text-center">
-              <div className={`text-2xl font-bold ${getScoreColor(summary.data.averageScore)}`}>{summary.data.averageScore}</div>
-              <div className="text-xs text-muted-foreground">Avg Score</div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Critical Alerts */}
-      {summary.data && summary.data.criticalAlerts.length > 0 && (
-        <Card className="border-red-500/30 bg-red-500/5">
-          <CardContent className="pt-4 pb-3">
-            <div className="flex items-center gap-2 mb-2">
-              <AlertTriangle className="h-4 w-4 text-red-400" />
-              <span className="text-sm font-semibold text-red-400">Critical: Backbone tables below 50 freshness</span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {summary.data.criticalAlerts.map((alert, i) => (
-                <Badge key={i} variant="outline" className="text-red-400 border-red-400/30">{alert}</Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Actions */}
-      <div className="flex gap-2">
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => runCheck.mutate()}
-          disabled={runCheck.isPending}
-        >
-          {runCheck.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <RefreshCw className="h-3 w-3 mr-1" />}
-          Run Freshness Check
-        </Button>
-        {(!records.data || records.data.length === 0) && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => initFreshness.mutate()}
-            disabled={initFreshness.isPending}
-          >
-            {initFreshness.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Plus className="h-3 w-3 mr-1" />}
-            Initialize Tracking
-          </Button>
-        )}
-      </div>
-
-      {/* Freshness Table */}
-      <Card>
-        <CardContent className="pt-6">
-          <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
-            <HeartPulse className="h-5 w-5 text-emerald-400" />
-            Knowledge Health Status
-          </h3>
-          {records.isLoading ? (
-            <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading...</div>
-          ) : !records.data || records.data.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <HeartPulse className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">No freshness data yet. Click "Initialize Tracking" to begin.</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border/50">
-                    <th className="text-left py-2 px-3 text-muted-foreground font-medium">Table</th>
-                    <th className="text-right py-2 px-3 text-muted-foreground font-medium">Records</th>
-                    <th className="text-right py-2 px-3 text-muted-foreground font-medium">Last Updated</th>
-                    <th className="text-right py-2 px-3 text-muted-foreground font-medium">Score</th>
-                    <th className="text-center py-2 px-3 text-muted-foreground font-medium">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {records.data.map((rec) => {
-                    const badge = getStatusBadge(rec.freshnessScore);
-                    return (
-                      <tr key={rec.tableName} className="border-b border-border/20 hover:bg-muted/30">
-                        <td className="py-2 px-3">
-                          <div className="font-medium">{rec.displayName}</div>
-                          <div className="text-xs text-muted-foreground">{rec.tableName}</div>
-                        </td>
-                        <td className="text-right py-2 px-3 tabular-nums">{rec.recordCount.toLocaleString()}</td>
-                        <td className="text-right py-2 px-3 text-xs text-muted-foreground">
-                          {rec.lastUpdate ? new Date(rec.lastUpdate).toLocaleDateString() : "Never"}
-                        </td>
-                        <td className={`text-right py-2 px-3 font-bold tabular-nums ${getScoreColor(rec.freshnessScore)}`}>
-                          {rec.freshnessScore}
-                        </td>
-                        <td className="text-center py-2 px-3">
-                          <Badge variant="outline" className={badge.color}>{badge.label}</Badge>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Quarterly Backbone Refresh */}
-      <QuarterlyRefreshCard />
-    </div>
-  );
-}
-
-function QuarterlyRefreshCard() {
-  const [result, setResult] = useState<{ prompt: string; stats: any } | null>(null);
-  const [copied, setCopied] = useState(false);
-  const generate = trpc.knowledgeHealth.generateQuarterlyRefreshPrompt.useMutation({
-    onSuccess: (data: any) => setResult(data),
-  });
-
-  const handleCopy = () => {
-    if (!result) return;
-    navigator.clipboard.writeText(result.prompt).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    });
-  };
-
-  return (
-    <Card className="border-border/40">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-base flex items-center gap-2">
-              <RefreshCw className="h-4 w-4 text-amber-400" /> Quarterly Backbone Refresh
-            </CardTitle>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Generate a pre-filled worker prompt targeting all stale, empty, or underpopulated tables
-            </p>
-          </div>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => generate.mutate()}
-            disabled={generate.isPending}
-            className="gap-1.5 border-amber-400/30 text-amber-400 hover:bg-amber-400/10"
-          >
-            {generate.isPending ? <><Loader2 className="h-3 w-3 animate-spin" /> Analyzing...</> : 'Generate Prompt'}
-          </Button>
-        </div>
-      </CardHeader>
-      {result && (
-        <CardContent className="space-y-3">
-          <div className="grid grid-cols-4 gap-2 text-center">
-            {[
-              { label: 'Overall Score', value: `${result.stats.overallScore}/100`, color: result.stats.overallScore >= 80 ? 'text-emerald-400' : result.stats.overallScore >= 50 ? 'text-amber-400' : 'text-red-400' },
-              { label: 'Empty Tables', value: result.stats.emptyCount, color: result.stats.emptyCount > 0 ? 'text-red-400' : 'text-emerald-400' },
-              { label: 'Stale Tables', value: result.stats.staleCount, color: result.stats.staleCount > 0 ? 'text-amber-400' : 'text-emerald-400' },
-              { label: 'Need Attention', value: result.stats.tablesNeedingAttention, color: result.stats.tablesNeedingAttention > 0 ? 'text-amber-400' : 'text-emerald-400' },
-            ].map((stat) => (
-              <div key={stat.label} className="rounded-md border border-border/30 p-2">
-                <div className={`text-xl font-bold tabular-nums ${stat.color}`}>{stat.value}</div>
-                <div className="text-xs text-muted-foreground mt-0.5">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-          <div className="relative">
-            <pre className="text-xs bg-muted/30 rounded-md p-3 overflow-auto max-h-64 whitespace-pre-wrap font-mono border border-border/30">{result.prompt}</pre>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleCopy}
-              className="absolute top-2 right-2 gap-1 text-xs h-7 px-2 bg-background"
-            >
-              {copied ? <><CheckCircle2 className="h-3 w-3" /> Copied</> : 'Copy'}
-            </Button>
-          </div>
-        </CardContent>
-      )}
-    </Card>
-  );
-}
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   Knowledge Gap Analysis Panel â€” Coverage Heatmap
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
-function KnowledgeGapAnalysisPanel() {
-  const metrics = trpc.knowledgeHealth.coverageMetrics.useQuery();
-  const calculateMut = trpc.knowledgeHealth.calculateCoverage.useMutation({
-    onSuccess: () => metrics.refetch(),
-  });
-  const [selectedCell, setSelectedCell] = useState<{ jurisdiction: string; claimType: string } | null>(null);
-  const cellDetail = trpc.knowledgeHealth.cellDetail.useQuery(
-    { jurisdiction: selectedCell?.jurisdiction ?? "", claimType: selectedCell?.claimType ?? "" },
-    { enabled: !!selectedCell }
-  );
-
-  // Build heatmap data
-  const jurisdictions = new Set<string>();
-  const claimTypes = new Set<string>();
-  const cellMap = new Map<string, { score: number; statutes: number; caseLaw: number; agencies: number; procedures: number; evidence: number; advocacy: number; remedy: number; deadlines: number }>();
-
-  if (metrics.data) {
-    for (const m of metrics.data) {
-      jurisdictions.add(m.jurisdiction);
-      claimTypes.add(m.claimType);
-      cellMap.set(`${m.jurisdiction}|${m.claimType}`, {
-        score: m.coverageScore,
-        statutes: m.statuteCount,
-        caseLaw: m.caseLawCount,
-        agencies: m.agencyCount,
-        procedures: m.proceduralCount,
-        evidence: m.evidenceProfilesCount,
-        advocacy: m.advocacyTargetsCount,
-        remedy: m.remedyTemplatesCount,
-        deadlines: m.deadlineRulesCount,
-      });
-    }
-  }
-
-  const sortedJurisdictions = Array.from(jurisdictions).sort();
-  const sortedClaimTypes = Array.from(claimTypes).sort();
-
-  // Calculate aggregate scores
-  const jurisdictionScores = new Map<string, { sum: number; count: number }>();
-  const claimTypeScores = new Map<string, { sum: number; count: number }>();
-  let overallSum = 0;
-  let overallCount = 0;
-
-  for (const [key, val] of cellMap) {
-    const [j, c] = key.split("|");
-    if (!jurisdictionScores.has(j)) jurisdictionScores.set(j, { sum: 0, count: 0 });
-    const js = jurisdictionScores.get(j)!;
-    js.sum += val.score;
-    js.count++;
-
-    if (!claimTypeScores.has(c)) claimTypeScores.set(c, { sum: 0, count: 0 });
-    const cs = claimTypeScores.get(c)!;
-    cs.sum += val.score;
-    cs.count++;
-
-    overallSum += val.score;
-    overallCount++;
-  }
-
-  const overallScore = overallCount > 0 ? Math.round(overallSum / overallCount) : 0;
-
-  const getCellColor = (score: number) => {
-    if (score >= 80) return "bg-emerald-500/30 text-emerald-300 hover:bg-emerald-500/40";
-    if (score >= 60) return "bg-amber-500/30 text-amber-300 hover:bg-amber-500/40";
-    return "bg-red-500/30 text-red-300 hover:bg-red-500/40";
-  };
-
-  const formatClaimType = (ct: string) => ct.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
-
-  return (
-    <div className="space-y-6">
-      {/* Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="bg-card/50">
-          <CardContent className="pt-4 pb-3 text-center">
-            <div className={`text-2xl font-bold ${overallScore >= 80 ? "text-emerald-400" : overallScore >= 60 ? "text-amber-400" : "text-red-400"}`}>
-              {overallScore}%
-            </div>
-            <div className="text-xs text-muted-foreground">Overall Coverage</div>
-          </CardContent>
-        </Card>
-        <Card className="bg-card/50">
-          <CardContent className="pt-4 pb-3 text-center">
-            <div className="text-2xl font-bold">{sortedJurisdictions.length}</div>
-            <div className="text-xs text-muted-foreground">Jurisdictions</div>
-          </CardContent>
-        </Card>
-        <Card className="bg-card/50">
-          <CardContent className="pt-4 pb-3 text-center">
-            <div className="text-2xl font-bold">{sortedClaimTypes.length}</div>
-            <div className="text-xs text-muted-foreground">Claim Types</div>
-          </CardContent>
-        </Card>
-        <Card className="bg-card/50">
-          <CardContent className="pt-4 pb-3 text-center">
-            <div className="text-2xl font-bold">{cellMap.size}</div>
-            <div className="text-xs text-muted-foreground">Coverage Cells</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Actions */}
-      <div className="flex gap-2">
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => calculateMut.mutate()}
-          disabled={calculateMut.isPending}
-        >
-          {calculateMut.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <RefreshCw className="h-3 w-3 mr-1" />}
-          Recalculate Coverage
-        </Button>
-      </div>
-
-      {/* Heatmap */}
-      <Card>
-        <CardContent className="pt-6">
-          <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
-            <Grid3X3 className="h-5 w-5 text-violet-400" />
-            Coverage Heatmap
-          </h3>
-          {metrics.isLoading ? (
-            <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading...</div>
-          ) : cellMap.size === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Grid3X3 className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">No coverage data yet. Click "Recalculate Coverage" to analyze.</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-border/50">
-                    <th className="text-left py-2 px-2 text-muted-foreground font-medium sticky left-0 bg-background z-10">Jurisdiction</th>
-                    {sortedClaimTypes.map(ct => (
-                      <th key={ct} className="text-center py-2 px-1 text-muted-foreground font-medium min-w-[80px]">
-                        <div className="truncate max-w-[80px]" title={formatClaimType(ct)}>{formatClaimType(ct)}</div>
-                      </th>
-                    ))}
-                    <th className="text-center py-2 px-2 text-muted-foreground font-medium">Avg</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedJurisdictions.map(j => {
-                    const jScore = jurisdictionScores.get(j);
-                    const avg = jScore ? Math.round(jScore.sum / jScore.count) : 0;
-                    return (
-                      <tr key={j} className="border-b border-border/10">
-                        <td className="py-1 px-2 font-medium sticky left-0 bg-background z-10">{j}</td>
-                        {sortedClaimTypes.map(ct => {
-                          const cell = cellMap.get(`${j}|${ct}`);
-                          if (!cell) return <td key={ct} className="py-1 px-1 text-center text-muted-foreground/30">â€”</td>;
-                          return (
-                            <td key={ct} className="py-1 px-1 text-center">
-                              <button
-                                className={`w-full rounded px-1 py-0.5 text-xs font-bold cursor-pointer transition-colors ${getCellColor(cell.score)}`}
-                                onClick={() => setSelectedCell({ jurisdiction: j, claimType: ct })}
-                                title={`${j} Ã— ${formatClaimType(ct)}: ${cell.score}%`}
-                              >
-                                {cell.score}
-                              </button>
-                            </td>
-                          );
-                        })}
-                        <td className={`py-1 px-2 text-center font-bold ${avg >= 80 ? "text-emerald-400" : avg >= 60 ? "text-amber-400" : "text-red-400"}`}>
-                          {avg}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  {/* Footer row: claim type averages */}
-                  <tr className="border-t border-border/50 font-bold">
-                    <td className="py-2 px-2 sticky left-0 bg-background z-10">Average</td>
-                    {sortedClaimTypes.map(ct => {
-                      const cs = claimTypeScores.get(ct);
-                      const avg = cs ? Math.round(cs.sum / cs.count) : 0;
-                      return (
-                        <td key={ct} className={`py-2 px-1 text-center ${avg >= 80 ? "text-emerald-400" : avg >= 60 ? "text-amber-400" : "text-red-400"}`}>
-                          {avg}
-                        </td>
-                      );
-                    })}
-                    <td className={`py-2 px-2 text-center ${overallScore >= 80 ? "text-emerald-400" : overallScore >= 60 ? "text-amber-400" : "text-red-400"}`}>
-                      {overallScore}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* Legend */}
-          <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-emerald-500/30" /> â‰¥80% (Green)
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-amber-500/30" /> 60-80% (Yellow)
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-red-500/30" /> &lt;60% (Red)
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Cell Detail */}
-      {selectedCell && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">
-                {selectedCell.jurisdiction} Ã— {formatClaimType(selectedCell.claimType)}
-              </h3>
-              <Button variant="ghost" size="sm" onClick={() => setSelectedCell(null)}>
-                <XCircle className="h-4 w-4" />
-              </Button>
-            </div>
-            {cellDetail.isLoading ? (
-              <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading...</div>
-            ) : cellDetail.data ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="rounded-lg border border-border/50 p-3 text-center">
-                    <div className="text-lg font-bold">{cellDetail.data.statuteCount}</div>
-                    <div className="text-xs text-muted-foreground">Statutes</div>
-                  </div>
-                  <div className="rounded-lg border border-border/50 p-3 text-center">
-                    <div className="text-lg font-bold">{cellDetail.data.caseLawCount}</div>
-                    <div className="text-xs text-muted-foreground">Case Law</div>
-                  </div>
-                  <div className="rounded-lg border border-border/50 p-3 text-center">
-                    <div className="text-lg font-bold">{cellDetail.data.agencyCount}</div>
-                    <div className="text-xs text-muted-foreground">Agencies</div>
-                  </div>
-                  <div className="rounded-lg border border-border/50 p-3 text-center">
-                    <div className="text-lg font-bold">{cellDetail.data.proceduralCount}</div>
-                    <div className="text-xs text-muted-foreground">Procedures</div>
-                  </div>
-                  <div className="rounded-lg border border-border/50 p-3 text-center">
-                    <div className="text-lg font-bold">{cellDetail.data.evidenceProfilesCount}</div>
-                    <div className="text-xs text-muted-foreground">Evidence Profiles</div>
-                  </div>
-                  <div className="rounded-lg border border-border/50 p-3 text-center">
-                    <div className="text-lg font-bold">{cellDetail.data.advocacyTargetsCount}</div>
-                    <div className="text-xs text-muted-foreground">Advocacy Targets</div>
-                  </div>
-                  <div className="rounded-lg border border-border/50 p-3 text-center">
-                    <div className="text-lg font-bold">{cellDetail.data.remedyTemplatesCount}</div>
-                    <div className="text-xs text-muted-foreground">Remedy Templates</div>
-                  </div>
-                  <div className="rounded-lg border border-border/50 p-3 text-center">
-                    <div className="text-lg font-bold">{cellDetail.data.deadlineRulesCount}</div>
-                    <div className="text-xs text-muted-foreground">Deadline Rules</div>
-                  </div>
-                </div>
-                {cellDetail.data.missingCategories.length > 0 && (
-                  <div className="rounded-lg border border-red-500/30 bg-red-500/5 p-3">
-                    <div className="text-sm font-medium text-red-400 mb-2">Missing Data Types</div>
-                    <div className="flex flex-wrap gap-2">
-                      {cellDetail.data.missingCategories.map(cat => (
-                        <Badge key={cat} variant="outline" className="text-red-400 border-red-400/30">
-                          {cat.replace(/_/g, " ")}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="text-center py-4 text-muted-foreground text-sm">No data for this cell.</div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   ENGINE PANELS â€” Harm Index, Risk Forecast, Harm Map, Front Door
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
-
-function HarmIndexPanel() {
-  const summary = trpc.engines.harmIndex.getSummary.useQuery();
-  const calculate = trpc.engines.harmIndex.calculate.useMutation({
-    onSuccess: () => summary.refetch(),
-  });
-
-  const entities = summary.data?.entities || [];
-  const topEntities = entities.slice(0, 20);
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-            <Flame className="h-5 w-5 text-orange-400" /> Systemic Harm Index
-          </h3>
-          <p className="text-sm text-zinc-400 mt-1">Entity-level harm scoring from complaints, litigation, and enforcement data</p>
-        </div>
-        <Button onClick={() => calculate.mutate()} disabled={calculate.isPending} size="sm" variant="outline">
-          {calculate.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <RefreshCw className="h-4 w-4 mr-1" />}
-          Calculate Index
-        </Button>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card><CardContent className="pt-4 text-center">
-          <div className="text-2xl font-bold text-white">{summary.data?.totalEntities || 0}</div>
-          <div className="text-xs text-zinc-400">Entities Tracked</div>
-        </CardContent></Card>
-        <Card><CardContent className="pt-4 text-center">
-          <div className="text-2xl font-bold text-red-400">{summary.data?.highRisk || 0}</div>
-          <div className="text-xs text-zinc-400">High Risk (â‰¥70)</div>
-        </CardContent></Card>
-        <Card><CardContent className="pt-4 text-center">
-          <div className="text-2xl font-bold text-yellow-400">{summary.data?.mediumRisk || 0}</div>
-          <div className="text-xs text-zinc-400">Medium Risk (40-69)</div>
-        </CardContent></Card>
-        <Card><CardContent className="pt-4 text-center">
-          <div className="text-2xl font-bold text-emerald-400">{summary.data?.lowRisk || 0}</div>
-          <div className="text-xs text-zinc-400">Low Risk (&lt;40)</div>
-        </CardContent></Card>
-      </div>
-
-      {/* Entity Table */}
-      <Card>
-        <CardHeader><CardTitle className="text-sm">Top Entities by Harm Score</CardTitle></CardHeader>
-        <CardContent>
-          {topEntities.length === 0 ? (
-            <div className="text-center py-8 text-zinc-500">
-              <Flame className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>No harm index data yet. Click "Calculate Index" to generate scores.</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-zinc-700 text-zinc-400">
-                    <th className="text-left py-2 px-2">Entity</th>
-                    <th className="text-left py-2 px-2">Type</th>
-                    <th className="text-left py-2 px-2">Industry</th>
-                    <th className="text-right py-2 px-2">Harm Score</th>
-                    <th className="text-right py-2 px-2">Complaints</th>
-                    <th className="text-right py-2 px-2">Litigation</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {topEntities.map((e: any, i: number) => (
-                    <tr key={i} className="border-b border-zinc-800 hover:bg-zinc-800/50">
-                      <td className="py-2 px-2 text-white font-medium">{e.entityName}</td>
-                      <td className="py-2 px-2">
-                        <Badge variant="outline" className="text-xs">{e.entityType || 'unknown'}</Badge>
-                      </td>
-                      <td className="py-2 px-2 text-zinc-400">{e.industrySector || 'â€”'}</td>
-                      <td className="py-2 px-2 text-right">
-                        <span className={`font-bold ${
-                          e.harmScore >= 70 ? 'text-red-400' : e.harmScore >= 40 ? 'text-yellow-400' : 'text-emerald-400'
-                        }`}>{e.harmScore?.toFixed(1)}</span>
-                      </td>
-                      <td className="py-2 px-2 text-right text-zinc-400">{e.complaintCount || 0}</td>
-                      <td className="py-2 px-2 text-right text-zinc-400">{e.litigationCount || 0}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-function RiskForecastPanel() {
-  const summary = trpc.engines.riskForecast.getSummary.useQuery();
-  const generate = trpc.engines.riskForecast.generate.useMutation({
-    onSuccess: () => summary.refetch(),
-  });
-
-  const forecasts = summary.data?.forecasts || [];
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-            <Radar className="h-5 w-5 text-purple-400" /> Systemic Risk Forecast
-          </h3>
-          <p className="text-sm text-zinc-400 mt-1">Predictive analysis of which patterns are likely to escalate</p>
-        </div>
-        <Button onClick={() => generate.mutate({})} disabled={generate.isPending} size="sm" variant="outline">
-          {generate.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <RefreshCw className="h-4 w-4 mr-1" />}
-          Generate Forecasts
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card><CardContent className="pt-4 text-center">
-          <div className="text-2xl font-bold text-white">{summary.data?.totalForecasts || 0}</div>
-          <div className="text-xs text-zinc-400">Active Forecasts</div>
-        </CardContent></Card>
-        <Card><CardContent className="pt-4 text-center">
-          <div className="text-2xl font-bold text-red-400">{summary.data?.criticalCount || 0}</div>
-          <div className="text-xs text-zinc-400">Critical Risk</div>
-        </CardContent></Card>
-        <Card><CardContent className="pt-4 text-center">
-          <div className="text-2xl font-bold text-yellow-400">{summary.data?.highCount || 0}</div>
-          <div className="text-xs text-zinc-400">High Risk</div>
-        </CardContent></Card>
-        <Card><CardContent className="pt-4 text-center">
-          <div className="text-2xl font-bold text-zinc-400">{summary.data?.avgConfidence?.toFixed(0) || 0}%</div>
-          <div className="text-xs text-zinc-400">Avg Confidence</div>
-        </CardContent></Card>
-      </div>
-
-      <Card>
-        <CardHeader><CardTitle className="text-sm">Risk Forecasts</CardTitle></CardHeader>
-        <CardContent>
-          {forecasts.length === 0 ? (
-            <div className="text-center py-8 text-zinc-500">
-              <Radar className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>No forecasts yet. Click "Generate Forecasts" to analyze risk patterns.</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {forecasts.slice(0, 15).map((f: any, i: number) => (
-                <div key={i} className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg border border-zinc-700">
-                  <div className="flex-1">
-                    <div className="text-white font-medium text-sm">{f.entityName || f.patternType}</div>
-                    <div className="text-xs text-zinc-400 mt-0.5">{f.riskCategory} â€” {f.forecastHorizon || 30}d horizon</div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="text-right">
-                      <div className={`text-sm font-bold ${
-                        f.riskLevel === 'critical' ? 'text-red-400' : 
-                        f.riskLevel === 'high' ? 'text-orange-400' : 
-                        f.riskLevel === 'medium' ? 'text-yellow-400' : 'text-emerald-400'
-                      }`}>{f.escalationProbability?.toFixed(0)}%</div>
-                      <div className="text-xs text-zinc-500">escalation</div>
-                    </div>
-                    <Badge variant="outline" className={`text-xs ${
-                      f.riskLevel === 'critical' ? 'border-red-500 text-red-400' : 
-                      f.riskLevel === 'high' ? 'border-orange-500 text-orange-400' : 
-                      f.riskLevel === 'medium' ? 'border-yellow-500 text-yellow-400' : 'border-emerald-500 text-emerald-400'
-                    }`}>{f.riskLevel}</Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-function HarmMapPanel() {
-  const mapData = trpc.engines.harmMap.getData.useQuery();
-  const generate = trpc.engines.harmMap.generate.useMutation({
-    onSuccess: () => mapData.refetch(),
-  });
-
-  const nodes = mapData.data?.nodes || [];
-  const edges = mapData.data?.edges || [];
-  const summary = mapData.data?.summary;
-
-  // Group nodes by type for visualization
-  const entityNodes = nodes.filter((n: any) => n.nodeType === 'entity');
-  const jurisdictionNodes = nodes.filter((n: any) => n.nodeType === 'jurisdiction');
-  const industryNodes = nodes.filter((n: any) => n.nodeType === 'industry');
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-            <Network className="h-5 w-5 text-cyan-400" /> Global Systemic Harm Map
-          </h3>
-          <p className="text-sm text-zinc-400 mt-1">Interactive network of entities, jurisdictions, and industries</p>
-        </div>
-        <Button onClick={() => generate.mutate()} disabled={generate.isPending} size="sm" variant="outline">
-          {generate.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <RefreshCw className="h-4 w-4 mr-1" />}
-          Generate Map
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card><CardContent className="pt-4 text-center">
-          <div className="text-2xl font-bold text-white">{summary?.nodeCount || 0}</div>
-          <div className="text-xs text-zinc-400">Nodes</div>
-        </CardContent></Card>
-        <Card><CardContent className="pt-4 text-center">
-          <div className="text-2xl font-bold text-cyan-400">{summary?.edgeCount || 0}</div>
-          <div className="text-xs text-zinc-400">Connections</div>
-        </CardContent></Card>
-        <Card><CardContent className="pt-4 text-center">
-          <div className="text-2xl font-bold text-orange-400">{entityNodes.length}</div>
-          <div className="text-xs text-zinc-400">Entities</div>
-        </CardContent></Card>
-        <Card><CardContent className="pt-4 text-center">
-          <div className="text-2xl font-bold text-purple-400">{jurisdictionNodes.length}</div>
-          <div className="text-xs text-zinc-400">Jurisdictions</div>
-        </CardContent></Card>
-        <Card><CardContent className="pt-4 text-center">
-          <div className="text-2xl font-bold text-emerald-400">{industryNodes.length}</div>
-          <div className="text-xs text-zinc-400">Industries</div>
-        </CardContent></Card>
-      </div>
-
-      {/* Network Graph Visualization */}
-      <Card>
-        <CardHeader><CardTitle className="text-sm">Network Graph</CardTitle></CardHeader>
-        <CardContent>
-          {nodes.length === 0 ? (
-            <div className="text-center py-8 text-zinc-500">
-              <Network className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>No map data yet. Click "Generate Map" to build the network.</p>
-            </div>
-          ) : (
-            <div className="relative bg-zinc-900 rounded-lg border border-zinc-700 p-4" style={{ minHeight: 400 }}>
-              {/* SVG Force-directed layout simulation */}
-              <svg width="100%" height="400" viewBox="0 0 800 400">
-                {/* Edges */}
-                {edges.slice(0, 100).map((edge: any, i: number) => {
-                  const source = nodes.find((n: any) => n.id === edge.sourceNodeId);
-                  const target = nodes.find((n: any) => n.id === edge.targetNodeId);
-                  if (!source || !target) return null;
-                  const si = nodes.indexOf(source);
-                  const ti = nodes.indexOf(target);
-                  const sx = 100 + (si % 12) * 55;
-                  const sy = 50 + Math.floor(si / 12) * 70;
-                  const tx = 100 + (ti % 12) * 55;
-                  const ty = 50 + Math.floor(ti / 12) * 70;
-                  return (
-                    <line key={`e-${i}`} x1={sx} y1={sy} x2={tx} y2={ty}
-                      stroke={edge.relationshipType === 'litigation_link' ? '#ef4444' : '#3b82f6'}
-                      strokeWidth={Math.max(0.5, edge.strengthScore / 50)}
-                      opacity={0.3} />
-                  );
-                })}
-                {/* Nodes */}
-                {nodes.slice(0, 60).map((node: any, i: number) => {
-                  const x = 100 + (i % 12) * 55;
-                  const y = 50 + Math.floor(i / 12) * 70;
-                  const color = node.nodeType === 'entity' ? '#f97316' :
-                    node.nodeType === 'jurisdiction' ? '#a855f7' : '#10b981';
-                  const radius = Math.max(6, Math.min(16, node.harmScore / 5));
-                  return (
-                    <g key={`n-${i}`}>
-                      <circle cx={x} cy={y} r={radius} fill={color} opacity={0.8} />
-                      <text x={x} y={y + radius + 12} textAnchor="middle" fill="#a1a1aa" fontSize="8">
-                        {node.nodeLabel?.substring(0, 12)}
-                      </text>
-                    </g>
-                  );
-                })}
-              </svg>
-              <div className="flex gap-4 mt-3 justify-center text-xs text-zinc-400">
-                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-orange-500 inline-block" /> Entity</span>
-                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-purple-500 inline-block" /> Jurisdiction</span>
-                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-emerald-500 inline-block" /> Industry</span>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Top Risk Entities */}
-      {entityNodes.length > 0 && (
-        <Card>
-          <CardHeader><CardTitle className="text-sm">Top Harm Entities</CardTitle></CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {entityNodes.slice(0, 10).map((n: any, i: number) => (
-                <div key={i} className="flex items-center justify-between p-2 bg-zinc-800/50 rounded border border-zinc-700">
-                  <span className="text-sm text-white">{n.nodeLabel}</span>
-                  <Badge variant="outline" className={`text-xs ${
-                    n.harmScore >= 70 ? 'border-red-500 text-red-400' :
-                    n.harmScore >= 40 ? 'border-yellow-500 text-yellow-400' : 'border-emerald-500 text-emerald-400'
-                  }`}>{n.harmScore?.toFixed(0)}</Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
-
-function FrontDoorPanel() {
-  const [story, setStory] = useState("");
-  const [activeSession, setActiveSession] = useState<any>(null);
-  const [selectedClaim, setSelectedClaim] = useState<string | null>(null);
-
-  const startSession = trpc.engines.interpreter.startSession.useMutation({
-    onSuccess: (data) => {
-      setActiveSession(data);
-      if (data.claimCandidates.length > 0) {
-        setSelectedClaim(data.claimCandidates[0].claimType);
-      }
-    },
-  });
-
-  const questions = trpc.engines.interpreter.getClarifyingQuestions.useQuery(
-    { claimType: selectedClaim || "" },
-    { enabled: !!selectedClaim }
-  );
-
-  const evidence = trpc.engines.interpreter.getEvidenceGuidance.useQuery(
-    { claimType: selectedClaim || "" },
-    { enabled: !!selectedClaim }
-  );
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-          <MessageSquare className="h-5 w-5 text-blue-400" /> Problem Interpreter â€” Front Door
-        </h3>
-        <p className="text-sm text-zinc-400 mt-1">Tell us what happened. Luminari will identify your legal situation and guide you.</p>
-      </div>
-
-      {!activeSession ? (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-zinc-300 block mb-2">Tell me what happened:</label>
-                <textarea
-                  value={story}
-                  onChange={(e) => setStory(e.target.value)}
-                  placeholder="Describe your situation in your own words. For example: 'My landlord has been refusing to fix a mold problem in my apartment for months, and now they're trying to evict me after I complained to the health department...'"
-                  className="w-full h-40 bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white text-sm placeholder:text-zinc-500 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <Button
-                onClick={() => startSession.mutate({ story })}
-                disabled={story.length < 20 || startSession.isPending}
-                className="w-full"
-              >
-                {startSession.isPending ? (
-                  <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Analyzing your situation...</>
-                ) : (
-                  <><MessageSquare className="h-4 w-4 mr-2" /> Analyze My Situation</>
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {/* Analysis Results */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-emerald-400" /> Analysis Complete
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-3">
-                <Badge variant="outline" className="text-xs">Jurisdiction: {activeSession.jurisdictionGuess}</Badge>
-                <Badge variant="outline" className="text-xs">Confidence: {(activeSession.confidenceScore * 100).toFixed(0)}%</Badge>
-              </div>
-
-              <div>
-                <div className="text-sm font-medium text-zinc-300 mb-2">Detected Claim Types:</div>
-                <div className="space-y-2">
-                  {activeSession.claimCandidates.map((c: any, i: number) => (
-                    <div
-                      key={i}
-                      onClick={() => setSelectedClaim(c.claimType)}
-                      className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                        selectedClaim === c.claimType
-                          ? 'border-blue-500 bg-blue-500/10'
-                          : 'border-zinc-700 bg-zinc-800/50 hover:border-zinc-600'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-white font-medium text-sm">
-                          {c.claimType.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
-                        </span>
-                        <Badge variant="outline" className={`text-xs ${
-                          c.confidence >= 0.7 ? 'border-emerald-500 text-emerald-400' :
-                          c.confidence >= 0.4 ? 'border-yellow-500 text-yellow-400' : 'border-zinc-500 text-zinc-400'
-                        }`}>{(c.confidence * 100).toFixed(0)}%</Badge>
-                      </div>
-                      <p className="text-xs text-zinc-400 mt-1">{c.reasoning}</p>
-                      {c.supportingKeywords.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {c.supportingKeywords.map((kw: string, ki: number) => (
-                            <Badge key={ki} variant="outline" className="text-xs bg-zinc-800">{kw}</Badge>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Clarifying Questions */}
-          {selectedClaim && questions.data && questions.data.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Clarifying Questions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {questions.data.map((q: any, i: number) => (
-                    <div key={i} className="p-3 bg-zinc-800/50 rounded-lg border border-zinc-700">
-                      <p className="text-sm text-white">{q.questionText}</p>
-                      {q.answerOptions && (
-                        <div className="flex flex-wrap gap-1.5 mt-2">
-                          {q.answerOptions.map((opt: string, oi: number) => (
-                            <Badge key={oi} variant="outline" className="text-xs cursor-pointer hover:bg-zinc-700">{opt}</Badge>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Evidence Guidance */}
-          {selectedClaim && evidence.data && evidence.data.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Evidence You Should Gather</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {evidence.data.map((eg: any, i: number) => (
-                    <div key={i} className="flex items-start gap-3 p-2 bg-zinc-800/50 rounded border border-zinc-700">
-                      <Badge variant="outline" className={`text-xs mt-0.5 ${
-                        eg.priority === 1 ? 'border-red-500 text-red-400' :
-                        eg.priority === 2 ? 'border-yellow-500 text-yellow-400' : 'border-zinc-500 text-zinc-400'
-                      }`}>P{eg.priority}</Badge>
-                      <div>
-                        <div className="text-sm text-white font-medium">{eg.evidenceType}</div>
-                        <div className="text-xs text-zinc-400 mt-0.5">{eg.guidanceText}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          <Button variant="outline" onClick={() => { setActiveSession(null); setStory(""); setSelectedClaim(null); }}>
-            <ArrowLeft className="h-4 w-4 mr-1" /> Start New Intake
-          </Button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* â”€â”€ Lobbying Panel â”€â”€ */
-function LobbyingPanel() {
-  const utils = trpc.useUtils();
-  const { data: stats, isLoading: loadingStats } = trpc.streams.lobbyingStats.useQuery();
-  const { data: topFirms, isLoading: loadingFirms } = trpc.streams.lobbyingTopFirms.useQuery({ limit: 10 });
-  const { data: policyAreas, isLoading: loadingPolicy } = trpc.streams.lobbyingByPolicy.useQuery({ limit: 10 });
-  const detectMut = trpc.streams.lobbyingDetectSignals.useMutation();
-  const ingestMut = trpc.streams.lobbyingIngest.useMutation({ onSuccess: () => { utils.streams.lobbyingStats.invalidate(); utils.streams.lobbyingTopFirms.invalidate(); utils.streams.lobbyingByPolicy.invalidate(); } });
-
-  if (loadingStats) return <PanelSkeleton />;
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <DollarSign className="h-5 w-5 text-green-400" />
-          Policy Influence Activity
-        </h3>
-        <Button variant="outline" size="sm" onClick={() => detectMut.mutate()} disabled={detectMut.isPending}>
-          {detectMut.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Zap className="h-3 w-3 mr-1" />}
-          Detect Signals
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <MetricCard label="Total Records" value={(stats?.totalRecords ?? 0).toLocaleString()} icon={<Database className="h-4 w-4" />} color="green" />
-        <MetricCard label="Total Spending" value={`$${((stats?.totalSpending ?? 0) / 1000000).toFixed(1)}M`} icon={<DollarSign className="h-4 w-4" />} color="emerald" />
-        <MetricCard label="Unique Firms" value={(stats?.uniqueFirms ?? 0).toString()} icon={<Building2 className="h-4 w-4" />} color="blue" />
-        <MetricCard label="Policy Areas" value={(stats?.uniquePolicyAreas ?? 0).toString()} icon={<Target className="h-4 w-4" />} color="violet" />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="bg-card/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Top Lobbying Firms</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loadingFirms ? <Loader2 className="h-4 w-4 animate-spin" /> : (
-              <div className="space-y-2">
-                {(topFirms ?? []).map((f: any, i: number) => (
-                  <div key={i} className="flex items-center justify-between text-sm">
-                    <span className="truncate max-w-[200px] text-muted-foreground">{f.firm}</span>
-                    <span className="font-mono text-xs text-green-400">${(f.total / 1000).toFixed(0)}K</span>
-                  </div>
-                ))}
-                {(!topFirms || topFirms.length === 0) && <p className="text-xs text-muted-foreground">No lobbying data yet</p>}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Policy Area Spending</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loadingPolicy ? <Loader2 className="h-4 w-4 animate-spin" /> : (
-              <div className="space-y-2">
-                {(policyAreas ?? []).map((p: any, i: number) => (
-                  <div key={i} className="flex items-center justify-between text-sm">
-                    <span className="truncate max-w-[200px] text-muted-foreground">{p.area}</span>
-                    <span className="font-mono text-xs text-emerald-400">${(p.total / 1000).toFixed(0)}K</span>
-                  </div>
-                ))}
-                 {(!policyAreas || policyAreas.length === 0) && <p className="text-xs text-muted-foreground">No policy data yet</p>}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-      <StreamUploader
-        title="Ingest Lobbying Records"
-        description="Upload lobbying disclosure data (JSON/CSV)"
-        sampleFields={[
-          { name: "clientName", type: "string", required: true },
-          { name: "lobbyingFirm", type: "string" },
-          { name: "lobbyistName", type: "string" },
-          { name: "industry", type: "string" },
-          { name: "policyArea", type: "string" },
-          { name: "lobbyingAmount", type: "number" },
-          { name: "reportingPeriod", type: "string" },
-          { name: "jurisdiction", type: "string" },
-          { name: "legislatorsContacted", type: "string" },
-          { name: "source_url", type: "string" },
-        ]}
-        onIngest={(records) => ingestMut.mutateAsync({ records })}
-        onSuccess={() => utils.streams.lobbyingStats.invalidate()}
-      />
-    </div>
-  );
-}
-/* â”€â”€ Litigation Panel â”€â”€ */
-function LitigationPanel() {
-  const utils = trpc.useUtils();
-  const { data: stats, isLoading: loadingStats } = trpc.streams.litigationStats.useQuery();
-  const { data: recent, isLoading: loadingRecent } = trpc.streams.litigationRecentFilings.useQuery({ limit: 10 });
-  const { data: outcomes } = trpc.streams.litigationOutcomes.useQuery();
-  const detectMut = trpc.streams.litigationDetectSignals.useMutation();
-  const ingestMut = trpc.streams.litigationIngest.useMutation({ onSuccess: () => { utils.streams.litigationStats.invalidate(); utils.streams.litigationRecentFilings.invalidate(); } });
-
-  if (loadingStats) return <PanelSkeleton />;
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <Gavel className="h-5 w-5 text-orange-400" />
-          Litigation Activity
-        </h3>
-        <Button variant="outline" size="sm" onClick={() => detectMut.mutate()} disabled={detectMut.isPending}>
-          {detectMut.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Zap className="h-3 w-3 mr-1" />}
-          Detect Signals
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <MetricCard label="Total Cases" value={(stats?.totalCases ?? 0).toLocaleString()} icon={<FileText className="h-4 w-4" />} color="orange" />
-        <MetricCard label="Courts" value={(stats?.uniqueCourts ?? 0).toString()} icon={<Landmark className="h-4 w-4" />} color="blue" />
-        <MetricCard label="Defendants" value={(stats?.uniqueDefendants ?? 0).toString()} icon={<Users className="h-4 w-4" />} color="red" />
-        <MetricCard label="Active" value={(stats?.activeCases ?? 0).toString()} icon={<Activity className="h-4 w-4" />} color="emerald" />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="bg-card/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Recent Filings</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loadingRecent ? <Loader2 className="h-4 w-4 animate-spin" /> : (
-              <div className="space-y-2">
-                {(recent ?? []).map((c: any, i: number) => (
-                  <div key={i} className="flex items-center justify-between text-sm">
-                    <div className="truncate max-w-[250px]">
-                      <span className="text-muted-foreground">{c.plaintiffName || 'Unknown'}</span>
-                      <span className="text-xs text-muted-foreground/60"> v. </span>
-                      <span className="text-red-400">{c.defendantName || 'Unknown'}</span>
-                    </div>
-                    <span className="text-xs text-muted-foreground">{c.courtName || ''}</span>
-                  </div>
-                ))}
-                {(!recent || recent.length === 0) && <p className="text-xs text-muted-foreground">No litigation data yet</p>}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Case Outcomes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {(outcomes ?? []).map((o: any, i: number) => (
-                <div key={i} className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground capitalize">{o.status || 'unknown'}</span>
-                  <span className="font-mono text-xs">{o.count}</span>
-                </div>
-              ))}
-              {(!outcomes || outcomes.length === 0) && <p className="text-xs text-muted-foreground">No outcome data yet</p>}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      <StreamUploader
-        title="Ingest Litigation Records"
-        description="Upload federal litigation case data (JSON/CSV)"
-        sampleFields={[
-          { name: "caseId", type: "string" },
-          { name: "courtName", type: "string" },
-          { name: "jurisdiction", type: "string" },
-          { name: "filingDate", type: "string" },
-          { name: "caseType", type: "string" },
-          { name: "natureOfSuit", type: "string" },
-          { name: "plaintiffName", type: "string" },
-          { name: "defendantName", type: "string" },
-          { name: "lawFirm", type: "string" },
-          { name: "judge", type: "string" },
-          { name: "industry", type: "string" },
-          { name: "caseStatus", type: "string" },
-          { name: "source_url", type: "string" },
-        ]}
-        onIngest={(records) => ingestMut.mutateAsync({ records })}
-        onSuccess={() => utils.streams.litigationStats.invalidate()}
-      />
-    </div>
-  );
-}
-/* â”€â”€ Administrative Decisions Panel â”€â”€ */
-function AdminDecisionsPanel() {
-  const utils = trpc.useUtils();
-  const { data: stats, isLoading } = trpc.streams.adminDecisionsStats.useQuery();
-  const { data: agencies } = trpc.streams.adminDecisionsOutcomesByAgency.useQuery({ limit: 10 });
-  const detectMut = trpc.streams.adminDecisionsDetectSignals.useMutation();
-  const ingestMut = trpc.streams.adminDecisionsIngest.useMutation({ onSuccess: () => { utils.streams.adminDecisionsStats.invalidate(); utils.streams.adminDecisionsOutcomesByAgency.invalidate(); } });
-
-  if (isLoading) return <PanelSkeleton />;
-
-  const denialRate = stats?.initialDenialRate ?? 0;
-  const appealRate = stats?.appealSuccessRate ?? 0;
-  const inversionDetected = appealRate > 0 && denialRate > 0 && appealRate > (100 - denialRate) * 1.5;
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <Scale className="h-5 w-5 text-purple-400" />
-          Administrative Outcomes
-        </h3>
-        <Button variant="outline" size="sm" onClick={() => detectMut.mutate()} disabled={detectMut.isPending}>
-          {detectMut.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Zap className="h-3 w-3 mr-1" />}
-          Detect Signals
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <MetricCard label="Total Decisions" value={(stats?.totalDecisions ?? 0).toLocaleString()} icon={<FileText className="h-4 w-4" />} color="purple" />
-        <MetricCard label="Initial Denial %" value={`${denialRate.toFixed(1)}%`} icon={<XCircle className="h-4 w-4" />} color={denialRate > 50 ? "red" : "yellow"} />
-        <MetricCard label="Appeal Success %" value={`${appealRate.toFixed(1)}%`} icon={<CheckCircle2 className="h-4 w-4" />} color={appealRate > 50 ? "emerald" : "orange"} />
-        <MetricCard label="Avg Processing" value={`${(stats?.avgProcessingDays ?? 0).toFixed(0)}d`} icon={<Clock className="h-4 w-4" />} color="blue" />
-      </div>
-
-      {inversionDetected && (
-        <Card className="border-red-500/50 bg-red-500/10">
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-2 text-red-400">
-              <AlertTriangle className="h-5 w-5" />
-              <div>
-                <p className="font-semibold">Appeal Success Inversion Detected</p>
-                <p className="text-xs text-red-400/80">Appeal success rate ({appealRate.toFixed(1)}%) significantly exceeds initial approval rate ({(100 - denialRate).toFixed(1)}%) â€” indicates systemic denial pattern</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <Card className="bg-card/50">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Outcomes by Agency</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {(agencies ?? []).map((a: any, i: number) => (
-              <div key={i} className="flex items-center justify-between text-sm">
-                <span className="truncate max-w-[200px] text-muted-foreground">{a.agency}</span>
-                <div className="flex items-center gap-3 text-xs">
-                  <span className="text-green-400">{a.approved} approved</span>
-                  <span className="text-red-400">{a.denied} denied</span>
-                  <span className="text-blue-400">{a.reversed} reversed</span>
-                </div>
-              </div>
-            ))}
-            {(!agencies || agencies.length === 0) && <p className="text-xs text-muted-foreground">No agency data yet</p>}
-          </div>
-        </CardContent>
-      </Card>
-      <StreamUploader
-        title="Ingest Administrative Decisions"
-        description="Upload administrative decision records (JSON/CSV)"
-        sampleFields={[
-          { name: "decisionId", type: "string" },
-          { name: "agency", type: "string", required: true },
-          { name: "program", type: "string" },
-          { name: "jurisdiction", type: "string" },
-          { name: "claimType", type: "string" },
-          { name: "decisionDate", type: "string" },
-          { name: "initialOutcome", type: "string" },
-          { name: "appealOutcome", type: "string" },
-          { name: "processingTimeDays", type: "number" },
-          { name: "hearingRequested", type: "boolean" },
-          { name: "reversal", type: "boolean" },
-          { name: "entityOrAgency", type: "string" },
-          { name: "source_url", type: "string" },
-        ]}
-        onIngest={(records) => ingestMut.mutateAsync({ records })}
-        onSuccess={() => utils.streams.adminDecisionsStats.invalidate()}
-      />
-    </div>
-  );
-}
-/* â”€â”€ Verified Reports Panel â”€â”€ */
-function VerifiedReportsPanel() {
-  const utils = trpc.useUtils();
-  const { data: stats, isLoading } = trpc.streams.verifiedReportStats.useQuery();
-  const { data: recent } = trpc.streams.recentReports.useQuery({ limit: 10 });
-  const generateMut = trpc.streams.verifiedSignals.useMutation();
-  const submitMut = trpc.streams.submitReport.useMutation({ onSuccess: () => { utils.streams.verifiedReportStats.invalidate(); utils.streams.recentReports.invalidate(); } });
-
-  if (isLoading) return <PanelSkeleton />;
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <Shield className="h-5 w-5 text-cyan-400" />
-          Verified User Reports
-        </h3>
-        <Button variant="outline" size="sm" onClick={() => generateMut.mutate()} disabled={generateMut.isPending}>
-          {generateMut.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Zap className="h-3 w-3 mr-1" />}
-          Generate Signals
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <MetricCard label="Total Reports" value={(stats?.totalReports ?? 0).toLocaleString()} icon={<FileText className="h-4 w-4" />} color="cyan" />
-        <MetricCard label="Verified" value={(stats?.verifiedCount ?? 0).toString()} icon={<CheckCircle2 className="h-4 w-4" />} color="emerald" />
-        <MetricCard label="Pending" value={(stats?.pendingCount ?? 0).toString()} icon={<Clock className="h-4 w-4" />} color="yellow" />
-        <MetricCard label="Avg Confidence" value={`${(stats?.avgConfidence ?? 0).toFixed(0)}%`} icon={<BarChart3 className="h-4 w-4" />} color="blue" />
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-        {["unverified", "community_confirmed", "evidence_verified", "legal_verified"].map((level) => {
-          const count = (stats as any)?.[`${level}Count`] ?? 0;
-          const colors: Record<string, string> = {
-            unverified: "text-gray-400",
-            community_confirmed: "text-yellow-400",
-            evidence_verified: "text-blue-400",
-            legal_verified: "text-emerald-400",
-          };
-          return (
-            <div key={level} className="text-center p-2 rounded-lg bg-card/50">
-              <p className={`text-lg font-bold ${colors[level]}`}>{count}</p>
-              <p className="text-xs text-muted-foreground capitalize">{level.replace(/_/g, " ")}</p>
-            </div>
-          );
-        })}
-      </div>
-
-      <Card className="bg-card/50">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Recent Reports</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {(recent ?? []).map((r: any, i: number) => (
-              <div key={i} className="flex items-center justify-between text-sm">
-                <div className="truncate max-w-[250px]">
-                  <span className="text-muted-foreground">{r.entityNamed || 'Anonymous'}</span>
-                  {r.claimType && <span className="text-xs text-muted-foreground/60 ml-1">({r.claimType})</span>}
-                </div>
-                <Badge variant="outline" className="text-xs capitalize">{(r.verification_status || 'unverified').replace(/_/g, ' ')}</Badge>
-              </div>
-            ))}
-            {(!recent || recent.length === 0) && <p className="text-xs text-muted-foreground">No reports yet. Users can submit harm reports through the platform.</p>}
-          </div>
-        </CardContent>
-      </Card>
-      <StreamUploader
-        title="Submit Verified Reports"
-        description="Upload harm reports for verification (JSON/CSV)"
-        sampleFields={[
-          { name: "reporterType", type: "string", required: true },
-          { name: "jurisdiction", type: "string" },
-          { name: "industry", type: "string" },
-          { name: "entityNamed", type: "string" },
-          { name: "claimType", type: "string" },
-          { name: "evidenceCount", type: "number" },
-          { name: "narrative", type: "string" },
-        ]}
-        onIngest={async (records) => {
-          let inserted = 0;
-          for (const r of records) {
-            await submitMut.mutateAsync(r);
-            inserted++;
-          }
-          return { inserted };
-        }}
-        onSuccess={() => utils.streams.verifiedReportStats.invalidate()}
-      />
-    </div>
-  );
-}
-/* â”€â”€ Civil Society / Advocacy Panel â”€â”€ */
-function AdvocacyPanel() {
-  const utils = trpc.useUtils();
-  const { data: stats, isLoading } = trpc.streams.advocacyStats.useQuery();
-  const { data: recent } = trpc.streams.advocacyRecentReports.useQuery({ limit: 10 });
-  const { data: byOrg } = trpc.streams.advocacyByOrganization.useQuery({ limit: 10 });
-  const { data: byHarm } = trpc.streams.advocacyByHarmType.useQuery({ limit: 10 });
-  const detectMut = trpc.streams.advocacyDetectSignals.useMutation();
-  const ingestMut = trpc.streams.advocacyIngest.useMutation({ onSuccess: () => { utils.streams.advocacyStats.invalidate(); utils.streams.advocacyRecentReports.invalidate(); utils.streams.advocacyByOrganization.invalidate(); utils.streams.advocacyByHarmType.invalidate(); } });
-
-  if (isLoading) return <PanelSkeleton />;
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <Megaphone className="h-5 w-5 text-rose-400" />
-          Civil Society / Advocacy Reports
-        </h3>
-        <Button variant="outline" size="sm" onClick={() => detectMut.mutate()} disabled={detectMut.isPending}>
-          {detectMut.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Zap className="h-3 w-3 mr-1" />}
-          Detect Signals
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <MetricCard label="Total Reports" value={(stats?.totalReports ?? 0).toLocaleString()} icon={<FileText className="h-4 w-4" />} color="rose" />
-        <MetricCard label="Organizations" value={(stats?.uniqueOrgs ?? 0).toLocaleString()} icon={<Building2 className="h-4 w-4" />} color="violet" />
-        <MetricCard label="Entities Named" value={(stats?.uniqueEntities ?? 0).toLocaleString()} icon={<Target className="h-4 w-4" />} color="amber" />
-        <MetricCard label="Policy Areas" value={(stats?.uniquePolicyAreas ?? 0).toLocaleString()} icon={<Landmark className="h-4 w-4" />} color="blue" />
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        <MetricCard label="Harm Types" value={(stats?.uniqueHarmTypes ?? 0).toLocaleString()} icon={<AlertTriangle className="h-4 w-4" />} color="red" />
-        <MetricCard label="People Affected" value={(stats?.totalAffected ?? 0).toLocaleString()} icon={<Users className="h-4 w-4" />} color="orange" />
-      </div>
-
-      {detectMut.data && (
-        <Card className="border-rose-500/30 bg-rose-500/5">
-          <CardContent className="pt-4">
-            <p className="text-sm text-rose-400">Detected {detectMut.data.length} advocacy signals</p>
-            {detectMut.data.length > 0 && (
-              <div className="mt-2 space-y-1">
-                {detectMut.data.slice(0, 5).map((s: any, i: number) => (
-                  <div key={i} className="text-xs text-muted-foreground flex items-center gap-2">
-                    <Badge variant="outline" className="text-[10px]">{s.signalType}</Badge>
-                    <span className="truncate">{s.description}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Organizations */}
-      <Card className="bg-card/50">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Top Reporting Organizations</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {(byOrg ?? []).map((org: any, i: number) => (
-              <div key={i} className="flex items-center justify-between p-2 rounded bg-background/50 border border-border/30">
-                <div className="flex-1 min-w-0">
-                  <span className="text-sm font-medium">{org.organizationName}</span>
-                  {org.organizationType && (
-                    <Badge variant="outline" className="ml-2 text-[10px]">{org.organizationType}</Badge>
-                  )}
-                  {org.policyAreas && (
-                    <div className="text-[10px] text-muted-foreground mt-0.5 truncate">Policy: {org.policyAreas}</div>
-                  )}
-                </div>
-                <Badge variant="secondary" className="text-xs">{org.reportCount} reports</Badge>
-              </div>
-            ))}
-            {(!byOrg || byOrg.length === 0) && (
-              <div className="text-center py-6">
-                <Megaphone className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-                <p className="text-xs text-muted-foreground">No advocacy reports ingested yet.</p>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Harm Types */}
-      {byHarm && byHarm.length > 0 && (
-        <Card className="bg-card/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Harm Types Reported</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {byHarm.map((h: any, i: number) => (
-                <div key={i} className="flex items-center justify-between p-2 rounded bg-background/50 border border-border/30">
-                  <div>
-                    <span className="text-sm font-medium">{h.harmType}</span>
-                    <div className="text-[10px] text-muted-foreground">{h.orgCount} org{h.orgCount !== 1 ? 's' : ''} reporting</div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {h.totalAffected > 0 && (
-                      <span className="text-xs text-muted-foreground">{Number(h.totalAffected).toLocaleString()} affected</span>
-                    )}
-                    <Badge variant="secondary" className="text-xs">{h.reportCount} reports</Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Recent Reports */}
-      <Card className="bg-card/50">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Recent Reports</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {(recent ?? []).map((r: any, i: number) => (
-              <div key={i} className="p-3 rounded-lg bg-background/50 border border-border/50">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-medium text-sm truncate">{r.reportTitle}</span>
-                  <Badge variant="outline" className="text-[10px] ml-2 shrink-0">{r.reportType || 'other'}</Badge>
-                </div>
-                <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
-                  <span>{r.organizationName}</span>
-                  {r.jurisdiction && <><span>\u00B7</span><span>{r.jurisdiction}</span></>}
-                  {r.entityNamed && <><span>\u00B7</span><span className="text-amber-400">Entity: {r.entityNamed}</span></>}
-                  {r.harmType && <><span>\u00B7</span><span className="text-red-400">{r.harmType}</span></>}
-                </div>
-                {r.keyFindings && (
-                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{r.keyFindings}</p>
-                )}
-              </div>
-            ))}
-            {(!recent || recent.length === 0) && (
-              <div className="text-center py-6">
-                <Megaphone className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-                <p className="text-xs text-muted-foreground">No advocacy reports yet. Ingest reports to populate this stream.</p>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-      <StreamUploader
-        title="Ingest Advocacy Reports"
-        description="Upload civil society / advocacy report data (JSON/CSV)"
-        sampleFields={[
-          { name: "organizationName", type: "string", required: true },
-          { name: "organizationType", type: "string" },
-          { name: "reportTitle", type: "string", required: true },
-          { name: "reportType", type: "string" },
-          { name: "jurisdiction", type: "string" },
-          { name: "policyArea", type: "string" },
-          { name: "industry", type: "string" },
-          { name: "entityNamed", type: "string" },
-          { name: "claimType", type: "string" },
-          { name: "harmType", type: "string" },
-          { name: "affectedPopulation", type: "string" },
-          { name: "estimatedAffectedCount", type: "number" },
-          { name: "keyFindings", type: "string" },
-          { name: "recommendedActions", type: "string" },
-          { name: "source_url", type: "string" },
-          { name: "publishDate", type: "string" },
-        ]}
-        onIngest={(records) => ingestMut.mutateAsync({ records })}
-        onSuccess={() => utils.streams.advocacyStats.invalidate()}
-      />
-    </div>
-  );
-}
-/* â”€â”€ Cross-Stream Correlation Panel â”€â”€ */
-function CrossStreamPanel() {
-  const { data: stats, isLoading } = trpc.streams.correlationStats.useQuery();
-  const { data: recent } = trpc.streams.recentCorrelations.useQuery({ limit: 10 });
-  const detectMut = trpc.streams.detectCorrelations.useMutation();
-
-  if (isLoading) return <PanelSkeleton />;
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <GitCompareArrows className="h-5 w-5 text-amber-400" />
-          Cross-Stream Correlation
-        </h3>
-        <Button variant="outline" size="sm" onClick={() => detectMut.mutate()} disabled={detectMut.isPending}>
-          {detectMut.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Zap className="h-3 w-3 mr-1" />}
-          Detect Correlations
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <MetricCard label="Correlations" value={(stats?.totalCorrelations ?? 0).toLocaleString()} icon={<GitCompareArrows className="h-4 w-4" />} color="amber" />
-        <MetricCard label="Level 3 (Multi)" value={(stats?.level3Count ?? 0).toString()} icon={<AlertTriangle className="h-4 w-4" />} color="red" />
-        <MetricCard label="Level 2" value={(stats?.level2Count ?? 0).toString()} icon={<TrendingUp className="h-4 w-4" />} color="orange" />
-        <MetricCard label="Avg Confidence" value={`${(stats?.avgConfidence ?? 0).toFixed(0)}%`} icon={<BarChart3 className="h-4 w-4" />} color="blue" />
-      </div>
-
-      {detectMut.data && (
-        <Card className="border-amber-500/30 bg-amber-500/5">
-          <CardContent className="pt-4">
-            <p className="text-sm text-amber-400">Found {detectMut.data.found} cross-stream correlations</p>
-          </CardContent>
-        </Card>
-      )}
-
-      <Card className="bg-card/50">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Source Streams Breakdown</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {(recent ?? []).map((c: any, i: number) => (
-              <div key={i} className="p-3 rounded-lg bg-background/50 border border-border/50">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium text-sm">{c.entity || 'Unknown Entity'}</span>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className={`text-xs ${
-                      c.correlationLevel >= 3 ? 'border-red-500/50 text-red-400' :
-                      c.correlationLevel >= 2 ? 'border-orange-500/50 text-orange-400' :
-                      'border-blue-500/50 text-blue-400'
-                    }`}>Level {c.correlationLevel}</Badge>
-                    <span className="text-xs text-muted-foreground">{c.confidenceScore}%</span>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-1">
-                  {(c.matchingStreams || '').split(',').filter(Boolean).map((s: string, j: number) => (
-                    <Badge key={j} variant="secondary" className="text-xs">{s.trim()}</Badge>
-                  ))}
-                </div>
-                {c.claimType && <p className="text-xs text-muted-foreground mt-1">Claim: {c.claimType}</p>}
-              </div>
-            ))}
-            {(!recent || recent.length === 0) && (
-              <div className="text-center py-6">
-                <GitCompareArrows className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-                <p className="text-xs text-muted-foreground">No correlations detected yet. Click "Detect Correlations" to scan across all data streams.</p>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   TIME-TRAVEL ANALYSIS PANEL (Session 71)
-   Historical replay, counterfactual analysis, algorithm comparison,
-   earliest detection, and run history.
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
-
-function TimeTravelPanel() {
-  const { data: stats, isLoading, refetch } = trpc.timeTravel.getStats.useQuery();
-  const { data: versions } = trpc.timeTravel.algorithmVersions.useQuery();
-  const { data: runs, refetch: refetchRuns } = trpc.timeTravel.listRuns.useQuery({ limit: 10 });
-
-  // Replay state
-  const [replayAlgo, setReplayAlgo] = useState("v3.0");
-  const [replayNotes, setReplayNotes] = useState("");
-  const replayMut = trpc.timeTravel.runHistoricalReplay.useMutation({
-    onSuccess: () => { refetch(); refetchRuns(); },
-  });
-
-  // Counterfactual state
-  const [cfAlgo, setCfAlgo] = useState("v3.0");
-  const [cfParams, setCfParams] = useState<Array<{ name: string; value: string; type: "threshold_change" | "weight_override" | "entity_filter"; description?: string }>>([
-    { name: "minConfidenceScore", value: "0.50", type: "threshold_change", description: "Lower confidence threshold" },
-  ]);
-  const counterfactualMut = trpc.timeTravel.runCounterfactualReplay.useMutation({
-    onSuccess: () => { refetch(); refetchRuns(); },
-  });
-
-  // Comparison state
-  const [compA, setCompA] = useState("v1.0");
-  const [compB, setCompB] = useState("v3.0");
-  const compareMut = trpc.timeTravel.compareAlgorithms.useMutation({
-    onSuccess: () => { refetch(); refetchRuns(); },
-  });
-
-  // Earliest detection state
-  const [earliestPattern, setEarliestPattern] = useState("repeat_entity");
-  const [earliestEntity, setEarliestEntity] = useState("");
-  const [earliestAlgo, setEarliestAlgo] = useState("v3.0");
-  const earliestMut = trpc.timeTravel.detectEarliest.useMutation({
-    onSuccess: () => { refetch(); refetchRuns(); },
-  });
-
-  // Report state
-  const [reportRunId, setReportRunId] = useState<number | null>(null);
-  const { data: reportData } = trpc.timeTravel.generateReport.useQuery(
-    { runId: reportRunId! },
-    { enabled: reportRunId !== null }
-  );
-
-  // Active sub-tab
-  const [activeMode, setActiveMode] = useState<"replay" | "counterfactual" | "compare" | "earliest" | "history">("replay");
-
-  if (isLoading) return <PanelSkeleton />;
-
-  return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <History className="h-5 w-5 text-cyan-400" />
-          Time-Travel Analysis Engine
-        </h3>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-xs border-cyan-500/30 text-cyan-400">
-            {stats?.totalRuns ?? 0} runs
-          </Badge>
-          <Badge variant="outline" className="text-xs border-emerald-500/30 text-emerald-400">
-            {stats?.totalHistoricalSignals ?? 0} historical signals
-          </Badge>
-        </div>
-      </div>
-
-      {/* Stats Row */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <MetricCard label="Total Runs" value={String(stats?.totalRuns ?? 0)} icon={<RotateCcw className="h-4 w-4" />} color="cyan" />
-        <MetricCard label="Completed" value={String(stats?.completedRuns ?? 0)} icon={<CheckCircle2 className="h-4 w-4" />} color="emerald" />
-        <MetricCard label="Hist. Signals" value={String(stats?.totalHistoricalSignals ?? 0)} icon={<Zap className="h-4 w-4" />} color="amber" />
-        <MetricCard label="Hist. Patterns" value={String(stats?.totalHistoricalPatterns ?? 0)} icon={<Network className="h-4 w-4" />} color="violet" />
-        <MetricCard label="Snapshots" value={String(stats?.totalSnapshots ?? 0)} icon={<Database className="h-4 w-4" />} color="blue" />
-      </div>
-
-      {/* Mode Selector */}
-      <div className="flex gap-2 flex-wrap">
-        {[
-          { id: "replay" as const, label: "Historical Replay", icon: <Play className="h-3 w-3" /> },
-          { id: "counterfactual" as const, label: "What If?", icon: <GitBranch className="h-3 w-3" /> },
-          { id: "compare" as const, label: "Compare Algorithms", icon: <GitCompareArrows className="h-3 w-3" /> },
-          { id: "earliest" as const, label: "Earliest Detection", icon: <Search className="h-3 w-3" /> },
-          { id: "history" as const, label: "Run History", icon: <Clock className="h-3 w-3" /> },
-        ].map(mode => (
-          <Button
-            key={mode.id}
-            variant={activeMode === mode.id ? "default" : "outline"}
-            size="sm"
-            onClick={() => setActiveMode(mode.id)}
-            className="gap-1.5"
-          >
-            {mode.icon} {mode.label}
-          </Button>
-        ))}
-      </div>
-
-      {/* â”€â”€ Historical Replay â”€â”€ */}
-      {activeMode === "replay" && (
-        <Card className="bg-card/50 border-cyan-500/20">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Play className="h-4 w-4 text-cyan-400" />
-              Historical Replay
-            </CardTitle>
-            <p className="text-xs text-muted-foreground">Re-run signal detection on historical data using any algorithm version</p>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Algorithm Version</label>
-                <select
-                  value={replayAlgo}
-                  onChange={e => setReplayAlgo(e.target.value)}
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                >
-                  {(versions ?? []).map(v => (
-                    <option key={v.id} value={v.id}>{v.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Notes (optional)</label>
-                <input
-                  type="text"
-                  value={replayNotes}
-                  onChange={e => setReplayNotes(e.target.value)}
-                  placeholder="Describe this replay run..."
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                />
-              </div>
-            </div>
-            <Button
-              onClick={() => replayMut.mutate({ algorithmVersion: replayAlgo, notes: replayNotes || undefined })}
-              disabled={replayMut.isPending}
-              className="gap-1.5"
-              size="sm"
-            >
-              {replayMut.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3" />}
-              Run Replay
-            </Button>
-            {replayMut.data && (
-              <div className="p-3 rounded-lg bg-cyan-500/5 border border-cyan-500/20 text-sm">
-                <p className="text-cyan-400 font-medium">Replay Complete</p>
-                <div className="grid grid-cols-3 gap-2 mt-2 text-xs text-muted-foreground">
-                  <span>Signals: <strong className="text-foreground">{replayMut.data.signalsDetected}</strong></span>
-                  <span>Patterns: <strong className="text-foreground">{replayMut.data.patternsDetected}</strong></span>
-                  <span>Status: <strong className="text-emerald-400">{replayMut.data.status}</strong></span>
-                </div>
-                {replayMut.data.summary?.keyFindings && (
-                  <div className="mt-2 space-y-1">
-                    {(replayMut.data.summary.keyFindings as string[]).slice(0, 3).map((f: string, i: number) => (
-                      <p key={i} className="text-xs text-muted-foreground">â€¢ {f}</p>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* â”€â”€ Counterfactual "What If" â”€â”€ */}
-      {activeMode === "counterfactual" && (
-        <Card className="bg-card/50 border-violet-500/20">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <GitBranch className="h-4 w-4 text-violet-400" />
-              Counterfactual Analysis â€” "What If?"
-            </CardTitle>
-            <p className="text-xs text-muted-foreground">Modify detection parameters and replay to see what would have been detected differently</p>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Base Algorithm</label>
-              <select
-                value={cfAlgo}
-                onChange={e => setCfAlgo(e.target.value)}
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-              >
-                {(versions ?? []).map(v => (
-                  <option key={v.id} value={v.id}>{v.label}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-xs text-muted-foreground">Parameter Overrides</label>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-6 text-xs gap-1"
-                  onClick={() => setCfParams([...cfParams, { name: "", value: "", type: "threshold_change" }])}
-                >
-                  <Plus className="h-3 w-3" /> Add
-                </Button>
-              </div>
-              {cfParams.map((p, i) => (
-                <div key={i} className="grid grid-cols-12 gap-2 items-center">
-                  <select
-                    value={p.type}
-                    onChange={e => {
-                      const next = [...cfParams];
-                      next[i] = { ...next[i], type: e.target.value as any };
-                      setCfParams(next);
-                    }}
-                    className="col-span-3 rounded-md border bg-background px-2 py-1.5 text-xs"
-                  >
-                    <option value="threshold_change">Threshold</option>
-                    <option value="weight_override">Weight</option>
-                    <option value="entity_filter">Entity Filter</option>
-                  </select>
-                  <input
-                    value={p.name}
-                    onChange={e => {
-                      const next = [...cfParams];
-                      next[i] = { ...next[i], name: e.target.value };
-                      setCfParams(next);
-                    }}
-                    placeholder="Parameter name"
-                    className="col-span-4 rounded-md border bg-background px-2 py-1.5 text-xs"
-                  />
-                  <input
-                    value={p.value}
-                    onChange={e => {
-                      const next = [...cfParams];
-                      next[i] = { ...next[i], value: e.target.value };
-                      setCfParams(next);
-                    }}
-                    placeholder="Value"
-                    className="col-span-4 rounded-md border bg-background px-2 py-1.5 text-xs"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="col-span-1 h-7 w-7 p-0"
-                    onClick={() => setCfParams(cfParams.filter((_, j) => j !== i))}
-                  >
-                    <Trash2 className="h-3 w-3 text-red-400" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-
-            <Button
-              onClick={() => counterfactualMut.mutate({
-                algorithmVersion: cfAlgo,
-                parameters: cfParams.filter(p => p.name && p.value),
-              })}
-              disabled={counterfactualMut.isPending}
-              className="gap-1.5"
-              size="sm"
-            >
-              {counterfactualMut.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <GitBranch className="h-3 w-3" />}
-              Run Counterfactual
-            </Button>
-
-            {counterfactualMut.data && (
-              <div className="p-3 rounded-lg bg-violet-500/5 border border-violet-500/20 text-sm">
-                <p className="text-violet-400 font-medium">Counterfactual Complete</p>
-                <div className="grid grid-cols-3 gap-2 mt-2 text-xs text-muted-foreground">
-                  <span>Signals: <strong className="text-foreground">{counterfactualMut.data.signalsDetected}</strong></span>
-                  <span>Patterns: <strong className="text-foreground">{counterfactualMut.data.patternsDetected}</strong></span>
-                  <span>Status: <strong className="text-emerald-400">{counterfactualMut.data.status}</strong></span>
-                </div>
-                {counterfactualMut.data.summary?.keyFindings && (
-                  <div className="mt-2 space-y-1">
-                    {(counterfactualMut.data.summary.keyFindings as string[]).slice(0, 3).map((f: string, i: number) => (
-                      <p key={i} className="text-xs text-muted-foreground">â€¢ {f}</p>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* â”€â”€ Algorithm Comparison â”€â”€ */}
-      {activeMode === "compare" && (
-        <Card className="bg-card/50 border-amber-500/20">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <GitCompareArrows className="h-4 w-4 text-amber-400" />
-              Algorithm Comparison
-            </CardTitle>
-            <p className="text-xs text-muted-foreground">Run two algorithm versions side-by-side on the same data to compare detection capabilities</p>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Version A</label>
-                <select
-                  value={compA}
-                  onChange={e => setCompA(e.target.value)}
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                >
-                  {(versions ?? []).map(v => (
-                    <option key={v.id} value={v.id}>{v.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Version B</label>
-                <select
-                  value={compB}
-                  onChange={e => setCompB(e.target.value)}
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                >
-                  {(versions ?? []).map(v => (
-                    <option key={v.id} value={v.id}>{v.label}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <Button
-              onClick={() => compareMut.mutate({ versionA: compA, versionB: compB })}
-              disabled={compareMut.isPending || compA === compB}
-              className="gap-1.5"
-              size="sm"
-            >
-              {compareMut.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <GitCompareArrows className="h-3 w-3" />}
-              Compare
-            </Button>
-
-            {compareMut.data && (
-              <div className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/20 text-sm">
-                <p className="text-amber-400 font-medium mb-3">Comparison Results</p>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-2 rounded bg-background/50 border">
-                    <p className="text-xs text-muted-foreground mb-1">{compA}</p>
-                    <div className="space-y-1 text-xs">
-                      <p>Signals: <strong>{compareMut.data.versionA.signals}</strong></p>
-                      <p>Patterns: <strong>{compareMut.data.versionA.patterns}</strong></p>
-                      <p>Avg Confidence: <strong>{(compareMut.data.versionA.avgConfidence * 100).toFixed(1)}%</strong></p>
-                    </div>
-                  </div>
-                  <div className="p-2 rounded bg-background/50 border">
-                    <p className="text-xs text-muted-foreground mb-1">{compB}</p>
-                    <div className="space-y-1 text-xs">
-                      <p>Signals: <strong>{compareMut.data.versionB.signals}</strong></p>
-                      <p>Patterns: <strong>{compareMut.data.versionB.patterns}</strong></p>
-                      <p>Avg Confidence: <strong>{(compareMut.data.versionB.avgConfidence * 100).toFixed(1)}%</strong></p>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
-                  <div className="p-2 rounded bg-background/50 border text-center">
-                    <p className="text-muted-foreground">Signal Delta</p>
-                    <p className={`font-bold ${compareMut.data.delta.signals > 0 ? 'text-emerald-400' : compareMut.data.delta.signals < 0 ? 'text-red-400' : 'text-muted-foreground'}`}>
-                      {compareMut.data.delta.signals > 0 ? '+' : ''}{compareMut.data.delta.signals}
-                    </p>
-                  </div>
-                  <div className="p-2 rounded bg-background/50 border text-center">
-                    <p className="text-muted-foreground">Unique to A</p>
-                    <p className="font-bold">{compareMut.data.uniqueToA}</p>
-                  </div>
-                  <div className="p-2 rounded bg-background/50 border text-center">
-                    <p className="text-muted-foreground">Unique to B</p>
-                    <p className="font-bold">{compareMut.data.uniqueToB}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* â”€â”€ Earliest Detection â”€â”€ */}
-      {activeMode === "earliest" && (
-        <Card className="bg-card/50 border-emerald-500/20">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Search className="h-4 w-4 text-emerald-400" />
-              Earliest Detection Finder
-            </CardTitle>
-            <p className="text-xs text-muted-foreground">Scan historical data to find the earliest point a pattern would have been detectable</p>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Pattern Type</label>
-                <select
-                  value={earliestPattern}
-                  onChange={e => setEarliestPattern(e.target.value)}
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                >
-                  <option value="any">Any Pattern</option>
-                  <option value="repeat_entity">Repeat Entity</option>
-                  <option value="frequency_spike">Frequency Spike</option>
-                  <option value="geographic_cluster">Geographic Cluster</option>
-                  <option value="status_delay">Status Delay</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Entity Name (optional)</label>
-                <input
-                  type="text"
-                  value={earliestEntity}
-                  onChange={e => setEarliestEntity(e.target.value)}
-                  placeholder="e.g. Amazon.com"
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Algorithm</label>
-                <select
-                  value={earliestAlgo}
-                  onChange={e => setEarliestAlgo(e.target.value)}
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                >
-                  {(versions ?? []).map(v => (
-                    <option key={v.id} value={v.id}>{v.label}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <Button
-              onClick={() => earliestMut.mutate({
-                patternType: earliestPattern,
-                entityName: earliestEntity || undefined,
-                algorithmVersion: earliestAlgo,
-              })}
-              disabled={earliestMut.isPending}
-              className="gap-1.5"
-              size="sm"
-            >
-              {earliestMut.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Search className="h-3 w-3" />}
-              Find Earliest Detection
-            </Button>
-
-            {earliestMut.data && (
-              <div className="p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20 text-sm">
-                <p className="text-emerald-400 font-medium">Earliest Detection Result</p>
-                {earliestMut.data.earliestDate ? (
-                  <div className="mt-2 space-y-2">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-                      <div className="p-2 rounded bg-background/50 border">
-                        <p className="text-muted-foreground">Earliest Date</p>
-                        <p className="font-bold text-emerald-400">{new Date(earliestMut.data.earliestDate).toLocaleDateString()}</p>
-                      </div>
-                      <div className="p-2 rounded bg-background/50 border">
-                        <p className="text-muted-foreground">Confidence</p>
-                        <p className="font-bold">{(earliestMut.data.confidence * 100).toFixed(1)}%</p>
-                      </div>
-                      <div className="p-2 rounded bg-background/50 border">
-                        <p className="text-muted-foreground">Signals Required</p>
-                        <p className="font-bold">{earliestMut.data.signalsRequired}</p>
-                      </div>
-                      <div className="p-2 rounded bg-background/50 border">
-                        <p className="text-muted-foreground">Streams</p>
-                        <p className="font-bold">{earliestMut.data.contributingStreams.length}</p>
-                      </div>
-                    </div>
-                    {earliestMut.data.contributingStreams.length > 0 && (
-                      <div className="flex gap-1 flex-wrap">
-                        {earliestMut.data.contributingStreams.map((s: string, i: number) => (
-                          <Badge key={i} variant="secondary" className="text-xs">{s}</Badge>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-xs text-muted-foreground mt-2">Pattern not detectable in historical data with current thresholds</p>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* â”€â”€ Run History â”€â”€ */}
-      {activeMode === "history" && (
-        <Card className="bg-card/50">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Clock className="h-4 w-4 text-muted-foreground" />
-              Run History
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {(runs ?? []).map((run: any) => (
-                <div key={run.id} className="p-3 rounded-lg bg-background/50 border border-border/50">
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className={`text-xs ${
-                        run.runType === 'historical_replay' ? 'border-cyan-500/50 text-cyan-400' :
-                        run.runType === 'counterfactual_replay' ? 'border-violet-500/50 text-violet-400' :
-                        run.runType === 'algorithm_comparison' ? 'border-amber-500/50 text-amber-400' :
-                        'border-emerald-500/50 text-emerald-400'
-                      }`}>
-                        {run.runType.replace(/_/g, ' ')}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">{run.algorithmVersion}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={run.status === 'completed' ? 'default' : run.status === 'failed' ? 'destructive' : 'secondary'} className="text-xs">
-                        {run.status}
-                      </Badge>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 text-xs gap-1"
-                        onClick={() => setReportRunId(run.id)}
-                      >
-                        <FileDown className="h-3 w-3" /> Report
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                    <span>Signals: {run.signalsDetected ?? 0}</span>
-                    <span>Patterns: {run.patternsDetected ?? 0}</span>
-                    <span>{new Date(run.createdAt).toLocaleString()}</span>
-                  </div>
-                  {run.notes && <p className="text-xs text-muted-foreground mt-1 italic">{run.notes}</p>}
-                </div>
-              ))}
-              {(!runs || runs.length === 0) && (
-                <div className="text-center py-8">
-                  <History className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-                  <p className="text-xs text-muted-foreground">No time-travel runs yet. Start a Historical Replay to begin.</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Report Modal */}
-      {reportRunId !== null && reportData && (
-        <Card className="bg-card/50 border-blue-500/20">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <FileDown className="h-4 w-4 text-blue-400" />
-                Replay Report
-              </CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => setReportRunId(null)} className="h-6 text-xs">
-                Close
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="max-h-96 overflow-y-auto rounded-lg bg-background/50 border p-4">
-              <pre className="text-xs whitespace-pre-wrap font-mono text-muted-foreground">{reportData}</pre>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
-
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// Entity Intelligence Panel
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-function EntityIntelPanel() {
-  const stats = trpc.enginesV2.entityStats.useQuery();
-  const extractMut = trpc.enginesV2.extractEntitiesFromSignals.useMutation();
-  const entities = trpc.enginesV2.entityList.useQuery({ limit: 20 });
-
-  if (stats.isLoading) return <PanelSkeleton />;
-  const s = stats.data;
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <Fingerprint className="h-5 w-5 text-violet-400" /> Entity Intelligence Layer
-          </h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            Structured entity profiles with resolution, classification, and relationship mapping
-          </p>
-        </div>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => extractMut.mutate()}
-          disabled={extractMut.isPending}
-        >
-          {extractMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Zap className="h-3.5 w-3.5 mr-1" />}
-          Extract from Signals
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <MetricCard icon={<Fingerprint className="h-3.5 w-3.5" />} label="Total Entities" value={s?.totalEntities ?? 0} />
-        <MetricCard icon={<Link2 className="h-3.5 w-3.5" />} label="Relationships" value={s?.totalRelationships ?? 0} />
-        <MetricCard icon={<Building2 className="h-3.5 w-3.5" />} label="Corporations" value={s?.byType?.corporation ?? 0} />
-        <MetricCard icon={<Users className="h-3.5 w-3.5" />} label="Govt Agencies" value={s?.byType?.government_agency ?? 0} />
-      </div>
-
-      {extractMut.isSuccess && (
-        <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3">
-          <p className="text-sm text-emerald-400">Extraction complete: {extractMut.data?.extracted ?? 0} entities extracted, {extractMut.data?.resolved ?? 0} resolved</p>
-        </div>
-      )}
-
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm">Entity Registry</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {entities.isLoading ? <PanelSkeleton /> : (
-            <div className="space-y-2">
-              {(entities.data?.entities ?? []).length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">No entities registered yet. Click "Extract from Signals" to populate.</p>
-              ) : (
-                (entities.data?.entities ?? []).map((e: any) => (
-                  <div key={e.id} className="flex items-center justify-between rounded-lg border p-3 hover:bg-muted/50">
-                    <div>
-                      <p className="font-medium text-sm">{e.canonicalName}</p>
-                      <p className="text-xs text-muted-foreground">{e.entityType} {e.industry ? `â€¢ ${e.industry}` : ''}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-xs">{e.signalCount ?? 0} signals</Badge>
-                      {e.riskScore > 0 && <Badge variant="destructive" className="text-xs">Risk: {e.riskScore}</Badge>}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// Institutional Accountability Panel
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-function InstitutionsPanel() {
-  const stats = trpc.enginesV2.institutionStats.useQuery();
-  const gaps = trpc.enginesV2.enforcementGaps.useQuery();
-  const alerts = trpc.enginesV2.accountabilityAlerts.useQuery();
-  const seedMut = trpc.enginesV2.seedInstitutions.useMutation();
-  const institutions = trpc.enginesV2.institutionList.useQuery({ limit: 20 });
-
-  if (stats.isLoading) return <PanelSkeleton />;
-  const s = stats.data;
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <Building className="h-5 w-5 text-amber-400" /> Institutional Accountability
-          </h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            Map patterns to oversight institutions, detect enforcement gaps, track accountability
-          </p>
-        </div>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => seedMut.mutate()}
-          disabled={seedMut.isPending}
-        >
-          {seedMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Building2 className="h-3.5 w-3.5 mr-1" />}
-          Seed Institutions
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <MetricCard icon={<Building2 className="h-3.5 w-3.5" />} label="Institutions" value={s?.totalInstitutions ?? 0} />
-        <MetricCard icon={<Link2 className="h-3.5 w-3.5" />} label="Pattern Links" value={s?.totalLinks ?? 0} />
-        <MetricCard icon={<Activity className="h-3.5 w-3.5" />} label="Activities" value={s?.totalActivities ?? 0} />
-        <MetricCard icon={<AlertTriangle className="h-3.5 w-3.5" />} label="Alerts" value={alerts.data?.length ?? 0} />
-      </div>
-
-      {seedMut.isSuccess && (
-        <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3">
-          <p className="text-sm text-emerald-400">Seeded {seedMut.data?.seeded ?? 0} of {seedMut.data?.total ?? 0} default institutions</p>
-        </div>
-      )}
-
-      {/* Enforcement Gaps */}
-      {(gaps.data ?? []).length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-amber-400" /> Enforcement Gaps
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {(gaps.data ?? []).slice(0, 5).map((g: any) => (
-                <div key={g.institutionId} className="flex items-center justify-between rounded-lg border p-3">
-                  <div>
-                    <p className="font-medium text-sm">{g.institutionName}</p>
-                    <p className="text-xs text-muted-foreground">{g.gapDescription}</p>
-                  </div>
-                  <Badge variant={g.gapScore >= 70 ? "destructive" : g.gapScore >= 40 ? "default" : "outline"} className="text-xs">
-                    Gap: {g.gapScore}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Accountability Alerts */}
-      {(alerts.data ?? []).length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Siren className="h-4 w-4 text-red-400" /> Accountability Alerts
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {(alerts.data ?? []).map((a: any, i: number) => (
-                <div key={i} className={`rounded-lg border p-3 ${
-                  a.alertLevel === 'critical' ? 'border-red-500/30 bg-red-500/5' :
-                  a.alertLevel === 'warning' ? 'border-amber-500/30 bg-amber-500/5' :
-                  'border-blue-500/30 bg-blue-500/5'
-                }`}>
-                  <div className="flex items-center gap-2 mb-1">
-                    <Badge variant={a.alertLevel === 'critical' ? 'destructive' : 'outline'} className="text-xs">
-                      {a.alertLevel.toUpperCase()}
-                    </Badge>
-                    <span className="text-sm font-medium">{a.institutionName}</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">{a.description}</p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Institution List */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm">Institution Registry</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {institutions.isLoading ? <PanelSkeleton /> : (
-            <div className="space-y-2">
-              {(institutions.data?.institutions ?? []).length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">No institutions registered. Click "Seed Institutions" to populate defaults.</p>
-              ) : (
-                (institutions.data?.institutions ?? []).map((inst: any) => (
-                  <div key={inst.id} className="flex items-center justify-between rounded-lg border p-3 hover:bg-muted/50">
-                    <div>
-                      <p className="font-medium text-sm">{inst.institutionName}</p>
-                      <p className="text-xs text-muted-foreground">{inst.institutionType} â€¢ {inst.jurisdiction ?? 'N/A'} â€¢ Power: {inst.enforcementPowerLevel}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-xs">Score: {inst.accountabilityScore ?? 50}</Badge>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// Regulatory Capture Detection Panel
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-function RegCapturePanel() {
-  const stats = trpc.enginesV2.captureStats.useQuery();
-  const patterns = trpc.enginesV2.capturePatterns.useQuery({ limit: 10 });
-  const [industry, setIndustry] = useState("Consumer Protection");
-  const analyzeMut = trpc.enginesV2.analyzeCaptureRisk.useMutation();
-
-  if (stats.isLoading) return <PanelSkeleton />;
-  const s = stats.data;
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <ShieldAlert className="h-5 w-5 text-red-400" /> Regulatory Capture Detection
-        </h3>
-        <p className="text-sm text-muted-foreground mt-1">
-          Cross-stream correlation of complaints vs enforcement vs lobbying â€” requires 3+ independent streams
-        </p>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <MetricCard icon={<ShieldAlert className="h-3.5 w-3.5" />} label="Capture Patterns" value={s?.totalPatterns ?? 0} />
-        <MetricCard icon={<Radar className="h-3.5 w-3.5" />} label="Capture Signals" value={s?.totalSignals ?? 0} />
-        <MetricCard icon={<AlertTriangle className="h-3.5 w-3.5" />} label="High Risk" value={s?.byStatus?.high_risk ?? 0} />
-        <MetricCard icon={<Target className="h-3.5 w-3.5" />} label="Confirmed" value={s?.byStatus?.confirmed_pattern ?? 0} />
-      </div>
-
-      {/* Analyze Industry */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm">Analyze Capture Risk</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={industry}
-              onChange={(e) => setIndustry(e.target.value)}
-              className="flex-1 rounded-md border bg-background px-3 py-2 text-sm"
-              placeholder="Industry (e.g., Consumer Protection, Telecommunications)"
-            />
-            <Button
-              size="sm"
-              onClick={() => analyzeMut.mutate({ industry })}
-              disabled={analyzeMut.isPending || !industry}
-            >
-              {analyzeMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Search className="h-3.5 w-3.5 mr-1" />}
-              Analyze
-            </Button>
-          </div>
-
-          {analyzeMut.isSuccess && analyzeMut.data && (
-            <div className="mt-4 space-y-3">
-              <div className={`rounded-lg border p-4 ${
-                analyzeMut.data.riskScore >= 70 ? 'border-red-500/30 bg-red-500/5' :
-                analyzeMut.data.riskScore >= 40 ? 'border-amber-500/30 bg-amber-500/5' :
-                'border-emerald-500/30 bg-emerald-500/5'
-              }`}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">Capture Risk Score</span>
-                  <span className="text-2xl font-bold font-mono">{analyzeMut.data.riskScore}/100</span>
-                </div>
-                <Badge variant={analyzeMut.data.status === 'confirmed_pattern' ? 'destructive' : 'outline'} className="text-xs">
-                  {analyzeMut.data.status.replace(/_/g, ' ').toUpperCase()}
-                </Badge>
-                <p className="text-xs text-muted-foreground mt-2">
-                  {analyzeMut.data.streamCount} streams with evidence â€¢ Minimum 3 required: {analyzeMut.data.meetsMinimumStreams ? 'âœ“ Met' : 'âœ— Not met'}
-                </p>
-              </div>
-
-              <div className="space-y-1">
-                <p className="text-xs font-medium text-muted-foreground">Indicators:</p>
-                {analyzeMut.data.indicators.map((ind: any, i: number) => (
-                  <div key={i} className="flex items-center justify-between text-xs rounded border p-2">
-                    <span className={ind.detected ? 'text-red-400' : 'text-muted-foreground'}>
-                      {ind.detected ? 'âš ' : 'â—‹'} {ind.indicator.replace(/_/g, ' ')}
-                    </span>
-                    <span className="font-mono">{ind.strength}/100</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Existing Patterns */}
-      {(patterns.data?.patterns ?? []).length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Capture Patterns</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {(patterns.data?.patterns ?? []).map((p: any) => (
-                <div key={p.id} className="flex items-center justify-between rounded-lg border p-3">
-                  <div>
-                    <p className="font-medium text-sm">{p.regulatedEntity ?? p.industry}</p>
-                    <p className="text-xs text-muted-foreground">{p.industry} â€¢ {p.jurisdiction ?? 'N/A'}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={p.captureRiskScore >= 70 ? 'destructive' : p.captureRiskScore >= 40 ? 'default' : 'outline'} className="text-xs">
-                      Risk: {p.captureRiskScore}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">{p.patternStatus.replace(/_/g, ' ')}</Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
-
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// Crisis Prediction Panel
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-function CrisisPredictPanel() {
-  const stats = trpc.enginesV2.crisisStats.useQuery();
-  const probability = trpc.enginesV2.calculateCrisisProbability.useQuery({});
-  const generateMut = trpc.enginesV2.generateCrisisPrediction.useMutation();
-  const predictions = trpc.enginesV2.crisisPredictions.useQuery({ limit: 10 });
-
-  if (stats.isLoading) return <PanelSkeleton />;
-  const s = stats.data;
-  const prob = probability.data;
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <AlertOctagon className="h-5 w-5 text-orange-400" /> Crisis Prediction Engine
-          </h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            Forecast systemic crises from pattern acceleration, enforcement gaps, and capture risk
-          </p>
-        </div>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => generateMut.mutate({})}
-          disabled={generateMut.isPending}
-        >
-          {generateMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Flame className="h-3.5 w-3.5 mr-1" />}
-          Generate Prediction
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <MetricCard icon={<Flame className="h-3.5 w-3.5" />} label="Predictions" value={s?.totalPredictions ?? 0} />
-        <MetricCard icon={<AlertTriangle className="h-3.5 w-3.5" />} label="High Risk" value={s?.highRiskCount ?? 0} />
-        <MetricCard icon={<Gauge className="h-3.5 w-3.5" />} label="Current Probability" value={prob ? `${prob.probability}%` : 'â€”'} />
-        <MetricCard icon={<Target className="h-3.5 w-3.5" />} label="Risk Level" value={prob?.riskLevel?.toUpperCase() ?? 'â€”'} />
-      </div>
-
-      {/* Current Crisis Probability Breakdown */}
-      {prob && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Crisis Probability Breakdown</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className={`rounded-lg border p-4 mb-4 ${
-              prob.probability >= 75 ? 'border-red-500/30 bg-red-500/5' :
-              prob.probability >= 50 ? 'border-amber-500/30 bg-amber-500/5' :
-              prob.probability >= 25 ? 'border-blue-500/30 bg-blue-500/5' :
-              'border-emerald-500/30 bg-emerald-500/5'
-            }`}>
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Overall Crisis Probability</span>
-                <span className="text-3xl font-bold font-mono">{prob.probability}%</span>
-              </div>
-              <div className="mt-2 h-2 rounded-full bg-muted overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all ${
-                    prob.probability >= 75 ? 'bg-red-500' :
-                    prob.probability >= 50 ? 'bg-amber-500' :
-                    prob.probability >= 25 ? 'bg-blue-500' :
-                    'bg-emerald-500'
-                  }`}
-                  style={{ width: `${prob.probability}%` }}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              {prob.indicators.map((ind: any, i: number) => (
-                <div key={i} className="flex items-center justify-between text-sm rounded border p-2">
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full" style={{
-                      backgroundColor: ind.value >= 50 ? '#ef4444' : ind.value >= 25 ? '#f59e0b' : '#22c55e'
-                    }} />
-                    <span className="text-xs">{ind.name.replace(/_/g, ' ')}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-24 h-1.5 rounded-full bg-muted overflow-hidden">
-                      <div className="h-full rounded-full bg-current" style={{ width: `${ind.value}%`, color: ind.value >= 50 ? '#ef4444' : ind.value >= 25 ? '#f59e0b' : '#22c55e' }} />
-                    </div>
-                    <span className="text-xs font-mono w-8 text-right">{ind.value}</span>
-                    <span className="text-xs text-muted-foreground w-8">Ã—{ind.weight}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Generated Prediction */}
-      {generateMut.isSuccess && generateMut.data && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Flame className="h-4 w-4 text-orange-400" /> Latest Prediction
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <Badge variant={generateMut.data.riskLevel === 'critical' ? 'destructive' : 'outline'}>
-                  {generateMut.data.riskLevel.toUpperCase()}
-                </Badge>
-                <span className="text-sm">{generateMut.data.predictionType.replace(/_/g, ' ')}</span>
-                <span className="text-xs text-muted-foreground">Confidence: {generateMut.data.confidence}%</span>
-              </div>
-              <div>
-                <p className="text-xs font-medium text-muted-foreground mb-1">Trigger Factors:</p>
-                {generateMut.data.triggerFactors.map((t: string, i: number) => (
-                  <p key={i} className="text-xs text-muted-foreground">â€¢ {t}</p>
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Estimated escalation: {new Date(generateMut.data.estimatedEscalationDate).toLocaleDateString()}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Prediction History */}
-      {(predictions.data?.predictions ?? []).length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Prediction History</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {(predictions.data?.predictions ?? []).map((p: any) => (
-                <div key={p.id} className="flex items-center justify-between rounded-lg border p-3">
-                  <div>
-                    <p className="font-medium text-sm">{p.predictionType.replace(/_/g, ' ')}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(Number(p.createdAtCp)).toLocaleDateString()} â€¢ {p.entityNameCp ?? p.industryCp ?? 'System-wide'}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={p.riskLevel === 'critical' ? 'destructive' : p.riskLevel === 'high' ? 'default' : 'outline'} className="text-xs">
-                      {p.crisisProbability}%
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
-
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// Session 73 Panels: Simulation Lab, Transparency, Dossier Studio, Ext. Collaboration
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-
-function SimulationLabPanel() {
-  const stats = trpc.enginesV3.simulationStats.useQuery();
-  const history = trpc.enginesV3.simulationHistory.useQuery({ limit: 10 });
-  const runSim = trpc.enginesV3.runSimulation.useMutation({
-    onSuccess: () => { stats.refetch(); history.refetch(); },
-  });
-  const [simType, setSimType] = React.useState<string>("policy_change");
-  const [targetIndustry, setTargetIndustry] = React.useState("");
-  const [paramKey, setParamKey] = React.useState("enforcement_budget_multiplier");
-  const [paramVal, setParamVal] = React.useState("1.5");
-
-  if (stats.isLoading) return <PanelSkeleton />;
-  const s = stats.data;
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <FlaskConical className="h-5 w-5 text-violet-400" /> Systemic Simulation Engine
-          </h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            Run "what if" simulations: policy changes, enforcement increases, penalty adjustments
-          </p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <MetricCard icon={<FlaskConical className="h-3.5 w-3.5" />} label="Total Simulations" value={s?.totalSimulations ?? 0} />
-        <MetricCard icon={<TrendingUp className="h-3.5 w-3.5" />} label="Avg Impact" value={s?.avgImpactScore ? `${s.avgImpactScore}/100` : 'â€”'} />
-        <MetricCard icon={<Target className="h-3.5 w-3.5" />} label="Sim Types" value={Object.keys(s?.byType ?? {}).length} />
-        <MetricCard icon={<BarChart className="h-3.5 w-3.5" />} label="Industries" value={Object.keys(s?.byIndustry ?? {}).length} />
-      </div>
-
-      {/* Run Simulation */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm">Run New Simulation</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs text-muted-foreground">Simulation Type</label>
-              <select className="w-full mt-1 rounded border bg-background px-2 py-1.5 text-sm" value={simType} onChange={e => setSimType(e.target.value)}>
-                <option value="policy_change">Policy Change</option>
-                <option value="enforcement_increase">Enforcement Increase</option>
-                <option value="penalty_adjustment">Penalty Adjustment</option>
-                <option value="staffing_change">Staffing Change</option>
-                <option value="jurisdiction_reform">Jurisdiction Reform</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground">Target Industry</label>
-              <input className="w-full mt-1 rounded border bg-background px-2 py-1.5 text-sm" placeholder="e.g. Financial Services" value={targetIndustry} onChange={e => setTargetIndustry(e.target.value)} />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground">Parameter</label>
-              <input className="w-full mt-1 rounded border bg-background px-2 py-1.5 text-sm" value={paramKey} onChange={e => setParamKey(e.target.value)} />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground">Value</label>
-              <input className="w-full mt-1 rounded border bg-background px-2 py-1.5 text-sm" value={paramVal} onChange={e => setParamVal(e.target.value)} />
-            </div>
-          </div>
-          <Button size="sm" className="mt-3" onClick={() => runSim.mutate({ simulationType: simType as any, targetIndustry: targetIndustry || undefined, parameters: { [paramKey]: parseFloat(paramVal) || 1 } })} disabled={runSim.isPending}>
-            {runSim.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Play className="h-3.5 w-3.5 mr-1" />}
-            Run Simulation
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Simulation History */}
-      {history.data && history.data.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Recent Simulations</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {history.data.map((sim: any) => (
-                <div key={sim.id} className="flex items-center justify-between rounded-lg border p-3 text-sm">
-                  <div>
-                    <p className="font-medium">{sim.simulationType?.replace(/_/g, ' ')}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {sim.targetIndustry ?? 'System-wide'} â€¢ {new Date(Number(sim.createdAt)).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={sim.impactScore >= 70 ? 'destructive' : sim.impactScore >= 40 ? 'default' : 'outline'} className="text-xs">
-                      Impact: {sim.impactScore ?? 'â€”'}/100
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">{sim.status}</Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
-
-function TransparencyPanel() {
-  const stats = trpc.enginesV3.transparencyStats.useQuery();
-  const docs = trpc.enginesV3.transparencyDocuments.useQuery({ limit: 10 });
-  const genExplainer = trpc.enginesV3.generateExplainer.useMutation({
-    onSuccess: () => { stats.refetch(); docs.refetch(); },
-  });
-  const genBrief = trpc.enginesV3.generateBrief.useMutation({
-    onSuccess: () => { stats.refetch(); docs.refetch(); },
-  });
-
-  if (stats.isLoading) return <PanelSkeleton />;
-  const s = stats.data;
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <Newspaper className="h-5 w-5 text-cyan-400" /> Public Transparency Layer
-          </h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            Generate plain-language explainers, accountability reports, and crisis warnings
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => genExplainer.mutate({ patternName: 'System Overview' })} disabled={genExplainer.isPending}>
-            {genExplainer.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <FileText className="h-3.5 w-3.5 mr-1" />}
-            Explainer
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => genBrief.mutate({ briefType: 'industry_overview' })} disabled={genBrief.isPending}>
-            {genBrief.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <ScrollText className="h-3.5 w-3.5 mr-1" />}
-            Brief
-          </Button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <MetricCard icon={<FileText className="h-3.5 w-3.5" />} label="Documents" value={s?.totalDocuments ?? 0} />
-        <MetricCard icon={<Eye className="h-3.5 w-3.5" />} label="Explainers" value={s?.byType?.['pattern_explainer'] ?? 0} />
-        <MetricCard icon={<ScrollText className="h-3.5 w-3.5" />} label="Briefs" value={(s?.byType?.['accountability_report'] ?? 0) + (s?.byType?.['crisis_warning'] ?? 0)} />
-        <MetricCard icon={<BookOpen className="h-3.5 w-3.5" />} label="Audiences" value={Object.keys(s?.byAudience ?? {}).length} />
-      </div>
-
-      {/* Recent Documents */}
-      {docs.data && docs.data.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Recent Transparency Documents</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {docs.data.map((doc: any) => (
-                <div key={doc.id} className="flex items-center justify-between rounded-lg border p-3 text-sm">
-                  <div>
-                    <p className="font-medium">{doc.title}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {doc.documentType?.replace(/_/g, ' ')} â€¢ {doc.audienceLevel?.replace(/_/g, ' ')} â€¢ {new Date(Number(doc.createdAt)).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <Badge variant="outline" className="text-xs">{doc.status}</Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
-
-function DossierStudioPanel() {
-  const stats = trpc.enginesV3.dossierStats.useQuery();
-  const genDossier = trpc.enginesV3.generateDossier.useMutation({
-    onSuccess: () => stats.refetch(),
-  });
-  const [dossierType, setDossierType] = React.useState<string>("investigation_kit");
-  const [audience, setAudience] = React.useState<string>("journalist");
-  const [entityName, setEntityName] = React.useState("");
-  const [patternName, setPatternName] = React.useState("");
-
-  if (stats.isLoading) return <PanelSkeleton />;
-  const s = stats.data;
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <FolderArchive className="h-5 w-5 text-amber-400" /> Evidence Publishing & Dossier Engine
-          </h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            Generate investigation kits, legal bundles, policy packets, and regulator referrals
-          </p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <MetricCard icon={<FolderArchive className="h-3.5 w-3.5" />} label="Total Dossiers" value={s?.totalDossiers ?? 0} />
-        <MetricCard icon={<Gavel className="h-3.5 w-3.5" />} label="Legal Bundles" value={s?.byType?.['legal_bundle'] ?? 0} />
-        <MetricCard icon={<Search className="h-3.5 w-3.5" />} label="Investigation Kits" value={s?.byType?.['investigation_kit'] ?? 0} />
-        <MetricCard icon={<Landmark className="h-3.5 w-3.5" />} label="Regulator Referrals" value={s?.byType?.['regulator_referral'] ?? 0} />
-      </div>
-
-      {/* Generate Dossier */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm">Generate New Dossier</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs text-muted-foreground">Dossier Type</label>
-              <select className="w-full mt-1 rounded border bg-background px-2 py-1.5 text-sm" value={dossierType} onChange={e => setDossierType(e.target.value)}>
-                <option value="investigation_kit">Investigation Kit</option>
-                <option value="legal_bundle">Legal Bundle</option>
-                <option value="policy_packet">Policy Packet</option>
-                <option value="regulator_referral">Regulator Referral</option>
-                <option value="entity_dossier">Entity Dossier</option>
-                <option value="pattern_dossier">Pattern Dossier</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground">Audience</label>
-              <select className="w-full mt-1 rounded border bg-background px-2 py-1.5 text-sm" value={audience} onChange={e => setAudience(e.target.value)}>
-                <option value="journalist">Journalist</option>
-                <option value="attorney">Attorney</option>
-                <option value="policymaker">Policymaker</option>
-                <option value="regulator">Regulator</option>
-                <option value="advocate">Advocate</option>
-                <option value="internal">Internal</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground">Entity Name (optional)</label>
-              <input className="w-full mt-1 rounded border bg-background px-2 py-1.5 text-sm" placeholder="e.g. Amazon.com" value={entityName} onChange={e => setEntityName(e.target.value)} />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground">Pattern Name (optional)</label>
-              <input className="w-full mt-1 rounded border bg-background px-2 py-1.5 text-sm" placeholder="e.g. Consumer Fraud" value={patternName} onChange={e => setPatternName(e.target.value)} />
-            </div>
-          </div>
-          <Button size="sm" className="mt-3" onClick={() => genDossier.mutate({ dossierType: dossierType as any, audienceType: audience as any, entityName: entityName || undefined, patternName: patternName || undefined })} disabled={genDossier.isPending}>
-            {genDossier.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <FileOutput className="h-3.5 w-3.5 mr-1" />}
-            Generate Dossier
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Recent Dossiers */}
-      {s?.recentDossiers && s.recentDossiers.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Recent Dossiers</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {s.recentDossiers.map((d: any) => (
-                <div key={d.id} className="flex items-center justify-between rounded-lg border p-3 text-sm">
-                  <div>
-                    <p className="font-medium">{d.title}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {d.dossierType?.replace(/_/g, ' ')} â€¢ {d.audienceType} â€¢ {new Date(Number(d.createdAt)).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <Badge variant="outline" className="text-xs">{d.status}</Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
-
-function ExtCollabPanel() {
-  const stats = trpc.enginesV3.collaborationStats.useQuery();
-  const partners = trpc.enginesV3.listPartners.useQuery({});
-  const registerMut = trpc.enginesV3.registerPartner.useMutation({
-    onSuccess: () => { stats.refetch(); partners.refetch(); },
-  });
-  const [partnerName, setPartnerName] = React.useState("");
-  const [partnerOrg, setPartnerOrg] = React.useState("");
-  const [partnerType, setPartnerType] = React.useState<string>("journalist");
-  const [partnerEmail, setPartnerEmail] = React.useState("");
-
-  if (stats.isLoading) return <PanelSkeleton />;
-  const s = stats.data;
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <Share2 className="h-5 w-5 text-emerald-400" /> External Collaboration & Secure Sharing
-          </h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage partners, share dossiers securely, track access, and apply redactions
-          </p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <MetricCard icon={<Users className="h-3.5 w-3.5" />} label="Partners" value={s?.totalPartners ?? 0} />
-        <MetricCard icon={<Shield className="h-3.5 w-3.5" />} label="Verified" value={s?.verifiedPartners ?? 0} />
-        <MetricCard icon={<Share2 className="h-3.5 w-3.5" />} label="Active Shares" value={s?.activeShares ?? 0} />
-        <MetricCard icon={<Eye className="h-3.5 w-3.5" />} label="Total Views" value={s?.totalViews ?? 0} />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <MetricCard icon={<Download className="h-3.5 w-3.5" />} label="Downloads" value={s?.totalDownloads ?? 0} />
-        <MetricCard icon={<MessageSquare className="h-3.5 w-3.5" />} label="Comments" value={s?.totalComments ?? 0} />
-      </div>
-
-      {/* Register Partner */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm">Register New Partner</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs text-muted-foreground">Name</label>
-              <input className="w-full mt-1 rounded border bg-background px-2 py-1.5 text-sm" placeholder="Partner name" value={partnerName} onChange={e => setPartnerName(e.target.value)} />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground">Organization</label>
-              <input className="w-full mt-1 rounded border bg-background px-2 py-1.5 text-sm" placeholder="Organization" value={partnerOrg} onChange={e => setPartnerOrg(e.target.value)} />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground">Type</label>
-              <select className="w-full mt-1 rounded border bg-background px-2 py-1.5 text-sm" value={partnerType} onChange={e => setPartnerType(e.target.value)}>
-                <option value="journalist">Journalist</option>
-                <option value="attorney">Attorney</option>
-                <option value="regulator">Regulator</option>
-                <option value="advocate">Advocate</option>
-                <option value="researcher">Researcher</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground">Email</label>
-              <input className="w-full mt-1 rounded border bg-background px-2 py-1.5 text-sm" placeholder="email@example.com" value={partnerEmail} onChange={e => setPartnerEmail(e.target.value)} />
-            </div>
-          </div>
-          <Button size="sm" className="mt-3" onClick={() => { if (partnerName) { registerMut.mutate({ name: partnerName, organization: partnerOrg || undefined, partnerType: partnerType as any, email: partnerEmail || undefined }); setPartnerName(''); setPartnerOrg(''); setPartnerEmail(''); } }} disabled={registerMut.isPending || !partnerName}>
-            {registerMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Plus className="h-3.5 w-3.5 mr-1" />}
-            Register Partner
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Partner List */}
-      {partners.data && partners.data.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Registered Partners</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {partners.data.map((p: any) => (
-                <div key={p.id} className="flex items-center justify-between rounded-lg border p-3 text-sm">
-                  <div>
-                    <p className="font-medium">{p.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {p.organization ?? 'â€”'} â€¢ {p.partnerType} â€¢ {p.email ?? 'No email'}
-                    </p>
-                  </div>
-                  <Badge variant={p.verification_status === 'verified' ? 'default' : 'outline'} className="text-xs">
-                    {p.verification_status}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Recent Shares */}
-      {s?.recentShares && s.recentShares.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Recent Shares</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {s.recentShares.map((share: any) => (
-                <div key={share.id} className="flex items-center justify-between rounded-lg border p-3 text-sm">
-                  <div>
-                    <p className="font-medium">Dossier #{share.dossierId}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {share.accessLevel?.replace(/_/g, ' ')} â€¢ Views: {share.viewCount} â€¢ Downloads: {share.downloadCount}
-                    </p>
-                  </div>
-                  <Badge variant={share.revoked ? 'destructive' : 'outline'} className="text-xs">
-                    {share.revoked ? 'Revoked' : 'Active'}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
-
-/* â”€â”€ Entity Transparency Panel â”€â”€ */
-function EntityTransparencyPanel() {
-  const stats = trpc.enginesV4.entityTransparencyStats.useQuery();
-  const topEntities = trpc.enginesV4.topEntities.useQuery({ limit: 10 });
-  const [patternId, setPatternId] = useState("");
-  const brief = trpc.enginesV4.investigativeBrief.useQuery(
-    { patternId: Number(patternId) },
-    { enabled: !!patternId && !isNaN(Number(patternId)) }
-  );
-  const generateBreakdown = trpc.enginesV4.generateEntityBreakdown.useMutation();
-
-  if (stats.isLoading) return <PanelSkeleton />;
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <Scan className="h-5 w-5 text-cyan-400" /> Entity Transparency Layer
-        </h3>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <MetricCard label="Entity Summaries" value={String(stats.data?.totalSummaries ?? 0)} icon={<Fingerprint className="h-3.5 w-3.5" />} color="cyan" />
-        <MetricCard label="Agency Mappings" value={String(stats.data?.totalAgencyMappings ?? 0)} icon={<Building className="h-3.5 w-3.5" />} color="blue" />
-        <MetricCard label="Unique Entities" value={String(stats.data?.uniqueEntities ?? 0)} icon={<Users className="h-3.5 w-3.5" />} color="violet" />
-        <MetricCard label="Unique Agencies" value={String(stats.data?.uniqueAgencies ?? 0)} icon={<Landmark className="h-3.5 w-3.5" />} color="amber" />
-      </div>
-
-      {/* Generate Entity Breakdown */}
-      <Card>
-        <CardHeader><CardTitle className="text-sm">Generate Entity Breakdown</CardTitle></CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex gap-2">
-            <input
-              type="number"
-              placeholder="Pattern ID"
-              value={patternId}
-              onChange={(e) => setPatternId(e.target.value)}
-              className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm"
-            />
-            <Button size="sm" onClick={() => patternId && generateBreakdown.mutate({ patternId: Number(patternId) })}>
-              <Play className="h-3 w-3 mr-1" /> Generate
-            </Button>
-          </div>
-          {generateBreakdown.isSuccess && (
-            <div className="text-xs text-emerald-400">Generated {generateBreakdown.data.length} entity summaries</div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Top Entities Leaderboard */}
-      <Card>
-        <CardHeader><CardTitle className="text-sm">Top Entities Leaderboard</CardTitle></CardHeader>
-        <CardContent>
-          {topEntities.isLoading ? <PanelSkeleton /> : (
-            <div className="space-y-2">
-              {(topEntities.data ?? []).map((e: any, i: number) => (
-                <div key={i} className="flex items-center justify-between rounded-lg border border-border/50 p-3">
-                  <div className="flex items-center gap-3">
-                    <span className="text-lg font-bold font-mono text-muted-foreground w-6">#{i + 1}</span>
-                    <div>
-                      <div className="font-medium text-sm">{e.entityName}</div>
-                      <div className="text-xs text-muted-foreground">{e.entityType || "unknown"}</div>
-                    </div>
-                  </div>
-                  <div className="flex gap-4 text-xs">
-                    <span title="Signals"><Zap className="h-3 w-3 inline mr-1 text-amber-400" />{e.signalCount}</span>
-                    <span title="Patterns"><Network className="h-3 w-3 inline mr-1 text-violet-400" />{e.patternCount}</span>
-                    <span title="Streams"><Layers className="h-3 w-3 inline mr-1 text-cyan-400" />{e.streamCount}</span>
-                    <Badge variant="outline" className="text-xs">{e.confidenceScore}%</Badge>
-                  </div>
-                </div>
-              ))}
-              {(topEntities.data ?? []).length === 0 && <PanelEmpty label="No entities scored yet â€” run Generate Entity Breakdown first" />}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Investigative Brief */}
-      {brief.data && (
-        <Card>
-          <CardHeader><CardTitle className="text-sm">Investigative Brief â€” Pattern #{patternId}</CardTitle></CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <div><strong>Summary:</strong> {brief.data.patternSummary}</div>
-            <div><strong>Entities:</strong> {brief.data.entitiesInvolved.map((e: any) => e.entityName).join(", ") || "None"}</div>
-            <div><strong>Agencies:</strong> {brief.data.agenciesResponsible.map((a: any) => a.agencyName).join(", ") || "None"}</div>
-            <div><strong>Signals:</strong> {brief.data.signalTimeline.length} events</div>
-            <div><strong>Litigation:</strong> {brief.data.litigationActivity.length} cases</div>
-            <div><strong>Regulatory Actions:</strong> {brief.data.regulatoryActions.length} actions</div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
-
-/* â”€â”€ Evidence Threshold Panel â”€â”€ */
-function EvidenceThresholdPanel() {
-  const stats = trpc.enginesV4.evidenceThresholdStats.useQuery();
-  const visible = trpc.enginesV4.visibleEntities.useQuery();
-  const provisional = trpc.enginesV4.provisionalEntities.useQuery();
-  const [entityName, setEntityName] = useState("");
-  const scoreMut = trpc.enginesV4.scoreEvidence.useMutation();
-
-  if (stats.isLoading) return <PanelSkeleton />;
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <Shield className="h-5 w-5 text-emerald-400" /> Entity Evidence Threshold System
-        </h3>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <MetricCard label="Total Scored" value={String(stats.data?.totalScored ?? 0)} icon={<Hash className="h-3.5 w-3.5" />} color="blue" />
-        <MetricCard label="Visible" value={String(stats.data?.visibleCount ?? 0)} icon={<Eye className="h-3.5 w-3.5" />} color="emerald" />
-        <MetricCard label="Provisional" value={String(stats.data?.provisionalCount ?? 0)} icon={<AlertTriangle className="h-3.5 w-3.5" />} color="amber" />
-        <MetricCard label="Avg Confidence" value={`${stats.data?.avgConfidence ?? 0}%`} icon={<Gauge className="h-3.5 w-3.5" />} color="violet" />
-      </div>
-
-      {/* Score Entity */}
-      <Card>
-        <CardHeader><CardTitle className="text-sm">Score Entity Evidence</CardTitle></CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="Entity name (e.g. Amazon.com)"
-              value={entityName}
-              onChange={(e) => setEntityName(e.target.value)}
-              className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm"
-            />
-            <Button size="sm" onClick={() => entityName && scoreMut.mutate({ entityName })}>
-              <Calculator className="h-3 w-3 mr-1" /> Score
-            </Button>
-          </div>
-          {scoreMut.isSuccess && scoreMut.data && (
-            <div className="rounded-lg border border-border/50 p-3 space-y-1 text-sm">
-              <div className="flex justify-between"><span>Confidence:</span><Badge variant="outline">{scoreMut.data.confidenceScore}%</Badge></div>
-              <div className="flex justify-between"><span>Signals:</span><span className="font-mono">{scoreMut.data.signalCount}</span></div>
-              <div className="flex justify-between"><span>Complaints:</span><span className="font-mono">{scoreMut.data.complaintCount}</span></div>
-              <div className="flex justify-between"><span>Streams:</span><span className="font-mono">{scoreMut.data.streamCount}</span></div>
-              <div className="flex justify-between"><span>Status:</span><Badge className={scoreMut.data.visibilityStatus === "visible" ? "bg-emerald-500/20 text-emerald-400" : "bg-amber-500/20 text-amber-400"}>{scoreMut.data.visibilityStatus}</Badge></div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Visible Entities */}
-      <Card>
-        <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Eye className="h-4 w-4 text-emerald-400" /> Visible Entities</CardTitle></CardHeader>
-        <CardContent>
-          {visible.isLoading ? <PanelSkeleton /> : (
-            <div className="space-y-1">
-              {(visible.data ?? []).slice(0, 10).map((e: any, i: number) => (
-                <div key={i} className="flex items-center justify-between text-sm py-1 border-b border-border/30">
-                  <span className="font-medium">{e.entityName}</span>
-                  <div className="flex gap-3 text-xs text-muted-foreground">
-                    <span>Confidence: {e.confidenceScore}%</span>
-                    <span>Signals: {e.signalCount}</span>
-                    <span>Streams: {e.streamCount}</span>
-                  </div>
-                </div>
-              ))}
-              {(visible.data ?? []).length === 0 && <PanelEmpty label="No visible entities â€” score entities first" />}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Provisional Entities */}
-      <Card>
-        <CardHeader><CardTitle className="text-sm flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-amber-400" /> Provisional Entities (below threshold)</CardTitle></CardHeader>
-        <CardContent>
-          {provisional.isLoading ? <PanelSkeleton /> : (
-            <div className="space-y-1">
-              {(provisional.data ?? []).slice(0, 10).map((e: any, i: number) => (
-                <div key={i} className="flex items-center justify-between text-sm py-1 border-b border-border/30">
-                  <span className="font-medium text-muted-foreground">{e.entityName}</span>
-                  <div className="flex gap-3 text-xs text-muted-foreground">
-                    <span>Confidence: {e.confidenceScore}%</span>
-                    <span>Signals: {e.signalCount}</span>
-                    <span>Streams: {e.streamCount}</span>
-                  </div>
-                </div>
-              ))}
-              {(provisional.data ?? []).length === 0 && <PanelEmpty label="No provisional entities" />}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-/* â”€â”€ Alerting Panel â”€â”€ */
-function AlertingPanel() {
-  const stats = trpc.enginesV4.alertingStats.useQuery();
-  const subs = trpc.enginesV4.mySubscriptions.useQuery();
-  const notifications = trpc.enginesV4.myNotifications.useQuery({ limit: 20 });
-  const checkAlerts = trpc.enginesV4.checkAlerts.useMutation();
-  const processDeliveries = trpc.enginesV4.processDeliveries.useMutation();
-  const [subForm, setSubForm] = useState({ type: "pattern", targetName: "" });
-  const createSub = trpc.enginesV4.createSubscription.useMutation();
-  const utils = trpc.useUtils();
-
-  if (stats.isLoading) return <PanelSkeleton />;
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <Bell className="h-5 w-5 text-amber-400" /> Public Alerting & Subscriptions
-        </h3>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => checkAlerts.mutate()}>
-            <Zap className="h-3 w-3 mr-1" /> Check Triggers
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => processDeliveries.mutate()}>
-            <Send className="h-3 w-3 mr-1" /> Process Deliveries
-          </Button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <MetricCard label="Subscriptions" value={String(stats.data?.totalSubscriptions ?? 0)} icon={<Bell className="h-3.5 w-3.5" />} color="amber" />
-        <MetricCard label="Active" value={String(stats.data?.activeSubscriptions ?? 0)} icon={<CheckCircle2 className="h-3.5 w-3.5" />} color="emerald" />
-        <MetricCard label="Events" value={String(stats.data?.totalEvents ?? 0)} icon={<Zap className="h-3.5 w-3.5" />} color="blue" />
-        <MetricCard label="Deliveries" value={String(stats.data?.totalDeliveries ?? 0)} icon={<Send className="h-3.5 w-3.5" />} color="violet" />
-      </div>
-
-      {/* Create Subscription */}
-      <Card>
-        <CardHeader><CardTitle className="text-sm">Create Subscription</CardTitle></CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex gap-2">
-            <select
-              value={subForm.type}
-              onChange={(e) => setSubForm(f => ({ ...f, type: e.target.value }))}
-              className="rounded-md border border-border bg-background px-3 py-2 text-sm"
-            >
-              <option value="pattern">Pattern</option>
-              <option value="entity">Entity</option>
-              <option value="industry">Industry</option>
-              <option value="jurisdiction">Jurisdiction</option>
-            </select>
-            <input
-              type="text"
-              placeholder="Target name"
-              value={subForm.targetName}
-              onChange={(e) => setSubForm(f => ({ ...f, targetName: e.target.value }))}
-              className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm"
-            />
-            <Button size="sm" onClick={() => {
-              if (subForm.targetName) {
-                createSub.mutate({ subscriptionType: subForm.type, targetName: subForm.targetName }, {
-                  onSuccess: () => { utils.enginesV4.mySubscriptions.invalidate(); setSubForm({ type: "pattern", targetName: "" }); }
-                });
-              }
-            }}>
-              <Plus className="h-3 w-3 mr-1" /> Subscribe
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* My Subscriptions */}
-      <Card>
-        <CardHeader><CardTitle className="text-sm">My Subscriptions</CardTitle></CardHeader>
-        <CardContent>
-          <div className="space-y-1">
-            {(subs.data ?? []).map((s: any) => (
-              <div key={s.id} className="flex items-center justify-between text-sm py-1.5 border-b border-border/30">
-                <div><Badge variant="outline" className="mr-2 text-xs">{s.subscriptionType}</Badge>{s.targetName}</div>
-                <Badge className={s.isActive ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400"}>{s.isActive ? "Active" : "Paused"}</Badge>
-              </div>
-            ))}
-            {(subs.data ?? []).length === 0 && <PanelEmpty label="No subscriptions yet" />}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Notifications */}
-      <Card>
-        <CardHeader><CardTitle className="text-sm">Recent Notifications</CardTitle></CardHeader>
-        <CardContent>
-          <div className="space-y-1">
-            {(notifications.data ?? []).map((n: any) => (
-              <div key={n.id} className="flex items-center justify-between text-sm py-1.5 border-b border-border/30">
-                <div className="flex items-center gap-2">
-                  <Badge className={n.severity === "critical" ? "bg-red-500/20 text-red-400" : n.severity === "high" ? "bg-orange-500/20 text-orange-400" : "bg-blue-500/20 text-blue-400"}>{n.severity}</Badge>
-                  <span>{n.eventTitle}</span>
-                </div>
-                <span className="text-xs text-muted-foreground">{new Date(n.triggeredAt).toLocaleDateString()}</span>
-              </div>
-            ))}
-            {(notifications.data ?? []).length === 0 && <PanelEmpty label="No notifications" />}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-/* â”€â”€ System Map Panel â”€â”€ */
-function SystemMapPanel() {
-  const stats = trpc.enginesV4.mapStats.useQuery();
-  const mapData = trpc.enginesV4.mapData.useQuery();
-  const buildMap = trpc.enginesV4.buildMap.useMutation();
-  const utils = trpc.useUtils();
-
-  if (stats.isLoading) return <PanelSkeleton />;
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <Waypoints className="h-5 w-5 text-violet-400" /> Global Systemic Intelligence Map
-        </h3>
-        <Button variant="outline" size="sm" onClick={() => buildMap.mutate(undefined, {
-          onSuccess: () => { utils.enginesV4.mapData.invalidate(); utils.enginesV4.mapStats.invalidate(); }
-        })}>
-          {buildMap.isPending ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Play className="h-3 w-3 mr-1" />}
-          Build Map from Signals
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <MetricCard label="Nodes" value={String(stats.data?.totalNodes ?? 0)} icon={<Globe className="h-3.5 w-3.5" />} color="violet" />
-        <MetricCard label="Edges" value={String(stats.data?.totalEdges ?? 0)} icon={<Link2 className="h-3.5 w-3.5" />} color="blue" />
-        <MetricCard label="Annotations" value={String(stats.data?.totalAnnotations ?? 0)} icon={<MessageSquare className="h-3.5 w-3.5" />} color="amber" />
-        <MetricCard label="Avg Risk" value={`${stats.data?.avgRiskScore ?? 0}`} icon={<AlertTriangle className="h-3.5 w-3.5" />} color="red" />
-      </div>
-
-      {buildMap.isSuccess && (
-        <div className="text-xs text-emerald-400 p-2 rounded bg-emerald-500/10">
-          Map built: {buildMap.data.nodesCreated} nodes, {buildMap.data.edgesCreated} edges created
-        </div>
-      )}
-
-      {/* Node List */}
-      <Card>
-        <CardHeader><CardTitle className="text-sm">Map Nodes</CardTitle></CardHeader>
-        <CardContent>
-          {mapData.isLoading ? <PanelSkeleton /> : (
-            <div className="space-y-1">
-              {(mapData.data?.nodes ?? []).slice(0, 20).map((n: any) => (
-                <div key={n.id} className="flex items-center justify-between text-sm py-1.5 border-b border-border/30">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs">{n.nodeType}</Badge>
-                    <span className="font-medium">{n.nodeName}</span>
-                  </div>
-                  <div className="flex gap-3 text-xs text-muted-foreground">
-                    <span>Risk: {n.riskScore ?? 0}</span>
-                    <span>Patterns: {n.patternCount ?? 0}</span>
-                  </div>
-                </div>
-              ))}
-              {(mapData.data?.nodes ?? []).length === 0 && <PanelEmpty label="No nodes â€” click Build Map from Signals" />}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Edge List */}
-      <Card>
-        <CardHeader><CardTitle className="text-sm">Map Edges (Relationships)</CardTitle></CardHeader>
-        <CardContent>
-          {mapData.isLoading ? <PanelSkeleton /> : (
-            <div className="space-y-1">
-              {(mapData.data?.edges ?? []).slice(0, 20).map((e: any) => (
-                <div key={e.id} className="flex items-center justify-between text-sm py-1.5 border-b border-border/30">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs">#{e.sourceNodeId}</span>
-                    <ArrowUpRight className="h-3 w-3 text-muted-foreground" />
-                    <span className="font-mono text-xs">#{e.targetNodeId}</span>
-                  </div>
-                  <Badge variant="outline" className="text-xs">{e.edgeType}</Badge>
-                </div>
-              ))}
-              {(mapData.data?.edges ?? []).length === 0 && <PanelEmpty label="No edges" />}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-/* â”€â”€ Failure Prediction Panel â”€â”€ */
-function FailurePredictionPanel() {
-  const stats = trpc.enginesV4.failurePredictionStats.useQuery();
-  const profiles = trpc.enginesV4.failureProfiles.useQuery();
-
-  if (stats.isLoading) return <PanelSkeleton />;
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <Factory className="h-5 w-5 text-red-400" /> Institutional Failure Prediction
-        </h3>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <MetricCard label="Profiles" value={String(stats.data?.totalProfiles ?? 0)} icon={<Building className="h-3.5 w-3.5" />} color="red" />
-        <MetricCard label="High Risk" value={String(stats.data?.highRiskCount ?? 0)} icon={<AlertOctagon className="h-3.5 w-3.5" />} color="orange" />
-        <MetricCard label="Timeline Events" value={String(stats.data?.totalTimelineEvents ?? 0)} icon={<Clock className="h-3.5 w-3.5" />} color="blue" />
-        <MetricCard label="Avg Probability" value={`${stats.data?.avgProbability ?? 0}%`} icon={<Gauge className="h-3.5 w-3.5" />} color="amber" />
-      </div>
-
-      {/* Failure Profiles */}
-      <Card>
-        <CardHeader><CardTitle className="text-sm">Institution Risk Profiles</CardTitle></CardHeader>
-        <CardContent>
-          {profiles.isLoading ? <PanelSkeleton /> : (
-            <div className="space-y-2">
-              {(profiles.data ?? []).map((p: any) => (
-                <div key={p.id} className="rounded-lg border border-border/50 p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="font-medium text-sm">{p.institutionName || `Institution #${p.institutionId}`}</div>
-                    <Badge className={
-                      p.failureProbability >= 70 ? "bg-red-500/20 text-red-400" :
-                      p.failureProbability >= 40 ? "bg-orange-500/20 text-orange-400" :
-                      "bg-emerald-500/20 text-emerald-400"
-                    }>
-                      {p.failureProbability}% failure risk
-                    </Badge>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground">
-                    <span>Pressure: {p.pressureIndex ?? 0}</span>
-                    <span>Complaints: {p.complaintVolume ?? 0}</span>
-                    <span>Enforcement: {p.enforcementActions ?? 0}</span>
-                  </div>
-                </div>
-              ))}
-              {(profiles.data ?? []).length === 0 && <PanelEmpty label="No failure profiles â€” run upsertFailureProfile to create" />}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-/* â”€â”€ Investigative Query Engine Panel â”€â”€ */
-function InvestigativeQueryPanel() {
-  const [queryText, setQueryText] = useState("");
-  const [activeResult, setActiveResult] = useState<any>(null);
-  const stats = trpc.enginesV4.investigativeQueryStats.useQuery();
-  const suggested = trpc.enginesV4.suggestedQueries.useQuery();
-  const history = trpc.enginesV4.queryHistory.useQuery();
-  const runQuery = trpc.enginesV4.runInvestigativeQuery.useMutation({
-    onSuccess: (data) => {
-      setActiveResult(data);
-      history.refetch();
-      stats.refetch();
-    },
-  });
-
-  const handleSubmit = () => {
-    if (!queryText.trim()) return;
-    runQuery.mutate({ queryText: queryText.trim() });
-  };
-
-  const handleSuggested = (text: string) => {
-    setQueryText(text);
-    runQuery.mutate({ queryText: text });
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <SearchCode className="h-5 w-5 text-violet-400" /> Investigative Query Engine
-        </h3>
-        <div className="flex gap-2 text-xs text-muted-foreground">
-          <span>{stats.data?.totalQueries ?? 0} queries</span>
-          <span>Â·</span>
-          <span>{stats.data?.totalResults ?? 0} results</span>
-        </div>
-      </div>
-
-      {/* Query Input */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={queryText}
-              onChange={(e) => setQueryText(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-              placeholder="Ask an investigative question... e.g. 'Companies with more than 25 complaints'"
-              className="flex-1 rounded-lg border border-border/50 bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30"
-            />
-            <Button
-              onClick={handleSubmit}
-              disabled={runQuery.isPending || !queryText.trim()}
-              className="gap-1.5 bg-violet-600 hover:bg-violet-700"
-            >
-              {runQuery.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-              Query
-            </Button>
-          </div>
-
-          {/* Suggested Queries */}
-          {!activeResult && (suggested.data ?? []).length > 0 && (
-            <div className="mt-4">
-              <div className="text-xs text-muted-foreground mb-2">Suggested queries:</div>
-              <div className="flex flex-wrap gap-1.5">
-                {(suggested.data ?? []).map((sq: any, i: number) => (
-                  <button
-                    key={i}
-                    onClick={() => handleSuggested(sq.text)}
-                    className="rounded-full border border-border/50 px-3 py-1 text-xs hover:bg-violet-500/10 hover:border-violet-500/30 transition-colors"
-                  >
-                    {sq.text}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Parsed Query Display */}
-      {activeResult?.parsedQuery && (
-        <Card>
-          <CardHeader><CardTitle className="text-sm">Parsed Query Filters</CardTitle></CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {activeResult.parsedQuery.entityType && (
-                <Badge className="bg-blue-500/20 text-blue-400">Type: {activeResult.parsedQuery.entityType}</Badge>
-              )}
-              {activeResult.parsedQuery.industry && (
-                <Badge className="bg-green-500/20 text-green-400">Industry: {activeResult.parsedQuery.industry}</Badge>
-              )}
-              {activeResult.parsedQuery.jurisdiction && (
-                <Badge className="bg-amber-500/20 text-amber-400">Jurisdiction: {activeResult.parsedQuery.jurisdiction}</Badge>
-              )}
-              {activeResult.parsedQuery.complaintThreshold && (
-                <Badge className="bg-red-500/20 text-red-400">Complaints â‰¥ {activeResult.parsedQuery.complaintThreshold}</Badge>
-              )}
-              {activeResult.parsedQuery.lawsuitThreshold && (
-                <Badge className="bg-orange-500/20 text-orange-400">Lawsuits â‰¥ {activeResult.parsedQuery.lawsuitThreshold}</Badge>
-              )}
-              {activeResult.parsedQuery.sortBy && (
-                <Badge className="bg-violet-500/20 text-violet-400">Sort: {activeResult.parsedQuery.sortBy}</Badge>
-              )}
-              {activeResult.parsedQuery.limit && (
-                <Badge className="bg-slate-500/20 text-slate-400">Limit: {activeResult.parsedQuery.limit}</Badge>
-              )}
-            </div>
-            <div className="text-xs text-muted-foreground mt-2">
-              {activeResult.totalResults} total matches Â· showing top {activeResult.results.length}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Results */}
-      {activeResult?.results && activeResult.results.length > 0 && (
-        <Card>
-          <CardHeader><CardTitle className="text-sm">Query Results</CardTitle></CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {activeResult.results.map((r: any) => (
-                <div key={r.id} className="rounded-lg border border-border/50 p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono text-muted-foreground">#{r.rank}</span>
-                      <span className="font-medium text-sm">{r.entityName}</span>
-                      {r.entityType && r.entityType !== "unknown" && (
-                        <Badge variant="outline" className="text-[10px]">{r.entityType}</Badge>
-                      )}
-                    </div>
-                    <Badge className={
-                      r.confidenceScore >= 70 ? "bg-emerald-500/20 text-emerald-400" :
-                      r.confidenceScore >= 40 ? "bg-amber-500/20 text-amber-400" :
-                      "bg-slate-500/20 text-slate-400"
-                    }>
-                      {r.confidenceScore}% confidence
-                    </Badge>
-                  </div>
-                  <div className="grid grid-cols-5 gap-2 text-xs text-muted-foreground mb-2">
-                    <span>Signals: {r.signalCount}</span>
-                    <span>Complaints: {r.complaintCount}</span>
-                    <span>Lawsuits: {r.lawsuitCount}</span>
-                    <span>Enforcement: {r.enforcementCount}</span>
-                    <span>Streams: {r.streamCount}</span>
-                  </div>
-                  {r.jurisdictions && r.jurisdictions.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-1">
-                      {r.jurisdictions.slice(0, 5).map((j: string, i: number) => (
-                        <span key={i} className="rounded bg-blue-500/10 px-1.5 py-0.5 text-[10px] text-blue-400">{j}</span>
-                      ))}
-                      {r.jurisdictions.length > 5 && <span className="text-[10px] text-muted-foreground">+{r.jurisdictions.length - 5} more</span>}
-                    </div>
-                  )}
-                  {r.sourceStreams && r.sourceStreams.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-2">
-                      {r.sourceStreams.map((s: string, i: number) => (
-                        <span key={i} className="rounded bg-violet-500/10 px-1.5 py-0.5 text-[10px] text-violet-400">{s.replace(/_/g, " ")}</span>
-                      ))}
-                    </div>
-                  )}
-                  {r.safeLanguageSummary && (
-                    <div className="text-xs text-muted-foreground italic border-l-2 border-violet-500/30 pl-2 mt-1">
-                      {r.safeLanguageSummary}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {activeResult?.results && activeResult.results.length === 0 && (
-        <PanelEmpty label="No entities matched your query filters. Try broadening your search." />
-      )}
-
-      {/* Query History */}
-      <Card>
-        <CardHeader><CardTitle className="text-sm flex items-center gap-2"><History className="h-4 w-4" /> Query History</CardTitle></CardHeader>
-        <CardContent>
-          {history.isLoading ? <PanelSkeleton /> : (
-            <div className="space-y-1">
-              {(history.data ?? []).slice(0, 10).map((q: any) => (
-                <div key={q.id} className="flex items-center justify-between rounded border border-border/30 px-3 py-2 text-xs">
-                  <span className="truncate flex-1 mr-2">{q.queryText}</span>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-[10px]">{q.resultCount ?? 0} results</Badge>
-                    <span className="text-muted-foreground">{new Date(q.createdAt).toLocaleString()}</span>
-                  </div>
-                </div>
-              ))}
-              {(history.data ?? []).length === 0 && <PanelEmpty label="No queries yet â€” try one above" />}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-export default function MissionControl() {
-  const { user, loading } = useAuth();
-  const [mainTab, setMainTab] = useState("operations");
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    window.location.href = getLoginUrl();
-    return null;
-  }
-
-  return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
-      <div className="border-b bg-card/50">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                <Activity className="h-6 w-6 text-primary" />
-                Mission Control
-              </h1>
-              <p className="text-sm text-muted-foreground mt-0.5">
-                Admin operational dashboard â€” system health, knowledge coverage, and case activity
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <nav className="flex items-center gap-1">
-                <Link href="/mudroom">
-                  <Button variant="ghost" size="sm" className="gap-1.5 text-xs">
-                    <DoorOpen className="h-3.5 w-3.5" /> Mudroom
-                  </Button>
-                </Link>
-                <Link href="/workshop">
-                  <Button variant="ghost" size="sm" className="gap-1.5 text-xs">
-                    <Wrench className="h-3.5 w-3.5" /> Workshop
-                  </Button>
-                </Link>
-                <Link href="/upload">
-                  <Button variant="ghost" size="sm" className="gap-1.5 text-xs">
-                    <Upload className="h-3.5 w-3.5" /> Dashboard
-                  </Button>
-                </Link>
-                <Link href="/lighthouse">
-                  <Button variant="ghost" size="sm" className="gap-1.5 text-xs">
-                    <Lamp className="h-3.5 w-3.5" /> Lighthouse
-                  </Button>
-                </Link>
-              </nav>
-              <div className="w-px h-6 bg-border" />
-              <Badge variant="outline" className="text-xs">
-                Admin Only
-              </Badge>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        <Tabs value={mainTab} onValueChange={setMainTab} className="space-y-6">
-          <TabsList>
-            {shouldRenderPanel("operations") && <TabsTrigger value="operations" className="gap-1.5">
-              <Activity className="h-3.5 w-3.5" /> Operations
-            </TabsTrigger>}
-            {shouldRenderPanel("registry") && <TabsTrigger value="registry" className="gap-1.5">
-              <Database className="h-3.5 w-3.5" /> Registry
-            </TabsTrigger>}
-            {shouldRenderPanel("ingestion") && <TabsTrigger value="ingestion" className="gap-1.5">
-              <Radio className="h-3.5 w-3.5" /> Live Data
-            </TabsTrigger>}
-            {shouldRenderPanel("kb-explorer") && <TabsTrigger value="kb-explorer" className="gap-1.5">
-              <Database className="h-3.5 w-3.5" /> KB Explorer
-            </TabsTrigger>}
-            {shouldRenderPanel("governance") && <TabsTrigger value="governance" className="gap-1.5">
-              <Shield className="h-3.5 w-3.5" /> Signal Governance
-            </TabsTrigger>}
-{shouldRenderPanel("patterns") &&             <TabsTrigger value="patterns" className="gap-1.5">
-              <Network className="h-3.5 w-3.5" /> Pattern Registry
-            </TabsTrigger>}
-{shouldRenderPanel("trends") &&             <TabsTrigger value="trends" className="gap-1.5">
-              <Gauge className="h-3.5 w-3.5" /> Trends & Pressure
-            </TabsTrigger>}
-{shouldRenderPanel("strategy-paths") &&             <TabsTrigger value="strategy-paths" className="gap-1.5">
-              <Route className="h-3.5 w-3.5" /> Strategy Paths
-            </TabsTrigger>}
-{shouldRenderPanel("outcomes") &&             <TabsTrigger value="outcomes" className="gap-1.5">
-              <Target className="h-3.5 w-3.5" /> Outcomes
-            </TabsTrigger>}
-{shouldRenderPanel("interventions") &&             <TabsTrigger value="interventions" className="gap-1.5">
-              <Siren className="h-3.5 w-3.5" /> Interventions
-            </TabsTrigger>}
-{shouldRenderPanel("policy") &&             <TabsTrigger value="policy" className="gap-1.5">
-              <Landmark className="h-3.5 w-3.5" /> Policy Impact
-            </TabsTrigger>}
-            {shouldRenderPanel("remedy-templates") && <TabsTrigger value="remedy-templates" className="gap-1.5">
-              <Calculator className="h-3.5 w-3.5" /> Remedy Templates
-            </TabsTrigger>}
-{shouldRenderPanel("memory-strategy") &&             <TabsTrigger value="memory-strategy" className="gap-1.5">
-              <Brain className="h-3.5 w-3.5" /> Memory Strategy
-            </TabsTrigger>}
-{shouldRenderPanel("reform-proposals") &&             <TabsTrigger value="reform-proposals" className="gap-1.5">
-              <FileOutput className="h-3.5 w-3.5" /> Reform Proposals
-            </TabsTrigger>}
-{shouldRenderPanel("coalitions") &&             <TabsTrigger value="coalitions" className="gap-1.5">
-              <Handshake className="h-3.5 w-3.5" /> Coalitions
-            </TabsTrigger>}
-            {shouldRenderPanel("evidence-lab") && <TabsTrigger value="evidence-lab" className="gap-1.5">
-              <Microscope className="h-3.5 w-3.5" /> Evidence Lab
-            </TabsTrigger>}
-            {shouldRenderPanel("claim-validation") && <TabsTrigger value="claim-validation" className="gap-1.5">
-              <ClipboardCheck className="h-3.5 w-3.5" /> Claim Validation
-            </TabsTrigger>}
-            {shouldRenderPanel("remedy-feasibility") && <TabsTrigger value="remedy-feasibility" className="gap-1.5">
-              <Gavel className="h-3.5 w-3.5" /> Remedy Feasibility
-            </TabsTrigger>}
-            {shouldRenderPanel("procedural-paths") && <TabsTrigger value="procedural-paths" className="gap-1.5">
-              <MapIcon className="h-3.5 w-3.5" /> Procedural Paths
-            </TabsTrigger>}
-            {shouldRenderPanel("hardening-pipeline") && <TabsTrigger value="hardening-pipeline" className="gap-1.5">
-              <Layers className="h-3.5 w-3.5" /> Hardening Pipeline
-            </TabsTrigger>}
-{shouldRenderPanel("coalition-intel") &&             <TabsTrigger value="coalition-intel" className="gap-1.5">
-              <Binoculars className="h-3.5 w-3.5" /> Coalition Intel
-            </TabsTrigger>}
-{shouldRenderPanel("campaign-engine") &&             <TabsTrigger value="campaign-engine" className="gap-1.5">
-              <Megaphone className="h-3.5 w-3.5" /> Campaign Engine
-            </TabsTrigger>}
-            {shouldRenderPanel("knowledge-health") && <TabsTrigger value="knowledge-health" className="gap-1.5">
-              <HeartPulse className="h-3.5 w-3.5" /> Knowledge Health
-            </TabsTrigger>}
-{shouldRenderPanel("gap-analysis") &&             <TabsTrigger value="gap-analysis" className="gap-1.5">
-              <Grid3X3 className="h-3.5 w-3.5" /> Gap Analysis
-            </TabsTrigger>}
-{shouldRenderPanel("harm-index") &&             <TabsTrigger value="harm-index" className="gap-1.5">
-              <Flame className="h-3.5 w-3.5" /> Harm Index
-            </TabsTrigger>}
-{shouldRenderPanel("risk-forecast") &&             <TabsTrigger value="risk-forecast" className="gap-1.5">
-              <Radar className="h-3.5 w-3.5" /> Risk Forecast
-            </TabsTrigger>}
-{shouldRenderPanel("harm-map") &&             <TabsTrigger value="harm-map" className="gap-1.5">
-              <Network className="h-3.5 w-3.5" /> Harm Map
-            </TabsTrigger>}
-            {shouldRenderPanel("front-door") && <TabsTrigger value="front-door" className="gap-1.5">
-              <MessageSquare className="h-3.5 w-3.5" /> Front Door
-            </TabsTrigger>}
-            {shouldRenderPanel("lobbying") && <TabsTrigger value="lobbying" className="gap-1.5">
-              <DollarSign className="h-3.5 w-3.5" /> Lobbying
-            </TabsTrigger>}
-            {shouldRenderPanel("litigation") && <TabsTrigger value="litigation" className="gap-1.5">
-              <Gavel className="h-3.5 w-3.5" /> Litigation
-            </TabsTrigger>}
-            {shouldRenderPanel("admin-decisions") && <TabsTrigger value="admin-decisions" className="gap-1.5">
-              <Scale className="h-3.5 w-3.5" /> Admin Decisions
-            </TabsTrigger>}
-            {shouldRenderPanel("verified-reports") && <TabsTrigger value="verified-reports" className="gap-1.5">
-              <Shield className="h-3.5 w-3.5" /> Verified Reports
-            </TabsTrigger>}
-            {shouldRenderPanel("advocacy") && <TabsTrigger value="advocacy" className="gap-1.5">
-              <Megaphone className="h-3.5 w-3.5" /> Advocacy
-            </TabsTrigger>}
-            {shouldRenderPanel("cross-stream") && <TabsTrigger value="cross-stream" className="gap-1.5">
-              <GitCompareArrows className="h-3.5 w-3.5" /> Cross-Stream
-            </TabsTrigger>}
-            {shouldRenderPanel("time-travel") && <TabsTrigger value="time-travel" className="gap-1.5">
-              <History className="h-3.5 w-3.5" /> Time Travel
-            </TabsTrigger>}
-            {shouldRenderPanel("entity-intel") && <TabsTrigger value="entity-intel" className="gap-1.5">
-              <Fingerprint className="h-3.5 w-3.5" /> Entity Intel
-            </TabsTrigger>}
-            {shouldRenderPanel("institutions") && <TabsTrigger value="institutions" className="gap-1.5">
-              <Building className="h-3.5 w-3.5" /> Institutions
-            </TabsTrigger>}
-            {shouldRenderPanel("reg-capture") && <TabsTrigger value="reg-capture" className="gap-1.5">
-              <ShieldAlert className="h-3.5 w-3.5" /> Reg. Capture
-            </TabsTrigger>}
-            {shouldRenderPanel("crisis-predict") && <TabsTrigger value="crisis-predict" className="gap-1.5">
-              <AlertOctagon className="h-3.5 w-3.5" /> Crisis Predict
-            </TabsTrigger>}
-            {shouldRenderPanel("simulation-lab") && <TabsTrigger value="simulation-lab" className="gap-1.5">
-              <FlaskConical className="h-3.5 w-3.5" /> Simulation Lab
-            </TabsTrigger>}
-            {shouldRenderPanel("transparency") && <TabsTrigger value="transparency" className="gap-1.5">
-              <Newspaper className="h-3.5 w-3.5" /> Transparency
-            </TabsTrigger>}
-            {shouldRenderPanel("dossier-studio") && <TabsTrigger value="dossier-studio" className="gap-1.5">
-              <FolderArchive className="h-3.5 w-3.5" /> Dossier Studio
-            </TabsTrigger>}
-            {shouldRenderPanel("ext-collab") && <TabsTrigger value="ext-collab" className="gap-1.5">
-              <Share2 className="h-3.5 w-3.5" /> Ext. Collaboration
-            </TabsTrigger>}
-            {shouldRenderPanel("entity-transparency") && <TabsTrigger value="entity-transparency" className="gap-1.5">
-              <Scan className="h-3.5 w-3.5" /> Entity Transparency
-            </TabsTrigger>}
-            {shouldRenderPanel("evidence-threshold") && <TabsTrigger value="evidence-threshold" className="gap-1.5">
-              <Shield className="h-3.5 w-3.5" /> Evidence Threshold
-            </TabsTrigger>}
-            {shouldRenderPanel("alerting") && <TabsTrigger value="alerting" className="gap-1.5">
-              <Bell className="h-3.5 w-3.5" /> Alerting
-            </TabsTrigger>}
-            {shouldRenderPanel("system-map") && <TabsTrigger value="system-map" className="gap-1.5">
-              <Waypoints className="h-3.5 w-3.5" /> System Map
-            </TabsTrigger>}
-            {shouldRenderPanel("failure-predict") && <TabsTrigger value="failure-predict" className="gap-1.5">
-              <Factory className="h-3.5 w-3.5" /> Failure Prediction
-            </TabsTrigger>}
-            {shouldRenderPanel("investigative-query") && <TabsTrigger value="investigative-query" className="gap-1.5">
-              <SearchCode className="h-3.5 w-3.5" /> Investigative Query
-            </TabsTrigger>}
-            {shouldRenderPanel("metadata-health") && <TabsTrigger value="metadata-health" className="gap-1.5">
-              <Database className="h-3.5 w-3.5" /> Metadata Health
-            </TabsTrigger>}
-            {shouldRenderPanel("pipeline-integrity") && <TabsTrigger value="pipeline-integrity" className="gap-1.5">
-              <Shield className="h-3.5 w-3.5" /> Pipeline Integrity
-            </TabsTrigger>}
-            {shouldRenderPanel("export-readiness") && <TabsTrigger value="export-readiness" className="gap-1.5">
-              <FileOutput className="h-3.5 w-3.5" /> Export Readiness
-            </TabsTrigger>}
-            <TabsTrigger value="lh-lineage" className="gap-1.5">
-              <GitBranch className="h-3.5 w-3.5" /> Signal Lineage
-            </TabsTrigger>
-            <TabsTrigger value="lh-gate-review" className="gap-1.5">
-              <Shield className="h-3.5 w-3.5" /> Gate Review
-            </TabsTrigger>
-            <TabsTrigger value="lh-patterns" className="gap-1.5">
-              <Fingerprint className="h-3.5 w-3.5" /> LH Patterns
-            </TabsTrigger>
-            <TabsTrigger value="lh-trends" className="gap-1.5">
-              <TrendingUp className="h-3.5 w-3.5" /> LH Trends
-            </TabsTrigger>
-            <TabsTrigger value="lh-strategies" className="gap-1.5">
-              <Target className="h-3.5 w-3.5" /> LH Strategies
-            </TabsTrigger>
-            <TabsTrigger value="lh-health" className="gap-1.5">
-              <HeartPulse className="h-3.5 w-3.5" /> LH Health
-            </TabsTrigger>
-            <TabsTrigger value="flags" className="gap-1.5">
-              <Flag className="h-3.5 w-3.5" /> Flags
-            </TabsTrigger>
-          </TabsList>
-
-          {shouldRenderPanel("operations") && <TabsContent value="operations" className="space-y-6">
-            {/* Quick Navigate â€” pass-through shortcuts to key functional tabs */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-              {([
-                { tab: "evidence-lab", label: "Evidence Lab", icon: <Microscope className="h-4 w-4" />, color: "text-cyan-400" },
-                { tab: "claim-validation", label: "Claim Validation", icon: <ClipboardCheck className="h-4 w-4" />, color: "text-emerald-400" },
-                { tab: "remedy-feasibility", label: "Remedy Feasibility", icon: <Scale className="h-4 w-4" />, color: "text-amber-400" },
-                { tab: "procedural-paths", label: "Procedural Paths", icon: <Route className="h-4 w-4" />, color: "text-violet-400" },
-                { tab: "flags", label: "Flag Queue", icon: <Flag className="h-4 w-4" />, color: "text-red-400" },
-                { tab: "kb-explorer", label: "KB Explorer", icon: <BookOpen className="h-4 w-4" />, color: "text-blue-400" },
-              ] as const).map(({ tab, label, icon, color }) => (
-                shouldRenderPanel(tab) ? (
-                  <button
-                    key={tab}
-                    onClick={() => setMainTab(tab)}
-                    className="flex flex-col items-center gap-1.5 p-3 rounded-lg border border-border/50 bg-card/30 hover:bg-card/60 hover:border-border transition-all text-center group"
-                  >
-                    <span className={`${color} group-hover:scale-110 transition-transform`}>{icon}</span>
-                    <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors leading-tight">{label}</span>
-                  </button>
-                ) : null
-              ))}
-            </div>
-            {/* Row 0: Canonical Core (orchestration root) */}
-            <Card>
-              <CardContent className="pt-6">
-                <CanonicalCorePanel />
-              </CardContent>
-            </Card>
-            {/* Row 0.5: Canonical Spine â€” Implementation Package */}
-            <Card>
-              <CardContent className="pt-6">
-                <CanonicalSpineDashboard />
-              </CardContent>
-            </Card>
-            {/* Row 0.75: Live Intake Operations â€” Lighthouse canonical intake telemetry */}
-            <Card>
-              <CardContent className="pt-6">
-                <LiveIntakeOperationsPanel />
-              </CardContent>
-            </Card>
-            {/* Row 1: System Health + Knowledge */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardContent className="pt-6">
-                  <SystemHealthPanel />
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-6">
-                  <KnowledgePopulationPanel onNavigateToKB={() => setMainTab("kb-explorer")} />
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Row 2: Case Activity + Structural Signals */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardContent className="pt-6">
-                  <CaseActivityPanel />
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-6">
-                  <StructuralSignalsPanel />
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Row 3: Work Queue (full width) */}
-            <Card>
-              <CardContent className="pt-6">
-                <WorkQueuePanel />
-              </CardContent>
-            </Card>
-
-            {/* Row 4: Engine Status (full width) */}
-            <Card>
-              <CardContent className="pt-6">
-                <EngineStatusPanel />
-              </CardContent>
-            </Card>
-            {/* Row 5: Panel Activation Summary */}
-            <Card>
-              <CardContent className="pt-6">
-                <PanelActivationSummary />
-              </CardContent>
-            </Card>
-          </TabsContent>}
-
-          {shouldRenderPanel("registry") && <TabsContent value="registry">
-            <LegacyRegistryView />
-          </TabsContent>}
-
-          {shouldRenderPanel("ingestion") && <TabsContent value="ingestion" className="space-y-6">
-            <IngestionPanel />
-          </TabsContent>}
-
-          {shouldRenderPanel("kb-explorer") && <TabsContent value="kb-explorer" className="space-y-6">
-            <KnowledgeExplorerPanel />
-          </TabsContent>}
-
-          {shouldRenderPanel("governance") && <TabsContent value="governance" className="space-y-6">
-            <div className="flex items-center justify-between mb-4">
-              <div />
-              <Link href="/mission-control/governance">
-                <Button variant="outline" size="sm" className="gap-1.5">
-                  <Shield className="h-3.5 w-3.5" />
-                  Constitutional Governance Dashboard
-                  <ExternalLink className="h-3 w-3" />
-                </Button>
-              </Link>
-            </div>
-            <SignalGovernancePanel />
-          </TabsContent>}
-
-{shouldRenderPanel("patterns") &&           <TabsContent value="patterns" className="space-y-6">
-            <PatternRegistryPanel />
-          </TabsContent>}
-
-{shouldRenderPanel("trends") &&           <TabsContent value="trends" className="space-y-6">
-            <TrendPressurePanel />
-          </TabsContent>}
-
-{shouldRenderPanel("strategy-paths") &&           <TabsContent value="strategy-paths" className="space-y-6">
-            <StrategyPathsPanel />
-          </TabsContent>}
-
-{shouldRenderPanel("outcomes") &&           <TabsContent value="outcomes" className="space-y-6">
-            <OutcomesPanel />
-          </TabsContent>}
-
-{shouldRenderPanel("interventions") &&           <TabsContent value="interventions" className="space-y-6">
-            <InterventionDashboardPanel />
-          </TabsContent>}
-
-{shouldRenderPanel("policy") &&           <TabsContent value="policy" className="space-y-6">
-            <PolicyImpactPanel />
-          </TabsContent>}
-
-          {shouldRenderPanel("remedy-templates") && <TabsContent value="remedy-templates" className="space-y-6">
-            <RemedyTemplatesPanel />
-          </TabsContent>}
-
-{shouldRenderPanel("memory-strategy") &&           <TabsContent value="memory-strategy" className="space-y-6">
-            <MemoryStrategyMetricsPanel />
-          </TabsContent>}
-
-{shouldRenderPanel("reform-proposals") &&           <TabsContent value="reform-proposals" className="space-y-6">
-            <ReformProposalsPanel />
-          </TabsContent>}
-
-{shouldRenderPanel("coalitions") &&           <TabsContent value="coalitions" className="space-y-6">
-            <CoalitionsPanel />
-          </TabsContent>}
-          {shouldRenderPanel("evidence-lab") && <TabsContent value="evidence-lab" className="space-y-6">
-            <EvidenceLabPanel onNavigateTo={setMainTab} />
-          </TabsContent>}
-          {shouldRenderPanel("claim-validation") && <TabsContent value="claim-validation" className="space-y-6">
-            <ClaimValidationPanel onNavigateTo={setMainTab} />
-          </TabsContent>}
-          {shouldRenderPanel("remedy-feasibility") && <TabsContent value="remedy-feasibility" className="space-y-6">
-            <RemedyFeasibilityPanel onNavigateTo={setMainTab} />
-          </TabsContent>}
-          {shouldRenderPanel("procedural-paths") && <TabsContent value="procedural-paths" className="space-y-6">
-            <ProceduralPathsPanel onNavigateTo={setMainTab} />
-          </TabsContent>}
-          {shouldRenderPanel("hardening-pipeline") && <TabsContent value="hardening-pipeline" className="space-y-6">
-            <HardeningPipelinePanel />
-          </TabsContent>}
-{shouldRenderPanel("coalition-intel") &&           <TabsContent value="coalition-intel" className="space-y-6">
-            <CoalitionIntelPanel />
-          </TabsContent>}
-{shouldRenderPanel("campaign-engine") &&           <TabsContent value="campaign-engine" className="space-y-6">
-            <CampaignEnginePanel />
-          </TabsContent>}
-          {shouldRenderPanel("knowledge-health") && <TabsContent value="knowledge-health" className="space-y-6">
-            <KnowledgeHealthPanel />
-          </TabsContent>}
-{shouldRenderPanel("gap-analysis") &&           <TabsContent value="gap-analysis" className="space-y-6">
-            <KnowledgeGapAnalysisPanel />
-          </TabsContent>}
-{shouldRenderPanel("harm-index") &&           <TabsContent value="harm-index" className="space-y-6">
-            <HarmIndexPanel />
-          </TabsContent>}
-{shouldRenderPanel("risk-forecast") &&           <TabsContent value="risk-forecast" className="space-y-6">
-            <RiskForecastPanel />
-          </TabsContent>}
-{shouldRenderPanel("harm-map") &&           <TabsContent value="harm-map" className="space-y-6">
-            <HarmMapPanel />
-          </TabsContent>}
-          {shouldRenderPanel("front-door") && <TabsContent value="front-door" className="space-y-6">
-            <FrontDoorPanel />
-          </TabsContent>}
-          {shouldRenderPanel("lobbying") && <TabsContent value="lobbying" className="space-y-6">
-            <LobbyingPanel />
-          </TabsContent>}
-          {shouldRenderPanel("litigation") && <TabsContent value="litigation" className="space-y-6">
-            <LitigationPanel />
-          </TabsContent>}
-          {shouldRenderPanel("admin-decisions") && <TabsContent value="admin-decisions" className="space-y-6">
-            <AdminDecisionsPanel />
-          </TabsContent>}
-          {shouldRenderPanel("verified-reports") && <TabsContent value="verified-reports" className="space-y-6">
-            <VerifiedReportsPanel />
-          </TabsContent>}
-          {shouldRenderPanel("advocacy") && <TabsContent value="advocacy" className="space-y-6">
-            <AdvocacyPanel />
-          </TabsContent>}
-          {shouldRenderPanel("cross-stream") && <TabsContent value="cross-stream" className="space-y-6">
-            <CrossStreamPanel />
-          </TabsContent>}
-          {shouldRenderPanel("time-travel") && <TabsContent value="time-travel" className="space-y-6">
-            <TimeTravelPanel />
-          </TabsContent>}
-          {shouldRenderPanel("entity-intel") && <TabsContent value="entity-intel" className="space-y-6">
-            <EntityIntelPanel />
-          </TabsContent>}
-          {shouldRenderPanel("institutions") && <TabsContent value="institutions" className="space-y-6">
-            <InstitutionsPanel />
-          </TabsContent>}
-          {shouldRenderPanel("reg-capture") && <TabsContent value="reg-capture" className="space-y-6">
-            <RegCapturePanel />
-          </TabsContent>}
-          {shouldRenderPanel("crisis-predict") && <TabsContent value="crisis-predict" className="space-y-6">
-            <CrisisPredictPanel />
-          </TabsContent>}
-          {shouldRenderPanel("simulation-lab") && <TabsContent value="simulation-lab" className="space-y-6">
-            <SimulationLabPanel />
-          </TabsContent>}
-          {shouldRenderPanel("transparency") && <TabsContent value="transparency" className="space-y-6">
-            <TransparencyPanel />
-          </TabsContent>}
-          {shouldRenderPanel("dossier-studio") && <TabsContent value="dossier-studio" className="space-y-6">
-            <DossierStudioPanel />
-          </TabsContent>}
-          {shouldRenderPanel("ext-collab") && <TabsContent value="ext-collab" className="space-y-6">
-            <ExtCollabPanel />
-          </TabsContent>}
-          {shouldRenderPanel("entity-transparency") && <TabsContent value="entity-transparency" className="space-y-6">
-            <EntityTransparencyPanel />
-          </TabsContent>}
-          {shouldRenderPanel("evidence-threshold") && <TabsContent value="evidence-threshold" className="space-y-6">
-            <EvidenceThresholdPanel />
-          </TabsContent>}
-          {shouldRenderPanel("alerting") && <TabsContent value="alerting" className="space-y-6">
-            <AlertingPanel />
-          </TabsContent>}
-          {shouldRenderPanel("system-map") && <TabsContent value="system-map" className="space-y-6">
-            <SystemMapPanel />
-          </TabsContent>}
-          {shouldRenderPanel("failure-predict") && <TabsContent value="failure-predict" className="space-y-6">
-            <FailurePredictionPanel />
-          </TabsContent>}
-          {shouldRenderPanel("investigative-query") && <TabsContent value="investigative-query" className="space-y-6">
-            <InvestigativeQueryPanel />
-          </TabsContent>}
-          {shouldRenderPanel("metadata-health") && <TabsContent value="metadata-health" className="space-y-6">
-            <Card><CardContent className="pt-6"><MetadataHealthPanel /></CardContent></Card>
-          </TabsContent>}
-          {shouldRenderPanel("pipeline-integrity") && <TabsContent value="pipeline-integrity" className="space-y-6">
-            <Card><CardContent className="pt-6"><PipelineIntegrityPanel /></CardContent></Card>
-          </TabsContent>}
-          {shouldRenderPanel("export-readiness") && <TabsContent value="export-readiness" className="space-y-6">
-            <Card><CardContent className="pt-6"><ExportReadinessPanel /></CardContent></Card>
-          </TabsContent>}
-          <TabsContent value="lh-lineage" className="space-y-6">
-            <Card><CardContent className="pt-6"><SignalLineagePanel /></CardContent></Card>
-          </TabsContent>
-          <TabsContent value="lh-gate-review" className="space-y-6">
-            <Card><CardContent className="pt-6"><GateReviewPanel /></CardContent></Card>
-          </TabsContent>
-          <TabsContent value="lh-patterns" className="space-y-6">
-            <Card><CardContent className="pt-6"><LighthousePatternRegistryPanel /></CardContent></Card>
-          </TabsContent>
-          <TabsContent value="lh-trends" className="space-y-6">
-            <Card><CardContent className="pt-6"><LighthouseTrendPressurePanel /></CardContent></Card>
-          </TabsContent>
-          <TabsContent value="lh-strategies" className="space-y-6">
-            <Card><CardContent className="pt-6"><StrategyProjectionPanel /></CardContent></Card>
-          </TabsContent>
-          <TabsContent value="lh-health" className="space-y-6">
-            <Card><CardContent className="pt-6"><PipelineHealthPanel /></CardContent></Card>
-          </TabsContent>
-          <TabsContent value="flags" className="space-y-6">
-            <Card>
-              <CardContent className="pt-6">
-                <FlagQueuePanel />
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
-    </div>
-  );
-}
+YªçŠx-®éÜj×¢ëiºÚ+Š§j[h‘éÜ¢éí×½}ã´èµ©hºÚn¶X§zÍKËÈË[›ØÚXÚÈ8 %™KY^\Ý[™È\HšYÈ™H™\ÛÛ™Y[ˆRH\H[YÛ›Y[\ÜÂš[\ÜÈ\ÙQY™™XÝ\ÙTÝ]HHœ›ÛHœ™XXÝŽÂš[\ÜÈ\ÙPØ\ÙHHœ›ÛHØÛÛ^ËÐØ\ÙPÛÛ^ŽÂš[\ÜÈ\ÙP]]Hœ›ÛH×ØÛÜ™KÚÛÚÜËÝ\ÙP]]ŽÂš[\ÜÈÙ]ÙÚ[•\›Hœ›ÛHØÛÛœÝŽÂš[\ÜÈœÈHœ›ÛHÛX‹ÝœÈŽÂš[\ÜÈ\ÙSØØ][ÛˆHœ›ÛHÛÝ]\ˆŽÂš[\ÜÈØ\™Ø\™ÛÛ[Ø\™XY\‹Ø\™]HHœ›ÛHØÛÛ\Û™[ËÝZKØØ\™ŽÂš[\ÜÈ˜YÙHHœ›ÛHØÛÛ\Û™[ËÝZKØ˜YÙHŽÂš[\ÜÈ]ÛˆHœ›ÛHØÛÛ\Û™[ËÝZKØ]ÛˆŽÂš[\ÜÈXœËXœÐÛÛ[XœÓ\ÝXœÕšYÙÙ\ˆHœ›ÛHØÛÛ\Û™[ËÝZKÝXœÈŽÂš[\ÜÂˆXÝ]š]K]X˜\ÙK˜\Ú\Ë[\šX[™ÛKÛØÚËÚXÚÐÚ\˜ÛL‹ˆÚ\˜ÛKØY\Œ‹Ù\™\‹\Ù\œËš[U^ÙX\˜Ú™[™[™Õ\ˆ˜\ÚY[^YK›ÛÚÓÜ[‹™Yœ™\ÚÝË^\›˜[[šËˆÛÜ“Ü[‹Ü™[˜Ú[\\ØY\œ›ÝÓYˆ˜Y[Ë^K]\ÙK˜\Ú‹\ËÛØ™KX\[‹ˆ™]ÛÜšËÚ]œ˜[˜Ú\œ›ÝÕ\šYÚÚ]œ›Û”šYÚØ]YÙKˆ›Ý]K\™Ù]˜\Ú\Ú\™[‹Z[[™Ì‹Ù[™ØØ[K[™X\šËˆØ[Ý[]Ü‹ØÜ›Û^Û\”ÚYÛ‹\Úœ˜Z[‹š[SÝ]][™ÚZÙKÝÛ›ØYˆZXÜ›ÜØÛÜKÛ\›Ø\™ÚXÚËØ]™[X\\ÈX\XÛÛ‹^Y\œËˆYYØ\Û™Kš[›ØÝ[\œËZ[\ÝÛ™Kˆ\ÝÜžKÚ]ÛÛ\\™P\œ›ÝÜËš[QÝÛ‹›Ý]PØÝËˆX\[ÙKÜšYÖËˆ›[YK[šÌ‹˜Y\‹Y\ÜØYÙTÜ]X\™Kˆš[™Ù\œš[Z[[™ËÚY[[\[\ØÝYÛÛ‹ˆ›\ÚÐÛÛšXØ[™]ÜÜ\\‹›Û\\˜Ú]™KÚ\™L‹ˆØØ[‹™[Ø^\Ú[Ë˜XÝÜžKÙX\˜ÚÛÙKˆ›YË\œ›ÝÔšYÚŸHœ›ÛH›XÚYK\™XXÝŽÂš[\ÜÈ[šÈHœ›ÛHÛÝ]\ˆŽÂš[\ÜÈ\ÙSZ\ÜÚ[ÛÛÛ›Û]HHœ›ÛHÚÛÚÜËÛZ\ÜÚ[Û‹Ý\ÙSZ\ÜÚ[ÛÛÛ›Û]HŽÂš[\ÜÈY]Y]RX[[™[\[[™R[YÜš]T[™[^Ü™XY[™\ÜÔ[™[Hœ›ÛHØÛÛ\Û™[ËÐÛÛ™Z][™[ÈŽÂš[\ÜÈX‘Ø]K[™[Ø]K[™[XÝ]˜][Û”Ý[[X\žHHœ›ÛHØÛÛ\Û™[ËÔ[™[Ø]HŽÂš[\ÜÈÚÝ[™[™\”[™[Hœ›ÛHÛX‹Ü[™[™YÚ\ÝžHŽÂš[\ÜÈÝ™X[U\ØY\ˆHœ›ÛHØÛÛ\Û™[ËÔÝ™X[U\ØY\ˆŽÂš[\ÜÈØ[›ÛšXØ[Ü[™Q\Ú›Ø\™Hœ›ÛHØÛÛ\Û™[ËÐØ[›ÛšXØ[Ü[™Q\Ú›Ø\™ŽÂš[\ÜÈ›YÔ]Y]YT[™[Hœ›ÛHØÛÛ\Û™[ËÑ›YÔ]Y]YT[™[ŽÂš[\ÜÈ›YÐ]ÛˆHœ›ÛHØÛÛ\Û™[ËÑ›YÐ]ÛˆŽÂš[\ÜÈZ\ÜÚ[ÛÛÛ›ÛØÚ[XSYÙ\”[™[Hœ›ÛHØÛÛ\Û™[ËÛZ\ÜÚ[Û‹ÓZ\ÜÚ[ÛÛÛ›ÛØÚ[XSYÙ\”[™[ŽÂ‚\H]X˜\ÙQXYÛ›ÜÝXÐÛÛ˜XÝHÂˆÚÎˆ›ÛÛX[ŽÂˆ]X˜\ÙNˆÝš[™ÎÂˆ]X˜\ÙWÝ\›ˆÝš[™ÎÂˆ]X˜\ÙWÝ™\œÚ[ÛŽˆÝš[™È[ÂˆX›X×ÝX›\Îˆ[X™\ˆ[Âˆ—ÙXYÛ›ÜÝXÎˆÈX›\ÎˆÈÝ[ˆ[X™\ˆ[NÈšY]ÜÎˆÈÝ[ˆ[X™\ˆ[NÈ›Ü™ZYÛ—ÚÙ^\ÎˆÈÝ[ˆ[X™\ˆ[NÈ\œ›ÜœÎˆ\œ˜^OÈÛÙNˆÝš[™ÎÈY\ÜØYÙNˆÝš[™ÈOˆNÂˆÝ\X˜\ÙWÜ›Ú™XÝˆÝš[™ÎÂˆ[Y\Ý[\ˆÝš[™ÎÂŸNÂ‚˜ÛÛœÝXYÛ›ÜÝX×Ü™\]Z\™YÙšY[ÈHÈ™]X˜\ÙH‹™]X˜\ÙWÝ\›‹™]X˜\ÙWÝ™\œÚ[Ûˆ‹œX›X×ÝX›\È‹™—ÙXYÛ›ÜÝXÈ‹œÝ\X˜\ÙWÜ›Ú™XÝ‹[Y\Ý[\—H\ÈÛÛœÝÂ‚™[˜Ý[Ûˆ\Ñ]X˜\ÙQXYÛ›ÜÝXÐÛÛ˜XÝ
+˜[YNˆ[šÛ›ÝÛŠNˆ˜[YH\È]X˜\ÙQXYÛ›ÜÝXÐÛÛ˜XÝÂˆYˆ
+]˜[YH\[Ùˆ˜[YHOOH›Øš™XÝŠH™]\›ˆ˜[ÙNÂˆ™]\›ˆXYÛ›ÜÝX×Ü™\]Z\™YÙšY[Ë™]™\žJ
+šY[
+HOˆšY[[ˆ˜[YJNÂŸB‚™[˜Ý[Ûˆ\ÙQ]X˜\ÙQXYÛ›ÜÝXÊ
+HÂˆÛÛœÝÙ]KÙ]]WHH\ÙTÝ]O]X˜\ÙQXYÛ›ÜÝXÐÛÛ˜XÝ[Š[
+NÂˆÛÛœÝÙ\œ›Ü‹Ù]\œ›Ü—HH\ÙTÝ]OÝš[™È[Š[
+NÂˆÛÛœÝÚ\ÓØY[™ËÙ]\ÓØY[™×HH\ÙTÝ]JYJNÂ‚ˆÛÛœÝØYH\Þ[˜È
+
+HOˆÂˆÙ]\ÓØY[™ÊYJNÂˆžHÂˆÛÛœÝ™\ÜÛœÙHH]ØZ]™]Ú
+‹Ø\KÙ‹YXYÛ›ÜÝXÈ‹ÈØXÚNˆ››Ë\ÝÜ™HˆJNÂˆÛÛœÝ^[ØYH]ØZ]™\ÜÛœÙKšœÛÛŠ
+NÂˆYˆ
+Z\Ñ]X˜\ÙQXYÛ›ÜÝXÐÛÛ˜XÝ
+^[ØY
+JHÂˆÙ]\œ›ÜŠXYÛ›ÜÝX×ØÛÛ˜XÝÛZ\ÛX]Úˆ^XÝY	ÙXYÛ›ÜÝX×Ü™\]Z\™YÙšY[Ëš›Ú[Š‹Š_X
+NÂˆ™]\›ŽÂˆBˆÙ]]J^[ØY
+NÂˆÙ]\œ›ÜŠ™\ÜÛœÙK›ÚÈÈ[ˆ^[ØY™\œ›ÜË›Y\ÜØYÙHÏÈ™]X˜\ÙWÙXYÛ›ÜÝX×Ù˜Z[YŠNÂˆHØ]Ú
+\œŠHÂˆÙ]\œ›ÜŠ\œˆ[œÝ[˜Ù[Ùˆ\œ›ÜˆÈ\œ‹›Y\ÜØYÙHˆÝš[™Ê\œŠJNÂˆHš[˜[HÂˆÙ]\ÓØY[™Ê˜[ÙJNÂˆBˆNÂ‚ˆ\ÙQY™™XÝ
+
+
+HOˆÂˆØY
+
+NÂˆÛÛœÝ[Y\ˆHÚ[™ÝËœÙ][\˜[
+ØYŒ
+NÂˆ™]\›ˆ
+
+HOˆÚ[™ÝË˜ÛX\’[\˜[
+[Y\ŠNÂˆK×JNÂ‚ˆ™]\›ˆÈ]K\œ›Ü‹\ÓØY[™Ë™Y™]ÚˆØYNÂŸB‚š[\ÜÈÛÛ[Z]ÐØ\ÙHHœ›ÛHØÛÛ\Û™[ËÐÛÛ[Z]ÐØ\ÙHŽÂš[\ÜÈ]\›”™YÚ\ÝžT[™[Hœ›ÛHØÛÛ\Û™[ËÛZ\ÜÚ[Û‹Ô]\›”™YÚ\ÝžT[™[ŽÂš[\ÜÈÝ˜]YÞT]Ô[™[Hœ›ÛHØÛÛ\Û™[ËÛZ\ÜÚ[Û‹ÔÝ˜]YÞT]Ô[™[ŽÂš[\ÜÈÝ]ÛÛY\Ô[™[Hœ›ÛHØÛÛ\Û™[ËÛZ\ÜÚ[Û‹ÓÝ]ÛÛY\Ô[™[ŽÂš[\ÜÈÚYÛ˜[[™XYÙT[™[Hœ›ÛHØÛÛ\Û™[ËÛYÚÝ\ÙKÔÚYÛ˜[[™XYÙT[™[ŽÂš[\ÜÈØ]T™]šY]Ô[™[Hœ›ÛHØÛÛ\Û™[ËÛYÚÝ\ÙKÑØ]T™]šY]Ô[™[ŽÂš[\ÜÈ]\›”™YÚ\ÝžT[™[\ÈYÚÝ\ÙT]\›”™YÚ\ÝžT[™[Hœ›ÛHØÛÛ\Û™[ËÛYÚÝ\ÙKÔ]\›”™YÚ\ÝžT[™[ŽÂš[\ÜÈ™[™™\ÜÝ\™T[™[\ÈYÚÝ\ÙU™[™™\ÜÝ\™T[™[Hœ›ÛHØÛÛ\Û™[ËÛYÚÝ\ÙKÕ™[™™\ÜÝ\™T[™[ŽÂš[\ÜÈÝ˜]YÞT›Ú™XÝ[Û”[™[Hœ›ÛHØÛÛ\Û™[ËÛYÚÝ\ÙKÔÝ˜]YÞT›Ú™XÝ[Û”[™[ŽÂš[\ÜÈ\[[™RX[[™[Hœ›ÛHØÛÛ\Û™[ËÛYÚÝ\ÙKÔ\[[™RX[[™[ŽÂš[\ÜÈ]™R[ZÙSÜ\˜][ÛœÔ[™[Hœ›ÛHØÛÛ\Û™[ËÛYÚÝ\ÙKÓ]™R[ZÙSÜ\˜][ÛœÔ[™[ŽÂ‚‹Êˆ8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥dˆSRST’H8 %RTÔÒSÓˆÓÓ•“Ó
+YZ[ˆÜ\˜][Û˜[\Ú›Ø\™
+BˆØ[›ÛšXØ[ÛÜ™HÜ˜Ú\Ý˜][Ûˆ›ÛÝ
+È™\Ù\™Y™YÚ\ÝžKÐ[HZÙHX‚ˆ8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d
+‹Â‚‹Êˆ8¥ 8¥ Ø[›ÛšXØ[ÛÜ™HX[[™[8¥ 8¥ 
+‹Â™[˜Ý[ÛˆØ[›ÛšXØ[ÛÜ™T[™[
+
+HÂˆÛÛœÝÈ]NˆX[\ÓØY[™ÎˆX[ØY[™ÈHHœË˜Ø[›ÛšXØ[ÛÜ™KšX[\ÙT]Y\žJ[™Yš[™YÂˆ™Y™]Ú[\˜[ˆŒˆJNÂˆÛÛœÝÈ]NˆÝ[[X\žK\ÓØY[™ÎˆÝ[[X\žSØY[™ÈHHœË˜Ø[›ÛšXØ[ÛÜ™KœÝ[[X\žK\ÙT]Y\žJ[™Yš[™YÂˆ™Y™]Ú[\˜[ˆŒˆJNÂˆÛÛœÝÈ]Nˆ\[[™TÝ]HHHœË˜Ø[›ÛšXØ[ÛÜ™Kœ\[[™TÝ]K\ÙT]Y\žJ[™Yš[™YÂˆ™Y™]Ú[\˜[ˆŒˆJNÂ‚ˆYˆ
+X[ØY[™ÈÝ[[X\žSØY[™ÊH™]\›ˆ[™[ÚÙ[]ÛˆÏŽÂˆYˆ
+ZX[\Ý[[X\žJH™]\›ˆ[™[[\HX™[HØ[›ÛšXØ[ÛÜ™H[˜]˜Z[X›HˆÏŽÂ‚ˆÛÛœÝØ]YÛÜšY\ÈHX[X›\Ëœ™YXÙJ
+XØÎˆ™XÛÜ™Ýš[™ËÈÜ[]Yˆ[X™\ŽÈ[\Nˆ[X™\ŽÈÝ[ˆ[X™\ˆO‹
+HOˆÂˆYˆ
+XXØÖÝ˜Ø]YÛÜžWJHXØÖÝ˜Ø]YÛÜžWHHÈÜ[]Yˆ[\NˆÝ[ˆNÂˆXØÖÝ˜Ø]YÛÜžWKÝ[
+ÊÎÂˆYˆ
+˜ÛÝ[ˆ
+HXØÖÝ˜Ø]YÛÜžWKœÜ[]Y
+ÊÎÂˆ[ÙHXØÖÝ˜Ø]YÛÜžWK™[\JÊÎÂˆ™]\›ˆXØÎÂˆKßJNÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KM‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆÈÛ\ÜÓ˜[YOH^[È›Û\Ù[ZX›Û›^][\ËXÙ[\ˆØ\Lˆ‚ˆ]X˜\ÙHÛ\ÜÓ˜[YOHšMHËMH^\š[X\žHˆÏ‚ˆØ[›ÛšXØ[Û›ÝÛYÙHÛÜ™BˆÚÏ‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^^È‚ˆÚX[Ý[™XÛÜ™ËÓØØ[TÝš[™Ê
+_H™XÛÜ™È0­ÈÚX[œÜ[]YX›\ßHX›\ÈÜ[]YˆÐ˜YÙO‚ˆÙ]‚‚ˆËÊˆÙ^HÛÝ[È
+‹ßBˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËMHØ\LÈ‚ˆY]šXÐØ\™X™[H’\š\ÙXÝ[ÛœÈˆ˜[YO^ÔÝš[™ÊÝ[[X\žKš\š\ÙXÝ[ÛœÊ_HXÛÛ^ÏÛØ™HÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜH˜›YHˆÏ‚ˆY]šXÐØ\™X™[H”›ÙÜ˜[\Èˆ˜[YO^ÔÝš[™ÊÝ[[X\žKœ›ÙÜ˜[\Ê_HXÛÛ^Ïš[U^Û\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜH™[Y\˜[ˆÏ‚ˆY]šXÐØ\™X™[HYÙ[˜ÚY\Èˆ˜[YO^ÔÝš[™ÊÝ[[X\žK›Ý™\œÚYÚ›ÙY\Ê_HXÛÛ^ÏZ[[™ÌˆÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜHš[Û]ˆÏ‚ˆY]šXÐØ\™X™[H“]™HÚYÛ˜[Èˆ˜[YO^ÔÝš[™ÊÝ[[X\žK›]™TÚYÛ˜[Ê_HXÛÛ^Ï˜Y[ÈÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜH›Ü˜[™ÙHˆÏ‚ˆY]šXÐØ\™X™[HØ\Ù\Èˆ˜[YO^ÔÝš[™ÊÝ[[X\žK˜Ø\Ù\Ê_HXÛÛ^ÏÙX\˜ÚÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜH˜›YHˆÏ‚ˆÙ]‚‚ˆËÊˆØ]YÛÜžHœ™XZÙÝÛˆ
+‹ßBˆØ\™Û\ÜÓ˜[YOH˜™ËXØ\™ÍL‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹Lˆ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H^[]]YY›Ü™YÜ›Ý[™•X›HX[žHØ]YÛÜžOÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËMØ\Lˆ‚ˆÓØš™XÝ™[šY\ÊØ]YÛÜšY\ÊK›X\
+
+ØØ]Ý]×JHOˆ
+ˆ]ˆÙ^O^ØØ]HÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ^^ÈLˆ›Ý[™Y™Ë[]]YÌÌ‚ˆÜ[ˆÛ\ÜÓ˜[YOH˜Ø\][^™H^[]]YY›Ü™YÜ›Ý[™žØØ]OÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[[Û›È‚ˆÜ[ˆÛ\ÜÓ˜[YOH^Y[Y\˜[MžÜÝ]ËœÜ[]YOÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™‹ÏÜÜ[‚ˆÜ[žÜÝ]ËÝ[OÜÜ[‚ˆÜÜ[‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚‚ˆËÊˆ\[[™HÝ]H
+‹ßBˆÜ\[[™TÝ]H	‰ˆ\[[™TÝ]Kš[™Ù\Ý[”Ý[[X\žK›[™Ýˆ	‰ˆ
+ˆØ\™Û\ÜÓ˜[YOH˜™ËXØ\™ÍL‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹Lˆ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H^[]]YY›Ü™YÜ›Ý[™”\[[™HÛÛ\][ÛÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLH‚ˆÜ\[[™TÝ]Kš[™Ù\Ý[”Ý[[X\žK›X\
+
+[ŠHOˆ
+ˆ]ˆÙ^O^Ü[‹™]\Ù]YHÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ^^È‚ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™žÜ[‹™]\Ù]YOÜÜ[‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[[Û›ÈžÜ[‹Ý[™XÛÜ™ËÓØØ[TÝš[™Ê
+_H™XÛÜ™ÏÜÜ[‚ˆ˜YÙH˜\šX[^Ü[‹›\ÝÝ]\ÈOOH	ØÛÛ\]Y	ÈÈ	ÙY˜][	Èˆ	ÜÙXÛÛ™\žIßHÛ\ÜÓ˜[YOH^VÌLH‚ˆÜ[‹›\ÝÝ]\È	Ý[šÛ›ÝÛ‰ßBˆÐ˜YÙO‚ˆÙ]‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_B‚ˆËÊˆ[\HX›\ÈØ\›š[™È
+‹ßBˆÚX[™[\UX›\Èˆ	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™›^][\ËXÙ[\ˆØ\LH‚ˆ[\šX[™ÛHÛ\ÜÓ˜[YOHšLÈËLÈ^X[X™\‹MˆÏ‚ˆÚX[™[\UX›\ßHØ[›ÛšXØ[X›\È\™H[\H8 %[ˆ[™Ù\Ý[ÛˆÜˆÛ›ÝÛYÙHÜ[][ÛˆÈš[[K‚ˆÙ]‚ˆ
+_BˆÙ]‚ˆ
+NÂŸB‚™[˜Ý[Ûˆ›Ü›X]\[YJÙXÛÛ™Îˆ[X™\ŠNˆÝš[™ÈÂˆÛÛœÝHX]™›ÛÜŠÙXÛÛ™ÈÈ
+NÂˆÛÛœÝHX]™›ÛÜŠ
+ÙXÛÛ™È	H
+HÈÍŒ
+NÂˆÛÛœÝHHX]™›ÛÜŠ
+ÙXÛÛ™È	HÍŒ
+HÈŒ
+NÂˆYˆ
+ˆ
+H™]\›ˆ	ÙY	ÚZ	Û_[XÂˆYˆ
+ˆ
+H™]\›ˆ	ÚZ	Û_[XÂˆ™]\›ˆ	Û_[XÂŸB‚™[˜Ý[Ûˆ›Ü›X]ž]\Êž]\Îˆ[X™\ŠNˆÝš[™ÈÂˆYˆ
+ž]\ÈL
+ˆL
+H™]\›ˆ	Êž]\ÈÈL
+KÑš^Y
+
+_HÐ˜Âˆ™]\›ˆ	Êž]\ÈÈ
+L
+ˆL
+JKÑš^Y
+
+_HP˜ÂŸB‚™[˜Ý[Ûˆ›Ü›X][YPYÛÊÎˆ[X™\ŠNˆÝš[™ÈÂˆÛÛœÝY™ˆH]K››ÝÊ
+HHÎÂˆÛÛœÝZ[œÈHX]™›ÛÜŠY™ˆÈŒ
+NÂˆYˆ
+Z[œÈJH™]\›ˆš\Ý›ÝÈŽÂˆYˆ
+Z[œÈŒ
+H™]\›ˆ	ÛZ[œß[HYÛØÂˆÛÛœÝÝ\œÈHX]™›ÛÜŠZ[œÈÈŒ
+NÂˆYˆ
+Ý\œÈ
+H™]\›ˆ	ÚÝ\œßZYÛØÂˆ™]\›ˆ	ÓX]™›ÛÜŠÝ\œÈÈ
+_YYÛØÂŸB‚‹Êˆ8¥ 8¥ [™[NˆÞ\Ý[HX[8¥ 8¥ 
+‹Â™[˜Ý[ÛˆÞ\Ý[RX[[™[
+
+HÂˆÛÛœÝÈ]K\ÓØY[™Ë™Y™]ÚHHœË˜YZ[‘\Ú›Ø\™œÞ\Ý[RX[\ÙT]Y\žJ[™Yš[™YÂˆ™Y™]Ú[\˜[ˆÌˆJNÂˆÛÛœÝXYÛ›ÜÝXÈH\ÙQ]X˜\ÙQXYÛ›ÜÝXÊ
+NÂ‚ˆYˆ
+\ÓØY[™ÈXYÛ›ÜÝXËš\ÓØY[™ÊH™]\›ˆ[™[ÚÙ[]ÛˆÏŽÂˆYˆ
+Y]JH™]\›ˆ[™[[\HX™[H“›ÈX[]H]˜Z[X›HˆÏŽÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KM‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆÈÛ\ÜÓ˜[YOH^[È›Û\Ù[ZX›Û›^][\ËXÙ[\ˆØ\Lˆ‚ˆÙ\™\ˆÛ\ÜÓ˜[YOHšMHËMH^Y[Y\˜[MˆÏ‚ˆÞ\Ý[HX[ˆÚÏ‚ˆ]Ûˆ˜\šX[H™ÚÜÝˆÚ^™OHœÛHˆÛÛXÚÏ^Ê
+HOˆ™Y™]Ú
+
+_O‚ˆ™Yœ™\ÚÝÈÛ\ÜÓ˜[YOHšLÈËLÈ\‹LHˆÏˆ™Yœ™\ÚˆÐ]Û‚ˆÙ]‚‚ˆØ\™Û\ÜÓ˜[YOH˜™ËXØ\™ÍL‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœM‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLHY™ÜšYXÛÛËMØ\LÈ^\ÛH‚ˆ]Ü[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™‘]X˜\ÙOÜÜ[]ˆÛ\ÜÓ˜[YO^ÙXYÛ›ÜÝXË™]OË™]X˜\ÙHOOH˜ÛÛ›™XÝYˆÈ^Y[Y\˜[Mˆˆ^\™YMŸOžÙXYÛ›ÜÝXË™]OË™]X˜\ÙHÏÈ[šÛ›ÝÛˆŸOÙ]Ù]‚ˆ]Ü[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™‘]X˜\ÙHT“ÜÜ[]žÙXYÛ›ÜÝXË™]OË™]X˜\ÙWÝ\›ÏÈ[šÛ›ÝÛˆŸOÙ]Ù]‚ˆ]Ü[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™”X›XÈX›\ÏÜÜ[]žÙXYÛ›ÜÝXË™]OËœX›X×ÝX›\ÈÏÈ[˜]˜Z[X›HŸOÙ]Ù]‚ˆ]Ü[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™”Ý\X˜\ÙH›Ú™XÝÜÜ[]ˆÛ\ÜÓ˜[YOH™›Û[[Û›È^^ÈžÙXYÛ›ÜÝXË™]OËœÝ\X˜\ÙWÜ›Ú™XÝÏÈ[šÛ›ÝÛˆŸOÙ]Ù]‚ˆÙ]‚ˆÙXYÛ›ÜÝXË™\œ›Üˆ	‰ˆ]ˆÛ\ÜÓ˜[YOH›]LÈ^^È^\™YLÌžÙXYÛ›ÜÝXË™\œ›ÜŸOÙ]ŸBˆÐØ\™ÛÛ[‚ˆÐØ\™‚‚ˆZ\ÜÚ[ÛÛÛ›ÛØÚ[XSYÙ\”[™[Ï‚‚ˆËÊˆÙ\™\ˆÝ]È
+‹ßBˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËMØ\LÈ‚ˆY]šXÐØ\™X™[H•\[YHˆ˜[YO^Ù›Ü›X]\[YJ]KœÙ\™\•\[YJ_HXÛÛ^ÏÛØÚÈÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜH™[Y\˜[ˆÏ‚ˆY]šXÐØ\™X™[H“Y[[ÜžH
+X\
+Hˆ˜[YO^Ù›Ü›X]ž]\Ê]K›Y[[ÜžU\ØYÙKšX\\ÙY
+_HXÛÛ^Ï˜\Û\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜH˜›YHˆÏ‚ˆY]šXÐØ\™X™[H”[œÈ
+
+Hˆ˜[YO^Ù]K›\ÝÝ[ÔÝš[™Ê
+_HXÛÛ^ÏXÝ]š]HÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜHš[Û]ˆÏ‚ˆY]šXÐØ\™ˆX™[H”ÝXØÙ\ÜÈ˜]H‚ˆ˜[YO^Ø	Ù]K›\ÝœÝXØÙ\ÜÔ˜]_IXBˆXÛÛ^Ù]K›\ÝœÝXØÙ\ÜÔ˜]HHLÈÚXÚÐÚ\˜ÛLˆÛ\ÜÓ˜[YOHšMËMˆÏˆˆ[\šX[™ÛHÛ\ÜÓ˜[YOHšMËMˆÏŸBˆÛÛÜ^Ù]K›\ÝœÝXØÙ\ÜÔ˜]HHLÈ™[Y\˜[ˆˆ›Ü˜[™ÙHŸBˆÏ‚ˆÙ]‚‚ˆËÊˆ[™Ú[™H[ˆœ™XZÙÝÛˆ
+‹ßBˆØ\™Û\ÜÓ˜[YOH˜™ËXØ\™ÍL‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹Lˆ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H^[]]YY›Ü™YÜ›Ý[™‘[™Ú[™HXÝ]š]H
+
+OÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËLÈØ\Lˆ‚ˆÝ]\Ð˜YÙHX™[HÛÛ\]YˆÛÝ[^Ù]K›\Ý˜ÛÛ\]YH˜\šX[HœÝXØÙ\ÜÈˆÏ‚ˆÝ]\Ð˜YÙHX™[H‘˜Z[YˆÛÝ[^Ù]K›\Ý™˜Z[YH˜\šX[H™\ÝXÝ]™HˆÏ‚ˆÝ]\Ð˜YÙHX™[H”[›š[™ÈˆÛÝ[^Ù]K›\Ýœ[›š[™ßH˜\šX[Hœ[›š[™ÈˆÏ‚ˆÙ]‚ˆÙ]K™[™Ú[™Pœ™XZÙÝÛ‹›[™Ýˆ	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH›]LÈÜXÙK^KLH‚ˆÙ]K™[™Ú[™Pœ™XZÙÝÛ‹›X\
+
+JHOˆ
+ˆ]ˆÙ^O^ÙK\_HÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ^^È‚ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™Ø\][^™HžÊK\HÏÈ[šÛ›ÝÛˆŠKœ™\XÙJ×ËÙËˆŠ_OÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[[Û›ÈžÙK˜ÛÝ[OÜÜ[‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆÙ]‚ˆ
+NÂŸB‚‹Êˆ8¥ 8¥ [™[ŽˆÛ›ÝÛYÙHÜ[][Ûˆ8¥ 8¥ 
+‹Â™[˜Ý[ÛˆÛ›ÝÛYÙTÜ[][Û”[™[
+ÈÛ“˜]šYØ]UÒÐˆNˆÈÛ“˜]šYØ]UÒÐÎˆ
+
+HOˆ›ÚYJHÂˆÛÛœÝÈ]K\ÓØY[™ÈHHœËšÛ›ÝÛYÙR[™Ù\Ý[Û‹œÜ[][Û”Ý]Ë\ÙT]Y\žJ[™Yš[™YÂˆ™Y™]Ú[\˜[ˆŒˆJNÂˆÛÛœÝË˜]šYØ]WHH\ÙSØØ][ÛŠ
+NÂ‚ˆYˆ
+\ÓØY[™ÊH™]\›ˆ[™[ÚÙ[]ÛˆÏŽÂˆYˆ
+Y]JH™]\›ˆ[™[[\HX™[H“›ÈÜ[][Ûˆ]HˆÏŽÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KM‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆÈÛ\ÜÓ˜[YOH^[È›Û\Ù[ZX›Û›^][\ËXÙ[\ˆØ\Lˆ‚ˆ]X˜\ÙHÛ\ÜÓ˜[YOHšMHËMH^X›YKMˆÏ‚ˆÛ›ÝÛYÙH˜XÚØ›Û™BˆÚÏ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\LH‚ˆÛÛ“˜]šYØ]UÒÐˆ	‰ˆ
+ˆ]Ûˆ˜\šX[H™ÚÜÝˆÚ^™OHœÛHˆÛÛXÚÏ^ÛÛ“˜]šYØ]UÒÐŸH]OH“Ü[ˆÐˆ^Ü™\ˆ‚ˆ›ÛÚÓÜ[ˆÛ\ÜÓ˜[YOHšLÈËLÈ\‹LHˆÏˆ^Ü™BˆÐ]Û‚ˆ
+_Bˆ]Ûˆ˜\šX[H™ÚÜÝˆÚ^™OHœÛHˆÛÛXÚÏ^Ê
+HOˆ˜]šYØ]J‹ØYZ[‹ÚÛ›ÝÛYÙK\Ü[][ÛˆŠ_O‚ˆ^\›˜[[šÈÛ\ÜÓ˜[YOHšLÈËLÈ\‹LHˆÏˆX[˜YÙBˆÐ]Û‚ˆÙ]‚ˆÙ]‚‚ˆËÊˆÝ[[X\žH
+‹ßBˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLÈØ\LÈ‚ˆY]šXÐØ\™X™[H•Ý[™XÛÜ™Èˆ˜[YO^Ù]KœÝ[[X\žKÝ[Ü[]YÓØØ[TÝš[™Ê
+_HXÛÛ^Ï›ÛÚÓÜ[ˆÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜH˜›YHˆÏ‚ˆY]šXÐØ\™ˆX™[HÛÝ™\˜YÙH‚ˆ˜[YO^Ø	Ù]KœÝ[[X\žK›Ý™\˜[ÛÝ™\˜YÙ_IXBˆXÛÛ^Ï˜\Ú\ÈÛ\ÜÓ˜[YOHšMËMˆÏŸBˆÛÛÜ^Ù]KœÝ[[X\žK›Ý™\˜[ÛÝ™\˜YÙHHLÈ™[Y\˜[ˆˆ]KœÝ[[X\žK›Ý™\˜[ÛÝ™\˜YÙHHHÈžY[ÝÈˆˆœ™YŸBˆÏ‚ˆY]šXÐØ\™X™[H‘[\HX›\Èˆ˜[YO^Ù]KœÝ[[X\žK˜Üš]XØ[SÝË›[™ÝÔÝš[™Ê
+_HXÛÛ^Ï[\šX[™ÛHÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜ^Ù]KœÝ[[X\žK˜Üš]XØ[SÝË›[™ÝˆÈœ™Yˆˆ™[Y\˜[ŸHÏ‚ˆÙ]‚‚ˆËÊˆX›H\Ý
+‹ßBˆØ\™Û\ÜÓ˜[YOH˜™ËXØ\™ÍL‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœM‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÙ]KX›\Ë›X\
+
+
+HOˆ
+ˆ]ˆÙ^O^Ý›˜[Y_HÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ^\ÛHÜ›Ý\Ý™\Ž˜™Ë[]]YÌŒ›Ý[™YLH[^LH˜[œÚ][Û‹XÛÛÜœÈÝ\œÛÜ‹YY˜][‚ˆÜ[ˆÛ\ÜÓ˜[YO^Ý˜ÛÝ[OOHÈ^\™YMˆˆ^[]]YY›Ü™YÜ›Ý[™ŸOžÝ›X™[OÜÜ[‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\LKH‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[[Û›È^^ÈžÝ˜ÛÝ[ÓØØ[TÝš[™Ê
+_OÜÜ[‚ˆ]ˆÛ\ÜÓ˜[YOHËLMˆLKH™Ë[]]Y›Ý[™YY[Ý™\™›ÝËZY[ˆ‚ˆ]‚ˆÛ\ÜÓ˜[YO^ØY[›Ý[™YY[	Âˆ˜ÛÝ™\˜YÙHOOHÈ˜™Ë\™YMLˆˆ˜ÛÝ™\˜YÙHHÈ˜™Ë[Ü˜[™ÙKMLˆˆ˜ÛÝ™\˜YÙHÍHÈ˜™ËX›YKMLˆˆ˜™ËY[Y\˜[ML‚ˆXBˆÝ[O^ÞÈÚYˆ	ÓX]›Z[Š˜ÛÝ™\˜YÙKL
+_IX_BˆÏ‚ˆÙ]‚ˆ›YÐ]Û‚ˆ\™Ù]\OHšØ—ÝX›H‚ˆ\™Ù]Y^Ý›˜[Y_Bˆ\™Ù]X™[^Ý›X™[BˆXÛÛ“Û›BˆÛ\ÜÓ˜[YOHšMHËMHLÜXÚ]KLÜ›Ý\ZÝ™\Ž›ÜXÚ]KLL˜[œÚ][Û‹[ÜXÚ]H‚ˆÏ‚ˆÛÛ“˜]šYØ]UÒÐˆ	‰ˆ
+ˆ]Û‚ˆÛÛXÚÏ^ÛÛ“˜]šYØ]UÒÐŸBˆ]O^ØÜ[ˆ	Ý›X™[H[ˆÐˆ^Ü™\˜BˆÛ\ÜÓ˜[YOHšMHËMHLÜXÚ]KLÜ›Ý\ZÝ™\Ž›ÜXÚ]KLL˜[œÚ][Û‹[ÜXÚ]H›^][\ËXÙ[\ˆ\ÝYžKXÙ[\ˆ›Ý[™YÝ™\Ž˜™Ë\š[X\žKÌŒ^\š[X\žH‚ˆ‚ˆ\œ›ÝÔšYÚÛ\ÜÓ˜[YOHšLÈËLÈˆÏ‚ˆØ]Û‚ˆ
+_BˆÙ]‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆÙ]‚ˆ
+NÂŸB‚‹Êˆ8¥ 8¥ [™[ÎˆØ\ÙHXÝ]š]H8¥ 8¥ 
+‹Â™[˜Ý[ÛˆØ\ÙPXÝ]š]T[™[
+
+HÂˆÛÛœÝÈ]K\ÓØY[™ÈHHœË˜YZ[‘\Ú›Ø\™˜Ø\ÙPXÝ]š]K\ÙT]Y\žJ[™Yš[™YÂˆ™Y™]Ú[\˜[ˆÌˆJNÂ‚ˆYˆ
+\ÓØY[™ÊH™]\›ˆ[™[ÚÙ[]ÛˆÏŽÂˆYˆ
+Y]JH™]\›ˆ[™[[\HX™[H“›ÈØ\ÙH]HˆÏŽÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KM‚ˆÈÛ\ÜÓ˜[YOH^[È›Û\Ù[ZX›Û›^][\ËXÙ[\ˆØ\Lˆ‚ˆš[U^Û\ÜÓ˜[YOHšMHËMH^]š[Û]MˆÏ‚ˆØ\ÙHXÝ]š]BˆÚÏ‚‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËMØ\LÈ‚ˆY]šXÐØ\™X™[H•Ý[Ø\Ù\Èˆ˜[YO^Ù]K˜Ø\Ù\ËÝ[ÔÝš[™Ê
+_HXÛÛ^Ïš[U^Û\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜHš[Û]ˆÏ‚ˆY]šXÐØ\™X™[H‘ØÝ[Y[Èˆ˜[YO^Ù]K™ØÝ[Y[ËÝ[ÓØØ[TÝš[™Ê
+_HXÛÛ^Ï›ÛÚÓÜ[ˆÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜH˜›YHˆÏ‚ˆY]šXÐØ\™X™[H•™\šYšXØ][Ûˆ™XÛÜ™Èˆ˜[YO^Ù]K™š[™[™ÜËÝ[ÓØØ[TÝš[™Ê
+_HXÛÛ^ÏÙX\˜ÚÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜH˜[X™\ˆˆÏ‚ˆY]šXÐØ\™X™[H•\Ù\œÈˆ˜[YO^Ù]K\Ù\œËÝ[ÔÝš[™Ê
+_HXÛÛ^Ï\Ù\œÈÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜH™[Y\˜[ˆÏ‚ˆÙ]‚‚ˆËÊˆÙ^IÜÈXÝ]š]H
+‹ßBˆØ\™Û\ÜÓ˜[YOH˜™ËXØ\™ÍL‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹Lˆ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H^[]]YY›Ü™YÜ›Ý[™•Ù^OÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆØ\Lˆ^\ÛH‚ˆ]ˆÛ\ÜÓ˜[YOH™›^\ÝYžKX™]ÙY[ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™“™]ÈØ\Ù\ÏÜÜ[Ü[ˆÛ\ÜÓ˜[YOH™›Û[[Û›ÈžÙ]K˜Ø\Ù\ËÙ^_OÜÜ[Ù]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^\ÝYžKX™]ÙY[ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™•\ØYÏÜÜ[Ü[ˆÛ\ÜÓ˜[YOH™›Û[[Û›ÈžÙ]K™ØÝ[Y[ËÙ^_OÜÜ[Ù]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^\ÝYžKX™]ÙY[ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™•™\šYšXØ][ÛœÏÜÜ[Ü[ˆÛ\ÜÓ˜[YOH™›Û[[Û›ÈžÙ]K™š[™[™ÜËÙ^_OÜÜ[Ù]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^\ÝYžKX™]ÙY[ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™“™]È\Ù\œÏÜÜ[Ü[ˆÛ\ÜÓ˜[YOH™›Û[[Û›ÈžÙ]K\Ù\œËÙ^_OÜÜ[Ù]‚ˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚‚ˆËÊˆ™XÙ[Ø\Ù\È
+‹ßBˆÙ]Kœ™XÙ[Ø\Ù\Ë›[™Ýˆ	‰ˆ
+ˆØ\™Û\ÜÓ˜[YOH˜™ËXØ\™ÍL‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹Lˆ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H^[]]YY›Ü™YÜ›Ý[™”™XÙ[Ø\Ù\ÏÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLKH‚ˆÙ]Kœ™XÙ[Ø\Ù\ËœÛXÙJJK›X\
+
+ÊHOˆ
+ˆ]ˆÙ^O^ØËšYHÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ^^È‚ˆÜ[ˆÛ\ÜÓ˜[YOH[˜Ø]HX^]ËVÌŒHžØË›˜[Y_OÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™žÙ›Ü›X][YPYÛÊË˜Ü™X]Y]
+_OÜÜ[‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_BˆÙ]‚ˆ
+NÂŸB‚‹Êˆ8¥ 8¥ [™[ˆÝXÝ\˜[ÚYÛ˜[È8¥ 8¥ 
+‹Â™[˜Ý[ÛˆÝXÝ\˜[ÚYÛ˜[Ô[™[
+
+HÂˆÛÛœÝÈ]K\ÓØY[™ÈHHœË˜YZ[‘\Ú›Ø\™œÝXÝ\˜[ÚYÛ˜[Ë\ÙT]Y\žJ[™Yš[™YÂˆ™Y™]Ú[\˜[ˆŒˆJNÂˆÛÛœÝÜÙ[XÝYÙ]™\š]KÙ]Ù[XÝYÙ]™\š]WHH\ÙTÝ]OÝš[™È[Š[
+NÂˆÛÛœÝÈ]Nˆš[]K\ÓØY[™Îˆš[ØY[™ÈHHœË˜YZ[‘\Ú›Ø\™™š[™[™ÜÐžTÙ]™\š]K\ÙT]Y\žJˆÈÙ]™\š]NˆÙ[XÝYÙ]™\š]HÏÈ[™Yš[™YKˆÈ[˜X›YˆÙ[XÝYÙ]™\š]HOOH[Bˆ
+NÂ‚ˆYˆ
+\ÓØY[™ÊH™]\›ˆ[™[ÚÙ[]ÛˆÏŽÂˆYˆ
+Y]JH™]\›ˆ[™[[\HX™[H“›ÈÚYÛ˜[]HˆÏŽÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KM‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆÈÛ\ÜÓ˜[YOH^[È›Û\Ù[ZX›Û›^][\ËXÙ[\ˆØ\Lˆ‚ˆÚY[Û\ÜÓ˜[YOHšMHËMH^X[X™\‹MˆÏ‚ˆÝXÝ\˜[ÚYÛ˜[ÂˆÚÏ‚ˆÜÙ[XÝYÙ]™\š]H	‰ˆ
+ˆ]Ûˆ˜\šX[H™ÚÜÝˆÚ^™OHœÛHˆÛÛXÚÏ^Ê
+HOˆÙ]Ù[XÝYÙ]™\š]J[
+_O‚ˆÚ\˜ÛHÛ\ÜÓ˜[YOHšLÈËLÈ\‹LHˆÏˆÛX\ˆš[\‚ˆÐ]Û‚ˆ
+_BˆÙ]‚‚ˆËÊˆÙ]™\š]HY]šXÈØ\™È8 %ÛXÚØX›H›Üˆš[]›ÝYÚ
+‹ßBˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLÈØ\LÈ‚ˆ]‚ˆÛ\ÜÓ˜[YO^ØÝ\œÛÜ‹\Ú[\ˆ›Ý[™Y[Èš[™ËLˆ˜[œÚ][Û‹X[	ÂˆÙ[XÝYÙ]™\š]HOOH[Èœš[™ËX[X™\‹MÍˆˆœš[™Ë]˜[œÜ\™[Ý™\Žœš[™ËX[X™\‹MÌŒ‚ˆXBˆÛÛXÚÏ^Ê
+HOˆÙ]Ù[XÝYÙ]™\š]J[
+_Bˆ]OH”ÚÝÈ[ÝXÝ\˜[ÚYÛ˜[È‚ˆ‚ˆY]šXÐØ\™X™[H•Ý[ÚYÛ˜[Èˆ˜[YO^Ù]KÝ[š[™[™ÜËÓØØ[TÝš[™Ê
+_HXÛÛ^Ï^YHÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜH˜[X™\ˆˆÏ‚ˆÙ]‚ˆÙ]K˜žTÙ]™\š]K›X\
+
+ÊHOˆ
+ˆ]‚ˆÙ^O^ÜËœÙ]™\š]_BˆÛ\ÜÓ˜[YO^ØÝ\œÛÜ‹\Ú[\ˆ›Ý[™Y[Èš[™ËLˆ˜[œÚ][Û‹X[	ÂˆÙ[XÝYÙ]™\š]HOOHËœÙ]™\š]BˆÈËœÙ]™\š]HOOHœÝ›Û™ÈˆÈœš[™Ë\™YMÍŒˆˆËœÙ]™\š]HOOH›[Ù\˜]HˆÈœš[™Ë[Ü˜[™ÙKMÍŒˆˆœš[™Ë^Y[ÝËMÍŒ‚ˆˆœš[™Ë]˜[œÜ\™[Ý™\Žœš[™ËX›Ü™\ˆ‚ˆXBˆÛÛXÚÏ^Ê
+HOˆÙ]Ù[XÝYÙ]™\š]JÙ[XÝYÙ]™\š]HOOHËœÙ]™\š]HÈ[ˆ
+ËœÙ]™\š]HÏÈ[
+J_Bˆ]O^ØÛXÚÈÈš[\ˆžH	ÜËœÙ]™\š]_HÙ]™\š]XBˆ‚ˆY]šXÐØ\™ˆX™[^ÜËœÙ]™\š]HÏÈ[šÛ›ÝÛˆŸBˆ˜[YO^ÜË˜ÛÝ[ÔÝš[™Ê
+_BˆXÛÛ^Ï[\šX[™ÛHÛ\ÜÓ˜[YOHšMËMˆÏŸBˆÛÛÜ^ÜËœÙ]™\š]HOOHœÝ›Û™ÈˆÈœ™YˆˆËœÙ]™\š]HOOH›[Ù\˜]HˆÈ›Ü˜[™ÙHˆˆžY[ÝÈŸBˆÏ‚ˆÙ]‚ˆ
+J_BˆÙ]‚‚ˆËÊˆš[]›ÝYÚÝXÝ\˜[\ÚYÛ˜[\Ý
+‹ßBˆÜÙ[XÝYÙ]™\š]HOOH[	‰ˆ
+ˆØ\™Û\ÜÓ˜[YO^Ø™ËXØ\™ÍL	ÂˆÙ[XÝYÙ]™\š]HOOHœÝ›Û™ÈˆÈ˜›Ü™\‹\™YMLÌÌˆˆÙ[XÝYÙ]™\š]HOOH›[Ù\˜]HˆÈ˜›Ü™\‹[Ü˜[™ÙKMLÌÌˆˆ˜›Ü™\‹^Y[ÝËMLÌÌ‚ˆXO‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹Lˆ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›Û[YY][HØ\][^™H›^][\ËXÙ[\ˆØ\Lˆ‚ˆ[\šX[™ÛHÛ\ÜÓ˜[YO^ØLËHËLËH	ÂˆÙ[XÝYÙ]™\š]HOOHœÝ›Û™ÈˆÈ^\™YMˆˆÙ[XÝYÙ]™\š]HOOH›[Ù\˜]HˆÈ^[Ü˜[™ÙKMˆˆ^^Y[ÝËM‚ˆXHÏ‚ˆÜÙ[XÝYÙ]™\š]_HÚYÛ˜[ÂˆÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆÙš[ØY[™ÈÈ
+ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ^^È^[]]YY›Ü™YÜ›Ý[™KLˆ‚ˆØY\ŒˆÛ\ÜÓ˜[YOHšLÈËLÈ[š[X]K\Ü[ˆˆÏˆØY[™Èš[™[™ÜË‹‹‚ˆÙ]‚ˆ
+HˆYš[]Hš[]K›[™ÝOOHÈ
+ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™KLˆ“›ÈÝXÝ\˜[ÚYÛ˜[È]\ÈÙ]™\š]H]™[Ü‚ˆ
+Hˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆX^ZMÝ™\™›ÝË^KX]]È‚ˆÙš[]K›X\
+
+ŠHOˆ
+ˆ]ˆÙ^O^Ù‹šYHÛ\ÜÓ˜[YOH^^ÈÜXÙK^KLH›Ü™\‹Xˆ›Ü™\‹X›Ü™\‹ÌÌ‹LKH\Ý˜›Ü™\‹L‚ˆ]ˆÛ\ÜÓ˜[YOH™›Û[YY][H[˜Ø]HžÙ‹]_OÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ^[]]YY›Ü™YÜ›Ý[™‚ˆÜ[]\Ë]ÚYHÚYÛ˜[ÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH˜Ø\][^™H^VÌLHLKHKLH›Ý[™Y™Ë[]]YžÊ‹˜Ø]YÛÜžHÏÈ[šÛ›ÝÛˆŠKœ™\XÙJ×ËÙËˆŠ_OÜÜ[‚ˆÜ[žÙ›Ü›X][YPYÛÊ‹˜Ü™X]Y]
+_OÜÜ[‚ˆÙ]‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_B‚ˆËÊˆš[]›ÝYÚˆš[™[™ÜÈžH\H\ÈÛXÚØX›HÚ\È
+‹ßBˆ]ˆÛ\ÜÓ˜[YOH™›^›^]Ü˜\Ø\LKH‚ˆÙ]K˜žPØ]YÛÜžK›X\
+
+ÊHOˆ
+ˆÜ[‚ˆÙ^O^ØË˜Ø]YÛÜž_BˆÛ\ÜÓ˜[YOHš[›[™KY›^][\ËXÙ[\ˆØ\LH^^ÈLˆKLH›Ý[™YY[›Ü™\ˆ›Ü™\‹X›Ü™\‹ÍL™ËXØ\™ÍŒ^[]]YY›Ü™YÜ›Ý[™Ý\œÛÜ‹YY˜][Ý™\Ž˜›Ü™\‹X›Ü™\ˆ˜[œÚ][Û‹XÛÛÜœÈ‚ˆ]O^Ø	ØË˜ÛÝ[H	ÊË˜Ø]YÛÜžHÏÈ	Ý[šÛ›ÝÛ‰ÊKœ™\XÙJ×ËÙË	È	Ê_HÝXÝ\˜[ÚYÛ˜[ØBˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH˜Ø\][^™HžÊË˜Ø]YÛÜžHÏÈ	Ý[šÛ›ÝÛ‰ÊKœ™\XÙJ×ËÙË	È	Ê_OÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[[Û›È^VÌLH^Y›Ü™YÜ›Ý[™ÍÌ[LHžØË˜ÛÝ[OÜÜ[‚ˆÜÜ[‚ˆ
+J_BˆÙ]‚‚ˆËÊˆžHØ]YÛÜžH
+‹ßBˆØ\™Û\ÜÓ˜[YOH˜™ËXØ\™ÍL‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹Lˆ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H^[]]YY›Ü™YÜ›Ý[™žH\OÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLKH‚ˆÙ]K˜žPØ]YÛÜžK›X\
+
+ÊHOˆ
+ˆ]ˆÙ^O^ØË˜Ø]YÛÜž_HÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ^\ÛH‚ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™Ø\][^™HžÊË˜Ø]YÛÜžHÏÈ[šÛ›ÝÛˆŠKœ™\XÙJ×ËÙËˆŠ_OÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[[Û›È^^ÈžØË˜ÛÝ[OÜÜ[‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚‚ˆËÊˆYÚ\š[Üš]HÝXÝ\˜[ÚYÛ˜[È
+Ú[ˆ›Èš[\ˆXÝ]™JH
+‹ßBˆÈ\Ù[XÝYÙ]™\š]H	‰ˆ]K˜Üš]XØ[š[™[™ÜË›[™Ýˆ	‰ˆ
+ˆØ\™Û\ÜÓ˜[YOH˜™ËXØ\™ÍL›Ü™\‹\™YMLÌŒ‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹Lˆ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H^\™YM’YÚTš[Üš]HÝXÝ\˜[ÚYÛ˜[ÏÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÙ]K˜Üš]XØ[š[™[™ÜËœÛXÙJJK›X\
+
+ŠHOˆ
+ˆ]ˆÙ^O^Ù‹šYHÛ\ÜÓ˜[YOH^^ÈÜXÙK^KLH‚ˆ]ˆÛ\ÜÓ˜[YOH™›Û[YY][H[˜Ø]HžÙ‹]_OÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ^[]]YY›Ü™YÜ›Ý[™‚ˆÜ[]\Ë]ÚYHÚYÛ˜[ÜÜ[‚ˆÜ[žÙ›Ü›X][YPYÛÊ‹˜Ü™X]Y]
+_OÜÜ[‚ˆÙ]‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_BˆÙ]‚ˆ
+NÂŸB‚‹Êˆ8¥ 8¥ [™[NˆÛÜšÈ]Y]YH8¥ 8¥ 
+‹Â™[˜Ý[ÛˆÛÜšÔ]Y]YT[™[
+
+HÂˆÛÛœÝÈ]K\ÓØY[™Ë™Y™]ÚHHœË˜YZ[‘\Ú›Ø\™ÛÜšÔ]Y]YK\ÙT]Y\žJ[™Yš[™YÂˆ™Y™]Ú[\˜[ˆMLˆJNÂ‚ˆYˆ
+\ÓØY[™ÊH™]\›ˆ[™[ÚÙ[]ÛˆÏŽÂˆYˆ
+Y]JH™]\›ˆ[™[[\HX™[H“›È]Y]YH]HˆÏŽÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KM‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆÈÛ\ÜÓ˜[YOH^[È›Û\Ù[ZX›Û›^][\ËXÙ[\ˆØ\Lˆ‚ˆXÝ]š]HÛ\ÜÓ˜[YOHšMHËMH^XÞX[‹MˆÏ‚ˆÛÜšÈ]Y]YBˆÚÏ‚ˆ]Ûˆ˜\šX[H™ÚÜÝˆÚ^™OHœÛHˆÛÛXÚÏ^Ê
+HOˆ™Y™]Ú
+
+_O‚ˆ™Yœ™\ÚÝÈÛ\ÜÓ˜[YOHšLÈËLÈ\‹LHˆÏˆ™Yœ™\ÚˆÐ]Û‚ˆÙ]‚‚ˆËÊˆ[›š[™È
+‹ßBˆÙ]Kœ[›š[™Ë›[™ÝˆÈ
+ˆØ\™Û\ÜÓ˜[YOH˜™ËXØ\™ÍL›Ü™\‹X›YKMLÌŒ‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹Lˆ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H^X›YKM›^][\ËXÙ[\ˆØ\LH‚ˆØY\ŒˆÛ\ÜÓ˜[YOHšLÈËLÈ[š[X]K\Ü[ˆˆÏˆ[›š[™È
+Ù]Kœ[›š[™Ë›[™ÝJBˆÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÙ]Kœ[›š[™Ë›X\
+
+ŠHOˆ
+ˆ]ˆÙ^O^Ü‹šYHÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ^^È‚ˆ]‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[YY][HØ\][^™HžÊ‹œ[•\HÏÈ[šÛ›ÝÛˆŠKœ™\XÙJ×ËÙËˆŠ_OÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™[LˆØ\ÙHÞÜ‹˜Ø\ÙRYOÜÜ[‚ˆÙ]‚ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™žÙ›Ü›X][YPYÛÊ‹˜Ü™X]Y]
+_OÜÜ[‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+Hˆ
+ˆØ\™Û\ÜÓ˜[YOH˜™ËXØ\™ÍL‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœM^XÙ[\ˆ^\ÛH^[]]YY›Ü™YÜ›Ý[™‚ˆÚXÚÐÚ\˜ÛLˆÛ\ÜÓ˜[YOHšMHËMH^X]]ÈX‹LH^Y[Y\˜[MˆÏ‚ˆ›ÈXÝ]™H[œÂˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_B‚ˆËÊˆ˜Z[Y
+‹ßBˆÙ]K™˜Z[Y›[™Ýˆ	‰ˆ
+ˆØ\™Û\ÜÓ˜[YOH˜™ËXØ\™ÍL›Ü™\‹\™YMLÌŒ‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹Lˆ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H^\™YM›^][\ËXÙ[\ˆØ\LH‚ˆÚ\˜ÛHÛ\ÜÓ˜[YOHšLÈËLÈˆÏˆ˜Z[Y
+Ù]K™˜Z[Y›[™ÝJBˆÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÙ]K™˜Z[Y›X\
+
+ŠHOˆ
+ˆ]ˆÙ^O^Ü‹šYHÛ\ÜÓ˜[YOH^^ÈÜXÙK^KLH‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[YY][HØ\][^™HžÊ‹œ[•\HÏÈ[šÛ›ÝÛˆŠKœ™\XÙJ×ËÙËˆŠ_OÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™Ø\ÙHÞÜ‹˜Ø\ÙRYOÜÜ[‚ˆÙ]‚ˆÜ‹™\œ›Ü“Y\ÜØYÙH	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH^\™YMÍÌ[˜Ø]HžÜ‹™\œ›Ü“Y\ÜØYÙ_OÙ]‚ˆ
+_BˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_B‚ˆËÊˆ™XÙ[HÛÛ\]Y
+‹ßBˆÙ]Kœ™XÙ[PÛÛ\]Y›[™Ýˆ	‰ˆ
+ˆØ\™Û\ÜÓ˜[YOH˜™ËXØ\™ÍL‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹Lˆ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H^Y[Y\˜[M”™XÙ[HÛÛ\]YÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLKH‚ˆÙ]Kœ™XÙ[PÛÛ\]YœÛXÙJJK›X\
+
+ŠHOˆ
+ˆ]ˆÙ^O^Ü‹šYHÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ^^È‚ˆÜ[ˆÛ\ÜÓ˜[YOH˜Ø\][^™HžÊ‹œ[•\HÏÈ[šÛ›ÝÛˆŠKœ™\XÙJ×ËÙËˆŠ_OÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™Ø\ÙHÞÜ‹˜Ø\ÙRYH0­ÈÜ‹˜ÛÛ\]Y]È›Ü›X][YPYÛÊ‹˜ÛÛ\]Y]
+Hˆ¸ %ŸOÜÜ[‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_BˆÙ]‚ˆ
+NÂŸB‚‹Êˆ8¥ 8¥ [™[Nˆ[™Ú[™HÝ]\È
+Ü\˜][™È[Ù[
+H8¥ 8¥ 
+‹Â™[˜Ý[Ûˆ[™Ú[™TÝ]\Ô[™[
+
+HÂˆÛÛœÝÈ]NˆÝ[˜[TÝ]\ÈHHœËœÞ\Ý[KœÝ]Ë\ÙT]Y\žJ[™Yš[™YÂˆ™Y™]Ú[\˜[ˆLˆJNÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KM‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆÈÛ\ÜÓ˜[YOH^[È›Û\Ù[ZX›Û›^][\ËXÙ[\ˆØ\Lˆ‚ˆØ]YÙHÛ\ÜÓ˜[YOHšMHËMH^\\œKMˆÏ‚ˆ[™Ú[™H]]Üš]H[Ù[ˆÚÏ‚ˆÙ]‚‚ˆËÊˆÜ\˜][™È[Ù[
+‹ßBˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLHÎ™ÜšYXÛÛËLÈØ\M‚ˆËÊˆ]]Û›Û[Ý\ÈÛÛ[[Ý\È
+‹ßBˆØ\™Û\ÜÓ˜[YOH˜™ËY[Y\˜[MLÍH›Ü™\‹Y[Y\˜[MLÌŒ‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹Lˆ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H^Y[Y\˜[M›^][\ËXÙ[\ˆØ\LKH‚ˆ˜\Û\ÜÓ˜[YOHšLËHËLËHˆÏˆ]]Û›Û[Ý\È
+ÛÛ[[Ý\ÊBˆÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆ]ˆÛ\ÜÓ˜[YOH^^ÈÜXÙK^KLKH‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™”]\›ˆ[™Ú[™OÜÜ[‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^Y[Y\˜[M›Ü™\‹Y[Y\˜[MLÌÌXÝ]™OÐ˜YÙO‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™•™[™[™Ú[™OÜÜ[‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^Y[Y\˜[M›Ü™\‹Y[Y\˜[MLÌÌXÝ]™OÐ˜YÙO‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™“Ý]ÛÛYH[™Ú[™OÜÜ[‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^Y[Y\˜[M›Ü™\‹Y[Y\˜[MLÌÌXÝ]™OÐ˜YÙO‚ˆÙ]‚ˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚‚ˆËÊˆ]]Û›Û[Ý\È˜Y
+‹ßBˆØ\™Û\ÜÓ˜[YOH˜™ËX›YKMLÍH›Ü™\‹X›YKMLÌŒ‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹Lˆ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H^X›YKM›^][\ËXÙ[\ˆØ\LKH‚ˆš[SÝ]]Û\ÜÓ˜[YOHšLËHËLËHˆÏˆ]]Û›Û[Ý\È
+˜YÛ›JBˆÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆ]ˆÛ\ÜÓ˜[YOH^^ÈÜXÙK^KLKH‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™”Ý˜]YÞH[™Ú[™OÜÜ[‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^X›YKM›Ü™\‹X›YKMLÌÌ‘˜YÐ˜YÙO‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™”›ØÙY\˜[[™Ú[™OÜÜ[‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^X›YKM›Ü™\‹X›YKMLÌÌ‘˜YÐ˜YÙO‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™•šXXš[]H[™Ú[™OÜÜ[‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^X›YKM›Ü™\‹X›YKMLÌÌ‘˜YÐ˜YÙO‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™”›ØÙY\˜[][™Ú[™OÜÜ[‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^X›YKM›Ü™\‹X›YKMLÌÌ‘˜YÐ˜YÙO‚ˆÙ]‚ˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚‚ˆËÊˆ[X[ˆ™\]Z\™Y
+‹ßBˆØ\™Û\ÜÓ˜[YOH˜™ËX[X™\‹MLÍH›Ü™\‹X[X™\‹MLÌŒ‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹Lˆ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H^X[X™\‹M›^][\ËXÙ[\ˆØ\LKH‚ˆÚY[Û\ÜÓ˜[YOHšLËHËLËHˆÏˆÛÝ™\™ZYÛˆ\›Ý˜[™\]Z\™YˆÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆ]ˆÛ\ÜÓ˜[YOH^^ÈÜXÙK^KLKH‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™\ÜÙ[X›H[™Ú[™OÜÜ[‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^X[X™\‹M›Ü™\‹X[X™\‹MLÌÌ\›Ý˜[Ð˜YÙO‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™Ø[\ZYÛˆ[™Ú[™OÜÜ[‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^X[X™\‹M›Ü™\‹X[X™\‹MLÌÌ\›Ý˜[Ð˜YÙO‚ˆÙ]‚ˆÙ]‚ˆ]ÛˆÚ^™OHœÛHˆ˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOHËY[]Lˆ^^Èˆ\ÐÚ[‚ˆ[šÈ™YH‹ÜÛÝ™\™ZYÛ‹XÛÛ›Û‚ˆÚY[Û\ÜÓ˜[YOHšLÈËLÈ\‹LHˆÏˆÛÈÈÛÝ™\™ZYÛˆÛÛ›ÛˆÓ[šÏ‚ˆÐ]Û‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆÙ]‚‚ˆËÊˆÝ[˜[HÝ]\È
+‹ßBˆÜÝ[˜[TÝ]\È	‰ˆ
+ˆØ\™Û\ÜÓ˜[YOH˜™ËXØ\™ÍL‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹Lˆ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H^[]]YY›Ü™YÜ›Ý[™›^][\ËXÙ[\ˆØ\LKH‚ˆ˜Y[ÈÛ\ÜÓ˜[YOHšLËHËLËH^XÞX[‹MˆÏˆÝ[˜[H]]Û›Û[Ý\È˜XÚÙš[ˆÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËMØ\Lˆ^^È‚ˆ]‚ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™›ØÚÈX‹LH”ÚYÛ˜[È[™[™ÏÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[[Û›È^[ÈžÜÝ[˜[TÝ]\ËœÚYÛ˜[ÏËœ[™[™ÈOÜÜ[‚ˆÙ]‚ˆ]‚ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™›ØÚÈX‹LH\›Ý™YÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[[Û›È^[È^Y[Y\˜[MžÜÝ[˜[TÝ]\ËœÚYÛ˜[ÏË˜\›Ý™YOÜÜ[‚ˆÙ]‚ˆ]‚ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™›ØÚÈX‹LH”™Z™XÝYÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[[Û›È^[È^\™YMžÜÝ[˜[TÝ]\ËœÚYÛ˜[ÏËœ™Z™XÝYOÜÜ[‚ˆÙ]‚ˆ]‚ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™›ØÚÈX‹LH•Ý[™YÚ\ÝžOÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[[Û›È^[ÈžÜÝ[˜[TÝ]\Ëœ™YÚ\ÝžHOÜÜ[‚ˆÙ]‚ˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_BˆÙ]‚ˆ
+NÂŸB‚‹Êˆ8¥ 8¥ Ú\™YÛÛ\Û™[È8¥ 8¥ 
+‹Â™[˜Ý[ÛˆY]šXÐØ\™
+ÈX™[˜[YKXÛÛ‹ÛÛÜˆNˆÈX™[ˆÝš[™ÎÈ˜[YNˆÝš[™ÎÈXÛÛŽˆ™XXÝ”™XXÝ›ÙNÈÛÛÜŽˆÝš[™ÈJHÂˆÛÛœÝÛÛÜ“X\ˆ™XÛÜ™Ýš[™ËÝš[™ÏˆHÂˆ[Y\˜[ˆ^Y[Y\˜[M™ËY[Y\˜[MLÌL›Ü™\‹Y[Y\˜[MLÌŒ‹ˆ›YNˆ^X›YKM™ËX›YKMLÌL›Ü™\‹X›YKMLÌŒ‹ˆš[Û]ˆ^]š[Û]M™Ë]š[Û]MLÌL›Ü™\‹]š[Û]MLÌŒ‹ˆ[X™\Žˆ^X[X™\‹M™ËX[X™\‹MLÌL›Ü™\‹X[X™\‹MLÌŒ‹ˆ™Yˆ^\™YM™Ë\™YMLÌL›Ü™\‹\™YMLÌŒ‹ˆÜ˜[™ÙNˆ^[Ü˜[™ÙKM™Ë[Ü˜[™ÙKMLÌL›Ü™\‹[Ü˜[™ÙKMLÌŒ‹ˆY[ÝÎˆ^^Y[ÝËM™Ë^Y[ÝËMLÌL›Ü™\‹^Y[ÝËMLÌŒ‹ˆÞX[Žˆ^XÞX[‹M™ËXÞX[‹MLÌL›Ü™\‹XÞX[‹MLÌŒ‹ˆNÂˆÛÛœÝÛÈHÛÛÜ“X\ØÛÛÜ—HÏÈÛÛÜ“X\˜›YNÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YO^Ø›Ý[™Y[È›Ü™\ˆLÈ	ØÛßXO‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\LKHX‹LHÜXÚ]KMÌžÚXÛÛŸOÜ[ˆÛ\ÜÓ˜[YOH^^ÈžÛX™[OÜÜ[Ù]‚ˆ]ˆÛ\ÜÓ˜[YOH^^›ÛX›Û›Û[[Û›ÈžÝ˜[Y_OÙ]‚ˆÙ]‚ˆ
+NÂŸB‚™[˜Ý[ÛˆÝ]\Ð˜YÙJÈX™[ÛÝ[˜\šX[NˆÈX™[ˆÝš[™ÎÈÛÝ[ˆ[X™\ŽÈ˜\šX[ˆœÝXØÙ\ÜÈˆ™\ÝXÝ]™Hˆœ[›š[™ÈˆJHÂˆÛÛœÝÛÈH˜\šX[OOHœÝXØÙ\ÜÈˆÈ˜™ËY[Y\˜[MLÌL^Y[Y\˜[M›Ü™\‹Y[Y\˜[MLÌŒ‚ˆˆ˜\šX[OOH™\ÝXÝ]™HˆÈ˜™Ë\™YMLÌL^\™YM›Ü™\‹\™YMLÌŒ‚ˆˆ˜™ËX›YKMLÌL^X›YKM›Ü™\‹X›YKMLÌŒŽÂˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YO^Ø›Ý[™Y[Y›Ü™\ˆLÈKLˆ^XÙ[\ˆ	ØÛßXO‚ˆ]ˆÛ\ÜÓ˜[YOH^[È›ÛX›Û›Û[[Û›ÈžØÛÝ[OÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^ÈÜXÚ]KMÌžÛX™[OÙ]‚ˆÙ]‚ˆ
+NÂŸB‚™[˜Ý[Ûˆ[™[ÚÙ[]ÛŠ
+HÂˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLÈ[š[X]K\[ÙH‚ˆ]ˆÛ\ÜÓ˜[YOHšMˆ™Ë[]]Y›Ý[™YËLKÌÈˆÏ‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆØ\LÈ‚ˆÖÌK‹ËK›X\
+
+JHOˆ]ˆÙ^O^Ú_HÛ\ÜÓ˜[YOHšLMˆ™Ë[]]Y›Ý[™Y[ÈˆÏŠ_BˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOHšLÌˆ™Ë[]]Y›Ý[™Y[ÈˆÏ‚ˆÙ]‚ˆ
+NÂŸB‚™[˜Ý[Ûˆ[™[[\JÈX™[NˆÈX™[ˆÝš[™ÈJHÂˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKXÙ[\ˆLÌˆ^\ÛH^[]]YY›Ü™YÜ›Ý[™‚ˆÛX™[BˆÙ]‚ˆ
+NÂŸB‚‹Êˆ8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥dˆQÐPÖH‘QÒTÕ–H’QUÈ
+™\Ù\™Yœ›ÛHÜšYÚ[˜[Z\ÜÚ[ÛˆÛÛ›Û
+Bˆ8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d
+‹Â‚™[˜Ý[ÛˆYØXÞT™YÚ\ÝžUšY]Ê
+HÂˆÛÛœÝÈ]Nˆ™YÚ\ÝžTÝ]ÈHHœËœ™YÚ\ÝžKœÝ]Ë\ÙT]Y\žJ[™Yš[™YÂˆ™]žNˆ˜[ÙKˆ™Y™]ÚÛ•Ú[™ÝÑ›ØÝ\Îˆ˜[ÙKˆJNÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ]ˆÛ\ÜÓ˜[YOH^XÙ[\ˆKN‚ˆÈÛ\ÜÓ˜[YOH^^›Û\Ù[ZX›ÛX‹Lˆ”™YÚ\ÝžH	ˆ[HZÙOÚÏ‚ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™^\ÛHX^]Ë[È^X]]È‚ˆHÜšYÚ[˜[Z\ÜÚ[ÛˆÛÛ›ÛÛÜšËX›Ø\™[\™˜XÙKˆÝ]H™YÚ\ÝžH]KØÚ[XH˜[Y][Û‹ˆ[™[HZÙHØÝ[Y[Ù[™\˜][ÛˆÛÛË‚ˆÜ‚ˆÙ]‚‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËMØ\LÈ‚ˆY]šXÐØ\™X™[H”Ý]\ÈZ[ˆ˜[YO^Ü™YÚ\ÝžTÝ]ÏËÝ[Ý]\ÏËÔÝš[™Ê
+HÏÈŽHŸHXÛÛ^Ï™[™[™Õ\Û\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜH™[Y\˜[ˆÏ‚ˆY]šXÐØ\™X™[H”›ÙÜ˜[\Èˆ˜[YO^Ü™YÚ\ÝžTÝ]ÏËÝ[›ÙÜ˜[\ÏËÓØØ[TÝš[™Ê
+HÏÈŽŽŸHXÛÛ^Ï›ÛÚÓÜ[ˆÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜH˜›YHˆÏ‚ˆY]šXÐØ\™X™[H“Ý™\œÚYÚ›ÙY\Èˆ˜[YO^Ü™YÚ\ÝžTÝ]ÏËÝ[Ý™\œÚYÚËÔÝš[™Ê
+HÏÈŒŒÌÈŸHXÛÛ^ÏÚY[Û\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜHš[Û]ˆÏ‚ˆY]šXÐØ\™X™[H•\ÝÈ\ÜÚ[™Èˆ˜[YO^Ü™YÚ\ÝžTÝ]ÏËÝ[\ÝÏËÓØØ[TÝš[™Ê
+HÏÈŒHŸHXÛÛ^ÏÚXÚÐÚ\˜ÛLˆÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜH™[Y\˜[ˆÏ‚ˆÙ]‚‚ˆØ\™Û\ÜÓ˜[YOH˜™ËXØ\™ÍL‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœMˆ^XÙ[\ˆ^\ÛH^[]]YY›Ü™YÜ›Ý[™‚ˆ•H[ÛÜšËX›Ø\™™YÚ\ÝžH[™[HZÙHØÝ[Y[Ù[™\˜][Ûˆ[\™˜XÙH\È™Y[ˆ™\Ù\™YÜ‚ˆÛ\ÜÓ˜[YOH›]LHXØÙ\ÜÈH]Z[YÝ]KXžK\Ý]H™YÚ\ÝžKØÚ[XH˜[Y][Û‹[™ØÝ[Y[[\]\È›ÝYÚHYXØ]Y™YÚ\ÝžHYÙ\ËÜ‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆÙ]‚ˆ
+NÂŸB‚‹Êˆ8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥dˆPRSˆÓÓTÓ‘S•ˆ8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d
+‹Â‚‹Êˆ8¥ 8¥ [™[ˆ]™H]H[™Ù\Ý[Ûˆ8¥ 8¥ 
+‹Â‹ÊŠˆ\‹Y]\Ù]›ÝÈÚ][ˆÝ]\ÈÛ[™ÈÈ\ØX›H[™Ù\Ý]Ûˆ
+‹Â™[˜Ý[Ûˆ]\Ù]›ÝÊÈËšYÙÙ\“]]][Û‹ÙÙÛS]]][ÛˆNˆÂˆÎˆÈÝ™X[WÚYˆÝš[™ÎÈÝ™X[WÛ˜[YNˆÝš[™ÎÈ[˜X›Yˆ›ÛÛX[ŽÈ\]WÙœ™\]Y[˜ÞNˆÝš[™ÎÈ\š\ÙXÝ[ÛŽˆÝš[™È[ÈÛXZ[ŽˆÝš[™È[È™XÛÜ™×Ú[™Ù\ÝYˆ[X™\ŽÈ\ÝÚ[™Ù\ÝYØ]ˆ[X™\ˆ[NÂˆšYÙÙ\“]]][ÛŽˆÈ]]]Nˆ
+[œ]ˆÈ]\Ù]YˆÝš[™ÎÈX^™XÛÜ™ÏÎˆ[X™\ˆJHOˆ›ÚYÈ\Ô[™[™Îˆ›ÛÛX[ˆNÂˆÙÙÛS]]][ÛŽˆÈ]]]Nˆ
+[œ]ˆÈ]\Ù]YˆÝš[™ÎÈ[˜X›Yˆ›ÛÛX[ˆJHOˆ›ÚYNÂŸJHÂˆÛÛœÝ[”Ý]\ÈHœËš[™Ù\Ý[Û‹™]\Ù][”Ý]\Ë\ÙT]Y\žJˆÈ]\Ù]YˆËœÝ™X[WÚYKˆÈ™Y™]Ú[\˜[ˆÌHËÈÛ]™\žHÜÈÚ[Hš\ÚX›Bˆ
+NÂ‚ˆÛÛœÝ\Ô[›š[™ÈH[”Ý]\Ë™]OËœ[›š[™ÈÏÈ˜[ÙNÂˆÛÛœÝ\Ô]Y]YYH[”Ý]\Ë™]OËœ]Y]YYÏÈ˜[ÙNÂˆÛÛœÝ\Ð\ÞHH\Ô[›š[™È\Ô]Y]YYšYÙÙ\“]]][Û‹š\Ô[™[™ÎÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœ›Ý[™Y[È›Ü™\ˆ›Ü™\‹X›Ü™\‹ÍLM›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^LHZ[‹]ËL‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[YY][H[˜Ø]HžÙËœÝ™X[WÛ˜[Y_OÜÜ[‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YO^ÙË™[˜X›YÈ^Y[Y\˜[M›Ü™\‹Y[Y\˜[MÌÌˆˆ^[]]YY›Ü™YÜ›Ý[™›Ü™\‹X›Ü™\ˆŸO‚ˆÙË™[˜X›YÈXÝ]™Hˆˆ”]\ÙYŸBˆÐ˜YÙO‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^XÞX[‹M›Ü™\‹XÞX[‹MÌÌžÙË\]WÙœ™\]Y[˜Þ_OÐ˜YÙO‚ˆÚ\Ô[›š[™È	‰ˆ
+ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^X[X™\‹M›Ü™\‹X[X™\‹MÌÌ[š[X]K\[ÙH‚ˆØY\ŒˆÛ\ÜÓ˜[YOHšLÈËLÈ[š[X]K\Ü[ˆ\‹LHˆÏˆ[›š[™ÂˆÐ˜YÙO‚ˆ
+_BˆÚ\Ô]Y]YY	‰ˆ
+ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^\\œKM›Ü™\‹\\œKMÌÌ‚ˆÛØÚÈÛ\ÜÓ˜[YOHšLÈËLÈ\‹LHˆÏˆ]Y]YYˆÐ˜YÙO‚ˆ
+_BˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™]LH›^][\ËXÙ[\ˆØ\LÈ‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\LHX\[ˆÛ\ÜÓ˜[YOHšLÈËLÈˆÏˆÙËš\š\ÙXÝ[ÛˆÏÈ¸ %ŸOÜÜ[‚ˆÜ[žÙË™ÛXZ[ˆÏÈ¸ %ŸOÜÜ[‚ˆÜ[žÊËœ™XÛÜ™×Ú[™Ù\ÝYÏÈ
+KÓØØ[TÝš[™Ê
+_H™XÛÜ™ÏÜÜ[‚ˆÙË›\ÝÚ[™Ù\ÝYØ]	‰ˆÜ[“\ÝˆÙ›Ü›X][YPYÛÊË›\ÝÚ[™Ù\ÝYØ]
+_OÜÜ[ŸBˆÙ]‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ[M‚ˆ]Û‚ˆÚ^™OHœÛH‚ˆ˜\šX[H›Ý][™H‚ˆÛÛXÚÏ^Ê
+HOˆšYÙÙ\“]]][Û‹›]]]JÈ]\Ù]YˆËœÝ™X[WÚYX^™XÛÜ™ÎˆLJ_Bˆ\ØX›Y^Ú\Ð\Þ_Bˆ]O^Ú\Ô[›š[™ÈÈ’[™Ù\Ý[Ûˆ\È[›š[™Èˆˆ\Ô]Y]YYÈ’[™Ù\Ý[Ûˆ\È]Y]YYˆˆ”Ý\[™Ù\Ý[ÛˆŸBˆ‚ˆÚ\Ð\ÞHÈØY\ŒˆÛ\ÜÓ˜[YOHšLËHËLËH[š[X]K\Ü[ˆˆÏˆˆ^HÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸBˆÚ\Ô[›š[™ÈÈ”[›š[™Ë‹‹ˆˆˆ\Ô]Y]YYÈ”]Y]YYˆˆ’[™Ù\ÝŸBˆÐ]Û‚ˆ]Û‚ˆÚ^™OHœÛH‚ˆ˜\šX[H›Ý][™H‚ˆÛÛXÚÏ^Ê
+HOˆÙÙÛS]]][Û‹›]]]JÈ]\Ù]YˆËœÝ™X[WÚY[˜X›YˆYË™[˜X›YJ_Bˆ‚ˆÙË™[˜X›YÈ]\ÙHÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆˆ^HÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸBˆÐ]Û‚ˆÙ]‚ˆÙ]‚ˆ
+NÂŸB‚™[˜Ý[Ûˆ[™Ù\Ý[Û”[™[
+
+HÂˆÛÛœÝ]\Ù]ÈHœË[šYšYY™Ù]Ý[šYšYYÚ[™Ù\Ý[Û—ÛY]šXÜË\ÙT]Y\žJßJNÂˆÛÛœÝ[œÈHœËš[™Ù\Ý[Û‹›\Ý[œË\ÙT]Y\žJÈ[Z]ˆLJNÂˆÛÛœÝÚYÛ˜[ÈHœË[šYšYY™Ù]Ý[šYšYYÜÚYÛ˜[Ë\ÙT]Y\žJÈ[Z]ˆŒJNÂˆÛÛœÝÚYÛ˜[Ý]ÈHœË[šYšYY™Ù]Ý[šYšYYÜÚYÛ˜[ÜÝ[[X\žK\ÙT]Y\žJßJNÂˆÛÛœÝÚYÛ˜[ØØ\™ÈHœËš[™Ù\Ý[Û‹›\ÝÜÚYÛ˜[Ú[[YÙ[˜ÙWØØ\™Ë\ÙT]Y\žJÂˆ[Z]ˆKˆ[˜ÛYWÙ^ÛYYˆ˜[ÙKˆJNÂˆÛÛœÝÚYÛ˜[ØØ\™ÜÝ[[X\žHHœËš[™Ù\Ý[Û‹™Ù]ÜÚYÛ˜[Ú[[YÙ[˜ÙWÜÝ[[X\žK\ÙT]Y\žJ
+NÂˆÛÛœÝØÚY[\”Ý]\ÈHœËš[™Ù\Ý[Û‹™Ù]ØÚY[\”Ý]\Ë\ÙT]Y\žJ
+NÂˆÛÛœÝ]\ÐØ][ÙÈHœËš[™Ù\Ý[Û‹™Ù]Ø]\×ÜX›X×ÜÝ™X[WØØ][ÙË\ÙT]Y\žJ
+NÂ‚ˆÛÛœÝÙYY]\Ó]]][ÛˆHœËš[™Ù\Ý[Û‹œÙYYØ]\×ÜÜ[][Û—ÜÝ™X[\Ë\ÙS]]][ÛŠÂˆÛ”ÝXØÙ\ÜÎˆ
+
+HOˆÂˆ]\Ù]Ëœ™Y™]Ú
+
+NÂˆØÚY[\”Ý]\Ëœ™Y™]Ú
+
+NÂˆ]\ÐØ][ÙËœ™Y™]Ú
+
+NÂˆKˆJNÂ‚ˆÛÛœÝÙYY]]][ÛˆHœËš[™Ù\Ý[Û‹œÙYYY˜][]\Ù]Ë\ÙS]]][ÛŠÂˆÛ”ÝXØÙ\ÜÎˆ
+
+HOˆÂˆ]\Ù]Ëœ™Y™]Ú
+
+NÂˆØÚY[\”Ý]\Ëœ™Y™]Ú
+
+NÂˆKˆJNÂˆÛÛœÝšYÙÙ\“]]][ÛˆHœËš[™Ù\Ý[Û‹šYÙÙ\’[™Ù\Ý[Û‹\ÙS]]][ÛŠÂˆÛ”ÝXØÙ\ÜÎˆ
+
+HOˆÂˆ[œËœ™Y™]Ú
+
+NÂˆÚYÛ˜[Ëœ™Y™]Ú
+
+NÂˆÚYÛ˜[Ý]Ëœ™Y™]Ú
+
+NÂˆÚYÛ˜[ØØ\™Ëœ™Y™]Ú
+
+NÂˆÚYÛ˜[ØØ\™ÜÝ[[X\žKœ™Y™]Ú
+
+NÂˆ]\Ù]Ëœ™Y™]Ú
+
+NÂˆKˆJNÂˆÛÛœÝÙÙÛS]]][ÛˆHœËš[™Ù\Ý[Û‹ÙÙÛQ]\Ù]\ÙS]]][ÛŠÂˆÛ”ÝXØÙ\ÜÎˆ
+
+HOˆÂˆ]\Ù]Ëœ™Y™]Ú
+
+NÂˆØÚY[\”Ý]\Ëœ™Y™]Ú
+
+NÂˆKˆJNÂ‚ˆÛÛœÝÙ]™\š]PÛÛÜŽˆ™XÛÜ™Ýš[™ËÝš[™ÏˆHÂˆÜš]XØ[ˆ^\™YM™Ë\™YMÌL›Ü™\‹\™YMÌÌ‹ˆYÚˆ^[Ü˜[™ÙKM™Ë[Ü˜[™ÙKMÌL›Ü™\‹[Ü˜[™ÙKMÌÌ‹ˆYY][Nˆ^^Y[ÝËM™Ë^Y[ÝËMÌL›Ü™\‹^Y[ÝËMÌÌ‹ˆÝÎˆ^X›YKM™ËX›YKMÌL›Ü™\‹X›YKMÌÌ‹ˆNÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆËÊˆ›ÝÈNˆØÚY[\ˆÝ]\È
+ÈÚYÛ˜[Ý]È
+‹ßBˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLHÎ™ÜšYXÛÛËLˆØ\Mˆ‚ˆØ\™‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœMˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆX‹M‚ˆÈÛ\ÜÓ˜[YOH^[È›Û\Ù[ZX›Û›^][\ËXÙ[\ˆØ\Lˆ‚ˆ˜Y[ÈÛ\ÜÓ˜[YOHšMHËMH^XÞX[‹MˆÏ‚ˆ[™Ù\Ý[ÛˆØÚY[\‚ˆÚÏ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^Ø\Lˆ›^]Ü˜\\ÝYžKY[™‚ˆ]Û‚ˆÚ^™OHœÛH‚ˆÛÛXÚÏ^Ê
+HOˆÙYY]\Ó]]][Û‹›]]]JßJ_Bˆ\ØX›Y^ÜÙYY]\Ó]]][Û‹š\Ô[™[™ßBˆ]OH”™YÚ\Ý\ˆHÝ\˜]Y]\ÈX›XÈÝ™X[HØ][ÙÈ‚ˆ‚ˆÜÙYY]\Ó]]][Û‹š\Ô[™[™ÈÈØY\ŒˆÛ\ÜÓ˜[YOHšLËHËLËH[š[X]K\Ü[ˆˆÏˆˆÛØ™HÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸBˆÜ[]H]\ÈÝ™X[\ÂˆÐ]Û‚ˆÊY]\Ù]Ë™]H]\Ù]Ë™]K›[™ÝOOH
+H	‰ˆ
+ˆ]Û‚ˆÚ^™OHœÛH‚ˆ˜\šX[H›Ý][™H‚ˆÛÛXÚÏ^Ê
+HOˆÙYY]]][Û‹›]]]J
+_Bˆ\ØX›Y^ÜÙYY]]][Û‹š\Ô[™[™ßBˆ‚ˆÜÙYY]]][Û‹š\Ô[™[™ÈÈØY\ŒˆÛ\ÜÓ˜[YOHšLËHËLËH[š[X]K\Ü[ˆˆÏˆˆ\ÈÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸBˆÙYYÐH]\Ù]ÂˆÐ]Û‚ˆ
+_BˆÙ]‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËLÈØ\LÈX‹M‚ˆ]ˆÛ\ÜÓ˜[YOHœ›Ý[™Y[È›Ü™\ˆ›Ü™\‹X›Ü™\‹ÍLLÈ‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™›^][\ËXÙ[\ˆØ\LH]X˜\ÙHÛ\ÜÓ˜[YOHšLÈËLÈˆÏˆ™YÚ\Ý\™YÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^›ÛX›Û^XÞX[‹MžÙ]\Ù]Ë™]OË›[™ÝÏÈOÙ]‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOHœ›Ý[™Y[È›Ü™\ˆ›Ü™\‹X›Ü™\‹ÍLLÈ‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™›^][\ËXÙ[\ˆØ\LH˜Y[ÈÛ\ÜÓ˜[YOHšLÈËLÈˆÏˆØÚY[YÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^›ÛX›Û^Y[Y\˜[MžÜØÚY[\”Ý]\Ë™]OË˜XÝ]™R›ØœÏË›[™ÝÏÈOÙ]‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOHœ›Ý[™Y[È›Ü™\ˆ›Ü™\‹X›Ü™\‹ÍLLÈ‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™›^][\ËXÙ[\ˆØ\LHXÝ]š]HÛ\ÜÓ˜[YOHšLÈËLÈˆÏˆ[›š[™ÏÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^›ÛX›Û^X[X™\‹MžÜØÚY[\”Ý]\Ë™]OËœ[›š[™Ò[™Ù\Ý[ÛœÏË›[™ÝÏÈOÙ]‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOHœ›Ý[™Y[È›Ü™\ˆ›Ü™\‹X›Ü™\‹ÍLLÈ‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™›^][\ËXÙ[\ˆØ\LHÛØ™HÛ\ÜÓ˜[YOHšLÈËLÈˆÏˆ]\ÈØ][ÙÏÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^›ÛX›Û^X›YKMžØ]\ÐØ][ÙË™]OËÝ[ÜÝ™X[\ÈÏÈOÙ]‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOHœ›Ý[™Y[È›Ü™\ˆ›Ü™\‹X›Ü™\‹ÍLLÈY˜ÛÛ\Ü[‹Lˆ‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™›^][\ËXÙ[\ˆØ\LH^Y\œÈÛ\ÜÓ˜[YOHšLÈËLÈˆÏˆX›XÈÝ™X[HÛXZ[œÏÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH›]LH›^›^]Ü˜\Ø\LH‚ˆØ]\ÐØ][ÙË™]OË˜žWÙÛXZ[ˆ	‰ˆØš™XÝ™[šY\Ê]\ÐØ][ÙË™]K˜žWÙÛXZ[ŠKœÛXÙJJK›X\
+
+ÙÛXZ[‹ÛÝ[JHOˆ
+ˆ˜YÙHÙ^O^ÙÛXZ[ŸH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^^ÈžÙÛXZ[ŸNˆÔÝš[™ÊÛÝ[
+_OÐ˜YÙO‚ˆ
+J_BˆÙ]‚ˆÙ]‚ˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚‚ˆØ\™‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœMˆ‚ˆÈÛ\ÜÓ˜[YOH^[È›Û\Ù[ZX›Û›^][\ËXÙ[\ˆØ\LˆX‹M‚ˆ˜\Û\ÜÓ˜[YOHšMHËMH^X[X™\‹MˆÏ‚ˆ]™HÚYÛ˜[Ý[[X\žBˆÚÏ‚ˆÜÚYÛ˜[ØØ\™ÜÝ[[X\žK™]OË˜ÛÛ™šYÝ\™YOOHYH	‰ˆÚYÛ˜[ØØ\™ÜÝ[[X\žK™]KœÛÝ\˜ÙWÜÝ]\ÈOOH›ÚÈˆÈ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLÈX‹M‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLÈØ\LÈ‚ˆ]ˆÛ\ÜÓ˜[YOHœ›Ý[™Y[È›Ü™\ˆ›Ü™\‹X›Ü™\‹ÍLLÈ‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™”›ÙXÝ[ÛˆØ\™ÏÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^›ÛX›Û^X[X™\‹MžÜÚYÛ˜[ØØ\™ÜÝ[[X\žK™]Kœ›ÙXÝ[Û—ØØ\™ÈÏÈOÙ]‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOHœ›Ý[™Y[È›Ü™\ˆ›Ü™\‹X›Ü™\‹ÍLLÈ‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™•Ý[Ø\™ÏÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^›ÛX›Û^XÞX[‹MžÜÚYÛ˜[ØØ\™ÜÝ[[X\žK™]KÝ[ØØ\™ÈÏÈOÙ]‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOHœ›Ý[™Y[È›Ü™\ˆ›Ü™\‹X›Ü™\‹ÍLLÈ‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™‘^ÛYYÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^›ÛX›Û^[]]YY›Ü™YÜ›Ý[™žÜÚYÛ˜[ØØ\™ÜÝ[[X\žK™]K™^ÛYYØØ\™ÈÏÈOÙ]‚ˆÙ]‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOHœ›Ý[™Y[È›Ü™\ˆ›Ü™\‹X›Ü™\‹ÍLLÈ‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™žHÙ]™\š]OÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^Ø\Lˆ]LH›^]Ü˜\‚ˆÓØš™XÝ™[šY\ÊÚYÛ˜[ØØ\™ÜÝ[[X\žK™]K˜žWÜÙ]™\š]HÏÈßJK›X\
+
+ÜÙ]™\š]KÛÝ[JHOˆ
+ˆ˜YÙHÙ^O^ÜÙ]™\š]_H˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YO^ÜÙ]™\š]PÛÛÜ–ÜÙ]™\š]WHÏÈˆŸOžÜÙ]™\š]_NˆÔÝš[™ÊÛÝ[
+_OÐ˜YÙO‚ˆ
+J_BˆÓØš™XÝšÙ^\ÊÚYÛ˜[ØØ\™ÜÝ[[X\žK™]K˜žWÜÙ]™\š]HÏÈßJK›[™ÝOOH	‰ˆ
+ˆÜ[ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™“›È]\ÈØ\™ÈY]ÜÜ[‚ˆ
+_BˆÙ]‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOHœ›Ý[™Y[È›Ü™\ˆ›Ü™\‹X›Ü™\‹ÍLLÈ‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™”ÚYÛ˜[˜[Z[Y\ÏÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^Ø\Lˆ]LH›^]Ü˜\‚ˆÓØš™XÝ™[šY\ÊÚYÛ˜[ØØ\™ÜÝ[[X\žK™]K˜žWÜÚYÛ˜[Ù˜[Z[HÏÈßJKœÛXÙJ
+K›X\
+
+ÜÚYÛ˜[Ù˜[Z[KÛÝ[JHOˆ
+ˆ˜YÙHÙ^O^ÜÚYÛ˜[Ù˜[Z[_H˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^XÞX[‹M›Ü™\‹XÞX[‹MÌÌžÜÚYÛ˜[Ù˜[Z[_NˆÔÝš[™ÊÛÝ[
+_OÐ˜YÙO‚ˆ
+J_BˆÙ]‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOHœ›Ý[™Y[È›Ü™\ˆ›Ü™\‹X›Ü™\‹ÍLLÈ‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™Ø[›ÛšXØ[ÛÙ\ÏÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^Ø\Lˆ]LH›^]Ü˜\‚ˆÓØš™XÝ™[šY\ÊÚYÛ˜[ØØ\™ÜÝ[[X\žK™]K˜žWØØ[›ÛšXØ[ÜÚYÛ˜[ØÛÙHÏÈßJKœÛXÙJ
+K›X\
+
+ØØ[›ÛšXØ[ÜÚYÛ˜[ØÛÙKÛÝ[JHOˆ
+ˆ˜YÙHÙ^O^ØØ[›ÛšXØ[ÜÚYÛ˜[ØÛÙ_H˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^X›YKM›Ü™\‹X›YKMÌÌžØØ[›ÛšXØ[ÜÚYÛ˜[ØÛÙ_NˆÔÝš[™ÊÛÝ[
+_OÐ˜YÙO‚ˆ
+J_BˆÙ]‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOHœ›Ý[™Y[È›Ü™\ˆ›Ü™\‹X›Ü™\‹ÍLLÈ‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™•™\šYšXØ][ÛˆÝ]\ÏÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^Ø\Lˆ]LH›^]Ü˜\‚ˆÓØš™XÝ™[šY\ÊÚYÛ˜[ØØ\™ÜÝ[[X\žK™]K˜žWÝ™\šYšXØ][Û—ÜÝ]\ÈÏÈßJK›X\
+
+Ý™\šYšXØ][Û—ÜÝ]\ËÛÝ[JHOˆ
+ˆ˜YÙHÙ^O^Ý™\šYšXØ][Û—ÜÝ]\ßH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^Y[Y\˜[M›Ü™\‹Y[Y\˜[MÌÌžÝ™\šYšXØ][Û—ÜÝ]\ßNˆÔÝš[™ÊÛÝ[
+_OÐ˜YÙO‚ˆ
+J_BˆÙ]‚ˆÙ]‚ˆÙ]‚ˆ
+Hˆ
+ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆØ\LÈX‹M‚ˆ]ˆÛ\ÜÓ˜[YOHœ›Ý[™Y[È›Ü™\ˆ›Ü™\‹X›Ü™\‹ÍLLÈ‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™XÝ]™HÚYÛ˜[ÏÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^›ÛX›Û^X[X™\‹MžÜÚYÛ˜[Ý]Ë™]OËÝ[XÝ]™HÏÈOÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^›ÛX›Û^X[X™\‹MžÜÚYÛ˜[Ý]Ë™]OËÝ[ØXÝ]™HÏÈOÙ]‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOHœ›Ý[™Y[È›Ü™\ˆ›Ü™\‹X›Ü™\‹ÍLLÈ‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™žHÙ]™\š]OÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^Ø\Lˆ]LH›^]Ü˜\‚ˆÜÚYÛ˜[Ý]Ë™]OË˜žWÜÙ]™\š]H	‰ˆØš™XÝ™[šY\ÊÚYÛ˜[Ý]Ë™]K˜žWÜÙ]™\š]JK›X\
+
+ÜÙ]‹ÛJHOˆ
+ˆ˜YÙHÙ^O^ÜÙ]ŸH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YO^ÜÙ]™\š]PÛÛÜ–ÜÙ]—HÏÈˆŸOžÜÙ]ŸNˆÔÝš[™ÊÛ
+_OÐ˜YÙO‚ˆ
+J_BˆÊ\ÚYÛ˜[Ý]Ë™]OË˜žWÜÙ]™\š]HØš™XÝšÙ^\ÊÚYÛ˜[Ý]Ë™]K˜žWÜÙ]™\š]JK›[™ÝOOH
+H	‰ˆ
+ˆÜ[ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™“›ÈÚYÛ˜[ÈY]ÜÜ[‚ˆ
+_BˆÙ]‚ˆÙ]‚ˆÙ]‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆÙ]‚‚ˆËÊˆ›ÝÈŽˆ]\Ù]™YÚ\ÝžH
+‹ßBˆØ\™‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœMˆ‚ˆÈÛ\ÜÓ˜[YOH^[È›Û\Ù[ZX›Û›^][\ËXÙ[\ˆØ\LˆX‹M‚ˆÛØ™HÛ\ÜÓ˜[YOHšMHËMH^Y[Y\˜[MˆÏ‚ˆ]\Ù]™YÚ\ÝžBˆÚÏ‚ˆÙ]\Ù]Ëš\ÓØY[™ÈÈ
+ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ^[]]YY›Ü™YÜ›Ý[™ØY\ŒˆÛ\ÜÓ˜[YOHšMËM[š[X]K\Ü[ˆˆÏˆØY[™Ë‹‹Ù]‚ˆ
+HˆY]\Ù]Ë™]H]\Ù]Ë™]K›[™ÝOOHÈ
+ˆ]ˆÛ\ÜÓ˜[YOH^XÙ[\ˆKN^[]]YY›Ü™YÜ›Ý[™‚ˆ]X˜\ÙHÛ\ÜÓ˜[YOHšNËN^X]]ÈX‹LˆÜXÚ]KMLˆÏ‚ˆ“›È]\Ù]È™YÚ\Ý\™YY]Ü‚ˆÛ\ÜÓ˜[YOH^\ÛH]LHÛXÚÈ”Ü[]H]\ÈÝ™X[\ÈˆÈYHÝ\˜]Y™Y\˜[Ý]K[™][šXÚ\[X›XÈÝ™X[HØ][ÙËÜ‚ˆÙ]‚ˆ
+Hˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLÈ‚ˆÙ]\Ù]Ë™]K›X\
+
+ÊHOˆ
+ˆ]\Ù]›ÝÂˆÙ^O^ÙËœÝ™X[WÚYBˆÏ^ÙßBˆšYÙÙ\“]]][Û^ÝšYÙÙ\“]]][ÛŸBˆÙÙÛS]]][Û^ÝÙÙÛS]]][ÛŸBˆÏ‚ˆ
+J_BˆÙ]‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚‚ˆËÊˆ›ÝÈÎˆ™XÙ[[œÈ
+È]™HÚYÛ˜[È
+‹ßBˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLHÎ™ÜšYXÛÛËLˆØ\Mˆ‚ˆØ\™‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœMˆ‚ˆÈÛ\ÜÓ˜[YOH^[È›Û\Ù[ZX›Û›^][\ËXÙ[\ˆØ\LˆX‹M‚ˆÛØÚÈÛ\ÜÓ˜[YOHšMHËMH^X›YKMˆÏ‚ˆ™XÙ[[™Ù\Ý[Ûˆ[œÂˆÚÏ‚ˆÜ[œËš\ÓØY[™ÈÈ
+ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ^[]]YY›Ü™YÜ›Ý[™ØY\ŒˆÛ\ÜÓ˜[YOHšMËM[š[X]K\Ü[ˆˆÏˆØY[™Ë‹‹Ù]‚ˆ
+Hˆ\[œË™]H[œË™]K›[™ÝOOHÈ
+ˆ]ˆÛ\ÜÓ˜[YOH^XÙ[\ˆKMˆ^[]]YY›Ü™YÜ›Ý[™‚ˆÛØÚÈÛ\ÜÓ˜[YOHšMˆËMˆ^X]]ÈX‹LˆÜXÚ]KMLˆÏ‚ˆÛ\ÜÓ˜[YOH^\ÛH“›È[™Ù\Ý[Ûˆ[œÈY]ˆÙYY]\Ù]È[™šYÙÙ\ˆ[ˆ[™Ù\Ý[Û‹Ü‚ˆÙ]‚ˆ
+Hˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÜ[œË™]K›X\
+
+[ŠHOˆ
+ˆ]ˆÙ^O^Ü[‹šYHÛ\ÜÓ˜[YOHœ›Ý[™Y[È›Ü™\ˆ›Ü™\‹X›Ü™\‹ÍLLÈ›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH^\ÛH›Û[YY][HžÜ[‹™]\Ù]YOÜÜ[‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YO^Âˆ[‹œÝ]\ÈOOH˜ÛÛ\]YˆÈ^Y[Y\˜[M›Ü™\‹Y[Y\˜[MÌÌˆ‚ˆ[‹œÝ]\ÈOOH™˜Z[YˆÈ^\™YM›Ü™\‹\™YMÌÌˆ‚ˆ[‹œÝ]\ÈOOHœ[›š[™ÈˆÈ^X[X™\‹M›Ü™\‹X[X™\‹MÌÌˆ‚ˆ[‹œÝ]\ÈOOH˜\WÝ[˜]˜Z[X›HˆÈ^[Ü˜[™ÙKM›Ü™\‹[Ü˜[™ÙKMÌÌˆ‚ˆ[‹œÝ]\ÈOOHœ\X[ˆÈ^X›YKM›Ü™\‹X›YKMÌÌˆ‚ˆ^[]]YY›Ü™YÜ›Ý[™›Ü™\‹X›Ü™\ˆ‚ˆO‚ˆÜ[‹œÝ]\ÈOOHœ[›š[™Èˆ	‰ˆØY\ŒˆÛ\ÜÓ˜[YOHšLÈËLÈ[š[X]K\Ü[ˆ\‹LHˆÏŸBˆÜ[‹œÝ]\ÈOOH˜\WÝ[˜]˜Z[X›HˆÈTH[˜]˜Z[X›Hˆˆ[‹œÝ]\ÈOOHœ\X[ˆÈ”\X[ˆˆ[‹œÝ]\ßBˆÐ˜YÙO‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™]LH‚ˆÜ[‹œÝ\[YHÈ™]È]J[‹œÝ\[YJKÓØØ[TÝš[™Ê
+Hˆ¸ %ŸH0­ÈÜ[‹œ™XÛÜ™Ô›ØÙ\ÜÙYÏÈH›ØÙ\ÜÙY0­ÈÜ[‹œÚYÛ˜[×ÙÙ[™\˜]YÏÈHÚYÛ˜[ÂˆÙ]‚ˆÙ]‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚‚ˆØ\™‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœMˆ‚ˆÈÛ\ÜÓ˜[YOH^[È›Û\Ù[ZX›Û›^][\ËXÙ[\ˆØ\LˆX‹M‚ˆ[\šX[™ÛHÛ\ÜÓ˜[YOHšMHËMH^X[X™\‹MˆÏ‚ˆ]™HÚYÛ˜[È]XÝYˆÚÏ‚ˆÜÚYÛ˜[ØØ\™Ë™]OË˜Ø\™È	‰ˆÚYÛ˜[ØØ\™Ë™]K˜Ø\™Ë›[™ÝˆÈ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆX^ZNMˆÝ™\™›ÝË^KX]]È‚ˆÜÚYÛ˜[ØØ\™Ë™]K˜Ø\™Ë›X\
+
+Ø\™
+HOˆ
+ˆ]‚ˆÙ^O^ØØ\™œÚYÛ˜[ÚYÏÈ	ØØ\™œÛÝ\˜ÙWÝX›_N‰ØØ\™œÛÝ\˜ÙWÜ™XÛÜ™ÚYXBˆÛ\ÜÓ˜[YO^Ø›Ý[™Y[È›Ü™\ˆLÈ	ØØ\™™^ÛYWÙœ›ÛWÜ›ÙXÝ[ÛˆÈ˜›Ü™\‹[Ü˜[™ÙKMÍ™Ë[Ü˜[™ÙKMÌLÜXÚ]KMÍHˆˆÙ]™\š]PÛÛÜ–ØØ\™œÙ]™\š]HÏÈˆ—HÏÈ˜›Ü™\‹X›Ü™\‹ÍLŸXBˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ›^]Ü˜\‚ˆØØ\™œÙ]™\š]H	‰ˆ
+ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YO^ÜÙ]™\š]PÛÛÜ–ØØ\™œÙ]™\š]WHÏÈˆŸOžØØ\™œÙ]™\š]_OÐ˜YÙO‚ˆ
+_BˆØØ\™˜Ø[›ÛšXØ[ÜÚYÛ˜[ØÛÙH	‰ˆ
+ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^X›YKM›Ü™\‹X›YKMÌÌžØØ\™˜Ø[›ÛšXØ[ÜÚYÛ˜[ØÛÙ_OÐ˜YÙO‚ˆ
+_BˆØØ\™œÚYÛ˜[Ù˜[Z[H	‰ˆ
+ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^XÞX[‹M›Ü™\‹XÞX[‹MÌÌžØØ\™œÚYÛ˜[Ù˜[Z[_OÐ˜YÙO‚ˆ
+_BˆØØ\™™\šYšXØ][Û—ÜÝ]\È	‰ˆ
+ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^Y[Y\˜[M›Ü™\‹Y[Y\˜[MÌÌžØØ\™™\šYšXØ][Û—ÜÝ]\ßOÐ˜YÙO‚ˆ
+_BˆØØ\™œ™XÛÜ™ÛÜšYÚ[ˆ	‰ˆ
+ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^]š[Û]M›Ü™\‹]š[Û]MÌÌžØØ\™œ™XÛÜ™ÛÜšYÚ[ŸOÐ˜YÙO‚ˆ
+_BˆØØ\™™^ÛYWÙœ›ÛWÜ›ÙXÝ[Ûˆ	‰ˆ
+ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^[Ü˜[™ÙKM›Ü™\‹[Ü˜[™ÙKMÌÌ™^ÛYYÐ˜YÙO‚ˆ
+_BˆÜ[ˆÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H[˜Ø]H‚ˆØØ\™™\Ü^WÝ]HÏÈØ\™˜Ø[›ÛšXØ[ÜÚYÛ˜[Û˜[YHÏÈØ\™œ˜]×ÜÚYÛ˜[Ý\HÏÈØ\™œÚYÛ˜[ÚYBˆÜÜ[‚ˆÙ]‚ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™]LH[™KXÛ[\Lˆ‚ˆØØ\™™\Ü^WÜÝ[[X\žHÏÈ“›È]\ÈÝ[[X\žH]˜Z[X›KˆŸBˆÜ‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™]LH›^][\ËXÙ[\ˆØ\Lˆ›^]Ü˜\‚ˆØØ\™š\š\ÙXÝ[Û—Ü˜]×Ý˜[YH	‰ˆÜ[žØØ\™š\š\ÙXÝ[Û—Ü˜]×Ý˜[Y_OÜÜ[ŸBˆØØ\™™Ù[ÙÜ˜\WÚÙ^H	‰ˆÜ[žØØ\™™Ù[ÙÜ˜\WÚÙ^_OÜÜ[ŸBˆØØ\™˜ÛÛ™šY[˜ÙWÜØÛÜ™HOOH[	‰ˆØ\™˜ÛÛ™šY[˜ÙWÜØÛÜ™HOOH[™Yš[™Y	‰ˆ
+ˆÜ[ÛÛ™šY[˜ÙNˆÊ[X™\ŠØ\™˜ÛÛ™šY[˜ÙWÜØÛÜ™JH
+ˆL
+KÑš^Y
+
+_IOÜÜ[‚ˆ
+_BˆØØ\™œÙ]™\š]WÜØÛÜ™HOOH[	‰ˆØ\™œÙ]™\š]WÜØÛÜ™HOOH[™Yš[™Y	‰ˆ
+ˆÜ[”Ù]™\š]HØÛÜ™NˆÓ[X™\ŠØ\™œÙ]™\š]WÜØÛÜ™JKÑš^Y
+Š_OÜÜ[‚ˆ
+_BˆØØ\™™]XÝYØ]	‰ˆÜ[žÛ™]È]JØ\™™]XÝYØ]
+KÓØØ[Q]TÝš[™Ê
+_OÜÜ[ŸBˆØØ\™œ]X\˜[[™WÜ™X\ÛÛˆ	‰ˆÜ[”]X\˜[[™NˆØØ\™œ]X\˜[[™WÜ™X\ÛÛŸOÜÜ[ŸBˆÙ]‚ˆØØ\™œÛÝ\˜ÙWÝ\›	‰ˆ
+ˆH™Y^ØØ\™œÛÝ\˜ÙWÝ\›H\™Ù]H—Ø›[šÈˆ™[H››Ü™Y™\œ™\ˆˆÛ\ÜÓ˜[YOH^^È^\š[X\žH[›[™KY›^][\ËXÙ[\ˆØ\LH]Lˆ‚ˆÛÝ\˜ÙH^\›˜[[šÈÛ\ÜÓ˜[YOHšLÈËLÈˆÏ‚ˆØO‚ˆ
+_BˆÙ]‚ˆ
+J_BˆÙ]‚ˆ
+HˆÚYÛ˜[Ëš\ÓØY[™ÈÚYÛ˜[ØØ\™Ëš\ÓØY[™ÈÈ
+ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ^[]]YY›Ü™YÜ›Ý[™ØY\ŒˆÛ\ÜÓ˜[YOHšMËM[š[X]K\Ü[ˆˆÏˆØY[™Ë‹‹Ù]‚ˆ
+Hˆ\ÚYÛ˜[Ë™]HÚYÛ˜[Ë™]K›[™ÝOOHÈ
+ˆ]ˆÛ\ÜÓ˜[YOH^XÙ[\ˆKMˆ^[]]YY›Ü™YÜ›Ý[™‚ˆ˜\Û\ÜÓ˜[YOHšMˆËMˆ^X]]ÈX‹LˆÜXÚ]KMLˆÏ‚ˆÛ\ÜÓ˜[YOH^\ÛH“›È]™HÚYÛ˜[ÈY]ˆ[ˆ[ˆ[™Ù\Ý[ÛˆÈ]XÝ]\›œËÜ‚ˆÙ]‚ˆ
+Hˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆX^ZNMˆÝ™\™›ÝË^KX]]È‚ˆÜÚYÛ˜[Ë™]K›X\
+
+ÚYÊHOˆÂˆÛÛœÝ[]U\PÛÛÜ“X\ˆ™XÛÜ™Ýš[™ËÝš[™ÏˆHÂˆÛÜœÜ˜][ÛŽˆ^X›YKM›Ü™\‹X›YKMLÌÌ™ËX›YKMLÌL‹ˆÜ™Ø[š^˜][ÛŽˆ^\\œKM›Ü™\‹\\œKMLÌÌ™Ë\\œKMLÌL‹ˆÛÝ™\››Y[ØYÙ[˜ÞNˆ^X[X™\‹M›Ü™\‹X[X™\‹MLÌÌ™ËX[X™\‹MLÌL‹ˆ›Ûœ›Ùš]ˆ^YÜ™Y[‹M›Ü™\‹YÜ™Y[‹MLÌÌ™ËYÜ™Y[‹MLÌL‹ˆ[™Ü™Ù[]Nˆ^[Ü˜[™ÙKM›Ü™\‹[Ü˜[™ÙKMLÌÌ™Ë[Ü˜[™ÙKMLÌL‹ˆÛÛ˜XÝÜ—Ø\Ú[™\ÜÎˆ^XÞX[‹M›Ü™\‹XÞX[‹MLÌÌ™ËXÞX[‹MLÌL‹ˆš[˜[˜ÚX[Ú[œÝ]][ÛŽˆ^Y[Y\˜[M›Ü™\‹Y[Y\˜[MLÌÌ™ËY[Y\˜[MLÌL‹ˆ[XÛÛWØÛÛ\[žNˆ^Z[™YÛËM›Ü™\‹Z[™YÛËMLÌÌ™ËZ[™YÛËMLÌL‹ˆYYXWØÛÛ\[žNˆ^\[šËM›Ü™\‹\[šËMLÌÌ™Ë\[šËMLÌL‹ˆ[™]šYX[Ü\œÛÛŽˆ^YÜ˜^KM›Ü™\‹YÜ˜^KMLÌÌ™ËYÜ˜^KMLÌL‹ˆ[šÛ›ÝÛŽˆ^YÜ˜^KML›Ü™\‹YÜ˜^KMŒÌÌ™ËYÜ˜^KMŒÌL‹ˆNÂˆÛÛœÝ[]U\SX™[ˆ™XÛÜ™Ýš[™ËÝš[™ÏˆHÂˆÛÜœÜ˜][ÛŽˆÛÜœÜ˜][Ûˆ‹ˆÜ™Ø[š^˜][ÛŽˆ“Ü™Ø[š^˜][Ûˆ‹ˆÛÝ™\››Y[ØYÙ[˜ÞNˆ‘ÛÝ™\››Y[YÙ[˜ÞH‹ˆ›Ûœ›Ùš]ˆ“›Ûœ›Ùš]‹ˆ[™Ü™Ù[]Nˆ“[™Ü™Ô›Ü\H‹ˆÛÛ˜XÝÜ—Ø\Ú[™\ÜÎˆÛÛ˜XÝÜˆ‹ˆš[˜[˜ÚX[Ú[œÝ]][ÛŽˆ‘š[˜[˜ÚX[[œÝ]][Ûˆ‹ˆ[XÛÛWØÛÛ\[žNˆ•[XÛÛH‹ˆYYXWØÛÛ\[žNˆ“YYXKÕXÚ‹ˆ[™]šYX[Ü\œÛÛŽˆ’[™]šYX[‹ˆ[šÛ›ÝÛŽˆ•[šÛ›ÝÛˆ‹ˆNÂˆËÈÚYÛ˜[\HÛ\ÜÚYšXØ][Ûˆ›Üˆš\ÝX[Y™™\™[X][Û‚ˆÛÛœÝÚYÛ˜[\PÛÛ™šYÎˆ™XÛÜ™Ýš[™ËÈX™[ˆÝš[™ÎÈXÛÛŽˆÝš[™ÎÈÛÛÜŽˆÝš[™ÈOˆHÂˆ™\X]Ù[]NˆÈX™[ˆ‘[]H‹XÛÛŽˆ—^ÌQŒÑLŸH‹ÛÛÜŽˆ^X›YKMˆKˆœ™\]Y[˜ÞWÜÜZÙNˆÈX™[ˆ”ÙXÝÜˆ‹XÛÛŽˆ—^ÌQÐ_H‹ÛÛÜŽˆ^X[X™\‹MˆKˆÙ[ÙÜ˜\X×ØÛ\Ý\ŽˆÈX™[ˆ“ØØ][Ûˆ‹XÛÛŽˆ—^ÌQÑH‹ÛÛÜŽˆ^Y[Y\˜[MˆKˆÝ]\×Ù[^NˆÈX™[ˆ”Ý]\È‹XÛÛŽˆ—LŒÑŒÈ‹ÛÛÜŽˆ^[Ü˜[™ÙKMˆKˆ™[™Ø[›ÛX[NˆÈX™[ˆ•™[™‹XÛÛŽˆ—^ÌQÎH‹ÛÛÜŽˆ^\\œKMˆKˆNÂˆÛÛœÝ\Ô™\X][]HHÚYËœÚYÛ˜[Ý\HOOHœ™\X]Ù[]HŽÂˆÛÛœÝ\Ñœ™\]Y[˜ÞTÜZÙHHÚYËœÚYÛ˜[Ý\HOOH™œ™\]Y[˜ÞWÜÜZÙHŽÂˆÛÛœÝ\Ü^S˜[YHH\Ô™\X][]BˆÈ
+
+ÚYÈ\È[žJK˜Ø[›ÛšXØ[[]S˜[YHÚYË]Kœ™\XÙJ×”™\X]
+ÛÛ\[ž_YÙ[˜Þ_[]JN—Ê‹ËˆŠKœ™\XÙJ×”™\X][]N—Ê‹ËˆŠJBˆˆÚYË]NÂˆÛÛœÝ[\HH
+ÚYÈ\È[žJK™[]U\NÂˆÛÛœÝ[›ÛHH
+ÚYÈ\È[žJK™[]T›ÛH\ÈÝš[™È[ÂˆÛÛœÝ[ÛÛ™šY[˜ÙHH
+ÚYÈ\È[žJK™[]PÛÛ™šY[˜ÙTØÛÜ™NÂˆÛÛœÝ›ÛPÛÛ™ˆH
+ÚYÈ\È[žJKœ›ÛPÛÛ™šY[˜ÙNÂˆÛÛœÝ[X\Ù\ÈH
+ÚYÈ\È[žJK™[]P[X\Ù\ÒœÛÛˆ\ÈÝš[™Ö×H[ÂˆÛÛœÝ›ÛSX™[H[›ÛHOOH˜\Ú[™\ÜÈˆ[›ÛHOOHœ™\ÜÛ™[ˆÈÛÛ\[žHˆˆ[›ÛHOOH˜YÙ[˜ÞHˆÈYÙ[˜ÞHˆˆ[›ÛHOOH›Ü™Ø[š^˜][ÛˆˆÈ“Ü™Ø[š^˜][Ûˆˆˆ[ÂˆÛÛœÝÝÛÛ™šYÈHÚYÛ˜[\PÛÛ™šYÖÜÚYËœÚYÛ˜[Ý\WHÏÈÈX™[ˆÚYËœÚYÛ˜[Ý\KXÛÛŽˆ—LLQ‘Lˆ‹ÛÛÜŽˆ^YÜ˜^KMˆNÂ‚ˆ™]\›ˆ
+ˆ]ˆÙ^O^ÜÚYËšYHÛ\ÜÓ˜[YO^Ø›Ý[™Y[È›Ü™\ˆLÈ	ÜÙ]™\š]PÛÛÜ–ÜÚYËœÙ]™\š]WÛ]™[HÏÈ˜›Ü™\‹X›Ü™\‹ÍLŸXO‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ›^]Ü˜\‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YO^ÜÙ]™\š]PÛÛÜ–ÜÚYËœÙ]™\š]WÛ]™[HÏÈˆŸOžÜÚYËœÙ]™\š]_OÐ˜YÙO‚ˆËÊˆÚYÛ˜[\H˜YÙH8 %[Ø^\ÈÚÝÛˆ
+‹ßBˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YO^Ø^VÌLH	ÜÝÛÛ™šYË˜ÛÛÜŸH›Ü™\‹XÝ\œ™[ÌÌO‚ˆÜÝÛÛ™šYË›X™[BˆÐ˜YÙO‚ˆÚ\Ô™\X][]H	‰ˆ[\H	‰ˆ
+ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YO^Ø^VÌLH	Ù[]U\PÛÛÜ“X\Ù[\WHˆŸXO‚ˆÙ[]U\SX™[Ù[\WH[\_BˆÐ˜YÙO‚ˆ
+_BˆÚ\Ô™\X][]H	‰ˆ›ÛSX™[	‰ˆ
+ˆÜ[ˆÛ\ÜÓ˜[YOH^VÌLH^[]]YY›Ü™YÜ›Ý[™›Û[YY][HžÜ›ÛSX™[NÜÜ[‚ˆ
+_BˆÜ[ˆÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H[˜Ø]H‚ˆÙ\Ü^S˜[Y_BˆÜÜ[‚ˆÙ]‚ˆÚ\Ô™\X][]H	‰ˆ[X\Ù\È	‰ˆ[X\Ù\Ë›[™Ýˆ	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH^VÌLH^[]]YY›Ü™YÜ›Ý[™]LH‚ˆ[ÛÈÛ›ÝÛˆ\ÎˆØ[X\Ù\Ëš›Ú[Š‹Š_BˆÙ]‚ˆ
+_BˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™]LH[™KXÛ[\LˆžÜÚYË™^[˜][ÛŸOÜ‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™]LH›^][\ËXÙ[\ˆØ\Lˆ›^]Ü˜\‚ˆÜ[žÜÚYËš\š\ÙXÝ[ÛŸOÜÜ[‚ˆÜ[—LÏÜÜ[‚ˆÜ[ÛÛ™šY[˜ÙNˆÊ[X™\ŠÚYË˜ÛÛ™šY[˜ÙWÜØÛÜ™JH
+ˆL
+KÑš^Y
+
+_IOÜÜ[‚ˆÚ\Ô™\X][]H	‰ˆ[ÛÛ™šY[˜ÙH	‰ˆ
+ˆ‚ˆÜ[—LÏÜÜ[‚ˆÜ[‘[]HØÛÜ™NˆÊ[X™\Š[ÛÛ™šY[˜ÙJH
+ˆL
+KÑš^Y
+
+_IOÜÜ[‚ˆÏ‚ˆ
+_BˆÚ\Ô™\X][]H	‰ˆ›ÛPÛÛ™ˆ	‰ˆ
+ˆ‚ˆÜ[—LÏÜÜ[‚ˆÜ[”›ÛNˆÊ[X™\Š›ÛPÛÛ™ŠH
+ˆL
+KÑš^Y
+
+_IOÜÜ[‚ˆÏ‚ˆ
+_BˆÜ[—LÏÜÜ[‚ˆÜ[žÜÚYË™]XÝYØ]È™]È]JÚYË™]XÝYØ]
+KÓØØ[Q]TÝš[™Ê
+Hˆ¸ %ŸOÜÜ[‚ˆÙ]‚ˆÙ]‚ˆ
+NÂˆJ_BˆÙ]‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆÙ]‚ˆÙ]‚ˆ
+NÂŸB‚‹Êˆ8¥ 8¥ Û›ÝÛYÙH˜XÚØ›Û™H^Ü™\ˆ[™[8¥ 8¥ 
+‹Â™[˜Ý[ÛˆÛ›ÝÛYÙQ^Ü™\”[™[
+
+HÂˆÛÛœÝØXÝ]™UX‹Ù]XÝ]™UX—HH\ÙTÝ]JœÝ]]\ÈŠNÂˆÛÛœÝÜÙX\˜ÚÙ]ÙX\˜ÚHH\ÙTÝ]JˆŠNÂˆÛÛœÝÚ\š\ÙXÝ[Û‹Ù]\š\ÙXÝ[Û—HH\ÙTÝ]JˆŠNÂˆÛÛœÝÜYÙKÙ]YÙWHH\ÙTÝ]J
+NÂˆÛÛœÝÜÙ[XÝY›ÝËÙ]Ù[XÝY›Ý×HH\ÙTÝ]OÝš[™È[Š[
+NÂ‚ˆÛÛœÝ\š\ÙXÝ[ÛœÈHœËšÛ›ÝÛYÙR[™Ù\Ý[Û‹™Ù]\š\ÙXÝ[ÛœË\ÙT]Y\žJ
+NÂˆÛÛœÝÛXZ[œÈHœËšÛ›ÝÛYÙR[™Ù\Ý[Û‹™Ù]ÛXZ[œË\ÙT]Y\žJ
+NÂ‚ˆÛÛœÝÝ]]\ÈHœËšÛ›ÝÛYÙR[™Ù\Ý[Û‹˜œ›ÝÜÙTÝ]]\Ë\ÙT]Y\žJˆÈÙX\˜ÚˆÙX\˜Ú[™Yš[™Y\š\ÙXÝ[ÛŽˆ\š\ÙXÝ[Ûˆ[™Yš[™Y[Z]ˆMKÙ™œÙ]ˆYÙH
+ˆMHKˆÈ[˜X›YˆXÝ]™UXˆOOHœÝ]]\ÈˆBˆ
+NÂˆÛÛœÝØ\ÙS]ÈHœËšÛ›ÝÛYÙR[™Ù\Ý[Û‹˜œ›ÝÜÙPØ\ÙS]Ë\ÙT]Y\žJˆÈÙX\˜ÚˆÙX\˜Ú[™Yš[™Y\š\ÙXÝ[ÛŽˆ\š\ÙXÝ[Ûˆ[™Yš[™Y[Z]ˆMKÙ™œÙ]ˆYÙH
+ˆMHKˆÈ[˜X›YˆXÝ]™UXˆOOH˜Ø\ÙS]ÈˆBˆ
+NÂˆÛÛœÝYÙ[˜ÚY\ÈHœËšÛ›ÝÛYÙR[™Ù\Ý[Û‹˜œ›ÝÜÙPYÙ[˜ÚY\Ë\ÙT]Y\žJˆÈÙX\˜ÚˆÙX\˜Ú[™Yš[™Y\š\ÙXÝ[ÛŽˆ\š\ÙXÝ[Ûˆ[™Yš[™Y[Z]ˆMKÙ™œÙ]ˆYÙH
+ˆMHKˆÈ[˜X›YˆXÝ]™UXˆOOH˜YÙ[˜ÚY\ÈˆBˆ
+NÂˆÛÛœÝÛÝ\ÈHœËšÛ›ÝÛYÙR[™Ù\Ý[Û‹˜œ›ÝÜÙPÛÝ\Ë\ÙT]Y\žJˆÈÙX\˜ÚˆÙX\˜Ú[™Yš[™Y\š\ÙXÝ[ÛŽˆ\š\ÙXÝ[Ûˆ[™Yš[™Y[Z]ˆMKÙ™œÙ]ˆYÙH
+ˆMHKˆÈ[˜X›YˆXÝ]™UXˆOOH˜ÛÝ\ÈˆBˆ
+NÂˆÛÛœÝ\™Ù]ÈHœËšÛ›ÝÛYÙR[™Ù\Ý[Û‹˜œ›ÝÜÙPY›ØØXÞU\™Ù]Ë\ÙT]Y\žJˆÈÙX\˜ÚˆÙX\˜Ú[™Yš[™Y[Z]ˆMKÙ™œÙ]ˆYÙH
+ˆMHKˆÈ[˜X›YˆXÝ]™UXˆOOH\™Ù]ÈˆBˆ
+NÂˆÛÛœÝ›Ü›][\ÈHœËšÛ›ÝÛYÙR[™Ù\Ý[Û‹˜œ›ÝÜÙTÙ][Y[›Ü›][\Ë\ÙT]Y\žJˆÈÙX\˜ÚˆÙX\˜Ú[™Yš[™Y[Z]ˆMKÙ™œÙ]ˆYÙH
+ˆMHKˆÈ[˜X›YˆXÝ]™UXˆOOH™›Ü›][\ÈˆBˆ
+NÂ‚ˆÛÛœÝXÛÛ™šYÈHÂˆÈÙ^NˆœÝ]]\È‹X™[ˆ”Ý]]\È‹XÛÛŽˆ›ÛÚÓÜ[ˆÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆKˆÈÙ^Nˆ˜Ø\ÙS]È‹X™[ˆØ\ÙH]È‹XÛÛŽˆØØ[HÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆKˆÈÙ^Nˆ˜YÙ[˜ÚY\È‹X™[ˆYÙ[˜ÚY\È‹XÛÛŽˆZ[[™ÌˆÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆKˆÈÙ^Nˆ˜ÛÝ\È‹X™[ˆÛÝ\È‹XÛÛŽˆ[™X\šÈÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆKˆÈÙ^Nˆ\™Ù]È‹X™[ˆY›ØØXÞH\™Ù]È‹XÛÛŽˆ\™Ù]Û\ÜÓ˜[YOHšLËHËLËHˆÏˆKˆÈÙ^Nˆ™›Ü›][\È‹X™[ˆ”Ù][Y[›Ü›][\È‹XÛÛŽˆØ[Ý[]ÜˆÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆKˆNÂ‚ˆÛÛœÝXÝ]™Q]HHXÝ]™UXˆOOHœÝ]]\ÈˆÈÝ]]\ÈˆXÝ]™UXˆOOH˜Ø\ÙS]ÈˆÈØ\ÙS]ÈˆXÝ]™UXˆOOH˜YÙ[˜ÚY\ÈˆÈYÙ[˜ÚY\ÈˆXÝ]™UXˆOOH˜ÛÝ\ÈˆÈÛÝ\ÈˆXÝ]™UXˆOOH\™Ù]ÈˆÈ\™Ù]Èˆ›Ü›][\ÎÂˆÛÛœÝ›ÝÜÈHXÝ]™Q]K™]OËœ›ÝÜÈÏÈ×NÂˆÛÛœÝÝ[HXÝ]™Q]K™]OËÝ[ÏÈÂˆÛÛœÝÝ[YÙ\ÈHX]˜ÙZ[
+Ý[ÈMJNÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KM‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆÈÛ\ÜÓ˜[YOH^[È›Û\Ù[ZX›Û›^][\ËXÙ[\ˆØ\Lˆ‚ˆ]X˜\ÙHÛ\ÜÓ˜[YOHšMHËMH^XÞX[‹MˆÏ‚ˆÛ›ÝÛYÙH˜XÚØ›Û™H^Ü™\‚ˆÚÏ‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^XÞX[‹M›Ü™\‹XÞX[‹MÌÌžÝÝ[ÓØØ[TÝš[™Ê
+_H™\Ý[ÏÐ˜YÙO‚ˆÙ]‚‚ˆËÊˆØ]YÛÜžHXœÈ
+‹ßBˆ]ˆÛ\ÜÓ˜[YOH™›^›^]Ü˜\Ø\LKH‚ˆÝXÛÛ™šYË›X\
+Oˆ
+ˆ]ÛˆÙ^O^ÝšÙ^_HÚ^™OHœÛHˆ˜\šX[^ØXÝ]™UXˆOOHšÙ^HÈ™Y˜][ˆˆ›Ý][™HŸBˆÛÛXÚÏ^Ê
+HOˆÈÙ]XÝ]™UXŠšÙ^JNÈÙ]YÙJ
+NÈ_HÛ\ÜÓ˜[YOH™Ø\LKH^^È‚ˆÝšXÛÛŸHÝ›X™[BˆÐ]Û‚ˆ
+J_BˆÙ]‚‚ˆËÊˆÙX\˜Ú
+Èš[\ˆ
+‹ßBˆ]ˆÛ\ÜÓ˜[YOH™›^Ø\Lˆ‚ˆ]ˆÛ\ÜÓ˜[YOHœ™[]]™H›^LH‚ˆÙX\˜ÚÛ\ÜÓ˜[YOH˜XœÛÛ]HYLÈÜLKÌˆ]˜[œÛ]K^KLKÌˆMËM^[]]YY›Ü™YÜ›Ý[™ˆÏ‚ˆ[œ]Û\ÜÓ˜[YOHËY[NH‹LÈKLˆ›Ý[™Y[Y›Ü™\ˆ›Ü™\‹X›Ü™\ˆ™ËX˜XÚÙÜ›Ý[™^\ÛH‚ˆXÙZÛ\^ØÙX\˜Ú	ÝXÛÛ™šYË™š[™
+OˆšÙ^HOOHXÝ]™UXŠOË›X™[ÏÈ	ÉßK‹‹˜Bˆ˜[YO^ÜÙX\˜ÚHÛÚ[™ÙO^ÙHOˆÈÙ]ÙX\˜Ú
+K\™Ù]˜[YJNÈÙ]YÙJ
+NÈ_HÏ‚ˆÙ]‚ˆÊXÝ]™UXˆOOH\™Ù]Èˆ	‰ˆXÝ]™UXˆOOH™›Ü›][\ÈŠH	‰ˆ
+ˆÙ[XÝÛ\ÜÓ˜[YOHœLÈKLˆ›Ý[™Y[Y›Ü™\ˆ›Ü™\‹X›Ü™\ˆ™ËX˜XÚÙÜ›Ý[™^\ÛHZ[‹]ËVÌLŒH‚ˆ˜[YO^Ú\š\ÙXÝ[ÛŸHÛÚ[™ÙO^ÙHOˆÈÙ]\š\ÙXÝ[ÛŠK\™Ù]˜[YJNÈÙ]YÙJ
+NÈ_O‚ˆÜ[Ûˆ˜[YOHˆ[\š\ÙXÝ[ÛœÏÛÜ[Û‚ˆÊ\š\ÙXÝ[ÛœË™]HÏÈ×JK›X\
+ˆOˆÜ[ÛˆÙ^O^ÚŸH˜[YO^ÚŸOžÚŸOÛÜ[ÛŠ_BˆÜÙ[XÝ‚ˆ
+_BˆÙ]‚‚ˆËÊˆ™\Ý[È
+‹ßBˆØ\™Û\ÜÓ˜[YOH˜™ËXØ\™ÍL‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœM‚ˆØXÝ]™Q]Kš\ÓØY[™ÈÈ
+ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKXÙ[\ˆKNØY\ŒˆÛ\ÜÓ˜[YOHšMHËMH[š[X]K\Ü[ˆ^[]]YY›Ü™YÜ›Ý[™ˆÏÙ]‚ˆ
+Hˆ›ÝÜË›[™ÝOOHÈ
+ˆ]ˆÛ\ÜÓ˜[YOH^XÙ[\ˆKN^[]]YY›Ü™YÜ›Ý[™^\ÛH“›È™XÛÜ™È›Ý[™Ù]‚ˆ
+Hˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÜ›ÝÜË›X\
+
+Žˆ[žKNˆ[X™\ŠHOˆÂˆÛÛœÝ›ÝÒÙ^HHÝš[™Ê‹šYÏÈ‹˜Ø\ÙWÚYÏÈ‹˜ÛÝ\ÚYÏÈ‹\™Ù]ÚYÏÈJNÂˆÛÛœÝ\ÓÜ[ˆHÙ[XÝY›ÝÈOOH›ÝÒÙ^NÂˆ™]\›ˆ
+ˆ]ˆÙ^O^Ü›ÝÒÙ^_BˆÛÛXÚÏ^Ê
+HOˆÙ]Ù[XÝY›ÝÊ\ÓÜ[ˆÈ[ˆ›ÝÒÙ^J_BˆÛ\ÜÓ˜[YO^Ø›Ý[™Y[È›Ü™\ˆLÈÝ\œÛÜ‹\Ú[\ˆ˜[œÚ][Û‹X[	Âˆ\ÓÜ[ˆÈ˜›Ü™\‹XÞX[‹MLÍ™ËXÞX[‹MLÍHˆˆ˜›Ü™\‹X›Ü™\‹ÍLÝ™\Ž˜™ËXXØÙ[ÌÌ‚ˆXO‚ˆËÊˆÝ]]\È
+‹ßBˆØXÝ]™UXˆOOHœÝ]]\Èˆ	‰ˆ
+ˆ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[YY][H^\ÛHžÜ‹]_OÜÜ[‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^^ÈžÜ‹š\š\ÙXÝ[ÛŸOÐ˜YÙO‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^^È^X›YKM›Ü™\‹X›YKMÌÌžÜ‹œÛÝ\˜ÙU\_OÐ˜YÙO‚ˆÚ]œ›Û”šYÚÛ\ÜÓ˜[YO^ØLËHËLËH[X]]È^[]]YY›Ü™YÜ›Ý[™˜[œÚ][Û‹]˜[œÙ›Ü›H	Ú\ÓÜ[ˆÈœ›Ý]KNLˆˆˆŸXHÏ‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™]LHžÜ‹˜Ú]][ÛŸOÙ]‚ˆÈZ\ÓÜ[ˆ	‰ˆ‹œÝ[[X\žH	‰ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™]LH[™KXÛ[\LˆžÜ‹œÝ[[X\ž_OÙ]ŸBˆÚ\ÓÜ[ˆ	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH›]LÈLÈ›Ü™\‹]›Ü™\‹X›Ü™\‹ÍLÜXÙK^KLˆˆÛÛXÚÏ^ÙHOˆKœÝÜ›ÜYØ][ÛŠ
+_O‚ˆÜ‹œÝ[[X\žH	‰ˆÛ\ÜÓ˜[YOH^^È^Y›Ü™YÜ›Ý[™ÎXY[™Ë\™[^YžÜ‹œÝ[[X\ž_OÜŸBˆÜ‹™Y™™XÝ]™Q]H	‰ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™‘Y™™XÝ]™NˆÜ‹™Y™™XÝ]™Q]_OÙ]ŸBˆÜ‹œÛÝ\˜ÙWÝ\›	‰ˆ
+ˆH™Y^Ü‹œÛÝ\˜ÙWÝ\›H\™Ù]H—Ø›[šÈˆ™[H››ÛÜ[™\ˆ›Ü™Y™\œ™\ˆ‚ˆÛ\ÜÓ˜[YOHš[›[™KY›^][\ËXÙ[\ˆØ\LH^^È^XÞX[‹MÝ™\Ž[™\›[™H‚ˆ^\›˜[[šÈÛ\ÜÓ˜[YOHšLÈËLÈˆÏˆšY]È[Ý]]BˆØO‚ˆ
+_Bˆ]ˆÛ\ÜÓ˜[YOHœLˆ›Ü™\‹]›Ü™\‹X›Ü™\‹ÌÌ‚ˆÛÛ[Z]ÐØ\ÙH\OHœÝ]]Hˆ][RY^Ü‹šYHX™[H]XÚÈØ\ÙHˆÚ^™OHœÛHˆ˜\šX[H›Ý][™HˆÏ‚ˆÙ]‚ˆÙ]‚ˆ
+_BˆÙ]‚ˆ
+_BˆËÊˆØ\ÙH]È
+‹ßBˆØXÝ]™UXˆOOH˜Ø\ÙS]Èˆ	‰ˆ
+ˆ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[YY][H^\ÛHžÜ‹˜Ø\ÙS˜[Y_OÜÜ[‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^^ÈžÜ‹š\š\ÙXÝ[ÛŸOÐ˜YÙO‚ˆÜ‹œÚYÛšYšXØ[˜ÙH	‰ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^^È^X[X™\‹M›Ü™\‹X[X™\‹MÌÌžÜ‹œÚYÛšYšXØ[˜Ù_OÐ˜YÙOŸBˆÚ]œ›Û”šYÚÛ\ÜÓ˜[YO^ØLËHËLËH[X]]È^[]]YY›Ü™YÜ›Ý[™˜[œÚ][Û‹]˜[œÙ›Ü›H	Ú\ÓÜ[ˆÈœ›Ý]KNLˆˆˆŸXHÏ‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™]LHžÜ‹˜Ú]][ÛŸHÜ‹˜ÛÝ\	‰ˆ8 %	Ü‹˜ÛÝ\XOÙ]‚ˆÈZ\ÓÜ[ˆ	‰ˆ‹œÝ[[X\žH	‰ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™]LH[™KXÛ[\LˆžÜ‹œÝ[[X\ž_OÙ]ŸBˆÚ\ÓÜ[ˆ	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH›]LÈLÈ›Ü™\‹]›Ü™\‹X›Ü™\‹ÍLÜXÙK^KLÈˆÛÛXÚÏ^ÙHOˆKœÝÜ›ÜYØ][ÛŠ
+_O‚ˆÜ‹šÛ[™È	‰ˆ
+ˆ]‚ˆ]ˆÛ\ÜÓ˜[YOH^VÌLH›Û[[Û›È^XÞX[‹M\\˜Ø\ÙH˜XÚÚ[™Ë]ÚY\ˆX‹LH’Û[™ÏÙ]‚ˆÛ\ÜÓ˜[YOH^^È^Y›Ü™YÜ›Ý[™ÎLXY[™Ë\™[^YžÜ‹šÛ[™ßOÜ‚ˆÙ]‚ˆ
+_BˆÜ‹œÝ[[X\žH	‰ˆ\‹šÛ[™È	‰ˆÛ\ÜÓ˜[YOH^^È^Y›Ü™YÜ›Ý[™ÎXY[™Ë\™[^YžÜ‹œÝ[[X\ž_OÜŸBˆÜ‹œÝ]]\Ò[\œ™]Y	‰ˆ
+ˆ]‚ˆ]ˆÛ\ÜÓ˜[YOH^VÌLH›Û[[Û›È^X[X™\‹M\\˜Ø\ÙH˜XÚÚ[™Ë]ÚY\ˆX‹LH”Ý]]\È[\œ™]YÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^›^]Ü˜\Ø\LH‚ˆÊ\œ˜^Kš\Ð\œ˜^J‹œÝ]]\Ò[\œ™]Y
+HÈ‹œÝ]]\Ò[\œ™]YˆÜ‹œÝ]]\Ò[\œ™]YJK›X\
+
+ÎˆÝš[™ËÚNˆ[X™\ŠHOˆ
+ˆ˜YÙHÙ^O^ÜÚ_H˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^VÌLH^X[X™\‹LÌ›Ü™\‹X[X™\‹MÌÌžÜßOÐ˜YÙO‚ˆ
+J_BˆÙ]‚ˆÙ]‚ˆ
+_BˆÜ‹™ÛXZ[œÈ	‰ˆ
+ˆ]‚ˆ]ˆÛ\ÜÓ˜[YOH^VÌLH›Û[[Û›È^]š[Û]M\\˜Ø\ÙH˜XÚÚ[™Ë]ÚY\ˆX‹LH‘ÛXZ[œÏÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^›^]Ü˜\Ø\LH‚ˆÊ\œ˜^Kš\Ð\œ˜^J‹™ÛXZ[œÊHÈ‹™ÛXZ[œÈˆÜ‹™ÛXZ[œ×JK›X\
+
+ˆÝš[™ËNˆ[X™\ŠHOˆ
+ˆ˜YÙHÙ^O^Ù_H˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^VÌLH^]š[Û]LÌ›Ü™\‹]š[Û]MÌÌØ\][^™HžÙœ™\XÙJ×ËÙË	È	Ê_OÐ˜YÙO‚ˆ
+J_BˆÙ]‚ˆÙ]‚ˆ
+_BˆÜ‹œÝXœÙ\]Y[\ÝÜžH	‰ˆ
+ˆ]‚ˆ]ˆÛ\ÜÓ˜[YOH^VÌLH›Û[[Û›È^[]]YY›Ü™YÜ›Ý[™\\˜Ø\ÙH˜XÚÚ[™Ë]ÚY\ˆX‹LH”ÝXœÙ\]Y[\ÝÜžOÙ]‚ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™XY[™Ë\™[^YžÜ‹œÝXœÙ\]Y[\ÝÜž_OÜ‚ˆÙ]‚ˆ
+_BˆÜ‹œÛÝ\˜ÙWÝ\›	‰ˆ
+ˆH™Y^Ü‹œÛÝ\˜ÙWÝ\›H\™Ù]H—Ø›[šÈˆ™[H››ÛÜ[™\ˆ›Ü™Y™\œ™\ˆ‚ˆÛ\ÜÓ˜[YOHš[›[™KY›^][\ËXÙ[\ˆØ\LH^^È^XÞX[‹MÝ™\Ž[™\›[™H‚ˆ^\›˜[[šÈÛ\ÜÓ˜[YOHšLÈËLÈˆÏˆ[Ü[š[Û‚ˆØO‚ˆ
+_Bˆ]ˆÛ\ÜÓ˜[YOHœLˆ›Ü™\‹]›Ü™\‹X›Ü™\‹ÌÌ‚ˆÛÛ[Z]ÐØ\ÙH\OHœÝ]]Hˆ][RY^Ü‹˜Ø\ÙWÚYÏÈ‹šYHX™[H]XÚÈØ\ÙHˆÚ^™OHœÛHˆ˜\šX[H›Ý][™HˆÏ‚ˆÙ]‚ˆÙ]‚ˆ
+_BˆÙ]‚ˆ
+_BˆËÊˆYÙ[˜ÚY\È
+‹ßBˆØXÝ]™UXˆOOH˜YÙ[˜ÚY\Èˆ	‰ˆ
+ˆ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[YY][H^\ÛHžÜ‹˜YÙ[˜ÞS˜[Y_OÜÜ[‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^^ÈžÜ‹š\š\ÙXÝ[ÛŸOÐ˜YÙO‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^^È^]š[Û]M›Ü™\‹]š[Û]MÌÌžÜ‹˜]]Üš]U\_OÐ˜YÙO‚ˆÚ]œ›Û”šYÚÛ\ÜÓ˜[YO^ØLËHËLËH[X]]È^[]]YY›Ü™YÜ›Ý[™˜[œÚ][Û‹]˜[œÙ›Ü›H	Ú\ÓÜ[ˆÈœ›Ý]KNLˆˆˆŸXHÏ‚ˆÙ]‚ˆÈZ\ÓÜ[ˆ	‰ˆ‹™š[[™Õ\›	‰ˆ]ˆÛ\ÜÓ˜[YOH^^È^XÞX[‹M]LH[˜Ø]HžÜ‹™š[[™Õ\›OÙ]ŸBˆÚ\ÓÜ[ˆ	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH›]LÈLÈ›Ü™\‹]›Ü™\‹X›Ü™\‹ÍLÜXÙK^KLˆˆÛÛXÚÏ^ÙHOˆKœÝÜ›ÜYØ][ÛŠ
+_O‚ˆÜ‹™\ØÜš\[Ûˆ	‰ˆÛ\ÜÓ˜[YOH^^È^Y›Ü™YÜ›Ý[™ÎXY[™Ë\™[^YžÜ‹™\ØÜš\[ÛŸOÜŸBˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLHØ\^KLKH‚ˆÜ‹œÛ™H	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH^VÌLH›Û[[Û›È^[]]YY›Ü™YÜ›Ý[™ËLM”Û™OÜÜ[‚ˆH™Y^Ø[‰Ü‹œÛ™_XHÛ\ÜÓ˜[YOH^^È^Y[Y\˜[MÝ™\Ž[™\›[™HžÜ‹œÛ™_OØO‚ˆÙ]‚ˆ
+_BˆÜ‹™[XZ[	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH^VÌLH›Û[[Û›È^[]]YY›Ü™YÜ›Ý[™ËLM‘[XZ[ÜÜ[‚ˆH™Y^ØXZ[Î‰Ü‹™[XZ[XHÛ\ÜÓ˜[YOH^^È^XÞX[‹MÝ™\Ž[™\›[™H[˜Ø]HžÜ‹™[XZ[OØO‚ˆÙ]‚ˆ
+_BˆÜ‹˜Y™\ÜÈ	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH™›^][\Ë\Ý\Ø\Lˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH^VÌLH›Û[[Û›È^[]]YY›Ü™YÜ›Ý[™ËLM]LHY™\ÜÏÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH^^È^Y›Ü™YÜ›Ý[™ÎžÜ‹˜Y™\ÜßOÜÜ[‚ˆÙ]‚ˆ
+_BˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^Ø\LÈ›^]Ü˜\‚ˆÜ‹™š[[™Õ\›	‰ˆ
+ˆH™Y^Ü‹™š[[™Õ\›H\™Ù]H—Ø›[šÈˆ™[H››ÛÜ[™\ˆ›Ü™Y™\œ™\ˆ‚ˆÛ\ÜÓ˜[YOHš[›[™KY›^][\ËXÙ[\ˆØ\LH^^È^XÞX[‹MÝ™\Ž[™\›[™H‚ˆ^\›˜[[šÈÛ\ÜÓ˜[YOHšLÈËLÈˆÏˆš[HÛÛ\Z[ˆØO‚ˆ
+_BˆÜ‹ÙXœÚ]U\›	‰ˆ
+ˆH™Y^Ü‹ÙXœÚ]U\›H\™Ù]H—Ø›[šÈˆ™[H››ÛÜ[™\ˆ›Ü™Y™\œ™\ˆ‚ˆÛ\ÜÓ˜[YOHš[›[™KY›^][\ËXÙ[\ˆØ\LH^^È^X›YKMÝ™\Ž[™\›[™H‚ˆ^\›˜[[šÈÛ\ÜÓ˜[YOHšLÈËLÈˆÏˆÙXœÚ]BˆØO‚ˆ
+_BˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOHœLˆ›Ü™\‹]›Ü™\‹X›Ü™\‹ÌÌ‚ˆÛÛ[Z]ÐØ\ÙH\OH˜™[™Yš]ˆ][RY^Ü‹šYHX™[H]XÚYÙ[˜ÞHÈØ\ÙHˆÚ^™OHœÛHˆ˜\šX[H›Ý][™HˆÏ‚ˆÙ]‚ˆÙ]‚ˆ
+_BˆÙ]‚ˆ
+_BˆËÊˆÛÝ\È
+‹ßBˆØXÝ]™UXˆOOH˜ÛÝ\Èˆ	‰ˆ
+ˆ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[YY][H^\ÛHžÜ‹˜ÛÝ\Û˜[Y_OÜÜ[‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^^ÈžÜ‹š\š\ÙXÝ[ÛŸOÐ˜YÙO‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^^È^Y[Y\˜[M›Ü™\‹Y[Y\˜[MÌÌžÜ‹˜ÛÝ\Ý\_OÐ˜YÙO‚ˆÜ‹™Yš[[™È	‰ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^^È^XÞX[‹M›Ü™\‹XÞX[‹MÌÌ‘KQš[[™ÏÐ˜YÙOŸBˆÚ]œ›Û”šYÚÛ\ÜÓ˜[YO^ØLËHËLËH[X]]È^[]]YY›Ü™YÜ›Ý[™˜[œÚ][Û‹]˜[œÙ›Ü›H	Ú\ÓÜ[ˆÈœ›Ý]KNLˆˆˆŸXHÏ‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™]LHžÜ‹˜ÛÝ\ÚYH8 %š[[™È™YNˆ	Ü‹™š[[™×Ù™YHÏÈ	Ó‹ÐIßOÙ]‚ˆÚ\ÓÜ[ˆ	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH›]LÈLÈ›Ü™\‹]›Ü™\‹X›Ü™\‹ÍLÜXÙK^KLˆˆÛÛXÚÏ^ÙHOˆKœÝÜ›ÜYØ][ÛŠ
+_O‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLHØ\^KLKH‚ˆÜ‹œÛ™H	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH^VÌLH›Û[[Û›È^[]]YY›Ü™YÜ›Ý[™ËLM”Û™OÜÜ[‚ˆH™Y^Ø[‰Ü‹œÛ™_XHÛ\ÜÓ˜[YOH^^È^Y[Y\˜[MÝ™\Ž[™\›[™HžÜ‹œÛ™_OØO‚ˆÙ]‚ˆ
+_BˆÜ‹˜Y™\ÜÈ	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH™›^][\Ë\Ý\Ø\Lˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH^VÌLH›Û[[Û›È^[]]YY›Ü™YÜ›Ý[™ËLM]LHY™\ÜÏÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH^^È^Y›Ü™YÜ›Ý[™ÎžÜ‹˜Y™\ÜßOÜÜ[‚ˆÙ]‚ˆ
+_BˆÜ‹šÝ\œÈ	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH^VÌLH›Û[[Û›È^[]]YY›Ü™YÜ›Ý[™ËLM’Ý\œÏÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH^^È^Y›Ü™YÜ›Ý[™ÎžÜ‹šÝ\œßOÜÜ[‚ˆÙ]‚ˆ
+_BˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^Ø\LÈ›^]Ü˜\‚ˆÜ‹™Yš[[™×Ý\›	‰ˆ
+ˆH™Y^Ü‹™Yš[[™×Ý\›H\™Ù]H—Ø›[šÈˆ™[H››ÛÜ[™\ˆ›Ü™Y™\œ™\ˆ‚ˆÛ\ÜÓ˜[YOHš[›[™KY›^][\ËXÙ[\ˆØ\LH^^È^XÞX[‹MÝ™\Ž[™\›[™H‚ˆ^\›˜[[šÈÛ\ÜÓ˜[YOHšLÈËLÈˆÏˆKQš[H\™BˆØO‚ˆ
+_BˆÜ‹ÙXœÚ]H	‰ˆ
+ˆH™Y^Ü‹ÙXœÚ]_H\™Ù]H—Ø›[šÈˆ™[H››ÛÜ[™\ˆ›Ü™Y™\œ™\ˆ‚ˆÛ\ÜÓ˜[YOHš[›[™KY›^][\ËXÙ[\ˆØ\LH^^È^X›YKMÝ™\Ž[™\›[™H‚ˆ^\›˜[[šÈÛ\ÜÓ˜[YOHšLÈËLÈˆÏˆÛÝ\ÙXœÚ]BˆØO‚ˆ
+_BˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOHœLˆ›Ü™\‹]›Ü™\‹X›Ü™\‹ÌÌ‚ˆÛÛ[Z]ÐØ\ÙH\OH™š[[™Èˆ][RY^Ü‹šYHX™[HYÛÝ\ÈØ\ÙHˆÚ^™OHœÛHˆ˜\šX[H›Ý][™HˆÏ‚ˆÙ]‚ˆÙ]‚ˆ
+_BˆÙ]‚ˆ
+_BˆËÊˆY›ØØXÞH\™Ù]È
+‹ßBˆØXÝ]™UXˆOOH\™Ù]Èˆ	‰ˆ
+ˆ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[YY][H^\ÛHžÜ‹\™Ù]Û˜[Y_OÜÜ[‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^^ÈžÜ‹\™Ù]Ý\_OÐ˜YÙO‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^^ÈžÜ‹š\š\ÙXÝ[ÛŸOÐ˜YÙO‚ˆÚ]œ›Û”šYÚÛ\ÜÓ˜[YO^ØLËHËLËH[X]]È^[]]YY›Ü™YÜ›Ý[™˜[œÚ][Û‹]˜[œÙ›Ü›H	Ú\ÓÜ[ˆÈœ›Ý]KNLˆˆˆŸXHÏ‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™]LH’[™›Y[˜ÙNˆÜ‹š[™›Y[˜ÙWÜØÛÜ™HÏÈ	Ó‹ÐIßH™\ÜÛœÚ]™[™\ÜÎˆÜ‹œ™\ÜÛœÚ]™[™\Ü×ÜØÛÜ™HÏÈ	Ó‹ÐIßOÙ]‚ˆÚ\ÓÜ[ˆ	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH›]LÈLÈ›Ü™\‹]›Ü™\‹X›Ü™\‹ÍLÜXÙK^KLˆˆÛÛXÚÏ^ÙHOˆKœÝÜ›ÜYØ][ÛŠ
+_O‚ˆÜ‹››Ý\È	‰ˆÛ\ÜÓ˜[YOH^^È^Y›Ü™YÜ›Ý[™ÎXY[™Ë\™[^YžÜ‹››Ý\ßOÜŸBˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLHØ\^KLKH‚ˆÜ‹™[XZ[	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH^VÌLH›Û[[Û›È^[]]YY›Ü™YÜ›Ý[™ËLM‘[XZ[ÜÜ[‚ˆH™Y^ØXZ[Î‰Ü‹™[XZ[XHÛ\ÜÓ˜[YOH^^È^XÞX[‹MÝ™\Ž[™\›[™H[˜Ø]HžÜ‹™[XZ[OØO‚ˆÙ]‚ˆ
+_BˆÜ‹œÛ™H	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH^VÌLH›Û[[Û›È^[]]YY›Ü™YÜ›Ý[™ËLM”Û™OÜÜ[‚ˆH™Y^Ø[‰Ü‹œÛ™_XHÛ\ÜÓ˜[YOH^^È^Y[Y\˜[MÝ™\Ž[™\›[™HžÜ‹œÛ™_OØO‚ˆÙ]‚ˆ
+_BˆÜ‹›Ù™šXÙWØY™\ÜÈ	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH™›^][\Ë\Ý\Ø\Lˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH^VÌLH›Û[[Û›È^[]]YY›Ü™YÜ›Ý[™ËLM]LH“Ù™šXÙOÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH^^È^Y›Ü™YÜ›Ý[™ÎžÜ‹›Ù™šXÙWØY™\ÜßOÜÜ[‚ˆÙ]‚ˆ
+_BˆÙ]‚ˆÜ‹ÙXœÚ]WÝ\›	‰ˆ
+ˆH™Y^Ü‹ÙXœÚ]WÝ\›H\™Ù]H—Ø›[šÈˆ™[H››ÛÜ[™\ˆ›Ü™Y™\œ™\ˆ‚ˆÛ\ÜÓ˜[YOHš[›[™KY›^][\ËXÙ[\ˆØ\LH^^È^X›YKMÝ™\Ž[™\›[™H‚ˆ^\›˜[[šÈÛ\ÜÓ˜[YOHšLÈËLÈˆÏˆÙXœÚ]BˆØO‚ˆ
+_Bˆ]ˆÛ\ÜÓ˜[YOHœLˆ›Ü™\‹]›Ü™\‹X›Ü™\‹ÌÌ‚ˆÛÛ[Z]ÐØ\ÙH\OH˜™[™Yš]ˆ][RY^Ü‹\™Ù]ÚYÏÈ‹šYHX™[H]XÚ\™Ù]ÈØ\ÙHˆÚ^™OHœÛHˆ˜\šX[H›Ý][™HˆÏ‚ˆÙ]‚ˆÙ]‚ˆ
+_BˆÙ]‚ˆ
+_BˆËÊˆÙ][Y[›Ü›][\È
+‹ßBˆØXÝ]™UXˆOOH™›Ü›][\Èˆ	‰ˆ
+ˆ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[YY][H^\ÛHžÜ‹™›Ü›][S˜[Y_OÜÜ[‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^^ÈžÜ‹˜ÛZ[U\_OÐ˜YÙO‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^^ÈžÜ‹š\š\ÙXÝ[ÛŸOÐ˜YÙO‚ˆÚ]œ›Û”šYÚÛ\ÜÓ˜[YO^ØLËHËLËH[X]]È^[]]YY›Ü™YÜ›Ý[™˜[œÚ][Û‹]˜[œÙ›Ü›H	Ú\ÓÜ[ˆÈœ›Ý]KNLˆˆˆŸXHÏ‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™]LH˜\ÙH][\Y\ŽˆÜ‹˜˜\ÙS][\Y\ˆÏÈ	Ó‹ÐIßOÙ]‚ˆÈZ\ÓÜ[ˆ	‰ˆ‹™\ØÜš\[Ûˆ	‰ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™]LH[™KXÛ[\LˆžÜ‹™\ØÜš\[ÛŸOÙ]ŸBˆÚ\ÓÜ[ˆ	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH›]LÈLÈ›Ü™\‹]›Ü™\‹X›Ü™\‹ÍLÜXÙK^KLˆˆÛÛXÚÏ^ÙHOˆKœÝÜ›ÜYØ][ÛŠ
+_O‚ˆÜ‹™\ØÜš\[Ûˆ	‰ˆÛ\ÜÓ˜[YOH^^È^Y›Ü™YÜ›Ý[™ÎXY[™Ë\™[^YžÜ‹™\ØÜš\[ÛŸOÜŸBˆÜ‹™›Ü›][H	‰ˆ
+ˆ]‚ˆ]ˆÛ\ÜÓ˜[YOH^VÌLH›Û[[Û›È^X[X™\‹M\\˜Ø\ÙH˜XÚÚ[™Ë]ÚY\ˆX‹LH‘›Ü›][OÙ]‚ˆÛÙHÛ\ÜÓ˜[YOH^^È^X[X™\‹LÌ™ËX[X™\‹MLÌLLˆKLH›Ý[™Y›ØÚÈžÜ‹™›Ü›][_OØÛÙO‚ˆÙ]‚ˆ
+_Bˆ]ˆÛ\ÜÓ˜[YOH™›^Ø\M^^È‚ˆÜ‹›Z[“][\Y\ˆOH[	‰ˆ]Ü[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™“Z[ŽˆÜÜ[Ü[žÜ‹›Z[“][\Y\Ÿ^ÜÜ[Ù]ŸBˆÜ‹›X^][\Y\ˆOH[	‰ˆ]Ü[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™“X^ˆÜÜ[Ü[žÜ‹›X^][\Y\Ÿ^ÜÜ[Ù]ŸBˆÜ‹˜ÛÛ™šY[˜ÙU™\ÚÛOH[	‰ˆ]Ü[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™ÛÛ™šY[˜ÙNˆÜÜ[Ü[žÜ‹˜ÛÛ™šY[˜ÙU™\ÚÛIOÜÜ[Ù]ŸBˆÙ]‚ˆÜ‹œÛÝ\˜ÙWÝ\›	‰ˆ
+ˆH™Y^Ü‹œÛÝ\˜ÙWÝ\›H\™Ù]H—Ø›[šÈˆ™[H››ÛÜ[™\ˆ›Ü™Y™\œ™\ˆ‚ˆÛ\ÜÓ˜[YOHš[›[™KY›^][\ËXÙ[\ˆØ\LH^^È^XÞX[‹MÝ™\Ž[™\›[™H‚ˆ^\›˜[[šÈÛ\ÜÓ˜[YOHšLÈËLÈˆÏˆÛÝ\˜ÙBˆØO‚ˆ
+_Bˆ]ˆÛ\ÜÓ˜[YOHœLˆ›Ü™\‹]›Ü™\‹X›Ü™\‹ÌÌ‚ˆÛÛ[Z]ÐØ\ÙH\OHœÝ]]Hˆ][RY^Ü‹šYHX™[H\H›Ü›][HÈØ\ÙHˆÚ^™OHœÛHˆ˜\šX[H›Ý][™HˆÏ‚ˆÙ]‚ˆÙ]‚ˆ
+_BˆÙ]‚ˆ
+_BˆÙ]‚ˆ
+NÂˆJ_BˆÙ]‚ˆ
+_B‚ˆËÊˆYÚ[˜][Ûˆ
+‹ßBˆÝÝ[YÙ\ÈˆH	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ]MLÈ›Ü™\‹]›Ü™\‹X›Ü™\‹ÍL‚ˆÜ[ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™”YÙHÜYÙH
+È_HÙˆÝÝ[YÙ\ßOÜÜ[‚ˆ]ˆÛ\ÜÓ˜[YOH™›^Ø\Lˆ‚ˆ]ÛˆÚ^™OHœÛHˆ˜\šX[H›Ý][™Hˆ\ØX›Y^ÜYÙHOOHHÛÛXÚÏ^Ê
+HOˆÙ]YÙJOˆHJ_O”™]Ð]Û‚ˆ]ÛˆÚ^™OHœÛHˆ˜\šX[H›Ý][™Hˆ\ØX›Y^ÜYÙHHÝ[YÙ\ÈH_HÛÛXÚÏ^Ê
+HOˆÙ]YÙJOˆ
+ÈJ_O“™^Ð]Û‚ˆÙ]‚ˆÙ]‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆÙ]‚ˆ
+NÂŸB‚‹Êˆ8¥ 8¥ ÚYÛ˜[ÛÝ™\›˜[˜ÙH[™[8¥ 8¥ 
+‹Â™[˜Ý[ÛˆÚYÛ˜[ÛÝ™\›˜[˜ÙT[™[
+
+HÂˆÛÛœÝÜÙ[XÝYÚYÛ˜[YÙ]Ù[XÝYÚYÛ˜[YHH\ÙTÝ]OÝš[™È[Š[
+NÂˆÛÛœÝÜÙ]™\š]Qš[\‹Ù]Ù]™\š]Qš[\—HH\ÙTÝ]OÝš[™ÏŠˆŠNÂˆÛÛœÝÝY\‘š[\‹Ù]Y\‘š[\—HH\ÙTÝ]OÝš[™ÏŠˆŠNÂ‚ˆÛÛœÝÈ]Nˆ\Ú›Ø\™\ÓØY[™Îˆ\ÚØY[™ÈHHœËœÚYÛ˜[ÛÝ™\›˜[˜ÙK™\Ú›Ø\™\ÙT]Y\žJˆÂˆÙ]™\š]S]™[ˆÙ]™\š]Qš[\ˆ[™Yš[™Yˆ\ØØ[][Û•Y\ŽˆY\‘š[\ˆ[™Yš[™YˆÛÝ™\›™YÛ›NˆYKˆ[Z]ˆLˆKˆÈ™Y™]Ú[\˜[ˆMLBˆ
+NÂˆÛÛœÝÈ]Nˆ\ØØ[][Û‹\ÓØY[™Îˆ\ØÓØY[™ÈHHœËœÚYÛ˜[ÛÝ™\›˜[˜ÙK™\ØØ[][Û”Ý[[X\žK\ÙT]Y\žJˆ[™Yš[™YÈ™Y™]Ú[\˜[ˆÌBˆ
+NÂˆÛÛœÝÈ]Nˆ™\ÚÛÈHHœËœÚYÛ˜[ÛÝ™\›˜[˜ÙK™\ØØ[][Û•™\ÚÛË\ÙT]Y\žJ
+NÂˆÛÛœÝÈ]Nˆ]Y]˜Z[HHœËœÚYÛ˜[ÛÝ™\›˜[˜ÙK˜]Y]˜Z[\ÙT]Y\žJˆÈÚYÛ˜[YˆÙ[XÝYÚYÛ˜[YHKˆÈ[˜X›YˆH\Ù[XÝYÚYÛ˜[YBˆ
+NÂ‚ˆÛÛœÝY\ÛÛÜœÎˆ™XÛÜ™Ýš[™ËÝš[™ÏˆHÂˆXY\œÚ\Ø[\ˆ˜™Ë\™YMLÌŒ^\™YM›Ü™\‹\™YMLÌÌ‹ˆ[™›Ü˜Ù[Y[Ù\ØØ[][ÛŽˆ˜™Ë[Ü˜[™ÙKMLÌŒ^[Ü˜[™ÙKM›Ü™\‹[Ü˜[™ÙKMLÌÌ‹ˆÝ[™\™Ü™\Ü[™Îˆ˜™Ë^Y[ÝËMLÌŒ^^Y[ÝËM›Ü™\‹^Y[ÝËMLÌÌ‹ˆ[˜[\ÝÜ™]šY]Îˆ˜™ËX›YKMLÌŒ^X›YKM›Ü™\‹X›YKMLÌÌ‹ˆ[Ûš]Üš[™×ÛÛ›Nˆ˜™Ë\Û]KMLÌŒ^\Û]KM›Ü™\‹\Û]KMLÌÌ‹ˆNÂ‚ˆÛÛœÝÙ]™\š]PÛÛÜœÎˆ™XÛÜ™Ýš[™ËÝš[™ÏˆHÂˆÜš]XØ[ˆ˜™Ë\™YMLÌŒ^\™YLÌ‹ˆYÚˆ˜™Ë[Ü˜[™ÙKMLÌŒ^[Ü˜[™ÙKLÌ‹ˆYY][Nˆ˜™Ë^Y[ÝËMLÌŒ^^Y[ÝËLÌ‹ˆÝÎˆ˜™ËY[Y\˜[MLÌŒ^Y[Y\˜[LÌ‹ˆNÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆËÊˆ\ØØ[][ÛˆY\ˆÝ[[X\žH
+‹ßBˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLHY™ÜšYXÛÛËMHØ\LÈ‚ˆÙ\ØÓØY[™ÈÈ
+ˆ\œ˜^K™œ›ÛJÈ[™ÝˆHJK›X\
+
+ËJHOˆ
+ˆØ\™Ù^O^Ú_OØ\™ÛÛ[Û\ÜÓ˜[YOHœM‹LÈ]ˆÛ\ÜÓ˜[YOHšLLˆ[š[X]K\[ÙH™Ë[]]Y›Ý[™YˆÏÐØ\™ÛÛ[ÐØ\™‚ˆ
+JBˆ
+Hˆ
+ˆ
+™\ÚÛÈ×JK›X\
+
+Y\Žˆ[žJHOˆÂˆÛÛœÝÛÝ[H
+\ØØ[][Ûˆ×JK™š[™
+
+Nˆ[žJHOˆKY\“˜[YHOOHY\‹Y\“˜[YJOËœÚYÛ˜[ÛÝ[ÏÈÂˆ™]\›ˆ
+ˆØ\™Ù^O^ÝY\‹Y\“˜[Y_HÛ\ÜÓ˜[YO^Ø›Ü™\ˆ	ÝY\ÛÛÜœÖÝY\‹Y\“˜[YWH˜›Ü™\‹X›Ü™\ˆŸHÝ\œÛÜ‹\Ú[\ˆ˜[œÚ][Û‹X[Ý™\ŽœØØ[KVÌKŒ—XBˆÛÛXÚÏ^Ê
+HOˆÙ]Y\‘š[\ŠY\‘š[\ˆOOHY\‹Y\“˜[YHÈˆˆˆY\‹Y\“˜[YJ_O‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœM‹LÈ‚ˆ]ˆÛ\ÜÓ˜[YOH^Lž›ÛX›ÛžØÛÝ[OÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^È›Û[YY][H]LHØ\][^™H‚ˆÝY\‹Y\“˜[YKœ™\XÙJ×ËÙËˆŠ_BˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^VÌLH^[]]YY›Ü™YÜ›Ý[™]LH‚ˆÝY\‹›Z[”ØÛÜ™_x $ÞÝY\‹›X^ØÛÜ™_HÛÛ™šY[˜ÙBˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+NÂˆJBˆ
+_BˆÙ]‚‚ˆËÊˆš[\œÈ
+‹ßBˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\LÈ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™”Ù]™\š]NÜÜ[‚ˆÖÈ˜Üš]XØ[‹šYÚ‹›YY][H‹›ÝÈ—K›X\
+ÈOˆ
+ˆ˜YÙHÙ^O^ÜßH˜\šX[H›Ý][™H‚ˆÛ\ÜÓ˜[YO^ØÝ\œÛÜ‹\Ú[\ˆ^^È	ÜÙ]™\š]Qš[\ˆOOHÈÈÙ]™\š]PÛÛÜœÖÜ×Hˆ›ÜXÚ]KMLŸXBˆÛÛXÚÏ^Ê
+HOˆÙ]Ù]™\š]Qš[\ŠÙ]™\š]Qš[\ˆOOHÈÈˆˆˆÊ_O‚ˆÜßBˆÐ˜YÙO‚ˆ
+J_BˆÙ]‚ˆÊÙ]™\š]Qš[\ˆY\‘š[\ŠH	‰ˆ
+ˆ]Ûˆ˜\šX[H™ÚÜÝˆÚ^™OHœÛHˆÛ\ÜÓ˜[YOH^^ÈMˆˆÛÛXÚÏ^Ê
+HOˆÈÙ]Ù]™\š]Qš[\ŠˆŠNÈÙ]Y\‘š[\ŠˆŠNÈ_O‚ˆÛX\ˆš[\œÂˆÐ]Û‚ˆ
+_BˆÙ]‚‚ˆËÊˆÚYÛ˜[\Ú›Ø\™X›H
+‹ßBˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^›^]Ü˜\][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆØ\Lˆ‚ˆØ\™]HÛ\ÜÓ˜[YOH^X˜\ÙH›^][\ËXÙ[\ˆØ\Lˆ‚ˆÚY[Û\ÜÓ˜[YOHšMËM^\š[X\žHˆÏ‚ˆÛÝ™\›™YØœÙ\˜][ÛˆØ[™Y]\ÂˆÙ\Ú›Ø\™	‰ˆ˜YÙH˜\šX[HœÙXÛÛ™\žHˆÛ\ÜÓ˜[YOH^^ÈžÙ\Ú›Ø\™Ý[ÏÈ\Ú›Ø\™œÚYÛ˜[ÏË›[™ÝÏÈOÐ˜YÙOŸBˆÐØ\™]O‚ˆ[šÈ™YH‹Ú[YÜš]K\™]šY]È‚ˆ]Ûˆ˜\šX[H›Ý][™HˆÚ^™OHœÛHˆÛ\ÜÓ˜[YOHšMÈ^^È‚ˆ[YÜš]H™]šY]È\œ›ÝÔšYÚÛ\ÜÓ˜[YOH›[LKHLËHËLËHˆÏ‚ˆÐ]Û‚ˆÓ[šÏ‚ˆÙ]‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆÙ\ÚØY[™ÈÈ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆžÐ\œ˜^K™œ›ÛJÈ[™ÝˆHJK›X\
+
+ËJHOˆ]ˆÙ^O^Ú_HÛ\ÜÓ˜[YOHšLM[š[X]K\[ÙH™Ë[]]Y›Ý[™YˆÏŠ_OÙ]‚ˆ
+HˆY\Ú›Ø\™Y\Ú›Ø\™œÚYÛ˜[È\Ú›Ø\™œÚYÛ˜[Ë›[™ÝOOHÈ
+ˆ]ˆÛ\ÜÓ˜[YOH^XÙ[\ˆKN^[]]YY›Ü™YÜ›Ý[™‚ˆÚY[Û\ÜÓ˜[YOHšNËN^X]]ÈX‹LˆÜXÚ]KMˆÏ‚ˆÛ\ÜÓ˜[YOH^\ÛH“›ÈÛÝ™\›™YØœÙ\˜][ÛˆØ[™Y]\ÈY]Ü‚ˆÛ\ÜÓ˜[YOH^^È]LH]\ÈØ[™Y]\ÈÚ[\X\ˆ\™HY\ˆ]\›Z[š\ÝXÈ\š]˜][Ûˆ[™œšYÙH\œÚ\Ý[˜ÙKÜ‚ˆÙ]‚ˆ
+Hˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÊ\Ú›Ø\™œÚYÛ˜[È×JK›X\
+
+ÚYÎˆ[žJHOˆ
+ˆ]ˆÙ^O^ÜÚYËœÚYÛ˜[ÚYBˆÛ\ÜÓ˜[YO^ØLÈ›Ý[™Y[È›Ü™\ˆ˜[œÚ][Û‹X[Ý\œÛÜ‹\Ú[\ˆÝ™\Ž˜™ËXXØÙ[ÌÌ	ÂˆÙ[XÝYÚYÛ˜[YOOHÚYËœÚYÛ˜[ÚYÈœš[™ËLHš[™Ë\š[X\žH™ËXXØÙ[ÌŒˆˆ˜™ËXØ\™ÍL‚ˆXBˆÛÛXÚÏ^Ê
+HOˆÙ]Ù[XÝYÚYÛ˜[Y
+Ù[XÝYÚYÛ˜[YOOHÚYËœÚYÛ˜[ÚYÈ[ˆÚYËœÚYÛ˜[ÚY
+_O‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\Ë\Ý\\ÝYžKX™]ÙY[ˆØ\LÈ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^LHZ[‹]ËL‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\LˆX‹LH‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[YY][H^\ÛH[˜Ø]HžÜÚYË]_OÜÜ[‚ˆ˜YÙHÛ\ÜÓ˜[YO^Ø^VÌLH	ÜÙ]™\š]PÛÛÜœÖÜÚYËœÙ]™\š]WÛ]™[HˆŸXO‚ˆÜÚYËœÙ]™\š]WÛ]™[BˆÐ˜YÙO‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^VÌLH‚ˆÊÚYË™ÛÝ™\›˜[˜ÙWÜÝ]\È›ØœÙ\˜][Û—ØØ[™Y]HŠKœ™\XÙJ×ËÙËˆŠ_BˆÐ˜YÙO‚ˆÙ]‚ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™[™KXÛ[\LˆžÜÚYË™^[˜][ÛŸOÜ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\LÈ]LKH^VÌLH^[]]YY›Ü™YÜ›Ý[™‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\LHÛØ™HÛ\ÜÓ˜[YOHšLÈËLÈˆÏžÜÚYËœÝ™X[WÚYOÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\LHX\[ˆÛ\ÜÓ˜[YOHšLÈËLÈˆÏžÜÚYËš\š\ÙXÝ[ÛŸOÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\LHÛØÚÈÛ\ÜÓ˜[YOHšLÈËLÈˆÏžÜÚYË™]XÝYØ]È™]È]JÚYË™]XÝYØ]
+KÓØØ[TÝš[™Ê
+HˆˆŸOÜÜ[‚ˆÙ]‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^\šYÚ›^\Úš[šËL‚ˆ]ˆÛ\ÜÓ˜[YO^Ø^[È›ÛX›Û	ÂˆÚYË˜ÛÛ™šY[˜ÙWÜØÛÜ™HHŽHÈ^\™YMˆ‚ˆÚYË˜ÛÛ™šY[˜ÙWÜØÛÜ™HHÌÈ^[Ü˜[™ÙKMˆ‚ˆÚYË˜ÛÛ™šY[˜ÙWÜØÛÜ™HHLHÈ^^Y[ÝËMˆˆ^\Û]KM‚ˆXO‚ˆÓX]œ›Ý[™
+ÚYË˜ÛÛ™šY[˜ÙWÜØÛÜ™H
+ˆL
+_IBˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^VÌLH^[]]YY›Ü™YÜ›Ý[™˜ÛÛ™šY[˜ÙOÙ]‚ˆÙ]‚ˆÙ]‚‚ˆËÊˆ^[™Y]Y]˜Z[
+‹ßBˆÜÙ[XÝYÚYÛ˜[YOOHÚYËœÚYÛ˜[ÚY	‰ˆ]Y]˜Z[	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH›]LÈLÈ›Ü™\‹]›Ü™\‹X›Ü™\‹ÍL‚ˆÛ\ÜÓ˜[YOH^^È›Û\Ù[ZX›ÛX‹Lˆ›^][\ËXÙ[\ˆØ\LH‚ˆ^YHÛ\ÜÓ˜[YOHšLÈËLÈˆÏˆÙ[™\˜][Ûˆ]Y]˜Z[ˆÚ‚ˆÊX]Y]˜Z[™Ù[™\˜][Û“ÙÈ]Y]˜Z[™Ù[™\˜][Û“ÙË›[™ÝOOH
+HÈ
+ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™“›È]Y]˜Z[™XÛÜ™Y›Üˆ\ÈÚYÛ˜[Ü‚ˆ
+Hˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆØ]Y]˜Z[™Ù[™\˜][Û“ÙË›X\
+
+[žNˆ[žKYˆ[X™\ŠHOˆ
+ˆ]ˆÙ^O^ÚYHÛ\ÜÓ˜[YOH^^È™ËX˜XÚÙÜ›Ý[™ÍL›Ý[™YLˆ›Ü™\ˆ›Ü™\‹X›Ü™\‹ÌÌ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆX‹LH‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[YY][HØ\][^™HžÊ[žKœÝ\˜[YHˆŠKœ™\XÙJ×ËÙËˆŠ_OÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™žÙ[žK˜Ü™X]Y]È™]È]J[žK˜Ü™X]Y]
+KÓØØ[U[YTÝš[™Ê
+HˆˆŸOÜÜ[‚ˆÙ]‚ˆÙ[žK[\]U\ÙY	‰ˆ]ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™•[\]NˆÙ[žK[\]U\ÙYOÙ]ŸBˆÙ[žK™\šYšXØ][Û”™\Ý[	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH›]LH‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^VÌLH‚ˆÙ[žK™\šYšXØ][Û”™\Ý[BˆÐ˜YÙO‚ˆÙ]‚ˆ
+_BˆÙ[žK™˜XÝÜœ™XZÙÝÛˆ	‰ˆ\œ˜^Kš\Ð\œ˜^J[žK™˜XÝÜœ™XZÙÝÛŠH	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH›]LHÜšYÜšYXÛÛËLˆØ\LH‚ˆÙ[žK™˜XÝÜœ™XZÙÝÛ‹›X\
+
+˜Žˆ[žKšNˆ[X™\ŠHOˆ
+ˆ]ˆÙ^O^Ùš_HÛ\ÜÓ˜[YOH™›^\ÝYžKX™]ÙY[ˆ^VÌLH‚ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™Ø\][^™HžÊ˜‹™˜XÝÜ“˜[YHˆŠKœ™\XÙJ×ËÙËˆŠ_OÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[[Û›ÈžÙ˜‹ÙZYÚYØÛÜ™OËÑš^Y
+JHÏÈ˜‹œ˜]ÔØÛÜ™OËÑš^Y
+JHÏÈ¸ %ŸOÜÜ[‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆ
+_BˆÙ]‚ˆ
+J_BˆÙ]‚ˆ
+_BˆÙ]‚ˆ
+_BˆÙ]‚ˆ
+J_BˆÙ]‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚‚ˆËÊˆÛÛ™šY[˜ÙH˜XÝÜœÈ™Y™\™[˜ÙH
+‹ßBˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›^][\ËXÙ[\ˆØ\Lˆ‚ˆ˜\Ú\ÈÛ\ÜÓ˜[YOHšMËM^\š[X\žHˆÏ‚ˆÛÛ™šY[˜ÙHØÛÜš[™È[Ù[ˆÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLHY™ÜšYXÛÛËLÈØ\LÈ‚ˆÊ™\ÚÛÈ×JK›X\
+
+Y\Žˆ[žJHOˆ
+ˆ]ˆÙ^O^ÝY\‹Y\“˜[Y_HÛ\ÜÓ˜[YO^ØLÈ›Ý[™Y[È›Ü™\ˆ	ÝY\ÛÛÜœÖÝY\‹Y\“˜[YWH˜›Ü™\‹X›Ü™\ˆŸXO‚ˆ]ˆÛ\ÜÓ˜[YOH™›Û[YY][H^\ÛHØ\][^™HX‹LHžÝY\‹Y\“˜[YKœ™\XÙJ×ËÙËˆŠ_OÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™žÝY\‹˜XÝ[ÛŸOÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^VÌLH]LH”ØÛÜ™H˜[™ÙNˆÝY\‹›Z[”ØÛÜ™_x $ÞÝY\‹›X^ØÛÜ™_OÙ]‚ˆÝY\‹˜]]Ñ\ØØ[]H	‰ˆ˜YÙHÛ\ÜÓ˜[YOH^VÌLH]LH™Ë\™YMLÌŒ^\™YLÌ]]ËY\ØØ[]OÐ˜YÙOŸBˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆÙ]‚ˆ
+NÂŸB‚‹Êˆ8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥dˆUT“ˆ‘QÒTÕ–HS‘Sˆ8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d
+‹Â‚‹Êˆ]\›”™YÚ\ÝžT[™[[Ý™YÈÛÛ\Û™[ËÛZ\ÜÚ[Û‹Ô]\›”™YÚ\ÝžT[™[Þ
+‹Â‚‹Êˆ8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥dˆ‘S‘	ˆ‘TÔÕT‘HS‘ÒS‘HS‘Sˆ8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d
+‹Â‚™[˜Ý[Ûˆ™[™™\ÜÝ\™T[™[
+
+HÂˆÛÛœÝÝ[[X\žHHœË™[™[™Ú[™K›Z\ÜÚ[ÛÛÛ›ÛÝ[[X\žK\ÙT]Y\žJ
+NÂˆÛÛœÝ\Ú›Ø\™HœË™[™[™Ú[™K™\Ú›Ø\™\ÙT]Y\žJ
+NÂˆÛÛœÝ[\[\ÈHœË™[™[™Ú[™K˜[\[\Ë\ÙT]Y\žJ
+NÂˆÛÛœÝ\]P[HœË™[™[™Ú[™K\]P[\ÙS]]][ÛŠÂˆÛ”ÝXØÙ\ÜÎˆ
+
+HOˆÂˆÝ[[X\žKœ™Y™]Ú
+
+NÂˆ\Ú›Ø\™œ™Y™]Ú
+
+NÂˆKˆJNÂˆÛÛœÝ][ÈHœË\ÙU][Ê
+NÂ‚ˆÛÛœÝÈHÝ[[X\žK™]NÂˆÛÛœÝ™[™ÈH\Ú›Ø\™™]OË™[™È×NÂ‚ˆÛÛœÝÛ\ÜÚYšXØ][ÛÛÛÜœÎˆ™XÛÜ™Ýš[™ËÝš[™ÏˆHÂˆÜš]XØ[ˆ˜™Ë\™YMLÌL^\™YM›Ü™\‹\™YMLÌÌ‹ˆXØÙ[\˜][™Îˆ˜™Ë[Ü˜[™ÙKMLÌL^[Ü˜[™ÙKM›Ü™\‹[Ü˜[™ÙKMLÌÌ‹ˆ[Y\™Ú[™Îˆ˜™Ë^Y[ÝËMLÌL^^Y[ÝËM›Ü™\‹^Y[ÝËMLÌÌ‹ˆÝX›Nˆ˜™ËX›YKMLÌL^X›YKM›Ü™\‹X›YKMLÌÌ‹ˆXÛ[š[™Îˆ˜™ËYÜ™Y[‹MLÌL^YÜ™Y[‹M›Ü™\‹YÜ™Y[‹MLÌÌ‹ˆNÂ‚ˆÛÛœÝ[ÛY[[RXÛÛœÎˆ™XÛÜ™Ýš[™ËÝš[™ÏˆHÂˆš\Ú[™Îˆ—LŒNLH‹ˆ˜[[™Îˆ—LŒNLÈ‹ˆ]X]Nˆ—LŒNLˆ‹ˆNÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆËÊˆÝ[[X\žHØ\™È
+‹ßBˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËMHØ\M‚ˆØ\™Û\ÜÓ˜[YOH˜›Ü™\‹\™YMLÌÌ‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœM‹LÈ^XÙ[\ˆ‚ˆ]ˆÛ\ÜÓ˜[YOH^Lž›ÛX›Û^\™YMžÜÏË˜Üš]XØ[ÛÝ[ÏÈOÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™Üš]XØ[Ù]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆØ\™Û\ÜÓ˜[YOH˜›Ü™\‹[Ü˜[™ÙKMLÌÌ‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœM‹LÈ^XÙ[\ˆ‚ˆ]ˆÛ\ÜÓ˜[YOH^Lž›ÛX›Û^[Ü˜[™ÙKMžÜÏË˜XØÙ[\˜][™ÐÛÝ[ÏÈOÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™XØÙ[\˜][™ÏÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆØ\™Û\ÜÓ˜[YOH˜›Ü™\‹^Y[ÝËMLÌÌ‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœM‹LÈ^XÙ[\ˆ‚ˆ]ˆÛ\ÜÓ˜[YOH^Lž›ÛX›Û^^Y[ÝËMžÜÏË™[Y\™Ú[™ÐÛÝ[ÏÈOÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™‘[Y\™Ú[™ÏÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆØ\™Û\ÜÓ˜[YOH˜›Ü™\‹X›YKMLÌÌ‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœM‹LÈ^XÙ[\ˆ‚ˆ]ˆÛ\ÜÓ˜[YOH^Lž›ÛX›Û^X›YKMžÜÏË˜]™Ô™\ÜÝ\™HÏÈOÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™]™È™\ÜÝ\™OÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆØ\™Û\ÜÓ˜[YOH˜›Ü™\‹\\œKMLÌÌ‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœM‹LÈ^XÙ[\ˆ‚ˆ]ˆÛ\ÜÓ˜[YOH^Lž›ÛX›Û^\\œKMžÜÏË›X^™\ÜÝ\™HÏÈOÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™“X^™\ÜÝ\™OÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆÙ]‚‚ˆËÊˆXÝ[Ûˆ]ÛœÈ
+‹ßBˆ]ˆÛ\ÜÓ˜[YOH™›^Ø\LÈ‚ˆ]Û‚ˆÚ^™OHœÛH‚ˆÛÛXÚÏ^Ê
+HOˆ\]P[›]]]J
+_Bˆ\ØX›Y^Ý\]P[š\Ô[™[™ßBˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆ‚ˆÝ\]P[š\Ô[™[™ÈÈØY\ŒˆÛ\ÜÓ˜[YOHšLËHËLËH[š[X]K\Ü[ˆˆÏˆˆ™Yœ™\ÚÝÈÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸBˆ\]H[™[™ÂˆÐ]Û‚ˆÙ]‚‚ˆËÊˆÜÜš]XØ[ÐXØÙ[\˜][™È
+‹ßBˆÜÏËÜÜš]XØ[	‰ˆËÜÜš]XØ[›[™Ýˆ	‰ˆ
+ˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›^][\ËXÙ[\ˆØ\Lˆ‚ˆ[\šX[™ÛHÛ\ÜÓ˜[YOHšMËM^\™YMˆÏ‚ˆÜš]XØ[	ˆXØÙ[\˜][™È™[™ÂˆÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÜËÜÜš]XØ[›X\
+
+ˆ[žJHOˆ
+ˆ]ˆÙ^O^Ý™[™ÚYHÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆLˆ›Ý[™Y[È™Ë[]]YÌÌ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\LÈ‚ˆ˜YÙHÛ\ÜÓ˜[YO^ØÛ\ÜÚYšXØ][ÛÛÛÜœÖÝ™[™ØÛ\ÜÚYšXØ][Û—HˆŸO‚ˆÝ™[™ØÛ\ÜÚYšXØ][ÛŸBˆÐ˜YÙO‚ˆÜ[ˆÛ\ÜÓ˜[YOH^\ÛH›Û[YY][HžÝœ]\›—Û˜[YHœ]\›—Ý\H•[šÛ›ÝÛˆŸOÜÜ[‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\M^^È^[]]YY›Ü™YÜ›Ý[™‚ˆÜ[”™\ÜÝ\™NˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[[Û›È›ÛX›Û^Y›Ü™YÜ›Ý[™žÝœ™\ÜÝ\™WÚ[™^OÜÜ[ÜÜ[‚ˆÜ[‘Ü›ÝÝˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[[Û›ÈžÝ™Ü›ÝÝÜ˜]WÌÌIOÜÜ[ÜÜ[‚ˆÜ[žÛ[ÛY[[RXÛÛœÖÝ›[ÛY[[WÙ\™XÝ[Û—H—LŒNLˆŸHÝ›[ÛY[[WÙ\™XÝ[ÛŸOÜÜ[‚ˆÙ]‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_B‚ˆËÊˆ[™[™ÈX›H
+‹ßBˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›^][\ËXÙ[\ˆØ\Lˆ‚ˆØ]YÙHÛ\ÜÓ˜[YOHšMËMˆÏ‚ˆ[™[™È
+Ù\Ú›Ø\™™]OËÝ[ÏÈJBˆÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆÝ™[™Ë›[™ÝOOHÈ
+ˆ]ˆÛ\ÜÓ˜[YOH^XÙ[\ˆKN^[]]YY›Ü™YÜ›Ý[™‚ˆØ]YÙHÛ\ÜÓ˜[YOHšNËN^X]]ÈX‹LˆÜXÚ]KMˆÏ‚ˆÛ\ÜÓ˜[YOH^\ÛH“›È™[™ÈØ[Ý[]YY]Ü‚ˆÛ\ÜÓ˜[YOH^^È]LHÛXÚÈ•\]H[™[™ÈˆÈ[˜[^™HXÝ]™H]\›œËÜ‚ˆÙ]‚ˆ
+Hˆ
+ˆ]ˆÛ\ÜÓ˜[YOH›Ý™\™›ÝË^X]]È‚ˆX›HÛ\ÜÓ˜[YOHËY[^\ÛH‚ˆXY‚ˆˆÛ\ÜÓ˜[YOH˜›Ü™\‹Xˆ^[Y^[]]YY›Ü™YÜ›Ý[™‚ˆÛ\ÜÓ˜[YOHœ‹Lˆ›Û[YY][H”]\›Ý‚ˆÛ\ÜÓ˜[YOHœ‹Lˆ›Û[YY][HÛ\ÜÚYšXØ][ÛÝ‚ˆÛ\ÜÓ˜[YOHœ‹Lˆ›Û[YY][H”™\ÜÝ\™OÝ‚ˆÛ\ÜÓ˜[YOHœ‹Lˆ›Û[YY][H“[ÛY[[OÝ‚ˆÛ\ÜÓ˜[YOHœ‹Lˆ›Û[YY][H‘Ü›ÝÝÙÝ‚ˆÛ\ÜÓ˜[YOHœ‹Lˆ›Û[YY][H‘Ü›ÝÝÌÝ‚ˆÛ\ÜÓ˜[YOHœ‹Lˆ›Û[YY][H”ÚYÛ˜[ÏÝ‚ˆÛ\ÜÓ˜[YOHœ‹Lˆ›Û[YY][H‘Ù[ÈÜ™XYÝ‚ˆÝ‚ˆÝXY‚ˆ›ÙO‚ˆÝ™[™Ë›X\
+
+ˆ[žJHOˆ
+ˆˆÙ^O^Ý™[™ÚYHÛ\ÜÓ˜[YOH˜›Ü™\‹Xˆ›Ü™\‹X›Ü™\‹ÍLÝ™\Ž˜™Ë[]]YÌŒ‚ˆÛ\ÜÓ˜[YOHœKLˆ›Û[YY][HžÝœ]\›—Û˜[YHœ]\›—Ý\H¸ %ŸOÝ‚ˆÛ\ÜÓ˜[YOHœKLˆ‚ˆ˜YÙHÛ\ÜÓ˜[YO^ØÛ\ÜÚYšXØ][ÛÛÛÜœÖÝ™[™ØÛ\ÜÚYšXØ][Û—HˆŸO‚ˆÝ™[™ØÛ\ÜÚYšXØ][ÛŸBˆÐ˜YÙO‚ˆÝ‚ˆÛ\ÜÓ˜[YOHœKLˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆ]ˆÛ\ÜÓ˜[YOHËLMˆLˆ™Ë[]]Y›Ý[™YY[Ý™\™›ÝËZY[ˆ‚ˆ]‚ˆÛ\ÜÓ˜[YO^ØY[›Ý[™YY[	Âˆ[X™\Šœ™\ÜÝ\™WÚ[™^
+HHHÈ˜™Ë\™YMLˆ‚ˆ[X™\Šœ™\ÜÝ\™WÚ[™^
+HHÌÈ˜™Ë[Ü˜[™ÙKMLˆ‚ˆ[X™\Šœ™\ÜÝ\™WÚ[™^
+HHLÈ˜™Ë^Y[ÝËMLˆˆ˜™ËX›YKML‚ˆXBˆÝ[O^ÞÈÚYˆ	ÓX]›Z[Š[X™\Šœ™\ÜÝ\™WÚ[™^
+KL
+_IX_BˆÏ‚ˆÙ]‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[[Û›È^^ÈžÝœ™\ÜÝ\™WÚ[™^OÜÜ[‚ˆÙ]‚ˆÝ‚ˆÛ\ÜÓ˜[YOHœKLˆ^^È‚ˆÛ[ÛY[[RXÛÛœÖÝ›[ÛY[[WÙ\™XÝ[Û—H—LŒNLˆŸHÝ›[ÛY[[WÙ\™XÝ[ÛŸBˆÝ‚ˆÛ\ÜÓ˜[YOHœKLˆ›Û[[Û›È^^ÈžÝ™Ü›ÝÝÜ˜]WÍÙIOÝ‚ˆÛ\ÜÓ˜[YOHœKLˆ›Û[[Û›È^^ÈžÝ™Ü›ÝÝÜ˜]WÌÌIOÝ‚ˆÛ\ÜÓ˜[YOHœKLˆ›Û[[Û›È^^ÈžÝ˜Ý\œ™[ÜÚYÛ˜[ØÛÝ[OÝ‚ˆÛ\ÜÓ˜[YOHœKLˆ›Û[[Û›È^^ÈžÝ˜Ý\œ™[ÙÙ[ÙÜ˜\X×ÜÜ™XYOÝ‚ˆÝ‚ˆ
+J_BˆÝ›ÙO‚ˆÝX›O‚ˆÙ]‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚‚ˆËÊˆ™XÙ[[\È
+‹ßBˆÜÏËœ™XÙ[[\È	‰ˆËœ™XÙ[[\Ë›[™Ýˆ	‰ˆ
+ˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›^][\ËXÙ[\ˆØ\Lˆ‚ˆ[\šX[™ÛHÛ\ÜÓ˜[YOHšMËM^^Y[ÝËMˆÏ‚ˆ™XÙ[™\ÜÝ\™H[\ÂˆÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÜËœ™XÙ[[\Ë›X\
+
+Nˆ[žKNˆ[X™\ŠHOˆ
+ˆ]ˆÙ^O^Ú_HÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆLˆ›Ý[™Y[È™Ë[]]YÌÌ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\LÈ‚ˆ˜YÙH˜\šX[^ØK˜[\Û]™[OOH˜Üš]XØ[ˆÈ™\ÝXÝ]™Hˆˆ›Ý][™HŸO‚ˆØK˜[\Û]™[BˆÐ˜YÙO‚ˆÜ[ˆÛ\ÜÓ˜[YOH^\ÛHžØKœ]\›—Û˜[YHKœ]\›—Ý\H•[šÛ›ÝÛˆŸOÜÜ[‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\LÈ^^È^[]]YY›Ü™YÜ›Ý[™‚ˆÜ[”™\ÜÝ\™NˆØKœ™\ÜÝ\™WÚ[™^OÜÜ[‚ˆÜ[žØKœÛ˜\ÚÝÙ]_OÜÜ[‚ˆÙ]‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_B‚ˆËÊˆ[\[\È
+‹ßBˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›^][\ËXÙ[\ˆØ\Lˆ‚ˆÚY[Û\ÜÓ˜[YOHšMËMˆÏ‚ˆ[\[\È
+Ø[\[\Ë™]OË›[™ÝÏÈJBˆÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆÊ[\[\Ë™]H×JK›[™ÝOOHÈ
+ˆÛ\ÜÓ˜[YOH^\ÛH^[]]YY›Ü™YÜ›Ý[™^XÙ[\ˆKM“›È[\[\ÈÛÛ™šYÝ\™YÜ‚ˆ
+Hˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLKH‚ˆÊ[\[\Ë™]H×JK›X\
+
+[Nˆ[žJHOˆ
+ˆ]ˆÙ^O^Ü[Kœ[WÚYHÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆLˆ›Ý[™Y™Ë[]]YÌŒ^^È‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^VÌLHžÜ[K˜[\ÜÙ]™\š]_OÐ˜YÙO‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[YY][HžÜ[Kœ[WÛ˜[Y_OÜÜ[‚ˆÙ]‚ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™‚ˆÜ[K˜ÛÛ™][Û—Ý\_HÜ[K™\ÚÛÙ\™XÝ[ÛŸHÜ[K™\ÚÛÝ˜[Y_BˆÜÜ[‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆÙ]‚ˆ
+NÂŸB‚‹Êˆ8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥dˆÕUQÖHU’S‘S‘ÈS‘Sˆ8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d
+‹Â‹ÊˆÝ˜]YÞT]Ô[™[[Ý™YÈÛÛ\Û™[ËÛZ\ÜÚ[Û‹ÔÝ˜]YÞT]Ô[™[Þ
+‹Â‚‹Êˆ8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥dˆÕUÓÓQTÈ	ˆQ‘‘PÕU‘S‘TÔÈS‘Sˆ8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d
+‹Â‹ÊˆÝ]ÛÛY\Ô[™[[Ý™YÈÛÛ\Û™[ËÛZ\ÜÚ[Û‹ÓÝ]ÛÛY\Ô[™[Þ
+‹Â‚‹ËÈ8¥ 8¥ 8¥ ™YY˜XÚÈØÚY[\ˆÙXÝ[Ûˆ8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ ™[˜Ý[Ûˆ™YY˜XÚÔØÚY[\”ÙXÝ[ÛŠ
+HÂˆÛÛœÝ™YY˜XÚÔHHœË›Ü\˜][Û˜[ÛÜšÙ›ÝË™™YY˜XÚÓÙÜË\ÙT]Y\žJ
+NÂˆÛÛœÝšYÙÙ\“]]HœË›Ü\˜][Û˜[ÛÜšÙ›ÝËšYÙÙ\‘™YY˜XÚË\ÙS]]][ÛŠ
+NÂˆÛÛœÝ][ÈHœË\ÙU][Ê
+NÂ‚ˆÛÛœÝÙÜÈH™YY˜XÚÔK™]OË›ÙÜÈ×NÂ‚ˆÛÛœÝ[™UšYÙÙ\ˆH\Þ[˜È
+
+HOˆÂˆ]ØZ]šYÙÙ\“]]›]]]P\Þ[˜Ê
+NÂˆ][Ë›Ü\˜][Û˜[ÛÜšÙ›ÝË™™YY˜XÚÓÙÜËš[˜[Y]J
+NÂˆNÂ‚ˆ™]\›ˆ
+ˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›^][\ËXÙ[\ˆØ\Lˆ‚ˆ™Yœ™\ÚÝÈÛ\ÜÓ˜[YOHšMËMˆÏ‚ˆ™YY˜XÚÈX\›š[™ÈÛÜˆÐØ\™]O‚ˆ]Ûˆ˜\šX[H›Ý][™HˆÚ^™OHœÛHˆÛÛXÚÏ^Ú[™UšYÙÙ\ŸH\ØX›Y^ÝšYÙÙ\“]]š\Ô[™[™ßO‚ˆÝšYÙÙ\“]]š\Ô[™[™ÈÈØY\ŒˆÛ\ÜÓ˜[YOHšLËHËLËH\‹LKH[š[X]K\Ü[ˆˆÏˆˆ™Yœ™\ÚÝÈÛ\ÜÓ˜[YOHšLËHËLËH\‹LKHˆÏŸBˆ[ˆ›ÝÂˆÐ]Û‚ˆÙ]‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆÛÙÜË›[™ÝOOHÈ
+ˆÛ\ÜÓ˜[YOH^\ÛH^[]]YY›Ü™YÜ›Ý[™^XÙ[\ˆKM“›È™YY˜XÚÈÞXÛ\È™XÛÜ™YY]ˆHØÚY[\ˆ[œÈ]™\žHˆÝ\œÈ]]ÛX]XØ[KÜ‚ˆ
+Hˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLÈ‚ˆÛÙÜËœÛXÙJL
+K›X\
+
+ÙÎˆ[žKNˆ[X™\ŠHOˆ
+ˆ]ˆÙ^O^Ú_HÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\LÈLÈ›Ý[™Y[È›Ü™\ˆ™ËXØ\™ÍL‚ˆ]ˆÛ\ÜÓ˜[YO^ØËLˆLˆ›Ý[™YY[	ÛÙËœÝ]\ÈOOH	ØÛÛ\]Y	ÈÈ	Ø™ËYÜ™Y[‹M	ÈˆÙËœÝ]\ÈOOH	Ù˜Z[Y	ÈÈ	Ø™Ë\™YM	Èˆ	Ø™Ë^Y[ÝËM	ßXHÏ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^LHZ[‹]ËL‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH^^È›Û[[Û›È^[]]YY›Ü™YÜ›Ý[™‚ˆÛÙËœ[]È™]È]JÙËœ[]
+KÓØØ[TÝš[™Ê
+Hˆ	Õ[šÛ›ÝÛ‰ßBˆÜÜ[‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^VÌLHžÛÙËœÝ]\È	ØÛÛ\]Y	ßOÐ˜YÙO‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^Ø\M]LH^^È^[]]YY›Ü™YÜ›Ý[™‚ˆÜ[”]\›œÎˆÛÙËœ]\›œÔ›ØÙ\ÜÙYÏÈOÜÜ[‚ˆÜ[”Ý˜]YÚY\ÎˆÛÙËœÝ˜]YÚY\Õ\]YÏÈOÜÜ[‚ˆÜ[”ÚYÛ˜[ÎˆÛÙËœÚYÛ˜[ÐÚ[™ÙYÏÈOÜÜ[‚ˆÛÙË™\˜][Ûˆ	‰ˆÜ[žÛÙË™\˜][ÛŸ[\ÏÜÜ[ŸBˆÙ]‚ˆÙ]‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+NÂŸB‚‹ËÈ8¥ 8¥ 8¥ [\™[[Ûˆ\Ú›Ø\™[™[8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ ™[˜Ý[Ûˆ[\™[[Û‘\Ú›Ø\™[™[
+
+HÂˆÛÛœÝ\ÚHHœËš[\™[[Û“™]ÛÜšË™\Ú›Ø\™\ÙT]Y\žJ
+NÂˆÛÛœÝÝ[[X\žTHHœËš[\™[[Û“™]ÛÜšË›Z\ÜÚ[ÛÛÛ›ÛÝ[[X\žK\ÙT]Y\žJ
+NÂ‚ˆÛÛœÝ\ÚH\ÚK™]NÂˆÛÛœÝÝ[[X\žHHÝ[[X\žTK™]NÂˆÛÛœÝ[™Ú[ÈH\ÚË™[™Ú[È×NÂˆÛÛœÝ™XÙ[ÝX›Z\ÜÚ[ÛœÈH\ÚËœ™XÙ[ÝX›Z\ÜÚ[ÛœÈ×NÂ‚ˆYˆ
+\ÚKš\ÓØY[™ÊH™]\›ˆ[™[ÚÙ[]ÛˆÏŽÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆËÊˆÝ[[X\žHØ\™È
+‹ßBˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËMØ\M‚ˆY]šXÐØ\™X™[H•Ý[[™Ú[Èˆ˜[YO^ÜÝ[[X\žOËÝ[[™Ú[ÈÏÈ\ÚËœÝ[[X\žOËÝ[[™Ú[ÈÏÈHÏ‚ˆY]šXÐØ\™X™[H•Ý[ÝX›Z\ÜÚ[ÛœÈˆ˜[YO^ÜÝ[[X\žOËÝ[ÝX›Z\ÜÚ[ÛœÈÏÈ\ÚËœÝ[[X\žOËÝ[ÝX›Z\ÜÚ[ÛœÈÏÈHÏ‚ˆY]šXÐØ\™X™[H”[™[™Èˆ˜[YO^ÜÝ[[X\žOËœ[™[™ÔÝX›Z\ÜÚ[ÛœÈÏÈ\ÚËœÝ[[X\žOËœ[™[™ÔÝX›Z\ÜÚ[ÛœÈÏÈHÏ‚ˆY]šXÐØ\™X™[HXÝ]™H[™\ÝYØ][ÛœÈˆ˜[YO^ÜÝ[[X\žOË˜XÝ]™R[™\ÝYØ][ÛœÈÏÈ\ÚËœÝ[[X\žOË˜XÝ]™R[™\ÝYØ][ÛœÈÏÈHÏ‚ˆÙ]‚‚ˆËÊˆÛËXÛÛ[[Žˆ[™Ú[È
+È™XÙ[ÝX›Z\ÜÚ[ÛœÈ
+‹ßBˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLHÎ™ÜšYXÛÛËLˆØ\Mˆ‚ˆËÊˆ]]Üš]H[™Ú[È
+‹ßBˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›^][\ËXÙ[\ˆØ\Lˆ‚ˆZ[[™ÌˆÛ\ÜÓ˜[YOHšMËMˆÏˆ]]Üš]H[™Ú[È
+Ù[™Ú[Ë›[™ÝJBˆÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆÙ[™Ú[Ë›[™ÝˆÈ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÙ[™Ú[ËœÛXÙJL
+K›X\
+
+\ˆ[žJHOˆ
+ˆ]ˆÙ^O^Ù\™[™Ú[ÚYHÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆL‹H›Ý[™Y[È›Ü™\ˆ™Ë[]]YÌŒ‚ˆ]ˆÛ\ÜÓ˜[YOH›Z[‹]ËL‚ˆ]ˆÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H[˜Ø]HžÙ\˜YÙ[˜ÞWØX˜œ™]šX][Ûˆ\˜YÙ[˜ÞWÛ˜[Y_OÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™‚ˆÙ\š[\™[[Û—Ý\_H0­È]™[Ù\™\ØØ[][Û—Û]™[H0­ÈÙ\š\š\ÙXÝ[Û—ÜØÛÜ_BˆÙ]‚ˆÙ]‚ˆÙ\ÙXœÚ]WÝ\›	‰ˆ
+ˆH™Y^Ù\ÙXœÚ]WÝ\›H\™Ù]H—Ø›[šÈˆ™[H››ÛÜ[™\ˆ›Ü™Y™\œ™\ˆˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™Ý™\Ž^Y›Ü™YÜ›Ý[™‚ˆ^\›˜[[šÈÛ\ÜÓ˜[YOHšLËHËLËHˆÏ‚ˆØO‚ˆ
+_BˆÙ]‚ˆ
+J_BˆÙ]‚ˆ
+Hˆ
+ˆ[™[[\HX™[H“›È[\™[[Ûˆ[™Ú[ÈÛÛ™šYÝ\™YˆˆÏ‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚‚ˆËÊˆ™XÙ[ÝX›Z\ÜÚ[ÛœÈ
+‹ßBˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›^][\ËXÙ[\ˆØ\Lˆ‚ˆÙ[™Û\ÜÓ˜[YOHšMËMˆÏˆ™XÙ[ÝX›Z\ÜÚ[ÛœÈ
+Ü™XÙ[ÝX›Z\ÜÚ[ÛœË›[™ÝJBˆÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆÜ™XÙ[ÝX›Z\ÜÚ[ÛœË›[™ÝˆÈ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÜ™XÙ[ÝX›Z\ÜÚ[ÛœËœÛXÙJL
+K›X\
+
+ÝXŽˆ[žJHOˆÂˆÛÛœÝÝ]\ÐÛÛÜˆHÝX‹œ™\ÜÛœÙWÜÝ]\ÈOOH˜ÛÜÙYˆÈ^YÜ™Y[‹MLˆˆÝX‹œ™\ÜÛœÙWÜÝ]\ÈOOHš[™\ÝYØ][Û—ÛÜ[ˆˆÈ^XÞX[‹MLˆˆÝX‹œ™\ÜÛœÙWÜÝ]\ÈOOHœÝX›Z]YˆÈ^X[X™\‹MLˆˆ^[]]YY›Ü™YÜ›Ý[™ŽÂˆ™]\›ˆ
+ˆ]ˆÙ^O^ÜÝX‹œÝX›Z\ÜÚ[Û—ÚYHÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆL‹H›Ý[™Y[È›Ü™\ˆ™Ë[]]YÌŒ‚ˆ]ˆÛ\ÜÓ˜[YOH›Z[‹]ËL‚ˆ]ˆÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H[˜Ø]HžÜÝX‹˜YÙ[˜ÞWÛ˜[YHÝX‹™[™Ú[ÚYOÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™‚ˆÜÝX‹˜XÝ[Û—Ý\_H0­ÈÜ[ˆÛ\ÜÓ˜[YO^ÜÝ]\ÐÛÛÜŸOžÜÝX‹œ™\ÜÛœÙWÜÝ]\ßOÜÜ[‚ˆÙ]‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™‚ˆÜÝX‹œÝX›Z\ÜÚ[Û—Ù]HÈ™]È]JÝX‹œÝX›Z\ÜÚ[Û—Ù]JKÓØØ[Q]TÝš[™Ê
+HˆˆŸBˆÙ]‚ˆÙ]‚ˆ
+NÂˆJ_BˆÙ]‚ˆ
+Hˆ
+ˆ[™[[\HX™[H“›ÈÝX›Z\ÜÚ[ÛœÈ™XÛÜ™YY]ˆˆÏ‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆÙ]‚‚ˆËÊˆ\ØØ[][Ûˆ[\ÈÝ[[X\žH
+‹ßBˆÜÝ[[X\žOË™\ØØ[][Û”[PÛÝ[OOH[™Yš[™Y	‰ˆ
+ˆØ\™‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœMˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\LÈ‚ˆÚ\™[ˆÛ\ÜÓ˜[YOHšMHËMH^\™YMLˆÏ‚ˆ]‚ˆ]ˆÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H‘\ØØ[][Ûˆ[\ÈXÝ]™OÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™‚ˆÜÝ[[X\žK™\ØØ[][Û”[PÛÝ[H[\ÈÛÛ™šYÝ\™YXÜ›ÜÜÈÜÝ[[X\žKš\š\ÙXÝ[ÛÛÝ[ÏÈH\š\ÙXÝ[ÛœÂˆÙ]‚ˆÙ]‚ˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_BˆÙ]‚ˆ
+NÂŸB‚‹ËÈ8¥ 8¥ 8¥ ÛXÞH[\XÝ[™[8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ ™[˜Ý[ÛˆÛXÞR[\XÝ[™[
+
+HÂˆÛÛœÝ\ÚHHœËœÛXÞR[\XÝ™\Ú›Ø\™\ÙT]Y\žJ
+NÂˆÛÛœÝ[Y[[™THHœËœÛXÞR[\XÝ[Y[[™K\ÙT]Y\žJ
+NÂ‚ˆÛÛœÝ\ÚH\ÚK™]NÂˆÛÛœÝ[Y[[™HH[Y[[™TK™]H×NÂ‚ˆYˆ
+\ÚKš\ÓØY[™ÊH™]\›ˆ[™[ÚÙ[]ÛˆÏŽÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆËÊˆÝ[[X\žHØ\™È
+‹ßBˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËMØ\M‚ˆY]šXÐØ\™X™[H”ÛXÞH]™[Èˆ˜[YO^Ù\ÚËÝ[]™[ÈÏÈHÏ‚ˆY]šXÐØ\™X™[H’[\XÝÈYX\Ý\™Yˆ˜[YO^Ù\ÚËÝ[[\XÝÈÏÈHÏ‚ˆY]šXÐØ\™X™[H”ÜÚ]]™H[\XÝÈˆ˜[YO^Ù\ÚËœÜÚ]]™R[\XÝÈÏÈHÏ‚ˆY]šXÐØ\™X™[H“™YØ]]™H[\XÝÈˆ˜[YO^Ù\ÚË›™YØ]]™R[\XÝÈÏÈHÏ‚ˆÙ]‚‚ˆËÊˆÛËXÛÛ[[Žˆ™XÙ[]™[È
+È[Y[[™H
+‹ßBˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLHÎ™ÜšYXÛÛËLˆØ\Mˆ‚ˆËÊˆ™XÙ[ÛXÞH]™[È
+‹ßBˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›^][\ËXÙ[\ˆØ\Lˆ‚ˆ[™X\šÈÛ\ÜÓ˜[YOHšMËMˆÏˆ™XÙ[ÛXÞH]™[ÂˆÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆÊ\ÚËœ™XÙ[]™[È×JK›[™ÝˆÈ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÊ\ÚËœ™XÙ[]™[È×JKœÛXÙJ
+K›X\
+
+]ˆ[žJHOˆ
+ˆ]ˆÙ^O^Ù]œÛXÞWÚYHÛ\ÜÓ˜[YOHœL‹H›Ý[™Y[È›Ü™\ˆ™Ë[]]YÌŒ‚ˆ]ˆÛ\ÜÓ˜[YOH^\ÛH›Û[YY][HžÙ]œÛXÞWÛ˜[Y_OÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™]LH‚ˆÙ]œÛXÞWÝ\_H0­ÈÙ]š\š\ÙXÝ[Ûˆ‘™Y\˜[ŸBˆÙ]™Y™™XÝ]™WÙ]H	‰ˆ0­ÈY™™XÝ]™Nˆ	Û™]È]J]™Y™™XÝ]™WÙ]JKÓØØ[Q]TÝš[™Ê
+_XBˆÙ]‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆ
+Hˆ
+ˆ[™[[\HX™[H“›ÈÛXÞH]™[È™XÛÜ™YˆˆÏ‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚‚ˆËÊˆÛXÞH™[™Ý™\›^H
+‹ßBˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›^][\ËXÙ[\ˆØ\Lˆ‚ˆ™[™[™Õ\Û\ÜÓ˜[YOHšMËMˆÏˆÛXÞH™[™Ý™\›^BˆÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆÝ[Y[[™K›[™ÝˆÈ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLÈ‚ˆÝ[Y[[™KœÛXÙJ
+K›X\
+
+][Nˆ[žKNˆ[X™\ŠHOˆÂˆÛÛœÝ[\XÝÛÛÜˆH][Kš[\XÝÙ\™XÝ[ÛˆOOHœÜÚ]]™HˆÈ^YÜ™Y[‹ML™ËYÜ™Y[‹MLÌL›Ü™\‹YÜ™Y[‹MLÌŒ‚ˆˆ][Kš[\XÝÙ\™XÝ[ÛˆOOH›™YØ]]™HˆÈ^\™YML™Ë\™YMLÌL›Ü™\‹\™YMLÌŒ‚ˆˆ^[]]YY›Ü™YÜ›Ý[™™Ë[]]YÌŒ›Ü™\‹X›Ü™\ˆŽÂˆ™]\›ˆ
+ˆ]ˆÙ^O^Ú][KœÛXÞWÚY_HÛ\ÜÓ˜[YOH™›^][\Ë\Ý\Ø\LÈ‚ˆ]ˆÛ\ÜÓ˜[YOHËLKHLKH›Ý[™YY[™Ë\š[X\žH]Lˆ›^\Úš[šËLˆÏ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^LHZ[‹]ËL‚ˆ]ˆÛ\ÜÓ˜[YOH^\ÛH›Û[YY][HžÚ][KœÛXÞWÛ˜[Y_OÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™‚ˆÚ][K™Y™™XÝ]™WÙ]HÈ™]È]J][K™Y™™XÝ]™WÙ]JKÓØØ[Q]TÝš[™Ê
+HˆˆŸBˆÚ][K˜Y™™XÝYÜ]\›—ØÛÝ[OOH[™Yš[™Y	‰ˆ0­È	Ú][K˜Y™™XÝYÜ]\›—ØÛÝ[H]\›œÈY™™XÝYBˆÙ]‚ˆÚ][Kš[\XÝÙ\™XÝ[Ûˆ	‰ˆ
+ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YO^Ø]LH^VÌLH	Ú[\XÝÛÛÜŸXO‚ˆÚ][Kš[\XÝÙ\™XÝ[ÛŸH[\XÝ
+Ú][KœÚYÛ˜[ØÚ[™ÙWÜÝÏÈIJBˆÐ˜YÙO‚ˆ
+_BˆÙ]‚ˆÙ]‚ˆ
+NÂˆJ_BˆÙ]‚ˆ
+Hˆ
+ˆ[™[[\HX™[H“›ÈÛXÞK]™[™ÛÜœ™[][ÛœÈYX\Ý\™YY]ˆ™XÛÜ™ÛXÞH]™[È[™YX\Ý\™HZ\ˆ[\XÝÛˆ]\›œËˆˆÏ‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆÙ]‚‚ˆËÊˆ[\XÝÛÜœ™[][ÛˆÝ[[X\žH
+‹ßBˆÙ\ÚËÜÛÜœ™[][ÛœÈ	‰ˆ\ÚÜÛÜœ™[][ÛœË›[™Ýˆ	‰ˆ
+ˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›^][\ËXÙ[\ˆØ\Lˆ‚ˆØØ[HÛ\ÜÓ˜[YOHšMËMˆÏˆÜÛXÞKT]\›ˆÛÜœ™[][ÛœÂˆÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÙ\ÚÜÛÜœ™[][ÛœËœÛXÙJŠK›X\
+
+ÛÜœŽˆ[žKNˆ[X™\ŠHOˆ
+ˆ]ˆÙ^O^Ú_HÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆL‹H›Ý[™Y[È›Ü™\ˆ™Ë[]]YÌŒ‚ˆ]ˆÛ\ÜÓ˜[YOH›Z[‹]ËL‚ˆ]ˆÛ\ÜÓ˜[YOH^\ÛH›Û[YY][HžØÛÜœ‹œÛXÞWÛ˜[Y_H8¡¤ˆØÛÜœ‹œ]\›—Ý\_OÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™žØÛÜœ‹š\š\ÙXÝ[ÛŸOÙ]‚ˆÙ]‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YO^ØÛÜœ‹˜ÛÜœ™[][Û—ÜÝ™[™ÝˆˆÈ^YÜ™Y[‹MLˆˆ^X[X™\‹MLŸO‚ˆÊÛÜœ‹˜ÛÜœ™[][Û—ÜÝ™[™Ý
+ˆL
+KÑš^Y
+
+_IHÛÜœ™[][Û‚ˆÐ˜YÙO‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_BˆÙ]‚ˆ
+NÂŸB‚‹ËÈ8¥ 8¥ 8¥ ™[YYH[\]\È[™[8¥ 8¥ 8¥ ™[˜Ý[Ûˆ™[YYU[\]\Ô[™[
+
+HÂˆÛÛœÝ\ÚHHœËœ™[YYU[\]K™\Ú›Ø\™\ÙT]Y\žJ
+NÂˆÛÛœÝZ\ÜÚ[Û”HHœËœ™[YYU[\]K›Z\ÜÚ[ÛÛÛ›ÛÝ[[X\žK\ÙT]Y\žJ
+NÂˆÛÛœÝ]Y]YTHHœËœ™[YYU[\]Kœ]Y]YTÝ]\Ë\ÙT]Y\žJ
+NÂˆÛÛœÝØ[Ñ\ÚHHœËœÙ][Y[Ø[Ý[]Ü‹™\Ú›Ø\™\ÙT]Y\žJ
+NÂˆÛÛœÝ›ØÙ\ÜÔ]Y]YS]]HœËœ™[YYU[\]Kœ›ØÙ\ÜÔ]Y]YK\ÙS]]][ÛŠ
+NÂ‚ˆÛÛœÝ\ÚH\ÚK™]H\È[žNÂˆÛÛœÝZ\ÜÚ[ÛˆHZ\ÜÚ[Û”K™]H\È[žNÂˆÛÛœÝ]Y]YHH]Y]YTK™]H\È[žNÂˆÛÛœÝØ[Ñ\ÚHØ[Ñ\ÚK™]H\È[žNÂ‚ˆYˆ
+\ÚKš\ÓØY[™ÈØ[Ñ\ÚKš\ÓØY[™ÊH™]\›ˆ[™[ÚÙ[]ÛˆÏŽÂˆYˆ
+Y\Ú	‰ˆXØ[Ñ\Ú
+H™]\›ˆ[™[[\HX™[H”™[YYH[\]\ÈˆÏŽÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆËÊˆÝ[[X\žHØ\™È
+‹ßBˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËMØ\M‚ˆY]šXÐØ\™X™[H•[\]\Èˆ˜[YO^ÔÝš[™Ê\ÚËÝ[[\]\ÈÏÈZ\ÜÚ[ÛËÝ[[\]\ÈÏÈ
+_HXÛÛ^ÏØÜ›Û^Û\ÜÓ˜[YOHšLËHËLËHˆÏŸHÛÛÜHš[Û]ˆÏ‚ˆY]šXÐØ\™X™[H‘Ù[™\˜]YØÜÈˆ˜[YO^ÔÝš[™Ê\ÚËÝ[Ù[™\˜]YÏÈZ\ÜÚ[ÛËÝ[Ù[™\˜]YÏÈ
+_HXÛÛ^Ïš[U^Û\ÜÓ˜[YOHšLËHËLËHˆÏŸHÛÛÜH˜›YHˆÏ‚ˆY]šXÐØ\™X™[H”Ù][Y[›Ü›][\Èˆ˜[YO^ÔÝš[™ÊØ[Ñ\ÚËÝ[›Ü›][\ÈÏÈ
+_HXÛÛ^ÏØ[Ý[]ÜˆÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHÛÛÜH˜[X™\ˆˆÏ‚ˆY]šXÐØ\™X™[HØ[Ý[][ÛœÈ[ˆˆ˜[YO^ÔÝš[™ÊØ[Ñ\ÚËÝ[Ø[Ý[][ÛœÈÏÈ
+_HXÛÛ^ÏÛ\”ÚYÛˆÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHÛÛÜH™[Y\˜[ˆÏ‚ˆÙ]‚‚ˆËÊˆ]™ÈÙ][Y[
+ÈY™™XÝ]™[™\ÜÈ›ÝÈ
+‹ßBˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLHY™ÜšYXÛÛËLÈØ\M‚ˆØØ[Ñ\ÚË˜]™ÔÙ][Y[ˆ	‰ˆ
+ˆY]šXÐØ\™X™[H]™ÈÙ][Y[ˆ˜[YO^Ø		ÓX]œ›Ý[™
+Ø[Ñ\Ú˜]™ÔÙ][Y[
+KÓØØ[TÝš[™Ê
+_XHXÛÛ^ÏÛ\”ÚYÛˆÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHÛÛÜH˜[X™\ˆˆÏ‚ˆ
+_BˆÛZ\ÜÚ[ÛË˜]™ÑY™™XÝ]™[™\ÜÈˆ	‰ˆ
+ˆY]šXÐØ\™X™[H]™ÈY™™XÝ]™[™\ÜÈˆ˜[YO^Ø	ÊZ\ÜÚ[Û‹˜]™ÑY™™XÝ]™[™\ÜÈ
+ˆL
+KÑš^Y
+
+_IXHXÛÛ^Ï\™Ù]Û\ÜÓ˜[YOHšLËHËLËHˆÏŸHÛÛÜH™[Y\˜[ˆÏ‚ˆ
+_BˆÛZ\ÜÚ[ÛËœ[™[™Ò[”]Y]YHˆ	‰ˆ
+ˆY]šXÐØ\™X™[H”]Y]YH[™[™Èˆ˜[YO^ÔÝš[™ÊZ\ÜÚ[Û‹œ[™[™Ò[”]Y]YJ_HXÛÛ^ÏÛØÚÈÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHÛÛÜHžY[ÝÈˆÏ‚ˆ
+_BˆÙ]‚‚ˆËÊˆ]Y]YHÝ]\È
+È›ØÙ\ÜÈ]Ûˆ
+‹ßBˆÜ]Y]YH	‰ˆ
+ˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH‘ØÝ[Y[Ù[™\˜][Ûˆ]Y]YOÐØ\™]O‚ˆ]Û‚ˆÚ^™OHœÛH‚ˆ˜\šX[H›Ý][™H‚ˆÛÛXÚÏ^Ê
+HOˆ›ØÙ\ÜÔ]Y]YS]]›]]]JßJ_Bˆ\ØX›Y^Ü›ØÙ\ÜÔ]Y]YS]]š\Ô[™[™È
+]Y]YKœ[™[™ÈOOH	‰ˆ]Y]YKœ›ØÙ\ÜÚ[™ÈOOH
+_Bˆ‚ˆÜ›ØÙ\ÜÔ]Y]YS]]š\Ô[™[™ÈÈØY\ŒˆÛ\ÜÓ˜[YOHšLÈËLÈ[š[X]K\Ü[ˆ\‹LHˆÏˆˆ^HÛ\ÜÓ˜[YOHšLÈËLÈ\‹LHˆÏŸBˆ›ØÙ\ÜÈ]Y]YBˆÐ]Û‚ˆÙ]‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËMØ\M^XÙ[\ˆ‚ˆ]‚ˆ]ˆÛ\ÜÓ˜[YOH^Lž›ÛX›Û^^Y[ÝËMLžÜ]Y]YKœ[™[™ßOÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™”[™[™ÏÙ]‚ˆÙ]‚ˆ]‚ˆ]ˆÛ\ÜÓ˜[YOH^Lž›ÛX›Û^X›YKMLžÜ]Y]YKœ›ØÙ\ÜÚ[™ßOÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™”›ØÙ\ÜÚ[™ÏÙ]‚ˆÙ]‚ˆ]‚ˆ]ˆÛ\ÜÓ˜[YOH^Lž›ÛX›Û^YÜ™Y[‹MLžÜ]Y]YK˜ÛÛ\]YOÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™ÛÛ\]YÙ]‚ˆÙ]‚ˆ]‚ˆ]ˆÛ\ÜÓ˜[YOH^Lž›ÛX›Û^\™YMLžÜ]Y]YK™˜Z[YOÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™‘˜Z[YÙ]‚ˆÙ]‚ˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_B‚ˆËÊˆ[ÜÝU\ÙY[\]\È
+‹ßBˆÙ\ÚËÜ[\]\È	‰ˆ\ÚÜ[\]\Ë›[™Ýˆ	‰ˆ
+ˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH“[ÜÝU\ÙY[\]\ÏÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÙ\ÚÜ[\]\Ë›X\
+
+ˆ[žJHOˆ
+ˆ]ˆÙ^O^Ý[\]RYHÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆKLˆ›Ü™\‹Xˆ›Ü™\‹X›Ü™\‹ÍL\Ý˜›Ü™\‹L‚ˆ]ˆÛ\ÜÓ˜[YOH™›^LHZ[‹]ËL‚ˆÜ[ˆÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H›ØÚÈ[˜Ø]HžÝ[\]S˜[Y_OÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™Ø\][^™HžÊ˜ÛZ[U\HˆŠKœ™\XÙJ×ËÙËˆŠ_H8 (ˆÝš\š\ÙXÝ[ÛŸOÜÜ[‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^Ø\Lˆ][\ËXÙ[\ˆ‚ˆ˜YÙH˜\šX[HœÙXÛÛ™\žHžÝ\ØYÙPÛÝ[H\Ù\ÏÐ˜YÙO‚ˆÝœÝXØÙ\ÜÔ˜]HOH[	‰ˆ
+ˆ˜YÙH˜\šX[^ÝœÝXØÙ\ÜÔ˜]HHÈÈ™Y˜][ˆˆœÙXÛÛ™\žHŸHÛ\ÜÓ˜[YOH^^È‚ˆÊœÝXØÙ\ÜÔ˜]H
+ˆL
+KÑš^Y
+
+_IBˆÐ˜YÙO‚ˆ
+_Bˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^^ÈØ\][^™HžÝ™Y™šXÝ[S]™[OÐ˜YÙO‚ˆÙ]‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_B‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLHÎ™ÜšYXÛÛËLˆØ\Mˆ‚ˆËÊˆ[\]HÛÝ™\˜YÙHžHÛZ[H\H
+‹ßBˆÙ\ÚË[\]\ÐžPÛZ[H	‰ˆ\Ú[\]\ÐžPÛZ[K›[™Ýˆ	‰ˆ
+ˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH•[\]HÛÝ™\˜YÙHžHÛZ[H\OÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÙ\Ú[\]\ÐžPÛZ[K›X\
+
+Ýˆ[žJHOˆ
+ˆ]ˆÙ^O^ØÝ˜ÛZ[U\_HÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆKLˆ›Ü™\‹Xˆ›Ü™\‹X›Ü™\‹ÍL\Ý˜›Ü™\‹L‚ˆÜ[ˆÛ\ÜÓ˜[YOH^\ÛH›Û[YY][HØ\][^™HžÊÝ˜ÛZ[U\HˆŠKœ™\XÙJ×ËÙËˆŠ_OÜÜ[‚ˆ˜YÙH˜\šX[HœÙXÛÛ™\žHžØÝ˜ÛÝ[H[\]\ÏÐ˜YÙO‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_B‚ˆËÊˆ\š\ÙXÝ[ÛˆÛÝ™\˜YÙH
+‹ßBˆÙ\ÚË[\]\ÐžR\š\ÙXÝ[Ûˆ	‰ˆ\Ú[\]\ÐžR\š\ÙXÝ[Û‹›[™Ýˆ	‰ˆ
+ˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH’\š\ÙXÝ[ÛˆÛÝ™\˜YÙOÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÙ\Ú[\]\ÐžR\š\ÙXÝ[Û‹›X\
+
+Žˆ[žJHOˆ
+ˆ]ˆÙ^O^Ú‹š\š\ÙXÝ[ÛŸHÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆKLˆ›Ü™\‹Xˆ›Ü™\‹X›Ü™\‹ÍL\Ý˜›Ü™\‹L‚ˆÜ[ˆÛ\ÜÓ˜[YOH^\ÛH›Û[YY][HžÚ‹š\š\ÙXÝ[ÛŸOÜÜ[‚ˆ˜YÙH˜\šX[HœÙXÛÛ™\žHžÚ‹˜ÛÝ[H[\]\ÏÐ˜YÙO‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_BˆÙ]‚‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLHÎ™ÜšYXÛÛËLˆØ\Mˆ‚ˆËÊˆÙ][Y[›Ü›][HÛÝ™\˜YÙH
+‹ßBˆØØ[Ñ\ÚË˜ÛZ[U\Pœ™XZÙÝÛˆ	‰ˆØ[Ñ\Ú˜ÛZ[U\Pœ™XZÙÝÛ‹›[™Ýˆ	‰ˆ
+ˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH”Ù][Y[›Ü›][HÛÝ™\˜YÙOÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆØØ[Ñ\Ú˜ÛZ[U\Pœ™XZÙÝÛ‹›X\
+
+Ýˆ[žJHOˆ
+ˆ]ˆÙ^O^ØÝ˜ÛZ[U\_HÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆKLˆ›Ü™\‹Xˆ›Ü™\‹X›Ü™\‹ÍL\Ý˜›Ü™\‹L‚ˆÜ[ˆÛ\ÜÓ˜[YOH^\ÛH›Û[YY][HØ\][^™HžÊÝ˜ÛZ[U\HˆŠKœ™\XÙJ×ËÙËˆŠ_OÜÜ[‚ˆ]ˆÛ\ÜÓ˜[YOH™›^Ø\Lˆ‚ˆ˜YÙH˜\šX[HœÙXÛÛ™\žHžØÝ˜ÛÝ[H›Ü›][\ÏÐ˜YÙO‚ˆØÝ˜]™Ð[[Ý[ˆ	‰ˆ
+ˆ˜YÙH˜\šX[H›Ý][™H‰ÓX]œ›Ý[™
+Ý˜]™Ð[[Ý[
+KÓØØ[TÝš[™Ê
+_H]™ÏÐ˜YÙO‚ˆ
+_BˆÙ]‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_B‚ˆËÊˆ\š\ÙXÝ[Ûˆ›Ü›][HÛÝ™\˜YÙH
+‹ßBˆØØ[Ñ\ÚËš\š\ÙXÝ[ÛÛÝ™\˜YÙH	‰ˆØ[Ñ\Úš\š\ÙXÝ[ÛÛÝ™\˜YÙK›[™Ýˆ	‰ˆ
+ˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH‘›Ü›][H\š\ÙXÝ[ÛˆÛÝ™\˜YÙOÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆØØ[Ñ\Úš\š\ÙXÝ[ÛÛÝ™\˜YÙK›X\
+
+Žˆ[žJHOˆ
+ˆ]ˆÙ^O^Ú‹š\š\ÙXÝ[ÛŸHÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆKLˆ›Ü™\‹Xˆ›Ü™\‹X›Ü™\‹ÍL\Ý˜›Ü™\‹L‚ˆÜ[ˆÛ\ÜÓ˜[YOH^\ÛH›Û[YY][HžÚ‹š\š\ÙXÝ[ÛŸOÜÜ[‚ˆ˜YÙH˜\šX[HœÙXÛÛ™\žHžÚ‹™›Ü›][PÛÝ[H›Ü›][\ÏÐ˜YÙO‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_BˆÙ]‚‚ˆËÊˆ[\]H\H\ÝšX][Ûˆ
+‹ßBˆÙ\ÚË[\]\ÐžU\H	‰ˆ\Ú[\]\ÐžU\K›[™Ýˆ	‰ˆ
+ˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH•[\]H\H\ÝšX][ÛÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOH™›^›^]Ü˜\Ø\LÈ‚ˆÙ\Ú[\]\ÐžU\K›X\
+
+ˆ[žJHOˆ
+ˆ]ˆÙ^O^Ý\_HÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ›Ý[™Y[È›Ü™\ˆ›Ü™\‹X›Ü™\‹ÍLLÈKLˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH^\ÛH›Û[YY][HØ\][^™HžÊ\HˆŠKœ™\XÙJ×ËÙËˆŠ_OÜÜ[‚ˆ˜YÙH˜\šX[HœÙXÛÛ™\žHˆÛ\ÜÓ˜[YOH^^ÈžÝ˜ÛÝ[OÐ˜YÙO‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_B‚ˆËÊˆ™XÙ[Ù[™\˜]YØÝ[Y[È
+‹ßBˆÙ\ÚËœ™XÙ[ØÜÈ	‰ˆ\Úœ™XÙ[ØÜË›[™Ýˆ	‰ˆ
+ˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH”™XÙ[HÙ[™\˜]YØÝ[Y[ÏÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÙ\Úœ™XÙ[ØÜË›X\
+
+ØÎˆ[žJHOˆ
+ˆ]ˆÙ^O^ÙØË™ØÒYHÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆKLˆ›Ü™\‹Xˆ›Ü™\‹X›Ü™\‹ÍL\Ý˜›Ü™\‹L‚ˆ]‚ˆÜ[ˆÛ\ÜÓ˜[YOH^\ÛH›Û[YY][HžÙØË[\]S˜[YHØË[\]RYOÜÜ[‚ˆÙØË˜Ü™X]Y]	‰ˆ
+ˆÜ[ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™[Lˆ‚ˆÛ™]È]JØË˜Ü™X]Y]
+KÓØØ[Q]TÝš[™Ê
+_BˆÜÜ[‚ˆ
+_BˆÙ]‚ˆ˜YÙH˜\šX[^ÙØËœÝ]\ÈOOH˜\›Ý™YˆÈ™Y˜][ˆˆœÙXÛÛ™\žHŸOžÙØËœÝ]\ßOÐ˜YÙO‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_B‚ˆËÊˆ™XÙ[Ø[Ý[][ÛœÈ
+‹ßBˆØØ[Ñ\ÚËœ™XÙ[Ø[Ý[][ÛœÈ	‰ˆØ[Ñ\Úœ™XÙ[Ø[Ý[][ÛœË›[™Ýˆ	‰ˆ
+ˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH”™XÙ[Ù][Y[Ø[Ý[][ÛœÏÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆØØ[Ñ\Úœ™XÙ[Ø[Ý[][ÛœË›X\
+
+Ø[Îˆ[žJHOˆ
+ˆ]ˆÙ^O^ØØ[Ë˜Ø[ÒYHÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆKLˆ›Ü™\‹Xˆ›Ü™\‹X›Ü™\‹ÍL\Ý˜›Ü™\‹L‚ˆ]‚ˆÜ[ˆÛ\ÜÓ˜[YOH^\ÛH›Û[YY][HžØØ[Ë™›Ü›][S˜[Y_OÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™[LˆØ\][^™HžÊØ[Ë˜ÛZ[U\HˆŠKœ™\XÙJ×ËÙËˆŠ_H8 (ˆØØ[Ëš\š\ÙXÝ[ÛŸOÜÜ[‚ˆÙ]‚ˆ˜YÙH˜\šX[H™Y˜][ˆÛ\ÜÓ˜[YOH™›Û[[Û›È‰ÓX]œ›Ý[™
+Ø[Ë˜Ø[Ý[]Y[[Ý[
+KÓØØ[TÝš[™Ê
+_OÐ˜YÙO‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_BˆÙ]‚ˆ
+NÂŸB‚‹ËÈ8¥ 8¥ 8¥ Y[[ÜžHÝ˜]YÞHY]šXÜÈ[™[8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ ™[˜Ý[ÛˆY[[ÜžTÝ˜]YÞSY]šXÜÔ[™[
+
+HÂˆÛÛœÝY]šXÜÔHHœË›Y[[ÜžSÝ™\›^K›Z\ÜÚ[ÛÛÛ›ÛY]šXÜË\ÙT]Y\žJ
+NÂˆÛÛœÝHHY]šXÜÔK™]NÂ‚ˆYˆ
+Y]šXÜÔKš\ÓØY[™ÊH™]\›ˆ[™[ÚÙ[]ÛˆÏŽÂˆYˆ
+[JH™]\›ˆ[™[[\HX™[H“›ÈY[[ÜžHÝ˜]YÞH]H]˜Z[X›HˆÏŽÂ‚ˆÛÛœÝ™[PÛÛÜˆH
+ŽˆÝš[™ÊHOˆˆOOHšYÚˆÈ^YÜ™Y[‹MˆˆˆOOH›YY][HˆÈ^X[X™\‹Mˆˆ^\™YMŽÂˆÛÛœÝ™[P™ÈH
+ŽˆÝš[™ÊHOˆˆOOHšYÚˆÈ˜™ËYÜ™Y[‹MLÌL›Ü™\‹YÜ™Y[‹MLÌŒˆˆˆOOH›YY][HˆÈ˜™ËX[X™\‹MLÌL›Ü™\‹X[X™\‹MLÌŒˆˆ˜™Ë\™YMLÌL›Ü™\‹\™YMLÌŒŽÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆËÊˆÝ[[X\žHÝ]È
+‹ßBˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLHY™ÜšYXÛÛËLÈØ\M‚ˆØ\™‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœMˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\LÈ‚ˆœ˜Z[ˆÛ\ÜÓ˜[YOHšMHËMH^\\œKMˆÏ‚ˆ]‚ˆÛ\ÜÓ˜[YOH^Lž›ÛX›Û^Y›Ü™YÜ›Ý[™žÛKÝ[Y[[ÜšY\ßOÜ‚ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™•Ý[Y[[ÜžH™XÛÜ™ÏÜ‚ˆÙ]‚ˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆØ\™‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœMˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\LÈ‚ˆ™[™[™Õ\Û\ÜÓ˜[YOHšMHËMH^YÜ™Y[‹MˆÏ‚ˆ]‚ˆÛ\ÜÓ˜[YOH^Lž›ÛX›Û^Y›Ü™YÜ›Ý[™žÓX]œ›Ý[™
+K›Ý™\˜[]™ÔØÛÜ™J_IOÜ‚ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™“Ý™\˜[]™ÈÝXØÙ\ÜÈØÛÜ™OÜ‚ˆÙ]‚ˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆØ\™‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœMˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\LÈ‚ˆ˜\Ú\Û\ÜÓ˜[YOHšMHËMH^XÞX[‹MˆÏ‚ˆ]‚ˆÛ\ÜÓ˜[YOH^Lž›ÛX›Û^Y›Ü™YÜ›Ý[™žÛKÝ[Ý[[X\šY\ßOÜ‚ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™YÙÜ™YØ]YÝ[[X\šY\ÏÜ‚ˆÙ]‚ˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆÙ]‚‚ˆËÊˆÜÝ˜]YÚY\ÈžH]\›ˆ
+‹ßBˆÛKÜÝ˜]YÚY\ÐžT]\›‹›[™Ýˆ	‰ˆ
+ˆØ\™‚ˆØ\™XY\‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›^][\ËXÙ[\ˆØ\Lˆ‚ˆ›Ý]HÛ\ÜÓ˜[YOHšMËM^\\œKMˆÏ‚ˆÜÝ˜]YÚY\ÈžH]\›‚ˆÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÛKÜÝ˜]YÚY\ÐžT]\›‹›X\
+
+Îˆ[žKNˆ[X™\ŠHOˆ
+ˆ]ˆÙ^O^Ú_HÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆLÈ›Ý[™Y[È™Ë[]]YÌÌ›Ü™\ˆ›Ü™\‹X›Ü™\ˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^LH‚ˆÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H^Y›Ü™YÜ›Ý[™žÜËœÝ˜]YÞS˜[Y_OÜ‚ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™žÜËœ]\›•\_OÜ‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\M^^È‚ˆÜ[ˆÛ\ÜÓ˜[YOH^YÜ™Y[‹M›Û[[Û›È›Û\Ù[ZX›ÛžÓX]œ›Ý[™
+Ë˜]™ÔÝXØÙ\ÜÔØÛÜ™J_IOÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™›Û[[Û›È›^ÜËœØ[\TÚ^™_OÜÜ[‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YO^Ø^VÌLH	Ü™[P™ÊËœ™[XXš[]J_H	Ü™[PÛÛÜŠËœ™[XXš[]J_XO‚ˆÜËœ™[XXš[]_BˆÐ˜YÙO‚ˆÙ]‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_B‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLHÎ™ÜšYXÛÛËLˆØ\Mˆ‚ˆËÊˆÜ\š\ÙXÝ[ÛœÈ
+‹ßBˆÛKÜ\š\ÙXÝ[ÛœË›[™Ýˆ	‰ˆ
+ˆØ\™‚ˆØ\™XY\‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›^][\ËXÙ[\ˆØ\Lˆ‚ˆÛØ™HÛ\ÜÓ˜[YOHšMËM^]X[MˆÏ‚ˆÜ\š\ÙXÝ[ÛœÂˆÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÛKÜ\š\ÙXÝ[ÛœË›X\
+
+Žˆ[žKNˆ[X™\ŠHOˆ
+ˆ]ˆÙ^O^Ú_HÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆLˆ›Ý[™Y™Ë[]]YÌŒ‚ˆÜ[ˆÛ\ÜÓ˜[YOH^\ÛH›Û[[Û›È›Û[YY][H^Y›Ü™YÜ›Ý[™žÚ‹š\š\ÙXÝ[ÛŸOÜÜ[‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\LÈ^^È‚ˆÜ[ˆÛ\ÜÓ˜[YOH^]X[M›Û[[Û›ÈžÓX]œ›Ý[™
+‹˜]™ÔØÛÜ™J_IH]™ÏÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™›Û[[Û›È›^Ú‹Ý[Ø[\\ßOÜÜ[‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YO^Ø^VÌLH	Ü™[P™Ê‹œ™[XXš[]J_H	Ü™[PÛÛÜŠ‹œ™[XXš[]J_XO‚ˆÚ‹œ™[XXš[]_BˆÐ˜YÙO‚ˆÙ]‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_B‚ˆËÊˆXÛ[š[™ÈÝ˜]YÚY\È
+‹ßBˆÛK™XÛ[š[™ÔÝ˜]YÚY\Ë›[™Ýˆ	‰ˆ
+ˆØ\™‚ˆØ\™XY\‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›^][\ËXÙ[\ˆØ\Lˆ‚ˆ[\šX[™ÛHÛ\ÜÓ˜[YOHšMËM^\™YMˆÏ‚ˆXÛ[š[™ÈÝ˜]YÚY\ÂˆÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÛK™XÛ[š[™ÔÝ˜]YÚY\Ë›X\
+
+Îˆ[žKNˆ[X™\ŠHOˆ
+ˆ]ˆÙ^O^Ú_HÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆLˆ›Ý[™Y™Ë\™YMLÍH›Ü™\ˆ›Ü™\‹\™YMLÌL‚ˆ]‚ˆÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H^Y›Ü™YÜ›Ý[™žÜËœÝ˜]YÞS˜[Y_OÜ‚ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™žÜËœ]\›•\_OÜ‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\LÈ^^È‚ˆÜ[ˆÛ\ÜÓ˜[YOH^\™YM›Û[[Û›È›Û\Ù[ZX›ÛžÓX]œ›Ý[™
+Ë˜]™ÔÝXØÙ\ÜÔØÛÜ™J_IOÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™›Û[[Û›È›^ÜËœØ[\TÚ^™_OÜÜ[‚ˆÙ]‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_BˆÙ]‚‚ˆËÊˆÝÈÛÛ™šY[˜ÙH™XÛÛ[Y[™][ÛœÈ
+‹ßBˆÛK›ÝÐÛÛ™šY[˜ÙT™XÛÛ[Y[™][ÛœË›[™Ýˆ	‰ˆ
+ˆØ\™‚ˆØ\™XY\‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›^][\ËXÙ[\ˆØ\Lˆ‚ˆ^YHÛ\ÜÓ˜[YOHšMËM^X[X™\‹MˆÏ‚ˆÝËPÛÛ™šY[˜ÙH™XÛÛ[Y[™][ÛœÈ
+[˜[\Ý™]šY]È™YYY
+BˆÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÛK›ÝÐÛÛ™šY[˜ÙT™XÛÛ[Y[™][ÛœË›X\
+
+Žˆ[žKNˆ[X™\ŠHOˆ
+ˆ]ˆÙ^O^Ú_HÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆLˆ›Ý[™Y™ËX[X™\‹MLÍH›Ü™\ˆ›Ü™\‹X[X™\‹MLÌL‚ˆ]ˆÛ\ÜÓ˜[YOH™›^LH‚ˆÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H^Y›Ü™YÜ›Ý[™žÜ‹œÝ˜]YÞS˜[Y_OÜ‚ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™žÜ‹œ]\›•\_H0­ÈÜ‹š\š\ÙXÝ[ÛŸOÜ‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\LÈ^^È‚ˆÜ[ˆÛ\ÜÓ˜[YOH^X[X™\‹M›Û[[Û›ÈžÓX]œ›Ý[™
+‹˜]™ÔÝXØÙ\ÜÔØÛÜ™J_IOÜÜ[‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^VÌLH™Ë\™YMLÌL›Ü™\‹\™YMLÌŒ^\™YM‚ˆ^Ü‹œØ[\TÚ^™_H8 %ÝÈÛÛ™šY[˜ÙBˆÐ˜YÙO‚ˆÙ]‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_BˆÙ]‚ˆ
+NÂŸB‚‹ËÈ8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d‹ËÈ‘Q“Ô“H“ÔÔÐSÈS‘S‹ËÈ8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d™[˜Ý[Ûˆ™Y›Ü›T›ÜÜØ[Ô[™[
+
+HÂˆÛÛœÝ\ÚHHœËœ™Y›Ü›TXÚØYÙK™\Ú›Ø\™\ÙT]Y\žJ
+NÂˆÛÛœÝÙ[™\˜]S]]HœËœ™Y›Ü›TXÚØYÙK™Ù[™\˜]K\ÙS]]][ÛŠÂˆÛ”ÝXØÙ\ÜÎˆ
+
+HOˆ\ÚKœ™Y™]Ú
+
+KˆJNÂˆÛÛœÝ\]TÝ]\Ó]]HœËœ™Y›Ü›TXÚØYÙK\]TÝ]\Ë\ÙS]]][ÛŠÂˆÛ”ÝXØÙ\ÜÎˆ
+
+HOˆÈ\ÚKœ™Y™]Ú
+
+NÈYˆ
+Ù[XÝYÙÊH]Z[Kœ™Y™]Ú
+
+NÈKˆJNÂˆÛÛœÝ™YÙ[™\˜]S]]HœËœ™Y›Ü›TXÚØYÙKœ™YÙ[™\˜]K\ÙS]]][ÛŠÂˆÛ”ÝXØÙ\ÜÎˆ
+
+HOˆÈ\ÚKœ™Y™]Ú
+
+NÈ™\œÚ[ÛœÔKœ™Y™]Ú
+
+NÈKˆJNÂˆÛÛœÝÜÙ[XÝYÙËÙ]Ù[XÝYÙ×HH\ÙTÝ]OÝš[™È[Š[
+NÂˆÛÛœÝÙ]Z[X‹Ù]]Z[X—HH\ÙTÝ]O›Ý™\šY]ÈˆœÙXÝ[ÛœÈˆ™\œÚ[ÛœÈˆ™^ÜÈˆ›Y[[ÜžHŠ›Ý™\šY]ÈŠNÂˆÛÛœÝ]Z[HHœËœ™Y›Ü›TXÚØYÙK™]Z[\ÙT]Y\žJˆÈXÚØYÙRYˆÙ[XÝYÙÈÏÈˆˆKˆÈ[˜X›YˆH\Ù[XÝYÙÈBˆ
+NÂˆÛÛœÝÙ^Ü›Ü›X]Ù]^Ü›Ü›X]HH\ÙTÝ]O›X\šÙÝÛˆˆš[ˆšœÛÛˆŠ›X\šÙÝÛˆŠNÂˆÛÛœÝ^ÜHHœËœ™Y›Ü›TXÚØYÙK™^Ü\ÙT]Y\žJˆÈXÚØYÙRYˆÙ[XÝYÙÈÏÈˆ‹›Ü›X]ˆ^Ü›Ü›X]KˆÈ[˜X›YˆH\Ù[XÝYÙÈ	‰ˆ]Z[XˆOOH™^ÜÈˆBˆ
+NÂˆÛÛœÝ™\œÚ[ÛœÔHHœËœ™Y›Ü›TXÚØYÙK™\œÚ[ÛœË\ÙT]Y\žJˆÈXÚØYÙRYˆÙ[XÝYÙÈÏÈˆˆKˆÈ[˜X›YˆH\Ù[XÝYÙÈ	‰ˆ]Z[XˆOOH™\œÚ[ÛœÈˆBˆ
+NÂˆÛÛœÝ^Ü\ÝÜžTHHœËœ™Y›Ü›TXÚØYÙK™^Ü\ÝÜžK\ÙT]Y\žJˆÈXÚØYÙRYˆÙ[XÝYÙÈÏÈˆˆKˆÈ[˜X›YˆH\Ù[XÝYÙÈ	‰ˆ]Z[XˆOOH™^ÜÈˆBˆ
+NÂˆÛÛœÝY[[ÜžTHHœËœ™Y›Ü›TXÚØYÙKœÝ˜]YÞSY[[ÜžK\ÙT]Y\žJˆÈXÚØYÙRYˆÙ[XÝYÙÈÏÈˆˆKˆÈ[˜X›YˆH\Ù[XÝYÙÈ	‰ˆ]Z[XˆOOH›Y[[ÜžHˆBˆ
+NÂ‚ˆÛÛœÝ\ÚH\ÚK™]NÂˆÛÛœÝÝ]\ÐÛÛÜœÎˆ™XÛÜ™Ýš[™ËÝš[™ÏˆHÂˆ˜Yˆ˜™Ë^š[˜ËMLÌŒ^^š[˜ËM‹ˆ™]šY]Îˆ˜™ËX[X™\‹MLÌŒ^X[X™\‹M‹ˆÝX›Z]Yˆ˜™ËX›YKMLÌŒ^X›YKM‹ˆ[™\—ØÛÛœÚY\˜][ÛŽˆ˜™Ë]š[Û]MLÌŒ^]š[Û]M‹ˆYÜYˆ˜™ËY[Y\˜[MLÌŒ^Y[Y\˜[M‹ˆ™Z™XÝYˆ˜™Ë\™YMLÌŒ^\™YM‹ˆNÂ‚ˆÛÛœÝ[™Q^ÜÝÛ›ØYH
+
+HOˆÂˆYˆ
+^ÜK™]OË˜ÛÛ[
+HÂˆÛÛœÝ›ØˆH™]È›ØŠÙ^ÜK™]K˜ÛÛ[KÈ\Nˆ^ÜK™]K›Z[YU\H^ÜZ[ˆˆJNÂˆÛÛœÝ\›HT“˜Ü™X]SØš™XÝT“
+›ØŠNÂˆÛÛœÝHHØÝ[Y[˜Ü™X]Q[[Y[
+˜HŠNÂˆKš™YˆH\›ÂˆK™ÝÛ›ØYH^ÜK™]K™š[[˜[YH™Y›Ü›K\XÚØYÙKIÜÙ[XÝYÙßK‰Ù^Ü›Ü›X]OOHšœÛÛˆˆÈšœÛÛˆˆˆ^Ü›Ü›X]OOHš[ˆÈš[ˆˆ›YŸXÂˆK˜ÛXÚÊ
+NÂˆT“œ™]›ÚÙSØš™XÝT“
+\›
+NÂˆBˆNÂ‚ˆYˆ
+\ÚKš\ÓØY[™ÊH™]\›ˆ]ˆÛ\ÜÓ˜[YOH™›^\ÝYžKXÙ[\ˆKLLˆØY\ŒˆÛ\ÜÓ˜[YOHšMˆËMˆ[š[X]K\Ü[ˆ^[]]YY›Ü™YÜ›Ý[™ˆÏÙ]ŽÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆËÊˆÝ[[X\žHY]šXÜÈ
+‹ßBˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËMØ\M‚ˆY]šXÐØ\™X™[H•Ý[XÚØYÙ\Èˆ˜[YO^ÔÝš[™Ê\ÚËÝ[XÚØYÙ\ÈÏÈ\ÚËÝ[ÏÈ
+_HXÛÛ^Ïš[SÝ]]Û\ÜÓ˜[YOHšLËHËLËHˆÏŸHÛÛÜHš[Û]ˆÏ‚ˆY]šXÐØ\™X™[H’[ˆ™]šY]Èˆ˜[YO^ÔÝš[™Ê\ÚË˜žTÝ]\ÏËœ™]šY]ÈÏÈ
+_HXÛÛ^Ï^YHÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHÛÛÜH˜[X™\ˆˆÏ‚ˆY]šXÐØ\™X™[H”ÝX›Z]Yˆ˜[YO^ÔÝš[™Ê\ÚË˜žTÝ]\ÏËœÝX›Z]YÏÈ
+_HXÛÛ^ÏÙ[™Û\ÜÓ˜[YOHšLËHËLËHˆÏŸHÛÛÜH˜›YHˆÏ‚ˆY]šXÐØ\™X™[HYÜYˆ˜[YO^ÔÝš[™Ê\ÚË˜žTÝ]\ÏË˜YÜYÏÈ
+_HXÛÛ^ÏÚXÚÐÚ\˜ÛLˆÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHÛÛÜH™[Y\˜[ˆÏ‚ˆÙ]‚‚ˆËÊˆXÚØYÙH\Ý
+‹ßBˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›^][\ËXÙ[\ˆØ\Lˆ‚ˆš[SÝ]]Û\ÜÓ˜[YOHšMËMˆÏˆ™Y›Ü›HXÚØYÙ\ÂˆÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆÊ\ÚËœXÚØYÙ\ÏË›[™ÝÏÈ\ÚËœ™XÙ[XÚØYÙ\ÏË›[™ÝÏÈ
+HOOHÈ
+ˆ]ˆÛ\ÜÓ˜[YOH^XÙ[\ˆKN^[]]YY›Ü™YÜ›Ý[™^\ÛH‚ˆš[SÝ]]Û\ÜÓ˜[YOHšNËN^X]]ÈX‹LˆÜXÚ]KMˆÏ‚ˆ“›È™Y›Ü›HXÚØYÙ\ÈÙ[™\˜]YY]Ü‚ˆÛ\ÜÓ˜[YOH^^È]LH‘Ù[™\˜]HXÚØYÙ\Èœ›ÛHHÛÜšØ™[˜ÚÝ˜]YÞH™]šY]È[™[Ü‚ˆÙ]‚ˆ
+Hˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÊ\ÚËœXÚØYÙ\ÈÏÈ\ÚËœ™XÙ[XÚØYÙ\ÈÏÈ×JK›X\
+
+ÙÎˆ[žJHOˆ
+ˆ]‚ˆÙ^O^ÜÙËœXÚØYÙRYBˆÛ\ÜÓ˜[YO^ØLÈ›Ý[™Y[È›Ü™\ˆÝ\œÛÜ‹\Ú[\ˆ˜[œÚ][Û‹XÛÛÜœÈÝ™\Ž˜™ËXXØÙ[ÍL	ÂˆÙ[XÝYÙÈOOHÙËœXÚØYÙRYÈ˜›Ü™\‹\š[X\žH™ËXXØÙ[ÌÌˆˆ˜›Ü™\‹X›Ü™\ˆ‚ˆXBˆÛÛXÚÏ^Ê
+HOˆÈÙ]Ù[XÝYÙÊÙËœXÚØYÙRY
+NÈÙ]]Z[XŠ›Ý™\šY]ÈŠNÈ_Bˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[YY][H^\ÛHžÜÙË]HÙËœXÚØYÙRYOÜÜ[‚ˆ˜YÙHÛ\ÜÓ˜[YO^Ø^VÌLH	ÜÝ]\ÐÛÛÜœÖÜÙËœÝ]\×HÏÈ˜™Ë^š[˜ËMLÌŒ^^š[˜ËMŸXO‚ˆÜÙËœÝ]\ÏËœ™\XÙJ×ËÙËˆŠ_BˆÐ˜YÙO‚ˆÙ]‚ˆÜ[ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™‚ˆÜÙË˜Ü™X]Y]È™]È]J[X™\ŠÙË˜Ü™X]Y]
+JKÓØØ[Q]TÝš[™Ê
+HˆˆŸBˆÜÜ[‚ˆÙ]‚ˆÜÙËœ]\›’Y	‰ˆ
+ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™]LH”]\›ŽˆÜÙËœ]\›’YOÜ‚ˆ
+_BˆÙ]‚ˆ
+J_BˆÙ]‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚‚ˆËÊˆ]Z[[™[Ú]XœÈ
+‹ßBˆÜÙ[XÝYÙÈ	‰ˆ]Z[K™]H	‰ˆ
+ˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›^][\ËXÙ[\ˆØ\Lˆ‚ˆØÜ›Û^Û\ÜÓ˜[YOHšMËMˆÏˆÙ]Z[K™]K]H”XÚØYÙH]Z[ŸBˆ˜YÙHÛ\ÜÓ˜[YO^Ø^VÌLH	ÜÝ]\ÐÛÛÜœÖÙ]Z[K™]KœÝ]\×HÏÈˆŸXO‚ˆÙ]Z[K™]KœÝ]\ÏËœ™\XÙJ×ËÙËˆŠ_BˆÐ˜YÙO‚ˆÐØ\™]O‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\LH‚ˆ]ÛˆÚ^™OHœÛHˆ˜\šX[H™ÚÜÝˆÛÛXÚÏ^Ê
+HOˆ™YÙ[™\˜]S]]›]]]JÈXÚØYÙRYˆÙ[XÝYÙÈJ_H\ØX›Y^Ü™YÙ[™\˜]S]]š\Ô[™[™ßO‚ˆ›Ý]PØÝÈÛ\ÜÓ˜[YOHšLËHËLËH\‹LHˆÏˆÜ™YÙ[™\˜]S]]š\Ô[™[™ÈÈ”™YÙ[™\˜][™Ë‹‹ˆˆˆ”™YÙ[™\˜]HŸBˆÐ]Û‚ˆ]ÛˆÚ^™OHœÛHˆ˜\šX[H™ÚÜÝˆÛÛXÚÏ^Ê
+HOˆÙ]Ù[XÝYÙÊ[
+_O‚ˆÚ\˜ÛHÛ\ÜÓ˜[YOHšLËHËLËHˆÏ‚ˆÐ]Û‚ˆÙ]‚ˆÙ]‚ˆËÊˆÝX‹]XœÈ
+‹ßBˆ]ˆÛ\ÜÓ˜[YOH™›^Ø\LH]LÈ‚ˆÊÈ›Ý™\šY]È‹œÙXÝ[ÛœÈ‹™\œÚ[ÛœÈ‹™^ÜÈ‹›Y[[ÜžH—H\ÈÛÛœÝ
+K›X\
+Oˆ
+ˆ]ÛˆÙ^O^ÝHÚ^™OHœÛHˆ˜\šX[^Ù]Z[XˆOOHÈ™Y˜][ˆˆ›Ý][™HŸHÛÛXÚÏ^Ê
+HOˆÙ]]Z[XŠ
+_HÛ\ÜÓ˜[YOH^^ÈØ\][^™H‚ˆÝOOH›Ý™\šY]ÈˆÈ^YHÛ\ÜÓ˜[YOHšLÈËLÈ\‹LHˆÏˆˆOOHœÙXÝ[ÛœÈˆÈ›ÛÚÓÜ[ˆÛ\ÜÓ˜[YOHšLÈËLÈ\‹LHˆÏˆˆOOH™\œÚ[ÛœÈˆÈ\ÝÜžHÛ\ÜÓ˜[YOHšLÈËLÈ\‹LHˆÏˆˆOOH™^ÜÈˆÈš[QÝÛˆÛ\ÜÓ˜[YOHšLÈËLÈ\‹LHˆÏˆˆœ˜Z[ˆÛ\ÜÓ˜[YOHšLÈËLÈ\‹LHˆÏŸBˆÝBˆÐ]Û‚ˆ
+J_BˆÙ]‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœÜXÙK^KM‚ˆËÊˆÝ™\šY]ÈXˆ
+‹ßBˆÙ]Z[XˆOOH›Ý™\šY]Èˆ	‰ˆ
+ˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆØ\M^\ÛH‚ˆ]Ü[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™”XÚØYÙHQÜÜ[ˆÜ[ˆÛ\ÜÓ˜[YOH›[LH›Û[[Û›È^^ÈžÙ]Z[K™]KœXÚØYÙRYOÜÜ[Ù]‚ˆ]Ü[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™”]\›ŽÜÜ[ˆÜ[ˆÛ\ÜÓ˜[YOH›[LHžÙ]Z[K™]Kœ]\›’YOÜÜ[Ù]‚ˆ]Ü[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™’\š\ÙXÝ[ÛŽÜÜ[ˆÜ[ˆÛ\ÜÓ˜[YOH›[LHžÙ]Z[K™]Kš\š\ÙXÝ[ÛŸOÜÜ[Ù]‚ˆ]Ü[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™”™Y›Ü›H\NÜÜ[ˆÜ[ˆÛ\ÜÓ˜[YOH›[LHžÙ]Z[K™]Kœ™Y›Ü›U\OËœ™\XÙJ×ËÙËˆŠ_OÜÜ[Ù]‚ˆÙ]Z[K™]KœÝX›Z]YÈ	‰ˆ]Ü[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™”ÝX›Z]YÎÜÜ[ˆÜ[ˆÛ\ÜÓ˜[YOH›[LHžÙ]Z[K™]KœÝX›Z]YßOÜÜ[Ù]ŸBˆÙ]Z[K™]K˜YÜY]H	‰ˆ]Ü[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™YÜYÜÜ[ˆÜ[ˆÛ\ÜÓ˜[YOH›[LHžÛ™]È]J]Z[K™]K˜YÜY]JKÓØØ[Q]TÝš[™Ê
+_OÜÜ[Ù]ŸBˆÙ]Z[K™]KœÚYÛ˜[™YXÝ[Û”ÝOH[	‰ˆ]Ü[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™”ÚYÛ˜[™YXÝ[ÛŽÜÜ[ˆÜ[ˆÛ\ÜÓ˜[YOH›[LHžÙ]Z[K™]KœÚYÛ˜[™YXÝ[Û”ÝIOÜÜ[Ù]ŸBˆÙ]‚ˆËÊˆ^XÝ]]™HÝ[[X\žH
+‹ßBˆÙ]Z[K™]K™^XÝ]]™TÝ[[X\žH	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœLÈ›Ý[™Y[È™Ë[]]YÌÌ›Ü™\ˆ‚ˆÛ\ÜÓ˜[YOH^^È›Û\Ù[ZX›Û^[]]YY›Ü™YÜ›Ý[™X‹Lˆ‘^XÝ]]™HÝ[[X\žOÚ‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆØ\Lˆ^\ÛH‚ˆÓØš™XÝ™[šY\Ê]Z[K™]K™^XÝ]]™TÝ[[X\žJK›X\
+
+ÚË—NˆÜÝš[™Ë[žWJHOˆ
+ˆ]ˆÙ^O^ÚßOÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™žÚËœ™\XÙJÊÐKV—JKÙËˆ	HŠKš[J
+_NÜÜ[ˆÜ[ˆÛ\ÜÓ˜[YOH›[LHžÝ\[ÙˆˆOOHœÝš[™ÈˆÈˆˆ”ÓÓ‹œÝš[™ÚYžJŠ_OÜÜ[Ù]‚ˆ
+J_BˆÙ]‚ˆÙ]‚ˆ
+_BˆËÊˆÝ]\ÈXÝ[ÛœÈ
+‹ßBˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\LˆLˆ‚ˆÙ]Z[K™]KœÝ]\ÈOOH™˜Yˆ	‰ˆ
+ˆ]ÛˆÚ^™OHœÛHˆ˜\šX[H›Ý][™HˆÛÛXÚÏ^Ê
+HOˆ\]TÝ]\Ó]]›]]]JÈXÚØYÙRYˆÙ[XÝYÙË™]ÔÝ]\Îˆœ™]šY]ÈˆJ_H\ØX›Y^Ý\]TÝ]\Ó]]š\Ô[™[™ßO‚ˆ^YHÛ\ÜÓ˜[YOHšLËHËLËH\‹LHˆÏˆ[Ý™HÈ™]šY]ÂˆÐ]Û‚ˆ
+_BˆÙ]Z[K™]KœÝ]\ÈOOHœ™]šY]Èˆ	‰ˆ
+ˆ]ÛˆÚ^™OHœÛHˆ˜\šX[H›Ý][™HˆÛÛXÚÏ^Ê
+HOˆ\]TÝ]\Ó]]›]]]JÈXÚØYÙRYˆÙ[XÝYÙË™]ÔÝ]\ÎˆœÝX›Z]YˆJ_H\ØX›Y^Ý\]TÝ]\Ó]]š\Ô[™[™ßO‚ˆÙ[™Û\ÜÓ˜[YOHšLËHËLËH\‹LHˆÏˆX\šÈÝX›Z]YˆÐ]Û‚ˆ
+_BˆÙ]Z[K™]KœÝ]\ÈOOHœÝX›Z]Yˆ	‰ˆ
+ˆ]ÛˆÚ^™OHœÛHˆ˜\šX[H›Ý][™HˆÛÛXÚÏ^Ê
+HOˆ\]TÝ]\Ó]]›]]]JÈXÚØYÙRYˆÙ[XÝYÙË™]ÔÝ]\Îˆ[™\—ØÛÛœÚY\˜][ÛˆˆJ_H\ØX›Y^Ý\]TÝ]\Ó]]š\Ô[™[™ßO‚ˆØØ[HÛ\ÜÓ˜[YOHšLËHËLËH\‹LHˆÏˆ[™\ˆÛÛœÚY\˜][Û‚ˆÐ]Û‚ˆ
+_BˆÙ]Z[K™]KœÝ]\ÈOOH[™\—ØÛÛœÚY\˜][Ûˆˆ	‰ˆ
+ˆ]ÛˆÚ^™OHœÛHˆ˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH˜›Ü™\‹Y[Y\˜[MLÍLˆÛÛXÚÏ^Ê
+HOˆ\]TÝ]\Ó]]›]]]JÈXÚØYÙRYˆÙ[XÝYÙË™]ÔÝ]\Îˆ˜YÜYˆJ_H\ØX›Y^Ý\]TÝ]\Ó]]š\Ô[™[™ßO‚ˆÚXÚÐÚ\˜ÛLˆÛ\ÜÓ˜[YOHšLËHËLËH\‹LHˆÏˆX\šÈYÜYˆÐ]Û‚ˆ
+_BˆÙ]‚ˆÏ‚ˆ
+_B‚ˆËÊˆÙXÝ[ÛœÈXˆ
+‹ßBˆÙ]Z[XˆOOHœÙXÝ[ÛœÈˆ	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLÈ‚ˆÖÂˆÈÙ^Nˆ™]šY[˜ÙTÙXÝ[Ûˆ‹X™[ˆ‘]šY[˜ÙHÙˆH›Ø›[H‹XÛÛŽˆZXÜ›ÜØÛÜHÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆKˆÈÙ^Nˆœ›ÛÝØ]\ÙTÙXÝ[Ûˆ‹X™[ˆ”›ÛÝØ]\ÙH[˜[\Ú\È‹XÛÛŽˆÙX\˜ÚÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆKˆÈÙ^Nˆš[\™[[Û’\ÝÜžTÙXÝ[Ûˆ‹X™[ˆ’[\™[[Ûˆ\ÝÜžH‹XÛÛŽˆXÝ]š]HÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆKˆÈÙ^Nˆœ™XÛÛ[Y[™Y™Y›Ü›\ÔÙXÝ[Ûˆ‹X™[ˆ”™XÛÛ[Y[™Y™Y›Ü›\È‹XÛÛŽˆØ]™[Û\ÜÓ˜[YOHšLËHËLËHˆÏˆKˆÈÙ^Nˆš[\[Y[][Û”›ØYX\ÙXÝ[Ûˆ‹X™[ˆ’[\[Y[][Ûˆ›ØYX\‹XÛÛŽˆX\XÛÛˆÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆKˆÈÙ^NˆœÝ\Ü[™Ñ]TÙXÝ[Ûˆ‹X™[ˆ”Ý\Ü[™È]H‹XÛÛŽˆ]X˜\ÙHÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆKˆK›X\
+
+ÈÙ^KX™[XÛÛˆJHOˆÂˆÛÛœÝÙXÝ[ÛˆH
+]Z[K™]H\È[žJOË–ÚÙ^WNÂˆYˆ
+\ÙXÝ[Ûˆ
+\[ÙˆÙXÝ[ÛˆOOH›Øš™XÝˆ	‰ˆØš™XÝšÙ^\ÊÙXÝ[ÛŠK›[™ÝOOH
+JH™]\›ˆ[Âˆ™]\›ˆ
+ˆ]ˆÙ^O^ÚÙ^_HÛ\ÜÓ˜[YOHœLÈ›Ý[™Y[È™Ë[]]YÌÌ›Ü™\ˆ‚ˆÛ\ÜÓ˜[YOH^^È›Û\Ù[ZX›Û^[]]YY›Ü™YÜ›Ý[™X‹Lˆ›^][\ËXÙ[\ˆØ\LHžÚXÛÛŸHÛX™[OÚ‚ˆÝ\[ÙˆÙXÝ[ÛˆOOH›Øš™XÝˆÈ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLH^\ÛH‚ˆÓØš™XÝ™[šY\ÊÙXÝ[ÛŠK›X\
+
+ÜÚËÝ—NˆÜÝš[™Ë[žWJHOˆ
+ˆ]ˆÙ^O^ÜÚßO‚ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™žÜÚËœ™\XÙJÊÐKV—JKÙËˆ	HŠKš[J
+_NÜÜ[žÈˆŸBˆÜ[žÐ\œ˜^Kš\Ð\œ˜^JÝŠHÈ
+Ý‹›[™ÝˆÈ	ÜÝ‹›[™ÝH][\Øˆ“›Û™HŠHˆ\[ÙˆÝˆOOH›Øš™XÝˆÈ”ÓÓ‹œÝš[™ÚYžJÝŠHˆÝš[™ÊÝŠ_OÜÜ[‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆ
+Hˆ
+ˆÛ\ÜÓ˜[YOH^\ÛHÚ]\ÜXÙK\™K]Ü˜\žÔÝš[™ÊÙXÝ[ÛŠ_OÜ‚ˆ
+_BˆÙ]‚ˆ
+NÂˆJ_BˆÙ]‚ˆ
+_B‚ˆËÊˆ™\œÚ[ÛœÈXˆ
+‹ßBˆÙ]Z[XˆOOH™\œÚ[ÛœÈˆ	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLÈ‚ˆÝ™\œÚ[ÛœÔKš\ÓØY[™ÈÈ
+ˆ]ˆÛ\ÜÓ˜[YOH™›^\ÝYžKXÙ[\ˆKMˆØY\ŒˆÛ\ÜÓ˜[YOHšMHËMH[š[X]K\Ü[ˆ^[]]YY›Ü™YÜ›Ý[™ˆÏÙ]‚ˆ
+Hˆ
+™\œÚ[ÛœÔK™]OË›[™ÝÏÈ
+HOOHÈ
+ˆ]ˆÛ\ÜÓ˜[YOH^XÙ[\ˆKMˆ^[]]YY›Ü™YÜ›Ý[™^\ÛH‚ˆ\ÝÜžHÛ\ÜÓ˜[YOHšNËN^X]]ÈX‹LˆÜXÚ]KMˆÏ‚ˆ“›È™\œÚ[Ûˆ\ÝÜžHY]Ü‚ˆÛ\ÜÓ˜[YOH^^È]LH•™\œÚ[ÛœÈ\™HÜ™X]Y]]ÛX]XØ[HÚ[ˆÝ]\ÈÚ[™Ù\ÈÜˆ™YÙ[™\˜][ÛˆØØÝ\œËÜ‚ˆÙ]‚ˆ
+Hˆ
+ˆ™\œÚ[ÛœÔK™]OË›X\
+
+Žˆ[žJHOˆ
+ˆ]ˆÙ^O^Ý‹šYHÛ\ÜÓ˜[YOHœLÈ›Ý[™Y[È›Ü™\ˆ›Ü™\‹X›Ü™\ˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆ˜YÙHÛ\ÜÓ˜[YOH˜™Ë]š[Û]MLÌŒ^]š[Û]M^VÌLHžÝ‹™\œÚ[Û“[X™\ŸOÐ˜YÙO‚ˆÜ[ˆÛ\ÜÓ˜[YOH^\ÛHžÝ‹˜Ú[™ÙTÝ[[X\žH”Û˜\ÚÝŸOÜÜ[‚ˆÙ]‚ˆÜ[ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™žÛ™]È]J‹˜Ü™X]Y]
+KÓØØ[TÝš[™Ê
+_OÜÜ[‚ˆÙ]‚ˆÝ‹˜Ü™X]YžH	‰ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™]LHžNˆÝ‹˜Ü™X]Yž_OÜŸBˆÙ]‚ˆ
+JBˆ
+_BˆÙ]‚ˆ
+_B‚ˆËÊˆ^ÜÈXˆ
+‹ßBˆÙ]Z[XˆOOH™^ÜÈˆ	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KM‚ˆËÊˆ^ÜXÝ[ÛœÈ
+‹ßBˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆÊÈ›X\šÙÝÛˆ‹š[‹šœÛÛˆ—H\ÈÛÛœÝ
+K›X\
+›]Oˆ
+ˆ]ÛˆÙ^O^Ù›]HÚ^™OHœÛHˆ˜\šX[^Ù^Ü›Ü›X]OOH›]È™Y˜][ˆˆ›Ý][™HŸHÛÛXÚÏ^Ê
+HOˆÙ]^Ü›Ü›X]
+›]
+_HÛ\ÜÓ˜[YOH^^È‚ˆÙ›]OOH›X\šÙÝÛˆˆÈš[U^Û\ÜÓ˜[YOHšLÈËLÈ\‹LHˆÏˆˆ›]OOHš[ˆÈÛØ™HÛ\ÜÓ˜[YOHšLÈËLÈ\‹LHˆÏˆˆ]X˜\ÙHÛ\ÜÓ˜[YOHšLÈËLÈ\‹LHˆÏŸBˆÙ›]Õ\\Ø\ÙJ
+_BˆÐ]Û‚ˆ
+J_Bˆ]ÛˆÚ^™OHœÛHˆ˜\šX[H›Ý][™HˆÛÛXÚÏ^Ú[™Q^ÜÝÛ›ØYH\ØX›Y^ÈY^ÜK™]OË˜ÛÛ[^ÜKš\ÓØY[™ßO‚ˆÝÛ›ØYÛ\ÜÓ˜[YOHšLËHËLËH\‹LHˆÏˆÙ^ÜKš\ÓØY[™ÈÈ“ØY[™Ë‹‹ˆˆˆ‘ÝÛ›ØYŸBˆÐ]Û‚ˆÙ]‚‚ˆËÊˆ^Ü™]šY]È
+‹ßBˆÙ^ÜK™]OË˜ÛÛ[	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœLÈ›Ý[™Y[È™Ë[]]YÌÌ›Ü™\ˆX^ZMÝ™\™›ÝË^KX]]È‚ˆ™HÛ\ÜÓ˜[YOH^^ÈÚ]\ÜXÙK\™K]Ü˜\›Û[[Û›ÈžÙ^ÜK™]K˜ÛÛ[œÝXœÝš[™ÊŒ
+_^Ù^ÜK™]K˜ÛÛ[›[™ÝˆŒÈ—‹‹‹ˆˆˆˆŸOÜ™O‚ˆÙ]‚ˆ
+_B‚ˆËÊˆ^Ü\ÝÜžH
+‹ßBˆ]‚ˆÛ\ÜÓ˜[YOH^^È›Û\Ù[ZX›Û^[]]YY›Ü™YÜ›Ý[™X‹Lˆ›^][\ËXÙ[\ˆØ\LH\ÝÜžHÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆ^Ü\ÝÜžOÚ‚ˆÙ^Ü\ÝÜžTKš\ÓØY[™ÈÈ
+ˆ]ˆÛ\ÜÓ˜[YOH™›^\ÝYžKXÙ[\ˆKMØY\ŒˆÛ\ÜÓ˜[YOHšMËM[š[X]K\Ü[ˆ^[]]YY›Ü™YÜ›Ý[™ˆÏÙ]‚ˆ
+Hˆ
+^Ü\ÝÜžTK™]OË›[™ÝÏÈ
+HOOHÈ
+ˆÛ\ÜÓ˜[YOH^\ÛH^[]]YY›Ü™YÜ›Ý[™“›È^ÜÈ™XÛÜ™YY]Ü‚ˆ
+Hˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLH‚ˆÙ^Ü\ÝÜžTK™]OË›X\
+
+Nˆ[žJHOˆ
+ˆ]ˆÙ^O^ÙKšYHÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆLˆ›Ý[™Y›Ü™\ˆ›Ü™\‹X›Ü™\ˆ^^È‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆ˜YÙHÛ\ÜÓ˜[YOH˜™ËX›YKMLÌŒ^X›YKM^VÌLHžÙK™^Ü›Ü›X]OÐ˜YÙO‚ˆÙK™š[TÚ^™H	‰ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™žÊK™š[TÚ^™HÈL
+KÑš^Y
+J_HÐÜÜ[ŸBˆÙ]‚ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™žÛ™]È]JK˜Ü™X]Y]
+KÓØØ[TÝš[™Ê
+_OÜÜ[‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆ
+_BˆÙ]‚ˆÙ]‚ˆ
+_B‚ˆËÊˆÝ˜]YÞHY[[ÜžHXˆ
+‹ßBˆÙ]Z[XˆOOH›Y[[ÜžHˆ	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLÈ‚ˆÛY[[ÜžTKš\ÓØY[™ÈÈ
+ˆ]ˆÛ\ÜÓ˜[YOH™›^\ÝYžKXÙ[\ˆKMˆØY\ŒˆÛ\ÜÓ˜[YOHšMHËMH[š[X]K\Ü[ˆ^[]]YY›Ü™YÜ›Ý[™ˆÏÙ]‚ˆ
+Hˆ
+Y[[ÜžTK™]OË›[™ÝÏÈ
+HOOHÈ
+ˆ]ˆÛ\ÜÓ˜[YOH^XÙ[\ˆKMˆ^[]]YY›Ü™YÜ›Ý[™^\ÛH‚ˆœ˜Z[ˆÛ\ÜÓ˜[YOHšNËN^X]]ÈX‹LˆÜXÚ]KMˆÏ‚ˆ“›ÈÝ˜]YÞHXÝ[ÛœÈ™XÛÜ™YY]Ü‚ˆÛ\ÜÓ˜[YOH^^È]LHXÝ[ÛœÈ\™H™XÛÜ™YÚ[ˆXÚØYÙ\È\™HÙ[™\˜]Y^ÜYÜˆÝ]\ËXÚ[™ÙYÜ‚ˆÙ]‚ˆ
+Hˆ
+ˆY[[ÜžTK™]OË›X\
+
+Nˆ[žJHOˆ
+ˆ]ˆÙ^O^ÛKšYHÛ\ÜÓ˜[YOHœLÈ›Ý[™Y[È›Ü™\ˆ›Ü™\‹X›Ü™\ˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆ˜YÙHÛ\ÜÓ˜[YO^Ø^VÌLH	ÂˆK˜XÝ[Û•\HOOH™Ù[™\˜]WÜXÚØYÙHˆÈ˜™ËY[Y\˜[MLÌŒ^Y[Y\˜[Mˆ‚ˆK˜XÝ[Û•\HOOH™^ÜÜXÚØYÙHˆÈ˜™ËX›YKMLÌŒ^X›YKMˆ‚ˆK˜XÝ[Û•\HOOHœ™YÙ[™\˜]WÜXÚØYÙHˆÈ˜™Ë]š[Û]MLÌŒ^]š[Û]Mˆ‚ˆ˜™Ë^š[˜ËMLÌŒ^^š[˜ËM‚ˆXO‚ˆÛK˜XÝ[Û•\OËœ™\XÙJ×ËÙËˆŠ_BˆÐ˜YÙO‚ˆÛK™Y™™XÝ]™[™\ÜÔØÛÜ™HOH[	‰ˆ
+ˆÜ[ˆÛ\ÜÓ˜[YOH^^È‘Y™™XÝ]™[™\ÜÎˆÛK™Y™™XÝ]™[™\ÜÔØÛÜ™_IOÜÜ[‚ˆ
+_BˆÙ]‚ˆÜ[ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™žÛ™]È]JK˜Ü™X]Y]
+KÓØØ[TÝš[™Ê
+_OÜÜ[‚ˆÙ]‚ˆÛK›Ý]ÛÛYQ™YY˜XÚÈ	‰ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™]LHžÛK›Ý]ÛÛYQ™YY˜XÚßOÜŸBˆÛK˜XÝ[Û‘]H	‰ˆ\[ÙˆK˜XÝ[Û‘]HOOH›Øš™XÝˆ	‰ˆØš™XÝšÙ^\ÊK˜XÝ[Û‘]JK›[™Ýˆ	‰ˆ
+ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™]LH›Û[[Û›ÈžÒ”ÓÓ‹œÝš[™ÚYžJK˜XÝ[Û‘]J_OÜ‚ˆ
+_BˆÙ]‚ˆ
+JBˆ
+_BˆÙ]‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_BˆÙ]‚ˆ
+NÂŸB‚‹ËÈ8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d‹ËÈÓÐSUSÓ”ÈS‘S‹ËÈ8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d™[˜Ý[ÛˆÛØ[][ÛœÔ[™[
+
+HÂˆÛÛœÝ\ÚHHœË˜ÛØ[][ÛY›ØØXÞK™\Ú›Ø\™\ÙT]Y\žJ
+NÂˆÛÛœÝÜÙ[XÝYÛXZ[‹Ù]Ù[XÝYÛXZ[—HH\ÙTÝ]OÝš[™ÏŠˆŠNÂˆÛÛœÝ\ØØ[][Û”HHœË˜ÛØ[][ÛY›ØØXÞK™\ØØ[][Û”›Ý]\Ë\ÙT]Y\žJˆÈÛXZ[ŽˆÙ[XÝYÛXZ[ˆ[™Yš[™YKˆÈ[˜X›YˆYHBˆ
+NÂˆÛÛœÝÜÙ[XÝY\š\ÙXÝ[Û‹Ù]Ù[XÝY\š\ÙXÝ[Û—HH\ÙTÝ]OÝš[™ÏŠˆŠNÂˆÛÛœÝXY[™THHœË˜ÛØ[][ÛY›ØØXÞK™XY[™T[\Ë\ÙT]Y\žJˆÈ\š\ÙXÝ[ÛŽˆÙ[XÝY\š\ÙXÝ[Ûˆ[™Yš[™YKˆÈ[˜X›YˆYHBˆ
+NÂˆÛÛœÝØXÝ]™TÙXÝ[Û‹Ù]XÝ]™TÙXÝ[Û—HH\ÙTÝ]O™\Ú›Ø\™ˆ™\ØØ[][Ûˆˆ™XY[™\ÈŠ™\Ú›Ø\™ŠNÂ‚ˆÛÛœÝ\ÚH\ÚK™]NÂ‚ˆYˆ
+\ÚKš\ÓØY[™ÊH™]\›ˆ]ˆÛ\ÜÓ˜[YOH™›^\ÝYžKXÙ[\ˆKLLˆØY\ŒˆÛ\ÜÓ˜[YOHšMˆËMˆ[š[X]K\Ü[ˆ^[]]YY›Ü™YÜ›Ý[™ˆÏÙ]ŽÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆËÊˆÙXÝ[ÛˆXœÈ
+‹ßBˆ]ˆÛ\ÜÓ˜[YOH™›^Ø\Lˆ‚ˆÊÈ™\Ú›Ø\™‹™\ØØ[][Ûˆ‹™XY[™\È—H\ÈÛÛœÝ
+K›X\
+ÈOˆ
+ˆ]Û‚ˆÙ^O^ÜßBˆÚ^™OHœÛH‚ˆ˜\šX[^ØXÝ]™TÙXÝ[ÛˆOOHÈÈ™Y˜][ˆˆ›Ý][™HŸBˆÛÛXÚÏ^Ê
+HOˆÙ]XÝ]™TÙXÝ[ÛŠÊ_BˆÛ\ÜÓ˜[YOH˜Ø\][^™H‚ˆ‚ˆÜÈOOH™\Ú›Ø\™ˆÈ[™ÚZÙHÛ\ÜÓ˜[YOHšLËHËLËH\‹LHˆÏˆˆÈOOH™\ØØ[][ÛˆˆÈ›Ý]HÛ\ÜÓ˜[YOHšLËHËLËH\‹LHˆÏˆˆÛØÚÈÛ\ÜÓ˜[YOHšLËHËLËH\‹LHˆÏŸBˆÜÈOOH™XY[™\ÈˆÈ‘XY[™H[\ÈˆˆÈOOH™\ØØ[][ù×Þ;¶‰žËkºwµçK›]]]J
+_H\ØX›Y^ÙÙ[™\˜]Kš\Ô[™[™ßHÚ^™OHœÛHˆ˜\šX[H›Ý][™H‚ˆÙÙ[™\˜]Kš\Ô[™[™ÈÈØY\ŒˆÛ\ÜÓ˜[YOHšMËM[š[X]K\Ü[ˆ\‹LHˆÏˆˆ™Yœ™\ÚÝÈÛ\ÜÓ˜[YOHšMËM\‹LHˆÏŸBˆÙ[™\˜]HX\ˆÐ]Û‚ˆÙ]‚‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËMHØ\M‚ˆØ\™Ø\™ÛÛ[Û\ÜÓ˜[YOHœM^XÙ[\ˆ‚ˆ]ˆÛ\ÜÓ˜[YOH^Lž›ÛX›Û^]Ú]HžÜÝ[[X\žOË››ÙPÛÝ[OÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^^š[˜ËM“›Ù\ÏÙ]‚ˆÐØ\™ÛÛ[ÐØ\™‚ˆØ\™Ø\™ÛÛ[Û\ÜÓ˜[YOHœM^XÙ[\ˆ‚ˆ]ˆÛ\ÜÓ˜[YOH^Lž›ÛX›Û^XÞX[‹MžÜÝ[[X\žOË™YÙPÛÝ[OÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^^š[˜ËMÛÛ›™XÝ[ÛœÏÙ]‚ˆÐØ\™ÛÛ[ÐØ\™‚ˆØ\™Ø\™ÛÛ[Û\ÜÓ˜[YOHœM^XÙ[\ˆ‚ˆ]ˆÛ\ÜÓ˜[YOH^Lž›ÛX›Û^[Ü˜[™ÙKMžÙ[]S›Ù\Ë›[™ÝOÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^^š[˜ËM‘[]Y\ÏÙ]‚ˆÐØ\™ÛÛ[ÐØ\™‚ˆØ\™Ø\™ÛÛ[Û\ÜÓ˜[YOHœM^XÙ[\ˆ‚ˆ]ˆÛ\ÜÓ˜[YOH^Lž›ÛX›Û^\\œKMžÚ\š\ÙXÝ[Û“›Ù\Ë›[™ÝOÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^^š[˜ËM’\š\ÙXÝ[ÛœÏÙ]‚ˆÐØ\™ÛÛ[ÐØ\™‚ˆØ\™Ø\™ÛÛ[Û\ÜÓ˜[YOHœM^XÙ[\ˆ‚ˆ]ˆÛ\ÜÓ˜[YOH^Lž›ÛX›Û^Y[Y\˜[MžÚ[™\ÝžS›Ù\Ë›[™ÝOÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^^š[˜ËM’[™\ÝšY\ÏÙ]‚ˆÐØ\™ÛÛ[ÐØ\™‚ˆÙ]‚‚ˆËÊˆ™]ÛÜšÈÜ˜\š\ÝX[^˜][Ûˆ
+‹ßBˆØ\™‚ˆØ\™XY\Ø\™]HÛ\ÜÓ˜[YOH^\ÛH“™]ÛÜšÈÜ˜\ÐØ\™]OÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆÛ›Ù\Ë›[™ÝOOHÈ
+ˆ]ˆÛ\ÜÓ˜[YOH^XÙ[\ˆKN^^š[˜ËML‚ˆ™]ÛÜšÈÛ\ÜÓ˜[YOHšNËN^X]]ÈX‹LˆÜXÚ]KMLˆÏ‚ˆ“›ÈX\]HY]ˆÛXÚÈ‘Ù[™\˜]HX\ˆÈZ[H™]ÛÜšËÜ‚ˆÙ]‚ˆ
+Hˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœ™[]]™H™Ë^š[˜ËNL›Ý[™Y[È›Ü™\ˆ›Ü™\‹^š[˜ËMÌMˆÝ[O^ÞÈZ[’ZYÚˆ_O‚ˆËÊˆÕ‘È›Ü˜ÙKY\™XÝY^[Ý]Ú[][][Ûˆ
+‹ßBˆÝ™ÈÚYHŒL	HˆZYÚHˆšY]Ð›ÞHŒ‚ˆËÊˆYÙ\È
+‹ßBˆÙYÙ\ËœÛXÙJL
+K›X\
+
+YÙNˆ[žKNˆ[X™\ŠHOˆÂˆÛÛœÝÛÝ\˜ÙHH›Ù\Ë™š[™
+
+Žˆ[žJHOˆ‹šYOOHYÙKœÛÝ\˜ÙS›ÙRY
+NÂˆÛÛœÝ\™Ù]H›Ù\Ë™š[™
+
+Žˆ[žJHOˆ‹šYOOHYÙK\™Ù]›ÙRY
+NÂˆYˆ
+\ÛÝ\˜ÙH]\™Ù]
+H™]\›ˆ[ÂˆÛÛœÝÚHH›Ù\Ëš[™^ÙŠÛÝ\˜ÙJNÂˆÛÛœÝHH›Ù\Ëš[™^ÙŠ\™Ù]
+NÂˆÛÛœÝÞHL
+È
+ÚH	HLŠH
+ˆMNÂˆÛÛœÝÞHHL
+ÈX]™›ÛÜŠÚHÈLŠH
+ˆÌÂˆÛÛœÝHL
+È
+H	HLŠH
+ˆMNÂˆÛÛœÝHHL
+ÈX]™›ÛÜŠHÈLŠH
+ˆÌÂˆ™]\›ˆ
+ˆ[™HÙ^O^ØKIÚ_XHO^ÜÞHLO^ÜÞ_H^ÝHL^Ý_BˆÝ›ÚÙO^ÙYÙKœ™[][ÛœÚ\\HOOH	Û]YØ][Û—Û[šÉÈÈ	ÈÙY	Èˆ	ÈÌØŽ™‰ßBˆÝ›ÚÙUÚY^ÓX]›X^
+KYÙKœÝ™[™ÝØÛÜ™HÈL
+_BˆÜXÚ]O^ÌŒßHÏ‚ˆ
+NÂˆJ_BˆËÊˆ›Ù\È
+‹ßBˆÛ›Ù\ËœÛXÙJŒ
+K›X\
+
+›ÙNˆ[žKNˆ[X™\ŠHOˆÂˆÛÛœÝHL
+È
+H	HLŠH
+ˆMNÂˆÛÛœÝHHL
+ÈX]™›ÛÜŠHÈLŠH
+ˆÌÂˆÛÛœÝÛÛÜˆH›ÙK››ÙU\HOOH	Ù[]IÈÈ	ÈÙŽMÌÌM‰È‚ˆ›ÙK››ÙU\HOOH	Ú\š\ÙXÝ[Û‰ÈÈ	ÈØNMYÉÈˆ	ÈÌLŽNIÎÂˆÛÛœÝ˜Y]\ÈHX]›X^
+‹X]›Z[ŠM‹›ÙKš\›TØÛÜ™HÈJJNÂˆ™]\›ˆ
+ˆÈÙ^O^Ø‹IÚ_XO‚ˆÚ\˜ÛHÞ^ÞHÞO^Þ_H^Ü˜Y]\ßHš[^ØÛÛÜŸHÜXÚ]O^ÌŽHÏ‚ˆ^^ÞHO^ÞH
+È˜Y]\È
+ÈLŸH^[˜ÚÜH›ZYHˆš[HˆØLXLXXHˆ›ÛÚ^™OHŽ‚ˆÛ›ÙK››ÙSX™[ËœÝXœÝš[™ÊLŠ_BˆÝ^‚ˆÙÏ‚ˆ
+NÂˆJ_BˆÜÝ™Ï‚ˆ]ˆÛ\ÜÓ˜[YOH™›^Ø\M]LÈ\ÝYžKXÙ[\ˆ^^È^^š[˜ËM‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\LHÜ[ˆÛ\ÜÓ˜[YOHËLÈLÈ›Ý[™YY[™Ë[Ü˜[™ÙKML[›[™KX›ØÚÈˆÏˆ[]OÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\LHÜ[ˆÛ\ÜÓ˜[YOHËLÈLÈ›Ý[™YY[™Ë\\œKML[›[™KX›ØÚÈˆÏˆ\š\ÙXÝ[ÛÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\LHÜ[ˆÛ\ÜÓ˜[YOHËLÈLÈ›Ý[™YY[™ËY[Y\˜[ML[›[™KX›ØÚÈˆÏˆ[™\ÝžOÜÜ[‚ˆÙ]‚ˆÙ]‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚‚ˆËÊˆÜš\ÚÈ[]Y\È
+‹ßBˆÙ[]S›Ù\Ë›[™Ýˆ	‰ˆ
+ˆØ\™‚ˆØ\™XY\Ø\™]HÛ\ÜÓ˜[YOH^\ÛH•Ü\›H[]Y\ÏÐØ\™]OÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLHY™ÜšYXÛÛËLˆØ\Lˆ‚ˆÙ[]S›Ù\ËœÛXÙJL
+K›X\
+
+Žˆ[žKNˆ[X™\ŠHOˆ
+ˆ]ˆÙ^O^Ú_HÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆLˆ™Ë^š[˜ËNÍL›Ý[™Y›Ü™\ˆ›Ü™\‹^š[˜ËMÌ‚ˆÜ[ˆÛ\ÜÓ˜[YOH^\ÛH^]Ú]HžÛ‹››ÙSX™[OÜÜ[‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YO^Ø^^È	Âˆ‹š\›TØÛÜ™HHÌÈ	Ø›Ü™\‹\™YML^\™YM	È‚ˆ‹š\›TØÛÜ™HHÈ	Ø›Ü™\‹^Y[ÝËML^^Y[ÝËM	Èˆ	Ø›Ü™\‹Y[Y\˜[ML^Y[Y\˜[M	ÂˆXOžÛ‹š\›TØÛÜ™OËÑš^Y
+
+_OÐ˜YÙO‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_BˆÙ]‚ˆ
+NÂŸB‚™[˜Ý[Ûˆœ›ÛÛÜ”[™[
+
+HÂˆÛÛœÝÜÝÜžKÙ]ÝÜžWHH\ÙTÝ]JˆŠNÂˆÛÛœÝØXÝ]™TÙ\ÜÚ[Û‹Ù]XÝ]™TÙ\ÜÚ[Û—HH\ÙTÝ]O[žOŠ[
+NÂˆÛÛœÝÜÙ[XÝYÛZ[KÙ]Ù[XÝYÛZ[WHH\ÙTÝ]OÝš[™È[Š[
+NÂ‚ˆÛÛœÝÝ\Ù\ÜÚ[ÛˆHœË™[™Ú[™\Ëš[\œ™]\‹œÝ\Ù\ÜÚ[Û‹\ÙS]]][ÛŠÂˆÛ”ÝXØÙ\ÜÎˆ
+]JHOˆÂˆÙ]XÝ]™TÙ\ÜÚ[ÛŠ]JNÂˆYˆ
+]K˜ÛZ[PØ[™Y]\Ë›[™Ýˆ
+HÂˆÙ]Ù[XÝYÛZ[J]K˜ÛZ[PØ[™Y]\ÖÌK˜ÛZ[U\JNÂˆBˆKˆJNÂ‚ˆÛÛœÝ]Y\Ý[ÛœÈHœË™[™Ú[™\Ëš[\œ™]\‹™Ù]Û\šYžZ[™Ô]Y\Ý[ÛœË\ÙT]Y\žJˆÈÛZ[U\NˆÙ[XÝYÛZ[HˆˆKˆÈ[˜X›YˆH\Ù[XÝYÛZ[HBˆ
+NÂ‚ˆÛÛœÝ]šY[˜ÙHHœË™[™Ú[™\Ëš[\œ™]\‹™Ù]]šY[˜ÙQÝZY[˜ÙK\ÙT]Y\žJˆÈÛZ[U\NˆÙ[XÝYÛZ[HˆˆKˆÈ[˜X›YˆH\Ù[XÝYÛZ[HBˆ
+NÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ]‚ˆÈÛ\ÜÓ˜[YOH^[È›Û\Ù[ZX›Û^]Ú]H›^][\ËXÙ[\ˆØ\Lˆ‚ˆY\ÜØYÙTÜ]X\™HÛ\ÜÓ˜[YOHšMHËMH^X›YKMˆÏˆ›Ø›[H[\œ™]\ˆ8 %œ›ÛÛÜ‚ˆÚÏ‚ˆÛ\ÜÓ˜[YOH^\ÛH^^š[˜ËM]LH•[\ÈÚ]\[™Yˆ[Z[˜\šHÚ[Y[YžH[Ý\ˆYØ[Ú]X][Ûˆ[™ÝZYH[ÝKÜ‚ˆÙ]‚‚ˆÈXXÝ]™TÙ\ÜÚ[ÛˆÈ
+ˆØ\™‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœMˆ‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KM‚ˆ]‚ˆX™[Û\ÜÓ˜[YOH^\ÛH›Û[YY][H^^š[˜ËLÌ›ØÚÈX‹Lˆ•[YHÚ]\[™YÛX™[‚ˆ^\™XBˆ˜[YO^ÜÝÜž_BˆÛÚ[™ÙO^ÊJHOˆÙ]ÝÜžJK\™Ù]˜[YJ_BˆXÙZÛ\H‘\ØÜšX™H[Ý\ˆÚ]X][Ûˆ[ˆ[Ý\ˆÝÛˆÛÜ™Ëˆ›Üˆ^[\Nˆ	Ó^H[™Ü™\È™Y[ˆ™Y\Ú[™ÈÈš^H[Û›Ø›[H[ˆ^H\\Y[›Üˆ[ÛË[™›ÝÈ^IÜ™HžZ[™ÈÈ]šXÝYHY\ˆHÛÛ\Z[™YÈHX[\\Y[‹‹‰È‚ˆÛ\ÜÓ˜[YOHËY[M™Ë^š[˜ËN›Ü™\ˆ›Ü™\‹^š[˜ËMÌ›Ý[™Y[ÈLÈ^]Ú]H^\ÛHXÙZÛ\Ž^^š[˜ËML™\Ú^™K[›Û™H›ØÝ\Î›Ý][™K[›Û™H›ØÝ\Îœš[™ËLˆ›ØÝ\Îœš[™ËX›YKML‚ˆÏ‚ˆÙ]‚ˆ]Û‚ˆÛÛXÚÏ^Ê
+HOˆÝ\Ù\ÜÚ[Û‹›]]]JÈÝÜžHJ_Bˆ\ØX›Y^ÜÝÜžK›[™ÝŒÝ\Ù\ÜÚ[Û‹š\Ô[™[™ßBˆÛ\ÜÓ˜[YOHËY[‚ˆ‚ˆÜÝ\Ù\ÜÚ[Û‹š\Ô[™[™ÈÈ
+ˆØY\ŒˆÛ\ÜÓ˜[YOHšMËM[š[X]K\Ü[ˆ\‹LˆˆÏˆ[˜[^š[™È[Ý\ˆÚ]X][Û‹‹‹Ï‚ˆ
+Hˆ
+ˆY\ÜØYÙTÜ]X\™HÛ\ÜÓ˜[YOHšMËM\‹LˆˆÏˆ[˜[^™H^HÚ]X][ÛÏ‚ˆ
+_BˆÐ]Û‚ˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+Hˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KM‚ˆËÊˆ[˜[\Ú\È™\Ý[È
+‹ßBˆØ\™‚ˆØ\™XY\‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›^][\ËXÙ[\ˆØ\Lˆ‚ˆÚXÚÐÚ\˜ÛLˆÛ\ÜÓ˜[YOHšMËM^Y[Y\˜[MˆÏˆ[˜[\Ú\ÈÛÛ\]BˆÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœÜXÙK^KM‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\LÈ‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^^È’\š\ÙXÝ[ÛŽˆØXÝ]™TÙ\ÜÚ[Û‹š\š\ÙXÝ[Û‘ÝY\ÜßOÐ˜YÙO‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^^ÈÛÛ™šY[˜ÙNˆÊXÝ]™TÙ\ÜÚ[Û‹˜ÛÛ™šY[˜ÙTØÛÜ™H
+ˆL
+KÑš^Y
+
+_IOÐ˜YÙO‚ˆÙ]‚‚ˆ]‚ˆ]ˆÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H^^š[˜ËLÌX‹Lˆ‘]XÝYÛZ[H\\ÎÙ]‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆØXÝ]™TÙ\ÜÚ[Û‹˜ÛZ[PØ[™Y]\Ë›X\
+
+Îˆ[žKNˆ[X™\ŠHOˆ
+ˆ]‚ˆÙ^O^Ú_BˆÛÛXÚÏ^Ê
+HOˆÙ]Ù[XÝYÛZ[JË˜ÛZ[U\J_BˆÛ\ÜÓ˜[YO^ØLÈ›Ý[™Y[È›Ü™\ˆÝ\œÛÜ‹\Ú[\ˆ˜[œÚ][Û‹XÛÛÜœÈ	ÂˆÙ[XÝYÛZ[HOOHË˜ÛZ[U\BˆÈ	Ø›Ü™\‹X›YKML™ËX›YKMLÌL	Âˆˆ	Ø›Ü™\‹^š[˜ËMÌ™Ë^š[˜ËNÍLÝ™\Ž˜›Ü™\‹^š[˜ËMŒ	ÂˆXBˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH^]Ú]H›Û[YY][H^\ÛH‚ˆØË˜ÛZ[U\Kœ™\XÙJ×ËÙË	È	ÊKœ™\XÙJ×—ËÙË
+ˆÝš[™ÊHOˆÕ\\Ø\ÙJ
+J_BˆÜÜ[‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YO^Ø^^È	ÂˆË˜ÛÛ™šY[˜ÙHHÈÈ	Ø›Ü™\‹Y[Y\˜[ML^Y[Y\˜[M	È‚ˆË˜ÛÛ™šY[˜ÙHHÈ	Ø›Ü™\‹^Y[ÝËML^^Y[ÝËM	Èˆ	Ø›Ü™\‹^š[˜ËML^^š[˜ËM	ÂˆXOžÊË˜ÛÛ™šY[˜ÙH
+ˆL
+KÑš^Y
+
+_IOÐ˜YÙO‚ˆÙ]‚ˆÛ\ÜÓ˜[YOH^^È^^š[˜ËM]LHžØËœ™X\ÛÛš[™ßOÜ‚ˆØËœÝ\Ü[™ÒÙ^]ÛÜ™Ë›[™Ýˆ	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH™›^›^]Ü˜\Ø\LH]Lˆ‚ˆØËœÝ\Ü[™ÒÙ^]ÛÜ™Ë›X\
+
+ÝÎˆÝš[™ËÚNˆ[X™\ŠHOˆ
+ˆ˜YÙHÙ^O^ÚÚ_H˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^^È™Ë^š[˜ËNžÚÝßOÐ˜YÙO‚ˆ
+J_BˆÙ]‚ˆ
+_BˆÙ]‚ˆ
+J_BˆÙ]‚ˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚‚ˆËÊˆÛ\šYžZ[™È]Y\Ý[ÛœÈ
+‹ßBˆÜÙ[XÝYÛZ[H	‰ˆ]Y\Ý[ÛœË™]H	‰ˆ]Y\Ý[ÛœË™]K›[™Ýˆ	‰ˆ
+ˆØ\™‚ˆØ\™XY\‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛHÛ\šYžZ[™È]Y\Ý[ÛœÏÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLÈ‚ˆÜ]Y\Ý[ÛœË™]K›X\
+
+Nˆ[žKNˆ[X™\ŠHOˆ
+ˆ]ˆÙ^O^Ú_HÛ\ÜÓ˜[YOHœLÈ™Ë^š[˜ËNÍL›Ý[™Y[È›Ü™\ˆ›Ü™\‹^š[˜ËMÌ‚ˆÛ\ÜÓ˜[YOH^\ÛH^]Ú]HžÜKœ]Y\Ý[Û•^OÜ‚ˆÜK˜[œÝÙ\“Ü[ÛœÈ	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH™›^›^]Ü˜\Ø\LKH]Lˆ‚ˆÜK˜[œÝÙ\“Ü[ÛœË›X\
+
+ÜˆÝš[™ËÚNˆ[X™\ŠHOˆ
+ˆ˜YÙHÙ^O^ÛÚ_H˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^^ÈÝ\œÛÜ‹\Ú[\ˆÝ™\Ž˜™Ë^š[˜ËMÌžÛÜOÐ˜YÙO‚ˆ
+J_BˆÙ]‚ˆ
+_BˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_B‚ˆËÊˆ]šY[˜ÙHÝZY[˜ÙH
+‹ßBˆÜÙ[XÝYÛZ[H	‰ˆ]šY[˜ÙK™]H	‰ˆ]šY[˜ÙK™]K›[™Ýˆ	‰ˆ
+ˆØ\™‚ˆØ\™XY\‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH‘]šY[˜ÙH[ÝHÚÝ[Ø]\ÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÙ]šY[˜ÙK™]K›X\
+
+YÎˆ[žKNˆ[X™\ŠHOˆ
+ˆ]ˆÙ^O^Ú_HÛ\ÜÓ˜[YOH™›^][\Ë\Ý\Ø\LÈLˆ™Ë^š[˜ËNÍL›Ý[™Y›Ü™\ˆ›Ü™\‹^š[˜ËMÌ‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YO^Ø^^È]LH	ÂˆYËœš[Üš]HOOHHÈ	Ø›Ü™\‹\™YML^\™YM	È‚ˆYËœš[Üš]HOOHˆÈ	Ø›Ü™\‹^Y[ÝËML^^Y[ÝËM	Èˆ	Ø›Ü™\‹^š[˜ËML^^š[˜ËM	ÂˆXO”ÙYËœš[Üš]_OÐ˜YÙO‚ˆ]‚ˆ]ˆÛ\ÜÓ˜[YOH^\ÛH^]Ú]H›Û[YY][HžÙYË™]šY[˜ÙU\_OÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^^š[˜ËM]LHžÙYË™ÝZY[˜ÙU^OÙ]‚ˆÙ]‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_B‚ˆ]Ûˆ˜\šX[H›Ý][™HˆÛÛXÚÏ^Ê
+HOˆÈÙ]XÝ]™TÙ\ÜÚ[ÛŠ[
+NÈÙ]ÝÜžJˆŠNÈÙ]Ù[XÝYÛZ[J[
+NÈ_O‚ˆ\œ›ÝÓYÛ\ÜÓ˜[YOHšMËM\‹LHˆÏˆÝ\™]È[ZÙBˆÐ]Û‚ˆÙ]‚ˆ
+_BˆÙ]‚ˆ
+NÂŸB‚‹Êˆ8¥ 8¥ Ø˜žZ[™È[™[8¥ 8¥ 
+‹Â™[˜Ý[ÛˆØ˜žZ[™Ô[™[
+
+HÂˆÛÛœÝ][ÈHœË\ÙU][Ê
+NÂˆÛÛœÝÈ]NˆÝ]Ë\ÓØY[™ÎˆØY[™ÔÝ]ÈHHœËœÝ™X[\Ë›Ø˜žZ[™ÔÝ]Ë\ÙT]Y\žJ
+NÂˆÛÛœÝÈ]NˆÜš\›\Ë\ÓØY[™ÎˆØY[™Ñš\›\ÈHHœËœÝ™X[\Ë›Ø˜žZ[™ÕÜš\›\Ë\ÙT]Y\žJÈ[Z]ˆLJNÂˆÛÛœÝÈ]NˆÛXÞP\™X\Ë\ÓØY[™ÎˆØY[™ÔÛXÞHHHœËœÝ™X[\Ë›Ø˜žZ[™ÐžTÛXÞK\ÙT]Y\žJÈ[Z]ˆLJNÂˆÛÛœÝ]XÝ]]HœËœÝ™X[\Ë›Ø˜žZ[™Ñ]XÝÚYÛ˜[Ë\ÙS]]][ÛŠ
+NÂˆÛÛœÝ[™Ù\Ý]]HœËœÝ™X[\Ë›Ø˜žZ[™Ò[™Ù\Ý\ÙS]]][ÛŠÈÛ”ÝXØÙ\ÜÎˆ
+
+HOˆÈ][ËœÝ™X[\Ë›Ø˜žZ[™ÔÝ]Ëš[˜[Y]J
+NÈ][ËœÝ™X[\Ë›Ø˜žZ[™ÕÜš\›\Ëš[˜[Y]J
+NÈ][ËœÝ™X[\Ë›Ø˜žZ[™ÐžTÛXÞKš[˜[Y]J
+NÈHJNÂ‚ˆYˆ
+ØY[™ÔÝ]ÊH™]\›ˆ[™[ÚÙ[]ÛˆÏŽÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KM‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆÈÛ\ÜÓ˜[YOH^[È›Û\Ù[ZX›Û›^][\ËXÙ[\ˆØ\Lˆ‚ˆÛ\”ÚYÛˆÛ\ÜÓ˜[YOHšMHËMH^YÜ™Y[‹MˆÏ‚ˆÛXÞH[™›Y[˜ÙHXÝ]š]BˆÚÏ‚ˆ]Ûˆ˜\šX[H›Ý][™HˆÚ^™OHœÛHˆÛÛXÚÏ^Ê
+HOˆ]XÝ]]›]]]J
+_H\ØX›Y^Ù]XÝ]]š\Ô[™[™ßO‚ˆÙ]XÝ]]š\Ô[™[™ÈÈØY\ŒˆÛ\ÜÓ˜[YOHšLÈËLÈ[š[X]K\Ü[ˆ\‹LHˆÏˆˆ˜\Û\ÜÓ˜[YOHšLÈËLÈ\‹LHˆÏŸBˆ]XÝÚYÛ˜[ÂˆÐ]Û‚ˆÙ]‚‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËMØ\LÈ‚ˆY]šXÐØ\™X™[H•Ý[™XÛÜ™Èˆ˜[YO^ÊÝ]ÏËÝ[™XÛÜ™ÈÏÈ
+KÓØØ[TÝš[™Ê
+_HXÛÛ^Ï]X˜\ÙHÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜH™Ü™Y[ˆˆÏ‚ˆY]šXÐØ\™X™[H•Ý[Ü[™[™Èˆ˜[YO^Ø		Ê
+Ý]ÏËÝ[Ü[™[™ÈÏÈ
+HÈL
+KÑš^Y
+J_SXHXÛÛ^ÏÛ\”ÚYÛˆÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜH™[Y\˜[ˆÏ‚ˆY]šXÐØ\™X™[H•[š\]YHš\›\Èˆ˜[YO^ÊÝ]ÏË[š\]YQš\›\ÈÏÈ
+KÔÝš[™Ê
+_HXÛÛ^ÏZ[[™ÌˆÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜH˜›YHˆÏ‚ˆY]šXÐØ\™X™[H”ÛXÞH\™X\Èˆ˜[YO^ÊÝ]ÏË[š\]YTÛXÞP\™X\ÈÏÈ
+KÔÝš[™Ê
+_HXÛÛ^Ï\™Ù]Û\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜHš[Û]ˆÏ‚ˆÙ]‚‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLHÎ™ÜšYXÛÛËLˆØ\M‚ˆØ\™Û\ÜÓ˜[YOH˜™ËXØ\™ÍL‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹Lˆ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H^[]]YY›Ü™YÜ›Ý[™•ÜØ˜žZ[™Èš\›\ÏÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆÛØY[™Ñš\›\ÈÈØY\ŒˆÛ\ÜÓ˜[YOHšMËM[š[X]K\Ü[ˆˆÏˆˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÊÜš\›\ÈÏÈ×JK›X\
+
+Žˆ[žKNˆ[X™\ŠHOˆ
+ˆ]ˆÙ^O^Ú_HÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ^\ÛH‚ˆÜ[ˆÛ\ÜÓ˜[YOH[˜Ø]HX^]ËVÌŒH^[]]YY›Ü™YÜ›Ý[™žÙ‹™š\›_OÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[[Û›È^^È^YÜ™Y[‹M‰Ê‹Ý[ÈL
+KÑš^Y
+
+_RÏÜÜ[‚ˆÙ]‚ˆ
+J_BˆÊ]Üš\›\ÈÜš\›\Ë›[™ÝOOH
+H	‰ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™“›ÈØ˜žZ[™È]HY]ÜŸBˆÙ]‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚‚ˆØ\™Û\ÜÓ˜[YOH˜™ËXØ\™ÍL‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹Lˆ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H^[]]YY›Ü™YÜ›Ý[™”ÛXÞH\™XHÜ[™[™ÏÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆÛØY[™ÔÛXÞHÈØY\ŒˆÛ\ÜÓ˜[YOHšMËM[š[X]K\Ü[ˆˆÏˆˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÊÛXÞP\™X\ÈÏÈ×JK›X\
+
+ˆ[žKNˆ[X™\ŠHOˆ
+ˆ]ˆÙ^O^Ú_HÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ^\ÛH‚ˆÜ[ˆÛ\ÜÓ˜[YOH[˜Ø]HX^]ËVÌŒH^[]]YY›Ü™YÜ›Ý[™žÜ˜\™X_OÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[[Û›È^^È^Y[Y\˜[M‰ÊÝ[ÈL
+KÑš^Y
+
+_RÏÜÜ[‚ˆÙ]‚ˆ
+J_BˆÊ\ÛXÞP\™X\ÈÛXÞP\™X\Ë›[™ÝOOH
+H	‰ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™“›ÈÛXÞH]HY]ÜŸBˆÙ]‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆÙ]‚ˆÝ™X[U\ØY\‚ˆ]OH’[™Ù\ÝØ˜žZ[™È™XÛÜ™È‚ˆ\ØÜš\[ÛH•\ØYØ˜žZ[™È\ØÛÜÝ\™H]H
+”ÓÓ‹ÐÔÕŠH‚ˆØ[\QšY[Ï^ÖÂˆÈ˜[YNˆ˜ÛY[˜[YH‹\NˆœÝš[™È‹™\]Z\™YˆYHKˆÈ˜[YNˆ›Ø˜žZ[™Ñš\›H‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆ›Ø˜žZ\Ý˜[YH‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆš[™\ÝžH‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆœÛXÞP\™XH‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆ›Ø˜žZ[™Ð[[Ý[‹\Nˆ›[X™\ˆˆKˆÈ˜[YNˆœ™\Ü[™Ô\š[Ù‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆš\š\ÙXÝ[Ûˆ‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆ›YÚ\Û]ÜœÐÛÛXÝY‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆœÛÝ\˜ÙWÝ\›‹\NˆœÝš[™ÈˆKˆ_BˆÛ’[™Ù\Ý^Ê™XÛÜ™ÊHOˆ[™Ù\Ý]]›]]]P\Þ[˜ÊÈ™XÛÜ™ÈJ_BˆÛ”ÝXØÙ\ÜÏ^Ê
+HOˆ][ËœÝ™X[\Ë›Ø˜žZ[™ÔÝ]Ëš[˜[Y]J
+_BˆÏ‚ˆÙ]‚ˆ
+NÂŸB‹Êˆ8¥ 8¥ ]YØ][Ûˆ[™[8¥ 8¥ 
+‹Â™[˜Ý[Ûˆ]YØ][Û”[™[
+
+HÂˆÛÛœÝ][ÈHœË\ÙU][Ê
+NÂˆÛÛœÝÈ]NˆÝ]Ë\ÓØY[™ÎˆØY[™ÔÝ]ÈHHœËœÝ™X[\Ë›]YØ][Û”Ý]Ë\ÙT]Y\žJ
+NÂˆÛÛœÝÈ]Nˆ™XÙ[\ÓØY[™ÎˆØY[™Ô™XÙ[HHœËœÝ™X[\Ë›]YØ][Û”™XÙ[š[[™ÜË\ÙT]Y\žJÈ[Z]ˆLJNÂˆÛÛœÝÈ]NˆÝ]ÛÛY\ÈHHœËœÝ™X[\Ë›]YØ][Û“Ý]ÛÛY\Ë\ÙT]Y\žJ
+NÂˆÛÛœÝ]XÝ]]HœËœÝ™X[\Ë›]YØ][Û‘]XÝÚYÛ˜[Ë\ÙS]]][ÛŠ
+NÂˆÛÛœÝ[™Ù\Ý]]HœËœÝ™X[\Ë›]YØ][Û’[™Ù\Ý\ÙS]]][ÛŠÈÛ”ÝXØÙ\ÜÎˆ
+
+HOˆÈ][ËœÝ™X[\Ë›]YØ][Û”Ý]Ëš[˜[Y]J
+NÈ][ËœÝ™X[\Ë›]YØ][Û”™XÙ[š[[™ÜËš[˜[Y]J
+NÈHJNÂ‚ˆYˆ
+ØY[™ÔÝ]ÊH™]\›ˆ[™[ÚÙ[]ÛˆÏŽÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KM‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆÈÛ\ÜÓ˜[YOH^[È›Û\Ù[ZX›Û›^][\ËXÙ[\ˆØ\Lˆ‚ˆØ]™[Û\ÜÓ˜[YOHšMHËMH^[Ü˜[™ÙKMˆÏ‚ˆ]YØ][ÛˆXÝ]š]BˆÚÏ‚ˆ]Ûˆ˜\šX[H›Ý][™HˆÚ^™OHœÛHˆÛÛXÚÏ^Ê
+HOˆ]XÝ]]›]]]J
+_H\ØX›Y^Ù]XÝ]]š\Ô[™[™ßO‚ˆÙ]XÝ]]š\Ô[™[™ÈÈØY\ŒˆÛ\ÜÓ˜[YOHšLÈËLÈ[š[X]K\Ü[ˆ\‹LHˆÏˆˆ˜\Û\ÜÓ˜[YOHšLÈËLÈ\‹LHˆÏŸBˆ]XÝÚYÛ˜[ÂˆÐ]Û‚ˆÙ]‚‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËMØ\LÈ‚ˆY]šXÐØ\™X™[H•Ý[Ø\Ù\Èˆ˜[YO^ÊÝ]ÏËÝ[Ø\Ù\ÈÏÈ
+KÓØØ[TÝš[™Ê
+_HXÛÛ^Ïš[U^Û\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜH›Ü˜[™ÙHˆÏ‚ˆY]šXÐØ\™X™[HÛÝ\Èˆ˜[YO^ÊÝ]ÏË[š\]YPÛÝ\ÈÏÈ
+KÔÝš[™Ê
+_HXÛÛ^Ï[™X\šÈÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜH˜›YHˆÏ‚ˆY]šXÐØ\™X™[H‘Y™[™[Èˆ˜[YO^ÊÝ]ÏË[š\]YQY™[™[ÈÏÈ
+KÔÝš[™Ê
+_HXÛÛ^Ï\Ù\œÈÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜHœ™YˆÏ‚ˆY]šXÐØ\™X™[HXÝ]™Hˆ˜[YO^ÊÝ]ÏË˜XÝ]™PØ\Ù\ÈÏÈ
+KÔÝš[™Ê
+_HXÛÛ^ÏXÝ]š]HÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜH™[Y\˜[ˆÏ‚ˆÙ]‚‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLHÎ™ÜšYXÛÛËLˆØ\M‚ˆØ\™Û\ÜÓ˜[YOH˜™ËXØ\™ÍL‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹Lˆ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H^[]]YY›Ü™YÜ›Ý[™”™XÙ[š[[™ÜÏÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆÛØY[™Ô™XÙ[ÈØY\ŒˆÛ\ÜÓ˜[YOHšMËM[š[X]K\Ü[ˆˆÏˆˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÊ™XÙ[ÏÈ×JK›X\
+
+Îˆ[žKNˆ[X™\ŠHOˆ
+ˆ]ˆÙ^O^Ú_HÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ^\ÛH‚ˆ]ˆÛ\ÜÓ˜[YOH[˜Ø]HX^]ËVÌLH‚ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™žØËœZ[Y™“˜[YH	Õ[šÛ›ÝÛ‰ßOÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™ÍŒˆ‹ˆÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH^\™YMžØË™Y™[™[˜[YH	Õ[šÛ›ÝÛ‰ßOÜÜ[‚ˆÙ]‚ˆÜ[ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™žØË˜ÛÝ\˜[YH	ÉßOÜÜ[‚ˆÙ]‚ˆ
+J_BˆÊ\™XÙ[™XÙ[›[™ÝOOH
+H	‰ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™“›È]YØ][Ûˆ]HY]ÜŸBˆÙ]‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚‚ˆØ\™Û\ÜÓ˜[YOH˜™ËXØ\™ÍL‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹Lˆ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H^[]]YY›Ü™YÜ›Ý[™Ø\ÙHÝ]ÛÛY\ÏÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÊÝ]ÛÛY\ÈÏÈ×JK›X\
+
+Îˆ[žKNˆ[X™\ŠHOˆ
+ˆ]ˆÙ^O^Ú_HÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ^\ÛH‚ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™Ø\][^™HžÛËœÝ]\È	Ý[šÛ›ÝÛ‰ßOÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[[Û›È^^ÈžÛË˜ÛÝ[OÜÜ[‚ˆÙ]‚ˆ
+J_BˆÊ[Ý]ÛÛY\ÈÝ]ÛÛY\Ë›[™ÝOOH
+H	‰ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™“›ÈÝ]ÛÛYH]HY]ÜŸBˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆÙ]‚ˆÝ™X[U\ØY\‚ˆ]OH’[™Ù\Ý]YØ][Ûˆ™XÛÜ™È‚ˆ\ØÜš\[ÛH•\ØY™Y\˜[]YØ][ÛˆØ\ÙH]H
+”ÓÓ‹ÐÔÕŠH‚ˆØ[\QšY[Ï^ÖÂˆÈ˜[YNˆ˜Ø\ÙRY‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆ˜ÛÝ\˜[YH‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆš\š\ÙXÝ[Ûˆ‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆ™š[[™Ñ]H‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆ˜Ø\ÙU\H‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆ›˜]\™SÙ”ÝZ]‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆœZ[Y™“˜[YH‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆ™Y™[™[˜[YH‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆ›]Ñš\›H‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆšYÙH‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆš[™\ÝžH‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆ˜Ø\ÙTÝ]\È‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆœÛÝ\˜ÙWÝ\›‹\NˆœÝš[™ÈˆKˆ_BˆÛ’[™Ù\Ý^Ê™XÛÜ™ÊHOˆ[™Ù\Ý]]›]]]P\Þ[˜ÊÈ™XÛÜ™ÈJ_BˆÛ”ÝXØÙ\ÜÏ^Ê
+HOˆ][ËœÝ™X[\Ë›]YØ][Û”Ý]Ëš[˜[Y]J
+_BˆÏ‚ˆÙ]‚ˆ
+NÂŸB‹Êˆ8¥ 8¥ YZ[š\Ý˜]]™HXÚ\Ú[ÛœÈ[™[8¥ 8¥ 
+‹Â™[˜Ý[ÛˆYZ[‘XÚ\Ú[ÛœÔ[™[
+
+HÂˆÛÛœÝ][ÈHœË\ÙU][Ê
+NÂˆÛÛœÝÈ]NˆÝ]Ë\ÓØY[™ÈHHœËœÝ™X[\Ë˜YZ[‘XÚ\Ú[ÛœÔÝ]Ë\ÙT]Y\žJ
+NÂˆÛÛœÝÈ]NˆYÙ[˜ÚY\ÈHHœËœÝ™X[\Ë˜YZ[‘XÚ\Ú[ÛœÓÝ]ÛÛY\ÐžPYÙ[˜ÞK\ÙT]Y\žJÈ[Z]ˆLJNÂˆÛÛœÝ]XÝ]]HœËœÝ™X[\Ë˜YZ[‘XÚ\Ú[ÛœÑ]XÝÚYÛ˜[Ë\ÙS]]][ÛŠ
+NÂˆÛÛœÝ[™Ù\Ý]]HœËœÝ™X[\Ë˜YZ[‘XÚ\Ú[ÛœÒ[™Ù\Ý\ÙS]]][ÛŠÈÛ”ÝXØÙ\ÜÎˆ
+
+HOˆÈ][ËœÝ™X[\Ë˜YZ[‘XÚ\Ú[ÛœÔÝ]Ëš[˜[Y]J
+NÈ][ËœÝ™X[\Ë˜YZ[‘XÚ\Ú[ÛœÓÝ]ÛÛY\ÐžPYÙ[˜ÞKš[˜[Y]J
+NÈHJNÂ‚ˆYˆ
+\ÓØY[™ÊH™]\›ˆ[™[ÚÙ[]ÛˆÏŽÂ‚ˆÛÛœÝ[šX[˜]HHÝ]ÏËš[š]X[[šX[˜]HÏÈÂˆÛÛœÝ\X[˜]HHÝ]ÏË˜\X[ÝXØÙ\ÜÔ˜]HÏÈÂˆÛÛœÝ[™\œÚ[Û‘]XÝYH\X[˜]Hˆ	‰ˆ[šX[˜]Hˆ	‰ˆ\X[˜]Hˆ
+LH[šX[˜]JH
+ˆKNÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KM‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆÈÛ\ÜÓ˜[YOH^[È›Û\Ù[ZX›Û›^][\ËXÙ[\ˆØ\Lˆ‚ˆØØ[HÛ\ÜÓ˜[YOHšMHËMH^\\œKMˆÏ‚ˆYZ[š\Ý˜]]™HÝ]ÛÛY\ÂˆÚÏ‚ˆ]Ûˆ˜\šX[H›Ý][™HˆÚ^™OHœÛHˆÛÛXÚÏ^Ê
+HOˆ]XÝ]]›]]]J
+_H\ØX›Y^Ù]XÝ]]š\Ô[™[™ßO‚ˆÙ]XÝ]]š\Ô[™[™ÈÈØY\ŒˆÛ\ÜÓ˜[YOHšLÈËLÈ[š[X]K\Ü[ˆ\‹LHˆÏˆˆ˜\Û\ÜÓ˜[YOHšLÈËLÈ\‹LHˆÏŸBˆ]XÝÚYÛ˜[ÂˆÐ]Û‚ˆÙ]‚‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËMØ\LÈ‚ˆY]šXÐØ\™X™[H•Ý[XÚ\Ú[ÛœÈˆ˜[YO^ÊÝ]ÏËÝ[XÚ\Ú[ÛœÈÏÈ
+KÓØØ[TÝš[™Ê
+_HXÛÛ^Ïš[U^Û\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜHœ\œHˆÏ‚ˆY]šXÐØ\™X™[H’[š]X[[šX[	Hˆ˜[YO^Ø	Ù[šX[˜]KÑš^Y
+J_IXHXÛÛ^ÏÚ\˜ÛHÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜ^Ù[šX[˜]HˆLÈœ™YˆˆžY[ÝÈŸHÏ‚ˆY]šXÐØ\™X™[H\X[ÝXØÙ\ÜÈ	Hˆ˜[YO^Ø	Ø\X[˜]KÑš^Y
+J_IXHXÛÛ^ÏÚXÚÐÚ\˜ÛLˆÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜ^Ø\X[˜]HˆLÈ™[Y\˜[ˆˆ›Ü˜[™ÙHŸHÏ‚ˆY]šXÐØ\™X™[H]™È›ØÙ\ÜÚ[™Èˆ˜[YO^Ø	ÊÝ]ÏË˜]™Ô›ØÙ\ÜÚ[™Ñ^\ÈÏÈ
+KÑš^Y
+
+_YHXÛÛ^ÏÛØÚÈÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜH˜›YHˆÏ‚ˆÙ]‚‚ˆÚ[™\œÚ[Û‘]XÝY	‰ˆ
+ˆØ\™Û\ÜÓ˜[YOH˜›Ü™\‹\™YMLÍL™Ë\™YMLÌL‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœM‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ^\™YM‚ˆ[\šX[™ÛHÛ\ÜÓ˜[YOHšMHËMHˆÏ‚ˆ]‚ˆÛ\ÜÓ˜[YOH™›Û\Ù[ZX›Û\X[ÝXØÙ\ÜÈ[™\œÚ[Ûˆ]XÝYÜ‚ˆÛ\ÜÓ˜[YOH^^È^\™YMÎ\X[ÝXØÙ\ÜÈ˜]H
+Ø\X[˜]KÑš^Y
+J_IJHÚYÛšYšXØ[H^ÙYYÈ[š]X[\›Ý˜[˜]H
+ÊLH[šX[˜]JKÑš^Y
+J_IJH8 %[™XØ]\ÈÞ\Ý[ZXÈ[šX[]\›Ü‚ˆÙ]‚ˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_B‚ˆØ\™Û\ÜÓ˜[YOH˜™ËXØ\™ÍL‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹Lˆ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H^[]]YY›Ü™YÜ›Ý[™“Ý]ÛÛY\ÈžHYÙ[˜ÞOÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÊYÙ[˜ÚY\ÈÏÈ×JK›X\
+
+Nˆ[žKNˆ[X™\ŠHOˆ
+ˆ]ˆÙ^O^Ú_HÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ^\ÛH‚ˆÜ[ˆÛ\ÜÓ˜[YOH[˜Ø]HX^]ËVÌŒH^[]]YY›Ü™YÜ›Ý[™žØK˜YÙ[˜Þ_OÜÜ[‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\LÈ^^È‚ˆÜ[ˆÛ\ÜÓ˜[YOH^YÜ™Y[‹MžØK˜\›Ý™YH\›Ý™YÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH^\™YMžØK™[šYYH[šYYÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH^X›YKMžØKœ™]™\œÙYH™]™\œÙYÜÜ[‚ˆÙ]‚ˆÙ]‚ˆ
+J_BˆÊXYÙ[˜ÚY\ÈYÙ[˜ÚY\Ë›[™ÝOOH
+H	‰ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™“›ÈYÙ[˜ÞH]HY]ÜŸBˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆÝ™X[U\ØY\‚ˆ]OH’[™Ù\ÝYZ[š\Ý˜]]™HXÚ\Ú[ÛœÈ‚ˆ\ØÜš\[ÛH•\ØYYZ[š\Ý˜]]™HXÚ\Ú[Ûˆ™XÛÜ™È
+”ÓÓ‹ÐÔÕŠH‚ˆØ[\QšY[Ï^ÖÂˆÈ˜[YNˆ™XÚ\Ú[Û’Y‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆ˜YÙ[˜ÞH‹\NˆœÝš[™È‹™\]Z\™YˆYHKˆÈ˜[YNˆœ›ÙÜ˜[H‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆš\š\ÙXÝ[Ûˆ‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆ˜ÛZ[U\H‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆ™XÚ\Ú[Û‘]H‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆš[š]X[Ý]ÛÛYH‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆ˜\X[Ý]ÛÛYH‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆœ›ØÙ\ÜÚ[™Õ[YQ^\È‹\Nˆ›[X™\ˆˆKˆÈ˜[YNˆšX\š[™Ô™\]Y\ÝY‹\Nˆ˜›ÛÛX[ˆˆKˆÈ˜[YNˆœ™]™\œØ[‹\Nˆ˜›ÛÛX[ˆˆKˆÈ˜[YNˆ™[]SÜYÙ[˜ÞH‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆœÛÝ\˜ÙWÝ\›‹\NˆœÝš[™ÈˆKˆ_BˆÛ’[™Ù\Ý^Ê™XÛÜ™ÊHOˆ[™Ù\Ý]]›]]]P\Þ[˜ÊÈ™XÛÜ™ÈJ_BˆÛ”ÝXØÙ\ÜÏ^Ê
+HOˆ][ËœÝ™X[\Ë˜YZ[‘XÚ\Ú[ÛœÔÝ]Ëš[˜[Y]J
+_BˆÏ‚ˆÙ]‚ˆ
+NÂŸB‹Êˆ8¥ 8¥ ™\šYšYY™\ÜÈ[™[8¥ 8¥ 
+‹Â™[˜Ý[Ûˆ™\šYšYY™\ÜÔ[™[
+
+HÂˆÛÛœÝ][ÈHœË\ÙU][Ê
+NÂˆÛÛœÝÈ]NˆÝ]Ë\ÓØY[™ÈHHœËœÝ™X[\Ë™\šYšYY™\ÜÝ]Ë\ÙT]Y\žJ
+NÂˆÛÛœÝÈ]Nˆ™XÙ[HHœËœÝ™X[\Ëœ™XÙ[™\ÜË\ÙT]Y\žJÈ[Z]ˆLJNÂˆÛÛœÝÙ[™\˜]S]]HœËœÝ™X[\Ë™\šYšYYÚYÛ˜[Ë\ÙS]]][ÛŠ
+NÂˆÛÛœÝÝX›Z]]]HœËœÝ™X[\ËœÝX›Z]™\Ü\ÙS]]][ÛŠÈÛ”ÝXØÙ\ÜÎˆ
+
+HOˆÈ][ËœÝ™X[\Ë™\šYšYY™\ÜÝ]Ëš[˜[Y]J
+NÈ][ËœÝ™X[\Ëœ™XÙ[™\ÜËš[˜[Y]J
+NÈHJNÂ‚ˆYˆ
+\ÓØY[™ÊH™]\›ˆ[™[ÚÙ[]ÛˆÏŽÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KM‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆÈÛ\ÜÓ˜[YOH^[È›Û\Ù[ZX›Û›^][\ËXÙ[\ˆØ\Lˆ‚ˆÚY[Û\ÜÓ˜[YOHšMHËMH^XÞX[‹MˆÏ‚ˆ™\šYšYY\Ù\ˆ™\ÜÂˆÚÏ‚ˆ]Ûˆ˜\šX[H›Ý][™HˆÚ^™OHœÛHˆÛÛXÚÏ^Ê
+HOˆÙ[™\˜]S]]›]]]J
+_H\ØX›Y^ÙÙ[™\˜]S]]š\Ô[™[™ßO‚ˆÙÙ[™\˜]S]]š\Ô[™[™ÈÈØY\ŒˆÛ\ÜÓ˜[YOHšLÈËLÈ[š[X]K\Ü[ˆ\‹LHˆÏˆˆ˜\Û\ÜÓ˜[YOHšLÈËLÈ\‹LHˆÏŸBˆÙ[™\˜]HÚYÛ˜[ÂˆÐ]Û‚ˆÙ]‚‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËMØ\LÈ‚ˆY]šXÐØ\™X™[H•Ý[™\ÜÈˆ˜[YO^ÊÝ]ÏËÝ[™\ÜÈÏÈ
+KÓØØ[TÝš[™Ê
+_HXÛÛ^Ïš[U^Û\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜH˜ÞX[ˆˆÏ‚ˆY]šXÐØ\™X™[H•™\šYšYYˆ˜[YO^ÊÝ]ÏË™\šYšYYÛÝ[ÏÈ
+KÔÝš[™Ê
+_HXÛÛ^ÏÚXÚÐÚ\˜ÛLˆÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜH™[Y\˜[ˆÏ‚ˆY]šXÐØ\™X™[H”[™[™Èˆ˜[YO^ÊÝ]ÏËœ[™[™ÐÛÝ[ÏÈ
+KÔÝš[™Ê
+_HXÛÛ^ÏÛØÚÈÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜHžY[ÝÈˆÏ‚ˆY]šXÐØ\™X™[H]™ÈÛÛ™šY[˜ÙHˆ˜[YO^Ø	ÊÝ]ÏË˜]™ÐÛÛ™šY[˜ÙHÏÈ
+KÑš^Y
+
+_IXHXÛÛ^Ï˜\Ú\ÈÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜH˜›YHˆÏ‚ˆÙ]‚‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËMØ\Lˆ‚ˆÖÈ[™\šYšYY‹˜ÛÛ[][š]WØÛÛ™š\›YY‹™]šY[˜ÙWÝ™\šYšYY‹›YØ[Ý™\šYšYY—K›X\
+
+]™[
+HOˆÂˆÛÛœÝÛÝ[H
+Ý]È\È[žJOË–Ø	Û]™[PÛÝ[HÏÈÂˆÛÛœÝÛÛÜœÎˆ™XÛÜ™Ýš[™ËÝš[™ÏˆHÂˆ[™\šYšYYˆ^YÜ˜^KM‹ˆÛÛ[][š]WØÛÛ™š\›YYˆ^^Y[ÝËM‹ˆ]šY[˜ÙWÝ™\šYšYYˆ^X›YKM‹ˆYØ[Ý™\šYšYYˆ^Y[Y\˜[M‹ˆNÂˆ™]\›ˆ
+ˆ]ˆÙ^O^Û]™[HÛ\ÜÓ˜[YOH^XÙ[\ˆLˆ›Ý[™Y[È™ËXØ\™ÍL‚ˆÛ\ÜÓ˜[YO^Ø^[È›ÛX›Û	ØÛÛÜœÖÛ]™[_XOžØÛÝ[OÜ‚ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™Ø\][^™HžÛ]™[œ™\XÙJ×ËÙËˆŠ_OÜ‚ˆÙ]‚ˆ
+NÂˆJ_BˆÙ]‚‚ˆØ\™Û\ÜÓ˜[YOH˜™ËXØ\™ÍL‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹Lˆ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H^[]]YY›Ü™YÜ›Ý[™”™XÙ[™\ÜÏÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÊ™XÙ[ÏÈ×JK›X\
+
+Žˆ[žKNˆ[X™\ŠHOˆ
+ˆ]ˆÙ^O^Ú_HÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ^\ÛH‚ˆ]ˆÛ\ÜÓ˜[YOH[˜Ø]HX^]ËVÌLH‚ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™žÜ‹™[]S˜[YY	Ð[›Ûž[[Ý\ÉßOÜÜ[‚ˆÜ‹˜ÛZ[U\H	‰ˆÜ[ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™ÍŒ[LHŠÜ‹˜ÛZ[U\_JOÜÜ[ŸBˆÙ]‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^^ÈØ\][^™HžÊ‹™\šYšXØ][Û—ÜÝ]\È	Ý[™\šYšYY	ÊKœ™\XÙJ×ËÙË	È	Ê_OÐ˜YÙO‚ˆÙ]‚ˆ
+J_BˆÊ\™XÙ[™XÙ[›[™ÝOOH
+H	‰ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™“›È™\ÜÈY]ˆ\Ù\œÈØ[ˆÝX›Z]\›H™\ÜÈ›ÝYÚH]›Ü›KÜŸBˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆÝ™X[U\ØY\‚ˆ]OH”ÝX›Z]™\šYšYY™\ÜÈ‚ˆ\ØÜš\[ÛH•\ØY\›H™\ÜÈ›Üˆ™\šYšXØ][Ûˆ
+”ÓÓ‹ÐÔÕŠH‚ˆØ[\QšY[Ï^ÖÂˆÈ˜[YNˆœ™\Ü\•\H‹\NˆœÝš[™È‹™\]Z\™YˆYHKˆÈ˜[YNˆš\š\ÙXÝ[Ûˆ‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆš[™\ÝžH‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆ™[]S˜[YY‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆ˜ÛZ[U\H‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆ™]šY[˜ÙPÛÝ[‹\Nˆ›[X™\ˆˆKˆÈ˜[YNˆ›˜\œ˜]]™H‹\NˆœÝš[™ÈˆKˆ_BˆÛ’[™Ù\Ý^Ø\Þ[˜È
+™XÛÜ™ÊHOˆÂˆ][œÙ\YHÂˆ›Üˆ
+ÛÛœÝˆÙˆ™XÛÜ™ÊHÂˆ]ØZ]ÝX›Z]]]›]]]P\Þ[˜ÊŠNÂˆ[œÙ\Y
+ÊÎÂˆBˆ™]\›ˆÈ[œÙ\YNÂˆ_BˆÛ”ÝXØÙ\ÜÏ^Ê
+HOˆ][ËœÝ™X[\Ë™\šYšYY™\ÜÝ]Ëš[˜[Y]J
+_BˆÏ‚ˆÙ]‚ˆ
+NÂŸB‹Êˆ8¥ 8¥ Ú]š[ÛØÚY]HÈY›ØØXÞH[™[8¥ 8¥ 
+‹Â™[˜Ý[ÛˆY›ØØXÞT[™[
+
+HÂˆÛÛœÝ][ÈHœË\ÙU][Ê
+NÂˆÛÛœÝÈ]NˆÝ]Ë\ÓØY[™ÈHHœËœÝ™X[\Ë˜Y›ØØXÞTÝ]Ë\ÙT]Y\žJ
+NÂˆÛÛœÝÈ]Nˆ™XÙ[HHœËœÝ™X[\Ë˜Y›ØØXÞT™XÙ[™\ÜË\ÙT]Y\žJÈ[Z]ˆLJNÂˆÛÛœÝÈ]NˆžSÜ™ÈHHœËœÝ™X[\Ë˜Y›ØØXÞPžSÜ™Ø[š^˜][Û‹\ÙT]Y\žJÈ[Z]ˆLJNÂˆÛÛœÝÈ]NˆžR\›HHHœËœÝ™X[\Ë˜Y›ØØXÞPžR\›U\K\ÙT]Y\žJÈ[Z]ˆLJNÂˆÛÛœÝ]XÝ]]HœËœÝ™X[\Ë˜Y›ØØXÞQ]XÝÚYÛ˜[Ë\ÙS]]][ÛŠ
+NÂˆÛÛœÝ[™Ù\Ý]]HœËœÝ™X[\Ë˜Y›ØØXÞR[™Ù\Ý\ÙS]]][ÛŠÈÛ”ÝXØÙ\ÜÎˆ
+
+HOˆÈ][ËœÝ™X[\Ë˜Y›ØØXÞTÝ]Ëš[˜[Y]J
+NÈ][ËœÝ™X[\Ë˜Y›ØØXÞT™XÙ[™\ÜËš[˜[Y]J
+NÈ][ËœÝ™X[\Ë˜Y›ØØXÞPžSÜ™Ø[š^˜][Û‹š[˜[Y]J
+NÈ][ËœÝ™X[\Ë˜Y›ØØXÞPžR\›U\Kš[˜[Y]J
+NÈHJNÂ‚ˆYˆ
+\ÓØY[™ÊH™]\›ˆ[™[ÚÙ[]ÛˆÏŽÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KM‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆÈÛ\ÜÓ˜[YOH^[È›Û\Ù[ZX›Û›^][\ËXÙ[\ˆØ\Lˆ‚ˆYYØ\Û™HÛ\ÜÓ˜[YOHšMHËMH^\›ÜÙKMˆÏ‚ˆÚ]š[ÛØÚY]HÈY›ØØXÞH™\ÜÂˆÚÏ‚ˆ]Ûˆ˜\šX[H›Ý][™HˆÚ^™OHœÛHˆÛÛXÚÏ^Ê
+HOˆ]XÝ]]›]]]J
+_H\ØX›Y^Ù]XÝ]]š\Ô[™[™ßO‚ˆÙ]XÝ]]š\Ô[™[™ÈÈØY\ŒˆÛ\ÜÓ˜[YOHšLÈËLÈ[š[X]K\Ü[ˆ\‹LHˆÏˆˆ˜\Û\ÜÓ˜[YOHšLÈËLÈ\‹LHˆÏŸBˆ]XÝÚYÛ˜[ÂˆÐ]Û‚ˆÙ]‚‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËMØ\LÈ‚ˆY]šXÐØ\™X™[H•Ý[™\ÜÈˆ˜[YO^ÊÝ]ÏËÝ[™\ÜÈÏÈ
+KÓØØ[TÝš[™Ê
+_HXÛÛ^Ïš[U^Û\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜHœ›ÜÙHˆÏ‚ˆY]šXÐØ\™X™[H“Ü™Ø[š^˜][ÛœÈˆ˜[YO^ÊÝ]ÏË[š\]YSÜ™ÜÈÏÈ
+KÓØØ[TÝš[™Ê
+_HXÛÛ^ÏZ[[™ÌˆÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜHš[Û]ˆÏ‚ˆY]šXÐØ\™X™[H‘[]Y\È˜[YYˆ˜[YO^ÊÝ]ÏË[š\]YQ[]Y\ÈÏÈ
+KÓØØ[TÝš[™Ê
+_HXÛÛ^Ï\™Ù]Û\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜH˜[X™\ˆˆÏ‚ˆY]šXÐØ\™X™[H”ÛXÞH\™X\Èˆ˜[YO^ÊÝ]ÏË[š\]YTÛXÞP\™X\ÈÏÈ
+KÓØØ[TÝš[™Ê
+_HXÛÛ^Ï[™X\šÈÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜH˜›YHˆÏ‚ˆÙ]‚‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËLÈØ\LÈ‚ˆY]šXÐØ\™X™[H’\›H\\Èˆ˜[YO^ÊÝ]ÏË[š\]YR\›U\\ÈÏÈ
+KÓØØ[TÝš[™Ê
+_HXÛÛ^Ï[\šX[™ÛHÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜHœ™YˆÏ‚ˆY]šXÐØ\™X™[H”[ÜHY™™XÝYˆ˜[YO^ÊÝ]ÏËÝ[Y™™XÝYÏÈ
+KÓØØ[TÝš[™Ê
+_HXÛÛ^Ï\Ù\œÈÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜH›Ü˜[™ÙHˆÏ‚ˆÙ]‚‚ˆÙ]XÝ]]™]H	‰ˆ
+ˆØ\™Û\ÜÓ˜[YOH˜›Ü™\‹\›ÜÙKMLÌÌ™Ë\›ÜÙKMLÍH‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœM‚ˆÛ\ÜÓ˜[YOH^\ÛH^\›ÜÙKM‘]XÝYÙ]XÝ]]™]K›[™ÝHY›ØØXÞHÚYÛ˜[ÏÜ‚ˆÙ]XÝ]]™]K›[™Ýˆ	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH›]LˆÜXÙK^KLH‚ˆÙ]XÝ]]™]KœÛXÙJJK›X\
+
+Îˆ[žKNˆ[X™\ŠHOˆ
+ˆ]ˆÙ^O^Ú_HÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™›^][\ËXÙ[\ˆØ\Lˆ‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^VÌLHžÜËœÚYÛ˜[\_OÐ˜YÙO‚ˆÜ[ˆÛ\ÜÓ˜[YOH[˜Ø]HžÜË™\ØÜš\[ÛŸOÜÜ[‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_B‚ˆËÊˆÜ™Ø[š^˜][ÛœÈ
+‹ßBˆØ\™Û\ÜÓ˜[YOH˜™ËXØ\™ÍL‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹Lˆ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H^[]]YY›Ü™YÜ›Ý[™•Ü™\Ü[™ÈÜ™Ø[š^˜][ÛœÏÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÊžSÜ™ÈÏÈ×JK›X\
+
+Ü™Îˆ[žKNˆ[X™\ŠHOˆ
+ˆ]ˆÙ^O^Ú_HÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆLˆ›Ý[™Y™ËX˜XÚÙÜ›Ý[™ÍL›Ü™\ˆ›Ü™\‹X›Ü™\‹ÌÌ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^LHZ[‹]ËL‚ˆÜ[ˆÛ\ÜÓ˜[YOH^\ÛH›Û[YY][HžÛÜ™Ë›Ü™Ø[š^˜][Û“˜[Y_OÜÜ[‚ˆÛÜ™Ë›Ü™Ø[š^˜][Û•\H	‰ˆ
+ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH›[Lˆ^VÌLHžÛÜ™Ë›Ü™Ø[š^˜][Û•\_OÐ˜YÙO‚ˆ
+_BˆÛÜ™ËœÛXÞP\™X\È	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH^VÌLH^[]]YY›Ü™YÜ›Ý[™]LH[˜Ø]H”ÛXÞNˆÛÜ™ËœÛXÞP\™X\ßOÙ]‚ˆ
+_BˆÙ]‚ˆ˜YÙH˜\šX[HœÙXÛÛ™\žHˆÛ\ÜÓ˜[YOH^^ÈžÛÜ™Ëœ™\ÜÛÝ[H™\ÜÏÐ˜YÙO‚ˆÙ]‚ˆ
+J_BˆÊXžSÜ™ÈžSÜ™Ë›[™ÝOOH
+H	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH^XÙ[\ˆKMˆ‚ˆYYØ\Û™HÛ\ÜÓ˜[YOHšNËN^[]]YY›Ü™YÜ›Ý[™ÌÌ^X]]ÈX‹LˆˆÏ‚ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™“›ÈY›ØØXÞH™\ÜÈ[™Ù\ÝYY]Ü‚ˆÙ]‚ˆ
+_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚‚ˆËÊˆ\›H\\È
+‹ßBˆØžR\›H	‰ˆžR\›K›[™Ýˆ	‰ˆ
+ˆØ\™Û\ÜÓ˜[YOH˜™ËXØ\™ÍL‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹Lˆ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H^[]]YY›Ü™YÜ›Ý[™’\›H\\È™\ÜYÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆØžR\›K›X\
+
+ˆ[žKNˆ[X™\ŠHOˆ
+ˆ]ˆÙ^O^Ú_HÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆLˆ›Ý[™Y™ËX˜XÚÙÜ›Ý[™ÍL›Ü™\ˆ›Ü™\‹X›Ü™\‹ÌÌ‚ˆ]‚ˆÜ[ˆÛ\ÜÓ˜[YOH^\ÛH›Û[YY][HžÚš\›U\_OÜÜ[‚ˆ]ˆÛ\ÜÓ˜[YOH^VÌLH^[]]YY›Ü™YÜ›Ý[™žÚ›Ü™ÐÛÝ[HÜ™ÞÚ›Ü™ÐÛÝ[OOHHÈ	ÜÉÈˆ	ÉßH™\Ü[™ÏÙ]‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆÚÝ[Y™™XÝYˆ	‰ˆ
+ˆÜ[ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™žÓ[X™\ŠÝ[Y™™XÝY
+KÓØØ[TÝš[™Ê
+_HY™™XÝYÜÜ[‚ˆ
+_Bˆ˜YÙH˜\šX[HœÙXÛÛ™\žHˆÛ\ÜÓ˜[YOH^^ÈžÚœ™\ÜÛÝ[H™\ÜÏÐ˜YÙO‚ˆÙ]‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_B‚ˆËÊˆ™XÙ[™\ÜÈ
+‹ßBˆØ\™Û\ÜÓ˜[YOH˜™ËXØ\™ÍL‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹Lˆ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H^[]]YY›Ü™YÜ›Ý[™”™XÙ[™\ÜÏÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÊ™XÙ[ÏÈ×JK›X\
+
+Žˆ[žKNˆ[X™\ŠHOˆ
+ˆ]ˆÙ^O^Ú_HÛ\ÜÓ˜[YOHœLÈ›Ý[™Y[È™ËX˜XÚÙÜ›Ý[™ÍL›Ü™\ˆ›Ü™\‹X›Ü™\‹ÍL‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆX‹LH‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[YY][H^\ÛH[˜Ø]HžÜ‹œ™\Ü]_OÜÜ[‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^VÌLH[LˆÚš[šËLžÜ‹œ™\Ü\H	ÛÝ\‰ßOÐ˜YÙO‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™›^][\ËXÙ[\ˆØ\Lˆ›^]Ü˜\‚ˆÜ[žÜ‹›Ü™Ø[š^˜][Û“˜[Y_OÜÜ[‚ˆÜ‹š\š\ÙXÝ[Ûˆ	‰ˆÜ[—LÏÜÜ[Ü[žÜ‹š\š\ÙXÝ[ÛŸOÜÜ[ÏŸBˆÜ‹™[]S˜[YY	‰ˆÜ[—LÏÜÜ[Ü[ˆÛ\ÜÓ˜[YOH^X[X™\‹M‘[]NˆÜ‹™[]S˜[YYOÜÜ[ÏŸBˆÜ‹š\›U\H	‰ˆÜ[—LÏÜÜ[Ü[ˆÛ\ÜÓ˜[YOH^\™YMžÜ‹š\›U\_OÜÜ[ÏŸBˆÙ]‚ˆÜ‹šÙ^Qš[™[™ÜÈ	‰ˆ
+ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™]LH[™KXÛ[\LˆžÜ‹šÙ^Qš[™[™ÜßOÜ‚ˆ
+_BˆÙ]‚ˆ
+J_BˆÊ\™XÙ[™XÙ[›[™ÝOOH
+H	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH^XÙ[\ˆKMˆ‚ˆYYØ\Û™HÛ\ÜÓ˜[YOHšNËN^[]]YY›Ü™YÜ›Ý[™ÌÌ^X]]ÈX‹LˆˆÏ‚ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™“›ÈY›ØØXÞH™\ÜÈY]ˆ[™Ù\Ý™\ÜÈÈÜ[]H\ÈÝ™X[KÜ‚ˆÙ]‚ˆ
+_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆÝ™X[U\ØY\‚ˆ]OH’[™Ù\ÝY›ØØXÞH™\ÜÈ‚ˆ\ØÜš\[ÛH•\ØYÚ]š[ÛØÚY]HÈY›ØØXÞH™\Ü]H
+”ÓÓ‹ÐÔÕŠH‚ˆØ[\QšY[Ï^ÖÂˆÈ˜[YNˆ›Ü™Ø[š^˜][Û“˜[YH‹\NˆœÝš[™È‹™\]Z\™YˆYHKˆÈ˜[YNˆ›Ü™Ø[š^˜][Û•\H‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆœ™\Ü]H‹\NˆœÝš[™È‹™\]Z\™YˆYHKˆÈ˜[YNˆœ™\Ü\H‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆš\š\ÙXÝ[Ûˆ‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆœÛXÞP\™XH‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆš[™\ÝžH‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆ™[]S˜[YY‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆ˜ÛZ[U\H‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆš\›U\H‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆ˜Y™™XÝYÜ[][Ûˆ‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆ™\Ý[X]YY™™XÝYÛÝ[‹\Nˆ›[X™\ˆˆKˆÈ˜[YNˆšÙ^Qš[™[™ÜÈ‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆœ™XÛÛ[Y[™YXÝ[ÛœÈ‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆœÛÝ\˜ÙWÝ\›‹\NˆœÝš[™ÈˆKˆÈ˜[YNˆœX›\Ú]H‹\NˆœÝš[™ÈˆKˆ_BˆÛ’[™Ù\Ý^Ê™XÛÜ™ÊHOˆ[™Ù\Ý]]›]]]P\Þ[˜ÊÈ™XÛÜ™ÈJ_BˆÛ”ÝXØÙ\ÜÏ^Ê
+HOˆ][ËœÝ™X[\Ë˜Y›ØØXÞTÝ]Ëš[˜[Y]J
+_BˆÏ‚ˆÙ]‚ˆ
+NÂŸB‹Êˆ8¥ 8¥ Ü›ÜÜËTÝ™X[HÛÜœ™[][Ûˆ[™[8¥ 8¥ 
+‹Â™[˜Ý[ÛˆÜ›ÜÜÔÝ™X[T[™[
+
+HÂˆÛÛœÝÈ]NˆÝ]Ë\ÓØY[™ÈHHœËœÝ™X[\Ë˜ÛÜœ™[][Û”Ý]Ë\ÙT]Y\žJ
+NÂˆÛÛœÝÈ]Nˆ™XÙ[HHœËœÝ™X[\Ëœ™XÙ[ÛÜœ™[][ÛœË\ÙT]Y\žJÈ[Z]ˆLJNÂˆÛÛœÝ]XÝ]]HœËœÝ™X[\Ë™]XÝÛÜœ™[][ÛœË\ÙS]]][ÛŠ
+NÂ‚ˆYˆ
+\ÓØY[™ÊH™]\›ˆ[™[ÚÙ[]ÛˆÏŽÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KM‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆÈÛ\ÜÓ˜[YOH^[È›Û\Ù[ZX›Û›^][\ËXÙ[\ˆØ\Lˆ‚ˆÚ]ÛÛ\\™P\œ›ÝÜÈÛ\ÜÓ˜[YOHšMHËMH^X[X™\‹MˆÏ‚ˆÜ›ÜÜËTÝ™X[HÛÜœ™[][Û‚ˆÚÏ‚ˆ]Ûˆ˜\šX[H›Ý][™HˆÚ^™OHœÛHˆÛÛXÚÏ^Ê
+HOˆ]XÝ]]›]]]J
+_H\ØX›Y^Ù]XÝ]]š\Ô[™[™ßO‚ˆÙ]XÝ]]š\Ô[™[™ÈÈØY\ŒˆÛ\ÜÓ˜[YOHšLÈËLÈ[š[X]K\Ü[ˆ\‹LHˆÏˆˆ˜\Û\ÜÓ˜[YOHšLÈËLÈ\‹LHˆÏŸBˆ]XÝÛÜœ™[][ÛœÂˆÐ]Û‚ˆÙ]‚‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËMØ\LÈ‚ˆY]šXÐØ\™X™[HÛÜœ™[][ÛœÈˆ˜[YO^ÊÝ]ÏËÝ[ÛÜœ™[][ÛœÈÏÈ
+KÓØØ[TÝš[™Ê
+_HXÛÛ^ÏÚ]ÛÛ\\™P\œ›ÝÜÈÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜH˜[X™\ˆˆÏ‚ˆY]šXÐØ\™X™[H“]™[È
+][JHˆ˜[YO^ÊÝ]ÏË›]™[ÐÛÝ[ÏÈ
+KÔÝš[™Ê
+_HXÛÛ^Ï[\šX[™ÛHÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜHœ™YˆÏ‚ˆY]šXÐØ\™X™[H“]™[ˆˆ˜[YO^ÊÝ]ÏË›]™[ÛÝ[ÏÈ
+KÔÝš[™Ê
+_HXÛÛ^Ï™[™[™Õ\Û\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜH›Ü˜[™ÙHˆÏ‚ˆY]šXÐØ\™X™[H]™ÈÛÛ™šY[˜ÙHˆ˜[YO^Ø	ÊÝ]ÏË˜]™ÐÛÛ™šY[˜ÙHÏÈ
+KÑš^Y
+
+_IXHXÛÛ^Ï˜\Ú\ÈÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜH˜›YHˆÏ‚ˆÙ]‚‚ˆÙ]XÝ]]™]H	‰ˆ
+ˆØ\™Û\ÜÓ˜[YOH˜›Ü™\‹X[X™\‹MLÌÌ™ËX[X™\‹MLÍH‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœM‚ˆÛ\ÜÓ˜[YOH^\ÛH^X[X™\‹M‘›Ý[™Ù]XÝ]]™]K™›Ý[™HÜ›ÜÜË\Ý™X[HÛÜœ™[][ÛœÏÜ‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_B‚ˆØ\™Û\ÜÓ˜[YOH˜™ËXØ\™ÍL‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹Lˆ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H^[]]YY›Ü™YÜ›Ý[™”ÛÝ\˜ÙHÝ™X[\Èœ™XZÙÝÛÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLÈ‚ˆÊ™XÙ[ÏÈ×JK›X\
+
+Îˆ[žKNˆ[X™\ŠHOˆ
+ˆ]ˆÙ^O^Ú_HÛ\ÜÓ˜[YOHœLÈ›Ý[™Y[È™ËX˜XÚÙÜ›Ý[™ÍL›Ü™\ˆ›Ü™\‹X›Ü™\‹ÍL‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆX‹Lˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[YY][H^\ÛHžØË™[]H	Õ[šÛ›ÝÛˆ[]IßOÜÜ[‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YO^Ø^^È	ÂˆË˜ÛÜœ™[][Û“]™[HÈÈ	Ø›Ü™\‹\™YMLÍL^\™YM	È‚ˆË˜ÛÜœ™[][Û“]™[HˆÈ	Ø›Ü™\‹[Ü˜[™ÙKMLÍL^[Ü˜[™ÙKM	È‚ˆ	Ø›Ü™\‹X›YKMLÍL^X›YKM	ÂˆXO“]™[ØË˜ÛÜœ™[][Û“]™[OÐ˜YÙO‚ˆÜ[ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™žØË˜ÛÛ™šY[˜ÙTØÛÜ™_IOÜÜ[‚ˆÙ]‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^›^]Ü˜\Ø\LH‚ˆÊË›X]Ú[™ÔÝ™X[\È	ÉÊKœÜ]
+	Ë	ÊK™š[\Š›ÛÛX[ŠK›X\
+
+ÎˆÝš[™ËŽˆ[X™\ŠHOˆ
+ˆ˜YÙHÙ^O^ÚŸH˜\šX[HœÙXÛÛ™\žHˆÛ\ÜÓ˜[YOH^^ÈžÜËš[J
+_OÐ˜YÙO‚ˆ
+J_BˆÙ]‚ˆØË˜ÛZ[U\H	‰ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™]LHÛZ[NˆØË˜ÛZ[U\_OÜŸBˆÙ]‚ˆ
+J_BˆÊ\™XÙ[™XÙ[›[™ÝOOH
+H	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH^XÙ[\ˆKMˆ‚ˆÚ]ÛÛ\\™P\œ›ÝÜÈÛ\ÜÓ˜[YOHšNËN^[]]YY›Ü™YÜ›Ý[™ÌÌ^X]]ÈX‹LˆˆÏ‚ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™“›ÈÛÜœ™[][ÛœÈ]XÝYY]ˆÛXÚÈ‘]XÝÛÜœ™[][ÛœÈˆÈØØ[ˆXÜ›ÜÜÈ[]HÝ™X[\ËÜ‚ˆÙ]‚ˆ
+_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆÙ]‚ˆ
+NÂŸB‚‹Êˆ8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥dˆSQKUU‘SSSTÒTÈS‘S
+Ù\ÜÚ[ÛˆÌJBˆ\ÝÜšXØ[™\^KÛÝ[\™˜XÝX[[˜[\Ú\Ë[ÛÜš]HÛÛ\\š\ÛÛ‹ˆX\›Y\Ý]XÝ[Û‹[™[ˆ\ÝÜžK‚ˆ8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d
+‹Â‚™[˜Ý[Ûˆ[YU˜]™[[™[
+
+HÂˆÛÛœÝÈ]NˆÝ]Ë\ÓØY[™Ë™Y™]ÚHHœË[YU˜]™[™Ù]Ý]Ë\ÙT]Y\žJ
+NÂˆÛÛœÝÈ]Nˆ™\œÚ[ÛœÈHHœË[YU˜]™[˜[ÛÜš]U™\œÚ[ÛœË\ÙT]Y\žJ
+NÂˆÛÛœÝÈ]Nˆ[œË™Y™]Úˆ™Y™]Ú[œÈHHœË[YU˜]™[›\Ý[œË\ÙT]Y\žJÈ[Z]ˆLJNÂ‚ˆËÈ™\^HÝ]BˆÛÛœÝÜ™\^P[ÛËÙ]™\^P[Û×HH\ÙTÝ]JŒËŒŠNÂˆÛÛœÝÜ™\^S›Ý\ËÙ]™\^S›Ý\×HH\ÙTÝ]JˆŠNÂˆÛÛœÝ™\^S]]HœË[YU˜]™[œ[’\ÝÜšXØ[™\^K\ÙS]]][ÛŠÂˆÛ”ÝXØÙ\ÜÎˆ
+
+HOˆÈ™Y™]Ú
+
+NÈ™Y™]Ú[œÊ
+NÈKˆJNÂ‚ˆËÈÛÝ[\™˜XÝX[Ý]BˆÛÛœÝØÙ[ÛËÙ]Ù[Û×HH\ÙTÝ]JŒËŒŠNÂˆÛÛœÝØÙ”\˜[\ËÙ]Ù”\˜[\×HH\ÙTÝ]O\œ˜^OÈ˜[YNˆÝš[™ÎÈ˜[YNˆÝš[™ÎÈ\Nˆ™\ÚÛØÚ[™ÙHˆÙZYÚÛÝ™\œšYHˆ™[]WÙš[\ˆŽÈ\ØÜš\[ÛÎˆÝš[™ÈOŠÂˆÈ˜[YNˆ›Z[ÛÛ™šY[˜ÙTØÛÜ™H‹˜[YNˆŒL‹\Nˆ™\ÚÛØÚ[™ÙH‹\ØÜš\[ÛŽˆ“ÝÙ\ˆÛÛ™šY[˜ÙH™\ÚÛˆKˆJNÂˆÛÛœÝÛÝ[\™˜XÝX[]]HœË[YU˜]™[œ[ÛÝ[\™˜XÝX[™\^K\ÙS]]][ÛŠÂˆÛ”ÝXØÙ\ÜÎˆ
+
+HOˆÈ™Y™]Ú
+
+NÈ™Y™]Ú[œÊ
+NÈKˆJNÂ‚ˆËÈÛÛ\\š\ÛÛˆÝ]BˆÛÛœÝØÛÛ\KÙ]ÛÛ\WHH\ÙTÝ]JŒKŒŠNÂˆÛÛœÝØÛÛ\‹Ù]ÛÛ\—HH\ÙTÝ]JŒËŒŠNÂˆÛÛœÝÛÛ\\™S]]HœË[YU˜]™[˜ÛÛ\\™P[ÛÜš]\Ë\ÙS]]][ÛŠÂˆÛ”ÝXØÙ\ÜÎˆ
+
+HOˆÈ™Y™]Ú
+
+NÈ™Y™]Ú[œÊ
+NÈKˆJNÂ‚ˆËÈX\›Y\Ý]XÝ[ÛˆÝ]BˆÛÛœÝÙX\›Y\Ý]\›‹Ù]X\›Y\Ý]\›—HH\ÙTÝ]Jœ™\X]Ù[]HŠNÂˆÛÛœÝÙX\›Y\Ý[]KÙ]X\›Y\Ý[]WHH\ÙTÝ]JˆŠNÂˆÛÛœÝÙX\›Y\Ý[ÛËÙ]X\›Y\Ý[Û×HH\ÙTÝ]JŒËŒŠNÂˆÛÛœÝX\›Y\Ý]]HœË[YU˜]™[™]XÝX\›Y\Ý\ÙS]]][ÛŠÂˆÛ”ÝXØÙ\ÜÎˆ
+
+HOˆÈ™Y™]Ú
+
+NÈ™Y™]Ú[œÊ
+NÈKˆJNÂ‚ˆËÈ™\ÜÝ]BˆÛÛœÝÜ™\Ü[’YÙ]™\Ü[’YHH\ÙTÝ]O[X™\ˆ[Š[
+NÂˆÛÛœÝÈ]Nˆ™\Ü]HHHœË[YU˜]™[™Ù[™\˜]T™\Ü\ÙT]Y\žJˆÈ[’Yˆ™\Ü[’YHKˆÈ[˜X›Yˆ™\Ü[’YOOH[Bˆ
+NÂ‚ˆËÈXÝ]™HÝX‹]X‚ˆÛÛœÝØXÝ]™S[ÙKÙ]XÝ]™S[ÙWHH\ÙTÝ]Oœ™\^Hˆ˜ÛÝ[\™˜XÝX[ˆ˜ÛÛ\\™Hˆ™X\›Y\Ýˆš\ÝÜžHŠœ™\^HŠNÂ‚ˆYˆ
+\ÓØY[™ÊH™]\›ˆ[™[ÚÙ[]ÛˆÏŽÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KM‚ˆËÊˆXY\ˆ
+‹ßBˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆÈÛ\ÜÓ˜[YOH^[È›Û\Ù[ZX›Û›^][\ËXÙ[\ˆØ\Lˆ‚ˆ\ÝÜžHÛ\ÜÓ˜[YOHšMHËMH^XÞX[‹MˆÏ‚ˆ[YKU˜]™[[˜[\Ú\È[™Ú[™BˆÚÏ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^^È›Ü™\‹XÞX[‹MLÌÌ^XÞX[‹M‚ˆÜÝ]ÏËÝ[[œÈÏÈH[œÂˆÐ˜YÙO‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^^È›Ü™\‹Y[Y\˜[MLÌÌ^Y[Y\˜[M‚ˆÜÝ]ÏËÝ[\ÝÜšXØ[ÚYÛ˜[ÈÏÈH\ÝÜšXØ[ÚYÛ˜[ÂˆÐ˜YÙO‚ˆÙ]‚ˆÙ]‚‚ˆËÊˆÝ]È›ÝÈ
+‹ßBˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËMHØ\LÈ‚ˆY]šXÐØ\™X™[H•Ý[[œÈˆ˜[YO^ÔÝš[™ÊÝ]ÏËÝ[[œÈÏÈ
+_HXÛÛ^Ï›Ý]PØÝÈÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜH˜ÞX[ˆˆÏ‚ˆY]šXÐØ\™X™[HÛÛ\]Yˆ˜[YO^ÔÝš[™ÊÝ]ÏË˜ÛÛ\]Y[œÈÏÈ
+_HXÛÛ^ÏÚXÚÐÚ\˜ÛLˆÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜH™[Y\˜[ˆÏ‚ˆY]šXÐØ\™X™[H’\ÝˆÚYÛ˜[Èˆ˜[YO^ÔÝš[™ÊÝ]ÏËÝ[\ÝÜšXØ[ÚYÛ˜[ÈÏÈ
+_HXÛÛ^Ï˜\Û\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜH˜[X™\ˆˆÏ‚ˆY]šXÐØ\™X™[H’\Ýˆ]\›œÈˆ˜[YO^ÔÝš[™ÊÝ]ÏËÝ[\ÝÜšXØ[]\›œÈÏÈ
+_HXÛÛ^Ï™]ÛÜšÈÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜHš[Û]ˆÏ‚ˆY]šXÐØ\™X™[H”Û˜\ÚÝÈˆ˜[YO^ÔÝš[™ÊÝ]ÏËÝ[Û˜\ÚÝÈÏÈ
+_HXÛÛ^Ï]X˜\ÙHÛ\ÜÓ˜[YOHšMËMˆÏŸHÛÛÜH˜›YHˆÏ‚ˆÙ]‚‚ˆËÊˆ[ÙHÙ[XÝÜˆ
+‹ßBˆ]ˆÛ\ÜÓ˜[YOH™›^Ø\Lˆ›^]Ü˜\‚ˆÖÂˆÈYˆœ™\^Hˆ\ÈÛÛœÝX™[ˆ’\ÝÜšXØ[™\^H‹XÛÛŽˆ^HÛ\ÜÓ˜[YOHšLÈËLÈˆÏˆKˆÈYˆ˜ÛÝ[\™˜XÝX[ˆ\ÈÛÛœÝX™[ˆ•Ú]YÈ‹XÛÛŽˆÚ]œ˜[˜ÚÛ\ÜÓ˜[YOHšLÈËLÈˆÏˆKˆÈYˆ˜ÛÛ\\™Hˆ\ÈÛÛœÝX™[ˆÛÛ\\™H[ÛÜš]\È‹XÛÛŽˆÚ]ÛÛ\\™P\œ›ÝÜÈÛ\ÜÓ˜[YOHšLÈËLÈˆÏˆKˆÈYˆ™X\›Y\Ýˆ\ÈÛÛœÝX™[ˆ‘X\›Y\Ý]XÝ[Ûˆ‹XÛÛŽˆÙX\˜ÚÛ\ÜÓ˜[YOHšLÈËLÈˆÏˆKˆÈYˆš\ÝÜžHˆ\ÈÛÛœÝX™[ˆ”[ˆ\ÝÜžH‹XÛÛŽˆÛØÚÈÛ\ÜÓ˜[YOHšLÈËLÈˆÏˆKˆK›X\
+[ÙHOˆ
+ˆ]Û‚ˆÙ^O^Û[ÙKšYBˆ˜\šX[^ØXÝ]™S[ÙHOOH[ÙKšYÈ™Y˜][ˆˆ›Ý][™HŸBˆÚ^™OHœÛH‚ˆÛÛXÚÏ^Ê
+HOˆÙ]XÝ]™S[ÙJ[ÙKšY
+_BˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆ‚ˆÛ[ÙKšXÛÛŸHÛ[ÙK›X™[BˆÐ]Û‚ˆ
+J_BˆÙ]‚‚ˆËÊˆ8¥ 8¥ \ÝÜšXØ[™\^H8¥ 8¥ 
+‹ßBˆØXÝ]™S[ÙHOOHœ™\^Hˆ	‰ˆ
+ˆØ\™Û\ÜÓ˜[YOH˜™ËXØ\™ÍL›Ü™\‹XÞX[‹MLÌŒ‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H›^][\ËXÙ[\ˆØ\Lˆ‚ˆ^HÛ\ÜÓ˜[YOHšMËM^XÞX[‹MˆÏ‚ˆ\ÝÜšXØ[™\^BˆÐØ\™]O‚ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™”™K\[ˆÚYÛ˜[]XÝ[ÛˆÛˆ\ÝÜšXØ[]H\Ú[™È[žH[ÛÜš]H™\œÚ[ÛÜ‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœÜXÙK^KLÈ‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLHY™ÜšYXÛÛËLˆØ\LÈ‚ˆ]‚ˆX™[Û\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™X‹LH›ØÚÈ[ÛÜš]H™\œÚ[ÛÛX™[‚ˆÙ[XÝˆ˜[YO^Ü™\^P[ÛßBˆÛÚ[™ÙO^ÙHOˆÙ]™\^P[ÛÊK\™Ù]˜[YJ_BˆÛ\ÜÓ˜[YOHËY[›Ý[™Y[Y›Ü™\ˆ™ËX˜XÚÙÜ›Ý[™LÈKLˆ^\ÛH‚ˆ‚ˆÊ™\œÚ[ÛœÈÏÈ×JK›X\
+ˆOˆ
+ˆÜ[ÛˆÙ^O^Ý‹šYH˜[YO^Ý‹šYOžÝ‹›X™[OÛÜ[Û‚ˆ
+J_BˆÜÙ[XÝ‚ˆÙ]‚ˆ]‚ˆX™[Û\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™X‹LH›ØÚÈ“›Ý\È
+Ü[Û˜[
+OÛX™[‚ˆ[œ]ˆ\OH^‚ˆ˜[YO^Ü™\^S›Ý\ßBˆÛÚ[™ÙO^ÙHOˆÙ]™\^S›Ý\ÊK\™Ù]˜[YJ_BˆXÙZÛ\H‘\ØÜšX™H\È™\^H[‹‹‹ˆ‚ˆÛ\ÜÓ˜[YOHËY[›Ý[™Y[Y›Ü™\ˆ™ËX˜XÚÙÜ›Ý[™LÈKLˆ^\ÛH‚ˆÏ‚ˆÙ]‚ˆÙ]‚ˆ]Û‚ˆÛÛXÚÏ^Ê
+HOˆ™\^S]]›]]]JÈ[ÛÜš]U™\œÚ[ÛŽˆ™\^P[ÛË›Ý\Îˆ™\^S›Ý\È[™Yš[™YJ_Bˆ\ØX›Y^Ü™\^S]]š\Ô[™[™ßBˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆÚ^™OHœÛH‚ˆ‚ˆÜ™\^S]]š\Ô[™[™ÈÈØY\ŒˆÛ\ÜÓ˜[YOHšLÈËLÈ[š[X]K\Ü[ˆˆÏˆˆ^HÛ\ÜÓ˜[YOHšLÈËLÈˆÏŸBˆ[ˆ™\^BˆÐ]Û‚ˆÜ™\^S]]™]H	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœLÈ›Ý[™Y[È™ËXÞX[‹MLÍH›Ü™\ˆ›Ü™\‹XÞX[‹MLÌŒ^\ÛH‚ˆÛ\ÜÓ˜[YOH^XÞX[‹M›Û[YY][H”™\^HÛÛ\]OÜ‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLÈØ\Lˆ]Lˆ^^È^[]]YY›Ü™YÜ›Ý[™‚ˆÜ[”ÚYÛ˜[ÎˆÝ›Û™ÈÛ\ÜÓ˜[YOH^Y›Ü™YÜ›Ý[™žÜ™\^S]]™]KœÚYÛ˜[Ñ]XÝYOÜÝ›Û™ÏÜÜ[‚ˆÜ[”]\›œÎˆÝ›Û™ÈÛ\ÜÓ˜[YOH^Y›Ü™YÜ›Ý[™žÜ™\^S]]™]Kœ]\›œÑ]XÝYOÜÝ›Û™ÏÜÜ[‚ˆÜ[”Ý]\ÎˆÝ›Û™ÈÛ\ÜÓ˜[YOH^Y[Y\˜[MžÜ™\^S]]™]KœÝ]\ßOÜÝ›Û™ÏÜÜ[‚ˆÙ]‚ˆÜ™\^S]]™]KœÝ[[X\žOËšÙ^Qš[™[™ÜÈ	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH›]LˆÜXÙK^KLH‚ˆÊ™\^S]]™]KœÝ[[X\žKšÙ^Qš[™[™ÜÈ\ÈÝš[™Ö×JKœÛXÙJÊK›X\
+
+ŽˆÝš[™ËNˆ[X™\ŠHOˆ
+ˆÙ^O^Ú_HÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™¸ (ˆÙŸOÜ‚ˆ
+J_BˆÙ]‚ˆ
+_BˆÙ]‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_B‚ˆËÊˆ8¥ 8¥ ÛÝ[\™˜XÝX[•Ú]Yˆˆ8¥ 8¥ 
+‹ßBˆØXÝ]™S[ÙHOOH˜ÛÝ[\™˜XÝX[ˆ	‰ˆ
+ˆØ\™Û\ÜÓ˜[YOH˜™ËXØ\™ÍL›Ü™\‹]š[Û]MLÌŒ‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H›^][\ËXÙ[\ˆØ\Lˆ‚ˆÚ]œ˜[˜ÚÛ\ÜÓ˜[YOHšMËM^]š[Û]MˆÏ‚ˆÛÝ[\™˜XÝX[[˜[\Ú\È8 %•Ú]YÈ‚ˆÐØ\™]O‚ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™“[ÙYžH]XÝ[Ûˆ\˜[Y]\œÈ[™™\^HÈÙYHÚ]ÛÝ[]™H™Y[ˆ]XÝYY™™\™[OÜ‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœÜXÙK^KLÈ‚ˆ]‚ˆX™[Û\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™X‹LH›ØÚÈ˜\ÙH[ÛÜš]OÛX™[‚ˆÙ[XÝˆ˜[YO^ØÙ[ÛßBˆÛÚ[™ÙO^ÙHOˆÙ]Ù[ÛÊK\™Ù]˜[YJ_BˆÛ\ÜÓ˜[YOHËY[›Ý[™Y[Y›Ü™\ˆ™ËX˜XÚÙÜ›Ý[™LÈKLˆ^\ÛH‚ˆ‚ˆÊ™\œÚ[ÛœÈÏÈ×JK›X\
+ˆOˆ
+ˆÜ[ÛˆÙ^O^Ý‹šYH˜[YO^Ý‹šYOžÝ‹›X™[OÛÜ[Û‚ˆ
+J_BˆÜÙ[XÝ‚ˆÙ]‚‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆX™[Û\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™”\˜[Y]\ˆÝ™\œšY\ÏÛX™[‚ˆ]Û‚ˆ˜\šX[H›Ý][™H‚ˆÚ^™OHœÛH‚ˆÛ\ÜÓ˜[YOHšMˆ^^ÈØ\LH‚ˆÛÛXÚÏ^Ê
+HOˆÙ]Ù”\˜[\ÊË‹‹˜Ù”\˜[\ËÈ˜[YNˆˆ‹˜[YNˆˆ‹\Nˆ™\ÚÛØÚ[™ÙHˆWJ_Bˆ‚ˆ\ÈÛ\ÜÓ˜[YOHšLÈËLÈˆÏˆYˆÐ]Û‚ˆÙ]‚ˆØÙ”\˜[\Ë›X\
+
+JHOˆ
+ˆ]ˆÙ^O^Ú_HÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLLˆØ\Lˆ][\ËXÙ[\ˆ‚ˆÙ[XÝˆ˜[YO^Ü\_BˆÛÚ[™ÙO^ÙHOˆÂˆÛÛœÝ™^HË‹‹˜Ù”\˜[\×NÂˆ™^ÚWHHÈ‹‹›™^ÚWK\NˆK\™Ù]˜[YH\È[žHNÂˆÙ]Ù”\˜[\Ê™^
+NÂˆ_BˆÛ\ÜÓ˜[YOH˜ÛÛ\Ü[‹LÈ›Ý[™Y[Y›Ü™\ˆ™ËX˜XÚÙÜ›Ý[™LˆKLKH^^È‚ˆ‚ˆÜ[Ûˆ˜[YOH™\ÚÛØÚ[™ÙH•™\ÚÛÛÜ[Û‚ˆÜ[Ûˆ˜[YOHÙZYÚÛÝ™\œšYH•ÙZYÚÛÜ[Û‚ˆÜ[Ûˆ˜[YOH™[]WÙš[\ˆ‘[]Hš[\ÛÜ[Û‚ˆÜÙ[XÝ‚ˆ[œ]ˆ˜[YO^Ü›˜[Y_BˆÛÚ[™ÙO^ÙHOˆÂˆÛÛœÝ™^HË‹‹˜Ù”\˜[\×NÂˆ™^ÚWHHÈ‹‹›™^ÚWK˜[YNˆK\™Ù]˜[YHNÂˆÙ]Ù”\˜[\Ê™^
+NÂˆ_BˆXÙZÛ\H”\˜[Y]\ˆ˜[YH‚ˆÛ\ÜÓ˜[YOH˜ÛÛ\Ü[‹M›Ý[™Y[Y›Ü™\ˆ™ËX˜XÚÙÜ›Ý[™LˆKLKH^^È‚ˆÏ‚ˆ[œ]ˆ˜[YO^Ü˜[Y_BˆÛÚ[™ÙO^ÙHOˆÂˆÛÛœÝ™^HË‹‹˜Ù”\˜[\×NÂˆ™^ÚWHHÈ‹‹›™^ÚWK˜[YNˆK\™Ù]˜[YHNÂˆÙ]Ù”\˜[\Ê™^
+NÂˆ_BˆXÙZÛ\H•˜[YH‚ˆÛ\ÜÓ˜[YOH˜ÛÛ\Ü[‹M›Ý[™Y[Y›Ü™\ˆ™ËX˜XÚÙÜ›Ý[™LˆKLKH^^È‚ˆÏ‚ˆ]Û‚ˆ˜\šX[H™ÚÜÝ‚ˆÚ^™OHœÛH‚ˆÛ\ÜÓ˜[YOH˜ÛÛ\Ü[‹LHMÈËMÈL‚ˆÛÛXÚÏ^Ê
+HOˆÙ]Ù”\˜[\ÊÙ”\˜[\Ë™š[\Š
+ËŠHOˆˆOOHJJ_Bˆ‚ˆ˜\ÚˆÛ\ÜÓ˜[YOHšLÈËLÈ^\™YMˆÏ‚ˆÐ]Û‚ˆÙ]‚ˆ
+J_BˆÙ]‚‚ˆ]Û‚ˆÛÛXÚÏ^Ê
+HOˆÛÝ[\™˜XÝX[]]›]]]JÂˆ[ÛÜš]U™\œÚ[ÛŽˆÙ[ÛËˆ\˜[Y]\œÎˆÙ”\˜[\Ë™š[\ŠOˆ›˜[YH	‰ˆ˜[YJKˆJ_Bˆ\ØX›Y^ØÛÝ[\™˜XÝX[]]š\Ô[™[™ßBˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆÚ^™OHœÛH‚ˆ‚ˆØÛÝ[\™˜XÝX[]]š\Ô[™[™ÈÈØY\ŒˆÛ\ÜÓ˜[YOHšLÈËLÈ[š[X]K\Ü[ˆˆÏˆˆÚ]œ˜[˜ÚÛ\ÜÓ˜[YOHšLÈËLÈˆÏŸBˆ[ˆÛÝ[\™˜XÝX[ˆÐ]Û‚‚ˆØÛÝ[\™˜XÝX[]]™]H	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœLÈ›Ý[™Y[È™Ë]š[Û]MLÍH›Ü™\ˆ›Ü™\‹]š[Û]MLÌŒ^\ÛH‚ˆÛ\ÜÓ˜[YOH^]š[Û]M›Û[YY][HÛÝ[\™˜XÝX[ÛÛ\]OÜ‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLÈØ\Lˆ]Lˆ^^È^[]]YY›Ü™YÜ›Ý[™‚ˆÜ[”ÚYÛ˜[ÎˆÝ›Û™ÈÛ\ÜÓ˜[YOH^Y›Ü™YÜ›Ý[™žØÛÝ[\™˜XÝX[]]™]KœÚYÛ˜[Ñ]XÝYOÜÝ›Û™ÏÜÜ[‚ˆÜ[”]\›œÎˆÝ›Û™ÈÛ\ÜÓ˜[YOH^Y›Ü™YÜ›Ý[™žØÛÝ[\™˜XÝX[]]™]Kœ]\›œÑ]XÝYOÜÝ›Û™ÏÜÜ[‚ˆÜ[”Ý]\ÎˆÝ›Û™ÈÛ\ÜÓ˜[YOH^Y[Y\˜[MžØÛÝ[\™˜XÝX[]]™]KœÝ]\ßOÜÝ›Û™ÏÜÜ[‚ˆÙ]‚ˆØÛÝ[\™˜XÝX[]]™]KœÝ[[X\žOËšÙ^Qš[™[™ÜÈ	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH›]LˆÜXÙK^KLH‚ˆÊÛÝ[\™˜XÝX[]]™]KœÝ[[X\žKšÙ^Qš[™[™ÜÈ\ÈÝš[™Ö×JKœÛXÙJÊK›X\
+
+ŽˆÝš[™ËNˆ[X™\ŠHOˆ
+ˆÙ^O^Ú_HÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™¸ (ˆÙŸOÜ‚ˆ
+J_BˆÙ]‚ˆ
+_BˆÙ]‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_B‚ˆËÊˆ8¥ 8¥ [ÛÜš]HÛÛ\\š\ÛÛˆ8¥ 8¥ 
+‹ßBˆØXÝ]™S[ÙHOOH˜ÛÛ\\™Hˆ	‰ˆ
+ˆØ\™Û\ÜÓ˜[YOH˜™ËXØ\™ÍL›Ü™\‹X[X™\‹MLÌŒ‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H›^][\ËXÙ[\ˆØ\Lˆ‚ˆÚ]ÛÛ\\™P\œ›ÝÜÈÛ\ÜÓ˜[YOHšMËM^X[X™\‹MˆÏ‚ˆ[ÛÜš]HÛÛ\\š\ÛÛ‚ˆÐØ\™]O‚ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™”[ˆÛÈ[ÛÜš]H™\œÚ[ÛœÈÚYKXžK\ÚYHÛˆHØ[YH]HÈÛÛ\\™H]XÝ[ÛˆØ\Xš[]Y\ÏÜ‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœÜXÙK^KLÈ‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆØ\LÈ‚ˆ]‚ˆX™[Û\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™X‹LH›ØÚÈ•™\œÚ[ÛˆOÛX™[‚ˆÙ[XÝˆ˜[YO^ØÛÛ\_BˆÛÚ[™ÙO^ÙHOˆÙ]ÛÛ\JK\™Ù]˜[YJ_BˆÛ\ÜÓ˜[YOHËY[›Ý[™Y[Y›Ü™\ˆ™ËX˜XÚÙÜ›Ý[™LÈKLˆ^\ÛH‚ˆ‚ˆÊ™\œÚ[ÛœÈÏÈ×JK›X\
+ˆOˆ
+ˆÜ[ÛˆÙ^O^Ý‹šYH˜[YO^Ý‹šYOžÝ‹›X™[OÛÜ[Û‚ˆ
+J_BˆÜÙ[XÝ‚ˆÙ]‚ˆ]‚ˆX™[Û\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™X‹LH›ØÚÈ•™\œÚ[ÛˆÛX™[‚ˆÙ[XÝˆ˜[YO^ØÛÛ\ŸBˆÛÚ[™ÙO^ÙHOˆÙ]ÛÛ\ŠK\™Ù]˜[YJ_BˆÛ\ÜÓ˜[YOHËY[›Ý[™Y[Y›Ü™\ˆ™ËX˜XÚÙÜ›Ý[™LÈKLˆ^\ÛH‚ˆ‚ˆÊ™\œÚ[ÛœÈÏÈ×JK›X\
+ˆOˆ
+ˆÜ[ÛˆÙ^O^Ý‹šYH˜[YO^Ý‹šYOžÝ‹›X™[OÛÜ[Û‚ˆ
+J_BˆÜÙ[XÝ‚ˆÙ]‚ˆÙ]‚‚ˆ]Û‚ˆÛÛXÚÏ^Ê
+HOˆÛÛ\\™S]]›]]]JÈ™\œÚ[ÛNˆÛÛ\K™\œÚ[ÛŽˆÛÛ\ˆJ_Bˆ\ØX›Y^ØÛÛ\\™S]]š\Ô[™[™ÈÛÛ\HOOHÛÛ\ŸBˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆÚ^™OHœÛH‚ˆ‚ˆØÛÛ\\™S]]š\Ô[™[™ÈÈØY\ŒˆÛ\ÜÓ˜[YOHšLÈËLÈ[š[X]K\Ü[ˆˆÏˆˆÚ]ÛÛ\\™P\œ›ÝÜÈÛ\ÜÓ˜[YOHšLÈËLÈˆÏŸBˆÛÛ\\™BˆÐ]Û‚‚ˆØÛÛ\\™S]]™]H	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœLÈ›Ý[™Y[È™ËX[X™\‹MLÍH›Ü™\ˆ›Ü™\‹X[X™\‹MLÌŒ^\ÛH‚ˆÛ\ÜÓ˜[YOH^X[X™\‹M›Û[YY][HX‹LÈÛÛ\\š\ÛÛˆ™\Ý[ÏÜ‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆØ\M‚ˆ]ˆÛ\ÜÓ˜[YOHœLˆ›Ý[™Y™ËX˜XÚÙÜ›Ý[™ÍL›Ü™\ˆ‚ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™X‹LHžØÛÛ\_OÜ‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLH^^È‚ˆ”ÚYÛ˜[ÎˆÝ›Û™ÏžØÛÛ\\™S]]™]K™\œÚ[ÛKœÚYÛ˜[ßOÜÝ›Û™ÏÜ‚ˆ”]\›œÎˆÝ›Û™ÏžØÛÛ\\™S]]™]K™\œÚ[ÛKœ]\›œßOÜÝ›Û™ÏÜ‚ˆ]™ÈÛÛ™šY[˜ÙNˆÝ›Û™ÏžÊÛÛ\\™S]]™]K™\œÚ[ÛK˜]™ÐÛÛ™šY[˜ÙH
+ˆL
+KÑš^Y
+J_IOÜÝ›Û™ÏÜ‚ˆÙ]‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOHœLˆ›Ý[™Y™ËX˜XÚÙÜ›Ý[™ÍL›Ü™\ˆ‚ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™X‹LHžØÛÛ\ŸOÜ‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLH^^È‚ˆ”ÚYÛ˜[ÎˆÝ›Û™ÏžØÛÛ\\™S]]™]K™\œÚ[Û‹œÚYÛ˜[ßOÜÝ›Û™ÏÜ‚ˆ”]\›œÎˆÝ›Û™ÏžØÛÛ\\™S]]™]K™\œÚ[Û‹œ]\›œßOÜÝ›Û™ÏÜ‚ˆ]™ÈÛÛ™šY[˜ÙNˆÝ›Û™ÏžÊÛÛ\\™S]]™]K™\œÚ[Û‹˜]™ÐÛÛ™šY[˜ÙH
+ˆL
+KÑš^Y
+J_IOÜÝ›Û™ÏÜ‚ˆÙ]‚ˆÙ]‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH›]LÈÜšYÜšYXÛÛËLÈØ\Lˆ^^È‚ˆ]ˆÛ\ÜÓ˜[YOHœLˆ›Ý[™Y™ËX˜XÚÙÜ›Ý[™ÍL›Ü™\ˆ^XÙ[\ˆ‚ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™”ÚYÛ˜[[OÜ‚ˆÛ\ÜÓ˜[YO^Ø›ÛX›Û	ØÛÛ\\™S]]™]K™[KœÚYÛ˜[ÈˆÈ	Ý^Y[Y\˜[M	ÈˆÛÛ\\™S]]™]K™[KœÚYÛ˜[ÈÈ	Ý^\™YM	Èˆ	Ý^[]]YY›Ü™YÜ›Ý[™	ßXO‚ˆØÛÛ\\™S]]™]K™[KœÚYÛ˜[ÈˆÈ	ÊÉÈˆ	Éß^ØÛÛ\\™S]]™]K™[KœÚYÛ˜[ßBˆÜ‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOHœLˆ›Ý[™Y™ËX˜XÚÙÜ›Ý[™ÍL›Ü™\ˆ^XÙ[\ˆ‚ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™•[š\]YHÈOÜ‚ˆÛ\ÜÓ˜[YOH™›ÛX›ÛžØÛÛ\\™S]]™]K[š\]YUÐ_OÜ‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOHœLˆ›Ý[™Y™ËX˜XÚÙÜ›Ý[™ÍL›Ü™\ˆ^XÙ[\ˆ‚ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™•[š\]YHÈÜ‚ˆÛ\ÜÓ˜[YOH™›ÛX›ÛžØÛÛ\\™S]]™]K[š\]YUÐŸOÜ‚ˆÙ]‚ˆÙ]‚ˆÙ]‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_B‚ˆËÊˆ8¥ 8¥ X\›Y\Ý]XÝ[Ûˆ8¥ 8¥ 
+‹ßBˆØXÝ]™S[ÙHOOH™X\›Y\Ýˆ	‰ˆ
+ˆØ\™Û\ÜÓ˜[YOH˜™ËXØ\™ÍL›Ü™\‹Y[Y\˜[MLÌŒ‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H›^][\ËXÙ[\ˆØ\Lˆ‚ˆÙX\˜ÚÛ\ÜÓ˜[YOHšMËM^Y[Y\˜[MˆÏ‚ˆX\›Y\Ý]XÝ[Ûˆš[™\‚ˆÐØ\™]O‚ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™”ØØ[ˆ\ÝÜšXØ[]HÈš[™HX\›Y\ÝÚ[H]\›ˆÛÝ[]™H™Y[ˆ]XÝX›OÜ‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœÜXÙK^KLÈ‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLHY™ÜšYXÛÛËLÈØ\LÈ‚ˆ]‚ˆX™[Û\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™X‹LH›ØÚÈ”]\›ˆ\OÛX™[‚ˆÙ[XÝˆ˜[YO^ÙX\›Y\Ý]\›ŸBˆÛÚ[™ÙO^ÙHOˆÙ]X\›Y\Ý]\›ŠK\™Ù]˜[YJ_BˆÛ\ÜÓ˜[YOHËY[›Ý[™Y[Y›Ü™\ˆ™ËX˜XÚÙÜ›Ý[™LÈKLˆ^\ÛH‚ˆ‚ˆÜ[Ûˆ˜[YOH˜[žH[žH]\›ÛÜ[Û‚ˆÜ[Ûˆ˜[YOHœ™\X]Ù[]H”™\X][]OÛÜ[Û‚ˆÜ[Ûˆ˜[YOH™œ™\]Y[˜ÞWÜÜZÙH‘œ™\]Y[˜ÞHÜZÙOÛÜ[Û‚ˆÜ[Ûˆ˜[YOH™Ù[ÙÜ˜\X×ØÛ\Ý\ˆ‘Ù[ÙÜ˜\XÈÛ\Ý\ÛÜ[Û‚ˆÜ[Ûˆ˜[YOHœÝ]\×Ù[^H”Ý]\È[^OÛÜ[Û‚ˆÜÙ[XÝ‚ˆÙ]‚ˆ]‚ˆX™[Û\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™X‹LH›ØÚÈ‘[]H˜[YH
+Ü[Û˜[
+OÛX™[‚ˆ[œ]ˆ\OH^‚ˆ˜[YO^ÙX\›Y\Ý[]_BˆÛÚ[™ÙO^ÙHOˆÙ]X\›Y\Ý[]JK\™Ù]˜[YJ_BˆXÙZÛ\H™K™Ëˆ[X^›Û‹˜ÛÛH‚ˆÛ\ÜÓ˜[YOHËY[›Ý[™Y[Y›Ü™\ˆ™ËX˜XÚÙÜ›Ý[™LÈKLˆ^\ÛH‚ˆÏ‚ˆÙ]‚ˆ]‚ˆX™[Û\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™X‹LH›ØÚÈ[ÛÜš]OÛX™[‚ˆÙ[XÝˆ˜[YO^ÙX\›Y\Ý[ÛßBˆÛÚ[™ÙO^ÙHOˆÙ]X\›Y\Ý[ÛÊK\™Ù]˜[YJ_BˆÛ\ÜÓ˜[YOHËY[›Ý[™Y[Y›Ü™\ˆ™ËX˜XÚÙÜ›Ý[™LÈKLˆ^\ÛH‚ˆ‚ˆÊ™\œÚ[ÛœÈÏÈ×JK›X\
+ˆOˆ
+ˆÜ[ÛˆÙ^O^Ý‹šYH˜[YO^Ý‹šYOžÝ‹›X™[OÛÜ[Û‚ˆ
+J_BˆÜÙ[XÝ‚ˆÙ]‚ˆÙ]‚‚ˆ]Û‚ˆÛÛXÚÏ^Ê
+HOˆX\›Y\Ý]]›]]]JÂˆ]\›•\NˆX\›Y\Ý]\›‹ˆ[]S˜[YNˆX\›Y\Ý[]H[™Yš[™Yˆ[ÛÜš]U™\œÚ[ÛŽˆX\›Y\Ý[ÛËˆJ_Bˆ\ØX›Y^ÙX\›Y\Ý]]š\Ô[™[™ßBˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆÚ^™OHœÛH‚ˆ‚ˆÙX\›Y\Ý]]š\Ô[™[™ÈÈØY\ŒˆÛ\ÜÓ˜[YOHšLÈËLÈ[š[X]K\Ü[ˆˆÏˆˆÙX\˜ÚÛ\ÜÓ˜[YOHšLÈËLÈˆÏŸBˆš[™X\›Y\Ý]XÝ[Û‚ˆÐ]Û‚‚ˆÙX\›Y\Ý]]™]H	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœLÈ›Ý[™Y[È™ËY[Y\˜[MLÍH›Ü™\ˆ›Ü™\‹Y[Y\˜[MLÌŒ^\ÛH‚ˆÛ\ÜÓ˜[YOH^Y[Y\˜[M›Û[YY][H‘X\›Y\Ý]XÝ[Ûˆ™\Ý[Ü‚ˆÙX\›Y\Ý]]™]K™X\›Y\Ý]HÈ
+ˆ]ˆÛ\ÜÓ˜[YOH›]LˆÜXÙK^KLˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËMØ\Lˆ^^È‚ˆ]ˆÛ\ÜÓ˜[YOHœLˆ›Ý[™Y™ËX˜XÚÙÜ›Ý[™ÍL›Ü™\ˆ‚ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™‘X\›Y\Ý]OÜ‚ˆÛ\ÜÓ˜[YOH™›ÛX›Û^Y[Y\˜[MžÛ™]È]JX\›Y\Ý]]™]K™X\›Y\Ý]JKÓØØ[Q]TÝš[™Ê
+_OÜ‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOHœLˆ›Ý[™Y™ËX˜XÚÙÜ›Ý[™ÍL›Ü™\ˆ‚ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™ÛÛ™šY[˜ÙOÜ‚ˆÛ\ÜÓ˜[YOH™›ÛX›ÛžÊX\›Y\Ý]]™]K˜ÛÛ™šY[˜ÙH
+ˆL
+KÑš^Y
+J_IOÜ‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOHœLˆ›Ý[™Y™ËX˜XÚÙÜ›Ý[™ÍL›Ü™\ˆ‚ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™”ÚYÛ˜[È™\]Z\™YÜ‚ˆÛ\ÜÓ˜[YOH™›ÛX›ÛžÙX\›Y\Ý]]™]KœÚYÛ˜[Ô™\]Z\™YOÜ‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOHœLˆ›Ý[™Y™ËX˜XÚÙÜ›Ý[™ÍL›Ü™\ˆ‚ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™”Ý™X[\ÏÜ‚ˆÛ\ÜÓ˜[YOH™›ÛX›ÛžÙX\›Y\Ý]]™]K˜ÛÛšX][™ÔÝ™X[\Ë›[™ÝOÜ‚ˆÙ]‚ˆÙ]‚ˆÙX\›Y\Ý]]™]K˜ÛÛšX][™ÔÝ™X[\Ë›[™Ýˆ	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH™›^Ø\LH›^]Ü˜\‚ˆÙX\›Y\Ý]]™]K˜ÛÛšX][™ÔÝ™X[\Ë›X\
+
+ÎˆÝš[™ËNˆ[X™\ŠHOˆ
+ˆ˜YÙHÙ^O^Ú_H˜\šX[HœÙXÛÛ™\žHˆÛ\ÜÓ˜[YOH^^ÈžÜßOÐ˜YÙO‚ˆ
+J_BˆÙ]‚ˆ
+_BˆÙ]‚ˆ
+Hˆ
+ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™]Lˆ”]\›ˆ›Ý]XÝX›H[ˆ\ÝÜšXØ[]HÚ]Ý\œ™[™\ÚÛÏÜ‚ˆ
+_BˆÙ]‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_B‚ˆËÊˆ8¥ 8¥ [ˆ\ÝÜžH8¥ 8¥ 
+‹ßBˆØXÝ]™S[ÙHOOHš\ÝÜžHˆ	‰ˆ
+ˆØ\™Û\ÜÓ˜[YOH˜™ËXØ\™ÍL‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H›^][\ËXÙ[\ˆØ\Lˆ‚ˆÛØÚÈÛ\ÜÓ˜[YOHšMËM^[]]YY›Ü™YÜ›Ý[™ˆÏ‚ˆ[ˆ\ÝÜžBˆÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÊ[œÈÏÈ×JK›X\
+
+[Žˆ[žJHOˆ
+ˆ]ˆÙ^O^Ü[‹šYHÛ\ÜÓ˜[YOHœLÈ›Ý[™Y[È™ËX˜XÚÙÜ›Ý[™ÍL›Ü™\ˆ›Ü™\‹X›Ü™\‹ÍL‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆX‹LH‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YO^Ø^^È	Âˆ[‹œ[•\HOOH	Ú\ÝÜšXØ[Ü™\^IÈÈ	Ø›Ü™\‹XÞX[‹MLÍL^XÞX[‹M	È‚ˆ[‹œ[•\HOOH	ØÛÝ[\™˜XÝX[Ü™\^IÈÈ	Ø›Ü™\‹]š[Û]MLÍL^]š[Û]M	È‚ˆ[‹œ[•\HOOH	Ø[ÛÜš]WØÛÛ\\š\ÛÛ‰ÈÈ	Ø›Ü™\‹X[X™\‹MLÍL^X[X™\‹M	È‚ˆ	Ø›Ü™\‹Y[Y\˜[MLÍL^Y[Y\˜[M	ÂˆXO‚ˆÜ[‹œ[•\Kœ™\XÙJ×ËÙË	È	Ê_BˆÐ˜YÙO‚ˆÜ[ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™žÜ[‹˜[ÛÜš]U™\œÚ[ÛŸOÜÜ[‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆ˜YÙH˜\šX[^Ü[‹œÝ]\ÈOOH	ØÛÛ\]Y	ÈÈ	ÙY˜][	Èˆ[‹œÝ]\ÈOOH	Ù˜Z[Y	ÈÈ	Ù\ÝXÝ]™IÈˆ	ÜÙXÛÛ™\žIßHÛ\ÜÓ˜[YOH^^È‚ˆÜ[‹œÝ]\ßBˆÐ˜YÙO‚ˆ]Û‚ˆ˜\šX[H™ÚÜÝ‚ˆÚ^™OHœÛH‚ˆÛ\ÜÓ˜[YOHšMˆ^^ÈØ\LH‚ˆÛÛXÚÏ^Ê
+HOˆÙ]™\Ü[’Y
+[‹šY
+_Bˆ‚ˆš[QÝÛˆÛ\ÜÓ˜[YOHšLÈËLÈˆÏˆ™\ÜˆÐ]Û‚ˆÙ]‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\M^^È^[]]YY›Ü™YÜ›Ý[™‚ˆÜ[”ÚYÛ˜[ÎˆÜ[‹œÚYÛ˜[Ñ]XÝYÏÈOÜÜ[‚ˆÜ[”]\›œÎˆÜ[‹œ]\›œÑ]XÝYÏÈOÜÜ[‚ˆÜ[žÛ™]È]J[‹˜Ü™X]Y]
+KÓØØ[TÝš[™Ê
+_OÜÜ[‚ˆÙ]‚ˆÜ[‹››Ý\È	‰ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™]LH][XÈžÜ[‹››Ý\ßOÜŸBˆÙ]‚ˆ
+J_BˆÊ\[œÈ[œË›[™ÝOOH
+H	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH^XÙ[\ˆKN‚ˆ\ÝÜžHÛ\ÜÓ˜[YOHšNËN^[]]YY›Ü™YÜ›Ý[™ÌÌ^X]]ÈX‹LˆˆÏ‚ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™“›È[YK]˜]™[[œÈY]ˆÝ\H\ÝÜšXØ[™\^HÈ™YÚ[‹Ü‚ˆÙ]‚ˆ
+_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_B‚ˆËÊˆ™\Ü[Ù[
+‹ßBˆÜ™\Ü[’YOOH[	‰ˆ™\Ü]H	‰ˆ
+ˆØ\™Û\ÜÓ˜[YOH˜™ËXØ\™ÍL›Ü™\‹X›YKMLÌŒ‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹Lˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›Û[YY][H›^][\ËXÙ[\ˆØ\Lˆ‚ˆš[QÝÛˆÛ\ÜÓ˜[YOHšMËM^X›YKMˆÏ‚ˆ™\^H™\ÜˆÐØ\™]O‚ˆ]Ûˆ˜\šX[H™ÚÜÝˆÚ^™OHœÛHˆÛÛXÚÏ^Ê
+HOˆÙ]™\Ü[’Y
+[
+_HÛ\ÜÓ˜[YOHšMˆ^^È‚ˆÛÜÙBˆÐ]Û‚ˆÙ]‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOH›X^ZNMˆÝ™\™›ÝË^KX]]È›Ý[™Y[È™ËX˜XÚÙÜ›Ý[™ÍL›Ü™\ˆM‚ˆ™HÛ\ÜÓ˜[YOH^^ÈÚ]\ÜXÙK\™K]Ü˜\›Û[[Û›È^[]]YY›Ü™YÜ›Ý[™žÜ™\Ü]_OÜ™O‚ˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_BˆÙ]‚ˆ
+NÂŸB‚‹ËÈ8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d‹ËÈ[]H[[YÙ[˜ÙH[™[‹ËÈ8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d™[˜Ý[Ûˆ[]R[[[™[
+
+HÂˆÛÛœÝÝ]ÈHœË™[™Ú[™\ÕŒ‹™[]TÝ]Ë\ÙT]Y\žJ
+NÂˆÛÛœÝ^˜XÝ]]HœË™[™Ú[™\ÕŒ‹™^˜XÝ[]Y\Ñœ›ÛTÚYÛ˜[Ë\ÙS]]][ÛŠ
+NÂˆÛÛœÝ[]Y\ÈHœË™[™Ú[™\ÕŒ‹™[]S\Ý\ÙT]Y\žJÈ[Z]ˆŒJNÂ‚ˆYˆ
+Ý]Ëš\ÓØY[™ÊH™]\›ˆ[™[ÚÙ[]ÛˆÏŽÂˆÛÛœÝÈHÝ]Ë™]NÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆ]‚ˆÈÛ\ÜÓ˜[YOH^[È›Û\Ù[ZX›Û›^][\ËXÙ[\ˆØ\Lˆ‚ˆš[™Ù\œš[Û\ÜÓ˜[YOHšMHËMH^]š[Û]MˆÏˆ[]H[[YÙ[˜ÙH^Y\‚ˆÚÏ‚ˆÛ\ÜÓ˜[YOH^\ÛH^[]]YY›Ü™YÜ›Ý[™]LH‚ˆÝXÝ\™Y[]H›Ùš[\ÈÚ]™\ÛÛ][Û‹Û\ÜÚYšXØ][Û‹[™™[][ÛœÚ\X\[™ÂˆÜ‚ˆÙ]‚ˆ]Û‚ˆÚ^™OHœÛH‚ˆ˜\šX[H›Ý][™H‚ˆÛÛXÚÏ^Ê
+HOˆ^˜XÝ]]›]]]J
+_Bˆ\ØX›Y^Ù^˜XÝ]]š\Ô[™[™ßBˆ‚ˆÙ^˜XÝ]]š\Ô[™[™ÈÈØY\ŒˆÛ\ÜÓ˜[YOHšLËHËLËH[š[X]K\Ü[ˆ\‹LHˆÏˆˆ˜\Û\ÜÓ˜[YOHšLËHËLËH\‹LHˆÏŸBˆ^˜XÝœ›ÛHÚYÛ˜[ÂˆÐ]Û‚ˆÙ]‚‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËMØ\LÈ‚ˆY]šXÐØ\™XÛÛ^Ïš[™Ù\œš[Û\ÜÓ˜[YOHšLËHËLËHˆÏŸHX™[H•Ý[[]Y\Èˆ˜[YO^ÜÏËÝ[[]Y\ÈÏÈHÏ‚ˆY]šXÐØ\™XÛÛ^Ï[šÌˆÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHX™[H”™[][ÛœÚ\Èˆ˜[YO^ÜÏËÝ[™[][ÛœÚ\ÈÏÈHÏ‚ˆY]šXÐØ\™XÛÛ^ÏZ[[™ÌˆÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHX™[HÛÜœÜ˜][ÛœÈˆ˜[YO^ÜÏË˜žU\OË˜ÛÜœÜ˜][ÛˆÏÈHÏ‚ˆY]šXÐØ\™XÛÛ^Ï\Ù\œÈÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHX™[H‘ÛÝYÙ[˜ÚY\Èˆ˜[YO^ÜÏË˜žU\OË™ÛÝ™\››Y[ØYÙ[˜ÞHÏÈHÏ‚ˆÙ]‚‚ˆÙ^˜XÝ]]š\ÔÝXØÙ\ÜÈ	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœ›Ý[™Y[È›Ü™\ˆ›Ü™\‹Y[Y\˜[MLÌŒ™ËY[Y\˜[MLÍHLÈ‚ˆÛ\ÜÓ˜[YOH^\ÛH^Y[Y\˜[M‘^˜XÝ[ÛˆÛÛ\]NˆÙ^˜XÝ]]™]OË™^˜XÝYÏÈH[]Y\È^˜XÝYÙ^˜XÝ]]™]OËœ™\ÛÛ™YÏÈH™\ÛÛ™YÜ‚ˆÙ]‚ˆ
+_B‚ˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH‘[]H™YÚ\ÝžOÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆÙ[]Y\Ëš\ÓØY[™ÈÈ[™[ÚÙ[]ÛˆÏˆˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÊ[]Y\Ë™]OË™[]Y\ÈÏÈ×JK›[™ÝOOHÈ
+ˆÛ\ÜÓ˜[YOH^\ÛH^[]]YY›Ü™YÜ›Ý[™^XÙ[\ˆKM“›È[]Y\È™YÚ\Ý\™YY]ˆÛXÚÈ‘^˜XÝœ›ÛHÚYÛ˜[ÈˆÈÜ[]KÜ‚ˆ
+Hˆ
+ˆ
+[]Y\Ë™]OË™[]Y\ÈÏÈ×JK›X\
+
+Nˆ[žJHOˆ
+ˆ]ˆÙ^O^ÙKšYHÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ›Ý[™Y[È›Ü™\ˆLÈÝ™\Ž˜™Ë[]]YÍL‚ˆ]‚ˆÛ\ÜÓ˜[YOH™›Û[YY][H^\ÛHžÙK˜Ø[›ÛšXØ[˜[Y_OÜ‚ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™žÙK™[]U\_HÙKš[™\ÝžHÈ8 (ˆ	ÙKš[™\Ýž_Xˆ	ÉßOÜ‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^^ÈžÙKœÚYÛ˜[ÛÝ[ÏÈHÚYÛ˜[ÏÐ˜YÙO‚ˆÙKœš\ÚÔØÛÜ™Hˆ	‰ˆ˜YÙH˜\šX[H™\ÝXÝ]™HˆÛ\ÜÓ˜[YOH^^È”š\ÚÎˆÙKœš\ÚÔØÛÜ™_OÐ˜YÙOŸBˆÙ]‚ˆÙ]‚ˆ
+JBˆ
+_BˆÙ]‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆÙ]‚ˆ
+NÂŸB‚‹ËÈ8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d‹ËÈ[œÝ]][Û˜[XØÛÝ[Xš[]H[™[‹ËÈ8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d™[˜Ý[Ûˆ[œÝ]][ÛœÔ[™[
+
+HÂˆÛÛœÝÝ]ÈHœË™[™Ú[™\ÕŒ‹š[œÝ]][Û”Ý]Ë\ÙT]Y\žJ
+NÂˆÛÛœÝØ\ÈHœË™[™Ú[™\ÕŒ‹™[™›Ü˜Ù[Y[Ø\Ë\ÙT]Y\žJ
+NÂˆÛÛœÝ[\ÈHœË™[™Ú[™\ÕŒ‹˜XØÛÝ[Xš[]P[\Ë\ÙT]Y\žJ
+NÂˆÛÛœÝÙYY]]HœË™[™Ú[™\ÕŒ‹œÙYY[œÝ]][ÛœË\ÙS]]][ÛŠ
+NÂˆÛÛœÝ[œÝ]][ÛœÈHœË™[™Ú[™\ÕŒ‹š[œÝ]][Û“\Ý\ÙT]Y\žJÈ[Z]ˆŒJNÂ‚ˆYˆ
+Ý]Ëš\ÓØY[™ÊH™]\›ˆ[™[ÚÙ[]ÛˆÏŽÂˆÛÛœÝÈHÝ]Ë™]NÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆ]‚ˆÈÛ\ÜÓ˜[YOH^[È›Û\Ù[ZX›Û›^][\ËXÙ[\ˆØ\Lˆ‚ˆZ[[™ÈÛ\ÜÓ˜[YOHšMHËMH^X[X™\‹MˆÏˆ[œÝ]][Û˜[XØÛÝ[Xš[]BˆÚÏ‚ˆÛ\ÜÓ˜[YOH^\ÛH^[]]YY›Ü™YÜ›Ý[™]LH‚ˆX\]\›œÈÈÝ™\œÚYÚ[œÝ]][ÛœË]XÝ[™›Ü˜Ù[Y[Ø\Ë˜XÚÈXØÛÝ[Xš[]BˆÜ‚ˆÙ]‚ˆ]Û‚ˆÚ^™OHœÛH‚ˆ˜\šX[H›Ý][™H‚ˆÛÛXÚÏ^Ê
+HOˆÙYY]]›]]]J
+_Bˆ\ØX›Y^ÜÙYY]]š\Ô[™[™ßBˆ‚ˆÜÙYY]]š\Ô[™[™ÈÈØY\ŒˆÛ\ÜÓ˜[YOHšLËHËLËH[š[X]K\Ü[ˆ\‹LHˆÏˆˆZ[[™ÌˆÛ\ÜÓ˜[YOHšLËHËLËH\‹LHˆÏŸBˆÙYY[œÝ]][ÛœÂˆÐ]Û‚ˆÙ]‚‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËMØ\LÈ‚ˆY]šXÐØ\™XÛÛ^ÏZ[[™ÌˆÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHX™[H’[œÝ]][ÛœÈˆ˜[YO^ÜÏËÝ[[œÝ]][ÛœÈÏÈHÏ‚ˆY]šXÐØ\™XÛÛ^Ï[šÌˆÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHX™[H”]\›ˆ[šÜÈˆ˜[YO^ÜÏËÝ[[šÜÈÏÈHÏ‚ˆY]šXÐØ\™XÛÛ^ÏXÝ]š]HÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHX™[HXÝ]š]Y\Èˆ˜[YO^ÜÏËÝ[XÝ]š]Y\ÈÏÈHÏ‚ˆY]šXÐØ\™XÛÛ^Ï[\šX[™ÛHÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHX™[H[\Èˆ˜[YO^Ø[\Ë™]OË›[™ÝÏÈHÏ‚ˆÙ]‚‚ˆÜÙYY]]š\ÔÝXØÙ\ÜÈ	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœ›Ý[™Y[È›Ü™\ˆ›Ü™\‹Y[Y\˜[MLÌŒ™ËY[Y\˜[MLÍHLÈ‚ˆÛ\ÜÓ˜[YOH^\ÛH^Y[Y\˜[M”ÙYYYÜÙYY]]™]OËœÙYYYÏÈHÙˆÜÙYY]]™]OËÝ[ÏÈHY˜][[œÝ]][ÛœÏÜ‚ˆÙ]‚ˆ
+_B‚ˆËÊˆ[™›Ü˜Ù[Y[Ø\È
+‹ßBˆÊØ\Ë™]HÏÈ×JK›[™Ýˆ	‰ˆ
+ˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›^][\ËXÙ[\ˆØ\Lˆ‚ˆ[\šX[™ÛHÛ\ÜÓ˜[YOHšMËM^X[X™\‹MˆÏˆ[™›Ü˜Ù[Y[Ø\ÂˆÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÊØ\Ë™]HÏÈ×JKœÛXÙJJK›X\
+
+Îˆ[žJHOˆ
+ˆ]ˆÙ^O^ÙËš[œÝ]][Û’YHÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ›Ý[™Y[È›Ü™\ˆLÈ‚ˆ]‚ˆÛ\ÜÓ˜[YOH™›Û[YY][H^\ÛHžÙËš[œÝ]][Û“˜[Y_OÜ‚ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™žÙË™Ø\\ØÜš\[ÛŸOÜ‚ˆÙ]‚ˆ˜YÙH˜\šX[^ÙË™Ø\ØÛÜ™HHÌÈ™\ÝXÝ]™HˆˆË™Ø\ØÛÜ™HHÈ™Y˜][ˆˆ›Ý][™HŸHÛ\ÜÓ˜[YOH^^È‚ˆØ\ˆÙË™Ø\ØÛÜ™_BˆÐ˜YÙO‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_B‚ˆËÊˆXØÛÝ[Xš[]H[\È
+‹ßBˆÊ[\Ë™]HÏÈ×JK›[™Ýˆ	‰ˆ
+ˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›^][\ËXÙ[\ˆØ\Lˆ‚ˆÚ\™[ˆÛ\ÜÓ˜[YOHšMËM^\™YMˆÏˆXØÛÝ[Xš[]H[\ÂˆÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÊ[\Ë™]HÏÈ×JK›X\
+
+Nˆ[žKNˆ[X™\ŠHOˆ
+ˆ]ˆÙ^O^Ú_HÛ\ÜÓ˜[YO^Ø›Ý[™Y[È›Ü™\ˆLÈ	ÂˆK˜[\]™[OOH	ØÜš]XØ[	ÈÈ	Ø›Ü™\‹\™YMLÌÌ™Ë\™YMLÍIÈ‚ˆK˜[\]™[OOH	ÝØ\›š[™ÉÈÈ	Ø›Ü™\‹X[X™\‹MLÌÌ™ËX[X™\‹MLÍIÈ‚ˆ	Ø›Ü™\‹X›YKMLÌÌ™ËX›YKMLÍIÂˆXO‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\LˆX‹LH‚ˆ˜YÙH˜\šX[^ØK˜[\]™[OOH	ØÜš]XØ[	ÈÈ	Ù\ÝXÝ]™IÈˆ	ÛÝ][™IßHÛ\ÜÓ˜[YOH^^È‚ˆØK˜[\]™[Õ\\Ø\ÙJ
+_BˆÐ˜YÙO‚ˆÜ[ˆÛ\ÜÓ˜[YOH^\ÛH›Û[YY][HžØKš[œÝ]][Û“˜[Y_OÜÜ[‚ˆÙ]‚ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™žØK™\ØÜš\[ÛŸOÜ‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_B‚ˆËÊˆ[œÝ]][Ûˆ\Ý
+‹ßBˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH’[œÝ]][Ûˆ™YÚ\ÝžOÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆÚ[œÝ]][ÛœËš\ÓØY[™ÈÈ[™[ÚÙ[]ÛˆÏˆˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÊ[œÝ]][ÛœË™]OËš[œÝ]][ÛœÈÏÈ×JK›[™ÝOOHÈ
+ˆÛ\ÜÓ˜[YOH^\ÛH^[]]YY›Ü™YÜ›Ý[™^XÙ[\ˆKM“›È[œÝ]][ÛœÈ™YÚ\Ý\™YˆÛXÚÈ”ÙYY[œÝ]][ÛœÈˆÈÜ[]HY˜][ËÜ‚ˆ
+Hˆ
+ˆ
+[œÝ]][ÛœË™]OËš[œÝ]][ÛœÈÏÈ×JK›X\
+
+[œÝˆ[žJHOˆ
+ˆ]ˆÙ^O^Ú[œÝšYHÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ›Ý[™Y[È›Ü™\ˆLÈÝ™\Ž˜™Ë[]]YÍL‚ˆ]‚ˆÛ\ÜÓ˜[YOH™›Û[YY][H^\ÛHžÚ[œÝš[œÝ]][Û“˜[Y_OÜ‚ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™žÚ[œÝš[œÝ]][Û•\_H8 (ˆÚ[œÝš\š\ÙXÝ[ÛˆÏÈ	Ó‹ÐIßH8 (ˆÝÙ\ŽˆÚ[œÝ™[™›Ü˜Ù[Y[ÝÙ\“]™[OÜ‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^^È”ØÛÜ™NˆÚ[œÝ˜XØÛÝ[Xš[]TØÛÜ™HÏÈLOÐ˜YÙO‚ˆÙ]‚ˆÙ]‚ˆ
+JBˆ
+_BˆÙ]‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆÙ]‚ˆ
+NÂŸB‚‹ËÈ8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d‹ËÈ™YÝ[]ÜžHØ\\™H]XÝ[Ûˆ[™[‹ËÈ8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d™[˜Ý[Ûˆ™YÐØ\\™T[™[
+
+HÂˆÛÛœÝÝ]ÈHœË™[™Ú[™\ÕŒ‹˜Ø\\™TÝ]Ë\ÙT]Y\žJ
+NÂˆÛÛœÝ]\›œÈHœË™[™Ú[™\ÕŒ‹˜Ø\\™T]\›œË\ÙT]Y\žJÈ[Z]ˆLJNÂˆÛÛœÝÚ[™\ÝžKÙ][™\ÝžWHH\ÙTÝ]JÛÛœÝ[Y\ˆ›ÝXÝ[ÛˆŠNÂˆÛÛœÝ[˜[^™S]]HœË™[™Ú[™\ÕŒ‹˜[˜[^™PØ\\™Tš\ÚË\ÙS]]][ÛŠ
+NÂ‚ˆYˆ
+Ý]Ëš\ÓØY[™ÊH™]\›ˆ[™[ÚÙ[]ÛˆÏŽÂˆÛÛœÝÈHÝ]Ë™]NÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ]‚ˆÈÛ\ÜÓ˜[YOH^[È›Û\Ù[ZX›Û›^][\ËXÙ[\ˆØ\Lˆ‚ˆÚY[[\Û\ÜÓ˜[YOHšMHËMH^\™YMˆÏˆ™YÝ[]ÜžHØ\\™H]XÝ[Û‚ˆÚÏ‚ˆÛ\ÜÓ˜[YOH^\ÛH^[]]YY›Ü™YÜ›Ý[™]LH‚ˆÜ›ÜÜË\Ý™X[HÛÜœ™[][ÛˆÙˆÛÛ\Z[ÈœÈ[™›Ü˜Ù[Y[œÈØ˜žZ[™È8 %™\]Z\™\ÈÊÈ[™\[™[Ý™X[\ÂˆÜ‚ˆÙ]‚‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËMØ\LÈ‚ˆY]šXÐØ\™XÛÛ^ÏÚY[[\Û\ÜÓ˜[YOHšLËHËLËHˆÏŸHX™[HØ\\™H]\›œÈˆ˜[YO^ÜÏËÝ[]\›œÈÏÈHÏ‚ˆY]šXÐØ\™XÛÛ^Ï˜Y\ˆÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHX™[HØ\\™HÚYÛ˜[Èˆ˜[YO^ÜÏËÝ[ÚYÛ˜[ÈÏÈHÏ‚ˆY]šXÐØ\™XÛÛ^Ï[\šX[™ÛHÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHX™[H’YÚš\ÚÈˆ˜[YO^ÜÏË˜žTÝ]\ÏËšYÚÜš\ÚÈÏÈHÏ‚ˆY]šXÐØ\™XÛÛ^Ï\™Ù]Û\ÜÓ˜[YOHšLËHËLËHˆÏŸHX™[HÛÛ™š\›YYˆ˜[YO^ÜÏË˜žTÝ]\ÏË˜ÛÛ™š\›YYÜ]\›ˆÏÈHÏ‚ˆÙ]‚‚ˆËÊˆ[˜[^™H[™\ÝžH
+‹ßBˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH[˜[^™HØ\\™Hš\ÚÏÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOH™›^Ø\Lˆ‚ˆ[œ]ˆ\OH^‚ˆ˜[YO^Ú[™\Ýž_BˆÛÚ[™ÙO^ÊJHOˆÙ][™\ÝžJK\™Ù]˜[YJ_BˆÛ\ÜÓ˜[YOH™›^LH›Ý[™Y[Y›Ü™\ˆ™ËX˜XÚÙÜ›Ý[™LÈKLˆ^\ÛH‚ˆXÙZÛ\H’[™\ÝžH
+K™Ë‹ÛÛœÝ[Y\ˆ›ÝXÝ[Û‹[XÛÛ[][šXØ][ÛœÊH‚ˆÏ‚ˆ]Û‚ˆÚ^™OHœÛH‚ˆÛÛXÚÏ^Ê
+HOˆ[˜[^™S]]›]]]JÈ[™\ÝžHJ_Bˆ\ØX›Y^Ø[˜[^™S]]š\Ô[™[™ÈZ[™\Ýž_Bˆ‚ˆØ[˜[^™S]]š\Ô[™[™ÈÈØY\ŒˆÛ\ÜÓ˜[YOHšLËHËLËH[š[X]K\Ü[ˆ\‹LHˆÏˆˆÙX\˜ÚÛ\ÜÓ˜[YOHšLËHËLËH\‹LHˆÏŸBˆ[˜[^™BˆÐ]Û‚ˆÙ]‚‚ˆØ[˜[^™S]]š\ÔÝXØÙ\ÜÈ	‰ˆ[˜[^™S]]™]H	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH›]MÜXÙK^KLÈ‚ˆ]ˆÛ\ÜÓ˜[YO^Ø›Ý[™Y[È›Ü™\ˆM	Âˆ[˜[^™S]]™]Kœš\ÚÔØÛÜ™HHÌÈ	Ø›Ü™\‹\™YMLÌÌ™Ë\™YMLÍIÈ‚ˆ[˜[^™S]]™]Kœš\ÚÔØÛÜ™HHÈ	Ø›Ü™\‹X[X™\‹MLÌÌ™ËX[X™\‹MLÍIÈ‚ˆ	Ø›Ü™\‹Y[Y\˜[MLÌÌ™ËY[Y\˜[MLÍIÂˆXO‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆX‹Lˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH^\ÛH›Û[YY][HØ\\™Hš\ÚÈØÛÜ™OÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH^Lž›ÛX›Û›Û[[Û›ÈžØ[˜[^™S]]™]Kœš\ÚÔØÛÜ™_KÌLÜÜ[‚ˆÙ]‚ˆ˜YÙH˜\šX[^Ø[˜[^™S]]™]KœÝ]\ÈOOH	ØÛÛ™š\›YYÜ]\›‰ÈÈ	Ù\ÝXÝ]™IÈˆ	ÛÝ][™IßHÛ\ÜÓ˜[YOH^^È‚ˆØ[˜[^™S]]™]KœÝ]\Ëœ™\XÙJ×ËÙË	È	ÊKÕ\\Ø\ÙJ
+_BˆÐ˜YÙO‚ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™]Lˆ‚ˆØ[˜[^™S]]™]KœÝ™X[PÛÝ[HÝ™X[\ÈÚ]]šY[˜ÙH8 (ˆZ[š[][HÈ™\]Z\™YˆØ[˜[^™S]]™]K›YY]ÓZ[š[][TÝ™X[\ÈÈ	ø§$ÈY]	Èˆ	ø§%È›ÝY]	ßBˆÜ‚ˆÙ]‚‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLH‚ˆÛ\ÜÓ˜[YOH^^È›Û[YY][H^[]]YY›Ü™YÜ›Ý[™’[™XØ]ÜœÎÜ‚ˆØ[˜[^™S]]™]Kš[™XØ]ÜœË›X\
+
+[™ˆ[žKNˆ[X™\ŠHOˆ
+ˆ]ˆÙ^O^Ú_HÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ^^È›Ý[™Y›Ü™\ˆLˆ‚ˆÜ[ˆÛ\ÜÓ˜[YO^Ú[™™]XÝYÈ	Ý^\™YM	Èˆ	Ý^[]]YY›Ü™YÜ›Ý[™	ßO‚ˆÚ[™™]XÝYÈ	ø¦¨	Èˆ	ø¥âÉßHÚ[™š[™XØ]Ü‹œ™\XÙJ×ËÙË	È	Ê_BˆÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[[Û›ÈžÚ[™œÝ™[™ÝKÌLÜÜ[‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÙ]‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚‚ˆËÊˆ^\Ý[™È]\›œÈ
+‹ßBˆÊ]\›œË™]OËœ]\›œÈÏÈ×JK›[™Ýˆ	‰ˆ
+ˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛHØ\\™H]\›œÏÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÊ]\›œË™]OËœ]\›œÈÏÈ×JK›X\
+
+ˆ[žJHOˆ
+ˆ]ˆÙ^O^ÜšYHÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ›Ý[™Y[È›Ü™\ˆLÈ‚ˆ]‚ˆÛ\ÜÓ˜[YOH™›Û[YY][H^\ÛHžÜœ™YÝ[]Y[]HÏÈš[™\Ýž_OÜ‚ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™žÜš[™\Ýž_H8 (ˆÜš\š\ÙXÝ[ÛˆÏÈ	Ó‹ÐIßOÜ‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆ˜YÙH˜\šX[^Ü˜Ø\\™Tš\ÚÔØÛÜ™HHÌÈ	Ù\ÝXÝ]™IÈˆ˜Ø\\™Tš\ÚÔØÛÜ™HHÈ	ÙY˜][	Èˆ	ÛÝ][™IßHÛ\ÜÓ˜[YOH^^È‚ˆš\ÚÎˆÜ˜Ø\\™Tš\ÚÔØÛÜ™_BˆÐ˜YÙO‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^^ÈžÜœ]\›”Ý]\Ëœ™\XÙJ×ËÙË	È	Ê_OÐ˜YÙO‚ˆÙ]‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_BˆÙ]‚ˆ
+NÂŸB‚‹ËÈ8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d‹ËÈÜš\Ú\È™YXÝ[Ûˆ[™[‹ËÈ8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d™[˜Ý[ÛˆÜš\Ú\Ô™YXÝ[™[
+
+HÂˆÛÛœÝÝ]ÈHœË™[™Ú[™\ÕŒ‹˜Üš\Ú\ÔÝ]Ë\ÙT]Y\žJ
+NÂˆÛÛœÝ›Ø˜Xš[]HHœË™[™Ú[™\ÕŒ‹˜Ø[Ý[]PÜš\Ú\Ô›Ø˜Xš[]K\ÙT]Y\žJßJNÂˆÛÛœÝÙ[™\˜]S]]HœË™[™Ú[™\ÕŒ‹™Ù[™\˜]PÜš\Ú\Ô™YXÝ[Û‹\ÙS]]][ÛŠ
+NÂˆÛÛœÝ™YXÝ[ÛœÈHœË™[™Ú[™\ÕŒ‹˜Üš\Ú\Ô™YXÝ[ÛœË\ÙT]Y\žJÈ[Z]ˆLJNÂ‚ˆYˆ
+Ý]Ëš\ÓØY[™ÊH™]\›ˆ[™[ÚÙ[]ÛˆÏŽÂˆÛÛœÝÈHÝ]Ë™]NÂˆÛÛœÝ›ØˆH›Ø˜Xš[]K™]NÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆ]‚ˆÈÛ\ÜÓ˜[YOH^[È›Û\Ù[ZX›Û›^][\ËXÙ[\ˆØ\Lˆ‚ˆ[\ØÝYÛÛˆÛ\ÜÓ˜[YOHšMHËMH^[Ü˜[™ÙKMˆÏˆÜš\Ú\È™YXÝ[Ûˆ[™Ú[™BˆÚÏ‚ˆÛ\ÜÓ˜[YOH^\ÛH^[]]YY›Ü™YÜ›Ý[™]LH‚ˆ›Ü™XØ\ÝÞ\Ý[ZXÈÜš\Ù\Èœ›ÛH]\›ˆXØÙ[\˜][Û‹[™›Ü˜Ù[Y[Ø\Ë[™Ø\\™Hš\ÚÂˆÜ‚ˆÙ]‚ˆ]Û‚ˆÚ^™OHœÛH‚ˆ˜\šX[H›Ý][™H‚ˆÛÛXÚÏ^Ê
+HOˆÙ[™\˜]S]]›]]]JßJ_Bˆ\ØX›Y^ÙÙ[™\˜]S]]š\Ô[™[™ßBˆ‚ˆÙÙ[™\˜]S]]š\Ô[™[™ÈÈØY\ŒˆÛ\ÜÓ˜[YOHšLËHËLËH[š[X]K\Ü[ˆ\‹LHˆÏˆˆ›[YHÛ\ÜÓ˜[YOHšLËHËLËH\‹LHˆÏŸBˆÙ[™\˜]H™YXÝ[Û‚ˆÐ]Û‚ˆÙ]‚‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËMØ\LÈ‚ˆY]šXÐØ\™XÛÛ^Ï›[YHÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHX™[H”™YXÝ[ÛœÈˆ˜[YO^ÜÏËÝ[™YXÝ[ÛœÈÏÈHÏ‚ˆY]šXÐØ\™XÛÛ^Ï[\šX[™ÛHÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHX™[H’YÚš\ÚÈˆ˜[YO^ÜÏËšYÚš\ÚÐÛÝ[ÏÈHÏ‚ˆY]šXÐØ\™XÛÛ^ÏØ]YÙHÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHX™[HÝ\œ™[›Ø˜Xš[]Hˆ˜[YO^Ü›ØˆÈ	Ü›Ø‹œ›Ø˜Xš[]_IXˆ	ø %	ßHÏ‚ˆY]šXÐØ\™XÛÛ^Ï\™Ù]Û\ÜÓ˜[YOHšLËHËLËHˆÏŸHX™[H”š\ÚÈ]™[ˆ˜[YO^Ü›ØËœš\ÚÓ]™[ËÕ\\Ø\ÙJ
+HÏÈ	ø %	ßHÏ‚ˆÙ]‚‚ˆËÊˆÝ\œ™[Üš\Ú\È›Ø˜Xš[]Hœ™XZÙÝÛˆ
+‹ßBˆÜ›Øˆ	‰ˆ
+ˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛHÜš\Ú\È›Ø˜Xš[]Hœ™XZÙÝÛÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YO^Ø›Ý[™Y[È›Ü™\ˆMX‹M	Âˆ›Ø‹œ›Ø˜Xš[]HHÍHÈ	Ø›Ü™\‹\™YMLÌÌ™Ë\™YMLÍIÈ‚ˆ›Ø‹œ›Ø˜Xš[]HHLÈ	Ø›Ü™\‹X[X™\‹MLÌÌ™ËX[X™\‹MLÍIÈ‚ˆ›Ø‹œ›Ø˜Xš[]HHHÈ	Ø›Ü™\‹X›YKMLÌÌ™ËX›YKMLÍIÈ‚ˆ	Ø›Ü™\‹Y[Y\˜[MLÌÌ™ËY[Y\˜[MLÍIÂˆXO‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH^\ÛH“Ý™\˜[Üš\Ú\È›Ø˜Xš[]OÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH^LÞ›ÛX›Û›Û[[Û›ÈžÜ›Ø‹œ›Ø˜Xš[]_IOÜÜ[‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH›]LˆLˆ›Ý[™YY[™Ë[]]YÝ™\™›ÝËZY[ˆ‚ˆ]‚ˆÛ\ÜÓ˜[YO^ØY[›Ý[™YY[˜[œÚ][Û‹X[	Âˆ›Ø‹œ›Ø˜Xš[]HHÍHÈ	Ø™Ë\™YML	È‚ˆ›Ø‹œ›Ø˜Xš[]HHLÈ	Ø™ËX[X™\‹ML	È‚ˆ›Ø‹œ›Ø˜Xš[]HHHÈ	Ø™ËX›YKML	È‚ˆ	Ø™ËY[Y\˜[ML	ÂˆXBˆÝ[O^ÞÈÚYˆ	Ü›Ø‹œ›Ø˜Xš[]_IX_BˆÏ‚ˆÙ]‚ˆÙ]‚‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÜ›Ø‹š[™XØ]ÜœË›X\
+
+[™ˆ[žKNˆ[X™\ŠHOˆ
+ˆ]ˆÙ^O^Ú_HÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ^\ÛH›Ý[™Y›Ü™\ˆLˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆ]ˆÛ\ÜÓ˜[YOHšLˆËLˆ›Ý[™YY[ˆÝ[O^ÞÂˆ˜XÚÙÜ›Ý[™ÛÛÜŽˆ[™˜[YHHLÈ	ÈÙY	Èˆ[™˜[YHHHÈ	ÈÙNYL‰Èˆ	ÈÌŒ˜ÍMYIÂˆ_HÏ‚ˆÜ[ˆÛ\ÜÓ˜[YOH^^ÈžÚ[™›˜[YKœ™\XÙJ×ËÙË	È	Ê_OÜÜ[‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\LÈ‚ˆ]ˆÛ\ÜÓ˜[YOHËLLKH›Ý[™YY[™Ë[]]YÝ™\™›ÝËZY[ˆ‚ˆ]ˆÛ\ÜÓ˜[YOHšY[›Ý[™YY[™ËXÝ\œ™[ˆÝ[O^ÞÈÚYˆ	Ú[™˜[Y_IXÛÛÜŽˆ[™˜[YHHLÈ	ÈÙY	Èˆ[™˜[YHHHÈ	ÈÙNYL‰Èˆ	ÈÌŒ˜ÍMYIÈ_HÏ‚ˆÙ]‚ˆÜ[ˆÛ\ÜÓ˜[YOH^^È›Û[[Û›ÈËN^\šYÚžÚ[™˜[Y_OÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™ËN°åÞÚ[™ÙZYÚOÜÜ[‚ˆÙ]‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_B‚ˆËÊˆÙ[™\˜]Y™YXÝ[Ûˆ
+‹ßBˆÙÙ[™\˜]S]]š\ÔÝXØÙ\ÜÈ	‰ˆÙ[™\˜]S]]™]H	‰ˆ
+ˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH›^][\ËXÙ[\ˆØ\Lˆ‚ˆ›[YHÛ\ÜÓ˜[YOHšMËM^[Ü˜[™ÙKMˆÏˆ]\Ý™YXÝ[Û‚ˆÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLÈ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\LÈ‚ˆ˜YÙH˜\šX[^ÙÙ[™\˜]S]]™]Kœš\ÚÓ]™[OOH	ØÜš]XØ[	ÈÈ	Ù\ÝXÝ]™IÈˆ	ÛÝ][™IßO‚ˆÙÙ[™\˜]S]]™]Kœš\ÚÓ]™[Õ\\Ø\ÙJ
+_BˆÐ˜YÙO‚ˆÜ[ˆÛ\ÜÓ˜[YOH^\ÛHžÙÙ[™\˜]S]]™]Kœ™YXÝ[Û•\Kœ™\XÙJ×ËÙË	È	Ê_OÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™ÛÛ™šY[˜ÙNˆÙÙ[™\˜]S]]™]K˜ÛÛ™šY[˜Ù_IOÜÜ[‚ˆÙ]‚ˆ]‚ˆÛ\ÜÓ˜[YOH^^È›Û[YY][H^[]]YY›Ü™YÜ›Ý[™X‹LH•šYÙÙ\ˆ˜XÝÜœÎÜ‚ˆÙÙ[™\˜]S]]™]KšYÙÙ\‘˜XÝÜœË›X\
+
+ˆÝš[™ËNˆ[X™\ŠHOˆ
+ˆÙ^O^Ú_HÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™¸ (ˆÝOÜ‚ˆ
+J_BˆÙ]‚ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™‚ˆ\Ý[X]Y\ØØ[][ÛŽˆÛ™]È]JÙ[™\˜]S]]™]K™\Ý[X]Y\ØØ[][Û‘]JKÓØØ[Q]TÝš[™Ê
+_BˆÜ‚ˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_B‚ˆËÊˆ™YXÝ[Ûˆ\ÝÜžH
+‹ßBˆÊ™YXÝ[ÛœË™]OËœ™YXÝ[ÛœÈÏÈ×JK›[™Ýˆ	‰ˆ
+ˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH”™YXÝ[Ûˆ\ÝÜžOÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÊ™YXÝ[ÛœË™]OËœ™YXÝ[ÛœÈÏÈ×JK›X\
+
+ˆ[žJHOˆ
+ˆ]ˆÙ^O^ÜšYHÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ›Ý[™Y[È›Ü™\ˆLÈ‚ˆ]‚ˆÛ\ÜÓ˜[YOH™›Û[YY][H^\ÛHžÜœ™YXÝ[Û•\Kœ™\XÙJ×ËÙË	È	Ê_OÜ‚ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™‚ˆÛ™]È]J[X™\Š˜Ü™X]Y]Ü
+JKÓØØ[Q]TÝš[™Ê
+_H8 (ˆÜ™[]S˜[YPÜÏÈš[™\ÝžPÜÏÈ	ÔÞ\Ý[K]ÚYIßBˆÜ‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆ˜YÙH˜\šX[^Üœš\ÚÓ]™[OOH	ØÜš]XØ[	ÈÈ	Ù\ÝXÝ]™IÈˆœš\ÚÓ]™[OOH	ÚYÚ	ÈÈ	ÙY˜][	Èˆ	ÛÝ][™IßHÛ\ÜÓ˜[YOH^^È‚ˆÜ˜Üš\Ú\Ô›Ø˜Xš[]_IBˆÐ˜YÙO‚ˆÙ]‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_BˆÙ]‚ˆ
+NÂŸB‚‹ËÈ8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d‹ËÈÙ\ÜÚ[ÛˆÌÈ[™[ÎˆÚ[][][ÛˆX‹˜[œÜ\™[˜ÞKÜÜÚY\ˆÝY[Ë^ˆÛÛX›Ü˜][Û‚‹ËÈ8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d8¥d‚™[˜Ý[ÛˆÚ[][][Û“X”[™[
+
+HÂˆÛÛœÝÝ]ÈHœË™[™Ú[™\ÕŒËœÚ[][][Û”Ý]Ë\ÙT]Y\žJ
+NÂˆÛÛœÝ\ÝÜžHHœË™[™Ú[™\ÕŒËœÚ[][][Û’\ÝÜžK\ÙT]Y\žJÈ[Z]ˆLJNÂˆÛÛœÝ[”Ú[HHœË™[™Ú[™\ÕŒËœ[”Ú[][][Û‹\ÙS]]][ÛŠÂˆÛ”ÝXØÙ\ÜÎˆ
+
+HOˆÈÝ]Ëœ™Y™]Ú
+
+NÈ\ÝÜžKœ™Y™]Ú
+
+NÈKˆJNÂˆÛÛœÝÜÚ[U\KÙ]Ú[U\WHH™XXÝ\ÙTÝ]OÝš[™ÏŠœÛXÞWØÚ[™ÙHŠNÂˆÛÛœÝÝ\™Ù][™\ÝžKÙ]\™Ù][™\ÝžWHH™XXÝ\ÙTÝ]JˆŠNÂˆÛÛœÝÜ\˜[RÙ^KÙ]\˜[RÙ^WHH™XXÝ\ÙTÝ]J™[™›Ü˜Ù[Y[ØYÙ]Û][\Y\ˆŠNÂˆÛÛœÝÜ\˜[U˜[Ù]\˜[U˜[HH™XXÝ\ÙTÝ]JŒKHŠNÂ‚ˆYˆ
+Ý]Ëš\ÓØY[™ÊH™]\›ˆ[™[ÚÙ[]ÛˆÏŽÂˆÛÛœÝÈHÝ]Ë™]NÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆ]‚ˆÈÛ\ÜÓ˜[YOH^[È›Û\Ù[ZX›Û›^][\ËXÙ[\ˆØ\Lˆ‚ˆ›\ÚÐÛÛšXØ[Û\ÜÓ˜[YOHšMHËMH^]š[Û]MˆÏˆÞ\Ý[ZXÈÚ[][][Ûˆ[™Ú[™BˆÚÏ‚ˆÛ\ÜÓ˜[YOH^\ÛH^[]]YY›Ü™YÜ›Ý[™]LH‚ˆ[ˆÚ]YˆˆÚ[][][ÛœÎˆÛXÞHÚ[™Ù\Ë[™›Ü˜Ù[Y[[˜Ü™X\Ù\Ë[˜[HY\ÝY[ÂˆÜ‚ˆÙ]‚ˆÙ]‚‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËMØ\LÈ‚ˆY]šXÐØ\™XÛÛ^Ï›\ÚÐÛÛšXØ[Û\ÜÓ˜[YOHšLËHËLËHˆÏŸHX™[H•Ý[Ú[][][ÛœÈˆ˜[YO^ÜÏËÝ[Ú[][][ÛœÈÏÈHÏ‚ˆY]šXÐØ\™XÛÛ^Ï™[™[™Õ\Û\ÜÓ˜[YOHšLËHËLËHˆÏŸHX™[H]™È[\XÝˆ˜[YO^ÜÏË˜]™Ò[\XÝØÛÜ™HÈ	ÜË˜]™Ò[\XÝØÛÜ™_KÌLˆ	ø %	ßHÏ‚ˆY]šXÐØ\™XÛÛ^Ï\™Ù]Û\ÜÓ˜[YOHšLËHËLËHˆÏŸHX™[H”Ú[H\\Èˆ˜[YO^ÓØš™XÝšÙ^\ÊÏË˜žU\HÏÈßJK›[™ÝHÏ‚ˆY]šXÐØ\™XÛÛ^Ï˜\Ú\Û\ÜÓ˜[YOHšLËHËLËHˆÏŸHX™[H’[™\ÝšY\Èˆ˜[YO^ÓØš™XÝšÙ^\ÊÏË˜žR[™\ÝžHÏÈßJK›[™ÝHÏ‚ˆÙ]‚‚ˆËÊˆ[ˆÚ[][][Ûˆ
+‹ßBˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH”[ˆ™]ÈÚ[][][ÛÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLHY™ÜšYXÛÛËLˆØ\LÈ‚ˆ]‚ˆX™[Û\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™”Ú[][][Ûˆ\OÛX™[‚ˆÙ[XÝÛ\ÜÓ˜[YOHËY[]LH›Ý[™Y›Ü™\ˆ™ËX˜XÚÙÜ›Ý[™LˆKLKH^\ÛHˆ˜[YO^ÜÚ[U\_HÛÚ[™ÙO^ÙHOˆÙ]Ú[U\JK\™Ù]˜[YJ_O‚ˆÜ[Ûˆ˜[YOHœÛXÞWØÚ[™ÙH”ÛXÞHÚ[™ÙOÛÜ[Û‚ˆÜ[Ûˆ˜[YOH™[™›Ü˜Ù[Y[Ú[˜Ü™X\ÙH‘[™›Ü˜Ù[Y[[˜Ü™X\ÙOÛÜ[Û‚ˆÜ[Ûˆ˜[YOHœ[˜[WØY\ÝY[”[˜[HY\ÝY[ÛÜ[Û‚ˆÜ[Ûˆ˜[YOHœÝY™š[™×ØÚ[™ÙH”ÝY™š[™ÈÚ[™ÙOÛÜ[Û‚ˆÜ[Ûˆ˜[YOHš\š\ÙXÝ[Û—Ü™Y›Ü›H’\š\ÙXÝ[Ûˆ™Y›Ü›OÛÜ[Û‚ˆÜÙ[XÝ‚ˆÙ]‚ˆ]‚ˆX™[Û\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™•\™Ù][™\ÝžOÛX™[‚ˆ[œ]Û\ÜÓ˜[YOHËY[]LH›Ý[™Y›Ü™\ˆ™ËX˜XÚÙÜ›Ý[™LˆKLKH^\ÛHˆXÙZÛ\H™K™Ëˆš[˜[˜ÚX[Ù\šXÙ\Èˆ˜[YO^Ý\™Ù][™\Ýž_HÛÚ[™ÙO^ÙHOˆÙ]\™Ù][™\ÝžJK\™Ù]˜[YJ_HÏ‚ˆÙ]‚ˆ]‚ˆX™[Û\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™”\˜[Y]\ÛX™[‚ˆ[œ]Û\ÜÓ˜[YOHËY[]LH›Ý[™Y›Ü™\ˆ™ËX˜XÚÙÜ›Ý[™LˆKLKH^\ÛHˆ˜[YO^Ü\˜[RÙ^_HÛÚ[™ÙO^ÙHOˆÙ]\˜[RÙ^JK\™Ù]˜[YJ_HÏ‚ˆÙ]‚ˆ]‚ˆX™[Û\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™•˜[YOÛX™[‚ˆ[œ]Û\ÜÓ˜[YOHËY[]LH›Ý[™Y›Ü™\ˆ™ËX˜XÚÙÜ›Ý[™LˆKLKH^\ÛHˆ˜[YO^Ü\˜[U˜[HÛÚ[™ÙO^ÙHOˆÙ]\˜[U˜[
+K\™Ù]˜[YJ_HÏ‚ˆÙ]‚ˆÙ]‚ˆ]ÛˆÚ^™OHœÛHˆÛ\ÜÓ˜[YOH›]LÈˆÛÛXÚÏ^Ê
+HOˆ[”Ú[K›]]]JÈÚ[][][Û•\NˆÚ[U\H\È[žK\™Ù][™\ÝžNˆ\™Ù][™\ÝžH[™Yš[™Y\˜[Y]\œÎˆÈÜ\˜[RÙ^WNˆ\œÙQ›Ø]
+\˜[U˜[
+HHHJ_H\ØX›Y^Ü[”Ú[Kš\Ô[™[™ßO‚ˆÜ[”Ú[Kš\Ô[™[™ÈÈØY\ŒˆÛ\ÜÓ˜[YOHšLËHËLËH[š[X]K\Ü[ˆ\‹LHˆÏˆˆ^HÛ\ÜÓ˜[YOHšLËHËLËH\‹LHˆÏŸBˆ[ˆÚ[][][Û‚ˆÐ]Û‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚‚ˆËÊˆÚ[][][Ûˆ\ÝÜžH
+‹ßBˆÚ\ÝÜžK™]H	‰ˆ\ÝÜžK™]K›[™Ýˆ	‰ˆ
+ˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH”™XÙ[Ú[][][ÛœÏÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÚ\ÝÜžK™]K›X\
+
+Ú[Nˆ[žJHOˆ
+ˆ]ˆÙ^O^ÜÚ[KšYHÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ›Ý[™Y[È›Ü™\ˆLÈ^\ÛH‚ˆ]‚ˆÛ\ÜÓ˜[YOH™›Û[YY][HžÜÚ[KœÚ[][][Û•\OËœ™\XÙJ×ËÙË	È	Ê_OÜ‚ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™‚ˆÜÚ[K\™Ù][™\ÝžHÏÈ	ÔÞ\Ý[K]ÚYIßH8 (ˆÛ™]È]J[X™\ŠÚ[K˜Ü™X]Y]
+JKÓØØ[Q]TÝš[™Ê
+_BˆÜ‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆ˜YÙH˜\šX[^ÜÚ[Kš[\XÝØÛÜ™HHÌÈ	Ù\ÝXÝ]™IÈˆÚ[Kš[\XÝØÛÜ™HHÈ	ÙY˜][	Èˆ	ÛÝ][™IßHÛ\ÜÓ˜[YOH^^È‚ˆ[\XÝˆÜÚ[Kš[\XÝØÛÜ™HÏÈ	ø %	ßKÌLˆÐ˜YÙO‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^^ÈžÜÚ[KœÝ]\ßOÐ˜YÙO‚ˆÙ]‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_BˆÙ]‚ˆ
+NÂŸB‚™[˜Ý[Ûˆ˜[œÜ\™[˜ÞT[™[
+
+HÂˆÛÛœÝÝ]ÈHœË™[™Ú[™\ÕŒË˜[œÜ\™[˜ÞTÝ]Ë\ÙT]Y\žJ
+NÂˆÛÛœÝØÜÈHœË™[™Ú[™\ÕŒË˜[œÜ\™[˜ÞQØÝ[Y[Ë\ÙT]Y\žJÈ[Z]ˆLJNÂˆÛÛœÝÙ[‘^Z[™\ˆHœË™[™Ú[™\ÕŒË™Ù[™\˜]Q^Z[™\‹\ÙS]]][ÛŠÂˆÛ”ÝXØÙ\ÜÎˆ
+
+HOˆÈÝ]Ëœ™Y™]Ú
+
+NÈØÜËœ™Y™]Ú
+
+NÈKˆJNÂˆÛÛœÝÙ[œšYYˆHœË™[™Ú[™\ÕŒË™Ù[™\˜]PœšYY‹\ÙS]]][ÛŠÂˆÛ”ÝXØÙ\ÜÎˆ
+
+HOˆÈÝ]Ëœ™Y™]Ú
+
+NÈØÜËœ™Y™]Ú
+
+NÈKˆJNÂ‚ˆYˆ
+Ý]Ëš\ÓØY[™ÊH™]\›ˆ[™[ÚÙ[]ÛˆÏŽÂˆÛÛœÝÈHÝ]Ë™]NÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆ]‚ˆÈÛ\ÜÓ˜[YOH^[È›Û\Ù[ZX›Û›^][\ËXÙ[\ˆØ\Lˆ‚ˆ™]ÜÜ\\ˆÛ\ÜÓ˜[YOHšMHËMH^XÞX[‹MˆÏˆX›XÈ˜[œÜ\™[˜ÞH^Y\‚ˆÚÏ‚ˆÛ\ÜÓ˜[YOH^\ÛH^[]]YY›Ü™YÜ›Ý[™]LH‚ˆÙ[™\˜]HZ[‹[[™ÝXYÙH^Z[™\œËXØÛÝ[Xš[]H™\ÜË[™Üš\Ú\ÈØ\›š[™ÜÂˆÜ‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^Ø\Lˆ‚ˆ]ÛˆÚ^™OHœÛHˆ˜\šX[H›Ý][™HˆÛÛXÚÏ^Ê
+HOˆÙ[‘^Z[™\‹›]]]JÈ]\›“˜[YNˆ	ÔÞ\Ý[HÝ™\šY]ÉÈJ_H\ØX›Y^ÙÙ[‘^Z[™\‹š\Ô[™[™ßO‚ˆÙÙ[‘^Z[™\‹š\Ô[™[™ÈÈØY\ŒˆÛ\ÜÓ˜[YOHšLËHËLËH[š[X]K\Ü[ˆ\‹LHˆÏˆˆš[U^Û\ÜÓ˜[YOHšLËHËLËH\‹LHˆÏŸBˆ^Z[™\‚ˆÐ]Û‚ˆ]ÛˆÚ^™OHœÛHˆ˜\šX[H›Ý][™HˆÛÛXÚÏ^Ê
+HOˆÙ[œšYY‹›]]]JÈœšYY•\Nˆ	Ú[™\ÝžWÛÝ™\šY]ÉÈJ_H\ØX›Y^ÙÙ[œšYY‹š\Ô[™[™ßO‚ˆÙÙ[œšYY‹š\Ô[™[™ÈÈØY\ŒˆÛ\ÜÓ˜[YOHšLËHËLËH[š[X]K\Ü[ˆ\‹LHˆÏˆˆØÜ›Û^Û\ÜÓ˜[YOHšLËHËLËH\‹LHˆÏŸBˆœšYY‚ˆÐ]Û‚ˆÙ]‚ˆÙ]‚‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËMØ\LÈ‚ˆY]šXÐØ\™XÛÛ^Ïš[U^Û\ÜÓ˜[YOHšLËHËLËHˆÏŸHX™[H‘ØÝ[Y[Èˆ˜[YO^ÜÏËÝ[ØÝ[Y[ÈÏÈHÏ‚ˆY]šXÐØ\™XÛÛ^Ï^YHÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHX™[H‘^Z[™\œÈˆ˜[YO^ÜÏË˜žU\OË–ÉÜ]\›—Ù^Z[™\‰×HÏÈHÏ‚ˆY]šXÐØ\™XÛÛ^ÏØÜ›Û^Û\ÜÓ˜[YOHšLËHËLËHˆÏŸHX™[HœšYYœÈˆ˜[YO^ÊÏË˜žU\OË–ÉØXØÛÝ[Xš[]WÜ™\Ü	×HÏÈ
+H
+È
+ÏË˜žU\OË–ÉØÜš\Ú\×ÝØ\›š[™É×HÏÈ
+_HÏ‚ˆY]šXÐØ\™XÛÛ^Ï›ÛÚÓÜ[ˆÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHX™[H]YY[˜Ù\Èˆ˜[YO^ÓØš™XÝšÙ^\ÊÏË˜žP]YY[˜ÙHÏÈßJK›[™ÝHÏ‚ˆÙ]‚‚ˆËÊˆ™XÙ[ØÝ[Y[È
+‹ßBˆÙØÜË™]H	‰ˆØÜË™]K›[™Ýˆ	‰ˆ
+ˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH”™XÙ[˜[œÜ\™[˜ÞHØÝ[Y[ÏÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÙØÜË™]K›X\
+
+ØÎˆ[žJHOˆ
+ˆ]ˆÙ^O^ÙØËšYHÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ›Ý[™Y[È›Ü™\ˆLÈ^\ÛH‚ˆ]‚ˆÛ\ÜÓ˜[YOH™›Û[YY][HžÙØË]_OÜ‚ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™‚ˆÙØË™ØÝ[Y[\OËœ™\XÙJ×ËÙË	È	Ê_H8 (ˆÙØË˜]YY[˜ÙS]™[Ëœ™\XÙJ×ËÙË	È	Ê_H8 (ˆÛ™]È]J[X™\ŠØË˜Ü™X]Y]
+JKÓØØ[Q]TÝš[™Ê
+_BˆÜ‚ˆÙ]‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^^ÈžÙØËœÝ]\ßOÐ˜YÙO‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_BˆÙ]‚ˆ
+NÂŸB‚™[˜Ý[ÛˆÜÜÚY\”ÝY[Ô[™[
+
+HÂˆÛÛœÝÝ]ÈHœË™[™Ú[™\ÕŒË™ÜÜÚY\”Ý]Ë\ÙT]Y\žJ
+NÂˆÛÛœÝÙ[‘ÜÜÚY\ˆHœË™[™Ú[™\ÕŒË™Ù[™\˜]QÜÜÚY\‹\ÙS]]][ÛŠÂˆÛ”ÝXØÙ\ÜÎˆ
+
+HOˆÝ]Ëœ™Y™]Ú
+
+KˆJNÂˆÛÛœÝÙÜÜÚY\•\KÙ]ÜÜÚY\•\WHH™XXÝ\ÙTÝ]OÝš[™ÏŠš[™\ÝYØ][Û—ÚÚ]ŠNÂˆÛÛœÝØ]YY[˜ÙKÙ]]YY[˜ÙWHH™XXÝ\ÙTÝ]OÝš[™ÏŠš›Ý\›˜[\ÝŠNÂˆÛÛœÝÙ[]S˜[YKÙ][]S˜[YWHH™XXÝ\ÙTÝ]JˆŠNÂˆÛÛœÝÜ]\›“˜[YKÙ]]\›“˜[YWHH™XXÝ\ÙTÝ]JˆŠNÂ‚ˆYˆ
+Ý]Ëš\ÓØY[™ÊH™]\›ˆ[™[ÚÙ[]ÛˆÏŽÂˆÛÛœÝÈHÝ]Ë™]NÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆ]‚ˆÈÛ\ÜÓ˜[YOH^[È›Û\Ù[ZX›Û›^][\ËXÙ[\ˆØ\Lˆ‚ˆ›Û\\˜Ú]™HÛ\ÜÓ˜[YOHšMHËMH^X[X™\‹MˆÏˆ]šY[˜ÙHX›\Ú[™È	ˆÜÜÚY\ˆ[™Ú[™BˆÚÏ‚ˆÛ\ÜÓ˜[YOH^\ÛH^[]]YY›Ü™YÜ›Ý[™]LH‚ˆÙ[™\˜]H[™\ÝYØ][ÛˆÚ]ËYØ[[™\ËÛXÞHXÚÙ]Ë[™™YÝ[]Üˆ™Y™\œ˜[ÂˆÜ‚ˆÙ]‚ˆÙ]‚‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËMØ\LÈ‚ˆY]šXÐØ\™XÛÛ^Ï›Û\\˜Ú]™HÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHX™[H•Ý[ÜÜÚY\œÈˆ˜[YO^ÜÏËÝ[ÜÜÚY\œÈÏÈHÏ‚ˆY]šXÐØ\™XÛÛ^ÏØ]™[Û\ÜÓ˜[YOHšLËHËLËHˆÏŸHX™[H“YØ[[™\Èˆ˜[YO^ÜÏË˜žU\OË–ÉÛYØ[Ø[™I×HÏÈHÏ‚ˆY]šXÐØ\™XÛÛ^ÏÙX\˜ÚÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHX™[H’[™\ÝYØ][ÛˆÚ]Èˆ˜[YO^ÜÏË˜žU\OË–ÉÚ[™\ÝYØ][Û—ÚÚ]	×HÏÈHÏ‚ˆY]šXÐØ\™XÛÛ^Ï[™X\šÈÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHX™[H”™YÝ[]Üˆ™Y™\œ˜[Èˆ˜[YO^ÜÏË˜žU\OË–ÉÜ™YÝ[]Ü—Ü™Y™\œ˜[	×HÏÈHÏ‚ˆÙ]‚‚ˆËÊˆÙ[™\˜]HÜÜÚY\ˆ
+‹ßBˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH‘Ù[™\˜]H™]ÈÜÜÚY\ÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLHY™ÜšYXÛÛËLˆØ\LÈ‚ˆ]‚ˆX™[Û\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™‘ÜÜÚY\ˆ\OÛX™[‚ˆÙ[XÝÛ\ÜÓ˜[YOHËY[]LH›Ý[™Y›Ü™\ˆ™ËX˜XÚÙÜ›Ý[™LˆKLKH^\ÛHˆ˜[YO^ÙÜÜÚY\•\_HÛÚ[™ÙO^ÙHOˆÙ]ÜÜÚY\•\JK\™Ù]˜[YJ_O‚ˆÜ[Ûˆ˜[YOHš[™\ÝYØ][Û—ÚÚ]’[™\ÝYØ][ÛˆÚ]ÛÜ[Û‚ˆÜ[Ûˆ˜[YOH›YØ[Ø[™H“YØ[[™OÛÜ[Û‚ˆÜ[Ûˆ˜[YOHœÛXÞWÜXÚÙ]”ÛXÞHXÚÙ]ÛÜ[Û‚ˆÜ[Ûˆ˜[YOHœ™YÝ[]Ü—Ü™Y™\œ˜[”™YÝ[]Üˆ™Y™\œ˜[ÛÜ[Û‚ˆÜ[Ûˆ˜[YOH™[]WÙÜÜÚY\ˆ‘[]HÜÜÚY\ÛÜ[Û‚ˆÜ[Ûˆ˜[YOHœ]\›—ÙÜÜÚY\ˆ”]\›ˆÜÜÚY\ÛÜ[Û‚ˆÜÙ[XÝ‚ˆÙ]‚ˆ]‚ˆX™[Û\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™]YY[˜ÙOÛX™[‚ˆÙ[XÝÛ\ÜÓ˜[YOHËY[]LH›Ý[™Y›Ü™\ˆ™ËX˜XÚÙÜ›Ý[™LˆKLKH^\ÛHˆ˜[YO^Ø]YY[˜Ù_HÛÚ[™ÙO^ÙHOˆÙ]]YY[˜ÙJK\™Ù]˜[YJ_O‚ˆÜ[Ûˆ˜[YOHš›Ý\›˜[\Ý’›Ý\›˜[\ÝÛÜ[Û‚ˆÜ[Ûˆ˜[YOH˜]Ü›™^H]Ü›™^OÛÜ[Û‚ˆÜ[Ûˆ˜[YOHœÛXÞ[XZÙ\ˆ”ÛXÞ[XZÙ\ÛÜ[Û‚ˆÜ[Ûˆ˜[YOHœ™YÝ[]Üˆ”™YÝ[]ÜÛÜ[Û‚ˆÜ[Ûˆ˜[YOH˜Y›ØØ]HY›ØØ]OÛÜ[Û‚ˆÜ[Ûˆ˜[YOHš[\›˜[’[\›˜[ÛÜ[Û‚ˆÜÙ[XÝ‚ˆÙ]‚ˆ]‚ˆX™[Û\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™‘[]H˜[YH
+Ü[Û˜[
+OÛX™[‚ˆ[œ]Û\ÜÓ˜[YOHËY[]LH›Ý[™Y›Ü™\ˆ™ËX˜XÚÙÜ›Ý[™LˆKLKH^\ÛHˆXÙZÛ\H™K™Ëˆ[X^›Û‹˜ÛÛHˆ˜[YO^Ù[]S˜[Y_HÛÚ[™ÙO^ÙHOˆÙ][]S˜[YJK\™Ù]˜[YJ_HÏ‚ˆÙ]‚ˆ]‚ˆX™[Û\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™”]\›ˆ˜[YH
+Ü[Û˜[
+OÛX™[‚ˆ[œ]Û\ÜÓ˜[YOHËY[]LH›Ý[™Y›Ü™\ˆ™ËX˜XÚÙÜ›Ý[™LˆKLKH^\ÛHˆXÙZÛ\H™K™ËˆÛÛœÝ[Y\ˆœ˜]Yˆ˜[YO^Ü]\›“˜[Y_HÛÚ[™ÙO^ÙHOˆÙ]]\›“˜[YJK\™Ù]˜[YJ_HÏ‚ˆÙ]‚ˆÙ]‚ˆ]ÛˆÚ^™OHœÛHˆÛ\ÜÓ˜[YOH›]LÈˆÛÛXÚÏ^Ê
+HOˆÙ[‘ÜÜÚY\‹›]]]JÈÜÜÚY\•\NˆÜÜÚY\•\H\È[žK]YY[˜ÙU\Nˆ]YY[˜ÙH\È[žK[]S˜[YNˆ[]S˜[YH[™Yš[™Y]\›“˜[YNˆ]\›“˜[YH[™Yš[™YJ_H\ØX›Y^ÙÙ[‘ÜÜÚY\‹š\Ô[™[™ßO‚ˆÙÙ[‘ÜÜÚY\‹š\Ô[™[™ÈÈØY\ŒˆÛ\ÜÓ˜[YOHšLËHËLËH[š[X]K\Ü[ˆ\‹LHˆÏˆˆš[SÝ]]Û\ÜÓ˜[YOHšLËHËLËH\‹LHˆÏŸBˆÙ[™\˜]HÜÜÚY\‚ˆÐ]Û‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚‚ˆËÊˆ™XÙ[ÜÜÚY\œÈ
+‹ßBˆÜÏËœ™XÙ[ÜÜÚY\œÈ	‰ˆËœ™XÙ[ÜÜÚY\œË›[™Ýˆ	‰ˆ
+ˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH”™XÙ[ÜÜÚY\œÏÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÜËœ™XÙ[ÜÜÚY\œË›X\
+
+ˆ[žJHOˆ
+ˆ]ˆÙ^O^ÙšYHÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ›Ý[™Y[È›Ü™\ˆLÈ^\ÛH‚ˆ]‚ˆÛ\ÜÓ˜[YOH™›Û[YY][HžÙ]_OÜ‚ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™‚ˆÙ™ÜÜÚY\•\OËœ™\XÙJ×ËÙË	È	Ê_H8 (ˆÙ˜]YY[˜ÙU\_H8 (ˆÛ™]È]J[X™\Š˜Ü™X]Y]
+JKÓØØ[Q]TÝš[™Ê
+_BˆÜ‚ˆÙ]‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^^ÈžÙœÝ]\ßOÐ˜YÙO‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_BˆÙ]‚ˆ
+NÂŸB‚™[˜Ý[Ûˆ^ÛÛX”[™[
+
+HÂˆÛÛœÝÝ]ÈHœË™[™Ú[™\ÕŒË˜ÛÛX›Ü˜][Û”Ý]Ë\ÙT]Y\žJ
+NÂˆÛÛœÝ\™\œÈHœË™[™Ú[™\ÕŒË›\Ý\™\œË\ÙT]Y\žJßJNÂˆÛÛœÝ™YÚ\Ý\“]]HœË™[™Ú[™\ÕŒËœ™YÚ\Ý\”\™\‹\ÙS]]][ÛŠÂˆÛ”ÝXØÙ\ÜÎˆ
+
+HOˆÈÝ]Ëœ™Y™]Ú
+
+NÈ\™\œËœ™Y™]Ú
+
+NÈKˆJNÂˆÛÛœÝÜ\™\“˜[YKÙ]\™\“˜[YWHH™XXÝ\ÙTÝ]JˆŠNÂˆÛÛœÝÜ\™\“Ü™ËÙ]\™\“Ü™×HH™XXÝ\ÙTÝ]JˆŠNÂˆÛÛœÝÜ\™\•\KÙ]\™\•\WHH™XXÝ\ÙTÝ]OÝš[™ÏŠš›Ý\›˜[\ÝŠNÂˆÛÛœÝÜ\™\‘[XZ[Ù]\™\‘[XZ[HH™XXÝ\ÙTÝ]JˆŠNÂ‚ˆYˆ
+Ý]Ëš\ÓØY[™ÊH™]\›ˆ[™[ÚÙ[]ÛˆÏŽÂˆÛÛœÝÈHÝ]Ë™]NÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆ]‚ˆÈÛ\ÜÓ˜[YOH^[È›Û\Ù[ZX›Û›^][\ËXÙ[\ˆØ\Lˆ‚ˆÚ\™LˆÛ\ÜÓ˜[YOHšMHËMH^Y[Y\˜[MˆÏˆ^\›˜[ÛÛX›Ü˜][Ûˆ	ˆÙXÝ\™HÚ\š[™ÂˆÚÏ‚ˆÛ\ÜÓ˜[YOH^\ÛH^[]]YY›Ü™YÜ›Ý[™]LH‚ˆX[˜YÙH\™\œËÚ\™HÜÜÚY\œÈÙXÝ\™[K˜XÚÈXØÙ\ÜË[™\H™YXÝ[ÛœÂˆÜ‚ˆÙ]‚ˆÙ]‚‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËMØ\LÈ‚ˆY]šXÐØ\™XÛÛ^Ï\Ù\œÈÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHX™[H”\™\œÈˆ˜[YO^ÜÏËÝ[\™\œÈÏÈHÏ‚ˆY]šXÐØ\™XÛÛ^ÏÚY[Û\ÜÓ˜[YOHšLËHËLËHˆÏŸHX™[H•™\šYšYYˆ˜[YO^ÜÏË™\šYšYY\™\œÈÏÈHÏ‚ˆY]šXÐØ\™XÛÛ^ÏÚ\™LˆÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHX™[HXÝ]™HÚ\™\Èˆ˜[YO^ÜÏË˜XÝ]™TÚ\™\ÈÏÈHÏ‚ˆY]šXÐØ\™XÛÛ^Ï^YHÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHX™[H•Ý[šY]ÜÈˆ˜[YO^ÜÏËÝ[šY]ÜÈÏÈHÏ‚ˆÙ]‚‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLHY™ÜšYXÛÛËLˆØ\LÈ‚ˆY]šXÐØ\™XÛÛ^ÏÝÛ›ØYÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHX™[H‘ÝÛ›ØYÈˆ˜[YO^ÜÏËÝ[ÝÛ›ØYÈÏÈHÏ‚ˆY]šXÐØ\™XÛÛ^ÏY\ÜØYÙTÜ]X\™HÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHX™[HÛÛ[Y[Èˆ˜[YO^ÜÏËÝ[ÛÛ[Y[ÈÏÈHÏ‚ˆÙ]‚‚ˆËÊˆ™YÚ\Ý\ˆ\™\ˆ
+‹ßBˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH”™YÚ\Ý\ˆ™]È\™\ÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLHY™ÜšYXÛÛËLˆØ\LÈ‚ˆ]‚ˆX™[Û\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™“˜[YOÛX™[‚ˆ[œ]Û\ÜÓ˜[YOHËY[]LH›Ý[™Y›Ü™\ˆ™ËX˜XÚÙÜ›Ý[™LˆKLKH^\ÛHˆXÙZÛ\H”\™\ˆ˜[YHˆ˜[YO^Ü\™\“˜[Y_HÛÚ[™ÙO^ÙHOˆÙ]\™\“˜[YJK\™Ù]˜[YJ_HÏ‚ˆÙ]‚ˆ]‚ˆX™[Û\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™“Ü™Ø[š^˜][ÛÛX™[‚ˆ[œ]Û\ÜÓ˜[YOHËY[]LH›Ý[™Y›Ü™\ˆ™ËX˜XÚÙÜ›Ý[™LˆKLKH^\ÛHˆXÙZÛ\H“Ü™Ø[š^˜][Ûˆˆ˜[YO^Ü\™\“Ü™ßHÛÚ[™ÙO^ÙHOˆÙ]\™\“Ü™ÊK\™Ù]˜[YJ_HÏ‚ˆÙ]‚ˆ]‚ˆX™[Û\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™•\OÛX™[‚ˆÙ[XÝÛ\ÜÓ˜[YOHËY[]LH›Ý[™Y›Ü™\ˆ™ËX˜XÚÙÜ›Ý[™LˆKLKH^\ÛHˆ˜[YO^Ü\™\•\_HÛÚ[™ÙO^ÙHOˆÙ]\™\•\JK\™Ù]˜[YJ_O‚ˆÜ[Ûˆ˜[YOHš›Ý\›˜[\Ý’›Ý\›˜[\ÝÛÜ[Û‚ˆÜ[Ûˆ˜[YOH˜]Ü›™^H]Ü›™^OÛÜ[Û‚ˆÜ[Ûˆ˜[YOHœ™YÝ[]Üˆ”™YÝ[]ÜÛÜ[Û‚ˆÜ[Ûˆ˜[YOH˜Y›ØØ]HY›ØØ]OÛÜ[Û‚ˆÜ[Ûˆ˜[YOHœ™\ÙX\˜Ú\ˆ”™\ÙX\˜Ú\ÛÜ[Û‚ˆÜ[Ûˆ˜[YOH›Ý\ˆ“Ý\ÛÜ[Û‚ˆÜÙ[XÝ‚ˆÙ]‚ˆ]‚ˆX™[Û\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™‘[XZ[ÛX™[‚ˆ[œ]Û\ÜÓ˜[YOHËY[]LH›Ý[™Y›Ü™\ˆ™ËX˜XÚÙÜ›Ý[™LˆKLKH^\ÛHˆXÙZÛ\H™[XZ[^[\K˜ÛÛHˆ˜[YO^Ü\™\‘[XZ[HÛÚ[™ÙO^ÙHOˆÙ]\™\‘[XZ[
+K\™Ù]˜[YJ_HÏ‚ˆÙ]‚ˆÙ]‚ˆ]ÛˆÚ^™OHœÛHˆÛ\ÜÓ˜[YOH›]LÈˆÛÛXÚÏ^Ê
+HOˆÈYˆ
+\™\“˜[YJHÈ™YÚ\Ý\“]]›]]]JÈ˜[YNˆ\™\“˜[YKÜ™Ø[š^˜][ÛŽˆ\™\“Ü™È[™Yš[™Y\™\•\Nˆ\™\•\H\È[žK[XZ[ˆ\™\‘[XZ[[™Yš[™YJNÈÙ]\™\“˜[YJ	ÉÊNÈÙ]\™\“Ü™Ê	ÉÊNÈÙ]\™\‘[XZ[
+	ÉÊNÈH_H\ØX›Y^Ü™YÚ\Ý\“]]š\Ô[™[™È\\™\“˜[Y_O‚ˆÜ™YÚ\Ý\“]]š\Ô[™[™ÈÈØY\ŒˆÛ\ÜÓ˜[YOHšLËHËLËH[š[X]K\Ü[ˆ\‹LHˆÏˆˆ\ÈÛ\ÜÓ˜[YOHšLËHËLËH\‹LHˆÏŸBˆ™YÚ\Ý\ˆ\™\‚ˆÐ]Û‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚‚ˆËÊˆ\™\ˆ\Ý
+‹ßBˆÜ\™\œË™]H	‰ˆ\™\œË™]K›[™Ýˆ	‰ˆ
+ˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH”™YÚ\Ý\™Y\™\œÏÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÜ\™\œË™]K›X\
+
+ˆ[žJHOˆ
+ˆ]ˆÙ^O^ÜšYHÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ›Ý[™Y[È›Ü™\ˆLÈ^\ÛH‚ˆ]‚ˆÛ\ÜÓ˜[YOH™›Û[YY][HžÜ›˜[Y_OÜ‚ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™‚ˆÜ›Ü™Ø[š^˜][ÛˆÏÈ	ø %	ßH8 (ˆÜœ\™\•\_H8 (ˆÜ™[XZ[ÏÈ	Ó›È[XZ[	ßBˆÜ‚ˆÙ]‚ˆ˜YÙH˜\šX[^Ü™\šYšXØ][Û—ÜÝ]\ÈOOH	Ý™\šYšYY	ÈÈ	ÙY˜][	Èˆ	ÛÝ][™IßHÛ\ÜÓ˜[YOH^^È‚ˆÜ™\šYšXØ][Û—ÜÝ]\ßBˆÐ˜YÙO‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_B‚ˆËÊˆ™XÙ[Ú\™\È
+‹ßBˆÜÏËœ™XÙ[Ú\™\È	‰ˆËœ™XÙ[Ú\™\Ë›[™Ýˆ	‰ˆ
+ˆØ\™‚ˆØ\™XY\ˆÛ\ÜÓ˜[YOHœ‹LÈ‚ˆØ\™]HÛ\ÜÓ˜[YOH^\ÛH”™XÙ[Ú\™\ÏÐØ\™]O‚ˆÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÜËœ™XÙ[Ú\™\Ë›X\
+
+Ú\™Nˆ[žJHOˆ
+ˆ]ˆÙ^O^ÜÚ\™KšYHÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ›Ý[™Y[È›Ü™\ˆLÈ^\ÛH‚ˆ]‚ˆÛ\ÜÓ˜[YOH™›Û[YY][H‘ÜÜÚY\ˆÞÜÚ\™K™ÜÜÚY\’YOÜ‚ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™‚ˆÜÚ\™K˜XØÙ\ÜÓ]™[Ëœ™\XÙJ×ËÙË	È	Ê_H8 (ˆšY]ÜÎˆÜÚ\™KšY]ÐÛÝ[H8 (ˆÝÛ›ØYÎˆÜÚ\™K™ÝÛ›ØYÛÝ[BˆÜ‚ˆÙ]‚ˆ˜YÙH˜\šX[^ÜÚ\™Kœ™]›ÚÙYÈ	Ù\ÝXÝ]™IÈˆ	ÛÝ][™IßHÛ\ÜÓ˜[YOH^^È‚ˆÜÚ\™Kœ™]›ÚÙYÈ	Ô™]›ÚÙY	Èˆ	ÐXÝ]™IßBˆÐ˜YÙO‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_BˆÙ]‚ˆ
+NÂŸB‚‹Êˆ8¥ 8¥ []H˜[œÜ\™[˜ÞH[™[8¥ 8¥ 
+‹Â™[˜Ý[Ûˆ[]U˜[œÜ\™[˜ÞT[™[
+
+HÂˆÛÛœÝÝ]ÈHœË™[™Ú[™\Õ™[]U˜[œÜ\™[˜ÞTÝ]Ë\ÙT]Y\žJ
+NÂˆÛÛœÝÜ[]Y\ÈHœË™[™Ú[™\ÕÜ[]Y\Ë\ÙT]Y\žJÈ[Z]ˆLJNÂˆÛÛœÝÜ]\›’YÙ]]\›’YHH\ÙTÝ]JˆŠNÂˆÛÛœÝœšYYˆHœË™[™Ú[™\Õš[™\ÝYØ]]™PœšYY‹\ÙT]Y\žJˆÈ]\›’Yˆ[X™\Š]\›’Y
+HKˆÈ[˜X›YˆH\]\›’Y	‰ˆZ\Ó˜SŠ[X™\Š]\›’Y
+JHBˆ
+NÂˆÛÛœÝÙ[™\˜]Pœ™XZÙÝÛˆHœË™[™Ú[™\Õ™Ù[™\˜]Q[]Pœ™XZÙÝÛ‹\ÙS]]][ÛŠ
+NÂ‚ˆYˆ
+Ý]Ëš\ÓØY[™ÊH™]\›ˆ[™[ÚÙ[]ÛˆÏŽÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆÈÛ\ÜÓ˜[YOH^[È›Û\Ù[ZX›Û›^][\ËXÙ[\ˆØ\Lˆ‚ˆØØ[ˆÛ\ÜÓ˜[YOHšMHËMH^XÞX[‹MˆÏˆ[]H˜[œÜ\™[˜ÞH^Y\‚ˆÚÏ‚ˆÙ]‚‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËMØ\LÈ‚ˆY]šXÐØ\™X™[H‘[]HÝ[[X\šY\Èˆ˜[YO^ÔÝš[™ÊÝ]Ë™]OËÝ[Ý[[X\šY\ÈÏÈ
+_HXÛÛ^Ïš[™Ù\œš[Û\ÜÓ˜[YOHšLËHËLËHˆÏŸHÛÛÜH˜ÞX[ˆˆÏ‚ˆY]šXÐØ\™X™[HYÙ[˜ÞHX\[™ÜÈˆ˜[YO^ÔÝš[™ÊÝ]Ë™]OËÝ[YÙ[˜ÞSX\[™ÜÈÏÈ
+_HXÛÛ^ÏZ[[™ÈÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHÛÛÜH˜›YHˆÏ‚ˆY]šXÐØ\™X™[H•[š\]YH[]Y\Èˆ˜[YO^ÔÝš[™ÊÝ]Ë™]OË[š\]YQ[]Y\ÈÏÈ
+_HXÛÛ^Ï\Ù\œÈÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHÛÛÜHš[Û]ˆÏ‚ˆY]šXÐØ\™X™[H•[š\]YHYÙ[˜ÚY\Èˆ˜[YO^ÔÝš[™ÊÝ]Ë™]OË[š\]YPYÙ[˜ÚY\ÈÏÈ
+_HXÛÛ^Ï[™X\šÈÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHÛÛÜH˜[X™\ˆˆÏ‚ˆÙ]‚‚ˆËÊˆÙ[™\˜]H[]Hœ™XZÙÝÛˆ
+‹ßBˆØ\™‚ˆØ\™XY\Ø\™]HÛ\ÜÓ˜[YOH^\ÛH‘Ù[™\˜]H[]Hœ™XZÙÝÛÐØ\™]OÐØ\™XY\‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœÜXÙK^KLÈ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^Ø\Lˆ‚ˆ[œ]ˆ\OH›[X™\ˆ‚ˆXÙZÛ\H”]\›ˆQ‚ˆ˜[YO^Ü]\›’YBˆÛÚ[™ÙO^ÊJHOˆÙ]]\›’Y
+K\™Ù]˜[YJ_BˆÛ\ÜÓ˜[YOH™›^LH›Ý[™Y[Y›Ü™\ˆ›Ü™\‹X›Ü™\ˆ™ËX˜XÚÙÜ›Ý[™LÈKLˆ^\ÛH‚ˆÏ‚ˆ]ÛˆÚ^™OHœÛHˆÛÛXÚÏ^Ê
+HOˆ]\›’Y	‰ˆÙ[™\˜]Pœ™XZÙÝÛ‹›]]]JÈ]\›’Yˆ[X™\Š]\›’Y
+HJ_O‚ˆ^HÛ\ÜÓ˜[YOHšLÈËLÈ\‹LHˆÏˆÙ[™\˜]BˆÐ]Û‚ˆÙ]‚ˆÙÙ[™\˜]Pœ™XZÙÝÛ‹š\ÔÝXØÙ\ÜÈ	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH^^È^Y[Y\˜[M‘Ù[™\˜]YÙÙ[™\˜]Pœ™XZÙÝÛ‹™]K›[™ÝH[]HÝ[[X\šY\ÏÙ]‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚‚ˆËÊˆÜ[]Y\ÈXY\˜›Ø\™
+‹ßBˆØ\™‚ˆØ\™XY\Ø\™]HÛ\ÜÓ˜[YOH^\ÛH•Ü[]Y\ÈXY\˜›Ø\™ÐØ\™]OÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆÝÜ[]Y\Ëš\ÓØY[™ÈÈ[™[ÚÙ[]ÛˆÏˆˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÊÜ[]Y\Ë™]HÏÈ×JK›X\
+
+Nˆ[žKNˆ[X™\ŠHOˆ
+ˆ]ˆÙ^O^Ú_HÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ›Ý[™Y[È›Ü™\ˆ›Ü™\‹X›Ü™\‹ÍLLÈ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\LÈ‚ˆÜ[ˆÛ\ÜÓ˜[YOH^[È›ÛX›Û›Û[[Û›È^[]]YY›Ü™YÜ›Ý[™ËMˆˆÞÚH
+È_OÜÜ[‚ˆ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›Û[YY][H^\ÛHžÙK™[]S˜[Y_OÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™žÙK™[]U\H[šÛ›ÝÛˆŸOÙ]‚ˆÙ]‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^Ø\M^^È‚ˆÜ[ˆ]OH”ÚYÛ˜[È˜\Û\ÜÓ˜[YOHšLÈËLÈ[›[™H\‹LH^X[X™\‹MˆÏžÙKœÚYÛ˜[ÛÝ[OÜÜ[‚ˆÜ[ˆ]OH”]\›œÈ™]ÛÜšÈÛ\ÜÓ˜[YOHšLÈËLÈ[›[™H\‹LH^]š[Û]MˆÏžÙKœ]\›ÛÝ[OÜÜ[‚ˆÜ[ˆ]OH”Ý™X[\È^Y\œÈÛ\ÜÓ˜[YOHšLÈËLÈ[›[™H\‹LH^XÞX[‹MˆÏžÙKœÝ™X[PÛÝ[OÜÜ[‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^^ÈžÙK˜ÛÛ™šY[˜ÙTØÛÜ™_IOÐ˜YÙO‚ˆÙ]‚ˆÙ]‚ˆ
+J_BˆÊÜ[]Y\Ë™]HÏÈ×JK›[™ÝOOH	‰ˆ[™[[\HX™[H“›È[]Y\ÈØÛÜ™YY]8 %[ˆÙ[™\˜]H[]Hœ™XZÙÝÛˆš\œÝˆÏŸBˆÙ]‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚‚ˆËÊˆ[™\ÝYØ]]™HœšYYˆ
+‹ßBˆØœšYY‹™]H	‰ˆ
+ˆØ\™‚ˆØ\™XY\Ø\™]HÛ\ÜÓ˜[YOH^\ÛH’[™\ÝYØ]]™HœšYYˆ8 %]\›ˆÞÜ]\›’YOÐØ\™]OÐØ\™XY\‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœÜXÙK^KLÈ^\ÛH‚ˆ]Ý›Û™Ï”Ý[[X\žNÜÝ›Û™ÏˆØœšYY‹™]Kœ]\›”Ý[[X\ž_OÙ]‚ˆ]Ý›Û™Ï‘[]Y\ÎÜÝ›Û™ÏˆØœšYY‹™]K™[]Y\Ò[›Û™Y›X\
+
+Nˆ[žJHOˆK™[]S˜[YJKš›Ú[Š‹ŠH“›Û™HŸOÙ]‚ˆ]Ý›Û™ÏYÙ[˜ÚY\ÎÜÝ›Û™ÏˆØœšYY‹™]K˜YÙ[˜ÚY\Ô™\ÜÛœÚX›K›X\
+
+Nˆ[žJHOˆK˜YÙ[˜ÞS˜[YJKš›Ú[Š‹ŠH“›Û™HŸOÙ]‚ˆ]Ý›Û™Ï”ÚYÛ˜[ÎÜÝ›Û™ÏˆØœšYY‹™]KœÚYÛ˜[[Y[[™K›[™ÝH]™[ÏÙ]‚ˆ]Ý›Û™Ï“]YØ][ÛŽÜÝ›Û™ÏˆØœšYY‹™]K›]YØ][ÛXÝ]š]K›[™ÝHØ\Ù\ÏÙ]‚ˆ]Ý›Û™Ï”™YÝ[]ÜžHXÝ[ÛœÎÜÝ›Û™ÏˆØœšYY‹™]Kœ™YÝ[]ÜžPXÝ[ÛœË›[™ÝHXÝ[ÛœÏÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_BˆÙ]‚ˆ
+NÂŸB‚‹Êˆ8¥ 8¥ ]šY[˜ÙH™\ÚÛ[™[8¥ 8¥ 
+‹Â™[˜Ý[Ûˆ]šY[˜ÙU™\ÚÛ[™[
+
+HÂˆÛÛœÝÝ]ÈHœË™[™Ú[™\Õ™]šY[˜ÙU™\ÚÛÝ]Ë\ÙT]Y\žJ
+NÂˆÛÛœÝš\ÚX›HHœË™[™Ú[™\Õš\ÚX›Q[]Y\Ë\ÙT]Y\žJ
+NÂˆÛÛœÝ›Ýš\Ú[Û˜[HœË™[™Ú[™\Õœ›Ýš\Ú[Û˜[[]Y\Ë\ÙT]Y\žJ
+NÂˆÛÛœÝÙ[]S˜[YKÙ][]S˜[YWHH\ÙTÝ]JˆŠNÂˆÛÛœÝØÛÜ™S]]HœË™[™Ú[™\ÕœØÛÜ™Q]šY[˜ÙK\ÙS]]][ÛŠ
+NÂ‚ˆYˆ
+Ý]Ëš\ÓØY[™ÊH™]\›ˆ[™[ÚÙ[]ÛˆÏŽÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆÈÛ\ÜÓ˜[YOH^[È›Û\Ù[ZX›Û›^][\ËXÙ[\ˆØ\Lˆ‚ˆÚY[Û\ÜÓ˜[YOHšMHËMH^Y[Y\˜[MˆÏˆ[]H]šY[˜ÙH™\ÚÛÞ\Ý[BˆÚÏ‚ˆÙ]‚‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËMØ\LÈ‚ˆY]šXÐØ\™X™[H•Ý[ØÛÜ™Yˆ˜[YO^ÔÝš[™ÊÝ]Ë™]OËÝ[ØÛÜ™YÏÈ
+_HXÛÛ^Ï\ÚÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHÛÛÜH˜›YHˆÏ‚ˆY]šXÐØ\™X™[H•š\ÚX›Hˆ˜[YO^ÔÝš[™ÊÝ]Ë™]OËš\ÚX›PÛÝ[ÏÈ
+_HXÛÛ^Ï^YHÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHÛÛÜH™[Y\˜[ˆÏ‚ˆY]šXÐØ\™X™[H”›Ýš\Ú[Û˜[ˆ˜[YO^ÔÝš[™ÊÝ]Ë™]OËœ›Ýš\Ú[Û˜[ÛÝ[ÏÈ
+_HXÛÛ^Ï[\šX[™ÛHÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHÛÛÜH˜[X™\ˆˆÏ‚ˆY]šXÐØ\™X™[H]™ÈÛÛ™šY[˜ÙHˆ˜[YO^Ø	ÜÝ]Ë™]OË˜]™ÐÛÛ™šY[˜ÙHÏÈIXHXÛÛ^ÏØ]YÙHÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHÛÛÜHš[Û]ˆÏ‚ˆÙ]‚‚ˆËÊˆØÛÜ™H[]H
+‹ßBˆØ\™‚ˆØ\™XY\Ø\™]HÛ\ÜÓ˜[YOH^\ÛH”ØÛÜ™H[]H]šY[˜ÙOÐØ\™]OÐØ\™XY\‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœÜXÙK^KLÈ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^Ø\Lˆ‚ˆ[œ]ˆ\OH^‚ˆXÙZÛ\H‘[]H˜[YH
+K™Ëˆ[X^›Û‹˜ÛÛJH‚ˆ˜[YO^Ù[]S˜[Y_BˆÛÚ[™ÙO^ÊJHOˆÙ][]S˜[YJK\™Ù]˜[YJ_BˆÛ\ÜÓ˜[YOH™›^LH›Ý[™Y[Y›Ü™\ˆ›Ü™\‹X›Ü™\ˆ™ËX˜XÚÙÜ›Ý[™LÈKLˆ^\ÛH‚ˆÏ‚ˆ]ÛˆÚ^™OHœÛHˆÛÛXÚÏ^Ê
+HOˆ[]S˜[YH	‰ˆØÛÜ™S]]›]]]JÈ[]S˜[YHJ_O‚ˆØ[Ý[]ÜˆÛ\ÜÓ˜[YOHšLÈËLÈ\‹LHˆÏˆØÛÜ™BˆÐ]Û‚ˆÙ]‚ˆÜØÛÜ™S]]š\ÔÝXØÙ\ÜÈ	‰ˆØÛÜ™S]]™]H	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœ›Ý[™Y[È›Ü™\ˆ›Ü™\‹X›Ü™\‹ÍLLÈÜXÙK^KLH^\ÛH‚ˆ]ˆÛ\ÜÓ˜[YOH™›^\ÝYžKX™]ÙY[ˆÜ[ÛÛ™šY[˜ÙNÜÜ[˜YÙH˜\šX[H›Ý][™HžÜØÛÜ™S]]™]K˜ÛÛ™šY[˜ÙTØÛÜ™_IOÐ˜YÙOÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^\ÝYžKX™]ÙY[ˆÜ[”ÚYÛ˜[ÎÜÜ[Ü[ˆÛ\ÜÓ˜[YOH™›Û[[Û›ÈžÜØÛÜ™S]]™]KœÚYÛ˜[ÛÝ[OÜÜ[Ù]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^\ÝYžKX™]ÙY[ˆÜ[ÛÛ\Z[ÎÜÜ[Ü[ˆÛ\ÜÓ˜[YOH™›Û[[Û›ÈžÜØÛÜ™S]]™]K˜ÛÛ\Z[ÛÝ[OÜÜ[Ù]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^\ÝYžKX™]ÙY[ˆÜ[”Ý™X[\ÎÜÜ[Ü[ˆÛ\ÜÓ˜[YOH™›Û[[Û›ÈžÜØÛÜ™S]]™]KœÝ™X[PÛÝ[OÜÜ[Ù]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^\ÝYžKX™]ÙY[ˆÜ[”Ý]\ÎÜÜ[˜YÙHÛ\ÜÓ˜[YO^ÜØÛÜ™S]]™]Kš\ÚXš[]TÝ]\ÈOOHš\ÚX›HˆÈ˜™ËY[Y\˜[MLÌŒ^Y[Y\˜[Mˆˆ˜™ËX[X™\‹MLÌŒ^X[X™\‹MŸOžÜØÛÜ™S]]™]Kš\ÚXš[]TÝ]\ßOÐ˜YÙOÙ]‚ˆÙ]‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚‚ˆËÊˆš\ÚX›H[]Y\È
+‹ßBˆØ\™‚ˆØ\™XY\Ø\™]HÛ\ÜÓ˜[YOH^\ÛH›^][\ËXÙ[\ˆØ\Lˆ^YHÛ\ÜÓ˜[YOHšMËM^Y[Y\˜[MˆÏˆš\ÚX›H[]Y\ÏÐØ\™]OÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆÝš\ÚX›Kš\ÓØY[™ÈÈ[™[ÚÙ[]ÛˆÏˆˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLH‚ˆÊš\ÚX›K™]HÏÈ×JKœÛXÙJL
+K›X\
+
+Nˆ[žKNˆ[X™\ŠHOˆ
+ˆ]ˆÙ^O^Ú_HÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ^\ÛHKLH›Ü™\‹Xˆ›Ü™\‹X›Ü™\‹ÌÌ‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[YY][HžÙK™[]S˜[Y_OÜÜ[‚ˆ]ˆÛ\ÜÓ˜[YOH™›^Ø\LÈ^^È^[]]YY›Ü™YÜ›Ý[™‚ˆÜ[ÛÛ™šY[˜ÙNˆÙK˜ÛÛ™šY[˜ÙTØÛÜ™_IOÜÜ[‚ˆÜ[”ÚYÛ˜[ÎˆÙKœÚYÛ˜[ÛÝ[OÜÜ[‚ˆÜ[”Ý™X[\ÎˆÙKœÝ™X[PÛÝ[OÜÜ[‚ˆÙ]‚ˆÙ]‚ˆ
+J_BˆÊš\ÚX›K™]HÏÈ×JK›[™ÝOOH	‰ˆ[™[[\HX™[H“›Èš\ÚX›H[]Y\È8 %ØÛÜ™H[]Y\Èš\œÝˆÏŸBˆÙ]‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚‚ˆËÊˆ›Ýš\Ú[Û˜[[]Y\È
+‹ßBˆØ\™‚ˆØ\™XY\Ø\™]HÛ\ÜÓ˜[YOH^\ÛH›^][\ËXÙ[\ˆØ\Lˆ[\šX[™ÛHÛ\ÜÓ˜[YOHšMËM^X[X™\‹MˆÏˆ›Ýš\Ú[Û˜[[]Y\È
+™[ÝÈ™\ÚÛ
+OÐØ\™]OÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆÜ›Ýš\Ú[Û˜[š\ÓØY[™ÈÈ[™[ÚÙ[]ÛˆÏˆˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLH‚ˆÊ›Ýš\Ú[Û˜[™]HÏÈ×JKœÛXÙJL
+K›X\
+
+Nˆ[žKNˆ[X™\ŠHOˆ
+ˆ]ˆÙ^O^Ú_HÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ^\ÛHKLH›Ü™\‹Xˆ›Ü™\‹X›Ü™\‹ÌÌ‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[YY][H^[]]YY›Ü™YÜ›Ý[™žÙK™[]S˜[Y_OÜÜ[‚ˆ]ˆÛ\ÜÓ˜[YOH™›^Ø\LÈ^^È^[]]YY›Ü™YÜ›Ý[™‚ˆÜ[ÛÛ™šY[˜ÙNˆÙK˜ÛÛ™šY[˜ÙTØÛÜ™_IOÜÜ[‚ˆÜ[”ÚYÛ˜[ÎˆÙKœÚYÛ˜[ÛÝ[OÜÜ[‚ˆÜ[”Ý™X[\ÎˆÙKœÝ™X[PÛÝ[OÜÜ[‚ˆÙ]‚ˆÙ]‚ˆ
+J_BˆÊ›Ýš\Ú[Û˜[™]HÏÈ×JK›[™ÝOOH	‰ˆ[™[[\HX™[H“›È›Ýš\Ú[Û˜[[]Y\ÈˆÏŸBˆÙ]‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆÙ]‚ˆ
+NÂŸB‚‹Êˆ8¥ 8¥ [\[™È[™[8¥ 8¥ 
+‹Â™[˜Ý[Ûˆ[\[™Ô[™[
+
+HÂˆÛÛœÝÝ]ÈHœË™[™Ú[™\Õ˜[\[™ÔÝ]Ë\ÙT]Y\žJ
+NÂˆÛÛœÝÝXœÈHœË™[™Ú[™\Õ›^TÝXœØÜš\[ÛœË\ÙT]Y\žJ
+NÂˆÛÛœÝ›ÝYšXØ][ÛœÈHœË™[™Ú[™\Õ›^S›ÝYšXØ][ÛœË\ÙT]Y\žJÈ[Z]ˆŒJNÂˆÛÛœÝÚXÚÐ[\ÈHœË™[™Ú[™\Õ˜ÚXÚÐ[\Ë\ÙS]]][ÛŠ
+NÂˆÛÛœÝ›ØÙ\ÜÑ[]™\šY\ÈHœË™[™Ú[™\Õœ›ØÙ\ÜÑ[]™\šY\Ë\ÙS]]][ÛŠ
+NÂˆÛÛœÝÜÝX‘›Ü›KÙ]ÝX‘›Ü›WHH\ÙTÝ]JÈ\Nˆœ]\›ˆ‹\™Ù]˜[YNˆˆˆJNÂˆÛÛœÝÜ™X]TÝXˆHœË™[™Ú[™\Õ˜Ü™X]TÝXœØÜš\[Û‹\ÙS]]][ÛŠ
+NÂˆÛÛœÝ][ÈHœË\ÙU][Ê
+NÂ‚ˆYˆ
+Ý]Ëš\ÓØY[™ÊH™]\›ˆ[™[ÚÙ[]ÛˆÏŽÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆÈÛ\ÜÓ˜[YOH^[È›Û\Ù[ZX›Û›^][\ËXÙ[\ˆØ\Lˆ‚ˆ™[Û\ÜÓ˜[YOHšMHËMH^X[X™\‹MˆÏˆX›XÈ[\[™È	ˆÝXœØÜš\[ÛœÂˆÚÏ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^Ø\Lˆ‚ˆ]Ûˆ˜\šX[H›Ý][™HˆÚ^™OHœÛHˆÛÛXÚÏ^Ê
+HOˆÚXÚÐ[\Ë›]]]J
+_O‚ˆ˜\Û\ÜÓ˜[YOHšLÈËLÈ\‹LHˆÏˆÚXÚÈšYÙÙ\œÂˆÐ]Û‚ˆ]Ûˆ˜\šX[H›Ý][™HˆÚ^™OHœÛHˆÛÛXÚÏ^Ê
+HOˆ›ØÙ\ÜÑ[]™\šY\Ë›]]]J
+_O‚ˆÙ[™Û\ÜÓ˜[YOHšLÈËLÈ\‹LHˆÏˆ›ØÙ\ÜÈ[]™\šY\ÂˆÐ]Û‚ˆÙ]‚ˆÙ]‚‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËMØ\LÈ‚ˆY]šXÐØ\™X™[H”ÝXœØÜš\[ÛœÈˆ˜[YO^ÔÝš[™ÊÝ]Ë™]OËÝ[ÝXœØÜš\[ÛœÈÏÈ
+_HXÛÛ^Ï™[Û\ÜÓ˜[YOHšLËHËLËHˆÏŸHÛÛÜH˜[X™\ˆˆÏ‚ˆY]šXÐØ\™X™[HXÝ]™Hˆ˜[YO^ÔÝš[™ÊÝ]Ë™]OË˜XÝ]™TÝXœØÜš\[ÛœÈÏÈ
+_HXÛÛ^ÏÚXÚÐÚ\˜ÛLˆÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHÛÛÜH™[Y\˜[ˆÏ‚ˆY]šXÐØ\™X™[H‘]™[Èˆ˜[YO^ÔÝš[™ÊÝ]Ë™]OËÝ[]™[ÈÏÈ
+_HXÛÛ^Ï˜\Û\ÜÓ˜[YOHšLËHËLËHˆÏŸHÛÛÜH˜›YHˆÏ‚ˆY]šXÐØ\™X™[H‘[]™\šY\Èˆ˜[YO^ÔÝš[™ÊÝ]Ë™]OËÝ[[]™\šY\ÈÏÈ
+_HXÛÛ^ÏÙ[™Û\ÜÓ˜[YOHšLËHËLËHˆÏŸHÛÛÜHš[Û]ˆÏ‚ˆÙ]‚‚ˆËÊˆÜ™X]HÝXœØÜš\[Ûˆ
+‹ßBˆØ\™‚ˆØ\™XY\Ø\™]HÛ\ÜÓ˜[YOH^\ÛHÜ™X]HÝXœØÜš\[ÛÐØ\™]OÐØ\™XY\‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœÜXÙK^KLÈ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^Ø\Lˆ‚ˆÙ[XÝˆ˜[YO^ÜÝX‘›Ü›K\_BˆÛÚ[™ÙO^ÊJHOˆÙ]ÝX‘›Ü›JˆOˆ
+È‹‹™‹\NˆK\™Ù]˜[YHJJ_BˆÛ\ÜÓ˜[YOHœ›Ý[™Y[Y›Ü™\ˆ›Ü™\‹X›Ü™\ˆ™ËX˜XÚÙÜ›Ý[™LÈKLˆ^\ÛH‚ˆ‚ˆÜ[Ûˆ˜[YOHœ]\›ˆ”]\›ÛÜ[Û‚ˆÜ[Ûˆ˜[YOH™[]H‘[]OÛÜ[Û‚ˆÜ[Ûˆ˜[YOHš[™\ÝžH’[™\ÝžOÛÜ[Û‚ˆÜ[Ûˆ˜[YOHš\š\ÙXÝ[Ûˆ’\š\ÙXÝ[ÛÛÜ[Û‚ˆÜÙ[XÝ‚ˆ[œ]ˆ\OH^‚ˆXÙZÛ\H•\™Ù]˜[YH‚ˆ˜[YO^ÜÝX‘›Ü›K\™Ù]˜[Y_BˆÛÚ[™ÙO^ÊJHOˆÙ]ÝX‘›Ü›JˆOˆ
+È‹‹™‹\™Ù]˜[YNˆK\™Ù]˜[YHJJ_BˆÛ\ÜÓ˜[YOH™›^LH›Ý[™Y[Y›Ü™\ˆ›Ü™\‹X›Ü™\ˆ™ËX˜XÚÙÜ›Ý[™LÈKLˆ^\ÛH‚ˆÏ‚ˆ]ÛˆÚ^™OHœÛHˆÛÛXÚÏ^Ê
+HOˆÂˆYˆ
+ÝX‘›Ü›K\™Ù]˜[YJHÂˆÜ™X]TÝX‹›]]]JÈÝXœØÜš\[Û•\NˆÝX‘›Ü›K\K\™Ù]˜[YNˆÝX‘›Ü›K\™Ù]˜[YHKÂˆÛ”ÝXØÙ\ÜÎˆ
+
+HOˆÈ][Ë™[™Ú[™\Õ›^TÝXœØÜš\[ÛœËš[˜[Y]J
+NÈÙ]ÝX‘›Ü›JÈ\Nˆœ]\›ˆ‹\™Ù]˜[YNˆˆˆJNÈBˆJNÂˆBˆ_O‚ˆ\ÈÛ\ÜÓ˜[YOHšLÈËLÈ\‹LHˆÏˆÝXœØÜšX™BˆÐ]Û‚ˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚‚ˆËÊˆ^HÝXœØÜš\[ÛœÈ
+‹ßBˆØ\™‚ˆØ\™XY\Ø\™]HÛ\ÜÓ˜[YOH^\ÛH“^HÝXœØÜš\[ÛœÏÐØ\™]OÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLH‚ˆÊÝXœË™]HÏÈ×JK›X\
+
+Îˆ[žJHOˆ
+ˆ]ˆÙ^O^ÜËšYHÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ^\ÛHKLKH›Ü™\‹Xˆ›Ü™\‹X›Ü™\‹ÌÌ‚ˆ]˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH›\‹Lˆ^^ÈžÜËœÝXœØÜš\[Û•\_OÐ˜YÙOžÜË\™Ù]˜[Y_OÙ]‚ˆ˜YÙHÛ\ÜÓ˜[YO^ÜËš\ÐXÝ]™HÈ˜™ËY[Y\˜[MLÌŒ^Y[Y\˜[Mˆˆ˜™Ë\™YMLÌŒ^\™YMŸOžÜËš\ÐXÝ]™HÈXÝ]™Hˆˆ”]\ÙYŸOÐ˜YÙO‚ˆÙ]‚ˆ
+J_BˆÊÝXœË™]HÏÈ×JK›[™ÝOOH	‰ˆ[™[[\HX™[H“›ÈÝXœØÜš\[ÛœÈY]ˆÏŸBˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚‚ˆËÊˆ›ÝYšXØ][ÛœÈ
+‹ßBˆØ\™‚ˆØ\™XY\Ø\™]HÛ\ÜÓ˜[YOH^\ÛH”™XÙ[›ÝYšXØ][ÛœÏÐØ\™]OÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLH‚ˆÊ›ÝYšXØ][ÛœË™]HÏÈ×JK›X\
+
+Žˆ[žJHOˆ
+ˆ]ˆÙ^O^Û‹šYHÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ^\ÛHKLKH›Ü™\‹Xˆ›Ü™\‹X›Ü™\‹ÌÌ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆ˜YÙHÛ\ÜÓ˜[YO^Û‹œÙ]™\š]HOOH˜Üš]XØ[ˆÈ˜™Ë\™YMLÌŒ^\™YMˆˆ‹œÙ]™\š]HOOHšYÚˆÈ˜™Ë[Ü˜[™ÙKMLÌŒ^[Ü˜[™ÙKMˆˆ˜™ËX›YKMLÌŒ^X›YKMŸOžÛ‹œÙ]™\š]_OÐ˜YÙO‚ˆÜ[žÛ‹™]™[]_OÜÜ[‚ˆÙ]‚ˆÜ[ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™žÛ™]È]J‹šYÙÙ\™Y]
+KÓØØ[Q]TÝš[™Ê
+_OÜÜ[‚ˆÙ]‚ˆ
+J_BˆÊ›ÝYšXØ][ÛœË™]HÏÈ×JK›[™ÝOOH	‰ˆ[™[[\HX™[H“›È›ÝYšXØ][ÛœÈˆÏŸBˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆÙ]‚ˆ
+NÂŸB‚‹Êˆ8¥ 8¥ Þ\Ý[HX\[™[8¥ 8¥ 
+‹Â™[˜Ý[ÛˆÞ\Ý[SX\[™[
+
+HÂˆÛÛœÝÝ]ÈHœË™[™Ú[™\Õ›X\Ý]Ë\ÙT]Y\žJ
+NÂˆÛÛœÝX\]HHœË™[™Ú[™\Õ›X\]K\ÙT]Y\žJ
+NÂˆÛÛœÝZ[X\HœË™[™Ú[™\Õ˜Z[X\\ÙS]]][ÛŠ
+NÂˆÛÛœÝ][ÈHœË\ÙU][Ê
+NÂ‚ˆYˆ
+Ý]Ëš\ÓØY[™ÊH™]\›ˆ[™[ÚÙ[]ÛˆÏŽÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆÈÛ\ÜÓ˜[YOH^[È›Û\Ù[ZX›Û›^][\ËXÙ[\ˆØ\Lˆ‚ˆØ^\Ú[ÈÛ\ÜÓ˜[YOHšMHËMH^]š[Û]MˆÏˆÛØ˜[Þ\Ý[ZXÈ[[YÙ[˜ÙHX\ˆÚÏ‚ˆ]Ûˆ˜\šX[H›Ý][™HˆÚ^™OHœÛHˆÛÛXÚÏ^Ê
+HOˆZ[X\›]]]J[™Yš[™YÂˆÛ”ÝXØÙ\ÜÎˆ
+
+HOˆÈ][Ë™[™Ú[™\Õ›X\]Kš[˜[Y]J
+NÈ][Ë™[™Ú[™\Õ›X\Ý]Ëš[˜[Y]J
+NÈBˆJ_O‚ˆØZ[X\š\Ô[™[™ÈÈØY\ŒˆÛ\ÜÓ˜[YOHšLÈËLÈ\‹LH[š[X]K\Ü[ˆˆÏˆˆ^HÛ\ÜÓ˜[YOHšLÈËLÈ\‹LHˆÏŸBˆZ[X\œ›ÛHÚYÛ˜[ÂˆÐ]Û‚ˆÙ]‚‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËMØ\LÈ‚ˆY]šXÐØ\™X™[H“›Ù\Èˆ˜[YO^ÔÝš[™ÊÝ]Ë™]OËÝ[›Ù\ÈÏÈ
+_HXÛÛ^ÏÛØ™HÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHÛÛÜHš[Û]ˆÏ‚ˆY]šXÐØ\™X™[H‘YÙ\Èˆ˜[YO^ÔÝš[™ÊÝ]Ë™]OËÝ[YÙ\ÈÏÈ
+_HXÛÛ^Ï[šÌˆÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHÛÛÜH˜›YHˆÏ‚ˆY]šXÐØ\™X™[H[››Ý][ÛœÈˆ˜[YO^ÔÝš[™ÊÝ]Ë™]OËÝ[[››Ý][ÛœÈÏÈ
+_HXÛÛ^ÏY\ÜØYÙTÜ]X\™HÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHÛÛÜH˜[X™\ˆˆÏ‚ˆY]šXÐØ\™X™[H]™Èš\ÚÈˆ˜[YO^Ø	ÜÝ]Ë™]OË˜]™Ôš\ÚÔØÛÜ™HÏÈXHXÛÛ^Ï[\šX[™ÛHÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHÛÛÜHœ™YˆÏ‚ˆÙ]‚‚ˆØZ[X\š\ÔÝXØÙ\ÜÈ	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH^^È^Y[Y\˜[MLˆ›Ý[™Y™ËY[Y\˜[MLÌL‚ˆX\Z[ˆØZ[X\™]K››Ù\ÐÜ™X]YH›Ù\ËØZ[X\™]K™YÙ\ÐÜ™X]YHYÙ\ÈÜ™X]YˆÙ]‚ˆ
+_B‚ˆËÊˆ›ÙH\Ý
+‹ßBˆØ\™‚ˆØ\™XY\Ø\™]HÛ\ÜÓ˜[YOH^\ÛH“X\›Ù\ÏÐØ\™]OÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆÛX\]Kš\ÓØY[™ÈÈ[™[ÚÙ[]ÛˆÏˆˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLH‚ˆÊX\]K™]OË››Ù\ÈÏÈ×JKœÛXÙJŒ
+K›X\
+
+Žˆ[žJHOˆ
+ˆ]ˆÙ^O^Û‹šYHÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ^\ÛHKLKH›Ü™\‹Xˆ›Ü™\‹X›Ü™\‹ÌÌ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^^ÈžÛ‹››ÙU\_OÐ˜YÙO‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[YY][HžÛ‹››ÙS˜[Y_OÜÜ[‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^Ø\LÈ^^È^[]]YY›Ü™YÜ›Ý[™‚ˆÜ[”š\ÚÎˆÛ‹œš\ÚÔØÛÜ™HÏÈOÜÜ[‚ˆÜ[”]\›œÎˆÛ‹œ]\›ÛÝ[ÏÈOÜÜ[‚ˆÙ]‚ˆÙ]‚ˆ
+J_BˆÊX\]K™]OË››Ù\ÈÏÈ×JK›[™ÝOOH	‰ˆ[™[[\HX™[H“›È›Ù\È8 %ÛXÚÈZ[X\œ›ÛHÚYÛ˜[ÈˆÏŸBˆÙ]‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚‚ˆËÊˆYÙH\Ý
+‹ßBˆØ\™‚ˆØ\™XY\Ø\™]HÛ\ÜÓ˜[YOH^\ÛH“X\YÙ\È
+™[][ÛœÚ\ÊOÐØ\™]OÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆÛX\]Kš\ÓØY[™ÈÈ[™[ÚÙ[]ÛˆÏˆˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLH‚ˆÊX\]K™]OË™YÙ\ÈÏÈ×JKœÛXÙJŒ
+K›X\
+
+Nˆ[žJHOˆ
+ˆ]ˆÙ^O^ÙKšYHÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ^\ÛHKLKH›Ü™\‹Xˆ›Ü™\‹X›Ü™\‹ÌÌ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[[Û›È^^ÈˆÞÙKœÛÝ\˜ÙS›ÙRYOÜÜ[‚ˆ\œ›ÝÕ\šYÚÛ\ÜÓ˜[YOHšLÈËLÈ^[]]YY›Ü™YÜ›Ý[™ˆÏ‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[[Û›È^^ÈˆÞÙK\™Ù]›ÙRYOÜÜ[‚ˆÙ]‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^^ÈžÙK™YÙU\_OÐ˜YÙO‚ˆÙ]‚ˆ
+J_BˆÊX\]K™]OË™YÙ\ÈÏÈ×JK›[™ÝOOH	‰ˆ[™[[\HX™[H“›ÈYÙ\ÈˆÏŸBˆÙ]‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆÙ]‚ˆ
+NÂŸB‚‹Êˆ8¥ 8¥ ˜Z[\™H™YXÝ[Ûˆ[™[8¥ 8¥ 
+‹Â™[˜Ý[Ûˆ˜Z[\™T™YXÝ[Û”[™[
+
+HÂˆÛÛœÝÝ]ÈHœË™[™Ú[™\Õ™˜Z[\™T™YXÝ[Û”Ý]Ë\ÙT]Y\žJ
+NÂˆÛÛœÝ›Ùš[\ÈHœË™[™Ú[™\Õ™˜Z[\™T›Ùš[\Ë\ÙT]Y\žJ
+NÂ‚ˆYˆ
+Ý]Ëš\ÓØY[™ÊH™]\›ˆ[™[ÚÙ[]ÛˆÏŽÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆÈÛ\ÜÓ˜[YOH^[È›Û\Ù[ZX›Û›^][\ËXÙ[\ˆØ\Lˆ‚ˆ˜XÝÜžHÛ\ÜÓ˜[YOHšMHËMH^\™YMˆÏˆ[œÝ]][Û˜[˜Z[\™H™YXÝ[Û‚ˆÚÏ‚ˆÙ]‚‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆY™ÜšYXÛÛËMØ\LÈ‚ˆY]šXÐØ\™X™[H”›Ùš[\Èˆ˜[YO^ÔÝš[™ÊÝ]Ë™]OËÝ[›Ùš[\ÈÏÈ
+_HXÛÛ^ÏZ[[™ÈÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHÛÛÜHœ™YˆÏ‚ˆY]šXÐØ\™X™[H’YÚš\ÚÈˆ˜[YO^ÔÝš[™ÊÝ]Ë™]OËšYÚš\ÚÐÛÝ[ÏÈ
+_HXÛÛ^Ï[\ØÝYÛÛˆÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHÛÛÜH›Ü˜[™ÙHˆÏ‚ˆY]šXÐØ\™X™[H•[Y[[™H]™[Èˆ˜[YO^ÔÝš[™ÊÝ]Ë™]OËÝ[[Y[[™Q]™[ÈÏÈ
+_HXÛÛ^ÏÛØÚÈÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHÛÛÜH˜›YHˆÏ‚ˆY]šXÐØ\™X™[H]™È›Ø˜Xš[]Hˆ˜[YO^Ø	ÜÝ]Ë™]OË˜]™Ô›Ø˜Xš[]HÏÈIXHXÛÛ^ÏØ]YÙHÛ\ÜÓ˜[YOHšLËHËLËHˆÏŸHÛÛÜH˜[X™\ˆˆÏ‚ˆÙ]‚‚ˆËÊˆ˜Z[\™H›Ùš[\È
+‹ßBˆØ\™‚ˆØ\™XY\Ø\™]HÛ\ÜÓ˜[YOH^\ÛH’[œÝ]][Ûˆš\ÚÈ›Ùš[\ÏÐØ\™]OÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆÜ›Ùš[\Ëš\ÓØY[™ÈÈ[™[ÚÙ[]ÛˆÏˆˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆÊ›Ùš[\Ë™]HÏÈ×JK›X\
+
+ˆ[žJHOˆ
+ˆ]ˆÙ^O^ÜšYHÛ\ÜÓ˜[YOHœ›Ý[™Y[È›Ü™\ˆ›Ü™\‹X›Ü™\‹ÍLLÈ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆX‹Lˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›Û[YY][H^\ÛHžÜš[œÝ]][Û“˜[YH[œÝ]][ÛˆÉÜš[œÝ]][Û’YXOÙ]‚ˆ˜YÙHÛ\ÜÓ˜[YO^Âˆ™˜Z[\™T›Ø˜Xš[]HHÌÈ˜™Ë\™YMLÌŒ^\™YMˆ‚ˆ™˜Z[\™T›Ø˜Xš[]HHÈ˜™Ë[Ü˜[™ÙKMLÌŒ^[Ü˜[™ÙKMˆ‚ˆ˜™ËY[Y\˜[MLÌŒ^Y[Y\˜[M‚ˆO‚ˆÜ™˜Z[\™T›Ø˜Xš[]_IH˜Z[\™Hš\ÚÂˆÐ˜YÙO‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLÈØ\Lˆ^^È^[]]YY›Ü™YÜ›Ý[™‚ˆÜ[”™\ÜÝ\™NˆÜœ™\ÜÝ\™R[™^ÏÈOÜÜ[‚ˆÜ[ÛÛ\Z[ÎˆÜ˜ÛÛ\Z[›Û[YHÏÈOÜÜ[‚ˆÜ[‘[™›Ü˜Ù[Y[ˆÜ™[™›Ü˜Ù[Y[XÝ[ÛœÈÏÈOÜÜ[‚ˆÙ]‚ˆÙ]‚ˆ
+J_BˆÊ›Ùš[\Ë™]HÏÈ×JK›[™ÝOOH	‰ˆ[™[[\HX™[H“›È˜Z[\™H›Ùš[\È8 %[ˆ\Ù\˜Z[\™T›Ùš[HÈÜ™X]HˆÏŸBˆÙ]‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆÙ]‚ˆ
+NÂŸB‚‹Êˆ8¥ 8¥ [™\ÝYØ]]™H]Y\žH[™Ú[™H[™[8¥ 8¥ 
+‹Â™[˜Ý[Ûˆ[™\ÝYØ]]™T]Y\žT[™[
+
+HÂˆÛÛœÝÜ]Y\žU^Ù]]Y\žU^HH\ÙTÝ]JˆŠNÂˆÛÛœÝØXÝ]™T™\Ý[Ù]XÝ]™T™\Ý[HH\ÙTÝ]O[žOŠ[
+NÂˆÛÛœÝÝ]ÈHœË™[™Ú[™\Õš[™\ÝYØ]]™T]Y\žTÝ]Ë\ÙT]Y\žJ
+NÂˆÛÛœÝÝYÙÙ\ÝYHœË™[™Ú[™\ÕœÝYÙÙ\ÝY]Y\šY\Ë\ÙT]Y\žJ
+NÂˆÛÛœÝ\ÝÜžHHœË™[™Ú[™\Õœ]Y\žR\ÝÜžK\ÙT]Y\žJ
+NÂˆÛÛœÝ[”]Y\žHHœË™[™Ú[™\Õœ[’[™\ÝYØ]]™T]Y\žK\ÙS]]][ÛŠÂˆÛ”ÝXØÙ\ÜÎˆ
+]JHOˆÂˆÙ]XÝ]™T™\Ý[
+]JNÂˆ\ÝÜžKœ™Y™]Ú
+
+NÂˆÝ]Ëœ™Y™]Ú
+
+NÂˆKˆJNÂ‚ˆÛÛœÝ[™TÝX›Z]H
+
+HOˆÂˆYˆ
+\]Y\žU^š[J
+JH™]\›ŽÂˆ[”]Y\žK›]]]JÈ]Y\žU^ˆ]Y\žU^š[J
+HJNÂˆNÂ‚ˆÛÛœÝ[™TÝYÙÙ\ÝYH
+^ˆÝš[™ÊHOˆÂˆÙ]]Y\žU^
+^
+NÂˆ[”]Y\žK›]]]JÈ]Y\žU^ˆ^JNÂˆNÂ‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆÈÛ\ÜÓ˜[YOH^[È›Û\Ù[ZX›Û›^][\ËXÙ[\ˆØ\Lˆ‚ˆÙX\˜ÚÛÙHÛ\ÜÓ˜[YOHšMHËMH^]š[Û]MˆÏˆ[™\ÝYØ]]™H]Y\žH[™Ú[™BˆÚÏ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^Ø\Lˆ^^È^[]]YY›Ü™YÜ›Ý[™‚ˆÜ[žÜÝ]Ë™]OËÝ[]Y\šY\ÈÏÈH]Y\šY\ÏÜÜ[‚ˆÜ[°­ÏÜÜ[‚ˆÜ[žÜÝ]Ë™]OËÝ[™\Ý[ÈÏÈH™\Ý[ÏÜÜ[‚ˆÙ]‚ˆÙ]‚‚ˆËÊˆ]Y\žH[œ]
+‹ßBˆØ\™‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœMˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^Ø\Lˆ‚ˆ[œ]ˆ\OH^‚ˆ˜[YO^Ü]Y\žU^BˆÛÚ[™ÙO^ÊJHOˆÙ]]Y\žU^
+K\™Ù]˜[YJ_BˆÛ’Ù^QÝÛ^ÊJHOˆKšÙ^HOOH‘[\ˆˆ	‰ˆ[™TÝX›Z]
+
+_BˆXÙZÛ\H\ÚÈ[ˆ[™\ÝYØ]]™H]Y\Ý[Û‹‹‹ˆK™Ëˆ	ÐÛÛ\[šY\ÈÚ][Ü™H[ˆHÛÛ\Z[ÉÈ‚ˆÛ\ÜÓ˜[YOH™›^LH›Ý[™Y[È›Ü™\ˆ›Ü™\‹X›Ü™\‹ÍL™ËX˜XÚÙÜ›Ý[™MKL‹H^\ÛH›ØÝ\Î›Ý][™K[›Û™H›ØÝ\Îœš[™ËLˆ›ØÝ\Îœš[™Ë]š[Û]MLÌÌ‚ˆÏ‚ˆ]Û‚ˆÛÛXÚÏ^Ú[™TÝX›Z]Bˆ\ØX›Y^Ü[”]Y\žKš\Ô[™[™È\]Y\žU^š[J
+_BˆÛ\ÜÓ˜[YOH™Ø\LKH™Ë]š[Û]MŒÝ™\Ž˜™Ë]š[Û]MÌ‚ˆ‚ˆÜ[”]Y\žKš\Ô[™[™ÈÈØY\ŒˆÛ\ÜÓ˜[YOHšMËM[š[X]K\Ü[ˆˆÏˆˆÙX\˜ÚÛ\ÜÓ˜[YOHšMËMˆÏŸBˆ]Y\žBˆÐ]Û‚ˆÙ]‚‚ˆËÊˆÝYÙÙ\ÝY]Y\šY\È
+‹ßBˆÈXXÝ]™T™\Ý[	‰ˆ
+ÝYÙÙ\ÝY™]HÏÈ×JK›[™Ýˆ	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH›]M‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™X‹Lˆ”ÝYÙÙ\ÝY]Y\šY\ÎÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^›^]Ü˜\Ø\LKH‚ˆÊÝYÙÙ\ÝY™]HÏÈ×JK›X\
+
+ÜNˆ[žKNˆ[X™\ŠHOˆ
+ˆ]Û‚ˆÙ^O^Ú_BˆÛÛXÚÏ^Ê
+HOˆ[™TÝYÙÙ\ÝY
+ÜK^
+_BˆÛ\ÜÓ˜[YOHœ›Ý[™YY[›Ü™\ˆ›Ü™\‹X›Ü™\‹ÍLLÈKLH^^ÈÝ™\Ž˜™Ë]š[Û]MLÌLÝ™\Ž˜›Ü™\‹]š[Û]MLÌÌ˜[œÚ][Û‹XÛÛÜœÈ‚ˆ‚ˆÜÜK^BˆØ]Û‚ˆ
+J_BˆÙ]‚ˆÙ]‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚‚ˆËÊˆ\œÙY]Y\žH\Ü^H
+‹ßBˆØXÝ]™T™\Ý[Ëœ\œÙY]Y\žH	‰ˆ
+ˆØ\™‚ˆØ\™XY\Ø\™]HÛ\ÜÓ˜[YOH^\ÛH”\œÙY]Y\žHš[\œÏÐØ\™]OÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOH™›^›^]Ü˜\Ø\Lˆ‚ˆØXÝ]™T™\Ý[œ\œÙY]Y\žK™[]U\H	‰ˆ
+ˆ˜YÙHÛ\ÜÓ˜[YOH˜™ËX›YKMLÌŒ^X›YKM•\NˆØXÝ]™T™\Ý[œ\œÙY]Y\žK™[]U\_OÐ˜YÙO‚ˆ
+_BˆØXÝ]™T™\Ý[œ\œÙY]Y\žKš[™\ÝžH	‰ˆ
+ˆ˜YÙHÛ\ÜÓ˜[YOH˜™ËYÜ™Y[‹MLÌŒ^YÜ™Y[‹M’[™\ÝžNˆØXÝ]™T™\Ý[œ\œÙY]Y\žKš[™\Ýž_OÐ˜YÙO‚ˆ
+_BˆØXÝ]™T™\Ý[œ\œÙY]Y\žKš\š\ÙXÝ[Ûˆ	‰ˆ
+ˆ˜YÙHÛ\ÜÓ˜[YOH˜™ËX[X™\‹MLÌŒ^X[X™\‹M’\š\ÙXÝ[ÛŽˆØXÝ]™T™\Ý[œ\œÙY]Y\žKš\š\ÙXÝ[ÛŸOÐ˜YÙO‚ˆ
+_BˆØXÝ]™T™\Ý[œ\œÙY]Y\žK˜ÛÛ\Z[™\ÚÛ	‰ˆ
+ˆ˜YÙHÛ\ÜÓ˜[YOH˜™Ë\™YMLÌŒ^\™YMÛÛ\Z[È8¢iHØXÝ]™T™\Ý[œ\œÙY]Y\žK˜ÛÛ\Z[™\ÚÛOÐ˜YÙO‚ˆ
+_BˆØXÝ]™T™\Ý[œ\œÙY]Y\žK›]ÜÝZ]™\ÚÛ	‰ˆ
+ˆ˜YÙHÛ\ÜÓ˜[YOH˜™Ë[Ü˜[™ÙKMLÌŒ^[Ü˜[™ÙKM“]ÜÝZ]È8¢iHØXÝ]™T™\Ý[œ\œÙY]Y\žK›]ÜÝZ]™\ÚÛOÐ˜YÙO‚ˆ
+_BˆØXÝ]™T™\Ý[œ\œÙY]Y\žKœÛÜžH	‰ˆ
+ˆ˜YÙHÛ\ÜÓ˜[YOH˜™Ë]š[Û]MLÌŒ^]š[Û]M”ÛÜˆØXÝ]™T™\Ý[œ\œÙY]Y\žKœÛÜž_OÐ˜YÙO‚ˆ
+_BˆØXÝ]™T™\Ý[œ\œÙY]Y\žK›[Z]	‰ˆ
+ˆ˜YÙHÛ\ÜÓ˜[YOH˜™Ë\Û]KMLÌŒ^\Û]KM“[Z]ˆØXÝ]™T™\Ý[œ\œÙY]Y\žK›[Z]OÐ˜YÙO‚ˆ
+_BˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™]Lˆ‚ˆØXÝ]™T™\Ý[Ý[™\Ý[ßHÝ[X]Ú\È0­ÈÚÝÚ[™ÈÜØXÝ]™T™\Ý[œ™\Ý[Ë›[™ÝBˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_B‚ˆËÊˆ™\Ý[È
+‹ßBˆØXÝ]™T™\Ý[Ëœ™\Ý[È	‰ˆXÝ]™T™\Ý[œ™\Ý[Ë›[™Ýˆ	‰ˆ
+ˆØ\™‚ˆØ\™XY\Ø\™]HÛ\ÜÓ˜[YOH^\ÛH”]Y\žH™\Ý[ÏÐØ\™]OÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLˆ‚ˆØXÝ]™T™\Ý[œ™\Ý[Ë›X\
+
+Žˆ[žJHOˆ
+ˆ]ˆÙ^O^Ü‹šYHÛ\ÜÓ˜[YOHœ›Ý[™Y[È›Ü™\ˆ›Ü™\‹X›Ü™\‹ÍLLÈ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆX‹Lˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆÜ[ˆÛ\ÜÓ˜[YOH^^È›Û[[Û›È^[]]YY›Ü™YÜ›Ý[™ˆÞÜ‹œ˜[šßOÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH™›Û[YY][H^\ÛHžÜ‹™[]S˜[Y_OÜÜ[‚ˆÜ‹™[]U\H	‰ˆ‹™[]U\HOOH[šÛ›ÝÛˆˆ	‰ˆ
+ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^VÌLHžÜ‹™[]U\_OÐ˜YÙO‚ˆ
+_BˆÙ]‚ˆ˜YÙHÛ\ÜÓ˜[YO^Âˆ‹˜ÛÛ™šY[˜ÙTØÛÜ™HHÌÈ˜™ËY[Y\˜[MLÌŒ^Y[Y\˜[Mˆ‚ˆ‹˜ÛÛ™šY[˜ÙTØÛÜ™HHÈ˜™ËX[X™\‹MLÌŒ^X[X™\‹Mˆ‚ˆ˜™Ë\Û]KMLÌŒ^\Û]KM‚ˆO‚ˆÜ‹˜ÛÛ™šY[˜ÙTØÛÜ™_IHÛÛ™šY[˜ÙBˆÐ˜YÙO‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËMHØ\Lˆ^^È^[]]YY›Ü™YÜ›Ý[™X‹Lˆ‚ˆÜ[”ÚYÛ˜[ÎˆÜ‹œÚYÛ˜[ÛÝ[OÜÜ[‚ˆÜ[ÛÛ\Z[ÎˆÜ‹˜ÛÛ\Z[ÛÝ[OÜÜ[‚ˆÜ[“]ÜÝZ]ÎˆÜ‹›]ÜÝZ]ÛÝ[OÜÜ[‚ˆÜ[‘[™›Ü˜Ù[Y[ˆÜ‹™[™›Ü˜Ù[Y[ÛÝ[OÜÜ[‚ˆÜ[”Ý™X[\ÎˆÜ‹œÝ™X[PÛÝ[OÜÜ[‚ˆÙ]‚ˆÜ‹š\š\ÙXÝ[ÛœÈ	‰ˆ‹š\š\ÙXÝ[ÛœË›[™Ýˆ	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH™›^›^]Ü˜\Ø\LHX‹LH‚ˆÜ‹š\š\ÙXÝ[ÛœËœÛXÙJJK›X\
+
+ŽˆÝš[™ËNˆ[X™\ŠHOˆ
+ˆÜ[ˆÙ^O^Ú_HÛ\ÜÓ˜[YOHœ›Ý[™Y™ËX›YKMLÌLLKHKLH^VÌLH^X›YKMžÚŸOÜÜ[‚ˆ
+J_BˆÜ‹š\š\ÙXÝ[ÛœË›[™ÝˆH	‰ˆÜ[ˆÛ\ÜÓ˜[YOH^VÌLH^[]]YY›Ü™YÜ›Ý[™ŠÞÜ‹š\š\ÙXÝ[ÛœË›[™ÝH_H[Ü™OÜÜ[ŸBˆÙ]‚ˆ
+_BˆÜ‹œÛÝ\˜ÙTÝ™X[\È	‰ˆ‹œÛÝ\˜ÙTÝ™X[\Ë›[™Ýˆ	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH™›^›^]Ü˜\Ø\LHX‹Lˆ‚ˆÜ‹œÛÝ\˜ÙTÝ™X[\Ë›X\
+
+ÎˆÝš[™ËNˆ[X™\ŠHOˆ
+ˆÜ[ˆÙ^O^Ú_HÛ\ÜÓ˜[YOHœ›Ý[™Y™Ë]š[Û]MLÌLLKHKLH^VÌLH^]š[Û]MžÜËœ™\XÙJ×ËÙËˆŠ_OÜÜ[‚ˆ
+J_BˆÙ]‚ˆ
+_BˆÜ‹œØY™S[™ÝXYÙTÝ[[X\žH	‰ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™][XÈ›Ü™\‹[Lˆ›Ü™\‹]š[Û]MLÌÌLˆ]LH‚ˆÜ‹œØY™S[™ÝXYÙTÝ[[X\ž_BˆÙ]‚ˆ
+_BˆÙ]‚ˆ
+J_BˆÙ]‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆ
+_B‚ˆØXÝ]™T™\Ý[Ëœ™\Ý[È	‰ˆXÝ]™T™\Ý[œ™\Ý[Ë›[™ÝOOH	‰ˆ
+ˆ[™[[\HX™[H“›È[]Y\ÈX]ÚY[Ý\ˆ]Y\žHš[\œËˆžHœ›ØY[š[™È[Ý\ˆÙX\˜ÚˆˆÏ‚ˆ
+_B‚ˆËÊˆ]Y\žH\ÝÜžH
+‹ßBˆØ\™‚ˆØ\™XY\Ø\™]HÛ\ÜÓ˜[YOH^\ÛH›^][\ËXÙ[\ˆØ\Lˆ\ÝÜžHÛ\ÜÓ˜[YOHšMËMˆÏˆ]Y\žH\ÝÜžOÐØ\™]OÐØ\™XY\‚ˆØ\™ÛÛ[‚ˆÚ\ÝÜžKš\ÓØY[™ÈÈ[™[ÚÙ[]ÛˆÏˆˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÜXÙK^KLH‚ˆÊ\ÝÜžK™]HÏÈ×JKœÛXÙJL
+K›X\
+
+Nˆ[žJHOˆ
+ˆ]ˆÙ^O^ÜKšYHÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ›Ý[™Y›Ü™\ˆ›Ü™\‹X›Ü™\‹ÌÌLÈKLˆ^^È‚ˆÜ[ˆÛ\ÜÓ˜[YOH[˜Ø]H›^LH\‹LˆžÜKœ]Y\žU^OÜÜ[‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^VÌLHžÜKœ™\Ý[ÛÝ[ÏÈH™\Ý[ÏÐ˜YÙO‚ˆÜ[ˆÛ\ÜÓ˜[YOH^[]]YY›Ü™YÜ›Ý[™žÛ™]È]JK˜Ü™X]Y]
+KÓØØ[TÝš[™Ê
+_OÜÜ[‚ˆÙ]‚ˆÙ]‚ˆ
+J_BˆÊ\ÝÜžK™]HÏÈ×JK›[™ÝOOH	‰ˆ[™[[\HX™[H“›È]Y\šY\ÈY]8 %žHÛ™HX›Ý™HˆÏŸBˆÙ]‚ˆ
+_BˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆÙ]‚ˆ
+NÂŸB‚™^ÜY˜][[˜Ý[ÛˆZ\ÜÚ[ÛÛÛ›Û
+
+HÂˆÛÛœÝÈ\Ù\‹ØY[™ÈHH\ÙP]]
+
+NÂˆÛÛœÝÛXZ[•X‹Ù]XZ[•X—HH\ÙTÝ]J›Ü\˜][ÛœÈŠNÂˆYˆ
+ØY[™ÊHÂˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH›Z[‹Z\ØÜ™Y[ˆ›^][\ËXÙ[\ˆ\ÝYžKXÙ[\ˆ™ËX˜XÚÙÜ›Ý[™‚ˆØY\ŒˆÛ\ÜÓ˜[YOHšNËN[š[X]K\Ü[ˆ^[]]YY›Ü™YÜ›Ý[™ˆÏ‚ˆÙ]‚ˆ
+NÂˆB‚ˆYˆ
+]\Ù\ŠHÂˆÚ[™ÝË›ØØ][Û‹š™YˆHÙ]ÙÚ[•\›
+
+NÂˆ™]\›ˆ[ÂˆB‚ˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOH›Z[‹Z\ØÜ™Y[ˆ™ËX˜XÚÙÜ›Ý[™^Y›Ü™YÜ›Ý[™‚ˆËÊˆXY\ˆ
+‹ßBˆ]ˆÛ\ÜÓ˜[YOH˜›Ü™\‹Xˆ™ËXØ\™ÍL‚ˆ]ˆÛ\ÜÓ˜[YOH›X^]ËMÞ^X]]ÈMˆKM‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆ‚ˆ]‚ˆHÛ\ÜÓ˜[YOH^Lž›ÛX›Û›^][\ËXÙ[\ˆØ\Lˆ‚ˆXÝ]š]HÛ\ÜÓ˜[YOHšMˆËMˆ^\š[X\žHˆÏ‚ˆZ\ÜÚ[ÛˆÛÛ›ÛˆÚO‚ˆÛ\ÜÓ˜[YOH^\ÛH^[]]YY›Ü™YÜ›Ý[™]LH‚ˆYZ[ˆÜ\˜][Û˜[\Ú›Ø\™8 %Þ\Ý[HX[Û›ÝÛYÙHÛÝ™\˜YÙK[™Ø\ÙHXÝ]š]BˆÜ‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\Lˆ‚ˆ˜]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆØ\LH‚ˆ[šÈ™YH‹Û]Y›ÛÛH‚ˆ]Ûˆ˜\šX[H™ÚÜÝˆÚ^™OHœÛHˆÛ\ÜÓ˜[YOH™Ø\LKH^^È‚ˆÛÜ“Ü[ˆÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆ]Y›ÛÛBˆÐ]Û‚ˆÓ[šÏ‚ˆ[šÈ™YH‹ÝÛÜšÜÚÜ‚ˆ]Ûˆ˜\šX[H™ÚÜÝˆÚ^™OHœÛHˆÛ\ÜÓ˜[YOH™Ø\LKH^^È‚ˆÜ™[˜ÚÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆÛÜšÜÚÜˆÐ]Û‚ˆÓ[šÏ‚ˆ[šÈ™YH‹Ý\ØY‚ˆ]Ûˆ˜\šX[H™ÚÜÝˆÚ^™OHœÛHˆÛ\ÜÓ˜[YOH™Ø\LKH^^È‚ˆ\ØYÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆ\Ú›Ø\™ˆÐ]Û‚ˆÓ[šÏ‚ˆ[šÈ™YH‹ÛYÚÝ\ÙH‚ˆ]Ûˆ˜\šX[H™ÚÜÝˆÚ^™OHœÛHˆÛ\ÜÓ˜[YOH™Ø\LKH^^È‚ˆ[\Û\ÜÓ˜[YOHšLËHËLËHˆÏˆYÚÝ\ÙBˆÐ]Û‚ˆÓ[šÏ‚ˆÛ˜]‚ˆ]ˆÛ\ÜÓ˜[YOHË\Mˆ™ËX›Ü™\ˆˆÏ‚ˆ˜YÙH˜\šX[H›Ý][™HˆÛ\ÜÓ˜[YOH^^È‚ˆYZ[ˆÛ›BˆÐ˜YÙO‚ˆÙ]‚ˆÙ]‚ˆÙ]‚ˆÙ]‚‚ˆËÊˆÛÛ[
+‹ßBˆ]ˆÛ\ÜÓ˜[YOH›X^]ËMÞ^X]]ÈMˆKMˆ‚ˆXœÈ˜[YO^ÛXZ[•XŸHÛ•˜[YPÚ[™ÙO^ÜÙ]XZ[•XŸHÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆXœÓ\Ý‚ˆÜÚÝ[™[™\”[™[
+›Ü\˜][ÛœÈŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOH›Ü\˜][ÛœÈˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆXÝ]š]HÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆÜ\˜][ÛœÂˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+œ™YÚ\ÝžHŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOHœ™YÚ\ÝžHˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆ]X˜\ÙHÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆ™YÚ\ÝžBˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+š[™Ù\Ý[ÛˆŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOHš[™Ù\Ý[ÛˆˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆ˜Y[ÈÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆ]™H]BˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+šØ‹Y^Ü™\ˆŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOHšØ‹Y^Ü™\ˆˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆ]X˜\ÙHÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆÐˆ^Ü™\‚ˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+™ÛÝ™\›˜[˜ÙHŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOH™ÛÝ™\›˜[˜ÙHˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆÚY[Û\ÜÓ˜[YOHšLËHËLËHˆÏˆÚYÛ˜[ÛÝ™\›˜[˜ÙBˆÕXœÕšYÙÙ\ŸBžÜÚÝ[™[™\”[™[
+œ]\›œÈŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOHœ]\›œÈˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆ™]ÛÜšÈÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆ]\›ˆ™YÚ\ÝžBˆÕXœÕšYÙÙ\ŸBžÜÚÝ[™[™\”[™[
+™[™ÈŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOH™[™ÈˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆØ]YÙHÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆ™[™È	ˆ™\ÜÝ\™BˆÕXœÕšYÙÙ\ŸBžÜÚÝ[™[™\”[™[
+œÝ˜]YÞK\]ÈŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOHœÝ˜]YÞK\]ÈˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆ›Ý]HÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆÝ˜]YÞH]ÂˆÕXœÕšYÙÙ\ŸBžÜÚÝ[™[™\”[™[
+›Ý]ÛÛY\ÈŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOH›Ý]ÛÛY\ÈˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆ\™Ù]Û\ÜÓ˜[YOHšLËHËLËHˆÏˆÝ]ÛÛY\ÂˆÕXœÕšYÙÙ\ŸBžÜÚÝ[™[™\”[™[
+š[\™[[ÛœÈŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOHš[\™[[ÛœÈˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆÚ\™[ˆÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆ[\™[[ÛœÂˆÕXœÕšYÙÙ\ŸBžÜÚÝ[™[™\”[™[
+œÛXÞHŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOHœÛXÞHˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆ[™X\šÈÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆÛXÞH[\XÝˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+œ™[YYK][\]\ÈŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOHœ™[YYK][\]\ÈˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆØ[Ý[]ÜˆÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆ™[YYH[\]\ÂˆÕXœÕšYÙÙ\ŸBžÜÚÝ[™[™\”[™[
+›Y[[ÜžK\Ý˜]YÞHŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOH›Y[[ÜžK\Ý˜]YÞHˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆœ˜Z[ˆÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆY[[ÜžHÝ˜]YÞBˆÕXœÕšYÙÙ\ŸBžÜÚÝ[™[™\”[™[
+œ™Y›Ü›K\›ÜÜØ[ÈŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOHœ™Y›Ü›K\›ÜÜØ[ÈˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆš[SÝ]]Û\ÜÓ˜[YOHšLËHËLËHˆÏˆ™Y›Ü›H›ÜÜØ[ÂˆÕXœÕšYÙÙ\ŸBžÜÚÝ[™[™\”[™[
+˜ÛØ[][ÛœÈŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOH˜ÛØ[][ÛœÈˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆ[™ÚZÙHÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆÛØ[][ÛœÂˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+™]šY[˜ÙK[XˆŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOH™]šY[˜ÙK[XˆˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆZXÜ›ÜØÛÜHÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆ]šY[˜ÙHX‚ˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+˜ÛZ[K]˜[Y][ÛˆŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOH˜ÛZ[K]˜[Y][ÛˆˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆÛ\›Ø\™ÚXÚÈÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆÛZ[H˜[Y][Û‚ˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+œ™[YYKY™X\ÚXš[]HŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOHœ™[YYKY™X\ÚXš[]HˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆØ]™[Û\ÜÓ˜[YOHšLËHËLËHˆÏˆ™[YYH™X\ÚXš[]BˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+œ›ØÙY\˜[\]ÈŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOHœ›ØÙY\˜[\]ÈˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆX\XÛÛˆÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆ›ØÙY\˜[]ÂˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+š\™[š[™Ë\\[[™HŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOHš\™[š[™Ë\\[[™HˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆ^Y\œÈÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆ\™[š[™È\[[™BˆÕXœÕšYÙÙ\ŸBžÜÚÝ[™[™\”[™[
+˜ÛØ[][Û‹Z[[ŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOH˜ÛØ[][Û‹Z[[ˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆš[›ØÝ[\œÈÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆÛØ[][Ûˆ[[ˆÕXœÕšYÙÙ\ŸBžÜÚÝ[™[™\”[™[
+˜Ø[\ZYÛ‹Y[™Ú[™HŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOH˜Ø[\ZYÛ‹Y[™Ú[™HˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆYYØ\Û™HÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆØ[\ZYÛˆ[™Ú[™BˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+šÛ›ÝÛYÙKZX[ŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOHšÛ›ÝÛYÙKZX[ˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆX\[ÙHÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆÛ›ÝÛYÙHX[ˆÕXœÕšYÙÙ\ŸBžÜÚÝ[™[™\”[™[
+™Ø\X[˜[\Ú\ÈŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOH™Ø\X[˜[\Ú\ÈˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆÜšYÖÈÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆØ\[˜[\Ú\ÂˆÕXœÕšYÙÙ\ŸBžÜÚÝ[™[™\”[™[
+š\›KZ[™^ŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOHš\›KZ[™^ˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆ›[YHÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆ\›H[™^ˆÕXœÕšYÙÙ\ŸBžÜÚÝ[™[™\”[™[
+œš\ÚËY›Ü™XØ\ÝŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOHœš\ÚËY›Ü™XØ\ÝˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆ˜Y\ˆÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆš\ÚÈ›Ü™XØ\ÝˆÕXœÕšYÙÙ\ŸBžÜÚÝ[™[™\”[™[
+š\›K[X\ŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOHš\›K[X\ˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆ™]ÛÜšÈÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆ\›HX\ˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+™œ›ÛYÛÜˆŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOH™œ›ÛYÛÜˆˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆY\ÜØYÙTÜ]X\™HÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆœ›ÛÛÜ‚ˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+›Ø˜žZ[™ÈŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOH›Ø˜žZ[™ÈˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆÛ\”ÚYÛˆÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆØ˜žZ[™ÂˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+›]YØ][ÛˆŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOH›]YØ][ÛˆˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆØ]™[Û\ÜÓ˜[YOHšLËHËLËHˆÏˆ]YØ][Û‚ˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+˜YZ[‹YXÚ\Ú[ÛœÈŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOH˜YZ[‹YXÚ\Ú[ÛœÈˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆØØ[HÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆYZ[ˆXÚ\Ú[ÛœÂˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+™\šYšYY\™\ÜÈŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOH™\šYšYY\™\ÜÈˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆÚY[Û\ÜÓ˜[YOHšLËHËLËHˆÏˆ™\šYšYY™\ÜÂˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+˜Y›ØØXÞHŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOH˜Y›ØØXÞHˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆYYØ\Û™HÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆY›ØØXÞBˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+˜Ü›ÜÜË\Ý™X[HŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOH˜Ü›ÜÜË\Ý™X[HˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆÚ]ÛÛ\\™P\œ›ÝÜÈÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆÜ›ÜÜËTÝ™X[BˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+[YK]˜]™[ŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOH[YK]˜]™[ˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆ\ÝÜžHÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆ[YH˜]™[ˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+™[]KZ[[ŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOH™[]KZ[[ˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆš[™Ù\œš[Û\ÜÓ˜[YOHšLËHËLËHˆÏˆ[]H[[ˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+š[œÝ]][ÛœÈŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOHš[œÝ]][ÛœÈˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆZ[[™ÈÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆ[œÝ]][ÛœÂˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+œ™YËXØ\\™HŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOHœ™YËXØ\\™HˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆÚY[[\Û\ÜÓ˜[YOHšLËHËLËHˆÏˆ™YËˆØ\\™BˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+˜Üš\Ú\Ë\™YXÝŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOH˜Üš\Ú\Ë\™YXÝˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆ[\ØÝYÛÛˆÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆÜš\Ú\È™YXÝˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+œÚ[][][Û‹[XˆŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOHœÚ[][][Û‹[XˆˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆ›\ÚÐÛÛšXØ[Û\ÜÓ˜[YOHšLËHËLËHˆÏˆÚ[][][ÛˆX‚ˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+˜[œÜ\™[˜ÞHŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOH˜[œÜ\™[˜ÞHˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆ™]ÜÜ\\ˆÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆ˜[œÜ\™[˜ÞBˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+™ÜÜÚY\‹\ÝY[ÈŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOH™ÜÜÚY\‹\ÝY[ÈˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆ›Û\\˜Ú]™HÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆÜÜÚY\ˆÝY[ÂˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+™^XÛÛXˆŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOH™^XÛÛXˆˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆÚ\™LˆÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆ^ˆÛÛX›Ü˜][Û‚ˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+™[]K]˜[œÜ\™[˜ÞHŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOH™[]K]˜[œÜ\™[˜ÞHˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆØØ[ˆÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆ[]H˜[œÜ\™[˜ÞBˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+™]šY[˜ÙK]™\ÚÛŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOH™]šY[˜ÙK]™\ÚÛˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆÚY[Û\ÜÓ˜[YOHšLËHËLËHˆÏˆ]šY[˜ÙH™\ÚÛˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+˜[\[™ÈŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOH˜[\[™ÈˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆ™[Û\ÜÓ˜[YOHšLËHËLËHˆÏˆ[\[™ÂˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+œÞ\Ý[K[X\ŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOHœÞ\Ý[K[X\ˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆØ^\Ú[ÈÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆÞ\Ý[HX\ˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+™˜Z[\™K\™YXÝŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOH™˜Z[\™K\™YXÝˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆ˜XÝÜžHÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆ˜Z[\™H™YXÝ[Û‚ˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+š[™\ÝYØ]]™K\]Y\žHŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOHš[™\ÝYØ]]™K\]Y\žHˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆÙX\˜ÚÛÙHÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆ[™\ÝYØ]]™H]Y\žBˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+›Y]Y]KZX[ŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOH›Y]Y]KZX[ˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆ]X˜\ÙHÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆY]Y]HX[ˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+œ\[[™KZ[YÜš]HŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOHœ\[[™KZ[YÜš]HˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆÚY[Û\ÜÓ˜[YOHšLËHËLËHˆÏˆ\[[™H[YÜš]BˆÕXœÕšYÙÙ\ŸBˆÜÚÝ[™[™\”[™[
+™^Ü\™XY[™\ÜÈŠH	‰ˆXœÕšYÙÙ\ˆ˜[YOH™^Ü\™XY[™\ÜÈˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆš[SÝ]]Û\ÜÓ˜[YOHšLËHËLËHˆÏˆ^Ü™XY[™\ÜÂˆÕXœÕšYÙÙ\ŸBˆXœÕšYÙÙ\ˆ˜[YOH›[[™XYÙHˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆÚ]œ˜[˜ÚÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆÚYÛ˜[[™XYÙBˆÕXœÕšYÙÙ\‚ˆXœÕšYÙÙ\ˆ˜[YOH›YØ]K\™]šY]ÈˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆÚY[Û\ÜÓ˜[YOHšLËHËLËHˆÏˆØ]H™]šY]ÂˆÕXœÕšYÙÙ\‚ˆXœÕšYÙÙ\ˆ˜[YOH›\]\›œÈˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆš[™Ù\œš[Û\ÜÓ˜[YOHšLËHËLËHˆÏˆ]\›œÂˆÕXœÕšYÙÙ\‚ˆXœÕšYÙÙ\ˆ˜[YOH›]™[™ÈˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆ™[™[™Õ\Û\ÜÓ˜[YOHšLËHËLËHˆÏˆ™[™ÂˆÕXœÕšYÙÙ\‚ˆXœÕšYÙÙ\ˆ˜[YOH›\Ý˜]YÚY\ÈˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆ\™Ù]Û\ÜÓ˜[YOHšLËHËLËHˆÏˆÝ˜]YÚY\ÂˆÕXœÕšYÙÙ\‚ˆXœÕšYÙÙ\ˆ˜[YOH›ZX[ˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆX\[ÙHÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆX[ˆÕXœÕšYÙÙ\‚ˆXœÕšYÙÙ\ˆ˜[YOH™›YÜÈˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆ›YÈÛ\ÜÓ˜[YOHšLËHËLËHˆÏˆ›YÜÂˆÕXœÕšYÙÙ\‚ˆÕXœÓ\Ý‚‚ˆÜÚÝ[™[™\”[™[
+›Ü\˜][ÛœÈŠH	‰ˆXœÐÛÛ[˜[YOH›Ü\˜][ÛœÈˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆËÊˆ]ZXÚÈ˜]šYØ]H8 %\ÜË]›ÝYÚÚÜÝ]ÈÈÙ^H[˜Ý[Û˜[XœÈ
+‹ßBˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLˆÛN™ÜšYXÛÛËLÈÎ™ÜšYXÛÛËMˆØ\Lˆ‚ˆÊÂˆÈXŽˆ™]šY[˜ÙK[Xˆ‹X™[ˆ‘]šY[˜ÙHXˆ‹XÛÛŽˆZXÜ›ÜØÛÜHÛ\ÜÓ˜[YOHšMËMˆÏ‹ÛÛÜŽˆ^XÞX[‹MˆKˆÈXŽˆ˜ÛZ[K]˜[Y][Ûˆ‹X™[ˆÛZ[H˜[Y][Ûˆ‹XÛÛŽˆÛ\›Ø\™ÚXÚÈÛ\ÜÓ˜[YOHšMËMˆÏ‹ÛÛÜŽˆ^Y[Y\˜[MˆKˆÈXŽˆœ™[YYKY™X\ÚXš[]H‹X™[ˆ”™[YYH™X\ÚXš[]H‹XÛÛŽˆØØ[HÛ\ÜÓ˜[YOHšMËMˆÏ‹ÛÛÜŽˆ^X[X™\‹MˆKˆÈXŽˆœ›ØÙY\˜[\]È‹X™[ˆ”›ØÙY\˜[]È‹XÛÛŽˆ›Ý]HÛ\ÜÓ˜[YOHšMËMˆÏ‹ÛÛÜŽˆ^]š[Û]MˆKˆÈXŽˆ™›YÜÈ‹X™[ˆ‘›YÈ]Y]YH‹XÛÛŽˆ›YÈÛ\ÜÓ˜[YOHšMËMˆÏ‹ÛÛÜŽˆ^\™YMˆKˆÈXŽˆšØ‹Y^Ü™\ˆ‹X™[ˆ’Ðˆ^Ü™\ˆ‹XÛÛŽˆ›ÛÚÓÜ[ˆÛ\ÜÓ˜[YOHšMËMˆÏ‹ÛÛÜŽˆ^X›YKMˆKˆH\ÈÛÛœÝ
+K›X\
+
+ÈX‹X™[XÛÛ‹ÛÛÜˆJHOˆ
+ˆÚÝ[™[™\”[™[
+XŠHÈ
+ˆ]Û‚ˆÙ^O^ÝXŸBˆÛÛXÚÏ^Ê
+HOˆÙ]XZ[•XŠXŠ_BˆÛ\ÜÓ˜[YOH™›^›^XÛÛ][\ËXÙ[\ˆØ\LKHLÈ›Ý[™Y[È›Ü™\ˆ›Ü™\‹X›Ü™\‹ÍL™ËXØ\™ÌÌÝ™\Ž˜™ËXØ\™ÍŒÝ™\Ž˜›Ü™\‹X›Ü™\ˆ˜[œÚ][Û‹X[^XÙ[\ˆÜ›Ý\‚ˆ‚ˆÜ[ˆÛ\ÜÓ˜[YO^Ø	ØÛÛÜŸHÜ›Ý\ZÝ™\ŽœØØ[KLLL˜[œÚ][Û‹]˜[œÙ›Ü›XOžÚXÛÛŸOÜÜ[‚ˆÜ[ˆÛ\ÜÓ˜[YOH^^È^[]]YY›Ü™YÜ›Ý[™Ü›Ý\ZÝ™\Ž^Y›Ü™YÜ›Ý[™˜[œÚ][Û‹XÛÛÜœÈXY[™Ë]YÚžÛX™[OÜÜ[‚ˆØ]Û‚ˆ
+Hˆ[ˆ
+J_BˆÙ]‚ˆËÊˆ›ÝÈˆØ[›ÛšXØ[ÛÜ™H
+Ü˜Ú\Ý˜][Ûˆ›ÛÝ
+H
+‹ßBˆØ\™‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœMˆ‚ˆØ[›ÛšXØ[ÛÜ™T[™[Ï‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆËÊˆ›ÝÈNˆØ[›ÛšXØ[Ü[™H8 %[\[Y[][ÛˆXÚØYÙH
+‹ßBˆØ\™‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœMˆ‚ˆØ[›ÛšXØ[Ü[™Q\Ú›Ø\™Ï‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆËÊˆ›ÝÈÍNˆ]™H[ZÙHÜ\˜][ÛœÈ8 %YÚÝ\ÙHØ[›ÛšXØ[[ZÙH[[Y]žH
+‹ßBˆØ\™‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœMˆ‚ˆ]™R[ZÙSÜ\˜][ÛœÔ[™[Ï‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆËÊˆ›ÝÈNˆÞ\Ý[HX[
+ÈÛ›ÝÛYÙH
+‹ßBˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLHÎ™ÜšYXÛÛËLˆØ\Mˆ‚ˆØ\™‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœMˆ‚ˆÞ\Ý[RX[[™[Ï‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆØ\™‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœMˆ‚ˆÛ›ÝÛYÙTÜ[][Û”[™[Û“˜]šYØ]UÒÐ^Ê
+HOˆÙ]XZ[•XŠšØ‹Y^Ü™\ˆŠ_HÏ‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆÙ]‚‚ˆËÊˆ›ÝÈŽˆØ\ÙHXÝ]š]H
+ÈÝXÝ\˜[ÚYÛ˜[È
+‹ßBˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLHÎ™ÜšYXÛÛËLˆØ\Mˆ‚ˆØ\™‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœMˆ‚ˆØ\ÙPXÝ]š]T[™[Ï‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆØ\™‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœMˆ‚ˆÝXÝ\˜[ÚYÛ˜[Ô[™[Ï‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆÙ]‚‚ˆËÊˆ›ÝÈÎˆÛÜšÈ]Y]YH
+[ÚY
+H
+‹ßBˆØ\™‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœMˆ‚ˆÛÜšÔ]Y]YT[™[Ï‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚‚ˆËÊˆ›ÝÈˆ[™Ú[™HÝ]\È
+[ÚY
+H
+‹ßBˆØ\™‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœMˆ‚ˆ[™Ú[™TÝ]\Ô[™[Ï‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆËÊˆ›ÝÈNˆ[™[XÝ]˜][ÛˆÝ[[X\žH
+‹ßBˆØ\™‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœMˆ‚ˆ[™[XÝ]˜][Û”Ý[[X\žHÏ‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆÕXœÐÛÛ[ŸB‚ˆÜÚÝ[™[™\”[™[
+œ™YÚ\ÝžHŠH	‰ˆXœÐÛÛ[˜[YOHœ™YÚ\ÝžH‚ˆYØXÞT™YÚ\ÝžUšY]ÈÏ‚ˆÕXœÐÛÛ[ŸB‚ˆÜÚÝ[™[™\”[™[
+š[™Ù\Ý[ÛˆŠH	‰ˆXœÐÛÛ[˜[YOHš[™Ù\Ý[ÛˆˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ[™Ù\Ý[Û”[™[Ï‚ˆÕXœÐÛÛ[ŸB‚ˆÜÚÝ[™[™\”[™[
+šØ‹Y^Ü™\ˆŠH	‰ˆXœÐÛÛ[˜[YOHšØ‹Y^Ü™\ˆˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆÛ›ÝÛYÙQ^Ü™\”[™[Ï‚ˆÕXœÐÛÛ[ŸB‚ˆÜÚÝ[™[™\”[™[
+™ÛÝ™\›˜[˜ÙHŠH	‰ˆXœÐÛÛ[˜[YOH™ÛÝ™\›˜[˜ÙHˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ]ˆÛ\ÜÓ˜[YOH™›^][\ËXÙ[\ˆ\ÝYžKX™]ÙY[ˆX‹M‚ˆ]ˆÏ‚ˆ[šÈ™YH‹ÛZ\ÜÚ[Û‹XÛÛ›ÛÙÛÝ™\›˜[˜ÙH‚ˆ]Ûˆ˜\šX[H›Ý][™HˆÚ^™OHœÛHˆÛ\ÜÓ˜[YOH™Ø\LKH‚ˆÚY[Û\ÜÓ˜[YOHšLËHËLËHˆÏ‚ˆÛÛœÝ]][Û˜[ÛÝ™\›˜[˜ÙH\Ú›Ø\™ˆ^\›˜[[šÈÛ\ÜÓ˜[YOHšLÈËLÈˆÏ‚ˆÐ]Û‚ˆÓ[šÏ‚ˆÙ]‚ˆÚYÛ˜[ÛÝ™\›˜[˜ÙT[™[Ï‚ˆÕXœÐÛÛ[ŸB‚žÜÚÝ[™[™\”[™[
+œ]\›œÈŠH	‰ˆXœÐÛÛ[˜[YOHœ]\›œÈˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ]\›”™YÚ\ÝžT[™[Ï‚ˆÕXœÐÛÛ[ŸB‚žÜÚÝ[™[™\”[™[
+™[™ÈŠH	‰ˆXœÐÛÛ[˜[YOH™[™ÈˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ™[™™\ÜÝ\™T[™[Ï‚ˆÕXœÐÛÛ[ŸB‚žÜÚÝ[™[™\”[™[
+œÝ˜]YÞK\]ÈŠH	‰ˆXœÐÛÛ[˜[YOHœÝ˜]YÞK\]ÈˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆÝ˜]YÞT]Ô[™[Ï‚ˆÕXœÐÛÛ[ŸB‚žÜÚÝ[™[™\”[™[
+›Ý]ÛÛY\ÈŠH	‰ˆXœÐÛÛ[˜[YOH›Ý]ÛÛY\ÈˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆÝ]ÛÛY\Ô[™[Ï‚ˆÕXœÐÛÛ[ŸB‚žÜÚÝ[™[™\”[™[
+š[\™[[ÛœÈŠH	‰ˆXœÐÛÛ[˜[YOHš[\™[[ÛœÈˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ[\™[[Û‘\Ú›Ø\™[™[Ï‚ˆÕXœÐÛÛ[ŸB‚žÜÚÝ[™[™\”[™[
+œÛXÞHŠH	‰ˆXœÐÛÛ[˜[YOHœÛXÞHˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆÛXÞR[\XÝ[™[Ï‚ˆÕXœÐÛÛ[ŸB‚ˆÜÚÝ[™[™\”[™[
+œ™[YYK][\]\ÈŠH	‰ˆXœÐÛÛ[˜[YOHœ™[YYK][\]\ÈˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ™[YYU[\]\Ô[™[Ï‚ˆÕXœÐÛÛ[ŸB‚žÜÚÝ[™[™\”[™[
+›Y[[ÜžK\Ý˜]YÞHŠH	‰ˆXœÐÛÛ[˜[YOH›Y[[ÜžK\Ý˜]YÞHˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆY[[ÜžTÝ˜]YÞSY]šXÜÔ[™[Ï‚ˆÕXœÐÛÛ[ŸB‚žÜÚÝ[™[™\”[™[
+œ™Y›Ü›K\›ÜÜØ[ÈŠH	‰ˆXœÐÛÛ[˜[YOHœ™Y›Ü›K\›ÜÜØ[ÈˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ™Y›Ü›T›ÜÜØ[Ô[™[Ï‚ˆÕXœÐÛÛ[ŸB‚žÜÚÝ[™[™\”[™[
+˜ÛØ[][ÛœÈŠH	‰ˆXœÐÛÛ[˜[YOH˜ÛØ[][ÛœÈˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆÛØ[][ÛœÔ[™[Ï‚ˆÕXœÐÛÛ[ŸBˆÜÚÝ[™[™\”[™[
+™]šY[˜ÙK[XˆŠH	‰ˆXœÐÛÛ[˜[YOH™]šY[˜ÙK[XˆˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ]šY[˜ÙSX”[™[Û“˜]šYØ]UÏ^ÜÙ]XZ[•XŸHÏ‚ˆÕXœÐÛÛ[ŸBˆÜÚÝ[™[™\”[™[
+˜ÛZ[K]˜[Y][ÛˆŠH	‰ˆXœÐÛÛ[˜[YOH˜ÛZ[K]˜[Y][ÛˆˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆÛZ[U˜[Y][Û”[™[Û“˜]šYØ]UÏ^ÜÙ]XZ[•XŸHÏ‚ˆÕXœÐÛÛ[ŸBˆÜÚÝ[™[™\”[™[
+œ™[YYKY™X\ÚXš[]HŠH	‰ˆXœÐÛÛ[˜[YOHœ™[YYKY™X\ÚXš[]HˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ™[YYQ™X\ÚXš[]T[™[Û“˜]šYØ]UÏ^ÜÙ]XZ[•XŸHÏ‚ˆÕXœÐÛÛ[ŸBˆÜÚÝ[™[™\”[™[
+œ›ØÙY\˜[\]ÈŠH	‰ˆXœÐÛÛ[˜[YOHœ›ØÙY\˜[\]ÈˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ›ØÙY\˜[]Ô[™[Û“˜]šYØ]UÏ^ÜÙ]XZ[•XŸHÏ‚ˆÕXœÐÛÛ[ŸBˆÜÚÝ[™[™\”[™[
+š\™[š[™Ë\\[[™HŠH	‰ˆXœÐÛÛ[˜[YOHš\™[š[™Ë\\[[™HˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ\™[š[™Ô\[[™T[™[Ï‚ˆÕXœÐÛÛ[ŸBžÜÚÝ[™[™\”[™[
+˜ÛØ[][Û‹Z[[ŠH	‰ˆXœÐÛÛ[˜[YOH˜ÛØ[][Û‹Z[[ˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆÛØ[][Û’[[[™[Ï‚ˆÕXœÐÛÛ[ŸBžÜÚÝ[™[™\”[™[
+˜Ø[\ZYÛ‹Y[™Ú[™HŠH	‰ˆXœÐÛÛ[˜[YOH˜Ø[\ZYÛ‹Y[™Ú[™HˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆØ[\ZYÛ‘[™Ú[™T[™[Ï‚ˆÕXœÐÛÛ[ŸBˆÜÚÝ[™[™\”[™[
+šÛ›ÝÛYÙKZX[ŠH	‰ˆXœÐÛÛ[˜[YOHšÛ›ÝÛYÙKZX[ˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆÛ›ÝÛYÙRX[[™[Ï‚ˆÕXœÐÛÛ[ŸBžÜÚÝ[™[™\”[™[
+™Ø\X[˜[\Ú\ÈŠH	‰ˆXœÐÛÛ[˜[YOH™Ø\X[˜[\Ú\ÈˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆÛ›ÝÛYÙQØ\[˜[\Ú\Ô[™[Ï‚ˆÕXœÐÛÛ[ŸBžÜÚÝ[™[™\”[™[
+š\›KZ[™^ŠH	‰ˆXœÐÛÛ[˜[YOHš\›KZ[™^ˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ\›R[™^[™[Ï‚ˆÕXœÐÛÛ[ŸBžÜÚÝ[™[™\”[™[
+œš\ÚËY›Ü™XØ\ÝŠH	‰ˆXœÐÛÛ[˜[YOHœš\ÚËY›Ü™XØ\ÝˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆš\ÚÑ›Ü™XØ\Ý[™[Ï‚ˆÕXœÐÛÛ[ŸBžÜÚÝ[™[™\”[™[
+š\›K[X\ŠH	‰ˆXœÐÛÛ[˜[YOHš\›K[X\ˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ\›SX\[™[Ï‚ˆÕXœÐÛÛ[ŸBˆÜÚÝ[™[™\”[™[
+™œ›ÛYÛÜˆŠH	‰ˆXœÐÛÛ[˜[YOH™œ›ÛYÛÜˆˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆœ›ÛÛÜ”[™[Ï‚ˆÕXœÐÛÛ[ŸBˆÜÚÝ[™[™\”[™[
+›Ø˜žZ[™ÈŠH	‰ˆXœÐÛÛ[˜[YOH›Ø˜žZ[™ÈˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆØ˜žZ[™Ô[™[Ï‚ˆÕXœÐÛÛ[ŸBˆÜÚÝ[™[™\”[™[
+›]YØ][ÛˆŠH	‰ˆXœÐÛÛ[˜[YOH›]YØ][ÛˆˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ]YØ][Û”[™[Ï‚ˆÕXœÐÛÛ[ŸBˆÜÚÝ[™[™\”[™[
+˜YZ[‹YXÚ\Ú[ÛœÈŠH	‰ˆXœÐÛÛ[˜[YOH˜YZ[‹YXÚ\Ú[ÛœÈˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆYZ[‘XÚ\Ú[ÛœÔ[™[Ï‚ˆÕXœÐÛÛ[ŸBˆÜÚÝ[™[™\”[™[
+™\šYšYY\™\ÜÈŠH	‰ˆXœÐÛÛ[˜[YOH™\šYšYY\™\ÜÈˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ™\šYšYY™\ÜÔ[™[Ï‚ˆÕXœÐÛÛ[ŸBˆÜÚÝ[™[™\”[™[
+˜Y›ØØXÞHŠH	‰ˆXœÐÛÛ[˜[YOH˜Y›ØØXÞHˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆY›ØØXÞT[™[Ï‚ˆÕXœÐÛÛ[ŸBˆÜÚÝ[™[™\”[™[
+˜Ü›ÜÜË\Ý™X[HŠH	‰ˆXœÐÛÛ[˜[YOH˜Ü›ÜÜË\Ý™X[HˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆÜ›ÜÜÔÝ™X[T[™[Ï‚ˆÕXœÐÛÛ[ŸBˆÜÚÝ[™[™\”[™[
+[YK]˜]™[ŠH	‰ˆXœÐÛÛ[˜[YOH[YK]˜]™[ˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ[YU˜]™[[™[Ï‚ˆÕXœÐÛÛ[ŸBˆÜÚÝ[™[™\”[™[
+™[]KZ[[ŠH	‰ˆXœÐÛÛ[˜[YOH™[]KZ[[ˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ[]R[[[™[Ï‚ˆÕXœÐÛÛ[ŸBˆÜÚÝ[™[™\”[™[
+š[œÝ]][ÛœÈŠH	‰ˆXœÐÛÛ[˜[YOHš[œÝ]][ÛœÈˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ[œÝ]][ÛœÔ[™[Ï‚ˆÕXœÐÛÛ[ŸBˆÜÚÝ[™[™\”[™[
+œ™YËXØ\\™HŠH	‰ˆXœÐÛÛ[˜[YOHœ™YËXØ\\™HˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ™YÐØ\\™T[™[Ï‚ˆÕXœÐÛÛ[ŸBˆÜÚÝ[™[™\”[™[
+˜Üš\Ú\Ë\™YXÝŠH	‰ˆXœÐÛÛ[˜[YOH˜Üš\Ú\Ë\™YXÝˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆÜš\Ú\Ô™YXÝ[™[Ï‚ˆÕXœÐÛÛ[ŸBˆÜÚÝ[™[™\”[™[
+œÚ[][][Û‹[XˆŠH	‰ˆXœÐÛÛ[˜[YOHœÚ[][][Û‹[XˆˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆÚ[][][Û“X”[™[Ï‚ˆÕXœÐÛÛ[ŸBˆÜÚÝ[™[™\”[™[
+˜[œÜ\™[˜ÞHŠH	‰ˆXœÐÛÛ[˜[YOH˜[œÜ\™[˜ÞHˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ˜[œÜ\™[˜ÞT[™[Ï‚ˆÕXœÐÛÛ[ŸBˆÜÚÝ[™[™\”[™[
+™ÜÜÚY\‹\ÝY[ÈŠH	‰ˆXœÐÛÛ[˜[YOH™ÜÜÚY\‹\ÝY[ÈˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆÜÜÚY\”ÝY[Ô[™[Ï‚ˆÕXœÐÛÛ[ŸBˆÜÚÝ[™[™\”[™[
+™^XÛÛXˆŠH	‰ˆXœÐÛÛ[˜[YOH™^XÛÛXˆˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ^ÛÛX”[™[Ï‚ˆÕXœÐÛÛ[ŸBˆÜÚÝ[™[™\”[™[
+™[]K]˜[œÜ\™[˜ÞHŠH	‰ˆXœÐÛÛ[˜[YOH™[]K]˜[œÜ\™[˜ÞHˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ[]U˜[œÜ\™[˜ÞT[™[Ï‚ˆÕXœÐÛÛ[ŸBˆÜÚÝ[™[™\”[™[
+™]šY[˜ÙK]™\ÚÛŠH	‰ˆXœÐÛÛ[˜[YOH™]šY[˜ÙK]™\ÚÛˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ]šY[˜ÙU™\ÚÛ[™[Ï‚ˆÕXœÐÛÛ[ŸBˆÜÚÝ[™[™\”[™[
+˜[\[™ÈŠH	‰ˆXœÐÛÛ[˜[YOH˜[\[™ÈˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ[\[™Ô[™[Ï‚ˆÕXœÐÛÛ[ŸBˆÜÚÝ[™[™\”[™[
+œÞ\Ý[K[X\ŠH	‰ˆXœÐÛÛ[˜[YOHœÞ\Ý[K[X\ˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆÞ\Ý[SX\[™[Ï‚ˆÕXœÐÛÛ[ŸBˆÜÚÝ[™[™\”[™[
+™˜Z[\™K\™YXÝŠH	‰ˆXœÐÛÛ[˜[YOH™˜Z[\™K\™YXÝˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ˜Z[\™T™YXÝ[Û”[™[Ï‚ˆÕXœÐÛÛ[ŸBˆÜÚÝ[™[™\”[™[
+š[™\ÝYØ]]™K\]Y\žHŠH	‰ˆXœÐÛÛ[˜[YOHš[™\ÝYØ]]™K\]Y\žHˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆ[™\ÝYØ]]™T]Y\žT[™[Ï‚ˆÕXœÐÛÛ[ŸBˆÜÚÝ[™[™\”[™[
+›Y]Y]KZX[ŠH	‰ˆXœÐÛÛ[˜[YOH›Y]Y]KZX[ˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆØ\™Ø\™ÛÛ[Û\ÜÓ˜[YOHœMˆY]Y]RX[[™[ÏÐØ\™ÛÛ[ÐØ\™‚ˆÕXœÐÛÛ[ŸBˆÜÚÝ[™[™\”[™[
+œ\[[™KZ[YÜš]HŠH	‰ˆXœÐÛÛ[˜[YOHœ\[[™KZ[YÜš]HˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆØ\™Ø\™ÛÛ[Û\ÜÓ˜[YOHœMˆ\[[™R[YÜš]T[™[ÏÐØ\™ÛÛ[ÐØ\™‚ˆÕXœÐÛÛ[ŸBˆÜÚÝ[™[™\”[™[
+™^Ü\™XY[™\ÜÈŠH	‰ˆXœÐÛÛ[˜[YOH™^Ü\™XY[™\ÜÈˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆØ\™Ø\™ÛÛ[Û\ÜÓ˜[YOHœMˆ^Ü™XY[™\ÜÔ[™[ÏÐØ\™ÛÛ[ÐØ\™‚ˆÕXœÐÛÛ[ŸBˆXœÐÛÛ[˜[YOH›[[™XYÙHˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆØ\™Ø\™ÛÛ[Û\ÜÓ˜[YOHœMˆÚYÛ˜[[™XYÙT[™[ÏÐØ\™ÛÛ[ÐØ\™‚ˆÕXœÐÛÛ[‚ˆXœÐÛÛ[˜[YOH›YØ]K\™]šY]ÈˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆØ\™Ø\™ÛÛ[Û\ÜÓ˜[YOHœMˆØ]T™]šY]Ô[™[ÏÐØ\™ÛÛ[ÐØ\™‚ˆÕXœÐÛÛ[‚ˆXœÐÛÛ[˜[YOH›\]\›œÈˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆØ\™Ø\™ÛÛ[Û\ÜÓ˜[YOHœMˆYÚÝ\ÙT]\›”™YÚ\ÝžT[™[ÏÐØ\™ÛÛ[ÐØ\™‚ˆÕXœÐÛÛ[‚ˆXœÐÛÛ[˜[YOH›]™[™ÈˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆØ\™Ø\™ÛÛ[Û\ÜÓ˜[YOHœMˆYÚÝ\ÙU™[™™\ÜÝ\™T[™[ÏÐØ\™ÛÛ[ÐØ\™‚ˆÕXœÐÛÛ[‚ˆXœÐÛÛ[˜[YOH›\Ý˜]YÚY\ÈˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆØ\™Ø\™ÛÛ[Û\ÜÓ˜[YOHœMˆÝ˜]YÞT›Ú™XÝ[Û”[™[ÏÐØ\™ÛÛ[ÐØ\™‚ˆÕXœÐÛÛ[‚ˆXœÐÛÛ[˜[YOH›ZX[ˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆØ\™Ø\™ÛÛ[Û\ÜÓ˜[YOHœMˆ\[[™RX[[™[ÏÐØ\™ÛÛ[ÐØ\™‚ˆÕXœÐÛÛ[‚ˆXœÐÛÛ[˜[YOH™›YÜÈˆÛ\ÜÓ˜[YOHœÜXÙK^KMˆ‚ˆØ\™‚ˆØ\™ÛÛ[Û\ÜÓ˜[YOHœMˆ‚ˆ›YÔ]Y]YT[™[Ï‚ˆÐØ\™ÛÛ[‚ˆÐØ\™‚ˆÕXœÐÛÛ[‚ˆÕXœÏ‚ˆÙ]‚ˆÙ]‚ˆ
+NÂŸB

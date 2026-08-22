@@ -112,6 +112,7 @@ import ingestion_control from "./pages/ingestion_control";
 import GovernanceDashboard from "./pages/GovernanceDashboard";
 import Verify from "./pages/Verify";
 import BusinessAnalytics from "./pages/BusinessAnalytics";
+import IntegrityReview from "./pages/IntegrityReview";
 
 /**
  * Role-based entry routing:
@@ -261,6 +262,7 @@ function App() {
                 <Route path="/barriers" component={LitigationBarriers} />
                 <Route path="/litigation-barriers" component={LitigationBarriers} />
                 <Route path="/signal-registry" component={SignalRegistry} />
+                <Route path="/integrity-review" component={IntegrityReview} />
                 <Route path="/enforcement-intel" component={EnforcementIntel} />
                 <Route path="/deadline-calculator" component={DeadlineCalculator} />
                 <Route path="/contradiction-scoring" component={ContradictionScoring} />

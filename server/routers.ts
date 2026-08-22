@@ -2915,6 +2915,7 @@ import { evidenceLayerRouter } from "./routers/evidence-layer";
 import { ingestionRouter } from "./routers/ingestion";
 import { knowledgeBackboneRouter } from "./routers/knowledge-backbone";
 import { signalGovernanceRouter } from "./routers/signal-governance";
+import { integrity_routing_router } from "./routers/integrity-routing";
 import { workbenchRouter } from "./routers/workbench";
 import { remedyRouter } from "./routers/remedy";
 import { paperworkRouter } from "./routers/paperwork";
@@ -3622,6 +3623,7 @@ export const appRouter = router({
   ingestion: ingestionRouter,
   knowledgeBackbone: knowledgeBackboneRouter,
   signalGovernance: signalGovernanceRouter,
+  integrity_routing: integrity_routing_router,
   meaningLayer: meaningLayerRouter,
   unifiedOutput: unifiedOutputRouter,
   unified: unifiedRouter,
