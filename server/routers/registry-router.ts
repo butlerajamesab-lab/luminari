@@ -230,16 +230,16 @@ export const registryRouter = router({
       const adjacent = ADJACENT_CATEGORIES[input.category] || [];
       if (adjacent.length === 0) return { programs: [], adjacent_categories: [] };
 
-      const placeholders = adjacent.map((_, index) => `${index + 1}`).join(', ');
+      const placeholders = adjacent.map((_, index) => `$${index + 1}`).join(', ');
       const params: any[] = [...adjacent];
 
       let stateFilter = '';
       if (input.stateCode) {
         params.push(input.stateCode.toUpperCase());
-        stateFilter = `AND j.abbreviation = ${params.length}`;
+        stateFilter = `AND j.abbreviation = $${params.length}`;
       }
 
-      const limitPlaceholder = `${params.length + 1}`;
+      const limitPlaceholder = `$${params.length + 1}`;
       const rowsResult = await pool.query(
         `SELECT p.id, p.name_rp AS name, p.agency_rp AS agency, p.category_rp AS category,
                 p.eligibility_rp AS eligibility, p.contact_rp AS contact, p.website_rp AS website,
