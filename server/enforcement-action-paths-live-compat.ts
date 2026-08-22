@@ -185,8 +185,8 @@ async function select_reviewed_dossier_action_paths(
   const [routes_result, supplements_result] = await Promise.all([
     pool.query<reviewed_route_row>(
       `select
-         action_key,
-         situation_key,
+         route_key as action_key,
+         pipeline_key as situation_key,
          action_kind,
          action_label,
          when_to_use,
@@ -206,9 +206,10 @@ async function select_reviewed_dossier_action_paths(
          raw_source_record_id,
          source_page,
          source_table_index
-       from public.v_lighthouse_reviewed_action_route_current_v1
-       where situation_key = $1
-       order by source_page nulls last, source_table_index nulls last, action_key`,
+       from public.v_ui_intake_routing_v1
+       where pipeline_key = $1
+         and is_user_routable
+       order by source_page nulls last, source_table_index nulls last, route_key`,
       [pipeline_type],
     ),
     pool.query<reviewed_supplement_row>(
