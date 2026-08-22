@@ -4713,15 +4713,16 @@ function markLighthouseSuggestionsUnavailable(error: any) {
 
 export async function createSuggestion(userId: number, content: string): Promise<number> {
   const now = Date.now();
-  const [result] = await db.insert(lighthouseSuggestions).values({
+  const [created] = await db.insert(lighthouseSuggestions).values({
     userId,
     content,
     status: "pending",
     votes: 0,
     createdAt: now,
     updatedAt: now,
-  });
-  return result.insertId;
+  }).returning({ id: lighthouseSuggestions.id });
+  if (!created) throw new Error("lighthouse_suggestion_insert_returned_no_row");
+  return created.id;
 }
 
 export async function listSuggestions(opts?: {
@@ -4747,33 +4748,39 @@ export async function listSuggestions(opts?: {
 
 export async function voteSuggestion(suggestionId: number, userId: number): Promise<boolean> {
   try {
-    const now = Date.now();
-    await db.insert(lighthouseSuggestionVotes).values({ suggestionId, userId, createdAt: now });
-    await db.update(lighthouseSuggestions)
-      .set({ votes: sql`votes + 1`, updatedAt: now })
-      .where(eq(lighthouseSuggestions.id, suggestionId));
-    return true;
+    return await db.transaction(async (tx) => {
+      const now = Date.now();
+      await tx.insert(lighthouseSuggestionVotes)
+        .values({ suggestionId, userId, createdAt: now });
+      const [updated] = await tx.update(lighthouseSuggestions)
+        .set({ votes: sql`votes + 1`, updatedAt: now })
+        .where(eq(lighthouseSuggestions.id, suggestionId))
+        .returning({ id: lighthouseSuggestions.id });
+      if (!updated) throw new Error("lighthouse_suggestion_vote_target_missing");
+      return true;
+    });
   } catch (e: any) {
-    // Duplicate vote — unique constraint violation
-    if (e?.code === "ER_DUP_ENTRY" || e?.message?.includes("Duplicate")) return false;
+    // PostgreSQL unique/FK violations mean the requested vote is not applicable.
+    if (e?.code === "23505" || e?.code === "23503") return false;
     throw e;
   }
 }
 
 export async function unvoteSuggestion(suggestionId: number, userId: number): Promise<boolean> {
-  const now = Date.now();
-  const [result] = await db.delete(lighthouseSuggestionVotes)
-    .where(and(
-      eq(lighthouseSuggestionVotes.suggestionId, suggestionId),
-      eq(lighthouseSuggestionVotes.userId, userId),
-    ));
-  if ((result as any).affectedRows > 0) {
-    await db.update(lighthouseSuggestions)
+  return db.transaction(async (tx) => {
+    const now = Date.now();
+    const deleted = await tx.delete(lighthouseSuggestionVotes)
+      .where(and(
+        eq(lighthouseSuggestionVotes.suggestionId, suggestionId),
+        eq(lighthouseSuggestionVotes.userId, userId),
+      ))
+      .returning({ id: lighthouseSuggestionVotes.id });
+    if (deleted.length === 0) return false;
+    await tx.update(lighthouseSuggestions)
       .set({ votes: sql`GREATEST(votes - 1, 0)`, updatedAt: now })
       .where(eq(lighthouseSuggestions.id, suggestionId));
     return true;
-  }
-  return false;
+  });
 }
 
 export async function getUserVotedSuggestionIds(userId: number): Promise<number[]> {
