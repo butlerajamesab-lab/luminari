@@ -180,13 +180,31 @@ export default function AgencyMetrics() {
           and to achieve measurable outcomes. This dashboard tracks what the data shows against what the law requires.
         </p>
 
-        {/* World Index Agency Overview — shown when performance metrics are empty or as supplement */}
+        {agencyNames.length === 0 && !allMetrics.isLoading && (
+          <div style={{
+            display: "flex", alignItems: "flex-start", gap: 12,
+            background: c.amberBg, border: `1px solid ${c.goldBorder}`,
+            borderRadius: 10, padding: "16px 18px", marginBottom: 20,
+          }}>
+            <AlertTriangle size={18} color={c.amber} style={{ flexShrink: 0, marginTop: 1 }} />
+            <div>
+              <p style={{ fontFamily: fontSans, fontSize: 13, fontWeight: 600, color: c.paper, marginBottom: 4 }}>
+                Performance metrics are not loaded for this surface.
+              </p>
+              <p style={{ fontFamily: fontSans, fontSize: 12, color: c.muted, lineHeight: 1.55 }}>
+                The agency directory below is reference inventory from the World Index. It is not performance evidence and is not used to imply agency outcomes, timeliness, or compliance.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* World Index reference directory — supplemental only, never performance evidence */}
         {worldAgencies.length > 0 && agencyNames.length === 0 && (
           <div style={{ marginBottom: 32 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
               <Building2 size={16} color={c.teal} />
               <span style={{ fontFamily: fontMono, fontSize: 11, color: c.teal, letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                Oversight Bodies from World Index ({worldAgencies.length})
+                Agency / Oversight Directory — reference only ({worldAgencies.length})
               </span>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 12 }}>
@@ -604,15 +622,15 @@ export default function AgencyMetrics() {
         )}
 
         {/* Empty state */}
-        {agencyNames.length === 0 && !allMetrics.isLoading && (
+        {agencyNames.length === 0 && !allMetrics.isLoading && worldAgencies.length === 0 && (
           <div style={{
             background: c.cardBg, border: `1px solid ${c.cardBorder}`,
             borderRadius: 10, padding: "48px 32px", textAlign: "center",
           }}>
             <BarChart3 size={32} color={c.muted} style={{ marginBottom: 16 }} />
-            <h3 style={{ fontFamily: fontSerif, fontSize: 18, color: c.paper, marginBottom: 8 }}>No Agency Data Yet</h3>
+            <h3 style={{ fontFamily: fontSerif, fontSize: 18, color: c.paper, marginBottom: 8 }}>No performance metrics loaded</h3>
             <p style={{ fontFamily: fontSans, fontSize: 13, color: c.muted, lineHeight: 1.6 }}>
-              Agency performance metrics will appear here as the system tracks enforcement data.
+              Performance evidence will appear here when a governed agency-metrics dataset is available.
             </p>
           </div>
         )}
