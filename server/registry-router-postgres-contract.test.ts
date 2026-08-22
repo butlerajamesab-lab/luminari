@@ -20,6 +20,16 @@ describe("jurisdiction-aware registry query contract", () => {
     expect(registrySource).toContain("countResult.rows");
   });
 
+  it("uses the live program columns and normalizes legacy jurisdiction references", () => {
+    expect(registrySource).toContain("p.name ILIKE");
+    expect(registrySource).toContain("p.category ILIKE");
+    expect(registrySource).toContain("p.contact_website_norm");
+    expect(registrySource).not.toContain("p.name_rp");
+    expect(registrySource).not.toContain("p.website_rp");
+    expect(registrySource).toContain("LOWER('us-' || j.abbreviation)");
+    expect(registrySource).toContain("LOWER('j_' || j.abbreviation)");
+  });
+
   it("passes the canonical stateCode contract from Benefits Navigator", () => {
     expect(benefitsSource).toContain(
       '{ query: browseCategoryKeyword ?? "", stateCode: selectedState ?? undefined }',
