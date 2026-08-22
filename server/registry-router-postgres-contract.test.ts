@@ -31,10 +31,10 @@ describe("jurisdiction-aware registry query contract", () => {
 
   it("keeps jurisdiction filters bound instead of interpolated", () => {
     expect(registrySource).toContain(
-      'conditions.push(\`j.abbreviation = \${bind(input.stateCode.toUpperCase())}\`)',
+      'conditions.push(`j.abbreviation = ${bind(input.stateCode.toUpperCase())}`)',
     );
     expect(registrySource).toContain(
-      'stateFilter = \`AND j.abbreviation = $\${params.length}\`',
+      'stateFilter = `AND j.abbreviation = ${params.length}`',
     );
   });
 });
