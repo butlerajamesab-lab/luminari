@@ -34,7 +34,7 @@ describe("jurisdiction-aware registry query contract", () => {
       'conditions.push(`j.abbreviation = ${bind(input.stateCode.toUpperCase())}`)',
     );
     expect(registrySource).toContain(
-      'stateFilter = `AND j.abbreviation = ${params.length}`',
+      'stateFilter = `AND j.abbreviation = $${params.length}`',
     );
   });
 });
