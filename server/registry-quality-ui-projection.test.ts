@@ -29,6 +29,12 @@ describe("registry quality UI projection", () => {
     }
   });
 
+  it("uses the same held predicate as the canonical current-object summary", () => {
+    for (const source of [migration, followup]) {
+      expect(source).toContain("o.data_state<>'current_typed'");
+    }
+  });
+
   it("reports stored readiness and all defined unresolved states without scoring", () => {
     for (const source of [migration, followup]) {
       expect(source).toContain("typed_ready_objects");
