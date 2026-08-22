@@ -11,24 +11,42 @@ const migration = readFileSync(
   ),
   "utf8",
 );
+const followup = readFileSync(
+  fileURLToPath(
+    new URL(
+      "../supabase/migrations/20260822000101_add_identity_unresolved_registry_quality_bucket_v1.sql",
+      import.meta.url,
+    ),
+  ),
+  "utf8",
+);
 
 describe("registry quality UI projection", () => {
   it("aggregates the canonical current civic-object substrate", () => {
-    expect(migration).toContain("public.v_lighthouse_civic_object_current_v1");
-    expect(migration).toContain("public.v_ui_registry_quality_v1");
+    for (const source of [migration, followup]) {
+      expect(source).toContain("public.v_lighthouse_civic_object_current_v1");
+      expect(source).toContain("public.v_ui_registry_quality_v1");
+    }
   });
 
-  it("reports stored readiness and unresolved states without scoring", () => {
-    expect(migration).toContain("typed_ready_objects");
-    expect(migration).toContain("jurisdiction_ready_objects");
-    expect(migration).toContain("direct_access_ready_objects");
-    expect(migration).toContain("unresolved_or_held_objects");
-    expect(migration).toContain("jurisdiction_conflict_objects");
-    expect(migration).toContain("identity_conflict_objects");
-    expect(migration).not.toMatch(/score|rank|confidence/i);
+  it("reports stored readiness and all defined unresolved states without scoring", () => {
+    for (const source of [migration, followup]) {
+      expect(source).toContain("typed_ready_objects");
+      expect(source).toContain("jurisdiction_ready_objects");
+      expect(source).toContain("direct_access_ready_objects");
+      expect(source).toContain("unresolved_or_held_objects");
+      expect(source).toContain("jurisdiction_conflict_objects");
+      expect(source).toContain("identity_conflict_objects");
+      expect(source).toContain("identity_unresolved_objects");
+      expect(source).toContain("resource_identity_unresolved_objects");
+      expect(source).toContain("resource_access_unresolved_objects");
+      expect(source).not.toMatch(/score|rank|confidence/i);
+    }
   });
 
   it("is read-only projection logic", () => {
-    expect(migration).not.toMatch(/\b(insert|update|delete|truncate)\b/i);
+    for (const source of [migration, followup]) {
+      expect(source).not.toMatch(/\b(insert|update|delete|truncate)\b/i);
+    }
   });
 });
