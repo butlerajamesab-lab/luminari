@@ -10,6 +10,8 @@ import {
 } from "./civic-genome-external-snapshot-contract";
 import {
   produce_civic_genome_family_snapshot_v1,
+  produce_current_civic_genome_family_snapshot_v1,
+  type civic_genome_external_current_snapshot_build_options_v1,
   type civic_genome_external_snapshot_build_options_v1,
 } from "./civic-genome-external-snapshot-producer";
 
@@ -147,15 +149,19 @@ function enrich_bill_component(
   };
 }
 
-export async function produce_civic_genome_atlas_family_snapshot_v1(
-  options: civic_genome_external_snapshot_build_options_v1,
+async function enrich_civic_genome_atlas_family_snapshot_v1(
+  base: civic_genome_external_snapshot_v1,
+  family_id: string,
+  options: Pick<
+    civic_genome_external_snapshot_build_options_v1,
+    "source_commit_sha" | "prior_snapshot_hash"
+  >,
 ): Promise<civic_genome_external_snapshot_v1> {
-  const base = await produce_civic_genome_family_snapshot_v1(options);
   const pool = await getPool();
   const client = await pool.connect();
   let version_rows: version_row[] = [];
   try {
-    const result = await client.query<version_row>(BILL_VERSION_SQL, [options.family_id, options.as_of]);
+    const result = await client.query<version_row>(BILL_VERSION_SQL, [family_id, base.as_of]);
     version_rows = result.rows;
   } finally {
     client.release();
@@ -182,7 +188,7 @@ export async function produce_civic_genome_atlas_family_snapshot_v1(
   const identity_hash = computeCanonicalHash({
     contract_id: base.contract_id,
     contract_version: base.contract_version,
-    family_id: options.family_id,
+    family_id,
     as_of: base.as_of,
     methodology_version: CIVIC_GENOME_ATLAS_SNAPSHOT_METHODOLOGY_VERSION,
   });
@@ -235,4 +241,24 @@ export async function produce_civic_genome_atlas_family_snapshot_v1(
       generated_at,
     },
   });
+}
+
+export async function produce_civic_genome_atlas_family_snapshot_v1(
+  options: civic_genome_external_snapshot_build_options_v1,
+): Promise<civic_genome_external_snapshot_v1> {
+  const base = await produce_civic_genome_family_snapshot_v1(options);
+  return enrich_civic_genome_atlas_family_snapshot_v1(base, options.family_id, options);
+}
+
+/**
+ * Preserves Atlas's source-native bill-version enrichment while resolving a
+ * configured handoff cursor to the current canonical family state. The lower
+ * bound remains part of the contract; it simply cannot make a later canonical
+ * source record look absent on a startup replay.
+ */
+export async function produce_current_civic_genome_atlas_family_snapshot_v1(
+  options: civic_genome_external_current_snapshot_build_options_v1,
+): Promise<civic_genome_external_snapshot_v1> {
+  const base = await produce_current_civic_genome_family_snapshot_v1(options);
+  return enrich_civic_genome_atlas_family_snapshot_v1(base, options.family_id, options);
 }

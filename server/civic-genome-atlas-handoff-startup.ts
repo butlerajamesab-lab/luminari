@@ -1,4 +1,4 @@
-import { produce_civic_genome_atlas_family_snapshot_v1 } from "./civic-genome-atlas-snapshot-producer";
+import { produce_current_civic_genome_atlas_family_snapshot_v1 } from "./civic-genome-atlas-snapshot-producer";
 import { deliver_civic_genome_snapshot_to_atlas_v1 } from "./civic-genome-atlas-handoff";
 
 export type civic_genome_atlas_handoff_configuration = {
@@ -49,20 +49,39 @@ export async function run_civic_genome_atlas_handoff_from_environment(
 
   console.log("[CivicGenomeAtlasHandoff] started", {
     family_id: configuration.family_id,
-    as_of: configuration.as_of,
+    configured_as_of: configuration.as_of,
     source_commit_sha,
   });
 
-  const snapshot = await produce_civic_genome_atlas_family_snapshot_v1({
+  const snapshot = await produce_current_civic_genome_atlas_family_snapshot_v1({
     family_id: configuration.family_id,
-    as_of: configuration.as_of,
+    as_of_floor: configuration.as_of,
     source_commit_sha,
     generated_at: new Date().toISOString(),
   });
-  return deliver_civic_genome_snapshot_to_atlas_v1({
+  const receipt = await deliver_civic_genome_snapshot_to_atlas_v1({
     snapshot,
     url: configuration.url,
     key_id: configuration.key_id,
     secret: configuration.secret,
   });
+  console.log("[CivicGenomeAtlasHandoff] completed", {
+    family_id: configuration.family_id,
+    configured_as_of: configuration.as_of,
+    effective_as_of: snapshot.as_of,
+    source_commit_sha,
+    source_snapshot_id: receipt.source_snapshot_id,
+    source_snapshot_hash: receipt.source_snapshot_hash,
+    source_export_receipt_id: receipt.source_export_receipt_id,
+    source_export_receipt_hash: receipt.source_export_receipt_hash,
+    source_component_count: receipt.source_component_count,
+    delivery_receipt_id: receipt.delivery_receipt_id,
+    delivery_receipt_hash: receipt.delivery_receipt_hash,
+    validation_state: receipt.validation_state,
+    verification_mapping_state: receipt.verification_mapping_state,
+    persistence_status: receipt.persistence_status,
+    persisted: receipt.persisted,
+    projection_executed: receipt.projection_executed,
+  });
+  return receipt;
 }
