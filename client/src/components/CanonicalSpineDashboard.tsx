@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { trpc } from "@/lib/trpc";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,23 +36,24 @@ function MetricTile({ label, value, icon, color }: { label: string; value: strin
 }
 
 export function CanonicalSpineDashboard() {
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const stateQuery = trpc.canonicalCore.currentState.useQuery(undefined, {
     refetchInterval: 30000,
     staleTime: 15000,
     refetchOnWindowFocus: false,
   });
   const nodesQuery = trpc.canonicalCore.graphNodes.useQuery({ limit: 16 }, {
-    refetchInterval: 60000,
+    enabled: stateQuery.isFetched,
     staleTime: 30000,
     refetchOnWindowFocus: false,
   });
   const edgesQuery = trpc.canonicalCore.graphEdges.useQuery({ limit: 16, semanticOnly: true }, {
-    refetchInterval: 60000,
+    enabled: nodesQuery.isFetched,
     staleTime: 30000,
     refetchOnWindowFocus: false,
   });
   const unresolvedQuery = trpc.canonicalCore.unresolvedRelationships.useQuery({ limit: 8 }, {
-    refetchInterval: 60000,
+    enabled: edgesQuery.isFetched,
     staleTime: 30000,
     refetchOnWindowFocus: false,
   });
@@ -62,11 +64,18 @@ export function CanonicalSpineDashboard() {
   const unresolved = unresolvedQuery.data ?? [];
   const signalDomains = state?.signal_domains ?? {};
 
-  const refreshAll = () => {
-    stateQuery.refetch();
-    nodesQuery.refetch();
-    edgesQuery.refetch();
-    unresolvedQuery.refetch();
+  const refreshAll = async () => {
+    setIsRefreshing(true);
+    try {
+      // These samples share the current civic-object boundary. Refresh them
+      // sequentially so Mission Control cannot recreate the production timeout.
+      await stateQuery.refetch();
+      await nodesQuery.refetch();
+      await edgesQuery.refetch();
+      await unresolvedQuery.refetch();
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   return (
@@ -81,8 +90,8 @@ export function CanonicalSpineDashboard() {
             Current reconciled civic objects plus source-declared relationships. Graph participation is a navigation layer, never a publication gate.
           </p>
         </div>
-        <Button variant="ghost" size="sm" onClick={refreshAll}>
-          <RefreshCw className="h-3 w-3 mr-1" /> Refresh
+        <Button variant="ghost" size="sm" onClick={refreshAll} disabled={isRefreshing}>
+          <RefreshCw className={`h-3 w-3 mr-1 ${isRefreshing ? "animate-spin" : ""}`} /> Refresh
         </Button>
       </div>
 

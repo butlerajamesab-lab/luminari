@@ -93,8 +93,8 @@ export async function createCase(
   const normalized_domain = domain ? domain.toLowerCase().trim() : null;
   const result = await getPool().query<{ id: number }>(
     `insert into public.cases
-      (user_id, name, description, domain, container, pipeline_type, created_at, updated_at)
-     values ($1,$2,$3,$4,$5,$6,$7,$8)
+      (user_id, name, description, status, domain, container, pipeline_type, created_at, updated_at)
+     values ($1,$2,$3,'active',$4,$5,$6,$7,$8)
      returning id`,
     [
       userId,

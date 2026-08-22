@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { useWorldIndex } from "@/hooks/useWorldIndex";
 import {
   ChevronRight,
   BarChart3,
@@ -20,6 +19,7 @@ import {
   Scale,
   Users,
   DollarSign,
+  Search,
 } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -100,11 +100,16 @@ const severityColors: Record<string, { bg: string; border: string; text: string 
 export default function AgencyMetrics() {
   const [, navigate] = useLocation();
   const [selectedAgency, setSelectedAgency] = useState<string | null>(null);
+  const [agencyQueryDraft, setAgencyQueryDraft] = useState("");
+  const [agencyQuery, setAgencyQuery] = useState("");
+  const [canonicalLimit, setCanonicalLimit] = useState(16);
   const allMetrics = trpc.agencyMetrics.getAll.useQuery();
   const statsQuery = trpc.agencyMetrics.stats.useQuery();
-  // World Index: unified agency data
-  const worldIndex = useWorldIndex();
-  const worldAgencies = worldIndex.nodesByType["agency"] ?? [];
+  const canonicalAgencies = trpc.agencyMetrics.listCanonicalAgencies.useQuery(
+    { query: agencyQuery || undefined, limit: canonicalLimit },
+    { staleTime: 5 * 60 * 1000, refetchOnWindowFocus: false }
+  );
+  const canonicalDirectory = canonicalAgencies.data;
 
   // Group metrics by agency
   const agencyGroups = useMemo(() => {
@@ -132,7 +137,7 @@ export default function AgencyMetrics() {
     { enabled: !!activeAgency }
   );
 
-  if (allMetrics.isLoading) {
+  if (allMetrics.isLoading && canonicalAgencies.isLoading) {
     return (
       <div style={{ minHeight: "100vh", background: c.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <Loader2 size={24} color={c.purple} style={{ animation: "spin 1s linear infinite" }} />
@@ -180,18 +185,58 @@ export default function AgencyMetrics() {
           and to achieve measurable outcomes. This dashboard tracks what the data shows against what the law requires.
         </p>
 
-        {/* World Index Agency Overview — shown when performance metrics are empty or as supplement */}
-        {worldAgencies.length > 0 && agencyNames.length === 0 && (
+        {/* Current governed agency identities, never the mixed World Index bucket. */}
+        {agencyNames.length === 0 && (
           <div style={{ marginBottom: 32 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-              <Building2 size={16} color={c.teal} />
-              <span style={{ fontFamily: fontMono, fontSize: 11, color: c.teal, letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                Oversight Bodies from World Index ({worldAgencies.length})
-              </span>
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Building2 size={16} color={c.teal} />
+                <span style={{ fontFamily: fontMono, fontSize: 11, color: c.teal, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                  Canonical agencies and oversight bodies
+                </span>
+              </div>
+              <p style={{ fontFamily: fontSans, fontSize: 12, color: c.muted, lineHeight: 1.6, marginTop: 8 }}>
+                Current governed identities from the Lighthouse accountability catalog. Exact source variants are preserved behind each displayed identity.
+              </p>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 12 }}>
-              {worldAgencies.map(agency => (
-                <div key={agency.id} style={{
+
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                setCanonicalLimit(16);
+                setAgencyQuery(agencyQueryDraft.trim());
+              }}
+              style={{ display: "flex", gap: 8, marginBottom: 16 }}
+            >
+              <label style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 8, border: `1px solid ${c.cardBorder}`, borderRadius: 8, padding: "0 12px", background: c.cardBg }}>
+                <Search size={15} color={c.teal} />
+                <span style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0,0,0,0)" }}>Search canonical agencies</span>
+                <input
+                  value={agencyQueryDraft}
+                  onChange={(event) => setAgencyQueryDraft(event.target.value)}
+                  placeholder="Search agencies, oversight bodies, or authority…"
+                  style={{ width: "100%", height: 42, border: 0, outline: 0, background: "transparent", color: c.paper, fontFamily: fontSans, fontSize: 13 }}
+                />
+              </label>
+              <button type="submit" style={{ border: `1px solid ${c.tealBorder}`, borderRadius: 8, padding: "0 16px", background: c.tealBg, color: c.teal, fontFamily: fontMono, fontSize: 11, cursor: "pointer" }}>
+                Search
+              </button>
+            </form>
+
+            {canonicalAgencies.isLoading && (
+              <div style={{ padding: 28, textAlign: "center", color: c.muted, fontFamily: fontSans, fontSize: 12 }}>
+                <Loader2 size={18} color={c.teal} style={{ animation: "spin 1s linear infinite", marginRight: 8, display: "inline" }} /> Loading canonical agencies…
+              </div>
+            )}
+            {canonicalAgencies.error && (
+              <div style={{ padding: 16, borderRadius: 8, border: `1px solid ${c.redBorder}`, background: c.redBg, color: "#fca5a5", fontFamily: fontSans, fontSize: 12 }}>
+                The canonical agency directory could not load. Performance records remain separate and unchanged.
+              </div>
+            )}
+
+            <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 12 }}>
+              {canonicalDirectory?.items.map(agency => (
+                <div key={agency.object_ref} style={{
                   background: c.cardBg, border: `1px solid ${c.cardBorder}`,
                   borderRadius: 10, padding: "16px 20px",
                 }}>
@@ -205,31 +250,47 @@ export default function AgencyMetrics() {
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ fontFamily: fontSans, fontSize: 13, fontWeight: 600, color: c.paper, marginBottom: 2 }}>
-                        {agency.metadata?.name || agency.id}
+                        {agency.display_name}
                       </p>
                       <p style={{ fontFamily: fontMono, fontSize: 10, color: c.teal, marginBottom: 4 }}>
-                        {agency.jurisdiction}
+                        {agency.jurisdiction_code} · {agency.object_class === "oversight_body" ? "oversight body" : "agency"}
                       </p>
-                      {agency.metadata?.function && (
+                      {(agency.description || agency.layer || agency.category) && (
                         <p style={{ fontFamily: fontSans, fontSize: 11, color: c.muted, lineHeight: 1.4 }}>
-                          {agency.metadata.function}
+                          {agency.description || agency.layer || agency.category}
                         </p>
                       )}
-                      {agency.metadata?.statute_of_limitations && (
-                        <p style={{ fontFamily: fontMono, fontSize: 10, color: c.gold, marginTop: 4 }}>
-                          SOL: {agency.metadata.statute_of_limitations}
+                      {agency.statutory_authority && (
+                        <p style={{ fontFamily: fontSans, fontSize: 11, color: c.gold, marginTop: 6 }}>
+                          Authority: {agency.statutory_authority}
                         </p>
                       )}
-                      {agency.metadata?.escalation && (
-                        <p style={{ fontFamily: fontMono, fontSize: 10, color: c.muted, marginTop: 2 }}>
-                          Escalation: {agency.metadata.escalation}
-                        </p>
-                      )}
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 8, fontFamily: fontMono, fontSize: 10 }}>
+                        {agency.phone && <a href={`tel:${String(agency.phone).replace(/[^0-9+]/g, "")}`} style={{ color: c.teal }}>Call</a>}
+                        {agency.email && <a href={`mailto:${agency.email}`} style={{ color: c.teal }}>Email</a>}
+                        {agency.website_url && <a href={agency.website_url} target="_blank" rel="noreferrer" style={{ color: c.teal }}>Official website</a>}
+                      </div>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
+
+            {canonicalDirectory && canonicalDirectory.items.length === 0 && !canonicalAgencies.isLoading && (
+              <div style={{ padding: 28, textAlign: "center", border: `1px solid ${c.cardBorder}`, borderRadius: 10, color: c.muted, fontFamily: fontSans, fontSize: 12 }}>
+                No canonical agency or oversight identity matches this search.
+              </div>
+            )}
+            {canonicalDirectory?.has_more && (
+              <button type="button" onClick={() => setCanonicalLimit(current => Math.min(64, current + 16))} style={{ width: "100%", marginTop: 12, border: `1px solid ${c.tealBorder}`, borderRadius: 8, padding: "10px 14px", background: c.tealBg, color: c.teal, fontFamily: fontMono, fontSize: 11, cursor: "pointer" }}>
+                Show 16 more
+              </button>
+            )}
+            {canonicalDirectory && canonicalDirectory.items.length > 0 && (
+              <p style={{ marginTop: 12, fontFamily: fontSans, fontSize: 11, color: c.muted, lineHeight: 1.5 }}>
+                Performance measurements have not yet been published for these identities. Their canonical agency records remain available without presenting that absence as an empty directory.
+              </p>
+            )}
           </div>
         )}
 
@@ -238,7 +299,7 @@ export default function AgencyMetrics() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 32 }}>
             <StatBox icon={Building2} label="Agencies Tracked" value={statsQuery.data.agencies.toString()} color={c.teal} />
             <StatBox icon={Clock} label="Fiscal Years" value={statsQuery.data.years.toString()} color={c.gold} />
-            <StatBox icon={Activity} label="Data Points" value={statsQuery.data.totalDataPoints.toString()} color={c.purple} />
+            <StatBox icon={Activity} label="Data Points" value={statsQuery.data.total_data_points.toString()} color={c.purple} />
           </div>
         )}
 
@@ -604,7 +665,10 @@ export default function AgencyMetrics() {
         )}
 
         {/* Empty state */}
-        {agencyNames.length === 0 && !allMetrics.isLoading && (
+        {agencyNames.length === 0 &&
+          (canonicalDirectory?.items.length ?? 0) === 0 &&
+          !canonicalAgencies.isLoading &&
+          !allMetrics.isLoading && (
           <div style={{
             background: c.cardBg, border: `1px solid ${c.cardBorder}`,
             borderRadius: 10, padding: "48px 32px", textAlign: "center",

@@ -116,6 +116,8 @@ type DirectorySummary = {
 
 type SearchResponse = {
   total: number;
+  total_is_exact: boolean;
+  has_more: boolean;
   limit: number;
   offset: number;
   items: DirectoryResource[];
@@ -274,8 +276,10 @@ function titleCase(value: string | null | undefined): string {
 
 function categoryLabel(category: string | null | undefined): string {
   if (!category) return "Other";
-  return CATEGORY_CONFIG[category as keyof typeof CATEGORY_CONFIG]?.label ??
-    titleCase(category);
+  return (
+    CATEGORY_CONFIG[category as keyof typeof CATEGORY_CONFIG]?.label ??
+    titleCase(category)
+  );
 }
 
 function normalizeExternalUrl(value: string): string | null {
@@ -300,11 +304,7 @@ function phoneHref(value: string): string | null {
 
 function formatAddress(location: ResourceLocation | undefined): string | null {
   if (!location) return null;
-  const locality = [
-    location.city,
-    location.state,
-    location.postal_code,
-  ]
+  const locality = [location.city, location.state, location.postal_code]
     .filter(Boolean)
     .join(" ");
   const parts = [
@@ -367,10 +367,9 @@ function ContactAction({ contact }: { contact: Contact }) {
     type === "filing_portal" ||
     type === "application"
   ) {
-    const candidates =
-      contact.contact_value.match(
-        /https?:\/\/[^\s·|]+|(?:www\.)?[a-z0-9][a-z0-9.-]*\.[a-z]{2,}(?:\/[^\s·|]*)?/gi
-      ) ?? [contact.contact_value];
+    const candidates = contact.contact_value.match(
+      /https?:\/\/[^\s·|]+|(?:www\.)?[a-z0-9][a-z0-9.-]*\.[a-z]{2,}(?:\/[^\s·|]*)?/gi,
+    ) ?? [contact.contact_value];
     const links = candidates
       .map(normalizeExternalUrl)
       .filter((value): value is string => Boolean(value))
@@ -413,9 +412,15 @@ function ResourceCard({ resource }: { resource: DirectoryResource }) {
   const address = formatAddress(currentLocation);
   const visibleContacts = resource.contacts
     .filter((contact) =>
-      ["phone", "hotline", "email", "website", "portal", "filing_portal", "application"].includes(
-        contact.contact_type.toLowerCase()
-      )
+      [
+        "phone",
+        "hotline",
+        "email",
+        "website",
+        "portal",
+        "filing_portal",
+        "application",
+      ].includes(contact.contact_type.toLowerCase()),
     )
     .slice(0, 5);
   const description =
@@ -425,8 +430,8 @@ function ResourceCard({ resource }: { resource: DirectoryResource }) {
     "Source-attached public service resource.";
   const mapEligible = Boolean(
     currentLocation?.manual_map_eligible &&
-      currentLocation.latitude != null &&
-      currentLocation.longitude != null
+    currentLocation.latitude != null &&
+    currentLocation.longitude != null,
   );
   const mapParams = new URLSearchParams();
   if (resource.state) mapParams.set("jurisdiction", resource.state);
@@ -497,8 +502,8 @@ function ResourceCard({ resource }: { resource: DirectoryResource }) {
             currentLocation?.manual_review_version &&
             !mapEligible && (
               <span className="mt-0.5 block">
-                Manually reviewed; no exact marker until genuine coordinates
-                are added.
+                Manually reviewed; no exact marker until genuine coordinates are
+                added.
               </span>
             )}
         </div>
@@ -515,10 +520,7 @@ function ResourceCard({ resource }: { resource: DirectoryResource }) {
         {visibleContacts.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {visibleContacts.map((contact) => (
-              <ContactAction
-                key={contact.contact_point_id}
-                contact={contact}
-              />
+              <ContactAction key={contact.contact_point_id} contact={contact} />
             ))}
           </div>
         )}
@@ -542,24 +544,18 @@ export default function ResourceDirectory() {
   const [, navigate] = useLocation();
   const initialParams = useMemo(
     () => new URLSearchParams(window.location.search),
-    []
+    [],
   );
   const [queryDraft, setQueryDraft] = useState(
-    initialParams.get("query") || ""
+    initialParams.get("query") || "",
   );
   const [query, setQuery] = useState(initialParams.get("query") || "");
   const [jurisdiction, setJurisdiction] = useState(
-    initialParams.get("jurisdiction") || ""
+    initialParams.get("jurisdiction") || "",
   );
-  const [category, setCategory] = useState(
-    initialParams.get("category") || ""
-  );
+  const [category, setCategory] = useState(initialParams.get("category") || "");
   const [page, setPage] = useState(0);
 
-  const summaryQuery = trpc.resourceDirectory.summary.useQuery(undefined, {
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
-  });
   const directoryQuery = trpc.resourceDirectory.search.useQuery(
     {
       query: query || undefined,
@@ -571,18 +567,27 @@ export default function ResourceDirectory() {
     {
       staleTime: 60 * 1000,
       refetchOnWindowFocus: false,
-    }
+    },
   );
+  // Let the first resource page settle before running the single-pass summary.
+  // This keeps two expensive canonical-view reads from competing during the
+  // public zero state while still caching filters and totals for five minutes.
+  const summaryQuery = trpc.resourceDirectory.summary.useQuery(undefined, {
+    enabled: directoryQuery.isSuccess || directoryQuery.isError,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
 
   const summary = summaryQuery.data as DirectorySummary | undefined;
   const searchResult = directoryQuery.data as SearchResponse | undefined;
-  const totalPages = Math.max(
-    1,
-    Math.ceil((searchResult?.total ?? 0) / PAGE_SIZE)
-  );
   const jurisdictionOptions = summary?.jurisdictions ?? [];
   const categoryOptions = summary?.categories ?? [];
   const hasFilters = Boolean(query || jurisdiction || category);
+  const exactVisibleTotal = !hasFilters
+    ? summary?.total_resources
+    : searchResult?.total_is_exact
+      ? searchResult.total
+      : undefined;
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -590,11 +595,7 @@ export default function ResourceDirectory() {
     if (jurisdiction) params.set("jurisdiction", jurisdiction);
     if (category) params.set("category", category);
     const suffix = params.toString() ? `?${params.toString()}` : "";
-    window.history.replaceState(
-      {},
-      "",
-      `${window.location.pathname}${suffix}`
-    );
+    window.history.replaceState({}, "", `${window.location.pathname}${suffix}`);
   }, [query, jurisdiction, category]);
 
   function submitSearch(event: FormEvent) {
@@ -638,7 +639,7 @@ export default function ResourceDirectory() {
                 </h1>
               </div>
               <p className="hidden text-[11px] text-slate-500 sm:block">
-                The v3.13 civic resource collection
+                The current governed civic resource collection
               </p>
             </div>
           </div>
@@ -664,8 +665,8 @@ export default function ResourceDirectory() {
             <p className="mt-5 max-w-3xl text-base leading-7 text-slate-300 sm:text-lg">
               Search the complete promoted state and territory collection by
               need, jurisdiction, service, or organization. Locations are
-              described honestly: exact public sites where known, coverage
-              areas everywhere else.
+              described honestly: exact public sites where known, coverage areas
+              everywhere else.
             </p>
 
             <form
@@ -748,7 +749,7 @@ export default function ResourceDirectory() {
                 Browse by need
               </p>
               <h2 className="mt-1 font-serif text-2xl font-semibold text-white">
-                Twelve resource categories
+                Twelve governed resource categories
               </h2>
             </div>
             {category && (
@@ -817,7 +818,11 @@ export default function ResourceDirectory() {
                 <h2 className="mt-1 font-serif text-3xl font-semibold text-white">
                   {directoryQuery.isLoading
                     ? "Searching the collection…"
-                    : `${(searchResult?.total ?? 0).toLocaleString()} resources`}
+                    : exactVisibleTotal != null
+                      ? `${exactVisibleTotal.toLocaleString()} resources`
+                      : searchResult?.has_more
+                        ? `At least ${searchResult.total.toLocaleString()} resources`
+                        : `${(searchResult?.total ?? 0).toLocaleString()} resources`}
                 </h2>
                 {hasFilters && (
                   <p className="mt-1 text-sm text-slate-400">
@@ -908,13 +913,13 @@ export default function ResourceDirectory() {
 
                 <div className="mt-8 flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-6 sm:flex-row">
                   <p className="text-xs text-slate-500">
-                    Showing{" "}
-                    {(searchResult.offset + 1).toLocaleString()}–
-                    {Math.min(
-                      searchResult.offset + searchResult.items.length,
-                      searchResult.total
-                    ).toLocaleString()}{" "}
-                    of {searchResult.total.toLocaleString()}
+                    Showing {(searchResult.offset + 1).toLocaleString()}–
+                    {(
+                      searchResult.offset + searchResult.items.length
+                    ).toLocaleString()}
+                    {searchResult.has_more
+                      ? " · More matches available"
+                      : " · End of results"}
                   </p>
                   <div className="flex items-center gap-2">
                     <button
@@ -930,15 +935,13 @@ export default function ResourceDirectory() {
                       Previous
                     </button>
                     <span className="px-2 font-mono text-xs text-slate-500">
-                      {page + 1} / {totalPages}
+                      Page {page + 1}
                     </span>
                     <button
                       type="button"
-                      disabled={page + 1 >= totalPages}
+                      disabled={!searchResult.has_more}
                       onClick={() => {
-                        setPage((current) =>
-                          Math.min(totalPages - 1, current + 1)
-                        );
+                        setPage((current) => current + 1);
                         window.scrollTo({ top: 1050, behavior: "smooth" });
                       }}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-2 text-xs font-medium text-slate-300 enabled:hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
