@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertTriangle, BarChart3, Shield, Target, Clock, Users, ChevronRight, ArrowLeft, Wrench } from "lucide-react";
 import { useLocation } from "wouter";
 import { safeArray, safeText } from "@/lib/data-guard";
+import { SignalArtifactContext } from "@/components/signal-architecture/SignalArtifactContext";
 
 const severityColor: Record<string, string> = {
   critical: "bg-red-500/10 text-red-400 border-red-500/30",
@@ -72,6 +73,7 @@ export default function ContradictionScoring() {
   const [, navigate] = useLocation();
   return (
     <div className="space-y-6">
+      <SignalArtifactContext />
       {/* Back nav */}
       <div className="flex items-center justify-between">
         <button onClick={() => navigate("/architecture")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">

@@ -4,6 +4,7 @@ import { AlertTriangle, ArrowLeft, ExternalLink, Fingerprint, Loader2, RefreshCw
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SignalArtifactContext } from "@/components/signal-architecture/SignalArtifactContext";
 import {
   useCandidateDetail,
   useCandidates,
@@ -93,6 +94,7 @@ export default function IntegrityReview() {
       </header>
 
       <main className="mx-auto max-w-7xl space-y-6 px-4 py-6 md:px-6">
+        <SignalArtifactContext />
         <Card className="border-amber-500/30 bg-amber-500/5">
           <CardContent className="flex gap-3 p-4 text-sm">
             <Scale className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />

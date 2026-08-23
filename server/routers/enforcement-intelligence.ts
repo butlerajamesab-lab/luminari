@@ -2,6 +2,14 @@ import { z } from "zod";
 import { router, protectedProcedure, publicProcedure } from "../_core/trpc";
 import { db, getPool } from "../db";
 import { read_signal_architecture } from "../signal-architecture-read-model";
+import {
+  SIGNAL_ARTIFACT_DOMAINS,
+  SIGNAL_CASE_RELATIONSHIPS,
+  connect_signal_artifact_to_case,
+  list_case_signal_artifacts,
+  list_signal_artifacts,
+  read_signal_artifact,
+} from "../signal-artifact-runtime";
 import { list_filing_deadline_records } from "../filing-deadline-runtime-compat";
 import { read_investigation_workflow } from "../investigation-workflow-runtime-compat";
 import { read_enforcement_pathways } from "../enforcement-pathway-runtime-compat";
@@ -143,6 +151,42 @@ export const enforcementIntelligenceRouter = router({
   get_signal_architecture: protectedProcedure
     .input(z.object({ limit: z.number().int().min(1).max(100).default(24) }).optional())
     .query(({ input }) => read_signal_architecture(input?.limit ?? 24)),
+
+  list_signal_artifacts: protectedProcedure
+    .input(z.object({
+      domain: z.enum(SIGNAL_ARTIFACT_DOMAINS).optional(),
+      limit: z.number().int().min(1).max(100).default(50),
+      offset: z.number().int().min(0).default(0),
+      query: z.string().trim().max(200).optional(),
+    }))
+    .query(({ input }) => list_signal_artifacts(input)),
+
+  get_signal_artifact: protectedProcedure
+    .input(z.object({
+      domain: z.enum(SIGNAL_ARTIFACT_DOMAINS),
+      record_id: z.string().uuid(),
+    }))
+    .query(({ input }) => read_signal_artifact(input.domain, input.record_id)),
+
+  connect_signal_artifact_to_case: protectedProcedure
+    .input(z.object({
+      domain: z.enum(SIGNAL_ARTIFACT_DOMAINS),
+      record_id: z.string().uuid(),
+      case_id: z.number().int().positive(),
+      relationship_type: z.enum(SIGNAL_CASE_RELATIONSHIPS),
+      reviewer_notes: z.string().trim().max(2000).optional(),
+    }))
+    .mutation(({ ctx, input }) => connect_signal_artifact_to_case({
+      ...input,
+      user_id: ctx.user.id,
+    })),
+
+  list_case_signal_artifacts: protectedProcedure
+    .input(z.object({ case_id: z.number().int().positive() }))
+    .query(({ ctx, input }) => list_case_signal_artifacts({
+      case_id: input.case_id,
+      user_id: ctx.user.id,
+    })),
 
   // ═══ Agency Forms ═══
   listForms: publicProcedure
