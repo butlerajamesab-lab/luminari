@@ -38,6 +38,7 @@ import {
   Info,
 } from "lucide-react";
 import { useLocation, useSearch } from "wouter";
+import { SignalArtifactContext } from "@/components/signal-architecture/SignalArtifactContext";
 
 const SEVERITY_COLORS: Record<string, string> = {
   critical: "bg-red-500/20 text-red-400 border-red-500/30",
@@ -315,6 +316,9 @@ export default function StructuralDiagnosticsLens() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <div className="max-w-6xl mx-auto px-4 pt-4">
+        <SignalArtifactContext />
+      </div>
       {/* Header */}
       <div className="border-b border-border/50 bg-card/30">
         <div className="max-w-6xl mx-auto px-4 py-6">

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { ArrowLeft, Compass, Eye, MapPin } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { SignalArtifactContext } from "@/components/signal-architecture/SignalArtifactContext";
 import { ANOMALIES, PATTERNS } from "./viewfinder-data";
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -343,6 +344,7 @@ export default function AnomalyViewfinder() {
       </nav>
 
       <main style={{ maxWidth: 1420, margin: "0 auto", padding: "24px 22px 70px" }}>
+        <SignalArtifactContext />
         {viewfinderQuery.error ? (
           <div style={{ border: `1px solid ${v.red}66`, background: "rgba(200,64,64,0.08)", color: v.bone, padding: 16, borderRadius: 10, marginBottom: 18 }}>
             Live jurisdiction profiles unavailable. No static state-fact fallback was used. {viewfinderQuery.error.message}

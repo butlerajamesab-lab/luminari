@@ -7,11 +7,22 @@ on:
       - "supabase/migrations/20260818084500_prism_domain2_legal_pattern_pullthrough.sql"
       - "supabase/migrations/20260818090000_domain2_current_prism_generation.sql"
       - "supabase/migrations/20260818095500_signal_architecture_runtime_projection_truth.sql"
+      - "supabase/migrations/20260822055000_signal_artifact_case_links_v1.sql"
       - "server/routers/enforcement-intel.ts"
+      - "server/routers/enforcement-intelligence.ts"
+      - "server/signal-artifact-runtime.ts"
+      - "server/signal-artifact-runtime.test.ts"
+      - "server/signal-artifact-navigation.contract.test.ts"
       - "server/signal-architecture-ground-truth.test.ts"
       - "server/signal-domain2-prism-currentness.test.ts"
       - "server/signal-architecture-runtime-observability-current.test.ts"
       - "client/src/pages/SignalRegistry.tsx"
+      - "client/src/components/signal-architecture/SignalArtifactContext.tsx"
+      - "client/src/pages/ControlRoom.tsx"
+      - "client/src/pages/AnomalyViewfinder.tsx"
+      - "client/src/pages/StructuralDiagnosticsLens.tsx"
+      - "client/src/pages/ContradictionScoring.tsx"
+      - "client/src/features/integrity-review/IntegrityReview.tsx"
       - ".github/workflows/signal-architecture-contract.yml"
   push:
     branches:
@@ -21,11 +32,22 @@ on:
       - "supabase/migrations/20260818084500_prism_domain2_legal_pattern_pullthrough.sql"
       - "supabase/migrations/20260818090000_domain2_current_prism_generation.sql"
       - "supabase/migrations/20260818095500_signal_architecture_runtime_projection_truth.sql"
+      - "supabase/migrations/20260822055000_signal_artifact_case_links_v1.sql"
       - "server/routers/enforcement-intel.ts"
+      - "server/routers/enforcement-intelligence.ts"
+      - "server/signal-artifact-runtime.ts"
+      - "server/signal-artifact-runtime.test.ts"
+      - "server/signal-artifact-navigation.contract.test.ts"
       - "server/signal-architecture-ground-truth.test.ts"
       - "server/signal-domain2-prism-currentness.test.ts"
       - "server/signal-architecture-runtime-observability-current.test.ts"
       - "client/src/pages/SignalRegistry.tsx"
+      - "client/src/components/signal-architecture/SignalArtifactContext.tsx"
+      - "client/src/pages/ControlRoom.tsx"
+      - "client/src/pages/AnomalyViewfinder.tsx"
+      - "client/src/pages/StructuralDiagnosticsLens.tsx"
+      - "client/src/pages/ContradictionScoring.tsx"
+      - "client/src/features/integrity-review/IntegrityReview.tsx"
       - ".github/workflows/signal-architecture-contract.yml"
 
 permissions:
@@ -48,5 +70,7 @@ jobs:
           server/signal-architecture-ground-truth.test.ts
           server/signal-domain2-prism-currentness.test.ts
           server/signal-architecture-runtime-observability-current.test.ts
+          server/signal-artifact-runtime.test.ts
+          server/signal-artifact-navigation.contract.test.ts
       - name: Verify formatting
         run: git diff --check

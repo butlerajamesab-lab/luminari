@@ -2,6 +2,14 @@ import { router, protectedProcedure, publicProcedure } from "../_core/trpc";
 import { z } from "zod";
 import { db } from "../db";
 import { read_signal_architecture } from "../signal-architecture-read-model";
+import {
+  SIGNAL_ARTIFACT_DOMAINS,
+  SIGNAL_CASE_RELATIONSHIPS,
+  connect_signal_artifact_to_case,
+  list_case_signal_artifacts,
+  list_signal_artifacts,
+  read_signal_artifact,
+} from "../signal-artifact-runtime";
 import { eq, and } from "drizzle-orm";
 import {
   workflowMaster,
@@ -18,6 +26,42 @@ export const enforcementIntelRouter = router({
       }).optional(),
     )
     .query(({ input }) => read_signal_architecture(input?.limit ?? 24)),
+
+  list_signal_artifacts: protectedProcedure
+    .input(z.object({
+      domain: z.enum(SIGNAL_ARTIFACT_DOMAINS).optional(),
+      limit: z.number().int().min(1).max(100).default(50),
+      offset: z.number().int().min(0).default(0),
+      query: z.string().trim().max(200).optional(),
+    }))
+    .query(({ input }) => list_signal_artifacts(input)),
+
+  get_signal_artifact: protectedProcedure
+    .input(z.object({
+      domain: z.enum(SIGNAL_ARTIFACT_DOMAINS),
+      record_id: z.string().uuid(),
+    }))
+    .query(({ input }) => read_signal_artifact(input.domain, input.record_id)),
+
+  connect_signal_artifact_to_case: protectedProcedure
+    .input(z.object({
+      domain: z.enum(SIGNAL_ARTIFACT_DOMAINS),
+      record_id: z.string().uuid(),
+      case_id: z.number().int().positive(),
+      relationship_type: z.enum(SIGNAL_CASE_RELATIONSHIPS),
+      reviewer_notes: z.string().trim().max(2000).optional(),
+    }))
+    .mutation(({ ctx, input }) => connect_signal_artifact_to_case({
+      ...input,
+      user_id: ctx.user.id,
+    })),
+
+  list_case_signal_artifacts: protectedProcedure
+    .input(z.object({ case_id: z.number().int().positive() }))
+    .query(({ ctx, input }) => list_case_signal_artifacts({
+      case_id: input.case_id,
+      user_id: ctx.user.id,
+    })),
 
   generateInvestigationWorkflow: publicProcedure
     .input(

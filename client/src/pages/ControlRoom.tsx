@@ -43,6 +43,7 @@ import {
   Gavel,
   Sparkles,
   Radio,
+  Link2,
 } from "lucide-react";
 
 /* ─── Case Completeness Panel ─── */
@@ -895,6 +896,74 @@ function PatternSignalsPanel({ caseId }: { caseId: number }) {
   );
 }
 
+/* ─── Human-linked Signal Architecture artifacts ─── */
+function LinkedSignalArtifactsPanel({ caseId }: { caseId: number }) {
+  const [, navigate] = useLocation();
+  const links = trpc.enforcementIntel.list_case_signal_artifacts.useQuery(
+    { case_id: caseId },
+    { refetchInterval: 30_000 },
+  );
+
+  return (
+    <Card className="col-span-1 lg:col-span-3 border-amber-500/20">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between gap-3">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <Link2 className="h-4 w-4 text-amber-400" />
+            Connected Signal Architecture Artifacts
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-[10px]">
+              {links.data?.length ?? 0} context receipt{links.data?.length === 1 ? "" : "s"}
+            </Badge>
+            <Button variant="ghost" size="sm" className="h-7 text-[10px]" onClick={() => navigate("/signal-registry")}>
+              Browse architecture <ExternalLink className="h-3 w-3 ml-1" />
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {links.isLoading ? (
+          <div className="py-6 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>
+        ) : links.error ? (
+          <p className="text-xs text-red-300">{links.error.message}</p>
+        ) : links.data?.length ? (
+          <div className="space-y-2 max-h-[32rem] overflow-y-auto pr-1">
+            {links.data.map((link) => (
+              <button
+                type="button"
+                key={link.link_id}
+                onClick={() => navigate(link.destination_path)}
+                className="w-full text-left rounded-lg border border-border/60 p-3 hover:bg-muted/40 transition-colors"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <div className="flex flex-wrap gap-1.5 mb-1.5">
+                      <Badge variant="outline" className="text-[9px] capitalize">{link.domain_code.replaceAll("_", " ")}</Badge>
+                      <Badge variant="outline" className="text-[9px] capitalize">{link.relationship_type.replaceAll("_", " ")}</Badge>
+                      <Badge variant="outline" className="text-[9px]">candidate context</Badge>
+                    </div>
+                    <p className="text-sm font-medium">{link.title}</p>
+                    <p className="text-[10px] text-muted-foreground mt-1 capitalize">{link.artifact_type.replaceAll("_", " ")} · home: {link.home_label}</p>
+                  </div>
+                  <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+                </div>
+                {link.reviewer_notes && <p className="text-xs text-muted-foreground mt-2">{link.reviewer_notes}</p>}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-6 text-muted-foreground">
+            <Link2 className="h-7 w-7 mx-auto mb-2 opacity-40" />
+            <p className="text-sm">No Signal Architecture artifact is connected to this case.</p>
+            <p className="text-xs mt-1">Connections are reviewer-created context, not findings.</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 /* ─── Receipt-bound Verification Panel ─── */
 function KeyFindingsPanel({ caseId }: { caseId: number }) {
   const [, navigate] = useLocation();
@@ -1091,6 +1160,7 @@ export default function ControlRoom() {
         <NextActionsPanel caseId={caseId} />
 
         {/* Row 3: Pattern Signals (full width) */}
+        <LinkedSignalArtifactsPanel caseId={caseId} />
         <PatternSignalsPanel caseId={caseId} />
       </div>
     </div>
