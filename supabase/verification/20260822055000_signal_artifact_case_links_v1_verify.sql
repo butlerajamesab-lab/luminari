@@ -45,6 +45,9 @@ with checks as (
               and t.tgenabled <> 'D'
          )
   union all
+  select 'intake_signal_foreign_key_is_indexed',
+         to_regclass('public.idx_signal_artifact_case_links_intake_signal') is not null
+  union all
   select 'all_rows_have_exactly_one_artifact',
          not exists (
            select 1
