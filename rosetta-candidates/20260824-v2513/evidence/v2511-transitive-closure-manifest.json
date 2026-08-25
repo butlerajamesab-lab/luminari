@@ -1,0 +1,366 @@
+{
+  "captured_at": "2026-08-23",
+  "source_project": "kjzytnzkkdpdxtqtjlew (Rosetta production, read-only)",
+  "entry_point": "run_rosetta_v3_extraction",
+  "closure_size": 51,
+  "closure_sha256_ordered_by_proname": "6be3cefe99d91eae22819aa84ff47f1e49be4f85e55a3e70a8b7aa4120c2b294",
+  "members": [
+    {
+      "proname": "rosetta_blocking_structural_repair_count",
+      "file": "rosetta_blocking_structural_repair_count__p_extraction_run_id_integer.sql",
+      "md5": "fc0d9f2503a9763f4a1e2d83d267aa1d",
+      "sha256": "981c67c8da9dd2723ce11c5d897f908741c455ccc048f5343c20cf6417a055a9",
+      "bytes": 764
+    },
+    {
+      "proname": "rosetta_normalize_clause_text",
+      "file": "rosetta_normalize_clause_text__p_text_text.sql",
+      "md5": "d209860bdf78f4714898ffaeee6aa1a4",
+      "sha256": "30cfcf96ab4db84601c629872e3338881a21e59df8a00730152fd7e9e8acaf18",
+      "bytes": 445
+    },
+    {
+      "proname": "rosetta_v24_amendment_operations",
+      "file": "rosetta_v24_amendment_operations__p_source_text_text.sql",
+      "md5": "72caf343b5726b3ecbd478750d6fa948",
+      "sha256": "910f474149756bb6c7ea24b5cccbcb9622c06d7f30938db5adabb018ba1553b8",
+      "bytes": 2301
+    },
+    {
+      "proname": "rosetta_v24_prune_amendment_projection",
+      "file": "rosetta_v24_prune_amendment_projection__p_extraction_run_id_integer.sql",
+      "md5": "e505da566468effbe64298925c393c36",
+      "sha256": "ea7052152fab7d278ace52a4f5de0724532cfc0b81c505c8bd645a211d0b6171",
+      "bytes": 2604
+    },
+    {
+      "proname": "rosetta_v2510_amendment_operations",
+      "file": "rosetta_v2510_amendment_operations__p_source_text_text.sql",
+      "md5": "c47864e0b03138315627f0ee327da79e",
+      "sha256": "c3af0ddafa1053131a5d6d1b1a027271191f1d333b780daa61fb15416f0b156d",
+      "bytes": 961
+    },
+    {
+      "proname": "rosetta_v2510_clean_amendment_operation_text",
+      "file": "rosetta_v2510_clean_amendment_operation_text__p_operation_text_text.sql",
+      "md5": "e9fc33d6be59310008c68993d05a921c",
+      "sha256": "2f8abf30032d2c108356e96527964740f272e4d4fb0f666aaf5df4e71245370c",
+      "bytes": 604
+    },
+    {
+      "proname": "rosetta_v2511_amendment_disposition",
+      "file": "rosetta_v2511_amendment_disposition__p_source_text_text_p_source_metadata_jsonb.sql",
+      "md5": "abf0a3d2e0fe477f6121bbc0b446dc97",
+      "sha256": "941b938d0b4d063b0d0426bc84ecf291c2e657c94b0fe4244ee7617d7ed65a29",
+      "bytes": 1535
+    },
+    {
+      "proname": "rosetta_v2511_amendment_format",
+      "file": "rosetta_v2511_amendment_format__p_source_text_text.sql",
+      "md5": "1ffa711e0e216de20326f245eb0dfe45",
+      "sha256": "e7969081583be060824ef0b4c7b91ecc0e2341a7aa8f61bc7501768f4b425ac9",
+      "bytes": 684
+    },
+    {
+      "proname": "rosetta_v2511_amendment_operations",
+      "file": "rosetta_v2511_amendment_operations__p_source_text_text.sql",
+      "md5": "17ebfeb0427a641b763899a3c2ca1eb3",
+      "sha256": "4449c9150f22b0b2563d35fb512f1043fa6136539ac9bc62f2bfcb16ce1491ba",
+      "bytes": 961
+    },
+    {
+      "proname": "rosetta_v2511_canonical_output",
+      "file": "rosetta_v2511_canonical_output__p_extraction_run_id_integer.sql",
+      "md5": "b8725706cc4f16653c490a60bb72d163",
+      "sha256": "5c5404c662d9d1145ff01b1f8e43a26dc4c181440078beb791ac2af08e415b04",
+      "bytes": 1211
+    },
+    {
+      "proname": "rosetta_v2511_clean_amendment_operation_text",
+      "file": "rosetta_v2511_clean_amendment_operation_text__p_operation_text_text.sql",
+      "md5": "ac1b90ec461e904014dfb8993f82f29a",
+      "sha256": "39c0817c0e7e897773977f71c0af90b825a06f4daee42b30374f35129cc5ed55",
+      "bytes": 604
+    },
+    {
+      "proname": "rosetta_v2511_final_coverage",
+      "file": "rosetta_v2511_final_coverage__p_extraction_run_id_integer.sql",
+      "md5": "8ed361dca5b49c867755603df265b4b6",
+      "sha256": "3e473152e8f8d908a712928114d93aa925209ca806cf0ded81b78737360f1f46",
+      "bytes": 1113
+    },
+    {
+      "proname": "rosetta_v2511_finalize_extraction",
+      "file": "rosetta_v2511_finalize_extraction__p_extraction_run_id_integer_p_source_text_text_p_source_metadata_jsonb_p_base_re.sql",
+      "md5": "5ce999ddaeb5ee4e5f636250642f78a1",
+      "sha256": "148fb9f8920b199d19561445c8f79bb3131ceccb96fb52bf673cc989b54d64e4",
+      "bytes": 10126
+    },
+    {
+      "proname": "rosetta_v2511_reclassify_amendment_structure",
+      "file": "rosetta_v2511_reclassify_amendment_structure__p_extraction_run_id_integer_p_source_text_text_p_source_metadata_jsonb.sql",
+      "md5": "8c46dac524827b053df7ad060de7c145",
+      "sha256": "3ae8104b1ade430e9b2ac041a1c0141fe6cc5bb552e8ac7a57c36cc90d47c9ad",
+      "bytes": 5078
+    },
+    {
+      "proname": "rosetta_v2511_reconcile_structural_correctness",
+      "file": "rosetta_v2511_reconcile_structural_correctness__p_extraction_run_id_integer.sql",
+      "md5": "0177c4a09bf3fd151505d503d6b9d64e",
+      "sha256": "6c1ab4b112d4731be66bbda697d77593804da16b2c95cbffaf4bbce74dcc7764",
+      "bytes": 452
+    },
+    {
+      "proname": "rosetta_v2511_refresh_final_coverage_receipts",
+      "file": "rosetta_v2511_refresh_final_coverage_receipts__p_extraction_run_id_integer.sql",
+      "md5": "875f475e37c8a34617bd3a3e0b0ea8cc",
+      "sha256": "932e6af2c356415698c3ae7b07bb673b82eb83fdd6efffe356e8a0a7ba53e874",
+      "bytes": 2117
+    },
+    {
+      "proname": "rosetta_v2511_validate_extraction",
+      "file": "rosetta_v2511_validate_extraction__p_extraction_run_id_integer_p_source_text_text.sql",
+      "md5": "b0721ed8fb085c51e183e540d1d3003c",
+      "sha256": "ad30f4b75dd0dfb32232271995ee151229c48d3fc09b36335d06d52ee862769b",
+      "bytes": 2268
+    },
+    {
+      "proname": "rosetta_v2511_validate_independent_structure",
+      "file": "rosetta_v2511_validate_independent_structure__p_extraction_run_id_integer_p_source_text_text.sql",
+      "md5": "8d72b364ea793802d898a58b2aa647a6",
+      "sha256": "b28a7f1d26f19e4a6406e36aff2e679240870c71603a1ba120bd9158e239f13b",
+      "bytes": 6358
+    },
+    {
+      "proname": "rosetta_v251_accountability_actor",
+      "file": "rosetta_v251_accountability_actor__p_trigger_text_p_existing_actor_text.sql",
+      "md5": "9de6e9c69eb3cd632a706229214235fb",
+      "sha256": "baab4dc92f61d764cc616d3704cee85a0cf9990b1d88183a2fb0677ace480b75",
+      "bytes": 479
+    },
+    {
+      "proname": "rosetta_v251_accountability_kind",
+      "file": "rosetta_v251_accountability_kind__p_trigger_text.sql",
+      "md5": "6cc59ebb703542a3da91e789a3531563",
+      "sha256": "59996ae926e51450ee3f1a958f4d574c1c8a6f1a192afa1bc5843e0af76c66a0",
+      "bytes": 1730
+    },
+    {
+      "proname": "rosetta_v251_validate_independent_structure",
+      "file": "rosetta_v251_validate_independent_structure__p_extraction_run_id_integer_p_source_text_text.sql",
+      "md5": "ee28b4f07f53d5c27988da40a36cb755",
+      "sha256": "1df43536bdff84ee37721a53814360d4c2802a658943d45528b3a1a6d6de2c1d",
+      "bytes": 1621
+    },
+    {
+      "proname": "rosetta_v252_penalty_actor",
+      "file": "rosetta_v252_penalty_actor__p_trigger_text.sql",
+      "md5": "aacb13f406f6483999e5fb6227174d01",
+      "sha256": "e7070e7a996da8f39647b44b592881a012c2d088342c91e5949c387cb8a57392",
+      "bytes": 262
+    },
+    {
+      "proname": "rosetta_v252_validate_independent_structure",
+      "file": "rosetta_v252_validate_independent_structure__p_extraction_run_id_integer_p_source_text_text.sql",
+      "md5": "0050f4ca2f2c5bc0f71f2234cecdfdab",
+      "sha256": "698f42cf3d13dd87cbbd4e01ee3e5db37572b6ae6f6aeee27e63207325db6f11",
+      "bytes": 414
+    },
+    {
+      "proname": "rosetta_v253_reconcile_structural_correctness",
+      "file": "rosetta_v253_reconcile_structural_correctness__p_extraction_run_id_integer.sql",
+      "md5": "9d18a514635860e498921c29f689f397",
+      "sha256": "cda3ceb18ad27c8bcca54852264b4f9c47e032e9c99747500aa68da602f566ba",
+      "bytes": 5289
+    },
+    {
+      "proname": "rosetta_v253_validate_independent_structure",
+      "file": "rosetta_v253_validate_independent_structure__p_extraction_run_id_integer_p_source_text_text.sql",
+      "md5": "93b45254d5f64f0905e9b6ae1d2aceca",
+      "sha256": "11116a8f2f3a6386452d39c9fa2e2a186d000dd13e5e0f494ceaf3c105462a18",
+      "bytes": 1673
+    },
+    {
+      "proname": "rosetta_v254_canonical_output",
+      "file": "rosetta_v254_canonical_output__p_extraction_run_id_integer.sql",
+      "md5": "dff8bda09dad98aeb6d3440750f430e2",
+      "sha256": "e90545beda05e6772374eeadcab251c6c7f9ce6512977a458067f7c1af08dafc",
+      "bytes": 2074
+    },
+    {
+      "proname": "rosetta_v254_reconcile_structural_correctness",
+      "file": "rosetta_v254_reconcile_structural_correctness__p_extraction_run_id_integer.sql",
+      "md5": "a4165043c03fe2909c567aed9ca4286f",
+      "sha256": "0788d59f6458d6754dc120a1aebdbbd630902c304f716f729586d0cca84996a1",
+      "bytes": 450
+    },
+    {
+      "proname": "rosetta_v25_actor_source_corrupt",
+      "file": "rosetta_v25_actor_source_corrupt__p_actor_text.sql",
+      "md5": "52e00a0e202d99458f48a9691acc323f",
+      "sha256": "cc7e4823709d15b4953f4926384a68d4982be816602fc59bb9106b15b9314dff",
+      "bytes": 390
+    },
+    {
+      "proname": "rosetta_v25_clause_structurally_sound",
+      "file": "rosetta_v25_clause_structurally_sound__p_clause_text_p_actor_text_p_modal_text.sql",
+      "md5": "4e1bf62db4c94b39f86b64a900e0c0fd",
+      "sha256": "a1e0053d28cab27e0b1c1c6560aed72511c904d7db44453150904b77625036c1",
+      "bytes": 525
+    },
+    {
+      "proname": "rosetta_v25_exact_definition_text",
+      "file": "rosetta_v25_exact_definition_text__p_source_text_text_p_definition_text_text.sql",
+      "md5": "884148e65964d3623d707e38b87583ce",
+      "sha256": "341773211d927a8815d51fccd6553e8e12c464a5c169d17d44bda6912b8ed4e0",
+      "bytes": 646
+    },
+    {
+      "proname": "rosetta_v25_is_internal_period",
+      "file": "rosetta_v25_is_internal_period__p_value_text_p_index_integer.sql",
+      "md5": "42d24d3a336d0df125e626de3429627b",
+      "sha256": "eac7f9d7027707fd9a3dc2597f0f9685f765a244fb876ecf17aeeb1d9b9d6d37",
+      "bytes": 1803
+    },
+    {
+      "proname": "rosetta_v25_layout_projection",
+      "file": "rosetta_v25_layout_projection__p_source_text_text.sql",
+      "md5": "50cd07f82d16b028a68ceb64609c63b0",
+      "sha256": "5b1689ecec8a5aea467dcdfec134adec688088fbdc6f14d866b829ad489f066c",
+      "bytes": 1024
+    },
+    {
+      "proname": "rosetta_v25_locate_normalized_text",
+      "file": "rosetta_v25_locate_normalized_text__p_raw_text_text_p_needle_text.sql",
+      "md5": "b49e2983b19a594cd8e0527717266e00",
+      "sha256": "9a5eb7e8d59146ad24643ac13f8bce55dab45bce59e6b83fca8839b199d4655e",
+      "bytes": 2227
+    },
+    {
+      "proname": "rosetta_v25_mask_matches",
+      "file": "rosetta_v25_mask_matches__p_value_text_p_pattern_text_p_flags_text.sql",
+      "md5": "289d42906106f0c6e935dc659ea9b0af",
+      "sha256": "8832f87fbff05809c5901512369673ad88220e855565d5aa6ee98908a7b2fb37",
+      "bytes": 868
+    },
+    {
+      "proname": "rosetta_v25_modal_and_actor",
+      "file": "rosetta_v25_modal_and_actor__p_clause_text.sql",
+      "md5": "3fce08d232efd6f800accea6f542e024",
+      "sha256": "8bc316d22312a4e91e7492f6a4cb5e6e497325060a0f5c49ce295c0f9ed39b9b",
+      "bytes": 967
+    },
+    {
+      "proname": "rosetta_v25_normative_clauses",
+      "file": "rosetta_v25_normative_clauses__p_source_text_text.sql",
+      "md5": "743a895db544b33daaa8a754f33f07a0",
+      "sha256": "0311339b5fedf4581481fdd1949ac41f4261925a160b926adf6f3894663bfb5c",
+      "bytes": 1469
+    },
+    {
+      "proname": "rosetta_v25_projected_contains",
+      "file": "rosetta_v25_projected_contains__p_source_text_text_p_needle_text.sql",
+      "md5": "abc1a02a1df0fddd6d83d5c9ce2f06bf",
+      "sha256": "2e413e7304dfa6a857bfba4bf4d5a3a33ffd6c2420c099f3c00eae644a224b3f",
+      "bytes": 414
+    },
+    {
+      "proname": "rosetta_v25_protect_internal_periods",
+      "file": "rosetta_v25_protect_internal_periods__p_value_text.sql",
+      "md5": "f95a67edc90354ce810e3ab514414966",
+      "sha256": "8ca1f88341a56bf6868e8666fdce47dde7b0d905b45e2d894dfbd26de4e7ba9f",
+      "bytes": 631
+    },
+    {
+      "proname": "rosetta_v25_refresh_object_source_spans",
+      "file": "rosetta_v25_refresh_object_source_spans__p_extraction_run_id_integer_p_source_text_text.sql",
+      "md5": "6ece54ff1d682dc0248eeee15f6c5dc2",
+      "sha256": "ae5f02c9a7525d3ff6d8d04718837f8865fcc80c80e753b6a8b223a3896069c1",
+      "bytes": 4110
+    },
+    {
+      "proname": "rosetta_v25_register_span_repairs",
+      "file": "rosetta_v25_register_span_repairs__p_extraction_run_id_integer.sql",
+      "md5": "43ce44d1a0e770c08d7bd5eef81c78c1",
+      "sha256": "bb1f508bb2b7b47a3c25c1a2b782e177782d94f68ce0879a9c9ee5d7828643a5",
+      "bytes": 1727
+    },
+    {
+      "proname": "rosetta_v25_section_spans",
+      "file": "rosetta_v25_section_spans__p_source_text_text.sql",
+      "md5": "0a97c8c1e198090c5972f5b383ac7d4c",
+      "sha256": "8af8cd1358c3e0f66d442d379b81dca464b89bef06e85d8eb6ac0af887b3f632",
+      "bytes": 2464
+    },
+    {
+      "proname": "rosetta_v25_unprotect_text",
+      "file": "rosetta_v25_unprotect_text__p_value_text.sql",
+      "md5": "e32fa4ff6ac424094c3665c5172750a4",
+      "sha256": "ccc3cba6ff39959f7ea429642be7a1106c1dbee08390dbacb5006d800247bbf9",
+      "bytes": 223
+    },
+    {
+      "proname": "rosetta_v25_validate_extraction",
+      "file": "rosetta_v25_validate_extraction__p_extraction_run_id_integer_p_source_text_text.sql",
+      "md5": "dd3eb712180007db323ef80720444cfc",
+      "sha256": "27ec4a388043cb5ccb19e1d65fb23375a8ff6f13ecb88a754c3cd0b103112c89",
+      "bytes": 5352
+    },
+    {
+      "proname": "rosetta_v25_validate_independent_structure",
+      "file": "rosetta_v25_validate_independent_structure__p_extraction_run_id_integer_p_source_text_text.sql",
+      "md5": "227a09af1d0d011052bc85522b698c93",
+      "sha256": "287369017113eaef7925626217baff872666d2a8f52c4e9d728a37920386ffbc",
+      "bytes": 6335
+    },
+    {
+      "proname": "rosetta_v2_is_legislative_finding",
+      "file": "rosetta_v2_is_legislative_finding__p_clause_text_p_modal_text.sql",
+      "md5": "9d2cd88704125175185bfdcd75a7744d",
+      "sha256": "009678601dce366f40d096826ba8fbeb2338ca9842085086daf03632eac90086",
+      "bytes": 632
+    },
+    {
+      "proname": "rosetta_v2_modal_and_actor",
+      "file": "rosetta_v2_modal_and_actor__p_clause_text.sql",
+      "md5": "15458f553f4a57f41ded3c4a5f26d46b",
+      "sha256": "fc35a75f480c5b3b09df9c49d5f13a640f146896518cdab96863c58405c9a2ec",
+      "bytes": 1066
+    },
+    {
+      "proname": "rosetta_v2_normalize_text",
+      "file": "rosetta_v2_normalize_text__p_value_text.sql",
+      "md5": "3dd05fc5b90b29b234e429147b8a1526",
+      "sha256": "0f85d06fe62c8430df70de49ad38087c0b1529ce16503a5809e7098de4fa6a5b",
+      "bytes": 245
+    },
+    {
+      "proname": "run_rosetta_v3_extraction",
+      "file": "run_rosetta_v3_extraction__full.sql",
+      "md5": "4488b2faa215c014300857ac22083916",
+      "sha256": "15f673402193f29b6777a36cb668f950a3cf7b51cb4c19f5788a46f1490028d4",
+      "bytes": 3771
+    },
+    {
+      "proname": "run_rosetta_v3_extraction_v2511_base",
+      "file": "run_rosetta_v3_extraction_v2511_base__p_source_document_id_integer_p_source_text_text_p_expected_source_content_hash_t.sql",
+      "md5": "48cbb64bf38e050493f60c5261089105",
+      "sha256": "0749542ab7845e51ed8ac6af21ce305e2a5f0c602d2d256a1d508538bba47eb9",
+      "bytes": 36775
+    },
+    {
+      "proname": "run_rosetta_v3_extraction_v2511_candidate",
+      "file": "run_rosetta_v3_extraction_v2511_candidate__p_source_document_id_integer_p_source_text_text_p_expected_source_content_hash_t.sql",
+      "md5": "4e69d5df22284c96300a91ecc2e5c257",
+      "sha256": "d8a2bc056e54659c38986a9401fee4c74e324c80fcfc446b7c505c6a003e7453",
+      "bytes": 4952
+    },
+    {
+      "proname": "run_rosetta_v3_extraction_v2511_candidate_base",
+      "file": "run_rosetta_v3_extraction_v2511_candidate_base__p_source_document_id_integer_p_source_text_text_p_expected_source_content_hash_t.sql",
+      "md5": "26c098083b384af6e349e9195831a4da",
+      "sha256": "06011e9bf12e1efbaa4f6f83af1ce6faec5eddf20b33fa635fe8319ddadda6ef",
+      "bytes": 9624
+    }
+  ]
+}

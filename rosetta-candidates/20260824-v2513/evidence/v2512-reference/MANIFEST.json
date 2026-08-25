@@ -1,0 +1,34 @@
+{
+ "provenance": "Retrieved read-only from production (project ROSETTA kjzytnzkkdpdxtqtjlew) via pg_get_functiondef; base64+server-side md5 chunk verification protocol; whole-string md5 and decoded-definition md5 both verified. Retrieved 2026-08-24.",
+ "purpose": "Reference bodies for C4 occurrence-aware span resolution (rosetta v2.5.12 candidate functions, never promoted). Used to port lane C4 without reconstructing from prose.",
+ "functions": [
+  {
+   "file": "rosetta_v2512_layout_projection.sql",
+   "bytes": 2459,
+   "md5": "5f6ddfc75ad3cdb965b9401055fb47c9",
+   "sha256": "34e7c39b3cdbb71dc776026e8a92c1e1a0ddaf89029a01daea2df6a82d838cd0",
+   "verification": "b64 chunk md5 + whole md5 + decoded def md5 (server-side, read-only)"
+  },
+  {
+   "file": "rosetta_v2512_locate_normalized_text_occurrence.sql",
+   "bytes": 2309,
+   "md5": "69c3df851e8c2aa96d766de85b3f0547",
+   "sha256": "2cbd8c792156dfa1bec07525d7be0b6fd10ac6d330b1269ba870f218393f35ab",
+   "verification": "b64 chunk md5 + whole md5 + decoded def md5 (server-side, read-only)"
+  },
+  {
+   "file": "rosetta_v2512_normalized_occurrence_count.sql",
+   "bytes": 806,
+   "md5": "25169fd73150b1d32727173ea701903b",
+   "sha256": "1a5f3cc327ffddb6257bfc34cd019c6643a596eab7015e82e1b342701308d35b",
+   "verification": "b64 chunk md5 + whole md5 + decoded def md5 (server-side, read-only)"
+  },
+  {
+   "file": "rosetta_v2512_refresh_object_source_spans.sql",
+   "bytes": 6797,
+   "md5": "8d307434e4f5d602eb3b90a439b6fa0b",
+   "sha256": "f7dfc8e994992862593adb02abb0aef6ddd9b990daf1548f0ec956716c7c1dc8",
+   "verification": "b64 chunk md5 + whole md5 + decoded def md5 (server-side, read-only)"
+  }
+ ]
+}
