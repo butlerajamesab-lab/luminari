@@ -1,0 +1,11 @@
+CREATE OR REPLACE FUNCTION public.rosetta_open_structural_repair_count(p_extraction_run_id integer)
+ RETURNS integer
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'pg_catalog', 'public'
+AS $function$
+  select count(*)::integer
+  from public.rosetta_structural_repair_queue repair
+  where repair.extraction_run_id = p_extraction_run_id
+    and repair.repair_state in ('open', 'in_review');
+$function$

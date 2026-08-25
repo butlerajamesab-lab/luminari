@@ -1,0 +1,51 @@
+name: Rosetta 2.5.13 candidate integrity
+
+on:
+  pull_request:
+    paths:
+      - "rosetta-candidates/20260824-v2513/**"
+      - "artifacts/lighthouse-audit/2026-08-25-kimi-spec-review/**"
+      - ".github/workflows/rosetta-v2513-candidate-integrity.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "rosetta-candidates/20260824-v2513/**"
+      - "artifacts/lighthouse-audit/2026-08-25-kimi-spec-review/**"
+      - ".github/workflows/rosetta-v2513-candidate-integrity.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: rosetta-candidates/20260824-v2513
+    steps:
+      - name: Check out candidate source
+        uses: actions/checkout@v4
+
+      - name: Verify packet hashes and static contracts
+        run: |
+          sha256sum -c SHA256SUMS
+          python3 tests/static_checks.py
+
+      - name: Verify control fidelity and deterministic generation
+        run: |
+          python3 tools/check_control_fidelity.py
+          python3 tools/generate.py
+          git diff --exit-code -- .
+
+  verify-lighthouse-evidence:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: artifacts/lighthouse-audit/2026-08-25-kimi-spec-review
+    steps:
+      - name: Check out evidence packet
+        uses: actions/checkout@v4
+
+      - name: Verify source bytes and internal evidence
+        run: python3 verify_packet.py

@@ -1,0 +1,61 @@
+{
+  "_provenance": {
+    "captured_at": "2026-08-23",
+    "source": "production project kjzytnzkkdpdxtqtjlew, read-only SELECT via Supabase SQL (pg_catalog queries)",
+    "method": "execute_sql read-only; no DDL/DML issued"
+  },
+  "query": "pg_class.relrowsecurity + pg_policy (polname/polroles/polcmd/qual/withcheck) for public relkind=r",
+  "rls_enabled_with_allow_public_read_policy": [
+    "accountability_route",
+    "actor_alias",
+    "actor_canon",
+    "appeal_pathway",
+    "corpus",
+    "entity_override",
+    "escalation_node",
+    "extraction_drift_log",
+    "extraction_manifest",
+    "extraction_rule_manifest",
+    "extraction_run",
+    "extraction_run_config",
+    "help_entity",
+    "hr1_raw_blocks",
+    "layer_coverage",
+    "source_document",
+    "term_definition",
+    "term_definition_affected_steps",
+    "validation_result",
+    "workflow_pipeline",
+    "workflow_step"
+  ],
+  "policy_detail": {
+    "polname": "allow_public_read",
+    "polroles": "{public} (empty => PUBLIC)",
+    "polcmd": "r (SELECT)",
+    "using": "true",
+    "with_check": null
+  },
+  "rls_enabled_no_policy": [
+    "comments",
+    "posts",
+    "rosetta_backend_capability_v1",
+    "rosetta_clause_ir",
+    "rosetta_current_generation_registry_v1",
+    "rosetta_semantic_receipt",
+    "rosetta_semantic_shadow_disposition_event",
+    "rosetta_semantic_shadow_run",
+    "rosetta_structural_representation",
+    "source_document_content",
+    "source_ingest_chunk_receipt",
+    "source_ingest_chunk_validation",
+    "users"
+  ],
+  "rls_disabled": [
+    "rosetta_canonical_clause",
+    "rosetta_clause_occurrence",
+    "rosetta_object_correction",
+    "rosetta_object_source_span",
+    "rosetta_structural_repair_queue"
+  ],
+  "security_note": "Five rosetta_* tables have relrowsecurity=false. RLS-enabled-no-policy tables deny all access under RLS for non-owners. No remediation applied (policy)."
+}

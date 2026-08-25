@@ -1,0 +1,44 @@
+{
+  "_provenance": {
+    "captured_at": "2026-08-23T15:56+00 (query execution time)",
+    "source": "production project kjzytnzkkdpdxtqtjlew, read-only SELECT via Supabase SQL (pg_catalog queries)",
+    "method": "execute_sql read-only; no DDL/DML issued",
+    "note": "Counts changed intra-day (morning capture: 7976 contents / 13509 documents / 8296 runs; afternoon: 8027/13581/8347) \u2014 the live system is still ingesting. Any sealed manifest must be watermark-bound, not count-bound."
+  },
+  "live_counts": {
+    "source_document_content": 8027,
+    "source_document": 13581,
+    "extraction_run_total": 8347,
+    "v2511_runs": 2877,
+    "v2511_completed_validated_admissible": 2177,
+    "content_earliest": "2026-07-31 18:26:26.968365+00",
+    "content_latest": "2026-08-23 15:56:22.255271+00",
+    "open_or_in_review_structural_repairs": 7939
+  },
+  "four_number_reconciliation": {
+    "13096": {
+      "label": "plan estimate",
+      "universe": "planning estimate of bill corpus size from the 2.5.x roadmap documents (pre-ingest projection)",
+      "status": "estimate, not a measurement; superseded by live counts",
+      "classification": "Retrieved (plan documents) / Not a database count"
+    },
+    "7628": {
+      "label": "PR #52 sealed enumeration set",
+      "universe": "sources sealed in the PR #52 enumeration-only experiment fixtures at its declared watermark",
+      "status": "watermark-bound subset measured at PR #52 creation time; predates later ingest",
+      "classification": "Retrieved (PR #52 bundle)"
+    },
+    "1038": {
+      "label": "quarantined runs",
+      "universe": "extraction runs placed under quarantine (see 'Rosetta Quarantine Run IDs \u2014 2026-08-23.txt')",
+      "status": "run-level quarantine list, orthogonal to source counts",
+      "classification": "Retrieved (prior evidence pack)"
+    },
+    "live": {
+      "label": "live database counts",
+      "universe": "source_document_content rows = versioned content bodies (8027); source_document rows = logical documents incl. multi-version (13581); extraction_run rows all engines (8347)",
+      "status": "measured 2026-08-23; still growing",
+      "classification": "Retrieved"
+    }
+  }
+}

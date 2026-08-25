@@ -1,0 +1,154 @@
+{
+  "artifact_scope": "rosetta-v2513 candidate fixture/runtime validation",
+  "status": "pass_with_explicit_scope_limit",
+  "validated_on": "2026-08-24",
+  "database": {
+    "provider": "Supabase preview branch",
+    "postgres_major": 17,
+    "branch_id": "797dd564-4642-4189-b3c7-7da6c24f9556",
+    "project_ref": "tndhtvhkbmhruxtfxibq",
+    "branch_name": "rosetta-corpus-continuity-20260822",
+    "production_project_ref": "kjzytnzkkdpdxtqtjlew",
+    "production_mutated": false,
+    "branch_merged": false
+  },
+  "build_checks": {
+    "migration_files_compiled": 20,
+    "sql_test_files_passed": [
+      "01_durability.sql",
+      "02_schema_and_control.sql",
+      "03_lanes_c1_c2_c3.sql",
+      "04_lanes_c4_c5.sql",
+      "05_lanes_c6_c7.sql",
+      "06_manifest_diff_gates.sql",
+      "07_end_to_end_replay.sql",
+      "10_security_lockdown.sql"
+    ],
+    "control_functions_matching": 51,
+    "control_functions_mismatching": 0,
+    "quarantine_run_ids_loaded_in_packet": 1038,
+    "generator_deterministic": true,
+    "static_contract_passed": true
+  },
+  "fixture": {
+    "source_registry_id": "aba01eb3-e8ba-4cd0-b415-837001e61d14",
+    "source_url": "test://mcp-help-span-fix-20260824",
+    "configuration_hash": "2ec383454a864078ea59cb13979c91acf7c51fbc610ca151297a18ecb3961ec3",
+    "scope": "one synthetic exact-source fixture exercising workflow, override, definition, and help objects; accountability count is zero"
+  },
+  "separated_transaction_replay": {
+    "claim_execute_stage_finalize_verify_are_committed_separately": true,
+    "forced_timeout": {
+      "attempt_id": "800a2121-9c16-44aa-a780-4da9d4bdc87c",
+      "terminal_state": "timed_out",
+      "receipt_kind": "timeout",
+      "sqlstate": "57014",
+      "fake_run_binding_created": false
+    },
+    "lanes": [
+      {
+        "prefix": "ctl_",
+        "engine": "rosetta-v3-deterministic-sql-2.5.11",
+        "closure_hash": "9f8656d238c571a9b00fa69deb973590b87e033620b1bc375fa7c6a48db06f67",
+        "attempt_id": "7e91b2ba-d512-441a-9057-d0d3d8c3482b"
+      },
+      {
+        "prefix": "c1_",
+        "engine": "rosetta-v3-deterministic-sql-2.5.13-c1",
+        "closure_hash": "800f7bebe2d39812584af0ed9febef1ba054108d8424da5cc5cad53427eabf60",
+        "attempt_id": "b36a7c70-2aa3-44f5-a249-37ca9c405262"
+      },
+      {
+        "prefix": "c2_",
+        "engine": "rosetta-v3-deterministic-sql-2.5.13-c2",
+        "closure_hash": "58c8b3b11d881026756079b469637359bd062dc4b18899c2f38a2dae70a98e6c",
+        "attempt_id": "4c2cc94f-df21-4fc1-a364-53eb1c5c7553"
+      },
+      {
+        "prefix": "c3_",
+        "engine": "rosetta-v3-deterministic-sql-2.5.13-c3",
+        "closure_hash": "bf3f0879b6bc90d6dd4242aae8c89a6c35730ccd5de22bb6608fe37f6cf82863",
+        "attempt_id": "c0d1a511-1ad0-40fa-a9f3-c85eed29e686"
+      },
+      {
+        "prefix": "c4_",
+        "engine": "rosetta-v3-deterministic-sql-2.5.13-c4",
+        "closure_hash": "554c8247780f04ab6c801eb155c9577c8e8dbffd91a68ba59e4858e474363639",
+        "attempt_id": "12356381-e6a4-4452-8b46-3c98003827aa"
+      },
+      {
+        "prefix": "c5_",
+        "engine": "rosetta-v3-deterministic-sql-2.5.13-c5",
+        "closure_hash": "a38a82f2fa780607e1ebf4dbecc71b36f98d02c3ab58c751a4abbb3acb1ab8fe",
+        "attempt_id": "78ffbc63-d050-4a8b-b4b6-00cd6ddf6db3"
+      },
+      {
+        "prefix": "c6_",
+        "engine": "rosetta-v3-deterministic-sql-2.5.13-c6",
+        "closure_hash": "5794e21ba5a58cd1bbf3f893cf36cde595687f7aa34e63798d5162a7ef361b29",
+        "attempt_id": "658c5c48-897c-4f19-8e69-c797ff61d8f0"
+      },
+      {
+        "prefix": "c7_",
+        "engine": "rosetta-v3-deterministic-sql-2.5.13-c7",
+        "closure_hash": "714e23a497109fc4811e6ebe25ac67ca40cb11971efacf60616935071caf40e0",
+        "attempt_id": "528c2ac8-1a5a-4452-8e5e-f9f729085edc"
+      },
+      {
+        "prefix": "v2513_",
+        "engine": "rosetta-v3-deterministic-sql-2.5.13",
+        "closure_hash": "3fda1f90c30a0a163b315d8fdfc874f3ed1f4957621717b51eb001df6f252010",
+        "attempt_id": "8a79d414-5f3f-4884-925a-2d79de43fae0"
+      }
+    ],
+    "all_lane_assertions": {
+      "attempt_state": "succeeded",
+      "terminal_outcome": "completed",
+      "source_binding_exact": true,
+      "run_binding_exact": true,
+      "output_hash_exact": true,
+      "nonempty_structural_output": true,
+      "run_status": "completed",
+      "admissibility_state": "admissible",
+      "object_count_per_lane": 7
+    }
+  },
+  "validator_regression": {
+    "defect": "help_entity spans were created but omitted from the inherited expected-span count",
+    "pre_fix_attempt_preserved": "251b2d44-4335-4eb8-96a0-af125d8a423d",
+    "c4": {
+      "attempt_id": "12356381-e6a4-4452-8b46-3c98003827aa",
+      "test": "independent_structure_v2513c4",
+      "status": "pass",
+      "expected_span_count": 10,
+      "actual_span_count": 10,
+      "bad_span_count": 0,
+      "span_hash_mismatch_count": 0
+    },
+    "convergence": {
+      "attempt_id": "8a79d414-5f3f-4884-925a-2d79de43fae0",
+      "test": "independent_structure_v2513",
+      "status": "pass",
+      "expected_span_count": 10,
+      "actual_span_count": 10,
+      "bad_span_count": 0,
+      "span_hash_mismatch_count": 0
+    }
+  },
+  "security": {
+    "missing_rls_tables": 0,
+    "public_execute_grants": 0,
+    "public_schema_grants": 0,
+    "caller_mutable_function_search_paths": 0,
+    "advisor_warn_or_error_count": 0,
+    "advisor_info": "17 rls_enabled_no_policy notices; intentional deny-all internal candidate tables"
+  },
+  "explicitly_not_claimed": [
+    "full immutable corpus replay",
+    "semantic correctness across all jurisdictions and source formats",
+    "complete G1-G11 promotion-gate success",
+    "production promotion",
+    "production deployment",
+    "production cutover"
+  ]
+}

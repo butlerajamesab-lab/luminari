@@ -1,0 +1,209 @@
+{
+  "_provenance": {
+    "captured_at": "2026-08-23",
+    "source": "production project kjzytnzkkdpdxtqtjlew, read-only SELECT via Supabase SQL (pg_catalog queries)",
+    "method": "execute_sql read-only; no DDL/DML issued"
+  },
+  "query": "SELECT manifest_id, engine_version, rule_set_version, manifest_hash, md5(manifest_json::text), char_length(manifest_json::text), created_at FROM extraction_rule_manifest ORDER BY manifest_id",
+  "count": 19,
+  "correction_note": "19 manifest rows retrieved; supersedes earlier session summary figure of 16.",
+  "manifests": [
+    {
+      "manifest_id": "0d168dbe-3845-408a-a288-04ce69509da0",
+      "engine_version": "rosetta-v3-deterministic-sql-2.5.8",
+      "rule_set_version": "rosetta-five-layer-structural-correctness-2.5.8",
+      "manifest_hash": "67dd6658766dd980a899c870f63fd386ff8a8abe94f7cccc0ed8c625ad6f8317",
+      "manifest_json_md5": "649e22814ea297d60bf936149d597ba0",
+      "json_len": 1698,
+      "created_at": "2026-08-16 15:37:11.14269+00"
+    },
+    {
+      "manifest_id": "0d94a314-c19d-4eb9-8090-95b8e40c1db1",
+      "engine_version": "rosetta-v3-deterministic-sql-2.3.0",
+      "rule_set_version": "rosetta-five-layer-structural-correctness-2.3.0",
+      "manifest_hash": "9d9efeb7df7184008511ab5772c9599726080d2cd8743bfd72e2c41d4d93fe57",
+      "manifest_json_md5": "692b7becc9d48f11bfc98ec2b9af42f9",
+      "json_len": 1421,
+      "created_at": "2026-08-05 23:09:19.837984+00"
+    },
+    {
+      "manifest_id": "143e0605-5989-45e6-ac0e-31ef24b823b4",
+      "engine_version": "rosetta-v3-deterministic-sql-2.0.0",
+      "rule_set_version": "rosetta-five-layer-structural-correctness-2.0.0",
+      "manifest_hash": "08b753159a4fee7006faebc5612467491cc79418fb0ef21e7c897e1835bd87da",
+      "manifest_json_md5": "a4d2801ee7c3855ca8437c0ffa98bbec",
+      "json_len": 1507,
+      "created_at": "2026-08-05 19:28:08.442812+00"
+    },
+    {
+      "manifest_id": "18fc5ad1-9de5-4a3f-ab48-f53b122a65c8",
+      "engine_version": "rosetta-v3-deterministic-sql-2.5.0",
+      "rule_set_version": "rosetta-five-layer-structural-correctness-2.5.0",
+      "manifest_hash": "6c1a8fac116c60f380d5bde274e2c82f3702eccc25aad9fa79f7696cf255219a",
+      "manifest_json_md5": "1dd426721f9cf1bbf56b095d7b4a0051",
+      "json_len": 1848,
+      "created_at": "2026-08-15 19:05:40.950145+00"
+    },
+    {
+      "manifest_id": "1f2c4079-fa7c-46a6-82a4-38916cbd9f6e",
+      "engine_version": "rosetta-v3-deterministic-sql-2.5.12",
+      "rule_set_version": "rosetta-five-layer-structural-correctness-2.5.12",
+      "manifest_hash": "4858b4848558b345aed4c32a04f52f42e2f931bda546f590f8beb3372980b1eb",
+      "manifest_json_md5": "62a6e09fd923ac2d384a871396311d79",
+      "json_len": 3968,
+      "created_at": "2026-08-20 05:39:34.124423+00"
+    },
+    {
+      "manifest_id": "37ad7755-1552-4784-9af8-af59599708ca",
+      "engine_version": "rosetta-v3-deterministic-sql-2.5.6",
+      "rule_set_version": "rosetta-five-layer-structural-correctness-2.5.6",
+      "manifest_hash": "3529fe7103abc4e618496f162a9da65ab18ff3aeb85afcc0b7e37048023b5242",
+      "manifest_json_md5": "557cec3987920459bba16dd1ffd63874",
+      "json_len": 1436,
+      "created_at": "2026-08-16 04:13:37.716918+00"
+    },
+    {
+      "manifest_id": "578c6e6b-3cb4-4ea2-8493-3aadffa9c3e3",
+      "engine_version": "rosetta-v3-deterministic-sql-2.5.1",
+      "rule_set_version": "rosetta-five-layer-structural-correctness-2.5.1",
+      "manifest_hash": "cbc91bee938b1865a01d97ac7c7622d8696aedb6e2910a9874ed798d7f9d6c2c",
+      "manifest_json_md5": "95227081269b25329b28ca5b0a0752f0",
+      "json_len": 869,
+      "created_at": "2026-08-15 19:10:10.603535+00"
+    },
+    {
+      "manifest_id": "644ea717-c18f-4638-864d-7603b1a7641e",
+      "engine_version": "rosetta-v3-deterministic-sql-2.5.4",
+      "rule_set_version": "rosetta-five-layer-structural-correctness-2.5.4",
+      "manifest_hash": "4342bd31f6ec88b1cc7189ab698686e5271c430c50e5bafda807fb57415f328b",
+      "manifest_json_md5": "056c5edb1ea2780a939b23ccc43ad526",
+      "json_len": 1028,
+      "created_at": "2026-08-16 00:46:44.425976+00"
+    },
+    {
+      "manifest_id": "6c501b33-ca99-4466-88cf-66d53f966ebf",
+      "engine_version": "rosetta-v3-deterministic-sql-1.0.0",
+      "rule_set_version": "rosetta-five-layer-exact-patterns-1.0.0",
+      "manifest_hash": "230b948f1d30c9b5f491f79863c04208f1fe1aab6c5faf52483b4492f985a3cf",
+      "manifest_json_md5": "7163647ea3d1c866d80563e41ab5ce22",
+      "json_len": 1257,
+      "created_at": "2026-07-31 18:14:08.555564+00"
+    },
+    {
+      "manifest_id": "6f63ab27-4380-4d2c-953f-815025ea7c87",
+      "engine_version": "rosetta-v3-deterministic-sql-2.5.3",
+      "rule_set_version": "rosetta-five-layer-structural-correctness-2.5.3",
+      "manifest_hash": "763abfa9a311610d0e357a9a6c20e66c796c942b55f2bda12b22420f24db3905",
+      "manifest_json_md5": "84fd1f3d179e6b56ee53be1c9d32325b",
+      "json_len": 745,
+      "created_at": "2026-08-15 19:19:27.453639+00"
+    },
+    {
+      "manifest_id": "72c38f08-bdcf-47ed-b608-434845880645",
+      "engine_version": "rosetta-v3-deterministic-sql-2.4.0",
+      "rule_set_version": "rosetta-five-layer-structural-correctness-2.4.0",
+      "manifest_hash": "0b6138cd7a54fdd5c2ef971a199ea66c23aa37a7c9a39fca65587f1ce15bcd31",
+      "manifest_json_md5": "cbfbb899318a0d487f7c256302f4df5b",
+      "json_len": 1060,
+      "created_at": "2026-08-15 11:05:25.680602+00"
+    },
+    {
+      "manifest_id": "840d05bf-d81a-45a8-96df-f59a45702ebf",
+      "engine_version": "rosetta-v3-deterministic-sql-2.5.10",
+      "rule_set_version": "rosetta-five-layer-structural-correctness-2.5.10",
+      "manifest_hash": "46f75737deaf11ee4cc352087ca67d2f7e57545fa9835ac281e4dab32b9cc674",
+      "manifest_json_md5": "f8a5cdd39c7aba1196c21972e58114e3",
+      "json_len": 2652,
+      "created_at": "2026-08-16 16:45:40.399794+00"
+    },
+    {
+      "manifest_id": "8ca1a1e8-b6ca-4cd2-a09e-017ad745dcf5",
+      "engine_version": "rosetta-v3-deterministic-sql-2.5.2",
+      "rule_set_version": "rosetta-five-layer-structural-correctness-2.5.2",
+      "manifest_hash": "4499e3e815fe496cfe2ca31bd7eca9dbfd8c707fca7a14b30cbab2898768b0a6",
+      "manifest_json_md5": "6ff3c7170d019e731ecb6f6523d6925a",
+      "json_len": 722,
+      "created_at": "2026-08-15 19:12:24.911572+00"
+    },
+    {
+      "manifest_id": "a35117fd-a1ac-4ef5-82c0-1e46e30acc90",
+      "engine_version": "rosetta-v3-deterministic-sql-2.5.11",
+      "rule_set_version": "rosetta-five-layer-structural-correctness-2.5.11",
+      "manifest_hash": "3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639",
+      "manifest_json_md5": "c0b627297b081393d41b2a9390f1f930",
+      "json_len": 3131,
+      "created_at": "2026-08-19 09:01:10.775257+00"
+    },
+    {
+      "manifest_id": "bdaa567d-4f80-4014-a707-557958157e6b",
+      "engine_version": "rosetta-v3-deterministic-sql-2.5.9",
+      "rule_set_version": "rosetta-five-layer-structural-correctness-2.5.9",
+      "manifest_hash": "7e8955f50c0feeb8afa367b72409e77e75003bfe4900eb61667777bcddb5dabb",
+      "manifest_json_md5": "5d4c789864e519708a0e8855e8a53988",
+      "json_len": 2337,
+      "created_at": "2026-08-16 16:43:53.542424+00"
+    },
+    {
+      "manifest_id": "c016322a-ba9b-4b8c-bd5b-1fb8cfb2ede0",
+      "engine_version": "rosetta-v3-deterministic-sql-2.5.7",
+      "rule_set_version": "rosetta-five-layer-structural-correctness-2.5.7",
+      "manifest_hash": "da311c93a775d61728d6a080b1218920c7a4a7fa86be52a4f33d05f0ac5b4ac8",
+      "manifest_json_md5": "e65396cbf3eac4cfe883169d4ba2e339",
+      "json_len": 1428,
+      "created_at": "2026-08-16 04:15:12.713649+00"
+    },
+    {
+      "manifest_id": "ced836aa-cec4-4ca7-9e0f-08f924b4ddb4",
+      "engine_version": "rosetta-v3-deterministic-sql-2.2.0",
+      "rule_set_version": "rosetta-five-layer-structural-correctness-2.2.0",
+      "manifest_hash": "e1fb0b7417e60c2f901f9120ad8b0a5740e9791adf86249e2589c2771d5aaf2f",
+      "manifest_json_md5": "f93509a019d047802d91e2d4fe50fcf0",
+      "json_len": 1637,
+      "created_at": "2026-08-05 21:33:46.044473+00"
+    },
+    {
+      "manifest_id": "d66e5893-1c0e-4484-81a1-7d9b020be012",
+      "engine_version": "rosetta-v3-deterministic-sql-2.1.0",
+      "rule_set_version": "rosetta-five-layer-structural-correctness-2.1.0",
+      "manifest_hash": "13d253a66e80329b784ea29e4196331a2821ee7e524f1ace1295d7642f6937da",
+      "manifest_json_md5": "11d6e62d0db0c5d103235d9e3e2c07a5",
+      "json_len": 1099,
+      "created_at": "2026-08-05 20:20:56.654833+00"
+    },
+    {
+      "manifest_id": "f98ab324-6e10-42e4-ae26-f5fd247530ac",
+      "engine_version": "rosetta-v3-deterministic-sql-2.5.5",
+      "rule_set_version": "rosetta-five-layer-structural-correctness-2.5.5",
+      "manifest_hash": "0df004af303b94dd9331d8a70fff410db7250e0523593ef4db4aaee5342a0363",
+      "manifest_json_md5": "373024ca7cd7440d608d27aa5b48ef01",
+      "json_len": 1071,
+      "created_at": "2026-08-16 04:12:57.241482+00"
+    }
+  ],
+  "v2511_manifest_json": {
+    "change": {
+      "coverage_block_scope": "Every retained amendment document, section, and amendment-operation block receives all five operative layers as not_applicable.",
+      "receipt_truthfulness": "The execution receipt returns final hashed objects, structural representations, five-layer coverage, and row counts after all reclassification and validation.",
+      "final_validation_order": "No canonical meaning changes after final coverage, structural self-check, and independent validation.",
+      "amendment_page_furniture": "Recognized trailing legislative page furniture remains excluded from amendment-operation spans.",
+      "amendment_representation": "Source-stated amendment instructions remain non-operative structural representations, not OVERRIDES objects.",
+      "exact_replay_immutability": "An already-finalized exact generation returns its stored final receipt without re-finalization, timestamp refresh, canonical-row mutation, or hash mutation. Interrupted base-stage generations complete finalization exactly once.",
+      "amendment_validation_stage_order": "The base parser retains raw-source structural self-check semantics before projection. Amendment-aware expected operative workflow = 0 is enforced only after finalizer reclassification/pruning, so temporary base workflow rows do not fail the pre-projection stage.",
+      "amendment_disposition_status_scope": "ADOPTED/NOT ADOPTED source disposition is recognized only from standalone status lines. Statutory uses such as regulations adopted by a city are not amendment-status evidence; explicit docket metadata remains independently checked against any standalone source status line.",
+      "marked_full_text_amendment_reprints": "A document_family=amendment source with both an explicit reprinted-as-amended marker and an amendment instruction key may have zero parsed line operations. Rosetta prunes all operative five-layer projection, records five-layer not_applicable coverage, preserves amendment structure, and continues to reject unrecognized zero-operation amendment formats.",
+      "amendment_operative_workflow_expectation": "For document_family=amendment, raw amendment-instruction modal clauses are diagnostic only. After the non-operative amendment projection, expected operative workflow is zero and any actual operative workflow fails validation."
+    },
+    "contract": "S -> {HELP, WORKFLOW, ACCOUNTABILITY, OVERRIDES, DEFINITIONS} plus non-operative structural representations",
+    "inherits": {
+      "status": "published_current_generation",
+      "engine_version": "rosetta-v3-deterministic-sql-2.5.10",
+      "rule_set_version": "rosetta-five-layer-structural-correctness-2.5.10"
+    },
+    "provenance": "Rosetta 2.5.11 is an immutable candidate generation. It preserves 2.5.10 receipts and adds deterministic recognition of source-marked full-text amendment reprints whose legal text is presented with an amendment instruction key rather than a line-operation sheet.",
+    "engine_version": "rosetta-v3-deterministic-sql-2.5.11",
+    "rule_set_version": "rosetta-five-layer-structural-correctness-2.5.11",
+    "source_projection": "rosetta-layout-projection-v25",
+    "handoff_contract_version": "rosetta-civic-genome-handoff-v2"
+  },
+  "v2511_manifest_file": "manifest-2.5.11.json (md5 of file = c0b627297b081393d41b2a9390f1f930, matches md5(manifest_json::text))"
+}

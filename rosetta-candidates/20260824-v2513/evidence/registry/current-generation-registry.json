@@ -1,0 +1,17 @@
+{
+  "_provenance": {
+    "captured_at": "2026-08-23",
+    "source": "production project kjzytnzkkdpdxtqtjlew, read-only SELECT via Supabase SQL (pg_catalog queries)",
+    "method": "execute_sql read-only; no DDL/DML issued"
+  },
+  "query": "SELECT * FROM public.rosetta_current_generation_registry_v1",
+  "row": {
+    "singleton": true,
+    "contract": "rosetta-current-generation-v1",
+    "engine_version": "rosetta-v3-deterministic-sql-2.5.11",
+    "rule_set_version": "rosetta-five-layer-structural-correctness-2.5.11",
+    "rule_manifest_hash": "3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639",
+    "validation_test_name": "independent_structure_v2511",
+    "promoted_at": "2026-08-19 09:27:22.675489+00"
+  }
+}

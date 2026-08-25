@@ -1,0 +1,45 @@
+{
+  "_provenance": {
+    "captured_at": "2026-08-24 (correction pass)",
+    "source": "production project kjzytnzkkdpdxtqtjlew, read-only pg_indexes query",
+    "method": "execute_sql read-only; no DDL/DML issued",
+    "note": "Standalone unique INDEXES (not constraints) \u2014 required by ON CONFLICT clauses in the 2.5.11 base function; the original mirror missed them because it captured constraints only."
+  },
+  "indexes": [
+    {
+      "table": "extraction_manifest",
+      "name": "extraction_manifest_run_unique",
+      "def": "CREATE UNIQUE INDEX extraction_manifest_run_unique ON public.extraction_manifest USING btree (extraction_run_id)"
+    },
+    {
+      "table": "extraction_manifest",
+      "name": "idx_manifest_run",
+      "def": "CREATE UNIQUE INDEX idx_manifest_run ON public.extraction_manifest USING btree (extraction_run_id)  -- NOTE: production carries two duplicate unique indexes on the same column; mirrored once"
+    },
+    {
+      "table": "extraction_run",
+      "name": "extraction_run_document_version_unique",
+      "def": "CREATE UNIQUE INDEX extraction_run_document_version_unique ON public.extraction_run USING btree (source_document_id, run_version)"
+    },
+    {
+      "table": "extraction_run",
+      "name": "extraction_run_replay_receipt_unique",
+      "def": "CREATE UNIQUE INDEX extraction_run_replay_receipt_unique ON public.extraction_run USING btree (source_document_id, source_content_id, engine_version, rule_set_version, rule_manifest_hash, configuration_hash) WHERE ((source_content_id IS NOT NULL) AND (engine_version IS NOT NULL) AND (rule_set_version IS NOT NULL) AND (rule_manifest_hash IS NOT NULL) AND (configuration_hash IS NOT NULL))"
+    },
+    {
+      "table": "extraction_run_config",
+      "name": "extraction_run_config_run_unique",
+      "def": "CREATE UNIQUE INDEX extraction_run_config_run_unique ON public.extraction_run_config USING btree (extraction_run_id)"
+    },
+    {
+      "table": "layer_coverage",
+      "name": "layer_coverage_extraction_run_id_source_block_id_layer_name_key",
+      "def": "CREATE UNIQUE INDEX layer_coverage_extraction_run_id_source_block_id_layer_name_key ON public.layer_coverage USING btree (extraction_run_id, source_block_id, layer_name)"
+    },
+    {
+      "table": "validation_result",
+      "name": "validation_result_run_test_unique",
+      "def": "CREATE UNIQUE INDEX validation_result_run_test_unique ON public.validation_result USING btree (extraction_run_id, test_name)"
+    }
+  ]
+}
