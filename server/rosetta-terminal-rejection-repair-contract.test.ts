@@ -24,14 +24,13 @@ describe("Rosetta terminal rejection and Docket backlog contract", () => {
     expect(migration).toContain("rosetta_v2511_final_validation_failed");
     expect(migration).toContain("'terminal_extraction_rejection'");
     expect(migration).toContain("on conflict (object_type, object_id, defect_type)");
-    expect(migration).toContain("'failed_invariants', v_failed_invariants");
-    expect(migration).toContain("'validation_receipts', v_manifest.validation_results");
-    expect(migration).toContain("after insert or update of status, admissibility_state, validation_results");
-    expect(migration).toContain("on public.extraction_manifest");
+    expect(migration).toContain("'failed_invariants', failed.invariants");
+    expect(migration).toContain("'validation_receipts', manifest.validation_results");
+    expect(migration).toContain("rosetta_classify_terminal_rejections_v1");
   });
 
   it("keeps historical repair work bounded and resumable", () => {
-    expect(migration).toContain("rosetta_backfill_terminal_rejection_repairs_v1");
+    expect(migration).toContain("rosetta_classify_terminal_rejections_v1");
     expect(migration).toContain("with candidate as materialized");
     expect(migration).toContain("limit greatest(1, least(coalesce(p_limit, 100), 250))");
     expect(migration).toContain("get diagnostics v_inserted = row_count");
@@ -49,16 +48,13 @@ describe("Rosetta terminal rejection and Docket backlog contract", () => {
   });
 
   it("pins every definer path and exposes only the read selector to service_role", () => {
-    expect(migration.match(/security definer/g)?.length).toBe(4);
-    expect(migration.match(/set search_path = pg_catalog, public/g)?.length).toBe(4);
+    expect(migration.match(/security definer/g)?.length).toBe(2);
+    expect(migration.match(/set search_path = pg_catalog, public/g)?.length).toBe(2);
     expect(migration).toContain(
       "grant execute on function public.rosetta_unbound_docket_source_documents_v1(integer)",
     );
     expect(migration).toContain(
-      "revoke all on function public.rosetta_register_terminal_rejection_repair_v1(integer, text)",
-    );
-    expect(migration).toContain(
-      "revoke all on function public.rosetta_backfill_terminal_rejection_repairs_v1(integer)",
+      "grant execute on function public.rosetta_classify_terminal_rejections_v1(integer)",
     );
   });
 });

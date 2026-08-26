@@ -11,22 +11,9 @@ begin
     'public.rosetta_unbound_docket_source_documents_v1(integer)'
   ) is null
      or to_regprocedure(
-       'public.rosetta_register_terminal_rejection_repair_v1(integer,text)'
-     ) is null
-     or to_regprocedure(
-       'public.rosetta_backfill_terminal_rejection_repairs_v1(integer)'
+       'public.rosetta_classify_terminal_rejections_v1(integer)'
      ) is null then
     raise exception 'VERIFY_FAIL terminal repair functions missing';
-  end if;
-
-  if not exists (
-    select 1
-      from pg_trigger
-     where tgname = 'extraction_manifest_terminal_rejection_repair_v1'
-       and tgrelid = 'public.extraction_manifest'::regclass
-       and not tgisinternal
-  ) then
-    raise exception 'VERIFY_FAIL terminal repair trigger missing';
   end if;
 
   select count(*)
@@ -128,25 +115,26 @@ begin
        'service_role',
        'public.rosetta_unbound_docket_source_documents_v1(integer)',
        'execute'
-     ) then
+  ) then
     raise exception 'VERIFY_FAIL oldest selector grant posture invalid';
   end if;
 
-  if exists (
-    select 1
-      from pg_proc procedure_row
-     where procedure_row.oid in (
-       'public.rosetta_register_terminal_rejection_repair_v1(integer,text)'::regprocedure,
-       'public.rosetta_manifest_terminal_rejection_repair_v1()'::regprocedure,
-       'public.rosetta_backfill_terminal_rejection_repairs_v1(integer)'::regprocedure
+  if has_function_privilege(
+       'anon',
+       'public.rosetta_classify_terminal_rejections_v1(integer)',
+       'execute'
      )
-       and (
-         has_function_privilege('anon', procedure_row.oid, 'execute')
-         or has_function_privilege('authenticated', procedure_row.oid, 'execute')
-         or has_function_privilege('service_role', procedure_row.oid, 'execute')
-       )
-  ) then
-    raise exception 'VERIFY_FAIL internal terminal repair function executable';
+     or has_function_privilege(
+       'authenticated',
+       'public.rosetta_classify_terminal_rejections_v1(integer)',
+       'execute'
+     )
+     or not has_function_privilege(
+       'service_role',
+       'public.rosetta_classify_terminal_rejections_v1(integer)',
+       'execute'
+     ) then
+    raise exception 'VERIFY_FAIL terminal classifier grant posture invalid';
   end if;
 
   select md5(pg_get_functiondef(

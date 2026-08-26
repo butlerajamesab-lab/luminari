@@ -15,8 +15,9 @@ const RECONCILE_BATCH_SIZE = 100;
 const DEFAULT_RECONCILE_INTERVAL_MS = 60_000;
 const MIN_RECONCILE_INTERVAL_MS = 10_000;
 const MAX_RECONCILE_INTERVAL_MS = 15 * 60_000;
+const ROSETTA_TERMINAL_CLASSIFIER_LIMIT = 250;
 const ROSETTA_BACKLOG_SELECTOR_LIMIT = 100;
-const ROSETTA_BACKLOG_SELECTOR_TIMEOUT_MS = 10_000;
+const ROSETTA_CONTROL_REQUEST_TIMEOUT_MS = 10_000;
 const DURABLE_CONTENT_RECOVERY_CONTRACT = "oldest-unbound-docket-v1";
 
 export type legislative_version_queue_job = {
@@ -99,6 +100,71 @@ export function is_exact_docket_document_identifier(value: string): boolean {
   return Boolean(match && match[1] === match[3]);
 }
 
+export async function classify_hidden_rosetta_terminal_rejections(): Promise<number> {
+  const base_url = required_environment("ROSETTA_SUPABASE_URL").replace(/\/$/, "");
+  const service_role_key = required_environment("ROSETTA_SUPABASE_SERVICE_ROLE_KEY");
+  const headers = create_rosetta_supabase_headers(service_role_key);
+  headers.set("accept", "application/json");
+  headers.set("content-type", "application/json");
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), ROSETTA_CONTROL_REQUEST_TIMEOUT_MS);
+  try {
+    const response = await fetch(
+      `${base_url}/rest/v1/rpc/rosetta_classify_terminal_rejections_v1`,
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ p_limit: ROSETTA_TERMINAL_CLASSIFIER_LIMIT }),
+        signal: controller.signal,
+      },
+    );
+    const response_body = response.status === 204 ? "" : await response.text();
+    if (!response.ok) {
+      throw new Error(
+        `rosetta_terminal_classifier_failed:${response.status}:${response_body.slice(0, 500)}`,
+      );
+    }
+    if (response.status === 204) return 0;
+
+    let payload: unknown;
+    try {
+      payload = JSON.parse(response_body);
+    } catch {
+      throw new Error("rosetta_terminal_classifier_invalid_json");
+    }
+    const classified_count = typeof payload === "number"
+      ? payload
+      : Array.isArray(payload) && payload.length === 1 && typeof payload[0] === "number"
+        ? payload[0]
+        : Number.NaN;
+    if (
+      !Number.isSafeInteger(classified_count)
+      || classified_count < 0
+      || classified_count > ROSETTA_TERMINAL_CLASSIFIER_LIMIT
+    ) {
+      throw new Error("rosetta_terminal_classifier_invalid_response");
+    }
+    return classified_count;
+  } catch (error) {
+    if (
+      error instanceof Error
+      && error.message.startsWith("rosetta_terminal_classifier_")
+    ) {
+      throw error;
+    }
+    if (controller.signal.aborted) {
+      throw new Error(
+        `rosetta_terminal_classifier_timeout:${ROSETTA_CONTROL_REQUEST_TIMEOUT_MS}`,
+      );
+    }
+    const cause = error instanceof Error ? error.name : "unknown";
+    throw new Error(`rosetta_terminal_classifier_network_failed:${cause}`);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export async function load_oldest_unbound_docket_identifiers(): Promise<string[]> {
   const base_url = required_environment("ROSETTA_SUPABASE_URL").replace(/\/$/, "");
   const service_role_key = required_environment("ROSETTA_SUPABASE_SERVICE_ROLE_KEY");
@@ -107,7 +173,7 @@ export async function load_oldest_unbound_docket_identifiers(): Promise<string[]
   headers.set("content-type", "application/json");
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), ROSETTA_BACKLOG_SELECTOR_TIMEOUT_MS);
+  const timeout = setTimeout(() => controller.abort(), ROSETTA_CONTROL_REQUEST_TIMEOUT_MS);
   try {
     const response = await fetch(
       `${base_url}/rest/v1/rpc/rosetta_unbound_docket_source_documents_v1`,
@@ -162,7 +228,7 @@ export async function load_oldest_unbound_docket_identifiers(): Promise<string[]
     }
     if (controller.signal.aborted) {
       throw new Error(
-        `rosetta_unbound_docket_selector_timeout:${ROSETTA_BACKLOG_SELECTOR_TIMEOUT_MS}`,
+        `rosetta_unbound_docket_selector_timeout:${ROSETTA_CONTROL_REQUEST_TIMEOUT_MS}`,
       );
     }
     const cause = error instanceof Error ? error.name : "unknown";
@@ -601,6 +667,21 @@ export async function run_legislative_version_queue_cycle(): Promise<void> {
   queue_cycle_running = true;
   try {
     await reconcile_completed_jobs_if_due();
+    try {
+      const classified_count = await classify_hidden_rosetta_terminal_rejections();
+      if (classified_count > 0) {
+        console.log("[LegislativeVersionQueue] terminal_repairs_classified", {
+          classified_count,
+          contract: "rosetta-terminal-rejection-repair-v1",
+        });
+      }
+    } catch (error) {
+      // Classification is fail-closed in Rosetta: terminal runs stay rejected.
+      // A control-surface outage must not stop unrelated queue work.
+      console.error("[LegislativeVersionQueue] terminal_classifier_failed", {
+        error_code: safe_error_code(error),
+      });
+    }
     let oldest_unbound_docket_identifiers: string[] = [];
     try {
       oldest_unbound_docket_identifiers = await load_oldest_unbound_docket_identifiers();

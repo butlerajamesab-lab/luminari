@@ -17,6 +17,7 @@ vi.mock("./civic-genome-legislative-version-pipeline", () => ({
 vi.stubGlobal("fetch", rosetta_fetch);
 
 import {
+  classify_hidden_rosetta_terminal_rejections,
   classify_legislative_version_failure,
   is_exact_docket_document_identifier,
   legislative_version_retry_delay_seconds,
@@ -42,10 +43,11 @@ beforeEach(() => {
   vi.stubEnv("ROSETTA_SUPABASE_URL", "https://rosetta.example.test");
   vi.stubEnv("ROSETTA_SUPABASE_SERVICE_ROLE_KEY", "sb_secret_test");
   query.mockResolvedValue({ rows: [] });
-  rosetta_fetch.mockResolvedValue(new Response("[]", {
-    status: 200,
-    headers: { "content-type": "application/json" },
-  }));
+  rosetta_fetch.mockImplementation(async (input: string | URL | Request) => (
+    String(input).includes("rosetta_classify_terminal_rejections_v1")
+      ? new Response("0", { status: 200 })
+      : new Response("[]", { status: 200 })
+  ));
   process_version.mockResolvedValue({
     bill_version_id: job.bill_version_id,
     genome_bill_id: "33333333-3333-4333-8333-333333333333",
@@ -82,6 +84,28 @@ describe("legislative version queue", () => {
       "docket:2064783:text:9999999:3298849",
     )).toBe(false);
     expect(is_exact_docket_document_identifier("docket:2064783:text:3298849")).toBe(false);
+  });
+
+  it("classifies hidden terminal runs through the bounded service control", async () => {
+    rosetta_fetch.mockResolvedValueOnce(new Response("17", { status: 200 }));
+
+    await expect(classify_hidden_rosetta_terminal_rejections()).resolves.toBe(17);
+
+    expect(String(rosetta_fetch.mock.calls[0][0])).toBe(
+      "https://rosetta.example.test/rest/v1/rpc/rosetta_classify_terminal_rejections_v1",
+    );
+    expect(rosetta_fetch.mock.calls[0][1]).toMatchObject({
+      method: "POST",
+      body: JSON.stringify({ p_limit: 250 }),
+    });
+  });
+
+  it("rejects an invalid terminal-classifier count", async () => {
+    rosetta_fetch.mockResolvedValueOnce(new Response("251", { status: 200 }));
+
+    await expect(classify_hidden_rosetta_terminal_rejections()).rejects.toThrow(
+      "rosetta_terminal_classifier_invalid_response",
+    );
   });
 
   it("loads the bounded Rosetta selector in its returned oldest-first order", async () => {
@@ -212,7 +236,9 @@ describe("legislative version queue", () => {
   });
 
   it("continues ordinary queue claims when the supplemental Rosetta selector is unavailable", async () => {
-    rosetta_fetch.mockResolvedValueOnce(new Response("unavailable", { status: 503 }));
+    rosetta_fetch
+      .mockResolvedValueOnce(new Response("0", { status: 200 }))
+      .mockResolvedValueOnce(new Response("unavailable", { status: 503 }));
 
     await expect(run_legislative_version_queue_cycle()).resolves.toBeUndefined();
 
