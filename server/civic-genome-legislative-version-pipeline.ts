@@ -79,6 +79,21 @@ type extracted_legislative_source = {
   source_metadata: Record<string, unknown>;
 };
 
+type rosetta_source_content_receipt = {
+  contract: "rosetta-durable-source-content-v1";
+  source_document_id: number;
+  source_content_id: string;
+  source_identity_hash: string;
+  source_content_hash: string;
+  source_byte_hash: string | null;
+  source_version: string;
+  source_url: string;
+  media_type: string;
+  registered: boolean;
+  replayed: boolean;
+  registered_at: string;
+};
+
 type rosetta_row = Record<string, unknown>;
 
 function required_environment(name: string): string {
@@ -517,10 +532,108 @@ async function invoke_rosetta_extraction(
   }
 }
 
+async function register_rosetta_source_content(
+  source_document_id: number,
+  source: extracted_legislative_source,
+): Promise<rosetta_source_content_receipt> {
+  const base_url = required_environment("ROSETTA_SUPABASE_URL");
+  const service_role_key = required_environment("ROSETTA_SUPABASE_SERVICE_ROLE_KEY");
+  const headers = create_rosetta_supabase_headers(service_role_key, {
+    accept: "application/json",
+    "content-type": "application/json",
+  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), ROSETTA_REQUEST_TIMEOUT_MS);
+  try {
+    const response = await fetch(
+      `${base_url}/rest/v1/rpc/rosetta_register_source_content_v1`,
+      {
+        method: "POST",
+        headers,
+        signal: controller.signal,
+        body: JSON.stringify({
+          p_source_document_id: source_document_id,
+          p_source_text: source.source_text,
+          p_expected_source_content_hash: source.source_content_hash,
+          p_source_url: source.source_url,
+          p_source_version: source.source_version,
+          p_media_type: source.media_type,
+          p_source_byte_hash: source.source_byte_hash,
+          p_source_provider_hash: source.provider_hash,
+          p_source_metadata: source.source_metadata,
+        }),
+      },
+    );
+    const response_body = await response.text();
+    if (!response.ok) {
+      throw new Error(
+        `legislative_version_rosetta_content_registration_failed:${response.status}:${response_body.slice(0, 1_000)}`,
+      );
+    }
+
+    let payload: unknown;
+    try {
+      payload = JSON.parse(response_body);
+    } catch {
+      throw new Error("invalid_legislative_version_content_registration_receipt_json");
+    }
+    const raw_receipt = Array.isArray(payload) ? payload[0] : payload;
+    const receipt = as_record(raw_receipt);
+    if (!receipt) {
+      throw new Error("invalid_legislative_version_content_registration_receipt");
+    }
+    if (
+      receipt.contract !== "rosetta-durable-source-content-v1"
+      || Number(receipt.source_document_id) !== source_document_id
+      || typeof receipt.source_content_id !== "string"
+      || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+        .test(receipt.source_content_id)
+      || receipt.source_content_hash !== source.source_content_hash
+      || receipt.source_byte_hash !== source.source_byte_hash
+      || typeof receipt.source_identity_hash !== "string"
+      || !/^[0-9a-f]{64}$/.test(receipt.source_identity_hash)
+      || receipt.source_version !== source.source_version
+      || receipt.source_url !== source.source_url
+      || receipt.media_type !== source.media_type
+      || typeof receipt.registered !== "boolean"
+      || typeof receipt.replayed !== "boolean"
+      || receipt.registered === receipt.replayed
+      || typeof receipt.registered_at !== "string"
+      || receipt.registered_at.length === 0
+    ) {
+      throw new Error("legislative_version_content_registration_identity_mismatch");
+    }
+    return receipt as unknown as rosetta_source_content_receipt;
+  } catch (error) {
+    if (
+      error instanceof Error
+      && (
+        error.message.startsWith("legislative_version_rosetta_content_registration_failed:")
+        || error.message.startsWith("invalid_legislative_version_content_registration_receipt")
+        || error.message === "legislative_version_content_registration_identity_mismatch"
+      )
+    ) {
+      throw error;
+    }
+    if (controller.signal.aborted) {
+      throw new Error(
+        `legislative_version_rosetta_content_registration_timeout:${ROSETTA_REQUEST_TIMEOUT_MS}`,
+      );
+    }
+    const cause = error instanceof Error ? error.name : "unknown";
+    throw new Error(
+      `legislative_version_rosetta_content_registration_network_failed:${cause}`,
+    );
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 async function record_source_ingested(
   bill_version_id: string,
   source_document_id: number,
   source: extracted_legislative_source,
+  content: rosetta_source_content_receipt,
 ): Promise<void> {
   await getPool().query(
     `update public.civic_genome_bill_version
@@ -533,7 +646,12 @@ async function record_source_ingested(
               'source_url', $4::text,
               'source_content_hash', $5::text,
               'source_byte_hash', $6::text,
-              'text_extractor_version', $7::text
+              'text_extractor_version', $7::text,
+              'rosetta_source_content_id', $8::uuid,
+              'rosetta_source_identity_hash', $9::text,
+              'durable_source_content_contract', $10::text,
+              'durable_source_content_replayed', $11::boolean,
+              'durable_source_content_registered_at', $12::timestamptz
             ),
             updated_at = now()
       where bill_version_id = $1::uuid`,
@@ -545,6 +663,11 @@ async function record_source_ingested(
       source.source_content_hash,
       source.source_byte_hash,
       source.extractor_version,
+      content.source_content_id,
+      content.source_identity_hash,
+      content.contract,
+      content.replayed,
+      content.registered_at,
     ],
   );
 }
@@ -625,7 +748,13 @@ export async function process_legislative_version(
   const version = await load_version(bill_version_id);
   const source_document_id = await ensure_rosetta_source_document(version);
   const source = await extract_version_source(version);
-  await record_source_ingested(bill_version_id, source_document_id, source);
+  const content = await register_rosetta_source_content(source_document_id, source);
+  await record_source_ingested(
+    bill_version_id,
+    source_document_id,
+    source,
+    content,
+  );
 
   const extraction = await invoke_rosetta_extraction(
     source_document_id,

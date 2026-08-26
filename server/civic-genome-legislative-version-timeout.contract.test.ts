@@ -28,17 +28,27 @@ describe("legislative version external request bounds", () => {
 
   it("bounds Rosetta metadata and extraction calls above the observed current-engine tail", () => {
     const metadata = function_source("rosetta_request", "ensure_rosetta_corpus");
-    const extraction = function_source("invoke_rosetta_extraction", "record_source_ingested");
+    const extraction = function_source(
+      "invoke_rosetta_extraction",
+      "register_rosetta_source_content",
+    );
+    const registration = function_source(
+      "register_rosetta_source_content",
+      "record_source_ingested",
+    );
 
     expect(pipeline).toContain("const ROSETTA_REQUEST_TIMEOUT_MS = 150_000");
     expect(pipeline).not.toContain("const ROSETTA_REQUEST_TIMEOUT_MS = 60_000");
-    for (const source of [metadata, extraction]) {
+    for (const source of [metadata, registration, extraction]) {
       expect(source).toContain("const controller = new AbortController()");
       expect(source).toContain("await response.text()");
       expect(source.indexOf("await response.text()"))
         .toBeLessThan(source.indexOf("clearTimeout(timeout)"));
     }
     expect(metadata).toContain("legislative_version_rosetta_request_timeout");
+    expect(registration).toContain(
+      "legislative_version_rosetta_content_registration_timeout",
+    );
     expect(extraction).toContain("legislative_version_rosetta_extraction_timeout");
   });
 });
