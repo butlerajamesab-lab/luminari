@@ -32,8 +32,22 @@ two active 2.5.11 parser-definition hashes are unchanged.
 Lighthouse may consume these functions only after this migration is verified.
 Before each queue claim, its service role runs the bounded classifier and then
 loads the oldest unbound identities. The worker joins each returned identifier
-to the exact bill-version identity and writes a one-time
+to the exact bill-version identity and writes a bounded, ordinal
 `durable_content_recovery_v1` receipt before processing, while retaining the
 existing `FOR UPDATE ... SKIP LOCKED` claim contract. This avoids replacing the
 parser or taking an exclusive trigger-installation lock on continuously active
 extraction tables.
+
+## 2026-08-26 durable source-content transaction boundary
+
+`migrations/20260826090000_durable_source_content_registration_v1.sql` adds the
+service-role-only `rosetta_register_source_content_v1` RPC. Lighthouse calls it
+after exact source acquisition and before the active parser RPC. It computes the
+same source identity as 2.5.11, inserts idempotently, and fails closed if an
+existing source version differs in any immutable identity field.
+
+This is a separate HTTP/PostgreSQL transaction. A later parser rejection or
+timeout can therefore remain fail-closed without rolling back the acquired
+`source_document_content` row. Run
+`verification/20260826090000_durable_source_content_registration_v1.verify.sql`
+before deploying the corresponding Lighthouse worker change.
