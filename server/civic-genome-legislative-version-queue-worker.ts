@@ -19,6 +19,8 @@ const ROSETTA_TERMINAL_CLASSIFIER_LIMIT = 250;
 const ROSETTA_BACKLOG_SELECTOR_LIMIT = 100;
 const ROSETTA_CONTROL_REQUEST_TIMEOUT_MS = 10_000;
 const DURABLE_CONTENT_RECOVERY_CONTRACT = "oldest-unbound-docket-v1";
+const DURABLE_CONTENT_RECOVERY_MAX_ATTEMPTS = 3;
+const DURABLE_CONTENT_RECOVERY_RETRY_SECONDS = 30;
 
 export type legislative_version_queue_job = {
   queue_id: string;
@@ -273,6 +275,8 @@ function deterministic_failure(error_code: string): boolean {
     "legislative_version_extraction_not_admissible",
     "legislative_version_extraction_output_hash_missing",
     "legislative_version_rosetta_extraction_failed:400",
+    "legislative_version_rosetta_content_registration_failed:400",
+    "legislative_version_content_registration_identity_mismatch",
     "rosetta_source_document_already_bound_to_other_bill",
     "rosetta_source_identity_binding_changed",
     "rosetta_completed_run_has_no_objects",
@@ -387,6 +391,7 @@ async function claim_jobs(
               queue.queue_state as prior_queue_state,
               queue.attempt_count as prior_attempt_count,
               rosetta_identity.document_identifier,
+              recovery_state.prior_recovery_attempts,
               recovery.is_durable_content_recovery
          from public.civic_genome_legislative_version_queue queue
          join public.civic_genome_bill_version version
@@ -405,12 +410,30 @@ async function claim_jobs(
                   version.source_document_key as document_identifier
          ) rosetta_identity
          cross join lateral (
+           select case
+             when coalesce(version.receipt_json, '{}'::jsonb)
+                    ? 'durable_content_recovery_v1'
+               then case
+                 when version.receipt_json
+                        #>> '{durable_content_recovery_v1,attempt_ordinal}'
+                        ~ '^[0-9]{1,9}$'
+                   then greatest(
+                     1,
+                     (version.receipt_json
+                       #>> '{durable_content_recovery_v1,attempt_ordinal}')::integer
+                   )
+                 else 1
+               end
+             else 0
+           end as prior_recovery_attempts
+         ) recovery_state
+         cross join lateral (
            select queue.queue_state = 'permanent_failure'
               and rosetta_identity.document_identifier = any($4::text[])
-              and not (
-                coalesce(version.receipt_json, '{}'::jsonb)
-                  ? 'durable_content_recovery_v1'
-              ) as is_durable_content_recovery
+              and recovery_state.prior_recovery_attempts < $6::integer
+              and queue.updated_at
+                    <= now() - make_interval(secs => $7::integer)
+              as is_durable_content_recovery
          ) recovery
          cross join lateral (
            select not exists (
@@ -467,6 +490,15 @@ async function claim_jobs(
                   jsonb_build_object(
                     'contract', $5::text,
                     'document_identifier', candidate.document_identifier,
+                    'attempt_ordinal',
+                      candidate.prior_recovery_attempts + 1,
+                    'first_selected_at', coalesce(
+                      version.receipt_json
+                        #>> '{durable_content_recovery_v1,first_selected_at}',
+                      version.receipt_json
+                        #>> '{durable_content_recovery_v1,selected_at}',
+                      now()::text
+                    ),
                     'selected_at', now(),
                     'worker_identity', $1::text,
                     'prior_queue_state', candidate.prior_queue_state,
@@ -477,10 +509,6 @@ async function claim_jobs(
          from candidate
         where candidate.is_durable_content_recovery
           and version.bill_version_id = candidate.bill_version_id
-          and not (
-            coalesce(version.receipt_json, '{}'::jsonb)
-              ? 'durable_content_recovery_v1'
-          )
        returning version.bill_version_id
      )
      update public.civic_genome_legislative_version_queue queue
@@ -512,6 +540,8 @@ async function claim_jobs(
       limit,
       oldest_unbound_docket_identifiers,
       DURABLE_CONTENT_RECOVERY_CONTRACT,
+      DURABLE_CONTENT_RECOVERY_MAX_ATTEMPTS,
+      DURABLE_CONTENT_RECOVERY_RETRY_SECONDS,
     ],
     {
       label: "legislative_version_queue_claim",
