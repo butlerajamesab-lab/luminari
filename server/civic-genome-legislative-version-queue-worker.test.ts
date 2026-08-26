@@ -168,6 +168,17 @@ describe("legislative version queue", () => {
       failure_class: "deterministic_contract",
       terminal: true,
     });
+
+    expect(classify_legislative_version_failure({
+      error: new Error(
+        "legislative_version_rosetta_content_registration_failed:400:source_content_hash_mismatch",
+      ),
+      prior_attempt_count: 0,
+    })).toMatchObject({
+      queue_state: "permanent_failure",
+      failure_class: "deterministic_contract",
+      terminal: true,
+    });
   });
 
   it("retries transient failures and eventually preserves an unknown terminal state", () => {
@@ -225,6 +236,11 @@ describe("legislative version queue", () => {
     expect(claim_sql).toContain("array_position($4::text[], rosetta_identity.document_identifier)");
     expect(claim_sql).toContain("'durable_content_recovery_v1'");
     expect(claim_sql).toContain("'contract', $5::text");
+    expect(claim_sql).toContain("recovery_state.prior_recovery_attempts < $6::integer");
+    expect(claim_sql).toContain("make_interval(secs => $7::integer)");
+    expect(claim_sql).toContain("'attempt_ordinal'");
+    expect(claim_sql).toContain("candidate.prior_recovery_attempts + 1");
+    expect(claim_sql).not.toContain("and not (\n            coalesce(version.receipt_json");
     expect(claim_sql).toContain("for update of queue, version skip locked");
 
     const currentSessionOrder = claim_sql.indexOf("(current_session.state is not null) desc");
