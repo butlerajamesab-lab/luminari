@@ -25,10 +25,11 @@ function normalizeFoiaRequest(row: Record<string, unknown>) {
 /**
  * Read FOIA requests from the production PostgreSQL contract.
  *
- * Production intentionally has only identity/state columns in foia_statutes
- * and foia_agencies. Enrichment fields therefore remain explicit nulls until
- * governed source rows are promoted; the user-owned request and case state
- * remain readable without inventing details or querying absent columns.
+ * As of 2026-08-26 the reference tables are populated (foia_statutes: federal +
+ * 50 states + DC; foia_agencies: 615 federal components via api.foia.gov), so
+ * statute and agency enrichment is joined live from the snake_case production
+ * columns. Requests without a linked statute/agency still read cleanly — the
+ * left joins keep enrichment fields null rather than dropping the row.
  */
 export async function listAllUserFoiaRequests(userId: number, opts?: FoiaListOptions) {
   const params: unknown[] = [userId];
@@ -66,15 +67,17 @@ export async function listAllUserFoiaRequests(userId: number, opts?: FoiaListOpt
        r.submitted_at as "submittedAt",
        r.response_due_at as "responseDueAt",
        r.response_received_at as "responseReceivedAt",
-       null::text as "statuteLawName",
-       null::text as "statuteReference",
-       null::integer as "responseDeadlineDays",
-       null::boolean as "feeWaiverAvailable",
-       null::text as "agencySubmissionMethods",
-       null::text as "agencyPortalUrl",
-       null::text as "agencyJurisdictionLevel"
+       s.statute_name as "statuteLawName",
+       s.citation as "statuteReference",
+       s.response_days as "responseDeadlineDays",
+       s.fee_waiver_available as "feeWaiverAvailable",
+       a.submission_methods as "agencySubmissionMethods",
+       a.submission_portal as "agencyPortalUrl",
+       a.jurisdiction_level as "agencyJurisdictionLevel"
      from public.foia_requests r
      left join public.cases c on c.id = r.case_id
+     left join public.foia_statutes s on s.id = r.statute_id
+     left join public.foia_agencies a on a.id = r.agency_id
      where r.user_id = $1
        ${statusFilter}
      order by r.updated_at desc

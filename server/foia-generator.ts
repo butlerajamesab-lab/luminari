@@ -416,7 +416,7 @@ export async function generateFoiaRequest(
   const fingerprint = generateFingerprint(
     missingRecord.domain,
     missingRecord.recordType,
-    primaryAgency?.agency.id ?? null,
+    primaryAgency?.agency?.id ?? null,
     "WA"
   );
 
@@ -455,13 +455,13 @@ export async function generateFoiaRequest(
       domain: missingRecord.domain,
       recordType: missingRecord.recordType,
       recordDescription: missingRecord.description,
-      agencyName: primaryAgency?.agency.agencyName ?? missingRecord.agencyType ?? "Records Custodian",
-      agencyAddress: primaryAgency?.agency.mailingAddress ?? null,
-      agencyEmail: primaryAgency?.agency.email ?? null,
-      statuteName: primaryAgency?.statute.lawName ?? "Public Records Act",
-      statuteReference: primaryAgency?.statute.statuteReference ?? missingRecord.legalBasis ?? "",
-      responseDeadlineDays: primaryAgency?.statute.responseDeadlineDays ?? null,
-      feeWaiverAvailable: primaryAgency?.statute.feeWaiverAvailable ?? false,
+      agencyName: primaryAgency?.agency?.agencyName ?? missingRecord.agencyType ?? "Records Custodian",
+      agencyAddress: primaryAgency?.agency?.mailingAddress ?? null,
+      agencyEmail: primaryAgency?.agency?.email ?? null,
+      statuteName: primaryAgency?.statute?.lawName ?? "Public Records Act",
+      statuteReference: primaryAgency?.statute?.statuteReference ?? missingRecord.legalBasis ?? "",
+      responseDeadlineDays: primaryAgency?.statute?.responseDeadlineDays ?? null,
+      feeWaiverAvailable: primaryAgency?.statute?.feeWaiverAvailable ?? false,
       requesterName: requesterInfo?.name ?? null,
       requesterEmail: requesterInfo?.email ?? null,
       caseDescription: caseRow.description,
@@ -477,8 +477,9 @@ export async function generateFoiaRequest(
 
   // 8. Persist
   const now = Date.now();
-  const responseDueAt = primaryAgency?.statute.responseDeadlineDays
-    ? now + primaryAgency.statute.responseDeadlineDays * 24 * 60 * 60 * 1000
+  const responseDeadlineDays = primaryAgency?.statute?.responseDeadlineDays ?? null;
+  const responseDueAt = responseDeadlineDays
+    ? now + responseDeadlineDays * 24 * 60 * 60 * 1000
     : null;
 
   const gatingReason = JSON.stringify({
@@ -492,8 +493,8 @@ export async function generateFoiaRequest(
     caseId,
     userId,
     missingRecordId,
-    agencyId: primaryAgency?.agency.id ?? null,
-    statuteId: primaryAgency?.statute.id ?? null,
+    agencyId: primaryAgency?.agency?.id ?? null,
+    statuteId: primaryAgency?.statute?.id ?? null,
     domain: missingRecord.domain,
     recordType: missingRecord.recordType,
     stateCode: "WA",
@@ -503,9 +504,9 @@ export async function generateFoiaRequest(
     requesterAddress: requesterInfo?.address ?? null,
     requesterEmail: requesterInfo?.email ?? null,
     requesterPhone: requesterInfo?.phone ?? null,
-    agencyName: primaryAgency?.agency.agencyName ?? missingRecord.agencyType ?? null,
-    agencyAddress: primaryAgency?.agency.mailingAddress ?? null,
-    agencyEmail: primaryAgency?.agency.email ?? null,
+    agencyName: primaryAgency?.agency?.agencyName ?? missingRecord.agencyType ?? null,
+    agencyAddress: primaryAgency?.agency?.mailingAddress ?? null,
+    agencyEmail: primaryAgency?.agency?.email ?? null,
     status: "draft",
     gatingReason,
     warmHandoff,
