@@ -12,10 +12,14 @@ describe("FOIA live-schema list compatibility", () => {
     "utf8",
   );
 
-  it("maps the production status column and leaves unavailable enrichment explicit", () => {
+  it("maps the production status column and joins live snake_case enrichment", () => {
     expect(compatibilitySource).toContain("r.foia_request_status as status");
-    expect(compatibilitySource).toContain('null::text as "statuteLawName"');
-    expect(compatibilitySource).toContain('null::text as "agencyPortalUrl"');
+    expect(compatibilitySource).toContain('s.statute_name as "statuteLawName"');
+    expect(compatibilitySource).toContain('s.citation as "statuteReference"');
+    expect(compatibilitySource).toContain('s.response_days as "responseDeadlineDays"');
+    expect(compatibilitySource).toContain('a.submission_portal as "agencyPortalUrl"');
+    expect(compatibilitySource).toContain("left join public.foia_statutes s on s.id = r.statute_id");
+    expect(compatibilitySource).toContain("left join public.foia_agencies a on a.id = r.agency_id");
     expect(compatibilitySource).not.toContain("foiaStatutes.");
     expect(compatibilitySource).not.toContain("foiaAgencies.");
   });
