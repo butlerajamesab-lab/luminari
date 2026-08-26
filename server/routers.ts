@@ -2391,15 +2391,39 @@ const foiaRequestsRouter = router({
       const { foiaRequests, missingRecords } = await import("../drizzle/schema");
       const now = Date.now();
 
+      // Fetch before update: the submission transition needs statuteId to start
+      // the statutory response clock.
+      const [existingRequest] = await db_helpers.db.select().from(foiaRequests)
+        .where(and(
+          eq(foiaRequests.id, input.requestId),
+          eq(foiaRequests.caseId, input.caseId)
+        ));
+
       // Update the FOIA request status
       const updateData: Record<string, any> = {
         status: input.status,
         updatedAt: now,
       };
 
-      // Set submittedAt when status transitions to submitted
+      // Set submittedAt when status transitions to submitted, and start the
+      // statutory response clock at that moment (never at draft creation).
       if (input.status === "submitted") {
         updateData.submittedAt = now;
+        if (existingRequest?.statuteId) {
+          try {
+            const { getStatuteById } = await import("./akb-lookup");
+            const { computeResponseDueAt } = await import("./foia-deadline");
+            const statute = await getStatuteById(existingRequest.statuteId);
+            const dueAt = computeResponseDueAt(
+              now,
+              statute?.responseDeadlineDays ?? null,
+              statute?.responseDeadlineUnit ?? null,
+            );
+            if (dueAt != null) updateData.responseDueAt = dueAt;
+          } catch {
+            // Leave response_due_at untouched if the reference lookup fails.
+          }
+        }
       }
       // Set responseReceivedAt when records are produced or denied
       if (["records_produced", "partial_denial", "denied"].includes(input.status)) {
