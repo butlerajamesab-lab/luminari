@@ -33,6 +33,7 @@ import {
 } from "../drizzle/schema";
 import { eq, and, inArray, sql } from "drizzle-orm";
 import { getAgenciesForRecord, normalizeDomainKey } from "./akb-lookup";
+import { deadlineUnitLabel } from "./foia-deadline";
 
 // ─── Types ───
 
@@ -292,6 +293,7 @@ async function generateFoiaLetter(params: {
   statuteName: string;
   statuteReference: string;
   responseDeadlineDays: number | null;
+  responseDeadlineUnit: string | null;
   feeWaiverAvailable: boolean;
   requesterName: string | null;
   requesterEmail: string | null;
@@ -308,7 +310,7 @@ async function generateFoiaLetter(params: {
   const agencyAddress = params.agencyAddress || "[AGENCY_ADDRESS]";
 
   const deadlineParagraph = params.responseDeadlineDays
-    ? `\nPursuant to ${params.statuteName}, I expect a response within ${params.responseDeadlineDays} business days. If you anticipate a delay, please notify me in writing of the reason for the delay and the expected date of response.\n`
+    ? `\nPursuant to ${params.statuteName}, I expect a response within ${params.responseDeadlineDays} ${deadlineUnitLabel(params.responseDeadlineUnit)}. If you anticipate a delay, please notify me in writing of the reason for the delay and the expected date of response.\n`
     : `\nPlease respond to this request at your earliest convenience. If you anticipate a delay, please notify me in writing of the reason for the delay and the expected date of response.\n`;
 
   const feeWaiverParagraph = params.feeWaiverAvailable
@@ -461,6 +463,7 @@ export async function generateFoiaRequest(
       statuteName: primaryAgency?.statute?.lawName ?? "Public Records Act",
       statuteReference: primaryAgency?.statute?.statuteReference ?? missingRecord.legalBasis ?? "",
       responseDeadlineDays: primaryAgency?.statute?.responseDeadlineDays ?? null,
+      responseDeadlineUnit: primaryAgency?.statute?.responseDeadlineUnit ?? null,
       feeWaiverAvailable: primaryAgency?.statute?.feeWaiverAvailable ?? false,
       requesterName: requesterInfo?.name ?? null,
       requesterEmail: requesterInfo?.email ?? null,
@@ -477,10 +480,10 @@ export async function generateFoiaRequest(
 
   // 8. Persist
   const now = Date.now();
-  const responseDeadlineDays = primaryAgency?.statute?.responseDeadlineDays ?? null;
-  const responseDueAt = responseDeadlineDays
-    ? now + responseDeadlineDays * 24 * 60 * 60 * 1000
-    : null;
+  // The statutory response clock starts at SUBMISSION, not draft creation:
+  // held drafts must not skew deadline tracking. updateStatus("submitted")
+  // computes responseDueAt from the statute at the moment of submission.
+  const responseDueAt: number | null = null;
 
   const gatingReason = JSON.stringify({
     severity: missingRecord.severity,

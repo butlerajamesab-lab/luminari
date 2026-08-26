@@ -143,6 +143,19 @@ export async function getStatutesForState(stateCode: string): Promise<AkbStatute
   return rows.map(mapStatute);
 }
 
+/** Single statute by primary key. Used by the submission transition to start the response clock. */
+export async function getStatuteById(id: number): Promise<AkbStatute | null> {
+  if (!Number.isInteger(id) || id <= 0) return null;
+  const { rows } = await getPool().query(
+    `select id, state_code, statute_name, citation, response_days, response_days_unit,
+            extension_rule, appeal_deadline_days, appeal_note,
+            fee_waiver_available, expedited_processing_available, official_url, notes
+       from public.foia_statutes where id = $1`,
+    [id],
+  );
+  return rows.length > 0 ? mapStatute(rows[0]) : null;
+}
+
 /** Agencies applicable to a state: state-level rows plus all federal components. */
 export async function getAgenciesForState(stateCode: string): Promise<AkbAgency[]> {
   const code = (stateCode ?? "").toUpperCase().trim();
