@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { query, process_version } = vi.hoisted(() => ({
+const { query, process_version, rosetta_fetch } = vi.hoisted(() => ({
   query: vi.fn(),
   process_version: vi.fn(),
+  rosetta_fetch: vi.fn(),
 }));
 
 vi.mock("./db", () => ({
@@ -13,9 +14,14 @@ vi.mock("./civic-genome-legislative-version-pipeline", () => ({
   process_legislative_version: process_version,
 }));
 
+vi.stubGlobal("fetch", rosetta_fetch);
+
 import {
+  classify_hidden_rosetta_terminal_rejections,
   classify_legislative_version_failure,
+  is_exact_docket_document_identifier,
   legislative_version_retry_delay_seconds,
+  load_oldest_unbound_docket_identifiers,
   process_legislative_version_job,
   run_legislative_version_queue_cycle,
 } from "./civic-genome-legislative-version-queue-worker";
@@ -28,11 +34,20 @@ const job = {
   document_family: "text" as const,
   version_type: "introduced",
   attempt_count: 0,
+  document_identifier: "docket:2064783:text:2064783:3298849",
+  durable_content_recovery: false,
 };
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.stubEnv("ROSETTA_SUPABASE_URL", "https://rosetta.example.test");
+  vi.stubEnv("ROSETTA_SUPABASE_SERVICE_ROLE_KEY", "sb_secret_test");
   query.mockResolvedValue({ rows: [] });
+  rosetta_fetch.mockImplementation(async (input: string | URL | Request) => (
+    String(input).includes("rosetta_classify_terminal_rejections_v1")
+      ? new Response("0", { status: 200 })
+      : new Response("[]", { status: 200 })
+  ));
   process_version.mockResolvedValue({
     bill_version_id: job.bill_version_id,
     genome_bill_id: "33333333-3333-4333-8333-333333333333",
@@ -56,6 +71,82 @@ describe("legislative version queue", () => {
     expect(legislative_version_retry_delay_seconds(1)).toBe(30);
     expect(legislative_version_retry_delay_seconds(2)).toBe(60);
     expect(legislative_version_retry_delay_seconds(20)).toBe(3600);
+  });
+
+  it("accepts only exact source-bill-bound Docket document identities", () => {
+    expect(is_exact_docket_document_identifier(
+      "docket:2064783:text:2064783:3298849",
+    )).toBe(true);
+    expect(is_exact_docket_document_identifier(
+      "docket:2064783:amendment:2064783:12345",
+    )).toBe(true);
+    expect(is_exact_docket_document_identifier(
+      "docket:2064783:text:9999999:3298849",
+    )).toBe(false);
+    expect(is_exact_docket_document_identifier("docket:2064783:text:3298849")).toBe(false);
+  });
+
+  it("classifies hidden terminal runs through the bounded service control", async () => {
+    rosetta_fetch.mockResolvedValueOnce(new Response("17", { status: 200 }));
+
+    await expect(classify_hidden_rosetta_terminal_rejections()).resolves.toBe(17);
+
+    expect(String(rosetta_fetch.mock.calls[0][0])).toBe(
+      "https://rosetta.example.test/rest/v1/rpc/rosetta_classify_terminal_rejections_v1",
+    );
+    expect(rosetta_fetch.mock.calls[0][1]).toMatchObject({
+      method: "POST",
+      body: JSON.stringify({ p_limit: 250 }),
+    });
+  });
+
+  it("rejects an invalid terminal-classifier count", async () => {
+    rosetta_fetch.mockResolvedValueOnce(new Response("251", { status: 200 }));
+
+    await expect(classify_hidden_rosetta_terminal_rejections()).rejects.toThrow(
+      "rosetta_terminal_classifier_invalid_response",
+    );
+  });
+
+  it("loads the bounded Rosetta selector in its returned oldest-first order", async () => {
+    rosetta_fetch.mockResolvedValueOnce(new Response(JSON.stringify([
+      {
+        source_document_id: 46,
+        document_identifier: "docket:1994334:text:1994334:3157683",
+        registered_at: "2026-08-05T22:35:55.418674+00:00",
+      },
+      {
+        source_document_id: 70,
+        document_identifier: "docket:2073426:amendment:2073426:282585",
+        registered_at: "2026-08-05T22:41:36.027414+00:00",
+      },
+    ]), { status: 200 }));
+
+    await expect(load_oldest_unbound_docket_identifiers()).resolves.toEqual([
+      "docket:1994334:text:1994334:3157683",
+      "docket:2073426:amendment:2073426:282585",
+    ]);
+
+    expect(rosetta_fetch).toHaveBeenCalledTimes(1);
+    expect(String(rosetta_fetch.mock.calls[0][0])).toBe(
+      "https://rosetta.example.test/rest/v1/rpc/rosetta_unbound_docket_source_documents_v1",
+    );
+    expect(rosetta_fetch.mock.calls[0][1]).toMatchObject({
+      method: "POST",
+      body: JSON.stringify({ p_limit: 100 }),
+    });
+  });
+
+  it("rejects a Rosetta selector response whose identity crosses source bills", async () => {
+    rosetta_fetch.mockResolvedValueOnce(new Response(JSON.stringify([{
+      source_document_id: 46,
+      document_identifier: "docket:1994334:text:2073426:3157683",
+      registered_at: "2026-08-05T22:35:55.418674+00:00",
+    }]), { status: 200 }));
+
+    await expect(load_oldest_unbound_docket_identifiers()).rejects.toThrow(
+      "rosetta_unbound_docket_selector_identity_invalid",
+    );
   });
 
   it("classifies source and structural contract failures as terminal", () => {
@@ -129,6 +220,12 @@ describe("legislative version queue", () => {
     expect(claim_sql).toContain("source_host.blocked_until");
     expect(claim_sql).toContain("split_part(lower(document.source_url), '/', 3)");
     expect(claim_sql).toContain("version.processing_state not in ('verified', 'verified_with_findings')");
+    expect(claim_sql).toContain("queue.queue_state = 'permanent_failure'");
+    expect(claim_sql).toContain("rosetta_identity.document_identifier = any($4::text[])");
+    expect(claim_sql).toContain("array_position($4::text[], rosetta_identity.document_identifier)");
+    expect(claim_sql).toContain("'durable_content_recovery_v1'");
+    expect(claim_sql).toContain("'contract', $5::text");
+    expect(claim_sql).toContain("for update of queue, version skip locked");
 
     const currentSessionOrder = claim_sql.indexOf("(current_session.state is not null) desc");
     const currentVersionOrder = claim_sql.indexOf("currency.is_current desc");
@@ -136,6 +233,16 @@ describe("legislative version queue", () => {
     expect(currentSessionOrder).toBeGreaterThanOrEqual(0);
     expect(currentVersionOrder).toBeGreaterThan(currentSessionOrder);
     expect(hostFairnessOrder).toBeGreaterThan(currentVersionOrder);
+  });
+
+  it("continues ordinary queue claims when the supplemental Rosetta selector is unavailable", async () => {
+    rosetta_fetch
+      .mockResolvedValueOnce(new Response("0", { status: 200 }))
+      .mockResolvedValueOnce(new Response("unavailable", { status: 503 }));
+
+    await expect(run_legislative_version_queue_cycle()).resolves.toBeUndefined();
+
+    expect(query.mock.calls.some(call => String(call[0]).includes("candidate as materialized"))).toBe(true);
   });
 
   it("preserves queue and version failure receipts for real pipeline failures", async () => {

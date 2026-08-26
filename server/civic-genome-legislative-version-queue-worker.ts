@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { query_with_diagnostics } from "./db";
 import { process_legislative_version } from "./civic-genome-legislative-version-pipeline";
+import { create_rosetta_supabase_headers } from "./rosetta-supabase-auth";
 
 const DEFAULT_POLL_INTERVAL_MS = 1_000;
 const MIN_POLL_INTERVAL_MS = 250;
@@ -14,6 +15,10 @@ const RECONCILE_BATCH_SIZE = 100;
 const DEFAULT_RECONCILE_INTERVAL_MS = 60_000;
 const MIN_RECONCILE_INTERVAL_MS = 10_000;
 const MAX_RECONCILE_INTERVAL_MS = 15 * 60_000;
+const ROSETTA_TERMINAL_CLASSIFIER_LIMIT = 250;
+const ROSETTA_BACKLOG_SELECTOR_LIMIT = 100;
+const ROSETTA_CONTROL_REQUEST_TIMEOUT_MS = 10_000;
+const DURABLE_CONTENT_RECOVERY_CONTRACT = "oldest-unbound-docket-v1";
 
 export type legislative_version_queue_job = {
   queue_id: string;
@@ -23,6 +28,14 @@ export type legislative_version_queue_job = {
   document_family: "text" | "amendment";
   version_type: string;
   attempt_count: number;
+  document_identifier: string;
+  durable_content_recovery: boolean;
+};
+
+type rosetta_unbound_docket_source = {
+  source_document_id?: unknown;
+  document_identifier?: unknown;
+  registered_at?: unknown;
 };
 
 export type legislative_version_failure_decision = {
@@ -74,6 +87,155 @@ function bounded_concurrency(): number {
     1,
     MAX_CONCURRENCY,
   );
+}
+
+function required_environment(name: string): string {
+  const value = process.env[name]?.trim();
+  if (!value) throw new Error(`missing_${name.toLowerCase()}`);
+  return value;
+}
+
+export function is_exact_docket_document_identifier(value: string): boolean {
+  const match = value.match(/^docket:(\d+):(text|amendment):(\d+):(\d+)$/);
+  return Boolean(match && match[1] === match[3]);
+}
+
+export async function classify_hidden_rosetta_terminal_rejections(): Promise<number> {
+  const base_url = required_environment("ROSETTA_SUPABASE_URL").replace(/\/$/, "");
+  const service_role_key = required_environment("ROSETTA_SUPABASE_SERVICE_ROLE_KEY");
+  const headers = create_rosetta_supabase_headers(service_role_key);
+  headers.set("accept", "application/json");
+  headers.set("content-type", "application/json");
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), ROSETTA_CONTROL_REQUEST_TIMEOUT_MS);
+  try {
+    const response = await fetch(
+      `${base_url}/rest/v1/rpc/rosetta_classify_terminal_rejections_v1`,
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ p_limit: ROSETTA_TERMINAL_CLASSIFIER_LIMIT }),
+        signal: controller.signal,
+      },
+    );
+    const response_body = response.status === 204 ? "" : await response.text();
+    if (!response.ok) {
+      throw new Error(
+        `rosetta_terminal_classifier_failed:${response.status}:${response_body.slice(0, 500)}`,
+      );
+    }
+    if (response.status === 204) return 0;
+
+    let payload: unknown;
+    try {
+      payload = JSON.parse(response_body);
+    } catch {
+      throw new Error("rosetta_terminal_classifier_invalid_json");
+    }
+    const classified_count = typeof payload === "number"
+      ? payload
+      : Array.isArray(payload) && payload.length === 1 && typeof payload[0] === "number"
+        ? payload[0]
+        : Number.NaN;
+    if (
+      !Number.isSafeInteger(classified_count)
+      || classified_count < 0
+      || classified_count > ROSETTA_TERMINAL_CLASSIFIER_LIMIT
+    ) {
+      throw new Error("rosetta_terminal_classifier_invalid_response");
+    }
+    return classified_count;
+  } catch (error) {
+    if (
+      error instanceof Error
+      && error.message.startsWith("rosetta_terminal_classifier_")
+    ) {
+      throw error;
+    }
+    if (controller.signal.aborted) {
+      throw new Error(
+        `rosetta_terminal_classifier_timeout:${ROSETTA_CONTROL_REQUEST_TIMEOUT_MS}`,
+      );
+    }
+    const cause = error instanceof Error ? error.name : "unknown";
+    throw new Error(`rosetta_terminal_classifier_network_failed:${cause}`);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+export async function load_oldest_unbound_docket_identifiers(): Promise<string[]> {
+  const base_url = required_environment("ROSETTA_SUPABASE_URL").replace(/\/$/, "");
+  const service_role_key = required_environment("ROSETTA_SUPABASE_SERVICE_ROLE_KEY");
+  const headers = create_rosetta_supabase_headers(service_role_key);
+  headers.set("accept", "application/json");
+  headers.set("content-type", "application/json");
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), ROSETTA_CONTROL_REQUEST_TIMEOUT_MS);
+  try {
+    const response = await fetch(
+      `${base_url}/rest/v1/rpc/rosetta_unbound_docket_source_documents_v1`,
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ p_limit: ROSETTA_BACKLOG_SELECTOR_LIMIT }),
+        signal: controller.signal,
+      },
+    );
+    const response_body = response.status === 204 ? "" : await response.text();
+    if (!response.ok) {
+      throw new Error(
+        `rosetta_unbound_docket_selector_failed:${response.status}:${response_body.slice(0, 500)}`,
+      );
+    }
+    if (response.status === 204) return [];
+
+    let payload: unknown;
+    try {
+      payload = JSON.parse(response_body);
+    } catch {
+      throw new Error("rosetta_unbound_docket_selector_invalid_json");
+    }
+    if (!Array.isArray(payload)) {
+      throw new Error("rosetta_unbound_docket_selector_invalid_response");
+    }
+
+    const identifiers: string[] = [];
+    const seen = new Set<string>();
+    for (const raw of payload as rosetta_unbound_docket_source[]) {
+      const source_document_id = Number(raw.source_document_id);
+      const document_identifier = String(raw.document_identifier ?? "");
+      if (
+        !Number.isSafeInteger(source_document_id)
+        || source_document_id <= 0
+        || !is_exact_docket_document_identifier(document_identifier)
+        || seen.has(document_identifier)
+      ) {
+        throw new Error("rosetta_unbound_docket_selector_identity_invalid");
+      }
+      seen.add(document_identifier);
+      identifiers.push(document_identifier);
+    }
+    return identifiers;
+  } catch (error) {
+    if (
+      error instanceof Error
+      && error.message.startsWith("rosetta_unbound_docket_selector_")
+    ) {
+      throw error;
+    }
+    if (controller.signal.aborted) {
+      throw new Error(
+        `rosetta_unbound_docket_selector_timeout:${ROSETTA_CONTROL_REQUEST_TIMEOUT_MS}`,
+      );
+    }
+    const cause = error instanceof Error ? error.name : "unknown";
+    throw new Error(`rosetta_unbound_docket_selector_network_failed:${cause}`);
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 function queue_enabled(): boolean {
@@ -191,7 +353,10 @@ async function reconcile_completed_jobs_if_due(): Promise<void> {
   await reconcile_completed_jobs();
 }
 
-async function claim_jobs(limit: number): Promise<legislative_version_queue_job[]> {
+async function claim_jobs(
+  limit: number,
+  oldest_unbound_docket_identifiers: string[],
+): Promise<legislative_version_queue_job[]> {
   const result = await query_with_diagnostics<legislative_version_queue_job>(
     `with current_sessions as (
        select distinct state, session_id::text as session_key
@@ -216,8 +381,13 @@ async function claim_jobs(limit: number): Promise<legislative_version_queue_job[
              and queue.next_attempt_at > now()
            )
         group by split_part(lower(document.source_url), '/', 3)
-     ), candidate as (
-       select queue.queue_id
+     ), candidate as materialized (
+       select queue.queue_id,
+              version.bill_version_id,
+              queue.queue_state as prior_queue_state,
+              queue.attempt_count as prior_attempt_count,
+              rosetta_identity.document_identifier,
+              recovery.is_durable_content_recovery
          from public.civic_genome_legislative_version_queue queue
          join public.civic_genome_bill_version version
            on version.bill_version_id = queue.bill_version_id
@@ -230,6 +400,18 @@ async function claim_jobs(limit: number): Promise<legislative_version_queue_job[
           and current_session.session_key = bill.session_key
          left join host_activity source_host
            on source_host.source_host = split_part(lower(document.source_url), '/', 3)
+         cross join lateral (
+           select 'docket:' || version.source_bill_id::text || ':' ||
+                  version.source_document_key as document_identifier
+         ) rosetta_identity
+         cross join lateral (
+           select queue.queue_state = 'permanent_failure'
+              and rosetta_identity.document_identifier = any($4::text[])
+              and not (
+                coalesce(version.receipt_json, '{}'::jsonb)
+                  ? 'durable_content_recovery_v1'
+              ) as is_durable_content_recovery
+         ) recovery
          cross join lateral (
            select not exists (
              select 1
@@ -244,13 +426,18 @@ async function claim_jobs(limit: number): Promise<legislative_version_queue_job[
                 )
            ) as is_current
          ) currency
-        where queue.next_attempt_at <= now()
-          and (
-            queue.queue_state in ('eligible', 'degraded')
-            or (
-              queue.queue_state = 'submitted'
-              and queue.locked_at < now() - make_interval(mins => $2::integer)
+        where (
+            (
+              queue.next_attempt_at <= now()
+              and (
+                queue.queue_state in ('eligible', 'degraded')
+                or (
+                  queue.queue_state = 'submitted'
+                  and queue.locked_at < now() - make_interval(mins => $2::integer)
+                )
+              )
             )
+            or recovery.is_durable_content_recovery
           )
           and (
             queue.locked_at is null
@@ -258,7 +445,11 @@ async function claim_jobs(limit: number): Promise<legislative_version_queue_job[
           )
           and version.processing_state not in ('verified', 'verified_with_findings')
           and coalesce(source_host.blocked_until, '-infinity'::timestamptz) <= now()
-        order by case when queue.priority < 0 then 0 else 1 end,
+        order by case when recovery.is_durable_content_recovery then 0 else 1 end,
+                 case when recovery.is_durable_content_recovery
+                   then array_position($4::text[], rosetta_identity.document_identifier)
+                 end asc nulls last,
+                 case when queue.priority < 0 then 0 else 1 end,
                  (current_session.state is not null) desc,
                  currency.is_current desc,
                  source_host.last_attempt_at asc nulls first,
@@ -266,18 +457,44 @@ async function claim_jobs(limit: number): Promise<legislative_version_queue_job[
                  queue.priority,
                  queue.created_at,
                  queue.queue_id
-        for update of queue skip locked
+        for update of queue, version skip locked
         limit $3::integer
+     ), marked_version as (
+       update public.civic_genome_bill_version version
+          set receipt_json = coalesce(version.receipt_json, '{}'::jsonb)
+                || jsonb_build_object(
+                  'durable_content_recovery_v1',
+                  jsonb_build_object(
+                    'contract', $5::text,
+                    'document_identifier', candidate.document_identifier,
+                    'selected_at', now(),
+                    'worker_identity', $1::text,
+                    'prior_queue_state', candidate.prior_queue_state,
+                    'prior_attempt_count', candidate.prior_attempt_count
+                  )
+                ),
+              updated_at = now()
+         from candidate
+        where candidate.is_durable_content_recovery
+          and version.bill_version_id = candidate.bill_version_id
+          and not (
+            coalesce(version.receipt_json, '{}'::jsonb)
+              ? 'durable_content_recovery_v1'
+          )
+       returning version.bill_version_id
      )
      update public.civic_genome_legislative_version_queue queue
         set queue_state = 'submitted',
             locked_at = now(),
             locked_by = $1,
             updated_at = now()
-       from candidate,
-            public.civic_genome_bill_version version
+       from candidate
+       join public.civic_genome_bill_version version
+         on version.bill_version_id = candidate.bill_version_id
       join public.docket_bill_source_document document
         on document.source_document_key = version.source_document_key
+      left join marked_version
+        on marked_version.bill_version_id = version.bill_version_id
       where queue.queue_id = candidate.queue_id
         and version.bill_version_id = queue.bill_version_id
       returning queue.queue_id::text,
@@ -286,8 +503,16 @@ async function claim_jobs(limit: number): Promise<legislative_version_queue_job[
                 version.source_bill_id,
                 version.document_family,
                 version.version_type,
-                queue.attempt_count`,
-    [queue_worker_id, QUEUE_LEASE_MINUTES, limit],
+                queue.attempt_count,
+                candidate.document_identifier,
+                candidate.is_durable_content_recovery as durable_content_recovery`,
+    [
+      queue_worker_id,
+      QUEUE_LEASE_MINUTES,
+      limit,
+      oldest_unbound_docket_identifiers,
+      DURABLE_CONTENT_RECOVERY_CONTRACT,
+    ],
     {
       label: "legislative_version_queue_claim",
       pool_acquire_timeout_ms: 1_000,
@@ -327,6 +552,8 @@ async function mark_job_completed(input: {
     source_bill_id: input.job.source_bill_id,
     document_family: input.job.document_family,
     version_type: input.job.version_type,
+    document_identifier: input.job.document_identifier,
+    durable_content_recovery: input.job.durable_content_recovery,
     assembly_run_id: input.assembly_run_id,
   });
 }
@@ -396,6 +623,8 @@ async function mark_job_failed(input: {
     source_bill_id: input.job.source_bill_id,
     document_family: input.job.document_family,
     version_type: input.job.version_type,
+    document_identifier: input.job.document_identifier,
+    durable_content_recovery: input.job.durable_content_recovery,
     queue_state: input.decision.queue_state,
     failure_class: input.decision.failure_class,
     error_code: input.decision.error_code,
@@ -438,7 +667,35 @@ export async function run_legislative_version_queue_cycle(): Promise<void> {
   queue_cycle_running = true;
   try {
     await reconcile_completed_jobs_if_due();
-    const jobs = await claim_jobs(bounded_concurrency());
+    try {
+      const classified_count = await classify_hidden_rosetta_terminal_rejections();
+      if (classified_count > 0) {
+        console.log("[LegislativeVersionQueue] terminal_repairs_classified", {
+          classified_count,
+          contract: "rosetta-terminal-rejection-repair-v1",
+        });
+      }
+    } catch (error) {
+      // Classification is fail-closed in Rosetta: terminal runs stay rejected.
+      // A control-surface outage must not stop unrelated queue work.
+      console.error("[LegislativeVersionQueue] terminal_classifier_failed", {
+        error_code: safe_error_code(error),
+      });
+    }
+    let oldest_unbound_docket_identifiers: string[] = [];
+    try {
+      oldest_unbound_docket_identifiers = await load_oldest_unbound_docket_identifiers();
+    } catch (error) {
+      // The recovery selector is supplemental. An unavailable Rosetta control
+      // surface must not stop ordinary eligible/degraded queue processing.
+      console.error("[LegislativeVersionQueue] backlog_selector_failed", {
+        error_code: safe_error_code(error),
+      });
+    }
+    const jobs = await claim_jobs(
+      bounded_concurrency(),
+      oldest_unbound_docket_identifiers,
+    );
     await Promise.all(jobs.map(job => process_legislative_version_job(job)));
   } catch (error) {
     console.error("[LegislativeVersionQueue] cycle_failed", {
@@ -462,7 +719,7 @@ export function start_legislative_version_queue_worker(): void {
     reconcile_interval_ms,
     concurrency,
     lease_minutes: QUEUE_LEASE_MINUTES,
-    priority_scope: "current_docket_session_then_latest_version_then_host_fairness",
+    priority_scope: "oldest_unbound_docket_then_current_session_latest_version_host_fairness",
   });
   void run_legislative_version_queue_cycle();
   queue_timer = setInterval(() => {
