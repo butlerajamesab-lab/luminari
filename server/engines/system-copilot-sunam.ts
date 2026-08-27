@@ -27,6 +27,11 @@ import {
 import { applyEnginePatch, applyStreamPatch, applySchemaPatch, rollbackPatch as executorRollback, getExecutionLog } from "./executor-service";
 import { uiReadFile, uiWriteFile, uiPatchFile, uiListFiles, uiGetChangeLog, uiRollbackLastWrite } from "../ui-editor";
 
+/** Quote a Postgres identifier safely */
+function quoteIdent(name: string): string {
+  return `"${name.replace(/"/g, '""')}"`;
+}
+
 // ─── System Context Builder ───
 
 /** Build a system context summary for the LLM */
@@ -129,13 +134,13 @@ You can also:
 // ─── Conversation Management ───
 
 export async function createConversation(userId: string, title?: string) {
-  const [result] = await db.insert(copilotConversations).values({
+  const inserted = await db.insert(copilotConversations).values({
     userId,
     title: title || "New Conversation",
     createdAt: Date.now(),
     updatedAt: Date.now(),
-  });
-  return { id: (result as any).insertId };
+  }).returning({ id: copilotConversations.id });
+  return { id: (inserted[0] as any).id as number };
 }
 
 export async function getConversations(userId: string, limit = 20) {
@@ -267,9 +272,9 @@ Be concise, technical, and safety-conscious. Flag destructive operations clearly
   if (/\bbackfill\b|\bprocess signals\b|\bfill detected\b/.test(lowerMsg)) {
     responseText = "To backfill signals, I will run the backfill_stream tool.\n\n[ARTIFACT:sql:Backfill detected_signals from live_signals]\nSELECT COUNT(*) FROM live_signals WHERE id NOT IN (SELECT COALESCE(source_signal_id, 0) FROM detected_signals);\n-- ROLLBACK: -- No rollback needed for SELECT\n[/ARTIFACT]";
   } else if (/\binspect\b|\bcheck table\b|\bcount rows\b|\bhow many\b/.test(lowerMsg)) {
-    const tableMatch = userMessage.match(/(?:table|from|in)\s+[`']?([\w_]+)[`']?/i);
+    const tableMatch = userMessage.match(/(?:table|from|in)\s+[`'"]?([\w_]+)[`'"]?/i);
     const tbl = tableMatch ? tableMatch[1] : "live_signals";
-    responseText = `To inspect ${tbl}, here is a query:\n\n[ARTIFACT:sql:Inspect ${tbl}]\nSELECT COUNT(*) as total_rows FROM \`${tbl}\` LIMIT 1;\n-- ROLLBACK: -- No rollback needed for SELECT\n[/ARTIFACT]`;
+    responseText = `To inspect ${tbl}, here is a query:\n\n[ARTIFACT:sql:Inspect ${tbl}]\nSELECT COUNT(*) as total_rows FROM "${tbl}" LIMIT 1;\n-- ROLLBACK: -- No rollback needed for SELECT\n[/ARTIFACT]`;
   } else if (/\bstream\b.*\bfail|\bfailing stream|\bstream.*error|\bstream.*health/.test(lowerMsg)) {
     responseText = "To check stream health, use the get_stream_diagnostics tool from Sovereign Control, or run:\n\n[ARTIFACT:sql:Check failing streams]\nSELECT stream_id, stream_name, consecutive_failures, last_error_message, enabled, auto_disabled FROM data_stream_registry WHERE consecutive_failures > 0 OR auto_disabled = true ORDER BY consecutive_failures DESC;\n-- ROLLBACK: -- No rollback needed for SELECT\n[/ARTIFACT]";
   } else if (/\benable\b.*\bstream|\bactivate\b.*\bstream/.test(lowerMsg)) {
@@ -320,7 +325,7 @@ Be concise, technical, and safety-conscious. Flag destructive operations clearly
       : artifactContent.trim();
     const rollbackContent = rollbackMatch ? rollbackMatch[1].trim() : null;
 
-    const [insertResult] = await db.insert(copilotArtifacts).values({
+    const insertedArtifact = await db.insert(copilotArtifacts).values({
       conversationId,
       artifactType: artifactType as any,
       title: artifactTitle,
@@ -328,9 +333,9 @@ Be concise, technical, and safety-conscious. Flag destructive operations clearly
       status: "pending_approval",
       rollbackContent,
       createdAt: Date.now(),
-    });
+    }).returning({ id: copilotArtifacts.id });
 
-    const artifactId = (insertResult as any).insertId;
+    const artifactId = (insertedArtifact[0] as any).id as number;
 
     // Generate impact analysis
     await generateImpactAnalysis(artifactId, artifactType, mainContent);
@@ -639,10 +644,10 @@ async function generateImpactAnalysis(artifactId: number, artifactType: string, 
   if (artifactType === "sql") {
     const upper = content.toUpperCase();
     // Extract table names from SQL
-    const tableMatches = content.match(/(?:FROM|INTO|UPDATE|TABLE|JOIN)\s+`?(\w+)`?/gi);
+    const tableMatches = content.match(/(?:FROM|INTO|UPDATE|TABLE|JOIN)\s+`?"?(\w+)`?"?/gi);
     if (tableMatches) {
       for (const match of tableMatches) {
-        const tableName = match.replace(/(?:FROM|INTO|UPDATE|TABLE|JOIN)\s+`?/i, "").replace(/`/g, "");
+        const tableName = match.replace(/(?:FROM|INTO|UPDATE|TABLE|JOIN)\s+`?"?/i, "").replace(/[`"]/g, "");
         if (tableName && !affectedTables.includes(tableName)) {
           affectedTables.push(tableName);
         }
@@ -684,19 +689,30 @@ async function generateImpactAnalysis(artifactId: number, artifactType: string, 
 export async function inspectTable(tableName: string) {
   let schema = "";
   try {
-    const result = await db.execute(sql.raw(`SELECT column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_schema = \'public\' AND table_name = \'${tableName}\'`));
-    schema = ((result[0] as unknown as any[])[0] as any)?.["Create Table"] || "";
+    const result = await db.execute(
+      sql`SELECT column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_schema = 'public' AND table_name = ${tableName} ORDER BY ordinal_position`
+    );
+    const cols = (result[0] as unknown as any[]) || [];
+    if (cols.length > 0) {
+      schema = cols.map((c: any) => {
+        let line = `  ${c.column_name} ${c.data_type}`;
+        if (c.column_default) line += ` DEFAULT ${c.column_default}`;
+        if (c.is_nullable === "NO") line += " NOT NULL";
+        return line;
+      }).join("\n");
+      schema = `CREATE TABLE ${quoteIdent(tableName)} (\n${schema}\n);`;
+    }
   } catch { /* */ }
 
   let rowCount = 0;
   try {
-    const result = await db.execute(sql.raw(`SELECT COUNT(*) as cnt FROM \`${tableName}\``));
-    rowCount = ((result[0] as unknown as any[])[0] as any)?.cnt || 0;
+    const result = await db.execute(sql.raw(`SELECT COUNT(*) as cnt FROM ${quoteIdent(tableName)}`));
+    rowCount = Number(((result[0] as unknown as any[])[0] as any)?.cnt) || 0;
   } catch { /* */ }
 
   let sampleRows: any[] = [];
   try {
-    const result = await db.execute(sql.raw(`SELECT * FROM \`${tableName}\` LIMIT 5`));
+    const result = await db.execute(sql.raw(`SELECT * FROM ${quoteIdent(tableName)} LIMIT 5`));
     sampleRows = result[0] as unknown as any[];
   } catch { /* */ }
 
