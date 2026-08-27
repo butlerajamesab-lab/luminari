@@ -106,6 +106,11 @@ export interface DataExport {
 
 // ─── Core Functions ───
 
+/** Quote a Postgres identifier safely */
+function quoteIdent(name: string): string {
+  return `"${name.replace(/"/g, '""')}"`;
+}
+
 /** Get all table names from the database */
 async function getAllTableNames(): Promise<string[]> {
   const result = await db.execute(sql`SELECT tablename FROM pg_tables WHERE schemaname = 'public'`);
@@ -113,13 +118,21 @@ async function getAllTableNames(): Promise<string[]> {
   return rows.map((r: any) => Object.values(r)[0] as string).sort();
 }
 
-/** Get CREATE TABLE statement for a table */
+/** Build a CREATE TABLE statement for a table from information_schema (Postgres) */
 async function getCreateStatement(tableName: string): Promise<string> {
   try {
-    const result = await db.execute(sql.raw(`SELECT column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_schema = \'public\' AND table_name = \'${tableName}\'`));
+    const result = await db.execute(
+      sql`SELECT column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_schema = 'public' AND table_name = ${tableName} ORDER BY ordinal_position`
+    );
     const rows = result[0] as unknown as any[];
     if (rows.length > 0) {
-      return (rows[0] as any)["Create Table"] || "";
+      const cols = rows.map((r: any) => {
+        let def = `${quoteIdent(r.column_name)} ${r.data_type}`;
+        if (r.column_default) def += ` DEFAULT ${r.column_default}`;
+        if (r.is_nullable === "NO") def += " NOT NULL";
+        return def;
+      });
+      return `CREATE TABLE ${quoteIdent(tableName)} (\n  ${cols.join(",\n  ")}\n);`;
     }
   } catch {
     // table might not exist
@@ -130,9 +143,9 @@ async function getCreateStatement(tableName: string): Promise<string> {
 /** Get row count for a table */
 async function getRowCount(tableName: string): Promise<number> {
   try {
-    const result = await db.execute(sql.raw(`SELECT COUNT(*) as cnt FROM \`${tableName}\``));
+    const result = await db.execute(sql.raw(`SELECT COUNT(*) as cnt FROM ${quoteIdent(tableName)}`));
     const rows = result[0] as unknown as any[];
-    return (rows[0] as any)?.cnt || 0;
+    return Number((rows[0] as any)?.cnt) || 0;
   } catch {
     return 0;
   }
@@ -229,7 +242,7 @@ export async function exportConfig(): Promise<ConfigExport> {
 /** Export table data (for full export) — limited to config/registry tables, NOT user data */
 export async function exportTableData(tableName: string, limit = 10000): Promise<DataExport> {
   try {
-    const result = await db.execute(sql.raw(`SELECT * FROM \`${tableName}\` LIMIT ${limit}`));
+    const result = await db.execute(sql.raw(`SELECT * FROM ${quoteIdent(tableName)} LIMIT ${Math.floor(limit)}`));
     const rows = result[0] as unknown as any[];
     return { tableName, rowCount: rows.length, rows };
   } catch {
@@ -362,15 +375,15 @@ export async function runExport(
   const timestamp = Date.now();
   const bundleName = `luminari-${exportType}-${new Date(timestamp).toISOString().replace(/[:.]/g, "-")}`;
 
-  // Create run record
-  const [insertResult] = await db.insert(exportSpineRuns).values({
+  // Create run record (Postgres: use RETURNING to get the new run id)
+  const inserted = await db.insert(exportSpineRuns).values({
     exportType,
     bundleName,
     status: "running",
     createdBy,
     createdAt: timestamp,
-  });
-  const runId = (insertResult as any).insertId;
+  }).returning({ id: exportSpineRuns.id });
+  const runId = (inserted[0] as any).id as number;
 
   try {
     const bundle: Record<string, any> = {
@@ -426,7 +439,7 @@ export async function runExport(
         packageManager: "pnpm",
         buildCommand: "pnpm build",
         startCommand: "pnpm start",
-        databaseType: "mysql",
+        databaseType: "postgresql",
         migrationStrategy: "drizzle-kit",
       };
       includedDirectories.push("deployment");
