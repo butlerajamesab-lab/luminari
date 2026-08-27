@@ -3,8 +3,8 @@ import JSZip from "jszip";
 import { getPool } from "../db";
 import { SUPABASE_PROJECT } from "../_core/health-diagnostics";
 
-export const FRESH_CORPUS_ENGINE_VERSION = "fresh_corpus_reconciliation_v1.2.0";
-export const FRESH_CORPUS_PARSER_VERSION = "fresh_registry_typed_parser_v1.2.0";
+export const FRESH_CORPUS_ENGINE_VERSION = "fresh_corpus_reconciliation_v1.2.1";
+export const FRESH_CORPUS_PARSER_VERSION = "fresh_registry_typed_parser_v1.2.1";
 
 const STATE_NAMES: Record<string, string> = {
   Alabama: "AL", Alaska: "AK", Arizona: "AZ", Arkansas: "AR", California: "CA",
@@ -363,11 +363,11 @@ export async function forEachXlsxRow(
   const relsXml = await zip.file("xl/_rels/workbook.xml.rels")?.async("text");
   if (!workbookXml || !relsXml) return 0;
   const relationships = new Map<string, string>();
-  for (const rel of relsXml.matchAll(/<Relationship\b[^>]*Id="([^"]+)"[^>]*Target="([^"]+)"[^>]*\/?\s*>/g)) {
+  for (const rel of relsXml.matchAll(/<Relationship\b[^>]*Id="([^"]+)"[^"]*Target="([^"]+)"[^"]*\/?\s*>/g)) {
     relationships.set(rel[1], rel[2].replace(/^\//, ""));
   }
   const sheets: Array<{ name: string; path: string }> = [];
-  for (const sheet of workbookXml.matchAll(/<sheet\b[^>]*name="([^"]+)"[^>]*r:id="([^"]+)"[^>]*\/?\s*>/g)) {
+  for (const sheet of workbookXml.matchAll(/<sheet\b[^>]*name="([^"]+)"[^"]*r:id="([^"]+)"[^"]*\/?\s*>/g)) {
     const target = relationships.get(sheet[2]);
     if (!target) continue;
     sheets.push({ name: decodeXmlEntities(sheet[1]), path: target.startsWith("xl/") ? target : `xl/${target.replace(/^\.\//, "")}` });
@@ -1015,13 +1015,17 @@ async function processArtifact(runId: string, artifact: SourceArtifact): Promise
 
   if (artifact.exact_duplicate_of) {
     const receipt = sha256(stable({ runId, artifact: artifact.artifact_key, exact_duplicate_of: artifact.exact_duplicate_of, status: "skipped_exact_duplicate" }));
+    // Parameters used only inside jsonb_build_object must carry explicit
+    // casts: jsonb_build_object is variadic "any", so the extended query
+    // protocol cannot infer an untyped parameter's type and Postgres rejects
+    // the statement with "could not determine data type of parameter $N".
     await pool.query(`update public.luminari_corpus_source_artifact_v1
       set extraction_status='fresh_duplicate_preserved',
           observed_at=now(),
           metadata=metadata||jsonb_build_object(
             'fresh_source_disposition','exact_duplicate_preserved',
-            'exact_duplicate_of',$2,
-            'fresh_parser_version',$3
+            'exact_duplicate_of',$2::text,
+            'fresh_parser_version',$3::text
           )
       where artifact_key=$1`, [artifact.artifact_key, artifact.exact_duplicate_of, FRESH_CORPUS_PARSER_VERSION]);
     await pool.query(`update public.luminari_corpus_rebuild_artifact_v1 set status='skipped_exact_duplicate',completed_at=now(),receipt_hash=$3,result_json=$4::jsonb where run_id=$1 and artifact_key=$2`,
@@ -1031,12 +1035,13 @@ async function processArtifact(runId: string, artifact: SourceArtifact): Promise
 
   if (artifact.artifact_role === "derivative_sql_artifact" || artifact.artifact_role === "derivative_bundle_artifact") {
     const receipt = sha256(stable({ runId, artifact: artifact.artifact_key, status: "preserved_derivative_not_reingested" }));
+    // Same untyped-parameter rule as the duplicate branch above.
     await pool.query(`update public.luminari_corpus_source_artifact_v1
       set extraction_status='fresh_derivative_preserved',
           observed_at=now(),
           metadata=metadata||jsonb_build_object(
             'fresh_source_disposition','derivative_preserved_not_reingested',
-            'fresh_parser_version',$2
+            'fresh_parser_version',$2::text
           )
       where artifact_key=$1`, [artifact.artifact_key, FRESH_CORPUS_PARSER_VERSION]);
     await pool.query(`update public.luminari_corpus_rebuild_artifact_v1 set status='preserved_derivative',completed_at=now(),receipt_hash=$3,result_json=$4::jsonb where run_id=$1 and artifact_key=$2`,
