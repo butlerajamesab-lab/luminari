@@ -8,13 +8,16 @@ export async function runDatabaseAudit() {
     console.log('║                    luminari_registry                         ║');
     console.log('╚════════════════════════════════════════════════════════════╝\n');
 
-    // Get all tables
-    const tables = await db.execute(sql`
-      SELECT TABLE_NAME 
-      FROM INFORMATION_SCHEMA.TABLES 
-      WHERE TABLE_SCHEMA = DATABASE()
-      ORDER BY TABLE_NAME
+    // Get all tables (Postgres)
+    const tablesResult = await db.execute(sql`
+      SELECT tablename
+      FROM pg_tables
+      WHERE schemaname = 'public'
+      ORDER BY tablename
     `);
+    const tables = ((tablesResult[0] as unknown as any[]) || []).map(
+      (r: any) => Object.values(r)[0] as string
+    );
 
     console.log(`Total Tables: ${tables.length}\n`);
     console.log('TABLE RECORD COUNTS:\n');
@@ -24,11 +27,12 @@ export async function runDatabaseAudit() {
 
     let totalRecords = 0;
 
-    for (const table of tables) {
-      const tableName = (table as any).TABLE_NAME;
+    for (const tableName of tables) {
       try {
-        const result = await db.execute(sql.raw(`SELECT COUNT(*) as count FROM ${tableName}`));
-        const count = (result[0] as any).count;
+        const result = await db.execute(
+          sql.raw(`SELECT COUNT(*) as count FROM "${tableName.replace(/"/g, '""')}"`)
+        );
+        const count = Number((result[0] as unknown as any[])[0]?.count) || 0;
         totalRecords += count;
         
         const paddedName = tableName.padEnd(39);

@@ -20,6 +20,11 @@
 import { db } from "../db";
 import { sql } from "drizzle-orm";
 
+/** Quote a Postgres identifier safely */
+function quoteIdent(name: string): string {
+  return `"${name.replace(/"/g, '""')}"`;
+}
+
 // ─── Registry Queries ────────────────────────────────────────────────────────
 
 export async function getJurisdictions(filters?: { stateCode?: string }) {
@@ -311,7 +316,7 @@ export async function getSystemSummary(): Promise<{
 
   for (const [key, table] of tables) {
     try {
-      const [rows] = await db.execute(sql.raw(`SELECT COUNT(*) as c FROM \`${table}\``));
+      const [rows] = await db.execute(sql.raw(`SELECT COUNT(*) as c FROM ${quoteIdent(table)}`));
       counts[key] = Number((rows as any)[0]?.c) || 0;
     } catch {
       counts[key] = 0;
