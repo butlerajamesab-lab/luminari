@@ -6,6 +6,7 @@ type release_argument = Error | boolean | undefined;
 type guarded_lease = {
   acquired_at: number;
   context: database_request_context | null;
+  acquisition_stack: string | null;
   expired: boolean;
   forced_release: boolean;
   timeout: ReturnType<typeof setTimeout>;
@@ -30,11 +31,32 @@ export type database_pool_lease_guard_snapshot = {
 
 const guard_states = new WeakMap<Pool, lease_guard_state>();
 
+/**
+ * Trim an acquisition stack to the frames that name the owner: drop the
+ * guard's own frames and node internals, keep the first frames in
+ * application code.
+ */
+function capture_acquisition_stack(): string | null {
+  const raw = new Error("pool_client_acquisition").stack;
+  if (!raw) return null;
+  const frames = raw.split("\n").slice(1)
+    .filter(line => !line.includes("database-pool-lease-guard") && !line.includes("node:internal") && !line.includes("node_modules"))
+    .slice(0, 12);
+  return frames.length ? frames.join("\n") : null;
+}
+
 function lease_log_context(lease: guarded_lease) {
   return {
     request_method: lease.context?.method ?? null,
     request_path: lease.context?.path ?? null,
     request_id: lease.context?.request_id ?? null,
+    job_label: lease.context?.label ?? null,
+    job_id: lease.context?.job_id ?? null,
+    acquired_at: new Date(lease.acquired_at).toISOString(),
+    // When no HTTP or job context is present, the acquisition stack is the
+    // only evidence that names the owner. Emit it on expiry so an unlabeled
+    // background loop identifies itself.
+    acquisition_stack: lease.context ? null : lease.acquisition_stack,
   };
 }
 
@@ -75,6 +97,9 @@ export function install_database_pool_lease_guard(
     const lease: guarded_lease = {
       acquired_at: Date.now(),
       context,
+      // Only pay for a stack capture when the caller carries no context;
+      // labeled HTTP requests and jobs already identify themselves.
+      acquisition_stack: context ? null : capture_acquisition_stack(),
       expired: false,
       forced_release: false,
       timeout: undefined as unknown as ReturnType<typeof setTimeout>,
