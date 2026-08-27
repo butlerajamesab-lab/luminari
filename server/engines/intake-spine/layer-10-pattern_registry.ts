@@ -29,8 +29,8 @@ export interface Layer10Input {
   transitions: StateTransition[];
 }
 
-export const LAYER_VERSION = '2.1.0';
-export const RULE_VERSION = '2.1.0';
+export const LAYER_VERSION = '2.2.0';
+export const RULE_VERSION = '2.2.0';
 
 export interface PatternRule {
   rule_id: string;
@@ -93,6 +93,32 @@ export const RULE_MANIFEST: { rules: PatternRule[]; missing_date_policy: 'unreso
       ],
       time_window_days: 730,
       min_independent_source_artifacts: 3,
+      same_entity: true,
+    },
+    {
+      rule_id: 'poa_bypass_isolation_v1',
+      pattern_type: 'poa_bypass_isolation_structural_match',
+      description: 'Alternate or estranged family contacted using instrument-derived information, followed by the engaged advocate being characterized as difficult and decision or access points proceeding around them',
+      required_sequence: [
+        { to_state: 'alternate_family_contacted', role: 'advocate_bypass_initiated' },
+        { to_state: 'advocate_characterized_difficult', role: 'advocate_reframed' },
+        { to_state: 'care_conference_referenced', role: 'decision_point_around_advocate' },
+      ],
+      time_window_days: 180,
+      min_independent_source_artifacts: 1,
+      same_entity: true,
+    },
+    {
+      rule_id: 'facility_neglect_sequence_v1',
+      pattern_type: 'facility_neglect_structural_match',
+      description: 'Documented care deficit followed by hospitalization and billing or readmission restriction while hospitalized',
+      required_sequence: [
+        { to_state: 'care_deficit_documented', role: 'documented_deficit' },
+        { to_state: 'facility_hospitalization', role: 'resulting_hospitalization' },
+        { to_state: 'bed_hold_charged', role: 'billing_during_hospitalization' },
+      ],
+      time_window_days: 365,
+      min_independent_source_artifacts: 1,
       same_entity: true,
     },
   ],
@@ -183,7 +209,10 @@ function matchSequence(transitions: StateTransition[], rule: PatternRule): Seque
     if (!a.transition_date && !b.transition_date) return a.transition_id.localeCompare(b.transition_id);
     if (!a.transition_date) return 1;
     if (!b.transition_date) return -1;
-    return a.transition_date.localeCompare(b.transition_date) || a.transition_id.localeCompare(b.transition_id);
+    return a.transition_date.localeCompare(b.transition_date)
+      || a.source_artifact_key.localeCompare(b.source_artifact_key)
+      || (a.source_span_offset - b.source_span_offset)
+      || a.transition_id.localeCompare(b.transition_id);
   });
 
   const matchedTransitions: StateTransition[] = [];

@@ -31,8 +31,8 @@ export interface Layer11Input {
   transitions: StateTransition[];
 }
 
-export const LAYER_VERSION = '2.1.0';
-export const RULE_VERSION = '2.1.0';
+export const LAYER_VERSION = '2.2.0';
+export const RULE_VERSION = '2.2.0';
 
 export interface CascadeRule {
   rule_id: string;
@@ -81,6 +81,30 @@ export const RULE_MANIFEST: {
         { to_state: 'policy_cancelled', role: 'insurance_loss_event' },
       ],
       max_window_days: 90,
+      same_entity: true,
+    },
+    {
+      rule_id: 'facility_neglect_cascade_v1',
+      match_type: 'facility_neglect_cascade',
+      description: 'Documented care deficit followed by hospitalization and a bed-hold charge while hospitalized',
+      steps: [
+        { to_state: 'care_deficit_documented', role: 'precipitating_care_deficit' },
+        { to_state: 'facility_hospitalization', role: 'downstream_hospitalization' },
+        { to_state: 'bed_hold_charged', role: 'financial_penalty_during_hospitalization' },
+      ],
+      max_window_days: 365,
+      same_entity: true,
+    },
+    {
+      rule_id: 'advocate_isolation_cascade_v1',
+      match_type: 'advocate_isolation_cascade',
+      description: 'Alternate family contact followed by advocate reframing and an access or decision restriction',
+      steps: [
+        { to_state: 'alternate_family_contacted', role: 'bypass_event' },
+        { to_state: 'advocate_characterized_difficult', role: 'reframing_event' },
+        { to_state: 'access_restricted', role: 'restriction_event' },
+      ],
+      max_window_days: 180,
       same_entity: true,
     },
   ],
@@ -190,7 +214,10 @@ function matchCascadeSequence(transitions: StateTransition[], rule: CascadeRule)
     if (!a.transition_date && !b.transition_date) return a.transition_id.localeCompare(b.transition_id);
     if (!a.transition_date) return 1;
     if (!b.transition_date) return -1;
-    return a.transition_date.localeCompare(b.transition_date) || a.transition_id.localeCompare(b.transition_id);
+    return a.transition_date.localeCompare(b.transition_date)
+      || a.source_artifact_key.localeCompare(b.source_artifact_key)
+      || (a.source_span_offset - b.source_span_offset)
+      || a.transition_id.localeCompare(b.transition_id);
   });
 
   const matchedTransitions: StateTransition[] = [];
