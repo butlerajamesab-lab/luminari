@@ -38,6 +38,13 @@ export interface RestorePreview {
   validation: ValidationResult;
 }
 
+// ─── Helpers ───
+
+/** Quote a Postgres identifier safely */
+function quoteIdent(name: string): string {
+  return `"${name.replace(/"/g, '""')}"`;
+}
+
 // ─── Core Functions ───
 
 /** Parse and validate a bundle JSON */
@@ -132,21 +139,39 @@ async function restoreConfig(config: any): Promise<{ restoredEngines: string[]; 
   const restoredEngines: string[] = [];
   const restoredStreams: string[] = [];
 
-  // Restore engines
+  // Restore engines (drizzle select-then-insert/update — Postgres compatible)
   if (config.engines && Array.isArray(config.engines)) {
     for (const engine of config.engines) {
       try {
-        // Upsert: try insert, on duplicate update
-        await db.execute(sql.raw(`
-          INSERT INTO engine_registry (engine_id_er, engine_name_er, description_er, category_er, enabled_er, sort_order_er, config_json_er, version_er, created_at_er, updated_at_er)
-          VALUES (${db.execute(sql`SELECT ${engine.engineId}`)}, ${db.execute(sql`SELECT ${engine.engineName}`)}, NULL, NULL, 1, 0, NULL, NULL, ${Date.now()}, ${Date.now()})
-          ON DUPLICATE KEY UPDATE engine_name_er = VALUES(engine_name_er), updated_at_er = ${Date.now()}
-        `)).catch(() => {
-          // Simplified: just insert if not exists
-        });
+        const existing = await db.select().from(engineRegistry).where(eq(engineRegistry.engineId, engine.engineId));
+        if (existing.length === 0) {
+          await db.insert(engineRegistry).values({
+            engineId: engine.engineId,
+            engineName: engine.engineName,
+            category: engine.category ?? null,
+            enabled: engine.enabled ?? true,
+            sortOrder: engine.sortOrder ?? 0,
+            configJson: engine.config ?? null,
+            version: engine.version ?? null,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          } as any);
+        } else {
+          await db.update(engineRegistry)
+            .set({
+              engineName: engine.engineName,
+              category: engine.category ?? null,
+              enabled: engine.enabled ?? true,
+              sortOrder: engine.sortOrder ?? 0,
+              configJson: engine.config ?? null,
+              version: engine.version ?? null,
+              updatedAt: Date.now(),
+            } as any)
+            .where(eq(engineRegistry.engineId, engine.engineId));
+        }
         restoredEngines.push(engine.engineId);
       } catch {
-        // Skip duplicates
+        // Skip individual engine errors
       }
     }
   }
@@ -225,8 +250,8 @@ export async function executeRestore(
   // Validate first
   const preview = await validateBundle(bundleJson);
 
-  // Create run record
-  const [insertResult] = await db.insert(restoreSpineRuns).values({
+  // Create run record (Postgres: use RETURNING to get the new run id)
+  const inserted = await db.insert(restoreSpineRuns).values({
     bundleName,
     restoreType,
     status: "validating",
@@ -235,8 +260,8 @@ export async function executeRestore(
     manifestChecksum: bundle._manifest?.checksum,
     validationResult: preview.validation,
     startedAt: Date.now(),
-  });
-  const runId = (insertResult as any).insertId;
+  }).returning({ id: restoreSpineRuns.id });
+  const runId = (inserted[0] as any).id as number;
 
   try {
     // Update to restoring
@@ -278,8 +303,8 @@ export async function executeRestore(
         try {
           if (dataExport.rows && dataExport.rows.length > 0 && dataExport.tableName) {
             // Only restore into empty tables to avoid conflicts
-            const countResult = await db.execute(sql.raw(`SELECT COUNT(*) as cnt FROM \`${dataExport.tableName}\``));
-            const currentCount = ((countResult[0] as unknown as any[])[0] as any)?.cnt || 0;
+            const countResult = await db.execute(sql.raw(`SELECT COUNT(*) as cnt FROM ${quoteIdent(dataExport.tableName)}`));
+            const currentCount = Number(((countResult[0] as unknown as any[])[0] as any)?.cnt) || 0;
             if (currentCount === 0) {
               for (const row of dataExport.rows) {
                 const cols = Object.keys(row);
@@ -287,13 +312,13 @@ export async function executeRestore(
                   const v = row[c];
                   if (v === null || v === undefined) return "NULL";
                   if (typeof v === "number") return String(v);
-                  if (typeof v === "boolean") return v ? "1" : "0";
+                  if (typeof v === "boolean") return v ? "TRUE" : "FALSE";
                   if (typeof v === "object") return `'${JSON.stringify(v).replace(/'/g, "''")}'`;
                   return `'${String(v).replace(/'/g, "''")}'`;
                 });
                 try {
                   await db.execute(sql.raw(
-                    `INSERT INTO \`${dataExport.tableName}\` (${cols.map(c => `\`${c}\``).join(",")}) VALUES (${vals.join(",")})`
+                    `INSERT INTO ${quoteIdent(dataExport.tableName)} (${cols.map(quoteIdent).join(",")}) VALUES (${vals.join(",")})`
                   ));
                 } catch {
                   // Skip individual row errors
@@ -308,7 +333,7 @@ export async function executeRestore(
       }
     }
 
-    const status = errors.length > 0 ? "completed" : "completed";
+    const status = "completed";
 
     await db.update(restoreSpineRuns)
       .set({
