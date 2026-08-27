@@ -3,8 +3,8 @@ import JSZip from "jszip";
 import { getPool } from "../db";
 import { SUPABASE_PROJECT } from "../_core/health-diagnostics";
 
-export const FRESH_CORPUS_ENGINE_VERSION = "fresh_corpus_reconciliation_v1.2.1";
-export const FRESH_CORPUS_PARSER_VERSION = "fresh_registry_typed_parser_v1.2.1";
+export const FRESH_CORPUS_ENGINE_VERSION = "fresh_corpus_reconciliation_v1.2.2";
+export const FRESH_CORPUS_PARSER_VERSION = "fresh_registry_typed_parser_v1.2.2";
 
 const STATE_NAMES: Record<string, string> = {
   Alabama: "AL", Alaska: "AK", Arizona: "AZ", Arkansas: "AR", California: "CA",
@@ -140,6 +140,19 @@ function sha256(input: Buffer | string): string {
   return crypto.createHash("sha256").update(input).digest("hex");
 }
 
+// Postgres text columns reject NUL bytes, and jsonb rejects both NUL bytes
+// and unpaired UTF-16 surrogates ("unsupported Unicode escape sequence").
+// Binary artifacts decoded as UTF-8 (archives, PDFs, images) contain all of
+// these. Every string that will reach a database parameter passes through
+// this sanitizer so preservation succeeds with a classified receipt instead
+// of a parse failure. The immutable source bytes and their hashes in Storage
+// are never touched — only the derived text projection is cleaned.
+function sanitizeUnicodeForStorage(value: string): string {
+  return value
+    .replace(/ /g, "")
+    .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, "\uFFFD");
+}
+
 function stable(value: unknown): string {
   if (value === null || value === undefined) return "null";
   if (Array.isArray(value)) return `[${value.map(stable).join(",")}]`;
@@ -147,6 +160,7 @@ function stable(value: unknown): string {
     const record = value as Record<string, unknown>;
     return `{${Object.keys(record).sort().map(key => `${JSON.stringify(key)}:${stable(record[key])}`).join(",")}}`;
   }
+  if (typeof value === "string") return JSON.stringify(sanitizeUnicodeForStorage(value));
   return JSON.stringify(value);
 }
 
@@ -155,7 +169,7 @@ function compact(value: unknown): string {
 }
 
 function nullable(value: unknown, max = 4000): string | null {
-  const cleaned = compact(value);
+  const cleaned = sanitizeUnicodeForStorage(compact(value));
   return cleaned ? cleaned.slice(0, max) : null;
 }
 
@@ -479,27 +493,31 @@ function candidate(ctx: ParseContext, input: Omit<Candidate, "candidate_key" | "
     candidate_hash: candidateHash,
     parser_version: FRESH_CORPUS_PARSER_VERSION,
   }));
+  // Sanitize every free-text field before it reaches a database parameter.
+  // Short fields are cheap to clean; raw_excerpt is the one that carries
+  // binary-decoded text from archives and PDFs.
+  const clean = (value: string | null): string | null => value === null ? null : sanitizeUnicodeForStorage(value);
   return {
     candidate_key: candidateKey,
     run_id: ctx.runId,
     artifact_key: ctx.artifact.artifact_key,
     candidate_type: input.candidate_type,
-    source_locator: input.source_locator,
+    source_locator: sanitizeUnicodeForStorage(input.source_locator),
     jurisdiction: jurisdiction.jurisdiction,
     state_code: jurisdiction.stateCode,
-    section_name: input.section_name,
-    name: input.name,
-    organization_name: input.organization_name,
-    category: input.category,
-    layer: input.layer,
-    phone: input.phone,
-    email: input.email,
-    website_url: input.website_url,
-    address: input.address,
-    eligibility_summary: input.eligibility_summary,
-    apply_notes: input.apply_notes,
-    description: input.description,
-    raw_excerpt: input.raw_excerpt,
+    section_name: clean(input.section_name),
+    name: clean(input.name),
+    organization_name: clean(input.organization_name),
+    category: clean(input.category),
+    layer: clean(input.layer),
+    phone: clean(input.phone),
+    email: clean(input.email),
+    website_url: clean(input.website_url),
+    address: clean(input.address),
+    eligibility_summary: clean(input.eligibility_summary),
+    apply_notes: clean(input.apply_notes),
+    description: clean(input.description),
+    raw_excerpt: clean(input.raw_excerpt),
     parser_version: FRESH_CORPUS_PARSER_VERSION,
     candidate_hash: candidateHash,
     source_content_sha256: ctx.contentSha256,
