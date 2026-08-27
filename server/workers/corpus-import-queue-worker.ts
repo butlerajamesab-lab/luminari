@@ -310,7 +310,11 @@ if (is_direct_worker_entry()) {
 // bounded work without entering the historical infinite worker loop. This is
 // the canonical startup hook so tRPC route imports cannot create duplicate
 // timers or duplicate runs.
-if (process.env.NODE_ENV === "production" && !is_direct_worker_entry()) {
+//
+// FRESH_CORPUS_RECONCILIATION_DISABLED=true is the operator kill switch: the
+// loop runs database work and archive parsing inside the same process as the
+// HTTP front door, so it must be possible to silence it without a redeploy.
+if (process.env.NODE_ENV === "production" && !is_direct_worker_entry() && process.env.FRESH_CORPUS_RECONCILIATION_DISABLED !== "true") {
   let automaticReconciliationRunning = false;
   const reconcile = () => {
     if (automaticReconciliationRunning) return;
