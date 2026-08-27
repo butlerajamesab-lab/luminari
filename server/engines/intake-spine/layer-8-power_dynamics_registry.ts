@@ -16,8 +16,8 @@ export interface PowerDynamic {
   asymmetry_level: 'high' | 'medium' | 'low' | 'unresolved';
 }
 
-export const LAYER_VERSION = '2.1.0';
-export const RULE_VERSION = '2.1.0';
+export const LAYER_VERSION = '2.2.0';
+export const RULE_VERSION = '2.2.0';
 
 type PowerRule = {
   authority_role: string | null;
@@ -36,6 +36,9 @@ export const RULE_MANIFEST: { rules: Record<RelationshipType, PowerRule> } = {
     legal_representative_client: { authority_role: 'representative', subject_role: 'client', direction_mode: 'service_fiduciary', level: 'low' },
     family: { authority_role: null, subject_role: null, direction_mode: 'bidirectional', level: 'unresolved' },
     opposing_party: { authority_role: null, subject_role: null, direction_mode: 'context_dependent', level: 'unresolved' },
+    caregiver_recipient: { authority_role: 'caregiver', subject_role: 'care_recipient', direction_mode: 'service_fiduciary', level: 'high' },
+    facility_resident: { authority_role: 'facility', subject_role: 'resident', direction_mode: 'authority_over_subject', level: 'high' },
+    authorized_representative_subject: { authority_role: 'authorized_representative', subject_role: 'represented_person', direction_mode: 'service_fiduciary', level: 'medium' },
   },
 };
 export const RULE_MANIFEST_HASH = computeRuleManifestHash(RULE_MANIFEST);
