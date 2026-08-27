@@ -24,8 +24,8 @@ export interface Layer4Input {
   artifacts: ParsedArtifact[];
 }
 
-export const LAYER_VERSION = '2.2.0';
-export const RULE_VERSION = '2.2.0';
+export const LAYER_VERSION = '2.3.0';
+export const RULE_VERSION = '2.3.0';
 
 type DateRule = {
   regex: { source: string; flags: string };
@@ -46,10 +46,20 @@ export const RULE_MANIFEST: {
       precision: 'exact',
       format: 'month_day_year',
     },
+    {
+      regex: { source: '\\b((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)\\.?\\s+\\d{1,2},?\\s+\\d{4})\\b', flags: 'gi' },
+      precision: 'exact',
+      format: 'month_day_year',
+    },
     { regex: { source: '\\b(\\d{1,2}\\/\\d{1,2}\\/\\d{4})\\b', flags: 'g' }, precision: 'exact', format: 'us_numeric' },
     { regex: { source: '\\b(\\d{4}-\\d{2}-\\d{2})\\b', flags: 'g' }, precision: 'exact', format: 'iso_date' },
     {
       regex: { source: '\\b((?:January|February|March|April|May|June|July|August|September|October|November|December)\\s+\\d{4})\\b', flags: 'gi' },
+      precision: 'month',
+      format: 'month_year',
+    },
+    {
+      regex: { source: '\\b((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)\\.?\\s+\\d{4})\\b', flags: 'gi' },
       precision: 'month',
       format: 'month_year',
     },
@@ -221,7 +231,8 @@ function normalizeDate(
   } else {
     const monthNames = ['january','february','march','april','may','june','july','august','september','october','november','december'];
     const parts = trimmed.split(/\s+/);
-    month = monthNames.indexOf(parts[0].toLowerCase()) + 1;
+    const monthToken = parts[0].toLowerCase().replace(/\.$/, '');
+    month = monthNames.findIndex(name => name.startsWith(monthToken) || monthToken.startsWith(name.slice(0, 3))) + 1;
     if (month <= 0) return null;
     if (format === 'month_year') {
       day = 1;
