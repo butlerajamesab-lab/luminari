@@ -117,6 +117,17 @@ export async function getPatternTypeId(patternType: PatternTypeValue): Promise<n
   return row.id;
 }
 
+/** True when the error is a unique-constraint violation (Postgres 23505 or legacy MySQL wording) */
+function isDuplicateKeyError(err: any): boolean {
+  return err?.code === "23505"
+    || err?.code === "ER_DUP_ENTRY"
+    || err?.message?.includes("duplicate key value")
+    || err?.message?.includes("Duplicate entry")
+    || err?.cause?.code === "23505"
+    || err?.cause?.message?.includes("duplicate key value")
+    || err?.cause?.message?.includes("Duplicate entry");
+}
+
 /**
  * Register a pattern occurrence. Upserts the pattern (by signature) and
  * records the occurrence (deduplicated by UNIQUE constraint).
@@ -165,7 +176,7 @@ export async function registerPatternOccurrence(params: {
       .where(eq(patterns.id, patternId as any));
   } else {
     isNewPattern = true;
-    const [inserted] = await db.insert(patterns).values({
+    const inserted = await db.insert(patterns).values({
       patternType: params.patternType,
       signature,
       description: params.description,
@@ -173,8 +184,8 @@ export async function registerPatternOccurrence(params: {
       lastSeenAt: now,
       occurrenceCount: 1,
       createdAt: now,
-    });
-    patternId = inserted.insertId;
+    }).returning({ id: patterns.id });
+    patternId = (inserted[0] as any).id as number;
   }
 
   // T2.3: Insert occurrence (deduplicated by UNIQUE constraint)
@@ -182,7 +193,7 @@ export async function registerPatternOccurrence(params: {
   let isNewOccurrence = false;
 
   try {
-    const [inserted] = await db.insert(patternOccurrences).values({
+    const inserted = await db.insert(patternOccurrences).values({
       patternId,
       caseId: params.caseId,
       entityId: params.entityId ?? null,
@@ -190,12 +201,12 @@ export async function registerPatternOccurrence(params: {
       evidenceReferenceId: params.evidenceReferenceId,
       evidenceReferenceType: params.evidenceReferenceType,
       createdAt: now,
-    });
-    occurrenceId = inserted.insertId;
+    }).returning({ id: patternOccurrences.id });
+    occurrenceId = (inserted[0] as any).id as number;
     isNewOccurrence = true;
   } catch (err: any) {
     // Duplicate entry — occurrence already exists
-    if (err.code === "ER_DUP_ENTRY" || err.message?.includes("Duplicate entry") || err.cause?.message?.includes("Duplicate entry")) {
+    if (isDuplicateKeyError(err)) {
       // Revert the occurrenceCount increment since this was a duplicate
       if (!isNewPattern) {
         await db.update(patterns)
@@ -859,7 +870,8 @@ export async function getPatternTrendData(userId: number): Promise<{
   totalOccurrences: number;
   dateRange: { earliest: string | null; latest: string | null };
 }> {
-  // T6.1: Query occurrences grouped by date and pattern type
+  // T6.1: Query occurrences grouped by date and pattern type (Postgres date math)
+  const dayExpr = sql`to_timestamp(${patternOccurrences.createdAt} / 1000.0)::date`;
   const rows = await db.select({
     patternType: patternTypes.patternType,
     createdAt: patternOccurrences.createdAt,
@@ -870,21 +882,15 @@ export async function getPatternTrendData(userId: number): Promise<{
     .innerJoin(patternTypes, eq(patterns.patternType, patternTypes.patternType))
     .innerJoin(cases, eq(patternOccurrences.caseId as any, cases.id))
     .where(eq(cases.userId, userId as any))
-    .groupBy(
-      patternTypes.patternType,
-      sql`DATE(FROM_UNIXTIME(${patternOccurrences.createdAt} / 1000))`
-    )
-    .orderBy(
-      sql`DATE(FROM_UNIXTIME(${patternOccurrences.createdAt} / 1000))`,
-      patternTypes.patternType
-    );
+    .groupBy(patternTypes.patternType, dayExpr)
+    .orderBy(dayExpr, patternTypes.patternType);
 
   // T6.2: Build daily counts keyed by date+type
   const dailyMap = new Map<string, Map<string, number>>();
   const allTypes = new Set<string>();
 
   for (const row of rows) {
-    const dateStr = new Date(row.createdAt).toISOString().split("T")[0];
+    const dateStr = new Date(Number(row.createdAt)).toISOString().split("T")[0];
     allTypes.add(row.patternType);
 
     if (!dailyMap.has(dateStr)) {

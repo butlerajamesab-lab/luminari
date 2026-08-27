@@ -265,9 +265,9 @@ export async function registerEntity(params: {
     return existing;
   }
 
-  // Insert new entity
+  // Insert new entity (Postgres: RETURNING gives us the new id)
   const aliases = ALIAS_MAP[canonicalName] ?? [];
-  const [inserted] = await db.insert(entityRegistry).values({
+  const inserted = await db.insert(entityRegistry).values({
     entityName: params.entityName,
     canonicalName,
     entityType,
@@ -284,9 +284,9 @@ export async function registerEntity(params: {
     lastSeenAt: now,
     createdAt: now,
     updatedAt: now,
-  });
+  }).returning({ id: entityRegistry.id });
 
-  return { id: inserted.insertId, canonicalName, entityType };
+  return { id: (inserted[0] as any).id as number, canonicalName, entityType };
 }
 
 /**
@@ -417,16 +417,16 @@ export async function createRelationship(params: {
     return existing;
   }
 
-  const [inserted] = await db.insert(entityRelationships).values({
+  const inserted = await db.insert(entityRelationships).values({
     entityIdA: params.entityIdA,
     entityIdB: params.entityIdB,
     relationshipType: params.relationshipType,
     confidenceScore: params.confidenceScore ?? 50,
     evidenceSource: params.evidenceSource ?? null,
     createdAt: Date.now(),
-  });
+  }).returning({ id: entityRelationships.id });
 
-  return { id: inserted.insertId };
+  return { id: (inserted[0] as any).id as number };
 }
 
 // ─── T6. Entity Confidence Score ───
