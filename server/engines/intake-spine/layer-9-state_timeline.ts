@@ -27,8 +27,8 @@ export interface Layer9Input {
   artifacts: ParsedArtifact[];
 }
 
-export const LAYER_VERSION = '2.2.0';
-export const RULE_VERSION = '2.2.0';
+export const LAYER_VERSION = '2.4.0';
+export const RULE_VERSION = '2.4.0';
 
 type StateRule = {
   regex: { source: string; flags: string };
@@ -75,10 +75,32 @@ export const RULE_MANIFEST: {
     { regex: { source: '\\bfiled (?:a )?complaint\\b', flags: 'gi' }, to_state: 'complaint_filed', domain: 'legal' },
     { regex: { source: '\\bfiled (?:a )?(?:law)?suit\\b', flags: 'gi' }, to_state: 'lawsuit_filed', domain: 'legal' },
     { regex: { source: '\\bcharge(?:d)? (?:was )?filed\\b', flags: 'gi' }, to_state: 'charge_filed', domain: 'legal' },
+    { regex: { source: '\\bmov(?:e|ed|ing) (?:in)?to (?:a )?(?:room in )?(?:long[ -]term care|(?:a )?nursing home|(?:a )?(?:care )?facility)\\b', flags: 'gi' }, to_state: 'facility_admission', domain: 'facility_care' },
+    { regex: { source: '\\b(?:was |been )?(?:admitted to|taken to|sent to|transported to) (?:the )?hospital\\b', flags: 'gi' }, to_state: 'facility_hospitalization', domain: 'facility_care' },
+    { regex: { source: '\\bin the hospital\\b', flags: 'gi' }, to_state: 'facility_hospitalization', domain: 'facility_care' },
+    { regex: { source: '\\bbed[ -]?hold\\b', flags: 'gi' }, to_state: 'bed_hold_charged', domain: 'facility_care' },
+    { regex: { source: '\\bcharging\\b.{0,60}\\bhold\\b.{0,20}\\bbed\\b', flags: 'gi' }, to_state: 'bed_hold_charged', domain: 'facility_care' },
+    { regex: { source: '\\breadmi(?:t|tted|ssion)\\b', flags: 'gi' }, to_state: 'readmission_restricted', domain: 'facility_care' },
+    { regex: { source: '\\bdehydrat(?:ion|ed)\\b', flags: 'gi' }, to_state: 'care_deficit_documented', domain: 'facility_care' },
+    { regex: { source: '\\bnot (?:been )?(?:getting|received?|given)\\b.{0,40}\\b(?:fluids?|water|hydration|food|medication|care)\\b', flags: 'gi' }, to_state: 'care_deficit_documented', domain: 'facility_care' },
+    { regex: { source: '\\bheat exhaustion\\b', flags: 'gi' }, to_state: 'environmental_hazard_documented', domain: 'facility_care' },
+    { regex: { source: '\\bcare (?:conference|plan meeting)\\b', flags: 'gi' }, to_state: 'care_conference_referenced', domain: 'facility_care' },
+    { regex: { source: '\\b(?:phone (?:number|#)|contact info(?:rmation)?)\\b.{0,60}\\b(?:POA|power of attorney)\\b', flags: 'gi' }, to_state: 'poa_instrument_info_used', domain: 'elder_advocacy' },
+    { regex: { source: '\\b(?:POA|power of attorney)\\b.{0,80}\\b(?:phone (?:number|#)|contact info(?:rmation)?)\\b', flags: 'gi' }, to_state: 'poa_instrument_info_used', domain: 'elder_advocacy' },
+    { regex: { source: '\\b(?:called|contacted|reached out to|invited)\\b.{0,60}\\b(?:estranged|backup|son|daughter|relative)\\b', flags: 'gi' }, to_state: 'alternate_family_contacted', domain: 'elder_advocacy' },
+    { regex: { source: '\\bbrand(?:ing|ed)? (?:me|her|him|them) as ["“]?difficult\\b', flags: 'gi' }, to_state: 'advocate_characterized_difficult', domain: 'elder_advocacy' },
+    { regex: { source: '\\brestraining order\\b', flags: 'gi' }, to_state: 'access_restricted', domain: 'elder_advocacy' },
+    { regex: { source: '\\brestrict(?:ing|ed|ion)?s?\\b.{0,40}\\b(?:access|visit)\\b', flags: 'gi' }, to_state: 'access_restricted', domain: 'elder_advocacy' },
+    { regex: { source: '\\bcharge\\b.{0,30}\\bper page\\b', flags: 'gi' }, to_state: 'records_access_obstructed', domain: 'elder_advocacy' },
+    { regex: { source: '\\binspector(?:s)? (?:were |was )?(?:there|here|coming|on[ -]?site)\\b', flags: 'gi' }, to_state: 'inspection_observed', domain: 'facility_care' },
   ],
   date_rules: [
     {
       regex: { source: '\\b((?:January|February|March|April|May|June|July|August|September|October|November|December)\\s+\\d{1,2},?\\s+\\d{4})\\b', flags: 'i' },
+      format: 'month_day_year',
+    },
+    {
+      regex: { source: '\\b((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)\\.?\\s+\\d{1,2},?\\s+\\d{4})\\b', flags: 'i' },
       format: 'month_day_year',
     },
     { regex: { source: '\\b(\\d{1,2}\\/\\d{1,2}\\/\\d{4})\\b', flags: '' }, format: 'us_numeric' },
@@ -256,7 +278,9 @@ function normalizeDate(value: string, format: DateRule['format']): string | null
   } else {
     const monthNames = ['january','february','march','april','may','june','july','august','september','october','november','december'];
     const parts = trimmed.split(/\s+/);
-    month = monthNames.indexOf(parts[0].toLowerCase()) + 1;
+    const monthToken = parts[0].toLowerCase().replace(/\.$/, '');
+    month = monthNames.findIndex(name => name.startsWith(monthToken) || monthToken.startsWith(name.slice(0, 3))) + 1;
+    if (month <= 0) return null;
     day = Number(parts[1]);
     year = Number(parts[2]);
   }
