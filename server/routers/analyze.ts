@@ -5,6 +5,7 @@ import * as db_helpers from '../db';
 import { execute_intake_spine_session, INTAKE_SPINE_LAYER_NAMES } from '../intake-spine-orchestrator';
 import { read_canonical_case_layer_outputs } from '../intake-case-layer-reader';
 import { read_case_intake_integrity_projection } from '../intake-case-integrity-projection';
+import { promoteCaseIntakeSignals } from '../intake-signal-promotion';
 import type { VerificationRecord } from '../engines/intake-spine/layer-5-verification_gate';
 import type { DetectedPattern } from '../engines/intake-spine/layer-10-pattern_registry';
 import type { CascadeChain } from '../engines/intake-spine/layer-11-cascade_registry';
@@ -17,7 +18,8 @@ export const analyzeRouter = router({
   /**
    * Execute the governed Universal Intake Spine for the one live upload session
    * bound to this case. Preservation remains separate; this is an explicit
-   * analysis action.
+   * analysis action. After a governed execution completes, its sealed outputs
+   * are promoted into Domain 1 intake signals so convergence can fire.
    */
   runIntakeSpine: protectedProcedure
     .input(z.object({
@@ -57,6 +59,10 @@ export const analyzeRouter = router({
         jurisdiction: input.jurisdiction,
         as_of: input.asOf,
       });
+      const promotion = await promoteCaseIntakeSignals(
+        input.caseId,
+        input.jurisdiction.trim().toUpperCase(),
+      );
       await db_helpers.logAudit({
         caseId: input.caseId,
         userId: ctx.user.id,
@@ -70,9 +76,42 @@ export const analyzeRouter = router({
           source_artifact_count: result.source_artifact_count,
           sealed_receipt_count: result.receipts.length,
           receipt_hashes: result.receipts.map(receipt => receipt.receipt_hash),
+          promoted_signal_count: promotion.new_signal_count,
         },
       });
-      return result;
+      return { ...result, promotion };
+    }),
+
+  /**
+   * Promote sealed intake spine outputs into Domain 1 intake signals without
+   * re-running the engines. Backfills cases whose governed execution already
+   * completed before the promotion writer existed. Idempotent by signal_hash.
+   */
+  promoteIntakeSignals: protectedProcedure
+    .input(z.object({
+      caseId: z.number().int().positive(),
+      jurisdiction: z.string().trim().min(1).max(32).optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await db_helpers.verifyCaseWriteAccess(input.caseId, ctx.user.id);
+      const promotion = await promoteCaseIntakeSignals(
+        input.caseId,
+        input.jurisdiction?.trim().toUpperCase(),
+      );
+      await db_helpers.logAudit({
+        caseId: input.caseId,
+        userId: ctx.user.id,
+        action: 'promote_intake_signals',
+        targetType: 'case',
+        targetId: input.caseId,
+        details: {
+          candidate_count: promotion.candidate_count,
+          new_signal_count: promotion.new_signal_count,
+          existing_signal_count: promotion.existing_signal_count,
+          promoted_layers: promotion.promoted_layers,
+        },
+      });
+      return promotion;
     }),
 
   /**
