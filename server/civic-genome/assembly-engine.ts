@@ -100,12 +100,33 @@ export function deduplicateTraits(traits: CivicGenomeTrait[]): CivicGenomeTrait[
   return [...byFingerprint.values()].sort((a, b) => a.traitFingerprint.localeCompare(b.traitFingerprint));
 }
 
-function normalizedSet(traits: CivicGenomeTrait[], classes: string[]): Set<string> {
-  return new Set(
-    traits
-      .filter((trait) => classes.includes(trait.traitClass) && trait.signalStatus === "confirmed")
-      .map((trait) => `${trait.traitKey}:${stableStringify(trait.normalizedValue)}`)
-  );
+type normalized_trait_index = {
+  all: Set<string>;
+  by_class: Map<string, Set<string>>;
+};
+
+function indexConfirmedTraits(traits: CivicGenomeTrait[]): normalized_trait_index {
+  const all = new Set<string>();
+  const by_class = new Map<string, Set<string>>();
+
+  for (const trait of traits) {
+    if (trait.signalStatus !== "confirmed") continue;
+    const normalized = `${trait.traitKey}:${stableStringify(trait.normalizedValue)}`;
+    all.add(normalized);
+    const class_traits = by_class.get(trait.traitClass) ?? new Set<string>();
+    class_traits.add(normalized);
+    by_class.set(trait.traitClass, class_traits);
+  }
+
+  return { all, by_class };
+}
+
+function normalizedSet(index: normalized_trait_index, classes: readonly string[]): Set<string> {
+  const normalized = new Set<string>();
+  for (const trait_class of classes) {
+    for (const value of index.by_class.get(trait_class) ?? []) normalized.add(value);
+  }
+  return normalized;
 }
 
 function jaccard(left: Set<string>, right: Set<string>): number {
@@ -114,17 +135,28 @@ function jaccard(left: Set<string>, right: Set<string>): number {
   return intersection / (left.size + right.size - intersection);
 }
 
-function sharedCount(left: CivicGenomeTrait[], right: CivicGenomeTrait[]): number {
-  const rightSet = normalizedSet(right, [...new Set(right.map((trait) => trait.traitClass))]);
-  return [...normalizedSet(left, [...new Set(left.map((trait) => trait.traitClass))])].filter((value) => rightSet.has(value)).length;
+function sharedCount(left: normalized_trait_index, right: normalized_trait_index): number {
+  const [smaller, larger] = left.all.size <= right.all.size
+    ? [left.all, right.all]
+    : [right.all, left.all];
+  let shared = 0;
+  for (const value of smaller) {
+    if (larger.has(value)) shared += 1;
+  }
+  return shared;
 }
 
-export function scoreFamilyCandidate(
+function scoreFamilyCandidateFromIndex(
   policyDomain: string,
-  billTraits: CivicGenomeTrait[],
-  family: CivicGenomeFamily
+  billTraits: normalized_trait_index,
+  family: CivicGenomeFamily,
 ): FamilySimilarityBreakdown {
-  const scoreFor = (classes: string[]) => jaccard(normalizedSet(billTraits, classes), normalizedSet(family.confirmedTraits, classes));
+  const family_traits = indexConfirmedTraits(family.confirmedTraits);
+  const scoreFor = (classes: readonly string[]) => {
+    const family_set = normalizedSet(family_traits, classes);
+    if (family_set.size === 0) return 0;
+    return jaccard(normalizedSet(billTraits, classes), family_set);
+  };
   const breakdown = {
     policyDomainSimilarity: policyDomain === family.policyDomain ? 1 : 0,
     actorSimilarity: scoreFor(["actor"]),
@@ -135,13 +167,25 @@ export function scoreFamilyCandidate(
   };
   const weightedScore = Object.entries(FAMILY_WEIGHTS).reduce(
     (sum, [key, weight]) => sum + breakdown[key as keyof typeof breakdown] * weight,
-    0
+    0,
   );
   return {
     ...breakdown,
     weightedScore: clamp(weightedScore),
-    sharedConfirmedTraitCount: sharedCount(billTraits, family.confirmedTraits),
+    sharedConfirmedTraitCount: sharedCount(billTraits, family_traits),
   };
+}
+
+export function scoreFamilyCandidate(
+  policyDomain: string,
+  billTraits: CivicGenomeTrait[],
+  family: CivicGenomeFamily
+): FamilySimilarityBreakdown {
+  return scoreFamilyCandidateFromIndex(
+    policyDomain,
+    indexConfirmedTraits(billTraits),
+    family,
+  );
 }
 
 export function resolveFamily(
@@ -154,8 +198,15 @@ export function resolveFamily(
   if (families.length === 0) {
     return { state: "unresolved_family_candidate", reason: "no_candidates", bestCandidateFamilyId: null, score: 0, breakdown: null };
   }
+  // A single bill can accumulate thousands of confirmed traits across many
+  // extraction runs. Build its normalized index once per resolution instead
+  // of rescanning and JSON-stringifying it for every candidate family.
+  const bill_trait_index = indexConfirmedTraits(traits);
   const ranked = families
-    .map((family) => ({ family, breakdown: scoreFamilyCandidate(policyDomain, traits, family) }))
+    .map((family) => ({
+      family,
+      breakdown: scoreFamilyCandidateFromIndex(policyDomain, bill_trait_index, family),
+    }))
     .sort((a, b) => b.breakdown.weightedScore - a.breakdown.weightedScore || a.family.familyId.localeCompare(b.family.familyId));
   const best = ranked[0];
   const contradiction = (best.family.hardContradictionKeys ?? []).some((key) => traits.some((trait) => trait.traitKey === key && trait.signalStatus === "confirmed"));

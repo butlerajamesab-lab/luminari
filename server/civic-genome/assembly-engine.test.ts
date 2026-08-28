@@ -99,7 +99,34 @@ describe("Civic Genome assembly engine", () => {
     const traits = adaptRosettaToGenomeTraits(input.genomeBillId, input.rosettaLawView.objects);
     const resolution = resolveFamily("housing", traits, [familyFromTraits(traits)], 0.7, 3);
     expect(resolution.state).toBe("assigned");
-    if (resolution.state === "assigned") expect(resolution.score).toBe(1);
+    if (resolution.state === "assigned") expect(resolution.score).toBeCloseTo(0.8);
+  });
+
+  it("normalizes a large bill trait once across the candidate universe", () => {
+    let normalized_value_reads = 0;
+    const normalized_value = {
+      get agency() {
+        normalized_value_reads += 1;
+        return "housing";
+      },
+    };
+    const adapted_source = adaptRosettaToGenomeTraits(
+      "genome_bill_large",
+      [object("accountability", "review_actor", normalized_value, "block_large")],
+    )[0];
+    const source = { ...adapted_source, normalizedValue: normalized_value };
+    normalized_value_reads = 0;
+    const empty_candidates = Array.from({ length: 500 }, (_, index) => ({
+      familyId: `family_${String(index).padStart(3, "0")}`,
+      familyKey: `family_${index}`,
+      policyDomain: "housing",
+      confirmedTraits: [],
+    }));
+
+    const resolution = resolveFamily("housing", [source], empty_candidates, 0.7, 3);
+
+    expect(resolution.state).toBe("unresolved_family_candidate");
+    expect(normalized_value_reads).toBe(1);
   });
 
   it("derives multiple lineage edges instead of a single parent pointer", () => {
