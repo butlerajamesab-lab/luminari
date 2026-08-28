@@ -1,11 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  acquire_prism_rosetta_circuit_request,
   get_prism_rosetta_circuit_snapshot,
   prism_rosetta_circuit_allows_request,
   prism_rosetta_request_timeout_ms,
   record_prism_rosetta_circuit_failure,
   record_prism_rosetta_circuit_success,
+  release_prism_rosetta_circuit_request,
   reset_prism_rosetta_circuit,
 } from "./prism-rosetta-client";
 import { PrismBoundaryError } from "./prism-verification-client";
@@ -60,7 +62,21 @@ describe("Prism Rosetta upstream circuit", () => {
     });
     expect(prism_rosetta_circuit_allows_request(902_999)).toBe(false);
     expect(get_prism_rosetta_circuit_snapshot(903_000).state).toBe("half_open");
-    expect(prism_rosetta_circuit_allows_request(903_000)).toBe(true);
+    expect(acquire_prism_rosetta_circuit_request("probe-1", 903_000)).toBe(
+      true,
+    );
+    expect(acquire_prism_rosetta_circuit_request("probe-2", 903_000)).toBe(
+      false,
+    );
+    expect(get_prism_rosetta_circuit_snapshot(903_000)).toMatchObject({
+      state: "half_open",
+      half_open_probe_request_id: "probe-1",
+    });
+    expect(prism_rosetta_circuit_allows_request(903_000)).toBe(false);
+    release_prism_rosetta_circuit_request("probe-1");
+    expect(acquire_prism_rosetta_circuit_request("probe-2", 903_000)).toBe(
+      true,
+    );
   });
 
   it("fails closed after one timeout for at least the measured upstream tail", () => {
