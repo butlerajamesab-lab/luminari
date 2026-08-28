@@ -37,10 +37,21 @@ import {
   get_civic_genome_rosetta_pipeline_status,
 } from "../civic-genome-operating-contracts";
 import { get_docket_verified_enrichment } from "../docket-verified-enrichment";
+import { background_workers_allowed } from "../runtime-role";
 
 const uuid_param = z.string().uuid();
 const source_bill_id_param = z.coerce.number().int().positive();
 const positive_integer_param = z.coerce.number().int().positive();
+
+const workerAdminProcedure = adminProcedure.use(({ next }) => {
+  if (!background_workers_allowed()) {
+    throw new TRPCError({
+      code: "SERVICE_UNAVAILABLE",
+      message: "background_runtime_required",
+    });
+  }
+  return next();
+});
 
 async function process_rosetta_pipeline_once(source_bill_id: number) {
   const status = await get_civic_genome_rosetta_pipeline_status(source_bill_id);
@@ -59,24 +70,24 @@ export const civicGenomeRouter = router({
   operating_contracts: publicProcedure
     .query(async () => get_civic_genome_operating_contracts()),
 
-  project_from_docket_cache: adminProcedure
+  project_from_docket_cache: workerAdminProcedure
     .input(z.object({
       state_code: z.string().max(10).optional(),
       limit: z.number().min(1).max(500).optional(),
     }).optional())
     .mutation(async ({ input }) => project_docket_cache_to_civic_genome(input ?? {})),
 
-  resolve_or_assemble_docket_bill: adminProcedure
+  resolve_or_assemble_docket_bill: workerAdminProcedure
     .input(z.object({ source_bill_id: source_bill_id_param }))
     .mutation(async ({ input }) => resolve_or_assemble_docket_bill(input.source_bill_id)),
 
   // This action is deliberately source-only. The UI label is "Create Rosetta
   // source handoff"; it must not synchronously run extraction + Genome assembly.
-  ingest_docket_bill_to_rosetta_source: adminProcedure
+  ingest_docket_bill_to_rosetta_source: workerAdminProcedure
     .input(z.object({ source_bill_id: source_bill_id_param }))
     .mutation(async ({ input }) => create_rosetta_source_handoff(input.source_bill_id)),
 
-  process_docket_bill_through_rosetta: adminProcedure
+  process_docket_bill_through_rosetta: workerAdminProcedure
     .input(z.object({ source_bill_id: source_bill_id_param }))
     .mutation(async ({ input }) => process_rosetta_pipeline_once(input.source_bill_id)),
 
@@ -92,7 +103,7 @@ export const civicGenomeRouter = router({
     .input(z.object({ source_bill_id: source_bill_id_param }))
     .query(async ({ input }) => get_civic_genome_rosetta_pipeline_status(input.source_bill_id)),
 
-  assemble_rosetta_structural_dna: adminProcedure
+  assemble_rosetta_structural_dna: workerAdminProcedure
     .input(z.object({
       genome_bill_id: uuid_param,
       source_document_id: positive_integer_param,
@@ -100,7 +111,7 @@ export const civicGenomeRouter = router({
     }))
     .mutation(async ({ input }) => assemble_rosetta_and_resolve_family(input)),
 
-  backfill_explicit_rosetta_bindings: adminProcedure
+  backfill_explicit_rosetta_bindings: workerAdminProcedure
     .input(z.object({
       bindings: z.array(z.object({
         genome_bill_id: uuid_param,
@@ -110,7 +121,7 @@ export const civicGenomeRouter = router({
     }))
     .mutation(async ({ input }) => backfill_explicit_rosetta_bindings(input.bindings)),
 
-  resolve_family: adminProcedure
+  resolve_family: workerAdminProcedure
     .input(z.object({ genome_bill_id: uuid_param }))
     .mutation(async ({ input }) => resolve_civic_genome_family(input.genome_bill_id)),
 

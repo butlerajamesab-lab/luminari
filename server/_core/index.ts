@@ -29,6 +29,10 @@ import { loadLensRegistry } from "../lens-engine";
 import { serveStatic, setupVite } from "./vite";
 import { livenessPayload, SUPABASE_PROJECT } from "./health-diagnostics";
 import { registerSecurityHeaders } from "./security-headers";
+import {
+  background_workers_allowed,
+  resolve_lighthouse_runtime_role,
+} from "../runtime-role";
 import { expireStaleUploadSessions, getPool } from "../db";
 import { initializeScheduler } from "../ingestion/scheduler";
 import { run_with_database_request_context } from "../db-request-context";
@@ -47,6 +51,7 @@ const runtime_fingerprint = Object.freeze({
   render_service_name: process.env.RENDER_SERVICE_NAME || null,
   node_env: process.env.NODE_ENV || null,
   auth_context_profile_resolution: "eager_profile_lookup_v1",
+  runtime_role: resolve_lighthouse_runtime_role(),
 });
 
 function isPortAvailable(port: number): Promise<boolean> {
@@ -247,44 +252,49 @@ async function startServer() {
   const port = await findAvailablePort(preferredPort);
   if (port !== preferredPort) console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
 
-  try {
-    await initializeScheduler();
-    console.log("[Startup] Ingestion scheduler initialized");
-  } catch (error) {
-    console.error("[Startup] Ingestion scheduler initialization failed:", error);
-  }
-
   server.listen(port, () => {
     console.log(`Luminari server running on http://localhost:${port}/`);
     console.log(`[Startup] Supabase project: ${SUPABASE_PROJECT}`);
     console.log("[Startup] Runtime fingerprint", runtime_fingerprint);
-    start_docket_state_cache_warmer(port);
-    void expireStaleUploadSessions().catch(error => {
-      console.error("[Upload Lifecycle] startup expiration failed", error);
-    });
     try { loadPipelineRegistry(); console.log("[Startup] Pipeline registry loaded"); } catch (e) { console.error("[Startup] Pipeline registry error:", e); }
     try { loadLensRegistry(); console.log("[Startup] Lens registry loaded"); } catch (e) { console.error("[Startup] Lens registry error:", e); }
-    void run_rosetta_control_repair_from_environment().catch(error => {
-      console.error("[RosettaControlRepair] failed", error);
-    });
-    void run_prism_rosetta_activation_from_environment().catch(error => {
-      console.error("[PrismRosettaActivation] failed", {
-        error_class: error instanceof Error ? error.name : "unknown",
-        error_message: error instanceof Error ? error.message : "unknown",
+
+    if (background_workers_allowed()) {
+      void expireStaleUploadSessions().catch(error => {
+        console.error("[Upload Lifecycle] startup expiration failed", error);
       });
-    });
-    void run_civic_genome_external_snapshot_proof_from_environment().catch(error => {
-      console.error("[CivicGenomeExternalSnapshotProof] failed", {
-        error_class: error instanceof Error ? error.name : "unknown",
-        error_message: error instanceof Error ? error.message : "unknown",
+      void initializeScheduler()
+        .then(() => console.log("[Startup] Ingestion scheduler initialized"))
+        .catch(error => {
+          console.error("[Startup] Ingestion scheduler initialization failed:", error);
+        });
+      start_docket_state_cache_warmer(port);
+      void run_rosetta_control_repair_from_environment().catch(error => {
+        console.error("[RosettaControlRepair] failed", error);
       });
-    });
-    void run_civic_genome_kaleidoscope_handoff_from_environment().catch(error => {
-      console.error("[CivicGenomeKaleidoscopeHandoff] failed", {
-        error_class: error instanceof Error ? error.name : "unknown",
-        error_message: error instanceof Error ? error.message : "unknown",
+      void run_prism_rosetta_activation_from_environment().catch(error => {
+        console.error("[PrismRosettaActivation] failed", {
+          error_class: error instanceof Error ? error.name : "unknown",
+          error_message: error instanceof Error ? error.message : "unknown",
+        });
       });
-    });
+      void run_civic_genome_external_snapshot_proof_from_environment().catch(error => {
+        console.error("[CivicGenomeExternalSnapshotProof] failed", {
+          error_class: error instanceof Error ? error.name : "unknown",
+          error_message: error instanceof Error ? error.message : "unknown",
+        });
+      });
+      void run_civic_genome_kaleidoscope_handoff_from_environment().catch(error => {
+        console.error("[CivicGenomeKaleidoscopeHandoff] failed", {
+          error_class: error instanceof Error ? error.name : "unknown",
+          error_message: error instanceof Error ? error.message : "unknown",
+        });
+      });
+    } else {
+      console.log("[RuntimeRole] HTTP-only process; background startup denied", {
+        ...resolve_lighthouse_runtime_role(),
+      });
+    }
   });
 
   process.on("SIGTERM", () => {

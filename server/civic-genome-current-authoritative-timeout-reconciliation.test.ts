@@ -35,6 +35,9 @@ describe("current authoritative legacy Rosetta timeout recovery", () => {
   it("runs recovery before the legislative-version worker begins claiming jobs", () => {
     const recoveryCall = startup.indexOf("await reconcile_current_authoritative_legacy_rosetta_timeouts()");
     const workerStart = startup.indexOf("start_legislative_version_queue_worker()");
+    expect(startup).toContain(
+      'background_feature_enabled("ROSETTA_LEGACY_TIMEOUT_RECONCILIATION_ENABLED")',
+    );
     expect(recoveryCall).toBeGreaterThanOrEqual(0);
     expect(workerStart).toBeGreaterThan(recoveryCall);
   });

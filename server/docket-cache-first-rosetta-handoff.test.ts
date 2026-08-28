@@ -24,8 +24,10 @@ describe("Docket cache-first and Rosetta source-handoff boundaries", () => {
     );
 
     expect(stateRoute).toContain("const cached = await read_state_cache(state)");
-    expect(stateRoute).toContain('source: fresh ? "cache" : "cache_stale_refreshing"');
+    expect(stateRoute).toContain('source: fresh ? "cache" : stale_reason');
     expect(stateRoute).toContain("if (!fresh) schedule_state_refresh(state)");
+    expect(stateRoute).toContain('"cache_stale_worker_paused"');
+    expect(stateRoute).toContain('error: "background_runtime_required"');
 
     const cachedBranch = stateRoute.indexOf("if (cached)");
     const cachedResponse = stateRoute.indexOf("return res.json", cachedBranch);
@@ -126,8 +128,8 @@ describe("Docket cache-first and Rosetta source-handoff boundaries", () => {
 
     const handoff = between(
       genomeRouter,
-      "ingest_docket_bill_to_rosetta_source: adminProcedure",
-      "process_docket_bill_through_rosetta: adminProcedure",
+      "ingest_docket_bill_to_rosetta_source: workerAdminProcedure",
+      "process_docket_bill_through_rosetta: workerAdminProcedure",
     );
 
     expect(handoff).toContain("create_rosetta_source_handoff(input.source_bill_id)");
@@ -138,7 +140,7 @@ describe("Docket cache-first and Rosetta source-handoff boundaries", () => {
   it("retains the explicit full Rosetta processing action separately", () => {
     const processing = between(
       genomeRouter,
-      "process_docket_bill_through_rosetta: adminProcedure",
+      "process_docket_bill_through_rosetta: workerAdminProcedure",
       "get_rosetta_law_view_by_extraction_run: adminProcedure",
     );
     expect(processing).toContain("process_rosetta_pipeline_once(input.source_bill_id)");

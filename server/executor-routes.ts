@@ -18,6 +18,10 @@ import {
   get_sunam_run_all_selection,
   summarize_sunam_exclusions,
 } from "./engines/sunam-stream-selection";
+import {
+  background_workers_allowed,
+  resolve_lighthouse_runtime_role,
+} from "./runtime-role";
 
 type ExecutorPayload = Record<string, unknown>;
 type ExecutorResult = ExecutorPayload & {
@@ -92,6 +96,18 @@ function sendExecutorResult(
 }
 
 export function registerExecutorRoutes(app: Express) {
+  app.use("/api/executor", (req, res, next) => {
+    if (["GET", "HEAD", "OPTIONS"].includes(req.method)) return next();
+    if (background_workers_allowed()) return next();
+
+    return res.status(503).json({
+      success: false,
+      error: "background_runtime_required",
+      message: "Executor mutations are disabled on the Lighthouse web service.",
+      runtime_role: resolve_lighthouse_runtime_role(),
+    });
+  });
+
   // ─── POST /api/executor/run_stream ───
   // Run a single stream immediately
   app.post("/api/executor/run_stream", async (req: Request, res: Response) => {

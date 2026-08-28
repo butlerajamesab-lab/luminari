@@ -4,13 +4,13 @@ import { query_with_diagnostics } from "./db";
 import { run_with_database_job_context } from "./db-request-context";
 import { process_legislative_version } from "./civic-genome-legislative-version-pipeline";
 import { create_rosetta_supabase_headers } from "./rosetta-supabase-auth";
+import { background_feature_enabled } from "./runtime-role";
 
 const DEFAULT_POLL_INTERVAL_MS = 1_000;
 const MIN_POLL_INTERVAL_MS = 250;
 const MAX_POLL_INTERVAL_MS = 60_000;
-// Family resolution is CPU-heavy and runs in the public web process today.
-// Default to one job so a single queue cycle cannot amplify event-loop stalls
-// on Render's one-core service. Operators can still raise this explicitly.
+// Family resolution is CPU-heavy. Keep concurrency at one even in an isolated
+// worker so a single queue cycle cannot amplify event-loop or database pressure.
 const DEFAULT_CONCURRENCY = 1;
 const MAX_CONCURRENCY = 32;
 const QUEUE_LEASE_MINUTES = 60;
@@ -245,12 +245,7 @@ export async function load_oldest_unbound_docket_identifiers(): Promise<string[]
 }
 
 function queue_enabled(): boolean {
-  const configured = process.env.LEGISLATIVE_VERSION_QUEUE_ENABLED
-    ?.trim()
-    .toLowerCase();
-  if (configured === "false") return false;
-  if (configured === "true") return true;
-  return process.env.NODE_ENV === "production";
+  return background_feature_enabled("LEGISLATIVE_VERSION_QUEUE_ENABLED");
 }
 
 function safe_error_code(error: unknown): string {

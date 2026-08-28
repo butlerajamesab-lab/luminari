@@ -12,6 +12,10 @@ import {
   type civic_genome_projection_result,
 } from "../civic-genome-projection";
 import { query_with_diagnostics } from "../db";
+import {
+  background_workers_allowed,
+  resolve_lighthouse_runtime_role,
+} from "../runtime-role";
 
 const cache_ttl_ms = 8 * 60 * 60 * 1000;
 const bill_detail_cache_ttl_ms = 24 * 60 * 60 * 1000;
@@ -65,7 +69,10 @@ type civic_genome_projection_status =
   | {
       ok: true;
       projected: false;
-      reason: "cache_fresh_no_projection" | "cache_stale_refreshing";
+      reason:
+        | "cache_fresh_no_projection"
+        | "cache_stale_refreshing"
+        | "cache_stale_worker_paused";
     };
 
 type docket_state_refresh_result = {
@@ -385,6 +392,7 @@ const serialize_error = (error: unknown): string => {
 };
 
 const schedule_state_refresh = (state: string): void => {
+  if (!background_workers_allowed()) return;
   if (state_refresh_in_flight.has(state)) return;
 
   const refresh = refresh_state_cache(state)
@@ -411,6 +419,18 @@ const schedule_state_refresh = (state: string): void => {
 
   state_refresh_in_flight.set(state, refresh);
 };
+
+docket_router.use((req, res, next) => {
+  if (["GET", "HEAD", "OPTIONS"].includes(req.method)) return next();
+  if (background_workers_allowed()) return next();
+
+  return res.status(503).json({
+    ok: false,
+    error: "background_runtime_required",
+    message: "Docket refresh operations are disabled on the Lighthouse web service.",
+    runtime_role: resolve_lighthouse_runtime_role(),
+  });
+});
 
 docket_router.get("/jurisdictions", (_req, res) => {
   return res.json({
@@ -524,10 +544,13 @@ docket_router.get("/state", async (req, res) => {
     if (cached) {
       const fresh = is_fresh(cached.fetched_at);
       if (!fresh) schedule_state_refresh(state);
+      const stale_reason = background_workers_allowed()
+        ? "cache_stale_refreshing"
+        : "cache_stale_worker_paused";
 
       return res.json({
         ok: true,
-        source: fresh ? "cache" : "cache_stale_refreshing",
+        source: fresh ? "cache" : stale_reason,
         state,
         session_id: cached.session_id,
         session_title: cached.session_title,
@@ -536,9 +559,18 @@ docket_router.get("/state", async (req, res) => {
         civic_genome_projection: {
           ok: true,
           projected: false,
-          reason: fresh ? "cache_fresh_no_projection" : "cache_stale_refreshing",
+          reason: fresh ? "cache_fresh_no_projection" : stale_reason,
         },
         bills: cached.bills,
+      });
+    }
+
+    if (!background_workers_allowed()) {
+      return res.status(503).json({
+        ok: false,
+        error: "background_runtime_required",
+        message: "No cached Docket state is available while refresh work is paused.",
+        runtime_role: resolve_lighthouse_runtime_role(),
       });
     }
 
@@ -576,6 +608,25 @@ docket_router.get("/bill/:bill_id", async (req, res) => {
         bill_id,
         fetched_at: cached.fetched_at,
         bill: cached.bill,
+      });
+    }
+
+    if (cached && !background_workers_allowed()) {
+      return res.json({
+        ok: true,
+        source: "cache_stale_worker_paused",
+        bill_id,
+        fetched_at: cached.fetched_at,
+        bill: cached.bill,
+      });
+    }
+
+    if (!cached && !background_workers_allowed()) {
+      return res.status(503).json({
+        ok: false,
+        error: "background_runtime_required",
+        message: "No cached Docket bill is available while refresh work is paused.",
+        runtime_role: resolve_lighthouse_runtime_role(),
       });
     }
 

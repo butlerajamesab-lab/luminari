@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import JSZip from "jszip";
 import { getPool } from "../db";
 import { SUPABASE_PROJECT } from "../_core/health-diagnostics";
+import { background_feature_enabled } from "../runtime-role";
 
 export const STATE_ENRICHMENT_ENGINE_VERSION = "fresh_state_enrichment_reconciliation_v1.0.0";
 export const STATE_ENRICHMENT_PARSER_VERSION = "state_enrichment_label_value_parser_v1.0.0";
@@ -364,7 +365,10 @@ export async function resumeFreshStateEnrichmentFromDatabase(options:{batchSize?
   return {status:"yielded",run_id:runId,processed};
 }
 
-if(process.env.NODE_ENV==="production"){
+if(
+  process.env.NODE_ENV === "production"
+  && background_feature_enabled("FRESH_STATE_ENRICHMENT_RECONCILIATION_ENABLED")
+){
   setTimeout(()=>{
     void resumeFreshStateEnrichmentFromDatabase({batchSize:5,maxBatches:20})
       .then(result=>{if(result.status!=="idle") console.log("[FreshStateEnrichment] startup_resume",result);})

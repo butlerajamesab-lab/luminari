@@ -1,4 +1,5 @@
 import { query_with_diagnostics } from "./db";
+import { background_feature_enabled } from "./runtime-role";
 
 const DEFAULT_INTERVAL_MS = 15 * 60 * 1000;
 const MIN_INTERVAL_MS = 5 * 60 * 1000;
@@ -39,12 +40,7 @@ function bounded_integer(
 }
 
 function warmer_enabled(): boolean {
-  const configured = process.env.DOCKET_STATE_CACHE_WARMER_ENABLED
-    ?.trim()
-    .toLowerCase();
-  if (configured === "false") return false;
-  if (configured === "true") return true;
-  return process.env.NODE_ENV === "production";
+  return background_feature_enabled("DOCKET_STATE_CACHE_WARMER_ENABLED");
 }
 
 function interval_ms(): number {

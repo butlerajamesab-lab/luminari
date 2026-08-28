@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { query_with_diagnostics } from "./db";
 import { assemble_rosetta_and_resolve_family } from "./civic-genome-rosetta-family-orchestration";
+import { background_feature_enabled } from "./runtime-role";
 
 const DEFAULT_POLL_INTERVAL_MS = 10_000;
 const MIN_POLL_INTERVAL_MS = 5_000;
@@ -35,12 +36,7 @@ function bounded_poll_interval(): number {
 }
 
 function queue_enabled(): boolean {
-  const configured = process.env.ROSETTA_GENOME_ACTIVATION_QUEUE_ENABLED
-    ?.trim()
-    .toLowerCase();
-  if (configured === "false") return false;
-  if (configured === "true") return true;
-  return process.env.NODE_ENV === "production";
+  return background_feature_enabled("ROSETTA_GENOME_ACTIVATION_QUEUE_ENABLED");
 }
 
 function safe_error_code(error: unknown): string {

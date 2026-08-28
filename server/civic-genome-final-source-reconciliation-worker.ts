@@ -1,5 +1,6 @@
 import { query_with_diagnostics } from "./db";
 import { get_bill, type legiscan_bill_detail } from "./services/legiscan";
+import { background_feature_enabled } from "./runtime-role";
 
 const DEFAULT_POLL_INTERVAL_MS = 60_000;
 const MIN_POLL_INTERVAL_MS = 10_000;
@@ -44,12 +45,9 @@ function bounded_integer(
 }
 
 function worker_enabled(): boolean {
-  const configured = process.env.CIVIC_GENOME_FINAL_SOURCE_RECONCILIATION_ENABLED
-    ?.trim()
-    .toLowerCase();
-  if (configured === "false") return false;
-  if (configured === "true") return true;
-  return process.env.NODE_ENV === "production";
+  return background_feature_enabled(
+    "CIVIC_GENOME_FINAL_SOURCE_RECONCILIATION_ENABLED",
+  );
 }
 
 function poll_interval_ms(): number {
