@@ -14,8 +14,8 @@ describe("Rosetta generation identity resolution", () => {
   });
 
   it("retains content-hash matching whenever Lighthouse has the hash", () => {
-    expect(source).toContain("if (candidate.source_content_hash)");
-    expect(source).toContain("query_params.source_content_hash = `eq.${candidate.source_content_hash}`");
+    expect(source).toContain("const source_filters = candidate.source_content_hash");
+    expect(source).toContain("source_content_hash: `eq.${candidate.source_content_hash}`");
   });
 
   it("retains the exact-one-row fail-closed identity gate", () => {

@@ -1,13 +1,17 @@
 import { randomUUID } from "node:crypto";
 
 import { query_with_diagnostics } from "./db";
+import { run_with_database_job_context } from "./db-request-context";
 import { process_legislative_version } from "./civic-genome-legislative-version-pipeline";
 import { create_rosetta_supabase_headers } from "./rosetta-supabase-auth";
 
 const DEFAULT_POLL_INTERVAL_MS = 1_000;
 const MIN_POLL_INTERVAL_MS = 250;
 const MAX_POLL_INTERVAL_MS = 60_000;
-const DEFAULT_CONCURRENCY = 8;
+// Family resolution is CPU-heavy and runs in the public web process today.
+// Default to one job so a single queue cycle cannot amplify event-loop stalls
+// on Render's one-core service. Operators can still raise this explicitly.
+const DEFAULT_CONCURRENCY = 1;
 const MAX_CONCURRENCY = 32;
 const QUEUE_LEASE_MINUTES = 60;
 const UNKNOWN_FAILURE_LIMIT = 5;
@@ -726,7 +730,10 @@ export async function run_legislative_version_queue_cycle(): Promise<void> {
       bounded_concurrency(),
       oldest_unbound_docket_identifiers,
     );
-    await Promise.all(jobs.map(job => process_legislative_version_job(job)));
+    await Promise.all(jobs.map(job => run_with_database_job_context(
+      { label: "legislative_version_queue_job", job_id: job.queue_id },
+      () => process_legislative_version_job(job),
+    )));
   } catch (error) {
     console.error("[LegislativeVersionQueue] cycle_failed", {
       error_class: error instanceof Error ? error.name : "unknown",

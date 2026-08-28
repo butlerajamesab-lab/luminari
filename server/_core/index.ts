@@ -182,10 +182,16 @@ async function startServer() {
     createExpressMiddleware({ router: appRouter, createContext }),
   );
 
-  app.get("/api/health", (_req, res) => {
+  const send_liveness = (_req: express.Request, res: express.Response) => {
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
     res.json(livenessPayload());
-  });
+  };
+
+  // The repository Blueprint uses /api/health, while the current Render
+  // service has drifted to /health. Keep both paths on the same cheap,
+  // database-independent liveness handler so either configuration fails true.
+  app.get("/health", send_liveness);
+  app.get("/api/health", send_liveness);
 
   app.get("/api/runtime-build", (_req, res) => {
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");

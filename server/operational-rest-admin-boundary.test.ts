@@ -61,6 +61,7 @@ describe("operational REST administrator boundary", () => {
   it("preserves public civic-reference routes outside the operational gate", () => {
     expect(index).toContain('app.use("/api/civic-map", civicMapRouter)');
     expect(index).toContain('app.use("/api/docket", docket_router)');
+    expect(index).toContain('app.get("/health", send_liveness)');
     expect(index).toContain('app.get("/api/health"');
   });
 });
