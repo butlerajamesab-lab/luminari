@@ -246,6 +246,7 @@ async function reconcile_completed_jobs(): Promise<void> {
         where verification.receipt_count = verification.expected_trait_count
           and verification.expected_trait_count = queue.expected_trait_count
           and queue.queue_state <> 'completed'
+          and ($2::uuid is null or queue.queue_id = $2::uuid)
         order by queue.updated_at, queue.queue_id
         for update of queue skip locked
         limit $1::integer
@@ -261,7 +262,7 @@ async function reconcile_completed_jobs(): Promise<void> {
             updated_at = now()
        from candidate
       where queue.queue_id = candidate.queue_id`,
-    [RECONCILE_BATCH_SIZE],
+    [RECONCILE_BATCH_SIZE, prism_rosetta_queue_canary_id()],
     {
       label: "prism_rosetta_queue_reconcile_completed",
       pool_acquire_timeout_ms: 1_000,
