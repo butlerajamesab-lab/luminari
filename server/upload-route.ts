@@ -1,4 +1,4 @@
-import type { Express, Request, Response } from "express";
+import type { Express, NextFunction, Request, Response } from "express";
 import multer from "multer";
 import { createHash } from "crypto";
 import { isSupabaseStorageKey, storageDelete, storageGet, storagePut } from "./storage";
@@ -12,7 +12,13 @@ import { cases } from "../drizzle/schema";
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB
+  limits: {
+    fileSize: 100 * 1024 * 1024, // 100 MiB per file
+    files: 50,
+    fields: 4,
+    parts: 54,
+    fieldSize: 64 * 1024,
+  },
 });
 
 function classifyFileType(mimeType: string): string {
@@ -26,6 +32,17 @@ function classifyFileType(mimeType: string): string {
 
 // Server-enforced batch cap
 const MAX_BATCH_SIZE = 50;
+const MAX_UPLOAD_REQUEST_BYTES = 110 * 1024 * 1024;
+const MAX_CONCURRENT_MULTIPART_UPLOADS = 2;
+const UPLOAD_RETRY_AFTER_SECONDS = 30;
+let activeMultipartUploadRequests = 0;
+
+export function getMultipartUploadCapacitySnapshot() {
+  return {
+    active: activeMultipartUploadRequests,
+    maximum: MAX_CONCURRENT_MULTIPART_UPLOADS,
+  };
+}
 
 function buildDocumentAccessUrl(caseId: number, storageKey: string): string {
   const query = new URLSearchParams({ key: storageKey });
@@ -47,6 +64,101 @@ async function authenticateCurrentRequest(req: Request, res: Response) {
     return await require_resolved_user(ctx);
   } catch {
     return null;
+  }
+}
+
+type AuthenticatedUploadUser = NonNullable<
+  Awaited<ReturnType<typeof authenticateCurrentRequest>>
+>;
+
+async function requireUploadAuthentication(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  const user = await authenticateCurrentRequest(req, res);
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  // Authenticate before Multer reads multipart bytes into memory. Route
+  // handlers reuse the resolved identity instead of performing a second lookup.
+  res.locals.uploadUser = user;
+  next();
+}
+
+function authenticatedUploadUser(res: Response): AuthenticatedUploadUser | null {
+  return (res.locals.uploadUser as AuthenticatedUploadUser | undefined) ?? null;
+}
+
+function requireBoundedMultipartRequest(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  const declaredLength = req.get("content-length");
+  if (!declaredLength) {
+    res.status(411).json({
+      error: "CONTENT_LENGTH_REQUIRED",
+      message: "Multipart uploads require a declared aggregate byte length",
+    });
+    return;
+  }
+
+  const requestBytes = Number(declaredLength);
+  if (!Number.isSafeInteger(requestBytes) || requestBytes < 0) {
+    res.status(400).json({ error: "INVALID_CONTENT_LENGTH" });
+    return;
+  }
+
+  if (requestBytes > MAX_UPLOAD_REQUEST_BYTES) {
+    res.status(413).json({
+      error: "UPLOAD_REQUEST_TOO_LARGE",
+      maxAllowedBytes: MAX_UPLOAD_REQUEST_BYTES,
+      receivedBytes: requestBytes,
+    });
+    return;
+  }
+
+  next();
+}
+
+function requireMultipartUploadCapacity(
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  if (activeMultipartUploadRequests >= MAX_CONCURRENT_MULTIPART_UPLOADS) {
+    res.setHeader("Retry-After", String(UPLOAD_RETRY_AFTER_SECONDS));
+    res.status(429).json({
+      error: "UPLOAD_CAPACITY_REACHED",
+      message: "Upload capacity is temporarily full",
+      maxConcurrentUploads: MAX_CONCURRENT_MULTIPART_UPLOADS,
+      retryAfterSeconds: UPLOAD_RETRY_AFTER_SECONDS,
+    });
+    return;
+  }
+
+  activeMultipartUploadRequests += 1;
+  let released = false;
+  const releaseCapacity = () => {
+    if (released) return;
+    released = true;
+    res.off("finish", releaseCapacity);
+    res.off("close", releaseCapacity);
+    activeMultipartUploadRequests = Math.max(0, activeMultipartUploadRequests - 1);
+  };
+
+  // Multer keeps file buffers alive through the route handler, so hold the
+  // slot until the response finishes or the client disconnects.
+  res.once("finish", releaseCapacity);
+  res.once("close", releaseCapacity);
+  try {
+    next();
+  } catch (error) {
+    releaseCapacity();
+    throw error;
   }
 }
 
@@ -102,9 +214,9 @@ export function registerUploadRoute(app: Express) {
     }
   });
 
-  app.post("/api/upload", upload.array("files", MAX_BATCH_SIZE), async (req: Request, res: Response) => {
+  app.post("/api/upload", requireUploadAuthentication, requireBoundedMultipartRequest, requireMultipartUploadCapacity, upload.array("files", MAX_BATCH_SIZE), async (req: Request, res: Response) => {
     try {
-      const user = await authenticateCurrentRequest(req, res);
+      const user = authenticatedUploadUser(res);
       if (!user) {
         res.status(401).json({ error: "Unauthorized" });
         return;
@@ -285,9 +397,9 @@ export function registerUploadRoute(app: Express) {
   // ── Scoped Replacement Upload: POST /api/upload/replace/:documentId ──
   // Accepts a single replacement upload, supersedes the original, creates the
   // canonical source registration, and links the immutable replacement chain.
-  app.post("/api/upload/replace/:documentId", upload.single("file"), async (req: Request, res: Response) => {
+  app.post("/api/upload/replace/:documentId", requireUploadAuthentication, requireBoundedMultipartRequest, requireMultipartUploadCapacity, upload.single("file"), async (req: Request, res: Response) => {
     try {
-      const user = await authenticateCurrentRequest(req, res);
+      const user = authenticatedUploadUser(res);
       if (!user) {
         res.status(401).json({ error: "Unauthorized" });
         return;

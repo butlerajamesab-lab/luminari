@@ -28,6 +28,7 @@ import { loadPipelineRegistry } from "../pipeline-resolver";
 import { loadLensRegistry } from "../lens-engine";
 import { serveStatic, setupVite } from "./vite";
 import { livenessPayload, SUPABASE_PROJECT } from "./health-diagnostics";
+import { registerSecurityHeaders } from "./security-headers";
 import { expireStaleUploadSessions, getPool } from "../db";
 import { initializeScheduler } from "../ingestion/scheduler";
 import { run_with_database_request_context } from "../db-request-context";
@@ -160,6 +161,7 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
 
+  registerSecurityHeaders(app);
   registerSlowRequestDiagnostics(app);
   app.use((req, _res, next) => {
     run_with_database_request_context({
