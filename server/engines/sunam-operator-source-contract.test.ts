@@ -14,7 +14,8 @@ const sovereign_control = read("../../client/src/pages/SovereignControl.tsx");
 
 describe("Sunam operator source contract", () => {
   it("uses the same operational tool registry for display, planning, dispatch, and execution", () => {
-    expect(executor).toContain("tools: SUNAM_TOOLS");
+    expect(executor).toContain("const visibleToolNames = getSunamVisibleToolNames()");
+    expect(executor).toContain("if (isSunamToolAllowed(candidate))");
     expect(executor).toContain("SUNAM_TOOLS.map");
     expect(executor).toContain("SUNAM_TOOL_NAMES.has(toolName)");
     expect(executor).toContain("SUNAM_OPERATOR_TOOLS");
