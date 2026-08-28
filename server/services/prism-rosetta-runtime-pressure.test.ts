@@ -1,5 +1,6 @@
 import { readFileSync } from "fs";
 import { describe, expect, it } from "vitest";
+import { prism_rosetta_queue_canary_id } from "./prism-rosetta-queue-worker";
 
 const activation = readFileSync(
   new URL("./prism-rosetta-activation.ts", import.meta.url),
@@ -68,6 +69,21 @@ describe("PRISM 2.2 bounded runtime pressure", () => {
     expect(activation).toContain(
       "const pending_batch = pending_requests.slice(0, max_new_submissions);",
     );
+  });
+
+  it("fails closed on an invalid canary scope and binds a valid queue ID", () => {
+    expect(prism_rosetta_queue_canary_id(undefined)).toBeNull();
+    expect(
+      prism_rosetta_queue_canary_id(" C910B298-4B23-434C-9715-9EAD270F568F "),
+    ).toBe("c910b298-4b23-434c-9715-9ead270f568f");
+    expect(() => prism_rosetta_queue_canary_id("not-a-uuid")).toThrow(
+      "prism_rosetta_queue_canary_id_invalid",
+    );
+    expect(queue_worker).toContain("PRISM_ROSETTA_QUEUE_CANARY_ID");
+    expect(queue_worker).toContain(
+      "and ($5::uuid is null or queue.queue_id = $5::uuid)",
+    );
+    expect(queue_worker).toContain("disabled_invalid_canary");
   });
 
   it("reuses locally persisted trait receipts before calling Prism again", () => {
