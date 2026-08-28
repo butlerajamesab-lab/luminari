@@ -22,6 +22,14 @@ function dateHash(value: string) {
   return Math.abs(hash);
 }
 
+const verifiedStatusSql =
+  "lower(trim(coalesce(verification_status,''))) like 'verified%'";
+const displayPrioritySql = `case
+  when ${verifiedStatusSql} then 100
+  when website is not null or phone is not null then 70
+  else 40
+end`;
+
 export async function readCurrentDiscoveryFacts(input: CurrentDiscoveryFactInput = {}) {
   const pool = getPool();
   const limit = clamp(input.limit, 1, 100, 60);
@@ -58,7 +66,8 @@ export async function readCurrentDiscoveryFacts(input: CurrentDiscoveryFactInput
   const [pageResult, categoryResult, summaryResult] = await Promise.all([
     pool.query(`
       select fact_id,fact_type,title,body,category,jurisdiction_code,jurisdiction_raw,
-             phone,website,source_lane,source_id,verification_status,display_priority,metadata,
+             phone,website,source_lane,source_id,verification_status,
+             ${displayPrioritySql} as display_priority,metadata,
              count(*) over()::int as filtered_total
         from public.v_lighthouse_did_you_know_candidates_v1
        where ${where.join(" and ")}
@@ -74,7 +83,7 @@ export async function readCurrentDiscoveryFacts(input: CurrentDiscoveryFactInput
     `),
     pool.query(`
       select count(*)::int as total,
-             count(*) filter(where verification_status ilike '%verified%')::int as verified,
+             count(*) filter(where ${verifiedStatusSql})::int as verified,
              count(*) filter(where phone is not null)::int as with_phone,
              count(*) filter(where website is not null)::int as with_website,
              count(distinct coalesce(jurisdiction_code,jurisdiction_raw))::int as jurisdictions,
