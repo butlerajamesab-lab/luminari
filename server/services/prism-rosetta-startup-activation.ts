@@ -9,20 +9,35 @@ import { start_docket_bill_activation_queue_worker } from "../docket-jurisdictio
 import { activate_prism_for_rosetta_assembly } from "./prism-rosetta-activation";
 import { run_prism_problem_handoff_from_environment } from "./prism-problem-intake-startup";
 import { start_prism_rosetta_queue_worker } from "./prism-rosetta-queue-worker";
+import {
+  background_feature_enabled,
+  background_workers_allowed,
+  resolve_lighthouse_runtime_role,
+} from "../runtime-role";
 
 export async function run_prism_rosetta_activation_from_environment(): Promise<void> {
+  if (!background_workers_allowed()) {
+    console.log("[RuntimeRole] background_startup_skipped", {
+      component: "prism_rosetta_startup_activation",
+      ...resolve_lighthouse_runtime_role(),
+    });
+    return;
+  }
+
   start_prism_rosetta_queue_worker();
   start_rosetta_generation_activation_queue_worker();
   start_rosetta_generation_target_sync();
   start_rosetta_generation_upgrade_worker();
 
-  try {
-    await reconcile_current_authoritative_legacy_rosetta_timeouts();
-  } catch (error) {
-    console.error("[CurrentAuthoritativeRosettaRecovery] startup_failed", {
-      error_class: error instanceof Error ? error.name : "unknown",
-      error_message: error instanceof Error ? error.message : "unknown",
-    });
+  if (background_feature_enabled("ROSETTA_LEGACY_TIMEOUT_RECONCILIATION_ENABLED")) {
+    try {
+      await reconcile_current_authoritative_legacy_rosetta_timeouts();
+    } catch (error) {
+      console.error("[CurrentAuthoritativeRosettaRecovery] startup_failed", {
+        error_class: error instanceof Error ? error.name : "unknown",
+        error_message: error instanceof Error ? error.message : "unknown",
+      });
+    }
   }
 
   start_legislative_version_queue_worker();

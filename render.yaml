@@ -4,6 +4,7 @@ services:
     runtime: node
     plan: starter
     branch: main
+    autoDeployTrigger: checksPass
     buildCommand: >-
       corepack pnpm install --frozen-lockfile && corepack pnpm build
     startCommand: >-
@@ -12,6 +13,8 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: LIGHTHOUSE_RUNTIME_ROLE
+        value: web
       - key: DATABASE_URL
         sync: false
       - key: SUPABASE_URL

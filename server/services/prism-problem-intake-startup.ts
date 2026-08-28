@@ -1,4 +1,5 @@
 import { runPrismProblemHandoffBatch } from "./prism-problem-intake-worker";
+import { background_feature_enabled } from "../runtime-role";
 
 const DEFAULT_INTERVAL_MS = 60_000;
 const MIN_INTERVAL_MS = 30_000;
@@ -25,9 +26,9 @@ async function sweep(label: string) {
 }
 
 export async function run_prism_problem_handoff_from_environment() {
-  if (process.env.PRISM_PROBLEM_HANDOFF_ENABLED === "0") {
-    console.log("[PrismProblemHandoff] disabled by environment");
-    return { enabled: false, reason: "environment_disabled" as const };
+  if (!background_feature_enabled("PRISM_PROBLEM_HANDOFF_ENABLED")) {
+    console.log("[PrismProblemHandoff] disabled by runtime boundary");
+    return { enabled: false, reason: "runtime_boundary" as const };
   }
   if (!process.env.PRISM_BRIDGE_SECRET) {
     console.warn("[PrismProblemHandoff] disabled: PRISM_BRIDGE_SECRET not configured");

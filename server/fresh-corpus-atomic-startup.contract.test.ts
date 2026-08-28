@@ -8,11 +8,12 @@ const service = readFileSync(new URL("./services/fresh-corpus-atomic-v1.ts", imp
 describe("fresh atomic corpus startup", () => {
   it("only resumes explicitly queued/running database work", () => {
     expect(startup).toContain("resumeFreshAtomicCorpusPassFromDatabase");
+    expect(startup).toContain('background_feature_enabled("FRESH_ATOMIC_CORPUS_RESUME_ENABLED")');
     expect(startup).not.toContain("queueFreshAtomicCorpusPass");
     expect(service).toContain("status in ('queued','running')");
   });
 
-  it("is mounted by the production server and never executes SQL artifacts", () => {
+  it("is mounted inertly by the web server and never executes SQL artifacts", () => {
     expect(core).toContain('import "../services/fresh-corpus-atomic-startup"');
     expect(service).toContain('sourceKind: "sql_copy_row"');
     expect(service).toContain('sourceKind: "sql_insert_row"');

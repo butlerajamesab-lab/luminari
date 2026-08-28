@@ -16,6 +16,7 @@ import {
   prism_rosetta_request_timeout_ms,
 } from "./prism-rosetta-client";
 import { PrismBoundaryError } from "./prism-verification-client";
+import { background_feature_enabled } from "../runtime-role";
 
 const DEFAULT_POLL_INTERVAL_MS = 10_000;
 const MIN_POLL_INTERVAL_MS = 5_000;
@@ -132,11 +133,7 @@ export function prism_rosetta_queue_canary_id(
 }
 
 function queue_enabled(): boolean {
-  const configured =
-    process.env.PRISM_ROSETTA_QUEUE_ENABLED?.trim().toLowerCase();
-  if (configured === "false") return false;
-  if (configured === "true") return true;
-  return process.env.NODE_ENV === "production";
+  return background_feature_enabled("PRISM_ROSETTA_QUEUE_ENABLED");
 }
 
 export function prism_queue_retry_delay_seconds(

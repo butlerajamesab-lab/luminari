@@ -1,5 +1,8 @@
 # Runtime Governance Map
 
+Production incident recovery and stop/go thresholds are governed by
+[`LIGHTHOUSE_STABILIZATION_RUNBOOK.md`](../LIGHTHOUSE_STABILIZATION_RUNBOOK.md).
+
 This document is the working runtime-control map for Lighthouse. The goal is to stop recurring pool-saturation and contract-drift incidents by treating every runtime surface as part of one governed system rather than as separate page bugs.
 
 ## Current invariant

@@ -7,16 +7,18 @@ const route = readFileSync(join(process.cwd(), "server/routes/ingestion_control_
 const index = readFileSync(join(process.cwd(), "server/_core/index.ts"), "utf8");
 
 describe("fresh corpus startup resume", () => {
-  it("hangs automatic reconciliation from the mounted production import chain", () => {
+  it("keeps the mounted web import inert unless a worker role grants reconciliation", () => {
     expect(index).toContain('from "../routes/ingestion_control_router"');
     expect(route).toContain('from "../workers/corpus-import-queue-worker"');
     expect(worker).toContain("reconcileFreshCorpusAutomatically");
     expect(worker).toContain("automatic_reconciliation");
     expect(worker).toContain("FRESH_CORPUS_RECONCILIATION_INTERVAL_MS");
+    expect(worker).toContain('background_feature_enabled("FRESH_CORPUS_RECONCILIATION_ENABLED")');
   });
 
   it("does not start the historical infinite worker loop inside the server bundle", () => {
-    expect(worker).toContain('process.env.NODE_ENV === "production" && !is_direct_worker_entry()');
+    expect(worker).toContain('process.env.NODE_ENV === "production"');
+    expect(worker).toContain("!is_direct_worker_entry()");
     expect(worker).toContain("if (is_direct_worker_entry())");
   });
 

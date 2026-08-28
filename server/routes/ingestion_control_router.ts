@@ -5,6 +5,10 @@ import { allowed_target_hints, create_candidates_from_ready_queue, list_corpus_i
 import { process_one_corpus_import_queue_row, type corpus_import_worker_action } from "../workers/corpus-import-queue-worker";
 import { classify_db_error, getPool } from "../db";
 import { inferRuntimeCounts, withRuntimeEnvelope } from "../../shared/runtime-envelope";
+import {
+  background_workers_allowed,
+  resolve_lighthouse_runtime_role,
+} from "../runtime-role";
 
 const execFileAsync = promisify(execFile);
 
@@ -103,6 +107,26 @@ function worker_actions_from_body(value: unknown): corpus_import_worker_action[]
   const parsed = value.filter((entry): entry is corpus_import_worker_action => typeof entry === "string" && allowed.has(entry as corpus_import_worker_action));
   return parsed.length ? parsed : fallback;
 }
+
+// The web service may inspect queue state, but it must never execute corpus
+// drains, extraction commands, or promotions in the HTTP process. Mutations
+// move to an explicitly scoped worker service; until then they fail closed.
+ingestion_control_rest_router.use((req, res, next) => {
+  if (["GET", "HEAD", "OPTIONS"].includes(req.method)) return next();
+  if (background_workers_allowed()) return next();
+
+  return res.status(503).json(runtime_error(
+    "background_runtime_required",
+    "This operation is disabled on the Lighthouse web service.",
+    {
+      action: "ingestion_control_mutation",
+      extra: {
+        retryable: false,
+        runtime_role: resolve_lighthouse_runtime_role(),
+      },
+    },
+  ));
+});
 
 ingestion_control_rest_router.get("/registry-entity-candidates", async (req, res) => {
   try {

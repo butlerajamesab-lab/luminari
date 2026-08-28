@@ -20,6 +20,7 @@ import { ingest_atlas_stream } from "./atlas-stream-adapter";
 import { detectSignals } from "./signal-detector";
 import { runConvergenceAnalysis } from "../math/convergence-runner";
 import { emitSignal, resolveSignalsForTarget } from "../live-signal-emitter";
+import { background_feature_enabled } from "../runtime-role";
 
 // ─── Constants ───
 
@@ -34,9 +35,17 @@ const cronExpressions = new Map<string, string>();
 const runningIngestions = new Set<string>();
 const ingestionQueue = new Map<string, { maxRecords?: number }[]>();
 
+function scheduler_enabled(): boolean {
+  return background_feature_enabled("INGESTION_SCHEDULER_ENABLED");
+}
+
 // ─── T1. Initialize Scheduler ───
 
 export async function initializeScheduler(): Promise<void> {
+  if (!scheduler_enabled()) {
+    console.log("[Scheduler] disabled by runtime boundary");
+    return;
+  }
   console.log("[Scheduler] Initializing ingestion scheduler...");
 
   // T6. Orphan run recovery
@@ -124,6 +133,10 @@ function cronToIntervalMs(cronExpr: string): number {
 }
 
 export function scheduleDataset(datasetId: string, cronExpression: string): void {
+  if (!scheduler_enabled()) {
+    console.log(`[Scheduler] Refused schedule for ${datasetId}: background runtime required`);
+    return;
+  }
   // Stop existing job if any
   const existing = activeJobs.get(datasetId);
   if (existing) {
@@ -312,6 +325,18 @@ export async function runIngestionPipeline(
   runId: number;
   diagnostics?: IngestionResult["diagnostics"];
 }> {
+  if (!scheduler_enabled()) {
+    return {
+      success: false,
+      recordsProcessed: 0,
+      recordsInserted: 0,
+      recordsUpdated: 0,
+      signalsGenerated: 0,
+      errors: ["background_runtime_required"],
+      runId: 0,
+    };
+  }
+
   // T2. Prevent duplicate concurrent runs — queue instead of rejecting
   if (runningIngestions.has(datasetId)) {
     const queue = ingestionQueue.get(datasetId) ?? [];

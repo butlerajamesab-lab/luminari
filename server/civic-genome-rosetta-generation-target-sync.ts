@@ -1,5 +1,6 @@
 import { query_with_diagnostics } from "./db";
 import { fetch_rosetta_current_generation } from "./civic-genome-rosetta-generation-upgrade-worker";
+import { background_feature_enabled } from "./runtime-role";
 
 const DEFAULT_INTERVAL_MS = 30_000;
 const MIN_INTERVAL_MS = 5_000;
@@ -10,10 +11,7 @@ let running = false;
 let stopped = false;
 
 function enabled(): boolean {
-  const configured = process.env.ROSETTA_GENOME_TARGET_SYNC_ENABLED?.trim().toLowerCase();
-  if (configured === "false") return false;
-  if (configured === "true") return true;
-  return process.env.NODE_ENV === "production";
+  return background_feature_enabled("ROSETTA_GENOME_TARGET_SYNC_ENABLED");
 }
 
 function interval_ms(): number {

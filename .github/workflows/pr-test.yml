@@ -3,6 +3,8 @@ name: PR Test
 on:
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
   workflow_dispatch:
 
 concurrency:
@@ -97,16 +99,27 @@ jobs:
       - name: Reject hard-coded JWT credentials
         run: python3 scripts/audit-hardcoded-jwts.py
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: pnpm
 
       - name: Install dependencies
-        run: npm install --legacy-peer-deps
+        run: pnpm install --frozen-lockfile
 
       - name: Execute authenticated multipart upload acceptance
-        run: npx vitest run server/upload-route-multipart-acceptance.test.ts
+        run: pnpm exec vitest run server/upload-route-multipart-acceptance.test.ts
+
+      - name: Verify web/background runtime isolation
+        run: >-
+          pnpm exec vitest run
+          server/runtime-role.test.ts
+          server/runtime-role-boundary.contract.test.ts
+          server/executor-runtime-boundary.test.ts
 
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
@@ -167,19 +180,19 @@ jobs:
         run: node scripts/audit-runtime-camelcase.mjs
 
       - name: Check owned snake_case contracts
-        run: npm run check:contracts
+        run: pnpm run check:contracts
 
       - name: TypeScript legacy debt scan
         continue-on-error: true
-        run: npx tsc -p tsconfig.ci.json --noEmit --pretty false
+        run: pnpm exec tsc -p tsconfig.ci.json --noEmit --pretty false
 
       - name: Vite client build
-        run: npx vite build
+        run: pnpm exec vite build
 
       - name: Server bundle build
         run: |
           set +e
-          npx esbuild server/_core/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist --log-level=debug --log-limit=200 > esbuild.log 2>&1
+          pnpm exec esbuild server/_core/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist --log-level=debug --log-limit=200 > esbuild.log 2>&1
           code=$?
           echo "esbuild exit code: $code"
           echo "--- esbuild diagnostics ---"

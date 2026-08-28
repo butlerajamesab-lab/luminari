@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { getPool } from "../db";
 import { create_candidates_from_ready_queue, promote_registry_entity_candidates_apply } from "../engines/ingestion_control";
+import { background_feature_enabled } from "../runtime-role";
 
 const execFileAsync = promisify(execFile);
 
@@ -314,7 +315,12 @@ if (is_direct_worker_entry()) {
 // FRESH_CORPUS_RECONCILIATION_DISABLED=true is the operator kill switch: the
 // loop runs database work and archive parsing inside the same process as the
 // HTTP front door, so it must be possible to silence it without a redeploy.
-if (process.env.NODE_ENV === "production" && !is_direct_worker_entry() && process.env.FRESH_CORPUS_RECONCILIATION_DISABLED !== "true") {
+if (
+  process.env.NODE_ENV === "production"
+  && !is_direct_worker_entry()
+  && process.env.FRESH_CORPUS_RECONCILIATION_DISABLED !== "true"
+  && background_feature_enabled("FRESH_CORPUS_RECONCILIATION_ENABLED")
+) {
   let automaticReconciliationRunning = false;
   const reconcile = () => {
     if (automaticReconciliationRunning) return;

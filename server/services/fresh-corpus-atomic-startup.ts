@@ -1,6 +1,10 @@
 import { resumeFreshAtomicCorpusPassFromDatabase } from "./fresh-corpus-atomic-v1";
+import { background_feature_enabled } from "../runtime-role";
 
-if (process.env.NODE_ENV === "production") {
+if (
+  process.env.NODE_ENV === "production"
+  && background_feature_enabled("FRESH_ATOMIC_CORPUS_RESUME_ENABLED")
+) {
   setTimeout(() => {
     void resumeFreshAtomicCorpusPassFromDatabase({ batchSize: 3, maxBatches: 60 })
       .then(result => {

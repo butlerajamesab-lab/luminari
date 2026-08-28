@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { project_docket_cache_to_civic_genome } from "./civic-genome-projection";
 import { query_with_diagnostics } from "./db";
 import { get_bill, type legiscan_bill_detail } from "./services/legiscan";
+import { background_feature_enabled } from "./runtime-role";
 
 const DEFAULT_POLL_INTERVAL_MS = 1_000;
 const MIN_POLL_INTERVAL_MS = 250;
@@ -76,12 +77,7 @@ function bounded_concurrency(): number {
 }
 
 function queue_enabled(): boolean {
-  const configured = process.env.DOCKET_BILL_ACTIVATION_QUEUE_ENABLED
-    ?.trim()
-    .toLowerCase();
-  if (configured === "false") return false;
-  if (configured === "true") return true;
-  return process.env.NODE_ENV === "production";
+  return background_feature_enabled("DOCKET_BILL_ACTIVATION_QUEUE_ENABLED");
 }
 
 function as_record(value: unknown): Record<string, unknown> | null {

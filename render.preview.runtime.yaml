@@ -3,12 +3,15 @@ services:
     name: luminari-operational-core-preview
     runtime: node
     branch: main
-    buildCommand: pnpm install && pnpm build
+    buildCommand: corepack pnpm install --frozen-lockfile && corepack pnpm build
     startCommand: pnpm start
     autoDeploy: false
     envVars:
       - key: NODE_ENV
         value: production
+
+      - key: LIGHTHOUSE_RUNTIME_ROLE
+        value: web
 
       - key: RUNTIME_MODE
         value: preview-reconstruction
