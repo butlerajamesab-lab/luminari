@@ -83,6 +83,9 @@ describe("PRISM 2.2 bounded runtime pressure", () => {
     expect(queue_worker).toContain(
       "and ($5::uuid is null or queue.queue_id = $5::uuid)",
     );
+    expect(queue_worker).toContain(
+      "and ($2::uuid is null or queue.queue_id = $2::uuid)",
+    );
     expect(queue_worker).toContain("disabled_invalid_canary");
   });
 
