@@ -8,6 +8,13 @@ import {
   PRISM_ROSETTA_RULE_SET_ID,
   PRISM_ROSETTA_RULE_SET_VERSION,
 } from "./prism-rosetta-contract-v2";
+import {
+  get_prism_rosetta_circuit_snapshot,
+  prism_rosetta_circuit_allows_request,
+  prism_rosetta_circuit_cooldown_ms,
+  prism_rosetta_circuit_failure_threshold,
+  prism_rosetta_request_timeout_ms,
+} from "./prism-rosetta-client";
 import { PrismBoundaryError } from "./prism-verification-client";
 
 const DEFAULT_POLL_INTERVAL_MS = 10_000;
@@ -56,13 +63,20 @@ let queue_timer: NodeJS.Timeout | null = null;
 let queue_cycle_running = false;
 let queue_stopped = false;
 let next_reconcile_at_ms = 0;
+let last_circuit_skip_open_until_ms = 0;
+let last_half_open_failure_count = 0;
 const queue_worker_id = [
   process.env.RENDER_SERVICE_ID ?? "lighthouse",
   process.pid,
   randomUUID(),
 ].join(":");
 
-function bounded_integer(input: string | undefined, fallback: number, minimum: number, maximum: number): number {
+function bounded_integer(
+  input: string | undefined,
+  fallback: number,
+  minimum: number,
+  maximum: number,
+): number {
   const parsed = Number.parseInt(input ?? "", 10);
   if (!Number.isFinite(parsed)) return fallback;
   return Math.max(minimum, Math.min(maximum, parsed));
@@ -105,22 +119,26 @@ function bounded_queue_batch_yield_retry_seconds(): number {
 }
 
 function queue_enabled(): boolean {
-  const configured = process.env.PRISM_ROSETTA_QUEUE_ENABLED?.trim().toLowerCase();
+  const configured =
+    process.env.PRISM_ROSETTA_QUEUE_ENABLED?.trim().toLowerCase();
   if (configured === "false") return false;
   if (configured === "true") return true;
   return process.env.NODE_ENV === "production";
 }
 
-export function prism_queue_retry_delay_seconds(failure_number: number): number {
+export function prism_queue_retry_delay_seconds(
+  failure_number: number,
+): number {
   const exponent = Math.max(0, Math.min(7, failure_number - 1));
-  return Math.min(3_600, 30 * (2 ** exponent));
+  return Math.min(3_600, 30 * 2 ** exponent);
 }
 
 function safe_error_code(error: unknown): string {
   const raw = error instanceof Error ? error.message : "unknown_queue_failure";
-  return raw
-    .replace(/[^a-zA-Z0-9:_-]/g, "_")
-    .slice(0, 256) || "unknown_queue_failure";
+  return (
+    raw.replace(/[^a-zA-Z0-9:_-]/g, "_").slice(0, 256) ||
+    "unknown_queue_failure"
+  );
 }
 
 function known_transient_failure_class(error_code: string): string | null {
@@ -146,7 +164,7 @@ function deterministic_contract_failure(error_code: string): boolean {
     "prism_rosetta_run_receipt_",
     "prism_rosetta_receipt_count_",
     "prism_rosetta_completion_timestamp_",
-  ].some(prefix => error_code.startsWith(prefix));
+  ].some((prefix) => error_code.startsWith(prefix));
 }
 
 export function classify_prism_queue_failure(input: {
@@ -179,9 +197,9 @@ export function classify_prism_queue_failure(input: {
       "permanent_upstream",
     ].includes(input.error.failure_class);
   } else if (
-    known_transient_class === null
-    && !terminal
-    && failure_number >= UNKNOWN_FAILURE_LIMIT
+    known_transient_class === null &&
+    !terminal &&
+    failure_number >= UNKNOWN_FAILURE_LIMIT
   ) {
     terminal = true;
   }
@@ -247,6 +265,7 @@ async function reconcile_completed_jobs_if_due(): Promise<void> {
 }
 
 async function claim_next_job(): Promise<prism_rosetta_queue_job | null> {
+  if (!prism_rosetta_circuit_allows_request()) return null;
   const result = await query_with_diagnostics<prism_rosetta_queue_job>(
     `with candidate as (
        select queue.queue_id
@@ -305,7 +324,9 @@ async function claim_next_job(): Promise<prism_rosetta_queue_job | null> {
   return result.rows[0] ?? null;
 }
 
-async function observed_receipt_count(job: prism_rosetta_queue_job): Promise<number> {
+async function observed_receipt_count(
+  job: prism_rosetta_queue_job,
+): Promise<number> {
   const result = await query_with_diagnostics<{ receipt_count: number }>(
     `select count(*)::integer as receipt_count
        from public.civic_genome_prism_verification_binding receipt
@@ -395,7 +416,9 @@ async function fail_job_for_processing_error(
   job: prism_rosetta_queue_job,
   error: unknown,
 ): Promise<void> {
-  const receipt_count = await observed_receipt_count(job).catch(() => job.receipt_count);
+  const receipt_count = await observed_receipt_count(job).catch(
+    () => job.receipt_count,
+  );
   const decision = classify_prism_queue_failure({
     error,
     prior_attempt_count: job.attempt_count,
@@ -412,6 +435,7 @@ async function fail_job_for_processing_error(
     failure_class: decision.failure_class,
     error_code: decision.error_code,
     retry_delay_seconds: decision.retry_delay_seconds,
+    circuit: get_prism_rosetta_circuit_snapshot(),
   });
 }
 
@@ -471,8 +495,50 @@ async function run_queue_cycle(): Promise<void> {
   queue_cycle_running = true;
   try {
     await reconcile_completed_jobs_if_due();
+    const circuit = get_prism_rosetta_circuit_snapshot();
+    if (circuit.state === "open") {
+      if (last_circuit_skip_open_until_ms !== circuit.open_until_ms) {
+        last_circuit_skip_open_until_ms = circuit.open_until_ms;
+        console.warn("[PrismRosettaQueue] circuit_open_skip", {
+          worker_id: queue_worker_id,
+          consecutive_failures: circuit.consecutive_failures,
+          last_failure_class: circuit.last_failure_class,
+          last_error_code: circuit.last_error_code,
+          last_request_id: circuit.last_request_id,
+          remaining_cooldown_ms: circuit.remaining_cooldown_ms,
+          open_until: new Date(circuit.open_until_ms).toISOString(),
+        });
+      }
+      return;
+    }
+    if (
+      circuit.state === "half_open" &&
+      last_half_open_failure_count !== circuit.consecutive_failures
+    ) {
+      last_half_open_failure_count = circuit.consecutive_failures;
+      console.log("[PrismRosettaQueue] circuit_half_open_probe", {
+        worker_id: queue_worker_id,
+        consecutive_failures: circuit.consecutive_failures,
+        last_request_id: circuit.last_request_id,
+      });
+    } else if (circuit.state === "closed") {
+      last_circuit_skip_open_until_ms = 0;
+      last_half_open_failure_count = 0;
+    }
     const job = await claim_next_job();
-    if (job) await process_job(job);
+    if (job) {
+      console.log("[PrismRosettaQueue] claimed", {
+        worker_id: queue_worker_id,
+        queue_id: job.queue_id,
+        assembly_run_id: job.assembly_run_id,
+        genome_bill_id: job.genome_bill_id,
+        expected_trait_count: job.expected_trait_count,
+        receipt_count: job.receipt_count,
+        attempt_count: job.attempt_count,
+        circuit_state: circuit.state,
+      });
+      await process_job(job);
+    }
   } catch (error) {
     console.error("[PrismRosettaQueue] cycle_failed", {
       error_class: error instanceof Error ? error.name : "unknown",
@@ -499,6 +565,9 @@ export function start_prism_rosetta_queue_worker(): void {
     interval_ms,
     reconcile_interval_ms,
     max_new_submissions,
+    request_timeout_ms: prism_rosetta_request_timeout_ms(),
+    circuit_failure_threshold: prism_rosetta_circuit_failure_threshold(),
+    circuit_cooldown_ms: prism_rosetta_circuit_cooldown_ms(),
     lease_minutes: QUEUE_LEASE_MINUTES,
     rule_set_id: PRISM_ROSETTA_RULE_SET_ID,
     rule_set_version: PRISM_ROSETTA_RULE_SET_VERSION,

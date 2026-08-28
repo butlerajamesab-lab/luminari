@@ -20,10 +20,35 @@ describe("PRISM 2.2 bounded runtime pressure", () => {
     expect(activation).toContain("PRISM_CONCURRENCY,");
   });
 
-  it("allows the deep verification endpoint up to sixty seconds with one attempt", () => {
-    expect(client).toContain("const PRISM_REQUEST_TIMEOUT_MS = 60_000;");
+  it("bounds the deep verification endpoint timeout and keeps one attempt", () => {
+    expect(client).toContain(
+      "const DEFAULT_PRISM_REQUEST_TIMEOUT_MS = 15_000;",
+    );
+    expect(client).toContain("const MAX_PRISM_REQUEST_TIMEOUT_MS = 30_000;");
+    expect(client).toContain(
+      "const DEFAULT_PRISM_CIRCUIT_FAILURE_THRESHOLD = 1;",
+    );
+    expect(client).toContain(
+      "const DEFAULT_PRISM_CIRCUIT_COOLDOWN_MS = 15 * 60_000;",
+    );
+    expect(client).toContain("PRISM_ROSETTA_REQUEST_TIMEOUT_MS");
     expect(client).toContain("const PRISM_MAX_ATTEMPTS = 1;");
-    expect(client).toContain("const PRISM_MAX_REQUEST_BYTES = 4 * 1024 * 1024;");
+    expect(client).toContain(
+      "const PRISM_MAX_REQUEST_BYTES = 4 * 1024 * 1024;",
+    );
+  });
+
+  it("does not claim more queue work while the upstream circuit is open", () => {
+    const circuit_guard_position = queue_worker.indexOf(
+      'if (circuit.state === "open")',
+    );
+    const claim_position = queue_worker.indexOf(
+      "const job = await claim_next_job();",
+    );
+    expect(queue_worker).toContain("[PrismRosettaQueue] circuit_open_skip");
+    expect(queue_worker).toContain("prism_rosetta_circuit_allows_request");
+    expect(circuit_guard_position).toBeGreaterThan(-1);
+    expect(claim_position).toBeGreaterThan(circuit_guard_position);
   });
 
   it("caps new Prism submissions per queue activation pass", () => {
@@ -52,7 +77,9 @@ describe("PRISM 2.2 bounded runtime pressure", () => {
     const submit_position = activation.indexOf(
       "const receipt = await submit_rosetta_prism_request(request);",
     );
-    expect(activation).toContain("prism_rosetta_load_existing_binding_receipts");
+    expect(activation).toContain(
+      "prism_rosetta_load_existing_binding_receipts",
+    );
     expect(activation).toContain("existing_receipts.get(trait.trait_id)");
     expect(activation).toContain(
       "if (existing_receipt?.request_id === request.request_id)",
