@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { Server } from "node:http";
+import { request, type Server } from "node:http";
 import express from "express";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -55,7 +55,10 @@ vi.mock("./db", () => ({
   findCommittedDocumentReplacement: state.find_committed_document_replacement,
 }));
 
-import { registerUploadRoute } from "./upload-route";
+import {
+  getMultipartUploadCapacitySnapshot,
+  registerUploadRoute,
+} from "./upload-route";
 
 let server: Server;
 let base_url: string;
@@ -82,6 +85,95 @@ async function post_replacement(contents: string, document_id = 812, filename = 
     headers: {
       "x-lighthouse-supabase-session": "test-supabase-session",
     },
+  });
+}
+
+async function post_unauthenticated_unterminated_multipart(
+  path: string,
+  field_name: "file" | "files",
+) {
+  const boundary = "lighthouse-auth-order-proof";
+  const body = [
+    `--${boundary}`,
+    `Content-Disposition: form-data; name="${field_name}"; filename="proof.txt"`,
+    "Content-Type: text/plain",
+    "",
+    "unauthenticated bytes that must not reach Multer",
+  ].join("\r\n");
+
+  return fetch(`${base_url}${path}`, {
+    method: "POST",
+    headers: { "content-type": `multipart/form-data; boundary=${boundary}` },
+    body,
+  });
+}
+
+async function post_raw_multipart(
+  path: string,
+  options: { declared_length?: number; send_chunk?: boolean },
+) {
+  const endpoint = new URL(path, base_url);
+
+  return new Promise<{
+    status: number;
+    body: Record<string, unknown>;
+    retry_after?: string;
+  }>((resolve, reject) => {
+    const headers: Record<string, string> = {
+      connection: "close",
+      "content-type": "multipart/form-data; boundary=lighthouse-aggregate-proof",
+      "x-lighthouse-supabase-session": "test-supabase-session",
+    };
+    if (options.declared_length === undefined) {
+      headers["transfer-encoding"] = "chunked";
+    } else {
+      headers["content-length"] = String(options.declared_length);
+    }
+
+    const req = request(endpoint, { method: "POST", headers }, response => {
+      const chunks: Buffer[] = [];
+      response.on("data", chunk => chunks.push(Buffer.from(chunk)));
+      response.on("end", () => {
+        resolve({
+          status: response.statusCode ?? 0,
+          body: JSON.parse(Buffer.concat(chunks).toString("utf8")) as Record<string, unknown>,
+          retry_after: response.headers["retry-after"] as string | undefined,
+        });
+      });
+    });
+    req.on("error", reject);
+    if (options.send_chunk) req.write("x");
+    req.end();
+  });
+}
+
+function hold_authenticated_multipart_open(path: string) {
+  const endpoint = new URL(path, base_url);
+  const req = request(endpoint, {
+    method: "POST",
+    headers: {
+      connection: "close",
+      "content-type": "multipart/form-data; boundary=lighthouse-capacity-proof",
+      "content-length": "1024",
+      "x-lighthouse-supabase-session": "test-supabase-session",
+    },
+  }, response => response.resume());
+  req.on("error", () => {});
+  req.write([
+    "--lighthouse-capacity-proof",
+    `Content-Disposition: form-data; name="${path.includes("replace") ? "file" : "files"}"; filename="held.txt"`,
+    "Content-Type: text/plain",
+    "",
+    "held",
+  ].join("\r\n"));
+  return req;
+}
+
+async function post_empty_replacement(document_id = 812) {
+  return fetch(`${base_url}/api/upload/replace/${document_id}`, {
+    method: "POST",
+    body: new FormData(),
+    headers: { "x-lighthouse-supabase-session": "test-supabase-session" },
   });
 }
 
@@ -155,16 +247,90 @@ beforeEach(() => {
 });
 
 describe("authenticated multipart document upload", () => {
-  it("rejects unauthenticated uploads before ownership, storage, or persistence", async () => {
+  it.each([
+    ["/api/upload", "files"],
+    ["/api/upload/replace/812", "file"],
+  ] as const)("rejects %s before multipart parsing or buffering", async (path, field_name) => {
     state.require_resolved_user.mockRejectedValue(new Error("missing_session"));
 
-    const response = await post_file("unauthorized payload");
+    const response = await post_unauthenticated_unterminated_multipart(path, field_name);
 
     expect(response.status).toBe(401);
     expect(await response.json()).toEqual({ error: "Unauthorized" });
+    expect(state.create_context).toHaveBeenCalledTimes(1);
     expect(state.storage_put).not.toHaveBeenCalled();
     expect(state.create_document).not.toHaveBeenCalled();
     expect(state.create_upload_session).not.toHaveBeenCalled();
+    expect(state.create_and_supersede_document_atomic).not.toHaveBeenCalled();
+  });
+
+  it("rejects an oversized aggregate body before Multer", async () => {
+    const response = await post_raw_multipart("/api/upload", {
+      declared_length: (110 * 1024 * 1024) + 1,
+    });
+
+    expect(response.status).toBe(413);
+    expect(response.body).toEqual({
+      error: "UPLOAD_REQUEST_TOO_LARGE",
+      maxAllowedBytes: 110 * 1024 * 1024,
+      receivedBytes: (110 * 1024 * 1024) + 1,
+    });
+    expect(state.create_context).toHaveBeenCalledTimes(1);
+    expect(state.storage_put).not.toHaveBeenCalled();
+    expect(state.create_upload_session).not.toHaveBeenCalled();
+    expect(state.create_and_supersede_document_atomic).not.toHaveBeenCalled();
+  });
+
+  it("rejects a chunked multipart upload whose aggregate size is unknowable", async () => {
+    const response = await post_raw_multipart("/api/upload", { send_chunk: true });
+
+    expect(response.status).toBe(411);
+    expect(response.body).toEqual({
+      error: "CONTENT_LENGTH_REQUIRED",
+      message: "Multipart uploads require a declared aggregate byte length",
+    });
+    expect(state.create_context).toHaveBeenCalledTimes(1);
+    expect(state.storage_put).not.toHaveBeenCalled();
+    expect(state.create_upload_session).not.toHaveBeenCalled();
+  });
+
+  it("caps concurrent in-memory multipart buffering and asks excess callers to retry", async () => {
+    const held_requests = [
+      hold_authenticated_multipart_open("/api/upload"),
+      hold_authenticated_multipart_open("/api/upload/replace/812"),
+    ];
+
+    try {
+      await vi.waitFor(() => {
+        expect(state.create_context).toHaveBeenCalledTimes(2);
+        expect(getMultipartUploadCapacitySnapshot()).toEqual({
+          active: 2,
+          maximum: 2,
+        });
+      });
+
+      const response = await post_raw_multipart("/api/upload", { declared_length: 0 });
+
+      expect(response.status).toBe(429);
+      expect(response.retry_after).toBe("30");
+      expect(response.body).toEqual({
+        error: "UPLOAD_CAPACITY_REACHED",
+        message: "Upload capacity is temporarily full",
+        maxConcurrentUploads: 2,
+        retryAfterSeconds: 30,
+      });
+      expect(state.storage_put).not.toHaveBeenCalled();
+      expect(state.create_upload_session).not.toHaveBeenCalled();
+    } finally {
+      held_requests.forEach(req => req.destroy());
+      await vi.waitFor(() => {
+        expect(getMultipartUploadCapacitySnapshot().active).toBe(0);
+      });
+    }
+
+    const released_response = await post_empty_replacement();
+    expect(released_response.status).toBe(400);
+    expect(await released_response.json()).toEqual({ error: "No file provided" });
   });
 
   it("resolves uploads through the current Lighthouse request-auth context", async () => {

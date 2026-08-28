@@ -1,24 +1,8 @@
 name: CI — Build check (main)
 
-# Honest CI for Luminari Lighthouse.
-#
-# Why this is build-only and not a deploy workflow:
-#   Production deploys to Manus (luminari-7zyn9wud.manus.space) are performed
-#   via Manus's internal `webdev_deploy_project` tool — there is no public
-#   Manus deploy API. The previous workflow attempted to POST to a placeholder
-#   `https://api.manus.space/v1/projects/...` endpoint that does not exist;
-#   it appeared to succeed because Manus serves an HTML brochure page at
-#   unknown URLs (returning 200 even for invalid project IDs), and then the
-#   post-deploy health check failed against an empty STAGING_URL secret,
-#   triggering the auto-rollback path on every push.
-#
-# What this workflow does instead:
-#   - Confirms every commit on main installs and builds cleanly.
-#   - Does NOT attempt to deploy.
-#   - Does NOT run a health check against any URL.
-#   - Does NOT fire auto-rollback (nothing to roll back from CI).
-#
-# Production deploys remain a manual step via the Manus interface.
+# Build-only CI for Luminari Lighthouse. The linked Render service owns the
+# production deployment lifecycle; this workflow verifies that each main
+# commit installs from the committed lockfile and builds successfully.
 
 on:
   push:
@@ -36,12 +20,12 @@ jobs:
     timeout-minutes: 15
 
     env:
-      # Note: do NOT set NODE_ENV=production here — npm skips devDependencies
-      # under that env, and vite (needed by `npm run build`) lives in devDeps.
+      # Note: do NOT set NODE_ENV=production here — package managers skip
+      # devDependencies under that env, and Vite lives in devDependencies.
       NODE_ENV: development
       # Supabase staging project: wepxlinwbjrkqdzkqpar
       # Build-time env so any client bundle that needs these doesn't crash;
-      # safe to leave unset — they're only required at runtime in Manus.
+      # safe to leave unset — they're only required at runtime in Render.
       DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
       SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
       SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
@@ -51,17 +35,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node 20
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          # cache: 'npm' intentionally omitted — no package-lock.json in repo
+          node-version: "20"
+          cache: pnpm
 
       - name: Install dependencies
-        run: npm install --legacy-peer-deps
+        run: pnpm install --frozen-lockfile
 
       - name: Build
-        run: npm run build
+        run: pnpm run build
 
       - name: Build summary
         if: always()
@@ -71,5 +58,5 @@ jobs:
           echo "- Commit: \`${GITHUB_SHA}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- Build: ${{ job.status }}" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "**Note:** This workflow does not deploy. Production deploys" >> "$GITHUB_STEP_SUMMARY"
-          echo "to Manus are performed manually via Manus's internal tooling." >> "$GITHUB_STEP_SUMMARY"
+          echo "**Note:** This workflow verifies the build only. The linked" >> "$GITHUB_STEP_SUMMARY"
+          echo "Render service owns the production deployment lifecycle." >> "$GITHUB_STEP_SUMMARY"
