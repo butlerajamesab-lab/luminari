@@ -32,6 +32,8 @@ const MAX_QUEUE_MAX_NEW_SUBMISSIONS = 500;
 const DEFAULT_QUEUE_BATCH_YIELD_RETRY_SECONDS = 30;
 const MIN_QUEUE_BATCH_YIELD_RETRY_SECONDS = 5;
 const MAX_QUEUE_BATCH_YIELD_RETRY_SECONDS = 300;
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export type prism_rosetta_queue_state =
   | "eligible"
@@ -116,6 +118,17 @@ function bounded_queue_batch_yield_retry_seconds(): number {
     MIN_QUEUE_BATCH_YIELD_RETRY_SECONDS,
     MAX_QUEUE_BATCH_YIELD_RETRY_SECONDS,
   );
+}
+
+export function prism_rosetta_queue_canary_id(
+  input = process.env.PRISM_ROSETTA_QUEUE_CANARY_ID,
+): string | null {
+  const configured = input?.trim();
+  if (!configured) return null;
+  if (!UUID_PATTERN.test(configured)) {
+    throw new Error("prism_rosetta_queue_canary_id_invalid");
+  }
+  return configured.toLowerCase();
 }
 
 function queue_enabled(): boolean {
@@ -292,6 +305,7 @@ async function claim_next_job(): Promise<prism_rosetta_queue_job | null> {
                and verification.prism_rule_set_version = queue.prism_rule_set_version
                and verification.receipt_count = verification.expected_trait_count
           )
+          and ($5::uuid is null or queue.queue_id = $5::uuid)
         order by queue.eligible_at, queue.queue_id
         for update skip locked
         limit 1
@@ -314,6 +328,7 @@ async function claim_next_job(): Promise<prism_rosetta_queue_job | null> {
       PRISM_ROSETTA_RULE_SET_ID,
       PRISM_ROSETTA_RULE_SET_VERSION,
       QUEUE_LEASE_MINUTES,
+      prism_rosetta_queue_canary_id(),
     ],
     {
       label: "prism_rosetta_queue_claim",
@@ -560,11 +575,21 @@ export function start_prism_rosetta_queue_worker(): void {
   const interval_ms = bounded_poll_interval();
   const reconcile_interval_ms = bounded_reconcile_interval();
   const max_new_submissions = bounded_queue_max_new_submissions();
+  let canary_queue_id: string | null;
+  try {
+    canary_queue_id = prism_rosetta_queue_canary_id();
+  } catch (error) {
+    console.error("[PrismRosettaQueue] disabled_invalid_canary", {
+      error_code: safe_error_code(error),
+    });
+    return;
+  }
   console.log("[PrismRosettaQueue] started", {
     worker_id: queue_worker_id,
     interval_ms,
     reconcile_interval_ms,
     max_new_submissions,
+    canary_queue_id,
     request_timeout_ms: prism_rosetta_request_timeout_ms(),
     circuit_failure_threshold: prism_rosetta_circuit_failure_threshold(),
     circuit_cooldown_ms: prism_rosetta_circuit_cooldown_ms(),
