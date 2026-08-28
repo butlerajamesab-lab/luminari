@@ -31,6 +31,7 @@ const MAX_PRISM_CIRCUIT_COOLDOWN_MS = 60 * 60_000;
 type prism_rosetta_circuit_state = {
   consecutive_failures: number;
   open_until_ms: number;
+  half_open_probe_request_id: string | null;
   last_failure_class: PrismBoundaryError["failure_class"] | null;
   last_error_code: string | null;
   last_request_id: string | null;
@@ -44,6 +45,7 @@ export type prism_rosetta_circuit_snapshot = prism_rosetta_circuit_state & {
 const prism_rosetta_circuit: prism_rosetta_circuit_state = {
   consecutive_failures: 0,
   open_until_ms: 0,
+  half_open_probe_request_id: null,
   last_failure_class: null,
   last_error_code: null,
   last_request_id: null,
@@ -115,7 +117,36 @@ export function get_prism_rosetta_circuit_snapshot(
 export function prism_rosetta_circuit_allows_request(
   now_ms = Date.now(),
 ): boolean {
-  return get_prism_rosetta_circuit_snapshot(now_ms).state !== "open";
+  const snapshot = get_prism_rosetta_circuit_snapshot(now_ms);
+  return (
+    snapshot.state === "closed" ||
+    (snapshot.state === "half_open" &&
+      snapshot.half_open_probe_request_id === null)
+  );
+}
+
+export function acquire_prism_rosetta_circuit_request(
+  request_id: string,
+  now_ms = Date.now(),
+): boolean {
+  const snapshot = get_prism_rosetta_circuit_snapshot(now_ms);
+  if (snapshot.state === "open") return false;
+  if (snapshot.state === "closed") return true;
+  if (prism_rosetta_circuit.half_open_probe_request_id !== null) return false;
+  prism_rosetta_circuit.half_open_probe_request_id = request_id;
+  console.log("[PrismRosettaCircuit] half_open_probe_reserved", {
+    request_id,
+    consecutive_failures: snapshot.consecutive_failures,
+  });
+  return true;
+}
+
+export function release_prism_rosetta_circuit_request(
+  request_id: string,
+): void {
+  if (prism_rosetta_circuit.half_open_probe_request_id === request_id) {
+    prism_rosetta_circuit.half_open_probe_request_id = null;
+  }
 }
 
 function circuit_breaking_failure(error: PrismBoundaryError): boolean {
@@ -139,6 +170,7 @@ export function record_prism_rosetta_circuit_failure(
   prism_rosetta_circuit.last_failure_class = error.failure_class;
   prism_rosetta_circuit.last_error_code = error.message;
   prism_rosetta_circuit.last_request_id = request_id;
+  prism_rosetta_circuit.half_open_probe_request_id = null;
 
   const threshold = prism_rosetta_circuit_failure_threshold();
   if (prism_rosetta_circuit.consecutive_failures >= threshold) {
@@ -172,6 +204,7 @@ export function record_prism_rosetta_circuit_success(
   const prior = get_prism_rosetta_circuit_snapshot(now_ms);
   prism_rosetta_circuit.consecutive_failures = 0;
   prism_rosetta_circuit.open_until_ms = 0;
+  prism_rosetta_circuit.half_open_probe_request_id = null;
   prism_rosetta_circuit.last_failure_class = null;
   prism_rosetta_circuit.last_error_code = null;
   prism_rosetta_circuit.last_request_id = null;
@@ -187,6 +220,7 @@ export function record_prism_rosetta_circuit_success(
 export function reset_prism_rosetta_circuit(): void {
   prism_rosetta_circuit.consecutive_failures = 0;
   prism_rosetta_circuit.open_until_ms = 0;
+  prism_rosetta_circuit.half_open_probe_request_id = null;
   prism_rosetta_circuit.last_failure_class = null;
   prism_rosetta_circuit.last_error_code = null;
   prism_rosetta_circuit.last_request_id = null;
@@ -427,7 +461,7 @@ async function call_prism(
   if (Buffer.byteLength(body, "utf8") > PRISM_MAX_REQUEST_BYTES) {
     throw new PrismBoundaryError("validation", 413, "prism_request_too_large");
   }
-  if (!prism_rosetta_circuit_allows_request()) {
+  if (!acquire_prism_rosetta_circuit_request(request.request_id)) {
     throw new PrismBoundaryError(
       "transient_upstream",
       503,
@@ -523,6 +557,7 @@ async function call_prism(
       }
     } finally {
       clearTimeout(timeout);
+      release_prism_rosetta_circuit_request(request.request_id);
     }
   }
   throw (
