@@ -91,6 +91,11 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const workflow_id = "pr-review-gate.yml";
+            const gateEvents = new Set([
+              "pull_request",
+              "pull_request_review",
+              "pull_request_review_comment",
+            ]);
             const rerunnable = new Set([
               "action_required",
               "cancelled",
@@ -151,7 +156,9 @@ jobs:
                 },
               );
               const latest = runs
-                .filter((run) => run.head_sha === pull.head.sha)
+                .filter(
+                  (run) => run.head_sha === pull.head.sha && gateEvents.has(run.event),
+                )
                 .sort((left, right) => Date.parse(right.created_at) - Date.parse(left.created_at))[0];
 
               if (!latest || latest.status !== "completed" || !rerunnable.has(latest.conclusion)) {
