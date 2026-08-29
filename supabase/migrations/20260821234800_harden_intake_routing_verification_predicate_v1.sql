@@ -1,9 +1,3 @@
--- Production follow-up for the governed intake routing projection.
---
--- `UNVERIFIED` contains the substring `verified`; explicitly reject it before
--- user-routable promotion. This migration is idempotent and changes the
--- read-only projection only.
-
 create or replace view public.v_ui_intake_routing_v1
 with (security_invoker = true)
 as

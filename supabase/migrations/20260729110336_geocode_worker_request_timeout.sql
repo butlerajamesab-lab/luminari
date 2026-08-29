@@ -7,19 +7,35 @@
 -- room for upstream latency and the worker's retry-safe queue transitions.
 
 do $block$
+declare
+  existing_job boolean := false;
 begin
-  if exists (
-    select 1 from cron.job where jobname = 'geocode-queue-worker-timer'
-  ) then
-    perform cron.unschedule('geocode-queue-worker-timer');
-  end if;
-end
-$block$;
+  -- A local or preview Supabase stack may not expose pg_cron. The previous
+  -- migration already made the authentication boundary mandatory; update the
+  -- schedule only when the scheduling capability is actually present.
+  if to_regclass('cron.job') is not null
+     and to_regprocedure('cron.schedule(text,text,text)') is not null
+     and to_regprocedure('cron.unschedule(text)') is not null then
+    execute $query$
+      select exists (
+        select 1
+        from cron.job
+        where jobname = 'geocode-queue-worker-timer'
+      )
+    $query$
+    into existing_job;
 
-select cron.schedule(
-  'geocode-queue-worker-timer',
-  '*/15 * * * *',
-  $cron$
+    if existing_job then
+      execute $query$
+        select cron.unschedule('geocode-queue-worker-timer')
+      $query$;
+    end if;
+
+    execute $schedule$
+      select cron.schedule(
+        'geocode-queue-worker-timer',
+        '*/15 * * * *',
+        $cron$
     select net.http_post(
       url := (
         select decrypted_secret
@@ -48,5 +64,9 @@ select cron.schedule(
       body := '{}'::jsonb,
       timeout_milliseconds := 120000
     );
-  $cron$
-);
+        $cron$
+      )
+    $schedule$;
+  end if;
+end
+$block$;

@@ -9,6 +9,7 @@ const scheduler = read("server/ingestion/scheduler.ts");
 const ingestion_control = read("server/routes/ingestion_control_router.ts");
 const docket_routes = read("server/routes/docket.ts");
 const civic_genome_router = read("server/routers/civic-genome-router.ts");
+const session76_router = read("server/routers/session76-router.ts");
 const render_blueprint = read("render.yaml");
 const pr_workflow = read(".github/workflows/pr-test.yml");
 
@@ -34,9 +35,15 @@ describe("Lighthouse web/background runtime boundary", () => {
     expect(production_entry).toContain("HTTP-only process; background startup denied");
     expect(production_entry).toContain("runtime_role: resolve_lighthouse_runtime_role()");
     const worker_boundary = production_entry.indexOf("if (background_workers_allowed())", listen_position);
+    const upload_expiration_grant = production_entry.indexOf(
+      'background_feature_enabled("UPLOAD_SESSION_EXPIRATION_ENABLED")',
+      listen_position,
+    );
     const upload_expiration = production_entry.indexOf("void expireStaleUploadSessions()", listen_position);
     expect(worker_boundary).toBeGreaterThan(listen_position);
+    expect(upload_expiration_grant).toBeGreaterThan(worker_boundary);
     expect(upload_expiration).toBeGreaterThan(worker_boundary);
+    expect(upload_expiration).toBeGreaterThan(upload_expiration_grant);
   });
 
   it("requires role plus an explicit positive flag for every default-on worker", () => {
@@ -55,6 +62,17 @@ describe("Lighthouse web/background runtime boundary", () => {
     expect(docket_routes).toContain('source: "cache_stale_worker_paused"');
     expect(civic_genome_router).toContain("const workerAdminProcedure = adminProcedure.use");
     expect(civic_genome_router.match(/workerAdminProcedure/g)?.length).toBe(8);
+    for (const mutation of [
+      "reenableStream",
+      "resetFailureCounters",
+      "refreshSchedules",
+      "resetCheckpoint",
+      "forceReingestion",
+    ]) {
+      expect(session76_router, mutation).toMatch(
+        new RegExp(`${mutation}: workerAdminProcedure`),
+      );
+    }
   });
 
   it("guards every import-time Fresh Corpus timer with a positive worker grant", () => {

@@ -151,4 +151,3 @@ comment on function public.register_declared_intake_context_v1(
   jsonb
 ) is
   'Registers an exact-byte declared intake source with the case sole live-upload authority and copies only explicit stabilization fields into the governed session.';
-

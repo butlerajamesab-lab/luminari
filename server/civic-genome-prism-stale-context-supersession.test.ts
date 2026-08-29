@@ -7,6 +7,15 @@ const migration = readFileSync(
     process.cwd(),
     "supabase",
     "migrations",
+    "20260820155755_civic_genome_prism_rosetta_stale_context_supersession_v1.sql",
+  ),
+  "utf8",
+);
+const repositoryOnlyReceipt = readFileSync(
+  join(
+    process.cwd(),
+    "supabase",
+    "migrations",
     "20260820063000_civic_genome_prism_rosetta_stale_context_supersession_v1.sql",
   ),
   "utf8",
@@ -22,6 +31,14 @@ const verification = readFileSync(
 );
 
 describe("Civic Genome Prism Rosetta stale-context supersession", () => {
+  it("keeps the earlier repository-only version as an explicit no-op receipt", () => {
+    expect(repositoryOnlyReceipt).toContain("Repository-only no-op receipt");
+    expect(repositoryOnlyReceipt).toContain(
+      "20260820155755_civic_genome_prism_rosetta_stale_context_supersession_v1.sql",
+    );
+    expect(repositoryOnlyReceipt).not.toContain("update public.civic_genome_prism_verification_queue");
+  });
+
   it("targets only the active Prism Rosetta document-context failure", () => {
     expect(migration).toContain("prism-rosetta-structural-binding");
     expect(migration).toContain("prism_rule_set_version='2.3.0'");

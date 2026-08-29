@@ -1,23 +1,9 @@
--- Keep Lighthouse case state on the existing canonical cases.status lane.
--- Intake sessions already begin as open/started; the legacy case projection
--- must be initialized in the same transaction instead of inventing a second
--- status source in the read model.
+-- Repository-only no-op receipt.
+-- The canonical production migration is 20260822222044_lighthouse_case_status_canonical_default.sql and must execute exactly once.
+-- This earlier version is retained only to preserve repository history without replaying the production change.
 
-alter table public.cases
-  alter column status set default 'active';
-
-update public.cases c
-   set status = 'active'
- where c.status is null
-   and exists (
-     select 1
-       from public.case_identity_bridge b
-       join public.case_intake_links l
-         on l.case_uuid = b.case_uuid
-        and l.is_primary is true
-        and l.link_type = 'primary_projection'
-      where b.legacy_case_id = c.id
-   );
-
-comment on column public.cases.status is
-  'Canonical Lighthouse case lifecycle state. New case/intake projections begin active; downstream read models project this column directly.';
+do $repository_only_duplicate_receipt$
+begin
+  raise notice 'Skipping duplicate repository migration; canonical receipt: 20260822222044_lighthouse_case_status_canonical_default.sql';
+end
+$repository_only_duplicate_receipt$;

@@ -8,6 +8,7 @@ const pool_state = vi.hoisted(() => ({
 
 vi.mock("../db", () => ({
   getPool: () => ({ query: pool_state.query }),
+  pool: { query: pool_state.query },
 }));
 
 import { adminDashboardRouter } from "./admin-dashboard";
@@ -57,7 +58,7 @@ describe("Mission Control admin dashboard pool budget", () => {
       caller.workQueue(),
     ]);
 
-    expect(pool_state.query).toHaveBeenCalledTimes(23);
+    expect(pool_state.query).toHaveBeenCalledTimes(22);
     expect(pool_state.maximum_active_queries).toBeLessThanOrEqual(4);
     expect(pool_state.active_queries).toBe(0);
   });

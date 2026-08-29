@@ -1,7 +1,7 @@
 -- Fix registry resource projection timestamp normalization.
 --
 -- registry_programs.created_at is stored as a bigint epoch millisecond value for
--- v3.13-derived rows. The previous v_registry_resources_unified projection treated
+-- v3.13-derived rows. The existing v_registry_resources_unified projection treated
 -- that bigint as epoch seconds, producing impossible future timestamps such as
 -- year 58544. This view-level repair preserves the source value and normalizes the
 -- projection without mutating registry_programs.

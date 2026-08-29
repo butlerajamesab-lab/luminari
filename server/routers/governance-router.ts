@@ -152,7 +152,7 @@ export const governanceRouter = router({
       .orderBy(governanceLog.seqNo);
 
     // Normalize JSON fields and produce JSONL
-    const lines = entries.map(e => {
+    const lines = entries.map((e: (typeof entries)[number]) => {
       const normalizeJson = (val: any) => {
         if (val === null || val === undefined) return null;
         if (typeof val === "string") {
@@ -358,7 +358,7 @@ export const governanceRouter = router({
       .selectDistinct({ component: governanceLog.component })
       .from(governanceLog)
       .orderBy(governanceLog.component);
-    return results.map(r => r.component);
+    return results.map((r: (typeof results)[number]) => r.component);
   }),
 
   // ═══════════════════════════════════════════════════════════════════
@@ -416,7 +416,7 @@ export const governanceRouter = router({
         recordId: input.recordId,
         changes: input.changes,
         rationale: input.rationale,
-        actorId: ctx.user.open_id,
+        actorId: ctx.user.open_id ?? String(ctx.user.id),
         actorRole: "admin",
       });
     }),
@@ -435,7 +435,7 @@ export const governanceRouter = router({
         datasetId: input.datasetId,
         enabled: input.enabled,
         rationale: input.rationale,
-        actorId: ctx.user.open_id,
+        actorId: ctx.user.open_id ?? String(ctx.user.id),
         actorRole: "admin",
       });
     }),
@@ -454,7 +454,7 @@ export const governanceRouter = router({
         signalId: input.signalId,
         suppress: input.suppress,
         rationale: input.rationale,
-        actorId: ctx.user.open_id,
+        actorId: ctx.user.open_id ?? String(ctx.user.id),
         actorRole: "admin",
       });
     }),
@@ -477,7 +477,7 @@ export const governanceRouter = router({
         enabled: input.enabled,
         config: input.config,
         rationale: input.rationale,
-        actorId: ctx.user.open_id,
+        actorId: ctx.user.open_id ?? String(ctx.user.id),
         actorRole: "admin",
       });
     }),
@@ -500,7 +500,7 @@ export const governanceRouter = router({
         previousConfig: input.previousConfig,
         newConfig: input.newConfig,
         rationale: input.rationale,
-        actorId: ctx.user.open_id,
+        actorId: ctx.user.open_id ?? String(ctx.user.id),
         actorRole: "admin",
       });
     }),
@@ -523,7 +523,7 @@ export const governanceRouter = router({
         previousCategory: input.previousCategory,
         newCategory: input.newCategory,
         rationale: input.rationale,
-        actorId: ctx.user.open_id,
+        actorId: ctx.user.open_id ?? String(ctx.user.id),
         actorRole: "admin",
       });
     }),
@@ -546,7 +546,7 @@ export const governanceRouter = router({
         newVersion: input.newVersion,
         changelog: input.changelog,
         rationale: input.rationale,
-        actorId: ctx.user.open_id,
+        actorId: ctx.user.open_id ?? String(ctx.user.id),
         actorRole: "admin",
       });
     }),

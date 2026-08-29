@@ -21,9 +21,7 @@ export type lighthouse_runtime_role_resolution = {
 export function resolve_lighthouse_runtime_role(
   environment: runtime_environment = process.env,
 ): lighthouse_runtime_role_resolution {
-  const configured_value = environment[LIGHTHOUSE_RUNTIME_ROLE_ENV]
-    ?.trim()
-    .toLowerCase() || null;
+  const configured_value = environment[LIGHTHOUSE_RUNTIME_ROLE_ENV] ?? null;
 
   if (configured_value === "worker") {
     return { role: "worker", configured_value, valid: true };
@@ -53,5 +51,5 @@ export function background_feature_enabled(
   environment: runtime_environment = process.env,
 ): boolean {
   return background_workers_allowed(environment)
-    && environment[feature_flag]?.trim().toLowerCase() === "true";
+    && environment[feature_flag] === "true";
 }

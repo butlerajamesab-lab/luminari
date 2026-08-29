@@ -1,14 +1,13 @@
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const migrationPath = "supabase/migrations/20260815123000_fresh_resource_address_projection_v2.sql";
-const preservationMigrationPath = "supabase/migrations/20260815124500_fresh_resource_source_address_preservation_v3.sql";
-const singlePassMigrationPath = "supabase/migrations/20260815134500_fresh_resource_single_pass_address_snapshot_v4.sql";
-const deprecationMigrationPath = "supabase/migrations/20260815134700_deprecate_multipass_address_snapshot_builders.sql";
+const migrationPath = "../supabase/migrations/20260815071015_fresh_resource_address_projection_v2.sql";
+const preservationMigrationPath = "../supabase/migrations/20260815071636_fresh_resource_source_address_preservation_v3.sql";
+const singlePassMigrationPath = "../supabase/migrations/20260815073800_fresh_resource_single_pass_address_snapshot_v4.sql";
+const deprecationMigrationPath = "../supabase/migrations/20260815074155_deprecate_multipass_address_snapshot_builders.sql";
 
 function source(path: string): string {
-  return readFileSync(join(process.cwd(), path), "utf8");
+  return readFileSync(new URL(path, import.meta.url), "utf8");
 }
 
 describe("fresh resource address projection v2", () => {

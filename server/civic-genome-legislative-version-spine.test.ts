@@ -7,7 +7,7 @@ const migration = readFileSync(
     process.cwd(),
     "supabase",
     "migrations",
-    "20260805210000_legislative_version_decomposition_spine.sql",
+    "20260805210717_legislative_version_decomposition_spine.sql",
   ),
   "utf8",
 );
@@ -16,7 +16,7 @@ const auto_registration = readFileSync(
     process.cwd(),
     "supabase",
     "migrations",
-    "20260805210100_legislative_version_spine_auto_registration.sql",
+    "20260805210739_legislative_version_spine_auto_registration.sql",
   ),
   "utf8",
 );

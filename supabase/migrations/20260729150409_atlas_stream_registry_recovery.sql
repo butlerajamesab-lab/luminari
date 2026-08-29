@@ -1,16 +1,7 @@
 -- Atlas stream registry recovery.
---
 -- Lighthouse mirrors deterministic Atlas signal_events. It does not fetch or
--- reinterpret the upstream agency feeds represented by these rows. Preserve
--- the original upstream source in the human-readable description, then switch
--- source_dsr to the runtime adapter family consumed by the Lighthouse
--- scheduler.
---
--- This migration is replay-safe and non-destructive.
+-- reinterpret the upstream agency feeds represented by these rows.
 
--- The bridge uses PostgreSQL ON CONFLICT against these exact identities. Live
--- Lighthouse already has these indexes; IF NOT EXISTS makes the contract safe
--- for recovery databases and fresh schema builds without duplicating them.
 create unique index if not exists streams_pkey
   on public.streams (stream_id);
 
@@ -20,11 +11,6 @@ create unique index if not exists signal_events_pkey
 create unique index if not exists cursors_stream_id_name_key
   on public.cursors (stream_id, name);
 
--- IF NOT EXISTS is not sufficient when a same-named index already exists with
--- the wrong uniqueness or columns. Resolve the ordered key columns from the
--- PostgreSQL catalog and fail before any stream is activated unless every
--- conflict target is exact, unique, valid, ready, non-partial, and expression-
--- free.
 do $atlas_identity_contract$
 declare
   streams_identity_columns text[];
@@ -34,12 +20,9 @@ begin
   select array_agg(attribute.attname order by key_column.ordinality)
     into streams_identity_columns
     from pg_index index_record
-    join pg_class index_relation
-      on index_relation.oid = index_record.indexrelid
-    join pg_class table_relation
-      on table_relation.oid = index_record.indrelid
-    join pg_namespace namespace
-      on namespace.oid = table_relation.relnamespace
+    join pg_class index_relation on index_relation.oid = index_record.indexrelid
+    join pg_class table_relation on table_relation.oid = index_record.indrelid
+    join pg_namespace namespace on namespace.oid = table_relation.relnamespace
     cross join lateral unnest(index_record.indkey::smallint[])
       with ordinality as key_column(attnum, ordinality)
     join pg_attribute attribute
@@ -65,12 +48,9 @@ begin
   select array_agg(attribute.attname order by key_column.ordinality)
     into signal_events_identity_columns
     from pg_index index_record
-    join pg_class index_relation
-      on index_relation.oid = index_record.indexrelid
-    join pg_class table_relation
-      on table_relation.oid = index_record.indrelid
-    join pg_namespace namespace
-      on namespace.oid = table_relation.relnamespace
+    join pg_class index_relation on index_relation.oid = index_record.indexrelid
+    join pg_class table_relation on table_relation.oid = index_record.indrelid
+    join pg_namespace namespace on namespace.oid = table_relation.relnamespace
     cross join lateral unnest(index_record.indkey::smallint[])
       with ordinality as key_column(attnum, ordinality)
     join pg_attribute attribute
@@ -96,12 +76,9 @@ begin
   select array_agg(attribute.attname order by key_column.ordinality)
     into cursors_identity_columns
     from pg_index index_record
-    join pg_class index_relation
-      on index_relation.oid = index_record.indexrelid
-    join pg_class table_relation
-      on table_relation.oid = index_record.indrelid
-    join pg_namespace namespace
-      on namespace.oid = table_relation.relnamespace
+    join pg_class index_relation on index_relation.oid = index_record.indexrelid
+    join pg_class table_relation on table_relation.oid = index_record.indrelid
+    join pg_namespace namespace on namespace.oid = table_relation.relnamespace
     cross join lateral unnest(index_record.indkey::smallint[])
       with ordinality as key_column(attnum, ordinality)
     join pg_attribute attribute
@@ -158,8 +135,6 @@ update public.data_stream_registry registry
   from atlas_runtime_rows runtime
  where registry.id = runtime.id;
 
--- Rows may already have source_dsr='atlas_stream' if this migration is replayed
--- or a prior recovery pass updated them. Reset only bridge operational state.
 update public.data_stream_registry
    set enabled_dsr = true,
        auto_disabled_dsr = false,
@@ -179,9 +154,6 @@ update public.data_stream_registry
    and api_url_dsr like '/v1/streams/%/events'
    and source_dsr = 'atlas_stream';
 
--- Retain crossed-wire and obsolete direct-source rows for audit, but remove
--- them from scheduling and health calculations. Their canonical replacements
--- are the Atlas stream-registry rows above.
 update public.data_stream_registry
    set enabled_dsr = false,
        auto_disabled_dsr = false,

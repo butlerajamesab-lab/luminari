@@ -6,6 +6,7 @@ begin;
 -- and S specifically and treats every other value as other_amendment.
 alter table public.docket_bill_source_document
   drop constraint if exists docket_bill_source_document_chamber_check;
+
 alter table public.docket_bill_source_document
   add constraint docket_bill_source_document_chamber_check
   check (
@@ -19,6 +20,7 @@ alter table public.docket_bill_source_document
 
 alter table public.civic_genome_bill_version
   drop constraint if exists civic_genome_bill_version_chamber_check;
+
 alter table public.civic_genome_bill_version
   add constraint civic_genome_bill_version_chamber_check
   check (

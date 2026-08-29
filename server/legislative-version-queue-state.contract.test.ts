@@ -1,13 +1,12 @@
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const migration = readFileSync(
-  join(process.cwd(), "supabase/migrations/20260815132500_legislative_version_queue_state_monotonicity.sql"),
+  new URL("../supabase/migrations/20260815072854_legislative_version_queue_state_monotonicity.sql", import.meta.url),
   "utf8",
 );
 const priorityMigration = readFileSync(
-  join(process.cwd(), "supabase/migrations/20260815132700_legislative_version_queue_priority_monotonicity.sql"),
+  new URL("../supabase/migrations/20260815073854_legislative_version_queue_priority_monotonicity.sql", import.meta.url),
   "utf8",
 );
 

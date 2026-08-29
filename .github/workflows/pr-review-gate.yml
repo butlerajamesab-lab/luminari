@@ -1,0 +1,174 @@
+name: PR Review Gate
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  pull_request_review:
+    types: [submitted, edited, dismissed]
+  pull_request_review_comment:
+    types: [created, edited, deleted]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  unresolved-review-threads:
+    name: No unresolved review findings
+    if: >-
+      github.event_name != 'schedule' &&
+      github.event_name != 'workflow_dispatch' &&
+      github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Reject unresolved current review threads
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const number = context.payload.pull_request.number;
+            const unresolved = [];
+            let cursor = null;
+
+            do {
+              const result = await github.graphql(`
+                query($owner: String!, $repo: String!, $number: Int!, $cursor: String) {
+                  repository(owner: $owner, name: $repo) {
+                    pullRequest(number: $number) {
+                      reviewThreads(first: 100, after: $cursor) {
+                        pageInfo { hasNextPage endCursor }
+                        nodes {
+                          isResolved
+                          isOutdated
+                          comments(first: 1) {
+                            nodes { url path body }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              `, { owner, repo, number, cursor });
+
+              const page = result.repository.pullRequest.reviewThreads;
+              for (const thread of page.nodes) {
+                if (!thread.isResolved && !thread.isOutdated) {
+                  unresolved.push(thread.comments.nodes[0] ?? {});
+                }
+              }
+              cursor = page.pageInfo.hasNextPage ? page.pageInfo.endCursor : null;
+            } while (cursor);
+
+            if (unresolved.length > 0) {
+              for (const finding of unresolved) {
+                core.error(`${finding.path ?? "review"}: ${finding.url ?? "unresolved thread"}`);
+              }
+              core.setFailed(`${unresolved.length} unresolved current review thread(s)`);
+            } else {
+              core.info("No unresolved current review threads");
+            }
+
+  recheck-resolved-review-threads:
+    name: Recheck resolved review findings
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Rerun stale failed gates after resolution
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const workflow_id = "pr-review-gate.yml";
+            const gateEvents = new Set([
+              "pull_request",
+              "pull_request_review",
+              "pull_request_review_comment",
+            ]);
+            const rerunnable = new Set([
+              "action_required",
+              "cancelled",
+              "failure",
+              "stale",
+              "timed_out",
+            ]);
+
+            async function countUnresolved(number) {
+              let count = 0;
+              let cursor = null;
+
+              do {
+                const result = await github.graphql(`
+                  query($owner: String!, $repo: String!, $number: Int!, $cursor: String) {
+                    repository(owner: $owner, name: $repo) {
+                      pullRequest(number: $number) {
+                        reviewThreads(first: 100, after: $cursor) {
+                          pageInfo { hasNextPage endCursor }
+                          nodes { isResolved isOutdated }
+                        }
+                      }
+                    }
+                  }
+                `, { owner, repo, number, cursor });
+
+                const page = result.repository.pullRequest.reviewThreads;
+                count += page.nodes.filter(
+                  (thread) => !thread.isResolved && !thread.isOutdated,
+                ).length;
+                cursor = page.pageInfo.hasNextPage ? page.pageInfo.endCursor : null;
+              } while (cursor);
+
+              return count;
+            }
+
+            const pulls = await github.paginate(github.rest.pulls.list, {
+              owner,
+              repo,
+              state: "open",
+              base: "main",
+              per_page: 100,
+            });
+
+            for (const pull of pulls) {
+              if (pull.draft || await countUnresolved(pull.number) > 0) {
+                continue;
+              }
+
+              const runs = await github.paginate(
+                github.rest.actions.listWorkflowRuns,
+                {
+                  owner,
+                  repo,
+                  workflow_id,
+                  branch: pull.head.ref,
+                  per_page: 100,
+                },
+              );
+              const latest = runs
+                .filter(
+                  (run) => run.head_sha === pull.head.sha && gateEvents.has(run.event),
+                )
+                .sort((left, right) => Date.parse(right.created_at) - Date.parse(left.created_at))[0];
+
+              if (!latest || latest.status !== "completed" || !rerunnable.has(latest.conclusion)) {
+                continue;
+              }
+
+              await github.rest.actions.reRunWorkflow({
+                owner,
+                repo,
+                run_id: latest.id,
+              });
+              core.info(`Requeued review gate for PR #${pull.number} at ${pull.head.sha}`);
+            }

@@ -8,6 +8,6 @@ describe("atomic source provenance", () => {
     expect(service).toContain("storage_byte_size_mismatch_expected_");
     expect(service).toContain("const contentSha256 = sha256(buffer)");
     expect(service).toContain("source_file_sha256");
-    expect(service).toContain("source_content_sha256");
+    expect(service).toContain("content_sha256=$3");
   });
 });

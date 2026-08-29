@@ -71,8 +71,14 @@ function string_value(value: unknown): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value : null;
 }
 
-function human_report_validation_summary(traits: unknown[]) {
-  return traits.reduce((summary, value) => {
+type validation_summary = {
+  supported: number;
+  contradicted: number;
+  unresolved: number;
+};
+
+function human_report_validation_summary(traits: unknown[]): validation_summary {
+  return traits.reduce<validation_summary>((summary, value) => {
     const trait = as_record(value);
     if (!trait) return summary;
     const display = civic_genome_prism_display(trait);

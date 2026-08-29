@@ -25,7 +25,7 @@ jobs:
         working-directory: rosetta-candidates/20260824-v2513
     steps:
       - name: Check out candidate source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Verify packet hashes and static contracts
         run: |
@@ -45,7 +45,7 @@ jobs:
         working-directory: artifacts/lighthouse-audit/2026-08-25-kimi-spec-review
     steps:
       - name: Check out evidence packet
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Verify source bytes and internal evidence
         run: python3 verify_packet.py

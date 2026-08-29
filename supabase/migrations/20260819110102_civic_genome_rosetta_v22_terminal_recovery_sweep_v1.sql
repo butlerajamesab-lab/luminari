@@ -7,6 +7,21 @@ declare
   v_receipt_count integer:=0;
   v_queue_count integer:=0;
 begin
+  -- FRESH_REPLAY_EMPTY_GUARD_BEGIN
+  -- This is a one-time production data repair, not schema seed data. A fresh
+  -- replay has no legislative versions, queue rows, or Docket source rows and
+  -- therefore has nothing that can be truthfully recovered. Preserve every
+  -- original fail-closed assertion as soon as any of those substrates exists.
+  if not exists (select 1 from public.civic_genome_bill_version limit 1)
+     and not exists (
+       select 1 from public.civic_genome_legislative_version_queue limit 1
+     )
+     and not exists (select 1 from public.docket_bill_source_document limit 1)
+  then
+    return;
+  end if;
+  -- FRESH_REPLAY_EMPTY_GUARD_END
+
   select * into v_target
   from public.civic_genome_rosetta_generation_target
   where target_name='current'

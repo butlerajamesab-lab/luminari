@@ -10,6 +10,7 @@ describe("canonical graph read performance contract", () => {
   const indexes = read("../supabase/migrations/20260816174809_optimize_current_civic_graph_relationship_joins.sql");
   const state = read("../supabase/migrations/20260816174926_optimize_lighthouse_canonical_state_v2_single_pass.sql");
   const parity = read("../scripts/audit-supabase-migration-ledger-parity.py");
+  const productionReceipts = read("../supabase/verification/production_migration_receipts_20260829.tsv");
 
   it("indexes the exact candidate and reconciliation identities used by current graph projection", () => {
     expect(indexes).toContain("(candidate_hash, artifact_key, created_at desc)");
@@ -34,7 +35,12 @@ describe("canonical graph read performance contract", () => {
   });
 
   it("records both production migration versions in parity", () => {
-    expect(parity).toContain('"20260816174809"');
-    expect(parity).toContain('"20260816174926"');
+    expect(parity).toContain("PRODUCTION_RECEIPTS");
+    expect(productionReceipts).toContain(
+      "20260816174809\toptimize_current_civic_graph_relationship_joins\t",
+    );
+    expect(productionReceipts).toContain(
+      "20260816174926\toptimize_lighthouse_canonical_state_v2_single_pass\t",
+    );
   });
 });

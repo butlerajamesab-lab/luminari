@@ -21,6 +21,23 @@ function satisfiedSegment():string{
  return satisfiedReconciliation.slice(start,end);
 }
 
+function v22RecoveryWithoutFreshReplayGuard():{
+ body:string;
+ guard:string;
+}{
+ const startMarker="  -- FRESH_REPLAY_EMPTY_GUARD_BEGIN\n";
+ const endMarker="  -- FRESH_REPLAY_EMPTY_GUARD_END\n\n";
+ const start=v22RecoveryLedger.indexOf(startMarker);
+ const end=v22RecoveryLedger.indexOf(endMarker,start);
+ expect(start).toBeGreaterThanOrEqual(0);
+ expect(end).toBeGreaterThan(start);
+ const after=end+endMarker.length;
+ return {
+  body:v22RecoveryLedger.slice(0,start)+v22RecoveryLedger.slice(after),
+  guard:v22RecoveryLedger.slice(start,after),
+ };
+}
+
 describe("Rosetta target supersession",()=>{
  it("adds an explicit superseded queue state",()=>{
   expect(supersession).toContain("'superseded'");
@@ -138,8 +155,13 @@ describe("Rosetta target supersession",()=>{
   expect(satisfiedReconciliation).not.toMatch(/update\s+public\.civic_genome_assembly_run/i);
  });
 
- it("keeps the obsolete v2.2 recovery source byte-identical to the production ledger migration",()=>{
-  expect(v22RecoveryLedger).toBe(v22Recovery);
+ it("keeps the production v2.2 recovery body byte-identical outside the audited fresh-empty guard",()=>{
+  const replay=v22RecoveryWithoutFreshReplayGuard();
+  expect(replay.body).toBe(v22Recovery);
+  expect(replay.guard).toContain("not exists (select 1 from public.civic_genome_bill_version limit 1)");
+  expect(replay.guard).toContain("public.civic_genome_legislative_version_queue limit 1");
+  expect(replay.guard).toContain("not exists (select 1 from public.docket_bill_source_document limit 1)");
+  expect(replay.guard).toContain("return;");
  });
 
  it("gates the obsolete v2.2 terminal recovery sweep to the exact current Rosetta 2.5.11 generation",()=>{

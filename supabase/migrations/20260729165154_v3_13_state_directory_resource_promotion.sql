@@ -1,7 +1,11 @@
 begin;
 
 create or replace function public.luminari_stable_uuid_v1(p_value text)
-returns uuid language sql immutable strict as $$
+returns uuid
+language sql
+immutable
+strict
+as $$
   select (
     substr(h, 1, 8) || '-' || substr(h, 9, 4) || '-' || substr(h, 13, 4) || '-' ||
     substr(h, 17, 4) || '-' || substr(h, 21, 12)
@@ -42,16 +46,20 @@ with jurisdiction_map as (
     upper(abbreviation) as jurisdiction_code
   from public.registry_jurisdictions
   where abbreviation is not null
-  order by regexp_replace(lower(split_part(name, '(', 1)), '[^a-z0-9]+', '', 'g'),
+  order by
+    regexp_replace(lower(split_part(name, '(', 1)), '[^a-z0-9]+', '', 'g'),
     (population_rj is not null) desc,
     created_at_rj desc
 ),
 candidates as (
-  select l.*, j.jurisdiction_code,
+  select
+    l.*,
+    j.jurisdiction_code,
     regexp_replace(lower(l.normalized_name), '[^a-z0-9]+', '', 'g') as normalized_identity,
     row_number() over (
       partition by j.jurisdiction_code, regexp_replace(lower(l.normalized_name), '[^a-z0-9]+', '', 'g')
-      order by case l.document_family when 'enriched_pass3' then 0 when 'enriched_pass2' then 1 else 2 end,
+      order by
+        case l.document_family when 'enriched_pass3' then 0 when 'enriched_pass2' then 1 else 2 end,
         l.deduped_source_row_count desc,
         l.logical_record_id
     ) as preference_rank
@@ -62,7 +70,9 @@ candidates as (
     and l.candidate_status = 'candidate_ready'
 ),
 grouped as (
-  select c.jurisdiction_code, c.normalized_identity,
+  select
+    c.jurisdiction_code,
+    c.normalized_identity,
     count(*)::integer as source_record_count,
     array_agg(c.logical_record_id order by c.preference_rank, c.logical_record_id) as source_logical_record_ids,
     array_agg(c.source_file order by c.preference_rank, c.logical_record_id) as source_files
@@ -70,10 +80,13 @@ grouped as (
   group by c.jurisdiction_code, c.normalized_identity
 ),
 preferred as (
-  select c.* from candidates c where c.preference_rank = 1
+  select c.*
+  from candidates c
+  where c.preference_rank = 1
 ),
 matched as (
-  select g.*,
+  select
+    g.*,
     p.logical_record_id as preferred_logical_record_id,
     p.normalized_name,
     p.row_class,
@@ -91,7 +104,8 @@ matched as (
     from public.luminari_resource_entities e
     where regexp_replace(lower(e.resource_name), '[^a-z0-9]+', '', 'g') = g.normalized_identity
       and upper(coalesce(e.state, e.jurisdiction, '')) = g.jurisdiction_code
-    order by case e.promotion_status when 'promoted' then 0 when 'review_ready' then 1 else 2 end,
+    order by
+      case e.promotion_status when 'promoted' then 0 when 'review_ready' then 1 else 2 end,
       e.canonical_id nulls last,
       e.resource_entity_id
     limit 1
@@ -106,12 +120,25 @@ matched as (
   ) rm on true
 )
 insert into public.state_directory_resource_promotion (
-  candidate_group_id, run_id, jurisdiction_code, normalized_identity, display_name,
-  row_class, preferred_logical_record_id, source_logical_record_ids, source_files,
-  source_record_count, preferred_payload, record_fingerprint, disposition,
-  target_table, target_record_id, canonical_id
+  candidate_group_id,
+  run_id,
+  jurisdiction_code,
+  normalized_identity,
+  display_name,
+  row_class,
+  preferred_logical_record_id,
+  source_logical_record_ids,
+  source_files,
+  source_record_count,
+  preferred_payload,
+  record_fingerprint,
+  disposition,
+  target_table,
+  target_record_id,
+  canonical_id
 )
-select m.candidate_group_id,
+select
+  m.candidate_group_id,
   'state_directory_reassembly_v1_20260729',
   m.jurisdiction_code,
   m.normalized_identity,
@@ -158,13 +185,33 @@ on conflict (candidate_group_id) do update set
   updated_at = now();
 
 insert into public.luminari_resource_entities (
-  resource_entity_id, canonical_id, source_family_key, source_table, source_pk,
-  source_hash, resource_name, resource_type, resource_category, layer,
-  jurisdiction, jurisdiction_scope, state, description, eligibility_summary,
-  apply_notes, service_categories, domains, metadata, verification_status,
-  promotion_status, provenance_status, created_at, updated_at
+  resource_entity_id,
+  canonical_id,
+  source_family_key,
+  source_table,
+  source_pk,
+  source_hash,
+  resource_name,
+  resource_type,
+  resource_category,
+  layer,
+  jurisdiction,
+  jurisdiction_scope,
+  state,
+  description,
+  eligibility_summary,
+  apply_notes,
+  service_categories,
+  domains,
+  metadata,
+  verification_status,
+  promotion_status,
+  provenance_status,
+  created_at,
+  updated_at
 )
-select p.target_record_id::uuid,
+select
+  p.target_record_id::uuid,
   p.canonical_id,
   'general_state_registry',
   'state_directory_logical_record',
@@ -239,7 +286,8 @@ select p.target_record_id::uuid,
   'source_attached',
   'review_ready',
   'staging_provenance_attached',
-  now(), now()
+  now(),
+  now()
 from public.state_directory_resource_promotion p
 where p.run_id = 'state_directory_reassembly_v1_20260729'
   and p.disposition = 'inserted'
@@ -252,21 +300,29 @@ on conflict (canonical_id) do update set
   metadata = coalesce(public.luminari_resource_entities.metadata, '{}'::jsonb) || excluded.metadata,
   verification_status = case
     when public.luminari_resource_entities.verification_status = 'verified' then 'verified'
-    else excluded.verification_status end,
+    else excluded.verification_status
+  end,
   promotion_status = case
     when public.luminari_resource_entities.promotion_status = 'promoted' then 'promoted'
-    else excluded.promotion_status end,
+    else excluded.promotion_status
+  end,
   provenance_status = case
     when public.luminari_resource_entities.provenance_status in ('verified', 'source_preserved')
       then public.luminari_resource_entities.provenance_status
-    else excluded.provenance_status end,
+    else excluded.provenance_status
+  end,
   updated_at = now();
 
 with contact_values as (
-  select p.*, e.resource_entity_id, e.canonical_id as entity_canonical_id,
-    c.contact_type, nullif(btrim(c.contact_value), '') as contact_value
+  select
+    p.*,
+    e.resource_entity_id,
+    e.canonical_id as entity_canonical_id,
+    c.contact_type,
+    nullif(btrim(c.contact_value), '') as contact_value
   from public.state_directory_resource_promotion p
-  join public.luminari_resource_entities e on e.resource_entity_id = p.target_record_id::uuid
+  join public.luminari_resource_entities e
+    on e.resource_entity_id = p.target_record_id::uuid
   cross join lateral (
     values
       ('phone'::text, coalesce(p.preferred_payload->'field_map'->>'phone', p.preferred_payload->'field_map'->>'phone_contact')),
@@ -282,44 +338,82 @@ with contact_values as (
     and p.disposition in ('inserted', 'duplicate_entity')
 )
 insert into public.luminari_resource_contact_points (
-  contact_point_id, resource_entity_id, canonical_id, contact_type, contact_value,
-  label, is_primary, contact_quality, source_table, source_pk, source_hash,
-  metadata, created_at
+  contact_point_id,
+  resource_entity_id,
+  canonical_id,
+  contact_type,
+  contact_value,
+  label,
+  is_primary,
+  contact_quality,
+  source_table,
+  source_pk,
+  source_hash,
+  metadata,
+  created_at
 )
-select public.luminari_stable_uuid_v1(entity_canonical_id || '|' || contact_type || '|' || contact_value),
-  resource_entity_id, entity_canonical_id, contact_type, contact_value,
-  'primary ' || contact_type, true, 'source_attached',
-  'state_directory_logical_record', preferred_logical_record_id, record_fingerprint,
+select
+  public.luminari_stable_uuid_v1(entity_canonical_id || '|' || contact_type || '|' || contact_value),
+  resource_entity_id,
+  entity_canonical_id,
+  contact_type,
+  contact_value,
+  'primary ' || contact_type,
+  true,
+  'source_attached',
+  'state_directory_logical_record',
+  preferred_logical_record_id,
+  record_fingerprint,
   jsonb_build_object(
     'promotion_group_id', candidate_group_id,
     'reassembly_run_id', run_id,
     'source_files', to_jsonb(source_files)
-  ), now()
+  ),
+  now()
 from contact_values
-where contact_value is not null and lower(contact_value) not like 'not published%'
+where contact_value is not null
+  and lower(contact_value) not like 'not published%'
 on conflict (contact_point_id) do update set
   metadata = coalesce(public.luminari_resource_contact_points.metadata, '{}'::jsonb) || excluded.metadata;
 
 with locations as (
-  select p.*, e.resource_entity_id,
+  select
+    p.*,
+    e.resource_entity_id,
     nullif(btrim(p.preferred_payload->'field_map'->>'address'), '') as address_value
   from public.state_directory_resource_promotion p
-  join public.luminari_resource_entities e on e.resource_entity_id = p.target_record_id::uuid
+  join public.luminari_resource_entities e
+    on e.resource_entity_id = p.target_record_id::uuid
   where p.run_id = 'state_directory_reassembly_v1_20260729'
     and p.disposition in ('inserted', 'duplicate_entity')
 )
 insert into public.luminari_resource_locations (
-  location_id, resource_entity_id, address_line1, state, country,
-  coordinate_quality, source_table, source_pk, metadata, created_at
+  location_id,
+  resource_entity_id,
+  address_line1,
+  state,
+  country,
+  coordinate_quality,
+  source_table,
+  source_pk,
+  metadata,
+  created_at
 )
-select public.luminari_stable_uuid_v1(resource_entity_id::text || '|address|' || address_value),
-  resource_entity_id, address_value, jurisdiction_code, 'US', 'unverified',
-  'state_directory_logical_record', preferred_logical_record_id,
+select
+  public.luminari_stable_uuid_v1(resource_entity_id::text || '|address|' || address_value),
+  resource_entity_id,
+  address_value,
+  jurisdiction_code,
+  'US',
+  'unverified',
+  'state_directory_logical_record',
+  preferred_logical_record_id,
   jsonb_build_object(
     'promotion_group_id', candidate_group_id,
     'reassembly_run_id', run_id,
     'source_files', to_jsonb(source_files)
-  ), now()
+  ),
+  now()
 from locations
 where address_value is not null
 on conflict (location_id) do update set
@@ -327,12 +421,15 @@ on conflict (location_id) do update set
   metadata = coalesce(public.luminari_resource_locations.metadata, '{}'::jsonb) || excluded.metadata;
 
 with exploded as (
-  select p.*, unnest(p.source_logical_record_ids) as logical_record_id
+  select
+    p.*,
+    unnest(p.source_logical_record_ids) as logical_record_id
   from public.state_directory_resource_promotion p
   where p.run_id = 'state_directory_reassembly_v1_20260729'
 )
 update public.state_directory_logical_record l
-set promotion_status = case when e.disposition = 'inserted' then 'promoted' else 'duplicate' end,
+set
+  promotion_status = case when e.disposition = 'inserted' then 'promoted' else 'duplicate' end,
   canonical_record_id = e.target_record_id,
   metadata = coalesce(l.metadata, '{}'::jsonb) || jsonb_build_object(
     'resource_promotion_group_id', e.candidate_group_id,
@@ -347,11 +444,22 @@ from exploded e
 where l.logical_record_id = e.logical_record_id;
 
 insert into public.substrate_promotion_batch (
-  batch_name, domain_key, source_artifact_id, status, candidate_count,
-  inserted_count, enriched_count, duplicate_count, rejected_count,
-  started_at, completed_at, rollback_metadata, notes
+  batch_name,
+  domain_key,
+  source_artifact_id,
+  status,
+  candidate_count,
+  inserted_count,
+  enriched_count,
+  duplicate_count,
+  rejected_count,
+  started_at,
+  completed_at,
+  rollback_metadata,
+  notes
 )
-select 'v3_13_state_directory_resource_entities_001',
+select
+  'v3_13_state_directory_resource_entities_001',
   'general_state_registry_resources',
   a.artifact_id,
   'completed',
@@ -360,7 +468,8 @@ select 'v3_13_state_directory_resource_entities_001',
   0,
   count(*) filter (where p.disposition in ('duplicate_entity', 'duplicate_registry'))::bigint,
   0,
-  now(), now(),
+  now(),
+  now(),
   jsonb_build_object(
     'canonical_id_prefix', 'sdr_',
     'source_table', 'state_directory_logical_record',
@@ -392,7 +501,9 @@ create policy "authenticated_read_only" on public.state_directory_resource_promo
   for select to authenticated using (true);
 
 create or replace view public.v_state_directory_resource_promotion_summary as
-select run_id, disposition,
+select
+  run_id,
+  disposition,
   count(*)::bigint as identity_groups,
   sum(source_record_count)::bigint as source_logical_records,
   count(distinct jurisdiction_code)::integer as jurisdictions

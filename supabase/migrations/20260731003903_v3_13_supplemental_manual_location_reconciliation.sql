@@ -167,6 +167,7 @@ declare
   missing_source_locations integer;
   source_location_drift integer;
   source_location_coordinate_drift integer;
+  live_source_count bigint;
 begin
   select count(*), count(distinct resource_entity_id)
     into decision_count, unique_resource_count
@@ -238,6 +239,10 @@ begin
     on l.location_id = x.location_id
   where l.latitude is not null or l.longitude is not null;
 
+  select count(*) into live_source_count
+  from public.luminari_resource_entities
+  where source_table = 'state_directory_logical_record';
+
   if decision_count <> 111 or unique_resource_count <> 111 then
     raise exception
       'supplemental decision drift: expected 111/111, found %/%',
@@ -295,12 +300,15 @@ begin
     raise exception 'supplemental decision/source ownership guard failed';
   end if;
 
-  if missing_entities <> 0
+  -- Enforce the reviewed live snapshot whenever any v3.13 corpus entities are
+  -- present. A fresh schema replay intentionally has none and must write none.
+  if live_source_count > 0 and (
+     missing_entities <> 0
      or entity_lineage_drift <> 0
      or prior_review_overlap <> 0
      or missing_source_locations <> 0
      or source_location_drift <> 0
-     or source_location_coordinate_drift <> 0 then
+     or source_location_coordinate_drift <> 0) then
     raise exception
       'supplemental live-source drift: missing entities %, lineage %, prior overlap %, missing locations %, location %, coordinate %',
       missing_entities, entity_lineage_drift, prior_review_overlap,
@@ -458,6 +466,8 @@ select
   ),
   now()
 from tmp_v3_13_manual_location_normalized d
+join public.luminari_resource_entities e
+  on e.resource_entity_id = d.resource_entity_id
 where d.reviewed_address is not null
 on conflict (location_id) do update set
   address_line1 = excluded.address_line1,
@@ -541,7 +551,12 @@ declare
   addressed_without_current integer;
   nonpoint_with_current integer;
   uncovered_corpus_resources integer;
+  live_source_count bigint;
 begin
+  select count(*) into live_source_count
+  from public.luminari_resource_entities
+  where source_table = 'state_directory_logical_record';
+
   select count(*), count(distinct resource_entity_id)
     into v2_resolution_count, v2_resource_count
   from public.luminari_resource_location_resolutions
@@ -636,26 +651,29 @@ begin
           in ('v3_13_manual_location_reconciliation_v1', 'v3_13_manual_location_reconciliation_v2')
     );
 
-  if v2_resolution_count <> 111 or v2_resource_count <> 111 then
+  if live_source_count > 0
+     and (v2_resolution_count <> 111 or v2_resource_count <> 111) then
     raise exception
       'v2 resolution write drift: expected 111/111, found %/%',
       v2_resolution_count, v2_resource_count;
   end if;
 
-  if v2_location_count <> 8
+  if live_source_count > 0 and (
+     v2_location_count <> 8
      or v2_location_resource_count <> 8
-     or v2_exact_pending_count <> 5 then
+     or v2_exact_pending_count <> 5) then
     raise exception
       'v2 reviewed-location drift: expected 8/8/5, found %/%/%',
       v2_location_count, v2_location_resource_count,
       v2_exact_pending_count;
   end if;
 
-  if combined_resolution_count <> 557
+  if live_source_count > 0 and (
+     combined_resolution_count <> 557
      or combined_resource_count <> 557
      or combined_location_count <> 217
      or combined_exact_pending_count <> 115
-     or combined_legacy_preserved <> 578 then
+     or combined_legacy_preserved <> 578) then
     raise exception
       'combined review drift: resolutions %/%, locations %, exact %, preserved %',
       combined_resolution_count, combined_resource_count,
@@ -673,6 +691,21 @@ begin
       accidental_coordinate_count, leaked_legacy_count,
       addressed_without_current, nonpoint_with_current,
       uncovered_corpus_resources;
+  end if;
+
+  if live_source_count = 0
+     and (v2_resolution_count <> 0
+       or v2_resource_count <> 0
+       or v2_location_count <> 0
+       or v2_location_resource_count <> 0
+       or v2_exact_pending_count <> 0
+       or combined_resolution_count <> 0
+       or combined_resource_count <> 0
+       or combined_location_count <> 0
+       or combined_exact_pending_count <> 0
+       or combined_legacy_preserved <> 0) then
+    raise exception
+      'supplemental reconciliation wrote rows without a live source corpus';
   end if;
 end
 $acceptance$;

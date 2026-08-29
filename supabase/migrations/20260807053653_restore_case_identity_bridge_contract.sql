@@ -71,9 +71,6 @@ after insert on public.cases
 for each row
 execute function public.luminari_ensure_case_identity_bridge_v1();
 
--- The runtime has always treated case_narratives as one current narrative per
--- legacy case. Make that assumption enforceable so PostgreSQL upsert semantics
--- are deterministic and concurrent writers cannot create ambiguous duplicates.
 create unique index if not exists ux_case_narratives_case_id
   on public.case_narratives (case_id);
 

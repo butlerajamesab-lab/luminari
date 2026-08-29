@@ -772,7 +772,9 @@ async function within_civic_genome_external_snapshot_transaction<T>(
   dependencies: { pool?: query_pool },
   operation: (client: query_client) => Promise<T>,
 ): Promise<T> {
-  const pool = dependencies.pool ?? getPool();
+  // getPool exposes the full node-postgres overload set while this producer
+  // deliberately depends on the smaller, testable query_client contract.
+  const pool = dependencies.pool ?? (getPool() as unknown as query_pool);
   const client = await pool.connect();
   let transaction_started = false;
   try {

@@ -118,15 +118,13 @@ export const adminDashboardRouter = router({
 
   /* Current Atlas Domain 3 signals only. Legacy detected_signals stay historical. */
   structuralSignals: publicProcedure.query(async () => {
-    const [summary, critical] = await Promise.all([
-      get_canonical_live_signal_summary(),
-      get_canonical_live_signals({ limit: 100 }),
-    ]);
+    const summary = await get_canonical_live_signal_summary();
+    const critical = await get_canonical_live_signals({ limit: 100 });
 
     const bySeverity = Object.entries(summary.by_severity)
       .map(([severity, count]) => ({ severity, count }))
       .sort((a, b) => b.count - a.count || a.severity.localeCompare(b.severity));
-    const byCategory = Object.entries(summary.by_stream)
+    const byCategory = Object.entries(summary.by_category)
       .map(([category, count]) => ({ category, count }))
       .sort((a, b) => b.count - a.count || a.category.localeCompare(b.category));
     const criticalFindings = critical
@@ -138,7 +136,7 @@ export const adminDashboardRouter = router({
         caseId: null,
         title: signal.title,
         severity: signal.severity_level,
-        category: signal.signal_type,
+        category: signal.category,
         created_at: signal.detected_at ?? Date.now(),
         createdAt: signal.detected_at ?? Date.now(),
         stream_id: signal.stream_id,
@@ -224,7 +222,7 @@ export const adminDashboardRouter = router({
         caseId: null,
         title: signal.title,
         severity: signal.severity_level,
-        category: signal.signal_type,
+        category: signal.category,
         created_at: signal.detected_at ?? Date.now(),
         createdAt: signal.detected_at ?? Date.now(),
         stream_id: signal.stream_id,

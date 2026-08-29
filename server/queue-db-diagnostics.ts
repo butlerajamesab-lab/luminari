@@ -187,6 +187,10 @@ export async function query_with_diagnostics<T = any>(
 
     const failure_class = classify_db_error(error);
     if (failure_class === "query_timeout") {
+      // A client-side timeout can leave the wire carrying a response for the
+      // abandoned query. Destroy this lease instead of returning a potentially
+      // desynchronized client to the shared pool.
+      release_error = error instanceof Error ? error : true;
       if (circuit_guarded) record_timeout(label, "query_timeout");
       throw new DbTimeoutDiagnosticError(
         "query_timeout",

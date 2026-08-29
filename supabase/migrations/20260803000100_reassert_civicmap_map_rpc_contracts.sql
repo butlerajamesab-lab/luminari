@@ -163,4 +163,5 @@ as $$
 $$;
 
 grant execute on function public.map_layer1_points(double precision, double precision, double precision, double precision, integer) to anon, authenticated;
+
 grant execute on function public.map_layer2_detail(uuid) to anon, authenticated;

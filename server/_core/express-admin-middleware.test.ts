@@ -28,6 +28,7 @@ function makeRequest() {
   return {
     method: "GET",
     path: "/schema",
+    originalUrl: "/schema",
   } as any;
 }
 

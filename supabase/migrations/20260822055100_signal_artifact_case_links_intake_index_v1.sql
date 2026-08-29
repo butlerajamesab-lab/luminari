@@ -1,10 +1,9 @@
-begin;
+-- Repository-only no-op receipt.
+-- The canonical production migration is 20260823015850_signal_artifact_case_links_intake_index_v1.sql and must execute exactly once.
+-- This earlier version is retained only to preserve repository history without replaying the production change.
 
-create index if not exists idx_signal_artifact_case_links_intake_signal
-  on public.signal_artifact_case_links_v1(intake_signal_id)
-  where intake_signal_id is not null;
-
-comment on index public.idx_signal_artifact_case_links_intake_signal is
-  'Covers the optional intake-signal foreign key used by governed case-link artifact lookups.';
-
-commit;
+do $repository_only_duplicate_receipt$
+begin
+  raise notice 'Skipping duplicate repository migration; canonical receipt: 20260823015850_signal_artifact_case_links_intake_index_v1.sql';
+end
+$repository_only_duplicate_receipt$;

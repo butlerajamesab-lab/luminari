@@ -20,6 +20,9 @@ describe("canonical spine semantic civic graph v2 contract", () => {
   const router = read("./routers/canonical-core-router.ts");
   const panel = read("../client/src/components/CanonicalSpineDashboard.tsx");
   const parity = read("../scripts/audit-supabase-migration-ledger-parity.py");
+  const productionReceipts = read(
+    "../supabase/verification/production_migration_receipts_20260829.tsv",
+  );
 
   it("keeps structural graph v1 and adds explicit semantic relationships as v2", () => {
     expect(relationshipMigration).toContain(
@@ -101,8 +104,13 @@ describe("canonical spine semantic civic graph v2 contract", () => {
   });
 
   it("records both production migrations in parity without weakening the guard", () => {
-    expect(parity).toContain('"20260816161657"');
-    expect(parity).toContain('"20260816162036"');
+    expect(parity).toContain("PRODUCTION_RECEIPTS");
+    expect(productionReceipts).toContain(
+      "20260816161657\tlighthouse_explicit_civic_relationship_graph_v2\t",
+    );
+    expect(productionReceipts).toContain(
+      "20260816162036\toptimize_lighthouse_canonical_state_v2\t",
+    );
     expect(parity).toContain("MIGRATION_LEDGER_PARITY_CONTRACT=PASS");
   });
 });

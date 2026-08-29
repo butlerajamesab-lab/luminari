@@ -6,7 +6,7 @@ function read(path: string): string {
 }
 
 describe("Signal Architecture artifact navigation contract", () => {
-  const migration = read("../supabase/migrations/20260822055000_signal_artifact_case_links_v1.sql");
+  const migration = read("../supabase/migrations/20260823015442_signal_artifact_case_links_v1.sql");
   const runtime = read("./signal-artifact-runtime.ts");
   const page = read("../client/src/pages/SignalRegistry.tsx");
   const context = read("../client/src/components/signal-architecture/SignalArtifactContext.tsx");

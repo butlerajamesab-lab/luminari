@@ -1,6 +1,7 @@
 begin;
 
 set local lock_timeout = '5s';
+
 set local statement_timeout = '120s';
 
 create or replace function public.luminari_reject_sealed_intake_layer_run_mutation()
@@ -50,6 +51,7 @@ $acl$;
 
 drop trigger if exists trg_intake_layer_runs_reject_sealed_mutation
   on public.intake_layer_runs;
+
 create trigger trg_intake_layer_runs_reject_sealed_mutation
 before update or delete on public.intake_layer_runs
 for each row

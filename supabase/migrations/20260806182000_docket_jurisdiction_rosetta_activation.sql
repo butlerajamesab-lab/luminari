@@ -163,6 +163,7 @@ $function$;
 
 drop trigger if exists docket_bill_processing_queue_refresh_activation
   on public.docket_bill_processing_queue;
+
 create trigger docket_bill_processing_queue_refresh_activation
 after update of queue_state on public.docket_bill_processing_queue
 for each row
@@ -183,6 +184,7 @@ $function$;
 
 drop trigger if exists docket_jurisdiction_activation_bill_refresh_run
   on public.docket_jurisdiction_activation_bill;
+
 create trigger docket_jurisdiction_activation_bill_refresh_run
 after insert on public.docket_jurisdiction_activation_bill
 for each row execute function public.refresh_docket_activation_after_binding();
@@ -332,6 +334,7 @@ $function$;
 
 drop trigger if exists docket_state_cache_enqueue_activation
   on public.docket_bill_state_cache;
+
 create trigger docket_state_cache_enqueue_activation
 after insert or update of bills, fetched_at
 on public.docket_bill_state_cache
@@ -365,38 +368,56 @@ end;
 $backfill$;
 
 alter table public.docket_jurisdiction_activation_run enable row level security;
+
 alter table public.docket_jurisdiction_activation_run force row level security;
+
 alter table public.docket_bill_processing_queue enable row level security;
+
 alter table public.docket_bill_processing_queue force row level security;
+
 alter table public.docket_jurisdiction_activation_bill enable row level security;
+
 alter table public.docket_jurisdiction_activation_bill force row level security;
 
 revoke all on table public.docket_jurisdiction_activation_run from public, anon, authenticated;
+
 revoke all on table public.docket_bill_processing_queue from public, anon, authenticated;
+
 revoke all on table public.docket_jurisdiction_activation_bill from public, anon, authenticated;
+
 grant select, insert, update, delete on table public.docket_jurisdiction_activation_run to service_role;
+
 grant select, insert, update, delete on table public.docket_bill_processing_queue to service_role;
+
 grant select, insert, update, delete on table public.docket_jurisdiction_activation_bill to service_role;
 
 revoke all on function public.register_docket_jurisdiction_activation(text, integer, text, jsonb, integer, timestamptz, text)
   from public, anon, authenticated;
+
 revoke all on function public.refresh_docket_jurisdiction_activation_run(uuid)
   from public, anon, authenticated;
+
 revoke all on function public.refresh_docket_activation_for_queue()
   from public, anon, authenticated;
+
 revoke all on function public.refresh_docket_activation_after_binding()
   from public, anon, authenticated;
+
 revoke all on function public.enqueue_docket_state_cache_activation()
   from public, anon, authenticated;
+
 grant execute on function public.register_docket_jurisdiction_activation(text, integer, text, jsonb, integer, timestamptz, text)
   to service_role;
+
 grant execute on function public.refresh_docket_jurisdiction_activation_run(uuid)
   to service_role;
 
 comment on table public.docket_jurisdiction_activation_run is
   'One immutable jurisdiction/session cache generation activation. Opening or refreshing a jurisdiction registers its exact cached bill set without blocking the user response.';
+
 comment on table public.docket_bill_processing_queue is
   'Deduplicated pre-Rosetta queue that retrieves exact bill detail and registers every official text and amendment into the existing legislative-version decomposition spine.';
+
 comment on function public.register_docket_jurisdiction_activation(text, integer, text, jsonb, integer, timestamptz, text) is
   'Registers one jurisdiction cache generation and deduplicated bill-detail work. It does not perform source retrieval, Rosetta extraction, Genome assembly, or Prism verification inline.';
 

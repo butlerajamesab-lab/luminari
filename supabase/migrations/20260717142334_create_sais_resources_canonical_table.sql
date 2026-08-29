@@ -1,3 +1,4 @@
+
 CREATE TABLE public.sais_resources (
   resource_id text PRIMARY KEY,
   family_key text NOT NULL DEFAULT 'systemic_abuse_intelligence' REFERENCES public.luminari_document_family_contracts(family_key),

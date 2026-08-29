@@ -66,7 +66,10 @@ describe("Civic Genome Rosetta current-generation convergence", () => {
   });
 
   it("recovers a missing downstream source binding only from an exact preserved Rosetta source receipt", () => {
-    expect(worker).toContain("source_content_hash: `eq.${candidate.source_content_hash}`");
+    expect(worker).toContain("if (candidate.source_content_hash)");
+    expect(worker).toContain(
+      'query.set("source_content_hash", `eq.${candidate.source_content_hash}`)',
+    );
     expect(worker).toContain("source_version: `eq.${candidate.source_version}`");
     expect(worker).toContain("source_document_id: `eq.${candidate.source_document_id}`");
     expect(worker).toContain("rows.length !== 1");

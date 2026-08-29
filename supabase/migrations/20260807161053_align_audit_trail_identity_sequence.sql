@@ -3,17 +3,11 @@ declare
   v_max_id bigint;
   v_sequence_name text;
 begin
-  lock table public.audit_trail in share row exclusive mode;
-
-  select coalesce(max(id), 0)
-    into v_max_id
-    from public.audit_trail;
-
+  select coalesce(max(id), 0) into v_max_id from public.audit_trail;
   v_sequence_name := pg_get_serial_sequence('public.audit_trail', 'id');
   if v_sequence_name is null then
     raise exception 'audit_trail_id_sequence_missing';
   end if;
-
   if v_max_id > 0 then
     perform setval(v_sequence_name::regclass, v_max_id, true);
   else

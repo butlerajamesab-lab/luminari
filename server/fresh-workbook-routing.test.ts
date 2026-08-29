@@ -41,7 +41,7 @@ describe("authoritative backbone workbook routing", () => {
   });
 
   it("bumps the parser contract for a complete replay", () => {
-    expect(FRESH_CORPUS_PARSER_VERSION).toBe("fresh_registry_typed_parser_v1.1.0");
+    expect(FRESH_CORPUS_PARSER_VERSION).toBe("fresh_registry_typed_parser_v1.2.2");
     const source = readFileSync(new URL("./services/fresh-corpus-reconciliation-v1.ts", import.meta.url), "utf8");
     expect(source).toContain("run_id: ctx.runId");
     expect(source).toContain("candidate_hash: candidateHash");

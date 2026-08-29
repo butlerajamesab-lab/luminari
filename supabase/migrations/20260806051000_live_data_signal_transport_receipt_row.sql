@@ -38,6 +38,7 @@ $$;
 
 revoke all on function public.register_live_data_signal_transport_receipt_v1(jsonb)
   from public, anon, authenticated;
+
 grant execute on function public.register_live_data_signal_transport_receipt_v1(jsonb)
   to service_role;
 

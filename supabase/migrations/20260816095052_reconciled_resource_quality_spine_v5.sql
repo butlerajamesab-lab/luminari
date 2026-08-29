@@ -1,15 +1,12 @@
--- Recovered from live production 2026-08-16.
--- Evaluates resource quality from the reconciled civic-object ledger rather than stale parser-only fields.
-
-CREATE OR REPLACE FUNCTION public.refresh_luminari_corpus_resource_quality_reconciled_v1(
+create or replace function public.refresh_luminari_corpus_resource_quality_reconciled_v1(
   p_run_id uuid,
-  p_quality_version text DEFAULT 'resource_quality_reconciled_v5.0.0'::text
+  p_quality_version text default 'resource_quality_reconciled_v5.0.0'
 )
-RETURNS jsonb
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path TO 'pg_catalog', 'public', 'pg_temp'
-AS $function$
+returns jsonb
+language plpgsql
+security definer
+set search_path = pg_catalog, public, pg_temp
+as $$
 declare
   v_candidates integer := 0;
   v_publishable integer := 0;
@@ -189,7 +186,7 @@ begin
     'evaluated_at',clock_timestamp()
   );
 end;
-$function$;
+$$;
 
-REVOKE ALL ON FUNCTION public.refresh_luminari_corpus_resource_quality_reconciled_v1(uuid,text) FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.refresh_luminari_corpus_resource_quality_reconciled_v1(uuid,text) TO service_role;
+revoke all on function public.refresh_luminari_corpus_resource_quality_reconciled_v1(uuid,text) from public, anon, authenticated;
+grant execute on function public.refresh_luminari_corpus_resource_quality_reconciled_v1(uuid,text) to service_role;

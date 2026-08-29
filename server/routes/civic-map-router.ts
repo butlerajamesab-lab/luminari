@@ -10,6 +10,15 @@ export const civicMapRouter = express.Router();
 
 type QueryParam = string | undefined;
 
+type ResourceDirectoryBreadth = Record<string, unknown> & {
+  total_directory_records?: unknown;
+  total_resources?: unknown;
+  direct_resource_count?: unknown;
+  program_count?: unknown;
+  jurisdiction_count?: unknown;
+  resources_with_locations?: unknown;
+};
+
 function parseNumber(value: QueryParam, fallback: number): number {
   if (value === undefined) return fallback;
   const parsed = Number(value);
@@ -83,7 +92,7 @@ async function getBreadthPreservingCoverage() {
   // be aborted before any circles render. Exact physical-site counts are a
   // separate, intentionally stricter projection.
   const [breadth, mapSites] = await Promise.all([
-    getPublishableResourceDirectorySummary() as Promise<Record<string, unknown>>,
+    getPublishableResourceDirectorySummary() as Promise<ResourceDirectoryBreadth>,
     getReviewedMapSiteCounts(),
   ]);
 

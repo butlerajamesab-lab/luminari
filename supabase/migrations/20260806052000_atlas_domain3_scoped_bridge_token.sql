@@ -1,7 +1,9 @@
 begin;
 
 create schema if not exists private;
+
 revoke all on schema private from public, anon, authenticated;
+
 grant usage on schema private to postgres;
 
 create table if not exists private.signal_bridge_token (
@@ -99,11 +101,13 @@ $$;
 
 revoke all on function public.register_live_data_signal_transport_receipt_v2(jsonb, text)
   from public, authenticated;
+
 grant execute on function public.register_live_data_signal_transport_receipt_v2(jsonb, text)
   to anon, service_role;
 
 comment on table private.signal_bridge_token is
   'Hash-only registry for narrow cross-platform signal transport credentials. Raw bridge tokens are never stored in Lighthouse.';
+
 comment on function public.register_live_data_signal_transport_receipt_v2(jsonb, text) is
   'Scoped Atlas Domain 3 transport boundary. The caller may reach it as anon through the Supabase gateway, but canonical registration occurs only after exact SHA-256 token validation.';
 

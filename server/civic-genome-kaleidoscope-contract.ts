@@ -20,6 +20,7 @@ export function build_kaleidoscope_civic_genome_contract(
   return {
     service_key: "kaleidoscope",
     display_name: "Kaleidoscope",
+    external_url: null,
     role: "Authenticated immutable baseline consumer",
     state: completed ? "available_unbound" : "not_established",
     state_label: completed

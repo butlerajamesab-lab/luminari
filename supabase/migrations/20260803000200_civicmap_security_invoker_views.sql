@@ -4,10 +4,12 @@
 begin;
 
 alter view public.v_map_layer1_light set (security_invoker = true);
+
 alter view public.v_map_layer2_detail set (security_invoker = true);
 
 comment on view public.v_map_layer1_light is
   'Layer-one Civic Map projection. Runs with invoker privileges so normalized civic-resource RLS and grants remain authoritative.';
+
 comment on view public.v_map_layer2_detail is
   'Layer-two Civic Map detail projection. Runs with invoker privileges so normalized civic-resource RLS and grants remain authoritative.';
 

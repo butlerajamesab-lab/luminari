@@ -170,11 +170,14 @@ describe("document upload PostgreSQL persistence contract", () => {
   it("expires stale sessions at production startup and keeps terminal sessions out of the active runtime view", () => {
     const entrypoint_source = read_source("./_core/index.ts");
     const migration_source = read_source(
-      "../supabase/migrations/20260822002000_fix_runtime_active_uploads_lifecycle_v1.sql",
+      "../supabase/migrations/20260822003812_fix_runtime_active_uploads_lifecycle_v1.sql",
     );
 
     expect(entrypoint_source).toContain(
       'import { expireStaleUploadSessions, getPool } from "../db";',
+    );
+    expect(entrypoint_source).toContain(
+      'background_feature_enabled("UPLOAD_SESSION_EXPIRATION_ENABLED")',
     );
     expect(entrypoint_source).toContain("void expireStaleUploadSessions().catch(error => {");
     expect(migration_source).toContain("with (security_invoker = true)");

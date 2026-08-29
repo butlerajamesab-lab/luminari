@@ -347,17 +347,17 @@ async function forEachWorksheetXmlRow(
     else if (partialRow < 0 && carry.length > 4096) carry = carry.slice(-4096);
   };
   await new Promise<void>((resolve, reject) => {
-    const stream = entry.internalStream("nodebuffer");
+    const stream = entry.nodeStream("nodebuffer");
     let processing = Promise.resolve();
     let failed = false;
-    stream.on("data", chunk => {
+    stream.on("data", (chunk: Buffer | Uint8Array | string) => {
       stream.pause();
       processing = processing
         .then(() => processChunk(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)))
         .then(() => { if (!failed) stream.resume(); })
-        .catch(error => { failed = true; reject(error); });
+        .catch((error: unknown) => { failed = true; reject(error); });
     });
-    stream.on("error", error => { failed = true; reject(error); });
+    stream.on("error", (error: unknown) => { failed = true; reject(error); });
     stream.on("end", () => { processing.then(() => { if (!failed) resolve(); }, reject); });
     stream.resume();
   });
@@ -377,11 +377,11 @@ export async function forEachXlsxRow(
   const relsXml = await zip.file("xl/_rels/workbook.xml.rels")?.async("text");
   if (!workbookXml || !relsXml) return 0;
   const relationships = new Map<string, string>();
-  for (const rel of relsXml.matchAll(/<Relationship\b[^>]*Id="([^"]+)"[^"]*Target="([^"]+)"[^"]*\/?\s*>/g)) {
+  for (const rel of relsXml.matchAll(/<Relationship\b[^>]*Id="([^"]+)"[^>]*Target="([^"]+)"[^>]*\/?\s*>/g)) {
     relationships.set(rel[1], rel[2].replace(/^\//, ""));
   }
   const sheets: Array<{ name: string; path: string }> = [];
-  for (const sheet of workbookXml.matchAll(/<sheet\b[^>]*name="([^"]+)"[^"]*r:id="([^"]+)"[^"]*\/?\s*>/g)) {
+  for (const sheet of workbookXml.matchAll(/<sheet\b[^>]*name="([^"]+)"[^>]*r:id="([^"]+)"[^>]*\/?\s*>/g)) {
     const target = relationships.get(sheet[2]);
     if (!target) continue;
     sheets.push({ name: decodeXmlEntities(sheet[1]), path: target.startsWith("xl/") ? target : `xl/${target.replace(/^\.\//, "")}` });

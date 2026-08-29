@@ -1,9 +1,3 @@
--- Production follow-up for registry-quality projection completeness.
---
--- `v_lighthouse_civic_object_current_v1` can emit `identity_unresolved` when a
--- candidate remains unresolved. Current production count is zero, but the
--- governed UI breakdown must remain exhaustive when such rows appear.
-
 create or replace view public.v_ui_registry_quality_v1
 with (security_invoker = true)
 as

@@ -250,7 +250,7 @@ as $function$
     and (not p_ready_only or c.typed_ready)
     and (
       nullif(btrim(p_query),'') is null
-      or concat_ws(' ',c.name,c.organization_name,c.category,c.description,c.statutory_authority,c.section_name,c.source_locator)
+      or concat_ws(' ',c.name,c.organization_name,c.category,c.description,c.statutorY_authority,c.section_name,c.source_locator)
            ilike '%' || btrim(p_query) || '%'
     )
   order by c.typed_ready desc, c.jurisdiction_ready desc, c.has_access_point desc,
@@ -287,6 +287,7 @@ revoke all on public.v_lighthouse_civic_directory_v1 from anon, authenticated;
 revoke all on public.v_lighthouse_signal_context_v2 from anon, authenticated;
 revoke all on public.v_lighthouse_case_attachable_objects_v1 from anon, authenticated;
 revoke all on public.v_lighthouse_unresolved_civic_objects_v1 from anon, authenticated;
+
 revoke all on function public.search_lighthouse_civic_objects_v1(text,text,text[],boolean,integer,integer) from public, anon, authenticated;
 revoke all on function public.get_lighthouse_civic_object_snapshot_v1() from public, anon, authenticated;
 

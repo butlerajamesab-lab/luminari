@@ -181,7 +181,11 @@ export const strategyEngineRouter = router({
       const catalog = await db.select().from(strategyClaimCatalog);
 
       // Deterministic claim candidate generation — map unique fact types to candidates
-      const uniqueFactTypes = [...new Set(facts.map((f: any) => f.factType).filter(Boolean))];
+      const uniqueFactTypes = [...new Set<string>(
+        facts
+          .map((f: any) => f.factType)
+          .filter((factType: unknown): factType is string => typeof factType === "string" && factType.length > 0),
+      )];
 
       // Map each unique claimType from catalog that has any matching fact types
       const candidateMap = new Map<string, any>();

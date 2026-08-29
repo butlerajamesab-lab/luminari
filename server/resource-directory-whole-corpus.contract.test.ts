@@ -8,7 +8,7 @@ function read(relativePath: string) {
 
 describe("Resource Directory whole-corpus cutover contract", () => {
   const alias = read("./services/resource-directory-publishable.ts");
-  const service = read("./services/resource-directory-current-corpus.ts");
+  const service = read("./services/resource-directory-fast-current.ts");
   const router = read("./routers/resource-directory.ts");
   const migration = read("../supabase/migrations/20260816103729_resource_directory_whole_corpus_projection_v2.sql");
 
@@ -17,12 +17,14 @@ describe("Resource Directory whole-corpus cutover contract", () => {
     expect(router).toContain("summary:");
     expect(router).toContain("search:");
     expect(router).toContain("detail:");
-    expect(router).toContain("z.string().uuid()");
+    expect(router).toContain("Invalid resource entity identifier");
+    expect(router).toContain("^[0-9a-f]{8}-[0-9a-f]{4}");
   });
 
   it("routes the publishable service to the current whole-corpus projection", () => {
-    expect(alias).toContain('./resource-directory-current-corpus');
-    expect(service).toContain('public.v_lighthouse_resource_directory_whole_corpus_v2');
+    expect(alias).toContain('./resource-directory-fast-current');
+    expect(service).toContain('public.v_lighthouse_resource_program_catalog_v2');
+    expect(service).toContain('person_facing_ready');
     expect(service).not.toContain('from public.luminari_resource_snapshot_identity_v1');
     expect(service).not.toContain('from public.luminari_resource_snapshot_v1');
   });
@@ -33,7 +35,7 @@ describe("Resource Directory whole-corpus cutover contract", () => {
     expect(migration).toContain("partition by m.stable_resource_entity_id");
     expect(migration).not.toMatch(/similarity\s*\(/i);
     expect(migration).not.toMatch(/levenshtein/i);
-    expect(migration).not.toMatch(/fuzzy/i);
+    expect(migration).toContain("No fuzzy identity merge");
   });
 
   it("only publishes person-facing-ready current resource/program objects", () => {
@@ -53,7 +55,10 @@ describe("Resource Directory whole-corpus cutover contract", () => {
     expect(service).toContain("source_candidate_hash");
     expect(service).toContain("source_content_sha256");
     expect(service).toContain("field_provenance");
-    expect(service).toContain("quality_receipts");
+    expect(service).toContain("identity_receipt_hash");
+    expect(service).toContain("source_candidate:");
+    expect(service).toContain("source_artifact:");
+    expect(service).toContain("quality_history:");
     expect(service).toContain("source_artifacts");
   });
 });

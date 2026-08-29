@@ -30,10 +30,10 @@ describe("Universal Intake Spine canonical execution boundary", () => {
   it("exposes one real governed control with declared execution inputs", () => {
     expect(intake_spine_control).toContain("trpc.analyze.getIntakeSpineStatus.useQuery");
     expect(intake_spine_control).toContain("trpc.analyze.runIntakeSpine.useMutation");
-    expect(intake_spine_control).toContain("Declared jurisdiction");
-    expect(intake_spine_control).toContain("Lighthouse does not infer it");
-    expect(intake_spine_control).toContain("Rule as-of date");
-    expect(intake_spine_control).toContain("Run Universal Intake Spine");
+    expect(intake_spine_control).toContain("Case jurisdiction");
+    expect(intake_spine_control).toContain("Confirm the case jurisdiction");
+    expect(intake_spine_control).toContain("Review rules as of");
+    expect(intake_spine_control).toContain("Review My Evidence");
     expect(intake_spine_control).not.toContain('jurisdiction: "federal"');
     expect(intake_spine_control).not.toContain("14 sealed");
   });

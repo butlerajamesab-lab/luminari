@@ -1,7 +1,3 @@
--- Expose exact readiness and unresolved-state counts from the canonical current
--- civic-object substrate. This projection performs no scoring, promotion, or
--- source mutation.
-
 create or replace view public.v_ui_registry_quality_v1
 with (security_invoker = true)
 as
@@ -25,10 +21,9 @@ select
   count(*) filter(where o.data_state='unresolved_legal_reference')::bigint as unresolved_legal_reference_objects,
   max(o.source_created_at) as latest_source_created_at,
   max(o.current_run_completed_at) as latest_run_completed_at,
-  max(o.reconciled_at) as latest_reconciled_at,
-  count(*) filter(where o.data_state='identity_unresolved')::bigint as identity_unresolved_objects
+  max(o.reconciled_at) as latest_reconciled_at
 from public.v_lighthouse_civic_object_current_v1 o
 group by o.object_class,o.source_object_type,o.category;
 
 comment on view public.v_ui_registry_quality_v1 is
-  'Governed read-only registry quality projection over current canonical civic objects. Reports exact stored readiness and all currently defined unresolved/conflict data-state buckets; performs no scoring or promotion.';
+  'Governed read-only registry quality projection over current canonical civic objects. Reports readiness/unresolved counts exactly as stored; performs no scoring or promotion.';

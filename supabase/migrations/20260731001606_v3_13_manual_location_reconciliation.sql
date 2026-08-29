@@ -219,6 +219,7 @@ declare
   missing_source_locations integer;
   source_location_drift integer;
   source_location_coordinate_drift integer;
+  live_source_count bigint;
 begin
   select count(*), count(distinct resource_entity_id)
     into decision_count, unique_resource_count
@@ -284,6 +285,10 @@ begin
     on l.location_id = x.location_id
   where l.latitude is not null or l.longitude is not null;
 
+  select count(*) into live_source_count
+  from public.luminari_resource_entities
+  where source_table = 'state_directory_logical_record';
+
   if decision_count <> 446 or unique_resource_count <> 446 then
     raise exception
       'manual location decision drift: expected 446/446, found %/%',
@@ -341,11 +346,15 @@ begin
     raise exception 'manual decision/source ownership guard failed';
   end if;
 
-  if missing_entities <> 0
+  -- Fresh/preview replay has the reviewed decision payload but deliberately no
+  -- imported v3.13 corpus. Enforce the complete live-source snapshot whenever
+  -- any source entities are present so partial imports cannot pass silently.
+  if live_source_count > 0 and (
+     missing_entities <> 0
      or entity_lineage_drift <> 0
      or missing_source_locations <> 0
      or source_location_drift <> 0
-     or source_location_coordinate_drift <> 0 then
+     or source_location_coordinate_drift <> 0) then
     raise exception
       'live source drift: missing entities %, lineage %, missing locations %, location %, coordinate %',
       missing_entities, entity_lineage_drift, missing_source_locations,
@@ -555,6 +564,8 @@ select
   ),
   now()
 from tmp_v3_13_manual_location_normalized d
+join public.luminari_resource_entities e
+  on e.resource_entity_id = d.resource_entity_id
 where d.reviewed_address is not null
 on conflict (location_id) do update set
   address_line1 = excluded.address_line1,
@@ -613,7 +624,12 @@ declare
   accidental_coordinate_count integer;
   leaked_legacy_count integer;
   resolution_id_mismatch integer;
+  live_source_count bigint;
 begin
+  select count(*) into live_source_count
+  from public.luminari_resource_entities
+  where source_table = 'state_directory_logical_record';
+
   select count(*), count(distinct resource_entity_id)
     into resolution_count, resolved_resource_count
   from public.luminari_resource_location_resolutions
@@ -653,15 +669,17 @@ begin
       'v3_13_manual_location_reconciliation_v1|resolution|' || r.resource_entity_id::text
     );
 
-  if resolution_count <> 446 or resolved_resource_count <> 446 then
+  if live_source_count > 0
+     and (resolution_count <> 446 or resolved_resource_count <> 446) then
     raise exception
       'manual resolution write drift: expected 446/446, found %/%',
       resolution_count, resolved_resource_count;
   end if;
 
-  if reviewed_location_count <> 209
+  if live_source_count > 0 and (
+     reviewed_location_count <> 209
      or reviewed_location_resource_count <> 209
-     or exact_pending_count <> 110 then
+     or exact_pending_count <> 110) then
     raise exception
       'reviewed location write drift: expected 209/209/110, found %/%/%',
       reviewed_location_count, reviewed_location_resource_count,
@@ -675,6 +693,16 @@ begin
       'manual circulation acceptance failed: coordinates %, leaked legacy %, ID mismatch %',
       accidental_coordinate_count, leaked_legacy_count,
       resolution_id_mismatch;
+  end if;
+
+  if live_source_count = 0
+     and (resolution_count <> 0
+       or resolved_resource_count <> 0
+       or reviewed_location_count <> 0
+       or reviewed_location_resource_count <> 0
+       or exact_pending_count <> 0) then
+    raise exception
+      'manual reconciliation wrote rows without a live source corpus';
   end if;
 end
 $acceptance$;

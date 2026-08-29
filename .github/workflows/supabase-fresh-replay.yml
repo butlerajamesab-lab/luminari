@@ -1,0 +1,71 @@
+name: Supabase Fresh Replay
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/supabase-fresh-replay.yml"
+      - "supabase/config.toml"
+      - "supabase/migrations/**"
+      - "supabase/seed.sql"
+      - "supabase/verification/**"
+      - "scripts/audit-supabase-migration-ledger-parity.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/supabase-fresh-replay.yml"
+      - "supabase/config.toml"
+      - "supabase/migrations/**"
+      - "supabase/seed.sql"
+      - "supabase/verification/**"
+      - "scripts/audit-supabase-migration-ledger-parity.py"
+  workflow_dispatch:
+
+concurrency:
+  group: supabase-fresh-replay-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  replay:
+    name: Rebuild database from zero
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.116.0
+
+      - name: Start isolated Supabase database
+        run: supabase db start
+
+      - name: Replay every migration from zero
+        run: supabase db reset --local --no-seed --debug
+
+      - name: Lint replayed database
+        run: supabase db lint --local --schema public --level error --fail-on error
+
+      - name: Verify retired Atlas bridge is fail-closed
+        run: >-
+          psql
+          postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          --set=ON_ERROR_STOP=1
+          --file=supabase/verification/20260505074842_retired_atlas_signal_chain_verify.sql
+
+      - name: Verify private Lighthouse case details are fail-closed
+        run: >-
+          psql
+          postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          --set=ON_ERROR_STOP=1
+          --file=supabase/verification/20260829093000_lighthouse_case_detail_client_lockdown_verify.sql
+
+      - name: Verify legacy function resolution bridges
+        run: >-
+          psql
+          postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          --set=ON_ERROR_STOP=1
+          --file=supabase/verification/20260829094000_legacy_function_resolution_bridges_verify.sql

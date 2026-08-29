@@ -12,6 +12,7 @@ describe("canonical spine current civic truth contract", () => {
   const router = read("./routers/canonical-core-router.ts");
   const panel = read("../client/src/components/CanonicalSpineDashboard.tsx");
   const parity = read("../scripts/audit-supabase-migration-ledger-parity.py");
+  const productionReceipts = read("../supabase/verification/production_migration_receipts_20260829.tsv");
 
   it("derives graph nodes from current civic objects instead of manual world_nodes", () => {
     expect(migration).toContain("from public.v_lighthouse_civic_object_current_v1");
@@ -58,7 +59,10 @@ describe("canonical spine current civic truth contract", () => {
   });
 
   it("records the production migration version without weakening parity", () => {
-    expect(parity).toContain('"20260816125001"');
+    expect(parity).toContain("PRODUCTION_RECEIPTS");
+    expect(productionReceipts).toContain(
+      "20260816125001\tcanonical_spine_current_civic_graph_v1\t",
+    );
     expect(parity).toContain("MIGRATION_LEDGER_PARITY_CONTRACT=PASS");
   });
 });

@@ -1,7 +1,3 @@
--- Preserve the existing Lighthouse resource catalog contract while preventing
--- SAIS legal authorities, doctrine, courts, and accountability objects from
--- being published as person-facing resources.
-
 CREATE OR REPLACE VIEW public.v_lighthouse_resource_catalog_v1 AS
 WITH luminari_contacts AS (
   SELECT resource_entity_id,

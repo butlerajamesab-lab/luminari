@@ -37,6 +37,7 @@ $$;
 
 drop trigger if exists civic_genome_bill_version_terminal_state_guard
   on public.civic_genome_bill_version;
+
 create trigger civic_genome_bill_version_terminal_state_guard
 before update of processing_state
 on public.civic_genome_bill_version

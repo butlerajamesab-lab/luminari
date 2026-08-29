@@ -7,6 +7,8 @@ function read(relative_path: string): string {
 }
 
 const db_source = read("./db.ts");
+const legacy_db_source = read("./db-legacy.ts");
+const diagnostics_source = read("./queue-db-diagnostics.ts");
 const pool_source = read("./pg-config.ts");
 const mission_control_source = read("./routers/admin-dashboard.ts");
 const health_source = read("./_core/health-diagnostics.ts");
@@ -27,9 +29,9 @@ describe("shared PostgreSQL pool safety contract", () => {
   });
 
   it("destroys a client after a client-side query timeout", () => {
-    expect(db_source).toContain("let release_error: Error | boolean | undefined");
-    expect(db_source).toContain("release_error = error instanceof Error ? error : true");
-    expect(db_source).toContain("client.release(release_error as any)");
+    expect(diagnostics_source).toContain("let release_error: Error | boolean | undefined");
+    expect(diagnostics_source).toContain("release_error = error instanceof Error ? error : true");
+    expect(diagnostics_source).toContain("client.release(release_error as any)");
   });
 
   it("forces out a leaked client after a bounded wall-clock lease", () => {
@@ -39,7 +41,8 @@ describe("shared PostgreSQL pool safety contract", () => {
   });
 
   it("preserves the real Pool receiver through the lazy export", () => {
-    expect(db_source).toContain("create_receiver_bound_lazy_proxy(() => initializePool())");
+    expect(db_source).toContain('export * from "./db-legacy"');
+    expect(legacy_db_source).toContain("create_receiver_bound_lazy_proxy(() => initializePool())");
     expect(lazy_proxy_source).toContain("value.bind(instance)");
     expect(lazy_proxy_source).toContain("Reflect.set(instance, property, value, instance)");
     expect(core_pool_source).toContain('export { pool } from "../db"');

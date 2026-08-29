@@ -1,7 +1,3 @@
--- Production ledger parity: 20260815091332_live_data_signal_entity_aware_semantic_identity_v2
--- Historical v1 signal records remain immutable. New/replayed Atlas projections use
--- the entity-aware semantic key shared with Atlas.
-
 create or replace function public.live_data_signal_semantic_key_v2(
   p_detection_rule_id text,
   p_signal_type text,

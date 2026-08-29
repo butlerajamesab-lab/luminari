@@ -5,6 +5,7 @@ begin;
 -- but remove anonymous gateway execution so there is one active external path.
 revoke all on function public.register_live_data_signal_transport_receipt_v2(jsonb, text)
   from public, anon, authenticated;
+
 grant execute on function public.register_live_data_signal_transport_receipt_v2(jsonb, text)
   to service_role;
 

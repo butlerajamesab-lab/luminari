@@ -4,6 +4,7 @@ export type CanonicalLiveSignal = {
   id: string;
   signal_id: string;
   signal_type: string;
+  category: string;
   stream_id: string;
   stream_name: string | null;
   jurisdiction: string;
@@ -35,6 +36,15 @@ export type CanonicalLiveSignal = {
   record_kind: "observation_candidate" | "promoted_signal" | "governed_domain_record";
 };
 
+export function normalize_canonical_live_signal_category(
+  signal_type: string,
+): string {
+  if (/^(contradiction|inconsistency|missing_evidence)_[0-9]+$/.test(signal_type)) {
+    return signal_type.replace(/_[0-9]+$/, "");
+  }
+  return signal_type;
+}
+
 export type CanonicalLiveSignalInput = {
   stream_id?: string;
   severity?: string;
@@ -51,10 +61,12 @@ function to_timestamp(value: unknown): number | null {
 
 function normalize(row: any): CanonicalLiveSignal {
   const entity_ids = Array.isArray(row.entity_ids) ? row.entity_ids.map(String) : [];
+  const signal_type = String(row.signal_type);
   return {
     id: String(row.live_data_signal_id),
     signal_id: String(row.live_data_signal_id),
-    signal_type: String(row.signal_type),
+    signal_type,
+    category: normalize_canonical_live_signal_category(signal_type),
     stream_id: String(row.primary_stream_id),
     stream_name: null,
     jurisdiction: String(row.jurisdiction_id),
@@ -91,7 +103,10 @@ function normalize(row: any): CanonicalLiveSignal {
   };
 }
 
-async function query_rows(input: CanonicalLiveSignalInput = {}, page = true) {
+async function query_rows(
+  input: CanonicalLiveSignalInput = {},
+  page = true,
+): Promise<CanonicalLiveSignal[]> {
   const where = ["is_current = true", "governance_status <> 'rejected'"];
   const params: unknown[] = [];
   const add = (column: string, value?: string) => {
@@ -157,12 +172,14 @@ export async function get_canonical_live_signal_summary(input: Omit<CanonicalLiv
   const by_status: Record<string, number> = {};
   const by_severity: Record<string, number> = {};
   const by_stream: Record<string, number> = {};
+  const by_category: Record<string, number> = {};
   const by_verification_state: Record<string, number> = {};
 
   for (const signal of signals) {
     by_status[signal.governance_status] = (by_status[signal.governance_status] ?? 0) + 1;
     by_severity[signal.severity_level] = (by_severity[signal.severity_level] ?? 0) + 1;
     by_stream[signal.stream_id] = (by_stream[signal.stream_id] ?? 0) + 1;
+    by_category[signal.category] = (by_category[signal.category] ?? 0) + 1;
     by_verification_state[signal.verification_state] = (by_verification_state[signal.verification_state] ?? 0) + 1;
   }
 
@@ -185,6 +202,7 @@ export async function get_canonical_live_signal_summary(input: Omit<CanonicalLiv
     by_status,
     by_severity,
     by_stream,
+    by_category,
     by_verification_state,
     legacy_archived: {
       detected_signals: Number(legacyRow.legacy_detected_signals ?? 0),

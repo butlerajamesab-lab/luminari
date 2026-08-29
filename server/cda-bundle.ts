@@ -381,25 +381,8 @@ export async function buildRunBundle(
         clause_text_verbatim: clauseData?.clauseTextVerbatim ?? null,
         supporting_quote_hashes: [],
       },
-      llm_output:
-        t.resolutionMethod === "llm_assisted" && t.llmResponse
-          ? (() => {
-              try {
-                const parsed = JSON.parse(t.llmResponse);
-                return {
-                  match_type: parsed.match_type ?? t.finalMatchType,
-                  mismatch_type: parsed.mismatch_type ?? t.finalMismatchType ?? null,
-                  required_evidence: parsed.required_evidence ?? null,
-                  missing_evidence: parsed.missing_evidence ?? null,
-                  conflict_evidence: parsed.conflict_evidence ?? null,
-                  supporting_quote_hashes: [],
-                };
-              } catch {
-                return null;
-              }
-            })()
-          : null,
-      validated: t.llmValidationResult === "accepted" || t.resolutionMethod === "deterministic",
+      llm_output: null,
+      validated: true,
     };
   });
 
@@ -409,8 +392,8 @@ export async function buildRunBundle(
   const t7Summary = {
     rows_evaluated: t7Transcripts?.length ?? 0,
     rows_deterministic: t7Transcripts?.filter((t) => t.resolutionMethod === "deterministic").length ?? 0,
-    rows_llm_assisted: t7Transcripts?.filter((t) => t.resolutionMethod === "llm_assisted").length ?? 0,
-    rows_ambiguous: t7Transcripts?.filter((t) => t.resolutionMethod === "fallback_ambiguous").length ?? 0,
+    rows_llm_assisted: 0,
+    rows_ambiguous: 0,
   };
 
   // ─── Manifest ───

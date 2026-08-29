@@ -31,8 +31,20 @@ execute function public.set_docket_bill_detail_cache_updated_at();
 
 alter table public.docket_bill_detail_cache enable row level security;
 
-create policy "service role can manage docket bill detail cache"
-  on public.docket_bill_detail_cache
-  for all
-  using (auth.role() = 'service_role')
-  with check (auth.role() = 'service_role');
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'docket_bill_detail_cache'
+      and policyname = 'service role can manage docket bill detail cache'
+  ) then
+    create policy "service role can manage docket bill detail cache"
+      on public.docket_bill_detail_cache
+      for all
+      using (auth.role() = 'service_role')
+      with check (auth.role() = 'service_role');
+  end if;
+end;
+$$;

@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 const migration = readFileSync(
   fileURLToPath(new URL(
-    "../supabase/migrations/20260818090000_domain2_current_prism_generation.sql",
+    "../supabase/migrations/20260818085239_domain2_current_prism_generation.sql",
     import.meta.url,
   )),
   "utf8",
