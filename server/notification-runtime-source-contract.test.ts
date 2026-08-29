@@ -47,7 +47,11 @@ describe("notification runtime source contract", () => {
   });
 
   it("requires the canonical resolved user for every client operation", () => {
-    expect(routerSource.match(/protectedProcedure/g)?.length).toBe(4);
+    expect(
+      routerSource.match(
+        /\b(?:list|unreadCount|markRead|markAllRead): protectedProcedure/g,
+      )?.length,
+    ).toBe(4);
     expect(routerSource).toContain("ctx.user.id");
     expect(routerSource).not.toContain("publicProcedure");
   });

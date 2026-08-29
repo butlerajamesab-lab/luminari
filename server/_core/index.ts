@@ -30,6 +30,7 @@ import { serveStatic, setupVite } from "./vite";
 import { livenessPayload, SUPABASE_PROJECT } from "./health-diagnostics";
 import { registerSecurityHeaders } from "./security-headers";
 import {
+  background_feature_enabled,
   background_workers_allowed,
   resolve_lighthouse_runtime_role,
 } from "../runtime-role";
@@ -260,9 +261,11 @@ async function startServer() {
     try { loadLensRegistry(); console.log("[Startup] Lens registry loaded"); } catch (e) { console.error("[Startup] Lens registry error:", e); }
 
     if (background_workers_allowed()) {
-      void expireStaleUploadSessions().catch(error => {
-        console.error("[Upload Lifecycle] startup expiration failed", error);
-      });
+      if (background_feature_enabled("UPLOAD_SESSION_EXPIRATION_ENABLED")) {
+        void expireStaleUploadSessions().catch(error => {
+          console.error("[Upload Lifecycle] startup expiration failed", error);
+        });
+      }
       void initializeScheduler()
         .then(() => console.log("[Startup] Ingestion scheduler initialized"))
         .catch(error => {

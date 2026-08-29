@@ -9,8 +9,20 @@
  * 5. Intervention Timeline Engine
  * 6. System Copilot (Sunam)
  */
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { router, adminProcedure, protectedProcedure } from "../_core/trpc";
+import { background_workers_allowed } from "../runtime-role";
+
+const workerAdminProcedure = adminProcedure.use(({ next }) => {
+  if (!background_workers_allowed()) {
+    throw new TRPCError({
+      code: "SERVICE_UNAVAILABLE",
+      message: "background_runtime_required",
+    });
+  }
+  return next();
+});
 
 // ─── Export Spine ───
 const exportSpineRouter = router({
@@ -680,7 +692,7 @@ const executionBridgeRouter = router({
   // ─── Self-Healing Controls (Session 80) ───
 
   // Re-enable an auto-disabled stream
-  reenableStream: adminProcedure
+  reenableStream: workerAdminProcedure
     .input(z.object({ stream_id: z.string() }))
     .mutation(async ({ input }) => {
       const { reenableStream } = await import("../ingestion/scheduler");
@@ -688,7 +700,7 @@ const executionBridgeRouter = router({
     }),
 
   // Reset failure counters for a stream
-  resetFailureCounters: adminProcedure
+  resetFailureCounters: workerAdminProcedure
     .input(z.object({ stream_id: z.string() }))
     .mutation(async ({ input }) => {
       const { resetFailureCounters } = await import("../ingestion/scheduler");
@@ -696,7 +708,7 @@ const executionBridgeRouter = router({
     }),
 
   // Refresh all schedules (re-reads registry, reschedules all)
-  refreshSchedules: adminProcedure.mutation(async () => {
+  refreshSchedules: workerAdminProcedure.mutation(async () => {
     const { refreshSchedules } = await import("../ingestion/scheduler");
     await refreshSchedules();
     const { getSchedulerStatus } = await import("../ingestion/scheduler");
@@ -816,7 +828,7 @@ const executionBridgeRouter = router({
   // ─── Executor Service Endpoints (Session 81) ───
 
   // Reset stream checkpoint — clears lastIngestedAt for force re-ingestion
-  resetCheckpoint: adminProcedure
+  resetCheckpoint: workerAdminProcedure
     .input(z.object({ stream_id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const { resetStreamCheckpoint } = await import("../engines/executor-service");
@@ -824,7 +836,7 @@ const executionBridgeRouter = router({
     }),
 
   // Force re-ingestion — reset checkpoint + immediately run
-  forceReingestion: adminProcedure
+  forceReingestion: workerAdminProcedure
     .input(z.object({ stream_id: z.string(), maxRecords: z.number().optional() }))
     .mutation(async ({ ctx, input }) => {
       const { resetStreamCheckpoint } = await import("../engines/executor-service");

@@ -39,7 +39,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Audit Render secret configuration
         shell: bash
@@ -103,7 +103,7 @@ jobs:
         uses: pnpm/action-setup@v4
 
       - name: Setup Node 20
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '20'
           cache: pnpm
@@ -120,6 +120,9 @@ jobs:
           server/runtime-role.test.ts
           server/runtime-role-boundary.contract.test.ts
           server/executor-runtime-boundary.test.ts
+
+      - name: Full repository test suite
+        run: pnpm exec vitest run
 
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
@@ -182,8 +185,7 @@ jobs:
       - name: Check owned snake_case contracts
         run: pnpm run check:contracts
 
-      - name: TypeScript legacy debt scan
-        continue-on-error: true
+      - name: TypeScript check
         run: pnpm exec tsc -p tsconfig.ci.json --noEmit --pretty false
 
       - name: Vite client build
@@ -201,7 +203,7 @@ jobs:
 
       - name: Upload esbuild diagnostics
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: esbuild-diagnostics
           path: esbuild.log

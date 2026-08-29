@@ -57,7 +57,7 @@ const EMAIL_PATTERN = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
 const STATUTE_PATTERN =
   /(?:\d+\s+U\.S\.C\.\s+§?\s*[\w.-]+|\d+\s+C\.F\.R\.\s+§?\s*[\w.-]+|(?:Utah|Minnesota|Minn\.|Minnesota Statutes?|Utah Code)\s+(?:Code\s+)?§+?\s*[\w.-]+(?:\([^)]+\))*|§+\s*[\w.-]+(?:\([^)]+\))*)/gi;
 const DEADLINE_PATTERN =
-  /(?:within\s+\d+\s+(?:day|days|month|months|year|years)|\b\d+\s*(?:-|–|—)?\s*(?:day|days|month|months|year|years)\b|deadline[^.\n|]*|\bSOL\b[^.\n|]*|due\s+(?:by|date)?[^.\n|]*)/gi;
+  /(?:within\s+\d+\s+(?:days?|months?|years?)\b|\b\d+\s*(?:-|–|—)?\s*(?:days?|months?|years?)\b|deadline[^.\n|]*|\bSOL\b[^.\n|]*|due\s+(?:by|date)?[^.\n|]*)/gi;
 
 function unique(values) {
   return [...new Set(values.map((value) => String(value).trim()).filter(Boolean))];

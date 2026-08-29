@@ -26,9 +26,6 @@ export default defineConfig({
     reportCompressedSize: false,
 
   },
-  test: {
-    include: ["src/**/*.{test,spec}.?(c|m)[jt]s?(x)", "../server/**/*.{test,spec}.?(c|m)[jt]s?(x)", "../shared/**/*.{test,spec}.?(c|m)[jt]s?(x)"],
-  },
   server: {
     host: true,
     allowedHosts: ["localhost", "127.0.0.1"],

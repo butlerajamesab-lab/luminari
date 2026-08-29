@@ -37,6 +37,8 @@ export type TrpcContext = {
   isInspectionMode?: boolean;
 };
 
+type ExpressContextInput = Pick<CreateExpressContextOptions, "req" | "res">;
+
 type SupabaseAuthUser = {
   id?: string;
   email?: string;
@@ -341,7 +343,7 @@ export async function require_resolved_user(ctx: TrpcContext): Promise<RuntimeUs
   return user;
 }
 
-export async function createContext(opts: CreateExpressContextOptions): Promise<TrpcContext> {
+export async function createContext(opts: ExpressContextInput): Promise<TrpcContext> {
   let user: RuntimeUser | null = null;
   let auth = createUnauthenticatedAuth();
   const phases: ContextLookupPhase[] = [];

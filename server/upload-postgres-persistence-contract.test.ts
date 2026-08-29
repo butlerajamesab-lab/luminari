@@ -176,6 +176,9 @@ describe("document upload PostgreSQL persistence contract", () => {
     expect(entrypoint_source).toContain(
       'import { expireStaleUploadSessions, getPool } from "../db";',
     );
+    expect(entrypoint_source).toContain(
+      'background_feature_enabled("UPLOAD_SESSION_EXPIRATION_ENABLED")',
+    );
     expect(entrypoint_source).toContain("void expireStaleUploadSessions().catch(error => {");
     expect(migration_source).toContain("with (security_invoker = true)");
     expect(migration_source).toContain("session_status in ('uploading', 'processing')");

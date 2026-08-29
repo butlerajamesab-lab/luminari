@@ -45,7 +45,9 @@ describe("Mission Control canonical-core read boundary", () => {
 
   it("deduplicates only an active state query and never retains a resolved TTL cache", () => {
     expect(canonical).toContain("current_canonical_state_in_flight");
-    expect(canonical).toContain("if (current_canonical_state_in_flight) return current_canonical_state_in_flight");
+    expect(canonical).toMatch(
+      /if \(current_canonical_state_in_flight\)\s+return current_canonical_state_in_flight/,
+    );
     expect(canonical).toContain("current_canonical_state_in_flight = null");
     expect(canonical).not.toContain("cache_expires");
     expect(canonical).not.toContain("cached_canonical_state");

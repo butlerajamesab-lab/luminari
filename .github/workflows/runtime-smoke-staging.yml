@@ -15,7 +15,22 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+
+      - name: Require staging database configuration
+        shell: bash
+        run: |
+          if [ -z "${DATABASE_URL:-}" ]; then
+            echo "::error::STAGING_DATABASE_URL is not configured for this workflow"
+            exit 1
+          fi
+          case "$DATABASE_URL" in
+            postgresql://*|postgres://*) ;;
+            *)
+              echo "::error::STAGING_DATABASE_URL is not a PostgreSQL connection URL"
+              exit 1
+              ;;
+          esac
 
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client

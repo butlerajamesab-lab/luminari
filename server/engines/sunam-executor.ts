@@ -826,19 +826,18 @@ export async function dispatchTool(
         }
 
         const engines = engine_rows
-          .map((engine) => ({
+          .map((engine: (typeof engine_rows)[number]) => ({
             ...engine,
             sort_order: Number(engine.sort_order ?? 0),
           }))
-          .sort((left, right) =>
+          .sort((left: (typeof engine_rows)[number], right: (typeof engine_rows)[number]) =>
             left.sort_order - right.sort_order ||
             String(left.engine_name).localeCompare(String(right.engine_name)),
           );
         const failures = streams.filter(
           (stream) =>
             stream.consecutive_failures > 0 ||
-            stream.auto_disabled ||
-            stream.health_status === "failing",
+            stream.auto_disabled,
         );
 
         return {

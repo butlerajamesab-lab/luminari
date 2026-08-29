@@ -114,11 +114,11 @@ const intakeRouter = router({
         const topSuggestion = result.suggestions[0];
 
         if (result.ready_to_recommend && topSuggestion) {
-          reply = `Based on what you've shared, it sounds like this involves ${topSuggestion.pipeline_type.replace(/_/g, " ")} issues. Let's get organized — I've put together a plan for what documents to gather and what steps to take next.`;
+          reply = `Based on what you've shared, it sounds like this involves ${topSuggestion.pipeline_id.replace(/_/g, " ")} issues. Let's get organized — I've put together a plan for what documents to gather and what steps to take next.`;
           plan = {
             caseName: `${input.situationType} case`,
             caseDescription: combinedText.slice(0, 300),
-            domain: topSuggestion.pipeline_type.replace(/_/g, " "),
+            domain: topSuggestion.pipeline_id.replace(/_/g, " "),
             documentChecklist: [
               { label: "Key correspondence", description: "Any letters, emails, or notices related to your situation", priority: "essential" },
               { label: "Official documents", description: "Contracts, agreements, court orders, or agency decisions", priority: "essential" },
@@ -3436,6 +3436,9 @@ const proofSupabaseUrl = process.env.SUPABASE_URL || "https://wepxlinwbjrkqdzkqp
 const proofSupabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 
 async function proofRestSelect(table: string, params: Record<string, string>) {
+  if (!proofSupabaseAnonKey) {
+    throw new Error("proof_supabase_anon_key_not_configured");
+  }
   const url = new URL(`/rest/v1/${table}`, proofSupabaseUrl);
   for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
   const response = await fetch(url, {

@@ -69,7 +69,9 @@ describe("typed provenance candidate v4", () => {
     expect(candidate.promotion_ready.intended_target_table).toBe(
       "legal_statutes",
     );
-    expect(candidate.forensic_provenance.source_candidate_id).toBe(136165);
+    // PostgreSQL bigint identifiers are preserved as strings so provenance
+    // remains exact when an identifier exceeds JavaScript's safe integer range.
+    expect(candidate.forensic_provenance.source_candidate_id).toBe("136165");
     expect(candidate.forensic_provenance.source_line_start).toBe(3);
     expect(candidate.forensic_provenance.source_line_end).toBe(12);
     expect(candidate.forensic_provenance.source_excerpt).toBe(excerpt);
@@ -87,6 +89,9 @@ describe("typed provenance candidate v4", () => {
     expect(values.urls).toContain("laborcommission.utah.gov");
     expect(values.statutes.join(" ")).toContain("42 U.S.C. § 2000e-5");
     expect(values.deadlines.join(" ")).toMatch(/180 days/i);
+
+    const singularValues = extract_typed_values("Appeal within 1 day.");
+    expect(singularValues.deadlines).toContain("within 1 day");
   });
 
   it("recognizes tribal, workflow, court, legal-aid, policy, and benefit classes", () => {

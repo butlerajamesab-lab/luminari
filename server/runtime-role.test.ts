@@ -24,8 +24,11 @@ describe("Lighthouse runtime role", () => {
       configured_value: null,
       valid: true,
     });
-    expect(resolve_lighthouse_runtime_role({ LIGHTHOUSE_RUNTIME_ROLE: " web " }).role)
-      .toBe("web");
+    expect(resolve_lighthouse_runtime_role({ LIGHTHOUSE_RUNTIME_ROLE: " web " })).toEqual({
+      role: "web",
+      configured_value: " web ",
+      valid: false,
+    });
     expect(resolve_lighthouse_runtime_role({ LIGHTHOUSE_RUNTIME_ROLE: "typo" })).toEqual({
       role: "web",
       configured_value: "typo",
@@ -59,5 +62,24 @@ describe("Lighthouse runtime role", () => {
       ...worker_environment,
       LEGISLATIVE_VERSION_QUEUE_ENABLED: "true",
     })).toBe(true);
+  });
+
+  it("rejects normalized variants of privileged grants", () => {
+    for (const configured_value of ["WORKER", "worker ", " worker", "Worker"]) {
+      expect(resolve_lighthouse_runtime_role({
+        LIGHTHOUSE_RUNTIME_ROLE: configured_value,
+      })).toEqual({
+        role: "web",
+        configured_value,
+        valid: false,
+      });
+    }
+
+    for (const configured_value of ["TRUE", "true ", " true", "True"]) {
+      expect(background_feature_enabled("TEST_WORKER_ENABLED", {
+        LIGHTHOUSE_RUNTIME_ROLE: "worker",
+        TEST_WORKER_ENABLED: configured_value,
+      })).toBe(false);
+    }
   });
 });

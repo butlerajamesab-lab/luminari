@@ -65,12 +65,23 @@ describe("Lighthouse intake runtime topology cutover", () => {
     expect(bundleSync).toContain('intakeStatus: "evidence_registered"');
   });
 
-  it("reads only the completed live upload authority for case projections", () => {
+  it("keeps sealed layer receipts inspectable while marking only completed sessions current", () => {
     for (const projection of [layerReader, runtimeProjection, chronologyProjection]) {
       expect(projection).toContain("s.session_type = 'live'");
       expect(projection).toContain("s.entry_channel = 'upload'");
-      expect(projection).toContain("s.completion_state = 'governed_execution_complete'");
     }
+    expect(layerReader).not.toContain(
+      "s.completion_state = 'governed_execution_complete'",
+    );
+    expect(layerReader).toContain(
+      'projection_current: row.completion_state === "governed_execution_complete"',
+    );
+    expect(runtimeProjection).toContain(
+      "s.completion_state = 'governed_execution_complete'",
+    );
+    expect(chronologyProjection).toContain(
+      "s.completion_state = 'governed_execution_complete'",
+    );
   });
 
   it("binds all Lighthouse status and action panels to governed projections", () => {

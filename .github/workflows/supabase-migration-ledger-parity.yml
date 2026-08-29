@@ -12,7 +12,7 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Verify production-ledger parity and bounded new migration
         run: python3 scripts/audit-supabase-migration-ledger-parity.py
       - name: Enforce Civic Genome / Rosetta ownership boundary

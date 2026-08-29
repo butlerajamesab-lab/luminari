@@ -20,8 +20,11 @@ describe("Civic Genome Rosetta duplicate-work guard", () => {
     expect(invocation_index).toBeGreaterThan(guard_index);
   });
 
-  it("routes both administrator entry points through the same guard", () => {
+  it("guards the full pipeline while keeping the source handoff source-only", () => {
     const guarded_calls = router_source.match(/process_rosetta_pipeline_once\(input\.source_bill_id\)/g) ?? [];
-    expect(guarded_calls).toHaveLength(2);
+    expect(guarded_calls).toHaveLength(1);
+    expect(router_source).toContain(
+      "create_rosetta_source_handoff(input.source_bill_id)",
+    );
   });
 });

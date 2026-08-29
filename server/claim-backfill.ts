@@ -222,6 +222,7 @@ export async function runClaimBackfill(caseId?: number): Promise<BackfillSummary
     // Index claims by documentId for O(1) lookup
     const claimsByDoc = new Map<number, typeof caseClaims>();
     for (const c of caseClaims) {
+      if (c.documentId === null) continue;
       const existing = claimsByDoc.get(c.documentId) || [];
       existing.push(c);
       claimsByDoc.set(c.documentId, existing);

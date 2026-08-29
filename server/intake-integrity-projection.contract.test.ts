@@ -497,10 +497,10 @@ describe("Universal Intake Spine evidence-integrity projection", () => {
     );
     expect(integrity).toContain("No legacy snapshot state was substituted");
     expect(integrity).not.toContain("snapshotLifecycle");
-    expect(control).toContain("INTAKE_STATUS_READ");
+    expect(control).not.toContain("INTAKE_STATUS_READ");
     expect(control).toMatch(
       /onClick=\{\(\)\s*=>\s*void\s+status\.refetch\(\)\}/,
     );
-    expect(control).toMatch(/No evidence or\s+execution state was changed/);
+    expect(control).toMatch(/Nothing was\s+changed/);
   });
 });

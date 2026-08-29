@@ -1,0 +1,69 @@
+name: PR Review Gate
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  pull_request_review:
+    types: [submitted, edited, dismissed]
+  pull_request_review_comment:
+    types: [created, edited, deleted]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  unresolved-review-threads:
+    name: No unresolved review findings
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Reject unresolved current review threads
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const number = context.payload.pull_request.number;
+            const unresolved = [];
+            let cursor = null;
+
+            do {
+              const result = await github.graphql(`
+                query($owner: String!, $repo: String!, $number: Int!, $cursor: String) {
+                  repository(owner: $owner, name: $repo) {
+                    pullRequest(number: $number) {
+                      reviewThreads(first: 100, after: $cursor) {
+                        pageInfo { hasNextPage endCursor }
+                        nodes {
+                          isResolved
+                          isOutdated
+                          comments(first: 1) {
+                            nodes { url path body }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              `, { owner, repo, number, cursor });
+
+              const page = result.repository.pullRequest.reviewThreads;
+              for (const thread of page.nodes) {
+                if (!thread.isResolved && !thread.isOutdated) {
+                  unresolved.push(thread.comments.nodes[0] ?? {});
+                }
+              }
+              cursor = page.pageInfo.hasNextPage ? page.pageInfo.endCursor : null;
+            } while (cursor);
+
+            if (unresolved.length > 0) {
+              for (const finding of unresolved) {
+                core.error(`${finding.path ?? "review"}: ${finding.url ?? "unresolved thread"}`);
+              }
+              core.setFailed(`${unresolved.length} unresolved current review thread(s)`);
+            } else {
+              core.info("No unresolved current review threads");
+            }

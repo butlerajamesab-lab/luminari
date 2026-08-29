@@ -38,7 +38,15 @@ describe("minimum Lighthouse queue stabilization", () => {
     expect(legislative).toContain("for update of queue skip locked");
     expect(legislative).toContain("reconcile_completed_jobs_if_due");
     expect(legislative).toContain("[LegislativeVersionQueue] completion_deferred");
-    expect(legislative).toContain("A queue-ledger completion write failure must never rewrite that bill version as failed");
+    const completion_start = legislative.indexOf("await mark_job_completed({");
+    const next_cycle_start = legislative.indexOf(
+      "export async function run_legislative_version_queue_cycle",
+      completion_start,
+    );
+    const completion_path = legislative.slice(completion_start, next_cycle_start);
+    expect(completion_start).toBeGreaterThan(-1);
+    expect(completion_path).toContain("[LegislativeVersionQueue] completion_deferred");
+    expect(completion_path).not.toContain("mark_job_failed");
   });
 
   it("bounds Prism reconciliation and preserves already-produced receipts", () => {
@@ -49,12 +57,14 @@ describe("minimum Lighthouse queue stabilization", () => {
     expect(prism).toContain("bookkeeping, not evidence that");
   });
 
-  it("warms Docket in bounded non-overlapping batches after HTTP startup", () => {
+  it("warms Docket sequentially in bounded non-overlapping batches after HTTP startup", () => {
     expect(warmer).toContain("const DEFAULT_BATCH_SIZE = 5");
     expect(warmer).toContain("const MAX_BATCH_SIZE = 10");
     expect(warmer).toContain("const DEFAULT_INTERVAL_MS = 15 * 60 * 1000");
     expect(warmer).toContain("if (cycle_running || stopped) return");
-    expect(warmer).toContain("/api/docket/warm-next-batch");
+    expect(warmer).toContain("/api/docket/warm-state");
+    expect(warmer).toContain("for (let index = 0; index < states_to_warm.length; index += 1)");
+    expect(warmer).toContain("await sleep(WARM_STATE_DELAY_MS)");
     const listen_index = startup.indexOf("server.listen(port, () => {");
     const warmer_index = startup.indexOf("start_docket_state_cache_warmer(port)");
     expect(listen_index).toBeGreaterThanOrEqual(0);
