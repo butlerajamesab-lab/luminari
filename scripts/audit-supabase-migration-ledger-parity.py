@@ -13,7 +13,11 @@ PRODUCTION_RECEIPTS = Path("supabase/verification/production_migration_receipts_
 APPROVED_REPOSITORY_ONLY = {
     "20260501203517": (
         "20260501203517_fresh_branch_signal_severity_foundation.sql",
-        "a75e1bd4bd76616b642aa0fbca670a58d51536fe",
+        "8a13b1a07ae5c0b897392fe400e052e1bda2e48d",
+    ),
+    "20260513200123": (
+        "20260513200123_harden_analysis_snapshots_fresh_replay.sql",
+        "81ef2c910c3ce9544e2d8e50b62d9b6fd263da77",
     ),
     "20260815040500": (
         "20260815040500_rosetta_structural_correctness_reconciliation.sql",
@@ -85,6 +89,14 @@ SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
     "20260509001402": (
         "bb3b4546c4257014a49a8cef5dea77e0",
         "1f0eb57d456e7f240e43c09f7b0759bdbd200ae0",
+    ),
+    "20260513200136": (
+        "cf445df3da67240166927ad737f9ea75",
+        "2e993338680b95caac9ae08c7b4a4b14426e4726",
+    ),
+    "20260513200250": (
+        "b35feafe3cc54edfe240be1fc1a34570",
+        "56acd505d15f5dfd5f22ef5cba53d47716653c10",
     ),
     "20260805194900": (
         "ed9f769f67de34a7c27d14e91e552a55",

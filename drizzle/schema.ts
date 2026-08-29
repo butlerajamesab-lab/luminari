@@ -7728,7 +7728,7 @@ export const caseSignals = pgTable("case_signals", {
   createdAt: bigint("created_at", { mode: "number" }).notNull(),
   updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
 }, (table) => [
-  index("idx_cs_case").on(table.caseId),
+  index("idx_case_signals_case").on(table.caseId),
   index("idx_cs_user").on(table.userId),
   index("idx_cs_entity").on(table.entityName),
   index("idx_cs_claim_type").on(table.claimType),
@@ -8129,7 +8129,7 @@ export const entityRelationships = pgTable("entity_relationships", {
 }, (t) => [
   index("idx_er_entity_a").on(t.entityIdA),
   index("idx_er_entity_b").on(t.entityIdB),
-  index("idx_er_type").on(t.relationshipType),
+  index("idx_entity_relationships_type").on(t.relationshipType),
 ]);
 
 export type EntityRelationshipRow = typeof entityRelationships.$inferSelect;
@@ -8444,9 +8444,9 @@ export const publicReports = pgTable("public_reports", {
   generatedAt: bigint("generated_at_pr", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
   generatedBy: varchar("generated_by_pr", { length: 128 }),
 }, (t) => [
-  index("idx_pr_type").on(t.reportType),
+  index("idx_public_reports_type").on(t.reportType),
   index("idx_pr_pattern").on(t.patternId),
-  index("idx_pr_status").on(t.status),
+  index("idx_public_reports_status").on(t.status),
   index("idx_pr_audience").on(t.audienceType),
 ]);
 
@@ -8876,7 +8876,7 @@ export const institutionAnnotations = pgTable("institution_annotations", {
   note: text("note_ia").notNull(),
   createdAt: bigint("created_at_ia", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
 }, (t) => [
-  index("idx_ia_institution").on(t.institutionId),
+  index("idx_institution_annotations_institution").on(t.institutionId),
 ]);
 
 export type InstitutionAnnotationRow = typeof institutionAnnotations.$inferSelect;
@@ -9720,7 +9720,7 @@ export const businessBaselines = pgTable("business_baselines", {
   lastUpdated: bigint("last_updated", { mode: "number" }).notNull(),
 }, (table) => [
   uniqueIndex("idx_entity_type_id").on(table.entityType, table.entityId),
-  index("idx_entity_type").on(table.entityType),
+  index("idx_business_baselines_entity_type").on(table.entityType),
 ]);
 
 export type BusinessBaseline = typeof businessBaselines.$inferSelect;

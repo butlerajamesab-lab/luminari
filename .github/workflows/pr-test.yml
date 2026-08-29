@@ -111,6 +111,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Validate Drizzle schema generation
+        run: pnpm exec drizzle-kit generate --dialect=postgresql --schema=./drizzle/schema.ts --out="$(mktemp -d)" --name=ci_schema_probe
+
       - name: Execute authenticated multipart upload acceptance
         run: pnpm exec vitest run server/upload-route-multipart-acceptance.test.ts
 
@@ -133,8 +136,100 @@ jobs:
       - name: Bootstrap schema guard fixtures
         run: psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 -f supabase/verification/runtime_hotfix_schema_guard_fixture.sql
 
+      - name: Bootstrap Supabase database roles
+        run: |
+          psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          do $$
+          begin
+            if not exists (select 1 from pg_roles where rolname = 'anon') then
+              create role anon nologin;
+            end if;
+            if not exists (select 1 from pg_roles where rolname = 'authenticated') then
+              create role authenticated nologin;
+            end if;
+            if not exists (select 1 from pg_roles where rolname = 'service_role') then
+              create role service_role nologin bypassrls;
+            end if;
+          end
+          $$;
+          SQL
+
+      - name: Apply clean-branch lineage foundation
+        run: psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260501203517_fresh_branch_signal_severity_foundation.sql
+
       - name: Apply conditional historical RLS hardening
         run: psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260509001402_phase1_rls_hardening_lighthouse_retry.sql
+
+      - name: Apply analysis snapshot lineage and hardening
+        run: |
+          psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260513200122_add_analysis_snapshots_table.sql
+          psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260513200123_harden_analysis_snapshots_fresh_replay.sql
+          psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260513200136_add_assertion_atoms_compatibility_view.sql
+          psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260513200250_fix_governing_authorities_compatibility_view.sql
+
+      - name: Verify clean-branch lineage contract
+        run: |
+          psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          do $$
+          declare
+            missing_relations text[];
+            rls_defects text[];
+          begin
+            select array_agg(required_relation order by required_relation)
+              into missing_relations
+            from unnest(array[
+              'entry_runs',
+              'snapshots',
+              'pipeline_runs',
+              'export_runs',
+              'analysis_snapshots'
+            ]) required_relation
+            where to_regclass(format('public.%I', required_relation)) is null;
+
+            if missing_relations is not null then
+              raise exception 'missing lineage relations: %', missing_relations;
+            end if;
+
+            select array_agg(c.relname order by c.relname)
+              into rls_defects
+            from pg_class c
+            join pg_namespace n on n.oid = c.relnamespace
+            where n.nspname = 'public'
+              and c.relname = any(array[
+                'entry_runs',
+                'snapshots',
+                'pipeline_runs',
+                'export_runs',
+                'analysis_snapshots'
+              ])
+              and not c.relrowsecurity;
+
+            if rls_defects is not null then
+              raise exception 'lineage relations without RLS: %', rls_defects;
+            end if;
+
+            if (
+              select count(*)
+              from pg_constraint
+              where contype = 'f'
+                and conrelid = any(array[
+                  'public.snapshots'::regclass,
+                  'public.pipeline_runs'::regclass,
+                  'public.export_runs'::regclass,
+                  'public.analysis_snapshots'::regclass
+                ])
+            ) <> 6 then
+              raise exception 'lineage foreign-key count mismatch';
+            end if;
+
+            if has_table_privilege('anon', 'public.analysis_snapshots', 'select')
+               or has_table_privilege('anon', 'public.analysis_snapshots', 'insert')
+               or has_table_privilege('authenticated', 'public.analysis_snapshots', 'insert') then
+              raise exception 'analysis_snapshots client grant boundary is not fail-closed';
+            end if;
+          end
+          $$;
+          SQL
 
       - name: Apply namespace migration
         run: psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260511000001_operational_core_namespace_activation.sql
