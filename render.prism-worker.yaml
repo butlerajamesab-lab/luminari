@@ -1,0 +1,36 @@
+services:
+  - type: worker
+    name: lighthouse-prism-canary
+    runtime: node
+    plan: starter
+    region: oregon
+    branch: main
+    autoDeployTrigger: checksPass
+    buildCommand: >-
+      corepack pnpm install --frozen-lockfile && corepack pnpm build:prism-worker
+    startCommand: >-
+      NODE_ENV=production node dist/prism-rosetta-worker.js
+    maxShutdownDelaySeconds: 60
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: LIGHTHOUSE_RUNTIME_ROLE
+        value: worker
+      - key: PRISM_ROSETTA_QUEUE_ENABLED
+        value: "true"
+      - key: PRISM_ROSETTA_QUEUE_CANARY_ID
+        value: 3fd366e0-9073-4b5e-b409-7f8d8933d26f
+      - key: PRISM_ROSETTA_QUEUE_MAX_NEW_SUBMISSIONS
+        value: "1"
+      - key: PRISM_ROSETTA_QUEUE_POLL_MS
+        value: "10000"
+      - key: PRISM_ROSETTA_QUEUE_RECONCILE_MS
+        value: "60000"
+      - key: PRISM_ROSETTA_REQUEST_TIMEOUT_MS
+        value: "15000"
+      - key: DATABASE_URL
+        sync: false
+      - key: PRISM_BRIDGE_SECRET
+        sync: false
+      - key: PRISM_BASE_URL
+        value: https://prism-14wm.onrender.com
