@@ -87,6 +87,8 @@ begin
   end if;
 
   if v_signal.is_current then
+    -- Only retire if this exact Atlas candidate is still the current projection.
+    -- A stale retirement receipt can never retire a newer superseding candidate.
     update public.live_data_signals
        set is_current = false
      where live_data_signal_id = v_signal.live_data_signal_id

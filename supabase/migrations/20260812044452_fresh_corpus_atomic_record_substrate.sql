@@ -1,6 +1,3 @@
--- Fresh source-bound atomic corpus layer.
--- Source artifact != atomic source record != typed candidate != identity != public projection.
-
 create table if not exists public.luminari_corpus_atomic_run_v1 (
   run_id uuid primary key default gen_random_uuid(),
   engine_version text not null,

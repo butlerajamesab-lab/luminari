@@ -12,4 +12,4 @@
 --
 -- No tables, views, columns, policies, or data are changed.
 
-select 1;
+select 1

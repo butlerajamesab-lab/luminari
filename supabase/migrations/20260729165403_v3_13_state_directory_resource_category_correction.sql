@@ -1,7 +1,11 @@
 begin;
 
 create or replace function public.state_directory_resource_category(p_identity text)
-returns text language sql immutable strict as $$
+returns text
+language sql
+immutable
+strict
+as $$
   select case
     when p_identity ~ '(snap|wic|food|nutrition|meal)' then 'food_nutrition'
     when p_identity ~ '(tanf|temporaryassistance|cashassistance|generalassistance|familyassistance)' then 'cash_assistance'
@@ -19,14 +23,16 @@ returns text language sql immutable strict as $$
 $$;
 
 with corrected as (
-  select resource_entity_id,
+  select
+    resource_entity_id,
     public.state_directory_resource_category(lower(metadata->>'original_identity')) as corrected_category
   from public.luminari_resource_entities
   where source_table = 'state_directory_logical_record'
     and nullif(metadata->>'original_identity', '') is not null
 )
 update public.luminari_resource_entities e
-set resource_category = c.corrected_category,
+set
+  resource_category = c.corrected_category,
   service_categories = array[c.corrected_category]::text[],
   metadata = coalesce(e.metadata, '{}'::jsonb) || jsonb_build_object(
     'resource_category_engine', 'state_directory_resource_category',

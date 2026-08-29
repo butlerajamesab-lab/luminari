@@ -1,3 +1,4 @@
+
 ALTER TABLE public.substrate_source_artifact ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.substrate_target_reconciliation ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.substrate_candidate_disposition ENABLE ROW LEVEL SECURITY;
@@ -7,6 +8,7 @@ ALTER TABLE public.corpus_artifact_manifest ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.generated_sql_source_manifest ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.generated_sql_bundle_audit ENABLE ROW LEVEL SECURITY;
 
+-- service_role: full access (matches internal pipeline/ETL access pattern used elsewhere in Lighthouse)
 CREATE POLICY "service_role_full_access" ON public.substrate_source_artifact FOR ALL TO service_role USING (true) WITH CHECK (true);
 CREATE POLICY "service_role_full_access" ON public.substrate_target_reconciliation FOR ALL TO service_role USING (true) WITH CHECK (true);
 CREATE POLICY "service_role_full_access" ON public.substrate_candidate_disposition FOR ALL TO service_role USING (true) WITH CHECK (true);
@@ -16,6 +18,7 @@ CREATE POLICY "service_role_full_access" ON public.corpus_artifact_manifest FOR 
 CREATE POLICY "service_role_full_access" ON public.generated_sql_source_manifest FOR ALL TO service_role USING (true) WITH CHECK (true);
 CREATE POLICY "service_role_full_access" ON public.generated_sql_bundle_audit FOR ALL TO service_role USING (true) WITH CHECK (true);
 
+-- authenticated: read-only (internal pipeline metadata, not end-user content; matches read access pattern used on other internal tables in this schema)
 CREATE POLICY "authenticated_read_only" ON public.substrate_source_artifact FOR SELECT TO authenticated USING (true);
 CREATE POLICY "authenticated_read_only" ON public.substrate_target_reconciliation FOR SELECT TO authenticated USING (true);
 CREATE POLICY "authenticated_read_only" ON public.substrate_candidate_disposition FOR SELECT TO authenticated USING (true);

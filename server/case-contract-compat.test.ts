@@ -8,7 +8,7 @@ const migration = readFileSync(
   "utf8",
 );
 const statusMigration = readFileSync(
-  new URL("../supabase/migrations/20260822203000_lighthouse_case_status_canonical_default.sql", import.meta.url),
+  new URL("../supabase/migrations/20260822222044_lighthouse_case_status_canonical_default.sql", import.meta.url),
   "utf8",
 );
 

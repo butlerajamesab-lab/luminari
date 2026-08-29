@@ -1,8 +1,5 @@
 begin;
 
--- Preserve the uploaded reference data as public read-only surfaces while
--- removing browser-role writes and satisfying Supabase's exposed-schema RLS
--- requirement. Server-side service_role/postgres privileges are untouched.
 alter table public.locator_sources enable row level security;
 alter table public.gov_offices enable row level security;
 alter table public.resource_office_xwalk enable row level security;
@@ -26,60 +23,38 @@ grant select on table
 to anon, authenticated;
 
 drop policy if exists locator_sources_public_read on public.locator_sources;
-create policy locator_sources_public_read
-  on public.locator_sources for select to anon, authenticated
-  using (true);
-
+create policy locator_sources_public_read on public.locator_sources
+  for select to anon, authenticated using (true);
 drop policy if exists gov_offices_public_read on public.gov_offices;
-create policy gov_offices_public_read
-  on public.gov_offices for select to anon, authenticated
-  using (true);
-
+create policy gov_offices_public_read on public.gov_offices
+  for select to anon, authenticated using (true);
 drop policy if exists resource_office_xwalk_public_read on public.resource_office_xwalk;
-create policy resource_office_xwalk_public_read
-  on public.resource_office_xwalk for select to anon, authenticated
-  using (true);
-
+create policy resource_office_xwalk_public_read on public.resource_office_xwalk
+  for select to anon, authenticated using (true);
 drop policy if exists foia_agency_records_public_read on public.foia_agency_records;
-create policy foia_agency_records_public_read
-  on public.foia_agency_records for select to anon, authenticated
-  using (true);
-
+create policy foia_agency_records_public_read on public.foia_agency_records
+  for select to anon, authenticated using (true);
 drop policy if exists foia_record_types_public_read on public.foia_record_types;
-create policy foia_record_types_public_read
-  on public.foia_record_types for select to anon, authenticated
-  using (true);
+create policy foia_record_types_public_read on public.foia_record_types
+  for select to anon, authenticated using (true);
 
--- The old FOR ALL policy treated locked archive rows as writable. Replace it
--- with an explicit read-only policy and keep append operations service-only.
 alter table public.registry_raw_archive enable row level security;
 drop policy if exists archive_read_only on public.registry_raw_archive;
 drop policy if exists authenticated_all_access_registry_raw_archive on public.registry_raw_archive;
 drop policy if exists registry_raw_archive_read on public.registry_raw_archive;
-
 revoke all privileges on table public.registry_raw_archive
   from public, anon, authenticated;
 revoke all privileges on sequence public.registry_raw_archive_id_seq
   from public, anon, authenticated;
 grant select on table public.registry_raw_archive to anon, authenticated;
+create policy registry_raw_archive_read on public.registry_raw_archive
+  for select to anon, authenticated using (locked is true);
 
-create policy registry_raw_archive_read
-  on public.registry_raw_archive for select to anon, authenticated
-  using (locked is true);
-
--- New public objects must be explicitly exposed rather than inheriting broad
--- Data API grants. Existing object grants are unchanged above except where
--- this migration names them directly.
 alter default privileges for role postgres in schema public
   revoke all privileges on tables from public, anon, authenticated;
 alter default privileges for role postgres in schema public
   revoke all privileges on sequences from public, anon, authenticated;
 alter default privileges for role postgres in schema public
   revoke all privileges on functions from public, anon, authenticated;
-
--- The managed supabase_admin role is not a member of postgres, so its default
--- ACLs require a Supabase-managed/admin operation and cannot be changed by a
--- normal project migration. Keep that exception visible in the audit rather
--- than making this otherwise-safe migration fail.
 
 commit;

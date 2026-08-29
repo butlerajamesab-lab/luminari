@@ -7,7 +7,6 @@
 
 begin;
 
--- Backfill only cases that currently have no primary Intake Spine session.
 with missing as (
   select
     c.id as legacy_case_id,
@@ -84,9 +83,6 @@ join inserted_sessions s
   on s.intake_session_id = m.intake_session_id
 on conflict (intake_session_id, case_uuid) do nothing;
 
--- Extend the already-installed case bridge trigger so future cases receive both
--- identity generations and a primary Intake Spine session in the same database
--- transaction as case creation. The existing bridge UUID is never replaced.
 create or replace function public.luminari_ensure_case_identity_bridge_v1()
 returns trigger
 language plpgsql

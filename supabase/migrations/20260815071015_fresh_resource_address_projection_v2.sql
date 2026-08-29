@@ -31,9 +31,6 @@ declare
   v_address_count integer:=0;
   v_receipt_hash text;
 begin
-  -- Keep the v2.3 identity and contact decisions intact, then deterministically
-  -- re-project only the address field with the corrected validator. The base
-  -- snapshot is not activated until this function has resealed its receipts.
   v_base_result:=public.create_luminari_resource_snapshot_v2_3(
     p_snapshot_version,
     p_quality_lanes

@@ -7,7 +7,7 @@ const migration = readFileSync(
     process.cwd(),
     "supabase",
     "migrations",
-    "20260815140500_prism_rosetta_v23_generation.sql",
+    "20260815110622_prism_rosetta_v23_generation.sql",
   ),
   "utf8",
 );

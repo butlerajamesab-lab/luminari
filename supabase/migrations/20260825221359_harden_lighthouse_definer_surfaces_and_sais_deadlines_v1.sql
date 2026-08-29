@@ -1,4 +1,3 @@
--- Supabase migration-ledger version: 20260825221359.
 -- Narrow forward-only repair for the remaining Lighthouse security-advisor
 -- findings. This intentionally does not repeat the broad 20260816091700
 -- migration that was rolled back: only the six currently flagged views, the

@@ -10,7 +10,7 @@ const ground_truth = read_repo_file(
   "../supabase/migrations/20260731185401_signal_architecture_ground_truth.sql",
 );
 const pull_through = read_repo_file(
-  "../supabase/migrations/20260806042000_signal_architecture_pull_through_v1.sql",
+  "../supabase/migrations/20260806043149_signal_architecture_pull_through_v1.sql",
 );
 
 describe("signal architecture pull-through v1", () => {

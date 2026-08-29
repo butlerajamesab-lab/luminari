@@ -1,5 +1,3 @@
-begin;
-
 -- Recover locations for the 64 v3.13 resources whose source rows carried
 -- office-labelled addresses rather than a literal `address` field.
 --
@@ -365,5 +363,3 @@ begin
   end if;
 end
 $acceptance$;
-
-commit;

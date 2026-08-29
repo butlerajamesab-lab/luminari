@@ -1,5 +1,3 @@
-begin;
-
 create or replace function public.reconcile_civic_genome_bill_version_prism_completion()
 returns trigger
 language plpgsql
@@ -67,10 +65,6 @@ on public.civic_genome_bill_version
 for each row
 execute function public.reconcile_civic_genome_bill_version_prism_completion();
 
--- Repair versions whose immutable Prism 2.2 run completed before the
--- legislative-version pipeline attached the assembly_run_id to the version.
--- Mentioning assembly_run_id replays the BEFORE trigger without changing the
--- assembly identity or any canonical Prism request/receipt/run.
 update public.civic_genome_bill_version version
    set assembly_run_id = version.assembly_run_id
  where version.assembly_run_id is not null
@@ -93,5 +87,3 @@ update public.civic_genome_bill_version version
 
 comment on function public.reconcile_civic_genome_bill_version_prism_completion() is
   'Closes the assembly-to-Prism completion race by hydrating a Civic Genome bill version from an already-existing immutable Prism Rosetta verification run when assembly_run_id is bound after verification completed.';
-
-commit;

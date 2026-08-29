@@ -1,8 +1,4 @@
--- Production-applied security reconciliation, step 2.
--- NOTE: This migration was intentionally rolled back by the immediately following migration
--- after confirming these surfaces are actively used. It remains in source control because
--- it exists in the production migration ledger and must not be silently erased.
-
+-- Close public-table exposure while preserving backend/service-role operation.
 ALTER TABLE public.governance_snapshots ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.state_enriched_directory_v3_13 ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.coalition_advocacy_orgs_v3_13_stage ENABLE ROW LEVEL SECURITY;
@@ -24,6 +20,7 @@ ALTER TABLE public.luminari_uuid_exports_v3_13 ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.master_template_docs_v3_13 ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.programs_v3_13_stage ENABLE ROW LEVEL SECURITY;
 
+-- Make flagged views honor the invoking role's grants/RLS instead of the owner's privileges.
 ALTER VIEW public.v_lighthouse_resource_catalog_v1 SET (security_invoker = true);
 ALTER VIEW public.v_lighthouse_did_you_know_candidates_v1 SET (security_invoker = true);
 ALTER VIEW public.v_lighthouse_findings_case_coverage_v1 SET (security_invoker = true);

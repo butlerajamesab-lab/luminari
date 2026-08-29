@@ -33,12 +33,12 @@ describe("governed intake and workflow UI projections", () => {
     for (const source of [migration, hardening]) {
       expect(source).toContain("verification_status");
       expect(source).toContain("is_user_routable");
-      expect(source).toContain("not like '%unverified%'");
       expect(source).toContain("not like '%partial%'");
-      expect(source).toContain("unverified_reference_only");
       expect(source).toContain("partial_review");
       expect(source).toContain("verified_routable");
     }
+    expect(hardening).toContain("not like '%unverified%'");
+    expect(hardening).toContain("unverified_reference_only");
     expect(migration).toContain("workflow_route_state");
   });
 

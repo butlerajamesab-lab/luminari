@@ -213,7 +213,12 @@ begin
    order by sealed_at desc, layer_run_id desc
    limit 1;
 
-  v_output_artifact_key := format('layer-output:%s:%s:%s', p_layer_name, p_input_hash, p_output_hash);
+  v_output_artifact_key := format(
+    'layer-output:%s:%s:%s',
+    p_layer_name,
+    p_input_hash,
+    p_output_hash
+  );
 
   select artifact_id
     into v_output_artifact_id
@@ -225,9 +230,18 @@ begin
   if v_output_artifact_id is null then
     v_output_artifact_id := extensions.gen_random_uuid();
     insert into public.intake_artifacts (
-      artifact_id, intake_session_id, artifact_key, source_family,
-      artifact_type, evidence_tier, availability, privacy_classification,
-      artifact_status, metadata, created_at, updated_at
+      artifact_id,
+      intake_session_id,
+      artifact_key,
+      source_family,
+      artifact_type,
+      evidence_tier,
+      availability,
+      privacy_classification,
+      artifact_status,
+      metadata,
+      created_at,
+      updated_at
     ) values (
       v_output_artifact_id,
       p_intake_session_id,
@@ -274,15 +288,24 @@ begin
   );
 
   v_input_refs_hash := pg_catalog.encode(
-    extensions.digest(pg_catalog.convert_to(public.luminari_canonical_json_v2(coalesce(p_input_refs, '[]'::jsonb)), 'UTF8'), 'sha256'),
+    extensions.digest(
+      pg_catalog.convert_to(public.luminari_canonical_json_v2(coalesce(p_input_refs, '[]'::jsonb)), 'UTF8'),
+      'sha256'
+    ),
     'hex'
   );
   v_output_refs_hash := pg_catalog.encode(
-    extensions.digest(pg_catalog.convert_to(public.luminari_canonical_json_v2(v_output_refs), 'UTF8'), 'sha256'),
+    extensions.digest(
+      pg_catalog.convert_to(public.luminari_canonical_json_v2(v_output_refs), 'UTF8'),
+      'sha256'
+    ),
     'hex'
   );
   v_unresolved_hash := pg_catalog.encode(
-    extensions.digest(pg_catalog.convert_to(public.luminari_canonical_json_v2(coalesce(p_unresolved_dependencies, '[]'::jsonb)), 'UTF8'), 'sha256'),
+    extensions.digest(
+      pg_catalog.convert_to(public.luminari_canonical_json_v2(coalesce(p_unresolved_dependencies, '[]'::jsonb)), 'UTF8'),
+      'sha256'
+    ),
     'hex'
   );
 
@@ -320,18 +343,51 @@ begin
   v_receipt := v_receipt_without_hash || pg_catalog.jsonb_build_object('receipt_hash', v_receipt_hash);
 
   insert into public.intake_layer_runs (
-    layer_run_id, intake_session_id, layer_name, layer_version, rule_version,
-    normalization_version, run_status, input_hash, output_hash, input_refs,
-    output_refs, unresolved_dependencies, receipt, started_at, completed_at,
-    is_sealed, sealed_at, supersedes_id, receipt_hash, previous_receipt_hash,
-    hash_algorithm, canonicalization_version
+    layer_run_id,
+    intake_session_id,
+    layer_name,
+    layer_version,
+    rule_version,
+    normalization_version,
+    run_status,
+    input_hash,
+    output_hash,
+    input_refs,
+    output_refs,
+    unresolved_dependencies,
+    receipt,
+    started_at,
+    completed_at,
+    is_sealed,
+    sealed_at,
+    supersedes_id,
+    receipt_hash,
+    previous_receipt_hash,
+    hash_algorithm,
+    canonicalization_version
   ) values (
-    v_layer_run_id, p_intake_session_id, p_layer_name, p_layer_version, p_rule_version,
-    p_parser_version, 'completed', p_input_hash, p_output_hash,
-    coalesce(p_input_refs, '[]'::jsonb), v_output_refs,
-    coalesce(p_unresolved_dependencies, '[]'::jsonb), v_receipt, v_now, v_now,
-    true, v_now, v_supersedes_id, v_receipt_hash, v_tip_hash,
-    'sha256', 'luminari.intake.canonical-json.v2'
+    v_layer_run_id,
+    p_intake_session_id,
+    p_layer_name,
+    p_layer_version,
+    p_rule_version,
+    p_parser_version,
+    'completed',
+    p_input_hash,
+    p_output_hash,
+    coalesce(p_input_refs, '[]'::jsonb),
+    v_output_refs,
+    coalesce(p_unresolved_dependencies, '[]'::jsonb),
+    v_receipt,
+    v_now,
+    v_now,
+    true,
+    v_now,
+    v_supersedes_id,
+    v_receipt_hash,
+    v_tip_hash,
+    'sha256',
+    'luminari.intake.canonical-json.v2'
   );
 
   return query select v_layer_run_id, v_receipt_hash, v_output_artifact_id, false;

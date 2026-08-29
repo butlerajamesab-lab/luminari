@@ -1,6 +1,3 @@
--- Universal Lighthouse Intake Spine foundation
--- Live Supabase migration: 20260730134202_universal_intake_spine_foundation
-
 create or replace function public.luminari_set_updated_at()
 returns trigger
 language plpgsql

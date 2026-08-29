@@ -1,6 +1,3 @@
--- Civic object visibility and reconciliation plane.
--- Additive only: does not rewrite source candidates or collapse source ownership.
-
 CREATE OR REPLACE VIEW public.v_civic_object_visibility_v1 WITH (security_invoker=true) AS
 SELECT c.candidate_key AS object_ref,c.candidate_type AS source_object_type,
 CASE WHEN c.candidate_type <> 'workbook_record' THEN c.candidate_type

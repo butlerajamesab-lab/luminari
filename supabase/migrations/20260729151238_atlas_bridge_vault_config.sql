@@ -1,10 +1,3 @@
--- Protected runtime configuration reader for the Atlas -> Lighthouse bridge.
---
--- Secret values are provisioned directly in Supabase Vault and are never
--- committed to source control. The Node runtime reaches this function through
--- its existing PostgreSQL connection when Render-specific Atlas environment
--- variables are absent.
-
 create or replace function public.get_atlas_bridge_runtime_config()
 returns table (
   atlas_supabase_url text,

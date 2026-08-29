@@ -1,6 +1,3 @@
--- Typed SAIS civic object projection and Doc 27 supplemental capacity.
--- Additive. The original 26-document SAIS manifest remains immutable.
-
 ALTER TABLE sais_import.source_document DROP CONSTRAINT IF EXISTS source_document_document_number_check;
 ALTER TABLE sais_import.source_document ADD CONSTRAINT source_document_document_number_check CHECK (document_number BETWEEN 1 AND 27);
 

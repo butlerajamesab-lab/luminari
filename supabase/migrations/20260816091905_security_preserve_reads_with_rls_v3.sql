@@ -1,5 +1,5 @@
--- Production-applied security reconciliation, step 3.
--- Preserve existing anon/authenticated read behavior while enabling RLS.
+-- Preserve existing anon/authenticated read behavior on the 20 currently public-read tables,
+-- while enabling RLS so future write grants cannot silently expose mutations.
 
 ALTER TABLE public.governance_snapshots ENABLE ROW LEVEL SECURITY;
 CREATE POLICY luminari_public_read_v1 ON public.governance_snapshots FOR SELECT TO anon, authenticated USING (true);
@@ -42,8 +42,8 @@ CREATE POLICY luminari_public_read_v1 ON public.master_template_docs_v3_13 FOR S
 ALTER TABLE public.programs_v3_13_stage ENABLE ROW LEVEL SECURITY;
 CREATE POLICY luminari_public_read_v1 ON public.programs_v3_13_stage FOR SELECT TO anon, authenticated USING (true);
 
--- These tables were already fail-closed by RLS with no policies. Their broad direct
--- API grants were therefore ineffective but dangerous if RLS were ever changed.
+-- These tables already have RLS enabled and no policies, so anon/authenticated have zero effective access today.
+-- Remove their broad direct grants to keep them fail-closed even if RLS is accidentally altered later.
 REVOKE ALL PRIVILEGES ON TABLE
   public.contacts,
   public.docket_bill_state_cache,

@@ -127,45 +127,8 @@ jobs:
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
-      - name: Verify recovered migration placeholders
-        shell: bash
-        run: |
-          count=0
-          while IFS= read -r file; do
-            psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 -f "$file"
-            count=$((count + 1))
-          done < <(find supabase/migrations -maxdepth 1 -type f -name '*_recovered_placeholder.sql' | sort)
-          if [ "$count" -eq 0 ]; then
-            echo "No recovered placeholder migrations were found"
-            exit 1
-          fi
-          echo "Verified $count recovered placeholder migrations"
-
-      - name: Verify unique migration versions
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from collections import defaultdict
-          from pathlib import Path
-
-          by_version = defaultdict(list)
-          for path in sorted(Path("supabase/migrations").glob("*.sql")):
-              version = path.name.split("_", 1)[0]
-              if len(version) == 14 and version.isdigit():
-                  by_version[version].append(path.name)
-
-          duplicates = {
-              version: names
-              for version, names in by_version.items()
-              if len(names) > 1
-          }
-          if duplicates:
-              for version, names in sorted(duplicates.items()):
-                  print(f"duplicate migration version {version}: {', '.join(names)}")
-              raise SystemExit(1)
-
-          print(f"Verified {len(by_version)} unique 14-digit migration versions")
-          PY
+      - name: Verify exact production migration ledger
+        run: python3 scripts/audit-supabase-migration-ledger-parity.py
 
       - name: Bootstrap schema guard fixtures
         run: psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 -f supabase/verification/runtime_hotfix_schema_guard_fixture.sql

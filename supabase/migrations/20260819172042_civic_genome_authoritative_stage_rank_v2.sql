@@ -25,8 +25,6 @@ as $function$
   end;
 $function$;
 
--- Source-document rows are mutable observations of the latest normalized Docket
--- metadata. Immutable observation receipts remain untouched.
 update public.docket_bill_source_document document
    set stage_rank = public.docket_legislative_stage_rank(document.normalized_version_type),
        latest_metadata = case
@@ -42,8 +40,6 @@ update public.docket_bill_source_document document
        updated_at = now()
  where document.stage_rank is distinct from public.docket_legislative_stage_rank(document.normalized_version_type);
 
--- Civic Genome bill-version identity is preserved. Only its ordering projection
--- is synchronized to the corrected canonical rank function.
 update public.civic_genome_bill_version version
    set stage_rank = public.docket_legislative_stage_rank(version.version_type),
        updated_at = now()

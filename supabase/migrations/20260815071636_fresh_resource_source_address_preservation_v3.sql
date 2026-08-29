@@ -50,9 +50,6 @@ declare
   v_noncanonical_count integer:=0;
   v_receipt_hash text;
 begin
-  -- v2.4 fixes PostgreSQL regex semantics. v2.5 additionally separates source
-  -- preservation from formatting quality so noncanonical evidence remains
-  -- inspectable while all addresses stay ineligible for mapping by default.
   v_base_result:=public.create_luminari_resource_snapshot_v2_4(
     p_snapshot_version,
     p_quality_lanes

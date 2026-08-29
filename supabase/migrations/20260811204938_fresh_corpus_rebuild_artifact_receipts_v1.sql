@@ -16,8 +16,6 @@ create table if not exists public.luminari_corpus_rebuild_artifact_v1 (
   check (extracted_text_sha256 is null or extracted_text_sha256 ~ '^[0-9a-f]{64}$'),
   check (receipt_hash is null or receipt_hash ~ '^[0-9a-f]{64}$')
 );
-comment on table public.luminari_corpus_rebuild_artifact_v1 is
-  'Per-run deterministic artifact receipts for fresh corpus reconciliation. Allows bounded resume without treating global source state as run state.';
-create index if not exists luminari_corpus_rebuild_artifact_status_idx
-  on public.luminari_corpus_rebuild_artifact_v1(run_id,status,artifact_key);
+comment on table public.luminari_corpus_rebuild_artifact_v1 is 'Per-run deterministic artifact receipts for fresh corpus reconciliation. Allows bounded resume without treating global source state as run state.';
+create index if not exists luminari_corpus_rebuild_artifact_status_idx on public.luminari_corpus_rebuild_artifact_v1(run_id,status,artifact_key);
 revoke all on public.luminari_corpus_rebuild_artifact_v1 from anon,authenticated;

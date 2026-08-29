@@ -1,7 +1,11 @@
 begin;
 
 create or replace function public.state_directory_document_family(p_source_file text)
-returns text language sql immutable strict as $$
+returns text
+language sql
+immutable
+strict
+as $$
   select case
     when lower(p_source_file) like '%enriched-pass3%' then 'enriched_pass3'
     when lower(p_source_file) like '%enriched-pass2%' then 'enriched_pass2'
@@ -11,7 +15,11 @@ returns text language sql immutable strict as $$
 $$;
 
 create or replace function public.state_directory_jurisdiction_key(p_source_file text)
-returns text language plpgsql immutable strict as $$
+returns text
+language plpgsql
+immutable
+strict
+as $$
 declare
   v_key text;
 begin
@@ -33,20 +41,27 @@ end;
 $$;
 
 create or replace function public.state_directory_row_class(p_payload jsonb)
-returns text language plpgsql immutable strict as $$
+returns text
+language plpgsql
+immutable
+strict
+as $$
 declare
   v_key_count integer;
 begin
   select count(*)::integer into v_key_count from jsonb_object_keys(p_payload);
 
   return case
-    when p_payload ? 'field' and p_payload ? 'information' then 'field_information_pair'
+    when p_payload ? 'field' and p_payload ? 'information'
+      then 'field_information_pair'
     when p_payload ? 'step' and p_payload ? 'action_required'
       and p_payload ? 'agency___contact' and p_payload ? 'deadline'
-      and p_payload ? 'documents_needed' then 'workflow_step'
+      and p_payload ? 'documents_needed'
+      then 'workflow_step'
     when p_payload ? 'oversight_body' and p_payload ? 'jurisdiction'
       and p_payload ? 'what_to_report' and p_payload ? 'complaint_path___sol'
-      and p_payload ? 'contact' then 'oversight_accountability'
+      and p_payload ? 'contact'
+      then 'oversight_accountability'
     when p_payload ? 'organization'
       and (p_payload ? 'phone' or p_payload ? 'phone___contact')
       and (p_payload ? 'address___website' or p_payload ? 'website___address')
@@ -55,20 +70,28 @@ begin
       or p_payload ? 'citation__click_for_source'
       or (p_payload ? 'citation' and p_payload ? 'official_source')
       then 'statute_legal_authority'
-    when p_payload ? 'registry_metric' then 'registry_metric'
+    when p_payload ? 'registry_metric'
+      then 'registry_metric'
     when (p_payload ? 'state' or p_payload ? 'territory' or p_payload ? 'jurisdiction')
       and p_payload ? 'medicaid' and p_payload ? 'min__wage' and p_payload ? 'population'
       then 'jurisdiction_snapshot'
-    when p_payload ? 'service_type' then 'service_type_exploded'
-    when p_payload ? 'element' and p_payload ? 'portability_assessment' then 'two_column_other'
-    when v_key_count = 1 then 'single_key_exploded'
+    when p_payload ? 'service_type'
+      then 'service_type_exploded'
+    when p_payload ? 'element' and p_payload ? 'portability_assessment'
+      then 'two_column_other'
+    when v_key_count = 1
+      then 'single_key_exploded'
     else 'other_structured'
   end;
 end;
 $$;
 
 create or replace function public.state_directory_route_lane(p_row_class text)
-returns text language sql immutable strict as $$
+returns text
+language sql
+immutable
+strict
+as $$
   select case p_row_class
     when 'field_information_pair' then 'resource_entity'
     when 'single_key_exploded' then 'resource_entity'
@@ -145,8 +168,13 @@ create table if not exists public.state_directory_logical_record (
   normalized_payload jsonb not null,
   record_fingerprint text not null,
   candidate_status text not null check (candidate_status in (
-    'candidate_ready', 'batch_requires_expansion', 'needs_identity',
-    'workflow_requires_parent_identity', 'profile_staged', 'staged', 'review_required'
+    'candidate_ready',
+    'batch_requires_expansion',
+    'needs_identity',
+    'workflow_requires_parent_identity',
+    'profile_staged',
+    'staged',
+    'review_required'
   )),
   canonical_target text,
   canonical_record_id text,
@@ -171,7 +199,12 @@ create unique index if not exists idx_state_directory_logical_record_fingerprint
   on public.state_directory_logical_record(record_fingerprint);
 
 insert into public.state_directory_reassembly_run (
-  run_id, engine_id, engine_version, source_table, status, classification_rules
+  run_id,
+  engine_id,
+  engine_version,
+  source_table,
+  status,
+  classification_rules
 ) values (
   'state_directory_reassembly_v1_20260729',
   'state_directory_reassembly',
@@ -191,21 +224,24 @@ on conflict (run_id) do update set
   updated_at = now();
 
 with typed as (
-  select s.*,
+  select
+    s.*,
     public.state_directory_document_family(s.source_file) as document_family,
     public.state_directory_jurisdiction_key(s.source_file) as jurisdiction_key,
     public.state_directory_row_class(s.payload) as row_class
   from public.state_enriched_directory_v3_13 s
 ),
 keyed as (
-  select t.*,
+  select
+    t.*,
     public.state_directory_route_lane(t.row_class) as route_lane,
     (select k from jsonb_object_keys(t.payload) as k order by k limit 1) as first_key,
     (select k from jsonb_object_keys(t.payload) as k where k <> 'service_type' order by k limit 1) as service_entity_key
   from typed t
 ),
 semantic as (
-  select k.*,
+  select
+    k.*,
     case k.row_class
       when 'single_key_exploded' then k.first_key
       when 'service_type_exploded' then k.service_entity_key
@@ -215,7 +251,8 @@ semantic as (
       when 'field_information_pair' then case
         when lower(btrim(k.payload->>'field')) in ('organization', 'agency', 'resource name', 'program name', 'name')
           then nullif(btrim(k.payload->>'information'), '')
-        else null end
+        else null
+      end
       else null
     end as semantic_identity,
     case k.row_class
@@ -224,7 +261,8 @@ semantic as (
       when 'single_key_exploded' then case
         when coalesce(k.payload->>k.first_key, '') ~ '^[^:]{1,80}:'
           then nullif(btrim(split_part(k.payload->>k.first_key, ':', 1)), '')
-        else 'entry_' || coalesce(k.row_idx, 0)::text end
+        else 'entry_' || coalesce(k.row_idx, 0)::text
+      end
       else null
     end as field_name,
     case k.row_class
@@ -233,15 +271,19 @@ semantic as (
       when 'single_key_exploded' then case
         when coalesce(k.payload->>k.first_key, '') ~ '^[^:]{1,80}:'
           then regexp_replace(k.payload->>k.first_key, '^[^:]{1,80}:\s*', '')
-        else k.payload->>k.first_key end
+        else k.payload->>k.first_key
+      end
       else null
     end as field_value
   from keyed k
 ),
 ranked as (
-  select x.*,
-    'sdd_' || md5(x.jurisdiction_key || '|' || x.document_family || '|' ||
-      coalesce(x.table_idx, -1)::text || '|' || coalesce(x.row_idx, -1)::text || '|' || x.payload::text) as duplicate_group_key,
+  select
+    x.*,
+    'sdd_' || md5(
+      x.jurisdiction_key || '|' || x.document_family || '|' ||
+      coalesce(x.table_idx, -1)::text || '|' || coalesce(x.row_idx, -1)::text || '|' || x.payload::text
+    ) as duplicate_group_key,
     row_number() over (
       partition by x.jurisdiction_key, x.document_family, x.table_idx, x.row_idx, x.payload
       order by x.source_file, coalesce(x.source_md5, ''), x.id
@@ -252,16 +294,48 @@ ranked as (
   from semantic x
 )
 insert into public.state_directory_row_classification (
-  stage_row_id, run_id, source_file, source_md5, document_family, jurisdiction_key,
-  table_idx, row_idx, row_class, route_lane, payload_hash, duplicate_group_key,
-  duplicate_rank, is_exact_duplicate, canonical_stage_row_id, semantic_identity,
-  field_name, field_value, classification_reason, payload
+  stage_row_id,
+  run_id,
+  source_file,
+  source_md5,
+  document_family,
+  jurisdiction_key,
+  table_idx,
+  row_idx,
+  row_class,
+  route_lane,
+  payload_hash,
+  duplicate_group_key,
+  duplicate_rank,
+  is_exact_duplicate,
+  canonical_stage_row_id,
+  semantic_identity,
+  field_name,
+  field_value,
+  classification_reason,
+  payload
 )
-select r.id, 'state_directory_reassembly_v1_20260729', r.source_file, r.source_md5,
-  r.document_family, r.jurisdiction_key, r.table_idx, r.row_idx, r.row_class,
-  r.route_lane, md5(r.payload::text), r.duplicate_group_key, r.duplicate_rank,
-  r.duplicate_rank > 1, r.canonical_stage_row_id, r.semantic_identity,
-  r.field_name, r.field_value, 'classified_by_explicit_payload_key_signature', r.payload
+select
+  r.id,
+  'state_directory_reassembly_v1_20260729',
+  r.source_file,
+  r.source_md5,
+  r.document_family,
+  r.jurisdiction_key,
+  r.table_idx,
+  r.row_idx,
+  r.row_class,
+  r.route_lane,
+  md5(r.payload::text),
+  r.duplicate_group_key,
+  r.duplicate_rank,
+  r.duplicate_rank > 1,
+  r.canonical_stage_row_id,
+  r.semantic_identity,
+  r.field_name,
+  r.field_value,
+  'classified_by_explicit_payload_key_signature',
+  r.payload
 from ranked r
 on conflict (stage_row_id) do update set
   run_id = excluded.run_id,
@@ -286,8 +360,10 @@ on conflict (stage_row_id) do update set
   updated_at = now();
 
 with primary_rows as (
-  select * from public.state_directory_row_classification
-  where run_id = 'state_directory_reassembly_v1_20260729' and not is_exact_duplicate
+  select *
+  from public.state_directory_row_classification
+  where run_id = 'state_directory_reassembly_v1_20260729'
+    and not is_exact_duplicate
 ),
 raw_counts as (
   select source_file, table_idx, row_class, count(*)::bigint as raw_source_row_count
@@ -297,26 +373,42 @@ raw_counts as (
 ),
 aggregated as (
   select
-    'sdl_' || md5(p.source_file || '|' || coalesce(p.table_idx, -1)::text || '|' || p.row_class) as logical_record_id,
-    p.source_file, p.document_family, p.jurisdiction_key, p.table_idx, p.row_class, p.route_lane,
+    'sdl_' || md5(
+      p.source_file || '|' || coalesce(p.table_idx, -1)::text || '|' || p.row_class
+    ) as logical_record_id,
+    p.source_file,
+    p.document_family,
+    p.jurisdiction_key,
+    p.table_idx,
+    p.row_class,
+    p.route_lane,
     r.raw_source_row_count,
     count(*)::bigint as deduped_source_row_count,
     array_agg(p.stage_row_id order by p.row_idx, p.stage_row_id) as source_stage_row_ids,
     array_agg(distinct p.semantic_identity order by p.semantic_identity)
       filter (where p.semantic_identity is not null) as identities,
-    count(distinct p.semantic_identity) filter (where p.semantic_identity is not null)::integer as identity_count,
+    count(distinct p.semantic_identity)
+      filter (where p.semantic_identity is not null)::integer as identity_count,
     jsonb_agg(p.payload order by p.row_idx, p.stage_row_id) as payload_rows,
     jsonb_object_agg(
       regexp_replace(lower(p.field_name), '[^a-z0-9]+', '_', 'g'),
-      to_jsonb(p.field_value) order by p.row_idx, p.stage_row_id
+      to_jsonb(p.field_value)
+      order by p.row_idx, p.stage_row_id
     ) filter (where p.field_name is not null and p.field_value is not null) as field_map
   from primary_rows p
   join raw_counts r using (source_file, table_idx, row_class)
-  group by p.source_file, p.document_family, p.jurisdiction_key, p.table_idx,
-    p.row_class, p.route_lane, r.raw_source_row_count
+  group by
+    p.source_file,
+    p.document_family,
+    p.jurisdiction_key,
+    p.table_idx,
+    p.row_class,
+    p.route_lane,
+    r.raw_source_row_count
 ),
 normalized as (
-  select a.*,
+  select
+    a.*,
     case when a.identity_count = 1 then a.identities[1] else null end as normalized_name,
     jsonb_build_object(
       'rows', a.payload_rows,
@@ -332,15 +424,40 @@ normalized as (
   from aggregated a
 )
 insert into public.state_directory_logical_record (
-  logical_record_id, run_id, source_file, document_family, jurisdiction_key,
-  table_idx, row_class, route_lane, raw_source_row_count, deduped_source_row_count,
-  source_stage_row_ids, normalized_name, identity_count, normalized_payload,
-  record_fingerprint, candidate_status, canonical_target, metadata
+  logical_record_id,
+  run_id,
+  source_file,
+  document_family,
+  jurisdiction_key,
+  table_idx,
+  row_class,
+  route_lane,
+  raw_source_row_count,
+  deduped_source_row_count,
+  source_stage_row_ids,
+  normalized_name,
+  identity_count,
+  normalized_payload,
+  record_fingerprint,
+  candidate_status,
+  canonical_target,
+  metadata
 )
-select n.logical_record_id, 'state_directory_reassembly_v1_20260729', n.source_file,
-  n.document_family, n.jurisdiction_key, n.table_idx, n.row_class, n.route_lane,
-  n.raw_source_row_count, n.deduped_source_row_count, n.source_stage_row_ids,
-  n.normalized_name, n.identity_count, n.normalized_payload,
+select
+  n.logical_record_id,
+  'state_directory_reassembly_v1_20260729',
+  n.source_file,
+  n.document_family,
+  n.jurisdiction_key,
+  n.table_idx,
+  n.row_class,
+  n.route_lane,
+  n.raw_source_row_count,
+  n.deduped_source_row_count,
+  n.source_stage_row_ids,
+  n.normalized_name,
+  n.identity_count,
+  n.normalized_payload,
   md5(n.jurisdiction_key || '|' || n.route_lane || '|' || n.row_class || '|' || n.normalized_payload::text),
   case
     when n.route_lane = 'resource_entity' and n.identity_count = 1 then 'candidate_ready'
@@ -387,15 +504,20 @@ on conflict (logical_record_id) do update set
   updated_at = now();
 
 update public.state_directory_reassembly_run r
-set source_row_count = s.source_rows,
+set
+  source_row_count = s.source_rows,
   classified_row_count = c.classified_rows,
   exact_duplicate_row_count = c.exact_duplicate_rows,
   deduped_row_count = c.classified_rows - c.exact_duplicate_rows,
   logical_record_count = l.logical_records,
   status = case
-    when s.source_rows = 30250 and c.classified_rows = s.source_rows
-      and c.classified_rows - c.exact_duplicate_rows > 0 and l.logical_records > 0
-      then 'completed' else 'failed' end,
+    when s.source_rows = 30250
+      and c.classified_rows = s.source_rows
+      and c.classified_rows - c.exact_duplicate_rows > 0
+      and l.logical_records > 0
+      then 'completed'
+    else 'failed'
+  end,
   validation = jsonb_build_object(
     'expected_source_rows', 30250,
     'source_rows_match', s.source_rows = 30250,
@@ -404,20 +526,32 @@ set source_row_count = s.source_rows,
     'logical_records_created', l.logical_records,
     'route_lane_count', l.route_lanes
   ),
-  completed_at = now(), updated_at = now()
-from (select count(*)::bigint as source_rows from public.state_enriched_directory_v3_13) s,
-  (select count(*)::bigint as classified_rows,
-    count(*) filter (where is_exact_duplicate)::bigint as exact_duplicate_rows
-   from public.state_directory_row_classification
-   where run_id = 'state_directory_reassembly_v1_20260729') c,
-  (select count(*)::bigint as logical_records,
-    count(distinct route_lane)::integer as route_lanes
-   from public.state_directory_logical_record
-   where run_id = 'state_directory_reassembly_v1_20260729') l
+  completed_at = now(),
+  updated_at = now()
+from
+  (select count(*)::bigint as source_rows from public.state_enriched_directory_v3_13) s,
+  (
+    select
+      count(*)::bigint as classified_rows,
+      count(*) filter (where is_exact_duplicate)::bigint as exact_duplicate_rows
+    from public.state_directory_row_classification
+    where run_id = 'state_directory_reassembly_v1_20260729'
+  ) c,
+  (
+    select
+      count(*)::bigint as logical_records,
+      count(distinct route_lane)::integer as route_lanes
+    from public.state_directory_logical_record
+    where run_id = 'state_directory_reassembly_v1_20260729'
+  ) l
 where r.run_id = 'state_directory_reassembly_v1_20260729';
 
 create or replace view public.v_state_directory_reassembly_summary as
-select l.run_id, l.route_lane, l.row_class, l.candidate_status,
+select
+  l.run_id,
+  l.route_lane,
+  l.row_class,
+  l.candidate_status,
   count(*)::bigint as logical_records,
   sum(l.raw_source_row_count)::bigint as raw_source_rows,
   sum(l.deduped_source_row_count)::bigint as deduped_source_rows,
@@ -428,12 +562,16 @@ from public.state_directory_logical_record l
 group by l.run_id, l.route_lane, l.row_class, l.candidate_status;
 
 create or replace view public.v_state_directory_reassembly_status as
-select r.*,
+select
+  r.*,
   coalesce((select jsonb_object_agg(route_lane, logical_records)
-    from (select route_lane, sum(logical_records)::bigint as logical_records
+    from (
+      select route_lane, sum(logical_records)::bigint as logical_records
       from public.v_state_directory_reassembly_summary s
-      where s.run_id = r.run_id group by route_lane order by route_lane) lane_totals), '{}'::jsonb)
-    as logical_records_by_lane
+      where s.run_id = r.run_id
+      group by route_lane
+      order by route_lane
+    ) lane_totals), '{}'::jsonb) as logical_records_by_lane
 from public.state_directory_reassembly_run r;
 
 alter table public.state_directory_reassembly_run enable row level security;
@@ -446,6 +584,7 @@ create policy "service_role_full_access" on public.state_directory_row_classific
   for all to service_role using (true) with check (true);
 create policy "service_role_full_access" on public.state_directory_logical_record
   for all to service_role using (true) with check (true);
+
 create policy "authenticated_read_only" on public.state_directory_reassembly_run
   for select to authenticated using (true);
 create policy "authenticated_read_only" on public.state_directory_row_classification

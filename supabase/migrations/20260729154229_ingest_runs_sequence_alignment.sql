@@ -1,7 +1,3 @@
--- Align the PostgreSQL ingest_runs sequence with preserved historical IDs.
--- The live table contained IDs above 30000 while its sequence remained near 14,
--- causing every PostgreSQL RETURNING insert to collide.
-
 do $block$
 declare
   sequence_name text;

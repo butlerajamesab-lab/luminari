@@ -321,7 +321,7 @@ begin
     select 1 from private.integrity_corroboration_assessment a
     where a.assessment_id=v_assessment and a.candidate_id=v_candidate
   ) then raise exception 'assessment does not belong to candidate'; end if;
-  if not case v_from
+  if not (case v_from
     when 'candidate' then v_to in ('evidence_gathering','review_hold','dismissed')
     when 'evidence_gathering' then v_to in ('corroboration_review','review_hold','dismissed')
     when 'corroboration_review' then v_to in ('corroborated','contradicted','inconclusive','review_hold')
@@ -333,7 +333,7 @@ begin
     when 'contradicted' then v_to in ('review_hold','closed')
     when 'inconclusive' then v_to in ('evidence_gathering','closed')
     when 'dismissed' then v_to='closed'
-    else false end
+    else false end)
   then raise exception 'invalid integrity candidate transition: % -> %',v_from,v_to; end if;
   v_hash := private.integrity_sha256_v1(jsonb_build_object(
     'candidate_id',v_candidate,'from_status',v_from,'to_status',v_to,

@@ -5,7 +5,7 @@ function read(path: string): string {
   return readFileSync(new URL(path, import.meta.url), "utf8");
 }
 
-const migration = read("../../supabase/migrations/20260821235951_atlas_domain3_integrity_review_projection.sql");
+const migration = read("../../supabase/migrations/20260822080454_atlas_domain3_integrity_review_projection.sql");
 const router_source = read("../routers/integrity-routing.ts");
 const service_source = read("./integrity-routing-service.ts");
 

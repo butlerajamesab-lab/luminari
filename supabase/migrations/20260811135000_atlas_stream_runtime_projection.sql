@@ -27,16 +27,12 @@ create table if not exists public.atlas_stream_runtime_projection_v1 (
   observed_at timestamptz not null,
   is_current boolean not null default true,
   updated_at timestamptz not null default now()
-);
-
+)
 comment on table public.atlas_stream_runtime_projection_v1 is
-  'Read-only Lighthouse projection of Atlas canonical stream/runtime state. Not an ownership table.';
-
+  'Read-only Lighthouse projection of Atlas canonical stream/runtime state. Not an ownership table.'
 create index if not exists atlas_stream_runtime_projection_current_idx
-  on public.atlas_stream_runtime_projection_v1 (is_current, status, runnable);
-
-revoke all on public.atlas_stream_runtime_projection_v1 from public, anon, authenticated;
-
+  on public.atlas_stream_runtime_projection_v1 (is_current, status, runnable)
+revoke all on public.atlas_stream_runtime_projection_v1 from public, anon, authenticated
 create or replace function public.register_atlas_stream_runtime_snapshot_v1(
   p_snapshot jsonb
 )
@@ -156,7 +152,6 @@ begin
     'registered_at',clock_timestamp()
   );
 end;
-$$;
-
+$$
 revoke all on function public.register_atlas_stream_runtime_snapshot_v1(jsonb)
-  from public, anon, authenticated;
+  from public, anon, authenticated

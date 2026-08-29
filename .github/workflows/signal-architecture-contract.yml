@@ -5,9 +5,9 @@ on:
     paths:
       - "supabase/migrations/20260731185401_signal_architecture_ground_truth.sql"
       - "supabase/migrations/20260818084500_prism_domain2_legal_pattern_pullthrough.sql"
-      - "supabase/migrations/20260818090000_domain2_current_prism_generation.sql"
+      - "supabase/migrations/20260818085239_domain2_current_prism_generation.sql"
       - "supabase/migrations/20260818095500_signal_architecture_runtime_projection_truth.sql"
-      - "supabase/migrations/20260822055000_signal_artifact_case_links_v1.sql"
+      - "supabase/migrations/20260823015442_signal_artifact_case_links_v1.sql"
       - "server/routers/enforcement-intel.ts"
       - "server/routers/enforcement-intelligence.ts"
       - "server/signal-artifact-runtime.ts"
@@ -30,9 +30,9 @@ on:
     paths:
       - "supabase/migrations/20260731185401_signal_architecture_ground_truth.sql"
       - "supabase/migrations/20260818084500_prism_domain2_legal_pattern_pullthrough.sql"
-      - "supabase/migrations/20260818090000_domain2_current_prism_generation.sql"
+      - "supabase/migrations/20260818085239_domain2_current_prism_generation.sql"
       - "supabase/migrations/20260818095500_signal_architecture_runtime_projection_truth.sql"
-      - "supabase/migrations/20260822055000_signal_artifact_case_links_v1.sql"
+      - "supabase/migrations/20260823015442_signal_artifact_case_links_v1.sql"
       - "server/routers/enforcement-intel.ts"
       - "server/routers/enforcement-intelligence.ts"
       - "server/signal-artifact-runtime.ts"

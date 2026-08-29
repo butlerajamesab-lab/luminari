@@ -18,8 +18,7 @@ select
 from public.normalized_civic_resource ncr
 left join public.api_source_registry asr on asr.id = ncr.source_id
 where ncr.latitude is not null
-  and ncr.longitude is not null;
-
+  and ncr.longitude is not null
 create or replace view public.v_map_layer2_detail as
 select
   ncr.id,
@@ -51,8 +50,7 @@ select
   null::text as program_owner_final,
   ncr.updated_at
 from public.normalized_civic_resource ncr
-left join public.api_source_registry asr on asr.id = ncr.source_id;
-
+left join public.api_source_registry asr on asr.id = ncr.source_id
 create or replace function public.map_layer1_points(
   p_min_lat double precision,
   p_max_lat double precision,
@@ -92,8 +90,7 @@ as $$
     and v.longitude::double precision between p_min_lng and p_max_lng
   order by v.normalization_confidence desc nulls last, v.id
   limit greatest(1, least(coalesce(p_limit, 2000), 5000));
-$$;
-
+$$
 create or replace function public.map_layer2_detail(p_id uuid)
 returns table(
   id uuid,
@@ -160,7 +157,6 @@ as $$
     d.updated_at
   from public.v_map_layer2_detail d
   where d.id = p_id;
-$$;
-
-grant execute on function public.map_layer1_points(double precision, double precision, double precision, double precision, integer) to anon, authenticated;
-grant execute on function public.map_layer2_detail(uuid) to anon, authenticated;
+$$
+grant execute on function public.map_layer1_points(double precision, double precision, double precision, double precision, integer) to anon, authenticated
+grant execute on function public.map_layer2_detail(uuid) to anon, authenticated

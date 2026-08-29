@@ -1,5 +1,5 @@
--- Production-applied rollback of 20260816091700 after active use of these surfaces was confirmed.
--- Restores prior read behavior; safe grant/RPC/search_path hardening from 09:16 remains intact.
+-- Roll back read-affecting hardening after confirmed runtime use.
+-- Preserve the prior safe grant/RPC/search_path hardening migration.
 
 ALTER TABLE public.governance_snapshots DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.state_enriched_directory_v3_13 DISABLE ROW LEVEL SECURITY;

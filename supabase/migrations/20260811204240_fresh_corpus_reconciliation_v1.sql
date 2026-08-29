@@ -1,7 +1,3 @@
--- Fresh-start reconciliation substrate for the two authoritative Lighthouse
--- Storage corpora. This migration is additive: original Storage objects and
--- all historical ingestion tables remain untouched.
-
 create table if not exists public.luminari_corpus_source_artifact_v1 (
   artifact_key text primary key,
   bucket_id text not null,
@@ -24,8 +20,7 @@ create table if not exists public.luminari_corpus_source_artifact_v1 (
   check (content_sha256 is null or content_sha256 ~ '^[0-9a-f]{64}$'),
   check (extracted_text_sha256 is null or extracted_text_sha256 ~ '^[0-9a-f]{64}$')
 );
-comment on table public.luminari_corpus_source_artifact_v1 is
-  'Fresh-start source ledger for Luminari registry/backbone Storage objects. Storage objects remain immutable source evidence; this table is a read-model manifest only.';
+comment on table public.luminari_corpus_source_artifact_v1 is 'Fresh-start source ledger for Luminari registry/backbone Storage objects. Storage objects remain immutable source evidence; this table is a read-model manifest only.';
 
 create table if not exists public.luminari_corpus_rebuild_run_v1 (
   run_id uuid primary key default gen_random_uuid(),
@@ -74,8 +69,7 @@ create table if not exists public.luminari_corpus_candidate_v1 (
   check (candidate_hash ~ '^[0-9a-f]{64}$'),
   check (source_content_sha256 is null or source_content_sha256 ~ '^[0-9a-f]{64}$')
 );
-comment on table public.luminari_corpus_candidate_v1 is
-  'Typed fresh-rebuild candidates. A candidate is not a canonical resource, workflow, finding, signal, or publication.';
+comment on table public.luminari_corpus_candidate_v1 is 'Typed fresh-rebuild candidates. A candidate is not a canonical resource, workflow, finding, signal, or publication.';
 
 create table if not exists public.luminari_corpus_identity_v1 (
   identity_key text primary key,
@@ -93,8 +87,7 @@ create table if not exists public.luminari_corpus_identity_v1 (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-comment on table public.luminari_corpus_identity_v1 is
-  'Deterministic dedupe identities for fresh corpus rebuild. Conflicting strong identifiers stay unresolved rather than being silently merged.';
+comment on table public.luminari_corpus_identity_v1 is 'Deterministic dedupe identities for fresh corpus rebuild. Conflicting strong identifiers stay unresolved rather than being silently merged.';
 
 create table if not exists public.luminari_corpus_identity_evidence_v1 (
   identity_key text not null references public.luminari_corpus_identity_v1(identity_key),
@@ -105,14 +98,10 @@ create table if not exists public.luminari_corpus_identity_evidence_v1 (
   primary key (identity_key,candidate_key)
 );
 
-create index if not exists luminari_corpus_source_artifact_role_idx
-  on public.luminari_corpus_source_artifact_v1(artifact_role,jurisdiction_hint);
-create index if not exists luminari_corpus_candidate_type_idx
-  on public.luminari_corpus_candidate_v1(candidate_type,state_code,candidate_state);
-create index if not exists luminari_corpus_candidate_artifact_idx
-  on public.luminari_corpus_candidate_v1(artifact_key);
-create index if not exists luminari_corpus_identity_lookup_idx
-  on public.luminari_corpus_identity_v1(identity_type,state_code,normalized_name_key);
+create index if not exists luminari_corpus_source_artifact_role_idx on public.luminari_corpus_source_artifact_v1(artifact_role,jurisdiction_hint);
+create index if not exists luminari_corpus_candidate_type_idx on public.luminari_corpus_candidate_v1(candidate_type,state_code,candidate_state);
+create index if not exists luminari_corpus_candidate_artifact_idx on public.luminari_corpus_candidate_v1(artifact_key);
+create index if not exists luminari_corpus_identity_lookup_idx on public.luminari_corpus_identity_v1(identity_type,state_code,normalized_name_key);
 
 revoke all on public.luminari_corpus_source_artifact_v1 from anon,authenticated;
 revoke all on public.luminari_corpus_rebuild_run_v1 from anon,authenticated;
@@ -199,8 +188,7 @@ on conflict (artifact_key) do update set
   observed_at=now(),metadata=excluded.metadata;
 
 with ranked as (
-  select artifact_key,
-         first_value(artifact_key) over (partition by transport_etag,byte_size order by artifact_key) as canonical_artifact,
+  select artifact_key, first_value(artifact_key) over (partition by transport_etag,byte_size order by artifact_key) as canonical_artifact,
          row_number() over (partition by transport_etag,byte_size order by artifact_key) as rn
   from public.luminari_corpus_source_artifact_v1
   where transport_etag is not null

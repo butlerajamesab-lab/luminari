@@ -1,6 +1,4 @@
 -- Explicit JSON receipt for Atlas Domain 3 registration.
--- Keeps the UUID-returning contract for existing callers while giving
--- cross-project transport a stable PostgREST response shape.
 
 create or replace function public.register_live_data_signal_receipt_v1(
   p_record jsonb

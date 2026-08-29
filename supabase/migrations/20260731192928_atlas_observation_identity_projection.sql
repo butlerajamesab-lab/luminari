@@ -1,6 +1,4 @@
 -- Lighthouse projection of Atlas canonical observation identity.
--- Historical mirrored rows remain preserved; current counts deduplicate the
--- stable event content while excluding transport-only provenance timestamps.
 -- Existing view columns retain their original order; new identity counts append.
 
 create extension if not exists pgcrypto with schema extensions;

@@ -1,22 +1,18 @@
--- Recovered from live production 2026-08-16.
--- Materializes the expensive read-time civic-object reconciliation into an indexed derived ledger.
--- Raw source candidates remain canonical provenance and are not rewritten.
-
-CREATE TABLE IF NOT EXISTS public.luminari_civic_object_reconciliation_v1 (
-  object_ref text PRIMARY KEY,
-  source_object_type text NOT NULL,
-  object_class text NOT NULL,
-  target_surface text NOT NULL,
-  run_id uuid NOT NULL,
-  artifact_key text NOT NULL,
+create table if not exists public.luminari_civic_object_reconciliation_v1 (
+  object_ref text primary key,
+  source_object_type text not null,
+  object_class text not null,
+  target_surface text not null,
+  run_id uuid not null,
+  artifact_key text not null,
   artifact_role text,
-  source_locator text NOT NULL,
+  source_locator text not null,
   source_content_sha256 text,
-  source_candidate_hash text NOT NULL,
-  parser_version text NOT NULL,
+  source_candidate_hash text not null,
+  parser_version text not null,
   jurisdiction text,
   state_code text,
-  jurisdiction_resolution_state text NOT NULL,
+  jurisdiction_resolution_state text not null,
   section_name text,
   name text,
   organization_name text,
@@ -36,36 +32,36 @@ CREATE TABLE IF NOT EXISTS public.luminari_civic_object_reconciliation_v1 (
   hours text,
   languages text,
   organization_type text,
-  candidate_state text NOT NULL,
-  source_created_at timestamptz NOT NULL,
-  field_provenance jsonb NOT NULL DEFAULT '{}'::jsonb,
-  has_access_point boolean NOT NULL DEFAULT false,
-  projection_state text NOT NULL,
-  projection_version text NOT NULL DEFAULT 'civic_object_reconciliation_v1',
-  reconciled_at timestamptz NOT NULL DEFAULT now()
+  candidate_state text not null,
+  source_created_at timestamptz not null,
+  field_provenance jsonb not null default '{}'::jsonb,
+  has_access_point boolean not null default false,
+  projection_state text not null,
+  projection_version text not null default 'civic_object_reconciliation_v1',
+  reconciled_at timestamptz not null default now()
 );
 
-CREATE INDEX IF NOT EXISTS luminari_civic_object_reconciliation_v1_artifact_idx
-  ON public.luminari_civic_object_reconciliation_v1 (artifact_key);
-CREATE INDEX IF NOT EXISTS luminari_civic_object_reconciliation_v1_class_idx
-  ON public.luminari_civic_object_reconciliation_v1 (object_class, projection_state);
-CREATE INDEX IF NOT EXISTS luminari_civic_object_reconciliation_v1_jurisdiction_idx
-  ON public.luminari_civic_object_reconciliation_v1 (state_code, jurisdiction);
-CREATE INDEX IF NOT EXISTS luminari_civic_object_reconciliation_v1_state_idx
-  ON public.luminari_civic_object_reconciliation_v1 (candidate_state, jurisdiction_resolution_state);
-CREATE INDEX IF NOT EXISTS luminari_civic_object_reconciliation_v1_surface_idx
-  ON public.luminari_civic_object_reconciliation_v1 (target_surface, object_class);
+create index if not exists luminari_civic_object_reconciliation_v1_class_idx
+  on public.luminari_civic_object_reconciliation_v1 (object_class, projection_state);
+create index if not exists luminari_civic_object_reconciliation_v1_surface_idx
+  on public.luminari_civic_object_reconciliation_v1 (target_surface, object_class);
+create index if not exists luminari_civic_object_reconciliation_v1_jurisdiction_idx
+  on public.luminari_civic_object_reconciliation_v1 (state_code, jurisdiction);
+create index if not exists luminari_civic_object_reconciliation_v1_artifact_idx
+  on public.luminari_civic_object_reconciliation_v1 (artifact_key);
+create index if not exists luminari_civic_object_reconciliation_v1_state_idx
+  on public.luminari_civic_object_reconciliation_v1 (candidate_state, jurisdiction_resolution_state);
 
-ALTER TABLE public.luminari_civic_object_reconciliation_v1 ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON public.luminari_civic_object_reconciliation_v1 FROM anon, authenticated;
-GRANT ALL ON public.luminari_civic_object_reconciliation_v1 TO service_role;
+alter table public.luminari_civic_object_reconciliation_v1 enable row level security;
+revoke all on table public.luminari_civic_object_reconciliation_v1 from public, anon, authenticated;
+grant select, insert, update, delete on table public.luminari_civic_object_reconciliation_v1 to service_role;
 
-CREATE OR REPLACE FUNCTION public.reconcile_luminari_civic_object_v1(p_candidate_key text)
-RETURNS boolean
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path TO 'pg_catalog', 'public'
-AS $function$
+create or replace function public.reconcile_luminari_civic_object_v1(p_candidate_key text)
+returns boolean
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $$
 declare
   v_written boolean := false;
 begin
@@ -141,14 +137,17 @@ begin
   get diagnostics v_written = row_count;
   return v_written;
 end;
-$function$;
+$$;
 
-CREATE OR REPLACE FUNCTION public.reconcile_luminari_civic_objects_batch_v1(p_limit integer DEFAULT 2000)
-RETURNS integer
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path TO 'pg_catalog', 'public'
-AS $function$
+revoke all on function public.reconcile_luminari_civic_object_v1(text) from public, anon, authenticated;
+grant execute on function public.reconcile_luminari_civic_object_v1(text) to service_role;
+
+create or replace function public.reconcile_luminari_civic_objects_batch_v1(p_limit integer default 2000)
+returns integer
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $$
 declare
   v_key text;
   v_count integer := 0;
@@ -174,47 +173,43 @@ begin
 
   return v_count;
 end;
-$function$;
+$$;
 
-CREATE OR REPLACE FUNCTION public.sync_luminari_civic_object_reconciliation_v1()
-RETURNS trigger
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path TO 'pg_catalog', 'public'
-AS $function$
+revoke all on function public.reconcile_luminari_civic_objects_batch_v1(integer) from public, anon, authenticated;
+grant execute on function public.reconcile_luminari_civic_objects_batch_v1(integer) to service_role;
+
+create or replace function public.sync_luminari_civic_object_reconciliation_v1()
+returns trigger
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $$
 begin
   perform public.reconcile_luminari_civic_object_v1(new.candidate_key);
   return new;
 end;
-$function$;
+$$;
 
-DROP TRIGGER IF EXISTS trg_sync_luminari_civic_object_reconciliation_v1
-  ON public.luminari_corpus_candidate_v1;
-CREATE TRIGGER trg_sync_luminari_civic_object_reconciliation_v1
-AFTER INSERT OR UPDATE ON public.luminari_corpus_candidate_v1
-FOR EACH ROW EXECUTE FUNCTION public.sync_luminari_civic_object_reconciliation_v1();
+revoke all on function public.sync_luminari_civic_object_reconciliation_v1() from public, anon, authenticated;
 
-CREATE OR REPLACE VIEW public.v_luminari_civic_object_reconciliation_status_v1
-WITH (security_invoker = true) AS
-SELECT
-  count(*) AS reconciled_rows,
-  count(*) FILTER (WHERE projection_version = 'civic_object_reconciliation_v1') AS current_projection_rows,
-  count(*) FILTER (WHERE object_class = 'resource') AS resource_rows,
-  count(*) FILTER (WHERE projection_state = 'usable_resource_candidate') AS usable_resource_candidates,
-  count(*) FILTER (WHERE projection_state = 'resource_needs_identity_recovery') AS resource_needs_identity_recovery,
-  count(*) FILTER (WHERE projection_state = 'resource_missing_access_point') AS resource_missing_access_point,
-  count(*) FILTER (WHERE object_class = 'unresolved_source_record') AS unresolved_source_records,
-  max(reconciled_at) AS latest_reconciled_at
-FROM public.luminari_civic_object_reconciliation_v1;
+drop trigger if exists trg_sync_luminari_civic_object_reconciliation_v1 on public.luminari_corpus_candidate_v1;
+create trigger trg_sync_luminari_civic_object_reconciliation_v1
+after insert or update on public.luminari_corpus_candidate_v1
+for each row execute function public.sync_luminari_civic_object_reconciliation_v1();
 
-REVOKE ALL ON FUNCTION public.reconcile_luminari_civic_object_v1(text) FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION public.reconcile_luminari_civic_objects_batch_v1(integer) FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION public.sync_luminari_civic_object_reconciliation_v1() FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.reconcile_luminari_civic_object_v1(text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.reconcile_luminari_civic_objects_batch_v1(integer) TO service_role;
-GRANT EXECUTE ON FUNCTION public.sync_luminari_civic_object_reconciliation_v1() TO service_role;
-REVOKE ALL ON public.v_luminari_civic_object_reconciliation_status_v1 FROM anon, authenticated;
-GRANT SELECT ON public.v_luminari_civic_object_reconciliation_status_v1 TO service_role;
+create or replace view public.v_luminari_civic_object_reconciliation_status_v1
+with (security_invoker = true)
+as
+select
+  count(*) as reconciled_rows,
+  count(*) filter (where projection_version='civic_object_reconciliation_v1') as current_projection_rows,
+  count(*) filter (where object_class='resource') as resource_rows,
+  count(*) filter (where projection_state='usable_resource_candidate') as usable_resource_candidates,
+  count(*) filter (where projection_state='resource_needs_identity_recovery') as resource_needs_identity_recovery,
+  count(*) filter (where projection_state='resource_missing_access_point') as resource_missing_access_point,
+  count(*) filter (where object_class='unresolved_source_record') as unresolved_source_records,
+  max(reconciled_at) as latest_reconciled_at
+from public.luminari_civic_object_reconciliation_v1;
 
--- Historical backfill is intentionally performed operationally in bounded batches via
--- reconcile_luminari_civic_objects_batch_v1(), not as one unbounded migration transaction.
+revoke all on table public.v_luminari_civic_object_reconciliation_status_v1 from public, anon, authenticated;
+grant select on table public.v_luminari_civic_object_reconciliation_status_v1 to service_role;

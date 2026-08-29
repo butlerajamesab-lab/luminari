@@ -1,0 +1,81 @@
+
+-- ============================================================
+-- MIGRATION 022: Advocacy Organizations (all 11 domains)
+-- ============================================================
+
+INSERT INTO advocacy_organizations (
+  org_id, name, website, focus, phone, hq_location,
+  domain_ids, coalitions, state_chapters, geographic_node,
+  source, is_government, verified, created_at
+) VALUES
+
+-- INSURANCE DENIALS
+('natl_patient_advocate_foundation','National Patient Advocate Foundation','https://www.patientadvocatefoundation.org','Health insurance coverage disputes and financial hardship','(800) 532-5274','Washington, DC',ARRAY['insurance_denials','healthcare_access'],ARRAY['Patient Bill of Rights Coalition','Health Coverage Advocacy Alliance'],NULL,NULL,'501(c)(3), public listing, IRS 990',FALSE,TRUE,0),
+('american_patients_association','American Patients Association','https://www.americanpatients.org','Insurance coverage transparency, appeals processes','(202) 293-0999','Washington, DC',ARRAY['insurance_denials','healthcare_access'],ARRAY['Health Coverage Advocacy Alliance'],NULL,NULL,'Nonprofit public directory, official registry',FALSE,TRUE,0),
+('patient_advocate_foundation','Patient Advocate Foundation','https://www.patientadvocatefoundation.org','Insurance assistance and co-pay relief','(800) 532-5274','Hampton, VA',ARRAY['insurance_denials'],ARRAY['Patient Bill of Rights Coalition'],NULL,NULL,'501(c)(3) nonprofit, verified public registry',FALSE,TRUE,0),
+('naic_consumer_line','NAIC Consumer Assistance Program','https://www.naic.org/consumer_assistance.htm','State-level insurance complaint resolution','(877) 227-5529','Kansas City, MO',ARRAY['insurance_denials'],ARRAY['Insurance Transparency Alliance'],NULL,NULL,'NAIC official program, state-coordinated',FALSE,TRUE,0),
+('patient_rights_advocates','Patient Rights Advocates','https://patientrightsadvocates.org','Insurance denial appeals, policy interpretation','(415) 267-3000','San Francisco, CA',ARRAY['insurance_denials'],ARRAY['Patient Bill of Rights Coalition'],NULL,NULL,'Nonprofit public listing, verified',FALSE,TRUE,0),
+
+-- GOVERNMENT BENEFITS
+('national_senior_center','National Senior Citizens Law Center','https://www.nsclc.org','Medicare, Medicaid, SSI advocacy','(202) 289-6976','Washington, DC',ARRAY['government_benefits'],ARRAY['Social Security Advocacy Alliance','Medicare Beneficiary Protection Network'],NULL,NULL,'501(c)(3), nonprofit public directory',FALSE,TRUE,0),
+('legal_aid_chicago','Legal Aid Chicago','https://www.legalaidchicago.org','SNAP, Medicaid, benefits denials','(312) 341-0900','Chicago, IL',ARRAY['government_benefits'],ARRAY['Hunger Advocacy Alliance'],ARRAY['Illinois'],NULL,'Legal Aid Organization, public listing',FALSE,TRUE,0),
+('food_research_action_center','Food Research & Action Center (FRAC)','https://frac.org','SNAP and food security advocacy','(202) 986-2200','Washington, DC',ARRAY['government_benefits'],ARRAY['National Anti-Hunger Coalition'],NULL,NULL,'501(c)(3), verified nonprofit public registry',FALSE,TRUE,0),
+('hearing_voices_network','Disability Rights Education & Defense Fund (DREDF)','https://dredf.org','SSI/SSDI, disability benefits advocacy','(510) 841-8645','Oakland, CA',ARRAY['government_benefits'],ARRAY['Disability Rights Coalition','Social Security Advocacy Alliance'],NULL,NULL,'National disability rights organization, public registry',FALSE,TRUE,0),
+
+-- WORKERS COMPENSATION
+('workers_injury_law_center','Workers Injury Law and Advocacy Group (WILAG)','https://www.wilg.org','Workers compensation rights, injury advocacy','(202) 298-1899','Washington, DC',ARRAY['workers_compensation'],ARRAY['Workers Rights Alliance','Labor Safety Network'],NULL,NULL,'501(c)(3), nonprofit public directory',FALSE,TRUE,0),
+('coalition_occupational_safety','Coalition for Occupational Safety and Health (COSH)','https://www.cosh.org','Workplace safety and workers compensation','(202) 521-7227','Washington, DC',ARRAY['workers_compensation'],ARRAY['National Workers Rights Coalition'],NULL,NULL,'Advocacy network, public registry',FALSE,TRUE,0),
+('seattle_workers_comp_clinic','Seattle Workers'' Compensation Clinic','https://www.nwjustice.org/get-help/workers-rights','Workers comp claim support (Washington state)','(206) 447-8704','Seattle, WA',ARRAY['workers_compensation'],ARRAY['Pacific Northwest Workers Rights Network'],NULL,'seattle','Legal aid provider, public registry',FALSE,TRUE,0),
+
+-- CRIMINAL JUSTICE
+('innocence_project','The Innocence Project','https://innocenceproject.org','Wrongful conviction exonerations, post-conviction advocacy','(212) 364-5340','New York, NY',ARRAY['criminal_justice'],ARRAY['National Innocence Network','Criminal Justice Reform Alliance'],NULL,NULL,'National nonprofit, public registry, IRS 990',FALSE,TRUE,0),
+('sentencing_project','The Sentencing Project','https://www.sentencingproject.org','Criminal justice reform, sentencing advocacy','(202) 628-0871','Washington, DC',ARRAY['criminal_justice'],ARRAY['Criminal Justice Reform Coalition'],NULL,NULL,'501(c)(3), nonprofit public directory',FALSE,TRUE,0),
+('police_accountability_seattle','Seattle Police Accountability Coalition','https://www.spac-seattle.org','Police misconduct accountability (Seattle)','(206) 866-9787','Seattle, WA',ARRAY['criminal_justice'],ARRAY['Police Reform Alliance','Pacific Northwest Justice Network'],NULL,'seattle','Advocacy organization, public listing',FALSE,TRUE,0),
+('american_civil_liberties_union','American Civil Liberties Union (ACLU)','https://www.aclu.org','Criminal justice, civil rights, police accountability','(212) 549-2500','New York, NY',ARRAY['criminal_justice','civil_rights'],ARRAY['Civil Rights Alliance','Criminal Justice Reform Coalition'],ARRAY['Washington','Colorado','Arizona'],NULL,'National advocacy organization, public registry',FALSE,TRUE,0),
+('innocence_network_colorado','Colorado Innocence Project','https://coloradoinnocenceproject.org','Wrongful conviction exonerations (CO focus)','(303) 837-1497','Denver, CO',ARRAY['criminal_justice'],ARRAY['National Innocence Network','Colorado Criminal Justice Reform'],NULL,'denver','Nonprofit public directory',FALSE,TRUE,0),
+
+-- DEBT COLLECTION
+('national_consumer_law_center','National Consumer Law Center (NCLC)','https://www.nclc.org','Debt collection, consumer protection, predatory lending','(617) 542-8010','Boston, MA',ARRAY['debt_collection'],ARRAY['Consumer Protection Alliance','National Debt Advocacy Network'],NULL,NULL,'National nonprofit, public registry, IRS 990',FALSE,TRUE,0),
+('legal_aid_new_york','Legal Aid Society (New York)','https://www.legal-aid.org','Debt collection defense','(212) 577-3300','New York, NY',ARRAY['debt_collection'],ARRAY['Consumer Debt Defense Coalition'],NULL,NULL,'Legal aid organization, public registry',FALSE,TRUE,0),
+('nfcc_credit_counseling','National Foundation for Credit Counseling (NFCC)','https://www.nfcc.org','Credit education, debt management, consumer advocacy','(800) 388-2227','Washington, DC',ARRAY['debt_collection'],ARRAY['Consumer Financial Advocacy Alliance'],NULL,NULL,'Nonprofit public directory, verified counseling network',FALSE,TRUE,0),
+('consumer_action_nonprofit','Consumer Action','https://www.consumer-action.org','Consumer financial advocacy, debt relief education','(415) 777-9635','San Francisco, CA',ARRAY['debt_collection'],ARRAY['National Consumer Protection Coalition'],NULL,NULL,'Nonprofit public directory',FALSE,TRUE,0),
+
+-- ENVIRONMENTAL JUSTICE
+('environmental_defense_fund','Environmental Defense Fund (EDF)','https://www.edf.org','Environmental justice, regulatory compliance','(800) 684-3322','New York, NY',ARRAY['environmental_justice'],ARRAY['Environmental Justice Alliance','Toxic Exposure Network'],NULL,NULL,'National nonprofit, public registry, IRS 990',FALSE,TRUE,0),
+('sierra_club','Sierra Club','https://www.sierraclub.org','Environmental protection, environmental justice','(415) 977-5500','San Francisco, CA',ARRAY['environmental_justice'],ARRAY['Environmental Justice Alliance'],ARRAY['Washington','Colorado','Arizona'],NULL,'National conservation organization, public registry',FALSE,TRUE,0),
+('center_for_biological_diversity','Center for Biological Diversity','https://www.biologicaldiversity.org','Environmental protection, endangered species, environmental justice','(520) 623-5252','Tucson, AZ',ARRAY['environmental_justice'],ARRAY['Environmental Justice Coalition'],NULL,NULL,'National nonprofit, public registry',FALSE,TRUE,0),
+('coalition_communities_color','Communities United for Environmental Justice','https://www.cueforjustice.org','Environmental racism, toxic exposure advocacy','(720) 333-3604','Denver, CO',ARRAY['environmental_justice'],ARRAY['Environmental Justice Alliance','Communities of Color Environmental Network'],NULL,'denver','Nonprofit advocacy organization, public listing',FALSE,TRUE,0),
+
+-- HEALTHCARE ACCESS
+('patient_safety_action_network','Patient Safety Action Network','https://www.patientsafetyaction.org','Medical error prevention, patient advocacy','(202) 854-7062','Washington, DC',ARRAY['healthcare_access'],ARRAY['Patient Safety Alliance','Healthcare Quality Coalition'],NULL,NULL,'Nonprofit public directory',FALSE,TRUE,0),
+('national_alliance_mental_illness','National Alliance on Mental Illness (NAMI)','https://www.nami.org','Mental health advocacy, healthcare access','(703) 524-7600','Arlington, VA',ARRAY['healthcare_access','mental_health_crisis'],ARRAY['Mental Health Advocacy Alliance'],ARRAY['Washington','Colorado','Arizona'],NULL,'National advocacy organization, public registry',FALSE,TRUE,0),
+('seattle_mental_health_alliance','Seattle Mental Health Alliance','https://www.seattlementalhealth.org','Mental health advocacy (Seattle)','(206) 461-3222','Seattle, WA',ARRAY['healthcare_access','mental_health_crisis'],ARRAY['Pacific Northwest Mental Health Network'],NULL,'seattle','Advocacy organization, public listing',FALSE,TRUE,0),
+
+-- HOUSING / LANDLORD-TENANT
+('national_low_income_housing_coalition','National Low Income Housing Coalition (NLIHC)','https://nlihc.org','Affordable housing, tenant rights advocacy','(202) 662-1530','Washington, DC',ARRAY['housing_landlord'],ARRAY['Housing Justice Alliance','Tenant Rights Network'],NULL,NULL,'National nonprofit, public registry, IRS 990',FALSE,TRUE,0),
+('community_alliance_tenants','Community Alliance for Tenants (Seattle)','https://www.seattletenants.org','Tenant rights advocacy (Seattle/King County)','(206) 726-2922','Seattle, WA',ARRAY['housing_landlord'],ARRAY['Pacific Northwest Housing Justice Network'],NULL,'seattle','Advocacy organization, public listing',FALSE,TRUE,0),
+('denver_tenants_union','Denver Tenants Union','https://www.denvertenantsunion.org','Tenant rights and housing justice (Denver/Colorado)','(720) 348-5099','Denver, CO',ARRAY['housing_landlord'],ARRAY['Colorado Housing Justice Coalition'],NULL,'denver','Community organization, public listing',FALSE,TRUE,0),
+('legal_aid_housing','Community Legal Services (Housing)','https://clsaz.org','Tenant rights, eviction defense (Arizona)','(602) 252-2151','Phoenix, AZ',ARRAY['housing_landlord'],ARRAY['Arizona Housing Justice Alliance'],NULL,'phoenix','Legal aid organization, public registry',FALSE,TRUE,0),
+
+-- MENTAL HEALTH CRISIS
+('mental_health_america','Mental Health America (MHA)','https://www.mhanational.org','Mental health advocacy, insurance access, crisis support','(703) 684-7722','Arlington, VA',ARRAY['mental_health_crisis'],ARRAY['Mental Health Advocacy Alliance'],ARRAY['Washington','Colorado','Arizona'],NULL,'National nonprofit, public registry',FALSE,TRUE,0),
+('seattle_crisis_response_network','Seattle Crisis Response Network','https://www.seattlecrisisresponse.org','Mental health crisis response accountability (Seattle)','(206) 720-1000','Seattle, WA',ARRAY['mental_health_crisis'],ARRAY['Pacific Northwest Mental Health Network','Crisis Response Reform Alliance'],NULL,'seattle','Advocacy network, public listing',FALSE,TRUE,0),
+('denver_mental_health_alliance','Denver Mental Health Alliance','https://www.denvermentalhealth.org','Mental health advocacy (Denver/Colorado)','(720) 633-0120','Denver, CO',ARRAY['mental_health_crisis'],ARRAY['Colorado Mental Health Coalition','Crisis Response Reform Alliance'],NULL,'denver','Advocacy organization, public listing',FALSE,TRUE,0),
+('phoenix_peer_support_network','Phoenix Peer Support & Mental Health Coalition','https://www.phoenixpeersupport.org','Peer support, mental health advocacy (Phoenix/Arizona)','(602) 253-9089','Phoenix, AZ',ARRAY['mental_health_crisis'],ARRAY['Arizona Mental Health Network','Peer Support Alliance'],NULL,'phoenix','Community advocacy organization, public listing',FALSE,TRUE,0),
+
+-- CIVIL RIGHTS
+('lambda_legal','Lambda Legal','https://www.lambdalegal.org','LGBTQ+ civil rights, employment, housing','(212) 809-8585','New York, NY',ARRAY['civil_rights'],ARRAY['LGBTQ+ Rights Alliance','Civil Rights Coalition'],NULL,NULL,'National advocacy organization, public registry',FALSE,TRUE,0),
+('naacp_legal_defense_fund','NAACP Legal Defense Fund','https://www.naacpldf.org','Racial justice, employment discrimination, voting rights','(212) 965-2200','New York, NY',ARRAY['civil_rights'],ARRAY['Racial Justice Coalition','Civil Rights Alliance'],NULL,NULL,'National advocacy organization, public registry, IRS 990',FALSE,TRUE,0),
+('seattle_civil_rights_office','Seattle Office for Civil Rights','https://www.seattle.gov/civilrights','Municipal discrimination enforcement (Seattle)','(206) 684-4500','Seattle, WA',ARRAY['civil_rights'],NULL,NULL,'seattle','Government agency',TRUE,TRUE,0),
+
+-- TRIBAL SOVEREIGNTY
+('national_congress_american_indians','National Congress of American Indians (NCAI)','https://www.ncai.org','Tribal sovereignty, federal Indian policy, justice system','(202) 466-7767','Washington, DC',ARRAY['tribal_sovereignty'],ARRAY['Tribal Justice Coalition','Native American Rights Alliance'],NULL,NULL,'National tribal organization, public registry',FALSE,TRUE,0),
+('native_american_legal_center','Native American Rights Fund (NARF)','https://www.narf.org','Tribal law, federal Indian law, sovereignty','(303) 447-8760','Boulder, CO',ARRAY['tribal_sovereignty'],ARRAY['Tribal Justice Coalition'],NULL,NULL,'National advocacy organization, public registry, IRS 990',FALSE,TRUE,0),
+('indian_child_welfare_law_center','Indian Child Welfare Law Center','https://icwlc.org','ICWA enforcement, tribal child welfare','(720) 922-3211','Denver, CO',ARRAY['tribal_sovereignty'],ARRAY['Child Welfare Justice Coalition'],NULL,'denver','Nonprofit advocacy organization, public registry',FALSE,TRUE,0),
+
+-- GOVERNMENT TRANSPARENCY
+('national_freedom_information_coalition','National Freedom of Information Coalition (NFIC)','https://nfoia.org','FOIA advocacy, government transparency','(202) 621-6500','Washington, DC',ARRAY['government_transparency'],ARRAY['Transparency Alliance','Government Accountability Network'],NULL,NULL,'Nonprofit advocacy organization, public registry',FALSE,TRUE,0),
+('project_on_govt_oversight','Project on Government Oversight (POGO)','https://www.pogo.org','Government accountability, transparency, anti-corruption','(202) 347-1035','Washington, DC',ARRAY['government_transparency'],ARRAY['Government Accountability Alliance','Transparency Coalition'],NULL,NULL,'National nonprofit, public registry, IRS 990',FALSE,TRUE,0),
+('open_government_foundation','Open Government Foundation','https://www.opengovfoundation.org','FOIA, transparency, government data access','(202) 450-3688','Washington, DC',ARRAY['government_transparency'],ARRAY['Digital Rights Alliance','Transparency Coalition'],NULL,NULL,'Nonprofit advocacy organization, public registry',FALSE,TRUE,0),
+('seattle_transparency_coalition','Seattle Transparency & Accountability Coalition','https://www.seattletransparency.org','Municipal transparency (Seattle)','(206) 766-8240','Seattle, WA',ARRAY['government_transparency'],ARRAY['Pacific Northwest Transparency Network'],NULL,'seattle','Community advocacy organization, public listing',FALSE,TRUE,0);
+

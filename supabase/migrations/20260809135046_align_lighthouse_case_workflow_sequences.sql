@@ -1,5 +1,3 @@
--- Repair serial sequences imported below their existing primary-key ranges.
--- Safe to replay: each sequence is aligned to the current table maximum.
 do $$
 declare
   v_table text;

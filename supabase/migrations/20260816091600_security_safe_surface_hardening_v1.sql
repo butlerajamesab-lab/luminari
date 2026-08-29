@@ -1,6 +1,6 @@
--- Production-applied security reconciliation, step 1.
--- Removes mutation/control exposure while preserving read behavior.
+-- Safe immediate hardening: close mutation/control surfaces without removing reads.
 
+-- 1) RLS-disabled public tables: preserve SELECT for now, remove mutation/admin-style privileges from API roles.
 REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON TABLE
   public.governance_snapshots,
   public.state_enriched_directory_v3_13,
@@ -24,6 +24,7 @@ REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON TABLE
   public.programs_v3_13_stage
 FROM anon, authenticated;
 
+-- 2) Flagged views are read surfaces. Remove meaningless/dangerous non-SELECT grants while preserving reads.
 REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON TABLE
   public.v_lighthouse_resource_catalog_v1,
   public.v_lighthouse_did_you_know_candidates_v1,
@@ -46,6 +47,7 @@ REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON TABLE
   public.registry_record_provenance
 FROM anon, authenticated;
 
+-- 3) Worker/control/trigger RPCs are not public API. Service role retains its existing execute access.
 REVOKE EXECUTE ON FUNCTION public.claim_corpus_import_queue_row(text,text,integer) FROM anon, authenticated;
 REVOKE EXECUTE ON FUNCTION public.mark_extract_docx_success(bigint,text,text,jsonb) FROM anon, authenticated;
 REVOKE EXECUTE ON FUNCTION public.mark_normalize_docx_success(bigint,text,text,jsonb) FROM anon, authenticated;
@@ -59,6 +61,7 @@ REVOKE EXECUTE ON FUNCTION public.omnidirectional_capture_health(text,timestampt
 REVOKE EXECUTE ON FUNCTION public.set_docket_bill_detail_cache_updated_at() FROM anon, authenticated;
 REVOKE EXECUTE ON FUNCTION public.touch_civic_genome_updated_at() FROM anon, authenticated;
 
+-- 4) Pin search_path on all currently flagged functions. Include extensions for pgcrypto helpers.
 ALTER FUNCTION public.mark_extract_docx_success(bigint,text,text,jsonb) SET search_path = pg_catalog, public, extensions, pg_temp;
 ALTER FUNCTION public.mark_normalize_docx_success(bigint,text,text,jsonb) SET search_path = pg_catalog, public, extensions, pg_temp;
 ALTER FUNCTION public.mark_route_dry_run_success(bigint,text,jsonb) SET search_path = pg_catalog, public, extensions, pg_temp;
