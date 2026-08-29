@@ -20,33 +20,43 @@ begin
       'medium',
       'low'
     );
+
+    comment on type public.signal_severity_enum is
+      'Canonical Atlas/Lighthouse severity ordering recovered for deterministic fresh-branch replay.';
   end if;
 end
 $$;
 
-create or replace function public.map_atlas_severity_to_signal_enum(
-  p_severity numeric
-)
-returns public.signal_severity_enum
-language plpgsql
-immutable
-set search_path = pg_catalog, public
-as $$
+do $migration$
 begin
-  if coalesce(p_severity, 0.50) >= 0.90 then
-    return 'critical'::public.signal_severity_enum;
-  elsif coalesce(p_severity, 0.50) >= 0.80 then
-    return 'high'::public.signal_severity_enum;
-  elsif coalesce(p_severity, 0.50) >= 0.60 then
-    return 'medium'::public.signal_severity_enum;
-  else
-    return 'low'::public.signal_severity_enum;
+  if to_regprocedure(
+    'public.map_atlas_severity_to_signal_enum(numeric)'
+  ) is null then
+    execute $function$
+      create function public.map_atlas_severity_to_signal_enum(
+        p_severity numeric
+      )
+      returns public.signal_severity_enum
+      language plpgsql
+      immutable
+      set search_path = pg_catalog, public
+      as $body$
+      begin
+        if coalesce(p_severity, 0.50) >= 0.90 then
+          return 'critical'::public.signal_severity_enum;
+        elsif coalesce(p_severity, 0.50) >= 0.80 then
+          return 'high'::public.signal_severity_enum;
+        elsif coalesce(p_severity, 0.50) >= 0.60 then
+          return 'medium'::public.signal_severity_enum;
+        else
+          return 'low'::public.signal_severity_enum;
+        end if;
+      end;
+      $body$
+    $function$;
+
+    comment on function public.map_atlas_severity_to_signal_enum(numeric) is
+      'Deterministically maps an Atlas numeric severity score to the canonical Lighthouse severity enum.';
   end if;
-end;
-$$;
-
-comment on type public.signal_severity_enum is
-  'Canonical Atlas/Lighthouse severity ordering recovered for deterministic fresh-branch replay.';
-
-comment on function public.map_atlas_severity_to_signal_enum(numeric) is
-  'Deterministically maps an Atlas numeric severity score to the canonical Lighthouse severity enum.';
+end
+$migration$;
