@@ -52,7 +52,7 @@ describe("PRISM 2.2 bounded runtime pressure", () => {
     expect(claim_position).toBeGreaterThan(circuit_guard_position);
   });
 
-  it("caps new Prism submissions per queue activation pass", () => {
+  it("caps new Prism submissions for the worker process lifetime", () => {
     expect(queue_worker).toContain(
       "const DEFAULT_QUEUE_MAX_NEW_SUBMISSIONS = 1;",
     );
@@ -60,7 +60,13 @@ describe("PRISM 2.2 bounded runtime pressure", () => {
       "process.env.PRISM_ROSETTA_QUEUE_MAX_NEW_SUBMISSIONS",
     );
     expect(queue_worker).toContain(
-      "max_new_submissions: bounded_queue_max_new_submissions(),",
+      "queue_remaining_new_submissions = max_new_submissions;",
+    );
+    expect(queue_worker).toContain(
+      "const reserved_new_submissions = queue_remaining_new_submissions;",
+    );
+    expect(queue_worker).toContain(
+      "max_new_submissions: reserved_new_submissions,",
     );
     expect(activation).toContain("max_new_submissions?: number;");
     expect(activation).toContain(
