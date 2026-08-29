@@ -235,6 +235,10 @@ APPROVED_REPOSITORY_ONLY = {
         "20260826130000_foia_reference_stubs_foundation.sql",
         "841ed793c9ce734b4aed610e471dc19c5b8f709a",
     ),
+    "20260829093000": (
+        "20260829093000_lighthouse_case_detail_client_lockdown.sql",
+        "8649acbf35650b172adbde5eecb95afe03bed934",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {

@@ -55,3 +55,10 @@ jobs:
           postgresql://postgres:postgres@127.0.0.1:54322/postgres
           --set=ON_ERROR_STOP=1
           --file=supabase/verification/20260505074842_retired_atlas_signal_chain_verify.sql
+
+      - name: Verify private Lighthouse case details are fail-closed
+        run: >-
+          psql
+          postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          --set=ON_ERROR_STOP=1
+          --file=supabase/verification/20260829093000_lighthouse_case_detail_client_lockdown_verify.sql
