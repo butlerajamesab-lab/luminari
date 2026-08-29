@@ -75,4 +75,3 @@ select
 from public.canonical_pathway_registry p
 left join public.canonical_procedural_state_registry s
 on s.stage_order = 1;
-

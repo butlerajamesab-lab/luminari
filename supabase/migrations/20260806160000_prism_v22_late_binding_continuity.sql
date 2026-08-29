@@ -1,4 +1,5 @@
-begin
+begin;
+
 -- Prism 2.2 is queued when an assembly becomes complete. Legislative-version
 -- registration can occur later, after that assembly trigger has already fired.
 -- This trigger closes that late-binding gap without rewriting any prior Prism
@@ -57,15 +58,18 @@ begin
 
   return new;
 end;
-$function$
+$function$;
+
 drop trigger if exists civic_genome_bill_version_enqueue_prism_v22
-  on public.civic_genome_bill_version
+  on public.civic_genome_bill_version;
+
 create trigger civic_genome_bill_version_enqueue_prism_v22
 after insert or update of assembly_run_id
 on public.civic_genome_bill_version
 for each row
 when (new.assembly_run_id is not null)
-execute function public.enqueue_civic_genome_bill_version_prism_v22()
+execute function public.enqueue_civic_genome_bill_version_prism_v22();
+
 -- Idempotently recover any version-linked completed assembly that was linked
 -- after the original Prism 2.2 one-time backfill.
 insert into public.civic_genome_prism_verification_queue (
@@ -96,9 +100,12 @@ where assembly.run_status = 'completed'
   and assembly.verification_state = 'complete'
   and assembly.trait_count > 0
 on conflict (assembly_run_id, prism_rule_set_id, prism_rule_set_version)
-  do nothing
+  do nothing;
+
 revoke all on function public.enqueue_civic_genome_bill_version_prism_v22()
-  from public, anon, authenticated, service_role
+  from public, anon, authenticated, service_role;
+
 comment on function public.enqueue_civic_genome_bill_version_prism_v22() is
-  'Queues a completed Civic Genome assembly for Prism Rosetta 2.2 when the legislative-version binding is created or changed after assembly completion. Existing verification generations remain immutable.'
-commit
+  'Queues a completed Civic Genome assembly for Prism Rosetta 2.2 when the legislative-version binding is created or changed after assembly completion. Existing verification generations remain immutable.';
+
+commit;

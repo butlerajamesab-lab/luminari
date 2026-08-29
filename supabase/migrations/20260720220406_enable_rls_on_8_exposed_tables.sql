@@ -7,4 +7,3 @@ ALTER TABLE public.domain_deep_dive_v3_13_stage ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.corpus_artifact_manifest ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.generated_sql_source_manifest ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.generated_sql_bundle_audit ENABLE ROW LEVEL SECURITY;
-

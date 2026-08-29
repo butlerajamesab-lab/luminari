@@ -1,16 +1,22 @@
-begin
-create schema if not exists private
-revoke all on schema private from public, anon, authenticated
-grant usage on schema private to postgres
+begin;
+
+create schema if not exists private;
+
+revoke all on schema private from public, anon, authenticated;
+
+grant usage on schema private to postgres;
+
 create table if not exists private.signal_bridge_token (
   token_id text primary key,
   token_hash text not null check (token_hash ~ '^[0-9a-f]{64}$'),
   token_scope text not null check (token_scope in ('live_data_signal_write')),
   is_active boolean not null default true,
   created_at timestamptz not null default now()
-)
+);
+
 revoke all on table private.signal_bridge_token
-  from public, anon, authenticated, service_role
+  from public, anon, authenticated, service_role;
+
 insert into private.signal_bridge_token (
   token_id,
   token_hash,
@@ -25,7 +31,8 @@ insert into private.signal_bridge_token (
 on conflict (token_id) do update
 set token_hash = excluded.token_hash,
     token_scope = excluded.token_scope,
-    is_active = true
+    is_active = true;
+
 create or replace function private.require_signal_bridge_token_v1(
   p_bridge_token text,
   p_required_scope text
@@ -61,9 +68,11 @@ begin
       errcode = '28000';
   end if;
 end;
-$$
+$$;
+
 revoke all on function private.require_signal_bridge_token_v1(text, text)
-  from public, anon, authenticated, service_role
+  from public, anon, authenticated, service_role;
+
 create or replace function public.register_live_data_signal_transport_receipt_v2(
   p_record jsonb,
   p_bridge_token text
@@ -88,14 +97,20 @@ begin
   select *
   from public.register_live_data_signal_transport_receipt_v1(p_record);
 end;
-$$
+$$;
+
 revoke all on function public.register_live_data_signal_transport_receipt_v2(jsonb, text)
-  from public, authenticated
+  from public, authenticated;
+
 grant execute on function public.register_live_data_signal_transport_receipt_v2(jsonb, text)
-  to anon, service_role
+  to anon, service_role;
+
 comment on table private.signal_bridge_token is
-  'Hash-only registry for narrow cross-platform signal transport credentials. Raw bridge tokens are never stored in Lighthouse.'
+  'Hash-only registry for narrow cross-platform signal transport credentials. Raw bridge tokens are never stored in Lighthouse.';
+
 comment on function public.register_live_data_signal_transport_receipt_v2(jsonb, text) is
-  'Scoped Atlas Domain 3 transport boundary. The caller may reach it as anon through the Supabase gateway, but canonical registration occurs only after exact SHA-256 token validation.'
-notify pgrst, 'reload schema'
-commit
+  'Scoped Atlas Domain 3 transport boundary. The caller may reach it as anon through the Supabase gateway, but canonical registration occurs only after exact SHA-256 token validation.';
+
+notify pgrst, 'reload schema';
+
+commit;

@@ -294,4 +294,3 @@ VALUES (
 UPDATE sunam_control_protocol
 SET provenance_id = (SELECT id FROM provenance WHERE table_name = 'sunam_control_protocol' ORDER BY id DESC LIMIT 1)
 WHERE provenance_id IS NULL;
-

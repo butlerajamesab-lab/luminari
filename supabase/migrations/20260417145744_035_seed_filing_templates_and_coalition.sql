@@ -60,4 +60,3 @@ INSERT INTO reform_media_outlets (outlet_id, outlet_name, outlet_type, coverage,
 ('media_003','Vox','News site + video platform','Policy + inequality explainers, breaking news on social policy','10M+ monthly; younger, digital-native audience','pitches@vox.com','HIGH - Explainer format reaches broad audience; strong explainers on policy gaps'),
 ('media_004','NPR (National Public Radio)','National broadcast + digital','Labor, civil rights, policy stories','25M+ monthly; wide demographic reach; trusted news brand','pitch@npr.org','MEDIUM-HIGH - Broad reach; editorial standards favor evidence-based stories'),
 ('media_005','APM Reports (American Public Media)','Radio/podcast investigations','Deep dives on systemic issues, inequality, workplace','2M+ listeners; engaged, policy-interested',NULL,'HIGH - Audio platform effective for narrative investigative pieces');
-

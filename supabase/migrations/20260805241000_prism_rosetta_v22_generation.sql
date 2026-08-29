@@ -1,4 +1,5 @@
-begin
+begin;
+
 create or replace function public.enqueue_civic_genome_prism_verification()
 returns trigger
 language plpgsql
@@ -35,7 +36,8 @@ begin
   end if;
   return new;
 end;
-$$
+$$;
+
 insert into public.civic_genome_prism_verification_queue (
   assembly_run_id,
   genome_bill_id,
@@ -64,9 +66,12 @@ where assembly.run_status = 'completed'
   and assembly.verification_state = 'complete'
   and assembly.trait_count > 0
 on conflict (assembly_run_id, prism_rule_set_id, prism_rule_set_version)
-  do nothing
+  do nothing;
+
 revoke all on function public.enqueue_civic_genome_prism_verification()
-  from public, anon, authenticated
+  from public, anon, authenticated;
+
 comment on function public.enqueue_civic_genome_prism_verification() is
-  'Queues each completed Civic Genome assembly for the governed Prism Rosetta structural-binding 2.2.0 generation. Preserved 2.1.0 queues, runs, bindings, requests, and receipts are not rewritten.'
-commit
+  'Queues each completed Civic Genome assembly for the governed Prism Rosetta structural-binding 2.2.0 generation. Preserved 2.1.0 queues, runs, bindings, requests, and receipts are not rewritten.';
+
+commit;

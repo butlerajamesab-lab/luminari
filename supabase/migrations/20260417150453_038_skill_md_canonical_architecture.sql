@@ -207,4 +207,3 @@ INSERT INTO engine_inclusion_doctrine (category, engines) VALUES
 ('escalation_action',ARRAY['Escalation Routing','Interagency Referral','Contact Resolution','Packet Assembly','Export/LumenSend']),
 ('system_level',ARRAY['System Hardening','Reform','Policy Change','Coalition Intelligence','Campaign','Memory']),
 ('resource_knowledge_benefits',ARRAY['Knowledge Loader','Coverage Analysis','Registry Sync','Resource Intelligence','Eligibility & Avenue Engine','Benefit Lifecycle Engine','Benefit Optimization/Threshold Engine']);
-

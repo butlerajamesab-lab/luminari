@@ -40,4 +40,3 @@ INSERT INTO knowledge_documents (
   'Claim validation example: wage_theft case, 60 hours/week, 10 weeks unpaid at restaurant. Element-level output: employer_employee_relationship(0.95, PROVEN), work_performed(0.65, NEEDS_EVIDENCE — recommend timesheet+coworker), unpaid_or_underpaid(0.90, PROVEN), statutory_minimum_wage_applies(0.95, PROVEN). STRONG CLAIM — 3/4 elements proven. File DOL complaint (federal) or state labor board (faster in CA/NY/WA). This is the canonical validation example for the Investigation Workflow.',
   ARRAY['claim_validation','wage_theft','example','L3'],
   'luminari-rebuild-apr-2026', TRUE, 0, 0);
-

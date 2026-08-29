@@ -32,4 +32,3 @@ CREATE TABLE manus_schema_registry (
   notes           TEXT,
   created_at      BIGINT NOT NULL DEFAULT 0
 );
-

@@ -251,4 +251,3 @@ INSERT INTO programs (
   'Families with children — up to $693/month for family of 3. 21-month state limit. Safety Net program after state TFA exhausted.',
   'Free', ARRAY['English','Spanish'],
   'https://ct.gov/dss', '2026-04', 0, 0);
-

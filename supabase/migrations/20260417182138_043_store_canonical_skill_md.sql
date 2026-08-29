@@ -129,4 +129,3 @@ Filename convention: luminari-[type]-[thread-ID]-[date].txt
 4. Confirm before generating any large output
 ',
 'Rebuilt 2026-04-17 after /mnt/skills/user/luminari/ directory disappeared. Stored in DB as permanent backup. This is the authoritative reference for all future sessions.');
-

@@ -10,7 +10,8 @@ create table if not exists namespace_activation_registry (
   layer_owner text,
   runtime_notes text,
   created_at timestamptz not null default now()
-)
+);
+
 insert into namespace_activation_registry (
   namespace_key,
   activation_status,
@@ -28,9 +29,11 @@ values
 ('signal-governance','ready','SAFE_TO_ACTIVATE','L6','Signal oversight visibility'),
 ('pattern-registry','ready','SAFE_TO_ACTIVATE','L6','Pattern visibility'),
 ('civic-map','ready','SAFE_TO_ACTIVATE','L11','Operational civic visibility')
-on conflict (namespace_key) do nothing
-alter table namespace_activation_registry enable row level security
+on conflict (namespace_key) do nothing;
+
+alter table namespace_activation_registry enable row level security;
+
 create policy namespace_activation_registry_public_read
 on namespace_activation_registry
 for select
-using (true)
+using (true);

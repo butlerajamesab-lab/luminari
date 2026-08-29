@@ -63,4 +63,3 @@ CREATE TABLE intake_sessions (
 CREATE INDEX idx_intake_user      ON intake_sessions(user_id);
 CREATE INDEX idx_intake_state     ON intake_sessions(state_code);
 CREATE INDEX idx_intake_situation ON intake_sessions(situation_type);
-

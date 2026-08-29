@@ -739,4 +739,3 @@ INSERT INTO engine_registry_v2 (
   FALSE, NULL, FALSE,
   ARRAY['Luminari___Neutral_Forensic_Engine_3.0.md'],
   0, 0);
-

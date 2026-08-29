@@ -107,4 +107,4 @@ BEGIN
     $view$;
   END IF;
 END
-$migration$
+$migration$;

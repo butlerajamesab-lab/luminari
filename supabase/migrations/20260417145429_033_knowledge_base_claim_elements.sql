@@ -124,4 +124,3 @@ CREATE TABLE reform_media_outlets (
   scope               TEXT,
   created_at          BIGINT NOT NULL DEFAULT 0
 );
-

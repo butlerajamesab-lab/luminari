@@ -557,4 +557,3 @@ INSERT INTO engine_registry_v3 (
   NULL,
   'Generic execution framework. All engines expected to be registered in engineRegistry and wrapped with withEngineTracking(). Per-engine compliance not confirmed.',
   TRUE, ARRAY['WARNING-05'], FALSE, 0, 0);
-

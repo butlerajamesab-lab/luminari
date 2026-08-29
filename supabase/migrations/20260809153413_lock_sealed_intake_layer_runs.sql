@@ -1,6 +1,9 @@
-begin
-set local lock_timeout = '5s'
-set local statement_timeout = '120s'
+begin;
+
+set local lock_timeout = '5s';
+
+set local statement_timeout = '120s';
+
 create or replace function public.luminari_reject_sealed_intake_layer_run_mutation()
 returns trigger
 language plpgsql
@@ -24,9 +27,11 @@ begin
 
   return new;
 end
-$function$
+$function$;
+
 revoke all on function public.luminari_reject_sealed_intake_layer_run_mutation()
-  from public
+  from public;
+
 do $acl$
 begin
   if exists (select 1 from pg_roles where rolname = 'anon') then
@@ -42,13 +47,17 @@ begin
       to service_role;
   end if;
 end
-$acl$
+$acl$;
+
 drop trigger if exists trg_intake_layer_runs_reject_sealed_mutation
-  on public.intake_layer_runs
+  on public.intake_layer_runs;
+
 create trigger trg_intake_layer_runs_reject_sealed_mutation
 before update or delete on public.intake_layer_runs
 for each row
-execute function public.luminari_reject_sealed_intake_layer_run_mutation()
+execute function public.luminari_reject_sealed_intake_layer_run_mutation();
+
 comment on function public.luminari_reject_sealed_intake_layer_run_mutation() is
-  'Rejects UPDATE or DELETE of sealed Universal Intake Spine layer runs; supersession requires insertion.'
-commit
+  'Rejects UPDATE or DELETE of sealed Universal Intake Spine layer runs; supersession requires insertion.';
+
+commit;

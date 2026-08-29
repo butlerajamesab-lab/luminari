@@ -6,6 +6,10 @@ from collections import defaultdict
 from pathlib import Path
 
 PRODUCTION_RECEIPTS = Path("supabase/verification/production_migration_receipts_20260829.tsv")
+# executable_md5 is exported from each ordered production statement array by
+# trimming trailing whitespace, restoring a missing top-level terminator,
+# joining statements with one blank line, and ending the file with one newline.
+# The sole comment-only receipt (20260517000000) intentionally gets no terminator.
 APPROVED_REPOSITORY_ONLY = {
     "20260501203517",
     "20260815040500",
@@ -24,17 +28,6 @@ APPROVED_REPOSITORY_ONLY = {
     "20260822055000",
     "20260822055100",
     "20260822203000",
-}
-
-TRAILING_NEWLINE_NORMALIZED_RECEIPTS = {
-    "20260817192259": (
-        "1094ff8d54939ff05e0325425cc70c86",
-        "2287eabf95aebcd84cee55a71d217705",
-    ),
-    "20260817192808": (
-        "81324b0cecbfa6b170529d0092e6026c",
-        "097b6d076c5e7acc69017f2fe7887be2",
-    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
@@ -76,7 +69,7 @@ REPLAY_ALIAS_RECEIPTS = {
 }
 
 
-def receipt_hashes(path: Path) -> set[str]:
+def file_hashes(path: Path) -> set[str]:
     body = path.read_bytes()
     hashes = {hashlib.md5(body).hexdigest()}
     if body.endswith(b"\n"):
@@ -93,7 +86,13 @@ def git_blob_sha1(path: Path) -> str:
 with PRODUCTION_RECEIPTS.open(encoding="utf-8", newline="") as receipt_file:
     receipt_rows = list(csv.DictReader(receipt_file, delimiter="\t"))
 
-required_columns = {"version", "name", "statements_md5"}
+required_columns = {
+    "version",
+    "name",
+    "statements_md5",
+    "statement_count",
+    "executable_md5",
+}
 malformed_receipts = [
     row
     for row in receipt_rows
@@ -103,6 +102,10 @@ malformed_receipts = [
     or not row["name"]
     or len(row["statements_md5"]) != 32
     or any(character not in "0123456789abcdef" for character in row["statements_md5"])
+    or not row["statement_count"].isdigit()
+    or int(row["statement_count"]) < 1
+    or len(row["executable_md5"]) != 32
+    or any(character not in "0123456789abcdef" for character in row["executable_md5"])
 ]
 
 production_by_version: dict[str, list[dict[str, str]]] = defaultdict(list)
@@ -115,10 +118,10 @@ production_duplicates = {
     if len(rows) > 1
 }
 production_versions = set(production_by_version)
-production_hashes = {
-    row["statements_md5"]: (row["version"], row["name"])
-    for row in receipt_rows
-}
+production_hashes: dict[str, tuple[str, str]] = {}
+for row in receipt_rows:
+    production_hashes[row["statements_md5"]] = (row["version"], row["name"])
+    production_hashes[row["executable_md5"]] = (row["version"], row["name"])
 
 local_by_version: dict[str, list[Path]] = defaultdict(list)
 for path in sorted(Path("supabase/migrations").glob("*.sql")):
@@ -146,14 +149,7 @@ for version in sorted(production_versions & local_versions):
     expected_name = f"{version}_{receipt['name']}.sql"
     if path.name != expected_name:
         name_mismatches.append((version, path.name, expected_name))
-    hashes = receipt_hashes(path)
-    normalization = TRAILING_NEWLINE_NORMALIZED_RECEIPTS.get(version)
-    normalized_match = (
-        normalization is not None
-        and receipt["statements_md5"] == normalization[0]
-        and hashlib.md5(path.read_bytes().rstrip(b"\n")).hexdigest()
-        == normalization[1]
-    )
+    actual_md5 = hashlib.md5(path.read_bytes()).hexdigest()
     source_controlled_application = SOURCE_CONTROLLED_APPLICATION_RECEIPTS.get(
         version
     )
@@ -169,13 +165,12 @@ for version in sorted(production_versions & local_versions):
         and git_blob_sha1(path) == replay_alias[1]
     )
     if (
-        receipt["statements_md5"] not in hashes
-        and not normalized_match
+        actual_md5 != receipt["executable_md5"]
         and not source_controlled_match
         and not replay_alias_match
     ):
         hash_mismatches.append(
-            (version, path.name, receipt["statements_md5"], sorted(hashes)[0])
+            (version, path.name, receipt["executable_md5"], actual_md5)
         )
 
 repository_only_production_hash_duplicates: list[
@@ -183,7 +178,7 @@ repository_only_production_hash_duplicates: list[
 ] = []
 for version in sorted(APPROVED_REPOSITORY_ONLY & local_versions):
     for path in local_by_version[version]:
-        for statements_md5 in receipt_hashes(path):
+        for statements_md5 in file_hashes(path):
             if statements_md5 in production_hashes:
                 production_version, production_name = production_hashes[statements_md5]
                 repository_only_production_hash_duplicates.append(
@@ -225,10 +220,6 @@ for version, actual, expected in name_mismatches:
 print(f"PRODUCTION_HASH_MISMATCH_COUNT={len(hash_mismatches)}")
 for version, name, expected, actual in hash_mismatches:
     print(f"PRODUCTION_HASH_MISMATCH={version}|{name}|{expected}|{actual}")
-print(
-    "PRODUCTION_TRAILING_NEWLINE_NORMALIZATION_COUNT="
-    f"{len(TRAILING_NEWLINE_NORMALIZED_RECEIPTS)}"
-)
 print(
     "SOURCE_CONTROLLED_APPLICATION_RECEIPT_COUNT="
     f"{len(SOURCE_CONTROLLED_APPLICATION_RECEIPTS)}"

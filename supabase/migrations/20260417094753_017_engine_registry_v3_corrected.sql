@@ -58,4 +58,3 @@ CREATE TABLE schema_table_registry (
   confirmed       BOOLEAN NOT NULL DEFAULT FALSE,
   notes           TEXT
 );
-

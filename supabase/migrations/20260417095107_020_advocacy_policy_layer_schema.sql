@@ -146,4 +146,3 @@ CREATE TABLE unified_output_layer_source (
   session_id      VARCHAR(64),
   created_at      BIGINT NOT NULL DEFAULT 0
 );
-

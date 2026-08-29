@@ -1,4 +1,5 @@
-begin
+begin;
+
 create or replace function public.guard_civic_genome_bill_version_terminal_state()
 returns trigger
 language plpgsql
@@ -32,13 +33,16 @@ begin
 
   return new;
 end;
-$$
+$$;
+
 drop trigger if exists civic_genome_bill_version_terminal_state_guard
-  on public.civic_genome_bill_version
+  on public.civic_genome_bill_version;
+
 create trigger civic_genome_bill_version_terminal_state_guard
 before update of processing_state
 on public.civic_genome_bill_version
-for each row execute function public.guard_civic_genome_bill_version_terminal_state()
+for each row execute function public.guard_civic_genome_bill_version_terminal_state();
+
 update public.civic_genome_bill_version version
    set processing_state = public.civic_genome_prism_version_state(
          verification.expected_trait_count,
@@ -62,9 +66,12 @@ update public.civic_genome_bill_version version
          verification.expected_trait_count,
          verification.receipt_count,
          verification.status_counts
-       )
+       );
+
 revoke all on function public.guard_civic_genome_bill_version_terminal_state()
-  from public, anon, authenticated
+  from public, anon, authenticated;
+
 comment on function public.guard_civic_genome_bill_version_terminal_state() is
-  'Prevents a late or duplicate legislative-version worker from regressing a completed Prism terminal state to an earlier pipeline state. Explicit reprocessing remains possible by first resetting the version to registered.'
-commit
+  'Prevents a late or duplicate legislative-version worker from regressing a completed Prism terminal state to an earlier pipeline state. Explicit reprocessing remains possible by first resetting the version to registered.';
+
+commit;

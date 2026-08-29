@@ -115,4 +115,3 @@ CREATE TABLE sunam_control_protocol (
   example         TEXT,
   created_at      BIGINT NOT NULL DEFAULT 0
 );
-

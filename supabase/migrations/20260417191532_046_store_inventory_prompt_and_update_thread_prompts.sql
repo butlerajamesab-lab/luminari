@@ -77,4 +77,3 @@ IMPORTANT: Extract EVERYTHING — fully implemented, partial, spec-only,
 mentioned-but-not-built, referenced, or implied. If it exists in this
 thread in any form, capture it. Nothing gets left behind.'
 WHERE prompt_id IN ('thread-engines', 'thread-data');
-

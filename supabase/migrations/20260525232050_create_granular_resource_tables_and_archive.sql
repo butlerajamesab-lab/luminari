@@ -139,4 +139,3 @@ CREATE INDEX IF NOT EXISTS idx_staging_cash_promotion ON registry_entity_staging
 CREATE INDEX IF NOT EXISTS idx_staging_utilities_promotion ON registry_entity_staging_utilities(promotion_ready);
 CREATE INDEX IF NOT EXISTS idx_staging_employment_promotion ON registry_entity_staging_employment(promotion_ready);
 CREATE INDEX IF NOT EXISTS idx_staging_mental_health_promotion ON registry_entity_staging_mental_health(promotion_ready);
-

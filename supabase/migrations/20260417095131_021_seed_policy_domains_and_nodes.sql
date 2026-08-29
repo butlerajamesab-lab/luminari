@@ -47,4 +47,3 @@ INSERT INTO geographic_nodes (node_id, city, state, status, target_launch, ratio
   ARRAY['NFIC','POGO','National alliance organizations'],
   NULL,
   0);
-

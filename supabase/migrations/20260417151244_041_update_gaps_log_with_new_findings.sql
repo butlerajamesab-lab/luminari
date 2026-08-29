@@ -19,4 +19,3 @@ ON CONFLICT (gap_id) DO NOTHING;
 UPDATE architecture_gaps_log
 SET description = 'patternFeedbackLoop table has NEVER been written to. Core loop PAT-557 spec defined but not implemented. 5-step spec: (1) After patternEngine.generateSystemicInferences → filter confidence >= 0.70, (2) For each inference: write to patternFeedbackLoop (pattern_id, jurisdiction, related_claims, related_agencies, confidence), (3) strategyEngine.getStrategyPaths: check patternFeedbackLoop for matching rows, (4) If match: append patternContext field (pattern name, complaint count, confidence, agency impact), (5) Render in GuidedDashboard.tsx as inline callout on matching path cards only. Before: ''Signal detected: repeat company.'' After: ''Pattern detected: Wage Theft at Small Employers — 43 similar cases — your case matches.'' This is the threshold gap between analysis platform and navigation engine.'
 WHERE gap_id = 'GAP_PATTERN_FEEDBACK_LOOP_EMPTY';
-

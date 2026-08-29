@@ -154,4 +154,3 @@ CREATE TABLE conflicts_detected (
 CREATE INDEX idx_cd_record_a           ON conflicts_detected(record_id_a);
 CREATE INDEX idx_cd_record_b           ON conflicts_detected(record_id_b);
 CREATE INDEX idx_cd_resolution_status  ON conflicts_detected(resolution_status);
-

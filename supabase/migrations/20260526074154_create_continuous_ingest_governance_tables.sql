@@ -42,4 +42,3 @@ CREATE TABLE IF NOT EXISTS public.luminari_ingest_contract_checks (
 
 CREATE INDEX IF NOT EXISTS idx_continuous_ingest_source_key ON public.luminari_continuous_ingest_sources(source_key);
 CREATE INDEX IF NOT EXISTS idx_ingest_contract_source ON public.luminari_ingest_contract_checks(source_key);
-

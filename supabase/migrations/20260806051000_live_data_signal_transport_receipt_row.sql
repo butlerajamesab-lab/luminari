@@ -1,4 +1,5 @@
-begin
+begin;
+
 create or replace function public.register_live_data_signal_transport_receipt_v1(
   p_record jsonb
 )
@@ -33,12 +34,17 @@ begin
       clock_timestamp()
     );
 end;
-$$
+$$;
+
 revoke all on function public.register_live_data_signal_transport_receipt_v1(jsonb)
-  from public, anon, authenticated
+  from public, anon, authenticated;
+
 grant execute on function public.register_live_data_signal_transport_receipt_v1(jsonb)
-  to service_role
+  to service_role;
+
 comment on function public.register_live_data_signal_transport_receipt_v1(jsonb) is
-  'Row-shaped service-role-only receipt boundary for Atlas Domain 3 transport. It delegates canonical registration to register_live_data_signal_receipt_v1 and exposes an explicit PostgREST result row.'
-notify pgrst, 'reload schema'
-commit
+  'Row-shaped service-role-only receipt boundary for Atlas Domain 3 transport. It delegates canonical registration to register_live_data_signal_receipt_v1 and exposes an explicit PostgREST result row.';
+
+notify pgrst, 'reload schema';
+
+commit;

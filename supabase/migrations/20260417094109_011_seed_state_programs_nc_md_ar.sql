@@ -251,4 +251,3 @@ INSERT INTO programs (
   'Low-income AR renters — Section 8/HCV, HOME, rental assistance.',
   'Free', ARRAY['English','Spanish'],
   'https://arkansasfinance.com', '2026-04', 0, 0);
-

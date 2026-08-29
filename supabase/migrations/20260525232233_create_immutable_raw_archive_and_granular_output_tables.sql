@@ -302,4 +302,3 @@ CREATE INDEX idx_legal_aid_coordinates ON registry_entities_legal_aid(latitude, 
 CREATE INDEX idx_mental_health_coordinates ON registry_entities_mental_health(latitude, longitude);
 CREATE INDEX idx_nonprofits_coordinates ON registry_entities_nonprofits(latitude, longitude);
 CREATE INDEX idx_government_coordinates ON registry_entities_government_agencies(latitude, longitude);
-

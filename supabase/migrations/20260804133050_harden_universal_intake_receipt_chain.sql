@@ -382,4 +382,3 @@ comment on function public.luminari_reject_preserved_intake_artifact_mutation() 
   'Rejects UPDATE or DELETE of preserved Guided Intake revision and power-dynamics artifacts; supersession requires insertion.';
 
 commit;
-

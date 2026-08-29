@@ -106,4 +106,3 @@ ALTER TABLE schema_table_registry ADD COLUMN IF NOT EXISTS provenance_id BIGINT 
 ALTER TABLE reform_legislators ADD COLUMN IF NOT EXISTS provenance_id BIGINT REFERENCES provenance(id);
 ALTER TABLE reform_campaigns ADD COLUMN IF NOT EXISTS provenance_id BIGINT REFERENCES provenance(id);
 ALTER TABLE reform_media_outlets ADD COLUMN IF NOT EXISTS provenance_id BIGINT REFERENCES provenance(id);
-

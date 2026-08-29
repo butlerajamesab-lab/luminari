@@ -269,4 +269,3 @@ INSERT INTO programs (
   'Low-income SC renters — Section 8/HCV, HOME, emergency rental assistance.',
   'Free', ARRAY['English','Spanish'],
   'https://schousing.com', '2026-04', 0, 0);
-

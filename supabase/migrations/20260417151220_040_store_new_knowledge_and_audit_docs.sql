@@ -49,4 +49,3 @@ INSERT INTO knowledge_documents (
   'Luminari knowledge upload tool — standalone HTML file. Stack: vanilla JS, Space Mono + Syne fonts. Design: Clinical dark theme (--bg: #060810, --accent: #00e5ff, --accent2: #7c3aed). Purpose: upload knowledge files to Luminari knowledge backbone from browser. Used to push documents to the platform without Manus terminal access.',
   ARRAY['uploader','html_tool','knowledge_upload','clinical_dark'],
   'luminari-rebuild-apr-2026', TRUE, 0, 0);
-

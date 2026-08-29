@@ -78,4 +78,3 @@ CREATE TABLE gap_log (
 CREATE INDEX idx_gap_case  ON gap_log(case_id);
 CREATE INDEX idx_gap_state ON gap_log(state_code);
 CREATE INDEX idx_gap_type  ON gap_log(gap_type);
-

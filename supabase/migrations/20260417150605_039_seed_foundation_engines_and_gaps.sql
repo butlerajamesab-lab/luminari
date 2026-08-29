@@ -40,4 +40,3 @@ INSERT INTO architecture_gaps_log (gap_id, gap_type, description, source) VALUES
 ('GAP_AKB_COVERAGE_WA_ONLY','data','AKB coverage = Washington State only. 45 of 51 pipeline types have no domain rules. All non-WA FOIA lookup paths return no-match.','V3 diagnostic audit — WARNING-07'),
 ('GAP_GATE_2_5_SNAPSHOTID','wiring','Gate 2.5 missing — three enqueueDocument() calls in routers.ts do not propagate snapshotId. 3-line fix. Audit trail shows snapshotId=0.','V3 risk zones — WARNING-02'),
 ('GAP_PATTERN_FEEDBACK_LOOP_EMPTY','data','patternFeedbackLoop table has NEVER been written to. Core loop PAT-557 spec defined but not implemented. When wired: system becomes a navigation engine instead of analysis platform.','Core feedback loop spec');
-

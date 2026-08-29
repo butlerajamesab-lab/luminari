@@ -56,4 +56,3 @@ INSERT INTO engine_drift_warnings (
   'Expand AKB coverage state by state using the state registry files already built. Priority: states already seeded in programs table.',
   ARRAY['Gap Detection Engine','FOIA Generator'],
   FALSE, 0);
-

@@ -67,4 +67,3 @@ REVOKE ALL ON TABLE v_api_pull_provenance_summary FROM anon, authenticated;
 ALTER VIEW v_unproven_atlas_signal_claims SET (security_invoker = true);
 ALTER VIEW v_lighthouse_native_signals SET (security_invoker = true);
 ALTER VIEW v_api_pull_provenance_summary SET (security_invoker = true);
-

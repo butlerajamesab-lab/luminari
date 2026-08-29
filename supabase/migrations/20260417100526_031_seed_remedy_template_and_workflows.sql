@@ -135,4 +135,3 @@ INSERT INTO workflows (
     {"step":5,"title":"Civil litigation","description":"File Title VII suit in federal court within 90 days of Right to Sue."}
   ]'::jsonb,
   '1-5 years', 0.35, 0);
-

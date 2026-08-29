@@ -215,4 +215,3 @@ INSERT INTO tribal_jurisdictions (
   'Yakama Tribal Court', 'Yakama Social Services', 'Yakama Housing Authority',
   'Yakama TANF', 'Yakama Indian Health', 'Yakama Enrollment',
   TRUE, TRUE, 0, 0);
-

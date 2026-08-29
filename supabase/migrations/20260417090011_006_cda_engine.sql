@@ -185,4 +185,3 @@ CREATE TABLE cda_artifacts (
 
 CREATE INDEX idx_cda_artifacts_run  ON cda_artifacts(run_id);
 CREATE INDEX idx_cda_artifacts_type ON cda_artifacts(artifact_type);
-

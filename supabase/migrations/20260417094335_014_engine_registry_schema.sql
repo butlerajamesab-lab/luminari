@@ -85,4 +85,3 @@ CREATE TABLE engine_drift_warnings (
   resolved        BOOLEAN NOT NULL DEFAULT FALSE,
   created_at      BIGINT NOT NULL DEFAULT 0
 );
-

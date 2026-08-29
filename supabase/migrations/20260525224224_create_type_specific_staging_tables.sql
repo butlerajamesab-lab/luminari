@@ -179,4 +179,3 @@ CREATE INDEX IF NOT EXISTS idx_staging_nonprofits_promotion_ready ON registry_en
 CREATE INDEX IF NOT EXISTS idx_staging_benefits_promotion_ready ON registry_entity_staging_benefits(promotion_ready);
 CREATE INDEX IF NOT EXISTS idx_staging_contacts_promotion_ready ON registry_entity_staging_contacts(promotion_ready);
 CREATE INDEX IF NOT EXISTS idx_staging_knowledge_promotion_ready ON registry_entity_staging_knowledge(promotion_ready);
-

@@ -209,4 +209,3 @@ create or replace view public.package_classification as
 select package_key, artifact_status, count(*) as file_count, coalesce(sum(file_size_kb),0) as total_size_kb
 from public.deliverable_files
 group by package_key, artifact_status;
-

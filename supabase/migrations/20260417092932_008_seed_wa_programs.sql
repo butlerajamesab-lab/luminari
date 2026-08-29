@@ -351,4 +351,3 @@ INSERT INTO programs (
   'Immigrants and refugees in WA. Legal, social, employment services.',
   'Free to sliding scale', ARRAY['English','Spanish','Somali','Arabic'],
   'https://www.icwc.org', '2026-04', 0, 0);
-

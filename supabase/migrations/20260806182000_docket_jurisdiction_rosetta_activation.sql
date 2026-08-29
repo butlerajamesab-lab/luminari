@@ -1,5 +1,7 @@
-begin
-create extension if not exists pgcrypto with schema extensions
+begin;
+
+create extension if not exists pgcrypto with schema extensions;
+
 create table if not exists public.docket_jurisdiction_activation_run (
   activation_id uuid primary key default gen_random_uuid(),
   state text not null check (state ~ '^[A-Z]{2}$'),
@@ -19,9 +21,11 @@ create table if not exists public.docket_jurisdiction_activation_run (
   updated_at timestamptz not null default now(),
   constraint docket_jurisdiction_activation_run_unique
     unique (state, session_id, cache_fetched_at)
-)
+);
+
 create index if not exists idx_docket_jurisdiction_activation_state
-  on public.docket_jurisdiction_activation_run(state, cache_fetched_at desc)
+  on public.docket_jurisdiction_activation_run(state, cache_fetched_at desc);
+
 create table if not exists public.docket_bill_processing_queue (
   queue_id uuid primary key default gen_random_uuid(),
   source_bill_id integer not null,
@@ -49,13 +53,15 @@ create table if not exists public.docket_bill_processing_queue (
   updated_at timestamptz not null default now(),
   constraint docket_bill_processing_generation_unique
     unique (source_bill_id, summary_fingerprint)
-)
+);
+
 create index if not exists idx_docket_bill_processing_queue_claim
   on public.docket_bill_processing_queue(
     queue_state,
     next_attempt_at,
     created_at
-  )
+  );
+
 create table if not exists public.docket_jurisdiction_activation_bill (
   activation_id uuid not null
     references public.docket_jurisdiction_activation_run(activation_id)
@@ -70,9 +76,11 @@ create table if not exists public.docket_jurisdiction_activation_bill (
   primary key (activation_id, source_bill_id),
   constraint docket_jurisdiction_activation_bill_queue_unique
     unique (activation_id, queue_id)
-)
+);
+
 create index if not exists idx_docket_jurisdiction_activation_bill_queue
-  on public.docket_jurisdiction_activation_bill(queue_id, activation_id)
+  on public.docket_jurisdiction_activation_bill(queue_id, activation_id);
+
 create or replace function public.refresh_docket_jurisdiction_activation_run(
   p_activation_id uuid
 )
@@ -131,7 +139,8 @@ begin
          updated_at = now()
    where activation.activation_id = p_activation_id;
 end;
-$function$
+$function$;
+
 create or replace function public.refresh_docket_activation_for_queue()
 returns trigger
 language plpgsql
@@ -150,14 +159,17 @@ begin
   end loop;
   return coalesce(new, old);
 end;
-$function$
+$function$;
+
 drop trigger if exists docket_bill_processing_queue_refresh_activation
-  on public.docket_bill_processing_queue
+  on public.docket_bill_processing_queue;
+
 create trigger docket_bill_processing_queue_refresh_activation
 after update of queue_state on public.docket_bill_processing_queue
 for each row
 when (old.queue_state is distinct from new.queue_state)
-execute function public.refresh_docket_activation_for_queue()
+execute function public.refresh_docket_activation_for_queue();
+
 create or replace function public.refresh_docket_activation_after_binding()
 returns trigger
 language plpgsql
@@ -168,12 +180,15 @@ begin
   perform public.refresh_docket_jurisdiction_activation_run(new.activation_id);
   return new;
 end;
-$function$
+$function$;
+
 drop trigger if exists docket_jurisdiction_activation_bill_refresh_run
-  on public.docket_jurisdiction_activation_bill
+  on public.docket_jurisdiction_activation_bill;
+
 create trigger docket_jurisdiction_activation_bill_refresh_run
 after insert on public.docket_jurisdiction_activation_bill
-for each row execute function public.refresh_docket_activation_after_binding()
+for each row execute function public.refresh_docket_activation_after_binding();
+
 create or replace function public.register_docket_jurisdiction_activation(
   p_state text,
   p_session_id integer,
@@ -295,7 +310,8 @@ begin
   perform public.refresh_docket_jurisdiction_activation_run(v_activation_id);
   return v_activation_id;
 end;
-$function$
+$function$;
+
 create or replace function public.enqueue_docket_state_cache_activation()
 returns trigger
 language plpgsql
@@ -314,15 +330,18 @@ begin
   );
   return new;
 end;
-$function$
+$function$;
+
 drop trigger if exists docket_state_cache_enqueue_activation
-  on public.docket_bill_state_cache
+  on public.docket_bill_state_cache;
+
 create trigger docket_state_cache_enqueue_activation
 after insert or update of bills, fetched_at
 on public.docket_bill_state_cache
 for each row
 when (new.session_id is not null and new.fetched_at is not null)
-execute function public.enqueue_docket_state_cache_activation()
+execute function public.enqueue_docket_state_cache_activation();
+
 -- Backfill the currently cached jurisdictions once. This creates durable work
 -- only for the exact cached bill-summary generations; unchanged future cache
 -- reads do not write and therefore do not create duplicate activations.
@@ -346,37 +365,60 @@ begin
     );
   end loop;
 end;
-$backfill$
-alter table public.docket_jurisdiction_activation_run enable row level security
-alter table public.docket_jurisdiction_activation_run force row level security
-alter table public.docket_bill_processing_queue enable row level security
-alter table public.docket_bill_processing_queue force row level security
-alter table public.docket_jurisdiction_activation_bill enable row level security
-alter table public.docket_jurisdiction_activation_bill force row level security
-revoke all on table public.docket_jurisdiction_activation_run from public, anon, authenticated
-revoke all on table public.docket_bill_processing_queue from public, anon, authenticated
-revoke all on table public.docket_jurisdiction_activation_bill from public, anon, authenticated
-grant select, insert, update, delete on table public.docket_jurisdiction_activation_run to service_role
-grant select, insert, update, delete on table public.docket_bill_processing_queue to service_role
-grant select, insert, update, delete on table public.docket_jurisdiction_activation_bill to service_role
+$backfill$;
+
+alter table public.docket_jurisdiction_activation_run enable row level security;
+
+alter table public.docket_jurisdiction_activation_run force row level security;
+
+alter table public.docket_bill_processing_queue enable row level security;
+
+alter table public.docket_bill_processing_queue force row level security;
+
+alter table public.docket_jurisdiction_activation_bill enable row level security;
+
+alter table public.docket_jurisdiction_activation_bill force row level security;
+
+revoke all on table public.docket_jurisdiction_activation_run from public, anon, authenticated;
+
+revoke all on table public.docket_bill_processing_queue from public, anon, authenticated;
+
+revoke all on table public.docket_jurisdiction_activation_bill from public, anon, authenticated;
+
+grant select, insert, update, delete on table public.docket_jurisdiction_activation_run to service_role;
+
+grant select, insert, update, delete on table public.docket_bill_processing_queue to service_role;
+
+grant select, insert, update, delete on table public.docket_jurisdiction_activation_bill to service_role;
+
 revoke all on function public.register_docket_jurisdiction_activation(text, integer, text, jsonb, integer, timestamptz, text)
-  from public, anon, authenticated
+  from public, anon, authenticated;
+
 revoke all on function public.refresh_docket_jurisdiction_activation_run(uuid)
-  from public, anon, authenticated
+  from public, anon, authenticated;
+
 revoke all on function public.refresh_docket_activation_for_queue()
-  from public, anon, authenticated
+  from public, anon, authenticated;
+
 revoke all on function public.refresh_docket_activation_after_binding()
-  from public, anon, authenticated
+  from public, anon, authenticated;
+
 revoke all on function public.enqueue_docket_state_cache_activation()
-  from public, anon, authenticated
+  from public, anon, authenticated;
+
 grant execute on function public.register_docket_jurisdiction_activation(text, integer, text, jsonb, integer, timestamptz, text)
-  to service_role
+  to service_role;
+
 grant execute on function public.refresh_docket_jurisdiction_activation_run(uuid)
-  to service_role
+  to service_role;
+
 comment on table public.docket_jurisdiction_activation_run is
-  'One immutable jurisdiction/session cache generation activation. Opening or refreshing a jurisdiction registers its exact cached bill set without blocking the user response.'
+  'One immutable jurisdiction/session cache generation activation. Opening or refreshing a jurisdiction registers its exact cached bill set without blocking the user response.';
+
 comment on table public.docket_bill_processing_queue is
-  'Deduplicated pre-Rosetta queue that retrieves exact bill detail and registers every official text and amendment into the existing legislative-version decomposition spine.'
+  'Deduplicated pre-Rosetta queue that retrieves exact bill detail and registers every official text and amendment into the existing legislative-version decomposition spine.';
+
 comment on function public.register_docket_jurisdiction_activation(text, integer, text, jsonb, integer, timestamptz, text) is
-  'Registers one jurisdiction cache generation and deduplicated bill-detail work. It does not perform source retrieval, Rosetta extraction, Genome assembly, or Prism verification inline.'
-commit
+  'Registers one jurisdiction cache generation and deduplicated bill-detail work. It does not perform source retrieval, Rosetta extraction, Genome assembly, or Prism verification inline.';
+
+commit;

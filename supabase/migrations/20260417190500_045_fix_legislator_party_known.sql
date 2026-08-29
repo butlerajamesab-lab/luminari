@@ -14,4 +14,3 @@ UPDATE legislator_contacts SET party = 'Republican' WHERE name IN (
 
 -- Bernie Sanders is technically Independent but caucuses Democratic
 UPDATE legislator_contacts SET party = 'Independent' WHERE name = 'Bernie Sanders';
-

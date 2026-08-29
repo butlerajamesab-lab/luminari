@@ -100,4 +100,3 @@ INSERT INTO schema_table_registry (table_name, table_group, confirmed, notes) VA
 ('schema_table_registry', 'luminari_new', TRUE, 'Canonical schema map'),
 ('gap_log', 'luminari_new', TRUE, NULL),
 ('interpretation_trace_log', 'luminari_new', TRUE, NULL);
-

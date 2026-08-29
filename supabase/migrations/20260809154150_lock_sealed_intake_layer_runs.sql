@@ -59,4 +59,3 @@ comment on function public.luminari_reject_sealed_intake_layer_run_mutation() is
   'Rejects UPDATE or DELETE of sealed Universal Intake Spine layer runs; supersession requires insertion.';
 
 commit;
-

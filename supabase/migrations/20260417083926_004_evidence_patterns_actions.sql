@@ -170,4 +170,3 @@ CREATE TABLE outcomes (
 
 CREATE INDEX idx_outcomes_case ON outcomes(case_id);
 CREATE INDEX idx_outcomes_type ON outcomes(outcome_type);
-

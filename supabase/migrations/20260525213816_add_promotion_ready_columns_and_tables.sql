@@ -112,4 +112,3 @@ CREATE INDEX IF NOT EXISTS idx_validation_log_staging_id ON promotion_validation
 CREATE INDEX IF NOT EXISTS idx_validation_log_passed ON promotion_validation_log(passed);
 CREATE INDEX IF NOT EXISTS idx_accounting_jurisdiction ON promotion_accounting(jurisdiction);
 CREATE INDEX IF NOT EXISTS idx_accounting_source_file ON promotion_accounting(source_file);
-

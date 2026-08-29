@@ -306,4 +306,3 @@ INSERT INTO schema_table_registry (table_name, table_group, confirmed, purpose, 
 ('phase2_runs','phase2',TRUE,'Phase 2 analysis run records','L5','Phase2','camelCase: phase2Runs'),
 ('phase2_evidence_requirements','phase2',TRUE,'Phase 2 evidence requirements','L5','Phase2','camelCase: phase2EvidenceRequirements'),
 ('phase2_structured_notes','phase2',TRUE,'Phase 2 structured notes','L5','Phase2','camelCase: phase2StructuredNotes');
-

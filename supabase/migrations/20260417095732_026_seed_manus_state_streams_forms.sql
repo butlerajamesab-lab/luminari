@@ -143,4 +143,3 @@ INSERT INTO feedback_loop_spec (
   'Pattern detected: Wage Theft at Small Employers — 43 similar cases — your case matches',
   0
 );
-

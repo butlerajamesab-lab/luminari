@@ -141,4 +141,3 @@ CREATE TABLE legal_cases (
 
 CREATE INDEX idx_lc_jurisdiction ON legal_cases(jurisdiction);
 CREATE INDEX idx_lc_citation     ON legal_cases(citation);
-

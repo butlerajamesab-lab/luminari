@@ -115,4 +115,3 @@ Output the full audit list. Nothing else.',
 '15-25 programs per state for all 40 uncovered states. Required coverage: SNAP, Medicaid, unemployment, rental assistance, LIHEAP, legal aid, DV services, mental health crisis, veterans, 211, FQHC.',
 'Target table: programs (add 600-1000 rows across 40 states). Currently covered: WA(21), TN(10), SC(10), AR(9), CT(9), MD(9), MS(9), AL(8), NC(8), LA(8). Missing: AK AZ CA CO DE FL GA HI IA ID IL IN KS KY MA ME MI MN MO MT NE NH NJ NM NV NY OH OK OR PA RI SD TX UT VA VT WI WV WY DC. Filename: luminari-STATE-[state-code]-[date].json',
 'luminari-STATE-[state-code]-[date].json');
-

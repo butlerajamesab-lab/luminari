@@ -1,4 +1,5 @@
-begin
+begin;
+
 create table if not exists public.docket_source_reference_date_receipt (
   source_document_key text primary key
     references public.docket_bill_source_document(source_document_key)
@@ -12,9 +13,11 @@ create table if not exists public.docket_source_reference_date_receipt (
   derivation_rule_version text not null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
-)
+);
+
 comment on table public.docket_source_reference_date_receipt is
-  'Deterministic receipts for official-source dates used when the upstream provider omits its document date. The provider payload remains preserved separately.'
+  'Deterministic receipts for official-source dates used when the upstream provider omits its document date. The provider payload remains preserved separately.';
+
 do $migration$
 declare
   v_definition text;
@@ -45,7 +48,8 @@ begin
     raise exception 'source_reference_date_expected_registration_function_missing';
   end if;
 end;
-$migration$
+$migration$;
+
 insert into public.docket_source_reference_date_receipt (
   source_document_key,
   provider_hash,
@@ -92,7 +96,8 @@ set provider_hash = excluded.provider_hash,
     reference_date = excluded.reference_date,
     source_observed_marker = excluded.source_observed_marker,
     derivation_rule_version = excluded.derivation_rule_version,
-    updated_at = now()
+    updated_at = now();
+
 do $validation$
 declare
   v_conflicts integer;
@@ -111,12 +116,14 @@ begin
       detail = v_conflicts::text;
   end if;
 end;
-$validation$
+$validation$;
+
 update public.docket_bill_source_document document
    set provider_date = receipt.reference_date,
        updated_at = now()
   from public.docket_source_reference_date_receipt receipt
  where receipt.source_document_key = document.source_document_key
    and document.provider_hash = receipt.provider_hash
-   and document.provider_date is distinct from receipt.reference_date
-commit
+   and document.provider_date is distinct from receipt.reference_date;
+
+commit;

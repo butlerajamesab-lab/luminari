@@ -99,4 +99,3 @@ INSERT INTO tribal_jurisdictions (
   'Mohegan Tribal Court', 'Mohegan Social Services', 'Mohegan Housing',
   'Mohegan TANF', 'Mohegan Health Services', 'Mohegan Enrollment',
   TRUE, TRUE, 0, 0);
-

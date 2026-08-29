@@ -67,4 +67,3 @@ INSERT INTO settlement_calculations (
 ('CIVIL_RIGHTS_1983_001','civil_rights_violation','federal',1.0,2.0,'actual_damages * 2.0','42 USC §1983',0),
 ('BENEFITS_DENIAL_SSA_001','benefits_denial','federal',1.0,1.0,'back_benefits * 1.0','Social Security Act §205',0),
 ('CONSUMER_FDCPA_001','consumer_fraud','federal',1000,1.0,'statutory_damages + actual_damages','FDCPA §1692k',0);
-

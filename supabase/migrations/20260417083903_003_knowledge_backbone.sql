@@ -127,4 +127,3 @@ CREATE TABLE doctrine_registry (
   created_at      BIGINT NOT NULL DEFAULT 0,
   updated_at      BIGINT NOT NULL DEFAULT 0
 );
-

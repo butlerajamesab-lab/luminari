@@ -401,4 +401,3 @@ comment on function public.register_docket_jurisdiction_activation(text, integer
   'Registers one jurisdiction cache generation and deduplicated bill-detail work. It does not perform source retrieval, Rosetta extraction, Genome assembly, or Prism verification inline.';
 
 commit;
-

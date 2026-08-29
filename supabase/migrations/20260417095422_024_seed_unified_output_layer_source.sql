@@ -44,4 +44,3 @@ INSERT INTO unified_output_layer_source (
 // Utilities: groupByType, getGeoNodes, getUrgentNodes, getNodesByPolicyEvent, getOverdueDeadlines
 // STATUS: COMPLETE — ~600 LOC',
   0);
-

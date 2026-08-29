@@ -45,4 +45,3 @@ INSERT INTO knowledge_documents (
   'V3 (Session 7, March 2026) → Current (April 2026) codebase delta. 55 tables → 366 tables. 50 modules → ~575 files. 1 monolith routers.ts → 82 separate router files. 39 pages → 92 pages. ~104K lines → ~201K lines. Complete V3 module → current router mapping (60 modules). Critical table name translations: governance_log→governanceLog, data_streams→dataStreamRegistry, pattern_signatures→patternRegistry+patternMetadata, signals→signalFlags+signalRegistry+detectedSignals+liveSignals (SPLIT), cda_runs→dossierPackages. CDA tables absorbed into shared schema. Tech stack: React 19 / Express 4 / tRPC 11 / Drizzle ORM / TiDB MySQL-compatible. NOT PostgreSQL.',
   ARRAY['architecture','v3','reconciliation','table_mapping','critical_reference'],
   'luminari-rebuild-apr-2026', TRUE, 0, 0);
-

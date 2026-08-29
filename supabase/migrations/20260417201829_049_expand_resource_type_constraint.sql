@@ -17,4 +17,3 @@ CHECK (resource_type = ANY (ARRAY[
   'housing_provider','nonprofit','program','community_health',
   'workforce','financial_assistance','crisis_line'
 ]));
-

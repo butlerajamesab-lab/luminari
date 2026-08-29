@@ -135,4 +135,3 @@ INSERT INTO advocacy_targets (
 ('target_eeoc_funding_increase','EEOC Funding & Capacity Increase','legislative','Federal','Budget advocacy ongoing',NULL,'Increase EEOC investigator hiring; reduce case backlog',NULL,'High',ARRAY['civil_rights'],0),
 ('target_icwa_enforcement','Indian Child Welfare Act (ICWA) Enforcement Strengthening','regulatory_change','Federal','Ongoing enforcement gaps','BIA, state child welfare agencies','Increase ICWA compliance audits; reduce state jurisdiction overreach',NULL,'High',ARRAY['tribal_sovereignty'],0),
 ('target_foia_modernization','FOIA Modernization & Processing Timeline Standards','legislative','Federal','2026 legislative session pending',NULL,'Mandatory FOIA processing timeline enforcement; increase fee waivers for advocacy',NULL,'Critical',ARRAY['government_transparency'],0);
-

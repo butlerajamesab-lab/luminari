@@ -130,4 +130,3 @@ CREATE TABLE tribal_jurisdictions (
 );
 
 CREATE INDEX idx_tribal_state ON tribal_jurisdictions(state_code);
-

@@ -56,7 +56,8 @@ where assembly.run_status = 'completed'
   and assembly.verification_state = 'complete'
   and assembly.trait_count > 0
 on conflict (assembly_run_id, prism_rule_set_id, prism_rule_set_version)
-  do nothing
+  do nothing;
+
 create or replace function public.enqueue_civic_genome_prism_verification()
 returns trigger
 language plpgsql
@@ -93,6 +94,7 @@ begin
   end if;
   return new;
 end;
-$$
+$$;
+
 revoke execute on function public.enqueue_civic_genome_prism_verification()
-  from public, anon, authenticated
+  from public, anon, authenticated;

@@ -17,4 +17,4 @@
 --
 -- No tables, columns, indexes, policies, views, or canonical data are changed.
 
-select 1
+select 1;

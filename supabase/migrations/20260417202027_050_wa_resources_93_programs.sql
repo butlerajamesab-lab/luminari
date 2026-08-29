@@ -107,4 +107,3 @@ ON CONFLICT (program_key) DO UPDATE SET
 
 INSERT INTO provenance (source_file, source_migration, populated_by, layer, family, table_name, status, verified_by, notes)
 VALUES ('wa-resources__1_.json','050_wa_resources_93_programs','manus_extraction','L3','Knowledge Backbone','programs','verified','claude','93 WA resources fully structured — food, health, housing, DV, legal aid, tribal services');
-

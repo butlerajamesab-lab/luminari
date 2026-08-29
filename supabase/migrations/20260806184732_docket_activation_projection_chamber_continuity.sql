@@ -57,4 +57,3 @@ comment on constraint civic_genome_bill_version_chamber_check
   'Preserves bounded uppercase provider chamber metadata copied from the source-document receipt without forcing non-H/S chambers into a false classification.';
 
 commit;
-

@@ -84,4 +84,3 @@ CREATE TABLE knowledge_upload_sessions (
   created_at      BIGINT NOT NULL DEFAULT 0,
   completed_at    BIGINT
 );
-
