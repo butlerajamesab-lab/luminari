@@ -12,6 +12,7 @@ describe("Anomaly Viewfinder live jurisdiction cutover contract", () => {
   const router = read("./routers/resource-directory.ts");
   const migration = read("../supabase/migrations/20260816111545_anomaly_viewfinder_live_jurisdiction_projection_v1.sql");
   const parity = read("../scripts/audit-supabase-migration-ledger-parity.py");
+  const productionReceipts = read("../supabase/verification/production_migration_receipts_20260829.tsv");
 
   it("removes the static jurisdiction fact feed from the Viewfinder page", () => {
     expect(page).not.toMatch(/import\s*\{[^}]*\bSTATES\b/);
@@ -50,7 +51,10 @@ describe("Anomaly Viewfinder live jurisdiction cutover contract", () => {
   });
 
   it("records the exact production migration version without weakening parity", () => {
-    expect(parity).toContain('"20260816111545"');
+    expect(parity).toContain("PRODUCTION_RECEIPTS");
+    expect(productionReceipts).toContain(
+      "20260816111545\tanomaly_viewfinder_live_jurisdiction_projection_v1\t",
+    );
     expect(parity).toContain("MIGRATION_LEDGER_PARITY_CONTRACT=PASS");
   });
 

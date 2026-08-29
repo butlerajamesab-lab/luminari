@@ -14,6 +14,7 @@ describe("Civic Map breadth restoration and World Index memory safety", () => {
   const breadthMigration = read("../supabase/migrations/20260816120146_resource_catalog_breadth_preserving_union_v2.sql");
   const directoryMigration = read("../supabase/migrations/20260816120403_resource_directory_breadth_compatibility_projection_v3.sql");
   const parity = read("../scripts/audit-supabase-migration-ledger-parity.py");
+  const productionReceipts = read("../supabase/verification/production_migration_receipts_20260829.tsv");
 
   it("publishes the breadth-preserving resource/program projection", () => {
     expect(directory).toContain('public.v_lighthouse_resource_directory_breadth_v3');
@@ -60,7 +61,8 @@ describe("Civic Map breadth restoration and World Index memory safety", () => {
   });
 
   it("records the exact production migration versions", () => {
-    expect(parity).toContain('"20260816120146"');
-    expect(parity).toContain('"20260816120403"');
+    expect(parity).toContain("PRODUCTION_RECEIPTS");
+    expect(productionReceipts).toContain("20260816120146\tresource_catalog_breadth_preserving_union_v2\t");
+    expect(productionReceipts).toContain("20260816120403\tresource_directory_breadth_compatibility_projection_v3\t");
   });
 });
