@@ -48,3 +48,10 @@ jobs:
 
       - name: Lint replayed database
         run: supabase db lint --local --level error --fail-on error
+
+      - name: Verify retired Atlas bridge is fail-closed
+        run: >-
+          psql
+          postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          --set=ON_ERROR_STOP=1
+          --file=supabase/verification/20260505074842_retired_atlas_signal_chain_verify.sql

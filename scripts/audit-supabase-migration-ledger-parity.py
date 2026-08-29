@@ -19,6 +19,10 @@ APPROVED_REPOSITORY_ONLY = {
         "20260505074840_detected_signals_foundation.sql",
         "25ac41b0683cca0c4cc3966efd0243573fb52f9b",
     ),
+    "20260505074842": (
+        "20260505074842_retire_incompatible_atlas_signal_chain.sql",
+        "4023ec7c649a9939dacb1e8b9a53565759569423",
+    ),
     "20260513200123": (
         "20260513200123_harden_analysis_snapshots_fresh_replay.sql",
         "81ef2c910c3ce9544e2d8e50b62d9b6fd263da77",
