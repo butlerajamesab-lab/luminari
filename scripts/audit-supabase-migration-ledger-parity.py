@@ -239,6 +239,10 @@ APPROVED_REPOSITORY_ONLY = {
         "20260829093000_lighthouse_case_detail_client_lockdown.sql",
         "8649acbf35650b172adbde5eecb95afe03bed934",
     ),
+    "20260829094000": (
+        "20260829094000_legacy_function_resolution_bridges.sql",
+        "14b8774b465db0b1dc0e563aafec51f684fd9dda",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {

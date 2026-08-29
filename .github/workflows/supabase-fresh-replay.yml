@@ -47,7 +47,7 @@ jobs:
         run: supabase db reset --local --no-seed --debug
 
       - name: Lint replayed database
-        run: supabase db lint --local --level error --fail-on error
+        run: supabase db lint --local --schema public --level error --fail-on error
 
       - name: Verify retired Atlas bridge is fail-closed
         run: >-
@@ -62,3 +62,10 @@ jobs:
           postgresql://postgres:postgres@127.0.0.1:54322/postgres
           --set=ON_ERROR_STOP=1
           --file=supabase/verification/20260829093000_lighthouse_case_detail_client_lockdown_verify.sql
+
+      - name: Verify legacy function resolution bridges
+        run: >-
+          psql
+          postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          --set=ON_ERROR_STOP=1
+          --file=supabase/verification/20260829094000_legacy_function_resolution_bridges_verify.sql
