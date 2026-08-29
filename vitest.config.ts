@@ -16,6 +16,7 @@ export default defineConfig({
   test: {
     include: [
       "client/src/**/*.{test,spec}.?(c|m)[jt]s?(x)",
+      "scripts/**/*.{test,spec}.?(c|m)[jt]s?(x)",
       "server/**/*.{test,spec}.?(c|m)[jt]s?(x)",
       "shared/**/*.{test,spec}.?(c|m)[jt]s?(x)",
     ],
