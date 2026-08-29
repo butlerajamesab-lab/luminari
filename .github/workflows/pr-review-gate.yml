@@ -18,52 +18,76 @@ jobs:
     name: No unresolved review findings
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    # GitHub emits no webhook when a review thread is resolved. Keep the check
+    # alive long enough to observe the resolution instead of leaving a stale
+    # failed result attached to an otherwise remediated pull request.
+    timeout-minutes: 20
     steps:
-      - name: Reject unresolved current review threads
+      - name: Wait for current review threads to be resolved
         uses: actions/github-script@v8
         with:
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const number = context.payload.pull_request.number;
-            const unresolved = [];
-            let cursor = null;
+            const attempts = 60;
+            const intervalMs = 15_000;
 
-            do {
-              const result = await github.graphql(`
-                query($owner: String!, $repo: String!, $number: Int!, $cursor: String) {
-                  repository(owner: $owner, name: $repo) {
-                    pullRequest(number: $number) {
-                      reviewThreads(first: 100, after: $cursor) {
-                        pageInfo { hasNextPage endCursor }
-                        nodes {
-                          isResolved
-                          isOutdated
-                          comments(first: 1) {
-                            nodes { url path body }
+            async function findUnresolved() {
+              const unresolved = [];
+              let cursor = null;
+
+              do {
+                const result = await github.graphql(`
+                  query($owner: String!, $repo: String!, $number: Int!, $cursor: String) {
+                    repository(owner: $owner, name: $repo) {
+                      pullRequest(number: $number) {
+                        reviewThreads(first: 100, after: $cursor) {
+                          pageInfo { hasNextPage endCursor }
+                          nodes {
+                            isResolved
+                            isOutdated
+                            comments(first: 1) {
+                              nodes { url path body }
+                            }
                           }
                         }
                       }
                     }
                   }
-                }
-              `, { owner, repo, number, cursor });
+                `, { owner, repo, number, cursor });
 
-              const page = result.repository.pullRequest.reviewThreads;
-              for (const thread of page.nodes) {
-                if (!thread.isResolved && !thread.isOutdated) {
-                  unresolved.push(thread.comments.nodes[0] ?? {});
+                const page = result.repository.pullRequest.reviewThreads;
+                for (const thread of page.nodes) {
+                  if (!thread.isResolved && !thread.isOutdated) {
+                    unresolved.push(thread.comments.nodes[0] ?? {});
+                  }
                 }
-              }
-              cursor = page.pageInfo.hasNextPage ? page.pageInfo.endCursor : null;
-            } while (cursor);
+                cursor = page.pageInfo.hasNextPage ? page.pageInfo.endCursor : null;
+              } while (cursor);
 
-            if (unresolved.length > 0) {
-              for (const finding of unresolved) {
-                core.error(`${finding.path ?? "review"}: ${finding.url ?? "unresolved thread"}`);
+              return unresolved;
+            }
+
+            for (let attempt = 1; attempt <= attempts; attempt += 1) {
+              const unresolved = await findUnresolved();
+              if (unresolved.length === 0) {
+                core.info("No unresolved current review threads");
+                return;
               }
-              core.setFailed(`${unresolved.length} unresolved current review thread(s)`);
-            } else {
-              core.info("No unresolved current review threads");
+
+              if (attempt === attempts) {
+                for (const finding of unresolved) {
+                  core.error(`${finding.path ?? "review"}: ${finding.url ?? "unresolved thread"}`);
+                }
+                core.setFailed(`${unresolved.length} unresolved current review thread(s)`);
+                return;
+              }
+
+              core.warning(
+                `${unresolved.length} unresolved review thread(s); ` +
+                `checking again in ${intervalMs / 1000} seconds ` +
+                `(attempt ${attempt}/${attempts})`,
+              );
+              await new Promise((resolve) => setTimeout(resolve, intervalMs));
             }
