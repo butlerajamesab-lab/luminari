@@ -4,8 +4,33 @@ begin;
 -- revoked client privileges from these tables; remove the matching permissive
 -- authenticated policies as defense in depth.
 
-drop policy if exists authenticated_all_access_evidence_profiles on public.evidence_profiles;
-drop policy if exists authenticated_all_access_evidence_sources on public.evidence_sources;
-drop policy if exists authenticated_all_access_evidence_to_element_links on public.evidence_to_element_links;
+do $containment$
+declare
+  v_table_name text;
+  v_policy_name text;
+  v_relation regclass;
+begin
+  for v_table_name, v_policy_name in
+    select policy.table_name, policy.policy_name
+    from (values
+      ('evidence_profiles', 'authenticated_all_access_evidence_profiles'),
+      ('evidence_sources', 'authenticated_all_access_evidence_sources'),
+      (
+        'evidence_to_element_links',
+        'authenticated_all_access_evidence_to_element_links'
+      )
+    ) as policy(table_name, policy_name)
+  loop
+    v_relation := to_regclass(format('public.%I', v_table_name));
+    if v_relation is not null then
+      execute format(
+        'drop policy if exists %I on %s',
+        v_policy_name,
+        v_relation
+      );
+    end if;
+  end loop;
+end
+$containment$;
 
 commit;

@@ -304,8 +304,38 @@ union all select 'legal_pattern',pattern_id::text,title,description,jurisdiction
 union all select 'live_data',live_data_signal_id::text,title,description,jurisdiction_id,governance_status,severity,confidence_score,entity_resolution_status,primary_stream_id,detected_at,created_at from public.live_data_signals where is_current
 union all select 'convergence',convergence_id::text,title,description,null::text,status,null::text,null::numeric,null::text,concat_ws(':',intake_signal_id::text,legal_pattern_id::text,live_data_signal_id::text),created_at,created_at from public.signal_convergences where is_current;
 
-create or replace view public.v_signal_architecture_integrity with (security_invoker=true) as
-select (select count(*) from public.signal_events)::bigint atlas_raw_observation_count,(select count(*) from public.detected_signals)::bigint legacy_detected_signals_count,(select count(*) from public.live_signals)::bigint legacy_live_signals_count,(select count(*) from public.detected_signals_v2)::bigint prior_v2_signal_count,(select count(*) from public.intake_signals where is_current)::bigint intake_signal_count,(select count(*) from public.legal_patterns where is_current)::bigint legal_pattern_count,(select count(*) from public.live_data_signals where is_current)::bigint live_data_signal_count,(select count(*) from public.signal_convergences where is_current)::bigint convergence_count,(select max(ingested_at) from public.signal_events) latest_atlas_observation_at,'legacy_detected_signals_are_unclassified_evidence'::text legacy_status,'raw_atlas_observations_are_not_live_data_signals'::text atlas_status;
+do $integrity_view$
+declare
+  legacy_detected_count_sql text;
+  legacy_live_count_sql text;
+begin
+  legacy_detected_count_sql := case
+    when to_regclass('public.detected_signals') is null then '0::bigint'
+    else '(select count(*) from public.detected_signals)::bigint'
+  end;
+  legacy_live_count_sql := case
+    when to_regclass('public.live_signals') is null then '0::bigint'
+    else '(select count(*) from public.live_signals)::bigint'
+  end;
+
+  execute format($view$
+    create or replace view public.v_signal_architecture_integrity
+    with (security_invoker=true) as
+    select
+      (select count(*) from public.signal_events)::bigint as atlas_raw_observation_count,
+      %s as legacy_detected_signals_count,
+      %s as legacy_live_signals_count,
+      (select count(*) from public.detected_signals_v2)::bigint as prior_v2_signal_count,
+      (select count(*) from public.intake_signals where is_current)::bigint as intake_signal_count,
+      (select count(*) from public.legal_patterns where is_current)::bigint as legal_pattern_count,
+      (select count(*) from public.live_data_signals where is_current)::bigint as live_data_signal_count,
+      (select count(*) from public.signal_convergences where is_current)::bigint as convergence_count,
+      (select max(ingested_at) from public.signal_events) as latest_atlas_observation_at,
+      'legacy_detected_signals_are_unclassified_evidence'::text as legacy_status,
+      'raw_atlas_observations_are_not_live_data_signals'::text as atlas_status
+  $view$, legacy_detected_count_sql, legacy_live_count_sql);
+end
+$integrity_view$;
 
 alter table public.signal_domain_registry enable row level security;
 alter table public.intake_signals enable row level security;

@@ -9,72 +9,103 @@ begin;
 -- This change deliberately does not alter public civic/resource catalogs or
 -- any Civic Genome, Atlas, Rosetta, Prism, or Kaleidoscope contract.
 
-revoke all privileges on table
-  public.audit_trail,
-  public.benefit_applications,
-  public.case_collaborators,
-  public.case_exit_guarantees,
-  public.case_narratives,
-  public.cases,
-  public.cda_documents,
-  public.cda_evidence_gaps,
-  public.chat_messages,
-  public.checklist_items,
-  public.claims,
-  public.document_correlations,
-  public.documents,
-  public.entities,
-  public.events,
-  public.evidence,
-  public.evidence_event_links,
-  public.evidence_graph_edges,
-  public.evidence_items,
-  public.evidence_profiles,
-  public.evidence_proof_links,
-  public.evidence_sources,
-  public.evidence_to_element_links,
-  public.findings,
-  public.intake_promotion_log,
-  public.intake_records,
-  public.intake_routing_logic,
-  public.intake_staging,
-  public.map_intake_sessions,
-  public.quotes,
-  public.relationships,
-  public.share_links,
-  public.upload_sessions,
-  public.user_feedback,
-  public.users
-from anon, authenticated;
+do $containment$
+declare
+  v_table_name text;
+  v_policy_name text;
+  v_relation regclass;
+begin
+  foreach v_table_name in array array[
+    'audit_trail',
+    'benefit_applications',
+    'case_collaborators',
+    'case_exit_guarantees',
+    'case_narratives',
+    'cases',
+    'cda_documents',
+    'cda_evidence_gaps',
+    'chat_messages',
+    'checklist_items',
+    'claims',
+    'document_correlations',
+    'documents',
+    'entities',
+    'events',
+    'evidence',
+    'evidence_event_links',
+    'evidence_graph_edges',
+    'evidence_items',
+    'evidence_profiles',
+    'evidence_proof_links',
+    'evidence_sources',
+    'evidence_to_element_links',
+    'findings',
+    'intake_promotion_log',
+    'intake_records',
+    'intake_routing_logic',
+    'intake_staging',
+    'map_intake_sessions',
+    'quotes',
+    'relationships',
+    'share_links',
+    'upload_sessions',
+    'user_feedback',
+    'users'
+  ]
+  loop
+    v_relation := to_regclass(format('public.%I', v_table_name));
+    if v_relation is not null then
+      execute format(
+        'revoke all privileges on table %s from anon, authenticated',
+        v_relation
+      );
+    end if;
+  end loop;
 
-drop policy if exists authenticated_all_access_audit_trail on public.audit_trail;
-drop policy if exists authenticated_all_access_benefit_applications on public.benefit_applications;
-drop policy if exists authenticated_all_access_case_collaborators on public.case_collaborators;
-drop policy if exists authenticated_all_access_case_exit_guarantees on public.case_exit_guarantees;
-drop policy if exists authenticated_all_access_case_narratives on public.case_narratives;
-drop policy if exists authenticated_all_access_cda_documents on public.cda_documents;
-drop policy if exists authenticated_all_access_cda_evidence_gaps on public.cda_evidence_gaps;
-drop policy if exists authenticated_all_access_chat_messages on public.chat_messages;
-drop policy if exists authenticated_all_access_checklist_items on public.checklist_items;
-drop policy if exists authenticated_all_access_claims on public.claims;
-drop policy if exists authenticated_all_access_document_correlations on public.document_correlations;
-drop policy if exists authenticated_all_access_events on public.events;
-drop policy if exists authenticated_all_access_evidence on public.evidence;
-drop policy if exists authenticated_all_access_evidence_event_links on public.evidence_event_links;
-drop policy if exists authenticated_all_access_evidence_graph_edges on public.evidence_graph_edges;
-drop policy if exists authenticated_all_access_evidence_items on public.evidence_items;
-drop policy if exists authenticated_all_access_evidence_proof_links on public.evidence_proof_links;
-drop policy if exists authenticated_all_access_findings on public.findings;
-drop policy if exists auth_read_intake_promotion_log on public.intake_promotion_log;
-drop policy if exists authenticated_all_access_intake_records on public.intake_records;
-drop policy if exists authenticated_all_access_intake_routing_logic on public.intake_routing_logic;
-drop policy if exists auth_read_intake_staging on public.intake_staging;
-drop policy if exists authenticated_all_access_map_intake_sessions on public.map_intake_sessions;
-drop policy if exists authenticated_all_access_quotes on public.quotes;
-drop policy if exists authenticated_all_access_relationships on public.relationships;
-drop policy if exists authenticated_all_access_share_links on public.share_links;
-drop policy if exists authenticated_all_access_upload_sessions on public.upload_sessions;
-drop policy if exists authenticated_all_access_user_feedback on public.user_feedback;
-drop policy if exists authenticated_all_access_users on public.users;
+  for v_table_name, v_policy_name in
+    select policy.table_name, policy.policy_name
+    from (values
+      ('audit_trail', 'authenticated_all_access_audit_trail'),
+      ('benefit_applications', 'authenticated_all_access_benefit_applications'),
+      ('case_collaborators', 'authenticated_all_access_case_collaborators'),
+      ('case_exit_guarantees', 'authenticated_all_access_case_exit_guarantees'),
+      ('case_narratives', 'authenticated_all_access_case_narratives'),
+      ('cda_documents', 'authenticated_all_access_cda_documents'),
+      ('cda_evidence_gaps', 'authenticated_all_access_cda_evidence_gaps'),
+      ('chat_messages', 'authenticated_all_access_chat_messages'),
+      ('checklist_items', 'authenticated_all_access_checklist_items'),
+      ('claims', 'authenticated_all_access_claims'),
+      ('document_correlations', 'authenticated_all_access_document_correlations'),
+      ('events', 'authenticated_all_access_events'),
+      ('evidence', 'authenticated_all_access_evidence'),
+      ('evidence_event_links', 'authenticated_all_access_evidence_event_links'),
+      ('evidence_graph_edges', 'authenticated_all_access_evidence_graph_edges'),
+      ('evidence_items', 'authenticated_all_access_evidence_items'),
+      ('evidence_proof_links', 'authenticated_all_access_evidence_proof_links'),
+      ('findings', 'authenticated_all_access_findings'),
+      ('intake_promotion_log', 'auth_read_intake_promotion_log'),
+      ('intake_records', 'authenticated_all_access_intake_records'),
+      ('intake_routing_logic', 'authenticated_all_access_intake_routing_logic'),
+      ('intake_staging', 'auth_read_intake_staging'),
+      ('map_intake_sessions', 'authenticated_all_access_map_intake_sessions'),
+      ('quotes', 'authenticated_all_access_quotes'),
+      ('relationships', 'authenticated_all_access_relationships'),
+      ('share_links', 'authenticated_all_access_share_links'),
+      ('upload_sessions', 'authenticated_all_access_upload_sessions'),
+      ('user_feedback', 'authenticated_all_access_user_feedback'),
+      ('users', 'authenticated_all_access_users')
+    ) as policy(table_name, policy_name)
+  loop
+    v_relation := to_regclass(format('public.%I', v_table_name));
+    if v_relation is not null then
+      execute format(
+        'drop policy if exists %I on %s',
+        v_policy_name,
+        v_relation
+      );
+    end if;
+  end loop;
+end
+$containment$;
 
 commit;

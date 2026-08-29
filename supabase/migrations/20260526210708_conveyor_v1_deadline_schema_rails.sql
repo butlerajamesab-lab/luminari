@@ -117,17 +117,51 @@ create index if not exists idx_conveyor_promotion_accounting_run on public.conve
 create index if not exists idx_conveyor_promotion_accounting_lane_status on public.conveyor_promotion_accounting(lane, status);
 create index if not exists idx_conveyor_promotion_accounting_dedupe on public.conveyor_promotion_accounting(dedupe_key);
 
-create or replace view public.v_conveyor_deadline_status as
-select
-  'deadline'::text as lane,
-  (select count(*) from public.registry_entity_extraction_v4 where lower(coalesce(program_id,'') || ' ' || coalesce(name,'') || ' ' || coalesce(promotion_ready::text,'')) ~ '(deadline|deadline_rule|workflow_deadline|procedural_path)') as v4_candidate_rows,
-  (select count(*) from public.extraction_staging where lower(coalesce(signal_type,'') || ' ' || coalesce(title,'') || ' ' || coalesce(explanation,'') || ' ' || coalesce(pattern_summary,'')) ~ '(deadline|deadline_rule|workflow_deadline|procedural_path)') as staging_candidate_rows,
-  (select count(*) from public.conveyor_validation_log where lane='deadline' and validation_status='pass') as validation_passed,
-  (select count(*) from public.conveyor_validation_log where lane='deadline' and validation_status='fail') as validation_failed,
-  (select count(*) from public.registry_deadline_rules) as promoted_canonical_rows,
-  (select count(*) from public.atlas_lighthouse_deadline_bridge_v1) as bridged_rows,
-  (select status from public.conveyor_runs where lane='deadline' order by started_at desc limit 1) as last_run_status,
-  (select started_at from public.conveyor_runs where lane='deadline' order by started_at desc limit 1) as last_run_at;
+-- extraction_staging is a legacy source outside the tracked ledger. Keep the
+-- canonical conveyor tables, but publish the mixed-source status view only
+-- when the staging search contract exists.
+do $compatibility$
+declare
+  prerequisite_count integer;
+  target_kind "char";
+begin
+  select count(*)
+    into prerequisite_count
+  from information_schema.columns
+  where table_schema = 'public'
+    and table_name = 'extraction_staging'
+    and column_name = any(array[
+      'signal_type',
+      'title',
+      'explanation',
+      'pattern_summary'
+    ]);
+
+  select c.relkind
+    into target_kind
+  from pg_class c
+  join pg_namespace n on n.oid = c.relnamespace
+  where n.nspname = 'public'
+    and c.relname = 'v_conveyor_deadline_status';
+
+  if prerequisite_count = 4
+     and (target_kind is null or target_kind = 'v') then
+    execute $view$
+      create or replace view public.v_conveyor_deadline_status as
+      select
+        'deadline'::text as lane,
+        (select count(*) from public.registry_entity_extraction_v4 where lower(coalesce(program_id,'') || ' ' || coalesce(name,'') || ' ' || coalesce(promotion_ready::text,'')) ~ '(deadline|deadline_rule|workflow_deadline|procedural_path)') as v4_candidate_rows,
+        (select count(*) from public.extraction_staging where lower(coalesce(signal_type,'') || ' ' || coalesce(title,'') || ' ' || coalesce(explanation,'') || ' ' || coalesce(pattern_summary,'')) ~ '(deadline|deadline_rule|workflow_deadline|procedural_path)') as staging_candidate_rows,
+        (select count(*) from public.conveyor_validation_log where lane='deadline' and validation_status='pass') as validation_passed,
+        (select count(*) from public.conveyor_validation_log where lane='deadline' and validation_status='fail') as validation_failed,
+        (select count(*) from public.registry_deadline_rules) as promoted_canonical_rows,
+        (select count(*) from public.atlas_lighthouse_deadline_bridge_v1) as bridged_rows,
+        (select status from public.conveyor_runs where lane='deadline' order by started_at desc limit 1) as last_run_status,
+        (select started_at from public.conveyor_runs where lane='deadline' order by started_at desc limit 1) as last_run_at
+    $view$;
+  end if;
+end
+$compatibility$;
 
 create or replace view public.v_atlas_deadline_runtime as
 select

@@ -185,6 +185,7 @@ from grouped;
 do $guard$
 declare
   allowlisted_records integer;
+  source_corpus_rows bigint;
   matched_resources integer;
   address_occurrences integer;
   distinct_locations integer;
@@ -192,6 +193,10 @@ declare
 begin
   select count(*) into allowlisted_records
   from tmp_sdr_manual_location_allowlist;
+
+  select count(*) into source_corpus_rows
+  from public.state_directory_logical_record
+  where run_id = 'state_directory_reassembly_v1_20260729';
 
   select count(distinct resource_entity_id) into matched_resources
   from tmp_sdr_manual_location_source;
@@ -210,25 +215,28 @@ begin
       allowlisted_records;
   end if;
 
-  if matched_resources <> 64 then
+  -- Fresh/preview schema replay intentionally has no imported v3.13 corpus.
+  -- Preserve the reviewed allowlist, but enforce the exact production counts
+  -- whenever any source corpus rows are present so partial imports still fail.
+  if source_corpus_rows > 0 and matched_resources <> 64 then
     raise exception
       'manual location recovery entity match drift: expected 64, found %',
       matched_resources;
   end if;
 
-  if address_occurrences <> 196 then
+  if source_corpus_rows > 0 and address_occurrences <> 196 then
     raise exception
       'manual location recovery source occurrence drift: expected 196, found %',
       address_occurrences;
   end if;
 
-  if distinct_locations <> 195 then
+  if source_corpus_rows > 0 and distinct_locations <> 195 then
     raise exception
       'manual location recovery distinct location drift: expected 195, found %',
       distinct_locations;
   end if;
 
-  if covered_resources <> 64 then
+  if source_corpus_rows > 0 and covered_resources <> 64 then
     raise exception
       'manual location recovery coverage drift: expected 64, found %',
       covered_resources;
@@ -319,10 +327,15 @@ where e.resource_entity_id = r.resource_entity_id;
 
 do $acceptance$
 declare
+  source_corpus_rows bigint;
   recovered_locations integer;
   recovered_resources integer;
   uncovered_resources integer;
 begin
+  select count(*) into source_corpus_rows
+  from public.state_directory_logical_record
+  where run_id = 'state_directory_reassembly_v1_20260729';
+
   select
     count(*)::integer,
     count(distinct resource_entity_id)::integer
@@ -344,13 +357,13 @@ begin
       and nullif(btrim(l.address_line1), '') is not null
   );
 
-  if recovered_locations <> 195 then
+  if source_corpus_rows > 0 and recovered_locations <> 195 then
     raise exception
       'manual location recovery write drift: expected 195, found %',
       recovered_locations;
   end if;
 
-  if recovered_resources <> 64 then
+  if source_corpus_rows > 0 and recovered_resources <> 64 then
     raise exception
       'manual location recovery resource drift: expected 64, found %',
       recovered_resources;
@@ -360,6 +373,14 @@ begin
     raise exception
       'manual location recovery incomplete: % allowlisted resources remain uncovered',
       uncovered_resources;
+  end if;
+
+  if source_corpus_rows = 0
+     and (recovered_locations <> 0 or recovered_resources <> 0) then
+    raise exception
+      'manual location recovery wrote rows without a source corpus: % locations across % resources',
+      recovered_locations,
+      recovered_resources;
   end if;
 end
 $acceptance$;

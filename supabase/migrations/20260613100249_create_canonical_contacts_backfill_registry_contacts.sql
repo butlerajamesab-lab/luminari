@@ -58,6 +58,32 @@ create trigger trg_contacts_updated_at
 before update on public.contacts
 for each row execute function public.set_contacts_updated_at();
 
+-- Registry sources predate complete migration tracking. Build the canonical
+-- contacts substrate unconditionally, but run each backfill only when its
+-- complete legacy source contract is available.
+do $compatibility$
+declare
+  missing_prerequisites integer;
+begin
+  select count(*)
+    into missing_prerequisites
+  from (values
+    ('committee_registry', 'uuid'), ('committee_registry', 'contact'),
+    ('grants_registry', 'uuid'), ('grants_registry', 'contact'),
+    ('legislator_registry', 'uuid'), ('legislator_registry', 'contact'),
+    ('nonprofit_registry', 'uuid'), ('nonprofit_registry', 'contact'),
+    ('oversight_registry', 'uuid'), ('oversight_registry', 'contact')
+  ) required(table_name, column_name)
+  where not exists (
+    select 1
+    from information_schema.columns c
+    where c.table_schema = 'public'
+      and c.table_name = required.table_name
+      and c.column_name = required.column_name
+  );
+
+  if missing_prerequisites = 0 then
+    execute $backfill$
 with source_contacts as (
   select 'committee' as entity_type, 'committee_registry' as entity_table, uuid::text as entity_id, key, value, 'committee_registry.contact' as source
   from public.committee_registry cross join lateral jsonb_each_text(contact)
@@ -87,8 +113,55 @@ insert into public.contacts (entity_type, entity_table, entity_id, contact_type,
 select entity_type, entity_table, entity_id, contact_type, value, label, false, source, provenance
 from normalized
 where value <> ''
-on conflict do nothing;
+on conflict do nothing
+    $backfill$;
+  end if;
+end
+$compatibility$;
 
+do $compatibility$
+declare
+  missing_prerequisites integer;
+begin
+  select count(*)
+    into missing_prerequisites
+  from (values
+    ('committee_registry', 'uuid'),
+    ('committee_registry', 'contact_email_norm'),
+    ('committee_registry', 'contact_phone_norm'),
+    ('committee_registry', 'contact_website_norm'),
+    ('committee_registry', 'contact_physical_address_norm'),
+    ('grants_registry', 'uuid'),
+    ('grants_registry', 'contact_email_norm'),
+    ('grants_registry', 'contact_phone_norm'),
+    ('grants_registry', 'contact_website_norm'),
+    ('grants_registry', 'contact_physical_address_norm'),
+    ('legislator_registry', 'uuid'),
+    ('legislator_registry', 'contact_email_norm'),
+    ('legislator_registry', 'contact_phone_norm'),
+    ('legislator_registry', 'contact_website_norm'),
+    ('legislator_registry', 'contact_physical_address_norm'),
+    ('nonprofit_registry', 'uuid'),
+    ('nonprofit_registry', 'contact_email_norm'),
+    ('nonprofit_registry', 'contact_phone_norm'),
+    ('nonprofit_registry', 'contact_website_norm'),
+    ('nonprofit_registry', 'contact_physical_address_norm'),
+    ('oversight_registry', 'uuid'),
+    ('oversight_registry', 'contact_email_norm'),
+    ('oversight_registry', 'contact_phone_norm'),
+    ('oversight_registry', 'contact_website_norm'),
+    ('oversight_registry', 'contact_physical_address_norm')
+  ) required(table_name, column_name)
+  where not exists (
+    select 1
+    from information_schema.columns c
+    where c.table_schema = 'public'
+      and c.table_name = required.table_name
+      and c.column_name = required.column_name
+  );
+
+  if missing_prerequisites = 0 then
+    execute $backfill$
 with registry_rows as (
   select 'committee' as entity_type, 'committee_registry' as entity_table, uuid::text as entity_id, contact_email_norm, contact_phone_norm, contact_website_norm, contact_physical_address_norm from public.committee_registry
   union all
@@ -112,14 +185,35 @@ insert into public.contacts (entity_type, entity_table, entity_id, contact_type,
 select entity_type, entity_table, entity_id, contact_type, value, label, false, source,
        jsonb_build_object('source_column', split_part(source,'.',2), 'backfill_migration','create_canonical_contacts_backfill_registry_contacts')
 from exploded
-on conflict do nothing;
+on conflict do nothing
+    $backfill$;
+  end if;
+end
+$compatibility$;
 
+do $compatibility$
+declare
+  prerequisite_count integer;
+begin
+  select count(*)
+    into prerequisite_count
+  from information_schema.columns
+  where table_schema = 'public'
+    and table_name = 'registry_programs'
+    and column_name = any(array['id', 'contact']);
+
+  if prerequisite_count = 2 then
+    execute $backfill$
 insert into public.contacts (entity_type, entity_table, entity_id, contact_type, value, label, is_primary, source, provenance)
 select 'program', 'registry_programs', id::text, 'text_contact', trim(contact), 'legacy_text_contact', true, 'registry_programs.contact',
        jsonb_build_object('source_column','contact','source_type','text','backfill_migration','create_canonical_contacts_backfill_registry_contacts')
 from public.registry_programs
 where nullif(trim(coalesce(contact,'')),'') is not null
-on conflict do nothing;
+on conflict do nothing
+    $backfill$;
+  end if;
+end
+$compatibility$;
 
 update public.contacts c
 set is_primary = true

@@ -57,7 +57,15 @@ insert into public.docket_source_reference_date_receipt (
   reference_date,
   source_observed_marker,
   derivation_rule_version
-) values
+)
+select
+  candidate.source_document_key,
+  candidate.provider_hash,
+  candidate.source_content_hash,
+  candidate.reference_date,
+  candidate.source_observed_marker,
+  candidate.derivation_rule_version
+from (values
   (
     'text:2064783:3298849',
     'a0c94db2b4b86f2fee3a2be5a50c8a38',
@@ -90,6 +98,16 @@ insert into public.docket_source_reference_date_receipt (
     'WITHDRAWN 02/17/2026',
     'official-source-status-date-v1'
   )
+) as candidate(
+  source_document_key,
+  provider_hash,
+  source_content_hash,
+  reference_date,
+  source_observed_marker,
+  derivation_rule_version
+)
+join public.docket_bill_source_document document
+  on document.source_document_key = candidate.source_document_key
 on conflict (source_document_key) do update
 set provider_hash = excluded.provider_hash,
     source_content_hash = excluded.source_content_hash,

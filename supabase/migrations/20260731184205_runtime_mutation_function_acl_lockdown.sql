@@ -54,7 +54,12 @@ begin
   foreach function_signature in array target_signatures loop
     function_oid := to_regprocedure(function_signature);
     if function_oid is null then
-      raise exception 'runtime security target function is missing: %', function_signature;
+      -- A clean replay can legitimately omit operational functions that were
+      -- created manually in the historical production database. Absence is
+      -- already fail-closed: there is no executable boundary to grant. Keep
+      -- processing so every function that does exist is still locked down.
+      raise warning 'runtime security target function is absent and therefore not executable: %', function_signature;
+      continue;
     end if;
 
     execute format(

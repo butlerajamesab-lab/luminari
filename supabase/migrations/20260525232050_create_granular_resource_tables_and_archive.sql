@@ -10,19 +10,73 @@ CREATE TABLE IF NOT EXISTS raw_material_archive (
   UNIQUE(source_table, source_id)
 );
 
--- Archive raw_table_cells
-INSERT INTO raw_material_archive (source_table, source_id, raw_content, archive_hash)
-SELECT 'raw_table_cells', id::text, json_build_object('id', id, 'cell_text', cell_text, 'table_id', table_id, 'registry_id', registry_id, 'row_index', row_index, 'column_index', column_index), 
-  substring(md5(id::text || cell_text), 1, 32)
-FROM raw_table_cells
-ON CONFLICT DO NOTHING;
+-- The legacy archive sources predate complete migration tracking. Preserve
+-- their rows when the exact source contracts exist; an absent optional source
+-- must not prevent the archive and granular staging schema from being built.
+do $archive$
+declare
+  prerequisite_count integer;
+begin
+  select count(*)
+    into prerequisite_count
+  from information_schema.columns
+  where table_schema = 'public'
+    and table_name = 'raw_table_cells'
+    and column_name = any(array[
+      'id',
+      'cell_text',
+      'table_id',
+      'registry_id',
+      'row_index',
+      'column_index'
+    ]);
 
--- Archive field_dictionary
-INSERT INTO raw_material_archive (source_table, source_id, raw_content, archive_hash)
-SELECT 'field_dictionary', id::text, json_build_object('id', id, 'field_name', field_name), 
-  substring(md5(id::text || field_name), 1, 32)
-FROM field_dictionary
-ON CONFLICT DO NOTHING;
+  if prerequisite_count = 6 then
+    execute $insert$
+      insert into public.raw_material_archive
+        (source_table, source_id, raw_content, archive_hash)
+      select
+        'raw_table_cells',
+        id::text,
+        json_build_object(
+          'id', id,
+          'cell_text', cell_text,
+          'table_id', table_id,
+          'registry_id', registry_id,
+          'row_index', row_index,
+          'column_index', column_index
+        ),
+        substring(md5(id::text || cell_text), 1, 32)
+      from public.raw_table_cells
+      on conflict do nothing
+    $insert$;
+  end if;
+
+  select count(*)
+    into prerequisite_count
+  from information_schema.columns
+  where table_schema = 'public'
+    and table_name = 'field_dictionary'
+    and column_name = any(array[
+      'id',
+      'field_name'
+    ]);
+
+  if prerequisite_count = 2 then
+    execute $insert$
+      insert into public.raw_material_archive
+        (source_table, source_id, raw_content, archive_hash)
+      select
+        'field_dictionary',
+        id::text,
+        json_build_object('id', id, 'field_name', field_name),
+        substring(md5(id::text || field_name), 1, 32)
+      from public.field_dictionary
+      on conflict do nothing
+    $insert$;
+  end if;
+end
+$archive$;
 
 -- GRANULAR RESOURCE TYPE STAGING TABLES (UI-ready)
 CREATE TABLE IF NOT EXISTS registry_entity_staging_food_banks (

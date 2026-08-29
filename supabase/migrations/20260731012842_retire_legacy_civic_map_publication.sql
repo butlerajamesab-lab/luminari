@@ -19,28 +19,37 @@ begin
     on p.resource_entity_id = e.resource_entity_id
   where e.source_table = 'state_directory_logical_record';
 
-  if canonical_resource_count <> 4178 then
+  -- Fresh/preview replay has schema but no imported v3.13 corpus. Once any
+  -- canonical source rows exist, require the exact reviewed production set.
+  if canonical_resource_count > 0 and canonical_resource_count <> 4178 then
     raise exception
       'Canonical directory guard failed: expected 4178 resources, found %',
       canonical_resource_count;
   end if;
 
-  if active_resource_count <> 4177 then
+  if canonical_resource_count > 0 and active_resource_count <> 4177 then
     raise exception
       'Canonical directory publication guard failed: expected 4177 active resources, found %',
       active_resource_count;
   end if;
 
-  select count(*)::int
-  into legacy_map_count
-  from public.v_ui_civic_map_v2;
+  if to_regclass('public.v_ui_civic_map_v2') is null then
+    legacy_map_count := 0;
+  else
+    execute 'select count(*)::int from public.v_ui_civic_map_v2'
+      into legacy_map_count;
+  end if;
 
-  if legacy_map_count < 1 then
+  if canonical_resource_count > 0 and legacy_map_count < 1 then
     raise exception
       'Legacy map guard failed: expected the legacy projection to contain rows before replacement';
   end if;
 
-  with lane_status as (
+  if canonical_resource_count = 0 then
+    fanout_missing_target_count := 0;
+    fanout_held_count := 0;
+  else
+    with lane_status as (
     select
       count(*)::int as ledger_rows,
       count(*) filter (
@@ -194,7 +203,8 @@ begin
     coalesce(sum(ledger_rows - resolved_rows), 0)::int,
     coalesce(sum(held_rows), 0)::int
   into fanout_missing_target_count, fanout_held_count
-  from lane_status;
+    from lane_status;
+  end if;
 
   if fanout_missing_target_count <> 0 then
     raise exception
@@ -202,10 +212,18 @@ begin
       fanout_missing_target_count;
   end if;
 
-  if fanout_held_count <> 174 then
+  if canonical_resource_count > 0 and fanout_held_count <> 174 then
     raise exception
       'Canonical hold guard failed: expected 174 intentionally held rows, found %',
       fanout_held_count;
+  end if;
+
+  if canonical_resource_count = 0
+     and (active_resource_count <> 0
+       or fanout_missing_target_count <> 0
+       or fanout_held_count <> 0) then
+    raise exception
+      'Fresh replay has canonical fan-out state without source resources';
   end if;
 end
 $guard$;

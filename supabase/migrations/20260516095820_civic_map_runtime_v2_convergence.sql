@@ -1,55 +1,123 @@
-drop view if exists public.v_civic_map_runtime_v2 cascade;
+-- The original convergence migration assumed two registry tables created
+-- outside the tracked ledger and dropped dependent views before checking.
+-- Publish the compatibility surface only when both source contracts exist.
+do $compatibility$
+declare
+  registry_column_count integer;
+  normalized_column_count integer;
+  circulation_kind "char";
+  runtime_kind "char";
+begin
+  select count(*)
+    into registry_column_count
+  from information_schema.columns
+  where table_schema = 'public'
+    and table_name = 'registry_programs'
+    and column_name = any(array[
+      'id',
+      'name_rp',
+      'category_rp',
+      'agency_rp',
+      'jurisdiction_id_rp',
+      'website_rp',
+      'contact_rp',
+      'created_at_rp'
+    ]);
 
-drop view if exists public.v_unified_civic_circulation cascade;
+  select count(*)
+    into normalized_column_count
+  from information_schema.columns
+  where table_schema = 'public'
+    and table_name = 'normalized_civic_resource'
+    and column_name = any(array[
+      'id',
+      'name',
+      'organization_name',
+      'resource_type',
+      'agency_name',
+      'state',
+      'website_url',
+      'phone',
+      'created_at',
+      'latitude',
+      'longitude'
+    ]);
 
-create view public.v_unified_civic_circulation as
-select
-  rp.id::text as canonical_id,
-  coalesce(rp.name_rp, 'Unnamed Program') as display_name,
-  coalesce(rp.category_rp, 'resource') as resource_category,
-  rp.agency_rp as organization,
-  rp.jurisdiction_id_rp as jurisdiction_id,
-  rp.website_rp as source_url,
-  rp.contact_rp as contact,
-  to_timestamp(rp.created_at_rp) as created_at,
-  'registry_programs' as source_layer,
-  null::numeric as latitude,
-  null::numeric as longitude,
-  null::text as state_code
-from public.registry_programs rp
+  select c.relkind
+    into circulation_kind
+  from pg_class c
+  join pg_namespace n on n.oid = c.relnamespace
+  where n.nspname = 'public'
+    and c.relname = 'v_unified_civic_circulation';
 
-union all
+  select c.relkind
+    into runtime_kind
+  from pg_class c
+  join pg_namespace n on n.oid = c.relnamespace
+  where n.nspname = 'public'
+    and c.relname = 'v_civic_map_runtime_v2';
 
-select
-  ncr.id::text as canonical_id,
-  coalesce(ncr.name, ncr.organization_name, 'Unnamed Resource') as display_name,
-  coalesce(ncr.resource_type, 'resource') as resource_category,
-  coalesce(ncr.organization_name, ncr.agency_name) as organization,
-  ncr.state as jurisdiction_id,
-  ncr.website_url as source_url,
-  ncr.phone as contact,
-  ncr.created_at,
-  'normalized_civic_resource' as source_layer,
-  ncr.latitude,
-  ncr.longitude,
-  ncr.state as state_code
-from public.normalized_civic_resource ncr;
+  if registry_column_count = 8
+     and normalized_column_count = 11
+     and (circulation_kind is null or circulation_kind = 'v')
+     and (runtime_kind is null or runtime_kind = 'v') then
+    execute $view$
+      create or replace view public.v_unified_civic_circulation as
+      select
+        rp.id::text as canonical_id,
+        coalesce(rp.name_rp, 'Unnamed Program') as display_name,
+        coalesce(rp.category_rp, 'resource') as resource_category,
+        rp.agency_rp as organization,
+        rp.jurisdiction_id_rp as jurisdiction_id,
+        rp.website_rp as source_url,
+        rp.contact_rp as contact,
+        to_timestamp(rp.created_at_rp) as created_at,
+        'registry_programs' as source_layer,
+        null::numeric as latitude,
+        null::numeric as longitude,
+        null::text as state_code
+      from public.registry_programs rp
 
-create view public.v_civic_map_runtime_v2 as
-select
-  canonical_id,
-  display_name,
-  resource_category,
-  organization,
-  jurisdiction_id,
-  source_url,
-  contact,
-  created_at,
-  source_layer,
-  latitude,
-  longitude,
-  state_code
-from public.v_unified_civic_circulation;
+      union all
 
-grant select on public.v_unified_civic_circulation to anon, authenticated, service_role;
-grant select on public.v_civic_map_runtime_v2 to anon, authenticated, service_role;
+      select
+        ncr.id::text as canonical_id,
+        coalesce(ncr.name, ncr.organization_name, 'Unnamed Resource') as display_name,
+        coalesce(ncr.resource_type, 'resource') as resource_category,
+        coalesce(ncr.organization_name, ncr.agency_name) as organization,
+        ncr.state as jurisdiction_id,
+        ncr.website_url as source_url,
+        ncr.phone as contact,
+        ncr.created_at,
+        'normalized_civic_resource' as source_layer,
+        ncr.latitude,
+        ncr.longitude,
+        ncr.state as state_code
+      from public.normalized_civic_resource ncr
+    $view$;
+
+    execute $view$
+      create or replace view public.v_civic_map_runtime_v2 as
+      select
+        canonical_id,
+        display_name,
+        resource_category,
+        organization,
+        jurisdiction_id,
+        source_url,
+        contact,
+        created_at,
+        source_layer,
+        latitude,
+        longitude,
+        state_code
+      from public.v_unified_civic_circulation
+    $view$;
+
+    grant select on public.v_unified_civic_circulation
+      to anon, authenticated, service_role;
+    grant select on public.v_civic_map_runtime_v2
+      to anon, authenticated, service_role;
+  end if;
+end
+$compatibility$;

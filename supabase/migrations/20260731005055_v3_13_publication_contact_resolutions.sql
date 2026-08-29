@@ -56,6 +56,7 @@ do $guard$
 declare
   matched_contact_rows integer;
   matched_resource_rows integer;
+  live_source_count bigint;
 begin
   select count(*)
   into matched_contact_rows
@@ -145,12 +146,6 @@ begin
    and actual.contact_type = expected.contact_type
    and actual.contact_value = expected.contact_value;
 
-  if matched_contact_rows <> 12 then
-    raise exception
-      'Publication contact source guard failed: expected 12 exact contacts, found %',
-      matched_contact_rows;
-  end if;
-
   select count(*)
   into matched_resource_rows
   from (
@@ -196,7 +191,15 @@ begin
     on actual.resource_entity_id = expected.resource_entity_id
    and actual.source_table = expected.source_table;
 
-  if matched_resource_rows <> 9 then
+  live_source_count := matched_contact_rows + matched_resource_rows;
+
+  if live_source_count > 0 and matched_contact_rows <> 12 then
+    raise exception
+      'Publication contact source guard failed: expected 12 exact contacts, found %',
+      matched_contact_rows;
+  end if;
+
+  if live_source_count > 0 and matched_resource_rows <> 9 then
     raise exception
       'Publication resource source guard failed: expected 9 resources, found %',
       matched_resource_rows;
@@ -214,7 +217,16 @@ insert into public.luminari_resource_publication_resolutions (
   reviewed_at,
   updated_at
 )
-values
+select
+  reviewed.resource_entity_id::uuid,
+  reviewed.publication_status,
+  reviewed.display_name_override,
+  reviewed.source_reference,
+  reviewed.review_note,
+  reviewed.review_version,
+  reviewed.reviewed_at::timestamptz,
+  reviewed.updated_at::timestamptz
+from (values
   (
     '26a04d4e-e7c3-d06a-2196-249897e9aea1',
     'active',
@@ -305,6 +317,21 @@ values
     '2026-07-31T02:30:00Z',
     now()
   )
+) as reviewed(
+  resource_entity_id,
+  publication_status,
+  display_name_override,
+  source_reference,
+  review_note,
+  review_version,
+  reviewed_at,
+  updated_at
+)
+where exists (
+  select 1
+  from public.luminari_resource_entities entity
+  where entity.resource_entity_id = reviewed.resource_entity_id::uuid
+)
 on conflict (resource_entity_id) do update
 set
   publication_status = excluded.publication_status,
@@ -328,7 +355,19 @@ insert into public.luminari_resource_contact_resolutions (
   reviewed_at,
   updated_at
 )
-values
+select
+  reviewed.contact_point_id::uuid,
+  reviewed.resource_entity_id::uuid,
+  reviewed.resolution_action,
+  reviewed.replacement_contact_type,
+  reviewed.replacement_contact_value,
+  reviewed.replacement_label,
+  reviewed.source_reference,
+  reviewed.review_note,
+  reviewed.review_version,
+  reviewed.reviewed_at::timestamptz,
+  reviewed.updated_at::timestamptz
+from (values
   (
     'b4162459-9b99-dc3a-df6e-66fe0944f786',
     '26a04d4e-e7c3-d06a-2196-249897e9aea1',
@@ -485,6 +524,25 @@ values
     '2026-07-31T02:30:00Z',
     now()
   )
+) as reviewed(
+  contact_point_id,
+  resource_entity_id,
+  resolution_action,
+  replacement_contact_type,
+  replacement_contact_value,
+  replacement_label,
+  source_reference,
+  review_note,
+  review_version,
+  reviewed_at,
+  updated_at
+)
+where exists (
+  select 1
+  from public.luminari_resource_contact_points contact
+  where contact.contact_point_id = reviewed.contact_point_id::uuid
+    and contact.resource_entity_id = reviewed.resource_entity_id::uuid
+)
 on conflict (contact_point_id) do update
 set
   resource_entity_id = excluded.resource_entity_id,
@@ -561,13 +619,16 @@ declare
   resolution_count integer;
   current_unsafe_count integer;
   inactive_contact_count integer;
+  live_source_count bigint;
 begin
   select count(*)
   into resolution_count
   from public.luminari_resource_contact_resolutions
   where review_version = 'v3_13_publication_contact_review_v1';
 
-  if resolution_count <> 12 then
+  live_source_count := resolution_count;
+
+  if live_source_count > 0 and resolution_count <> 12 then
     raise exception
       'Expected 12 publication contact resolutions, found %',
       resolution_count;
@@ -598,6 +659,11 @@ begin
     raise exception
       'Inactive publication still has current contact rows: %',
       inactive_contact_count;
+  end if;
+
+  if live_source_count = 0 and resolution_count <> 0 then
+    raise exception
+      'Publication contact resolutions were written without source resources';
   end if;
 end
 $verify$;

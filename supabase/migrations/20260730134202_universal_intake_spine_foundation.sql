@@ -8,6 +8,43 @@ begin
 end;
 $$;
 
+-- An older intake experiment used the same table name with an incompatible
+-- bigint-keyed contract. Preserve that empty fresh-replay shell for its legacy
+-- foreign keys, then create the UUID-keyed universal spine under the canonical
+-- name. Refuse to move a populated table: historical data requires an explicit
+-- audited data migration, never an implicit schema replay conversion.
+do $compatibility$
+declare
+  legacy_row_count bigint;
+begin
+  if to_regclass('public.intake_sessions') is not null
+     and not exists (
+       select 1
+       from information_schema.columns
+       where table_schema = 'public'
+         and table_name = 'intake_sessions'
+         and column_name = 'intake_session_id'
+     ) then
+    if to_regclass('public.intake_sessions_legacy_v1') is not null then
+      raise exception
+        'both public.intake_sessions and public.intake_sessions_legacy_v1 exist without the universal intake contract';
+    end if;
+
+    lock table public.intake_sessions in access exclusive mode;
+    select count(*) into legacy_row_count from public.intake_sessions;
+    if legacy_row_count <> 0 then
+      raise exception
+        'legacy public.intake_sessions contains % rows; explicit audited migration required',
+        legacy_row_count;
+    end if;
+
+    alter table public.intake_sessions rename to intake_sessions_legacy_v1;
+    alter table public.intake_sessions_legacy_v1
+      rename constraint intake_sessions_pkey to intake_sessions_legacy_v1_pkey;
+  end if;
+end
+$compatibility$;
+
 create table if not exists public.case_identity_bridge (
   case_uuid uuid primary key default gen_random_uuid(),
   legacy_case_id integer not null unique references public.cases(id) on delete cascade,

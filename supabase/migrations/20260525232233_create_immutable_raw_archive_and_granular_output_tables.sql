@@ -12,13 +12,54 @@ CREATE INDEX idx_raw_archive_source ON registry_raw_archive(source_table);
 ALTER TABLE registry_raw_archive ENABLE ROW LEVEL SECURITY;
 CREATE POLICY archive_read_only ON registry_raw_archive FOR ALL USING (locked = TRUE);
 
--- Archive raw_table_cells
-INSERT INTO registry_raw_archive (source_table, source_id, raw_content)
-SELECT 'raw_table_cells', id, cell_text FROM raw_table_cells WHERE cell_text IS NOT NULL;
+-- Archive optional legacy sources only when their exact contracts exist.
+-- Their absence on a zero-based replay must not prevent the immutable archive
+-- and granular output schema from being created.
+do $archive$
+declare
+  prerequisite_count integer;
+begin
+  select count(*)
+    into prerequisite_count
+  from information_schema.columns
+  where table_schema = 'public'
+    and table_name = 'raw_table_cells'
+    and column_name = any(array[
+      'id',
+      'cell_text'
+    ]);
 
--- Archive field_dictionary
-INSERT INTO registry_raw_archive (source_table, source_id, raw_content)
-SELECT 'field_dictionary', id, field_name FROM field_dictionary WHERE field_name IS NOT NULL;
+  if prerequisite_count = 2 then
+    execute $insert$
+      insert into public.registry_raw_archive
+        (source_table, source_id, raw_content)
+      select 'raw_table_cells', id, cell_text
+      from public.raw_table_cells
+      where cell_text is not null
+    $insert$;
+  end if;
+
+  select count(*)
+    into prerequisite_count
+  from information_schema.columns
+  where table_schema = 'public'
+    and table_name = 'field_dictionary'
+    and column_name = any(array[
+      'id',
+      'field_name'
+    ]);
+
+  if prerequisite_count = 2 then
+    execute $insert$
+      insert into public.registry_raw_archive
+        (source_table, source_id, raw_content)
+      select 'field_dictionary', id, field_name
+      from public.field_dictionary
+      where field_name is not null
+    $insert$;
+  end if;
+end
+$archive$;
 
 -- GRANULAR OUTPUT TABLES (by specific resource type, not generic categories)
 

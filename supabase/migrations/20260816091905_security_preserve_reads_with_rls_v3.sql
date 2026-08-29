@@ -1,61 +1,57 @@
--- Preserve existing anon/authenticated read behavior on the 20 currently public-read tables,
--- while enabling RLS so future write grants cannot silently expose mutations.
+-- Preserve existing anon/authenticated read behavior on legacy public-read
+-- tables while enabling RLS so future write grants cannot expose mutations.
+-- Optional absent staging relations stay fail-closed and are skipped.
 
-ALTER TABLE public.governance_snapshots ENABLE ROW LEVEL SECURITY;
-CREATE POLICY luminari_public_read_v1 ON public.governance_snapshots FOR SELECT TO anon, authenticated USING (true);
-ALTER TABLE public.state_enriched_directory_v3_13 ENABLE ROW LEVEL SECURITY;
-CREATE POLICY luminari_public_read_v1 ON public.state_enriched_directory_v3_13 FOR SELECT TO anon, authenticated USING (true);
-ALTER TABLE public.coalition_advocacy_orgs_v3_13_stage ENABLE ROW LEVEL SECURITY;
-CREATE POLICY luminari_public_read_v1 ON public.coalition_advocacy_orgs_v3_13_stage FOR SELECT TO anon, authenticated USING (true);
-ALTER TABLE public.ingest_staging_v3_13 ENABLE ROW LEVEL SECURITY;
-CREATE POLICY luminari_public_read_v1 ON public.ingest_staging_v3_13 FOR SELECT TO anon, authenticated USING (true);
-ALTER TABLE public.registry_programs_v3_13_stage ENABLE ROW LEVEL SECURITY;
-CREATE POLICY luminari_public_read_v1 ON public.registry_programs_v3_13_stage FOR SELECT TO anon, authenticated USING (true);
-ALTER TABLE public.domain_deep_dive_records_v3_13 ENABLE ROW LEVEL SECURITY;
-CREATE POLICY luminari_public_read_v1 ON public.domain_deep_dive_records_v3_13 FOR SELECT TO anon, authenticated USING (true);
-ALTER TABLE public.policy_layer_docs_v3_13 ENABLE ROW LEVEL SECURITY;
-CREATE POLICY luminari_public_read_v1 ON public.policy_layer_docs_v3_13 FOR SELECT TO anon, authenticated USING (true);
-ALTER TABLE public.sol_collision_analysis_v3_13 ENABLE ROW LEVEL SECURITY;
-CREATE POLICY luminari_public_read_v1 ON public.sol_collision_analysis_v3_13 FOR SELECT TO anon, authenticated USING (true);
-ALTER TABLE public.specification_extraction_v3_13 ENABLE ROW LEVEL SECURITY;
-CREATE POLICY luminari_public_read_v1 ON public.specification_extraction_v3_13 FOR SELECT TO anon, authenticated USING (true);
-ALTER TABLE public.tribal_jurisdictions_addendum_v3_13 ENABLE ROW LEVEL SECURITY;
-CREATE POLICY luminari_public_read_v1 ON public.tribal_jurisdictions_addendum_v3_13 FOR SELECT TO anon, authenticated USING (true);
-ALTER TABLE public.address_audit_v3_13 ENABLE ROW LEVEL SECURITY;
-CREATE POLICY luminari_public_read_v1 ON public.address_audit_v3_13 FOR SELECT TO anon, authenticated USING (true);
-ALTER TABLE public.advocacy_targets_v3_13 ENABLE ROW LEVEL SECURITY;
-CREATE POLICY luminari_public_read_v1 ON public.advocacy_targets_v3_13 FOR SELECT TO anon, authenticated USING (true);
-ALTER TABLE public.benefits_cascade_stages ENABLE ROW LEVEL SECURITY;
-CREATE POLICY luminari_public_read_v1 ON public.benefits_cascade_stages FOR SELECT TO anon, authenticated USING (true);
-ALTER TABLE public.legal_aid_wa_v3_13 ENABLE ROW LEVEL SECURITY;
-CREATE POLICY luminari_public_read_v1 ON public.legal_aid_wa_v3_13 FOR SELECT TO anon, authenticated USING (true);
-ALTER TABLE public.legal_statutes_v3_13_stage ENABLE ROW LEVEL SECURITY;
-CREATE POLICY luminari_public_read_v1 ON public.legal_statutes_v3_13_stage FOR SELECT TO anon, authenticated USING (true);
-ALTER TABLE public.legislator_contacts_v3_13_stage ENABLE ROW LEVEL SECURITY;
-CREATE POLICY luminari_public_read_v1 ON public.legislator_contacts_v3_13_stage FOR SELECT TO anon, authenticated USING (true);
-ALTER TABLE public.luminari_batch_exports_v3_13 ENABLE ROW LEVEL SECURITY;
-CREATE POLICY luminari_public_read_v1 ON public.luminari_batch_exports_v3_13 FOR SELECT TO anon, authenticated USING (true);
-ALTER TABLE public.luminari_uuid_exports_v3_13 ENABLE ROW LEVEL SECURITY;
-CREATE POLICY luminari_public_read_v1 ON public.luminari_uuid_exports_v3_13 FOR SELECT TO anon, authenticated USING (true);
-ALTER TABLE public.master_template_docs_v3_13 ENABLE ROW LEVEL SECURITY;
-CREATE POLICY luminari_public_read_v1 ON public.master_template_docs_v3_13 FOR SELECT TO anon, authenticated USING (true);
-ALTER TABLE public.programs_v3_13_stage ENABLE ROW LEVEL SECURITY;
-CREATE POLICY luminari_public_read_v1 ON public.programs_v3_13_stage FOR SELECT TO anon, authenticated USING (true);
+do $public_reads$
+declare
+  relation_name text;
+begin
+  foreach relation_name in array array[
+    'governance_snapshots','state_enriched_directory_v3_13',
+    'coalition_advocacy_orgs_v3_13_stage','ingest_staging_v3_13',
+    'registry_programs_v3_13_stage','domain_deep_dive_records_v3_13',
+    'policy_layer_docs_v3_13','sol_collision_analysis_v3_13',
+    'specification_extraction_v3_13','tribal_jurisdictions_addendum_v3_13',
+    'address_audit_v3_13','advocacy_targets_v3_13','benefits_cascade_stages',
+    'legal_aid_wa_v3_13','legal_statutes_v3_13_stage',
+    'legislator_contacts_v3_13_stage','luminari_batch_exports_v3_13',
+    'luminari_uuid_exports_v3_13','master_template_docs_v3_13',
+    'programs_v3_13_stage'
+  ]
+  loop
+    if to_regclass(format('public.%I', relation_name)) is not null then
+      execute format('alter table public.%I enable row level security', relation_name);
+      execute format('drop policy if exists luminari_public_read_v1 on public.%I', relation_name);
+      execute format(
+        'create policy luminari_public_read_v1 on public.%I for select to anon, authenticated using (true)',
+        relation_name
+      );
+    end if;
+  end loop;
+end
+$public_reads$;
 
--- These tables already have RLS enabled and no policies, so anon/authenticated have zero effective access today.
--- Remove their broad direct grants to keep them fail-closed even if RLS is accidentally altered later.
-REVOKE ALL PRIVILEGES ON TABLE
-  public.contacts,
-  public.docket_bill_state_cache,
-  public.omnidirectional_contradiction_clusters,
-  public.omnidirectional_domain_packs,
-  public.omnidirectional_edge_constraints,
-  public.omnidirectional_edge_types,
-  public.omnidirectional_graph_edges,
-  public.omnidirectional_graph_health_snapshots,
-  public.omnidirectional_graph_nodes,
-  public.omnidirectional_graph_paths,
-  public.omnidirectional_graph_snapshots,
-  public.omnidirectional_node_types,
-  public.omnidirectional_traversal_rulesets
-FROM anon, authenticated;
+-- These tables already have RLS enabled and no client policies. Remove broad
+-- direct grants where the optional relation actually exists.
+do $private_tables$
+declare
+  relation_name text;
+begin
+  foreach relation_name in array array[
+    'contacts','docket_bill_state_cache','omnidirectional_contradiction_clusters',
+    'omnidirectional_domain_packs','omnidirectional_edge_constraints',
+    'omnidirectional_edge_types','omnidirectional_graph_edges',
+    'omnidirectional_graph_health_snapshots','omnidirectional_graph_nodes',
+    'omnidirectional_graph_paths','omnidirectional_graph_snapshots',
+    'omnidirectional_node_types','omnidirectional_traversal_rulesets'
+  ]
+  loop
+    if to_regclass(format('public.%I', relation_name)) is not null then
+      execute format(
+        'revoke all privileges on table public.%I from anon, authenticated',
+        relation_name
+      );
+    end if;
+  end loop;
+end
+$private_tables$;

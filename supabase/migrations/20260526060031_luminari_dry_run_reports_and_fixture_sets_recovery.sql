@@ -1,5 +1,42 @@
 begin;
 
+create or replace function pg_temp.publish_compatibility_view(
+  source_name text,
+  target_name text,
+  view_definition text
+)
+returns void
+language plpgsql
+as $function$
+declare
+  source_kind "char";
+  target_kind "char";
+begin
+  select c.relkind
+    into source_kind
+  from pg_class c
+  join pg_namespace n on n.oid = c.relnamespace
+  where n.nspname = 'public'
+    and c.relname = source_name;
+
+  select c.relkind
+    into target_kind
+  from pg_class c
+  join pg_namespace n on n.oid = c.relnamespace
+  where n.nspname = 'public'
+    and c.relname = target_name;
+
+  if source_kind in ('v', 'm')
+     and (target_kind is null or target_kind = 'v') then
+    execute view_definition;
+  end if;
+end
+$function$;
+
+select pg_temp.publish_compatibility_view(
+  'v_luminari_resource_source_candidates',
+  'v_luminari_resource_dry_run_promotion_summary',
+  $view$
 create or replace view public.v_luminari_resource_dry_run_promotion_summary as
 with base as (
   select
@@ -48,8 +85,13 @@ select
   count(*) filter (where has_address = 0) as location_enrichment_needed
 from scored
 group by source_table
-order by source_table;
+order by source_table
+$view$);
 
+select pg_temp.publish_compatibility_view(
+  'v_luminari_resource_source_candidates',
+  'v_luminari_resource_dry_run_blockers',
+  $view$
 create or replace view public.v_luminari_resource_dry_run_blockers as
 select
   source_table,
@@ -68,8 +110,13 @@ where nullif(resource_name,'') is null
    or (nullif(phone,'') is null and nullif(email,'') is null and nullif(website_url,'') is null)
    or nullif(address_line1,'') is null
    or nullif(eligibility_summary,'') is null
-   or nullif(apply_notes,'') is null;
+   or nullif(apply_notes,'') is null
+$view$);
 
+select pg_temp.publish_compatibility_view(
+  'v_luminari_resource_source_candidates',
+  'v_luminari_resource_possible_duplicates',
+  $view$
 create or replace view public.v_luminari_resource_possible_duplicates as
 with keyed as (
   select
@@ -94,8 +141,13 @@ from keyed
 where normalized_name_key <> ''
 group by normalized_name_key, normalized_jurisdiction_key
 having count(*) > 1
-order by duplicate_count desc, normalized_name_key;
+order by duplicate_count desc, normalized_name_key
+$view$);
 
+select pg_temp.publish_compatibility_view(
+  'v_luminari_legal_source_candidates',
+  'v_luminari_legal_dry_run_promotion_summary',
+  $view$
 create or replace view public.v_luminari_legal_dry_run_promotion_summary as
 with base as (
   select
@@ -137,8 +189,13 @@ select
   count(*) filter (where has_jurisdiction = 0) as blocked_missing_jurisdiction
 from scored
 group by source_table, authority_type
-order by source_table, authority_type;
+order by source_table, authority_type
+$view$);
 
+select pg_temp.publish_compatibility_view(
+  'v_luminari_legal_source_candidates',
+  'v_luminari_legal_dry_run_blockers',
+  $view$
 create or replace view public.v_luminari_legal_dry_run_blockers as
 select
   source_table,
@@ -157,8 +214,13 @@ from public.v_luminari_legal_source_candidates
 where (nullif(citation,'') is null and nullif(title,'') is null)
    or nullif(jurisdiction,'') is null
    or nullif(source_url,'') is null
-   or (authority_type in ('statute','deadline_rule','enforcement_channel','enforcement_record') and nullif(statute_of_limitations,'') is null);
+   or (authority_type in ('statute','deadline_rule','enforcement_channel','enforcement_record') and nullif(statute_of_limitations,'') is null)
+$view$);
 
+select pg_temp.publish_compatibility_view(
+  'v_luminari_legal_source_candidates',
+  'v_luminari_legal_possible_duplicates',
+  $view$
 create or replace view public.v_luminari_legal_possible_duplicates as
 with keyed as (
   select
@@ -185,7 +247,8 @@ from keyed
 where normalized_citation_key <> ''
 group by authority_type, normalized_citation_key, normalized_jurisdiction_key
 having count(*) > 1
-order by duplicate_count desc, authority_type, normalized_citation_key;
+order by duplicate_count desc, authority_type, normalized_citation_key
+$view$);
 
 create table if not exists public.luminari_registry_fixture_plan (
   fixture_key text primary key,

@@ -6,6 +6,20 @@ declare
   v_receipt_count integer:=0;
   v_queue_count integer:=0;
 begin
+  -- This receipt is a bounded repair of a historical production failure set.
+  -- On a fresh replay none of its four source substrates contains rows, so
+  -- there is no truthful supersession receipt to write. Retain the original
+  -- no-target failure whenever any relevant operational data is present.
+  if not exists (
+       select 1 from public.civic_genome_prism_verification_queue limit 1
+     )
+     and not exists (select 1 from public.civic_genome_assembly_run limit 1)
+     and not exists (select 1 from public.civic_genome_bill_version limit 1)
+     and not exists (select 1 from public.docket_bill_source_document limit 1)
+  then
+    return;
+  end if;
+
   with replacement_candidate as (
     select
       queue.queue_id,
