@@ -133,6 +133,9 @@ jobs:
       - name: Bootstrap schema guard fixtures
         run: psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 -f supabase/verification/runtime_hotfix_schema_guard_fixture.sql
 
+      - name: Apply conditional historical RLS hardening
+        run: psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260509001402_phase1_rls_hardening_lighthouse_retry.sql
+
       - name: Apply namespace migration
         run: psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260511000001_operational_core_namespace_activation.sql
 

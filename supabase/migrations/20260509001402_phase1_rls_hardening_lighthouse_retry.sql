@@ -1,81 +1,93 @@
-BEGIN;
+begin;
 
-ALTER TABLE public.cases ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.documents ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.evidence_items ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.claims ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.findings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.snapshots ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.pipeline_runs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.export_runs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.export_artifacts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.detected_signals ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.intake_records ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.source_records ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.raw_api_record ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.normalized_records ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.ingested_records ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.atlas_lighthouse_signal_bridge_v1 ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.atlas_lighthouse_resource_bridge_v1 ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.atlas_lighthouse_judicial_signal_bridge_v1 ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.atlas_lighthouse_legal_bridge_v1 ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.machine_outputs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.machine_verification_requirements ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.metadata_machines ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.legal_statutes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.legal_case_law ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.api_source_registry ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.normalized_civic_resource ENABLE ROW LEVEL SECURITY;
+-- Production had several of these relations before migration tracking became
+-- complete. A clean replay must harden every relation that exists without
+-- aborting on a historical object that is not yet represented in the ledger.
+do $hardening$
+declare
+  relation_name text;
+  policy_record record;
+begin
+  foreach relation_name in array array[
+    'cases',
+    'documents',
+    'evidence_items',
+    'claims',
+    'findings',
+    'snapshots',
+    'pipeline_runs',
+    'export_runs',
+    'export_artifacts',
+    'detected_signals',
+    'intake_records',
+    'source_records',
+    'raw_api_record',
+    'normalized_records',
+    'ingested_records',
+    'atlas_lighthouse_signal_bridge_v1',
+    'atlas_lighthouse_resource_bridge_v1',
+    'atlas_lighthouse_judicial_signal_bridge_v1',
+    'atlas_lighthouse_legal_bridge_v1',
+    'machine_outputs',
+    'machine_verification_requirements',
+    'metadata_machines',
+    'legal_statutes',
+    'legal_case_law',
+    'api_source_registry',
+    'normalized_civic_resource'
+  ]
+  loop
+    if to_regclass(format('%I.%I', 'public', relation_name)) is not null then
+      execute format(
+        'alter table %I.%I enable row level security',
+        'public',
+        relation_name
+      );
+    end if;
+  end loop;
 
-DROP POLICY IF EXISTS atlas_signal_bridge_public_read ON public.atlas_lighthouse_signal_bridge_v1;
-CREATE POLICY atlas_signal_bridge_public_read ON public.atlas_lighthouse_signal_bridge_v1 FOR SELECT TO anon, authenticated USING (true);
+  for policy_record in
+    select *
+    from (
+      values
+        ('atlas_lighthouse_signal_bridge_v1', 'atlas_signal_bridge_public_read', 'anon, authenticated'),
+        ('atlas_lighthouse_resource_bridge_v1', 'atlas_resource_bridge_public_read', 'anon, authenticated'),
+        ('atlas_lighthouse_judicial_signal_bridge_v1', 'atlas_judicial_bridge_public_read', 'anon, authenticated'),
+        ('atlas_lighthouse_legal_bridge_v1', 'atlas_legal_bridge_public_read', 'anon, authenticated'),
+        ('legal_statutes', 'legal_statutes_public_read', 'anon, authenticated'),
+        ('legal_case_law', 'legal_case_law_public_read', 'anon, authenticated'),
+        ('metadata_machines', 'metadata_machines_public_read', 'anon, authenticated'),
+        ('machine_outputs', 'machine_outputs_public_read', 'anon, authenticated'),
+        ('machine_verification_requirements', 'machine_verification_requirements_public_read', 'anon, authenticated'),
+        ('normalized_civic_resource', 'civic_resources_public_read', 'anon, authenticated'),
+        ('api_source_registry', 'api_source_registry_public_read', 'anon, authenticated'),
+        ('detected_signals', 'detected_signals_authenticated_read', 'authenticated'),
+        ('cases', 'cases_authenticated_read', 'authenticated'),
+        ('claims', 'claims_authenticated_read', 'authenticated'),
+        ('findings', 'findings_authenticated_read', 'authenticated'),
+        ('snapshots', 'snapshots_authenticated_read', 'authenticated'),
+        ('pipeline_runs', 'pipeline_runs_authenticated_read', 'authenticated')
+    ) as policy_config(relation_name, policy_name, role_clause)
+  loop
+    if to_regclass(
+      format('%I.%I', 'public', policy_record.relation_name)
+    ) is not null then
+      execute format(
+        'drop policy if exists %I on %I.%I',
+        policy_record.policy_name,
+        'public',
+        policy_record.relation_name
+      );
+      execute format(
+        'create policy %I on %I.%I for select to %s using (true)',
+        policy_record.policy_name,
+        'public',
+        policy_record.relation_name,
+        policy_record.role_clause
+      );
+    end if;
+  end loop;
+end
+$hardening$;
 
-DROP POLICY IF EXISTS atlas_resource_bridge_public_read ON public.atlas_lighthouse_resource_bridge_v1;
-CREATE POLICY atlas_resource_bridge_public_read ON public.atlas_lighthouse_resource_bridge_v1 FOR SELECT TO anon, authenticated USING (true);
-
-DROP POLICY IF EXISTS atlas_judicial_bridge_public_read ON public.atlas_lighthouse_judicial_signal_bridge_v1;
-CREATE POLICY atlas_judicial_bridge_public_read ON public.atlas_lighthouse_judicial_signal_bridge_v1 FOR SELECT TO anon, authenticated USING (true);
-
-DROP POLICY IF EXISTS atlas_legal_bridge_public_read ON public.atlas_lighthouse_legal_bridge_v1;
-CREATE POLICY atlas_legal_bridge_public_read ON public.atlas_lighthouse_legal_bridge_v1 FOR SELECT TO anon, authenticated USING (true);
-
-DROP POLICY IF EXISTS legal_statutes_public_read ON public.legal_statutes;
-CREATE POLICY legal_statutes_public_read ON public.legal_statutes FOR SELECT TO anon, authenticated USING (true);
-
-DROP POLICY IF EXISTS legal_case_law_public_read ON public.legal_case_law;
-CREATE POLICY legal_case_law_public_read ON public.legal_case_law FOR SELECT TO anon, authenticated USING (true);
-
-DROP POLICY IF EXISTS metadata_machines_public_read ON public.metadata_machines;
-CREATE POLICY metadata_machines_public_read ON public.metadata_machines FOR SELECT TO anon, authenticated USING (true);
-
-DROP POLICY IF EXISTS machine_outputs_public_read ON public.machine_outputs;
-CREATE POLICY machine_outputs_public_read ON public.machine_outputs FOR SELECT TO anon, authenticated USING (true);
-
-DROP POLICY IF EXISTS machine_verification_requirements_public_read ON public.machine_verification_requirements;
-CREATE POLICY machine_verification_requirements_public_read ON public.machine_verification_requirements FOR SELECT TO anon, authenticated USING (true);
-
-DROP POLICY IF EXISTS civic_resources_public_read ON public.normalized_civic_resource;
-CREATE POLICY civic_resources_public_read ON public.normalized_civic_resource FOR SELECT TO anon, authenticated USING (true);
-
-DROP POLICY IF EXISTS api_source_registry_public_read ON public.api_source_registry;
-CREATE POLICY api_source_registry_public_read ON public.api_source_registry FOR SELECT TO anon, authenticated USING (true);
-
-DROP POLICY IF EXISTS detected_signals_authenticated_read ON public.detected_signals;
-CREATE POLICY detected_signals_authenticated_read ON public.detected_signals FOR SELECT TO authenticated USING (true);
-
-DROP POLICY IF EXISTS cases_authenticated_read ON public.cases;
-CREATE POLICY cases_authenticated_read ON public.cases FOR SELECT TO authenticated USING (true);
-
-DROP POLICY IF EXISTS claims_authenticated_read ON public.claims;
-CREATE POLICY claims_authenticated_read ON public.claims FOR SELECT TO authenticated USING (true);
-
-DROP POLICY IF EXISTS findings_authenticated_read ON public.findings;
-CREATE POLICY findings_authenticated_read ON public.findings FOR SELECT TO authenticated USING (true);
-
-DROP POLICY IF EXISTS snapshots_authenticated_read ON public.snapshots;
-CREATE POLICY snapshots_authenticated_read ON public.snapshots FOR SELECT TO authenticated USING (true);
-
-DROP POLICY IF EXISTS pipeline_runs_authenticated_read ON public.pipeline_runs;
-CREATE POLICY pipeline_runs_authenticated_read ON public.pipeline_runs FOR SELECT TO authenticated USING (true);
-
-COMMIT;
+commit;

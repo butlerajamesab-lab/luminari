@@ -11,26 +11,81 @@ PRODUCTION_RECEIPTS = Path("supabase/verification/production_migration_receipts_
 # joining statements with one blank line, and ending the file with one newline.
 # The sole comment-only receipt (20260517000000) intentionally gets no terminator.
 APPROVED_REPOSITORY_ONLY = {
-    "20260501203517",
-    "20260815040500",
-    "20260815140500",
-    "20260818084500",
-    "20260818090000",
-    "20260818095500",
-    "20260818210000",
-    "20260820063000",
-    "20260821051200",
-    "20260821123000",
-    "20260821123100",
-    "20260821235951",
-    "20260822002000",
-    "20260822012500",
-    "20260822055000",
-    "20260822055100",
-    "20260822203000",
+    "20260501203517": (
+        "20260501203517_fresh_branch_signal_severity_foundation.sql",
+        "a75e1bd4bd76616b642aa0fbca670a58d51536fe",
+    ),
+    "20260815040500": (
+        "20260815040500_rosetta_structural_correctness_reconciliation.sql",
+        "79515b62a48d5fc865048276073f1f633fe4402e",
+    ),
+    "20260815140500": (
+        "20260815140500_prism_rosetta_v23_generation.sql",
+        "a98571ecb82ae4638cf0f496f387787789087f56",
+    ),
+    "20260818084500": (
+        "20260818084500_prism_domain2_legal_pattern_pullthrough.sql",
+        "34abda022c0159764a158816c737b7bb1ed426a1",
+    ),
+    "20260818090000": (
+        "20260818090000_domain2_current_prism_generation.sql",
+        "1666a2d30880efbffeeca0b58f1a1482d212bccb",
+    ),
+    "20260818095500": (
+        "20260818095500_signal_architecture_runtime_projection_truth.sql",
+        "af52234965f8641488c56e8a3422ae8aa183287d",
+    ),
+    "20260818210000": (
+        "20260818210000_canonical_core_read_boundary.sql",
+        "f13271ce76999f21521aaddf9bbfffe47bfa2d88",
+    ),
+    "20260820063000": (
+        "20260820063000_civic_genome_prism_rosetta_stale_context_supersession_v1.sql",
+        "5d2f0890b94431bc46076456309cdd4dda67c2d0",
+    ),
+    "20260821051200": (
+        "20260821051200_civic_genome_prism_rosetta_stale_context_sweeper_v2.sql",
+        "3a4ec5bec743a0711f621deafcba29f560e05039",
+    ),
+    "20260821123000": (
+        "20260821123000_lighthouse_private_client_read_lockdown_v1.sql",
+        "0480f8c4eb9976059459fec5de7b3d89f6faaa6a",
+    ),
+    "20260821123100": (
+        "20260821123100_lighthouse_private_client_read_lockdown_policy_completion_v1.sql",
+        "f65f8d4a736ae13609902eb75d0da0f2803ca60c",
+    ),
+    "20260821235951": (
+        "20260821235951_atlas_domain3_integrity_review_projection.sql",
+        "612ad13348694ecd03a3b801a1d04d5424026848",
+    ),
+    "20260822002000": (
+        "20260822002000_fix_runtime_active_uploads_lifecycle_v1.sql",
+        "0e8c84ac2b00c95964b1f7d22db2cd1b11e624ac",
+    ),
+    "20260822012500": (
+        "20260822012500_atlas_domain3_integrity_review_projection_verify.sql",
+        "9358b4216dd449499b08e8facb901a9e61f7164d",
+    ),
+    "20260822055000": (
+        "20260822055000_signal_artifact_case_links_v1.sql",
+        "d5e994db936c5e5e4f5d3e3dc7dd7ee95f49790b",
+    ),
+    "20260822055100": (
+        "20260822055100_signal_artifact_case_links_intake_index_v1.sql",
+        "579e1b5599c5ee2bfe3abe4f02a6fbe3bf6d229b",
+    ),
+    "20260822203000": (
+        "20260822203000_lighthouse_case_status_canonical_default.sql",
+        "07150814d2ddd32aa41c0611408a4ed92478a37a",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
+    "20260509001402": (
+        "bb3b4546c4257014a49a8cef5dea77e0",
+        "1f0eb57d456e7f240e43c09f7b0759bdbd200ae0",
+    ),
     "20260805194900": (
         "ed9f769f67de34a7c27d14e91e552a55",
         "1a14f25ed15b1ce6392099639e06c1a5160dc462",
@@ -130,9 +185,12 @@ for path in sorted(Path("supabase/migrations").glob("*.sql")):
         local_by_version[version].append(path)
 
 local_versions = set(local_by_version)
+approved_repository_only_versions = set(APPROVED_REPOSITORY_ONLY)
 missing_production = sorted(production_versions - local_versions)
-missing_repository_only = sorted(APPROVED_REPOSITORY_ONLY - local_versions)
-unexpected_local = sorted(local_versions - production_versions - APPROVED_REPOSITORY_ONLY)
+missing_repository_only = sorted(approved_repository_only_versions - local_versions)
+unexpected_local = sorted(
+    local_versions - production_versions - approved_repository_only_versions
+)
 duplicates = {
     version: paths
     for version, paths in local_by_version.items()
@@ -173,10 +231,27 @@ for version in sorted(production_versions & local_versions):
             (version, path.name, receipt["executable_md5"], actual_md5)
         )
 
+repository_only_name_mismatches: list[tuple[str, str, str]] = []
+repository_only_hash_mismatches: list[tuple[str, str, str, str]] = []
+for version in sorted(approved_repository_only_versions & local_versions):
+    if version in duplicates:
+        continue
+    path = local_by_version[version][0]
+    expected_name, expected_blob_sha1 = APPROVED_REPOSITORY_ONLY[version]
+    if path.name != expected_name:
+        repository_only_name_mismatches.append(
+            (version, path.name, expected_name)
+        )
+    actual_blob_sha1 = git_blob_sha1(path)
+    if actual_blob_sha1 != expected_blob_sha1:
+        repository_only_hash_mismatches.append(
+            (version, path.name, expected_blob_sha1, actual_blob_sha1)
+        )
+
 repository_only_production_hash_duplicates: list[
     tuple[str, str, str, str, str]
 ] = []
-for version in sorted(APPROVED_REPOSITORY_ONLY & local_versions):
+for version in sorted(approved_repository_only_versions & local_versions):
     for path in local_by_version[version]:
         for statements_md5 in file_hashes(path):
             if statements_md5 in production_hashes:
@@ -221,6 +296,18 @@ print(f"PRODUCTION_HASH_MISMATCH_COUNT={len(hash_mismatches)}")
 for version, name, expected, actual in hash_mismatches:
     print(f"PRODUCTION_HASH_MISMATCH={version}|{name}|{expected}|{actual}")
 print(
+    "REPOSITORY_ONLY_NAME_MISMATCH_COUNT="
+    f"{len(repository_only_name_mismatches)}"
+)
+for version, actual, expected in repository_only_name_mismatches:
+    print(f"REPOSITORY_ONLY_NAME_MISMATCH={version}|{actual}|{expected}")
+print(
+    "REPOSITORY_ONLY_HASH_MISMATCH_COUNT="
+    f"{len(repository_only_hash_mismatches)}"
+)
+for version, name, expected, actual in repository_only_hash_mismatches:
+    print(f"REPOSITORY_ONLY_HASH_MISMATCH={version}|{name}|{expected}|{actual}")
+print(
     "SOURCE_CONTROLLED_APPLICATION_RECEIPT_COUNT="
     f"{len(SOURCE_CONTROLLED_APPLICATION_RECEIPTS)}"
 )
@@ -250,6 +337,8 @@ if (
     or malformed_receipts
     or name_mismatches
     or hash_mismatches
+    or repository_only_name_mismatches
+    or repository_only_hash_mismatches
     or repository_only_production_hash_duplicates
 ):
     raise SystemExit(1)
