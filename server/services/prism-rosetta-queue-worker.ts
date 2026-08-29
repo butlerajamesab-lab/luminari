@@ -68,6 +68,8 @@ let queue_stopped = false;
 let next_reconcile_at_ms = 0;
 let last_circuit_skip_open_until_ms = 0;
 let last_half_open_failure_count = 0;
+let queue_remaining_new_submissions = 0;
+let submission_budget_exhausted_logged = false;
 const queue_worker_id = [
   process.env.RENDER_SERVICE_ID ?? "lighthouse",
   process.pid,
@@ -453,12 +455,17 @@ async function fail_job_for_processing_error(
 }
 
 async function process_job(job: prism_rosetta_queue_job): Promise<void> {
+  // Reserve the entire remaining process-lifetime allowance before crossing the
+  // Prism boundary. A timeout or network failure can occur after Prism accepted
+  // a request, so restoring unused-looking budget would permit an unsafe retry.
+  const reserved_new_submissions = queue_remaining_new_submissions;
+  queue_remaining_new_submissions = 0;
   let result: Awaited<ReturnType<typeof activate_prism_for_rosetta_assembly>>;
   try {
     result = await activate_prism_for_rosetta_assembly({
       genome_bill_id: job.genome_bill_id,
       assembly_run_id: job.assembly_run_id,
-      max_new_submissions: bounded_queue_max_new_submissions(),
+      max_new_submissions: reserved_new_submissions,
     });
   } catch (error) {
     await fail_job_for_processing_error(job, error);
@@ -508,6 +515,16 @@ async function run_queue_cycle(): Promise<void> {
   queue_cycle_running = true;
   try {
     await reconcile_completed_jobs_if_due();
+    if (queue_remaining_new_submissions <= 0) {
+      if (!submission_budget_exhausted_logged) {
+        submission_budget_exhausted_logged = true;
+        console.log("[PrismRosettaQueue] submission_budget_exhausted", {
+          worker_id: queue_worker_id,
+          canary_queue_id: prism_rosetta_queue_canary_id(),
+        });
+      }
+      return;
+    }
     const circuit = get_prism_rosetta_circuit_snapshot();
     if (circuit.state === "open") {
       if (last_circuit_skip_open_until_ms !== circuit.open_until_ms) {
@@ -573,6 +590,8 @@ export function start_prism_rosetta_queue_worker(): void {
   const interval_ms = bounded_poll_interval();
   const reconcile_interval_ms = bounded_reconcile_interval();
   const max_new_submissions = bounded_queue_max_new_submissions();
+  queue_remaining_new_submissions = max_new_submissions;
+  submission_budget_exhausted_logged = false;
   let canary_queue_id: string | null;
   try {
     canary_queue_id = prism_rosetta_queue_canary_id();
