@@ -55,6 +55,14 @@ create table if not exists public.data_stream_registry (
 
 alter table public.data_stream_registry enable row level security;
 
+-- Production may already carry these policies from an earlier operational
+-- repair. Replace only the canonical policy names so this historical receipt
+-- is safe on both a clean database and the existing production database.
+drop policy if exists authenticated_read_data_stream_registry
+  on public.data_stream_registry;
+drop policy if exists service_all_data_stream_registry
+  on public.data_stream_registry;
+
 create policy authenticated_read_data_stream_registry
   on public.data_stream_registry for select to authenticated using (true);
 create policy service_all_data_stream_registry
