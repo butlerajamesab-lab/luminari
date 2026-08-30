@@ -63,6 +63,7 @@ export type prism_queue_failure_decision = {
 };
 
 let queue_timer: NodeJS.Timeout | null = null;
+let active_queue_cycle: Promise<void> | null = null;
 let queue_cycle_running = false;
 let queue_stopped = false;
 let next_reconcile_at_ms = 0;
@@ -455,17 +456,19 @@ async function fail_job_for_processing_error(
 }
 
 async function process_job(job: prism_rosetta_queue_job): Promise<void> {
-  // Reserve the entire remaining process-lifetime allowance before crossing the
-  // Prism boundary. A timeout or network failure can occur after Prism accepted
-  // a request, so restoring unused-looking budget would permit an unsafe retry.
-  const reserved_new_submissions = queue_remaining_new_submissions;
-  queue_remaining_new_submissions = 0;
+  const available_new_submissions = queue_remaining_new_submissions;
   let result: Awaited<ReturnType<typeof activate_prism_for_rosetta_assembly>>;
   try {
     result = await activate_prism_for_rosetta_assembly({
       genome_bill_id: job.genome_bill_id,
       assembly_run_id: job.assembly_run_id,
-      max_new_submissions: reserved_new_submissions,
+      max_new_submissions: available_new_submissions,
+      on_before_first_submission: () => {
+        // Spend the process-lifetime allowance at the exact external boundary.
+        // Database preparation failures remain retryable, while any attempted
+        // Prism request consumes the budget because acceptance may be ambiguous.
+        queue_remaining_new_submissions = 0;
+      },
     });
   } catch (error) {
     await fail_job_for_processing_error(job, error);
@@ -579,6 +582,15 @@ async function run_queue_cycle(): Promise<void> {
   }
 }
 
+function schedule_queue_cycle(): void {
+  if (active_queue_cycle) return;
+  const cycle = run_queue_cycle();
+  active_queue_cycle = cycle;
+  void cycle.finally(() => {
+    if (active_queue_cycle === cycle) active_queue_cycle = null;
+  });
+}
+
 export function start_prism_rosetta_queue_worker(): void {
   if (queue_timer || !queue_enabled()) {
     if (!queue_enabled()) {
@@ -614,15 +626,16 @@ export function start_prism_rosetta_queue_worker(): void {
     rule_set_id: PRISM_ROSETTA_RULE_SET_ID,
     rule_set_version: PRISM_ROSETTA_RULE_SET_VERSION,
   });
-  void run_queue_cycle();
+  schedule_queue_cycle();
   queue_timer = setInterval(() => {
-    void run_queue_cycle();
+    schedule_queue_cycle();
   }, interval_ms);
   queue_timer.unref?.();
 }
 
-export function stop_prism_rosetta_queue_worker(): void {
+export async function stop_prism_rosetta_queue_worker(): Promise<void> {
   queue_stopped = true;
   if (queue_timer) clearInterval(queue_timer);
   queue_timer = null;
+  await active_queue_cycle;
 }
