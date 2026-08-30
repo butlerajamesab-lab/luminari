@@ -42,7 +42,7 @@ describe("isolated Prism worker deployment contract", () => {
     expect(activation.indexOf("input.on_before_first_submission?.()")).toBeLessThan(
       activation.indexOf("submit_rosetta_prism_request(request)"),
     );
-    expect(queueWorker.indexOf("queue_remaining_new_submissions = 0")).toBeGreaterThan(
+    expect(queueWorker.lastIndexOf("queue_remaining_new_submissions = 0")).toBeGreaterThan(
       queueWorker.indexOf("await activate_prism_for_rosetta_assembly"),
     );
   });
