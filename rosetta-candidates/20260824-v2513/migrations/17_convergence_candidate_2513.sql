@@ -1179,7 +1179,14 @@ CREATE OR REPLACE FUNCTION rosetta_v2513.v2513_rosetta_v25_is_internal_period(p_
  IMMUTABLE STRICT
  SET search_path TO 'pg_catalog'
 AS $function$
-declare v_previous text:=substr(p_value,greatest(1,p_index-1),1); v_next text:=substr(p_value,p_index+1,1); v_left text:=substr(p_value,1,greatest(0,p_index-1)); v_after text:=ltrim(substr(p_value,p_index+1)); v_word text; v_dotted text;
+declare
+  v_previous text:=substr(p_value,greatest(1,p_index-1),1);
+  v_next text:=substr(p_value,p_index+1,1);
+  v_left text:=substr(p_value,1,greatest(0,p_index-1));
+  v_after text:=ltrim(substr(p_value,p_index+1));
+  v_word text;
+  v_dotted text;
+  v_given_name text;
 begin
  if substr(p_value,p_index,1)<>'.' then return false; end if;
  if v_previous ~ '[0-9A-Za-z]' and v_next ~ '[0-9]' then return true; end if;
@@ -1195,9 +1202,27 @@ begin
  if v_left ~ '[0-9]+\s+S[.]\s+Ct$' and v_after ~ '^[0-9]' then return true; end if;
  v_dotted:=(regexp_match(v_left,'([A-Za-z]+(?:[.][A-Za-z]+)+)$'))[1];
  if v_dotted is not null and v_after<>'' and v_after !~ '^(?:A|An|Each|Every|No|That|The|This)\M' then return true; end if;
+
+ -- A person-name middle initial is internal only in a narrow three-token
+ -- context: capitalized given name, one-letter initial, capitalized surname.
+ -- Common structural labels and sentence-start determiners are excluded so
+ -- constructs such as "Section A. The department" remain sentence breaks.
+ if v_word is not null and v_word ~ '^[A-Z]$' then
+   v_given_name := (regexp_match(
+     v_left,'([A-Z][A-Za-z''-]+)[ \t]+[A-Z]$'))[1];
+   if v_given_name is not null
+      and not (lower(v_given_name)=any(array[
+        'appendix','article','chapter','exhibit','item','option','paragraph',
+        'part','schedule','section','subsection']))
+      and v_after ~ '^[A-Z][A-Za-z''-]+\M'
+      and v_after !~ '^(?:A|An|Each|Every|No|That|The|This)\M' then
+     return true;
+   end if;
+ end if;
  if v_word is not null and v_word ~ '^[A-Z]$' and v_after ~ '^(?:[0-9]|No[.]\s*[0-9])' then return true; end if;
  return false;
-end;$function$;
+end;
+$function$;
 CREATE OR REPLACE FUNCTION rosetta_v2513.v2513_rosetta_v25_layout_projection(p_source_text text)
  RETURNS text
  LANGUAGE plpgsql
@@ -1207,6 +1232,9 @@ AS $function$
 declare
   v_result text := p_source_text;
   v_line_label_count integer;
+  v_digest_start integer;
+  v_digest_region text;
+  v_digest_mask text;
 begin
   v_line_label_count := regexp_count(p_source_text,'(^|\n)[0-9]{1,3}[.][0-9]{1,3}[ \t]+',1,'n');
   if v_line_label_count >= 3 then
@@ -1217,6 +1245,29 @@ begin
     v_result := rosetta_v2513.v2513_rosetta_v25_mask_matches(v_result,'(^|\n)REVISOR[^\n]*(\n|$)','n');
     v_result := rosetta_v2513.v2513_rosetta_v25_mask_matches(v_result,'(^|\n)[ \t]*--[ \t]*[0-9]+[ \t]+of[ \t]+[0-9]+[ \t]*--[ \t]*(\n|$)','n');
   end if;
+
+  -- Exact Colorado bill-page chrome. Masking preserves string length and line
+  -- boundaries so every downstream source offset remains stable.
+  v_result := rosetta_v2513.v2513_rosetta_v25_mask_matches(
+    v_result,
+    '(^|\n)[ \t]*PAGE[ \t]+[0-9]+-(?:HOUSE|SENATE)[ \t]+BILL[^\n]*(\n|$)',
+    'in');
+
+  -- Louisiana legislative DIGEST text is excluded only when the standalone
+  -- heading is followed by the authoritative non-operative disclaimer. This
+  -- avoids treating an arbitrary use of the word "digest" as an exclusion.
+  v_digest_start := regexp_instr(
+    v_result,'(^|\n)[ \t]*DIGEST[ \t]*(\n|$)',1,1,0,'in');
+  if v_digest_start > 0 then
+    v_digest_region := substr(v_result,v_digest_start);
+    if left(v_digest_region,2000) ~*
+       'constitutes[[:space:]]+no[[:space:]]+part[[:space:]]+of[[:space:]]+the[[:space:]]+legislative[[:space:]]+instrument' then
+      v_digest_mask := regexp_replace(v_digest_region,'[^\n\r]',' ','g');
+      v_result := overlay(v_result placing v_digest_mask from v_digest_start
+                          for char_length(v_digest_region));
+    end if;
+  end if;
+
   return rosetta_v2513.v2513_rosetta_v25_protect_internal_periods(v_result);
 end;
 $function$;
@@ -1912,7 +1963,8 @@ declare
   v_section_definition_count integer := 0;
   v_structural_validation jsonb;
 begin
-  -- C3 + C7: verify acquisition provenance before parsing HTML, then verify the exact-source charset receipt.
+  -- C3 + C7: reject invalid reference dates, verify acquisition provenance before parsing HTML, then verify the exact-source charset receipt.
+  perform rosetta_v2513.v2513_rosetta_v25_reference_date_gate(p_reference_date);
   perform rosetta_v2513.v2513_rosetta_v25_source_acquisition_gate(
     p_source_document_id, p_source_text, p_media_type, p_source_version, p_source_url);
   perform rosetta_v2513.v2513_rosetta_v25_charset_gate(p_source_document_id, p_source_text);
@@ -3123,6 +3175,21 @@ begin
   );
 end;
 $function$;
+CREATE OR REPLACE FUNCTION rosetta_v2513.v2513_rosetta_v25_reference_date_gate(p_reference_date date)
+ RETURNS void
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'pg_catalog'
+AS $function$
+begin
+  -- Provider/reference dates before the Unix epoch are sentinel/configuration
+  -- defects in this acquisition contract, never credible source dates.
+  if p_reference_date is not null and p_reference_date < date '1970-01-01' then
+    raise exception 'reference_date_below_credible_minimum: % is before 1970-01-01',
+      p_reference_date using errcode = 'P1A08';
+  end if;
+end;
+$function$;
 CREATE OR REPLACE FUNCTION rosetta_v2513.v2513_rosetta_v25_source_acquisition_gate(
     p_source_document_id integer,
     p_source_text text,
@@ -3497,4 +3564,4 @@ $function$;
 insert into rosetta_v2513.extraction_rule_manifest
   (engine_version, rule_set_version, manifest_hash, manifest_json, is_active)
 values ('rosetta-v3-deterministic-sql-2.5.13', 'rosetta-five-layer-structural-correctness-2.5.13',
-        '607531be651d994d70a061ba4889091efb02c1f2cf1f33c178cd519514b61efe', $manifest${"changes":["C1 measured actor-length bound (1024) with blocking overflow","C2 actor-source corruption detection (chrome, dates, entities, replacement chars, scaffolding, multi-clause)","C3 hash-bound projection contract with receipts and fail-closed verification","C4 occurrence-aware span binding (ported 2.5.12 trio + refresh)","C5 clause decomposition with exact offsets; scaffold and conditions never actors","C6 modal retyping revalidation; mixed-polarity fails closed","C7 decoding-method receipts; undispositioned replacement chars block"],"closure_namespace":"rosetta_v2513","closure_prefix":"v2513_","control_identity":"rosetta-v3-deterministic-sql-2.5.11","engine_version":"rosetta-v3-deterministic-sql-2.5.13","lane":"all","publication":"structurally disabled: no publication view, no registry row, no publishable-run path references this namespace","rule_set_version":"rosetta-five-layer-structural-correctness-2.5.13","title":"2.5.13 convergence candidate composing lanes c1..c7"}$manifest$::jsonb, true);
+        '700a5e02f92738d28aeb2861454af2ad0825379582b16cb2f18e6399572daabd', $manifest${"changes":["C1 measured actor-length bound (1024) with blocking overflow","C2 actor-source corruption detection (chrome, dates, entities, replacement chars, scaffolding, multi-clause)","C3 hash-bound projection and acquisition contract with exact exclusions and reference-date gate","C4 occurrence-aware span binding (ported 2.5.12 trio + refresh)","C5 clause decomposition with exact offsets; scaffold and conditions never actors","C6 modal retyping revalidation; mixed-polarity fails closed","C7 decoding-method receipts; undispositioned replacement chars block"],"closure_namespace":"rosetta_v2513","closure_prefix":"v2513_","control_identity":"rosetta-v3-deterministic-sql-2.5.11","engine_version":"rosetta-v3-deterministic-sql-2.5.13","lane":"all","publication":"structurally disabled: no publication view, no registry row, no publishable-run path references this namespace","rule_set_version":"rosetta-five-layer-structural-correctness-2.5.13","title":"2.5.13 convergence candidate composing lanes c1..c7"}$manifest$::jsonb, true);

@@ -1127,7 +1127,14 @@ CREATE OR REPLACE FUNCTION rosetta_v2513.c5_rosetta_v25_is_internal_period(p_val
  IMMUTABLE STRICT
  SET search_path TO 'pg_catalog'
 AS $function$
-declare v_previous text:=substr(p_value,greatest(1,p_index-1),1); v_next text:=substr(p_value,p_index+1,1); v_left text:=substr(p_value,1,greatest(0,p_index-1)); v_after text:=ltrim(substr(p_value,p_index+1)); v_word text; v_dotted text;
+declare
+  v_previous text:=substr(p_value,greatest(1,p_index-1),1);
+  v_next text:=substr(p_value,p_index+1,1);
+  v_left text:=substr(p_value,1,greatest(0,p_index-1));
+  v_after text:=ltrim(substr(p_value,p_index+1));
+  v_word text;
+  v_dotted text;
+  v_given_name text;
 begin
  if substr(p_value,p_index,1)<>'.' then return false; end if;
  if v_previous ~ '[0-9A-Za-z]' and v_next ~ '[0-9]' then return true; end if;
@@ -1143,9 +1150,27 @@ begin
  if v_left ~ '[0-9]+\s+S[.]\s+Ct$' and v_after ~ '^[0-9]' then return true; end if;
  v_dotted:=(regexp_match(v_left,'([A-Za-z]+(?:[.][A-Za-z]+)+)$'))[1];
  if v_dotted is not null and v_after<>'' and v_after !~ '^(?:A|An|Each|Every|No|That|The|This)\M' then return true; end if;
+
+ -- A person-name middle initial is internal only in a narrow three-token
+ -- context: capitalized given name, one-letter initial, capitalized surname.
+ -- Common structural labels and sentence-start determiners are excluded so
+ -- constructs such as "Section A. The department" remain sentence breaks.
+ if v_word is not null and v_word ~ '^[A-Z]$' then
+   v_given_name := (regexp_match(
+     v_left,'([A-Z][A-Za-z''-]+)[ \t]+[A-Z]$'))[1];
+   if v_given_name is not null
+      and not (lower(v_given_name)=any(array[
+        'appendix','article','chapter','exhibit','item','option','paragraph',
+        'part','schedule','section','subsection']))
+      and v_after ~ '^[A-Z][A-Za-z''-]+\M'
+      and v_after !~ '^(?:A|An|Each|Every|No|That|The|This)\M' then
+     return true;
+   end if;
+ end if;
  if v_word is not null and v_word ~ '^[A-Z]$' and v_after ~ '^(?:[0-9]|No[.]\s*[0-9])' then return true; end if;
  return false;
-end;$function$;
+end;
+$function$;
 CREATE OR REPLACE FUNCTION rosetta_v2513.c5_rosetta_v25_layout_projection(p_source_text text)
  RETURNS text
  LANGUAGE plpgsql

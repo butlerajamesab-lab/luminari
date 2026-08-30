@@ -2,6 +2,10 @@
 
 Status: **isolated candidate; not deployed or promoted**.
 
+The current regression-repair evidence and the full-corpus G10 blocker are
+reported in [REPAIR_VALIDATION_REPORT_20260830.md](REPAIR_VALIDATION_REPORT_20260830.md).
+Do not infer a full-corpus or promotion-gate pass from the bounded runtime.
+
 Start with [IMPLEMENTATION_REPORT.md](IMPLEMENTATION_REPORT.md). The important
 rule is simple: do not install this packet in production. Validate it in an
 empty disposable PostgreSQL database, replay the complete immutable corpus,
@@ -53,7 +57,8 @@ The runner aborts if it finds `public.extraction_run`, `rosetta_v2513`, or
 `rosetta_replay`. A current zero-exit invocation is the only valid runtime PASS
 receipt for a new database. This packet also carries the bounded, durable
 PostgreSQL 17 preview-branch receipt in
-`tests/SUPABASE_BRANCH_VALIDATION_RESULTS.json`: migrations and bounded tests
+`tests/SUPABASE_BRANCH_REGRESSION_REPAIR_RESULTS.json`: migrations, exact
+24592/24593 regressions, and bounded tests
 passed, a forced timeout was recorded durably, and control/C1–C7/convergence
 completed against one exact-source fixture with exact source/run/output
 bindings. That receipt is deliberately **not** a full-corpus replay claim.

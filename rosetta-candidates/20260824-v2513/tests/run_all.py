@@ -146,7 +146,11 @@ if fails == 0:
 
 if fails == 0:
     # 08/09: genuine transaction-separation and every-lane replay proofs.
-    for script_name in ("08_separated_transactions.py", "09_all_lanes_replay.py"):
+    for script_name in (
+        "08_separated_transactions.py",
+        "09_all_lanes_replay.py",
+        "11_exact_regressions.py",
+    ):
         script = os.path.join(ROOT, "tests", script_name)
         if os.path.exists(script):
             p = subprocess.run([sys.executable, script, URI, PSQL],

@@ -146,8 +146,12 @@ def verify_candidate_contract(root: str | Path) -> dict[str, int | str]:
     convergence = (migrations / "17_convergence_candidate_2513.sql").read_text(encoding="utf-8")
     required_convergence = {
         "C3 acquisition gate": "html_content_extraction_receipt_missing",
+        "C3 page-line exclusion": "PAGE[ \\t]+[0-9]+-(?:HOUSE|SENATE)",
+        "C3 non-operative DIGEST exclusion": "constitutes[[:space:]]+no[[:space:]]+part",
+        "C3 reference-date gate": "reference_date_below_credible_minimum",
         "C4 help spans": "union all select 'help_entity'",
         "C5 decomposition": "rosetta_v25_decompose_clause",
+        "C5 middle-initial protection": "v_given_name",
         "C6 mixed polarity": "modal_polarity_conflict",
         "C7 charset gate": "charset_receipt_missing_or_incomplete",
         "decomposed actor bound": "char_length(v_d.actor) > v_bound",
@@ -206,9 +210,20 @@ def verify_candidate_contract(root: str | Path) -> dict[str, int | str]:
     runner = (migrations / "12_replay_runner.sql").read_text(encoding="utf-8")
     if runner.count("transaction_boundary_required") < 2 or runner.count("P1R30") < 2:
         raise RuntimeError("same-transaction replay shortcuts are not disabled")
+    for token in (
+        "validated_reference_date",
+        "reference_date_below_credible_minimum",
+        "rosetta_replay.validated_reference_date(c.source_metadata)",
+    ):
+        if token not in runner:
+            raise RuntimeError(f"replay reference-date gate missing: {token}")
 
     test_runner = (root / "tests" / "run_all.py").read_text(encoding="utf-8")
-    for transaction_test in ("08_separated_transactions.py", "09_all_lanes_replay.py"):
+    for transaction_test in (
+        "08_separated_transactions.py",
+        "09_all_lanes_replay.py",
+        "11_exact_regressions.py",
+    ):
         if transaction_test not in test_runner:
             raise RuntimeError(f"runtime runner omits {transaction_test}")
     result_position = test_runner.find('print("RESULT:"')
@@ -216,6 +231,39 @@ def verify_candidate_contract(root: str | Path) -> dict[str, int | str]:
         raise RuntimeError("runtime runner has no final result emission")
     if test_runner.find("08_separated_transactions.py") > result_position:
         raise RuntimeError("separated-transaction tests are sequenced after the final result")
+
+    separated = (root / "tests" / "08_separated_transactions.py").read_text(
+        encoding="utf-8"
+    )
+    if "replay_source_registry r using(source_registry_id)" in separated:
+        raise RuntimeError("separated-transaction proof retains an ambiguous USING join")
+    if "r.source_registry_id=b.source_registry_id" not in separated:
+        raise RuntimeError("separated-transaction proof omits exact registry binding")
+
+    exact_test = (root / "tests" / "11_exact_regressions.py").read_text(
+        encoding="utf-8"
+    )
+    fixture_hashes = {
+        "rosetta-run-24592.json":
+            "57288c33bf546a88f9e1f6a2364c7243ec924009152471d58256b78b5762250c",
+        "rosetta-run-24593.json":
+            "f3a025a35ad472f29d65bce30d89c3e394b9116e780def0e570fb51daf9099a7",
+    }
+    for fixture_name, expected_hash in fixture_hashes.items():
+        fixture = root / "tests" / "fixtures" / fixture_name
+        if hashlib.sha256(fixture.read_bytes()).hexdigest() != expected_hash:
+            raise RuntimeError(f"exact regression fixture drifted: {fixture_name}")
+        if expected_hash not in exact_test:
+            raise RuntimeError(f"exact regression test does not bind {fixture_name}")
+    for token in (
+        "Proposed law",
+        "David R. Poynter",
+        "PAGE[ \\\\t]+[0-9]+-(HOUSE|SENATE)",
+        "1969-12-31",
+        "P1A08",
+    ):
+        if token not in exact_test:
+            raise RuntimeError(f"exact regression coverage missing: {token}")
 
     gates = (migrations / "14_promotion_gates.sql").read_text(encoding="utf-8")
     missing_gates = [f"G{i}" for i in range(1, 12) if f"G{i}" not in gates]

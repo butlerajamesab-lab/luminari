@@ -31,6 +31,32 @@ begin
 end;
 $fn$;
 
+create or replace function rosetta_replay.validated_reference_date(
+    p_source_metadata jsonb)
+returns date language plpgsql immutable
+set search_path to 'pg_catalog'
+as $fn$
+declare v_raw text; v_date date;
+begin
+  v_raw:=nullif(btrim(p_source_metadata->>'reference_date'),'');
+  -- Preserve the existing contract for absent/non-date metadata: it does not
+  -- become a parser reference date. Exact calendar dates are validated below.
+  if v_raw is null or v_raw !~ '^\d{4}-\d{2}-\d{2}$' then
+    return null;
+  end if;
+  begin
+    v_date:=v_raw::date;
+  exception when datetime_field_overflow or invalid_datetime_format then
+    raise exception 'reference_date_invalid: %',v_raw using errcode='P1A08';
+  end;
+  if v_date < date '1970-01-01' then
+    raise exception 'reference_date_below_credible_minimum: % is before 1970-01-01',
+      v_date using errcode='P1A08';
+  end if;
+  return v_date;
+end;
+$fn$;
+
 create or replace function rosetta_replay.expected_configuration_hash(
     p_source_registry_id uuid)
 returns text language plpgsql stable
@@ -39,8 +65,7 @@ as $fn$
 declare v_hash text;
 begin
   select encode(extensions.digest(convert_to(jsonb_build_object(
-      'reference_date',case when c.source_metadata->>'reference_date' ~ '^\d{4}-\d{2}-\d{2}$'
-                        then (c.source_metadata->>'reference_date')::date else null end,
+      'reference_date',rosetta_replay.validated_reference_date(c.source_metadata),
       'text_extractor_version',coalesce(nullif(btrim(c.source_metadata->>'text_extractor_version'),''),'plain-text-1'),
       'normalization_version','rosetta-normalize-whitespace-v2',
       'parsing_projection_version','rosetta-layout-projection-v25',
@@ -236,8 +261,7 @@ begin
       'select rosetta_v2513.%Irun_rosetta_v3_extraction_v2511_candidate('
       'c.source_document_id,c.source_text,c.source_content_hash,c.source_url,'
       'c.source_version,c.media_type,c.source_byte_hash,c.source_provider_hash,'
-      'case when c.source_metadata->>''reference_date'' ~ ''^\d{4}-\d{2}-\d{2}$'' '
-      'then (c.source_metadata->>''reference_date'')::date else null end,'
+      'rosetta_replay.validated_reference_date(c.source_metadata),'
       'coalesce(nullif(c.source_metadata->>''text_extractor_version'',''''),''plain-text-1''),'
       'c.source_metadata) from rosetta_v2513.source_document_content c '
       'where c.source_content_id=$1 and c.source_content_hash=$2',p_closure_prefix)

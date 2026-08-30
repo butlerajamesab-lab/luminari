@@ -1,0 +1,1076 @@
+{
+  "law_view": {
+    "objects": [
+      {
+        "key": "ov-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0001",
+        "layer": "override",
+        "metadata": {
+          "source_span": {
+            "span_status": "resolved",
+            "raw_text_hash": "3e0fe0ea70d413daea6270280b0890aa0f3c0c74ed3c40481472a4ffa937c1ab",
+            "section_number": "Sec. 1",
+            "char_offset_end": 1123,
+            "char_offset_start": 594,
+            "block_content_hash": "a3cca172abfa4c2f16c069e8f4166ee480437711ec21eee0b144b051f9f12f63",
+            "projection_version": "rosetta-layout-projection-v25"
+          },
+          "canon_version": 2,
+          "signal_status": "confirmed",
+          "actor_canon_id": null
+        },
+        "confirmed": true,
+        "confidence": 1,
+        "source_block_id": "blk-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0002",
+        "normalized_value": {
+          "sunset_date": null,
+          "override_type": "source_stated_condition",
+          "effective_date": null,
+          "granting_actor": null,
+          "override_scope": "(3) (a) (I) In addition to the reimbursement rate process described in subsection (1) of this section and subject to FEDERAL APPROVAL AND adequate funding being made available pursuant to section 25.5-4-402.4, the Colorado healthcare affordability and sustainability enterprise created in section 25.5-4-402.4 (3) shall pay an additional amount based upon performance IN THE HOSPITAL QUALITY INCENTIVE PROGRAM to those NOTE: This bill has been prepared for the signatures of the appropriate legislative officers and the Governor.",
+          "temporal_status": "pending",
+          "governing_section": "Sec. 1",
+          "override_condition": "(3) (a) (I) In addition to the reimbursement rate process described in subsection (1) of this section and subject to FEDERAL APPROVAL AND adequate funding being made available pursuant to section 25.5-4-402.4, the Colorado healthcare affordability and sustainability enterprise created in section 25.5-4-402.4 (3) shall pay an additional amount based upon performance IN THE HOSPITAL QUALITY INCENTIVE PROGRAM to those NOTE: This bill has been prepared for the signatures of the appropriate legislative officers and the Governor.",
+          "overridden_authority": "Base rule within Sec. 1"
+        },
+        "source_object_id": "ov-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0001",
+        "extraction_run_id": "24593",
+        "source_object_type": "entity_override"
+      },
+      {
+        "key": "ov-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0002",
+        "layer": "override",
+        "metadata": {
+          "source_span": {
+            "span_status": "resolved",
+            "raw_text_hash": "d681518d11b221b0b4cddd19acb0d73c92716072dab57113c90a6d0976224b4e",
+            "section_number": "Sec. 1",
+            "char_offset_end": 3110,
+            "char_offset_start": 2620,
+            "block_content_hash": "a3cca172abfa4c2f16c069e8f4166ee480437711ec21eee0b144b051f9f12f63",
+            "projection_version": "rosetta-layout-projection-v25"
+          },
+          "canon_version": 2,
+          "signal_status": "confirmed",
+          "actor_canon_id": null
+        },
+        "confirmed": true,
+        "confidence": 1,
+        "source_block_id": "blk-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0002",
+        "normalized_value": {
+          "sunset_date": null,
+          "override_type": "source_stated_exception",
+          "effective_date": null,
+          "granting_actor": "WHEN APPROVING A PROGRAM PURSUANT TO THIS SUBSECTION (3)(a), THE BOARD",
+          "override_scope": "(B) WHEN APPROVING A PROGRAM PURSUANT TO THIS SUBSECTION (3)(a), THE BOARD SHALL REQUIRE THAT NEW MEASURES REMAIN IN PLACE FOR A DEFINED PERIOD OF TIME NOT TO EXCEED THREE YEARS PRIOR TO MODIFICATION OR REPLACEMENT OF THE NEW MEASURES ; EXCEPT THAT THE BOARD MAY APPROVE MODIFICATIONS OR REPLACEMENTS PRIOR TO THE END OF THE DEFINED PERIOD OF TIME IF THE BOARD IS PRESENTED WITH EVIDENCE THAT THE APPROVED MEASURES ARE NOT MEETING THE GOALS OF THE PROGRAM OR REQUIRE TECHNICAL ADJUSTMENTS .",
+          "temporal_status": "pending",
+          "governing_section": "Sec. 1",
+          "override_condition": "(B) WHEN APPROVING A PROGRAM PURSUANT TO THIS SUBSECTION (3)(a), THE BOARD SHALL REQUIRE THAT NEW MEASURES REMAIN IN PLACE FOR A DEFINED PERIOD OF TIME NOT TO EXCEED THREE YEARS PRIOR TO MODIFICATION OR REPLACEMENT OF THE NEW MEASURES ; EXCEPT THAT THE BOARD MAY APPROVE MODIFICATIONS OR REPLACEMENTS PRIOR TO THE END OF THE DEFINED PERIOD OF TIME IF THE BOARD IS PRESENTED WITH EVIDENCE THAT THE APPROVED MEASURES ARE NOT MEETING THE GOALS OF THE PROGRAM OR REQUIRE TECHNICAL ADJUSTMENTS .",
+          "overridden_authority": "Base rule within Sec. 1"
+        },
+        "source_object_id": "ov-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0002",
+        "extraction_run_id": "24593",
+        "source_object_type": "entity_override"
+      },
+      {
+        "key": "ov-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0003",
+        "layer": "override",
+        "metadata": {
+          "source_span": {
+            "span_status": "resolved",
+            "raw_text_hash": "acc90b6245aa36d3d91741c37d604504c92fa1b2112a50d719b2885771256cde",
+            "section_number": "Sec. 1",
+            "char_offset_end": 3505,
+            "char_offset_start": 3297,
+            "block_content_hash": "a3cca172abfa4c2f16c069e8f4166ee480437711ec21eee0b144b051f9f12f63",
+            "projection_version": "rosetta-layout-projection-v25"
+          },
+          "canon_version": 2,
+          "signal_status": "confirmed",
+          "actor_canon_id": null
+        },
+        "confirmed": true,
+        "confidence": 1,
+        "source_block_id": "blk-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0002",
+        "normalized_value": {
+          "sunset_date": null,
+          "override_type": "source_stated_exception",
+          "effective_date": null,
+          "granting_actor": "ANY MODIFICATIONS TO THE HOSPITAL QUALITY INCENTIVE PROGRAM",
+          "override_scope": "(C) ANY MODIFICATIONS TO THE HOSPITAL QUALITY INCENTIVE PROGRAM MUST BE APPROVED BY THE BOARD PRIOR TO IMPLEMENTATION; EXCEPT THAT CHANGES NECESSARY TO COMPLY WITH FEDERAL LAW MAY BE IMPLEMENTED IMMEDIATELY.",
+          "temporal_status": "pending",
+          "governing_section": "Sec. 1",
+          "override_condition": "(C) ANY MODIFICATIONS TO THE HOSPITAL QUALITY INCENTIVE PROGRAM MUST BE APPROVED BY THE BOARD PRIOR TO IMPLEMENTATION; EXCEPT THAT CHANGES NECESSARY TO COMPLY WITH FEDERAL LAW MAY BE IMPLEMENTED IMMEDIATELY.",
+          "overridden_authority": "Base rule within Sec. 1"
+        },
+        "source_object_id": "ov-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0003",
+        "extraction_run_id": "24593",
+        "source_object_type": "entity_override"
+      },
+      {
+        "key": "ov-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0004",
+        "layer": "override",
+        "metadata": {
+          "source_span": {
+            "span_status": "resolved",
+            "raw_text_hash": "b20e18d9bf337922833f6418260394db4d878f72fe6f0ecbfe603d48d66a1bd0",
+            "section_number": "Sec. 1",
+            "char_offset_end": 4879,
+            "char_offset_start": 4275,
+            "block_content_hash": "a3cca172abfa4c2f16c069e8f4166ee480437711ec21eee0b144b051f9f12f63",
+            "projection_version": "rosetta-layout-projection-v25"
+          },
+          "canon_version": 2,
+          "signal_status": "confirmed",
+          "actor_canon_id": null
+        },
+        "confirmed": true,
+        "confidence": 1,
+        "source_block_id": "blk-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0002",
+        "normalized_value": {
+          "sunset_date": null,
+          "override_type": "source_stated_exception",
+          "effective_date": null,
+          "granting_actor": "N OTWITHSTANDING SUBSECTION (3)(b)(I) OF THIS SECTION, THE MAXIMUM PERCENTAGE OF PAYMENTS",
+          "override_scope": "(II) N OTWITHSTANDING SUBSECTION (3)(b)(I) OF THIS SECTION, THE MAXIMUM PERCENTAGE OF PAYMENTS MUST NOT EXCEED SEVEN PERCENT OF THE TOTAL REIMBURSEMENTS MADE TO HOSPITALS IN THE PREVIOUS STATE FISCAL YEAR UNLESS AND UNTIL THE COLORADO HEALTHCARE AFFORDABILITY AND SUSTAINABILITY ENTERPRISE BOARD FORMALLY APPROVES A HOSPITAL QUALITY INCENTIVE PROGRAM PURSUANT TO SUBSECTION (3)(a) OF THIS SECTION, DEVELOPED WITH INPUT FROM HOSPITAL REPRESENTATIVES WITH CLINICAL EXPERTISE , AFTER WHICH THE MAXIMUM PERCENTAGE OF PAYMENTS MUST NOT EXCEED NINE PERCENT OF THE TOTAL REIMBURSEMENTS MADE TO HOSPITALS.",
+          "temporal_status": "pending",
+          "governing_section": "Sec. 1",
+          "override_condition": "(II) N OTWITHSTANDING SUBSECTION (3)(b)(I) OF THIS SECTION, THE MAXIMUM PERCENTAGE OF PAYMENTS MUST NOT EXCEED SEVEN PERCENT OF THE TOTAL REIMBURSEMENTS MADE TO HOSPITALS IN THE PREVIOUS STATE FISCAL YEAR UNLESS AND UNTIL THE COLORADO HEALTHCARE AFFORDABILITY AND SUSTAINABILITY ENTERPRISE BOARD FORMALLY APPROVES A HOSPITAL QUALITY INCENTIVE PROGRAM PURSUANT TO SUBSECTION (3)(a) OF THIS SECTION, DEVELOPED WITH INPUT FROM HOSPITAL REPRESENTATIVES WITH CLINICAL EXPERTISE , AFTER WHICH THE MAXIMUM PERCENTAGE OF PAYMENTS MUST NOT EXCEED NINE PERCENT OF THE TOTAL REIMBURSEMENTS MADE TO HOSPITALS.",
+          "overridden_authority": "Base rule within Sec. 1"
+        },
+        "source_object_id": "ov-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0004",
+        "extraction_run_id": "24593",
+        "source_object_type": "entity_override"
+      },
+      {
+        "key": "ov-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0005",
+        "layer": "override",
+        "metadata": {
+          "source_span": {
+            "span_status": "resolved",
+            "raw_text_hash": "8fe619fc8a0829ca9adc44bced06270e6f6c49af89d7a022beb31cc74d1624ab",
+            "section_number": "Sec. 2",
+            "char_offset_end": 8232,
+            "char_offset_start": 7939,
+            "block_content_hash": "a0f2aaa87efb80ffd7304e9083e33f09f0602e8e7806da2e6a96f3510c0699a9",
+            "projection_version": "rosetta-layout-projection-v25"
+          },
+          "canon_version": 2,
+          "signal_status": "confirmed",
+          "actor_canon_id": null
+        },
+        "confirmed": true,
+        "confidence": 1,
+        "source_block_id": "blk-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0003",
+        "normalized_value": {
+          "sunset_date": null,
+          "override_type": "source_stated_condition",
+          "effective_date": null,
+          "granting_actor": "Subject to federal approval and to minimize the financial impact on certain hospitals, the enterprise",
+          "override_scope": "Subject to federal approval and to minimize the financial impact on certain hospitals, the enterprise may exempt from payment of the hospital provider fee certain types of hospitals, including but not limited to: (5) Healthcare affordability and sustainability hospital provider fee cash fund.",
+          "temporal_status": "pending",
+          "governing_section": "Sec. 2",
+          "override_condition": "Subject to federal approval and to minimize the financial impact on certain hospitals, the enterprise may exempt from payment of the hospital provider fee certain types of hospitals, including but not limited to: (5) Healthcare affordability and sustainability hospital provider fee cash fund.",
+          "overridden_authority": "Base rule within Sec. 2"
+        },
+        "source_object_id": "ov-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0005",
+        "extraction_run_id": "24593",
+        "source_object_type": "entity_override"
+      },
+      {
+        "key": "ov-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0006",
+        "layer": "override",
+        "metadata": {
+          "source_span": {
+            "span_status": "resolved",
+            "raw_text_hash": "5b7b3c743060e15df9a028f6174e326caa6266ce6cf7405abbe6db1c520ceeb5",
+            "section_number": "Sec. 2",
+            "char_offset_end": 8907,
+            "char_offset_start": 8233,
+            "block_content_hash": "a0f2aaa87efb80ffd7304e9083e33f09f0602e8e7806da2e6a96f3510c0699a9",
+            "projection_version": "rosetta-layout-projection-v25"
+          },
+          "canon_version": 2,
+          "signal_status": "confirmed",
+          "actor_canon_id": null
+        },
+        "confirmed": true,
+        "confidence": 1,
+        "source_block_id": "blk-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0003",
+        "normalized_value": {
+          "sunset_date": null,
+          "override_type": "source_stated_condition",
+          "effective_date": null,
+          "granting_actor": null,
+          "override_scope": "PAGE 4-HOUSE BILL 26-1432 -- 4 of 7 -- (b) All money in the hospital provider fee cash fund is subject to federal matching as authorized under federal law and, subject to annual appropriation by the general assembly, shall be expended by the enterprise for the following purposes: (VIII) Subject to any necessary federal waivers being obtained, to provide funding for a health-care delivery system reform incentive payments program as described in subsection (8) of this section SUBJECT TO FEDERAL APPROVAL, FOR THE HOSPITAL QUALITY INCENTIVE PROGRAM DESCRIBED IN SECTION 25.5-4-402 (3); (7) Colorado healthcare affordability and sustainability enterprise board.",
+          "temporal_status": "pending",
+          "governing_section": "Sec. 2",
+          "override_condition": "PAGE 4-HOUSE BILL 26-1432 -- 4 of 7 -- (b) All money in the hospital provider fee cash fund is subject to federal matching as authorized under federal law and, subject to annual appropriation by the general assembly, shall be expended by the enterprise for the following purposes: (VIII) Subject to any necessary federal waivers being obtained, to provide funding for a health-care delivery system reform incentive payments program as described in subsection (8) of this section SUBJECT TO FEDERAL APPROVAL, FOR THE HOSPITAL QUALITY INCENTIVE PROGRAM DESCRIBED IN SECTION 25.5-4-402 (3); (7) Colorado healthcare affordability and sustainability enterprise board.",
+          "overridden_authority": "Base rule within Sec. 2"
+        },
+        "source_object_id": "ov-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0006",
+        "extraction_run_id": "24593",
+        "source_object_type": "entity_override"
+      },
+      {
+        "key": "wp-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0002",
+        "layer": "workflow",
+        "metadata": {
+          "source_span": {
+            "section_number": "Sec. 1",
+            "char_offset_end": 4880,
+            "char_offset_start": 422,
+            "block_content_hash": "a3cca172abfa4c2f16c069e8f4166ee480437711ec21eee0b144b051f9f12f63"
+          },
+          "canon_version": 2,
+          "signal_status": "confirmed"
+        },
+        "confirmed": true,
+        "confidence": 1,
+        "source_block_id": "blk-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0002",
+        "normalized_value": {
+          "steps": [
+            {
+              "verb": "shall",
+              "actor": "In addition to the reimbursement rate process described in subsection (1) of this section and subject to FEDERAL APPROVAL AND adequate funding being made available pursuant to section 25.5-4-402.4, the Colorado healthcare affordability and sustainability enterprise created in section 25.5-4-402.4 (3)",
+              "step_id": "ws-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0001",
+              "step_name": "(3) (a) (I) In addition to the reimbursement rate process described in subsection (1) of this section and subject to FEDERAL APPROVAL AND adequate funding being made available pursuant to section 25.5-4-402.4, the Colorado healthcare affordability and sustainability enterprise created in section 25.5-4-402.4 (3) shall pay an additional amount based upon performance IN THE HOSPITAL QUALITY INCENTIVE PROGRAM to those NOTE: This bill has been prepared for the signatures of the appropriate legislative officers and the Governor.",
+              "step_order": 1,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "3e0fe0ea70d413daea6270280b0890aa0f3c0c74ed3c40481472a4ffa937c1ab",
+                "char_offset_end": 1123,
+                "char_offset_start": 594,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 1"
+            },
+            {
+              "verb": "must",
+              "actor": "T HE HOSPITAL QUALITY INCENTIVE PROGRAM",
+              "step_id": "ws-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0002",
+              "step_name": "T HE HOSPITAL QUALITY INCENTIVE PROGRAM MUST INCLUDE a performance metric related to workplace violence.",
+              "step_order": 2,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "6456ae263cb5c76820e6a12a480d49fade130efbb5da8b79563e388f41c6de17",
+                "char_offset_end": 1853,
+                "char_offset_start": 1749,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 1"
+            },
+            {
+              "verb": "shall",
+              "actor": "The state department",
+              "step_id": "ws-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0003",
+              "step_name": "The state department shall determine this amount based upon nationally recognized performance measures established in rules adopted by the state board.",
+              "step_order": 3,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "4f5cd4197cbdf01d71af3d9418c9637d135b3e93393184b25f9f0a5c84c5162b",
+                "char_offset_end": 2005,
+                "char_offset_start": 1854,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 1"
+            },
+            {
+              "verb": "must",
+              "actor": "The state quality standards",
+              "step_id": "ws-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0004",
+              "step_name": "The state quality standards must be consistent with federal quality standards published by an organization with expertise in health-care quality, including, but not limited to, the federal centers for medicare and medicaid services, the agency for healthcare research and quality, or the national quality forum.",
+              "step_order": 4,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "9604553776f2b2a8b9a982224bdaf4c097feeefa1a6fe447fb5950b164e119ec",
+                "char_offset_end": 2325,
+                "char_offset_start": 2006,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 1"
+            },
+            {
+              "verb": "shall",
+              "actor": "PRIOR TO IMPLEMENTATION OF THE PROGRAM , THE COLORADO HEALTHCARE AFFORDABILITY AND SUSTAINABILITY ENTERPRISE BOARD",
+              "step_id": "ws-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0005",
+              "step_name": "(II) (A) PRIOR TO IMPLEMENTATION OF THE PROGRAM , THE COLORADO HEALTHCARE AFFORDABILITY AND SUSTAINABILITY ENTERPRISE BOARD SHALL APPROVE THE PERCENTAGE OF HOSPITALS ' REIMBURSEMENT IN THE HOSPITAL QUALITY INCENTIVE PROGRAM, PROGRAM STRUCTURE , PERFORMANCE MEASURES , AND SCORING METHODOLOGY.",
+              "step_order": 5,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "8390759b559d47992c9ef743bc70e5256e1560e49e14d2f4cced03bcd1679357",
+                "char_offset_end": 2619,
+                "char_offset_start": 2326,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 1"
+            },
+            {
+              "verb": "shall",
+              "actor": "WHEN APPROVING A PROGRAM PURSUANT TO THIS SUBSECTION (3)(a), THE BOARD",
+              "step_id": "ws-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0006",
+              "step_name": "(B) WHEN APPROVING A PROGRAM PURSUANT TO THIS SUBSECTION (3)(a), THE BOARD SHALL REQUIRE THAT NEW MEASURES REMAIN IN PLACE FOR A DEFINED PERIOD OF TIME NOT TO EXCEED THREE YEARS PRIOR TO MODIFICATION OR REPLACEMENT OF THE NEW MEASURES ; EXCEPT THAT THE BOARD MAY APPROVE MODIFICATIONS OR REPLACEMENTS PRIOR TO THE END OF THE DEFINED PERIOD OF TIME IF THE BOARD IS PRESENTED WITH EVIDENCE THAT THE APPROVED MEASURES ARE NOT MEETING THE GOALS OF THE PROGRAM OR REQUIRE TECHNICAL ADJUSTMENTS .",
+              "step_order": 6,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "d681518d11b221b0b4cddd19acb0d73c92716072dab57113c90a6d0976224b4e",
+                "char_offset_end": 3110,
+                "char_offset_start": 2620,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 1"
+            },
+            {
+              "verb": "must",
+              "actor": "ANY MODIFICATIONS TO THE HOSPITAL QUALITY INCENTIVE PROGRAM",
+              "step_id": "ws-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0007",
+              "step_name": "(C) ANY MODIFICATIONS TO THE HOSPITAL QUALITY INCENTIVE PROGRAM MUST BE APPROVED BY THE BOARD PRIOR TO IMPLEMENTATION; EXCEPT THAT CHANGES NECESSARY TO COMPLY WITH FEDERAL LAW MAY BE IMPLEMENTED IMMEDIATELY.",
+              "step_order": 7,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "acc90b6245aa36d3d91741c37d604504c92fa1b2112a50d719b2885771256cde",
+                "char_offset_end": 3505,
+                "char_offset_start": 3297,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 1"
+            },
+            {
+              "verb": "must",
+              "actor": "The amount of the payments made pursuant to subsection (3)(a) of this section",
+              "step_id": "ws-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0008",
+              "step_name": "(b) (I) The amount of the payments made pursuant to subsection (3)(a) of this section must be computed annually.",
+              "step_order": 8,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "d824912f3dfe1b2da26114e8b6f77422126a44146280160cf1487441984dfce5",
+                "char_offset_end": 4097,
+                "char_offset_start": 3984,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 1"
+            },
+            {
+              "verb": "must",
+              "actor": "For each state fiscal year, the total amount of the payments",
+              "step_id": "ws-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0009",
+              "step_name": "For each state fiscal year, the total amount of the payments must be no more than seven percent of the total reimbursements made to hospitals in the previous state fiscal year.",
+              "step_order": 9,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "02644f72044ad3b546c1ff7837990bdb85a30571d5e2607cfe61f0881b5c692a",
+                "char_offset_end": 4274,
+                "char_offset_start": 4098,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 1"
+            },
+            {
+              "verb": "must not",
+              "actor": "N OTWITHSTANDING SUBSECTION (3)(b)(I) OF THIS SECTION, THE MAXIMUM PERCENTAGE OF PAYMENTS",
+              "step_id": "ws-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0010",
+              "step_name": "(II) N OTWITHSTANDING SUBSECTION (3)(b)(I) OF THIS SECTION, THE MAXIMUM PERCENTAGE OF PAYMENTS MUST NOT EXCEED SEVEN PERCENT OF THE TOTAL REIMBURSEMENTS MADE TO HOSPITALS IN THE PREVIOUS STATE FISCAL YEAR UNLESS AND UNTIL THE COLORADO HEALTHCARE AFFORDABILITY AND SUSTAINABILITY ENTERPRISE BOARD FORMALLY APPROVES A HOSPITAL QUALITY INCENTIVE PROGRAM PURSUANT TO SUBSECTION (3)(a) OF THIS SECTION, DEVELOPED WITH INPUT FROM HOSPITAL REPRESENTATIVES WITH CLINICAL EXPERTISE , AFTER WHICH THE MAXIMUM PERCENTAGE OF PAYMENTS MUST NOT EXCEED NINE PERCENT OF THE TOTAL REIMBURSEMENTS MADE TO HOSPITALS.",
+              "step_order": 10,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "b20e18d9bf337922833f6418260394db4d878f72fe6f0ecbfe603d48d66a1bd0",
+                "char_offset_end": 4879,
+                "char_offset_start": 4275,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 1"
+            }
+          ],
+          "pipeline_name": "Exact source obligations for Sec. 1",
+          "pipeline_type": "section_ordered_normative_modal_clauses",
+          "governing_section": "Sec. 1"
+        },
+        "source_object_id": "wp-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0002",
+        "extraction_run_id": "24593",
+        "source_object_type": "workflow_pipeline"
+      },
+      {
+        "key": "wp-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0003",
+        "layer": "workflow",
+        "metadata": {
+          "source_span": {
+            "section_number": "Sec. 2",
+            "char_offset_end": 12141,
+            "char_offset_start": 4880,
+            "block_content_hash": "a0f2aaa87efb80ffd7304e9083e33f09f0602e8e7806da2e6a96f3510c0699a9"
+          },
+          "canon_version": 2,
+          "signal_status": "confirmed"
+        },
+        "confirmed": true,
+        "confidence": 1,
+        "source_block_id": "blk-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0003",
+        "normalized_value": {
+          "steps": [
+            {
+              "verb": "may",
+              "actor": "If the amount of hospital provider fee revenue collected exceeds the federal net patient revenue-based limit on the amount of such fee revenue that",
+              "step_id": "ws-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0011",
+              "step_name": "If the amount of hospital provider fee revenue collected exceeds the federal net patient revenue-based limit on the amount of such fee revenue that may be collected, requiring repayment to the federal government of excess federal matching money received, hospitals that received such excess federal matching money are responsible for repaying the excess federal money and any associated federal penalties to the federal government.",
+              "step_order": 1,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "e78b67f63abde7e7d5ee3764736956d00993943d45f15ff53964ee6dd9439652",
+                "char_offset_end": 6735,
+                "char_offset_start": 6304,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 2"
+            },
+            {
+              "verb": "shall",
+              "actor": "The enterprise",
+              "step_id": "ws-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0012",
+              "step_name": "The enterprise shall use the hospital provider fee revenue to: (IV) Provide or contract for or arrange the provision of additional business services to hospitals by: (E) Providing funding for, and in cooperation with the state department and hospitals supporting the implementation of a health-care delivery system reform incentive payments program as described in subsection (8) of this section THE HOSPITAL QUALITY INCENTIVE PROGRAM CREATED IN SECTION 25.5-4-402 (3)(a).",
+              "step_order": 2,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "918d48eda860ad70cabc1dbc4bbdc1ef54917413b1410c25eb59e85df269aed4",
+                "char_offset_end": 7209,
+                "char_offset_start": 6736,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 2"
+            },
+            {
+              "verb": "may",
+              "actor": "In accordance with the redistributive method set forth in 42 CFR 433.68 (e)(1) and (e)(2), the enterprise, acting in concert with or through an agreement with the state department if required by federal law",
+              "step_id": "ws-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0013",
+              "step_name": "(c) (I) In accordance with the redistributive method set forth in 42 CFR 433.68 (e)(1) and (e)(2), the enterprise, acting in concert with or through an agreement with the state department if required by federal law, may seek a waiver from the broad-based hospital provider fee requirement or the uniform hospital provider fee requirement, or both.",
+              "step_order": 3,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "f1a3400a2874413de6bf012be02a8bf31278396687db16e0f3658ca72d3da689",
+                "char_offset_end": 7557,
+                "char_offset_start": 7210,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 2"
+            },
+            {
+              "verb": "shall",
+              "actor": "In addition, the enterprise, acting in concert with or through an agreement with the state department if required by federal law",
+              "step_id": "ws-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0014",
+              "step_name": "In addition, the enterprise, acting in concert with or through an agreement with the state department if required by federal law, shall seek any federal waiver necessary to fund and, in cooperation with the state department and hospitals, support the implementation of a health-care delivery system reform incentive payments program as described in subsection (8) of this section.",
+              "step_order": 4,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "96a5311191d167d15a8d3e0ff9a2bab405df0d2cdaad1bca2d8c81217601cee4",
+                "char_offset_end": 7938,
+                "char_offset_start": 7558,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 2"
+            },
+            {
+              "verb": "may",
+              "actor": "Subject to federal approval and to minimize the financial impact on certain hospitals, the enterprise",
+              "step_id": "ws-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0015",
+              "step_name": "Subject to federal approval and to minimize the financial impact on certain hospitals, the enterprise may exempt from payment of the hospital provider fee certain types of hospitals, including but not limited to: (5) Healthcare affordability and sustainability hospital provider fee cash fund.",
+              "step_order": 5,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "8fe619fc8a0829ca9adc44bced06270e6f6c49af89d7a022beb31cc74d1624ab",
+                "char_offset_end": 8232,
+                "char_offset_start": 7939,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 2"
+            },
+            {
+              "verb": "shall",
+              "actor": "The enterprise board has, at a minimum, the following duties: (V) To direct and oversee the enterprise in seeking, in concert with or through an agreement with the state department if required by federal law, any federal waiver necessary to fund and, in cooperation with the state department and hospitals, support the implementation of a health-care delivery system reform incentive payments program as described in subsection (8) of this section THE HOSPITAL QUALITY INCENTIVE PROGRAM CREATED IN SECTION 25.5-4-402 (3)(a); (e) On or before January 15, 2018, and on or before January 15 each year thereafter, the enterprise board",
+              "step_id": "ws-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0016",
+              "step_name": "(d) The enterprise board has, at a minimum, the following duties: (V) To direct and oversee the enterprise in seeking, in concert with or through an agreement with the state department if required by federal law, any federal waiver necessary to fund and, in cooperation with the state department and hospitals, support the implementation of a health-care delivery system reform incentive payments program as described in subsection (8) of this section THE HOSPITAL QUALITY INCENTIVE PROGRAM CREATED IN SECTION 25.5-4-402 (3)(a); (e) On or before January 15, 2018, and on or before January 15 each year thereafter, the enterprise board shall submit a written report to the health and human services committee of the senate and the health and human services committee of the house of representatives, or any successor committees, the joint budget committee of the general assembly, the governor, and the state board.",
+              "step_order": 6,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "e84b225bd283d25db950322ef653a70d3ac28d2eb1f2be9e51b0d4ee54fd7f6a",
+                "char_offset_end": 9822,
+                "char_offset_start": 8908,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 2"
+            },
+            {
+              "verb": "shall",
+              "actor": "The enterprise, acting in concert with or through an agreement with the state department if required by federal law",
+              "step_id": "ws-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0017",
+              "step_name": "The enterprise, acting in concert with or through an agreement with the state department if required by federal law, shall seek any federal waiver necessary to fund and, in cooperation with the state department and hospitals, support the implementation, no earlier than October 1, 2019, of a health-care delivery system reform incentive payments program that will improve health-care access and outcomes for individuals served by the state department while efficiently utilizing available financial resources.",
+              "step_order": 7,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "229c777945e631f11c38506836652f6e9042314d6b186991ee36bc30893661e7",
+                "char_offset_end": 11478,
+                "char_offset_start": 10961,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 2"
+            }
+          ],
+          "pipeline_name": "Exact source obligations for Sec. 2",
+          "pipeline_type": "section_ordered_normative_modal_clauses",
+          "governing_section": "Sec. 2"
+        },
+        "source_object_id": "wp-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-0003",
+        "extraction_run_id": "24593",
+        "source_object_type": "workflow_pipeline"
+      }
+    ],
+    "coverage": {
+      "help": {
+        "reason": "No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+        "status": "not_applicable",
+        "validated_at": "2026-08-28T14:47:28.473744+00:00"
+      },
+      "workflow": {
+        "reason": "Deterministic section-local rule match. | No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+        "status": "populated",
+        "validated_at": "2026-08-28T14:47:28.473834+00:00"
+      },
+      "overrides": {
+        "reason": "Deterministic section-local rule match. | No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+        "status": "populated",
+        "validated_at": "2026-08-28T14:47:28.473876+00:00"
+      },
+      "definitions": {
+        "reason": "No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+        "status": "not_applicable",
+        "validated_at": "2026-08-28T14:47:28.473888+00:00"
+      },
+      "accountability": {
+        "reason": "No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+        "status": "not_applicable",
+        "validated_at": "2026-08-28T14:47:28.473863+00:00"
+      }
+    },
+    "corpus_id": 7,
+    "created_at": "2026-08-28T14:47:25.904729+00:00",
+    "media_type": "application/pdf",
+    "run_status": "completed",
+    "source_url": "https://leg.colorado.gov/bill_files/117043/download",
+    "run_version": 1,
+    "completed_at": "2026-08-28T14:47:40.22669+00:00",
+    "document_name": "HB1432: Enrolled — Health-Care Payment Programs",
+    "document_type": "bill_version",
+    "engine_version": "rosetta-v3-deterministic-sql-2.5.11",
+    "source_version": "legiscan_text:3445401:Enrolled:pdf-parse-2.4.5-legislative-version-v1",
+    "provenance_state": "complete",
+    "rule_set_version": "rosetta-five-layer-structural-correctness-2.5.11",
+    "source_byte_hash": "37a42eee7e6f38f6a691a06bf52cc385cf60a72b1d998aa7c625fe7a96d67660",
+    "extraction_run_id": 24593,
+    "configuration_hash": "ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf",
+    "rule_manifest_hash": "3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639",
+    "source_document_id": 19584,
+    "admissibility_state": "admissible",
+    "document_identifier": "docket:2148176:text:2148176:3445401",
+    "output_content_hash": "83646dc5661ee3858fcc563530000d3106d10128ff3e0323d734b99306665e38",
+    "source_content_hash": "4a4594b0ee1d6b5c7b523e232d3daa48409b63d288d3c92c1160bbb5f39b1e01",
+    "confidence_threshold": 1,
+    "source_identity_hash": "cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753",
+    "source_provider_hash": "bfe44218c7013dd8d5cde26010c2735c",
+    "structural_representations": []
+  },
+  "run_receipt": {
+    "id": 24593,
+    "created_at": "2026-08-28T14:47:25.904729+00:00",
+    "run_status": "completed",
+    "run_version": 1,
+    "completed_at": "2026-08-28T14:47:40.22669+00:00",
+    "failure_code": null,
+    "engine_version": "rosetta-v3-deterministic-sql-2.5.11",
+    "rule_set_version": "rosetta-five-layer-structural-correctness-2.5.11",
+    "source_content_id": "6acef145-b09d-4e60-a1d6-7008b9911496",
+    "configuration_hash": "ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf",
+    "configuration_json": {
+      "reference_date": "1969-12-31",
+      "confidence_mode": "binary_exact_match_only",
+      "normalization_version": "rosetta-normalize-whitespace-v2",
+      "text_extractor_version": "pdf-parse-2.4.5-legislative-version-v1",
+      "parsing_projection_version": "rosetta-layout-projection-v25"
+    },
+    "rule_manifest_hash": "3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639",
+    "source_document_id": 19584,
+    "admissibility_state": "admissible",
+    "output_content_hash": "83646dc5661ee3858fcc563530000d3106d10128ff3e0323d734b99306665e38",
+    "source_content_hash": "4a4594b0ee1d6b5c7b523e232d3daa48409b63d288d3c92c1160bbb5f39b1e01",
+    "confidence_threshold": 1,
+    "source_identity_hash": "cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753",
+    "source_document": {
+      "id": 19584,
+      "corpus_id": 7,
+      "created_at": "2026-08-28T14:47:24.851545+00:00",
+      "document_name": "HB1432: Enrolled — Health-Care Payment Programs",
+      "document_type": "bill_version",
+      "document_identifier": "docket:2148176:text:2148176:3445401"
+    },
+    "lifecycle_version": "rosetta-run-lifecycle-v1",
+    "lifecycle_class": "admissible_production",
+    "lifecycle_label": "Production admissible",
+    "lifecycle_detail": "Admissible deterministic law generation with complete source, rule, configuration, and output receipts. Current proof membership is determined only by Rosetta’s database proof predicate.",
+    "age_hours": 38.6,
+    "is_control": false,
+    "proof_membership_authority": "rosetta-database-current-proof-predicate",
+    "inspectable": true
+  },
+  "validation_results": [
+    {
+      "id": "vr-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-source-bound",
+      "details": {
+        "source_block_id": "blk-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-root"
+      },
+      "test_name": "canonical_rows_source_bound",
+      "executed_at": "2026-08-28T14:47:25.904729+00:00",
+      "test_result": "pass",
+      "failure_count": 0,
+      "extraction_run_id": 24593
+    },
+    {
+      "id": "vr-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-exact-source-structure",
+      "details": {
+        "status": "pass",
+        "contract": "rosetta-structural-correctness-v2511",
+        "document_family": "text",
+        "amendment_disposition": null,
+        "operative_layer_projection": null,
+        "structural_span_mismatch_count": 0,
+        "structural_representation_count": 0,
+        "amendment_coverage_mismatch_count": 0,
+        "structural_footer_contamination_count": 0
+      },
+      "test_name": "exact_source_structure_v2511",
+      "executed_at": "2026-08-28T14:47:25.904729+00:00",
+      "test_result": "pass",
+      "failure_count": 0,
+      "extraction_run_id": 24593
+    },
+    {
+      "id": "vr-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-coverage",
+      "details": {
+        "contract": "rosetta-final-five-layer-coverage-v2511",
+        "coverage": {
+          "help": {
+            "reason": "No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+            "status": "not_applicable",
+            "validated_at": "2026-08-28T14:47:28.473744+00:00"
+          },
+          "workflow": {
+            "reason": "Deterministic section-local rule match. | No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+            "status": "populated",
+            "validated_at": "2026-08-28T14:47:28.473834+00:00"
+          },
+          "overrides": {
+            "reason": "Deterministic section-local rule match. | No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+            "status": "populated",
+            "validated_at": "2026-08-28T14:47:28.473876+00:00"
+          },
+          "definitions": {
+            "reason": "No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+            "status": "not_applicable",
+            "validated_at": "2026-08-28T14:47:28.473888+00:00"
+          },
+          "accountability": {
+            "reason": "No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+            "status": "not_applicable",
+            "validated_at": "2026-08-28T14:47:28.473863+00:00"
+          }
+        },
+        "terminal": true,
+        "layer_count": 5
+      },
+      "test_name": "five_layer_coverage",
+      "executed_at": "2026-08-28T14:47:25.904729+00:00",
+      "test_result": "pass",
+      "failure_count": 0,
+      "extraction_run_id": 24593
+    },
+    {
+      "id": "vr-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-independent-structure",
+      "details": {
+        "status": "pass",
+        "contract": "rosetta-independent-structural-validation-v2511",
+        "bad_span_count": 0,
+        "document_family": "text",
+        "actual_span_count": 23,
+        "extraction_run_id": 24593,
+        "expected_span_count": 23,
+        "actual_workflow_count": 17,
+        "blocking_repair_count": 0,
+        "duplicate_section_count": 0,
+        "expected_workflow_count": 17,
+        "span_hash_mismatch_count": 0,
+        "block_hash_mismatch_count": 0,
+        "penalty_actor_mismatch_count": 0,
+        "workflow_contamination_count": 0,
+        "override_false_positive_count": 0,
+        "actual_clause_occurrence_count": 0,
+        "definition_contamination_count": 0,
+        "expected_clause_occurrence_count": 0,
+        "accountability_contamination_count": 0,
+        "accountability_typing_mismatch_count": 0,
+        "clause_occurrence_binding_mismatch_count": 0
+      },
+      "test_name": "independent_structure_v2511",
+      "executed_at": "2026-08-28T14:47:25.904729+00:00",
+      "test_result": "pass",
+      "failure_count": 0,
+      "extraction_run_id": 24593
+    },
+    {
+      "id": "vr-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-no-pending",
+      "details": {
+        "contract": "rosetta-final-five-layer-coverage-v2511",
+        "coverage": {
+          "help": {
+            "reason": "No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+            "status": "not_applicable",
+            "validated_at": "2026-08-28T14:47:28.473744+00:00"
+          },
+          "workflow": {
+            "reason": "Deterministic section-local rule match. | No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+            "status": "populated",
+            "validated_at": "2026-08-28T14:47:28.473834+00:00"
+          },
+          "overrides": {
+            "reason": "Deterministic section-local rule match. | No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+            "status": "populated",
+            "validated_at": "2026-08-28T14:47:28.473876+00:00"
+          },
+          "definitions": {
+            "reason": "No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+            "status": "not_applicable",
+            "validated_at": "2026-08-28T14:47:28.473888+00:00"
+          },
+          "accountability": {
+            "reason": "No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+            "status": "not_applicable",
+            "validated_at": "2026-08-28T14:47:28.473863+00:00"
+          }
+        },
+        "terminal": true,
+        "layer_count": 5
+      },
+      "test_name": "no_pending_coverage",
+      "executed_at": "2026-08-28T14:47:25.904729+00:00",
+      "test_result": "pass",
+      "failure_count": 0,
+      "extraction_run_id": 24593
+    },
+    {
+      "id": "vr-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-output-hash",
+      "details": {
+        "contract": "rosetta-final-output-hash-v2511",
+        "output_content_hash": "83646dc5661ee3858fcc563530000d3106d10128ff3e0323d734b99306665e38"
+      },
+      "test_name": "output_hash_verified",
+      "executed_at": "2026-08-28T14:47:25.904729+00:00",
+      "test_result": "pass",
+      "failure_count": 0,
+      "extraction_run_id": 24593
+    },
+    {
+      "id": "vr-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-source-bytes",
+      "details": {
+        "media_type": "application/pdf",
+        "source_byte_hash": "37a42eee7e6f38f6a691a06bf52cc385cf60a72b1d998aa7c625fe7a96d67660"
+      },
+      "test_name": "source_bytes_receipted",
+      "executed_at": "2026-08-28T14:47:25.904729+00:00",
+      "test_result": "pass",
+      "failure_count": 0,
+      "extraction_run_id": 24593
+    },
+    {
+      "id": "vr-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-source-hash",
+      "details": {
+        "source_content_hash": "4a4594b0ee1d6b5c7b523e232d3daa48409b63d288d3c92c1160bbb5f39b1e01"
+      },
+      "test_name": "source_hash_verified",
+      "executed_at": "2026-08-28T14:47:25.904729+00:00",
+      "test_result": "pass",
+      "failure_count": 0,
+      "extraction_run_id": 24593
+    },
+    {
+      "id": "vr-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf-structural-correctness",
+      "details": {
+        "status": "pass",
+        "document_family": "text",
+        "engine_contract": "rosetta-structural-self-check-v2511",
+        "actor_mismatch_count": 0,
+        "extra_workflow_count": 0,
+        "modal_mismatch_count": 0,
+        "actual_workflow_count": 17,
+        "missing_workflow_count": 0,
+        "coverage_mismatch_count": 0,
+        "expected_workflow_count": 17,
+        "override_section_mismatch_count": 0,
+        "workflow_section_mismatch_count": 0,
+        "definition_section_mismatch_count": 0
+      },
+      "test_name": "structural_correctness_v2",
+      "executed_at": "2026-08-28T14:47:25.904729+00:00",
+      "test_result": "pass",
+      "failure_count": 0,
+      "extraction_run_id": 24593
+    }
+  ],
+  "extraction_manifest": {
+    "id": "manifest-v2511-cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753-ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf",
+    "status": "clean",
+    "corpus_id": 7,
+    "row_counts": {
+      "help": 0,
+      "coverage": 20,
+      "overrides": 6,
+      "raw_blocks": 5,
+      "definitions": 0,
+      "workflow_steps": 17,
+      "workflow_pipelines": 2,
+      "accountability_routes": 0,
+      "structural_representations": 0
+    },
+    "executed_at": "2026-08-28T14:47:25.904729+00:00",
+    "output_hash": "83646dc5661ee3858fcc563530000d3106d10128ff3e0323d734b99306665e38",
+    "source_hash": "4a4594b0ee1d6b5c7b523e232d3daa48409b63d288d3c92c1160bbb5f39b1e01",
+    "drift_events": [],
+    "canon_version": 1,
+    "rule_manifest": {
+      "is_active": true,
+      "created_at": "2026-08-19T09:01:10.775257+00:00",
+      "manifest_id": "a35117fd-a1ac-4ef5-82c0-1e46e30acc90",
+      "manifest_hash": "3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639",
+      "manifest_json": {
+        "change": {
+          "coverage_block_scope": "Every retained amendment document, section, and amendment-operation block receives all five operative layers as not_applicable.",
+          "receipt_truthfulness": "The execution receipt returns final hashed objects, structural representations, five-layer coverage, and row counts after all reclassification and validation.",
+          "final_validation_order": "No canonical meaning changes after final coverage, structural self-check, and independent validation.",
+          "amendment_page_furniture": "Recognized trailing legislative page furniture remains excluded from amendment-operation spans.",
+          "amendment_representation": "Source-stated amendment instructions remain non-operative structural representations, not OVERRIDES objects.",
+          "exact_replay_immutability": "An already-finalized exact generation returns its stored final receipt without re-finalization, timestamp refresh, canonical-row mutation, or hash mutation. Interrupted base-stage generations complete finalization exactly once.",
+          "amendment_validation_stage_order": "The base parser retains raw-source structural self-check semantics before projection. Amendment-aware expected operative workflow = 0 is enforced only after finalizer reclassification/pruning, so temporary base workflow rows do not fail the pre-projection stage.",
+          "amendment_disposition_status_scope": "ADOPTED/NOT ADOPTED source disposition is recognized only from standalone status lines. Statutory uses such as regulations adopted by a city are not amendment-status evidence; explicit docket metadata remains independently checked against any standalone source status line.",
+          "marked_full_text_amendment_reprints": "A document_family=amendment source with both an explicit reprinted-as-amended marker and an amendment instruction key may have zero parsed line operations. Rosetta prunes all operative five-layer projection, records five-layer not_applicable coverage, preserves amendment structure, and continues to reject unrecognized zero-operation amendment formats.",
+          "amendment_operative_workflow_expectation": "For document_family=amendment, raw amendment-instruction modal clauses are diagnostic only. After the non-operative amendment projection, expected operative workflow is zero and any actual operative workflow fails validation."
+        },
+        "contract": "S -> {HELP, WORKFLOW, ACCOUNTABILITY, OVERRIDES, DEFINITIONS} plus non-operative structural representations",
+        "inherits": {
+          "status": "published_current_generation",
+          "engine_version": "rosetta-v3-deterministic-sql-2.5.10",
+          "rule_set_version": "rosetta-five-layer-structural-correctness-2.5.10"
+        },
+        "provenance": "Rosetta 2.5.11 is an immutable candidate generation. It preserves 2.5.10 receipts and adds deterministic recognition of source-marked full-text amendment reprints whose legal text is presented with an amendment instruction key rather than a line-operation sheet.",
+        "engine_version": "rosetta-v3-deterministic-sql-2.5.11",
+        "rule_set_version": "rosetta-five-layer-structural-correctness-2.5.11",
+        "source_projection": "rosetta-layout-projection-v25",
+        "handoff_contract_version": "rosetta-civic-genome-handoff-v2"
+      },
+      "engine_version": "rosetta-v3-deterministic-sql-2.5.11",
+      "rule_set_version": "rosetta-five-layer-structural-correctness-2.5.11"
+    },
+    "engine_version": "rosetta-v3-deterministic-sql-2.5.11",
+    "rule_set_version": "rosetta-five-layer-structural-correctness-2.5.11",
+    "extraction_run_id": 24593,
+    "source_content_id": "6acef145-b09d-4e60-a1d6-7008b9911496",
+    "configuration_hash": "ae6aa37617755273842dcbfeaa5520ae4a8fbcf4272ccb2c720b35cd5d718fbf",
+    "rule_manifest_hash": "3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639",
+    "source_document_id": 19584,
+    "validation_results": {
+      "five_layer_coverage": true,
+      "no_pending_coverage": true,
+      "output_hash_verified": true,
+      "source_hash_verified": true,
+      "source_bytes_receipted": true,
+      "object_source_spans_v25": {
+        "contract": "rosetta-object-source-span-v25",
+        "resolved": 23,
+        "ambiguous": 0,
+        "unresolved": 0,
+        "extraction_run_id": 24593
+      },
+      "structural_correctness_v2": {
+        "status": "pass",
+        "document_family": "text",
+        "engine_contract": "rosetta-structural-self-check-v2511",
+        "actor_mismatch_count": 0,
+        "extra_workflow_count": 0,
+        "modal_mismatch_count": 0,
+        "actual_workflow_count": 17,
+        "missing_workflow_count": 0,
+        "coverage_mismatch_count": 0,
+        "expected_workflow_count": 17,
+        "override_section_mismatch_count": 0,
+        "workflow_section_mismatch_count": 0,
+        "definition_section_mismatch_count": 0
+      },
+      "canonical_rows_source_bound": true,
+      "independent_structure_v2511": {
+        "status": "pass",
+        "contract": "rosetta-independent-structural-validation-v2511",
+        "bad_span_count": 0,
+        "document_family": "text",
+        "actual_span_count": 23,
+        "extraction_run_id": 24593,
+        "expected_span_count": 23,
+        "actual_workflow_count": 17,
+        "blocking_repair_count": 0,
+        "duplicate_section_count": 0,
+        "expected_workflow_count": 17,
+        "span_hash_mismatch_count": 0,
+        "block_hash_mismatch_count": 0,
+        "penalty_actor_mismatch_count": 0,
+        "workflow_contamination_count": 0,
+        "override_false_positive_count": 0,
+        "actual_clause_occurrence_count": 0,
+        "definition_contamination_count": 0,
+        "expected_clause_occurrence_count": 0,
+        "accountability_contamination_count": 0,
+        "accountability_typing_mismatch_count": 0,
+        "clause_occurrence_binding_mismatch_count": 0
+      },
+      "exact_source_structure_v2511": {
+        "status": "pass",
+        "contract": "rosetta-structural-correctness-v2511",
+        "document_family": "text",
+        "amendment_disposition": null,
+        "operative_layer_projection": null,
+        "structural_span_mismatch_count": 0,
+        "structural_representation_count": 0,
+        "amendment_coverage_mismatch_count": 0,
+        "structural_footer_contamination_count": 0
+      },
+      "span_repair_registration_v25": {
+        "contract": "rosetta-span-repair-registration-v25",
+        "extraction_run_id": 24593,
+        "blocking_repair_count": 0
+      },
+      "final_five_layer_coverage_v2511": {
+        "status": "pass",
+        "contract": "rosetta-final-five-layer-coverage-v2511",
+        "coverage": {
+          "help": {
+            "reason": "No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+            "status": "not_applicable",
+            "validated_at": "2026-08-28T14:47:28.473744+00:00"
+          },
+          "workflow": {
+            "reason": "Deterministic section-local rule match. | No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+            "status": "populated",
+            "validated_at": "2026-08-28T14:47:28.473834+00:00"
+          },
+          "overrides": {
+            "reason": "Deterministic section-local rule match. | No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+            "status": "populated",
+            "validated_at": "2026-08-28T14:47:28.473876+00:00"
+          },
+          "definitions": {
+            "reason": "No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+            "status": "not_applicable",
+            "validated_at": "2026-08-28T14:47:28.473888+00:00"
+          },
+          "accountability": {
+            "reason": "No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+            "status": "not_applicable",
+            "validated_at": "2026-08-28T14:47:28.473863+00:00"
+          }
+        },
+        "terminal": true,
+        "layer_count": 5
+      },
+      "structural_reconciliation_v2511": {
+        "contract": "rosetta-structural-reconciliation-v2511",
+        "definition_count": 0,
+        "extraction_run_id": 24593,
+        "publication_state": "verified",
+        "accountability_count": 0,
+        "blocking_repair_count": 0,
+        "clause_occurrence_count": 0
+      },
+      "structural_reclassification_v2511": {
+        "applied": false,
+        "contract": "rosetta-amendment-structural-representation-v2511",
+        "document_family": "text",
+        "representation_count": 0
+      }
+    },
+    "admissibility_state": "admissible",
+    "source_identity_hash": "cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753"
+  },
+  "source_receipt": {
+    "created_at": "2026-08-28T14:47:25.778727+00:00",
+    "media_type": "application/pdf",
+    "source_url": "https://leg.colorado.gov/bill_files/117043/download",
+    "source_text": "HOUSE BILL 26-1432\nBY REPRESENTATIVE(S) Soper and Stewart K., Bacon, Boesenecker,\nBradley, Brown, Carter, Duran, English, Flanell, Froelich, Gonzalez R.,\nHamrick, Johnson, Lindsay, McCormick, Nguyen, Rydin, Story, Titone,\nWinter T., Woodrow, McCluskie;\nalso SENATOR(S) Roberts and Pelton R., Catlin, Kipp, Coleman.\nCONCERNING HEALTH- CARE PAYMENT PROGRAMS .\nBe it enacted by the General Assembly of the State of Colorado:\nSECTION 1. \tIn Colorado Revised Statutes, 25.5-4-402, amend\n(3)(a) and (3)(b) as follows:\n25.5-4-402. Providers - hospital reimbursement - hospital review\nprogram - rules.\n(3) (a) (I) In addition to the reimbursement rate process described\nin subsection (1) of this section and subject to FEDERAL APPROVAL AND\nadequate funding being made available pursuant to section 25.5-4-402.4,\nthe Colorado healthcare affordability and sustainability enterprise created\nin section 25.5-4-402.4 (3) shall pay an additional amount based upon\nperformance IN THE HOSPITAL QUALITY INCENTIVE PROGRAM to those\nNOTE: This bill has been prepared for the signatures of the appropriate legislative\nofficers and the Governor. To determine whether the Governor has signed the bill\nor taken other action on it, please consult the legislative status sheet, the legislative\nhistory, or the Session Laws.\n________\nCapital letters or bold & italic numbers indicate new material added to existing law; dashes\nthrough words or numbers indicate deletions from existing law and such material is not part of\nthe act.\n\n-- 1 of 7 --\n\nhospitals that provide services that improve health-care outcomes for their\npatients, including DELIVER SAFER, MORE EFFECTIVE CARE THAT IMPROVES\nPATIENT OUTCOMES AND REDUCES PREVENTABLE UTILIZATION TO REDUCE\nHEALTH - CARE COSTS . T HE HOSPITAL QUALITY INCENTIVE PROGRAM MUST\nINCLUDE a performance metric related to workplace violence. The state\ndepartment shall determine this amount based upon nationally recognized\nperformance measures established in rules adopted by the state board. The\nstate quality standards must be consistent with federal quality standards\npublished \tby \tan \torganization \twith \texpertise \tin \thealth-care \tquality,\nincluding, but not limited to, the federal centers for medicare and medicaid\nservices, the agency for healthcare research and quality, or the national\nquality forum.\n(II) (A) \tPRIOR TO IMPLEMENTATION OF THE PROGRAM , THE\nCOLORADO HEALTHCARE AFFORDABILITY AND SUSTAINABILITY ENTERPRISE\nBOARD SHALL APPROVE THE PERCENTAGE OF HOSPITALS ' REIMBURSEMENT\nIN THE HOSPITAL QUALITY INCENTIVE PROGRAM, PROGRAM STRUCTURE ,\nPERFORMANCE MEASURES , AND SCORING METHODOLOGY.\n(B) WHEN APPROVING A PROGRAM PURSUANT TO THIS SUBSECTION\n(3)(a), THE BOARD SHALL REQUIRE THAT NEW MEASURES REMAIN IN PLACE\nFOR A DEFINED PERIOD OF TIME NOT TO EXCEED THREE YEARS PRIOR TO\nMODIFICATION OR REPLACEMENT OF THE NEW MEASURES ; EXCEPT THAT THE\nBOARD MAY APPROVE MODIFICATIONS OR REPLACEMENTS PRIOR TO THE END\nOF THE DEFINED PERIOD OF TIME IF THE BOARD IS PRESENTED WITH EVIDENCE\nTHAT THE APPROVED MEASURES ARE NOT MEETING THE GOALS OF THE\nPROGRAM OR REQUIRE TECHNICAL ADJUSTMENTS . \tN OTHING IN THIS\nSUBSECTION (3)(a) PRECLUDES THE BOARD FROM RENEWING MEASURES\nTHAT MEET THE GOALS OF THE PROGRAM AFTER THE DEFINED PERIOD OF\nTIME NOT TO EXCEED THREE YEARS HAS EXPIRED.\n(C) \tANY MODIFICATIONS TO THE HOSPITAL QUALITY INCENTIVE\nPROGRAM MUST BE APPROVED BY THE BOARD PRIOR TO IMPLEMENTATION;\nEXCEPT THAT CHANGES NECESSARY TO COMPLY WITH FEDERAL LAW MAY BE\nIMPLEMENTED IMMEDIATELY.\n(III) \tPERFORMANCE MEASURES AND METHODOLOGIES MUST BE\nBASED ON FACTORS THAT ARE REASONABLY WITHIN HOSPITALS ' CONTROL,\nALIGNED WITH NATIONALLY RECOGNIZED STANDARDS TO THE MAXIMUM\nEXTENT PRACTICABLE , AND DESIGNED TO MINIMIZE ADMINISTRATIVE\nPAGE 2-HOUSE BILL 26-1432\n\n-- 2 of 7 --\n\nBURDEN, \tINCLUDING \tBY \tAVOIDING \tDUPLICATIVE \tREPORTING \tAND\nLEVERAGING EXISTING DATA SOURCES WHEN POSSIBLE . T HE HOSPITAL\nQUALITY INCENTIVE PROGRAM SHOULD ALIGN WITH FEDERAL QUALITY\nSTANDARDS .\n(b) (I) \tThe amount of the payments made pursuant to subsection\n(3)(a) of this section must be computed annually. For each state fiscal year,\nthe total amount of the payments must be no more than seven percent of the\ntotal reimbursements made to hospitals in the previous state fiscal year.\n(II) N OTWITHSTANDING SUBSECTION (3)(b)(I) OF THIS SECTION, THE\nMAXIMUM PERCENTAGE OF PAYMENTS MUST NOT EXCEED SEVEN PERCENT\nOF THE TOTAL REIMBURSEMENTS MADE TO HOSPITALS IN THE PREVIOUS\nSTATE FISCAL YEAR UNLESS AND UNTIL THE COLORADO HEALTHCARE\nAFFORDABILITY \tAND \tSUSTAINABILITY \tENTERPRISE \tBOARD \tFORMALLY\nAPPROVES A HOSPITAL QUALITY INCENTIVE PROGRAM PURSUANT TO\nSUBSECTION \t(3)(a) \tOF THIS SECTION, DEVELOPED WITH INPUT FROM\nHOSPITAL REPRESENTATIVES WITH CLINICAL EXPERTISE , AFTER WHICH THE\nMAXIMUM PERCENTAGE OF PAYMENTS MUST NOT EXCEED NINE PERCENT OF\nTHE TOTAL REIMBURSEMENTS MADE TO HOSPITALS.\nSECTION 2. In Colorado Revised Statutes, 25.5-4-402.4, amend\n(4)(a)(IV)(E), (4)(c)(I) introductory portion, (5)(b)(VIII), (7)(d)(V), and\n(7)(e)(VI); and repeal (8) as follows:\n25.5-4-402.4. \tHospitals \t- \thealthcare \taffordability \tand\nsustainability hospital provider fee - healthcare affordability and\nsustainability nursing facility provider fee - healthcare affordability\nand sustainability intermediate care facility fee - receipt of public funds\n- Colorado healthcare affordability and sustainability enterprise -\nfederal waiver - funds created - reports - rules - legislative declaration\n- definitions - repeal.\n(4) Healthcare affordability and sustainability hospital provider\nfee.\n(a) For the fiscal year commencing July 1, 2017, and for each fiscal\nyear thereafter, the enterprise is authorized to charge and collect a\nhealthcare affordability and sustainability hospital provider fee, as described\nin 42 CFR 433.68 (b), or as otherwise in compliance with 42 CFR 433, on\nPAGE 3-HOUSE BILL 26-1432\n\n-- 3 of 7 --\n\noutpatient and inpatient services provided by all licensed or certified\nhospitals, and receive public funds as described in 42 CFR 433.51, for the\npurpose of obtaining federal financial participation under the state medical\nassistance program as described in this article 4 and articles 5 and 6 of this\ntitle 25.5, including disproportionate share hospital payments pursuant to 42\nU.S.C. sec. 1396r-4. If the amount of hospital provider fee revenue\ncollected exceeds the federal net patient revenue-based limit on the amount\nof such fee revenue that may be collected, requiring repayment to the\nfederal government of excess federal matching money received, hospitals\nthat received such excess federal matching money are responsible for\nrepaying the excess federal money and any associated federal penalties to\nthe federal government. The enterprise shall use the hospital provider fee\nrevenue to:\n(IV) Provide or contract for or arrange the provision of additional\nbusiness services to hospitals by:\n(E) \tProviding funding for, and in cooperation with the state\ndepartment and hospitals supporting the implementation of a health-care\ndelivery system reform incentive payments program as described in\nsubsection (8) of this section THE HOSPITAL QUALITY INCENTIVE PROGRAM\nCREATED IN SECTION 25.5-4-402 (3)(a).\n(c) (I) In accordance with the redistributive method set forth in 42\nCFR 433.68 (e)(1) and (e)(2), the enterprise, acting in concert with or\nthrough an agreement with the state department if required by federal law,\nmay seek a waiver from the broad-based hospital provider fee requirement\nor the uniform hospital provider fee requirement, or both. In addition, the\nenterprise, acting in concert with or through an agreement with the state\ndepartment if required by federal law, shall seek any federal waiver\nnecessary to fund and, in cooperation with the state department and\nhospitals, support the implementation of a health-care delivery system\nreform incentive payments program as described in subsection (8) of this\nsection. Subject to federal approval and to minimize the financial impact on\ncertain hospitals, the enterprise may exempt from payment of the hospital\nprovider fee certain types of hospitals, including but not limited to:\n(5) Healthcare affordability and sustainability hospital provider\nfee cash fund.\nPAGE 4-HOUSE BILL 26-1432\n\n-- 4 of 7 --\n\n(b) All money in the hospital provider fee cash fund is subject to\nfederal matching as authorized under federal law and, subject to annual\nappropriation by the general assembly, shall be expended by the enterprise\nfor the following purposes:\n(VIII) Subject to any necessary federal waivers being obtained, to\nprovide \tfunding \tfor \ta \thealth-care \tdelivery system reform incentive\npayments program as described in subsection (8) of this section SUBJECT TO\nFEDERAL APPROVAL, FOR THE HOSPITAL QUALITY INCENTIVE PROGRAM\nDESCRIBED IN SECTION 25.5-4-402 (3);\n(7) \tColorado \thealthcare \taffordability \tand \tsustainability\nenterprise board.\n(d) The enterprise board has, at a minimum, the following duties:\n(V) To direct and oversee the enterprise in seeking, in concert with\nor through an agreement with the state department if required by federal\nlaw, any federal waiver necessary to fund and, in cooperation with the state\ndepartment and hospitals, support the implementation of a health-care\ndelivery system reform incentive payments program as described in\nsubsection (8) of this section THE HOSPITAL QUALITY INCENTIVE PROGRAM\nCREATED IN SECTION 25.5-4-402 (3)(a);\n(e) On or before January 15, 2018, and on or before January 15 each\nyear thereafter, the enterprise board shall submit a written report to the\nhealth and human services committee of the senate and the health and\nhuman services committee of the house of representatives, or any successor\ncommittees, the joint budget committee of the general assembly, the\ngovernor, and the state board. The report shall include, but need not be\nlimited to:\n(VI) A summary of:\n(A) \tThe efforts made by the enterprise acting in concert with or\nthrough an agreement with the state department if required by federal law,\nto seek any federal waiver necessary to fund and, in cooperation with the\nstate department and hospitals, support the implementation of a health-care\ndelivery system reform incentive payments program as described in\nsubsection (8) of this section TO IMPLEMENT THE HOSPITAL QUALITY\nPAGE 5-HOUSE BILL 26-1432\n\n-- 5 of 7 --\n\nINCENTIVE PROGRAM REQUIRED PURSUANT TO SECTION 25.5-4-402 (3),\nINCLUDING INFORMATION ABOUT THE STRUCTURE OF THE HOSPITAL QUALITY\nINCENTIVE PROGRAM AND ANY RESULTS ACHIEVED AS A RESULT OF THE\nHOSPITAL QUALITY INCENTIVE PROGRAM; and\n(B) \tThe progress actually made by the enterprise, in cooperation\nwith the state department and hospitals, towards the goal of implementing\nsuch \ta \tprogram \tAND \tTHE \tENTERPRISE \tBOARD ' S \tLEGISLATIVE\nRECOMMENDATIONS FOR CHANGES TO THE HOSPITAL QUALITY INCENTIVE\nPROGRAM.\n(8) \tHealth-care delivery system reform incentive payments\nprogram - funding and implementation. The enterprise, acting in concert\nwith or through an agreement with the state department if required by\nfederal law, shall seek any federal waiver necessary to fund and, in\ncooperation \twith \tthe \tstate \tdepartment \tand \thospitals, \tsupport \tthe\nimplementation, no earlier than October 1, 2019, of a health-care delivery\nsystem reform incentive payments program that will improve health-care\naccess and outcomes for individuals served by the state department while\nefficiently utilizing available financial resources. Such a program must, at\na minimum:\n(a) Include an initial planning phase to:\n(I) Assess needs; and\n(II) \tDevelop achievable outcome-based metrics to be used to\nmeasure progress towards program goals, including the goals of health-care\ndelivery system integration, improved patient outcomes, and more efficient\nprovision of care; and\n(b) Address the following focus areas:\n(I) Care coordination and care transition management;\n(II) Integration of physical and behavioral health-care services;\n(III) Chronic condition management;\n(IV) Targeted population health; and\nPAGE 6-HOUSE BILL 26-1432\n\n-- 6 of 7 --\n\n(V) Data-driven accountability and outcome measurement.\nSECTION \t3. \tSafety \tclause. \tThe \tgeneral \tassembly \tfinds,\ndetermines, and declares that this act is necessary for the immediate\npreservation of the public peace, health, or safety or for appropriations for\nthe support and maintenance of the departments of the state and state\ninstitutions.\n____________________________ \t____________________________\nJulie McCluskie \tJames Rashad Coleman, Sr.\nSPEAKER OF THE HOUSE \tPRESIDENT OF\nOF REPRESENTATIVES \tTHE SENATE\n____________________________ \t____________________________\nVanessa Reilly \tEsther van Mourik\nCHIEF CLERK OF THE HOUSE \tSECRETARY OF\nOF REPRESENTATIVES \tTHE SENATE\nAPPROVED________________________________________\n(Date and Time)\n_________________________________________\nJared S. Polis\nGOVERNOR OF THE STATE OF COLORADO\nPAGE 7-HOUSE BILL 26-1432\n\n-- 7 of 7 --",
+    "source_version": "legiscan_text:3445401:Enrolled:pdf-parse-2.4.5-legislative-version-v1",
+    "source_metadata": {
+      "docket_adopted": null,
+      "docket_bill_id": 2148176,
+      "docket_chamber": null,
+      "docket_source_url": "https://leg.colorado.gov/bill_files/117043/download",
+      "docket_stage_rank": 400,
+      "docket_description": null,
+      "docket_provider_url": "https://legiscan.com/CO/text/HB1432/id/3445401",
+      "docket_version_type": "enrolled",
+      "extraction_text_url": "https://leg.colorado.gov/bill_files/117043/download",
+      "registered_metadata": {
+        "source_url": "https://leg.colorado.gov/bill_files/117043/download",
+        "stage_rank": 400,
+        "source_stem": "download",
+        "provider_url": "https://legiscan.com/CO/text/HB1432/id/3445401",
+        "provider_date": "1969-12-31",
+        "provider_hash": "bfe44218c7013dd8d5cde26010c2735c",
+        "provider_size": 137878,
+        "source_bill_id": 2148176,
+        "document_family": "text",
+        "provider_payload": {
+          "url": "https://legiscan.com/CO/text/HB1432/id/3445401",
+          "date": "1969-12-31",
+          "mime": "application/pdf",
+          "type": "Enrolled",
+          "doc_id": 3445401,
+          "mime_id": 2,
+          "type_id": 5,
+          "alt_mime": "",
+          "text_hash": "bfe44218c7013dd8d5cde26010c2735c",
+          "text_size": 137878,
+          "state_link": "https://leg.colorado.gov/bill_files/117043/download",
+          "alt_mime_id": 0,
+          "alt_bill_text": 0,
+          "alt_text_hash": "",
+          "alt_text_size": 0,
+          "alt_state_link": ""
+        },
+        "provider_sequence": 6,
+        "source_document_key": "text:2148176:3445401",
+        "provider_document_id": 3445401,
+        "provider_document_type": "Enrolled",
+        "normalized_version_type": "enrolled"
+      },
+      "docket_provider_date": "1969-12-31",
+      "docket_provider_hash": "bfe44218c7013dd8d5cde26010c2735c",
+      "docket_provider_size": 137878,
+      "source_url_rewritten": false,
+      "docket_document_family": "text",
+      "registered_observed_at": "2026-08-06 18:41:45.756342+00",
+      "california_bill_page_url": null,
+      "docket_provider_sequence": 6,
+      "extraction_text_byte_hash": "37a42eee7e6f38f6a691a06bf52cc385cf60a72b1d998aa7c625fe7a96d67660",
+      "docket_source_document_key": "text:2148176:3445401",
+      "docket_provider_document_id": 3445401,
+      "docket_provider_document_type": "Enrolled",
+      "california_session_bootstrapped": false,
+      "docket_base_source_document_key": null,
+      "docket_predecessor_source_document_key": "text:2148176:3435611"
+    },
+    "source_byte_hash": "37a42eee7e6f38f6a691a06bf52cc385cf60a72b1d998aa7c625fe7a96d67660",
+    "source_content_id": "6acef145-b09d-4e60-a1d6-7008b9911496",
+    "source_document_id": 19584,
+    "source_content_hash": "4a4594b0ee1d6b5c7b523e232d3daa48409b63d288d3c92c1160bbb5f39b1e01",
+    "source_identity_hash": "cd6cb966fa79d53e5d1ffa38711f0d944a95c6ce9f9b02fc191b2f22ddf6d753",
+    "source_provider_hash": "bfe44218c7013dd8d5cde26010c2735c"
+  }
+}

@@ -511,8 +511,23 @@ $function$""",
 # ===========================================================================
 LANES["c3"] = {
  "tag": "2.5.13-c3",
- "title": "C3 hash-bound projection contract with receipts and fail-closed verification",
+ "title": "C3 hash-bound projection and acquisition contract with exact exclusions and reference-date gate",
  "extra_functions": [
+"""CREATE OR REPLACE FUNCTION public.rosetta_v25_reference_date_gate(p_reference_date date)
+ RETURNS void
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'pg_catalog'
+AS $function$
+begin
+  -- Provider/reference dates before the Unix epoch are sentinel/configuration
+  -- defects in this acquisition contract, never credible source dates.
+  if p_reference_date is not null and p_reference_date < date '1970-01-01' then
+    raise exception 'reference_date_below_credible_minimum: % is before 1970-01-01',
+      p_reference_date using errcode = 'P1A08';
+  end if;
+end;
+$function$""",
 """CREATE OR REPLACE FUNCTION public.rosetta_v25_source_acquisition_gate(
     p_source_document_id integer,
     p_source_text text,
@@ -615,6 +630,54 @@ AS $function$
 $function$""",
  ],
  "overrides": {
+"rosetta_v25_layout_projection": """CREATE OR REPLACE FUNCTION public.rosetta_v25_layout_projection(p_source_text text)
+ RETURNS text
+ LANGUAGE plpgsql
+ IMMUTABLE STRICT
+ SET search_path TO 'pg_catalog', 'public'
+AS $function$
+declare
+  v_result text := p_source_text;
+  v_line_label_count integer;
+  v_digest_start integer;
+  v_digest_region text;
+  v_digest_mask text;
+begin
+  v_line_label_count := regexp_count(p_source_text,'(^|\\n)[0-9]{1,3}[.][0-9]{1,3}[ \\t]+',1,'n');
+  if v_line_label_count >= 3 then
+    v_result := public.rosetta_v25_mask_matches(v_result,'(^|\\n)[0-9]{1,3}[.][0-9]{1,3}[ \\t]+','n');
+  end if;
+  if v_result ~ 'REVISOR' or v_line_label_count >= 3 then
+    v_result := public.rosetta_v25_mask_matches(v_result,'(^|\\n)[0-9]{1,3}[ \\t]+(?:Sec[.]|Section)[ \\t]+[0-9]+[A-Za-z]?[.][^\\n]*(\\n|$)','n');
+    v_result := public.rosetta_v25_mask_matches(v_result,'(^|\\n)REVISOR[^\\n]*(\\n|$)','n');
+    v_result := public.rosetta_v25_mask_matches(v_result,'(^|\\n)[ \\t]*--[ \\t]*[0-9]+[ \\t]+of[ \\t]+[0-9]+[ \\t]*--[ \\t]*(\\n|$)','n');
+  end if;
+
+  -- Exact Colorado bill-page chrome. Masking preserves string length and line
+  -- boundaries so every downstream source offset remains stable.
+  v_result := public.rosetta_v25_mask_matches(
+    v_result,
+    '(^|\\n)[ \\t]*PAGE[ \\t]+[0-9]+-(?:HOUSE|SENATE)[ \\t]+BILL[^\\n]*(\\n|$)',
+    'in');
+
+  -- Louisiana legislative DIGEST text is excluded only when the standalone
+  -- heading is followed by the authoritative non-operative disclaimer. This
+  -- avoids treating an arbitrary use of the word "digest" as an exclusion.
+  v_digest_start := regexp_instr(
+    v_result,'(^|\\n)[ \\t]*DIGEST[ \\t]*(\\n|$)',1,1,0,'in');
+  if v_digest_start > 0 then
+    v_digest_region := substr(v_result,v_digest_start);
+    if left(v_digest_region,2000) ~*
+       'constitutes[[:space:]]+no[[:space:]]+part[[:space:]]+of[[:space:]]+the[[:space:]]+legislative[[:space:]]+instrument' then
+      v_digest_mask := regexp_replace(v_digest_region,'[^\\n\\r]',' ','g');
+      v_result := overlay(v_result placing v_digest_mask from v_digest_start
+                          for char_length(v_digest_region));
+    end if;
+  end if;
+
+  return public.rosetta_v25_protect_internal_periods(v_result);
+end;
+$function$""",
 "rosetta_v25_refresh_object_source_spans": None,  # placeholder replaced below
  },
 }
@@ -626,7 +689,8 @@ LANES["c3"]["overrides"]["run_rosetta_v3_extraction_v2511_base"] = (
     DEFS[next(k for k in DEFS if k.startswith("run_rosetta_v3_extraction_v2511_base__"))]
     .replace(
         "begin\n  perform pg_advisory_xact_lock(20260731, p_source_document_id);",
-        "begin\n  perform public.rosetta_v25_source_acquisition_gate("
+        "begin\n  perform public.rosetta_v25_reference_date_gate(p_reference_date);\n"
+        "  perform public.rosetta_v25_source_acquisition_gate("
         "p_source_document_id, p_source_text, p_media_type, p_source_version, p_source_url);\n"
         "  perform pg_advisory_xact_lock(20260731, p_source_document_id);"
     )
@@ -895,6 +959,57 @@ end;
 $function$""",
  },
 }
+
+LANES["c5"]["overrides"]["rosetta_v25_is_internal_period"] = """CREATE OR REPLACE FUNCTION public.rosetta_v25_is_internal_period(p_value text, p_index integer)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ IMMUTABLE STRICT
+ SET search_path TO 'pg_catalog'
+AS $function$
+declare
+  v_previous text:=substr(p_value,greatest(1,p_index-1),1);
+  v_next text:=substr(p_value,p_index+1,1);
+  v_left text:=substr(p_value,1,greatest(0,p_index-1));
+  v_after text:=ltrim(substr(p_value,p_index+1));
+  v_word text;
+  v_dotted text;
+  v_given_name text;
+begin
+ if substr(p_value,p_index,1)<>'.' then return false; end if;
+ if v_previous ~ '[0-9A-Za-z]' and v_next ~ '[0-9]' then return true; end if;
+ if v_previous ~ '[A-Za-z]' and v_next ~ '[A-Za-z]' then return true; end if;
+ v_word:=(regexp_match(v_left,'([A-Za-z]+)$'))[1];
+ if v_word is not null and lower(v_word)=any(array['art','co','corp','dr','etc','inc','mr','mrs','ms','no','st','v','vs']) and v_after<>'' then return true; end if;
+ if lower(coalesce(v_word,''))='e' and v_after ~ '^g[.]' then return true; end if;
+ if lower(coalesce(v_word,''))='i' and v_after ~ '^e[.]' then return true; end if;
+ if v_word='Pub' and v_after ~ '^L[.]\\s*(?:No[.]\\s*)?[0-9]' then return true; end if;
+ if v_left ~ '[0-9]+\\s+F$' and v_after ~ '^Supp[.]\\s*[0-9]' then return true; end if;
+ if v_left ~ '[0-9]+\\s+F[.]\\s+Supp$' and v_after ~ '^[0-9]' then return true; end if;
+ if v_left ~ '[0-9]+\\s+S$' and v_after ~ '^Ct[.]\\s*[0-9]' then return true; end if;
+ if v_left ~ '[0-9]+\\s+S[.]\\s+Ct$' and v_after ~ '^[0-9]' then return true; end if;
+ v_dotted:=(regexp_match(v_left,'([A-Za-z]+(?:[.][A-Za-z]+)+)$'))[1];
+ if v_dotted is not null and v_after<>'' and v_after !~ '^(?:A|An|Each|Every|No|That|The|This)\\M' then return true; end if;
+
+ -- A person-name middle initial is internal only in a narrow three-token
+ -- context: capitalized given name, one-letter initial, capitalized surname.
+ -- Common structural labels and sentence-start determiners are excluded so
+ -- constructs such as "Section A. The department" remain sentence breaks.
+ if v_word is not null and v_word ~ '^[A-Z]$' then
+   v_given_name := (regexp_match(
+     v_left,'([A-Z][A-Za-z''-]+)[ \\t]+[A-Z]$'))[1];
+   if v_given_name is not null
+      and not (lower(v_given_name)=any(array[
+        'appendix','article','chapter','exhibit','item','option','paragraph',
+        'part','schedule','section','subsection']))
+      and v_after ~ '^[A-Z][A-Za-z''-]+\\M'
+      and v_after !~ '^(?:A|An|Each|Every|No|That|The|This)\\M' then
+     return true;
+   end if;
+ end if;
+ if v_word is not null and v_word ~ '^[A-Z]$' and v_after ~ '^(?:[0-9]|No[.]\\s*[0-9])' then return true; end if;
+ return false;
+end;
+$function$""",
 
 # ===========================================================================
 # Lane C6 -- no silent modal retyping; revalidation against stored clause;
@@ -2193,6 +2308,8 @@ begin
 end;
 $function$""",
    "rosetta_v25_actor_source_corrupt": LANES["c2"]["overrides"]["rosetta_v25_actor_source_corrupt"],
+   "rosetta_v25_layout_projection": LANES["c3"]["overrides"]["rosetta_v25_layout_projection"],
+   "rosetta_v25_is_internal_period": LANES["c5"]["overrides"]["rosetta_v25_is_internal_period"],
    "rosetta_v25_validate_independent_structure": validator_with_help_span_count(),
    "rosetta_v25_refresh_object_source_spans": """CREATE OR REPLACE FUNCTION public.rosetta_v25_refresh_object_source_spans(p_extraction_run_id integer, p_source_text text)
  RETURNS jsonb
@@ -2252,8 +2369,9 @@ $function$
      .replace(
        "  -- C7: exact-source charset receipt gate.\n"
        "  perform public.rosetta_v25_charset_gate(p_source_document_id, p_source_text);",
-       "  -- C3 + C7: verify acquisition provenance before parsing HTML, then "
-       "verify the exact-source charset receipt.\n"
+       "  -- C3 + C7: reject invalid reference dates, verify acquisition "
+       "provenance before parsing HTML, then verify the exact-source charset receipt.\n"
+       "  perform public.rosetta_v25_reference_date_gate(p_reference_date);\n"
        "  perform public.rosetta_v25_source_acquisition_gate(\n"
        "    p_source_document_id, p_source_text, p_media_type, p_source_version, p_source_url);\n"
        "  perform public.rosetta_v25_charset_gate(p_source_document_id, p_source_text);"

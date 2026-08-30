@@ -1,5 +1,11 @@
 # Rosetta 2.5.13 controlled repair candidate
 
+> Update (2026-08-30): the four named regression closures now have exact
+> disposable-PostgreSQL 17 evidence. Full-corpus replay remains blocked by the
+> 1,038-control-run/1,000-source manifest cardinality mismatch documented in
+> `REPAIR_VALIDATION_REPORT_20260830.md`. This historical implementation report
+> must not be read as a current full-corpus result.
+
 ## Result
 
 This packet replaces the drifting 2.5.x patch cycle with one isolated,

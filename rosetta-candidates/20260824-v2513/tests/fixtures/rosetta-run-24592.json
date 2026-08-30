@@ -1,0 +1,1305 @@
+{
+  "law_view": {
+    "objects": [
+      {
+        "key": "td-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0001",
+        "layer": "definition",
+        "metadata": {
+          "source_span": {
+            "span_status": "resolved",
+            "raw_text_hash": "2e2a0cf9b41341cd88959be00088a8a4307bd3fd4b2f448cb2e8d61e81f20b40",
+            "section_number": "Sec. 2",
+            "char_offset_end": 10507,
+            "char_offset_start": 10248,
+            "block_content_hash": "3133527460f84854fb9fe4f0da300c16c6ab8a147c0d2a6493b349dda531e7d6",
+            "projection_version": "rosetta-layout-projection-v25"
+          },
+          "canon_version": 2,
+          "signal_status": "confirmed"
+        },
+        "confirmed": true,
+        "confidence": 1,
+        "source_block_id": "blk-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0003",
+        "normalized_value": {
+          "defined_term": "Consortium",
+          "definition_text": "means a network of public and private sector experts and 12 health professionals in this state specializing in women's health, as well as policy 13 leaders necessary to effectuate change for a comprehensive women's health agenda 14 for the state.",
+          "definition_type": "technical",
+          "defining_section": "Sec. 2"
+        },
+        "source_object_id": "td-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0001",
+        "extraction_run_id": "24592",
+        "source_object_type": "term_definition"
+      },
+      {
+        "key": "td-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0002",
+        "layer": "definition",
+        "metadata": {
+          "source_span": {
+            "span_status": "resolved",
+            "raw_text_hash": "9c1337e557771a6706d513e29c30d4e71245446a5cb9957517572879372f8670",
+            "section_number": "Sec. 2",
+            "char_offset_end": 10886,
+            "char_offset_start": 10515,
+            "block_content_hash": "3133527460f84854fb9fe4f0da300c16c6ab8a147c0d2a6493b349dda531e7d6",
+            "projection_version": "rosetta-layout-projection-v25"
+          },
+          "canon_version": 2,
+          "signal_status": "confirmed"
+        },
+        "confirmed": true,
+        "confidence": 1,
+        "source_block_id": "blk-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0003",
+        "normalized_value": {
+          "defined_term": "Funding Priority Program for Women's Health Initiatives",
+          "definition_text": "means a 16 schedule of detailed women's health initiatives in this state which are prioritized and 17 adopted by the Louisiana Women's Health Consortium each fiscal year which 18 includes any current funding provided, the entity receiving the funding, and any 19 additional funding needed in ensuing fiscal years.",
+          "definition_type": "technical",
+          "defining_section": "Sec. 2"
+        },
+        "source_object_id": "td-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0002",
+        "extraction_run_id": "24592",
+        "source_object_type": "term_definition"
+      },
+      {
+        "key": "td-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0003",
+        "layer": "definition",
+        "metadata": {
+          "source_span": {
+            "span_status": "resolved",
+            "raw_text_hash": "6b2af0a1f01d02b64cb204192a3f30a274725ddc163b6e36c9cd418881f3f771",
+            "section_number": "Sec. 2",
+            "char_offset_end": 11366,
+            "char_offset_start": 11046,
+            "block_content_hash": "3133527460f84854fb9fe4f0da300c16c6ab8a147c0d2a6493b349dda531e7d6",
+            "projection_version": "rosetta-layout-projection-v25"
+          },
+          "canon_version": 2,
+          "signal_status": "confirmed"
+        },
+        "confirmed": true,
+        "confidence": 1,
+        "source_block_id": "blk-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0003",
+        "normalized_value": {
+          "defined_term": "Interagency Women's Health Agenda",
+          "definition_text": "means a yearly assessment by the 23 consortium given to the governor, legislature, and made available to the public of 24 strengths, weaknesses, and opportunities on those issues of health which significantly 25 affect women, in particular perimenopause, menopause, and postmenopause.",
+          "definition_type": "technical",
+          "defining_section": "Sec. 2"
+        },
+        "source_object_id": "td-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0003",
+        "extraction_run_id": "24592",
+        "source_object_type": "term_definition"
+      },
+      {
+        "key": "td-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0004",
+        "layer": "definition",
+        "metadata": {
+          "source_span": {
+            "span_status": "resolved",
+            "raw_text_hash": "a7deb4e290d6cf7f2e52936eeb8306e009349e3682867c6a069c82c56ba96eac",
+            "section_number": "Sec. 2",
+            "char_offset_end": 11481,
+            "char_offset_start": 11374,
+            "block_content_hash": "3133527460f84854fb9fe4f0da300c16c6ab8a147c0d2a6493b349dda531e7d6",
+            "projection_version": "rosetta-layout-projection-v25"
+          },
+          "canon_version": 2,
+          "signal_status": "confirmed"
+        },
+        "confirmed": true,
+        "confidence": 1,
+        "source_block_id": "blk-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0003",
+        "normalized_value": {
+          "defined_term": "Menopause",
+          "definition_text": "means twelve months since the last menstrual cycle and the 27 end of reproductive capabilities.",
+          "definition_type": "technical",
+          "defining_section": "Sec. 2"
+        },
+        "source_object_id": "td-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0004",
+        "extraction_run_id": "24592",
+        "source_object_type": "term_definition"
+      },
+      {
+        "key": "td-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0005",
+        "layer": "definition",
+        "metadata": {
+          "source_span": {
+            "span_status": "resolved",
+            "raw_text_hash": "dc04f3f368805506b50007553cee8d309c65b433bb1bf410a64fad81e6572d17",
+            "section_number": "Sec. 2",
+            "char_offset_end": 11581,
+            "char_offset_start": 11489,
+            "block_content_hash": "3133527460f84854fb9fe4f0da300c16c6ab8a147c0d2a6493b349dda531e7d6",
+            "projection_version": "rosetta-layout-projection-v25"
+          },
+          "canon_version": 2,
+          "signal_status": "confirmed"
+        },
+        "confirmed": true,
+        "confidence": 1,
+        "source_block_id": "blk-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0003",
+        "normalized_value": {
+          "defined_term": "Perimenopause",
+          "definition_text": "means an extended transitional stage that takes place 29 prior to menopause.",
+          "definition_type": "technical",
+          "defining_section": "Sec. 2"
+        },
+        "source_object_id": "td-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0005",
+        "extraction_run_id": "24592",
+        "source_object_type": "term_definition"
+      },
+      {
+        "key": "td-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0006",
+        "layer": "definition",
+        "metadata": {
+          "source_span": {
+            "span_status": "resolved",
+            "raw_text_hash": "2494622c5f38fba30e161395a5499d1ed4f230ac0094bb5c12f0f7e47d3abaef",
+            "section_number": "Sec. 2",
+            "char_offset_end": 11873,
+            "char_offset_start": 11812,
+            "block_content_hash": "3133527460f84854fb9fe4f0da300c16c6ab8a147c0d2a6493b349dda531e7d6",
+            "projection_version": "rosetta-layout-projection-v25"
+          },
+          "canon_version": 2,
+          "signal_status": "confirmed"
+        },
+        "confirmed": true,
+        "confidence": 1,
+        "source_block_id": "blk-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0003",
+        "normalized_value": {
+          "defined_term": "Postmenopause",
+          "definition_text": "means the remaining lifespan after menopause.",
+          "definition_type": "technical",
+          "defining_section": "Sec. 2"
+        },
+        "source_object_id": "td-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0006",
+        "extraction_run_id": "24592",
+        "source_object_type": "term_definition"
+      },
+      {
+        "key": "ov-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0001",
+        "layer": "override",
+        "metadata": {
+          "source_span": {
+            "span_status": "resolved",
+            "raw_text_hash": "10cb49ccd4d63761a67b2ea8b04f9beb8153dc0f5ffd87ff8f56f9b256c268de",
+            "section_number": "Sec. 2",
+            "char_offset_end": 5606,
+            "char_offset_start": 5429,
+            "block_content_hash": "3133527460f84854fb9fe4f0da300c16c6ab8a147c0d2a6493b349dda531e7d6",
+            "projection_version": "rosetta-layout-projection-v25"
+          },
+          "canon_version": 2,
+          "signal_status": "confirmed",
+          "actor_canon_id": null
+        },
+        "confirmed": true,
+        "confidence": 1,
+        "source_block_id": "blk-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0003",
+        "normalized_value": {
+          "sunset_date": null,
+          "override_type": "source_stated_exception",
+          "effective_date": null,
+          "granting_actor": "Each consortium member",
+          "override_scope": "Each consortium member shall serve without compensation except a 2 member may receive reimbursement for expenses in accordance with the guidelines 3 of the entity he represents.",
+          "temporal_status": "pending",
+          "governing_section": "Sec. 2",
+          "override_condition": "Each consortium member shall serve without compensation except a 2 member may receive reimbursement for expenses in accordance with the guidelines 3 of the entity he represents.",
+          "overridden_authority": "Base rule within Sec. 2"
+        },
+        "source_object_id": "ov-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0001",
+        "extraction_run_id": "24592",
+        "source_object_type": "entity_override"
+      },
+      {
+        "key": "ov-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0002",
+        "layer": "override",
+        "metadata": {
+          "source_span": {
+            "span_status": "resolved",
+            "raw_text_hash": "30f61d127fc10b46b1e609d523cdb1c35a673bbe44a5ef0f6822ecfaa2dd25cd",
+            "section_number": "Sec. 2",
+            "char_offset_end": 6239,
+            "char_offset_start": 6113,
+            "block_content_hash": "3133527460f84854fb9fe4f0da300c16c6ab8a147c0d2a6493b349dda531e7d6",
+            "projection_version": "rosetta-layout-projection-v25"
+          },
+          "canon_version": 2,
+          "signal_status": "confirmed",
+          "actor_canon_id": null
+        },
+        "confirmed": true,
+        "confidence": 1,
+        "source_block_id": "blk-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0003",
+        "normalized_value": {
+          "sunset_date": null,
+          "override_type": "source_stated_exception",
+          "effective_date": null,
+          "granting_actor": "The consortium",
+          "override_scope": "The consortium shall hold quarterly public meetings unless decided by a 13 vote of the consoritum or by order of the chairman.",
+          "temporal_status": "pending",
+          "governing_section": "Sec. 2",
+          "override_condition": "The consortium shall hold quarterly public meetings unless decided by a 13 vote of the consoritum or by order of the chairman.",
+          "overridden_authority": "Base rule within Sec. 2"
+        },
+        "source_object_id": "ov-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0002",
+        "extraction_run_id": "24592",
+        "source_object_type": "entity_override"
+      },
+      {
+        "key": "ov-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0003",
+        "layer": "override",
+        "metadata": {
+          "source_span": {
+            "span_status": "resolved",
+            "raw_text_hash": "bb2719a2839bda22c45d07d9da936180f17b01887d9299fed1d1b3ff175d77cf",
+            "section_number": "Sec. 2",
+            "char_offset_end": 13291,
+            "char_offset_start": 13091,
+            "block_content_hash": "3133527460f84854fb9fe4f0da300c16c6ab8a147c0d2a6493b349dda531e7d6",
+            "projection_version": "rosetta-layout-projection-v25"
+          },
+          "canon_version": 2,
+          "signal_status": "confirmed",
+          "actor_canon_id": null
+        },
+        "confirmed": true,
+        "confidence": 1,
+        "source_block_id": "blk-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0003",
+        "normalized_value": {
+          "sunset_date": null,
+          "override_type": "source_stated_exception",
+          "effective_date": null,
+          "granting_actor": "Proposed law provides that each consortium member will serve without compensation, except members",
+          "override_scope": "Proposed law provides that each consortium member will serve without compensation, except members may receive reimbursement for expenses in accordance with the guidelines of the entity they represent.",
+          "temporal_status": "pending",
+          "governing_section": "Sec. 2",
+          "override_condition": "Proposed law provides that each consortium member will serve without compensation, except members may receive reimbursement for expenses in accordance with the guidelines of the entity they represent.",
+          "overridden_authority": "Base rule within Sec. 2"
+        },
+        "source_object_id": "ov-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0003",
+        "extraction_run_id": "24592",
+        "source_object_type": "entity_override"
+      },
+      {
+        "key": "ov-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0004",
+        "layer": "override",
+        "metadata": {
+          "source_span": {
+            "span_status": "resolved",
+            "raw_text_hash": "2efb45dde290c928c5e99a901fb7518d1b36dab429c3e65da8d3b7bedf958472",
+            "section_number": "Sec. 2",
+            "char_offset_end": 13827,
+            "char_offset_start": 13667,
+            "block_content_hash": "3133527460f84854fb9fe4f0da300c16c6ab8a147c0d2a6493b349dda531e7d6",
+            "projection_version": "rosetta-layout-projection-v25"
+          },
+          "canon_version": 2,
+          "signal_status": "confirmed",
+          "actor_canon_id": null
+        },
+        "confirmed": true,
+        "confidence": 1,
+        "source_block_id": "blk-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0003",
+        "normalized_value": {
+          "sunset_date": null,
+          "override_type": "source_stated_exception",
+          "effective_date": null,
+          "granting_actor": "Proposed law provides that the domicile of the consortium",
+          "override_scope": "Proposed law provides that the domicile of the consortium shall be in East Baton Rouge Parish; however, the consortium may hold meetings elsewhere in the state.",
+          "temporal_status": "pending",
+          "governing_section": "Sec. 2",
+          "override_condition": "Proposed law provides that the domicile of the consortium shall be in East Baton Rouge Parish; however, the consortium may hold meetings elsewhere in the state.",
+          "overridden_authority": "Base rule within Sec. 2"
+        },
+        "source_object_id": "ov-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0004",
+        "extraction_run_id": "24592",
+        "source_object_type": "entity_override"
+      },
+      {
+        "key": "ov-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0005",
+        "layer": "override",
+        "metadata": {
+          "source_span": {
+            "span_status": "resolved",
+            "raw_text_hash": "9a488406901ed09a6b49413c2272ebb51e3bd5b8e448fe967a8ee92500b79cfc",
+            "section_number": "Sec. 2",
+            "char_offset_end": 13978,
+            "char_offset_start": 13828,
+            "block_content_hash": "3133527460f84854fb9fe4f0da300c16c6ab8a147c0d2a6493b349dda531e7d6",
+            "projection_version": "rosetta-layout-projection-v25"
+          },
+          "canon_version": 2,
+          "signal_status": "confirmed",
+          "actor_canon_id": null
+        },
+        "confirmed": true,
+        "confidence": 1,
+        "source_block_id": "blk-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0003",
+        "normalized_value": {
+          "sunset_date": null,
+          "override_type": "source_stated_exception",
+          "effective_date": null,
+          "granting_actor": null,
+          "override_scope": "Proposed law requires the consortium to hold quarterly public meetings, unless otherwise voted against by the members or by order, or the chairperson.",
+          "temporal_status": "pending",
+          "governing_section": "Sec. 2",
+          "override_condition": "Proposed law requires the consortium to hold quarterly public meetings, unless otherwise voted against by the members or by order, or the chairperson.",
+          "overridden_authority": "Base rule within Sec. 2"
+        },
+        "source_object_id": "ov-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0005",
+        "extraction_run_id": "24592",
+        "source_object_type": "entity_override"
+      },
+      {
+        "key": "wp-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0002",
+        "layer": "workflow",
+        "metadata": {
+          "source_span": {
+            "section_number": "Sec. 1",
+            "char_offset_end": 1014,
+            "char_offset_start": 586,
+            "block_content_hash": "7de1a1a473ce4db69542227db7b02f161f8b05340df5d48b9b8520b5e7a70e96"
+          },
+          "canon_version": 2,
+          "signal_status": "confirmed"
+        },
+        "confirmed": true,
+        "confidence": 1,
+        "source_block_id": "blk-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0002",
+        "normalized_value": {
+          "steps": [
+            {
+              "verb": "shall",
+              "actor": "The following agencies are placed within the Louisiana Department of 12 Health and",
+              "step_id": "ws-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0001",
+              "step_name": "The following agencies are placed within the Louisiana Department of 12 Health and shall exercise and perform their powers, duties, functions, and 13 responsibilities as otherwise provided by law: 14 * * * 15 (23) Women's Health Consortium (R.S. 46:2526).",
+              "step_order": 1,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "b5932ba7d3f0b2914d39b74ce4784b9082c60a823a8690283bf840a4ee06b395",
+                "char_offset_end": 1001,
+                "char_offset_start": 746,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 1"
+            }
+          ],
+          "pipeline_name": "Exact source obligations for Sec. 1",
+          "pipeline_type": "section_ordered_normative_modal_clauses",
+          "governing_section": "Sec. 1"
+        },
+        "source_object_id": "wp-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0002",
+        "extraction_run_id": "24592",
+        "source_object_type": "workflow_pipeline"
+      },
+      {
+        "key": "wp-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0003",
+        "layer": "workflow",
+        "metadata": {
+          "source_span": {
+            "section_number": "Sec. 2",
+            "char_offset_end": 15357,
+            "char_offset_start": 1014,
+            "block_content_hash": "3133527460f84854fb9fe4f0da300c16c6ab8a147c0d2a6493b349dda531e7d6"
+          },
+          "canon_version": 2,
+          "signal_status": "confirmed"
+        },
+        "confirmed": true,
+        "confidence": 1,
+        "source_block_id": "blk-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0003",
+        "normalized_value": {
+          "steps": [
+            {
+              "verb": "shall",
+              "actor": "The consortium",
+              "step_id": "ws-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0002",
+              "step_name": "The consortium shall be comprised of the following voting members: 2 (1) One member who is the surgeon general or his designee.",
+              "step_order": 1,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "692c0589f50526a5e4a7e496abcea72d5c226bd1d5ba7b12ea464f31c6d995f9",
+                "char_offset_end": 1567,
+                "char_offset_start": 1440,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 2"
+            },
+            {
+              "verb": "may",
+              "actor": "The consortium",
+              "step_id": "ws-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0003",
+              "step_name": "The consortium may engage and solicit, as necessary, input, 4 recommendations, and guidance on issues pertaining to the advancement of women's 5 health from interested parties and stakeholders, including but not limited to the 6 following: 7 (1) One member from the Xavier University of Louisiana College of 8 Pharmacy appointed by the dean of the Xavier University of Louisiana College of 9 Pharmacy.",
+              "step_order": 2,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "c11d1ebfe3d9920407ab315c90797e3db8ba78ea9625bcb20220e1d7a08bceec",
+                "char_offset_end": 3852,
+                "char_offset_start": 3451,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 2"
+            },
+            {
+              "verb": "shall",
+              "actor": "Each member",
+              "step_id": "ws-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0004",
+              "step_name": "Each member shall serve at the pleasure of the appointing authority.",
+              "step_order": 3,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "4b09ba89aa878884de51dd972765552593c493c1d95ce16037332f07910e5b88",
+                "char_offset_end": 4853,
+                "char_offset_start": 4785,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 2"
+            },
+            {
+              "verb": "shall",
+              "actor": "The consortium",
+              "step_id": "ws-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0005",
+              "step_name": "(1) The consortium shall adopt rules and regulations to provide for the 25 governance of the consortium.",
+              "step_order": 4,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "d1a36e3571f01181800df5fbbf86b815f69d2bb9dfe0c337c30745d13534bc0e",
+                "char_offset_end": 4963,
+                "char_offset_start": 4859,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 2"
+            },
+            {
+              "verb": "shall",
+              "actor": "Such rules and regulations",
+              "step_id": "ws-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0006",
+              "step_name": "Such rules and regulations shall include but not be 26 limited to procedures and grounds for the removal of any consortium member.",
+              "step_order": 5,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "42ddf84b7aa101a31c88b827d11e8862004814073029244ae35efb1bf2418c8d",
+                "char_offset_end": 5094,
+                "char_offset_start": 4964,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 2"
+            },
+            {
+              "verb": "shall",
+              "actor": "Each consortium member",
+              "step_id": "ws-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0007",
+              "step_name": "Each consortium member shall serve without compensation except a 2 member may receive reimbursement for expenses in accordance with the guidelines 3 of the entity he represents.",
+              "step_order": 6,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "10cb49ccd4d63761a67b2ea8b04f9beb8153dc0f5ffd87ff8f56f9b256c268de",
+                "char_offset_end": 5606,
+                "char_offset_start": 5429,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 2"
+            },
+            {
+              "verb": "shall",
+              "actor": "The member from the Pennington Biomedical Research Center",
+              "step_id": "ws-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0008",
+              "step_name": "(1) The member from the Pennington Biomedical Research Center shall 5 serve as the initial chairman for two years.",
+              "step_order": 7,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "972d4f84e48a98bdf046c7b940f402675b59abadcc9d11d43ec62977fa22e41f",
+                "char_offset_end": 5725,
+                "char_offset_start": 5611,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 2"
+            },
+            {
+              "verb": "shall",
+              "actor": "The domicile of the consortium",
+              "step_id": "ws-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0009",
+              "step_name": "The domicile of the consortium shall be East Baton Rouge Parish, but the 11 consortium may hold meetings elsewhere in the state.",
+              "step_order": 8,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "f33d14160b7a3d694a5d4003b2b9ce0d5cf0508219d4d16586afac1cf8424818",
+                "char_offset_end": 6106,
+                "char_offset_start": 5978,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 2"
+            },
+            {
+              "verb": "shall",
+              "actor": "The consortium",
+              "step_id": "ws-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0010",
+              "step_name": "The consortium shall hold quarterly public meetings unless decided by a 13 vote of the consoritum or by order of the chairman.",
+              "step_order": 9,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "30f61d127fc10b46b1e609d523cdb1c35a673bbe44a5ef0f6822ecfaa2dd25cd",
+                "char_offset_end": 6239,
+                "char_offset_start": 6113,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 2"
+            },
+            {
+              "verb": "shall",
+              "actor": "Special meeting",
+              "step_id": "ws-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0011",
+              "step_name": "Special meeting shall be held 14 on call of the chairman or of a majority of the voting members of the consortium.",
+              "step_order": 10,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "1f1e8d834b66497ac318a5eb7a5400d325d59ae2dbcc53de8a9cac350743b8e6",
+                "char_offset_end": 6354,
+                "char_offset_start": 6240,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 2"
+            },
+            {
+              "verb": "shall",
+              "actor": "The number of members necessary to constitute a quorum for the 16 transaction of business",
+              "step_id": "ws-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0012",
+              "step_name": "The number of members necessary to constitute a quorum for the 16 transaction of business shall be a majority of the voting members of the consortium.",
+              "step_order": 11,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "faaa4bfe7891bb20499be903abae4908f5a1a462e1dad979ffc05798a64001a8",
+                "char_offset_end": 6511,
+                "char_offset_start": 6361,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 2"
+            },
+            {
+              "verb": "shall",
+              "actor": "Each department participating on the consortium",
+              "step_id": "ws-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0013",
+              "step_name": "Each department participating on the consortium shall assist as needed 20 in providing staff support for the consrtium, including but not limited to the 21 scheduling of meetings, providing public notice of scheduled meetings, and posting 22 information about the consortium and its meeting minutes online.",
+              "step_order": 12,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "cd012fbc0c31d8c548dfa0e14e84340a7a44f6354fe0dee6c13e3c81d66b7d6b",
+                "char_offset_end": 6969,
+                "char_offset_start": 6663,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 2"
+            },
+            {
+              "verb": "shall",
+              "actor": "The functions of the consortium",
+              "step_id": "ws-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0014",
+              "step_name": "The functions of the consortium shall be to accomplish all of the 24 following: 25 (1) Develop initiative known as the Funding Priority Program for Women's 26 Health Initiatives to identify current funding provided for women's health initiatives, 27 prioritize funding needed to sustain and enhance current effective initiatives, and 28 identify new initiatives to support emerging scientific research and innovation, as Page 4 of 8 CODING: Words in struck through type are deletions from existing law; words underscored are additions.",
+              "step_order": 13,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "afb74f41c30919ce4954584d4ae2b33bf58f7569cd769cc7931177a7886b74e5",
+                "char_offset_end": 7511,
+                "char_offset_start": 6976,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 2"
+            },
+            {
+              "verb": "shall",
+              "actor": "The 4 agenda",
+              "step_id": "ws-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0015",
+              "step_name": "The 4 agenda shall include but not be limited to all of the following: 5 (a) Strengths, weaknesses, and opportunities in research, access to care, 6 medical education, funding, policy, regulations, public education, and access to 7 information pertaining to women's health at every stage of life.",
+              "step_order": 14,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "81555b9835ac72b2ae0428a1ad74ee5037f9485e460fb666bcc3e1f2dbb8366f",
+                "char_offset_end": 8083,
+                "char_offset_start": 7787,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 2"
+            },
+            {
+              "verb": "shall",
+              "actor": "The consortium",
+              "step_id": "ws-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0016",
+              "step_name": "The consortium shall submit to the David R.",
+              "step_order": 15,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "56db30d7e8969e035384764791afb057615e6d90f15ce2c89c701bebb75116cd",
+                "char_offset_end": 9791,
+                "char_offset_start": 9748,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 2"
+            },
+            {
+              "verb": "may",
+              "actor": "Proposed law provides for interested parties and stakeholders that the consortium",
+              "step_id": "ws-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0017",
+              "step_name": "Proposed law provides for interested parties and stakeholders that the consortium may consult with on matters of women's health.",
+              "step_order": 16,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "ddf5c7a05c189a2f5571b58f729ac0feeeb2d83df4eeb5d8942cb61a865fbae2",
+                "char_offset_end": 12592,
+                "char_offset_start": 12464,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 2"
+            },
+            {
+              "verb": "may",
+              "actor": "Proposed law provides that the consortium",
+              "step_id": "ws-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0018",
+              "step_name": "Proposed law provides that the consortium may engage and solicit, as necessary, input, recommendations, and guidance on issues pertaining to the advancement of women's health from interested parties and stakeholders.",
+              "step_order": 17,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "21a1e6646b028708d48397d2403862d30bf94467d9244b28573f706dd1cc88b9",
+                "char_offset_end": 12809,
+                "char_offset_start": 12593,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 2"
+            },
+            {
+              "verb": "shall",
+              "actor": "Proposed law provides that the consortium",
+              "step_id": "ws-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0019",
+              "step_name": "Proposed law provides that the consortium shall adopt rules and regulations to provide for the governance of the consortium.",
+              "step_order": 18,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "2e63a632003c3a28f10f90d5a6d4fcd1ac4e70751ec8090e1f4fcaa76187c909",
+                "char_offset_end": 12934,
+                "char_offset_start": 12810,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 2"
+            },
+            {
+              "verb": "may",
+              "actor": "Proposed law provides that each consortium member will serve without compensation, except members",
+              "step_id": "ws-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0020",
+              "step_name": "Proposed law provides that each consortium member will serve without compensation, except members may receive reimbursement for expenses in accordance with the guidelines of the entity they represent.",
+              "step_order": 19,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "bb2719a2839bda22c45d07d9da936180f17b01887d9299fed1d1b3ff175d77cf",
+                "char_offset_end": 13291,
+                "char_offset_start": 13091,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 2"
+            },
+            {
+              "verb": "shall",
+              "actor": "Proposed law provides that the consortium",
+              "step_id": "ws-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0021",
+              "step_name": "Proposed law provides that the consortium shall elect a vice chairperson and may elect other officers, if appropriate.",
+              "step_order": 20,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "5cd87ef024140dbe17b7106e49abd8e2eb2c12969c66dab9360849c91838f307",
+                "char_offset_end": 13666,
+                "char_offset_start": 13548,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 2"
+            },
+            {
+              "verb": "shall",
+              "actor": "Proposed law provides that the domicile of the consortium",
+              "step_id": "ws-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0022",
+              "step_name": "Proposed law provides that the domicile of the consortium shall be in East Baton Rouge Parish; however, the consortium may hold meetings elsewhere in the state.",
+              "step_order": 21,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "2efb45dde290c928c5e99a901fb7518d1b36dab429c3e65da8d3b7bedf958472",
+                "char_offset_end": 13827,
+                "char_offset_start": 13667,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 2"
+            },
+            {
+              "verb": "shall",
+              "actor": "Proposed law provides the time period for when the report",
+              "step_id": "ws-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0023",
+              "step_name": "Proposed law provides the time period for when the report shall be submitted and to whom it shall be submitted.",
+              "step_order": 22,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "6a17574819a8117f225f659cfba6e52b4b290dc06d59e487b0f0a63b64888ce0",
+                "char_offset_end": 14627,
+                "char_offset_start": 14516,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Sec. 2"
+            }
+          ],
+          "pipeline_name": "Exact source obligations for Sec. 2",
+          "pipeline_type": "section_ordered_normative_modal_clauses",
+          "governing_section": "Sec. 2"
+        },
+        "source_object_id": "wp-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-0003",
+        "extraction_run_id": "24592",
+        "source_object_type": "workflow_pipeline"
+      }
+    ],
+    "coverage": {
+      "help": {
+        "reason": "No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+        "status": "not_applicable",
+        "validated_at": "2026-08-28T14:45:46.721682+00:00"
+      },
+      "workflow": {
+        "reason": "Deterministic section-local rule match. | No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+        "status": "populated",
+        "validated_at": "2026-08-28T14:45:46.723837+00:00"
+      },
+      "overrides": {
+        "reason": "Deterministic section-local rule match. | No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+        "status": "populated",
+        "validated_at": "2026-08-28T14:45:46.723882+00:00"
+      },
+      "definitions": {
+        "reason": "Deterministic section-local rule match. | No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+        "status": "populated",
+        "validated_at": "2026-08-28T14:45:46.723894+00:00"
+      },
+      "accountability": {
+        "reason": "No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+        "status": "not_applicable",
+        "validated_at": "2026-08-28T14:45:46.723868+00:00"
+      }
+    },
+    "corpus_id": 7,
+    "created_at": "2026-08-28T14:45:40.733892+00:00",
+    "media_type": "application/pdf",
+    "run_status": "completed",
+    "source_url": "https://www.legis.la.gov/Legis/ViewDocument.aspx?d=1458653",
+    "run_version": 1,
+    "completed_at": "2026-08-28T14:47:19.576057+00:00",
+    "document_name": "HB944: Engrossed — Creates the Louisiana Women's Health Consortium (EN NO IMPACT See Note)",
+    "document_type": "bill_version",
+    "engine_version": "rosetta-v3-deterministic-sql-2.5.11",
+    "source_version": "legiscan_text:3410382:Engrossed:pdf-parse-2.4.5-legislative-version-v1",
+    "provenance_state": "complete",
+    "rule_set_version": "rosetta-five-layer-structural-correctness-2.5.11",
+    "source_byte_hash": "f0f9763e413e56f7013dc7eec3cae665ad5fb96e8fba0ae66b260882ca92e595",
+    "extraction_run_id": 24592,
+    "configuration_hash": "d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded",
+    "rule_manifest_hash": "3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639",
+    "source_document_id": 19583,
+    "admissibility_state": "admissible",
+    "document_identifier": "docket:2127180:text:2127180:3410382",
+    "output_content_hash": "65dc277849899e4761e113d42becd55f4e30b9c543c0970ff46eca9603d2c1f0",
+    "source_content_hash": "a6b611c842422141f73675bfc11c89fda690b0c83147a1f30537cd92c4518bd6",
+    "confidence_threshold": 1,
+    "source_identity_hash": "e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33",
+    "source_provider_hash": "2b8f11ce428dbe929492d53478d07a9f",
+    "structural_representations": []
+  },
+  "run_receipt": {
+    "id": 24592,
+    "created_at": "2026-08-28T14:45:40.733892+00:00",
+    "run_status": "completed",
+    "run_version": 1,
+    "completed_at": "2026-08-28T14:47:19.576057+00:00",
+    "failure_code": null,
+    "engine_version": "rosetta-v3-deterministic-sql-2.5.11",
+    "rule_set_version": "rosetta-five-layer-structural-correctness-2.5.11",
+    "source_content_id": "4784ec8d-c431-4db0-9370-d30200cfb7ad",
+    "configuration_hash": "d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded",
+    "configuration_json": {
+      "reference_date": "2026-08-18",
+      "confidence_mode": "binary_exact_match_only",
+      "normalization_version": "rosetta-normalize-whitespace-v2",
+      "text_extractor_version": "pdf-parse-2.4.5-legislative-version-v1",
+      "parsing_projection_version": "rosetta-layout-projection-v25"
+    },
+    "rule_manifest_hash": "3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639",
+    "source_document_id": 19583,
+    "admissibility_state": "admissible",
+    "output_content_hash": "65dc277849899e4761e113d42becd55f4e30b9c543c0970ff46eca9603d2c1f0",
+    "source_content_hash": "a6b611c842422141f73675bfc11c89fda690b0c83147a1f30537cd92c4518bd6",
+    "confidence_threshold": 1,
+    "source_identity_hash": "e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33",
+    "source_document": {
+      "id": 19583,
+      "corpus_id": 7,
+      "created_at": "2026-08-28T14:45:39.805694+00:00",
+      "document_name": "HB944: Engrossed — Creates the Louisiana Women's Health Consortium (EN NO IMPACT See Note)",
+      "document_type": "bill_version",
+      "document_identifier": "docket:2127180:text:2127180:3410382"
+    },
+    "lifecycle_version": "rosetta-run-lifecycle-v1",
+    "lifecycle_class": "admissible_production",
+    "lifecycle_label": "Production admissible",
+    "lifecycle_detail": "Admissible deterministic law generation with complete source, rule, configuration, and output receipts. Current proof membership is determined only by Rosetta’s database proof predicate.",
+    "age_hours": 38.6,
+    "is_control": false,
+    "proof_membership_authority": "rosetta-database-current-proof-predicate",
+    "inspectable": true
+  },
+  "validation_results": [
+    {
+      "id": "vr-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-source-bound",
+      "details": {
+        "source_block_id": "blk-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-root"
+      },
+      "test_name": "canonical_rows_source_bound",
+      "executed_at": "2026-08-28T14:45:40.733892+00:00",
+      "test_result": "pass",
+      "failure_count": 0,
+      "extraction_run_id": 24592
+    },
+    {
+      "id": "vr-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-exact-source-structure",
+      "details": {
+        "status": "pass",
+        "contract": "rosetta-structural-correctness-v2511",
+        "document_family": "text",
+        "amendment_disposition": null,
+        "operative_layer_projection": null,
+        "structural_span_mismatch_count": 0,
+        "structural_representation_count": 0,
+        "amendment_coverage_mismatch_count": 0,
+        "structural_footer_contamination_count": 0
+      },
+      "test_name": "exact_source_structure_v2511",
+      "executed_at": "2026-08-28T14:45:40.733892+00:00",
+      "test_result": "pass",
+      "failure_count": 0,
+      "extraction_run_id": 24592
+    },
+    {
+      "id": "vr-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-coverage",
+      "details": {
+        "contract": "rosetta-final-five-layer-coverage-v2511",
+        "coverage": {
+          "help": {
+            "reason": "No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+            "status": "not_applicable",
+            "validated_at": "2026-08-28T14:45:46.721682+00:00"
+          },
+          "workflow": {
+            "reason": "Deterministic section-local rule match. | No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+            "status": "populated",
+            "validated_at": "2026-08-28T14:45:46.723837+00:00"
+          },
+          "overrides": {
+            "reason": "Deterministic section-local rule match. | No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+            "status": "populated",
+            "validated_at": "2026-08-28T14:45:46.723882+00:00"
+          },
+          "definitions": {
+            "reason": "Deterministic section-local rule match. | No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+            "status": "populated",
+            "validated_at": "2026-08-28T14:45:46.723894+00:00"
+          },
+          "accountability": {
+            "reason": "No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+            "status": "not_applicable",
+            "validated_at": "2026-08-28T14:45:46.723868+00:00"
+          }
+        },
+        "terminal": true,
+        "layer_count": 5
+      },
+      "test_name": "five_layer_coverage",
+      "executed_at": "2026-08-28T14:45:40.733892+00:00",
+      "test_result": "pass",
+      "failure_count": 0,
+      "extraction_run_id": 24592
+    },
+    {
+      "id": "vr-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-independent-structure",
+      "details": {
+        "status": "pass",
+        "contract": "rosetta-independent-structural-validation-v2511",
+        "bad_span_count": 0,
+        "document_family": "text",
+        "actual_span_count": 34,
+        "extraction_run_id": 24592,
+        "expected_span_count": 34,
+        "actual_workflow_count": 23,
+        "blocking_repair_count": 0,
+        "duplicate_section_count": 0,
+        "expected_workflow_count": 23,
+        "span_hash_mismatch_count": 0,
+        "block_hash_mismatch_count": 0,
+        "penalty_actor_mismatch_count": 0,
+        "workflow_contamination_count": 0,
+        "override_false_positive_count": 0,
+        "actual_clause_occurrence_count": 0,
+        "definition_contamination_count": 0,
+        "expected_clause_occurrence_count": 0,
+        "accountability_contamination_count": 0,
+        "accountability_typing_mismatch_count": 0,
+        "clause_occurrence_binding_mismatch_count": 0
+      },
+      "test_name": "independent_structure_v2511",
+      "executed_at": "2026-08-28T14:45:40.733892+00:00",
+      "test_result": "pass",
+      "failure_count": 0,
+      "extraction_run_id": 24592
+    },
+    {
+      "id": "vr-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-no-pending",
+      "details": {
+        "contract": "rosetta-final-five-layer-coverage-v2511",
+        "coverage": {
+          "help": {
+            "reason": "No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+            "status": "not_applicable",
+            "validated_at": "2026-08-28T14:45:46.721682+00:00"
+          },
+          "workflow": {
+            "reason": "Deterministic section-local rule match. | No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+            "status": "populated",
+            "validated_at": "2026-08-28T14:45:46.723837+00:00"
+          },
+          "overrides": {
+            "reason": "Deterministic section-local rule match. | No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+            "status": "populated",
+            "validated_at": "2026-08-28T14:45:46.723882+00:00"
+          },
+          "definitions": {
+            "reason": "Deterministic section-local rule match. | No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+            "status": "populated",
+            "validated_at": "2026-08-28T14:45:46.723894+00:00"
+          },
+          "accountability": {
+            "reason": "No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+            "status": "not_applicable",
+            "validated_at": "2026-08-28T14:45:46.723868+00:00"
+          }
+        },
+        "terminal": true,
+        "layer_count": 5
+      },
+      "test_name": "no_pending_coverage",
+      "executed_at": "2026-08-28T14:45:40.733892+00:00",
+      "test_result": "pass",
+      "failure_count": 0,
+      "extraction_run_id": 24592
+    },
+    {
+      "id": "vr-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-output-hash",
+      "details": {
+        "contract": "rosetta-final-output-hash-v2511",
+        "output_content_hash": "65dc277849899e4761e113d42becd55f4e30b9c543c0970ff46eca9603d2c1f0"
+      },
+      "test_name": "output_hash_verified",
+      "executed_at": "2026-08-28T14:45:40.733892+00:00",
+      "test_result": "pass",
+      "failure_count": 0,
+      "extraction_run_id": 24592
+    },
+    {
+      "id": "vr-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-source-bytes",
+      "details": {
+        "media_type": "application/pdf",
+        "source_byte_hash": "f0f9763e413e56f7013dc7eec3cae665ad5fb96e8fba0ae66b260882ca92e595"
+      },
+      "test_name": "source_bytes_receipted",
+      "executed_at": "2026-08-28T14:45:40.733892+00:00",
+      "test_result": "pass",
+      "failure_count": 0,
+      "extraction_run_id": 24592
+    },
+    {
+      "id": "vr-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-source-hash",
+      "details": {
+        "source_content_hash": "a6b611c842422141f73675bfc11c89fda690b0c83147a1f30537cd92c4518bd6"
+      },
+      "test_name": "source_hash_verified",
+      "executed_at": "2026-08-28T14:45:40.733892+00:00",
+      "test_result": "pass",
+      "failure_count": 0,
+      "extraction_run_id": 24592
+    },
+    {
+      "id": "vr-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded-structural-correctness",
+      "details": {
+        "status": "pass",
+        "document_family": "text",
+        "engine_contract": "rosetta-structural-self-check-v2511",
+        "actor_mismatch_count": 0,
+        "extra_workflow_count": 0,
+        "modal_mismatch_count": 0,
+        "actual_workflow_count": 23,
+        "missing_workflow_count": 0,
+        "coverage_mismatch_count": 0,
+        "expected_workflow_count": 23,
+        "override_section_mismatch_count": 0,
+        "workflow_section_mismatch_count": 0,
+        "definition_section_mismatch_count": 0
+      },
+      "test_name": "structural_correctness_v2",
+      "executed_at": "2026-08-28T14:45:40.733892+00:00",
+      "test_result": "pass",
+      "failure_count": 0,
+      "extraction_run_id": 24592
+    }
+  ],
+  "extraction_manifest": {
+    "id": "manifest-v2511-e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33-d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded",
+    "status": "clean",
+    "corpus_id": 7,
+    "row_counts": {
+      "help": 0,
+      "coverage": 15,
+      "overrides": 5,
+      "raw_blocks": 4,
+      "definitions": 6,
+      "workflow_steps": 23,
+      "workflow_pipelines": 2,
+      "accountability_routes": 0,
+      "structural_representations": 0
+    },
+    "executed_at": "2026-08-28T14:45:40.733892+00:00",
+    "output_hash": "65dc277849899e4761e113d42becd55f4e30b9c543c0970ff46eca9603d2c1f0",
+    "source_hash": "a6b611c842422141f73675bfc11c89fda690b0c83147a1f30537cd92c4518bd6",
+    "drift_events": [],
+    "canon_version": 1,
+    "rule_manifest": {
+      "is_active": true,
+      "created_at": "2026-08-19T09:01:10.775257+00:00",
+      "manifest_id": "a35117fd-a1ac-4ef5-82c0-1e46e30acc90",
+      "manifest_hash": "3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639",
+      "manifest_json": {
+        "change": {
+          "coverage_block_scope": "Every retained amendment document, section, and amendment-operation block receives all five operative layers as not_applicable.",
+          "receipt_truthfulness": "The execution receipt returns final hashed objects, structural representations, five-layer coverage, and row counts after all reclassification and validation.",
+          "final_validation_order": "No canonical meaning changes after final coverage, structural self-check, and independent validation.",
+          "amendment_page_furniture": "Recognized trailing legislative page furniture remains excluded from amendment-operation spans.",
+          "amendment_representation": "Source-stated amendment instructions remain non-operative structural representations, not OVERRIDES objects.",
+          "exact_replay_immutability": "An already-finalized exact generation returns its stored final receipt without re-finalization, timestamp refresh, canonical-row mutation, or hash mutation. Interrupted base-stage generations complete finalization exactly once.",
+          "amendment_validation_stage_order": "The base parser retains raw-source structural self-check semantics before projection. Amendment-aware expected operative workflow = 0 is enforced only after finalizer reclassification/pruning, so temporary base workflow rows do not fail the pre-projection stage.",
+          "amendment_disposition_status_scope": "ADOPTED/NOT ADOPTED source disposition is recognized only from standalone status lines. Statutory uses such as regulations adopted by a city are not amendment-status evidence; explicit docket metadata remains independently checked against any standalone source status line.",
+          "marked_full_text_amendment_reprints": "A document_family=amendment source with both an explicit reprinted-as-amended marker and an amendment instruction key may have zero parsed line operations. Rosetta prunes all operative five-layer projection, records five-layer not_applicable coverage, preserves amendment structure, and continues to reject unrecognized zero-operation amendment formats.",
+          "amendment_operative_workflow_expectation": "For document_family=amendment, raw amendment-instruction modal clauses are diagnostic only. After the non-operative amendment projection, expected operative workflow is zero and any actual operative workflow fails validation."
+        },
+        "contract": "S -> {HELP, WORKFLOW, ACCOUNTABILITY, OVERRIDES, DEFINITIONS} plus non-operative structural representations",
+        "inherits": {
+          "status": "published_current_generation",
+          "engine_version": "rosetta-v3-deterministic-sql-2.5.10",
+          "rule_set_version": "rosetta-five-layer-structural-correctness-2.5.10"
+        },
+        "provenance": "Rosetta 2.5.11 is an immutable candidate generation. It preserves 2.5.10 receipts and adds deterministic recognition of source-marked full-text amendment reprints whose legal text is presented with an amendment instruction key rather than a line-operation sheet.",
+        "engine_version": "rosetta-v3-deterministic-sql-2.5.11",
+        "rule_set_version": "rosetta-five-layer-structural-correctness-2.5.11",
+        "source_projection": "rosetta-layout-projection-v25",
+        "handoff_contract_version": "rosetta-civic-genome-handoff-v2"
+      },
+      "engine_version": "rosetta-v3-deterministic-sql-2.5.11",
+      "rule_set_version": "rosetta-five-layer-structural-correctness-2.5.11"
+    },
+    "engine_version": "rosetta-v3-deterministic-sql-2.5.11",
+    "rule_set_version": "rosetta-five-layer-structural-correctness-2.5.11",
+    "extraction_run_id": 24592,
+    "source_content_id": "4784ec8d-c431-4db0-9370-d30200cfb7ad",
+    "configuration_hash": "d3b2a3456ee987f5141fbc38955f4adff79c9d0a253b0225770242eb51598ded",
+    "rule_manifest_hash": "3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639",
+    "source_document_id": 19583,
+    "validation_results": {
+      "five_layer_coverage": true,
+      "no_pending_coverage": true,
+      "output_hash_verified": true,
+      "source_hash_verified": true,
+      "source_bytes_receipted": true,
+      "object_source_spans_v25": {
+        "contract": "rosetta-object-source-span-v25",
+        "resolved": 34,
+        "ambiguous": 0,
+        "unresolved": 0,
+        "extraction_run_id": 24592
+      },
+      "structural_correctness_v2": {
+        "status": "pass",
+        "document_family": "text",
+        "engine_contract": "rosetta-structural-self-check-v2511",
+        "actor_mismatch_count": 0,
+        "extra_workflow_count": 0,
+        "modal_mismatch_count": 0,
+        "actual_workflow_count": 23,
+        "missing_workflow_count": 0,
+        "coverage_mismatch_count": 0,
+        "expected_workflow_count": 23,
+        "override_section_mismatch_count": 0,
+        "workflow_section_mismatch_count": 0,
+        "definition_section_mismatch_count": 0
+      },
+      "canonical_rows_source_bound": true,
+      "independent_structure_v2511": {
+        "status": "pass",
+        "contract": "rosetta-independent-structural-validation-v2511",
+        "bad_span_count": 0,
+        "document_family": "text",
+        "actual_span_count": 34,
+        "extraction_run_id": 24592,
+        "expected_span_count": 34,
+        "actual_workflow_count": 23,
+        "blocking_repair_count": 0,
+        "duplicate_section_count": 0,
+        "expected_workflow_count": 23,
+        "span_hash_mismatch_count": 0,
+        "block_hash_mismatch_count": 0,
+        "penalty_actor_mismatch_count": 0,
+        "workflow_contamination_count": 0,
+        "override_false_positive_count": 0,
+        "actual_clause_occurrence_count": 0,
+        "definition_contamination_count": 0,
+        "expected_clause_occurrence_count": 0,
+        "accountability_contamination_count": 0,
+        "accountability_typing_mismatch_count": 0,
+        "clause_occurrence_binding_mismatch_count": 0
+      },
+      "exact_source_structure_v2511": {
+        "status": "pass",
+        "contract": "rosetta-structural-correctness-v2511",
+        "document_family": "text",
+        "amendment_disposition": null,
+        "operative_layer_projection": null,
+        "structural_span_mismatch_count": 0,
+        "structural_representation_count": 0,
+        "amendment_coverage_mismatch_count": 0,
+        "structural_footer_contamination_count": 0
+      },
+      "span_repair_registration_v25": {
+        "contract": "rosetta-span-repair-registration-v25",
+        "extraction_run_id": 24592,
+        "blocking_repair_count": 0
+      },
+      "final_five_layer_coverage_v2511": {
+        "status": "pass",
+        "contract": "rosetta-final-five-layer-coverage-v2511",
+        "coverage": {
+          "help": {
+            "reason": "No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+            "status": "not_applicable",
+            "validated_at": "2026-08-28T14:45:46.721682+00:00"
+          },
+          "workflow": {
+            "reason": "Deterministic section-local rule match. | No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+            "status": "populated",
+            "validated_at": "2026-08-28T14:45:46.723837+00:00"
+          },
+          "overrides": {
+            "reason": "Deterministic section-local rule match. | No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+            "status": "populated",
+            "validated_at": "2026-08-28T14:45:46.723882+00:00"
+          },
+          "definitions": {
+            "reason": "Deterministic section-local rule match. | No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+            "status": "populated",
+            "validated_at": "2026-08-28T14:45:46.723894+00:00"
+          },
+          "accountability": {
+            "reason": "No deterministic section-local rule matched this source span under rule manifest 3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639.",
+            "status": "not_applicable",
+            "validated_at": "2026-08-28T14:45:46.723868+00:00"
+          }
+        },
+        "terminal": true,
+        "layer_count": 5
+      },
+      "structural_reconciliation_v2511": {
+        "contract": "rosetta-structural-reconciliation-v2511",
+        "definition_count": 6,
+        "extraction_run_id": 24592,
+        "publication_state": "verified",
+        "accountability_count": 0,
+        "blocking_repair_count": 0,
+        "clause_occurrence_count": 0
+      },
+      "structural_reclassification_v2511": {
+        "applied": false,
+        "contract": "rosetta-amendment-structural-representation-v2511",
+        "document_family": "text",
+        "representation_count": 0
+      }
+    },
+    "admissibility_state": "admissible",
+    "source_identity_hash": "e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33"
+  },
+  "source_receipt": {
+    "created_at": "2026-08-28T14:45:40.585658+00:00",
+    "media_type": "application/pdf",
+    "source_url": "https://www.legis.la.gov/Legis/ViewDocument.aspx?d=1458653",
+    "source_text": "HLS 26RS-1186 ENGROSSED\n2026 Regular Session\nHOUSE BILL NO. 944\nBY REPRESENTATIVE HILFERTY\nHEALTH SERVICES: Creates the Louisiana Women's Health Consortium\n1 AN ACT\n2 To enact R.S. 36:259(B)(23) and R.S. 46:2526, relative to the creation of the Women's\n3 Health Consortium within the Louisiana Department of Health; to provide for the\n4 membership of the consortium; to provide for the functions of the consortium; to\n5 provide for the organization of the consortium; to require an annual report; and to\n6 provide for related matters.\n7 Be it enacted by the Legislature of Louisiana:\n8 Section 1. R.S. 36:259(B)(23) is hereby enacted to read as follows:\n9 §259. Transfer of agencies and functions to Louisiana Department of Health\n10 * * *\n11 B. The following agencies are placed within the Louisiana Department of\n12 Health and shall exercise and perform their powers, duties, functions, and\n13 responsibilities as otherwise provided by law:\n14 * * *\n15 (23) Women's Health Consortium (R.S. 46:2526).\n16 * * *\n17 Section 2. R.S. 46:2526 is hereby enacted to read as follows:\n18 §2526. Women's Health Consortium\n19 A. There is hereby established within the Louisiana Department of Health,\n20 office on women's health and community health, the Women's Health Consortium.\nPage 1 of 8\nCODING: Words in struck through type are deletions from existing law; words underscored\nare additions.\n\n-- 1 of 8 --\n\nHLS 26RS-1186 ENGROSSED\nHB NO. 944\n1 B. The consortium shall be comprised of the following voting members:\n2 (1) One member who is the surgeon general or his designee.\n3 (2) One member who is the executive director of the Louisiana State Board\n4 of Medical Examiners or his designee.\n5 (3) One member from the Pennington Biomedical Research Center\n6 specializing in areas of women's health appointed by the executive director of the\n7 Pennington Biomedical Research Center.\n8 (4) One member from the Tulane School of Medicine specializing in the\n9 areas of women's health appointed by the dean of the Tulane School of Medicine.\n10 (5) One member from the Ochsner Health System specializing in the areas\n11 of women's health appointed by the president of the Ochsner Health System.\n12 (6) One member from Woman's Hospital of Baton Rouge appointed by the\n13 president of Woman's Hospital of Baton Rouge.\n14 (7) One member from the Louisiana House of Representatives appointed by\n15 the speaker.\n16 (8) One member from the Louisiana Senate by the president.\n17 (9) One member who is the secretary of Louisiana Works or his designee.\n18 (10) One member who is the commissioner of insurance or his designee.\n19 (11) One member who is assistant secretary for the office of women's health\n20 and community health or his designee.\n21 (12) One member who is the executive director of the governor's office on\n22 women's policy or his designee.\n23 (13) One member who is a nurse practitioner or physician's assistant from\n24 a rural community appointed by the surgeon general.\n25 (14) One member who is an epidemiologist or health statistician appointed\n26 by the surgeon general.\n27 (15) One member who is a healthcare consumer appointed by the surgeon\n28 general.\nPage 2 of 8\nCODING: Words in struck through type are deletions from existing law; words underscored\nare additions.\n\n-- 2 of 8 --\n\nHLS 26RS-1186 ENGROSSED\nHB NO. 944\n1 (16) One member who is a functional medicine provider or integrative\n2 medicine provider appointed by the surgeon general.\n3 C. The consortium may engage and solicit, as necessary, input,\n4 recommendations, and guidance on issues pertaining to the advancement of women's\n5 health from interested parties and stakeholders, including but not limited to the\n6 following:\n7 (1) One member from the Xavier University of Louisiana College of\n8 Pharmacy appointed by the dean of the Xavier University of Louisiana College of\n9 Pharmacy.\n10 (2) One member from the University of Louisiana at Monroe College of\n11 Pharmacy appointed by the dean of the University of Louisiana at Monroe College\n12 of Pharmacy.\n13 (3) One member from the Baton Rouge General Medical Center specializing\n14 in women's health issues appointed by the president of Baton Rouge General.\n15 (4) One member from Our Lady of the Lake Health specializing in women's\n16 health appointed by the president of Our Lady of the Lake Health.\n17 (5) One member from the Louisiana Association of Health Plans appointed\n18 by the executive director of the Louisiana Association of Health Plans.\n19 (6) One member from the Louisiana Hospital Association appointed by the\n20 president or chief executive officer of the Louisiana Hospital Association.\n21 (7) One member of the Louisiana section of American College of\n22 Obstetricians and Gynecologists appointed by the section chair of the organization.\n23 D. Each member shall serve at the pleasure of the appointing authority.\n24 E.(1) The consortium shall adopt rules and regulations to provide for the\n25 governance of the consortium. Such rules and regulations shall include but not be\n26 limited to procedures and grounds for the removal of any consortium member.\n27 (2) Procedures for filling a vacancy created by the removal, resignation, or\n28 death of any consortium member shall follow those used for initial appointments.\nPage 3 of 8\nCODING: Words in struck through type are deletions from existing law; words underscored\nare additions.\n\n-- 3 of 8 --\n\nHLS 26RS-1186 ENGROSSED\nHB NO. 944\n1 F. Each consortium member shall serve without compensation except a\n2 member may receive reimbursement for expenses in accordance with the guidelines\n3 of the entity he represents.\n4 G.(1) The member from the Pennington Biomedical Research Center shall\n5 serve as the initial chairman for two years.\n6 (2) After the term of the initial chairman, the consortium shall elect a\n7 chairman every two years who shall serve for a term of two years.\n8 (3) The consortium shall elect a vice chairman and may elect other officers\n9 as deemed appropriate.\n10 H. The domicile of the consortium shall be East Baton Rouge Parish, but the\n11 consortium may hold meetings elsewhere in the state.\n12 I. The consortium shall hold quarterly public meetings unless decided by a\n13 vote of the consoritum or by order of the chairman. Special meeting shall be held\n14 on call of the chairman or of a majority of the voting members of the consortium.\n15 J. The number of members necessary to constitute a quorum for the\n16 transaction of business shall be a majority of the voting members of the consortium.\n17 A majority vote of the voting members of the consortium members constituting a\n18 quorum is necessary for any action taken by the consortium.\n19 K. Each department participating on the consortium shall assist as needed\n20 in providing staff support for the consrtium, including but not limited to the\n21 scheduling of meetings, providing public notice of scheduled meetings, and posting\n22 information about the consortium and its meeting minutes online.\n23 L. The functions of the consortium shall be to accomplish all of the\n24 following:\n25 (1) Develop initiative known as the Funding Priority Program for Women's\n26 Health Initiatives to identify current funding provided for women's health initiatives,\n27 prioritize funding needed to sustain and enhance current effective initiatives, and\n28 identify new initiatives to support emerging scientific research and innovation, as\nPage 4 of 8\nCODING: Words in struck through type are deletions from existing law; words underscored\nare additions.\n\n-- 4 of 8 --\n\nHLS 26RS-1186 ENGROSSED\nHB NO. 944\n1 well as any additional measures that will advance women's health, including but not\n2 limited to public-private partnerships and multi-state collaborations.\n3 (2) Develop an Interagency Women's Health Agenda for the state. The\n4 agenda shall include but not be limited to all of the following:\n5 (a) Strengths, weaknesses, and opportunities in research, access to care,\n6 medical education, funding, policy, regulations, public education, and access to\n7 information pertaining to women's health at every stage of life.\n8 (b) The Funding Priority Program for Women's Health Initiatives.\n9 (3) Focus on those issues of health which significantly affect women in this\n10 state, including but not limited to perimenopause, menopause, and post menopause.\n11 (4) Serve as a resource to the state on issues affecting women's health at\n12 every stage of life.\n13 (5) Identify systemic barriers and health gaps to standard access of quality\n14 care across women's health and possible solutions.\n15 (6) Provide recommendations on solutions and partnerships to drive\n16 innovation in the diagnosis, treatment, and prevention of women-specific conditions\n17 in this state.\n18 (7) Evaluate the training in the delivery of care for medical students and\n19 physicians in this state, relating to the health issues which significantly affect\n20 women.\n21 (8) Evaluate the impacts of health issues on the workforce.\n22 (9) Ensure information data and sharing between governmental and\n23 non-governmental entities relative to women's health issues.\n24 (10) Identify a system for educating women on health issues to improve\n25 quality of life and increase longevity.\n26 (11) Coordinate an online clearinghouse of credible online evidence-based\n27 information and resources, including the Interagency Women's Health Agenda, as\n28 identified by the consortium.\nPage 5 of 8\nCODING: Words in struck through type are deletions from existing law; words underscored\nare additions.\n\n-- 5 of 8 --\n\nHLS 26RS-1186 ENGROSSED\nHB NO. 944\n1 (12) The consortium shall maintain confidentiality of any information data\n2 or records provided to it, as required by the laws relative to such records and\n3 information.\n4 M. The consortium shall submit to the David R. Poynter Legislative Research\n5 Library, the House and Senate committees on health and welfare, and the governor's\n6 office prior to December thirty-first each year an annual written report that\n7 summarizes the activities for the year prior, including the Interagency Women's\n8 Health Agenda for the state, and any recommendations.\n9 N. For the purposes of this Section, the following terms have the meanings\n10 ascribed to them in this Subsection:\n11 (1) \"Consortium\" means a network of public and private sector experts and\n12 health professionals in this state specializing in women's health, as well as policy\n13 leaders necessary to effectuate change for a comprehensive women's health agenda\n14 for the state.\n15 (2) \"Funding Priority Program for Women's Health Initiatives\" means a\n16 schedule of detailed women's health initiatives in this state which are prioritized and\n17 adopted by the Louisiana Women's Health Consortium each fiscal year which\n18 includes any current funding provided, the entity receiving the funding, and any\n19 additional funding needed in ensuing fiscal years. The schedule also includes any\n20 alternative means of funding identified from potential public-private partnerships and\n21 multi-state collaborations.\n22 (3) \"Interagency Women's Health Agenda\" means a yearly assessment by the\n23 consortium given to the governor, legislature, and made available to the public of\n24 strengths, weaknesses, and opportunities on those issues of health which significantly\n25 affect women, in particular perimenopause, menopause, and postmenopause.\n26 (4) \"Menopause\" means twelve months since the last menstrual cycle and the\n27 end of reproductive capabilities.\n28 (5) \"Perimenopause\" means an extended transitional stage that takes place\n29 prior to menopause. This state is initiated by fluctuations in hormone levels.\nPage 6 of 8\nCODING: Words in struck through type are deletions from existing law; words underscored\nare additions.\n\n-- 6 of 8 --\n\nHLS 26RS-1186 ENGROSSED\nHB NO. 944\n1 (6) \"Postmenopause\" means the remaining lifespan after menopause.\nDIGEST\nThe digest printed below was prepared by House Legislative Services. It constitutes no part\nof the legislative instrument. The keyword, one-liner, abstract, and digest do not constitute\npart of the law or proof or indicia of legislative intent. [R.S. 1:13(B) and 24:177(E)]\nHB 944 Engrossed 2026 Regular Session Hilferty\nAbstract: Creates the Women's Health Consortium.\nProposed law establishes the Women's Health Consortium (consortium) within the La. Dept.\nof Health (LDH), office on women's health and community health.\nProposed law provides for the membership of the consortium.\nProposed law provides for interested parties and stakeholders that the consortium may\nconsult with on matters of women's health.\nProposed law provides that the consortium may engage and solicit, as necessary, input,\nrecommendations, and guidance on issues pertaining to the advancement of women's health\nfrom interested parties and stakeholders.\nProposed law provides that the consortium shall adopt rules and regulations to provide for\nthe governance of the consortium.\nProposed law further provides that the rules and regulations include but not be limited to\nprocedures and grounds for the removal of any consortium member.\nProposed law provides that each consortium member will serve without compensation,\nexcept members may receive reimbursement for expenses in accordance with the guidelines\nof the entity they represent.\nProposed law requires the member from the Pennington Biomedical Research Center to\nserve as the initial chairperson for two years.\nProposed law further requires the consortium, after the initial two-year period, to elect a new\nchairperson every two years.\nProposed law provides that the consortium shall elect a vice chairperson and may elect other\nofficers, if appropriate.\nProposed law provides that the domicile of the consortium shall be in East Baton Rouge\nParish; however, the consortium may hold meetings elsewhere in the state.\nProposed law requires the consortium to hold quarterly public meetings, unless otherwise\nvoted against by the members or by order, or the chairperson.\nProposed law provides the procedure for the consortium to host special meetings.\nProposed law requires each member participating in the consortium to assist as needed in\nproviding staff support.\nProposed law provides the functions of the consortium.\nPage 7 of 8\nCODING: Words in struck through type are deletions from existing law; words underscored\nare additions.\n\n-- 7 of 8 --\n\nHLS 26RS-1186 ENGROSSED\nHB NO. 944\nProposed law requires the consortium to submit an annual written report that summarizes\nthe activities of the consortium. Proposed law provides the time period for when the report\nshall be submitted and to whom it shall be submitted.\nProposed law establishes the \"Funding Priority Program for Women's Health Initiatives\" to\nplan and prioritize available resources to improve health outcomes.\nProposed law provides for definitions.\n(Adds R.S. 36:259(B)(23) and R.S. 40:2526)\nSummary of Amendments Adopted by House\nThe Committee Amendments Proposed by House Committee on Health and Welfare to\nthe original bill:\n1. Add members to the consortium and interested parties involved with the\nconsortium.\n2. Clarify the membership of the consortium and provide for interested parties\nworking with the consortium.\n3. Make technical corrections.\nPage 8 of 8\nCODING: Words in struck through type are deletions from existing law; words underscored\nare additions.\n\n-- 8 of 8 --",
+    "source_version": "legiscan_text:3410382:Engrossed:pdf-parse-2.4.5-legislative-version-v1",
+    "source_metadata": {
+      "docket_adopted": null,
+      "docket_bill_id": 2127180,
+      "docket_chamber": null,
+      "docket_source_url": "https://www.legis.la.gov/Legis/ViewDocument.aspx?d=1458653",
+      "docket_stage_rank": 300,
+      "docket_description": null,
+      "docket_provider_url": "https://legiscan.com/LA/text/HB944/id/3410382",
+      "docket_version_type": "engrossed",
+      "extraction_text_url": "https://www.legis.la.gov/Legis/ViewDocument.aspx?d=1458653",
+      "registered_metadata": {
+        "source_url": "https://www.legis.la.gov/Legis/ViewDocument.aspx?d=1458653",
+        "stage_rank": 300,
+        "source_stem": "ViewDocument.aspx?d=1458653",
+        "provider_url": "https://legiscan.com/LA/text/HB944/id/3410382",
+        "provider_date": null,
+        "provider_hash": "2b8f11ce428dbe929492d53478d07a9f",
+        "provider_size": 64233,
+        "source_bill_id": 2127180,
+        "document_family": "text",
+        "provider_payload": {
+          "url": "https://legiscan.com/LA/text/HB944/id/3410382",
+          "date": "0000-00-00",
+          "mime": "application/pdf",
+          "type": "Engrossed",
+          "doc_id": 3410382,
+          "mime_id": 2,
+          "type_id": 4,
+          "alt_mime": "",
+          "text_hash": "2b8f11ce428dbe929492d53478d07a9f",
+          "text_size": 64233,
+          "state_link": "https://www.legis.la.gov/Legis/ViewDocument.aspx?d=1458653",
+          "alt_mime_id": 0,
+          "alt_bill_text": 0,
+          "alt_text_hash": "",
+          "alt_text_size": 0,
+          "alt_state_link": ""
+        },
+        "provider_sequence": 2,
+        "source_document_key": "text:2127180:3410382",
+        "provider_document_id": 3410382,
+        "provider_document_type": "Engrossed",
+        "normalized_version_type": "engrossed"
+      },
+      "docket_provider_date": null,
+      "docket_provider_hash": "2b8f11ce428dbe929492d53478d07a9f",
+      "docket_provider_size": 64233,
+      "source_url_rewritten": false,
+      "docket_document_family": "text",
+      "registered_observed_at": "2026-08-18 05:39:51.433591+00",
+      "california_bill_page_url": null,
+      "docket_provider_sequence": 2,
+      "extraction_text_byte_hash": "f0f9763e413e56f7013dc7eec3cae665ad5fb96e8fba0ae66b260882ca92e595",
+      "docket_source_document_key": "text:2127180:3410382",
+      "docket_provider_document_id": 3410382,
+      "docket_provider_document_type": "Engrossed",
+      "california_session_bootstrapped": false,
+      "docket_base_source_document_key": null,
+      "docket_predecessor_source_document_key": "text:2127180:3380024"
+    },
+    "source_byte_hash": "f0f9763e413e56f7013dc7eec3cae665ad5fb96e8fba0ae66b260882ca92e595",
+    "source_content_id": "4784ec8d-c431-4db0-9370-d30200cfb7ad",
+    "source_document_id": 19583,
+    "source_content_hash": "a6b611c842422141f73675bfc11c89fda690b0c83147a1f30537cd92c4518bd6",
+    "source_identity_hash": "e4931f177ce27ab4f52ac04d94be026b2882f5894fccbd23d149f5e03706de33",
+    "source_provider_hash": "2b8f11ce428dbe929492d53478d07a9f"
+  }
+}

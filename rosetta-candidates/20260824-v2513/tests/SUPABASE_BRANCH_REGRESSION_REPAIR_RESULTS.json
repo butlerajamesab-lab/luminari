@@ -1,0 +1,179 @@
+{
+  "status": "bounded_pass_full_corpus_blocked",
+  "captured_at_utc": "2026-08-30T16:25:58Z",
+  "source_lock": {
+    "repository": "butlerajamesab-lab/luminari",
+    "base_commit": "05327dca408c12b63268ea1c6ef80ee3775bb643",
+    "root": "rosetta-candidates/20260824-v2513",
+    "original_sha256sums_sha256": "c91257d43357d8cc740fda145a71284fcf2d4732da6869d6f0091ebe8d123aca",
+    "original_members_verified": 125,
+    "original_directory_file_count": 126,
+    "control_function_fidelity": {
+      "matching": 51,
+      "missing": 0,
+      "changed": 0
+    }
+  },
+  "database": {
+    "provider": "Supabase preview branch",
+    "branch_name": "rosetta-v2513-regression-repair-final-20260830",
+    "branch_id": "47aa47ac-e8f6-43d9-9245-0bea43bb2435",
+    "project_ref": "gjqoiutzuicocfcbynqu",
+    "parent_project_ref": "kjzytnzkkdpdxtqtjlew",
+    "postgresql_version": "17.6",
+    "with_data": false,
+    "canonical_unsafe_target_predicate": false,
+    "production_mutated": false,
+    "branch_merged": false,
+    "render_deployed": false,
+    "promotion_requested": false,
+    "cutover_requested": false
+  },
+  "migration_install": {
+    "status": "pass",
+    "order": [
+      "01",
+      "02",
+      "03",
+      "04",
+      "05",
+      "06",
+      "07",
+      "08",
+      "09",
+      "10",
+      "17",
+      "11",
+      "12",
+      "13",
+      "14",
+      "15",
+      "16",
+      "18"
+    ],
+    "transport": "Supabase apply_migration",
+    "canonical_psql_runner_executed": false
+  },
+  "static_verification": {
+    "status": "pass",
+    "generator_second_pass_stable": true,
+    "sql_files_lexed": 29,
+    "migration_files": 20,
+    "public_schema_mutations": 0,
+    "control_functions_matching": 51,
+    "quarantine_run_ids": 1038,
+    "quarantine_evidence_sha256": "13dd88b0519f6ee1d36189aa4f45b4acd0fc0e499a37a3b089f12666c53a476e"
+  },
+  "bounded_sql_tests": {
+    "status": "pass",
+    "tests": [
+      "01_durability.sql",
+      "02_schema_and_control.sql",
+      "03_lanes_c1_c2_c3.sql",
+      "04_lanes_c4_c5.sql",
+      "05_lanes_c6_c7.sql",
+      "06_manifest_diff_gates.sql",
+      "07_end_to_end_replay.sql",
+      "10_security_lockdown.sql"
+    ]
+  },
+  "exact_regressions": {
+    "fixture_integrity": {
+      "24592_file_sha256": "57288c33bf546a88f9e1f6a2364c7243ec924009152471d58256b78b5762250c",
+      "24592_source_sha256": "a6b611c842422141f73675bfc11c89fda690b0c83147a1f30537cd92c4518bd6",
+      "24593_file_sha256": "f3a025a35ad472f29d65bce30d89c3e394b9116e780def0e570fb51daf9099a7",
+      "24593_source_sha256": "4a4594b0ee1d6b5c7b523e232d3daa48409b63d288d3c92c1160bbb5f39b1e01"
+    },
+    "source_lock_observations": {
+      "24592_digest_normative_clause_count": 7,
+      "24592_middle_initial_protected": false,
+      "24592_complete_report_clause": false,
+      "24593_surviving_page_bill_lines": 6,
+      "24593_observed_provider_date": "1969-12-31",
+      "reference_date_lower_bound_present": false
+    },
+    "repaired_results": {
+      "projection_lengths_preserved": true,
+      "24592_digest_normative_clause_count": 0,
+      "24592_middle_initial_protected": true,
+      "24592_complete_report_clause_count": 1,
+      "list_marker_negative_control": true,
+      "24593_surviving_page_bill_lines": 0,
+      "24593_normative_clause_count": 16,
+      "24593_max_actor_length": 630,
+      "candidate_rejects_1969_12_31_with_sqlstate": "P1A08",
+      "replay_identity_rejects_1969_12_31_with_sqlstate": "P1A08",
+      "1970_01_01_and_null_reference_dates_accepted": true
+    }
+  },
+  "separated_transaction_replay": {
+    "status": "pass_mcp_equivalent",
+    "transport": "independent Supabase execute_sql calls",
+    "canonical_psql_driver_executed": false,
+    "configuration_hash": "2ec383454a864078ea59cb13979c91acf7c51fbc610ca151297a18ecb3961ec3",
+    "forced_timeout": {
+      "attempt_id": "871de587-6d10-439b-ae70-fc9bbfdc0602",
+      "attempt_state": "timed_out",
+      "receipt_kind": "timeout",
+      "sqlstate": "57014",
+      "run_binding_present": false
+    },
+    "lanes": [
+      {"prefix": "ctl_", "attempt_id": "56bef0d2-24c7-4faf-84a2-b4ab7346e1b0", "closure_hash": "9f8656d238c571a9b00fa69deb973590b87e033620b1bc375fa7c6a48db06f67"},
+      {"prefix": "c1_", "attempt_id": "8e43e1a7-dc3c-4976-953c-21abcc4aedcd", "closure_hash": "800f7bebe2d39812584af0ed9febef1ba054108d8424da5cc5cad53427eabf60"},
+      {"prefix": "c2_", "attempt_id": "3a864ee8-9d13-4728-bffe-7c3cb0f03da5", "closure_hash": "58c8b3b11d881026756079b469637359bd062dc4b18899c2f38a2dae70a98e6c"},
+      {"prefix": "c3_", "attempt_id": "14412d2f-e69a-42e5-a6c0-b9f55859bb7a", "closure_hash": "4696776f39b1975575847f281137251255b3717643a63a55e168a7ecbd7333b4"},
+      {"prefix": "c4_", "attempt_id": "8f301fca-a2a4-4534-ac31-d98167be3b53", "closure_hash": "554c8247780f04ab6c801eb155c9577c8e8dbffd91a68ba59e4858e474363639"},
+      {"prefix": "c5_", "attempt_id": "b3021800-7e8c-4239-951d-f02ddc5b5b0f", "closure_hash": "a3323f06969df544287727f31c39f202a1dd6a0882284b094e59bbe4896f23ab"},
+      {"prefix": "c6_", "attempt_id": "633609ed-25b2-4004-a9a5-21dd59953871", "closure_hash": "5794e21ba5a58cd1bbf3f893cf36cde595687f7aa34e63798d5162a7ef361b29"},
+      {"prefix": "c7_", "attempt_id": "a645e359-de1e-4d07-afde-c90d71ea4dc1", "closure_hash": "714e23a497109fc4811e6ebe25ac67ca40cb11971efacf60616935071caf40e0"},
+      {"prefix": "v2513_", "attempt_id": "7ff2286e-50d6-477c-a649-3217f2aec62c", "closure_hash": "17b2495fafb5f338e53fd9cefe61efaf6d695fa4b8beba71243d97a40db2f90d"}
+    ],
+    "all_lane_assertions": {
+      "attempt_state": "succeeded",
+      "terminal_outcome": "completed",
+      "exact_source_registry_binding": true,
+      "exact_source_content_binding": true,
+      "exact_output_hash_binding": true,
+      "nonempty_structural_output": true
+    }
+  },
+  "full_corpus_preflight": {
+    "status": "blocked",
+    "quarantine_ids_expected": 1038,
+    "quarantine_ids_found_read_only_in_production": 1038,
+    "distinct_source_content_ids": 1000,
+    "source_content_rows_present": 1038,
+    "source_text_rows_present": 1038,
+    "source_text_bytes": 13117985,
+    "source_contents_with_multiple_control_runs": 25,
+    "extra_control_run_memberships": 38,
+    "maximum_control_runs_for_one_source": 8,
+    "blocking_contract": "sealed_corpus_member is unique by manifest_id/source_registry_id and stores one control_run_id; G10 requires every one of the 1,038 control_run_id values to appear on a flagged member. The observed 1,000-source mapping cannot represent 38 additional run memberships without an authorized manifest/gate redesign.",
+    "canonical_worker_executed": false,
+    "complete_diff_executed": false,
+    "terminal_tallies": null
+  },
+  "promotion_gates": {
+    "status": "not_evaluated_full_corpus",
+    "G1": "unknown",
+    "G2": "unknown",
+    "G3": "unknown",
+    "G4": "unknown",
+    "G5": "unknown",
+    "G6": "unknown",
+    "G7": "unknown",
+    "G8": "unknown",
+    "G9": "unknown",
+    "G10": "structurally_blocked_by_duplicate_control_run_memberships",
+    "G11": "not_requested_no_human_authorization"
+  },
+  "production_state": {
+    "postgresql_version": "17.6",
+    "candidate_schema_present": false,
+    "replay_schema_present": false,
+    "registered_engine": "rosetta-v3-deterministic-sql-2.5.11",
+    "registered_rule_set": "rosetta-five-layer-structural-correctness-2.5.11",
+    "writes_performed_by_this_validation": false
+  }
+}

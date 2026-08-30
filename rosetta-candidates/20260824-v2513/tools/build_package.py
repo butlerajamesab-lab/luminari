@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Regenerate, statically verify, checksum, and deterministically ZIP the packet."""
+"""Regenerate, statically verify, and checksum the individual-file packet.
+
+No archive is created by default. Pass an explicit output path only when an
+archive is separately authorized.
+"""
 from __future__ import annotations
 
 import hashlib
@@ -13,7 +17,6 @@ import zipfile
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_OUTPUT = ROOT.parent.parent / "rosetta-v2513-fixed-20260824.zip"
 GENERATED = [
     ROOT / "migrations" / name
     for name in (
@@ -29,7 +32,7 @@ GENERATED = [
         "17_convergence_candidate_2513.sql",
     )
 ]
-BRANCH_RECEIPT = ROOT / "tests" / "SUPABASE_BRANCH_VALIDATION_RESULTS.json"
+BRANCH_RECEIPT = ROOT / "tests" / "SUPABASE_BRANCH_REGRESSION_REPAIR_RESULTS.json"
 
 
 def run(*args: str) -> str:
@@ -71,7 +74,9 @@ def package_files() -> list[Path]:
 
 
 def main() -> int:
-    output = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else DEFAULT_OUTPUT
+    if len(sys.argv) > 2:
+        raise SystemExit("usage: build_package.py [EXPLICIT_ARCHIVE_PATH]")
+    output = Path(sys.argv[1]).resolve() if len(sys.argv) == 2 else None
 
     first_output = run(sys.executable, "tools/generate.py")
     first = generated_hashes()
@@ -88,8 +93,8 @@ def main() -> int:
     static_output = run(sys.executable, "tests/static_checks.py")
 
     branch_receipt = json.loads(BRANCH_RECEIPT.read_text(encoding="utf-8"))
-    if branch_receipt.get("status") != "pass_with_explicit_scope_limit":
-        raise SystemExit("Supabase branch validation receipt is missing a bounded PASS status")
+    if branch_receipt.get("status") != "bounded_pass_full_corpus_blocked":
+        raise SystemExit("current branch receipt is missing its bounded-pass/full-corpus-blocked status")
     if branch_receipt.get("database", {}).get("production_mutated") is not False:
         raise SystemExit("Supabase branch receipt does not prove production_mutated=false")
     if branch_receipt.get("database", {}).get("branch_merged") is not False:
@@ -97,7 +102,7 @@ def main() -> int:
     lane_receipts = branch_receipt.get("separated_transaction_replay", {}).get("lanes", [])
     if len(lane_receipts) != 9:
         raise SystemExit(f"expected 9 branch lane receipts, found {len(lane_receipts)}")
-    runtime_validation = "isolated_supabase_branch_postgresql17_fixture_pass"
+    runtime_validation = "bounded_disposable_supabase_postgresql17_pass_full_corpus_blocked"
 
     runtime_available = bool(shutil.which("psql") or importlib.util.find_spec("pgserver"))
     static_receipt = (
@@ -107,6 +112,8 @@ def main() -> int:
         f"runtime_tool_detected: {str(runtime_available).lower()}\n"
         f"isolated_branch_runtime_validation: {runtime_validation}\n"
         f"isolated_branch_receipt_sha256: {digest(BRANCH_RECEIPT)}\n"
+        "full_corpus_replay_executed: false\n"
+        "full_corpus_status: blocked_by_1038_control_runs_to_1000_unique_sources_manifest_contract\n"
         "production_touched: false\n\n"
         "GENERATOR RUN 1\n" + first_output + "\n\n"
         "GENERATOR RUN 2\n" + second_output + "\n\n"
@@ -116,7 +123,12 @@ def main() -> int:
     (ROOT / "STATIC_VERIFICATION_RESULTS.txt").write_text(static_receipt, encoding="utf-8")
 
     manifest = {
-        "artifact": "rosetta-v2513-fixed-20260824",
+        "artifact": "rosetta-v2513-regression-repair-20260830",
+        "base_commit": "05327dca408c12b63268ea1c6ef80ee3775bb643",
+        "base_root": "rosetta-candidates/20260824-v2513",
+        "original_sha256sums_sha256": "c91257d43357d8cc740fda145a71284fcf2d4732da6869d6f0091ebe8d123aca",
+        "original_directory_file_count": 126,
+        "directory_file_count_including_sha256sums": len(package_files()) + 1,
         "candidate_engine": "rosetta-v3-deterministic-sql-2.5.13",
         "candidate_rule_set": "rosetta-five-layer-structural-correctness-2.5.13",
         "control_engine": "rosetta-v3-deterministic-sql-2.5.11",
@@ -125,12 +137,14 @@ def main() -> int:
         "control_function_fidelity": {"matching": 51, "mismatching": 0},
         "quarantine_run_count": 1038,
         "runtime_validation": runtime_validation,
-        "runtime_validation_scope": "synthetic exact-source fixture plus bounded SQL/security tests; not a full-corpus replay",
+        "runtime_validation_scope": "exact 24592/24593 regressions, bounded SQL/security tests, forced timeout, and nine-closure exact-source replay through independent connector transactions; not a full-corpus replay",
         "runtime_validation_receipt": str(BRANCH_RECEIPT.relative_to(ROOT)),
         "runtime_validation_receipt_sha256": digest(BRANCH_RECEIPT),
         "production_mutation": False,
         "production_promotion_write_included": False,
         "production_cutover_write_included": False,
+        "sealed_corpus_status": "blocked_by_1038_control_runs_to_1000_unique_sources_manifest_contract",
+        "source_inventory_format": "individual files plus SHA256SUMS; no archive by default",
         "generated_migration_sha256": first,
     }
     (ROOT / "PACKAGE_MANIFEST.json").write_text(
@@ -150,26 +164,31 @@ def main() -> int:
         if actual != expected:
             raise SystemExit(f"post-build checksum mismatch: {relative}")
 
-    output.parent.mkdir(parents=True, exist_ok=True)
-    if output.exists():
-        output.unlink()
-    top = "rosetta-v2513-fixed-20260824"
-    with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
-        for path in sorted([ROOT / "SHA256SUMS", *files]):
-            relative = path.relative_to(ROOT)
-            info = zipfile.ZipInfo(f"{top}/{relative.as_posix()}", (2026, 8, 24, 0, 0, 0))
-            mode = 0o755 if path.suffix in {".py", ".sh"} else 0o644
-            info.external_attr = (mode & 0xFFFF) << 16
-            info.compress_type = zipfile.ZIP_DEFLATED
-            archive.writestr(info, path.read_bytes(), compresslevel=9)
-
-    print(json.dumps({
-        "output": str(output),
-        "archive_sha256": digest(output),
-        "archive_bytes": output.stat().st_size,
-        "archive_files": len(files) + 1,
+    result = {
+        "archive_created": output is not None,
+        "inventory_files": len(files) + 1,
         "runtime_validation": runtime_validation,
-    }, sort_keys=True))
+        "sha256sums_sha256": digest(ROOT / "SHA256SUMS"),
+    }
+    if output is not None:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        if output.exists():
+            output.unlink()
+        top = "rosetta-v2513-regression-repair-20260830"
+        with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
+            for path in sorted([ROOT / "SHA256SUMS", *files]):
+                relative = path.relative_to(ROOT)
+                info = zipfile.ZipInfo(f"{top}/{relative.as_posix()}", (2026, 8, 30, 0, 0, 0))
+                mode = 0o755 if path.suffix in {".py", ".sh"} else 0o644
+                info.external_attr = (mode & 0xFFFF) << 16
+                info.compress_type = zipfile.ZIP_DEFLATED
+                archive.writestr(info, path.read_bytes(), compresslevel=9)
+        result.update({
+            "output": str(output),
+            "archive_sha256": digest(output),
+            "archive_bytes": output.stat().st_size,
+        })
+    print(json.dumps(result, sort_keys=True))
     return 0
 
 

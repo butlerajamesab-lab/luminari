@@ -1,5 +1,7 @@
 {
-  "artifact": "rosetta-v2513-fixed-20260824",
+  "artifact": "rosetta-v2513-regression-repair-20260830",
+  "base_commit": "05327dca408c12b63268ea1c6ef80ee3775bb643",
+  "base_root": "rosetta-candidates/20260824-v2513",
   "candidate_engine": "rosetta-v3-deterministic-sql-2.5.13",
   "candidate_rule_set": "rosetta-five-layer-structural-correctness-2.5.13",
   "control_engine": "rosetta-v3-deterministic-sql-2.5.11",
@@ -8,25 +10,30 @@
     "mismatching": 0
   },
   "control_manifest_sha256": "3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639",
+  "directory_file_count_including_sha256sums": 131,
   "generated_migration_sha256": {
     "migrations/02_candidate_schema.sql": "270348b74e774e65e8ae2edc6add11e10ceef8481e53e874dd12ed460f8e8622",
     "migrations/03_control_closure_2511.sql": "66dc4e7dc140507c35ed671ecf0682523e00c9171db936f28cac18987543744e",
     "migrations/04_lane_c1_measured_actor_bound.sql": "798ba98c07f06d994e1c4399b5c32d9d7127d1f9e6fa4a68a75bdd2d4fbfaf04",
     "migrations/05_lane_c2_actor_source_corruption.sql": "1b7958cfc34eb7c76603dcee347199639f76ae6eb2053e2183c8ae758a6c4be4",
-    "migrations/06_lane_c3_projection_contract.sql": "c613651c39a5a4adfd03211a07ab64ea5ee0297517a4db51a6f4f96d79b30dc4",
+    "migrations/06_lane_c3_projection_contract.sql": "31bdf5a04190417344003504637d8ab1d34591bcb897f05835636f792c89a28d",
     "migrations/07_lane_c4_occurrence_aware_spans.sql": "1d73f3c182201c308abea1ec985c8aa53bbda7aeae836e155cb3c982d49def04",
-    "migrations/08_lane_c5_clause_decomposition.sql": "2eaca595dd682ceb63ce5f3e25c59d53dd172efac1a40f4eef31379e0132fc93",
+    "migrations/08_lane_c5_clause_decomposition.sql": "0fdf4a1e4b8ebc82ce3d9d8581c1e3eed343d0f0e9633614f45c541002e55f5c",
     "migrations/09_lane_c6_modal_retyping_revalidation.sql": "7e5c9a1a191f3680231338f975d5025181b8d636aea04836205fc186dfa45a48",
     "migrations/10_lane_c7_charset_receipt_gate.sql": "1555b7e4ff51018fbbb7287ca1f759f5c5017d67f680cff0e37ce4fc07882bc6",
-    "migrations/17_convergence_candidate_2513.sql": "ac1d2772b8596f24fc85fd93c1438526d55b12baba241523222e9261c669de1e"
+    "migrations/17_convergence_candidate_2513.sql": "c9cc81bde385f95521e969973b97743834c9e7381b5354c313ca7e39d55f0bab"
   },
   "generator_deterministic": true,
+  "original_directory_file_count": 126,
+  "original_sha256sums_sha256": "c91257d43357d8cc740fda145a71284fcf2d4732da6869d6f0091ebe8d123aca",
   "production_cutover_write_included": false,
   "production_mutation": false,
   "production_promotion_write_included": false,
   "quarantine_run_count": 1038,
-  "runtime_validation": "isolated_supabase_branch_postgresql17_fixture_pass",
-  "runtime_validation_receipt": "tests/SUPABASE_BRANCH_VALIDATION_RESULTS.json",
-  "runtime_validation_receipt_sha256": "e68029633806c6c5bbf8289de554ebf304d9eb92f3cd193aab5871f4db23fa62",
-  "runtime_validation_scope": "synthetic exact-source fixture plus bounded SQL/security tests; not a full-corpus replay"
+  "runtime_validation": "bounded_disposable_supabase_postgresql17_pass_full_corpus_blocked",
+  "runtime_validation_receipt": "tests/SUPABASE_BRANCH_REGRESSION_REPAIR_RESULTS.json",
+  "runtime_validation_receipt_sha256": "ef284f6cd0b6d9597fe820351e0f9e8f7a46e0a1ed10808e79a9f1d8ad9ebf91",
+  "runtime_validation_scope": "exact 24592/24593 regressions, bounded SQL/security tests, forced timeout, and nine-closure exact-source replay through independent connector transactions; not a full-corpus replay",
+  "sealed_corpus_status": "blocked_by_1038_control_runs_to_1000_unique_sources_manifest_contract",
+  "source_inventory_format": "individual files plus SHA256SUMS; no archive by default"
 }

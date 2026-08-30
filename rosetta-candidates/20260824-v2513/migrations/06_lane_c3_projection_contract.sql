@@ -1,5 +1,5 @@
 -- ============================================================================
--- Migration: lane c3 -- C3 hash-bound projection contract with receipts and fail-closed verification
+-- Migration: lane c3 -- C3 hash-bound projection and acquisition contract with exact exclusions and reference-date gate
 -- One-variable experiment: a full independent copy of the 51-function closure
 -- in rosetta_v2513 with prefix c3_, identity tokens swapped inside string
 -- literals only ('2.5.11' -> '2.5.13-c3'), plus the lane's surgical change.
@@ -1155,6 +1155,9 @@ AS $function$
 declare
   v_result text := p_source_text;
   v_line_label_count integer;
+  v_digest_start integer;
+  v_digest_region text;
+  v_digest_mask text;
 begin
   v_line_label_count := regexp_count(p_source_text,'(^|\n)[0-9]{1,3}[.][0-9]{1,3}[ \t]+',1,'n');
   if v_line_label_count >= 3 then
@@ -1165,6 +1168,29 @@ begin
     v_result := rosetta_v2513.c3_rosetta_v25_mask_matches(v_result,'(^|\n)REVISOR[^\n]*(\n|$)','n');
     v_result := rosetta_v2513.c3_rosetta_v25_mask_matches(v_result,'(^|\n)[ \t]*--[ \t]*[0-9]+[ \t]+of[ \t]+[0-9]+[ \t]*--[ \t]*(\n|$)','n');
   end if;
+
+  -- Exact Colorado bill-page chrome. Masking preserves string length and line
+  -- boundaries so every downstream source offset remains stable.
+  v_result := rosetta_v2513.c3_rosetta_v25_mask_matches(
+    v_result,
+    '(^|\n)[ \t]*PAGE[ \t]+[0-9]+-(?:HOUSE|SENATE)[ \t]+BILL[^\n]*(\n|$)',
+    'in');
+
+  -- Louisiana legislative DIGEST text is excluded only when the standalone
+  -- heading is followed by the authoritative non-operative disclaimer. This
+  -- avoids treating an arbitrary use of the word "digest" as an exclusion.
+  v_digest_start := regexp_instr(
+    v_result,'(^|\n)[ \t]*DIGEST[ \t]*(\n|$)',1,1,0,'in');
+  if v_digest_start > 0 then
+    v_digest_region := substr(v_result,v_digest_start);
+    if left(v_digest_region,2000) ~*
+       'constitutes[[:space:]]+no[[:space:]]+part[[:space:]]+of[[:space:]]+the[[:space:]]+legislative[[:space:]]+instrument' then
+      v_digest_mask := regexp_replace(v_digest_region,'[^\n\r]',' ','g');
+      v_result := overlay(v_result placing v_digest_mask from v_digest_start
+                          for char_length(v_digest_region));
+    end if;
+  end if;
+
   return rosetta_v2513.c3_rosetta_v25_protect_internal_periods(v_result);
 end;
 $function$;
@@ -1883,6 +1909,7 @@ declare
   v_section_definition_count integer := 0;
   v_structural_validation jsonb;
 begin
+  perform rosetta_v2513.c3_rosetta_v25_reference_date_gate(p_reference_date);
   perform rosetta_v2513.c3_rosetta_v25_source_acquisition_gate(p_source_document_id, p_source_text, p_media_type, p_source_version, p_source_url);
   perform pg_advisory_xact_lock(20260731, p_source_document_id);
 
@@ -3091,6 +3118,21 @@ begin
   );
 end;
 $function$;
+CREATE OR REPLACE FUNCTION rosetta_v2513.c3_rosetta_v25_reference_date_gate(p_reference_date date)
+ RETURNS void
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'pg_catalog'
+AS $function$
+begin
+  -- Provider/reference dates before the Unix epoch are sentinel/configuration
+  -- defects in this acquisition contract, never credible source dates.
+  if p_reference_date is not null and p_reference_date < date '1970-01-01' then
+    raise exception 'reference_date_below_credible_minimum: % is before 1970-01-01',
+      p_reference_date using errcode = 'P1A08';
+  end if;
+end;
+$function$;
 CREATE OR REPLACE FUNCTION rosetta_v2513.c3_rosetta_v25_source_acquisition_gate(
     p_source_document_id integer,
     p_source_text text,
@@ -3194,4 +3236,4 @@ $function$;
 insert into rosetta_v2513.extraction_rule_manifest
   (engine_version, rule_set_version, manifest_hash, manifest_json, is_active)
 values ('rosetta-v3-deterministic-sql-2.5.13-c3', 'rosetta-five-layer-structural-correctness-2.5.13-c3',
-        '3f9ff72e9bb4fe97187740b4866ce0c417d50206a1d67a19ef6f31a48c2ab1fe', $manifest${"changes":["C3 hash-bound projection contract with receipts and fail-closed verification"],"closure_namespace":"rosetta_v2513","closure_prefix":"c3_","control_identity":"rosetta-v3-deterministic-sql-2.5.11","engine_version":"rosetta-v3-deterministic-sql-2.5.13-c3","lane":"c3","publication":"structurally disabled: no publication view, no registry row, no publishable-run path references this namespace","rule_set_version":"rosetta-five-layer-structural-correctness-2.5.13-c3","title":"C3 hash-bound projection contract with receipts and fail-closed verification"}$manifest$::jsonb, true);
+        '092797b8eb3e0246bc6f905a6285e1a1b6d9f78d9629afeacf8fc26a657c3815', $manifest${"changes":["C3 hash-bound projection and acquisition contract with exact exclusions and reference-date gate"],"closure_namespace":"rosetta_v2513","closure_prefix":"c3_","control_identity":"rosetta-v3-deterministic-sql-2.5.11","engine_version":"rosetta-v3-deterministic-sql-2.5.13-c3","lane":"c3","publication":"structurally disabled: no publication view, no registry row, no publishable-run path references this namespace","rule_set_version":"rosetta-five-layer-structural-correctness-2.5.13-c3","title":"C3 hash-bound projection and acquisition contract with exact exclusions and reference-date gate"}$manifest$::jsonb, true);
