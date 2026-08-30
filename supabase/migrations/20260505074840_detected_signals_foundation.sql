@@ -66,14 +66,35 @@ create table if not exists public.detected_signals (
   signal_description text
 );
 
-alter table public.detected_signals enable row level security;
-revoke all on table public.detected_signals from public, anon, authenticated;
-grant all on table public.detected_signals to service_role;
+-- Production currently exposes detected_signals as a security-invoker view, while
+-- a clean replay creates the legacy relation as a table. CREATE TABLE IF NOT
+-- EXISTS accepts either relation name, so harden the relation according to its
+-- actual kind instead of issuing table-only RLS commands against a view.
+do $detected_signals_hardening$
+declare
+  relation_kind "char";
+begin
+  select c.relkind
+    into relation_kind
+    from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+   where n.nspname = 'public'
+     and c.relname = 'detected_signals';
 
-drop policy if exists detected_signals_service_role_all
-  on public.detected_signals;
-create policy detected_signals_service_role_all
-  on public.detected_signals
-  for all to service_role using (true) with check (true);
+  if relation_kind in ('r', 'p') then
+    execute 'alter table public.detected_signals enable row level security';
+    execute 'revoke all on table public.detected_signals from public, anon, authenticated';
+    execute 'grant all on table public.detected_signals to service_role';
+    execute 'drop policy if exists detected_signals_service_role_all on public.detected_signals';
+    execute 'create policy detected_signals_service_role_all on public.detected_signals for all to service_role using (true) with check (true)';
+  elsif relation_kind = 'v' then
+    execute 'alter view public.detected_signals set (security_invoker = true)';
+    execute 'revoke all on table public.detected_signals from public, anon, authenticated';
+    execute 'grant select on table public.detected_signals to service_role';
+  else
+    raise exception 'public.detected_signals has unsupported relation kind %', relation_kind;
+  end if;
+end
+$detected_signals_hardening$;
 
 commit;
