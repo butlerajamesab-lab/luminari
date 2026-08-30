@@ -53,6 +53,9 @@ create table if not exists public.ingest_runs (
 
 alter table public.ingest_runs enable row level security;
 
+drop policy if exists authenticated_all_access_ingest_runs on public.ingest_runs;
+drop policy if exists service_role_all_ingest_runs_21b7fe3c on public.ingest_runs;
+
 create policy authenticated_all_access_ingest_runs
   on public.ingest_runs for select to authenticated using (true);
 create policy service_role_all_ingest_runs_21b7fe3c
