@@ -194,12 +194,18 @@ declare
   v_mixed text;
   v_operational_digest text;
   v_enact_after_digest text;
+  v_house_resolve_after_digest text;
+  v_senate_resolve_after_digest text;
+  v_concurrent_resolve_after_digest text;
+  v_joint_resolve_after_digest text;
+  v_further_only_digest text;
   v_remote_digest text;
   v_control_count integer;
   v_candidate_count integer;
   v_mixed_count integer;
   v_operational_count integer;
   v_enact_count integer;
+  v_unsupported_rejected boolean := false;
 begin
   v_digest := 'The following digest was prepared by Senate Legislative Services and '
            || 'constitutes no part of the legislative instrument.'
@@ -288,6 +294,125 @@ begin
   if v_enact_count <> 1 then
     raise exception 'TEST_FAIL c3 failed to preserve enacting clause after DIGEST count=%',
       v_enact_count;
+  end if;
+
+  -- The same fail-safe boundary must preserve operative chamber resolutions,
+  -- including Senate THEREFORE form and Section-prefixed joint resolutions.
+  v_house_resolve_after_digest := 'DIGEST' || chr(10)
+                       || 'Prepared by House Legislative Services. It constitutes no part '
+                       || 'of the legislative instrument.' || chr(10)
+                       || 'Proposed law provides that the board shall adopt rules.' || chr(10)
+                       || 'BE IT RESOLVED that the House of Representatives of the' || chr(13)
+                       || chr(10) || 'Legislature of Louisiana does hereby direct that' || chr(10)
+                       || 'The clerk shall file the report.';
+  if strpos(
+       rosetta_v2513.c3_rosetta_v25_layout_projection(v_house_resolve_after_digest),
+       'BE IT RESOLVED that the House of Representatives') = 0 then
+    raise exception 'TEST_FAIL c3 erased House resolution boundary after DIGEST';
+  end if;
+  if char_length(
+       rosetta_v2513.c3_rosetta_v25_layout_projection(v_house_resolve_after_digest))
+       <> char_length(v_house_resolve_after_digest) then
+    raise exception 'TEST_FAIL c3 House resolution projection changed source length';
+  end if;
+  select count(*) into v_candidate_count
+    from rosetta_v2513.c3_rosetta_v25_normative_clauses(
+      v_house_resolve_after_digest);
+  if v_candidate_count <> 1 then
+    raise exception 'TEST_FAIL c3 failed to preserve House resolution after DIGEST count=%',
+      v_candidate_count;
+  end if;
+
+  v_senate_resolve_after_digest := 'DIGEST' || chr(10)
+                       || 'The following digest constitutes no part of the legislative '
+                       || 'instrument.' || chr(10)
+                       || 'BE IT RESOLVED by the United States Senate that the board shall '
+                       || 'ignore this quoted digest language.' || chr(10)
+                       || 'Proposed law provides that the board shall adopt rules.' || chr(10)
+                       || 'NOW, THEREFORE, BE IT RESOLVED that the Senate of the' || chr(10)
+                       || 'Legislature of Louisiana does hereby direct that' || chr(10)
+                       || 'The secretary shall file the report.';
+  if strpos(
+       rosetta_v2513.c3_rosetta_v25_layout_projection(v_senate_resolve_after_digest),
+       'NOW, THEREFORE, BE IT RESOLVED that the Senate') = 0 then
+    raise exception 'TEST_FAIL c3 erased Senate resolution boundary after DIGEST';
+  end if;
+  select count(*) into v_candidate_count
+    from rosetta_v2513.c3_rosetta_v25_normative_clauses(
+      v_senate_resolve_after_digest);
+  if v_candidate_count <> 1 then
+    raise exception 'TEST_FAIL c3 failed to preserve Senate resolution after DIGEST count=%',
+      v_candidate_count;
+  end if;
+
+  v_concurrent_resolve_after_digest := 'DIGEST' || chr(10)
+                       || 'The following digest constitutes no part of the legislative '
+                       || 'instrument.' || chr(10)
+                       || 'Proposed law provides that the board shall adopt rules.' || chr(10)
+                       || 'THEREFORE, BE IT RESOLVED that the Legislature of Louisiana '
+                       || 'does hereby direct that' || chr(10)
+                       || 'The secretary shall publish the report.';
+  if strpos(
+       rosetta_v2513.c3_rosetta_v25_layout_projection(
+         v_concurrent_resolve_after_digest),
+       'THEREFORE, BE IT RESOLVED that the Legislature of Louisiana') = 0 then
+    raise exception 'TEST_FAIL c3 erased concurrent resolution boundary after DIGEST';
+  end if;
+  select count(*) into v_candidate_count
+    from rosetta_v2513.c3_rosetta_v25_normative_clauses(
+      v_concurrent_resolve_after_digest);
+  if v_candidate_count <> 1 then
+    raise exception 'TEST_FAIL c3 failed to preserve concurrent resolution after DIGEST count=%',
+      v_candidate_count;
+  end if;
+
+  v_joint_resolve_after_digest := 'DIGEST' || chr(10)
+                       || 'Prepared by House Legislative Services. It constitutes no part '
+                       || 'of the legislative instrument.' || chr(10)
+                       || 'Proposed law provides that the board shall adopt rules.' || chr(10)
+                       || 'Section 1. Be it resolved by the Legislature of Louisiana, '
+                       || 'two-thirds of the members elected to each house concurring, that' || chr(10)
+                       || 'The secretary shall publish the proposition.';
+  if strpos(
+       rosetta_v2513.c3_rosetta_v25_layout_projection(v_joint_resolve_after_digest),
+       'Section 1. Be it resolved by the Legislature of Louisiana') = 0 then
+    raise exception 'TEST_FAIL c3 erased joint resolution boundary after DIGEST';
+  end if;
+  select count(*) into v_candidate_count
+    from rosetta_v2513.c3_rosetta_v25_normative_clauses(
+      v_joint_resolve_after_digest);
+  if v_candidate_count <> 1 then
+    raise exception 'TEST_FAIL c3 failed to preserve joint resolution after DIGEST count=%',
+      v_candidate_count;
+  end if;
+
+  -- A continuation alone is not a primary jurisdiction-authenticated boundary.
+  v_further_only_digest := 'DIGEST' || chr(10)
+                       || 'Prepared by House Legislative Services. It constitutes no part '
+                       || 'of the legislative instrument.' || chr(10)
+                       || 'BE IT FURTHER RESOLVED that the board shall publish the report.';
+  select count(*) into v_candidate_count
+    from rosetta_v2513.c3_rosetta_v25_normative_clauses(v_further_only_digest);
+  if v_candidate_count <> 0 then
+    raise exception 'TEST_FAIL c3 accepted standalone further-resolved boundary count=%',
+      v_candidate_count;
+  end if;
+
+  -- A later instrument header with no supported Louisiana operative formula
+  -- proves a composite source but cannot be safely projected.
+  begin
+    perform rosetta_v2513.c3_rosetta_v25_layout_projection(
+      'DIGEST' || chr(10)
+      || 'Prepared by House Legislative Services. It constitutes no part '
+      || 'of the legislative instrument.' || chr(10)
+      || 'Proposed law provides that the board shall adopt rules.' || chr(10)
+      || 'A RESOLUTION' || chr(10)
+      || 'BE IT ORDERED that the clerk shall file the report.');
+  exception when sqlstate 'P1A04' then
+    v_unsupported_rejected := true;
+  end;
+  if not v_unsupported_rejected then
+    raise exception 'TEST_FAIL c3 accepted unsupported post-DIGEST instrument';
   end if;
 
   v_remote_digest := 'DIGEST' || chr(10) || repeat('x', 1100) || chr(10)

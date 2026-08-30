@@ -11,10 +11,10 @@ production_touched: false
 GENERATOR RUN 1
 02_candidate_schema.sql 68630 270348b74e774e65
 03_control_closure_2511.sql 147202 66dc4e7dc140507c
-17_convergence_candidate_2513.sql 184391 e3d3df9fbce009eb
+17_convergence_candidate_2513.sql 185782 cfb04abcaf33f9c0
 04_lane_c1_measured_actor_bound.sql 148705 798ba98c07f06d99
 05_lane_c2_actor_source_corruption.sql 149061 1b7958cfc34eb7c7
-06_lane_c3_projection_contract.sql 156572 9cfc0521fae6dcf3
+06_lane_c3_projection_contract.sql 157963 cd62141a3f414484
 07_lane_c4_occurrence_aware_spans.sql 160463 1d73f3c182201c30
 08_lane_c5_clause_decomposition.sql 151345 1a81df27fa024ad4
 09_lane_c6_modal_retyping_revalidation.sql 149519 7e5c9a1a191f3680
@@ -23,10 +23,10 @@ GENERATOR RUN 1
 GENERATOR RUN 2
 02_candidate_schema.sql 68630 270348b74e774e65
 03_control_closure_2511.sql 147202 66dc4e7dc140507c
-17_convergence_candidate_2513.sql 184391 e3d3df9fbce009eb
+17_convergence_candidate_2513.sql 185782 cfb04abcaf33f9c0
 04_lane_c1_measured_actor_bound.sql 148705 798ba98c07f06d99
 05_lane_c2_actor_source_corruption.sql 149061 1b7958cfc34eb7c7
-06_lane_c3_projection_contract.sql 156572 9cfc0521fae6dcf3
+06_lane_c3_projection_contract.sql 157963 cd62141a3f414484
 07_lane_c4_occurrence_aware_spans.sql 160463 1d73f3c182201c30
 08_lane_c5_clause_decomposition.sql 151345 1a81df27fa024ad4
 09_lane_c6_modal_retyping_revalidation.sql 149519 7e5c9a1a191f3680

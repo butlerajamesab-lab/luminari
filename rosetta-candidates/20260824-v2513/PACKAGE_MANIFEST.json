@@ -13,12 +13,12 @@
     "migrations/03_control_closure_2511.sql": "66dc4e7dc140507c35ed671ecf0682523e00c9171db936f28cac18987543744e",
     "migrations/04_lane_c1_measured_actor_bound.sql": "798ba98c07f06d994e1c4399b5c32d9d7127d1f9e6fa4a68a75bdd2d4fbfaf04",
     "migrations/05_lane_c2_actor_source_corruption.sql": "1b7958cfc34eb7c76603dcee347199639f76ae6eb2053e2183c8ae758a6c4be4",
-    "migrations/06_lane_c3_projection_contract.sql": "9cfc0521fae6dcf391f309f1f6652bca37de8106ac71ce081868f6d7fa3feab3",
+    "migrations/06_lane_c3_projection_contract.sql": "cd62141a3f414484b1fb2f1174aa668ba4e7757d76a29c835040eea5d1fd69db",
     "migrations/07_lane_c4_occurrence_aware_spans.sql": "1d73f3c182201c308abea1ec985c8aa53bbda7aeae836e155cb3c982d49def04",
     "migrations/08_lane_c5_clause_decomposition.sql": "1a81df27fa024ad4e8a1be348eedf9f689ff52f7eaeccb476f37802f34e1a14e",
     "migrations/09_lane_c6_modal_retyping_revalidation.sql": "7e5c9a1a191f3680231338f975d5025181b8d636aea04836205fc186dfa45a48",
     "migrations/10_lane_c7_charset_receipt_gate.sql": "1555b7e4ff51018fbbb7287ca1f759f5c5017d67f680cff0e37ce4fc07882bc6",
-    "migrations/17_convergence_candidate_2513.sql": "e3d3df9fbce009eb346e01bc29c876b5acef87d5cebd49d9adf552347b7407aa"
+    "migrations/17_convergence_candidate_2513.sql": "cfb04abcaf33f9c09f836f98efb157293a46ece547767c722ff407c14e628a92"
   },
   "generator_deterministic": true,
   "historical_runtime_validation": {

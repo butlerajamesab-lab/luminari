@@ -523,7 +523,9 @@ declare
   v_start integer;
   v_heading integer;
   v_disclaimer integer;
+  v_search_start integer;
   v_end integer;
+  v_instrument_header integer;
   v_segment text;
   v_mask text;
 begin
@@ -549,11 +551,27 @@ begin
     return p_value;
   end if;
   v_start := least(v_heading, v_disclaimer);
+  v_search_start := greatest(v_heading, v_disclaimer) + 1;
+  -- A source extractor can place a House/Senate digest before the operative
+  -- instrument. Stop at a high-confidence Louisiana bill, chamber-resolution,
+  -- or constitutional-joint-resolution formula. Do not trust a bare AN ACT,
+  -- A RESOLUTION, or unanchored BE IT RESOLVED marker.
   v_end := regexp_instr(
     p_value,
-    '(^|\\n)[ \\t]*Be[ \\t]+it[ \\t]+enacted[ \\t]+by[ \\t]+the[ \\t]+Legislature[ \\t]+of[ \\t]+Louisiana[ \\t]*:',
-    v_start + 1, 1, 0, 'in');
+    '(^|\\n)[ \\t]*(?:[0-9]{1,3}[ \\t]+)?(?:(?:Section[ \\t]+[0-9]+[.]?|(?:(?:NOW[ \\t]*,[ \\t]*)?THEREFORE[ \\t]*,))[ \\t]+)?Be[ \\t]+it[ \\t]+(?:enacted[ \\t\\r\\n]+by[ \\t\\r\\n]+the[ \\t\\r\\n]+Legislature[ \\t\\r\\n]+of[ \\t\\r\\n]+Louisiana[ \\t]*[.:]|resolved[ \\t\\r\\n]+(?:by|that)[ \\t\\r\\n]+the[ \\t\\r\\n]+(?:Legislature[ \\t\\r\\n]+of[ \\t\\r\\n]+Louisiana|(?:House[ \\t\\r\\n]+of[ \\t\\r\\n]+Representatives|Senate)[ \\t\\r\\n]+of[ \\t\\r\\n]+the[ \\t\\r\\n]+Legislature[ \\t\\r\\n]+of[ \\t\\r\\n]+Louisiana)(?=[ \\t\\r\\n,:]))',
+    v_search_start, 1, 0, 'in');
   if v_end = 0 then
+    -- A later instrument header proves concatenated/misordered source. If its
+    -- operative formula is not one of the jurisdiction-authenticated forms
+    -- above, block instead of silently masking an unknown instrument to EOF.
+    v_instrument_header := regexp_instr(
+      p_value,
+      '(^|\\n)[ \\t]*(?:[0-9]{1,3}[ \\t]+)?(?:AN[ \\t]+ACT|A[ \\t]+(?:CONCURRENT[ \\t]+|JOINT[ \\t]+)?RESOLUTION)[ \\t]*(?:\\r?\\n|$)',
+      v_search_start, 1, 0, 'in');
+    if v_instrument_header <> 0 then
+      raise exception 'unsupported_louisiana_operative_boundary_after_digest'
+        using errcode = 'P1A04';
+    end if;
     v_end := char_length(p_value) + 1;
   end if;
   v_segment := substr(p_value, v_start, v_end - v_start);
