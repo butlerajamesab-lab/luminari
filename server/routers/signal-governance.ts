@@ -9,10 +9,10 @@
 import { z } from "zod";
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import {
-  getSignalAuditTrail,
   getEscalationSummary,
   getProvenance,
 } from "../signal-governance";
+import { get_signal_audit_trail } from "../signal-governance-audit-compat";
 import { db } from "../db";
 import { sql } from "drizzle-orm";
 import {
@@ -80,7 +80,7 @@ export const signalGovernanceRouter = router({
   auditTrail: publicProcedure
     .input(z.object({ signalId: z.string() }))
     .query(async ({ input }) => {
-      return getSignalAuditTrail(input.signalId);
+      return get_signal_audit_trail(input.signalId);
     }),
 
   escalationSummary: publicProcedure
