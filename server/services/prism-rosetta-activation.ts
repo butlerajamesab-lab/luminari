@@ -727,6 +727,7 @@ export async function activate_prism_for_rosetta_assembly(input: {
   genome_bill_id: string;
   assembly_run_id?: string;
   max_new_submissions?: number;
+  on_before_first_submission?: () => void;
 }): Promise<PrismRosettaActivationResult> {
   const lighthouse_commit = process.env.RENDER_GIT_COMMIT?.trim();
   if (!lighthouse_commit || !/^[a-f0-9]{7,64}$/i.test(lighthouse_commit)) {
@@ -767,6 +768,9 @@ export async function activate_prism_for_rosetta_assembly(input: {
   const reused_receipts = prepared_requests.flatMap((entry) =>
     entry.existing_receipt ? [entry.existing_receipt] : []
   );
+  if (pending_batch.length > 0) {
+    input.on_before_first_submission?.();
+  }
   const new_receipts = await map_bounded(
     pending_batch,
     PRISM_CONCURRENCY,
