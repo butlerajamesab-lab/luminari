@@ -60,6 +60,14 @@ alter table public.streams enable row level security;
 alter table public.signal_events enable row level security;
 alter table public.cursors enable row level security;
 
+-- Production may already carry these policies from an earlier operational
+-- repair. Replace every canonical policy declared by this receipt so replay
+-- cannot advance into a second duplicate-policy collision.
+drop policy if exists authenticated_read_streams on public.streams;
+drop policy if exists authenticated_read_signal_events on public.signal_events;
+drop policy if exists authenticated_all_access_cursors on public.cursors;
+drop policy if exists service_role_all_cursors_bd9a3dbb on public.cursors;
+
 create policy authenticated_read_streams
   on public.streams for select to authenticated using (true);
 create policy authenticated_read_signal_events
