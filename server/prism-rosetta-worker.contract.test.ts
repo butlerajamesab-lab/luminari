@@ -8,11 +8,19 @@ describe("isolated Prism worker deployment contract", () => {
       "server/services/prism-rosetta-queue-worker.ts",
       "utf8",
     );
+    const activation = readFileSync(
+      "server/services/prism-rosetta-activation.ts",
+      "utf8",
+    );
     const blueprint = readFileSync("render.prism-worker.yaml", "utf8");
 
     expect(entrypoint).toContain('background_feature_enabled("PRISM_ROSETTA_QUEUE_ENABLED")');
     expect(entrypoint).toContain("prism_worker_canary_queue_id_required");
     expect(entrypoint).toContain("start_prism_rosetta_queue_worker()");
+    expect(entrypoint).toContain("await stop_prism_rosetta_queue_worker()");
+    expect(entrypoint.indexOf("await stop_prism_rosetta_queue_worker()")).toBeLessThan(
+      entrypoint.indexOf("await getPool().end()"),
+    );
     expect(entrypoint).not.toContain("initializeScheduler");
     expect(entrypoint).not.toContain("start_legislative_version_queue_worker");
     expect(entrypoint).not.toContain("start_docket_state_cache_warmer");
@@ -21,12 +29,20 @@ describe("isolated Prism worker deployment contract", () => {
     expect(blueprint).toContain("LIGHTHOUSE_RUNTIME_ROLE");
     expect(blueprint).toContain("PRISM_ROSETTA_QUEUE_CANARY_ID");
     expect(blueprint).toContain("PRISM_ROSETTA_QUEUE_MAX_NEW_SUBMISSIONS");
+    expect(blueprint).toContain("ROSETTA_SUPABASE_URL");
+    expect(blueprint).toContain("ROSETTA_SUPABASE_SERVICE_ROLE_KEY");
     expect(blueprint).not.toContain("LEGISLATIVE_VERSION_QUEUE_ENABLED");
 
     expect(queueWorker).toContain("queue_remaining_new_submissions = max_new_submissions");
     expect(queueWorker).toContain("queue_remaining_new_submissions = 0");
     expect(queueWorker).toContain("submission_budget_exhausted");
-    expect(queueWorker.indexOf("queue_remaining_new_submissions = 0")).toBeLessThan(
+    expect(queueWorker).toContain("await active_queue_cycle");
+    expect(queueWorker).toContain("on_before_first_submission");
+    expect(activation).toContain("input.on_before_first_submission?.()");
+    expect(activation.indexOf("input.on_before_first_submission?.()")).toBeLessThan(
+      activation.indexOf("submit_rosetta_prism_request(request)"),
+    );
+    expect(queueWorker.lastIndexOf("queue_remaining_new_submissions = 0")).toBeGreaterThan(
       queueWorker.indexOf("await activate_prism_for_rosetta_assembly"),
     );
   });
