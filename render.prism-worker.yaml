@@ -28,6 +28,10 @@ services:
         value: "60000"
       - key: PRISM_ROSETTA_REQUEST_TIMEOUT_MS
         value: "15000"
+      - key: ROSETTA_SUPABASE_URL
+        sync: false
+      - key: ROSETTA_SUPABASE_SERVICE_ROLE_KEY
+        sync: false
       - key: DATABASE_URL
         sync: false
       - key: PRISM_BRIDGE_SECRET
