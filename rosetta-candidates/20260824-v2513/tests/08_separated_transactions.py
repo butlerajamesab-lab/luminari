@@ -135,8 +135,11 @@ final = tx(
     "(b.source_content_id=r.source_content_id)::text||'|'||"
     "(b.source_content_hash=r.source_content_hash)::text||'|'||"
     "(b.extraction_run_id is not null and b.output_content_hash is not null)::text "
-    "from rosetta_replay.replay_attempt a join rosetta_replay.replay_run_binding b using(attempt_id) "
-    "join rosetta_replay.replay_source_registry r using(source_registry_id) "
+    "from rosetta_replay.replay_attempt a "
+    "join rosetta_replay.replay_run_binding b "
+    "on b.attempt_id=a.attempt_id and b.source_registry_id=a.source_registry_id "
+    "join rosetta_replay.replay_source_registry r "
+    "on r.source_registry_id=a.source_registry_id "
     f"where a.attempt_id={lit(attempt)}::uuid;",
 )
 check("08.5 finalize sealed exact run/output binding", final == "succeeded|completed|true|true|true", final)
