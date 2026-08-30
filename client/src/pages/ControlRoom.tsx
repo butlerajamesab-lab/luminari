@@ -42,7 +42,6 @@ import {
   Route,
   Gavel,
   Sparkles,
-  Radio,
   Link2,
 } from "lucide-react";
 
@@ -634,38 +633,8 @@ function DeadlinesPanel({ caseId }: { caseId: number }) {
             })}
           </div>
         )}
-        {/* Legistar Events — upcoming Seattle City Council meetings */}
-        <LegistarEventsWidget />
       </CardContent>
     </Card>
-  );
-}
-
-/* ─── Legistar Events Widget (inline in Deadlines panel) ─── */
-function LegistarEventsWidget() {
-  const { data, isLoading } = trpc.docket.legistarEvents.useQuery(
-    { top: 3 },
-    { refetchInterval: 10 * 60 * 1000 }
-  );
-  if (isLoading || !data || data.events.length === 0) return null;
-  return (
-    <div className="mt-3 pt-3 border-t border-border/30">
-      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1">
-        <Radio className="h-3 w-3 text-sky-400" />
-        Seattle Council — Recent Meetings
-      </p>
-      <div className="space-y-1.5">
-        {data.events.map((e: any) => (
-          <div key={e.id} className="p-2 rounded bg-muted/30 border border-border/30">
-            <p className="text-[10px] font-medium text-foreground truncate">{e.body}</p>
-            <p className="text-[9px] text-muted-foreground mt-0.5">
-              {new Date(e.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-              {e.location && ` · ${e.location.split("\n")[0]}`}
-            </p>
-          </div>
-        ))}
-      </div>
-    </div>
   );
 }
 
