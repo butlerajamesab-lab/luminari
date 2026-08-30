@@ -107,3 +107,62 @@ begin
   end if;
   raise notice 'PASS 04.3 C1/C5 differential trigger produces distinct actor semantics';
 end $$;
+
+-- C5 sentence segmentation: a person-name middle initial remains inside the
+-- normative clause. The rule is intentionally narrower than a generic
+-- capital-dot-capital substitution so sentence labels remain boundaries.
+do $$
+declare
+  v_text text := 'David R. Poynter shall submit the report.';
+  v_control_actor text;
+  v_candidate_actor text;
+  v_candidate_clause text;
+  v_label_actor text;
+  v_rule_actor text;
+  v_qualified_actor text;
+  v_qualified_clause text;
+begin
+  select actor into v_control_actor
+    from rosetta_v2513.ctl_rosetta_v25_normative_clauses(v_text)
+    order by clause_ordinal limit 1;
+  select actor, clause_text into v_candidate_actor, v_candidate_clause
+    from rosetta_v2513.c5_rosetta_v25_normative_clauses(v_text)
+    order by clause_ordinal limit 1;
+  if v_control_actor is distinct from 'Poynter' then
+    raise exception 'TEST_FAIL control middle-initial behavior drifted: actor=%',
+      v_control_actor;
+  end if;
+  if v_candidate_actor is distinct from 'David R. Poynter'
+     or v_candidate_clause is distinct from v_text then
+    raise exception 'TEST_FAIL c5 middle initial actor/clause=% / %',
+      v_candidate_actor, v_candidate_clause;
+  end if;
+
+  select actor into v_label_actor
+    from rosetta_v2513.c5_rosetta_v25_normative_clauses(
+      'Plan A. The agency shall file the report.')
+    order by clause_ordinal limit 1;
+  if v_label_actor is distinct from 'The agency' then
+    raise exception 'TEST_FAIL c5 sentence label over-protected: actor=%',
+      v_label_actor;
+  end if;
+  select actor into v_rule_actor
+    from rosetta_v2513.c5_rosetta_v25_normative_clauses(
+      'Rule A. Smith shall file the report.')
+    order by clause_ordinal limit 1;
+  if v_rule_actor is distinct from 'Smith' then
+    raise exception 'TEST_FAIL c5 Rule label over-protected: actor=%',
+      v_rule_actor;
+  end if;
+  select actor, clause_text into v_qualified_actor, v_qualified_clause
+    from rosetta_v2513.c5_rosetta_v25_normative_clauses(
+      'David R. Poynter, director, shall file the report.')
+    order by clause_ordinal limit 1;
+  if v_qualified_actor is distinct from 'David R. Poynter, director'
+     or v_qualified_clause is distinct from
+       'David R. Poynter, director, shall file the report.' then
+    raise exception 'TEST_FAIL c5 qualified middle initial actor/clause=% / %',
+      v_qualified_actor, v_qualified_clause;
+  end if;
+  raise notice 'PASS 04.4 C5 person middle initial protected without label collision';
+end $$;

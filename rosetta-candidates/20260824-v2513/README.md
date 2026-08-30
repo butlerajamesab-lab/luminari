@@ -2,6 +2,12 @@
 
 Status: **isolated candidate; not deployed or promoted**.
 
+Rosetta is a distinct first-class Luminari platform for deterministic
+five-layer decomposition. Docket Room is
+its upstream producer of exact law/version source artifacts. This packet
+repairs Rosetta's deterministic decomposition substrate; it does not repair or
+replace the currently separate Docket Room runtime.
+
 Start with [IMPLEMENTATION_REPORT.md](IMPLEMENTATION_REPORT.md). The important
 rule is simple: do not install this packet in production. Validate it in an
 empty disposable PostgreSQL database, replay the complete immutable corpus,
@@ -49,14 +55,22 @@ ROSETTA_DISPOSABLE_ACK=I_UNDERSTAND \
 python3 tests/capture_evidence.py
 ```
 
+By default the current-run transcript is written to
+`/tmp/rosetta-v2513-current-runtime-validation.txt` (or `RUNNER_TEMP` in
+CI). Set `ROSETTA_CURRENT_VALIDATION_OUTPUT` to another path in an existing
+directory outside this checksummed packet. The capture script refuses to
+overwrite any packet file, including the immutable historical transcript.
+
 The runner aborts if it finds `public.extraction_run`, `rosetta_v2513`, or
 `rosetta_replay`. A current zero-exit invocation is the only valid runtime PASS
-receipt for a new database. This packet also carries the bounded, durable
+for newly generated SQL. The packet preserves the source-locked August 24
 PostgreSQL 17 preview-branch receipt in
-`tests/SUPABASE_BRANCH_VALIDATION_RESULTS.json`: migrations and bounded tests
-passed, a forced timeout was recorded durably, and control/C1–C7/convergence
-completed against one exact-source fixture with exact source/run/output
-bindings. That receipt is deliberately **not** a full-corpus replay claim.
+`tests/SUPABASE_BRANCH_VALIDATION_RESULTS.json` as **historical evidence**. Its
+validated migration hashes are recorded separately in
+`PACKAGE_MANIFEST.json`; it cannot validate later generator output. Pull
+requests run the current bytes against an empty isolated PostgreSQL 17 service.
+Neither the historical receipt nor that bounded CI gate is a full-corpus
+replay claim.
 
 ## Full-corpus replay
 

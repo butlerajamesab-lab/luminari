@@ -120,3 +120,340 @@ begin
   end;
   raise notice 'PASS 03.4 C3 exact HTML acquisition receipt required';
 end $$;
+
+-- C3 layout projection: Colorado PAGE furniture is masked in place while text
+-- glued on either side remains visible. The 2.5.11 control is pinned to the
+-- known pre-fix behavior.
+do $$
+declare
+  v_header text := 'PAGE 4-HOUSE BILL 26-1432';
+  v_raw text;
+  v_candidate text;
+  v_control text;
+begin
+  v_raw := 'Opening line' || chr(10) || v_header || chr(10)
+        || 'The clerk shall file the report. An exhibit cites '
+        || v_header || ' in narrative text.';
+  v_candidate := rosetta_v2513.c3_rosetta_v25_layout_projection(v_raw);
+  v_control := rosetta_v2513.ctl_rosetta_v25_layout_projection(v_raw);
+  if char_length(v_candidate) <> char_length(v_raw) then
+    raise exception 'TEST_FAIL c3 page projection changed source length';
+  end if;
+  if strpos(v_control, v_header) = 0 then
+    raise exception 'TEST_FAIL control no longer exposes page-line regression';
+  end if;
+  if strpos(split_part(v_candidate, chr(10), 2), v_header) > 0 then
+    raise exception 'TEST_FAIL c3 Colorado page line leaked';
+  end if;
+  if strpos(v_candidate, v_header) > 0
+     or strpos(v_candidate, 'An exhibit cites ') = 0
+     or strpos(v_candidate, ' in narrative text.') = 0
+     or strpos(v_candidate, 'The clerk shall file the report.') = 0 then
+    raise exception 'TEST_FAIL c3 page rule failed token-only masking';
+  end if;
+  if strpos(
+       rosetta_v2513.c3_rosetta_v25_layout_projection(
+         'PAGE 12-SENATE BILL 24-088' || chr(10) || 'The board shall act.'),
+       'PAGE 12-SENATE BILL 24-088') > 0 then
+    raise exception 'TEST_FAIL c3 Senate page line leaked';
+  end if;
+  if rosetta_v2513.c3_rosetta_v25_layout_projection(
+       'PAGE 4-HOUSE BILL 25-1117COMPANY shall file.')
+       not like '%COMPANY shall file.%' then
+    raise exception 'TEST_FAIL c3 page rule erased glued operative letters';
+  end if;
+  if rosetta_v2513.c3_rosetta_v25_layout_projection(
+       'Opening text.PAGE 4-HOUSE BILL 25-1117COMPANY shall file.')
+       not like 'Opening text.%COMPANY shall file.%' then
+    raise exception 'TEST_FAIL c3 page rule erased preceding glued text';
+  end if;
+  if rosetta_v2513.c3_rosetta_v25_layout_projection(
+       'PAGE 4-HOUSE BILL 19-13148-83-503. Office created.')
+       not like '%8-83-503. Office created.%' then
+    raise exception 'TEST_FAIL c3 page rule erased glued operative digits';
+  end if;
+  if rosetta_v2513.c3_rosetta_v25_layout_projection(
+       'PAGE 7-SENATE BILL 25-0038-83-503. Office created.')
+       not like '%8-83-503. Office created.%' then
+    raise exception 'TEST_FAIL c3 Senate page rule erased glued operative digits';
+  end if;
+  if strpos(
+       rosetta_v2513.c3_rosetta_v25_layout_projection(
+         'PAGE 2-HOUSE BILL 23B-1001' || chr(10) || 'The board shall act.'),
+       'PAGE 2-HOUSE BILL 23B-1001') > 0 then
+    raise exception 'TEST_FAIL c3 Colorado special-session page line leaked';
+  end if;
+  raise notice 'PASS 03.5 C3 Colorado House/Senate page furniture masked in place';
+end $$;
+
+-- C3 non-operative region: a Louisiana Legislative Services disclaimer binds
+-- a nearby DIGEST as non-operative. Operative text remains extractable.
+do $$
+declare
+  v_digest text;
+  v_mixed text;
+  v_operational_digest text;
+  v_enact_after_digest text;
+  v_house_resolve_after_digest text;
+  v_senate_resolve_after_digest text;
+  v_concurrent_resolve_after_digest text;
+  v_joint_resolve_after_digest text;
+  v_further_only_digest text;
+  v_remote_digest text;
+  v_control_count integer;
+  v_candidate_count integer;
+  v_mixed_count integer;
+  v_operational_count integer;
+  v_enact_count integer;
+  v_unsupported_rejected boolean := false;
+begin
+  v_digest := 'The following digest was prepared by Senate Legislative Services and '
+           || 'constitutes no part of the legislative instrument.'
+           || chr(10) || 'DIGEST' || chr(10)
+           || 'HB 1 Engrossed 2026 Regular Session' || chr(10)
+           || 'Proposed law provides that the board shall adopt rules.';
+  select count(*) into v_control_count
+    from rosetta_v2513.ctl_rosetta_v25_normative_clauses(v_digest);
+  select count(*) into v_candidate_count
+    from rosetta_v2513.c3_rosetta_v25_normative_clauses(v_digest);
+  if v_control_count = 0 then
+    raise exception 'TEST_FAIL control no longer exposes DIGEST regression';
+  end if;
+  if v_candidate_count <> 0 then
+    raise exception 'TEST_FAIL c3 DIGEST emitted % normative clauses', v_candidate_count;
+  end if;
+
+  -- The official House layout reverses the order: DIGEST, then disclaimer.
+  select count(*) into v_candidate_count
+    from rosetta_v2513.c3_rosetta_v25_normative_clauses(
+      'DIGEST' || chr(10)
+      || 'The digest printed below was prepared by House Legislative Services. '
+      || 'It constitutes no part of the legislative instrument.' || chr(10)
+      || 'Proposed law provides that the board shall adopt rules.');
+  if v_candidate_count <> 0 then
+    raise exception 'TEST_FAIL c3 House-order DIGEST emitted % clauses',
+      v_candidate_count;
+  end if;
+
+  v_mixed := 'Sec. 1. The clerk shall file the report.' || chr(10)
+          || 'The following digest was prepared by Senate Legislative Services and '
+          || 'constitutes no part of the legislative instrument.' || chr(10)
+          || 'DIGEST' || chr(10)
+          || 'Proposed law provides that the board shall adopt rules.';
+  select count(*) into v_mixed_count
+    from rosetta_v2513.c3_rosetta_v25_normative_clauses(v_mixed);
+  if v_mixed_count <> 1 then
+    raise exception 'TEST_FAIL c3 operative text before DIGEST count=%', v_mixed_count;
+  end if;
+
+  -- A heading alone is not sufficient evidence that a section is
+  -- non-operative in a general-purpose law decomposer.
+  v_operational_digest := 'DIGEST' || chr(10)
+                       || 'The board shall adopt the digest protocol.';
+  select count(*) into v_operational_count
+    from rosetta_v2513.c3_rosetta_v25_normative_clauses(v_operational_digest);
+  if v_operational_count <> 1 then
+    raise exception 'TEST_FAIL c3 erased DIGEST without non-operative disclaimer';
+  end if;
+
+  -- Alternate Senate disclaimer wording is source-authenticated too.
+  select count(*) into v_candidate_count
+    from rosetta_v2513.c3_rosetta_v25_normative_clauses(
+      'The digest prepared by Senate Legislative Services does not constitute a part '
+      || 'of the legislative instrument.' || chr(10)
+      || 'DIGEST' || chr(10)
+      || 'Proposed law provides that the board shall adopt rules.');
+  if v_candidate_count <> 0 then
+    raise exception 'TEST_FAIL c3 alternate Senate DIGEST emitted % clauses',
+      v_candidate_count;
+  end if;
+
+  -- Official Louisiana digests may name an individual drafter rather than
+  -- House/Senate Legislative Services; the disclaimer is authoritative.
+  select count(*) into v_candidate_count
+    from rosetta_v2513.c3_rosetta_v25_normative_clauses(
+      'The following digest constitutes no part of the legislative instrument. '
+      || 'It was prepared by Archana D. Cadge.' || chr(10)
+      || 'DIGEST' || chr(10)
+      || 'Proposed law provides that the board shall adopt rules.');
+  if v_candidate_count <> 0 then
+    raise exception 'TEST_FAIL c3 named-drafter DIGEST emitted % clauses',
+      v_candidate_count;
+  end if;
+
+  -- If a recognized digest precedes operative text, preserve the full
+  -- Louisiana enacting clause rather than trusting a bare AN ACT marker.
+  v_enact_after_digest := 'DIGEST' || chr(10)
+                       || 'Prepared by House Legislative Services. It constitutes no part '
+                       || 'of the legislative instrument.' || chr(10)
+                       || 'Proposed law provides that the board shall adopt rules.' || chr(10)
+                       || 'Be it enacted by the Legislature of Louisiana:' || chr(10)
+                       || 'The clerk shall file the report.';
+  select count(*) into v_enact_count
+    from rosetta_v2513.c3_rosetta_v25_normative_clauses(v_enact_after_digest);
+  if v_enact_count <> 1 then
+    raise exception 'TEST_FAIL c3 failed to preserve enacting clause after DIGEST count=%',
+      v_enact_count;
+  end if;
+
+  -- The same fail-safe boundary must preserve operative chamber resolutions,
+  -- including Senate THEREFORE form and Section-prefixed joint resolutions.
+  v_house_resolve_after_digest := 'DIGEST' || chr(10)
+                       || 'Prepared by House Legislative Services. It constitutes no part '
+                       || 'of the legislative instrument.' || chr(10)
+                       || 'Proposed law provides that the board shall adopt rules.' || chr(10)
+                       || 'BE IT RESOLVED that the House of Representatives of the' || chr(13)
+                       || chr(10) || 'Legislature of Louisiana does hereby direct that' || chr(10)
+                       || 'The clerk shall file the report.';
+  if strpos(
+       rosetta_v2513.c3_rosetta_v25_layout_projection(v_house_resolve_after_digest),
+       'BE IT RESOLVED that the House of Representatives') = 0 then
+    raise exception 'TEST_FAIL c3 erased House resolution boundary after DIGEST';
+  end if;
+  if char_length(
+       rosetta_v2513.c3_rosetta_v25_layout_projection(v_house_resolve_after_digest))
+       <> char_length(v_house_resolve_after_digest) then
+    raise exception 'TEST_FAIL c3 House resolution projection changed source length';
+  end if;
+  select count(*) into v_candidate_count
+    from rosetta_v2513.c3_rosetta_v25_normative_clauses(
+      v_house_resolve_after_digest);
+  if v_candidate_count <> 1 then
+    raise exception 'TEST_FAIL c3 failed to preserve House resolution after DIGEST count=%',
+      v_candidate_count;
+  end if;
+
+  v_senate_resolve_after_digest := 'DIGEST' || chr(10)
+                       || 'The following digest constitutes no part of the legislative '
+                       || 'instrument.' || chr(10)
+                       || 'BE IT RESOLVED by the United States Senate that the board shall '
+                       || 'ignore this quoted digest language.' || chr(10)
+                       || 'Proposed law provides that the board shall adopt rules.' || chr(10)
+                       || 'NOW, THEREFORE, BE IT RESOLVED that the Senate of the' || chr(10)
+                       || 'Legislature of Louisiana does hereby direct that' || chr(10)
+                       || 'The secretary shall file the report.';
+  if strpos(
+       rosetta_v2513.c3_rosetta_v25_layout_projection(v_senate_resolve_after_digest),
+       'NOW, THEREFORE, BE IT RESOLVED that the Senate') = 0 then
+    raise exception 'TEST_FAIL c3 erased Senate resolution boundary after DIGEST';
+  end if;
+  select count(*) into v_candidate_count
+    from rosetta_v2513.c3_rosetta_v25_normative_clauses(
+      v_senate_resolve_after_digest);
+  if v_candidate_count <> 1 then
+    raise exception 'TEST_FAIL c3 failed to preserve Senate resolution after DIGEST count=%',
+      v_candidate_count;
+  end if;
+
+  v_concurrent_resolve_after_digest := 'DIGEST' || chr(10)
+                       || 'The following digest constitutes no part of the legislative '
+                       || 'instrument.' || chr(10)
+                       || 'Proposed law provides that the board shall adopt rules.' || chr(10)
+                       || 'THEREFORE, BE IT RESOLVED that the Legislature of Louisiana '
+                       || 'does hereby direct that' || chr(10)
+                       || 'The secretary shall publish the report.';
+  if strpos(
+       rosetta_v2513.c3_rosetta_v25_layout_projection(
+         v_concurrent_resolve_after_digest),
+       'THEREFORE, BE IT RESOLVED that the Legislature of Louisiana') = 0 then
+    raise exception 'TEST_FAIL c3 erased concurrent resolution boundary after DIGEST';
+  end if;
+  select count(*) into v_candidate_count
+    from rosetta_v2513.c3_rosetta_v25_normative_clauses(
+      v_concurrent_resolve_after_digest);
+  if v_candidate_count <> 1 then
+    raise exception 'TEST_FAIL c3 failed to preserve concurrent resolution after DIGEST count=%',
+      v_candidate_count;
+  end if;
+
+  v_joint_resolve_after_digest := 'DIGEST' || chr(10)
+                       || 'Prepared by House Legislative Services. It constitutes no part '
+                       || 'of the legislative instrument.' || chr(10)
+                       || 'Proposed law provides that the board shall adopt rules.' || chr(10)
+                       || 'Section 1. Be it resolved by the Legislature of Louisiana, '
+                       || 'two-thirds of the members elected to each house concurring, that' || chr(10)
+                       || 'The secretary shall publish the proposition.';
+  if strpos(
+       rosetta_v2513.c3_rosetta_v25_layout_projection(v_joint_resolve_after_digest),
+       'Section 1. Be it resolved by the Legislature of Louisiana') = 0 then
+    raise exception 'TEST_FAIL c3 erased joint resolution boundary after DIGEST';
+  end if;
+  select count(*) into v_candidate_count
+    from rosetta_v2513.c3_rosetta_v25_normative_clauses(
+      v_joint_resolve_after_digest);
+  if v_candidate_count <> 1 then
+    raise exception 'TEST_FAIL c3 failed to preserve joint resolution after DIGEST count=%',
+      v_candidate_count;
+  end if;
+
+  -- A continuation alone is not a primary jurisdiction-authenticated boundary.
+  v_further_only_digest := 'DIGEST' || chr(10)
+                       || 'Prepared by House Legislative Services. It constitutes no part '
+                       || 'of the legislative instrument.' || chr(10)
+                       || 'BE IT FURTHER RESOLVED that the board shall publish the report.';
+  select count(*) into v_candidate_count
+    from rosetta_v2513.c3_rosetta_v25_normative_clauses(v_further_only_digest);
+  if v_candidate_count <> 0 then
+    raise exception 'TEST_FAIL c3 accepted standalone further-resolved boundary count=%',
+      v_candidate_count;
+  end if;
+
+  -- A later instrument header with no supported Louisiana operative formula
+  -- proves a composite source but cannot be safely projected.
+  begin
+    perform rosetta_v2513.c3_rosetta_v25_layout_projection(
+      'DIGEST' || chr(10)
+      || 'Prepared by House Legislative Services. It constitutes no part '
+      || 'of the legislative instrument.' || chr(10)
+      || 'Proposed law provides that the board shall adopt rules.' || chr(10)
+      || 'A RESOLUTION' || chr(10)
+      || 'BE IT ORDERED that the clerk shall file the report.');
+  exception when sqlstate 'P1A04' then
+    v_unsupported_rejected := true;
+  end;
+  if not v_unsupported_rejected then
+    raise exception 'TEST_FAIL c3 accepted unsupported post-DIGEST instrument';
+  end if;
+
+  v_remote_digest := 'DIGEST' || chr(10) || repeat('x', 1100) || chr(10)
+                  || 'Prepared by House Legislative Services. It constitutes no part '
+                  || 'of the legislative instrument.' || chr(10)
+                  || 'The board shall adopt rules.';
+  if strpos(
+       rosetta_v2513.c3_rosetta_v25_layout_projection(v_remote_digest),
+       'DIGEST') = 0 then
+    raise exception 'TEST_FAIL c3 accepted remote DIGEST disclaimer';
+  end if;
+  raise notice 'PASS 03.6 C3 Louisiana DIGEST excluded without losing operative text';
+end $$;
+
+-- C3 provider/reference-date gate: a pre-epoch transport date is rejected
+-- before any source lookup or candidate write. Null and the inclusive floor
+-- remain valid.
+do $$
+declare v_rejected boolean := false;
+begin
+  perform rosetta_v2513.c3_rosetta_v25_reference_date_gate(null);
+  perform rosetta_v2513.c3_rosetta_v25_reference_date_gate(date '1970-01-01');
+  begin
+    perform rosetta_v2513.c3_run_rosetta_v3_extraction_v2511_base(
+      -1,
+      'The board shall act.',
+      repeat('0',64),
+      'test://epoch-regression',
+      'v1',
+      'text/plain',
+      null,
+      null,
+      date '1969-12-31');
+  exception when sqlstate 'P1A03' then
+    if sqlerrm not like 'reference_date_below_provider_observation_floor:%' then
+      raise;
+    end if;
+    v_rejected := true;
+  end;
+  if not v_rejected then
+    raise exception 'TEST_FAIL c3 accepted 1969-12-31 reference date';
+  end if;
+  raise notice 'PASS 03.7 C3 pre-epoch reference date rejected before extraction';
+end $$;
