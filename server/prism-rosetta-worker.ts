@@ -37,7 +37,7 @@ async function shutdown(signal: string): Promise<void> {
   shutting_down = true;
   console.log("[PrismRosettaWorker] shutdown_started", { signal });
   clearInterval(keep_alive);
-  stop_prism_rosetta_queue_worker();
+  await stop_prism_rosetta_queue_worker();
   await getPool().end();
   console.log("[PrismRosettaWorker] shutdown_complete", { signal });
   process.exit(0);
