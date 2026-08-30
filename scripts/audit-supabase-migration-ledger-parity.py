@@ -53,7 +53,7 @@ APPROVED_REPOSITORY_ONLY = {
     ),
     "20260729150408": (
         "20260729150408_atlas_stream_tables_foundation.sql",
-        "bac1144637f412c4118a293ac2c829f016bcf81f",
+        "14ac09651474f9265c3a1a3fa04f9677e6418c18",
     ),
     "20260729154228": (
         "20260729154228_ingest_runs_foundation.sql",
