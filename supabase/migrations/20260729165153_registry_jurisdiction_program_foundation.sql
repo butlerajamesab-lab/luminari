@@ -55,6 +55,9 @@ create index if not exists idx_registry_programs_name
 alter table public.registry_jurisdictions enable row level security;
 alter table public.registry_programs enable row level security;
 
+drop policy if exists public_read_registry_jurisdictions on public.registry_jurisdictions;
+drop policy if exists public_read_registry_programs on public.registry_programs;
+
 create policy public_read_registry_jurisdictions
   on public.registry_jurisdictions for select to anon, authenticated using (true);
 create policy public_read_registry_programs
