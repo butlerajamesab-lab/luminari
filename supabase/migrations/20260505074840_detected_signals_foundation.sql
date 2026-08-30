@@ -70,7 +70,7 @@ create table if not exists public.detected_signals (
 -- a clean replay creates the legacy relation as a table. CREATE TABLE IF NOT
 -- EXISTS accepts either relation name, so harden the relation according to its
 -- actual kind instead of issuing table-only RLS commands against a view.
-do $
+do $detected_signals_hardening$
 declare
   relation_kind "char";
 begin
@@ -95,6 +95,6 @@ begin
     raise exception 'public.detected_signals has unsupported relation kind %', relation_kind;
   end if;
 end
-$;
+$detected_signals_hardening$;
 
 commit;
