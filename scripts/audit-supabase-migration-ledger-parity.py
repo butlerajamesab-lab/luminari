@@ -57,7 +57,7 @@ APPROVED_REPOSITORY_ONLY = {
     ),
     "20260729154228": (
         "20260729154228_ingest_runs_foundation.sql",
-        "13da53e576a0df1bcd6b1bdeb55d799531f20a5d",
+        "35f7c0ff86b9ed090106a239c528648a805c22a5",
     ),
     "20260729164259": (
         "20260729164259_state_enriched_directory_foundation.sql",
@@ -65,11 +65,11 @@ APPROVED_REPOSITORY_ONLY = {
     ),
     "20260729165153": (
         "20260729165153_registry_jurisdiction_program_foundation.sql",
-        "6945a09fbc7d670545d46fbe45c8d1d325442f47",
+        "24e8e1107d2354712614d9f094816ea10d840238",
     ),
     "20260730093430": (
         "20260730093430_world_index_tables_foundation.sql",
-        "be84abac936c354f79309122132d73d06646b555",
+        "7088dbbee9bcf6846d5cd2952c9f9e2d93930343",
     ),
     "20260731091000": (
         "20260731091000_civic_genome_event_foundation.sql",
