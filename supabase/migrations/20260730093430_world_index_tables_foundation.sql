@@ -40,6 +40,10 @@ create table if not exists public.workflow_steps (
 alter table public.agencies_registry enable row level security;
 alter table public.workflow_steps enable row level security;
 
+drop policy if exists public_read_agencies_registry on public.agencies_registry;
+drop policy if exists authenticated_all_access_workflow_steps on public.workflow_steps;
+drop policy if exists service_role_all_workflow_steps_46e1ab5b on public.workflow_steps;
+
 create policy public_read_agencies_registry
   on public.agencies_registry for select to anon, authenticated using (true);
 create policy authenticated_all_access_workflow_steps
