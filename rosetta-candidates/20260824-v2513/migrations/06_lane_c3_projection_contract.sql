@@ -1,5 +1,5 @@
 -- ============================================================================
--- Migration: lane c3 -- C3 hash-bound projection contract with receipts and fail-closed verification
+-- Migration: lane c3 -- C3 source acquisition, non-operative projection exclusions, reference-date gate, and receipts
 -- One-variable experiment: a full independent copy of the 51-function closure
 -- in rosetta_v2513 with prefix c3_, identity tokens swapped inside string
 -- literals only ('2.5.11' -> '2.5.13-c3'), plus the lane's surgical change.
@@ -1165,6 +1165,13 @@ begin
     v_result := rosetta_v2513.c3_rosetta_v25_mask_matches(v_result,'(^|\n)REVISOR[^\n]*(\n|$)','n');
     v_result := rosetta_v2513.c3_rosetta_v25_mask_matches(v_result,'(^|\n)[ \t]*--[ \t]*[0-9]+[ \t]+of[ \t]+[0-9]+[ \t]*--[ \t]*(\n|$)','n');
   end if;
+  -- Colorado PDF extraction can glue page furniture to text on both
+  -- sides. Mask only the contemporary fixed-width footer token.
+  v_result := rosetta_v2513.c3_rosetta_v25_mask_matches(
+    v_result,
+    'PAGE[ \t]+[0-9]{1,4}[ \t]*-[ \t]*(?:HOUSE[ \t]+BILL[ \t]+[0-9]{2}[A-Z]?-[0-9]{4}|SENATE[ \t]+BILL[ \t]+[0-9]{2}[A-Z]?-[0-9]{3})',
+    'in');
+  v_result := rosetta_v2513.c3_rosetta_v25_mask_nonoperative_digest(v_result);
   return rosetta_v2513.c3_rosetta_v25_protect_internal_periods(v_result);
 end;
 $function$;
@@ -1883,6 +1890,7 @@ declare
   v_section_definition_count integer := 0;
   v_structural_validation jsonb;
 begin
+  perform rosetta_v2513.c3_rosetta_v25_reference_date_gate(p_reference_date);
   perform rosetta_v2513.c3_rosetta_v25_source_acquisition_gate(p_source_document_id, p_source_text, p_media_type, p_source_version, p_source_url);
   perform pg_advisory_xact_lock(20260731, p_source_document_id);
 
@@ -2223,7 +2231,7 @@ begin
   end if;
 
 
-  v_flat := rosetta_v2513.c3_rosetta_v2_normalize_text(p_source_text);
+  v_flat := rosetta_v2513.c3_rosetta_v2_normalize_text(rosetta_v2513.c3_rosetta_v25_layout_projection(p_source_text));
 
   v_match := regexp_match(
     v_flat,
@@ -3091,6 +3099,73 @@ begin
   );
 end;
 $function$;
+CREATE OR REPLACE FUNCTION rosetta_v2513.c3_rosetta_v25_mask_nonoperative_digest(p_value text)
+ RETURNS text
+ LANGUAGE plpgsql
+ IMMUTABLE STRICT
+ SET search_path TO 'pg_catalog'
+AS $function$
+declare
+  v_start integer;
+  v_heading integer;
+  v_disclaimer integer;
+  v_end integer;
+  v_segment text;
+  v_mask text;
+begin
+  -- A DIGEST heading is not enough to prove non-operative status across all
+  -- jurisdictions. Require the source's own nearby statutory Louisiana
+  -- non-operative disclaimer, then mask without changing offsets.
+  v_heading := regexp_instr(
+    p_value,
+    '(^|\n)[ \t]*DIGEST[ \t]*(\r?\n|$)',
+    1, 1, 0, 'in');
+  if v_heading = 0 then
+    return p_value;
+  end if;
+  v_disclaimer := regexp_instr(
+    p_value,
+    '(?:constitutes[ \t\r\n]+no[ \t\r\n]+part|does[ \t\r\n]+not[ \t\r\n]+constitute[ \t\r\n]+a[ \t\r\n]+part)[ \t\r\n]+of[ \t\r\n]+the[ \t\r\n]+legislative[ \t\r\n]+instrument',
+    greatest(1, v_heading - 1024), 1, 0, 'in');
+  -- Louisiana House and Senate layouts place the disclaimer on opposite sides
+  -- of the heading, and some name an individual drafter instead of Legislative
+  -- Services. The authoritative disclaimer—not authorship—is the evidence.
+  if v_disclaimer = 0
+     or abs(v_disclaimer - v_heading) > 1024 then
+    return p_value;
+  end if;
+  v_start := least(v_heading, v_disclaimer);
+  v_end := regexp_instr(
+    p_value,
+    '(^|\n)[ \t]*Be[ \t]+it[ \t]+enacted[ \t]+by[ \t]+the[ \t]+Legislature[ \t]+of[ \t]+Louisiana[ \t]*:',
+    v_start + 1, 1, 0, 'in');
+  if v_end = 0 then
+    v_end := char_length(p_value) + 1;
+  end if;
+  v_segment := substr(p_value, v_start, v_end - v_start);
+  v_mask := regexp_replace(v_segment, '[^\n\r]', ' ', 'g');
+  return overlay(p_value placing v_mask from v_start for v_end - v_start);
+end;
+$function$;
+CREATE OR REPLACE FUNCTION rosetta_v2513.c3_rosetta_v25_reference_date_gate(p_reference_date date)
+ RETURNS void
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'pg_catalog'
+AS $function$
+declare
+  -- reference_date is the provider-observation/as-of date, not the date of
+  -- enactment inside a historical instrument. The Unix epoch is therefore a
+  -- deterministic lower bound for this transport field.
+  v_provider_observation_floor constant date := date '1970-01-01';
+begin
+  if p_reference_date is not null
+     and p_reference_date < v_provider_observation_floor then
+    raise exception 'reference_date_below_provider_observation_floor: % is before %',
+      p_reference_date, v_provider_observation_floor using errcode = 'P1A03';
+  end if;
+end;
+$function$;
 CREATE OR REPLACE FUNCTION rosetta_v2513.c3_rosetta_v25_source_acquisition_gate(
     p_source_document_id integer,
     p_source_text text,
@@ -3194,4 +3269,4 @@ $function$;
 insert into rosetta_v2513.extraction_rule_manifest
   (engine_version, rule_set_version, manifest_hash, manifest_json, is_active)
 values ('rosetta-v3-deterministic-sql-2.5.13-c3', 'rosetta-five-layer-structural-correctness-2.5.13-c3',
-        '3f9ff72e9bb4fe97187740b4866ce0c417d50206a1d67a19ef6f31a48c2ab1fe', $manifest${"changes":["C3 hash-bound projection contract with receipts and fail-closed verification"],"closure_namespace":"rosetta_v2513","closure_prefix":"c3_","control_identity":"rosetta-v3-deterministic-sql-2.5.11","engine_version":"rosetta-v3-deterministic-sql-2.5.13-c3","lane":"c3","publication":"structurally disabled: no publication view, no registry row, no publishable-run path references this namespace","rule_set_version":"rosetta-five-layer-structural-correctness-2.5.13-c3","title":"C3 hash-bound projection contract with receipts and fail-closed verification"}$manifest$::jsonb, true);
+        '4166865922a9228063fbeef2302f0aa8d02f917d516377ba42b95eb52eef29f2', $manifest${"changes":["C3 source acquisition, non-operative projection exclusions, reference-date gate, and receipts"],"closure_namespace":"rosetta_v2513","closure_prefix":"c3_","control_identity":"rosetta-v3-deterministic-sql-2.5.11","engine_version":"rosetta-v3-deterministic-sql-2.5.13-c3","lane":"c3","publication":"structurally disabled: no publication view, no registry row, no publishable-run path references this namespace","rule_set_version":"rosetta-five-layer-structural-correctness-2.5.13-c3","title":"C3 source acquisition, non-operative projection exclusions, reference-date gate, and receipts"}$manifest$::jsonb, true);

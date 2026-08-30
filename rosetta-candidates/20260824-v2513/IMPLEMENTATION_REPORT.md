@@ -5,6 +5,8 @@
 This packet replaces the drifting 2.5.x patch cycle with one isolated,
 corpus-replayable candidate. It does **not** modify Rosetta 2.5.11 in place,
 publish objects, promote a registry row, cut over traffic, or touch production.
+Rosetta remains its own decomposition platform: Docket Room supplies exact
+law/version artifacts upstream, and this repair does not restore Docket Room.
 
 The end state is intentionally binary:
 
@@ -19,9 +21,9 @@ The end state is intentionally binary:
 |---|---|---|
 | C1 | actor length | Applies the measured 1,024-character guard to the **decomposed actor**, not to the whole condition/scaffold; overflow is blocking and never truncated. |
 | C2 | actor sanity | Blocks navigation chrome, action-history date chains, HTML entities, U+FFFD, amendatory scaffolding, and multi-modal actor capture. |
-| C3 | source acquisition | `text/html` may enter parsing only as exact registered extracted legal text with raw-byte and extracted-text SHA-256 receipts; residue fails closed. |
+| C3 | source acquisition and projection | `text/html` may enter parsing only as exact registered extracted legal text with raw-byte and extracted-text SHA-256 receipts; fixed-width Colorado PAGE tokens and Louisiana DIGEST regions carrying the exact statutory non-operative disclaimer are masked in place; provider/reference dates before `1970-01-01` fail before writes. |
 | C4 | spans | Uses occurrence-aware binding and records an explicit resolved/ambiguous/unresolved state for workflow, accountability, override, definition, **and help** objects. |
-| C5 | decomposition | Separates leading condition, amendatory scaffold, actor, modal, action, and trailing condition while preserving exact actor offsets. |
+| C5 | segmentation and decomposition | Preserves person middle initials such as `David R. Poynter` as one normative actor, then separates leading condition, amendatory scaffold, actor, modal, action, and trailing condition while preserving exact actor offsets. |
 | C6 | polarity | Mixed positive/negative modal clauses create a blocking repair instead of being silently retyped; negative modal text is preserved. |
 | C7 | decoding | Requires a charset receipt bound to the exact content hash; replacement characters require an explicit manual-literal disposition and block span certainty. |
 
@@ -68,19 +70,22 @@ These checks were actually executed against the bytes in this packet:
   `3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639`.
 - Control closure reverse-rename fidelity: 51/51 captured function bodies,
   zero MD5 differences.
-- SQL lexical integrity: 29 migration/test SQL files balanced.
+- SQL lexical integrity: 30 migration/test SQL files balanced.
 - Static production-write scan: zero production-schema mutation paths outside
   the read-only capture migration.
 - Quarantine evidence: 1,038 unique run IDs; SHA-256
   `13dd88b0519f6ee1d36189aa4f45b4acd0fc0e499a37a3b089f12666c53a476e`.
 - Package checksums: generated and reverified by `tools/build_package.py`.
 
-## Isolated PostgreSQL runtime verification
+## Historical bounded runtime receipt
 
-The repaired candidate was also exercised on the existing non-production
+The source-locked August 24 candidate was exercised on the non-production
 Supabase preview branch `rosetta-corpus-continuity-20260822` (PostgreSQL 17).
-The durable machine-readable receipt is
-`tests/SUPABASE_BRANCH_VALIDATION_RESULTS.json`.
+Its immutable machine-readable receipt is
+`tests/SUPABASE_BRANCH_VALIDATION_RESULTS.json`. It is retained as historical
+evidence and is bound to the earlier generated migration hashes recorded under
+`historical_runtime_validation` in `PACKAGE_MANIFEST.json`; it is not current
+runtime proof for regenerated SQL.
 
 - Twenty migration files compiled in dependency order.
 - SQL tests 01–07 and the security test passed. The restored diff/G6
@@ -101,23 +106,24 @@ The durable machine-readable receipt is
   these schemas; its 17 INFO notices are the intentional RLS-with-no-policy
   posture of deny-all internal tables.
 
-This is a bounded fixture/runtime result. It proves that the repaired SQL can
-run and that these controls behave as declared. It does not stand in for the
-immutable full-corpus experiment.
+This was a bounded fixture/runtime result for the source-locked earlier bytes.
+The current repair must pass the isolated PostgreSQL 17 pull-request job before
+review. Neither run stands in for the immutable full-corpus experiment.
 
 ## Not claimed
 
-No full real-corpus replay, semantic acceptance across all jurisdictions and
+No fresh full real-corpus replay, semantic acceptance across all jurisdictions and
 source formats, complete G1–G11 promotion-gate success, promotion, deployment,
-or production cutover has occurred. The runtime result above covers one exact
-synthetic source and bounded control fixtures only. Production was not mutated,
-and the preview branch was not merged.
+or production cutover has occurred. The historical runtime result above covers
+one exact synthetic source and bounded control fixtures only. Production was
+not mutated, and the preview branch was not merged.
 
 ## Required next experiment
 
 1. Create an empty disposable PostgreSQL database or Supabase branch.
 2. Run `python3 tests/capture_evidence.py`; the runner refuses a target that
-   contains `public.extraction_run` or preexisting package schemas.
+   contains `public.extraction_run` or preexisting package schemas and writes
+   the current transcript outside the checksummed packet.
 3. Import the immutable corpus sources and their exact 2.5.11 control runs into
    the isolated mirror.
 4. Load `evidence/Rosetta Quarantine Run IDs — 2026-08-23.txt` with

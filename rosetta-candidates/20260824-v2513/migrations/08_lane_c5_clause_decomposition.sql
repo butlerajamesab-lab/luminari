@@ -1,5 +1,5 @@
 -- ============================================================================
--- Migration: lane c5 -- C5 clause decomposition with exact offsets; scaffold and conditions never actors
+-- Migration: lane c5 -- C5 clause segmentation and decomposition with person-name middle initials and exact offsets
 -- One-variable experiment: a full independent copy of the 51-function closure
 -- in rosetta_v2513 with prefix c5_, identity tokens swapped inside string
 -- literals only ('2.5.11' -> '2.5.13-c5'), plus the lane's surgical change.
@@ -1143,6 +1143,10 @@ begin
  if v_left ~ '[0-9]+\s+S[.]\s+Ct$' and v_after ~ '^[0-9]' then return true; end if;
  v_dotted:=(regexp_match(v_left,'([A-Za-z]+(?:[.][A-Za-z]+)+)$'))[1];
  if v_dotted is not null and v_after<>'' and v_after !~ '^(?:A|An|Each|Every|No|That|The|This)\M' then return true; end if;
+ if v_word is not null and v_word ~ '^[A-Z]$'
+    and v_left ~ '(^|[^A-Za-z])[A-Z][A-Za-z''-]{1,63}[ \t]+[A-Z]$'
+    and v_left !~* '(^|[^A-Za-z])(Appendix|Article|Chapter|Ch|Class|Clause|Digest|Division|Exhibit|Figure|Form|Grade|Item|Option|Paragraph|Part|Phase|Plan|Policy|Rule|Schedule|Section|Sec|Step|Subpart|Subsection|Table|Title|Version|Volume)[ \t]+[A-Z]$'
+    and v_after ~ '^[A-Z][A-Za-z''-]{1,63}(?:[ \t]*,[ \t]*[a-z][A-Za-z'' -]{0,63}[ \t]*,)?[ \t]+(?:shall|must|may)\M' then return true; end if;
  if v_word is not null and v_word ~ '^[A-Z]$' and v_after ~ '^(?:[0-9]|No[.]\s*[0-9])' then return true; end if;
  return false;
 end;$function$;
@@ -3155,4 +3159,4 @@ $function$;
 insert into rosetta_v2513.extraction_rule_manifest
   (engine_version, rule_set_version, manifest_hash, manifest_json, is_active)
 values ('rosetta-v3-deterministic-sql-2.5.13-c5', 'rosetta-five-layer-structural-correctness-2.5.13-c5',
-        'f059557513937ce343b45af6c3e72e4f19287557af9b24883523ff4fe29d3f05', $manifest${"changes":["C5 clause decomposition with exact offsets; scaffold and conditions never actors"],"closure_namespace":"rosetta_v2513","closure_prefix":"c5_","control_identity":"rosetta-v3-deterministic-sql-2.5.11","engine_version":"rosetta-v3-deterministic-sql-2.5.13-c5","lane":"c5","publication":"structurally disabled: no publication view, no registry row, no publishable-run path references this namespace","rule_set_version":"rosetta-five-layer-structural-correctness-2.5.13-c5","title":"C5 clause decomposition with exact offsets; scaffold and conditions never actors"}$manifest$::jsonb, true);
+        'd5b5c1e5a5f5f34ba55d9895a029da0c1fbecd3e2eb39d11ae4b594e5a022d43', $manifest${"changes":["C5 clause segmentation and decomposition with person-name middle initials and exact offsets"],"closure_namespace":"rosetta_v2513","closure_prefix":"c5_","control_identity":"rosetta-v3-deterministic-sql-2.5.11","engine_version":"rosetta-v3-deterministic-sql-2.5.13-c5","lane":"c5","publication":"structurally disabled: no publication view, no registry row, no publishable-run path references this namespace","rule_set_version":"rosetta-five-layer-structural-correctness-2.5.13-c5","title":"C5 clause segmentation and decomposition with person-name middle initials and exact offsets"}$manifest$::jsonb, true);

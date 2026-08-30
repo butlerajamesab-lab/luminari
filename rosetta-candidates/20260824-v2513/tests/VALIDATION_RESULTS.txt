@@ -1,6 +1,8 @@
-Rosetta 2.5.13 current-build validation
-status: PASS_WITH_EXPLICIT_SCOPE_LIMIT
+Rosetta 2.5.13 HISTORICAL validation transcript
+status: HISTORICAL_SUPERSEDED_NOT_CURRENT_BUILD_PROOF
+original_status: PASS_WITH_EXPLICIT_SCOPE_LIMIT
 validated_on: 2026-08-24
+current_generated_migrations_validated_by_this_file: false
 
 LOCAL BUILD VERIFICATION
 generator_deterministic: true

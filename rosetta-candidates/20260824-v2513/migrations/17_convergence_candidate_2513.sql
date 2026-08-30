@@ -1195,6 +1195,10 @@ begin
  if v_left ~ '[0-9]+\s+S[.]\s+Ct$' and v_after ~ '^[0-9]' then return true; end if;
  v_dotted:=(regexp_match(v_left,'([A-Za-z]+(?:[.][A-Za-z]+)+)$'))[1];
  if v_dotted is not null and v_after<>'' and v_after !~ '^(?:A|An|Each|Every|No|That|The|This)\M' then return true; end if;
+ if v_word is not null and v_word ~ '^[A-Z]$'
+    and v_left ~ '(^|[^A-Za-z])[A-Z][A-Za-z''-]{1,63}[ \t]+[A-Z]$'
+    and v_left !~* '(^|[^A-Za-z])(Appendix|Article|Chapter|Ch|Class|Clause|Digest|Division|Exhibit|Figure|Form|Grade|Item|Option|Paragraph|Part|Phase|Plan|Policy|Rule|Schedule|Section|Sec|Step|Subpart|Subsection|Table|Title|Version|Volume)[ \t]+[A-Z]$'
+    and v_after ~ '^[A-Z][A-Za-z''-]{1,63}(?:[ \t]*,[ \t]*[a-z][A-Za-z'' -]{0,63}[ \t]*,)?[ \t]+(?:shall|must|may)\M' then return true; end if;
  if v_word is not null and v_word ~ '^[A-Z]$' and v_after ~ '^(?:[0-9]|No[.]\s*[0-9])' then return true; end if;
  return false;
 end;$function$;
@@ -1217,6 +1221,13 @@ begin
     v_result := rosetta_v2513.v2513_rosetta_v25_mask_matches(v_result,'(^|\n)REVISOR[^\n]*(\n|$)','n');
     v_result := rosetta_v2513.v2513_rosetta_v25_mask_matches(v_result,'(^|\n)[ \t]*--[ \t]*[0-9]+[ \t]+of[ \t]+[0-9]+[ \t]*--[ \t]*(\n|$)','n');
   end if;
+  -- Colorado PDF extraction can glue page furniture to text on both
+  -- sides. Mask only the contemporary fixed-width footer token.
+  v_result := rosetta_v2513.v2513_rosetta_v25_mask_matches(
+    v_result,
+    'PAGE[ \t]+[0-9]{1,4}[ \t]*-[ \t]*(?:HOUSE[ \t]+BILL[ \t]+[0-9]{2}[A-Z]?-[0-9]{4}|SENATE[ \t]+BILL[ \t]+[0-9]{2}[A-Z]?-[0-9]{3})',
+    'in');
+  v_result := rosetta_v2513.v2513_rosetta_v25_mask_nonoperative_digest(v_result);
   return rosetta_v2513.v2513_rosetta_v25_protect_internal_periods(v_result);
 end;
 $function$;
@@ -1912,7 +1923,8 @@ declare
   v_section_definition_count integer := 0;
   v_structural_validation jsonb;
 begin
-  -- C3 + C7: verify acquisition provenance before parsing HTML, then verify the exact-source charset receipt.
+  -- C3 + C7: reject invalid provider-observation dates, verify HTML acquisition provenance, then verify the exact-source charset receipt.
+  perform rosetta_v2513.v2513_rosetta_v25_reference_date_gate(p_reference_date);
   perform rosetta_v2513.v2513_rosetta_v25_source_acquisition_gate(
     p_source_document_id, p_source_text, p_media_type, p_source_version, p_source_url);
   perform rosetta_v2513.v2513_rosetta_v25_charset_gate(p_source_document_id, p_source_text);
@@ -2255,7 +2267,7 @@ begin
   end if;
 
 
-  v_flat := rosetta_v2513.v2513_rosetta_v2_normalize_text(p_source_text);
+  v_flat := rosetta_v2513.v2513_rosetta_v2_normalize_text(rosetta_v2513.v2513_rosetta_v25_layout_projection(p_source_text));
 
   v_match := regexp_match(
     v_flat,
@@ -3123,6 +3135,73 @@ begin
   );
 end;
 $function$;
+CREATE OR REPLACE FUNCTION rosetta_v2513.v2513_rosetta_v25_mask_nonoperative_digest(p_value text)
+ RETURNS text
+ LANGUAGE plpgsql
+ IMMUTABLE STRICT
+ SET search_path TO 'pg_catalog'
+AS $function$
+declare
+  v_start integer;
+  v_heading integer;
+  v_disclaimer integer;
+  v_end integer;
+  v_segment text;
+  v_mask text;
+begin
+  -- A DIGEST heading is not enough to prove non-operative status across all
+  -- jurisdictions. Require the source's own nearby statutory Louisiana
+  -- non-operative disclaimer, then mask without changing offsets.
+  v_heading := regexp_instr(
+    p_value,
+    '(^|\n)[ \t]*DIGEST[ \t]*(\r?\n|$)',
+    1, 1, 0, 'in');
+  if v_heading = 0 then
+    return p_value;
+  end if;
+  v_disclaimer := regexp_instr(
+    p_value,
+    '(?:constitutes[ \t\r\n]+no[ \t\r\n]+part|does[ \t\r\n]+not[ \t\r\n]+constitute[ \t\r\n]+a[ \t\r\n]+part)[ \t\r\n]+of[ \t\r\n]+the[ \t\r\n]+legislative[ \t\r\n]+instrument',
+    greatest(1, v_heading - 1024), 1, 0, 'in');
+  -- Louisiana House and Senate layouts place the disclaimer on opposite sides
+  -- of the heading, and some name an individual drafter instead of Legislative
+  -- Services. The authoritative disclaimer—not authorship—is the evidence.
+  if v_disclaimer = 0
+     or abs(v_disclaimer - v_heading) > 1024 then
+    return p_value;
+  end if;
+  v_start := least(v_heading, v_disclaimer);
+  v_end := regexp_instr(
+    p_value,
+    '(^|\n)[ \t]*Be[ \t]+it[ \t]+enacted[ \t]+by[ \t]+the[ \t]+Legislature[ \t]+of[ \t]+Louisiana[ \t]*:',
+    v_start + 1, 1, 0, 'in');
+  if v_end = 0 then
+    v_end := char_length(p_value) + 1;
+  end if;
+  v_segment := substr(p_value, v_start, v_end - v_start);
+  v_mask := regexp_replace(v_segment, '[^\n\r]', ' ', 'g');
+  return overlay(p_value placing v_mask from v_start for v_end - v_start);
+end;
+$function$;
+CREATE OR REPLACE FUNCTION rosetta_v2513.v2513_rosetta_v25_reference_date_gate(p_reference_date date)
+ RETURNS void
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'pg_catalog'
+AS $function$
+declare
+  -- reference_date is the provider-observation/as-of date, not the date of
+  -- enactment inside a historical instrument. The Unix epoch is therefore a
+  -- deterministic lower bound for this transport field.
+  v_provider_observation_floor constant date := date '1970-01-01';
+begin
+  if p_reference_date is not null
+     and p_reference_date < v_provider_observation_floor then
+    raise exception 'reference_date_below_provider_observation_floor: % is before %',
+      p_reference_date, v_provider_observation_floor using errcode = 'P1A03';
+  end if;
+end;
+$function$;
 CREATE OR REPLACE FUNCTION rosetta_v2513.v2513_rosetta_v25_source_acquisition_gate(
     p_source_document_id integer,
     p_source_text text,
@@ -3497,4 +3576,4 @@ $function$;
 insert into rosetta_v2513.extraction_rule_manifest
   (engine_version, rule_set_version, manifest_hash, manifest_json, is_active)
 values ('rosetta-v3-deterministic-sql-2.5.13', 'rosetta-five-layer-structural-correctness-2.5.13',
-        '607531be651d994d70a061ba4889091efb02c1f2cf1f33c178cd519514b61efe', $manifest${"changes":["C1 measured actor-length bound (1024) with blocking overflow","C2 actor-source corruption detection (chrome, dates, entities, replacement chars, scaffolding, multi-clause)","C3 hash-bound projection contract with receipts and fail-closed verification","C4 occurrence-aware span binding (ported 2.5.12 trio + refresh)","C5 clause decomposition with exact offsets; scaffold and conditions never actors","C6 modal retyping revalidation; mixed-polarity fails closed","C7 decoding-method receipts; undispositioned replacement chars block"],"closure_namespace":"rosetta_v2513","closure_prefix":"v2513_","control_identity":"rosetta-v3-deterministic-sql-2.5.11","engine_version":"rosetta-v3-deterministic-sql-2.5.13","lane":"all","publication":"structurally disabled: no publication view, no registry row, no publishable-run path references this namespace","rule_set_version":"rosetta-five-layer-structural-correctness-2.5.13","title":"2.5.13 convergence candidate composing lanes c1..c7"}$manifest$::jsonb, true);
+        '79b278f0199ffce4e9d765a36469e29fa23a646d02a0e4043d897d4346a093af', $manifest${"changes":["C1 measured actor-length bound (1024) with blocking overflow","C2 actor-source corruption detection (chrome, dates, entities, replacement chars, scaffolding, multi-clause)","C3 source acquisition, non-operative projection exclusions, reference-date gate, and receipts","C4 occurrence-aware span binding (ported 2.5.12 trio + refresh)","C5 clause segmentation and decomposition with person-name middle initials and exact offsets","C6 modal retyping revalidation; mixed-polarity fails closed","C7 decoding-method receipts; undispositioned replacement chars block"],"closure_namespace":"rosetta_v2513","closure_prefix":"v2513_","control_identity":"rosetta-v3-deterministic-sql-2.5.11","engine_version":"rosetta-v3-deterministic-sql-2.5.13","lane":"all","publication":"structurally disabled: no publication view, no registry row, no publishable-run path references this namespace","rule_set_version":"rosetta-five-layer-structural-correctness-2.5.13","title":"2.5.13 convergence candidate composing lanes c1..c7"}$manifest$::jsonb, true);

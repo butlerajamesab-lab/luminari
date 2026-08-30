@@ -7,6 +7,7 @@ packet bytes alone and leave database execution to ``run_all.py``.
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 from pathlib import Path
 
@@ -14,6 +15,36 @@ EXPECTED_MANIFEST_SHA256 = (
     "3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639"
 )
 EXPECTED_MANIFEST_MD5 = "c0b627297b081393d41b2a9390f1f930"
+EXPECTED_HISTORICAL_PACKAGE_MANIFEST_SHA256 = (
+    "efa789b26afbf08bb6161d2d03237f090cc8711721d9763378c0d7f0c855c675"
+)
+EXPECTED_HISTORICAL_RECEIPT_SHA256 = (
+    "e68029633806c6c5bbf8289de554ebf304d9eb92f3cd193aab5871f4db23fa62"
+)
+EXPECTED_HISTORICAL_MIGRATION_SHA256 = {
+    "migrations/02_candidate_schema.sql": "270348b74e774e65e8ae2edc6add11e10ceef8481e53e874dd12ed460f8e8622",
+    "migrations/03_control_closure_2511.sql": "66dc4e7dc140507c35ed671ecf0682523e00c9171db936f28cac18987543744e",
+    "migrations/04_lane_c1_measured_actor_bound.sql": "798ba98c07f06d994e1c4399b5c32d9d7127d1f9e6fa4a68a75bdd2d4fbfaf04",
+    "migrations/05_lane_c2_actor_source_corruption.sql": "1b7958cfc34eb7c76603dcee347199639f76ae6eb2053e2183c8ae758a6c4be4",
+    "migrations/06_lane_c3_projection_contract.sql": "c613651c39a5a4adfd03211a07ab64ea5ee0297517a4db51a6f4f96d79b30dc4",
+    "migrations/07_lane_c4_occurrence_aware_spans.sql": "1d73f3c182201c308abea1ec985c8aa53bbda7aeae836e155cb3c982d49def04",
+    "migrations/08_lane_c5_clause_decomposition.sql": "2eaca595dd682ceb63ce5f3e25c59d53dd172efac1a40f4eef31379e0132fc93",
+    "migrations/09_lane_c6_modal_retyping_revalidation.sql": "7e5c9a1a191f3680231338f975d5025181b8d636aea04836205fc186dfa45a48",
+    "migrations/10_lane_c7_charset_receipt_gate.sql": "1555b7e4ff51018fbbb7287ca1f759f5c5017d67f680cff0e37ce4fc07882bc6",
+    "migrations/17_convergence_candidate_2513.sql": "ac1d2772b8596f24fc85fd93c1438526d55b12baba241523222e9261c669de1e",
+}
+GENERATED_MIGRATIONS = (
+    "02_candidate_schema.sql",
+    "03_control_closure_2511.sql",
+    "04_lane_c1_measured_actor_bound.sql",
+    "05_lane_c2_actor_source_corruption.sql",
+    "06_lane_c3_projection_contract.sql",
+    "07_lane_c4_occurrence_aware_spans.sql",
+    "08_lane_c5_clause_decomposition.sql",
+    "09_lane_c6_modal_retyping_revalidation.sql",
+    "10_lane_c7_charset_receipt_gate.sql",
+    "17_convergence_candidate_2513.sql",
+)
 
 
 def verify_captured_manifest(root: str | Path) -> tuple[str, str, int]:
@@ -125,6 +156,74 @@ def verify_candidate_contract(root: str | Path) -> dict[str, int | str]:
     for path in sql_paths:
         _sql_lexical_balance(path)
 
+    # The package manifest is the current-byte claim. A runtime PASS is valid
+    # only when a separate validation binding names these exact generated SQL
+    # hashes and its receipt hash verifies. Historical receipts may remain in
+    # the packet, but they cannot validate regenerated migrations.
+    current_generated = {
+        f"migrations/{name}": hashlib.sha256((migrations / name).read_bytes()).hexdigest()
+        for name in GENERATED_MIGRATIONS
+    }
+    package_manifest_path = root / "PACKAGE_MANIFEST.json"
+    package_manifest = json.loads(package_manifest_path.read_text(encoding="utf-8"))
+    if package_manifest.get("generated_migration_sha256") != current_generated:
+        raise RuntimeError("package manifest is not bound to current generated migrations")
+    historical = package_manifest.get("historical_runtime_validation")
+    if not isinstance(historical, dict):
+        raise RuntimeError("source-locked historical runtime binding is missing")
+    expected_historical = {
+        "status": "isolated_supabase_branch_postgresql17_fixture_pass",
+        "validated_on": "2026-08-24",
+        "scope": (
+            "synthetic exact-source fixture plus bounded SQL/security tests; "
+            "not a full-corpus replay"
+        ),
+        "receipt": "tests/SUPABASE_BRANCH_VALIDATION_RESULTS.json",
+        "receipt_sha256": EXPECTED_HISTORICAL_RECEIPT_SHA256,
+        "binding_package_manifest_sha256": EXPECTED_HISTORICAL_PACKAGE_MANIFEST_SHA256,
+        "validated_generated_migration_sha256": EXPECTED_HISTORICAL_MIGRATION_SHA256,
+    }
+    if historical != expected_historical:
+        raise RuntimeError("source-locked historical runtime binding changed")
+    historical_receipt = root / historical["receipt"]
+    if hashlib.sha256(historical_receipt.read_bytes()).hexdigest() != (
+        EXPECTED_HISTORICAL_RECEIPT_SHA256
+    ):
+        raise RuntimeError("source-locked historical runtime receipt changed")
+
+    runtime_status = package_manifest.get("runtime_validation")
+    if runtime_status == "isolated_postgresql17_current_build_pass":
+        binding = package_manifest.get("runtime_validation_binding")
+        if not isinstance(binding, dict):
+            raise RuntimeError("current runtime PASS lacks an explicit validation binding")
+        if binding.get("validated_generated_migration_sha256") != current_generated:
+            raise RuntimeError("current runtime PASS is bound to different migration bytes")
+        receipt_relative = binding.get("receipt")
+        receipt_sha256 = binding.get("receipt_sha256")
+        if not isinstance(receipt_relative, str) or not isinstance(receipt_sha256, str):
+            raise RuntimeError("current runtime PASS lacks a receipt path/hash")
+        receipt_path = (root / receipt_relative).resolve()
+        if root.resolve() not in receipt_path.parents or not receipt_path.is_file():
+            raise RuntimeError("current runtime PASS receipt path is invalid")
+        if hashlib.sha256(receipt_path.read_bytes()).hexdigest() != receipt_sha256:
+            raise RuntimeError("current runtime PASS receipt hash mismatch")
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        if receipt.get("status") != "pass":
+            raise RuntimeError("current runtime receipt does not declare pass")
+        if receipt.get("postgres_major") != 17:
+            raise RuntimeError("current runtime receipt is not PostgreSQL 17")
+        if receipt.get("production_mutated") is not False:
+            raise RuntimeError("current runtime receipt does not prove production untouched")
+        if receipt.get("generated_migration_sha256") != current_generated:
+            raise RuntimeError("current runtime receipt is bound to different migrations")
+        git_commit_sha = receipt.get("git_commit_sha")
+        if not isinstance(git_commit_sha, str) or not re.fullmatch(
+            r"[0-9a-f]{40}", git_commit_sha
+        ):
+            raise RuntimeError("current runtime receipt lacks an exact Git commit SHA")
+    elif runtime_status != "current_generated_migrations_not_runtime_validated":
+        raise RuntimeError(f"unrecognized current runtime status: {runtime_status!r}")
+
     # Candidate/replay migrations may read the captured public schema in
     # migration 00 only. Every other migration must stay in the two isolated
     # namespaces; no production-table mutation is allowed in the packet.
@@ -146,8 +245,18 @@ def verify_candidate_contract(root: str | Path) -> dict[str, int | str]:
     convergence = (migrations / "17_convergence_candidate_2513.sql").read_text(encoding="utf-8")
     required_convergence = {
         "C3 acquisition gate": "html_content_extraction_receipt_missing",
+        "C3 Colorado House page furniture": "HOUSE[ \\t]+BILL[ \\t]+[0-9]{2}[A-Z]?-[0-9]{4}",
+        "C3 Colorado Senate page furniture": "SENATE[ \\t]+BILL[ \\t]+[0-9]{2}[A-Z]?-[0-9]{3}",
+        "C3 Louisiana DIGEST exclusion": "rosetta_v25_mask_nonoperative_digest",
+        "C3 Louisiana statutory disclaimer": "constitutes[ \\t\\r\\n]+no[ \\t\\r\\n]+part",
+        "C3 Louisiana alternate disclaimer": "does[ \\t\\r\\n]+not[ \\t\\r\\n]+constitute",
+        "C3 Louisiana proximity bound": "abs(v_disclaimer - v_heading) > 1024",
+        "C3 Louisiana enacting boundary": "Be[ \\t]+it[ \\t]+enacted",
+        "C3 reference-date lower bound": "reference_date_below_provider_observation_floor",
         "C4 help spans": "union all select 'help_entity'",
         "C5 decomposition": "rosetta_v25_decompose_clause",
+        "C5 person middle initial": "(?:[ \\t]*,[ \\t]*[a-z]",
+        "C5 structural-label boundary": "|Policy|Rule|Schedule",
         "C6 mixed polarity": "modal_polarity_conflict",
         "C7 charset gate": "charset_receipt_missing_or_incomplete",
         "decomposed actor bound": "char_length(v_d.actor) > v_bound",
@@ -184,6 +293,41 @@ def verify_candidate_contract(root: str | Path) -> dict[str, int | str]:
     c6_test = (root / "tests" / "05_lanes_c6_c7.sql").read_text(encoding="utf-8")
     if "v_negative is distinct from 'shall'" not in c6_test:
         raise RuntimeError("C6 negative-clause test does not assert the constrained base modal")
+
+    regression_test = (root / "tests" / "11_open_regressions.sql").read_text(
+        encoding="utf-8"
+    )
+    for fixture in (
+        "PAGE 4-HOUSE BILL 26-1432",
+        "PAGE 4-HOUSE BILL 25-1117COMPANY shall file.",
+        "Rule A. Smith shall file the report.",
+        "David R. Poynter shall submit the report.",
+        "constitutes no part of the legislative instrument",
+        "Proposed law provides that the board shall adopt rules.",
+        "date '1969-12-31'",
+    ):
+        if fixture not in regression_test:
+            raise RuntimeError(f"open-regression fixture missing: {fixture}")
+
+    historical_text = (root / "tests" / "VALIDATION_RESULTS.txt").read_text(
+        encoding="utf-8"
+    )
+    if not historical_text.startswith(
+        "Rosetta 2.5.13 HISTORICAL validation transcript\n"
+        "status: HISTORICAL_SUPERSEDED_NOT_CURRENT_BUILD_PROOF\n"
+    ):
+        raise RuntimeError("historical text receipt is mislabeled as current proof")
+
+    capture = (root / "tests" / "capture_evidence.py").read_text(encoding="utf-8")
+    if '"VALIDATION_RESULTS.txt"' in capture:
+        raise RuntimeError("current runtime capture can overwrite historical evidence")
+    for token in (
+        "ROSETTA_CURRENT_VALIDATION_OUTPUT",
+        "current_validation_output_must_be_outside_checksummed_packet",
+        "ROOT in result.parents",
+    ):
+        if token not in capture:
+            raise RuntimeError(f"current runtime capture boundary missing: {token}")
 
     security_test = (root / "tests" / "02_schema_and_control.sql").read_text(
         encoding="utf-8"
