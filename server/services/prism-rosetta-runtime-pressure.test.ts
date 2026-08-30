@@ -63,12 +63,16 @@ describe("PRISM 2.2 bounded runtime pressure", () => {
       "queue_remaining_new_submissions = max_new_submissions;",
     );
     expect(queue_worker).toContain(
-      "const reserved_new_submissions = queue_remaining_new_submissions;",
+      "const available_new_submissions = queue_remaining_new_submissions;",
     );
     expect(queue_worker).toContain(
-      "max_new_submissions: reserved_new_submissions,",
+      "max_new_submissions: available_new_submissions,",
     );
+    expect(queue_worker).toContain("on_before_first_submission: () => {");
+    expect(queue_worker).toContain("queue_remaining_new_submissions = 0;");
     expect(activation).toContain("max_new_submissions?: number;");
+    expect(activation).toContain("on_before_first_submission?: () => void;");
+    expect(activation).toContain("input.on_before_first_submission?.();");
     expect(activation).toContain(
       "export class PrismRosettaPartialActivationError extends Error",
     );
