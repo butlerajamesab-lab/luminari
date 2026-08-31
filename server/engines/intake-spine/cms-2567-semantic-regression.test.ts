@@ -6,6 +6,7 @@ import { processLayer6, type Entity } from "./layer-6-entity_registry";
 import { processLayer7, type Relationship } from "./layer-7-relationship_graph";
 import { processLayer9 } from "./layer-9-state_timeline";
 import type { ParsedArtifact, TextSpan } from "./parsing-substrate";
+import { semanticSpansForArtifact } from "./semantic-substrate";
 
 /**
  * Regression fixture distilled from the Caroline Kline Galland Home CMS-2567
@@ -90,6 +91,56 @@ const renderInvoice = artifactFromPages(INVOICE_KEY, [
 ]);
 
 describe("CMS-2567 semantic-lane regression", () => {
+  it("carries the CMS narrative boundary across paragraph spans on one page", () => {
+    const header = `${cmsHeader("11/21/2024", "Page 1 of 1")}\nResidents Affected - One resident`;
+    const firstNarrative =
+      "On 11/20/2024 Resident 45 was admitted to the hospital.";
+    const secondNarrative =
+      "Resident 45 was a resident of Caroline Kline Galland Home.";
+    const footer = cmsFooter("Page 1 of 1");
+    const splitPage = artifactFromParagraphPages(
+      "cms-2567:paragraph-split.pdf",
+      [[header, firstNarrative, secondNarrative, footer]],
+    );
+
+    const semantic = semanticSpansForArtifact(splitPage, [splitPage]);
+    expect(semantic.map((span) => span.text)).toEqual([
+      firstNarrative,
+      secondNarrative,
+    ]);
+    expect(semantic[0].start_offset).toBe(
+      splitPage.extracted_text.indexOf(firstNarrative),
+    );
+    expect(semantic.some((span) => /FORM CMS-2567/i.test(span.text))).toBe(
+      false,
+    );
+
+    const chronology = processLayer4({ artifacts: [splitPage] });
+    const entities = processLayer6({ artifacts: [splitPage] });
+    const relationships = processLayer7({
+      entities: entities.data,
+      artifacts: [splitPage],
+    });
+    const timeline = processLayer9({
+      entities: entities.data,
+      artifacts: [splitPage],
+    });
+
+    expect(
+      chronology.data.some((event) => event.event_text === firstNarrative),
+    ).toBe(true);
+    expect(
+      relationships.data.some(
+        (relationship) => relationship.type === "facility_resident",
+      ),
+    ).toBe(true);
+    expect(
+      timeline.data.some(
+        (transition) => transition.to_state === "facility_hospitalization",
+      ),
+    ).toBe(true);
+  });
+
   it("does not turn repeated CMS headers or footers into semantic facts", () => {
     const headerOnly = artifactFromPages("cms-2567:repeated-furniture.pdf", [
       `${cmsHeader("11/21/2024", "Page 1 of 2")}\n${cmsFooter("Page 1 of 2")}`,
@@ -281,6 +332,62 @@ function artifactFromPages(
     extraction_status: "success",
     parser_version: "cms-2567-regression-fixture-v1",
     rule_version: "cms-2567-regression-fixture-v1",
+    parser_rule_manifest_hash: "a".repeat(64),
+  };
+}
+
+function artifactFromParagraphPages(
+  artifactKey: string,
+  pages: string[][],
+): ParsedArtifact {
+  const paragraphSeparator = "\n\n";
+  const pageSeparator = "\n\f\n";
+  const pageTexts = pages.map((paragraphs) =>
+    paragraphs.join(paragraphSeparator),
+  );
+  const extractedText = pageTexts.join(pageSeparator);
+  const spans: TextSpan[] = [];
+  let pageOffset = 0;
+
+  for (let pageIndex = 0; pageIndex < pages.length; pageIndex++) {
+    let paragraphOffset = pageOffset;
+    for (
+      let paragraphIndex = 0;
+      paragraphIndex < pages[pageIndex].length;
+      paragraphIndex++
+    ) {
+      const paragraph = pages[pageIndex][paragraphIndex];
+      spans.push({
+        text: paragraph,
+        start_offset: paragraphOffset,
+        end_offset: paragraphOffset + paragraph.length,
+        page: pageIndex + 1,
+        paragraph_index: paragraphIndex,
+        source_artifact_key: artifactKey,
+      });
+      paragraphOffset +=
+        paragraph.length +
+        (paragraphIndex < pages[pageIndex].length - 1
+          ? paragraphSeparator.length
+          : 0);
+    }
+    pageOffset +=
+      pageTexts[pageIndex].length +
+      (pageIndex < pages.length - 1 ? pageSeparator.length : 0);
+  }
+
+  return {
+    artifact_key: artifactKey,
+    raw_bytes_sha256: createHash("sha256").update(extractedText).digest("hex"),
+    declared_mime_type: "application/pdf",
+    detected_mime_type: "application/pdf",
+    mime_type: "application/pdf",
+    byte_size: Buffer.byteLength(extractedText),
+    extracted_text: extractedText,
+    spans,
+    extraction_status: "success",
+    parser_version: "cms-2567-paragraph-regression-fixture-v1",
+    rule_version: "cms-2567-paragraph-regression-fixture-v1",
     parser_rule_manifest_hash: "a".repeat(64),
   };
 }

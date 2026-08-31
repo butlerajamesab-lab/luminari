@@ -112,9 +112,7 @@ export function isCmsHeaderOrFooterText(text: string): boolean {
 
 function cmsNarrativeSpans(artifact: ParsedArtifact): TextSpan[] {
   const output: TextSpan[] = [];
-  for (const page of [...artifact.spans].sort(
-    (a, b) => a.start_offset - b.start_offset,
-  )) {
+  for (const page of groupCmsSpansByPage(artifact)) {
     const startMatch = /Residents Affected\s*-\s*[^\n]*/gi;
     let lastStart: RegExpExecArray | null = null;
     let current: RegExpExecArray | null;
@@ -185,6 +183,53 @@ function cmsNarrativeSpans(artifact: ParsedArtifact): TextSpan[] {
     }
   }
   return output;
+}
+
+/**
+ * pdf-parse exposes a page as several paragraph spans whenever the source has
+ * blank lines. CMS narrative headings and their body therefore do not
+ * necessarily share one span. Rebuild a page-local view from the original
+ * extracted text so the narrative boundary carries across those spans while
+ * every emitted sentence keeps its exact artifact offset.
+ */
+function groupCmsSpansByPage(artifact: ParsedArtifact): TextSpan[] {
+  const sorted = [...artifact.spans].sort(
+    (left, right) => left.start_offset - right.start_offset,
+  );
+  const pageGroups = new Map<number, TextSpan[]>();
+  const unpaged: TextSpan[] = [];
+
+  for (const span of sorted) {
+    if (span.page === undefined) {
+      // Non-PDF parsers do not provide a reliable page boundary. Keep those
+      // spans isolated rather than accidentally carrying CMS state across an
+      // entire document.
+      unpaged.push(span);
+      continue;
+    }
+    const group = pageGroups.get(span.page) ?? [];
+    group.push(span);
+    pageGroups.set(span.page, group);
+  }
+
+  const pages = [...pageGroups.entries()].map(([pageNumber, spans]) => {
+    const start = Math.min(...spans.map((span) => span.start_offset));
+    const end = Math.max(...spans.map((span) => span.end_offset));
+    return {
+      text: artifact.extracted_text.substring(start, end),
+      start_offset: start,
+      end_offset: end,
+      page: pageNumber,
+      paragraph_index: Math.min(
+        ...spans.map((span) => span.paragraph_index ?? 0),
+      ),
+      source_artifact_key: artifact.artifact_key,
+    } satisfies TextSpan;
+  });
+
+  return [...pages, ...unpaged].sort(
+    (left, right) => left.start_offset - right.start_offset,
+  );
 }
 
 function splitSpanIntoSentences(span: TextSpan): TextSpan[] {
