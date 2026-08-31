@@ -3,7 +3,7 @@
   "project_ref": "kjzytnzkkdpdxtqtjlew",
   "preview_ref": "fqmgxoicohsvntceslxu",
   "line_endings": "LF",
-  "migration_count": 132,
+  "migration_count": 139,
   "migrations": [
     {
       "version": "20260701000000",
@@ -796,6 +796,48 @@
       "file": "20260831072211_v2514_generation_authorization.sql",
       "sha256": "62c84fe61785980da251511a522726da1f9a0b1fdd4a3b19ed8a15c693f3af2b",
       "bytes": 28429
+    },
+    {
+      "version": "20260831074134",
+      "file": "20260831074134_v2514_preview_24_campaign_timeout_preflight.sql",
+      "sha256": "2e3f2f684b1441857466882a6912bd945f21783e0af2400930189786ca517e2a",
+      "bytes": 5807
+    },
+    {
+      "version": "20260831075045",
+      "file": "20260831075045_v2515_preview_25_convergence_candidate.sql",
+      "sha256": "05acf12965a6c254fcbcb527688864594c030bfb030b5d580e703071d29395bf",
+      "bytes": 186907
+    },
+    {
+      "version": "20260831075047",
+      "file": "20260831075047_v2515_preview_26_generation_authorization.sql",
+      "sha256": "6c99d0557e5cd65d612eab291b678e885933fb0b860b424189f1729d13148e88",
+      "bytes": 26145
+    },
+    {
+      "version": "20260831081006",
+      "file": "20260831081006_v2516_preview_27_convergence_candidate.sql",
+      "sha256": "74ec29e20946f83694bd3b5e3fab708ee9be051f0bf0c4fb21ecb162df510961",
+      "bytes": 187339
+    },
+    {
+      "version": "20260831081012",
+      "file": "20260831081012_v2516_preview_28_generation_authorization.sql",
+      "sha256": "ebb19b324ca8b094d80f9d1d51729f613984ae391e31c94e7be19816cca905e9",
+      "bytes": 26434
+    },
+    {
+      "version": "20260831081539",
+      "file": "20260831081539_v2517_preview_29_convergence_candidate.sql",
+      "sha256": "1d03b1ed79a198ea7883e1aee7719bfe242beefd1216cf75b6f8fde135fada2f",
+      "bytes": 187963
+    },
+    {
+      "version": "20260831081541",
+      "file": "20260831081541_v2517_preview_30_generation_authorization.sql",
+      "sha256": "89c19ed3432aff92a7d1ff06f167db03e06963b84ca57f4736fd5c726f7c9fd8",
+      "bytes": 26710
     }
   ]
 }
