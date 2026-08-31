@@ -23,7 +23,7 @@ import { prism_verification_router } from "../routes/prism-verification-router";
 import { civic_genome_export_router } from "../routes/civic-genome-export-router";
 import { invite_redemption_router } from "../routes/invite-redemption-router";
 import { registerUploadRoute } from "../upload-route";
-import { registerExportRoute } from "../export-route";
+import { registerExportRoute } from "../export-production-route";
 import { registerExecutorRoutes } from "../executor-routes";
 import { loadPipelineRegistry } from "../pipeline-resolver";
 import { loadLensRegistry } from "../lens-engine";

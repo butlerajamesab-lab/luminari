@@ -3,28 +3,38 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const state = vi.hoisted(() => ({
   getSnapshot: vi.fn(),
+  getLatestSnapshot: vi.fn(),
+  listDocuments: vi.fn(),
+  listEntities: vi.fn(),
+  listEvents: vi.fn(),
+  listRelationshipsEnriched: vi.fn(),
+  getCaseStats: vi.fn(),
+  getGovernedEntityRolesForDocument: vi.fn(),
+  readLayer: vi.fn(),
 }));
 
 vi.mock("./db", () => ({
-  db: {},
   getSnapshot: state.getSnapshot,
+  getLatestSnapshot: state.getLatestSnapshot,
+  listDocuments: state.listDocuments,
+  listEntities: state.listEntities,
+  listEvents: state.listEvents,
+  listRelationshipsEnriched: state.listRelationshipsEnriched,
+  getCaseStats: state.getCaseStats,
+  getGovernedEntityRolesForDocument: state.getGovernedEntityRolesForDocument,
 }));
 
-vi.mock("./phase2-db", () => ({
-  getPhase2ExportData: vi.fn(),
-}));
-
-vi.mock("./crypto-signing", () => ({
-  getPublicKeyPem: vi.fn(),
-  getPublicKeyFingerprint: vi.fn(),
+vi.mock("./intake-case-layer-reader", () => ({
+  read_canonical_case_layer_outputs: state.readLayer,
 }));
 
 import {
   EXPORT_TYPE_HEADER,
   ExportRequestError,
+  loadCurrentCaseExportData,
   setExportDownloadHeaders,
   streamJsonExport,
-} from "./export-streaming";
+} from "./export-current";
 
 function responseDouble() {
   const headers = new Map<string, string>();
@@ -45,6 +55,18 @@ function responseDouble() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  state.getLatestSnapshot.mockResolvedValue(null);
+  state.listDocuments.mockResolvedValue([]);
+  state.listEntities.mockResolvedValue([]);
+  state.listEvents.mockResolvedValue([]);
+  state.listRelationshipsEnriched.mockResolvedValue([]);
+  state.getCaseStats.mockResolvedValue({
+    documents: 0,
+    entities: 0,
+    events: 0,
+  });
+  state.getGovernedEntityRolesForDocument.mockResolvedValue([]);
+  state.readLayer.mockResolvedValue({ state: "not_projected", outputs: [] });
 });
 
 describe("sovereign export response contract", () => {
@@ -92,5 +114,54 @@ describe("sovereign export response contract", () => {
     expect(state.getSnapshot).toHaveBeenCalledWith(72);
     expect(res.write).not.toHaveBeenCalled();
     expect(headers.get(EXPORT_TYPE_HEADER.toLowerCase())).toBe("json-dump");
+  });
+
+  it("exports governed projections without private storage locations", async () => {
+    state.listDocuments.mockResolvedValue([
+      {
+        id: 7,
+        caseId: 44,
+        filename: "inspection.pdf",
+        s3Key: "private/key",
+        s3Url: "https://private",
+        sha256Hash: "abc",
+      },
+    ]);
+    state.listEntities.mockResolvedValue([
+      {
+        id: 8,
+        caseId: 44,
+        name: "Caroline Kline Galland Home",
+        type: "organization",
+        canonical_entity_id: "entity-1",
+      },
+    ]);
+    state.listEvents.mockResolvedValue([
+      {
+        id: "event-1",
+        caseId: 44,
+        title: "Inspection observed",
+        canonical_source_artifact_key: "artifact:abc",
+        canonical_source_span_offset: 12,
+      },
+    ]);
+
+    const exported = await loadCurrentCaseExportData(
+      { id: 44, name: "Inspection case", userId: 9 },
+      44,
+    );
+
+    expect(exported.case).not.toHaveProperty("userId");
+    expect(exported.sources[0]).toMatchObject({
+      filename: "inspection.pdf",
+      sha256_hash: "abc",
+    });
+    expect(exported.sources[0]).not.toHaveProperty("s3Key");
+    expect(exported.sources[0]).not.toHaveProperty("s3Url");
+    expect(exported.entities).toHaveLength(1);
+    expect(exported.chronology).toHaveLength(1);
+    expect(exported.projection_scope.authority).toBe(
+      "sealed_current_universal_intake_projection",
+    );
   });
 });

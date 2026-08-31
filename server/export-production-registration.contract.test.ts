@@ -19,7 +19,7 @@ describe("production export route registration", () => {
     expect(packageJson.scripts.build).toContain("server/_core/index.ts");
 
     const importIndex = productionEntry.indexOf(
-      'import { registerExportRoute } from "../export-route";',
+      'import { registerExportRoute } from "../export-production-route";',
     );
     const registrationIndex = productionEntry.indexOf(
       "registerExportRoute(app);",

@@ -1,7 +1,10 @@
 import type { Express, Request, Response } from "express";
 import { sdk } from "./_core/sdk";
 import * as dbHelpers from "./db";
-import { clearExportDownloadHeaders, ExportRequestError, streamJsonExport, streamHtmlBundle } from "./export-streaming";
+import { db } from "./db";
+import { documents, entities, quotes, claims, findings, events, relationships, signalFlags, documentCorrelations } from "../drizzle/schema";
+import { eq } from "drizzle-orm";
+import { streamJsonExport, streamHtmlBundle } from "./export-streaming";
 import { ENGINE_VERSION, ENGINE_MODEL_IDENTIFIER, ENGINE_DETERMINISM_PARAMS } from "../shared/const";
 
 function escapeHtml(text: string): string {
@@ -11,17 +14,6 @@ function escapeHtml(text: string): string {
 function formatDate(ts: number | null | undefined): string {
   if (!ts) return "N/A";
   return new Date(ts).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
-}
-
-export function parsePositiveIntegerQuery(value: unknown): number | null {
-  if (typeof value !== "string" || !/^[1-9]\d*$/.test(value)) return null;
-  const parsed = Number(value);
-  return Number.isSafeInteger(parsed) ? parsed : null;
-}
-
-export function parseOptionalSnapshotId(value: unknown): number | null {
-  if (value === undefined || value === "0") return 0;
-  return parsePositiveIntegerQuery(value);
 }
 
 const baseStyles = `
@@ -66,19 +58,26 @@ export function registerExportRoute(app: Express) {
         return;
       }
 
-      const caseId = parsePositiveIntegerQuery(req.query.caseId);
-      if (caseId === null) {
+      const caseId = parseInt(req.query.caseId as string);
+      if (!caseId || isNaN(caseId)) {
         res.status(400).json({ error: "caseId is required" });
         return;
       }
 
       // Verify ownership or collaborator access (read-only is sufficient for export)
-      let caseData;
       try {
-        caseData = await dbHelpers.verifyCaseOwnership(caseId, user.id);
+        await dbHelpers.verifyCaseOwnership(caseId, user.id);
       } catch {
         res.status(403).json({ error: "Access denied" });
         return;
+      }
+      // Fetch case data — owner path uses getCase(userId), collaborator path uses direct fetch
+      let caseData = await dbHelpers.getCase(caseId, user.id);
+      if (!caseData) {
+        // Collaborator: getCase filters by userId, so fetch directly since verifyCaseOwnership passed
+        const [c] = await db.select().from((await import("../drizzle/schema")).cases).where(eq((await import("../drizzle/schema")).cases.id, caseId));
+        if (!c) { res.status(404).json({ error: "Case not found" }); return; }
+        caseData = c as any;
       }
 
       const exportType = req.params.type;
@@ -102,11 +101,7 @@ export function registerExportRoute(app: Express) {
           return;
         case "json-dump": {
           const includeText = req.query.includeText === "true";
-          const snapshotId = parseOptionalSnapshotId(req.query.snapshotId);
-          if (snapshotId === null) {
-            res.status(400).json({ error: "snapshotId must be a positive integer" });
-            return;
-          }
+          const snapshotId = req.query.snapshotId ? parseInt(req.query.snapshotId as string, 10) : 0;
           await streamJsonExport(res, caseData, caseId, { includeTextContent: includeText, snapshotId });
           return;
         }
@@ -119,16 +114,7 @@ export function registerExportRoute(app: Express) {
       res.send(html);
     } catch (err: any) {
       console.error("[Export] Error:", err);
-      if (res.headersSent) {
-        res.destroy(err instanceof Error ? err : undefined);
-        return;
-      }
-      clearExportDownloadHeaders(res);
-      if (err instanceof ExportRequestError) {
-        res.status(err.statusCode).json({ error: err.message });
-        return;
-      }
-      res.status(500).json({ error: "Export failed" });
+      res.status(500).json({ error: err.message || "Export failed" });
     }
   });
 }

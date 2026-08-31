@@ -7,6 +7,8 @@ const state = vi.hoisted(() => ({
   verifyCaseOwnership: vi.fn(),
   streamJsonExport: vi.fn(),
   streamHtmlBundle: vi.fn(),
+  loadCurrentCaseExportData: vi.fn(),
+  renderCaseReport: vi.fn(),
 }));
 
 vi.mock("./_core/sdk", () => ({
@@ -17,7 +19,7 @@ vi.mock("./db", () => ({
   verifyCaseOwnership: state.verifyCaseOwnership,
 }));
 
-vi.mock("./export-streaming", () => {
+vi.mock("./export-current", () => {
   class ExportRequestError extends Error {
     constructor(
       message: string,
@@ -36,6 +38,8 @@ vi.mock("./export-streaming", () => {
     },
     streamJsonExport: state.streamJsonExport,
     streamHtmlBundle: state.streamHtmlBundle,
+    loadCurrentCaseExportData: state.loadCurrentCaseExportData,
+    renderCaseReport: state.renderCaseReport,
   };
 });
 
@@ -43,7 +47,7 @@ import {
   parseOptionalSnapshotId,
   parsePositiveIntegerQuery,
   registerExportRoute,
-} from "./export-route";
+} from "./export-production-route";
 
 async function withExportServer(
   run: (baseUrl: string) => Promise<void>,

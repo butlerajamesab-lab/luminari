@@ -28,36 +28,6 @@ import { ArtifactCollector, buildManifest, buildHashIndex, buildExportMeta, cano
 import { getPublicKeyPem, getPublicKeyFingerprint } from "./crypto-signing";
 import { getPhase2ExportData } from "./phase2-db";
 
-export type SovereignExportType = "full-bundle" | "json-dump";
-
-export const EXPORT_TYPE_HEADER = "X-Luminari-Export-Type";
-
-export class ExportRequestError extends Error {
-  constructor(message: string, readonly statusCode: number) {
-    super(message);
-    this.name = "ExportRequestError";
-  }
-}
-
-function exportFilename(caseName: unknown, suffix: string): string {
-  const safeCaseName = String(caseName ?? "").replace(/[^a-zA-Z0-9]/g, "_").replace(/^_+|_+$/g, "") || "Case";
-  return `Luminari_${safeCaseName}_${suffix}`;
-}
-
-export function setExportDownloadHeaders(res: Response, exportType: SovereignExportType, caseName: unknown): void {
-  const isJson = exportType === "json-dump";
-  res.setHeader("Content-Type", isJson ? "application/json; charset=utf-8" : "text/html; charset=utf-8");
-  res.setHeader("Content-Disposition", `attachment; filename="${exportFilename(caseName, isJson ? "Data.json" : "Bundle.html")}"`);
-  res.setHeader(EXPORT_TYPE_HEADER, exportType);
-  res.setHeader("Cache-Control", "private, no-store, max-age=0");
-  res.setHeader("X-Content-Type-Options", "nosniff");
-}
-
-export function clearExportDownloadHeaders(res: Response): void {
-  res.removeHeader("Content-Disposition");
-  res.removeHeader(EXPORT_TYPE_HEADER);
-}
-
 // ─── Batch Loaders (eliminate N+1) ───
 
 /**
@@ -347,7 +317,10 @@ export async function streamJsonExport(
   const includeText = options.includeTextContent ?? false;
   const filterSnapshotId = options.snapshotId ?? 0; // 0 = all snapshots
 
-  setExportDownloadHeaders(res, "json-dump", caseData.name);
+  // Set headers for streaming JSON
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.setHeader("Content-Disposition", `attachment; filename="Luminari_${caseData.name.replace(/[^a-zA-Z0-9]/g, "_")}_Data.json"`);
+  res.setHeader("Transfer-Encoding", "chunked");
 
   // Gate 8: Artifact collector for manifest + hash index
   const collector = new ArtifactCollector();
@@ -358,9 +331,6 @@ export async function streamJsonExport(
   let latestSnapshot;
   if (filterSnapshotId) {
     latestSnapshot = await dbHelpers.getSnapshot(filterSnapshotId);
-    if (!latestSnapshot || latestSnapshot.caseId !== caseId) {
-      throw new ExportRequestError("Snapshot not found for this case", 404);
-    }
   } else {
     // Fallback: resolve latest snapshot for backward compat, but mark in export metadata
     latestSnapshot = await dbHelpers.getLatestSnapshot(caseId);
@@ -630,7 +600,9 @@ export async function streamHtmlBundle(
   bundleScript: string,
   escapeHtml: (s: string) => string
 ): Promise<void> {
-  setExportDownloadHeaders(res, "full-bundle", caseData.name);
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.setHeader("Content-Disposition", `attachment; filename="Luminari_${caseData.name.replace(/[^a-zA-Z0-9]/g, "_")}_Bundle.html"`);
+  res.setHeader("Transfer-Encoding", "chunked");
 
   const stats = await dbHelpers.getCaseStats(caseId);
   const now = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" });
