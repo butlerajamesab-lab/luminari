@@ -1,0 +1,27 @@
+name: Rosetta migration ledger recovery
+
+on:
+  push:
+    branches:
+      - repair/rosetta-v2513-ledger-reconstruction-20260830
+    paths:
+      - "supabase/config.toml"
+      - "supabase/migrations/**"
+      - "supabase/functions/**"
+      - "supabase/rosetta-migration-ledger.json"
+      - "scripts/verify-rosetta-migration-branch.mjs"
+      - ".github/workflows/rosetta-migration-ledger-recovery.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-ledger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Rosetta deployment branch
+        uses: actions/checkout@v7
+
+      - name: Verify project binding and complete migration bodies
+        run: node scripts/verify-rosetta-migration-branch.mjs

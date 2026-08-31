@@ -1,0 +1,1 @@
+-- Source-control replay version for the Rosetta structural correctness v2 producer. Production implementation is recorded under ledger version 20260805192921; this alias preserves exact repository parity. select 1

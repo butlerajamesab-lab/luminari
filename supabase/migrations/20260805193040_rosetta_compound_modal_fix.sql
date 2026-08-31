@@ -1,0 +1,1 @@
+-- Source-control replay version for Rosetta compound modal preservation. Production implementation is recorded under ledger version 20260805193114; this alias preserves exact repository parity. select 1

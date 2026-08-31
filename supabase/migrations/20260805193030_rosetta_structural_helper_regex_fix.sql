@@ -1,0 +1,1 @@
+-- Source-control replay version for the Rosetta v2 PostgreSQL regex correction. Production implementation is recorded under ledger version 20260805193025; this alias preserves exact repository parity. select 1

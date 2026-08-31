@@ -1,4 +1,0 @@
--- CivicMap V2 currently loads normalized_civic_resource in loadResources().
--- Next required runtime mutation:
--- replace normalized_civic_resource with v_unified_civic_infrastructure
--- and hydrate by node_type.

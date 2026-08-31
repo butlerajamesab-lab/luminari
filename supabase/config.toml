@@ -2,7 +2,9 @@
 # https://supabase.com/docs/guides/local-development/cli/config
 # A string used to distinguish different Supabase projects on the same host. Defaults to the
 # working directory name when running `supabase init`.
-project_id = "luminari-repo"
+# This deployment branch is bound only to the standalone ROSETTA project.
+# Lighthouse uses the main branch and its own migration ledger.
+project_id = "rosetta-repo"
 
 [api]
 enabled = true
@@ -406,3 +408,9 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 # declarative_schema_path = "./database"
 # JSON string passed through to pg-delta SQL formatting.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":80,\"commaStyle\":\"trailing\"}"
+
+[functions.rosetta-migration-41019-export-temp]
+verify_jwt = true
+
+[functions.rosetta-v259-v2510-migration-export-temp]
+verify_jwt = true

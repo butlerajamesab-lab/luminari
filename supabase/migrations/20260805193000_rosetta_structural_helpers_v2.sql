@@ -1,0 +1,1 @@
+-- Source-control replay version for Rosetta structural helpers v2. Production implementation is recorded under ledger version 20260805192808; this alias preserves exact repository parity. select 1

@@ -1,0 +1,801 @@
+{
+  "project": "ROSETTA",
+  "project_ref": "kjzytnzkkdpdxtqtjlew",
+  "preview_ref": "fqmgxoicohsvntceslxu",
+  "line_endings": "LF",
+  "migration_count": 132,
+  "migrations": [
+    {
+      "version": "20260701000000",
+      "file": "20260701000000_rosetta_preledger_schema.sql",
+      "sha256": "2f449a6ffc186dab7a43c0a0dcf1ad17e262a8f54990c591a9564d597f3f1ac4",
+      "bytes": 60845
+    },
+    {
+      "version": "20260723124236",
+      "file": "20260723124236_civic_genome_law_view_v1.sql",
+      "sha256": "c5aff722566b8a7163f349ffc66b86121dc49f08f879764a01198ab8b58cf418",
+      "bytes": 5899
+    },
+    {
+      "version": "20260731181408",
+      "file": "20260731181408_rosetta_deterministic_extraction_activation.sql",
+      "sha256": "e444c8bc633738b418543fa0fe4e42f4653844a4d8acf1c9cea275088cea8f36",
+      "bytes": 51774
+    },
+    {
+      "version": "20260731182107",
+      "file": "20260731182107_rosetta_extraction_pgcrypto_search_path.sql",
+      "sha256": "9d3d4b07f4554664cb21a26fe3775af6b4d7e579cb88b42089d140b2978895ef",
+      "bytes": 186
+    },
+    {
+      "version": "20260731182123",
+      "file": "20260731182123_rosetta_source_ingest_chunk_receipts.sql",
+      "sha256": "455e8190be37ea3d88cff4def7b7da9e0058d92fc68c16d85d855df9d3e77066",
+      "bytes": 1150
+    },
+    {
+      "version": "20260731182442",
+      "file": "20260731182442_rosetta_http_source_retrieval_support.sql",
+      "sha256": "0cd95a11077b60e529f32add77b8dd9f4f53967528f31752de8a6bf3e5fc763a",
+      "bytes": 74
+    },
+    {
+      "version": "20260731182528",
+      "file": "20260731182528_rosetta_extraction_postgres_regex_bounds.sql",
+      "sha256": "13c9adca8a7ecabe992737494abd593815b20eb022487940d657e38c1bf173fa",
+      "bytes": 1030
+    },
+    {
+      "version": "20260731182605",
+      "file": "20260731182605_rosetta_extraction_jsonb_coverage_count.sql",
+      "sha256": "54d0a3735075ee5ca9bb7aac676ba20c82c8bb4d745247749f268ab5db6faf5e",
+      "bytes": 1007
+    },
+    {
+      "version": "20260731183042",
+      "file": "20260731183042_rosetta_source_ingest_chunk_hash_guard.sql",
+      "sha256": "41b6ba584cde6b03f77613f9129aed79092a3446e7463320640d620ab3937f4e",
+      "bytes": 1979
+    },
+    {
+      "version": "20260731183134",
+      "file": "20260731183134_rosetta_security_boundary_hardening.sql",
+      "sha256": "cb32ae0e5b871bc2faf073a5a302f82d01656e15223314c905da1a992fc6b36f",
+      "bytes": 1118
+    },
+    {
+      "version": "20260804054832",
+      "file": "20260804054832_rosetta_template_table_quarantine.sql",
+      "sha256": "ec6a6666f4700e261b9c35f8781b62ecf7593751b345f4eedff43c43fa5d9601",
+      "bytes": 1451
+    },
+    {
+      "version": "20260804091229",
+      "file": "20260804091229_rosetta_extraction_statement_timeout.sql",
+      "sha256": "c4ac444d114b8fe8d1ae0517e2419cc66e22286c94e828a9802576638aed0a0f",
+      "bytes": 520
+    },
+    {
+      "version": "20260805192808",
+      "file": "20260805192808_rosetta_structural_helpers_v2.sql",
+      "sha256": "c5e29d406feb2ca550e228ce66c5d225a868c1dedadd35fb1b63d56c614c1f3c",
+      "bytes": 14079
+    },
+    {
+      "version": "20260805192921",
+      "file": "20260805192921_rosetta_structural_correctness_v2.sql",
+      "sha256": "bd69f09c933f02e8c22058f116a12f0bdecf020eb5e003836ac63aef5981a595",
+      "bytes": 17860
+    },
+    {
+      "version": "20260805193000",
+      "file": "20260805193000_rosetta_structural_helpers_v2.sql",
+      "sha256": "ae2d03c040fa508fdf629b224574b2e591857f3fe1e5a0b831b24a3fae45eb29",
+      "bytes": 198
+    },
+    {
+      "version": "20260805193025",
+      "file": "20260805193025_rosetta_structural_helper_regex_fix.sql",
+      "sha256": "d0f8cf6ee8044d5950729f3746dfdda817c1bb6f37ae055bba0d39f051131e22",
+      "bytes": 2108
+    },
+    {
+      "version": "20260805193030",
+      "file": "20260805193030_rosetta_structural_helper_regex_fix.sql",
+      "sha256": "6fb37ec2a973a33a0ca21792e6528d8d2ce1c20f9accc3e19cfddb7239a2d7bc",
+      "bytes": 211
+    },
+    {
+      "version": "20260805193040",
+      "file": "20260805193040_rosetta_compound_modal_fix.sql",
+      "sha256": "838e3bbfe8e98deab51814a0b14efd29858e4b0bfa969684e12db61ff92dfd49",
+      "bytes": 204
+    },
+    {
+      "version": "20260805193100",
+      "file": "20260805193100_rosetta_structural_correctness_v2.sql",
+      "sha256": "bd0827d30a2cc05e7bcfc3f211bd1f62269bc6110d14e9a79527567b480784b1",
+      "bytes": 215
+    },
+    {
+      "version": "20260805193114",
+      "file": "20260805193114_rosetta_compound_modal_fix.sql",
+      "sha256": "8f8fad664d09856755b4c00d1aee9ab44936ac8e283dfc7e4b7a4f06b18d091a",
+      "bytes": 1063
+    },
+    {
+      "version": "20260805202000",
+      "file": "20260805202000_rosetta_override_section_export_v21.sql",
+      "sha256": "babab941fd037563e37bafdb49ae1b0aaa23f35cef34b1a0c4feedb9fee48666",
+      "bytes": 5919
+    },
+    {
+      "version": "20260805202100",
+      "file": "20260805202100_rosetta_generation_scoped_ids_v21.sql",
+      "sha256": "e3c6c163ae8d6ffda1522dbb6823c3f9ae38bd2459f26c028ceb8940841e6bbd",
+      "bytes": 2571
+    },
+    {
+      "version": "20260805213346",
+      "file": "20260805213346_rosetta_amendment_operations_v22_helpers.sql",
+      "sha256": "1ec6ee30f0c87a4d10f9abcb34aba45c73554eefe2591a7a7e9c7d357959af2d",
+      "bytes": 17662
+    },
+    {
+      "version": "20260805213409",
+      "file": "20260805213409_rosetta_amendment_operations_v22_activation.sql",
+      "sha256": "7db3a4c1d18867b8c36604b409483f9f23f6ef7a842f96247508b8889661e23b",
+      "bytes": 4351
+    },
+    {
+      "version": "20260805213456",
+      "file": "20260805213456_rosetta_amendment_operations_v22_pgcrypto.sql",
+      "sha256": "f4a09fdd37c428045219b59b07605c3e297b19dce4b4bfe5ca7614b145d2ed4d",
+      "bytes": 485
+    },
+    {
+      "version": "20260805213702",
+      "file": "20260805213702_rosetta_amendment_operations_v22_manifest_status_v2.sql",
+      "sha256": "53ab57ebcb157a0ed7fd4004c8222f2a05631b7a767fe29330daa11e962bfd88",
+      "bytes": 807
+    },
+    {
+      "version": "20260805213743",
+      "file": "20260805213743_rosetta_amendment_operations_v22_run_status.sql",
+      "sha256": "b07a60ed4f1ed1a9e50796ca7494225d88df2d62b8543ea3b1369e39ddff39b1",
+      "bytes": 887
+    },
+    {
+      "version": "20260805223010",
+      "file": "20260805223010_rosetta_amendment_operations_v22_helpers.sql",
+      "sha256": "89d011a80a6e8bbafd8cb8ad2b13d122b72bfe02bd2186bd2f691c2c8ea51a2a",
+      "bytes": 215
+    },
+    {
+      "version": "20260805223015",
+      "file": "20260805223015_rosetta_amendment_operations_v22_pgcrypto.sql",
+      "sha256": "a81d849a8607305a1b39b200a7d47cc6ff39fb21dd4161df29d2a4dc7f42f29e",
+      "bytes": 216
+    },
+    {
+      "version": "20260805223017",
+      "file": "20260805223017_rosetta_amendment_operations_v22_manifest_status_v2.sql",
+      "sha256": "7b645cf5afd53118b4b569b08b429a5af9e5b12a2afd4c0775d9077cfaee9ecb",
+      "bytes": 223
+    },
+    {
+      "version": "20260805223018",
+      "file": "20260805223018_rosetta_amendment_operations_v22_run_status.sql",
+      "sha256": "9a08c501e5c738e65e66f05d6530cf481e95545ac01d9c343f4f8e1908683787",
+      "bytes": 218
+    },
+    {
+      "version": "20260805223020",
+      "file": "20260805223020_rosetta_amendment_operations_v22_activation.sql",
+      "sha256": "f40ec827c74f70ff001578118b46ff001f8e75211f42934e3a9085856991ccce",
+      "bytes": 218
+    },
+    {
+      "version": "20260805230919",
+      "file": "20260805230919_rosetta_whole_document_amendments_v23.sql",
+      "sha256": "db169123cda7baa5dcc0765a388dafa76452404037461a96b6be4a3d8bffbe3c",
+      "bytes": 12259
+    },
+    {
+      "version": "20260805231536",
+      "file": "20260805231536_rosetta_v23_exact_operation_offsets.sql",
+      "sha256": "f79e8402b93a92a065224236545badaf6ecd71abd97f85198f0840c9e29b2e97",
+      "bytes": 2661
+    },
+    {
+      "version": "20260807005959",
+      "file": "20260807005959_rosetta_multi_law_proof_read_model_v1.sql",
+      "sha256": "7574cc56c16b409516bf74ae8ef46bd60e5b4e5bb763fd735053f016ff6b9dcc",
+      "bytes": 4763
+    },
+    {
+      "version": "20260807011033",
+      "file": "20260807011033_rosetta_multi_law_proof_public_read_grant_v1.sql",
+      "sha256": "a5b97e0cd6dd4bcb4626599374c58d8a5140aec454a77f140f2bb573449c27ca",
+      "bytes": 547
+    },
+    {
+      "version": "20260812172127",
+      "file": "20260812172127_rosetta_semantic_clause_shadow_v1.sql",
+      "sha256": "1c216162229770e5eed3a3f09c89917ec22275502d973d805323d5bf5b0e3396",
+      "bytes": 3996
+    },
+    {
+      "version": "20260812175543",
+      "file": "20260812175543_rosetta_semantic_shadow_completion_v1.sql",
+      "sha256": "4a7f6232a8a7cb2f7a4b4c306917dfc045d239c843a86314c7bf6af95832ea04",
+      "bytes": 1151
+    },
+    {
+      "version": "20260812204451",
+      "file": "20260812204451_rosetta_semantic_shadow_disposition_v1.sql",
+      "sha256": "4e2f0b2333dc246f7d5ea2e6c1cdad67c064df0919b258e6a94068225b34d871",
+      "bytes": 6123
+    },
+    {
+      "version": "20260812210046",
+      "file": "20260812210046_rosetta_semantic_shadow_consumption_validation_gate_v1.sql",
+      "sha256": "79957c12c7ef617ace0dab1f20cf2c7657d84bd50a272eb351afea70a7d00840",
+      "bytes": 1150
+    },
+    {
+      "version": "20260815041013",
+      "file": "20260815041013_rosetta_structural_correctness_reconciliation.sql",
+      "sha256": "c99c2a126839919f1c098c040c60e82156f2547e2304a1854d59056212e0fb9a",
+      "bytes": 20769
+    },
+    {
+      "version": "20260815041426",
+      "file": "20260815041426_rosetta_structural_correctness_reconciliation_hardening.sql",
+      "sha256": "c0bb0a27c19ee5db3ca742d80247b5b4b98f23425571e0fee18baf6e9bda7b4a",
+      "bytes": 1211
+    },
+    {
+      "version": "20260815110525",
+      "file": "20260815110525_rosetta_amendment_disposition_v24.sql",
+      "sha256": "ba0c671c31e5d2fa9d977c6a7d01b3a6e51b195a23c45debd75819df499774b2",
+      "bytes": 15862
+    },
+    {
+      "version": "20260815175914",
+      "file": "20260815175914_rosetta_fail_closed_publication_gate.sql",
+      "sha256": "7c642a60e09b60ff9045f90991e7ecfb65af6eac7d96035ded10a9ea9f4b8f72",
+      "bytes": 7327
+    },
+    {
+      "version": "20260815180521",
+      "file": "20260815180521_rosetta_blocking_repair_gate_refinement.sql",
+      "sha256": "d78968c0d7234ca9fc60fb1f184f7c11d28976a4d210c7b707c69c3c6866a12b",
+      "bytes": 7000
+    },
+    {
+      "version": "20260815185355",
+      "file": "20260815185355_rosetta_source_projection_v25.sql",
+      "sha256": "3af4b91806ec4f243133b5e6e28f66f15965d6d3c465379d75604daecf6ef217",
+      "bytes": 11583
+    },
+    {
+      "version": "20260815185432",
+      "file": "20260815185432_rosetta_source_projection_v25_regex_hardening.sql",
+      "sha256": "8b4d5c5e1593e5930f996ca1b89a9e9cd3a9271aff649671385861f68f519e4b",
+      "bytes": 1638
+    },
+    {
+      "version": "20260815185507",
+      "file": "20260815185507_rosetta_source_projection_v25_actor_hardening.sql",
+      "sha256": "b20112f7bfd17484f2299b32bfdef227e65d88f9cadd69f4ffe4a0d51f936eac",
+      "bytes": 1136
+    },
+    {
+      "version": "20260815185628",
+      "file": "20260815185628_rosetta_source_projection_v25_citation_hardening.sql",
+      "sha256": "b154d09e958c856dc75b50e2fe66e647614dd84e754231e62722e0914afd2fa5",
+      "bytes": 2511
+    },
+    {
+      "version": "20260815185819",
+      "file": "20260815185819_rosetta_object_source_spans_v25.sql",
+      "sha256": "ff5c6b52a7cd2e1910b6b98bbf9d1745441db89ffd02c810db31559d8bbe2815",
+      "bytes": 8091
+    },
+    {
+      "version": "20260815190032",
+      "file": "20260815190032_rosetta_object_span_export_v25.sql",
+      "sha256": "4ee66b132e8ceced7460a5accb30f69158d1f6ff9cfb92b5ed82d493bcd00c58",
+      "bytes": 4126
+    },
+    {
+      "version": "20260815190216",
+      "file": "20260815190216_rosetta_structural_validation_v25.sql",
+      "sha256": "353022f6fedb9debfca198cdaf0e453aec66d0840c1ee00ac3225b9aff016680",
+      "bytes": 16706
+    },
+    {
+      "version": "20260815190540",
+      "file": "20260815190540_rosetta_decomposition_v25.sql",
+      "sha256": "3cd86a0a6b99fa570ecada9b4d05b49225bb887da184e064daed87ad561ac91e",
+      "bytes": 17942
+    },
+    {
+      "version": "20260815190921",
+      "file": "20260815190921_rosetta_accountability_semantics_v251.sql",
+      "sha256": "129b3867ac0b82904f4c3ee6cb3dc7752857fc1b5c2249e78d443615210e87a1",
+      "bytes": 9693
+    },
+    {
+      "version": "20260815191010",
+      "file": "20260815191010_rosetta_decomposition_v251.sql",
+      "sha256": "8ea423603060dcbc045ba1405c6991e88a470fdcc7d741f5601046d3942dc4a7",
+      "bytes": 9397
+    },
+    {
+      "version": "20260815191224",
+      "file": "20260815191224_rosetta_decomposition_v252.sql",
+      "sha256": "984a610a452f47b8aeb2401b341a427c10ce016beac77bd01efccda992dc98ea",
+      "bytes": 11309
+    },
+    {
+      "version": "20260815191829",
+      "file": "20260815191829_rosetta_clause_occurrence_v253.sql",
+      "sha256": "ee867e4f968f9e258b6a3322787c35e18c3d71f2a5faa72344d95c32156ef731",
+      "bytes": 9299
+    },
+    {
+      "version": "20260815191927",
+      "file": "20260815191927_rosetta_decomposition_v253.sql",
+      "sha256": "05d1eee718596b7a04be635564b46d63ede7842095e9974eec791630aca606c1",
+      "bytes": 9118
+    },
+    {
+      "version": "20260815192054",
+      "file": "20260815192054_rosetta_clause_occurrence_legacy_backfill_v253.sql",
+      "sha256": "137d5ed03cf8a6069110a562fe35ffcd0d6e5b45261d2bd7ef8498cc6cdf11f8",
+      "bytes": 1975
+    },
+    {
+      "version": "20260815192457",
+      "file": "20260815192457_rosetta_v253_read_security.sql",
+      "sha256": "c6b445a4505523501196770e006b35a04778260106be4350abbeafa2df23c795",
+      "bytes": 1247
+    },
+    {
+      "version": "20260815192955",
+      "file": "20260815192955_rosetta_legacy_reconciliation_retirement_v253.sql",
+      "sha256": "5a86eaf8c278dfd8f0a8dab7d2edf683c841981bf5f18469f424d8b18b696b95",
+      "bytes": 336
+    },
+    {
+      "version": "20260815193204",
+      "file": "20260815193204_rosetta_current_proof_gate_v253.sql",
+      "sha256": "e13fec493d15c4a3746bdc46828e1e633749e239a8802b79610577eb6a7d1adb",
+      "bytes": 4834
+    },
+    {
+      "version": "20260815194040",
+      "file": "20260815194040_rosetta_current_generation_replay_v1.sql",
+      "sha256": "d191b1eea252956f914fd6f4744ce80923130aea43d9455d56f721a1fa8e285a",
+      "bytes": 4214
+    },
+    {
+      "version": "20260815194431",
+      "file": "20260815194431_rosetta_current_generation_replay_receipt_v1.sql",
+      "sha256": "8b8ce7e8b32aba889c96ea43ecc45d82ffce491675112d5f2ca2b514f53623e4",
+      "bytes": 3615
+    },
+    {
+      "version": "20260815195251",
+      "file": "20260815195251_rosetta_current_handoff_gate_v1.sql",
+      "sha256": "809475a41612295513a5fd15566f6c89546f6b060e2ecee91509d61a0cb03c28",
+      "bytes": 4142
+    },
+    {
+      "version": "20260815215203",
+      "file": "20260815215203_rosetta_operator_read_boundary_probe.sql",
+      "sha256": "2ef60e17292797b53a15bec4dc593e1bd2b275f1110561dcf78a0084709c6bce",
+      "bytes": 917
+    },
+    {
+      "version": "20260815220016",
+      "file": "20260815220016_rosetta_backend_capability_v1.sql",
+      "sha256": "42106279124a64a2dc2baa61336bc7b0f9be9a3d08084d5bad66393927c9dc8b",
+      "bytes": 8775
+    },
+    {
+      "version": "20260815220737",
+      "file": "20260815220737_rosetta_backend_capability_private_wrappers.sql",
+      "sha256": "a1fad1824911a80269b65a3ab72304c8a4709f47a6ccd2616d4db9110d76dafe",
+      "bytes": 3475
+    },
+    {
+      "version": "20260815221610",
+      "file": "20260815221610_rosetta_current_proof_summary_v1.sql",
+      "sha256": "5213550b7687cb0d90e2a76cf55e76a7e8a5cfa418b87f95f3f3fbaca30fbbc5",
+      "bytes": 7683
+    },
+    {
+      "version": "20260816000309",
+      "file": "20260816000309_rosetta_explainable_run_detail_v1.sql",
+      "sha256": "12d7317a2867181b74b01a3123c797a1cb407289aff99b7b47aa4a024f20363b",
+      "bytes": 3066
+    },
+    {
+      "version": "20260816000537",
+      "file": "20260816000537_rosetta_run_proof_membership_v1.sql",
+      "sha256": "0af035179f2edfc6025d4d5c0978b7b0e00321a121ec813707e34a56a7e439da",
+      "bytes": 1619
+    },
+    {
+      "version": "20260816004318",
+      "file": "20260816004318_rosetta_current_generation_registry_v1.sql",
+      "sha256": "32a1bfd552340627036b8cffb470795ef7127554bc57e7120d184773e31d0b93",
+      "bytes": 11167
+    },
+    {
+      "version": "20260816004644",
+      "file": "20260816004644_rosetta_decomposition_v254_candidate.sql",
+      "sha256": "d13cfafb551bc4df1a092980db1d3775b5d6114844a613610ad28aa4bb792adb",
+      "bytes": 13518
+    },
+    {
+      "version": "20260816004719",
+      "file": "20260816004719_rosetta_v254_candidate_manifest_enable.sql",
+      "sha256": "702461dfa1b4085c4f308b939a51f0df0c45c6f13f01d87a64909726e1f6a06c",
+      "bytes": 519
+    },
+    {
+      "version": "20260816034909",
+      "file": "20260816034909_rosetta_current_proof_set_read_model_v2.sql",
+      "sha256": "b3f16edd9876b8f0e7cfc703b6811a01d1814fe73da1b1e58ae3a0696dc15b76",
+      "bytes": 8429
+    },
+    {
+      "version": "20260816035411",
+      "file": "20260816035411_rosetta_current_proof_latest_fail_closed_v2.sql",
+      "sha256": "e710acbd063124fbf3e88cce34f69760fae39591743aa08508b6d24fe92f2976",
+      "bytes": 2516
+    },
+    {
+      "version": "20260816035632",
+      "file": "20260816035632_rosetta_structural_representation_v1.sql",
+      "sha256": "2e1bd4c4b68e7eb9ccd7dc17e345e008fe37024790394b93f66f1d0b1ab26fab",
+      "bytes": 6102
+    },
+    {
+      "version": "20260816041019",
+      "file": "20260816041019_rosetta_decomposition_v255_candidate.sql",
+      "sha256": "aa0b96b54416ec6e7ed7e064fc93739b1d7fb60c19f2d19fb6fc1b0ff6bd6f72",
+      "bytes": 28997
+    },
+    {
+      "version": "20260816041137",
+      "file": "20260816041137_rosetta_v255_amendment_coverage_block_scope.sql",
+      "sha256": "683cc38af4f4848211b5a22d8416685f767f8de89931b2c4725765f75041550e",
+      "bytes": 6004
+    },
+    {
+      "version": "20260816041257",
+      "file": "20260816041257_rosetta_v255_freeze_rejected_generation.sql",
+      "sha256": "ef590ff8c60ce6f676fa91efa89e24c2765a9c928e55d27c2bce47b06e4e7e41",
+      "bytes": 1304
+    },
+    {
+      "version": "20260816041337",
+      "file": "20260816041337_rosetta_decomposition_v256_candidate.sql",
+      "sha256": "76e5498f520bc9e99b491de6d462ba8c7bae4f3dd4894a69422c62b57f76d8f2",
+      "bytes": 6614
+    },
+    {
+      "version": "20260816041435",
+      "file": "20260816041435_rosetta_v256_freeze_receipt_diagnostic.sql",
+      "sha256": "9e1f4aeaea029b0143924271ed93452dec8f43f0c67684202aee5213beb893ab",
+      "bytes": 719
+    },
+    {
+      "version": "20260816041512",
+      "file": "20260816041512_rosetta_decomposition_v257_candidate.sql",
+      "sha256": "e81e0a12a6cd3553daef4d2b4b3c36a241861947397940f8bb6acdc960825ef3",
+      "bytes": 8702
+    },
+    {
+      "version": "20260816042200",
+      "file": "20260816042200_rosetta_v254_freeze_diagnostic_generation.sql",
+      "sha256": "3501a057870f3516cd76f8cd11cdd703d4e5ac13677a6b1e5d9557417d9c352e",
+      "bytes": 709
+    },
+    {
+      "version": "20260816044519",
+      "file": "20260816044519_rosetta_v257_freeze_replay_diagnostic.sql",
+      "sha256": "57283e90eb66704e150a72a84184f98a3cc59bd6c9990da6a488e216dc9cf18d",
+      "bytes": 776
+    },
+    {
+      "version": "20260816153711",
+      "file": "20260816153711_rosetta_decomposition_v258_candidate.sql",
+      "sha256": "9c5040bafcc1504f4a0161ddcbc30b5cafc911bf6dbb8dd490ac5f1b5bf3bd86",
+      "bytes": 10090
+    },
+    {
+      "version": "20260816162537",
+      "file": "20260816162537_rosetta_promote_v258.sql",
+      "sha256": "d626af28bee190031ca1e120dfe8ce65200b978865d9b401af89a86789b04950",
+      "bytes": 7478
+    },
+    {
+      "version": "20260816164353",
+      "file": "20260816164353_rosetta_decomposition_v259_candidate.sql",
+      "sha256": "0b96a814b502a0ba7302c3f6d424359a0ae2ed81964e8fcc96f2cd1b5f03f799",
+      "bytes": 17088
+    },
+    {
+      "version": "20260816164540",
+      "file": "20260816164540_rosetta_decomposition_v2510_candidate.sql",
+      "sha256": "df0a1617cae91d3f840ab82ac7fc2a16884fe62dc16e8fe33f0c263723a54819",
+      "bytes": 6848
+    },
+    {
+      "version": "20260818111502",
+      "file": "20260818111502_rosetta_semantic_worker_capability_v1.sql",
+      "sha256": "91aa83520fdda2f554d0083f242e3244c6dc8e18def58a8c59a7c600d2167819",
+      "bytes": 14234
+    },
+    {
+      "version": "20260818114448",
+      "file": "20260818114448_rosetta_semantic_temporal_rule_v1.sql",
+      "sha256": "2fdf8951fe2b08896b75254935d1e90d354e79ad681d2843e8391e41c55593a1",
+      "bytes": 961
+    },
+    {
+      "version": "20260818201352",
+      "file": "20260818201352_rosetta_workflow_step_dashboard_count_index.sql",
+      "sha256": "cee2a06ccbe17da62efd795913c2c45f8bd5a2ae21b16530d64682e9bcbe83e1",
+      "bytes": 361
+    },
+    {
+      "version": "20260819043111",
+      "file": "20260819043111_rosetta_promote_v2510.sql",
+      "sha256": "2f08511c44aa2c8c2351667bd7229dbedf54bbb122c287a2f3764864dee32e8a",
+      "bytes": 6156
+    },
+    {
+      "version": "20260819090110",
+      "file": "20260819090110_rosetta_decomposition_v2511_marked_reprint_candidate.sql",
+      "sha256": "b07dc18dc92a1b5bfd5250a57eb0f76549ad468e929ba7c71758f17b70ab537a",
+      "bytes": 9853
+    },
+    {
+      "version": "20260819092722",
+      "file": "20260819092722_rosetta_promote_v2511.sql",
+      "sha256": "83f30fae20dd07c9172bad40a0edf3a06fe4c8f7e6919e24dc2dd8252b29ad3c",
+      "bytes": 6462
+    },
+    {
+      "version": "20260819195803",
+      "file": "20260819195803_rosetta_v2511_rpc_timeout_window.sql",
+      "sha256": "5a73ff028fae0eaa00bc772c7b4263bae7935cd62d6a313340bdae3128e8f3da",
+      "bytes": 1888
+    },
+    {
+      "version": "20260820053934",
+      "file": "20260820053934_rosetta_decomposition_v2512_source_layout_candidate.sql",
+      "sha256": "d3b2bf6bb15defd691662faab3a9d2e2224a0fd257b0267a021e1f62eff885b0",
+      "bytes": 24924
+    },
+    {
+      "version": "20260822042601",
+      "file": "20260822042601_rosetta_v2512_self_check_alignment.sql",
+      "sha256": "cbad4e4a235ec3eb76feccbc5bfdb6c828f58a2e27d5c7b1f4cc8a48542cd646",
+      "bytes": 4050
+    },
+    {
+      "version": "20260822043914",
+      "file": "20260822043914_lock_down_rosetta_v2512_candidate_helpers.sql",
+      "sha256": "7b40a0a4e513e7a15bc70e3e53c8f9a79d74c8875e4da48e4da23b11cb9f5a9a",
+      "bytes": 3022
+    },
+    {
+      "version": "20260822044453",
+      "file": "20260822044453_reconcile_rosetta_v2512_candidate_helper_lockdown.sql",
+      "sha256": "cedfe893e7fe818a1d2bd0689b7f0b55e8c6408480fa148dfcd90c0781320586",
+      "bytes": 2618
+    },
+    {
+      "version": "20260824140916",
+      "file": "20260824140916_rosetta_current_proof_repair_antijoin_v1.sql",
+      "sha256": "4f1fcc8f1d6ba557b739773543273040d372e3883e0d171be8838b06fc74422b",
+      "bytes": 4541
+    },
+    {
+      "version": "20260824151024",
+      "file": "20260824151024_rosetta_run_lifecycle_summary_v1.sql",
+      "sha256": "42645af3b1aae4a9de8f7f47f68cb770b6848cb1483a079652805abf8e57644c",
+      "bytes": 4597
+    },
+    {
+      "version": "20260826082733",
+      "file": "20260826082733_terminal_rejection_classifier_and_oldest_docket_backlog_v1.sql",
+      "sha256": "094d9302ec67a7eca6e9d8f0dd504fc678cfa093d1305dfd65999b2e0dd1500f",
+      "bytes": 6237
+    },
+    {
+      "version": "20260826084312",
+      "file": "20260826084312_durable_source_content_registration_v1.sql",
+      "sha256": "baa46f9fd7a96807858a3aa2654422f3ecb21d2814296435e18c4bc3d984d7ec",
+      "bytes": 5791
+    },
+    {
+      "version": "20260829233334",
+      "file": "20260829233334_rosetta_current_proof_repair_antijoin_v1.sql",
+      "sha256": "4f1fcc8f1d6ba557b739773543273040d372e3883e0d171be8838b06fc74422b",
+      "bytes": 4541
+    },
+    {
+      "version": "20260829233741",
+      "file": "20260829233741_rosetta_run_lifecycle_summary_v1.sql",
+      "sha256": "366e0fb221ab741ffe068b5469e7e7067c37db55061c999baf0e261eee15a9a6",
+      "bytes": 4927
+    },
+    {
+      "version": "20260831033037",
+      "file": "20260831033037_v2513_live_01_durable_replay_attempts.sql",
+      "sha256": "d52e0f7799592a931bb3b2bb77b105ffa01347c74a5ff5f175f5a44037fb5ee5",
+      "bytes": 20178
+    },
+    {
+      "version": "20260831033040",
+      "file": "20260831033040_v2513_live_02_candidate_schema.sql",
+      "sha256": "2cc878f10e3dc8f54304c43694778afb03ba3d54918b351f1a1a82cdbf67ee94",
+      "bytes": 68631
+    },
+    {
+      "version": "20260831033043",
+      "file": "20260831033043_v2513_live_03_control_closure_2511.sql",
+      "sha256": "4b2d350853d06127d0f790efde06e933fef621b821fdf10ffed3541c3438d9c2",
+      "bytes": 147221
+    },
+    {
+      "version": "20260831033058",
+      "file": "20260831033058_v2513_live_04_lane_c1_measured_actor_bound.sql",
+      "sha256": "4aab6c8c8118e519ba89ffb727da2a52927a897945bee172085f5f4c4a1ae75c",
+      "bytes": 148720
+    },
+    {
+      "version": "20260831033101",
+      "file": "20260831033101_v2513_live_05_lane_c2_actor_source_corruption.sql",
+      "sha256": "cf64a30c08faa853e6f848b186427b839143460e6e9b20f93eb8012768f2072f",
+      "bytes": 149080
+    },
+    {
+      "version": "20260831033103",
+      "file": "20260831033103_v2513_live_06_lane_c3_projection_contract.sql",
+      "sha256": "26a9e00040ef967926072cdd48d2a9b62f440b592f4b5410c612fda82894f71a",
+      "bytes": 154643
+    },
+    {
+      "version": "20260831033106",
+      "file": "20260831033106_v2513_live_07_lane_c4_occurrence_aware_spans.sql",
+      "sha256": "307a5c89be37feccb8f27e782189136b275e0b11586021821bcceb8e62d0726c",
+      "bytes": 161939
+    },
+    {
+      "version": "20260831033119",
+      "file": "20260831033119_v2513_live_08_lane_c5_clause_decomposition.sql",
+      "sha256": "943cfd6e4999061604de243ee796217b2befc568b9f3887449b2dbc1e9592fe0",
+      "bytes": 151110
+    },
+    {
+      "version": "20260831033121",
+      "file": "20260831033121_v2513_live_09_lane_c6_modal_retyping_revalidation.sql",
+      "sha256": "2dc1636f6713a000a7a04ad9ad4a7e9fe36177150185b2e1ce2348b9bf51b6a7",
+      "bytes": 149538
+    },
+    {
+      "version": "20260831033124",
+      "file": "20260831033124_v2513_live_10_lane_c7_charset_receipt_gate.sql",
+      "sha256": "06a519be82d0d3b323b5a1d5479dafc1390d11054074cbc0fec661a9d0bdf322",
+      "bytes": 150445
+    },
+    {
+      "version": "20260831033126",
+      "file": "20260831033126_v2513_live_17_convergence_candidate_2513.sql",
+      "sha256": "54583401e12f038d6ced130d7b8dbf504264de7a0968a0e1c7f37a1e415080e8",
+      "bytes": 184230
+    },
+    {
+      "version": "20260831033136",
+      "file": "20260831033136_v2513_live_11_sealed_corpus_manifest.sql",
+      "sha256": "084f58edfedd2bf01889ecf7d8d57f6398982edd230da5958c7b15656373b707",
+      "bytes": 16517
+    },
+    {
+      "version": "20260831033138",
+      "file": "20260831033138_v2513_live_12_replay_runner.sql",
+      "sha256": "e055bd56ab76b47a06497a03715bcc73f7e9f92079cbe54feee2245c79c43e5b",
+      "bytes": 22615
+    },
+    {
+      "version": "20260831033140",
+      "file": "20260831033140_v2513_live_13_object_diff.sql",
+      "sha256": "17547a7a4849af4153bdf1de9ab94dafc8bb27a0689131c054c375f2983f82be",
+      "bytes": 16708
+    },
+    {
+      "version": "20260831033142",
+      "file": "20260831033142_v2513_live_14_promotion_gates.sql",
+      "sha256": "cbdbe0038e9e425eaead3eceae73ac98ba4f524e4d5595a0268c1f8613dbc337",
+      "bytes": 17696
+    },
+    {
+      "version": "20260831033200",
+      "file": "20260831033200_v2513_live_15_guarded_promotion.sql",
+      "sha256": "777268cf6cfeeebb24737b855d19d4a18fdbb1d7b13cfc4c5b553509f4e7fd4f",
+      "bytes": 3402
+    },
+    {
+      "version": "20260831033203",
+      "file": "20260831033203_v2513_live_16_guarded_cutover_catchup.sql",
+      "sha256": "874f7ec960ea2cb5e59dc1714d21c3cbbcd5f181c3d7c891edaa91e9bc158734",
+      "bytes": 2595
+    },
+    {
+      "version": "20260831033205",
+      "file": "20260831033205_v2513_live_18_candidate_security_lockdown.sql",
+      "sha256": "d15b9b954ba9a00cd43f63973be8d58c71b9622f251f6c91211ee57f83c6011c",
+      "bytes": 4582
+    },
+    {
+      "version": "20260831055951",
+      "file": "20260831055951_v2513_preview_19_full_corpus_replay_contract.sql",
+      "sha256": "ae62eb135a220feefc6dba28bcf55242e2f32570a6d0a8225682a3d06cfb725e",
+      "bytes": 24501
+    },
+    {
+      "version": "20260831060100",
+      "file": "20260831060100_v2513_preview_19b_pin_closure_trigger_search_path.sql",
+      "sha256": "9213fbe682075547927c708f42e23da5df61759508d20e50d220379a706c904a",
+      "bytes": 389
+    },
+    {
+      "version": "20260831060355",
+      "file": "20260831060355_v2513_preview_19c_full_replay_batches.sql",
+      "sha256": "933a1e99846ab3541b19bcdb1106f094c1e8bb2ca9f60a3438c68cd51ef8fb44",
+      "bytes": 36244
+    },
+    {
+      "version": "20260831062615",
+      "file": "20260831062615_v2513_preview_20_resumable_replay_campaign.sql",
+      "sha256": "84fefd53e6ec68ff4e4f756fe52a19b05f15bacb4601bf8c43efba121f092e4d",
+      "bytes": 20607
+    },
+    {
+      "version": "20260831064245",
+      "file": "20260831064245_v2513_preview_21_full_new_parser_authorization.sql",
+      "sha256": "4d7caeca09aa62fd2235f20775062538d2b486dcc28b074d551c44c6293dc526",
+      "bytes": 23387
+    },
+    {
+      "version": "20260831070512",
+      "file": "20260831070512_v2513_preview_22_projection_composition_and_safe_locator.sql",
+      "sha256": "8cb073f2ed1409264f7b032a7e0ddc720ffb2681bd57991eff74548cda8f86d5",
+      "bytes": 12439
+    },
+    {
+      "version": "20260831072206",
+      "file": "20260831072206_v2514_superseding_candidate.sql",
+      "sha256": "b30f19a41974b127e900c735ee152035ea590cfe4cfe980d4532a2f489ab22cf",
+      "bytes": 186355
+    },
+    {
+      "version": "20260831072211",
+      "file": "20260831072211_v2514_generation_authorization.sql",
+      "sha256": "62c84fe61785980da251511a522726da1f9a0b1fdd4a3b19ed8a15c693f3af2b",
+      "bytes": 28429
+    }
+  ]
+}
