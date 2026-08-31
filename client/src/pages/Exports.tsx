@@ -7,6 +7,20 @@ import { FileText, Users, Clock, Network, Loader2, ExternalLink, Printer, Downlo
 import { useState, useRef, useCallback } from "react";
 import { toast } from "sonner";
 
+export type SovereignExportType = "full-bundle" | "json-dump";
+
+const EXPORT_TYPE_HEADER = "X-Luminari-Export-Type";
+
+export function validateExportDownloadResponse(response: Pick<Response, "headers">, exportType: SovereignExportType): void {
+  const expectedContentType = exportType === "json-dump" ? "application/json" : "text/html";
+  const actualExportType = response.headers.get(EXPORT_TYPE_HEADER);
+  const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
+  const disposition = response.headers.get("content-disposition")?.toLowerCase() ?? "";
+  if (actualExportType !== exportType || !contentType.startsWith(expectedContentType) || !disposition.startsWith("attachment;")) {
+    throw new Error("The server returned the application page instead of a case export. Refresh and try again.");
+  }
+}
+
 export default function Exports() {
   const { currentCaseId, currentCase } = useCase();
   const [, setLocation] = useLocation();
@@ -60,12 +74,15 @@ export default function Exports() {
     }
   }, [currentCaseId]);
 
-  const handleDownload = useCallback(async (exportType: string, filename: string) => {
+  const handleDownload = useCallback(async (exportType: SovereignExportType, filename: string) => {
     if (!currentCaseId) return;
     setGenerating(exportType);
     try {
       const url = `/api/export/${exportType}?caseId=${currentCaseId}`;
-      const response = await fetch(url, { credentials: "same-origin" });
+      const response = await fetch(url, {
+        credentials: "same-origin",
+        headers: { Accept: exportType === "json-dump" ? "application/json" : "text/html" },
+      });
 
       if (!response.ok) {
         const errText = await response.text();
@@ -77,6 +94,7 @@ export default function Exports() {
         throw new Error(errMsg);
       }
 
+      validateExportDownloadResponse(response, exportType);
       const blob = await response.blob();
       const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");

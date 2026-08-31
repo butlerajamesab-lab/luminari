@@ -67,6 +67,7 @@ import {
   processLayer14,
   computeLayer14ExecutionRuleManifestHash,
 } from './engines/intake-spine/layer-14-action_paths';
+import { assertDerivedSemanticQuality } from './engines/intake-spine/derived-semantic-quality';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const SHA256_RE = /^[0-9a-f]{64}$/;
@@ -525,6 +526,20 @@ export async function execute_intake_spine_session(
   const parser_refs = source_receipts.map(dependency_ref);
 
   const l4 = processLayer4({ artifacts: parsed_artifacts });
+  const l6 = processLayer6({ artifacts: parsed_artifacts });
+  const l7 = processLayer7({ entities: l6.data, artifacts: parsed_artifacts });
+  const l9 = processLayer9({ entities: l6.data, artifacts: parsed_artifacts });
+
+  // Preservation (Layers 1-3) is independently receipt-bound. Derived
+  // semantics fail closed as one unit before any derived layer is persisted.
+  assertDerivedSemanticQuality({
+    artifacts: parsed_artifacts,
+    chronology: l4.data,
+    entities: l6.data,
+    relationships: l7.data,
+    state_transitions: l9.data,
+  });
+
   const l4Persisted = await persist_execution_layer({
     session_id: session.intake_session_id,
     result: l4,
@@ -536,7 +551,6 @@ export async function execute_intake_spine_session(
     dependency_key: 'chronology_reconstruction',
   });
 
-  const l6 = processLayer6({ artifacts: parsed_artifacts });
   const l6Persisted = await persist_execution_layer({
     session_id: session.intake_session_id,
     result: l6,
@@ -548,7 +562,6 @@ export async function execute_intake_spine_session(
     dependency_key: 'entity_registry',
   });
 
-  const l7 = processLayer7({ entities: l6.data, artifacts: parsed_artifacts });
   const l7Persisted = await persist_execution_layer({
     session_id: session.intake_session_id,
     result: l7,
@@ -563,7 +576,6 @@ export async function execute_intake_spine_session(
     dependency_key: 'relationship_graph',
   });
 
-  const l9 = processLayer9({ entities: l6.data, artifacts: parsed_artifacts });
   const l9Persisted = await persist_execution_layer({
     session_id: session.intake_session_id,
     result: l9,
@@ -891,4 +903,3 @@ function text_or_undefined(value: unknown): string | undefined {
 function unique_sorted(values: string[]): string[] {
   return Array.from(new Set(values.map(value => value.trim()).filter(Boolean))).sort();
 }
-

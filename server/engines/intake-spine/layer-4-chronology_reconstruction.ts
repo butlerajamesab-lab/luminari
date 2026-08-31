@@ -8,6 +8,13 @@ import {
   CANONICALIZATION_VERSION,
 } from './utils';
 import { ParsedArtifact } from './parsing-substrate';
+import {
+  classifySemanticArtifact,
+  cmsSurveyDate,
+  isDateOutsideCmsRecordRange,
+  isExcludedFromDominantSemanticLane,
+  semanticSpansForArtifact,
+} from './semantic-substrate';
 
 export interface ChronologyEvent {
   event_id: string;
@@ -24,8 +31,8 @@ export interface Layer4Input {
   artifacts: ParsedArtifact[];
 }
 
-export const LAYER_VERSION = '2.3.0';
-export const RULE_VERSION = '2.3.0';
+export const LAYER_VERSION = '2.5.0';
+export const RULE_VERSION = '2.5.0';
 
 type DateRule = {
   regex: { source: string; flags: string };
@@ -39,6 +46,7 @@ export const RULE_MANIFEST: {
   sentence_boundaries: string[];
   excluded_non_event_sentence_patterns: Array<{ source: string; flags: string; reason: string }>;
   unsupported_artifact_policy: 'unresolved_skip';
+  max_events_per_semantic_sentence: 1;
 } = {
   date_rules: [
     {
@@ -87,6 +95,7 @@ export const RULE_MANIFEST: {
     },
   ],
   unsupported_artifact_policy: 'unresolved_skip',
+  max_events_per_semantic_sentence: 1,
 };
 
 export const RULE_MANIFEST_HASH = computeRuleManifestHash(RULE_MANIFEST);
@@ -111,6 +120,7 @@ export function processLayer4(input: Layer4Input): EngineResult<ChronologyEvent[
   });
   const unresolved: UnresolvedDependency[] = [];
   const events: ChronologyEvent[] = [];
+  const seenEvents = new Set<string>();
 
   for (const artifact of artifacts) {
     if (artifact.extraction_status !== 'success') {
@@ -122,7 +132,24 @@ export function processLayer4(input: Layer4Input): EngineResult<ChronologyEvent[
       continue;
     }
 
-    for (const span of [...artifact.spans].sort((a, b) => a.start_offset - b.start_offset)) {
+    if (isExcludedFromDominantSemanticLane(artifact, artifacts)) {
+      unresolved.push({
+        field: `artifact:${artifact.artifact_key}:semantic_lane`,
+        reason: 'unresolved',
+        detail: 'Artifact preserved as evidence but excluded from the dominant CMS-2567 semantic lane',
+      });
+      continue;
+    }
+
+    const artifactClass = classifySemanticArtifact(artifact);
+    const surveyDate = artifactClass === 'cms_2567' ? cmsSurveyDate(artifact) : null;
+
+    for (const span of semanticSpansForArtifact(artifact, artifacts)) {
+      const candidates: Array<{
+        date: string;
+        precision: DateRule['precision'];
+        matchIndex: number;
+      }> = [];
       for (const rule of DATE_RULES) {
         rule.regex.lastIndex = 0;
         let match: RegExpExecArray | null;
@@ -136,31 +163,47 @@ export function processLayer4(input: Layer4Input): EngineResult<ChronologyEvent[
             });
             continue;
           }
-          const bounds = sentenceBounds(span.text, match.index);
-          const event_text = span.text.substring(bounds.start, bounds.end).trim();
-          if (isDeclaredNonEventSentence(event_text)) continue;
-          const actorMatch = ACTOR_SUBJECT_PATTERN.exec(event_text);
-          ACTOR_SUBJECT_PATTERN.lastIndex = 0;
-          const actor = actorMatch ? actorMatch[1] : null;
-          const source_span_offset = span.start_offset + match.index;
-
-          events.push({
-            event_id: `evt_${computeHash({
-              artifact_key: artifact.artifact_key,
-              source_span_offset,
-              date: normalizedDate,
-              event_text,
-            }).substring(0, 16)}`,
-            date: normalizedDate,
-            date_precision: rule.precision,
-            event_text,
-            actor,
-            source_artifact_key: artifact.artifact_key,
-            source_span_offset,
-            verification_status: 'document_stated',
-          });
+          if (artifactClass === 'cms_2567' && isDateOutsideCmsRecordRange(normalizedDate, surveyDate)) {
+            unresolved.push({
+              field: `chronology_date:${artifact.artifact_key}:${span.start_offset + match.index}`,
+              reason: 'unresolved',
+              detail: `CMS-2567 source date is outside the bounded survey record range and requires review: ${match[1]}`,
+            });
+            continue;
+          }
+          candidates.push({ date: normalizedDate, precision: rule.precision, matchIndex: match.index });
         }
       }
+
+      const primary = candidates.sort((a, b) => a.matchIndex - b.matchIndex || a.date.localeCompare(b.date))[0];
+      if (!primary) continue;
+      const bounds = sentenceBounds(span.text, primary.matchIndex);
+      const event_text = span.text.substring(bounds.start, bounds.end).trim();
+      if (isDeclaredNonEventSentence(event_text)) continue;
+      const actor = extractEventActor(event_text, artifactClass === 'cms_2567');
+      const source_span_offset = span.start_offset + primary.matchIndex;
+      const eventIdentity = computeHash({
+        artifact_key: artifact.artifact_key,
+        event_text: event_text.replace(/\s+/g, ' ').trim(),
+      });
+      if (seenEvents.has(eventIdentity)) continue;
+      seenEvents.add(eventIdentity);
+
+      events.push({
+        event_id: `evt_${computeHash({
+          artifact_key: artifact.artifact_key,
+          source_span_offset,
+          date: primary.date,
+          event_text,
+        }).substring(0, 16)}`,
+        date: primary.date,
+        date_precision: primary.precision,
+        event_text,
+        actor,
+        source_artifact_key: artifact.artifact_key,
+        source_span_offset,
+        verification_status: 'document_stated',
+      });
     }
   }
 
@@ -183,6 +226,17 @@ export function processLayer4(input: Layer4Input): EngineResult<ChronologyEvent[
     unresolved_dependencies: unresolved.sort((a, b) => a.field.localeCompare(b.field)),
     is_sealed: false,
   };
+}
+
+function extractEventActor(text: string, isCms2567: boolean): string | null {
+  if (isCms2567) {
+    const aliases = Array.from(text.matchAll(/\b(Resident\s+\d+[A-Za-z]?|Staff\s+[A-Z]{1,3})\b/g));
+    const staff = aliases.find(match => /^staff\b/i.test(match[1]));
+    return (staff || aliases[0])?.[1] || null;
+  }
+  const actorMatch = ACTOR_SUBJECT_PATTERN.exec(text);
+  ACTOR_SUBJECT_PATTERN.lastIndex = 0;
+  return actorMatch ? actorMatch[1] : null;
 }
 
 export function isDeclaredNonEventSentence(text: string): boolean {

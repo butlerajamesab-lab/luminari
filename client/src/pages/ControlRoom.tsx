@@ -243,7 +243,7 @@ function CaseCompletenessPanel({ caseId }: { caseId: number }) {
 function EvidenceSummaryPanel({ caseId }: { caseId: number }) {
   const [, navigate] = useLocation();
   const { data: stats, isLoading } = trpc.cases.stats.useQuery(
-    { case_id: caseId },
+    { caseId },
     { refetchInterval: 30000 }
   );
 
@@ -268,12 +268,12 @@ function EvidenceSummaryPanel({ caseId }: { caseId: number }) {
   }
 
   const metrics = [
-    { label: "Registered Sources", value: stats?.documents ?? 0, icon: FileText, path: "/documents" },
-    { label: "Entities", value: stats?.entities ?? 0, icon: Users, path: "/entities" },
-    { label: "Events", value: stats?.events ?? 0, icon: Clock, path: "/timeline" },
-    { label: "Verification Records", value: stats?.findings ?? 0, icon: Shield, path: "/findings" },
-    { label: "Structural Signals", value: stats?.signalFlags ?? 0, icon: AlertTriangle, path: "/viewfinder" },
-    { label: "Claim Candidates", value: stats?.claims ?? 0, icon: Scale, path: "/claim-elements" },
+    { label: "Registered Sources", value: stats?.derivedIntake.registeredSources ?? 0, icon: FileText, path: "/documents" },
+    { label: "Entities", value: stats?.derivedIntake.entities ?? 0, icon: Users, path: "/entities" },
+    { label: "Events", value: stats?.derivedIntake.events ?? 0, icon: Clock, path: "/timeline" },
+    { label: "Verification Records", value: stats?.verificationRecords ?? 0, icon: Shield, path: "/findings" },
+    { label: "Structural Signals", value: stats?.derivedIntake.structuralSignals ?? 0, icon: AlertTriangle, path: "/viewfinder" },
+    { label: "Claim Candidates", value: stats?.claimCandidates ?? 0, icon: Scale, path: "/claim-elements" },
   ];
 
   return (

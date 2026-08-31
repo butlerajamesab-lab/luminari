@@ -7,6 +7,11 @@ import {
   CANONICALIZATION_VERSION,
 } from './utils';
 import { ParsedArtifact } from './parsing-substrate';
+import {
+  classifySemanticArtifact,
+  isExcludedFromDominantSemanticLane,
+  semanticSpansForArtifact,
+} from './semantic-substrate';
 
 export type EntityType = 'person' | 'organization' | 'address' | 'contact' | 'unknown';
 
@@ -35,8 +40,8 @@ export interface Layer6Input {
   artifacts: ParsedArtifact[];
 }
 
-export const LAYER_VERSION = '2.3.0';
-export const RULE_VERSION = '2.3.0';
+export const LAYER_VERSION = '2.5.0';
+export const RULE_VERSION = '2.5.0';
 
 const ADDRESS_STATE_ABBREVIATIONS: Record<string, string> = {
   wa: 'washington', ca: 'california', or: 'oregon', ny: 'new york', tx: 'texas',
@@ -56,6 +61,20 @@ const PERSON_LEADING_STOPLIST = [
 ] as const;
 
 export const RULE_MANIFEST = {
+  cms_person_alias_pattern: {
+    source: '\\b(Resident\\s+\\d+[A-Za-z]?|Staff\\s+[A-Z]{1,3})\\b',
+    flags: 'g',
+  },
+  cms_provider_pattern: {
+    source: "\\b([A-Z][A-Za-z'’-]+(?:[ \\t]+[A-Z][A-Za-z'’-]+){1,6}[ \\t]+(?:Home|Hospital|Center|Centre|Clinic|Facility))\\b",
+    flags: 'g',
+  },
+  cms_address_pattern: {
+    source: "\\b(\\d{1,5}\\s+[A-Z][A-Za-z'’-]+(?:\\s+[A-Z][A-Za-z'’-]+){0,5}\\s+(?:Street|St|Avenue|Ave|Boulevard|Blvd|Drive|Dr|Road|Rd|Lane|Ln|Way|Court|Ct|Place|Pl|Circle|Cir)(?:\\s+(?:North|South|East|West|N|S|E|W))?)\\b",
+    flags: 'g',
+  },
+  cms_document_scoped_aliases: true,
+  mixed_corpus_billing_policy: 'preserve_without_semantic_projection',
   person_patterns: [
     { source: '\\b(Mr\\.|Mrs\\.|Ms\\.|Dr\\.|Prof\\.)\\s+([A-Z][a-z]+(?:\\s+[A-Z][a-z]+){1,3})\\b', flags: 'g' },
     { source: '\\b([A-Z][a-z]+\\s+[A-Z][a-z]+)\\b(?=\\s+(?:was|is|has been|filed|stated|reported|testified|claimed))', flags: 'g' },
@@ -102,6 +121,9 @@ const ORG_PATTERNS = RULE_MANIFEST.organization_patterns.map(regexFromManifest);
 const ADDRESS_PATTERN = regexFromManifest(RULE_MANIFEST.address_pattern);
 const PHONE_PATTERN = regexFromManifest(RULE_MANIFEST.phone_pattern);
 const EMAIL_PATTERN = regexFromManifest(RULE_MANIFEST.email_pattern);
+const CMS_PERSON_ALIAS_PATTERN = regexFromManifest(RULE_MANIFEST.cms_person_alias_pattern);
+const CMS_PROVIDER_PATTERN = regexFromManifest(RULE_MANIFEST.cms_provider_pattern);
+const CMS_ADDRESS_PATTERN = regexFromManifest(RULE_MANIFEST.cms_address_pattern);
 const ORGANIZATION_STOPLIST = new Set<string>(RULE_MANIFEST.organization_token_stoplist);
 const PERSON_PREFIX_STOPLIST = new Set<string>(RULE_MANIFEST.person_leading_stoplist);
 
@@ -129,54 +151,119 @@ export function processLayer6(input: Layer6Input): EngineResult<Entity[]> {
       });
       continue;
     }
-    const text = artifact.extracted_text;
 
-    for (const pattern of PERSON_PATTERNS) {
-      pattern.lastIndex = 0;
-      let match: RegExpExecArray | null;
-      while ((match = pattern.exec(text)) !== null) {
-        const rawName = match[0].replace(/^(Mr\.|Mrs\.|Ms\.|Dr\.|Prof\.)\s+/, '');
-        if (isExcludedPersonMention(rawName)) continue;
-        addEntity(entityMap, rawName, 'person', artifact.artifact_key, match.index);
+    if (isExcludedFromDominantSemanticLane(artifact, artifacts)) {
+      unresolved.push({
+        field: `artifact:${artifact.artifact_key}:semantic_lane`,
+        reason: 'unresolved',
+        detail: 'Artifact preserved as evidence but excluded from the dominant CMS-2567 semantic lane',
+      });
+      continue;
+    }
+
+    const artifactClass = classifySemanticArtifact(artifact);
+    const semanticSpans = semanticSpansForArtifact(artifact, artifacts);
+
+    if (artifactClass === 'cms_2567') {
+      for (const span of semanticSpans) {
+        CMS_PERSON_ALIAS_PATTERN.lastIndex = 0;
+        let aliasMatch: RegExpExecArray | null;
+        while ((aliasMatch = CMS_PERSON_ALIAS_PATTERN.exec(span.text)) !== null) {
+          addEntity(
+            entityMap,
+            aliasMatch[1],
+            'person',
+            artifact.artifact_key,
+            span.start_offset + aliasMatch.index,
+            true,
+          );
+        }
       }
-    }
 
-    for (const pattern of AMBIGUOUS_NAME_PATTERNS) {
-      pattern.lastIndex = 0;
-      let match: RegExpExecArray | null;
-      while ((match = pattern.exec(text)) !== null) {
-        const rawName = match[1];
-        if (!rawName || isExcludedPersonMention(rawName)) continue;
-        addEntity(entityMap, rawName, 'unknown', artifact.artifact_key, match.index + match[0].indexOf(rawName));
+      CMS_PROVIDER_PATTERN.lastIndex = 0;
+      let providerMatch: RegExpExecArray | null;
+      while ((providerMatch = CMS_PROVIDER_PATTERN.exec(artifact.extracted_text)) !== null) {
+        const rawName = providerMatch[1];
+        if (!rawName || isExcludedOrganizationToken(rawName)) continue;
+        addEntity(
+          entityMap,
+          rawName,
+          'organization',
+          artifact.artifact_key,
+          providerMatch.index + providerMatch[0].indexOf(rawName),
+        );
       }
-    }
 
-    for (const pattern of ORG_PATTERNS) {
-      pattern.lastIndex = 0;
-      let match: RegExpExecArray | null;
-      while ((match = pattern.exec(text)) !== null) {
-        const rawName = match[1];
-        if (!rawName || rawName.length <= 2 || isExcludedOrganizationToken(rawName)) continue;
-        addEntity(entityMap, rawName, 'organization', artifact.artifact_key, match.index);
+      CMS_ADDRESS_PATTERN.lastIndex = 0;
+      let cmsAddressMatch: RegExpExecArray | null;
+      while ((cmsAddressMatch = CMS_ADDRESS_PATTERN.exec(artifact.extracted_text)) !== null) {
+        addEntity(
+          entityMap,
+          cmsAddressMatch[1],
+          'address',
+          artifact.artifact_key,
+          cmsAddressMatch.index,
+        );
       }
+      continue;
     }
 
-    ADDRESS_PATTERN.lastIndex = 0;
-    let addressMatch: RegExpExecArray | null;
-    while ((addressMatch = ADDRESS_PATTERN.exec(text)) !== null) {
-      addEntity(entityMap, addressMatch[1], 'address', artifact.artifact_key, addressMatch.index);
-    }
+    for (const span of semanticSpans) {
+      const text = span.text;
 
-    PHONE_PATTERN.lastIndex = 0;
-    let phoneMatch: RegExpExecArray | null;
-    while ((phoneMatch = PHONE_PATTERN.exec(text)) !== null) {
-      addEntity(entityMap, phoneMatch[1], 'contact', artifact.artifact_key, phoneMatch.index);
-    }
+      for (const pattern of PERSON_PATTERNS) {
+        pattern.lastIndex = 0;
+        let match: RegExpExecArray | null;
+        while ((match = pattern.exec(text)) !== null) {
+          const rawName = match[0].replace(/^(Mr\.|Mrs\.|Ms\.|Dr\.|Prof\.)\s+/, '');
+          if (isExcludedPersonMention(rawName)) continue;
+          addEntity(entityMap, rawName, 'person', artifact.artifact_key, span.start_offset + match.index);
+        }
+      }
 
-    EMAIL_PATTERN.lastIndex = 0;
-    let emailMatch: RegExpExecArray | null;
-    while ((emailMatch = EMAIL_PATTERN.exec(text)) !== null) {
-      addEntity(entityMap, emailMatch[1], 'contact', artifact.artifact_key, emailMatch.index);
+      for (const pattern of AMBIGUOUS_NAME_PATTERNS) {
+        pattern.lastIndex = 0;
+        let match: RegExpExecArray | null;
+        while ((match = pattern.exec(text)) !== null) {
+          const rawName = match[1];
+          if (!rawName || isExcludedPersonMention(rawName)) continue;
+          addEntity(
+            entityMap,
+            rawName,
+            'unknown',
+            artifact.artifact_key,
+            span.start_offset + match.index + match[0].indexOf(rawName),
+          );
+        }
+      }
+
+      for (const pattern of ORG_PATTERNS) {
+        pattern.lastIndex = 0;
+        let match: RegExpExecArray | null;
+        while ((match = pattern.exec(text)) !== null) {
+          const rawName = match[1];
+          if (!rawName || rawName.length <= 2 || isExcludedOrganizationToken(rawName)) continue;
+          addEntity(entityMap, rawName, 'organization', artifact.artifact_key, span.start_offset + match.index);
+        }
+      }
+
+      ADDRESS_PATTERN.lastIndex = 0;
+      let addressMatch: RegExpExecArray | null;
+      while ((addressMatch = ADDRESS_PATTERN.exec(text)) !== null) {
+        addEntity(entityMap, addressMatch[1], 'address', artifact.artifact_key, span.start_offset + addressMatch.index);
+      }
+
+      PHONE_PATTERN.lastIndex = 0;
+      let phoneMatch: RegExpExecArray | null;
+      while ((phoneMatch = PHONE_PATTERN.exec(text)) !== null) {
+        addEntity(entityMap, phoneMatch[1], 'contact', artifact.artifact_key, span.start_offset + phoneMatch.index);
+      }
+
+      EMAIL_PATTERN.lastIndex = 0;
+      let emailMatch: RegExpExecArray | null;
+      while ((emailMatch = EMAIL_PATTERN.exec(text)) !== null) {
+        addEntity(entityMap, emailMatch[1], 'contact', artifact.artifact_key, span.start_offset + emailMatch.index);
+      }
     }
   }
 
@@ -247,10 +334,12 @@ function addEntity(
   type: EntityType,
   artifactKey: string,
   offset: number,
+  scopeToArtifact = false,
 ): void {
   const canonical = normalizeEntityName(rawName, type);
   if (canonical.length < 2) return;
-  const mapKey = `${type}|${canonical}`;
+  const scopeKey = scopeToArtifact ? artifactKey : null;
+  const mapKey = `${type}|${canonical}|${scopeKey || 'global'}`;
   const mention: EntityMention = { raw_text: rawName, artifact_key: artifactKey, span_offset: offset };
   const existing = map.get(mapKey);
   if (existing) {
@@ -258,7 +347,7 @@ function addEntity(
     return;
   }
   map.set(mapKey, {
-    entity_id: `ent_${computeHash({ type, canonical_name: canonical }).substring(0, 16)}`,
+    entity_id: `ent_${computeHash({ type, canonical_name: canonical, scope_key: scopeKey }).substring(0, 16)}`,
     type,
     canonical_name: canonical,
     raw_mentions: [mention],

@@ -6,8 +6,12 @@ import {
   UnresolvedDependency,
   CANONICALIZATION_VERSION,
 } from './utils';
-import { Entity } from './layer-6-entity_registry';
+import { Entity, EntityType } from './layer-6-entity_registry';
 import { ParsedArtifact } from './parsing-substrate';
+import {
+  isExcludedFromDominantSemanticLane,
+  semanticSpansForArtifact,
+} from './semantic-substrate';
 
 export type RelationshipType =
   | 'employer_employee'
@@ -46,8 +50,8 @@ export interface Layer7Input {
   artifacts: ParsedArtifact[];
 }
 
-export const LAYER_VERSION = '2.3.0';
-export const RULE_VERSION = '2.3.0';
+export const LAYER_VERSION = '2.5.0';
+export const RULE_VERSION = '2.5.0';
 
 type MarkerDirection = 'a_to_b' | 'b_to_a' | 'bidirectional';
 type MarkerManifestRow = {
@@ -62,6 +66,8 @@ export const RULE_MANIFEST: {
   markers: MarkerManifestRow[];
   role_map: Record<RelationshipType, { authority: string; subject: string }>;
   mention_binding: 'exact_extracted_mention_offsets_only';
+  marker_scope: 'between_mentions_in_one_sentence';
+  endpoint_type_policy: 'role_compatible';
 } = {
   context_chars: 32,
   first_marker_per_pair_per_span: true,
@@ -109,6 +115,8 @@ export const RULE_MANIFEST: {
     opposing_party: { authority: 'party', subject: 'party' },
   },
   mention_binding: 'exact_extracted_mention_offsets_only',
+  marker_scope: 'between_mentions_in_one_sentence',
+  endpoint_type_policy: 'role_compatible',
 };
 
 export const RULE_MANIFEST_HASH = computeRuleManifestHash(RULE_MANIFEST);
@@ -162,7 +170,16 @@ export function processLayer7(input: Layer7Input): EngineResult<Relationship[]> 
       continue;
     }
 
-    for (const span of [...artifact.spans].sort((a, b) => a.start_offset - b.start_offset)) {
+    if (isExcludedFromDominantSemanticLane(artifact, artifacts)) {
+      unresolved.push({
+        field: `artifact:${artifact.artifact_key}:semantic_lane`,
+        reason: 'unresolved',
+        detail: 'Artifact preserved as evidence but excluded from the dominant CMS-2567 semantic lane',
+      });
+      continue;
+    }
+
+    for (const span of semanticSpansForArtifact(artifact, artifacts)) {
       const spanText = span.text;
       const entitiesInSpan: Array<{ entity: Entity; position: number; mention_text: string }> = [];
 
@@ -190,16 +207,23 @@ export function processLayer7(input: Layer7Input): EngineResult<Relationship[]> 
         for (let j = i + 1; j < entitiesInSpan.length; j++) {
           const first = entitiesInSpan[i];
           const second = entitiesInSpan[j];
-          const contextStart = Math.max(0, first.position - RULE_MANIFEST.context_chars);
-          const contextEnd = Math.min(spanText.length, second.position + second.mention_text.length + RULE_MANIFEST.context_chars);
-          const contextText = spanText.substring(contextStart, contextEnd);
+          const markerSearchStart = first.position + first.mention_text.length;
+          const markerSearchEnd = second.position;
+          if (markerSearchEnd <= markerSearchStart) continue;
+          const markerText = spanText.substring(markerSearchStart, markerSearchEnd);
 
           for (const marker of RELATIONSHIP_MARKERS) {
             marker.pattern.lastIndex = 0;
-            const markerMatch = marker.pattern.exec(contextText);
+            const markerMatch = marker.pattern.exec(markerText);
             if (!markerMatch) continue;
 
             const textualRoles = getTextualRoles(marker.type, marker.direction);
+            if (
+              !isRelationshipRoleTypeCompatible(marker.type, textualRoles.role_first, first.entity.type)
+              || !isRelationshipRoleTypeCompatible(marker.type, textualRoles.role_second, second.entity.type)
+            ) {
+              continue;
+            }
             const canonical = canonicalizeRelationshipEndpoints(
               first.entity.entity_id,
               textualRoles.role_first,
@@ -214,7 +238,7 @@ export function processLayer7(input: Layer7Input): EngineResult<Relationship[]> 
               span_start_offset: span.start_offset,
               span_text: spanText,
               marker_text: markerMatch[0],
-              marker_offset: span.start_offset + contextStart + markerMatch.index,
+              marker_offset: span.start_offset + markerSearchStart + markerMatch.index,
             };
 
             const existing = relationshipMap.get(relationship_id);
@@ -257,6 +281,54 @@ export function processLayer7(input: Layer7Input): EngineResult<Relationship[]> 
     unresolved_dependencies: unresolved.sort((a, b) => a.field.localeCompare(b.field)),
     is_sealed: false,
   };
+}
+
+export function isRelationshipRoleTypeCompatible(
+  type: RelationshipType,
+  role: string,
+  entityType: EntityType,
+): boolean {
+  const personLike = entityType === 'person' || entityType === 'unknown';
+  const organizationLike = entityType === 'organization' || entityType === 'unknown';
+  const partyLike = personLike || organizationLike;
+
+  switch (type) {
+    case 'facility_resident':
+      return role === 'facility' ? entityType === 'organization' : personLike;
+    case 'caregiver_recipient':
+    case 'family':
+      return personLike;
+    case 'employer_employee':
+      return role === 'employer' ? organizationLike : personLike;
+    case 'agency_complainant':
+      return role === 'agency' ? organizationLike : personLike;
+    case 'insurer_insured':
+      return role === 'insurer' ? organizationLike : partyLike;
+    case 'landlord_tenant':
+    case 'creditor_debtor':
+    case 'legal_representative_client':
+    case 'authorized_representative_subject':
+    case 'opposing_party':
+      return partyLike;
+  }
+}
+
+export function isRelationshipTypeCompatible(
+  relationship: Relationship,
+  entities: Map<string, Entity> | Entity[],
+): boolean {
+  const entityMap = entities instanceof Map
+    ? entities
+    : new Map(entities.map(entity => [entity.entity_id, entity]));
+  const entityA = entityMap.get(relationship.entity_a_id);
+  const entityB = entityMap.get(relationship.entity_b_id);
+  return Boolean(
+    entityA
+    && entityB
+    && relationship.entity_a_id !== relationship.entity_b_id
+    && isRelationshipRoleTypeCompatible(relationship.type, relationship.role_a, entityA.type)
+    && isRelationshipRoleTypeCompatible(relationship.type, relationship.role_b, entityB.type),
+  );
 }
 
 function getTextualRoles(
