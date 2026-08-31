@@ -7,6 +7,7 @@ import { Upload as UploadIcon, FileText, CheckCircle, XCircle, X, Loader2, Alert
 import { useState, useCallback, useRef } from "react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import { getAuthenticatedRequestHeaders } from "@/lib/session-token";
 import {
   Dialog,
   DialogContent,
@@ -342,9 +343,20 @@ export default function Upload() {
       ));
 
       try {
+        // Multipart fetches bypass the tRPC transport, so bind the request
+        // explicitly to the current Supabase session instead of relying on
+        // cookies or global fetch wrapper installation order.
+        const uploadHeaders = await getAuthenticatedRequestHeaders();
+        if (!uploadHeaders.has("x-lighthouse-supabase-session")) {
+          throw new Error(
+            "Your sign-in session could not be verified. Refresh the page and sign in again before uploading.",
+          );
+        }
+
         const res = await fetch("/api/upload", {
           method: "POST",
           body: formData,
+          headers: uploadHeaders,
           credentials: "include",
         });
 

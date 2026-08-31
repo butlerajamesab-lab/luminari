@@ -18,6 +18,21 @@ describe("unrestricted evidence upload boundary", () => {
     expect(upload_page).toContain("Any file type");
   });
 
+  it("forwards the live Supabase session on multipart upload requests", () => {
+    expect(upload_page).toContain(
+      'import { getAuthenticatedRequestHeaders } from "@/lib/session-token";',
+    );
+    expect(upload_page).toContain(
+      "const uploadHeaders = await getAuthenticatedRequestHeaders();",
+    );
+    expect(upload_page).toContain(
+      'uploadHeaders.has("x-lighthouse-supabase-session")',
+    );
+    expect(upload_page).toMatch(
+      /fetch\("\/api\/upload", \{[\s\S]*headers: uploadHeaders,[\s\S]*credentials: "include"/,
+    );
+  });
+
   it("preserves unknown file formats instead of rejecting them", () => {
     expect(upload_route).toContain("multer.memoryStorage()");
     expect(upload_route).not.toContain("fileFilter:");
