@@ -16,15 +16,18 @@ import {
   background_workers_allowed,
   resolve_lighthouse_runtime_role,
 } from "../runtime-role";
+import { docket_request_scoped_refresh_allowed } from "../docket-request-refresh-policy";
 
 const cache_ttl_ms = 8 * 60 * 60 * 1000;
 const bill_detail_cache_ttl_ms = 24 * 60 * 60 * 1000;
 const warm_state_delay_ms = 750;
 const warm_next_batch_default_limit = 5;
 const warm_next_batch_max_limit = 10;
+const request_refresh_failure_cooldown_ms = 5 * 60 * 1000;
 
 export const docket_router = Router();
-const state_refresh_in_flight = new Map<string, Promise<void>>();
+const state_refresh_in_flight = new Map<string, Promise<docket_state_refresh_result>>();
+const state_refresh_retry_after = new Map<string, number>();
 
 type docket_state_cache_row = {
   id?: string;
@@ -76,7 +79,8 @@ type civic_genome_projection_status =
       reason:
         | "cache_fresh_no_projection"
         | "cache_stale_refreshing"
-        | "cache_stale_worker_paused";
+        | "cache_stale_worker_paused"
+        | "cache_stale_request_refresh_failed";
     };
 
 type docket_state_refresh_result = {
@@ -365,25 +369,48 @@ const serialize_error = (error: unknown): string => {
   return "unknown_docket_room_error";
 };
 
-const schedule_state_refresh = (state: string): void => {
-  if (!background_workers_allowed()) return;
-  if (state_refresh_in_flight.has(state)) return;
+const retry_after_iso = (state: string): string | null => {
+  const retry_after = state_refresh_retry_after.get(state);
+  return retry_after && retry_after > Date.now()
+    ? new Date(retry_after).toISOString()
+    : null;
+};
+
+const request_refresh_attempt_allowed = (state: string): boolean =>
+  docket_request_scoped_refresh_allowed(state) && retry_after_iso(state) === null;
+
+const get_or_start_state_refresh = (
+  state: string,
+  trigger: "background" | "request_scoped",
+): Promise<docket_state_refresh_result> => {
+  const existing = state_refresh_in_flight.get(state);
+  if (existing) return existing;
 
   const refresh = refresh_state_cache(state)
     .then(result => {
-      console.log("[Docket] background_state_refresh_completed", {
+      state_refresh_retry_after.delete(state);
+      console.log("[Docket] state_refresh_completed", {
         state,
+        trigger,
         source: result.source,
         bill_count: result.row.bill_count,
         fetched_at: result.row.fetched_at,
         projection_state: result.civic_genome_projection.projected ? "projected" : "not_projected",
       });
+      return result;
     })
     .catch(error => {
-      console.error("[Docket] background_state_refresh_failed", {
+      state_refresh_retry_after.set(
         state,
+        Date.now() + request_refresh_failure_cooldown_ms,
+      );
+      console.error("[Docket] state_refresh_failed", {
+        state,
+        trigger,
+        retry_after: retry_after_iso(state),
         error: serialize_error(error),
       });
+      throw error;
     })
     .finally(() => {
       if (state_refresh_in_flight.get(state) === refresh) {
@@ -392,6 +419,12 @@ const schedule_state_refresh = (state: string): void => {
     });
 
   state_refresh_in_flight.set(state, refresh);
+  return refresh;
+};
+
+const schedule_state_refresh = (state: string): void => {
+  if (!background_workers_allowed()) return;
+  void get_or_start_state_refresh(state, "background").catch(() => undefined);
 };
 
 docket_router.use((req, res, next) => {
@@ -517,6 +550,41 @@ docket_router.get("/state", async (req, res) => {
 
     if (cached) {
       const fresh = is_fresh(cached.fetched_at);
+      if (!fresh && request_refresh_attempt_allowed(state)) {
+        try {
+          const refreshed = await get_or_start_state_refresh(state, "request_scoped");
+          return res.json({
+            ok: true,
+            source: refreshed.source,
+            refresh_mode: "request_scoped",
+            state,
+            session_id: refreshed.row.session_id,
+            session_title: refreshed.row.session_title,
+            bill_count: refreshed.row.bill_count,
+            fetched_at: refreshed.row.fetched_at,
+            civic_genome_projection: refreshed.civic_genome_projection,
+            bills: refreshed.row.bills,
+          });
+        } catch {
+          const stale_reason = "cache_stale_request_refresh_failed";
+          return res.json({
+            ok: true,
+            source: stale_reason,
+            state,
+            session_id: cached.session_id,
+            session_title: cached.session_title,
+            bill_count: cached.bill_count,
+            fetched_at: cached.fetched_at,
+            refresh_retry_after: retry_after_iso(state),
+            civic_genome_projection: {
+              ok: true,
+              projected: false,
+              reason: stale_reason,
+            },
+            bills: cached.bills,
+          });
+        }
+      }
       if (!fresh) schedule_state_refresh(state);
       const stale_reason = background_workers_allowed()
         ? "cache_stale_refreshing"
@@ -539,21 +607,26 @@ docket_router.get("/state", async (req, res) => {
       });
     }
 
-    if (!background_workers_allowed()) {
+    if (!background_workers_allowed() && !request_refresh_attempt_allowed(state)) {
       return res.status(503).json({
         ok: false,
         error: "background_runtime_required",
         message: "No cached Docket state is available while refresh work is paused.",
+        refresh_retry_after: retry_after_iso(state),
         runtime_role: resolve_lighthouse_runtime_role(),
       });
     }
 
     // No cached source exists. The first acquisition must still retrieve the
     // official provider list; subsequent reads become cache-first immediately.
-    const refreshed = await refresh_state_cache(state);
+    const refresh_mode = background_workers_allowed() ? "worker" : "request_scoped";
+    const refreshed = background_workers_allowed()
+      ? await refresh_state_cache(state)
+      : await get_or_start_state_refresh(state, "request_scoped");
     return res.json({
       ok: true,
       source: refreshed.source,
+      refresh_mode,
       state,
       session_id: refreshed.row.session_id,
       session_title: refreshed.row.session_title,
