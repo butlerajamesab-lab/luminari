@@ -7,6 +7,20 @@ import { FileText, Users, Clock, Network, Loader2, ExternalLink, Printer, Downlo
 import { useState, useRef, useCallback } from "react";
 import { toast } from "sonner";
 
+export type SovereignExportType = "full-bundle" | "json-dump";
+
+const EXPORT_TYPE_HEADER = "X-Luminari-Export-Type";
+
+export function validateExportDownloadResponse(response: Pick<Response, "headers">, exportType: SovereignExportType): void {
+  const expectedContentType = exportType === "json-dump" ? "application/json" : "text/html";
+  const actualExportType = response.headers.get(EXPORT_TYPE_HEADER);
+  const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
+  const disposition = response.headers.get("content-disposition")?.toLowerCase() ?? "";
+  if (actualExportType !== exportType || !contentType.startsWith(expectedContentType) || !disposition.startsWith("attachment;")) {
+    throw new Error("The server returned the application page instead of a case export. Refresh and try again.");
+  }
+}
+
 export default function Exports() {
   const { currentCaseId, currentCase } = useCase();
   const [, setLocation] = useLocation();
@@ -60,12 +74,15 @@ export default function Exports() {
     }
   }, [currentCaseId]);
 
-  const handleDownload = useCallback(async (exportType: string, filename: string) => {
+  const handleDownload = useCallback(async (exportType: SovereignExportType, filename: string) => {
     if (!currentCaseId) return;
     setGenerating(exportType);
     try {
       const url = `/api/export/${exportType}?caseId=${currentCaseId}`;
-      const response = await fetch(url, { credentials: "same-origin" });
+      const response = await fetch(url, {
+        credentials: "same-origin",
+        headers: { Accept: exportType === "json-dump" ? "application/json" : "text/html" },
+      });
 
       if (!response.ok) {
         const errText = await response.text();
@@ -77,6 +94,7 @@ export default function Exports() {
         throw new Error(errMsg);
       }
 
+      validateExportDownloadResponse(response, exportType);
       const blob = await response.blob();
       const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -114,8 +132,8 @@ export default function Exports() {
   const exportTypes = [
     {
       id: "case-brief",
-      title: "Case Brief",
-      description: "Executive summary with key findings, evidence chains, timeline, and full citation table.",
+      title: "Evidence Review Brief",
+      description: "Source register, derived verification posture, source-bound chronology, and clearly labeled unverified candidates.",
       icon: FileText,
       stats: `${stats?.findings ?? 0} findings, ${stats?.documents ?? 0} documents`,
       color: "text-blue-400",
@@ -123,7 +141,7 @@ export default function Exports() {
     {
       id: "entity-report",
       title: "Entity Report",
-      description: "People, organizations, and their roles — with relationships and source citations.",
+      description: "Canonical people and organizations with their source-bound roles and explicit relationships.",
       icon: Users,
       stats: `${stats?.entities ?? 0} entities tracked`,
       color: "text-emerald-400",
@@ -139,7 +157,7 @@ export default function Exports() {
     {
       id: "relationship-report",
       title: "Relationship Report",
-      description: "Documented connections between entities with evidence for each.",
+      description: "Only explicit source-bound connections between canonical entities, with the backing span for each edge.",
       icon: Network,
       stats: `${stats?.relationships ?? 0} relationships mapped`,
       color: "text-purple-400",
@@ -180,7 +198,7 @@ export default function Exports() {
             </CardHeader>
             <CardContent>
               <CardDescription className="text-sm mb-3">
-                Complete case with all findings, timeline, entities, quotes, claims, correlations, and signal flags. Includes search, collapsible sections, and print-to-PDF. <strong>Zero internet required.</strong>
+                Current governed source register, chronology, canonical entities, explicit relationships, verification records, candidates, and provenance receipts. Includes search, collapsible sections, and print-to-PDF. <strong>Zero internet required.</strong>
               </CardDescription>
               <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
                 <Globe className="h-3.5 w-3.5" />
@@ -216,7 +234,7 @@ export default function Exports() {
             </CardHeader>
             <CardContent>
               <CardDescription className="text-sm mb-3">
-                Complete structured data dump: documents, quotes, entities, claims, findings, events, relationships, correlations, signal flags, and entity roles. <strong>Import into any system.</strong>
+                Structured export of the current governed projection: sources, chronology, canonical entities, entity roles, explicit relationships, verification records, candidates, and provenance receipts. <strong>Import into any system.</strong>
               </CardDescription>
               <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
                 <Shield className="h-3.5 w-3.5" />
@@ -239,9 +257,9 @@ export default function Exports() {
         </div>
       </div>
 
-      {/* ─── COURT-READY REPORTS ─── */}
+      {/* ─── EVIDENCE REVIEW REPORTS ─── */}
       <div>
-        <h2 className="text-lg font-semibold text-foreground mb-4">Court-Ready Reports</h2>
+        <h2 className="text-lg font-semibold text-foreground mb-4">Evidence Review Reports</h2>
         <div className="grid gap-4 md:grid-cols-2">
           {exportTypes.map((exp) => (
             <Card key={exp.id} className="hover:border-primary/30 transition-colors">

@@ -2,6 +2,9 @@ import { TRPCError } from "@trpc/server";
 
 import { getPool } from "./db-legacy";
 import { computeHash } from "./engines/intake-spine/utils";
+import {
+  read_case_intake_integrity_projection,
+} from "./intake-case-integrity-projection";
 
 const EXECUTION_CONTRACT_VERSION = "luminari.intake.layer-execution.v1";
 const CANONICALIZATION_VERSION = "luminari.intake.canonical-json.v2";
@@ -15,6 +18,11 @@ type ChronologyEvent = {
   source_artifact_key: string;
   source_span_offset: number;
   verification_status: string;
+};
+
+type MergedChronologyEvent = ChronologyEvent & {
+  source_intake_session_ids: string[];
+  canonical_projection_variant_id: string;
 };
 
 function projection_error(message: string, cause?: unknown): never {
@@ -32,6 +40,7 @@ function as_array(value: unknown): any[] {
 async function load_canonical_chronology_outputs(case_id: number): Promise<{
   state: "not_projected" | "canonical_projection";
   outputs: Array<{
+    intake_session_id: string;
     layer_run_id: string;
     output_hash: string;
     receipt_hash: string;
@@ -67,6 +76,7 @@ async function load_canonical_chronology_outputs(case_id: number): Promise<{
           and lr.is_sealed = true
      )
      select
+       r.intake_session_id::text,
        r.layer_run_id::text,
        r.layer_version,
        r.rule_version,
@@ -134,6 +144,7 @@ async function load_canonical_chronology_outputs(case_id: number): Promise<{
       projection_error(`run ${row.layer_run_id} chronology output hash mismatch`);
     }
     return {
+      intake_session_id: String(row.intake_session_id),
       layer_run_id: String(row.layer_run_id),
       output_hash: String(row.output_hash),
       receipt_hash: String(row.receipt_hash),
@@ -146,8 +157,13 @@ async function load_canonical_chronology_outputs(case_id: number): Promise<{
 }
 
 async function load_source_document_bindings(case_id: number) {
-  const result = await getPool().query(
-    `select a.artifact_key, a.filename, a.metadata
+  const [result, integrity] = await Promise.all([
+    getPool().query(
+      `select a.intake_session_id::text,
+            a.artifact_id::text,
+            a.artifact_key,
+            a.filename,
+            a.metadata
        from public.case_identity_bridge cib
        join public.case_intake_links cil on cil.case_uuid = cib.case_uuid
        join public.intake_sessions s on s.intake_session_id = cil.intake_session_id
@@ -165,13 +181,27 @@ async function load_source_document_bindings(case_id: number) {
         and a.artifact_status in ('registered', 'preserved')
         and coalesce(d.document_resolution, 'active') = 'active'
       order by a.artifact_key, a.artifact_id`,
-    [case_id],
+      [case_id],
+    ),
+    read_case_intake_integrity_projection(case_id),
+  ]);
+  const preserved_artifacts = new Set(
+    integrity.artifacts.flatMap(artifact =>
+      artifact.integrity_status === "preserved"
+        ? [
+            `${artifact.intake_session_id}\u001f${artifact.artifact_id}\u001f${artifact.artifact_key}`,
+          ]
+        : [],
+    ),
   );
   const by_artifact = new Map<string, any[]>();
   for (const row of result.rows) {
-    const list = by_artifact.get(String(row.artifact_key)) ?? [];
+    const identity = `${String(row.intake_session_id)}\u001f${String(row.artifact_id)}\u001f${String(row.artifact_key)}`;
+    if (!preserved_artifacts.has(identity)) continue;
+    const binding_key = `${String(row.intake_session_id)}\u001f${String(row.artifact_key)}`;
+    const list = by_artifact.get(binding_key) ?? [];
     list.push(row);
-    by_artifact.set(String(row.artifact_key), list);
+    by_artifact.set(binding_key, list);
   }
   return by_artifact;
 }
@@ -188,28 +218,72 @@ function source_binding(rows: any[] | undefined): { document_id: number | null; 
   };
 }
 
-function merge_chronology(outputs: Array<{ data: ChronologyEvent[] }>): ChronologyEvent[] {
-  const events = new Map<string, ChronologyEvent>();
+function source_binding_for_event(
+  bindings: Map<string, any[]>,
+  event: MergedChronologyEvent,
+): {
+  document_id: number | null;
+  filename: string | null;
+  intake_session_id: string | null;
+} {
+  for (const intake_session_id of event.source_intake_session_ids) {
+    const binding = source_binding(
+      bindings.get(
+        `${intake_session_id}\u001f${event.source_artifact_key}`,
+      ),
+    );
+    if (binding.document_id !== null) {
+      return { ...binding, intake_session_id };
+    }
+  }
+  return { document_id: null, filename: null, intake_session_id: null };
+}
+
+function merge_chronology(
+  outputs: Array<{ intake_session_id: string; data: ChronologyEvent[] }>,
+): MergedChronologyEvent[] {
+  const events = new Map<
+    string,
+    {
+      event: ChronologyEvent;
+      payload_hash: string;
+      intake_session_ids: Set<string>;
+    }
+  >();
   for (const output of outputs) {
     for (const event of output.data) {
       if (!event || typeof event.event_id !== "string" || typeof event.event_text !== "string") {
         projection_error("canonical chronology contains an invalid event row");
       }
-      const existing = events.get(event.event_id);
+      const payload_hash = computeHash(event);
+      const variant_identity = `${event.event_id}\u001f${payload_hash}`;
+      const existing = events.get(variant_identity);
       if (!existing) {
-        events.set(event.event_id, event);
+        events.set(variant_identity, {
+          event,
+          payload_hash,
+          intake_session_ids: new Set([output.intake_session_id]),
+        });
         continue;
       }
-      if (computeHash(existing) !== computeHash(event)) {
-        projection_error(`canonical chronology event ${event.event_id} changed meaning across linked sessions`);
-      }
+      existing.intake_session_ids.add(output.intake_session_id);
     }
   }
-  return [...events.values()].sort((left, right) =>
+  return [...events.values()].map(
+    ({ event, payload_hash, intake_session_ids }) => ({
+      ...event,
+      source_intake_session_ids: [...intake_session_ids].sort(),
+      canonical_projection_variant_id:
+        `${event.event_id}@${payload_hash.slice(0, 16)}`,
+    }),
+  ).sort((left, right) =>
     (left.date ?? "9999-99-99").localeCompare(right.date ?? "9999-99-99")
       || left.source_artifact_key.localeCompare(right.source_artifact_key)
       || left.source_span_offset - right.source_span_offset
-      || left.event_id.localeCompare(right.event_id),
+      || left.event_id.localeCompare(right.event_id)
+      || left.canonical_projection_variant_id.localeCompare(
+        right.canonical_projection_variant_id,
+      ),
   );
 }
 
@@ -220,10 +294,17 @@ export async function getCaseChronologyProjectionState(caseId: number): Promise<
   canonical_receipt_hashes: string[];
 }> {
   const canonical = await load_canonical_chronology_outputs(caseId);
+  const bindings =
+    canonical.state === "canonical_projection"
+      ? await load_source_document_bindings(caseId)
+      : new Map<string, any[]>();
   return {
     projection_state: canonical.state,
     event_count: canonical.state === "canonical_projection"
-      ? merge_chronology(canonical.outputs).length
+      ? merge_chronology(canonical.outputs).filter(
+          event =>
+            source_binding_for_event(bindings, event).document_id !== null,
+        ).length
       : 0,
     canonical_output_hashes: [...new Set(canonical.outputs.map(output => output.output_hash))].sort(),
     canonical_receipt_hashes: [...new Set(canonical.outputs.map(output => output.receipt_hash))].sort(),
@@ -239,10 +320,11 @@ export async function listEvents(caseId: number) {
   const receipt_hashes = [...new Set(canonical.outputs.map(output => output.receipt_hash))].sort();
   const layer_versions = [...new Set(canonical.outputs.map(output => output.layer_version))].sort();
 
-  return merge_chronology(canonical.outputs).map(event => {
-    const binding = source_binding(bindings.get(event.source_artifact_key));
-    return {
-      id: event.event_id,
+  return merge_chronology(canonical.outputs).flatMap(event => {
+    const binding = source_binding_for_event(bindings, event);
+    if (binding.document_id === null) return [];
+    return [{
+      id: event.canonical_projection_variant_id,
       caseId,
       title: event.event_text,
       description: null,
@@ -253,14 +335,18 @@ export async function listEvents(caseId: number) {
       documentFilename: binding.filename,
       projection_source: "universal_intake_spine",
       canonical_event_id: event.event_id,
+      canonical_projection_variant_id:
+        event.canonical_projection_variant_id,
       canonical_date_precision: event.date_precision,
       canonical_verification_status: event.verification_status,
       canonical_actor: event.actor,
       canonical_source_artifact_key: event.source_artifact_key,
+      canonical_source_intake_session_id: binding.intake_session_id,
+      canonical_source_intake_session_ids: event.source_intake_session_ids,
       canonical_source_span_offset: event.source_span_offset,
       canonical_output_hashes: output_hashes,
       canonical_receipt_hashes: receipt_hashes,
       canonical_layer_versions: layer_versions,
-    };
+    }];
   });
 }

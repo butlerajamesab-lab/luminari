@@ -80,4 +80,19 @@ describe("governed narrative provenance", () => {
     expect(paragraphs[0].text).toContain("governed chronology event evt-canonical-42");
     expect(paragraphs[0].text).not.toContain("event #0");
   });
+
+  it("keeps each governed event in its own source-bound paragraph", () => {
+    const first = chronologyItem();
+    const second = { ...chronologyItem(), id: "evt-canonical-43", label: "A second source event" };
+    const paragraphs = generateParagraphsFromGroups([{
+      label: "January 2024",
+      sortKey: first.sortKey,
+      items: [first, second],
+    }], [first, second]);
+
+    expect(paragraphs).toHaveLength(2);
+    expect(paragraphs.map(paragraph => paragraph.sourceRefs)).toEqual([[0], [1]]);
+    expect(paragraphs[0].text).not.toContain("A second source event");
+    expect(paragraphs[1].text).not.toContain("The source records an event");
+  });
 });

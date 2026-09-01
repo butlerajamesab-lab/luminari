@@ -10,6 +10,7 @@ import { db } from "../db";
 import { cases, caseState, caseFlags } from "../../drizzle/schema";
 import { eq, and } from "drizzle-orm";
 import { emitSignal } from "../live-signal-emitter";
+import { isMissingCaseCommitmentRelation } from "../case-commitment-availability";
 
 async function verify_case_ownership(case_id: number, user_id: number) {
   const [case_row] = await db.select({ id: cases.id, user_id: cases.userId })
@@ -105,10 +106,15 @@ export const caseStateRouter = router({
     .input(z.object({ case_id: z.number() }))
     .query(async ({ ctx, input }) => {
       await verify_case_ownership(input.case_id, ctx.user.id);
-      const state = await get_or_create_case_state(input.case_id, ctx.user.id);
-      const flags = await db.select().from(caseFlags)
-        .where(and(eq(caseFlags.caseId, input.case_id), eq(caseFlags.status, "open")));
-      return { state, flags };
+      try {
+        const state = await get_or_create_case_state(input.case_id, ctx.user.id);
+        const flags = await db.select().from(caseFlags)
+          .where(and(eq(caseFlags.caseId, input.case_id), eq(caseFlags.status, "open")));
+        return { state, flags, projection_state: "case_state_projection" as const };
+      } catch (error) {
+        if (!isMissingCaseCommitmentRelation(error)) throw error;
+        return { state: null, flags: [], projection_state: "not_projected" as const };
+      }
     }),
 
   commit_finding: protectedProcedure
@@ -517,10 +523,16 @@ export const caseStateRouter = router({
     .input(z.object({ case_id: z.number(), status: z.enum(["open", "resolved", "all"]).optional().default("open") }))
     .query(async ({ ctx, input }) => {
       await verify_case_ownership(input.case_id, ctx.user.id);
-      const query = db.select().from(caseFlags).where(eq(caseFlags.caseId, input.case_id));
-      if (input.status !== "all") {
-        return db.select().from(caseFlags).where(and(eq(caseFlags.caseId, input.case_id), eq(caseFlags.status, input.status)));
+      try {
+        const query = db.select().from(caseFlags).where(eq(caseFlags.caseId, input.case_id));
+        if (input.status !== "all") {
+          return await db.select().from(caseFlags)
+            .where(and(eq(caseFlags.caseId, input.case_id), eq(caseFlags.status, input.status)));
+        }
+        return await query;
+      } catch (error) {
+        if (!isMissingCaseCommitmentRelation(error)) throw error;
+        return [];
       }
-      return query;
     }),
 });

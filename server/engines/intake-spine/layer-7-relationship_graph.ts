@@ -6,8 +6,12 @@ import {
   UnresolvedDependency,
   CANONICALIZATION_VERSION,
 } from './utils';
-import { Entity } from './layer-6-entity_registry';
+import { Entity, EntityType } from './layer-6-entity_registry';
 import { ParsedArtifact } from './parsing-substrate';
+import {
+  isExcludedFromDominantSemanticLane,
+  semanticSpansForArtifact,
+} from './semantic-substrate';
 
 export type RelationshipType =
   | 'employer_employee'
@@ -46,14 +50,16 @@ export interface Layer7Input {
   artifacts: ParsedArtifact[];
 }
 
-export const LAYER_VERSION = '2.3.0';
-export const RULE_VERSION = '2.3.0';
+export const LAYER_VERSION = '2.5.0';
+export const RULE_VERSION = '2.5.0';
 
 type MarkerDirection = 'a_to_b' | 'b_to_a' | 'bidirectional';
+type MarkerScope = 'between_mentions' | 'post_coordinated_endpoints';
 type MarkerManifestRow = {
   regex: { source: string; flags: string };
   type: RelationshipType;
   direction: MarkerDirection;
+  scope?: MarkerScope;
 };
 
 export const RULE_MANIFEST: {
@@ -62,6 +68,9 @@ export const RULE_MANIFEST: {
   markers: MarkerManifestRow[];
   role_map: Record<RelationshipType, { authority: string; subject: string }>;
   mention_binding: 'exact_extracted_mention_offsets_only';
+  marker_scope: 'bound_regions_in_one_sentence';
+  coordinated_endpoint_policy: 'complete_contiguous_list_all_pairs';
+  endpoint_type_policy: 'role_compatible';
 } = {
   context_chars: 32,
   first_marker_per_pair_per_span: true,
@@ -87,6 +96,7 @@ export const RULE_MANIFEST: {
     { regex: { source: '(?:holds |has )?(?:a )?power of attorney for', flags: 'i' }, type: 'authorized_representative_subject', direction: 'a_to_b' },
     { regex: { source: 'married to', flags: 'i' }, type: 'family', direction: 'bidirectional' },
     { regex: { source: 'spouse', flags: 'i' }, type: 'family', direction: 'bidirectional' },
+    { regex: { source: '^(?:are|were) family(?: members)?', flags: 'i' }, type: 'family', direction: 'bidirectional', scope: 'post_coordinated_endpoints' },
     { regex: { source: 'child of', flags: 'i' }, type: 'family', direction: 'b_to_a' },
     { regex: { source: 'parent of', flags: 'i' }, type: 'family', direction: 'a_to_b' },
     { regex: { source: '(?:daughter|son|mother|father|sister|brother) of', flags: 'i' }, type: 'family', direction: 'bidirectional' },
@@ -94,6 +104,7 @@ export const RULE_MANIFEST: {
     { regex: { source: 'policy(?:holder)? (?:with|of)', flags: 'i' }, type: 'insurer_insured', direction: 'b_to_a' },
     { regex: { source: 'owes money to', flags: 'i' }, type: 'creditor_debtor', direction: 'b_to_a' },
     { regex: { source: 'creditor', flags: 'i' }, type: 'creditor_debtor', direction: 'a_to_b' },
+    { regex: { source: '^(?:are|were) opposing parties', flags: 'i' }, type: 'opposing_party', direction: 'bidirectional', scope: 'post_coordinated_endpoints' },
   ],
   role_map: {
     employer_employee: { authority: 'employer', subject: 'employee' },
@@ -109,6 +120,9 @@ export const RULE_MANIFEST: {
     opposing_party: { authority: 'party', subject: 'party' },
   },
   mention_binding: 'exact_extracted_mention_offsets_only',
+  marker_scope: 'bound_regions_in_one_sentence',
+  coordinated_endpoint_policy: 'complete_contiguous_list_all_pairs',
+  endpoint_type_policy: 'role_compatible',
 };
 
 export const RULE_MANIFEST_HASH = computeRuleManifestHash(RULE_MANIFEST);
@@ -116,6 +130,7 @@ const RELATIONSHIP_MARKERS = RULE_MANIFEST.markers.map(row => ({
   pattern: regexFromManifest(row.regex),
   type: row.type,
   direction: row.direction,
+  scope: row.scope ?? 'between_mentions',
 }));
 
 export function processLayer7(input: Layer7Input): EngineResult<Relationship[]> {
@@ -162,7 +177,16 @@ export function processLayer7(input: Layer7Input): EngineResult<Relationship[]> 
       continue;
     }
 
-    for (const span of [...artifact.spans].sort((a, b) => a.start_offset - b.start_offset)) {
+    if (isExcludedFromDominantSemanticLane(artifact, artifacts)) {
+      unresolved.push({
+        field: `artifact:${artifact.artifact_key}:semantic_lane`,
+        reason: 'unresolved',
+        detail: 'Artifact preserved as evidence but excluded from the dominant CMS-2567 semantic lane',
+      });
+      continue;
+    }
+
+    for (const span of semanticSpansForArtifact(artifact, artifacts)) {
       const spanText = span.text;
       const entitiesInSpan: Array<{ entity: Entity; position: number; mention_text: string }> = [];
 
@@ -174,11 +198,11 @@ export function processLayer7(input: Layer7Input): EngineResult<Relationship[]> 
             mention.span_offset < span.end_offset,
           )
           .sort((a, b) => a.span_offset - b.span_offset || a.raw_text.localeCompare(b.raw_text));
-        if (mentions.length > 0) {
+        for (const mention of mentions) {
           entitiesInSpan.push({
             entity,
-            position: mentions[0].span_offset - span.start_offset,
-            mention_text: mentions[0].raw_text,
+            position: mention.span_offset - span.start_offset,
+            mention_text: mention.raw_text,
           });
         }
       }
@@ -190,16 +214,35 @@ export function processLayer7(input: Layer7Input): EngineResult<Relationship[]> 
         for (let j = i + 1; j < entitiesInSpan.length; j++) {
           const first = entitiesInSpan[i];
           const second = entitiesInSpan[j];
-          const contextStart = Math.max(0, first.position - RULE_MANIFEST.context_chars);
-          const contextEnd = Math.min(spanText.length, second.position + second.mention_text.length + RULE_MANIFEST.context_chars);
-          const contextText = spanText.substring(contextStart, contextEnd);
+          if (first.entity.entity_id === second.entity.entity_id) continue;
+          const markerSearchStart = first.position + first.mention_text.length;
+          const markerSearchEnd = second.position;
+          if (markerSearchEnd <= markerSearchStart) continue;
+          const betweenMentions = spanText.substring(markerSearchStart, markerSearchEnd);
 
           for (const marker of RELATIONSHIP_MARKERS) {
-            marker.pattern.lastIndex = 0;
-            const markerMatch = marker.pattern.exec(contextText);
-            if (!markerMatch) continue;
+            const markerBinding = marker.scope === 'post_coordinated_endpoints'
+              ? findPostCoordinatedMarkerForPair(
+                  spanText,
+                  entitiesInSpan,
+                  i,
+                  j,
+                  marker.pattern,
+                )
+              : findMarkerInRegion(
+                  betweenMentions,
+                  markerSearchStart,
+                  marker.pattern,
+                );
+            if (!markerBinding) continue;
 
             const textualRoles = getTextualRoles(marker.type, marker.direction);
+            if (
+              !isRelationshipRoleTypeCompatible(marker.type, textualRoles.role_first, first.entity.type)
+              || !isRelationshipRoleTypeCompatible(marker.type, textualRoles.role_second, second.entity.type)
+            ) {
+              continue;
+            }
             const canonical = canonicalizeRelationshipEndpoints(
               first.entity.entity_id,
               textualRoles.role_first,
@@ -213,8 +256,8 @@ export function processLayer7(input: Layer7Input): EngineResult<Relationship[]> 
               artifact_key: artifact.artifact_key,
               span_start_offset: span.start_offset,
               span_text: spanText,
-              marker_text: markerMatch[0],
-              marker_offset: span.start_offset + contextStart + markerMatch.index,
+              marker_text: markerBinding.match[0],
+              marker_offset: span.start_offset + markerBinding.marker_offset,
             };
 
             const existing = relationshipMap.get(relationship_id);
@@ -257,6 +300,116 @@ export function processLayer7(input: Layer7Input): EngineResult<Relationship[]> 
     unresolved_dependencies: unresolved.sort((a, b) => a.field.localeCompare(b.field)),
     is_sealed: false,
   };
+}
+
+type SpanEntityMention = {
+  entity: Entity;
+  position: number;
+  mention_text: string;
+};
+
+function findMarkerInRegion(
+  text: string,
+  regionStart: number,
+  pattern: RegExp,
+): { match: RegExpExecArray; marker_offset: number } | null {
+  pattern.lastIndex = 0;
+  const match = pattern.exec(text);
+  return match
+    ? { match, marker_offset: regionStart + match.index }
+    : null;
+}
+
+function findPostCoordinatedMarkerForPair(
+  spanText: string,
+  mentions: SpanEntityMention[],
+  pairFirstIndex: number,
+  pairSecondIndex: number,
+  pattern: RegExp,
+): { match: RegExpExecArray; marker_offset: number } | null {
+  for (let groupEnd = pairSecondIndex; groupEnd < mentions.length; groupEnd++) {
+    const lastMention = mentions[groupEnd];
+    const postEndpointStart = lastMention.position + lastMention.mention_text.length;
+    const postEndpointText = spanText.substring(postEndpointStart);
+    const leadingWhitespace = postEndpointText.search(/\S/);
+    if (leadingWhitespace < 0) continue;
+
+    const markerBinding = findMarkerInRegion(
+      postEndpointText.substring(leadingWhitespace),
+      postEndpointStart + leadingWhitespace,
+      pattern,
+    );
+    if (!markerBinding) continue;
+
+    let groupStart = groupEnd;
+    while (groupStart > 0) {
+      const previous = mentions[groupStart - 1];
+      const current = mentions[groupStart];
+      const separator = spanText.substring(
+        previous.position + previous.mention_text.length,
+        current.position,
+      );
+      if (!isCoordinatedListSeparator(separator)) break;
+      groupStart--;
+    }
+
+    if (pairFirstIndex >= groupStart && pairSecondIndex <= groupEnd) {
+      return markerBinding;
+    }
+  }
+  return null;
+}
+
+function isCoordinatedListSeparator(text: string): boolean {
+  return /^\s*(?:,\s*(?:(?:and|or|&)\s*)?|(?:and|or|&)\s*)$/i.test(text);
+}
+
+export function isRelationshipRoleTypeCompatible(
+  type: RelationshipType,
+  role: string,
+  entityType: EntityType,
+): boolean {
+  const personLike = entityType === 'person' || entityType === 'unknown';
+  const organizationLike = entityType === 'organization' || entityType === 'unknown';
+  const partyLike = personLike || organizationLike;
+
+  switch (type) {
+    case 'facility_resident':
+      return role === 'facility' ? entityType === 'organization' : personLike;
+    case 'caregiver_recipient':
+    case 'family':
+      return personLike;
+    case 'employer_employee':
+      return role === 'employer' ? organizationLike : personLike;
+    case 'agency_complainant':
+      return role === 'agency' ? organizationLike : personLike;
+    case 'insurer_insured':
+      return role === 'insurer' ? organizationLike : partyLike;
+    case 'landlord_tenant':
+    case 'creditor_debtor':
+    case 'legal_representative_client':
+    case 'authorized_representative_subject':
+    case 'opposing_party':
+      return partyLike;
+  }
+}
+
+export function isRelationshipTypeCompatible(
+  relationship: Relationship,
+  entities: Map<string, Entity> | Entity[],
+): boolean {
+  const entityMap = entities instanceof Map
+    ? entities
+    : new Map(entities.map(entity => [entity.entity_id, entity]));
+  const entityA = entityMap.get(relationship.entity_a_id);
+  const entityB = entityMap.get(relationship.entity_b_id);
+  return Boolean(
+    entityA
+    && entityB
+    && relationship.entity_a_id !== relationship.entity_b_id
+    && isRelationshipRoleTypeCompatible(relationship.type, relationship.role_a, entityA.type)
+    && isRelationshipRoleTypeCompatible(relationship.type, relationship.role_b, entityB.type),
+  );
 }
 
 function getTextualRoles(

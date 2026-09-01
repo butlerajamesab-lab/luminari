@@ -209,9 +209,10 @@ export function buildNarrativePrompt(
 // ─── T4. Deterministic Paragraph Generation ───
 
 /**
- * Generate paragraphs mechanically from grouped timeline data.
- * Each DateGroup becomes one paragraph combining all items in that group.
- * Undated items become a "Background" paragraph.
+ * Generate bounded, source-addressable paragraphs mechanically from grouped
+ * timeline data. One event per paragraph prevents a high-volume inspection
+ * month from becoming an unreadable blob and keeps every citation local to the
+ * sentence it supports.
  */
 export function generateParagraphsFromGroups(
   groups: DateGroup[],
@@ -221,41 +222,38 @@ export function generateParagraphsFromGroups(
 
   // If there are enough groups, add section headings
   const useHeadings = groups.length >= 4;
+  let chronologicalHeadingAdded = false;
 
   for (const group of groups) {
     const isUndated = group.sortKey === Infinity;
 
-    // Add heading paragraph for undated section
-    if (isUndated && useHeadings) {
-      paragraphs.push({ text: "## Background and Context", sourceRefs: [] });
-    } else if (useHeadings && paragraphs.length === 0) {
-      paragraphs.push({ text: "## Chronological Record", sourceRefs: [] });
+    if (useHeadings) {
+      if (isUndated) {
+        paragraphs.push({ text: "## Background and Context", sourceRefs: [] });
+      } else {
+        if (!chronologicalHeadingAdded) {
+          paragraphs.push({ text: "## Chronological Record", sourceRefs: [] });
+          chronologicalHeadingAdded = true;
+        }
+        paragraphs.push({ text: `## ${group.label}`, sourceRefs: [] });
+      }
     }
-
-    // Build paragraph text from items in this group
-    const sentences: string[] = [];
-    const sourceRefs: number[] = [];
 
     for (const item of group.items) {
       const idx = items.indexOf(item);
-      if (idx >= 0) sourceRefs.push(idx);
+      const sourceRefs = idx >= 0 ? [idx] : [];
 
-      // Build sentence for this item
       const canonical_id = String(item.id);
       const sourcePart = item.documentName
         ? ` (Source span · ${item.documentName}; governed chronology event ${canonical_id})`
         : ` (Governed chronology event ${canonical_id})`;
-
-      sentences.push(`${item.label}.${sourcePart}`);
+      const label = item.label.trim();
+      const statement = /[.!?]$/.test(label) ? label : `${label}.`;
+      const prefix = isUndated
+        ? "Background record: "
+        : `During ${group.label}: `;
+      paragraphs.push({ text: `${prefix}${statement}${sourcePart}`, sourceRefs });
     }
-
-    // Combine into paragraph
-    const prefix = isUndated
-      ? "The following background information was identified: "
-      : `During ${group.label}, the record indicates the following: `;
-
-    const text = prefix + sentences.join(" ");
-    paragraphs.push({ text, sourceRefs });
   }
 
   return paragraphs;

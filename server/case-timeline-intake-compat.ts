@@ -19,7 +19,10 @@ export async function getCaseTimelineData(caseId: number): Promise<any[]> {
     const normalized = normalize_date(event.dateOccurred);
     return {
       type: "event" as const,
-      id: event.canonical_event_id ?? event.id,
+      id:
+        event.canonical_projection_variant_id ??
+        event.canonical_event_id ??
+        event.id,
       date: normalized.date,
       datePrecision: event.canonical_date_precision ?? "unknown",
       sortKey: normalized.sortKey,

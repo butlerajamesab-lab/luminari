@@ -9,6 +9,14 @@ import {
 } from './utils';
 import { Entity } from './layer-6-entity_registry';
 import { ParsedArtifact } from './parsing-substrate';
+import {
+  classifySemanticArtifact,
+  cmsSurveyDate,
+  isDateOutsideCmsRecordRange,
+  isExcludedFromDominantSemanticLane,
+  semanticSentenceBounds,
+  semanticSpansForArtifact,
+} from './semantic-substrate';
 
 export interface StateTransition {
   transition_id: string;
@@ -27,8 +35,8 @@ export interface Layer9Input {
   artifacts: ParsedArtifact[];
 }
 
-export const LAYER_VERSION = '2.4.0';
-export const RULE_VERSION = '2.4.0';
+export const LAYER_VERSION = '2.5.0';
+export const RULE_VERSION = '2.5.0';
 
 type StateRule = {
   regex: { source: string; flags: string };
@@ -143,12 +151,24 @@ export function processLayer9(input: Layer9Input): EngineResult<StateTransition[
       continue;
     }
 
-    for (const span of [...artifact.spans].sort((a, b) => a.start_offset - b.start_offset)) {
+    if (isExcludedFromDominantSemanticLane(artifact, artifacts)) {
+      unresolved.push({
+        field: `artifact:${artifact.artifact_key}:semantic_lane`,
+        reason: 'unresolved',
+        detail: 'Artifact preserved as evidence but excluded from the dominant CMS-2567 semantic lane',
+      });
+      continue;
+    }
+
+    const artifactClass = classifySemanticArtifact(artifact);
+    const surveyDate = artifactClass === 'cms_2567' ? cmsSurveyDate(artifact) : null;
+
+    for (const span of semanticSpansForArtifact(artifact, artifacts)) {
       for (const rule of STATE_RULES) {
         rule.pattern.lastIndex = 0;
         let match: RegExpExecArray | null;
         while ((match = rule.pattern.exec(span.text)) !== null) {
-          const bounds = sentenceBounds(span.text, match.index);
+          const bounds = semanticSentenceBounds(span.text, match.index);
           const sentence = span.text.substring(bounds.start, bounds.end).trim();
           const sentenceAbsoluteOffset = span.start_offset + bounds.start;
           const entities = entitiesMentionedInSentence(
@@ -171,6 +191,18 @@ export function processLayer9(input: Layer9Input): EngineResult<StateTransition[
 
           const entity = entities[0];
           const transitionDate = extractDate(sentence);
+          if (
+            artifactClass === 'cms_2567'
+            && transitionDate
+            && isDateOutsideCmsRecordRange(transitionDate, surveyDate)
+          ) {
+            unresolved.push({
+              field: `transition_date:${artifact.artifact_key}:${sentenceAbsoluteOffset}`,
+              reason: 'unresolved',
+              detail: `CMS-2567 transition date is outside the bounded survey record range: ${transitionDate}`,
+            });
+            continue;
+          }
           const transition_id = `trans_${computeHash({
             entity_id: entity.entity_id,
             to_state: rule.to_state,
@@ -208,24 +240,6 @@ export function processLayer9(input: Layer9Input): EngineResult<StateTransition[
     unresolved_dependencies: unresolved.sort((a, b) => a.field.localeCompare(b.field)),
     is_sealed: false,
   };
-}
-
-function sentenceBounds(text: string, position: number): { start: number; end: number } {
-  let start = 0;
-  for (let i = position - 1; i >= 0; i--) {
-    if (text[i] === '.' || text[i] === '!' || text[i] === '?' || text[i] === '\n') {
-      start = i + 1;
-      break;
-    }
-  }
-  let end = text.length;
-  for (let i = position; i < text.length; i++) {
-    if (text[i] === '.' || text[i] === '!' || text[i] === '?' || text[i] === '\n') {
-      end = i + 1;
-      break;
-    }
-  }
-  return { start, end };
 }
 
 function entitiesMentionedInSentence(

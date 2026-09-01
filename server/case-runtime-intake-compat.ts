@@ -37,6 +37,7 @@ function externalize_entity_role(role: any) {
   const {
     canonicalArtifactKey,
     canonicalSpanOffset,
+    canonicalIntakeSessionId,
     projectionSource,
     ...legacy_shape
   } = role;
@@ -44,6 +45,7 @@ function externalize_entity_role(role: any) {
     ...legacy_shape,
     canonical_artifact_key: canonicalArtifactKey,
     canonical_span_offset: canonicalSpanOffset,
+    canonical_intake_session_id: canonicalIntakeSessionId,
     projection_source: projectionSource,
   };
 }

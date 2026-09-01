@@ -7,7 +7,7 @@ import { registerOAuthRoutes } from "./oauth";
 import { registerStripeWebhook } from "../stripe-webhook";
 import { registerUploadRoute } from "../upload-route";
 import { registerDocketUploadRoute } from "../docket-upload-route";
-import { registerExportRoute } from "../export-route";
+import { registerExportRoute } from "../export-production-route";
 import { registerCdaExportRoute } from "../cda-export-route";
 import { registerBundleSyncRoute } from "../bundle-sync";
 import { registerBundleDownloadRoute } from "../bundle-download-route";
