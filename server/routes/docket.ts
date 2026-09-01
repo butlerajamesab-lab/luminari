@@ -78,6 +78,7 @@ type civic_genome_projection_status =
       projected: false;
       reason:
         | "cache_fresh_no_projection"
+        | "request_scoped_cache_refresh_only"
         | "cache_stale_refreshing"
         | "cache_stale_worker_paused"
         | "cache_stale_request_refresh_failed";
@@ -319,7 +320,10 @@ const project_refreshed_state_to_civic_genome = async (state: string): Promise<c
   }
 };
 
-const refresh_state_cache = async (state: string): Promise<docket_state_refresh_result> => {
+const refresh_state_cache = async (
+  state: string,
+  { project_to_civic_genome = true }: { project_to_civic_genome?: boolean } = {},
+): Promise<docket_state_refresh_result> => {
   const cached = await read_state_cache(state);
 
   if (cached && is_fresh(cached.fetched_at)) {
@@ -352,7 +356,13 @@ const refresh_state_cache = async (state: string): Promise<docket_state_refresh_
   };
 
   await upsert_state_cache(row);
-  const civic_genome_projection = await project_refreshed_state_to_civic_genome(state);
+  const civic_genome_projection: civic_genome_projection_status = project_to_civic_genome
+    ? await project_refreshed_state_to_civic_genome(state)
+    : {
+        ok: true,
+        projected: false,
+        reason: "request_scoped_cache_refresh_only",
+      };
 
   return {
     source: cached ? "legiscan_refresh_stale_cache" : "legiscan_refresh_empty_cache",
@@ -386,7 +396,9 @@ const get_or_start_state_refresh = (
   const existing = state_refresh_in_flight.get(state);
   if (existing) return existing;
 
-  const refresh = refresh_state_cache(state)
+  const refresh = refresh_state_cache(state, {
+    project_to_civic_genome: trigger === "background",
+  })
     .then(result => {
       state_refresh_retry_after.delete(state);
       console.log("[Docket] state_refresh_completed", {
