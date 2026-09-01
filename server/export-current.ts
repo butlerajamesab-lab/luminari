@@ -1,6 +1,7 @@
 import type { Response } from "express";
 
 import * as dbHelpers from "./db";
+import { read_case_intake_integrity_projection } from "./intake-case-integrity-projection";
 import { read_canonical_case_layer_outputs } from "./intake-case-layer-reader";
 
 export type SovereignExportType = "full-bundle" | "json-dump";
@@ -211,6 +212,7 @@ export async function loadCurrentCaseExportData(
 
   const [
     documentRows,
+    integrity,
     entityRows,
     chronologyRows,
     relationshipRows,
@@ -223,6 +225,7 @@ export async function loadCurrentCaseExportData(
     claims,
   ] = await Promise.all([
     dbHelpers.listDocuments(caseId),
+    read_case_intake_integrity_projection(caseId),
     dbHelpers.listEntities(caseId),
     dbHelpers.listEvents(caseId),
     dbHelpers.listRelationshipsEnriched(caseId),
@@ -237,9 +240,21 @@ export async function loadCurrentCaseExportData(
     loadLayer(caseId, "rights_and_duties_matrix"),
   ]);
 
+  const governedDocumentIds = new Set(
+    integrity.artifacts.flatMap((artifact) =>
+      artifact.integrity_status === "preserved" &&
+      artifact.legacy_document_id !== null
+        ? [artifact.legacy_document_id]
+        : [],
+    ),
+  );
   const sources = asRecords(documentRows)
     .map((row) => safeDocument(row, options.includeTextContent === true))
-    .filter((row) => matchesSnapshot(row, requestedSnapshotId));
+    .filter(
+      (row) =>
+        governedDocumentIds.has(Number(row.id)) &&
+        matchesSnapshot(row, requestedSnapshotId),
+    );
   const entities = asRecords(entityRows).filter((row) =>
     matchesSnapshot(row, requestedSnapshotId),
   );
@@ -282,6 +297,8 @@ export async function loadCurrentCaseExportData(
       snapshot_filter_policy: requestedSnapshotId
         ? "matching legacy snapshot rows plus receipt-bound current projections"
         : "all rows in the current governed case projection",
+      source_filter_policy:
+        "active linked source artifacts with sealed preserved integrity",
       reviewer_commitment_boundary:
         "Derived records are not reviewer-committed findings.",
       source_storage_fields_excluded: ["s3_key", "s3_url"],

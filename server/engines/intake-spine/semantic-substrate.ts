@@ -201,9 +201,9 @@ function groupCmsSpansByPage(artifact: ParsedArtifact): TextSpan[] {
 
   for (const span of sorted) {
     if (span.page === undefined) {
-      // Non-PDF parsers do not provide a reliable page boundary. Keep those
-      // spans isolated rather than accidentally carrying CMS state across an
-      // entire document.
+      // DOCX/text parsers have paragraph offsets but no page boundary. Collect
+      // them into one bounded document-local view below so a CMS heading can
+      // govern the narrative paragraphs that follow it.
       unpaged.push(span);
       continue;
     }
@@ -227,7 +227,24 @@ function groupCmsSpansByPage(artifact: ParsedArtifact): TextSpan[] {
     } satisfies TextSpan;
   });
 
-  return [...pages, ...unpaged].sort(
+  const unpagedDocument =
+    unpaged.length > 0
+      ? (() => {
+          const start = Math.min(...unpaged.map((span) => span.start_offset));
+          const end = Math.max(...unpaged.map((span) => span.end_offset));
+          return {
+            text: artifact.extracted_text.substring(start, end),
+            start_offset: start,
+            end_offset: end,
+            paragraph_index: Math.min(
+              ...unpaged.map((span) => span.paragraph_index ?? 0),
+            ),
+            source_artifact_key: artifact.artifact_key,
+          } satisfies TextSpan;
+        })()
+      : null;
+
+  return [...pages, ...(unpagedDocument ? [unpagedDocument] : [])].sort(
     (left, right) => left.start_offset - right.start_offset,
   );
 }

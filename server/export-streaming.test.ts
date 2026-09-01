@@ -10,6 +10,7 @@ const state = vi.hoisted(() => ({
   listRelationshipsEnriched: vi.fn(),
   getCaseStats: vi.fn(),
   getGovernedEntityRolesForDocument: vi.fn(),
+  readIntegrity: vi.fn(),
   readLayer: vi.fn(),
 }));
 
@@ -26,6 +27,10 @@ vi.mock("./db", () => ({
 
 vi.mock("./intake-case-layer-reader", () => ({
   read_canonical_case_layer_outputs: state.readLayer,
+}));
+
+vi.mock("./intake-case-integrity-projection", () => ({
+  read_case_intake_integrity_projection: state.readIntegrity,
 }));
 
 import {
@@ -66,6 +71,7 @@ beforeEach(() => {
     events: 0,
   });
   state.getGovernedEntityRolesForDocument.mockResolvedValue([]);
+  state.readIntegrity.mockResolvedValue({ artifacts: [] });
   state.readLayer.mockResolvedValue({ state: "not_projected", outputs: [] });
 });
 
@@ -117,6 +123,9 @@ describe("sovereign export response contract", () => {
   });
 
   it("exports governed projections without private storage locations", async () => {
+    state.readIntegrity.mockResolvedValue({
+      artifacts: [{ legacy_document_id: 7, integrity_status: "preserved" }],
+    });
     state.listDocuments.mockResolvedValue([
       {
         id: 7,
@@ -162,6 +171,35 @@ describe("sovereign export response contract", () => {
     expect(exported.chronology).toHaveLength(1);
     expect(exported.projection_scope.authority).toBe(
       "sealed_current_universal_intake_projection",
+    );
+  });
+
+  it("restricts source rows and role lookups to preserved linked intake artifacts", async () => {
+    state.listDocuments.mockResolvedValue([
+      { id: 7, filename: "current.pdf", documentResolution: "active" },
+      { id: 8, filename: "quarantined.pdf", documentResolution: "active" },
+      { id: 9, filename: "superseded.pdf", documentResolution: "superseded" },
+      { id: 10, filename: "unlinked.pdf", documentResolution: "active" },
+    ]);
+    state.readIntegrity.mockResolvedValue({
+      artifacts: [
+        { legacy_document_id: 7, integrity_status: "preserved" },
+        { legacy_document_id: 8, integrity_status: "quarantined" },
+      ],
+    });
+
+    const exported = await loadCurrentCaseExportData(
+      { id: 44, name: "Inspection case" },
+      44,
+    );
+
+    expect(exported.sources.map((source) => source.filename)).toEqual([
+      "current.pdf",
+    ]);
+    expect(state.getGovernedEntityRolesForDocument).toHaveBeenCalledTimes(1);
+    expect(state.getGovernedEntityRolesForDocument).toHaveBeenCalledWith(44, 7);
+    expect(exported.projection_scope.source_filter_policy).toBe(
+      "active linked source artifacts with sealed preserved integrity",
     );
   });
 

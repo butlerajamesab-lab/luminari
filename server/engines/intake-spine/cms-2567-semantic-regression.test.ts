@@ -141,6 +141,58 @@ describe("CMS-2567 semantic-lane regression", () => {
     ).toBe(true);
   });
 
+  it("carries the CMS narrative boundary across unpaged DOCX/text spans", () => {
+    const artifactKey = "cms-2567:unpaged.txt";
+    const firstNarrative =
+      "On 11/20/2024 Resident 45 was admitted to the hospital.";
+    const secondNarrative =
+      "Resident 45 was a resident of Caroline Kline Galland Home.";
+    const paged = artifactFromParagraphPages(artifactKey, [
+      [
+        `${cmsHeader("11/21/2024", "Page 1 of 1")}\nResidents Affected - One resident`,
+        firstNarrative,
+        secondNarrative,
+        cmsFooter("Page 1 of 1"),
+      ],
+    ]);
+    const unpaged: ParsedArtifact = {
+      ...paged,
+      declared_mime_type: "text/plain",
+      detected_mime_type: "text/plain",
+      mime_type: "text/plain",
+      spans: paged.spans.map(({ page: _page, ...span }) => span),
+    };
+
+    expect(
+      semanticSpansForArtifact(unpaged, [unpaged]).map((span) => span.text),
+    ).toEqual([firstNarrative, secondNarrative]);
+
+    const chronology = processLayer4({ artifacts: [unpaged] });
+    const entities = processLayer6({ artifacts: [unpaged] });
+    const relationships = processLayer7({
+      entities: entities.data,
+      artifacts: [unpaged],
+    });
+    const timeline = processLayer9({
+      entities: entities.data,
+      artifacts: [unpaged],
+    });
+
+    expect(chronology.data.some((event) => event.date === "2024-11-20")).toBe(
+      true,
+    );
+    expect(
+      relationships.data.some(
+        (relationship) => relationship.type === "facility_resident",
+      ),
+    ).toBe(true);
+    expect(
+      timeline.data.some(
+        (transition) => transition.to_state === "facility_hospitalization",
+      ),
+    ).toBe(true);
+  });
+
   it("does not turn repeated CMS headers or footers into semantic facts", () => {
     const headerOnly = artifactFromPages("cms-2567:repeated-furniture.pdf", [
       `${cmsHeader("11/21/2024", "Page 1 of 2")}\n${cmsFooter("Page 1 of 2")}`,
