@@ -35,6 +35,7 @@ const supersessionMigration = [
   "20260901074426_civic_genome_temporal_supersession_v3_backfill_8_of_8.sql",
   "20260901074437_civic_genome_temporal_supersession_v3_handoff.sql",
   "20260901074445_civic_genome_temporal_supersession_v3_activation.sql",
+  "20260901075857_civic_genome_temporal_supersession_v3_lint_safe_sync.sql",
 ]
   .map((filename) =>
     readFileSync(join(root, "supabase", "migrations", filename), "utf8"),
@@ -46,6 +47,15 @@ const supersessionVerification = readFileSync(
     "supabase",
     "verification",
     "20260901074445_civic_genome_temporal_supersession_v3.verify.sql",
+  ),
+  "utf8",
+);
+const lintSafeSyncMigration = readFileSync(
+  join(
+    root,
+    "supabase",
+    "migrations",
+    "20260901075857_civic_genome_temporal_supersession_v3_lint_safe_sync.sql",
   ),
   "utf8",
 );
@@ -144,6 +154,10 @@ describe("Civic Genome event-time chronology v2", () => {
     expect(supersessionVerification).toContain(
       "original immutable event was not reactivated by source revision",
     );
+    expect(lintSafeSyncMigration).not.toContain(
+      "pg_temp.civic_genome_current_history_work_v3",
+    );
+    expect(lintSafeSyncMigration).toContain("replacement_predecessor");
   });
 
   it("exports only correction-aware current events while retaining receipts", () => {
