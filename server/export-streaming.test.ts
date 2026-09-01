@@ -1,3 +1,4 @@
+import { EventEmitter } from "node:events";
 import type { Response } from "express";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -206,6 +207,33 @@ describe("sovereign export response contract", () => {
           chunk.includes("second-large-source.pdf"),
       ),
     ).toBe(false);
+  });
+
+  it("stops waiting for backpressure when the client disconnects", async () => {
+    const { res } = responseDouble();
+    const events = new EventEmitter();
+    Object.assign(res, {
+      once: events.once.bind(events),
+      off: events.off.bind(events),
+      destroyed: false,
+      writableEnded: false,
+    });
+    (res.write as ReturnType<typeof vi.fn>).mockReturnValueOnce(false);
+
+    const exporting = streamJsonExport(
+      res,
+      { id: 44, name: "Inspection case" },
+      44,
+    );
+    setTimeout(() => {
+      Object.assign(res, { destroyed: true });
+      events.emit("close");
+    }, 0);
+
+    await expect(exporting).rejects.toThrow(
+      "Export response closed before buffered data drained",
+    );
+    expect(res.end).not.toHaveBeenCalled();
   });
 
   it("restricts source rows and role lookups to preserved linked intake artifacts", async () => {

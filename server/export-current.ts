@@ -1,4 +1,3 @@
-import { once } from "node:events";
 import type { Response } from "express";
 
 import * as dbHelpers from "./db";
@@ -361,7 +360,41 @@ function jsonStringify(value: unknown): string {
 }
 
 async function writeJsonChunk(res: Response, chunk: string): Promise<void> {
-  if (res.write(chunk) === false) await once(res, "drain");
+  if (res.write(chunk) === false) await waitForJsonDrain(res);
+}
+
+function waitForJsonDrain(res: Response): Promise<void> {
+  if (res.destroyed || res.writableEnded) {
+    return Promise.reject(
+      new Error("Export response closed before buffered data drained"),
+    );
+  }
+
+  return new Promise<void>((resolve, reject) => {
+    const cleanup = () => {
+      res.off("drain", onDrain);
+      res.off("close", onClose);
+      res.off("error", onError);
+    };
+    const onDrain = () => {
+      cleanup();
+      resolve();
+    };
+    const onClose = () => {
+      cleanup();
+      reject(new Error("Export response closed before buffered data drained"));
+    };
+    const onError = (error: Error) => {
+      cleanup();
+      reject(error);
+    };
+
+    res.once("drain", onDrain);
+    res.once("close", onClose);
+    res.once("error", onError);
+    // Close can race the listener registration after write() returns false.
+    if (res.destroyed || res.writableEnded) onClose();
+  });
 }
 
 async function writeJsonValue(res: Response, value: unknown): Promise<void> {

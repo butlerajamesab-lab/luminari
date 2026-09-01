@@ -121,10 +121,15 @@ function cmsNarrativeSpans(artifact: ParsedArtifact): TextSpan[] {
         /\(X4\)[^\n]*SUMMARY STATEMENT OF DEFICIENCIES[^\n]*/gi,
       ),
     ];
-    // Prefer the more precise Residents Affected boundary when the form
-    // exposes it. Continuation pages sometimes expose only the X4 heading.
-    const narrativeStarts =
-      residentStarts.length > 0 ? residentStarts : summaryStarts;
+    // Prefer Residents Affected within each X4 block, but retain an X4-only
+    // continuation block even when a different block exposes that marker.
+    // This matters when an unpaged DOCX/text conversion collapses several
+    // original pages into one document-local view.
+    const narrativeStarts = selectCmsNarrativeStarts(
+      residentStarts,
+      summaryStarts,
+      page.text.length,
+    );
     if (narrativeStarts.length === 0) continue;
 
     // A page (and especially an unpaged DOCX/text conversion) may contain
@@ -199,6 +204,37 @@ function cmsNarrativeSpans(artifact: ParsedArtifact): TextSpan[] {
     }
   }
   return output;
+}
+
+function selectCmsNarrativeStarts(
+  residentStarts: RegExpMatchArray[],
+  summaryStarts: RegExpMatchArray[],
+  textLength: number,
+): RegExpMatchArray[] {
+  if (summaryStarts.length === 0) return residentStarts;
+
+  const selected: RegExpMatchArray[] = [];
+  const firstSummaryIndex = summaryStarts[0].index ?? 0;
+  selected.push(
+    ...residentStarts.filter(
+      (resident) => (resident.index ?? textLength) < firstSummaryIndex,
+    ),
+  );
+
+  for (let index = 0; index < summaryStarts.length; index++) {
+    const summary = summaryStarts[index];
+    const sectionStart = summary.index ?? 0;
+    const sectionEnd = summaryStarts[index + 1]?.index ?? textLength;
+    const sectionResidents = residentStarts.filter((resident) => {
+      const residentIndex = resident.index ?? textLength;
+      return residentIndex >= sectionStart && residentIndex < sectionEnd;
+    });
+    selected.push(
+      ...(sectionResidents.length > 0 ? sectionResidents : [summary]),
+    );
+  }
+
+  return selected.sort((left, right) => (left.index ?? 0) - (right.index ?? 0));
 }
 
 /**
