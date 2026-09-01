@@ -135,7 +135,7 @@ describe("Codex reviewer regressions", () => {
   });
 
   it("keeps dotted contacts intact for contact extraction", () => {
-    const sentence = "Email jane.doe@example.com or call 206.555.0123 today.";
+    const sentence = "Email jane.doe@example.com or call 206.555-0123 today.";
     const artifact = artifactFromSentences([sentence]);
 
     expect(
@@ -146,7 +146,7 @@ describe("Codex reviewer regressions", () => {
         .data.filter((entity) => entity.type === "contact")
         .map((entity) => entity.canonical_name)
         .sort(),
-    ).toEqual(["206.555.0123", "jane.doe@example.com"]);
+    ).toEqual(["206.555-0123", "jane.doe@example.com"]);
   });
 
   it("binds relationship predicates that immediately follow coordinated endpoints", () => {

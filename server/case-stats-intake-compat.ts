@@ -20,6 +20,18 @@ function output_item_count<T>(outputs: Array<{ data: T[] }>): number {
   );
 }
 
+function current_layer_outputs<T extends { projection_current: boolean }>(
+  outputs: T[],
+): T[] {
+  return outputs.filter((output) => output.projection_current);
+}
+
+function current_layer_state(
+  outputs: Array<{ projection_current: boolean }>,
+): "not_projected" | "canonical_projection" {
+  return outputs.length > 0 ? "canonical_projection" : "not_projected";
+}
+
 export type CaseCommittedCounts = {
   findings: number;
   barriers: number;
@@ -71,7 +83,7 @@ async function read_case_commitment_projection(
 ): Promise<CaseCommitmentProjection> {
   let rows: Array<Record<string, unknown>>;
   try {
-    const result = await getPool().query(
+    const result = (await getPool().query(
       `select
        case when jsonb_typeof(committed_finding_ids) = 'array'
          then jsonb_array_length(committed_finding_ids) else 0 end::int as findings,
@@ -91,7 +103,7 @@ async function read_case_commitment_projection(
      where case_id = $1
      limit 1`,
       [case_id],
-    ) as unknown as { rows: Array<Record<string, unknown>> };
+    )) as unknown as { rows: Array<Record<string, unknown>> };
     rows = result.rows;
   } catch (error) {
     if (isMissingCaseCommitmentRelation(error)) {
@@ -156,6 +168,12 @@ export async function getCaseStats(caseId: number) {
     ),
     read_case_commitment_projection(caseId),
   ]);
+  const currentVerificationOutputs = current_layer_outputs(
+    verification.outputs,
+  );
+  const currentClaimOutputs = current_layer_outputs(claims.outputs);
+  const currentPatternOutputs = current_layer_outputs(patterns.outputs);
+  const currentCascadeOutputs = current_layer_outputs(cascades.outputs);
 
   const documentStatus: Record<string, number> = {};
   for (const artifact of integrity.artifacts) {
@@ -175,21 +193,11 @@ export async function getCaseStats(caseId: number) {
       relationships.state === "canonical_projection"
         ? relationships.relationships.length
         : 0,
-    verificationRecords:
-      verification.state === "canonical_projection"
-        ? output_item_count(verification.outputs)
-        : 0,
-    claimCandidates:
-      claims.state === "canonical_projection"
-        ? output_item_count(claims.outputs)
-        : 0,
+    verificationRecords: output_item_count(currentVerificationOutputs),
+    claimCandidates: output_item_count(currentClaimOutputs),
     structuralSignals:
-      (patterns.state === "canonical_projection"
-        ? output_item_count(patterns.outputs)
-        : 0) +
-      (cascades.state === "canonical_projection"
-        ? output_item_count(cascades.outputs)
-        : 0),
+      output_item_count(currentPatternOutputs) +
+      output_item_count(currentCascadeOutputs),
   };
 
   return {
@@ -214,10 +222,10 @@ export async function getCaseStats(caseId: number) {
       integrity: integrity.projection_state,
       entities: entities.state,
       relationships: relationships.state,
-      verification: verification.state,
-      claims: claims.state,
-      patterns: patterns.state,
-      cascades: cascades.state,
+      verification: current_layer_state(currentVerificationOutputs),
+      claims: current_layer_state(currentClaimOutputs),
+      patterns: current_layer_state(currentPatternOutputs),
+      cascades: current_layer_state(currentCascadeOutputs),
       commitments: commitment.state,
     },
     provenance: {

@@ -32,11 +32,14 @@ vi.mock("./intake-case-runtime-projection", () => ({
 
 import { getCaseStats } from "./case-stats-intake-compat";
 
-function canonical_output(count: number) {
+function canonical_output(count: number, projection_current = true) {
   return {
     state: "canonical_projection",
     outputs: [
-      { data: Array.from({ length: count }, (_, index) => ({ index })) },
+      {
+        projection_current,
+        data: Array.from({ length: count }, (_, index) => ({ index })),
+      },
     ],
   };
 }
@@ -120,6 +123,42 @@ describe("case stats Intake Spine compatibility projection", () => {
     );
     expect(stats.provenance.derivedIntake.reviewerCommitted).toBe(false);
     expect(stats.provenance.committed.reviewerCommitted).toBe(true);
+  });
+
+  it("excludes sealed outputs that are not part of a current governed session", async () => {
+    mocks.read_layer.mockImplementation(
+      async (_case_id: number, layer_name: string) => {
+        if (layer_name === "verification_gate")
+          return canonical_output(87, false);
+        if (layer_name === "rights_and_duties_matrix")
+          return {
+            state: "canonical_projection",
+            outputs: [
+              ...canonical_output(11, false).outputs,
+              ...canonical_output(3, true).outputs,
+            ],
+          };
+        if (layer_name === "pattern_registry")
+          return canonical_output(4, false);
+        if (layer_name === "cascade_registry") return canonical_output(2, true);
+        throw new Error(`unexpected layer ${layer_name}`);
+      },
+    );
+
+    const stats = await getCaseStats(11);
+
+    expect(stats.derivedIntake).toMatchObject({
+      verificationRecords: 0,
+      claimCandidates: 3,
+      structuralSignals: 2,
+    });
+    expect(stats).toMatchObject({ findings: 0, claims: 3, signalFlags: 2 });
+    expect(stats.projectionState).toMatchObject({
+      verification: "not_projected",
+      claims: "canonical_projection",
+      patterns: "not_projected",
+      cascades: "canonical_projection",
+    });
   });
 
   it("retains the legacy top-level counters as documented compatibility aliases", async () => {
