@@ -336,6 +336,7 @@ function protectSupportedNonterminalPeriods(text: string): string {
   const patterns = [
     /\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/g,
     /\b\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b/g,
+    /\b\d+(?:\.\d+)+\b/g,
     /\b(?:Mr|Mrs|Ms|Dr|Prof)\.(?=\s+[A-Z])/gi,
     /\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)\.(?=\s+\d{1,4}\b)/gi,
     /\b(?:Inc|Corp|Co)\.(?=\s+(?:[a-z]|and\b|or\b|&))/g,

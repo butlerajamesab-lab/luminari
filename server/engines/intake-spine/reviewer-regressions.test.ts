@@ -116,6 +116,25 @@ describe("Codex reviewer regressions", () => {
     ]);
   });
 
+  it("keeps decimal measurements inside state-transition source bounds", () => {
+    const sentence =
+      "Alice Smith had a 2.5 cm wound and was admitted to the hospital.";
+    const artifact = artifactFromSentences([sentence]);
+    const alice = entityAtSource(
+      "alice-smith",
+      "person",
+      "Alice Smith",
+      artifact,
+    );
+
+    expect(
+      semanticSpansForArtifact(artifact, [artifact]).map((span) => span.text),
+    ).toEqual([sentence]);
+    expect(
+      processLayer9({ entities: [alice], artifacts: [artifact] }).data,
+    ).toEqual([expect.objectContaining({ source_text: sentence })]);
+  });
+
   it("keeps organization suffixes with following relationship predicates", () => {
     const sentence = "Acme Inc. is employer Alice Smith was hired.";
     const artifact = artifactFromSentences([sentence]);
