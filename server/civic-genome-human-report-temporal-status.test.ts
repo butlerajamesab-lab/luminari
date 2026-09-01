@@ -11,27 +11,26 @@ describe("Civic Genome human report temporal status", () => {
   it("separates pending provider records from confirmed event history", async () => {
     vi.stubEnv("ROSETTA_SUPABASE_URL", "https://rosetta.test");
     vi.stubEnv("ROSETTA_SUPABASE_SERVICE_ROLE_KEY", "sb_secret_test");
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify([
-      {
-        source_content_id: "11111111-1111-4111-8111-111111111111",
-        source_document_id: 7,
-        source_version: "fixture-v1",
-        source_url: "https://legislature.example.test/bill",
-        media_type: "text/html",
-        source_text: "Authoritative source fixture.",
-        source_content_hash: "a".repeat(64),
-        source_byte_hash: "b".repeat(64),
-        source_provider_hash: null,
-        source_identity_hash: "c".repeat(64),
-        source_metadata: {},
-        created_at: "2026-09-01T00:00:00.000Z",
-      },
-    ]), {
-      status: 200,
-      headers: { "content-type": "application/json" },
-    })));
+    const source_payload = JSON.stringify([{
+      source_content_id: "11111111-1111-4111-8111-111111111111",
+      source_document_id: 7,
+      source_version: "fixture-v1",
+      source_url: "https://legislature.example.test/bill",
+      media_type: "text/html",
+      source_text: "Authoritative source fixture.",
+      source_content_hash: "a".repeat(64),
+      source_byte_hash: "b".repeat(64),
+      source_provider_hash: null,
+      source_identity_hash: "c".repeat(64),
+      source_metadata: {},
+      created_at: "2026-09-01T00:00:00.000Z",
+    }]);
+    vi.stubGlobal("fetch", vi.fn().mockImplementation(async () => new Response(
+      source_payload,
+      { status: 200, headers: { "content-type": "application/json" } },
+    )));
 
-    const report = await render_civic_genome_human_report({
+    const payload = {
       exported_at: "2026-09-01T00:00:00.000Z",
       source_bill_id: 1,
       genome_bill_id: "22222222-2222-4222-8222-222222222222",
@@ -80,7 +79,9 @@ describe("Civic Genome human report temporal status", () => {
       lineage_edges: [],
       family: null,
       bill_temporal_facts: null,
-    }, "detailed");
+    };
+    const report = await render_civic_genome_human_report(payload, "detailed");
+    const summary = await render_civic_genome_human_report(payload, "summary");
 
     expect(report).toContain(
       '<span class="label">Confirmed events</span><b>1</b>',
@@ -93,5 +94,12 @@ describe("Civic Genome human report temporal status", () => {
     expect(report).toMatch(
       /<tr class="pending-event">[\s\S]*?Pending provider record — not confirmed[\s\S]*?Provider reports enactment[\s\S]*?<\/tr>/,
     );
+    expect(summary).toContain(
+      '<span class="label">Pending provider records</span><b>1</b>',
+    );
+    expect(summary).toContain("Pending source evidence");
+    expect(summary).toContain("Provider-reported actions awaiting confirmation");
+    expect(summary).toContain("Provider reports enactment");
+    expect(summary).toContain("not counted as confirmed legislative history");
   });
 });

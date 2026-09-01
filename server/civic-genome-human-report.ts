@@ -276,6 +276,7 @@ function report_css(): string {
     .muted { color: #697b73; }
     .good { color: #0b7048; font-weight: 700; }
     .warn { color: #8b5b00; font-weight: 700; }
+    .pending-panel { border-color: #d4a84f; background: #fffaf0; }
     .pending-event { background: #fff8e8; }
     .event-status { font: 700 .72rem ui-monospace, SFMono-Regular, Menlo, monospace; }
     .final-diff { color: #a23434; font-weight: 700; }
@@ -486,6 +487,9 @@ export async function render_civic_genome_human_report(
   const pending_event_count = presented_events.filter(
     ({ presentation }) => presentation.pending,
   ).length;
+  const pending_events = presented_events.filter(
+    ({ presentation }) => presentation.pending,
+  );
   const unclassified_event_count =
     events.length - confirmed_event_count - pending_event_count;
   const lineage = as_records(root.lineage_edges);
@@ -511,6 +515,16 @@ export async function render_civic_genome_human_report(
   const state = string_value(bill.state_code) ?? "Unknown jurisdiction";
   const session = string_value(bill.session_key) ?? "Unknown session";
   const report_title = `${bill_number} — ${mode === "summary" ? "Civic Genome Summary" : "Civic Genome Detailed Report"}`;
+
+  const summary_pending_section = mode === "summary" && pending_events.length > 0
+    ? `
+    <section class="panel pending-panel">
+      <span class="eyebrow">Pending source evidence</span>
+      <h2>Provider-reported actions awaiting confirmation</h2>
+      <p class="warn">These ${pending_events.length} record${pending_events.length === 1 ? " is" : "s are"} preserved as evidence but not counted as confirmed legislative history.</p>
+      <table><thead><tr><th>Provider-reported time</th><th>Observed by Lighthouse</th><th>Type</th><th>Action</th></tr></thead><tbody>${pending_events.map(({ event }) => `<tr class="pending-event"><td>${html(format_date(event.event_at ?? event.valid_at ?? event.event_timestamp))}</td><td>${html(format_date(event.observed_at ?? event.created_at))}</td><td>${html(human_key(event.event_type))}</td><td>${html(event.action_text ?? as_record(event.event_payload_json)?.event_summary ?? "Recorded source event")}</td></tr>`).join("")}</tbody></table>
+    </section>`
+    : "";
 
   const current_traits_html = [...trait_groups.entries()]
     .map(
@@ -606,12 +620,17 @@ export async function render_civic_genome_human_report(
       <div class="metric"><span class="label">Enacted</span><b>${html(format_date(temporal_facts?.enacted_at ?? bill.enacted_at))}</b></div>
       <div class="metric"><span class="label">Effective</span><b>${html(format_date(temporal_facts?.effective_at ?? bill.effective_at))}</b></div>
       <div class="metric"><span class="label">Last observed</span><b>${html(format_date(temporal_facts?.last_observed_at ?? bill.last_observed_at))}</b></div>
+      <div class="metric"><span class="label">Confirmed events</span><b>${confirmed_event_count}</b></div>
+      <div class="metric"><span class="label">Pending provider records</span><b>${pending_event_count}</b></div>
+      ${unclassified_event_count > 0 ? `<div class="metric"><span class="label">Confirmation unavailable</span><b>${unclassified_event_count}</b></div>` : ""}
       <div class="metric"><span class="label">Current version</span><b>${html(version_label(current_version))}</b></div>
       <div class="metric"><span class="label">Highest verified version</span><b>${html(version_label(published_version))}</b></div>
     </div>
     ${bill.last_action_summary ? `<p><b>Latest source action:</b> ${html(bill.last_action_summary)}</p>` : ""}
     <p class="subhead">These are source-event dates. Rosetta extraction receipts and Lighthouse observation receipts retain their own separately labeled timestamps.</p>
   </section>
+
+  ${summary_pending_section}
 
   <section class="panel">
     <span class="eyebrow">Current verified structural state</span>
