@@ -48,6 +48,10 @@ type docket_bill_detail_cache_row = {
   source: string;
 };
 
+type docket_bill_detail_cache_database_row = Omit<docket_bill_detail_cache_row, "fetched_at"> & {
+  fetched_at: string | Date;
+};
+
 type civic_genome_projection_status =
   | {
       ok: true;
@@ -119,65 +123,25 @@ const normalize_bill_id = (bill_id: unknown): number => {
   return normalized;
 };
 
-const get_supabase_cache_config = () => {
-  const supabase_url = process.env.LIGHTHOUSE_SUPABASE_URL ?? process.env.SUPABASE_URL ?? "";
-  const supabase_service_role_key = process.env.LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
-
-  if (!supabase_url || !supabase_service_role_key) {
-    throw new Error("supabase_not_configured_for_docket_room_cache_access");
-  }
-
-  return {
-    supabase_url: supabase_url.replace(/\/$/, ""),
-    supabase_service_role_key,
-  };
-};
-
-const supabase_cache_headers = (include_body = false): Record<string, string> => {
-  const { supabase_service_role_key } = get_supabase_cache_config();
-  const headers: Record<string, string> = {
-    apikey: supabase_service_role_key,
-    authorization: `Bearer ${supabase_service_role_key}`,
-  };
-
-  if (include_body) {
-    headers["content-type"] = "application/json";
-    headers.prefer = "resolution=merge-duplicates,return=minimal";
-  }
-
-  return headers;
-};
-
-const supabase_cache_url = (path: string, query: Record<string, string>): string => {
-  const { supabase_url } = get_supabase_cache_config();
-  const search_params = new URLSearchParams(query);
-
-  return `${supabase_url}/rest/v1/${path}?${search_params.toString()}`;
-};
-
-const parse_supabase_cache_response = async <row_type>(response: Response): Promise<row_type | null> => {
-  if (!response.ok) {
-    throw new Error(`supabase_cache_request_failed_http_${response.status}`);
-  }
-
-  const rows = (await response.json()) as row_type[];
-
-  return rows[0] ?? null;
-};
+const normalize_fetched_at = (value: string | Date): string =>
+  value instanceof Date ? value.toISOString() : value;
 
 const read_state_cache = async (state: string): Promise<docket_state_cache_row | null> => {
-  const response = await fetch(
-    supabase_cache_url("docket_bill_state_cache", {
-      state: `eq.${state}`,
-      select: "*",
-    }),
+  const result = await query_with_diagnostics<docket_state_cache_database_row>(
+    `select id, state, session_id, session_title, bills, bill_count, fetched_at, source
+       from public.docket_bill_state_cache
+      where state = $1
+      limit 1`,
+    [state],
     {
-      method: "GET",
-      headers: supabase_cache_headers(),
+      label: "docket_state_cache_read",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 5_000,
     },
   );
+  const row = result.rows[0];
 
-  return parse_supabase_cache_response<docket_state_cache_row>(response);
+  return row ? { ...row, fetched_at: normalize_fetched_at(row.fetched_at) } : null;
 };
 
 const read_all_state_cache = async (): Promise<docket_state_cache_row[]> => {
@@ -195,57 +159,67 @@ const read_all_state_cache = async (): Promise<docket_state_cache_row[]> => {
 
   return result.rows.map(row => ({
     ...row,
-    fetched_at: row.fetched_at instanceof Date ? row.fetched_at.toISOString() : row.fetched_at,
+    fetched_at: normalize_fetched_at(row.fetched_at),
   }));
 };
 
 const upsert_state_cache = async (row: docket_state_cache_row): Promise<void> => {
-  const response = await fetch(
-    supabase_cache_url("docket_bill_state_cache", {
-      on_conflict: "state",
-    }),
+  await query_with_diagnostics(
+    `insert into public.docket_bill_state_cache (
+       state, session_id, session_title, bills, bill_count, fetched_at, source
+     ) values ($1, $2, $3, $4::jsonb, $5, $6::timestamptz, $7)
+     on conflict (state) do update set
+       session_id = excluded.session_id,
+       session_title = excluded.session_title,
+       bills = excluded.bills,
+       bill_count = excluded.bill_count,
+       fetched_at = excluded.fetched_at,
+       source = excluded.source,
+       updated_at = now()`,
+    [row.state, row.session_id, row.session_title, JSON.stringify(row.bills), row.bill_count, row.fetched_at, row.source],
     {
-      method: "POST",
-      headers: supabase_cache_headers(true),
-      body: JSON.stringify(row),
+      label: "docket_state_cache_upsert",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 10_000,
     },
   );
-
-  if (!response.ok) {
-    throw new Error(`supabase_cache_request_failed_http_${response.status}`);
-  }
 };
 
 const read_bill_detail_cache = async (bill_id: number): Promise<docket_bill_detail_cache_row | null> => {
-  const response = await fetch(
-    supabase_cache_url("docket_bill_detail_cache", {
-      bill_id: `eq.${bill_id}`,
-      select: "*",
-    }),
+  const result = await query_with_diagnostics<docket_bill_detail_cache_database_row>(
+    `select bill_id, bill, fetched_at, source
+       from public.docket_bill_detail_cache
+      where bill_id = $1
+      limit 1`,
+    [bill_id],
     {
-      method: "GET",
-      headers: supabase_cache_headers(),
+      label: "docket_bill_detail_cache_read",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 5_000,
     },
   );
+  const row = result.rows[0];
 
-  return parse_supabase_cache_response<docket_bill_detail_cache_row>(response);
+  return row ? { ...row, fetched_at: normalize_fetched_at(row.fetched_at) } : null;
 };
 
 const upsert_bill_detail_cache = async (row: docket_bill_detail_cache_row): Promise<void> => {
-  const response = await fetch(
-    supabase_cache_url("docket_bill_detail_cache", {
-      on_conflict: "bill_id",
-    }),
+  await query_with_diagnostics(
+    `insert into public.docket_bill_detail_cache (
+       bill_id, bill, fetched_at, source
+     ) values ($1, $2::jsonb, $3::timestamptz, $4)
+     on conflict (bill_id) do update set
+       bill = excluded.bill,
+       fetched_at = excluded.fetched_at,
+       source = excluded.source,
+       updated_at = now()`,
+    [row.bill_id, JSON.stringify(row.bill), row.fetched_at, row.source],
     {
-      method: "POST",
-      headers: supabase_cache_headers(true),
-      body: JSON.stringify(row),
+      label: "docket_bill_detail_cache_upsert",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 10_000,
     },
   );
-
-  if (!response.ok) {
-    throw new Error(`supabase_cache_request_failed_http_${response.status}`);
-  }
 };
 
 const is_fresh = (fetched_at: string, ttl_ms = cache_ttl_ms): boolean => {

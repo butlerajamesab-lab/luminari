@@ -65,6 +65,40 @@ describe("Docket cache-first and Rosetta source-handoff boundaries", () => {
     expect(cacheStatus).toContain('status_source: "production_database"');
   });
 
+  it("uses one canonical Postgres cache path for state and bill reads and writes", () => {
+    const stateRead = between(
+      docketRoute,
+      "const read_state_cache = async",
+      "const read_all_state_cache = async",
+    );
+    const stateWrite = between(
+      docketRoute,
+      "const upsert_state_cache = async",
+      "const read_bill_detail_cache = async",
+    );
+    const billRead = between(
+      docketRoute,
+      "const read_bill_detail_cache = async",
+      "const upsert_bill_detail_cache = async",
+    );
+    const billWrite = between(
+      docketRoute,
+      "const upsert_bill_detail_cache = async",
+      "const is_fresh =",
+    );
+
+    expect(stateRead).toContain("from public.docket_bill_state_cache");
+    expect(stateRead).toContain("where state = $1");
+    expect(stateWrite).toContain("insert into public.docket_bill_state_cache");
+    expect(stateWrite).toContain("on conflict (state) do update");
+    expect(billRead).toContain("from public.docket_bill_detail_cache");
+    expect(billRead).toContain("where bill_id = $1");
+    expect(billWrite).toContain("insert into public.docket_bill_detail_cache");
+    expect(billWrite).toContain("on conflict (bill_id) do update");
+    expect(docketRoute).not.toContain("supabase_cache_url");
+    expect(docketRoute).not.toContain("supabase_cache_headers");
+  });
+
   it("keeps automatic recovery on the same canonical eight-hour cache TTL", () => {
     expect(docketRoute).toContain("const cache_ttl_ms = 8 * 60 * 60 * 1000");
     expect(docketWarmer).toContain("const STATE_CACHE_TTL_MS = 8 * 60 * 60 * 1000");
