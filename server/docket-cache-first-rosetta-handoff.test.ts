@@ -52,6 +52,24 @@ describe("Docket cache-first and Rosetta source-handoff boundaries", () => {
     expect(docketRoute).toContain("request_refresh_failure_cooldown_ms");
   });
 
+  it("keeps Civic Genome projection out of the request-scoped refresh path", () => {
+    const refreshStateCache = between(
+      docketRoute,
+      "const refresh_state_cache = async",
+      "const serialize_error =",
+    );
+    const singleFlightRefresh = between(
+      docketRoute,
+      "const get_or_start_state_refresh =",
+      "const schedule_state_refresh =",
+    );
+
+    expect(refreshStateCache).toContain("project_to_civic_genome = true");
+    expect(refreshStateCache).toContain("project_to_civic_genome\n    ? await project_refreshed_state_to_civic_genome(state)");
+    expect(refreshStateCache).toContain('reason: "request_scoped_cache_refresh_only"');
+    expect(singleFlightRefresh).toContain('project_to_civic_genome: trigger === "background"');
+  });
+
   it("reports bulk cache status from production Postgres truth", () => {
     const bulkRead = between(
       docketRoute,
