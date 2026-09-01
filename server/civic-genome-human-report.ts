@@ -55,6 +55,20 @@ function html(value: unknown): string {
     .replace(/'/g, "&#39;");
 }
 
+function source_link(value: unknown): string {
+  const raw = string_value(value);
+  if (!raw) return '<span class="muted">Not observed</span>';
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol === "https:" || parsed.protocol === "http:") {
+      return `<a href="${html(parsed.toString())}" rel="noopener noreferrer">${html(raw)}</a>`;
+    }
+  } catch {
+    // Preserve malformed historical values as inert text, never as active links.
+  }
+  return html(raw);
+}
+
 function human_key(value: unknown): string {
   const raw = string_value(value) ?? "Recorded field";
   return raw
@@ -384,11 +398,28 @@ function source_block(
   heading: string,
   open = false,
 ): string {
+  const official_source_url =
+    string_value(source.source_metadata.docket_official_source_url)
+    ?? source.source_url;
+  const provider_copy_fallback_used =
+    source.source_metadata.provider_copy_fallback_used === true
+    || string_value(source.source_metadata.source_fetch_mode)
+      === "provider_copy_fallback";
+  const provider_copy_retrieval_url =
+    string_value(source.source_metadata.provider_copy_retrieval_url)
+    ?? string_value(source.source_metadata.docket_source_url)
+    ?? source.source_url;
+  const provider_copy_verified =
+    source.source_metadata.provider_copy_hash_verified === true
+    && source.source_metadata.provider_copy_size_verified === true;
+
   return `<section class="panel source-copy">
     <span class="eyebrow">Authoritative source copy</span>
     <h2>${html(heading)}</h2>
     <div class="source-header">
-      <div><b>Official source:</b> <a href="${html(source.source_url)}">${html(source.source_url)}</a></div>
+      <div><b>Official source:</b> ${source_link(official_source_url)}</div>
+      ${provider_copy_fallback_used ? `<div><b>${provider_copy_verified ? "Verified provider copy" : "Provider retrieval copy"}:</b> ${source_link(provider_copy_retrieval_url)}</div>` : ""}
+      ${provider_copy_fallback_used ? `<div><b>Retrieval path:</b> Official-source transfer failed; Rosetta parsed the separately identified provider copy${provider_copy_verified ? " after exact hash and byte-size verification" : ""}.</div>` : ""}
       <div><b>Rosetta source version:</b> ${html(source.source_version)}</div>
       <div><b>Source document ID:</b> ${html(source.source_document_id)}</div>
       <div><b>Source content hash:</b> <span class="mono">${html(source.source_content_hash)}</span></div>

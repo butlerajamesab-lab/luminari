@@ -72,6 +72,7 @@ describe("Civic Genome provider-copy source fallback", () => {
       provider_copy_hash_verified: true,
       provider_copy_size_verified: true,
       docket_official_source_url: expect.stringContaining("legislature.vermont.gov"),
+      provider_copy_retrieval_url: expect.stringContaining("legiscan.com"),
     });
   });
 

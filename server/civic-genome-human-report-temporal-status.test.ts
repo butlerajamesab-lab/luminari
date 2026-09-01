@@ -15,14 +15,24 @@ describe("Civic Genome human report temporal status", () => {
       source_content_id: "11111111-1111-4111-8111-111111111111",
       source_document_id: 7,
       source_version: "fixture-v1",
-      source_url: "https://legislature.example.test/bill",
+      source_url: "https://legiscan.com/VT/text/S0001/id/99",
       media_type: "text/html",
       source_text: "Authoritative source fixture.",
       source_content_hash: "a".repeat(64),
       source_byte_hash: "b".repeat(64),
       source_provider_hash: null,
       source_identity_hash: "c".repeat(64),
-      source_metadata: {},
+      source_metadata: {
+        docket_official_source_url:
+          "https://legislature.vermont.gov/bill/status/2026/S.1",
+        docket_source_url: "https://legiscan.com/VT/text/S0001/id/99",
+        provider_copy_retrieval_url:
+          "https://legiscan.com/VT/text/S0001/id/99",
+        source_fetch_mode: "provider_copy_fallback",
+        provider_copy_fallback_used: true,
+        provider_copy_hash_verified: true,
+        provider_copy_size_verified: true,
+      },
       created_at: "2026-09-01T00:00:00.000Z",
     }]);
     vi.stubGlobal("fetch", vi.fn().mockImplementation(async () => new Response(
@@ -101,5 +111,19 @@ describe("Civic Genome human report temporal status", () => {
     expect(summary).toContain("Provider-reported actions awaiting confirmation");
     expect(summary).toContain("Provider reports enactment");
     expect(summary).toContain("not counted as confirmed legislative history");
+    for (const rendered of [report, summary]) {
+      expect(rendered).toContain(
+        '<b>Official source:</b> <a href="https://legislature.vermont.gov/bill/status/2026/S.1"',
+      );
+      expect(rendered).toContain(
+        '<b>Verified provider copy:</b> <a href="https://legiscan.com/VT/text/S0001/id/99"',
+      );
+      expect(rendered).not.toContain(
+        '<b>Official source:</b> <a href="https://legiscan.com/',
+      );
+      expect(rendered).toContain(
+        "after exact hash and byte-size verification",
+      );
+    }
   });
 });

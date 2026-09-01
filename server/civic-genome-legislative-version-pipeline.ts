@@ -658,6 +658,8 @@ export async function extract_version_source(
       docket_provider_url: version.provider_url,
       docket_source_url: source_url,
       docket_official_source_url: selected_source_url,
+      provider_copy_retrieval_url:
+        source_fetch_mode === "provider_copy_fallback" ? source_url : null,
       extraction_text_url,
       extraction_text_byte_hash,
       source_url_rewritten: source_url !== selected_source_url,
