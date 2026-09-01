@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { docket_request_scoped_refresh_allowed } from "./docket-request-refresh-policy";
+import { LEGISCAN_ROLLOUT_STATES } from "./services/legiscan";
 
 describe("Docket request-scoped refresh policy", () => {
   it("fails closed unless the feature and exact jurisdiction are both granted", () => {
@@ -30,5 +31,16 @@ describe("Docket request-scoped refresh policy", () => {
     };
 
     expect(docket_request_scoped_refresh_allowed("WA", environment)).toBe(false);
+  });
+
+  it("permits every verified national rollout jurisdiction when each is named", () => {
+    const environment = {
+      DOCKET_REQUEST_SCOPED_REFRESH_ENABLED: "true",
+      DOCKET_REQUEST_SCOPED_REFRESH_STATES: LEGISCAN_ROLLOUT_STATES.join(","),
+    };
+
+    for (const state of LEGISCAN_ROLLOUT_STATES) {
+      expect(docket_request_scoped_refresh_allowed(state, environment)).toBe(true);
+    }
   });
 });
