@@ -15,6 +15,10 @@ services:
         value: production
       - key: LIGHTHOUSE_RUNTIME_ROLE
         value: web
+      - key: DOCKET_REQUEST_SCOPED_REFRESH_ENABLED
+        value: "true"
+      - key: DOCKET_REQUEST_SCOPED_REFRESH_STATES
+        value: WA
       - key: DATABASE_URL
         sync: false
       - key: SUPABASE_URL
