@@ -1,10 +1,11 @@
 #!/usr/bin/env node
-import { readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 
 const index = readFileSync('server/_core/index.ts', 'utf8');
 const diagnostic = readFileSync('server/_core/health-diagnostics.ts', 'utf8');
 const systemRouter = readFileSync('server/_core/systemRouter.ts', 'utf8');
 const context = readFileSync('server/_core/context.ts', 'utf8');
+const compatibilityAuthHook = readFileSync('client/src/_core/hooks/useAuth.ts', 'utf8');
 const userCache = readFileSync('server/_core/user-cache.ts', 'utf8');
 const expressAdmin = readFileSync('server/_core/express-admin-middleware.ts', 'utf8');
 const trpcServiceAdmin = readFileSync('server/_core/trpc-service-admin-middleware.ts', 'utf8');
@@ -12,6 +13,18 @@ const routers = readFileSync('server/routers.ts', 'utf8');
 const publicAdminMaintenance = readFileSync('server/routers/public-admin-maintenance.ts', 'utf8');
 const debugDb = readFileSync('server/routers/debug-db.ts', 'utf8');
 const sunam = readFileSync('server/routers/sunam.ts', 'utf8');
+
+function readJavaScriptBundles(directory) {
+  const bundles = [];
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    const path = `${directory}/${entry.name}`;
+    if (entry.isDirectory()) bundles.push(...readJavaScriptBundles(path));
+    else if (entry.isFile() && entry.name.endsWith('.js')) bundles.push([path, readFileSync(path, 'utf8')]);
+  }
+  return bundles;
+}
+
+const runtimeBundles = existsSync('dist') ? readJavaScriptBundles('dist') : [];
 
 const required_liveness = ['ok', 'runtime', 'service', 'supabase_project', 'timestamp'];
 const forbidden_liveness = ['supabaseProject', 'publicTables', 'databaseUrl', 'dbDiagnostic', 'database_version', 'public_tables', 'database', 'db_diagnostic'];
@@ -48,11 +61,24 @@ if (context.includes('console.warn("[CONTEXT] auth_context_event", { event, ...d
 if (userCache.includes('cache_key: normalized')) fail('authentication cache keys must not be logged');
 if (!userCache.includes('lookup_key_kind')) fail('authentication cache diagnostics must retain only key classification');
 
-if (context.includes('x-lighthouse-inspection-mode')) fail('request headers must never activate an inspection administrator identity');
-if (context.includes('VITE_LIGHTHOUSE_INSPECTION_MODE')) fail('client-exposed environment variables must never activate inspection identity');
-if (context.includes('isLighthouseInspectionMode(opts.req)')) fail('request state must not participate in inspection identity activation');
-if (!context.includes('process.env.NODE_ENV !== "production"')) fail('inspection identity must fail closed in production');
-if (!context.includes('process.env.LIGHTHOUSE_INSPECTION_MODE === "true"')) fail('non-production inspection identity requires an explicit server-only flag');
+const syntheticInspectionMarkers = [
+  'LIGHTHOUSE_INSPECTION_MODE',
+  'x-lighthouse-inspection-mode',
+  'inspection_user',
+  'Inspection User',
+  'temporary_lighthouse_inspection_mode',
+  'createInspectionUser',
+  'auth_status: "inspection_mode"',
+  'preview_user',
+];
+for (const marker of syntheticInspectionMarkers) {
+  if (context.includes(marker)) fail(`retired synthetic inspection identity remains in the server auth context: ${marker}`);
+  for (const [path, bundle] of runtimeBundles) {
+    if (bundle.includes(marker)) fail(`retired synthetic inspection identity remains in executable bundle ${path}: ${marker}`);
+  }
+}
+if (!compatibilityAuthHook.includes('export { useAuth } from "@/core/hooks/useAuth"')) fail('legacy auth imports must resolve to canonical Supabase authentication');
+if (compatibilityAuthHook.includes('previewUser') || compatibilityAuthHook.includes('isInspectionMode')) fail('legacy auth compatibility must not manufacture a preview identity');
 
 if (!index.includes('import { requireExpressAdmin } from "./express-admin-middleware"')) fail('Express administrator middleware must be imported');
 if (!expressAdmin.includes('resolve_user_for_procedure')) fail('Express administrator gate must resolve the canonical runtime user');

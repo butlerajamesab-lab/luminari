@@ -44,7 +44,6 @@ export function useAuth(_options?: UseAuthOptions) {
     loading,
     error: null,
     isAuthenticated: Boolean(session),
-    isInspectionMode: false,
   }), [session, loading]);
 
   return {

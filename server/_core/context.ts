@@ -10,8 +10,7 @@ import {
 export type AuthStatus =
   | "unauthenticated"
   | "authenticated_profile_resolved"
-  | "authenticated_profile_unresolved"
-  | "inspection_mode";
+  | "authenticated_profile_unresolved";
 
 export type ProfileResolutionStatus =
   | "not_attempted"
@@ -34,7 +33,6 @@ export type TrpcContext = {
   user: RuntimeUser | null;
   auth: ContextAuth;
   isSystem?: boolean;
-  isInspectionMode?: boolean;
 };
 
 type ExpressContextInput = Pick<CreateExpressContextOptions, "req" | "res">;
@@ -136,10 +134,6 @@ function createUnauthenticatedAuth(): ContextAuth {
   return { auth_status: "unauthenticated", supabase_user_id: null, supabase_email: null, profile_resolution_status: "not_attempted", profile_resolution_error: null };
 }
 
-function createInspectionAuth(): ContextAuth {
-  return { auth_status: "inspection_mode", supabase_user_id: null, supabase_email: null, profile_resolution_status: "resolved", profile_resolution_error: null };
-}
-
 function createAuthenticatedUnresolvedAuth(authUser: SupabaseAuthUser): ContextAuth {
   return {
     auth_status: "authenticated_profile_unresolved",
@@ -204,18 +198,6 @@ function getSupabaseConfig(): { url: string; key: string } | null {
   const key = process.env.LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
   return { url: url.replace(/\/$/, ""), key };
-}
-
-function isLighthouseInspectionMode(): boolean {
-  return (
-    process.env.NODE_ENV !== "production" &&
-    process.env.LIGHTHOUSE_INSPECTION_MODE === "true"
-  );
-}
-
-function createInspectionUser(): RuntimeUser {
-  const now = Date.now();
-  return { id: 0, open_id: "inspection_user", name: "Inspection User", email: "inspection@lighthouse.local", login_method: "temporary_lighthouse_inspection_mode", role: "admin", plan: "enterprise", created_at: now, updated_at: now, last_signed_in: now };
 }
 
 function readHeader(req: CreateExpressContextOptions["req"] | undefined, name: string): string | null {
@@ -348,10 +330,6 @@ export async function createContext(opts: ExpressContextInput): Promise<TrpcCont
   let auth = createUnauthenticatedAuth();
   const phases: ContextLookupPhase[] = [];
   const started = Date.now();
-  const isInspectionMode = isLighthouseInspectionMode();
-  if (isInspectionMode) {
-    return { req: opts.req, res: opts.res, user: createInspectionUser(), auth: createInspectionAuth(), isSystem: false, isInspectionMode: true };
-  }
   try {
     const authUser = await resolveSupabaseAuthUser(opts.req, phases);
     if (authUser) {
@@ -369,11 +347,10 @@ export async function createContext(opts: ExpressContextInput): Promise<TrpcCont
   } finally {
     logSlowContextUserLookup(phases, Date.now() - started);
   }
-  return { req: opts.req, res: opts.res, user, auth, isSystem: false, isInspectionMode: false };
+  return { req: opts.req, res: opts.res, user, auth, isSystem: false };
 }
 
 export const __testing = {
   resolveProfileFromSupabaseAuthUser,
   sanitizeAuthLogDetails,
-  isLighthouseInspectionMode,
 };

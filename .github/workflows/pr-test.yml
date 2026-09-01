@@ -272,6 +272,9 @@ jobs:
       - name: Copy server config
         run: '[ ! -d server/config ] || cp -r server/config dist/config'
 
+      - name: Validate built authentication bundle
+        run: pnpm run check:health-contracts
+
       - name: Start server
         run: |
           npm start &
