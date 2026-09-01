@@ -150,7 +150,10 @@ async function loadLayer(
     caseId,
     layerName,
   );
-  const rows = projection.outputs.flatMap((output) =>
+  const currentOutputs = projection.outputs.filter(
+    (output) => output.projection_current,
+  );
+  const rows = currentOutputs.flatMap((output) =>
     (Array.isArray(output.data) ? output.data : []).map((item) => ({
       ...asRecord(item),
       _receipt: {
@@ -167,9 +170,9 @@ async function loadLayer(
     })),
   );
   return {
-    state: projection.state,
+    state: currentOutputs.length > 0 ? "canonical_projection" : "not_projected",
     rows,
-    receipts: projection.outputs.map((output) => ({
+    receipts: currentOutputs.map((output) => ({
       intake_session_id: output.intake_session_id,
       layer_run_id: output.layer_run_id,
       layer_name: output.layer_name,

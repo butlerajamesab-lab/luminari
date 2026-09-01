@@ -164,4 +164,59 @@ describe("sovereign export response contract", () => {
       "sealed_current_universal_intake_projection",
     );
   });
+
+  it("excludes sealed layer outputs that are not the current governed projection", async () => {
+    state.readLayer.mockImplementation(
+      async (_caseId: number, layerName: string) =>
+        layerName === "verification_gate"
+          ? {
+              state: "canonical_projection",
+              outputs: [
+                {
+                  intake_session_id: "session-stale",
+                  layer_run_id: "run-stale",
+                  layer_name: layerName,
+                  layer_version: "2.5.0",
+                  rule_version: "2.5.0",
+                  parser_version: "parser-v1",
+                  input_hash: "1".repeat(64),
+                  output_hash: "2".repeat(64),
+                  receipt_hash: "3".repeat(64),
+                  completed_at: "2026-08-30T20:00:00.000Z",
+                  unresolved_dependencies: [],
+                  projection_current: false,
+                  data: [{ verification_id: "stale-record" }],
+                },
+                {
+                  intake_session_id: "session-current",
+                  layer_run_id: "run-current",
+                  layer_name: layerName,
+                  layer_version: "2.5.0",
+                  rule_version: "2.5.0",
+                  parser_version: "parser-v1",
+                  input_hash: "4".repeat(64),
+                  output_hash: "5".repeat(64),
+                  receipt_hash: "6".repeat(64),
+                  completed_at: "2026-08-30T21:00:00.000Z",
+                  unresolved_dependencies: [],
+                  projection_current: true,
+                  data: [{ verification_id: "current-record" }],
+                },
+              ],
+            }
+          : { state: "not_projected", outputs: [] },
+    );
+
+    const exported = await loadCurrentCaseExportData(
+      { id: 44, name: "Inspection case" },
+      44,
+    );
+
+    expect(
+      exported.verification_records.map((row) => row.verification_id),
+    ).toEqual(["current-record"]);
+    expect(
+      exported.layer_receipts.map((receipt) => receipt.intake_session_id),
+    ).toEqual(["session-current"]);
+  });
 });

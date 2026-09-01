@@ -54,10 +54,12 @@ export const LAYER_VERSION = '2.5.0';
 export const RULE_VERSION = '2.5.0';
 
 type MarkerDirection = 'a_to_b' | 'b_to_a' | 'bidirectional';
+type MarkerScope = 'between_mentions' | 'post_coordinated_endpoints';
 type MarkerManifestRow = {
   regex: { source: string; flags: string };
   type: RelationshipType;
   direction: MarkerDirection;
+  scope?: MarkerScope;
 };
 
 export const RULE_MANIFEST: {
@@ -66,7 +68,7 @@ export const RULE_MANIFEST: {
   markers: MarkerManifestRow[];
   role_map: Record<RelationshipType, { authority: string; subject: string }>;
   mention_binding: 'exact_extracted_mention_offsets_only';
-  marker_scope: 'between_mentions_in_one_sentence';
+  marker_scope: 'bound_regions_in_one_sentence';
   endpoint_type_policy: 'role_compatible';
 } = {
   context_chars: 32,
@@ -93,6 +95,7 @@ export const RULE_MANIFEST: {
     { regex: { source: '(?:holds |has )?(?:a )?power of attorney for', flags: 'i' }, type: 'authorized_representative_subject', direction: 'a_to_b' },
     { regex: { source: 'married to', flags: 'i' }, type: 'family', direction: 'bidirectional' },
     { regex: { source: 'spouse', flags: 'i' }, type: 'family', direction: 'bidirectional' },
+    { regex: { source: '^(?:are|were) family(?: members)?', flags: 'i' }, type: 'family', direction: 'bidirectional', scope: 'post_coordinated_endpoints' },
     { regex: { source: 'child of', flags: 'i' }, type: 'family', direction: 'b_to_a' },
     { regex: { source: 'parent of', flags: 'i' }, type: 'family', direction: 'a_to_b' },
     { regex: { source: '(?:daughter|son|mother|father|sister|brother) of', flags: 'i' }, type: 'family', direction: 'bidirectional' },
@@ -100,6 +103,7 @@ export const RULE_MANIFEST: {
     { regex: { source: 'policy(?:holder)? (?:with|of)', flags: 'i' }, type: 'insurer_insured', direction: 'b_to_a' },
     { regex: { source: 'owes money to', flags: 'i' }, type: 'creditor_debtor', direction: 'b_to_a' },
     { regex: { source: 'creditor', flags: 'i' }, type: 'creditor_debtor', direction: 'a_to_b' },
+    { regex: { source: '^(?:are|were) opposing parties', flags: 'i' }, type: 'opposing_party', direction: 'bidirectional', scope: 'post_coordinated_endpoints' },
   ],
   role_map: {
     employer_employee: { authority: 'employer', subject: 'employee' },
@@ -115,7 +119,7 @@ export const RULE_MANIFEST: {
     opposing_party: { authority: 'party', subject: 'party' },
   },
   mention_binding: 'exact_extracted_mention_offsets_only',
-  marker_scope: 'between_mentions_in_one_sentence',
+  marker_scope: 'bound_regions_in_one_sentence',
   endpoint_type_policy: 'role_compatible',
 };
 
@@ -124,6 +128,7 @@ const RELATIONSHIP_MARKERS = RULE_MANIFEST.markers.map(row => ({
   pattern: regexFromManifest(row.regex),
   type: row.type,
   direction: row.direction,
+  scope: row.scope ?? 'between_mentions',
 }));
 
 export function processLayer7(input: Layer7Input): EngineResult<Relationship[]> {
@@ -210,11 +215,25 @@ export function processLayer7(input: Layer7Input): EngineResult<Relationship[]> 
           const markerSearchStart = first.position + first.mention_text.length;
           const markerSearchEnd = second.position;
           if (markerSearchEnd <= markerSearchStart) continue;
-          const markerText = spanText.substring(markerSearchStart, markerSearchEnd);
+          const betweenMentions = spanText.substring(markerSearchStart, markerSearchEnd);
+          const postEndpointStart = second.position + second.mention_text.length;
+          const coordinatedEndpoints = /^\s*,?\s*(?:and|or|&)\s*$/i.test(betweenMentions);
+          const postEndpointText = spanText.substring(postEndpointStart);
+          const postEndpointLeadingWhitespace = postEndpointText.search(/\S/);
 
           for (const marker of RELATIONSHIP_MARKERS) {
+            const markerRegion = marker.scope === 'post_coordinated_endpoints'
+              ? coordinatedEndpoints && postEndpointLeadingWhitespace >= 0
+                ? {
+                    text: postEndpointText.substring(postEndpointLeadingWhitespace),
+                    start: postEndpointStart + postEndpointLeadingWhitespace,
+                  }
+                : null
+              : { text: betweenMentions, start: markerSearchStart };
+            if (!markerRegion) continue;
+
             marker.pattern.lastIndex = 0;
-            const markerMatch = marker.pattern.exec(markerText);
+            const markerMatch = marker.pattern.exec(markerRegion.text);
             if (!markerMatch) continue;
 
             const textualRoles = getTextualRoles(marker.type, marker.direction);
@@ -238,7 +257,7 @@ export function processLayer7(input: Layer7Input): EngineResult<Relationship[]> 
               span_start_offset: span.start_offset,
               span_text: spanText,
               marker_text: markerMatch[0],
-              marker_offset: span.start_offset + markerSearchStart + markerMatch.index,
+              marker_offset: span.start_offset + markerRegion.start + markerMatch.index,
             };
 
             const existing = relationshipMap.get(relationship_id);

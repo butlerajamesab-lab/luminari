@@ -234,10 +234,17 @@ function groupCmsSpansByPage(artifact: ParsedArtifact): TextSpan[] {
 
 function splitSpanIntoSentences(span: TextSpan): TextSpan[] {
   const output: TextSpan[] = [];
+  // Keep title abbreviations attached to the name that follows. The protected
+  // text is exactly the same length as the source so all emitted offsets still
+  // point into the untouched artifact bytes.
+  const protectedText = span.text.replace(
+    /\b(?:Mr|Mrs|Ms|Dr|Prof)\./gi,
+    (honorific) => `${honorific.slice(0, -1)}\uE000`,
+  );
   const pattern = /[^.!?]+(?:[.!?]+|$)/g;
   let match: RegExpExecArray | null;
-  while ((match = pattern.exec(span.text)) !== null) {
-    const raw = match[0];
+  while ((match = pattern.exec(protectedText)) !== null) {
+    const raw = span.text.substring(match.index, match.index + match[0].length);
     const leading = raw.search(/\S/);
     if (leading < 0) continue;
     const trimmedEnd = raw.trimEnd().length;

@@ -217,7 +217,13 @@ export function processLayer6(input: Layer6Input): EngineResult<Entity[]> {
         while ((match = pattern.exec(text)) !== null) {
           const rawName = match[0].replace(/^(Mr\.|Mrs\.|Ms\.|Dr\.|Prof\.)\s+/, '');
           if (isExcludedPersonMention(rawName)) continue;
-          addEntity(entityMap, rawName, 'person', artifact.artifact_key, span.start_offset + match.index);
+          addEntity(
+            entityMap,
+            rawName,
+            'person',
+            artifact.artifact_key,
+            span.start_offset + match.index + match[0].indexOf(rawName),
+          );
         }
       }
 
