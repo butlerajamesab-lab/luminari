@@ -170,7 +170,7 @@ async function fetch_bytes(
       throw new Error("legislative_version_source_exceeds_max_bytes");
     }
     return { bytes, content_type: response.headers.get("content-type") };
-  } catch {
+  } catch (error) {
     if (
       error instanceof Error
       && error.message.startsWith("legislative_version_")
@@ -311,7 +311,7 @@ async function fetch_provider_copy(
         retrieval_mode: "legiscan_api_get_amendment",
       };
     }
-  } catch (error) {
+  } catch {
     // The queue must treat every failure inside the authenticated provider
     // boundary as a shared-service outage. Per-document verification begins
     // below this catch, so hash, size, identity, and parsing failures remain
