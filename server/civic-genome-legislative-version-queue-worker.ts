@@ -30,6 +30,8 @@ const DURABLE_CONTENT_RECOVERY_MAX_ATTEMPTS = 3;
 const DURABLE_CONTENT_RECOVERY_RETRY_SECONDS = 30;
 const PROVIDER_COPY_FALLBACK_RECOVERY_CONTRACT =
   "civic-genome-provider-copy-fallback-recovery-v1";
+const SHARED_PROVIDER_RELEASE_RETRY_MIN_MS = 250;
+const SHARED_PROVIDER_RELEASE_RETRY_MAX_MS = 5_000;
 const ALLOWED_RECOVERY_CONTRACT_SCOPES = new Set([
   PROVIDER_COPY_FALLBACK_RECOVERY_CONTRACT,
 ]);
@@ -65,7 +67,9 @@ let queue_timer: NodeJS.Timeout | null = null;
 let active_queue_cycle: Promise<void> | null = null;
 let queue_cycle_running = false;
 let queue_stopped = false;
+let queue_shutdown_requested = false;
 let next_reconcile_at_ms = 0;
+const shared_provider_release_waiters = new Map<NodeJS.Timeout, () => void>();
 const queue_worker_id = [
   process.env.RENDER_SERVICE_ID ?? "lighthouse",
   process.pid,
@@ -622,15 +626,28 @@ async function release_job_after_shared_provider_outage(
   job: legislative_version_queue_job,
 ): Promise<void> {
   const result = await query_with_diagnostics<{ queue_id: string }>(
-    `update public.civic_genome_legislative_version_queue queue
-        set queue_state = $2,
-            locked_at = null,
-            locked_by = null,
-            updated_at = now()
+    `with released as (
+       update public.civic_genome_legislative_version_queue queue
+          set queue_state = $2,
+              locked_at = null,
+              locked_by = null,
+              updated_at = now()
+        where queue.queue_id = $1::uuid
+          and queue.locked_by = $3
+          and queue.attempt_count = $4::integer
+       returning queue.queue_id::text
+     )
+     select released.queue_id
+       from released
+     union all
+     select queue.queue_id::text
+       from public.civic_genome_legislative_version_queue queue
       where queue.queue_id = $1::uuid
-        and queue.locked_by = $3
+        and queue.queue_state = $2
+        and queue.locked_at is null
+        and queue.locked_by is null
         and queue.attempt_count = $4::integer
-      returning queue.queue_id::text`,
+        and not exists (select 1 from released)`,
     [
       job.queue_id,
       restorable_queue_state(job.prior_queue_state),
@@ -645,6 +662,69 @@ async function release_job_after_shared_provider_outage(
   );
   if (result.rows.length !== 1) {
     throw new Error("legislative_version_queue_shared_provider_release_failed");
+  }
+}
+
+function shared_provider_release_retry_delay_ms(
+  release_attempt: number,
+): number {
+  return Math.min(
+    SHARED_PROVIDER_RELEASE_RETRY_MAX_MS,
+    SHARED_PROVIDER_RELEASE_RETRY_MIN_MS
+      * (2 ** Math.min(5, Math.max(0, release_attempt - 1))),
+  );
+}
+
+function wait_for_shared_provider_release_retry(delay_ms: number): Promise<void> {
+  return new Promise(resolve => {
+    let timer: NodeJS.Timeout;
+    const finish = (): void => {
+      shared_provider_release_waiters.delete(timer);
+      resolve();
+    };
+    timer = setTimeout(finish, delay_ms);
+    shared_provider_release_waiters.set(timer, finish);
+  });
+}
+
+function wake_shared_provider_release_retries(): void {
+  for (const [timer, finish] of shared_provider_release_waiters) {
+    clearTimeout(timer);
+    finish();
+  }
+}
+
+async function finalize_shared_provider_release(
+  job: legislative_version_queue_job,
+): Promise<void> {
+  let release_attempt = 0;
+  while (true) {
+    release_attempt += 1;
+    try {
+      await release_job_after_shared_provider_outage(job);
+      if (release_attempt > 1) {
+        console.log("[LegislativeVersionQueue] shared_provider_release_recovered", {
+          queue_id: job.queue_id,
+          bill_version_id: job.bill_version_id,
+          release_attempt,
+        });
+      }
+      return;
+    } catch (release_error) {
+      if (queue_shutdown_requested) throw release_error;
+      const retry_delay_ms = shared_provider_release_retry_delay_ms(
+        release_attempt,
+      );
+      console.error("[LegislativeVersionQueue] shared_provider_release_retry", {
+        queue_id: job.queue_id,
+        bill_version_id: job.bill_version_id,
+        attempt_count: job.attempt_count,
+        release_attempt,
+        retry_delay_ms,
+        error_code: safe_error_code(release_error),
+      });
+      await wait_for_shared_provider_release_retry(retry_delay_ms);
+    }
   }
 }
 
@@ -768,7 +848,7 @@ export async function process_legislative_version_job(
     if (is_legislative_version_shared_provider_outage(error)) {
       pause_legislative_version_queue_after_shared_provider_outage();
       try {
-        await release_job_after_shared_provider_outage(job);
+        await finalize_shared_provider_release(job);
       } catch (release_error) {
         console.error("[LegislativeVersionQueue] shared_provider_release_failed", {
           queue_id: job.queue_id,
@@ -887,6 +967,7 @@ export function start_legislative_version_queue_worker(): void {
     return;
   }
   queue_stopped = false;
+  queue_shutdown_requested = false;
   const interval_ms = bounded_poll_interval();
   const concurrency = recovery_contract_scope ? 1 : bounded_concurrency();
   const reconcile_interval_ms = bounded_reconcile_interval();
@@ -908,7 +989,9 @@ export function start_legislative_version_queue_worker(): void {
 
 export async function stop_legislative_version_queue_worker(): Promise<void> {
   queue_stopped = true;
+  queue_shutdown_requested = true;
   if (queue_timer) clearInterval(queue_timer);
   queue_timer = null;
+  wake_shared_provider_release_retries();
   await active_queue_cycle;
 }

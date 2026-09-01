@@ -364,16 +364,27 @@ describe("legislative version queue", () => {
     process_version.mockRejectedValue(new Error(
       "legislative_version_provider_fallback_shared_service_unavailable",
     ));
-    query.mockResolvedValueOnce({ rows: [{ queue_id: outage_job.queue_id }] });
+    vi.useFakeTimers();
+    query
+      .mockRejectedValueOnce(new Error("pool acquire timed out after 1000ms"))
+      .mockResolvedValueOnce({ rows: [{ queue_id: outage_job.queue_id }] });
 
-    await expect(process_legislative_version_job(outage_job)).resolves.toBeUndefined();
+    try {
+      const processing = process_legislative_version_job(outage_job);
+      await vi.runAllTimersAsync();
+      await expect(processing).resolves.toBeUndefined();
+    } finally {
+      vi.useRealTimers();
+    }
 
-    expect(query).toHaveBeenCalledTimes(1);
-    const release_call = query.mock.calls[0];
+    expect(query).toHaveBeenCalledTimes(2);
+    const release_call = query.mock.calls[1];
     expect(release_call[2]?.label).toBe(
       "legislative_version_queue_release_shared_provider_outage",
     );
     expect(String(release_call[0])).not.toContain("attempt_count = attempt_count + 1");
+    expect(String(release_call[0])).toContain("with released as");
+    expect(String(release_call[0])).toContain("queue.locked_by is null");
     expect(release_call[1][1]).toBe("degraded");
     expect(release_call[1][3]).toBe(outage_job.attempt_count);
     expect(query.mock.calls.some(call => String(call[0]).includes("processing_state = 'failed'"))).toBe(false);
