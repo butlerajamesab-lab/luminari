@@ -121,9 +121,14 @@ const outbound_operation = (op: legiscan_operation_key): string => {
   return `${verb}${rest.map(part => `${part[0]?.toUpperCase() ?? ""}${part.slice(1)}`).join("")}`;
 };
 
-const SHARED_PROVIDER_ALERT_PATTERN = /\b(?:api\s*key|access\s*key|account|auth(?:entication|orization)?|unauthori[sz]ed|credential|quota|rate\s*limit|request\s*limit|daily\s*limit|credit|subscription|permission|denied|forbidden|service|maintenance|temporar(?:y|ily)|server|internal\s+error|busy)\b/i;
-const RECORD_PROVIDER_ALERT_SUBJECT_PATTERN = /\b(?:id|record|document|bill\s*text|amendment|text)\b/i;
-const RECORD_PROVIDER_ALERT_FAILURE_PATTERN = /\b(?:invalid|unknown|missing|not\s+(?:found|available)|(?:could\s+not|unable\s+to)\s+(?:find|locate|retrieve)|unavailable|does(?:\s+not|n't)\s+exist|no\s+(?:bill\s+)?(?:record|document|text|amendment)(?:\s+(?:was\s+)?found)?)\b/i;
+const SHARED_PROVIDER_ALERT_PATTERN = /\b(?:api\s*key|access\s*key|api\s*request|account|auth(?:entication|orization)?|unauthori[sz]ed|credential|quota|rate\s*limit|request\s*limit|daily\s*limit|credit|subscription|permission|denied|forbidden|service|maintenance|temporar(?:y|ily)|server|internal\s+error|busy)\b/i;
+const RECORD_PROVIDER_ALERT_PATTERNS = [
+  /\b(?:invalid|unknown|missing)\s+(?:(?:bill\s+text|amendment|document|record)\s+)?id\b/i,
+  /\b(?:bill\s+text|amendment|document|record)(?:\s+id)?\s+(?:is\s+)?(?:invalid|unknown|missing|not\s+(?:found|available)|unavailable|does(?:\s+not|n't)\s+exist)\b/i,
+  /\bid(?:\s+\d+)?\s+(?:is\s+)?(?:invalid|unknown|missing|not\s+(?:found|available)|unavailable|does(?:\s+not|n't)\s+exist)\b/i,
+  /\bno\s+(?:bill\s+text|amendment|document|record)(?:\s+was)?\s+found\b/i,
+  /\b(?:could\s+not|unable\s+to)\s+(?:find|locate|retrieve)\s+(?:the\s+)?(?:bill\s+text|amendment|document|record|id)\b/i,
+] as const;
 
 const classify_provider_alert_scope = (
   op: legiscan_operation_key,
@@ -133,8 +138,7 @@ const classify_provider_alert_scope = (
   if (typeof message !== "string") return "shared";
   if (SHARED_PROVIDER_ALERT_PATTERN.test(message)) return "shared";
 
-  return RECORD_PROVIDER_ALERT_SUBJECT_PATTERN.test(message)
-    && RECORD_PROVIDER_ALERT_FAILURE_PATTERN.test(message)
+  return RECORD_PROVIDER_ALERT_PATTERNS.some(pattern => pattern.test(message))
     ? "record"
     : "shared";
 };

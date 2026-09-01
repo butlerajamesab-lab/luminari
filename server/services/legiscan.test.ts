@@ -95,6 +95,7 @@ describe("LegiScan bill-text API client", () => {
   it.each([
     "Document ID not found",
     "No bill text found for ID 99",
+    "Invalid document ID",
   ])("keeps the unavailable document alert '%s' record-scoped", async (message) => {
     vi.stubEnv("LEGISCAN_API_KEY", "test-legiscan-key");
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
@@ -111,6 +112,7 @@ describe("LegiScan bill-text API client", () => {
     "Invalid API key key=test-legiscan-key",
     "Daily request quota exhausted",
     "Provider returned an unexplained error",
+    "Invalid API request for document ID 99",
   ])("keeps shared or ambiguous provider alert '%s' shared and private", async (message) => {
     vi.stubEnv("LEGISCAN_API_KEY", "test-legiscan-key");
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
