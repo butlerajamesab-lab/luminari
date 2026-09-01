@@ -17,7 +17,7 @@ describe("Civic Genome human report temporal status", () => {
       source_version: "fixture-v1",
       source_url: "https://legiscan.com/VT/text/S0001/id/99",
       media_type: "text/html",
-      source_text: "Authoritative source fixture.",
+      source_text: "Analyzed source fixture.",
       source_content_hash: "a".repeat(64),
       source_byte_hash: "b".repeat(64),
       source_provider_hash: null,
@@ -52,7 +52,15 @@ describe("Civic Genome human report temporal status", () => {
           session_key: "2026",
           bill_status: "active",
         },
-        structural_dna: { traits: [], validation_summary: {} },
+        structural_dna: {
+          traits: [{
+            trait_class: "duty",
+            trait_key: "fixture_support",
+            normalized_value_json: { present: true },
+            prism_verification_status: "supported_by_one_source",
+          }],
+          validation_summary: { supported: 1 },
+        },
         current_version: {
           source_document_id: 7,
           version_type: "introduced",
@@ -124,6 +132,21 @@ describe("Civic Genome human report temporal status", () => {
       expect(rendered).toContain(
         "after exact hash and byte-size verification",
       );
+      expect(rendered).toContain("Verified provider retrieval copy");
+      expect(rendered).toContain(
+        "full verified provider copy analyzed by Rosetta",
+      );
+      expect(rendered).toContain("Provider-copy text supported");
+      expect(rendered).toContain(
+        "Provider-copy text supports this extraction",
+      );
+      expect(rendered).toContain(
+        "do not assert that Rosetta retrieved or independently confirmed",
+      );
+      expect(rendered).not.toContain("Authoritative source copy");
+      expect(rendered).not.toContain("full authoritative source");
+      expect(rendered).not.toContain("Official-source supported");
+      expect(rendered).not.toContain("Official legislative source verified");
     }
   });
 });

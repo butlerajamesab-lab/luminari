@@ -76,13 +76,20 @@ function human_key(value: unknown): string {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-function human_prism_status(value: unknown): string {
+function human_prism_status(
+  value: unknown,
+  provider_copy_fallback_used = false,
+): string {
   const raw = string_value(value);
   if (!raw) return "Prism receipt not attached in this read model";
-  if (raw === "supported_by_one_source")
-    return "Official legislative source verified";
-  if (raw === "independent_authoritative_source_not_supplied")
-    return "Official legislative source verified";
+  if (
+    raw === "supported_by_one_source"
+    || raw === "independent_authoritative_source_not_supplied"
+  ) {
+    return provider_copy_fallback_used
+      ? "Provider-copy text supports this extraction"
+      : "Official legislative source verified";
+  }
   if (raw === "contradicted") return "Language did not carry into final bill";
   if (raw === "incomplete") return "Verification incomplete";
   return human_key(raw);
@@ -346,14 +353,21 @@ function proof_rows(
     .join("")}</section>`;
 }
 
-function trait_block(trait: json_record, detailed: boolean): string {
+function trait_block(
+  trait: json_record,
+  detailed: boolean,
+  provider_copy_fallback_used: boolean,
+): string {
   const trait_class = human_key(trait.trait_class);
   const trait_key = human_key(trait.trait_key);
-  const prism_status = human_prism_status(trait.prism_verification_status);
+  const prism_status = human_prism_status(
+    trait.prism_verification_status,
+    provider_copy_fallback_used,
+  );
   const status_class =
     prism_status === "Language did not carry into final bill"
       ? "final-diff"
-      : prism_status.includes("verified")
+      : prism_status.includes("verified") || prism_status.includes("supports")
         ? "good"
         : "warn";
   const unresolved = meaningful_unresolved(trait.prism_unresolved_conditions);
@@ -393,18 +407,26 @@ function trait_block(trait: json_record, detailed: boolean): string {
   </article>`;
 }
 
+type source_block_heading = {
+  official: string;
+  provider_copy: string;
+};
+
+function is_provider_copy_fallback(source: rosetta_source_content): boolean {
+  return source.source_metadata.provider_copy_fallback_used === true
+    || string_value(source.source_metadata.source_fetch_mode)
+      === "provider_copy_fallback";
+}
+
 function source_block(
   source: rosetta_source_content,
-  heading: string,
+  heading: source_block_heading,
   open = false,
 ): string {
   const official_source_url =
     string_value(source.source_metadata.docket_official_source_url)
     ?? source.source_url;
-  const provider_copy_fallback_used =
-    source.source_metadata.provider_copy_fallback_used === true
-    || string_value(source.source_metadata.source_fetch_mode)
-      === "provider_copy_fallback";
+  const provider_copy_fallback_used = is_provider_copy_fallback(source);
   const provider_copy_retrieval_url =
     string_value(source.source_metadata.provider_copy_retrieval_url)
     ?? string_value(source.source_metadata.docket_source_url)
@@ -414,8 +436,8 @@ function source_block(
     && source.source_metadata.provider_copy_size_verified === true;
 
   return `<section class="panel source-copy">
-    <span class="eyebrow">Authoritative source copy</span>
-    <h2>${html(heading)}</h2>
+    <span class="eyebrow">${provider_copy_fallback_used ? "Verified provider retrieval copy" : "Authoritative source copy"}</span>
+    <h2>${html(provider_copy_fallback_used ? heading.provider_copy : heading.official)}</h2>
     <div class="source-header">
       <div><b>Official source:</b> ${source_link(official_source_url)}</div>
       ${provider_copy_fallback_used ? `<div><b>${provider_copy_verified ? "Verified provider copy" : "Provider retrieval copy"}:</b> ${source_link(provider_copy_retrieval_url)}</div>` : ""}
@@ -501,6 +523,7 @@ export async function render_civic_genome_human_report(
     throw new Error(
       "civic_genome_human_report_verified_source_text_unavailable",
     );
+  const final_source_uses_provider_copy = is_provider_copy_fallback(final_source);
 
   const traits = as_records(structural_dna.traits);
   const validation = as_record(structural_dna.validation_summary) ?? {};
@@ -563,7 +586,7 @@ export async function render_civic_genome_human_report(
     <section class="panel">
       <span class="eyebrow">Structural DNA</span>
       <h2>${html(human_key(group))}</h2>
-      ${rows.map((row) => trait_block(row, detailed)).join("")}
+      ${rows.map((row) => trait_block(row, detailed, final_source_uses_provider_copy)).join("")}
     </section>`,
     )
     .join("");
@@ -573,7 +596,7 @@ export async function render_civic_genome_human_report(
     <section class="panel break">
       <span class="eyebrow">Version lineage</span>
       <h2>Legislative text versions</h2>
-      <p class="subhead">Each version remains separately identifiable. A later authoritative state does not erase the earlier source.</p>
+      <p class="subhead">Each version remains separately identifiable. A later legislative version state does not erase the earlier source.</p>
       ${version_table(versions, source_by_document)}
     </section>
 
@@ -615,7 +638,10 @@ export async function render_civic_genome_human_report(
           return `<section class="panel"><h2>${html(human_key(version.version_type))}</h2><p class="warn">Rosetta source copy was not attached for this version. The gap is preserved rather than substituted.</p></section>`;
         return source_block(
           source,
-          `${human_key(version.version_type)} — full source snapshot`,
+          {
+            official: `${human_key(version.version_type)} — full official-source snapshot`,
+            provider_copy: `${human_key(version.version_type)} — full verified provider-copy snapshot analyzed by Rosetta`,
+          },
           false,
         );
       })
@@ -668,12 +694,13 @@ export async function render_civic_genome_human_report(
     <h2>What the current Civic Genome snapshot contains</h2>
     <div class="grid">
       ${layer_summary || '<div class="metric"><span class="label">Structural traits</span><b>None observed</b></div>'}
-      <div class="metric"><span class="label">Official-source supported</span><b>${html(validation.supported ?? 0)}</b></div>
+      <div class="metric"><span class="label">${final_source_uses_provider_copy ? "Provider-copy text supported" : "Official-source supported"}</span><b>${html(validation.supported ?? 0)}</b></div>
       <div class="metric"><span class="label">Did not carry into final bill</span><b>${html(validation.contradicted ?? 0)}</b></div>
       <div class="metric"><span class="label">Unresolved</span><b>${html(validation.unresolved ?? 0)}</b></div>
     </div>
     ${family ? `<p><b>Family:</b> ${html(family.family_label ?? family.family_id ?? "Not observed")}</p>` : ""}
     ${family_assignment ? `<p><b>Family assignment:</b> ${html(human_key(family_assignment.status))}</p>` : ""}
+    ${final_source_uses_provider_copy ? '<p class="warn">Support counts reflect deterministic checks against a hash- and byte-size-verified provider copy. They do not assert that Rosetta retrieved or independently confirmed the analyzed text from the official legislative source.</p>' : ""}
   </section>
 
   ${current_traits_html || '<section class="panel"><h2>No published structural traits</h2><p class="muted">No structural DNA objects are attached to the highest verified snapshot.</p></section>'}
@@ -681,7 +708,10 @@ export async function render_civic_genome_human_report(
   ${detailed_sections}
 
   <div class="break"></div>
-  ${source_block(final_source, `${human_key(published_version?.version_type ?? current_version?.version_type ?? "authoritative")} — full authoritative source used by Rosetta`, true)}
+  ${source_block(final_source, {
+    official: `${human_key(published_version?.version_type ?? current_version?.version_type ?? "authoritative")} — full authoritative source used by Rosetta`,
+    provider_copy: `${human_key(published_version?.version_type ?? current_version?.version_type ?? "source")} — full verified provider copy analyzed by Rosetta`,
+  }, true)}
 
   <footer>
     <div>Exported: ${html(format_date(root.exported_at))}</div>
