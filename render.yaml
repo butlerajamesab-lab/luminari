@@ -15,6 +15,10 @@ services:
         value: production
       - key: LIGHTHOUSE_RUNTIME_ROLE
         value: web
+      - key: DOCKET_REQUEST_SCOPED_REFRESH_ENABLED
+        value: "true"
+      - key: DOCKET_REQUEST_SCOPED_REFRESH_STATES
+        value: "AL,AK,AZ,AR,CA,CO,CT,DE,FL,GA,HI,ID,IL,IN,IA,KS,KY,LA,ME,MD,MA,MI,MN,MS,MO,MT,NE,NV,NH,NJ,NM,NY,NC,ND,OH,OK,OR,PA,RI,SC,SD,TN,TX,UT,VT,VA,WA,WV,WI,WY,DC"
       - key: DATABASE_URL
         sync: false
       - key: SUPABASE_URL
