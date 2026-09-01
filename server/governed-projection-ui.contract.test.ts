@@ -37,8 +37,10 @@ describe("governed projection reader surfaces", () => {
     expect(analyze).toContain("getIntakeRelationshipProjection");
     expect(analyze).toContain("unresolved_dependencies: output.unresolved_dependencies");
     expect(graph).toContain('projection_state === "canonical_projection"');
-    expect(graph).toContain("recorded zero explicit relationships");
-    expect(graph).toContain("isolated nodes");
+    expect(graph).toContain("Sealed projection found zero explicit relationships");
+    expect(graph).toContain("not drawn as connected merely because they appear in the same evidence");
+    expect(graph).toContain(".filter((entity) => connectedEntityIds.has(entity.id))");
+    expect(graph).toContain(") : !hasRelationships ? (");
     expect(graph).toContain("<ForceGraph2D");
   });
 

@@ -110,25 +110,36 @@ export default function NetworkGraph() {
     });
     observer.observe(container);
     return () => observer.disconnect();
-  }, [entitiesLoading, relationshipsLoading, projectionLoading, entities?.length]);
+  }, [
+    entitiesLoading,
+    relationshipsLoading,
+    projectionLoading,
+    entities?.length,
+    relationships?.length,
+  ]);
 
   const graphData = useMemo(() => {
     if (!entities || !relationships) return { nodes: [], links: [] };
 
     const connectionCount: Record<number, number> = {};
+    const connectedEntityIds = new Set<number>();
     relationships.forEach((r) => {
       connectionCount[r.sourceEntityId] = (connectionCount[r.sourceEntityId] || 0) + 1;
       connectionCount[r.targetEntityId] = (connectionCount[r.targetEntityId] || 0) + 1;
+      connectedEntityIds.add(r.sourceEntityId);
+      connectedEntityIds.add(r.targetEntityId);
     });
 
-    const nodes: GraphNode[] = entities.map((e) => ({
-      id: `e-${e.id}`,
-      name: e.name,
-      type: e.type,
-      val: Math.max(2, (connectionCount[e.id] || 0) * 2),
-      color: entityTypeColors[e.type] || "#94a3b8",
-      entityId: e.id,
-    }));
+    const nodes: GraphNode[] = entities
+      .filter((entity) => connectedEntityIds.has(entity.id))
+      .map((entity) => ({
+        id: `e-${entity.id}`,
+        name: entity.name,
+        type: entity.type,
+        val: Math.max(2, (connectionCount[entity.id] || 0) * 2),
+        color: entityTypeColors[entity.type] || "#94a3b8",
+        entityId: entity.id,
+      }));
 
     const nodeIds = new Set(nodes.map(n => n.id));
 
@@ -175,7 +186,7 @@ export default function NetworkGraph() {
   }
 
   const hasEntities = (entities?.length ?? 0) > 0;
-  const hasRelationships = (relationships?.length ?? 0) > 0;
+  const hasRelationships = graphData.links.length > 0;
   const projectionComplete = relationshipProjection?.projection_state === "canonical_projection";
   const graphLoading = entitiesLoading || relationshipsLoading || projectionLoading;
 
@@ -185,14 +196,14 @@ export default function NetworkGraph() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Network Graph</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {entities?.length || 0} entities, {relationships?.length || 0} connections
+            {entities?.length || 0} registered entities, {relationships?.length || 0} explicit connections
             {hasRelationships && <span className="ml-2 text-xs">&mdash; click edges to see backing evidence</span>}
           </p>
         </div>
-        {hasEntities && (
+        {hasRelationships && (
           <div className="flex items-center gap-2 flex-wrap">
             {Object.entries(entityTypeColors).map(([type, color]) => {
-              const count = entities?.filter(e => e.type === type).length || 0;
+              const count = graphData.nodes.filter(node => node.type === type).length;
               if (count === 0) return null;
               return (
                 <div key={type} className="flex items-center gap-1">
@@ -232,35 +243,42 @@ export default function NetworkGraph() {
             )}
           </CardContent>
         </Card>
+      ) : !hasRelationships ? (
+        <Card className="border-cyan-500/20 bg-cyan-950/10">
+          <CardContent className="p-8 flex flex-col items-center gap-4 text-center">
+            <Network className="h-10 w-10 text-cyan-400" />
+            <div className="max-w-xl">
+              <p className="text-sm font-medium">
+                {projectionComplete
+                  ? "Sealed projection found zero explicit relationships"
+                  : "No eligible sealed relationship projection is available yet"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                {projectionComplete
+                  ? `${entities?.length ?? 0} source-bound entities remain available in the Entity Registry. They are not drawn as connected merely because they appear in the same evidence.`
+                  : `${entities?.length ?? 0} source-bound entities are available, but the relationship layer has not produced an eligible connection set.`}
+              </p>
+            </div>
+            {relationshipDependencies.length > 0 && (
+              <div className="max-w-xl text-left">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Unresolved dependencies</p>
+                <ul className="mt-1 space-y-0.5 text-xs text-muted-foreground list-disc list-inside">
+                  {relationshipDependencies.slice(0, 3).map(dependency => <li key={dependency}>{dependency}</li>)}
+                </ul>
+              </div>
+            )}
+            <div className="flex items-center gap-2 flex-wrap justify-center">
+              <Button variant="outline" size="sm" onClick={() => setLocation("/entities")}>Open Entity Registry</Button>
+              {!projectionComplete && (
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setLocation("/upload")}>
+                  <Upload className="h-3.5 w-3.5" /> Upload Evidence
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       ) : (
         <>
-          {!hasRelationships && (
-            <Card className="border-cyan-500/20 bg-cyan-950/10">
-              <CardContent className="p-4 space-y-2">
-                <div className="flex items-start gap-3">
-                  <Network className="h-4 w-4 text-cyan-400 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium">
-                      {projectionComplete ? "Governed relationship projection completed" : "Entities projected; relationship projection pending"}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {projectionComplete
-                        ? `${entities?.length ?? 0} source-bound entities were identified and the sealed relationship layer recorded zero explicit relationships. The entities remain visible below as isolated nodes.`
-                        : `${entities?.length ?? 0} source-bound entities are available, but there is no eligible sealed relationship output yet.`}
-                    </p>
-                  </div>
-                </div>
-                {relationshipDependencies.length > 0 && (
-                  <div className="pl-7">
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Unresolved dependencies</p>
-                    <ul className="mt-1 space-y-0.5 text-xs text-muted-foreground list-disc list-inside">
-                      {relationshipDependencies.slice(0, 3).map(dependency => <li key={dependency}>{dependency}</li>)}
-                    </ul>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
           <div className="relative">
           <Card className="overflow-hidden">
             <div ref={containerRef} className="w-full" style={{ height: "calc(100vh - 220px)", minHeight: 500 }}>

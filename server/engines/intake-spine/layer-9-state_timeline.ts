@@ -14,6 +14,7 @@ import {
   cmsSurveyDate,
   isDateOutsideCmsRecordRange,
   isExcludedFromDominantSemanticLane,
+  SEMANTIC_SUBSTRATE_VERSION,
   semanticSentenceBounds,
   semanticSpansForArtifact,
 } from './semantic-substrate';
@@ -35,8 +36,8 @@ export interface Layer9Input {
   artifacts: ParsedArtifact[];
 }
 
-export const LAYER_VERSION = '2.5.0';
-export const RULE_VERSION = '2.5.0';
+export const LAYER_VERSION = '2.6.0';
+export const RULE_VERSION = '2.6.0';
 
 type StateRule = {
   regex: { source: string; flags: string };
@@ -57,6 +58,8 @@ export const RULE_MANIFEST: {
   ambiguous_entity_policy: 'unresolved';
   missing_date_policy: 'null';
   from_state_policy: 'null_without_explicit_prior_state_rule';
+  semantic_substrate_version: string;
+  sms_transition_date_policy: 'message_timestamp_when_sentence_has_no_explicit_date';
 } = {
   state_rules: [
     { regex: { source: '\\b(?:was |been |got )?terminated\\b', flags: 'gi' }, to_state: 'terminated', domain: 'employment' },
@@ -119,6 +122,8 @@ export const RULE_MANIFEST: {
   ambiguous_entity_policy: 'unresolved',
   missing_date_policy: 'null',
   from_state_policy: 'null_without_explicit_prior_state_rule',
+  semantic_substrate_version: SEMANTIC_SUBSTRATE_VERSION,
+  sms_transition_date_policy: 'message_timestamp_when_sentence_has_no_explicit_date',
 };
 
 export const RULE_MANIFEST_HASH = computeRuleManifestHash(RULE_MANIFEST);
@@ -163,7 +168,7 @@ export function processLayer9(input: Layer9Input): EngineResult<StateTransition[
     const artifactClass = classifySemanticArtifact(artifact);
     const surveyDate = artifactClass === 'cms_2567' ? cmsSurveyDate(artifact) : null;
 
-    for (const span of semanticSpansForArtifact(artifact, artifacts)) {
+    for (const span of semanticSpansForArtifact(artifact, artifacts, 'state_timeline')) {
       for (const rule of STATE_RULES) {
         rule.pattern.lastIndex = 0;
         let match: RegExpExecArray | null;
@@ -190,7 +195,7 @@ export function processLayer9(input: Layer9Input): EngineResult<StateTransition[
           }
 
           const entity = entities[0];
-          const transitionDate = extractDate(sentence);
+          const transitionDate = extractDate(sentence) ?? span.occurred_at?.slice(0, 10) ?? null;
           if (
             artifactClass === 'cms_2567'
             && transitionDate

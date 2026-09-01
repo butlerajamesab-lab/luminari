@@ -31,6 +31,7 @@ function artifactFromSentences(sentences: string[]): ParsedArtifact {
     extracted_text: extractedText,
     spans,
     extraction_status: "success",
+    extraction_method: "utf8_text",
     parser_version: "fixture-parser-v1",
     rule_version: "fixture-rule-v1",
     parser_rule_manifest_hash: "b".repeat(64),
@@ -59,6 +60,101 @@ function entityAtSource(
 }
 
 describe("Codex reviewer regressions", () => {
+  it("does not promote pronouns, deictics, kinship roles, or care acronyms into entities", () => {
+    const artifact = artifactFromSentences([
+      "There was a meeting and Mother was present.",
+      "The PCP and UHC NP reviewed ADL support.",
+    ]);
+    const names = processLayer6({ artifacts: [artifact] }).data.map(
+      (entity) => entity.canonical_name,
+    );
+
+    expect(names).not.toEqual(
+      expect.arrayContaining(["there", "mother", "pcp", "uhc np", "adl"]),
+    );
+  });
+
+  it("filters OCR resource pages only inside a dominant CMS inspection corpus", () => {
+    const referenceText =
+      "Grievance Policy & Procedure. The facility reviews complaints annually.";
+    const reference: ParsedArtifact = {
+      ...artifactFromSentences([referenceText]),
+      extraction_method: "tesseract_ocr",
+      spans: [
+        {
+          text: referenceText,
+          start_offset: 0,
+          end_offset: referenceText.length,
+          page: 1,
+          source_artifact_key: "sha256:reviewer-regression",
+          source_kind: "ocr_page",
+        },
+      ],
+    };
+    const cms = artifactFromSentences([
+      "STATEMENT OF DEFICIENCIES PROVIDER/SUPPLIER/CLIA FORM CMS-2567",
+    ]);
+
+    expect(semanticSpansForArtifact(reference, [reference])).toHaveLength(2);
+    expect(semanticSpansForArtifact(reference, [cms, reference])).toEqual([]);
+  });
+
+  it("deduplicates archive OCR only when the same-named page content also matches", () => {
+    const standaloneText =
+      "Richard care conference reviewed dementia symptoms feeding hydration oral hygiene walking mobility treatment goals daily activities nursing staff family support medical monitoring documented changes over time.";
+    const matchingArchiveText =
+      "Richard care conference reviewed dementia symptoms, feeding, hydration, oral hygiene, walking mobility, treatment goals, daily activities, nursing staff, family support, medical monitoring, and documented changes over time.";
+    const differentArchiveText =
+      "Budget planning reviewed invoices subscriptions cloud hosting deployment metrics build minutes tax totals payment methods account renewal service credits usage charges billing contacts and monthly statements.";
+    const standalone: ParsedArtifact = {
+      ...artifactFromSentences([standaloneText]),
+      artifact_key: "standalone-image",
+      source_filename: "IMG_1000.JPEG",
+      extracted_text: standaloneText,
+      extraction_method: "tesseract_ocr",
+      spans: [
+        {
+          text: standaloneText,
+          start_offset: 0,
+          end_offset: standaloneText.length,
+          page: 1,
+          source_artifact_key: "standalone-image",
+          source_kind: "ocr_page",
+        },
+      ],
+    };
+    const archive = (text: string): ParsedArtifact => ({
+      ...artifactFromSentences([text]),
+      artifact_key: `archive-${text.length}`,
+      source_filename: "photos.zip",
+      extracted_text: text,
+      extraction_method: "tesseract_archive_ocr",
+      spans: [
+        {
+          text,
+          start_offset: 0,
+          end_offset: text.length,
+          page: 1,
+          source_artifact_key: `archive-${text.length}`,
+          source_kind: "archive_ocr_page",
+          archive_member_path: "photos/IMG_1000.JPEG",
+          archive_member_filename: "IMG_1000.JPEG",
+        },
+      ],
+    });
+    const matching = archive(matchingArchiveText);
+    const different = archive(differentArchiveText);
+
+    expect(semanticSpansForArtifact(matching, [standalone, matching])).toEqual(
+      [],
+    );
+    expect(
+      semanticSpansForArtifact(different, [standalone, different]).map(
+        (span) => span.text,
+      ),
+    ).toEqual([differentArchiveText]);
+  });
+
   it("keeps an honorific and titled person in one source-bound sentence", () => {
     const sentence = "Dr. Jane Smith reviewed the file.";
     const artifact = artifactFromSentences([sentence]);

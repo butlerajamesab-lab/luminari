@@ -10,6 +10,7 @@ import { ParsedArtifact } from './parsing-substrate';
 import {
   classifySemanticArtifact,
   isExcludedFromDominantSemanticLane,
+  SEMANTIC_SUBSTRATE_VERSION,
   semanticSpansForArtifact,
 } from './semantic-substrate';
 
@@ -40,8 +41,8 @@ export interface Layer6Input {
   artifacts: ParsedArtifact[];
 }
 
-export const LAYER_VERSION = '2.5.0';
-export const RULE_VERSION = '2.5.0';
+export const LAYER_VERSION = '2.6.0';
+export const RULE_VERSION = '2.6.0';
 
 const ADDRESS_STATE_ABBREVIATIONS: Record<string, string> = {
   wa: 'washington', ca: 'california', or: 'oregon', ny: 'new york', tx: 'texas',
@@ -55,9 +56,17 @@ const ORGANIZATION_TOKEN_STOPLIST = [
   'DATE', 'TIME', 'SUBJECT', 'NOTE', 'NOTES', 'BENEFIT', 'BENEFITS',
 ] as const;
 
+const NON_ENTITY_ACRONYM_STOPLIST = [
+  'ADL', 'CNA', 'CP', 'DON', 'DPOA', 'LPN', 'MAR', 'MDS', 'NP', 'PCP', 'POA',
+  'RN', 'UTI',
+] as const;
+
 const PERSON_LEADING_STOPLIST = [
   'Whether', 'Then', 'This', 'That', 'These', 'Those', 'When', 'Where', 'Why', 'How',
   'What', 'Which', 'While', 'After', 'Before', 'Because', 'Although', 'Since', 'Until',
+  'I', 'We', 'He', 'She', 'It', 'They', 'Me', 'Us', 'Him', 'Her', 'Them',
+  'There', 'Here', 'Someone', 'Somebody', 'Anyone', 'Anybody', 'Everyone', 'Everybody',
+  'Nobody', 'Mother', 'Father', 'Mom', 'Dad',
 ] as const;
 
 export const RULE_MANIFEST = {
@@ -105,12 +114,15 @@ export const RULE_MANIFEST = {
   email_pattern: { source: '\\b([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,})\\b', flags: 'g' },
   address_state_abbreviations: ADDRESS_STATE_ABBREVIATIONS,
   organization_token_stoplist: ORGANIZATION_TOKEN_STOPLIST,
+  non_entity_acronym_stoplist: NON_ENTITY_ACRONYM_STOPLIST,
   person_leading_stoplist: PERSON_LEADING_STOPLIST,
   ambiguous_name_type: 'unknown',
   organization_abbreviation_expansion: false,
   exact_normalized_match_auto_merge: true,
   levenshtein_review_threshold: 2,
   near_match_auto_merge: false,
+  semantic_substrate_version: SEMANTIC_SUBSTRATE_VERSION,
+  source_aware_projection: 'exclude_transport_metadata_reactions_and_content_duplicate_archive_members',
 } as const;
 
 export const RULE_MANIFEST_HASH = computeRuleManifestHash(RULE_MANIFEST);
@@ -125,6 +137,7 @@ const CMS_PERSON_ALIAS_PATTERN = regexFromManifest(RULE_MANIFEST.cms_person_alia
 const CMS_PROVIDER_PATTERN = regexFromManifest(RULE_MANIFEST.cms_provider_pattern);
 const CMS_ADDRESS_PATTERN = regexFromManifest(RULE_MANIFEST.cms_address_pattern);
 const ORGANIZATION_STOPLIST = new Set<string>(RULE_MANIFEST.organization_token_stoplist);
+const NON_ENTITY_ACRONYMS = new Set<string>(RULE_MANIFEST.non_entity_acronym_stoplist);
 const PERSON_PREFIX_STOPLIST = new Set<string>(RULE_MANIFEST.person_leading_stoplist);
 
 export function processLayer6(input: Layer6Input): EngineResult<Entity[]> {
@@ -162,7 +175,7 @@ export function processLayer6(input: Layer6Input): EngineResult<Entity[]> {
     }
 
     const artifactClass = classifySemanticArtifact(artifact);
-    const semanticSpans = semanticSpansForArtifact(artifact, artifacts);
+    const semanticSpans = semanticSpansForArtifact(artifact, artifacts, 'entities');
 
     if (artifactClass === 'cms_2567') {
       for (const span of semanticSpans) {
@@ -316,7 +329,10 @@ export function processLayer6(input: Layer6Input): EngineResult<Entity[]> {
 }
 
 export function isExcludedOrganizationToken(rawName: string): boolean {
-  return ORGANIZATION_STOPLIST.has(rawName.trim().replace(/\s+/g, ' ').toUpperCase());
+  const normalized = rawName.trim().replace(/\s+/g, ' ').toUpperCase();
+  if (ORGANIZATION_STOPLIST.has(normalized) || NON_ENTITY_ACRONYMS.has(normalized)) return true;
+  const tokens = normalized.split(' ');
+  return rawName === rawName.toUpperCase() && NON_ENTITY_ACRONYMS.has(tokens[tokens.length - 1]);
 }
 
 export function isExcludedPersonMention(rawName: string): boolean {
