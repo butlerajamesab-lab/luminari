@@ -11,7 +11,7 @@ describe("Civic Genome human report temporal status", () => {
   it("separates pending provider records from confirmed event history", async () => {
     vi.stubEnv("ROSETTA_SUPABASE_URL", "https://rosetta.test");
     vi.stubEnv("ROSETTA_SUPABASE_SERVICE_ROLE_KEY", "sb_secret_test");
-    const source_payload = JSON.stringify([{
+    let source_payload = JSON.stringify([{
       source_content_id: "11111111-1111-4111-8111-111111111111",
       source_document_id: 7,
       source_version: "fixture-v1",
@@ -150,5 +150,17 @@ describe("Civic Genome human report temporal status", () => {
       expect(rendered).not.toContain("Official-source supported");
       expect(rendered).not.toContain("Official legislative source verified");
     }
+
+    source_payload = source_payload.replace(
+      "legiscan_api_get_bill_text",
+      "legiscan_api_get_amendment",
+    );
+    const amendment_report = await render_civic_genome_human_report(
+      payload,
+      "detailed",
+    );
+    expect(amendment_report).toContain(
+      "through LegiScan's authenticated getAmendment API and verified its exact hash and byte size before parsing",
+    );
   });
 });

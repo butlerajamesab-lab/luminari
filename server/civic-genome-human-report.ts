@@ -444,7 +444,7 @@ function source_block(
     <div class="source-header">
       <div><b>Official source:</b> ${source_link(official_source_url)}</div>
       ${provider_copy_fallback_used ? `<div><b>Provider locator:</b> ${source_link(provider_copy_locator_url)}</div>` : ""}
-      ${provider_copy_fallback_used ? `<div><b>Retrieval path:</b> Official-source transfer failed; Rosetta retrieved the separately identified provider copy${provider_copy_retrieval_mode === "legiscan_api_get_bill_text" ? " through LegiScan's authenticated getBillText API" : ""}${provider_copy_verified ? " and verified its exact hash and byte size before parsing" : ""}.</div>` : ""}
+      ${provider_copy_fallback_used ? `<div><b>Retrieval path:</b> Official-source transfer failed; Rosetta retrieved the separately identified provider copy${provider_copy_retrieval_mode === "legiscan_api_get_bill_text" ? " through LegiScan's authenticated getBillText API" : provider_copy_retrieval_mode === "legiscan_api_get_amendment" ? " through LegiScan's authenticated getAmendment API" : ""}${provider_copy_verified ? " and verified its exact hash and byte size before parsing" : ""}.</div>` : ""}
       <div><b>Rosetta source version:</b> ${html(source.source_version)}</div>
       <div><b>Source document ID:</b> ${html(source.source_document_id)}</div>
       <div><b>Source content hash:</b> <span class="mono">${html(source.source_content_hash)}</span></div>

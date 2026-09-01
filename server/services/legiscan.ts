@@ -25,7 +25,8 @@ type legiscan_operation_key =
   | "get_session_list"
   | "get_master_list"
   | "get_bill"
-  | "get_bill_text";
+  | "get_bill_text"
+  | "get_amendment";
 
 type legiscan_envelope<payload> = payload & {
   status: legiscan_status;
@@ -77,6 +78,22 @@ export type legiscan_bill_text = {
   state_link?: string;
   text_size?: number | string;
   text_hash?: string;
+};
+
+export type legiscan_amendment = {
+  doc: string;
+  amendment_id: number | string;
+  bill_id?: number | string;
+  chamber?: string;
+  chamber_id?: number | string;
+  adopted?: number | string | boolean;
+  date?: string;
+  title?: string;
+  description?: string;
+  mime?: string;
+  mime_id?: number | string;
+  amendment_size?: number | string;
+  amendment_hash?: string;
 };
 
 const require_positive_safe_integer = (
@@ -245,4 +262,39 @@ export const get_bill_text = async (
   }
 
   return data.text as legiscan_bill_text;
+};
+
+export const get_amendment = async (
+  amendment_id: number,
+): Promise<legiscan_amendment> => {
+  const data = await legiscan_request<{
+    status: "OK";
+    amendment?: unknown;
+  }>("get_amendment", {
+    id: require_positive_safe_integer(
+      amendment_id,
+      "invalid_legiscan_amendment_id",
+    ),
+  });
+
+  if (
+    !data.amendment
+    || typeof data.amendment !== "object"
+    || Array.isArray(data.amendment)
+    || typeof (data.amendment as Record<string, unknown>).doc !== "string"
+  ) {
+    throw new Error("invalid_legiscan_amendment_payload");
+  }
+
+  const response_amendment_id = Number(
+    (data.amendment as Record<string, unknown>).amendment_id,
+  );
+  if (
+    !Number.isSafeInteger(response_amendment_id)
+    || response_amendment_id !== amendment_id
+  ) {
+    throw new Error("invalid_legiscan_amendment_response_id");
+  }
+
+  return data.amendment as legiscan_amendment;
 };

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { get_bill_text } from "./legiscan";
+import { get_amendment, get_bill_text } from "./legiscan";
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -110,5 +110,70 @@ describe("LegiScan bill-text API client", () => {
     expect(failure).toBeInstanceOf(Error);
     expect((failure as Error).message).toContain("key=[redacted]");
     expect((failure as Error).message).not.toContain("test-legiscan-key");
+  });
+});
+
+describe("LegiScan amendment API client", () => {
+  it("calls the authenticated getAmendment operation with the amendment id", async () => {
+    vi.stubEnv("LEGISCAN_API_KEY", "test-legiscan-key");
+    const fetch_mock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      status: "OK",
+      amendment: {
+        amendment_id: 77,
+        doc: "SGVsbG8=",
+        mime: "text/plain",
+        amendment_size: 5,
+        amendment_hash: "8b1a9953c4611296a827abf8c47804d7",
+      },
+    }), { status: 200 }));
+    vi.stubGlobal("fetch", fetch_mock);
+
+    await expect(get_amendment(77)).resolves.toMatchObject({
+      amendment_id: 77,
+      doc: "SGVsbG8=",
+    });
+
+    const requested_url = fetch_mock.mock.calls[0]?.[0] as URL;
+    expect(requested_url.searchParams.get("op")).toBe("getAmendment");
+    expect(requested_url.searchParams.get("id")).toBe("77");
+    expect(requested_url.searchParams.get("key")).toBe("test-legiscan-key");
+  });
+
+  it.each([0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY])(
+    "rejects invalid amendment id %s without making a request",
+    async (amendment_id) => {
+      vi.stubEnv("LEGISCAN_API_KEY", "test-legiscan-key");
+      const fetch_mock = vi.fn();
+      vi.stubGlobal("fetch", fetch_mock);
+
+      await expect(get_amendment(amendment_id)).rejects.toThrow(
+        "invalid_legiscan_amendment_id",
+      );
+      expect(fetch_mock).not.toHaveBeenCalled();
+    },
+  );
+
+  it("rejects an OK response without an amendment document", async () => {
+    vi.stubEnv("LEGISCAN_API_KEY", "test-legiscan-key");
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      status: "OK",
+      amendment: { amendment_id: 77 },
+    }), { status: 200 })));
+
+    await expect(get_amendment(77)).rejects.toThrow(
+      "invalid_legiscan_amendment_payload",
+    );
+  });
+
+  it("requires the amendment envelope to identify the requested amendment", async () => {
+    vi.stubEnv("LEGISCAN_API_KEY", "test-legiscan-key");
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      status: "OK",
+      amendment: { amendment_id: 78, doc: "SGVsbG8=" },
+    }), { status: 200 })));
+
+    await expect(get_amendment(77)).rejects.toThrow(
+      "invalid_legiscan_amendment_response_id",
+    );
   });
 });

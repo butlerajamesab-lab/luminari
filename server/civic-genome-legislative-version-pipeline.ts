@@ -14,7 +14,7 @@ import {
 } from "./civic-genome-rosetta-extraction";
 import { create_rosetta_supabase_headers } from "./rosetta-supabase-auth";
 import { fetch_california_official_pdf } from "./california-legislative-source";
-import { get_bill_text } from "./services/legiscan";
+import { get_amendment, get_bill_text } from "./services/legiscan";
 
 const PDF_PARSE_VERSION = "2.4.5";
 const WA_HTML_EXTRACTOR_VERSION = "wa-official-legislative-version-html-strip-v1";
@@ -86,15 +86,21 @@ type extracted_legislative_source = {
 type provider_copy_contract = {
   locator_url: string;
   provider_document_id: number;
+  document_family: "text" | "amendment";
   expected_md5: string;
   expected_size: number;
 };
+
+type provider_copy_retrieval_mode =
+  | "legiscan_api_get_bill_text"
+  | "legiscan_api_get_amendment";
 
 type provider_copy_source = {
   bytes: Buffer;
   content_type: string | null;
   locator_url: string;
   api_document_id: number;
+  retrieval_mode: provider_copy_retrieval_mode;
 };
 
 type rosetta_source_content_receipt = {
@@ -251,6 +257,7 @@ function provider_copy_contract_for(
   return {
     locator_url: parsed.toString(),
     provider_document_id,
+    document_family: version.document_family,
     expected_md5: provider_hash,
     expected_size,
   };
@@ -271,9 +278,36 @@ function verify_provider_copy_bytes(
 async function fetch_provider_copy(
   contract: provider_copy_contract,
 ): Promise<provider_copy_source> {
-  let document: Awaited<ReturnType<typeof get_bill_text>>;
+  let document: {
+    doc: string;
+    document_id: number | string;
+    mime?: string;
+    provider_size?: number | string;
+    provider_hash?: string;
+    retrieval_mode: provider_copy_retrieval_mode;
+  };
   try {
-    document = await get_bill_text(contract.provider_document_id);
+    if (contract.document_family === "text") {
+      const bill_text = await get_bill_text(contract.provider_document_id);
+      document = {
+        doc: bill_text.doc,
+        document_id: bill_text.doc_id,
+        mime: bill_text.mime,
+        provider_size: bill_text.text_size,
+        provider_hash: bill_text.text_hash,
+        retrieval_mode: "legiscan_api_get_bill_text",
+      };
+    } else {
+      const amendment = await get_amendment(contract.provider_document_id);
+      document = {
+        doc: amendment.doc,
+        document_id: amendment.amendment_id,
+        mime: amendment.mime,
+        provider_size: amendment.amendment_size,
+        provider_hash: amendment.amendment_hash,
+        retrieval_mode: "legiscan_api_get_amendment",
+      };
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : "unknown";
     const reason = /^(?:invalid_legiscan_|legiscan_(?:http|network|request_timeout)_)/
@@ -283,7 +317,7 @@ async function fetch_provider_copy(
     throw new Error(`legislative_version_provider_fallback_api_failed:${reason}`);
   }
 
-  const returned_document_id = Number(document.doc_id);
+  const returned_document_id = Number(document.document_id);
   if (
     !Number.isSafeInteger(returned_document_id)
     || returned_document_id !== contract.provider_document_id
@@ -314,8 +348,8 @@ async function fetch_provider_copy(
     throw new Error("legislative_version_provider_fallback_document_base64_invalid");
   }
 
-  if (document.text_size !== undefined && document.text_size !== null) {
-    const returned_size = Number(document.text_size);
+  if (document.provider_size !== undefined && document.provider_size !== null) {
+    const returned_size = Number(document.provider_size);
     if (
       !Number.isSafeInteger(returned_size)
       || returned_size !== contract.expected_size
@@ -323,8 +357,8 @@ async function fetch_provider_copy(
       throw new Error("legislative_version_provider_fallback_api_size_mismatch");
     }
   }
-  if (document.text_hash !== undefined && document.text_hash !== null) {
-    const returned_hash = String(document.text_hash).trim().toLowerCase();
+  if (document.provider_hash !== undefined && document.provider_hash !== null) {
+    const returned_hash = String(document.provider_hash).trim().toLowerCase();
     if (returned_hash !== contract.expected_md5) {
       throw new Error("legislative_version_provider_fallback_api_hash_mismatch");
     }
@@ -338,6 +372,7 @@ async function fetch_provider_copy(
       : null,
     locator_url: contract.locator_url,
     api_document_id: contract.provider_document_id,
+    retrieval_mode: document.retrieval_mode,
   };
 }
 
@@ -544,6 +579,7 @@ export async function extract_version_source(
   let source_fetch_mode: "official" | "provider_copy_fallback" = "official";
   let official_fetch_error: string | null = null;
   let provider_copy_api_document_id: number | null = null;
+  let provider_copy_retrieval_mode: provider_copy_retrieval_mode | null = null;
   let official: { bytes: Buffer; content_type: string | null } | null;
 
   try {
@@ -564,6 +600,7 @@ export async function extract_version_source(
     const provider_copy = await fetch_provider_copy(fallback);
     source_url = provider_copy.locator_url;
     provider_copy_api_document_id = provider_copy.api_document_id;
+    provider_copy_retrieval_mode = provider_copy.retrieval_mode;
     official = provider_copy;
     source_fetch_mode = "provider_copy_fallback";
   }
@@ -658,7 +695,7 @@ export async function extract_version_source(
         source_fetch_mode === "provider_copy_fallback" ? source_url : null,
       provider_copy_retrieval_mode:
         source_fetch_mode === "provider_copy_fallback"
-          ? "legiscan_api_get_bill_text"
+          ? provider_copy_retrieval_mode
           : null,
       provider_copy_api_document_id:
         source_fetch_mode === "provider_copy_fallback"
