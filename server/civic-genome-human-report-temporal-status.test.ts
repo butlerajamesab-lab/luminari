@@ -26,8 +26,10 @@ describe("Civic Genome human report temporal status", () => {
         docket_official_source_url:
           "https://legislature.vermont.gov/bill/status/2026/S.1",
         docket_source_url: "https://legiscan.com/VT/text/S0001/id/99",
-        provider_copy_retrieval_url:
+        provider_copy_locator_url:
           "https://legiscan.com/VT/text/S0001/id/99",
+        provider_copy_retrieval_mode: "legiscan_api_get_bill_text",
+        provider_copy_api_document_id: 99,
         source_fetch_mode: "provider_copy_fallback",
         provider_copy_fallback_used: true,
         provider_copy_hash_verified: true,
@@ -124,15 +126,15 @@ describe("Civic Genome human report temporal status", () => {
         '<b>Official source:</b> <a href="https://legislature.vermont.gov/bill/status/2026/S.1"',
       );
       expect(rendered).toContain(
-        '<b>Verified provider copy:</b> <a href="https://legiscan.com/VT/text/S0001/id/99"',
+        '<b>Provider locator:</b> <a href="https://legiscan.com/VT/text/S0001/id/99"',
       );
       expect(rendered).not.toContain(
         '<b>Official source:</b> <a href="https://legiscan.com/',
       );
       expect(rendered).toContain(
-        "after exact hash and byte-size verification",
+        "through LegiScan's authenticated getBillText API and verified its exact hash and byte size before parsing",
       );
-      expect(rendered).toContain("Verified provider retrieval copy");
+      expect(rendered).toContain("Verified provider copy");
       expect(rendered).toContain(
         "full verified provider copy analyzed by Rosetta",
       );

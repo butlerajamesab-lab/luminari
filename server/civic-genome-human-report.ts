@@ -427,21 +427,24 @@ function source_block(
     string_value(source.source_metadata.docket_official_source_url)
     ?? source.source_url;
   const provider_copy_fallback_used = is_provider_copy_fallback(source);
-  const provider_copy_retrieval_url =
-    string_value(source.source_metadata.provider_copy_retrieval_url)
+  const provider_copy_locator_url =
+    string_value(source.source_metadata.provider_copy_locator_url)
+    ?? string_value(source.source_metadata.provider_copy_retrieval_url)
     ?? string_value(source.source_metadata.docket_source_url)
     ?? source.source_url;
+  const provider_copy_retrieval_mode =
+    string_value(source.source_metadata.provider_copy_retrieval_mode);
   const provider_copy_verified =
     source.source_metadata.provider_copy_hash_verified === true
     && source.source_metadata.provider_copy_size_verified === true;
 
   return `<section class="panel source-copy">
-    <span class="eyebrow">${provider_copy_fallback_used ? "Verified provider retrieval copy" : "Authoritative source copy"}</span>
+    <span class="eyebrow">${provider_copy_fallback_used ? "Verified provider copy" : "Authoritative source copy"}</span>
     <h2>${html(provider_copy_fallback_used ? heading.provider_copy : heading.official)}</h2>
     <div class="source-header">
       <div><b>Official source:</b> ${source_link(official_source_url)}</div>
-      ${provider_copy_fallback_used ? `<div><b>${provider_copy_verified ? "Verified provider copy" : "Provider retrieval copy"}:</b> ${source_link(provider_copy_retrieval_url)}</div>` : ""}
-      ${provider_copy_fallback_used ? `<div><b>Retrieval path:</b> Official-source transfer failed; Rosetta parsed the separately identified provider copy${provider_copy_verified ? " after exact hash and byte-size verification" : ""}.</div>` : ""}
+      ${provider_copy_fallback_used ? `<div><b>Provider locator:</b> ${source_link(provider_copy_locator_url)}</div>` : ""}
+      ${provider_copy_fallback_used ? `<div><b>Retrieval path:</b> Official-source transfer failed; Rosetta retrieved the separately identified provider copy${provider_copy_retrieval_mode === "legiscan_api_get_bill_text" ? " through LegiScan's authenticated getBillText API" : ""}${provider_copy_verified ? " and verified its exact hash and byte size before parsing" : ""}.</div>` : ""}
       <div><b>Rosetta source version:</b> ${html(source.source_version)}</div>
       <div><b>Source document ID:</b> ${html(source.source_document_id)}</div>
       <div><b>Source content hash:</b> <span class="mono">${html(source.source_content_hash)}</span></div>

@@ -25,18 +25,28 @@ const canary_queue_id = process.env.PRISM_ROSETTA_QUEUE_CANARY_ID?.trim();
 if (!canary_queue_id) {
   throw new Error("prism_worker_canary_queue_id_required");
 }
-const legislative_version_queue_enabled = background_feature_enabled(
+const legislative_version_queue_requested = background_feature_enabled(
   "LEGISLATIVE_VERSION_QUEUE_ENABLED",
 );
 const legislative_version_queue_recovery_scope =
-  legislative_version_queue_enabled
+  legislative_version_queue_requested
     ? legislative_version_queue_recovery_contract_scope()
     : null;
 if (
-  legislative_version_queue_enabled &&
+  legislative_version_queue_requested &&
   !legislative_version_queue_recovery_scope
 ) {
   throw new Error("prism_worker_legislative_recovery_scope_required");
+}
+const legiscan_api_key_configured = Boolean(
+  process.env.LEGISCAN_API_KEY?.trim(),
+);
+const legislative_version_queue_enabled =
+  legislative_version_queue_requested && legiscan_api_key_configured;
+if (legislative_version_queue_requested && !legiscan_api_key_configured) {
+  console.error(
+    "[PrismRosettaWorker] legislative_queue_disabled_missing_legiscan_api_key",
+  );
 }
 
 console.log("[PrismRosettaWorker] starting", {
@@ -44,8 +54,10 @@ console.log("[PrismRosettaWorker] starting", {
   canary_queue_id,
   render_git_commit: process.env.RENDER_GIT_COMMIT ?? null,
   render_service_id: process.env.RENDER_SERVICE_ID ?? null,
+  legislative_version_queue_requested,
   legislative_version_queue_enabled,
   legislative_version_queue_recovery_scope,
+  legiscan_api_key_configured,
 });
 start_prism_rosetta_queue_worker();
 if (legislative_version_queue_enabled) {

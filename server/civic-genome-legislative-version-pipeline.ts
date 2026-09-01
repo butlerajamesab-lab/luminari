@@ -14,6 +14,7 @@ import {
 } from "./civic-genome-rosetta-extraction";
 import { create_rosetta_supabase_headers } from "./rosetta-supabase-auth";
 import { fetch_california_official_pdf } from "./california-legislative-source";
+import { get_bill_text } from "./services/legiscan";
 
 const PDF_PARSE_VERSION = "2.4.5";
 const WA_HTML_EXTRACTOR_VERSION = "wa-official-legislative-version-html-strip-v1";
@@ -25,9 +26,9 @@ const SOURCE_FETCH_TIMEOUT_MS = 30_000;
 const ROSETTA_REQUEST_TIMEOUT_MS = 150_000;
 const ROSETTA_CORPUS_NAME = "Lighthouse Docket Legislative Versions";
 const ROSETTA_CORPUS_TYPE = "legislative_version";
-const PROVIDER_COPY_FALLBACK_VERSION = "hash-checked-provider-copy-v1";
+const PROVIDER_COPY_FALLBACK_VERSION = "legiscan-api-hash-checked-provider-copy-v2";
 const PROVIDER_COPY_HOSTS = new Set(["legiscan.com", "www.legiscan.com"]);
-const MAX_PROVIDER_COPY_REDIRECTS = 5;
+const MAX_PROVIDER_COPY_BASE64_LENGTH = Math.ceil(MAX_SOURCE_BYTES / 3) * 4;
 
 export type legislative_version_processing_result = {
   bill_version_id: string;
@@ -83,7 +84,8 @@ type extracted_legislative_source = {
 };
 
 type provider_copy_contract = {
-  url: string;
+  locator_url: string;
+  provider_document_id: number;
   expected_md5: string;
   expected_size: number;
 };
@@ -91,7 +93,8 @@ type provider_copy_contract = {
 type provider_copy_source = {
   bytes: Buffer;
   content_type: string | null;
-  final_url: string;
+  locator_url: string;
+  api_document_id: number;
 };
 
 type rosetta_source_content_receipt = {
@@ -216,10 +219,16 @@ function provider_copy_contract_for(
   const provider_url = String(version.provider_url ?? "").trim();
   const provider_hash = String(version.provider_hash ?? "").trim().toLowerCase();
   const provider_size_text = String(version.provider_size ?? "").trim();
+  const provider_document_id = Number(
+    String(version.provider_document_id ?? "").trim(),
+  );
 
   if (!provider_url && !provider_hash && !provider_size_text) return null;
   if (!provider_url || !provider_hash || !provider_size_text) {
     throw new Error("legislative_version_provider_fallback_contract_incomplete");
+  }
+  if (!Number.isSafeInteger(provider_document_id) || provider_document_id <= 0) {
+    throw new Error("legislative_version_provider_fallback_document_id_invalid");
   }
 
   const parsed = validated_provider_copy_url(provider_url, "url_invalid");
@@ -240,7 +249,8 @@ function provider_copy_contract_for(
   }
 
   return {
-    url: parsed.toString(),
+    locator_url: parsed.toString(),
+    provider_document_id,
     expected_md5: provider_hash,
     expected_size,
   };
@@ -261,90 +271,76 @@ function verify_provider_copy_bytes(
 async function fetch_provider_copy(
   contract: provider_copy_contract,
 ): Promise<provider_copy_source> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), SOURCE_FETCH_TIMEOUT_MS);
-  let current_url = validated_provider_copy_url(contract.url, "url_invalid");
-
+  let document: Awaited<ReturnType<typeof get_bill_text>>;
   try {
-    for (let redirect_count = 0; redirect_count <= MAX_PROVIDER_COPY_REDIRECTS; redirect_count += 1) {
-      const response = await fetch(current_url, {
-        method: "GET",
-        redirect: "manual",
-        headers: { accept: "application/pdf,text/html;q=0.9,*/*;q=0.1" },
-        signal: controller.signal,
-      });
-
-      if (response.status >= 300 && response.status < 400) {
-        const location = response.headers.get("location");
-        if (!location) {
-          throw new Error("legislative_version_provider_fallback_redirect_location_missing");
-        }
-        if (redirect_count === MAX_PROVIDER_COPY_REDIRECTS) {
-          throw new Error("legislative_version_provider_fallback_redirect_limit_exceeded");
-        }
-
-        let redirected_url: URL;
-        try {
-          redirected_url = new URL(location, current_url);
-        } catch {
-          throw new Error("legislative_version_provider_fallback_redirect_url_invalid");
-        }
-        current_url = validated_provider_copy_url(
-          redirected_url.toString(),
-          "authority_invalid",
-        );
-        continue;
-      }
-
-      if (!response.ok) {
-        throw new Error(
-          `legislative_version_provider_fallback_fetch_failed:${response.status}`,
-        );
-      }
-      const content_length = Number(response.headers.get("content-length") ?? 0);
-      if (Number.isFinite(content_length) && content_length > MAX_SOURCE_BYTES) {
-        throw new Error("legislative_version_provider_fallback_exceeds_max_bytes");
-      }
-      const bytes = Buffer.from(await response.arrayBuffer());
-      if (bytes.length === 0) {
-        throw new Error("legislative_version_provider_fallback_empty");
-      }
-      if (bytes.length > MAX_SOURCE_BYTES) {
-        throw new Error("legislative_version_provider_fallback_exceeds_max_bytes");
-      }
-      verify_provider_copy_bytes(bytes, contract);
-      return {
-        bytes,
-        content_type: response.headers.get("content-type"),
-        final_url: current_url.toString(),
-      };
-    }
-    throw new Error("legislative_version_provider_fallback_redirect_limit_exceeded");
+    document = await get_bill_text(contract.provider_document_id);
   } catch (error) {
-    if (
-      error instanceof Error
-      && error.message.startsWith("legislative_version_provider_fallback_")
-    ) {
-      throw error;
-    }
-    const source_host = current_url.hostname.toLowerCase();
-    if (controller.signal.aborted) {
-      throw new Error(
-        `legislative_version_provider_fallback_timeout:${source_host}:${SOURCE_FETCH_TIMEOUT_MS}`,
-      );
-    }
-    const cause = error instanceof Error && error.cause && typeof error.cause === "object"
-      && "code" in error.cause
-      ? String(error.cause.code)
-      : error instanceof Error
-        ? error.name
-        : "unknown";
-    throw new Error(
-      `legislative_version_provider_fallback_network_failed:${source_host}:${cause}`,
-    );
-  } finally {
-    clearTimeout(timeout);
+    const message = error instanceof Error ? error.message : "unknown";
+    const reason = /^(?:invalid_legiscan_|legiscan_(?:http|network|request_timeout)_)/
+      .test(message)
+      ? message
+      : "legiscan_api_error";
+    throw new Error(`legislative_version_provider_fallback_api_failed:${reason}`);
   }
+
+  if (document.doc_id !== undefined && document.doc_id !== null) {
+    const returned_document_id = Number(document.doc_id);
+    if (
+      !Number.isSafeInteger(returned_document_id)
+      || returned_document_id !== contract.provider_document_id
+    ) {
+      throw new Error("legislative_version_provider_fallback_document_id_mismatch");
+    }
+  }
+
+  const encoded_document = document.doc.trim();
+  if (
+    !encoded_document
+    || encoded_document.length > MAX_PROVIDER_COPY_BASE64_LENGTH
+    || encoded_document.length % 4 !== 0
+    || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(
+      encoded_document,
+    )
+  ) {
+    throw new Error("legislative_version_provider_fallback_document_base64_invalid");
+  }
+
+  const bytes = Buffer.from(encoded_document, "base64");
+  if (bytes.length === 0) {
+    throw new Error("legislative_version_provider_fallback_empty");
+  }
+  if (
+    bytes.length > MAX_SOURCE_BYTES
+    || bytes.toString("base64") !== encoded_document
+  ) {
+    throw new Error("legislative_version_provider_fallback_document_base64_invalid");
+  }
+
+  if (document.text_size !== undefined && document.text_size !== null) {
+    const returned_size = Number(document.text_size);
+    if (
+      !Number.isSafeInteger(returned_size)
+      || returned_size !== contract.expected_size
+    ) {
+      throw new Error("legislative_version_provider_fallback_api_size_mismatch");
+    }
+  }
+  if (document.text_hash !== undefined && document.text_hash !== null) {
+    const returned_hash = String(document.text_hash).trim().toLowerCase();
+    if (returned_hash !== contract.expected_md5) {
+      throw new Error("legislative_version_provider_fallback_api_hash_mismatch");
+    }
+  }
+
+  verify_provider_copy_bytes(bytes, contract);
+  return {
+    bytes,
+    content_type: typeof document.mime === "string" && document.mime.trim()
+      ? document.mime.trim()
+      : null,
+    locator_url: contract.locator_url,
+    api_document_id: contract.provider_document_id,
+  };
 }
 
 function derive_wa_official_html_url(pdf_url: string): string | null {
@@ -549,6 +545,7 @@ export async function extract_version_source(
   let source_url = selected_source_url;
   let source_fetch_mode: "official" | "provider_copy_fallback" = "official";
   let official_fetch_error: string | null = null;
+  let provider_copy_api_document_id: number | null = null;
   let official: { bytes: Buffer; content_type: string | null } | null;
 
   try {
@@ -567,7 +564,8 @@ export async function extract_version_source(
     official_fetch_error = error instanceof Error ? error.message : "unknown";
     california_pdf = null;
     const provider_copy = await fetch_provider_copy(fallback);
-    source_url = provider_copy.final_url;
+    source_url = provider_copy.locator_url;
+    provider_copy_api_document_id = provider_copy.api_document_id;
     official = provider_copy;
     source_fetch_mode = "provider_copy_fallback";
   }
@@ -658,8 +656,16 @@ export async function extract_version_source(
       docket_provider_url: version.provider_url,
       docket_source_url: source_url,
       docket_official_source_url: selected_source_url,
-      provider_copy_retrieval_url:
+      provider_copy_locator_url:
         source_fetch_mode === "provider_copy_fallback" ? source_url : null,
+      provider_copy_retrieval_mode:
+        source_fetch_mode === "provider_copy_fallback"
+          ? "legiscan_api_get_bill_text"
+          : null,
+      provider_copy_api_document_id:
+        source_fetch_mode === "provider_copy_fallback"
+          ? provider_copy_api_document_id
+          : null,
       extraction_text_url,
       extraction_text_byte_hash,
       source_url_rewritten: source_url !== selected_source_url,

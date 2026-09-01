@@ -38,6 +38,8 @@ services:
         value: "60000"
       - key: LEGISLATIVE_VERSION_QUEUE_RECOVERY_CONTRACT_SCOPE
         value: civic-genome-provider-copy-fallback-recovery-v1
+      - key: LEGISCAN_API_KEY
+        sync: false
       - key: ROSETTA_SUPABASE_URL
         sync: false
       - key: ROSETTA_SUPABASE_SERVICE_ROLE_KEY
