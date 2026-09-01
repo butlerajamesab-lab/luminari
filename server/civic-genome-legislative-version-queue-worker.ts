@@ -2,7 +2,10 @@ import { randomUUID } from "node:crypto";
 
 import { query_with_diagnostics } from "./db";
 import { run_with_database_job_context } from "./db-request-context";
-import { process_legislative_version } from "./civic-genome-legislative-version-pipeline";
+import {
+  LEGISLATIVE_VERSION_PROVIDER_SHARED_OUTAGE_ERROR_CODE,
+  process_legislative_version,
+} from "./civic-genome-legislative-version-pipeline";
 import { create_rosetta_supabase_headers } from "./rosetta-supabase-auth";
 import { background_feature_enabled } from "./runtime-role";
 
@@ -38,6 +41,7 @@ export type legislative_version_queue_job = {
   source_bill_id: number;
   document_family: "text" | "amendment";
   version_type: string;
+  prior_queue_state: "eligible" | "degraded" | "submitted" | "permanent_failure";
   attempt_count: number;
   document_identifier: string;
   durable_content_recovery: boolean;
@@ -334,6 +338,13 @@ export function classify_legislative_version_failure(input: {
   };
 }
 
+export function is_legislative_version_shared_provider_outage(
+  error: unknown,
+): boolean {
+  return safe_error_code(error)
+    === LEGISLATIVE_VERSION_PROVIDER_SHARED_OUTAGE_ERROR_CODE;
+}
+
 async function reconcile_completed_jobs(
   recovery_contract_scope: string | null,
 ): Promise<void> {
@@ -569,6 +580,7 @@ async function claim_jobs(
                 version.source_bill_id,
                 version.document_family,
                 version.version_type,
+                candidate.prior_queue_state,
                 queue.attempt_count,
                 candidate.document_identifier,
                 candidate.is_durable_content_recovery as durable_content_recovery`,
@@ -589,6 +601,51 @@ async function claim_jobs(
     },
   );
   return result.rows;
+}
+
+function pause_legislative_version_queue_after_shared_provider_outage(): void {
+  queue_stopped = true;
+  if (queue_timer) clearInterval(queue_timer);
+  queue_timer = null;
+}
+
+function restorable_queue_state(
+  prior_queue_state: legislative_version_queue_job["prior_queue_state"],
+): legislative_version_queue_job["prior_queue_state"] {
+  // A stale submitted lease cannot be restored without a lock because it would
+  // no longer satisfy the queue's reclaim predicate. Degraded preserves its
+  // retryability while the process-wide provider pause prevents another claim.
+  return prior_queue_state === "submitted" ? "degraded" : prior_queue_state;
+}
+
+async function release_job_after_shared_provider_outage(
+  job: legislative_version_queue_job,
+): Promise<void> {
+  const result = await query_with_diagnostics<{ queue_id: string }>(
+    `update public.civic_genome_legislative_version_queue queue
+        set queue_state = $2,
+            locked_at = null,
+            locked_by = null,
+            updated_at = now()
+      where queue.queue_id = $1::uuid
+        and queue.locked_by = $3
+        and queue.attempt_count = $4::integer
+      returning queue.queue_id::text`,
+    [
+      job.queue_id,
+      restorable_queue_state(job.prior_queue_state),
+      queue_worker_id,
+      job.attempt_count,
+    ],
+    {
+      label: "legislative_version_queue_release_shared_provider_outage",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 5_000,
+    },
+  );
+  if (result.rows.length !== 1) {
+    throw new Error("legislative_version_queue_shared_provider_release_failed");
+  }
 }
 
 async function mark_job_completed(input: {
@@ -708,6 +765,28 @@ export async function process_legislative_version_job(
   try {
     result = await process_legislative_version(job.bill_version_id);
   } catch (error) {
+    if (is_legislative_version_shared_provider_outage(error)) {
+      pause_legislative_version_queue_after_shared_provider_outage();
+      try {
+        await release_job_after_shared_provider_outage(job);
+      } catch (release_error) {
+        console.error("[LegislativeVersionQueue] shared_provider_release_failed", {
+          queue_id: job.queue_id,
+          bill_version_id: job.bill_version_id,
+          attempt_count: job.attempt_count,
+          error_code: safe_error_code(release_error),
+        });
+        throw release_error;
+      }
+      console.error("[LegislativeVersionQueue] paused_shared_provider_outage", {
+        queue_id: job.queue_id,
+        bill_version_id: job.bill_version_id,
+        attempt_count: job.attempt_count,
+        restored_queue_state: restorable_queue_state(job.prior_queue_state),
+        error_code: LEGISLATIVE_VERSION_PROVIDER_SHARED_OUTAGE_ERROR_CODE,
+      });
+      return;
+    }
     const decision = classify_legislative_version_failure({
       error,
       prior_attempt_count: job.attempt_count,
@@ -768,7 +847,7 @@ export async function run_legislative_version_queue_cycle(): Promise<void> {
       }
     }
     const jobs = await claim_jobs(
-      bounded_concurrency(),
+      recovery_contract_scope ? 1 : bounded_concurrency(),
       oldest_unbound_docket_identifiers,
       recovery_contract_scope,
     );
@@ -809,7 +888,7 @@ export function start_legislative_version_queue_worker(): void {
   }
   queue_stopped = false;
   const interval_ms = bounded_poll_interval();
-  const concurrency = bounded_concurrency();
+  const concurrency = recovery_contract_scope ? 1 : bounded_concurrency();
   const reconcile_interval_ms = bounded_reconcile_interval();
   console.log("[LegislativeVersionQueue] started", {
     worker_id: queue_worker_id,

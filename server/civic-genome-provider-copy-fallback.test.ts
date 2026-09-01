@@ -248,6 +248,21 @@ describe("Civic Genome provider-copy source fallback", () => {
     );
   });
 
+  it("maps a post-probe API failure to the shared-provider pause contract", async () => {
+    const source = html_source();
+    const expected_md5 = createHash("md5").update(source).digest("hex");
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValueOnce(new TypeError("fetch failed")));
+    get_bill_text_mock.mockRejectedValueOnce(new Error(
+      "legiscan_api_error_while_calling_get_bill_text:quota_exhausted",
+    ));
+
+    await expect(extract_version_source(
+      version_fixture(source, expected_md5) as never,
+    )).rejects.toThrow(
+      "legislative_version_provider_fallback_shared_service_unavailable",
+    );
+  });
+
   it("does not fall back when official bytes arrive but parsing rejects them", async () => {
     const provider_source = html_source();
     const expected_md5 = createHash("md5").update(provider_source).digest("hex");

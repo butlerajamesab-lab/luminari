@@ -11,6 +11,8 @@ vi.mock("./db", () => ({
 }));
 
 vi.mock("./civic-genome-legislative-version-pipeline", () => ({
+  LEGISLATIVE_VERSION_PROVIDER_SHARED_OUTAGE_ERROR_CODE:
+    "legislative_version_provider_fallback_shared_service_unavailable",
   process_legislative_version: process_version,
 }));
 
@@ -22,6 +24,7 @@ import {
   is_exact_docket_document_identifier,
   legislative_version_queue_recovery_contract_scope,
   legislative_version_retry_delay_seconds,
+  is_legislative_version_shared_provider_outage,
   load_oldest_unbound_docket_identifiers,
   process_legislative_version_job,
   run_legislative_version_queue_cycle,
@@ -34,6 +37,7 @@ const job = {
   source_bill_id: 2064783,
   document_family: "text" as const,
   version_type: "introduced",
+  prior_queue_state: "eligible" as const,
   attempt_count: 0,
   document_identifier: "docket:2064783:text:2064783:3298849",
   durable_content_recovery: false,
@@ -250,6 +254,15 @@ describe("legislative version queue", () => {
     });
   });
 
+  it("recognizes only the stable shared-provider outage code", () => {
+    expect(is_legislative_version_shared_provider_outage(new Error(
+      "legislative_version_provider_fallback_shared_service_unavailable",
+    ))).toBe(true);
+    expect(is_legislative_version_shared_provider_outage(new Error(
+      "legislative_version_provider_fallback_hash_mismatch",
+    ))).toBe(false);
+  });
+
   it("processes only the exact queued bill-version identity", async () => {
     await process_legislative_version_job(job);
 
@@ -337,5 +350,33 @@ describe("legislative version queue", () => {
     expect(process_version).toHaveBeenCalledTimes(1);
     expect(query).toHaveBeenCalledTimes(1);
     expect(query.mock.calls.some(call => String(call[0]).includes("processing_state = 'failed'"))).toBe(false);
+  });
+
+  it("pauses and releases a claimed row without consuming an attempt on a shared provider outage", async () => {
+    const outage_job = {
+      ...job,
+      prior_queue_state: "degraded" as const,
+      attempt_count: 1,
+    };
+    process_version.mockRejectedValue(new Error(
+      "legislative_version_provider_fallback_shared_service_unavailable",
+    ));
+    query.mockResolvedValueOnce({ rows: [{ queue_id: outage_job.queue_id }] });
+
+    await expect(process_legislative_version_job(outage_job)).resolves.toBeUndefined();
+
+    expect(query).toHaveBeenCalledTimes(1);
+    const release_call = query.mock.calls[0];
+    expect(release_call[2]?.label).toBe(
+      "legislative_version_queue_release_shared_provider_outage",
+    );
+    expect(String(release_call[0])).not.toContain("attempt_count = attempt_count + 1");
+    expect(release_call[1][1]).toBe("degraded");
+    expect(release_call[1][3]).toBe(outage_job.attempt_count);
+    expect(query.mock.calls.some(call => String(call[0]).includes("processing_state = 'failed'"))).toBe(false);
+
+    query.mockClear();
+    await run_legislative_version_queue_cycle();
+    expect(query).not.toHaveBeenCalled();
   });
 });

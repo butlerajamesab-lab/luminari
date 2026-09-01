@@ -30,6 +30,9 @@ const PROVIDER_COPY_FALLBACK_VERSION = "legiscan-api-hash-checked-provider-copy-
 const PROVIDER_COPY_HOSTS = new Set(["legiscan.com", "www.legiscan.com"]);
 const MAX_PROVIDER_COPY_BASE64_LENGTH = Math.ceil(MAX_SOURCE_BYTES / 3) * 4;
 
+export const LEGISLATIVE_VERSION_PROVIDER_SHARED_OUTAGE_ERROR_CODE =
+  "legislative_version_provider_fallback_shared_service_unavailable";
+
 export type legislative_version_processing_result = {
   bill_version_id: string;
   genome_bill_id: string;
@@ -167,7 +170,7 @@ async function fetch_bytes(
       throw new Error("legislative_version_source_exceeds_max_bytes");
     }
     return { bytes, content_type: response.headers.get("content-type") };
-  } catch (error) {
+  } catch {
     if (
       error instanceof Error
       && error.message.startsWith("legislative_version_")
@@ -309,12 +312,11 @@ async function fetch_provider_copy(
       };
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : "unknown";
-    const reason = /^(?:invalid_legiscan_|legiscan_(?:http|network|request_timeout)_)/
-      .test(message)
-      ? message
-      : "legiscan_api_error";
-    throw new Error(`legislative_version_provider_fallback_api_failed:${reason}`);
+    // The queue must treat every failure inside the authenticated provider
+    // boundary as a shared-service outage. Per-document verification begins
+    // below this catch, so hash, size, identity, and parsing failures remain
+    // deterministic row failures instead of pausing unrelated work.
+    throw new Error(LEGISLATIVE_VERSION_PROVIDER_SHARED_OUTAGE_ERROR_CODE);
   }
 
   const returned_document_id = Number(document.document_id);
