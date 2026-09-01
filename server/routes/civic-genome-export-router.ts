@@ -6,12 +6,18 @@ import {
 import { getPool } from "../db";
 import { get_civic_genome_bill_detail } from "../civic-genome-bill-detail";
 import { get_genome_bill_by_source_id } from "../civic-genome-source-id";
-import { render_civic_genome_human_report, type civic_genome_report_mode } from "../civic-genome-human-report";
+import {
+  render_civic_genome_human_report,
+  type civic_genome_report_mode,
+} from "../civic-genome-human-report";
 import {
   get_genome_family,
+  get_genome_bill_temporal_facts_v2,
   get_genome_stats,
+  list_event_time_momentum_snapshots_v2,
   list_genome_bills,
   list_genome_events,
+  list_genome_lifecycle_events_v2,
   list_momentum_snapshots,
   type GenomeBill,
 } from "../civic-genome-db";
@@ -34,36 +40,55 @@ function source_bill_id_from_bill(bill: GenomeBill): number | null {
 }
 
 function safe_filename(value: unknown): string {
-  return String(value ?? "record")
-    .trim()
-    .replace(/[^a-zA-Z0-9._-]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 120) || "record";
+  return (
+    String(value ?? "record")
+      .trim()
+      .replace(/[^a-zA-Z0-9._-]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 120) || "record"
+  );
 }
 
-function send_json_attachment(res: Response, filename: string, payload: unknown) {
+function send_json_attachment(
+  res: Response,
+  filename: string,
+  payload: unknown,
+) {
   res.setHeader("Content-Type", "application/json; charset=utf-8");
-  res.setHeader("Content-Disposition", `attachment; filename=\"${safe_filename(filename)}.json\"`);
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename=\"${safe_filename(filename)}.json\"`,
+  );
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
   res.send(JSON.stringify(payload, null, 2));
 }
 
-function send_html_attachment(res: Response, filename: string, payload: string) {
+function send_html_attachment(
+  res: Response,
+  filename: string,
+  payload: string,
+) {
   res.setHeader("Content-Type", "text/html; charset=utf-8");
-  res.setHeader("Content-Disposition", `attachment; filename=\"${safe_filename(filename)}.html\"`);
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename=\"${safe_filename(filename)}.html\"`,
+  );
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
   res.send(payload);
 }
 
 function as_record(value: unknown): json_record | null {
   return value && typeof value === "object" && !Array.isArray(value)
-    ? value as json_record
+    ? (value as json_record)
     : null;
 }
 
 function as_records(value: unknown): json_record[] {
   return Array.isArray(value)
-    ? value.filter((entry): entry is json_record => Boolean(entry) && typeof entry === "object" && !Array.isArray(entry))
+    ? value.filter(
+        (entry): entry is json_record =>
+          Boolean(entry) && typeof entry === "object" && !Array.isArray(entry),
+      )
     : [];
 }
 
@@ -77,16 +102,22 @@ type validation_summary = {
   unresolved: number;
 };
 
-function human_report_validation_summary(traits: unknown[]): validation_summary {
-  return traits.reduce<validation_summary>((summary, value) => {
-    const trait = as_record(value);
-    if (!trait) return summary;
-    const display = civic_genome_prism_display(trait);
-    if (display.tone === "finding") summary.contradicted += 1;
-    else if (display.tone === "open" || display.tone === "neutral") summary.unresolved += 1;
-    else if (display.tone === "supported") summary.supported += 1;
-    return summary;
-  }, { supported: 0, contradicted: 0, unresolved: 0 });
+function human_report_validation_summary(
+  traits: unknown[],
+): validation_summary {
+  return traits.reduce<validation_summary>(
+    (summary, value) => {
+      const trait = as_record(value);
+      if (!trait) return summary;
+      const display = civic_genome_prism_display(trait);
+      if (display.tone === "finding") summary.contradicted += 1;
+      else if (display.tone === "open" || display.tone === "neutral")
+        summary.unresolved += 1;
+      else if (display.tone === "supported") summary.supported += 1;
+      return summary;
+    },
+    { supported: 0, contradicted: 0, unresolved: 0 },
+  );
 }
 
 function humanize_report_payload(payload: unknown): json_record {
@@ -100,17 +131,28 @@ function humanize_report_payload(payload: unknown): json_record {
   const procedural = as_record(bill?.procedural_lifecycle_json);
   const structural_dna = as_record(detail?.structural_dna);
   const traits = as_records(structural_dna?.traits);
+  const temporal_facts = as_record(clone.bill_temporal_facts);
 
   if (bill) {
-    const action = string_value(bill_structural?.source_last_action)
-      ?? string_value(procedural?.last_action);
-    const action_date = string_value(bill_structural?.source_last_action_date)
-      ?? string_value(procedural?.last_action_date)
-      ?? string_value(bill.last_action_at)?.slice(0, 10)
-      ?? null;
-    if (action) {
-      bill.last_action_at = action_date ? `${action} (${action_date})` : action;
+    const action =
+      string_value(temporal_facts?.last_action_text) ??
+      string_value(bill_structural?.source_last_action) ??
+      string_value(procedural?.last_action);
+    if (temporal_facts) {
+      bill.prefiled_at = temporal_facts.prefiled_at ?? null;
+      bill.introduced_at =
+        temporal_facts.introduced_at ?? bill.introduced_at ?? null;
+      bill.enacted_at = temporal_facts.enacted_at ?? bill.enacted_at ?? null;
+      bill.effective_at =
+        temporal_facts.effective_at ?? bill.effective_at ?? null;
+      bill.last_action_at =
+        temporal_facts.last_action_at ?? bill.last_action_at ?? null;
+      bill.last_observed_at =
+        temporal_facts.last_observed_at ?? bill.last_observed_at ?? null;
+      bill.lifecycle_temporal_contract =
+        temporal_facts.temporal_contract ?? null;
     }
+    bill.last_action_summary = action;
   }
 
   for (const trait of traits) {
@@ -131,9 +173,10 @@ function humanize_report_payload(payload: unknown): json_record {
   }
 
   for (const event of as_records(clone.bill_events)) {
-    if (event.event_at == null && event.event_timestamp != null) {
-      event.event_at = event.event_timestamp;
+    if (event.event_at == null) {
+      event.event_at = event.valid_at ?? event.event_timestamp ?? null;
     }
+    event.observed_at = event.observed_at ?? event.created_at ?? null;
   }
 
   return clone;
@@ -161,43 +204,79 @@ async function build_single_bill_export(source_bill_id: number) {
   if (!detail) return null;
 
   const pool = getPool();
-  const [versions_result, lineage_result, all_traits_result, all_runs_result] = await Promise.all([
-    pool.query(
-      `select *
+  const [versions_result, lineage_result, all_traits_result, all_runs_result] =
+    await Promise.all([
+      pool.query(
+        `select *
          from public.civic_genome_bill_version
         where genome_bill_id = $1
         order by stage_rank desc, provider_sequence desc, created_at desc, bill_version_id desc`,
-      [bill.genome_bill_id],
-    ),
-    pool.query(
-      `select *
+        [bill.genome_bill_id],
+      ),
+      pool.query(
+        `select *
          from public.bill_lineage_edge
         where from_bill_id = $1 or to_bill_id = $1
         order by created_at desc, lineage_edge_id desc`,
-      [bill.genome_bill_id],
-    ),
-    pool.query(
-      `select *
+        [bill.genome_bill_id],
+      ),
+      pool.query(
+        `select *
          from public.civic_genome_trait
         where genome_bill_id = $1
         order by created_at asc, trait_class, trait_key, trait_id`,
-      [bill.genome_bill_id],
-    ),
-    pool.query(
-      `select *
+        [bill.genome_bill_id],
+      ),
+      pool.query(
+        `select *
          from public.civic_genome_assembly_run
         where genome_bill_id = $1
         order by created_at asc, assembly_run_id asc`,
-      [bill.genome_bill_id],
-    ),
-  ]);
+        [bill.genome_bill_id],
+      ),
+    ]);
 
-  const [family, family_bills, events, momentum] = await Promise.all([
+  const [
+    family,
+    family_bills,
+    legacy_events,
+    lifecycle_events,
+    event_time_momentum,
+    legacy_momentum,
+    temporal_facts,
+  ] = await Promise.all([
     get_genome_family(bill.family_id),
     list_genome_bills({ family_id: bill.family_id, limit: 200 }),
     list_genome_events({ genome_bill_id: bill.genome_bill_id, limit: 500 }),
+    list_genome_lifecycle_events_v2({
+      genome_bill_id: bill.genome_bill_id,
+      limit: 2_000,
+    }),
+    list_event_time_momentum_snapshots_v2({
+      family_id: bill.family_id,
+      limit: 2_000,
+    }),
     list_momentum_snapshots({ family_id: bill.family_id, limit: 365 }),
+    get_genome_bill_temporal_facts_v2(bill.genome_bill_id),
   ]);
+  const events =
+    lifecycle_events.length > 0
+      ? lifecycle_events
+      : legacy_events.map((event) => ({
+          ...event,
+          valid_at: event.event_timestamp,
+          observed_at: event.created_at,
+          chronology_basis: "legacy_mixed_time",
+        }));
+  const momentum =
+    event_time_momentum.length > 0
+      ? event_time_momentum
+      : legacy_momentum.map((snapshot) => ({
+          ...snapshot,
+          observed_at: snapshot.created_at,
+          chronology_basis: "observation_time_legacy",
+          methodology_version: "family_momentum_snapshot_v1",
+        }));
 
   return {
     export_type: "civic_genome_bill_export",
@@ -209,21 +288,31 @@ async function build_single_bill_export(source_bill_id: number) {
     bill_versions: versions_result.rows,
     all_structural_traits: all_traits_result.rows,
     all_assembly_runs: all_runs_result.rows,
+    bill_temporal_facts: temporal_facts,
     bill_events: events,
+    legacy_projection_events: legacy_events,
     lineage_edges: lineage_result.rows,
     family,
     family_bills,
     family_momentum_snapshots: momentum,
+    legacy_observation_snapshots: legacy_momentum,
     counts: {
       bill_versions: versions_result.rowCount ?? versions_result.rows.length,
-      structural_traits: all_traits_result.rowCount ?? all_traits_result.rows.length,
+      structural_traits:
+        all_traits_result.rowCount ?? all_traits_result.rows.length,
       assembly_runs: all_runs_result.rowCount ?? all_runs_result.rows.length,
       bill_events: events.length,
+      legacy_projection_events: legacy_events.length,
       lineage_edges: lineage_result.rowCount ?? lineage_result.rows.length,
       family_bills: family_bills.length,
       family_momentum_snapshots: momentum.length,
+      legacy_observation_snapshots: legacy_momentum.length,
     },
-    interpretation: "This is a source-preserving Civic Genome export. Historical versions and receipts are preserved as history; export does not re-run or mutate Rosetta, Prism, Docket, or Civic Genome state.",
+    temporal_interpretation: temporal_facts
+      ? "Legislative event time, Lighthouse observation time, and extraction time are separate. Momentum is replayed over source event time."
+      : "Event-time chronology v2 is unavailable for this bill; legacy mixed-time projection rows are preserved and explicitly labeled.",
+    interpretation:
+      "This is a source-preserving Civic Genome export. Historical versions, legacy projections, and receipts are preserved as history; export does not re-run or mutate Rosetta, Prism, Docket, or Civic Genome state.",
   };
 }
 
@@ -233,7 +322,10 @@ async function send_human_bill_report(
   mode: civic_genome_report_mode,
 ) {
   const payload = await build_single_bill_export(source_bill_id);
-  if (!payload) return res.status(404).json({ ok: false, error: "civic_genome_bill_not_found" });
+  if (!payload)
+    return res
+      .status(404)
+      .json({ ok: false, error: "civic_genome_bill_not_found" });
 
   const selected = payload.bill_detail.bill;
   const human_payload = humanize_report_payload(payload);
@@ -247,37 +339,63 @@ async function send_human_bill_report(
   );
 }
 
-civic_genome_export_router.get("/bill/:source_bill_id/summary", async (req, res) => {
-  const source_bill_id = positive_integer(req.params.source_bill_id);
-  if (!source_bill_id) return res.status(400).json({ ok: false, error: "invalid_source_bill_id" });
+civic_genome_export_router.get(
+  "/bill/:source_bill_id/summary",
+  async (req, res) => {
+    const source_bill_id = positive_integer(req.params.source_bill_id);
+    if (!source_bill_id)
+      return res
+        .status(400)
+        .json({ ok: false, error: "invalid_source_bill_id" });
 
-  try {
-    return await send_human_bill_report(res, source_bill_id, "summary");
-  } catch (error) {
-    console.error("[CivicGenomeExport] summary report failed", { source_bill_id, error });
-    return res.status(500).json({ ok: false, error: "civic_genome_summary_report_failed" });
-  }
-});
+    try {
+      return await send_human_bill_report(res, source_bill_id, "summary");
+    } catch (error) {
+      console.error("[CivicGenomeExport] summary report failed", {
+        source_bill_id,
+        error,
+      });
+      return res
+        .status(500)
+        .json({ ok: false, error: "civic_genome_summary_report_failed" });
+    }
+  },
+);
 
-civic_genome_export_router.get("/bill/:source_bill_id/detailed", async (req, res) => {
-  const source_bill_id = positive_integer(req.params.source_bill_id);
-  if (!source_bill_id) return res.status(400).json({ ok: false, error: "invalid_source_bill_id" });
+civic_genome_export_router.get(
+  "/bill/:source_bill_id/detailed",
+  async (req, res) => {
+    const source_bill_id = positive_integer(req.params.source_bill_id);
+    if (!source_bill_id)
+      return res
+        .status(400)
+        .json({ ok: false, error: "invalid_source_bill_id" });
 
-  try {
-    return await send_human_bill_report(res, source_bill_id, "detailed");
-  } catch (error) {
-    console.error("[CivicGenomeExport] detailed report failed", { source_bill_id, error });
-    return res.status(500).json({ ok: false, error: "civic_genome_detailed_report_failed" });
-  }
-});
+    try {
+      return await send_human_bill_report(res, source_bill_id, "detailed");
+    } catch (error) {
+      console.error("[CivicGenomeExport] detailed report failed", {
+        source_bill_id,
+        error,
+      });
+      return res
+        .status(500)
+        .json({ ok: false, error: "civic_genome_detailed_report_failed" });
+    }
+  },
+);
 
 civic_genome_export_router.get("/bill/:source_bill_id", async (req, res) => {
   const source_bill_id = positive_integer(req.params.source_bill_id);
-  if (!source_bill_id) return res.status(400).json({ ok: false, error: "invalid_source_bill_id" });
+  if (!source_bill_id)
+    return res.status(400).json({ ok: false, error: "invalid_source_bill_id" });
 
   try {
     const payload = await build_single_bill_export(source_bill_id);
-    if (!payload) return res.status(404).json({ ok: false, error: "civic_genome_bill_not_found" });
+    if (!payload)
+      return res
+        .status(404)
+        .json({ ok: false, error: "civic_genome_bill_not_found" });
     const selected = payload.bill_detail.bill;
     return send_json_attachment(
       res,
@@ -285,23 +403,30 @@ civic_genome_export_router.get("/bill/:source_bill_id", async (req, res) => {
       payload,
     );
   } catch (error) {
-    console.error("[CivicGenomeExport] bill export failed", { source_bill_id, error });
-    return res.status(500).json({ ok: false, error: "civic_genome_bill_export_failed" });
+    console.error("[CivicGenomeExport] bill export failed", {
+      source_bill_id,
+      error,
+    });
+    return res
+      .status(500)
+      .json({ ok: false, error: "civic_genome_bill_export_failed" });
   }
 });
 
 civic_genome_export_router.get("/current", async (req, res) => {
-  const requested_limit = positive_integer(req.query.limit) ?? MULTI_EXPORT_LIMIT;
+  const requested_limit =
+    positive_integer(req.query.limit) ?? MULTI_EXPORT_LIMIT;
   const limit = Math.min(requested_limit, MULTI_EXPORT_LIMIT);
   const offset_value = Number(req.query.offset ?? 0);
-  const offset = Number.isSafeInteger(offset_value) && offset_value >= 0 ? offset_value : 0;
+  const offset =
+    Number.isSafeInteger(offset_value) && offset_value >= 0 ? offset_value : 0;
 
   try {
     const [stats, bills] = await Promise.all([
       get_genome_stats(),
       list_genome_bills({ limit, offset }),
     ]);
-    const export_bills = bills.map(bill => ({
+    const export_bills = bills.map((bill) => ({
       source_bill_id: source_bill_id_from_bill(bill),
       ...bill,
     }));
@@ -310,7 +435,8 @@ civic_genome_export_router.get("/current", async (req, res) => {
       export_type: "civic_genome_current_proof_export",
       export_contract: EXPORT_CONTRACT,
       exported_at: new Date().toISOString(),
-      interpretation: "Each returned row is a Civic Genome bill record as currently stored. This export is read-only and does not replay historical failures or mutate any upstream owner.",
+      interpretation:
+        "Each returned row is a Civic Genome bill record as currently stored. This export is read-only and does not replay historical failures or mutate any upstream owner.",
       total_bill_count: stats.total_bills,
       returned_bill_count: export_bills.length,
       offset,
@@ -319,9 +445,19 @@ civic_genome_export_router.get("/current", async (req, res) => {
       bills: export_bills,
     };
 
-    return send_json_attachment(res, `civic-genome-current-${offset}-${offset + export_bills.length}`, payload);
+    return send_json_attachment(
+      res,
+      `civic-genome-current-${offset}-${offset + export_bills.length}`,
+      payload,
+    );
   } catch (error) {
-    console.error("[CivicGenomeExport] current export failed", { limit, offset, error });
-    return res.status(500).json({ ok: false, error: "civic_genome_current_export_failed" });
+    console.error("[CivicGenomeExport] current export failed", {
+      limit,
+      offset,
+      error,
+    });
+    return res
+      .status(500)
+      .json({ ok: false, error: "civic_genome_current_export_failed" });
   }
 });

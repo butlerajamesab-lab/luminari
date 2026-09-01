@@ -51,6 +51,9 @@ export interface GenomeBill {
   introduced_at: string | null;
   last_action_at: string | null;
   enacted_at: string | null;
+  effective_at: string | null;
+  last_observed_at: string | null;
+  lifecycle_temporal_contract: string | null;
   rosetta_extraction_run_id: string | null;
   structural_dna_hash: string;
   structural_dna_json: Record<string, unknown>;
@@ -81,6 +84,50 @@ export interface GenomeEvent {
   created_at: string;
 }
 
+export interface GenomeLifecycleEventV2 {
+  lifecycle_event_id: string;
+  genome_bill_id: string;
+  bill_id: string;
+  state_code: string;
+  source_bill_id: number;
+  source_provider: string;
+  source_event_key: string;
+  source_sequence: number;
+  source_duplicate_sequence: number;
+  event_type: string;
+  valid_at: string;
+  effective_at: string | null;
+  observed_at: string;
+  state_position_after: string | null;
+  action_text: string;
+  chamber_code: string | null;
+  importance: number | null;
+  source_trace: unknown[];
+  event_payload_json: Record<string, unknown>;
+  source_input_hash: string;
+  supersedes_lifecycle_event_id: string | null;
+  created_at: string;
+}
+
+export interface GenomeBillTemporalFactsV2 {
+  genome_bill_id: string;
+  bill_id: string;
+  family_id: string;
+  state_code: string;
+  source_bill_number: string;
+  prefiled_at: string | null;
+  introduced_at: string | null;
+  enacted_at: string | null;
+  effective_at: string | null;
+  last_action_at: string;
+  last_observed_at: string;
+  last_action_text: string;
+  current_state_position: string | null;
+  source_event_count: number;
+  source_event_set_hash: string;
+  temporal_contract: "civic_genome_event_time_v2";
+}
+
 export interface LineageEdge {
   lineage_edge_id: string;
   family_id: string | null;
@@ -107,6 +154,20 @@ export interface MomentumSnapshot {
   created_at: string;
 }
 
+export interface EventTimeMomentumSnapshotV2 extends MomentumSnapshot {
+  observed_at: string;
+  chronology_basis: "source_event_time";
+  methodology_version: "civic_genome_momentum_event_time_v2";
+  source_event_ids: string[];
+  input_hash: string;
+}
+
+function temporal_v2_unavailable(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const code = "code" in error ? String(error.code ?? "") : "";
+  return code === "42P01" || code === "42883" || code === "42703";
+}
+
 // ─── Families ────────────────────────────────────────────────────────────────
 
 export async function list_genome_families(opts?: {
@@ -128,7 +189,8 @@ export async function list_genome_families(opts?: {
     conditions.push(`family_status = $${params.length}`);
   }
 
-  const where = conditions.length > 0 ? `where ${conditions.join(" and ")}` : "";
+  const where =
+    conditions.length > 0 ? `where ${conditions.join(" and ")}` : "";
   const limit = Math.min(opts?.limit ?? 50, 200);
   const offset = opts?.offset ?? 0;
   params.push(limit, offset);
@@ -138,16 +200,18 @@ export async function list_genome_families(opts?: {
      ${where}
      order by momentum_score desc, last_event_at desc nulls last
      limit $${params.length - 1} offset $${params.length}`,
-    params
+    params,
   );
   return rows;
 }
 
-export async function get_genome_family(family_id: string): Promise<GenomeFamily | null> {
+export async function get_genome_family(
+  family_id: string,
+): Promise<GenomeFamily | null> {
   const pool = getPool();
   const { rows } = await pool.query<GenomeFamily>(
     `select * from civic_genome_family where family_id = $1 limit 1`,
-    [family_id]
+    [family_id],
   );
   return rows[0] ?? null;
 }
@@ -183,7 +247,8 @@ export async function list_genome_bills(opts?: {
     conditions.push(`current_state_position = $${params.length}`);
   }
 
-  const where = conditions.length > 0 ? `where ${conditions.join(" and ")}` : "";
+  const where =
+    conditions.length > 0 ? `where ${conditions.join(" and ")}` : "";
   const limit = Math.min(opts?.limit ?? 50, 200);
   const offset = opts?.offset ?? 0;
   params.push(limit, offset);
@@ -193,16 +258,18 @@ export async function list_genome_bills(opts?: {
      ${where}
      order by last_action_at desc nulls last, introduced_at desc nulls last
      limit $${params.length - 1} offset $${params.length}`,
-    params
+    params,
   );
   return rows;
 }
 
-export async function get_genome_bill(genome_bill_id: string): Promise<GenomeBill | null> {
+export async function get_genome_bill(
+  genome_bill_id: string,
+): Promise<GenomeBill | null> {
   const pool = getPool();
   const { rows } = await pool.query<GenomeBill>(
     `select * from civic_genome_bill where genome_bill_id = $1 limit 1`,
-    [genome_bill_id]
+    [genome_bill_id],
   );
   return rows[0] ?? null;
 }
@@ -238,7 +305,8 @@ export async function list_genome_events(opts?: {
     conditions.push(`event_type = $${params.length}`);
   }
 
-  const where = conditions.length > 0 ? `where ${conditions.join(" and ")}` : "";
+  const where =
+    conditions.length > 0 ? `where ${conditions.join(" and ")}` : "";
   const limit = Math.min(opts?.limit ?? 100, 500);
   const offset = opts?.offset ?? 0;
   params.push(limit, offset);
@@ -248,9 +316,52 @@ export async function list_genome_events(opts?: {
      ${where}
      order by event_timestamp desc
      limit $${params.length - 1} offset $${params.length}`,
-    params
+    params,
   );
   return rows;
+}
+
+export async function list_genome_lifecycle_events_v2(opts: {
+  genome_bill_id: string;
+  limit?: number;
+}): Promise<GenomeLifecycleEventV2[]> {
+  const pool = getPool();
+  const limit = Math.min(opts.limit ?? 500, 2_000);
+
+  try {
+    const { rows } = await pool.query<GenomeLifecycleEventV2>(
+      `select *
+         from public.civic_genome_lifecycle_event_v2
+        where genome_bill_id = $1
+        order by valid_at desc, source_sequence desc, lifecycle_event_id desc
+        limit $2`,
+      [opts.genome_bill_id, limit],
+    );
+    return rows;
+  } catch (error) {
+    if (temporal_v2_unavailable(error)) return [];
+    throw error;
+  }
+}
+
+export async function get_genome_bill_temporal_facts_v2(
+  genome_bill_id: string,
+): Promise<GenomeBillTemporalFactsV2 | null> {
+  const pool = getPool();
+
+  try {
+    const { rows } = await pool.query<GenomeBillTemporalFactsV2>(
+      `select *
+         from public.v_civic_genome_bill_temporal_facts_v2
+        where genome_bill_id = $1
+        limit 1`,
+      [genome_bill_id],
+    );
+    return rows[0] ?? null;
+  } catch (error) {
+    if (temporal_v2_unavailable(error)) return null;
+    throw error;
+  }
 }
 
 // ─── Lineage Edges ───────────────────────────────────────────────────────────
@@ -283,7 +394,8 @@ export async function list_lineage_edges(opts?: {
     conditions.push(`relationship_type = $${params.length}`);
   }
 
-  const where = conditions.length > 0 ? `where ${conditions.join(" and ")}` : "";
+  const where =
+    conditions.length > 0 ? `where ${conditions.join(" and ")}` : "";
   const limit = Math.min(opts?.limit ?? 100, 500);
   params.push(limit);
 
@@ -292,7 +404,7 @@ export async function list_lineage_edges(opts?: {
      ${where}
      order by confidence_score desc, created_at desc
      limit $${params.length}`,
-    params
+    params,
   );
   return rows;
 }
@@ -310,9 +422,36 @@ export async function list_momentum_snapshots(opts: {
      where family_id = $1
      order by snapshot_date desc
      limit $2`,
-    [opts.family_id, limit]
+    [opts.family_id, limit],
   );
   return rows;
+}
+
+export async function list_event_time_momentum_snapshots_v2(opts: {
+  family_id: string;
+  observed_as_of?: string;
+  limit?: number;
+}): Promise<EventTimeMomentumSnapshotV2[]> {
+  const pool = getPool();
+  const limit = Math.min(opts.limit ?? 365, 2_000);
+  const observed_as_of = opts.observed_as_of ?? new Date().toISOString();
+
+  try {
+    const { rows } = await pool.query<EventTimeMomentumSnapshotV2>(
+      `select *
+         from public.civic_genome_family_momentum_event_time_v2(
+           $1::uuid,
+           $2::timestamptz
+         )
+        order by snapshot_date desc
+        limit $3`,
+      [opts.family_id, observed_as_of, limit],
+    );
+    return rows;
+  } catch (error) {
+    if (temporal_v2_unavailable(error)) return [];
+    throw error;
+  }
 }
 
 // ─── Summary ─────────────────────────────────────────────────────────────────
@@ -351,10 +490,10 @@ export async function get_genome_stats(): Promise<GenomeStats> {
               group by family_id
              having count(distinct state_code) > 1
            ) cross_state_families
-       ) as cross_state_family_count`
+       ) as cross_state_family_count`,
   );
   const { rows: domain_rows } = await pool.query<{ policy_domain: string }>(
-    `select distinct policy_domain from civic_genome_family order by policy_domain`
+    `select distinct policy_domain from civic_genome_family order by policy_domain`,
   );
   const r = rows[0];
   return {

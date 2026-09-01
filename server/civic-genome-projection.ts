@@ -44,7 +44,8 @@ export type civic_genome_projection_result = {
   results: projected_bill_result[];
 };
 
-const sha256 = (value: string): string => createHash("sha256").update(value).digest("hex");
+const sha256 = (value: string): string =>
+  createHash("sha256").update(value).digest("hex");
 
 const stable_uuid = (value: string): string => {
   const hash = sha256(value);
@@ -66,7 +67,8 @@ const slugify = (value: string): string =>
     .replace(/^_+|_+$/g, "")
     .slice(0, 120) || "unclassified_bill_family";
 
-const normalize_state_code = (value: string): string => value.trim().toUpperCase();
+const normalize_state_code = (value: string): string =>
+  value.trim().toUpperCase();
 
 const normalize_bill_text = (bill: legiscan_master_bill): string =>
   bill.title ?? bill.description ?? bill.number ?? `bill_${bill.bill_id}`;
@@ -83,7 +85,9 @@ const normalize_projection_offset = (offset: number | undefined): number => {
   return offset;
 };
 
-const normalize_projection_batch_size = (batch_size: number | undefined): number | null => {
+const normalize_projection_batch_size = (
+  batch_size: number | undefined,
+): number | null => {
   if (batch_size === undefined) {
     return null;
   }
@@ -98,31 +102,45 @@ const normalize_projection_batch_size = (batch_size: number | undefined): number
 const infer_policy_domain = (bill: legiscan_master_bill): string => {
   const text = `${bill.title ?? ""} ${bill.description ?? ""}`.toLowerCase();
 
-  if (/medicaid|medicare|health|hospital|mental health|behavioral health/.test(text)) return "health";
+  if (
+    /medicaid|medicare|health|hospital|mental health|behavioral health/.test(
+      text,
+    )
+  )
+    return "health";
   if (/housing|tenant|landlord|eviction|homeless/.test(text)) return "housing";
-  if (/education|school|student|teacher|university/.test(text)) return "education";
-  if (/tax|revenue|appropriation|budget|funding|grant/.test(text)) return "finance";
-  if (/criminal|court|sentence|probation|police|jail|prison/.test(text)) return "justice";
+  if (/education|school|student|teacher|university/.test(text))
+    return "education";
+  if (/tax|revenue|appropriation|budget|funding|grant/.test(text))
+    return "finance";
+  if (/criminal|court|sentence|probation|police|jail|prison/.test(text))
+    return "justice";
   if (/labor|wage|employment|worker|unemployment/.test(text)) return "labor";
   if (/election|voter|ballot|campaign/.test(text)) return "elections";
-  if (/tribal|tribe|indian nation|native/.test(text)) return "tribal_governance";
-  if (/commend|memorial|celebrat|honor|recogniz/.test(text)) return "commending_resolution";
+  if (/tribal|tribe|indian nation|native/.test(text))
+    return "tribal_governance";
+  if (/commend|memorial|celebrat|honor|recogniz/.test(text))
+    return "commending_resolution";
 
   return "unclassified_legislation";
 };
 
 export const infer_state_position = (bill: legiscan_master_bill): string => {
   const last_action = (bill.last_action ?? "").toLowerCase();
-  const text = `${bill.title ?? ""} ${bill.description ?? ""} ${bill.last_action ?? ""}`.toLowerCase();
+  const text =
+    `${bill.title ?? ""} ${bill.description ?? ""} ${bill.last_action ?? ""}`.toLowerCase();
 
   // An explicit effective-date action is post-enactment evidence even when
   // the cached master-list status remains the generic LegiScan "Passed" code.
   // Restrict this signal to the action field so bills *about* effective dates
   // are not falsely classified as enacted.
   if (/^\s*effective date\b/.test(last_action)) return "enacted";
-  if (/chapter|enacted|signed by governor|became law/.test(text)) return "enacted";
-  if (/failed|withdrawn|dead|vetoed|postponed indefinitely/.test(text)) return "failed";
-  if (/passed house and senate|passed both/.test(text)) return "advanced_two_chambers";
+  if (/chapter|enacted|signed by governor|became law/.test(text))
+    return "enacted";
+  if (/failed|withdrawn|dead|vetoed|postponed indefinitely/.test(text))
+    return "failed";
+  if (/passed house and senate|passed both/.test(text))
+    return "advanced_two_chambers";
   if (/passed house|passed senate/.test(text)) return "advanced_one_chamber";
   if (/committee|referred|reported/.test(text)) return "active_in_committee";
 
@@ -135,7 +153,10 @@ const build_family_key = (bill: legiscan_master_bill): string => {
   return `${policy_domain}:${slugify(basis)}`;
 };
 
-const build_structural_dna_json = (state_row: docket_state_cache_row, bill: legiscan_master_bill) => ({
+const build_structural_dna_json = (
+  state_row: docket_state_cache_row,
+  bill: legiscan_master_bill,
+) => ({
   source_layer: "docket_room_cache",
   source_provider: state_row.source,
   state_code: state_row.state,
@@ -159,11 +180,15 @@ export const should_append_projection_event = (
   existing_state_position: string | null,
   next_state_position: string,
 ): boolean =>
-  existing_hash === null
-  || existing_hash !== next_hash
-  || (existing_state_position !== null && existing_state_position !== next_state_position);
+  existing_hash === null ||
+  existing_hash !== next_hash ||
+  (existing_state_position !== null &&
+    existing_state_position !== next_state_position);
 
-const upsert_family = async (family_key: string, bill: legiscan_master_bill): Promise<string> => {
+const upsert_family = async (
+  family_key: string,
+  bill: legiscan_master_bill,
+): Promise<string> => {
   const pool = getPool();
   const policy_domain = infer_policy_domain(bill);
   const family_label = normalize_bill_text(bill).slice(0, 240);
@@ -206,6 +231,7 @@ const refresh_family_rollups = async (family_id: string): Promise<void> => {
          count(distinct state_code) filter (where current_state_position in ('introduced', 'active_in_committee', 'advanced_one_chamber', 'advanced_two_chambers'))::int as introduced_state_count,
          count(distinct state_code) filter (where current_state_position = 'enacted')::int as enacted_state_count,
          count(distinct state_code) filter (where current_state_position = 'failed')::int as failed_state_count,
+         min(enacted_at) as first_enacted_at,
          max(coalesce(last_action_at, introduced_at, updated_at)) as last_event_at
        from public.civic_genome_bill
        where family_id = $1
@@ -216,6 +242,7 @@ const refresh_family_rollups = async (family_id: string): Promise<void> => {
        introduced_state_count = coalesce(rollup.introduced_state_count, 0),
        enacted_state_count = coalesce(rollup.enacted_state_count, 0),
        failed_state_count = coalesce(rollup.failed_state_count, 0),
+       first_enacted_at = rollup.first_enacted_at,
        last_event_at = rollup.last_event_at,
        momentum_score = least(1, coalesce(rollup.active_state_count, 0)::numeric / 50),
        acceleration_score = 0,
@@ -223,43 +250,6 @@ const refresh_family_rollups = async (family_id: string): Promise<void> => {
        updated_at = now()
      from rollup
      where family.family_id = $1`,
-    [family_id],
-  );
-
-  await pool.query(
-    `insert into public.family_momentum_snapshot (
-       family_id,
-       snapshot_date,
-       active_state_count,
-       introduced_state_count,
-       enacted_state_count,
-       failed_state_count,
-       new_state_count,
-       velocity_score,
-       acceleration_score,
-       collapse_score
-     )
-     select
-       family_id,
-       current_date,
-       active_state_count,
-       introduced_state_count,
-       enacted_state_count,
-       failed_state_count,
-       0,
-       momentum_score,
-       acceleration_score,
-       collapse_score
-     from public.civic_genome_family
-     where family_id = $1
-     on conflict (family_id, snapshot_date) do update set
-       active_state_count = excluded.active_state_count,
-       introduced_state_count = excluded.introduced_state_count,
-       enacted_state_count = excluded.enacted_state_count,
-       failed_state_count = excluded.failed_state_count,
-       velocity_score = excluded.velocity_score,
-       acceleration_score = excluded.acceleration_score,
-       collapse_score = excluded.collapse_score`,
     [family_id],
   );
 };
@@ -282,7 +272,10 @@ const project_bill = async (
     ...docket_observation,
     docket_observation_hash,
   };
-  const bill_status = bill.status === undefined || bill.status === null ? null : `legiscan_status_${bill.status}`;
+  const bill_status =
+    bill.status === undefined || bill.status === null
+      ? null
+      : `legiscan_status_${bill.status}`;
 
   const { rows: existing_rows } = await pool.query<{
     genome_bill_id: string;
@@ -302,11 +295,12 @@ const project_bill = async (
   );
 
   const existing = existing_rows[0] ?? null;
-  const existing_docket_observation_hash = typeof existing?.structural_dna_json?.docket_observation_hash === "string"
-    ? existing.structural_dna_json.docket_observation_hash
-    : existing?.rosetta_extraction_run_id
-      ? null
-      : existing?.structural_dna_hash ?? null;
+  const existing_docket_observation_hash =
+    typeof existing?.structural_dna_json?.docket_observation_hash === "string"
+      ? existing.structural_dna_json.docket_observation_hash
+      : existing?.rosetta_extraction_run_id
+        ? null
+        : (existing?.structural_dna_hash ?? null);
   const should_append_event = should_append_projection_event(
     existing_docket_observation_hash,
     docket_observation_hash,
@@ -314,7 +308,10 @@ const project_bill = async (
     current_state_position,
   );
 
-  const { rows } = await pool.query<{ genome_bill_id: string; family_id: string }>(
+  const { rows } = await pool.query<{
+    genome_bill_id: string;
+    family_id: string;
+  }>(
     `insert into public.civic_genome_bill (
        family_id,
        bill_id,
@@ -419,7 +416,10 @@ const project_bill = async (
         bill_id,
         state_code,
         event_type,
-        bill.last_action_date ?? bill.status_date ?? state_row.fetched_at ?? null,
+        bill.last_action_date ??
+          bill.status_date ??
+          state_row.fetched_at ??
+          null,
         existing?.bill_status ?? null,
         bill_status,
         bill.change_hash ?? null,
@@ -456,7 +456,11 @@ const project_bill = async (
     family_id: persisted_family_id,
     genome_bill_id,
     event_type,
-    action: existing ? (should_append_event ? "updated" : "unchanged") : "inserted",
+    action: existing
+      ? should_append_event
+        ? "updated"
+        : "unchanged"
+      : "inserted",
   };
 };
 
@@ -470,7 +474,9 @@ export async function project_docket_cache_to_civic_genome(opts?: {
   const params: unknown[] = [];
   const conditions: string[] = [];
   const batch_offset = normalize_projection_offset(opts?.offset);
-  const batch_size = normalize_projection_batch_size(opts?.batch_size ?? opts?.limit);
+  const batch_size = normalize_projection_batch_size(
+    opts?.batch_size ?? opts?.limit,
+  );
   const batch_end = batch_size === null ? null : batch_offset + batch_size;
 
   if (opts?.state_code) {
@@ -478,7 +484,8 @@ export async function project_docket_cache_to_civic_genome(opts?: {
     conditions.push(`state = $${params.length}`);
   }
 
-  const where = conditions.length > 0 ? `where ${conditions.join(" and ")}` : "";
+  const where =
+    conditions.length > 0 ? `where ${conditions.join(" and ")}` : "";
   const { rows } = await pool.query<docket_state_cache_row>(
     `select state, session_id, session_title, bills, bill_count, fetched_at, source
      from public.docket_bill_state_cache
@@ -514,9 +521,11 @@ export async function project_docket_cache_to_civic_genome(opts?: {
     }
   }
 
-  const next_offset = batch_end !== null && batch_end < total_candidate_count ? batch_end : null;
-  const remaining_count = next_offset === null ? 0 : total_candidate_count - next_offset;
-  const family_ids = new Set(results.map(result => result.family_id));
+  const next_offset =
+    batch_end !== null && batch_end < total_candidate_count ? batch_end : null;
+  const remaining_count =
+    next_offset === null ? 0 : total_candidate_count - next_offset;
+  const family_ids = new Set(results.map((result) => result.family_id));
 
   return {
     ok: true,
@@ -529,10 +538,14 @@ export async function project_docket_cache_to_civic_genome(opts?: {
     remaining_count,
     has_more: next_offset !== null,
     bills_seen,
-    inserted_count: results.filter(result => result.action === "inserted").length,
-    updated_count: results.filter(result => result.action === "updated").length,
-    unchanged_count: results.filter(result => result.action === "unchanged").length,
-    event_count: results.filter(result => result.action !== "unchanged").length,
+    inserted_count: results.filter((result) => result.action === "inserted")
+      .length,
+    updated_count: results.filter((result) => result.action === "updated")
+      .length,
+    unchanged_count: results.filter((result) => result.action === "unchanged")
+      .length,
+    event_count: results.filter((result) => result.action !== "unchanged")
+      .length,
     family_count: family_ids.size,
     results,
   };
