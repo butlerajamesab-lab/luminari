@@ -1,6 +1,19 @@
 import type { ParsedArtifact, TextSpan } from "./parsing-substrate";
 
-export type SemanticArtifactClass = "cms_2567" | "billing_invoice" | "generic";
+export const SEMANTIC_SUBSTRATE_VERSION = "2.2.0";
+
+export type SemanticArtifactClass =
+  | "cms_2567"
+  | "billing_invoice"
+  | "property_insurance_notice"
+  | "sms_backup_xml"
+  | "generic";
+
+export type SemanticPurpose =
+  | "chronology"
+  | "entities"
+  | "relationships"
+  | "state_timeline";
 
 const CMS_HEADER_MARKERS = [
   /STATEMENT OF DEFICIENCIES/i,
@@ -26,6 +39,7 @@ const CMS_NON_NARRATIVE_SENTENCES = [
 export function classifySemanticArtifact(
   artifact: ParsedArtifact,
 ): SemanticArtifactClass {
+  if (artifact.extraction_method === "sms_backup_xml") return "sms_backup_xml";
   const text = artifact.extracted_text || "";
   const cmsMarkerCount = CMS_HEADER_MARKERS.filter((pattern) =>
     pattern.test(text),
@@ -38,6 +52,15 @@ export function classifySemanticArtifact(
   ) {
     return "billing_invoice";
   }
+  if (
+    /\bState Farm\b/i.test(text) &&
+    /\bHomeowners Policy\b/i.test(text) &&
+    /\b(?:underwriting requirement|survey company visited|property and liability losses)\b/i.test(
+      text,
+    )
+  ) {
+    return "property_insurance_notice";
+  }
   return "generic";
 }
 
@@ -48,8 +71,8 @@ export function corpusHasCms2567(artifacts: ParsedArtifact[]): boolean {
 }
 
 /**
- * A clearly unrelated billing artifact is preserved by Layers 2/3 but is not
- * allowed to contaminate a CMS-2567 inspection corpus's semantic graph.
+ * Clearly unrelated billing or property-insurance artifacts are preserved by
+ * Layers 2/3 but cannot contaminate a CMS-2567 inspection corpus's semantics.
  */
 export function isExcludedFromDominantSemanticLane(
   artifact: ParsedArtifact,
@@ -57,18 +80,262 @@ export function isExcludedFromDominantSemanticLane(
 ): boolean {
   return (
     corpusHasCms2567(corpus) &&
-    classifySemanticArtifact(artifact) === "billing_invoice"
+    ["billing_invoice", "property_insurance_notice"].includes(
+      classifySemanticArtifact(artifact),
+    )
   );
 }
 
 export function semanticSpansForArtifact(
   artifact: ParsedArtifact,
   corpus: ParsedArtifact[],
+  purpose: SemanticPurpose = "entities",
 ): TextSpan[] {
   if (isExcludedFromDominantSemanticLane(artifact, corpus)) return [];
   if (classifySemanticArtifact(artifact) === "cms_2567")
     return cmsNarrativeSpans(artifact);
-  return artifact.spans.flatMap(splitSpanIntoSentences);
+
+  let spans = removeDuplicateArchiveMembers(artifact, corpus);
+  if (classifySemanticArtifact(artifact) === "sms_backup_xml") {
+    spans = spans.filter(
+      (span) =>
+        span.message_kind !== "reaction" &&
+        isSmsCaseRelevant(span.text, corpus),
+    );
+  }
+  if (corpusHasCms2567(corpus)) spans = removeOcrReferencePages(spans);
+
+  const sentences = spans.flatMap(splitSpanIntoSentences);
+  return purpose === "chronology" &&
+    classifySemanticArtifact(artifact) === "sms_backup_xml"
+    ? sentences.filter((span) => isSmsChronologySentence(span.text, corpus))
+    : sentences;
+}
+
+export function isSmsTransportMetadataLeak(text: string): boolean {
+  return (
+    /<(?:sms|mms|part|addr)(?:\s|>)/i.test(text) ||
+    /\b(?:protocol|date_sent|sub_id|readable_date|contact_name|m_type|msg_box|ctt_s|sef_type|service_center)\s*=/i.test(
+      text,
+    ) ||
+    /\bproto:[A-Za-z0-9+/=_-]{16,}/.test(text)
+  );
+}
+
+function removeDuplicateArchiveMembers(
+  artifact: ParsedArtifact,
+  corpus: ParsedArtifact[],
+): TextSpan[] {
+  if (artifact.extraction_method !== "tesseract_archive_ocr") {
+    return artifact.spans;
+  }
+  const standaloneTextByFilename = new Map<string, string[]>();
+  for (const candidate of corpus) {
+    if (
+      candidate.artifact_key === artifact.artifact_key ||
+      candidate.extraction_method !== "tesseract_ocr" ||
+      candidate.extraction_status !== "success" ||
+      !candidate.source_filename
+    ) {
+      continue;
+    }
+    const filename = normalizeFilename(candidate.source_filename);
+    const texts = standaloneTextByFilename.get(filename) ?? [];
+    texts.push(candidate.extracted_text);
+    standaloneTextByFilename.set(filename, texts);
+  }
+
+  const archiveTextByMember = new Map<string, string[]>();
+  for (const span of artifact.spans) {
+    if (!span.archive_member_path) continue;
+    const texts = archiveTextByMember.get(span.archive_member_path) ?? [];
+    texts.push(span.text);
+    archiveTextByMember.set(span.archive_member_path, texts);
+  }
+  const duplicateMembers = new Set<string>();
+  for (const [memberPath, lines] of archiveTextByMember) {
+    const filename = normalizeFilename(memberPath);
+    const standaloneTexts = standaloneTextByFilename.get(filename) ?? [];
+    if (
+      standaloneTexts.some((standaloneText) =>
+        isOcrSemanticDuplicate(lines.join("\n"), standaloneText),
+      )
+    ) {
+      duplicateMembers.add(memberPath);
+    }
+  }
+
+  return artifact.spans.filter(
+    (span) =>
+      !span.archive_member_path ||
+      !duplicateMembers.has(span.archive_member_path),
+  );
+}
+
+function isOcrSemanticDuplicate(left: string, right: string): boolean {
+  const leftTokens = ocrSemanticTokens(left);
+  const rightTokens = ocrSemanticTokens(right);
+  if (leftTokens.size < 20 || rightTokens.size < 20) return false;
+  let intersection = 0;
+  for (const token of leftTokens) {
+    if (rightTokens.has(token)) intersection++;
+  }
+  const diceSimilarity =
+    (2 * intersection) / (leftTokens.size + rightTokens.size);
+  return diceSimilarity >= 0.6;
+}
+
+function ocrSemanticTokens(value: string): Set<string> {
+  return new Set(
+    (value.toLowerCase().match(/[a-z0-9]+/g) ?? []).filter(
+      (token) => token.length >= 3,
+    ),
+  );
+}
+
+function removeOcrReferencePages(spans: TextSpan[]): TextSpan[] {
+  const pageText = new Map<string, string[]>();
+  for (const span of spans) {
+    if (
+      span.source_kind !== "ocr_page" &&
+      span.source_kind !== "archive_ocr_page"
+    )
+      continue;
+    const key = `${span.source_artifact_key}:${span.page ?? 0}:${span.archive_member_path ?? ""}`;
+    const text = pageText.get(key) ?? [];
+    text.push(span.text);
+    pageText.set(key, text);
+  }
+  const excluded = new Set<string>(
+    [...pageText.entries()]
+      .filter(([, lines]) => isOcrReferencePage(lines.join("\n")))
+      .map(([key]) => key),
+  );
+  return spans.filter((span) => {
+    const key = `${span.source_artifact_key}:${span.page ?? 0}:${span.archive_member_path ?? ""}`;
+    return !excluded.has(key);
+  });
+}
+
+function isOcrReferencePage(text: string): boolean {
+  return [
+    /Grievance Policy\s*&\s*Procedure/i,
+    /Notice Regarding Grievances/i,
+    /OBJECTIVE OF GRIEVANCE POLICY/i,
+    /\bwritten grievance decisions?\b/i,
+    /\bGrievance Official(?: or Grievance Official Designee)?\b/i,
+    /\bFiling a Complaint\b/i,
+    /Required Contact Information\s*\(pursuant to 42 CFR 483\.10\)/i,
+    /\bWashington State Contacts\b/i,
+    /Washington Nursing Home Survey Agency/i,
+    /\bKing County Resources\b/i,
+    /\bKing County Caregiver Support Network\b/i,
+    /\bLong Term Care Ombudsman\b/i,
+    /\bAdult Protective Services\b/i,
+    /Senior Information\s*&\s*Assistance/i,
+    /Pathways Information and Assistance Program/i,
+  ].some((pattern) => pattern.test(text));
+}
+
+function isSmsCaseRelevant(text: string, corpus: ParsedArtifact[]): boolean {
+  if (
+    /\b(?:nursing home|long[ -]term care|care conference|family council|ombudsman|Medicare inspector|CMS|social worker|resident|caregiver|POA|power of attorney|in[ -]house PCP)\b/i.test(
+      text,
+    )
+  ) {
+    return true;
+  }
+  if (containsAnyAlias(text, deriveFacilityAliases(corpus))) return true;
+  return (
+    containsAnyAlias(text, deriveSubjectAliases(corpus)) &&
+    /\b(?:care|facility|unit|staff|doctor|PCP|NP|nurse|medical|Medicaid|Medicare|dementia|wheelchair|fell|fall|food|eat(?:ing)?|dinner|water|liquids?|hydrat(?:e|ion)|medication|hospital|appointment|assessment|procedure|headache|chemical|cleaner|waxed|floor|grievance|complaint|inspectors?)\b/i.test(
+      text,
+    )
+  );
+}
+
+function isSmsChronologySentence(
+  text: string,
+  corpus: ParsedArtifact[],
+): boolean {
+  return (
+    isSmsCaseRelevant(text, corpus) &&
+    /\b(?:fell|fall|moved|moving|admitted|transferred|hospital|not (?:been )?(?:getting|given|receiving)|refus(?:e|ed|ing|al)|dehydrat(?:ed|ion)|liquids?|water|food|eating|dinner|medication|care conference|social worker|called|contacted|invited|less than 24|POA|power of attorney|complaint|grievance|ombudsman|inspector|cleaned|waxed|Robusto|chemical exposure|headache|procedure|assessment|restrict(?:ed|ing)|avoiding|rude|difficult)\b/i.test(
+      text,
+    )
+  );
+}
+
+function deriveSubjectAliases(corpus: ParsedArtifact[]): string[] {
+  const aliases = new Set<string>();
+  const nicknameMap: Record<string, string[]> = {
+    richard: ["Rick"],
+    robert: ["Bob", "Rob"],
+    william: ["Bill", "Will"],
+    james: ["Jim"],
+    elizabeth: ["Beth", "Liz"],
+    margaret: ["Maggie", "Peggy"],
+  };
+  for (const artifact of corpus) {
+    const pattern =
+      /^\s*([A-Z][A-Za-z'’-]+(?:\s+[A-Z][A-Za-z'’-]+){1,3})\s+Care Conference Agenda\b/gim;
+    let match: RegExpExecArray | null;
+    while ((match = pattern.exec(artifact.extracted_text)) !== null) {
+      aliases.add(match[1]);
+      const firstName = match[1].split(/\s+/)[0];
+      aliases.add(firstName);
+      for (const nickname of nicknameMap[firstName.toLowerCase()] ?? []) {
+        aliases.add(nickname);
+      }
+    }
+  }
+  return [...aliases].sort();
+}
+
+function deriveFacilityAliases(corpus: ParsedArtifact[]): string[] {
+  const aliases = new Set<string>();
+  const pattern =
+    /\b([A-Z][A-Za-z'’-]+(?:[ \t]+[A-Z][A-Za-z'’-]+){1,6}[ \t]+(?:Home|Hospital|Center|Centre|Clinic|Facility))\b/g;
+  for (const artifact of corpus) {
+    if (classifySemanticArtifact(artifact) !== "cms_2567") continue;
+    let match: RegExpExecArray | null;
+    while ((match = pattern.exec(artifact.extracted_text)) !== null) {
+      const fullName = match[1].replace(/\s+/g, " ").trim();
+      aliases.add(fullName);
+      const shortName = fullName.replace(
+        /\s+(?:Home|Hospital|Center|Centre|Clinic|Facility)$/,
+        "",
+      );
+      if (shortName.split(" ").length >= 2) {
+        aliases.add(shortName);
+        const acronym = shortName
+          .split(" ")
+          .map((token) => token[0])
+          .join("")
+          .toUpperCase();
+        if (acronym.length >= 2) aliases.add(acronym);
+      }
+    }
+  }
+  return [...aliases].sort();
+}
+
+function containsAnyAlias(text: string, aliases: string[]): boolean {
+  return aliases.some((alias) => {
+    const pattern = new RegExp(
+      `(?:^|[^\\p{L}\\p{N}])${escapeRegex(alias)}(?:$|[^\\p{L}\\p{N}])`,
+      "iu",
+    );
+    return pattern.test(text);
+  });
+}
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function normalizeFilename(value: string): string {
+  return value.replaceAll("\\", "/").split("/").pop()!.trim().toLowerCase();
 }
 
 export function cmsSurveyDate(artifact: ParsedArtifact): string | null {
@@ -316,12 +583,10 @@ function splitSpanIntoSentences(span: TextSpan): TextSpan[] {
     const text = span.text.substring(start, end);
     if (text.replace(/\s+/g, " ").trim().length < 3) continue;
     output.push({
+      ...span,
       text,
       start_offset: span.start_offset + start,
       end_offset: span.start_offset + end,
-      page: span.page,
-      paragraph_index: span.paragraph_index,
-      source_artifact_key: span.source_artifact_key,
     });
   }
   return output;

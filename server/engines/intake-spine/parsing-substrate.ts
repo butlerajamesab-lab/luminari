@@ -1,5 +1,20 @@
 import crypto from 'crypto';
 import { computeRuleManifestHash } from './utils';
+import {
+  detectSupportedImageMime,
+  HEIC_CONVERT_VERSION,
+  OCR_RULE_MANIFEST,
+  parseImageArchiveWithOcr,
+  parseImageWithOcr,
+  TESSERACT_ENG_DATA_VERSION,
+  TESSERACT_JS_VERSION,
+} from './ocr-substrate';
+import {
+  isSmsBackupRestoreXml,
+  parseSmsBackupRestoreXml,
+  SMS_BACKUP_FORMAT_VERSION,
+  SMS_BACKUP_RULE_MANIFEST,
+} from './sms-backup-substrate';
 
 export interface TextSpan {
   text: string;
@@ -8,10 +23,29 @@ export interface TextSpan {
   page?: number;
   paragraph_index?: number;
   source_artifact_key: string;
+  source_kind?: 'sms_message' | 'ocr_page' | 'archive_ocr_page';
+  source_record_index?: number;
+  source_record_char_offset?: number;
+  occurred_at?: string;
+  message_direction?: 'received' | 'sent' | 'unknown';
+  message_contact_name?: string;
+  message_kind?: 'message' | 'reaction';
+  archive_member_path?: string;
+  archive_member_filename?: string;
 }
+
+export type ExtractionMethod =
+  | 'pdf_text'
+  | 'docx_xml'
+  | 'utf8_text'
+  | 'sms_backup_xml'
+  | 'tesseract_ocr'
+  | 'tesseract_archive_ocr'
+  | 'none';
 
 export interface ParsedArtifact {
   artifact_key: string;
+  source_filename?: string;
   raw_bytes_sha256: string;
   declared_mime_type: string;
   detected_mime_type: string | null;
@@ -20,6 +54,7 @@ export interface ParsedArtifact {
   extracted_text: string;
   spans: TextSpan[];
   extraction_status: 'success' | 'unsupported_format' | 'extraction_failed';
+  extraction_method: ExtractionMethod;
   extraction_error?: string;
   parser_version: string;
   rule_version: string;
@@ -28,8 +63,8 @@ export interface ParsedArtifact {
 
 export const PDF_PARSE_VERSION = '2.4.5';
 export const JSZIP_VERSION = '3.10.1';
-export const PARSER_VERSION = `luminari.intake.parser.v2.1.1+pdf-parse@${PDF_PARSE_VERSION}+jszip@${JSZIP_VERSION}`;
-export const RULE_VERSION = '2.1.1';
+export const PARSER_VERSION = `luminari.intake.parser.v2.2.0+pdf-parse@${PDF_PARSE_VERSION}+jszip@${JSZIP_VERSION}+tesseract.js@${TESSERACT_JS_VERSION}+eng@${TESSERACT_ENG_DATA_VERSION}+heic-convert@${HEIC_CONVERT_VERSION}`;
+export const RULE_VERSION = '2.2.0';
 
 export const PARSER_RULE_MANIFEST = {
   mime_detection: {
@@ -52,6 +87,11 @@ export const PARSER_RULE_MANIFEST = {
     token_order: ['w:t', 'w:tab', 'w:br', 'w:cr'],
     paragraph_separator: '\\n',
   },
+  sms_backup: {
+    format_version: SMS_BACKUP_FORMAT_VERSION,
+    rules: SMS_BACKUP_RULE_MANIFEST,
+  },
+  ocr: OCR_RULE_MANIFEST,
   unsupported_format_policy: 'preserve_with_unsupported_format',
   extraction_failure_policy: 'preserve_with_extraction_failed',
 } as const;
@@ -62,15 +102,18 @@ export async function parseArtifact(
   artifact_key: string,
   bytes: Buffer,
   declared_mime_type: string,
+  source_filename?: string,
 ): Promise<ParsedArtifact> {
   const raw_bytes_sha256 = crypto.createHash('sha256').update(bytes).digest('hex');
   const byte_size = bytes.length;
   const normalizedDeclaredMime = declared_mime_type.trim().toLowerCase() || 'application/octet-stream';
   const detected_mime_type = await detectMimeFromBytes(bytes);
   const effective_mime = detected_mime_type || normalizedDeclaredMime;
+  const normalizedSourceFilename = normalizeSourceFilename(source_filename);
 
   const base = {
     artifact_key,
+    ...(normalizedSourceFilename ? { source_filename: normalizedSourceFilename } : {}),
     raw_bytes_sha256,
     declared_mime_type: normalizedDeclaredMime,
     detected_mime_type,
@@ -89,6 +132,7 @@ export async function parseArtifact(
         extracted_text: result.text,
         spans: result.spans,
         extraction_status: 'success',
+        extraction_method: 'pdf_text',
       };
     }
 
@@ -99,7 +143,48 @@ export async function parseArtifact(
         extracted_text: result.text,
         spans: result.spans,
         extraction_status: 'success',
+        extraction_method: 'docx_xml',
       };
+    }
+
+    if (effective_mime === 'application/vnd.sms-backup-restore+xml') {
+      const result = parseSmsBackupRestoreXml(bytes, artifact_key);
+      return {
+        ...base,
+        extracted_text: result.text,
+        spans: result.spans,
+        extraction_status: 'success',
+        extraction_method: 'sms_backup_xml',
+      };
+    }
+
+    if (
+      effective_mime === 'image/jpeg' ||
+      effective_mime === 'image/png' ||
+      effective_mime === 'image/heic' ||
+      effective_mime === 'image/heif'
+    ) {
+      const result = await parseImageWithOcr(bytes, effective_mime, artifact_key);
+      return {
+        ...base,
+        extracted_text: result.text,
+        spans: result.spans,
+        extraction_status: 'success',
+        extraction_method: 'tesseract_ocr',
+      };
+    }
+
+    if (effective_mime === 'application/zip') {
+      const result = await parseImageArchiveWithOcr(bytes, artifact_key);
+      if (result) {
+        return {
+          ...base,
+          extracted_text: result.text,
+          spans: result.spans,
+          extraction_status: 'success',
+          extraction_method: 'tesseract_archive_ocr',
+        };
+      }
     }
 
     if (effective_mime.startsWith('text/')) {
@@ -109,6 +194,7 @@ export async function parseArtifact(
         extracted_text: text,
         spans: textLineSpans(text, artifact_key),
         extraction_status: 'success',
+        extraction_method: 'utf8_text',
       };
     }
 
@@ -117,6 +203,7 @@ export async function parseArtifact(
       extracted_text: '',
       spans: [],
       extraction_status: 'unsupported_format',
+      extraction_method: 'none',
     };
   } catch (error: unknown) {
     return {
@@ -124,6 +211,7 @@ export async function parseArtifact(
       extracted_text: '',
       spans: [],
       extraction_status: 'extraction_failed',
+      extraction_method: 'none',
       extraction_error: error instanceof Error ? error.message : 'unknown_extraction_error',
     };
   }
@@ -226,6 +314,13 @@ function decodeXmlEntities(text: string): string {
 }
 
 async function detectMimeFromBytes(bytes: Buffer): Promise<string | null> {
+  const imageMime = detectSupportedImageMime(bytes);
+  if (imageMime) return imageMime;
+
+  if (isSmsBackupRestoreXml(bytes)) {
+    return 'application/vnd.sms-backup-restore+xml';
+  }
+
   if (bytes.length < 4) return detectTextMime(bytes);
 
   if (matchesMagic(bytes, PARSER_RULE_MANIFEST.mime_detection.pdf_magic)) {
@@ -267,6 +362,12 @@ function matchesMagic(bytes: Buffer, magic: readonly number[]): boolean {
 
 function decodeUtf8(bytes: Buffer): string {
   return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+}
+
+function normalizeSourceFilename(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  const normalized = value.replaceAll('\\', '/').split('/').pop()?.trim();
+  return normalized || undefined;
 }
 
 function textLineSpans(text: string, artifact_key: string): TextSpan[] {

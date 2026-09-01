@@ -10,6 +10,7 @@ import { Entity, EntityType } from './layer-6-entity_registry';
 import { ParsedArtifact } from './parsing-substrate';
 import {
   isExcludedFromDominantSemanticLane,
+  SEMANTIC_SUBSTRATE_VERSION,
   semanticSpansForArtifact,
 } from './semantic-substrate';
 
@@ -50,8 +51,8 @@ export interface Layer7Input {
   artifacts: ParsedArtifact[];
 }
 
-export const LAYER_VERSION = '2.5.0';
-export const RULE_VERSION = '2.5.0';
+export const LAYER_VERSION = '2.6.0';
+export const RULE_VERSION = '2.6.0';
 
 type MarkerDirection = 'a_to_b' | 'b_to_a' | 'bidirectional';
 type MarkerScope = 'between_mentions' | 'post_coordinated_endpoints';
@@ -71,6 +72,7 @@ export const RULE_MANIFEST: {
   marker_scope: 'bound_regions_in_one_sentence';
   coordinated_endpoint_policy: 'complete_contiguous_list_all_pairs';
   endpoint_type_policy: 'role_compatible';
+  semantic_substrate_version: string;
 } = {
   context_chars: 32,
   first_marker_per_pair_per_span: true,
@@ -123,6 +125,7 @@ export const RULE_MANIFEST: {
   marker_scope: 'bound_regions_in_one_sentence',
   coordinated_endpoint_policy: 'complete_contiguous_list_all_pairs',
   endpoint_type_policy: 'role_compatible',
+  semantic_substrate_version: SEMANTIC_SUBSTRATE_VERSION,
 };
 
 export const RULE_MANIFEST_HASH = computeRuleManifestHash(RULE_MANIFEST);
@@ -186,7 +189,7 @@ export function processLayer7(input: Layer7Input): EngineResult<Relationship[]> 
       continue;
     }
 
-    for (const span of semanticSpansForArtifact(artifact, artifacts)) {
+    for (const span of semanticSpansForArtifact(artifact, artifacts, 'relationships')) {
       const spanText = span.text;
       const entitiesInSpan: Array<{ entity: Entity; position: number; mention_text: string }> = [];
 

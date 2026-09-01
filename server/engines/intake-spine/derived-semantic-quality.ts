@@ -12,6 +12,7 @@ import {
   isCmsHeaderOrFooterText,
   isDateOutsideCmsRecordRange,
   isExcludedFromDominantSemanticLane,
+  isSmsTransportMetadataLeak,
   semanticSpansForArtifact,
 } from "./semantic-substrate";
 
@@ -75,6 +76,33 @@ export function collectDerivedSemanticQualityIssues(
       .filter((artifact) => classifySemanticArtifact(artifact) === "cms_2567")
       .map((artifact) => [artifact.artifact_key, artifact]),
   );
+  const smsArtifactKeys = new Set(
+    input.artifacts
+      .filter(
+        (artifact) => classifySemanticArtifact(artifact) === "sms_backup_xml",
+      )
+      .map((artifact) => artifact.artifact_key),
+  );
+
+  for (const artifact of input.artifacts) {
+    if (!smsArtifactKeys.has(artifact.artifact_key)) continue;
+    if (isSmsTransportMetadataLeak(artifact.extracted_text)) {
+      pushIssue(
+        issues,
+        "sms_transport_metadata_in_extracted_text",
+        artifact.artifact_key,
+        "Raw XML or transport attributes entered parsed text",
+      );
+    }
+    if (artifact.spans.some((span) => span.source_kind !== "sms_message")) {
+      pushIssue(
+        issues,
+        "sms_span_missing_message_provenance",
+        artifact.artifact_key,
+        "Every parsed SMS span must carry message provenance",
+      );
+    }
+  }
 
   for (const relationship of input.relationships) {
     const entityA = entitiesById.get(relationship.entity_a_id);
@@ -106,6 +134,17 @@ export function collectDerivedSemanticQualityIssues(
     }
 
     for (const source of relationship.source_refs) {
+      if (
+        smsArtifactKeys.has(source.artifact_key) &&
+        isSmsTransportMetadataLeak(source.span_text)
+      ) {
+        pushIssue(
+          issues,
+          "sms_transport_metadata_relationship",
+          relationship.relationship_id,
+          source.artifact_key,
+        );
+      }
       if (excludedArtifactKeys.has(source.artifact_key)) {
         pushIssue(
           issues,
@@ -129,6 +168,17 @@ export function collectDerivedSemanticQualityIssues(
   }
 
   for (const event of input.chronology) {
+    if (
+      smsArtifactKeys.has(event.source_artifact_key) &&
+      isSmsTransportMetadataLeak(event.event_text)
+    ) {
+      pushIssue(
+        issues,
+        "sms_transport_metadata_chronology",
+        event.event_id,
+        event.source_artifact_key,
+      );
+    }
     if (excludedArtifactKeys.has(event.source_artifact_key)) {
       pushIssue(
         issues,
@@ -163,6 +213,17 @@ export function collectDerivedSemanticQualityIssues(
   }
 
   for (const transition of input.state_transitions) {
+    if (
+      smsArtifactKeys.has(transition.source_artifact_key) &&
+      isSmsTransportMetadataLeak(transition.source_text)
+    ) {
+      pushIssue(
+        issues,
+        "sms_transport_metadata_state",
+        transition.transition_id,
+        transition.source_artifact_key,
+      );
+    }
     if (excludedArtifactKeys.has(transition.source_artifact_key)) {
       pushIssue(
         issues,
@@ -207,6 +268,17 @@ export function collectDerivedSemanticQualityIssues(
           mention.artifact_key,
         );
         continue;
+      }
+      if (
+        smsArtifactKeys.has(mention.artifact_key) &&
+        isSmsTransportMetadataLeak(mention.raw_text)
+      ) {
+        pushIssue(
+          issues,
+          "sms_transport_metadata_entity",
+          entity.entity_id,
+          mention.raw_text,
+        );
       }
       if (excludedArtifactKeys.has(mention.artifact_key)) {
         pushIssue(

@@ -30,6 +30,7 @@ function artifact(artifactKey: string, text: string): ParsedArtifact {
       },
     ],
     extraction_status: "success",
+    extraction_method: "pdf_text",
     parser_version: "test-parser",
     rule_version: "test-rule",
     parser_rule_manifest_hash: "b".repeat(64),
@@ -348,6 +349,35 @@ describe("derived semantic quality gate", () => {
       expect.arrayContaining([
         "cms_future_chronology_date",
         "cms_future_state_date",
+      ]),
+    );
+  });
+
+  it("rejects raw SMS XML or transport attributes in parsed and derived text", () => {
+    const sms = artifact(
+      "sms-a",
+      '<sms protocol="0" contact_name="Cheryl" body="care conference" />',
+    );
+    sms.declared_mime_type = "text/xml";
+    sms.detected_mime_type = "application/vnd.sms-backup-restore+xml";
+    sms.mime_type = "application/vnd.sms-backup-restore+xml";
+    sms.extraction_method = "sms_backup_xml";
+    const event: ChronologyEvent = {
+      event_id: "sms-leak-event",
+      date: "2026-08-31",
+      date_precision: "exact",
+      event_text: 'protocol="0" care conference',
+      actor: null,
+      source_artifact_key: sms.artifact_key,
+      source_span_offset: 0,
+      verification_status: "document_stated",
+    };
+
+    expect(issueCodes({ ...baseInput(sms), chronology: [event] })).toEqual(
+      expect.arrayContaining([
+        "sms_transport_metadata_in_extracted_text",
+        "sms_span_missing_message_provenance",
+        "sms_transport_metadata_chronology",
       ]),
     );
   });

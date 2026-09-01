@@ -13,6 +13,7 @@ import {
   cmsSurveyDate,
   isDateOutsideCmsRecordRange,
   isExcludedFromDominantSemanticLane,
+  SEMANTIC_SUBSTRATE_VERSION,
   semanticSentenceBounds,
   semanticSpansForArtifact,
 } from './semantic-substrate';
@@ -32,8 +33,8 @@ export interface Layer4Input {
   artifacts: ParsedArtifact[];
 }
 
-export const LAYER_VERSION = '2.5.0';
-export const RULE_VERSION = '2.5.0';
+export const LAYER_VERSION = '2.6.0';
+export const RULE_VERSION = '2.6.0';
 
 type DateRule = {
   regex: { source: string; flags: string };
@@ -48,6 +49,8 @@ export const RULE_MANIFEST: {
   excluded_non_event_sentence_patterns: Array<{ source: string; flags: string; reason: string }>;
   unsupported_artifact_policy: 'unresolved_skip';
   max_events_per_semantic_sentence: 1;
+  semantic_substrate_version: string;
+  sms_event_date_policy: 'message_timestamp_for_explicit_care_event_sentence';
 } = {
   date_rules: [
     {
@@ -97,6 +100,8 @@ export const RULE_MANIFEST: {
   ],
   unsupported_artifact_policy: 'unresolved_skip',
   max_events_per_semantic_sentence: 1,
+  semantic_substrate_version: SEMANTIC_SUBSTRATE_VERSION,
+  sms_event_date_policy: 'message_timestamp_for_explicit_care_event_sentence',
 };
 
 export const RULE_MANIFEST_HASH = computeRuleManifestHash(RULE_MANIFEST);
@@ -145,7 +150,38 @@ export function processLayer4(input: Layer4Input): EngineResult<ChronologyEvent[
     const artifactClass = classifySemanticArtifact(artifact);
     const surveyDate = artifactClass === 'cms_2567' ? cmsSurveyDate(artifact) : null;
 
-    for (const span of semanticSpansForArtifact(artifact, artifacts)) {
+    for (const span of semanticSpansForArtifact(artifact, artifacts, 'chronology')) {
+      if (artifactClass === 'sms_backup_xml' && span.occurred_at) {
+        const date = span.occurred_at.slice(0, 10);
+        const event_text = span.text.trim();
+        const source_span_offset = span.start_offset;
+        const eventIdentity = computeHash({
+          artifact_key: artifact.artifact_key,
+          event_text: event_text.replace(/\s+/g, ' ').trim(),
+          occurred_at: span.occurred_at,
+        });
+        if (seenEvents.has(eventIdentity)) continue;
+        seenEvents.add(eventIdentity);
+        events.push({
+          event_id: `evt_${computeHash({
+            artifact_key: artifact.artifact_key,
+            source_span_offset,
+            date,
+            event_text,
+          }).substring(0, 16)}`,
+          date,
+          date_precision: 'exact',
+          event_text,
+          // The backup's contact label is user-maintained transport metadata,
+          // not a verified identity. Keep the event source-bound without
+          // promoting that label into the entity graph.
+          actor: null,
+          source_artifact_key: artifact.artifact_key,
+          source_span_offset,
+          verification_status: 'document_stated',
+        });
+        continue;
+      }
       const candidates: Array<{
         date: string;
         precision: DateRule['precision'];

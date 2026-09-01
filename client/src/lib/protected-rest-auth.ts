@@ -7,6 +7,7 @@ const PROTECTED_REST_PREFIXES = [
   "/api/ingestion-control",
   "/api/upload",
   "/api/cases",
+  "/api/export",
 ] as const;
 
 let installed = false;

@@ -24,6 +24,7 @@ describe("protected REST and Atlas service boundary", () => {
     expect(protectedRest).toContain('"/api/ingestion-control"');
     expect(protectedRest).toContain('"/api/upload"');
     expect(protectedRest).toContain('"/api/cases"');
+    expect(protectedRest).toContain('"/api/export"');
     expect(protectedRest).toContain("url.origin !== window.location.origin");
     expect(protectedRest).toContain("getAuthenticatedRequestHeaders");
     expect(sessionToken).toContain('headers.set("x-lighthouse-supabase-session"');

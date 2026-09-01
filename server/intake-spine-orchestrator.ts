@@ -499,7 +499,12 @@ export async function execute_intake_spine_session(
     });
     source_receipts.push(l3Persisted);
 
-    const parsed = await parseArtifact(artifact.artifact_key, source.bytes, declared_mime_type);
+    const parsed = await parseArtifact(
+      artifact.artifact_key,
+      source.bytes,
+      declared_mime_type,
+      artifact.filename ?? undefined,
+    );
     if (parsed.raw_bytes_sha256 !== source.verified_sha256) {
       throw new Error(`intake_spine_orchestrator_parser_raw_hash_mismatch:${artifact.artifact_id}`);
     }
@@ -512,12 +517,14 @@ export async function execute_intake_spine_session(
   const parser_input_manifest = parsed_artifacts
     .map(parsed => ({
       artifact_key: parsed.artifact_key,
+      source_filename: parsed.source_filename ?? null,
       raw_bytes_sha256: parsed.raw_bytes_sha256,
       declared_mime_type: parsed.declared_mime_type,
       detected_mime_type: parsed.detected_mime_type,
       effective_mime_type: parsed.mime_type,
       byte_size: parsed.byte_size,
       extraction_status: parsed.extraction_status,
+      extraction_method: parsed.extraction_method,
       parser_version: parsed.parser_version,
       parser_rule_manifest_hash: parsed.parser_rule_manifest_hash,
       parsed_output_hash: computeHash({ extracted_text: parsed.extracted_text, spans: parsed.spans }),
