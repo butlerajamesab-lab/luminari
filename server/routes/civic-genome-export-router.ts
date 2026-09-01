@@ -17,6 +17,7 @@ import {
   list_event_time_momentum_snapshots_v2,
   list_genome_bills,
   list_genome_events,
+  list_genome_lifecycle_event_history_v3,
   list_genome_lifecycle_events_v2,
   list_momentum_snapshots,
   type GenomeBill,
@@ -241,6 +242,7 @@ async function build_single_bill_export(source_bill_id: number) {
     family_bills,
     legacy_events,
     lifecycle_events,
+    lifecycle_event_history,
     event_time_momentum,
     legacy_momentum,
     temporal_facts,
@@ -251,6 +253,10 @@ async function build_single_bill_export(source_bill_id: number) {
     list_genome_lifecycle_events_v2({
       genome_bill_id: bill.genome_bill_id,
       limit: 2_000,
+    }),
+    list_genome_lifecycle_event_history_v3({
+      genome_bill_id: bill.genome_bill_id,
+      limit: 5_000,
     }),
     list_event_time_momentum_snapshots_v2({
       family_id: bill.family_id,
@@ -290,6 +296,10 @@ async function build_single_bill_export(source_bill_id: number) {
     all_assembly_runs: all_runs_result.rows,
     bill_temporal_facts: temporal_facts,
     bill_events: events,
+    lifecycle_event_history,
+    lifecycle_supersession_receipts: lifecycle_event_history.filter(
+      (event) => event.supersedes_lifecycle_event_id !== null,
+    ),
     legacy_projection_events: legacy_events,
     lineage_edges: lineage_result.rows,
     family,
@@ -302,6 +312,10 @@ async function build_single_bill_export(source_bill_id: number) {
         all_traits_result.rowCount ?? all_traits_result.rows.length,
       assembly_runs: all_runs_result.rowCount ?? all_runs_result.rows.length,
       bill_events: events.length,
+      lifecycle_event_history: lifecycle_event_history.length,
+      lifecycle_supersession_receipts: lifecycle_event_history.filter(
+        (event) => event.supersedes_lifecycle_event_id !== null,
+      ).length,
       legacy_projection_events: legacy_events.length,
       lineage_edges: lineage_result.rowCount ?? lineage_result.rows.length,
       family_bills: family_bills.length,
@@ -309,7 +323,7 @@ async function build_single_bill_export(source_bill_id: number) {
       legacy_observation_snapshots: legacy_momentum.length,
     },
     temporal_interpretation: temporal_facts
-      ? "Legislative event time, Lighthouse observation time, and extraction time are separate. Momentum is replayed over source event time."
+      ? "Legislative event time, Lighthouse observation time, and extraction time are separate. Momentum is replayed over source event time from the latest source revision; superseded rows and tombstones remain preserved history but are not current truth."
       : "Event-time chronology v2 is unavailable for this bill; legacy mixed-time projection rows are preserved and explicitly labeled.",
     interpretation:
       "This is a source-preserving Civic Genome export. Historical versions, legacy projections, and receipts are preserved as history; export does not re-run or mutate Rosetta, Prism, Docket, or Civic Genome state.",

@@ -63,7 +63,7 @@ export interface GenomeBill {
   fiscal_effects_json: Record<string, unknown>;
   enforcement_graph_json: Record<string, unknown>;
   downstream_impact_graph_json: Record<string, unknown>;
-  current_state_position: string;
+  current_state_position: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -109,6 +109,13 @@ export interface GenomeLifecycleEventV2 {
   created_at: string;
 }
 
+export interface GenomeLifecycleEventHistoryV3 extends GenomeLifecycleEventV2 {
+  current_source_revision_id: string | null;
+  current_source_revision_hash: string | null;
+  current_revision_observed_at: string | null;
+  canonical_status: "current" | "superseded" | "tombstone";
+}
+
 export interface GenomeBillTemporalFactsV2 {
   genome_bill_id: string;
   bill_id: string;
@@ -119,13 +126,15 @@ export interface GenomeBillTemporalFactsV2 {
   introduced_at: string | null;
   enacted_at: string | null;
   effective_at: string | null;
-  last_action_at: string;
+  last_action_at: string | null;
   last_observed_at: string;
-  last_action_text: string;
+  last_action_text: string | null;
   current_state_position: string | null;
   source_event_count: number;
   source_event_set_hash: string;
-  temporal_contract: "civic_genome_event_time_v2";
+  temporal_contract:
+    | "civic_genome_event_time_v2"
+    | "civic_genome_event_time_v3";
 }
 
 export interface LineageEdge {
@@ -157,7 +166,9 @@ export interface MomentumSnapshot {
 export interface EventTimeMomentumSnapshotV2 extends MomentumSnapshot {
   observed_at: string;
   chronology_basis: "source_event_time";
-  methodology_version: "civic_genome_momentum_event_time_v2";
+  methodology_version:
+    | "civic_genome_momentum_event_time_v2"
+    | "civic_genome_momentum_event_time_v3";
   source_event_ids: string[];
   input_hash: string;
 }
@@ -331,9 +342,32 @@ export async function list_genome_lifecycle_events_v2(opts: {
   try {
     const { rows } = await pool.query<GenomeLifecycleEventV2>(
       `select *
-         from public.civic_genome_lifecycle_event_v2
+         from public.v_civic_genome_lifecycle_event_current_v3
         where genome_bill_id = $1
         order by valid_at desc, source_sequence desc, lifecycle_event_id desc
+        limit $2`,
+      [opts.genome_bill_id, limit],
+    );
+    return rows;
+  } catch (error) {
+    if (temporal_v2_unavailable(error)) return [];
+    throw error;
+  }
+}
+
+export async function list_genome_lifecycle_event_history_v3(opts: {
+  genome_bill_id: string;
+  limit?: number;
+}): Promise<GenomeLifecycleEventHistoryV3[]> {
+  const pool = getPool();
+  const limit = Math.min(opts.limit ?? 2_000, 5_000);
+
+  try {
+    const { rows } = await pool.query<GenomeLifecycleEventHistoryV3>(
+      `select *
+         from public.v_civic_genome_lifecycle_event_history_v3
+        where genome_bill_id = $1
+        order by observed_at desc, created_at desc, lifecycle_event_id desc
         limit $2`,
       [opts.genome_bill_id, limit],
     );

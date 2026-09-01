@@ -51,6 +51,8 @@ describe("Civic Genome export contract", () => {
     expect(route).toContain("all_structural_traits: all_traits_result.rows");
     expect(route).toContain("all_assembly_runs: all_runs_result.rows");
     expect(route).toContain("bill_events: events");
+    expect(route).toContain("lifecycle_event_history");
+    expect(route).toContain("lifecycle_supersession_receipts");
     expect(route).toContain("lineage_edges: lineage_result.rows");
     expect(route).toContain("family_momentum_snapshots: momentum");
     expect(route).not.toMatch(/delete\s+from/i);
