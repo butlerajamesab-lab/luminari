@@ -200,4 +200,79 @@ describe("chronology Layer 3 source binding", () => {
 
     await expect(listEvents(44)).resolves.toEqual([]);
   });
+
+  it("keeps one canonical event when multiple valid sessions bind duplicate evidence", async () => {
+    const sharedChronology = [chronology[0]];
+    const sharedHash = computeHash(sharedChronology);
+    const canonicalOutput = (sessionId: string, outputArtifactId: string) => ({
+      ...canonicalRows[0],
+      intake_session_id: sessionId,
+      layer_run_id: `run-${sessionId}`,
+      output_hash: sharedHash,
+      output_refs: [{ artifact_id: outputArtifactId }],
+      receipt: {
+        ...canonicalRows[0].receipt,
+        output_artifact_id: outputArtifactId,
+      },
+      output_artifact_id: outputArtifactId,
+      metadata: {
+        ...canonicalRows[0].metadata,
+        output_hash: sharedHash,
+        data: sharedChronology,
+      },
+    });
+    mocks.query.mockImplementation(async (sql: string) => ({
+      rows: sql.includes("chronology_reconstruction")
+        ? [
+            canonicalOutput("session-a", "output-artifact-a"),
+            canonicalOutput("session-b", "output-artifact-b"),
+          ]
+        : [
+            {
+              intake_session_id: "session-a",
+              artifact_id: "source-a",
+              artifact_key: "artifact-preserved",
+              filename: "duplicate-a.pdf",
+              metadata: { legacy_document_id: 7 },
+            },
+            {
+              intake_session_id: "session-b",
+              artifact_id: "source-b",
+              artifact_key: "artifact-preserved",
+              filename: "duplicate-b.pdf",
+              metadata: { legacy_document_id: 9 },
+            },
+          ],
+    }));
+    mocks.readIntegrity.mockResolvedValue({
+      artifacts: [
+        {
+          intake_session_id: "session-a",
+          artifact_id: "source-a",
+          artifact_key: "artifact-preserved",
+          integrity_status: "preserved",
+        },
+        {
+          intake_session_id: "session-b",
+          artifact_id: "source-b",
+          artifact_key: "artifact-preserved",
+          integrity_status: "preserved",
+        },
+      ],
+    });
+
+    await expect(listEvents(44)).resolves.toEqual([
+      expect.objectContaining({
+        id: "event-preserved",
+        documentId: 7,
+        documentFilename: "duplicate-a.pdf",
+        canonical_source_intake_session_id: "session-a",
+        canonical_source_intake_session_ids: ["session-a", "session-b"],
+      }),
+    ]);
+    await expect(getCaseChronologyProjectionState(44)).resolves.toMatchObject({
+      projection_state: "canonical_projection",
+      event_count: 1,
+    });
+  });
 });

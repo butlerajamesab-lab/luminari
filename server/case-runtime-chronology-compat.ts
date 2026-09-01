@@ -220,14 +220,22 @@ function source_binding(rows: any[] | undefined): { document_id: number | null; 
 function source_binding_for_event(
   bindings: Map<string, any[]>,
   event: MergedChronologyEvent,
-): { document_id: number | null; filename: string | null } {
-  const rows = event.source_intake_session_ids.flatMap(
-    intake_session_id =>
+): {
+  document_id: number | null;
+  filename: string | null;
+  intake_session_id: string | null;
+} {
+  for (const intake_session_id of event.source_intake_session_ids) {
+    const binding = source_binding(
       bindings.get(
         `${intake_session_id}\u001f${event.source_artifact_key}`,
-      ) ?? [],
-  );
-  return source_binding(rows);
+      ),
+    );
+    if (binding.document_id !== null) {
+      return { ...binding, intake_session_id };
+    }
+  }
+  return { document_id: null, filename: null, intake_session_id: null };
 }
 
 function merge_chronology(
@@ -319,6 +327,7 @@ export async function listEvents(caseId: number) {
       canonical_verification_status: event.verification_status,
       canonical_actor: event.actor,
       canonical_source_artifact_key: event.source_artifact_key,
+      canonical_source_intake_session_id: binding.intake_session_id,
       canonical_source_intake_session_ids: event.source_intake_session_ids,
       canonical_source_span_offset: event.source_span_offset,
       canonical_output_hashes: output_hashes,

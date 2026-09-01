@@ -1,3 +1,5 @@
+import { computeHash } from "./engines/intake-spine/utils";
+
 export type GovernedRecord = Record<string, any>;
 
 function asRecord(value: unknown): GovernedRecord {
@@ -23,6 +25,86 @@ function receiptSessionId(row: GovernedRecord): string | null {
 
 function sessionScopedIdentity(sessionId: string, value: string): string {
   return `${sessionId}\u001f${value}`;
+}
+
+function canonicalRecordPayload(row: GovernedRecord): GovernedRecord {
+  const {
+    _receipt: _receipt,
+    canonical_intake_session_ids: _canonicalIntakeSessionIds,
+    ...payload
+  } = row;
+  return payload;
+}
+
+function canonicalRecordIdentity(
+  row: GovernedRecord,
+  fields: string[],
+): string | null {
+  for (const field of fields) {
+    if (typeof row[field] === "string" && row[field].length > 0) {
+      return String(row[field]);
+    }
+  }
+  return null;
+}
+
+function deduplicateCanonicalRows(
+  rows: GovernedRecord[],
+  identityFields: string[],
+  label: string,
+): GovernedRecord[] {
+  const records = new Map<
+    string,
+    {
+      row: GovernedRecord;
+      payloadHash: string;
+      intakeSessionIds: Set<string>;
+    }
+  >();
+  const orderedRows = [...rows].sort((left, right) => {
+    const leftIdentity = canonicalRecordIdentity(left, identityFields) ?? "";
+    const rightIdentity = canonicalRecordIdentity(right, identityFields) ?? "";
+    return (
+      leftIdentity.localeCompare(rightIdentity) ||
+      String(receiptSessionId(left) ?? "").localeCompare(
+        String(receiptSessionId(right) ?? ""),
+      )
+    );
+  });
+
+  for (const row of orderedRows) {
+    const identity = canonicalRecordIdentity(row, identityFields);
+    if (identity === null) {
+      throw new Error(`Governed ${label} row is missing its canonical identity`);
+    }
+    const sessionId = receiptSessionId(row);
+    if (sessionId === null) {
+      throw new Error(
+        `Governed ${label} ${identity} is missing its producing session`,
+      );
+    }
+    const payloadHash = computeHash(canonicalRecordPayload(row));
+    const existing = records.get(identity);
+    if (!existing) {
+      records.set(identity, {
+        row,
+        payloadHash,
+        intakeSessionIds: new Set([sessionId]),
+      });
+      continue;
+    }
+    if (existing.payloadHash !== payloadHash) {
+      throw new Error(
+        `Governed ${label} ${identity} changed meaning across linked sessions`,
+      );
+    }
+    existing.intakeSessionIds.add(sessionId);
+  }
+
+  return [...records.values()].map((record) => ({
+    ...record.row,
+    canonical_intake_session_ids: [...record.intakeSessionIds].sort(),
+  }));
 }
 
 export function governedArtifactIdentitySet(
@@ -61,15 +143,65 @@ function recomputeVerificationRecords(
   rows: GovernedRecord[],
   governedArtifactIdentities: Set<string>,
 ): GovernedRecord[] {
-  return rows.flatMap((row) => {
+  const records = new Map<
+    string,
+    {
+      row: GovernedRecord;
+      sourceRefs: Map<string, GovernedRecord>;
+      intakeSessionIds: Set<string>;
+    }
+  >();
+  const orderedRows = [...rows].sort(
+    (left, right) =>
+      String(left.fact_key ?? left.verification_id ?? "").localeCompare(
+        String(right.fact_key ?? right.verification_id ?? ""),
+      ) ||
+      String(receiptSessionId(left) ?? "").localeCompare(
+        String(receiptSessionId(right) ?? ""),
+      ),
+  );
+
+  for (const row of orderedRows) {
     const sessionId = receiptSessionId(row);
-    if (sessionId === null) return [];
+    if (sessionId === null) continue;
     const sourceRefs = asRecords(row.source_refs).filter((ref) =>
       governedArtifactIdentities.has(
         sessionScopedIdentity(sessionId, String(ref.artifact_key ?? "")),
       ),
     );
-    if (sourceRefs.length === 0) return [];
+    if (sourceRefs.length === 0) continue;
+    const factKey = String(row.fact_key ?? row.verification_id ?? "");
+    if (factKey.length === 0) {
+      throw new Error("Governed verification row is missing its fact key");
+    }
+    const record = records.get(factKey) ?? {
+      row,
+      sourceRefs: new Map<string, GovernedRecord>(),
+      intakeSessionIds: new Set<string>(),
+    };
+    record.intakeSessionIds.add(sessionId);
+    for (const ref of sourceRefs) {
+      const refIdentity = computeHash({
+        artifact_key: String(ref.artifact_key ?? ""),
+        span_offset: String(ref.span_offset ?? ""),
+        value_stated: String(ref.value_stated ?? ""),
+      });
+      record.sourceRefs.set(refIdentity, ref);
+    }
+    records.set(factKey, record);
+  }
+
+  return [...records.entries()].map(([factKey, record]) => {
+    const sourceRefs = [...record.sourceRefs.values()].sort(
+      (left, right) =>
+        String(left.artifact_key ?? "").localeCompare(
+          String(right.artifact_key ?? ""),
+        ) ||
+        Number(left.span_offset ?? 0) - Number(right.span_offset ?? 0) ||
+        String(left.value_stated ?? "").localeCompare(
+          String(right.value_stated ?? ""),
+        ),
+    );
 
     const valuesByArtifact = new Map<string, Set<string>>();
     for (const ref of sourceRefs) {
@@ -79,10 +211,12 @@ function recomputeVerificationRecords(
       valuesByArtifact.set(artifactKey, values);
     }
 
-    const originalContradictions = asRecords(row.contradiction_refs);
+    const originalContradictions = asRecords(
+      record.row.contradiction_refs,
+    );
     const attribute = String(
       originalContradictions[0]?.attribute ??
-        String(row.fact_key ?? "").split("|")[1] ??
+        factKey.split("|")[1] ??
         "unknown",
     );
     const contradictionRefs: GovernedRecord[] = [];
@@ -123,14 +257,13 @@ function recomputeVerificationRecords(
             ? "supported_by_multiple_sources"
             : "document_stated";
 
-    return [
-      {
-        ...row,
-        verification_state: verificationState,
-        source_refs: sourceRefs,
-        contradiction_refs: contradictionRefs,
-      },
-    ];
+    return {
+      ...record.row,
+      verification_state: verificationState,
+      source_refs: sourceRefs,
+      contradiction_refs: contradictionRefs,
+      canonical_intake_session_ids: [...record.intakeSessionIds].sort(),
+    };
   });
 }
 
@@ -234,7 +367,7 @@ export function projectGovernedDerivedRows(input: {
   cascades: GovernedRecord[];
   claimCandidates: GovernedRecord[];
 } {
-  const stateTransitions = input.stateRows.filter((transition) => {
+  const eligibleStateTransitions = input.stateRows.filter((transition) => {
     const sessionId = receiptSessionId(transition);
     if (sessionId === null) return false;
     const artifactKey = String(
@@ -250,13 +383,14 @@ export function projectGovernedDerivedRows(input: {
     input.verificationRows,
     input.governedArtifactIdentities,
   );
-  const governedTransitionIds = sessionRecordIdentitySet(stateTransitions, [
-    "transition_id",
-  ]);
+  const governedTransitionIds = sessionRecordIdentitySet(
+    eligibleStateTransitions,
+    ["transition_id"],
+  );
   const governedRelationshipIds = governedRelationshipIdentitySet(
     input.relationships,
   );
-  const patterns = sourceBoundRegistryRows(
+  const eligiblePatterns = sourceBoundRegistryRows(
     input.patternRows,
     input.governedArtifactIdentities,
   ).filter((pattern) => {
@@ -275,8 +409,10 @@ export function projectGovernedDerivedRows(input: {
       )
     );
   });
-  const governedPatternIds = sessionRecordIdentitySet(patterns, ["pattern_id"]);
-  const cascades = sourceBoundRegistryRows(
+  const governedPatternIds = sessionRecordIdentitySet(eligiblePatterns, [
+    "pattern_id",
+  ]);
+  const eligibleCascades = sourceBoundRegistryRows(
     input.cascadeRows,
     input.governedArtifactIdentities,
   ).filter((cascade) => {
@@ -295,7 +431,7 @@ export function projectGovernedDerivedRows(input: {
       )
     );
   });
-  const claimCandidates = governedClaimCandidates(
+  const eligibleClaimCandidates = governedClaimCandidates(
     input.claimRows,
     governedRelationshipIds,
     governedTransitionIds,
@@ -304,9 +440,25 @@ export function projectGovernedDerivedRows(input: {
 
   return {
     verificationRecords,
-    stateTransitions,
-    patterns,
-    cascades,
-    claimCandidates,
+    stateTransitions: deduplicateCanonicalRows(
+      eligibleStateTransitions,
+      ["transition_id"],
+      "state transition",
+    ),
+    patterns: deduplicateCanonicalRows(
+      eligiblePatterns,
+      ["pattern_id"],
+      "pattern",
+    ),
+    cascades: deduplicateCanonicalRows(
+      eligibleCascades,
+      ["cascade_id"],
+      "cascade",
+    ),
+    claimCandidates: deduplicateCanonicalRows(
+      eligibleClaimCandidates,
+      ["candidate_id"],
+      "claim candidate",
+    ),
   };
 }
