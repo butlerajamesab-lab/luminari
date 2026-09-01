@@ -21,6 +21,34 @@ const verification = readFileSync(
   ),
   "utf8",
 );
+const supersessionMigration = [
+  "20260901072811_civic_genome_temporal_supersession_v3_foundation.sql",
+  "20260901073614_civic_genome_temporal_supersession_v3_batch_scope.sql",
+  "20260901074007_civic_genome_temporal_supersession_v3_linear_predecessors.sql",
+  "20260901074016_civic_genome_temporal_supersession_v3_backfill_1_of_8.sql",
+  "20260901074126_civic_genome_temporal_supersession_v3_backfill_2_of_8.sql",
+  "20260901074203_civic_genome_temporal_supersession_v3_backfill_3_of_8.sql",
+  "20260901074241_civic_genome_temporal_supersession_v3_backfill_4_of_8.sql",
+  "20260901074319_civic_genome_temporal_supersession_v3_backfill_5_of_8.sql",
+  "20260901074350_civic_genome_temporal_supersession_v3_backfill_6_of_8.sql",
+  "20260901074412_civic_genome_temporal_supersession_v3_backfill_7_of_8.sql",
+  "20260901074426_civic_genome_temporal_supersession_v3_backfill_8_of_8.sql",
+  "20260901074437_civic_genome_temporal_supersession_v3_handoff.sql",
+  "20260901074445_civic_genome_temporal_supersession_v3_activation.sql",
+]
+  .map((filename) =>
+    readFileSync(join(root, "supabase", "migrations", filename), "utf8"),
+  )
+  .join("\n");
+const supersessionVerification = readFileSync(
+  join(
+    root,
+    "supabase",
+    "verification",
+    "20260901074445_civic_genome_temporal_supersession_v3.verify.sql",
+  ),
+  "utf8",
+);
 const projection = readFileSync(
   join(root, "server", "civic-genome-projection.ts"),
   "utf8",
@@ -92,5 +120,36 @@ describe("Civic Genome event-time chronology v2", () => {
     expect(humanReport).toContain("Last legislative action");
     expect(humanReport).toContain("Effective");
     expect(humanReport).toContain("Last observed");
+  });
+
+  it("supersedes corrected or deleted source actions without erasing history", () => {
+    expect(supersessionMigration).toContain(
+      "civic_genome_lifecycle_source_revision_v3",
+    );
+    expect(supersessionMigration).toContain("supersedes_lifecycle_event_id");
+    expect(supersessionMigration).toContain("'source_tombstone'");
+    expect(supersessionMigration).toContain(
+      "v_civic_genome_lifecycle_event_current_v3",
+    );
+    expect(supersessionMigration).toContain(
+      "v_civic_genome_lifecycle_event_history_v3",
+    );
+    expect(supersessionMigration).toContain("current.source_event_keys");
+    expect(supersessionVerification).toContain(
+      "superseded effective-date row remained current",
+    );
+    expect(supersessionVerification).toContain(
+      "deleted source action did not receive a tombstone",
+    );
+    expect(supersessionVerification).toContain(
+      "original immutable event was not reactivated by source revision",
+    );
+  });
+
+  it("exports only correction-aware current events while retaining receipts", () => {
+    expect(exportRoute).toContain("list_genome_lifecycle_event_history_v3");
+    expect(exportRoute).toContain("lifecycle_event_history");
+    expect(exportRoute).toContain("lifecycle_supersession_receipts");
+    expect(exportRoute).toContain("superseded rows and tombstones");
   });
 });
