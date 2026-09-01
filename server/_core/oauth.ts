@@ -11,26 +11,6 @@ function getQueryParam(req: Request, key: string): string | undefined {
 }
 
 export function registerOAuthRoutes(app: Express) {
-  // Validation routes bypass - for /intake and /case/:id testing
-  app.get("/api/validation-session", async (req: Request, res: Response) => {
-    if (process.env.TEMP_AUTH_BYPASS !== "true") {
-      res.status(403).json({ error: "Validation bypass not enabled" });
-      return;
-    }
-    try {
-      const validationToken = await sdk.createSessionToken("validation-user-001", {
-        name: "Validation User",
-        expiresInMs: ONE_YEAR_MS,
-      });
-      const cookieOptions = getSessionCookieOptions(req);
-      res.cookie(COOKIE_NAME, validationToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
-      res.json({ success: true, message: "Validation session created" });
-    } catch (error) {
-      console.error("[OAuth] Validation session creation failed", error);
-      res.status(500).json({ error: "Failed to create validation session" });
-    }
-  });
-
   // GitHub OAuth callback
   app.get("/api/oauth/callback", async (req: Request, res: Response) => {
     const code = getQueryParam(req, "code");

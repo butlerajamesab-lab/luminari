@@ -7,7 +7,6 @@ import { createRoot } from "react-dom/client";
 import type { ComponentType } from "react";
 import superjson from "superjson";
 import { getLoginUrl } from "./const";
-import { initializeValidationSession } from "./_core/validation-session";
 import { ClickToReadProvider } from "./contexts/ClickToReadContext";
 import { CivicGenomeExportDock } from "./components/civic-genome/CivicGenomeExportDock";
 import "./index.css";
@@ -22,9 +21,6 @@ async function loadRuntimeApp(): Promise<ComponentType> {
   }
   return (await import("./App")).default;
 }
-
-// Initialize validation session for /intake and /case/:id routes
-initializeValidationSession().catch(console.error);
 
 function is_non_retryable_runtime_error(error: unknown): boolean {
   const message = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
@@ -66,11 +62,6 @@ window.addEventListener('error', (event) => {
     event.preventDefault();
     console.warn('[Suppressed] Benign abort/cancel error:', event.error?.message);
   }
-  // TEMPORARY: Suppress auth errors
-  if (event.error?.message?.includes('UNAUTHORIZED') || event.error?.message?.includes('Unauthorized')) {
-    event.preventDefault();
-    console.warn('[Suppressed] Auth error:', event.error?.message);
-  }
 });
 
 window.addEventListener('unhandledrejection', (event) => {
@@ -82,8 +73,15 @@ window.addEventListener('unhandledrejection', (event) => {
 });
 
 const redirectToLoginIfUnauthorized = (error: unknown) => {
-  // TEMPORARY: OAuth disabled - no redirects
-  return;
+  if (typeof window === "undefined" || window.location.pathname === "/login") return;
+
+  const message = error instanceof Error ? error.message : String(error);
+  const isUnauthorized =
+    message === UNAUTHED_ERR_MSG ||
+    message.includes("UNAUTHORIZED") ||
+    message.includes("Unauthorized");
+
+  if (isUnauthorized) window.location.assign(getLoginUrl());
 };
 
 queryClient.getQueryCache().subscribe(event => {

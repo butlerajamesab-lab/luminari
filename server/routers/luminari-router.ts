@@ -17,12 +17,6 @@ import * as matchingService from "../services/matchingService";
 import * as registryService from "../services/registryService";
 import * as caseService from "../services/caseService";
 import * as luminariContextService from "../services/luminariContextService";
-import { createTemporaryProtectedProcedure, isTemporaryBypassEnabled } from "../_core/temp-bypass-procedure";
-
-// Use temporary protected procedure for development validation
-const tempProtectedProcedure = isTemporaryBypassEnabled() 
-  ? createTemporaryProtectedProcedure(protectedProcedure)
-  : protectedProcedure;
 
 export const luminariRouter = router({
   /**
@@ -48,7 +42,7 @@ export const luminariRouter = router({
    * 2. Query Registry DB for match
    * 3. Return composed response
    */
-  processIntake: tempProtectedProcedure
+  processIntake: protectedProcedure
     .input(
       z.object({
         jurisdiction_id: z.number(),
@@ -80,7 +74,7 @@ export const luminariRouter = router({
   /**
    * Get case with registry context
    */
-  getCase: tempProtectedProcedure
+  getCase: protectedProcedure
     .input(z.object({ case_id: z.number() }))
     // @ts-ignore
     .query(async ({ input }) => {
