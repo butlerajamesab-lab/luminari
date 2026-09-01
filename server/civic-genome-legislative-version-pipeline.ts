@@ -116,6 +116,11 @@ const PROVIDER_COPY_DOCUMENT_PAYLOAD_FAILURE_CODES = new Set([
   "invalid_legiscan_amendment_payload",
 ]);
 
+const PROVIDER_COPY_DOCUMENT_UNAVAILABLE_FAILURE_CODES = new Set([
+  "legiscan_record_api_error_while_calling_get_bill_text",
+  "legiscan_record_api_error_while_calling_get_amendment",
+]);
+
 function provider_copy_document_failure_code(error: unknown): string | null {
   const error_code = error instanceof Error ? error.message : "";
   if (PROVIDER_COPY_DOCUMENT_ID_FAILURE_CODES.has(error_code)) {
@@ -123,6 +128,9 @@ function provider_copy_document_failure_code(error: unknown): string | null {
   }
   if (PROVIDER_COPY_DOCUMENT_PAYLOAD_FAILURE_CODES.has(error_code)) {
     return "legislative_version_provider_fallback_api_payload_invalid";
+  }
+  if (PROVIDER_COPY_DOCUMENT_UNAVAILABLE_FAILURE_CODES.has(error_code)) {
+    return "legislative_version_provider_fallback_document_unavailable";
   }
   return null;
 }

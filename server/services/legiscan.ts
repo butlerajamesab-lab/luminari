@@ -121,7 +121,23 @@ const outbound_operation = (op: legiscan_operation_key): string => {
   return `${verb}${rest.map(part => `${part[0]?.toUpperCase() ?? ""}${part.slice(1)}`).join("")}`;
 };
 
-const redact_api_key = (message: string): string => message.replace(/key=[^&\s]+/gi, "key=[redacted]");
+const SHARED_PROVIDER_ALERT_PATTERN = /\b(?:api\s*key|access\s*key|account|auth(?:entication|orization)?|unauthori[sz]ed|credential|quota|rate\s*limit|request\s*limit|daily\s*limit|credit|subscription|permission|denied|forbidden|service|maintenance|temporar(?:y|ily)|server|internal\s+error|busy)\b/i;
+const RECORD_PROVIDER_ALERT_SUBJECT_PATTERN = /\b(?:id|record|document|bill\s*text|amendment|text)\b/i;
+const RECORD_PROVIDER_ALERT_FAILURE_PATTERN = /\b(?:invalid|unknown|missing|not\s+(?:found|available)|(?:could\s+not|unable\s+to)\s+(?:find|locate|retrieve)|unavailable|does(?:\s+not|n't)\s+exist|no\s+(?:bill\s+)?(?:record|document|text|amendment)(?:\s+(?:was\s+)?found)?)\b/i;
+
+const classify_provider_alert_scope = (
+  op: legiscan_operation_key,
+  message: unknown,
+): "record" | "shared" => {
+  if (op !== "get_bill_text" && op !== "get_amendment") return "shared";
+  if (typeof message !== "string") return "shared";
+  if (SHARED_PROVIDER_ALERT_PATTERN.test(message)) return "shared";
+
+  return RECORD_PROVIDER_ALERT_SUBJECT_PATTERN.test(message)
+    && RECORD_PROVIDER_ALERT_FAILURE_PATTERN.test(message)
+    ? "record"
+    : "shared";
+};
 
 const legiscan_request = async <payload>(
   op: legiscan_operation_key,
@@ -154,10 +170,10 @@ const legiscan_request = async <payload>(
     }
 
     if (data.status === "ERROR") {
-      const detail = redact_api_key(
-        data.alert?.message ?? "provider_error_without_detail",
-      );
-      throw new Error(`legiscan_api_error_while_calling_${op}:${detail}`);
+      const scope = classify_provider_alert_scope(op, data.alert?.message);
+      // Provider alert text is untrusted and can echo credentials or other
+      // request details. Expose only a stable, non-sensitive error category.
+      throw new Error(`legiscan_${scope}_api_error_while_calling_${op}`);
     }
     if (data.status !== "OK") {
       throw new Error(`legiscan_invalid_status_while_calling_${op}`);

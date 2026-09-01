@@ -92,12 +92,31 @@ describe("LegiScan bill-text API client", () => {
     },
   );
 
-  it("redacts the API key from provider error messages", async () => {
+  it.each([
+    "Document ID not found",
+    "No bill text found for ID 99",
+  ])("keeps the unavailable document alert '%s' record-scoped", async (message) => {
+    vi.stubEnv("LEGISCAN_API_KEY", "test-legiscan-key");
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      status: "ERROR",
+      alert: { message },
+    }), { status: 200 })));
+
+    await expect(get_bill_text(99)).rejects.toThrow(
+      "legiscan_record_api_error_while_calling_get_bill_text",
+    );
+  });
+
+  it.each([
+    "Invalid API key key=test-legiscan-key",
+    "Daily request quota exhausted",
+    "Provider returned an unexplained error",
+  ])("keeps shared or ambiguous provider alert '%s' shared and private", async (message) => {
     vi.stubEnv("LEGISCAN_API_KEY", "test-legiscan-key");
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
       status: "ERROR",
       alert: {
-        message: "Denied for key=test-legiscan-key&op=getBillText",
+        message,
       },
     }), { status: 200 })));
 
@@ -108,8 +127,11 @@ describe("LegiScan bill-text API client", () => {
       failure = error;
     }
     expect(failure).toBeInstanceOf(Error);
-    expect((failure as Error).message).toContain("key=[redacted]");
+    expect((failure as Error).message).toBe(
+      "legiscan_shared_api_error_while_calling_get_bill_text",
+    );
     expect((failure as Error).message).not.toContain("test-legiscan-key");
+    expect((failure as Error).message).not.toContain(message);
   });
 });
 
@@ -174,6 +196,20 @@ describe("LegiScan amendment API client", () => {
 
     await expect(get_amendment(77)).rejects.toThrow(
       "invalid_legiscan_amendment_response_id",
+    );
+  });
+
+  it("keeps an unavailable amendment alert record-scoped", async () => {
+    vi.stubEnv("LEGISCAN_API_KEY", "test-legiscan-key");
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      status: "ERROR",
+      alert: {
+        message: "Unknown amendment ID",
+      },
+    }), { status: 200 })));
+
+    await expect(get_amendment(77)).rejects.toThrow(
+      "legiscan_record_api_error_while_calling_get_amendment",
     );
   });
 });

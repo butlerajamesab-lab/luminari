@@ -248,6 +248,36 @@ describe("Civic Genome provider-copy source fallback", () => {
     );
   });
 
+  it("keeps an unavailable bill text record-scoped", async () => {
+    const source = html_source();
+    const expected_md5 = createHash("md5").update(source).digest("hex");
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValueOnce(new TypeError("fetch failed")));
+    get_bill_text_mock.mockRejectedValueOnce(new Error(
+      "legiscan_record_api_error_while_calling_get_bill_text",
+    ));
+
+    await expect(extract_version_source(
+      version_fixture(source, expected_md5) as never,
+    )).rejects.toThrow(
+      "legislative_version_provider_fallback_document_unavailable",
+    );
+  });
+
+  it("keeps an unavailable amendment record-scoped", async () => {
+    const source = html_source();
+    const expected_md5 = createHash("md5").update(source).digest("hex");
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValueOnce(new TypeError("fetch failed")));
+    get_amendment_mock.mockRejectedValueOnce(new Error(
+      "legiscan_record_api_error_while_calling_get_amendment",
+    ));
+
+    await expect(extract_version_source(
+      amendment_version_fixture(source, expected_md5) as never,
+    )).rejects.toThrow(
+      "legislative_version_provider_fallback_document_unavailable",
+    );
+  });
+
   it("rejects a bill-text response that omits its document identity", async () => {
     const source = html_source();
     const expected_md5 = createHash("md5").update(source).digest("hex");
@@ -283,7 +313,7 @@ describe("Civic Genome provider-copy source fallback", () => {
     const expected_md5 = createHash("md5").update(source).digest("hex");
     vi.stubGlobal("fetch", vi.fn().mockRejectedValueOnce(new TypeError("fetch failed")));
     get_bill_text_mock.mockRejectedValueOnce(new Error(
-      "legiscan_api_error_while_calling_get_bill_text:quota_exhausted",
+      "legiscan_shared_api_error_while_calling_get_bill_text",
     ));
 
     await expect(extract_version_source(
