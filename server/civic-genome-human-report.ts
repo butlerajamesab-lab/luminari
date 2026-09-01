@@ -19,11 +19,12 @@ type rosetta_source_content = {
   created_at: string;
 };
 
-const NO_SECOND_SOURCE_CONDITION = "independent_authoritative_source_not_supplied";
+const NO_SECOND_SOURCE_CONDITION =
+  "independent_authoritative_source_not_supplied";
 
 function as_record(value: unknown): json_record | null {
   return value && typeof value === "object" && !Array.isArray(value)
-    ? value as json_record
+    ? (value as json_record)
     : null;
 }
 
@@ -35,7 +36,8 @@ function as_records(value: unknown): json_record[] {
 
 function string_value(value: unknown): string | null {
   if (typeof value === "string" && value.trim()) return value;
-  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (typeof value === "number" || typeof value === "boolean")
+    return String(value);
   return null;
 }
 
@@ -57,36 +59,43 @@ function human_key(value: unknown): string {
   const raw = string_value(value) ?? "Recorded field";
   return raw
     .replace(/[_-]+/g, " ")
-    .replace(/\b\w/g, char => char.toUpperCase());
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 function human_prism_status(value: unknown): string {
   const raw = string_value(value);
   if (!raw) return "Prism receipt not attached in this read model";
-  if (raw === "supported_by_one_source") return "Official legislative source verified";
-  if (raw === "independent_authoritative_source_not_supplied") return "Official legislative source verified";
+  if (raw === "supported_by_one_source")
+    return "Official legislative source verified";
+  if (raw === "independent_authoritative_source_not_supplied")
+    return "Official legislative source verified";
   if (raw === "contradicted") return "Language did not carry into final bill";
   if (raw === "incomplete") return "Verification incomplete";
   return human_key(raw);
 }
 
 function proof_item_title(entry: json_record): string {
-  return string_value(entry.check)
-    ?? string_value(entry.finding)
-    ?? string_value(entry.requirement)
-    ?? string_value(entry.condition)
-    ?? "Recorded proof item";
+  return (
+    string_value(entry.check) ??
+    string_value(entry.finding) ??
+    string_value(entry.requirement) ??
+    string_value(entry.condition) ??
+    "Recorded proof item"
+  );
 }
 
 function meaningful_unresolved(value: unknown): json_record[] {
-  return as_records(value).filter(entry => proof_item_title(entry) !== NO_SECOND_SOURCE_CONDITION);
+  return as_records(value).filter(
+    (entry) => proof_item_title(entry) !== NO_SECOND_SOURCE_CONDITION,
+  );
 }
 
 function render_value(value: unknown): string {
-  if (value === null || value === undefined) return '<span class="muted">Not observed</span>';
+  if (value === null || value === undefined)
+    return '<span class="muted">Not observed</span>';
   if (Array.isArray(value)) {
     if (value.length === 0) return '<span class="muted">None</span>';
-    return `<ul>${value.map(item => `<li>${render_value(item)}</li>`).join("")}</ul>`;
+    return `<ul>${value.map((item) => `<li>${render_value(item)}</li>`).join("")}</ul>`;
   }
   const record = as_record(value);
   if (record) {
@@ -108,36 +117,58 @@ function format_date(value: unknown): string {
   const raw = string_value(value);
   if (!raw) return "Not observed";
   const date = new Date(raw);
-  return Number.isNaN(date.getTime()) ? raw : date.toLocaleString("en-US", { timeZone: "UTC" }) + " UTC";
+  return Number.isNaN(date.getTime())
+    ? raw
+    : date.toLocaleString("en-US", { timeZone: "UTC" }) + " UTC";
 }
 
 function required_rosetta_config() {
   const base_url = process.env.ROSETTA_SUPABASE_URL?.trim().replace(/\/$/, "");
   const key = process.env.ROSETTA_SUPABASE_SERVICE_ROLE_KEY?.trim();
-  if (!base_url || !key) throw new Error("civic_genome_human_report_rosetta_source_access_not_configured");
+  if (!base_url || !key)
+    throw new Error(
+      "civic_genome_human_report_rosetta_source_access_not_configured",
+    );
   return { base_url, key };
 }
 
-async function load_rosetta_source_content(source_document_ids: number[]): Promise<rosetta_source_content[]> {
-  const unique_ids = [...new Set(source_document_ids.filter(id => Number.isSafeInteger(id) && id > 0))];
+async function load_rosetta_source_content(
+  source_document_ids: number[],
+): Promise<rosetta_source_content[]> {
+  const unique_ids = [
+    ...new Set(
+      source_document_ids.filter((id) => Number.isSafeInteger(id) && id > 0),
+    ),
+  ];
   if (unique_ids.length === 0) return [];
 
   const { base_url, key } = required_rosetta_config();
   const query = new URLSearchParams({
-    select: "source_content_id,source_document_id,source_version,source_url,media_type,source_text,source_content_hash,source_byte_hash,source_provider_hash,source_identity_hash,source_metadata,created_at",
+    select:
+      "source_content_id,source_document_id,source_version,source_url,media_type,source_text,source_content_hash,source_byte_hash,source_provider_hash,source_identity_hash,source_metadata,created_at",
     source_document_id: `in.(${unique_ids.join(",")})`,
     order: "created_at.desc",
   });
-  const headers = create_rosetta_supabase_headers(key, { accept: "application/json" });
-  const response = await fetch(`${base_url}/rest/v1/source_document_content?${query.toString()}`, {
-    method: "GET",
-    headers,
+  const headers = create_rosetta_supabase_headers(key, {
+    accept: "application/json",
   });
+  const response = await fetch(
+    `${base_url}/rest/v1/source_document_content?${query.toString()}`,
+    {
+      method: "GET",
+      headers,
+    },
+  );
   if (!response.ok) {
-    throw new Error(`civic_genome_human_report_rosetta_source_fetch_failed:${response.status}`);
+    throw new Error(
+      `civic_genome_human_report_rosetta_source_fetch_failed:${response.status}`,
+    );
   }
   const payload: unknown = await response.json();
-  if (!Array.isArray(payload)) throw new Error("civic_genome_human_report_rosetta_source_invalid_response");
+  if (!Array.isArray(payload))
+    throw new Error(
+      "civic_genome_human_report_rosetta_source_invalid_response",
+    );
 
   const seen = new Set<number>();
   const rows: rosetta_source_content[] = [];
@@ -149,7 +180,13 @@ async function load_rosetta_source_content(source_document_ids: number[]): Promi
     const source_url = string_value(row.source_url);
     const source_content_hash = string_value(row.source_content_hash);
     const source_identity_hash = string_value(row.source_identity_hash);
-    if (!source_text || !source_url || !source_content_hash || !source_identity_hash) continue;
+    if (
+      !source_text ||
+      !source_url ||
+      !source_content_hash ||
+      !source_identity_hash
+    )
+      continue;
     seen.add(source_document_id);
     rows.push({
       source_content_id: string_value(row.source_content_id) ?? "not_observed",
@@ -218,32 +255,42 @@ function report_css(): string {
   `;
 }
 
-function proof_rows(title: string, value: unknown, tone: "pass" | "fail" | "open"): string {
-  const rows = title === "Unresolved conditions" ? meaningful_unresolved(value) : as_records(value);
+function proof_rows(
+  title: string,
+  value: unknown,
+  tone: "pass" | "fail" | "open",
+): string {
+  const rows =
+    title === "Unresolved conditions"
+      ? meaningful_unresolved(value)
+      : as_records(value);
   if (rows.length === 0) return "";
-  return `<section><h4>${html(title)} · ${rows.length}</h4>${rows.map(entry => {
-    const source_quote = string_value(entry.source_quote);
-    const expected = string_value(entry.expected);
-    const observed = string_value(entry.observed);
-    const source_section = string_value(entry.source_section);
-    return `<div class="proof ${tone}">
+  return `<section><h4>${html(title)} · ${rows.length}</h4>${rows
+    .map((entry) => {
+      const source_quote = string_value(entry.source_quote);
+      const expected = string_value(entry.expected);
+      const observed = string_value(entry.observed);
+      const source_section = string_value(entry.source_section);
+      return `<div class="proof ${tone}">
       <div class="mono">${html(human_key(proof_item_title(entry)))}</div>
       ${source_quote ? `<blockquote>${html(source_quote)}</blockquote>` : ""}
       ${source_section ? `<div class="muted">Source section: ${html(source_section)}</div>` : ""}
       ${expected || observed ? `<div class="muted">${expected ? `Expected: ${html(expected)}` : ""}${expected && observed ? "<br>" : ""}${observed ? `Observed: ${html(observed)}` : ""}</div>` : ""}
     </div>`;
-  }).join("")}</section>`;
+    })
+    .join("")}</section>`;
 }
 
 function trait_block(trait: json_record, detailed: boolean): string {
   const trait_class = human_key(trait.trait_class);
   const trait_key = human_key(trait.trait_key);
   const prism_status = human_prism_status(trait.prism_verification_status);
-  const status_class = prism_status === "Language did not carry into final bill"
-    ? "final-diff"
-    : prism_status.includes("verified")
-      ? "good"
-      : "warn";
+  const status_class =
+    prism_status === "Language did not carry into final bill"
+      ? "final-diff"
+      : prism_status.includes("verified")
+        ? "good"
+        : "warn";
   const unresolved = meaningful_unresolved(trait.prism_unresolved_conditions);
   return `<article class="trait">
     <div class="trait-head">
@@ -251,7 +298,9 @@ function trait_block(trait: json_record, detailed: boolean): string {
       <div class="trait-status ${status_class}">${html(prism_status)}</div>
     </div>
     ${render_value(trait.normalized_value_json)}
-    ${detailed ? `
+    ${
+      detailed
+        ? `
       <div class="grid" style="margin-top:12px">
         <div class="metric"><span class="label">Rosetta</span><b>${html(human_key(trait.rosetta_verification_state ?? trait.verification_state))}</b></div>
         <div class="metric"><span class="label">Source document</span><b>${html(trait.source_document_id ?? "Not observed")}</b></div>
@@ -273,11 +322,17 @@ function trait_block(trait: json_record, detailed: boolean): string {
           <div><dt>Trait fingerprint</dt><dd class="mono">${html(trait.trait_fingerprint ?? "Not observed")}</dd></div>
           <div><dt>Content hash</dt><dd class="mono">${html(trait.content_hash ?? "Not observed")}</dd></div>
         </dl>
-      </details>` : ""}
+      </details>`
+        : ""
+    }
   </article>`;
 }
 
-function source_block(source: rosetta_source_content, heading: string, open = false): string {
+function source_block(
+  source: rosetta_source_content,
+  heading: string,
+  open = false,
+): string {
   return `<section class="panel source-copy">
     <span class="eyebrow">Authoritative source copy</span>
     <h2>${html(heading)}</h2>
@@ -296,23 +351,32 @@ function source_block(source: rosetta_source_content, heading: string, open = fa
   </section>`;
 }
 
-function version_table(versions: json_record[], source_by_document: Map<number, rosetta_source_content>): string {
+function version_table(
+  versions: json_record[],
+  source_by_document: Map<number, rosetta_source_content>,
+): string {
   const ordered = [...versions].sort((left, right) => {
     const left_rank = Number(left.stage_rank ?? 0);
     const right_rank = Number(right.stage_rank ?? 0);
     if (left_rank !== right_rank) return left_rank - right_rank;
-    return Number(left.provider_sequence ?? 0) - Number(right.provider_sequence ?? 0);
+    return (
+      Number(left.provider_sequence ?? 0) - Number(right.provider_sequence ?? 0)
+    );
   });
-  return `<table><thead><tr><th>Stage</th><th>State</th><th>Rosetta source</th><th>Run</th><th>Source copy</th></tr></thead><tbody>${ordered.map(version => {
-    const source_document_id = positive_integer(version.rosetta_source_document_id);
-    return `<tr>
+  return `<table><thead><tr><th>Stage</th><th>State</th><th>Rosetta source</th><th>Run</th><th>Source copy</th></tr></thead><tbody>${ordered
+    .map((version) => {
+      const source_document_id = positive_integer(
+        version.rosetta_source_document_id,
+      );
+      return `<tr>
       <td>${html(human_key(version.version_type))}</td>
       <td>${html(human_key(version.processing_state))}</td>
       <td class="mono">${html(source_document_id ?? "Not observed")}</td>
       <td class="mono">${html(version.rosetta_extraction_run_id ?? "Not observed")}</td>
       <td>${source_document_id && source_by_document.has(source_document_id) ? "Included below" : "Not attached"}</td>
     </tr>`;
-  }).join("")}</tbody></table>`;
+    })
+    .join("")}</tbody></table>`;
 }
 
 export async function render_civic_genome_human_report(
@@ -328,22 +392,33 @@ export async function render_civic_genome_human_report(
   }
 
   const source_bill_id = positive_integer(root.source_bill_id);
-  if (!source_bill_id) throw new Error("civic_genome_human_report_source_bill_id_missing");
+  if (!source_bill_id)
+    throw new Error("civic_genome_human_report_source_bill_id_missing");
 
   const versions = as_records(root.bill_versions);
   const current_version = as_record(bill_detail.current_version);
   const published_version = as_record(bill_detail.published_version);
-  const final_source_document_id = positive_integer(published_version?.source_document_id ?? current_version?.source_document_id);
-  if (!final_source_document_id) throw new Error("civic_genome_human_report_verified_source_not_bound");
+  const final_source_document_id = positive_integer(
+    published_version?.source_document_id ??
+      current_version?.source_document_id,
+  );
+  if (!final_source_document_id)
+    throw new Error("civic_genome_human_report_verified_source_not_bound");
 
   const source_document_ids = versions
-    .map(version => positive_integer(version.rosetta_source_document_id))
+    .map((version) => positive_integer(version.rosetta_source_document_id))
     .filter((value): value is number => Boolean(value));
-  if (!source_document_ids.includes(final_source_document_id)) source_document_ids.push(final_source_document_id);
+  if (!source_document_ids.includes(final_source_document_id))
+    source_document_ids.push(final_source_document_id);
   const source_rows = await load_rosetta_source_content(source_document_ids);
-  const source_by_document = new Map(source_rows.map(row => [row.source_document_id, row]));
+  const source_by_document = new Map(
+    source_rows.map((row) => [row.source_document_id, row]),
+  );
   const final_source = source_by_document.get(final_source_document_id);
-  if (!final_source?.source_text) throw new Error("civic_genome_human_report_verified_source_text_unavailable");
+  if (!final_source?.source_text)
+    throw new Error(
+      "civic_genome_human_report_verified_source_text_unavailable",
+    );
 
   const traits = as_records(structural_dna.traits);
   const validation = as_record(structural_dna.validation_summary) ?? {};
@@ -353,6 +428,7 @@ export async function render_civic_genome_human_report(
   const events = as_records(root.bill_events);
   const lineage = as_records(root.lineage_edges);
   const family = as_record(root.family);
+  const temporal_facts = as_record(root.bill_temporal_facts);
   const detailed = mode === "detailed";
 
   const trait_groups = new Map<string, json_record[]>();
@@ -361,23 +437,32 @@ export async function render_civic_genome_human_report(
     trait_groups.set(key, [...(trait_groups.get(key) ?? []), trait]);
   }
   const layer_summary = [...trait_groups.entries()]
-    .map(([key, rows]) => `<div class="metric"><span class="label">${html(human_key(key))}</span><b>${rows.length}</b></div>`)
+    .map(
+      ([key, rows]) =>
+        `<div class="metric"><span class="label">${html(human_key(key))}</span><b>${rows.length}</b></div>`,
+    )
     .join("");
 
-  const bill_number = string_value(bill.source_bill_number) ?? `Bill ${source_bill_id}`;
+  const bill_number =
+    string_value(bill.source_bill_number) ?? `Bill ${source_bill_id}`;
   const bill_title = string_value(bill.source_bill_title) ?? "Untitled bill";
   const state = string_value(bill.state_code) ?? "Unknown jurisdiction";
   const session = string_value(bill.session_key) ?? "Unknown session";
   const report_title = `${bill_number} — ${mode === "summary" ? "Civic Genome Summary" : "Civic Genome Detailed Report"}`;
 
-  const current_traits_html = [...trait_groups.entries()].map(([group, rows]) => `
+  const current_traits_html = [...trait_groups.entries()]
+    .map(
+      ([group, rows]) => `
     <section class="panel">
       <span class="eyebrow">Structural DNA</span>
       <h2>${html(human_key(group))}</h2>
-      ${rows.map(row => trait_block(row, detailed)).join("")}
-    </section>`).join("");
+      ${rows.map((row) => trait_block(row, detailed)).join("")}
+    </section>`,
+    )
+    .join("");
 
-  const detailed_sections = detailed ? `
+  const detailed_sections = detailed
+    ? `
     <section class="panel break">
       <span class="eyebrow">Version lineage</span>
       <h2>Legislative text versions</h2>
@@ -394,27 +479,40 @@ export async function render_civic_genome_human_report(
         <div class="metric"><span class="label">Historical structural traits</span><b>${all_traits.length}</b></div>
         <div class="metric"><span class="label">Assembly runs</span><b>${all_runs.length}</b></div>
       </div>
-      ${events.length ? `<details><summary>Event ledger</summary><table><thead><tr><th>Date</th><th>Type</th><th>Payload</th></tr></thead><tbody>${events.map(event => `<tr><td>${html(format_date(event.event_at ?? event.created_at))}</td><td>${html(human_key(event.event_type))}</td><td>${render_value(event.event_payload_json ?? event.event_data_json ?? event)}</td></tr>`).join("")}</tbody></table></details>` : ""}
+      <p class="subhead">Legal event time and Lighthouse observation time are shown separately. Neither is an extraction-run timestamp.</p>
+      ${events.length ? `<details><summary>Event ledger</summary><table><thead><tr><th>Legal event time</th><th>Observed by Lighthouse</th><th>Type</th><th>Action</th></tr></thead><tbody>${events.map((event) => `<tr><td>${html(format_date(event.event_at ?? event.valid_at ?? event.event_timestamp))}</td><td>${html(format_date(event.observed_at ?? event.created_at))}</td><td>${html(human_key(event.event_type))}</td><td>${html(event.action_text ?? as_record(event.event_payload_json)?.event_summary ?? "Recorded source event")}</td></tr>`).join("")}</tbody></table></details>` : ""}
       ${lineage.length ? `<details><summary>Lineage edge ledger</summary>${render_value(lineage)}</details>` : ""}
     </section>
 
     <section class="panel">
       <span class="eyebrow">Technical appendix</span>
       <h2>Assembly and deterministic receipts</h2>
-      ${all_runs.length ? `<table><thead><tr><th>Run</th><th>Source</th><th>Engine</th><th>Verification</th><th>Output hash</th></tr></thead><tbody>${all_runs.map(run => `<tr><td class="mono">${html(run.assembly_run_id)}</td><td class="mono">${html(run.source_document_id)}</td><td class="mono">${html(run.engine_version)}</td><td>${html(human_key(run.verification_state))}</td><td class="mono">${html(run.output_hash)}</td></tr>`).join("")}</tbody></table>` : '<p class="muted">No assembly runs attached.</p>'}
+      <p class="subhead">Run dates below are processing receipts: they say when Rosetta assembled a particular source document, not when the Legislature acted.</p>
+      ${all_runs.length ? `<table><thead><tr><th>Run</th><th>Source</th><th>Recorded</th><th>Engine</th><th>Verification</th><th>Output hash</th></tr></thead><tbody>${all_runs.map((run) => `<tr><td class="mono">${html(run.assembly_run_id)}</td><td class="mono">${html(run.source_document_id)}</td><td>${html(format_date(run.created_at))}</td><td class="mono">${html(run.engine_version)}</td><td>${html(human_key(run.verification_state))}</td><td class="mono">${html(run.output_hash)}</td></tr>`).join("")}</tbody></table>` : '<p class="muted">No assembly runs attached.</p>'}
     </section>
 
     <div class="break"></div>
     ${versions
       .slice()
       .sort((a, b) => Number(a.stage_rank ?? 0) - Number(b.stage_rank ?? 0))
-      .map(version => {
-        const source_document_id = positive_integer(version.rosetta_source_document_id);
-        const source = source_document_id ? source_by_document.get(source_document_id) : null;
-        if (!source) return `<section class="panel"><h2>${html(human_key(version.version_type))}</h2><p class="warn">Rosetta source copy was not attached for this version. The gap is preserved rather than substituted.</p></section>`;
-        return source_block(source, `${human_key(version.version_type)} — full source snapshot`, false);
-      }).join("")}
-  ` : "";
+      .map((version) => {
+        const source_document_id = positive_integer(
+          version.rosetta_source_document_id,
+        );
+        const source = source_document_id
+          ? source_by_document.get(source_document_id)
+          : null;
+        if (!source)
+          return `<section class="panel"><h2>${html(human_key(version.version_type))}</h2><p class="warn">Rosetta source copy was not attached for this version. The gap is preserved rather than substituted.</p></section>`;
+        return source_block(
+          source,
+          `${human_key(version.version_type)} — full source snapshot`,
+          false,
+        );
+      })
+      .join("")}
+  `
+    : "";
 
   return `<!doctype html>
 <html lang="en">
@@ -440,10 +538,15 @@ export async function render_civic_genome_human_report(
       <div class="metric"><span class="label">Jurisdiction</span><b>${html(state)}</b></div>
       <div class="metric"><span class="label">Session</span><b>${html(session)}</b></div>
       <div class="metric"><span class="label">Bill status</span><b>${html(human_key(bill.bill_status))}</b></div>
-      <div class="metric"><span class="label">Last action</span><b>${html(format_date(bill.last_action_at))}</b></div>
+      <div class="metric"><span class="label">Last legislative action</span><b>${html(format_date(temporal_facts?.last_action_at ?? bill.last_action_at))}</b></div>
+      <div class="metric"><span class="label">Enacted</span><b>${html(format_date(temporal_facts?.enacted_at ?? bill.enacted_at))}</b></div>
+      <div class="metric"><span class="label">Effective</span><b>${html(format_date(temporal_facts?.effective_at ?? bill.effective_at))}</b></div>
+      <div class="metric"><span class="label">Last observed</span><b>${html(format_date(temporal_facts?.last_observed_at ?? bill.last_observed_at))}</b></div>
       <div class="metric"><span class="label">Current version</span><b>${html(version_label(current_version))}</b></div>
       <div class="metric"><span class="label">Highest verified version</span><b>${html(version_label(published_version))}</b></div>
     </div>
+    ${bill.last_action_summary ? `<p><b>Latest source action:</b> ${html(bill.last_action_summary)}</p>` : ""}
+    <p class="subhead">These are source-event dates. Rosetta extraction receipts and Lighthouse observation receipts retain their own separately labeled timestamps.</p>
   </section>
 
   <section class="panel">

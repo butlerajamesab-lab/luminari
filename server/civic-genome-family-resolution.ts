@@ -71,7 +71,8 @@ export type CivicGenomeCandidateFamilyRow = {
   policy_domain: string;
 };
 
-export type CivicGenomeCandidateTraitRow = persisted_trait & CivicGenomeCandidateFamilyRow;
+export type CivicGenomeCandidateTraitRow = persisted_trait &
+  CivicGenomeCandidateFamilyRow;
 
 async function refresh_family_rollup(
   client: PoolClient,
@@ -91,6 +92,7 @@ async function refresh_family_rollup(
          )::int as introduced_state_count,
          count(distinct state_code) filter (where current_state_position = 'enacted')::int as enacted_state_count,
          count(distinct state_code) filter (where current_state_position = 'failed')::int as failed_state_count,
+         min(enacted_at) as first_enacted_at,
          max(coalesce(last_action_at, introduced_at, updated_at)) as last_event_at
        from public.civic_genome_bill
        where family_id = $1
@@ -100,6 +102,7 @@ async function refresh_family_rollup(
             introduced_state_count = coalesce(rollup.introduced_state_count, 0),
             enacted_state_count = coalesce(rollup.enacted_state_count, 0),
             failed_state_count = coalesce(rollup.failed_state_count, 0),
+            first_enacted_at = rollup.first_enacted_at,
             last_event_at = rollup.last_event_at,
             momentum_score = least(1, coalesce(rollup.active_state_count, 0)::numeric / 50),
             acceleration_score = 0,
@@ -115,27 +118,6 @@ async function refresh_family_rollup(
             updated_at = now()
        from rollup
       where family.family_id = $1`,
-    [family_id],
-  );
-  await client.query(
-    `insert into public.family_momentum_snapshot (
-       family_id, snapshot_date, active_state_count,
-       introduced_state_count, enacted_state_count, failed_state_count,
-       new_state_count, velocity_score, acceleration_score, collapse_score
-     )
-     select family_id, current_date, active_state_count,
-            introduced_state_count, enacted_state_count, failed_state_count,
-            0, momentum_score, acceleration_score, collapse_score
-       from public.civic_genome_family
-      where family_id = $1
-     on conflict (family_id, snapshot_date) do update set
-       active_state_count = excluded.active_state_count,
-       introduced_state_count = excluded.introduced_state_count,
-       enacted_state_count = excluded.enacted_state_count,
-       failed_state_count = excluded.failed_state_count,
-       velocity_score = excluded.velocity_score,
-       acceleration_score = excluded.acceleration_score,
-       collapse_score = excluded.collapse_score`,
     [family_id],
   );
 }
@@ -181,17 +163,23 @@ export function materialize_civic_genome_family_candidates(
 
   for (const row of trait_rows) {
     const family = candidates.get(row.family_id);
-    if (!family) throw new Error("civic_genome_candidate_trait_without_family_metadata");
+    if (!family)
+      throw new Error("civic_genome_candidate_trait_without_family_metadata");
     family.confirmedTraits.push(to_trait(row));
   }
 
-  return [...candidates.values()].sort((left, right) => left.familyId.localeCompare(right.familyId));
+  return [...candidates.values()].sort((left, right) =>
+    left.familyId.localeCompare(right.familyId),
+  );
 }
 
 function build_exact_confirmed_trait_matches(
   confirmed_traits: CivicGenomeTrait[],
 ): Array<{ trait_key: string; normalized_value_json: unknown }> {
-  const matches = new Map<string, { trait_key: string; normalized_value_json: unknown }>();
+  const matches = new Map<
+    string,
+    { trait_key: string; normalized_value_json: unknown }
+  >();
   for (const trait of confirmed_traits) {
     const key = `${trait.traitKey}\u0000${stableStringify(trait.normalizedValue)}`;
     matches.set(key, {
@@ -210,7 +198,10 @@ export async function resolve_civic_genome_family(
 
   try {
     await client.query("begin");
-    const result = await resolve_civic_genome_family_with_client(client, genome_bill_id);
+    const result = await resolve_civic_genome_family_with_client(
+      client,
+      genome_bill_id,
+    );
     await client.query("commit");
     return result;
   } catch (error) {
@@ -247,7 +238,9 @@ export async function resolve_civic_genome_family_with_client(
     [genome_bill_id],
   );
   const traits = trait_result.rows.map(to_trait);
-  const confirmed_traits = traits.filter(trait => trait.signalStatus === "confirmed");
+  const confirmed_traits = traits.filter(
+    (trait) => trait.signalStatus === "confirmed",
+  );
 
   if (confirmed_traits.length === 0) {
     return record_unresolved(client, bill, {
@@ -259,8 +252,9 @@ export async function resolve_civic_genome_family_with_client(
     });
   }
 
-  const candidate_family_result = await client.query<CivicGenomeCandidateFamilyRow>(
-    `select family.family_id, family.family_key, family.policy_domain
+  const candidate_family_result =
+    await client.query<CivicGenomeCandidateFamilyRow>(
+      `select family.family_id, family.family_key, family.policy_domain
        from public.civic_genome_family family
        join public.civic_genome_bill bill on bill.family_id = family.family_id
        join public.civic_genome_trait trait on trait.genome_bill_id = bill.genome_bill_id
@@ -269,12 +263,14 @@ export async function resolve_civic_genome_family_with_client(
         and trait.signal_status = 'confirmed'
       group by family.family_id, family.family_key, family.policy_domain
       order by family.family_id`,
-    [bill.policy_domain, bill.family_id],
-  );
+      [bill.policy_domain, bill.family_id],
+    );
 
-  const exact_confirmed_trait_matches = build_exact_confirmed_trait_matches(confirmed_traits);
-  const candidate_trait_result = await client.query<CivicGenomeCandidateTraitRow>(
-    `with input_traits as materialized (
+  const exact_confirmed_trait_matches =
+    build_exact_confirmed_trait_matches(confirmed_traits);
+  const candidate_trait_result =
+    await client.query<CivicGenomeCandidateTraitRow>(
+      `with input_traits as materialized (
        select distinct input.trait_key, input.normalized_value_json
        from jsonb_to_recordset($3::jsonb) as input(
          trait_key text,
@@ -311,12 +307,12 @@ export async function resolve_civic_genome_family_with_client(
        join public.civic_genome_trait trait on trait.genome_bill_id = candidate_bill.genome_bill_id
       where trait.signal_status = 'confirmed'
       order by family.family_id, trait.trait_fingerprint`,
-    [
-      bill.policy_domain,
-      bill.family_id,
-      JSON.stringify(exact_confirmed_trait_matches),
-    ],
-  );
+      [
+        bill.policy_domain,
+        bill.family_id,
+        JSON.stringify(exact_confirmed_trait_matches),
+      ],
+    );
   const candidates = materialize_civic_genome_family_candidates(
     candidate_family_result.rows,
     candidate_trait_result.rows,
@@ -335,7 +331,7 @@ export async function resolve_civic_genome_family_with_client(
       reason: resolution.reason,
       best_candidate_family_id: resolution.bestCandidateFamilyId,
       best_candidate_score: resolution.score,
-      candidate_family_ids: candidates.map(candidate => candidate.familyId),
+      candidate_family_ids: candidates.map((candidate) => candidate.familyId),
       similarity_breakdown: resolution.breakdown,
     });
   }
@@ -345,7 +341,10 @@ export async function resolve_civic_genome_family_with_client(
       reason: "ambiguous_above_threshold",
       best_candidate_family_id: resolution.familyId,
       best_candidate_score: resolution.score,
-      candidate_family_ids: [resolution.familyId, ...resolution.competingFamilyIds],
+      candidate_family_ids: [
+        resolution.familyId,
+        ...resolution.competingFamilyIds,
+      ],
       similarity_breakdown: resolution.breakdown,
     });
   }
