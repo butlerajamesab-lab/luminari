@@ -2,6 +2,16 @@ import { createHash } from "node:crypto";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+const { get_amendment_mock, get_bill_text_mock } = vi.hoisted(() => ({
+  get_amendment_mock: vi.fn(),
+  get_bill_text_mock: vi.fn(),
+}));
+
+vi.mock("./services/legiscan", () => ({
+  get_amendment: get_amendment_mock,
+  get_bill_text: get_bill_text_mock,
+}));
+
 import { extract_version_source } from "./civic-genome-legislative-version-pipeline";
 
 function version_fixture(source: string, expected_md5: string) {
@@ -39,59 +49,130 @@ function html_source(): string {
   return `<!doctype html><html><body><main>${"Provider-preserved bill text. ".repeat(20)}</main></body></html>`;
 }
 
+function api_document(source: string) {
+  return {
+    doc_id: 99,
+    doc: Buffer.from(source).toString("base64"),
+    mime: "text/html",
+    text_size: Buffer.byteLength(source),
+    text_hash: createHash("md5").update(source).digest("hex"),
+    url: "https://legiscan.com/VT/text/S0001/id/99",
+  };
+}
+
+function amendment_version_fixture(source: string, expected_md5: string) {
+  return {
+    ...version_fixture(source, expected_md5),
+    source_document_key: "VT:S0001:amendment:1",
+    document_family: "amendment" as const,
+    version_type: "senate_amendment",
+    provider_document_type: "Senate Amendment 001",
+    provider_url: "https://legiscan.com/VT/amendment/S0001/id/99",
+  };
+}
+
+function api_amendment(source: string) {
+  return {
+    amendment_id: 99,
+    doc: Buffer.from(source).toString("base64"),
+    mime: "text/html",
+    amendment_size: Buffer.byteLength(source),
+    amendment_hash: createHash("md5").update(source).digest("hex"),
+  };
+}
+
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.clearAllMocks();
 });
 
 describe("Civic Genome provider-copy source fallback", () => {
-  it("uses a LegiScan copy only after the official fetch fails and verifies bytes", async () => {
+  it("uses authenticated LegiScan bill text only after the official fetch fails", async () => {
     const source = html_source();
     const expected_md5 = createHash("md5").update(source).digest("hex");
-    const fetch_mock = vi.fn()
-      .mockRejectedValueOnce(Object.assign(new TypeError("fetch failed"), {
-        cause: { code: "UNABLE_TO_VERIFY_LEAF_SIGNATURE" },
-      }))
-      .mockResolvedValueOnce(new Response(source, {
-        status: 200,
-        headers: { "content-type": "text/html" },
-      }));
+    const fetch_mock = vi.fn().mockRejectedValueOnce(Object.assign(
+      new TypeError("fetch failed"),
+      { cause: { code: "UNABLE_TO_VERIFY_LEAF_SIGNATURE" } },
+    ));
     vi.stubGlobal("fetch", fetch_mock);
+    get_bill_text_mock.mockResolvedValueOnce(api_document(source));
 
     const extracted = await extract_version_source(
       version_fixture(source, expected_md5) as never,
     );
 
-    expect(fetch_mock).toHaveBeenCalledTimes(2);
+    expect(fetch_mock).toHaveBeenCalledTimes(1);
     expect(fetch_mock.mock.calls[0]?.[0]).toContain("legislature.vermont.gov");
-    expect(String(fetch_mock.mock.calls[1]?.[0])).toContain("legiscan.com");
-    expect(extracted.source_url).toContain("legiscan.com");
-    expect(extracted.source_version).toContain("hash-checked-provider-copy-v1");
+    expect(get_bill_text_mock).toHaveBeenCalledOnce();
+    expect(get_bill_text_mock).toHaveBeenCalledWith(99);
+    expect(extracted.source_url).toBe("https://legiscan.com/VT/text/S0001/id/99");
+    expect(extracted.source_version).toContain(
+      "legiscan-api-hash-checked-provider-copy-v2",
+    );
     expect(extracted.source_metadata).toMatchObject({
       source_fetch_mode: "provider_copy_fallback",
       provider_copy_fallback_used: true,
       provider_copy_hash_verified: true,
       provider_copy_size_verified: true,
+      provider_copy_retrieval_mode: "legiscan_api_get_bill_text",
+      provider_copy_api_document_id: 99,
       docket_official_source_url: expect.stringContaining("legislature.vermont.gov"),
-      provider_copy_retrieval_url: expect.stringContaining("legiscan.com"),
+      provider_copy_locator_url: "https://legiscan.com/VT/text/S0001/id/99",
     });
   });
 
-  it("fails closed when the provider bytes do not match the registered hash", async () => {
+  it("routes amendment recovery through the amendment-specific API envelope", async () => {
     const source = html_source();
-    const fetch_mock = vi.fn()
-      .mockRejectedValueOnce(new TypeError("fetch failed"))
-      .mockResolvedValueOnce(new Response(source, {
-        status: 200,
-        headers: { "content-type": "text/html" },
-      }));
-    vi.stubGlobal("fetch", fetch_mock);
+    const expected_md5 = createHash("md5").update(source).digest("hex");
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValueOnce(new TypeError("fetch failed")));
+    get_amendment_mock.mockResolvedValueOnce(api_amendment(source));
+
+    const extracted = await extract_version_source(
+      amendment_version_fixture(source, expected_md5) as never,
+    );
+
+    expect(get_amendment_mock).toHaveBeenCalledOnce();
+    expect(get_amendment_mock).toHaveBeenCalledWith(99);
+    expect(get_bill_text_mock).not.toHaveBeenCalled();
+    expect(extracted.source_metadata).toMatchObject({
+      docket_document_family: "amendment",
+      provider_copy_retrieval_mode: "legiscan_api_get_amendment",
+      provider_copy_api_document_id: 99,
+      provider_copy_hash_verified: true,
+      provider_copy_size_verified: true,
+    });
+  });
+
+  it("rejects an amendment response for a different provider amendment", async () => {
+    const source = html_source();
+    const expected_md5 = createHash("md5").update(source).digest("hex");
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValueOnce(new TypeError("fetch failed")));
+    get_amendment_mock.mockResolvedValueOnce({
+      ...api_amendment(source),
+      amendment_id: 100,
+    });
+
+    await expect(extract_version_source(
+      amendment_version_fixture(source, expected_md5) as never,
+    )).rejects.toThrow(
+      "legislative_version_provider_fallback_document_id_mismatch",
+    );
+  });
+
+  it("fails closed when decoded provider bytes do not match the registered hash", async () => {
+    const source = html_source();
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValueOnce(new TypeError("fetch failed")));
+    get_bill_text_mock.mockResolvedValueOnce({
+      ...api_document(source),
+      text_hash: "0".repeat(32),
+    });
 
     await expect(extract_version_source(
       version_fixture(source, "0".repeat(32)) as never,
     )).rejects.toThrow("legislative_version_provider_fallback_hash_mismatch");
   });
 
-  it("does not use an untrusted provider host", async () => {
+  it("does not call the API for an untrusted provider locator", async () => {
     const source = html_source();
     const expected_md5 = createHash("md5").update(source).digest("hex");
     const version = {
@@ -102,53 +183,147 @@ describe("Civic Genome provider-copy source fallback", () => {
 
     await expect(extract_version_source(version as never))
       .rejects.toThrow("legislative_version_provider_fallback_authority_invalid");
+    expect(get_bill_text_mock).not.toHaveBeenCalled();
   });
 
-  it("rejects a provider redirect before it can leave the LegiScan boundary", async () => {
+  it("rejects malformed base64 before parsing or verification", async () => {
     const source = html_source();
     const expected_md5 = createHash("md5").update(source).digest("hex");
-    const fetch_mock = vi.fn()
-      .mockRejectedValueOnce(new TypeError("fetch failed"))
-      .mockResolvedValueOnce(new Response(null, {
-        status: 302,
-        headers: { location: "http://127.0.0.1/internal" },
-      }));
-    vi.stubGlobal("fetch", fetch_mock);
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValueOnce(new TypeError("fetch failed")));
+    get_bill_text_mock.mockResolvedValueOnce({
+      ...api_document(source),
+      doc: "not-base64***=",
+    });
 
     await expect(extract_version_source(
       version_fixture(source, expected_md5) as never,
-    )).rejects.toThrow("legislative_version_provider_fallback_authority_invalid");
-
-    expect(fetch_mock).toHaveBeenCalledTimes(2);
+    )).rejects.toThrow(
+      "legislative_version_provider_fallback_document_base64_invalid",
+    );
   });
 
-  it("allows a bounded redirect that remains inside the LegiScan boundary", async () => {
+  it("rejects a bill-text response for a different provider document", async () => {
     const source = html_source();
     const expected_md5 = createHash("md5").update(source).digest("hex");
-    const redirected_url = "https://www.legiscan.com/VT/text/S0001/id/99/download";
-    const fetch_mock = vi.fn()
-      .mockRejectedValueOnce(new TypeError("fetch failed"))
-      .mockResolvedValueOnce(new Response(null, {
-        status: 302,
-        headers: { location: redirected_url },
-      }))
-      .mockResolvedValueOnce(new Response(source, {
-        status: 200,
-        headers: { "content-type": "text/html" },
-      }));
-    vi.stubGlobal("fetch", fetch_mock);
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValueOnce(new TypeError("fetch failed")));
+    get_bill_text_mock.mockResolvedValueOnce({
+      ...api_document(source),
+      doc_id: 100,
+    });
 
-    const extracted = await extract_version_source(
+    await expect(extract_version_source(
       version_fixture(source, expected_md5) as never,
+    )).rejects.toThrow(
+      "legislative_version_provider_fallback_document_id_mismatch",
     );
-
-    expect(fetch_mock).toHaveBeenCalledTimes(3);
-    expect(fetch_mock.mock.calls[1]?.[1]).toMatchObject({ redirect: "manual" });
-    expect(fetch_mock.mock.calls[2]?.[0]).toEqual(new URL(redirected_url));
-    expect(extracted.source_url).toBe(redirected_url);
   });
 
-  it("does not fall back when the official bytes arrive but parsing rejects them", async () => {
+  it("keeps a client-detected bill-text identity failure row-scoped", async () => {
+    const source = html_source();
+    const expected_md5 = createHash("md5").update(source).digest("hex");
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValueOnce(new TypeError("fetch failed")));
+    get_bill_text_mock.mockRejectedValueOnce(new Error(
+      "invalid_legiscan_bill_text_response_document_id",
+    ));
+
+    await expect(extract_version_source(
+      version_fixture(source, expected_md5) as never,
+    )).rejects.toThrow(
+      "legislative_version_provider_fallback_document_id_mismatch",
+    );
+  });
+
+  it("keeps a client-detected amendment identity failure row-scoped", async () => {
+    const source = html_source();
+    const expected_md5 = createHash("md5").update(source).digest("hex");
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValueOnce(new TypeError("fetch failed")));
+    get_amendment_mock.mockRejectedValueOnce(new Error(
+      "invalid_legiscan_amendment_response_id",
+    ));
+
+    await expect(extract_version_source(
+      amendment_version_fixture(source, expected_md5) as never,
+    )).rejects.toThrow(
+      "legislative_version_provider_fallback_document_id_mismatch",
+    );
+  });
+
+  it("keeps an unavailable bill text record-scoped", async () => {
+    const source = html_source();
+    const expected_md5 = createHash("md5").update(source).digest("hex");
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValueOnce(new TypeError("fetch failed")));
+    get_bill_text_mock.mockRejectedValueOnce(new Error(
+      "legiscan_record_api_error_while_calling_get_bill_text",
+    ));
+
+    await expect(extract_version_source(
+      version_fixture(source, expected_md5) as never,
+    )).rejects.toThrow(
+      "legislative_version_provider_fallback_document_unavailable",
+    );
+  });
+
+  it("keeps an unavailable amendment record-scoped", async () => {
+    const source = html_source();
+    const expected_md5 = createHash("md5").update(source).digest("hex");
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValueOnce(new TypeError("fetch failed")));
+    get_amendment_mock.mockRejectedValueOnce(new Error(
+      "legiscan_record_api_error_while_calling_get_amendment",
+    ));
+
+    await expect(extract_version_source(
+      amendment_version_fixture(source, expected_md5) as never,
+    )).rejects.toThrow(
+      "legislative_version_provider_fallback_document_unavailable",
+    );
+  });
+
+  it("rejects a bill-text response that omits its document identity", async () => {
+    const source = html_source();
+    const expected_md5 = createHash("md5").update(source).digest("hex");
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValueOnce(new TypeError("fetch failed")));
+    const { doc_id: _omitted, ...unidentified_document } = api_document(source);
+    get_bill_text_mock.mockResolvedValueOnce(unidentified_document);
+
+    await expect(extract_version_source(
+      version_fixture(source, expected_md5) as never,
+    )).rejects.toThrow(
+      "legislative_version_provider_fallback_document_id_mismatch",
+    );
+  });
+
+  it("fails closed when API metadata disagrees with the registered size", async () => {
+    const source = html_source();
+    const expected_md5 = createHash("md5").update(source).digest("hex");
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValueOnce(new TypeError("fetch failed")));
+    get_bill_text_mock.mockResolvedValueOnce({
+      ...api_document(source),
+      text_size: Buffer.byteLength(source) + 1,
+    });
+
+    await expect(extract_version_source(
+      version_fixture(source, expected_md5) as never,
+    )).rejects.toThrow(
+      "legislative_version_provider_fallback_api_size_mismatch",
+    );
+  });
+
+  it("maps a post-probe API failure to the shared-provider pause contract", async () => {
+    const source = html_source();
+    const expected_md5 = createHash("md5").update(source).digest("hex");
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValueOnce(new TypeError("fetch failed")));
+    get_bill_text_mock.mockRejectedValueOnce(new Error(
+      "legiscan_shared_api_error_while_calling_get_bill_text",
+    ));
+
+    await expect(extract_version_source(
+      version_fixture(source, expected_md5) as never,
+    )).rejects.toThrow(
+      "legislative_version_provider_fallback_shared_service_unavailable",
+    );
+  });
+
+  it("does not fall back when official bytes arrive but parsing rejects them", async () => {
     const provider_source = html_source();
     const expected_md5 = createHash("md5").update(provider_source).digest("hex");
     const fetch_mock = vi.fn().mockResolvedValue(new Response(
@@ -163,5 +338,6 @@ describe("Civic Genome provider-copy source fallback", () => {
 
     expect(fetch_mock).toHaveBeenCalledTimes(1);
     expect(fetch_mock.mock.calls[0]?.[0]).toContain("legislature.vermont.gov");
+    expect(get_bill_text_mock).not.toHaveBeenCalled();
   });
 });

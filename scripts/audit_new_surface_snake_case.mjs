@@ -22,7 +22,7 @@ const audit_scanned_files = [
 
 const required_fix_tokens = new Set([
   "sessionId", "sessionTitle", "billCount", "fetchedAt", "docketRouter",
-  "getSessionList", "getMasterList", "getBill", "LegiScanSession", "LegiScanMasterBill", "LegiScanBillDetail",
+  "getSessionList", "getMasterList", "getBill", "getBillText", "getAmendment", "LegiScanSession", "LegiScanMasterBill", "LegiScanBillDetail",
   "requiredEnv", "normalizeStateCode", "legiscanRequest", "LegiScanEnvelope",
   "sourcePosture", "layerCards", "tribalCardPage", "routeToRecognition", "recognitionTimeline",
   "sourcePacket", "tribeId", "layerSlug", "allyCall", "primaryDeclaration", "territorialDeclaration",
@@ -33,6 +33,8 @@ const third_party_required = new Map([
   ["getSessionList", "LegiScan API operation string must remain exact."],
   ["getMasterList", "LegiScan API operation string must remain exact."],
   ["getBill", "LegiScan API operation string must remain exact."],
+  ["getBillText", "LegiScan API operation string must remain exact."],
+  ["getAmendment", "LegiScan API operation string must remain exact."],
   ["persistSession", "Supabase auth option key is an external library contract."],
   ["autoRefreshToken", "Supabase auth option key is an external library contract."],
 ]);

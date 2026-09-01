@@ -11,7 +11,7 @@ describe("Civic Genome human report temporal status", () => {
   it("separates pending provider records from confirmed event history", async () => {
     vi.stubEnv("ROSETTA_SUPABASE_URL", "https://rosetta.test");
     vi.stubEnv("ROSETTA_SUPABASE_SERVICE_ROLE_KEY", "sb_secret_test");
-    const source_payload = JSON.stringify([{
+    let source_payload = JSON.stringify([{
       source_content_id: "11111111-1111-4111-8111-111111111111",
       source_document_id: 7,
       source_version: "fixture-v1",
@@ -26,8 +26,10 @@ describe("Civic Genome human report temporal status", () => {
         docket_official_source_url:
           "https://legislature.vermont.gov/bill/status/2026/S.1",
         docket_source_url: "https://legiscan.com/VT/text/S0001/id/99",
-        provider_copy_retrieval_url:
+        provider_copy_locator_url:
           "https://legiscan.com/VT/text/S0001/id/99",
+        provider_copy_retrieval_mode: "legiscan_api_get_bill_text",
+        provider_copy_api_document_id: 99,
         source_fetch_mode: "provider_copy_fallback",
         provider_copy_fallback_used: true,
         provider_copy_hash_verified: true,
@@ -124,15 +126,15 @@ describe("Civic Genome human report temporal status", () => {
         '<b>Official source:</b> <a href="https://legislature.vermont.gov/bill/status/2026/S.1"',
       );
       expect(rendered).toContain(
-        '<b>Verified provider copy:</b> <a href="https://legiscan.com/VT/text/S0001/id/99"',
+        '<b>Provider locator:</b> <a href="https://legiscan.com/VT/text/S0001/id/99"',
       );
       expect(rendered).not.toContain(
         '<b>Official source:</b> <a href="https://legiscan.com/',
       );
       expect(rendered).toContain(
-        "after exact hash and byte-size verification",
+        "through LegiScan's authenticated getBillText API and verified its exact hash and byte size before parsing",
       );
-      expect(rendered).toContain("Verified provider retrieval copy");
+      expect(rendered).toContain("Verified provider copy");
       expect(rendered).toContain(
         "full verified provider copy analyzed by Rosetta",
       );
@@ -148,5 +150,17 @@ describe("Civic Genome human report temporal status", () => {
       expect(rendered).not.toContain("Official-source supported");
       expect(rendered).not.toContain("Official legislative source verified");
     }
+
+    source_payload = source_payload.replace(
+      "legiscan_api_get_bill_text",
+      "legiscan_api_get_amendment",
+    );
+    const amendment_report = await render_civic_genome_human_report(
+      payload,
+      "detailed",
+    );
+    expect(amendment_report).toContain(
+      "through LegiScan's authenticated getAmendment API and verified its exact hash and byte size before parsing",
+    );
   });
 });

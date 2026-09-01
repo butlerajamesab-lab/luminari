@@ -24,6 +24,7 @@ describe("isolated Render queue worker deployment contract", () => {
     expect(entrypoint).toContain("prism_worker_canary_queue_id_required");
     expect(entrypoint).toContain("start_prism_rosetta_queue_worker()");
     expect(entrypoint).toContain('"LEGISLATIVE_VERSION_QUEUE_ENABLED"');
+    expect(entrypoint).toContain("legislative_version_queue_requested");
     expect(entrypoint).toContain(
       "legislative_version_queue_recovery_contract_scope()",
     );
@@ -32,6 +33,26 @@ describe("isolated Render queue worker deployment contract", () => {
     );
     expect(entrypoint).toContain("start_legislative_version_queue_worker()");
     expect(entrypoint).toContain("stop_legislative_version_queue_worker()");
+    expect(entrypoint).toContain("legiscan_api_key_configured");
+    expect(entrypoint).toContain("get_bill_text(legiscan_bill_text_probe_document_id)");
+    expect(entrypoint).toContain("legiscan_bill_text_probe_configured");
+    expect(entrypoint).toContain(
+      "legislative_queue_disabled_missing_legiscan_api_key",
+    );
+    expect(entrypoint).toContain(
+      "legislative_queue_disabled_legiscan_bill_text_probe_failed",
+    );
+    expect(entrypoint).toContain(
+      "legislative_queue_credential_accepted",
+    );
+    expect(
+      entrypoint.indexOf("await get_bill_text(legiscan_bill_text_probe_document_id)"),
+    ).toBeLessThan(
+      entrypoint.indexOf("start_legislative_version_queue_worker()"),
+    );
+    expect(
+      entrypoint.indexOf("await legislative_version_queue_startup"),
+    ).toBeLessThan(entrypoint.indexOf("await Promise.all(["));
     expect(
       entrypoint.indexOf("stop_legislative_version_queue_worker()"),
     ).toBeLessThan(entrypoint.indexOf("await getPool().end()"));
@@ -44,6 +65,10 @@ describe("isolated Render queue worker deployment contract", () => {
     expect(blueprint).toContain("PRISM_ROSETTA_QUEUE_MAX_NEW_SUBMISSIONS");
     expect(blueprint).toContain("LEGISLATIVE_VERSION_QUEUE_ENABLED");
     expect(blueprint).toContain("LEGISLATIVE_VERSION_QUEUE_CONCURRENCY");
+    expect(blueprint).toMatch(/key: LEGISCAN_API_KEY\s+sync: false/);
+    expect(blueprint).toMatch(
+      /key: LEGISCAN_BILL_TEXT_PROBE_DOCUMENT_ID\s+value: "3305916"/,
+    );
     expect(blueprint).toMatch(
       /LEGISLATIVE_VERSION_QUEUE_RECOVERY_CONTRACT_SCOPE\s+value: civic-genome-provider-copy-fallback-recovery-v1/,
     );
