@@ -6,11 +6,17 @@ declare
   original_bill jsonb;
   corrected_bill jsonb;
   deleted_bill jsonb;
+  shifted_corrected_bill jsonb;
+  empty_bill jsonb;
   original_fetched_at timestamptz;
   test_observed_at timestamptz := clock_timestamp() + interval '1 second';
   effective_history_index integer;
+  earlier_history_index integer;
+  removed_action_text text;
   original_effective_event_id uuid;
   corrected_effective_event_id uuid;
+  shifted_corrected_event_id uuid;
+  removed_event_id uuid;
   original_current_count integer;
   restored_current_count integer;
   before_replay_event_count bigint;
@@ -18,6 +24,7 @@ declare
   before_replay_revision_count bigint;
   after_replay_revision_count bigint;
   facts record;
+  projected_bill record;
 begin
   if to_regclass('public.civic_genome_lifecycle_source_revision_v3') is null then
     raise exception 'source revision ledger is missing';
@@ -212,6 +219,176 @@ begin
       'correction/delete/reappearance changed restored current event count: % -> %',
       original_current_count,
       restored_current_count;
+  end if;
+
+  select
+    (history.ordinality - 1)::integer,
+    history.value->>'action'
+    into earlier_history_index, removed_action_text
+  from jsonb_array_elements(original_bill->'history')
+    with ordinality history(value, ordinality)
+  where history.ordinality - 1 < effective_history_index
+    and coalesce(history.value->>'action', '') <> ''
+  order by history.ordinality
+  limit 1;
+
+  if earlier_history_index is null then
+    raise exception 'SB5124 has no earlier action for shifted-correction test';
+  end if;
+
+  select event.lifecycle_event_id
+    into removed_event_id
+  from public.v_civic_genome_lifecycle_event_current_v3 event
+  where event.genome_bill_id = target_genome_bill_id
+    and event.source_sequence = earlier_history_index + 1
+    and event.action_text = removed_action_text
+  limit 1;
+
+  if removed_event_id is null then
+    raise exception 'earlier event for shifted-correction test is not current';
+  end if;
+
+  select jsonb_set(
+    original_bill,
+    '{history}',
+    coalesce(
+      jsonb_agg(
+        case
+          when history.ordinality = effective_history_index + 1
+            then jsonb_set(
+              history.value,
+              '{action}',
+              to_jsonb('Effective date 7/1/2026.'::text),
+              false
+            )
+          else history.value
+        end
+        order by history.ordinality
+      ) filter (
+        where history.ordinality <> earlier_history_index + 1
+      ),
+      '[]'::jsonb
+    ),
+    false
+  ) into shifted_corrected_bill
+  from jsonb_array_elements(original_bill->'history')
+    with ordinality history(value, ordinality);
+
+  update public.docket_bill_detail_cache
+     set bill = shifted_corrected_bill,
+         fetched_at = test_observed_at + interval '3 seconds'
+   where bill_id = 1900268;
+
+  select event.lifecycle_event_id
+    into shifted_corrected_event_id
+  from public.v_civic_genome_lifecycle_event_current_v3 event
+  where event.genome_bill_id = target_genome_bill_id
+    and event.action_text = 'Effective date 7/1/2026.'
+    and event.supersedes_lifecycle_event_id = original_effective_event_id
+  limit 1;
+
+  if shifted_corrected_event_id is null then
+    raise exception
+      'ordinal shift linked a correction to the wrong predecessor';
+  end if;
+
+  if not exists (
+    select 1
+    from public.civic_genome_lifecycle_event_v2 tombstone
+    where tombstone.event_type = 'source_tombstone'
+      and tombstone.supersedes_lifecycle_event_id = removed_event_id
+  ) then
+    raise exception 'shifted deletion did not tombstone the removed event';
+  end if;
+
+  if exists (
+    select 1
+    from public.civic_genome_lifecycle_event_v2 tombstone
+    where tombstone.event_type = 'source_tombstone'
+      and tombstone.supersedes_lifecycle_event_id = original_effective_event_id
+  ) then
+    raise exception 'shifted correction incorrectly tombstoned its predecessor';
+  end if;
+
+  update public.docket_bill_detail_cache
+     set bill = original_bill,
+         fetched_at = test_observed_at + interval '4 seconds'
+   where bill_id = 1900268;
+
+  empty_bill := jsonb_set(
+    original_bill,
+    '{history}',
+    '[]'::jsonb,
+    false
+  );
+
+  update public.docket_bill_detail_cache
+     set bill = empty_bill,
+         fetched_at = test_observed_at + interval '5 seconds'
+   where bill_id = 1900268;
+
+  select *
+    into facts
+  from public.v_civic_genome_bill_temporal_facts_v3
+  where genome_bill_id = target_genome_bill_id;
+
+  if not found then
+    raise exception 'empty current revision removed the bill facts row';
+  end if;
+
+  if facts.source_event_count <> 0
+     or facts.prefiled_at is not null
+     or facts.introduced_at is not null
+     or facts.enacted_at is not null
+     or facts.effective_at is not null
+     or facts.last_action_at is not null
+     or facts.last_action_text is not null
+     or facts.current_state_position is not null
+     or facts.last_observed_at is distinct from
+       test_observed_at + interval '5 seconds'
+  then
+    raise exception 'empty current revision retained stale facts: %',
+      to_jsonb(facts);
+  end if;
+
+  select
+    bill.introduced_at,
+    bill.last_action_at,
+    bill.enacted_at,
+    bill.effective_at,
+    bill.current_state_position,
+    bill.procedural_lifecycle_json->>'source_event_count'
+      as projected_source_event_count
+    into projected_bill
+  from public.civic_genome_bill bill
+  where bill.genome_bill_id = target_genome_bill_id;
+
+  if projected_bill.introduced_at is not null
+     or projected_bill.last_action_at is not null
+     or projected_bill.enacted_at is not null
+     or projected_bill.effective_at is not null
+     or projected_bill.current_state_position is not null
+     or projected_bill.projected_source_event_count is distinct from '0'
+  then
+    raise exception 'empty current revision retained a stale bill projection: %',
+      to_jsonb(projected_bill);
+  end if;
+
+  update public.docket_bill_detail_cache
+     set bill = original_bill,
+         fetched_at = test_observed_at + interval '6 seconds'
+   where bill_id = 1900268;
+
+  select *
+    into facts
+  from public.v_civic_genome_bill_temporal_facts_v3
+  where genome_bill_id = target_genome_bill_id;
+
+  if facts.effective_at::date is distinct from date '2026-06-11'
+     or facts.current_state_position is distinct from 'enacted'
+  then
+    raise exception 'restoring empty history did not restore current facts: %',
+      to_jsonb(facts);
   end if;
 
   select count(*)

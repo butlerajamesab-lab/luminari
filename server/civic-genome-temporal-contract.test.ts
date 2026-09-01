@@ -36,6 +36,7 @@ const supersessionMigration = [
   "20260901074437_civic_genome_temporal_supersession_v3_handoff.sql",
   "20260901074445_civic_genome_temporal_supersession_v3_activation.sql",
   "20260901075857_civic_genome_temporal_supersession_v3_lint_safe_sync.sql",
+  "20260901080637_civic_genome_temporal_supersession_v3_edge_cases.sql",
 ]
   .map((filename) =>
     readFileSync(join(root, "supabase", "migrations", filename), "utf8"),
@@ -56,6 +57,15 @@ const lintSafeSyncMigration = readFileSync(
     "supabase",
     "migrations",
     "20260901075857_civic_genome_temporal_supersession_v3_lint_safe_sync.sql",
+  ),
+  "utf8",
+);
+const edgeCaseMigration = readFileSync(
+  join(
+    root,
+    "supabase",
+    "migrations",
+    "20260901080637_civic_genome_temporal_supersession_v3_edge_cases.sql",
   ),
   "utf8",
 );
@@ -158,6 +168,20 @@ describe("Civic Genome event-time chronology v2", () => {
       "pg_temp.civic_genome_current_history_work_v3",
     );
     expect(lintSafeSyncMigration).toContain("replacement_predecessor");
+    expect(edgeCaseMigration).toContain("stable_event");
+    expect(edgeCaseMigration).toContain("anchor_segment");
+    expect(edgeCaseMigration).toContain(
+      "left join public.v_civic_genome_lifecycle_event_current_v3",
+    );
+    expect(edgeCaseMigration).toContain(
+      "alter column current_state_position drop not null",
+    );
+    expect(supersessionVerification).toContain(
+      "ordinal shift linked a correction to the wrong predecessor",
+    );
+    expect(supersessionVerification).toContain(
+      "empty current revision removed the bill facts row",
+    );
   });
 
   it("exports only correction-aware current events while retaining receipts", () => {

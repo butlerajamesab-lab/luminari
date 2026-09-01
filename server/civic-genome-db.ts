@@ -63,7 +63,7 @@ export interface GenomeBill {
   fiscal_effects_json: Record<string, unknown>;
   enforcement_graph_json: Record<string, unknown>;
   downstream_impact_graph_json: Record<string, unknown>;
-  current_state_position: string;
+  current_state_position: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -126,9 +126,9 @@ export interface GenomeBillTemporalFactsV2 {
   introduced_at: string | null;
   enacted_at: string | null;
   effective_at: string | null;
-  last_action_at: string;
+  last_action_at: string | null;
   last_observed_at: string;
-  last_action_text: string;
+  last_action_text: string | null;
   current_state_position: string | null;
   source_event_count: number;
   source_event_set_hash: string;
