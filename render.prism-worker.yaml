@@ -10,7 +10,7 @@ services:
       corepack pnpm install --frozen-lockfile && corepack pnpm build:prism-worker
     startCommand: >-
       NODE_ENV=production node dist/prism-rosetta-worker.js
-    maxShutdownDelaySeconds: 60
+    maxShutdownDelaySeconds: 300
     envVars:
       - key: NODE_ENV
         value: production
@@ -28,6 +28,16 @@ services:
         value: "60000"
       - key: PRISM_ROSETTA_REQUEST_TIMEOUT_MS
         value: "15000"
+      - key: LEGISLATIVE_VERSION_QUEUE_ENABLED
+        value: "true"
+      - key: LEGISLATIVE_VERSION_QUEUE_CONCURRENCY
+        value: "1"
+      - key: LEGISLATIVE_VERSION_QUEUE_POLL_MS
+        value: "5000"
+      - key: LEGISLATIVE_VERSION_QUEUE_RECONCILE_MS
+        value: "60000"
+      - key: LEGISLATIVE_VERSION_QUEUE_RECOVERY_CONTRACT_SCOPE
+        value: civic-genome-provider-copy-fallback-recovery-v1
       - key: ROSETTA_SUPABASE_URL
         sync: false
       - key: ROSETTA_SUPABASE_SERVICE_ROLE_KEY

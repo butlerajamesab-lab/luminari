@@ -20,6 +20,7 @@ import {
   classify_hidden_rosetta_terminal_rejections,
   classify_legislative_version_failure,
   is_exact_docket_document_identifier,
+  legislative_version_queue_recovery_contract_scope,
   legislative_version_retry_delay_seconds,
   load_oldest_unbound_docket_identifiers,
   process_legislative_version_job,
@@ -38,10 +39,14 @@ const job = {
   durable_content_recovery: false,
 };
 
+const provider_fallback_recovery_contract =
+  "civic-genome-provider-copy-fallback-recovery-v1";
+
 beforeEach(() => {
   vi.clearAllMocks();
   vi.stubEnv("ROSETTA_SUPABASE_URL", "https://rosetta.example.test");
   vi.stubEnv("ROSETTA_SUPABASE_SERVICE_ROLE_KEY", "sb_secret_test");
+  vi.stubEnv("LEGISLATIVE_VERSION_QUEUE_RECOVERY_CONTRACT_SCOPE", "");
   query.mockResolvedValue({ rows: [] });
   rosetta_fetch.mockImplementation(async (input: string | URL | Request) => (
     String(input).includes("rosetta_classify_terminal_rejections_v1")
@@ -67,6 +72,48 @@ beforeEach(() => {
 });
 
 describe("legislative version queue", () => {
+  it("accepts only the exact allowlisted recovery contract scope", () => {
+    expect(legislative_version_queue_recovery_contract_scope({})).toBeNull();
+    expect(legislative_version_queue_recovery_contract_scope({
+      LEGISLATIVE_VERSION_QUEUE_RECOVERY_CONTRACT_SCOPE:
+        provider_fallback_recovery_contract,
+    })).toBe(provider_fallback_recovery_contract);
+    expect(() => legislative_version_queue_recovery_contract_scope({
+      LEGISLATIVE_VERSION_QUEUE_RECOVERY_CONTRACT_SCOPE: "untrusted-contract",
+    })).toThrow("legislative_version_queue_recovery_contract_scope_invalid");
+  });
+
+  it("scopes reconciliation and claims while skipping global Rosetta repairs", async () => {
+    vi.stubEnv(
+      "LEGISLATIVE_VERSION_QUEUE_RECOVERY_CONTRACT_SCOPE",
+      provider_fallback_recovery_contract,
+    );
+
+    await run_legislative_version_queue_cycle();
+
+    expect(rosetta_fetch).not.toHaveBeenCalled();
+    const reconciliation_call = query.mock.calls.find(
+      call => call[2]?.label === "legislative_version_queue_reconcile_completed",
+    );
+    expect(reconciliation_call).toBeTruthy();
+    expect(String(reconciliation_call?.[0])).toContain(
+      "version.receipt_json->>'source_fallback_recovery_contract' = $2",
+    );
+    expect(reconciliation_call?.[1][1]).toBe(
+      provider_fallback_recovery_contract,
+    );
+
+    const claim_call = query.mock.calls.find(
+      call => call[2]?.label === "legislative_version_queue_claim",
+    );
+    expect(claim_call).toBeTruthy();
+    expect(String(claim_call?.[0])).toContain(
+      "version.receipt_json->>'source_fallback_recovery_contract' = $8",
+    );
+    expect(claim_call?.[1][3]).toEqual([]);
+    expect(claim_call?.[1][7]).toBe(provider_fallback_recovery_contract);
+  });
+
   it("uses bounded exponential retry timing", () => {
     expect(legislative_version_retry_delay_seconds(1)).toBe(30);
     expect(legislative_version_retry_delay_seconds(2)).toBe(60);
@@ -238,10 +285,18 @@ describe("legislative version queue", () => {
     expect(claim_sql).toContain("'contract', $5::text");
     expect(claim_sql).toContain("recovery_state.prior_recovery_attempts < $6::integer");
     expect(claim_sql).toContain("make_interval(secs => $7::integer)");
+    expect(claim_sql).toContain(
+      "version.receipt_json->>'source_fallback_recovery_contract' = $8",
+    );
     expect(claim_sql).toContain("'attempt_ordinal'");
     expect(claim_sql).toContain("candidate.prior_recovery_attempts + 1");
     expect(claim_sql).not.toContain("and not (\n            coalesce(version.receipt_json");
     expect(claim_sql).toContain("for update of queue, version skip locked");
+
+    const claim_call = query.mock.calls.find(
+      call => call[2]?.label === "legislative_version_queue_claim",
+    );
+    expect(claim_call?.[1][7]).toBeNull();
 
     const currentSessionOrder = claim_sql.indexOf("(current_session.state is not null) desc");
     const currentVersionOrder = claim_sql.indexOf("currency.is_current desc");
