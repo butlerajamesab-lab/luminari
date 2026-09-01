@@ -218,6 +218,7 @@ describe("sovereign export response contract", () => {
     state.readIntegrity.mockResolvedValue({
       artifacts: [
         {
+          intake_session_id: "session-current",
           artifact_key: "artifact-current",
           legacy_document_id: 7,
           integrity_status: "preserved",
@@ -317,11 +318,13 @@ describe("sovereign export response contract", () => {
     state.readIntegrity.mockResolvedValue({
       artifacts: [
         {
+          intake_session_id: "session-current",
           artifact_key: "artifact-current",
           legacy_document_id: 7,
           integrity_status: "preserved",
         },
         {
+          intake_session_id: "session-current",
           artifact_key: "artifact-stale",
           legacy_document_id: 8,
           integrity_status: "quarantined",
@@ -345,14 +348,28 @@ describe("sovereign export response contract", () => {
         id: "relationship-current",
         canonical_relationship_id: "rel-current",
         backingEvidence: [
-          { id: "evidence-current", documentId: 7 },
-          { id: "evidence-stale-copy", documentId: 8 },
+          {
+            id: "evidence-current",
+            documentId: 7,
+            canonical_intake_session_id: "session-current",
+          },
+          {
+            id: "evidence-stale-copy",
+            documentId: 8,
+            canonical_intake_session_id: "session-current",
+          },
         ],
       },
       {
         id: "relationship-stale",
         canonical_relationship_id: "rel-stale",
-        backingEvidence: [{ id: "evidence-stale", documentId: 8 }],
+        backingEvidence: [
+          {
+            id: "evidence-stale",
+            documentId: 8,
+            canonical_intake_session_id: "session-current",
+          },
+        ],
       },
       { id: "relationship-unsupported", backingEvidence: [] },
     ]);
@@ -531,8 +548,126 @@ describe("sovereign export response contract", () => {
       "at least one backing-evidence row bound to a governed source",
     );
     expect(exported.projection_scope.derived_source_filter_policy).toBe(
-      "all derived projections require governed source bindings; dependent verification states are recomputed",
+      "all derived projections require producing-session governed source bindings; dependent verification states are recomputed",
     );
+  });
+
+  it("does not let a preserved duplicate in another session rescue quarantined derived rows", async () => {
+    state.listDocuments.mockResolvedValue([
+      { id: 7, filename: "preserved-duplicate.pdf" },
+      { id: 8, filename: "quarantined-original.pdf" },
+    ]);
+    state.readIntegrity.mockResolvedValue({
+      artifacts: [
+        {
+          intake_session_id: "session-preserved",
+          artifact_key: "artifact-shared",
+          legacy_document_id: 7,
+          integrity_status: "preserved",
+        },
+        {
+          intake_session_id: "session-quarantined",
+          artifact_key: "artifact-shared",
+          legacy_document_id: 8,
+          integrity_status: "quarantined",
+        },
+      ],
+    });
+    state.listRelationshipsEnriched.mockResolvedValue([
+      {
+        id: "relationship-shared",
+        canonical_relationship_id: "rel-shared",
+        backingEvidence: [
+          {
+            id: "evidence-preserved",
+            documentId: 7,
+            canonical_intake_session_id: "session-preserved",
+          },
+        ],
+      },
+    ]);
+    const quarantinedLayerData: Record<
+      string,
+      Array<Record<string, unknown>>
+    > = {
+      state_timeline: [
+        {
+          transition_id: "transition-shared",
+          source_artifact_key: "artifact-shared",
+        },
+      ],
+      verification_gate: [
+        {
+          fact_key: "resident|state|2026-08-30",
+          verification_state: "document_stated",
+          source_refs: [
+            {
+              artifact_key: "artifact-shared",
+              span_offset: 10,
+              value_stated: "active",
+            },
+          ],
+          contradiction_refs: [],
+        },
+      ],
+      pattern_registry: [
+        {
+          pattern_id: "pattern-shared",
+          source_artifacts: ["artifact-shared"],
+          matching_transitions: [{ transition_id: "transition-shared" }],
+        },
+      ],
+      cascade_registry: [
+        {
+          cascade_id: "cascade-shared",
+          source_artifacts: ["artifact-shared"],
+          transitions_in_chain: [{ transition_id: "transition-shared" }],
+        },
+      ],
+      rights_and_duties_matrix: [
+        {
+          candidate_id: "claim-shared",
+          triggering_relationship_ids: ["rel-shared"],
+          triggering_transition_ids: [],
+          triggering_pattern_ids: [],
+        },
+      ],
+    };
+    state.readLayer.mockImplementation(
+      async (_caseId: number, layerName: string) => ({
+        state: "canonical_projection",
+        outputs: [
+          {
+            intake_session_id: "session-quarantined",
+            layer_run_id: `run-${layerName}`,
+            layer_name: layerName,
+            layer_version: "2.5.0",
+            rule_version: "2.5.0",
+            parser_version: "parser-v1",
+            input_hash: "1".repeat(64),
+            output_hash: "2".repeat(64),
+            receipt_hash: "3".repeat(64),
+            completed_at: "2026-08-30T21:00:00.000Z",
+            unresolved_dependencies: [],
+            projection_current: true,
+            data: quarantinedLayerData[layerName] ?? [],
+          },
+        ],
+      }),
+    );
+
+    const exported = await loadCurrentCaseExportData(
+      { id: 44, name: "Inspection case" },
+      44,
+    );
+
+    expect(exported.sources.map((row) => row.id)).toEqual([7]);
+    expect(exported.relationships).toHaveLength(1);
+    expect(exported.state_transitions).toEqual([]);
+    expect(exported.verification_records).toEqual([]);
+    expect(exported.patterns).toEqual([]);
+    expect(exported.cascades).toEqual([]);
+    expect(exported.claim_candidates).toEqual([]);
   });
 
   it("excludes sealed layer outputs that are not the current governed projection", async () => {
@@ -540,6 +675,7 @@ describe("sovereign export response contract", () => {
     state.readIntegrity.mockResolvedValue({
       artifacts: [
         {
+          intake_session_id: "session-current",
           artifact_key: "artifact-current",
           legacy_document_id: 7,
           integrity_status: "preserved",

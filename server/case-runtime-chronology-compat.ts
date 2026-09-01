@@ -20,6 +20,10 @@ type ChronologyEvent = {
   verification_status: string;
 };
 
+type MergedChronologyEvent = ChronologyEvent & {
+  source_intake_session_ids: string[];
+};
+
 function projection_error(message: string, cause?: unknown): never {
   throw new TRPCError({
     code: "INTERNAL_SERVER_ERROR",
@@ -35,6 +39,7 @@ function as_array(value: unknown): any[] {
 async function load_canonical_chronology_outputs(case_id: number): Promise<{
   state: "not_projected" | "canonical_projection";
   outputs: Array<{
+    intake_session_id: string;
     layer_run_id: string;
     output_hash: string;
     receipt_hash: string;
@@ -70,6 +75,7 @@ async function load_canonical_chronology_outputs(case_id: number): Promise<{
           and lr.is_sealed = true
      )
      select
+       r.intake_session_id::text,
        r.layer_run_id::text,
        r.layer_version,
        r.rule_version,
@@ -137,6 +143,7 @@ async function load_canonical_chronology_outputs(case_id: number): Promise<{
       projection_error(`run ${row.layer_run_id} chronology output hash mismatch`);
     }
     return {
+      intake_session_id: String(row.intake_session_id),
       layer_run_id: String(row.layer_run_id),
       output_hash: String(row.output_hash),
       receipt_hash: String(row.receipt_hash),
@@ -190,9 +197,10 @@ async function load_source_document_bindings(case_id: number) {
   for (const row of result.rows) {
     const identity = `${String(row.intake_session_id)}\u001f${String(row.artifact_id)}\u001f${String(row.artifact_key)}`;
     if (!preserved_artifacts.has(identity)) continue;
-    const list = by_artifact.get(String(row.artifact_key)) ?? [];
+    const binding_key = `${String(row.intake_session_id)}\u001f${String(row.artifact_key)}`;
+    const list = by_artifact.get(binding_key) ?? [];
     list.push(row);
-    by_artifact.set(String(row.artifact_key), list);
+    by_artifact.set(binding_key, list);
   }
   return by_artifact;
 }
@@ -209,8 +217,26 @@ function source_binding(rows: any[] | undefined): { document_id: number | null; 
   };
 }
 
-function merge_chronology(outputs: Array<{ data: ChronologyEvent[] }>): ChronologyEvent[] {
-  const events = new Map<string, ChronologyEvent>();
+function source_binding_for_event(
+  bindings: Map<string, any[]>,
+  event: MergedChronologyEvent,
+): { document_id: number | null; filename: string | null } {
+  const rows = event.source_intake_session_ids.flatMap(
+    intake_session_id =>
+      bindings.get(
+        `${intake_session_id}\u001f${event.source_artifact_key}`,
+      ) ?? [],
+  );
+  return source_binding(rows);
+}
+
+function merge_chronology(
+  outputs: Array<{ intake_session_id: string; data: ChronologyEvent[] }>,
+): MergedChronologyEvent[] {
+  const events = new Map<
+    string,
+    { event: ChronologyEvent; intake_session_ids: Set<string> }
+  >();
   for (const output of outputs) {
     for (const event of output.data) {
       if (!event || typeof event.event_id !== "string" || typeof event.event_text !== "string") {
@@ -218,15 +244,22 @@ function merge_chronology(outputs: Array<{ data: ChronologyEvent[] }>): Chronolo
       }
       const existing = events.get(event.event_id);
       if (!existing) {
-        events.set(event.event_id, event);
+        events.set(event.event_id, {
+          event,
+          intake_session_ids: new Set([output.intake_session_id]),
+        });
         continue;
       }
-      if (computeHash(existing) !== computeHash(event)) {
+      if (computeHash(existing.event) !== computeHash(event)) {
         projection_error(`canonical chronology event ${event.event_id} changed meaning across linked sessions`);
       }
+      existing.intake_session_ids.add(output.intake_session_id);
     }
   }
-  return [...events.values()].sort((left, right) =>
+  return [...events.values()].map(({ event, intake_session_ids }) => ({
+    ...event,
+    source_intake_session_ids: [...intake_session_ids].sort(),
+  })).sort((left, right) =>
     (left.date ?? "9999-99-99").localeCompare(right.date ?? "9999-99-99")
       || left.source_artifact_key.localeCompare(right.source_artifact_key)
       || left.source_span_offset - right.source_span_offset
@@ -250,8 +283,7 @@ export async function getCaseChronologyProjectionState(caseId: number): Promise<
     event_count: canonical.state === "canonical_projection"
       ? merge_chronology(canonical.outputs).filter(
           event =>
-            source_binding(bindings.get(event.source_artifact_key))
-              .document_id !== null,
+            source_binding_for_event(bindings, event).document_id !== null,
         ).length
       : 0,
     canonical_output_hashes: [...new Set(canonical.outputs.map(output => output.output_hash))].sort(),
@@ -269,7 +301,7 @@ export async function listEvents(caseId: number) {
   const layer_versions = [...new Set(canonical.outputs.map(output => output.layer_version))].sort();
 
   return merge_chronology(canonical.outputs).flatMap(event => {
-    const binding = source_binding(bindings.get(event.source_artifact_key));
+    const binding = source_binding_for_event(bindings, event);
     if (binding.document_id === null) return [];
     return [{
       id: event.event_id,
@@ -287,6 +319,7 @@ export async function listEvents(caseId: number) {
       canonical_verification_status: event.verification_status,
       canonical_actor: event.actor,
       canonical_source_artifact_key: event.source_artifact_key,
+      canonical_source_intake_session_ids: event.source_intake_session_ids,
       canonical_source_span_offset: event.source_span_offset,
       canonical_output_hashes: output_hashes,
       canonical_receipt_hashes: receipt_hashes,

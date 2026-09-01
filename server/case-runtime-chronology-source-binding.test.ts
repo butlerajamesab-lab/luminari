@@ -46,6 +46,7 @@ const chronology = [
 const outputHash = computeHash(chronology);
 const canonicalRows = [
   {
+    intake_session_id: "session-current",
     layer_run_id: "run-chronology",
     layer_version: "2.5.0",
     rule_version: "2.5.0",
@@ -133,5 +134,70 @@ describe("chronology Layer 3 source binding", () => {
       projection_state: "canonical_projection",
       event_count: 1,
     });
+  });
+
+  it("does not bind a quarantined event to a preserved duplicate in another session", async () => {
+    const duplicateChronology = [
+      {
+        event_id: "event-shared",
+        date: "2026-08-31",
+        date_precision: "exact",
+        event_text: "Event from quarantined session",
+        actor: null,
+        source_artifact_key: "artifact-shared",
+        source_span_offset: 20,
+        verification_status: "document_stated",
+      },
+    ];
+    const duplicateHash = computeHash(duplicateChronology);
+    mocks.query.mockImplementation(async (sql: string) => ({
+      rows: sql.includes("chronology_reconstruction")
+        ? [
+            {
+              ...canonicalRows[0],
+              intake_session_id: "session-quarantined",
+              output_hash: duplicateHash,
+              metadata: {
+                ...canonicalRows[0].metadata,
+                output_hash: duplicateHash,
+                data: duplicateChronology,
+              },
+            },
+          ]
+        : [
+            {
+              intake_session_id: "session-quarantined",
+              artifact_id: "source-quarantined",
+              artifact_key: "artifact-shared",
+              filename: "quarantined.pdf",
+              metadata: { legacy_document_id: 8 },
+            },
+            {
+              intake_session_id: "session-preserved",
+              artifact_id: "source-preserved-duplicate",
+              artifact_key: "artifact-shared",
+              filename: "preserved-duplicate.pdf",
+              metadata: { legacy_document_id: 7 },
+            },
+          ],
+    }));
+    mocks.readIntegrity.mockResolvedValue({
+      artifacts: [
+        {
+          intake_session_id: "session-quarantined",
+          artifact_id: "source-quarantined",
+          artifact_key: "artifact-shared",
+          integrity_status: "quarantined",
+        },
+        {
+          intake_session_id: "session-preserved",
+          artifact_id: "source-preserved-duplicate",
+          artifact_key: "artifact-shared",
+          integrity_status: "preserved",
+        },
+      ],
+    });
+
+    await expect(listEvents(44)).resolves.toEqual([]);
   });
 });

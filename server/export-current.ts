@@ -165,13 +165,26 @@ function stringArray(value: unknown): string[] {
     : [];
 }
 
+function receiptSessionId(row: ExportRecord): string | null {
+  const value = asRecord(row._receipt).intake_session_id;
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+function sessionScopedIdentity(sessionId: string, value: string): string {
+  return `${sessionId}\u001f${value}`;
+}
+
 function recomputeVerificationRecords(
   rows: ExportRecord[],
-  governedArtifactKeys: Set<string>,
+  governedArtifactIdentities: Set<string>,
 ): ExportRecord[] {
   return rows.flatMap((row) => {
+    const sessionId = receiptSessionId(row);
+    if (sessionId === null) return [];
     const sourceRefs = asRecords(row.source_refs).filter((ref) =>
-      governedArtifactKeys.has(String(ref.artifact_key ?? "")),
+      governedArtifactIdentities.has(
+        sessionScopedIdentity(sessionId, String(ref.artifact_key ?? "")),
+      ),
     );
     if (sourceRefs.length === 0) return [];
 
@@ -240,31 +253,60 @@ function recomputeVerificationRecords(
 
 function sourceBoundRegistryRows(
   rows: ExportRecord[],
-  governedArtifactKeys: Set<string>,
+  governedArtifactIdentities: Set<string>,
 ): ExportRecord[] {
   return rows.filter((row) => {
+    const sessionId = receiptSessionId(row);
+    if (sessionId === null) return false;
     const sourceArtifacts = stringArray(row.source_artifacts);
     return (
       sourceArtifacts.length > 0 &&
-      sourceArtifacts.every((key) => governedArtifactKeys.has(key))
+      sourceArtifacts.every((key) =>
+        governedArtifactIdentities.has(sessionScopedIdentity(sessionId, key)),
+      )
     );
   });
 }
 
-function recordIdentitySet(
+function sessionRecordIdentitySet(
   rows: ExportRecord[],
   fields: string[],
 ): Set<string> {
   return new Set(
     rows.flatMap((row) => {
+      const sessionId = receiptSessionId(row);
+      if (sessionId === null) return [];
       for (const field of fields) {
         if (typeof row[field] === "string" && row[field].length > 0) {
-          return [String(row[field])];
+          return [sessionScopedIdentity(sessionId, String(row[field]))];
         }
       }
       return [];
     }),
   );
+}
+
+function governedRelationshipIdentitySet(rows: ExportRecord[]): Set<string> {
+  const identities = new Set<string>();
+  for (const row of rows) {
+    const relationshipId =
+      row.canonical_relationship_id ??
+      row.canonicalRelationshipId ??
+      row.relationship_id;
+    if (typeof relationshipId !== "string" || relationshipId.length === 0) {
+      continue;
+    }
+    for (const evidence of asRecords(
+      row.evidence ?? row.backingEvidence ?? row.backing_evidence,
+    )) {
+      const sessionId =
+        evidence.canonical_intake_session_id ??
+        evidence.canonicalIntakeSessionId;
+      if (typeof sessionId !== "string" || sessionId.length === 0) continue;
+      identities.add(sessionScopedIdentity(sessionId, relationshipId));
+    }
+  }
+  return identities;
 }
 
 function governedClaimCandidates(
@@ -274,14 +316,22 @@ function governedClaimCandidates(
   governedPatternIds: Set<string>,
 ): ExportRecord[] {
   return rows.filter((row) => {
+    const sessionId = receiptSessionId(row);
+    if (sessionId === null) return false;
     const relationshipIds = stringArray(row.triggering_relationship_ids);
     const transitionIds = stringArray(row.triggering_transition_ids);
     const patternIds = stringArray(row.triggering_pattern_ids);
     return (
       relationshipIds.length > 0 &&
-      relationshipIds.every((id) => governedRelationshipIds.has(id)) &&
-      transitionIds.every((id) => governedTransitionIds.has(id)) &&
-      patternIds.every((id) => governedPatternIds.has(id))
+      relationshipIds.every((id) =>
+        governedRelationshipIds.has(sessionScopedIdentity(sessionId, id)),
+      ) &&
+      transitionIds.every((id) =>
+        governedTransitionIds.has(sessionScopedIdentity(sessionId, id)),
+      ) &&
+      patternIds.every((id) =>
+        governedPatternIds.has(sessionScopedIdentity(sessionId, id)),
+      )
     );
   });
 }
@@ -445,12 +495,17 @@ export async function loadCurrentCaseExportData(
       return documentId === null ? [] : [documentId];
     }),
   );
-  const governedArtifactKeys = new Set(
+  const governedArtifactIdentities = new Set(
     integrity.artifacts.flatMap((artifact) =>
       artifact.integrity_status === "preserved" &&
       artifact.legacy_document_id !== null &&
       governedSourceDocumentIds.has(artifact.legacy_document_id)
-        ? [artifact.artifact_key]
+        ? [
+            sessionScopedIdentity(
+              artifact.intake_session_id,
+              artifact.artifact_key,
+            ),
+          ]
         : [],
     ),
   );
@@ -503,47 +558,68 @@ export async function loadCurrentCaseExportData(
           String(right.intake_session_id ?? ""),
         ),
     );
-  const stateTransitions = states.rows.filter((transition) =>
-    governedArtifactKeys.has(
-      String(
-        transition.source_artifact_key ??
-          transition.canonical_source_artifact_key ??
-          "",
-      ),
-    ),
-  );
+  const stateTransitions = states.rows.filter((transition) => {
+    const sessionId = receiptSessionId(transition);
+    if (sessionId === null) return false;
+    const artifactKey = String(
+      transition.source_artifact_key ??
+        transition.canonical_source_artifact_key ??
+        "",
+    );
+    return governedArtifactIdentities.has(
+      sessionScopedIdentity(sessionId, artifactKey),
+    );
+  });
   const verificationRecords = recomputeVerificationRecords(
     verification.rows,
-    governedArtifactKeys,
+    governedArtifactIdentities,
   );
-  const governedTransitionIds = recordIdentitySet(stateTransitions, [
+  const governedTransitionIds = sessionRecordIdentitySet(stateTransitions, [
     "transition_id",
   ]);
-  const governedRelationshipIds = recordIdentitySet(relationships, [
-    "canonical_relationship_id",
-    "canonicalRelationshipId",
-    "relationship_id",
-    "id",
-  ]);
+  const governedRelationshipIds =
+    governedRelationshipIdentitySet(relationships);
   const governedPatterns = sourceBoundRegistryRows(
     patterns.rows,
-    governedArtifactKeys,
-  ).filter((pattern) =>
-    asRecords(pattern.matching_transitions).every((transition) =>
-      governedTransitionIds.has(String(transition.transition_id ?? "")),
-    ),
-  );
-  const governedPatternIds = recordIdentitySet(governedPatterns, [
+    governedArtifactIdentities,
+  ).filter((pattern) => {
+    const sessionId = receiptSessionId(pattern);
+    if (sessionId === null) return false;
+    const matchingTransitions = asRecords(pattern.matching_transitions);
+    return (
+      matchingTransitions.length > 0 &&
+      matchingTransitions.every((transition) =>
+        governedTransitionIds.has(
+          sessionScopedIdentity(
+            sessionId,
+            String(transition.transition_id ?? ""),
+          ),
+        ),
+      )
+    );
+  });
+  const governedPatternIds = sessionRecordIdentitySet(governedPatterns, [
     "pattern_id",
   ]);
   const governedCascades = sourceBoundRegistryRows(
     cascades.rows,
-    governedArtifactKeys,
-  ).filter((cascade) =>
-    asRecords(cascade.transitions_in_chain).every((transition) =>
-      governedTransitionIds.has(String(transition.transition_id ?? "")),
-    ),
-  );
+    governedArtifactIdentities,
+  ).filter((cascade) => {
+    const sessionId = receiptSessionId(cascade);
+    if (sessionId === null) return false;
+    const transitions = asRecords(cascade.transitions_in_chain);
+    return (
+      transitions.length > 0 &&
+      transitions.every((transition) =>
+        governedTransitionIds.has(
+          sessionScopedIdentity(
+            sessionId,
+            String(transition.transition_id ?? ""),
+          ),
+        ),
+      )
+    );
+  });
   const claimCandidates = governedClaimCandidates(
     claims.rows,
     governedRelationshipIds,
@@ -574,7 +650,7 @@ export async function loadCurrentCaseExportData(
       source_filter_policy:
         "active linked source artifacts with sealed preserved integrity",
       derived_source_filter_policy:
-        "all derived projections require governed source bindings; dependent verification states are recomputed",
+        "all derived projections require producing-session governed source bindings; dependent verification states are recomputed",
       relationship_filter_policy:
         "at least one backing-evidence row bound to a governed source",
       reviewer_commitment_boundary:
