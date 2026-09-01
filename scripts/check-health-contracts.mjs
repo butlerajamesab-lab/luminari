@@ -7,6 +7,11 @@ const diagnostic = readFileSync('server/_core/health-diagnostics.ts', 'utf8');
 const systemRouter = readFileSync('server/_core/systemRouter.ts', 'utf8');
 const context = readFileSync('server/_core/context.ts', 'utf8');
 const compatibilityAuthHook = readFileSync('client/src/_core/hooks/useAuth.ts', 'utf8');
+const clientIndex = readFileSync('client/index.html', 'utf8');
+const clientEntry = readFileSync('client/src/main.tsx', 'utf8');
+const luminariRouter = readFileSync('server/routers/luminari-router.ts', 'utf8');
+const canonicalOauth = readFileSync('server/_core/oauth.ts', 'utf8');
+const legacyOauth = readFileSync('server/core/oauth.ts', 'utf8');
 const userCache = readFileSync('server/_core/user-cache.ts', 'utf8');
 const expressAdmin = readFileSync('server/_core/express-admin-middleware.ts', 'utf8');
 const trpcServiceAdmin = readFileSync('server/_core/trpc-service-admin-middleware.ts', 'utf8');
@@ -73,12 +78,43 @@ const syntheticInspectionMarkers = [
   'auth_status: "inspection_mode"',
   'preview_user',
 ];
+const syntheticValidationMarkers = [
+  'TEMP_AUTH_BYPASS',
+  'validation-user-001',
+  'dev-validation-user-001',
+  'Validation User',
+  'data-preview-auth-disabled',
+  'sign-in is intentionally disabled',
+];
 for (const marker of syntheticInspectionMarkers) {
   if (context.includes(marker)) fail(`retired synthetic inspection identity remains in the server auth context: ${marker}`);
   for (const [path, bundle] of runtimeBundles) {
     if (bundle.includes(marker)) fail(`retired synthetic inspection identity remains in executable bundle ${path}: ${marker}`);
   }
 }
+for (const marker of syntheticValidationMarkers) {
+  for (const [path, bundle] of runtimeBundles) {
+    if (bundle.includes(marker)) fail(`retired synthetic validation identity remains in executable bundle ${path}: ${marker}`);
+  }
+}
+const retiredSyntheticAuthFiles = [
+  'client/src/_core/validation-session.ts',
+  'client/src/core/validation-session.ts',
+  'server/_core/temp-auth-bypass.ts',
+  'server/_core/temp-bypass-procedure.ts',
+  'server/_core/validation-middleware.ts',
+  'server/core/temp-auth-bypass.ts',
+  'server/core/temp-bypass-procedure.ts',
+  'server/core/validation-middleware.ts',
+];
+for (const path of retiredSyntheticAuthFiles) {
+  if (existsSync(path)) fail(`retired synthetic authentication source was restored: ${path}`);
+}
+if (clientIndex.includes('data-preview-auth-disabled') || clientIndex.includes('Preview Mode')) fail('application shell must not disable Supabase sign-in');
+if (clientEntry.includes('initializeValidationSession') || clientEntry.includes('OAuth disabled - no redirects')) fail('client entrypoint must not retain validation-session or disabled-login shims');
+if (!clientEntry.includes('window.location.assign(getLoginUrl())')) fail('unauthorized client requests must return users to canonical Supabase sign-in');
+if (luminariRouter.includes('tempProtectedProcedure') || luminariRouter.includes('TemporaryBypass')) fail('Luminari mutations must use the canonical protected procedure');
+if (canonicalOauth.includes('/api/validation-session') || legacyOauth.includes('/api/validation-session')) fail('server must not mint validation-session identities');
 if (!compatibilityAuthHook.includes('export { useAuth } from "@/core/hooks/useAuth"')) fail('legacy auth imports must resolve to canonical Supabase authentication');
 if (compatibilityAuthHook.includes('previewUser') || compatibilityAuthHook.includes('isInspectionMode')) fail('legacy auth compatibility must not manufacture a preview identity');
 
