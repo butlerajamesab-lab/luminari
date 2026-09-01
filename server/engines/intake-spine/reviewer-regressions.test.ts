@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
+import { processLayer4 } from "./layer-4-chronology_reconstruction";
 import { processLayer6, type Entity } from "./layer-6-entity_registry";
 import { processLayer7 } from "./layer-7-relationship_graph";
+import { processLayer9 } from "./layer-9-state_timeline";
 import type { ParsedArtifact, TextSpan } from "./parsing-substrate";
 import { semanticSpansForArtifact } from "./semantic-substrate";
 
@@ -76,6 +78,75 @@ describe("Codex reviewer regressions", () => {
         span_offset: sentence.indexOf("Jane Smith"),
       },
     ]);
+  });
+
+  it("preserves abbreviated dates for the chronology engine", () => {
+    const sentence = "On Jan. 5, 2026, Alice Smith filed a complaint.";
+    const artifact = artifactFromSentences([sentence]);
+
+    expect(
+      semanticSpansForArtifact(artifact, [artifact]).map((span) => span.text),
+    ).toEqual([sentence]);
+    expect(processLayer4({ artifacts: [artifact] }).data).toEqual([
+      expect.objectContaining({
+        date: "2026-01-05",
+        event_text: sentence,
+      }),
+    ]);
+  });
+
+  it("preserves abbreviated dates in state-transition source bounds", () => {
+    const sentence =
+      "On Jan. 5, 2026, Alice Smith was admitted to the hospital.";
+    const artifact = artifactFromSentences([sentence]);
+    const alice = entityAtSource(
+      "alice-smith",
+      "person",
+      "Alice Smith",
+      artifact,
+    );
+
+    expect(
+      processLayer9({ entities: [alice], artifacts: [artifact] }).data,
+    ).toEqual([
+      expect.objectContaining({
+        transition_date: "2026-01-05",
+        source_text: sentence,
+      }),
+    ]);
+  });
+
+  it("keeps organization suffixes with following relationship predicates", () => {
+    const sentence = "Acme Inc. is employer Alice Smith was hired.";
+    const artifact = artifactFromSentences([sentence]);
+
+    expect(
+      semanticSpansForArtifact(artifact, [artifact]).map((span) => span.text),
+    ).toEqual([sentence]);
+    const entities = processLayer6({ artifacts: [artifact] }).data;
+    expect(
+      entities.find((entity) => entity.canonical_name === "acme inc."),
+    ).toMatchObject({ type: "organization" });
+    expect(
+      processLayer7({ entities, artifacts: [artifact] }).data.map(
+        (relationship) => relationship.type,
+      ),
+    ).toContain("employer_employee");
+  });
+
+  it("keeps dotted contacts intact for contact extraction", () => {
+    const sentence = "Email jane.doe@example.com or call 206.555.0123 today.";
+    const artifact = artifactFromSentences([sentence]);
+
+    expect(
+      semanticSpansForArtifact(artifact, [artifact]).map((span) => span.text),
+    ).toEqual([sentence]);
+    expect(
+      processLayer6({ artifacts: [artifact] })
+        .data.filter((entity) => entity.type === "contact")
+        .map((entity) => entity.canonical_name)
+        .sort(),
+    ).toEqual(["206.555.0123", "jane.doe@example.com"]);
   });
 
   it("binds relationship predicates that immediately follow coordinated endpoints", () => {

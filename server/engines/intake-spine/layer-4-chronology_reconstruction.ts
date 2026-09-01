@@ -13,6 +13,7 @@ import {
   cmsSurveyDate,
   isDateOutsideCmsRecordRange,
   isExcludedFromDominantSemanticLane,
+  semanticSentenceBounds,
   semanticSpansForArtifact,
 } from './semantic-substrate';
 
@@ -177,7 +178,7 @@ export function processLayer4(input: Layer4Input): EngineResult<ChronologyEvent[
 
       const primary = candidates.sort((a, b) => a.matchIndex - b.matchIndex || a.date.localeCompare(b.date))[0];
       if (!primary) continue;
-      const bounds = sentenceBounds(span.text, primary.matchIndex);
+      const bounds = semanticSentenceBounds(span.text, primary.matchIndex);
       const event_text = span.text.substring(bounds.start, bounds.end).trim();
       if (isDeclaredNonEventSentence(event_text)) continue;
       const actor = extractEventActor(event_text, artifactClass === 'cms_2567');
@@ -245,24 +246,6 @@ export function isDeclaredNonEventSentence(text: string): boolean {
     if (rule.regex.test(text)) return true;
   }
   return false;
-}
-
-function sentenceBounds(text: string, position: number): { start: number; end: number } {
-  let start = 0;
-  for (let i = position - 1; i >= 0; i--) {
-    if (text[i] === '.' || text[i] === '!' || text[i] === '?' || text[i] === '\n') {
-      start = i + 1;
-      break;
-    }
-  }
-  let end = text.length;
-  for (let i = position; i < text.length; i++) {
-    if (text[i] === '.' || text[i] === '!' || text[i] === '?' || text[i] === '\n') {
-      end = i + 1;
-      break;
-    }
-  }
-  return { start, end };
 }
 
 function normalizeDate(

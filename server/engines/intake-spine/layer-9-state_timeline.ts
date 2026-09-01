@@ -14,6 +14,7 @@ import {
   cmsSurveyDate,
   isDateOutsideCmsRecordRange,
   isExcludedFromDominantSemanticLane,
+  semanticSentenceBounds,
   semanticSpansForArtifact,
 } from './semantic-substrate';
 
@@ -167,7 +168,7 @@ export function processLayer9(input: Layer9Input): EngineResult<StateTransition[
         rule.pattern.lastIndex = 0;
         let match: RegExpExecArray | null;
         while ((match = rule.pattern.exec(span.text)) !== null) {
-          const bounds = sentenceBounds(span.text, match.index);
+          const bounds = semanticSentenceBounds(span.text, match.index);
           const sentence = span.text.substring(bounds.start, bounds.end).trim();
           const sentenceAbsoluteOffset = span.start_offset + bounds.start;
           const entities = entitiesMentionedInSentence(
@@ -239,24 +240,6 @@ export function processLayer9(input: Layer9Input): EngineResult<StateTransition[
     unresolved_dependencies: unresolved.sort((a, b) => a.field.localeCompare(b.field)),
     is_sealed: false,
   };
-}
-
-function sentenceBounds(text: string, position: number): { start: number; end: number } {
-  let start = 0;
-  for (let i = position - 1; i >= 0; i--) {
-    if (text[i] === '.' || text[i] === '!' || text[i] === '?' || text[i] === '\n') {
-      start = i + 1;
-      break;
-    }
-  }
-  let end = text.length;
-  for (let i = position; i < text.length; i++) {
-    if (text[i] === '.' || text[i] === '!' || text[i] === '?' || text[i] === '\n') {
-      end = i + 1;
-      break;
-    }
-  }
-  return { start, end };
 }
 
 function entitiesMentionedInSentence(

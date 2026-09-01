@@ -234,13 +234,7 @@ function groupCmsSpansByPage(artifact: ParsedArtifact): TextSpan[] {
 
 function splitSpanIntoSentences(span: TextSpan): TextSpan[] {
   const output: TextSpan[] = [];
-  // Keep title abbreviations attached to the name that follows. The protected
-  // text is exactly the same length as the source so all emitted offsets still
-  // point into the untouched artifact bytes.
-  const protectedText = span.text.replace(
-    /\b(?:Mr|Mrs|Ms|Dr|Prof)\./gi,
-    (honorific) => `${honorific.slice(0, -1)}\uE000`,
-  );
+  const protectedText = protectSupportedNonterminalPeriods(span.text);
   const pattern = /[^.!?]+(?:[.!?]+|$)/g;
   let match: RegExpExecArray | null;
   while ((match = pattern.exec(protectedText)) !== null) {
@@ -262,6 +256,62 @@ function splitSpanIntoSentences(span: TextSpan): TextSpan[] {
     });
   }
   return output;
+}
+
+/**
+ * The downstream manifests explicitly consume these period-bearing forms.
+ * Protect only uses that are demonstrably nonterminal, then split a same-length
+ * shadow string so source text and offsets remain byte-for-byte untouched.
+ */
+function protectSupportedNonterminalPeriods(text: string): string {
+  const patterns = [
+    /\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/g,
+    /\b\d{3}\.\d{3}\.\d{4}\b/g,
+    /\(\d{3}\)\.\d{3}\.\d{4}\b/g,
+    /\b(?:Mr|Mrs|Ms|Dr|Prof)\.(?=\s+[A-Z])/gi,
+    /\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)\.(?=\s+\d{1,4}\b)/gi,
+    /\b(?:Inc|Corp|Co)\.(?=\s+(?:[a-z]|and\b|or\b|&))/g,
+    /\b(?:St|Ave|Blvd|Dr|Rd|Ln|Ct|Pl|Cir)\.(?=\s*,|\s+[a-z])/g,
+  ] as const;
+  return patterns.reduce(
+    (protectedText, pattern) =>
+      protectedText.replace(pattern, (abbreviation) =>
+        abbreviation.replaceAll(".", "\uE000"),
+      ),
+    text,
+  );
+}
+
+export function semanticSentenceBounds(
+  text: string,
+  position: number,
+): { start: number; end: number } {
+  const protectedText = protectSupportedNonterminalPeriods(text);
+  let start = 0;
+  for (let index = position - 1; index >= 0; index--) {
+    if (
+      protectedText[index] === "." ||
+      protectedText[index] === "!" ||
+      protectedText[index] === "?" ||
+      protectedText[index] === "\n"
+    ) {
+      start = index + 1;
+      break;
+    }
+  }
+  let end = protectedText.length;
+  for (let index = position; index < protectedText.length; index++) {
+    if (
+      protectedText[index] === "." ||
+      protectedText[index] === "!" ||
+      protectedText[index] === "?" ||
+      protectedText[index] === "\n"
+    ) {
+      end = index + 1;
+      break;
+    }
+  }
+  return { start, end };
 }
 
 function linesWithOffsets(
