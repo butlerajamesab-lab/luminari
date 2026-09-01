@@ -151,9 +151,13 @@ describe("sovereign export response contract", () => {
         id: "event-1",
         caseId: 44,
         title: "Inspection observed",
+        documentId: 7,
         canonical_source_artifact_key: "artifact:abc",
         canonical_source_span_offset: 12,
       },
+    ]);
+    state.getGovernedEntityRolesForDocument.mockResolvedValue([
+      { entityId: 8, documentId: 7 },
     ]);
 
     const exported = await loadCurrentCaseExportData(
@@ -262,6 +266,72 @@ describe("sovereign export response contract", () => {
     expect(state.getGovernedEntityRolesForDocument).toHaveBeenCalledWith(44, 7);
     expect(exported.projection_scope.source_filter_policy).toBe(
       "active linked source artifacts with sealed preserved integrity",
+    );
+  });
+
+  it("exports only relationships backed by currently governed sources", async () => {
+    state.listDocuments.mockResolvedValue([
+      { id: 7, filename: "current.pdf" },
+      { id: 8, filename: "superseded.pdf" },
+    ]);
+    state.readIntegrity.mockResolvedValue({
+      artifacts: [
+        { legacy_document_id: 7, integrity_status: "preserved" },
+        { legacy_document_id: 8, integrity_status: "quarantined" },
+      ],
+    });
+    state.listEntities.mockResolvedValue([
+      { id: 101, name: "Current entity" },
+      { id: 102, name: "Stale entity" },
+    ]);
+    state.getGovernedEntityRolesForDocument.mockResolvedValue([
+      { entityId: 101, documentId: 7 },
+    ]);
+    state.listEvents.mockResolvedValue([
+      { id: "event-current", documentId: 7 },
+      { id: "event-stale", documentId: 8 },
+      { id: "event-unbound", documentId: null },
+    ]);
+    state.listRelationshipsEnriched.mockResolvedValue([
+      {
+        id: "relationship-current",
+        backingEvidence: [
+          { id: "evidence-current", documentId: 7 },
+          { id: "evidence-stale-copy", documentId: 8 },
+        ],
+      },
+      {
+        id: "relationship-stale",
+        backingEvidence: [{ id: "evidence-stale", documentId: 8 }],
+      },
+      { id: "relationship-unsupported", backingEvidence: [] },
+    ]);
+
+    const exported = await loadCurrentCaseExportData(
+      { id: 44, name: "Inspection case" },
+      44,
+    );
+
+    expect(exported.relationships).toEqual([
+      expect.objectContaining({
+        id: "relationship-current",
+        backingEvidence: [
+          expect.objectContaining({ id: "evidence-current", documentId: 7 }),
+        ],
+      }),
+    ]);
+    expect(exported.relationships[0].evidence).toEqual(
+      exported.relationships[0].backingEvidence,
+    );
+    expect(exported.entities.map((entity) => entity.id)).toEqual([101]);
+    expect(exported.chronology.map((event) => event.id)).toEqual([
+      "event-current",
+    ]);
+    expect(exported.projection_scope.relationship_filter_policy).toBe(
+      "at least one backing-evidence row bound to a governed source",
+    );
+    expect(exported.projection_scope.derived_source_filter_policy).toBe(
+      "entities, chronology, and relationships require governed source bindings",
     );
   });
 

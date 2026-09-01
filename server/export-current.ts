@@ -143,6 +143,22 @@ function matchesSnapshot(row: ExportRecord, snapshotId: number): boolean {
   return rowSnapshot === null || rowSnapshot === snapshotId;
 }
 
+function governedRelationshipEvidence(
+  relationship: ExportRecord,
+  governedSourceDocumentIds: Set<number>,
+): ExportRecord[] {
+  return asRecords(
+    relationship.backingEvidence ??
+      relationship.backing_evidence ??
+      relationship.evidence,
+  ).filter((evidence) => {
+    const documentId = asPositiveInteger(
+      evidence.documentId ?? evidence.document_id,
+    );
+    return documentId !== null && governedSourceDocumentIds.has(documentId);
+  });
+}
+
 async function loadLayer(
   caseId: number,
   layerName: string,
@@ -255,15 +271,33 @@ export async function loadCurrentCaseExportData(
         governedDocumentIds.has(Number(row.id)) &&
         matchesSnapshot(row, requestedSnapshotId),
     );
-  const entities = asRecords(entityRows).filter((row) =>
+  const governedSourceDocumentIds = new Set(
+    sources.flatMap((source) => {
+      const documentId = asPositiveInteger(source.id);
+      return documentId === null ? [] : [documentId];
+    }),
+  );
+  const snapshotEntities = asRecords(entityRows).filter((row) =>
     matchesSnapshot(row, requestedSnapshotId),
   );
-  const chronology = asRecords(chronologyRows).filter((row) =>
-    matchesSnapshot(row, requestedSnapshotId),
-  );
-  const relationships = asRecords(relationshipRows).filter((row) =>
-    matchesSnapshot(row, requestedSnapshotId),
-  );
+  const chronology = asRecords(chronologyRows).filter((row) => {
+    const documentId = asPositiveInteger(row.documentId ?? row.document_id);
+    return (
+      matchesSnapshot(row, requestedSnapshotId) &&
+      documentId !== null &&
+      governedSourceDocumentIds.has(documentId)
+    );
+  });
+  const relationships = asRecords(relationshipRows).flatMap((row) => {
+    if (!matchesSnapshot(row, requestedSnapshotId)) return [];
+    const evidence = governedRelationshipEvidence(
+      row,
+      governedSourceDocumentIds,
+    );
+    return evidence.length > 0
+      ? [{ ...row, evidence, backingEvidence: evidence }]
+      : [];
+  });
 
   const roleGroups = await Promise.all(
     sources.flatMap((source) => {
@@ -274,6 +308,12 @@ export async function loadCurrentCaseExportData(
     }),
   );
   const entityRoles = roleGroups.flatMap((group) => asRecords(group));
+  const governedEntityIds = new Set(
+    entityRoles.map((role) => String(role.entityId ?? role.entity_id ?? "")),
+  );
+  const entities = snapshotEntities.filter((entity) =>
+    governedEntityIds.has(String(entity.id ?? "")),
+  );
 
   const layerReceipts = [verification, states, patterns, cascades, claims]
     .flatMap((layer) => layer.receipts)
@@ -299,6 +339,10 @@ export async function loadCurrentCaseExportData(
         : "all rows in the current governed case projection",
       source_filter_policy:
         "active linked source artifacts with sealed preserved integrity",
+      derived_source_filter_policy:
+        "entities, chronology, and relationships require governed source bindings",
+      relationship_filter_policy:
+        "at least one backing-evidence row bound to a governed source",
       reviewer_commitment_boundary:
         "Derived records are not reviewer-committed findings.",
       source_storage_fields_excluded: ["s3_key", "s3_url"],

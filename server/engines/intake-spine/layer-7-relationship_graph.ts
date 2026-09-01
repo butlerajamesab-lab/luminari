@@ -198,11 +198,11 @@ export function processLayer7(input: Layer7Input): EngineResult<Relationship[]> 
             mention.span_offset < span.end_offset,
           )
           .sort((a, b) => a.span_offset - b.span_offset || a.raw_text.localeCompare(b.raw_text));
-        if (mentions.length > 0) {
+        for (const mention of mentions) {
           entitiesInSpan.push({
             entity,
-            position: mentions[0].span_offset - span.start_offset,
-            mention_text: mentions[0].raw_text,
+            position: mention.span_offset - span.start_offset,
+            mention_text: mention.raw_text,
           });
         }
       }
@@ -214,6 +214,7 @@ export function processLayer7(input: Layer7Input): EngineResult<Relationship[]> 
         for (let j = i + 1; j < entitiesInSpan.length; j++) {
           const first = entitiesInSpan[i];
           const second = entitiesInSpan[j];
+          if (first.entity.entity_id === second.entity.entity_id) continue;
           const markerSearchStart = first.position + first.mention_text.length;
           const markerSearchEnd = second.position;
           if (markerSearchEnd <= markerSearchStart) continue;

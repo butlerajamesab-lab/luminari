@@ -580,8 +580,20 @@ export async function project_case_entities(case_id: number): Promise<{
     };
   }
 
-  const canonical_entities = merge_canonical_entities(layer.outputs);
+  const merged_canonical_entities = merge_canonical_entities(layer.outputs);
   const source_artifacts = source_artifact_index(await load_case_source_artifacts(case_id));
+  const canonical_entities = merged_canonical_entities.flatMap(entity => {
+    const raw_mentions = entity.raw_mentions.filter(mention =>
+      unambiguous_source_binding(source_artifacts.get(mention.artifact_key)).binding_state === "bound"
+    );
+    return raw_mentions.length > 0 ? [{ ...entity, raw_mentions }] : [];
+  });
+  const supported_entity_ids = new Set(canonical_entities.map(entity => entity.entity_id));
+  for (const entity of canonical_entities) {
+    entity.review_candidates = (entity.review_candidates ?? []).filter(candidate =>
+      supported_entity_ids.has(candidate.candidate_entity_id)
+    );
+  }
   const output_hashes = [...new Set(layer.outputs.map(output => output.output_hash))].sort();
   const receipt_hashes = [...new Set(layer.outputs.map(output => output.receipt_hash))].sort();
   const latest_completed_at = layer.outputs
@@ -893,13 +905,17 @@ export async function project_case_relationships(case_id: number): Promise<{
   const receipt_hashes = [...new Set(relationship_layer.outputs.map(output => output.receipt_hash))].sort();
   const layer_versions = [...new Set(relationship_layer.outputs.map(output => output.layer_version))].sort().join("|");
 
-  const relationships = canonical_relationships.map(relationship => {
-    const endpoints = source_target_entity_ids(relationship, entity_ids);
+  const relationships = canonical_relationships.flatMap(relationship => {
     const evidence = project_relationship_evidence(case_id, relationship, entity_projection.source_artifacts);
+    // A canonical edge without a currently bound source span is not a runtime
+    // relationship. Superseded, quarantined, and ambiguous sources fail closed
+    // here so every downstream surface receives the same supported projection.
+    if (evidence.length === 0) return [];
+    const endpoints = source_target_entity_ids(relationship, entity_ids);
     const snapshot_ids = [...new Set(evidence
       .map(row => unambiguous_source_binding(entity_projection.source_artifacts.get(row.canonicalArtifactKey)).snapshot_id)
       .filter((value): value is number => value !== null))];
-    return {
+    return [{
       id: stable_projection_id(case_id, "relationship", relationship.relationship_id),
       caseId: case_id,
       sourceEntityId: endpoints.source,
@@ -916,7 +932,7 @@ export async function project_case_relationships(case_id: number): Promise<{
       projectionSource: "universal_intake_spine" as const,
       evidence,
       backingEvidence: evidence,
-    };
+    }];
   });
   assert_unique_projection_ids(relationships, relationship => relationship.id, relationship => relationship.canonicalRelationshipId);
   relationships.sort((left, right) => left.canonicalRelationshipId.localeCompare(right.canonicalRelationshipId));

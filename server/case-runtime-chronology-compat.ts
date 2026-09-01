@@ -239,9 +239,10 @@ export async function listEvents(caseId: number) {
   const receipt_hashes = [...new Set(canonical.outputs.map(output => output.receipt_hash))].sort();
   const layer_versions = [...new Set(canonical.outputs.map(output => output.layer_version))].sort();
 
-  return merge_chronology(canonical.outputs).map(event => {
+  return merge_chronology(canonical.outputs).flatMap(event => {
     const binding = source_binding(bindings.get(event.source_artifact_key));
-    return {
+    if (binding.document_id === null) return [];
+    return [{
       id: event.event_id,
       caseId,
       title: event.event_text,
@@ -261,6 +262,6 @@ export async function listEvents(caseId: number) {
       canonical_output_hashes: output_hashes,
       canonical_receipt_hashes: receipt_hashes,
       canonical_layer_versions: layer_versions,
-    };
+    }];
   });
 }
