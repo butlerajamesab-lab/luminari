@@ -66,7 +66,7 @@ export type legiscan_bill_detail = Record<string, unknown>;
 
 export type legiscan_bill_text = {
   doc: string;
-  doc_id?: number | string;
+  doc_id: number | string;
   bill_id?: number | string;
   date?: string;
   type?: string;
@@ -141,6 +141,9 @@ const legiscan_request = async <payload>(
         data.alert?.message ?? "provider_error_without_detail",
       );
       throw new Error(`legiscan_api_error_while_calling_${op}:${detail}`);
+    }
+    if (data.status !== "OK") {
+      throw new Error(`legiscan_invalid_status_while_calling_${op}`);
     }
 
     return data as payload;
@@ -229,6 +232,16 @@ export const get_bill_text = async (
     || typeof (data.text as Record<string, unknown>).doc !== "string"
   ) {
     throw new Error("invalid_legiscan_bill_text_payload");
+  }
+
+  const response_document_id = Number(
+    (data.text as Record<string, unknown>).doc_id,
+  );
+  if (
+    !Number.isSafeInteger(response_document_id)
+    || response_document_id !== document_id
+  ) {
+    throw new Error("invalid_legiscan_bill_text_response_document_id");
   }
 
   return data.text as legiscan_bill_text;

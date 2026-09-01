@@ -65,6 +65,33 @@ describe("LegiScan bill-text API client", () => {
     );
   });
 
+  it("requires the response to identify the requested document", async () => {
+    vi.stubEnv("LEGISCAN_API_KEY", "test-legiscan-key");
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      status: "OK",
+      text: { doc: "SGVsbG8=" },
+    }), { status: 200 })));
+
+    await expect(get_bill_text(99)).rejects.toThrow(
+      "invalid_legiscan_bill_text_response_document_id",
+    );
+  });
+
+  it.each([undefined, "UNKNOWN"])(
+    "rejects a non-OK response status %s",
+    async (status) => {
+      vi.stubEnv("LEGISCAN_API_KEY", "test-legiscan-key");
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+        ...(status === undefined ? {} : { status }),
+        text: { doc_id: 99, doc: "SGVsbG8=" },
+      }), { status: 200 })));
+
+      await expect(get_bill_text(99)).rejects.toThrow(
+        "legiscan_invalid_status_while_calling_get_bill_text",
+      );
+    },
+  );
+
   it("redacts the API key from provider error messages", async () => {
     vi.stubEnv("LEGISCAN_API_KEY", "test-legiscan-key");
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({

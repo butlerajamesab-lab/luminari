@@ -283,14 +283,12 @@ async function fetch_provider_copy(
     throw new Error(`legislative_version_provider_fallback_api_failed:${reason}`);
   }
 
-  if (document.doc_id !== undefined && document.doc_id !== null) {
-    const returned_document_id = Number(document.doc_id);
-    if (
-      !Number.isSafeInteger(returned_document_id)
-      || returned_document_id !== contract.provider_document_id
-    ) {
-      throw new Error("legislative_version_provider_fallback_document_id_mismatch");
-    }
+  const returned_document_id = Number(document.doc_id);
+  if (
+    !Number.isSafeInteger(returned_document_id)
+    || returned_document_id !== contract.provider_document_id
+  ) {
+    throw new Error("legislative_version_provider_fallback_document_id_mismatch");
   }
 
   const encoded_document = document.doc.trim();

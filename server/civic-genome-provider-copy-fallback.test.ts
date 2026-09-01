@@ -157,6 +157,20 @@ describe("Civic Genome provider-copy source fallback", () => {
     );
   });
 
+  it("rejects a bill-text response that omits its document identity", async () => {
+    const source = html_source();
+    const expected_md5 = createHash("md5").update(source).digest("hex");
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValueOnce(new TypeError("fetch failed")));
+    const { doc_id: _omitted, ...unidentified_document } = api_document(source);
+    get_bill_text_mock.mockResolvedValueOnce(unidentified_document);
+
+    await expect(extract_version_source(
+      version_fixture(source, expected_md5) as never,
+    )).rejects.toThrow(
+      "legislative_version_provider_fallback_document_id_mismatch",
+    );
+  });
+
   it("fails closed when API metadata disagrees with the registered size", async () => {
     const source = html_source();
     const expected_md5 = createHash("md5").update(source).digest("hex");

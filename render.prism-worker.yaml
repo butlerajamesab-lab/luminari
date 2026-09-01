@@ -40,6 +40,8 @@ services:
         value: civic-genome-provider-copy-fallback-recovery-v1
       - key: LEGISCAN_API_KEY
         sync: false
+      - key: LEGISCAN_BILL_TEXT_PROBE_DOCUMENT_ID
+        value: "3305916"
       - key: ROSETTA_SUPABASE_URL
         sync: false
       - key: ROSETTA_SUPABASE_SERVICE_ROLE_KEY
