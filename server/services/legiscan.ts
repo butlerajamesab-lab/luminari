@@ -121,25 +121,25 @@ const outbound_operation = (op: legiscan_operation_key): string => {
   return `${verb}${rest.map(part => `${part[0]?.toUpperCase() ?? ""}${part.slice(1)}`).join("")}`;
 };
 
-const SHARED_PROVIDER_ALERT_PATTERN = /\b(?:api\s*key|access\s*key|api\s*request|account|auth(?:entication|orization)?|unauthori[sz]ed|credential|quota|rate\s*limit|request\s*limit|daily\s*limit|credit|subscription|permission|denied|forbidden|service|maintenance|temporar(?:y|ily)|server|internal\s+error|busy)\b/i;
+const SHARED_PROVIDER_ALERT_PATTERN = /\b(?:api\s*key|access\s*key|api\s*request|account|auth(?:entication|orization)?|unauthori[sz]ed|credential|quota|rate\s*limit|request\s*limit|daily\s*limit|credit|subscription|permission|denied|forbidden|service|maintenance|temporar(?:y|ily)|server|internal\s+error|busy|connection|timed?\s*out|timeout|transport|network|upstream|gateway|proxy|dns|socket|reset|refused|unreachable|malformed|parse|json|response)\b/i;
 const COMMON_RECORD_PROVIDER_ALERT_PATTERNS = [
-  /\b(?:invalid|unknown|missing)\s+(?:(?:document|record)\s+)?id\b/i,
-  /\b(?:document|record)(?:\s+id)?\s+(?:is\s+)?(?:invalid|unknown|missing|not\s+(?:found|available)|unavailable|does(?:\s+not|n't)\s+exist)\b/i,
-  /^\s*id(?:\s+\d+)?\s+(?:is\s+)?(?:invalid|unknown|missing|not\s+(?:found|available)|unavailable|does(?:\s+not|n't)\s+exist)\b/i,
-  /\bno\s+(?:document|record)(?:\s+was)?\s+found\b/i,
-  /\b(?:could\s+not|unable\s+to)\s+(?:find|locate|retrieve)\s+(?:the\s+)?(?:document|record|id)\b/i,
+  /^\s*(?:invalid|unknown|missing)\s+(?:(?:document|record)\s+)?id(?:\s*[:#]?\s*\d+)?\s*[.!]?\s*$/i,
+  /^\s*(?:document|record)(?:\s+id)?(?:\s*[:#]?\s*\d+)?\s+(?:is\s+)?(?:invalid|unknown|missing|not\s+(?:found|available)|unavailable|does(?:\s+not|n't)\s+exist)\s*[.!]?\s*$/i,
+  /^\s*id(?:\s*[:#]?\s*\d+)?\s+(?:is\s+)?(?:invalid|unknown|missing|not\s+(?:found|available)|unavailable|does(?:\s+not|n't)\s+exist)\s*[.!]?\s*$/i,
+  /^\s*no\s+(?:document|record)(?:\s+was)?\s+found(?:\s+for\s+id(?:\s*[:#]?\s*\d+)?)?\s*[.!]?\s*$/i,
+  /^\s*(?:could\s+not|unable\s+to)\s+(?:find|locate|retrieve)\s+(?:the\s+)?(?:document|record)(?:\s+id)?(?:\s*[:#]?\s*\d+)?\s*[.!]?\s*$/i,
 ] as const;
 const BILL_TEXT_RECORD_PROVIDER_ALERT_PATTERNS = [
-  /\b(?:invalid|unknown|missing)\s+bill\s+text(?:\s+id)?\b/i,
-  /\bbill\s+text(?:\s+id)?\s+(?:is\s+)?(?:invalid|unknown|missing|not\s+(?:found|available)|unavailable|does(?:\s+not|n't)\s+exist)\b/i,
-  /\bno\s+bill\s+text(?:\s+was)?\s+found\b/i,
-  /\b(?:could\s+not|unable\s+to)\s+(?:find|locate|retrieve)\s+(?:the\s+)?bill\s+text\b/i,
+  /^\s*(?:invalid|unknown|missing)\s+bill\s+text(?:\s+id)?(?:\s*[:#]?\s*\d+)?\s*[.!]?\s*$/i,
+  /^\s*bill\s+text(?:\s+id)?(?:\s*[:#]?\s*\d+)?\s+(?:is\s+)?(?:invalid|unknown|missing|not\s+(?:found|available)|unavailable|does(?:\s+not|n't)\s+exist)\s*[.!]?\s*$/i,
+  /^\s*no\s+bill\s+text(?:\s+was)?\s+found(?:\s+for\s+id(?:\s*[:#]?\s*\d+)?)?\s*[.!]?\s*$/i,
+  /^\s*(?:could\s+not|unable\s+to)\s+(?:find|locate|retrieve)\s+(?:the\s+)?bill\s+text(?:\s+id)?(?:\s*[:#]?\s*\d+)?\s*[.!]?\s*$/i,
 ] as const;
 const AMENDMENT_RECORD_PROVIDER_ALERT_PATTERNS = [
-  /\b(?:invalid|unknown|missing)\s+amendment(?:\s+id)?\b/i,
-  /\bamendment(?:\s+id)?\s+(?:is\s+)?(?:invalid|unknown|missing|not\s+(?:found|available)|unavailable|does(?:\s+not|n't)\s+exist)\b/i,
-  /\bno\s+amendment(?:\s+was)?\s+found\b/i,
-  /\b(?:could\s+not|unable\s+to)\s+(?:find|locate|retrieve)\s+(?:the\s+)?amendment\b/i,
+  /^\s*(?:invalid|unknown|missing)\s+amendment(?:\s+id)?(?:\s*[:#]?\s*\d+)?\s*[.!]?\s*$/i,
+  /^\s*amendment(?:\s+id)?(?:\s*[:#]?\s*\d+)?\s+(?:is\s+)?(?:invalid|unknown|missing|not\s+(?:found|available)|unavailable|does(?:\s+not|n't)\s+exist)\s*[.!]?\s*$/i,
+  /^\s*no\s+amendment(?:\s+was)?\s+found(?:\s+for\s+id(?:\s*[:#]?\s*\d+)?)?\s*[.!]?\s*$/i,
+  /^\s*(?:could\s+not|unable\s+to)\s+(?:find|locate|retrieve)\s+(?:the\s+)?amendment(?:\s+id)?(?:\s*[:#]?\s*\d+)?\s*[.!]?\s*$/i,
 ] as const;
 
 const classify_provider_alert_scope = (
