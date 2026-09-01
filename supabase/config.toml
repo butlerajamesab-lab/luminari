@@ -406,3 +406,12 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 # declarative_schema_path = "./database"
 # JSON string passed through to pg-delta SQL formatting.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":80,\"commaStyle\":\"trailing\"}"
+
+# The queue worker authenticates its scheduler request against a Vault-backed
+# secret. The retired debug tombstone has no custom authentication and must
+# remain behind the platform JWT gate.
+[functions.geocode-queue-worker]
+verify_jwt = false
+
+[functions.geocode-queue-worker-debug]
+verify_jwt = true

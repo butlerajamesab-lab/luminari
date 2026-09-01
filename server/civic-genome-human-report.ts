@@ -55,6 +55,20 @@ function html(value: unknown): string {
     .replace(/'/g, "&#39;");
 }
 
+function source_link(value: unknown): string {
+  const raw = string_value(value);
+  if (!raw) return '<span class="muted">Not observed</span>';
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol === "https:" || parsed.protocol === "http:") {
+      return `<a href="${html(parsed.toString())}" rel="noopener noreferrer">${html(raw)}</a>`;
+    }
+  } catch {
+    // Preserve malformed historical values as inert text, never as active links.
+  }
+  return html(raw);
+}
+
 function human_key(value: unknown): string {
   const raw = string_value(value) ?? "Recorded field";
   return raw
@@ -62,13 +76,20 @@ function human_key(value: unknown): string {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-function human_prism_status(value: unknown): string {
+function human_prism_status(
+  value: unknown,
+  provider_copy_fallback_used = false,
+): string {
   const raw = string_value(value);
   if (!raw) return "Prism receipt not attached in this read model";
-  if (raw === "supported_by_one_source")
-    return "Official legislative source verified";
-  if (raw === "independent_authoritative_source_not_supplied")
-    return "Official legislative source verified";
+  if (
+    raw === "supported_by_one_source"
+    || raw === "independent_authoritative_source_not_supplied"
+  ) {
+    return provider_copy_fallback_used
+      ? "Provider-copy text supports this extraction"
+      : "Official legislative source verified";
+  }
   if (raw === "contradicted") return "Language did not carry into final bill";
   if (raw === "incomplete") return "Verification incomplete";
   return human_key(raw);
@@ -120,6 +141,54 @@ function format_date(value: unknown): string {
   return Number.isNaN(date.getTime())
     ? raw
     : date.toLocaleString("en-US", { timeZone: "UTC" }) + " UTC";
+}
+
+type event_temporal_presentation = {
+  status_class: "good" | "warn" | "muted";
+  row_class: "confirmed-event" | "pending-event" | "unclassified-event";
+  label: string;
+  confirmed: boolean;
+  pending: boolean;
+};
+
+function event_temporal_presentation(
+  event: json_record,
+): event_temporal_presentation {
+  const temporal_status = string_value(event.temporal_status);
+  if (temporal_status === "confirmed_provider_record") {
+    return {
+      status_class: "good",
+      row_class: "confirmed-event",
+      label: "Confirmed provider record",
+      confirmed: true,
+      pending: false,
+    };
+  }
+  if (temporal_status === "future_dated_provider_record") {
+    return {
+      status_class: "warn",
+      row_class: "pending-event",
+      label: "Pending provider record — not confirmed",
+      confirmed: false,
+      pending: true,
+    };
+  }
+  if (temporal_status === "legacy_mixed_time") {
+    return {
+      status_class: "muted",
+      row_class: "unclassified-event",
+      label: "Legacy chronology — confirmation unavailable",
+      confirmed: false,
+      pending: false,
+    };
+  }
+  return {
+    status_class: "muted",
+    row_class: "unclassified-event",
+    label: "Confirmation status unavailable",
+    confirmed: false,
+    pending: false,
+  };
 }
 
 function required_rosetta_config() {
@@ -228,6 +297,9 @@ function report_css(): string {
     .muted { color: #697b73; }
     .good { color: #0b7048; font-weight: 700; }
     .warn { color: #8b5b00; font-weight: 700; }
+    .pending-panel { border-color: #d4a84f; background: #fffaf0; }
+    .pending-event { background: #fff8e8; }
+    .event-status { font: 700 .72rem ui-monospace, SFMono-Regular, Menlo, monospace; }
     .final-diff { color: #a23434; font-weight: 700; }
     .trait { border: 1px solid #dfe9e4; border-radius: 9px; padding: 14px; margin-top: 10px; break-inside: avoid; }
     .trait-head { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; align-items: baseline; }
@@ -281,14 +353,21 @@ function proof_rows(
     .join("")}</section>`;
 }
 
-function trait_block(trait: json_record, detailed: boolean): string {
+function trait_block(
+  trait: json_record,
+  detailed: boolean,
+  provider_copy_fallback_used: boolean,
+): string {
   const trait_class = human_key(trait.trait_class);
   const trait_key = human_key(trait.trait_key);
-  const prism_status = human_prism_status(trait.prism_verification_status);
+  const prism_status = human_prism_status(
+    trait.prism_verification_status,
+    provider_copy_fallback_used,
+  );
   const status_class =
     prism_status === "Language did not carry into final bill"
       ? "final-diff"
-      : prism_status.includes("verified")
+      : prism_status.includes("verified") || prism_status.includes("supports")
         ? "good"
         : "warn";
   const unresolved = meaningful_unresolved(trait.prism_unresolved_conditions);
@@ -328,16 +407,41 @@ function trait_block(trait: json_record, detailed: boolean): string {
   </article>`;
 }
 
+type source_block_heading = {
+  official: string;
+  provider_copy: string;
+};
+
+function is_provider_copy_fallback(source: rosetta_source_content): boolean {
+  return source.source_metadata.provider_copy_fallback_used === true
+    || string_value(source.source_metadata.source_fetch_mode)
+      === "provider_copy_fallback";
+}
+
 function source_block(
   source: rosetta_source_content,
-  heading: string,
+  heading: source_block_heading,
   open = false,
 ): string {
+  const official_source_url =
+    string_value(source.source_metadata.docket_official_source_url)
+    ?? source.source_url;
+  const provider_copy_fallback_used = is_provider_copy_fallback(source);
+  const provider_copy_retrieval_url =
+    string_value(source.source_metadata.provider_copy_retrieval_url)
+    ?? string_value(source.source_metadata.docket_source_url)
+    ?? source.source_url;
+  const provider_copy_verified =
+    source.source_metadata.provider_copy_hash_verified === true
+    && source.source_metadata.provider_copy_size_verified === true;
+
   return `<section class="panel source-copy">
-    <span class="eyebrow">Authoritative source copy</span>
-    <h2>${html(heading)}</h2>
+    <span class="eyebrow">${provider_copy_fallback_used ? "Verified provider retrieval copy" : "Authoritative source copy"}</span>
+    <h2>${html(provider_copy_fallback_used ? heading.provider_copy : heading.official)}</h2>
     <div class="source-header">
-      <div><b>Official source:</b> <a href="${html(source.source_url)}">${html(source.source_url)}</a></div>
+      <div><b>Official source:</b> ${source_link(official_source_url)}</div>
+      ${provider_copy_fallback_used ? `<div><b>${provider_copy_verified ? "Verified provider copy" : "Provider retrieval copy"}:</b> ${source_link(provider_copy_retrieval_url)}</div>` : ""}
+      ${provider_copy_fallback_used ? `<div><b>Retrieval path:</b> Official-source transfer failed; Rosetta parsed the separately identified provider copy${provider_copy_verified ? " after exact hash and byte-size verification" : ""}.</div>` : ""}
       <div><b>Rosetta source version:</b> ${html(source.source_version)}</div>
       <div><b>Source document ID:</b> ${html(source.source_document_id)}</div>
       <div><b>Source content hash:</b> <span class="mono">${html(source.source_content_hash)}</span></div>
@@ -419,6 +523,7 @@ export async function render_civic_genome_human_report(
     throw new Error(
       "civic_genome_human_report_verified_source_text_unavailable",
     );
+  const final_source_uses_provider_copy = is_provider_copy_fallback(final_source);
 
   const traits = as_records(structural_dna.traits);
   const validation = as_record(structural_dna.validation_summary) ?? {};
@@ -426,6 +531,21 @@ export async function render_civic_genome_human_report(
   const all_traits = as_records(root.all_structural_traits);
   const all_runs = as_records(root.all_assembly_runs);
   const events = as_records(root.bill_events);
+  const presented_events = events.map((event) => ({
+    event,
+    presentation: event_temporal_presentation(event),
+  }));
+  const confirmed_event_count = presented_events.filter(
+    ({ presentation }) => presentation.confirmed,
+  ).length;
+  const pending_event_count = presented_events.filter(
+    ({ presentation }) => presentation.pending,
+  ).length;
+  const pending_events = presented_events.filter(
+    ({ presentation }) => presentation.pending,
+  );
+  const unclassified_event_count =
+    events.length - confirmed_event_count - pending_event_count;
   const lineage = as_records(root.lineage_edges);
   const family = as_record(root.family);
   const temporal_facts = as_record(root.bill_temporal_facts);
@@ -450,13 +570,23 @@ export async function render_civic_genome_human_report(
   const session = string_value(bill.session_key) ?? "Unknown session";
   const report_title = `${bill_number} — ${mode === "summary" ? "Civic Genome Summary" : "Civic Genome Detailed Report"}`;
 
+  const summary_pending_section = mode === "summary" && pending_events.length > 0
+    ? `
+    <section class="panel pending-panel">
+      <span class="eyebrow">Pending source evidence</span>
+      <h2>Provider-reported actions awaiting confirmation</h2>
+      <p class="warn">These ${pending_events.length} record${pending_events.length === 1 ? " is" : "s are"} preserved as evidence but not counted as confirmed legislative history.</p>
+      <table><thead><tr><th>Provider-reported time</th><th>Observed by Lighthouse</th><th>Type</th><th>Action</th></tr></thead><tbody>${pending_events.map(({ event }) => `<tr class="pending-event"><td>${html(format_date(event.event_at ?? event.valid_at ?? event.event_timestamp))}</td><td>${html(format_date(event.observed_at ?? event.created_at))}</td><td>${html(human_key(event.event_type))}</td><td>${html(event.action_text ?? as_record(event.event_payload_json)?.event_summary ?? "Recorded source event")}</td></tr>`).join("")}</tbody></table>
+    </section>`
+    : "";
+
   const current_traits_html = [...trait_groups.entries()]
     .map(
       ([group, rows]) => `
     <section class="panel">
       <span class="eyebrow">Structural DNA</span>
       <h2>${html(human_key(group))}</h2>
-      ${rows.map((row) => trait_block(row, detailed)).join("")}
+      ${rows.map((row) => trait_block(row, detailed, final_source_uses_provider_copy)).join("")}
     </section>`,
     )
     .join("");
@@ -466,7 +596,7 @@ export async function render_civic_genome_human_report(
     <section class="panel break">
       <span class="eyebrow">Version lineage</span>
       <h2>Legislative text versions</h2>
-      <p class="subhead">Each version remains separately identifiable. A later authoritative state does not erase the earlier source.</p>
+      <p class="subhead">Each version remains separately identifiable. A later legislative version state does not erase the earlier source.</p>
       ${version_table(versions, source_by_document)}
     </section>
 
@@ -474,13 +604,15 @@ export async function render_civic_genome_human_report(
       <span class="eyebrow">Civic Genome history</span>
       <h2>Events and lineage edges</h2>
       <div class="grid">
-        <div class="metric"><span class="label">Events</span><b>${events.length}</b></div>
+        <div class="metric"><span class="label">Confirmed events</span><b>${confirmed_event_count}</b></div>
+        <div class="metric"><span class="label">Pending provider records</span><b>${pending_event_count}</b></div>
+        ${unclassified_event_count > 0 ? `<div class="metric"><span class="label">Confirmation unavailable</span><b>${unclassified_event_count}</b></div>` : ""}
         <div class="metric"><span class="label">Lineage edges</span><b>${lineage.length}</b></div>
         <div class="metric"><span class="label">Historical structural traits</span><b>${all_traits.length}</b></div>
         <div class="metric"><span class="label">Assembly runs</span><b>${all_runs.length}</b></div>
       </div>
-      <p class="subhead">Legal event time and Lighthouse observation time are shown separately. Neither is an extraction-run timestamp.</p>
-      ${events.length ? `<details><summary>Event ledger</summary><table><thead><tr><th>Legal event time</th><th>Observed by Lighthouse</th><th>Type</th><th>Action</th></tr></thead><tbody>${events.map((event) => `<tr><td>${html(format_date(event.event_at ?? event.valid_at ?? event.event_timestamp))}</td><td>${html(format_date(event.observed_at ?? event.created_at))}</td><td>${html(human_key(event.event_type))}</td><td>${html(event.action_text ?? as_record(event.event_payload_json)?.event_summary ?? "Recorded source event")}</td></tr>`).join("")}</tbody></table></details>` : ""}
+      <p class="subhead">Legal event time and Lighthouse observation time are shown separately. Future-dated provider records are preserved as pending evidence and are not assertions that the action occurred. Neither clock is an extraction-run timestamp.</p>
+      ${events.length ? `<details><summary>Event ledger</summary><table><thead><tr><th>Legal event time</th><th>Observed by Lighthouse</th><th>Confirmation status</th><th>Type</th><th>Action</th></tr></thead><tbody>${presented_events.map(({ event, presentation }) => `<tr class="${presentation.row_class}"><td>${html(format_date(event.event_at ?? event.valid_at ?? event.event_timestamp))}</td><td>${html(format_date(event.observed_at ?? event.created_at))}</td><td><span class="event-status ${presentation.status_class}">${html(presentation.label)}</span></td><td>${html(human_key(event.event_type))}</td><td>${html(event.action_text ?? as_record(event.event_payload_json)?.event_summary ?? "Recorded source event")}</td></tr>`).join("")}</tbody></table></details>` : ""}
       ${lineage.length ? `<details><summary>Lineage edge ledger</summary>${render_value(lineage)}</details>` : ""}
     </section>
 
@@ -506,7 +638,10 @@ export async function render_civic_genome_human_report(
           return `<section class="panel"><h2>${html(human_key(version.version_type))}</h2><p class="warn">Rosetta source copy was not attached for this version. The gap is preserved rather than substituted.</p></section>`;
         return source_block(
           source,
-          `${human_key(version.version_type)} — full source snapshot`,
+          {
+            official: `${human_key(version.version_type)} — full official-source snapshot`,
+            provider_copy: `${human_key(version.version_type)} — full verified provider-copy snapshot analyzed by Rosetta`,
+          },
           false,
         );
       })
@@ -542,6 +677,9 @@ export async function render_civic_genome_human_report(
       <div class="metric"><span class="label">Enacted</span><b>${html(format_date(temporal_facts?.enacted_at ?? bill.enacted_at))}</b></div>
       <div class="metric"><span class="label">Effective</span><b>${html(format_date(temporal_facts?.effective_at ?? bill.effective_at))}</b></div>
       <div class="metric"><span class="label">Last observed</span><b>${html(format_date(temporal_facts?.last_observed_at ?? bill.last_observed_at))}</b></div>
+      <div class="metric"><span class="label">Confirmed events</span><b>${confirmed_event_count}</b></div>
+      <div class="metric"><span class="label">Pending provider records</span><b>${pending_event_count}</b></div>
+      ${unclassified_event_count > 0 ? `<div class="metric"><span class="label">Confirmation unavailable</span><b>${unclassified_event_count}</b></div>` : ""}
       <div class="metric"><span class="label">Current version</span><b>${html(version_label(current_version))}</b></div>
       <div class="metric"><span class="label">Highest verified version</span><b>${html(version_label(published_version))}</b></div>
     </div>
@@ -549,17 +687,20 @@ export async function render_civic_genome_human_report(
     <p class="subhead">These are source-event dates. Rosetta extraction receipts and Lighthouse observation receipts retain their own separately labeled timestamps.</p>
   </section>
 
+  ${summary_pending_section}
+
   <section class="panel">
     <span class="eyebrow">Current verified structural state</span>
     <h2>What the current Civic Genome snapshot contains</h2>
     <div class="grid">
       ${layer_summary || '<div class="metric"><span class="label">Structural traits</span><b>None observed</b></div>'}
-      <div class="metric"><span class="label">Official-source supported</span><b>${html(validation.supported ?? 0)}</b></div>
+      <div class="metric"><span class="label">${final_source_uses_provider_copy ? "Provider-copy text supported" : "Official-source supported"}</span><b>${html(validation.supported ?? 0)}</b></div>
       <div class="metric"><span class="label">Did not carry into final bill</span><b>${html(validation.contradicted ?? 0)}</b></div>
       <div class="metric"><span class="label">Unresolved</span><b>${html(validation.unresolved ?? 0)}</b></div>
     </div>
     ${family ? `<p><b>Family:</b> ${html(family.family_label ?? family.family_id ?? "Not observed")}</p>` : ""}
     ${family_assignment ? `<p><b>Family assignment:</b> ${html(human_key(family_assignment.status))}</p>` : ""}
+    ${final_source_uses_provider_copy ? '<p class="warn">Support counts reflect deterministic checks against a hash- and byte-size-verified provider copy. They do not assert that Rosetta retrieved or independently confirmed the analyzed text from the official legislative source.</p>' : ""}
   </section>
 
   ${current_traits_html || '<section class="panel"><h2>No published structural traits</h2><p class="muted">No structural DNA objects are attached to the highest verified snapshot.</p></section>'}
@@ -567,7 +708,10 @@ export async function render_civic_genome_human_report(
   ${detailed_sections}
 
   <div class="break"></div>
-  ${source_block(final_source, `${human_key(published_version?.version_type ?? current_version?.version_type ?? "authoritative")} — full authoritative source used by Rosetta`, true)}
+  ${source_block(final_source, {
+    official: `${human_key(published_version?.version_type ?? current_version?.version_type ?? "authoritative")} — full authoritative source used by Rosetta`,
+    provider_copy: `${human_key(published_version?.version_type ?? current_version?.version_type ?? "source")} — full verified provider copy analyzed by Rosetta`,
+  }, true)}
 
   <footer>
     <div>Exported: ${html(format_date(root.exported_at))}</div>

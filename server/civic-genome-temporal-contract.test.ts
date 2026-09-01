@@ -140,6 +140,10 @@ describe("Civic Genome event-time chronology v2", () => {
     expect(humanReport).toContain("Last legislative action");
     expect(humanReport).toContain("Effective");
     expect(humanReport).toContain("Last observed");
+    expect(humanReport).toContain("Pending provider records");
+    expect(humanReport).toContain("Pending provider record — not confirmed");
+    expect(humanReport).toContain("future_dated_provider_record");
+    expect(humanReport).toContain("are not assertions that the action occurred");
   });
 
   it("supersedes corrected or deleted source actions without erasing history", () => {
