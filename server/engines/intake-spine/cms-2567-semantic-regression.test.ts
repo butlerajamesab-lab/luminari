@@ -193,6 +193,66 @@ describe("CMS-2567 semantic-lane regression", () => {
     ).toBe(true);
   });
 
+  it("preserves every CMS deficiency narrative block on the same page", () => {
+    const firstEvent =
+      "On 11/19/2024 Resident 45 was admitted to the hospital.";
+    const firstRelationship =
+      "Resident 45 was a resident of Caroline Kline Galland Home.";
+    const secondEvent =
+      "On 11/20/2024 Resident 46 was admitted to the hospital.";
+    const secondRelationship =
+      "Resident 46 was a resident of Caroline Kline Galland Home.";
+    const secondHeading =
+      "(X4) ID PREFIX TAG SUMMARY STATEMENT OF DEFICIENCIES Page 1 of 1";
+    const multipleBlocks = artifactFromParagraphPages(
+      "cms-2567:multiple-narrative-blocks.pdf",
+      [
+        [
+          `${cmsHeader("11/21/2024", "Page 1 of 1")}\nResidents Affected - One resident`,
+          firstEvent,
+          firstRelationship,
+          `${secondHeading}\nResidents Affected - One resident`,
+          secondEvent,
+          secondRelationship,
+          cmsFooter("Page 1 of 1"),
+        ],
+      ],
+    );
+
+    const semantic = semanticSpansForArtifact(multipleBlocks, [multipleBlocks]);
+    expect(semantic.map((span) => span.text)).toEqual([
+      firstEvent,
+      firstRelationship,
+      secondEvent,
+      secondRelationship,
+    ]);
+
+    const chronology = processLayer4({ artifacts: [multipleBlocks] });
+    const entities = processLayer6({ artifacts: [multipleBlocks] });
+    const relationships = processLayer7({
+      entities: entities.data,
+      artifacts: [multipleBlocks],
+    });
+    const timeline = processLayer9({
+      entities: entities.data,
+      artifacts: [multipleBlocks],
+    });
+
+    expect(chronology.data.map((event) => event.date)).toEqual(
+      expect.arrayContaining(["2024-11-19", "2024-11-20"]),
+    );
+    expect(
+      relationships.data.filter(
+        (relationship) => relationship.type === "facility_resident",
+      ),
+    ).toHaveLength(2);
+    expect(
+      timeline.data.filter(
+        (transition) => transition.to_state === "facility_hospitalization",
+      ),
+    ).toHaveLength(2);
+  });
+
   it("does not turn repeated CMS headers or footers into semantic facts", () => {
     const headerOnly = artifactFromPages("cms-2567:repeated-furniture.pdf", [
       `${cmsHeader("11/21/2024", "Page 1 of 2")}\n${cmsFooter("Page 1 of 2")}`,

@@ -174,6 +174,40 @@ describe("sovereign export response contract", () => {
     );
   });
 
+  it("streams top-level arrays one row at a time", async () => {
+    state.readIntegrity.mockResolvedValue({
+      artifacts: [
+        { legacy_document_id: 7, integrity_status: "preserved" },
+        { legacy_document_id: 8, integrity_status: "preserved" },
+      ],
+    });
+    state.listDocuments.mockResolvedValue([
+      { id: 7, filename: "first-large-source.pdf" },
+      { id: 8, filename: "second-large-source.pdf" },
+    ]);
+    const { res } = responseDouble();
+
+    await streamJsonExport(res, { id: 44, name: "Inspection case" }, 44, {
+      includeTextContent: true,
+    });
+
+    const written = (res.write as ReturnType<typeof vi.fn>).mock.calls.map(
+      ([chunk]) => String(chunk),
+    );
+    const finalChunk = (res.end as ReturnType<typeof vi.fn>).mock.calls[0]?.[0];
+    const parsed = JSON.parse(`${written.join("")}${String(finalChunk)}`);
+    expect(
+      parsed.sources.map((source: Record<string, unknown>) => source.filename),
+    ).toEqual(["first-large-source.pdf", "second-large-source.pdf"]);
+    expect(
+      written.some(
+        (chunk) =>
+          chunk.includes("first-large-source.pdf") &&
+          chunk.includes("second-large-source.pdf"),
+      ),
+    ).toBe(false);
+  });
+
   it("restricts source rows and role lookups to preserved linked intake artifacts", async () => {
     state.listDocuments.mockResolvedValue([
       { id: 7, filename: "current.pdf", documentResolution: "active" },

@@ -113,73 +113,89 @@ export function isCmsHeaderOrFooterText(text: string): boolean {
 function cmsNarrativeSpans(artifact: ParsedArtifact): TextSpan[] {
   const output: TextSpan[] = [];
   for (const page of groupCmsSpansByPage(artifact)) {
-    const startMatch = /Residents Affected\s*-\s*[^\n]*/gi;
-    let lastStart: RegExpExecArray | null = null;
-    let current: RegExpExecArray | null;
-    while ((current = startMatch.exec(page.text)) !== null) lastStart = current;
-    const summaryHeading =
-      /\(X4\)[^\n]*SUMMARY STATEMENT OF DEFICIENCIES[^\n]*/gi;
-    let lastHeading: RegExpExecArray | null = null;
-    while ((current = summaryHeading.exec(page.text)) !== null)
-      lastHeading = current;
-    if (!lastStart && !lastHeading) continue;
+    const residentStarts = [
+      ...page.text.matchAll(/Residents Affected\s*-\s*[^\n]*/gi),
+    ];
+    const summaryStarts = [
+      ...page.text.matchAll(
+        /\(X4\)[^\n]*SUMMARY STATEMENT OF DEFICIENCIES[^\n]*/gi,
+      ),
+    ];
+    // Prefer the more precise Residents Affected boundary when the form
+    // exposes it. Continuation pages sometimes expose only the X4 heading.
+    const narrativeStarts =
+      residentStarts.length > 0 ? residentStarts : summaryStarts;
+    if (narrativeStarts.length === 0) continue;
 
-    const narrativeStart = lastStart || lastHeading!;
-    let bodyStart = narrativeStart.index + narrativeStart[0].length;
-    while (
-      bodyStart < page.text.length &&
-      /[\r\n\t ]/.test(page.text[bodyStart])
-    )
-      bodyStart++;
-    let bodyEnd = page.text.length;
+    // A page (and especially an unpaged DOCX/text conversion) may contain
+    // several deficiency blocks. Every later X4/Residents boundary closes the
+    // current block so an earlier narrative cannot be overwritten by the last.
+    const sectionBoundaries = [...residentStarts, ...summaryStarts]
+      .map((match) => match.index)
+      .filter((index): index is number => index !== undefined)
+      .sort((left, right) => left - right);
 
-    const explicitFooter = page.text.indexOf(
-      "Any deficiency statement ending with an asterisk",
-      bodyStart,
-    );
-    if (explicitFooter >= 0) bodyEnd = Math.min(bodyEnd, explicitFooter);
-    const continuation = page.text.indexOf(
-      "(continued on next page)",
-      bodyStart,
-    );
-    if (continuation >= 0) bodyEnd = Math.min(bodyEnd, continuation);
-
-    // Strip extraction-order footer crumbs that pdf-parse places after the
-    // narrative even though they are visually in the page footer.
-    const lines = linesWithOffsets(
-      page.text.substring(bodyStart, bodyEnd),
-      bodyStart,
-    );
-    while (lines.length > 0) {
-      const line = lines[lines.length - 1].text;
-      if (
-        CMS_TRAILING_FURNITURE.some((pattern) => pattern.test(line)) ||
-        /^\s*\d{1,2}\/\d{1,2}\/\d{4}\s*$/.test(line)
-      ) {
-        bodyEnd = lines.pop()!.start;
-        continue;
-      }
-      break;
-    }
-
-    if (bodyEnd <= bodyStart) continue;
-    const body: TextSpan = {
-      text: page.text.substring(bodyStart, bodyEnd),
-      start_offset: page.start_offset + bodyStart,
-      end_offset: page.start_offset + bodyEnd,
-      page: page.page,
-      paragraph_index: page.paragraph_index,
-      source_artifact_key: artifact.artifact_key,
-    };
-    for (const sentence of splitSpanIntoSentences(body)) {
-      if (
-        CMS_NON_NARRATIVE_SENTENCES.some((pattern) =>
-          pattern.test(sentence.text),
-        )
+    for (const narrativeStart of narrativeStarts) {
+      if (narrativeStart.index === undefined) continue;
+      let bodyStart = narrativeStart.index + narrativeStart[0].length;
+      while (
+        bodyStart < page.text.length &&
+        /[\r\n\t ]/.test(page.text[bodyStart])
       )
-        continue;
-      if (isCmsHeaderOrFooterText(sentence.text)) continue;
-      output.push(sentence);
+        bodyStart++;
+      let bodyEnd =
+        sectionBoundaries.find((boundary) => boundary >= bodyStart) ??
+        page.text.length;
+
+      const explicitFooter = page.text.indexOf(
+        "Any deficiency statement ending with an asterisk",
+        bodyStart,
+      );
+      if (explicitFooter >= 0 && explicitFooter < bodyEnd)
+        bodyEnd = explicitFooter;
+      const continuation = page.text.indexOf(
+        "(continued on next page)",
+        bodyStart,
+      );
+      if (continuation >= 0 && continuation < bodyEnd) bodyEnd = continuation;
+
+      // Strip extraction-order footer crumbs that pdf-parse places after the
+      // narrative even though they are visually in the page footer.
+      const lines = linesWithOffsets(
+        page.text.substring(bodyStart, bodyEnd),
+        bodyStart,
+      );
+      while (lines.length > 0) {
+        const line = lines[lines.length - 1].text;
+        if (
+          CMS_TRAILING_FURNITURE.some((pattern) => pattern.test(line)) ||
+          /^\s*\d{1,2}\/\d{1,2}\/\d{4}\s*$/.test(line)
+        ) {
+          bodyEnd = lines.pop()!.start;
+          continue;
+        }
+        break;
+      }
+
+      if (bodyEnd <= bodyStart) continue;
+      const body: TextSpan = {
+        text: page.text.substring(bodyStart, bodyEnd),
+        start_offset: page.start_offset + bodyStart,
+        end_offset: page.start_offset + bodyEnd,
+        page: page.page,
+        paragraph_index: page.paragraph_index,
+        source_artifact_key: artifact.artifact_key,
+      };
+      for (const sentence of splitSpanIntoSentences(body)) {
+        if (
+          CMS_NON_NARRATIVE_SENTENCES.some((pattern) =>
+            pattern.test(sentence.text),
+          )
+        )
+          continue;
+        if (isCmsHeaderOrFooterText(sentence.text)) continue;
+        output.push(sentence);
+      }
     }
   }
   return output;

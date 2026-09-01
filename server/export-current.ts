@@ -1,3 +1,4 @@
+import { once } from "node:events";
 import type { Response } from "express";
 
 import * as dbHelpers from "./db";
@@ -359,13 +360,35 @@ function jsonStringify(value: unknown): string {
   );
 }
 
-function writeJsonObject(res: Response, data: CurrentCaseExportData): void {
-  res.write("{");
+async function writeJsonChunk(res: Response, chunk: string): Promise<void> {
+  if (res.write(chunk) === false) await once(res, "drain");
+}
+
+async function writeJsonValue(res: Response, value: unknown): Promise<void> {
+  if (!Array.isArray(value)) {
+    await writeJsonChunk(res, jsonStringify(value));
+    return;
+  }
+
+  await writeJsonChunk(res, "[");
+  for (let index = 0; index < value.length; index++) {
+    if (index > 0) await writeJsonChunk(res, ",");
+    // Serialize one row at a time. The governed projection is already resident
+    // in memory, but exports must not allocate a second whole-array JSON copy.
+    await writeJsonChunk(res, jsonStringify(value[index]));
+  }
+  await writeJsonChunk(res, "]");
+}
+
+async function writeJsonObject(
+  res: Response,
+  data: CurrentCaseExportData,
+): Promise<void> {
+  await writeJsonChunk(res, "{");
   let first = true;
   for (const [key, value] of Object.entries(data)) {
-    res.write(
-      `${first ? "" : ","}${jsonStringify(key)}:${jsonStringify(value)}`,
-    );
+    await writeJsonChunk(res, `${first ? "" : ","}${jsonStringify(key)}:`);
+    await writeJsonValue(res, value);
     first = false;
   }
   res.end("}\n");
@@ -379,7 +402,7 @@ export async function streamJsonExport(
 ): Promise<void> {
   setExportDownloadHeaders(res, "json-dump", asRecord(caseData).name);
   const data = await loadCurrentCaseExportData(caseData, caseId, options);
-  writeJsonObject(res, data);
+  await writeJsonObject(res, data);
 }
 
 function escapeHtml(value: unknown): string {
