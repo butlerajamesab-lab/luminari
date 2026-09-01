@@ -343,6 +343,7 @@ describe("sovereign export response contract", () => {
     state.listRelationshipsEnriched.mockResolvedValue([
       {
         id: "relationship-current",
+        canonical_relationship_id: "rel-current",
         backingEvidence: [
           { id: "evidence-current", documentId: 7 },
           { id: "evidence-stale-copy", documentId: 8 },
@@ -350,43 +351,124 @@ describe("sovereign export response contract", () => {
       },
       {
         id: "relationship-stale",
+        canonical_relationship_id: "rel-stale",
         backingEvidence: [{ id: "evidence-stale", documentId: 8 }],
       },
       { id: "relationship-unsupported", backingEvidence: [] },
     ]);
+    const layerData: Record<string, Array<Record<string, unknown>>> = {
+      state_timeline: [
+        {
+          transition_id: "transition-current",
+          source_artifact_key: "artifact-current",
+        },
+        {
+          transition_id: "transition-stale",
+          source_artifact_key: "artifact-stale",
+        },
+      ],
+      verification_gate: [
+        {
+          fact_key: "resident|state|2026-08-30",
+          verification_state: "contradicted",
+          source_refs: [
+            {
+              artifact_key: "artifact-current",
+              span_offset: 10,
+              value_stated: "active",
+            },
+            {
+              artifact_key: "artifact-stale",
+              span_offset: 20,
+              value_stated: "inactive",
+            },
+          ],
+          contradiction_refs: [
+            {
+              artifact_key_a: "artifact-current",
+              value_a: "active",
+              artifact_key_b: "artifact-stale",
+              value_b: "inactive",
+              attribute: "state",
+            },
+          ],
+        },
+        {
+          fact_key: "stale|state|2026-08-30",
+          verification_state: "document_stated",
+          source_refs: [
+            {
+              artifact_key: "artifact-stale",
+              span_offset: 30,
+              value_stated: "inactive",
+            },
+          ],
+          contradiction_refs: [],
+        },
+      ],
+      pattern_registry: [
+        {
+          pattern_id: "pattern-current",
+          source_artifacts: ["artifact-current"],
+          matching_transitions: [{ transition_id: "transition-current" }],
+        },
+        {
+          pattern_id: "pattern-stale",
+          source_artifacts: ["artifact-stale"],
+          matching_transitions: [{ transition_id: "transition-stale" }],
+        },
+      ],
+      cascade_registry: [
+        {
+          cascade_id: "cascade-current",
+          source_artifacts: ["artifact-current"],
+          transitions_in_chain: [{ transition_id: "transition-current" }],
+        },
+        {
+          cascade_id: "cascade-stale",
+          source_artifacts: ["artifact-current", "artifact-stale"],
+          transitions_in_chain: [
+            { transition_id: "transition-current" },
+            { transition_id: "transition-stale" },
+          ],
+        },
+      ],
+      rights_and_duties_matrix: [
+        {
+          candidate_id: "claim-current",
+          triggering_relationship_ids: ["rel-current"],
+          triggering_transition_ids: ["transition-current"],
+          triggering_pattern_ids: ["pattern-current"],
+        },
+        {
+          candidate_id: "claim-stale",
+          triggering_relationship_ids: ["rel-stale"],
+          triggering_transition_ids: ["transition-stale"],
+          triggering_pattern_ids: ["pattern-stale"],
+        },
+      ],
+    };
     state.readLayer.mockImplementation(
-      async (_caseId: number, layerName: string) =>
-        layerName === "state_timeline"
-          ? {
-              state: "canonical_projection",
-              outputs: [
-                {
-                  intake_session_id: "session-current",
-                  layer_run_id: "run-state-current",
-                  layer_name: layerName,
-                  layer_version: "2.5.0",
-                  rule_version: "2.5.0",
-                  parser_version: "parser-v1",
-                  input_hash: "1".repeat(64),
-                  output_hash: "2".repeat(64),
-                  receipt_hash: "3".repeat(64),
-                  completed_at: "2026-08-30T21:00:00.000Z",
-                  unresolved_dependencies: [],
-                  projection_current: true,
-                  data: [
-                    {
-                      transition_id: "transition-current",
-                      source_artifact_key: "artifact-current",
-                    },
-                    {
-                      transition_id: "transition-stale",
-                      source_artifact_key: "artifact-stale",
-                    },
-                  ],
-                },
-              ],
-            }
-          : { state: "not_projected", outputs: [] },
+      async (_caseId: number, layerName: string) => ({
+        state: "canonical_projection",
+        outputs: [
+          {
+            intake_session_id: "session-current",
+            layer_run_id: `run-${layerName}`,
+            layer_name: layerName,
+            layer_version: "2.5.0",
+            rule_version: "2.5.0",
+            parser_version: "parser-v1",
+            input_hash: "1".repeat(64),
+            output_hash: "2".repeat(64),
+            receipt_hash: "3".repeat(64),
+            completed_at: "2026-08-30T21:00:00.000Z",
+            unresolved_dependencies: [],
+            projection_current: true,
+            data: layerData[layerName] ?? [],
+          },
+        ],
+      }),
     );
 
     const exported = await loadCurrentCaseExportData(
@@ -414,15 +496,56 @@ describe("sovereign export response contract", () => {
         String(transition.transition_id),
       ),
     ).toEqual(["transition-current"]);
+    expect(exported.verification_records).toEqual([
+      expect.objectContaining({
+        fact_key: "resident|state|2026-08-30",
+        verification_state: "document_stated",
+        source_refs: [
+          expect.objectContaining({ artifact_key: "artifact-current" }),
+        ],
+        contradiction_refs: [],
+      }),
+    ]);
+    expect(exported.patterns.map((row) => row.pattern_id)).toEqual([
+      "pattern-current",
+    ]);
+    expect(exported.cascades.map((row) => row.cascade_id)).toEqual([
+      "cascade-current",
+    ]);
+    expect(exported.claim_candidates.map((row) => row.candidate_id)).toEqual([
+      "claim-current",
+    ]);
+    expect(exported.summary).toMatchObject({
+      documents: 1,
+      findings: 1,
+      claims: 1,
+      signalFlags: 2,
+      derivedIntake: {
+        registeredSources: 1,
+        verificationRecords: 1,
+        claimCandidates: 1,
+        structuralSignals: 2,
+      },
+    });
     expect(exported.projection_scope.relationship_filter_policy).toBe(
       "at least one backing-evidence row bound to a governed source",
     );
     expect(exported.projection_scope.derived_source_filter_policy).toBe(
-      "entities, chronology, relationships, and state transitions require governed source bindings",
+      "all derived projections require governed source bindings; dependent verification states are recomputed",
     );
   });
 
   it("excludes sealed layer outputs that are not the current governed projection", async () => {
+    state.listDocuments.mockResolvedValue([{ id: 7, filename: "current.pdf" }]);
+    state.readIntegrity.mockResolvedValue({
+      artifacts: [
+        {
+          artifact_key: "artifact-current",
+          legacy_document_id: 7,
+          integrity_status: "preserved",
+        },
+      ],
+    });
     state.readLayer.mockImplementation(
       async (_caseId: number, layerName: string) =>
         layerName === "verification_gate"
@@ -442,7 +565,18 @@ describe("sovereign export response contract", () => {
                   completed_at: "2026-08-30T20:00:00.000Z",
                   unresolved_dependencies: [],
                   projection_current: false,
-                  data: [{ verification_id: "stale-record" }],
+                  data: [
+                    {
+                      verification_id: "stale-record",
+                      source_refs: [
+                        {
+                          artifact_key: "artifact-current",
+                          value_stated: "value",
+                        },
+                      ],
+                      contradiction_refs: [],
+                    },
+                  ],
                 },
                 {
                   intake_session_id: "session-current",
@@ -457,7 +591,18 @@ describe("sovereign export response contract", () => {
                   completed_at: "2026-08-30T21:00:00.000Z",
                   unresolved_dependencies: [],
                   projection_current: true,
-                  data: [{ verification_id: "current-record" }],
+                  data: [
+                    {
+                      verification_id: "current-record",
+                      source_refs: [
+                        {
+                          artifact_key: "artifact-current",
+                          value_stated: "value",
+                        },
+                      ],
+                      contradiction_refs: [],
+                    },
+                  ],
                 },
               ],
             }

@@ -159,6 +159,174 @@ function governedRelationshipEvidence(
   });
 }
 
+function stringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
+}
+
+function recomputeVerificationRecords(
+  rows: ExportRecord[],
+  governedArtifactKeys: Set<string>,
+): ExportRecord[] {
+  return rows.flatMap((row) => {
+    const sourceRefs = asRecords(row.source_refs).filter((ref) =>
+      governedArtifactKeys.has(String(ref.artifact_key ?? "")),
+    );
+    if (sourceRefs.length === 0) return [];
+
+    const valuesByArtifact = new Map<string, Set<string>>();
+    for (const ref of sourceRefs) {
+      const artifactKey = String(ref.artifact_key);
+      const values = valuesByArtifact.get(artifactKey) ?? new Set<string>();
+      values.add(String(ref.value_stated ?? ""));
+      valuesByArtifact.set(artifactKey, values);
+    }
+
+    const originalContradictions = asRecords(row.contradiction_refs);
+    const attribute = String(
+      originalContradictions[0]?.attribute ??
+        String(row.fact_key ?? "").split("|")[1] ??
+        "unknown",
+    );
+    const contradictionRefs: ExportRecord[] = [];
+    const artifacts = [...valuesByArtifact.keys()].sort();
+    for (let i = 0; i < artifacts.length; i += 1) {
+      for (let j = i + 1; j < artifacts.length; j += 1) {
+        for (const valueA of [
+          ...(valuesByArtifact.get(artifacts[i]) ?? []),
+        ].sort()) {
+          for (const valueB of [
+            ...(valuesByArtifact.get(artifacts[j]) ?? []),
+          ].sort()) {
+            if (valueA === valueB) continue;
+            contradictionRefs.push({
+              artifact_key_a: artifacts[i],
+              value_a: valueA,
+              artifact_key_b: artifacts[j],
+              value_b: valueB,
+              attribute,
+            });
+          }
+        }
+      }
+    }
+
+    const allValues = new Set(
+      sourceRefs.map((ref) => String(ref.value_stated ?? "")),
+    );
+    const sameSourceConflict = [...valuesByArtifact.values()].some(
+      (values) => values.size > 1,
+    );
+    const verificationState =
+      contradictionRefs.length > 0
+        ? "contradicted"
+        : sameSourceConflict || allValues.size > 1
+          ? "disputed"
+          : valuesByArtifact.size >= 2
+            ? "supported_by_multiple_sources"
+            : "document_stated";
+
+    return [
+      {
+        ...row,
+        verification_state: verificationState,
+        source_refs: sourceRefs,
+        contradiction_refs: contradictionRefs,
+      },
+    ];
+  });
+}
+
+function sourceBoundRegistryRows(
+  rows: ExportRecord[],
+  governedArtifactKeys: Set<string>,
+): ExportRecord[] {
+  return rows.filter((row) => {
+    const sourceArtifacts = stringArray(row.source_artifacts);
+    return (
+      sourceArtifacts.length > 0 &&
+      sourceArtifacts.every((key) => governedArtifactKeys.has(key))
+    );
+  });
+}
+
+function recordIdentitySet(
+  rows: ExportRecord[],
+  fields: string[],
+): Set<string> {
+  return new Set(
+    rows.flatMap((row) => {
+      for (const field of fields) {
+        if (typeof row[field] === "string" && row[field].length > 0) {
+          return [String(row[field])];
+        }
+      }
+      return [];
+    }),
+  );
+}
+
+function governedClaimCandidates(
+  rows: ExportRecord[],
+  governedRelationshipIds: Set<string>,
+  governedTransitionIds: Set<string>,
+  governedPatternIds: Set<string>,
+): ExportRecord[] {
+  return rows.filter((row) => {
+    const relationshipIds = stringArray(row.triggering_relationship_ids);
+    const transitionIds = stringArray(row.triggering_transition_ids);
+    const patternIds = stringArray(row.triggering_pattern_ids);
+    return (
+      relationshipIds.length > 0 &&
+      relationshipIds.every((id) => governedRelationshipIds.has(id)) &&
+      transitionIds.every((id) => governedTransitionIds.has(id)) &&
+      patternIds.every((id) => governedPatternIds.has(id))
+    );
+  });
+}
+
+function governedSummary(
+  stats: unknown,
+  counts: {
+    sources: number;
+    entities: number;
+    chronology: number;
+    relationships: number;
+    verification: number;
+    claims: number;
+    patterns: number;
+    cascades: number;
+  },
+): ExportRecord {
+  const summary = asRecord(stats);
+  const derivedIntake = asRecord(summary.derivedIntake);
+  const structuralSignals = counts.patterns + counts.cascades;
+  return {
+    ...summary,
+    documents: counts.sources,
+    entities: counts.entities,
+    claims: counts.claims,
+    findings: counts.verification,
+    events: counts.chronology,
+    relationships: counts.relationships,
+    signalFlags: structuralSignals,
+    verificationRecords: counts.verification,
+    claimCandidates: counts.claims,
+    derivedIntake: {
+      ...derivedIntake,
+      registeredSources: counts.sources,
+      entities: counts.entities,
+      events: counts.chronology,
+      relationships: counts.relationships,
+      verificationRecords: counts.verification,
+      claimCandidates: counts.claims,
+      structuralSignals,
+    },
+    documentStatus: { preserved: counts.sources },
+  };
+}
+
 async function loadLayer(
   caseId: number,
   layerName: string,
@@ -344,6 +512,54 @@ export async function loadCurrentCaseExportData(
       ),
     ),
   );
+  const verificationRecords = recomputeVerificationRecords(
+    verification.rows,
+    governedArtifactKeys,
+  );
+  const governedTransitionIds = recordIdentitySet(stateTransitions, [
+    "transition_id",
+  ]);
+  const governedRelationshipIds = recordIdentitySet(relationships, [
+    "canonical_relationship_id",
+    "canonicalRelationshipId",
+    "relationship_id",
+    "id",
+  ]);
+  const governedPatterns = sourceBoundRegistryRows(
+    patterns.rows,
+    governedArtifactKeys,
+  ).filter((pattern) =>
+    asRecords(pattern.matching_transitions).every((transition) =>
+      governedTransitionIds.has(String(transition.transition_id ?? "")),
+    ),
+  );
+  const governedPatternIds = recordIdentitySet(governedPatterns, [
+    "pattern_id",
+  ]);
+  const governedCascades = sourceBoundRegistryRows(
+    cascades.rows,
+    governedArtifactKeys,
+  ).filter((cascade) =>
+    asRecords(cascade.transitions_in_chain).every((transition) =>
+      governedTransitionIds.has(String(transition.transition_id ?? "")),
+    ),
+  );
+  const claimCandidates = governedClaimCandidates(
+    claims.rows,
+    governedRelationshipIds,
+    governedTransitionIds,
+    governedPatternIds,
+  );
+  const summary = governedSummary(stats, {
+    sources: sources.length,
+    entities: entities.length,
+    chronology: chronology.length,
+    relationships: relationships.length,
+    verification: verificationRecords.length,
+    claims: claimCandidates.length,
+    patterns: governedPatterns.length,
+    cascades: governedCascades.length,
+  });
 
   return {
     export_contract: CURRENT_EXPORT_CONTRACT,
@@ -358,7 +574,7 @@ export async function loadCurrentCaseExportData(
       source_filter_policy:
         "active linked source artifacts with sealed preserved integrity",
       derived_source_filter_policy:
-        "entities, chronology, relationships, and state transitions require governed source bindings",
+        "all derived projections require governed source bindings; dependent verification states are recomputed",
       relationship_filter_policy:
         "at least one backing-evidence row bound to a governed source",
       reviewer_commitment_boundary:
@@ -367,17 +583,17 @@ export async function loadCurrentCaseExportData(
     },
     case: safeCase(caseData, caseId),
     snapshot: safeSnapshot(latestSnapshot),
-    summary: asRecord(stats),
+    summary,
     sources,
     entities,
     entity_roles: entityRoles,
     chronology,
     relationships,
-    verification_records: verification.rows,
+    verification_records: verificationRecords,
     state_transitions: stateTransitions,
-    patterns: patterns.rows,
-    cascades: cascades.rows,
-    claim_candidates: claims.rows,
+    patterns: governedPatterns,
+    cascades: governedCascades,
+    claim_candidates: claimCandidates,
     layer_receipts: layerReceipts,
   };
 }

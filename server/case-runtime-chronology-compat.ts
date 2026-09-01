@@ -2,6 +2,9 @@ import { TRPCError } from "@trpc/server";
 
 import { getPool } from "./db-legacy";
 import { computeHash } from "./engines/intake-spine/utils";
+import {
+  read_case_intake_integrity_projection,
+} from "./intake-case-integrity-projection";
 
 const EXECUTION_CONTRACT_VERSION = "luminari.intake.layer-execution.v1";
 const CANONICALIZATION_VERSION = "luminari.intake.canonical-json.v2";
@@ -146,8 +149,13 @@ async function load_canonical_chronology_outputs(case_id: number): Promise<{
 }
 
 async function load_source_document_bindings(case_id: number) {
-  const result = await getPool().query(
-    `select a.artifact_key, a.filename, a.metadata
+  const [result, integrity] = await Promise.all([
+    getPool().query(
+      `select a.intake_session_id::text,
+            a.artifact_id::text,
+            a.artifact_key,
+            a.filename,
+            a.metadata
        from public.case_identity_bridge cib
        join public.case_intake_links cil on cil.case_uuid = cib.case_uuid
        join public.intake_sessions s on s.intake_session_id = cil.intake_session_id
@@ -165,10 +173,23 @@ async function load_source_document_bindings(case_id: number) {
         and a.artifact_status in ('registered', 'preserved')
         and coalesce(d.document_resolution, 'active') = 'active'
       order by a.artifact_key, a.artifact_id`,
-    [case_id],
+      [case_id],
+    ),
+    read_case_intake_integrity_projection(case_id),
+  ]);
+  const preserved_artifacts = new Set(
+    integrity.artifacts.flatMap(artifact =>
+      artifact.integrity_status === "preserved"
+        ? [
+            `${artifact.intake_session_id}\u001f${artifact.artifact_id}\u001f${artifact.artifact_key}`,
+          ]
+        : [],
+    ),
   );
   const by_artifact = new Map<string, any[]>();
   for (const row of result.rows) {
+    const identity = `${String(row.intake_session_id)}\u001f${String(row.artifact_id)}\u001f${String(row.artifact_key)}`;
+    if (!preserved_artifacts.has(identity)) continue;
     const list = by_artifact.get(String(row.artifact_key)) ?? [];
     list.push(row);
     by_artifact.set(String(row.artifact_key), list);
@@ -220,10 +241,18 @@ export async function getCaseChronologyProjectionState(caseId: number): Promise<
   canonical_receipt_hashes: string[];
 }> {
   const canonical = await load_canonical_chronology_outputs(caseId);
+  const bindings =
+    canonical.state === "canonical_projection"
+      ? await load_source_document_bindings(caseId)
+      : new Map<string, any[]>();
   return {
     projection_state: canonical.state,
     event_count: canonical.state === "canonical_projection"
-      ? merge_chronology(canonical.outputs).length
+      ? merge_chronology(canonical.outputs).filter(
+          event =>
+            source_binding(bindings.get(event.source_artifact_key))
+              .document_id !== null,
+        ).length
       : 0,
     canonical_output_hashes: [...new Set(canonical.outputs.map(output => output.output_hash))].sort(),
     canonical_receipt_hashes: [...new Set(canonical.outputs.map(output => output.receipt_hash))].sort(),
