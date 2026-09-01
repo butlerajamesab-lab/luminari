@@ -25,6 +25,8 @@ const SOURCE_FETCH_TIMEOUT_MS = 30_000;
 const ROSETTA_REQUEST_TIMEOUT_MS = 150_000;
 const ROSETTA_CORPUS_NAME = "Lighthouse Docket Legislative Versions";
 const ROSETTA_CORPUS_TYPE = "legislative_version";
+const PROVIDER_COPY_FALLBACK_VERSION = "hash-checked-provider-copy-v1";
+const PROVIDER_COPY_HOSTS = new Set(["legiscan.com", "www.legiscan.com"]);
 
 export type legislative_version_processing_result = {
   bill_version_id: string;
@@ -79,6 +81,12 @@ type extracted_legislative_source = {
   source_metadata: Record<string, unknown>;
 };
 
+type provider_copy_contract = {
+  url: string;
+  expected_md5: string;
+  expected_size: number;
+};
+
 type rosetta_source_content_receipt = {
   contract: "rosetta-durable-source-content-v1";
   source_document_id: number;
@@ -104,6 +112,10 @@ function required_environment(name: string): string {
 
 function sha256(value: Buffer | string): string {
   return createHash("sha256").update(value).digest("hex");
+}
+
+function md5(value: Buffer): string {
+  return createHash("md5").update(value).digest("hex");
 }
 
 function as_record(value: unknown): Record<string, unknown> | null {
@@ -164,6 +176,64 @@ async function fetch_bytes(
     );
   } finally {
     clearTimeout(timeout);
+  }
+}
+
+function provider_copy_contract_for(
+  version: legislative_version_row,
+  official_source_url: string,
+): provider_copy_contract | null {
+  const provider_url = String(version.provider_url ?? "").trim();
+  const provider_hash = String(version.provider_hash ?? "").trim().toLowerCase();
+  const provider_size_text = String(version.provider_size ?? "").trim();
+
+  if (!provider_url && !provider_hash && !provider_size_text) return null;
+  if (!provider_url || !provider_hash || !provider_size_text) {
+    throw new Error("legislative_version_provider_fallback_contract_incomplete");
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(provider_url);
+  } catch {
+    throw new Error("legislative_version_provider_fallback_url_invalid");
+  }
+  const host = parsed.hostname.toLowerCase();
+  if (parsed.protocol !== "https:" || !PROVIDER_COPY_HOSTS.has(host)) {
+    throw new Error("legislative_version_provider_fallback_authority_invalid");
+  }
+  if (provider_url === official_source_url) {
+    throw new Error("legislative_version_provider_fallback_not_distinct");
+  }
+  if (!/^[0-9a-f]{32}$/.test(provider_hash)) {
+    throw new Error("legislative_version_provider_fallback_hash_invalid");
+  }
+
+  const expected_size = Number(provider_size_text);
+  if (
+    !Number.isSafeInteger(expected_size)
+    || expected_size <= 0
+    || expected_size > MAX_SOURCE_BYTES
+  ) {
+    throw new Error("legislative_version_provider_fallback_size_invalid");
+  }
+
+  return {
+    url: parsed.toString(),
+    expected_md5: provider_hash,
+    expected_size,
+  };
+}
+
+function verify_provider_copy(
+  source: { bytes: Buffer; content_type: string | null },
+  contract: provider_copy_contract,
+): void {
+  if (source.bytes.length !== contract.expected_size) {
+    throw new Error("legislative_version_provider_fallback_size_mismatch");
+  }
+  if (md5(source.bytes) !== contract.expected_md5) {
+    throw new Error("legislative_version_provider_fallback_hash_mismatch");
   }
 }
 
@@ -355,7 +425,7 @@ function deterministic_reference_date(version: legislative_version_row): string 
   throw new Error("legislative_version_reference_date_unavailable");
 }
 
-async function extract_version_source(
+export async function extract_version_source(
   version: legislative_version_row,
 ): Promise<extracted_legislative_source> {
   const selected_source_url = version.source_url.trim();
@@ -363,14 +433,35 @@ async function extract_version_source(
     throw new Error("legislative_version_source_url_invalid");
   }
 
-  const california_page_url = derive_california_official_text_url(selected_source_url);
-  const california_pdf = california_page_url
-    ? await fetch_california_official_pdf(selected_source_url)
-    : null;
-  const source_url = california_pdf?.source_url ?? selected_source_url;
-  const official = california_pdf
-    ? { bytes: california_pdf.bytes, content_type: "application/pdf" }
-    : await fetch_bytes(source_url, true);
+  let california_pdf:
+    | Awaited<ReturnType<typeof fetch_california_official_pdf>>
+    | null = null;
+  let source_url = selected_source_url;
+  let source_fetch_mode: "official" | "provider_copy_fallback" = "official";
+  let official_fetch_error: string | null = null;
+  let official: { bytes: Buffer; content_type: string | null } | null;
+
+  try {
+    const california_page_url = derive_california_official_text_url(selected_source_url);
+    california_pdf = california_page_url
+      ? await fetch_california_official_pdf(selected_source_url)
+      : null;
+    source_url = california_pdf?.source_url ?? selected_source_url;
+    official = california_pdf
+      ? { bytes: california_pdf.bytes, content_type: "application/pdf" }
+      : await fetch_bytes(source_url, true);
+  } catch (error) {
+    const fallback = provider_copy_contract_for(version, selected_source_url);
+    if (!fallback) throw error;
+
+    official_fetch_error = error instanceof Error ? error.message : "unknown";
+    source_url = fallback.url;
+    california_pdf = null;
+    official = await fetch_bytes(source_url, true);
+    if (!official) throw new Error("legislative_version_provider_fallback_fetch_missing");
+    verify_provider_copy(official, fallback);
+    source_fetch_mode = "provider_copy_fallback";
+  }
   if (!official) throw new Error("legislative_version_source_fetch_missing");
 
   const source_byte_hash = sha256(official.bytes);
@@ -418,7 +509,15 @@ async function extract_version_source(
   const family_prefix = version.document_family === "text"
     ? "legiscan_text"
     : "legiscan_amendment";
-  const source_version = `${family_prefix}:${version.provider_document_id}:${version.provider_document_type}:${extractor_version}`;
+  const source_version = [
+    family_prefix,
+    version.provider_document_id,
+    version.provider_document_type,
+    extractor_version,
+    source_fetch_mode === "provider_copy_fallback"
+      ? PROVIDER_COPY_FALLBACK_VERSION
+      : null,
+  ].filter(Boolean).join(":");
   const source_content_hash = sha256(source_text);
 
   return {
@@ -449,9 +548,15 @@ async function extract_version_source(
       docket_description: version.description,
       docket_provider_url: version.provider_url,
       docket_source_url: source_url,
+      docket_official_source_url: selected_source_url,
       extraction_text_url,
       extraction_text_byte_hash,
       source_url_rewritten: source_url !== selected_source_url,
+      source_fetch_mode,
+      provider_copy_fallback_used: source_fetch_mode === "provider_copy_fallback",
+      provider_copy_hash_verified: source_fetch_mode === "provider_copy_fallback",
+      provider_copy_size_verified: source_fetch_mode === "provider_copy_fallback",
+      official_fetch_error,
       california_bill_page_url: california_pdf?.bill_page_url ?? null,
       california_session_bootstrapped: california_pdf?.session_bootstrapped ?? false,
       registered_metadata: version.latest_metadata,
