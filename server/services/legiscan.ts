@@ -127,19 +127,19 @@ const COMMON_RECORD_PROVIDER_ALERT_PATTERNS = [
   /^\s*(?:document|record)(?:\s+id)?(?:\s*[:#]?\s*\d+)?\s+(?:is\s+)?(?:invalid|unknown|missing|not\s+(?:found|available)|unavailable|does(?:\s+not|n't)\s+exist)\s*[.!]?\s*$/i,
   /^\s*id(?:\s*[:#]?\s*\d+)?\s+(?:is\s+)?(?:invalid|unknown|missing|not\s+(?:found|available)|unavailable|does(?:\s+not|n't)\s+exist)\s*[.!]?\s*$/i,
   /^\s*no\s+(?:document|record)(?:\s+was)?\s+found(?:\s+for\s+id(?:\s*[:#]?\s*\d+)?)?\s*[.!]?\s*$/i,
-  /^\s*(?:could\s+not|unable\s+to)\s+(?:find|locate|retrieve)\s+(?:the\s+)?(?:document|record)(?:\s+id)?(?:\s*[:#]?\s*\d+)?\s*[.!]?\s*$/i,
+  /^\s*(?:could\s+not|unable\s+to)\s+(?:find|locate)\s+(?:the\s+)?(?:document|record)(?:\s+id)?(?:\s*[:#]?\s*\d+)?\s*[.!]?\s*$/i,
 ] as const;
 const BILL_TEXT_RECORD_PROVIDER_ALERT_PATTERNS = [
   /^\s*(?:invalid|unknown|missing)\s+bill\s+text(?:\s+id)?(?:\s*[:#]?\s*\d+)?\s*[.!]?\s*$/i,
   /^\s*bill\s+text(?:\s+id)?(?:\s*[:#]?\s*\d+)?\s+(?:is\s+)?(?:invalid|unknown|missing|not\s+(?:found|available)|unavailable|does(?:\s+not|n't)\s+exist)\s*[.!]?\s*$/i,
   /^\s*no\s+bill\s+text(?:\s+was)?\s+found(?:\s+for\s+id(?:\s*[:#]?\s*\d+)?)?\s*[.!]?\s*$/i,
-  /^\s*(?:could\s+not|unable\s+to)\s+(?:find|locate|retrieve)\s+(?:the\s+)?bill\s+text(?:\s+id)?(?:\s*[:#]?\s*\d+)?\s*[.!]?\s*$/i,
+  /^\s*(?:could\s+not|unable\s+to)\s+(?:find|locate)\s+(?:the\s+)?bill\s+text(?:\s+id)?(?:\s*[:#]?\s*\d+)?\s*[.!]?\s*$/i,
 ] as const;
 const AMENDMENT_RECORD_PROVIDER_ALERT_PATTERNS = [
   /^\s*(?:invalid|unknown|missing)\s+amendment(?:\s+id)?(?:\s*[:#]?\s*\d+)?\s*[.!]?\s*$/i,
   /^\s*amendment(?:\s+id)?(?:\s*[:#]?\s*\d+)?\s+(?:is\s+)?(?:invalid|unknown|missing|not\s+(?:found|available)|unavailable|does(?:\s+not|n't)\s+exist)\s*[.!]?\s*$/i,
   /^\s*no\s+amendment(?:\s+was)?\s+found(?:\s+for\s+id(?:\s*[:#]?\s*\d+)?)?\s*[.!]?\s*$/i,
-  /^\s*(?:could\s+not|unable\s+to)\s+(?:find|locate|retrieve)\s+(?:the\s+)?amendment(?:\s+id)?(?:\s*[:#]?\s*\d+)?\s*[.!]?\s*$/i,
+  /^\s*(?:could\s+not|unable\s+to)\s+(?:find|locate)\s+(?:the\s+)?amendment(?:\s+id)?(?:\s*[:#]?\s*\d+)?\s*[.!]?\s*$/i,
 ] as const;
 
 const classify_provider_alert_scope = (

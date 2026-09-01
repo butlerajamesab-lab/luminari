@@ -116,6 +116,7 @@ describe("LegiScan bill-text API client", () => {
     "Invalid API request for document ID 99",
     "Request ID invalid",
     "Unknown amendment ID",
+    "Unable to retrieve document",
     "Unable to retrieve document: upstream connection timed out",
     "Document ID not found: malformed provider response",
   ])("keeps shared or ambiguous provider alert '%s' shared and private", async (message) => {
