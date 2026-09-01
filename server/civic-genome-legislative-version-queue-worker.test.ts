@@ -261,6 +261,9 @@ describe("legislative version queue", () => {
     expect(is_legislative_version_shared_provider_outage(new Error(
       "legislative_version_provider_fallback_hash_mismatch",
     ))).toBe(false);
+    expect(is_legislative_version_shared_provider_outage(new Error(
+      "legislative_version_provider_fallback_document_id_mismatch",
+    ))).toBe(false);
   });
 
   it("processes only the exact queued bill-version identity", async () => {

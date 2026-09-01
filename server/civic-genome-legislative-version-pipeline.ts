@@ -106,6 +106,27 @@ type provider_copy_source = {
   retrieval_mode: provider_copy_retrieval_mode;
 };
 
+const PROVIDER_COPY_DOCUMENT_ID_FAILURE_CODES = new Set([
+  "invalid_legiscan_bill_text_response_document_id",
+  "invalid_legiscan_amendment_response_id",
+]);
+
+const PROVIDER_COPY_DOCUMENT_PAYLOAD_FAILURE_CODES = new Set([
+  "invalid_legiscan_bill_text_payload",
+  "invalid_legiscan_amendment_payload",
+]);
+
+function provider_copy_document_failure_code(error: unknown): string | null {
+  const error_code = error instanceof Error ? error.message : "";
+  if (PROVIDER_COPY_DOCUMENT_ID_FAILURE_CODES.has(error_code)) {
+    return "legislative_version_provider_fallback_document_id_mismatch";
+  }
+  if (PROVIDER_COPY_DOCUMENT_PAYLOAD_FAILURE_CODES.has(error_code)) {
+    return "legislative_version_provider_fallback_api_payload_invalid";
+  }
+  return null;
+}
+
 type rosetta_source_content_receipt = {
   contract: "rosetta-durable-source-content-v1";
   source_document_id: number;
@@ -311,11 +332,13 @@ async function fetch_provider_copy(
         retrieval_mode: "legiscan_api_get_amendment",
       };
     }
-  } catch {
+  } catch (error) {
+    const document_failure_code = provider_copy_document_failure_code(error);
+    if (document_failure_code) throw new Error(document_failure_code);
     // The queue must treat every failure inside the authenticated provider
-    // boundary as a shared-service outage. Per-document verification begins
-    // below this catch, so hash, size, identity, and parsing failures remain
-    // deterministic row failures instead of pausing unrelated work.
+    // transport/envelope boundary as a shared-service outage. Stable
+    // per-document payload and identity failures are mapped above, and byte
+    // verification begins below, so none of those pause unrelated work.
     throw new Error(LEGISLATIVE_VERSION_PROVIDER_SHARED_OUTAGE_ERROR_CODE);
   }
 
