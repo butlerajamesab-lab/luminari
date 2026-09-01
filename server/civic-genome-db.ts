@@ -109,6 +109,16 @@ export interface GenomeLifecycleEventV2 {
   created_at: string;
 }
 
+export interface GenomeCurrentLifecycleEventV3 extends GenomeLifecycleEventV2 {
+  current_source_revision_id: string;
+  current_source_revision_hash: string;
+  current_revision_observed_at: string;
+  canonical_status: "current";
+  temporal_status:
+    | "confirmed_provider_record"
+    | "future_dated_provider_record";
+}
+
 export interface GenomeLifecycleEventHistoryV3 extends GenomeLifecycleEventV2 {
   current_source_revision_id: string | null;
   current_source_revision_hash: string | null;
@@ -335,12 +345,12 @@ export async function list_genome_events(opts?: {
 export async function list_genome_lifecycle_events_v2(opts: {
   genome_bill_id: string;
   limit?: number;
-}): Promise<GenomeLifecycleEventV2[]> {
+}): Promise<GenomeCurrentLifecycleEventV3[]> {
   const pool = getPool();
   const limit = Math.min(opts.limit ?? 500, 2_000);
 
   try {
-    const { rows } = await pool.query<GenomeLifecycleEventV2>(
+    const { rows } = await pool.query<GenomeCurrentLifecycleEventV3>(
       `select *
          from public.v_civic_genome_lifecycle_event_current_v3
         where genome_bill_id = $1

@@ -178,6 +178,12 @@ function humanize_report_payload(payload: unknown): json_record {
       event.event_at = event.valid_at ?? event.event_timestamp ?? null;
     }
     event.observed_at = event.observed_at ?? event.created_at ?? null;
+    if (event.temporal_status == null) {
+      event.temporal_status =
+        event.chronology_basis === "legacy_mixed_time"
+          ? "legacy_mixed_time"
+          : "confirmation_status_unavailable";
+    }
   }
 
   return clone;
@@ -323,7 +329,7 @@ async function build_single_bill_export(source_bill_id: number) {
       legacy_observation_snapshots: legacy_momentum.length,
     },
     temporal_interpretation: temporal_facts
-      ? "Legislative event time, Lighthouse observation time, and extraction time are separate. Momentum is replayed over source event time from the latest source revision; superseded rows and tombstones remain preserved history but are not current truth."
+      ? "Legislative event time, Lighthouse observation time, and extraction time are separate. Momentum is replayed over confirmed source event time from the latest source revision; future-dated provider records remain preserved and explicitly pending, while superseded rows and tombstones remain preserved history but are not current truth."
       : "Event-time chronology v2 is unavailable for this bill; legacy mixed-time projection rows are preserved and explicitly labeled.",
     interpretation:
       "This is a source-preserving Civic Genome export. Historical versions, legacy projections, and receipts are preserved as history; export does not re-run or mutate Rosetta, Prism, Docket, or Civic Genome state.",

@@ -122,6 +122,54 @@ function format_date(value: unknown): string {
     : date.toLocaleString("en-US", { timeZone: "UTC" }) + " UTC";
 }
 
+type event_temporal_presentation = {
+  status_class: "good" | "warn" | "muted";
+  row_class: "confirmed-event" | "pending-event" | "unclassified-event";
+  label: string;
+  confirmed: boolean;
+  pending: boolean;
+};
+
+function event_temporal_presentation(
+  event: json_record,
+): event_temporal_presentation {
+  const temporal_status = string_value(event.temporal_status);
+  if (temporal_status === "confirmed_provider_record") {
+    return {
+      status_class: "good",
+      row_class: "confirmed-event",
+      label: "Confirmed provider record",
+      confirmed: true,
+      pending: false,
+    };
+  }
+  if (temporal_status === "future_dated_provider_record") {
+    return {
+      status_class: "warn",
+      row_class: "pending-event",
+      label: "Pending provider record — not confirmed",
+      confirmed: false,
+      pending: true,
+    };
+  }
+  if (temporal_status === "legacy_mixed_time") {
+    return {
+      status_class: "muted",
+      row_class: "unclassified-event",
+      label: "Legacy chronology — confirmation unavailable",
+      confirmed: false,
+      pending: false,
+    };
+  }
+  return {
+    status_class: "muted",
+    row_class: "unclassified-event",
+    label: "Confirmation status unavailable",
+    confirmed: false,
+    pending: false,
+  };
+}
+
 function required_rosetta_config() {
   const base_url = process.env.ROSETTA_SUPABASE_URL?.trim().replace(/\/$/, "");
   const key = process.env.ROSETTA_SUPABASE_SERVICE_ROLE_KEY?.trim();
@@ -228,6 +276,8 @@ function report_css(): string {
     .muted { color: #697b73; }
     .good { color: #0b7048; font-weight: 700; }
     .warn { color: #8b5b00; font-weight: 700; }
+    .pending-event { background: #fff8e8; }
+    .event-status { font: 700 .72rem ui-monospace, SFMono-Regular, Menlo, monospace; }
     .final-diff { color: #a23434; font-weight: 700; }
     .trait { border: 1px solid #dfe9e4; border-radius: 9px; padding: 14px; margin-top: 10px; break-inside: avoid; }
     .trait-head { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; align-items: baseline; }
@@ -426,6 +476,18 @@ export async function render_civic_genome_human_report(
   const all_traits = as_records(root.all_structural_traits);
   const all_runs = as_records(root.all_assembly_runs);
   const events = as_records(root.bill_events);
+  const presented_events = events.map((event) => ({
+    event,
+    presentation: event_temporal_presentation(event),
+  }));
+  const confirmed_event_count = presented_events.filter(
+    ({ presentation }) => presentation.confirmed,
+  ).length;
+  const pending_event_count = presented_events.filter(
+    ({ presentation }) => presentation.pending,
+  ).length;
+  const unclassified_event_count =
+    events.length - confirmed_event_count - pending_event_count;
   const lineage = as_records(root.lineage_edges);
   const family = as_record(root.family);
   const temporal_facts = as_record(root.bill_temporal_facts);
@@ -474,13 +536,15 @@ export async function render_civic_genome_human_report(
       <span class="eyebrow">Civic Genome history</span>
       <h2>Events and lineage edges</h2>
       <div class="grid">
-        <div class="metric"><span class="label">Events</span><b>${events.length}</b></div>
+        <div class="metric"><span class="label">Confirmed events</span><b>${confirmed_event_count}</b></div>
+        <div class="metric"><span class="label">Pending provider records</span><b>${pending_event_count}</b></div>
+        ${unclassified_event_count > 0 ? `<div class="metric"><span class="label">Confirmation unavailable</span><b>${unclassified_event_count}</b></div>` : ""}
         <div class="metric"><span class="label">Lineage edges</span><b>${lineage.length}</b></div>
         <div class="metric"><span class="label">Historical structural traits</span><b>${all_traits.length}</b></div>
         <div class="metric"><span class="label">Assembly runs</span><b>${all_runs.length}</b></div>
       </div>
-      <p class="subhead">Legal event time and Lighthouse observation time are shown separately. Neither is an extraction-run timestamp.</p>
-      ${events.length ? `<details><summary>Event ledger</summary><table><thead><tr><th>Legal event time</th><th>Observed by Lighthouse</th><th>Type</th><th>Action</th></tr></thead><tbody>${events.map((event) => `<tr><td>${html(format_date(event.event_at ?? event.valid_at ?? event.event_timestamp))}</td><td>${html(format_date(event.observed_at ?? event.created_at))}</td><td>${html(human_key(event.event_type))}</td><td>${html(event.action_text ?? as_record(event.event_payload_json)?.event_summary ?? "Recorded source event")}</td></tr>`).join("")}</tbody></table></details>` : ""}
+      <p class="subhead">Legal event time and Lighthouse observation time are shown separately. Future-dated provider records are preserved as pending evidence and are not assertions that the action occurred. Neither clock is an extraction-run timestamp.</p>
+      ${events.length ? `<details><summary>Event ledger</summary><table><thead><tr><th>Legal event time</th><th>Observed by Lighthouse</th><th>Confirmation status</th><th>Type</th><th>Action</th></tr></thead><tbody>${presented_events.map(({ event, presentation }) => `<tr class="${presentation.row_class}"><td>${html(format_date(event.event_at ?? event.valid_at ?? event.event_timestamp))}</td><td>${html(format_date(event.observed_at ?? event.created_at))}</td><td><span class="event-status ${presentation.status_class}">${html(presentation.label)}</span></td><td>${html(human_key(event.event_type))}</td><td>${html(event.action_text ?? as_record(event.event_payload_json)?.event_summary ?? "Recorded source event")}</td></tr>`).join("")}</tbody></table></details>` : ""}
       ${lineage.length ? `<details><summary>Lineage edge ledger</summary>${render_value(lineage)}</details>` : ""}
     </section>
 
