@@ -1,6 +1,10 @@
 import type { Response } from "express";
 
 import * as dbHelpers from "./db";
+import {
+  governedArtifactIdentitySet,
+  projectGovernedDerivedRows,
+} from "./governed-derived-projection";
 import { read_case_intake_integrity_projection } from "./intake-case-integrity-projection";
 import { read_canonical_case_layer_outputs } from "./intake-case-layer-reader";
 
@@ -156,183 +160,6 @@ function governedRelationshipEvidence(
       evidence.documentId ?? evidence.document_id,
     );
     return documentId !== null && governedSourceDocumentIds.has(documentId);
-  });
-}
-
-function stringArray(value: unknown): string[] {
-  return Array.isArray(value)
-    ? value.filter((item): item is string => typeof item === "string")
-    : [];
-}
-
-function receiptSessionId(row: ExportRecord): string | null {
-  const value = asRecord(row._receipt).intake_session_id;
-  return typeof value === "string" && value.length > 0 ? value : null;
-}
-
-function sessionScopedIdentity(sessionId: string, value: string): string {
-  return `${sessionId}\u001f${value}`;
-}
-
-function recomputeVerificationRecords(
-  rows: ExportRecord[],
-  governedArtifactIdentities: Set<string>,
-): ExportRecord[] {
-  return rows.flatMap((row) => {
-    const sessionId = receiptSessionId(row);
-    if (sessionId === null) return [];
-    const sourceRefs = asRecords(row.source_refs).filter((ref) =>
-      governedArtifactIdentities.has(
-        sessionScopedIdentity(sessionId, String(ref.artifact_key ?? "")),
-      ),
-    );
-    if (sourceRefs.length === 0) return [];
-
-    const valuesByArtifact = new Map<string, Set<string>>();
-    for (const ref of sourceRefs) {
-      const artifactKey = String(ref.artifact_key);
-      const values = valuesByArtifact.get(artifactKey) ?? new Set<string>();
-      values.add(String(ref.value_stated ?? ""));
-      valuesByArtifact.set(artifactKey, values);
-    }
-
-    const originalContradictions = asRecords(row.contradiction_refs);
-    const attribute = String(
-      originalContradictions[0]?.attribute ??
-        String(row.fact_key ?? "").split("|")[1] ??
-        "unknown",
-    );
-    const contradictionRefs: ExportRecord[] = [];
-    const artifacts = [...valuesByArtifact.keys()].sort();
-    for (let i = 0; i < artifacts.length; i += 1) {
-      for (let j = i + 1; j < artifacts.length; j += 1) {
-        for (const valueA of [
-          ...(valuesByArtifact.get(artifacts[i]) ?? []),
-        ].sort()) {
-          for (const valueB of [
-            ...(valuesByArtifact.get(artifacts[j]) ?? []),
-          ].sort()) {
-            if (valueA === valueB) continue;
-            contradictionRefs.push({
-              artifact_key_a: artifacts[i],
-              value_a: valueA,
-              artifact_key_b: artifacts[j],
-              value_b: valueB,
-              attribute,
-            });
-          }
-        }
-      }
-    }
-
-    const allValues = new Set(
-      sourceRefs.map((ref) => String(ref.value_stated ?? "")),
-    );
-    const sameSourceConflict = [...valuesByArtifact.values()].some(
-      (values) => values.size > 1,
-    );
-    const verificationState =
-      contradictionRefs.length > 0
-        ? "contradicted"
-        : sameSourceConflict || allValues.size > 1
-          ? "disputed"
-          : valuesByArtifact.size >= 2
-            ? "supported_by_multiple_sources"
-            : "document_stated";
-
-    return [
-      {
-        ...row,
-        verification_state: verificationState,
-        source_refs: sourceRefs,
-        contradiction_refs: contradictionRefs,
-      },
-    ];
-  });
-}
-
-function sourceBoundRegistryRows(
-  rows: ExportRecord[],
-  governedArtifactIdentities: Set<string>,
-): ExportRecord[] {
-  return rows.filter((row) => {
-    const sessionId = receiptSessionId(row);
-    if (sessionId === null) return false;
-    const sourceArtifacts = stringArray(row.source_artifacts);
-    return (
-      sourceArtifacts.length > 0 &&
-      sourceArtifacts.every((key) =>
-        governedArtifactIdentities.has(sessionScopedIdentity(sessionId, key)),
-      )
-    );
-  });
-}
-
-function sessionRecordIdentitySet(
-  rows: ExportRecord[],
-  fields: string[],
-): Set<string> {
-  return new Set(
-    rows.flatMap((row) => {
-      const sessionId = receiptSessionId(row);
-      if (sessionId === null) return [];
-      for (const field of fields) {
-        if (typeof row[field] === "string" && row[field].length > 0) {
-          return [sessionScopedIdentity(sessionId, String(row[field]))];
-        }
-      }
-      return [];
-    }),
-  );
-}
-
-function governedRelationshipIdentitySet(rows: ExportRecord[]): Set<string> {
-  const identities = new Set<string>();
-  for (const row of rows) {
-    const relationshipId =
-      row.canonical_relationship_id ??
-      row.canonicalRelationshipId ??
-      row.relationship_id;
-    if (typeof relationshipId !== "string" || relationshipId.length === 0) {
-      continue;
-    }
-    for (const evidence of asRecords(
-      row.evidence ?? row.backingEvidence ?? row.backing_evidence,
-    )) {
-      const sessionId =
-        evidence.canonical_intake_session_id ??
-        evidence.canonicalIntakeSessionId;
-      if (typeof sessionId !== "string" || sessionId.length === 0) continue;
-      identities.add(sessionScopedIdentity(sessionId, relationshipId));
-    }
-  }
-  return identities;
-}
-
-function governedClaimCandidates(
-  rows: ExportRecord[],
-  governedRelationshipIds: Set<string>,
-  governedTransitionIds: Set<string>,
-  governedPatternIds: Set<string>,
-): ExportRecord[] {
-  return rows.filter((row) => {
-    const sessionId = receiptSessionId(row);
-    if (sessionId === null) return false;
-    const relationshipIds = stringArray(row.triggering_relationship_ids);
-    const transitionIds = stringArray(row.triggering_transition_ids);
-    const patternIds = stringArray(row.triggering_pattern_ids);
-    return (
-      relationshipIds.length > 0 &&
-      relationshipIds.every((id) =>
-        governedRelationshipIds.has(sessionScopedIdentity(sessionId, id)),
-      ) &&
-      transitionIds.every((id) =>
-        governedTransitionIds.has(sessionScopedIdentity(sessionId, id)),
-      ) &&
-      patternIds.every((id) =>
-        governedPatternIds.has(sessionScopedIdentity(sessionId, id)),
-      )
-    );
   });
 }
 
@@ -495,19 +322,9 @@ export async function loadCurrentCaseExportData(
       return documentId === null ? [] : [documentId];
     }),
   );
-  const governedArtifactIdentities = new Set(
-    integrity.artifacts.flatMap((artifact) =>
-      artifact.integrity_status === "preserved" &&
-      artifact.legacy_document_id !== null &&
-      governedSourceDocumentIds.has(artifact.legacy_document_id)
-        ? [
-            sessionScopedIdentity(
-              artifact.intake_session_id,
-              artifact.artifact_key,
-            ),
-          ]
-        : [],
-    ),
+  const governedArtifactIdentities = governedArtifactIdentitySet(
+    integrity.artifacts,
+    governedSourceDocumentIds,
   );
   const snapshotEntities = asRecords(entityRows).filter((row) =>
     matchesSnapshot(row, requestedSnapshotId),
@@ -558,74 +375,22 @@ export async function loadCurrentCaseExportData(
           String(right.intake_session_id ?? ""),
         ),
     );
-  const stateTransitions = states.rows.filter((transition) => {
-    const sessionId = receiptSessionId(transition);
-    if (sessionId === null) return false;
-    const artifactKey = String(
-      transition.source_artifact_key ??
-        transition.canonical_source_artifact_key ??
-        "",
-    );
-    return governedArtifactIdentities.has(
-      sessionScopedIdentity(sessionId, artifactKey),
-    );
-  });
-  const verificationRecords = recomputeVerificationRecords(
-    verification.rows,
+  const governedDerived = projectGovernedDerivedRows({
+    verificationRows: verification.rows,
+    stateRows: states.rows,
+    patternRows: patterns.rows,
+    cascadeRows: cascades.rows,
+    claimRows: claims.rows,
+    relationships,
     governedArtifactIdentities,
-  );
-  const governedTransitionIds = sessionRecordIdentitySet(stateTransitions, [
-    "transition_id",
-  ]);
-  const governedRelationshipIds =
-    governedRelationshipIdentitySet(relationships);
-  const governedPatterns = sourceBoundRegistryRows(
-    patterns.rows,
-    governedArtifactIdentities,
-  ).filter((pattern) => {
-    const sessionId = receiptSessionId(pattern);
-    if (sessionId === null) return false;
-    const matchingTransitions = asRecords(pattern.matching_transitions);
-    return (
-      matchingTransitions.length > 0 &&
-      matchingTransitions.every((transition) =>
-        governedTransitionIds.has(
-          sessionScopedIdentity(
-            sessionId,
-            String(transition.transition_id ?? ""),
-          ),
-        ),
-      )
-    );
   });
-  const governedPatternIds = sessionRecordIdentitySet(governedPatterns, [
-    "pattern_id",
-  ]);
-  const governedCascades = sourceBoundRegistryRows(
-    cascades.rows,
-    governedArtifactIdentities,
-  ).filter((cascade) => {
-    const sessionId = receiptSessionId(cascade);
-    if (sessionId === null) return false;
-    const transitions = asRecords(cascade.transitions_in_chain);
-    return (
-      transitions.length > 0 &&
-      transitions.every((transition) =>
-        governedTransitionIds.has(
-          sessionScopedIdentity(
-            sessionId,
-            String(transition.transition_id ?? ""),
-          ),
-        ),
-      )
-    );
-  });
-  const claimCandidates = governedClaimCandidates(
-    claims.rows,
-    governedRelationshipIds,
-    governedTransitionIds,
-    governedPatternIds,
-  );
+  const {
+    verificationRecords,
+    stateTransitions,
+    patterns: governedPatterns,
+    cascades: governedCascades,
+    claimCandidates,
+  } = governedDerived;
   const summary = governedSummary(stats, {
     sources: sources.length,
     entities: entities.length,

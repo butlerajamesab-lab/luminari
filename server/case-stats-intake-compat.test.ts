@@ -32,13 +32,64 @@ vi.mock("./intake-case-runtime-projection", () => ({
 
 import { getCaseStats } from "./case-stats-intake-compat";
 
-function canonical_output(count: number, projection_current = true) {
+function layer_data(layer_name: string, count: number) {
+  return Array.from({ length: count }, (_, index) => {
+    if (layer_name === "verification_gate") {
+      return {
+        fact_key: `entity-${index}|state|2026-08-30`,
+        verification_state: "document_stated",
+        source_refs: [
+          {
+            artifact_key: "artifact-current",
+            span_offset: index,
+            value_stated: "active",
+          },
+        ],
+        contradiction_refs: [],
+      };
+    }
+    if (layer_name === "state_timeline") {
+      return {
+        transition_id: `transition-${index}`,
+        source_artifact_key: "artifact-current",
+      };
+    }
+    if (layer_name === "pattern_registry") {
+      return {
+        pattern_id: `pattern-${index}`,
+        source_artifacts: ["artifact-current"],
+        matching_transitions: [{ transition_id: "transition-0" }],
+      };
+    }
+    if (layer_name === "cascade_registry") {
+      return {
+        cascade_id: `cascade-${index}`,
+        source_artifacts: ["artifact-current"],
+        transitions_in_chain: [{ transition_id: "transition-0" }],
+      };
+    }
+    return {
+      candidate_id: `claim-${index}`,
+      triggering_relationship_ids: ["rel-0"],
+      triggering_transition_ids: [],
+      triggering_pattern_ids: [],
+    };
+  });
+}
+
+function canonical_output(
+  layer_name: string,
+  count: number,
+  projection_current = true,
+  intake_session_id = "session-current",
+) {
   return {
     state: "canonical_projection",
     outputs: [
       {
+        intake_session_id,
         projection_current,
-        data: Array.from({ length: count }, (_, index) => ({ index })),
+        data: layer_data(layer_name, count),
       },
     ],
   };
@@ -51,10 +102,26 @@ describe("case stats Intake Spine compatibility projection", () => {
       projection_state: "verified",
       source_artifact_count: 5,
       artifacts: [
-        { integrity_status: "preserved" },
-        { integrity_status: "preserved" },
-        { integrity_status: "preserved" },
-        { integrity_status: "quarantined" },
+        {
+          intake_session_id: "session-current",
+          artifact_key: "artifact-current",
+          integrity_status: "preserved",
+        },
+        {
+          intake_session_id: "session-current",
+          artifact_key: "artifact-two",
+          integrity_status: "preserved",
+        },
+        {
+          intake_session_id: "session-current",
+          artifact_key: "artifact-three",
+          integrity_status: "preserved",
+        },
+        {
+          intake_session_id: "session-current",
+          artifact_key: "artifact-quarantined",
+          integrity_status: "quarantined",
+        },
         { source_artifact_status: "registered" },
       ],
     });
@@ -64,18 +131,26 @@ describe("case stats Intake Spine compatibility projection", () => {
     });
     mocks.project_relationships.mockResolvedValue({
       state: "canonical_projection",
-      relationships: Array.from({ length: 765 }, (_, index) => ({ index })),
+      relationships: Array.from({ length: 765 }, (_, index) => ({
+        canonicalRelationshipId: `rel-${index}`,
+        evidence: [{ canonicalIntakeSessionId: "session-current" }],
+      })),
     });
     mocks.list_events.mockResolvedValue(
       Array.from({ length: 1_022 }, (_, index) => ({ index })),
     );
     mocks.read_layer.mockImplementation(
       async (_case_id: number, layer_name: string) => {
-        if (layer_name === "verification_gate") return canonical_output(87);
+        if (layer_name === "verification_gate")
+          return canonical_output(layer_name, 87);
+        if (layer_name === "state_timeline")
+          return canonical_output(layer_name, 1);
         if (layer_name === "rights_and_duties_matrix")
-          return canonical_output(11);
-        if (layer_name === "pattern_registry") return canonical_output(4);
-        if (layer_name === "cascade_registry") return canonical_output(2);
+          return canonical_output(layer_name, 11);
+        if (layer_name === "pattern_registry")
+          return canonical_output(layer_name, 4);
+        if (layer_name === "cascade_registry")
+          return canonical_output(layer_name, 2);
         throw new Error(`unexpected layer ${layer_name}`);
       },
     );
@@ -129,18 +204,21 @@ describe("case stats Intake Spine compatibility projection", () => {
     mocks.read_layer.mockImplementation(
       async (_case_id: number, layer_name: string) => {
         if (layer_name === "verification_gate")
-          return canonical_output(87, false);
+          return canonical_output(layer_name, 87, false);
+        if (layer_name === "state_timeline")
+          return canonical_output(layer_name, 1, true);
         if (layer_name === "rights_and_duties_matrix")
           return {
             state: "canonical_projection",
             outputs: [
-              ...canonical_output(11, false).outputs,
-              ...canonical_output(3, true).outputs,
+              ...canonical_output(layer_name, 11, false).outputs,
+              ...canonical_output(layer_name, 3, true).outputs,
             ],
           };
         if (layer_name === "pattern_registry")
-          return canonical_output(4, false);
-        if (layer_name === "cascade_registry") return canonical_output(2, true);
+          return canonical_output(layer_name, 4, false);
+        if (layer_name === "cascade_registry")
+          return canonical_output(layer_name, 2, true);
         throw new Error(`unexpected layer ${layer_name}`);
       },
     );
@@ -159,6 +237,52 @@ describe("case stats Intake Spine compatibility projection", () => {
       patterns: "not_projected",
       cascades: "canonical_projection",
     });
+  });
+
+  it("excludes source-invalid rows even when another session preserves the same artifact key", async () => {
+    mocks.read_integrity.mockResolvedValue({
+      projection_state: "blocked",
+      source_artifact_count: 2,
+      artifacts: [
+        {
+          intake_session_id: "session-preserved",
+          artifact_key: "artifact-current",
+          integrity_status: "preserved",
+        },
+        {
+          intake_session_id: "session-quarantined",
+          artifact_key: "artifact-current",
+          integrity_status: "quarantined",
+        },
+      ],
+    });
+    mocks.project_relationships.mockResolvedValue({
+      state: "canonical_projection",
+      relationships: [
+        {
+          canonicalRelationshipId: "rel-0",
+          evidence: [{ canonicalIntakeSessionId: "session-preserved" }],
+        },
+      ],
+    });
+    mocks.read_layer.mockImplementation(
+      async (_case_id: number, layer_name: string) =>
+        canonical_output(
+          layer_name,
+          layer_name === "state_timeline" ? 1 : 2,
+          true,
+          "session-quarantined",
+        ),
+    );
+
+    const stats = await getCaseStats(11);
+
+    expect(stats.derivedIntake).toMatchObject({
+      verificationRecords: 0,
+      claimCandidates: 0,
+      structuralSignals: 0,
+    });
+    expect(stats).toMatchObject({ findings: 0, claims: 0, signalFlags: 0 });
   });
 
   it("retains the legacy top-level counters as documented compatibility aliases", async () => {

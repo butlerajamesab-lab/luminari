@@ -67,6 +67,7 @@ type CanonicalEntityMention = {
   raw_text: string;
   artifact_key: string;
   span_offset: number;
+  intake_session_id?: string;
 };
 
 type CanonicalEntity = {
@@ -129,6 +130,7 @@ export type ProjectedEntityRole = {
   documentFilename: string | null;
   canonicalArtifactKey: string;
   canonicalSpanOffset: number;
+  canonicalIntakeSessionId: string;
   projectionSource: "universal_intake_spine";
 };
 
@@ -531,7 +533,10 @@ function merge_canonical_entities(outputs: CanonicalLayerOutput<CanonicalEntity[
       if (!existing) {
         entity_map.set(entity.entity_id, {
           ...entity,
-          raw_mentions: [...(entity.raw_mentions ?? [])],
+          raw_mentions: (entity.raw_mentions ?? []).map(mention => ({
+            ...mention,
+            intake_session_id: output.intake_session_id,
+          })),
           review_candidates: [...(entity.review_candidates ?? [])],
         });
         continue;
@@ -539,7 +544,10 @@ function merge_canonical_entities(outputs: CanonicalLayerOutput<CanonicalEntity[
       if (existing.type !== entity.type || existing.canonical_name !== entity.canonical_name) {
         projection_error(`canonical entity ${entity.entity_id} changed meaning across linked Intake sessions`);
       }
-      existing.raw_mentions.push(...(entity.raw_mentions ?? []));
+      existing.raw_mentions.push(...(entity.raw_mentions ?? []).map(mention => ({
+        ...mention,
+        intake_session_id: output.intake_session_id,
+      })));
       existing.review_candidates = [
         ...(existing.review_candidates ?? []),
         ...(entity.review_candidates ?? []),
@@ -551,7 +559,7 @@ function merge_canonical_entities(outputs: CanonicalLayerOutput<CanonicalEntity[
   for (const entity of entities) {
     entity.raw_mentions = sorted_unique(
       entity.raw_mentions,
-      mention => `${mention.artifact_key}\u001f${mention.span_offset}\u001f${mention.raw_text}`,
+      mention => `${mention.intake_session_id ?? ""}\u001f${mention.artifact_key}\u001f${mention.span_offset}\u001f${mention.raw_text}`,
     );
     entity.review_candidates = sorted_unique(
       entity.review_candidates ?? [],
@@ -576,16 +584,31 @@ function assert_unique_projection_ids<T>(rows: T[], id_of: (row: T) => number, c
 
 function preferred_entity_display_name(entity: CanonicalEntity): string {
   const mentions = [...(entity.raw_mentions ?? [])].sort((left, right) =>
-    left.artifact_key.localeCompare(right.artifact_key)
+    String(left.intake_session_id ?? "").localeCompare(String(right.intake_session_id ?? ""))
+      || left.artifact_key.localeCompare(right.artifact_key)
       || left.span_offset - right.span_offset
       || left.raw_text.localeCompare(right.raw_text),
   );
   return mentions[0]?.raw_text?.trim() || entity.canonical_name;
 }
 
+function entity_mention_binding(
+  mention: CanonicalEntityMention,
+  artifacts: Map<string, SourceArtifactRow[]>,
+): SourceArtifactBinding {
+  if (!mention.intake_session_id) {
+    return resolve_source_artifact_binding(undefined);
+  }
+  return resolve_source_artifact_binding(
+    (artifacts.get(mention.artifact_key) ?? []).filter(
+      artifact => artifact.intake_session_id === mention.intake_session_id,
+    ),
+  );
+}
+
 function entity_snapshot_id(entity: CanonicalEntity, artifacts: Map<string, SourceArtifactRow[]>): number | null {
   const snapshot_ids = [...new Set(entity.raw_mentions
-    .map(mention => unambiguous_source_binding(artifacts.get(mention.artifact_key)).snapshot_id)
+    .map(mention => entity_mention_binding(mention, artifacts).snapshot_id)
     .filter((value): value is number => value !== null))];
   return snapshot_ids.length === 1 ? snapshot_ids[0] : null;
 }
@@ -610,7 +633,7 @@ export async function project_case_entities(case_id: number): Promise<{
   const source_artifacts = source_artifact_index(await load_case_source_artifacts(case_id));
   const canonical_entities = merged_canonical_entities.flatMap(entity => {
     const raw_mentions = entity.raw_mentions.filter(mention =>
-      unambiguous_source_binding(source_artifacts.get(mention.artifact_key)).binding_state === "bound"
+      entity_mention_binding(mention, source_artifacts).binding_state === "bound"
     );
     return raw_mentions.length > 0 ? [{ ...entity, raw_mentions }] : [];
   });
@@ -674,13 +697,14 @@ export async function get_projected_entity_roles(entity_id: number): Promise<Pro
 
   const roles: ProjectedEntityRole[] = [];
   for (const mention of canonical_entity.raw_mentions) {
-    const binding = unambiguous_source_binding(projection.source_artifacts.get(mention.artifact_key));
+    const binding = entity_mention_binding(mention, projection.source_artifacts);
     if (!binding.document_id) continue;
+    if (!mention.intake_session_id) continue;
     roles.push({
       id: stable_projection_id(
         case_id,
         "entity_role",
-        `${canonical_entity.entity_id}\u001f${mention.artifact_key}\u001f${mention.span_offset}`,
+        `${canonical_entity.entity_id}\u001f${mention.intake_session_id}\u001f${mention.artifact_key}\u001f${mention.span_offset}`,
       ),
       entityId: entity_id,
       documentId: binding.document_id,
@@ -691,11 +715,12 @@ export async function get_projected_entity_roles(entity_id: number): Promise<Pro
       documentFilename: binding.filename,
       canonicalArtifactKey: mention.artifact_key,
       canonicalSpanOffset: mention.span_offset,
+      canonicalIntakeSessionId: mention.intake_session_id,
       projectionSource: "universal_intake_spine",
     });
   }
-  const unique = sorted_unique(roles, role => `${role.documentId}\u001f${role.canonicalArtifactKey}\u001f${role.canonicalSpanOffset}`);
-  assert_unique_projection_ids(unique, role => role.id, role => `${role.canonicalArtifactKey}:${role.canonicalSpanOffset}`);
+  const unique = sorted_unique(roles, role => `${role.documentId}\u001f${role.canonicalIntakeSessionId}\u001f${role.canonicalArtifactKey}\u001f${role.canonicalSpanOffset}`);
+  assert_unique_projection_ids(unique, role => role.id, role => `${role.canonicalIntakeSessionId}:${role.canonicalArtifactKey}:${role.canonicalSpanOffset}`);
   return unique;
 }
 
@@ -715,13 +740,14 @@ function roles_for_document(
       projection_error(`canonical entity ${canonical_entity.entity_id} lost its projected identity`);
     }
     for (const mention of canonical_entity.raw_mentions) {
-      const binding = unambiguous_source_binding(projection.source_artifacts.get(mention.artifact_key));
+      const binding = entity_mention_binding(mention, projection.source_artifacts);
       if (binding.document_id !== document_id) continue;
+      if (!mention.intake_session_id) continue;
       roles.push({
         id: stable_projection_id(
           case_id,
           "entity_role",
-          `${canonical_entity.entity_id}\u001f${mention.artifact_key}\u001f${mention.span_offset}`,
+          `${canonical_entity.entity_id}\u001f${mention.intake_session_id}\u001f${mention.artifact_key}\u001f${mention.span_offset}`,
         ),
         entityId: projected_entity.id,
         documentId: document_id,
@@ -732,6 +758,7 @@ function roles_for_document(
         documentFilename: binding.filename,
         canonicalArtifactKey: mention.artifact_key,
         canonicalSpanOffset: mention.span_offset,
+        canonicalIntakeSessionId: mention.intake_session_id,
         projectionSource: "universal_intake_spine",
       });
     }
@@ -739,12 +766,12 @@ function roles_for_document(
 
   const unique = sorted_unique(
     roles,
-    role => `${role.entityId}\u001f${role.canonicalArtifactKey}\u001f${role.canonicalSpanOffset}`,
+    role => `${role.entityId}\u001f${role.canonicalIntakeSessionId}\u001f${role.canonicalArtifactKey}\u001f${role.canonicalSpanOffset}`,
   );
   assert_unique_projection_ids(
     unique,
     role => role.id,
-    role => `${role.entityId}:${role.canonicalArtifactKey}:${role.canonicalSpanOffset}`,
+    role => `${role.entityId}:${role.canonicalIntakeSessionId}:${role.canonicalArtifactKey}:${role.canonicalSpanOffset}`,
   );
   return unique;
 }

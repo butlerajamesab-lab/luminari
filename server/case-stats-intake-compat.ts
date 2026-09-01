@@ -3,27 +3,40 @@ import { getPool } from "./db-legacy";
 import { read_case_intake_integrity_projection } from "./intake-case-integrity-projection";
 import { read_canonical_case_layer_outputs } from "./intake-case-layer-reader";
 import {
+  governedArtifactIdentitySet,
+  projectGovernedDerivedRows,
+  type GovernedRecord,
+} from "./governed-derived-projection";
+import {
   project_case_entities,
   project_case_relationships,
 } from "./intake-case-runtime-projection";
 import type { VerificationRecord } from "./engines/intake-spine/layer-5-verification_gate";
+import type { StateTransition } from "./engines/intake-spine/layer-9-state_timeline";
 import type { DetectedPattern } from "./engines/intake-spine/layer-10-pattern_registry";
 import type { CascadeChain } from "./engines/intake-spine/layer-11-cascade_registry";
 import type { ClaimCandidate } from "./engines/intake-spine/layer-12-rights_and_duties_matrix";
 import { isMissingCaseCommitmentRelation } from "./case-commitment-availability";
 
-function output_item_count<T>(outputs: Array<{ data: T[] }>): number {
-  return outputs.reduce(
-    (total, output) =>
-      total + (Array.isArray(output.data) ? output.data.length : 0),
-    0,
-  );
-}
-
 function current_layer_outputs<T extends { projection_current: boolean }>(
   outputs: T[],
 ): T[] {
   return outputs.filter((output) => output.projection_current);
+}
+
+function current_layer_rows<T>(
+  outputs: Array<{
+    projection_current: boolean;
+    intake_session_id: string;
+    data: T[];
+  }>,
+): GovernedRecord[] {
+  return current_layer_outputs(outputs).flatMap((output) =>
+    (Array.isArray(output.data) ? output.data : []).map((row) => ({
+      ...(row !== null && typeof row === "object" ? row : {}),
+      _receipt: { intake_session_id: output.intake_session_id },
+    })),
+  );
 }
 
 function current_layer_state(
@@ -141,6 +154,7 @@ export async function getCaseStats(caseId: number) {
     relationships,
     events,
     verification,
+    states,
     claims,
     patterns,
     cascades,
@@ -153,6 +167,10 @@ export async function getCaseStats(caseId: number) {
     read_canonical_case_layer_outputs<VerificationRecord[]>(
       caseId,
       "verification_gate",
+    ),
+    read_canonical_case_layer_outputs<StateTransition[]>(
+      caseId,
+      "state_timeline",
     ),
     read_canonical_case_layer_outputs<ClaimCandidate[]>(
       caseId,
@@ -171,9 +189,24 @@ export async function getCaseStats(caseId: number) {
   const currentVerificationOutputs = current_layer_outputs(
     verification.outputs,
   );
+  const currentStateOutputs = current_layer_outputs(states.outputs);
   const currentClaimOutputs = current_layer_outputs(claims.outputs);
   const currentPatternOutputs = current_layer_outputs(patterns.outputs);
   const currentCascadeOutputs = current_layer_outputs(cascades.outputs);
+  const governedDerived = projectGovernedDerivedRows({
+    verificationRows: current_layer_rows(currentVerificationOutputs),
+    stateRows: current_layer_rows(currentStateOutputs),
+    patternRows: current_layer_rows(currentPatternOutputs),
+    cascadeRows: current_layer_rows(currentCascadeOutputs),
+    claimRows: current_layer_rows(currentClaimOutputs),
+    relationships:
+      relationships.state === "canonical_projection"
+        ? (relationships.relationships as unknown as GovernedRecord[])
+        : [],
+    governedArtifactIdentities: governedArtifactIdentitySet(
+      integrity.artifacts,
+    ),
+  });
 
   const documentStatus: Record<string, number> = {};
   for (const artifact of integrity.artifacts) {
@@ -193,11 +226,10 @@ export async function getCaseStats(caseId: number) {
       relationships.state === "canonical_projection"
         ? relationships.relationships.length
         : 0,
-    verificationRecords: output_item_count(currentVerificationOutputs),
-    claimCandidates: output_item_count(currentClaimOutputs),
+    verificationRecords: governedDerived.verificationRecords.length,
+    claimCandidates: governedDerived.claimCandidates.length,
     structuralSignals:
-      output_item_count(currentPatternOutputs) +
-      output_item_count(currentCascadeOutputs),
+      governedDerived.patterns.length + governedDerived.cascades.length,
   };
 
   return {
