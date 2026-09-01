@@ -2,6 +2,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 
 const index = readFileSync('server/_core/index.ts', 'utf8');
+const packageManifest = JSON.parse(readFileSync('package.json', 'utf8'));
 const diagnostic = readFileSync('server/_core/health-diagnostics.ts', 'utf8');
 const systemRouter = readFileSync('server/_core/systemRouter.ts', 'utf8');
 const context = readFileSync('server/_core/context.ts', 'utf8');
@@ -31,6 +32,7 @@ const forbidden_liveness = ['supabaseProject', 'publicTables', 'databaseUrl', 'd
 const required_diagnostic = ['database', 'database_url', 'database_version', 'public_tables', 'db_diagnostic', 'supabase_project', 'timestamp'];
 
 function fail(message) { console.error(message); process.exit(1); }
+if (!packageManifest.scripts?.build?.includes('check:health-contracts')) fail('production build must validate generated authentication bundles');
 if (!index.includes('app.get("/api/health"')) fail('/api/health route is missing');
 if (!index.includes('livenessPayload()')) fail('/api/health must use livenessPayload');
 for (const field of required_liveness) if (!diagnostic.includes(field)) fail(`liveness field missing: ${field}`);
