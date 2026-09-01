@@ -16,7 +16,7 @@ function between(source: string, start: string, end: string): string {
 }
 
 describe("Docket cache-first and Rosetta source-handoff boundaries", () => {
-  it("serves an existing stale state cache before provider refresh work", () => {
+  it("keeps stale-cache fallback while permitting an explicitly scoped request refresh", () => {
     const stateRoute = between(
       docketRoute,
       'docket_router.get("/state"',
@@ -25,24 +25,31 @@ describe("Docket cache-first and Rosetta source-handoff boundaries", () => {
 
     expect(stateRoute).toContain("const cached = await read_state_cache(state)");
     expect(stateRoute).toContain('source: fresh ? "cache" : stale_reason');
+    expect(stateRoute).toContain("request_refresh_attempt_allowed(state)");
+    expect(stateRoute).toContain('get_or_start_state_refresh(state, "request_scoped")');
+    expect(stateRoute).toContain('refresh_mode: "request_scoped"');
+    expect(stateRoute).toContain('"cache_stale_request_refresh_failed"');
     expect(stateRoute).toContain("if (!fresh) schedule_state_refresh(state)");
     expect(stateRoute).toContain('"cache_stale_worker_paused"');
     expect(stateRoute).toContain('error: "background_runtime_required"');
 
     const cachedBranch = stateRoute.indexOf("if (cached)");
     const cachedResponse = stateRoute.indexOf("return res.json", cachedBranch);
-    const uncachedRefresh = stateRoute.indexOf("const refreshed = await refresh_state_cache(state)");
+    const uncachedRefresh = stateRoute.indexOf("// No cached source exists");
 
     expect(cachedBranch).toBeGreaterThanOrEqual(0);
     expect(cachedResponse).toBeGreaterThan(cachedBranch);
     expect(uncachedRefresh).toBeGreaterThan(cachedResponse);
   });
 
-  it("deduplicates background state refreshes per jurisdiction", () => {
+  it("deduplicates worker and request-scoped state refreshes per jurisdiction", () => {
     expect(docketRoute).toContain("state_refresh_in_flight");
-    expect(docketRoute).toContain("if (state_refresh_in_flight.has(state)) return");
+    expect(docketRoute).toContain("const existing = state_refresh_in_flight.get(state)");
+    expect(docketRoute).toContain("if (existing) return existing");
     expect(docketRoute).toContain("state_refresh_in_flight.set(state, refresh)");
     expect(docketRoute).toContain("state_refresh_in_flight.delete(state)");
+    expect(docketRoute).toContain("state_refresh_retry_after");
+    expect(docketRoute).toContain("request_refresh_failure_cooldown_ms");
   });
 
   it("reports bulk cache status from production Postgres truth", () => {
