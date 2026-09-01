@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-describe("isolated Prism worker deployment contract", () => {
-  it("starts only the dedicated Prism queue entrypoint with a required canary", () => {
+describe("isolated Render queue worker deployment contract", () => {
+  it("starts only explicitly gated queues and drains both before shutdown", () => {
     const entrypoint = readFileSync("server/prism-rosetta-worker.ts", "utf8");
     const queueWorker = readFileSync(
       "server/services/prism-rosetta-queue-worker.ts",
@@ -12,38 +12,79 @@ describe("isolated Prism worker deployment contract", () => {
       "server/services/prism-rosetta-activation.ts",
       "utf8",
     );
+    const legislativeWorker = readFileSync(
+      "server/civic-genome-legislative-version-queue-worker.ts",
+      "utf8",
+    );
     const blueprint = readFileSync("render.prism-worker.yaml", "utf8");
 
-    expect(entrypoint).toContain('background_feature_enabled("PRISM_ROSETTA_QUEUE_ENABLED")');
+    expect(entrypoint).toContain(
+      'background_feature_enabled("PRISM_ROSETTA_QUEUE_ENABLED")',
+    );
     expect(entrypoint).toContain("prism_worker_canary_queue_id_required");
     expect(entrypoint).toContain("start_prism_rosetta_queue_worker()");
-    expect(entrypoint).toContain("await stop_prism_rosetta_queue_worker()");
-    expect(entrypoint.indexOf("await stop_prism_rosetta_queue_worker()")).toBeLessThan(
-      entrypoint.indexOf("await getPool().end()"),
+    expect(entrypoint).toContain('"LEGISLATIVE_VERSION_QUEUE_ENABLED"');
+    expect(entrypoint).toContain(
+      "legislative_version_queue_recovery_contract_scope()",
     );
+    expect(entrypoint).toContain(
+      "prism_worker_legislative_recovery_scope_required",
+    );
+    expect(entrypoint).toContain("start_legislative_version_queue_worker()");
+    expect(entrypoint).toContain("stop_legislative_version_queue_worker()");
+    expect(
+      entrypoint.indexOf("stop_legislative_version_queue_worker()"),
+    ).toBeLessThan(entrypoint.indexOf("await getPool().end()"));
     expect(entrypoint).not.toContain("initializeScheduler");
-    expect(entrypoint).not.toContain("start_legislative_version_queue_worker");
     expect(entrypoint).not.toContain("start_docket_state_cache_warmer");
 
     expect(blueprint).toContain("type: worker");
     expect(blueprint).toContain("LIGHTHOUSE_RUNTIME_ROLE");
     expect(blueprint).toContain("PRISM_ROSETTA_QUEUE_CANARY_ID");
     expect(blueprint).toContain("PRISM_ROSETTA_QUEUE_MAX_NEW_SUBMISSIONS");
+    expect(blueprint).toContain("LEGISLATIVE_VERSION_QUEUE_ENABLED");
+    expect(blueprint).toContain("LEGISLATIVE_VERSION_QUEUE_CONCURRENCY");
+    expect(blueprint).toMatch(
+      /LEGISLATIVE_VERSION_QUEUE_RECOVERY_CONTRACT_SCOPE\s+value: civic-genome-provider-copy-fallback-recovery-v1/,
+    );
+    expect(blueprint).toContain("maxShutdownDelaySeconds: 300");
     expect(blueprint).toContain("ROSETTA_SUPABASE_URL");
     expect(blueprint).toContain("ROSETTA_SUPABASE_SERVICE_ROLE_KEY");
-    expect(blueprint).not.toContain("LEGISLATIVE_VERSION_QUEUE_ENABLED");
 
-    expect(queueWorker).toContain("queue_remaining_new_submissions = max_new_submissions");
+    expect(queueWorker).toContain(
+      "queue_remaining_new_submissions = max_new_submissions",
+    );
     expect(queueWorker).toContain("queue_remaining_new_submissions = 0");
     expect(queueWorker).toContain("submission_budget_exhausted");
     expect(queueWorker).toContain("await active_queue_cycle");
     expect(queueWorker).toContain("on_before_first_submission");
     expect(activation).toContain("input.on_before_first_submission?.()");
-    expect(activation.indexOf("input.on_before_first_submission?.()")).toBeLessThan(
-      activation.indexOf("submit_rosetta_prism_request(request)"),
-    );
-    expect(queueWorker.lastIndexOf("queue_remaining_new_submissions = 0")).toBeGreaterThan(
+    expect(
+      activation.indexOf("input.on_before_first_submission?.()"),
+    ).toBeLessThan(activation.indexOf("submit_rosetta_prism_request(request)"));
+    expect(
+      queueWorker.lastIndexOf("queue_remaining_new_submissions = 0"),
+    ).toBeGreaterThan(
       queueWorker.indexOf("await activate_prism_for_rosetta_assembly"),
+    );
+    expect(legislativeWorker).toContain(
+      "let active_queue_cycle: Promise<void> | null = null",
+    );
+    expect(legislativeWorker).toContain(
+      "schedule_legislative_version_queue_cycle()",
+    );
+    expect(legislativeWorker).toContain(
+      "export async function stop_legislative_version_queue_worker",
+    );
+    expect(legislativeWorker).toContain("await active_queue_cycle");
+    expect(legislativeWorker).toContain(
+      '"civic-genome-provider-copy-fallback-recovery-v1"',
+    );
+    expect(legislativeWorker).toContain(
+      "legislative_version_queue_recovery_contract_scope_invalid",
+    );
+    expect(legislativeWorker).toContain(
+      "version.receipt_json->>'source_fallback_recovery_contract' = $8",
     );
   });
 });

@@ -25,6 +25,11 @@ const ROSETTA_CONTROL_REQUEST_TIMEOUT_MS = 10_000;
 const DURABLE_CONTENT_RECOVERY_CONTRACT = "oldest-unbound-docket-v1";
 const DURABLE_CONTENT_RECOVERY_MAX_ATTEMPTS = 3;
 const DURABLE_CONTENT_RECOVERY_RETRY_SECONDS = 30;
+const PROVIDER_COPY_FALLBACK_RECOVERY_CONTRACT =
+  "civic-genome-provider-copy-fallback-recovery-v1";
+const ALLOWED_RECOVERY_CONTRACT_SCOPES = new Set([
+  PROVIDER_COPY_FALLBACK_RECOVERY_CONTRACT,
+]);
 
 export type legislative_version_queue_job = {
   queue_id: string;
@@ -53,6 +58,7 @@ export type legislative_version_failure_decision = {
 };
 
 let queue_timer: NodeJS.Timeout | null = null;
+let active_queue_cycle: Promise<void> | null = null;
 let queue_cycle_running = false;
 let queue_stopped = false;
 let next_reconcile_at_ms = 0;
@@ -98,6 +104,19 @@ function bounded_concurrency(): number {
 function required_environment(name: string): string {
   const value = process.env[name]?.trim();
   if (!value) throw new Error(`missing_${name.toLowerCase()}`);
+  return value;
+}
+
+export function legislative_version_queue_recovery_contract_scope(
+  environment: Record<string, string | undefined> = process.env,
+): string | null {
+  const value = environment
+    .LEGISLATIVE_VERSION_QUEUE_RECOVERY_CONTRACT_SCOPE
+    ?.trim();
+  if (!value) return null;
+  if (!ALLOWED_RECOVERY_CONTRACT_SCOPES.has(value)) {
+    throw new Error("legislative_version_queue_recovery_contract_scope_invalid");
+  }
   return value;
 }
 
@@ -315,7 +334,9 @@ export function classify_legislative_version_failure(input: {
   };
 }
 
-async function reconcile_completed_jobs(): Promise<void> {
+async function reconcile_completed_jobs(
+  recovery_contract_scope: string | null,
+): Promise<void> {
   await query_with_diagnostics(
     `with candidate as (
        select queue.queue_id,
@@ -326,6 +347,10 @@ async function reconcile_completed_jobs(): Promise<void> {
         where version.assembly_run_id is not null
           and version.processing_state in ('assembled', 'verification_partial', 'verified')
           and queue.queue_state <> 'completed'
+          and (
+            $2::text is null
+            or version.receipt_json->>'source_fallback_recovery_contract' = $2
+          )
         order by queue.updated_at, queue.queue_id
         for update of queue skip locked
         limit $1::integer
@@ -340,7 +365,7 @@ async function reconcile_completed_jobs(): Promise<void> {
             updated_at = now()
        from candidate
       where queue.queue_id = candidate.queue_id`,
-    [RECONCILE_BATCH_SIZE],
+    [RECONCILE_BATCH_SIZE, recovery_contract_scope],
     {
       label: "legislative_version_queue_reconcile_completed",
       pool_acquire_timeout_ms: 1_000,
@@ -349,16 +374,19 @@ async function reconcile_completed_jobs(): Promise<void> {
   );
 }
 
-async function reconcile_completed_jobs_if_due(): Promise<void> {
+async function reconcile_completed_jobs_if_due(
+  recovery_contract_scope: string | null,
+): Promise<void> {
   const now_ms = Date.now();
   if (now_ms < next_reconcile_at_ms) return;
   next_reconcile_at_ms = now_ms + bounded_reconcile_interval();
-  await reconcile_completed_jobs();
+  await reconcile_completed_jobs(recovery_contract_scope);
 }
 
 async function claim_jobs(
   limit: number,
   oldest_unbound_docket_identifiers: string[],
+  recovery_contract_scope: string | null,
 ): Promise<legislative_version_queue_job[]> {
   const result = await query_with_diagnostics<legislative_version_queue_job>(
     `with current_sessions as (
@@ -378,11 +406,17 @@ async function claim_jobs(
            on version.bill_version_id = queue.bill_version_id
          join public.docket_bill_source_document document
            on document.source_document_key = version.source_document_key
-        where queue.attempt_count > 0
-           or (
-             queue.queue_state = 'degraded'
-             and queue.next_attempt_at > now()
-           )
+        where (
+            $8::text is null
+            or version.receipt_json->>'source_fallback_recovery_contract' = $8
+          )
+          and (
+            queue.attempt_count > 0
+            or (
+              queue.queue_state = 'degraded'
+              and queue.next_attempt_at > now()
+            )
+          )
         group by split_part(lower(document.source_url), '/', 3)
      ), candidate as materialized (
        select queue.queue_id,
@@ -428,6 +462,7 @@ async function claim_jobs(
          ) recovery_state
          cross join lateral (
            select queue.queue_state = 'permanent_failure'
+              and $8::text is null
               and rosetta_identity.document_identifier = any($4::text[])
               and recovery_state.prior_recovery_attempts < $6::integer
               and queue.updated_at
@@ -466,6 +501,10 @@ async function claim_jobs(
             or queue.locked_at < now() - make_interval(mins => $2::integer)
           )
           and version.processing_state not in ('verified', 'verified_with_findings')
+          and (
+            $8::text is null
+            or version.receipt_json->>'source_fallback_recovery_contract' = $8
+          )
           and coalesce(source_host.blocked_until, '-infinity'::timestamptz) <= now()
         order by case when recovery.is_durable_content_recovery then 0 else 1 end,
                  case when recovery.is_durable_content_recovery
@@ -541,6 +580,7 @@ async function claim_jobs(
       DURABLE_CONTENT_RECOVERY_CONTRACT,
       DURABLE_CONTENT_RECOVERY_MAX_ATTEMPTS,
       DURABLE_CONTENT_RECOVERY_RETRY_SECONDS,
+      recovery_contract_scope,
     ],
     {
       label: "legislative_version_queue_claim",
@@ -695,35 +735,42 @@ export async function run_legislative_version_queue_cycle(): Promise<void> {
   if (queue_cycle_running || queue_stopped) return;
   queue_cycle_running = true;
   try {
-    await reconcile_completed_jobs_if_due();
-    try {
-      const classified_count = await classify_hidden_rosetta_terminal_rejections();
-      if (classified_count > 0) {
-        console.log("[LegislativeVersionQueue] terminal_repairs_classified", {
-          classified_count,
-          contract: "rosetta-terminal-rejection-repair-v1",
+    const recovery_contract_scope =
+      legislative_version_queue_recovery_contract_scope();
+    await reconcile_completed_jobs_if_due(recovery_contract_scope);
+    if (!recovery_contract_scope) {
+      try {
+        const classified_count = await classify_hidden_rosetta_terminal_rejections();
+        if (classified_count > 0) {
+          console.log("[LegislativeVersionQueue] terminal_repairs_classified", {
+            classified_count,
+            contract: "rosetta-terminal-rejection-repair-v1",
+          });
+        }
+      } catch (error) {
+        // Classification is fail-closed in Rosetta: terminal runs stay rejected.
+        // A control-surface outage must not stop unrelated queue work.
+        console.error("[LegislativeVersionQueue] terminal_classifier_failed", {
+          error_code: safe_error_code(error),
         });
       }
-    } catch (error) {
-      // Classification is fail-closed in Rosetta: terminal runs stay rejected.
-      // A control-surface outage must not stop unrelated queue work.
-      console.error("[LegislativeVersionQueue] terminal_classifier_failed", {
-        error_code: safe_error_code(error),
-      });
     }
     let oldest_unbound_docket_identifiers: string[] = [];
-    try {
-      oldest_unbound_docket_identifiers = await load_oldest_unbound_docket_identifiers();
-    } catch (error) {
-      // The recovery selector is supplemental. An unavailable Rosetta control
-      // surface must not stop ordinary eligible/degraded queue processing.
-      console.error("[LegislativeVersionQueue] backlog_selector_failed", {
-        error_code: safe_error_code(error),
-      });
+    if (!recovery_contract_scope) {
+      try {
+        oldest_unbound_docket_identifiers = await load_oldest_unbound_docket_identifiers();
+      } catch (error) {
+        // The recovery selector is supplemental. An unavailable Rosetta control
+        // surface must not stop ordinary eligible/degraded queue processing.
+        console.error("[LegislativeVersionQueue] backlog_selector_failed", {
+          error_code: safe_error_code(error),
+        });
+      }
     }
     const jobs = await claim_jobs(
       bounded_concurrency(),
       oldest_unbound_docket_identifiers,
+      recovery_contract_scope,
     );
     await Promise.all(jobs.map(job => run_with_database_job_context(
       { label: "legislative_version_queue_job", job_id: job.queue_id },
@@ -739,8 +786,27 @@ export async function run_legislative_version_queue_cycle(): Promise<void> {
   }
 }
 
+function schedule_legislative_version_queue_cycle(): void {
+  if (active_queue_cycle) return;
+  const cycle = run_legislative_version_queue_cycle();
+  active_queue_cycle = cycle;
+  void cycle.finally(() => {
+    if (active_queue_cycle === cycle) active_queue_cycle = null;
+  });
+}
+
 export function start_legislative_version_queue_worker(): void {
   if (queue_timer || !queue_enabled()) return;
+  let recovery_contract_scope: string | null;
+  try {
+    recovery_contract_scope =
+      legislative_version_queue_recovery_contract_scope();
+  } catch (error) {
+    console.error("[LegislativeVersionQueue] disabled_invalid_scope", {
+      error_code: safe_error_code(error),
+    });
+    return;
+  }
   queue_stopped = false;
   const interval_ms = bounded_poll_interval();
   const concurrency = bounded_concurrency();
@@ -750,18 +816,20 @@ export function start_legislative_version_queue_worker(): void {
     interval_ms,
     reconcile_interval_ms,
     concurrency,
+    recovery_contract_scope,
     lease_minutes: QUEUE_LEASE_MINUTES,
     priority_scope: "oldest_unbound_docket_then_current_session_latest_version_host_fairness",
   });
-  void run_legislative_version_queue_cycle();
+  schedule_legislative_version_queue_cycle();
   queue_timer = setInterval(() => {
-    void run_legislative_version_queue_cycle();
+    schedule_legislative_version_queue_cycle();
   }, interval_ms);
   queue_timer.unref?.();
 }
 
-export function stop_legislative_version_queue_worker(): void {
+export async function stop_legislative_version_queue_worker(): Promise<void> {
   queue_stopped = true;
   if (queue_timer) clearInterval(queue_timer);
   queue_timer = null;
+  await active_queue_cycle;
 }
