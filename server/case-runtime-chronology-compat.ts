@@ -269,21 +269,12 @@ function merge_chronology(
       existing.intake_session_ids.add(output.intake_session_id);
     }
   }
-  const variant_counts = new Map<string, number>();
-  for (const { event } of events.values()) {
-    variant_counts.set(
-      event.event_id,
-      (variant_counts.get(event.event_id) ?? 0) + 1,
-    );
-  }
   return [...events.values()].map(
     ({ event, payload_hash, intake_session_ids }) => ({
       ...event,
       source_intake_session_ids: [...intake_session_ids].sort(),
       canonical_projection_variant_id:
-        (variant_counts.get(event.event_id) ?? 0) > 1
-          ? `${event.event_id}@${payload_hash.slice(0, 16)}`
-          : event.event_id,
+        `${event.event_id}@${payload_hash.slice(0, 16)}`,
     }),
   ).sort((left, right) =>
     (left.date ?? "9999-99-99").localeCompare(right.date ?? "9999-99-99")

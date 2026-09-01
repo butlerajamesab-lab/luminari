@@ -120,7 +120,10 @@ describe("chronology Layer 3 source binding", () => {
   it("projects only events bound to the exact preserved source identity", async () => {
     const events = await listEvents(44);
 
-    expect(events.map((event) => event.id)).toEqual(["event-preserved"]);
+    expect(events.map((event) => event.canonical_event_id)).toEqual([
+      "event-preserved",
+    ]);
+    expect(events[0].id).toMatch(/^event-preserved@[0-9a-f]{16}$/);
     expect(events[0]).toMatchObject({
       documentId: 7,
       documentFilename: "preserved.pdf",
@@ -261,15 +264,17 @@ describe("chronology Layer 3 source binding", () => {
       ],
     });
 
-    await expect(listEvents(44)).resolves.toEqual([
+    const events = await listEvents(44);
+    expect(events).toEqual([
       expect.objectContaining({
-        id: "event-preserved",
+        canonical_event_id: "event-preserved",
         documentId: 7,
         documentFilename: "duplicate-a.pdf",
         canonical_source_intake_session_id: "session-a",
         canonical_source_intake_session_ids: ["session-a", "session-b"],
       }),
     ]);
+    expect(events[0].id).toMatch(/^event-preserved@[0-9a-f]{16}$/);
     await expect(getCaseChronologyProjectionState(44)).resolves.toMatchObject({
       projection_state: "canonical_projection",
       event_count: 1,
