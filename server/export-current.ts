@@ -277,6 +277,15 @@ export async function loadCurrentCaseExportData(
       return documentId === null ? [] : [documentId];
     }),
   );
+  const governedArtifactKeys = new Set(
+    integrity.artifacts.flatMap((artifact) =>
+      artifact.integrity_status === "preserved" &&
+      artifact.legacy_document_id !== null &&
+      governedSourceDocumentIds.has(artifact.legacy_document_id)
+        ? [artifact.artifact_key]
+        : [],
+    ),
+  );
   const snapshotEntities = asRecords(entityRows).filter((row) =>
     matchesSnapshot(row, requestedSnapshotId),
   );
@@ -326,6 +335,15 @@ export async function loadCurrentCaseExportData(
           String(right.intake_session_id ?? ""),
         ),
     );
+  const stateTransitions = states.rows.filter((transition) =>
+    governedArtifactKeys.has(
+      String(
+        transition.source_artifact_key ??
+          transition.canonical_source_artifact_key ??
+          "",
+      ),
+    ),
+  );
 
   return {
     export_contract: CURRENT_EXPORT_CONTRACT,
@@ -340,7 +358,7 @@ export async function loadCurrentCaseExportData(
       source_filter_policy:
         "active linked source artifacts with sealed preserved integrity",
       derived_source_filter_policy:
-        "entities, chronology, and relationships require governed source bindings",
+        "entities, chronology, relationships, and state transitions require governed source bindings",
       relationship_filter_policy:
         "at least one backing-evidence row bound to a governed source",
       reviewer_commitment_boundary:
@@ -356,7 +374,7 @@ export async function loadCurrentCaseExportData(
     chronology,
     relationships,
     verification_records: verification.rows,
-    state_transitions: states.rows,
+    state_transitions: stateTransitions,
     patterns: patterns.rows,
     cascades: cascades.rows,
     claim_candidates: claims.rows,
@@ -403,11 +421,11 @@ function jsonStringify(value: unknown): string {
   );
 }
 
-async function writeJsonChunk(res: Response, chunk: string): Promise<void> {
-  if (res.write(chunk) === false) await waitForJsonDrain(res);
+async function writeResponseChunk(res: Response, chunk: string): Promise<void> {
+  if (res.write(chunk) === false) await waitForResponseDrain(res);
 }
 
-function waitForJsonDrain(res: Response): Promise<void> {
+function waitForResponseDrain(res: Response): Promise<void> {
   if (res.destroyed || res.writableEnded) {
     return Promise.reject(
       new Error("Export response closed before buffered data drained"),
@@ -443,28 +461,28 @@ function waitForJsonDrain(res: Response): Promise<void> {
 
 async function writeJsonValue(res: Response, value: unknown): Promise<void> {
   if (!Array.isArray(value)) {
-    await writeJsonChunk(res, jsonStringify(value));
+    await writeResponseChunk(res, jsonStringify(value));
     return;
   }
 
-  await writeJsonChunk(res, "[");
+  await writeResponseChunk(res, "[");
   for (let index = 0; index < value.length; index++) {
-    if (index > 0) await writeJsonChunk(res, ",");
+    if (index > 0) await writeResponseChunk(res, ",");
     // Serialize one row at a time. The governed projection is already resident
     // in memory, but exports must not allocate a second whole-array JSON copy.
-    await writeJsonChunk(res, jsonStringify(value[index]));
+    await writeResponseChunk(res, jsonStringify(value[index]));
   }
-  await writeJsonChunk(res, "]");
+  await writeResponseChunk(res, "]");
 }
 
 async function writeJsonObject(
   res: Response,
   data: CurrentCaseExportData,
 ): Promise<void> {
-  await writeJsonChunk(res, "{");
+  await writeResponseChunk(res, "{");
   let first = true;
   for (const [key, value] of Object.entries(data)) {
-    await writeJsonChunk(res, `${first ? "" : ","}${jsonStringify(key)}:`);
+    await writeResponseChunk(res, `${first ? "" : ","}${jsonStringify(key)}:`);
     await writeJsonValue(res, value);
     first = false;
   }
@@ -735,10 +753,9 @@ function renderCounts(data: CurrentCaseExportData): string {
   return `<div class="counts">${items.map(([label, value]) => `<div class="count"><strong>${value}</strong>${escapeHtml(label)}</div>`).join("")}</div>`;
 }
 
-function page(
+function pageStart(
   data: CurrentCaseExportData,
   title: string,
-  sections: string,
   searchable: boolean,
 ): string {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -749,9 +766,11 @@ function page(
     <p class="muted">Generated ${escapeHtml(data.generated_at)} · ${escapeHtml(data.export_contract)}</p>
     <div class="notice"><strong>Evidence posture:</strong> This report displays the sealed current Universal Intake projection. Machine-derived verification records, transitions, patterns, and claim candidates remain uncommitted until a reviewer acts.</div>
     ${renderCounts(data)}
-    ${searchable ? '<input id="search" type="search" placeholder="Search this offline export" aria-label="Search this export">' : ""}
-    ${sections}
-    <footer>Storage locations and private object keys are intentionally excluded. Source identity is carried by filenames, hashes, canonical artifact keys, offsets, output hashes, and receipt hashes.</footer>
+    ${searchable ? '<input id="search" type="search" placeholder="Search this offline export" aria-label="Search this export">' : ""}`;
+}
+
+function pageEnd(searchable: boolean): string {
+  return `<footer>Storage locations and private object keys are intentionally excluded. Source identity is carried by filenames, hashes, canonical artifact keys, offsets, output hashes, and receipt hashes.</footer>
     ${
       searchable
         ? `<script>
@@ -768,6 +787,15 @@ function page(
         : ""
     }
   </body></html>`;
+}
+
+function page(
+  data: CurrentCaseExportData,
+  title: string,
+  sections: string,
+  searchable: boolean,
+): string {
+  return pageStart(data, title, searchable) + sections + pageEnd(searchable);
 }
 
 export function renderFullBundle(data: CurrentCaseExportData): string {
@@ -838,5 +866,18 @@ export async function streamHtmlBundle(
 ): Promise<void> {
   setExportDownloadHeaders(res, "full-bundle", asRecord(caseData).name);
   const data = await loadCurrentCaseExportData(caseData, caseId);
-  res.end(renderFullBundle(data));
+  await writeResponseChunk(
+    res,
+    pageStart(data, "Luminari governed evidence bundle", true),
+  );
+  await writeResponseChunk(res, renderSources(data, true));
+  await writeResponseChunk(res, renderChronology(data));
+  await writeResponseChunk(res, renderEntities(data));
+  await writeResponseChunk(res, renderRelationships(data));
+  await writeResponseChunk(res, renderVerification(data));
+  await writeResponseChunk(res, renderStateTransitions(data));
+  await writeResponseChunk(res, renderCandidates(data));
+  await writeResponseChunk(res, renderReceipts(data));
+  await writeResponseChunk(res, pageEnd(true));
+  res.end();
 }

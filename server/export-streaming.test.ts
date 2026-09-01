@@ -39,6 +39,7 @@ import {
   ExportRequestError,
   loadCurrentCaseExportData,
   setExportDownloadHeaders,
+  streamHtmlBundle,
   streamJsonExport,
 } from "./export-current";
 
@@ -213,6 +214,45 @@ describe("sovereign export response contract", () => {
     ).toBe(false);
   });
 
+  it("streams the HTML bundle section by section", async () => {
+    state.readIntegrity.mockResolvedValue({
+      artifacts: [
+        {
+          artifact_key: "artifact-current",
+          legacy_document_id: 7,
+          integrity_status: "preserved",
+        },
+      ],
+    });
+    state.listDocuments.mockResolvedValue([
+      { id: 7, filename: "inspection.pdf" },
+    ]);
+    const { res } = responseDouble();
+
+    await streamHtmlBundle(res, { id: 44, name: "Inspection case" }, 44);
+
+    const written = (res.write as ReturnType<typeof vi.fn>).mock.calls.map(
+      ([chunk]) => String(chunk),
+    );
+    expect(written.length).toBeGreaterThanOrEqual(10);
+    expect(written[0]).toContain("<!doctype html>");
+    expect(written.some((chunk) => chunk.includes("Source register"))).toBe(
+      true,
+    );
+    expect(
+      written.some((chunk) => chunk.includes("Source-bound chronology")),
+    ).toBe(true);
+    expect(written.at(-1)).toContain("</html>");
+    expect(res.end).toHaveBeenCalledWith();
+    expect(
+      written.some(
+        (chunk) =>
+          chunk.includes("Source register") &&
+          chunk.includes("Source-bound chronology"),
+      ),
+    ).toBe(false);
+  });
+
   it("stops waiting for backpressure when the client disconnects", async () => {
     const { res } = responseDouble();
     const events = new EventEmitter();
@@ -276,8 +316,16 @@ describe("sovereign export response contract", () => {
     ]);
     state.readIntegrity.mockResolvedValue({
       artifacts: [
-        { legacy_document_id: 7, integrity_status: "preserved" },
-        { legacy_document_id: 8, integrity_status: "quarantined" },
+        {
+          artifact_key: "artifact-current",
+          legacy_document_id: 7,
+          integrity_status: "preserved",
+        },
+        {
+          artifact_key: "artifact-stale",
+          legacy_document_id: 8,
+          integrity_status: "quarantined",
+        },
       ],
     });
     state.listEntities.mockResolvedValue([
@@ -306,6 +354,40 @@ describe("sovereign export response contract", () => {
       },
       { id: "relationship-unsupported", backingEvidence: [] },
     ]);
+    state.readLayer.mockImplementation(
+      async (_caseId: number, layerName: string) =>
+        layerName === "state_timeline"
+          ? {
+              state: "canonical_projection",
+              outputs: [
+                {
+                  intake_session_id: "session-current",
+                  layer_run_id: "run-state-current",
+                  layer_name: layerName,
+                  layer_version: "2.5.0",
+                  rule_version: "2.5.0",
+                  parser_version: "parser-v1",
+                  input_hash: "1".repeat(64),
+                  output_hash: "2".repeat(64),
+                  receipt_hash: "3".repeat(64),
+                  completed_at: "2026-08-30T21:00:00.000Z",
+                  unresolved_dependencies: [],
+                  projection_current: true,
+                  data: [
+                    {
+                      transition_id: "transition-current",
+                      source_artifact_key: "artifact-current",
+                    },
+                    {
+                      transition_id: "transition-stale",
+                      source_artifact_key: "artifact-stale",
+                    },
+                  ],
+                },
+              ],
+            }
+          : { state: "not_projected", outputs: [] },
+    );
 
     const exported = await loadCurrentCaseExportData(
       { id: 44, name: "Inspection case" },
@@ -327,11 +409,16 @@ describe("sovereign export response contract", () => {
     expect(exported.chronology.map((event) => event.id)).toEqual([
       "event-current",
     ]);
+    expect(
+      exported.state_transitions.map((transition) =>
+        String(transition.transition_id),
+      ),
+    ).toEqual(["transition-current"]);
     expect(exported.projection_scope.relationship_filter_policy).toBe(
       "at least one backing-evidence row bound to a governed source",
     );
     expect(exported.projection_scope.derived_source_filter_policy).toBe(
-      "entities, chronology, and relationships require governed source bindings",
+      "entities, chronology, relationships, and state transitions require governed source bindings",
     );
   });
 

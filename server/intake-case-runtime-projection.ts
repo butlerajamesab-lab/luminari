@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 
 import { getPool } from "./db-legacy";
 import { computeHash } from "./engines/intake-spine/utils";
+import { read_case_intake_integrity_projection } from "./intake-case-integrity-projection";
 
 const EXECUTION_CONTRACT_VERSION = "luminari.intake.layer-execution.v1";
 const CANONICALIZATION_VERSION = "luminari.intake.canonical-json.v2";
@@ -45,6 +46,7 @@ export type SourceArtifactRow = {
   filename: string | null;
   mime_type: string | null;
   metadata: any;
+  preservation_integrity_status: "preserved" | "quarantined" | null;
 };
 
 type CanonicalLayerOutput<T> = {
@@ -386,8 +388,9 @@ async function load_case_layer_outputs<T>(
 }
 
 async function load_case_source_artifacts(case_id: number): Promise<SourceArtifactRow[]> {
-  const result = await getPool().query(
-    `select
+  const [result, integrity] = await Promise.all([
+    getPool().query(
+      `select
        a.intake_session_id,
        a.artifact_id::text,
        a.artifact_key,
@@ -411,10 +414,24 @@ async function load_case_source_artifacts(case_id: number): Promise<SourceArtifa
        and a.artifact_type = 'source_document'
        and a.artifact_status in ('registered', 'preserved')
        and coalesce(d.document_resolution, 'active') = 'active'
-     order by a.artifact_key, a.artifact_id`,
-    [case_id],
+       order by a.artifact_key, a.artifact_id`,
+      [case_id],
+    ),
+    read_case_intake_integrity_projection(case_id),
+  ]);
+  const preserved_artifacts = new Set(
+    integrity.artifacts.flatMap(artifact =>
+      artifact.integrity_status === "preserved"
+        ? [`${artifact.intake_session_id}\u001f${artifact.artifact_id}\u001f${artifact.artifact_key}`]
+        : [],
+    ),
   );
-  return result.rows as SourceArtifactRow[];
+  return result.rows.flatMap(row => {
+    const identity = `${String(row.intake_session_id)}\u001f${String(row.artifact_id)}\u001f${String(row.artifact_key)}`;
+    return preserved_artifacts.has(identity)
+      ? [{ ...row, preservation_integrity_status: "preserved" as const }]
+      : [];
+  });
 }
 
 function source_artifact_index(rows: SourceArtifactRow[]) {
@@ -455,6 +472,15 @@ export function resolve_source_artifact_binding(
       binding_state: "missing",
     };
   }
+  if (rows.some(row => row.preservation_integrity_status !== "preserved")) {
+    return {
+      document_id: null,
+      filename: null,
+      snapshot_id: null,
+      source_artifact_status: null,
+      binding_state: "ineligible",
+    };
+  }
   const statuses = [...new Set(rows.map(row => row.artifact_status))];
   const artifact_ids = [...new Set(rows.map(row => row.artifact_id))];
   if (statuses.some(status => status !== "registered" && status !== "preserved")) {
@@ -486,7 +512,7 @@ export function resolve_source_artifact_binding(
     document_id: document_ids[0],
     filename: filenames.length === 1 ? filenames[0] : null,
     snapshot_id: snapshot_ids.length === 1 ? snapshot_ids[0] : null,
-    source_artifact_status: statuses[0] as "registered" | "preserved",
+    source_artifact_status: "preserved",
     binding_state: "bound",
   };
 }
@@ -760,11 +786,7 @@ export async function get_governed_document_projection(
     source_bound,
     processing_state: source_bound ? "governed_execution_complete" : "not_bound",
     canonical_artifact_keys: [...new Set(bound_artifacts.map(row => row.artifact_key))].sort(),
-    source_artifact_statuses: [...new Set(bound_artifacts.map(row => row.artifact_status))]
-      .filter((status): status is "registered" | "preserved" =>
-        status === "registered" || status === "preserved"
-      )
-      .sort(),
+    source_artifact_statuses: bound_artifacts.length > 0 ? ["preserved"] : [],
     entity_count: new Set(roles.map(role => role.entityId)).size,
     mention_count: roles.length,
   };
