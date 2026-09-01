@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { __testing } from "./context";
+import { __testing, createContext } from "./context";
 import { dedupe_user_lookup } from "./user-cache";
 
 const TEST_UUID = "186ad6af-4528-4153-a466-5e3ee1a5165a";
@@ -45,24 +45,16 @@ describe("authentication runtime security", () => {
     expect(serialized).toContain("email");
   });
 
-  it("never activates the artificial inspection identity in production", () => {
-    vi.stubEnv("NODE_ENV", "production");
-    vi.stubEnv("LIGHTHOUSE_INSPECTION_MODE", "true");
-
-    expect(__testing.isLighthouseInspectionMode()).toBe(false);
-  });
-
-  it("allows explicit server-only inspection mode outside production", () => {
+  it("does not create an artificial identity from the retired inspection flag", async () => {
     vi.stubEnv("NODE_ENV", "test");
     vi.stubEnv("LIGHTHOUSE_INSPECTION_MODE", "true");
 
-    expect(__testing.isLighthouseInspectionMode()).toBe(true);
-  });
+    const context = await createContext({
+      req: { headers: {} },
+      res: {},
+    } as any);
 
-  it("keeps inspection mode off by default outside production", () => {
-    vi.stubEnv("NODE_ENV", "development");
-    vi.stubEnv("LIGHTHOUSE_INSPECTION_MODE", "false");
-
-    expect(__testing.isLighthouseInspectionMode()).toBe(false);
+    expect(context.user).toBeNull();
+    expect(context.auth.auth_status).toBe("unauthenticated");
   });
 });

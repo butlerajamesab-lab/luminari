@@ -113,7 +113,7 @@ Certain Render differences may be intentional upgrades and should not be treated
 - CivicMap may be upgraded beyond the original map behavior.
 - Atlas data population should remain separate from Lighthouse UI display.
 - Render may use different route shells if source-backed functionality is preserved.
-- Authentication may remain disabled or bypassed for inspection mode until sign-in is verified.
+- Review environments use the same Supabase authentication boundary as production. Synthetic preview identities are prohibited.
 
 Upgrade overlay does not excuse missing baseline surfaces.
 
@@ -192,13 +192,13 @@ Known or suspected missing/broken/hidden routes from user reports and baseline d
 
 ## 7. Dashboard Recovery Priorities
 
-1. Restore stable inspection access without production auth activation.
+1. Restore stable review access through a real non-production Supabase account.
 2. Preserve Alexander dashboard/workspace continuity:
    - continue where you left off
    - recent ingestion/case items
    - direct access
    - guided start
-   - inspection mode usability
+   - authenticated review usability
 3. Restore sidebar/nav grouping from source docs.
 4. Fix broken core routes:
    - Docket Room
