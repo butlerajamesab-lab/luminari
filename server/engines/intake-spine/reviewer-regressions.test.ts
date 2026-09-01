@@ -181,6 +181,44 @@ describe("Codex reviewer regressions", () => {
     }
   });
 
+  it("projects every pair in an explicitly coordinated endpoint list", () => {
+    const artifact = artifactFromSentences([
+      "Resident 1, Resident 2, and Resident 3 are family.",
+    ]);
+    const entities: Entity[] = [
+      entityAtSource("resident-1", "person", "Resident 1", artifact),
+      entityAtSource("resident-2", "person", "Resident 2", artifact),
+      entityAtSource("resident-3", "person", "Resident 3", artifact),
+    ];
+
+    const relationships = processLayer7({
+      entities,
+      artifacts: [artifact],
+    }).data;
+
+    expect(
+      relationships
+        .map((relationship) =>
+          [relationship.entity_a_id, relationship.entity_b_id].sort().join("|"),
+        )
+        .sort(),
+    ).toEqual([
+      "entity-resident-1|entity-resident-2",
+      "entity-resident-1|entity-resident-3",
+      "entity-resident-2|entity-resident-3",
+    ]);
+    expect(
+      relationships.every((relationship) => relationship.type === "family"),
+    ).toBe(true);
+    expect(
+      relationships.every(
+        (relationship) =>
+          relationship.source_refs.length === 1 &&
+          relationship.source_refs[0].marker_text === "are family",
+      ),
+    ).toBe(true);
+  });
+
   it("does not borrow a later predicate for an earlier coordinated pair", () => {
     const artifact = artifactFromSentences([
       "Alice and Bob met Carol and Dave are family.",

@@ -69,6 +69,7 @@ export const RULE_MANIFEST: {
   role_map: Record<RelationshipType, { authority: string; subject: string }>;
   mention_binding: 'exact_extracted_mention_offsets_only';
   marker_scope: 'bound_regions_in_one_sentence';
+  coordinated_endpoint_policy: 'complete_contiguous_list_all_pairs';
   endpoint_type_policy: 'role_compatible';
 } = {
   context_chars: 32,
@@ -120,6 +121,7 @@ export const RULE_MANIFEST: {
   },
   mention_binding: 'exact_extracted_mention_offsets_only',
   marker_scope: 'bound_regions_in_one_sentence',
+  coordinated_endpoint_policy: 'complete_contiguous_list_all_pairs',
   endpoint_type_policy: 'role_compatible',
 };
 
@@ -216,25 +218,22 @@ export function processLayer7(input: Layer7Input): EngineResult<Relationship[]> 
           const markerSearchEnd = second.position;
           if (markerSearchEnd <= markerSearchStart) continue;
           const betweenMentions = spanText.substring(markerSearchStart, markerSearchEnd);
-          const postEndpointStart = second.position + second.mention_text.length;
-          const coordinatedEndpoints = /^\s*,?\s*(?:and|or|&)\s*$/i.test(betweenMentions);
-          const postEndpointText = spanText.substring(postEndpointStart);
-          const postEndpointLeadingWhitespace = postEndpointText.search(/\S/);
 
           for (const marker of RELATIONSHIP_MARKERS) {
-            const markerRegion = marker.scope === 'post_coordinated_endpoints'
-              ? coordinatedEndpoints && postEndpointLeadingWhitespace >= 0
-                ? {
-                    text: postEndpointText.substring(postEndpointLeadingWhitespace),
-                    start: postEndpointStart + postEndpointLeadingWhitespace,
-                  }
-                : null
-              : { text: betweenMentions, start: markerSearchStart };
-            if (!markerRegion) continue;
-
-            marker.pattern.lastIndex = 0;
-            const markerMatch = marker.pattern.exec(markerRegion.text);
-            if (!markerMatch) continue;
+            const markerBinding = marker.scope === 'post_coordinated_endpoints'
+              ? findPostCoordinatedMarkerForPair(
+                  spanText,
+                  entitiesInSpan,
+                  i,
+                  j,
+                  marker.pattern,
+                )
+              : findMarkerInRegion(
+                  betweenMentions,
+                  markerSearchStart,
+                  marker.pattern,
+                );
+            if (!markerBinding) continue;
 
             const textualRoles = getTextualRoles(marker.type, marker.direction);
             if (
@@ -256,8 +255,8 @@ export function processLayer7(input: Layer7Input): EngineResult<Relationship[]> 
               artifact_key: artifact.artifact_key,
               span_start_offset: span.start_offset,
               span_text: spanText,
-              marker_text: markerMatch[0],
-              marker_offset: span.start_offset + markerRegion.start + markerMatch.index,
+              marker_text: markerBinding.match[0],
+              marker_offset: span.start_offset + markerBinding.marker_offset,
             };
 
             const existing = relationshipMap.get(relationship_id);
@@ -300,6 +299,68 @@ export function processLayer7(input: Layer7Input): EngineResult<Relationship[]> 
     unresolved_dependencies: unresolved.sort((a, b) => a.field.localeCompare(b.field)),
     is_sealed: false,
   };
+}
+
+type SpanEntityMention = {
+  entity: Entity;
+  position: number;
+  mention_text: string;
+};
+
+function findMarkerInRegion(
+  text: string,
+  regionStart: number,
+  pattern: RegExp,
+): { match: RegExpExecArray; marker_offset: number } | null {
+  pattern.lastIndex = 0;
+  const match = pattern.exec(text);
+  return match
+    ? { match, marker_offset: regionStart + match.index }
+    : null;
+}
+
+function findPostCoordinatedMarkerForPair(
+  spanText: string,
+  mentions: SpanEntityMention[],
+  pairFirstIndex: number,
+  pairSecondIndex: number,
+  pattern: RegExp,
+): { match: RegExpExecArray; marker_offset: number } | null {
+  for (let groupEnd = pairSecondIndex; groupEnd < mentions.length; groupEnd++) {
+    const lastMention = mentions[groupEnd];
+    const postEndpointStart = lastMention.position + lastMention.mention_text.length;
+    const postEndpointText = spanText.substring(postEndpointStart);
+    const leadingWhitespace = postEndpointText.search(/\S/);
+    if (leadingWhitespace < 0) continue;
+
+    const markerBinding = findMarkerInRegion(
+      postEndpointText.substring(leadingWhitespace),
+      postEndpointStart + leadingWhitespace,
+      pattern,
+    );
+    if (!markerBinding) continue;
+
+    let groupStart = groupEnd;
+    while (groupStart > 0) {
+      const previous = mentions[groupStart - 1];
+      const current = mentions[groupStart];
+      const separator = spanText.substring(
+        previous.position + previous.mention_text.length,
+        current.position,
+      );
+      if (!isCoordinatedListSeparator(separator)) break;
+      groupStart--;
+    }
+
+    if (pairFirstIndex >= groupStart && pairSecondIndex <= groupEnd) {
+      return markerBinding;
+    }
+  }
+  return null;
+}
+
+function isCoordinatedListSeparator(text: string): boolean {
+  return /^\s*(?:,\s*(?:(?:and|or|&)\s*)?|(?:and|or|&)\s*)$/i.test(text);
 }
 
 export function isRelationshipRoleTypeCompatible(
