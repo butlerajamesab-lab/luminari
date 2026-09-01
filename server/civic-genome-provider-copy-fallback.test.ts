@@ -63,7 +63,7 @@ describe("Civic Genome provider-copy source fallback", () => {
 
     expect(fetch_mock).toHaveBeenCalledTimes(2);
     expect(fetch_mock.mock.calls[0]?.[0]).toContain("legislature.vermont.gov");
-    expect(fetch_mock.mock.calls[1]?.[0]).toContain("legiscan.com");
+    expect(String(fetch_mock.mock.calls[1]?.[0])).toContain("legiscan.com");
     expect(extracted.source_url).toContain("legiscan.com");
     expect(extracted.source_version).toContain("hash-checked-provider-copy-v1");
     expect(extracted.source_metadata).toMatchObject({
@@ -101,6 +101,50 @@ describe("Civic Genome provider-copy source fallback", () => {
 
     await expect(extract_version_source(version as never))
       .rejects.toThrow("legislative_version_provider_fallback_authority_invalid");
+  });
+
+  it("rejects a provider redirect before it can leave the LegiScan boundary", async () => {
+    const source = html_source();
+    const expected_md5 = createHash("md5").update(source).digest("hex");
+    const fetch_mock = vi.fn()
+      .mockRejectedValueOnce(new TypeError("fetch failed"))
+      .mockResolvedValueOnce(new Response(null, {
+        status: 302,
+        headers: { location: "http://127.0.0.1/internal" },
+      }));
+    vi.stubGlobal("fetch", fetch_mock);
+
+    await expect(extract_version_source(
+      version_fixture(source, expected_md5) as never,
+    )).rejects.toThrow("legislative_version_provider_fallback_authority_invalid");
+
+    expect(fetch_mock).toHaveBeenCalledTimes(2);
+  });
+
+  it("allows a bounded redirect that remains inside the LegiScan boundary", async () => {
+    const source = html_source();
+    const expected_md5 = createHash("md5").update(source).digest("hex");
+    const redirected_url = "https://www.legiscan.com/VT/text/S0001/id/99/download";
+    const fetch_mock = vi.fn()
+      .mockRejectedValueOnce(new TypeError("fetch failed"))
+      .mockResolvedValueOnce(new Response(null, {
+        status: 302,
+        headers: { location: redirected_url },
+      }))
+      .mockResolvedValueOnce(new Response(source, {
+        status: 200,
+        headers: { "content-type": "text/html" },
+      }));
+    vi.stubGlobal("fetch", fetch_mock);
+
+    const extracted = await extract_version_source(
+      version_fixture(source, expected_md5) as never,
+    );
+
+    expect(fetch_mock).toHaveBeenCalledTimes(3);
+    expect(fetch_mock.mock.calls[1]?.[1]).toMatchObject({ redirect: "manual" });
+    expect(fetch_mock.mock.calls[2]?.[0]).toEqual(new URL(redirected_url));
+    expect(extracted.source_url).toBe(redirected_url);
   });
 
   it("does not fall back when the official bytes arrive but parsing rejects them", async () => {

@@ -27,6 +27,7 @@ const ROSETTA_CORPUS_NAME = "Lighthouse Docket Legislative Versions";
 const ROSETTA_CORPUS_TYPE = "legislative_version";
 const PROVIDER_COPY_FALLBACK_VERSION = "hash-checked-provider-copy-v1";
 const PROVIDER_COPY_HOSTS = new Set(["legiscan.com", "www.legiscan.com"]);
+const MAX_PROVIDER_COPY_REDIRECTS = 5;
 
 export type legislative_version_processing_result = {
   bill_version_id: string;
@@ -85,6 +86,12 @@ type provider_copy_contract = {
   url: string;
   expected_md5: string;
   expected_size: number;
+};
+
+type provider_copy_source = {
+  bytes: Buffer;
+  content_type: string | null;
+  final_url: string;
 };
 
 type rosetta_source_content_receipt = {
@@ -179,6 +186,29 @@ async function fetch_bytes(
   }
 }
 
+function validated_provider_copy_url(
+  value: string,
+  failure_code: "url_invalid" | "authority_invalid",
+): URL {
+  let parsed: URL;
+  try {
+    parsed = new URL(value);
+  } catch {
+    throw new Error(`legislative_version_provider_fallback_${failure_code}`);
+  }
+  const host = parsed.hostname.toLowerCase();
+  if (
+    parsed.protocol !== "https:"
+    || !PROVIDER_COPY_HOSTS.has(host)
+    || (parsed.port !== "" && parsed.port !== "443")
+    || parsed.username !== ""
+    || parsed.password !== ""
+  ) {
+    throw new Error("legislative_version_provider_fallback_authority_invalid");
+  }
+  return parsed;
+}
+
 function provider_copy_contract_for(
   version: legislative_version_row,
   official_source_url: string,
@@ -192,17 +222,8 @@ function provider_copy_contract_for(
     throw new Error("legislative_version_provider_fallback_contract_incomplete");
   }
 
-  let parsed: URL;
-  try {
-    parsed = new URL(provider_url);
-  } catch {
-    throw new Error("legislative_version_provider_fallback_url_invalid");
-  }
-  const host = parsed.hostname.toLowerCase();
-  if (parsed.protocol !== "https:" || !PROVIDER_COPY_HOSTS.has(host)) {
-    throw new Error("legislative_version_provider_fallback_authority_invalid");
-  }
-  if (provider_url === official_source_url) {
+  const parsed = validated_provider_copy_url(provider_url, "url_invalid");
+  if (parsed.toString() === official_source_url) {
     throw new Error("legislative_version_provider_fallback_not_distinct");
   }
   if (!/^[0-9a-f]{32}$/.test(provider_hash)) {
@@ -225,15 +246,104 @@ function provider_copy_contract_for(
   };
 }
 
-function verify_provider_copy(
-  source: { bytes: Buffer; content_type: string | null },
+function verify_provider_copy_bytes(
+  bytes: Buffer,
   contract: provider_copy_contract,
 ): void {
-  if (source.bytes.length !== contract.expected_size) {
+  if (bytes.length !== contract.expected_size) {
     throw new Error("legislative_version_provider_fallback_size_mismatch");
   }
-  if (md5(source.bytes) !== contract.expected_md5) {
+  if (md5(bytes) !== contract.expected_md5) {
     throw new Error("legislative_version_provider_fallback_hash_mismatch");
+  }
+}
+
+async function fetch_provider_copy(
+  contract: provider_copy_contract,
+): Promise<provider_copy_source> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), SOURCE_FETCH_TIMEOUT_MS);
+  let current_url = validated_provider_copy_url(contract.url, "url_invalid");
+
+  try {
+    for (let redirect_count = 0; redirect_count <= MAX_PROVIDER_COPY_REDIRECTS; redirect_count += 1) {
+      const response = await fetch(current_url, {
+        method: "GET",
+        redirect: "manual",
+        headers: { accept: "application/pdf,text/html;q=0.9,*/*;q=0.1" },
+        signal: controller.signal,
+      });
+
+      if (response.status >= 300 && response.status < 400) {
+        const location = response.headers.get("location");
+        if (!location) {
+          throw new Error("legislative_version_provider_fallback_redirect_location_missing");
+        }
+        if (redirect_count === MAX_PROVIDER_COPY_REDIRECTS) {
+          throw new Error("legislative_version_provider_fallback_redirect_limit_exceeded");
+        }
+
+        let redirected_url: URL;
+        try {
+          redirected_url = new URL(location, current_url);
+        } catch {
+          throw new Error("legislative_version_provider_fallback_redirect_url_invalid");
+        }
+        current_url = validated_provider_copy_url(
+          redirected_url.toString(),
+          "authority_invalid",
+        );
+        continue;
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          `legislative_version_provider_fallback_fetch_failed:${response.status}`,
+        );
+      }
+      const content_length = Number(response.headers.get("content-length") ?? 0);
+      if (Number.isFinite(content_length) && content_length > MAX_SOURCE_BYTES) {
+        throw new Error("legislative_version_provider_fallback_exceeds_max_bytes");
+      }
+      const bytes = Buffer.from(await response.arrayBuffer());
+      if (bytes.length === 0) {
+        throw new Error("legislative_version_provider_fallback_empty");
+      }
+      if (bytes.length > MAX_SOURCE_BYTES) {
+        throw new Error("legislative_version_provider_fallback_exceeds_max_bytes");
+      }
+      verify_provider_copy_bytes(bytes, contract);
+      return {
+        bytes,
+        content_type: response.headers.get("content-type"),
+        final_url: current_url.toString(),
+      };
+    }
+    throw new Error("legislative_version_provider_fallback_redirect_limit_exceeded");
+  } catch (error) {
+    if (
+      error instanceof Error
+      && error.message.startsWith("legislative_version_provider_fallback_")
+    ) {
+      throw error;
+    }
+    const source_host = current_url.hostname.toLowerCase();
+    if (controller.signal.aborted) {
+      throw new Error(
+        `legislative_version_provider_fallback_timeout:${source_host}:${SOURCE_FETCH_TIMEOUT_MS}`,
+      );
+    }
+    const cause = error instanceof Error && error.cause && typeof error.cause === "object"
+      && "code" in error.cause
+      ? String(error.cause.code)
+      : error instanceof Error
+        ? error.name
+        : "unknown";
+    throw new Error(
+      `legislative_version_provider_fallback_network_failed:${source_host}:${cause}`,
+    );
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
@@ -455,11 +565,10 @@ export async function extract_version_source(
     if (!fallback) throw error;
 
     official_fetch_error = error instanceof Error ? error.message : "unknown";
-    source_url = fallback.url;
     california_pdf = null;
-    official = await fetch_bytes(source_url, true);
-    if (!official) throw new Error("legislative_version_provider_fallback_fetch_missing");
-    verify_provider_copy(official, fallback);
+    const provider_copy = await fetch_provider_copy(fallback);
+    source_url = provider_copy.final_url;
+    official = provider_copy;
     source_fetch_mode = "provider_copy_fallback";
   }
   if (!official) throw new Error("legislative_version_source_fetch_missing");
