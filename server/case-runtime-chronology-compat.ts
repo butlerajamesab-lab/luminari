@@ -22,6 +22,7 @@ type ChronologyEvent = {
 
 type MergedChronologyEvent = ChronologyEvent & {
   source_intake_session_ids: string[];
+  canonical_projection_variant_id: string;
 };
 
 function projection_error(message: string, cause?: unknown): never {
@@ -243,35 +244,55 @@ function merge_chronology(
 ): MergedChronologyEvent[] {
   const events = new Map<
     string,
-    { event: ChronologyEvent; intake_session_ids: Set<string> }
+    {
+      event: ChronologyEvent;
+      payload_hash: string;
+      intake_session_ids: Set<string>;
+    }
   >();
   for (const output of outputs) {
     for (const event of output.data) {
       if (!event || typeof event.event_id !== "string" || typeof event.event_text !== "string") {
         projection_error("canonical chronology contains an invalid event row");
       }
-      const existing = events.get(event.event_id);
+      const payload_hash = computeHash(event);
+      const variant_identity = `${event.event_id}\u001f${payload_hash}`;
+      const existing = events.get(variant_identity);
       if (!existing) {
-        events.set(event.event_id, {
+        events.set(variant_identity, {
           event,
+          payload_hash,
           intake_session_ids: new Set([output.intake_session_id]),
         });
         continue;
       }
-      if (computeHash(existing.event) !== computeHash(event)) {
-        projection_error(`canonical chronology event ${event.event_id} changed meaning across linked sessions`);
-      }
       existing.intake_session_ids.add(output.intake_session_id);
     }
   }
-  return [...events.values()].map(({ event, intake_session_ids }) => ({
-    ...event,
-    source_intake_session_ids: [...intake_session_ids].sort(),
-  })).sort((left, right) =>
+  const variant_counts = new Map<string, number>();
+  for (const { event } of events.values()) {
+    variant_counts.set(
+      event.event_id,
+      (variant_counts.get(event.event_id) ?? 0) + 1,
+    );
+  }
+  return [...events.values()].map(
+    ({ event, payload_hash, intake_session_ids }) => ({
+      ...event,
+      source_intake_session_ids: [...intake_session_ids].sort(),
+      canonical_projection_variant_id:
+        (variant_counts.get(event.event_id) ?? 0) > 1
+          ? `${event.event_id}@${payload_hash.slice(0, 16)}`
+          : event.event_id,
+    }),
+  ).sort((left, right) =>
     (left.date ?? "9999-99-99").localeCompare(right.date ?? "9999-99-99")
       || left.source_artifact_key.localeCompare(right.source_artifact_key)
       || left.source_span_offset - right.source_span_offset
-      || left.event_id.localeCompare(right.event_id),
+      || left.event_id.localeCompare(right.event_id)
+      || left.canonical_projection_variant_id.localeCompare(
+        right.canonical_projection_variant_id,
+      ),
   );
 }
 
@@ -312,7 +333,7 @@ export async function listEvents(caseId: number) {
     const binding = source_binding_for_event(bindings, event);
     if (binding.document_id === null) return [];
     return [{
-      id: event.event_id,
+      id: event.canonical_projection_variant_id,
       caseId,
       title: event.event_text,
       description: null,
@@ -323,6 +344,8 @@ export async function listEvents(caseId: number) {
       documentFilename: binding.filename,
       projection_source: "universal_intake_spine",
       canonical_event_id: event.event_id,
+      canonical_projection_variant_id:
+        event.canonical_projection_variant_id,
       canonical_date_precision: event.date_precision,
       canonical_verification_status: event.verification_status,
       canonical_actor: event.actor,

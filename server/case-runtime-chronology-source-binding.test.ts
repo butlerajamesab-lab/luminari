@@ -275,4 +275,94 @@ describe("chronology Layer 3 source binding", () => {
       event_count: 1,
     });
   });
+
+  it("preserves distinct versioned payloads that share an event ID", async () => {
+    const variants = [
+      [{ ...chronology[0], actor: null }],
+      [{ ...chronology[0], actor: "Resident 12" }],
+    ];
+    const canonicalOutput = (
+      sessionId: string,
+      outputArtifactId: string,
+      data: typeof chronology,
+    ) => {
+      const outputHash = computeHash(data);
+      return {
+        ...canonicalRows[0],
+        intake_session_id: sessionId,
+        layer_run_id: `run-${sessionId}`,
+        output_hash: outputHash,
+        output_refs: [{ artifact_id: outputArtifactId }],
+        receipt: {
+          ...canonicalRows[0].receipt,
+          output_artifact_id: outputArtifactId,
+        },
+        output_artifact_id: outputArtifactId,
+        metadata: {
+          ...canonicalRows[0].metadata,
+          output_hash: outputHash,
+          data,
+        },
+      };
+    };
+    mocks.query.mockImplementation(async (sql: string) => ({
+      rows: sql.includes("chronology_reconstruction")
+        ? [
+            canonicalOutput("session-a", "output-artifact-a", variants[0]),
+            canonicalOutput("session-b", "output-artifact-b", variants[1]),
+          ]
+        : [
+            {
+              intake_session_id: "session-a",
+              artifact_id: "source-a",
+              artifact_key: "artifact-preserved",
+              filename: "version-a.pdf",
+              metadata: { legacy_document_id: 7 },
+            },
+            {
+              intake_session_id: "session-b",
+              artifact_id: "source-b",
+              artifact_key: "artifact-preserved",
+              filename: "version-b.pdf",
+              metadata: { legacy_document_id: 9 },
+            },
+          ],
+    }));
+    mocks.readIntegrity.mockResolvedValue({
+      artifacts: [
+        {
+          intake_session_id: "session-a",
+          artifact_id: "source-a",
+          artifact_key: "artifact-preserved",
+          integrity_status: "preserved",
+        },
+        {
+          intake_session_id: "session-b",
+          artifact_id: "source-b",
+          artifact_key: "artifact-preserved",
+          integrity_status: "preserved",
+        },
+      ],
+    });
+
+    const events = await listEvents(44);
+    expect(events).toHaveLength(2);
+    expect(events.map((event) => event.canonical_event_id)).toEqual([
+      "event-preserved",
+      "event-preserved",
+    ]);
+    expect(new Set(events.map((event) => event.id)).size).toBe(2);
+    expect(
+      events.every(
+        (event) => event.id === event.canonical_projection_variant_id,
+      ),
+    ).toBe(true);
+    expect(new Set(events.map((event) => event.canonical_actor))).toEqual(
+      new Set([null, "Resident 12"]),
+    );
+    await expect(getCaseChronologyProjectionState(44)).resolves.toMatchObject({
+      projection_state: "canonical_projection",
+      event_count: 2,
+    });
+  });
 });

@@ -45,6 +45,7 @@ export interface legacy_timeline_event {
   document_id?: string | number | null;
   projection_source?: string | null;
   canonical_event_id?: string | null;
+  canonical_projection_variant_id?: string | null;
   canonical_date_precision?: "exact" | "month" | "year" | "unknown" | null;
   canonical_verification_status?: string | null;
   canonical_source_artifact_key?: string | null;
@@ -111,10 +112,15 @@ function project_intake_event_to_chronology(
   if (event.canonical_source_span_offset !== undefined && event.canonical_source_span_offset !== null) {
     source_references.add(`source_offset:${event.canonical_source_span_offset}`);
   }
-  source_references.add(`intake_event:${event.canonical_event_id ?? event.id}`);
+  source_references.add(
+    `intake_event:${event.canonical_projection_variant_id ?? event.canonical_event_id ?? event.id}`,
+  );
 
   return {
-    chronology_event_id: event.canonical_event_id ?? String(event.id),
+    chronology_event_id:
+      event.canonical_projection_variant_id ??
+      event.canonical_event_id ??
+      String(event.id),
     event_date,
     event_date_precision: precision,
     observed_event: build_observed_event(event),

@@ -39,6 +39,23 @@ describe("project_legacy_event_to_chronology", () => {
       "legacy_event:event-8",
     ]);
   });
+
+  it("uses the versioned projection identity for intake chronology variants", () => {
+    const record = project_legacy_event_to_chronology({
+      id: "event-shared@variant-a",
+      title: "Resident 12 fell",
+      projection_source: "universal_intake_spine",
+      canonical_event_id: "event-shared",
+      canonical_projection_variant_id: "event-shared@variant-a",
+      canonical_verification_status: "document_stated",
+      canonical_source_artifact_key: "artifact-shared",
+    });
+
+    expect(record.chronology_event_id).toBe("event-shared@variant-a");
+    expect(record.source_references).toContain(
+      "intake_event:event-shared@variant-a",
+    );
+  });
 });
 
 describe("sort_chronology_records", () => {
