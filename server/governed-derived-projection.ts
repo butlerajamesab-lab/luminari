@@ -56,6 +56,7 @@ function deduplicateCanonicalRows(
   const records = new Map<
     string,
     {
+      canonicalIdentity: string;
       row: GovernedRecord;
       payloadHash: string;
       intakeSessionIds: Set<string>;
@@ -84,19 +85,16 @@ function deduplicateCanonicalRows(
       );
     }
     const payloadHash = computeHash(canonicalRecordPayload(row));
-    const existing = records.get(identity);
+    const versionedIdentity = `${identity}\u001f${payloadHash}`;
+    const existing = records.get(versionedIdentity);
     if (!existing) {
-      records.set(identity, {
+      records.set(versionedIdentity, {
+        canonicalIdentity: identity,
         row,
         payloadHash,
         intakeSessionIds: new Set([sessionId]),
       });
       continue;
-    }
-    if (existing.payloadHash !== payloadHash) {
-      throw new Error(
-        `Governed ${label} ${identity} changed meaning across linked sessions`,
-      );
     }
     existing.intakeSessionIds.add(sessionId);
   }
@@ -104,6 +102,8 @@ function deduplicateCanonicalRows(
   return [...records.values()].map((record) => ({
     ...record.row,
     canonical_intake_session_ids: [...record.intakeSessionIds].sort(),
+    canonical_projection_variant_id:
+      `${record.canonicalIdentity}@${record.payloadHash.slice(0, 16)}`,
   }));
 }
 

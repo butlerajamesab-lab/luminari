@@ -132,4 +132,60 @@ describe("governed derived projection", () => {
       }),
     ]);
   });
+
+  it("retains distinct versioned payloads that share a canonical ID", () => {
+    const relationships = [
+      {
+        canonical_relationship_id: "relationship-shared",
+        evidence: [
+          { canonical_intake_session_id: "session-a" },
+          { canonical_intake_session_id: "session-b" },
+        ],
+      },
+    ];
+    const candidate = {
+      candidate_id: "claim-shared",
+      triggering_relationship_ids: ["relationship-shared"],
+      triggering_transition_ids: [],
+      triggering_pattern_ids: [],
+    };
+    const projected = projectGovernedDerivedRows({
+      verificationRows: [],
+      stateRows: [],
+      patternRows: [],
+      cascadeRows: [],
+      claimRows: [
+        inSession(
+          {
+            ...candidate,
+            governing_standards: ["registry-v1"],
+            registry_binding: { governed_registry_hash: "hash-v1" },
+          },
+          "session-a",
+        ),
+        inSession(
+          {
+            ...candidate,
+            governing_standards: ["registry-v2"],
+            registry_binding: { governed_registry_hash: "hash-v2" },
+          },
+          "session-b",
+        ),
+      ],
+      relationships,
+      governedArtifactIdentities: new Set(),
+    });
+
+    expect(projected.claimCandidates).toHaveLength(2);
+    expect(
+      new Set(
+        projected.claimCandidates.map(
+          (row) => row.canonical_projection_variant_id,
+        ),
+      ).size,
+    ).toBe(2);
+    expect(
+      projected.claimCandidates.map((row) => row.canonical_intake_session_ids),
+    ).toEqual([["session-a"], ["session-b"]]);
+  });
 });
