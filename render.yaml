@@ -6,7 +6,7 @@ services:
     branch: main
     autoDeployTrigger: checksPass
     buildCommand: >-
-      corepack pnpm install --frozen-lockfile && corepack pnpm build
+      corepack pnpm install --frozen-lockfile && corepack pnpm build && corepack pnpm run check:health-contracts
     startCommand: >-
       NODE_ENV=production node dist/index.js
     healthCheckPath: /api/health
