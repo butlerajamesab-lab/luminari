@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "wouter";
+import { PublicWalkthroughShell } from "@/components/PublicWalkthroughShell";
 
 const TYPE_CONFIG: Record<string, { icon: any; label: string; color: string }> = {
   question: { icon: HelpCircle, label: "Question", color: "text-blue-400" },
@@ -29,10 +30,12 @@ const STATUS_CONFIG: Record<string, { icon: any; label: string; variant: "defaul
 
 export default function AdminFeedback() {
   const { user } = useAuth();
+  const canAdminister = user?.role === "admin";
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const { data: feedbackList, refetch } = trpc.feedback.list.useQuery({ limit: 100 }, {
-    enabled: user?.role === "admin",
+  const { data: queriedFeedbackList, refetch } = trpc.feedback.list.useQuery({ limit: 100 }, {
+    enabled: canAdminister,
+    retry: false,
   });
 
   const updateStatus = trpc.feedback.updateStatus.useMutation({
@@ -42,21 +45,17 @@ export default function AdminFeedback() {
     },
   });
 
-  if (user?.role !== "admin") {
+  if (!canAdminister) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardContent className="pt-8 pb-6 text-center space-y-3">
-            <MessageCircle className="h-12 w-12 text-muted-foreground mx-auto" />
-            <h2 className="text-lg font-semibold">Admin Access Required</h2>
-            <p className="text-sm text-muted-foreground">
-              You need admin privileges to view the feedback dashboard.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <PublicWalkthroughShell
+        title="Feedback Dashboard"
+        description="The feedback-administration route is open for walkthrough. Messages, contact details, status history, and moderation actions remain private."
+        sections={["Feedback Summary", "Status Filters", "Message Review", "Moderation Queue"]}
+      />
     );
   }
+
+  const feedbackList = queriedFeedbackList;
 
   const filtered = feedbackList?.filter((f: any) =>
     statusFilter === "all" ? true : f.status === statusFilter

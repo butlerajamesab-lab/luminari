@@ -46,6 +46,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { PublicWalkthroughShell } from "@/components/PublicWalkthroughShell";
 
 const PLAN_LABELS: Record<string, { label: string; color: string }> = {
   free: { label: "Free", color: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20" },
@@ -58,9 +59,16 @@ const PLAN_LABELS: Record<string, { label: string; color: string }> = {
 
 export default function AdminUsers() {
   const { user: currentUser } = useAuth();
+  const canAdminister = currentUser?.role === "admin";
   const utils = trpc.useUtils();
-  const { data: users, isLoading } = trpc.usersAdmin.list.useQuery();
-  const { data: invites, isLoading: invitesLoading } = trpc.invites.list.useQuery();
+  const { data: users, isLoading } = trpc.usersAdmin.list.useQuery(undefined, {
+    enabled: canAdminister,
+    retry: false,
+  });
+  const { data: invites, isLoading: invitesLoading } = trpc.invites.list.useQuery(undefined, {
+    enabled: canAdminister,
+    retry: false,
+  });
   const [search, setSearch] = useState("");
   const [confirmDialog, setConfirmDialog] = useState<{
     userId: number;
@@ -117,6 +125,16 @@ export default function AdminUsers() {
     },
     onError: (err) => toast.error(err.message),
   });
+
+  if (!canAdminister) {
+    return (
+      <PublicWalkthroughShell
+        title="User Management"
+        description="The user-administration route is open for walkthrough. Account emails, roles, plans, invitation tokens, and management actions remain private."
+        sections={["User Summary", "Roles & Plans", "Invitation Links", "Account Controls"]}
+      />
+    );
+  }
 
   const filteredUsers = users?.filter((u) => {
     const q = search.toLowerCase();

@@ -20,8 +20,14 @@ describe("global dashboard escape", () => {
       '{ icon: Rocket, label: "Mission Control", path: "/mission-control" }',
     );
     expect(catalog).toContain("[...allNavSections, adminSection]");
+    expect(app).toContain('<Route path="/"><DashboardRouter /></Route>');
+    expect(app).toContain('<Route path="/" component={PlatformDashboard} />');
+    expect(app).not.toContain('navigate("/login", { replace: true })');
+    expect(layout).not.toContain('if (!user) {\n    return (');
+    expect(layout).toContain("Public browsing");
+    expect(layout).toContain("Sign in to make changes");
     expect(catalog).toContain('navigate("/case-overview")');
-    expect(catalog).toContain("Case Overview is a separate case surface.");
+    expect(catalog).toContain("Viewing and navigation are public");
   });
 
   it("keeps Dashboard reachable from shared layer headers", () => {

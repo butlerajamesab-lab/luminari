@@ -34,6 +34,8 @@ import AnnotatedText from "@/components/AnnotatedText";
 import type { AnnotationEntity, AnnotationQuote, AnnotationCorrelation } from "@/components/AnnotatedText";
 import Source_viewer from "@/components/Source_viewer";
 import { use_private_source_access } from "@/hooks/use_private_source_access";
+import { useAuth } from "@/core/hooks/useAuth";
+import { PublicWalkthroughShell } from "@/components/PublicWalkthroughShell";
 
 function QuotesTab({ docId }: { docId: number }) {
   const { data: quotes, isLoading } = trpc.documents.quotes.useQuery({ documentId: docId });
@@ -159,6 +161,23 @@ function EntitiesTab({ docId, governed }: { docId: number; governed: boolean }) 
 }
 
 export default function DocumentDetail() {
+  const { user } = useAuth();
+
+  if (!user) {
+    return (
+      <PublicWalkthroughShell
+        title="Document Detail"
+        description="The document-detail workspace is open for walkthrough. Source files, extracted text, annotations, entity links, integrity metadata, and document actions remain private."
+        sections={["Document Overview", "Source Viewer", "Claims and Quotes", "Entity Links"]}
+        backHref="/documents"
+      />
+    );
+  }
+
+  return <AuthenticatedDocumentDetail />;
+}
+
+function AuthenticatedDocumentDetail() {
   const params = useParams<{ id: string }>();
   const docId = parseInt(params.id || "0");
   const [, setLocation] = useLocation();

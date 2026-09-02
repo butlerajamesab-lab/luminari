@@ -51,6 +51,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Streamdown } from "streamdown";
+import { useAuth } from "@/core/hooks/useAuth";
+import { PublicWalkthroughShell } from "@/components/PublicWalkthroughShell";
 
 const SLIDE_TYPE_CONFIG: Record<string, { icon: typeof FileText; label: string; color: string }> = {
   title: { icon: Type, label: "Title", color: "bg-blue-500/10 text-blue-400 border-blue-500/20" },
@@ -76,6 +78,23 @@ type SlideData = {
 };
 
 export default function PresentationEditor() {
+  const { user } = useAuth();
+
+  if (!user) {
+    return (
+      <PublicWalkthroughShell
+        title="Presentation Editor"
+        description="The presentation workspace is open for walkthrough. Case-derived slides, citations, speaker notes, exports, and editing actions remain private."
+        sections={["Slide Outline", "Evidence Citations", "Presentation Mode", "Editing Tools"]}
+        backHref="/presentations"
+      />
+    );
+  }
+
+  return <AuthenticatedPresentationEditor />;
+}
+
+function AuthenticatedPresentationEditor() {
   const params = useParams<{ id: string }>();
   const presId = Number(params.id);
   const search = useSearch();

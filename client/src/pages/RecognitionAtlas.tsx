@@ -1,4 +1,3 @@
-import { useAuth } from "@/core/hooks/useAuth";
 import { Link } from "wouter";
 import {
   ArrowRight,
@@ -75,27 +74,11 @@ function nav_links() {
 }
 
 export default function RecognitionAtlas() {
-  const { user, isAuthenticated, loading } = useAuth();
-
-  if (loading) {
-    return gate_panel({
-      title: "Loading Recognition Atlas preview",
-      message: "Checking admin access before showing this unpublished Recognition Atlas presentation layer.",
-    });
-  }
-
-  if (!isAuthenticated || user?.role !== "admin") {
-    return gate_panel({
-      title: "Recognition Atlas preview requires admin access",
-      message: "This route is the admin-preview presentation layer for Recognition Atlas. It is not public-facing and does not indicate tribal approval.",
-    });
-  }
-
   return (
     <main style={{ minHeight: "100vh", background: tone.bg, color: tone.paper, fontFamily: "Inter, system-ui, sans-serif", padding: "clamp(1.25rem, 3vw, 3rem)" }}>
       <section style={{ maxWidth: 1180, margin: "0 auto" }}>
         <div style={{ border: `1px solid rgba(212,160,23,0.35)`, background: "rgba(212,160,23,0.08)", color: tone.gold, borderRadius: 999, padding: "0.5rem 0.85rem", display: "inline-flex", alignItems: "center", gap: 8, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: "1.5rem" }}>
-          <EyeOff size={14} /> Admin Preview — presentation layer not public
+          <EyeOff size={14} /> Public read-only review preview — not tribal approval
         </div>
 
         <header style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.5fr) minmax(280px, 0.8fr)", gap: "2rem", alignItems: "end" }}>

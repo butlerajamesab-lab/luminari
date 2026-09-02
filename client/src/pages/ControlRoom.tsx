@@ -1,6 +1,8 @@
 import { useCase } from "@/contexts/CaseContext";
+import { useAuth } from "@/core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { useRoute } from "wouter";
+import { PublicWalkthroughShell } from "@/components/PublicWalkthroughShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -1067,6 +1069,22 @@ function KeyFindingsPanel({ caseId }: { caseId: number }) {
 
 /* ─── Main Control Room Page ─── */
 export default function ControlRoom() {
+  const { user } = useAuth();
+
+  if (!user) {
+    return (
+      <PublicWalkthroughShell
+        title="Control Room"
+        description="The case control room is open for route and layout review. Case records, governed analysis, deadlines, signal artifacts, and execution controls remain private."
+        sections={["Case Commitment", "Evidence Summary", "Strategy Paths", "Verification Records", "Deadlines", "Next Actions"]}
+      />
+    );
+  }
+
+  return <AuthenticatedControlRoom />;
+}
+
+function AuthenticatedControlRoom() {
   const { currentCaseId, currentCase } = useCase();
   const [, navigate] = useLocation();
   // Support both /cases/:id/control-room (URL param) and /control-room (global selector)

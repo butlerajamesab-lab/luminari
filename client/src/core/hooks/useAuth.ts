@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import { useQueryClient } from "@tanstack/react-query";
+import { clearPrivateQueryCache } from "@/core/privateQueryCache";
 
 type UseAuthOptions = {
   redirectOnUnauthenticated?: boolean;
@@ -8,6 +10,7 @@ type UseAuthOptions = {
 };
 
 export function useAuth(_options?: UseAuthOptions) {
+  const queryClient = useQueryClient();
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -18,7 +21,8 @@ export function useAuth(_options?: UseAuthOptions) {
       setSession(data.session);
       setLoading(false);
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, newSession) => {
+      if (event === "SIGNED_OUT") clearPrivateQueryCache(queryClient);
       setSession(newSession);
       setLoading(false);
     });
@@ -26,12 +30,13 @@ export function useAuth(_options?: UseAuthOptions) {
       mounted = false;
       sub.subscription.unsubscribe();
     };
-  }, []);
+  }, [queryClient]);
 
   const logout = useCallback(async () => {
     await supabase.auth.signOut();
+    clearPrivateQueryCache(queryClient);
     setSession(null);
-  }, []);
+  }, [queryClient]);
 
   const state = useMemo(() => ({
     user: session?.user ? {

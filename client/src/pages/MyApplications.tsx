@@ -2,7 +2,6 @@ import { useState, useMemo } from "react";
 import { useLocation, Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -697,49 +696,32 @@ function SummaryDashboard({ summary, deadlines }: { summary: any; deadlines: any
 
 export default function MyApplications() {
   const [, navigate] = useLocation();
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
-  const { data: apps, isLoading, refetch } = trpc.benefitApps.list.useQuery(
+  const { data: queriedApps, isLoading, refetch } = trpc.benefitApps.list.useQuery(
     undefined,
     { enabled: !!user },
   );
 
-  const { data: summary } = trpc.benefitApps.summary.useQuery(
+  const { data: queriedSummary } = trpc.benefitApps.summary.useQuery(
     undefined,
     { enabled: !!user },
   );
 
-  const { data: deadlines } = trpc.benefitApps.upcomingDeadlines.useQuery(
+  const { data: queriedDeadlines } = trpc.benefitApps.upcomingDeadlines.useQuery(
     undefined,
     { enabled: !!user },
   );
+  const apps = user ? queriedApps : undefined;
+  const summary = user ? queriedSummary : undefined;
+  const deadlines = user ? queriedDeadlines : undefined;
 
   const filteredApps = useMemo(() => {
     if (!apps) return [];
     if (statusFilter === "all") return apps;
     return apps.filter((a: any) => a.status === statusFilter);
   }, [apps, statusFilter]);
-
-  // Not logged in
-  if (!authLoading && !user) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="bg-card/50 border-border/50 max-w-md w-full mx-4">
-          <CardContent className="p-8 text-center">
-            <Shield className="w-12 h-12 text-primary/40 mx-auto mb-4" />
-            <h2 className="text-lg font-semibold text-foreground mb-2">Sign In Required</h2>
-            <p className="text-sm text-muted-foreground mb-6">
-              Sign in to track your benefit applications, manage documents, and set deadline reminders.
-            </p>
-            <Button onClick={() => window.location.href = getLoginUrl()}>
-              Sign In
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -781,6 +763,19 @@ export default function MyApplications() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+        {!user && (
+          <Card className="border-amber-500/30 bg-amber-500/10">
+            <CardContent className="p-4 flex items-start gap-3">
+              <Shield className="w-5 h-5 text-amber-400 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-amber-200">Public walkthrough mode</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  The applications workspace is open for traversal. Personal applications remain private, so this preview is intentionally empty.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />

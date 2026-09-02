@@ -1,12 +1,10 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { Route, Switch, useLocation } from "wouter";
-import { useEffect, useState } from "react";
-import { useAuth } from "@/core/hooks/useAuth";
+import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import { CaseProvider, useCase } from "./contexts/CaseContext";
+import { CaseProvider } from "./contexts/CaseContext";
 import { PlainLanguageProvider } from "./contexts/PlainLanguageContext";
 import DashboardLayout from "./components/DashboardLayout";
 import Home from "./pages/Home";
@@ -114,54 +112,6 @@ import Verify from "./pages/Verify";
 import BusinessAnalytics from "./pages/BusinessAnalytics";
 import IntegrityReview from "./pages/IntegrityReview";
 
-/**
- * Role-based entry routing:
- *   - Unauthenticated → /mudroom (calm entry, orientation)
- *   - Authenticated admin → /mission-control
- *   - Authenticated professional/analyst/enterprise plan → dashboard (DashboardRouter)
- *   - Authenticated free/advocacy with cases → /resolve (Repair Bench)
- *   - Authenticated free/advocacy without cases → /mudroom
- *
- * The Mudroom is a front porch, not a gate. All users can still visit any area.
- * Modes change the default entry point, not access.
- */
-function HomeOrWelcome() {
-  const { cases, isLoading } = useCase();
-  const { isAuthenticated, user, loading: authLoading } = useAuth();
-  const [, navigate] = useLocation();
-  const [checked, setChecked] = useState(false);
-
-  useEffect(() => {
-    if (authLoading || isLoading) return;
-
-    if (typeof window !== 'undefined') {
-      const pathname = window.location.pathname;
-      if (pathname.startsWith('/intake') || pathname.startsWith('/case/')) {
-        setChecked(true);
-        return;
-      }
-    }
-
-    if (!isAuthenticated) {
-      navigate("/login", { replace: true });
-      setChecked(true);
-      return;
-    }
-
-    setChecked(true);
-  }, [cases, isLoading, authLoading, isAuthenticated, user, navigate]);
-
-  if (!checked) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
-      </div>
-    );
-  }
-
-  return <Home />;
-}
-
 function DashboardRouter() {
   return (
     <DashboardLayout>
@@ -169,7 +119,7 @@ function DashboardRouter() {
       <Switch>
         <Route path="/dashboard" component={PlatformDashboard} />
         <Route path="/case-overview" component={Home} />
-        <Route path="/" component={Home} />
+        <Route path="/" component={PlatformDashboard} />
         <Route path="/control-room" component={ControlRoom} />
         <Route path="/cases/:id/control-room" component={ControlRoom} />
         <Route path="/cases" component={Cases} />
@@ -238,7 +188,7 @@ function App() {
                 <Route path="/ingestion-control" component={ingestion_control} />
                 <Route path="/dashboard"><DashboardRouter /></Route>
                 <Route path="/case-overview"><DashboardRouter /></Route>
-                <Route path="/" component={HomeOrWelcome} />
+                <Route path="/"><DashboardRouter /></Route>
                 <Route path="/lighthouse" component={Lighthouse} />
                 <Route path="/civic-map" component={CivicMap} />
                 <Route path="/viewfinder" component={AnomalyViewfinder} />

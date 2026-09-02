@@ -1,27 +1,28 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { trpc } from '@/lib/trpc';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/core/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/core/hooks/useAuth';
 
 export default function BusinessAnalytics() {
-  const { user } = useAuth();
   const [selectedEntity, setSelectedEntity] = useState<'product' | 'expense_category'>('product');
+  const { user } = useAuth();
+  const canAdminister = user?.role === 'admin';
 
   // Fetch baselines
-  const { data: baselines, isLoading: baselinesLoading } = trpc.business.getBaselines.useQuery();
+  const { data: queriedBaselines, isLoading: baselinesLoading } = trpc.business.getBaselines.useQuery(undefined, {
+    enabled: canAdminister,
+    retry: false,
+  });
   
   // Fetch analytics summary
-  const { data: summary, isLoading: summaryLoading } = trpc.business.getAnalyticsSummary.useQuery();
-
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-muted-foreground">Please log in to view analytics</p>
-      </div>
-    );
-  }
+  const { data: queriedSummary, isLoading: summaryLoading } = trpc.business.getAnalyticsSummary.useQuery(undefined, {
+    enabled: canAdminister,
+    retry: false,
+  });
+  const baselines = canAdminister ? queriedBaselines : undefined;
+  const summary = canAdminister ? queriedSummary : undefined;
 
   return (
     <div className="space-y-8 p-8">
@@ -31,6 +32,11 @@ export default function BusinessAnalytics() {
         <p className="text-muted-foreground mt-2">
           Monitor product and expense baselines for anomaly detection
         </p>
+        {!canAdminister && (
+          <p className="text-xs text-amber-500 mt-1">
+            Public read-only view. Private baseline records and changes remain protected.
+          </p>
+        )}
       </div>
 
       {/* Summary Cards */}

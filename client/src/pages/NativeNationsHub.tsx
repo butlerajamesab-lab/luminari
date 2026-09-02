@@ -1,4 +1,3 @@
-import { useAuth } from "@/core/hooks/useAuth";
 import { Link } from "wouter";
 import { ArrowRight, EyeOff, Lock, Shield } from "lucide-react";
 
@@ -107,31 +106,15 @@ function source_packet_card({ title, href, description }: { title: string; href:
 }
 
 export default function NativeNationsHub() {
-  const { user, isAuthenticated, loading } = useAuth();
-
-  if (loading) {
-    return gate_panel({
-      title: "Loading Native Nations Hub preview",
-      message: "Checking admin access before showing this unpublished Native Nations Hub preview.",
-    });
-  }
-
-  if (!isAuthenticated || user?.role !== "admin") {
-    return gate_panel({
-      title: "Native Nations Hub is in admin preview",
-      message: "This page is not public yet. Admin access is required while the Native Nations Hub is prepared as a Lighthouse entry point.",
-    });
-  }
-
   return (
     <main style={{ minHeight: "100vh", background: tone.bg, color: tone.paper, fontFamily: "Inter, system-ui, sans-serif", padding: "clamp(1.25rem, 3vw, 3rem)" }}>
       <section style={{ maxWidth: 1180, margin: "0 auto" }}>
         <div style={{ border: `1px solid rgba(212,160,23,0.35)`, background: "rgba(212,160,23,0.08)", color: tone.gold, borderRadius: 999, padding: "0.5rem 0.85rem", display: "inline-flex", alignItems: "center", gap: 8, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: "1.5rem" }}>
-          <EyeOff size={14} /> admin_preview_only / not_public_yet
+          <EyeOff size={14} /> public_read_only_review / not_tribal_approval
         </div>
 
         <header style={{ border: `1px solid ${tone.card_border}`, background: tone.card_bg, borderRadius: 28, padding: "clamp(1.25rem, 3vw, 2rem)", marginBottom: "1rem" }}>
-          <p style={{ color: tone.blue, letterSpacing: "0.14em", textTransform: "uppercase", fontSize: 12, marginBottom: 12 }}>Lighthouse entry point · admin preview</p>
+          <p style={{ color: tone.blue, letterSpacing: "0.14em", textTransform: "uppercase", fontSize: 12, marginBottom: 12 }}>Lighthouse entry point · public review preview</p>
           <h1 style={{ fontSize: "clamp(2.5rem, 7vw, 5.75rem)", lineHeight: 0.95, margin: 0 }}>Native Nations Hub</h1>
           <p style={{ color: tone.muted, lineHeight: 1.75, fontSize: "1.08rem", maxWidth: 920, marginTop: "1.25rem" }}>
             A tribal-focused Lighthouse entry point for records recovery, recognition pathways, language preservation, place names, safety resources, traditions, source-grounded review, and the full guided intake system.

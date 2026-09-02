@@ -44,8 +44,6 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { CSSProperties, useCallback, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
-import { DashboardLayoutSkeleton } from "./DashboardLayoutSkeleton";
-import { Button } from "./ui/button";
 import { trpc } from "@/lib/trpc";
 import PlainLanguageToggle from "./PlainLanguageToggle";
 import { NotificationBell } from "./NotificationBell";
@@ -115,48 +113,11 @@ export default function DashboardLayout({
     const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
     return saved ? parseInt(saved, 10) : DEFAULT_WIDTH;
   });
-  const { loading, user } = useAuth();
   const isMobile = useIsMobile();
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
   }, [sidebarWidth]);
-
-  if (loading) {
-    return <DashboardLayoutSkeleton />;
-  }
-
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="flex flex-col items-center gap-8 p-8 max-w-md w-full">
-          <div className="flex flex-col items-center gap-4">
-            <div className="flex items-center gap-3">
-              <Scale className="h-8 w-8 text-primary" />
-              <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-                Luminari
-              </h1>
-            </div>
-            <p className="text-xs font-mono text-muted-foreground tracking-wider uppercase">
-              Neutral Document Intelligence Platform
-            </p>
-            <p className="text-sm text-muted-foreground text-center max-w-sm mt-2">
-              Upload documents. Illuminate evidence. Every assertion traced to its source.
-            </p>
-          </div>
-          <Button
-            onClick={() => {
-              window.location.href = getLoginUrl();
-            }}
-            size="lg"
-            className="w-full"
-          >
-            Authenticate
-          </Button>
-        </div>
-      </div>
-    );
-  }
 
   // Mobile layout: no sidebar, bottom nav instead
   if (isMobile) {
@@ -184,6 +145,7 @@ export default function DashboardLayout({
 /* ─── Mobile Layout ─── */
 function MobileLayout({ children }: { children: React.ReactNode }) {
   const [location, setLocation] = useLocation();
+  const { user } = useAuth();
   const { currentCase, currentCaseId } = useCase();
 
   const allMenuItems = allNavSections.flatMap(section => section.items);
@@ -192,11 +154,11 @@ function MobileLayout({ children }: { children: React.ReactNode }) {
   // Stats for guided journey step detection
   const caseStatsQuery = trpc.cases.stats.useQuery(
     { caseId: currentCaseId! },
-    { enabled: !!currentCaseId }
+    { enabled: Boolean(user) && !!currentCaseId }
   );
   const intakeStatusQuery = trpc.analyze.getIntakeSpineStatus.useQuery(
     { caseId: currentCaseId! },
-    { enabled: !!currentCaseId, retry: false }
+    { enabled: Boolean(user) && !!currentCaseId, retry: false }
   );
   const caseStats = caseStatsQuery.data ?? null;
   const hasIntakeExecution = (intakeStatusQuery.data ?? []).some(
@@ -569,15 +531,18 @@ function DesktopLayoutContent({
   }, [location]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Live data queries
-  const casesQuery = trpc.cases.list.useQuery();
-  const cases = casesQuery.data ?? [];
+  const casesQuery = trpc.cases.list.useQuery(undefined, {
+    enabled: Boolean(user),
+    retry: false,
+  });
+  const cases = user ? casesQuery.data ?? [] : [];
   const caseStatsQuery2 = trpc.cases.stats.useQuery(
     { caseId: currentCaseId! },
-    { enabled: !!currentCaseId }
+    { enabled: Boolean(user) && !!currentCaseId }
   );
   const intakeStatusQuery2 = trpc.analyze.getIntakeSpineStatus.useQuery(
     { caseId: currentCaseId! },
-    { enabled: !!currentCaseId, retry: false }
+    { enabled: Boolean(user) && !!currentCaseId, retry: false }
   );
   const caseStats = caseStatsQuery2.data ?? null;
   const hasIntakeExecution = (intakeStatusQuery2.data ?? []).some(
@@ -790,10 +755,12 @@ function DesktopLayoutContent({
               </DropdownMenu>
             </div>
             <PlainLanguageToggle collapsed={isCollapsed} />
-            <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'px-1'}`}>
-              <NotificationBell />
-            </div>
-            <DropdownMenu>
+            {user && (
+              <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'px-1'}`}>
+                <NotificationBell />
+              </div>
+            )}
+            {user ? <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-3 rounded-md px-1 py-1 hover:bg-accent/50 transition-colors w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   <Avatar className="h-8 w-8 border shrink-0">
@@ -834,7 +801,19 @@ function DesktopLayoutContent({
                   <span>Sign out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
-            </DropdownMenu>
+            </DropdownMenu> : (
+              <button
+                type="button"
+                onClick={() => { window.location.href = getLoginUrl(); }}
+                className="flex w-full items-center gap-3 rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-left hover:bg-primary/10 transition-colors group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2"
+              >
+                <Eye className="h-4 w-4 shrink-0 text-primary" />
+                <span className="min-w-0 group-data-[collapsible=icon]:hidden">
+                  <span className="block text-xs font-medium text-foreground">Public browsing</span>
+                  <span className="block truncate text-[10px] text-muted-foreground">Sign in to make changes</span>
+                </span>
+              </button>
+            )}
           </SidebarFooter>
         </Sidebar>
 

@@ -1,4 +1,6 @@
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/core/hooks/useAuth";
+import { PublicWalkthroughShell } from "@/components/PublicWalkthroughShell";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -33,8 +35,11 @@ const DOMAIN_COLORS: Record<string, string> = {
 };
 
 export default function CaseTemplates() {
+  const { user } = useAuth();
   const [, setLocation] = useLocation();
-  const { data: templates, isLoading } = trpc.caseTemplates.list.useQuery();
+  const { data: templates, isLoading } = trpc.caseTemplates.list.useQuery(undefined, {
+    enabled: Boolean(user),
+  });
   const createFromTemplate = trpc.caseTemplates.createFromTemplate.useMutation();
   const [creatingId, setCreatingId] = useState<string | null>(null);
 
@@ -49,6 +54,16 @@ export default function CaseTemplates() {
       setCreatingId(null);
     }
   };
+
+  if (!user) {
+    return (
+      <PublicWalkthroughShell
+        title="Case Templates"
+        description="Walk through the template workspace. Template details and case creation remain available after sign-in."
+        sections={["Template catalog", "Case setup", "Document checklists"]}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

@@ -1,9 +1,10 @@
 // @ts-nocheck — pre-existing type drift, to be resolved in UI type alignment pass
 import { useState, useMemo } from "react";
-import { useAuth } from "@/core/hooks/useAuth";
 import { useLocation, useParams } from "wouter";
 import { useCase } from "@/contexts/CaseContext";
+import { useAuth } from "@/core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
+import { PublicWalkthroughShell } from "@/components/PublicWalkthroughShell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +25,6 @@ import {
   ArrowUpRight, Landmark, ListChecks, Brain, Workflow, GitBranch,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getLoginUrl } from "@/const";
 
 /* ═══════════════════════════════════════════════════════════════════════
    WORKBENCH DASHBOARD — Unified Case Workspace
@@ -2938,7 +2938,23 @@ function CasePatternBridgePanel({ caseId }: { caseId: number }) {
 }
 
 export default function WorkbenchDashboard() {
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { user } = useAuth();
+
+  if (!user) {
+    return (
+      <PublicWalkthroughShell
+        title="Workbench"
+        description="The case workbench is open for route and layout review. Private cases, evidence, strategy records, and case actions remain available only to an authenticated owner."
+        sections={["Case Summary", "Parts Checklist", "Evidence Panel", "Tools", "Next Steps"]}
+        backHref="/workshop"
+      />
+    );
+  }
+
+  return <AuthenticatedWorkbenchDashboard />;
+}
+
+function AuthenticatedWorkbenchDashboard() {
   const [, navigate] = useLocation();
   const params = useParams<{ caseId: string }>();
   const { cases: userCases, currentCase, currentCaseId, setCurrentCaseId } = useCase();
@@ -2971,11 +2987,7 @@ export default function WorkbenchDashboard() {
           <p style={{ fontFamily: fontSans, fontSize: 14, color: wb.muted, lineHeight: 1.6, marginBottom: 32 }}>
             Select a case to open its workbench — or start a new one.
           </p>
-          {!isAuthenticated ? (
-            <Button onClick={() => { window.location.href = getLoginUrl(); }}>
-              Sign In to Continue
-            </Button>
-          ) : userCases && userCases.length > 0 ? (
+          {userCases && userCases.length > 0 ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {userCases.map((c: any) => (
                 <button

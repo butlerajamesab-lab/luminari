@@ -13,8 +13,6 @@
  */
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
-import { useAuth } from "@/core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -26,10 +24,12 @@ import {
   Copy, Download, RefreshCw, Search,
   Clock, Hash, Link2, Eye, FileText,
   ArrowLeft, Loader2, CheckCircle2, XCircle,
-  Lock, Fingerprint, Camera, AlertTriangle,
+  Fingerprint, Camera, AlertTriangle,
   ChevronUp,
 } from "lucide-react";
 import { Link } from "wouter";
+import { useAuth } from "@/core/hooks/useAuth";
+import { PublicWalkthroughShell } from "@/components/PublicWalkthroughShell";
 
 /* ═══════════════════════════════════════════════════════════════════
    Utility Functions
@@ -759,33 +759,16 @@ function ExportPanel() {
    ═══════════════════════════════════════════════════════════════════ */
 
 export default function GovernanceDashboard() {
-  const { isAuthenticated, user, loading } = useAuth();
   const [selectedEntrySeqNo, setSelectedEntrySeqNo] = useState<number | null>(null);
+  const { user } = useAuth();
 
-  if (loading) {
+  if (!user) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="max-w-md w-full">
-          <CardContent className="pt-6 text-center">
-            <Lock className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
-            <h2 className="text-lg font-semibold mb-2">Authentication Required</h2>
-            <p className="text-sm text-muted-foreground mb-4">
-              The Governance Dashboard requires admin access.
-            </p>
-            <a href={getLoginUrl("/mission-control/governance")}>
-              <Button>Sign In</Button>
-            </a>
-          </CardContent>
-        </Card>
-      </div>
+      <PublicWalkthroughShell
+        title="Governance Dashboard"
+        description="The governance route is open for walkthrough. Hash-chain entries, snapshots, export logs, and verification actions remain private to the owner session."
+        sections={["Chain Status", "Governance Log Feed", "Entry Detail", "Snapshots & Verification", "Export Log", "Constitutional Articles"]}
+      />
     );
   }
 

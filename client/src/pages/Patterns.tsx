@@ -8,6 +8,8 @@ import { Network, ChevronDown, ChevronRight, ExternalLink, Users, Building2, Fil
 import { useLocation } from "wouter";
 import { caseWorkspacePath } from "@/lib/caseNavigation";
 import PatternTrendChart from "@/components/PatternTrendChart";
+import { useAuth } from "@/core/hooks/useAuth";
+import { PublicWalkthroughShell } from "@/components/PublicWalkthroughShell";
 
 const PATTERN_TYPE_META: Record<string, { label: string; icon: React.ComponentType<{ className?: string }>; color: string; bgColor: string; borderColor: string }> = {
   entity_recurrence: { label: "Entity Recurrence", icon: Users, color: "text-blue-400", bgColor: "bg-blue-500/10", borderColor: "border-blue-500/20" },
@@ -225,6 +227,22 @@ function PatternDetailCard({ pattern }: {
 }
 
 export default function Patterns() {
+  const { user } = useAuth();
+
+  if (!user) {
+    return (
+      <PublicWalkthroughShell
+        title="Cross-Case Patterns"
+        description="The pattern-analysis workspace is open for walkthrough. Live case links, evidence relationships, legal grounding, and strategy feedback remain private."
+        sections={["Pattern Taxonomy", "Trend Views", "Related Evidence", "Strategy Feedback"]}
+      />
+    );
+  }
+
+  return <AuthenticatedPatterns />;
+}
+
+function AuthenticatedPatterns() {
   const { data: summary, isLoading } = trpc.patterns.summary.useQuery();
   const [filterType, setFilterType] = useState<string | null>(null);
 

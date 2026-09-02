@@ -23,6 +23,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import { useAuth } from "@/core/hooks/useAuth";
+import { PublicWalkthroughShell } from "@/components/PublicWalkthroughShell";
 import {
   ShieldCheck,
   ShieldAlert,
@@ -772,6 +774,18 @@ function ResourceList() {
 // ─── Main Page ───
 
 export default function ResourceVerification() {
+  const { user } = useAuth();
+
+  if (!user) {
+    return (
+      <PublicWalkthroughShell
+        title="Resource Verification"
+        description="The quality-control route is open for walkthrough. Resource records, audit findings, verification flags, and deactivation controls remain private."
+        sections={["Audit Dashboard", "All Resources", "Verification Queue", "Flags", "Data Quality"]}
+      />
+    );
+  }
+
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       <div>

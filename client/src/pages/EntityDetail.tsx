@@ -11,6 +11,8 @@ import { formatRelationshipForReadAloud, wrapWithCompletion } from "@/lib/forens
 import { deriveDocumentDisplayLabel } from "@/lib/documentLabel";
 import { getFromParam, buildFromParam } from "@/lib/buildFromParam";
 import { useState } from "react";
+import { useAuth } from "@/core/hooks/useAuth";
+import { PublicWalkthroughShell } from "@/components/PublicWalkthroughShell";
 
 /* ─── Expandable Quote (shared pattern) ─── */
 function ExpandableQuote({ text }: { text: string }) {
@@ -38,6 +40,23 @@ function ExpandableQuote({ text }: { text: string }) {
 }
 
 export default function EntityDetail() {
+  const { user } = useAuth();
+
+  if (!user) {
+    return (
+      <PublicWalkthroughShell
+        title="Entity Detail"
+        description="The entity-detail workspace is open for walkthrough. Entity identities, document appearances, relationships, quotes, and source links remain private."
+        sections={["Entity Overview", "Document Appearances", "Relationships", "Source Evidence"]}
+        backHref="/entities"
+      />
+    );
+  }
+
+  return <AuthenticatedEntityDetail />;
+}
+
+function AuthenticatedEntityDetail() {
   const params = useParams<{ id: string }>();
   const entityId = parseInt(params.id || "0");
   const [, setLocation] = useLocation();

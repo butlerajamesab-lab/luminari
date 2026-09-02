@@ -59,7 +59,7 @@ export default function PlatformDashboard() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
   const isAdmin = user?.role === "admin";
-  const sections = isAdmin ? [...allNavSections, adminSection] : allNavSections;
+  const sections = [...allNavSections, adminSection];
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6">
@@ -74,10 +74,10 @@ export default function PlatformDashboard() {
                 Luminari platform catalog
               </p>
               <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-                {isAdmin ? "Admin Dashboard" : "Platform Dashboard"}
+                {isAdmin ? "Admin Dashboard" : "Public Platform Dashboard"}
               </h1>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-                Open any Luminari workspace from the catalog. Case Overview is a separate case surface.
+                Open any Luminari workspace from the catalog. Viewing and navigation are public; protected changes still require your account.
               </p>
             </div>
           </div>

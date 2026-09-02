@@ -10,7 +10,6 @@ import {
   FileCheck, PenTool, AlertTriangle, Shield,
   ClipboardList, Receipt, FileSignature, Stamp,
 } from "lucide-react";
-import { getLoginUrl } from "@/const";
 
 /* ═══════════════════════════════════════════════════════════════════════
    SHOP OFFICE — Where You File the Paperwork
@@ -145,11 +144,7 @@ export default function ShopOffice() {
   const foiaRequestCount = foiaQuery.data?.total ?? 0;
 
   const handleDeskClick = (desk: Desk) => {
-    if (!isAuthenticated) {
-      window.location.href = getLoginUrl();
-      return;
-    }
-    if (desk.requiresCase && !hasActiveCase) {
+    if (desk.requiresCase && isAuthenticated && !hasActiveCase) {
       navigate(hasCase ? "/cases" : "/welcome");
       return;
     }
