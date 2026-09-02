@@ -8,7 +8,6 @@ import { useState, useMemo, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { useWorldIndex } from "@/hooks/useWorldIndex";
 import { useAuth } from "@/core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -135,11 +134,11 @@ function ComposeForm({ onDraftCreated, initialDocType, initialState, initialCont
   // Load programs/oversight for selected state
   const { data: programsRaw } = trpc.lumensend.context.programs.useQuery(
     { stateCode: stateCode },
-    { enabled: !!stateCode && (contextType === "registry_program") }
+    { enabled: Boolean(user) && !!stateCode && (contextType === "registry_program"), retry: false }
   );
   const { data: oversightRaw } = trpc.lumensend.context.oversightBodies.useQuery(
     { stateCode: stateCode },
-    { enabled: !!stateCode && (contextType === "oversight_body") }
+    { enabled: Boolean(user) && !!stateCode && (contextType === "oversight_body"), retry: false }
   );
   // World Index fallback: if JSON-based context returns empty, use world index nodes
   const worldIndex = useWorldIndex();
@@ -183,7 +182,7 @@ function ComposeForm({ onDraftCreated, initialDocType, initialState, initialCont
       oversightBody: selectedOversight || undefined,
       userSituation: situation || undefined,
     },
-    { enabled: step === "preflight" && !!docType && !!contextType }
+    { enabled: Boolean(user) && step === "preflight" && !!docType && !!contextType, retry: false }
   );
 
   // Generate letter
@@ -198,6 +197,12 @@ function ComposeForm({ onDraftCreated, initialDocType, initialState, initialCont
   });
 
   const handleGenerate = () => {
+    if (!user) {
+      toast.info("Public walkthrough mode", {
+        description: "Sign in when you are ready to generate and save a real draft.",
+      });
+      return;
+    }
     generateMutation.mutate({
       stateCode,
       documentType: docType as any,
@@ -656,7 +661,12 @@ function DraftView({ draftId, onBack }: { draftId: number; onBack: () => void })
 
 // ─── Drafts List ───
 function DraftsList({ onSelectDraft, onCompose }: { onSelectDraft: (id: number) => void; onCompose: () => void }) {
-  const { data: drafts, isLoading } = trpc.lumensend.drafts.list.useQuery({});
+  const { user } = useAuth();
+  const { data: queriedDrafts, isLoading } = trpc.lumensend.drafts.list.useQuery({}, {
+    enabled: Boolean(user),
+    retry: false,
+  });
+  const drafts = user ? queriedDrafts : undefined;
 
   const statusColors: Record<string, string> = {
     draft: "bg-amber-500/20 text-amber-400",
@@ -728,7 +738,7 @@ function DraftsList({ onSelectDraft, onCompose }: { onSelectDraft: (id: number) 
 
 // ─── Main Page ───
 export default function LumenSendPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
   const [view, setView] = useState<"list" | "compose" | "draft">("list");
   const [selectedDraftId, setSelectedDraftId] = useState<number | null>(null);
   const [initialDocType, setInitialDocType] = useState<string | null>(null);
@@ -764,33 +774,6 @@ export default function LumenSendPage() {
     }
   }, []);
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="max-w-md w-full bg-card border-border">
-          <CardContent className="p-8 text-center">
-            <Send className="w-12 h-12 mx-auto text-primary mb-4" />
-            <h2 className="text-xl font-semibold text-foreground">LumenSend</h2>
-            <p className="text-sm text-muted-foreground mt-2 mb-6">
-              Generate and send pre-filled letters, complaints, appeals, and applications. Sign in to get started.
-            </p>
-            <a href={getLoginUrl()}>
-              <Button className="w-full">Sign In to Continue</Button>
-            </a>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -810,6 +793,11 @@ export default function LumenSendPage() {
 
       {/* Content */}
       <div className="max-w-4xl mx-auto px-4 py-6">
+        {!user && (
+          <div className="mb-5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+            Public walkthrough mode: explore the complete composer; generating or saving a draft still requires the owner session.
+          </div>
+        )}
         {view === "list" && (
           <DraftsList
             onSelectDraft={(id) => { setSelectedDraftId(id); setView("draft"); }}

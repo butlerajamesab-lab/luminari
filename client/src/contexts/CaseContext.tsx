@@ -55,10 +55,12 @@ export function CaseProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const currentCase = cases?.find(c => c.id === currentCaseId) ?? null;
+  const visibleCases = isAuthenticated ? cases : undefined;
+  const currentCase = visibleCases?.find(c => c.id === currentCaseId) ?? null;
+  const visibleCurrentCaseId = isAuthenticated ? currentCaseId : null;
 
   return (
-    <CaseContext.Provider value={{ currentCaseId, setCurrentCaseId, currentCase, cases, isLoading }}>
+    <CaseContext.Provider value={{ currentCaseId: visibleCurrentCaseId, setCurrentCaseId, currentCase, cases: visibleCases, isLoading }}>
       {children}
     </CaseContext.Provider>
   );

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useAuth } from "@/core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
 import { useLocation, useSearch } from "wouter";
 import { useCase } from "@/contexts/CaseContext";
 import { Button } from "@/components/ui/button";
@@ -151,7 +150,7 @@ const STATIONS: Station[] = [
 ];
 
 export default function WorkshopFloor() {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { cases } = useCase();
   const [, navigate] = useLocation();
   const searchStr = useSearch();
@@ -162,13 +161,7 @@ export default function WorkshopFloor() {
 
   const hasCase = cases && cases.length > 0;
 
-  const handleToolClick = (station: Station, href: string) => {
-    if (station.requiresAuth && !isAuthenticated) {
-      window.location.href = getLoginUrl();
-      return;
-    }
-    navigate(href);
-  };
+  const handleToolClick = (_station: Station, href: string) => navigate(href);
 
   return (
     <div
@@ -226,9 +219,9 @@ export default function WorkshopFloor() {
               variant="ghost"
               size="sm"
               className="text-muted-foreground hover:text-foreground"
-              onClick={() => window.location.href = getLoginUrl()}
+              onClick={() => navigate("/dashboard")}
             >
-              Sign In
+              Platform Dashboard <ArrowRight className="ml-1 h-3.5 w-3.5" />
             </Button>
           )}
         </div>
@@ -252,7 +245,6 @@ export default function WorkshopFloor() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {STATIONS.map((station) => {
             const isExpanded = expandedStation === station.id;
-            const isLocked = station.requiresAuth && !isAuthenticated;
             const needsCase = station.requiresCase && !hasCase;
 
             return (
@@ -280,14 +272,9 @@ export default function WorkshopFloor() {
                         {station.metaphor}
                       </p>
                     </div>
-                    {isLocked && (
-                      <Badge variant="outline" className="text-[10px] border-amber-500/30 text-amber-400">
-                        Sign in
-                      </Badge>
-                    )}
-                    {!isLocked && needsCase && (
+                    {needsCase && (
                       <Badge variant="outline" className="text-[10px] border-blue-500/30 text-blue-400">
-                        Start a case
+                        {isAuthenticated ? "Start a case" : "Preview"}
                       </Badge>
                     )}
                   </div>

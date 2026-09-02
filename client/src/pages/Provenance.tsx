@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { useCase } from "@/contexts/CaseContext";
+import { useAuth } from "@/core/hooks/useAuth";
+import { PublicWalkthroughShell } from "@/components/PublicWalkthroughShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +27,7 @@ import { useLocation } from "wouter";
 import { Link } from "wouter";
 
 export default function Provenance() {
+  const { user } = useAuth();
   const { currentCaseId } = useCase();
   const [, setLocation] = useLocation();
   const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -35,12 +38,12 @@ export default function Provenance() {
 
   const { data: findings, isLoading } = trpc.provenance.listUnsupported.useQuery(
     { caseId: currentCaseId ?? undefined },
-    { enabled: true }
+    { enabled: Boolean(user) }
   );
 
   const { data: metrics, isLoading: metricsLoading } = trpc.provenance.metrics.useQuery(
     { caseId: currentCaseId ?? undefined },
-    { enabled: true }
+    { enabled: Boolean(user) }
   );
 
   const reRunMatching = trpc.provenance.reRunMatching.useMutation({
@@ -92,7 +95,10 @@ export default function Provenance() {
   const [batchPolling, setBatchPolling] = useState(false);
   const { data: batchProgress, refetch: refetchBatch } = trpc.provenance.getBatchProgress.useQuery(
     undefined,
-    { refetchInterval: batchPolling ? 2000 : false }
+    {
+      enabled: Boolean(user),
+      refetchInterval: user && batchPolling ? 2000 : false,
+    }
   );
 
   const activeBatchRunning = batchProgress?.isActive === true && batchProgress?.status === "running";
@@ -133,6 +139,16 @@ export default function Provenance() {
       utils.provenance.metrics.invalidate();
     }
   }, [batchProgress?.isActive, batchProgress?.status]);
+
+  if (!user) {
+    return (
+      <PublicWalkthroughShell
+        title="Provenance Drill-Down"
+        description="Walk through the source-linkage and audit workspace without exposing case findings, batch history, or review controls."
+        sections={["Source linkage", "Provenance metrics", "Batch review"]}
+      />
+    );
+  }
 
   if (!currentCaseId) {
     return (

@@ -94,7 +94,7 @@ function gate_panel({ title, message }: { title: string; message: string }) {
       <section style={{ width: "min(720px, 100%)", border: `1px solid ${tone.card_border}`, background: tone.card_bg, borderRadius: 24, padding: "2rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
           <Lock size={22} color={tone.gold} />
-          <span style={{ color: tone.gold, textTransform: "uppercase", letterSpacing: "0.12em", fontSize: 12 }}>Admin gated</span>
+          <span style={{ color: tone.gold, textTransform: "uppercase", letterSpacing: "0.12em", fontSize: 12 }}>Public walkthrough</span>
         </div>
         <h1 style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", margin: "0 0 1rem" }}>{title}</h1>
         <p style={{ color: tone.muted, lineHeight: 1.7, fontSize: "1.05rem", marginBottom: "1.5rem" }}>{message}</p>
@@ -246,13 +246,16 @@ function get_page(tribe_id: supported_tribe_id): tribal_card_page {
 }
 
 export default function RecognitionAtlasTribe() {
-  const { user, isAuthenticated, loading } = useAuth();
+  const { user } = useAuth();
+  const canReview = user?.role === "admin";
   const [, params] = useRoute("/recognition-atlas/:tribe_id");
   const tribe_id = params?.tribe_id ?? "";
 
-  if (loading) return gate_panel({ title: "Loading tribal card preview", message: "Checking admin access before showing this unpublished tribal card." });
-  if (!isAuthenticated || user?.role !== "admin") return gate_panel({ title: "Tribal card requires admin access", message: "This tribal card is still in preparation and requires tribal review before public publication." });
   if (!is_supported_tribe_id(tribe_id)) return gate_panel({ title: "Tribal card not available yet", message: "This Recognition Atlas tribal card has not been scaffolded into the admin preview yet." });
+  if (!canReview) return gate_panel({
+    title: "Tribal card walkthrough",
+    message: "This route is open for navigation. The underlying source packet remains hidden until tribal review permits public display.",
+  });
 
   const page = get_page(tribe_id);
 

@@ -2,6 +2,8 @@ import { useState, useMemo, useEffect } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useCase } from "@/contexts/CaseContext";
+import { useAuth } from "@/core/hooks/useAuth";
+import { PublicWalkthroughShell } from "@/components/PublicWalkthroughShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -498,18 +500,23 @@ function RequestRow({ request, showCase }: { request: any; showCase?: boolean })
 export default function FoiaTracking() {
   const [statusFilter, setStatusFilter] = useState("all");
   const { currentCaseId } = useCase();
+  const { user } = useAuth();
 
   const { data: allRequests, isLoading } = trpc.foiaRequests.listAll.useQuery(
     { statusFilter: statusFilter !== "all" ? statusFilter : undefined },
-    { refetchInterval: 30000 }
+    {
+      enabled: Boolean(user),
+      refetchInterval: user ? 30000 : false,
+    }
   );
 
   // Trigger deadline check on mount
   const checkDeadlines = trpc.foiaRequests.checkDeadlines.useMutation();
   useEffect(() => {
+    if (!user) return;
     checkDeadlines.mutate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user?.id]);
 
   // Group by case
   const groupedByCase = useMemo(() => {
@@ -538,6 +545,16 @@ export default function FoiaTracking() {
       return 0;
     });
   }, [caseIds, groupedByCase]);
+
+  if (!user) {
+    return (
+      <PublicWalkthroughShell
+        title="FOIA Request Tracker"
+        description="Walk through the request lifecycle, deadline, and response workspace. Personal requests and deadline actions remain available only after sign-in."
+        sections={["Request lifecycle", "Deadline tracking", "Responses and appeals"]}
+      />
+    );
+  }
 
   if (isLoading) {
     return (

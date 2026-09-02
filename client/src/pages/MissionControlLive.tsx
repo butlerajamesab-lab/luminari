@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/core/hooks/useAuth";
+import { PublicWalkthroughShell } from "@/components/PublicWalkthroughShell";
 
 const QUERY_OPTIONS = {
   staleTime: 60_000,
@@ -28,15 +30,28 @@ function stateBadge(kind: "ok" | "loading" | "empty" | "error", label: string) {
 }
 
 export default function MissionControlLive() {
-  const systemHealth = trpc.adminDashboard.systemHealth.useQuery(undefined, QUERY_OPTIONS);
-  const structuralSignals = trpc.adminDashboard.structuralSignals.useQuery(undefined, QUERY_OPTIONS);
-  const workQueue = trpc.adminDashboard.workQueue.useQuery(undefined, QUERY_OPTIONS);
+  const { user } = useAuth();
+  const queryOptions = { ...QUERY_OPTIONS, enabled: Boolean(user) };
+  const systemHealth = trpc.adminDashboard.systemHealth.useQuery(undefined, queryOptions);
+  const structuralSignals = trpc.adminDashboard.structuralSignals.useQuery(undefined, queryOptions);
+  const workQueue = trpc.adminDashboard.workQueue.useQuery(undefined, queryOptions);
 
   const running = safeArray(workQueue.data?.running);
   const failed = safeArray(workQueue.data?.failed);
   const completed = safeArray(workQueue.data?.recentlyCompleted);
   const bySeverity = safeArray(structuralSignals.data?.bySeverity);
   const byCategory = safeArray(structuralSignals.data?.byCategory);
+
+  if (!user) {
+    return (
+      <PublicWalkthroughShell
+        title="Live Stream Mission Control"
+        description="The live runtime route is open for walkthrough. Run history, failures, case identifiers, and live queue details remain private."
+        sections={["Runtime Health", "Detected Signals", "Runtime Queue", "Live Stream Notes"]}
+        backHref="/mission-control"
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">

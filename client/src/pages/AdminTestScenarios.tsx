@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
+import { useAuth } from "@/core/hooks/useAuth";
+import { PublicWalkthroughShell } from "@/components/PublicWalkthroughShell";
 import {
   FlaskConical, Play, FileText, Users, Search, Loader2,
   ChevronDown, ChevronUp, CheckCircle2, AlertTriangle,
@@ -75,7 +77,12 @@ const PIPELINE_LABELS: Record<string, string> = {
 };
 
 export default function AdminTestScenarios() {
-  const { data: bundles, isLoading } = trpc.testScenarios.listBundles.useQuery();
+  const { user } = useAuth();
+  const canAdminister = user?.role === "admin";
+  const { data: bundles, isLoading } = trpc.testScenarios.listBundles.useQuery(undefined, {
+    enabled: canAdminister,
+    retry: false,
+  });
   const [search, setSearch] = useState("");
   const [expandedBundle, setExpandedBundle] = useState<string | null>(null);
   const [loadingBundle, setLoadingBundle] = useState<string | null>(null);
@@ -100,6 +107,16 @@ export default function AdminTestScenarios() {
       toast.error("Failed to load test bundle", { description: err.message });
     },
   });
+
+  if (!canAdminister) {
+    return (
+      <PublicWalkthroughShell
+        title="Test Scenarios"
+        description="The testing workspace is open for walkthrough. Scenario bundles, synthetic case creation, and pipeline execution remain owner-only."
+        sections={["Scenario Library", "Bundle Details", "Pipeline Preview", "Test Case Creation"]}
+      />
+    );
+  }
 
   const filteredBundles = bundles?.filter(b =>
     b.scenarioName.toLowerCase().includes(search.toLowerCase()) ||

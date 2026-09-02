@@ -126,7 +126,7 @@ function gate_panel({ title, message }: { title: string; message: string }) {
       <section style={{ width: "min(760px, 100%)", border: `1px solid ${tone.card_border}`, background: tone.card_bg, borderRadius: 24, padding: "2rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
           <Lock size={22} color={tone.gold} />
-          <span style={{ color: tone.gold, textTransform: "uppercase", letterSpacing: "0.12em", fontSize: 12 }}>Admin gated</span>
+          <span style={{ color: tone.gold, textTransform: "uppercase", letterSpacing: "0.12em", fontSize: 12 }}>Public walkthrough</span>
         </div>
         <h1 style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", margin: "0 0 1rem" }}>{title}</h1>
         <p style={{ color: tone.muted, lineHeight: 1.7, fontSize: "1.05rem", marginBottom: "1.5rem" }}>{message}</p>
@@ -166,19 +166,13 @@ function source_field_grid({ fields }: { fields: source_field[] }) {
 }
 
 export default function RecognitionGideon() {
-  const { user, isAuthenticated, loading } = useAuth();
+  const { user } = useAuth();
+  const canReview = user?.role === "admin";
 
-  if (loading) {
+  if (!canReview) {
     return gate_panel({
-      title: "Loading Recognition Gideon preview",
-      message: "Checking admin access before showing the unpublished Route to Recognition comparison surface.",
-    });
-  }
-
-  if (!isAuthenticated || user?.role !== "admin") {
-    return gate_panel({
-      title: "Recognition Gideon requires admin access",
-      message: "This RTR comparison page is a private preview. It is not public-facing and does not indicate tribal approval.",
+      title: "Recognition Gideon walkthrough",
+      message: "This comparison route is open for navigation. Draft recognition analysis and unapproved tribal source fields remain hidden pending review.",
     });
   }
 

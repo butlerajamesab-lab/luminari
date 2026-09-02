@@ -11,7 +11,6 @@ import {
   Loader2, AlertTriangle, Briefcase, Clock,
   Filter, Plus, ArrowRight, BookOpen,
 } from "lucide-react";
-import { getLoginUrl } from "@/const";
 
 /* ═══════════════════════════════════════════════════════════════════════
    EVIDENCE LAB — Where You Examine the Facts
@@ -152,11 +151,7 @@ export default function EvidenceLab() {
   ];
 
   const handleStationClick = (station: LabStation) => {
-    if (!isAuthenticated) {
-      window.location.href = getLoginUrl();
-      return;
-    }
-    if (station.requiresCase && !hasCase) {
+    if (station.requiresCase && isAuthenticated && !hasCase) {
       navigate("/welcome");
       return;
     }

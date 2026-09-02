@@ -23,15 +23,17 @@ import {
 import { Wrench, AlertTriangle, ArrowRight, Trash2, Search, Shield, CheckCircle2, Send } from "lucide-react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
+import { PublicWalkthroughShell } from "@/components/PublicWalkthroughShell";
 
 export default function CaseRepair() {
   const { user } = useAuth();
+  const canAdminister = user?.role === "admin";
   const [, setLocation] = useLocation();
 
 
   // Orphan scan
   const orphanQuery = trpc.caseRepair.findOrphans.useQuery(undefined, {
-    enabled: user?.role === "admin",
+    enabled: canAdminister,
   });
 
   // Move state
@@ -46,7 +48,10 @@ export default function CaseRepair() {
   const [showPurgeConfirm, setShowPurgeConfirm] = useState(false);
 
   // Cases for target selection
-  const casesQuery = trpc.cases.list.useQuery();
+  const casesQuery = trpc.cases.list.useQuery(undefined, {
+    enabled: canAdminister,
+    retry: false,
+  });
 
   // Mutations
   const moveMutation = trpc.caseRepair.moveEntities.useMutation({
@@ -84,15 +89,13 @@ export default function CaseRepair() {
     },
   });
 
-  if (user?.role !== "admin") {
+  if (!canAdminister) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Alert variant="destructive" className="max-w-md">
-          <Shield className="h-4 w-4" />
-          <AlertTitle>Access Denied</AlertTitle>
-          <AlertDescription>Case Repair is restricted to admin users.</AlertDescription>
-        </Alert>
-      </div>
+      <PublicWalkthroughShell
+        title="Case Repair"
+        description="The repair workspace is open for walkthrough. Case names, orphan scans, move previews, purge previews, and repair actions remain private."
+        sections={["Orphan Scan", "Move Entities", "Purge Preview", "Repair Confirmation"]}
+      />
     );
   }
 

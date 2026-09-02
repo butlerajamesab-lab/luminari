@@ -3,6 +3,8 @@ import { useLocation, useSearch } from "wouter";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { LayerNavBar } from "@/components/LayerNavBar";
+import { PublicWalkthroughShell } from "@/components/PublicWalkthroughShell";
+import { useAuth } from "@/core/hooks/useAuth";
 import {
   Activity,
   AlertTriangle,
@@ -133,6 +135,7 @@ function format_number(value: number | null | undefined): string {
 }
 
 export default function SignalRegistry() {
+  const { user } = useAuth();
   const search_string = useSearch();
   const [, navigate] = useLocation();
   const url_params = useMemo(
@@ -156,22 +159,32 @@ export default function SignalRegistry() {
 
   const architecture_query = trpc.enforcementIntel.get_signal_architecture.useQuery(
     { limit: 1 },
-    { refetchInterval: 60_000 },
+    {
+      enabled: Boolean(user),
+      refetchInterval: user ? 60_000 : false,
+    },
   );
-  const artifacts_query = trpc.enforcementIntel.list_signal_artifacts.useQuery({
-    domain: selected_domain,
-    limit: PAGE_SIZE,
-    offset,
-    query: search_query || undefined,
-  });
+  const artifacts_query = trpc.enforcementIntel.list_signal_artifacts.useQuery(
+    {
+      domain: selected_domain,
+      limit: PAGE_SIZE,
+      offset,
+      query: search_query || undefined,
+    },
+    { enabled: Boolean(user) },
+  );
   const artifact_detail_query = trpc.enforcementIntel.get_signal_artifact.useQuery(
     {
       domain: selected_domain ?? "live_data",
       record_id: selected_record_id ?? "",
     },
-    { enabled: selected_domain != null && selected_record_id != null },
+    {
+      enabled: Boolean(user) && selected_domain != null && selected_record_id != null,
+    },
   );
-  const cases_query = trpc.cases.list.useQuery();
+  const cases_query = trpc.cases.list.useQuery(undefined, {
+    enabled: Boolean(user),
+  });
   const utils = trpc.useUtils();
   const connect_mutation = trpc.enforcementIntel.connect_signal_artifact_to_case.useMutation({
     onSuccess: async (result) => {
@@ -192,6 +205,16 @@ export default function SignalRegistry() {
     }
     set_selected_record_id(url_record_id);
   }, [url_domain, url_record_id]);
+
+  if (!user) {
+    return (
+      <PublicWalkthroughShell
+        title="Signal Registry"
+        description="Explore the structure of the governed signal workspace. Live artifacts, case links, and review actions remain private."
+        sections={["Signal architecture", "Artifact browser", "Case connections"]}
+      />
+    );
+  }
 
   function choose_domain(domain: string) {
     if (domain === "case_intake") {

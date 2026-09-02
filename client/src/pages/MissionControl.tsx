@@ -1,8 +1,6 @@
 // @ts-nocheck — pre-existing type drift, to be resolved in UI type alignment pass
 import { useEffect, useState } from "react";
 import { useCase } from "@/contexts/CaseContext";
-import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,6 +36,8 @@ import { CanonicalSpineDashboard } from "@/components/CanonicalSpineDashboard";
 import { FlagQueuePanel } from "@/components/FlagQueuePanel";
 import { FlagButton } from "@/components/FlagButton";
 import { MissionControlSchemaLedgerPanel } from "@/components/mission/MissionControlSchemaLedgerPanel";
+import { useAuth } from "@/core/hooks/useAuth";
+import { PublicWalkthroughShell } from "@/components/PublicWalkthroughShell";
 
 type DatabaseDiagnosticContract = {
   ok: boolean;
@@ -9426,19 +9426,27 @@ function InvestigativeQueryPanel() {
 }
 
 export default function MissionControl() {
-  const { user, loading } = useAuth();
   const [mainTab, setMainTab] = useState("operations");
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
+  const { user } = useAuth();
 
   if (!user) {
-    window.location.href = getLoginUrl();
-    return null;
+    return (
+      <PublicWalkthroughShell
+        title="Mission Control"
+        description="The operational dashboard is open for route and layout review. Runtime logs, case activity, failure details, and operator controls are withheld from the public walkthrough."
+        sections={[
+          "Operations",
+          "Registry",
+          "Live Data",
+          "Knowledge Explorer",
+          "Signal Governance",
+          "Pattern Registry",
+          "Evidence Lab",
+          "System Health",
+          "Export Readiness",
+        ]}
+      />
+    );
   }
 
   return (

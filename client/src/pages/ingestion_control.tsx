@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, ChevronDown, ChevronRight, Database, Eye, Loader2, RefreshCw, ShieldAlert, Zap } from "lucide-react";
+import { useAuth } from "@/core/hooks/useAuth";
+import { PublicWalkthroughShell } from "@/components/PublicWalkthroughShell";
 
 type status_filter_value = "all" | "blocked" | "review_required" | "pending_bucket_content_scan" | "pending_docx_normalization" | "ready_for_review" | "docx_extraction_failed" | "candidates_created";
 type visible_queue_row = { id:number; source_name:string|null; source_ext:string|null; storage_bucket:string|null; storage_path:string|null; storage_mode:string|null; target_hint:string|null; import_status:string|null; record_count_estimate:number|null; created_at:string|null; updated_at:string|null; raw_text_chars:number; normalized_text_chars?:number|null; has_payload:boolean; policy_class:string; dedupe_behavior:string; intended_destination:string; blocked_reason:string|null; next_action:string; worker_state?:string|null; attempt_count?:number|null; leased_by?:string|null; lease_expires_at?:string|null; last_error_code?:string|null };
@@ -29,6 +31,7 @@ function StatusChip({row}:{row:visible_queue_row}){ const kind=row_status_kind(r
 function lane_for(row:visible_queue_row):lane_key{ if(row.import_status === "ready_for_review") return "review"; if(row.next_action === "extract_docx_queue_row") return "extract"; if(row.next_action === "normalize_docx_queue_row") return "normalize"; if(row.next_action === "route_corpus_queue_dry_run") return "route"; return "other"; }
 
 export default function ingestion_control(){
+  const { user } = useAuth();
   const [status_filter,set_status_filter]=useState<status_filter_value>("all");
   const [rows,set_rows]=useState<visible_queue_row[]>([]);
   const [summary_counts,set_summary_counts]=useState<Record<string,number>>({});
@@ -62,13 +65,21 @@ export default function ingestion_control(){
   const drain_normalize=async()=>{ set_action_key("normalize:drain"); set_action_message(null); set_extract_diagnostic(null); set_error_message(null); try{ const result=await read_json_response<{success:boolean;action:string;runtime_ms:number;summary?:{normalized_rows?:number|string;normalized_characters?:number|string};error?:string;message?:string}>(await fetch(`/api/ingestion-control/corpus-import-queue/normalize-docx-drain`,{method:"POST",credentials:"include",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({})})); if(!result.success) throw new Error(result.message ?? result.error ?? "normalize_docx_drain_failed"); const normalized_rows=Number(result.summary?.normalized_rows ?? 0); const normalized_characters=Number(result.summary?.normalized_characters ?? 0); set_action_message(`Normalize all extracted DOCX complete · normalized_rows ${normalized_rows.toLocaleString()} · normalized_characters ${normalized_characters.toLocaleString()}`); await load_queue(); }catch(error:any){ set_error_message(error?.message ?? String(error)); await load_queue(); }finally{ set_action_key(null); } };
   const create_candidates=async()=>{ set_action_key("candidates:create"); set_action_message(null); set_extract_diagnostic(null); set_candidate_result(null); set_error_message(null); try{ const result=await read_json_response<candidate_conveyor_result>(await fetch(`/api/ingestion-control/corpus-import-queue/create-candidates-from-ready`,{method:"POST",credentials:"include",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({})})); if(!result.success) throw new Error(result.message ?? result.error ?? "create_candidates_from_ready_failed"); set_candidate_result(result); set_action_message(`Candidate conveyor complete · processed_rows ${Number(result.processed_rows??0).toLocaleString()} · candidate_count ${Number(result.candidate_count??0).toLocaleString()}`); await load_queue(); }catch(error:any){ set_error_message(error?.message ?? String(error)); await load_queue(); }finally{ set_action_key(null); } };
 
-  useEffect(()=>{ load_queue(); },[status_filter]);
+  useEffect(()=>{ if(user) load_queue(); },[status_filter,user]);
   const grouped=useMemo(()=>({ extract:rows.filter(row=>lane_for(row)==="extract"), normalize:rows.filter(row=>lane_for(row)==="normalize"), review:rows.filter(row=>lane_for(row)==="review"), route:rows.filter(row=>lane_for(row)==="route"), other:rows.filter(row=>lane_for(row)==="other") }),[rows]);
   const summary=useMemo(()=>({ total_visible_rows:rows.length, pending_bucket_content_scan:summary_counts.pending_bucket_content_scan ?? rows.filter(row=>row.import_status==="pending_bucket_content_scan").length, pending_docx_normalization:summary_counts.pending_docx_normalization ?? rows.filter(row=>row.import_status==="pending_docx_normalization").length, ready_for_review:summary_counts.ready_for_review ?? rows.filter(row=>row.import_status==="ready_for_review").length, docx_extraction_failed:summary_counts.docx_extraction_failed ?? rows.filter(row=>row.import_status==="docx_extraction_failed").length, candidates_created:summary_counts.candidates_created ?? rows.filter(row=>row.import_status==="candidates_created").length, extractable_docx_rows:grouped.extract.length, normalization_rows:grouped.normalize.length }),[rows,grouped,summary_counts]);
   const diagnostic_failed=extraction_has_failure(extract_diagnostic);
   const queue_count_label=(value:number)=>queue_error&&rows.length===0?"unavailable":value.toLocaleString();
   const toggle_lane=(key:lane_key)=>set_open_lanes(value=>({...value,[key]:!value[key]}));
   const registry_candidate_count_label=candidate_summary ? Number(candidate_summary.total_candidate_count).toLocaleString() : (candidate_summary_error ? "unavailable" : "not loaded");
+
+  if(!user){
+    return <PublicWalkthroughShell
+      title="Ingestion Control"
+      description="The ingestion-control route is open for walkthrough. Queue rows, source payloads, failure details, extraction commands, and promotion controls remain owner-only."
+      sections={["Import Queue", "Extraction", "Normalization", "Candidate Review", "Verification", "Promotion"]}
+    />;
+  }
 
   function ErrorPanel({error}:{error:surface_error}){ return <Card className="border-red-500/40 bg-red-950/15"><CardContent className="p-3 space-y-1 text-xs text-red-100"><div className="font-semibold">{error.kind}</div><div><span className="text-red-200">endpoint:</span> {error.endpoint}</div>{error.status!==undefined&&<div><span className="text-red-200">status:</span> {error.status}</div>}{error.code&&<div><span className="text-red-200">code:</span> {error.code}</div>}<div><span className="text-red-200">message:</span> {error.message}</div>{error.expected_shape&&<div><span className="text-red-200">expected_shape:</span> {error.expected_shape}</div>}<div>Previous successful data is preserved when available; this panel means the current refresh did not load trusted data.</div></CardContent></Card>; }
 

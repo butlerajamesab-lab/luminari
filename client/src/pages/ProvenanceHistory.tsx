@@ -17,6 +17,8 @@ import {
   BellOff,
 } from "lucide-react";
 import { Link } from "wouter";
+import { useAuth } from "@/core/hooks/useAuth";
+import { PublicWalkthroughShell } from "@/components/PublicWalkthroughShell";
 
 function formatPercent(value: unknown): string {
   const parsed = Number(value);
@@ -31,6 +33,23 @@ function formatRuntime(value: number | null | undefined): string {
 }
 
 export default function ProvenanceHistory() {
+  const { user } = useAuth();
+
+  if (!user) {
+    return (
+      <PublicWalkthroughShell
+        title="Provenance Batch History"
+        description="The provenance-history workspace is open for walkthrough. Batch runs, resolution metrics, fallback rates, and alert delivery history remain private."
+        sections={["Run Timeline", "Trend Summary", "Coverage Metrics", "Alert History"]}
+        backHref="/provenance"
+      />
+    );
+  }
+
+  return <AuthenticatedProvenanceHistory />;
+}
+
+function AuthenticatedProvenanceHistory() {
   const [, setLocation] = useLocation();
   const { data: batchRuns, isLoading } = trpc.provenance.listBatchRuns.useQuery({ limit: 50 });
   const { data: alertHistory } = trpc.provenance.alertHistory.useQuery({ limit: 20 });

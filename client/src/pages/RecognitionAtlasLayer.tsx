@@ -114,7 +114,7 @@ function gate_panel({ title, message }: { title: string; message: string }) {
   return (
     <main style={{ minHeight: "100vh", background: tone.bg, color: tone.paper, display: "grid", placeItems: "center", padding: "2rem", fontFamily: "Inter, system-ui, sans-serif" }}>
       <section style={{ width: "min(720px, 100%)", border: `1px solid ${tone.card_border}`, background: tone.card_bg, borderRadius: 24, padding: "2rem" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}><Lock size={22} color={tone.gold} /><span style={{ color: tone.gold, textTransform: "uppercase", letterSpacing: "0.12em", fontSize: 12 }}>Admin gated</span></div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}><Lock size={22} color={tone.gold} /><span style={{ color: tone.gold, textTransform: "uppercase", letterSpacing: "0.12em", fontSize: 12 }}>Public walkthrough</span></div>
         <h1 style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", margin: "0 0 1rem" }}>{title}</h1>
         <p style={{ color: tone.muted, lineHeight: 1.7, fontSize: "1.05rem", marginBottom: "1.5rem" }}>{message}</p>
         {return_links()}
@@ -406,14 +406,16 @@ function get_chinook_layer_fields(active_layer_slug: layer_slug): preview_field[
 
 export default function RecognitionAtlasLayer() {
   const [, params] = useRoute("/recognition-atlas/:tribe_id/:layer_slug");
-  const { user, isAuthenticated, loading } = useAuth();
-
-  if (loading) return gate_panel({ title: "Loading Recognition Atlas layer preview", message: "Checking admin access before showing this unpublished layer preview." });
-  if (!isAuthenticated || user?.role !== "admin") return gate_panel({ title: "Recognition Atlas layer preview requires admin access", message: "This layer is available only for pre-publication review. It is not public-facing and does not indicate tribal approval." });
+  const { user } = useAuth();
+  const canReview = user?.role === "admin";
 
   const tribe_id = params?.tribe_id ?? "";
   const active_layer_slug = params?.layer_slug as layer_slug | undefined;
   if (!is_supported_tribe_id(tribe_id) || !active_layer_slug || !(active_layer_slug in layer_slug_to_key)) return gate_panel({ title: "Recognition Atlas layer not found", message: "Only the Duwamish, Muwékma, and Chinook admin preview layers are wired in this phase." });
+  if (!canReview) return gate_panel({
+    title: "Recognition Atlas layer walkthrough",
+    message: "This route is open for navigation. Unapproved source fields and cultural material remain hidden pending tribal review.",
+  });
 
   const layer_key = tribe_id === "muwekma" && active_layer_slug === "language" ? "layer_5_living_culture" : layer_slug_to_key[active_layer_slug];
   const layer_config = get_layer_config(tribe_id, active_layer_slug);

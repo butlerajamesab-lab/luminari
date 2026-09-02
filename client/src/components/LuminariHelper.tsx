@@ -63,6 +63,10 @@ export function LuminariHelper() {
   }, [view]);
 
   const handleSubmit = () => {
+    if (!user) {
+      toast.error("Sign in to send feedback");
+      return;
+    }
     if (!message.trim()) return;
     submitFeedback.mutate({
       feedbackType,
@@ -72,8 +76,6 @@ export function LuminariHelper() {
   };
 
   const nextTip = () => setTipIndex((i) => (i + 1) % QUICK_TIPS.length);
-
-  if (!user) return null;
 
   const onDashboard = location === "/dashboard";
 
@@ -127,7 +129,12 @@ export function LuminariHelper() {
             {/* Menu View */}
             {view === "menu" && (
               <div className="space-y-1.5">
-                {FEEDBACK_TYPES.map((type) => {
+                {!user && (
+                  <p className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
+                    Public browsing is open. Sign in only when you need to submit feedback or make a change.
+                  </p>
+                )}
+                {user && FEEDBACK_TYPES.map((type) => {
                   const Icon = type.icon;
                   return (
                     <button

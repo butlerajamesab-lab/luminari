@@ -272,11 +272,13 @@ const FUNNEL_STAGES = [
   { key: "case_completed", label: "Case Completed", color: "#8b5cf6" },
 ];
 
-function FunnelAnalyticsSection() {
+function FunnelAnalyticsSection({ enabled }: { enabled: boolean }) {
   const [timeRange, setTimeRange] = useState<number | undefined>(undefined);
-  const { data: funnelData, isLoading } = trpc.analytics.funnelStats.useQuery(
-    timeRange ? { timeRangeDays: timeRange } : undefined
+  const { data: queriedFunnelData, isLoading } = trpc.analytics.funnelStats.useQuery(
+    timeRange ? { timeRangeDays: timeRange } : undefined,
+    { enabled, retry: false },
   );
+  const funnelData = enabled ? queriedFunnelData : undefined;
 
   const globalFunnel = funnelData?.globalFunnel || {};
   const pipelineBreakdown = funnelData?.pipelineBreakdown || {};
@@ -408,22 +410,13 @@ function FunnelAnalyticsSection() {
 // ─── Main Page ───
 export default function AdminAnalytics() {
   const { user } = useAuth();
-  const { data: stats, isLoading, refetch } = trpc.analytics.pipelineStats.useQuery();
+  const canAdminister = user?.role === "admin";
+  const { data: queriedStats, isLoading, refetch } = trpc.analytics.pipelineStats.useQuery(undefined, {
+    enabled: canAdminister,
+    retry: false,
+  });
+  const stats = canAdminister ? queriedStats : undefined;
   const { nodes, edges, isLoading: worldLoading, jurisdictions } = useWorldIndex();
-
-  if (user?.role !== "admin") {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardContent className="py-8 text-center">
-            <BarChart3 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h2 className="text-lg font-semibold mb-2">Admin Access Required</h2>
-            <p className="text-sm text-muted-foreground">Pipeline analytics are only available to administrators.</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   if (isLoading) {
     return (
@@ -466,6 +459,11 @@ export default function AdminAnalytics() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container max-w-6xl py-8">
+        {!user && (
+          <p className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-xs text-amber-500">
+            Public read-only view. Private pipeline statistics and administrator actions remain protected.
+          </p>
+        )}
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
@@ -482,7 +480,7 @@ export default function AdminAnalytics() {
               </p>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={() => refetch()} className="gap-1.5">
+          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={!canAdminister} className="gap-1.5">
             <RefreshCw className="h-3.5 w-3.5" />
             Refresh
           </Button>
@@ -610,7 +608,7 @@ export default function AdminAnalytics() {
         </Card>
 
         {/* Funnel Analytics Section */}
-        <FunnelAnalyticsSection />
+        <FunnelAnalyticsSection enabled={canAdminister} />
 
         {/* Pipeline Detail Table */}
         {Object.keys(byPipeline).length > 0 && (

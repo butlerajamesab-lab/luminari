@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 import AtlasCommandPanel from "@/components/sovereign/AtlasCommandPanel";
+import { PublicWalkthroughShell } from "@/components/PublicWalkthroughShell";
 
 // ─── Export Spine Panel ───
 function ExportSpinePanel() {
@@ -1691,7 +1692,15 @@ export default function SovereignControl() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("export");
 
-  // Admin access check removed - Sovereign Control now accessible to all users
+  if (!user) {
+    return (
+      <PublicWalkthroughShell
+        title="Sovereign Control"
+        description="The independence and administration workspace is available for walkthrough. Exports, restores, stream controls, schema operations, and direct system execution remain owner-only."
+        sections={["Export Spine", "Restore Spine", "Admin Control", "Data Streams", "Atlas", "Intervention Timeline", "Sunam"]}
+      />
+    );
+  }
 
   return (
     <div className="p-6 max-w-7xl mx-auto">

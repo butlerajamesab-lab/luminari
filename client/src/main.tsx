@@ -87,7 +87,9 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
 queryClient.getQueryCache().subscribe(event => {
   if (event.type === "updated" && event.action.type === "error") {
     const error = event.query.state.error;
-    redirectToLoginIfUnauthorized(error);
+    // Public browsing must remain on the requested route when a private read is
+    // unavailable. The page can render its shell/empty state without exposing
+    // the protected record or turning a background query into a login wall.
     // Don't log cancel/abort errors as they're benign
     if (error?.message?.includes('cancel') || error?.name === 'AbortError') return;
     console.error("[API Query Error]", error);
