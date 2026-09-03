@@ -244,18 +244,16 @@ def verify_candidate_contract(root: str | Path) -> dict[str, int | str]:
 
     convergence = (migrations / "17_convergence_candidate_2513.sql").read_text(encoding="utf-8")
     required_convergence = {
-        "C3 acquisition gate": "html_content_extraction_receipt_missing",
-        "C3 Colorado House page furniture": "HOUSE[ \\t]+BILL[ \\t]+[0-9]{2}[A-Z]?-[0-9]{4}",
-        "C3 Colorado Senate page furniture": "SENATE[ \\t]+BILL[ \\t]+[0-9]{2}[A-Z]?-[0-9]{3}",
-        "C3 Louisiana DIGEST exclusion": "rosetta_v25_mask_nonoperative_digest",
-        "C3 Louisiana statutory disclaimer": "constitutes[ \\t\\r\\n]+no[ \\t\\r\\n]+part",
-        "C3 Louisiana alternate disclaimer": "does[ \\t\\r\\n]+not[ \\t\\r\\n]+constitute",
-        "C3 Louisiana proximity bound": "abs(v_disclaimer - v_heading) > 1024",
-        "C3 Louisiana enacting boundary": "enacted[ \\t\\r\\n]+by[ \\t\\r\\n]+the",
-        "C3 Louisiana resolution boundary": "(?:by|that)[ \\t\\r\\n]+the",
-        "C3 Louisiana joint-resolution boundary": "Section[ \\t]+[0-9]+[.]?",
-        "C3 unsupported composite rejection": "unsupported_louisiana_operative_boundary_after_digest",
-        "C3 reference-date lower bound": "reference_date_below_provider_observation_floor",
+        "C3 acquisition gate": "content_extraction_receipt_missing",
+        "C3 generic extraction contract": "rosetta-content-extraction-v1",
+        "C3 exact extracted-text binding": "extracted_text_sha256",
+        "C3 exact raw-byte binding": "raw_source_sha256",
+        "C3 verified projection": "projection_verified",
+        "C3 residue verification": "residue_check_passed",
+        "C3 reference-date receipt": "reference_date_receipt_required",
+        "C3 reference-date value binding": "reference_date' is distinct from",
+        "C3 unknown temporal default": "v_temporal_status text := 'unknown'",
+        "C3 identity offset mapping": "identity-character-offsets",
         "C4 help spans": "union all select 'help_entity'",
         "C5 decomposition": "rosetta_v25_decompose_clause",
         "C5 person middle initial": "(?:[ \\t]*,[ \\t]*[a-z]",
@@ -268,6 +266,48 @@ def verify_candidate_contract(root: str | Path) -> dict[str, int | str]:
     absent = [label for label, token in required_convergence.items() if token not in convergence]
     if absent:
         raise RuntimeError(f"convergence candidate omits required controls: {absent}")
+
+    # Exact cases belong in regression fixtures, never in the generator or
+    # generated engine. A parser rule named for a jurisdiction, run, bill, or
+    # one observed date is an individual-source patch and is release-blocking.
+    engine_paths = [root / "tools" / "generate.py"] + [
+        migrations / name for name in GENERATED_MIGRATIONS
+    ]
+    source_specific_literals = (
+        "Colorado",
+        "Louisiana",
+        "24592",
+        "24593",
+        "26-1432",
+        "1969-12-31",
+        "Poynter",
+        "unsupported_louisiana",
+    )
+    leaked = {
+        str(path.relative_to(root)): [
+            literal
+            for literal in source_specific_literals
+            if literal.lower() in path.read_text(encoding="utf-8").lower()
+        ]
+        for path in engine_paths
+    }
+    leaked = {path: literals for path, literals in leaked.items() if literals}
+    if leaked:
+        raise RuntimeError(f"source-specific literals found in engine bytes: {leaked}")
+
+    replay_runner = (migrations / "12_replay_runner.sql").read_text(
+        encoding="utf-8"
+    )
+    for token in (
+        "'reference_date_receipt',coalesce(",
+        "c.source_metadata#>'{registered_metadata,reference_date_receipt}'",
+        "'contract','rosetta-parser-configuration-v2'",
+        "'reference_date','reference_date_receipt','text_extractor_version'",
+    ):
+        if token not in replay_runner:
+            raise RuntimeError(
+                f"replay configuration identity omits date-evidence contract: {token}"
+            )
 
     c4 = (migrations / "07_lane_c4_occurrence_aware_spans.sql").read_text(
         encoding="utf-8"
@@ -311,6 +351,19 @@ def verify_candidate_contract(root: str | Path) -> dict[str, int | str]:
     ):
         if fixture not in regression_test:
             raise RuntimeError(f"open-regression fixture missing: {fixture}")
+
+    separated_test = (root / "tests" / "08_separated_transactions.py").read_text(
+        encoding="utf-8"
+    )
+    for token in (
+        "rosetta-reference-date-receipt-v1",
+        "'basis','evaluation_as_of'",
+        "'text_extractor_version','identity-text-v1'",
+    ):
+        if token not in separated_test:
+            raise RuntimeError(
+                f"separated replay fixture bypasses evidence contract: {token}"
+            )
 
     historical_text = (root / "tests" / "VALIDATION_RESULTS.txt").read_text(
         encoding="utf-8"

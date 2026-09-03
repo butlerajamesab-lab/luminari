@@ -10,10 +10,13 @@ law/version artifacts upstream, and this repair does not restore Docket Room.
 
 The end state is intentionally binary:
 
-- either the same immutable corpus passes exact source/run/output binding,
-  complete object-field diffs, seven correction-specific controls, quarantine
-  replay, and explicit human authorization; or
-- the candidate stays unpublished.
+- either every member of the same immutable corpus is truthfully accounted for
+  as completed, rejected, deferred, timed out, or failed; every completed run
+  has exact source/run/output binding; every exact currently admissible control
+  remains compatible; complete object-field diffs, seven correction-specific
+  controls, quarantine replay, and explicit human authorization pass; or
+- the candidate stays unpublished. Full accounting is mandatory; universal
+  parse success is not claimed or required.
 
 ## Universal corrections
 
@@ -21,9 +24,9 @@ The end state is intentionally binary:
 |---|---|---|
 | C1 | actor length | Applies the measured 1,024-character guard to the **decomposed actor**, not to the whole condition/scaffold; overflow is blocking and never truncated. |
 | C2 | actor sanity | Blocks navigation chrome, action-history date chains, HTML entities, U+FFFD, amendatory scaffolding, and multi-modal actor capture. |
-| C3 | source acquisition and projection | `text/html` may enter parsing only as exact registered extracted legal text with raw-byte and extracted-text SHA-256 receipts; fixed-width Colorado PAGE tokens and Louisiana DIGEST regions carrying the exact statutory non-operative disclaimer are masked in place; provider/reference dates before `1970-01-01` fail before writes. |
+| C3 | source acquisition and projection | Identity text may enter directly. Every transformed or non-text source requires a generic receipt binding media type, extractor, raw bytes, extracted text, projection verification, and residue checks. A non-null reference date requires a value-bound provenance receipt; without one, the candidate rejects the run instead of inferring truth from a calendar cutoff. No jurisdiction, bill, run, file, or observed date is embedded in parser logic. |
 | C4 | spans | Uses occurrence-aware binding and records an explicit resolved/ambiguous/unresolved state for workflow, accountability, override, definition, **and help** objects. |
-| C5 | segmentation and decomposition | Preserves person middle initials such as `David R. Poynter` as one normative actor, then separates leading condition, amendatory scaffold, actor, modal, action, and trailing condition while preserving exact actor offsets. |
+| C5 | segmentation and decomposition | Preserves person-shaped middle initials as part of one normative actor while retaining structural-label sentence boundaries, then separates leading condition, amendatory scaffold, actor, modal, action, and trailing condition while preserving exact actor offsets. |
 | C6 | polarity | Mixed positive/negative modal clauses create a blocking repair instead of being silently retyped; negative modal text is preserved. |
 | C7 | decoding | Requires a charset receipt bound to the exact content hash; replacement characters require an explicit manual-literal disposition and block span certainty. |
 

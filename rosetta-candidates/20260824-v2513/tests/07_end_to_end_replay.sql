@@ -18,7 +18,7 @@ begin
     (source_document_id,source_version,source_url,media_type,source_text,
      source_content_hash,source_identity_hash,source_metadata)
   values(v_doc,'v1','test://07-deferred','text/plain',v_text,v_hash,repeat('8',64),
-    '{"text_extractor_version":"fixture-1"}'::jsonb)
+    '{"text_extractor_version":"identity-text-v1"}'::jsonb)
   returning source_content_id into v_content;
   v_source:=rosetta_replay.register_source(v_content,v_hash,octet_length(convert_to(v_text,'UTF8')),
     '{"source_charset":"UTF-8","decoding_method":"strict_utf8","invalid_byte_handling":"reject","replacement_char_count":0,"replacement_chars_block_span_certainty":false}'::jsonb);

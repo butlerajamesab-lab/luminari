@@ -41,6 +41,10 @@ begin
   select encode(extensions.digest(convert_to(jsonb_build_object(
       'reference_date',case when c.source_metadata->>'reference_date' ~ '^\d{4}-\d{2}-\d{2}$'
                         then (c.source_metadata->>'reference_date')::date else null end,
+      'reference_date_receipt',coalesce(
+        c.source_metadata->'reference_date_receipt',
+        c.source_metadata#>'{registered_metadata,reference_date_receipt}',
+        'null'::jsonb),
       'text_extractor_version',coalesce(nullif(btrim(c.source_metadata->>'text_extractor_version'),''),'plain-text-1'),
       'normalization_version','rosetta-normalize-whitespace-v2',
       'parsing_projection_version','rosetta-layout-projection-v25',
@@ -64,8 +68,9 @@ returns text language sql immutable
 set search_path to 'pg_catalog','extensions'
 as $fn$
   select encode(extensions.digest(convert_to(jsonb_build_object(
-    'contract','rosetta-parser-configuration-v1',
-    'per_source_fields',jsonb_build_array('reference_date','text_extractor_version'),
+    'contract','rosetta-parser-configuration-v2',
+    'per_source_fields',jsonb_build_array(
+      'reference_date','reference_date_receipt','text_extractor_version'),
     'normalization_version','rosetta-normalize-whitespace-v2',
     'parsing_projection_version','rosetta-layout-projection-v25',
     'confidence_mode','binary_exact_match_only')::text,'UTF8'),'sha256'),'hex');

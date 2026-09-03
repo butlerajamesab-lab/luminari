@@ -13,6 +13,12 @@ rule is simple: do not install this packet in production. Validate it in an
 empty disposable PostgreSQL database, replay the complete immutable corpus,
 and review the complete object-field diff first.
 
+Parser behavior is global-only. Exact bills, jurisdictions, provider records,
+run IDs, and observed dates may appear in regression fixtures, but never in
+the generator or generated engine. A source that lacks universally valid
+evidence is rejected or left unresolved; it is never made to pass by a
+document-shaped rule.
+
 ## What is in here
 
 - `migrations/01–18`: durable source/attempt receipts, a byte-faithful 2.5.11

@@ -1,5 +1,5 @@
 -- ============================================================================
--- Migration: lane c3 -- C3 source acquisition, non-operative projection exclusions, reference-date gate, and receipts
+-- Migration: lane c3 -- C3 universal source-acquisition, reference-date provenance, and projection receipts
 -- One-variable experiment: a full independent copy of the 51-function closure
 -- in rosetta_v2513 with prefix c3_, identity tokens swapped inside string
 -- literals only ('2.5.11' -> '2.5.13-c3'), plus the lane's surgical change.
@@ -1165,13 +1165,6 @@ begin
     v_result := rosetta_v2513.c3_rosetta_v25_mask_matches(v_result,'(^|\n)REVISOR[^\n]*(\n|$)','n');
     v_result := rosetta_v2513.c3_rosetta_v25_mask_matches(v_result,'(^|\n)[ \t]*--[ \t]*[0-9]+[ \t]+of[ \t]+[0-9]+[ \t]*--[ \t]*(\n|$)','n');
   end if;
-  -- Colorado PDF extraction can glue page furniture to text on both
-  -- sides. Mask only the contemporary fixed-width footer token.
-  v_result := rosetta_v2513.c3_rosetta_v25_mask_matches(
-    v_result,
-    'PAGE[ \t]+[0-9]{1,4}[ \t]*-[ \t]*(?:HOUSE[ \t]+BILL[ \t]+[0-9]{2}[A-Z]?-[0-9]{4}|SENATE[ \t]+BILL[ \t]+[0-9]{2}[A-Z]?-[0-9]{3})',
-    'in');
-  v_result := rosetta_v2513.c3_rosetta_v25_mask_nonoperative_digest(v_result);
   return rosetta_v2513.c3_rosetta_v25_protect_internal_periods(v_result);
 end;
 $function$;
@@ -1345,7 +1338,7 @@ begin
   insert into rosetta_v2513.projection_receipt(extraction_run_id,object_type,object_id,raw_sha256,projected_sha256,projection_method,projection_version,offset_mapping,offset_mapping_status,charset_receipt,excluded_regions,verified)
   select p_extraction_run_id, v_row.object_type, v_row.object_id::text,
          r.receipt->>'raw_sha256', r.receipt->>'projected_sha256', r.receipt->>'projection_method', r.receipt->>'projection_version',
-         null, r.receipt->>'offset_mapping_status', r.receipt->'charset_receipt', r.receipt->'excluded_regions',
+         r.receipt->'offset_mapping', r.receipt->>'offset_mapping_status', r.receipt->'charset_receipt', r.receipt->'excluded_regions',
          rosetta_v2513.c3_rosetta_v25_verify_projection(v_block_text, rosetta_v2513.c3_rosetta_v25_layout_projection(v_block_text))
   from (select rosetta_v2513.c3_rosetta_v25_projection_receipt(v_block_text) as receipt) as r;
   insert into rosetta_v2513.rosetta_object_source_span(object_type,object_id,extraction_run_id,source_document_id,source_block_id,source_offset_start,source_offset_end,raw_text,normalized_text,raw_text_hash,projection_version,span_status)
@@ -1855,7 +1848,7 @@ declare
   v_flat text;
   v_section_number text := 'Document';
   v_effective_date date;
-  v_temporal_status text := 'pending';
+  v_temporal_status text := 'unknown';
   v_run_id integer;
   v_run_version integer;
   v_replay_status text;
@@ -1890,8 +1883,9 @@ declare
   v_section_definition_count integer := 0;
   v_structural_validation jsonb;
 begin
-  perform rosetta_v2513.c3_rosetta_v25_reference_date_gate(p_reference_date);
-  perform rosetta_v2513.c3_rosetta_v25_source_acquisition_gate(p_source_document_id, p_source_text, p_media_type, p_source_version, p_source_url);
+  perform rosetta_v2513.c3_rosetta_v25_reference_date_gate(
+    p_reference_date, coalesce(p_source_metadata, '{}'::jsonb));
+  perform rosetta_v2513.c3_rosetta_v25_source_acquisition_gate(p_source_document_id, p_source_text, p_media_type, p_source_version, p_source_url, p_source_byte_hash, p_text_extractor_version);
   perform pg_advisory_xact_lock(20260731, p_source_document_id);
 
   select sd.corpus_id, sd.document_identifier, sd.document_name
@@ -1947,6 +1941,10 @@ begin
 
   v_configuration_json := jsonb_build_object(
     'reference_date', p_reference_date,
+    'reference_date_receipt', coalesce(
+      p_source_metadata->'reference_date_receipt',
+      p_source_metadata#>'{registered_metadata,reference_date_receipt}',
+      'null'::jsonb),
     'text_extractor_version', coalesce(nullif(btrim(p_text_extractor_version), ''), 'unknown'),
     'normalization_version', 'rosetta-normalize-whitespace-v2',
     'parsing_projection_version', 'rosetta-layout-projection-v25',
@@ -3099,88 +3097,36 @@ begin
   );
 end;
 $function$;
-CREATE OR REPLACE FUNCTION rosetta_v2513.c3_rosetta_v25_mask_nonoperative_digest(p_value text)
- RETURNS text
- LANGUAGE plpgsql
- IMMUTABLE STRICT
- SET search_path TO 'pg_catalog'
-AS $function$
-declare
-  v_start integer;
-  v_heading integer;
-  v_disclaimer integer;
-  v_search_start integer;
-  v_end integer;
-  v_instrument_header integer;
-  v_segment text;
-  v_mask text;
-begin
-  -- A DIGEST heading is not enough to prove non-operative status across all
-  -- jurisdictions. Require the source's own nearby statutory Louisiana
-  -- non-operative disclaimer, then mask without changing offsets.
-  v_heading := regexp_instr(
-    p_value,
-    '(^|\n)[ \t]*DIGEST[ \t]*(\r?\n|$)',
-    1, 1, 0, 'in');
-  if v_heading = 0 then
-    return p_value;
-  end if;
-  v_disclaimer := regexp_instr(
-    p_value,
-    '(?:constitutes[ \t\r\n]+no[ \t\r\n]+part|does[ \t\r\n]+not[ \t\r\n]+constitute[ \t\r\n]+a[ \t\r\n]+part)[ \t\r\n]+of[ \t\r\n]+the[ \t\r\n]+legislative[ \t\r\n]+instrument',
-    greatest(1, v_heading - 1024), 1, 0, 'in');
-  -- Louisiana House and Senate layouts place the disclaimer on opposite sides
-  -- of the heading, and some name an individual drafter instead of Legislative
-  -- Services. The authoritative disclaimer—not authorship—is the evidence.
-  if v_disclaimer = 0
-     or abs(v_disclaimer - v_heading) > 1024 then
-    return p_value;
-  end if;
-  v_start := least(v_heading, v_disclaimer);
-  v_search_start := greatest(v_heading, v_disclaimer) + 1;
-  -- A source extractor can place a House/Senate digest before the operative
-  -- instrument. Stop at a high-confidence Louisiana bill, chamber-resolution,
-  -- or constitutional-joint-resolution formula. Do not trust a bare AN ACT,
-  -- A RESOLUTION, or unanchored BE IT RESOLVED marker.
-  v_end := regexp_instr(
-    p_value,
-    '(^|\n)[ \t]*(?:[0-9]{1,3}[ \t]+)?(?:(?:Section[ \t]+[0-9]+[.]?|(?:(?:NOW[ \t]*,[ \t]*)?THEREFORE[ \t]*,))[ \t]+)?Be[ \t]+it[ \t]+(?:enacted[ \t\r\n]+by[ \t\r\n]+the[ \t\r\n]+Legislature[ \t\r\n]+of[ \t\r\n]+Louisiana[ \t]*[.:]|resolved[ \t\r\n]+(?:by|that)[ \t\r\n]+the[ \t\r\n]+(?:Legislature[ \t\r\n]+of[ \t\r\n]+Louisiana|(?:House[ \t\r\n]+of[ \t\r\n]+Representatives|Senate)[ \t\r\n]+of[ \t\r\n]+the[ \t\r\n]+Legislature[ \t\r\n]+of[ \t\r\n]+Louisiana)(?=[ \t\r\n,:]))',
-    v_search_start, 1, 0, 'in');
-  if v_end = 0 then
-    -- A later instrument header proves concatenated/misordered source. If its
-    -- operative formula is not one of the jurisdiction-authenticated forms
-    -- above, block instead of silently masking an unknown instrument to EOF.
-    v_instrument_header := regexp_instr(
-      p_value,
-      '(^|\n)[ \t]*(?:[0-9]{1,3}[ \t]+)?(?:AN[ \t]+ACT|A[ \t]+(?:CONCURRENT[ \t]+|JOINT[ \t]+)?RESOLUTION)[ \t]*(?:\r?\n|$)',
-      v_search_start, 1, 0, 'in');
-    if v_instrument_header <> 0 then
-      raise exception 'unsupported_louisiana_operative_boundary_after_digest'
-        using errcode = 'P1A04';
-    end if;
-    v_end := char_length(p_value) + 1;
-  end if;
-  v_segment := substr(p_value, v_start, v_end - v_start);
-  v_mask := regexp_replace(v_segment, '[^\n\r]', ' ', 'g');
-  return overlay(p_value placing v_mask from v_start for v_end - v_start);
-end;
-$function$;
-CREATE OR REPLACE FUNCTION rosetta_v2513.c3_rosetta_v25_reference_date_gate(p_reference_date date)
+CREATE OR REPLACE FUNCTION rosetta_v2513.c3_rosetta_v25_reference_date_gate(
+    p_reference_date date,
+    p_source_metadata jsonb default '{}'::jsonb)
  RETURNS void
  LANGUAGE plpgsql
  IMMUTABLE
  SET search_path TO 'pg_catalog'
 AS $function$
 declare
-  -- reference_date is the provider-observation/as-of date, not the date of
-  -- enactment inside a historical instrument. The Unix epoch is therefore a
-  -- deterministic lower bound for this transport field.
-  v_provider_observation_floor constant date := date '1970-01-01';
+  v_receipt jsonb;
 begin
-  if p_reference_date is not null
-     and p_reference_date < v_provider_observation_floor then
-    raise exception 'reference_date_below_provider_observation_floor: % is before %',
-      p_reference_date, v_provider_observation_floor using errcode = 'P1A03';
+  if p_reference_date is null then
+    return;
+  end if;
+
+  v_receipt := coalesce(
+    p_source_metadata->'reference_date_receipt',
+    p_source_metadata#>'{registered_metadata,reference_date_receipt}');
+
+  -- No calendar cutoff can distinguish a real historical as-of date from a
+  -- provider default.  A non-null reference date may affect temporal status
+  -- only when an immutable receipt binds its value, role, and evidence hash.
+  if v_receipt is null
+     or v_receipt->>'contract' <> 'rosetta-reference-date-receipt-v1'
+     or v_receipt->>'reference_date' is distinct from p_reference_date::text
+     or v_receipt->>'basis' not in ('provider_observation','evaluation_as_of')
+     or coalesce((v_receipt->>'verified')::boolean,false) is not true
+     or lower(coalesce(v_receipt->>'evidence_sha256','')) !~ '^[0-9a-f]{64}$' then
+    raise exception 'reference_date_receipt_required: non-null reference_date is unverified'
+      using errcode = 'P1A03';
   end if;
 end;
 $function$;
@@ -3189,25 +3135,36 @@ CREATE OR REPLACE FUNCTION rosetta_v2513.c3_rosetta_v25_source_acquisition_gate(
     p_source_text text,
     p_media_type text,
     p_source_version text,
-    p_source_url text)
+    p_source_url text,
+    p_source_byte_hash text,
+    p_text_extractor_version text)
  RETURNS void
  LANGUAGE plpgsql
- STABLE STRICT
+ STABLE
  SET search_path TO 'pg_catalog', 'public', 'extensions'
 AS $function$
 declare
   v_content rosetta_v2513.source_document_content%rowtype;
   v_receipt jsonb;
   v_text_hash text;
+  v_media_type text;
+  v_extractor_version text;
+  v_identity_text boolean;
 begin
-  -- C3 is an acquisition boundary, not a parser-side chrome deny-list.  For
-  -- text/html, the stored text MUST already be the deterministic extracted
-  -- legal text and MUST carry a receipt binding it to the immutable raw bytes.
-  if lower(coalesce(p_media_type,'')) not in ('text/html','application/xhtml+xml') then
+  v_text_hash := encode(digest(convert_to(coalesce(p_source_text,''),'UTF8'),'sha256'),'hex');
+  v_media_type := lower(coalesce(nullif(btrim(p_media_type),''),'text/plain'));
+  v_extractor_version := coalesce(nullif(btrim(p_text_extractor_version),''),'unknown');
+  v_identity_text := v_media_type in ('text/plain','text/markdown')
+    and v_extractor_version in ('plain-text-1','identity-text-v1')
+    and (p_source_byte_hash is null or lower(p_source_byte_hash) = v_text_hash);
+
+  -- Exact identity text needs no extraction claim. Every transformed or
+  -- non-text source does: Rosetta will reject the source rather than learn a
+  -- parser regex for one provider, jurisdiction, bill, or file.
+  if v_identity_text then
     return;
   end if;
 
-  v_text_hash := encode(digest(convert_to(p_source_text,'UTF8'),'sha256'),'hex');
   select c.* into v_content
   from rosetta_v2513.source_document_content c
   where c.source_document_id = p_source_document_id
@@ -3215,30 +3172,48 @@ begin
     and c.source_version = p_source_version
     and c.source_url = p_source_url;
   if not found then
-    raise exception 'html_content_extraction_receipt_missing: extracted text is not registered for source document %',
+    raise exception 'content_extraction_receipt_missing: transformed source is not registered for source document %',
       p_source_document_id using errcode = 'P1A03';
   end if;
 
   v_receipt := v_content.source_metadata->'content_extraction_receipt';
   if v_receipt is null
      or v_content.source_byte_hash !~ '^[0-9a-f]{64}$'
-     or v_receipt->>'contract' <> 'rosetta-html-content-extraction-v1'
-     or nullif(v_receipt->>'extractor_version','') is null
+     or lower(v_content.source_byte_hash) is distinct from lower(p_source_byte_hash)
+     or lower(v_content.media_type) is distinct from v_media_type
+     or v_receipt->>'contract' not in (
+          'rosetta-content-extraction-v1','rosetta-html-content-extraction-v1')
+     or v_receipt->>'extractor_version' is distinct from v_extractor_version
      or v_receipt->>'extracted_text_sha256' is distinct from v_text_hash
      or lower(v_receipt->>'raw_source_sha256') is distinct from lower(v_content.source_byte_hash)
-     or coalesce((v_receipt->>'navigation_removed')::boolean,false) is not true
-     or coalesce((v_receipt->>'action_tables_removed')::boolean,false) is not true
-     or coalesce((v_receipt->>'vote_chrome_removed')::boolean,false) is not true then
-    raise exception 'html_content_extraction_receipt_invalid: raw/extracted hashes and removal assertions must be exact'
+     or (
+       v_receipt->>'contract' = 'rosetta-content-extraction-v1'
+       and (
+         v_receipt->>'media_type' is distinct from v_media_type
+         or coalesce((v_receipt->>'projection_verified')::boolean,false) is not true
+         or coalesce((v_receipt->>'residue_check_passed')::boolean,false) is not true
+       )
+     )
+     or (
+       v_receipt->>'contract' = 'rosetta-html-content-extraction-v1'
+       and (
+         v_media_type not in ('text/html','application/xhtml+xml')
+         or coalesce((v_receipt->>'navigation_removed')::boolean,false) is not true
+         or coalesce((v_receipt->>'action_tables_removed')::boolean,false) is not true
+         or coalesce((v_receipt->>'vote_chrome_removed')::boolean,false) is not true
+       )
+     ) then
+    raise exception 'content_extraction_receipt_invalid: identity, extractor, projection, and residue evidence must be exact'
       using errcode = 'P1A03';
   end if;
 
-  -- Defense in depth: a receipted extraction still fails if obvious markup or
-  -- the observed navigation/action chrome survived into parser input.
-  if p_source_text ~* '<[[:space:]]*(html|body|nav|script|style|a)\M'
+  -- A receipted markup extraction still fails if markup or generic navigation
+  -- residue survives. This is a media contract, not a source-specific repair.
+  if v_media_type in ('text/html','application/xhtml+xml')
+     and (p_source_text ~* '<[[:space:]]*(html|body|nav|script|style|a)\M'
      or p_source_text ~* '&(?:nbsp|amp|quot|apos|lt|gt|#x?[0-9a-f]+);'
-     or p_source_text ~* '\m(go to top|skip to main content|actions:[[:space:]]*bill no|print this bill|share this page)\M' then
-    raise exception 'html_content_extraction_residue: parser input still contains markup, entities, or navigation/action chrome'
+     or p_source_text ~* '\m(go to top|skip to main content|navigation|breadcrumb|print this|share this)\M') then
+    raise exception 'content_extraction_residue: extracted markup source still contains structural chrome'
       using errcode = 'P1A03';
   end if;
 end;
@@ -3255,6 +3230,10 @@ declare
   v_i integer;
 begin
   v_projected := rosetta_v2513.c3_rosetta_v25_layout_projection(p_source_text);
+  if char_length(v_projected) <> char_length(p_source_text) then
+    raise exception 'projection_offset_contract_violated: source length %, projected length %',
+      char_length(p_source_text), char_length(v_projected) using errcode = 'P1A03';
+  end if;
   -- excluded-region receipt: positions masked to spaces by the projection
   for v_i in 1..char_length(p_source_text) loop
     if substr(p_source_text, v_i, 1) not in (' ', chr(10), chr(13), chr(9))
@@ -3268,8 +3247,11 @@ begin
     'projected_sha256', encode(digest(convert_to(v_projected,'UTF8'),'sha256'),'hex'),
     'projection_method', 'masking-projection',
     'projection_version', 'rosetta-layout-projection-v2513c3',
-    'offset_mapping_status', 'not_preserved_declared',
-    'offset_mapping', null,
+    'offset_mapping_status', 'preserved',
+    'offset_mapping', jsonb_build_object(
+      'kind','identity-character-offsets',
+      'source_length',char_length(p_source_text),
+      'projected_length',char_length(v_projected)),
     'excluded_regions', jsonb_build_object('masked_char_count', v_excluded,
         'method', 'position-diff of raw vs projected'),
     'charset_receipt', jsonb_build_object('source_charset','UTF8','decoding_method','database text (already decoded)'));
@@ -3287,4 +3269,4 @@ $function$;
 insert into rosetta_v2513.extraction_rule_manifest
   (engine_version, rule_set_version, manifest_hash, manifest_json, is_active)
 values ('rosetta-v3-deterministic-sql-2.5.13-c3', 'rosetta-five-layer-structural-correctness-2.5.13-c3',
-        '4166865922a9228063fbeef2302f0aa8d02f917d516377ba42b95eb52eef29f2', $manifest${"changes":["C3 source acquisition, non-operative projection exclusions, reference-date gate, and receipts"],"closure_namespace":"rosetta_v2513","closure_prefix":"c3_","control_identity":"rosetta-v3-deterministic-sql-2.5.11","engine_version":"rosetta-v3-deterministic-sql-2.5.13-c3","lane":"c3","publication":"structurally disabled: no publication view, no registry row, no publishable-run path references this namespace","rule_set_version":"rosetta-five-layer-structural-correctness-2.5.13-c3","title":"C3 source acquisition, non-operative projection exclusions, reference-date gate, and receipts"}$manifest$::jsonb, true);
+        '07097c8aff708045f71a638029855a54711dbd41ba1ce784b8cf5bb0418b3d86', $manifest${"changes":["C3 universal source-acquisition, reference-date provenance, and projection receipts"],"closure_namespace":"rosetta_v2513","closure_prefix":"c3_","control_identity":"rosetta-v3-deterministic-sql-2.5.11","engine_version":"rosetta-v3-deterministic-sql-2.5.13-c3","lane":"c3","publication":"structurally disabled: no publication view, no registry row, no publishable-run path references this namespace","rule_set_version":"rosetta-five-layer-structural-correctness-2.5.13-c3","title":"C3 universal source-acquisition, reference-date provenance, and projection receipts"}$manifest$::jsonb, true);
