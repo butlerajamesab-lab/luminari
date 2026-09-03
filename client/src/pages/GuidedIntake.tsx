@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { getLoginUrl } from "@/const";
 
 /* ─── Types ─── */
 
@@ -47,6 +48,35 @@ interface AutoDetectResult {
   suggested_pre_lenses: string[];
   next_questions: IntakeQuestion[];
   ready_to_recommend: boolean;
+}
+
+type IntakePhase = "questions" | "suggestions" | "confirm";
+
+interface GuidedIntakeDraft {
+  version: 1;
+  answers: Record<string, string>;
+  detect_result: AutoDetectResult | null;
+  selected_pipeline: string | null;
+  phase: IntakePhase;
+  show_all_suggestions: boolean;
+  use_smart_detect: boolean;
+  saved_at: string;
+}
+
+const GUIDED_INTAKE_DRAFT_KEY = "luminari-guided-intake-draft-v1";
+
+function loadGuidedIntakeDraft(): GuidedIntakeDraft | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(GUIDED_INTAKE_DRAFT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as GuidedIntakeDraft;
+    if (parsed.version !== 1 || !parsed.answers || typeof parsed.answers !== "object") return null;
+    if (!["questions", "suggestions", "confirm"].includes(parsed.phase)) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
 }
 
 /* ─── Category display config ─── */
@@ -148,7 +178,8 @@ function SuggestionCard({
 
 export default function GuidedIntake() {
   const [, setLocation] = useLocation();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const [restoredDraft] = useState(loadGuidedIntakeDraft);
 
   // ─── Map session context (from Civic Map intake) ─────────────────
   const [mapSessionId] = useState(() => {
@@ -166,18 +197,18 @@ export default function GuidedIntake() {
   );
 
   // Questionnaire state
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answers, setAnswers] = useState<Record<string, string>>(() => restoredDraft?.answers ?? {});
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [currentInput, setCurrentInput] = useState("");
   const [isDetecting, setIsDetecting] = useState(false);
   const [isSmartDetecting, setIsSmartDetecting] = useState(false);
-  const [detectResult, setDetectResult] = useState<AutoDetectResult | null>(null);
-  const [selectedPipeline, setSelectedPipeline] = useState<string | null>(null);
+  const [detectResult, setDetectResult] = useState<AutoDetectResult | null>(() => restoredDraft?.detect_result ?? null);
+  const [selectedPipeline, setSelectedPipeline] = useState<string | null>(() => restoredDraft?.selected_pipeline ?? null);
   const [isCreating, setIsCreating] = useState(false);
-  const [showAllSuggestions, setShowAllSuggestions] = useState(false);
+  const [showAllSuggestions, setShowAllSuggestions] = useState(() => restoredDraft?.show_all_suggestions ?? false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [phase, setPhase] = useState<"questions" | "suggestions" | "confirm">("questions");
-  const [useSmartDetect, setUseSmartDetect] = useState(false);
+  const [phase, setPhase] = useState<IntakePhase>(() => restoredDraft?.phase ?? "questions");
+  const [useSmartDetect, setUseSmartDetect] = useState(() => restoredDraft?.use_smart_detect ?? false);
   const [mapContextApplied, setMapContextApplied] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -366,11 +397,37 @@ export default function GuidedIntake() {
     setSelectedPipeline(pipelineId === selectedPipeline ? null : pipelineId);
   };
 
+  const persistDraftForSignIn = () => {
+    const draft: GuidedIntakeDraft = {
+      version: 1,
+      answers,
+      detect_result: detectResult,
+      selected_pipeline: selectedPipeline,
+      phase,
+      show_all_suggestions: showAllSuggestions,
+      use_smart_detect: useSmartDetect,
+      saved_at: new Date().toISOString(),
+    };
+    try {
+      window.sessionStorage.setItem(GUIDED_INTAKE_DRAFT_KEY, JSON.stringify(draft));
+      return true;
+    } catch {
+      toast.error("Your answers could not be preserved for sign-in. Please keep this tab open and try again.");
+      return false;
+    }
+  };
+
   // Handle case creation
   const handleCreateCase = async () => {
-    if (!selectedPipeline || isCreating) return;
+    if (!selectedPipeline || isCreating || authLoading) return;
     const suggestion = detectResult?.suggestions.find(s => s.pipeline_id === selectedPipeline);
     if (!suggestion) return;
+
+    if (!user) {
+      if (!persistDraftForSignIn()) return;
+      setLocation(getLoginUrl("/guided-intake"));
+      return;
+    }
 
     setIsCreating(true);
     try {
@@ -398,6 +455,7 @@ export default function GuidedIntake() {
       }
 
       logEvent.mutate({ pipelineType: suggestion.pipeline_id, eventType: "guided_intake_complete" });
+      window.sessionStorage.removeItem(GUIDED_INTAKE_DRAFT_KEY);
       toast.success("Your case has been created. Let's start gathering your documents.");
       setLocation(`/guide/${result.id}`);
     } catch {
@@ -408,7 +466,12 @@ export default function GuidedIntake() {
 
   // Handle "Continue to conversation" — go to the old intake with the selected pipeline
   const handleContinueToConversation = () => {
-    if (!selectedPipeline) return;
+    if (!selectedPipeline || authLoading) return;
+    if (!user) {
+      if (!persistDraftForSignIn()) return;
+      setLocation(getLoginUrl("/guided-intake"));
+      return;
+    }
     logEvent.mutate({ pipelineType: selectedPipeline, eventType: "guided_to_conversation" });
     setLocation(`/intake?situation=${selectedPipeline}`);
   };
@@ -871,14 +934,17 @@ export default function GuidedIntake() {
                       <div className="space-y-3 pt-2">
                         <Button
                           onClick={handleCreateCase}
-                          disabled={isCreating}
+                          disabled={isCreating || authLoading}
                           className="w-full gap-2"
                           size="lg"
                         >
-                          {isCreating ? (
+                          {isCreating || authLoading ? (
                             <><Loader2 className="h-4 w-4 animate-spin" /> Setting things up...</>
                           ) : (
-                            <><ArrowRight className="h-4 w-4" /> Create my case</>
+                            <>
+                              <ArrowRight className="h-4 w-4" />
+                              {user ? "Create my case" : "Sign in to save my case"}
+                            </>
                           )}
                         </Button>
 
@@ -908,7 +974,9 @@ export default function GuidedIntake() {
                         </Button>
 
                         <p className="text-[10px] text-center text-muted-foreground/60">
-                          You can always come back and add more details later
+                          {user
+                            ? "You can always come back and add more details later"
+                            : "Your completed answers stay in this tab and return with you after sign-in"}
                         </p>
                       </div>
                     </CardContent>
