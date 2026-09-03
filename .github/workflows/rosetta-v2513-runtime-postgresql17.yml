@@ -39,6 +39,7 @@ jobs:
     env:
       ROSETTA_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/rosetta_v2513_ci
       ROSETTA_DISPOSABLE_ACK: I_UNDERSTAND
+      ROSETTA_CURRENT_VALIDATION_OUTPUT: ${{ runner.temp }}/rosetta-v2513-current-runtime-validation.txt
     steps:
       - name: Check out candidate source
         uses: actions/checkout@v7
@@ -54,6 +55,13 @@ jobs:
             "select current_setting('server_version_num')::int / 10000")" = "17"
 
       - name: Run disposable Rosetta runtime gate
-        run: |
-          set -o pipefail
-          python3 tests/run_all.py | tee "$RUNNER_TEMP/rosetta-v2513-runtime.txt"
+        run: python3 tests/capture_evidence.py
+
+      - name: Preserve current-build runtime transcript
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rosetta-v2513-runtime-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/rosetta-v2513-current-runtime-validation.txt
+          if-no-files-found: error
+          retention-days: 30

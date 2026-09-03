@@ -38,59 +38,6 @@ jobs:
           python3 tools/generate.py
           git diff --exit-code -- .
 
-  verify-runtime-postgresql17:
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: rosetta_v2513_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres -d rosetta_v2513_test"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    defaults:
-      run:
-        working-directory: rosetta-candidates/20260824-v2513
-    env:
-      ROSETTA_TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/rosetta_v2513_test
-      ROSETTA_DISPOSABLE_ACK: I_UNDERSTAND
-      ROSETTA_CURRENT_VALIDATION_OUTPUT: ${{ runner.temp }}/rosetta-v2513-current-runtime-validation.txt
-    steps:
-      - name: Check out candidate source
-        uses: actions/checkout@v7
-
-      - name: Install PostgreSQL client
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client
-
-      - name: Verify exact PostgreSQL 17 target
-        run: |
-          version="$(psql "$ROSETTA_TEST_DATABASE_URL" -X -Atc 'show server_version_num;')"
-          if [ "$version" -lt 170000 ] || [ "$version" -ge 180000 ]; then
-            echo "Expected PostgreSQL 17, got server_version_num=$version" >&2
-            exit 1
-          fi
-          echo "PostgreSQL server_version_num=$version"
-
-      - name: Run current-build migration and regression chain
-        run: python3 tests/capture_evidence.py
-
-      - name: Preserve current-build runtime transcript
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: rosetta-v2513-runtime-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/rosetta-v2513-current-runtime-validation.txt
-          if-no-files-found: error
-          retention-days: 30
-
   verify-lighthouse-evidence:
     runs-on: ubuntu-latest
     defaults:
