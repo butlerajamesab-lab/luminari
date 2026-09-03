@@ -17,7 +17,8 @@ begin
   insert into rosetta_v2513.source_document_content
     (source_document_id,source_version,source_url,media_type,source_text,
      source_content_hash,source_identity_hash,source_metadata)
-  values(v_doc,'v1','test://07-deferred','text/plain',v_text,v_hash,repeat('8',64),
+  values(v_doc,'v1','test://07-deferred','text/plain',v_text,v_hash,
+    encode(extensions.digest(convert_to('fixture:test-07:deferred-v1','UTF8'),'sha256'),'hex'),
     '{"text_extractor_version":"identity-text-v1"}'::jsonb)
   returning source_content_id into v_content;
   v_source:=rosetta_replay.register_source(v_content,v_hash,octet_length(convert_to(v_text,'UTF8')),

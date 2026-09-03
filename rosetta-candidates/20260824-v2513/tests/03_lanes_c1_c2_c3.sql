@@ -146,7 +146,8 @@ begin
      source_content_hash,source_byte_hash,source_identity_hash,source_metadata)
   values(
     v_doc,'html-v1','test://html-extracted','text/html',v_text,v_hash,v_raw_hash,
-    repeat('b',64),jsonb_build_object('content_extraction_receipt',jsonb_build_object(
+    encode(extensions.digest(convert_to('fixture:test-03:html-v1','UTF8'),'sha256'),'hex'),
+    jsonb_build_object('content_extraction_receipt',jsonb_build_object(
       'contract','rosetta-html-content-extraction-v1',
       'extractor_version','test-html-v1',
       'raw_source_sha256',v_raw_hash,
@@ -165,7 +166,8 @@ begin
      source_content_hash,source_byte_hash,source_identity_hash,source_metadata)
   values(
     v_doc,'pdf-v1','test://pdf-extracted','application/pdf',v_pdf_text,
-    v_pdf_hash,repeat('c',64),repeat('d',64),
+    v_pdf_hash,repeat('c',64),
+    encode(extensions.digest(convert_to('fixture:test-03:pdf-v1','UTF8'),'sha256'),'hex'),
     jsonb_build_object('content_extraction_receipt',jsonb_build_object(
       'contract','rosetta-content-extraction-v1',
       'media_type','application/pdf',

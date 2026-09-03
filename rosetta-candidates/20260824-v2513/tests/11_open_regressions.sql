@@ -77,7 +77,8 @@ begin
      source_content_hash,source_byte_hash,source_identity_hash,source_metadata)
   values(
     v_doc,'verified-projection','test://verified-projection','application/pdf',
-    v_clean,v_clean_hash,v_raw_hash,repeat('d',64),
+    v_clean,v_clean_hash,v_raw_hash,
+    encode(extensions.digest(convert_to('fixture:test-11:verified-projection','UTF8'),'sha256'),'hex'),
     jsonb_build_object('content_extraction_receipt',jsonb_build_object(
       'contract','rosetta-content-extraction-v1',
       'media_type','application/pdf',

@@ -25,7 +25,8 @@ begin
   insert into rosetta_v2513.source_document_content
     (source_document_id,source_version,source_url,media_type,source_text,
      source_content_hash,source_identity_hash,source_metadata)
-  values(v_doc,'v1','test://06-control','text/plain',v_text,v_hash,repeat('6',64),
+  values(v_doc,'v1','test://06-control','text/plain',v_text,v_hash,
+    encode(extensions.digest(convert_to('fixture:test-06:control-v1','UTF8'),'sha256'),'hex'),
     jsonb_build_object(
       'reference_date','2026-08-24',
       'reference_date_receipt',jsonb_build_object(
@@ -37,7 +38,8 @@ begin
   insert into rosetta_v2513.source_document_content
     (source_document_id,source_version,source_url,media_type,source_text,
      source_content_hash,source_identity_hash,source_metadata)
-  values(v_other_doc,'v1','test://06-other','text/plain',v_other_text,v_other_hash,repeat('7',64),
+  values(v_other_doc,'v1','test://06-other','text/plain',v_other_text,v_other_hash,
+    encode(extensions.digest(convert_to('fixture:test-06:other-v1','UTF8'),'sha256'),'hex'),
     jsonb_build_object(
       'reference_date','2026-08-24',
       'reference_date_receipt',jsonb_build_object(

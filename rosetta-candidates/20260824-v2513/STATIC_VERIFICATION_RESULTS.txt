@@ -41,5 +41,6 @@ PASS sql_files_lexed=30
 PASS migration_files=20
 PASS public_schema_mutations=0
 PASS control_functions_matching=51
+PASS fixture_source_identities=8
 PASS quarantine_run_ids=1038
 PASS quarantine_sha256=13dd88b0519f6ee1d36189aa4f45b4acd0fc0e499a37a3b089f12666c53a476e

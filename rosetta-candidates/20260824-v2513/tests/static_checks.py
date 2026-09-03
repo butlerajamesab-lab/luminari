@@ -152,9 +152,33 @@ def verify_candidate_contract(root: str | Path) -> dict[str, int | str]:
     if missing:
         raise RuntimeError(f"missing migration prefixes: {missing}")
 
-    sql_paths = sorted(migrations.glob("*.sql")) + sorted((root / "tests").glob("*.sql"))
+    test_sql_paths = sorted((root / "tests").glob("*.sql"))
+    sql_paths = sorted(migrations.glob("*.sql")) + test_sql_paths
     for path in sql_paths:
         _sql_lexical_balance(path)
+
+    # SQL fixtures commit into one shared disposable schema. Every direct
+    # source-content insert therefore needs a deterministic, namespaced
+    # identity instead of a repeated-character placeholder that can collide
+    # with another test and hide the actual runtime result.
+    test_sql = "\n".join(path.read_text(encoding="utf-8") for path in test_sql_paths)
+    source_content_inserts = len(re.findall(
+        r"insert\s+into\s+rosetta_v2513\.source_document_content\b",
+        test_sql,
+        re.IGNORECASE,
+    ))
+    fixture_identity_labels = re.findall(
+        r"convert_to\('(fixture:[^']+)','UTF8'\)",
+        test_sql,
+        re.IGNORECASE,
+    )
+    if len(fixture_identity_labels) != source_content_inserts:
+        raise RuntimeError(
+            "every direct source-content fixture insert must use one "
+            "namespaced deterministic identity hash"
+        )
+    if len(fixture_identity_labels) != len(set(fixture_identity_labels)):
+        raise RuntimeError("duplicate source-content fixture identity label")
 
     # The package manifest is the current-byte claim. A runtime PASS is valid
     # only when a separate validation binding names these exact generated SQL
@@ -455,6 +479,7 @@ def verify_candidate_contract(root: str | Path) -> dict[str, int | str]:
         "migration_files": len(list(migrations.glob("*.sql"))),
         "public_schema_mutations": len(public_mutations),
         "control_functions_matching": 51,
+        "fixture_source_identities": len(fixture_identity_labels),
         "quarantine_run_ids": len(run_ids),
         "quarantine_sha256": hashlib.sha256(quarantine.read_bytes()).hexdigest(),
     }
