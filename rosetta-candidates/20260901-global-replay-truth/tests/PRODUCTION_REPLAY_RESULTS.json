@@ -1,0 +1,87 @@
+{
+  "status": "stopped_nonpass_not_promoted",
+  "recorded_on": "2026-09-01",
+  "production_project_ref": "kjzytnzkkdpdxtqtjlew",
+  "git_commit": "da75996",
+  "scope": "Global v2.5.28 candidate evaluation against the immutable 11,884-source authorized corpus; no per-source exceptions",
+  "production_migration_versions": {
+    "01_truthful_campaign_dispositions.sql": "20260901161539",
+    "02_observed_outcomes_only.sql": "20260901161552",
+    "03_universal_manifest_and_diff.sql": "20260901161601",
+    "04_universal_promotion_gate.sql": "20260901161608",
+    "05_terminal_campaign_result_integrity.sql": "20260901162453"
+  },
+  "migration_05_sha256": "3f7bf7328a22565886c48be04c8678f6cf9a1be886acc2e28dc385876345bed4",
+  "production_contract_sql": "pass",
+  "campaign": {
+    "campaign_id": "54aeb84f-c2d5-4e10-bac3-cad22eb3f22f",
+    "campaign_name": "v2528-global-truth-full-20260901-da75996",
+    "engine_version": "rosetta-v3-deterministic-sql-2.5.28",
+    "rule_set_version": "rosetta-five-layer-structural-correctness-2.5.28",
+    "closure_prefix": "v2528_",
+    "closure_hash": "db2ed9b12dc1d95c14caa779ac50955bee4a5085190fb2fb356f5da4734a5727",
+    "started_at": "2026-09-01T16:25:44.285228+00:00",
+    "finished_at": "2026-09-01T16:26:54.325179+00:00",
+    "campaign_state": "stopped",
+    "replay_result": "nonpass",
+    "coverage_complete": false,
+    "promotion_eligible": false,
+    "source_total": 11884,
+    "accounted_sources": 1328,
+    "completed_sources": 737,
+    "rejected_sources": 590,
+    "timed_out_sources": 1,
+    "nonpass_sources": 591,
+    "unprocessed_sources": 10556,
+    "bound_sources": 1330,
+    "pending_finalize_at_stop_verification": 2,
+    "exact_engine_closure_running_attempts_at_stop_verification": 63,
+    "stop_reason": "Universal candidate disproven by observed nonpass dispositions; no per-source exceptions permitted."
+  },
+  "compatibility_analysis": {
+    "contract": "truthful-global-compatibility-v1",
+    "analysis_added_on": "2026-09-01",
+    "completed_with_exact_production_admissible_control": 338,
+    "completed_without_exact_production_admissible_control": 399,
+    "rejected_with_exact_production_admissible_control": 149,
+    "rejected_without_exact_production_admissible_control": 441,
+    "timed_out_with_exact_production_admissible_control": 0,
+    "timed_out_without_exact_production_admissible_control": 1,
+    "candidate_compatible": false,
+    "blocking_reasons": [
+      "149 exact production-admissible sources were rejected by the candidate",
+      "one source timed out instead of reaching a deterministic terminal support boundary"
+    ],
+    "interpretation": "A truthful rejection is still a source nonpass. Rejections on sources with no exact production-admissible control are disclosed but do not by themselves prove a candidate regression."
+  },
+  "truthful_mixed_outcome_gate_deployment": {
+    "deployed_on": "2026-09-01",
+    "migration_version": "20260901171324",
+    "migration_name": "global_replay_truthful_mixed_outcome_compatibility",
+    "contract_result": "pass",
+    "preview_production_function_definitions_equal": true,
+    "function_definition_md5": {
+      "replay_campaign_truth_gate": "b37af2504491ddecfcb7cea3b06e25fb",
+      "seal_truthful_campaign_manifest": "d31b6442976f1b265e2bbc4f416be558",
+      "truthful_campaign_promotion_gate": "f68a349bc08984f8bf7d0f90b586bd11"
+    },
+    "parser_published": false,
+    "public_engine_after": "rosetta-v3-deterministic-sql-2.5.11",
+    "public_rule_set_after": "rosetta-five-layer-structural-correctness-2.5.11",
+    "active_campaigns_after": 0,
+    "disposition_count_after": 1328,
+    "latest_public_run_id_after": 24606
+  },
+  "scheduler_shutdown": {
+    "jobs_unscheduled": 7,
+    "scheduled_jobs_remaining": 0,
+    "active_job_runs": 0
+  },
+  "publication": {
+    "publication_receipts": 0,
+    "candidate_published": false,
+    "production_engine_before": "rosetta-v3-deterministic-sql-2.5.11",
+    "production_engine_after": "rosetta-v3-deterministic-sql-2.5.11"
+  },
+  "truth_statement": "The candidate is not promotion-compatible. Unprocessed sources are not characterized as successes or failures; 149 observed rejections regress exact production-admissible controls and one timeout is nondeterministic. The other 441 observed rejections remain explicit source nonpasses and are not relabeled as candidate regressions."
+}

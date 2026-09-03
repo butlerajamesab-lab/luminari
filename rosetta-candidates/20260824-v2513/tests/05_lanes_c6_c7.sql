@@ -94,7 +94,8 @@ begin
   end;
   insert into rosetta_v2513.source_document_content
     (source_document_id,source_version,source_url,media_type,source_text,source_content_hash,source_identity_hash)
-  values(doc_id,'clean-v1','test://c7-clean','text/plain',clean_text,clean_hash,repeat('c',64))
+  values(doc_id,'clean-v1','test://c7-clean','text/plain',clean_text,clean_hash,
+    encode(extensions.digest(convert_to('fixture:test-05:c7-clean-v1','UTF8'),'sha256'),'hex'))
   returning source_content_id into clean_id;
   perform rosetta_replay.register_source(clean_id,clean_hash,octet_length(convert_to(clean_text,'UTF8')),
     '{"source_charset":"UTF-8","decoding_method":"strict_utf8","invalid_byte_handling":"reject","replacement_char_count":0,"replacement_chars_block_span_certainty":false}'::jsonb);
@@ -108,7 +109,8 @@ begin
   end;
   insert into rosetta_v2513.source_document_content
     (source_document_id,source_version,source_url,media_type,source_text,source_content_hash,source_identity_hash)
-  values(doc_id,'literal-v1','test://c7-literal','text/plain',literal_text,literal_hash,repeat('d',64))
+  values(doc_id,'literal-v1','test://c7-literal','text/plain',literal_text,literal_hash,
+    encode(extensions.digest(convert_to('fixture:test-05:c7-literal-v1','UTF8'),'sha256'),'hex'))
   returning source_content_id into literal_id;
   perform rosetta_replay.register_source(literal_id,literal_hash,octet_length(convert_to(literal_text,'UTF8')),
     '{"source_charset":"UTF-8","decoding_method":"strict_utf8","invalid_byte_handling":"reject","replacement_char_count":1,"replacement_char_disposition":"manual_verified_literal","replacement_chars_block_span_certainty":false}'::jsonb);

@@ -73,7 +73,13 @@ insert into rosetta_v2513.source_document_content
 select id,'v1',{lit(URL)},'text/plain',{lit(TEXT)},
   encode(extensions.digest(convert_to({lit(TEXT)},'UTF8'),'sha256'),'hex'),
   encode(extensions.digest(convert_to('identity:'||{lit(TEXT)},'UTF8'),'sha256'),'hex'),
-  '{{"reference_date":"2026-08-24","text_extractor_version":"fixture-1"}}'::jsonb
+  jsonb_build_object(
+    'reference_date','2026-08-24',
+    'reference_date_receipt',jsonb_build_object(
+      'contract','rosetta-reference-date-receipt-v1',
+      'reference_date','2026-08-24','basis','evaluation_as_of',
+      'verified',true,'evidence_sha256',repeat('f',64)),
+    'text_extractor_version','identity-text-v1')
 from rosetta_v2513.source_document where document_name='separated-fixture';
 with registered as (
   select rosetta_replay.register_source(c.source_content_id,c.source_content_hash,
@@ -159,7 +165,7 @@ insert into rosetta_v2513.source_document_content
 select id,'v1',{lit(big_url)},'text/plain',{big_text_sql},
   encode(extensions.digest(convert_to({big_text_sql},'UTF8'),'sha256'),'hex'),
   encode(extensions.digest(convert_to('identity:'||{big_text_sql},'UTF8'),'sha256'),'hex'),
-  '{{"text_extractor_version":"fixture-1"}}'::jsonb
+  '{{"text_extractor_version":"identity-text-v1"}}'::jsonb
 from rosetta_v2513.source_document where document_name='separated-timeout';
 with registered as (
  select rosetta_replay.register_source(c.source_content_id,c.source_content_hash,

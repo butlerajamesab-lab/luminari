@@ -32,19 +32,29 @@ end;
 $fn$;
 
 create or replace function rosetta_replay.expected_configuration_hash(
-    p_source_registry_id uuid)
+    p_source_registry_id uuid,
+    p_closure_prefix text)
 returns text language plpgsql stable
 set search_path to 'pg_catalog', 'rosetta_replay', 'rosetta_v2513', 'extensions'
 as $fn$
 declare v_hash text;
 begin
-  select encode(extensions.digest(convert_to(jsonb_build_object(
+  if p_closure_prefix !~ '^(ctl_|c[1-7]_|v2513_)$' then
+    raise exception 'invalid closure prefix: %',p_closure_prefix using errcode='22023';
+  end if;
+  select encode(extensions.digest(convert_to((jsonb_build_object(
       'reference_date',case when c.source_metadata->>'reference_date' ~ '^\d{4}-\d{2}-\d{2}$'
                         then (c.source_metadata->>'reference_date')::date else null end,
       'text_extractor_version',coalesce(nullif(btrim(c.source_metadata->>'text_extractor_version'),''),'plain-text-1'),
       'normalization_version','rosetta-normalize-whitespace-v2',
       'parsing_projection_version','rosetta-layout-projection-v25',
-      'confidence_mode','binary_exact_match_only')::text,'UTF8'),'sha256'),'hex')
+      'confidence_mode','binary_exact_match_only') ||
+      case when p_closure_prefix in ('c3_','v2513_') then
+        jsonb_build_object('reference_date_receipt',coalesce(
+          c.source_metadata->'reference_date_receipt',
+          c.source_metadata#>'{registered_metadata,reference_date_receipt}',
+          'null'::jsonb))
+      else '{}'::jsonb end)::text,'UTF8'),'sha256'),'hex')
     into v_hash
   from rosetta_replay.replay_source_registry r
   join rosetta_v2513.source_document_content c
@@ -59,13 +69,25 @@ begin
 end;
 $fn$;
 
+-- One-argument callers are production-candidate callers. Keep that public
+-- contract stable while lane/control verification opts into the exact closure.
+create or replace function rosetta_replay.expected_configuration_hash(
+    p_source_registry_id uuid)
+returns text language sql stable
+set search_path to 'pg_catalog', 'rosetta_replay'
+as $fn$
+  select rosetta_replay.expected_configuration_hash(
+    p_source_registry_id,'v2513_');
+$fn$;
+
 create or replace function rosetta_replay.configuration_contract_sha256()
 returns text language sql immutable
 set search_path to 'pg_catalog','extensions'
 as $fn$
   select encode(extensions.digest(convert_to(jsonb_build_object(
-    'contract','rosetta-parser-configuration-v1',
-    'per_source_fields',jsonb_build_array('reference_date','text_extractor_version'),
+    'contract','rosetta-parser-configuration-v2',
+    'per_source_fields',jsonb_build_array(
+      'reference_date','reference_date_receipt','text_extractor_version'),
     'normalization_version','rosetta-normalize-whitespace-v2',
     'parsing_projection_version','rosetta-layout-projection-v25',
     'confidence_mode','binary_exact_match_only')::text,'UTF8'),'sha256'),'hex');
@@ -128,7 +150,8 @@ begin
     raise exception 'source % has no immutable replay expectation',p_source_registry_id
       using errcode='P1R12';
   end if;
-  v_expected_config:=rosetta_replay.expected_configuration_hash(p_source_registry_id);
+  v_expected_config:=rosetta_replay.expected_configuration_hash(
+    p_source_registry_id,p_closure_prefix);
   if p_config_hash is distinct from v_expected_config then
     raise exception 'configuration hash mismatch: supplied %, expected %',p_config_hash,v_expected_config
       using errcode='P1R13';
@@ -214,7 +237,8 @@ begin
   end if;
   if v_attempt.closure_hash is distinct from rosetta_replay.closure_sha256(p_closure_prefix)
      or v_attempt.config_hash is distinct from
-        rosetta_replay.expected_configuration_hash(v_attempt.source_registry_id) then
+        rosetta_replay.expected_configuration_hash(
+          v_attempt.source_registry_id,p_closure_prefix) then
     raise exception 'attempt identity no longer matches closure or source configuration'
       using errcode='P1R19';
   end if;

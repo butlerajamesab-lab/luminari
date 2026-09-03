@@ -13,6 +13,12 @@ rule is simple: do not install this packet in production. Validate it in an
 empty disposable PostgreSQL database, replay the complete immutable corpus,
 and review the complete object-field diff first.
 
+Parser behavior is global-only. Exact bills, jurisdictions, provider records,
+run IDs, and observed dates may appear in regression fixtures, but never in
+the generator or generated engine. A source that lacks universally valid
+evidence is rejected or left unresolved; it is never made to pass by a
+document-shaped rule.
+
 ## What is in here
 
 - `migrations/01–18`: durable source/attempt receipts, a byte-faithful 2.5.11
@@ -24,8 +30,9 @@ and review the complete object-field diff first.
 - `tests/`: strict SQL tests plus separate-process transaction and all-lane
   replay drivers.
 - `tools/generate.py`: deterministic lane/convergence generator.
-- `tools/replay_manifest_worker.py`: claim → execute/defer → finalize in
-  separate committed transactions.
+- `tools/replay_manifest_worker.py`: claim → observe → finalize in separate
+  committed transactions; historical expected outcomes never decide whether
+  the parser runs.
 - `tools/extract_html_source.py`: fail-closed semantic-container extraction for
   HTML sources with raw/extracted SHA-256 receipt.
 - `evidence/`: captured 2.5.11 definitions, schema evidence, 2.5.12 span
@@ -74,17 +81,58 @@ replay claim.
 
 ## Full-corpus replay
 
-After the disposable runtime tests pass, load exact immutable sources and exact
-2.5.11 control runs, declare every expected terminal outcome, seal the corpus,
-load the quarantine run IDs, and run:
+After the disposable runtime tests pass, load the exact immutable sources and
+exact 2.5.11 control runs, freeze the authorized campaign membership and its
+whole-corpus denominator, seal the corpus, load the quarantine run IDs, and
+apply `../20260901-global-replay-truth/migrations/07_truth_first_quarantine_sweep.sql`.
+The worker fails before reading or claiming a manifest unless that migration's
+`truth_observation_*` contract is installed; it never falls back to the legacy
+expectation-gated executor or retry-chain claim path. Then run:
 
 ```bash
+test -n "$ROSETTA_REPLAY_DATABASE_URL"
 python3 tools/replay_manifest_worker.py \
-  POSTGRES_URI MANIFEST_UUID v2513_ \
+  MANIFEST_UUID v2513_ \
   rosetta-v3-deterministic-sql-2.5.13 \
   rosetta-five-layer-structural-correctness-2.5.13 worker-name
 ```
 
+The campaign success target is complete, truthful accounting for every frozen
+member, not universal parsing. Apply the following operating contract:
+
+- execute each source at most once in a candidate campaign; do not
+  automatically retry it in the same campaign;
+- if a prior worker left a committed pending outcome, bind and finalize that
+  outcome without another parser call; if it left no outcome, never adopt it
+  for re-execution—leave an active lease alone and quarantine an expired lease
+  as an invocation-ambiguous terminal failure;
+- persist every observed terminal result, including rejection, deferral,
+  timeout, and terminal failure, as an immutable quarantine disposition;
+- count a member only after its exact evidence exists: an observed-result
+  binding for completion/rejection/deferral, or a same-attempt non-retryable
+  terminal receipt for timeout/failure; a bare state label stays unaccounted;
+- continue with later manifest members after a non-success instead of allowing
+  one document to abort or poison the remaining corpus;
+- calculate quarantine share against the frozen whole-corpus denominator, not
+  against only the sources attempted so far;
+- emit an early warning when quarantine reaches 10%, and require a generalized
+  pattern review when it reaches 15%; neither threshold stops the sweep; and
+- group review findings by failure class, document class, provider family, and
+  media type. Never add a production parser branch for a literal source,
+  bill, jurisdiction, provider record, run ID, or observed date.
+
+At the exact 10% and 15% crossings, the standalone Render worker emits a
+structured `rosetta_quarantine_checkpoint` event immediately to stderr (and
+repeats both events in its final JSON receipt); Render therefore exposes the
+checkpoint while later members continue processing. The immutable attempts,
+receipts, and bindings remain the underlying quarantine evidence. The
+snapshot-backed migration-07 campaign path additionally persists its
+checkpoint and whole-stack pattern-review events in PostgreSQL.
+
 No source may disappear from the manifest. Previously rejected and quarantined
-sources remain first-class members. No unexplained object-field change can pass
-the promotion gates.
+sources remain first-class members; unprocessed sources remain explicitly
+unaccounted until attempted. Corpus accounting, candidate compatibility, and
+promotion are separate decisions. A completely accounted campaign can contain
+honest non-successes without claiming they parsed, while compatibility and
+promotion gates may still block on regressions or unexplained object-field
+changes.
