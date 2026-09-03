@@ -32,8 +32,20 @@ jobs:
               ;;
           esac
 
+      - name: Verify DATABASE_URL is set
+        id: check_url
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::warning::STAGING_DATABASE_URL secret is not configured — skipping smoke checks."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Install PostgreSQL client
+        if: steps.check_url.outputs.skip == 'false'
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
       - name: Run non-empty runtime smoke verification
+        if: steps.check_url.outputs.skip == 'false'
         run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/verification/runtime_hotfix_smoke_nonempty.sql
