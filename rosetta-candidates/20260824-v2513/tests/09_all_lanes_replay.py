@@ -47,10 +47,13 @@ source = tx(
     "join rosetta_v2513.source_document_content c using(source_content_id) "
     f"where c.source_url={lit(URL)} and c.source_content_hash=r.source_content_hash;",
 ).splitlines()[-1]
-config = tx("config lookup", f"select rosetta_replay.expected_configuration_hash({lit(source)}::uuid);").splitlines()[-1]
-
 for prefix, engine, rules in LANES:
     closure = tx(f"{prefix} closure", f"select rosetta_replay.closure_sha256({lit(prefix)});").splitlines()[-1]
+    config = tx(
+        f"{prefix} config",
+        "select rosetta_replay.expected_configuration_hash("
+        f"{lit(source)}::uuid,{lit(prefix)});",
+    ).splitlines()[-1]
     attempt = tx(
         f"{prefix} claim",
         "select rosetta_replay.replay_claim("

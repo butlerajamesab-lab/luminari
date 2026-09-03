@@ -82,7 +82,8 @@ def main() -> int:
         member = json.loads(line)
         source = validate("source UUID", member["source_registry_id"], UUID_RE)
         config = db.tx(
-            f"select rosetta_replay.expected_configuration_hash({literal(source)}::uuid);"
+            "select rosetta_replay.expected_configuration_hash("
+            f"{literal(source)}::uuid,{literal(prefix)});"
         ).splitlines()[-1]
         attempt = db.tx(
             "select rosetta_replay.replay_claim("

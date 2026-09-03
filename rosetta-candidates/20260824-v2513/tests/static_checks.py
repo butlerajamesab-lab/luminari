@@ -180,6 +180,20 @@ def verify_candidate_contract(root: str | Path) -> dict[str, int | str]:
     if len(fixture_identity_labels) != len(set(fixture_identity_labels)):
         raise RuntimeError("duplicate source-content fixture identity label")
 
+    replay_runner = (migrations / "12_replay_runner.sql").read_text(encoding="utf-8")
+    for token in (
+        "p_source_registry_id uuid,\n    p_closure_prefix text)",
+        "p_closure_prefix in ('c3_','v2513_')",
+        "p_source_registry_id,'v2513_'",
+        "p_source_registry_id,p_closure_prefix",
+        "v_attempt.source_registry_id,p_closure_prefix",
+    ):
+        if token not in replay_runner:
+            raise RuntimeError(
+                "replay configuration hashing is not bound to the selected closure: "
+                f"missing {token!r}"
+            )
+
     # The package manifest is the current-byte claim. A runtime PASS is valid
     # only when a separate validation binding names these exact generated SQL
     # hashes and its receipt hash verifies. Historical receipts may remain in
