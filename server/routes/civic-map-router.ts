@@ -108,7 +108,7 @@ async function getBreadthPreservingCoverage() {
   return {
     ...breadth,
     verified_physical_sites: Number(mapSites.verified_physical_sites ?? 0),
-    // Genuine geocoded public sites = the reviewed v3_13 lane plus official
+    // Genuine coordinate-backed public sites = the reviewed v3_13 lane plus official
     // government-office coordinates from locator source feeds.
     exact_mappable_resources:
       Number(mapSites.exact_mappable_resources ?? 0) + govOfficeExactSites,
