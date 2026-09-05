@@ -7,6 +7,7 @@ import {
   getPublishableResourceDirectorySummary,
   searchPublishableResourceDirectory,
 } from "../services/resource-directory-publishable";
+import { getGovOfficeDetail } from "../services/resource-directory";
 
 const searchInput = z
   .object({
@@ -22,6 +23,15 @@ const searchInput = z
     offset: z.number().int().min(0).max(20_000).optional(),
   })
   .optional();
+
+// Directory detail accepts both identity shapes: canonical resource UUIDs
+// and hash-derived government-office keys (gof_ + sha256 hex).
+const resourceIdentifier = z
+  .string()
+  .regex(
+    /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|gof_[a-f0-9]{16,32})$/i,
+    "Invalid resource identifier"
+  );
 
 export const resourceDirectoryRouter = router({
   summary: publicProcedure.query(async () => {
@@ -39,18 +49,13 @@ export const resourceDirectoryRouter = router({
   detail: publicProcedure
     .input(
       z.object({
-        resourceEntityId: z
-          .string()
-          .regex(
-            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-            "Invalid resource entity identifier"
-          ),
+        resourceEntityId: resourceIdentifier,
       })
     )
     .query(async ({ input }) => {
-      const resource = await getPublishableResourceDirectoryDetail(
-        input.resourceEntityId
-      );
+      const resource = /^gof_/i.test(input.resourceEntityId)
+        ? await getGovOfficeDetail(input.resourceEntityId)
+        : await getPublishableResourceDirectoryDetail(input.resourceEntityId);
       if (!resource) {
         throw new TRPCError({
           code: "NOT_FOUND",
