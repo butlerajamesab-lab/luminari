@@ -516,39 +516,74 @@ export async function getResourceDirectoryMapPoints(
   const pool = getPool();
   const { rows } = await pool.query(
     `
-      select
-        e.resource_entity_id::text as resource_entity_id,
-        coalesce(
-          nullif(p.display_name_override, ''),
-          e.resource_name
-        ) as resource_name,
-        e.resource_category,
-        e.state,
-        l.location_id::text as location_id,
-        l.address_line1,
-        l.address_line2,
-        l.city,
-        l.county,
-        l.state as location_state,
-        l.postal_code,
-        l.latitude::float8 as latitude,
-        l.longitude::float8 as longitude,
-        l.coordinate_quality,
-        l.manual_location_kind,
-        l.manual_source_reference
-      from public.v_luminari_resource_locations_current_v3_13 l
-      join public.luminari_resource_entities e
-        on e.resource_entity_id = l.resource_entity_id
-      left join public.luminari_resource_publication_resolutions p
-        on p.resource_entity_id = e.resource_entity_id
-      where e.source_table = $1
-        and coalesce(p.publication_status, 'active') = 'active'
-        and l.manual_map_eligible is true
-        and l.latitude is not null
-        and l.longitude is not null
-        and l.latitude between $2 and $3
-        and l.longitude between $4 and $5
-      order by e.resource_name, l.location_id
+      with reviewed_sites as (
+        select
+          e.resource_entity_id::text as resource_entity_id,
+          coalesce(
+            nullif(p.display_name_override, ''),
+            e.resource_name
+          ) as resource_name,
+          e.resource_category,
+          e.state,
+          l.location_id::text as location_id,
+          l.address_line1,
+          l.address_line2,
+          l.city,
+          l.county,
+          l.state as location_state,
+          l.postal_code,
+          l.latitude::float8 as latitude,
+          l.longitude::float8 as longitude,
+          l.coordinate_quality,
+          l.manual_location_kind,
+          l.manual_source_reference
+        from public.v_luminari_resource_locations_current_v3_13 l
+        join public.luminari_resource_entities e
+          on e.resource_entity_id = l.resource_entity_id
+        left join public.luminari_resource_publication_resolutions p
+          on p.resource_entity_id = e.resource_entity_id
+        where e.source_table = $1
+          and coalesce(p.publication_status, 'active') = 'active'
+          and l.manual_map_eligible is true
+          and l.latitude is not null
+          and l.longitude is not null
+          and l.latitude between $2 and $3
+          and l.longitude between $4 and $5
+      ),
+      gov_office_sites as (
+        select
+          g.office_id::text as resource_entity_id,
+          g.office_name as resource_name,
+          'government_office'::text as resource_category,
+          g.state,
+          null::text as location_id,
+          g.address_full as address_line1,
+          null::text as address_line2,
+          g.city,
+          g.county,
+          g.state as location_state,
+          null::text as postal_code,
+          g.lat::float8 as latitude,
+          g.lng::float8 as longitude,
+          'official_source_feed'::text as coordinate_quality,
+          'government_office'::text as manual_location_kind,
+          ('locator source: ' || g.source_id ||
+            ' · payload ' || coalesce(g.source_hash8, 'unrecorded'))
+            as manual_source_reference
+        from public.gov_offices g
+        where g.lat is not null
+          and g.lng is not null
+          and g.superseded_by is null
+          and g.lat between $2 and $3
+          and g.lng between $4 and $5
+      )
+      select *
+      from (
+        select * from reviewed_sites
+        union all
+        select * from gov_office_sites
+      ) points
+      order by resource_name, location_id
       limit $6
     `,
     [
@@ -562,6 +597,126 @@ export async function getResourceDirectoryMapPoints(
   );
 
   return rows;
+}
+
+export async function getGovOfficeDetail(officeId: string) {
+  const pool = getPool();
+  const { rows } = await pool.query(
+    `
+      select jsonb_build_object(
+        'resource_entity_id', g.office_id,
+        'canonical_id', 'govoff:' || g.office_id,
+        'resource_name', g.office_name,
+        'source_resource_name', g.office_name,
+        'resource_type', g.office_type,
+        'resource_category', 'government_office',
+        'jurisdiction', g.state,
+        'jurisdiction_scope', g.agency_key,
+        'state', g.state,
+        'county', g.county,
+        'city', g.city,
+        'description', null,
+        'eligibility_summary', null,
+        'apply_notes', null,
+        'service_categories', '[]'::jsonb,
+        'verification_status', 'verified — official government source file',
+        'promotion_status', null,
+        'provenance_status', g.provenance,
+        'publication_status', 'active',
+        'publication_source_reference',
+          g.source_id || ' · payload ' || coalesce(g.source_hash8, 'unrecorded'),
+        'publication_review_note', null,
+        'contacts', coalesce(contacts.payload, '[]'::jsonb),
+        'locations', jsonb_build_array(
+          jsonb_build_object(
+            'location_id', null,
+            'address_line1', g.address_full,
+            'address_line2', null,
+            'city', g.city,
+            'county', g.county,
+            'state', g.state,
+            'postal_code', null,
+            'country', 'US',
+            'latitude', g.lat::float8,
+            'longitude', g.lng::float8,
+            'coordinate_quality', 'official_source_feed',
+            'manual_disposition', null,
+            'manual_location_kind', 'government_office',
+            'manual_map_eligible', true,
+            'manual_source_reference',
+              g.source_id || ' · payload ' || coalesce(g.source_hash8, 'unrecorded'),
+            'manual_review_note', null,
+            'manual_review_version', 'locator_architecture_v1'
+          )
+        ),
+        'location_resolution', null
+      ) as payload
+      from public.gov_offices g
+      left join lateral (
+        select jsonb_agg(contact.payload) as payload
+        from (
+          select jsonb_build_object(
+            'contact_point_id', null,
+            'contact_type', 'phone',
+            'contact_value', nullif(g.phone_raw, ''),
+            'label', 'Published phone',
+            'is_primary', true,
+            'contact_quality', 'official_source_feed',
+            'manually_reviewed', false,
+            'manual_source_reference', g.source_id,
+            'manual_review_note', null
+          ) as payload
+          where nullif(g.phone_raw, '') is not null
+          union all
+          select jsonb_build_object(
+            'contact_point_id', null,
+            'contact_type', 'email',
+            'contact_value', nullif(g.email, ''),
+            'label', 'Published email',
+            'is_primary', false,
+            'contact_quality', 'official_source_feed',
+            'manually_reviewed', false,
+            'manual_source_reference', g.source_id,
+            'manual_review_note', null
+          )
+          where nullif(g.email, '') is not null
+          union all
+          select jsonb_build_object(
+            'contact_point_id', null,
+            'contact_type', 'website',
+            'contact_value', nullif(g.url, ''),
+            'label', 'Published website',
+            'is_primary', false,
+            'contact_quality', 'official_source_feed',
+            'manually_reviewed', false,
+            'manual_source_reference', g.source_id,
+            'manual_review_note', null
+          )
+          where nullif(g.url, '') is not null
+        ) contact
+      ) contacts on true
+      where g.office_id = $1
+        and g.superseded_by is null
+      limit 1
+    `,
+    [officeId]
+  );
+
+  return rows[0]?.payload ?? null;
+}
+
+export async function getGovOfficeExactSiteCount() {
+  const pool = getPool();
+  const { rows } = await pool.query(
+    `
+      select count(*)::int as gov_office_exact_sites
+      from public.gov_offices
+      where lat is not null
+        and lng is not null
+        and superseded_by is null
+    `
+  );
+  return Number(rows[0]?.gov_office_exact_sites ?? 0);
 }
 
 export function clearResourceDirectorySummaryCache() {
