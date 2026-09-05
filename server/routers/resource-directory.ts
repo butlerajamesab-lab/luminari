@@ -26,11 +26,17 @@ const searchInput = z
 
 // Directory detail accepts both identity shapes: canonical resource UUIDs
 // and hash-derived government-office keys (gof_ + sha256 hex).
+const resourceUuidPattern =
+  "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$";
+const govOfficeIdPattern = "^gof_[a-f0-9]{16,32}$";
 const resourceIdentifier = z
   .string()
   .regex(
-    /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|gof_[a-f0-9]{16,32})$/i,
-    "Invalid resource identifier"
+    new RegExp(
+      `^(?:${resourceUuidPattern.slice(1, -1)}|${govOfficeIdPattern.slice(1, -1)})$`,
+      "i"
+    ),
+    "Invalid resource entity identifier"
   );
 
 export const resourceDirectoryRouter = router({

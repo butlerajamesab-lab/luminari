@@ -243,6 +243,14 @@ APPROVED_REPOSITORY_ONLY = {
         "20260829094000_legacy_function_resolution_bridges.sql",
         "14b8774b465db0b1dc0e563aafec51f684fd9dda",
     ),
+    "20260905080000": (
+        "20260905080000_strip_docx_markup_from_corpus_candidates.sql",
+        "69b2e75477c9f07d69e8b07f4f9a1508d51270da",
+    ),
+    "20260905100000": (
+        "20260905100000_case_resource_links.sql",
+        "9fd6948fd7a04a0303ced0052928ee30cdabbed1",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
