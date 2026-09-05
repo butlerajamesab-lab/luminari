@@ -65,6 +65,7 @@ type cli_options = {
   out_dir: string;
   limit?: number;
   dry_run: boolean;
+  manifest_only: boolean;
 };
 
 type fetched_source = {
@@ -175,6 +176,7 @@ function parse_args(argv: string[]): cli_options {
     derive_manifest: false,
     out_dir: path.resolve("artifacts/rosetta-c3-backfill-census"),
     dry_run: false,
+    manifest_only: false,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -191,6 +193,8 @@ function parse_args(argv: string[]): cli_options {
       options.limit = limit;
     } else if (arg === "--dry-run") {
       options.dry_run = true;
+    } else if (arg === "--manifest-only") {
+      options.manifest_only = true;
     } else {
       throw new Error(`unknown_argument:${arg}`);
     }
@@ -700,12 +704,99 @@ function render_output_tsv(rows: output_row[]): string {
   return [headers.join("\t"), ...lines].join("\n") + "\n";
 }
 
+export function render_manifest_tsv(rows: source_manifest_row[]): string {
+  const ordered = [...rows].sort((left, right) => left.ordinal - right.ordinal);
+  const headers = [
+    "ordinal",
+    "source_registry_id",
+    "host",
+    "media_type",
+    "extractor_family",
+    "source_content_hash",
+    "source_byte_hash",
+    "source_document_id",
+    "source_content_id",
+    "source_version",
+    "source_url",
+  ];
+  const lines = ordered.map(row => [
+    row.ordinal,
+    row.source_registry_id,
+    row.host,
+    row.media_type,
+    row.extractor_family,
+    row.source_content_hash,
+    row.source_byte_hash,
+    row.source_document_id,
+    row.source_content_id,
+    row.source_version,
+    row.source_url,
+  ].map(tsv_escape).join("\t"));
+  return [headers.join("\t"), ...lines].join("\n") + "\n";
+}
+
+async function write_manifest_outputs(
+  out_dir: string,
+  manifest_rows: source_manifest_row[],
+): Promise<{ manifest_path: string; manifest_sha256: string; receipt_path: string }> {
+  await mkdir(out_dir, { recursive: true });
+  const hashes = compute_manifest_hashes(manifest_rows);
+  const manifest_tsv = render_manifest_tsv(manifest_rows);
+  const manifest_path = path.join(out_dir, "c3-fetchability-census-manifest.tsv");
+  const receipt_path = path.join(out_dir, "c3-fetchability-census-manifest-receipt.json");
+  await writeFile(manifest_path, manifest_tsv, "utf8");
+
+  const receipt = {
+    contract: `${C3_FETCH_CENSUS_CONTRACT}:manifest-freeze`,
+    generated_at: new Date().toISOString(),
+    row_count: manifest_rows.length,
+    declared_20260904_constants: {
+      membership_sha256: C3_FETCH_CENSUS_20260904_MEMBERSHIP_SHA256,
+      manifest_sha256: C3_FETCH_CENSUS_20260904_MANIFEST_SHA256,
+    },
+    declared_20260904_manifest_match:
+      manifest_rows.length === 164 &&
+      hashes.membership_sha256 === C3_FETCH_CENSUS_20260904_MEMBERSHIP_SHA256 &&
+      hashes.manifest_sha256 === C3_FETCH_CENSUS_20260904_MANIFEST_SHA256,
+    hashes,
+    canonical_hash_recipes: {
+      membership_sha256:
+        "SHA-256 over source_registry_id values in ordinal order, joined by \\n separators only, no trailing terminator.",
+      manifest_sha256:
+        "SHA-256 over ordinal|source_registry_id|host|media_type|extractor_family|source_content_hash lines in ordinal order, joined by \\n separators only, no trailing terminator.",
+      manifest_file_sha256:
+        "SHA-256 over the emitted manifest TSV bytes, including its ordinary final newline.",
+    },
+    outputs: {
+      manifest_tsv: {
+        path: manifest_path,
+        sha256: sha256(manifest_tsv),
+      },
+      receipt_json: {
+        path: receipt_path,
+      },
+    },
+    boundaries: [
+      "This manifest-freeze step is read-only against Supabase/PostgreSQL.",
+      "This artifact binds the exact member order for a later census run.",
+      "Receipt-writing migrations remain a separate generated-SQL lane.",
+    ],
+  };
+  await writeFile(receipt_path, JSON.stringify(receipt, null, 2) + "\n", "utf8");
+  return {
+    manifest_path,
+    manifest_sha256: sha256(manifest_tsv),
+    receipt_path,
+  };
+}
+
 async function write_outputs(
   out_dir: string,
   manifest_rows: source_manifest_row[],
   output_rows: output_row[],
 ): Promise<void> {
   await mkdir(out_dir, { recursive: true });
+  const manifest_output = await write_manifest_outputs(out_dir, manifest_rows);
   const hashes = compute_manifest_hashes(manifest_rows);
   const result_tsv = render_output_tsv(output_rows);
   const result_path = path.join(out_dir, "c3-fetchability-census-results.tsv");
@@ -726,6 +817,7 @@ async function write_outputs(
     };
     non_reproducible_rows: Array<Record<string, unknown>>;
     outputs: {
+      manifest_tsv: { path: string; sha256: string };
       result_tsv: { path: string; sha256: string };
       receipt_json: { path: string };
     };
@@ -767,6 +859,10 @@ async function write_outputs(
         path: result_path,
         sha256: sha256(result_tsv),
       },
+      manifest_tsv: {
+        path: manifest_output.manifest_path,
+        sha256: manifest_output.manifest_sha256,
+      },
       receipt_json: {
         path: receipt_path,
       },
@@ -787,6 +883,10 @@ export async function run_c3_backfill_census(options: cli_options): Promise<void
       ? await read_manifest_tsv(options.manifest_tsv, pool)
       : await derive_manifest_rows(pool);
     const selected_rows = options.limit ? manifest_rows.slice(0, options.limit) : manifest_rows;
+    if (options.manifest_only) {
+      await write_manifest_outputs(options.out_dir, selected_rows);
+      return;
+    }
     const output_rows: output_row[] = [];
     for (const row of selected_rows) {
       output_rows.push(await run_row(row, options.dry_run));
