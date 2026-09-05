@@ -1044,8 +1044,21 @@
         preferCanvas: true,
       }).setView([38.5, -96.5], 4);
 
+      // CARTO raster basemaps now require a free API key (request one at
+      // carto.com/basemaps/apikey — free up to 5M tile requests/month).
+      // Resolution order: the ?carto_key= URL parameter (the React shell at
+      // /civic-map forwards its query string into this iframe, so
+      // /civic-map?carto_key=... works), then the constant below, which is
+      // filled in once the foundation's key is issued. Without a key the
+      // tiles render CARTO's "API key required" watermark but the map and
+      // all data layers still function.
+      const CARTO_BASEMAP_KEY = "";
+      const cartoBasemapKey = params.get("carto_key") || CARTO_BASEMAP_KEY;
+      const cartoTileUrl =
+        "https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png" +
+        (cartoBasemapKey ? `?key=${encodeURIComponent(cartoBasemapKey)}` : "");
       const tiles = L.tileLayer(
-        "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+        cartoTileUrl,
         {
           attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
           subdomains: "abcd",
