@@ -2,7 +2,9 @@ name: PR Review Gate
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    # GitHub does not emit an event when a review thread is resolved.
+    # Recheck hourly instead of every five minutes to avoid redundant CI churn.
+    - cron: "17 * * * *"
   workflow_dispatch:
   pull_request:
     branches: [main]
