@@ -80,11 +80,10 @@ export async function readCurrentDiscoveryFacts(input: CurrentDiscoveryFactInput
              phone,website,source_lane,source_id,verification_status,
              ${displayPrioritySql} as display_priority,metadata,
              count(*) over()::int as filtered_total
-        from public.v_lighthouse_did_you_know_candidates_v1
+       from public.v_lighthouse_did_you_know_candidates_v1
        where ${where.join(" and ")}
-       order by
-         case when ${claimSignalSql} then 0 else 1 end,
-         display_priority desc nulls last,title,fact_id
+       order by display_priority desc nulls last,
+         case when ${claimSignalSql} then 0 else 1 end,title,fact_id
        limit ${limitParam} offset ${offsetParam}
     `, params),
     pool.query(`
