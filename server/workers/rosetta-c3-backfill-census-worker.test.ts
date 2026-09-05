@@ -7,6 +7,7 @@ import {
   classify_fetch_failure,
   compute_manifest_hashes,
   derive_extractor_family,
+  render_manifest_tsv,
   sha256,
   type source_manifest_row,
 } from "./rosetta-c3-backfill-census-worker";
@@ -122,5 +123,37 @@ describe("Rosetta C3 backfill census worker", () => {
   it("hashes buffers and strings through the same SHA-256 contract", () => {
     expect(sha256("")).toBe("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
     expect(sha256(Buffer.from("receipt"))).toBe(hash("receipt"));
+  });
+
+  it("renders a frozen manifest TSV without changing the canonical hash recipe", () => {
+    const rows = [
+      manifest_row({ ordinal: 2, source_registry_id: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb" }),
+      manifest_row({
+        ordinal: 1,
+        source_registry_id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+        source_metadata: {
+          extraction_text_url: "https://lawfilesext.leg.wa.gov/example.html",
+          extraction_text_byte_hash: "abc123",
+        },
+      }),
+    ];
+
+    const manifest_tsv = render_manifest_tsv(rows);
+
+    expect(manifest_tsv).toContain("ordinal\tsource_registry_id\thost\tmedia_type");
+    expect(manifest_tsv).toContain("\n1\taaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\t");
+    expect(manifest_tsv).toContain(
+      Buffer.from(JSON.stringify(rows[1].source_metadata), "utf8").toString("base64"),
+    );
+    expect(manifest_tsv.endsWith("\n")).toBe(true);
+    expect(sha256(manifest_tsv)).not.toBe(compute_manifest_hashes(rows).manifest_sha256);
+  });
+
+  it("preserves an input frozen manifest instead of treating the database as the artifact", () => {
+    const source = readFileSync("server/workers/rosetta-c3-backfill-census-worker.ts", "utf8");
+    expect(source).toContain("source_metadata_json_base64");
+    expect(source).toContain("has_full_manifest");
+    expect(source).toContain("input_manifest_path");
+    expect(source).toContain("sha256(await readFile(input_manifest_path, \"utf8\"))");
   });
 });
