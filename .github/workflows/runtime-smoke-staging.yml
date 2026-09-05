@@ -1,9 +1,10 @@
 name: Runtime Smoke (Staging DB)
 
+# Scheduled execution is intentionally disabled while STAGING_DATABASE_URL is
+# absent from GitHub Actions. Keep this workflow manual and fail-closed until
+# the credential is configured and a successful manual run proves the wiring.
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '30 10 * * *'
 
 jobs:
   smoke:
