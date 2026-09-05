@@ -276,7 +276,7 @@ async function read_manifest_tsv(file_path: string, pool: pg.Pool): Promise<sour
   }
 
   if (has_full_manifest) {
-    return partial_rows.map(row => ({
+    const frozen_rows = partial_rows.map(row => ({
       ordinal: row.ordinal,
       source_registry_id: row.source_registry_id,
       host: row.values[full_manifest_indexes.host],
@@ -290,6 +290,19 @@ async function read_manifest_tsv(file_path: string, pool: pg.Pool): Promise<sour
       source_document_id: Number(row.values[full_manifest_indexes.source_document_id]),
       source_content_id: row.values[full_manifest_indexes.source_content_id],
     }));
+    if (frozen_rows.some(row =>
+      !row.host ||
+      !row.media_type ||
+      !row.extractor_family ||
+      !row.source_content_hash ||
+      !row.source_url ||
+      !row.source_version ||
+      !Number.isInteger(row.source_document_id) ||
+      !row.source_content_id
+    )) {
+      throw new Error("invalid_full_manifest_tsv_row");
+    }
+    return frozen_rows;
   }
 
   const ids = partial_rows.map(row => row.source_registry_id);
