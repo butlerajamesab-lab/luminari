@@ -43,6 +43,7 @@ export type source_manifest_row = {
   source_byte_hash: string | null;
   source_url: string;
   source_version: string;
+  source_metadata: Record<string, unknown>;
   source_document_id: number;
   source_content_id: string;
 };
@@ -158,6 +159,17 @@ export function host_from_url(source_url: string): string {
   }
 }
 
+function as_record(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+}
+
+function metadata_string(row: source_manifest_row, key: string): string | null {
+  const value = row.source_metadata[key];
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
 function parse_args(argv: string[]): cli_options {
   const options: cli_options = {
     derive_manifest: false,
@@ -267,6 +279,7 @@ async function enrich_manifest_rows(
     media_type: string;
     source_content_hash: string;
     source_byte_hash: string | null;
+    source_metadata: unknown;
   }>(
     `select
         r.source_registry_id::text,
@@ -276,7 +289,8 @@ async function enrich_manifest_rows(
         c.source_url,
         c.media_type,
         c.source_content_hash,
-        c.source_byte_hash
+        c.source_byte_hash,
+        c.source_metadata
        from rosetta_replay.replay_source_registry r
        join rosetta_v2513.source_document_content c
          on c.source_content_id = r.source_content_id
@@ -296,6 +310,7 @@ async function enrich_manifest_rows(
       source_byte_hash: row.source_byte_hash,
       source_url: row.source_url,
       source_version: row.source_version,
+      source_metadata: as_record(row.source_metadata),
       source_document_id: row.source_document_id,
       source_content_id: row.source_content_id,
     },
@@ -312,6 +327,7 @@ async function derive_manifest_rows(pool: pg.Pool): Promise<source_manifest_row[
     media_type: string;
     source_content_hash: string;
     source_byte_hash: string | null;
+    source_metadata: unknown;
   }>(
     `with source_rows as (
        select
@@ -323,6 +339,7 @@ async function derive_manifest_rows(pool: pg.Pool): Promise<source_manifest_row[
          c.media_type,
          c.source_content_hash,
          c.source_byte_hash,
+         c.source_metadata,
          lower(split_part(split_part(c.source_url, '://', 2), '/', 1)) as host
        from rosetta_replay.replay_source_registry r
        join rosetta_v2513.source_document_content c
@@ -346,6 +363,7 @@ async function derive_manifest_rows(pool: pg.Pool): Promise<source_manifest_row[
       source_byte_hash: row.source_byte_hash,
       source_url: row.source_url,
       source_version: row.source_version,
+      source_metadata: as_record(row.source_metadata),
       source_document_id: row.source_document_id,
       source_content_id: row.source_content_id,
     };
@@ -467,6 +485,39 @@ function is_pdf(bytes: Buffer): boolean {
   return bytes.subarray(0, 5).toString("ascii") === "%PDF-";
 }
 
+async function fetch_expected_bytes(url: string, expected_sha256: string): Promise<Buffer> {
+  if (!url.startsWith("https://")) throw new Error("auxiliary_https_url_required");
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      redirect: "follow",
+      signal: controller.signal,
+      headers: {
+        accept: "application/pdf,text/html,application/xhtml+xml,*/*;q=0.1",
+        "accept-language": "en-US,en;q=0.9",
+        "user-agent": USER_AGENT,
+      },
+    });
+    if (!response.ok) throw new Error(`auxiliary_fetch_failed:http_${response.status}`);
+    const content_length = Number(response.headers.get("content-length") ?? 0);
+    if (Number.isFinite(content_length) && content_length > MAX_SOURCE_BYTES) {
+      throw new Error("auxiliary_source_exceeds_max_bytes");
+    }
+    const bytes = Buffer.from(await response.arrayBuffer());
+    if (bytes.length === 0) throw new Error("auxiliary_source_empty");
+    if (bytes.length > MAX_SOURCE_BYTES) throw new Error("auxiliary_source_exceeds_max_bytes");
+    const observed_sha256 = sha256(bytes);
+    if (observed_sha256 !== expected_sha256) {
+      throw new Error(`auxiliary_byte_hash_mismatch:${observed_sha256}`);
+    }
+    return bytes;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 async function extract_pdf_text(pdf_bytes: Buffer): Promise<string> {
   if (!is_pdf(pdf_bytes)) throw new Error("source_is_not_pdf");
   const parser = new PDFParse({ data: pdf_bytes });
@@ -490,7 +541,16 @@ async function reproduce_text(row: source_manifest_row, bytes: Buffer): Promise<
       row.extractor_family === "official-legislative-html-strip-v1") {
       source_text = normalize_official_html(bytes.toString("utf8"));
     } else if (row.extractor_family === "wa-official-legislative-version-html-strip-v1") {
-      source_text = normalize_wa_official_html(bytes.toString("utf8"));
+      const extraction_text_url = metadata_string(row, "extraction_text_url");
+      const extraction_text_byte_hash = metadata_string(row, "extraction_text_byte_hash");
+      if (!extraction_text_url || !extraction_text_byte_hash) {
+        throw new Error("wa_extraction_text_receipt_missing");
+      }
+      const html_bytes = await fetch_expected_bytes(
+        extraction_text_url,
+        extraction_text_byte_hash,
+      );
+      source_text = normalize_wa_official_html(html_bytes.toString("utf8"));
     } else {
       return {
         extractor_status: "extractor_unavailable",
