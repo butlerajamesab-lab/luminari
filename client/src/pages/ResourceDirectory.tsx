@@ -465,7 +465,12 @@ function ResourceCard({ resource }: { resource: DirectoryResource }) {
       </div>
 
       <h2 className="text-lg font-semibold leading-snug text-slate-50">
-        {resource.resource_name}
+        <Link
+          href={`/resource/${resource.resource_entity_id}`}
+          className="transition hover:text-emerald-200"
+        >
+          {resource.resource_name}
+        </Link>
       </h2>
       <p className="mt-2 line-clamp-4 text-sm leading-6 text-slate-300">
         {description}

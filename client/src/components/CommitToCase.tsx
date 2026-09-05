@@ -11,6 +11,7 @@
  *   <CommitToCase type="statute" itemId={statute.id} />
  *   <CommitToCase type="foia" itemId={foiaRequest.id} />
  *   <CommitToCase type="filing" itemId={filing.id} />
+ *   <CommitToCase type="resource" itemId={resource.resource_entity_id} resourceName={resource.resource_name} />
  *
  * Reads active case from CaseContext. Shows a case picker if no active case.
  */
@@ -41,7 +42,8 @@ type CommitType =
   | "filing"
   | "proceduralPath"
   | "remedyStrategy"
-  | "claimType";
+  | "claimType"
+  | "resource";
 
 type CommitToCaseProps = {
   type: CommitType;
@@ -49,6 +51,9 @@ type CommitToCaseProps = {
   itemId?: number | string;
   // For signal commits
   signalType?: "structural" | "evidentiary" | "pattern" | "resource";
+  // For resource commits (directory records, keyed by UUID or gof_ hash)
+  resourceName?: string;
+  sourceLane?: string;
   // For procedural path commits
   pathId?: number;
   pathLabel?: string;
@@ -71,6 +76,8 @@ export function CommitToCase({
   type,
   itemId,
   signalType,
+  resourceName,
+  sourceLane,
   pathId,
   pathLabel,
   deadlines,
@@ -100,12 +107,14 @@ export function CommitToCase({
   const commit_filing = trpc.case_state.commit_filing.useMutation({ onSuccess: handleSuccess, onError: handleError });
   const commit_path = trpc.case_state.commit_procedural_path.useMutation({ onSuccess: handleSuccess, onError: handleError });
   const commit_strategy = trpc.case_state.commit_remedy_strategy.useMutation({ onSuccess: handleSuccess, onError: handleError });
+  const commit_resource = trpc.case_state.commit_resource.useMutation({ onSuccess: handleSuccess, onError: handleError });
   const set_claim_type = trpc.case_state.set_claim_type.useMutation({ onSuccess: handleSuccess, onError: handleError });
 
   const isLoading =
     commit_finding.isPending || commit_barrier.isPending || commit_benefit.isPending ||
     commit_signal.isPending || commit_statute.isPending || commit_foia.isPending ||
     commit_filing.isPending || commit_path.isPending || commit_strategy.isPending ||
+    commit_resource.isPending ||
     set_claim_type.isPending;
 
   function handleSuccess() {
@@ -133,6 +142,7 @@ export function CommitToCase({
       case "proceduralPath": return `Path "${pathLabel}" set as active strategy.`;
       case "remedyStrategy": return `Remedy strategy "${strategyLabel}" committed.`;
       case "claimType": return `Claim type set to "${claimType}".`;
+      case "resource": return `Resource "${resourceName ?? "record"}" attached to case.`;
       default: return "Committed to case.";
     }
   }
@@ -144,6 +154,7 @@ export function CommitToCase({
       case "proceduralPath": return "Set as Active Path";
       case "remedyStrategy": return "Commit Strategy";
       case "claimType": return "Set Claim Type";
+      case "resource": return "Attach to Case";
       default: return "Commit to Case";
     }
   }
@@ -171,6 +182,14 @@ export function CommitToCase({
         break;
       case "filing":
         commit_filing.mutate({ case_id: caseId, filing_id: numericItemId });
+        break;
+      case "resource":
+        commit_resource.mutate({
+          case_id: caseId,
+          resource_ref: String(itemId),
+          resource_name: resourceName,
+          source_lane: sourceLane,
+        });
         break;
       case "proceduralPath":
         commit_path.mutate({ case_id: caseId, path_id: pathId, path_label: pathLabel!, deadlines: deadlines?.map((deadline) => ({ label: deadline.label, date: deadline.date, days_remaining: deadline.daysRemaining, critical: deadline.critical })) });

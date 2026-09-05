@@ -6,7 +6,7 @@
  */
 import { z } from "zod";
 import { router, protectedProcedure } from "../_core/trpc";
-import { db } from "../db";
+import { db, getPool } from "../db";
 import { cases, caseState, caseFlags } from "../../drizzle/schema";
 import { eq, and } from "drizzle-orm";
 import { emitSignal } from "../live-signal-emitter";
@@ -101,6 +101,25 @@ async function update_completeness(case_id: number) {
     .where(eq(caseState.caseId, case_id));
 }
 
+// case_resource_links is introduced by migration
+// 20260905100000_case_resource_links.sql. Until it is applied, resource
+// reads degrade to an empty list rather than erroring — the same
+// degrade-open posture as the other commitment projections.
+async function list_case_resource_links(case_id: number) {
+  try {
+    const { rows } = await getPool().query(
+      `select resource_ref, resource_name, source_lane, created_at
+         from public.case_resource_links
+        where case_id = $1 and removed_at is null
+        order by created_at, resource_ref`,
+      [case_id]
+    );
+    return rows;
+  } catch {
+    return [] as Array<Record<string, unknown>>;
+  }
+}
+
 export const caseStateRouter = router({
   get: protectedProcedure
     .input(z.object({ case_id: z.number() }))
@@ -110,10 +129,11 @@ export const caseStateRouter = router({
         const state = await get_or_create_case_state(input.case_id, ctx.user.id);
         const flags = await db.select().from(caseFlags)
           .where(and(eq(caseFlags.caseId, input.case_id), eq(caseFlags.status, "open")));
-        return { state, flags, projection_state: "case_state_projection" as const };
+        const resource_links = await list_case_resource_links(input.case_id);
+        return { state, flags, resource_links, projection_state: "case_state_projection" as const };
       } catch (error) {
         if (!isMissingCaseCommitmentRelation(error)) throw error;
-        return { state: null, flags: [], projection_state: "not_projected" as const };
+        return { state: null, flags: [], resource_links: [], projection_state: "not_projected" as const };
       }
     }),
 
@@ -304,14 +324,60 @@ export const caseStateRouter = router({
       return { success: true, filing_id: input.filing_id };
     }),
 
-  remove_commit: protectedProcedure
+  // Directory resources attach by reference (UUID or gof_ hash key), never
+  // by row position. Identity is link_hash = sha256(case_id:resource_ref);
+  // a repeat commit is a no-op, and removal is a soft remove — the receipt
+  // stays on record.
+  commit_resource: protectedProcedure
     .input(z.object({
       case_id: z.number(),
-      item_type: z.enum(["finding", "barrier", "benefit", "signal", "statute", "foia", "filing"]),
-      item_id: z.number(),
+      resource_ref: z.string().min(1).max(200),
+      resource_name: z.string().max(400).optional(),
+      source_lane: z.string().max(120).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       await verify_case_ownership(input.case_id, ctx.user.id);
+      await getPool().query(
+        `insert into public.case_resource_links
+           (case_id, user_id, resource_ref, resource_name, source_lane, link_hash, created_at)
+         values ($1, $2, $3, $4, $5,
+           encode(digest($1::text || ':' || $3, 'sha256'), 'hex'), $6)
+         on conflict (link_hash) do nothing`,
+        [
+          input.case_id,
+          ctx.user.id,
+          input.resource_ref,
+          input.resource_name ?? null,
+          input.source_lane ?? null,
+          Date.now(),
+        ]
+      );
+      return { success: true, resource_ref: input.resource_ref };
+    }),
+
+  remove_commit: protectedProcedure
+    .input(z.object({
+      case_id: z.number(),
+      item_type: z.enum(["finding", "barrier", "benefit", "signal", "statute", "foia", "filing", "resource"]),
+      item_id: z.number().optional(),
+      resource_ref: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await verify_case_ownership(input.case_id, ctx.user.id);
+
+      if (input.item_type === "resource") {
+        if (!input.resource_ref) {
+          throw new Error("resource_ref is required when removing a resource link");
+        }
+        await getPool().query(
+          `update public.case_resource_links
+              set removed_at = $3
+            where case_id = $1 and resource_ref = $2 and removed_at is null`,
+          [input.case_id, input.resource_ref, Date.now()]
+        );
+        return { success: true };
+      }
+
       const state = await get_or_create_case_state(input.case_id, ctx.user.id);
       const field_map: Record<string, keyof typeof state> = {
         finding: "committedFindingIds",
@@ -464,7 +530,7 @@ export const caseStateRouter = router({
             description: timeline.appeal_deadline,
             jurisdiction: timeline.jurisdiction,
             tolling_applied: false,
-            special_considerations: null,
+            special_considerations: timeline.special_considerations,
           });
         }
       }
