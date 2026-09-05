@@ -1,7 +1,8 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
+import { useEffect, useState } from "react";
+import { Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { CaseProvider } from "./contexts/CaseContext";
@@ -153,6 +154,33 @@ function DashboardRouter() {
   );
 }
 
+const PUBLIC_ROOT_SEEN_KEY = "luminari-public-root-seen";
+
+function PublicEntry() {
+  const [, setLocation] = useLocation();
+  const [isFirstVisit] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return window.localStorage.getItem(PUBLIC_ROOT_SEEN_KEY) !== "true";
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (isFirstVisit) {
+      window.localStorage.setItem(PUBLIC_ROOT_SEEN_KEY, "true");
+      return;
+    }
+    setLocation("/lighthouse", { replace: true });
+  }, [isFirstVisit, setLocation]);
+
+  if (isFirstVisit) return <Welcome />;
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">
+      Opening Lighthouse...
+    </div>
+  );
+}
+
 function App() {
   return (
     <ErrorBoundary>
@@ -188,7 +216,7 @@ function App() {
                 <Route path="/ingestion-control" component={ingestion_control} />
                 <Route path="/dashboard"><DashboardRouter /></Route>
                 <Route path="/case-overview"><DashboardRouter /></Route>
-                <Route path="/"><DashboardRouter /></Route>
+                <Route path="/" component={PublicEntry} />
                 <Route path="/lighthouse" component={Lighthouse} />
                 <Route path="/civic-map" component={CivicMap} />
                 <Route path="/viewfinder" component={AnomalyViewfinder} />

@@ -2531,10 +2531,7 @@ export default function Welcome() {
           <div className="flex justify-center">
             <div className="inline-flex rounded-lg border border-border/50 bg-card/30 p-1 gap-1">
               <button
-                onClick={() => {
-                  setActiveTab("guided");
-                  setShowPipelineCatalog(false);
-                }}
+                onClick={() => setLocation("/guided-intake")}
                 className={`px-4 py-2.5 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
                   activeTab === "guided"
                     ? "bg-primary text-primary-foreground shadow-sm"
