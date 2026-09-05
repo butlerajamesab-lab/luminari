@@ -249,16 +249,47 @@ async function read_manifest_tsv(file_path: string, pool: pg.Pool): Promise<sour
   if (source_registry_index === -1 || ordinal_index === -1) {
     throw new Error("manifest_tsv_requires_ordinal_and_source_registry_id");
   }
+  const full_manifest_indexes = {
+    host: headers.indexOf("host"),
+    media_type: headers.indexOf("media_type"),
+    extractor_family: headers.indexOf("extractor_family"),
+    source_content_hash: headers.indexOf("source_content_hash"),
+    source_byte_hash: headers.indexOf("source_byte_hash"),
+    source_document_id: headers.indexOf("source_document_id"),
+    source_content_id: headers.indexOf("source_content_id"),
+    source_version: headers.indexOf("source_version"),
+    source_metadata_json_base64: headers.indexOf("source_metadata_json_base64"),
+    source_url: headers.indexOf("source_url"),
+  };
+  const has_full_manifest = Object.values(full_manifest_indexes).every(index => index !== -1);
 
   const partial_rows = data_lines.map(line => {
     const values = parse_tsv_line(line);
     return {
       ordinal: Number(values[ordinal_index]),
       source_registry_id: values[source_registry_index],
+      values,
     };
   });
   if (partial_rows.some(row => !Number.isInteger(row.ordinal) || !row.source_registry_id)) {
     throw new Error("invalid_manifest_tsv_row");
+  }
+
+  if (has_full_manifest) {
+    return partial_rows.map(row => ({
+      ordinal: row.ordinal,
+      source_registry_id: row.source_registry_id,
+      host: row.values[full_manifest_indexes.host],
+      media_type: row.values[full_manifest_indexes.media_type],
+      extractor_family: row.values[full_manifest_indexes.extractor_family],
+      source_content_hash: row.values[full_manifest_indexes.source_content_hash],
+      source_byte_hash: tsv_unescape(row.values[full_manifest_indexes.source_byte_hash]),
+      source_url: row.values[full_manifest_indexes.source_url],
+      source_version: row.values[full_manifest_indexes.source_version],
+      source_metadata: metadata_from_tsv(row.values[full_manifest_indexes.source_metadata_json_base64]),
+      source_document_id: Number(row.values[full_manifest_indexes.source_document_id]),
+      source_content_id: row.values[full_manifest_indexes.source_content_id],
+    }));
   }
 
   const ids = partial_rows.map(row => row.source_registry_id);
@@ -656,6 +687,23 @@ function tsv_escape(value: unknown): string {
   return String(value).replace(/\t/g, " ").replace(/\r?\n/g, " ");
 }
 
+function tsv_unescape(value: string): string | null {
+  return value === "" ? null : value;
+}
+
+function metadata_to_tsv(value: Record<string, unknown>): string {
+  return Buffer.from(JSON.stringify(value), "utf8").toString("base64");
+}
+
+function metadata_from_tsv(value: string | null): Record<string, unknown> {
+  if (!value) return {};
+  try {
+    return as_record(JSON.parse(Buffer.from(value, "base64").toString("utf8")));
+  } catch {
+    throw new Error("invalid_manifest_source_metadata_json_base64");
+  }
+}
+
 function render_output_tsv(rows: output_row[]): string {
   const headers = [
     "ordinal",
@@ -717,6 +765,7 @@ export function render_manifest_tsv(rows: source_manifest_row[]): string {
     "source_document_id",
     "source_content_id",
     "source_version",
+    "source_metadata_json_base64",
     "source_url",
   ];
   const lines = ordered.map(row => [
@@ -730,6 +779,7 @@ export function render_manifest_tsv(rows: source_manifest_row[]): string {
     row.source_document_id,
     row.source_content_id,
     row.source_version,
+    metadata_to_tsv(row.source_metadata),
     row.source_url,
   ].map(tsv_escape).join("\t"));
   return [headers.join("\t"), ...lines].join("\n") + "\n";
@@ -794,9 +844,15 @@ async function write_outputs(
   out_dir: string,
   manifest_rows: source_manifest_row[],
   output_rows: output_row[],
+  input_manifest_path: string | null,
 ): Promise<void> {
   await mkdir(out_dir, { recursive: true });
-  const manifest_output = await write_manifest_outputs(out_dir, manifest_rows);
+  const manifest_output = input_manifest_path
+    ? {
+      manifest_path: input_manifest_path,
+      manifest_sha256: sha256(await readFile(input_manifest_path, "utf8")),
+    }
+    : await write_manifest_outputs(out_dir, manifest_rows);
   const hashes = compute_manifest_hashes(manifest_rows);
   const result_tsv = render_output_tsv(output_rows);
   const result_path = path.join(out_dir, "c3-fetchability-census-results.tsv");
@@ -855,13 +911,13 @@ async function write_outputs(
         error_code: row.error_code,
       })),
     outputs: {
-      result_tsv: {
-        path: result_path,
-        sha256: sha256(result_tsv),
-      },
       manifest_tsv: {
         path: manifest_output.manifest_path,
         sha256: manifest_output.manifest_sha256,
+      },
+      result_tsv: {
+        path: result_path,
+        sha256: sha256(result_tsv),
       },
       receipt_json: {
         path: receipt_path,
@@ -891,7 +947,7 @@ export async function run_c3_backfill_census(options: cli_options): Promise<void
     for (const row of selected_rows) {
       output_rows.push(await run_row(row, options.dry_run));
     }
-    await write_outputs(options.out_dir, selected_rows, output_rows);
+    await write_outputs(options.out_dir, selected_rows, output_rows, options.manifest_tsv ?? null);
   } finally {
     await pool.end();
   }
