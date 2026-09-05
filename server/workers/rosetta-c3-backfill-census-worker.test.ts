@@ -26,6 +26,7 @@ function manifest_row(overrides: Partial<source_manifest_row>): source_manifest_
     source_byte_hash: "7567aca08382f76cbbc6dba65d686e5fa3494c2c0ec1febd43bb13689abc47de",
     source_url: "https://lawfilesext.leg.wa.gov/example.pdf",
     source_version: "legiscan_text:1:Enrolled:wa-official-legislative-version-html-strip-v1",
+    source_metadata: {},
     source_document_id: 42,
     source_content_id: "00000000-0000-0000-0000-000000000001",
     ...overrides,
@@ -108,6 +109,14 @@ describe("Rosetta C3 backfill census worker", () => {
     expect(source).not.toContain("pdf_text_incomplete");
     expect(source).not.toContain("wa_html_text_incomplete");
     expect(source).toContain("source_text_below_200_chars");
+  });
+
+  it("replays WA HTML from recorded extraction-text receipts", () => {
+    const source = readFileSync("server/workers/rosetta-c3-backfill-census-worker.ts", "utf8");
+    expect(source).toContain('metadata_string(row, "extraction_text_url")');
+    expect(source).toContain('metadata_string(row, "extraction_text_byte_hash")');
+    expect(source).toContain("wa_extraction_text_receipt_missing");
+    expect(source).toContain("auxiliary_byte_hash_mismatch");
   });
 
   it("hashes buffers and strings through the same SHA-256 contract", () => {
