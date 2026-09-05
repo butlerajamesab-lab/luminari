@@ -1,5 +1,7 @@
 import express, { Request, Response } from "express";
 import {
+  getGovOfficeDetail,
+  getGovOfficeExactSiteCount,
   getResourceDirectoryDetail,
   getResourceDirectoryMapPoints,
 } from "../services/resource-directory";
@@ -48,6 +50,12 @@ function isUuid(value: string): boolean {
   );
 }
 
+// gov_offices office_ids are hash-derived text keys ("gof_" + sha256 hex),
+// never UUIDs. The detail endpoint accepts both identity shapes.
+function isGovOfficeId(value: string): boolean {
+  return /^gof_[a-f0-9]{16,32}$/i.test(value);
+}
+
 function parseBounds(req: Request) {
   const north = parseNumber(req.query.north as QueryParam, 90);
   const south = parseNumber(req.query.south as QueryParam, -90);
@@ -91,16 +99,22 @@ async function getBreadthPreservingCoverage() {
   // heavier joins and can cause the public map's primary coverage request to
   // be aborted before any circles render. Exact physical-site counts are a
   // separate, intentionally stricter projection.
-  const [breadth, mapSites] = await Promise.all([
+  const [breadth, mapSites, govOfficeExactSites] = await Promise.all([
     getPublishableResourceDirectorySummary() as Promise<ResourceDirectoryBreadth>,
     getReviewedMapSiteCounts(),
+    getGovOfficeExactSiteCount(),
   ]);
 
   return {
     ...breadth,
     verified_physical_sites: Number(mapSites.verified_physical_sites ?? 0),
-    exact_mappable_resources: Number(mapSites.exact_mappable_resources ?? 0),
-    geography_source: "reviewed_v3_13_locations",
+    // Genuine geocoded public sites = the reviewed v3_13 lane plus official
+    // government-office coordinates from locator source feeds.
+    exact_mappable_resources:
+      Number(mapSites.exact_mappable_resources ?? 0) + govOfficeExactSites,
+    gov_office_exact_sites: govOfficeExactSites,
+    geography_source:
+      "reviewed_v3_13_locations + gov_offices_official_coordinates",
     coverage_source: "breadth_preserving_resource_directory_v3",
   };
 }
@@ -124,6 +138,7 @@ civicMapRouter.get("/health", async (_req: Request, res: Response) => {
       verified_physical_sites:
         summary.verified_physical_sites ?? 0,
       exact_mappable_resources: summary.exact_mappable_resources ?? 0,
+      gov_office_exact_sites: summary.gov_office_exact_sites ?? 0,
     });
   } catch (error) {
     return sendError(res, error);
@@ -173,7 +188,7 @@ async function sendPoints(req: Request, res: Response) {
     );
     return res.json({
       ok: true,
-      source: "reviewed_v3_13_exact_public_sites",
+      source: "reviewed_v3_13_exact_public_sites + gov_offices_official_coordinates",
       count: points.length,
       points,
     });
@@ -190,6 +205,23 @@ civicMapRouter.get(
   async (req: Request, res: Response) => {
     try {
       const { resource_entity_id } = req.params;
+
+      if (isGovOfficeId(resource_entity_id)) {
+        const office = await getGovOfficeDetail(resource_entity_id);
+        if (!office) {
+          return res.status(404).json({
+            ok: false,
+            error: "not_found",
+            resource_entity_id,
+          });
+        }
+        res.setHeader(
+          "Cache-Control",
+          "public, max-age=60, stale-while-revalidate=300"
+        );
+        return res.json({ ok: true, resource: office });
+      }
+
       if (!isUuid(resource_entity_id)) {
         return res.status(400).json({
           ok: false,
