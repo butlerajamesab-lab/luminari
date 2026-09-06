@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
 import { ArrowLeft, BookOpen, Compass, FileText, Home, Landmark, LayoutDashboard, MapPinned, Route, Wrench } from "lucide-react";
 
@@ -26,6 +27,34 @@ export default function CivicMap() {
     frameParams.set("carto_key", cartoBasemapKey);
   }
   const frameSuffix = frameParams.toString() ? `?${frameParams.toString()}` : "";
+
+  // Leaflet inside the frame must never initialize against a zero-size
+  // container — that is the jigsaw-scramble origin. Measure this shell's
+  // container first, and only mount the iframe once it has real dimensions.
+  const shellRef = useRef<HTMLDivElement | null>(null);
+  const [frameReady, setFrameReady] = useState(false);
+
+  useEffect(() => {
+    if (frameReady) return;
+    let attempts = 0;
+    const measure = () => {
+      const el = shellRef.current;
+      if (el && el.offsetHeight > 10 && el.offsetWidth > 10) {
+        setFrameReady(true);
+        return;
+      }
+      attempts += 1;
+      if (attempts < 120) {
+        requestAnimationFrame(measure);
+      } else {
+        // Fallback: after ~2 seconds of retries, mount anyway — the inner
+        // page's own invalidateSize passes remain as the second line.
+        setFrameReady(true);
+      }
+    };
+    const raf = requestAnimationFrame(measure);
+    return () => cancelAnimationFrame(raf);
+  }, [frameReady]);
 
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
@@ -59,11 +88,15 @@ export default function CivicMap() {
         </nav>
       </header>
 
-      <iframe
-        src={`/civicmap.html${frameSuffix}`}
-        className="min-h-0 flex-1 border-0"
-        title="Civic Map — Resource Directory geography"
-      />
+      <div ref={shellRef} className="min-h-0 flex-1">
+        {frameReady && (
+          <iframe
+            src={`/civicmap.html${frameSuffix}`}
+            className="h-full w-full border-0"
+            title="Civic Map — Resource Directory geography"
+          />
+        )}
+      </div>
     </div>
   );
 }
