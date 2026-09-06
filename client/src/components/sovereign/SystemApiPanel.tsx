@@ -2,11 +2,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Activity,
   Database,
+  ExternalLink,
   Loader2,
+  Play,
   RefreshCw,
   Route,
   Search,
   Server,
+  TerminalSquare,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -44,6 +47,41 @@ type SystemRoutes = {
   backend: { total: number; mounts: BackendMount[] };
 };
 
+const RUNNABLE_DIAGNOSTICS = [
+  {
+    label: "Run System Health",
+    path: "/api/system/health",
+    description: "Owner-authenticated runtime and database health",
+  },
+  {
+    label: "Run Route Inventory",
+    path: "/api/system/routes",
+    description: "Owner-authenticated frontend and backend route catalog",
+  },
+  {
+    label: "Run Public Health",
+    path: "/api/health",
+    description: "Public deployment health contract",
+  },
+] as const;
+
+type RunnableDiagnosticPath = (typeof RUNNABLE_DIAGNOSTICS)[number]["path"];
+
+const RUNNABLE_DIAGNOSTIC_PATHS = new Set<RunnableDiagnosticPath>(
+  RUNNABLE_DIAGNOSTICS.map((diagnostic) => diagnostic.path),
+);
+
+type DiagnosticRun = {
+  method: "GET";
+  path: RunnableDiagnosticPath;
+  ok: boolean;
+  status: number | null;
+  status_text: string;
+  duration_ms: number;
+  timestamp: string;
+  payload: unknown;
+};
+
 function errorMessage(payload: unknown, status: number): string {
   if (payload && typeof payload === "object") {
     const record = payload as Record<string, unknown>;
@@ -68,6 +106,25 @@ function formatTimestamp(value?: string): string {
   if (!value) return "Not retrieved";
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+}
+
+function isConcreteFrontendRoute(path: string): boolean {
+  return !path.includes(":") && !path.includes("*");
+}
+
+function isRunnableBackendMount(
+  mount: BackendMount,
+): mount is BackendMount & { path: RunnableDiagnosticPath } {
+  return (
+    mount.method === "GET" &&
+    RUNNABLE_DIAGNOSTIC_PATHS.has(mount.path as RunnableDiagnosticPath)
+  );
+}
+
+function printablePayload(payload: unknown): string {
+  if (typeof payload === "string") return payload;
+  if (payload === null || payload === undefined) return "No response body";
+  return JSON.stringify(payload, null, 2);
 }
 
 function HealthValue({
@@ -98,6 +155,12 @@ export default function SystemApiPanel() {
   const [routesError, setRoutesError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [runningPath, setRunningPath] = useState<RunnableDiagnosticPath | null>(
+    null,
+  );
+  const [diagnosticRun, setDiagnosticRun] = useState<DiagnosticRun | null>(
+    null,
+  );
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -133,6 +196,64 @@ export default function SystemApiPanel() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const runDiagnostic = useCallback(async (path: RunnableDiagnosticPath) => {
+    setRunningPath(path);
+    const startedAt = performance.now();
+
+    try {
+      const response = await fetch(path, {
+        method: "GET",
+        cache: "no-store",
+      });
+      const responseText = await response.text();
+      let payload: unknown = responseText || null;
+
+      if (responseText) {
+        try {
+          payload = JSON.parse(responseText);
+        } catch {
+          // Preserve non-JSON responses exactly as returned.
+        }
+      }
+
+      const result: DiagnosticRun = {
+        method: "GET",
+        path,
+        ok: response.ok,
+        status: response.status,
+        status_text: response.statusText,
+        duration_ms: Math.round(performance.now() - startedAt),
+        timestamp: new Date().toISOString(),
+        payload,
+      };
+
+      setDiagnosticRun(result);
+      if (response.ok && path === "/api/system/health") {
+        setHealth(payload as SystemHealth);
+        setHealthError(null);
+      }
+      if (response.ok && path === "/api/system/routes") {
+        setRoutes(payload as SystemRoutes);
+        setRoutesError(null);
+      }
+    } catch (error) {
+      setDiagnosticRun({
+        method: "GET",
+        path,
+        ok: false,
+        status: null,
+        status_text: "Network error",
+        duration_ms: Math.round(performance.now() - startedAt),
+        timestamp: new Date().toISOString(),
+        payload: {
+          error: error instanceof Error ? error.message : String(error),
+        },
+      });
+    } finally {
+      setRunningPath(null);
+    }
+  }, []);
 
   const normalizedSearch = search.trim().toLowerCase();
   const frontendRoutes = useMemo(() => {
@@ -184,6 +305,75 @@ export default function SystemApiPanel() {
           Refresh
         </Button>
       </div>
+
+      <Card className="border-cyan-500/30 bg-cyan-950/10">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <TerminalSquare className="h-4 w-4 text-cyan-400" /> Run Diagnostics
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Live, allowlisted GET requests only. Results appear here without
+            changing system state.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-2 md:grid-cols-3">
+            {RUNNABLE_DIAGNOSTICS.map((diagnostic) => (
+              <Button
+                key={diagnostic.path}
+                variant="outline"
+                className="h-auto min-h-16 justify-start whitespace-normal p-3 text-left"
+                onClick={() => void runDiagnostic(diagnostic.path)}
+                disabled={runningPath !== null}
+              >
+                {runningPath === diagnostic.path ? (
+                  <Loader2 className="mr-3 h-4 w-4 shrink-0 animate-spin" />
+                ) : (
+                  <Play className="mr-3 h-4 w-4 shrink-0 text-cyan-400" />
+                )}
+                <span>
+                  <span className="block text-sm font-medium">
+                    {diagnostic.label}
+                  </span>
+                  <span className="mt-0.5 block font-mono text-[10px] text-muted-foreground">
+                    GET {diagnostic.path}
+                  </span>
+                </span>
+              </Button>
+            ))}
+          </div>
+
+          {diagnosticRun ? (
+            <div className="overflow-hidden rounded border border-border bg-background/70">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2 text-xs">
+                <span className="font-mono">
+                  {diagnosticRun.method} {diagnosticRun.path}
+                </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge
+                    className={
+                      diagnosticRun.ok ? "bg-emerald-600" : "bg-red-600"
+                    }
+                  >
+                    {diagnosticRun.status ?? "ERR"} {diagnosticRun.status_text}
+                  </Badge>
+                  <span className="text-muted-foreground">
+                    {diagnosticRun.duration_ms} ms ·{" "}
+                    {formatTimestamp(diagnosticRun.timestamp)}
+                  </span>
+                </div>
+              </div>
+              <pre className="max-h-80 overflow-auto whitespace-pre-wrap break-words p-3 font-mono text-[11px] leading-relaxed text-foreground">
+                {printablePayload(diagnosticRun.payload)}
+              </pre>
+            </div>
+          ) : (
+            <div className="rounded border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
+              Push a button to run a live diagnostic and inspect its response.
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card
         className={
@@ -291,12 +481,33 @@ export default function SystemApiPanel() {
                         {route.component_slug}
                       </div>
                     </div>
-                    <Badge
-                      variant="secondary"
-                      className="self-center text-[10px]"
-                    >
-                      {route.layer}
-                    </Badge>
+                    <div className="flex items-center gap-2 self-center">
+                      <Badge variant="secondary" className="text-[10px]">
+                        {route.layer}
+                      </Badge>
+                      {isConcreteFrontendRoute(route.path) ? (
+                        <Button variant="ghost" size="sm" asChild>
+                          <a
+                            href={route.path}
+                            target="_blank"
+                            rel="noreferrer"
+                            aria-label={`Open ${route.path}`}
+                          >
+                            Open
+                            <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
+                          </a>
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled
+                          title="This route needs a record identifier"
+                        >
+                          Needs ID
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ))}
                 {!isLoading && frontendRoutes.length === 0 && (
@@ -316,7 +527,7 @@ export default function SystemApiPanel() {
                 {backendMounts.map((mount) => (
                   <div
                     key={`${mount.method}:${mount.path}`}
-                    className="grid grid-cols-[auto_1fr] gap-3 rounded px-2 py-2 hover:bg-muted/30"
+                    className="grid grid-cols-[auto_1fr_auto] gap-3 rounded px-2 py-2 hover:bg-muted/30"
                   >
                     <Badge
                       variant="outline"
@@ -332,6 +543,25 @@ export default function SystemApiPanel() {
                         {mount.source}
                       </div>
                     </div>
+                    {isRunnableBackendMount(mount) ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => void runDiagnostic(mount.path)}
+                        disabled={runningPath !== null}
+                      >
+                        {runningPath === mount.path ? (
+                          <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Play className="mr-1.5 h-3.5 w-3.5" />
+                        )}
+                        Run
+                      </Button>
+                    ) : (
+                      <span className="self-center text-[10px] text-muted-foreground">
+                        Catalog only
+                      </span>
+                    )}
                   </div>
                 ))}
                 {!isLoading && backendMounts.length === 0 && (
