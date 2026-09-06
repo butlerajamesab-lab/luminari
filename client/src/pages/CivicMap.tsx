@@ -12,7 +12,21 @@ const navItems = [
   { href: "/mission-control", label: "Mission Control", icon: LayoutDashboard },
 ];
 
+// The basemap key arrives from the Render environment
+// (VITE_CARTO_BASEMAP_KEY) and is forwarded to the map frame as a query
+// parameter — the source file stays free of embedded credentials, and the
+// key can rotate without a code change.
+const cartoBasemapKey = import.meta.env.VITE_CARTO_BASEMAP_KEY as
+  | string
+  | undefined;
+
 export default function CivicMap() {
+  const frameParams = new URLSearchParams(window.location.search);
+  if (cartoBasemapKey && !frameParams.has("carto_key")) {
+    frameParams.set("carto_key", cartoBasemapKey);
+  }
+  const frameSuffix = frameParams.toString() ? `?${frameParams.toString()}` : "";
+
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
       <header className="z-10 flex flex-wrap items-center justify-between gap-3 border-b border-border bg-background/95 px-4 py-2 shadow-sm backdrop-blur">
@@ -46,7 +60,7 @@ export default function CivicMap() {
       </header>
 
       <iframe
-        src={`/civicmap.html${window.location.search}`}
+        src={`/civicmap.html${frameSuffix}`}
         className="min-h-0 flex-1 border-0"
         title="Civic Map — Resource Directory geography"
       />
