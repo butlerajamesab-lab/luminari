@@ -27,10 +27,11 @@ import {
   RefreshCw, Trash2, Eye, FileText, Send, Plus,
   Settings, ToggleLeft, ArrowUpDown, Search,
   Table2, Zap, Activity, Archive, ChevronRight,
-  Loader2, Copy, RotateCcw, ArrowLeft, CalendarClock,
+  Loader2, Copy, RotateCcw, ArrowLeft, CalendarClock, Server,
 } from "lucide-react";
 import { Link } from "wouter";
 import AtlasCommandPanel from "@/components/sovereign/AtlasCommandPanel";
+import SystemApiPanel from "@/components/sovereign/SystemApiPanel";
 import { PublicWalkthroughShell } from "@/components/PublicWalkthroughShell";
 
 // ─── Export Spine Panel ───
@@ -411,7 +412,7 @@ function RestoreSpinePanel() {
 
 // ─── Admin Sovereign Control Panel ───
 function AdminControlPanel() {
-  const [activeSection, setActiveSection] = useState("engines");
+  const [activeSection, setActiveSection] = useState("system-api");
   const [sqlInput, setSqlInput] = useState("");
   const [sqlResult, setSqlResult] = useState<any>(null);
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
@@ -437,6 +438,7 @@ function AdminControlPanel() {
   const reorderEngines = trpc.s76.execution.reorderEngines.useMutation();
 
   const sections = [
+    { id: "system-api", label: "System API", icon: Server },
     { id: "engines", label: "Engines", icon: Zap },
     { id: "streams", label: "Streams", icon: Activity },
     { id: "schema", label: "Schema", icon: Table2 },
@@ -468,6 +470,8 @@ function AdminControlPanel() {
           </Button>
         ))}
       </div>
+
+      {activeSection === "system-api" && <SystemApiPanel />}
 
       {/* Engine Manager */}
       {activeSection === "engines" && (
