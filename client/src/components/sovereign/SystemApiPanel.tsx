@@ -33,6 +33,7 @@ type FrontendRoute = {
   path: string;
   component_slug: string;
   layer: string;
+  registered: boolean;
 };
 
 type BackendMount = {
@@ -110,6 +111,10 @@ function formatTimestamp(value?: string): string {
 
 function isConcreteFrontendRoute(path: string): boolean {
   return !path.includes(":") && !path.includes("*");
+}
+
+function isOpenableFrontendRoute(route: FrontendRoute): boolean {
+  return route.registered && isConcreteFrontendRoute(route.path);
 }
 
 function isRunnableBackendMount(
@@ -485,7 +490,7 @@ export default function SystemApiPanel() {
                       <Badge variant="secondary" className="text-[10px]">
                         {route.layer}
                       </Badge>
-                      {isConcreteFrontendRoute(route.path) ? (
+                      {isOpenableFrontendRoute(route) ? (
                         <Button variant="ghost" size="sm" asChild>
                           <a
                             href={route.path}
@@ -497,7 +502,7 @@ export default function SystemApiPanel() {
                             <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
                           </a>
                         </Button>
-                      ) : (
+                      ) : route.registered ? (
                         <Button
                           variant="ghost"
                           size="sm"
@@ -505,6 +510,15 @@ export default function SystemApiPanel() {
                           title="This route needs a record identifier"
                         >
                           Needs ID
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled
+                          title="This inventory entry is not registered by the client router"
+                        >
+                          Catalog only
                         </Button>
                       )}
                     </div>

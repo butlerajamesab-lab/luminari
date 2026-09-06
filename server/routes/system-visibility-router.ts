@@ -27,6 +27,7 @@
  */
 import express, { Request, Response } from "express";
 import { getPool } from "../db";
+import { isRegisteredClientRoute } from "../../shared/client-route-registry";
 
 const router = express.Router();
 
@@ -203,9 +204,17 @@ router.get("/routes", async (_req: Request, res: Response) => {
     { method: "USE", path: "/api/healer/*", source: "healer-routes" },
   ];
 
+  const frontend_route_inventory = frontend_routes.map((route) => ({
+    ...route,
+    registered: isRegisteredClientRoute(route.path),
+  }));
+
   res.json({
     timestamp: now(),
-    frontend: { total: frontend_routes.length, routes: frontend_routes },
+    frontend: {
+      total: frontend_route_inventory.length,
+      routes: frontend_route_inventory,
+    },
     backend: { total: backend_mounts.length, mounts: backend_mounts },
   });
 });

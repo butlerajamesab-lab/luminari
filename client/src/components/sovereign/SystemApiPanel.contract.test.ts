@@ -40,11 +40,15 @@ describe("Sovereign Control system API panel", () => {
     expect(panel).toContain("RUNNABLE_DIAGNOSTIC_PATHS.has");
   });
 
-  it("makes route inventory searchable and concrete frontend routes openable", () => {
+  it("opens only concrete routes registered by the client router", () => {
     expect(panel).toContain('aria-label="Search system routes"');
-    expect(panel).toContain("isConcreteFrontendRoute(route.path)");
+    expect(panel).toContain("isOpenableFrontendRoute(route)");
+    expect(panel).toContain(
+      "route.registered && isConcreteFrontendRoute(route.path)",
+    );
     expect(panel).toContain('target="_blank"');
     expect(panel).toContain("Needs ID");
+    expect(panel).toContain("Catalog only");
     expect(panel).toMatch(
       /Structural metadata only; no\s+records or secrets\./,
     );
