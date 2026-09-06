@@ -11,6 +11,12 @@ export type PublishableResourceDirectorySearchInput = {
 const PROJECTION_CONTRACT = "lighthouse_resource_directory_current_v4";
 const DIRECTORY_VIEW = "public.v_lighthouse_resource_program_catalog_v2";
 const SUMMARY_CACHE_TTL_MS = 5 * 60 * 1000;
+// Read-layer alias normalization: one source row carries the nonstandard
+// code USVI (registry_programs lmn_f14ab9f72c70ad63e98fcd98). The canonical
+// code for the U.S. Virgin Islands is VI. Normalizing here keeps the source
+// value preserved and the public directory consistent — jurisdiction_count,
+// the filter list, and search all see one territory instead of two.
+const JURISDICTION_CODE_SQL = `case upper(coalesce(state_code,jurisdiction)) when 'USVI' then 'VI' else upper(coalesce(state_code,jurisdiction)) end`;
 // Reuse the governed twelve-category vocabulary and precedence already
 // declared by v_lighthouse_resource_directory_whole_corpus_v2. The bounded
 // public reader classifies only source category/layer labels so summary and
@@ -177,8 +183,11 @@ function mapResourceRow(row: any) {
   const displayName =
     resourceDisplayText(row.name ?? row.organization_name) || "[unnamed]";
   const category = String(row.ui_category ?? "general_resource");
-  const state = row.state_code ?? null;
-  const jurisdiction = row.jurisdiction ?? state ?? null;
+  const rawState = row.state_code ?? null;
+  // Display-layer alias normalization, matching the summary read layer.
+  const state = rawState === "USVI" ? "VI" : rawState;
+  const jurisdiction =
+    row.jurisdiction === "USVI" ? "VI" : (row.jurisdiction ?? state ?? null);
   const resourceId = stableResourceId(row);
   const source = sourceReference(row);
 
@@ -278,7 +287,8 @@ async function loadPublishableResourceDirectorySummary(): Promise<
   const pool = getPool();
   const result = await pool.query(`
     with catalog as materialized (
-      select object_class,phone,email,website_url,address,state_code,jurisdiction,
+      select object_class,phone,email,website_url,address,
+             ${JURISDICTION_CODE_SQL} as jurisdiction_code,
              person_facing_ready,${DIRECTORY_UI_CATEGORY_SQL} as ui_category
         from ${DIRECTORY_VIEW}
     ), totals as (
@@ -289,7 +299,7 @@ async function loadPublishableResourceDirectorySummary(): Promise<
              count(*) filter(where phone is not null or email is not null or website_url is not null)::int as resources_with_contacts,
              count(*) filter(where address is not null)::int as location_count,
              count(*) filter(where address is not null)::int as resources_with_locations,
-             count(distinct upper(coalesce(state_code,jurisdiction)))::int as jurisdiction_count,
+             count(distinct jurisdiction_code)::int as jurisdiction_count,
              count(*) filter(where object_class='resource')::int as direct_resource_count,
              count(*) filter(where object_class='program')::int as program_count,
              count(*) filter(where person_facing_ready)::int as person_facing_ready_count,
@@ -301,13 +311,13 @@ async function loadPublishableResourceDirectorySummary(): Promise<
         from catalog
        group by 1
     ), jurisdiction_category_rows as (
-      select upper(coalesce(state_code,jurisdiction)) as code,
+      select jurisdiction_code as code,
              ui_category as category_key,
              count(*)::int as category_count,
              count(*) filter(where object_class='resource')::int as direct_resource_count,
              count(*) filter(where object_class='program')::int as program_count
         from catalog
-       where coalesce(state_code,jurisdiction) is not null
+       where jurisdiction_code is not null
        group by 1,2
     ), jurisdiction_rows as (
       select code,
@@ -434,7 +444,7 @@ export async function searchPublishableResourceDirectory(
 
   if (input.jurisdiction) {
     params.push(input.jurisdiction.toUpperCase());
-    where.push(`upper(coalesce(state_code,jurisdiction))=$${params.length}`);
+    where.push(`${JURISDICTION_CODE_SQL}=$${params.length}`);
   }
   if (input.category) {
     params.push(input.category);
