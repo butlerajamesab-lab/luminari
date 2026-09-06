@@ -97,6 +97,17 @@ const config = {
     process.env.PUBLIC_BASE_URL ?? "http://localhost:8787"
   ),
   apiKey: process.env.API_KEY ?? "dev-local-key",
+  lighthouseBaseUrl: trimTrailingSlash(
+    process.env.LIGHTHOUSE_BASE_URL ?? "https://luminari.onrender.com"
+  ),
+  lighthouseSystemReadToken:
+    process.env.LIGHTHOUSE_SYSTEM_READ_TOKEN?.trim() ?? "",
+  lighthouseRequestTimeoutMs: numberFromEnv(
+    "LIGHTHOUSE_REQUEST_TIMEOUT_MS",
+    15_000,
+    1_000,
+    60_000
+  ),
   dataDir: path.resolve(process.env.DATA_DIR ?? "./data"),
   renderTtlHours: numberFromEnv("RENDER_TTL_HOURS", 24, 1, 168),
   bodyLimitBytes: 1_500_000,
@@ -298,6 +309,58 @@ async function requireApiKey(
 
   if (!suppliedKey || !safeEqual(suppliedKey, config.apiKey)) {
     return reply.code(401).send({ error: "Unauthorized" });
+  }
+}
+
+type SystemDiagnosticPath = "/api/system/health" | "/api/system/routes";
+
+async function fetchSystemDiagnostic(
+  pathname: SystemDiagnosticPath
+): Promise<Record<string, unknown>> {
+  if (config.lighthouseSystemReadToken.length < 32) {
+    throw new PublicError(503, "System diagnostics bridge is not configured.");
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(
+    () => controller.abort(),
+    config.lighthouseRequestTimeoutMs
+  );
+
+  try {
+    const response = await fetch(`${config.lighthouseBaseUrl}${pathname}`, {
+      method: "GET",
+      headers: {
+        accept: "application/json",
+        "x-lighthouse-system-read-token": config.lighthouseSystemReadToken
+      },
+      redirect: "error",
+      signal: controller.signal
+    });
+
+    if (!response.ok) {
+      throw new PublicError(
+        response.status === 401 || response.status === 403 ? 502 : response.status,
+        response.status === 401 || response.status === 403
+          ? "Lighthouse rejected the diagnostics bridge credential."
+          : `Lighthouse diagnostics returned HTTP ${response.status}.`
+      );
+    }
+
+    const payload: unknown = await response.json();
+    if (typeof payload !== "object" || payload === null || Array.isArray(payload)) {
+      throw new PublicError(502, "Lighthouse diagnostics returned invalid JSON.");
+    }
+
+    return payload as Record<string, unknown>;
+  } catch (error) {
+    if (error instanceof PublicError) throw error;
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new PublicError(504, "Lighthouse diagnostics timed out.");
+    }
+    throw new PublicError(502, "Lighthouse diagnostics are unavailable.");
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
@@ -827,7 +890,7 @@ function buildOpenApiDocument(): Record<string, unknown> {
     openapi: "3.1.0",
     info: {
       title: "GPT Website Renderer Toolkit",
-      version: "1.0.0",
+      version: "1.1.0",
       description:
         "Render HTML, CSS, and JavaScript into a preview URL and screenshot for a custom GPT."
     },
@@ -970,6 +1033,108 @@ function buildOpenApiDocument(): Record<string, unknown> {
             }
           }
         }
+      },
+      "/v1/system/health": {
+        get: {
+          operationId: "getLighthouseSystemHealth",
+          summary: "Read the owner-authorized Lighthouse system health receipt.",
+          description:
+            "Use this to inspect live Lighthouse runtime and database health without mutating the platform.",
+          security: [{ ApiKeyAuth: [] }],
+          responses: {
+            "200": {
+              description: "Live Lighthouse system health receipt.",
+              content: {
+                "application/json": {
+                  schema: { type: "object", additionalProperties: true }
+                }
+              }
+            },
+            "401": {
+              description: "Missing or invalid renderer API key.",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" }
+                }
+              }
+            },
+            "502": {
+              description: "The Lighthouse diagnostics bridge rejected or could not reach its upstream.",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" }
+                }
+              }
+            },
+            "503": {
+              description: "The diagnostics bridge is not configured.",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" }
+                }
+              }
+            },
+            "504": {
+              description: "The Lighthouse diagnostics request timed out.",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/system/routes": {
+        get: {
+          operationId: "getLighthouseSystemRoutes",
+          summary: "Read the owner-authorized Lighthouse route inventory.",
+          description:
+            "Use this to inspect the live frontend and backend route inventory without mutating the platform.",
+          security: [{ ApiKeyAuth: [] }],
+          responses: {
+            "200": {
+              description: "Live Lighthouse route inventory.",
+              content: {
+                "application/json": {
+                  schema: { type: "object", additionalProperties: true }
+                }
+              }
+            },
+            "401": {
+              description: "Missing or invalid renderer API key.",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" }
+                }
+              }
+            },
+            "502": {
+              description: "The Lighthouse diagnostics bridge rejected or could not reach its upstream.",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" }
+                }
+              }
+            },
+            "503": {
+              description: "The diagnostics bridge is not configured.",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" }
+                }
+              }
+            },
+            "504": {
+              description: "The Lighthouse diagnostics request timed out.",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" }
+                }
+              }
+            }
+          }
+        }
       }
     }
   };
@@ -1027,6 +1192,24 @@ function buildServer(): FastifyInstance {
   }));
 
   app.get("/openapi.json", async () => buildOpenApiDocument());
+
+  app.get(
+    "/v1/system/health",
+    { preHandler: requireApiKey },
+    async (_request, reply) => {
+      reply.header("Cache-Control", "private, no-store, no-cache, must-revalidate");
+      return fetchSystemDiagnostic("/api/system/health");
+    }
+  );
+
+  app.get(
+    "/v1/system/routes",
+    { preHandler: requireApiKey },
+    async (_request, reply) => {
+      reply.header("Cache-Control", "private, no-store, no-cache, must-revalidate");
+      return fetchSystemDiagnostic("/api/system/routes");
+    }
+  );
 
   app.post<{ Body: RenderRequestBody; Reply: RenderResponseBody }>(
     "/v1/render",
@@ -1150,6 +1333,12 @@ async function main(): Promise<void> {
   if (config.apiKey === "dev-local-key") {
     app.log.warn(
       "Using default API_KEY=dev-local-key. Set a strong API_KEY before exposing this service."
+    );
+  }
+
+  if (config.lighthouseSystemReadToken.length < 32) {
+    app.log.warn(
+      "LIGHTHOUSE_SYSTEM_READ_TOKEN is absent or too short; system diagnostics bridge is disabled."
     );
   }
 

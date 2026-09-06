@@ -10,6 +10,8 @@ It is intentionally contained under `tools/gpt-website-renderer/` so it does not
 - `GET /openapi.json`
 - `POST /v1/render`
 - `GET /v1/renders/:id`
+- `GET /v1/system/health`
+- `GET /v1/system/routes`
 - `GET /previews/:id`
 - `GET /screenshots/:id.png`
 - `GET /artifacts/:id.html`
@@ -38,6 +40,9 @@ PORT=8787
 HOST=0.0.0.0
 PUBLIC_BASE_URL=https://your-renderer.example.com
 API_KEY=replace-with-a-long-random-value
+LIGHTHOUSE_BASE_URL=https://luminari.onrender.com
+LIGHTHOUSE_SYSTEM_READ_TOKEN=replace-with-a-separate-long-random-value
+LIGHTHOUSE_REQUEST_TIMEOUT_MS=15000
 DATA_DIR=./data
 RENDER_TTL_HOURS=24
 PLAYWRIGHT_CHROMIUM_NO_SANDBOX=0
@@ -91,6 +96,12 @@ The main operation is:
 operationId: renderWebsitePreview
 POST /v1/render
 ```
+
+The same authenticated GPT Action also exposes the two read-only owner
+diagnostics as `getLighthouseSystemHealth` and `getLighthouseSystemRoutes`.
+The bridge token is server-to-server only; do not put
+`LIGHTHOUSE_SYSTEM_READ_TOKEN` in the GPT configuration. The GPT continues to
+use the renderer's existing `x-api-key` credential.
 
 The GPT should send:
 

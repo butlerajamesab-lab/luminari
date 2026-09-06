@@ -29,7 +29,10 @@ import { runIntegrityLockdown } from "../services/integrity-lockdown";
 import { createContext } from "./context";
 import { sessionMiddleware } from "./session-middleware";
 import { serveStatic, setupVite } from "./vite";
-import { requireExpressAdmin } from "../_core/express-admin-middleware";
+import {
+  requireExpressAdmin,
+  requireExpressAdminOrSystemReadToken,
+} from "../_core/express-admin-middleware";
 import { systemVisibilityRouter } from "../routes/system-visibility-router";
 import { conveyorRouter } from "../routes/conveyor-router";
 import { civicMapRouter } from "../routes/civic-map-router";
@@ -88,7 +91,7 @@ async function startServer() {
   // Autonomous healer REST routes
   registerHealerRoutes(app);
   // System Visibility Layer — deterministic readonly administrator diagnostics
-  app.use("/api/system", requireExpressAdmin, systemVisibilityRouter);
+  app.use("/api/system", requireExpressAdminOrSystemReadToken, systemVisibilityRouter);
   // Conveyor Belt API — validate → promote → bridge → report
   app.use("/api/conveyor", conveyorRouter);
   // CivicMap rendering API — preview/detail/bounds, snake_case contracts

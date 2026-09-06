@@ -56,7 +56,7 @@ for (const field of required_diagnostic) if (!diagnostic.includes(field)) fail(`
 if (!index.includes('app.get("/api/db-diagnostic", requireExpressAdmin')) fail('/api/db-diagnostic must be restored behind requireExpressAdmin');
 if (!index.includes('buildAdminDatabaseDiagnostic()')) fail('/api/db-diagnostic must use the bounded administrator diagnostic builder');
 if (index.includes('app.get("/api/db-diagnostic", async')) fail('/api/db-diagnostic must not be mounted without an administrator gate');
-if (!index.includes('app.use("/api/system", requireExpressAdmin, systemVisibilityRouter)')) fail('/api/system visibility routes must require an administrator');
+if (!index.includes('app.use("/api/system", requireExpressAdminOrSystemReadToken, systemVisibilityRouter)')) fail('/api/system visibility routes must use the scoped administrator-or-read-token gate');
 if (index.includes('app.use("/api/system", systemVisibilityRouter)')) fail('/api/system must not be mounted without an administrator gate');
 if (index.includes('diagnostic_not_public')) fail('legacy 404-only diagnostic stub must not replace the authenticated Mission Control contract');
 if (index.includes('sendDatabaseDiagnostic')) fail('Express entrypoint must not expose the legacy deep diagnostic sender');
@@ -132,9 +132,13 @@ if (canonicalOauth.includes('/api/validation-session') || legacyOauth.includes('
 if (!compatibilityAuthHook.includes('export { useAuth } from "@/core/hooks/useAuth"')) fail('legacy auth imports must resolve to canonical Supabase authentication');
 if (compatibilityAuthHook.includes('previewUser') || compatibilityAuthHook.includes('isInspectionMode')) fail('legacy auth compatibility must not manufacture a preview identity');
 
-if (!index.includes('import { requireExpressAdmin } from "./express-admin-middleware"')) fail('Express administrator middleware must be imported');
+if (!index.includes('requireExpressAdmin,') || !index.includes('requireExpressAdminOrSystemReadToken,') || !index.includes('from "./express-admin-middleware"')) fail('Express administrator middleware and scoped system-read gate must be imported');
 if (!expressAdmin.includes('resolve_user_for_procedure')) fail('Express administrator gate must resolve the canonical runtime user');
 if (!expressAdmin.includes('user.role !== "admin"')) fail('Express administrator gate must enforce the admin role');
+if (!expressAdmin.includes('SYSTEM_READ_PATHS') || !expressAdmin.includes('"/api/system/health"') || !expressAdmin.includes('"/api/system/routes"')) fail('system service-token access must remain limited to health and route inventory');
+if (!expressAdmin.includes('req.method !== "GET"')) fail('system service-token access must remain read-only');
+if (!expressAdmin.includes('expected.length < 32')) fail('system service token must fail closed when absent or weak');
+if (!expressAdmin.includes('timingSafeEqual')) fail('system service token comparison must be constant-time');
 if (!expressAdmin.includes('status(401)') || !expressAdmin.includes('status(403)') || !expressAdmin.includes('status(503)')) fail('Express administrator gate must fail closed for missing, forbidden, and unavailable auth states');
 if (expressAdmin.includes('supabase_user_id') || expressAdmin.includes('supabase_email')) fail('Express administrator gate must not log or return account identifiers');
 
