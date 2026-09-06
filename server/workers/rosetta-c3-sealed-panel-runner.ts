@@ -127,7 +127,14 @@ function create_pool(): pg.Pool {
 export function should_execute_claim(claim: unknown): boolean {
   if (!claim || typeof claim !== "object") return false;
   const value = claim as Record<string, unknown>;
-  return value.attempt_state === "running";
+  return value.created === true && value.attempt_state === "running";
+}
+
+function should_finalize_without_execution(claim: unknown): boolean {
+  if (!claim || typeof claim !== "object") return false;
+  const value = claim as Record<string, unknown>;
+  return value.created === false &&
+    ["claimed", "running", "failed_retryable"].includes(String(value.attempt_state));
 }
 
 export function summarize_results(results: member_result[]) {
@@ -232,6 +239,31 @@ async function run_member(
   );
   result.claim = claim_result.rows[0]?.claim;
   if (!should_execute_claim(result.claim)) {
+    if (should_finalize_without_execution(result.claim)) {
+      const attempt_id = (result.claim as Record<string, unknown>).attempt_id;
+      if (typeof attempt_id !== "string") throw new Error("claim_missing_attempt_id");
+      try {
+        const final_result = await pool.query(
+          `select rosetta_replay.truth_observation_finalize(
+             $1::uuid,$2::uuid,$3) as receipt_id`,
+          [attempt_id, options.manifest_id, options.worker_identity],
+        );
+        return {
+          ...result,
+          final_receipt_id: final_result.rows[0]?.receipt_id,
+          skipped_reason: "reused_claim_finalized_without_execution",
+        };
+      } catch (error) {
+        return {
+          ...result,
+          skipped_reason: "reused_claim_not_executed",
+          error_code: error instanceof Error && "code" in error
+            ? String((error as Error & { code?: string }).code ?? "")
+            : undefined,
+          error_message: error instanceof Error ? error.message : String(error),
+        };
+      }
+    }
     return { ...result, skipped_reason: "claim_not_running" };
   }
 
@@ -249,12 +281,6 @@ async function run_member(
     );
     result.execution = execution_result.rows[0]?.execution;
     await client.query("set local statement_timeout = '0'");
-    const final_result = await client.query(
-      `select rosetta_replay.truth_observation_finalize(
-         $1::uuid,$2::uuid,$3) as receipt_id`,
-      [attempt_id, options.manifest_id, options.worker_identity],
-    );
-    result.final_receipt_id = final_result.rows[0]?.receipt_id;
     await client.query("commit");
   } catch (error) {
     await client.query("rollback").catch(() => undefined);
@@ -264,6 +290,21 @@ async function run_member(
     result.error_message = error instanceof Error ? error.message : String(error);
   } finally {
     client.release();
+  }
+  if (result.error_code || result.error_message) return result;
+
+  try {
+    const final_result = await pool.query(
+      `select rosetta_replay.truth_observation_finalize(
+         $1::uuid,$2::uuid,$3) as receipt_id`,
+      [attempt_id, options.manifest_id, options.worker_identity],
+    );
+    result.final_receipt_id = final_result.rows[0]?.receipt_id;
+  } catch (error) {
+    result.error_code = error instanceof Error && "code" in error
+      ? String((error as Error & { code?: string }).code ?? "")
+      : undefined;
+    result.error_message = error instanceof Error ? error.message : String(error);
   }
   return result;
 }

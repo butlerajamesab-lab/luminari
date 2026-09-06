@@ -25,8 +25,9 @@ describe("Rosetta C3 sealed panel runner", () => {
     expect(options.limit).toBe(3);
   });
 
-  it("executes only live running claims", () => {
-    expect(should_execute_claim({ attempt_state: "running" })).toBe(true);
+  it("executes only freshly created running claims", () => {
+    expect(should_execute_claim({ created: true, attempt_state: "running" })).toBe(true);
+    expect(should_execute_claim({ created: false, attempt_state: "running" })).toBe(false);
     expect(should_execute_claim({ attempt_state: "rejected" })).toBe(false);
     expect(should_execute_claim({ attempt_state: "timed_out" })).toBe(false);
     expect(should_execute_claim(null)).toBe(false);
