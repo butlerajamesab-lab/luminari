@@ -73,7 +73,7 @@ describe("retired whole-universe civic/legal explorer", () => {
     expect(exists("server/routes/ai-inspect-router.ts")).toBe(false);
     expect(productionEntry).not.toContain("aiInspectRouter");
     expect(productionEntry).not.toContain('app.use("/api/ai"');
-    expect(devEntry).toContain('app.use("/api/system", requireExpressAdmin, systemVisibilityRouter)');
+    expect(devEntry).toContain('app.use("/api/system", requireExpressAdminOrSystemReadToken, systemVisibilityRouter)');
     expect(visibility).toContain("Administrator auth required");
     expect(visibility).not.toContain("/api/ai");
     expect(visibility).not.toContain("AI INSPECTION ROUTER");

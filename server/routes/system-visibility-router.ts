@@ -9,11 +9,12 @@
  * MOUNT:
  *   server/_core/index.ts:
  *     import { systemVisibilityRouter } from "../routes/system-visibility-router";
- *     app.use("/api/system", requireExpressAdmin, systemVisibilityRouter);
+ *     app.use("/api/system", requireExpressAdminOrSystemReadToken, systemVisibilityRouter);
  *
  * RULES:
  *   - GET only. No POST, no mutations, no writes.
- *   - Administrator auth required at the Express mount.
+ *   - Administrator auth required at the Express mount, except the exact GET
+ *     health/routes pair may use the dedicated owner read token.
  *   - Structural metadata only — no PII, no raw records.
  *   - Every DB query is wrapped. Failures surface explicitly.
  *   - No secrets exposed. No service_role keys, no JWT secrets.
@@ -38,7 +39,7 @@ function now(): string {
 }
 
 function cacheStatic(res: Response) {
-  res.setHeader("Cache-Control", "public, max-age=120, must-revalidate");
+  res.setHeader("Cache-Control", "private, no-store, no-cache, must-revalidate");
 }
 
 function cacheLive(res: Response) {

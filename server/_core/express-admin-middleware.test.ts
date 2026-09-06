@@ -10,7 +10,10 @@ vi.mock("./context", () => ({
   resolve_user_for_procedure: contextMocks.resolveUser,
 }));
 
-import { requireExpressAdmin } from "./express-admin-middleware";
+import {
+  requireExpressAdmin,
+  requireExpressAdminOrSystemReadToken,
+} from "./express-admin-middleware";
 
 function makeResponse() {
   const res: any = {
@@ -24,11 +27,16 @@ function makeResponse() {
   return res;
 }
 
-function makeRequest() {
+function makeRequest(
+  originalUrl = "/schema",
+  method = "GET",
+  headers: Record<string, string> = {}
+) {
   return {
-    method: "GET",
+    method,
     path: "/schema",
-    originalUrl: "/schema",
+    originalUrl,
+    headers,
   } as any;
 }
 
@@ -96,5 +104,85 @@ describe("requireExpressAdmin", () => {
       error: "authentication_temporarily_unavailable",
     });
     expect(next).not.toHaveBeenCalled();
+  });
+});
+
+describe("requireExpressAdminOrSystemReadToken", () => {
+  const originalToken = process.env.LIGHTHOUSE_SYSTEM_READ_TOKEN;
+  const token = "system-read-test-token-that-is-longer-than-32-bytes";
+
+  afterEach(() => {
+    vi.clearAllMocks();
+    vi.restoreAllMocks();
+    if (originalToken === undefined) delete process.env.LIGHTHOUSE_SYSTEM_READ_TOKEN;
+    else process.env.LIGHTHOUSE_SYSTEM_READ_TOKEN = originalToken;
+  });
+
+  it.each(["/api/system/health", "/api/system/routes?fresh=1"])(
+    "accepts the scoped service token for GET %s",
+    async originalUrl => {
+      process.env.LIGHTHOUSE_SYSTEM_READ_TOKEN = token;
+      const req = makeRequest(originalUrl, "GET", {
+        "x-lighthouse-system-read-token": token,
+      });
+      const res = makeResponse();
+      const next = vi.fn();
+
+      await requireExpressAdminOrSystemReadToken(req, res, next);
+
+      expect(next).toHaveBeenCalledTimes(1);
+      expect(res.locals.system_read_authorized).toBe(true);
+      expect(contextMocks.createContext).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each([
+    ["/api/system/schema", "GET"],
+    ["/api/system/health", "POST"],
+  ])("does not authorize %s with method %s", async (originalUrl, method) => {
+    process.env.LIGHTHOUSE_SYSTEM_READ_TOKEN = token;
+    contextMocks.createContext.mockResolvedValue({});
+    contextMocks.resolveUser.mockResolvedValue(null);
+    const req = makeRequest(originalUrl, method, {
+      "x-lighthouse-system-read-token": token,
+    });
+    const res = makeResponse();
+    const next = vi.fn();
+
+    await requireExpressAdminOrSystemReadToken(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("fails closed when the configured token is absent or too short", async () => {
+    process.env.LIGHTHOUSE_SYSTEM_READ_TOKEN = "short";
+    contextMocks.createContext.mockResolvedValue({});
+    contextMocks.resolveUser.mockResolvedValue(null);
+    const req = makeRequest("/api/system/health", "GET", {
+      "x-lighthouse-system-read-token": "short",
+    });
+    const res = makeResponse();
+    const next = vi.fn();
+
+    await requireExpressAdminOrSystemReadToken(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("still accepts canonical administrator authentication", async () => {
+    process.env.LIGHTHOUSE_SYSTEM_READ_TOKEN = token;
+    contextMocks.createContext.mockResolvedValue({});
+    const admin = { id: 1, role: "admin" };
+    contextMocks.resolveUser.mockResolvedValue(admin);
+    const req = makeRequest("/api/system/schema");
+    const res = makeResponse();
+    const next = vi.fn();
+
+    await requireExpressAdminOrSystemReadToken(req, res, next);
+
+    expect(res.locals.runtime_user).toBe(admin);
+    expect(next).toHaveBeenCalledTimes(1);
   });
 });
