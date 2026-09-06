@@ -1,5 +1,7 @@
-import { readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
+import { tmpdir } from "node:os";
+import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
@@ -8,6 +10,7 @@ import {
   compute_manifest_hashes,
   derive_extractor_family,
   render_manifest_tsv,
+  run_c3_backfill_census,
   sha256,
   type source_manifest_row,
 } from "./rosetta-c3-backfill-census-worker";
@@ -116,6 +119,8 @@ describe("Rosetta C3 backfill census worker", () => {
     const source = readFileSync("server/workers/rosetta-c3-backfill-census-worker.ts", "utf8");
     expect(source).toContain('metadata_string(row, "extraction_text_url")');
     expect(source).toContain('metadata_string(row, "extraction_text_byte_hash")');
+    expect(source).toContain('metadata_string(row, "extraction_text_html_sha256")');
+    expect(source).toContain('row.host === "lawfilesext.leg.wa.gov"');
     expect(source).toContain("wa_extraction_text_receipt_missing");
     expect(source).toContain("auxiliary_byte_hash_mismatch");
   });
@@ -155,5 +160,46 @@ describe("Rosetta C3 backfill census worker", () => {
     expect(source).toContain("has_full_manifest");
     expect(source).toContain("input_manifest_path");
     expect(source).toContain("sha256(await readFile(input_manifest_path, \"utf8\"))");
+  });
+
+  it("runs census rows with bounded concurrency while preserving output order", () => {
+    const source = readFileSync("server/workers/rosetta-c3-backfill-census-worker.ts", "utf8");
+    expect(source).toContain("DEFAULT_CONCURRENCY = 8");
+    expect(source).toContain("--concurrency");
+    expect(source).toContain("new Array<output_row>(rows.length)");
+    expect(source).toContain("output_rows[row_index] = await run_row");
+  });
+
+  it("runs from a full frozen manifest without requiring a replay database URL", async () => {
+    const previous_replay_url = process.env.ROSETTA_REPLAY_DATABASE_URL;
+    const previous_rosetta_url = process.env.ROSETTA_DATABASE_URL;
+    delete process.env.ROSETTA_REPLAY_DATABASE_URL;
+    delete process.env.ROSETTA_DATABASE_URL;
+
+    const directory = mkdtempSync(path.join(tmpdir(), "c3-census-"));
+    try {
+      const manifest_path = path.join(directory, "manifest.tsv");
+      const out_dir = path.join(directory, "out");
+      writeFileSync(manifest_path, render_manifest_tsv([
+        manifest_row({ ordinal: 1 }),
+      ]));
+
+      await run_c3_backfill_census({
+        manifest_tsv: manifest_path,
+        derive_manifest: false,
+        out_dir,
+        dry_run: true,
+        manifest_only: false,
+      });
+
+      expect(existsSync(path.join(out_dir, "c3-fetchability-census-results.tsv"))).toBe(true);
+      expect(existsSync(path.join(out_dir, "c3-fetchability-census-receipt.json"))).toBe(true);
+    } finally {
+      if (previous_replay_url === undefined) delete process.env.ROSETTA_REPLAY_DATABASE_URL;
+      else process.env.ROSETTA_REPLAY_DATABASE_URL = previous_replay_url;
+      if (previous_rosetta_url === undefined) delete process.env.ROSETTA_DATABASE_URL;
+      else process.env.ROSETTA_DATABASE_URL = previous_rosetta_url;
+      rmSync(directory, { recursive: true, force: true });
+    }
   });
 });
