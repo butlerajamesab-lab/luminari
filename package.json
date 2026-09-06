@@ -7,6 +7,7 @@
     "dev": "NODE_ENV=development tsx watch server/core/index.ts",
     "build": "vite build && esbuild server/_core/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist && ([ ! -d server/config ] || cp -r server/config dist/config) && pnpm run check:health-contracts",
     "build:prism-worker": "esbuild server/prism-rosetta-worker.ts --platform=node --packages=external --bundle --format=esm --outfile=dist/prism-rosetta-worker.js",
+    "build:c3-census-worker": "esbuild server/workers/rosetta-c3-backfill-census-worker.ts --platform=node --packages=external --bundle --format=esm --outfile=dist/rosetta-c3-backfill-census-worker.js",
     "rosetta:c3-census": "tsx server/workers/rosetta-c3-backfill-census-worker.ts",
     "prestart": "pnpm build",
     "start": "NODE_ENV=production node dist/index.js",

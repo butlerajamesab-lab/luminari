@@ -21,6 +21,7 @@ export const C3_FETCH_CENSUS_20260904_MANIFEST_SHA256 =
 
 const FETCH_TIMEOUT_MS = 45_000;
 const MAX_SOURCE_BYTES = 25 * 1024 * 1024;
+const DEFAULT_CONCURRENCY = 8;
 const USER_AGENT =
   "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 " +
   "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
@@ -64,6 +65,7 @@ type cli_options = {
   derive_manifest: boolean;
   out_dir: string;
   limit?: number;
+  concurrency?: number;
   dry_run: boolean;
   manifest_only: boolean;
 };
@@ -171,6 +173,11 @@ function metadata_string(row: source_manifest_row, key: string): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
+function wa_extraction_text_byte_hash(row: source_manifest_row): string | null {
+  return metadata_string(row, "extraction_text_byte_hash") ??
+    metadata_string(row, "extraction_text_html_sha256");
+}
+
 function parse_args(argv: string[]): cli_options {
   const options: cli_options = {
     derive_manifest: false,
@@ -191,6 +198,12 @@ function parse_args(argv: string[]): cli_options {
       const limit = Number(required_arg(argv, ++index, arg));
       if (!Number.isInteger(limit) || limit < 1) throw new Error("invalid_limit");
       options.limit = limit;
+    } else if (arg === "--concurrency") {
+      const concurrency = Number(required_arg(argv, ++index, arg));
+      if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 32) {
+        throw new Error("invalid_concurrency");
+      }
+      options.concurrency = concurrency;
     } else if (arg === "--dry-run") {
       options.dry_run = true;
     } else if (arg === "--manifest-only") {
@@ -238,7 +251,7 @@ function parse_tsv_line(line: string): string[] {
   return line.split("\t");
 }
 
-async function read_manifest_tsv(file_path: string, pool: pg.Pool): Promise<source_manifest_row[]> {
+async function read_manifest_tsv(file_path: string, pool: pg.Pool | null): Promise<source_manifest_row[]> {
   const content = await readFile(file_path, "utf8");
   const lines = content.split(/\r?\n/).filter(line => line.trim().length > 0);
   const [header_line, ...data_lines] = lines;
@@ -303,6 +316,10 @@ async function read_manifest_tsv(file_path: string, pool: pg.Pool): Promise<sour
       throw new Error("invalid_full_manifest_tsv_row");
     }
     return frozen_rows;
+  }
+
+  if (!pool) {
+    throw new Error("partial_manifest_tsv_requires_rosetta_replay_database_url");
   }
 
   const ids = partial_rows.map(row => row.source_registry_id);
@@ -588,9 +605,16 @@ async function reproduce_text(row: source_manifest_row, bytes: Buffer): Promise<
     } else if (row.extractor_family === "official-legislative-version-html-strip-v1" ||
       row.extractor_family === "official-legislative-html-strip-v1") {
       source_text = normalize_official_html(bytes.toString("utf8"));
-    } else if (row.extractor_family === "wa-official-legislative-version-html-strip-v1") {
+    } else if (
+      row.extractor_family === "wa-official-legislative-version-html-strip-v1" ||
+      (
+        row.host === "lawfilesext.leg.wa.gov" &&
+        metadata_string(row, "extraction_text_url") &&
+        wa_extraction_text_byte_hash(row)
+      )
+    ) {
       const extraction_text_url = metadata_string(row, "extraction_text_url");
-      const extraction_text_byte_hash = metadata_string(row, "extraction_text_byte_hash");
+      const extraction_text_byte_hash = wa_extraction_text_byte_hash(row);
       if (!extraction_text_url || !extraction_text_byte_hash) {
         throw new Error("wa_extraction_text_receipt_missing");
       }
@@ -685,6 +709,26 @@ async function run_row(row: source_manifest_row, dry_run: boolean): Promise<outp
     error_message: extraction.error_message ?? fetch_result.error_message,
     fetched_at,
   };
+}
+
+async function run_rows(
+  rows: source_manifest_row[],
+  dry_run: boolean,
+  concurrency: number,
+): Promise<output_row[]> {
+  const output_rows = new Array<output_row>(rows.length);
+  let next_index = 0;
+  const worker_count = Math.min(concurrency, rows.length);
+
+  await Promise.all(Array.from({ length: worker_count }, async () => {
+    while (next_index < rows.length) {
+      const row_index = next_index;
+      next_index += 1;
+      output_rows[row_index] = await run_row(rows[row_index], dry_run);
+    }
+  }));
+
+  return output_rows;
 }
 
 function summarize<T extends Record<string, unknown>>(rows: T[], key: keyof T): Record<string, number> {
@@ -946,23 +990,38 @@ async function write_outputs(
 }
 
 export async function run_c3_backfill_census(options: cli_options): Promise<void> {
-  const pool = create_pool();
+  let pool: pg.Pool | null = null;
+  const require_pool = (): pg.Pool => {
+    pool ??= create_pool();
+    return pool;
+  };
   try {
-    const manifest_rows = options.manifest_tsv
-      ? await read_manifest_tsv(options.manifest_tsv, pool)
-      : await derive_manifest_rows(pool);
+    let manifest_rows: source_manifest_row[];
+    if (options.manifest_tsv) {
+      try {
+        manifest_rows = await read_manifest_tsv(options.manifest_tsv, null);
+      } catch (error) {
+        if (!(error instanceof Error) || error.message !== "partial_manifest_tsv_requires_rosetta_replay_database_url") {
+          throw error;
+        }
+        manifest_rows = await read_manifest_tsv(options.manifest_tsv, require_pool());
+      }
+    } else {
+      manifest_rows = await derive_manifest_rows(require_pool());
+    }
     const selected_rows = options.limit ? manifest_rows.slice(0, options.limit) : manifest_rows;
     if (options.manifest_only) {
       await write_manifest_outputs(options.out_dir, selected_rows);
       return;
     }
-    const output_rows: output_row[] = [];
-    for (const row of selected_rows) {
-      output_rows.push(await run_row(row, options.dry_run));
-    }
+    const output_rows = await run_rows(
+      selected_rows,
+      options.dry_run,
+      options.concurrency ?? DEFAULT_CONCURRENCY,
+    );
     await write_outputs(options.out_dir, selected_rows, output_rows, options.manifest_tsv ?? null);
   } finally {
-    await pool.end();
+    await pool?.end();
   }
 }
 
