@@ -1,8 +1,0 @@
-CREATE OR REPLACE FUNCTION public.rosetta_v253_validate_independent_structure(p_extraction_run_id integer, p_source_text text)
- RETURNS jsonb
- LANGUAGE plpgsql
- STABLE STRICT
- SET search_path TO 'pg_catalog', 'public', 'extensions'
-AS $function$
-declare v_base jsonb; v_expected integer; v_actual integer; v_binding_mismatch integer; v_status text;
-begin v_base:=public.rosetta_v252_validate_independent_structure(p_extraction_run_id,p_source_text); select count(*)::integer into v_expected from public.escalation_node node join public.accountability_route route on route.id=node.accountability_route_id where route.extraction_run_id=p_extraction_run_id; select count(*)::integer into v_actual from public.rosetta_clause_occurrence occurrence where occurrence.extraction_run_id=p_extraction_run_id; select count(*)::integer into v_binding_mismatch from public.rosetta_clause_occurrence occurrence join public.escalation_node node on node.id=occurrence.escalation_node_id where occurrence.extraction_run_id=p_extraction_run_id and (node.accountability_route_id is distinct from occurrence.accountability_route_id or public.rosetta_normalize_clause_text(node.action_required) is distinct from public.rosetta_normalize_clause_text(occurrence.source_text)); v_status:=case when coalesce(v_base->>'status','fail')='pass' and v_expected=v_actual and v_binding_mismatch=0 then 'pass' else 'fail' end; return v_base||jsonb_build_object('status',v_status,'contract','rosetta-independent-structural-validation-v253','expected_clause_occurrence_count',v_expected,'actual_clause_occurrence_count',v_actual,'clause_occurrence_binding_mismatch_count',v_binding_mismatch); end;$function$
