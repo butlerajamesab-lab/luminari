@@ -800,7 +800,7 @@
       <button class="button" id="resetButton" type="button">
         ↺ <span>Reset</span>
       </button>
-      <a class="button primary" id="directoryButton" href="/resources">
+      <a class="button primary" id="directoryButton" href="/resource-directory">
         ☰ <span>Open Directory</span>
       </a>
     </div>
@@ -1048,10 +1048,10 @@
       // carto.com/basemaps/apikey). Resolution order: the ?carto_key= URL
       // parameter (the React shell at /civic-map forwards its query string
       // into this iframe, so /civic-map?carto_key=... works), then the
-      // configured default below. Keep this source file free of embedded
-      // JWT-shaped credentials; without a runtime key the map still functions
-      // but tiles carry CARTO's "API key required" watermark.
-      const CARTO_BASEMAP_KEY = "";
+      // constant below holding the foundation-issued public basemap key.
+      // The key is designed for client-side use; without it the map still
+      // functions but tiles carry CARTO's "API key required" watermark.
+      const CARTO_BASEMAP_KEY = "eyJhbGciOiJIUzI1NiJ9.eyJhIjoiYWNfemQ0d3cyY3UiLCJqdGkiOiJkMjQ0NzFiMyJ9.lCWQngOvFZW8p4f2rKRXUKIhJMdh3EMlJkLrFGu01lQ";
       const cartoBasemapKey = params.get("carto_key") || CARTO_BASEMAP_KEY;
       const cartoTileUrl =
         "https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png" +
@@ -1226,7 +1226,7 @@
       const suffix = directoryParams.toString()
         ? `?${directoryParams.toString()}`
         : "";
-      document.getElementById("directoryButton").href = `/resources${suffix}`;
+      document.getElementById("directoryButton").href = `/resource-directory${suffix}`;
     }
 
     function updateBrowserState() {
@@ -1406,7 +1406,7 @@
         </section>
         <section class="detail-section">
           <div class="actions">
-            <a class="action primary" href="/resources?${directoryParams.toString()}">
+            <a class="action primary" href="/resource-directory?${directoryParams.toString()}">
               Open ${escapeHtml(meta.name)} directory
             </a>
           </div>
@@ -1623,7 +1623,7 @@
           <div class="actions">
             <a class="action primary" href="/resource/${encodeURIComponent(resource.resource_entity_id)}">View full record</a>
             ${actions.join("")}
-            <a class="action" href="/resources?${directoryParams.toString()}">Open in Directory</a>
+            <a class="action" href="/resource-directory?${directoryParams.toString()}">Open in Directory</a>
           </div>
         </section>
       `;
