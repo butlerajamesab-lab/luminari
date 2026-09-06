@@ -21,7 +21,7 @@ describe("Sovereign Control system API panel", () => {
     expect(sovereignControl).toContain('activeSection === "system-api"');
   });
 
-  it("reads only the two bounded system diagnostics", () => {
+  it("reads and runs only the bounded GET diagnostics", () => {
     expect(panel).toContain(
       'fetchDiagnostic<SystemHealth>("/api/system/health")',
     );
@@ -32,12 +32,30 @@ describe("Sovereign Control system API panel", () => {
       /LIGHTHOUSE_SYSTEM_READ_TOKEN|x-lighthouse-system-read-token/,
     );
     expect(panel).not.toMatch(/method:\s*["']POST["']/);
+    expect(panel).toContain('label: "Run System Health"');
+    expect(panel).toContain('label: "Run Route Inventory"');
+    expect(panel).toContain('label: "Run Public Health"');
+    expect(panel).toContain('path: "/api/health"');
+    expect(panel).toContain('method: "GET"');
+    expect(panel).toContain("RUNNABLE_DIAGNOSTIC_PATHS.has");
   });
 
-  it("makes route inventory searchable without exposing record data", () => {
+  it("makes route inventory searchable and concrete frontend routes openable", () => {
     expect(panel).toContain('aria-label="Search system routes"');
+    expect(panel).toContain("isConcreteFrontendRoute(route.path)");
+    expect(panel).toContain('target="_blank"');
+    expect(panel).toContain("Needs ID");
     expect(panel).toMatch(
       /Structural metadata only; no\s+records or secrets\./,
+    );
+  });
+
+  it("renders each live response inline with status and duration", () => {
+    expect(panel).toContain("diagnosticRun.status");
+    expect(panel).toContain("diagnosticRun.duration_ms");
+    expect(panel).toContain("printablePayload(diagnosticRun.payload)");
+    expect(panel).toContain(
+      "Push a button to run a live diagnostic and inspect its response.",
     );
   });
 });
