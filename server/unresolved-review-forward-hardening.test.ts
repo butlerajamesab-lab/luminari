@@ -19,7 +19,14 @@ describe("forward hardening for unresolved database review findings", () => {
       "set atlas_semantic_key = public.live_data_signal_semantic_key_v2",
     );
     expect(semanticHardening).toContain("partition by atlas_semantic_key");
-    expect(semanticHardening).toContain("set is_current = (ranked.current_rank = 1)");
+    expect(semanticHardening).toContain("bool_or(is_current)");
+    expect(semanticHardening).toContain("order by is_current desc");
+    expect(semanticHardening).toContain(
+      "group_had_current and current_rank = 1 as should_be_current",
+    );
+    expect(semanticHardening).toContain(
+      "set is_current = reconciled.should_be_current",
+    );
     expect(semanticHardening).toContain(
       "create unique index live_data_signals_one_current_atlas_semantic_idx",
     );
@@ -49,7 +56,10 @@ describe("forward hardening for unresolved database review findings", () => {
       "live_data_signal_semantic_transition_v1 is append-only",
     );
     expect(semanticHardening).toMatch(
-      /revoke insert, update, delete[\s\S]*from public, anon, authenticated, service_role;/,
+      /revoke all[\s\S]*on public\.live_data_signal_semantic_transition_v1[\s\S]*from public, anon, authenticated, service_role;/,
+    );
+    expect(semanticHardening).toMatch(
+      /grant select[\s\S]*on public\.live_data_signal_semantic_transition_v1[\s\S]*to service_role;/,
     );
   });
 
