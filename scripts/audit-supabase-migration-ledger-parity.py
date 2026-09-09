@@ -253,7 +253,7 @@ APPROVED_REPOSITORY_ONLY = {
     ),
     "20260909012008": (
         "20260909012008_live_data_signal_review_hardening.sql",
-        "652487dc60f013e9d851159f67d72d2efb620d86",
+        "fde19c96d37041d86740f471381ced4bb9782bba",
     ),
     "20260909012009": (
         "20260909012009_rosetta_convergence_service_role_grant.sql",
