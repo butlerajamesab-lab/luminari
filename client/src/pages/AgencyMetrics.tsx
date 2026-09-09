@@ -192,7 +192,9 @@ export default function AgencyMetrics() {
                 Performance metrics are not loaded for this surface.
               </p>
               <p style={{ fontFamily: fontSans, fontSize: 12, color: c.muted, lineHeight: 1.55 }}>
-                The agency directory below is reference inventory from the World Index. It is not performance evidence and is not used to imply agency outcomes, timeliness, or compliance.
+                {worldAgencies.length > 0
+                  ? "The agency directory below is reference inventory from the World Index. It is not performance evidence and is not used to imply agency outcomes, timeliness, or compliance."
+                  : "Agency reference inventory is unavailable for this surface. No performance evidence is loaded, and no agency outcomes, timeliness, or compliance are implied."}
               </p>
             </div>
           </div>
