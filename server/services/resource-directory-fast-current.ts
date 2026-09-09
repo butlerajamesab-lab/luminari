@@ -165,7 +165,7 @@ function locationsFor(row: any) {
       address_line2: null,
       city: null,
       county: null,
-      state: row.state_code ?? null,
+      state: row.state ?? row.state_code ?? null,
       postal_code: null,
       country: "US",
       latitude: null,
