@@ -17,7 +17,7 @@ describe("Jurisdiction alias normalization", () => {
     // The summary aggregation groups on the normalized code…
     expect(service).toContain("jurisdiction_code");
     // …and the row mapper normalizes both state and jurisdiction fields.
-    expect(service).toContain('row.state_code === "USVI" ? "VI"');
+    expect(service).toContain('rawState === "USVI" ? "VI"');
     expect(service).toContain('row.jurisdiction === "USVI" ? "VI"');
   });
 });
