@@ -36,18 +36,27 @@ update public.live_data_signals
 with ranked as (
   select
     live_data_signal_id,
+    bool_or(is_current) over (
+      partition by atlas_semantic_key
+    ) as group_had_current,
     row_number() over (
       partition by atlas_semantic_key
-      order by created_at desc, detected_at desc, live_data_signal_id desc
+      order by is_current desc, created_at desc, detected_at desc, live_data_signal_id desc
     ) as current_rank
   from public.live_data_signals
   where detection_rule_id = 'atlas.domain3.cross_category_entity'
+),
+reconciled as (
+  select
+    live_data_signal_id,
+    group_had_current and current_rank = 1 as should_be_current
+  from ranked
 )
 update public.live_data_signals signal
-   set is_current = (ranked.current_rank = 1)
-  from ranked
- where ranked.live_data_signal_id = signal.live_data_signal_id
-   and signal.is_current is distinct from (ranked.current_rank = 1);
+   set is_current = reconciled.should_be_current
+  from reconciled
+ where reconciled.live_data_signal_id = signal.live_data_signal_id
+   and signal.is_current is distinct from reconciled.should_be_current;
 
 alter table public.live_data_signals
   enable trigger live_data_signals_immutable_v1;
@@ -75,7 +84,7 @@ create trigger live_data_signal_semantic_transition_immutable_v1
 before update or delete on public.live_data_signal_semantic_transition_v1
 for each row execute function public.guard_live_data_signal_semantic_transition_immutable_v1();
 
-revoke insert, update, delete
+revoke all
   on public.live_data_signal_semantic_transition_v1
   from public, anon, authenticated, service_role;
 grant select
