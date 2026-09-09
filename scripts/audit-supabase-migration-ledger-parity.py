@@ -251,6 +251,14 @@ APPROVED_REPOSITORY_ONLY = {
         "20260905100000_case_resource_links.sql",
         "9fd6948fd7a04a0303ced0052928ee30cdabbed1",
     ),
+    "20260909012008": (
+        "20260909012008_live_data_signal_review_hardening.sql",
+        "652487dc60f013e9d851159f67d72d2efb620d86",
+    ),
+    "20260909012009": (
+        "20260909012009_rosetta_convergence_service_role_grant.sql",
+        "76e88513649508067c77e2fdce1555e281d109ed",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
