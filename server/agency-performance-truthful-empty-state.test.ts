@@ -11,7 +11,9 @@ describe("Agency Performance truth boundary", () => {
   it("keeps World Index inventory explicitly separate from performance evidence", () => {
     expect(page).toContain("Performance metrics are not loaded for this surface.");
     expect(page).toContain("Agency / Oversight Directory — reference only");
+    expect(page).toContain("worldAgencies.length > 0");
     expect(page).toContain("It is not performance evidence");
+    expect(page).toContain("Agency reference inventory is unavailable for this surface.");
   });
 
   it("preserves the real performance dashboard when metric rows exist", () => {
