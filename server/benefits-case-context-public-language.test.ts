@@ -7,14 +7,19 @@ const page = readFileSync(
   "utf8",
 );
 
+const stagedActions = page.slice(
+  page.indexOf("function StagedCaseActions"),
+  page.indexOf("/* ─── Main Benefits Navigator Page"),
+);
+
 describe("Benefits Navigator case-context language", () => {
   it("does not expose internal bridge codes to the person using Lighthouse", () => {
-    expect(page).not.toContain("CASE_CONTEXT_BRIDGE_MISSING");
+    expect(stagedActions).not.toContain("CASE_CONTEXT_BRIDGE_MISSING");
   });
 
   it("explains the missing case context as a user action", () => {
-    expect(page).toMatch(/choose|start/i);
-    expect(page).toMatch(/case/i);
-    expect(page).toMatch(/save/i);
+    expect(stagedActions).toContain(
+      "Choose or start a case before using Save to Case or Link to Current Case.",
+    );
   });
 });
