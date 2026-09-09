@@ -5,7 +5,10 @@ import hashlib
 from collections import defaultdict
 from pathlib import Path
 
-PRODUCTION_RECEIPTS = Path("supabase/verification/production_migration_receipts_20260829.tsv")
+PRODUCTION_RECEIPTS = (
+    Path("supabase/verification/production_migration_receipts_20260829.tsv"),
+    Path("supabase/verification/production_migration_receipts_20260909_addendum.tsv"),
+)
 # executable_md5 is exported from each ordered production statement array by
 # trimming trailing whitespace, restoring a missing top-level terminator,
 # joining statements with one blank line, and ending the file with one newline.
@@ -482,8 +485,10 @@ def git_blob_sha1(path: Path) -> str:
     return hashlib.sha1(header + body).hexdigest()
 
 
-with PRODUCTION_RECEIPTS.open(encoding="utf-8", newline="") as receipt_file:
-    receipt_rows = list(csv.DictReader(receipt_file, delimiter="\t"))
+receipt_rows: list[dict[str, str]] = []
+for receipt_path in PRODUCTION_RECEIPTS:
+    with receipt_path.open(encoding="utf-8", newline="") as receipt_file:
+        receipt_rows.extend(csv.DictReader(receipt_file, delimiter="\t"))
 
 required_columns = {
     "version",
