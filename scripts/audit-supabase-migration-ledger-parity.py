@@ -264,7 +264,7 @@ APPROVED_REPOSITORY_ONLY = {
     ),
     "20260909142600": (
         "20260909142600_lighthouse_compat_type_preflight.sql",
-        "1396e60ee42a8a4eaca7494cfdec7da876e8e71d",
+        "76cb27d46c791e95f8f0d7a0b383837d602c2fad",
     ),
     "20260909142800": (
         "20260909142800_lighthouse_pattern_identity_preflight.sql",

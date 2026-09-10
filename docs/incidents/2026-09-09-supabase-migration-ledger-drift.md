@@ -198,3 +198,26 @@ dependent objects survive. Fresh databases retain the intended default names.
 Regression fixtures cover both naming conventions, dependent views, named
 calls, UTF-8 output, service-only grants, and two applications of the migration.
 Its repository-only checksum is updated; production history is unchanged.
+
+### Production immutable-observation backfill boundary
+
+After #618 merged, the native production workflow at 2026-09-10 04:51 UTC
+advanced to 513 recorded versions. The compatibility type preflight then
+rolled back because `immutable_live_signal_observation` treats newly added
+legacy-value receipts as observation changes. The runtime contract remains
+pending until this preflight succeeds.
+
+The pending preflight now takes an exclusive table lock, temporarily suspends
+only that exact observation trigger, copies the original values and converts
+storage, then restores the original trigger mode in the same DO transaction.
+Concurrent writers cannot enter during the suspension; failures roll back the
+data, alias, and trigger changes together. The immutable-observation function
+and its allowed lifecycle fields are unchanged. This pending version's source
+checksum is updated explicitly.
+
+The production regression imports the original trigger/function migration,
+reproduces the rejected provenance write, and exercises the actual preflight
+twice under all four trigger modes. It verifies original values and private
+aliases, rejects observation and provenance edits afterward, permits lifecycle
+updates, and forces a conversion failure to prove rollback restores protection.
+Both workflow path filters also watch the source of the fixture's guard.
