@@ -2,6 +2,7 @@ import { router, protectedProcedure, publicProcedure } from "../_core/trpc";
 import { z } from "zod";
 import { db } from "../db";
 import { read_signal_architecture } from "../signal-architecture-read-model";
+import { read_intake_pattern_catalog } from "../intake-pattern-catalog";
 import {
   SIGNAL_ARTIFACT_DOMAINS,
   SIGNAL_CASE_RELATIONSHIPS,
@@ -19,6 +20,8 @@ import {
 } from "../../drizzle/schema";
 
 export const enforcementIntelRouter = router({
+  get_intake_pattern_catalog: protectedProcedure.query(() => read_intake_pattern_catalog()),
+
   get_signal_architecture: protectedProcedure
     .input(
       z.object({

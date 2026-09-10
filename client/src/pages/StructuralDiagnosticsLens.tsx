@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { useWorldIndex } from "@/hooks/useWorldIndex";
+import { diagnosticsView } from "@/lib/diagnosticsView";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -144,6 +145,21 @@ function InterpretationContextPanel({ context }: { context: any }) {
   );
 }
 
+function DiagnosticsReadError({ error, hasData, retry, label }: { error: { message: string }; hasData: boolean; retry: () => void; label: string }) {
+  return <div role="alert" className="mb-4 rounded-lg border border-red-500/30 p-3 text-sm">
+    <p>{label} could not refresh. {hasData ? "The last successful result remains visible." : "Results are unavailable."}</p>
+    <p className="text-muted-foreground">{error.message}</p>
+    <Button size="sm" variant="outline" className="mt-2" onClick={retry}>Retry {label.toLowerCase()}</Button>
+  </div>;
+}
+
+function DiagnosticsReferenceContext() {
+  const worldIndex = useWorldIndex();
+  if (worldIndex.isLoading) return <p role="status">Loading reference context…</p>;
+  if (worldIndex.error) return <p role="alert">Reference context is unavailable: {worldIndex.error.message}</p>;
+  return <p className="mt-2 text-muted-foreground">Bounded World Index sample: {worldIndex.counts.totalNodes} nodes ({worldIndex.counts.signals} signals, {worldIndex.counts.agencies} agencies, {worldIndex.counts.programs} programs).</p>;
+}
+
 export default function StructuralDiagnosticsLens() {
   const [, navigate] = useLocation();
   const searchString = useSearch();
@@ -159,15 +175,16 @@ export default function StructuralDiagnosticsLens() {
   const [filterClaimType, setFilterClaimType] = useState(handoffClaimType);
   const [filterJurisdiction, setFilterJurisdiction] = useState(handoffJurisdiction);
   const [filterDomain, setFilterDomain] = useState(handoffDomain);
-  const [activeTab, setActiveTab] = useState("barriers");
+  const [activeTab, setActiveTab] = useState<"barriers" | "doctrines" | "institutions" | "signals" | "paths" | "live">("barriers");
+  const [showReferenceContext, setShowReferenceContext] = useState(false);
   const [expandedCluster, setExpandedCluster] = useState<string | null>(null);
   const [expandedLiveGroup, setExpandedLiveGroup] = useState<string | null>(null);
 
   // Sync URL params on mount (in case of navigation)
   useEffect(() => {
-    if (handoffClaimType) setFilterClaimType(handoffClaimType);
-    if (handoffJurisdiction) setFilterJurisdiction(handoffJurisdiction);
-    if (handoffDomain) setFilterDomain(handoffDomain);
+    setFilterClaimType(handoffClaimType);
+    setFilterJurisdiction(handoffJurisdiction);
+    setFilterDomain(handoffDomain);
   }, [handoffClaimType, handoffJurisdiction, handoffDomain]);
 
   const hasActiveFilter = !!(filterClaimType || filterJurisdiction || filterDomain);
@@ -195,30 +212,19 @@ export default function StructuralDiagnosticsLens() {
     navigate("/diagnostics", { replace: true });
   }
 
-  // ─── World Index (unified data source) ───
-  const worldIndex = useWorldIndex();
-  const worldSignals = useMemo(() => {
-    const all = worldIndex.nodesByType["signal"] ?? [];
-    if (!filterJurisdiction) return all;
-    return all.filter(s => s.jurisdiction === filterJurisdiction);
-  }, [worldIndex.nodesByType, filterJurisdiction]);
-  const worldAgencies = worldIndex.nodesByType["agency"] ?? [];
-  const worldPrograms = worldIndex.nodesByType["program"] ?? [];
-
-  // ─── Queries ───
-  const barrierClusters = trpc.dualLens.getBarrierClusters.useQuery({});
-  const doctrineClusters = trpc.dualLens.getDoctrineClusters.useQuery({});
-  const institutions = trpc.dualLens.getAffectedInstitutions.useQuery({});
-  const signalPatterns = trpc.dualLens.getSignalPatterns.useQuery({});
-  const systemicPaths = trpc.dualLens.getSystemicPaths.useQuery({});
-  const stats = trpc.dualLens.stats.useQuery();
-
-  // Live signals queries
+  // Load the selected lens only; unrelated reads must not delay this table.
+  const barrierClusters = trpc.dualLens.getBarrierClusters.useQuery({}, { enabled: activeTab === "barriers", select: diagnosticsView.barriers });
+  const doctrineClusters = trpc.dualLens.getDoctrineClusters.useQuery({}, { enabled: activeTab === "doctrines", select: diagnosticsView.doctrines });
+  const institutions = trpc.dualLens.getAffectedInstitutions.useQuery({}, { enabled: activeTab === "institutions", select: diagnosticsView.institutions });
+  const signalPatterns = trpc.dualLens.getSignalPatterns.useQuery({}, { enabled: activeTab === "signals", select: diagnosticsView.signals });
+  const systemicPaths = trpc.dualLens.getSystemicPaths.useQuery({}, { enabled: activeTab === "paths", select: diagnosticsView.paths });
+  const stats = trpc.dualLens.stats.useQuery(undefined, { select: diagnosticsView.stats });
   const detectedSignalsQuery = trpc.dualLens.getLiveSignalsForDiagnostics.useQuery({
     jurisdiction: filterJurisdiction || undefined,
     domain: filterDomain || undefined,
-  });
-  const liveSignalSummary = trpc.dualLens.getLiveSignalSummary.useQuery();
+  }, { enabled: activeTab === "live", select: diagnosticsView.live });
+  const liveSignalSummary = trpc.dualLens.getLiveSignalSummary.useQuery(undefined, { enabled: activeTab === "live", select: diagnosticsView.summary });
+  const selectedQuery = { barriers: barrierClusters, doctrines: doctrineClusters, institutions, signals: signalPatterns, paths: systemicPaths, live: detectedSignalsQuery }[activeTab];
 
   // ─── Client-side filtering helpers ───
   function matchesFilter(text: string): boolean {
@@ -254,7 +260,7 @@ export default function StructuralDiagnosticsLens() {
         return filteredDoctrines.length > 0 ? { ...cluster, count: filteredDoctrines.length, doctrines: filteredDoctrines } : null;
       })
       .filter(Boolean) as typeof doctrineClusters.data.clusters;
-    return { clusters: filtered, totalDoctrines: filtered.reduce((sum, c) => sum + c.count, 0), doctrineEdges: doctrineClusters.data.doctrineEdges };
+    return { clusters: filtered, totalDoctrines: filtered.reduce((sum, c) => sum + c.count, 0), doctrineEdges: doctrineClusters.data.doctrineEdges, doctrineEdgesAvailable: doctrineClusters.data.doctrineEdgesAvailable };
   }, [doctrineClusters.data, filterKeywords, hasActiveFilter]);
 
   // Filter institutions
@@ -323,8 +329,8 @@ export default function StructuralDiagnosticsLens() {
       <div className="border-b border-border/50 bg-card/30">
         <div className="max-w-6xl mx-auto px-4 py-6">
           <div className="flex items-center gap-3 mb-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/resolve")}>
-              <ArrowLeft className="w-4 h-4 mr-1" /> Case Resolution
+            <Button variant="ghost" size="sm" onClick={() => navigate("/signal-registry")}>
+              <ArrowLeft className="w-4 h-4 mr-1" /> Signal Registry
             </Button>
             <span className="text-muted-foreground">/</span>
             <span className="text-sm text-muted-foreground">Structural Diagnostics</span>
@@ -431,7 +437,7 @@ export default function StructuralDiagnosticsLens() {
               </div>
               <div>
                 <span className="text-muted-foreground">Graph Edges:</span>{" "}
-                <span className="font-medium">{stats.data.graph.edges}</span>
+                <span className="font-medium">{stats.data.graph.available ? stats.data.graph.edges : "Unavailable"}</span>
               </div>
               {liveSignalCount > 0 && (
                 <div className="flex items-center gap-1.5">
@@ -445,14 +451,7 @@ export default function StructuralDiagnosticsLens() {
                   )}
                 </div>
               )}
-              {!worldIndex.isLoading && (
-                <div className="flex items-center gap-1.5">
-                  <Layers className="w-3.5 h-3.5 text-blue-400" />
-                  <span className="text-muted-foreground">World Index:</span>{" "}
-                  <span className="font-medium text-blue-400">{worldIndex.counts.totalNodes} nodes</span>
-                  <span className="text-xs text-muted-foreground">({worldSignals.length} signals, {worldAgencies.length} agencies, {worldPrograms.length} programs)</span>
-                </div>
-              )}
+
             </div>
           )}
         </div>
@@ -460,7 +459,18 @@ export default function StructuralDiagnosticsLens() {
 
       {/* Main content */}
       <div className="max-w-6xl mx-auto px-4 py-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        {stats.error && <DiagnosticsReadError error={stats.error} hasData={!!stats.data} retry={() => { void stats.refetch(); }} label="Summary" />}
+        {selectedQuery?.error && <DiagnosticsReadError error={selectedQuery.error} hasData={!!selectedQuery.data} retry={() => { void selectedQuery.refetch(); }} label="Selected diagnostics table" />}
+        {activeTab === "live" && liveSignalSummary.error && <DiagnosticsReadError error={liveSignalSummary.error} hasData={!!liveSignalSummary.data} retry={() => { void liveSignalSummary.refetch(); }} label="Live signal summary" />}
+        <details className="mb-4 text-sm" onToggle={event => setShowReferenceContext(event.currentTarget.open)}>
+          <summary className="cursor-pointer text-muted-foreground">Broader reference context</summary>
+          {showReferenceContext && <DiagnosticsReferenceContext />}
+        </details>
+        <Tabs value={activeTab} onValueChange={value => {
+          if (["barriers", "doctrines", "institutions", "signals", "paths", "live"].includes(value)) {
+            setActiveTab(value as typeof activeTab);
+          }
+        }}>
           <TabsList className="mb-6 flex-wrap">
             <TabsTrigger value="barriers" className="gap-2">
               <AlertTriangle className="w-4 h-4" /> Barrier Clusters
@@ -586,8 +596,8 @@ export default function StructuralDiagnosticsLens() {
                   {hasActiveFilter && doctrineClusters.data && filteredDoctrineClusters.totalDoctrines !== doctrineClusters.data.totalDoctrines && (
                     <span className="text-purple-400"> (filtered from {doctrineClusters.data.totalDoctrines})</span>
                   )}
-                  {" "}across {filteredDoctrineClusters.clusters.length} domains,
-                  connected by {filteredDoctrineClusters.doctrineEdges} graph edges
+                  {" "}across {filteredDoctrineClusters.clusters.length} domains
+                  {filteredDoctrineClusters.doctrineEdgesAvailable ? `, connected by ${filteredDoctrineClusters.doctrineEdges} graph edges` : " · graph connections are not available"}
                 </p>
                 {filteredDoctrineClusters.clusters.length === 0 && hasActiveFilter && (
                   <Card className="border-border/30">
