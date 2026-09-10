@@ -113,3 +113,73 @@ corrected foundation twice against both shapes.
 The production backlog before this rollout is 30 migrations, including the
 three September 9 repair/hardening versions. Their application and the live
 runtime checks remain separate from the successful clean-replay test.
+
+### Recorded signal-view successor
+
+After #616 merged at `13eaf4a`, production applied eight pending versions and
+reached 492 ledger entries. The next pending version, `20260818095500`, failed
+with `cannot drop columns from view`: its 13-column signal-integrity definition
+would remove `live_data_candidate_count` and `live_data_promoted_count`.
+
+Production already records `20260822080454`, whose checked-in definition adds
+those two governance-state counts while retaining the original Atlas metrics.
+The live view definition matches that successor's projection. The pending
+version therefore preserves the successor only when its ledger entry exists
+and the current view exposes both bigint counts and their expected source and
+governance filters. An inconsistent recorded successor raises an exception.
+Fresh replay still executes the original definition in chronological order.
+The pending version's repository-only checksum is updated; the applied
+successor source and production history are unchanged.
+
+The PostgreSQL fixture checks ordered replay, repeat execution against the
+recorded successor without changing its definition or counts, and rejection of
+an invalid successor. Fixture ledger entries exist only inside rolled-back
+transactions in the dedicated loopback test database.
+
+The preservation guard compares PostgreSQL's complete normalized view definition
+with the recorded successor, including every current-row predicate. Regression
+fixtures reject historical Atlas, candidate, and promoted rows independently.
+
+### Predecessor storage preflight
+
+The automatic review of #616 completed after its merge and identified two
+additional predecessor shapes. The original Drizzle patterns table used UUID
+identities and timestamp columns; user workflow tables used quoted camelCase
+columns and PostgreSQL enums. An additive preflight migration, ordered directly
+before the runtime contract, normalizes their storage while retaining original
+values, UUID references, ownership, source citations, and review decisions.
+The runtime migration already applied in previews is unchanged.
+
+The UUID fixture retains foreign-key references and verifies original dates and
+signatures after two executions. The workflow fixture starts with populated
+predecessor tables and checks ownership, nondefault enum values, content, and
+timestamps after two executions. #617 must pass these PostgreSQL regressions,
+fresh replay, preview checks, CI, and completed review before production resumes.
+
+Review of the first #617 revision also identified the pattern write boundary.
+A preceding additive identity migration preserves original UUID primary keys
+and inbound references under `source_pattern_id`, adds deterministic numeric
+runtime IDs, and retains UUID case provenance under `source_case_id`. New writes
+can omit predecessor-only provenance. UUID occurrence links receive an exact
+numeric mapping; unmatched legacy integer links retain their original values,
+and numeric allocation starts above them to prevent invented associations.
+Quoted companion pattern columns are renamed and the predecessor pattern-type
+creation default is supplied. The expanded fixture inserts occurrences for
+both an existing and a newly created pattern after two migration executions.
+
+### Production compatibility-view dependencies
+
+A read-only catalog check found five `compat` views depending on columns that
+still use legacy text/integer types in production: `ingest_runs`,
+`ingested_records`, `live_signals`, `remedy_paths`, and
+`pattern_aggregation_runs`. PostgreSQL rejects their base-column type changes
+while these views exist. The aliases have no additional dependent objects.
+
+An additive type preflight converts these columns and restores each alias in
+the same transaction, retaining its projection, owner, options, comments, and
+effective table/column grants. It removes privileges inherited during recreation
+before restoring the original grants. Original source values remain in provenance
+columns, including invalid dates, numbers, and JSON. The regression first proves
+the original runtime conversion fails against the aliases, then proves both the
+preflight and the actual runtime conversion blocks succeed twice, with unchanged
+alias metadata and no privilege expansion. Applied migration files remain intact.

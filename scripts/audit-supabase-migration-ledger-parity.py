@@ -180,7 +180,7 @@ APPROVED_REPOSITORY_ONLY = {
     ),
     "20260818095500": (
         "20260818095500_signal_architecture_runtime_projection_truth.sql",
-        "af52234965f8641488c56e8a3422ae8aa183287d",
+        "ae8966e23ecc2f13a3fc8255def2a75623ba3270",
     ),
     "20260818210000": (
         "20260818210000_canonical_core_read_boundary.sql",
@@ -261,6 +261,18 @@ APPROVED_REPOSITORY_ONLY = {
     "20260909012009": (
         "20260909012009_rosetta_convergence_service_role_grant.sql",
         "76e88513649508067c77e2fdce1555e281d109ed",
+    ),
+    "20260909142600": (
+        "20260909142600_lighthouse_compat_type_preflight.sql",
+        "1396e60ee42a8a4eaca7494cfdec7da876e8e71d",
+    ),
+    "20260909142800": (
+        "20260909142800_lighthouse_pattern_identity_preflight.sql",
+        "34f215ef4502d5b449595136348f47ab4701d666",
+    ),
+    "20260909142900": (
+        "20260909142900_lighthouse_legacy_runtime_preflight.sql",
+        "bfa46225a2de8f4fc31ebd13819e245bfebfb620",
     ),
     "20260909143000": (
         "20260909143000_lighthouse_runtime_postgres_contract_v1.sql",
