@@ -506,7 +506,7 @@ export const dualLensRouter = router({
       }> = {};
 
       for (const b of allBarriers) {
-        const type = b.barrierType ?? "unknown";
+        const type = b.barrier_type ?? "unknown";
         if (!clusters[type]) {
           clusters[type] = { type, count: 0, severity: b.severity ?? "low", barriers: [] };
         }
@@ -624,11 +624,11 @@ export const dualLensRouter = router({
       }> = [];
 
       const relevantBarriers = input.barrierType
-        ? barriers.filter((b: any) => b.barrierType === input.barrierType)
+        ? barriers.filter((b: any) => b.barrier_type === input.barrierType)
         : barriers.filter((b: any) => b.severity === "critical" || b.severity === "high");
 
       for (const b of relevantBarriers.slice(0, 15)) {
-        const barrierText = (b.barrierType ?? "").toLowerCase();
+        const barrierText = (b.barrier_type ?? "").toLowerCase();
 
         // Find related doctrine
         const relatedDoctrine = doctrines.find((d: any) => {
@@ -643,11 +643,11 @@ export const dualLensRouter = router({
         });
 
         paths.push({
-          barrier: b.barrierType ?? "unknown",
+          barrier: b.barrier_type ?? "unknown",
           severity: b.severity ?? "medium",
           doctrineLink: relatedDoctrine?.name ?? null,
           statuteLink: relatedStatute?.title ?? null,
-          reformPath: b.possibleWorkarounds ? JSON.stringify(b.possibleWorkarounds) : "Further analysis needed",
+          reformPath: as_string_array(b.possible_workarounds).join("; ") || "Further analysis needed",
         });
       }
 
@@ -676,7 +676,7 @@ export const dualLensRouter = router({
       }> = {};
 
       for (const s of signals) {
-        const type = s.signalType ?? "general";
+        const type = s.signal_type ?? "general";
         if (!patterns[type]) {
           patterns[type] = { type, count: 0, signals: [] };
         }
@@ -744,7 +744,7 @@ export const dualLensRouter = router({
         .limit(input.limit);
 
       // Enrich with dataset names
-      const datasetIds = [...new Set(signals.map((s: any) => s.datasetId))];
+      const datasetIds = [...new Set(signals.map((s: any) => s.datasetId).filter((id: any) => id != null && id !== ""))];
       const datasets = datasetIds.length > 0
         ? await db.select({ datasetId: dataStreamRegistry.streamId, datasetName: dataStreamRegistry.streamName })
             .from(dataStreamRegistry)
@@ -754,7 +754,7 @@ export const dualLensRouter = router({
 
       // Cross-reference with signal_registry for known pattern matching
       const knownSignals = await db.select().from(signalRegistry);
-      const knownTypes = new Set(knownSignals.map((s: any) => s.signalType?.toLowerCase()));
+      const knownTypes = new Set(knownSignals.map((s: any) => s.signal_type?.toLowerCase()));
 
       // Group by signal type
       const grouped: Record<string, {
@@ -767,12 +767,12 @@ export const dualLensRouter = router({
           explanation: string;
           patternSummary: string;
           severity: string;
-          confidenceScore: string;
+          confidenceScore: string | null;
           jurisdiction: string;
           domain: string;
           datasetId: string;
           datasetName: string;
-          detectedAt: number;
+          detectedAt: number | null;
           supportingStatistics: any;
           matchesKnownPattern: boolean;
         }>;
@@ -789,14 +789,14 @@ export const dualLensRouter = router({
           signalType: s.signalType,
           title: s.plainLanguageExplanation,
           explanation: s.plainLanguageExplanation,
-          patternSummary: s.narrativeReasoning ?? '',
-          severity: s.severityLevel,
-          confidenceScore: String(s.confidenceScore),
+          patternSummary: s.plainLanguageExplanation ?? '',
+          severity: s.severityLevel || 'unclassified',
+          confidenceScore: s.confidenceScore == null ? null : String(s.confidenceScore),
           jurisdiction: s.jurisdictionScope ?? '',
-          domain: s.datasetId,
-          datasetId: s.datasetId,
-          datasetName: datasetNameMap[s.datasetId] ?? s.datasetId,
-          detectedAt: s.detectionTimestamp,
+          domain: s.datasetId ?? '',
+          datasetId: s.datasetId ?? '',
+          datasetName: datasetNameMap[s.datasetId] ?? s.datasetId ?? 'Source not recorded',
+          detectedAt: s.detectionTimestamp == null ? null : new Date(s.detectionTimestamp).getTime(),
           supportingStatistics: s.crossSignalLinks ?? {},
           matchesKnownPattern: knownTypes.has(s.signalType.toLowerCase()),
         });
@@ -856,7 +856,7 @@ export const dualLensRouter = router({
 
     return {
       total_active: totalResult?.count ?? 0,
-      by_severity: Object.fromEntries(bySeverity.map((r: any) => [r.severity, r.count])),
+      by_severity: Object.fromEntries(bySeverity.map((r: any) => [r.severity || "unclassified", r.count])),
       by_domain: Object.fromEntries(byDomain.map((r: any) => [r.domain, r.count])),
       by_type: Object.fromEntries(byType.map((r: any) => [r.signalType, r.count])),
       last_detected_at: latest?.detectedAt ?? null,

@@ -49,7 +49,7 @@ vi.mock("@/lib/trpc", () => ({
   },
 }));
 
-import StructuralDiagnosticsLens from "./StructuralDiagnosticsLens";
+import StructuralDiagnosticsLens, { formatRecordedConfidence, formatTimeAgo } from "./StructuralDiagnosticsLens";
 
 beforeEach(() => {
   state.reads = {};
@@ -105,7 +105,7 @@ beforeEach(() => {
           signals: [
             {
               id: 1,
-              signalId: "SIG-1",
+              signal_type: "repeated_denial", domain: "employment",
               explanation: "A recorded signal explanation",
             },
           ],
@@ -159,8 +159,17 @@ it("renders the snake_case API responses across every diagnostics panel", () => 
   expect(html).toContain("out of 40 total agencies");
   expect(html).toContain("A recorded signal explanation");
   expect(html).toContain("identified from 10 barriers");
-  expect(html).toContain("Active Signals");
+  expect(html).toContain("Recorded Signals");
   expect(html).toContain("Unavailable");
+});
+
+it("distinguishes absent confidence and dates from a recorded zero", () => {
+  expect(formatRecordedConfidence(null)).toBe("Not recorded");
+  expect(formatRecordedConfidence("null")).toBe("Not recorded");
+  expect(formatRecordedConfidence("0")).toBe("0%");
+  expect(formatRecordedConfidence("0.8")).toBe("80%");
+  expect(formatTimeAgo(null)).toBe("Date not recorded");
+  expect(formatTimeAgo("invalid")).toBe("Date unresolved");
 });
 
 it("requests only the initial table and summary, leaving broader context on demand", () => {
