@@ -155,3 +155,14 @@ signatures after two executions. The workflow fixture starts with populated
 predecessor tables and checks ownership, nondefault enum values, content, and
 timestamps after two executions. #617 must pass these PostgreSQL regressions,
 fresh replay, preview checks, CI, and completed review before production resumes.
+
+Review of the first #617 revision also identified the pattern write boundary.
+A preceding additive identity migration preserves original UUID primary keys
+and inbound references under `source_pattern_id`, adds deterministic numeric
+runtime IDs, and retains UUID case provenance under `source_case_id`. New writes
+can omit predecessor-only provenance. UUID occurrence links receive an exact
+numeric mapping; unmatched legacy integer links retain their original values,
+and numeric allocation starts above them to prevent invented associations.
+Quoted companion pattern columns are renamed and the predecessor pattern-type
+creation default is supplied. The expanded fixture inserts occurrences for
+both an existing and a newly created pattern after two migration executions.

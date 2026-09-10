@@ -262,6 +262,10 @@ APPROVED_REPOSITORY_ONLY = {
         "20260909012009_rosetta_convergence_service_role_grant.sql",
         "76e88513649508067c77e2fdce1555e281d109ed",
     ),
+    "20260909142800": (
+        "20260909142800_lighthouse_pattern_identity_preflight.sql",
+        "34f215ef4502d5b449595136348f47ab4701d666",
+    ),
     "20260909142900": (
         "20260909142900_lighthouse_legacy_runtime_preflight.sql",
         "bfa46225a2de8f4fc31ebd13819e245bfebfb620",
