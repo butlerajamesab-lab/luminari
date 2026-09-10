@@ -54,8 +54,8 @@ export interface MessageAuthorBinding {
   verification_state: 'verified';
 }
 
-export const LAYER_VERSION = '2.6.3';
-export const RULE_VERSION = '2.6.3';
+export const LAYER_VERSION = '2.6.4';
+export const RULE_VERSION = '2.6.4';
 
 const CARE_PERSON_NAME = "[A-Z][a-z]+(?:[’'-][A-Z]?[a-z]+)*(?:[ \\t]+[A-Z][a-z]+(?:[’'-][A-Z]?[a-z]+)*){0,3}";
 const CARE_DECLARANT = `(?:I|${CARE_PERSON_NAME})`;
@@ -144,6 +144,36 @@ export const RULE_MANIFEST = {
   },
   care_classification_scope: 'affirmative_explicit_recipient_same_artifact_exact_name_only',
   care_classification_identity: 'recompute_person_identity_preserve_original_name_and_source_mentions',
+  clinical_subject_pattern: {
+    source: `\\b(${CARE_PERSON_NAME})[’']s[ \\t]+(?:[a-z][a-z-]*[ \\t]+){0,4}(?:diagnosis|care assessment)[ \\t]+(?:is|was|remains|remained)\\b(?![ \\t]+(?:not|no|false|untrue|uncertain|unconfirmed|disputed|inconclusive)\\b)`,
+    flags: 'g',
+  },
+  clinical_human_care_context: {
+    source: '\\b(?:care (?:conference|plan)|nursing (?:care|assessment|home)|long[- ]term care|skilled nursing|resident care|clinical assessment|patient care)\\b',
+    flags: 'i',
+  },
+  clinical_nonhuman_context: {
+    source: "^\\s*(?:(?:(?:veterinar(?:y|ian)|canine|feline|equine|animal|pet|dog|cat|horse|software|computer|device|engine|vehicle|robot)\\s+){1,3}(?:care (?:conference|plan)|assessment|record|patient (?:record|assessment))(?:\\s+(?:agenda|summary))?(?:\\s+for\\s+(?:the\\s+|a\\s+)?[A-Za-z][A-Za-z '-]{0,60})?|care (?:conference|plan)\\s+for\\s+(?:the\\s+|a\\s+)?(?:animal|pet|dog|cat|horse|software|computer|device|engine|vehicle|robot))\\s*[:.]?\\s*$",
+    flags: 'i',
+  },
+  clinical_nonhuman_subject: {
+    source: '\\b(?:veterinar(?:y|ian)|canine|feline|equine|animal|pet|dog|cat|horse|software|computer|device|engine|vehicle|robot)\\b',
+    flags: 'i',
+  },
+  clinical_eponym_pattern: { source: "^[’']s\\s+(?:disease|syndrome)\\b", flags: 'i' },
+  clinical_uncertain_remainder: {
+    source: "\\b(?:not|never|no longer|possibly|perhaps|maybe|potentially|uncertain|unconfirmed|unverified|disputed|inconclusive|false|untrue|incorrect|pending|if|whether)\\b|n[’']t\\b",
+    flags: 'i',
+  },
+  clinical_context_scope: 'nonhuman_subject_or_explicit_heading_only_uncertainty_in_source_sentence_prefix_and_remainder_including_ocr_wraps',
+  clinical_context_radius: 600,
+  clinical_classification_scope: 'source_named_subject_with_local_human_care_cue_same_message_or_page',
+  clinical_claim_policy: 'classify_subject_only_do_not_verify_diagnosis_or_assert_alias_equivalence',
+  clinical_organization_exclusion: 'reject_candidates_matching_organization_patterns_or_business_suffixes',
+  clinical_business_suffix_pattern: {
+    source: '\\b(?:Inc|LLC|Corp|Corporation|Company|Co)\\.?$',
+    flags: 'i',
+  },
   mention_context: {
     policy: 'exact_source_slice_within_smallest_containing_parsed_span',
     max_chars: 600,
@@ -165,6 +195,13 @@ export const RULE_MANIFEST_HASH = computeRuleManifestHash(RULE_MANIFEST);
 const PERSON_PATTERNS = RULE_MANIFEST.person_patterns.map(regexFromManifest);
 const CARE_RECIPIENT_PATTERNS = RULE_MANIFEST.explicit_care_recipient_patterns.map(regexFromManifest);
 const CARE_UNCERTAIN_PREFIX = regexFromManifest(RULE_MANIFEST.care_classification_uncertain_prefix);
+const CLINICAL_SUBJECT_PATTERN = regexFromManifest(RULE_MANIFEST.clinical_subject_pattern);
+const CLINICAL_HUMAN_CONTEXT = regexFromManifest(RULE_MANIFEST.clinical_human_care_context);
+const CLINICAL_NONHUMAN_CONTEXT = regexFromManifest(RULE_MANIFEST.clinical_nonhuman_context);
+const CLINICAL_NONHUMAN_SUBJECT = regexFromManifest(RULE_MANIFEST.clinical_nonhuman_subject);
+const CLINICAL_EPONYM_PATTERN = regexFromManifest(RULE_MANIFEST.clinical_eponym_pattern);
+const CLINICAL_UNCERTAIN_REMAINDER = regexFromManifest(RULE_MANIFEST.clinical_uncertain_remainder);
+const CLINICAL_BUSINESS_SUFFIX = regexFromManifest(RULE_MANIFEST.clinical_business_suffix_pattern);
 const AMBIGUOUS_NAME_PATTERNS = RULE_MANIFEST.ambiguous_name_patterns.map(regexFromManifest);
 const ORG_PATTERNS = RULE_MANIFEST.organization_patterns.map(regexFromManifest);
 const ADDRESS_PATTERN = regexFromManifest(RULE_MANIFEST.address_pattern);
@@ -263,7 +300,7 @@ export function processLayer6(input: Layer6Input): EngineResult<Entity[]> {
     for (const span of semanticSpans) {
       const text = span.text;
 
-      for (const mention of explicitCareRecipientMentions(text)) {
+      for (const mention of [...explicitCareRecipientMentions(text), ...explicitClinicalSubjectMentions(span, artifact)]) {
         const names = personEvidenceByArtifact.get(artifact.artifact_key) ?? new Set<string>();
         names.add(normalizeEntityName(mention.raw_name, 'person'));
         personEvidenceByArtifact.set(artifact.artifact_key, names);
@@ -351,7 +388,7 @@ export function processLayer6(input: Layer6Input): EngineResult<Entity[]> {
   }
 
   // A bare mention is no longer unknown when the same source explicitly names
-  // that person as a care recipient. Evidence in another document cannot make
+  // that person as a care recipient or clinical subject. Another document cannot make
   // that identity decision, and near matches remain review-only.
   for (const [key, entity] of entityMap) {
     if (entity.type !== 'unknown') continue;
@@ -444,6 +481,59 @@ function explicitCareRecipientMentions(text: string): Array<{ raw_name: string; 
     }
   }
   return mentions;
+}
+
+function explicitClinicalSubjectMentions(
+  span: ParsedArtifact['spans'][number], artifact: ParsedArtifact,
+): Array<{ raw_name: string; offset: number }> {
+  const mentions: Array<{ raw_name: string; offset: number }> = [];
+  if (span.text.includes('?')) return mentions;
+  CLINICAL_SUBJECT_PATTERN.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = CLINICAL_SUBJECT_PATTERN.exec(span.text)) !== null) {
+    if (isExcludedPersonMention(match[1]) || isClinicalOrganizationCandidate(match[1])) continue;
+    const possessiveAssertion = match[0].slice(match[1].length);
+    if (CLINICAL_EPONYM_PATTERN.test(possessiveAssertion) || CLINICAL_NONHUMAN_SUBJECT.test(match[0])) continue;
+    const absoluteOffset = span.start_offset + match.index;
+    const assertionEnd = absoluteOffset + match[0].length;
+    if (artifact.extracted_text.slice(absoluteOffset, assertionEnd) !== match[0]) continue;
+    // OCR lines share a page; SMS messages must never borrow a human-care cue
+    // from a different message. Archive members must not borrow across images.
+    const sourceSpans = span.source_kind === 'sms_message'
+      ? artifact.spans.filter(source => source.start_offset <= absoluteOffset && source.end_offset >= assertionEnd)
+      : artifact.spans.filter(source => source.page === span.page && source.archive_member_path === span.archive_member_path);
+    if (sourceSpans.length === 0) continue;
+    const sourceStart = Math.min(...sourceSpans.map(source => source.start_offset));
+    const sourceEnd = Math.max(...sourceSpans.map(source => source.end_offset));
+    const prefix = artifact.extracted_text.slice(Math.max(sourceStart, absoluteOffset - RULE_MANIFEST.clinical_context_radius), absoluteOffset)
+      .split(/[.!?;]/).at(-1) ?? '';
+    if (CARE_UNCERTAIN_PREFIX.test(`${prefix} ${match[1]}`)) continue;
+    // "the dog Rowan's diagnosis" binds a nonhuman subject, whereas a later
+    // reference to medical devices or gross motor skills does not.
+    const subjectPrefix = prefix.match(/(?:^|\s)((?:[A-Za-z]+\s+){0,2}[A-Za-z]+)\s*$/)?.[1] ?? '';
+    if (CLINICAL_NONHUMAN_SUBJECT.test(subjectPrefix)) continue;
+    const context = artifact.extracted_text.slice(
+      Math.max(sourceStart, absoluteOffset - RULE_MANIFEST.clinical_context_radius),
+      Math.min(sourceEnd, assertionEnd + RULE_MANIFEST.clinical_context_radius),
+    );
+    if (!CLINICAL_HUMAN_CONTEXT.test(context)
+      || context.split(/[\r\n]/).some(line => CLINICAL_NONHUMAN_CONTEXT.test(line))) continue;
+    // OCR paragraphs may be split into line spans. Read the remainder from the
+    // original source through this sentence, never from a subsequent sentence.
+    const remainder = artifact.extracted_text.slice(assertionEnd, Math.min(sourceEnd, assertionEnd + RULE_MANIFEST.clinical_context_radius))
+      .split(/[.!?;]/, 1)[0];
+    if (CLINICAL_UNCERTAIN_REMAINDER.test(remainder)) continue;
+    mentions.push({ raw_name: match[1], offset: match.index });
+  }
+  return mentions;
+}
+
+function isClinicalOrganizationCandidate(rawName: string): boolean {
+  if (CLINICAL_BUSINESS_SUFFIX.test(rawName)) return true;
+  return ORG_PATTERNS.some(pattern => {
+    pattern.lastIndex = 0;
+    return pattern.test(rawName);
+  });
 }
 
 function addBoundEntity(
