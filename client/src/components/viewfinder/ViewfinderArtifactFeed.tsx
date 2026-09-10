@@ -36,7 +36,6 @@ export function ViewfinderEvidence({ item }: { item: Artifact }) {
       staleTime: 0,
       refetchInterval: VIEWFINDER_REFRESH_MS,
       refetchOnWindowFocus: true,
-      retry: 1,
     },
   );
   const errorCode = detail.error?.data?.code;
@@ -102,7 +101,6 @@ export function ViewfinderArtifactFeed({ domain }: { domain: Domain }) {
       refetchInterval: VIEWFINDER_REFRESH_MS,
       refetchOnWindowFocus: true,
       refetchOnReconnect: true,
-      retry: 1,
     },
   );
   const accessDenied = feed.error?.data?.code === "UNAUTHORIZED" || feed.error?.data?.code === "FORBIDDEN";

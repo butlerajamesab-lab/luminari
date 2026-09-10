@@ -296,7 +296,6 @@ export default function AnomalyViewfinder() {
     refetchInterval: VIEWFINDER_REFRESH_MS,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
-    retry: 1,
   });
 
   const liveStates = useMemo(

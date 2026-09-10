@@ -66,6 +66,15 @@ describe("Viewfinder canonical feed", () => {
     expect(state.listQuery.mock.lastCall?.[0].domain).toBe("legal_pattern");
   });
 
+  it("inherits the app retry policy for all three polling reads", () => {
+    renderToStaticMarkup(<AnomalyViewfinder />);
+    state.detailQuery.mockReturnValue({ data: undefined, error: null });
+    renderToStaticMarkup(<ViewfinderEvidence item={item(1) as any} />);
+    for (const query of [state.stateQuery, state.listQuery, state.detailQuery]) {
+      expect(query.mock.lastCall?.[1]).not.toHaveProperty("retry");
+    }
+  });
+
   it("does not run protected reads or show cached records to a signed-out visitor", () => {
     state.user = null;
     const html = renderToStaticMarkup(<AnomalyViewfinder />);
