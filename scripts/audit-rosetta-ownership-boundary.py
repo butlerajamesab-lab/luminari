@@ -1,53 +1,71 @@
+"""Keep Rosetta implementation out of Lighthouse, including candidate packages."""
 from __future__ import annotations
 
 import re
+import subprocess
 from pathlib import Path
 
-MIGRATION_ROOT = Path("supabase/migrations")
+ROOT = Path(__file__).resolve().parents[1]
+OWNER_DIRECTORIES = {"rosetta-candidates", "rosetta-owner"}
+OWNER_MODULE = re.compile(r"semantic-clause-.*\.(?:js|cjs|mjs|ts)$", re.IGNORECASE)
+IDENTIFIER = r'"?[a-z_][a-z_0-9]*"?'
+QUALIFIER = rf"(?:{IDENTIFIER}\s*\.\s*)?"
+DECLARATION = (
+    r"\bcreate\s+(?:or\s+replace\s+)?(?:unlogged\s+)?"
+    r"(?:function|procedure|table|(?:materialized\s+)?view)\s+"
+    r"(?:if\s+not\s+exists\s+)?"
+)
+OWNER_OBJECT = (
+    r'"?(?:run_rosetta_[a-z_0-9]*|rosetta_[a-z_0-9]*|v_rosetta_[a-z_0-9]*'
+    r'|hr1_raw_blocks|help_entity|workflow_pipeline|workflow_step'
+    r'|accountability_route|escalation_node|entity_override|term_definition)\b"?'
+)
+OWNER_DDL = re.compile(DECLARATION + QUALIFIER + OWNER_OBJECT, re.IGNORECASE)
+OWNER_SCHEMA = re.compile(
+    r'\bcreate\s+schema\s+(?:if\s+not\s+exists\s+)?"?rosetta(?:_[a-z_0-9]+)?\b"?',
+    re.IGNORECASE,
+)
 
-FORBIDDEN = {
-    "canonical_producer": re.compile(
-        r"create\s+(?:or\s+replace\s+)?function\s+public\.run_rosetta_v3_extraction\b",
-        re.IGNORECASE,
-    ),
-    "structural_repair_queue": re.compile(
-        r"create\s+(?:table\s+if\s+not\s+exists\s+|table\s+)public\.rosetta_structural_repair_queue\b",
-        re.IGNORECASE,
-    ),
-    "canonical_clause": re.compile(
-        r"create\s+(?:table\s+if\s+not\s+exists\s+|table\s+)public\.rosetta_canonical_clause\b",
-        re.IGNORECASE,
-    ),
-    "clause_occurrence": re.compile(
-        r"create\s+(?:table\s+if\s+not\s+exists\s+|table\s+)public\.rosetta_clause_occurrence\b",
-        re.IGNORECASE,
-    ),
-    "reconciliation_producer": re.compile(
-        r"create\s+(?:or\s+replace\s+)?function\s+public\.rosetta_reconcile_structural_correctness\b",
-        re.IGNORECASE,
-    ),
-    "versioned_rosetta_engine": re.compile(
-        r"create\s+(?:or\s+replace\s+)?function\s+public\.rosetta_v\d+_.*(?:extract|reconcil|canonical_output)\b",
-        re.IGNORECASE,
-    ),
-}
 
-violations: list[str] = []
-for path in sorted(MIGRATION_ROOT.glob("*.sql")):
-    sql = path.read_text(encoding="utf-8")
-    # Comments explain historical ownership and are not executable DDL. Strip
-    # line comments before checking so the retirement marker can document the
-    # forbidden surface without tripping the executable-boundary audit.
-    executable = re.sub(r"--[^\n]*", "", sql)
-    for label, pattern in FORBIDDEN.items():
-        if pattern.search(executable):
-            violations.append(f"{path.name}:{label}")
+def ownership_violations(path: Path, content: str = "") -> list[str]:
+    """Inspect one repository-relative path without requiring a git checkout."""
+    violations = []
+    if OWNER_DIRECTORIES.intersection(part.lower() for part in path.parts):
+        violations.append("rosetta_owner_package")
+    if OWNER_MODULE.fullmatch(path.name):
+        violations.append("rosetta_semantic_implementation")
+    if path.suffix.lower() == ".sql":
+        # Retirement markers document historical ownership without defining it.
+        executable = re.sub(r"/\*.*?\*/|--[^\n]*", "", content, flags=re.DOTALL)
+        if OWNER_DDL.search(executable):
+            violations.append("rosetta_owner_ddl")
+        if OWNER_SCHEMA.search(executable):
+            violations.append("rosetta_owner_schema")
+    return violations
 
-print(f"ROSETTA_OWNERSHIP_VIOLATION_COUNT={len(violations)}")
-for violation in violations:
-    print(f"ROSETTA_OWNERSHIP_VIOLATION={violation}")
 
-if violations:
-    raise SystemExit(1)
+def audit_repository(root: Path) -> list[str]:
+    # A candidate or generator package is ownership, even outside migrations.
+    result = subprocess.run(
+        ["git", "ls-files", "-z"], cwd=root, check=True, capture_output=True,
+    )
+    paths = [Path(name) for name in result.stdout.decode().split("\0") if name]
+    violations = []
+    for path in sorted(paths):
+        content = (root / path).read_text(encoding="utf-8") if path.suffix.lower() == ".sql" else ""
+        violations.extend(f"{path.as_posix()}:{label}" for label in ownership_violations(path, content))
+    return violations
 
-print("ROSETTA_OWNERSHIP_BOUNDARY=PASS")
+
+def main() -> None:
+    violations = audit_repository(ROOT)
+    print(f"ROSETTA_OWNERSHIP_VIOLATION_COUNT={len(violations)}")
+    for violation in violations:
+        print(f"ROSETTA_OWNERSHIP_VIOLATION={violation}")
+    if violations:
+        raise SystemExit(1)
+    print("ROSETTA_OWNERSHIP_BOUNDARY=PASS")
+
+
+if __name__ == "__main__":
+    main()
