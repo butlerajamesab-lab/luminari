@@ -218,4 +218,57 @@ describe('source-bound care recipient person classification', () => {
       expect(result.data.find(entity => entity.canonical_name === name.toLowerCase())?.type).toBe('organization');
     }
   });
+
+  it.each([
+    'Alzheimer’s disease diagnosis remains recorded.',
+    'Somerton’s disease diagnosis is recorded.',
+    'Somerton’s syndrome diagnosis remains recorded.',
+  ])('does not turn a possessive illness eponym into a patient: %s', sentence => {
+    const source = artifact(['Care Conference Agenda', sentence]);
+    expect(processLayer6({ artifacts: [source] }).data.some(entity => entity.type === 'person')).toBe(false);
+  });
+
+  it.each([
+    'The assessment reviews gross motor skills.',
+    'The patient uses a medical device.',
+    'The medical device is not ready.',
+    'Veterinary care was discussed for a neighbor’s pet.',
+  ])('does not let unrelated clinical context veto a person: %s', following => {
+    const source = artifact(['Care Conference Agenda', 'Rowan’s dementia diagnosis remains recorded.', following]);
+    source.extraction_method = 'tesseract_ocr';
+    source.spans = source.spans.map(span => ({ ...span, source_kind: 'ocr_page', page: 1 }));
+    expect(processLayer6({ artifacts: [source] }).data.find(entity => entity.canonical_name === 'rowan')?.type).toBe('person');
+  });
+
+  it.each([
+    ['Care Conference Agenda', 'The dog Rowan’s diagnosis remains recorded.'],
+    ['Care Conference Agenda', 'Rowan’s software diagnosis is recorded.'],
+    ['Device care plan', 'Rowan’s diagnosis remains recorded.'],
+    ['Care plan for the dog', 'Rowan’s diagnosis remains recorded.'],
+  ])('excludes a linked nonhuman subject or heading: %s; %s', (heading, sentence) => {
+    expect(processLayer6({ artifacts: [artifact([heading, sentence])] }).data.some(entity => entity.type === 'person')).toBe(false);
+  });
+
+  it.each([
+    'Rowan’s diagnosis is still not confirmed.',
+    'Rowan’s diagnosis remains possibly incorrect.',
+    'Rowan’s diagnosis remains under review and unverified.',
+  ])('keeps uncertainty later in the same assertion unresolved: %s', sentence => {
+    const subject = processLayer6({ artifacts: [artifact(['Care Conference Agenda', sentence])] }).data.find(entity => entity.canonical_name === 'rowan');
+    expect(subject?.type).toBe('unknown');
+  });
+
+  it('retains an OCR-wrapped uncertainty qualifier in the same source sentence', () => {
+    const source = artifact(['Care Conference Agenda', 'Rowan’s diagnosis is still', 'not confirmed.']);
+    source.extraction_method = 'tesseract_ocr';
+    source.spans = source.spans.map(span => ({ ...span, source_kind: 'ocr_page', page: 1 }));
+    expect(processLayer6({ artifacts: [source] }).data.find(entity => entity.canonical_name === 'rowan')?.type).toBe('unknown');
+  });
+
+  it('retains an OCR-wrapped conditional prefix in the same source sentence', () => {
+    const source = artifact(['Care Conference Agenda', 'If', 'Rowan’s diagnosis is recorded, request review.']);
+    source.extraction_method = 'tesseract_ocr';
+    source.spans = source.spans.map(span => ({ ...span, source_kind: 'ocr_page', page: 1 }));
+    expect(processLayer6({ artifacts: [source] }).data.find(entity => entity.canonical_name === 'rowan')?.type).toBe('unknown');
+  });
 });
