@@ -68,7 +68,8 @@ export function filter_source_events(
     (!filters.document_id || event.document_id === filters.document_id)
     && (!filters.scope || event.event_scope === filters.scope)
     && (!filters.status || event.fact_status === filters.status)
-    && (!query || [event.observed_event, event.document_filename, event.actor, event.event_date]
+    && (!query || [event.observed_event, event.document_filename, event.actor, event.event_date,
+      event.source_message_local_time, event.source_message_timestamp_text]
       .some(value => value?.toLocaleLowerCase().includes(query))),
   );
 }

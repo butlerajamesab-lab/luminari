@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   humanize_chronology_value,
   project_legacy_event_to_chronology,
+  source_message_time_label,
   sort_chronology_records,
 } from "./chronologyProjection";
 
@@ -55,6 +56,28 @@ describe("project_legacy_event_to_chronology", () => {
     expect(record.source_references).toContain(
       "intake_event:event-shared@variant-a",
     );
+  });
+
+  it("retains source-local clock provenance without upgrading the date to an exact instant", () => {
+    const localTime = {
+      source_message_local_time: "2026-01-05T23:59:42",
+      source_message_timezone: "unknown" as const,
+      source_message_timestamp_text: "Jan 5, 2026 11:59:42 PM",
+    };
+    const record = project_legacy_event_to_chronology({
+      id: "html-event", title: "I visited the facility.", documentId: 42,
+      dateOccurred: "2026-01-05", projection_source: "universal_intake_spine",
+      canonical_date_precision: "exact", canonical_verification_status: "document_stated", ...localTime,
+    });
+    expect(record).toMatchObject({ ...localTime, event_date: "2026-01-05", event_date_precision: "exact_date", fact_status: "document_stated" });
+    expect(source_message_time_label(record)).toBe("Source time: Jan 5, 2026 11:59:42 PM · timezone not recorded");
+    expect(source_message_time_label({ source_message_local_time: "2026-01-05T23:59:42", source_message_timezone: "unknown" })).toBe("Source time: 2026-01-05 23:59:42 · timezone not recorded");
+  });
+
+  it("leaves existing XML-style chronology shapes unchanged when local provenance is absent", () => {
+    const record = project_legacy_event_to_chronology({ id: "xml-event", title: "A visit", projection_source: "universal_intake_spine" });
+    for (const field of ["source_message_local_time", "source_message_timezone", "source_message_timestamp_text"]) expect(record).not.toHaveProperty(field);
+    expect(source_message_time_label(record)).toBeNull();
   });
 });
 

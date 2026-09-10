@@ -14,6 +14,7 @@ import {
   cmsSurveyDate,
   isDateOutsideCmsRecordRange,
   isExcludedFromDominantSemanticLane,
+  sourceMessageLocalTimestamp,
   SEMANTIC_SUBSTRATE_VERSION,
   semanticSentenceBounds,
   semanticSpansForArtifact,
@@ -30,6 +31,9 @@ export interface StateTransition {
   source_text: string;
   verification_status: FactStatus;
   transition_scope?: 'case_specific' | 'facility_wide';
+  source_message_local_time?: string;
+  source_message_timezone?: 'unknown';
+  source_message_timestamp_text?: string;
 }
 
 export interface Layer9Input {
@@ -37,8 +41,8 @@ export interface Layer9Input {
   artifacts: ParsedArtifact[];
 }
 
-export const LAYER_VERSION = '2.7.0';
-export const RULE_VERSION = '2.7.0';
+export const LAYER_VERSION = '2.7.1';
+export const RULE_VERSION = '2.7.1';
 
 type StateRule = {
   regex: { source: string; flags: string };
@@ -60,7 +64,7 @@ export const RULE_MANIFEST: {
   missing_date_policy: 'null';
   from_state_policy: 'null_without_explicit_prior_state_rule';
   semantic_substrate_version: string;
-  sms_transition_date_policy: 'message_timestamp_when_sentence_has_no_explicit_date';
+  sms_transition_date_policy: 'message_timestamp_or_source_local_date_when_no_explicit_date_preserve_unknown_timezone';
   mixed_corpus_scope_policy: 'retain_with_case_specific_or_facility_wide_scope';
   fragment_policy: 'require_state_marker_and_bounded_entity_mention';
 } = {
@@ -126,7 +130,7 @@ export const RULE_MANIFEST: {
   missing_date_policy: 'null',
   from_state_policy: 'null_without_explicit_prior_state_rule',
   semantic_substrate_version: SEMANTIC_SUBSTRATE_VERSION,
-  sms_transition_date_policy: 'message_timestamp_when_sentence_has_no_explicit_date',
+  sms_transition_date_policy: 'message_timestamp_or_source_local_date_when_no_explicit_date_preserve_unknown_timezone',
   mixed_corpus_scope_policy: 'retain_with_case_specific_or_facility_wide_scope',
   fragment_policy: 'require_state_marker_and_bounded_entity_mention',
 };
@@ -171,6 +175,13 @@ export function processLayer9(input: Layer9Input): EngineResult<StateTransition[
     }
 
     const artifactClass = classifySemanticArtifact(artifact);
+    if (artifact.extraction_method === 'sms_backup_html') {
+      unresolved.push({
+        field: `artifact:${artifact.artifact_key}:message_timezone`,
+        reason: 'unresolved',
+        detail: 'SMS HTML displays local calendar dates and times without a verified timezone; transition dates retain the source calendar date only',
+      });
+    }
     const transitionScope = artifactClass === 'cms_2567' ? 'facility_wide' : 'case_specific';
     const surveyDate = artifactClass === 'cms_2567' ? cmsSurveyDate(artifact) : null;
 
@@ -208,7 +219,9 @@ export function processLayer9(input: Layer9Input): EngineResult<StateTransition[
           }
 
           const entity = entities[0];
-          const transitionDate = extractDate(sentence) ?? span.occurred_at?.slice(0, 10) ?? null;
+          const explicitDate = extractDate(sentence);
+          const localTimestamp = sourceMessageLocalTimestamp(span);
+          const transitionDate = explicitDate ?? span.occurred_at?.slice(0, 10) ?? localTimestamp?.slice(0, 10) ?? null;
           if (
             artifactClass === 'cms_2567'
             && transitionDate
@@ -240,6 +253,11 @@ export function processLayer9(input: Layer9Input): EngineResult<StateTransition[
             source_text: sentence,
             verification_status: 'document_stated',
             transition_scope: transitionScope,
+            ...(!explicitDate && !span.occurred_at && localTimestamp ? {
+              source_message_local_time: localTimestamp,
+              source_message_timezone: 'unknown' as const,
+              ...(span.source_timestamp_text ? { source_message_timestamp_text: span.source_timestamp_text } : {}),
+            } : {}),
           });
         }
       }

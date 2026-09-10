@@ -38,6 +38,9 @@ export async function getCaseTimelineData(caseId: number): Promise<any[]> {
       canonical_source_span_offset: event.canonical_source_span_offset ?? null,
       canonical_output_hashes: event.canonical_output_hashes ?? [],
       canonical_receipt_hashes: event.canonical_receipt_hashes ?? [],
+      ...(event.source_message_local_time !== undefined ? { source_message_local_time: event.source_message_local_time } : {}),
+      ...(event.source_message_timezone !== undefined ? { source_message_timezone: event.source_message_timezone } : {}),
+      ...(event.source_message_timestamp_text !== undefined ? { source_message_timestamp_text: event.source_message_timestamp_text } : {}),
     };
   }).sort((left: any, right: any) =>
     left.sortKey - right.sortKey

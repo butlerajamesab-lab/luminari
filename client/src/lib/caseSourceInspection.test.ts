@@ -8,6 +8,13 @@ const events = project_source_events([
 ]);
 
 describe("source inspection", () => {
+  it("preserves and searches source-local clock text without timezone conversion", () => {
+    const localTime = { source_message_local_time: "2026-01-05T23:59:42", source_message_timezone: "unknown" as const, source_message_timestamp_text: "Jan 5, 2026 11:59:42 PM" };
+    const projected = project_source_events([{ id: "message", title: "I visited the facility.", documentId: 12, dateOccurred: "2026-01-05", projection_source: "universal_intake_spine", ...localTime }]);
+    expect(projected[0]).toMatchObject({ ...localTime, event_date: "2026-01-05" });
+    expect(filter_source_events(projected, { query: "11:59:42 PM" })).toEqual(projected);
+    expect(inspect_document_pair(projected, 12, 15).source_events[0]).toMatchObject(localTime);
+  });
   it("keeps exact document/source/offset/status while filtering scope, text and document", () => {
     const result = filter_source_events(events, { document_id: "12", scope: "case_specific", query: "ADA", status: "document_stated" });
     expect(result).toHaveLength(1);

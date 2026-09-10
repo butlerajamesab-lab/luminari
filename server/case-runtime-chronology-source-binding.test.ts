@@ -19,6 +19,7 @@ import {
   getCaseChronologyProjectionState,
   listEvents,
 } from "./case-runtime-chronology-compat";
+import { getCaseTimelineData } from "./case-timeline-intake-compat";
 
 const chronology = [
   {
@@ -139,6 +140,46 @@ describe("chronology Layer 3 source binding", () => {
       projection_state: "canonical_projection",
       event_count: 1,
     });
+  });
+
+  it("preserves source-local message time through both chronology adapters without adding a timezone", async () => {
+    const localTime = {
+      source_message_local_time: "2026-08-30T23:59:42",
+      source_message_timezone: "unknown",
+      source_message_timestamp_text: "Aug 30, 2026 11:59:42 PM",
+    };
+    const localChronology = [{ ...chronology[0], ...localTime }];
+    const localHash = computeHash(localChronology);
+    mocks.query.mockImplementation(async (sql: string) => ({
+      rows: sql.includes("chronology_reconstruction")
+        ? [{ ...canonicalRows[0], output_hash: localHash, metadata: {
+            ...canonicalRows[0].metadata, output_hash: localHash, data: localChronology,
+          } }]
+        : sourceRows,
+    }));
+
+    const [event] = await listEvents(44);
+    expect(event).toMatchObject({
+      ...localTime,
+      dateOccurred: "2026-08-30",
+      documentId: 7,
+      canonical_source_artifact_key: "artifact-preserved",
+      canonical_source_span_offset: 10,
+      canonical_verification_status: "document_stated",
+      canonical_output_hashes: [localHash],
+    });
+    const [timeline] = await getCaseTimelineData(44);
+    expect(timeline).toMatchObject({ ...localTime, date: "2026-08-30", datePrecision: "exact", documentId: 7 });
+    expect(timeline.source_message_local_time).not.toMatch(/Z|[+-]\d\d:\d\d$/);
+  });
+
+  it("does not add local-time metadata to earlier chronology payloads", async () => {
+    const [event] = await listEvents(44);
+    const [timeline] = await getCaseTimelineData(44);
+    for (const field of ["source_message_local_time", "source_message_timezone", "source_message_timestamp_text"]) {
+      expect(event).not.toHaveProperty(field);
+      expect(timeline).not.toHaveProperty(field);
+    }
   });
 
   it("does not bind a quarantined event to a preserved duplicate in another session", async () => {

@@ -19,6 +19,9 @@ type ChronologyEvent = {
   source_span_offset: number;
   verification_status: string;
   event_scope?: "case_specific" | "facility_wide";
+  source_message_local_time?: string;
+  source_message_timezone?: "unknown";
+  source_message_timestamp_text?: string;
 };
 
 type MergedChronologyEvent = ChronologyEvent & {
@@ -349,6 +352,9 @@ export async function listEvents(caseId: number) {
       canonical_output_hashes: output_hashes,
       canonical_receipt_hashes: receipt_hashes,
       canonical_layer_versions: layer_versions,
+      ...(event.source_message_local_time !== undefined ? { source_message_local_time: event.source_message_local_time } : {}),
+      ...(event.source_message_timezone !== undefined ? { source_message_timezone: event.source_message_timezone } : {}),
+      ...(event.source_message_timestamp_text !== undefined ? { source_message_timestamp_text: event.source_message_timestamp_text } : {}),
     }];
   });
 }

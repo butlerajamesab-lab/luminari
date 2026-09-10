@@ -51,8 +51,8 @@ export interface Layer7Input {
   artifacts: ParsedArtifact[];
 }
 
-export const LAYER_VERSION = '2.6.2';
-export const RULE_VERSION = '2.6.2';
+export const LAYER_VERSION = '2.6.3';
+export const RULE_VERSION = '2.6.3';
 
 type MarkerDirection = 'a_to_b' | 'b_to_a' | 'bidirectional';
 type MarkerScope = 'between_mentions' | 'post_coordinated_endpoints' | 'post_second_endpoint';

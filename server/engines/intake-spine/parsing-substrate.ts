@@ -15,6 +15,11 @@ import {
   SMS_BACKUP_FORMAT_VERSION,
   SMS_BACKUP_RULE_MANIFEST,
 } from './sms-backup-substrate';
+import {
+  isSmsBackupRestoreHtml,
+  parseSmsBackupRestoreHtml,
+  SMS_BACKUP_HTML_RULE_MANIFEST,
+} from './sms-backup-html-substrate';
 
 export interface TextSpan {
   text: string;
@@ -27,6 +32,9 @@ export interface TextSpan {
   source_record_index?: number;
   source_record_char_offset?: number;
   occurred_at?: string;
+  occurred_at_local?: string;
+  occurred_at_timezone?: 'unknown';
+  source_timestamp_text?: string;
   message_direction?: 'received' | 'sent' | 'unknown';
   message_contact_name?: string;
   message_kind?: 'message' | 'reaction';
@@ -39,6 +47,7 @@ export type ExtractionMethod =
   | 'docx_xml'
   | 'utf8_text'
   | 'sms_backup_xml'
+  | 'sms_backup_html'
   | 'tesseract_ocr'
   | 'tesseract_archive_ocr'
   | 'none';
@@ -63,8 +72,8 @@ export interface ParsedArtifact {
 
 export const PDF_PARSE_VERSION = '2.4.5';
 export const JSZIP_VERSION = '3.10.1';
-export const PARSER_VERSION = `luminari.intake.parser.v2.2.0+pdf-parse@${PDF_PARSE_VERSION}+jszip@${JSZIP_VERSION}+tesseract.js@${TESSERACT_JS_VERSION}+eng@${TESSERACT_ENG_DATA_VERSION}+heic-convert@${HEIC_CONVERT_VERSION}`;
-export const RULE_VERSION = '2.2.0';
+export const PARSER_VERSION = `luminari.intake.parser.v2.3.0+pdf-parse@${PDF_PARSE_VERSION}+jszip@${JSZIP_VERSION}+tesseract.js@${TESSERACT_JS_VERSION}+eng@${TESSERACT_ENG_DATA_VERSION}+heic-convert@${HEIC_CONVERT_VERSION}`;
+export const RULE_VERSION = '2.3.0';
 
 export const PARSER_RULE_MANIFEST = {
   mime_detection: {
@@ -91,6 +100,7 @@ export const PARSER_RULE_MANIFEST = {
     format_version: SMS_BACKUP_FORMAT_VERSION,
     rules: SMS_BACKUP_RULE_MANIFEST,
   },
+  sms_backup_html: SMS_BACKUP_HTML_RULE_MANIFEST,
   ocr: OCR_RULE_MANIFEST,
   unsupported_format_policy: 'preserve_with_unsupported_format',
   extraction_failure_policy: 'preserve_with_extraction_failed',
@@ -155,6 +165,17 @@ export async function parseArtifact(
         spans: result.spans,
         extraction_status: 'success',
         extraction_method: 'sms_backup_xml',
+      };
+    }
+
+    if (effective_mime === 'application/vnd.sms-backup-restore+html') {
+      const result = parseSmsBackupRestoreHtml(bytes, artifact_key);
+      return {
+        ...base,
+        extracted_text: result.text,
+        spans: result.spans,
+        extraction_status: 'success',
+        extraction_method: 'sms_backup_html',
       };
     }
 
@@ -319,6 +340,10 @@ async function detectMimeFromBytes(bytes: Buffer): Promise<string | null> {
 
   if (isSmsBackupRestoreXml(bytes)) {
     return 'application/vnd.sms-backup-restore+xml';
+  }
+
+  if (isSmsBackupRestoreHtml(bytes)) {
+    return 'application/vnd.sms-backup-restore+html';
   }
 
   if (bytes.length < 4) return detectTextMime(bytes);

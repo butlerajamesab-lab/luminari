@@ -13,6 +13,8 @@ import {
   cmsSurveyDate,
   isDateOutsideCmsRecordRange,
   isExcludedFromDominantSemanticLane,
+  isSmsBackupArtifact,
+  sourceMessageLocalTimestamp,
   SEMANTIC_SUBSTRATE_VERSION,
   semanticSentenceBounds,
   semanticSpansForArtifact,
@@ -28,14 +30,17 @@ export interface ChronologyEvent {
   source_span_offset: number;
   verification_status: FactStatus;
   event_scope?: 'case_specific' | 'facility_wide';
+  source_message_local_time?: string;
+  source_message_timezone?: 'unknown';
+  source_message_timestamp_text?: string;
 }
 
 export interface Layer4Input {
   artifacts: ParsedArtifact[];
 }
 
-export const LAYER_VERSION = '2.7.0';
-export const RULE_VERSION = '2.7.0';
+export const LAYER_VERSION = '2.7.1';
+export const RULE_VERSION = '2.7.1';
 
 type DateRule = {
   regex: { source: string; flags: string };
@@ -51,7 +56,8 @@ export const RULE_MANIFEST: {
   unsupported_artifact_policy: 'unresolved_skip';
   max_events_per_semantic_sentence: 1;
   semantic_substrate_version: string;
-  sms_event_date_policy: 'message_timestamp_for_explicit_care_event_sentence';
+  sms_event_date_policy: 'message_timestamp_or_source_local_date_for_explicit_care_event_sentence_preserve_unknown_timezone';
+  sms_html_deduplication_policy: 'include_source_row_identity';
   mixed_corpus_scope_policy: 'retain_with_case_specific_or_facility_wide_scope';
   fragment_policy: 'reject_only_date_and_temporal_label_fragments';
   fragment_time_regex: { source: string; flags: string };
@@ -106,7 +112,8 @@ export const RULE_MANIFEST: {
   unsupported_artifact_policy: 'unresolved_skip',
   max_events_per_semantic_sentence: 1,
   semantic_substrate_version: SEMANTIC_SUBSTRATE_VERSION,
-  sms_event_date_policy: 'message_timestamp_for_explicit_care_event_sentence',
+  sms_event_date_policy: 'message_timestamp_or_source_local_date_for_explicit_care_event_sentence_preserve_unknown_timezone',
+  sms_html_deduplication_policy: 'include_source_row_identity',
   mixed_corpus_scope_policy: 'retain_with_case_specific_or_facility_wide_scope',
   fragment_policy: 'reject_only_date_and_temporal_label_fragments',
   fragment_time_regex: { source: '\\b\\d{1,2}:\\d{2}(?::\\d{2})?(?:\\s*[AP]M)?\\b', flags: 'gi' },
@@ -160,18 +167,31 @@ export function processLayer4(input: Layer4Input): EngineResult<ChronologyEvent[
     }
 
     const artifactClass = classifySemanticArtifact(artifact);
+    if (artifact.extraction_method === 'sms_backup_html') {
+      unresolved.push({
+        field: `artifact:${artifact.artifact_key}:message_timezone`,
+        reason: 'unresolved',
+        detail: 'SMS HTML displays local calendar dates and times without a verified timezone; no UTC instant has been inferred',
+      });
+    }
     const eventScope = artifactClass === 'cms_2567' ? 'facility_wide' : 'case_specific';
     const surveyDate = artifactClass === 'cms_2567' ? cmsSurveyDate(artifact) : null;
 
     for (const span of semanticSpansForArtifact(artifact, artifacts, 'chronology')) {
-      if (artifactClass === 'sms_backup_xml' && span.occurred_at) {
-        const date = span.occurred_at.slice(0, 10);
+      const localTimestamp = sourceMessageLocalTimestamp(span);
+      const messageTimestamp = span.occurred_at ?? localTimestamp;
+      if (isSmsBackupArtifact(artifact) && messageTimestamp) {
+        const date = messageTimestamp.slice(0, 10);
         const event_text = span.text.trim();
         const source_span_offset = span.start_offset;
         const eventIdentity = computeHash({
           artifact_key: artifact.artifact_key,
           event_text: event_text.replace(/\s+/g, ' ').trim(),
-          occurred_at: span.occurred_at,
+          ...(span.occurred_at ? { occurred_at: span.occurred_at } : {}),
+          ...(localTimestamp && !span.occurred_at ? { occurred_at_local: localTimestamp, occurred_at_timezone: 'unknown' } : {}),
+          ...(artifactClass === 'sms_backup_html' ? {
+            source_record_identity: span.source_record_index ?? span.source_record_char_offset ?? span.start_offset,
+          } : {}),
         });
         if (seenEvents.has(eventIdentity)) continue;
         seenEvents.add(eventIdentity);
@@ -193,6 +213,11 @@ export function processLayer4(input: Layer4Input): EngineResult<ChronologyEvent[
           source_span_offset,
           verification_status: 'document_stated',
           event_scope: eventScope,
+          ...(localTimestamp && !span.occurred_at ? {
+            source_message_local_time: localTimestamp,
+            source_message_timezone: 'unknown' as const,
+            ...(span.source_timestamp_text ? { source_message_timestamp_text: span.source_timestamp_text } : {}),
+          } : {}),
         });
         continue;
       }

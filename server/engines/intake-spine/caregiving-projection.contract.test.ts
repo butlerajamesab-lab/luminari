@@ -137,8 +137,8 @@ describe('caregiving intake projection contracts', () => {
       message_author_bindings: [authorBinding(artifact, 'received', 'Jordan', 'Source contact')],
     }).data;
     const result = processLayer7({ entities, artifacts: [artifact] });
-    expect(result.layer_version).toBe('2.6.2');
-    expect(result.rule_version).toBe('2.6.2');
+    expect(result.layer_version).toBe('2.6.3');
+    expect(result.rule_version).toBe('2.6.3');
     expect(result.data.map(relationship => relationship.type).sort()).toEqual([
       'authorized_representative_subject', 'caregiver_recipient',
     ]);

@@ -107,6 +107,22 @@ describe("Findings document connection pages", () => {
 });
 
 describe("Chronology source access", () => {
+  it("labels a source-local timestamp and preserves the original calendar day without claiming UTC", () => {
+    state.events.data = [{
+      id: "local-event", title: "I visited the facility.", documentId: 12,
+      documentFilename: "messages.html", dateOccurred: "2026-01-05",
+      projection_source: "universal_intake_spine", canonical_date_precision: "exact",
+      canonical_verification_status: "document_stated",
+      source_message_local_time: "2026-01-05T23:59:42", source_message_timezone: "unknown",
+      source_message_timestamp_text: "Jan 5, 2026 11:59:42 PM",
+    }];
+    const html = renderToStaticMarkup(<Timeline />);
+    expect(html).toContain("Source time: Jan 5, 2026 11:59:42 PM · timezone not recorded");
+    expect(html).toContain("2026-01-05 · Exact Date");
+    expect(html).toContain("Document Stated");
+    expect(html).not.toContain("2026-01-06");
+    expect(html).not.toContain("UTC");
+  });
   it.each([
     ["events", "UNAUTHORIZED"], ["events", "FORBIDDEN"],
     ["documents", "UNAUTHORIZED"], ["documents", "FORBIDDEN"],
