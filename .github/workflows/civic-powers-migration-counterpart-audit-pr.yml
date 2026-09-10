@@ -1,0 +1,16 @@
+name: Civic Powers migration counterpart audit
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  map-counterparts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Map remote migration names to repository files
+        run: python3 scripts/civic-powers-migration-counterpart-audit.py

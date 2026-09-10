@@ -1,0 +1,16 @@
+name: Civic Powers migration ledger parity
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  compare-ledgers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compare production ledger versions to repository files
+        run: python3 scripts/civic-powers-migration-ledger-audit.py
