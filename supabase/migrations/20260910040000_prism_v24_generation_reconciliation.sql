@@ -15,6 +15,8 @@ as $function$
        and exists (select 1 from public.civic_genome_assembly_run assembly
                     where assembly.assembly_run_id = run.assembly_run_id
                       and assembly.genome_bill_id = run.genome_bill_id
+                      and assembly.source_document_id = run.source_document_id
+                      and assembly.extraction_run_id = run.extraction_run_id
                       and assembly.run_status = 'completed'
                       and assembly.verification_state = 'complete'
                       and assembly.trait_count = run.expected_trait_count)
@@ -26,6 +28,7 @@ as $function$
                and binding.prism_rule_set_version = run.prism_rule_set_version) = run.expected_trait_count
        and (select count(*)
               from public.civic_genome_prism_verification_binding binding
+              join public.civic_genome_trait trait on trait.trait_id = binding.trait_id
               join public.lighthouse_prism_verification_receipts receipt
                 on receipt.prism_verification_receipt_id = binding.prism_verification_receipt_id
               join public.lighthouse_prism_verification_requests request
@@ -34,6 +37,11 @@ as $function$
                and binding.genome_bill_id = run.genome_bill_id
                and binding.source_document_id = run.source_document_id
                and binding.extraction_run_id = run.extraction_run_id
+               and trait.genome_bill_id = run.genome_bill_id
+               and trait.source_document_id = run.source_document_id
+               and trait.extraction_run_id = run.extraction_run_id
+               and trait.source_object_id = binding.source_object_id
+               and trait.verification_state = 'confirmed'
                and binding.prism_rule_set_id = run.prism_rule_set_id
                and binding.prism_rule_set_version = run.prism_rule_set_version
                and binding.prism_engine_version = run.prism_engine_version
@@ -53,6 +61,55 @@ as $function$
       from public.civic_genome_prism_verification_run run
      where run.verification_run_id = p_run_id
   ), false);
+$function$;
+
+create or replace function private.prism_v24_modal_prior_covered_v1(p_run_id uuid,p_prior_id uuid)
+returns boolean language sql stable
+set search_path = pg_catalog, public, private
+as $function$
+  select coalesce((
+    select jsonb_array_length(prior.contradiction_refs) > 0 and not exists (
+      select 1 from jsonb_array_elements(prior.contradiction_refs) old_ref
+      left join public.civic_genome_prism_verification_binding binding
+        on binding.assembly_run_id = run.assembly_run_id
+       and binding.prism_rule_set_id = run.prism_rule_set_id
+       and binding.prism_rule_set_version = run.prism_rule_set_version
+       and binding.trait_id::text = old_ref->>'trait_id'
+      left join public.lighthouse_prism_verification_receipts receipt
+        on receipt.prism_verification_receipt_id = binding.prism_verification_receipt_id
+      where receipt.prism_verification_receipt_id is null
+         or nullif(old_ref->'contradiction'->>'step_order','') is null
+         or old_ref->'contradiction'->>'step_order' = 'not_observed'
+         or old_ref->'contradiction'->>'check' is distinct from split_part(prior.rule_id,':',2)
+         or not exists (
+           select 1 from (
+             select finding from jsonb_array_elements(receipt.contradictions) finding
+              where finding->>'check' = split_part(prior.rule_id,':',2)
+             union all
+             select finding from jsonb_array_elements(receipt.supported_findings) finding
+              where finding->>'check' = split_part(prior.rule_id,':',2)
+                and finding->>'finding' = 'deterministic_check_passed'
+                and nullif(finding->>'evaluated_span','') is not null
+                and finding->>'matched_modal' in ('shall','shall not','must','must not','may','may not')
+             union all
+             select finding from jsonb_array_elements(receipt.unresolved_conditions) finding
+              where finding->>'condition' in ('modal_only_in_quoted_text','modal_in_definitional_context','workflow_modal_span_not_available')
+             union all
+             select finding from jsonb_array_elements(receipt.missing_evidence) finding
+              where split_part(prior.rule_id,':',2) = 'workflow_modal_polarity_matches'
+                and finding->>'requirement' = 'workflow_declared_modal'
+                and nullif(finding->>'evaluated_span','') is not null
+           ) proof where proof.finding->>'step_order' = old_ref->'contradiction'->>'step_order'
+         )
+    )
+      from public.civic_genome_prism_verification_run run
+      join public.legal_patterns prior on prior.pattern_id = p_prior_id
+     where run.verification_run_id = p_run_id
+       and prior.source_relation = 'public.civic_genome_prism_verification_run'
+       and prior.rule_id in ('prism-rosetta-structural-binding:workflow_modal_present',
+                            'prism-rosetta-structural-binding:workflow_modal_polarity_matches')
+       and prior.authority_refs @> jsonb_build_array(jsonb_build_object('assembly_run_id',run.assembly_run_id))
+  ),false);
 $function$;
 
 create or replace function private.project_prism_v24_modal_successors_v1(p_run_id uuid)
@@ -478,6 +535,16 @@ begin
      limit 1;
 
     if v_supersedes_id is not null then
+      if v_generation = '2.4.0'
+         and v_record->>'rule_id' in ('prism-rosetta-structural-binding:workflow_modal_present',
+                                     'prism-rosetta-structural-binding:workflow_modal_polarity_matches')
+         and not private.prism_v24_modal_prior_covered_v1(p_verification_run_id,v_supersedes_id) then
+        -- New contradictions remain in immutable 2.4 receipts. Hold the aggregate
+        -- projection until every earlier trait/step has explicit 2.4 coverage.
+        raise warning 'prism_v24_modal_projection_held_uncovered_prior:%:%',p_verification_run_id,v_supersedes_id;
+        v_supersedes_id := null;
+        continue;
+      end if;
       v_record := v_record || jsonb_build_object('supersedes_id', v_supersedes_id);
     end if;
 
@@ -502,6 +569,8 @@ comment on function private.project_prism_legal_patterns_v1(uuid) is
 
 
 revoke all on function private.prism_v24_complete_receipt_set_v1(uuid)
+  from public, anon, authenticated, service_role;
+revoke all on function private.prism_v24_modal_prior_covered_v1(uuid,uuid)
   from public, anon, authenticated, service_role;
 revoke all on function private.project_prism_v24_modal_successors_v1(uuid)
   from public, anon, authenticated, service_role;
