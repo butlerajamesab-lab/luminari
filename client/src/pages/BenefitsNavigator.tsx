@@ -781,7 +781,7 @@ function StagedCaseActions({ caseId }: { caseId?: number }) {
     <Card className="bg-card/50 border-border/50">
       <CardHeader className="pb-2">
         <CardTitle className="text-sm flex items-center gap-2"><ClipboardList className="w-4 h-4 text-primary" />Staged case-building actions</CardTitle>
-        {!caseId && <p className="text-xs text-amber-200">CASE_CONTEXT_BRIDGE_MISSING</p>}
+        {!caseId && <p className="text-xs text-amber-200">Choose or start a case before using Save to Case or Link to Current Case.</p>}
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
