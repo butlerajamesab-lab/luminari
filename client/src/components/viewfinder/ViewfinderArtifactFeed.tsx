@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "../../../../server/routers";
 import { trpc } from "@/lib/trpc";
+import { SignalEvidenceDetails } from "@/components/signal-architecture/SignalEvidenceDetails";
 
 export const VIEWFINDER_REFRESH_MS = 30_000;
 const PAGE_SIZE = 50;
@@ -51,6 +52,7 @@ export function ViewfinderEvidence({ item }: { item: Artifact }) {
       <div className="vf-badges">
         {sourceUrls(detail.data.evidence).map((url, index) => <a key={url} href={url} target="_blank" rel="noreferrer">Source {index + 1} ↗</a>)}
       </div>
+      <SignalEvidenceDetails artifact={detail.data} />
       <div>Source: <span className="vf-reference">{detail.data.source_reference ?? "Unknown"}</span></div>
       <div>Input hash: <span className="vf-reference">{detail.data.method.input_hash ?? "Unknown"}</span></div>
       <div>Record hash: <span className="vf-reference">{detail.data.source_hash}</span></div>
@@ -75,14 +77,14 @@ function ArtifactCard({ item }: { item: Artifact }) {
       <p>{item.description}</p>
       <dl className="vf-facts">
         <div><dt>Verification</dt><dd>{readable(item.status)}</dd></div>
-        {item.governance_status ? <div><dt>Review state</dt><dd>{readable(item.governance_status)}</dd></div> : null}
+        {item.governance_status ? <div><dt>Record status</dt><dd>{readable(item.governance_status)}</dd></div> : null}
         <div><dt>Observed / detected</dt><dd>{formatViewfinderDate(item.occurred_at)}</dd></div>
         {item.domain_code === "live_data" ? <div><dt>Source freshness</dt><dd>{formatViewfinderDate(item.source_freshness_at)}</dd></div> : null}
         <div><dt>Rule</dt><dd>{item.method.rule_id ?? "Unknown"} · version {item.method.rule_version ?? "Unknown"}</dd></div>
         <div><dt>Engine</dt><dd>{item.method.engine_id ?? "Unknown"} · version {item.method.engine_version ?? "Unknown"}</dd></div>
       </dl>
       <button type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>
-        {expanded ? "Hide evidence" : "Inspect evidence"}
+        {expanded ? "Hide evidence" : "Inspect source records and checks"}
       </button>
       {expanded ? <ViewfinderEvidence item={item} /> : null}
     </article>

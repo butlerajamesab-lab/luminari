@@ -78,7 +78,7 @@ export function signal_artifact_destination(
       home_label: "Anomaly Viewfinder",
       home_path: "/viewfinder",
       environmental_effect:
-        "This Atlas-derived observation candidate identifies a measurable recurrence, concentration, spike, or unresolved-record condition. It is a lead for human review, not a finding of wrongdoing.",
+        "This Atlas detection records a recurrence, concentration, spike, or unresolved-record condition. Inspect its saved observations and comparison statistics to assess what it supports. Linking it to a case saves context; it does not perform verification.",
     };
   }
 
@@ -275,6 +275,70 @@ function notFound(): never {
   });
 }
 
+/** Resolve only references saved on the selected current artifact. Matching a
+ * content hash establishes record identity, not independent corroboration. */
+export async function read_signal_source_observations(value: unknown) {
+  const refs = wireJson(value, []);
+  const allRefs = Array.isArray(refs) ? refs : [];
+  const valid = allRefs.flatMap((ref) => {
+    if (!ref || typeof ref !== "object") return [];
+    const { stream_id, offset, event_identity_hash } = ref;
+    const offsetText = typeof offset === "string" ? offset : Number.isSafeInteger(offset) ? String(offset) : "";
+    if (typeof stream_id !== "string" || !stream_id || !/^\d{1,19}$/.test(offsetText)
+      || BigInt(offsetText) > 9223372036854775807n
+      || typeof event_identity_hash !== "string" || !/^[a-f0-9]{64}$/.test(event_identity_hash)) return [];
+    return [{ stream_id, event_offset: offsetText, event_identity_hash }];
+  });
+  const selected = valid.slice(0, 100);
+  const rows = selected.length ? (await getPool().query(`
+    with refs as (
+      select * from jsonb_to_recordset($1::jsonb)
+        as ref(stream_id text, event_offset bigint, event_identity_hash text)
+    ), resolved as (
+      select ref.*, event."offset" as found_offset,
+             event."timestamp", event.source_id, event.jurisdiction_id,
+             event.payload, event.spacetime,
+             public.lighthouse_atlas_event_identity_hash_v1(
+               event.stream_id, event."timestamp", event.signal_type,
+               event.spacetime, event.provenance, event.payload,
+               event.source_id, event.jurisdiction_id, event.module_hint
+             ) = ref.event_identity_hash as hash_matches
+        from refs ref
+        left join public.signal_events event
+          on event.stream_id = ref.stream_id and event."offset" = ref.event_offset
+    )
+    select stream_id, event_offset::text, event_identity_hash,
+           case when found_offset is null then 'missing'
+                when hash_matches is true then 'matched'
+                else 'hash_mismatch' end as resolution,
+           case when hash_matches then "timestamp" end as observed_at,
+           case when hash_matches then source_id end as source_id,
+           case when hash_matches then jurisdiction_id end as jurisdiction_id,
+           case when hash_matches then payload - 'provenance_tracking' end as payload,
+           case when hash_matches then spacetime end as spacetime
+      from resolved
+     order by stream_id, event_offset
+  `, [JSON.stringify(selected)])).rows : [];
+  return {
+    reference_count: allRefs.length,
+    invalid_reference_count: allRefs.length - valid.length,
+    truncated: selected.length < valid.length,
+    observations: rows.map((row) => ({
+      stream_id: String(row.stream_id),
+      event_offset: String(row.event_offset),
+      event_identity_hash: String(row.event_identity_hash),
+      resolution: String(row.resolution),
+      observed_at: wireDate(row.observed_at),
+      source_id: row.source_id as string | null,
+      jurisdiction_id: row.jurisdiction_id as string | null,
+      payload: wireJson(row.payload, null),
+      spacetime: wireJson(row.spacetime, null),
+    })),
+  };
+}
+
+export type SignalSourceObservations = Awaited<ReturnType<typeof read_signal_source_observations>>;
+
 export async function read_signal_artifact(
   domain: SignalArtifactDomain,
   recordId: string,
@@ -376,6 +440,7 @@ export async function read_signal_artifact(
     return {
       ...toListItem({ ...row, domain_code: domain }),
       entity_resolution_status: row.entity_resolution_status,
+      source_observations: await read_signal_source_observations(row.source_event_refs),
       evidence: {
         evidence_refs: wireJson(row.evidence_refs, []),
         source_event_refs: wireJson(row.source_event_refs, []),

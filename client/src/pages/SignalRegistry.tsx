@@ -5,6 +5,7 @@ import { trpc } from "@/lib/trpc";
 import { LayerNavBar } from "@/components/LayerNavBar";
 import { PublicWalkthroughShell } from "@/components/PublicWalkthroughShell";
 import { useAuth } from "@/core/hooks/useAuth";
+import { SignalEvidenceDetails } from "@/components/signal-architecture/SignalEvidenceDetails";
 import {
   Activity,
   AlertTriangle,
@@ -96,34 +97,6 @@ function collect_urls(value: unknown, urls = new Set<string>()): Set<string> {
   return urls;
 }
 
-type ContradictionDetail = {
-  check?: string;
-  finding?: string;
-  expected?: string;
-  observed?: string;
-  source_quote?: string;
-};
-
-/** Recursively find structured contradiction objects inside an artifact's evidence payload */
-function collect_contradictions(value: unknown, found: ContradictionDetail[] = []): ContradictionDetail[] {
-  if (Array.isArray(value)) {
-    value.forEach((item) => collect_contradictions(item, found));
-    return found;
-  }
-  if (value && typeof value === "object") {
-    const obj = value as Record<string, unknown>;
-    if (
-      typeof obj.check === "string" &&
-      ("expected" in obj || "observed" in obj || "source_quote" in obj)
-    ) {
-      found.push(obj as ContradictionDetail);
-      return found;
-    }
-    Object.values(obj).forEach((item) => collect_contradictions(item, found));
-  }
-  return found;
-}
-
 function format_date(value: string | null | undefined): string {
   if (!value) return "No record yet";
   const date = new Date(value);
@@ -171,7 +144,7 @@ export default function SignalRegistry() {
       offset,
       query: search_query || undefined,
     },
-    { enabled: Boolean(user) },
+    { enabled: Boolean(user), refetchInterval: user ? 30_000 : false, refetchOnWindowFocus: true, refetchOnReconnect: true },
   );
   const artifact_detail_query = trpc.enforcementIntel.get_signal_artifact.useQuery(
     {
@@ -180,6 +153,9 @@ export default function SignalRegistry() {
     },
     {
       enabled: Boolean(user) && selected_domain != null && selected_record_id != null,
+      refetchInterval: user ? 30_000 : false,
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
     },
   );
   const cases_query = trpc.cases.list.useQuery(undefined, {
@@ -683,10 +659,12 @@ export default function SignalRegistry() {
             <div style={{ padding: 28, display: "flex", justifyContent: "center" }}>
               <Loader2 size={24} style={{ animation: "spin 1s linear infinite" }} />
             </div>
-          ) : artifact_detail_query.error ? (
+          ) : artifact_detail_query.error && (!artifact_detail_query.data || ["NOT_FOUND", "UNAUTHORIZED", "FORBIDDEN"].includes(artifact_detail_query.error.data?.code ?? "")) ? (
             <div style={{ color: palette.danger }}>{artifact_detail_query.error.message}</div>
           ) : artifact_detail_query.data ? (
             <div style={{ display: "grid", gap: 18 }}>
+              {artifact_detail_query.error ? <p role="alert">Evidence refresh failed. Showing the last successful result; it may be out of date.</p> : null}
+              {artifact_detail_query.fetchStatus === "paused" ? <p role="status">Connection paused; showing the last successful evidence.</p> : null}
               <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
                 <div style={{ maxWidth: 820 }}>
                   <div style={{ color: domain_meta[selected_domain].color, textTransform: "uppercase", fontSize: 11, letterSpacing: 1 }}>
@@ -715,68 +693,7 @@ export default function SignalRegistry() {
                 </p>
               </div>
 
-              {(() => {
-                const contradictions = collect_contradictions(artifact_detail_query.data.evidence);
-                if (contradictions.length === 0) return null;
-                return (
-                  <div style={{ border: `1px solid rgba(192,132,252,0.35)`, borderRadius: 10, padding: 14, background: "rgba(192,132,252,0.05)" }}>
-                    <div style={{ color: palette.legal, fontSize: 11, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>
-                      Why this is a contradiction
-                    </div>
-                    <div style={{ display: "grid", gap: 12 }}>
-                      {contradictions.map((item, index) => (
-                        <div key={`${item.check ?? "check"}-${index}`} style={{ borderTop: index > 0 ? `1px solid ${palette.border}` : "none", paddingTop: index > 0 ? 12 : 0 }}>
-                          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10 }}>
-                            {item.check && (
-                              <div>
-                                <div style={why_label_style}>Check performed</div>
-                                <div style={why_value_style}>{readable(item.check)}</div>
-                              </div>
-                            )}
-                            {item.finding && (
-                              <div>
-                                <div style={why_label_style}>Finding</div>
-                                <div style={why_value_style}>{readable(item.finding)}</div>
-                              </div>
-                            )}
-                            {item.expected && (
-                              <div>
-                                <div style={why_label_style}>Expected to find</div>
-                                <div style={why_value_style}>{item.expected}</div>
-                              </div>
-                            )}
-                            {item.observed && (
-                              <div>
-                                <div style={why_label_style}>Actually observed</div>
-                                <div style={why_value_style}>{readable(item.observed)}</div>
-                              </div>
-                            )}
-                          </div>
-                          {item.source_quote && (
-                            <blockquote
-                              style={{
-                                margin: "10px 0 0",
-                                padding: "10px 12px",
-                                borderLeft: `3px solid ${palette.legal}`,
-                                background: "rgba(255,255,255,0.03)",
-                                color: palette.text,
-                                fontSize: 13,
-                                lineHeight: 1.6,
-                                whiteSpace: "pre-wrap",
-                              }}
-                            >
-                              {item.source_quote}
-                              <div style={{ marginTop: 6, color: palette.muted, fontSize: 11 }}>
-                                Exact words from the verified source version
-                              </div>
-                            </blockquote>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })()}
+              <SignalEvidenceDetails artifact={artifact_detail_query.data} />
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 }}>
                 <div style={json_detail_style}>
@@ -827,7 +744,7 @@ export default function SignalRegistry() {
                   <h3 style={{ margin: 0, fontSize: 16 }}>Connect this artifact to a case</h3>
                 </div>
                 <p style={{ margin: "0 0 12px", color: palette.muted, fontSize: 12 }}>
-                  This creates a reviewer-authored context receipt. It does not create a finding, prove wrongdoing, or change the artifact.
+                  Optional: save this record with a case. Viewing its evidence requires no case link. This is an association, not a review gate. It does not create a finding, prove wrongdoing, or change the artifact.
                 </p>
                 <div className="signal-case-link-grid" style={{ display: "grid", gridTemplateColumns: "minmax(200px, 0.8fr) minmax(200px, 0.7fr) minmax(240px, 1fr) auto", gap: 10 }}>
                   <select value={selected_case_id} onChange={(event) => set_selected_case_id(event.target.value)} style={control_style}>
@@ -994,19 +911,5 @@ const json_pre_style = {
   overflowWrap: "anywhere",
   color: palette.muted,
   fontSize: 11,
-  lineHeight: 1.5,
-} as const;
-
-const why_label_style = {
-  color: palette.muted,
-  fontSize: 11,
-  textTransform: "uppercase",
-  letterSpacing: 1,
-  marginBottom: 3,
-} as const;
-
-const why_value_style = {
-  color: palette.text,
-  fontSize: 14,
   lineHeight: 1.5,
 } as const;

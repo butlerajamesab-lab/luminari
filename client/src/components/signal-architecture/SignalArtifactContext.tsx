@@ -3,6 +3,8 @@ import { useLocation, useSearch } from "wouter";
 import { ExternalLink, FileSearch, Loader2, Radio } from "lucide-react";
 
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/core/hooks/useAuth";
+import { SignalEvidenceDetails } from "./SignalEvidenceDetails";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,6 +34,7 @@ function readable(value: string): string {
 }
 
 export function SignalArtifactContext() {
+  const { user } = useAuth();
   const search = useSearch();
   const [, navigate] = useLocation();
   const params = useMemo(() => new URLSearchParams(search), [search]);
@@ -40,10 +43,12 @@ export function SignalArtifactContext() {
   const domain = isDomain(domainValue) ? domainValue : null;
   const artifact = trpc.enforcementIntel.get_signal_artifact.useQuery(
     { domain: domain ?? "live_data", record_id: recordId ?? "" },
-    { enabled: domain != null && recordId != null },
+    { enabled: Boolean(user) && domain != null && recordId != null,
+      staleTime: 0, refetchInterval: 30_000, refetchOnWindowFocus: true, refetchOnReconnect: true },
   );
 
   if (!domain || !recordId) return null;
+  if (!user) return <p>Sign in to inspect this detection and its source records.</p>;
 
   if (artifact.isLoading) {
     return (
@@ -55,7 +60,8 @@ export function SignalArtifactContext() {
     );
   }
 
-  if (artifact.error || !artifact.data) {
+  const code = artifact.error?.data?.code;
+  if (["NOT_FOUND", "UNAUTHORIZED", "FORBIDDEN"].includes(code ?? "") || !artifact.data) {
     return (
       <Card className="mb-5 border-red-500/30 bg-red-500/5">
         <CardContent className="p-5 text-sm text-red-300">
@@ -102,6 +108,8 @@ export function SignalArtifactContext() {
         </div>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
+        {artifact.error ? <p role="alert">Evidence refresh failed. Showing the last successful result; it may be out of date.</p> : null}
+        {artifact.fetchStatus === "paused" ? <p role="status">Connection paused; showing the last successful evidence.</p> : null}
         <p className="text-muted-foreground leading-relaxed">{item.description}</p>
         <div className="rounded-lg border border-amber-500/20 bg-background/40 p-3">
           <div className="text-xs font-semibold uppercase tracking-wide text-amber-300 mb-1">
@@ -124,6 +132,7 @@ export function SignalArtifactContext() {
             ))}
           </div>
         )}
+        <SignalEvidenceDetails artifact={item} />
       </CardContent>
     </Card>
   );

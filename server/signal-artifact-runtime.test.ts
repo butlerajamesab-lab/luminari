@@ -17,6 +17,7 @@ import {
   list_case_signal_artifacts,
   list_signal_artifacts,
   read_signal_artifact,
+  read_signal_source_observations,
   signal_artifact_destination,
 } from "./signal-artifact-runtime";
 
@@ -155,6 +156,41 @@ describe("Signal Architecture artifact runtime", () => {
       contradiction_refs: [{ source_quote: "exact text" }],
     });
     expect(result.provenance).toMatchObject({ engine_id: "prism", rule_id: "override" });
+  });
+
+  it("resolves only saved source identities and keeps bigint offsets lossless", async () => {
+    query.mockResolvedValueOnce({ rows: [{
+      stream_id: "cfpb_complaints", event_offset: "9223372036854775807",
+      event_identity_hash: "a".repeat(64), resolution: "matched",
+      observed_at: "2026-05-10T00:28:15.973Z", source_id: "cfpb_complaints", jurisdiction_id: "FL",
+      payload: { complaint_id: "22042857", issue: "Improper use of your report" }, spacetime: { region: "FL" },
+    }] });
+    const result = await read_signal_source_observations([
+      { stream_id: "cfpb_complaints", offset: "9223372036854775807", event_identity_hash: "a".repeat(64) },
+      { stream_id: "invalid", offset: "9223372036854775808", event_identity_hash: "a".repeat(64) },
+      { stream_id: "invalid", offset: 100, event_identity_hash: "missing" },
+      { stream_id: "invalid", offset: Number.MAX_SAFE_INTEGER + 1, event_identity_hash: "a".repeat(64) },
+    ]);
+    expect(result).toMatchObject({ reference_count: 4, invalid_reference_count: 3, truncated: false });
+    expect(result.observations[0]).toMatchObject({ event_offset: "9223372036854775807", payload: { complaint_id: "22042857" } });
+    expect(JSON.parse(query.mock.calls[0][1][0])).toEqual([
+      { stream_id: "cfpb_complaints", event_offset: "9223372036854775807", event_identity_hash: "a".repeat(64) },
+    ]);
+    expect(query.mock.calls[0][0]).toContain("case when hash_matches then payload - 'provenance_tracking' end");
+    expect(query.mock.calls[0][0]).toContain('event.stream_id = ref.stream_id and event."offset" = ref.event_offset');
+  });
+
+  it("reports missing references without querying unrelated observations", async () => {
+    expect(await read_signal_source_observations(null)).toMatchObject({ reference_count: 0, observations: [] });
+    expect(await read_signal_source_observations([null, { offset: "1 OR 1=1" }])).toMatchObject({ invalid_reference_count: 2, observations: [] });
+    expect(query).not.toHaveBeenCalled();
+  });
+
+  it("bounds source resolution and reports retained references beyond the limit", async () => {
+    query.mockResolvedValueOnce({ rows: [] });
+    const result = await read_signal_source_observations(Array.from({ length: 101 }, (_, offset) => ({ stream_id: "source", offset, event_identity_hash: "a".repeat(64) })));
+    expect(result).toMatchObject({ reference_count: 101, truncated: true });
+    expect(JSON.parse(query.mock.calls[0][1][0])).toHaveLength(100);
   });
 
   it("verifies case access before listing connected context receipts", async () => {

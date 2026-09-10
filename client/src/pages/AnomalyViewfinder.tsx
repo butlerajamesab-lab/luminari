@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { useLocation, useSearch } from "wouter";
+import { useMemo, useState } from "react";
+import { Link, useLocation, useSearch } from "wouter";
 import { ArrowLeft, Compass, Eye, MapPin } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { SignalArtifactContext } from "@/components/signal-architecture/SignalArtifactContext";
@@ -259,8 +259,31 @@ function LiveStateDetail({ state }: { state: LiveStateData }) {
 export function viewfinderFeedPath(search: string, domain: "live_data" | "legal_pattern") {
   const params = new URLSearchParams(search);
   if (params.get("signal_domain") !== domain) params.delete("signal_id");
+  params.delete("viewfinder_tab");
   params.set("signal_domain", domain);
   return `/viewfinder?${params.toString()}`;
+}
+
+export function viewfinderTabPath(search: string, mode: Mode) {
+  if (mode === "anomalies" || mode === "patterns") {
+    return viewfinderFeedPath(search, mode === "anomalies" ? "live_data" : "legal_pattern");
+  }
+  const params = new URLSearchParams(search);
+  params.delete("signal_domain");
+  params.delete("signal_id");
+  if (mode === "spotlight") params.delete("viewfinder_tab");
+  else params.set("viewfinder_tab", mode);
+  const query = params.toString();
+  return `/viewfinder${query ? `?${query}` : ""}`;
+}
+
+function viewfinderMode(search: string): Mode {
+  const params = new URLSearchParams(search);
+  const domain = params.get("signal_domain");
+  if (domain === "live_data") return "anomalies";
+  if (domain === "legal_pattern") return "patterns";
+  const tab = params.get("viewfinder_tab");
+  return tab === "compare" || tab === "about" ? tab : "spotlight";
 }
 
 function ArtifactAccessNotice({ loading, returnTo }: { loading: boolean; returnTo: string }) {
@@ -278,15 +301,7 @@ export default function AnomalyViewfinder() {
   const [, setLocation] = useLocation();
   const urlSearch = useSearch();
   const { user, loading: authLoading } = useAuth();
-  const [mode, setMode] = useState<Mode>(() => {
-    const domain = new URLSearchParams(urlSearch).get("signal_domain");
-    return domain === "live_data" ? "anomalies" : domain === "legal_pattern" ? "patterns" : "spotlight";
-  });
-  useEffect(() => {
-    const domain = new URLSearchParams(urlSearch).get("signal_domain");
-    if (domain === "live_data") setMode("anomalies");
-    if (domain === "legal_pattern") setMode("patterns");
-  }, [urlSearch]);
+  const mode = viewfinderMode(urlSearch);
   const [search, setSearch] = useState("");
   const [selectedCode, setSelectedCode] = useState("WA");
   const [sortKey, setSortKey] = useState<SortKey>("name");
@@ -363,9 +378,9 @@ export default function AnomalyViewfinder() {
       <nav style={{ borderBottom: `1px solid ${v.border}`, position: "sticky", top: 0, zIndex: 20, background: "rgba(13,13,15,0.96)", backdropFilter: "blur(12px)" }}>
         <div style={{ maxWidth: 1420, margin: "0 auto", padding: "0 22px", display: "flex", gap: 4, overflowX: "auto" }}>
           {tabs.map((tab) => (
-            <button key={tab.id} aria-pressed={mode === tab.id} onClick={() => setMode(tab.id)} style={{ whiteSpace: "nowrap", border: 0, borderBottom: mode === tab.id ? `2px solid ${v.gold}` : "2px solid transparent", background: "transparent", color: mode === tab.id ? v.bone : v.muted, padding: "13px 15px 11px", cursor: "pointer", fontSize: 12, fontWeight: 700, letterSpacing: "0.04em" }}>
+            <Link key={tab.id} href={viewfinderTabPath(urlSearch, tab.id)} aria-current={mode === tab.id ? "page" : undefined} style={{ whiteSpace: "nowrap", textDecoration: "none", border: 0, borderBottom: mode === tab.id ? `2px solid ${v.gold}` : "2px solid transparent", background: "transparent", color: mode === tab.id ? v.bone : v.muted, padding: "13px 15px 11px", cursor: "pointer", fontSize: 12, fontWeight: 700, letterSpacing: "0.04em" }}>
               {tab.label}
-            </button>
+            </Link>
           ))}
         </div>
       </nav>
@@ -463,7 +478,7 @@ export default function AnomalyViewfinder() {
                 </thead>
                 <tbody>
                   {sortedStates.map((state) => (
-                    <tr key={state.jurisdictionCode} onClick={() => { setSelectedCode(state.jurisdictionCode); setMode("spotlight"); }} style={{ cursor: "pointer" }}>
+                    <tr key={state.jurisdictionCode} onClick={() => { setSelectedCode(state.jurisdictionCode); setLocation(viewfinderTabPath(urlSearch, "spotlight")); }} style={{ cursor: "pointer" }}>
                       <td style={{ padding: "11px 10px", borderBottom: `1px solid ${v.border}` }}><strong style={{ color: v.bone }}>{state.name}</strong><div style={{ color: v.muted, marginTop: 3 }}>{state.jurisdictionCode}</div></td>
                       <td style={{ padding: "11px 10px", borderBottom: `1px solid ${v.border}`, color: state.exp === null ? v.muted : state.exp ? v.green : v.red }}>{state.exp === null ? "Unknown" : state.exp ? "Expanded" : "Not expanded"}</td>
                       <td title={state.uiMaximumRaw ?? undefined} style={{ padding: "11px 10px", borderBottom: `1px solid ${v.border}`, color: state.ui === null ? v.muted : metricTone(state.ui, 700, 450) }}>{display(state.uiMaximumRaw)}</td>
@@ -498,6 +513,7 @@ export default function AnomalyViewfinder() {
                 ["5 · Anomalies use the canonical Atlas detections", "The Anomalies tab reads the same current live-data records as Signal Registry: measured recurrence, concentration, spikes, and unresolved-record conditions. Each record shows its actual rule and engine version, verification state, review state, detection time, and source freshness. A candidate is a lead for review, not a confirmed finding."],
                 ["6 · Patterns use the canonical Prism records", "The Patterns tab reads the same current legal-pattern records as Signal Registry. Inspect evidence to see source references, recorded statistics, and input and record hashes. The old ten narrative cards are no longer the data source. The separate Cross-Case Patterns workspace uses deterministic signature matching and evidence occurrences from your cases; these are distinct methods, not interchangeable counts."],
                 ["7 · Live updates and complete browsing", "Both feeds check for current records every 30 seconds while visible, on return to the page, and on reconnection. Search covers the complete feed. Pages contain up to 50 records with total counts and Next/Previous controls; there is no ten-result ceiling. Detection time belongs to the source record and never changes just because the page refreshed. Failed refreshes are labeled, and evidence access follows the existing sign-in boundary."],
+                ["8 · Inspect evidence before making a decision", "Open a detection to read its saved source observations, comparison statistics, and expected-versus-observed text checks. Saved examples may cover only part of the detected population; their coverage is shown explicitly. A matching source hash establishes record identity, not independent corroboration. Viewing evidence requires no case link. Case links save context and do not approve the method or verify the result."],
               ].map(([title, body]) => (
                 <div key={title} style={{ background: v.surface, border: `1px solid ${v.border}`, borderRadius: 12, padding: 18 }}>
                   <h3 style={{ color: v.gold, fontSize: 13, margin: "0 0 8px" }}>{title}</h3>

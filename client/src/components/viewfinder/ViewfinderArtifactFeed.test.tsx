@@ -15,7 +15,10 @@ vi.mock("@/lib/trpc", () => ({ trpc: {
 } }));
 vi.mock("@/core/hooks/useAuth", () => ({ useAuth: () => ({ user: state.user, loading: false }) }));
 vi.mock("@/components/signal-architecture/SignalArtifactContext", () => ({ SignalArtifactContext: () => null }));
-vi.mock("wouter", () => ({ useLocation: () => ["/viewfinder", vi.fn()], useSearch: () => state.search }));
+vi.mock("wouter", () => ({
+  useLocation: () => ["/viewfinder", vi.fn()], useSearch: () => state.search,
+  Link: (props: any) => <a {...props} />,
+}));
 
 import AnomalyViewfinder, { viewfinderFeedPath } from "@/pages/AnomalyViewfinder";
 import { ViewfinderArtifactFeed, ViewfinderEvidence, formatViewfinderDate } from "./ViewfinderArtifactFeed";
@@ -94,6 +97,29 @@ describe("Viewfinder canonical feed", () => {
       .toBe("/viewfinder?signal_domain=legal_pattern");
     expect(viewfinderFeedPath("?signal_domain=legal_pattern&signal_id=legal-id", "live_data"))
       .toBe("/viewfinder?signal_domain=live_data");
+  });
+
+  it.each([true, false])("keeps tab URLs, selected feed, and artifact domain together (signed in: %s)", (signedIn) => {
+    state.user = signedIn ? { id: "reader" } : null;
+    state.search = "?signal_domain=live_data&signal_id=live-id";
+    const html = renderToStaticMarkup(<AnomalyViewfinder />);
+    const links = [...html.matchAll(/<a\b([^>]*)>(Spotlight|Compare|Anomalies|Patterns|Method)<\/a>/g)];
+    const href = (label: string) => links.find((link) => link[2] === label)?.[1].match(/href="([^"]*)"/)?.[1].replaceAll("&amp;", "&");
+    expect(href("Anomalies")).toBe("/viewfinder?signal_domain=live_data&signal_id=live-id");
+    expect(href("Patterns")).toBe("/viewfinder?signal_domain=legal_pattern");
+    expect(href("Spotlight")).toBe("/viewfinder");
+    expect(href("Compare")).toBe("/viewfinder?viewfinder_tab=compare");
+    expect(href("Method")).toBe("/viewfinder?viewfinder_tab=about");
+
+    // Render the actual tab destination, as on navigation, reload, or Back.
+    for (const label of ["Patterns", "Method", "Compare", "Spotlight", "Anomalies"]) {
+      state.search = new URL(href(label)!, "https://example.test").search;
+      const destination = renderToStaticMarkup(<AnomalyViewfinder />);
+      expect(destination).toMatch(new RegExp(`<a[^>]*aria-current="page"[^>]*>${label}</a>`));
+      if (signedIn && label === "Patterns") expect(state.listQuery.mock.lastCall?.[0].domain).toBe("legal_pattern");
+      if (signedIn && label === "Anomalies") expect(state.listQuery.mock.lastCall?.[0].domain).toBe("live_data");
+    }
+    if (!signedIn) expect(state.listQuery).not.toHaveBeenCalled();
   });
 
   it("shows refreshed records without altering their source dates", () => {
