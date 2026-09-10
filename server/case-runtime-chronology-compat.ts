@@ -18,6 +18,7 @@ type ChronologyEvent = {
   source_artifact_key: string;
   source_span_offset: number;
   verification_status: string;
+  event_scope?: "case_specific" | "facility_wide";
 };
 
 type MergedChronologyEvent = ChronologyEvent & {
@@ -340,6 +341,7 @@ export async function listEvents(caseId: number) {
       canonical_date_precision: event.date_precision,
       canonical_verification_status: event.verification_status,
       canonical_actor: event.actor,
+      canonical_event_scope: event.event_scope ?? null,
       canonical_source_artifact_key: event.source_artifact_key,
       canonical_source_intake_session_id: binding.intake_session_id,
       canonical_source_intake_session_ids: event.source_intake_session_ids,

@@ -875,10 +875,16 @@ const correlationsRouter = router({
       return db_helpers.listCorrelations(input.caseId);
     }),
   listEnriched: protectedProcedure
-    .input(z.object({ caseId: z.number() }))
+    .input(z.object({
+      caseId: z.number(),
+      limit: z.number().int().min(1).max(50).optional(),
+      cursor: z.string().max(80).regex(/^(?:projected:\d+:\d+|legacy:\d+)$/).optional(),
+      documentId: z.number().int().positive().optional(),
+      search: z.string().trim().max(200).optional(),
+    }))
     .query(async ({ ctx, input }) => {
       await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
-      return db_helpers.listCorrelationsEnriched(input.caseId);
+      return db_helpers.listCorrelationsEnriched(input.caseId, input);
     }),
 });
 

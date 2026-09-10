@@ -76,7 +76,7 @@ describe('caregiving intake projection contracts', () => {
     expect(result.data.some(event => event.date === '2026-01-04' && event.event_text.includes('admitted'))).toBe(true);
   });
 
-  it('rejects document-control tokens while preserving ambiguous single names without inventing identity type', () => {
+  it('rejects document-control tokens and classifies only explicitly supported care recipients', () => {
     const artifact = artifactFromSentences([
       'AND PDF JPEG BENEFIT',
       'Cheryl is caregiver for Rick.',
@@ -91,7 +91,7 @@ describe('caregiving intake projection contracts', () => {
     expect(names.has('benefit')).toBe(false);
     expect(names.has('whether cheryl')).toBe(false);
     expect(names.get('cheryl')).toBe('unknown');
-    expect(names.get('rick')).toBe('unknown');
+    expect(names.get('rick')).toBe('person');
     expect(names.get('kline galland home')).toBe('organization');
   });
 
@@ -224,6 +224,8 @@ describe('caregiving intake projection contracts', () => {
       artifact_key: artifact.artifact_key,
       span_offset: 0,
       binding_provenance_refs: ['assertion:1', 'assertion:2'],
+      source_context: "I am Rick's caregiver.",
+      source_context_offset: 0,
     }]);
     expect(result.unresolved_dependencies).toEqual([]);
     const relationships = processLayer7({ entities: result.data, artifacts: [artifact] }).data;

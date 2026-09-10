@@ -68,6 +68,8 @@ type CanonicalEntityMention = {
   artifact_key: string;
   span_offset: number;
   binding_provenance_refs?: string[];
+  source_context?: string;
+  source_context_offset?: number;
   intake_session_id?: string;
 };
 
@@ -117,6 +119,8 @@ export type ProjectedEntity = {
   canonicalEntityId: string;
   canonicalOutputHashes: string[];
   canonicalReceiptHashes: string[];
+  sourceDocumentIds: number[];
+  sourceMentionCount: number;
   projectionSource: "universal_intake_spine";
 };
 
@@ -132,6 +136,10 @@ export type ProjectedEntityRole = {
   canonicalArtifactKey: string;
   canonicalSpanOffset: number;
   canonicalIntakeSessionId: string;
+  rawMention: string;
+  bindingProvenanceRefs: string[];
+  sourceContext: string | null;
+  sourceContextOffset: number | null;
   projectionSource: "universal_intake_spine";
 };
 
@@ -625,6 +633,23 @@ function entity_snapshot_id(entity: CanonicalEntity, artifacts: Map<string, Sour
   return snapshot_ids.length === 1 ? snapshot_ids[0] : null;
 }
 
+function projected_mention_evidence(mention: CanonicalEntityMention) {
+  const context = mention.source_context;
+  const start = mention.source_context_offset;
+  const relative_offset = typeof start === "number" ? mention.span_offset - start : -1;
+  const valid_context = typeof context === "string"
+    && typeof start === "number" && Number.isSafeInteger(start) && start >= 0
+    && relative_offset >= 0
+    && context.slice(relative_offset, relative_offset + mention.raw_text.length) === mention.raw_text;
+  return {
+    rawMention: mention.raw_text,
+    bindingProvenanceRefs: [...new Set((mention.binding_provenance_refs ?? [])
+      .filter(ref => typeof ref === "string" && ref.trim()))].sort(),
+    sourceContext: valid_context ? context : null,
+    sourceContextOffset: valid_context ? start : null,
+  };
+}
+
 export async function project_case_entities(case_id: number): Promise<{
   state: CaseRuntimeProjectionState;
   entities: ProjectedEntity[];
@@ -679,6 +704,10 @@ export async function project_case_entities(case_id: number): Promise<{
     canonicalEntityId: entity.entity_id,
     canonicalOutputHashes: output_hashes,
     canonicalReceiptHashes: receipt_hashes,
+    sourceDocumentIds: [...new Set(entity.raw_mentions
+      .map(mention => entity_mention_binding(mention, source_artifacts).document_id)
+      .filter((id): id is number => id !== null))].sort((a, b) => a - b),
+    sourceMentionCount: entity.raw_mentions.length,
     projectionSource: "universal_intake_spine" as const,
   }));
   assert_unique_projection_ids(entities, entity => entity.id, entity => entity.canonicalEntityId);
@@ -728,6 +757,7 @@ export async function get_projected_entity_roles(entity_id: number): Promise<Pro
       canonicalArtifactKey: mention.artifact_key,
       canonicalSpanOffset: mention.span_offset,
       canonicalIntakeSessionId: mention.intake_session_id,
+      ...projected_mention_evidence(mention),
       projectionSource: "universal_intake_spine",
     });
   }
@@ -771,6 +801,7 @@ function roles_for_document(
         canonicalArtifactKey: mention.artifact_key,
         canonicalSpanOffset: mention.span_offset,
         canonicalIntakeSessionId: mention.intake_session_id,
+        ...projected_mention_evidence(mention),
         projectionSource: "universal_intake_spine",
       });
     }

@@ -172,6 +172,8 @@ describe("Codex reviewer regressions", () => {
         raw_text: "Jane Smith",
         artifact_key: artifact.artifact_key,
         span_offset: sentence.indexOf("Jane Smith"),
+        source_context: sentence,
+        source_context_offset: 0,
       },
     ]);
   });

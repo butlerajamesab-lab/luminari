@@ -15,7 +15,7 @@ vi.mock("./intake-case-integrity-projection", () => ({
   read_case_intake_integrity_projection: mocks.readIntegrity,
 }));
 
-import { project_case_entities } from "./intake-case-runtime-projection";
+import { get_projected_entity_roles, project_case_entities } from "./intake-case-runtime-projection";
 
 const entityData = [
   {
@@ -203,5 +203,42 @@ describe("reviewed message-author display names", () => {
 
     const projection = await project_case_entities(44);
     expect(projection.entities[0].name).toBe("I");
+  });
+
+  it("exposes source membership and exact reviewed mention context without replacing the source words", async () => {
+    mock_preserved_entity_output([{
+      ...author,
+      raw_mentions: [{
+        ...author.raw_mentions[0],
+        source_context: "I am the caregiver.",
+        source_context_offset: 0,
+      }],
+    }]);
+    const projection = await project_case_entities(44);
+    expect(projection.entities[0]).toMatchObject({ sourceDocumentIds: [8], sourceMentionCount: 1 });
+    const roles = await get_projected_entity_roles(projection.entities[0].id);
+    expect(roles).toHaveLength(1);
+    expect(roles![0]).toMatchObject({
+      documentId: 8,
+      rawMention: "I",
+      sourceContext: "I am the caregiver.",
+      sourceContextOffset: 0,
+      bindingProvenanceRefs: ["reviewed-assertion:fixture"],
+      canonicalSpanOffset: 0,
+    });
+  });
+
+  it("does not display a context excerpt whose offset does not locate the sealed mention", async () => {
+    mock_preserved_entity_output([{
+      ...author,
+      raw_mentions: [{
+        ...author.raw_mentions[0],
+        source_context: "Someone else is the caregiver.",
+        source_context_offset: 0,
+      }],
+    }]);
+    const projection = await project_case_entities(44);
+    const roles = await get_projected_entity_roles(projection.entities[0].id);
+    expect(roles![0]).toMatchObject({ rawMention: "I", sourceContext: null, sourceContextOffset: null });
   });
 });

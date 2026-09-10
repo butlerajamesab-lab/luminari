@@ -11,7 +11,6 @@ const chronology = read("case-runtime-chronology-compat.ts");
 const compatibility = read("case-runtime-intake-compat.ts");
 const analyze = read("routers/analyze.ts");
 const routers = read("routers.ts");
-const graph = read("../client/src/pages/NetworkGraph.tsx");
 const documentDetail = read("../client/src/pages/DocumentDetail.tsx");
 const statement = read("../client/src/pages/StatementOfFacts.tsx");
 
@@ -33,15 +32,13 @@ describe("governed projection reader surfaces", () => {
     expect(routers).toContain("if (governed !== null) return governed");
   });
 
-  it("distinguishes a sealed completed-zero relationship layer from not projected", () => {
+  it("provides explicit relationship projection state and dependencies to the graph", () => {
     expect(analyze).toContain("getIntakeRelationshipProjection");
     expect(analyze).toContain("unresolved_dependencies: output.unresolved_dependencies");
-    expect(graph).toContain('projection_state === "canonical_projection"');
-    expect(graph).toContain("Sealed projection found zero explicit relationships");
-    expect(graph).toContain("not drawn as connected merely because they appear in the same evidence");
-    expect(graph).toContain(".filter((entity) => connectedEntityIds.has(entity.id))");
-    expect(graph).toContain(") : !hasRelationships ? (");
-    expect(graph).toContain("<ForceGraph2D");
+    expect(analyze).toContain("projection_state: projection.state");
+    // NetworkGraph.test.tsx exercises completed-zero versus not-projected
+    // rendering; evidenceGraph.test.ts verifies that source membership never
+    // invents relationships and unconnected entities stay visible.
   });
 
   it("does not fabricate full text when only governed projections were retained", () => {

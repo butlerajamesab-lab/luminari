@@ -1,4 +1,5 @@
 import { getPool } from "./db-legacy";
+import { document_connection_page_limit, project_case_document_connections, type DocumentConnection } from "./intake-document-connections";
 
 function as_number(value: unknown): number {
   const parsed = Number(value ?? 0);
@@ -321,10 +322,20 @@ function map_correlation(row: any) {
     targetDocumentId: as_number(row.target_document_id),
     correlationType: row.correlation_type ?? null,
     sharedIdentifiers: [] as string[],
+    description: "Legacy connection without an attached evidence basis. This record does not establish corroboration.",
+    evidenceStatus: "unverified" as const,
+    evidenceCount: 0,
+    basis: [],
+    canonicalConnectionId: null,
+    canonicalOutputHashes: [] as string[],
+    canonicalReceiptHashes: [] as string[],
+    projectionSource: "legacy" as const,
   };
 }
 
 export async function listCorrelations(caseId: number) {
+  // Gates and exports consume this compatibility surface. Shared mentions are
+  // an inspection aid, never additional recorded correlations for those gates.
   const result = await getPool().query(
     `select id, case_id, source_document_id, target_document_id, correlation_type
        from public.document_correlations
@@ -335,19 +346,15 @@ export async function listCorrelations(caseId: number) {
   return result.rows.map(map_correlation);
 }
 
-export async function listCorrelationsEnriched(caseId: number) {
-  const result = await getPool().query(
-    `select c.id, c.case_id, c.source_document_id, c.target_document_id, c.correlation_type,
-            sd.filename as source_filename, sd.file_type as source_file_type,
-            td.filename as target_filename, td.file_type as target_file_type
-       from public.document_correlations c
-       left join public.documents sd on sd.id = c.source_document_id
-       left join public.documents td on td.id = c.target_document_id
-      where c.case_id = $1
-      order by c.id`,
-    [caseId],
-  );
-  return result.rows.map((row: any) => ({
+export type CorrelationInspectionOptions = {
+  limit?: number;
+  cursor?: string;
+  documentId?: number;
+  search?: string;
+};
+
+function map_enriched_correlation(row: any) {
+  return {
     ...map_correlation(row),
     sourceDocument: row.source_document_id ? {
       id: as_number(row.source_document_id),
@@ -359,7 +366,48 @@ export async function listCorrelationsEnriched(caseId: number) {
       filename: row.target_filename ?? null,
       fileType: row.target_file_type ?? null,
     } : null,
-  }));
+  };
+}
+
+export async function listCorrelationsEnriched(caseId: number, options: CorrelationInspectionOptions = {}) {
+  const limit = document_connection_page_limit(options.limit);
+  const cursor = options.cursor;
+  const legacyMatch = cursor ? /^legacy:(\d+)$/.exec(cursor) : null;
+  if (cursor && !legacyMatch && !/^projected:\d+:\d+$/.test(cursor)) throw new Error("Invalid document connection cursor");
+  const legacyAfter = legacyMatch ? Number(legacyMatch[1]) : 0;
+  if (!Number.isSafeInteger(legacyAfter) || legacyAfter < 0) throw new Error("Invalid recorded connection cursor");
+  if (options.documentId !== undefined && (!Number.isSafeInteger(options.documentId) || options.documentId <= 0)) throw new Error("Invalid document connection source document");
+  const items: Array<DocumentConnection | ReturnType<typeof map_enriched_correlation>> = [];
+  if (!legacyMatch) {
+    const page = await project_case_document_connections(caseId, {
+      ...options, limit, cursor: cursor?.slice("projected:".length),
+    });
+    items.push(...page.items);
+    if (page.nextCursor) return { items, nextCursor: `projected:${page.nextCursor}` };
+  }
+  const remaining = limit - items.length;
+  const result = await getPool().query(
+    `select c.id, c.case_id, c.source_document_id, c.target_document_id, c.correlation_type,
+            sd.filename as source_filename, sd.file_type as source_file_type,
+            td.filename as target_filename, td.file_type as target_file_type
+       from public.document_correlations c
+       left join public.documents sd on sd.id = c.source_document_id and sd.case_id = c.case_id
+       left join public.documents td on td.id = c.target_document_id and td.case_id = c.case_id
+      where c.case_id = $1 and c.id > $2
+        and ($3::integer is null or c.source_document_id = $3 or c.target_document_id = $3)
+        and ($4::text = '' or position($4 in lower(coalesce(sd.filename, ''))) > 0
+             or position($4 in lower(coalesce(td.filename, ''))) > 0
+             or position($4 in lower(coalesce(c.correlation_type, ''))) > 0
+             or position($4 in replace(lower(coalesce(c.correlation_type, '')), '_', ' ')) > 0)
+      order by c.id
+      limit $5`,
+    [caseId, legacyAfter, options.documentId ?? null, (options.search ?? "").trim().toLowerCase(), remaining + 1],
+  );
+  const legacyRows = result.rows.slice(0, remaining);
+  items.push(...legacyRows.map(map_enriched_correlation));
+  const hasMore = result.rows.length > remaining;
+  const lastLegacyId = legacyRows.length ? as_number(legacyRows.at(-1).id) : legacyAfter;
+  return { items, nextCursor: hasMore ? `legacy:${lastLegacyId}` : null };
 }
 
 function map_finding(row: any) {

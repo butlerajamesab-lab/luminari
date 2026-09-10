@@ -30,6 +30,7 @@ const chronology = [
     source_artifact_key: "artifact-preserved",
     source_span_offset: 10,
     verification_status: "document_stated",
+    event_scope: "facility_wide",
   },
   {
     event_id: "event-quarantined",
@@ -127,6 +128,7 @@ describe("chronology Layer 3 source binding", () => {
     expect(events[0]).toMatchObject({
       documentId: 7,
       documentFilename: "preserved.pdf",
+      canonical_event_scope: "facility_wide",
     });
   });
 
