@@ -12,7 +12,7 @@
  */
 
 import { trpc } from "@/lib/trpc";
-import { useCase } from "@/contexts/CaseContext";
+import { uploadReplacementDocument } from "@/lib/replacementUpload";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -45,8 +45,12 @@ export interface ReplaceDocumentModalV2Props {
   onClose: () => void;
   /** The document ID being replaced */
   documentId: number;
+  /** Case owning the original document, independent of the global case picker */
+  caseId: number | null;
   /** The document filename (for display) */
   documentName: string;
+  /** Open directly in the action requested by the caller */
+  initialMode?: "select" | "upload";
   /** Optional callback after successful replacement */
   onSuccess?: (result: { replacementDocumentId: number }) => void;
 }
@@ -55,34 +59,37 @@ export default function ReplaceDocumentModalV2({
   open,
   onClose,
   documentId,
+  caseId,
   documentName,
+  initialMode = "select",
   onSuccess,
 }: ReplaceDocumentModalV2Props) {
-  const { currentCaseId } = useCase();
   const utils = trpc.useUtils();
 
   // ── Local State ──
-  const [mode, setMode] = useState<"select" | "upload">("select");
+  const [mode, setMode] = useState<"select" | "upload">(initialMode);
   const [replacementDocId, setReplacementDocId] = useState<string>("");
   const [reason, setReason] = useState("");
   const [replaceFile, setReplaceFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   // Reset state when modal opens/closes
   useEffect(() => {
     if (open) {
-      setMode("select");
+      setMode(initialMode);
       setReplacementDocId("");
       setReason("");
       setReplaceFile(null);
       setUploading(false);
+      setUploadError(null);
     }
-  }, [open]);
+  }, [open, documentId, caseId, initialMode]);
 
   // ── Replacement Candidates ──
   const { data: docs } = trpc.documents.list.useQuery(
-    { caseId: currentCaseId! },
-    { enabled: !!currentCaseId && open }
+    { caseId: caseId! },
+    { enabled: !!caseId && open }
   );
 
   const replacementCandidates = useMemo(() => {
@@ -126,26 +133,19 @@ export default function ReplaceDocumentModalV2({
   const handleUploadReplace = async () => {
     if (!replaceFile) return;
     setUploading(true);
+    setUploadError(null);
     try {
-      const formData = new FormData();
-      formData.append("file", replaceFile);
-      const res = await fetch(`/api/upload/replace/${documentId}`, {
-        method: "POST",
-        body: formData,
-        credentials: "include",
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || data.message || "Replacement upload failed");
-      }
+      const data = await uploadReplacementDocument(documentId, replaceFile);
       toast.success(
         `Replaced document #${documentId} → new document #${data.newDocumentId} — source registered`
       );
       invalidateAll();
       onSuccess?.({ replacementDocumentId: data.newDocumentId });
       onClose();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Replacement upload failed. Please try again.";
+      setUploadError(message);
+      toast.error(message);
     } finally {
       setUploading(false);
     }
@@ -156,13 +156,16 @@ export default function ReplaceDocumentModalV2({
     input.type = "file";
     input.onchange = (e) => {
       const f = (e.target as HTMLInputElement).files?.[0];
-      if (f) setReplaceFile(f);
+      if (f) {
+        setReplaceFile(f);
+        setUploadError(null);
+      }
     };
     input.click();
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+    <Dialog open={open} onOpenChange={(o) => !o && !uploading && onClose()}>
       <DialogContent className="sm:max-w-lg" data-testid="replace-document-modal-v2">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-cyan-300">
@@ -184,7 +187,8 @@ export default function ReplaceDocumentModalV2({
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
-                onClick={() => setMode("select")}
+                disabled={uploading}
+                onClick={() => { setMode("select"); setUploadError(null); }}
               >
                 Select Existing
               </button>
@@ -194,7 +198,8 @@ export default function ReplaceDocumentModalV2({
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
-                onClick={() => setMode("upload")}
+                disabled={uploading}
+                onClick={() => { setMode("upload"); setUploadError(null); }}
               >
                 Upload Replacement
               </button>
@@ -282,7 +287,7 @@ export default function ReplaceDocumentModalV2({
                     </label>
                     <div
                       className="mt-1.5 p-4 rounded-md border-2 border-dashed border-muted-foreground/30 text-center cursor-pointer hover:border-cyan-500/50 transition-colors"
-                      onClick={handleFileSelect}
+                      onClick={() => !uploading && handleFileSelect()}
                     >
                       {replaceFile ? (
                         <div className="flex items-center justify-center gap-2">
@@ -293,9 +298,11 @@ export default function ReplaceDocumentModalV2({
                           </span>
                           <button
                             className="ml-2 text-muted-foreground hover:text-red-400"
+                            disabled={uploading}
                             onClick={(e) => {
                               e.stopPropagation();
                               setReplaceFile(null);
+                              setUploadError(null);
                             }}
                           >
                             <XCircle className="h-3.5 w-3.5" />
@@ -337,9 +344,15 @@ export default function ReplaceDocumentModalV2({
               )}
             </div>
 
+            {uploadError && (
+              <p role="alert" className="rounded-md border border-red-500/30 bg-red-950/20 p-3 text-sm text-red-200">
+                {uploadError}
+              </p>
+            )}
+
             {/* ── Footer Actions ── */}
             <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={onClose}>
+              <Button variant="outline" onClick={onClose} disabled={uploading}>
                 Cancel
               </Button>
               {mode === "select" ? (

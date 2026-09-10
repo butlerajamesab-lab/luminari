@@ -12,6 +12,8 @@ function read_repo_file(relative_path: string): string {
 describe("unrestricted evidence upload boundary", () => {
   const upload_page = read_repo_file("../client/src/pages/Upload.tsx");
   const upload_route = read_repo_file("./upload-route.ts");
+  const replacement_upload = read_repo_file("../client/src/lib/replacementUpload.ts");
+  const replacement_modal = read_repo_file("../client/src/components/ReplaceDocumentModalV2.tsx");
 
   it("does not restrict the browser file picker by extension or MIME type", () => {
     expect(upload_page).not.toMatch(/\baccept\s*=/);
@@ -38,6 +40,13 @@ describe("unrestricted evidence upload boundary", () => {
     expect(upload_route).not.toContain("fileFilter:");
     expect(upload_route).toContain('return "other";');
     expect(upload_route).toContain("fileSize: 100 * 1024 * 1024");
+  });
+
+  it("explicitly authenticates replacement uploads without depending on global fetch wrappers", () => {
+    expect(replacement_modal).toContain("await uploadReplacementDocument(documentId, replaceFile)");
+    expect(replacement_upload).toContain("const uploadHeaders = await getAuthenticatedRequestHeaders();");
+    expect(replacement_upload).toContain('uploadHeaders.has("x-lighthouse-supabase-session")');
+    expect(replacement_upload).toMatch(/fetch\(`\/api\/upload\/replace\/\$\{documentId\}`, \{[\s\S]*headers: uploadHeaders,[\s\S]*credentials: "include"/);
   });
 
   it("keeps authentication, hashing, and case ownership while preserving analysis separation", () => {

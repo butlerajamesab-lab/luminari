@@ -30,7 +30,7 @@ import ReplaceDocumentModalV2 from "@/components/ReplaceDocumentModalV2";
 
 type ResolutionModal =
   | { type: "none" }
-  | { type: "replace"; docId: number; docName: string }
+  | { type: "replace"; docId: number; docName: string; caseId: number }
   | { type: "corrupted" | "excluded"; docId: number; docName: string };
 
 function Metric({ label, value, tone = "default" }: {
@@ -187,7 +187,7 @@ export default function IntegrityDashboard() {
                 </Badge>
                 {document && (
                   <div className="flex gap-1">
-                    <Button variant="ghost" size="sm" className="gap-1" onClick={() => setModal({ type: "replace", docId: document.id, docName: document.filename })}>
+                    <Button variant="ghost" size="sm" className="gap-1" onClick={() => setModal({ type: "replace", docId: document.id, docName: document.filename, caseId: document.caseId })}>
                       <Replace className="h-3.5 w-3.5" />Replace
                     </Button>
                     {blocked && (
@@ -207,6 +207,7 @@ export default function IntegrityDashboard() {
         open={modal.type === "replace"}
         onClose={() => setModal({ type: "none" })}
         documentId={modal.type === "replace" ? modal.docId : 0}
+        caseId={modal.type === "replace" ? modal.caseId : null}
         documentName={modal.type === "replace" ? modal.docName : ""}
         onSuccess={invalidate}
       />

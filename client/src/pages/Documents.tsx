@@ -93,7 +93,7 @@ export default function Documents() {
     { caseId: currentCaseId! },
     { enabled: !!currentCaseId, refetchInterval: 5000 }
   );
-  const [replaceTarget, setReplaceTarget] = useState<{ id: number; name: string } | null>(null);
+  const [replaceTarget, setReplaceTarget] = useState<{ id: number; name: string; caseId: number } | null>(null);
 
   const startCdaRun = trpc.cda.startRun.useMutation({
     onSuccess: (data) => {
@@ -423,7 +423,7 @@ export default function Documents() {
                               View Details
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => setReplaceTarget({ id: doc.id, name: doc.filename })}>
+                            <DropdownMenuItem onClick={() => setReplaceTarget({ id: doc.id, name: doc.filename, caseId: doc.caseId })}>
                               <Replace className="h-3.5 w-3.5 mr-2" />
                               Replace Document
                             </DropdownMenuItem>
@@ -518,6 +518,7 @@ export default function Documents() {
         open={!!replaceTarget}
         onClose={() => setReplaceTarget(null)}
         documentId={replaceTarget?.id ?? 0}
+        caseId={replaceTarget?.caseId ?? null}
         documentName={replaceTarget?.name ?? ''}
         onSuccess={() => {
           utils.documents.list.invalidate();

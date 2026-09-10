@@ -34,7 +34,7 @@ type ModalState =
   | { type: "none" }
   | { type: "corrupted"; docId: number; docName: string }
   | { type: "excluded"; docId: number; docName: string }
-  | { type: "replace"; docId: number; docName: string }
+  | { type: "replace"; docId: number; docName: string; caseId: number }
   | { type: "metadata"; docId: number; docName: string };
 
 export default function ExtractionFailures() {
@@ -284,7 +284,7 @@ export default function ExtractionFailures() {
                     <DropdownMenuContent align="end" className="w-56">
                       <DropdownMenuItem
                         onClick={() => {
-                          setModal({ type: "replace", docId: doc.id, docName: doc.filename });
+                          setModal({ type: "replace", docId: doc.id, docName: doc.filename, caseId: doc.caseId });
                           setReason("");
                         }}
                         className="gap-2"
@@ -476,6 +476,7 @@ export default function ExtractionFailures() {
         open={modal.type === "replace"}
         onClose={() => setModal({ type: "none" })}
         documentId={modal.type === "replace" ? modal.docId : 0}
+        caseId={modal.type === "replace" ? modal.caseId : null}
         documentName={modal.type === "replace" ? modal.docName : ""}
         onSuccess={() => {
           utils.documents.list.invalidate();
