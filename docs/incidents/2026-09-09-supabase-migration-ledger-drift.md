@@ -135,3 +135,23 @@ The PostgreSQL fixture checks ordered replay, repeat execution against the
 recorded successor without changing its definition or counts, and rejection of
 an invalid successor. Fixture ledger entries exist only inside rolled-back
 transactions in the dedicated loopback test database.
+
+The preservation guard compares PostgreSQL's complete normalized view definition
+with the recorded successor, including every current-row predicate. Regression
+fixtures reject historical Atlas, candidate, and promoted rows independently.
+
+### Predecessor storage preflight
+
+The automatic review of #616 completed after its merge and identified two
+additional predecessor shapes. The original Drizzle patterns table used UUID
+identities and timestamp columns; user workflow tables used quoted camelCase
+columns and PostgreSQL enums. An additive preflight migration, ordered directly
+before the runtime contract, normalizes their storage while retaining original
+values, UUID references, ownership, source citations, and review decisions.
+The runtime migration already applied in previews is unchanged.
+
+The UUID fixture retains foreign-key references and verifies original dates and
+signatures after two executions. The workflow fixture starts with populated
+predecessor tables and checks ownership, nondefault enum values, content, and
+timestamps after two executions. #617 must pass these PostgreSQL regressions,
+fresh replay, preview checks, CI, and completed review before production resumes.

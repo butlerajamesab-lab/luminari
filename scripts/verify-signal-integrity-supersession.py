@@ -23,7 +23,8 @@ create table public.atlas_stream_runtime_projection_v1 (
   observation_count bigint, identity_bound_observation_count bigint,
   latest_observed_at timestamptz, is_current boolean
 );
-insert into public.atlas_stream_runtime_projection_v1 values (10,8,'2026-09-01',true);
+insert into public.atlas_stream_runtime_projection_v1 values
+  (10,8,'2026-09-01',true),(1000,900,'2026-08-01',false);
 create table public.detected_signals(id integer);
 create table public.live_signals(id integer);
 create table public.detected_signals_v2(id integer);
@@ -31,7 +32,8 @@ create table public.intake_signals(is_current boolean);
 create table public.legal_patterns(is_current boolean);
 create table public.live_data_signals(is_current boolean, governance_status text);
 create table public.signal_convergences(is_current boolean);
-insert into public.live_data_signals values (true,'observation_candidate'),(true,'promoted'),(false,'promoted');
+insert into public.live_data_signals values
+  (true,'observation_candidate'),(true,'promoted'),(false,'promoted'),(false,'observation_candidate');
 """
 assertions = """
 do $$ begin
@@ -51,13 +53,26 @@ do $$ begin
   end if;
 end $$;
 """
-for fixture_name, recorded in [("ordered_replay", False), ("production_successor", True), ("invalid_successor", True)]:
+drifted_definitions = {
+    "historical_atlas_rows": successor_view.replace("where p.is_current", "where true"),
+    "historical_candidates": successor_view.replace(
+        "where is_current and governance_status = 'observation_candidate'",
+        "where governance_status = 'observation_candidate'"),
+    "historical_promoted_rows": successor_view.replace(
+        "where is_current and governance_status = 'promoted'", "where governance_status = 'promoted'"),
+}
+for fixture_name, recorded in [
+    ("ordered_replay", False), ("production_successor", True), ("invalid_successor", True),
+    *[(name, True) for name in drifted_definitions],
+]:
     # All ledger writes below are synthetic, isolated, rolled-back test setup.
     setup = successor_view if recorded else migration + successor_view
     if recorded:
         setup += "insert into supabase_migrations.schema_migrations values ('20260822080454');"
     if fixture_name == "invalid_successor":
         setup += "drop view public.v_signal_architecture_integrity; create view public.v_signal_architecture_integrity as select 1 as unexpected;"
+    if fixture_name in drifted_definitions:
+        setup += drifted_definitions[fixture_name]
     query = "\n".join([
         "begin;", fixture, setup,
         "create temporary table saved_definition as select pg_get_viewdef('public.v_signal_architecture_integrity'::regclass,true) as definition;",
@@ -67,7 +82,7 @@ for fixture_name, recorded in [("ordered_replay", False), ("production_successor
         ["psql", "--no-psqlrc", "--set=ON_ERROR_STOP=1", "--quiet", "--dbname", database_url],
         input=query, text=True, capture_output=True, timeout=60,
     )
-    if fixture_name == "invalid_successor":
+    if fixture_name == "invalid_successor" or fixture_name in drifted_definitions:
         if result.returncode == 0 or "does not satisfy its live view contract" not in result.stderr:
             raise SystemExit(f"{fixture_name}: FAIL\n{result.stderr}")
     elif result.returncode:
