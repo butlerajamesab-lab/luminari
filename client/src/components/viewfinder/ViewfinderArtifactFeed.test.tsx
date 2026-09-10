@@ -6,10 +6,11 @@ const state = vi.hoisted(() => ({
   search: "?signal_domain=live_data",
   feed: {} as any,
   listQuery: vi.fn(),
+  detailQuery: vi.fn(),
   stateQuery: vi.fn(),
 }));
 vi.mock("@/lib/trpc", () => ({ trpc: {
-  enforcementIntel: { list_signal_artifacts: { useQuery: state.listQuery } },
+  enforcementIntel: { list_signal_artifacts: { useQuery: state.listQuery }, get_signal_artifact: { useQuery: state.detailQuery } },
   resourceDirectory: { viewfinderStates: { useQuery: state.stateQuery } },
 } }));
 vi.mock("@/core/hooks/useAuth", () => ({ useAuth: () => ({ user: state.user, loading: false }) }));
@@ -17,7 +18,7 @@ vi.mock("@/components/signal-architecture/SignalArtifactContext", () => ({ Signa
 vi.mock("wouter", () => ({ useLocation: () => ["/viewfinder", vi.fn()], useSearch: () => state.search }));
 
 import AnomalyViewfinder from "@/pages/AnomalyViewfinder";
-import { ViewfinderArtifactFeed, formatViewfinderDate } from "./ViewfinderArtifactFeed";
+import { ViewfinderArtifactFeed, ViewfinderEvidence, formatViewfinderDate } from "./ViewfinderArtifactFeed";
 
 function item(index: number) {
   return {
@@ -39,6 +40,7 @@ describe("Viewfinder canonical feed", () => {
       isLoading: false, isFetching: false, error: null, refetch: vi.fn(), fetchStatus: "idle",
     };
     state.listQuery.mockReset().mockImplementation(() => state.feed);
+    state.detailQuery.mockReset();
     state.stateQuery.mockReset().mockReturnValue({ data: { states: [] }, isLoading: false, isFetching: false, dataUpdatedAt: 0 });
   });
 
@@ -92,6 +94,13 @@ describe("Viewfinder canonical feed", () => {
     expect(html).toContain(formatViewfinderDate(state.feed.data.checked_at));
   });
 
+  it("withholds cached feed records when the server denies access", () => {
+    state.feed.error = { data: { code: "UNAUTHORIZED" } };
+    const html = renderToStaticMarkup(<ViewfinderArtifactFeed domain="live_data" />);
+    expect(html).toContain("Your session no longer has access");
+    expect(html).not.toContain("Current detection");
+  });
+
   it("keeps an empty feed distinct from loading and transport failure", () => {
     state.feed.data = { ...state.feed.data, items: [], total: 0, has_more: false, next_offset: null };
     const html = renderToStaticMarkup(<ViewfinderArtifactFeed domain="live_data" />);
@@ -100,5 +109,26 @@ describe("Viewfinder canonical feed", () => {
     expect(html).not.toContain("Refresh failed");
     expect(formatViewfinderDate(null)).toBe("Unknown");
     expect(formatViewfinderDate("invalid")).toBe("Unknown");
+  });
+
+  it("preserves cached evidence with a warning after a transient refresh failure", () => {
+    state.detailQuery.mockReturnValue({
+      data: { ...item(1), environmental_effect: "Recorded effect", source_reference: "source:123", evidence: { source_url: "https://example.test/evidence", quote: "Preserved source text" } },
+      error: new Error("Network unavailable"), fetchStatus: "idle",
+    });
+    const html = renderToStaticMarkup(<ViewfinderEvidence item={item(1) as any} />);
+    expect(html).toContain("Showing the last successful evidence");
+    expect(html).toContain("Preserved source text");
+    expect(html).toContain('href="https://example.test/evidence"');
+  });
+
+  it.each(["NOT_FOUND", "UNAUTHORIZED", "FORBIDDEN"])("withholds cached evidence after %s", (code) => {
+    state.detailQuery.mockReturnValue({
+      data: { ...item(1), evidence: { quote: "Cached private evidence" } },
+      error: { data: { code } }, fetchStatus: "idle",
+    });
+    const html = renderToStaticMarkup(<ViewfinderEvidence item={item(1) as any} />);
+    expect(html).not.toContain("Cached private evidence");
+    expect(html).toContain('role="alert"');
   });
 });

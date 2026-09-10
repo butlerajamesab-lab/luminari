@@ -29,7 +29,7 @@ function sourceUrls(value: unknown, urls = new Set<string>()): string[] {
   return [...urls];
 }
 
-function Evidence({ item }: { item: Artifact }) {
+export function ViewfinderEvidence({ item }: { item: Artifact }) {
   const detail = trpc.enforcementIntel.get_signal_artifact.useQuery(
     { domain: item.domain_code, record_id: item.record_id },
     {
@@ -39,10 +39,15 @@ function Evidence({ item }: { item: Artifact }) {
       retry: 1,
     },
   );
-  if (detail.error) return <p role="alert">Evidence could not be refreshed. This record may have been superseded. Retry by reopening its evidence.</p>;
+  const errorCode = detail.error?.data?.code;
+  if (errorCode === "NOT_FOUND") return <p role="alert">This record is no longer current. Refresh the feed to see its replacement.</p>;
+  if (errorCode === "UNAUTHORIZED" || errorCode === "FORBIDDEN") return <p role="alert">Evidence access is unavailable. Sign in again to check your access.</p>;
+  if (detail.error && !detail.data) return <p role="alert">Evidence could not be loaded. Retry by reopening its evidence.</p>;
   if (!detail.data) return <p role="status">Loading evidence…</p>;
   return (
     <div className="vf-evidence">
+      {detail.error ? <p role="alert">Evidence refresh failed. Showing the last successful evidence; it may be out of date.</p> : null}
+      {detail.fetchStatus === "paused" ? <p role="status">Connection paused; showing the last successful evidence.</p> : null}
       <p>{detail.data.environmental_effect}</p>
       <div className="vf-badges">
         {sourceUrls(detail.data.evidence).map((url, index) => <a key={url} href={url} target="_blank" rel="noreferrer">Source {index + 1} ↗</a>)}
@@ -80,7 +85,7 @@ function ArtifactCard({ item }: { item: Artifact }) {
       <button type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>
         {expanded ? "Hide evidence" : "Inspect evidence"}
       </button>
-      {expanded ? <Evidence item={item} /> : null}
+      {expanded ? <ViewfinderEvidence item={item} /> : null}
     </article>
   );
 }
@@ -100,7 +105,8 @@ export function ViewfinderArtifactFeed({ domain }: { domain: Domain }) {
       retry: 1,
     },
   );
-  const data = feed.data;
+  const accessDenied = feed.error?.data?.code === "UNAUTHORIZED" || feed.error?.data?.code === "FORBIDDEN";
+  const data = accessDenied ? undefined : feed.data;
   const items = data?.items ?? [];
 
   useEffect(() => {
@@ -139,7 +145,7 @@ export function ViewfinderArtifactFeed({ domain }: { domain: Domain }) {
         Checks every 30 seconds while visible, and when you return. Last successful check: {formatViewfinderDate(data?.checked_at)}.
         {feed.fetchStatus === "paused" ? " Connection paused; showing the last successful result." : ""}
       </div>
-      {feed.error ? <div className="vf-error" role="alert">Refresh failed. {data ? "Showing the last successful result; it may be out of date." : "The live feed is unavailable."} Use Refresh now to retry.</div> : null}
+      {feed.error ? <div className="vf-error" role="alert">Refresh failed. {accessDenied ? "Your session no longer has access. Sign in again to view detections." : data ? "Showing the last successful result; it may be out of date." : "The live feed is unavailable."} Use Refresh now to retry.</div> : null}
       <form className="vf-search" onSubmit={(event) => { event.preventDefault(); setSearch(draftSearch.trim()); setOffset(0); }}>
         <label htmlFor={`vf-search-${domain}`}>Search all results</label>
         <input id={`vf-search-${domain}`} value={draftSearch} maxLength={200} onChange={(event) => setDraftSearch(event.target.value)} placeholder="Title, type, jurisdiction, or source…" />
