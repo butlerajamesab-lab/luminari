@@ -75,6 +75,18 @@ describe('SMS HTML downstream semantics', () => {
     expect(processLayer7({ artifacts: [artifact], entities }).data).toEqual([]);
   });
 
+  it('retains separate HTML rows with identical text in the same displayed second', () => {
+    const artifact = messageArtifact([
+      { text: 'Rowan is moving to a room in long term care.' },
+      { text: 'Rowan is moving to a room in long term care.' },
+    ]);
+    const chronology = processLayer4({ artifacts: [artifact] }).data;
+    expect(chronology).toHaveLength(2);
+    expect(chronology.map(event => event.source_span_offset)).toEqual(artifact.spans.map(span => span.start_offset));
+    expect(new Set(chronology.map(event => event.event_id)).size).toBe(2);
+    expect(chronology.every(event => event.source_message_timezone === 'unknown')).toBe(true);
+  });
+
   it('requires a reviewed binding for the new artifact and never treats a Sent correspondent as the author', () => {
     const artifact = messageArtifact([{ text: 'I am Rowan’s caregiver.', direction: 'sent' }]);
     const oldSourceBinding = { ...binding(artifact, 'sent', 'Alex Example'), artifact_key: 'sha256:old-xml' };

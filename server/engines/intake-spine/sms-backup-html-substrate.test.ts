@@ -120,7 +120,44 @@ describe('SMS Backup viewer HTML parser', () => {
     expect(isSmsBackupRestoreHtml(Buffer.from(`<html><table>${headers}${row('Care review.')}</table></html>`))).toBe(false);
   });
 
-  it('detects the viewer when the byte probe ends inside a multibyte character', async () => {
+  it('extracts structured messages when a long stylesheet precedes the viewer heading and table', async () => {
+    const html = viewer(row('Care review.')).replace('body { color: #333; }', `/*${' stylesheet '.repeat(2048)}*/`);
+    expect(html.indexOf('Conversation with:')).toBeGreaterThan(8192);
+    const parsed = await parseArtifact('fixture', Buffer.from(html), 'text/html', 'messages.html');
+    expect(parsed).toMatchObject({
+      detected_mime_type: 'application/vnd.sms-backup-restore+html',
+      extraction_method: 'sms_backup_html', extraction_status: 'success',
+      extracted_text: 'Care review.',
+    });
+    expect(parsed.spans).toHaveLength(1);
+    expect(parsed.spans[0]).toMatchObject({ source_kind: 'sms_message', source_record_index: 0 });
+  });
+
+  it.each(['before_header', 'message_body'])('fails closed for recognizable viewer HTML with invalid UTF-8 at %s', async position => {
+    const html = viewer(row(position === 'message_body' ? 'TOKEN' : 'Care review.'));
+    const offset = position === 'before_header' ? html.indexOf('body {') : html.indexOf('TOKEN');
+    const bytes = Buffer.concat([Buffer.from(html.slice(0, offset)), Buffer.from([0xff]), Buffer.from(html.slice(offset))]);
+    expect(isSmsBackupRestoreHtml(bytes)).toBe(true);
+    const parsed = await parseArtifact('fixture', bytes, 'text/html', 'messages.html');
+    expect(parsed).toMatchObject({
+      detected_mime_type: 'application/vnd.sms-backup-restore+html',
+      extraction_status: 'extraction_failed', extracted_text: '', spans: [],
+    });
+  });
+
+  it('routes a recognizable oversized viewer to the size failure without raw HTML fallback', async () => {
+    const bytes = Buffer.alloc(SMS_BACKUP_HTML_RULE_MANIFEST.max_bytes + 1, ' ');
+    bytes.write(viewer(row('Care review.')));
+    expect(isSmsBackupRestoreHtml(bytes)).toBe(true);
+    const parsed = await parseArtifact('fixture', bytes, 'text/html', 'messages.html');
+    expect(parsed).toMatchObject({
+      detected_mime_type: 'application/vnd.sms-backup-restore+html',
+      extraction_status: 'extraction_failed', extraction_error: 'sms_html_byte_limit_exceeded',
+      extracted_text: '', spans: [],
+    });
+  });
+
+  it('preserves multibyte text beyond the former short detection probe', async () => {
     const template = viewer(row('TOKEN'));
     const prefixBytes = Buffer.byteLength(template.slice(0, template.indexOf('TOKEN')));
     const html = template.replace('TOKEN', `${'x'.repeat(8191 - prefixBytes)}🧪 Care review.`);

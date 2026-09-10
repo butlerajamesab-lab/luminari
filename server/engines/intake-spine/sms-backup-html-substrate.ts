@@ -7,6 +7,7 @@ export const SMS_BACKUP_HTML_RULE_MANIFEST = {
   signature: 'Conversation with:',
   headers: ['Type', 'Date', 'Name / Number', 'Content'],
   max_bytes: 25 * 1024 * 1024,
+  detection_policy: 'scan_entire_document_up_to_max_bytes_utf8_replacement_for_signature_only_then_strict_full_document_parse',
   max_records: 50_000,
   max_text_chars_per_record: 250_000,
   timestamp_format: 'English_Mmm_D_YYYY_h_mm_ss_AM_PM',
@@ -23,12 +24,12 @@ export const SMS_BACKUP_HTML_RULE_MANIFEST = {
 } as const;
 
 export function isSmsBackupRestoreHtml(bytes: Buffer): boolean {
-  let sample: string;
-  try {
-    sample = new TextDecoder('utf-8', { fatal: true }).decode(bytes.subarray(0, 8192), { stream: true });
-  } catch {
-    return false;
-  }
+  // Viewer styles can precede the table by far more than a small MIME probe.
+  // Cap detection at the supported file size, including for oversized input.
+  // Replacement decoding is only for recognition: the parser enforces both
+  // the size limit and strict UTF-8, so malformed viewers cannot fall back to
+  // generic HTML text merely because their encoding is invalid.
+  const sample = new TextDecoder('utf-8').decode(bytes.subarray(0, SMS_BACKUP_HTML_RULE_MANIFEST.max_bytes));
   return /<html(?:\s|>)/i.test(sample)
     && /Conversation with:/i.test(sample)
     && /<table(?:\s|>)/i.test(sample)
