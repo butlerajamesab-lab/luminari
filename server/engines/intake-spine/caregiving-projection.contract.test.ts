@@ -3,6 +3,7 @@ import { processLayer4 } from './layer-4-chronology_reconstruction';
 import { processLayer6 } from './layer-6-entity_registry';
 import { processLayer7 } from './layer-7-relationship_graph';
 import type { ParsedArtifact, TextSpan } from './parsing-substrate';
+import type { MessageAuthorBinding } from './layer-6-entity_registry';
 
 function artifactFromSentences(sentences: string[]): ParsedArtifact {
   const text = sentences.join('\n');
@@ -31,6 +32,36 @@ function artifactFromSentences(sentences: string[]): ParsedArtifact {
     parser_version: 'fixture-parser-v1',
     rule_version: 'fixture-rule-v1',
     parser_rule_manifest_hash: 'b'.repeat(64),
+  };
+}
+
+function smsArtifact(sentences: string[], direction: 'received' | 'sent', contactName: string): ParsedArtifact {
+  const artifact = artifactFromSentences(sentences);
+  artifact.extraction_method = 'sms_backup_xml';
+  artifact.spans = artifact.spans.map(span => ({
+    ...span,
+    source_kind: 'sms_message' as const,
+    message_kind: 'message' as const,
+    message_direction: direction,
+    message_contact_name: contactName,
+  }));
+  return artifact;
+}
+
+function authorBinding(
+  artifact: ParsedArtifact,
+  direction: 'received' | 'sent',
+  author: string,
+  contactName?: string,
+  provenance = 'case-participant-assertion:test',
+): MessageAuthorBinding {
+  return {
+    artifact_key: artifact.artifact_key,
+    message_direction: direction,
+    ...(contactName ? { source_contact_name: contactName } : {}),
+    author_canonical_name: author,
+    provenance_ref: provenance,
+    verification_state: 'verified',
   };
 }
 
@@ -78,5 +109,63 @@ describe('caregiving intake projection contracts', () => {
       expect(relationship.source_refs.length).toBeGreaterThan(0);
       expect(relationship.source_refs[0].artifact_key).toBe(artifact.artifact_key);
     }
+  });
+
+  it('binds inbound first-person caregiver and POA declarations only through a verified participant assertion', () => {
+    const artifact = smsArtifact([
+      "I am Rick's caregiver.",
+      'I have power of attorney for Rick.',
+    ], 'received', 'Cheryl');
+    const bindings = [authorBinding(artifact, 'received', 'Cheryl', 'Cheryl')];
+    const entityResult = processLayer6({ artifacts: [artifact], message_author_bindings: bindings });
+    expect(entityResult.data.find(entity => entity.canonical_name === 'cheryl')?.raw_mentions)
+      .toEqual(expect.arrayContaining([expect.objectContaining({ raw_text: 'I', binding_provenance_ref: 'case-participant-assertion:test' })]));
+    const relationships = processLayer7({ entities: entityResult.data, artifacts: [artifact] }).data;
+    expect(new Set(relationships.map(value => value.type))).toEqual(new Set([
+      'caregiver_recipient', 'authorized_representative_subject',
+    ]));
+  });
+
+  it('supports syntax-bounded family and facility declarations in ordinary evidence', () => {
+    const artifact = artifactFromSentences([
+      "Cheryl is Rick's daughter.",
+      'Rick lives at Kline Galland Home.',
+    ]);
+    const entities = processLayer6({ artifacts: [artifact] }).data;
+    expect(new Set(processLayer7({ entities, artifacts: [artifact] }).data.map(value => value.type)))
+      .toEqual(new Set(['family', 'facility_resident']));
+  });
+
+  it('supports an explicitly mapped outbound author without treating the remote contact as author', () => {
+    const artifact = smsArtifact(["I am Dana's caregiver."], 'sent', 'Dana');
+    const bindings = [authorBinding(artifact, 'sent', 'Morgan')];
+    const entities = processLayer6({ artifacts: [artifact], message_author_bindings: bindings }).data;
+    expect(entities.some(entity => entity.canonical_name === 'morgan')).toBe(true);
+    expect(processLayer7({ entities, artifacts: [artifact] }).data).toHaveLength(1);
+  });
+
+  it('keeps unmapped and ambiguous first-person SMS authors unresolved and emits no relationship', () => {
+    const artifact = smsArtifact(["I am Rick's caregiver."], 'received', 'Cheryl');
+    const unmapped = processLayer6({ artifacts: [artifact] });
+    expect(unmapped.data.some(entity => entity.canonical_name === 'cheryl')).toBe(false);
+    expect(unmapped.unresolved_dependencies.some(value => value.detail.includes('no verified'))).toBe(true);
+    expect(processLayer7({ entities: unmapped.data, artifacts: [artifact] }).data).toEqual([]);
+
+    const ambiguous = processLayer6({
+      artifacts: [artifact],
+      message_author_bindings: [
+        authorBinding(artifact, 'received', 'Cheryl', 'Cheryl', 'assertion:1'),
+        authorBinding(artifact, 'received', 'Charlotte', 'Cheryl', 'assertion:2'),
+      ],
+    });
+    expect(ambiguous.unresolved_dependencies.some(value => value.detail.includes('ambiguous'))).toBe(true);
+    expect(processLayer7({ entities: ambiguous.data, artifacts: [artifact] }).data).toEqual([]);
+  });
+
+  it('does not misbind descriptive possessives outside the declared-subject syntax', () => {
+    const artifact = smsArtifact(["I spoke to Rick's caregiver, Cheryl, about his care."], 'received', 'Morgan');
+    const bindings = [authorBinding(artifact, 'received', 'Morgan', 'Morgan')];
+    const entities = processLayer6({ artifacts: [artifact], message_author_bindings: bindings }).data;
+    expect(processLayer7({ entities, artifacts: [artifact] }).data).toEqual([]);
   });
 });

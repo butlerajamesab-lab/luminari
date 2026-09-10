@@ -62,7 +62,16 @@ beforeEach(() => {
         barriers: 10,
         detected_signals: 6,
       },
-      graph: { edges: 0, available: false },
+      graph: {
+        name: "canonical_civic_graph",
+        edges: null,
+        structural_edges: null,
+        semantic_edges: null,
+        unresolved_relationships: null,
+        available: false,
+        reason: "The canonical graph summary timed out. Retry after the current database load clears.",
+        contract: null,
+      },
     },
     getBarrierClusters: {
       clusters: [
@@ -81,6 +90,7 @@ beforeEach(() => {
       total_doctrines: 1,
       doctrine_edges: 0,
       doctrine_edges_available: false,
+      doctrine_edges_unavailable_reason: "The doctrine graph count is unavailable.",
     },
     getAffectedInstitutions: {
       institutions: [
@@ -153,7 +163,7 @@ it("renders the snake_case API responses across every diagnostics panel", () => 
   expect(html).toContain("Structural Diagnostics");
   expect(html).toContain("7 barriers");
   expect(html).toContain("Equal protection");
-  expect(html).toContain("graph connections are not available");
+  expect(html).toContain("doctrine graph connections are unavailable");
   expect(html).toContain("TEST");
   expect(html).toContain(">27<");
   expect(html).toContain("out of 40 total agencies");
@@ -161,6 +171,24 @@ it("renders the snake_case API responses across every diagnostics panel", () => 
   expect(html).toContain("identified from 10 barriers");
   expect(html).toContain("Recorded Signals");
   expect(html).toContain("Unavailable");
+  expect(html).toContain("canonical graph summary timed out");
+});
+
+it("renders a verified canonical edge count when the governed graph is available", () => {
+  state.results.stats.data.graph = {
+    name: "canonical_civic_graph",
+    edges: 655,
+    structural_edges: 600,
+    semantic_edges: 55,
+    unresolved_relationships: 4,
+    available: true,
+    reason: null,
+    contract: "lighthouse_canonical_state_v2",
+  };
+  const html = renderToStaticMarkup(<StructuralDiagnosticsLens />);
+  expect(html).toContain("Canonical Civic Graph Edges:");
+  expect(html).toContain(">655<");
+  expect(html).not.toContain("canonical graph summary timed out");
 });
 
 it("distinguishes absent confidence and dates from a recorded zero", () => {

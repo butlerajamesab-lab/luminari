@@ -473,6 +473,91 @@ describe("CMS-2567 semantic-lane regression", () => {
       expect(unresolvedText).toContain(date);
     }
   });
+
+  it("separates case-specific events from facility-wide CMS evidence in the same corpus", () => {
+    const caseSentence =
+      "Cheryl Morgan was admitted to the hospital on January 5, 2026.";
+    const caseArtifact = artifactFromPages("case:care-summary.pdf", [
+      caseSentence,
+    ]);
+    const facilityArtifact = artifactFromPages("cms-2567:mixed-scope.pdf", [
+      [
+        cmsHeader("11/21/2024", "Page 1 of 1"),
+        "On 11/20/2024 Resident 45 was admitted to the hospital.",
+        cmsFooter("Page 1 of 1"),
+      ].join("\n"),
+    ]);
+    const artifacts = [facilityArtifact, caseArtifact];
+    const entities = processLayer6({ artifacts }).data;
+    const timelineEntities = entities.filter(
+      (entity) =>
+        !entity.raw_mentions.some(
+          (mention) => mention.artifact_key === caseArtifact.artifact_key,
+        ) ||
+        (entity.type === "person" && entity.canonical_name === "cheryl morgan"),
+    );
+    const chronology = processLayer4({ artifacts });
+    const timeline = processLayer9({ entities: timelineEntities, artifacts });
+    const chronologyReplay = processLayer4({ artifacts: [...artifacts].reverse() });
+    const timelineReplay = processLayer9({
+      entities: [...timelineEntities].reverse(),
+      artifacts: [...artifacts].reverse(),
+    });
+
+    expect(chronologyReplay.data).toEqual(chronology.data);
+    expect(chronologyReplay.output_hash).toBe(chronology.output_hash);
+    expect(timelineReplay.data).toEqual(timeline.data);
+    expect(timelineReplay.output_hash).toBe(timeline.output_hash);
+
+    expect(
+      chronology.data.filter((event) => event.event_scope === "case_specific"),
+    ).toEqual([
+      expect.objectContaining({
+        date: "2026-01-05",
+        event_text: caseSentence,
+        source_artifact_key: caseArtifact.artifact_key,
+      }),
+    ]);
+    expect(
+      timeline.data.filter(
+        (transition) => transition.transition_scope === "case_specific",
+      ),
+    ).toEqual([
+      expect.objectContaining({
+        to_state: "facility_hospitalization",
+        source_text: caseSentence,
+        source_artifact_key: caseArtifact.artifact_key,
+      }),
+    ]);
+    expect(
+      chronology.data.some(
+        (event) =>
+          event.source_artifact_key === facilityArtifact.artifact_key &&
+          event.event_scope === "facility_wide",
+      ),
+    ).toBe(true);
+    expect(
+      timeline.data.some(
+        (transition) =>
+          transition.source_artifact_key === facilityArtifact.artifact_key &&
+          transition.transition_scope === "facility_wide",
+      ),
+    ).toBe(true);
+  });
+
+  it("does not promote a date-bearing label fragment into chronology", () => {
+    const fragment = "Incident date: January 5, 2026.";
+    const artifact = artifactFromPages("case:intake-label.pdf", [fragment]);
+    const chronology = processLayer4({ artifacts: [artifact] });
+
+    expect(chronology.data).toEqual([]);
+    expect(chronology.unresolved_dependencies).toEqual([
+      expect.objectContaining({
+        field: expect.stringContaining("chronology_fragment:"),
+        reason: "incomplete",
+      }),
+    ]);
+  });
 });
 
 function artifactFromPages(

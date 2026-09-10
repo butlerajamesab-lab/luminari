@@ -19,6 +19,33 @@ import {
 } from "../../drizzle/schema";
 import { enrichSignalWithInterpretation, loadInterpretationPack, getCategoryContext } from "../ingestion/interpretation-layer";
 import { query_with_diagnostics } from "../db-legacy";
+import { getCurrentCanonicalState } from "../services/current-canonical-state";
+
+const DIAGNOSTICS_STATS_TIMEOUT_MS = 5_000;
+const GRAPH_EXPANSION_LIMIT_PER_DIRECTION = 25;
+const DOCTRINE_GRAPH_NODE_TYPES = new Set(["statute", "case", "doctrine", "agency"]);
+
+function graph_unavailable_reason(error: unknown): string {
+  if (error instanceof Error && /timeout|timed out/i.test(error.message)) {
+    return "The canonical graph summary timed out. Retry after the current database load clears.";
+  }
+  return "The canonical graph summary could not be read. The edge count is unknown.";
+}
+
+function doctrine_graph_unavailable_reason(error: unknown): string {
+  if (error instanceof Error && /timeout|timed out/i.test(error.message)) {
+    return "The doctrine graph count timed out. Retry after the current database load clears.";
+  }
+  return "The doctrine graph count could not be read. The edge count is unknown.";
+}
+
+function canonical_graph_count(value: unknown, field: string): number {
+  const count = Number(value);
+  if (!Number.isFinite(count) || count < 0) {
+    throw new Error(`Canonical graph field ${field} is unavailable`);
+  }
+  return count;
+}
 
 function as_string_array(value: unknown): string[] {
   if (Array.isArray(value)) return value.map(String);
@@ -528,13 +555,41 @@ export const dualLensRouter = router({
       domain: z.string().optional(),
     }))
     .query(async ({ input }) => {
-      const { rows: allDoctrines } = await query_with_diagnostics<any>(
+      const doctrines_request = query_with_diagnostics<any>(
         `select id, name, description, primary_cases, domains, added_by, created_at, updated_at
            from public.doctrine_registry
-          order by name asc, id asc`,
+          order by name asc, id asc
+          limit 500`,
         [],
-        { label: "dual_lens_doctrine_clusters" },
+        { label: "dual_lens_doctrine_clusters", pool_acquire_timeout_ms: 1_000, query_timeout_ms: 4_000 },
       );
+      const doctrine_count_request = query_with_diagnostics<{ doctrine_count: number }>(
+        `select count(*)::int as doctrine_count from public.doctrine_registry`,
+        [],
+        { label: "dual_lens_doctrine_count", pool_acquire_timeout_ms: 1_000, query_timeout_ms: 4_000 },
+      );
+      const edge_request = query_with_diagnostics<{ edge_count: number }>(
+        `select count(*)::int as edge_count from public.doctrine_graph_edges`,
+        [],
+        { label: "dual_lens_doctrine_edge_count", pool_acquire_timeout_ms: 1_000, query_timeout_ms: 4_000 },
+      ).then(({ rows }) => ({
+        count: Number(rows[0]?.edge_count ?? 0),
+        available: true as const,
+        reason: null,
+      })).catch((error: unknown) => ({
+        count: null,
+        available: false as const,
+        reason: doctrine_graph_unavailable_reason(error),
+      }));
+      const [{ rows: allDoctrines }, { rows: doctrine_count_rows }, doctrine_graph] = await Promise.all([
+        doctrines_request,
+        doctrine_count_request,
+        edge_request,
+      ]);
+      const total_doctrines = Number(doctrine_count_rows[0]?.doctrine_count);
+      if (!Number.isFinite(total_doctrines) || total_doctrines < 0) {
+        throw new Error("Doctrine registry count is unavailable");
+      }
 
       // Group by first domain
       const clusters: Record<string, {
@@ -555,9 +610,11 @@ export const dualLensRouter = router({
 
       return {
         clusters: Object.values(clusters).sort((a, b) => b.count - a.count),
-        total_doctrines: allDoctrines.length,
-        doctrine_edges: 0,
-        doctrine_edges_available: false,
+        total_doctrines,
+        doctrine_edges: doctrine_graph.count,
+        doctrine_edges_available: doctrine_graph.available,
+        doctrine_edges_unavailable_reason: doctrine_graph.reason,
+        doctrine_results_limited: total_doctrines > allDoctrines.length,
       };
     }),
 
@@ -704,14 +761,62 @@ export const dualLensRouter = router({
       nodeType: z.enum(["claim", "proof", "barrier", "agency", "action", "pattern", "doctrine", "statute", "case"]),
     }))
     .query(async ({ input }) => {
-      return {
-        node_id: input.nodeId,
-        node_type: input.nodeType,
-        outgoing: [],
-        incoming: [],
-        total_connections: 0,
-        graph_available: false,
-      };
+      if (!DOCTRINE_GRAPH_NODE_TYPES.has(input.nodeType)) {
+        return {
+          graph_name: "doctrine_graph" as const,
+          node_id: input.nodeId,
+          node_type: input.nodeType,
+          outgoing: [],
+          incoming: [],
+          returned_connections: 0,
+          graph_available: false,
+          graph_unavailable_reason: `Node type ${input.nodeType} is not owned by the doctrine graph.`,
+          truncated: false,
+        };
+      }
+
+      try {
+        const { rows } = await query_with_diagnostics<any>(
+          `(select 'outgoing'::text as direction,id,from_type::text,from_id,edge_type::text,to_type::text,to_id,strength::text,notes
+              from public.doctrine_graph_edges
+             where from_type = $1::public.doctrine_graph_edges_from_type_enum and from_id = $2
+             order by id asc
+             limit ${GRAPH_EXPANSION_LIMIT_PER_DIRECTION})
+           union all
+           (select 'incoming'::text as direction,id,from_type::text,from_id,edge_type::text,to_type::text,to_id,strength::text,notes
+              from public.doctrine_graph_edges
+             where to_type = $1::public.doctrine_graph_edges_to_type_enum and to_id = $2
+             order by id asc
+             limit ${GRAPH_EXPANSION_LIMIT_PER_DIRECTION})`,
+          [input.nodeType, input.nodeId],
+          { label: "dual_lens_doctrine_graph_expand", pool_acquire_timeout_ms: 1_000, query_timeout_ms: 4_000 },
+        );
+        const outgoing = rows.filter((row) => row.direction === "outgoing");
+        const incoming = rows.filter((row) => row.direction === "incoming");
+        return {
+          graph_name: "doctrine_graph" as const,
+          node_id: input.nodeId,
+          node_type: input.nodeType,
+          outgoing,
+          incoming,
+          returned_connections: rows.length,
+          graph_available: true,
+          graph_unavailable_reason: null,
+          truncated: outgoing.length === GRAPH_EXPANSION_LIMIT_PER_DIRECTION || incoming.length === GRAPH_EXPANSION_LIMIT_PER_DIRECTION,
+        };
+      } catch (error) {
+        return {
+          graph_name: "doctrine_graph" as const,
+          node_id: input.nodeId,
+          node_type: input.nodeType,
+          outgoing: [],
+          incoming: [],
+          returned_connections: 0,
+          graph_available: false,
+          graph_unavailable_reason: graph_unavailable_reason(error),
+          truncated: false,
+        };
+      }
     }),
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -943,7 +1048,7 @@ export const dualLensRouter = router({
    * Get summary stats for the dual-lens dashboard.
    */
   stats: publicProcedure.query(async () => {
-    const { rows } = await query_with_diagnostics<{
+    const counts_request = query_with_diagnostics<{
       claim_count: number;
       proof_count: number;
       barrier_count: number;
@@ -967,8 +1072,38 @@ export const dualLensRouter = router({
          (select count(*)::int from public.court_directory) as court_count,
          (select count(*)::int from public.detected_signals where signal_id is not null) as live_signal_count`,
       [],
-      { label: "dual_lens_stats" },
+      {
+        label: "dual_lens_stats",
+        pool_acquire_timeout_ms: 1_000,
+        query_timeout_ms: DIAGNOSTICS_STATS_TIMEOUT_MS,
+      },
     );
+    // The graph total comes from the governed canonical-state contract. Keep
+    // it independent from registry counts so a graph timeout is represented as
+    // unavailable instead of turning the entire diagnostics summary into a 504.
+    const graph_request = getCurrentCanonicalState()
+      .then((state) => ({
+        name: "canonical_civic_graph" as const,
+        edges: canonical_graph_count(state.graph_edges, "graph_edges"),
+        structural_edges: canonical_graph_count(state.structural_graph_edges, "structural_graph_edges"),
+        semantic_edges: canonical_graph_count(state.semantic_graph_edges, "semantic_graph_edges"),
+        unresolved_relationships: canonical_graph_count(state.unresolved_relationships, "unresolved_relationships"),
+        available: true as const,
+        reason: null,
+        contract: state.contract,
+      }))
+      .catch((error: unknown) => ({
+        name: "canonical_civic_graph" as const,
+        edges: null,
+        structural_edges: null,
+        semantic_edges: null,
+        unresolved_relationships: null,
+        available: false as const,
+        reason: graph_unavailable_reason(error),
+        contract: null,
+      }));
+
+    const [{ rows }, graph] = await Promise.all([counts_request, graph_request]);
     const counts = rows[0] ?? {
       claim_count: 0,
       proof_count: 0,
@@ -998,10 +1133,7 @@ export const dualLensRouter = router({
         barriers: Number(counts.barrier_count),
         detected_signals: Number(counts.live_signal_count),
       },
-      graph: {
-        edges: 0,
-        available: false,
-      },
+      graph,
     };
   }),
 });

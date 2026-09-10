@@ -29,6 +29,7 @@ export interface StateTransition {
   source_span_offset: number;
   source_text: string;
   verification_status: FactStatus;
+  transition_scope?: 'case_specific' | 'facility_wide';
 }
 
 export interface Layer9Input {
@@ -36,8 +37,8 @@ export interface Layer9Input {
   artifacts: ParsedArtifact[];
 }
 
-export const LAYER_VERSION = '2.6.0';
-export const RULE_VERSION = '2.6.0';
+export const LAYER_VERSION = '2.7.0';
+export const RULE_VERSION = '2.7.0';
 
 type StateRule = {
   regex: { source: string; flags: string };
@@ -60,6 +61,8 @@ export const RULE_MANIFEST: {
   from_state_policy: 'null_without_explicit_prior_state_rule';
   semantic_substrate_version: string;
   sms_transition_date_policy: 'message_timestamp_when_sentence_has_no_explicit_date';
+  mixed_corpus_scope_policy: 'retain_with_case_specific_or_facility_wide_scope';
+  fragment_policy: 'reject_without_bounded_subject_and_predicate';
 } = {
   state_rules: [
     { regex: { source: '\\b(?:was |been |got )?terminated\\b', flags: 'gi' }, to_state: 'terminated', domain: 'employment' },
@@ -124,6 +127,8 @@ export const RULE_MANIFEST: {
   from_state_policy: 'null_without_explicit_prior_state_rule',
   semantic_substrate_version: SEMANTIC_SUBSTRATE_VERSION,
   sms_transition_date_policy: 'message_timestamp_when_sentence_has_no_explicit_date',
+  mixed_corpus_scope_policy: 'retain_with_case_specific_or_facility_wide_scope',
+  fragment_policy: 'reject_without_bounded_subject_and_predicate',
 };
 
 export const RULE_MANIFEST_HASH = computeRuleManifestHash(RULE_MANIFEST);
@@ -166,6 +171,7 @@ export function processLayer9(input: Layer9Input): EngineResult<StateTransition[
     }
 
     const artifactClass = classifySemanticArtifact(artifact);
+    const transitionScope = artifactClass === 'cms_2567' ? 'facility_wide' : 'case_specific';
     const surveyDate = artifactClass === 'cms_2567' ? cmsSurveyDate(artifact) : null;
 
     for (const span of semanticSpansForArtifact(artifact, artifacts, 'state_timeline')) {
@@ -175,6 +181,7 @@ export function processLayer9(input: Layer9Input): EngineResult<StateTransition[
         while ((match = rule.pattern.exec(span.text)) !== null) {
           const bounds = semanticSentenceBounds(span.text, match.index);
           const sentence = span.text.substring(bounds.start, bounds.end).trim();
+          if (!isCompleteTransitionSentence(sentence)) continue;
           const sentenceAbsoluteOffset = span.start_offset + bounds.start;
           const entities = entitiesMentionedInSentence(
             input.entities,
@@ -226,6 +233,7 @@ export function processLayer9(input: Layer9Input): EngineResult<StateTransition[
             source_span_offset: sentenceAbsoluteOffset,
             source_text: sentence,
             verification_status: 'document_stated',
+            transition_scope: transitionScope,
           });
         }
       }
@@ -245,6 +253,11 @@ export function processLayer9(input: Layer9Input): EngineResult<StateTransition[
     unresolved_dependencies: unresolved.sort((a, b) => a.field.localeCompare(b.field)),
     is_sealed: false,
   };
+}
+
+function isCompleteTransitionSentence(text: string): boolean {
+  const normalized = text.replace(/\s+/g, ' ').trim();
+  return normalized.split(/\s+/).filter(token => /[A-Za-z]/.test(token)).length >= 3;
 }
 
 function entitiesMentionedInSentence(

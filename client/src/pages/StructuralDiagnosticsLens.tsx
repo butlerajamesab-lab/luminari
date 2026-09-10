@@ -446,8 +446,13 @@ export default function StructuralDiagnosticsLens() {
                 <span className="font-medium">{stats.data.structuralDiagnostics.barriers}</span>
               </div>
               <div>
-                <span className="text-muted-foreground">Graph Edges:</span>{" "}
+                <span className="text-muted-foreground">Canonical Civic Graph Edges:</span>{" "}
                 <span className="font-medium">{stats.data.graph.available ? stats.data.graph.edges : "Unavailable"}</span>
+                {!stats.data.graph.available && stats.data.graph.reason && (
+                  <p className="max-w-md text-xs text-amber-400" role="status">
+                    {stats.data.graph.reason}
+                  </p>
+                )}
               </div>
               {liveSignalCount > 0 && (
                 <div className="flex items-center gap-1.5">
@@ -607,7 +612,7 @@ export default function StructuralDiagnosticsLens() {
                     <span className="text-purple-400"> (filtered from {doctrineClusters.data.totalDoctrines})</span>
                   )}
                   {" "}across {filteredDoctrineClusters.clusters.length} domains
-                  {filteredDoctrineClusters.doctrineEdgesAvailable ? `, connected by ${filteredDoctrineClusters.doctrineEdges} graph edges` : " · graph connections are not available"}
+                  {filteredDoctrineClusters.doctrineEdgesAvailable ? `, connected by ${filteredDoctrineClusters.doctrineEdges} doctrine graph edges` : ` · doctrine graph connections are unavailable${filteredDoctrineClusters.doctrineEdgesUnavailableReason ? `: ${filteredDoctrineClusters.doctrineEdgesUnavailableReason}` : ""}`}
                 </p>
                 {filteredDoctrineClusters.clusters.length === 0 && hasActiveFilter && (
                   <Card className="border-border/30">

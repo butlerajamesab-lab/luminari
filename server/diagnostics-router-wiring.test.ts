@@ -3,6 +3,8 @@ import { beforeEach, expect, it, vi } from "vitest";
 
 const state = vi.hoisted(() => ({
   catalog: vi.fn(),
+  canonical: vi.fn(),
+  query: vi.fn(),
   rows: new Map<unknown, any[]>(),
 }));
 vi.mock("./intake-pattern-catalog", () => ({
@@ -25,6 +27,12 @@ vi.mock("./db", () => ({
     }),
   },
 }));
+vi.mock("./services/current-canonical-state", () => ({
+  getCurrentCanonicalState: state.canonical,
+}));
+vi.mock("./db-legacy", () => ({
+  query_with_diagnostics: state.query,
+}));
 
 import { enforcementIntelligenceRouter } from "./routers/enforcement-intelligence";
 import { dualLensRouter } from "./routers/dual-lens";
@@ -44,6 +52,27 @@ beforeEach(() => {
     history: [],
     chronology_observations: 6019,
     distinct_pattern_occurrences: 0,
+  });
+  state.canonical.mockReset().mockResolvedValue({
+    contract: "lighthouse_canonical_state_v2",
+    graph_edges: 655,
+    structural_graph_edges: 600,
+    semantic_graph_edges: 55,
+    unresolved_relationships: 4,
+  });
+  state.query.mockReset().mockResolvedValue({
+    rows: [{
+      claim_count: 1,
+      proof_count: 2,
+      barrier_count: 3,
+      agency_count: 4,
+      workflow_count: 5,
+      deadline_count: 6,
+      doctrine_count: 7,
+      signal_count: 8,
+      court_count: 9,
+      live_signal_count: 10,
+    }],
   });
   state.rows.set(litigationBarriers, [
     {
@@ -219,5 +248,107 @@ it("keeps incomplete live metadata explicit without exposing additional source f
   });
   expect(JSON.stringify(result)).not.toContain(
     "Unpublished source description",
+  );
+});
+
+it("reports the governed canonical graph count and its component totals", async () => {
+  const caller = dualLensRouter.createCaller({} as never);
+  const result = await caller.stats();
+  expect(result.graph).toEqual({
+    name: "canonical_civic_graph",
+    edges: 655,
+    structural_edges: 600,
+    semantic_edges: 55,
+    unresolved_relationships: 4,
+    available: true,
+    reason: null,
+    contract: "lighthouse_canonical_state_v2",
+  });
+});
+
+it("keeps registry stats available and explains when the graph read times out", async () => {
+  state.canonical.mockRejectedValueOnce(new Error("query timeout after 7000ms"));
+  const caller = dualLensRouter.createCaller({} as never);
+  const result = await caller.stats();
+  expect(result.structural_diagnostics).toBeDefined();
+  expect(result.graph).toMatchObject({
+    name: "canonical_civic_graph",
+    edges: null,
+    available: false,
+    contract: null,
+  });
+  expect(result.graph.reason).toContain("timed out");
+});
+
+it("applies an explicit pool and query budget to the diagnostics summary read", async () => {
+  const caller = dualLensRouter.createCaller({} as never);
+  await caller.stats();
+  expect(state.query).toHaveBeenCalledWith(
+    expect.stringContaining("from public.strategy_claim_catalog"),
+    [],
+    expect.objectContaining({
+      label: "dual_lens_stats",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 5_000,
+    }),
+  );
+});
+
+it("expands only the doctrine graph with indexed directions and a bounded result", async () => {
+  state.query.mockResolvedValueOnce({ rows: [
+    { direction: "outgoing", id: 1, from_id: "D-1", to_id: "S-1" },
+    { direction: "incoming", id: 2, from_id: "C-1", to_id: "D-1" },
+  ] });
+  const caller = dualLensRouter.createCaller({} as never);
+  const result = await caller.expandNode({ nodeId: "D-1", nodeType: "doctrine" });
+  expect(result).toMatchObject({
+    graph_name: "doctrine_graph",
+    graph_available: true,
+    returned_connections: 2,
+    truncated: false,
+  });
+  expect(result.outgoing).toHaveLength(1);
+  expect(result.incoming).toHaveLength(1);
+  expect(state.query).toHaveBeenCalledWith(
+    expect.stringMatching(/where from_type = \$1[\s\S]*limit 25[\s\S]*where to_type = \$1[\s\S]*limit 25/),
+    ["doctrine", "D-1"],
+    expect.objectContaining({ query_timeout_ms: 4_000 }),
+  );
+});
+
+it("does not route foreign node types into the doctrine graph", async () => {
+  const caller = dualLensRouter.createCaller({} as never);
+  const result = await caller.expandNode({ nodeId: "P-1", nodeType: "pattern" });
+  expect(result).toMatchObject({
+    graph_name: "doctrine_graph",
+    graph_available: false,
+    returned_connections: 0,
+  });
+  expect(result.graph_unavailable_reason).toContain("not owned by the doctrine graph");
+  expect(state.query).not.toHaveBeenCalled();
+});
+
+it("keeps the doctrine total independent from the capped cluster rows", async () => {
+  const doctrineRows = Array.from({ length: 500 }, (_, index) => ({
+    id: index + 1,
+    name: `Doctrine ${index + 1}`,
+    domains: ["general"],
+  }));
+  state.query.mockImplementation((_sql: string, _params: unknown[], options: { label: string }) => {
+    if (options.label === "dual_lens_doctrine_clusters") return Promise.resolve({ rows: doctrineRows });
+    if (options.label === "dual_lens_doctrine_count") return Promise.resolve({ rows: [{ doctrine_count: 731 }] });
+    if (options.label === "dual_lens_doctrine_edge_count") return Promise.resolve({ rows: [{ edge_count: 44 }] });
+    throw new Error(`Unexpected query: ${options.label}`);
+  });
+  const caller = dualLensRouter.createCaller({} as never);
+  const result = await caller.getDoctrineClusters({});
+  expect(result.total_doctrines).toBe(731);
+  expect(result.clusters.reduce((sum, cluster) => sum + cluster.count, 0)).toBe(500);
+  expect(result.doctrine_results_limited).toBe(true);
+  expect(result.doctrine_edges).toBe(44);
+  expect(state.query).toHaveBeenCalledWith(
+    expect.stringContaining("count(*)::int as doctrine_count"),
+    [],
+    expect.objectContaining({ query_timeout_ms: 4_000 }),
   );
 });
