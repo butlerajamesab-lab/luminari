@@ -385,47 +385,50 @@ function SourceEventCandidates({ documentId, filename, events, onNavigate }: {
   </section>;
 }
 
-function CorrelationsTab({ caseId }: { caseId: number }) {
-  const correlationsQuery = trpc.correlations.listEnriched.useQuery({ caseId });
-  const correlations = correlationsQuery.data as EnrichedCorrelation[] | undefined;
-  const [visible, setVisible] = useState(20);
+export function CorrelationsTab({ caseId }: { caseId: number }) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [documentFilter, setDocumentFilter] = useState("");
   const [search, setSearch] = useState("");
+  const [appliedSearch, setAppliedSearch] = useState("");
+  useEffect(() => {
+    const timer = setTimeout(() => setAppliedSearch(search.trim()), 250);
+    return () => clearTimeout(timer);
+  }, [search]);
+  const correlationsQuery = trpc.correlations.listEnriched.useInfiniteQuery({
+    caseId, limit: 20,
+    documentId: documentFilter ? Number(documentFilter) : undefined,
+    search: appliedSearch || undefined,
+  }, { getNextPageParam: (page: { nextCursor: string | null }) => page.nextCursor ?? undefined });
+  const correlations = correlationsQuery.data?.pages.flatMap((page: { items: EnrichedCorrelation[] }) => page.items) as EnrichedCorrelation[] | undefined;
+  const documentsQuery = trpc.documents.list.useQuery({ caseId });
   const eventsQuery = trpc.events.list.useQuery({ caseId }, { enabled: expanded !== null });
   const events = useMemo(() => project_source_events(eventsQuery.data ?? []), [eventsQuery.data]);
   const [, setLocation] = useLocation();
-  useEffect(() => { setVisible(20); setExpanded(null); setDocumentFilter(""); setSearch(""); }, [caseId]);
+  useEffect(() => { setExpanded(null); setDocumentFilter(""); setSearch(""); setAppliedSearch(""); }, [caseId]);
+  useEffect(() => { setExpanded(null); }, [documentFilter, appliedSearch]);
   const documents = useMemo(() => {
     const result = new Map<number, string>();
-    for (const connection of correlations ?? []) {
-      if (connection.sourceDocument) result.set(connection.sourceDocument.id, connection.sourceDocument.filename || `Document ${connection.sourceDocument.id}`);
-      if (connection.targetDocument) result.set(connection.targetDocument.id, connection.targetDocument.filename || `Document ${connection.targetDocument.id}`);
+    for (const document of documentsQuery.data ?? []) {
+      result.set(document.id, document.filename || `Document ${document.id}`);
     }
     return [...result.entries()].sort((a, b) => a[1].localeCompare(b[1]));
-  }, [correlations]);
-  const filtered = (correlations ?? []).filter(connection => {
-    const query = search.trim().toLocaleLowerCase();
-    return (!documentFilter || String(connection.sourceDocumentId) === documentFilter || String(connection.targetDocumentId) === documentFilter)
-      && (!query || [connection.correlationType, connection.description, connection.sourceDocument?.filename, connection.targetDocument?.filename, ...(connection.basis ?? []).map(basis => basis.canonicalEntityName)]
-        .some(value => value?.toLocaleLowerCase().includes(query)));
-  });
+  }, [documentsQuery.data]);
   const openDocument = (id: number) => { if (source_document_id(id)) setLocation(`/documents/${id}?from=${encodeURIComponent(buildFromParam())}`); };
 
-  if (correlationsQuery.isLoading) return <Skeleton />;
-  if (correlationsQuery.error && !correlations) return <Card><CardContent className="p-4" role="alert">Document connections could not be loaded. <Button variant="ghost" size="sm" onClick={() => void correlationsQuery.refetch()}>Retry</Button></CardContent></Card>;
-  if (!correlations?.length) return <Empty icon={<Link2 className="h-10 w-10 text-muted-foreground" />} text="No source-linked document connections or recorded candidate links are available yet." />;
+  const accessDenied = [correlationsQuery.error, documentsQuery.error, eventsQuery.error]
+    .some(error => ["UNAUTHORIZED", "FORBIDDEN"].includes(error?.data?.code ?? ""));
+  if (accessDenied) return <Card><CardContent className="p-4" role="alert">Access to these source records is unavailable. Sign in with an account that has access to this case.</CardContent></Card>;
 
   return <div className="space-y-3">
     <p className="text-xs text-muted-foreground">Inspect the exact mentions behind a document connection. A shared identity or repeated statement does not establish that the same event occurred or was independently corroborated.</p>
-    {correlationsQuery.error && <p role="alert" className="text-sm text-red-300">Connection refresh failed. Showing the last successful result.</p>}
+    {correlationsQuery.error && <div role="alert" className="text-sm text-red-300">{correlations ? "Connection refresh failed. Showing the last successful result." : "Document connections could not be loaded."} <Button variant="ghost" size="sm" onClick={() => void correlationsQuery.refetch()}>Retry</Button></div>}
     <div className="grid gap-2 sm:grid-cols-2">
-      <label className="text-xs space-y-1">Source document<select aria-label="Filter document connections" className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm" value={documentFilter} onChange={event => { setDocumentFilter(event.target.value); setVisible(20); }}><option value="">All documents</option>{documents.map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select></label>
-      <label className="text-xs space-y-1">Search connections<input aria-label="Search document connections" className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm" value={search} placeholder="Entity, filename, or recorded link type" onChange={event => { setSearch(event.target.value); setVisible(20); }} /></label>
+      <label className="text-xs space-y-1">Source document<select aria-label="Filter document connections" className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm" value={documentFilter} onChange={event => setDocumentFilter(event.target.value)}><option value="">All documents</option>{documents.map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select></label>
+      <label className="text-xs space-y-1">Search connections<input aria-label="Search document connections" maxLength={200} className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm" value={search} placeholder="Entity, filename, or recorded link type" onChange={event => setSearch(event.target.value)} /></label>
     </div>
-    <p className="text-xs text-muted-foreground">{filtered.length} of {correlations.length} connections</p>
-    {filtered.length === 0 && <p className="text-sm">No document connections match these filters.</p>}
-    {filtered.slice(0, visible).map(connection => {
+    {correlationsQuery.isLoading ? <Skeleton /> : <p className="text-xs text-muted-foreground">{correlations?.length ?? 0} connections loaded{correlationsQuery.hasNextPage ? " · more available" : ""}</p>}
+    {!correlationsQuery.isLoading && !correlationsQuery.error && !correlations?.length && <p className="text-sm">No document connections match these filters.</p>}
+    {(correlations ?? []).map(connection => {
       const key = connection.canonicalConnectionId ?? `legacy:${connection.id}`;
       const supported = connection.evidenceStatus === "source_linked" && Boolean(connection.basis?.length);
       const sourceName = connection.sourceDocument?.filename || `Document ${connection.sourceDocumentId}`;
@@ -448,7 +451,7 @@ function CorrelationsTab({ caseId }: { caseId: number }) {
         </div>}
       </CardContent></Card>;
     })}
-    {visible < filtered.length && <Button variant="outline" className="w-full" onClick={() => setVisible(count => count + 20)}>Show more ({filtered.length - visible} remaining)</Button>}
+    {correlationsQuery.hasNextPage && <Button variant="outline" className="w-full" disabled={correlationsQuery.isFetchingNextPage} onClick={() => void correlationsQuery.fetchNextPage()}>{correlationsQuery.isFetchingNextPage ? "Loading connections…" : "Load more connections"}</Button>}
   </div>;
 }
 
@@ -641,10 +644,6 @@ export default function Findings() {
     { caseId: currentCaseId! },
     { enabled: !!currentCaseId, select: (d) => d.length }
   );
-  const { data: correlations } = trpc.correlations.list.useQuery(
-    { caseId: currentCaseId! },
-    { enabled: !!currentCaseId, select: (d) => d.length }
-  );
 
   if (!currentCaseId) {
     return (
@@ -688,7 +687,7 @@ export default function Findings() {
           </TabsTrigger>
           <TabsTrigger value="correlations" className="gap-1.5">
             <Link2 className="h-3.5 w-3.5" />
-            Document connections ({correlations ?? 0})
+            Document connections
           </TabsTrigger>
         </TabsList>
 

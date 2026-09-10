@@ -43,6 +43,9 @@ function CaseChronology({ caseId }: { caseId: number }) {
   const clearFilters = () => { setDocumentId(""); setSearch(""); setScope(""); setStatus(""); setVisible(50); };
   const openDocument = (id: string) => setLocation(`/documents/${id}?from=${encodeURIComponent(buildFromParam())}`);
   const selectClass = "h-9 w-full rounded-md border border-input bg-background px-2 text-sm";
+  const accessDenied = [eventsQuery.error, documentsQuery.error]
+    .some(error => ["UNAUTHORIZED", "FORBIDDEN"].includes(error?.data?.code ?? ""));
+  if (accessDenied) return <Card><CardContent className="p-4" role="alert">Access to this chronology is unavailable. Sign in with an account that has access to this case.</CardContent></Card>;
 
   return (
     <div className="space-y-4">

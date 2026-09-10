@@ -7,7 +7,7 @@ vi.mock("./intake-case-runtime-projection", async importOriginal => ({
   project_case_entities: mocks.project,
 }));
 
-import { build_document_connections } from "./intake-document-connections";
+import { build_document_connections, build_document_connection_page } from "./intake-document-connections";
 import { listCorrelations, listCorrelationsEnriched } from "./case-runtime-read-compat";
 import type { project_case_entities, SourceArtifactRow } from "./intake-case-runtime-projection";
 
@@ -167,20 +167,129 @@ describe("source-bound document connections", () => {
   });
 });
 
-describe("case correlation read compatibility", () => {
-  it.each([listCorrelations, listCorrelationsEnriched])("retains unsupported legacy records as unverified beside exact canonical evidence", async list => {
-    mocks.project.mockResolvedValue(fixture());
-    mocks.query.mockResolvedValue({ rows: [{
-      id: 77, case_id: 8, source_document_id: 11, target_document_id: 22,
-      correlation_type: "corroborated", source_filename: "source-11.txt", target_filename: "source-22.txt",
-    }] });
-    const rows = await list(8);
-    expect(rows).toHaveLength(2);
-    expect(rows.find(row => row.id === 77)).toMatchObject({
-      correlationType: "corroborated", evidenceStatus: "unverified", evidenceCount: 0, basis: [], sharedIdentifiers: [],
+function many_documents(count: number): Projection {
+  const projection = fixture();
+  projection.source_artifacts = new Map(Array.from({ length: count }, (_, i) => [`artifact-${i + 1}`, [artifact(i + 1)]]));
+  projection.canonical_entities[0].raw_mentions = Array.from({ length: count }, (_, i) => mention(i + 1));
+  return projection;
+}
+
+describe("bounded document-pair expansion", () => {
+  it("materializes a bounded page for an entity present in thousands of sources", () => {
+    const projection = many_documents(2_000);
+    const page = build_document_connection_page(8, projection, { limit: 20 });
+    expect(page.items).toHaveLength(20);
+    expect(page.items.map(item => [item.sourceDocumentId, item.targetDocumentId])).toEqual(Array.from({ length: 20 }, (_, i) => [1, i + 2]));
+    expect(page.nextCursor).toBe("1:21");
+    const tail = build_document_connection_page(8, projection, { limit: 20, cursor: "1998:2000" });
+    expect(tail.items.map(item => [item.sourceDocumentId, item.targetDocumentId])).toEqual([[1999, 2000]]);
+    expect(tail.nextCursor).toBeNull();
+  });
+
+  it("pages overlapping entity pair streams without duplicate pairs or missing bases", () => {
+    const projection = many_documents(6);
+    projection.canonical_entities.push({
+      entity_id: "entity-facility", type: "organization", canonical_name: "Sample Facility",
+      raw_mentions: [mention(1, "Sample Facility"), mention(3, "Sample Facility"), mention(6, "Sample Facility")],
     });
-    expect(rows.find(row => row.id < 0)).toMatchObject({ correlationType: "shared_entity", evidenceStatus: "source_linked", evidenceCount: 1 });
+    const all = [];
+    let cursor: string | undefined;
+    do {
+      const page = build_document_connection_page(8, projection, { limit: 3, cursor });
+      all.push(...page.items);
+      cursor = page.nextCursor ?? undefined;
+    } while (cursor);
+    expect(all).toHaveLength(15);
+    expect(new Set(all.map(item => item.canonicalConnectionId)).size).toBe(15);
+    expect(all.find(item => item.sourceDocumentId === 1 && item.targetDocumentId === 3)?.basis).toHaveLength(2);
+    expect(all.map(item => [item.sourceDocumentId, item.targetDocumentId])).toEqual(
+      Array.from({ length: 5 }, (_, i) => Array.from({ length: 5 - i }, (_, j) => [i + 1, i + j + 2])).flat(),
+    );
+  });
+
+  it("applies source and filename/entity filters before paging and keeps all paired evidence", () => {
+    const projection = many_documents(6);
+    projection.canonical_entities.push({
+      entity_id: "entity-facility", type: "organization", canonical_name: "Sample Facility",
+      raw_mentions: [mention(1, "Sample Facility"), mention(3, "Sample Facility"), mention(6, "Sample Facility")],
+    });
+    const sourcePage = build_document_connection_page(8, projection, { limit: 2, documentId: 6 });
+    expect(sourcePage.items.map(item => [item.sourceDocumentId, item.targetDocumentId])).toEqual([[1, 6], [2, 6]]);
+    expect(sourcePage.nextCursor).toBe("2:6");
+    const searched = build_document_connection_page(8, projection, { search: "facility", documentId: 6 });
+    expect(searched.items.map(item => [item.sourceDocumentId, item.targetDocumentId])).toEqual([[1, 6], [3, 6]]);
+    expect(searched.items.every(item => item.basis.length === 2)).toBe(true);
+    const filename = build_document_connection_page(8, projection, { search: "source-3.txt", limit: 2 });
+    expect(filename.items.map(item => [item.sourceDocumentId, item.targetDocumentId])).toEqual([[1, 3], [2, 3]]);
+    expect(build_document_connection_page(8, projection, { search: "no matching source" }).items).toEqual([]);
+    expect(build_document_connection_page(8, projection, { search: "shared entity", limit: 2 }).items).toHaveLength(2);
+  });
+
+  it("rejects an excessive page size or invalid cursor", () => {
+    expect(() => build_document_connection_page(8, fixture(), { limit: 51 })).toThrow("page limit");
+    expect(() => build_document_connection_page(8, fixture(), { cursor: "22:11" })).toThrow("cursor");
+    expect(() => build_document_connection_page(8, fixture(), { cursor: "9007199254740992:9007199254740993" })).toThrow("cursor");
+  });
+});
+
+describe("case correlation read compatibility", () => {
+  const legacy = (id = 77) => ({
+    id, case_id: 8, source_document_id: 11, target_document_id: 22,
+    correlation_type: "corroborated", source_filename: "source-11.txt", target_filename: "source-22.txt",
+  });
+
+  it("keeps gate/export compatibility reads limited to recorded legacy rows and never invokes the projection", async () => {
+    mocks.project.mockRejectedValue(new Error("must not be queried by legacy gate"));
+    mocks.query.mockResolvedValue({ rows: [legacy()] });
+    const rows = await listCorrelations(8);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ id: 77, evidenceStatus: "unverified", evidenceCount: 0, basis: [], sharedIdentifiers: [] });
+    expect(mocks.project).not.toHaveBeenCalled();
     expect(mocks.query.mock.calls[0][1]).toEqual([8]);
+  });
+
+  it("returns source-linked inspection evidence and recorded legacy candidates through the enriched page only", async () => {
+    mocks.project.mockResolvedValue(fixture());
+    mocks.query.mockResolvedValue({ rows: [legacy()] });
+    const page = await listCorrelationsEnriched(8);
+    expect(page.items).toHaveLength(2);
+    expect(page.nextCursor).toBeNull();
+    expect(page.items.find(row => row.id === 77)).toMatchObject({ correlationType: "corroborated", evidenceStatus: "unverified", evidenceCount: 0 });
+    expect(page.items.find(row => row.id < 0)).toMatchObject({ correlationType: "shared_entity", evidenceStatus: "source_linked", evidenceCount: 1 });
+    expect(mocks.query.mock.calls[0][1]).toEqual([8, 0, null, "", 20]);
+  });
+
+  it("bounds legacy reads, resumes by recorded id, and applies the same source/search filters", async () => {
+    mocks.query.mockResolvedValue({ rows: [legacy(78), legacy(79), legacy(80)] });
+    const page = await listCorrelationsEnriched(8, { cursor: "legacy:77", limit: 2, documentId: 11, search: " Corroborated " });
+    expect(page.items.map(item => item.id)).toEqual([78, 79]);
+    expect(page.nextCursor).toBe("legacy:79");
+    expect(mocks.project).not.toHaveBeenCalled();
+    expect(mocks.query.mock.calls[0][1]).toEqual([8, 77, 11, "corroborated", 3]);
+    expect(mocks.query.mock.calls[0][0]).toContain("c.id > $2");
+    expect(mocks.query.mock.calls[0][0]).toContain("limit $5");
+  });
+
+  it("transitions between derived and legacy pages without exceeding the page limit or hiding legacy rows", async () => {
+    mocks.project.mockResolvedValue(fixture());
+    mocks.query.mockResolvedValue({ rows: [legacy()] });
+    const first = await listCorrelationsEnriched(8, { limit: 1 });
+    expect(first.items).toHaveLength(1);
+    expect(first.items[0].id).toBeLessThan(0);
+    expect(first.nextCursor).toBe("legacy:0");
+    expect(mocks.query.mock.calls[0][1]).toEqual([8, 0, null, "", 1]);
+    const second = await listCorrelationsEnriched(8, { limit: 1, cursor: first.nextCursor! });
+    expect(second.items.map(item => item.id)).toEqual([77]);
+    expect(second.nextCursor).toBeNull();
+    expect(mocks.project).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not fetch legacy records before a derived page is complete", async () => {
+    mocks.project.mockResolvedValue(many_documents(6));
+    const page = await listCorrelationsEnriched(8, { limit: 2 });
+    expect(page.items).toHaveLength(2);
+    expect(page.nextCursor).toBe("projected:1:3");
+    expect(mocks.query).not.toHaveBeenCalled();
   });
 
   it("propagates canonical integrity failures instead of silently returning legacy records", async () => {
