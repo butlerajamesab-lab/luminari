@@ -15,14 +15,8 @@
 import { db } from "../db";
 import {
   crisisPredictions,
-  patternRegistry,
-  detectedSignals,
-  regulatoryCapturePatterns,
-  trendPressureMetrics,
-  institutionRegistry,
-  patternInstitutionLinks,
 } from "../../drizzle/schema";
-import { eq, and, sql, desc, count, gte, lte } from "drizzle-orm";
+import { eq, and, sql, desc, count, gte } from "drizzle-orm";
 
 // ─── Crisis Types ───
 export type CrisisType =
@@ -60,80 +54,89 @@ export async function calculateCrisisProbability(params: {
 }): Promise<{ probability: number; indicators: CrisisIndicator[]; riskLevel: RiskLevel }> {
   const indicators: CrisisIndicator[] = [];
 
-  // Indicator 1: Pattern pressure acceleration (25%)
-  const patterns = await db
-    .select()
-    .from(patternRegistry)
-    // @ts-ignore pre-existing type mismatch
-    .where(eq(patternRegistry.status, "active"));
+  const trendFilter = sql`${params.jurisdiction
+    ? sql`AND jurisdiction ILIKE ${params.jurisdiction}`
+    : sql``}${params.industry
+    ? sql` AND domain ILIKE ${`%${params.industry}%`}`
+    : sql``}`;
+  const signalFilter = sql`${params.jurisdiction
+    ? sql`AND COALESCE(jurisdiction_scope, jurisdiction, '') ILIKE ${params.jurisdiction}`
+    : sql``}${params.entityName
+    ? sql` AND (COALESCE(entity_id, '') ILIKE ${`%${params.entityName}%`} OR COALESCE(affected_entities, '') ILIKE ${`%${params.entityName}%`})`
+    : sql``}${params.industry
+    ? sql` AND COALESCE(domain, '') ILIKE ${`%${params.industry}%`}`
+    : sql``}`;
 
-  const avgPressure = patterns.length > 0
-    // @ts-ignore pre-existing type mismatch
-    ? patterns.reduce((sum, p) => sum + (p.pressureScore ?? 0), 0) / patterns.length
-    : 0;
+  const [patternRows] = await db.execute(sql`
+    SELECT COUNT(*)::int AS pattern_count,
+           COALESCE(AVG(pressure_index), 0)::numeric AS avg_pressure
+      FROM v_active_trends WHERE true ${trendFilter}
+  `);
+  const patternState = (patternRows as unknown as any[])[0] ?? {};
+  const patternCount = Number(patternState.pattern_count) || 0;
+  const avgPressure = Number(patternState.avg_pressure) || 0;
 
   indicators.push({
     name: "pattern_pressure",
     weight: 0.25,
     value: Math.min(100, avgPressure),
-    description: `Average pattern pressure: ${avgPressure.toFixed(1)}/100 across ${patterns.length} active patterns`,
+    description: `Average governed trend pressure: ${avgPressure.toFixed(1)}/100 across ${patternCount} current trends`,
   });
 
   // Indicator 2: Signal density (20%)
-  const [signalCount] = await db
-    .select({ count: count() })
-    .from(detectedSignals);
-
-  const signalDensity = Math.min(100, (signalCount?.count ?? 0) * 3);
+  const [signalRows] = await db.execute(sql`
+    SELECT COUNT(*)::int AS signal_count,
+           COUNT(DISTINCT COALESCE(NULLIF(dataset_id,''), NULLIF(signal_type,'')))::int AS source_count
+      FROM detected_signals WHERE true ${signalFilter}
+  `);
+  const signalState = (signalRows as unknown as any[])[0] ?? {};
+  const signalCount = Number(signalState.signal_count) || 0;
+  const sourceCount = Number(signalState.source_count) || 0;
+  const signalDensity = Math.min(100, signalCount * 3);
   indicators.push({
     name: "signal_density",
     weight: 0.20,
     value: signalDensity,
-    description: `${signalCount?.count ?? 0} active signals detected`,
+    description: `${signalCount} governed signals match the requested scope`,
   });
 
-  // Indicator 3: Enforcement gap severity (20%)
-  const [gapInstitutions] = await db
-    .select({ count: count() })
-    .from(institutionRegistry)
-    .where(lte(institutionRegistry.accountabilityScore, 40));
-
-  const totalInst = await db.select({ count: count() }).from(institutionRegistry);
-  const gapRatio = (totalInst[0]?.count ?? 0) > 0
-    ? ((gapInstitutions?.count ?? 0) / (totalInst[0]?.count ?? 1)) * 100
-    : 0;
+  // Indicator 3: governed access/readiness gap among agencies and oversight.
+  const [gapRows] = await db.execute(sql`
+    SELECT COUNT(*)::int AS total,
+           COUNT(*) FILTER (
+             WHERE direct_access_ready IS NOT TRUE
+                OR NULLIF(BTRIM(COALESCE(statutory_authority,'')), '') IS NULL
+           )::int AS gap_count
+      FROM v_lighthouse_workflow_accountability_catalog_v1
+     WHERE object_class IN ('agency','oversight_body')
+       ${params.jurisdiction
+         ? sql`AND UPPER(COALESCE(state_code, jurisdiction, '')) = UPPER(${params.jurisdiction})`
+         : sql``}
+  `);
+  const gapState = (gapRows as unknown as any[])[0] ?? {};
+  const totalInstitutions = Number(gapState.total) || 0;
+  const gapInstitutions = Number(gapState.gap_count) || 0;
+  const gapRatio = totalInstitutions > 0 ? (gapInstitutions / totalInstitutions) * 100 : 0;
 
   indicators.push({
     name: "enforcement_gap",
     weight: 0.20,
     value: Math.min(100, gapRatio),
-    description: `${gapInstitutions?.count ?? 0} institutions with low accountability scores`,
+    description: `${gapInstitutions} of ${totalInstitutions} governed agency/oversight records lack a complete authority or direct-access path`,
   });
 
-  // Indicator 4: Capture risk (15%)
-  const [capturePatterns] = await db
-    .select({ count: count() })
-    .from(regulatoryCapturePatterns)
-    .where(gte(regulatoryCapturePatterns.captureRiskScore, 50));
-
-  const captureRisk = Math.min(100, (capturePatterns?.count ?? 0) * 25);
+  // No governed capture-risk projection is currently populated. Keep this
+  // component explicitly unavailable instead of manufacturing a score.
+  const captureRisk = 0;
   indicators.push({
     name: "capture_risk",
     weight: 0.15,
     value: captureRisk,
-    description: `${capturePatterns?.count ?? 0} high-risk capture patterns detected`,
+    description: "No governed capture-risk metric is currently available",
   });
 
   // Indicator 5: Cross-stream confirmation (10%)
-  const signalTypes = await db
-    .select({
-      signalType: detectedSignals.signalType,
-      cnt: count(),
-    })
-    .from(detectedSignals)
-    .groupBy(detectedSignals.signalType);
-
-  const activeStreams = signalTypes.length;
+  const activeStreams = sourceCount;
   const crossStreamScore = Math.min(100, activeStreams * 20);
   indicators.push({
     name: "cross_stream",
@@ -143,18 +146,18 @@ export async function calculateCrisisProbability(params: {
   });
 
   // Indicator 6: Trend momentum (10%)
-  const [trendMetrics] = await db
-    .select({ count: count() })
-    .from(trendPressureMetrics)
-    // @ts-ignore pre-existing type mismatch
-    .where(gte(trendPressureMetrics.pressureScore, 60));
-
-  const trendMomentum = Math.min(100, (trendMetrics?.count ?? 0) * 20);
+  const [momentumRows] = await db.execute(sql`
+    SELECT COUNT(*)::int AS high_pressure_count
+      FROM v_active_trends
+     WHERE pressure_index >= 60 ${trendFilter}
+  `);
+  const highPressureCount = Number((momentumRows as unknown as any[])[0]?.high_pressure_count) || 0;
+  const trendMomentum = Math.min(100, highPressureCount * 20);
   indicators.push({
     name: "trend_momentum",
     weight: 0.10,
     value: trendMomentum,
-    description: `${trendMetrics?.count ?? 0} high-pressure trend metrics`,
+    description: `${highPressureCount} current trends have pressure at or above 60`,
   });
 
   // Calculate weighted probability
@@ -268,23 +271,22 @@ export async function generateCrisisPrediction(params: {
   const escalationDate = estimateEscalationDate(probability, 30, 1);
 
   // Store prediction
-  // @ts-ignore pre-existing type mismatch
-  const [inserted] = await db.insert(crisisPredictions).values({
+  const inserted = await db.insert(crisisPredictions).values({
     patternId: null,
-    industryCp: params.industry ?? null,
-    jurisdictionCp: params.jurisdiction ?? null,
-    entityNameCp: params.entityName ?? null,
+    industry: params.industry ?? null,
+    jurisdiction: params.jurisdiction ?? null,
+    entityName: params.entityName ?? null,
     predictionType,
     crisisProbability: probability,
     estimatedEscalationDate: escalationDate,
     predictionConfidence: Math.min(100, Math.round(probability * 0.8)),
-    riskLevel: riskLevel,
+    riskLevel,
     triggerFactors,
-    createdAtCp: Date.now(),
-  });
+    createdAt: Date.now(),
+  }).returning({ id: crisisPredictions.id });
 
   return {
-    id: inserted.insertId,
+    id: inserted[0]?.id,
     predictionType,
     probability,
     riskLevel,

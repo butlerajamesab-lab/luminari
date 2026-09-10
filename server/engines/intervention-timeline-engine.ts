@@ -44,9 +44,9 @@ export async function recordTimelineEvent(input: {
     impactScore: input.impactScore ?? 0,
     metadata: input.metadata,
     timestamp: input.timestamp ?? Date.now(),
-  });
+  }).returning({ id: patternTimelineEvents.id });
 
-  return { id: (result as any).insertId };
+  return { id: result.id };
 }
 
 /** Get timeline for a specific pattern */

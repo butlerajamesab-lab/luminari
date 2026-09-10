@@ -29,7 +29,7 @@ export async function getSnapshotHash(caseId: number): Promise<string | null> {
 export async function deriveSnapshotHash(caseId: number): Promise<string | null> {
   try {
     const result = await db.execute(
-      sql`SELECT MD5(GROUP_CONCAT(document_id ORDER BY document_id)) as hash
+      sql`SELECT MD5(STRING_AGG(document_id::text, ',' ORDER BY document_id)) as hash
       FROM case_documents
       WHERE case_id = ${caseId}`
     ) as unknown as any[];

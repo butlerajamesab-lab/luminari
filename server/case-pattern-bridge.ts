@@ -330,8 +330,8 @@ export async function storeCaseSignals(
       active: 1,
       createdAt: now,
       updatedAt: now,
-    });
-    insertedIds.push(result.insertId);
+    }).returning({ id: caseSignals.id });
+    insertedIds.push(result.id);
   }
 
   return insertedIds;
@@ -381,7 +381,7 @@ export async function evaluatePatternCandidates(
         caseSignalId: signal.id,
         contributionType: "supporting",
         linkedAt: now,
-      }).onDuplicateKeyUpdate({ set: { linkedAt: now } });
+      }).onConflictDoNothing();
 
       // Update the case_signal with the pattern candidate link
       await db.update(caseSignals).set({
@@ -428,20 +428,20 @@ export async function evaluatePatternCandidates(
           timeWindowDays: 90,
           createdAt: now,
           updatedAt: now,
-        });
+        }).returning({ id: patternCandidates.id });
 
         // Link case to new candidate
         await db.insert(casePatternLinks).values({
           caseId,
-          patternCandidateId: result.insertId,
+          patternCandidateId: result.id,
           caseSignalId: signal.id,
           contributionType: "originating",
           linkedAt: now,
-        }).onDuplicateKeyUpdate({ set: { linkedAt: now } });
+        }).onConflictDoNothing();
 
         // Update case_signal with candidate link
         await db.update(caseSignals).set({
-          patternCandidateId: result.insertId,
+          patternCandidateId: result.id,
           updatedAt: now,
         }).where(eq(caseSignals.id, signal.id));
 

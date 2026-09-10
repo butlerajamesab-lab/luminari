@@ -79,7 +79,7 @@ export const canonicalSpineRouter = router({
     const { rows: dsRows } = await pool.query(`SELECT COUNT(*) as cnt FROM detected_signals`);
     const { rows: sflRows } = await pool.query(`SELECT COUNT(*) as cnt FROM signal_flow_logs`);
     const { rows: wnRows } = await pool.query(`SELECT COUNT(*) as cnt FROM world_nodes`);
-    const { rows: rpRows } = await pool.query(`SELECT COUNT(*) as cnt FROM remedy_paths WHERE signal_id_rp IS NOT NULL`);
+    const { rows: rpRows } = await pool.query(`SELECT COUNT(*) as cnt FROM remedy_paths WHERE signal_id IS NOT NULL`);
 
     return {
       ingested_records: (irRows as any[])[0]?.cnt ?? 0,
@@ -112,13 +112,18 @@ export const canonicalSpineRouter = router({
       const rawStr = JSON.stringify(input.rawJson);
 
       const { rows: result } = await pool.query(
-        `INSERT INTO ingested_records (datasetId_ir, sourceRecordId, rawJson, source_hash, stream_id_ir, metadata_l1_l2, ingestedAt, updatedAt_ir, processed_for_signals)
+        `INSERT INTO ingested_records (dataset_id_ir, source_record_id, raw_json, source_hash, stream_id_ir, metadata_l1_l2, ingested_at, updated_at_ir, processed_for_signals)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, false)
-         ON DUPLICATE KEY UPDATE updatedAt_ir = VALUES(updatedAt_ir), rawJson = VALUES(rawJson), stream_id_ir = COALESCE(VALUES(stream_id_ir), stream_id_ir), metadata_l1_l2 = COALESCE(VALUES(metadata_l1_l2), metadata_l1_l2)`,
+         ON CONFLICT (source_hash) DO UPDATE
+         SET updated_at_ir = EXCLUDED.updated_at_ir,
+             raw_json = EXCLUDED.raw_json,
+             stream_id_ir = COALESCE(EXCLUDED.stream_id_ir, ingested_records.stream_id_ir),
+             metadata_l1_l2 = COALESCE(EXCLUDED.metadata_l1_l2, ingested_records.metadata_l1_l2)
+         RETURNING id`,
         [input.datasetId, input.sourceRecordId, rawStr, sourceHash, input.streamId ?? null, metaStr, now, now]
       );
 
-      return { id: (result as any).insertId, sourceHash };
+      return { id: result[0].id, sourceHash };
     }),
 
   // ─── Detect ───
@@ -208,8 +213,8 @@ export const canonicalSpineRouter = router({
         let query = `SELECT * FROM world_nodes WHERE 1=1`;
         const params: any[] = [];
         if (input.biomeType) {
-          query += ` AND biome_type = ?`;
           params.push(input.biomeType);
+          query += ` AND biome_type = $${params.length}`;
         }
         if (input.activeOnly) {
           query += ` AND active_remedy = true`;
@@ -250,11 +255,12 @@ export const canonicalSpineRouter = router({
         const now = Date.now();
         const { rows: result } = await pool.query(
           `INSERT INTO world_nodes (biome_type, node_name_wn, latitude, longitude, metadata_l10, active_remedy, last_verified_at_wn, created_at_wn, updated_at_wn)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+           RETURNING id`,
           [input.biomeType, input.nodeName, input.latitude ?? null, input.longitude ?? null, JSON.stringify(input.metadataL10), input.activeRemedy, now, now, now]
         );
 
-        return { id: (result as any).insertId, validated: true };
+        return { id: result[0].id, validated: true };
       }),
 
     update: protectedProcedure
@@ -269,17 +275,21 @@ export const canonicalSpineRouter = router({
 
         const sets: string[] = [];
         const params: any[] = [];
-        if (input.biomeType) { sets.push("biome_type = ?"); params.push(input.biomeType); }
-        if (input.nodeName) { sets.push("node_name_wn = ?"); params.push(input.nodeName); }
-        if (input.latitude !== undefined) { sets.push("latitude = ?"); params.push(input.latitude); }
-        if (input.longitude !== undefined) { sets.push("longitude = ?"); params.push(input.longitude); }
-        if (input.metadataL10) { sets.push("metadata_l10 = ?"); params.push(JSON.stringify(input.metadataL10)); }
-        if (input.activeRemedy !== undefined) { sets.push("active_remedy = ?"); params.push(input.activeRemedy); }
-        sets.push("last_verified_at_wn = ?"); params.push(Date.now());
-        sets.push("updated_at_wn = ?"); params.push(Date.now());
+        const addSet = (column: string, value: unknown) => {
+          params.push(value);
+          sets.push(`${column} = $${params.length}`);
+        };
+        if (input.biomeType) addSet("biome_type", input.biomeType);
+        if (input.nodeName) addSet("node_name_wn", input.nodeName);
+        if (input.latitude !== undefined) addSet("latitude", input.latitude);
+        if (input.longitude !== undefined) addSet("longitude", input.longitude);
+        if (input.metadataL10) addSet("metadata_l10", JSON.stringify(input.metadataL10));
+        if (input.activeRemedy !== undefined) addSet("active_remedy", input.activeRemedy);
+        addSet("last_verified_at_wn", Date.now());
+        addSet("updated_at_wn", Date.now());
         params.push(input.id);
 
-        await pool.query(`UPDATE world_nodes SET ${sets.join(", ")} WHERE id = $1`, params);
+        await pool.query(`UPDATE world_nodes SET ${sets.join(", ")} WHERE id = $${params.length}`, params);
         return { id: input.id, updated: true };
       }),
   }),
@@ -311,19 +321,20 @@ export const canonicalSpineRouter = router({
         const status = input.blockReason ? "blocked" : "pending";
 
         const { rows: result } = await pool.query(
-          `INSERT INTO remedy_paths (caseId, userId, title, description, pathType, viability, generatedBy, remedyStatus, createdAt, updatedAt, signal_id_rp, route_direction, target_node_id, block_reason, canonical_remedy_status)
-           VALUES ($1, $2, $3, $4, $5, 'moderate', 'system', 'draft', $6, $7, $8, $9, $10, $11, $12)`,
+          `INSERT INTO remedy_paths (case_id, user_id, title, description, path_type, viability, generated_by, remedy_status, created_at, updated_at, signal_id, route_direction, target_node_id, block_reason, canonical_remedy_status)
+           VALUES ($1, $2, $3, $4, $5, 'moderate', 'system', 'draft', $6, $7, $8, $9, $10, $11, $12)
+           RETURNING id`,
           [input.caseId, input.userId, input.title, input.description ?? null, input.pathType, now, now, input.signalId, input.routeDirection ?? null, input.targetNodeId ?? null, input.blockReason ?? null, status]
         );
 
-        return { id: (result as any).insertId, status, integrity_check: integrityCheck.passed };
+        return { id: result[0].id, status, integrity_check: integrityCheck.passed };
       }),
 
     bySignal: publicProcedure
       .input(z.object({ signalId: z.string() }))
       .query(async ({ input }) => {
         const { rows: rows } = await pool.query(
-          `SELECT * FROM remedy_paths WHERE signal_id_rp = $1 ORDER BY createdAt DESC`,
+          `SELECT * FROM remedy_paths WHERE signal_id = $1 ORDER BY created_at DESC`,
           [input.signalId]
         );
         return rows as any[];
@@ -351,7 +362,13 @@ export const canonicalSpineRouter = router({
 
   proofStreamCandidates: publicProcedure.query(async () => {
     const { rows: rows } = await pool.query(
-      `SELECT id, signalType, jurisdiction, domain, severity, title, confidenceScore
+      `SELECT id,
+              signal_type AS "signalType",
+              jurisdiction,
+              domain,
+              severity,
+              title,
+              confidence_score AS "confidenceScore"
        FROM live_signals
        WHERE domain IS NOT NULL AND jurisdiction IS NOT NULL
        ORDER BY id ASC LIMIT 20`

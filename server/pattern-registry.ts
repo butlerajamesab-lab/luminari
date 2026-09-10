@@ -187,16 +187,16 @@ async function createPatternFromSignals(
 
   // Link signals to pattern
   for (const signal of signals) {
+    const linkStrength = String(Math.max(0, Math.min(1, signal.confidence_score / 100)));
     await db.insert(patternSignalLinks).values({
       patternId,
       signalId: signal.signal_id,
-      signalType: signal.signal_type,
-      confidenceAtLink: signal.confidence_score,
-      contributingFactor: String(1.0 / signals.length),
+      linkStrength,
       linkedAt: now,
-      datasetId: signal.dataset_id,
-      sourceRecordIds: signal.source_record_ids,
-    }).onDuplicateKeyUpdate({ set: { confidenceAtLink: signal.confidence_score } });
+    }).onConflictDoUpdate({
+      target: [patternSignalLinks.patternId, patternSignalLinks.signalId],
+      set: { linkStrength, linkedAt: now },
+    });
   }
 
   // Create initial evolution snapshot
@@ -233,16 +233,16 @@ async function updatePatternWithSignals(
 
   // Link new signals
   for (const signal of newSignals) {
+    const linkStrength = String(Math.max(0, Math.min(1, signal.confidence_score / 100)));
     await db.insert(patternSignalLinks).values({
       patternId: pattern.patternId,
       signalId: signal.signal_id,
-      signalType: signal.signal_type,
-      confidenceAtLink: signal.confidence_score,
-      contributingFactor: String(1.0 / signals.length),
+      linkStrength,
       linkedAt: now,
-      datasetId: signal.dataset_id,
-      sourceRecordIds: signal.source_record_ids,
-    }).onDuplicateKeyUpdate({ set: { confidenceAtLink: signal.confidence_score } });
+    }).onConflictDoUpdate({
+      target: [patternSignalLinks.patternId, patternSignalLinks.signalId],
+      set: { linkStrength, linkedAt: now },
+    });
   }
 
   // Recalculate aggregates

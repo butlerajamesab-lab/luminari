@@ -2042,21 +2042,32 @@ export type GapRecords = typeof gapRecords.$inferSelect;
 export type InsertGapRecords = typeof gapRecords.$inferInsert;
 
 export const ingestedRecords = pgTable("ingested_records", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  entryRunId: uuid("entry_run_id").notNull(),
-  caseId: uuid("case_id"),
-  datasetId: text("dataset_id"),
-  recordKey: text("record_key"),
+  id: serial("id").primaryKey(),
+  sourceId: text("source_id"),
+  status: text("status"),
+  recordCount: integer("record_count"),
+  errorMessage: text("error_message"),
+  createdAt: bigint("created_at", { mode: "number" }),
+  datasetId: text("dataset_id_ir"),
+  sourceRecordId: text("source_record_id"),
+  ingestedAt: bigint("ingested_at", { mode: "number" }),
+  updatedAt: bigint("updated_at_ir", { mode: "number" }),
   normalizedDate: timestamp("normalized_date", { withTimezone: true }),
   normalizedCategory: text("normalized_category"),
-  normalizedCity: text("normalized_city"),
   normalizedEntity: text("normalized_entity"),
-  ingestedAt: timestamp("ingested_at", { withTimezone: true }).defaultNow(),
-  rawPayload: jsonb("raw_payload").notNull(),
+  normalizedJurisdiction: text("normalized_jurisdiction"),
+  normalizedCity: text("normalized_city"),
+  normalizedState: text("normalized_state"),
+  normalizedZip: text("normalized_zip"),
+  normalizedStatus: text("normalized_status"),
+  normalizedAmount: numeric("normalized_amount"),
+  normalizedDescription: text("normalized_description"),
+  processedForSignals: boolean("processed_for_signals"),
+  rawPayload: jsonb("raw_json"),
   sourceHash: text("source_hash"),
-  sourceSystem: text("source_system"),
-  status: recordStatusEnum("status").default(sql`'received'::record_status_enum`).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  streamId: text("stream_id_ir"),
+  metadataL1L2: jsonb("metadata_l1_l2"),
+  normalizedDateLegacyText: text("normalized_date_legacy_text"),
 });
 
 export type IngestedRecord = typeof ingestedRecords.$inferSelect;
@@ -2419,18 +2430,34 @@ export type PatternScope = typeof patternScope.$inferSelect;
 export type InsertPatternScope = typeof patternScope.$inferInsert;
 
 export const patterns = pgTable("patterns", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  caseId: uuid("case_id").notNull(),
-  snapshotId: uuid("snapshot_id").notNull(),
-  pipelineRunId: uuid("pipeline_run_id").notNull(),
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  patternKey: varchar("pattern_key", { length: 128 }).notNull(),
+  name: varchar("name", { length: 256 }).notNull(),
+  caseId: integer("case_id"),
+  patternTypeId: integer("pattern_type_id"),
   signature: text("signature"),
-  occurrenceCount: integer("occurrence_count"),
-  firstSeenAt: timestamp("first_seen_at", { withTimezone: true }),
-  lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
+  sourceSignature: text("source_signature"),
+  occurrenceCount: integer("occurrence_count").default(0),
+  firstSeenAt: bigint("first_seen_at", { mode: "number" }),
+  lastSeenAt: bigint("last_seen_at", { mode: "number" }),
   patternType: text("pattern_type").notNull(),
-  description: text("description"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-});
+  description: text("description").notNull(),
+  entityName: varchar("entity_name", { length: 512 }),
+  claimType: varchar("claim_type", { length: 128 }),
+  jurisdiction: varchar("jurisdiction", { length: 128 }),
+  domain: varchar("domain", { length: 128 }),
+  caseCount: integer("case_count").default(0).notNull(),
+  signalCount: integer("signal_count").default(0).notNull(),
+  confidenceScore: numeric("confidence_score", { precision: 5, scale: 4 }).default("0.5").notNull(),
+  status: varchar("status", { length: 32 }).default("candidate").notNull(),
+  createdAt: bigint("created_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+  updatedAt: bigint("updated_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+}, (table) => [
+  uniqueIndex("uq_patterns_pattern_key").on(table.patternKey),
+  uniqueIndex("uq_patterns_signature").on(table.signature),
+  index("idx_patterns_type").on(table.patternType),
+  index("idx_patterns_status").on(table.status),
+]);
 
 export type Pattern = typeof patterns.$inferSelect;
 export type InsertPattern = typeof patterns.$inferInsert;
@@ -3250,15 +3277,15 @@ export type DocumentCorrelation = typeof documentCorrelations.$inferSelect;
 
 export const presentations = pgTable("presentations", {
   id: serial("id").primaryKey(),
-  caseId: integer("caseId").notNull(),
-  userId: integer("userId").notNull(),
+  caseId: integer("case_id").notNull(),
+  userId: integer("user_id").notNull(),
   title: varchar("title", { length: 512 }).notNull(),
   description: text("description"),
-  snapshotId: integer("snapshotId"),
-  slideCount: integer("slideCount").notNull().default(0),
+  snapshotId: integer("snapshot_id"),
+  slideCount: integer("slide_count").notNull().default(0),
   theme: varchar("theme", { length: 64 }).notNull().default("courtroom"),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull(),
-  updatedAt: bigint("updatedAt", { mode: "number" }).notNull(),
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
+  updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
 }, (table) => [
   index("idx_pres_case").on(table.caseId),
 ]);
@@ -3267,12 +3294,12 @@ export type Presentation = typeof presentations.$inferSelect;
 
 export const presentationSlides = pgTable("presentation_slides", {
   id: serial("id").primaryKey(),
-  presentationId: integer("presentationId").notNull(),
-  orderIndex: integer("orderIndex").notNull(),
-  slideType: varchar("slideType", { length: 64 }).notNull(), // title, finding, evidence_quote, timeline, entity_map, summary, custom
+  presentationId: integer("presentation_id").notNull(),
+  orderIndex: integer("order_index").notNull(),
+  slideType: varchar("slide_type", { length: 64 }).notNull(), // title, finding, evidence_quote, timeline, entity_map, summary, custom
   title: varchar("title", { length: 512 }),
   content: text("content"), // markdown
-  sourceCitations: jsonb("sourceCitations"), // { documentId, documentName, page, quote, claimId }[]
+  sourceCitations: jsonb("source_citations"), // { documentId, documentName, page, quote, claimId }[]
   notes: text("notes"), // speaker notes
   layout: varchar("layout", { length: 64 }).notNull().default("default"), // default, split, full_quote, evidence_grid
   metadata: jsonb("metadata"), // { findingId, entityIds, eventIds, correlationId, significance }
@@ -3284,15 +3311,15 @@ export type PresentationSlide = typeof presentationSlides.$inferSelect;
 
 export const entityMergeSuggestions = pgTable("entity_merge_suggestions", {
   id: serial("id").primaryKey(),
-  caseId: integer("caseId").notNull(),
-  sourceEntityId: integer("sourceEntityId").notNull(), // entity to be merged (absorbed)
-  targetEntityId: integer("targetEntityId").notNull(), // surviving entity
+  caseId: integer("case_id").notNull(),
+  sourceEntityId: integer("source_entity_id").notNull(), // entity to be merged (absorbed)
+  targetEntityId: integer("target_entity_id").notNull(), // surviving entity
   confidence: doublePrecision("confidence").notNull(), // 0.0 - 1.0
   reason: text("reason").notNull(), // explanation of why these are likely duplicates
-  status: pgEnum("entity_merge_suggestions_merge_status_enum", ["pending", "approved", "rejected"])("mergeStatus").default("pending").notNull(),
-  reviewedAt: bigint("reviewedAt", { mode: "number" }),
-  reviewedBy: integer("reviewedBy"),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull(),
+  status: varchar("status", { length: 16 }).default("pending").notNull(),
+  reviewedAt: bigint("reviewed_at", { mode: "number" }),
+  reviewedBy: integer("reviewed_by"),
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
 }, (table) => [
   index("idx_merge_case").on(table.caseId),
   index("idx_merge_source").on(table.sourceEntityId),
@@ -3488,14 +3515,14 @@ export type ChecklistItem = typeof checklistItems.$inferSelect;
 
 export const userFeedback = pgTable("user_feedback", {
   id: serial("id").primaryKey(),
-  userId: integer("userId").notNull(),
-  caseId: integer("caseId"),
-  feedbackType: pgEnum("user_feedback_feedback_type_enum", ["suggestion", "question", "bug_report", "praise", "other"])("feedbackType").default("suggestion").notNull(),
+  userId: integer("user_id").notNull(),
+  caseId: integer("case_id"),
+  feedbackType: varchar("feedback_type", { length: 32 }).default("suggestion").notNull(),
   message: text("message").notNull(),
-  currentPage: varchar("currentPage", { length: 256 }),
-  pipelineType: varchar("pipelineType", { length: 64 }),
-  status: pgEnum("user_feedback_feedback_status_enum", ["new", "reviewed", "resolved"])("feedbackStatus").default("new").notNull(),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull(),
+  currentPage: varchar("current_page", { length: 256 }),
+  pipelineType: varchar("pipeline_type", { length: 64 }),
+  status: varchar("status", { length: 16 }).default("new").notNull(),
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
 }, (table) => [
   index("idx_feedback_user").on(table.userId),
   index("idx_feedback_status").on(table.status),
@@ -3778,9 +3805,9 @@ export type InsertCaseNarrative = typeof caseNarratives.$inferInsert;
 
 export const patternTypes = pgTable("pattern_types", {
   id: serial("id").primaryKey(),
-  patternType: varchar("patternType", { length: 128 }).notNull().unique(),
+  patternType: varchar("pattern_type", { length: 128 }).notNull().unique(),
   description: text("description").notNull(),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull(),
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
 });
 
 export type PatternType = typeof patternTypes.$inferSelect;
@@ -3788,13 +3815,13 @@ export type InsertPatternType = typeof patternTypes.$inferInsert;
 
 export const patternOccurrences = pgTable("pattern_occurrences", {
   id: serial("id").primaryKey(),
-  patternId: integer("patternId").notNull(), // FK → patterns.id
-  caseId: integer("caseId").notNull(),
-  entityId: integer("entityId"), // optional: entity involved
-  agencyId: integer("agencyId"), // optional: agency involved
-  evidenceReferenceId: integer("evidenceReferenceId").notNull(), // ID of the evidence item (entity, claim, foia_request, etc.)
-  evidenceReferenceType: varchar("evidenceReferenceType", { length: 64 }).notNull(), // "entity", "claim", "foia_request", "finding", "missing_record"
-  createdAt: bigint("createdAt", { mode: "number" }).notNull(),
+  patternId: integer("pattern_id").notNull(), // FK → patterns.id
+  caseId: integer("case_id").notNull(),
+  entityId: integer("entity_id"), // optional: entity involved
+  agencyId: integer("agency_id"), // optional: agency involved
+  evidenceReferenceId: integer("evidence_reference_id").notNull(), // ID of the evidence item (entity, claim, foia_request, finding, missing_record)
+  evidenceReferenceType: varchar("evidence_reference_type", { length: 64 }).notNull(),
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
 }, (table) => [
   index("idx_po_pattern").on(table.patternId),
   index("idx_po_case").on(table.caseId),
@@ -4206,14 +4233,12 @@ export type InsertDocketSubmission = typeof docketSubmissions.$inferInsert;
 
 export const lumensendTemplates = pgTable("lumensend_templates", {
   id: serial("id").primaryKey(),
-  documentType: pgEnum("lumensend_templates_document_type_enum", [
-    "appeal", "complaint", "inquiry", "application", "follow_up", "demand", "notice"
-  ])("documentType").notNull(),
+  documentType: varchar("document_type", { length: 32 }).notNull(),
   name: varchar("name", { length: 256 }).notNull(),
   description: text("description"),
-  subjectTemplate: text("subjectTemplate").notNull(),
-  bodyTemplate: text("bodyTemplate").notNull(),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull(),
+  subjectTemplate: text("subject_template").notNull(),
+  bodyTemplate: text("body_template").notNull(),
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
 });
 
 export type LumensendTemplate = typeof lumensendTemplates.$inferSelect;
@@ -4221,46 +4246,42 @@ export type InsertLumensendTemplate = typeof lumensendTemplates.$inferInsert;
 
 export const lumensendDrafts = pgTable("lumensend_drafts", {
   id: serial("id").primaryKey(),
-  userId: integer("userId").notNull(),
-  caseId: integer("caseId"),
-  documentType: pgEnum("lumensend_drafts_draft_document_type_enum", [
-    "appeal", "complaint", "inquiry", "application", "follow_up", "demand", "notice"
-  ])("draftDocumentType").notNull(),
-  templateId: integer("templateId"),
+  userId: integer("user_id").notNull(),
+  caseId: integer("case_id"),
+  documentType: varchar("document_type", { length: 32 }).notNull(),
+  templateId: integer("template_id"),
   // Recipient info (pre-filled from registry)
-  recipientAgency: varchar("recipientAgency", { length: 512 }),
-  recipientName: varchar("recipientName", { length: 256 }),
-  recipientAddress: text("recipientAddress"),
-  recipientEmail: varchar("recipientEmail", { length: 320 }),
-  recipientPhone: varchar("recipientPhone", { length: 64 }),
+  recipientAgency: varchar("recipient_agency", { length: 512 }),
+  recipientName: varchar("recipient_name", { length: 256 }),
+  recipientAddress: text("recipient_address"),
+  recipientEmail: varchar("recipient_email", { length: 320 }),
+  recipientPhone: varchar("recipient_phone", { length: 64 }),
   // Letter content
   subject: text("subject").notNull(),
   body: text("body").notNull(),
   // Sender info
-  senderName: varchar("senderName", { length: 256 }),
-  senderAddress: text("senderAddress"),
-  senderEmail: varchar("senderEmail", { length: 320 }),
-  senderPhone: varchar("senderPhone", { length: 64 }),
+  senderName: varchar("sender_name", { length: 256 }),
+  senderAddress: text("sender_address"),
+  senderEmail: varchar("sender_email", { length: 320 }),
+  senderPhone: varchar("sender_phone", { length: 64 }),
   // Context: where in Luminari did this originate
-  contextType: pgEnum("lumensend_drafts_context_type_enum", [
-    "registry_program", "oversight_body", "cda_denial", "case_repair", "docket_entry", "manual"
-  ])("contextType").default("manual").notNull(),
-  contextId: varchar("contextId", { length: 256 }),
-  contextLabel: text("contextLabel"),
+  contextType: varchar("context_type", { length: 32 }).default("manual").notNull(),
+  contextId: varchar("context_id", { length: 256 }),
+  contextLabel: text("context_label"),
   // State & jurisdiction
-  jurisdiction: varchar("draftJurisdiction", { length: 64 }),
+  jurisdiction: varchar("jurisdiction", { length: 64 }),
   // Status
-  status: pgEnum("lumensend_drafts_draft_status_enum", ["draft", "ready", "sent", "printed", "copied"])("draftStatus").default("draft").notNull(),
-  sentAt: bigint("sentAt", { mode: "number" }),
-  sentMethod: pgEnum("lumensend_drafts_sent_method_enum", ["email", "print", "copy"])("sentMethod"),
+  status: varchar("status", { length: 16 }).default("draft").notNull(),
+  sentAt: bigint("sent_at", { mode: "number" }),
+  sentMethod: varchar("sent_method", { length: 16 }),
   // Dispatch bundle: related actions suggested by the LLM
-  relatedActions: text("relatedActions"), // JSON array
+  relatedActions: text("related_actions"), // JSON array
   // Follow-up
-  followUpDate: bigint("followUpDate", { mode: "number" }),
-  followUpSent: boolean("followUpSent").default(false),
+  followUpDate: bigint("follow_up_date", { mode: "number" }),
+  followUpSent: boolean("follow_up_sent").default(false),
   // Timestamps
-  createdAt: bigint("createdAt", { mode: "number" }).notNull(),
-  updatedAt: bigint("updatedAt", { mode: "number" }).notNull(),
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
+  updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
 }, (table) => [
   index("idx_lumensend_user").on(table.userId),
   index("idx_lumensend_case").on(table.caseId),
@@ -5802,19 +5823,19 @@ export type InsertAssemblyOutputRegistry = typeof assemblyOutputRegistry.$inferI
 
 export const patternEntityClusters = pgTable("pattern_entity_clusters", {
   id: serial("id").primaryKey(),
-  entityName: varchar("entityName", { length: 512 }).notNull(),
-  entityType: varchar("entityType", { length: 64 }),
+  entityName: varchar("entity_name", { length: 512 }).notNull(),
+  entityType: varchar("entity_type", { length: 64 }),
   aliases: jsonb("aliases"),
-  caseIds: jsonb("caseIds"),
-  caseCount: integer("caseCount").default(0),
-  firstSeen: bigint("firstSeen", { mode: "number" }),
-  lastSeen: bigint("lastSeen", { mode: "number" }),
+  caseIds: jsonb("case_ids"),
+  caseCount: integer("case_count").default(0),
+  firstSeen: bigint("first_seen", { mode: "number" }),
+  lastSeen: bigint("last_seen", { mode: "number" }),
   jurisdictions: jsonb("jurisdictions"),
-  claimTypes: jsonb("claimTypes"),
-  riskScore: numeric("riskScore", { precision: 5, scale: 2 }),
+  claimTypes: jsonb("claim_types"),
+  riskScore: numeric("risk_score", { precision: 5, scale: 2 }),
   notes: text("notes"),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
-  updatedAt: bigint("updatedAt", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+  createdAt: bigint("created_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+  updatedAt: bigint("updated_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
 }, (table) => [
   index("idx_pec_name").on(table.entityName),
   index("idx_pec_type").on(table.entityType),
@@ -5825,17 +5846,17 @@ export type InsertPatternEntityCluster = typeof patternEntityClusters.$inferInse
 
 export const patternConductClusters = pgTable("pattern_conduct_clusters", {
   id: serial("id").primaryKey(),
-  conductType: varchar("conductType", { length: 256 }).notNull(),
-  conductCategory: varchar("conductCategory", { length: 128 }),
+  conductType: varchar("conduct_type", { length: 256 }).notNull(),
+  conductCategory: varchar("conduct_category", { length: 128 }),
   description: text("description"),
-  caseIds: jsonb("caseIds"),
-  caseCount: integer("caseCount").default(0),
-  entityClusterIds: jsonb("entityClusterIds"),
-  commonElements: jsonb("commonElements"),
-  frequencyScore: numeric("frequencyScore", { precision: 5, scale: 2 }),
-  severityScore: numeric("severityScore", { precision: 5, scale: 2 }),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
-  updatedAt: bigint("updatedAt", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+  caseIds: jsonb("case_ids"),
+  caseCount: integer("case_count").default(0),
+  entityClusterIds: jsonb("entity_cluster_ids"),
+  commonElements: jsonb("common_elements"),
+  frequencyScore: numeric("frequency_score", { precision: 5, scale: 2 }),
+  severityScore: numeric("severity_score", { precision: 5, scale: 2 }),
+  createdAt: bigint("created_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+  updatedAt: bigint("updated_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
 }, (table) => [
   index("idx_pcc_type").on(table.conductType),
   index("idx_pcc_category").on(table.conductCategory),
@@ -5846,20 +5867,20 @@ export type InsertPatternConductCluster = typeof patternConductClusters.$inferIn
 
 export const patternOutcomeAnalytics = pgTable("pattern_outcome_analytics", {
   id: serial("id").primaryKey(),
-  claimType: varchar("claimType", { length: 128 }).notNull(),
+  claimType: varchar("claim_type", { length: 128 }).notNull(),
   jurisdiction: varchar("jurisdiction", { length: 128 }),
   forum: varchar("forum", { length: 256 }),
-  totalCases: integer("totalCases").default(0),
-  winRate: numeric("winRate", { precision: 5, scale: 2 }),
-  settlementRate: numeric("settlementRate", { precision: 5, scale: 2 }),
-  avgSettlementAmount: numeric("avgSettlementAmount", { precision: 12, scale: 2 }),
-  avgTimeToResolution: varchar("avgTimeToResolution", { length: 64 }),
-  medianDamagesAwarded: numeric("medianDamagesAwarded", { precision: 12, scale: 2 }),
-  keyFactors: jsonb("keyFactors"),
-  timeRange: varchar("timeRange", { length: 64 }),
+  totalCases: integer("total_cases").default(0),
+  winRate: numeric("win_rate", { precision: 5, scale: 2 }),
+  settlementRate: numeric("settlement_rate", { precision: 5, scale: 2 }),
+  avgSettlementAmount: numeric("avg_settlement_amount", { precision: 12, scale: 2 }),
+  avgTimeToResolution: varchar("avg_time_to_resolution", { length: 64 }),
+  medianDamagesAwarded: numeric("median_damages_awarded", { precision: 12, scale: 2 }),
+  keyFactors: jsonb("key_factors"),
+  timeRange: varchar("time_range", { length: 64 }),
   notes: text("notes"),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
-  updatedAt: bigint("updatedAt", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+  createdAt: bigint("created_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+  updatedAt: bigint("updated_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
 }, (table) => [
   index("idx_poa_claim").on(table.claimType),
   index("idx_poa_jurisdiction").on(table.jurisdiction),
@@ -5870,15 +5891,15 @@ export type InsertPatternOutcomeAnalytic = typeof patternOutcomeAnalytics.$infer
 
 export const patternOutcomeDivergence = pgTable("pattern_outcome_divergence", {
   id: serial("id").primaryKey(),
-  claimType: varchar("claimType", { length: 128 }).notNull(),
-  jurisdictionA: varchar("jurisdictionA", { length: 128 }).notNull(),
-  jurisdictionB: varchar("jurisdictionB", { length: 128 }).notNull(),
-  metricName: varchar("metricName", { length: 128 }).notNull(),
-  valueA: numeric("valueA", { precision: 10, scale: 2 }),
-  valueB: numeric("valueB", { precision: 10, scale: 2 }),
-  divergenceScore: numeric("divergenceScore", { precision: 5, scale: 2 }),
+  claimType: varchar("claim_type", { length: 128 }).notNull(),
+  jurisdictionA: varchar("jurisdiction_a", { length: 128 }).notNull(),
+  jurisdictionB: varchar("jurisdiction_b", { length: 128 }).notNull(),
+  metricName: varchar("metric_name", { length: 128 }).notNull(),
+  valueA: numeric("value_a", { precision: 10, scale: 2 }),
+  valueB: numeric("value_b", { precision: 10, scale: 2 }),
+  divergenceScore: numeric("divergence_score", { precision: 5, scale: 2 }),
   explanation: text("explanation"),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+  createdAt: bigint("created_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
 }, (table) => [
   index("idx_pod_claim").on(table.claimType),
   index("idx_pod_jA").on(table.jurisdictionA),
@@ -5890,17 +5911,17 @@ export type InsertPatternOutcomeDivergence = typeof patternOutcomeDivergence.$in
 
 export const patternSystemicInferences = pgTable("pattern_systemic_inferences", {
   id: serial("id").primaryKey(),
-  inferenceType: varchar("inferenceType", { length: 128 }).notNull(),
+  inferenceType: varchar("inference_type", { length: 128 }).notNull(),
   description: text("description").notNull(),
-  entityClusterIds: jsonb("entityClusterIds"),
-  conductClusterIds: jsonb("conductClusterIds"),
-  supportingCaseIds: jsonb("supportingCaseIds"),
-  evidenceStrength: pgEnum("pattern_systemic_inferences_evidence_strength_enum", ["strong", "moderate", "preliminary"])("evidenceStrength").default("preliminary"),
-  confidenceScore: numeric("confidenceScore", { precision: 5, scale: 2 }),
-  legalImplications: text("legalImplications"),
-  recommendedActions: jsonb("recommendedActions"),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
-  updatedAt: bigint("updatedAt", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+  entityClusterIds: jsonb("entity_cluster_ids"),
+  conductClusterIds: jsonb("conduct_cluster_ids"),
+  supportingCaseIds: jsonb("supporting_case_ids"),
+  evidenceStrength: varchar("evidence_strength", { length: 32 }).default("preliminary"),
+  confidenceScore: numeric("confidence_score", { precision: 5, scale: 2 }),
+  legalImplications: text("legal_implications"),
+  recommendedActions: jsonb("recommended_actions"),
+  createdAt: bigint("created_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+  updatedAt: bigint("updated_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
 }, (table) => [
   index("idx_psi_type").on(table.inferenceType),
   index("idx_psi_strength").on(table.evidenceStrength),
@@ -5911,18 +5932,18 @@ export type InsertPatternSystemicInference = typeof patternSystemicInferences.$i
 
 export const patternTemporalTrends = pgTable("pattern_temporal_trends", {
   id: serial("id").primaryKey(),
-  trendType: varchar("trendType", { length: 128 }).notNull(),
-  claimType: varchar("claimType", { length: 128 }),
+  trendType: varchar("trend_type", { length: 128 }).notNull(),
+  claimType: varchar("claim_type", { length: 128 }),
   jurisdiction: varchar("jurisdiction", { length: 128 }),
-  periodStart: varchar("periodStart", { length: 32 }),
-  periodEnd: varchar("periodEnd", { length: 32 }),
-  metricName: varchar("metricName", { length: 128 }).notNull(),
-  metricValue: numeric("metricValue", { precision: 10, scale: 2 }),
-  previousValue: numeric("previousValue", { precision: 10, scale: 2 }),
-  changePercent: numeric("changePercent", { precision: 7, scale: 2 }),
-  trendDirection: pgEnum("pattern_temporal_trends_trend_direction_enum", ["increasing", "decreasing", "stable"])("trendDirection").default("stable"),
+  periodStart: varchar("period_start", { length: 32 }),
+  periodEnd: varchar("period_end", { length: 32 }),
+  metricName: varchar("metric_name", { length: 128 }).notNull(),
+  metricValue: numeric("metric_value", { precision: 10, scale: 2 }),
+  previousValue: numeric("previous_value", { precision: 10, scale: 2 }),
+  changePercent: numeric("change_percent", { precision: 7, scale: 2 }),
+  trendDirection: varchar("trend_direction", { length: 16 }).default("stable"),
   notes: text("notes"),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+  createdAt: bigint("created_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
 }, (table) => [
   index("idx_ptt_type").on(table.trendType),
   index("idx_ptt_claim").on(table.claimType),
@@ -5935,14 +5956,14 @@ export const patternGeographicHotspots = pgTable("pattern_geographic_hotspots", 
   id: serial("id").primaryKey(),
   jurisdiction: varchar("jurisdiction", { length: 128 }).notNull(),
   region: varchar("region", { length: 128 }),
-  claimType: varchar("claimType", { length: 128 }),
-  caseCount: integer("caseCount").default(0),
-  densityScore: numeric("densityScore", { precision: 5, scale: 2 }),
-  topEntities: jsonb("topEntities"),
-  topConductTypes: jsonb("topConductTypes"),
-  periodCovered: varchar("periodCovered", { length: 64 }),
+  claimType: varchar("claim_type", { length: 128 }),
+  caseCount: integer("case_count").default(0),
+  densityScore: numeric("density_score", { precision: 5, scale: 2 }),
+  topEntities: jsonb("top_entities"),
+  topConductTypes: jsonb("top_conduct_types"),
+  periodCovered: varchar("period_covered", { length: 64 }),
   notes: text("notes"),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+  createdAt: bigint("created_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
 }, (table) => [
   index("idx_pgh_jurisdiction").on(table.jurisdiction),
   index("idx_pgh_claim").on(table.claimType),
@@ -5953,15 +5974,15 @@ export type InsertPatternGeographicHotspot = typeof patternGeographicHotspots.$i
 
 export const patternIndustryProfiles = pgTable("pattern_industry_profiles", {
   id: serial("id").primaryKey(),
-  industryName: varchar("industryName", { length: 256 }).notNull(),
-  naicsCode: varchar("naicsCode", { length: 16 }),
-  commonClaimTypes: jsonb("commonClaimTypes"),
-  commonViolations: jsonb("commonViolations"),
-  avgCaseCount: integer("avgCaseCount").default(0),
-  riskLevel: pgEnum("pattern_industry_profiles_risk_level_enum", ["high", "medium", "low"])("riskLevel").default("medium"),
-  regulatoryFocus: jsonb("regulatoryFocus"),
+  industryName: varchar("industry_name", { length: 256 }).notNull(),
+  naicsCode: varchar("naics_code", { length: 16 }),
+  commonClaimTypes: jsonb("common_claim_types"),
+  commonViolations: jsonb("common_violations"),
+  avgCaseCount: integer("avg_case_count").default(0),
+  riskLevel: varchar("risk_level", { length: 16 }).default("medium"),
+  regulatoryFocus: jsonb("regulatory_focus"),
   notes: text("notes"),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+  createdAt: bigint("created_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
 }, (table) => [
   index("idx_pip_name").on(table.industryName),
   index("idx_pip_risk").on(table.riskLevel),
@@ -5972,13 +5993,13 @@ export type InsertPatternIndustryProfile = typeof patternIndustryProfiles.$infer
 
 export const patternEvidenceCorrelations = pgTable("pattern_evidence_correlations", {
   id: serial("id").primaryKey(),
-  evidenceType: varchar("evidenceType", { length: 128 }).notNull(),
-  claimType: varchar("claimType", { length: 128 }),
-  correlationStrength: numeric("correlationStrength", { precision: 5, scale: 2 }),
-  outcomeImpact: pgEnum("pattern_evidence_correlations_outcome_impact_enum", ["strongly_positive", "positive", "neutral", "negative", "strongly_negative"])("outcomeImpact").default("neutral"),
-  sampleSize: integer("sampleSize").default(0),
+  evidenceType: varchar("evidence_type", { length: 128 }).notNull(),
+  claimType: varchar("claim_type", { length: 128 }),
+  correlationStrength: numeric("correlation_strength", { precision: 5, scale: 2 }),
+  outcomeImpact: varchar("outcome_impact", { length: 32 }).default("neutral"),
+  sampleSize: integer("sample_size").default(0),
   description: text("description"),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+  createdAt: bigint("created_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
 }, (table) => [
   index("idx_pecorr_evidence").on(table.evidenceType),
   index("idx_pecorr_claim").on(table.claimType),
@@ -5989,14 +6010,14 @@ export type InsertPatternEvidenceCorrelation = typeof patternEvidenceCorrelation
 
 export const patternDefenseStrategies = pgTable("pattern_defense_strategies", {
   id: serial("id").primaryKey(),
-  defenseName: varchar("defenseName", { length: 256 }).notNull(),
-  claimType: varchar("claimType", { length: 128 }),
-  frequencyObserved: integer("frequencyObserved").default(0),
-  successRate: numeric("successRate", { precision: 5, scale: 2 }),
-  counterStrategies: jsonb("counterStrategies"),
+  defenseName: varchar("defense_name", { length: 256 }).notNull(),
+  claimType: varchar("claim_type", { length: 128 }),
+  frequencyObserved: integer("frequency_observed").default(0),
+  successRate: numeric("success_rate", { precision: 5, scale: 2 }),
+  counterStrategies: jsonb("counter_strategies"),
   vulnerabilities: jsonb("vulnerabilities"),
   notes: text("notes"),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+  createdAt: bigint("created_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
 }, (table) => [
   index("idx_pds_name").on(table.defenseName),
   index("idx_pds_claim").on(table.claimType),
@@ -6007,14 +6028,14 @@ export type InsertPatternDefenseStrategy = typeof patternDefenseStrategies.$infe
 
 export const patternCaseLinks = pgTable("pattern_case_links", {
   id: serial("id").primaryKey(),
-  caseIdA: integer("caseIdA").notNull(),
-  caseIdB: integer("caseIdB").notNull(),
-  linkType: varchar("linkType", { length: 128 }).notNull(),
-  sharedEntityClusterIds: jsonb("sharedEntityClusterIds"),
-  sharedConductClusterIds: jsonb("sharedConductClusterIds"),
-  similarityScore: numeric("similarityScore", { precision: 5, scale: 2 }),
+  caseIdA: integer("case_id_a").notNull(),
+  caseIdB: integer("case_id_b").notNull(),
+  linkType: varchar("link_type", { length: 128 }).notNull(),
+  sharedEntityClusterIds: jsonb("shared_entity_cluster_ids"),
+  sharedConductClusterIds: jsonb("shared_conduct_cluster_ids"),
+  similarityScore: numeric("similarity_score", { precision: 5, scale: 2 }),
   notes: text("notes"),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+  createdAt: bigint("created_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
 }, (table) => [
   index("idx_pcl_caseA").on(table.caseIdA),
   index("idx_pcl_caseB").on(table.caseIdB),
@@ -6026,17 +6047,17 @@ export type InsertPatternCaseLink = typeof patternCaseLinks.$inferInsert;
 
 export const patternAggregationRuns = pgTable("pattern_aggregation_runs", {
   id: serial("id").primaryKey(),
-  runType: varchar("runType", { length: 64 }).notNull(),
-  caseIdsAnalyzed: jsonb("caseIdsAnalyzed"),
-  totalCasesProcessed: integer("totalCasesProcessed").default(0),
-  entityClustersFound: integer("entityClustersFound").default(0),
-  conductClustersFound: integer("conductClustersFound").default(0),
-  systemicInferencesGenerated: integer("systemicInferencesGenerated").default(0),
-  runStatus: pgEnum("pattern_aggregation_runs_run_status_enum", ["running", "completed", "failed"])("runStatus").default("running"),
-  errorMessage: text("errorMessage"),
-  startedAt: bigint("startedAt", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
-  completedAt: bigint("completedAt", { mode: "number" }),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+  runType: varchar("run_type", { length: 64 }).notNull(),
+  caseIdsAnalyzed: jsonb("case_ids_analyzed"),
+  totalCasesProcessed: integer("total_cases_processed").default(0),
+  entityClustersFound: integer("entity_clusters_found").default(0),
+  conductClustersFound: integer("conduct_clusters_found").default(0),
+  systemicInferencesGenerated: integer("systemic_inferences_generated").default(0),
+  runStatus: varchar("run_status", { length: 16 }).default("running"),
+  errorMessage: text("error_message"),
+  startedAt: bigint("started_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+  completedAt: bigint("completed_at", { mode: "number" }),
+  createdAt: bigint("created_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
 }, (table) => [
   index("idx_par_type").on(table.runType),
   index("idx_par_status").on(table.runStatus),
@@ -6047,16 +6068,16 @@ export type InsertPatternAggregationRun = typeof patternAggregationRuns.$inferIn
 
 export const patternFeedbackLoop = pgTable("pattern_feedback_loop", {
   id: serial("id").primaryKey(),
-  strategyPathId: integer("strategyPathId").notNull(),
-  entityClusterId: integer("entityClusterId"),
-  conductClusterId: integer("conductClusterId"),
-  outcomeAnalyticsId: integer("outcomeAnalyticsId"),
-  systemicInferenceId: integer("systemicInferenceId"),
-  feedbackType: varchar("feedbackType", { length: 64 }).notNull(),
-  adjustmentApplied: text("adjustmentApplied"),
-  confidenceDelta: numeric("confidenceDelta", { precision: 5, scale: 2 }),
-  appliedAt: bigint("appliedAt", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+  strategyPathId: integer("strategy_path_id").notNull(),
+  entityClusterId: integer("entity_cluster_id"),
+  conductClusterId: integer("conduct_cluster_id"),
+  outcomeAnalyticsId: integer("outcome_analytics_id"),
+  systemicInferenceId: integer("systemic_inference_id"),
+  feedbackType: varchar("feedback_type", { length: 64 }).notNull(),
+  adjustmentApplied: text("adjustment_applied"),
+  confidenceDelta: numeric("confidence_delta", { precision: 5, scale: 2 }),
+  appliedAt: bigint("applied_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+  createdAt: bigint("created_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
 }, (table) => [
   index("idx_pfl_strategy").on(table.strategyPathId),
   index("idx_pfl_entity").on(table.entityClusterId),
@@ -6320,15 +6341,15 @@ export type InsertIngestRun = typeof ingestRuns.$inferInsert;
 
 export const liveSignals = pgTable("live_signals", {
   id: serial("id").primaryKey(),
-  signalType: varchar("signalType", { length: 256 }).notNull(),
-  datasetId: varchar("datasetId", { length: 64 }).notNull(),
+  signalType: varchar("signal_type", { length: 256 }).notNull(),
+  datasetId: varchar("dataset_id", { length: 128 }).notNull(),
   jurisdiction: varchar("jurisdiction", { length: 128 }).notNull(),
   domain: varchar("domain", { length: 128 }).notNull(),
-  severity: pgEnum("live_signals_severity_enum", ["critical", "high", "medium", "low"])("severity").default("high").notNull(),
+  severity: varchar("severity", { length: 32 }).$type<"critical" | "high" | "medium" | "low">(),
   title: varchar("title", { length: 512 }).notNull(),
   explanation: text("explanation").notNull(),
-  patternSummary: text("patternSummary").notNull(),
-  supportingStatistics: jsonb("supportingStatistics").$type<{
+  patternSummary: text("pattern_summary").notNull(),
+  supportingStatistics: jsonb("supporting_statistics").$type<{
     recordsAnalyzed: number;
     patternCount: number;
     percentageAffected: number;
@@ -6336,22 +6357,30 @@ export const liveSignals = pgTable("live_signals", {
     jurisdictionsAffected: string[];
     dataSource: string;
     additionalMetrics?: Record<string, number | string>;
-  }>().notNull(),
-  confidenceScore: numeric("confidenceScore", { precision: 5, scale: 4 }).notNull(),
-  detectedAt: bigint("detectedAt", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
-  ingestRunId: integer("ingestRunId"),
+  }>(),
+  confidenceScore: numeric("confidence_score", { precision: 10, scale: 4 }).notNull(),
+  detectedAt: bigint("detected_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+  ingestRunId: text("ingest_run_id"),
   // Link to existing signal registry if this matches a known pattern
-  signalRegistryId: integer("signalRegistryId"),
+  signalRegistryId: text("signal_registry_id"),
   // Deduplication: hash of signal type + dataset + jurisdiction + time window
-  signalFingerprint: varchar("signalFingerprint", { length: 64 }).notNull(),
-  supersededBy: integer("supersededBy"), // if a newer signal replaces this one
+  signalFingerprint: varchar("signal_fingerprint", { length: 128 }).notNull(),
+  supersededBy: text("superseded_by"), // if a newer signal replaces this one
   active: boolean("active").default(true).notNull(),
   // Entity classification fields (Session 65)
-  entityType: pgEnum("live_signals_entity_type_ls_enum", [
-    "corporation", "organization", "government_agency", "nonprofit",
-    "landlord_entity", "contractor_business", "financial_institution",
-    "telecom_company", "media_company", "individual_person", "unknown"
-  ])("entity_type_ls"),
+  entityType: varchar("entity_type_ls", { length: 64 }).$type<
+    | "corporation"
+    | "organization"
+    | "government_agency"
+    | "nonprofit"
+    | "landlord_entity"
+    | "contractor_business"
+    | "financial_institution"
+    | "telecom_company"
+    | "media_company"
+    | "individual_person"
+    | "unknown"
+  >(),
   entityConfidenceScore: numeric("entity_confidence_score_ls", { precision: 5, scale: 4 }),
   canonicalEntityName: varchar("canonical_entity_name", { length: 512 }),
   entityAliasesJson: jsonb("entity_aliases_json").$type<string[]>(),
@@ -6359,14 +6388,14 @@ export const liveSignals = pgTable("live_signals", {
   roleConfidence: numeric("role_confidence", { precision: 5, scale: 4 }),
   // ─── Gating fields (Live Signals System Phase 2) ───
   // effectType: behavioral effect on downstream consumers
-  effectType: pgEnum("live_signals_effect_type_ls_enum", [
-    "RESOURCE_STALE",
-    "PATH_INVALID",
-    "DEADLINE_APPROACHING",
-    "POLICY_CHANGE",
-    "STREAM_ANOMALY",
-    "ENTITY_RISK",
-  ])("effect_type_ls"),
+  effectType: varchar("effect_type_ls", { length: 64 }).$type<
+    | "RESOURCE_STALE"
+    | "PATH_INVALID"
+    | "DEADLINE_APPROACHING"
+    | "POLICY_CHANGE"
+    | "STREAM_ANOMALY"
+    | "ENTITY_RISK"
+  >(),
   // targetTable: which table the signal applies to
   targetTable: varchar("target_table_ls", { length: 64 }),
   // targetId: the specific row ID in targetTable
@@ -6641,23 +6670,23 @@ export const escalationThresholds = pgTable("escalation_thresholds", {
 
 export const remedyPaths = pgTable("remedy_paths", {
   id: serial("id").primaryKey(),
-  caseId: integer("caseId").notNull(),
-  userId: integer("userId").notNull(),
+  caseId: integer("case_id"),
+  userId: integer("user_id"),
   title: varchar("title", { length: 512 }).notNull(),
   description: text("description"),
-  pathType: varchar("pathType", { length: 64 }).notNull(), // administrative, judicial, legislative, informal, hybrid
+  pathType: varchar("path_type", { length: 64 }).notNull(), // administrative, judicial, legislative, informal, hybrid
   viability: varchar("viability", { length: 32 }).notNull(), // strong, moderate, weak, uncertain
-  estimatedTimeline: varchar("estimatedTimeline", { length: 128 }),
-  estimatedCost: varchar("estimatedCost", { length: 128 }),
-  riskLevel: varchar("riskLevel", { length: 32 }), // low, medium, high
+  estimatedTimeline: varchar("estimated_timeline", { length: 128 }),
+  estimatedCost: varchar("estimated_cost", { length: 128 }),
+  riskLevel: varchar("risk_level", { length: 32 }), // low, medium, high
   prerequisites: jsonb("prerequisites").$type<string[]>(),
-  relatedClaimTypes: jsonb("relatedClaimTypes").$type<string[]>(),
-  generatedBy: varchar("generatedBy", { length: 32 }).default("llm").notNull(), // llm, manual, template
-  status: pgEnum("remedy_paths_remedy_status_enum", ["draft", "active", "completed", "abandoned"])("remedyStatus").default("draft").notNull(),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
-  updatedAt: bigint("updatedAt", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+  relatedClaimTypes: jsonb("related_claim_types").$type<string[]>(),
+  generatedBy: varchar("generated_by", { length: 32 }).default("llm").notNull(), // llm, manual, template
+  status: varchar("remedy_status", { length: 32 }).default("draft").notNull(),
+  createdAt: bigint("created_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+  updatedAt: bigint("updated_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
   // ─── Canonical Spine (Implementation Package) ───
-  signalId: varchar("signal_id_rp", { length: 64 }), // FK to detected_signals.signal_id
+  signalId: varchar("signal_id", { length: 64 }), // FK to detected_signals.signal_id
   routeDirection: varchar("route_direction", { length: 16 }), // UPWARD | LATERAL
   targetNodeId: integer("target_node_id"), // FK to world_nodes.id
   blockReason: text("block_reason"), // null unless blocked
@@ -6792,19 +6821,17 @@ export const patternRegistry = pgTable("pattern_registry", {
 ]);
 
 export const patternSignalLinks = pgTable("pattern_signal_links", {
-  id: serial("id").primaryKey(),
-  patternId: char("pattern_id", { length: 36 }).notNull(),
-  signalId: varchar("signal_id", { length: 100 }),
-  signalType: varchar("signal_type", { length: 100 }),
-  confidenceAtLink: integer("confidence_at_link"),
-  contributingFactor: numeric("contributing_factor", { precision: 5, scale: 2 }),
+  id: uuid("id").defaultRandom().primaryKey(),
+  patternId: text("pattern_id").notNull(),
+  signalId: text("signal_id").notNull(),
+  linkStrength: numeric("link_strength", { precision: 8, scale: 6 }).default("1.0"),
   linkedAt: bigint("linked_at", { mode: "number" }),
-  datasetId: varchar("dataset_id", { length: 50 }),
-  sourceRecordIds: jsonb("source_record_ids").$type<string[]>(),
+  createdAt: timestamp("created_at").defaultNow(),
+  linkMethod: text("link_method").default("pattern_engine_v1"),
 }, (t) => [
-  index("idx_psl_pattern_drz").on(t.patternId),
-  index("idx_psl_signal_drz").on(t.signalId),
-  uniqueIndex("uq_pattern_signal_drz").on(t.patternId, t.signalId),
+  index("idx_psl_pattern").on(t.patternId),
+  index("idx_psl_signal").on(t.signalId),
+  uniqueIndex("uq_pattern_signal").on(t.patternId, t.signalId),
 ]);
 
 export const patternMetadata = pgTable("pattern_metadata", {
@@ -8269,10 +8296,10 @@ export type RegulatoryCaptureMetricRow = typeof regulatoryCaptureMetrics.$inferS
 
 export const crisisPredictions = pgTable("crisis_predictions", {
   id: serial("id").primaryKey(),
-  patternId: integer("pattern_id_cp"),
-  industry: varchar("industry_cp", { length: 256 }),
-  jurisdiction: varchar("jurisdiction_cp", { length: 256 }),
-  entityName: varchar("entity_name_cp", { length: 512 }),
+  patternId: integer("pattern_id"),
+  industry: varchar("industry", { length: 256 }),
+  jurisdiction: varchar("jurisdiction", { length: 256 }),
+  entityName: varchar("entity_name", { length: 512 }),
   predictionType: pgEnum("crisis_predictions_prediction_type_enum", [
     "industry_crisis", "institutional_failure",
     "enforcement_collapse", "policy_shockwave"
@@ -8282,9 +8309,9 @@ export const crisisPredictions = pgTable("crisis_predictions", {
   predictionConfidence: integer("prediction_confidence").default(0).notNull(),
   riskLevel: pgEnum("crisis_predictions_risk_level_cp_enum", [
     "low", "moderate", "high", "critical"
-  ])("risk_level_cp").default("low").notNull(),
+  ])("risk_level").default("low").notNull(),
   triggerFactors: jsonb("trigger_factors").$type<string[]>(),
-  createdAt: bigint("created_at_cp", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+  createdAt: bigint("created_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
 }, (t) => [
   index("idx_cp_pattern").on(t.patternId),
   index("idx_cp_type").on(t.predictionType),
@@ -8950,19 +8977,19 @@ export type ExportSpineRun = typeof exportSpineRuns.$inferSelect;
 
 export const restoreSpineRuns = pgTable("restore_spine_runs", {
   id: serial("id").primaryKey(),
-  bundleName: varchar("bundle_name_rsr", { length: 256 }).notNull(),
-  restoreType: pgEnum("restore_spine_runs_restore_type_rsr_enum", ["full", "schema", "config", "deployment"])("restore_type_rsr").notNull(),
-  status: pgEnum("restore_spine_runs_status_rsr_enum", ["pending", "validating", "restoring", "completed", "failed", "rolled_back"])("status_rsr").default("pending").notNull(),
-  startedAt: bigint("started_at_rsr", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
-  completedAt: bigint("completed_at_rsr", { mode: "number" }),
-  restoredTables: jsonb("restored_tables_rsr").$type<string[]>(),
-  restoredEngines: jsonb("restored_engines_rsr").$type<string[]>(),
-  restoredStreams: jsonb("restored_streams_rsr").$type<string[]>(),
-  errors: jsonb("errors_rsr").$type<string[]>(),
-  executedBy: varchar("executed_by_rsr", { length: 256 }),
-  riskLevel: pgEnum("restore_spine_runs_risk_level_rsr_enum", ["low", "medium", "high", "critical"])("risk_level_rsr").default("medium"),
-  manifestChecksum: varchar("manifest_checksum_rsr", { length: 128 }),
-  validationResult: jsonb("validation_result_rsr").$type<{
+  bundleName: varchar("bundle_name", { length: 256 }).notNull(),
+  restoreType: varchar("restore_type", { length: 16 }).notNull(),
+  status: varchar("status", { length: 16 }).default("pending").notNull(),
+  startedAt: bigint("started_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+  completedAt: bigint("completed_at", { mode: "number" }),
+  restoredTables: jsonb("restored_tables").$type<string[]>(),
+  restoredEngines: jsonb("restored_engines").$type<string[]>(),
+  restoredStreams: jsonb("restored_streams").$type<string[]>(),
+  errors: jsonb("errors").$type<string[]>(),
+  executedBy: varchar("executed_by", { length: 256 }),
+  riskLevel: varchar("risk_level", { length: 16 }).default("medium"),
+  manifestChecksum: varchar("manifest_checksum", { length: 128 }),
+  validationResult: jsonb("validation_result").$type<{
     checksumValid: boolean;
     schemaCompatible: boolean;
     migrationCompatible: boolean;
@@ -9079,17 +9106,14 @@ export type DataStreamRegistryRow = typeof dataStreamRegistry.$inferSelect;
 
 export const patternTimelineEvents = pgTable("pattern_timeline_events", {
   id: serial("id").primaryKey(),
-  patternId: varchar("pattern_id_pte", { length: 128 }).notNull(),
-  eventType: pgEnum("pattern_timeline_events_event_type_pte_enum", [
-    "pattern_detected", "strategy_generated", "intervention_started",
-    "intervention_completed", "outcome_recorded", "trend_shift", "policy_change",
-  ])("event_type_pte").notNull(),
-  eventSource: varchar("event_source_pte", { length: 256 }),
-  title: varchar("title_pte", { length: 512 }).notNull(),
-  description: text("description_pte"),
-  impactScore: integer("impact_score_pte").default(0),
-  metadata: jsonb("metadata_pte").$type<Record<string, any>>(),
-  timestamp: bigint("timestamp_pte", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+  patternId: varchar("pattern_id", { length: 128 }).notNull(),
+  eventType: varchar("event_type", { length: 32 }).notNull(),
+  eventSource: varchar("event_source", { length: 256 }),
+  title: varchar("title", { length: 512 }).notNull(),
+  description: text("description"),
+  impactScore: integer("impact_score").default(0),
+  metadata: jsonb("metadata").$type<Record<string, any>>(),
+  timestamp: bigint("timestamp", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
 }, (t) => [
   index("idx_pte_pattern").on(t.patternId),
   index("idx_pte_type").on(t.eventType),
@@ -9760,16 +9784,16 @@ export type InsertRegistryPolicyAlert = typeof registryPolicyAlerts.$inferInsert
 
 export const registryPrograms = pgTable("registry_programs", {
   id: varchar("id", { length: 128 }).primaryKey(),
-  jurisdictionId: varchar("jurisdiction_id_rp", { length: 128 }).notNull(),
-  category: text("category_rp"),
-  name: text("name_rp"),
-  agency: text("agency_rp"),
-  eligibility: text("eligibility_rp"),
-  contact: text("contact_rp"),
-  website: text("website_rp"),
-  applyNotes: text("apply_notes_rp"),
-  fingerprint: varchar("fingerprint_rp", { length: 128 }),
-  createdAt: bigint("created_at_rp", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+  jurisdictionId: varchar("jurisdiction_id", { length: 128 }).notNull(),
+  category: text("category"),
+  name: text("name"),
+  agency: text("agency"),
+  eligibility: text("eligibility"),
+  contact: text("contact"),
+  website: text("website"),
+  applyNotes: text("apply_notes"),
+  fingerprint: varchar("fingerprint", { length: 128 }),
+  createdAt: bigint("created_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
 }, (table) => [
   index("idx_rp_jurisdiction").on(table.jurisdictionId),
   index("idx_rp_fingerprint").on(table.fingerprint),
@@ -9942,8 +9966,8 @@ export const conduitEvents = pgTable("conduit_events", {
   engineId: varchar("engine_id", { length: 128 }),
   runId: varchar("run_id", { length: 128 }),
   snapshotId: integer("snapshot_id"),
-  metadata: jsonb("metadata"),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+  metadata: text("metadata"),
+  createdAt: bigint("created_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
 }, (table) => [
   index("idx_ce_type").on(table.eventType),
   index("idx_ce_pipeline").on(table.pipelineId),
@@ -9958,10 +9982,10 @@ export const alphaLakeExports = pgTable("alpha_lake_exports", {
   id: serial("id").primaryKey(),
   snapshotId: integer("snapshot_id").notNull(),
   exportType: varchar("export_type", { length: 64 }).notNull(), // "full", "partial", "delta"
-  engineRunIds: jsonb("engine_run_ids"), // string[] of run_ids included
-  outputPayload: jsonb("output_payload"), // assembled document
+  engineRunIds: text("engine_run_ids"), // JSON string[] of run_ids included
+  outputPayload: text("output_payload"), // assembled document JSON
   status: varchar("status", { length: 32 }).default("completed"),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+  createdAt: bigint("created_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
 }, (table) => [
   index("idx_ale_snapshot").on(table.snapshotId),
   index("idx_ale_type").on(table.exportType),
@@ -10411,8 +10435,8 @@ export const caseState = pgTable("case_state", {
   proceduralPathLabel: varchar("procedural_path_label", { length: 256 }),
   remedyStrategyId: integer("remedy_strategy_id"),
   remedyStrategyLabel: varchar("remedy_strategy_label", { length: 256 }),
-  claimType: varchar("claim_type_cs", { length: 64 }),
-  jurisdiction: varchar("jurisdiction_cs", { length: 64 }),
+  claimType: varchar("claim_type", { length: 64 }),
+  jurisdiction: varchar("jurisdiction", { length: 64 }),
   committedFindingIds: jsonb("committed_finding_ids").$type<number[]>().notNull().default([]),
   committedBarrierIds: jsonb("committed_barrier_ids").$type<number[]>().notNull().default([]),
   committedBenefitIds: jsonb("committed_benefit_ids").$type<number[]>().notNull().default([]),
@@ -10424,8 +10448,8 @@ export const caseState = pgTable("case_state", {
   completenessBreakdown: jsonb("completeness_breakdown").$type<{ missing: string[]; present: string[]; score: number }>(),
   computedDeadlines: jsonb("computed_deadlines").$type<Array<{ label: string; date: string; daysRemaining: number; critical: boolean }>>(),
   nextActions: jsonb("next_actions").$type<Array<{ label: string; type: string; priority: number; targetPage?: string }>>(),
-  createdAt: bigint("created_at_cs", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
-  updatedAt: bigint("updated_at_cs", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+  createdAt: bigint("created_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+  updatedAt: bigint("updated_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
 }, (table) => [
   uniqueIndex("idx_case_state_case").on(table.caseId),
   index("idx_case_state_user").on(table.userId),
@@ -10438,18 +10462,18 @@ export const caseFlags = pgTable("case_flags", {
   id: serial("id").primaryKey(),
   caseId: integer("case_id").notNull(),
   userId: integer("user_id").notNull(),
-  type: pgEnum("case_flags_flag_type_enum", ["system", "user"])("flag_type").notNull().default("user"),
+  type: varchar("flag_type", { length: 16 }).notNull().default("user"),
   location: varchar("location", { length: 128 }).notNull(),
   targetId: integer("target_id"),
   targetType: varchar("target_type", { length: 64 }),
   message: text("message").notNull(),
-  status: pgEnum("case_flags_flag_status_enum", ["open", "resolved"])("flag_status").notNull().default("open"),
+  status: varchar("flag_status", { length: 16 }).notNull().default("open"),
   areaName: varchar("area_name", { length: 256 }),
   state: varchar("state_code", { length: 10 }),
   lat: doublePrecision("lat"),
   lng: doublePrecision("lng"),
-  createdAt: bigint("created_at_cf", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
-  resolvedAt: bigint("resolved_at_cf", { mode: "number" }),
+  createdAt: bigint("created_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+  resolvedAt: bigint("resolved_at", { mode: "number" }),
 }, (table) => [
   index("idx_case_flags_case").on(table.caseId),
   index("idx_case_flags_type").on(table.type),

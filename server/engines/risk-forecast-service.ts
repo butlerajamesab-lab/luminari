@@ -27,7 +27,7 @@ function classifyForecastRisk(score: number): string {
 }
 
 export interface ForecastResult {
-  patternId: number | null;
+  patternId: string | null;
   entityName: string;
   riskForecastScore: number;
   riskCategory: string;
@@ -48,6 +48,8 @@ export interface ForecastSummary {
   avgForecastScore: number;
   topRisks: ForecastResult[];
   earlyWarnings: ForecastResult[];
+  source: string;
+  scoringBasis: string;
 }
 
 /**
@@ -102,8 +104,9 @@ export async function generateRiskForecasts(horizonDays: number = 30): Promise<{
 
       // Entity concentration (how many datasets mention this entity)
       const datasetSpread = await db.execute(sql`
-        SELECT COUNT(DISTINCT sourceDataset) as cnt FROM ingested_records 
-        WHERE normalizedEntity = ${entityName}
+        SELECT COUNT(DISTINCT COALESCE(dataset_id_ir, stream_id_ir, source_id)) as cnt
+        FROM ingested_records
+        WHERE normalized_entity = ${entityName}
       `);
       const entityConcentration = Math.min(100, (Number((datasetSpread[0] as unknown as any[])[0]?.cnt) || 0) * 20);
 
@@ -162,28 +165,27 @@ export async function generateRiskForecasts(horizonDays: number = 30): Promise<{
  * Get forecast summary
  */
 export async function getRiskForecastSummary(): Promise<ForecastSummary> {
-  const projections = await db.execute(sql`
-    SELECT erp.id, erp.entity_name, erp.industry_sector, 
-           erp.current_harm_score, erp.predicted_harm_score, erp.risk_category,
-           erp.projection_horizon_days
-    FROM entity_risk_projection erp
-    WHERE erp.id = (
-      SELECT MAX(erp2.id) FROM entity_risk_projection erp2 
-      WHERE erp2.entity_name = erp.entity_name
-    )
-    ORDER BY erp.predicted_harm_score DESC
+  // v_active_trends is the governed, populated forecast surface. The retired
+  // entity_risk_projection table was never migrated and produced live 500s.
+  const [projectionRows] = await db.execute(sql`
+    SELECT pattern_id, domain, jurisdiction, pressure_index,
+           growth_rate_30d,
+           current_signal_count, forecast_30d_signal_count,
+           forecast_confidence
+      FROM v_active_trends
+     ORDER BY pressure_index DESC NULLS LAST, pattern_id
   `);
 
-  const forecasts: ForecastResult[] = (projections[0] as unknown as any[]).map(r => ({
-    patternId: null,
-    entityName: r.entity_name,
-    riskForecastScore: Number(r.predicted_harm_score) || 0,
-    riskCategory: r.risk_category || "Stable",
-    predictedSignalGrowth: 0,
-    predictedPressureIndex: 0,
+  const forecasts: ForecastResult[] = (projectionRows as unknown as any[]).map(r => ({
+    patternId: r.pattern_id,
+    entityName: [r.domain, r.jurisdiction].filter(Boolean).join(" / ") || r.pattern_id,
+    riskForecastScore: Number(r.pressure_index) || 0,
+    riskCategory: classifyForecastRisk(Number(r.pressure_index) || 0),
+    predictedSignalGrowth: Number(r.growth_rate_30d) || 0,
+    predictedPressureIndex: Number(r.pressure_index) || 0,
     predictedGeographicSpread: 0,
-    predictedEntityCount: 0,
-    confidenceLevel: 0,
+    predictedEntityCount: Number(r.forecast_30d_signal_count ?? r.current_signal_count) || 0,
+    confidenceLevel: Number(r.forecast_confidence) || 0,
   }));
 
   const crisisRisk = forecasts.filter(f => f.riskCategory === "Systemic Crisis Risk").length;
@@ -205,5 +207,7 @@ export async function getRiskForecastSummary(): Promise<ForecastSummary> {
     avgForecastScore: avgScore,
     topRisks: forecasts.slice(0, 20),
     earlyWarnings: forecasts.filter(f => f.riskForecastScore >= 80).slice(0, 10),
+    source: "v_active_trends",
+    scoringBasis: "governed trend pressure index",
   };
 }

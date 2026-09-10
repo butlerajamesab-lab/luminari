@@ -203,7 +203,8 @@ export async function applyMerge(suggestion: MergeSuggestion): Promise<void> {
       confidence: suggestion.confidence.toFixed(4),
       source: "dedup_merge",
       createdAt: now,
-    }).onDuplicateKeyUpdate({
+    }).onConflictDoUpdate({
+      target: entityAliases.aliasName,
       set: {
         canonicalName: suggestion.canonicalName,
         entityType: suggestion.entityType,
@@ -223,7 +224,8 @@ export async function applyMerge(suggestion: MergeSuggestion): Promise<void> {
         confidence: suggestion.confidence.toFixed(4),
         source: "dedup_merge",
         createdAt: now,
-      }).onDuplicateKeyUpdate({
+      }).onConflictDoUpdate({
+        target: entityAliases.aliasName,
         set: {
           canonicalName: suggestion.canonicalName,
           entityType: suggestion.entityType,

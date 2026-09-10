@@ -30,7 +30,7 @@ export const lighthouseLineageRouter = router({
 
   /** Get full lineage for a single signal by signal_id */
   getBySignalId: publicProcedure
-    .input(z.object({ signalId: z.string().uuid() }))
+    .input(z.object({ signalId: z.string().trim().min(1).max(256) }))
     .query(async ({ input }) => {
       const all = await getSignalLineage({ limit: 500 });
       const entry = all.find((l) => l.detected_signal_id === input.signalId) ?? null;

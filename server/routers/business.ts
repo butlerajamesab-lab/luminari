@@ -49,7 +49,7 @@ export const businessRouter = router({
     .mutation(async ({ input }) => {
       const now = Date.now();
       
-      const result = await db
+      const [result] = await db
         .insert(businessBaselines)
         .values({
           entityType: input.entityType,
@@ -59,16 +59,18 @@ export const businessRouter = router({
           sampleCount: input.sampleCount,
           lastUpdated: now,
         })
-        .onDuplicateKeyUpdate({
+        .onConflictDoUpdate({
+          target: [businessBaselines.entityType, businessBaselines.entityId],
           set: {
             avgAmount: input.avgAmount,
             stddevAmount: input.stddevAmount,
             sampleCount: input.sampleCount,
             lastUpdated: now,
           },
-        });
+        })
+        .returning({ id: businessBaselines.id });
 
-      return { success: true, id: result?.[0]?.insertId ?? (result as any).insertId };
+      return { success: true, id: result.id };
     }),
 
   /**

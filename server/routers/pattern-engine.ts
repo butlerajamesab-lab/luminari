@@ -578,22 +578,63 @@ export const patternEngineRouter = router({
   getTemporalTrends: protectedProcedure
     .input(z.object({ claimType: z.string().optional() }))
     .query(async ({ input }) => {
-      if (input.claimType) {
-        return db.select().from(patternTemporalTrends)
-          .where(eq(patternTemporalTrends.claimType, input.claimType));
-      }
-      return db.select().from(patternTemporalTrends);
+      // Active trends do not carry a claim type. A requested claim filter must
+      // therefore return an explicit empty result instead of inventing one.
+      if (input.claimType) return [];
+      const [rows] = await db.execute(sql`
+        SELECT trend_id, trend_classification, jurisdiction,
+               current_signal_count, growth_rate_30d, momentum_direction,
+               created_at, updated_at
+        FROM v_active_trends
+        ORDER BY pressure_index DESC, current_signal_count DESC
+      `);
+      return (rows as unknown as any[]).map((row, index) => ({
+        id: index + 1,
+        trendType: row.trend_classification,
+        claimType: null,
+        jurisdiction: row.jurisdiction,
+        periodStart: row.created_at ? String(row.created_at).slice(0, 10) : null,
+        periodEnd: row.updated_at ? String(row.updated_at).slice(0, 10) : null,
+        metricName: "current_signal_count",
+        metricValue: Number(row.current_signal_count ?? 0),
+        previousValue: null,
+        changePercent: row.growth_rate_30d == null ? null : Number(row.growth_rate_30d),
+        trendDirection: row.momentum_direction ?? "stable",
+        notes: `Canonical trend ${row.trend_id}`,
+        createdAt: row.created_at ? Date.parse(row.created_at) : 0,
+      }));
     }),
 
   getGeographicHotspots: protectedProcedure
     .query(async () => {
-      return db.select().from(patternGeographicHotspots)
-        .orderBy(desc(patternGeographicHotspots.densityScore));
+      const [rows] = await db.execute(sql`
+        SELECT COALESCE(jurisdiction, 'unknown') AS jurisdiction,
+               SUM(current_signal_count)::int AS signal_count,
+               AVG(pressure_index)::numeric(5,2) AS density_score,
+               MAX(updated_at) AS updated_at
+        FROM v_active_trends
+        GROUP BY COALESCE(jurisdiction, 'unknown')
+        ORDER BY density_score DESC
+      `);
+      return (rows as unknown as any[]).map((row, index) => ({
+        id: index + 1,
+        jurisdiction: row.jurisdiction,
+        region: null,
+        claimType: null,
+        caseCount: Number(row.signal_count ?? 0),
+        densityScore: row.density_score == null ? null : Number(row.density_score),
+        topEntities: null,
+        topConductTypes: null,
+        periodCovered: null,
+        notes: "Canonical active-trend projection; count represents linked signals, not cases.",
+        createdAt: row.updated_at ? Date.parse(row.updated_at) : 0,
+      }));
     }),
 
   getIndustryProfiles: protectedProcedure
     .query(async () => {
-      return db.select().from(patternIndustryProfiles);
+      // No governed industry attribution exists in the active trend contract.
+      return [];
     }),
 
   getEvidenceCorrelations: protectedProcedure

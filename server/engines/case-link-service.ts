@@ -72,14 +72,13 @@ export async function generateShareableLink(
   };
 
   // Create link
-  await db.execute(sql`
+  const [linkRows] = await db.execute(sql`
     INSERT INTO shareable_case_links 
     (case_id, generated_by, access_level, token, expires_at, view_count, created_at)
     VALUES (${caseId}, ${generatedBy}, ${accessLevel}, ${token}, ${expiresAt}, 0, ${now})
+    RETURNING id
   `);
-
-  const linkResult = await db.execute(sql`SELECT LAST_INSERT_ID() as id`);
-  const linkId = (linkResult[0] as unknown as any[])[0]?.id;
+  const linkId = Number((linkRows as unknown as any[])[0]?.id);
 
   // Create permissions
   await db.execute(sql`

@@ -155,11 +155,11 @@ export async function runPatternEngine(
             ${now},
             ${now}
           )
-          ON DUPLICATE KEY UPDATE
-            signal_count = VALUES(signal_count),
-            signal_types = VALUES(signal_types),
-            severity = VALUES(severity),
-            updated_at = VALUES(updated_at)
+          ON CONFLICT (cluster_id) DO UPDATE SET
+            signal_count = EXCLUDED.signal_count,
+            signal_types = EXCLUDED.signal_types,
+            severity = EXCLUDED.severity,
+            updated_at = EXCLUDED.updated_at
         `
       );
       console.log(`[Pattern Engine] Persisted cluster ${cluster.clusterId}: ${cluster.signalCount} signals, severity=${cluster.severity}`);

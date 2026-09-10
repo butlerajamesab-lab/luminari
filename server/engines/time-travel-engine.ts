@@ -118,8 +118,8 @@ export async function createSnapshot(
 
   if (sourceTable === "ingested_records") {
     const conditions = [];
-    if (dateRange?.from) conditions.push(gte(ingestedRecords.ingestedAt, new Date(dateRange.from)));
-    if (dateRange?.to) conditions.push(lte(ingestedRecords.ingestedAt, new Date(dateRange.to)));
+    if (dateRange?.from) conditions.push(gte(ingestedRecords.ingestedAt, dateRange.from));
+    if (dateRange?.to) conditions.push(lte(ingestedRecords.ingestedAt, dateRange.to));
 
     const [result] = await db
       .select({ count: count() })
@@ -1102,7 +1102,7 @@ function replaySignalDetection(
     statusMap.set(status, (statusMap.get(status) ?? 0) + 1);
   }
   // Map recordStatusEnum values to open/in-flight concept
-  const openStatuses: Array<typeof records[number]["status"]> = ["received", "normalized"];
+  const openStatuses = ["received", "normalized"] as const;
   let openCount = 0;
   for (const s of openStatuses) openCount += statusMap.get(s) ?? 0;
   const openPct = records.length > 0 ? (openCount / records.length) * 100 : 0;

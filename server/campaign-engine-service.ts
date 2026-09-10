@@ -97,43 +97,58 @@ function safeJsonParse(val: any, fallback: any = []): any {
   try { return JSON.parse(val); } catch { return fallback; }
 }
 
+function toIsoTimestamp(value: unknown): string {
+  if (typeof value === "string" && !/^\d+$/.test(value)) return value;
+  const numeric = Number(value);
+  return Number.isFinite(numeric) && numeric > 0
+    ? new Date(numeric).toISOString()
+    : new Date(0).toISOString();
+}
+
 function mapCampaign(r: any): Campaign {
   return {
     id: r.id, name: r.name, patternId: r.pattern_id, jurisdiction: r.jurisdiction,
     description: r.description, impactIndex: r.impact_index || 0, status: r.status,
     currentStage: r.current_stage || 1, stageHistory: safeJsonParse(r.stage_history),
-    reformPackageId: r.reform_package_id, startedAt: r.started_at, createdAt: r.created_at,
-    updatedAt: r.updated_at,
+    reformPackageId: r.reform_package_id,
+    startedAt: toIsoTimestamp(r.started_at),
+    createdAt: toIsoTimestamp(r.created_at),
+    updatedAt: toIsoTimestamp(r.updated_at),
   };
 }
 
 function mapAction(r: any): CampaignAction {
   return {
-    id: r.id, campaignId: r.campaign_id, stageNumber: r.stage_number, date: r.date,
+    id: r.id, campaignId: r.campaign_id, stageNumber: r.stage_number, date: toIsoTimestamp(r.date),
     action: r.action, responsibleParty: r.responsible_party,
     responsiblePartyType: r.responsible_party_type, impactScore: r.impact_score || 0,
-    result: r.result, source: r.source, sourceId: r.source_id, createdAt: r.created_at,
+    result: r.result, source: r.source, sourceId: r.source_id, createdAt: toIsoTimestamp(r.created_at),
   };
 }
 
 function mapOutcome(r: any): CampaignOutcome {
   return {
-    id: r.id, campaignId: r.campaign_id, date: r.date, result: r.result,
+    id: r.id, campaignId: r.campaign_id, date: toIsoTimestamp(r.date), result: r.result,
     impactScore: r.impact_score || 0, notes: r.notes,
-    policyChangeId: r.policy_change_id, createdAt: r.created_at,
+    policyChangeId: r.policy_change_id, createdAt: toIsoTimestamp(r.created_at),
   };
 }
 
 // ── Auto-Create from Critical Patterns ─────────────────────────────────
 
 export async function checkAndCreateCampaigns(): Promise<Campaign[]> {
-  // Find patterns with pressure_index > 85 or trend = 'critical' that don't already have campaigns
+  // Governed trend projection is the canonical source for campaign eligibility.
   const [criticalPatterns] = await db.execute(sql`
-    SELECT pr.id, pr.pattern_type, pr.jurisdiction, pr.description, pr.pressure_index, pr.trend
-    FROM pattern_registry pr
-    WHERE (pr.pressure_index > 85 OR pr.trend = 'critical')
-    AND pr.id NOT IN (SELECT COALESCE(pattern_id, '') FROM campaigns)
-    ORDER BY pr.pressure_index DESC
+    SELECT t.pattern_id AS id,
+           t.trend_classification AS pattern_type,
+           COALESCE(t.jurisdiction, 'unknown') AS jurisdiction,
+           CONCAT('Governed ', t.trend_classification, ' trend in ', COALESCE(t.domain, 'unclassified')) AS description,
+           t.pressure_index,
+           t.trend_classification AS trend
+    FROM v_active_trends t
+    WHERE (t.pressure_index > 85 OR LOWER(t.trend_classification) = 'critical')
+    AND NOT EXISTS (SELECT 1 FROM campaigns c WHERE c.pattern_id = t.pattern_id)
+    ORDER BY t.pressure_index DESC
     LIMIT 10
   `);
 
@@ -161,9 +176,9 @@ export async function createCampaign(params: {
   impactIndex?: number;
 }): Promise<Campaign> {
   const id = randomUUID();
-  const now = new Date().toISOString();
+  const now = Date.now();
   const stageHistory: StageHistoryEntry[] = [{
-    stage: 1, stageName: "Detection", enteredAt: now,
+    stage: 1, stageName: "Detection", enteredAt: new Date(now).toISOString(),
   }];
   const stageHistoryJson = JSON.stringify(stageHistory);
   const patternId = params.patternId || null;
@@ -171,8 +186,8 @@ export async function createCampaign(params: {
   const impactIndex = params.impactIndex || 0;
 
   await db.execute(sql`
-    INSERT INTO campaigns (id, name, pattern_id, jurisdiction, description, impact_index, status, current_stage, stage_history, started_at)
-    VALUES (${id}, ${params.name}, ${patternId}, ${params.jurisdiction}, ${description}, ${impactIndex}, ${"analysis"}, ${1}, ${stageHistoryJson}, NOW())
+    INSERT INTO campaigns (id, name, pattern_id, jurisdiction, description, impact_index, status, current_stage, stage_history, started_at, created_at, updated_at)
+    VALUES (${id}, ${params.name}, ${patternId}, ${params.jurisdiction}, ${description}, ${impactIndex}, ${"analysis"}, ${1}, ${stageHistoryJson}, ${now}, ${now}, ${now})
   `);
 
   // Log the creation action
@@ -237,17 +252,18 @@ export async function advanceCampaignStage(campaignId: string, notes?: string): 
   if (!campaign) throw new Error("Campaign not found");
   if (campaign.currentStage >= 6) throw new Error("Campaign already at final stage");
 
-  const now = new Date().toISOString();
+  const now = Date.now();
+  const nowIso = new Date(now).toISOString();
   const newStage = campaign.currentStage + 1;
   const stageDef = CAMPAIGN_STAGES.find(s => s.number === newStage)!;
 
   // Complete current stage
   const history = [...campaign.stageHistory];
   const currentEntry = history.find(h => h.stage === campaign.currentStage && !h.completedAt);
-  if (currentEntry) currentEntry.completedAt = now;
+  if (currentEntry) currentEntry.completedAt = nowIso;
 
   // Add new stage entry
-  history.push({ stage: newStage, stageName: stageDef.name, enteredAt: now, notes });
+  history.push({ stage: newStage, stageName: stageDef.name, enteredAt: nowIso, notes });
 
   // Determine status based on stage
   let status = "analysis";
@@ -259,7 +275,7 @@ export async function advanceCampaignStage(campaignId: string, notes?: string): 
 
   const historyJson = JSON.stringify(history);
   await db.execute(sql`
-    UPDATE campaigns SET current_stage = ${newStage}, status = ${status}, stage_history = ${historyJson}, updated_at = NOW()
+    UPDATE campaigns SET current_stage = ${newStage}, status = ${status}, stage_history = ${historyJson}, updated_at = ${now}
     WHERE id = ${campaignId}
   `);
 
@@ -278,7 +294,7 @@ export async function advanceCampaignStage(campaignId: string, notes?: string): 
 
 export async function linkReformPackage(campaignId: string, reformPackageId: string): Promise<void> {
   await db.execute(sql`
-    UPDATE campaigns SET reform_package_id = ${reformPackageId}, updated_at = NOW() WHERE id = ${campaignId}
+    UPDATE campaigns SET reform_package_id = ${reformPackageId}, updated_at = ${Date.now()} WHERE id = ${campaignId}
   `);
 
   await logAction({
@@ -372,7 +388,7 @@ export async function getCampaignTargets(campaignId: string): Promise<any[]> {
 export async function updateTargetStatus(targetId: string, status: string, response?: string): Promise<void> {
   const resp = response || null;
   await db.execute(sql`
-    UPDATE coalition_campaign_targets SET outreach_status = ${status}, response = ${resp}, last_contacted = NOW(), updated_at = NOW()
+    UPDATE coalition_campaign_targets SET outreach_status = ${status}, response = ${resp}, last_contacted = ${Date.now()}, updated_at = ${Date.now()}
     WHERE id = ${targetId}
   `);
 }
@@ -395,9 +411,10 @@ export async function logAction(params: {
   const result = params.result || null;
   const source = params.source || null;
   const sourceId = params.sourceId || null;
+  const now = Date.now();
   await db.execute(sql`
     INSERT INTO campaign_actions (id, campaign_id, stage_number, date, action, responsible_party, responsible_party_type, impact_score, result, source, source_id)
-    VALUES (${id}, ${params.campaignId}, ${params.stageNumber}, NOW(), ${params.action}, ${params.responsibleParty}, ${params.responsiblePartyType}, ${impactScore}, ${result}, ${source}, ${sourceId})
+    VALUES (${id}, ${params.campaignId}, ${params.stageNumber}, ${now}, ${params.action}, ${params.responsibleParty}, ${params.responsiblePartyType}, ${impactScore}, ${result}, ${source}, ${sourceId})
   `);
   return id;
 }
@@ -429,9 +446,10 @@ export async function recordOutcome(params: {
   const impactScore = params.impactScore || 0;
   const notes = params.notes || null;
   const policyChangeId = params.policyChangeId || null;
+  const now = Date.now();
   await db.execute(sql`
     INSERT INTO campaign_outcomes (id, campaign_id, date, result, impact_score, notes, policy_change_id)
-    VALUES (${id}, ${params.campaignId}, NOW(), ${params.result}, ${impactScore}, ${notes}, ${policyChangeId})
+    VALUES (${id}, ${params.campaignId}, ${now}, ${params.result}, ${impactScore}, ${notes}, ${policyChangeId})
   `);
 
   await logAction({

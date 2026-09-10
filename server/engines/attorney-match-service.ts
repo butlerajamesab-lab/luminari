@@ -158,7 +158,7 @@ export async function findMatchingAttorneys(request: MatchRequest): Promise<Atto
  */
 export async function addAttorney(attorney: Omit<Attorney, "id">): Promise<number> {
   const now = Date.now();
-  await db.execute(sql`
+  const [rows] = await db.execute(sql`
     INSERT INTO attorney_registry 
     (name, firm_name, bar_number, jurisdiction, practice_areas, years_experience,
      accepts_contingency, accepts_pro_bono, accepts_new_clients, contact_email, website, created_at)
@@ -166,10 +166,9 @@ export async function addAttorney(attorney: Omit<Attorney, "id">): Promise<numbe
             ${JSON.stringify(attorney.practiceAreas)}, ${attorney.yearsExperience},
             ${attorney.acceptsContingency}, ${attorney.acceptsProBono}, ${attorney.acceptsNewClients},
             ${attorney.contactEmail}, ${attorney.website}, ${now})
+    RETURNING id
   `);
-
-  const result = await db.execute(sql`SELECT LAST_INSERT_ID() as id`);
-  return (result[0] as unknown as any[])[0]?.id;
+  return Number((rows as unknown as any[])[0]?.id);
 }
 
 /**

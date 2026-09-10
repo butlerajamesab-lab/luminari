@@ -7,6 +7,7 @@
  */
 
 import { db } from "./db";
+import { knowledgeCoverageMetrics } from "../drizzle/schema";
 import { sql } from "drizzle-orm";
 
 // ─── Coverage Weights ───
@@ -336,29 +337,37 @@ export async function calculateCoverage(): Promise<{
   // Persist to DB
   for (const cell of cells) {
     try {
-      const j = cell.jurisdiction.replace(/'/g, "''");
-      const c = cell.claimType.replace(/'/g, "''");
-      await db.execute(sql.raw(
-        `INSERT INTO knowledge_coverage_metrics 
-         (jurisdiction_kcm, claim_type_kcm, statute_count, case_law_count, agency_count, 
-          procedural_count, evidence_profiles_count, advocacy_targets_count, 
-          remedy_templates_count, deadline_rules_count, coverage_score, last_calculated, created_at_kcm, updated_at_kcm)
-         VALUES ('${j}', '${c}', ${cell.statuteCount}, ${cell.caseLawCount}, ${cell.agencyCount},
-                 ${cell.proceduralCount}, ${cell.evidenceProfilesCount}, ${cell.advocacyTargetsCount},
-                 ${cell.remedyTemplatesCount}, ${cell.deadlineRulesCount}, ${cell.coverageScore}, ${now}, ${now}, ${now})
-         ON DUPLICATE KEY UPDATE
-           statute_count = VALUES(statute_count),
-           case_law_count = VALUES(case_law_count),
-           agency_count = VALUES(agency_count),
-           procedural_count = VALUES(procedural_count),
-           evidence_profiles_count = VALUES(evidence_profiles_count),
-           advocacy_targets_count = VALUES(advocacy_targets_count),
-           remedy_templates_count = VALUES(remedy_templates_count),
-           deadline_rules_count = VALUES(deadline_rules_count),
-           coverage_score = VALUES(coverage_score),
-           last_calculated = VALUES(last_calculated),
-           updated_at_kcm = VALUES(updated_at_kcm)`
-      ));
+      await db.insert(knowledgeCoverageMetrics).values({
+        jurisdiction: cell.jurisdiction,
+        claimType: cell.claimType,
+        statuteCount: cell.statuteCount,
+        caseLawCount: cell.caseLawCount,
+        agencyCount: cell.agencyCount,
+        proceduralCount: cell.proceduralCount,
+        evidenceProfilesCount: cell.evidenceProfilesCount,
+        advocacyTargetsCount: cell.advocacyTargetsCount,
+        remedyTemplatesCount: cell.remedyTemplatesCount,
+        deadlineRulesCount: cell.deadlineRulesCount,
+        coverageScore: cell.coverageScore,
+        lastCalculated: now,
+        createdAt: now,
+        updatedAt: now,
+      }).onConflictDoUpdate({
+        target: [knowledgeCoverageMetrics.jurisdiction, knowledgeCoverageMetrics.claimType],
+        set: {
+          statuteCount: cell.statuteCount,
+          caseLawCount: cell.caseLawCount,
+          agencyCount: cell.agencyCount,
+          proceduralCount: cell.proceduralCount,
+          evidenceProfilesCount: cell.evidenceProfilesCount,
+          advocacyTargetsCount: cell.advocacyTargetsCount,
+          remedyTemplatesCount: cell.remedyTemplatesCount,
+          deadlineRulesCount: cell.deadlineRulesCount,
+          coverageScore: cell.coverageScore,
+          lastCalculated: now,
+          updatedAt: now,
+        },
+      });
     } catch (e) {
       errors.push(`persist ${cell.jurisdiction}/${cell.claimType}: ${e}`);
     }

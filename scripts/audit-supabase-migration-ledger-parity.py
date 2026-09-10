@@ -262,6 +262,10 @@ APPROVED_REPOSITORY_ONLY = {
         "20260909012009_rosetta_convergence_service_role_grant.sql",
         "76e88513649508067c77e2fdce1555e281d109ed",
     ),
+    "20260909143000": (
+        "20260909143000_lighthouse_runtime_postgres_contract_v1.sql",
+        "36e0fcbc2b98c737d69f60dce0dbde18566bbd9b",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {

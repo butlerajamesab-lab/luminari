@@ -7,6 +7,7 @@
  */
 
 import { db } from "./db";
+import { knowledgeFreshness } from "../drizzle/schema";
 import { sql } from "drizzle-orm";
 
 // ─── Freshness Configuration ───
@@ -46,7 +47,7 @@ export const FRESHNESS_CONFIGS: FreshnessConfig[] = [
   { tableName: "coalition_media", displayName: "Coalition Media", staleDays: 180, category: "backbone", timestampColumn: "updatedAt" },
   // Live Data
   { tableName: "consumer_complaints", displayName: "Consumer Complaints", staleDays: 90, category: "live_data", timestampColumn: "date_received" },
-  { tableName: "enforcement_records", displayName: "Enforcement Records", staleDays: 90, category: "live_data", timestampColumn: "action_date" },
+  { tableName: "legal_enforcement_records", displayName: "Enforcement Records", staleDays: 90, category: "live_data", timestampColumn: "created_at" },
   { tableName: "campaign_finance_records", displayName: "Campaign Finance", staleDays: 180, category: "live_data", timestampColumn: "contribution_date" },
 ];
 
@@ -199,20 +200,32 @@ export async function runFreshnessCheck(): Promise<{
       const staleFlag = freshnessScore < 50;
 
       // Upsert into knowledge_freshness
-      await db.execute(sql.raw(
-        `INSERT INTO knowledge_freshness (table_name, display_name, last_update, record_count, freshness_score, stale_flag, stale_days, category_kf, last_checked, created_at_kf, updated_at_kf)
-         VALUES ('${config.tableName}', '${config.displayName}', ${lastUpdate ?? 'NULL'}, ${recordCount}, ${freshnessScore}, ${staleFlag ? 1 : 0}, ${config.staleDays}, '${config.category}', ${now}, ${now}, ${now})
-         ON DUPLICATE KEY UPDATE
-           display_name = VALUES(display_name),
-           last_update = VALUES(last_update),
-           record_count = VALUES(record_count),
-           freshness_score = VALUES(freshness_score),
-           stale_flag = VALUES(stale_flag),
-           stale_days = VALUES(stale_days),
-           category_kf = VALUES(category_kf),
-           last_checked = VALUES(last_checked),
-           updated_at_kf = VALUES(updated_at_kf)`
-      ));
+      await db.insert(knowledgeFreshness).values({
+        tableName: config.tableName,
+        displayName: config.displayName,
+        lastUpdate,
+        recordCount,
+        freshnessScore,
+        staleFlag,
+        staleDays: config.staleDays,
+        category: config.category,
+        lastChecked: now,
+        createdAt: now,
+        updatedAt: now,
+      }).onConflictDoUpdate({
+        target: knowledgeFreshness.tableName,
+        set: {
+          displayName: config.displayName,
+          lastUpdate,
+          recordCount,
+          freshnessScore,
+          staleFlag,
+          staleDays: config.staleDays,
+          category: config.category,
+          lastChecked: now,
+          updatedAt: now,
+        },
+      });
 
       tablesChecked++;
       tablesUpdated++;

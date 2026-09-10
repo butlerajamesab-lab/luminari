@@ -207,15 +207,14 @@ export async function startIntakeSession(userId: number | null, rawStory: string
   const jurisdictionGuess = detectJurisdiction(rawStory);
 
   // Save session
-  await db.execute(sql`
+  const [sessionRows] = await db.execute(sql`
     INSERT INTO problem_intake_sessions 
     (user_id, raw_story, jurisdiction_guess, claim_candidates, confidence_score, status, created_at, updated_at)
     VALUES (${userId}, ${rawStory}, ${jurisdictionGuess}, 
             ${JSON.stringify(claimCandidates)}, ${overallConfidence}, 'analyzed', ${now}, ${now})
+    RETURNING id
   `);
-
-  const sessionResult = await db.execute(sql`SELECT LAST_INSERT_ID() as id`);
-  const sessionId = (sessionResult[0] as unknown as any[])[0]?.id;
+  const sessionId = Number((sessionRows as unknown as any[])[0]?.id);
 
   // Save individual claim matches
   for (const claim of claimCandidates) {

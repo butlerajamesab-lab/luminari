@@ -118,10 +118,10 @@ export async function runProceduralEngine(
             ${now},
             ${now}
           )
-          ON DUPLICATE KEY UPDATE
-            procedure_type = VALUES(procedure_type),
-            steps = VALUES(steps),
-            updated_at = VALUES(updated_at)
+          ON CONFLICT (cluster_id) DO UPDATE SET
+            procedure_type = EXCLUDED.procedure_type,
+            steps = EXCLUDED.steps,
+            updated_at = EXCLUDED.updated_at
         `
       );
       console.log(

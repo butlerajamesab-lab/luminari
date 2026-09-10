@@ -172,18 +172,24 @@ export async function registerPatternOccurrence(params: {
       .set({
         lastSeenAt: now,
         occurrenceCount: sql`${patterns.occurrenceCount} + 1`,
+        signalCount: sql`${patterns.signalCount} + 1`,
+        updatedAt: now,
       })
       .where(eq(patterns.id, patternId as any));
   } else {
     isNewPattern = true;
     const inserted = await db.insert(patterns).values({
+      patternKey: signature,
       patternType: params.patternType,
+      name: params.patternType.split("_").map(part => part[0].toUpperCase() + part.slice(1)).join(" "),
       signature,
       description: params.description,
       firstSeenAt: now,
       lastSeenAt: now,
       occurrenceCount: 1,
+      signalCount: 1,
       createdAt: now,
+      updatedAt: now,
     }).returning({ id: patterns.id });
     patternId = (inserted[0] as any).id as number;
   }
@@ -212,6 +218,8 @@ export async function registerPatternOccurrence(params: {
         await db.update(patterns)
           .set({
             occurrenceCount: sql`GREATEST(${patterns.occurrenceCount} - 1, 1)`,
+            signalCount: sql`GREATEST(${patterns.signalCount} - 1, 1)`,
+            updatedAt: now,
           })
           .where(eq(patterns.id, patternId as any));
       }

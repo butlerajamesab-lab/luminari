@@ -20,7 +20,7 @@ export const conduitRouter = router({
   metadataHealth: protectedProcedure.query(async ({ ctx }) => {
     // Table registry stats
     const [tableRows] = await db.execute(sql`
-      SELECT category, status, COUNT(*) as cnt, SUM(rowCount) as total_rows
+      SELECT category, status, COUNT(*) as cnt, SUM(row_count) as total_rows
       FROM table_registry
       GROUP BY category, status
       ORDER BY category
@@ -29,8 +29,8 @@ export const conduitRouter = router({
     // Field dictionary stats
     const [fieldStats] = await db.execute(sql`
       SELECT COUNT(*) as total_fields,
-             SUM(CASE WHEN isPrimaryKey = 1 THEN 1 ELSE 0 END) as pk_fields,
-             SUM(CASE WHEN isIndexed = 1 THEN 1 ELSE 0 END) as indexed_fields
+             SUM(CASE WHEN is_primary_key = 1 THEN 1 ELSE 0 END) as pk_fields,
+             SUM(CASE WHEN is_indexed = 1 THEN 1 ELSE 0 END) as indexed_fields
       FROM field_dictionary
     `);
 
@@ -42,7 +42,7 @@ export const conduitRouter = router({
     const [eventCounts] = await db.execute(sql`
       SELECT event_type, COUNT(*) as cnt
       FROM conduit_events
-      WHERE createdAt > ${cutoff}
+      WHERE created_at > ${cutoff}
       GROUP BY event_type
       ORDER BY cnt DESC
     `);
@@ -90,20 +90,20 @@ export const conduitRouter = router({
       SELECT run_id, engine_id, status, 
              CASE 
                WHEN output_refs IS NULL THEN 'missing'
-               WHEN JSON_TYPE(output_refs) = 'OBJECT' AND JSON_EXTRACT(output_refs, '$.primary') IS NOT NULL THEN 'deterministic'
-               WHEN JSON_TYPE(output_refs) = 'ARRAY' THEN 'legacy'
+               WHEN btrim(output_refs) LIKE '{%' AND output_refs ~ '"primary"[[:space:]]*:' THEN 'deterministic'
+               WHEN btrim(output_refs) LIKE '[%' THEN 'legacy'
                ELSE 'unknown'
              END as ref_format,
              CASE WHEN snapshot_id IS NOT NULL THEN 1 ELSE 0 END as has_snapshot,
-             startedAt, completedAt
+             started_at, completed_at
       FROM engine_runs
-      ORDER BY startedAt DESC
+      ORDER BY started_at DESC
       LIMIT 50
     `);
 
     // Enforcement rule summary across recent successful runs
     const [success_runs] = await db.execute(sql`
-      SELECT run_id FROM engine_runs WHERE status = 'success' ORDER BY completedAt DESC LIMIT 10
+      SELECT run_id FROM engine_runs WHERE status = 'success' ORDER BY completed_at DESC LIMIT 10
     `);
 
     const ruleResults: any[] = [];
@@ -124,8 +124,8 @@ export const conduitRouter = router({
       SELECT 
         COUNT(*) as total,
         SUM(CASE WHEN output_refs IS NULL THEN 1 ELSE 0 END) as no_refs,
-        SUM(CASE WHEN JSON_TYPE(output_refs) = 'OBJECT' AND JSON_EXTRACT(output_refs, '$.primary') IS NOT NULL THEN 1 ELSE 0 END) as deterministic,
-        SUM(CASE WHEN JSON_TYPE(output_refs) = 'ARRAY' THEN 1 ELSE 0 END) as legacy
+        SUM(CASE WHEN btrim(output_refs) LIKE '{%' AND output_refs ~ '"primary"[[:space:]]*:' THEN 1 ELSE 0 END) as deterministic,
+        SUM(CASE WHEN btrim(output_refs) LIKE '[%' THEN 1 ELSE 0 END) as legacy
       FROM engine_runs
     `);
 
@@ -147,23 +147,25 @@ export const conduitRouter = router({
   // ─── Export Readiness Panel ───
 
   exportReadiness: protectedProcedure.query(async ({ ctx }) => {
-    // Snapshots with bound runs
+    // The integer engine_runs.snapshot_id contract is bound to the existing,
+    // populated corpus_snapshots table. The separate UUID snapshots table is
+    // an intake/run projection and cannot be joined to legacy engine runs.
     const [snapshots] = await db.execute(sql`
-      SELECT s.id, s.caseId, s.status, s.createdAt,
+      SELECT s.id, s.case_id, s.snapshot_status AS status, s.created_at,
              COUNT(er.run_id) as bound_runs,
              SUM(CASE WHEN er.status = 'success' THEN 1 ELSE 0 END) as success_runs
-      FROM case_snapshots s
+      FROM corpus_snapshots s
       LEFT JOIN engine_runs er ON er.snapshot_id = s.id
       GROUP BY s.id
-      ORDER BY s.createdAt DESC
+      ORDER BY s.created_at DESC
       LIMIT 20
     `);
 
     // Alpha Lake exports
     const [exports] = await db.execute(sql`
-      SELECT id, snapshot_id, export_type, status, createdAt
+      SELECT id, snapshot_id, export_type, status, created_at
       FROM alpha_lake_exports
-      ORDER BY createdAt DESC
+      ORDER BY created_at DESC
       LIMIT 20
     `);
 
@@ -173,7 +175,7 @@ export const conduitRouter = router({
       if (snap.bound_runs > 0 && snap.success_runs === snap.bound_runs) {
         readySnapshots.push({
           snapshotId: snap.id,
-          caseId: snap.caseId,
+          caseId: snap.case_id,
           bound_runs: snap.bound_runs,
           ready: true,
         });

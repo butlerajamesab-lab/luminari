@@ -271,7 +271,7 @@ export async function getEvidenceConfidenceDashboard(): Promise<EvidenceConfiden
       END as domain,
       COUNT(*) as cnt
     FROM evidence_confidence_rules
-    GROUP BY domain`
+    GROUP BY 1`
   );
   const claimTypesByDomain: Record<string, number> = {};
   for (const row of domainRows as unknown as any[]) {
