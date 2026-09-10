@@ -8,7 +8,7 @@ declare
   v_user_id integer := -2147483000;
   v_legacy_case_id integer := -2147483000;
   v_case_uuid uuid;
-  v_session_id uuid := gen_random_uuid();
+  v_session_id uuid;
   v_artifact_id uuid := gen_random_uuid();
   v_first_id uuid;
   v_successor_id uuid;
@@ -31,12 +31,17 @@ begin
     values (v_legacy_case_id, v_user_id, 'Participant assertion isolated fixture');
   select case_uuid into strict v_case_uuid from public.case_identity_bridge
     where legacy_case_id = v_legacy_case_id;
-  insert into public.intake_sessions (intake_session_id, owner_user_id, session_type, entry_channel)
-    values (v_session_id, v_user_id, 'fixture', 'isolated-verification');
+  -- The cases INSERT trigger creates the primary intake session. Exercise that
+  -- canonical binding instead of attempting to create a second primary link.
+  select link.intake_session_id into strict v_session_id
+    from public.case_intake_links link
+    join public.intake_sessions session on session.intake_session_id = link.intake_session_id
+    where link.case_uuid = v_case_uuid
+      and link.is_primary = true
+      and link.link_type = 'primary_projection'
+      and session.owner_user_id = v_user_id;
   insert into public.intake_artifacts (artifact_id, intake_session_id, artifact_key, artifact_type, evidence_tier, availability)
     values (v_artifact_id, v_session_id, 'fixture:participant', 'source_document', 'source', 'available');
-  insert into public.case_intake_links (intake_session_id, case_uuid, link_type, is_primary)
-    values (v_session_id, v_case_uuid, 'primary_projection', true);
 
   if not has_table_privilege('service_role', 'public.intake_message_participant_assertions', 'SELECT')
      or not has_function_privilege('service_role', v_rpc, 'EXECUTE') then
