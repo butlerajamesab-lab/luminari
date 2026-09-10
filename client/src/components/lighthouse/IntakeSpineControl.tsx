@@ -237,7 +237,7 @@ export function IntakeSpineControl({
               </Alert>
             )}
 
-            {selectedSession.projection_invalidated_at && (
+            {selectedSession.projection_requires_review && (
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>

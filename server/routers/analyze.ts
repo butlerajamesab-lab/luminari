@@ -6,6 +6,7 @@ import { execute_intake_spine_session, INTAKE_SPINE_LAYER_NAMES } from '../intak
 import { read_canonical_case_layer_outputs } from '../intake-case-layer-reader';
 import { read_case_intake_integrity_projection } from '../intake-case-integrity-projection';
 import { promoteCaseIntakeSignals } from '../intake-signal-promotion';
+import { resolve_intake_review_status } from '../intake-review-status';
 import type { VerificationRecord } from '../engines/intake-spine/layer-5-verification_gate';
 import type { DetectedPattern } from '../engines/intake-spine/layer-10-pattern_registry';
 import type { CascadeChain } from '../engines/intake-spine/layer-11-cascade_registry';
@@ -138,6 +139,7 @@ export const analyzeRouter = router({
         last_governed_jurisdiction: string | null;
         last_governed_rule_as_of: string | null;
         projection_invalidated_at: string | null;
+        last_successful_review_epoch_ms: string | null;
       }>(
         `select
            s.intake_session_id::text,
@@ -164,7 +166,17 @@ export const analyzeRouter = router({
              filter (where ilr.receipt_hash ~ '^[0-9a-f]{64}$'))[1] as latest_receipt_hash,
            s.metadata #>> '{last_governed_execution,jurisdiction}' as last_governed_jurisdiction,
            s.metadata #>> '{last_governed_execution,rule_as_of}' as last_governed_rule_as_of,
-           s.metadata ->> 'runtime_projection_invalidated_at' as projection_invalidated_at
+           s.metadata ->> 'runtime_projection_invalidated_at' as projection_invalidated_at,
+           (
+             select max(audit.created_at)::text
+               from public.audit_trail audit
+              where audit.case_id = cib.legacy_case_id
+                and audit.action = 'run_intake_spine'
+                and (case
+                  when pg_catalog.pg_input_is_valid(audit.details, 'jsonb')
+                  then audit.details::jsonb ->> 'intake_session_id'
+                end) = s.intake_session_id::text
+           ) as last_successful_review_epoch_ms
          from public.intake_sessions s
          join public.case_intake_links cil
            on cil.intake_session_id = s.intake_session_id
@@ -184,7 +196,8 @@ export const analyzeRouter = router({
           and s.session_type = 'live'
           and s.entry_channel = 'upload'
         group by s.intake_session_id, s.session_type, s.entry_channel, s.source_label,
-                 s.session_status, s.completion_state, s.created_at, s.metadata
+                 s.session_status, s.completion_state, s.created_at, s.metadata,
+                 cib.legacy_case_id
         order by s.created_at asc`,
         [input.caseId],
       );
@@ -200,6 +213,7 @@ export const analyzeRouter = router({
         const missing_layer_names = INTAKE_SPINE_LAYER_NAMES.filter(
           name => !sealed_layer_names.includes(name),
         );
+        const review_status = resolve_intake_review_status(row);
         return ({
         intake_session_id: row.intake_session_id,
         session_type: row.session_type,
@@ -222,6 +236,7 @@ export const analyzeRouter = router({
         missing_layer_names,
         execution_complete:
           row.completion_state === 'governed_execution_complete'
+          && !review_status.projection_requires_review
           && session_artifacts.length > 0
           && session_artifacts.every(artifact => artifact.integrity_status === 'preserved')
           && missing_layer_names.length === 0,
@@ -232,6 +247,7 @@ export const analyzeRouter = router({
         last_governed_jurisdiction: row.last_governed_jurisdiction,
         last_governed_rule_as_of: row.last_governed_rule_as_of,
         projection_invalidated_at: row.projection_invalidated_at,
+        ...review_status,
         });
       });
     }),
