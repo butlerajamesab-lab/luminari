@@ -49,6 +49,13 @@ jobs:
       - name: Lint replayed database
         run: supabase db lint --local --schema public --level error --fail-on error
 
+      - name: Verify Prism 2.4 receipt projection and bounded replay
+        run: >-
+          psql
+          postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          --set=ON_ERROR_STOP=1
+          --file=supabase/verification/20260910040000_prism_v24_generation_reconciliation_verify.sql
+
       - name: Verify reviewed participant assertion runtime and access boundary
         run: >-
           psql

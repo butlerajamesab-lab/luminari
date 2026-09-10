@@ -7,11 +7,11 @@ export const PRISM_RULE_SET_VERSION = "1.0.0";
 export const PRISM_RULE_SET_HASH =
   "298eaf14df23f17c07dbc253fb6a2abe2f55ac9425942a46ab08f6bdd05401b0";
 
-export const PRISM_ROSETTA_ENGINE_VERSION = "2.3.0";
+export const PRISM_ROSETTA_ENGINE_VERSION = "2.4.0";
 export const PRISM_ROSETTA_RULE_SET_ID = "prism-rosetta-structural-binding";
-export const PRISM_ROSETTA_RULE_SET_VERSION = "2.3.0";
+export const PRISM_ROSETTA_RULE_SET_VERSION = "2.4.0";
 export const PRISM_ROSETTA_RULE_SET_HASH =
-  "5be83f4d0d341685b244cc0d47126293f28072eabf02fc1b4e5b2d0bd41fd157";
+  "78cf62b9cd452d8de62397c775fa71a2507777ebf81b1ea53915782d573768a6";
 
 const hash_schema = z.string().regex(/^[a-f0-9]{64}$/i);
 
