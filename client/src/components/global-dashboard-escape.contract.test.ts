@@ -20,7 +20,8 @@ describe("global dashboard escape", () => {
       '{ icon: Rocket, label: "Mission Control", path: "/mission-control" }',
     );
     expect(catalog).toContain("[...allNavSections, adminSection]");
-    expect(app).toContain('<Route path="/"><DashboardRouter /></Route>');
+    expect(app).toContain('<Route path="/" component={PublicEntry} />');
+    expect(app).toContain('setLocation("/lighthouse", { replace: true });');
     expect(app).toContain('<Route path="/" component={PlatformDashboard} />');
     expect(app).not.toContain('navigate("/login", { replace: true })');
     expect(layout).not.toContain('if (!user) {\n    return (');

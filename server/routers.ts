@@ -200,14 +200,17 @@ const intakeRouter = router({
     }),
 
   /** Auto-detect pipeline from free-text answers */
-  autoDetect: protectedProcedure
+  // This is a bounded, deterministic classification pass with no persistence
+  // or privileged reads. Keeping it public lets a visitor finish the intake
+  // questions before authentication is required at the case-save boundary.
+  autoDetect: publicProcedure
     .input(z.object({
-      what_happened: z.string().optional(),
-      who_involved: z.string().optional(),
-      documents_available: z.string().optional(),
-      where: z.string().optional(),
-      additional_context: z.string().optional(),
-      combined_text: z.string().optional(),
+      what_happened: z.string().trim().max(5_000).optional(),
+      who_involved: z.string().trim().max(2_000).optional(),
+      documents_available: z.string().trim().max(2_000).optional(),
+      where: z.string().trim().max(500).optional(),
+      additional_context: z.string().trim().max(5_000).optional(),
+      combined_text: z.string().trim().max(10_000).optional(),
     }))
     .mutation(async ({ input }) => {
       const { autoDetect } = await import("./intake-autodetect");
@@ -236,9 +239,9 @@ const intakeRouter = router({
     }),
 
   /** Deterministic auto-detect: runs keyword scoring directly on free text */
-  smartDetect: protectedProcedure
+  smartDetect: publicProcedure
     .input(z.object({
-      text: z.string().min(1),
+      text: z.string().trim().min(1).max(10_000),
     }))
     .mutation(async ({ input }) => {
       const { autoDetect } = await import("./intake-autodetect");

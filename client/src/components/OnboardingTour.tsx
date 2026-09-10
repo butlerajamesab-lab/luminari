@@ -75,12 +75,13 @@ const TOUR_STEPS: TourStep[] = [
 export function OnboardingTour({ onComplete }: { onComplete?: () => void }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
+  const [showInvitation, setShowInvitation] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
     const completed = localStorage.getItem(TOUR_COMPLETED_KEY);
     if (!completed) {
-      setIsVisible(true);
+      setShowInvitation(true);
     }
   }, []);
 
@@ -109,16 +110,55 @@ export function OnboardingTour({ onComplete }: { onComplete?: () => void }) {
   const handleComplete = () => {
     localStorage.setItem(TOUR_COMPLETED_KEY, "true");
     setIsVisible(false);
+    setShowInvitation(false);
     onComplete?.();
   };
 
   const handleSkip = () => {
     localStorage.setItem(TOUR_COMPLETED_KEY, "true");
     setIsVisible(false);
+    setShowInvitation(false);
     onComplete?.();
   };
 
-  if (!isVisible) return null;
+  const handleStartTour = () => {
+    setCurrentStep(0);
+    setShowInvitation(false);
+    setIsVisible(true);
+  };
+
+  if (!isVisible) {
+    if (!showInvitation) return null;
+
+    return (
+      <div className="pointer-events-none fixed inset-x-4 bottom-4 z-40 flex justify-center sm:justify-end">
+        <div className="pointer-events-auto w-full max-w-sm rounded-xl border border-border/60 bg-card/95 p-4 shadow-xl backdrop-blur-sm">
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+              <Sparkles className="h-4 w-4 text-primary" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-foreground">New here?</p>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                Take the one-minute tour whenever you are ready. Everything on this page is available now.
+              </p>
+              <div className="mt-3 flex items-center gap-2">
+                <Button size="sm" onClick={handleStartTour}>Take the tour</Button>
+                <Button variant="ghost" size="sm" onClick={handleSkip}>Not now</Button>
+              </div>
+            </div>
+            <button
+              onClick={handleSkip}
+              className="text-muted-foreground transition-colors hover:text-foreground"
+              aria-label="Dismiss tour invitation"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const step = TOUR_STEPS[currentStep];
   const Icon = step.icon;
