@@ -1,4 +1,5 @@
 import { getPool } from "./db-legacy";
+import { project_case_document_connections } from "./intake-document-connections";
 
 function as_number(value: unknown): number {
   const parsed = Number(value ?? 0);
@@ -321,33 +322,41 @@ function map_correlation(row: any) {
     targetDocumentId: as_number(row.target_document_id),
     correlationType: row.correlation_type ?? null,
     sharedIdentifiers: [] as string[],
+    description: "Legacy connection without an attached evidence basis. This record does not establish corroboration.",
+    evidenceStatus: "unverified" as const,
+    evidenceCount: 0,
+    basis: [],
+    canonicalConnectionId: null,
+    canonicalOutputHashes: [] as string[],
+    canonicalReceiptHashes: [] as string[],
+    projectionSource: "legacy" as const,
   };
 }
 
 export async function listCorrelations(caseId: number) {
-  const result = await getPool().query(
+  const [result, connections] = await Promise.all([getPool().query(
     `select id, case_id, source_document_id, target_document_id, correlation_type
        from public.document_correlations
       where case_id = $1
       order by id`,
     [caseId],
-  );
-  return result.rows.map(map_correlation);
+  ), project_case_document_connections(caseId)]);
+  return [...connections, ...result.rows.map(map_correlation)];
 }
 
 export async function listCorrelationsEnriched(caseId: number) {
-  const result = await getPool().query(
+  const [result, connections] = await Promise.all([getPool().query(
     `select c.id, c.case_id, c.source_document_id, c.target_document_id, c.correlation_type,
             sd.filename as source_filename, sd.file_type as source_file_type,
             td.filename as target_filename, td.file_type as target_file_type
        from public.document_correlations c
-       left join public.documents sd on sd.id = c.source_document_id
-       left join public.documents td on td.id = c.target_document_id
+       left join public.documents sd on sd.id = c.source_document_id and sd.case_id = c.case_id
+       left join public.documents td on td.id = c.target_document_id and td.case_id = c.case_id
       where c.case_id = $1
       order by c.id`,
     [caseId],
-  );
-  return result.rows.map((row: any) => ({
+  ), project_case_document_connections(caseId)]);
+  return [...connections, ...result.rows.map((row: any) => ({
     ...map_correlation(row),
     sourceDocument: row.source_document_id ? {
       id: as_number(row.source_document_id),
@@ -359,7 +368,7 @@ export async function listCorrelationsEnriched(caseId: number) {
       filename: row.target_filename ?? null,
       fileType: row.target_file_type ?? null,
     } : null,
-  }));
+  }))];
 }
 
 function map_finding(row: any) {

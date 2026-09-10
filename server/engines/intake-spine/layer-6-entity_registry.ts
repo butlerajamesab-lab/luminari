@@ -29,6 +29,8 @@ export interface EntityMention {
   artifact_key: string;
   span_offset: number;
   binding_provenance_refs?: string[];
+  source_context?: string;
+  source_context_offset?: number;
 }
 
 export interface ReviewCandidate {
@@ -52,8 +54,11 @@ export interface MessageAuthorBinding {
   verification_state: 'verified';
 }
 
-export const LAYER_VERSION = '2.6.2';
-export const RULE_VERSION = '2.6.2';
+export const LAYER_VERSION = '2.6.3';
+export const RULE_VERSION = '2.6.3';
+
+const CARE_PERSON_NAME = "[A-Z][a-z]+(?:[’'-][A-Z]?[a-z]+)*(?:[ \\t]+[A-Z][a-z]+(?:[’'-][A-Z]?[a-z]+)*){0,3}";
+const CARE_DECLARANT = `(?:I|${CARE_PERSON_NAME})`;
 
 const ADDRESS_STATE_ABBREVIATIONS: Record<string, string> = {
   wa: 'washington', ca: 'california', or: 'oregon', ny: 'new york', tx: 'texas',
@@ -128,6 +133,23 @@ export const RULE_MANIFEST = {
   non_entity_acronym_stoplist: NON_ENTITY_ACRONYM_STOPLIST,
   person_leading_stoplist: PERSON_LEADING_STOPLIST,
   ambiguous_name_type: 'unknown',
+  explicit_care_recipient_patterns: [
+    { source: `\\b(${CARE_DECLARANT})[ \\t]+(?:am|is|was)[ \\t]+(${CARE_PERSON_NAME})[’']s[ \\t]+(?:sole[ \\t]+)?(?:caregiver|POA|power of attorney)\\b`, flags: 'g' },
+    { source: `\\b(${CARE_DECLARANT})[ \\t]+(?:am|is|was)[ \\t]+(?:(?:the|a)[ \\t]+)?(?:sole[ \\t]+)?(?:caregiver|authorized representative)[ \\t]+for[ \\t]+(${CARE_PERSON_NAME})\\b(?![ \\t]+[A-Z])`, flags: 'g' },
+    { source: `\\b(${CARE_DECLARANT})[ \\t]+(?:have|has|had|hold|holds)[ \\t]+(?:a[ \\t]+)?power of attorney[ \\t]+for[ \\t]+(${CARE_PERSON_NAME})\\b(?![ \\t]+[A-Z])`, flags: 'g' },
+  ],
+  care_classification_uncertain_prefix: {
+    source: "\\b(?:if|whether|maybe|perhaps|possibly|may|might|could|would|should|not|never|false|untrue|denies|denied|deny|doubt|doubts|doubted|suppose|supposed|assuming|pretend|pretended|wish|wishes|wished)\\b|n[’']t\\b",
+    flags: 'i',
+  },
+  care_classification_scope: 'affirmative_explicit_recipient_same_artifact_exact_name_only',
+  care_classification_identity: 'recompute_person_identity_preserve_original_name_and_source_mentions',
+  mention_context: {
+    policy: 'exact_source_slice_within_smallest_containing_parsed_span',
+    max_chars: 600,
+    preceding_chars: 200,
+    mismatch_policy: 'omit_without_rewriting',
+  },
   organization_abbreviation_expansion: false,
   exact_normalized_match_auto_merge: true,
   levenshtein_review_threshold: 2,
@@ -141,6 +163,8 @@ export const RULE_MANIFEST = {
 export const RULE_MANIFEST_HASH = computeRuleManifestHash(RULE_MANIFEST);
 
 const PERSON_PATTERNS = RULE_MANIFEST.person_patterns.map(regexFromManifest);
+const CARE_RECIPIENT_PATTERNS = RULE_MANIFEST.explicit_care_recipient_patterns.map(regexFromManifest);
+const CARE_UNCERTAIN_PREFIX = regexFromManifest(RULE_MANIFEST.care_classification_uncertain_prefix);
 const AMBIGUOUS_NAME_PATTERNS = RULE_MANIFEST.ambiguous_name_patterns.map(regexFromManifest);
 const ORG_PATTERNS = RULE_MANIFEST.organization_patterns.map(regexFromManifest);
 const ADDRESS_PATTERN = regexFromManifest(RULE_MANIFEST.address_pattern);
@@ -168,6 +192,7 @@ export function processLayer6(input: Layer6Input): EngineResult<Entity[]> {
   });
   const unresolved: UnresolvedDependency[] = [];
   const entityMap = new Map<string, Entity>();
+  const personEvidenceByArtifact = new Map<string, Set<string>>();
 
   for (const artifact of artifacts) {
     if (artifact.extraction_status !== 'success') {
@@ -237,6 +262,13 @@ export function processLayer6(input: Layer6Input): EngineResult<Entity[]> {
 
     for (const span of semanticSpans) {
       const text = span.text;
+
+      for (const mention of explicitCareRecipientMentions(text)) {
+        const names = personEvidenceByArtifact.get(artifact.artifact_key) ?? new Set<string>();
+        names.add(normalizeEntityName(mention.raw_name, 'person'));
+        personEvidenceByArtifact.set(artifact.artifact_key, names);
+        addEntity(entityMap, mention.raw_name, 'person', artifact.artifact_key, span.start_offset + mention.offset);
+      }
 
       const authorBindings = authorBindingsForSpan(span, artifact.artifact_key, input.message_author_bindings);
       if (authorBindings.length === 1) {
@@ -318,6 +350,19 @@ export function processLayer6(input: Layer6Input): EngineResult<Entity[]> {
     }
   }
 
+  // A bare mention is no longer unknown when the same source explicitly names
+  // that person as a care recipient. Evidence in another document cannot make
+  // that identity decision, and near matches remain review-only.
+  for (const [key, entity] of entityMap) {
+    if (entity.type !== 'unknown') continue;
+    entity.raw_mentions = entity.raw_mentions.filter(mention => {
+      if (!personEvidenceByArtifact.get(mention.artifact_key)?.has(entity.canonical_name)) return true;
+      addEntity(entityMap, mention.raw_text, 'person', mention.artifact_key, mention.span_offset);
+      return false;
+    });
+    if (entity.raw_mentions.length === 0) entityMap.delete(key);
+  }
+
   const entities = Array.from(entityMap.values()).sort((a, b) => a.entity_id.localeCompare(b.entity_id));
   for (let i = 0; i < entities.length; i++) {
     for (let j = i + 1; j < entities.length; j++) {
@@ -343,6 +388,7 @@ export function processLayer6(input: Layer6Input): EngineResult<Entity[]> {
 
   for (const entity of entities) {
     entity.raw_mentions = dedupeMentions(entity.raw_mentions);
+    for (const mention of entity.raw_mentions) attachSourceContext(mention, artifacts);
     entity.review_candidates.sort((a, b) => a.candidate_entity_id.localeCompare(b.candidate_entity_id));
   }
 
@@ -358,6 +404,46 @@ export function processLayer6(input: Layer6Input): EngineResult<Entity[]> {
     unresolved_dependencies: unresolved.sort((a, b) => a.field.localeCompare(b.field)),
     is_sealed: false,
   };
+}
+
+function attachSourceContext(mention: EntityMention, artifacts: ParsedArtifact[]): void {
+  const artifact = artifacts.find(value => value.artifact_key === mention.artifact_key);
+  if (!artifact) return;
+  const mentionEnd = mention.span_offset + mention.raw_text.length;
+  if (artifact.extracted_text.slice(mention.span_offset, mentionEnd) !== mention.raw_text) return;
+  const containingSpan = artifact.spans
+    .filter(span => span.start_offset <= mention.span_offset && span.end_offset >= mentionEnd)
+    .sort((a, b) => (a.end_offset - a.start_offset) - (b.end_offset - b.start_offset)
+      || a.start_offset - b.start_offset)[0];
+  if (!containingSpan) return;
+  const start = Math.max(0, containingSpan.start_offset, mention.span_offset - RULE_MANIFEST.mention_context.preceding_chars);
+  const end = Math.min(artifact.extracted_text.length, containingSpan.end_offset, start + RULE_MANIFEST.mention_context.max_chars);
+  if (end < mentionEnd) return;
+  mention.source_context = artifact.extracted_text.slice(start, end);
+  mention.source_context_offset = start;
+}
+
+function explicitCareRecipientMentions(text: string): Array<{ raw_name: string; offset: number }> {
+  const mentions: Array<{ raw_name: string; offset: number }> = [];
+  // Questions and conditional/negated prefixes cannot establish a classification.
+  // Inspect only the prefix: a later clause such as "he is not able to speak"
+  // does not negate an earlier affirmative caregiver statement.
+  if (text.includes('?')) return mentions;
+  for (const pattern of CARE_RECIPIENT_PATTERNS) {
+    pattern.lastIndex = 0;
+    let match: RegExpExecArray | null;
+    while ((match = pattern.exec(text)) !== null) {
+      if ((match[1] !== 'I' && isExcludedPersonMention(match[1])) || isExcludedPersonMention(match[2])) continue;
+      const prefix = text.slice(0, match.index).split(/[.!?;\n]/).at(-1) ?? '';
+      if (CARE_UNCERTAIN_PREFIX.test(`${prefix} ${match[1]}`)) continue;
+      const raw_name = match[2];
+      // The recipient is the last occurrence in a possessive assertion, and
+      // this also handles a declarant and recipient with the same written name.
+      const offset = match.index + match[0].lastIndexOf(raw_name);
+      mentions.push({ raw_name, offset });
+    }
+  }
+  return mentions;
 }
 
 function addBoundEntity(

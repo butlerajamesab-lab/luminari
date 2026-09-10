@@ -1,4 +1,5 @@
 import { trpc } from "@/lib/trpc";
+import { useCase } from "@/contexts/CaseContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,7 +22,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useLocation, useParams } from "wouter";
 import { caseWorkspacePath } from "@/lib/caseNavigation";
-import { ArrowLeft, FileText, Quote, AlertTriangle, Users, ExternalLink, Shield, RefreshCw, Loader2, Download, Ban, FileX, Link2, ChevronDown } from "lucide-react";
+import { ArrowLeft, FileText, Quote, AlertTriangle, Users, ExternalLink, Shield, RefreshCw, Loader2, Download, Ban, FileX, Link2, ChevronDown, Network } from "lucide-react";
 import ReplaceDocumentModalV2 from "@/components/ReplaceDocumentModalV2";
 import ReadAloud from "@/components/ReadAloud";
 import PageReadAloud from "@/components/PageReadAloud";
@@ -178,6 +179,7 @@ export default function DocumentDetail() {
 }
 
 function AuthenticatedDocumentDetail() {
+  const { setCurrentCaseId } = useCase();
   const params = useParams<{ id: string }>();
   const docId = parseInt(params.id || "0");
   const [, setLocation] = useLocation();
@@ -295,6 +297,10 @@ function AuthenticatedDocumentDetail() {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => {
+            setCurrentCaseId(doc.caseId);
+            setLocation(`/network?documentId=${docId}`);
+          }}><Network className="h-3.5 w-3.5" />Document graph</Button>
           <Button variant="outline" size="sm" className="gap-1.5" onClick={openIntakeSpine}><Shield className="h-3.5 w-3.5" />Review Spine Receipts</Button>
           {doc.s3Url && <Button variant="outline" size="sm" className="gap-1.5" onClick={handleDownload} disabled={!documentAccessUrl || isResolvingDocumentAccess}><Download className="h-3.5 w-3.5" />Download</Button>}
           {doc.s3Url && <Button variant="outline" size="sm" className="gap-1.5" disabled={!documentAccessUrl || isResolvingDocumentAccess} asChild={Boolean(documentAccessUrl)}>{documentAccessUrl ? <a href={documentAccessUrl} target="_blank" rel="noopener noreferrer"><ExternalLink className="h-3.5 w-3.5" />Source</a> : <span><ExternalLink className="h-3.5 w-3.5" />Source</span>}</Button>}

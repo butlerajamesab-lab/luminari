@@ -8,19 +8,22 @@ import { useLocation } from "wouter";
 import {
   Lightbulb, Flag, Link2, FileCheck, FileWarning,
   FileText, Quote, ExternalLink, ChevronDown, ChevronUp,
-  ArrowRight, BookOpen, Search, Upload, Send, ShieldCheck,
+  BookOpen, Search, Upload, Send, ShieldCheck,
 } from "lucide-react";
 import ReadAloud from "@/components/ReadAloud";
 import PageReadAloud from "@/components/PageReadAloud";
 import { CommitToCase, FlagArea } from "@/components/CommitToCase";
 import { NextStepBar } from "@/components/NextStepBar";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { usePlainText } from "@/hooks/usePlainText";
-import { formatFindingForReadAloud, formatSignalForReadAloud, formatCorrelationForReadAloud } from "@/lib/forensicReadAloud";
+import { formatFindingForReadAloud, formatSignalForReadAloud } from "@/lib/forensicReadAloud";
 import { buildFromParam } from "@/lib/buildFromParam";
 import { deriveDocumentDisplayLabel } from "@/lib/documentLabel";
 import { MissingRecordsSection } from "@/components/MissingRecords";
 import { EnforcementSuggestions } from "@/components/EnforcementSuggestions";
+import { inspect_document_pair, project_source_events, source_document_id, type source_event } from "@/lib/caseSourceInspection";
+import { humanize_chronology_value } from "@/lib/chronologyProjection";
+import { DocumentConnectionEvidence, type connection_basis } from "@/components/DocumentConnectionEvidence";
 
 /* ─── Evidentiary Weight Badge ─── */
 function WeightBadge({ weight }: { weight: string }) {
@@ -348,98 +351,105 @@ function FlagsTab({ caseId }: { caseId: number }) {
   );
 }
 
-/* ─── Enriched Correlations Tab ─── */
+/* ─── Source connections ─── */
 type EnrichedCorrelation = {
   id: number;
   caseId: number;
   sourceDocumentId: number;
   targetDocumentId: number;
-  correlationType: string;
-  description: string | null;
-  sharedIdentifiers: unknown;
-  sourceDocument: { id: number; filename: string; documentType: string | null } | null;
-  targetDocument: { id: number; filename: string; documentType: string | null } | null;
+  correlationType: string | null;
+  description?: string | null;
+  sharedIdentifiers?: unknown;
+  evidenceStatus?: "source_linked" | "unverified";
+  basis?: connection_basis[];
+  canonicalConnectionId?: string | null;
+  sourceDocument: { id: number; filename: string | null } | null;
+  targetDocument: { id: number; filename: string | null } | null;
 };
 
+function SourceEventCandidates({ documentId, filename, events, onNavigate }: {
+  documentId: number; filename: string; events: source_event[]; onNavigate: (path: string) => void;
+}) {
+  const [visible, setVisible] = useState(5);
+  return <section className="min-w-0 rounded-md border border-border p-3 space-y-2">
+    <h4 className="text-xs font-semibold break-words">{filename}</h4>
+    <p className="text-xs text-muted-foreground">{events.length} source-bound event{events.length === 1 ? "" : "s"}</p>
+    {events.length === 0 && <p className="text-xs text-muted-foreground">No chronology events are extracted from this document. Open the document to inspect its source text.</p>}
+    {events.slice(0, visible).map(event => <article key={event.chronology_event_id} className="rounded border border-border/50 p-2 space-y-1">
+      <div className="flex flex-wrap gap-1.5 text-[10px] text-muted-foreground"><span>{event.event_date ?? "Date unknown"} · {humanize_chronology_value(event.event_date_precision)}</span><Badge variant="outline" className="text-[9px]">{humanize_chronology_value(event.fact_status)}</Badge></div>
+      <p className="text-xs whitespace-pre-wrap break-words">{event.observed_event}</p>
+      <details className="text-[10px] text-muted-foreground"><summary className="cursor-pointer">Exact source references</summary>{event.source_references.map(reference => <code key={reference} className="block break-all">{reference}</code>)}</details>
+    </article>)}
+    {visible < events.length && <Button variant="ghost" size="sm" onClick={() => setVisible(count => count + 10)}>Show more ({events.length - visible} remaining)</Button>}
+    <Button variant="outline" size="sm" onClick={() => onNavigate(`/timeline?document=${documentId}`)}>View this document's chronology</Button>
+  </section>;
+}
+
 function CorrelationsTab({ caseId }: { caseId: number }) {
-  const { data: correlations, isLoading } = trpc.correlations.listEnriched.useQuery({ caseId }) as { data: EnrichedCorrelation[] | undefined; isLoading: boolean };
+  const correlationsQuery = trpc.correlations.listEnriched.useQuery({ caseId });
+  const correlations = correlationsQuery.data as EnrichedCorrelation[] | undefined;
   const [visible, setVisible] = useState(20);
-  const plainify = usePlainText();
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [documentFilter, setDocumentFilter] = useState("");
+  const [search, setSearch] = useState("");
+  const eventsQuery = trpc.events.list.useQuery({ caseId }, { enabled: expanded !== null });
+  const events = useMemo(() => project_source_events(eventsQuery.data ?? []), [eventsQuery.data]);
   const [, setLocation] = useLocation();
+  useEffect(() => { setVisible(20); setExpanded(null); setDocumentFilter(""); setSearch(""); }, [caseId]);
+  const documents = useMemo(() => {
+    const result = new Map<number, string>();
+    for (const connection of correlations ?? []) {
+      if (connection.sourceDocument) result.set(connection.sourceDocument.id, connection.sourceDocument.filename || `Document ${connection.sourceDocument.id}`);
+      if (connection.targetDocument) result.set(connection.targetDocument.id, connection.targetDocument.filename || `Document ${connection.targetDocument.id}`);
+    }
+    return [...result.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+  }, [correlations]);
+  const filtered = (correlations ?? []).filter(connection => {
+    const query = search.trim().toLocaleLowerCase();
+    return (!documentFilter || String(connection.sourceDocumentId) === documentFilter || String(connection.targetDocumentId) === documentFilter)
+      && (!query || [connection.correlationType, connection.description, connection.sourceDocument?.filename, connection.targetDocument?.filename, ...(connection.basis ?? []).map(basis => basis.canonicalEntityName)]
+        .some(value => value?.toLocaleLowerCase().includes(query)));
+  });
+  const openDocument = (id: number) => { if (source_document_id(id)) setLocation(`/documents/${id}?from=${encodeURIComponent(buildFromParam())}`); };
 
-  if (isLoading) return <Skeleton />;
-  if (!correlations || correlations.length === 0) return <Empty icon={<Link2 className="h-10 w-10 text-muted-foreground" />} text="No cross-document correlations found yet." />;
+  if (correlationsQuery.isLoading) return <Skeleton />;
+  if (correlationsQuery.error && !correlations) return <Card><CardContent className="p-4" role="alert">Document connections could not be loaded. <Button variant="ghost" size="sm" onClick={() => void correlationsQuery.refetch()}>Retry</Button></CardContent></Card>;
+  if (!correlations?.length) return <Empty icon={<Link2 className="h-10 w-10 text-muted-foreground" />} text="No source-linked document connections or recorded candidate links are available yet." />;
 
-  const shown = correlations.slice(0, visible);
-
-  return (
-    <div className="space-y-2">
-      {shown.map((c) => {
-        const srcDoc = c.sourceDocument;
-        const tgtDoc = c.targetDocument;
-        const shared = c.sharedIdentifiers as string[] | null;
-        return (
-          <Card key={c.id}>
-            <CardContent className="p-3">
-              <div className="flex items-start gap-2">
-                <Link2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                <div className="flex-1 min-w-0 space-y-2">
-                  <p className="text-sm font-medium capitalize">{c.correlationType.replace(/_/g, " ")}</p>
-                  {c.description && (
-                    <p className="text-xs text-muted-foreground leading-relaxed">{plainify(c.description)}</p>
-                  )}
-
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {srcDoc && (
-                      <button
-                        onClick={() => setLocation(`/documents/${srcDoc.id}?from=${encodeURIComponent(buildFromParam())}`)}
-                        className="text-[11px] text-primary hover:underline flex items-center gap-1 bg-primary/5 rounded px-2 py-0.5"
-                      >
-                        <FileText className="h-3 w-3" />
-                        {deriveDocumentDisplayLabel(srcDoc.filename)}
-                      </button>
-                    )}
-                    <ArrowRight className="h-3 w-3 text-muted-foreground shrink-0" />
-                    {tgtDoc && (
-                      <button
-                        onClick={() => setLocation(`/documents/${tgtDoc.id}?from=${encodeURIComponent(buildFromParam())}`)}
-                        className="text-[11px] text-primary hover:underline flex items-center gap-1 bg-primary/5 rounded px-2 py-0.5"
-                      >
-                        <FileText className="h-3 w-3" />
-                        {deriveDocumentDisplayLabel(tgtDoc.filename)}
-                      </button>
-                    )}
-                  </div>
-
-                  {shared && shared.length > 0 && (
-                    <div className="flex items-center gap-1 flex-wrap">
-                      <span className="text-[10px] text-muted-foreground">Shared:</span>
-                      {shared.slice(0, 5).map((sid, idx) => (
-                        <Badge key={idx} variant="secondary" className="text-[9px]">{sid}</Badge>
-                      ))}
-                      {shared.length > 5 && (
-                        <span className="text-[9px] text-muted-foreground">+{shared.length - 5} more</span>
-                      )}
-                    </div>
-                  )}
-                </div>
-                <ReadAloud
-                  text={`${c.correlationType}. ${c.description || ""}`}
-                  forensicText={formatCorrelationForReadAloud({ correlationType: c.correlationType, description: c.description || undefined }, {})}
-                  label=""
-                />
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
-      {visible < correlations.length && (
-        <Button variant="outline" className="w-full" onClick={() => setVisible(v => v + 20)}>
-          Show more ({correlations.length - visible} remaining)
-        </Button>
-      )}
+  return <div className="space-y-3">
+    <p className="text-xs text-muted-foreground">Inspect the exact mentions behind a document connection. A shared identity or repeated statement does not establish that the same event occurred or was independently corroborated.</p>
+    {correlationsQuery.error && <p role="alert" className="text-sm text-red-300">Connection refresh failed. Showing the last successful result.</p>}
+    <div className="grid gap-2 sm:grid-cols-2">
+      <label className="text-xs space-y-1">Source document<select aria-label="Filter document connections" className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm" value={documentFilter} onChange={event => { setDocumentFilter(event.target.value); setVisible(20); }}><option value="">All documents</option>{documents.map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select></label>
+      <label className="text-xs space-y-1">Search connections<input aria-label="Search document connections" className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm" value={search} placeholder="Entity, filename, or recorded link type" onChange={event => { setSearch(event.target.value); setVisible(20); }} /></label>
     </div>
-  );
+    <p className="text-xs text-muted-foreground">{filtered.length} of {correlations.length} connections</p>
+    {filtered.length === 0 && <p className="text-sm">No document connections match these filters.</p>}
+    {filtered.slice(0, visible).map(connection => {
+      const key = connection.canonicalConnectionId ?? `legacy:${connection.id}`;
+      const supported = connection.evidenceStatus === "source_linked" && Boolean(connection.basis?.length);
+      const sourceName = connection.sourceDocument?.filename || `Document ${connection.sourceDocumentId}`;
+      const targetName = connection.targetDocument?.filename || `Document ${connection.targetDocumentId}`;
+      const pair = expanded === key ? inspect_document_pair(events, connection.sourceDocumentId, connection.targetDocumentId) : null;
+      return <Card key={key}><CardContent className="p-4 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold">{supported ? "Shared entity mentions" : `Recorded link: ${(connection.correlationType || "unspecified").replace(/_/g, " ")}`}</h3>
+          <Badge variant="outline">{supported ? "Source-linked mentions" : "Unverified candidate"}</Badge>
+        </div>
+        {supported ? <p className="text-xs text-muted-foreground">These documents mention the same canonical entity. The quoted evidence below explains the connection.</p> : <p className="text-xs text-muted-foreground">This saved link contains no paired quotations, event identifiers, or verification rationale. Its label is not a verified corroboration finding. Compare the available source observations below.</p>}
+        <div className="grid gap-2 sm:grid-cols-2">{[{ id: connection.sourceDocumentId, name: sourceName }, { id: connection.targetDocumentId, name: targetName }].map((document, index) => <button key={`${index}:${document.id}`} className="text-xs text-primary hover:underline text-left flex items-center gap-1.5" onClick={() => openDocument(document.id)}><FileText className="h-3.5 w-3.5 shrink-0" />{document.name}</button>)}</div>
+        {supported && <DocumentConnectionEvidence basis={connection.basis!} onOpenDocument={openDocument} />}
+        <Button variant="outline" size="sm" aria-expanded={expanded === key} onClick={() => setExpanded(expanded === key ? null : key)}>{expanded === key ? "Close source event comparison" : "Compare source events"}</Button>
+        {pair && <div className="space-y-3">
+          <p className="text-xs text-muted-foreground">Each column lists events extracted from that document. Rows are not matched event pairs; no corroboration judgment is inferred from this comparison.</p>
+          {eventsQuery.isLoading && <p role="status" className="text-xs">Loading source-bound chronology…</p>}
+          {eventsQuery.error && <div role="alert" className="text-xs">{eventsQuery.data ? "Chronology refresh failed. Showing the last successful source observations." : "Source events could not be loaded."} <Button variant="ghost" size="sm" onClick={() => void eventsQuery.refetch()}>Retry</Button></div>}
+          {eventsQuery.data && <div className="grid gap-3 lg:grid-cols-2"><SourceEventCandidates key={`${key}:source`} documentId={connection.sourceDocumentId} filename={sourceName} events={pair.source_events} onNavigate={setLocation} /><SourceEventCandidates key={`${key}:target`} documentId={connection.targetDocumentId} filename={targetName} events={pair.target_events} onNavigate={setLocation} /></div>}
+        </div>}
+      </CardContent></Card>;
+    })}
+    {visible < filtered.length && <Button variant="outline" className="w-full" onClick={() => setVisible(count => count + 20)}>Show more ({filtered.length - visible} remaining)</Button>}
+  </div>;
 }
 
 /* ─── Shared helpers ─── */
@@ -650,7 +660,7 @@ export default function Findings() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Findings & Intelligence</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Deterministic verification records, legacy findings, signal flags, and correlations remain separately classified and source-bound.
+          Deterministic verification records, legacy findings, signal flags, and document connections retain their evidence status.
         </p>
       </div>
 
@@ -678,7 +688,7 @@ export default function Findings() {
           </TabsTrigger>
           <TabsTrigger value="correlations" className="gap-1.5">
             <Link2 className="h-3.5 w-3.5" />
-            Correlations ({correlations ?? 0})
+            Document connections ({correlations ?? 0})
           </TabsTrigger>
         </TabsList>
 
