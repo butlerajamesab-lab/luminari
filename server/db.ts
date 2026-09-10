@@ -97,3 +97,24 @@ export {
 } from "./enforcement-action-paths-live-compat";
 export { getSharedCaseData } from "./shared-case-runtime-compat";
 export { listAllUserFoiaRequests } from "./foia-requests-live-compat";
+export {
+  createPresentation,
+  getPresentation,
+  listPresentations,
+  updatePresentation,
+  deletePresentation,
+  updatePresentationSlideCount,
+  addSlide,
+  updateSlide,
+  deleteSlide,
+  reorderSlides,
+  getSlides,
+  getSlide,
+  createMergeSuggestion,
+  listMergeSuggestions,
+  updateMergeSuggestionStatus,
+  getMergeSuggestion,
+  createFeedback,
+  listFeedback,
+  updateFeedbackStatus,
+} from "./legacy-feature-runtime-compat";

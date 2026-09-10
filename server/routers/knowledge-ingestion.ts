@@ -844,14 +844,33 @@ export const knowledgeIngestionRouter = router({
       offset: z.number().min(0).default(0),
     }))
     .query(async ({ input }) => {
+      // registry_programs is the populated governed source. Its live contract
+      // uses canonical snake_case columns, not the retired *_rp aliases.
+      const params: unknown[] = [];
       const conditions: string[] = [];
-      // advocacy_targets table doesn't exist — serve from registry_programs (1694 rows)
-      if (input.search) conditions.push(`(name_rp LIKE '%${input.search.replace(/'/g, "''")}%' OR agency_rp LIKE '%${input.search.replace(/'/g, "''")}%' OR eligibility_rp LIKE '%${input.search.replace(/'/g, "''")}%')`);
-      if (input.targetType) conditions.push(`category_rp LIKE '%${input.targetType.replace(/'/g, "''")}%'`);
-      const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-      const [rows] = await db.execute(sql.raw(`SELECT id, name_rp AS target_name, category_rp AS target_type, jurisdiction_id_rp AS jurisdiction, contact_rp AS contact_info, created_at_rp AS created_at FROM registry_programs ${where} ORDER BY created_at_rp DESC LIMIT ${input.limit} OFFSET ${input.offset}`));
-      const [countRows] = await db.execute(sql.raw(`SELECT COUNT(*) as cnt FROM registry_programs ${where}`));
-      return { rows: rows as unknown as unknown as any[], total: Number((countRows as unknown as any[])[0]?.cnt ?? 0) };
+      if (input.search) {
+        params.push(`%${input.search}%`);
+        conditions.push(`(name ilike $${params.length} or agency ilike $${params.length} or eligibility ilike $${params.length})`);
+      }
+      if (input.targetType) {
+        params.push(`%${input.targetType}%`);
+        conditions.push(`category ilike $${params.length}`);
+      }
+      const where = conditions.length ? `where ${conditions.join(" and ")}` : "";
+      const pool = getPool();
+      const [rows, countRows] = await Promise.all([
+        pool.query(
+          `select id,name as target_name,category as target_type,
+                  coalesce(jurisdiction_id_rp,jurisdiction_id) as jurisdiction,
+                  contact as contact_info,website,apply_notes,created_at
+             from public.registry_programs ${where}
+            order by created_at desc,id
+            limit $${params.length + 1} offset $${params.length + 2}`,
+          [...params, input.limit, input.offset],
+        ),
+        pool.query(`select count(*)::int as cnt from public.registry_programs ${where}`, params),
+      ]);
+      return { rows: rows.rows, total: Number(countRows.rows[0]?.cnt ?? 0), source: "registry_programs" };
     }),
 
   /** Browse settlement formulas */

@@ -331,7 +331,7 @@ async function promoteSignal(signal: LiveSignalRow, decision: SunamDecision, gat
 
 async function stageSignal(signal: LiveSignalRow, decision: SunamDecision): Promise<number> {
   const now = Date.now();
-  const result = await db.execute(sql`
+  const [rows] = await db.execute(sql`
     INSERT INTO extraction_staging
       (signal_type, dataset_id, jurisdiction, domain, severity, title, explanation,
        pattern_summary, supporting_statistics, raw_confidence_score, signal_fingerprint,
@@ -353,8 +353,9 @@ async function stageSignal(signal: LiveSignalRow, decision: SunamDecision): Prom
        ${JSON.stringify(decision.breakdown)},
        'staged', ${decision.reason},
        ${now}, ${now}, ${now})
+    RETURNING id
   `);
-  return (result as any)[0]?.insertId || 0;
+  return Number((rows as unknown as any[])[0]?.id) || 0;
 }
 
 // ─── Log gate decision ──────────────────────────────────────────
@@ -368,7 +369,7 @@ async function logGateDecision(
   actor: string | null = null
 ): Promise<number> {
   const now = Date.now();
-  await db.execute(sql`
+  const [rows] = await db.execute(sql`
     INSERT INTO sunam_gate_log
       (live_signal_id, signal_fingerprint, signal_type, dataset_id,
        sunam_score, threshold_used, score_breakdown,
@@ -382,9 +383,8 @@ async function logGateDecision(
        ${outcome}, ${decision.reason},
        ${promotedSignalId}, ${stagingId}, ${actor},
        ${now}, ${now})
+    RETURNING id
   `);
-  // Return the auto-increment ID of the gate log entry
-  const [rows] = await db.execute(sql`SELECT LAST_INSERT_ID() as id`);
   return Number((rows as unknown as any[])[0]?.id) || 0;
 }
 
@@ -445,21 +445,22 @@ export async function processGateBatch(liveSignalIds: number[]): Promise<{
       // original columns hold the actual data for all 1,216 signals.
       const rows = await db.execute(sql`
         SELECT id,
-               COALESCE(NULLIF(signalType_ls, ''), signalType) as signalType,
-               COALESCE(NULLIF(datasetId_ls, ''), datasetId) as datasetId,
-               COALESCE(NULLIF(jurisdiction_ls, ''), jurisdiction) as jurisdiction,
-               COALESCE(NULLIF(domain_ls, ''), domain) as domain,
-               COALESCE(NULLIF(severity_ls, ''), severity) as severity,
-               COALESCE(NULLIF(title_ls, ''), title) as title,
-               COALESCE(NULLIF(explanation_ls, ''), explanation) as explanation,
-               patternSummary,
-               supportingStatistics, confidenceScore,
-               COALESCE(detectedAt_ls, detectedAt) as detectedAt,
-               ingestRunId,
-               signalFingerprint,
-               COALESCE(NULLIF(entity_type_ls, ''), entityType) as entityType,
-               canonical_entity_name as canonicalEntityName,
-               entity_role as entityRole
+               signal_type as "signalType",
+               dataset_id as "datasetId",
+               jurisdiction,
+               domain,
+               severity,
+               title,
+               explanation,
+               pattern_summary as "patternSummary",
+               supporting_statistics as "supportingStatistics",
+               confidence_score as "confidenceScore",
+               detected_at as "detectedAt",
+               ingest_run_id as "ingestRunId",
+               signal_fingerprint as "signalFingerprint",
+               COALESCE(NULLIF(entity_type_ls, ''), entity_type) as "entityType",
+               canonical_entity_name as "canonicalEntityName",
+               entity_role as "entityRole"
         FROM live_signals WHERE id = ${id}
       `);
       const arr = (rows as any)[0];
@@ -567,7 +568,7 @@ export async function manualPromote(stagingId: number, actor: string): Promise<{
   };
 
   // Step 1: Log the gate decision FIRST to get gateLogId
-  await db.execute(sql`
+  const [gateRows] = await db.execute(sql`
     INSERT INTO sunam_gate_log
       (live_signal_id, signal_fingerprint, signal_type, dataset_id,
        sunam_score, threshold_used, score_breakdown,
@@ -582,8 +583,8 @@ export async function manualPromote(stagingId: number, actor: string): Promise<{
        'manual_promote', ${`Manually promoted by ${actor}`},
        ${null}, ${stagingId}, ${actor},
        ${now}, ${now})
+    RETURNING id
   `);
-  const [gateRows] = await db.execute(sql`SELECT LAST_INSERT_ID() as id`);
   const gateLogId = Number((gateRows as unknown as any[])[0]?.id) || 0;
 
   // Step 2: Promote through governance layer WITH gateLogId

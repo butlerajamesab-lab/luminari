@@ -1,0 +1,53 @@
+name: Lighthouse pattern preservation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/lighthouse-pattern-preservation.yml"
+      - "scripts/verify-lighthouse-pattern-preservation.py"
+      - "scripts/verify-lighthouse-view-foundations.py"
+      - "supabase/migrations/20260815081130_case_surface_tables_foundation.sql"
+      - "supabase/migrations/20260816063000_visibility_legacy_tables_foundation.sql"
+      - "supabase/migrations/20260909143000_lighthouse_runtime_postgres_contract_v1.sql"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/lighthouse-pattern-preservation.yml"
+      - "scripts/verify-lighthouse-pattern-preservation.py"
+      - "scripts/verify-lighthouse-view-foundations.py"
+      - "supabase/migrations/20260815081130_case_surface_tables_foundation.sql"
+      - "supabase/migrations/20260816063000_visibility_legacy_tables_foundation.sql"
+      - "supabase/migrations/20260909143000_lighthouse_runtime_postgres_contract_v1.sql"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preservation:
+    name: Preserve pattern rows and original dates
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: lighthouse_runtime_contract_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d lighthouse_runtime_contract_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PATTERN_TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/lighthouse_runtime_contract_test
+    steps:
+      - uses: actions/checkout@v7
+      - name: Verify production view conversion and legacy table replay
+        run: python3 scripts/verify-lighthouse-pattern-preservation.py
+      - name: Verify foundations preserve existing production views
+        run: python3 scripts/verify-lighthouse-view-foundations.py

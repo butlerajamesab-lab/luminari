@@ -63,7 +63,7 @@ export async function runActivationEngine(
 
   for (const activation of activations) {
     try {
-      // Use raw SQL for MySQL upsert (ON DUPLICATE KEY UPDATE)
+      // PostgreSQL upsert on the canonical cluster identity.
       await dbInstance.execute(
         sql`
           INSERT INTO activation_outputs (
@@ -76,10 +76,10 @@ export async function runActivationEngine(
             ${now},
             ${now}
           )
-          ON DUPLICATE KEY UPDATE
-            procedure_type = VALUES(procedure_type),
-            steps = VALUES(steps),
-            updated_at = VALUES(updated_at)
+          ON CONFLICT (cluster_id) DO UPDATE SET
+            procedure_type = EXCLUDED.procedure_type,
+            steps = EXCLUDED.steps,
+            updated_at = EXCLUDED.updated_at
         `
       );
       console.log(

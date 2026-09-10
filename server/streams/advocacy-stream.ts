@@ -89,8 +89,8 @@ export async function detectAdvocacySurge(): Promise<AdvocacySignal[]> {
       entityNamed: advocacyReports.entityNamed,
       orgCount: sql<number>`COUNT(DISTINCT ${advocacyReports.organizationName})`.as("org_count"),
       reportCount: sql<number>`COUNT(*)`.as("report_count"),
-      harmTypes: sql<string>`GROUP_CONCAT(DISTINCT ${advocacyReports.harmType})`.as("harm_types"),
-      jurisdictions: sql<string>`GROUP_CONCAT(DISTINCT ${advocacyReports.jurisdiction})`.as("jurisdictions"),
+      harmTypes: sql<string>`STRING_AGG(DISTINCT ${advocacyReports.harmType}::text, ',')`.as("harm_types"),
+      jurisdictions: sql<string>`STRING_AGG(DISTINCT ${advocacyReports.jurisdiction}::text, ',')`.as("jurisdictions"),
     })
     .from(advocacyReports)
     .where(sql`${advocacyReports.entityNamed} IS NOT NULL AND ${advocacyReports.entityNamed} != ''`)
@@ -129,8 +129,8 @@ export async function detectPolicyConvergence(): Promise<AdvocacySignal[]> {
       policyArea: advocacyReports.policyArea,
       orgCount: sql<number>`COUNT(DISTINCT ${advocacyReports.organizationName})`.as("org_count"),
       reportCount: sql<number>`COUNT(*)`.as("report_count"),
-      reportTypes: sql<string>`GROUP_CONCAT(DISTINCT ${advocacyReports.reportType})`.as("report_types"),
-      entities: sql<string>`GROUP_CONCAT(DISTINCT ${advocacyReports.entityNamed})`.as("entities"),
+      reportTypes: sql<string>`STRING_AGG(DISTINCT ${advocacyReports.reportType}::text, ',')`.as("report_types"),
+      entities: sql<string>`STRING_AGG(DISTINCT ${advocacyReports.entityNamed}::text, ',')`.as("entities"),
     })
     .from(advocacyReports)
     .where(sql`${advocacyReports.policyArea} IS NOT NULL AND ${advocacyReports.policyArea} != ''`)
@@ -234,7 +234,7 @@ export async function detectEntityAdvocacyPressure(): Promise<AdvocacySignal[]> 
       entityNamed: advocacyReports.entityNamed,
       reportTypeCount: sql<number>`COUNT(DISTINCT ${advocacyReports.reportType})`.as("report_type_count"),
       reportCount: sql<number>`COUNT(*)`.as("report_count"),
-      reportTypes: sql<string>`GROUP_CONCAT(DISTINCT ${advocacyReports.reportType})`.as("report_types"),
+      reportTypes: sql<string>`STRING_AGG(DISTINCT ${advocacyReports.reportType}::text, ',')`.as("report_types"),
       orgCount: sql<number>`COUNT(DISTINCT ${advocacyReports.organizationName})`.as("org_count"),
       totalAffected: sql<number>`SUM(COALESCE(${advocacyReports.estimatedAffectedCount}, 0))`.as("total_affected"),
     })
@@ -293,8 +293,8 @@ export async function getAdvocacyByOrganization(limit = 10) {
       organizationName: advocacyReports.organizationName,
       organizationType: advocacyReports.organizationType,
       reportCount: sql<number>`COUNT(*)`.as("report_count"),
-      policyAreas: sql<string>`GROUP_CONCAT(DISTINCT ${advocacyReports.policyArea})`.as("policy_areas"),
-      entitiesNamed: sql<string>`GROUP_CONCAT(DISTINCT ${advocacyReports.entityNamed})`.as("entities_named"),
+      policyAreas: sql<string>`STRING_AGG(DISTINCT ${advocacyReports.policyArea}::text, ',')`.as("policy_areas"),
+      entitiesNamed: sql<string>`STRING_AGG(DISTINCT ${advocacyReports.entityNamed}::text, ',')`.as("entities_named"),
     })
     .from(advocacyReports)
     .groupBy(advocacyReports.organizationName, advocacyReports.organizationType)

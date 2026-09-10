@@ -664,7 +664,8 @@ export async function classifyAndCacheEntity(rawName: string, datasetId?: string
       confidence: classification.confidence.toFixed(4),
       source: "heuristic",
       createdAt: Date.now(),
-    }).onDuplicateKeyUpdate({
+    }).onConflictDoUpdate({
+      target: entityAliases.aliasName,
       set: {
         entityType: classification.entityType,
         confidence: classification.confidence.toFixed(4),
@@ -682,7 +683,8 @@ export async function classifyAndCacheEntity(rawName: string, datasetId?: string
             confidence: classification.confidence.toFixed(4),
             source: "heuristic",
             createdAt: Date.now(),
-          }).onDuplicateKeyUpdate({
+          }).onConflictDoUpdate({
+            target: entityAliases.aliasName,
             set: {
               canonicalName: classification.canonicalName,
               entityType: classification.entityType,

@@ -331,7 +331,8 @@ export async function geocodeAddress(address: string): Promise<GeocodedLocation 
       placeId,
       source: "google",
       createdAt: Date.now(),
-    }).onDuplicateKeyUpdate({
+    }).onConflictDoUpdate({
+      target: geocodeCache.addressKey,
       set: { lat, lng, formattedAddress, placeId },
     });
 
@@ -414,7 +415,8 @@ export async function insertManualGeocode(
     placeId: null,
     source: "manual",
     createdAt: Date.now(),
-  }).onDuplicateKeyUpdate({
+  }).onConflictDoUpdate({
+    target: geocodeCache.addressKey,
     set: { lat, lng, formattedAddress: formattedAddress ?? address, source: "manual" as const },
   });
 }

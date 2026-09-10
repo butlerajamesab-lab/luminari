@@ -147,14 +147,10 @@ export const agencyMetricsRouter = router({
 
   // Get all metrics (all agencies, all years)
   getAll: publicProcedure.query(async () => {
-    const rows = await db
-      .select()
-      .from(agencyPerformanceMetrics)
-      .orderBy(
-        agencyPerformanceMetrics.agencyName,
-        desc(agencyPerformanceMetrics.fiscalYear),
-      );
-    return rows;
+    // Production does not yet contain the legacy annual-metrics table. Do not
+    // manufacture performance figures from directory records: an empty series
+    // intentionally lets the UI expose the populated canonical directory.
+    return [];
   }),
 
   // Get weak joints related to an agency (by matching statuteCitation keywords)
@@ -201,25 +197,27 @@ export const agencyMetricsRouter = router({
 
   // Summary stats
   stats: publicProcedure.query(async () => {
-    const [agencyCount] = await db
-      .select({
-        count: sql<number>`COUNT(DISTINCT agencyName)`,
-      })
-      .from(agencyPerformanceMetrics);
-    const [yearCount] = await db
-      .select({
-        count: sql<number>`COUNT(DISTINCT fiscalYear)`,
-      })
-      .from(agencyPerformanceMetrics);
-    const [totalRows] = await db
-      .select({
-        count: sql<number>`COUNT(*)`,
-      })
-      .from(agencyPerformanceMetrics);
+    const result = await query_with_diagnostics<{ agencies: number }>(
+      `select count(*)::int as agencies
+         from (
+           select lower(regexp_replace(btrim(coalesce(nullif(name,''),nullif(organization_name,''),'')),'[[:space:]]+',' ','g')),
+                  upper(coalesce(nullif(btrim(state_code),''),nullif(btrim(jurisdiction),'')))
+             from public.v_lighthouse_workflow_accountability_catalog_v1
+            where object_class in ('agency','oversight_body')
+              and typed_ready is true
+              and jurisdiction_ready is true
+              and coalesce(nullif(btrim(name),''),nullif(btrim(organization_name),'')) is not null
+            group by 1,2
+         ) agencies`,
+      [],
+      { label: "agency_metrics_canonical_stats", pool_acquire_timeout_ms: 1_000, query_timeout_ms: 7_000 },
+    );
     return {
-      agencies: agencyCount?.count ?? 0,
-      years: yearCount?.count ?? 0,
-      total_data_points: totalRows?.count ?? 0,
+      agencies: Number(result.rows[0]?.agencies ?? 0),
+      years: 0,
+      total_data_points: 0,
+      source: "v_lighthouse_workflow_accountability_catalog_v1",
+      annual_metrics_available: false,
     };
   }),
 });

@@ -72,7 +72,7 @@ export async function detectRepeatLitigationPatterns(): Promise<LitigationSignal
       defendantName: federalLitigationCases.defendantName,
       caseCount: sql<number>`COUNT(*)`.as("case_count"),
       courts: sql<number>`COUNT(DISTINCT ${federalLitigationCases.courtName})`.as("courts"),
-      caseTypes: sql<string>`GROUP_CONCAT(DISTINCT ${federalLitigationCases.caseType})`.as("case_types"),
+      caseTypes: sql<string>`STRING_AGG(DISTINCT ${federalLitigationCases.caseType}::text, ',')`.as("case_types"),
     })
     .from(federalLitigationCases)
     .where(and(

@@ -91,3 +91,25 @@ smoke checks are all required before the backbone can be declared converged.
 
 No production ledger row or production schema object was changed while creating
 this receipt.
+
+## Production-view convergence repair — 2026-09-10
+
+The GitHub integration reached the pending foundation chain after the ledger
+sources were reconciled. The run triggered by main `0672663` failed at
+`20260815081130`: `entities` is a canonical production view, so table RLS cannot
+be enabled on it. A read-only catalog check also found `unified_resources` is a
+view; the subsequent `20260816063000` foundation had the same incompatibility.
+The other 21 relations named by the pending foundation migrations are tables.
+
+Neither of those two foundation versions is recorded in the production ledger.
+Their source is corrected to keep existing views and apply `security_invoker`,
+while enabling RLS and creating service-role policies only for physical tables.
+The repository-only checksums are updated explicitly. Applied production
+migration sources and production ledger rows are not rewritten or marked as
+applied. Preview databases that have already applied the empty-table variant
+retain the same table behavior; the new PostgreSQL fixture also executes each
+corrected foundation twice against both shapes.
+
+The production backlog before this rollout is 30 migrations, including the
+three September 9 repair/hardening versions. Their application and the live
+runtime checks remain separate from the successful clean-replay test.

@@ -1,13 +1,13 @@
 /**
  * Engine 3: Systemic Risk Forecast Engine
- * 
+ *
  * Predicts which harm patterns will escalate based on:
  * - Signal growth velocity (30%)
  * - Complaint acceleration (25%)
  * - Geographic expansion (20%)
  * - Entity concentration (15%)
  * - Regulatory gap score (10%)
- * 
+ *
  * Risk categories:
  * 0-20: Stable
  * 21-40: Watch
@@ -27,7 +27,7 @@ function classifyForecastRisk(score: number): string {
 }
 
 export interface ForecastResult {
-  patternId: number | null;
+  patternId: string | null;
   entityName: string;
   riskForecastScore: number;
   riskCategory: string;
@@ -48,6 +48,8 @@ export interface ForecastSummary {
   avgForecastScore: number;
   topRisks: ForecastResult[];
   earlyWarnings: ForecastResult[];
+  source: string;
+  scoringBasis: string;
 }
 
 /**
@@ -81,11 +83,11 @@ export async function generateRiskForecasts(horizonDays: number = 30): Promise<{
 
       // Signal growth velocity
       const recentSignals = await db.execute(sql`
-        SELECT COUNT(*) as cnt FROM detected_signals 
+        SELECT COUNT(*) as cnt FROM detected_signals
         WHERE entity_id = ${entityName} AND detection_timestamp >= ${thirtyDaysAgo}
       `);
       const priorSignals = await db.execute(sql`
-        SELECT COUNT(*) as cnt FROM detected_signals 
+        SELECT COUNT(*) as cnt FROM detected_signals
         WHERE entity_id = ${entityName} AND detection_timestamp >= ${sixtyDaysAgo} AND detection_timestamp < ${thirtyDaysAgo}
       `);
 
@@ -102,14 +104,15 @@ export async function generateRiskForecasts(horizonDays: number = 30): Promise<{
 
       // Entity concentration (how many datasets mention this entity)
       const datasetSpread = await db.execute(sql`
-        SELECT COUNT(DISTINCT sourceDataset) as cnt FROM ingested_records 
-        WHERE normalizedEntity = ${entityName}
+        SELECT COUNT(DISTINCT COALESCE(dataset_id_ir, stream_id_ir, source_id)) as cnt
+        FROM ingested_records
+        WHERE normalized_entity = ${entityName}
       `);
       const entityConcentration = Math.min(100, (Number((datasetSpread[0] as unknown as any[])[0]?.cnt) || 0) * 20);
 
       // Regulatory gap (inverse of enforcement count — fewer enforcements = bigger gap)
       const enforcementCount = Number(entity.enforcement_count) || 0;
-      const regulatoryGap = complaintCount > 0 
+      const regulatoryGap = complaintCount > 0
         ? Math.min(100, Math.max(0, (1 - enforcementCount / Math.max(1, complaintCount)) * 100))
         : 0;
 
@@ -131,7 +134,7 @@ export async function generateRiskForecasts(horizonDays: number = 30): Promise<{
 
       // Insert forecast
       await db.execute(sql`
-        INSERT INTO risk_forecasts 
+        INSERT INTO risk_forecasts
         (pattern_id, forecast_date, forecast_horizon_days, predicted_signal_growth,
          predicted_pressure_index, predicted_geographic_spread, predicted_entity_count,
          risk_forecast_score, confidence_level, created_at)
@@ -142,8 +145,8 @@ export async function generateRiskForecasts(horizonDays: number = 30): Promise<{
 
       // Insert entity risk projection
       await db.execute(sql`
-        INSERT INTO entity_risk_projection 
-        (entity_id, entity_name, industry_sector, current_harm_score, 
+        INSERT INTO entity_risk_projection
+        (entity_id, entity_name, industry_sector, current_harm_score,
          predicted_harm_score, risk_category, projection_horizon_days, created_at)
         VALUES (${entity.id}, ${entityName}, ${entity.industry_sector},
                 ${currentHarmScore}, ${predictedHarmScore}, ${riskCategory}, ${horizonDays}, ${now})
@@ -163,12 +166,12 @@ export async function generateRiskForecasts(horizonDays: number = 30): Promise<{
  */
 export async function getRiskForecastSummary(): Promise<ForecastSummary> {
   const projections = await db.execute(sql`
-    SELECT erp.id, erp.entity_name, erp.industry_sector, 
+    SELECT erp.id, erp.entity_name, erp.industry_sector,
            erp.current_harm_score, erp.predicted_harm_score, erp.risk_category,
            erp.projection_horizon_days
     FROM entity_risk_projection erp
     WHERE erp.id = (
-      SELECT MAX(erp2.id) FROM entity_risk_projection erp2 
+      SELECT MAX(erp2.id) FROM entity_risk_projection erp2
       WHERE erp2.entity_name = erp.entity_name
     )
     ORDER BY erp.predicted_harm_score DESC
@@ -205,5 +208,7 @@ export async function getRiskForecastSummary(): Promise<ForecastSummary> {
     avgForecastScore: avgScore,
     topRisks: forecasts.slice(0, 20),
     earlyWarnings: forecasts.filter(f => f.riskForecastScore >= 80).slice(0, 10),
+    source: "entity_risk_projection",
+    scoringBasis: "stored entity forecast output",
   };
 }

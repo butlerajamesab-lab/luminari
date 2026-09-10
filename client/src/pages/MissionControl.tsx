@@ -6410,11 +6410,11 @@ function HarmMapPanel() {
           <h3 className="text-lg font-semibold text-white flex items-center gap-2">
             <Network className="h-5 w-5 text-cyan-400" /> Global Systemic Harm Map
           </h3>
-          <p className="text-sm text-zinc-400 mt-1">Interactive network of entities, jurisdictions, and industries</p>
+          <p className="text-sm text-zinc-400 mt-1">Current objects and recorded relationships. Harm scores and relationship strength are unassessed.</p>
         </div>
         <Button onClick={() => generate.mutate()} disabled={generate.isPending} size="sm" variant="outline">
           {generate.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <RefreshCw className="h-4 w-4 mr-1" />}
-          Generate Map
+          Refresh Map
         </Button>
       </div>
 
@@ -6448,7 +6448,7 @@ function HarmMapPanel() {
           {nodes.length === 0 ? (
             <div className="text-center py-8 text-zinc-500">
               <Network className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>No map data yet. Click "Generate Map" to build the network.</p>
+              <p>No map data yet. Click "Refresh Map" to build the network.</p>
             </div>
           ) : (
             <div className="relative bg-zinc-900 rounded-lg border border-zinc-700 p-4" style={{ minHeight: 400 }}>
@@ -6468,7 +6468,7 @@ function HarmMapPanel() {
                   return (
                     <line key={`e-${i}`} x1={sx} y1={sy} x2={tx} y2={ty}
                       stroke={edge.relationshipType === 'litigation_link' ? '#ef4444' : '#3b82f6'}
-                      strokeWidth={Math.max(0.5, edge.strengthScore / 50)}
+                      strokeWidth={1}
                       opacity={0.3} />
                   );
                 })}
@@ -6478,7 +6478,7 @@ function HarmMapPanel() {
                   const y = 50 + Math.floor(i / 12) * 70;
                   const color = node.nodeType === 'entity' ? '#f97316' :
                     node.nodeType === 'jurisdiction' ? '#a855f7' : '#10b981';
-                  const radius = Math.max(6, Math.min(16, node.harmScore / 5));
+                  const radius = 8;
                   return (
                     <g key={`n-${i}`}>
                       <circle cx={x} cy={y} r={radius} fill={color} opacity={0.8} />
@@ -6502,16 +6502,17 @@ function HarmMapPanel() {
       {/* Top Risk Entities */}
       {entityNodes.length > 0 && (
         <Card>
-          <CardHeader><CardTitle className="text-sm">Top Harm Entities</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-sm">Entities in this view</CardTitle></CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {entityNodes.slice(0, 10).map((n: any, i: number) => (
                 <div key={i} className="flex items-center justify-between p-2 bg-zinc-800/50 rounded border border-zinc-700">
                   <span className="text-sm text-white">{n.nodeLabel}</span>
                   <Badge variant="outline" className={`text-xs ${
+                    n.harmScore == null ? 'border-zinc-600 text-zinc-400' :
                     n.harmScore >= 70 ? 'border-red-500 text-red-400' :
                     n.harmScore >= 40 ? 'border-yellow-500 text-yellow-400' : 'border-emerald-500 text-emerald-400'
-                  }`}>{n.harmScore?.toFixed(0)}</Badge>
+                  }`}>{n.harmScore == null ? "Unassessed" : n.harmScore.toFixed(0)}</Badge>
                 </div>
               ))}
             </div>
@@ -8234,7 +8235,7 @@ function CrisisPredictPanel() {
           size="sm"
           variant="outline"
           onClick={() => generateMut.mutate({})}
-          disabled={generateMut.isPending}
+          disabled={generateMut.isPending || prob?.probability == null}
         >
           {generateMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Flame className="h-3.5 w-3.5 mr-1" />}
           Generate Prediction
@@ -8244,12 +8245,20 @@ function CrisisPredictPanel() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <MetricCard icon={<Flame className="h-3.5 w-3.5" />} label="Predictions" value={s?.totalPredictions ?? 0} />
         <MetricCard icon={<AlertTriangle className="h-3.5 w-3.5" />} label="High Risk" value={s?.highRiskCount ?? 0} />
-        <MetricCard icon={<Gauge className="h-3.5 w-3.5" />} label="Current Probability" value={prob ? `${prob.probability}%` : '—'} />
+        <MetricCard icon={<Gauge className="h-3.5 w-3.5" />} label="Current Probability" value={prob?.probability != null ? `${prob.probability}%` : 'Unknown'} />
         <MetricCard icon={<Target className="h-3.5 w-3.5" />} label="Risk Level" value={prob?.riskLevel?.toUpperCase() ?? '—'} />
       </div>
 
+      {prob?.probability === null && (
+        <p className="text-sm text-muted-foreground" role="status">
+          A prediction requires verified enforcement, capture-risk, and independent-source evidence.
+          Those inputs are incomplete, so the current probability is unknown.
+        </p>
+      )}
+      {generateMut.error && <p className="text-sm text-red-400" role="alert">{generateMut.error.message}</p>}
+
       {/* Current Crisis Probability Breakdown */}
-      {prob && (
+      {prob && prob.probability !== null && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm">Crisis Probability Breakdown</CardTitle>

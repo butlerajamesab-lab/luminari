@@ -49,7 +49,7 @@ export const lighthouseGovernanceRouter = router({
       byDecision[d.decision] = (byDecision[d.decision] ?? 0) + 1;
       bySource[d.source_system] = (bySource[d.source_system] ?? 0) + 1;
       if (d.was_promoted) totalPromoted++;
-      avgScore += d.composite_score;
+      avgScore += d.composite_score ?? 0;
     }
     return {
       total_decisions: decisions.length,

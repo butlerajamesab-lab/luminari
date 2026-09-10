@@ -120,22 +120,22 @@ export interface LighthouseGateDecision {
   jurisdiction_raw_value: string;
   dataset_id: string | null;
   decision: string;
-  composite_score: number;
+  composite_score: number | null;
   profile_name: string | null;
-  score_provenance_confidence: number;
-  score_source_trust_tier: number;
-  score_jurisdiction_validity: number;
-  score_temporal_relevance: number;
-  score_schema_validity: number;
-  score_duplicate_probability: number;
-  score_extraction_completeness: number;
-  score_contradiction_flags: number;
+  score_provenance_confidence: number | null;
+  score_source_trust_tier: number | null;
+  score_jurisdiction_validity: number | null;
+  score_temporal_relevance: number | null;
+  score_schema_validity: number | null;
+  score_duplicate_probability: number | null;
+  score_extraction_completeness: number | null;
+  score_contradiction_flags: number | null;
   decision_reason: string | null;
   evaluated_at: string;
-  gate_hash: string;
-  signal_hash: string;
-  payload_hash: string;
-  decision_hash: string;
+  gate_hash: string | null;
+  signal_hash: string | null;
+  payload_hash: string | null;
+  decision_hash: string | null;
   was_promoted: boolean;
   promoted_at: string | null;
   detected_signal_id: string | null;
@@ -146,7 +146,7 @@ export interface LighthouseGateDecision {
 
 export interface LighthouseStagedSignal {
   staging_id: string;
-  gate_log_id: string;
+  gate_log_id: string | null;
   signal_type: string;
   source_system: string;
   jurisdiction_raw_value: string;

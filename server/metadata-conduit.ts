@@ -25,22 +25,25 @@ export async function scanSchema(): Promise<{
   let newTables = 0;
   let newFields = 0;
 
-  // Get all tables from INFORMATION_SCHEMA
+  // PostgreSQL catalog scan. pg_stat_user_tables supplies a non-blocking row
+  // estimate; exact COUNT(*) scans here would turn governance into an outage.
   const [allTables] = await db.execute(sql`
-    SELECT TABLE_NAME, TABLE_ROWS 
-    FROM INFORMATION_SCHEMA.TABLES 
-    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_TYPE = 'BASE TABLE'
-    ORDER BY TABLE_NAME
+    SELECT t.table_name, COALESCE(s.n_live_tup, 0)::bigint AS table_rows
+    FROM information_schema.tables t
+    LEFT JOIN pg_stat_user_tables s
+      ON s.schemaname = t.table_schema AND s.relname = t.table_name
+    WHERE t.table_schema = 'public' AND t.table_type = 'BASE TABLE'
+    ORDER BY t.table_name
   `);
   const tables = allTables as unknown as any[];
 
   for (const t of tables) {
-    const tableName = t.TABLE_NAME;
-    const rowCount = t.TABLE_ROWS || 0;
+    const tableName = t.table_name;
+    const rowCount = Number(t.table_rows) || 0;
 
     // Check if already registered
     const [existing] = await db.execute(
-      sql`SELECT id FROM table_registry WHERE tableName = ${tableName} LIMIT 1`
+      sql`SELECT id FROM table_registry WHERE table_name = ${tableName} LIMIT 1`
     );
     const existingRows = existing as unknown as any[];
 
@@ -51,8 +54,8 @@ export async function scanSchema(): Promise<{
 
     // Get column count
     const [cols] = await db.execute(sql`
-      SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
-      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ${tableName}
+      SELECT COUNT(*)::int as cnt FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = ${tableName}
     `);
     const columnCount = (cols as unknown as any[])[0]?.cnt || 0;
 
@@ -61,45 +64,67 @@ export async function scanSchema(): Promise<{
       // Update counts
       await db.execute(sql`
         UPDATE table_registry 
-        SET rowCount = ${rowCount}, columnCount = ${columnCount}, 
-            lastScannedAt = ${now}, updatedAt = ${now},
+        SET row_count = ${rowCount}, column_count = ${columnCount},
+            last_scanned_at = ${now}, updated_at = ${now},
             status = ${rowCount > 0 ? 'active' : 'empty'}
         WHERE id = ${tableId}
       `);
     } else {
-      const [ins] = await db.execute(sql`
-        INSERT INTO table_registry (tableName, category, description, rowCount, columnCount, lastScannedAt, status, createdAt, updatedAt)
+      const [inserted] = await db.execute(sql`
+        INSERT INTO table_registry (table_name, category, description, row_count, column_count, last_scanned_at, status, created_at, updated_at)
         VALUES (${tableName}, ${category}, ${`Auto-scanned: ${tableName}`}, ${rowCount}, ${columnCount}, ${now}, ${rowCount > 0 ? 'active' : 'empty'}, ${now}, ${now})
+        RETURNING id
       `);
-      tableId = (ins as any).insertId;
+      tableId = Number((inserted as unknown as any[])[0]?.id);
       newTables++;
     }
 
     // Scan fields
     const [fields] = await db.execute(sql`
-      SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_KEY
-      FROM INFORMATION_SCHEMA.COLUMNS
-      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ${tableName}
-      ORDER BY ORDINAL_POSITION
+      SELECT c.column_name, c.data_type, c.is_nullable,
+             EXISTS (
+               SELECT 1
+               FROM information_schema.table_constraints tc
+               JOIN information_schema.key_column_usage kcu
+                 ON kcu.constraint_name = tc.constraint_name
+                AND kcu.constraint_schema = tc.constraint_schema
+               WHERE tc.table_schema = c.table_schema
+                 AND tc.table_name = c.table_name
+                 AND tc.constraint_type = 'PRIMARY KEY'
+                 AND kcu.column_name = c.column_name
+             ) AS is_primary_key,
+             EXISTS (
+               SELECT 1
+               FROM pg_index i
+               JOIN pg_class rel ON rel.oid = i.indrelid
+               JOIN pg_namespace ns ON ns.oid = rel.relnamespace
+               JOIN pg_attribute a ON a.attrelid = rel.oid AND a.attnum = ANY(i.indkey)
+               WHERE ns.nspname = c.table_schema
+                 AND rel.relname = c.table_name
+                 AND a.attname = c.column_name
+             ) AS is_indexed
+      FROM information_schema.columns c
+      WHERE c.table_schema = 'public' AND c.table_name = ${tableName}
+      ORDER BY c.ordinal_position
     `);
 
     // @ts-ignore - cast is valid at runtime
     for (const f of fields as any[]) {
       const [existingField] = await db.execute(sql`
         SELECT id FROM field_dictionary 
-        WHERE table_id = ${tableId} AND fieldName = ${f.COLUMN_NAME} LIMIT 1
+        WHERE table_id = ${tableId} AND field_name = ${f.column_name} LIMIT 1
       `);
 
       if ((existingField as unknown as any[]).length === 0) {
         await db.execute(sql`
-          INSERT INTO field_dictionary (table_id, fieldName, fieldType, isNullable, isPrimaryKey, isIndexed, createdAt)
+          INSERT INTO field_dictionary (table_id, field_name, field_type, is_nullable, is_primary_key, is_indexed, created_at)
           VALUES (
             ${tableId}, 
-            ${f.COLUMN_NAME}, 
-            ${f.DATA_TYPE}, 
-            ${f.IS_NULLABLE === 'YES' ? 1 : 0}, 
-            ${f.COLUMN_KEY === 'PRI' ? 1 : 0}, 
-            ${f.COLUMN_KEY !== '' ? 1 : 0}, 
+            ${f.column_name},
+            ${f.data_type},
+            ${f.is_nullable === 'YES' ? 1 : 0},
+            ${f.is_primary_key ? 1 : 0},
+            ${f.is_indexed ? 1 : 0},
             ${now}
           )
         `);
@@ -152,12 +177,12 @@ export async function detectDrift(): Promise<{
 
   // Unknown tables: tables in DB not in table_registry
   const [allTables] = await db.execute(sql`
-    SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES 
-    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_TYPE = 'BASE TABLE'
+    SELECT table_name FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
   `);
-  const [registeredRows] = await db.execute(sql`SELECT tableName FROM table_registry`);
-  const registered = new Set((registeredRows as unknown as any[]).map(r => r.tableName));
-  const unknown = (allTables as unknown as any[]).filter(r => !registered.has(r.TABLE_NAME)).map(r => r.TABLE_NAME);
+  const [registeredRows] = await db.execute(sql`SELECT table_name FROM table_registry`);
+  const registered = new Set((registeredRows as unknown as any[]).map(r => r.table_name));
+  const unknown = (allTables as unknown as any[]).filter(r => !registered.has(r.table_name)).map(r => r.table_name);
 
   return {
     orphanFields,
@@ -179,8 +204,8 @@ export async function logConduitEvent(params: {
   metadata?: Record<string, any>;
 }): Promise<number> {
   const now = Date.now();
-  const [result] = await db.execute(sql`
-    INSERT INTO conduit_events (event_type, pipeline_id, engine_id, run_id, snapshot_id, metadata, createdAt)
+  const [inserted] = await db.execute(sql`
+    INSERT INTO conduit_events (event_type, pipeline_id, engine_id, run_id, snapshot_id, metadata, created_at)
     VALUES (
       ${params.eventType},
       ${params.pipelineId ?? null},
@@ -190,8 +215,9 @@ export async function logConduitEvent(params: {
       ${JSON.stringify(params.metadata ?? {})},
       ${now}
     )
+    RETURNING id
   `);
-  return (result as any).insertId;
+  return Number((inserted as unknown as any[])[0]?.id);
 }
 
 // ─── validateMetadataCompleteness: gate before snapshot ───
@@ -233,7 +259,7 @@ export async function validateMetadataCompleteness(runId: string): Promise<{
 
     // Check table exists in table_registry
     const [trCheck] = await db.execute(
-      sql`SELECT id FROM table_registry WHERE tableName = ${table} LIMIT 1`
+      sql`SELECT id FROM table_registry WHERE table_name = ${table} LIMIT 1`
     );
     if ((trCheck as unknown as any[]).length === 0) {
       errors.push(`Primary table "${table}" not found in table_registry`);
@@ -241,8 +267,12 @@ export async function validateMetadataCompleteness(runId: string): Promise<{
 
     // Check row exists
     try {
+      if (!/^[a-z_][a-z0-9_]*$/i.test(table)) {
+        errors.push(`Unsafe primary table identifier: "${table}"`);
+        return { valid: false, errors };
+      }
       const [rowCheck] = await db.execute(
-        sql.raw(`SELECT id FROM "${table}" WHERE id = ${id} LIMIT 1`)
+        sql`SELECT id FROM ${sql.raw(`"${table}"`)} WHERE id::text = ${String(id)} LIMIT 1`
       );
       if ((rowCheck as unknown as any[]).length === 0) {
         errors.push(`Primary entity id=${id} not found in ${table}`);
@@ -255,14 +285,18 @@ export async function validateMetadataCompleteness(runId: string): Promise<{
     if (refs.artifacts && Array.isArray(refs.artifacts)) {
       for (const artifact of refs.artifacts) {
         const [artTrCheck] = await db.execute(
-          sql`SELECT id FROM table_registry WHERE tableName = ${artifact.table} LIMIT 1`
+          sql`SELECT id FROM table_registry WHERE table_name = ${artifact.table} LIMIT 1`
         );
         if ((artTrCheck as unknown as any[]).length === 0) {
           errors.push(`Artifact table "${artifact.table}" not found in table_registry`);
         }
         try {
+          if (!/^[a-z_][a-z0-9_]*$/i.test(artifact.table)) {
+            errors.push(`Unsafe artifact table identifier: "${artifact.table}"`);
+            continue;
+          }
           const [artRowCheck] = await db.execute(
-            sql.raw(`SELECT id FROM "${artifact.table}" WHERE id = ${artifact.id} LIMIT 1`)
+            sql`SELECT id FROM ${sql.raw(`"${artifact.table}"`)} WHERE id::text = ${String(artifact.id)} LIMIT 1`
           );
           if ((artRowCheck as unknown as any[]).length === 0) {
             errors.push(`Artifact entity id=${artifact.id} not found in ${artifact.table}`);
@@ -277,7 +311,7 @@ export async function validateMetadataCompleteness(runId: string): Promise<{
     if (refs.meta?.tables && Array.isArray(refs.meta.tables)) {
       for (const t of refs.meta.tables) {
         const [tCheck] = await db.execute(
-          sql`SELECT id FROM table_registry WHERE tableName = ${t} LIMIT 1`
+          sql`SELECT id FROM table_registry WHERE table_name = ${t} LIMIT 1`
         );
         if ((tCheck as unknown as any[]).length === 0) {
           errors.push(`Meta table "${t}" not found in table_registry`);
@@ -378,10 +412,10 @@ export async function generateOutput(snapshotId: number): Promise<{
 
   // Fetch all engine_runs for this snapshot
   const [runRows] = await db.execute(sql`
-    SELECT run_id, engine_id, status, output_refs, caseId, startedAt, completedAt
+    SELECT run_id, engine_id, status, output_refs, case_id, started_at, completed_at
     FROM engine_runs
     WHERE snapshot_id = ${snapshotId}
-    ORDER BY startedAt ASC
+    ORDER BY started_at ASC
   `);
   const runs = runRows as unknown as any[];
 
@@ -399,16 +433,16 @@ export async function generateOutput(snapshotId: number): Promise<{
       engine_id: r.engine_id,
       status: r.status,
       output_refs: typeof r.output_refs === 'string' ? JSON.parse(r.output_refs) : r.output_refs,
-      case_id: r.caseId,
-      started_at: r.startedAt,
-      completed_at: r.completedAt,
+      case_id: r.case_id,
+      started_at: r.started_at,
+      completed_at: r.completed_at,
     })),
   };
 
   // Insert into alpha_lake_exports
   const now = Date.now();
-  const [ins] = await db.execute(sql`
-    INSERT INTO alpha_lake_exports (snapshot_id, export_type, engine_run_ids, output_payload, status, createdAt)
+  const [inserted] = await db.execute(sql`
+    INSERT INTO alpha_lake_exports (snapshot_id, export_type, engine_run_ids, output_payload, status, created_at)
     VALUES (
       ${snapshotId},
       ${'full'},
@@ -417,8 +451,9 @@ export async function generateOutput(snapshotId: number): Promise<{
       ${'completed'},
       ${now}
     )
+    RETURNING id
   `);
-  const exportId = (ins as any).insertId;
+  const exportId = Number((inserted as unknown as any[])[0]?.id);
 
   // Governance logging
   await logConduitEvent({

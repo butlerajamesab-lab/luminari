@@ -19,7 +19,7 @@ import {
   liveSignals,
   ingestRuns,
 } from "../drizzle/schema";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import crypto from "crypto";
 
 // ─── Types ───
@@ -83,8 +83,8 @@ export async function ingestCanonicalRegistry(data: CanonicalExport): Promise<In
     retryCount: 0,
     signalsProcessed: false,
     adapterUsed: "canonical_registry_ingest",
-  });
-  const runId = runResult.insertId;
+  }).returning({ id: ingestRuns.id });
+  const runId = runResult.id;
 
   let totalJurisdictions = 0;
   let totalPrograms = 0;
@@ -109,12 +109,15 @@ export async function ingestCanonicalRegistry(data: CanonicalExport): Promise<In
         const meta = jData.jurisdiction_metadata || {};
 
         // ── Jurisdiction ──
+        const jurisdictionName = meta.state || meta.jurisdiction || key;
+        const jurisdictionAbbreviation = extractAbbreviation(meta.state || key);
+        const jurisdictionType = jData.jurisdiction_type || collectionType;
         await db.insert(registryJurisdictions).values({
           id: jId,
-          name: meta.state || meta.jurisdiction || key,
-          abbreviation: extractAbbreviation(meta.state || key),
+          name: jurisdictionName,
+          abbreviation: jurisdictionAbbreviation,
           fips: meta.fips || null,
-          type: jData.jurisdiction_type || collectionType,
+          type: jurisdictionType,
           population: meta.population || null,
           medicaidStatus: meta.medicaid || null,
           minimumWage: meta.minimum_wage || null,
@@ -122,7 +125,21 @@ export async function ingestCanonicalRegistry(data: CanonicalExport): Promise<In
           wageSol: meta.wage_sol || null,
           civilRightsSol: meta.civil_rights_sol || null,
           createdAt: now,
-        }).onDuplicateKeyUpdate({ set: { name: sql`VALUES(name)` } });
+        }).onConflictDoUpdate({
+          target: registryJurisdictions.id,
+          set: {
+            name: jurisdictionName,
+            abbreviation: jurisdictionAbbreviation,
+            fips: meta.fips || null,
+            type: jurisdictionType,
+            population: meta.population || null,
+            medicaidStatus: meta.medicaid || null,
+            minimumWage: meta.minimum_wage || null,
+            uiMax: meta.ui_max || null,
+            wageSol: meta.wage_sol || null,
+            civilRightsSol: meta.civil_rights_sol || null,
+          },
+        });
         totalJurisdictions++;
 
         // ── Policy Alerts (layer_0) ──
@@ -130,14 +147,24 @@ export async function ingestCanonicalRegistry(data: CanonicalExport): Promise<In
         for (let i = 0; i < alerts.length; i++) {
           const a = alerts[i];
           const aId = makeId("pa", `${key}_${i}`);
+          const alertTitle = a.title || null;
+          const alertDescription = a.description || a.raw || null;
           await db.insert(registryPolicyAlerts).values({
             id: aId,
             jurisdictionId: jId,
             severity: a.severity || null,
-            title: a.title || null,
-            description: a.description || a.raw || null,
+            title: alertTitle,
+            description: alertDescription,
             createdAt: now,
-          }).onDuplicateKeyUpdate({ set: { title: sql`VALUES(title)` } });
+          }).onConflictDoUpdate({
+            target: registryPolicyAlerts.id,
+            set: {
+              jurisdictionId: jId,
+              severity: a.severity || null,
+              title: alertTitle,
+              description: alertDescription,
+            },
+          });
           totalAlerts++;
         }
 
@@ -150,11 +177,12 @@ export async function ingestCanonicalRegistry(data: CanonicalExport): Promise<In
               const p = items[i];
               const pId = makeId("prog", `${key}_${category}_${i}`);
               const fp = fingerprint(jId, category, p.name || `${i}`);
+              const programName = p.name || null;
               await db.insert(registryPrograms).values({
                 id: pId,
                 jurisdictionId: jId,
                 category: category,
-                name: p.name || null,
+                name: programName,
                 agency: p.agency || null,
                 eligibility: p.eligibility || null,
                 contact: p.contact || null,
@@ -162,7 +190,20 @@ export async function ingestCanonicalRegistry(data: CanonicalExport): Promise<In
                 applyNotes: p.apply_notes || null,
                 fingerprint: fp,
                 createdAt: now,
-              }).onDuplicateKeyUpdate({ set: { name: sql`VALUES(name)` } });
+              }).onConflictDoUpdate({
+                target: registryPrograms.id,
+                set: {
+                  jurisdictionId: jId,
+                  category,
+                  name: programName,
+                  agency: p.agency || null,
+                  eligibility: p.eligibility || null,
+                  contact: p.contact || null,
+                  website: p.website || null,
+                  applyNotes: p.apply_notes || null,
+                  fingerprint: fp,
+                },
+              });
               totalPrograms++;
             }
           }
@@ -173,16 +214,30 @@ export async function ingestCanonicalRegistry(data: CanonicalExport): Promise<In
         for (let i = 0; i < workflows.length; i++) {
           const w = workflows[i];
           const wId = makeId("wf", `${key}_${i}`);
+          const workflowType = w.workflow_type || null;
+          const workflowSteps = w.steps || [];
+          const workflowDeadlines = Array.isArray(w.deadlines) ? w.deadlines.join("; ") : (w.deadlines || null);
+          const workflowEscalationPaths = Array.isArray(w.escalation_paths) ? w.escalation_paths.join("; ") : (w.escalation_paths || null);
           await db.insert(registryWorkflows).values({
             id: wId,
             jurisdictionId: jId,
-            workflowType: w.workflow_type || null,
+            workflowType,
             primaryStatutes: w.primary_statutes || null,
-            steps: w.steps || [],
-            deadlines: Array.isArray(w.deadlines) ? w.deadlines.join("; ") : (w.deadlines || null),
-            escalationPaths: Array.isArray(w.escalation_paths) ? w.escalation_paths.join("; ") : (w.escalation_paths || null),
+            steps: workflowSteps,
+            deadlines: workflowDeadlines,
+            escalationPaths: workflowEscalationPaths,
             createdAt: now,
-          }).onDuplicateKeyUpdate({ set: { workflowType: sql`VALUES(workflow_type)` } });
+          }).onConflictDoUpdate({
+            target: registryWorkflows.id,
+            set: {
+              jurisdictionId: jId,
+              workflowType,
+              primaryStatutes: w.primary_statutes || null,
+              steps: workflowSteps,
+              deadlines: workflowDeadlines,
+              escalationPaths: workflowEscalationPaths,
+            },
+          });
           totalWorkflows++;
         }
 
@@ -191,17 +246,29 @@ export async function ingestCanonicalRegistry(data: CanonicalExport): Promise<In
         for (let i = 0; i < oversight.length; i++) {
           const o = oversight[i];
           const oId = makeId("ob", `${key}_${i}`);
+          const oversightAgencyName = o.agency_name || null;
           await db.insert(registryOversightBodies).values({
             id: oId,
             jurisdictionId: jId,
-            agencyName: o.agency_name || null,
+            agencyName: oversightAgencyName,
             function: o.function || null,
             statuteOfLimitations: o.statute_of_limitations || null,
             contact: o.contact || null,
             pathway: o.pathway || null,
             escalation: o.escalation || null,
             createdAt: now,
-          }).onDuplicateKeyUpdate({ set: { agencyName: sql`VALUES(agency_name)` } });
+          }).onConflictDoUpdate({
+            target: registryOversightBodies.id,
+            set: {
+              jurisdictionId: jId,
+              agencyName: oversightAgencyName,
+              function: o.function || null,
+              statuteOfLimitations: o.statute_of_limitations || null,
+              contact: o.contact || null,
+              pathway: o.pathway || null,
+              escalation: o.escalation || null,
+            },
+          });
           totalOversight++;
         }
 
@@ -209,15 +276,28 @@ export async function ingestCanonicalRegistry(data: CanonicalExport): Promise<In
         const st = jData.source_traceability;
         if (st) {
           const stId = makeId("st", key);
+          const sourceDocuments = st.source_documents || [];
+          const sourceVariants = st.source_variants || [];
+          const notesOnMerge = Array.isArray(st.notes_on_merge) ? st.notes_on_merge.join("; ") : null;
+          const sourceConflicts = st.conflicts || [];
           await db.insert(registrySourceTraceability).values({
             id: stId,
             jurisdictionId: jId,
-            sourceDocuments: st.source_documents || [],
-            sourceVariants: st.source_variants || [],
-            notesOnMerge: Array.isArray(st.notes_on_merge) ? st.notes_on_merge.join("; ") : null,
-            conflicts: st.conflicts || [],
+            sourceDocuments,
+            sourceVariants,
+            notesOnMerge,
+            conflicts: sourceConflicts,
             createdAt: now,
-          }).onDuplicateKeyUpdate({ set: { sourceDocuments: sql`VALUES(source_documents)` } });
+          }).onConflictDoUpdate({
+            target: registrySourceTraceability.id,
+            set: {
+              jurisdictionId: jId,
+              sourceDocuments,
+              sourceVariants,
+              notesOnMerge,
+              conflicts: sourceConflicts,
+            },
+          });
           totalTraceability++;
         }
 
@@ -234,7 +314,17 @@ export async function ingestCanonicalRegistry(data: CanonicalExport): Promise<In
             sourceReference: sig.sourceReference,
             fingerprint: sig.fingerprint,
             createdAt: now,
-          }).onDuplicateKeyUpdate({ set: { category: sql`VALUES(category)` } });
+          }).onConflictDoUpdate({
+            target: registrySignals.id,
+            set: {
+              jurisdictionId: jId,
+              category: sig.category,
+              signalType: sig.signalType,
+              severity: sig.severity,
+              sourceReference: sig.sourceReference,
+              fingerprint: sig.fingerprint,
+            },
+          });
           totalSignals++;
 
           // ALSO insert into live_signals — the SAME table used by pattern/strategy engines
@@ -259,10 +349,25 @@ export async function ingestCanonicalRegistry(data: CanonicalExport): Promise<In
               },
               confidenceScore: "0.9000",
               detectedAt: now,
-              ingestRunId: runId,
+              ingestRunId: String(runId),
               signalFingerprint: lsFp,
               active: true,
-            }).onDuplicateKeyUpdate({ set: { active: sql`VALUES(active)` } });
+            }).onConflictDoUpdate({
+              target: liveSignals.signalFingerprint,
+              set: {
+                datasetId: "luminari_canonical_registry",
+                jurisdiction: key,
+                domain: sig.category,
+                severity: mapSeverity(sig.severity),
+                title: `[Registry] ${sig.signalType} — ${meta.state || key}`,
+                explanation: sig.sourceReference || `Registry signal from ${key}`,
+                patternSummary: `Registry-derived ${sig.category} signal for ${key}`,
+                confidenceScore: "0.9000",
+                detectedAt: now,
+                ingestRunId: String(runId),
+                active: true,
+              },
+            });
             totalLiveSignals++;
           } catch (e: any) {
             // Duplicate fingerprint — idempotent, skip

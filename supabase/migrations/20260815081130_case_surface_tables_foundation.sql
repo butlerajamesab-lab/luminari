@@ -48,7 +48,29 @@ create table if not exists public.signals (
   fingerprint text
 );
 
-alter table public.entities enable row level security;
+-- This version is pending in production, where entities is already a
+-- canonical read view. Preserve that view and its rows; table RLS and policies
+-- apply only to the empty table created during a fresh replay.
+do $$
+declare
+  relation_kind "char";
+begin
+  select relkind into relation_kind from pg_class
+    where oid = 'public.entities'::regclass;
+  if relation_kind in ('r', 'p') then
+    alter table public.entities enable row level security;
+    drop policy if exists service_role_all_entities on public.entities;
+    create policy service_role_all_entities on public.entities
+      for all to service_role using (true) with check (true);
+  elsif relation_kind = 'v' then
+    alter view public.entities set (security_invoker = true);
+  else
+    raise exception 'Unsupported public.entities relation kind: %', relation_kind;
+  end if;
+end;
+$$;
+
+
 alter table public.evidence enable row level security;
 alter table public.relationships enable row level security;
 alter table public.signals enable row level security;
@@ -60,9 +82,6 @@ grant select, insert, update, delete on public.entities,
 grant usage, select on sequence public.evidence_id_seq,
   public.relationships_id_seq, public.signals_id_seq to service_role;
 
-drop policy if exists service_role_all_entities on public.entities;
-create policy service_role_all_entities on public.entities
-  for all to service_role using (true) with check (true);
 drop policy if exists service_role_all_evidence on public.evidence;
 create policy service_role_all_evidence on public.evidence
   for all to service_role using (true) with check (true);
@@ -73,8 +92,6 @@ drop policy if exists service_role_all_signals on public.signals;
 create policy service_role_all_signals on public.signals
   for all to service_role using (true) with check (true);
 
-comment on table public.entities is
-  'Service-only Lighthouse case entities reconstructed for executable migration replay.';
 comment on table public.evidence is
   'Service-only Lighthouse case evidence reconstructed for executable migration replay.';
 comment on table public.relationships is

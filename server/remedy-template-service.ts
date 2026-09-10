@@ -83,7 +83,7 @@ export async function listTemplates(filters?: {
  */
 export async function getTemplate(templateId: string): Promise<TemplateInfo & { templateBody: string }> {
   const [rows] = await db.execute(
-    sql`SELECT * FROM remedy_templates WHERE template_id = ${templateId}`
+    sql`SELECT * FROM remedy_templates WHERE template_id::text = ${templateId}`
   );
   const row = (rows as unknown as any[])[0];
   if (!row) throw new Error(`Template not found: ${templateId}`);
@@ -168,7 +168,7 @@ export async function generateDocument(
 
   // Update usage count
   await db.execute(
-    sql`UPDATE remedy_templates SET usage_count = usage_count + 1, updated_at = NOW() WHERE template_id = ${templateId}`
+    sql`UPDATE remedy_templates SET usage_count = COALESCE(usage_count, 0) + 1 WHERE template_id::text = ${templateId}`
   );
 
   return {
@@ -196,7 +196,7 @@ export async function listGeneratedDocs(filters?: {
   limit?: number;
 }): Promise<GeneratedDoc[]> {
   let query = sql`SELECT grd.*, rt.template_name FROM remedy_doc_generated grd
-      LEFT JOIN remedy_templates rt ON grd.template_id = rt.template_id WHERE 1=1`;
+      LEFT JOIN remedy_templates rt ON grd.template_id = rt.template_id::text WHERE 1=1`;
 
   if (filters?.caseId) query = sql`${query} AND grd.case_id = ${filters.caseId}`;
   if (filters?.patternId) query = sql`${query} AND grd.pattern_id = ${filters.patternId}`;
@@ -422,7 +422,7 @@ export async function recordDocOutcome(input: {
   // Update template success rate
   const successRate = isSuccess ? 100 : 0;
   await db.execute(
-    sql`UPDATE remedy_templates SET success_rate = ${successRate}, updated_at = NOW() WHERE template_id = ${input.templateId}`
+    sql`UPDATE remedy_templates SET success_rate = ${successRate} WHERE template_id::text = ${input.templateId}`
   );
 
   return trackingId;
@@ -498,7 +498,7 @@ export async function getMissionControlRemedySummary(): Promise<{
           COUNT(DISTINCT rt.template_id) as template_count,
           COUNT(grd.doc_id) as generated_count
         FROM remedy_templates rt
-        LEFT JOIN remedy_doc_generated grd ON rt.template_id = grd.template_id
+        LEFT JOIN remedy_doc_generated grd ON rt.template_id::text = grd.template_id
         WHERE rt.is_active = 1
         GROUP BY rt.claim_type
         ORDER BY generated_count DESC`
@@ -529,7 +529,7 @@ export async function getMissionControlRemedySummary(): Promise<{
 
 function mapTemplateRow(row: any): TemplateInfo {
   return {
-    templateId: row.template_id,
+    templateId: String(row.template_id),
     templateName: row.template_name,
     templateType: row.template_type,
     claimType: row.claim_type,

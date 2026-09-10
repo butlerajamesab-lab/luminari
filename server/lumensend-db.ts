@@ -29,8 +29,9 @@ export async function getTemplate(id: number) {
 }
 
 export async function createTemplate(data: InsertLumensendTemplate) {
-  const result = await db.insert(lumensendTemplates).values(data);
-  return { id: Number(result[0].insertId) };
+  const [result] = await db.insert(lumensendTemplates).values(data)
+    .returning({ id: lumensendTemplates.id });
+  return { id: result.id };
 }
 
 // ─── Drafts ───
@@ -53,8 +54,9 @@ export async function getDraft(id: number, userId: number) {
 }
 
 export async function createDraft(data: InsertLumensendDraft) {
-  const result = await db.insert(lumensendDrafts).values(data);
-  return { id: Number(result[0].insertId) };
+  const [result] = await db.insert(lumensendDrafts).values(data)
+    .returning({ id: lumensendDrafts.id });
+  return { id: result.id };
 }
 
 export async function updateDraft(id: number, userId: number, data: Partial<InsertLumensendDraft>) {

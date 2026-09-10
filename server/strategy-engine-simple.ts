@@ -125,11 +125,11 @@ export async function runStrategyEngine(
             ${now},
             ${now}
           )
-          ON DUPLICATE KEY UPDATE
-            strategy_type = VALUES(strategy_type),
-            action = VALUES(action),
-            priority = VALUES(priority),
-            updated_at = VALUES(updated_at)
+          ON CONFLICT (cluster_id) DO UPDATE SET
+            strategy_type = EXCLUDED.strategy_type,
+            action = EXCLUDED.action,
+            priority = EXCLUDED.priority,
+            updated_at = EXCLUDED.updated_at
         `
       );
       console.log(

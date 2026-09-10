@@ -105,10 +105,10 @@ export async function normalizeAndStoreSignals(
     // Check for existing signal from same entity + type within 90 days in live_signals
     const [existing] = await db.execute(sql`
       SELECT id FROM live_signals
-      WHERE signalType_ls = ${sig.signalType}
-        AND canonical_entity_name LIKE ${`%${sig.entity}%`}
-        AND jurisdiction_ls = ${sig.jurisdiction}
-        AND detectedAt_ls > ${Date.now() - 90 * 24 * 60 * 60 * 1000}
+      WHERE signal_type = ${sig.signalType}
+        AND canonical_entity_name ILIKE ${`%${sig.entity}%`}
+        AND jurisdiction = ${sig.jurisdiction}
+        AND detected_at > ${Date.now() - 90 * 24 * 60 * 60 * 1000}
       LIMIT 1
     `);
 
@@ -121,21 +121,21 @@ export async function normalizeAndStoreSignals(
       // Store in live_signals — the gate will decide promotion
       const fingerprint = `case-${caseId}-${sig.signalType}-${sig.entity}-${Date.now()}`;
       const nowMs = Date.now();
-      await db.execute(sql`
+      const [idRows] = await db.execute(sql`
         INSERT INTO live_signals
-          (signalType_ls, datasetId_ls, jurisdiction_ls, domain_ls, severity_ls,
-           title_ls, explanation_ls, patternSummary, supportingStatistics,
-           confidenceScore, detectedAt_ls, signalFingerprint,
-           canonical_entity_name, entity_role, active_ls)
+          (signal_type, dataset_id, jurisdiction, domain, severity,
+           title, explanation, pattern_summary, supporting_statistics,
+           confidence_score, detected_at, signal_fingerprint,
+           canonical_entity_name, entity_role, active)
         VALUES
           (${sig.signalType}, ${'case-pipeline'}, ${sig.jurisdiction}, ${'case-data'},
            ${'medium'}, ${`Case ${caseId}: ${sig.signalType.replace(/_/g, ' ')} signal`},
            ${sig.description}, ${null},
            ${JSON.stringify({ observedValue: sig.observedValue, caseId, entity: sig.entity })},
            ${sig.confidenceScore}, ${nowMs}, ${fingerprint},
-           ${sig.entity}, ${'subject'}, ${1})
+           ${sig.entity}, ${'subject'}, ${true})
+        RETURNING id
       `);
-      const [idRows] = await db.execute(sql`SELECT LAST_INSERT_ID() as id`);
       const newId = String((idRows as unknown as any[])[0]?.id);
       signalIds.push(newId);
       stored++;
