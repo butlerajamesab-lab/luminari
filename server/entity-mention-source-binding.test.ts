@@ -127,3 +127,81 @@ describe("entity mention producing-session source binding", () => {
     expect(projection.entities).toEqual([]);
   });
 });
+
+function mock_preserved_entity_output(data: Array<Record<string, unknown>>) {
+  const output_hash = computeHash(data);
+  mocks.query.mockImplementation(async (sql: string) => ({
+    rows: sql.includes("lr.layer_name = $2") ? [{
+      ...layerRows[0],
+      output_hash,
+      output_artifact_metadata: {
+        ...layerRows[0].output_artifact_metadata,
+        output_hash,
+        data,
+      },
+    }] : [sourceRows[0]],
+  }));
+  mocks.readIntegrity.mockResolvedValue({
+    artifacts: [{
+      intake_session_id: "session-quarantined",
+      artifact_id: "source-quarantined",
+      artifact_key: "artifact-shared",
+      integrity_status: "preserved",
+    }],
+  });
+}
+
+describe("reviewed message-author display names", () => {
+  const author = {
+    entity_id: "entity-reviewed-author",
+    type: "person",
+    canonical_name: "jordan reviewer",
+    raw_mentions: [{
+      raw_text: "I",
+      artifact_key: "artifact-shared",
+      span_offset: 0,
+      binding_provenance_refs: ["reviewed-assertion:fixture"],
+    }],
+    review_candidates: [],
+  };
+
+  it("shows the reviewed canonical identity instead of I while preserving ordinary source casing", async () => {
+    const ordinary = {
+      ...entityData[0],
+      entity_id: "entity-rick",
+      canonical_name: "rick",
+      raw_mentions: [{ raw_text: "Rick", artifact_key: "artifact-shared", span_offset: 5 }],
+    };
+    mock_preserved_entity_output([author, ordinary]);
+
+    const projection = await project_case_entities(44);
+    const names = Object.fromEntries(projection.entities.map(entity => [entity.canonicalEntityId, entity.name]));
+    expect(names).toEqual({ "entity-reviewed-author": "jordan reviewer", "entity-rick": "Rick" });
+    expect(projection.canonical_entities.find(entity => entity.entity_id === author.entity_id)?.raw_mentions[0])
+      .toMatchObject(author.raw_mentions[0]);
+  });
+
+  it("retains a literal canonical-name spelling when it appears after a bound pronoun", async () => {
+    mock_preserved_entity_output([{
+      ...author,
+      raw_mentions: [...author.raw_mentions, {
+        raw_text: "Jordan Reviewer",
+        artifact_key: "artifact-shared",
+        span_offset: 25,
+      }],
+    }]);
+
+    const projection = await project_case_entities(44);
+    expect(projection.entities[0].name).toBe("Jordan Reviewer");
+  });
+
+  it("does not treat an empty provenance reference as a reviewed author binding", async () => {
+    mock_preserved_entity_output([{
+      ...author,
+      raw_mentions: [{ ...author.raw_mentions[0], binding_provenance_refs: [""] }],
+    }]);
+
+    const projection = await project_case_entities(44);
+    expect(projection.entities[0].name).toBe("I");
+  });
+});

@@ -67,6 +67,7 @@ type CanonicalEntityMention = {
   raw_text: string;
   artifact_key: string;
   span_offset: number;
+  binding_provenance_refs?: string[];
   intake_session_id?: string;
 };
 
@@ -589,6 +590,17 @@ function preferred_entity_display_name(entity: CanonicalEntity): string {
       || left.span_offset - right.span_offset
       || left.raw_text.localeCompare(right.raw_text),
   );
+  if (mentions.some(mention => Array.isArray(mention.binding_provenance_refs)
+    && mention.binding_provenance_refs.some(ref => typeof ref === "string" && ref.trim()))) {
+    // Reviewed message authors can have only first-person pronoun mentions.
+    // Their sealed canonical identity supplies the name; a matching literal
+    // mention may preserve source casing without changing that identity.
+    const normalized_name = entity.canonical_name.trim().replace(/\s+/g, " ").toLowerCase();
+    const named_mention = mentions.find(mention =>
+      mention.raw_text.trim().replace(/\s+/g, " ").toLowerCase() === normalized_name
+    );
+    return named_mention?.raw_text.trim() || entity.canonical_name;
+  }
   return mentions[0]?.raw_text?.trim() || entity.canonical_name;
 }
 
