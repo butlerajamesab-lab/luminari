@@ -48,8 +48,8 @@ describe('source-bound care recipient person classification', () => {
       expect(mention.artifact_key).toBe(source.artifact_key);
       expect(source.extracted_text.slice(mention.span_offset, mention.span_offset + mention.raw_text.length)).toBe('Rowan');
     }
-    expect(result.layer_version).toBe('2.6.4');
-    expect(result.rule_version).toBe('2.6.4');
+    expect(result.layer_version).toBe('2.6.5');
+    expect(result.rule_version).toBe('2.6.5');
     expect(RULE_MANIFEST_HASH).toMatch(/^[a-f0-9]{64}$/);
   });
 

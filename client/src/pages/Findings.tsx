@@ -22,7 +22,7 @@ import { deriveDocumentDisplayLabel } from "@/lib/documentLabel";
 import { MissingRecordsSection } from "@/components/MissingRecords";
 import { EnforcementSuggestions } from "@/components/EnforcementSuggestions";
 import { inspect_document_pair, project_source_events, source_document_id, type source_event } from "@/lib/caseSourceInspection";
-import { humanize_chronology_value } from "@/lib/chronologyProjection";
+import { humanize_chronology_value, source_message_time_label } from "@/lib/chronologyProjection";
 import { DocumentConnectionEvidence, type connection_basis } from "@/components/DocumentConnectionEvidence";
 
 /* ─── Evidentiary Weight Badge ─── */
@@ -377,6 +377,7 @@ function SourceEventCandidates({ documentId, filename, events, onNavigate }: {
     {events.length === 0 && <p className="text-xs text-muted-foreground">No chronology events are extracted from this document. Open the document to inspect its source text.</p>}
     {events.slice(0, visible).map(event => <article key={event.chronology_event_id} className="rounded border border-border/50 p-2 space-y-1">
       <div className="flex flex-wrap gap-1.5 text-[10px] text-muted-foreground"><span>{event.event_date ?? "Date unknown"} · {humanize_chronology_value(event.event_date_precision)}</span><Badge variant="outline" className="text-[9px]">{humanize_chronology_value(event.fact_status)}</Badge></div>
+      {source_message_time_label(event) && <p className="text-[10px] text-muted-foreground">{source_message_time_label(event)}</p>}
       <p className="text-xs whitespace-pre-wrap break-words">{event.observed_event}</p>
       <details className="text-[10px] text-muted-foreground"><summary className="cursor-pointer">Exact source references</summary>{event.source_references.map(reference => <code key={reference} className="block break-all">{reference}</code>)}</details>
     </article>)}

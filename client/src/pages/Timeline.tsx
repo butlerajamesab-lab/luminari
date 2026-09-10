@@ -10,7 +10,7 @@ import ReadAloud from "@/components/ReadAloud";
 import PageReadAloud from "@/components/PageReadAloud";
 import { useMemo, useState } from "react";
 import { formatEventForReadAloud } from "@/lib/forensicReadAloud";
-import { humanize_chronology_value } from "@/lib/chronologyProjection";
+import { humanize_chronology_value, source_message_time_label } from "@/lib/chronologyProjection";
 import { filter_source_events, project_source_events, source_document_id, source_document_options } from "@/lib/caseSourceInspection";
 import { buildFromParam } from "@/lib/buildFromParam";
 
@@ -88,7 +88,7 @@ function CaseChronology({ caseId }: { caseId: number }) {
       </div>
       {eventsQuery.error && <div role="alert" className="rounded-md border border-red-500/30 p-3 text-sm">{eventsQuery.data ? "Chronology refresh failed. Showing the last successful result." : "Chronology could not be loaded."} <Button variant="ghost" size="sm" onClick={() => void eventsQuery.refetch()}>Retry</Button></div>}
       {documentsQuery.error && <p role="status" className="text-xs text-muted-foreground">The document list could not be refreshed. Documents linked to loaded events remain available.</p>}
-      {filtered.length > 0 && <PageReadAloud text={filtered.map(record => `${record.event_date || "Date unknown"}. ${record.observed_event}`).join(" Next event. ")} label="Listen to filtered chronology" />}
+      {filtered.length > 0 && <PageReadAloud text={filtered.map(record => `${record.event_date || "Date unknown"}. ${source_message_time_label(record) ? `${source_message_time_label(record)}. ` : ""}${record.observed_event}`).join(" Next event. ")} label="Listen to filtered chronology" />}
       {eventsQuery.isLoading ? (
         <div className="space-y-2">{[1, 2, 3].map(index => <div key={index} className="h-24 bg-muted/50 rounded-md animate-pulse" />)}</div>
       ) : filtered.length === 0 && !eventsQuery.error ? (
@@ -102,7 +102,7 @@ function CaseChronology({ caseId }: { caseId: number }) {
           {filtered.slice(0, visible).map(record => <Card key={record.chronology_event_id}><CardContent className="p-4 space-y-3">
             <div className="flex items-start justify-between gap-3">
               <p className="text-sm font-medium whitespace-pre-wrap break-words">{record.observed_event}</p>
-              <ReadAloud text={record.observed_event} forensicText={formatEventForReadAloud({ title: record.observed_event, dateOccurred: record.event_date || undefined, location: record.location || undefined }, {})} label="" />
+              <ReadAloud text={record.observed_event} forensicText={[formatEventForReadAloud({ title: record.observed_event, dateOccurred: record.event_date || undefined, location: record.location || undefined }, {}), source_message_time_label(record)].filter(Boolean).join(" ")} label="" />
             </div>
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <Calendar className="h-3 w-3" /><span>{record.event_date ?? "Date unknown"} · {humanize_chronology_value(record.event_date_precision)}</span>
@@ -110,6 +110,7 @@ function CaseChronology({ caseId }: { caseId: number }) {
               <Badge variant="outline">{record.event_scope === "unknown" ? "Scope not recorded" : humanize_chronology_value(record.event_scope)}</Badge>
               {record.actor && <span>Actor stated: {record.actor}</span>}
             </div>
+            {source_message_time_label(record) && <p className="text-xs text-muted-foreground">{source_message_time_label(record)}</p>}
             {record.document_id && <button className="text-xs text-primary hover:underline text-left flex items-center gap-1.5" onClick={() => openDocument(record.document_id!)}><FileText className="h-3.5 w-3.5 shrink-0" />{record.document_filename || `Document ${record.document_id}`}</button>}
             <details className="rounded-md border border-border/50 bg-muted/20 p-2.5 text-xs">
               <summary className="cursor-pointer text-muted-foreground">Source references · {humanize_chronology_value(record.source_confidence_level)}</summary>

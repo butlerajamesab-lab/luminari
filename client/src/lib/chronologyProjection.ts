@@ -50,6 +50,9 @@ export interface legacy_timeline_event {
   canonical_verification_status?: string | null;
   canonical_source_artifact_key?: string | null;
   canonical_source_span_offset?: number | null;
+  source_message_local_time?: string;
+  source_message_timezone?: "unknown";
+  source_message_timestamp_text?: string;
 }
 
 export interface chronology_timeline_record {
@@ -62,6 +65,9 @@ export interface chronology_timeline_record {
   source_references: string[];
   source_confidence_level: chronology_source_confidence;
   fact_status: chronology_fact_status;
+  source_message_local_time?: string;
+  source_message_timezone?: "unknown";
+  source_message_timestamp_text?: string;
 }
 
 const INTAKE_FACT_STATUSES = new Set<chronology_fact_status>([
@@ -129,6 +135,9 @@ function project_intake_event_to_chronology(
     source_references: [...source_references],
     source_confidence_level: "source_bound",
     fact_status,
+    ...(event.source_message_local_time !== undefined ? { source_message_local_time: event.source_message_local_time } : {}),
+    ...(event.source_message_timezone !== undefined ? { source_message_timezone: event.source_message_timezone } : {}),
+    ...(event.source_message_timestamp_text !== undefined ? { source_message_timestamp_text: event.source_message_timestamp_text } : {}),
   };
 }
 
@@ -173,4 +182,13 @@ export function sort_chronology_records(
 
 export function humanize_chronology_value(value: string): string {
   return value.replace(/_/g, " ").replace(/\b\w/g, character => character.toUpperCase());
+}
+
+/** A source-local clock reading is not converted into a verified UTC instant. */
+export function source_message_time_label(record: Pick<chronology_timeline_record,
+  "source_message_local_time" | "source_message_timezone" | "source_message_timestamp_text"
+>): string | null {
+  if (!record.source_message_local_time) return null;
+  const sourceTime = record.source_message_timestamp_text || record.source_message_local_time.replace("T", " ");
+  return `Source time: ${sourceTime} · timezone not recorded`;
 }

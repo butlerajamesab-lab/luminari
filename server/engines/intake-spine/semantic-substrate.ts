@@ -1,12 +1,13 @@
 import type { ParsedArtifact, TextSpan } from "./parsing-substrate";
 
-export const SEMANTIC_SUBSTRATE_VERSION = "2.2.0";
+export const SEMANTIC_SUBSTRATE_VERSION = "2.2.1";
 
 export type SemanticArtifactClass =
   | "cms_2567"
   | "billing_invoice"
   | "property_insurance_notice"
   | "sms_backup_xml"
+  | "sms_backup_html"
   | "generic";
 
 export type SemanticPurpose =
@@ -40,6 +41,7 @@ export function classifySemanticArtifact(
   artifact: ParsedArtifact,
 ): SemanticArtifactClass {
   if (artifact.extraction_method === "sms_backup_xml") return "sms_backup_xml";
+  if (artifact.extraction_method === "sms_backup_html") return "sms_backup_html";
   const text = artifact.extracted_text || "";
   const cmsMarkerCount = CMS_HEADER_MARKERS.filter((pattern) =>
     pattern.test(text),
@@ -96,7 +98,7 @@ export function semanticSpansForArtifact(
     return cmsNarrativeSpans(artifact);
 
   let spans = removeDuplicateArchiveMembers(artifact, corpus);
-  if (classifySemanticArtifact(artifact) === "sms_backup_xml") {
+  if (isSmsBackupArtifact(artifact)) {
     spans = spans.filter(
       (span) =>
         span.message_kind !== "reaction" &&
@@ -107,14 +109,31 @@ export function semanticSpansForArtifact(
 
   const sentences = spans.flatMap(splitSpanIntoSentences);
   return purpose === "chronology" &&
-    classifySemanticArtifact(artifact) === "sms_backup_xml"
+    isSmsBackupArtifact(artifact)
     ? sentences.filter((span) => isSmsChronologySentence(span.text, corpus))
     : sentences;
+}
+
+export function isSmsBackupArtifact(artifact: ParsedArtifact): boolean {
+  return artifact.extraction_method === "sms_backup_xml" || artifact.extraction_method === "sms_backup_html";
+}
+
+export function sourceMessageLocalTimestamp(span: TextSpan): string | undefined {
+  if (span.source_kind !== "sms_message" || span.occurred_at_timezone !== "unknown") return undefined;
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})$/.exec(span.occurred_at_local ?? "");
+  if (!match) return undefined;
+  const [year, month, day, hour, minute, second] = match.slice(1).map(Number);
+  const leap = year % 400 === 0 || (year % 4 === 0 && year % 100 !== 0);
+  const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  if (year < 1 || month < 1 || month > 12 || day < 1 || day > days[month - 1]
+    || hour > 23 || minute > 59 || second > 59) return undefined;
+  return span.occurred_at_local;
 }
 
 export function isSmsTransportMetadataLeak(text: string): boolean {
   return (
     /<(?:sms|mms|part|addr)(?:\s|>)/i.test(text) ||
+    /<\/?(?:html|head|body|style|script|table|thead|tbody|tr|th|td)(?:\s|>)/i.test(text) ||
     /\b(?:protocol|date_sent|sub_id|readable_date|contact_name|m_type|msg_box|ctt_s|sef_type|service_center)\s*=/i.test(
       text,
     ) ||

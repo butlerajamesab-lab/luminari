@@ -258,7 +258,7 @@ function normalizeOptionalMetadata(value: string | undefined): string | null {
   return normalized || null;
 }
 
-function isReactionText(text: string): boolean {
+export function isReactionText(text: string): boolean {
   const normalized = text.replace(/[\u200B-\u200D\u2060\uFEFF]/g, '').trim();
   return (
     /^(?:Liked|Loved|Disliked|Emphasized|Questioned|Laughed at)\s+[“"]/i.test(

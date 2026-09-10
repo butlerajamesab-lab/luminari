@@ -54,8 +54,8 @@ export interface MessageAuthorBinding {
   verification_state: 'verified';
 }
 
-export const LAYER_VERSION = '2.6.4';
-export const RULE_VERSION = '2.6.4';
+export const LAYER_VERSION = '2.6.5';
+export const RULE_VERSION = '2.6.5';
 
 const CARE_PERSON_NAME = "[A-Z][a-z]+(?:[’'-][A-Z]?[a-z]+)*(?:[ \\t]+[A-Z][a-z]+(?:[’'-][A-Z]?[a-z]+)*){0,3}";
 const CARE_DECLARANT = `(?:I|${CARE_PERSON_NAME})`;

@@ -13,6 +13,7 @@ import {
   isDateOutsideCmsRecordRange,
   isExcludedFromDominantSemanticLane,
   isSmsTransportMetadataLeak,
+  isSmsBackupArtifact,
   semanticSpansForArtifact,
 } from "./semantic-substrate";
 
@@ -79,7 +80,7 @@ export function collectDerivedSemanticQualityIssues(
   const smsArtifactKeys = new Set(
     input.artifacts
       .filter(
-        (artifact) => classifySemanticArtifact(artifact) === "sms_backup_xml",
+        (artifact) => isSmsBackupArtifact(artifact),
       )
       .map((artifact) => artifact.artifact_key),
   );
@@ -91,7 +92,7 @@ export function collectDerivedSemanticQualityIssues(
         issues,
         "sms_transport_metadata_in_extracted_text",
         artifact.artifact_key,
-        "Raw XML or transport attributes entered parsed text",
+        "Raw XML, HTML, or transport attributes entered parsed text",
       );
     }
     if (artifact.spans.some((span) => span.source_kind !== "sms_message")) {
