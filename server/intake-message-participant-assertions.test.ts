@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
 import { load_verified_message_author_bindings } from './intake-message-participant-assertions';
 
-const migration = readFileSync(fileURLToPath(new URL('../supabase/migrations/20260910021000_intake_message_participant_assertions.sql', import.meta.url)), 'utf8');
+const migration = readFileSync(fileURLToPath(new URL('../supabase/migrations/20260910180544_intake_message_participant_assertions.sql', import.meta.url)), 'utf8');
 const case11Review = readFileSync(fileURLToPath(new URL('../supabase/verification/20260910021000_case_11_message_participant_assertion_review.sql', import.meta.url)), 'utf8');
 
 describe('canonical message participant assertions', () => {
