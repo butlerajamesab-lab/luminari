@@ -8234,7 +8234,7 @@ function CrisisPredictPanel() {
           size="sm"
           variant="outline"
           onClick={() => generateMut.mutate({})}
-          disabled={generateMut.isPending}
+          disabled={generateMut.isPending || prob?.probability == null}
         >
           {generateMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Flame className="h-3.5 w-3.5 mr-1" />}
           Generate Prediction
@@ -8244,12 +8244,20 @@ function CrisisPredictPanel() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <MetricCard icon={<Flame className="h-3.5 w-3.5" />} label="Predictions" value={s?.totalPredictions ?? 0} />
         <MetricCard icon={<AlertTriangle className="h-3.5 w-3.5" />} label="High Risk" value={s?.highRiskCount ?? 0} />
-        <MetricCard icon={<Gauge className="h-3.5 w-3.5" />} label="Current Probability" value={prob ? `${prob.probability}%` : '—'} />
+        <MetricCard icon={<Gauge className="h-3.5 w-3.5" />} label="Current Probability" value={prob?.probability != null ? `${prob.probability}%` : 'Unknown'} />
         <MetricCard icon={<Target className="h-3.5 w-3.5" />} label="Risk Level" value={prob?.riskLevel?.toUpperCase() ?? '—'} />
       </div>
 
+      {prob?.probability === null && (
+        <p className="text-sm text-muted-foreground" role="status">
+          A prediction requires verified enforcement, capture-risk, and independent-source evidence.
+          Those inputs are incomplete, so the current probability is unknown.
+        </p>
+      )}
+      {generateMut.error && <p className="text-sm text-red-400" role="alert">{generateMut.error.message}</p>}
+
       {/* Current Crisis Probability Breakdown */}
-      {prob && (
+      {prob && prob.probability !== null && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm">Crisis Probability Breakdown</CardTitle>

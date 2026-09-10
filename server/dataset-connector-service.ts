@@ -215,12 +215,12 @@ export async function extractSignalsFromEnforcement(
     const penalty = Number(r.total_penalty) || 0;
     const severity = cnt >= 5 ? 'critical' : cnt >= 3 ? 'high' : 'medium';
     return {
-      signalType: 'enforcement_cluster',
-      source: 'enforcement_records',
+      signalType: 'agency_response_record_cluster',
+      source: 'legal_enforcement_records',
       entity: r.respondent_name,
       jurisdiction: r.jurisdiction,
       severity,
-      description: `${cnt} verified enforcement-response records associated with ${r.agency_name} for ${r.violation_type}`,
+      description: `${cnt} agency-response records associated with ${r.agency_name} for ${r.violation_type}`,
       dataPoints: cnt,
       claimType: r.violation_type?.toLowerCase().replace(/ /g, '_') || 'enforcement',
     };
@@ -244,9 +244,6 @@ export async function detectRepeatOffenders(
      FROM (
        SELECT company_name as entity, jurisdiction, claim_type as domain, COUNT(*) as cnt, 'complaints' as source
        FROM consumer_complaints GROUP BY company_name, jurisdiction, claim_type
-       UNION ALL
-       SELECT agency_name as entity, jurisdiction, complaint_type as domain, COUNT(*) as cnt, 'enforcement' as source
-       FROM legal_enforcement_records GROUP BY agency_name, jurisdiction, complaint_type
      ) combined
      GROUP BY entity, jurisdiction, domain
      HAVING SUM(cnt) >= ${safeMinimum}
@@ -255,12 +252,12 @@ export async function detectRepeatOffenders(
   `);
 
   return (patterns as any[]).map(r => ({
-    patternType: 'repeat_offender',
+    patternType: 'repeat_complaint',
     entity: r.entity,
     jurisdiction: r.jurisdiction,
     occurrences: Number(r.total),
     domain: r.domain || 'unknown',
-    description: `${r.entity} has ${r.total} combined complaints/enforcement actions across ${r.sources}`,
+    description: `${r.total} complaint records name ${r.entity}; allegations and outcomes require verification`,
   }));
 }
 
@@ -292,12 +289,12 @@ export async function detectRegulatoryGaps(limit: number = 20): Promise<PatternF
   `);
 
   return (gaps as any[]).map(r => ({
-    patternType: 'regulatory_gap',
+    patternType: 'unverified_enforcement_coverage',
     entity: `${r.jurisdiction} - ${r.domain}`,
     jurisdiction: r.jurisdiction,
-    occurrences: Number(r.gap),
+    occurrences: Number(r.complaint_count),
     domain: r.domain || 'unknown',
-    description: `${r.complaint_count} complaints vs ${r.enforcement_count} enforcement actions in ${r.jurisdiction} for ${r.domain} — potential enforcement gap`,
+    description: `${r.complaint_count} complaint records and ${r.enforcement_count} agency-response records for ${r.jurisdiction} / ${r.domain}; matching coverage and outcomes are unverified`,
   }));
 }
 
@@ -366,7 +363,7 @@ export async function analyzeEnforcementTrends(
     const older = Number(r.older) || 1;
     const changePercent = ((recent - older) / older) * 100;
     return {
-      metric: 'enforcement_frequency',
+      metric: 'agency_response_records_by_period_end',
       jurisdiction: r.jurisdiction,
       domain: r.domain || 'unknown',
       currentValue: recent,
@@ -389,13 +386,12 @@ export async function generateInterventionTargets(
   entity: string;
   jurisdiction: string;
   complaint_count: number;
-  enforcement_count: number;
-  totalPenalties: number;
+  enforcement_count: number | null;
+  totalPenalties: number | null;
   recommendedAction: string;
   priority: 'low' | 'medium' | 'high' | 'critical';
 }>> {
   const complaintFilter = jurisdiction ? sql`WHERE jurisdiction = ${jurisdiction}` : sql.empty();
-  const enforcementFilter = jurisdiction ? sql`WHERE jurisdiction = ${jurisdiction}` : sql.empty();
   const safeLimit = boundedLimit(limit, 20);
 
   const [targets]: any = await db.execute(sql`
@@ -406,10 +402,6 @@ export async function generateInterventionTargets(
        SELECT company_name as entity, jurisdiction, COUNT(*) as complaints, 0 as enforcements, 0 as penalties
        FROM consumer_complaints ${complaintFilter}
        GROUP BY company_name, jurisdiction
-       UNION ALL
-       SELECT agency_name as entity, jurisdiction, 0 as complaints, COUNT(*) as enforcements, 0 as penalties
-       FROM legal_enforcement_records ${enforcementFilter}
-       GROUP BY agency_name, jurisdiction
      ) combined
      GROUP BY entity, jurisdiction
      ORDER BY SUM(complaints) + SUM(enforcements) DESC
@@ -422,17 +414,13 @@ export async function generateInterventionTargets(
     const penalties = Number(r.penalties) || 0;
     const total = complaints + enforcements;
     const priority = total >= 10 ? 'critical' : total >= 5 ? 'high' : total >= 3 ? 'medium' : 'low';
-    const recommendedAction = enforcements > 0
-      ? 'Monitor ongoing enforcement; consider advocacy escalation'
-      : complaints >= 5
-        ? 'File formal complaint with regulatory agency'
-        : 'Document pattern; prepare for potential escalation';
+    const recommendedAction = 'Review complaint records and verify enforcement history and jurisdiction before choosing an action';
     return {
       entity: r.entity,
       jurisdiction: r.jurisdiction,
       complaint_count: complaints,
-      enforcement_count: enforcements,
-      totalPenalties: penalties,
+      enforcement_count: null,
+      totalPenalties: null,
       recommendedAction,
       priority,
     };

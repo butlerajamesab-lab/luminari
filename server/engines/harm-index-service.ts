@@ -91,8 +91,6 @@ export async function calculateHarmIndex(): Promise<{ processed: number; errors:
       SELECT entity_name, COUNT(*) as lit_count 
       FROM (
         SELECT defendant_name AS entity_name FROM federal_litigation_cases
-        UNION ALL
-        SELECT plaintiff_name AS entity_name FROM federal_litigation_cases
       ) litigation
       WHERE NULLIF(BTRIM(entity_name), '') IS NOT NULL
       GROUP BY entity_name
@@ -201,7 +199,7 @@ export async function getHarmIndexSummary(): Promise<HarmIndexSummary> {
     ORDER BY s.systemic_harm_score DESC
   `);
 
-  let entities: HarmIndexEntity[] = (results[0] as unknown as any[]).map(r => ({
+  const entities: HarmIndexEntity[] = (results[0] as unknown as any[]).map(r => ({
     id: r.id,
     entityName: r.entity_name,
     entityType: r.entity_type || "unknown",
@@ -218,66 +216,8 @@ export async function getHarmIndexSummary(): Promise<HarmIndexSummary> {
     lastUpdated: Number(r.calculated_at) || 0,
   }));
 
-  let materialized = entities.length > 0;
-  let source = "harm_index_entities + harm_index_scores";
-
-  // A new environment is useful before the first materialization run. Derive
-  // the exact same bounded inputs from the populated ingestion backbone; do
-  // not invent litigation or enforcement counts that are not present.
-  if (!materialized) {
-    const [derivedRows] = await db.execute(sql`
-      WITH complaints AS (
-        SELECT normalized_entity AS entity_name,
-               COUNT(*)::int AS complaint_count,
-               COUNT(DISTINCT COALESCE(dataset_id_ir, stream_id_ir, source_id))::int AS dataset_count
-          FROM ingested_records
-         WHERE NULLIF(BTRIM(normalized_entity), '') IS NOT NULL
-         GROUP BY normalized_entity
-      ), signals AS (
-        SELECT LOWER(BTRIM(entity_id)) AS entity_key, COUNT(*)::int AS signal_count
-          FROM detected_signals
-         WHERE NULLIF(BTRIM(entity_id), '') IS NOT NULL
-         GROUP BY LOWER(BTRIM(entity_id))
-      )
-      SELECT (hashtextextended(c.entity_name, 0) & 2147483647)::int AS id,
-             c.entity_name, c.complaint_count, c.dataset_count,
-             COALESCE(s.signal_count, 0)::int AS signal_count
-        FROM complaints c
-        LEFT JOIN signals s ON s.entity_key = LOWER(BTRIM(c.entity_name))
-       ORDER BY c.complaint_count DESC, c.entity_name
-       LIMIT 500
-    `);
-    entities = (derivedRows as unknown as any[]).map((row) => {
-      const complaintCount = Number(row.complaint_count) || 0;
-      const datasetCount = Number(row.dataset_count) || 0;
-      const signalCount = Number(row.signal_count) || 0;
-      const severityScore = normalizeLog(complaintCount, 100);
-      const geographicSpread = normalizeLog(datasetCount, 5);
-      const patternAcceleration = Math.min(100, signalCount * 20);
-      const systemicHarmScore = Math.round((
-        severityScore * 0.25 +
-        geographicSpread * 0.15 +
-        patternAcceleration * 0.15
-      ) * 100) / 100;
-      return {
-        id: Number(row.id),
-        entityName: row.entity_name,
-        entityType: "unknown",
-        industrySector: null,
-        jurisdiction: null,
-        systemicHarmScore,
-        riskClassification: classifyRisk(systemicHarmScore),
-        complaintCount,
-        litigationCount: 0,
-        enforcementCount: signalCount,
-        geographicSpread,
-        severityScore,
-        patternAcceleration,
-        lastUpdated: 0,
-      };
-    });
-    source = "ingested_records + detected_signals";
-  }
+  const materialized = entities.length > 0;
+  const source = "harm_index_entities + harm_index_scores";
 
   const criticalActors = entities.filter(e => e.systemicHarmScore >= 81).length;
   const highRiskActors = entities.filter(e => e.systemicHarmScore >= 61 && e.systemicHarmScore < 81).length;

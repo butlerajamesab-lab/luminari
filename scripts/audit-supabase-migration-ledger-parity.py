@@ -264,7 +264,7 @@ APPROVED_REPOSITORY_ONLY = {
     ),
     "20260909143000": (
         "20260909143000_lighthouse_runtime_postgres_contract_v1.sql",
-        "36e0fcbc2b98c737d69f60dce0dbde18566bbd9b",
+        "288d613674d5545f7673eadc08430ce26bcff089",
     ),
 }
 

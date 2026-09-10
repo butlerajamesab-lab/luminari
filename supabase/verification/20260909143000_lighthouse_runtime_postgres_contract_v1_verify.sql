@@ -11,6 +11,7 @@ begin
   foreach relation_name in array array[
     'data_stream_registry',
     'ingest_runs',
+    'ingested_records',
     'live_signals',
     'registry_jurisdictions',
     'registry_programs',
@@ -103,6 +104,12 @@ begin
       ('data_stream_registry', 'last_success_at_dsr', 'int8'),
       ('data_stream_registry', 'last_http_status_dsr', 'int4'),
       ('ingest_runs', 'errors_run', 'jsonb'),
+      ('ingested_records', 'raw_json', 'jsonb'),
+      ('ingested_records', 'metadata_l1_l2', 'jsonb'),
+      ('ingested_records', 'normalized_date', 'timestamptz'),
+      ('ingested_records', 'normalized_amount', 'numeric'),
+      ('ingested_records', 'ingested_at', 'int8'),
+      ('ingested_records', 'processed_for_signals', 'bool'),
       ('live_signals', 'supporting_statistics', 'jsonb'),
       ('live_signals', 'confidence_score', 'numeric'),
       ('live_signals', 'entity_aliases_json', 'jsonb'),
@@ -186,7 +193,7 @@ begin
    where n.nspname = 'public'
      and c.relkind in ('r', 'p')
      and c.relname in (
-       'data_stream_registry', 'ingest_runs', 'live_signals',
+       'data_stream_registry', 'ingest_runs', 'ingested_records', 'live_signals',
        'registry_policy_alerts', 'registry_workflows',
        'registry_oversight_bodies', 'registry_source_traceability',
        'registry_signals',
@@ -211,7 +218,7 @@ begin
    where table_schema = 'public'
      and grantee in ('anon', 'authenticated')
      and table_name in (
-       'data_stream_registry', 'ingest_runs', 'live_signals',
+       'data_stream_registry', 'ingest_runs', 'ingested_records', 'live_signals',
        'registry_policy_alerts', 'registry_workflows',
        'registry_oversight_bodies', 'registry_source_traceability',
        'registry_signals',

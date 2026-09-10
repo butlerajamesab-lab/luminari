@@ -165,6 +165,37 @@ $$;
 -- Preserve the original normalized-date representation, then make the fields
 -- used by the detector and historical replay match their PostgreSQL runtime
 -- types. Invalid JSON is retained losslessly under {"legacy_text": ...}.
+-- Production already has this relation, but no earlier checked-in migration
+-- creates it. Supply the same nullable runtime columns for an empty replay.
+create table if not exists public.ingested_records (
+  id serial primary key,
+  source_id text,
+  status text,
+  record_count integer,
+  error_message text,
+  created_at bigint,
+  dataset_id_ir text,
+  source_record_id text,
+  ingested_at bigint,
+  updated_at_ir bigint,
+  normalized_date timestamptz,
+  normalized_category text,
+  normalized_entity text,
+  normalized_jurisdiction text,
+  normalized_city text,
+  normalized_state text,
+  normalized_zip text,
+  normalized_status text,
+  normalized_amount numeric,
+  normalized_description text,
+  processed_for_signals boolean,
+  raw_json jsonb,
+  source_hash text,
+  stream_id_ir text,
+  metadata_l1_l2 jsonb,
+  normalized_date_legacy_text text
+);
+
 alter table public.ingested_records
   add column if not exists normalized_date_legacy_text text;
 
@@ -2378,6 +2409,7 @@ begin
   foreach relation_name in array array[
     'data_stream_registry',
     'ingest_runs',
+    'ingested_records',
     'live_signals',
     'registry_policy_alerts',
     'registry_workflows',
@@ -2496,6 +2528,7 @@ begin
   foreach relation_name in array array[
     'data_stream_registry',
     'ingest_runs',
+    'ingested_records',
     'live_signals',
     'registry_jurisdictions',
     'registry_programs',
@@ -2602,6 +2635,12 @@ begin
       ('data_stream_registry', 'last_success_at_dsr', 'int8'),
       ('data_stream_registry', 'last_http_status_dsr', 'int4'),
       ('ingest_runs', 'errors_run', 'jsonb'),
+      ('ingested_records', 'raw_json', 'jsonb'),
+      ('ingested_records', 'metadata_l1_l2', 'jsonb'),
+      ('ingested_records', 'normalized_date', 'timestamptz'),
+      ('ingested_records', 'normalized_amount', 'numeric'),
+      ('ingested_records', 'ingested_at', 'int8'),
+      ('ingested_records', 'processed_for_signals', 'bool'),
       ('live_signals', 'supporting_statistics', 'jsonb'),
       ('live_signals', 'confidence_score', 'numeric'),
       ('live_signals', 'entity_aliases_json', 'jsonb'),

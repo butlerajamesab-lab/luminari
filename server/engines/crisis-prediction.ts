@@ -13,6 +13,7 @@
  */
 
 import { db } from "../db";
+import { TRPCError } from "@trpc/server";
 import {
   crisisPredictions,
 } from "../../drizzle/schema";
@@ -32,7 +33,7 @@ export type RiskLevel = "low" | "moderate" | "high" | "critical";
 export interface CrisisIndicator {
   name: string;
   weight: number;
-  value: number;    // 0-100
+  value: number | null;    // 0-100; null when the governed input is unavailable
   description: string;
 }
 
@@ -51,7 +52,7 @@ export async function calculateCrisisProbability(params: {
   industry?: string;
   entityName?: string;
   jurisdiction?: string;
-}): Promise<{ probability: number; indicators: CrisisIndicator[]; riskLevel: RiskLevel }> {
+}): Promise<{ probability: number | null; indicators: CrisisIndicator[]; riskLevel: RiskLevel | "unknown"; unresolved_inputs: string[] }> {
   const indicators: CrisisIndicator[] = [];
 
   const trendFilter = sql`${params.jurisdiction
@@ -86,7 +87,7 @@ export async function calculateCrisisProbability(params: {
   // Indicator 2: Signal density (20%)
   const [signalRows] = await db.execute(sql`
     SELECT COUNT(*)::int AS signal_count,
-           COUNT(DISTINCT COALESCE(NULLIF(dataset_id,''), NULLIF(signal_type,'')))::int AS source_count
+           COUNT(DISTINCT NULLIF(dataset_id,''))::int AS source_count
       FROM detected_signals WHERE true ${signalFilter}
   `);
   const signalState = (signalRows as unknown as any[])[0] ?? {};
@@ -100,39 +101,19 @@ export async function calculateCrisisProbability(params: {
     description: `${signalCount} governed signals match the requested scope`,
   });
 
-  // Indicator 3: governed access/readiness gap among agencies and oversight.
-  const [gapRows] = await db.execute(sql`
-    SELECT COUNT(*)::int AS total,
-           COUNT(*) FILTER (
-             WHERE direct_access_ready IS NOT TRUE
-                OR NULLIF(BTRIM(COALESCE(statutory_authority,'')), '') IS NULL
-           )::int AS gap_count
-      FROM v_lighthouse_workflow_accountability_catalog_v1
-     WHERE object_class IN ('agency','oversight_body')
-       ${params.jurisdiction
-         ? sql`AND UPPER(COALESCE(state_code, jurisdiction, '')) = UPPER(${params.jurisdiction})`
-         : sql``}
-  `);
-  const gapState = (gapRows as unknown as any[])[0] ?? {};
-  const totalInstitutions = Number(gapState.total) || 0;
-  const gapInstitutions = Number(gapState.gap_count) || 0;
-  const gapRatio = totalInstitutions > 0 ? (gapInstitutions / totalInstitutions) * 100 : 0;
-
+  // Directory completeness does not measure enforcement or regulatory capture.
+  // No retrieved source supplies these scoped indicators, so keep them unknown.
   indicators.push({
     name: "enforcement_gap",
     weight: 0.20,
-    value: Math.min(100, gapRatio),
-    description: `${gapInstitutions} of ${totalInstitutions} governed agency/oversight records lack a complete authority or direct-access path`,
+    value: null,
+    description: "Verified enforcement-gap measurements are unavailable for this scope",
   });
-
-  // No governed capture-risk projection is currently populated. Keep this
-  // component explicitly unavailable instead of manufacturing a score.
-  const captureRisk = 0;
   indicators.push({
     name: "capture_risk",
     weight: 0.15,
-    value: captureRisk,
-    description: "No governed capture-risk metric is currently available",
+    value: null,
+    description: "Verified capture-risk measurements are unavailable for this scope",
   });
 
   // Indicator 5: Cross-stream confirmation (10%)
@@ -141,8 +122,8 @@ export async function calculateCrisisProbability(params: {
   indicators.push({
     name: "cross_stream",
     weight: 0.10,
-    value: crossStreamScore,
-    description: `${activeStreams} independent signal streams active`,
+    value: null,
+    description: `${activeStreams} dataset identifiers represented; source independence is unverified`,
   });
 
   // Indicator 6: Trend momentum (10%)
@@ -160,10 +141,15 @@ export async function calculateCrisisProbability(params: {
     description: `${highPressureCount} current trends have pressure at or above 60`,
   });
 
-  // Calculate weighted probability
+  const unresolved_inputs = indicators.filter(indicator => indicator.value === null).map(indicator => indicator.name);
+  if (unresolved_inputs.length > 0) {
+    return { probability: null, indicators, riskLevel: "unknown", unresolved_inputs };
+  }
+
+  // Calculate only when every required input is verified and available.
   let probability = 0;
   for (const ind of indicators) {
-    probability += ind.value * ind.weight;
+    probability += (ind.value ?? 0) * ind.weight;
   }
   probability = Math.min(100, Math.round(probability));
 
@@ -173,7 +159,7 @@ export async function calculateCrisisProbability(params: {
   else if (probability >= 50) riskLevel = "high";
   else if (probability >= 25) riskLevel = "moderate";
 
-  return { probability, indicators, riskLevel };
+  return { probability, indicators, riskLevel, unresolved_inputs };
 }
 
 // ─── T2. Escalation Timeline Estimation ───
@@ -216,10 +202,10 @@ export function identifyTriggerFactors(indicators: CrisisIndicator[]): string[] 
   const triggers: string[] = [];
 
   // Sort by weighted contribution (value * weight)
-  const sorted = [...indicators].sort((a, b) => (b.value * b.weight) - (a.value * a.weight));
+  const sorted = [...indicators].sort((a, b) => ((b.value ?? 0) * b.weight) - ((a.value ?? 0) * a.weight));
 
   for (const ind of sorted) {
-    if (ind.value >= 50) {
+    if (ind.value !== null && ind.value >= 50) {
       switch (ind.name) {
         case "pattern_pressure":
           triggers.push("Accelerating pattern pressure across active patterns");
@@ -261,7 +247,13 @@ export async function generateCrisisPrediction(params: {
   jurisdiction?: string;
   predictionType?: CrisisType;
 }) {
-  const { probability, indicators, riskLevel } = await calculateCrisisProbability(params);
+  const { probability, indicators, riskLevel, unresolved_inputs } = await calculateCrisisProbability(params);
+  if (probability === null || riskLevel === "unknown") {
+    throw new TRPCError({
+      code: "PRECONDITION_FAILED",
+      message: `Prediction requires verified inputs: ${unresolved_inputs.join(", ")}`,
+    });
+  }
   const triggerFactors = identifyTriggerFactors(indicators);
 
   // Determine prediction type from dominant indicators
@@ -299,7 +291,7 @@ export async function generateCrisisPrediction(params: {
 
 function determinePredictionType(indicators: CrisisIndicator[]): CrisisType {
   const maxIndicator = indicators.reduce((max, ind) =>
-    (ind.value * ind.weight) > (max.value * max.weight) ? ind : max
+    ((ind.value ?? 0) * ind.weight) > ((max.value ?? 0) * max.weight) ? ind : max
   );
 
   switch (maxIndicator.name) {
