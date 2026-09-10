@@ -28,6 +28,11 @@ class OwnershipBoundaryTest(unittest.TestCase):
             "create view private.rosetta_semantic_shadow_consumable as select 1;",
             "create schema if not exists rosetta_v2513;",
             "create table public.workflow_step (id text);",
+            "create temp table rosetta_canonical_clause (id int);",
+            'create temporary table "rosetta_canonical_clause" (id int);',
+            'create global temporary table if not exists "rosetta_workflow" (id int);',
+            "create local temp table workflow_step (id text);",
+            "create unlogged table public.rosetta_canonical_clause (id int);",
         ):
             with self.subTest(sql=sql):
                 self.assertTrue(MODULE.ownership_violations(Path("staging/repair.sql"), sql))

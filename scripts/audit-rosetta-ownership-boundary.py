@@ -11,7 +11,8 @@ OWNER_MODULE = re.compile(r"semantic-clause-.*\.(?:js|cjs|mjs|ts)$", re.IGNORECA
 IDENTIFIER = r'"?[a-z_][a-z_0-9]*"?'
 QUALIFIER = rf"(?:{IDENTIFIER}\s*\.\s*)?"
 DECLARATION = (
-    r"\bcreate\s+(?:or\s+replace\s+)?(?:unlogged\s+)?"
+    r"\bcreate\s+(?:or\s+replace\s+)?"
+    r"(?:(?:(?:global|local)\s+)?(?:temp|temporary)\s+|unlogged\s+)?"
     r"(?:function|procedure|table|(?:materialized\s+)?view)\s+"
     r"(?:if\s+not\s+exists\s+)?"
 )
