@@ -12,6 +12,12 @@ if target.hostname not in {"localhost", "127.0.0.1", "::1"} or target.path != "/
     raise SystemExit("Compatibility regression requires the dedicated loopback test database")
 
 preflight = Path("supabase/migrations/20260909142600_lighthouse_compat_type_preflight.sql").read_text()
+guard_source = Path("supabase/migrations/20260801074427_math_engine_v21_correctness.sql").read_text()
+guard_function = re.search(r"create or replace function public\.prevent_live_signal_observation_rewrite\(\).*?\$\$;", guard_source, re.S)
+guard_trigger = re.search(r"create trigger immutable_live_signal_observation .*?;", guard_source, re.S)
+if not guard_function or not guard_trigger:
+    raise SystemExit("Production observation guard changed; review the trigger regression")
+observation_guard = guard_function.group() + "\n" + guard_trigger.group()
 runtime = Path("supabase/migrations/20260909143000_lighthouse_runtime_postgres_contract_v1.sql").read_text()
 helpers = runtime.split("-- Ingestion and canonical registry contracts", 1)[0]
 tables = ["ingest_runs", "ingested_records", "live_signals", "remedy_paths", "pattern_aggregation_runs"]
@@ -30,7 +36,8 @@ create table public.ingest_runs(id serial primary key,errors_run text);
 create table public.ingested_records(id serial primary key,raw_json text,metadata_l1_l2 text,
   normalized_date text,normalized_amount text,processed_for_signals integer default 0);
 create table public.live_signals(id serial primary key,supporting_statistics text default '{}',entity_aliases_json text,
-  confidence_score text default '0.5',entity_confidence_score_ls text,role_confidence text);
+  confidence_score text default '0.5',entity_confidence_score_ls text,role_confidence text,
+  active boolean default true,status text default 'active',superseded_by integer);
 create table public.remedy_paths(id serial primary key,prerequisites text,related_claim_types text,signal_id integer);
 create table public.pattern_aggregation_runs(id serial primary key,case_ids_analyzed text,completed_at text);
 insert into public.ingest_runs(errors_run) values ('not json');
@@ -120,3 +127,85 @@ verified = run("\n".join(["begin; set local timezone='UTC';",fixture,preflight,r
 if verified.returncode:
     raise SystemExit("compat_type_preflight: FAIL\n" + verified.stderr)
 print("compat_type_preflight: PASS — conversion, original values, view metadata, private grants, defaults, repeat execution")
+
+guard_receipt = """
+create temporary table original_observation_guard as
+select oid,tgfoid,tgenabled,pg_get_triggerdef(oid) as definition,
+  pg_get_functiondef(tgfoid) as function_definition
+from pg_trigger where tgrelid='public.live_signals'::regclass and tgname='immutable_live_signal_observation';
+"""
+guard_assertions = """
+do $$ begin
+  if exists(select 1 from original_observation_guard o left join pg_trigger t on t.oid=o.oid
+    where t.oid is null or t.tgfoid<>o.tgfoid or t.tgenabled<>o.tgenabled
+      or pg_get_triggerdef(t.oid)<>o.definition or pg_get_functiondef(t.tgfoid)<>o.function_definition) then
+    raise exception 'Original immutability guard or enabled mode changed';
+  end if;
+  if (select tgenabled from original_observation_guard) in ('O','A') then
+    begin
+      update public.live_signals set confidence_score=0.01 where id=1;
+      raise exception 'Observation rewrite was allowed';
+    exception when raise_exception then
+      if sqlerrm<>'live_signals observation fields are immutable; create a superseding observation instead' then raise; end if;
+    end;
+    begin
+      update public.live_signals set role_confidence_legacy_text='invented provenance' where id=1;
+      raise exception 'Provenance rewrite was allowed';
+    exception when raise_exception then
+      if sqlerrm<>'live_signals observation fields are immutable; create a superseding observation instead' then raise; end if;
+    end;
+  end if;
+  update public.live_signals set active=false,status='superseded',superseded_by=2 where id=1;
+end $$;
+"""
+
+# Reproduce the deployed failure with the actual immutable-observation function.
+blocked = run("\n".join(["begin;", fixture, observation_guard,
+    "alter table public.live_signals add column role_confidence_legacy_text text;",
+    "update public.live_signals set role_confidence_legacy_text=role_confidence;", "rollback;"]))
+if blocked.returncode == 0 or "live_signals observation fields are immutable" not in blocked.stderr:
+    raise SystemExit("Original immutable provenance blocker was not reproduced:\n" + blocked.stderr)
+print("original_immutable_provenance: PASS — deployed guard rejects the original provenance backfill")
+
+for mode in ["enable", "enable always", "enable replica", "disable"]:
+    verified = run("\n".join(["begin; set local timezone='UTC';", fixture, observation_guard,
+        f"alter table public.live_signals {mode} trigger immutable_live_signal_observation;", guard_receipt,
+        preflight, runtime_conversions, assertions, guard_assertions,
+        preflight, runtime_conversions, assertions, guard_assertions, "rollback;"]))
+    if verified.returncode:
+        raise SystemExit(f"immutable_provenance_{mode}: FAIL\n" + verified.stderr)
+    print(f"immutable_provenance_{mode}: PASS — original guard, immutable evidence, lifecycle writes, repeat execution")
+
+# Force conversion to fail after the guard has been suspended. The real DO
+# statement must restore every table/view/trigger change on failure.
+rollback_assertions = """
+do $failure_test$ begin
+  begin
+    execute $migration$__PREFLIGHT__$migration$;
+    raise exception 'Oversized numeric observation did not abort conversion';
+  exception when numeric_value_out_of_range then null;
+  end;
+  if exists(select 1 from information_schema.columns where table_schema='public'
+      and table_name='live_signals' and column_name like '%_legacy_text')
+    or (select data_type from information_schema.columns where table_schema='public'
+      and table_name='live_signals' and column_name='confidence_score')<>'text'
+    or (select tgenabled from pg_trigger where tgrelid='public.live_signals'::regclass
+      and tgname='immutable_live_signal_observation')<>'O'
+    or not exists(select 1 from compat.live_signals where confidence_score='123456789' and role_confidence='not scored') then
+    raise exception 'Failed conversion did not restore original storage, alias, or trigger';
+  end if;
+  begin
+    update public.live_signals set confidence_score='rewritten' where id=1;
+    raise exception 'Failed conversion left observation rewrites enabled';
+  exception when raise_exception then
+    if sqlerrm<>'live_signals observation fields are immutable; create a superseding observation instead' then raise; end if;
+  end;
+end $failure_test$;
+""".replace("__PREFLIGHT__", preflight)
+verified = run("\n".join(["begin;", fixture,
+    "update public.live_signals set confidence_score='123456789' where id=1;",
+    observation_guard, guard_receipt,
+    rollback_assertions, "rollback;"]))
+if verified.returncode:
+    raise SystemExit("immutable_provenance_rollback: FAIL\n" + verified.stderr)
+print("immutable_provenance_rollback: PASS — conversion failure restores original data, aliases, and immutable writes")

@@ -33,6 +33,7 @@ declare
   column_receipt jsonb;
   grantee_sql text;
   original_default text;
+  observation_trigger_mode "char";
 begin
   create temporary table luminari_compat_type_targets on commit drop as
   select * from (values
@@ -63,6 +64,21 @@ begin
     join information_schema.columns c on c.table_schema='public'
       and c.table_name=t.relation_name and c.column_name=t.column_name and c.udt_name=t.source_type
   loop
+    observation_trigger_mode := null;
+    if target_relation_name='live_signals' then
+      -- The original observation guard also protects newly added provenance
+      -- columns. Hold the table lock until this DO transaction finishes so no
+      -- concurrent writer can enter while its exact trigger is suspended.
+      lock table public.live_signals in access exclusive mode;
+      select t.tgenabled into observation_trigger_mode from pg_trigger t
+        where t.tgrelid='public.live_signals'::regclass and not t.tgisinternal
+          and t.tgname='immutable_live_signal_observation'
+          and t.tgfoid=to_regprocedure('public.prevent_live_signal_observation_rewrite()');
+      if observation_trigger_mode is not null then
+        alter table public.live_signals disable trigger immutable_live_signal_observation;
+      end if;
+    end if;
+
     select jsonb_build_object(
       'definition',pg_get_viewdef(c.oid,false),'owner',pg_get_userbyid(c.relowner),
       'options',c.reloptions,'comment',obj_description(c.oid,'pg_class'),
@@ -101,6 +117,16 @@ begin
           target_relation_name,conversion.column_name,original_default,conversion.target_type);
       end if;
     end loop;
+
+    if observation_trigger_mode is not null then
+      -- Restore the original mode, including REPLICA/ALWAYS/disabled states.
+      -- Any earlier failure rolls back both conversion and trigger DDL.
+      execute format('alter table public.live_signals %s trigger immutable_live_signal_observation',
+        case observation_trigger_mode
+          when 'O' then 'enable' when 'A' then 'enable always'
+          when 'R' then 'enable replica' when 'D' then 'disable'
+        end);
+    end if;
 
     if view_receipt is not null then
       execute format('create view compat.%I as %s',target_relation_name,view_receipt->>'definition');
