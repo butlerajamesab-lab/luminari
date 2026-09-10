@@ -274,6 +274,10 @@ APPROVED_REPOSITORY_ONLY = {
         "20260909142900_lighthouse_legacy_runtime_preflight.sql",
         "bfa46225a2de8f4fc31ebd13819e245bfebfb620",
     ),
+    "20260909142930": (
+        "20260909142930_lighthouse_pattern_type_key_preflight.sql",
+        "3949bd7193e32feb11823ffc9981f6531aa4d82c",
+    ),
     "20260909143000": (
         "20260909143000_lighthouse_runtime_postgres_contract_v1.sql",
         "288d613674d5545f7673eadc08430ce26bcff089",

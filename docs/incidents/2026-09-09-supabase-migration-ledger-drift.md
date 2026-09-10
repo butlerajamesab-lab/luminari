@@ -221,3 +221,26 @@ twice under all four trigger modes. It verifies original values and private
 aliases, rejects observation and provenance edits afterward, permits lifecycle
 updates, and forces a conversion failure to prove rollback restores protection.
 Both workflow path filters also watch the source of the fixture's guard.
+
+### Production pattern-type conflict key
+
+After #619 merged, the production workflow at 2026-09-10 05:05 UTC applied
+all three preflights and reached 516/517 versions. All six live signals retain
+their original checksum `7ea8ab9fd85f6efe617e7bd2ea1fd69b`; observation trigger
+OID 117705, function OID 117699, definition, and enabled mode `O` are unchanged.
+The runtime transaction rolled back at the pattern-type seed because the
+older, empty `pattern_types(id, pattern_type)` table has only its ID primary
+key. The original `patterns` view remains intact.
+
+An additive `20260909142930` preflight supplies a usable unique key for
+`pattern_types.pattern_type` before the runtime seed. Existing valid immediate
+nonpartial keys are retained. Existing IDs, nullable values, and references
+remain unchanged; duplicate legacy names fail closed without deleting rows.
+The runtime migration itself remains unchanged. This adds one tracked version,
+bringing the expected final ledger to 518.
+
+The regression executes the actual runtime seed and covers the exact empty
+production shape, populated predecessor rows and references, an existing key,
+a partial key, a fresh table, repeat execution, and duplicate-key rollback.
+Read-only catalog checks confirmed the runtime migration's other existing
+`ON CONFLICT` targets retain their primary keys; its receipt table is new.
