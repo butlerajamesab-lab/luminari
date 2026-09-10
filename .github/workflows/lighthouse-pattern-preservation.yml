@@ -12,6 +12,8 @@ on:
       - "scripts/verify-lighthouse-compat-type-preflight.py"
       - "supabase/migrations/20260801074427_math_engine_v21_correctness.sql"
       - "scripts/verify-legacy-function-argument-preservation.py"
+      - "scripts/verify-lighthouse-pattern-type-key.py"
+      - "supabase/migrations/20260909142930_lighthouse_pattern_type_key_preflight.sql"
       - "supabase/migrations/20260829094000_legacy_function_resolution_bridges.sql"
       - "supabase/verification/20260829094000_legacy_function_resolution_bridges_verify.sql"
       - "supabase/migrations/20260909142600_lighthouse_compat_type_preflight.sql"
@@ -33,6 +35,8 @@ on:
       - "scripts/verify-lighthouse-compat-type-preflight.py"
       - "supabase/migrations/20260801074427_math_engine_v21_correctness.sql"
       - "scripts/verify-legacy-function-argument-preservation.py"
+      - "scripts/verify-lighthouse-pattern-type-key.py"
+      - "supabase/migrations/20260909142930_lighthouse_pattern_type_key_preflight.sql"
       - "supabase/migrations/20260829094000_legacy_function_resolution_bridges.sql"
       - "supabase/verification/20260829094000_legacy_function_resolution_bridges_verify.sql"
       - "supabase/migrations/20260909142600_lighthouse_compat_type_preflight.sql"
@@ -83,3 +87,5 @@ jobs:
         run: python3 scripts/verify-lighthouse-compat-type-preflight.py
       - name: Verify legacy function argument names and dependencies
         run: python3 scripts/verify-legacy-function-argument-preservation.py
+      - name: Verify production pattern-type conflict key
+        run: python3 scripts/verify-lighthouse-pattern-type-key.py
