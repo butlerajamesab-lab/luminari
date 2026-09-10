@@ -345,10 +345,34 @@ it("keeps the doctrine total independent from the capped cluster rows", async ()
   expect(result.total_doctrines).toBe(731);
   expect(result.clusters.reduce((sum, cluster) => sum + cluster.count, 0)).toBe(500);
   expect(result.doctrine_results_limited).toBe(true);
+  expect(result.returned_doctrines).toBe(500);
+  expect(result.next_offset).toBe(500);
   expect(result.doctrine_edges).toBe(44);
   expect(state.query).toHaveBeenCalledWith(
     expect.stringContaining("count(*)::int as doctrine_count"),
-    [],
+    [[], ""],
     expect.objectContaining({ query_timeout_ms: 4_000 }),
+  );
+});
+
+it("filters the full doctrine registry before paging beyond the first 500 rows", async () => {
+  state.query.mockImplementation((_sql: string, _params: unknown[], options: { label: string }) => {
+    if (options.label === "dual_lens_doctrine_clusters") return Promise.resolve({ rows: [{ id: 601, name: "Later doctrine", domains: ["housing"] }] });
+    if (options.label === "dual_lens_doctrine_count") return Promise.resolve({ rows: [{ doctrine_count: 601 }] });
+    return Promise.resolve({ rows: [{ edge_count: 44 }] });
+  });
+  const result = await dualLensRouter.createCaller({} as never).getDoctrineClusters({
+    keywords: ["HOUSING"], search: "Later", offset: 600, limit: 100,
+  });
+  expect(result.clusters[0].doctrines[0].id).toBe(601);
+  expect(result.next_offset).toBeNull();
+  expect(result.total_doctrines).toBe(601);
+  expect(state.query).toHaveBeenCalledWith(
+    expect.stringMatching(/where[\s\S]*unnest\(\$1::text\[\]\)[\s\S]*order by name asc, id asc[\s\S]*limit \$3 offset \$4/),
+    [["housing"], "later", 100, 600], expect.any(Object),
+  );
+  expect(state.query).toHaveBeenCalledWith(
+    expect.stringMatching(/count\(\*\)[\s\S]*where[\s\S]*unnest\(\$1::text\[\]\)/),
+    [["housing"], "later"], expect.any(Object),
   );
 });

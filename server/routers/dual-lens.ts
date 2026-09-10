@@ -553,19 +553,31 @@ export const dualLensRouter = router({
   getDoctrineClusters: publicProcedure
     .input(z.object({
       domain: z.string().optional(),
+      keywords: z.array(z.string().trim().min(1).max(100)).max(30).default([]),
+      search: z.string().trim().max(100).default(""),
+      offset: z.number().int().min(0).max(1_000_000).default(0),
+      limit: z.number().int().min(1).max(500).default(500),
     }))
     .query(async ({ input }) => {
+      const keywords = [...new Set([...input.keywords, ...(input.domain ? [input.domain] : [])]
+        .map(word => word.trim().toLowerCase()).filter(Boolean))];
+      const predicate = `(cardinality($1::text[]) = 0 or exists (
+        select 1 from unnest($1::text[]) keyword
+         where strpos(lower(concat_ws(' ', name, description, domains::text)), keyword) > 0
+      )) and ($2::text = '' or strpos(lower(concat_ws(' ', name, description, domains::text)), $2) > 0)`;
+      const filter_params = [keywords, input.search.toLowerCase()];
       const doctrines_request = query_with_diagnostics<any>(
         `select id, name, description, primary_cases, domains, added_by, created_at, updated_at
            from public.doctrine_registry
+          where ${predicate}
           order by name asc, id asc
-          limit 500`,
-        [],
+          limit $3 offset $4`,
+        [...filter_params, input.limit, input.offset],
         { label: "dual_lens_doctrine_clusters", pool_acquire_timeout_ms: 1_000, query_timeout_ms: 4_000 },
       );
       const doctrine_count_request = query_with_diagnostics<{ doctrine_count: number }>(
-        `select count(*)::int as doctrine_count from public.doctrine_registry`,
-        [],
+        `select count(*)::int as doctrine_count from public.doctrine_registry where ${predicate}`,
+        filter_params,
         { label: "dual_lens_doctrine_count", pool_acquire_timeout_ms: 1_000, query_timeout_ms: 4_000 },
       );
       const edge_request = query_with_diagnostics<{ edge_count: number }>(
@@ -615,6 +627,11 @@ export const dualLensRouter = router({
         doctrine_edges_available: doctrine_graph.available,
         doctrine_edges_unavailable_reason: doctrine_graph.reason,
         doctrine_results_limited: total_doctrines > allDoctrines.length,
+        returned_doctrines: allDoctrines.length,
+        offset: input.offset,
+        limit: input.limit,
+        next_offset: input.offset + allDoctrines.length < total_doctrines
+          ? input.offset + input.limit : null,
       };
     }),
 

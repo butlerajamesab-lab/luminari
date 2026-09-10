@@ -119,11 +119,38 @@ describe('caregiving intake projection contracts', () => {
     const bindings = [authorBinding(artifact, 'received', 'Cheryl', 'Cheryl')];
     const entityResult = processLayer6({ artifacts: [artifact], message_author_bindings: bindings });
     expect(entityResult.data.find(entity => entity.canonical_name === 'cheryl')?.raw_mentions)
-      .toEqual(expect.arrayContaining([expect.objectContaining({ raw_text: 'I', binding_provenance_ref: 'case-participant-assertion:test' })]));
+      .toEqual(expect.arrayContaining([expect.objectContaining({ raw_text: 'I', binding_provenance_refs: ['case-participant-assertion:test'] })]));
     const relationships = processLayer7({ entities: entityResult.data, artifacts: [artifact] }).data;
     expect(new Set(relationships.map(value => value.type))).toEqual(new Set([
       'caregiver_recipient', 'authorized_representative_subject',
     ]));
+  });
+
+  it('accepts agreeing verified author assertions and preserves all distinct provenance deterministically', () => {
+    const artifact = smsArtifact(["I am Rick's caregiver."], 'received', 'Cheryl');
+    const bindings = [
+      authorBinding(artifact, 'received', 'Cheryl', 'Cheryl', 'assertion:2'),
+      authorBinding(artifact, 'received', ' CHERYL ', 'Cheryl', 'assertion:1'),
+      authorBinding(artifact, 'received', 'Cheryl', 'Cheryl', 'assertion:2'),
+    ];
+    const result = processLayer6({ artifacts: [artifact], message_author_bindings: bindings });
+    const author = result.data.find(entity => entity.canonical_name === 'cheryl');
+    expect(author?.raw_mentions).toEqual([{
+      raw_text: 'I',
+      artifact_key: artifact.artifact_key,
+      span_offset: 0,
+      binding_provenance_refs: ['assertion:1', 'assertion:2'],
+    }]);
+    expect(result.unresolved_dependencies).toEqual([]);
+    const relationships = processLayer7({ entities: result.data, artifacts: [artifact] }).data;
+    expect(relationships).toHaveLength(1);
+    expect(relationships[0].type).toBe('caregiver_recipient');
+    expect(relationships[0].source_refs).toHaveLength(1);
+
+    const replay = processLayer6({ artifacts: [artifact], message_author_bindings: [...bindings].reverse() });
+    expect(replay.input_hash).toBe(result.input_hash);
+    expect(replay.output_hash).toBe(result.output_hash);
+    expect(replay.data).toEqual(result.data);
   });
 
   it('supports syntax-bounded family and facility declarations in ordinary evidence', () => {
@@ -155,10 +182,12 @@ describe('caregiving intake projection contracts', () => {
       artifacts: [artifact],
       message_author_bindings: [
         authorBinding(artifact, 'received', 'Cheryl', 'Cheryl', 'assertion:1'),
+        authorBinding(artifact, 'received', 'CHERYL', 'Cheryl', 'assertion:3'),
         authorBinding(artifact, 'received', 'Charlotte', 'Cheryl', 'assertion:2'),
       ],
     });
     expect(ambiguous.unresolved_dependencies.some(value => value.detail.includes('ambiguous'))).toBe(true);
+    expect(ambiguous.data.flatMap(entity => entity.raw_mentions).some(mention => mention.binding_provenance_refs)).toBe(false);
     expect(processLayer7({ entities: ambiguous.data, artifacts: [artifact] }).data).toEqual([]);
   });
 

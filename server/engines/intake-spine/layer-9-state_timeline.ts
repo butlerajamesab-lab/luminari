@@ -62,7 +62,7 @@ export const RULE_MANIFEST: {
   semantic_substrate_version: string;
   sms_transition_date_policy: 'message_timestamp_when_sentence_has_no_explicit_date';
   mixed_corpus_scope_policy: 'retain_with_case_specific_or_facility_wide_scope';
-  fragment_policy: 'reject_without_bounded_subject_and_predicate';
+  fragment_policy: 'require_state_marker_and_bounded_entity_mention';
 } = {
   state_rules: [
     { regex: { source: '\\b(?:was |been |got )?terminated\\b', flags: 'gi' }, to_state: 'terminated', domain: 'employment' },
@@ -128,7 +128,7 @@ export const RULE_MANIFEST: {
   semantic_substrate_version: SEMANTIC_SUBSTRATE_VERSION,
   sms_transition_date_policy: 'message_timestamp_when_sentence_has_no_explicit_date',
   mixed_corpus_scope_policy: 'retain_with_case_specific_or_facility_wide_scope',
-  fragment_policy: 'reject_without_bounded_subject_and_predicate',
+  fragment_policy: 'require_state_marker_and_bounded_entity_mention',
 };
 
 export const RULE_MANIFEST_HASH = computeRuleManifestHash(RULE_MANIFEST);
@@ -181,7 +181,6 @@ export function processLayer9(input: Layer9Input): EngineResult<StateTransition[
         while ((match = rule.pattern.exec(span.text)) !== null) {
           const bounds = semanticSentenceBounds(span.text, match.index);
           const sentence = span.text.substring(bounds.start, bounds.end).trim();
-          if (!isCompleteTransitionSentence(sentence)) continue;
           const sentenceAbsoluteOffset = span.start_offset + bounds.start;
           const entities = entitiesMentionedInSentence(
             input.entities,
@@ -191,7 +190,14 @@ export function processLayer9(input: Layer9Input): EngineResult<StateTransition[
             bounds.end,
           );
 
-          if (entities.length === 0) continue;
+          if (entities.length === 0) {
+            unresolved.push({
+              field: `transition:${rule.to_state}:${artifact.artifact_key}:${sentenceAbsoluteOffset}`,
+              reason: 'unresolved',
+              detail: 'State marker has no extracted entity mention in the bounded sentence',
+            });
+            continue;
+          }
           if (entities.length > 1) {
             unresolved.push({
               field: `transition:${rule.to_state}:${artifact.artifact_key}:${sentenceAbsoluteOffset}`,
@@ -253,11 +259,6 @@ export function processLayer9(input: Layer9Input): EngineResult<StateTransition[
     unresolved_dependencies: unresolved.sort((a, b) => a.field.localeCompare(b.field)),
     is_sealed: false,
   };
-}
-
-function isCompleteTransitionSentence(text: string): boolean {
-  const normalized = text.replace(/\s+/g, ' ').trim();
-  return normalized.split(/\s+/).filter(token => /[A-Za-z]/.test(token)).length >= 3;
 }
 
 function entitiesMentionedInSentence(

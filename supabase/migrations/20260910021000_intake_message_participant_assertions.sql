@@ -25,13 +25,19 @@ create table public.intake_message_participant_assertions (
   created_at timestamptz not null default clock_timestamp(),
   check ((review_status = 'pending' and reviewed_by is null and reviewed_at is null and review_receipt is null)
       or (review_status in ('verified','rejected') and reviewed_by is not null and reviewed_at is not null
-          and jsonb_typeof(review_receipt) = 'object')),
+          and review_receipt is not null and jsonb_typeof(review_receipt) = 'object')),
   check (message_direction = 'sent' or nullif(btrim(source_contact_name), '') is not null),
   unique (supersedes_assertion_id)
 );
 
 create index idx_intake_message_participant_assertions_scope
   on public.intake_message_participant_assertions (intake_session_id, case_uuid, artifact_id, artifact_key);
+create index idx_intake_message_participant_assertions_case
+  on public.intake_message_participant_assertions (case_uuid);
+create index idx_intake_message_participant_assertions_artifact
+  on public.intake_message_participant_assertions (artifact_id);
+create index idx_intake_message_participant_assertions_reviewer
+  on public.intake_message_participant_assertions (reviewed_by);
 
 create or replace function public.intake_message_participant_assertion_identity_v1(
   p_intake_session_id uuid, p_case_uuid uuid, p_artifact_id uuid, p_artifact_key text,
@@ -103,18 +109,20 @@ create or replace function public.append_reviewed_intake_message_participant_ass
 language plpgsql security definer set search_path = '' as $fn$
 declare
   v_direction text := pg_catalog.lower(pg_catalog.btrim(p_message_direction));
-  v_contact text := pg_catalog.nullif(pg_catalog.btrim(p_source_contact_name), '');
+  v_contact text := nullif(pg_catalog.btrim(p_source_contact_name), '');
   v_author text := pg_catalog.btrim(p_author_canonical_name);
   v_provenance text := pg_catalog.btrim(p_provenance_ref);
   v_identity text;
 begin
-  if p_review_status not in ('verified', 'rejected') or p_reviewed_by is null
-     or pg_catalog.jsonb_typeof(p_review_receipt) <> 'object' then
+  if p_review_status is null or p_review_status not in ('verified', 'rejected') or p_reviewed_by is null
+     or pg_catalog.jsonb_typeof(p_review_receipt) is distinct from 'object' then
     raise exception using errcode = '22023', message = 'explicit reviewed participant assertion receipt required';
   end if;
-  if pg_catalog.jsonb_typeof(p_evidence) <> 'object'
-     or pg_catalog.jsonb_typeof(p_evidence->'source_refs') <> 'array'
-     or pg_catalog.jsonb_array_length(p_evidence->'source_refs') = 0 then
+  if pg_catalog.jsonb_typeof(p_evidence) is distinct from 'object'
+     or pg_catalog.jsonb_typeof(p_evidence->'source_refs') is distinct from 'array' then
+    raise exception using errcode = '22023', message = 'source-bound participant assertion evidence required';
+  end if;
+  if pg_catalog.jsonb_array_length(p_evidence->'source_refs') = 0 then
     raise exception using errcode = '22023', message = 'source-bound participant assertion evidence required';
   end if;
   v_identity := public.intake_message_participant_assertion_identity_v1(
@@ -172,6 +180,7 @@ begin
     revoke all on function public.append_reviewed_intake_message_participant_assertion_v1(uuid, uuid, uuid, text, text, text, text, jsonb, text, text, integer, jsonb, uuid) from authenticated;
   end if;
   if exists (select 1 from pg_roles where rolname = 'service_role') then
+    revoke all on table public.intake_message_participant_assertions from service_role;
     grant select on table public.intake_message_participant_assertions to service_role;
     grant execute on function public.append_reviewed_intake_message_participant_assertion_v1(uuid, uuid, uuid, text, text, text, text, jsonb, text, text, integer, jsonb, uuid) to service_role;
   end if;

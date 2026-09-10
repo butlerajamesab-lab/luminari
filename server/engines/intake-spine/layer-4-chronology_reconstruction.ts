@@ -53,7 +53,9 @@ export const RULE_MANIFEST: {
   semantic_substrate_version: string;
   sms_event_date_policy: 'message_timestamp_for_explicit_care_event_sentence';
   mixed_corpus_scope_policy: 'retain_with_case_specific_or_facility_wide_scope';
-  fragment_policy: 'reject_without_event_predicate';
+  fragment_policy: 'reject_only_date_and_temporal_label_fragments';
+  fragment_time_regex: { source: string; flags: string };
+  fragment_remainder_regex: { source: string; flags: string };
 } = {
   date_rules: [
     {
@@ -106,7 +108,12 @@ export const RULE_MANIFEST: {
   semantic_substrate_version: SEMANTIC_SUBSTRATE_VERSION,
   sms_event_date_policy: 'message_timestamp_for_explicit_care_event_sentence',
   mixed_corpus_scope_policy: 'retain_with_case_specific_or_facility_wide_scope',
-  fragment_policy: 'reject_without_event_predicate',
+  fragment_policy: 'reject_only_date_and_temporal_label_fragments',
+  fragment_time_regex: { source: '\\b\\d{1,2}:\\d{2}(?::\\d{2})?(?:\\s*[AP]M)?\\b', flags: 'gi' },
+  fragment_remainder_regex: {
+    source: '^(?:(?:on|at|in|as of|dated|date|time|incident date|event date|admission date|discharge date|survey date)\\s*)*$',
+    flags: 'i',
+  },
 };
 
 export const RULE_MANIFEST_HASH = computeRuleManifestHash(RULE_MANIFEST);
@@ -224,11 +231,11 @@ export function processLayer4(input: Layer4Input): EngineResult<ChronologyEvent[
       const bounds = semanticSentenceBounds(span.text, primary.matchIndex);
       const event_text = span.text.substring(bounds.start, bounds.end).trim();
       if (isDeclaredNonEventSentence(event_text)) continue;
-      if (!isCompleteEventSentence(event_text)) {
+      if (isDateOnlyFragment(event_text)) {
         unresolved.push({
           field: `chronology_fragment:${artifact.artifact_key}:${span.start_offset + bounds.start}`,
           reason: 'incomplete',
-          detail: 'Date-bearing fragment lacks a deterministic event predicate and was not promoted',
+          detail: 'Date-bearing fragment contains only a date, time, or temporal label and was not promoted',
         });
         continue;
       }
@@ -281,10 +288,20 @@ export function processLayer4(input: Layer4Input): EngineResult<ChronologyEvent[
   };
 }
 
-function isCompleteEventSentence(text: string): boolean {
-  const normalized = text.replace(/\s+/g, ' ').trim();
-  if (normalized.split(/\s+/).filter(token => /[A-Za-z]/.test(token)).length < 3) return false;
-  return /\b(?:was|were|is|are|has|had|did|became|filed|stated|reported|testified|claimed|received|submitted|appealed|applied|admitted|taken|sent|transported|transferred|observed|reviewed|showed|found|occurred|completed|provided|denied|approved|terminated|resigned|hired|promoted|demoted|suspended|evicted|moved|signed|executed|called|contacted|invited|charged|restricted|failed|refused|requested|notified|died|fell|injured)\b/i.test(normalized);
+function isDateOnlyFragment(text: string): boolean {
+  // Reject known temporal shells, not unrecognized verbs. A finite predicate
+  // vocabulary cannot establish whether an arbitrary source sentence is an event.
+  let remainder = text;
+  for (const rule of DATE_RULES) {
+    rule.regex.lastIndex = 0;
+    remainder = remainder.replace(rule.regex, ' ');
+  }
+  remainder = remainder
+    .replace(regexFromManifest(RULE_MANIFEST.fragment_time_regex), ' ')
+    .replace(/[.,:;!?()[\]{}—–-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return regexFromManifest(RULE_MANIFEST.fragment_remainder_regex).test(remainder);
 }
 
 function extractEventActor(text: string, isCms2567: boolean): string | null {

@@ -15,6 +15,8 @@ export const diagnosticsView = {
     doctrineEdges: data.doctrine_edges,
     doctrineEdgesAvailable: data.doctrine_edges_available,
     doctrineEdgesUnavailableReason: data.doctrine_edges_unavailable_reason,
+    returnedDoctrines: data.returned_doctrines,
+    nextOffset: data.next_offset,
   }),
   institutions: (data: Output["getAffectedInstitutions"]) => ({
     totalAgencies: data.total_agencies,

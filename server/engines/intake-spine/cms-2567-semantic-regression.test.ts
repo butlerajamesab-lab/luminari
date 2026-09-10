@@ -545,8 +545,33 @@ describe("CMS-2567 semantic-lane regression", () => {
     ).toBe(true);
   });
 
-  it("does not promote a date-bearing label fragment into chronology", () => {
-    const fragment = "Incident date: January 5, 2026.";
+  it.each([
+    "On January 4, 2026, John Smith visited the hospital.",
+    "On January 4, 2026, John Smith met the nurse.",
+    "On January 4, 2026, John Smith left.",
+    "On January 4, 2026, John Smith arrived.",
+    "January 4, 2026: I left.",
+  ])("retains dated narrative without a fixed verb vocabulary: %s", (sentence) => {
+    const artifact = artifactFromPages("case:dated-narrative.pdf", [sentence]);
+    const chronology = processLayer4({ artifacts: [artifact] });
+
+    expect(chronology.data).toEqual([
+      expect.objectContaining({
+        date: "2026-01-04",
+        event_text: sentence,
+        source_artifact_key: artifact.artifact_key,
+        event_scope: "case_specific",
+        verification_status: "document_stated",
+      }),
+    ]);
+    expect(chronology.unresolved_dependencies).toEqual([]);
+  });
+
+  it.each([
+    "Incident date: January 5, 2026.",
+    "January 5, 2026.",
+    "On January 5, 2026 at 12:30 PM.",
+  ])("does not promote a date-bearing label fragment: %s", (fragment) => {
     const artifact = artifactFromPages("case:intake-label.pdf", [fragment]);
     const chronology = processLayer4({ artifacts: [artifact] });
 
@@ -555,6 +580,57 @@ describe("CMS-2567 semantic-lane regression", () => {
       expect.objectContaining({
         field: expect.stringContaining("chronology_fragment:"),
         reason: "incomplete",
+      }),
+    ]);
+  });
+
+  it("retains a short state assertion with a verified message author", () => {
+    const artifact = artifactFromPages("case:resignation.xml", [
+      "I resigned. I was a nursing home caregiver.",
+    ]);
+    artifact.extraction_method = "sms_backup_xml";
+    artifact.spans = artifact.spans.map((span) => ({
+      ...span,
+      source_kind: "sms_message",
+      message_kind: "message",
+      message_direction: "sent",
+      occurred_at: "2026-01-04T12:30:00.000Z",
+    }));
+    const entities = processLayer6({
+      artifacts: [artifact],
+      message_author_bindings: [{
+        artifact_key: artifact.artifact_key,
+        message_direction: "sent",
+        author_canonical_name: "Cheryl Morgan",
+        provenance_ref: "case-participant-assertion:resignation-fixture",
+        verification_state: "verified",
+      }],
+    }).data;
+    const author = entities.find((entity) => entity.canonical_name === "cheryl morgan");
+    expect(author).toBeDefined();
+    const timeline = processLayer9({ artifacts: [artifact], entities });
+
+    expect(timeline.data).toEqual([
+      expect.objectContaining({
+        entity_id: author!.entity_id,
+        to_state: "resigned",
+        source_text: "I resigned.",
+        transition_date: "2026-01-04",
+        source_artifact_key: artifact.artifact_key,
+        source_span_offset: 0,
+        transition_scope: "case_specific",
+      }),
+    ]);
+    expect(timeline.unresolved_dependencies).toEqual([]);
+    const unmapped = processLayer9({
+      artifacts: [artifact],
+      entities: processLayer6({ artifacts: [artifact] }).data,
+    });
+    expect(unmapped.data).toEqual([]);
+    expect(unmapped.unresolved_dependencies).toEqual([
+      expect.objectContaining({
+        field: expect.stringContaining("transition:resigned:"),
+        reason: "unresolved",
       }),
     ]);
   });

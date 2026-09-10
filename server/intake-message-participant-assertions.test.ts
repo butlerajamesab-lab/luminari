@@ -29,6 +29,25 @@ describe('canonical message participant assertions', () => {
     expect(migration).toContain('grant select on table public.intake_message_participant_assertions to service_role');
   });
 
+  it('rejects null review receipts and missing evidence before attempting an insert', () => {
+    expect(migration).not.toContain('pg_catalog.nullif(');
+    expect(migration).toContain("v_contact text := nullif(pg_catalog.btrim(p_source_contact_name), '')");
+    expect(migration).toContain("p_review_status is null or p_review_status not in ('verified', 'rejected')");
+    expect(migration).toContain("pg_catalog.jsonb_typeof(p_review_receipt) is distinct from 'object'");
+    expect(migration).toContain("review_receipt is not null and jsonb_typeof(review_receipt) = 'object'");
+    expect(migration).toContain("pg_catalog.jsonb_typeof(p_evidence) is distinct from 'object'");
+    expect(migration).toContain("pg_catalog.jsonb_typeof(p_evidence->'source_refs') is distinct from 'array'");
+    expect(migration).toContain("if pg_catalog.jsonb_array_length(p_evidence->'source_refs') = 0 then");
+  });
+
+  it('removes any default service-role table write grants before granting read access', () => {
+    const revoke = migration.indexOf('revoke all on table public.intake_message_participant_assertions from service_role;');
+    const select = migration.indexOf('grant select on table public.intake_message_participant_assertions to service_role;');
+    expect(revoke).toBeGreaterThan(-1);
+    expect(select).toBeGreaterThan(revoke);
+    expect(migration).not.toMatch(/grant\s+(?:all|insert|update|delete|truncate)\b[^;]*intake_message_participant_assertions[^;]*to service_role/i);
+  });
+
   it('ships no inferred case-11 mapping and keeps its reviewed execution path inert', () => {
     expect(case11Review).toContain("v_assertions jsonb := '[]'::jsonb");
     expect(case11Review).toContain('case 11 participant assertions require completed evidence review');

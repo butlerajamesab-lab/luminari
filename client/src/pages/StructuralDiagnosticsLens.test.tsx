@@ -88,6 +88,8 @@ beforeEach(() => {
         },
       ],
       total_doctrines: 1,
+      returned_doctrines: 1,
+      next_offset: null,
       doctrine_edges: 0,
       doctrine_edges_available: false,
       doctrine_edges_unavailable_reason: "The doctrine graph count is unavailable.",
@@ -163,6 +165,7 @@ it("renders the snake_case API responses across every diagnostics panel", () => 
   expect(html).toContain("Structural Diagnostics");
   expect(html).toContain("7 barriers");
   expect(html).toContain("Equal protection");
+  expect(html).toContain("Showing 1 on this page");
   expect(html).toContain("doctrine graph connections are unavailable");
   expect(html).toContain("TEST");
   expect(html).toContain(">27<");
@@ -172,6 +175,21 @@ it("renders the snake_case API responses across every diagnostics panel", () => 
   expect(html).toContain("Recorded Signals");
   expect(html).toContain("Unavailable");
   expect(html).toContain("canonical graph summary timed out");
+});
+
+it("shows doctrine pagination and every doctrine returned on the current page", () => {
+  state.results.getDoctrineClusters.data = {
+    ...state.results.getDoctrineClusters.data,
+    total_doctrines: 731, returned_doctrines: 6, next_offset: 100,
+    clusters: [{ category: "general", count: 6, doctrines: Array.from({ length: 6 }, (_, i) => ({ id: i, name: `Visible doctrine ${i + 1}` })) }],
+  };
+  const html = renderToStaticMarkup(<StructuralDiagnosticsLens />);
+  expect(html).toContain("731 matching doctrines");
+  expect(html).toContain("Showing 6 on this page");
+  expect(html).toContain("Visible doctrine 6");
+  expect(html).toContain("Search all doctrines");
+  expect(html).toContain("Next doctrines");
+  expect(html).not.toMatch(/disabled=""[^>]*>Next doctrines/);
 });
 
 it("renders a verified canonical edge count when the governed graph is available", () => {
