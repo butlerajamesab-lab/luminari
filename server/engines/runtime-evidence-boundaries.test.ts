@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const { execute, insert } = vi.hoisted(() => ({ execute: vi.fn(), insert: vi.fn() }));
 vi.mock("../db", () => ({ db: { execute, insert } }));
 
+import { getHarmMapData } from "./harm-map-service";
+
 import { getHarmIndexSummary } from "./harm-index-service";
 import { getRiskForecastSummary } from "./risk-forecast-service";
 import { calculateCrisisProbability, generateCrisisPrediction } from "./crisis-prediction";
@@ -20,6 +22,18 @@ describe("Runtime evidence boundaries", () => {
     expect(result.materialized).toBe(false);
     expect(result.source).toBe("harm_index_entities + harm_index_scores");
     expect(execute).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps graph evidence states without inventing numeric scores or counts", async () => {
+    execute.mockResolvedValueOnce([[{ id: 1, canonical_node_id: "node:fixture", node_type: "entity", node_label: "Fixture" }]])
+      .mockResolvedValueOnce([[{ id: 2, source_node_id: 1, target_node_id: 1, evidence_state: "governed" }]])
+      .mockResolvedValueOnce([[{ node_count: 1, edge_count: 1 }]]);
+    const result = await getHarmMapData();
+    expect(result.nodes[0].harmScore).toBeNull();
+    expect(result.nodes[0].riskScore).toBeNull();
+    expect(result.edges[0].strengthScore).toBeNull();
+    expect(result.edges[0].evidenceCount).toBeNull();
+    expect(result.edges[0].evidenceState).toBe("governed");
   });
 
   it("preserves the identity and result of an actual stored entity forecast", async () => {

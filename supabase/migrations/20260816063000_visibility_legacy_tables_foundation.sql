@@ -89,7 +89,29 @@ create table if not exists public.civil_gideon_directory (
   created_at timestamptz not null default now()
 );
 
-alter table public.unified_resources enable row level security;
+-- This version is pending in production, where unified_resources is already a
+-- canonical read view. Preserve that view and its rows; table RLS and policies
+-- apply only to the empty table created during a fresh replay.
+do $$
+declare
+  relation_kind "char";
+begin
+  select relkind into relation_kind from pg_class
+    where oid = 'public.unified_resources'::regclass;
+  if relation_kind in ('r', 'p') then
+    alter table public.unified_resources enable row level security;
+    drop policy if exists service_role_all_unified_resources on public.unified_resources;
+    create policy service_role_all_unified_resources on public.unified_resources
+      for all to service_role using (true) with check (true);
+  elsif relation_kind = 'v' then
+    alter view public.unified_resources set (security_invoker = true);
+  else
+    raise exception 'Unsupported public.unified_resources relation kind: %', relation_kind;
+  end if;
+end;
+$$;
+
+
 alter table public.legal_case_law enable row level security;
 alter table public.legal_enforcement_records enable row level security;
 alter table public.civil_gideon_directory enable row level security;
@@ -106,9 +128,6 @@ grant select, insert, update, delete on public.unified_resources,
   to service_role;
 grant usage, select on sequence public.legal_enforcement_records_id_seq to service_role;
 
-drop policy if exists service_role_all_unified_resources on public.unified_resources;
-create policy service_role_all_unified_resources on public.unified_resources
-  for all to service_role using (true) with check (true);
 drop policy if exists service_role_all_legal_case_law on public.legal_case_law;
 create policy service_role_all_legal_case_law on public.legal_case_law
   for all to service_role using (true) with check (true);
@@ -119,8 +138,6 @@ drop policy if exists service_role_all_civil_gideon_directory on public.civil_gi
 create policy service_role_all_civil_gideon_directory on public.civil_gideon_directory
   for all to service_role using (true) with check (true);
 
-comment on table public.unified_resources is
-  'Service-only legacy mixed resource relation reconstructed as an empty visibility lane.';
 comment on table public.legal_case_law is
   'Service-only canonical case-law relation reconstructed for executable migration replay.';
 comment on table public.legal_enforcement_records is

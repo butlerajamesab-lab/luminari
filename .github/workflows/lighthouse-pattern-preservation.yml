@@ -6,12 +6,18 @@ on:
     paths:
       - ".github/workflows/lighthouse-pattern-preservation.yml"
       - "scripts/verify-lighthouse-pattern-preservation.py"
+      - "scripts/verify-lighthouse-view-foundations.py"
+      - "supabase/migrations/20260815081130_case_surface_tables_foundation.sql"
+      - "supabase/migrations/20260816063000_visibility_legacy_tables_foundation.sql"
       - "supabase/migrations/20260909143000_lighthouse_runtime_postgres_contract_v1.sql"
   push:
     branches: [main]
     paths:
       - ".github/workflows/lighthouse-pattern-preservation.yml"
       - "scripts/verify-lighthouse-pattern-preservation.py"
+      - "scripts/verify-lighthouse-view-foundations.py"
+      - "supabase/migrations/20260815081130_case_surface_tables_foundation.sql"
+      - "supabase/migrations/20260816063000_visibility_legacy_tables_foundation.sql"
       - "supabase/migrations/20260909143000_lighthouse_runtime_postgres_contract_v1.sql"
   workflow_dispatch:
 
@@ -43,3 +49,5 @@ jobs:
       - uses: actions/checkout@v7
       - name: Verify production view conversion and legacy table replay
         run: python3 scripts/verify-lighthouse-pattern-preservation.py
+      - name: Verify foundations preserve existing production views
+        run: python3 scripts/verify-lighthouse-view-foundations.py

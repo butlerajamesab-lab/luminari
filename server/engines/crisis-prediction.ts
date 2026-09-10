@@ -118,7 +118,6 @@ export async function calculateCrisisProbability(params: {
 
   // Indicator 5: Cross-stream confirmation (10%)
   const activeStreams = sourceCount;
-  const crossStreamScore = Math.min(100, activeStreams * 20);
   indicators.push({
     name: "cross_stream",
     weight: 0.10,

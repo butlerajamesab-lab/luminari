@@ -144,11 +144,11 @@ APPROVED_REPOSITORY_ONLY = {
     ),
     "20260815081130": (
         "20260815081130_case_surface_tables_foundation.sql",
-        "0009349f013832cb095010205c7b62e40b0f5690",
+        "ecafec1f6885d269c49f3688474271a2114f9d8b",
     ),
     "20260816063000": (
         "20260816063000_visibility_legacy_tables_foundation.sql",
-        "ccbb0a0325cf9420baf2fbe3325c48ce47456f20",
+        "81dff222f69ead95cab1b986c79142ffcd84f3e6",
     ),
     "20260816124000": (
         "20260816124000_legacy_signal_graph_tables_foundation.sql",

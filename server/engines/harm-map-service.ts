@@ -17,8 +17,8 @@ export interface MapNode {
   patternId: number | null;
   jurisdiction: string | null;
   industrySector: string | null;
-  harmScore: number;
-  riskScore: number;
+  harmScore: number | null;
+  riskScore: number | null;
   status: string;
   canonicalNodeId?: string;
   objectRef?: string | null;
@@ -30,8 +30,8 @@ export interface MapEdge {
   sourceNodeId: number;
   targetNodeId: number;
   relationshipType: string;
-  strengthScore: number;
-  evidenceCount: number;
+  strengthScore: number | null;
+  evidenceCount: number | null;
   canonicalEdgeId?: string;
   evidenceState?: string | null;
 }
@@ -121,8 +121,6 @@ export async function getHarmMapData(): Promise<HarmMapData> {
            ${numericId("e.from_node_id")} AS source_node_id,
            ${numericId("e.to_node_id")} AS target_node_id,
            e.edge_type AS relationship_type,
-           CASE WHEN e.evidence_state IN ('verified','governed','current') THEN 100 ELSE 50 END AS strength_score,
-           1 AS evidence_count,
            e.evidence_state
       FROM selected_edges e
      ORDER BY e.edge_id
@@ -142,8 +140,8 @@ export async function getHarmMapData(): Promise<HarmMapData> {
     patternId: null,
     jurisdiction: row.jurisdiction,
     industrySector: null,
-    harmScore: 0,
-    riskScore: 0,
+    harmScore: null,
+    riskScore: null,
     status: row.status || "current",
     canonicalNodeId: row.canonical_node_id,
     objectRef: row.object_ref,
@@ -155,8 +153,8 @@ export async function getHarmMapData(): Promise<HarmMapData> {
     sourceNodeId: Number(row.source_node_id),
     targetNodeId: Number(row.target_node_id),
     relationshipType: row.relationship_type || "related",
-    strengthScore: Number(row.strength_score) || 0,
-    evidenceCount: Number(row.evidence_count) || 0,
+    strengthScore: null,
+    evidenceCount: null,
     canonicalEdgeId: row.canonical_edge_id,
     evidenceState: row.evidence_state,
   }));
