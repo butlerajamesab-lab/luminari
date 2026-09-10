@@ -182,8 +182,8 @@ rollback_assertions = """
 do $failure_test$ begin
   begin
     execute $migration$__PREFLIGHT__$migration$;
-    raise exception 'Invalid numeric default did not abort conversion';
-  exception when invalid_text_representation then null;
+    raise exception 'Oversized numeric observation did not abort conversion';
+  exception when numeric_value_out_of_range then null;
   end;
   if exists(select 1 from information_schema.columns where table_schema='public'
       and table_name='live_signals' and column_name like '%_legacy_text')
@@ -191,7 +191,7 @@ do $failure_test$ begin
       and table_name='live_signals' and column_name='confidence_score')<>'text'
     or (select tgenabled from pg_trigger where tgrelid='public.live_signals'::regclass
       and tgname='immutable_live_signal_observation')<>'O'
-    or not exists(select 1 from compat.live_signals where confidence_score='0.85' and role_confidence='not scored') then
+    or not exists(select 1 from compat.live_signals where confidence_score='123456789' and role_confidence='not scored') then
     raise exception 'Failed conversion did not restore original storage, alias, or trigger';
   end if;
   begin
@@ -202,8 +202,9 @@ do $failure_test$ begin
   end;
 end $failure_test$;
 """.replace("__PREFLIGHT__", preflight)
-verified = run("\n".join(["begin;", fixture, observation_guard, guard_receipt,
-    "alter table public.live_signals alter column confidence_score set default 'invalid numeric';",
+verified = run("\n".join(["begin;", fixture,
+    "update public.live_signals set confidence_score='123456789' where id=1;",
+    observation_guard, guard_receipt,
     rollback_assertions, "rollback;"]))
 if verified.returncode:
     raise SystemExit("immutable_provenance_rollback: FAIL\n" + verified.stderr)
