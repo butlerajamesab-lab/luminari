@@ -9,9 +9,12 @@ on:
       - "scripts/verify-lighthouse-view-foundations.py"
       - "scripts/verify-signal-integrity-supersession.py"
       - "scripts/verify-lighthouse-legacy-preflight.py"
+      - "scripts/verify-lighthouse-compat-type-preflight.py"
+      - "supabase/migrations/20260909142600_lighthouse_compat_type_preflight.sql"
       - "supabase/migrations/20260909142800_lighthouse_pattern_identity_preflight.sql"
       - "supabase/migrations/20260909142900_lighthouse_legacy_runtime_preflight.sql"
       - "supabase/migrations/20260818095500_signal_architecture_runtime_projection_truth.sql"
+      - "supabase/migrations/20260822080454_atlas_domain3_integrity_review_projection.sql"
       - "supabase/migrations/20260815081130_case_surface_tables_foundation.sql"
       - "supabase/migrations/20260816063000_visibility_legacy_tables_foundation.sql"
       - "supabase/migrations/20260909143000_lighthouse_runtime_postgres_contract_v1.sql"
@@ -23,9 +26,12 @@ on:
       - "scripts/verify-lighthouse-view-foundations.py"
       - "scripts/verify-signal-integrity-supersession.py"
       - "scripts/verify-lighthouse-legacy-preflight.py"
+      - "scripts/verify-lighthouse-compat-type-preflight.py"
+      - "supabase/migrations/20260909142600_lighthouse_compat_type_preflight.sql"
       - "supabase/migrations/20260909142800_lighthouse_pattern_identity_preflight.sql"
       - "supabase/migrations/20260909142900_lighthouse_legacy_runtime_preflight.sql"
       - "supabase/migrations/20260818095500_signal_architecture_runtime_projection_truth.sql"
+      - "supabase/migrations/20260822080454_atlas_domain3_integrity_review_projection.sql"
       - "supabase/migrations/20260815081130_case_surface_tables_foundation.sql"
       - "supabase/migrations/20260816063000_visibility_legacy_tables_foundation.sql"
       - "supabase/migrations/20260909143000_lighthouse_runtime_postgres_contract_v1.sql"
@@ -65,3 +71,5 @@ jobs:
         run: python3 scripts/verify-signal-integrity-supersession.py
       - name: Verify predecessor UUID patterns and workflow columns
         run: python3 scripts/verify-lighthouse-legacy-preflight.py
+      - name: Verify production compatibility aliases survive type conversion
+        run: python3 scripts/verify-lighthouse-compat-type-preflight.py

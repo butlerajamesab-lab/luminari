@@ -166,3 +166,20 @@ and numeric allocation starts above them to prevent invented associations.
 Quoted companion pattern columns are renamed and the predecessor pattern-type
 creation default is supplied. The expanded fixture inserts occurrences for
 both an existing and a newly created pattern after two migration executions.
+
+### Production compatibility-view dependencies
+
+A read-only catalog check found five `compat` views depending on columns that
+still use legacy text/integer types in production: `ingest_runs`,
+`ingested_records`, `live_signals`, `remedy_paths`, and
+`pattern_aggregation_runs`. PostgreSQL rejects their base-column type changes
+while these views exist. The aliases have no additional dependent objects.
+
+An additive type preflight converts these columns and restores each alias in
+the same transaction, retaining its projection, owner, options, comments, and
+effective table/column grants. It removes privileges inherited during recreation
+before restoring the original grants. Original source values remain in provenance
+columns, including invalid dates, numbers, and JSON. The regression first proves
+the original runtime conversion fails against the aliases, then proves both the
+preflight and the actual runtime conversion blocks succeed twice, with unchanged
+alias metadata and no privilege expansion. Applied migration files remain intact.
