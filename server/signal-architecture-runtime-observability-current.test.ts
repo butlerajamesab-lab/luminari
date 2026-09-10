@@ -39,9 +39,11 @@ describe("signal architecture current runtime observability", () => {
     expect(page).toContain("Unique Atlas observations");
   });
 
-  it("does not present an empty promoted intake-signal store as empty case intake", () => {
-    expect(page).toContain("Promoted Case Intake Signals");
-    expect(page).toContain("Intake sessions, uploaded documents, preserved evidence, and case reviews are tracked separately");
-    expect(page).toContain('isCaseIntake ? "promoted" : "current"');
+  it("distinguishes retained intake observations from detected patterns", () => {
+    expect(page).toContain("Intake observations and patterns");
+    expect(page).toContain("individual chronology events and historical processing records");
+    expect(page).toContain('isCaseIntake ? "retained observations" : "current"');
+    expect(page).not.toContain('navigate("/cases")');
+    expect(page).not.toContain("Open private case artifacts");
   });
 });

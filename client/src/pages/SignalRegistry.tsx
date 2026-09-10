@@ -5,6 +5,7 @@ import { trpc } from "@/lib/trpc";
 import { LayerNavBar } from "@/components/LayerNavBar";
 import { PublicWalkthroughShell } from "@/components/PublicWalkthroughShell";
 import { useAuth } from "@/core/hooks/useAuth";
+import { IntakePatternExplorer } from "@/components/signal-architecture/IntakePatternExplorer";
 import { SignalEvidenceDetails } from "@/components/signal-architecture/SignalEvidenceDetails";
 import {
   Activity,
@@ -121,6 +122,7 @@ export default function SignalRegistry() {
   );
   const url_domain = url_params.get("signal_domain") ?? url_params.get("domain");
   const url_record_id = url_params.get("signal_id");
+  const browsingIntake = url_domain === "case_intake";
   const [selected_domain, set_selected_domain] = useState<ArtifactDomain | undefined>(
     is_artifact_domain(url_domain) ? url_domain : undefined,
   );
@@ -148,7 +150,7 @@ export default function SignalRegistry() {
       offset,
       query: search_query || undefined,
     },
-    { enabled: Boolean(user), refetchInterval: user ? 30_000 : false, refetchOnWindowFocus: true, refetchOnReconnect: true },
+    { enabled: Boolean(user) && !browsingIntake, refetchInterval: user && !browsingIntake ? 30_000 : false, refetchOnWindowFocus: true, refetchOnReconnect: true },
   );
   const artifacts_data = accessDenied(artifacts_query.error) ? undefined : artifacts_query.data;
   const artifact_detail_query = trpc.enforcementIntel.get_signal_artifact.useQuery(
@@ -157,14 +159,14 @@ export default function SignalRegistry() {
       record_id: selected_record_id ?? "",
     },
     {
-      enabled: Boolean(user) && selected_domain != null && selected_record_id != null,
+      enabled: Boolean(user) && !browsingIntake && selected_domain != null && selected_record_id != null,
       refetchInterval: user ? 30_000 : false,
       refetchOnWindowFocus: true,
       refetchOnReconnect: true,
     },
   );
   const cases_query = trpc.cases.list.useQuery(undefined, {
-    enabled: Boolean(user),
+    enabled: Boolean(user) && !browsingIntake && selected_record_id != null,
   });
   const utils = trpc.useUtils();
   const connect_mutation = trpc.enforcementIntel.connect_signal_artifact_to_case.useMutation({
@@ -181,10 +183,9 @@ export default function SignalRegistry() {
   });
 
   useEffect(() => {
-    if (is_artifact_domain(url_domain)) {
-      set_selected_domain(url_domain);
-    }
+    set_selected_domain(is_artifact_domain(url_domain) ? url_domain : undefined);
     set_selected_record_id(url_record_id);
+    set_offset(0);
   }, [url_domain, url_record_id]);
 
   if (!user) {
@@ -198,12 +199,8 @@ export default function SignalRegistry() {
   }
 
   function choose_domain(domain: string) {
-    if (domain === "case_intake") {
-      navigate("/cases");
-      return;
-    }
-    if (!is_artifact_domain(domain)) return;
-    set_selected_domain(domain);
+    if (domain !== "case_intake" && !is_artifact_domain(domain)) return;
+    set_selected_domain(is_artifact_domain(domain) ? domain : undefined);
     set_selected_record_id(null);
     set_offset(0);
     navigate(`/signal-registry?domain=${domain}`);
@@ -368,12 +365,12 @@ export default function SignalRegistry() {
           const isCaseIntake = domain.domain_code === "case_intake";
           const isLiveData = domain.domain_code === "live_data";
           const displayLabel = isCaseIntake
-            ? "Promoted Case Intake Signals"
+            ? "Intake observations and patterns"
             : isLiveData
               ? "Atlas Domain 3 Records"
             : domain.domain_label;
           const displayDescription = isCaseIntake
-            ? "Promoted case breakpoints only. Intake sessions, uploaded documents, preserved evidence, and case reviews are tracked separately and are not counted here."
+            ? "Retained intake observations include individual chronology events and historical processing records. Explore pattern meanings, matching conditions, and recorded pattern history."
             : isLiveData
               ? `${format_number(integrity.live_data_candidate_count)} governed observation candidates and ${format_number(integrity.live_data_promoted_count)} promoted canonical signals projected from Atlas. Candidates are not findings.`
             : domain.description;
@@ -394,7 +391,7 @@ export default function SignalRegistry() {
               style={{
                 background: palette.surface,
                 border: `1px solid ${
-                  selected_domain === domain.domain_code ? color : palette.border
+                  (browsingIntake ? "case_intake" : selected_domain) === domain.domain_code ? color : palette.border
                 }`,
                 borderTop: `3px solid ${color}`,
                 borderRadius: 12,
@@ -402,7 +399,7 @@ export default function SignalRegistry() {
                 cursor: "pointer",
                 outline: "none",
                 boxShadow:
-                  selected_domain === domain.domain_code
+                  (browsingIntake ? "case_intake" : selected_domain) === domain.domain_code
                     ? `0 0 0 2px ${color}22`
                     : "none",
               }}
@@ -419,10 +416,10 @@ export default function SignalRegistry() {
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <div style={{ fontSize: 24, fontWeight: 750, color }}>
-                    {format_number(domain.current_record_count)}
+                    {format_number(isCaseIntake ? domain.total_record_count : domain.current_record_count)}
                   </div>
                   <div style={{ color: palette.muted, fontSize: 11 }}>
-                    {isCaseIntake ? "promoted" : "current"}
+                    {isCaseIntake ? "retained observations" : "current"}
                   </div>
                 </div>
               </div>
@@ -451,7 +448,7 @@ export default function SignalRegistry() {
                 <p style={contract_text_style}><strong>Confidence:</strong> {domain.confidence_policy}</p>
               </details>
               <div style={{ marginTop: 12, color, fontSize: 12, display: "flex", alignItems: "center", gap: 5 }}>
-                {isCaseIntake ? "Open private case artifacts" : "Explore every artifact"}
+                {isCaseIntake ? "Explore pattern meanings and history" : "Explore every artifact"}
                 <ChevronRight size={14} />
               </div>
             </article>
@@ -459,7 +456,7 @@ export default function SignalRegistry() {
         })}
       </section>
 
-      <section
+      {browsingIntake ? <IntakePatternExplorer /> : <section
         id="signal-artifact-browser"
         style={{
           background: palette.surface,
@@ -481,7 +478,7 @@ export default function SignalRegistry() {
           <div>
             <h2 style={{ margin: 0, fontSize: 19 }}>Canonical artifact explorer</h2>
             <p style={{ margin: "5px 0 0", color: palette.muted, fontSize: 13 }}>
-              Browse every Domain 2, Domain 3, and convergence artifact. Domain 1 stays inside its authorized case workspace.
+              Browse Domain 2, Domain 3, and convergence evidence. Select Domain 1 above to explore intake pattern definitions and history.
             </p>
           </div>
           <div style={{ color: palette.muted, fontSize: 12, display: "flex", gap: 6 }}>
@@ -653,9 +650,9 @@ export default function SignalRegistry() {
             Next {PAGE_SIZE} <ChevronRight size={14} />
           </button>
         </div>
-      </section>
+      </section>}
 
-      {selected_record_id && selected_domain && (
+      {!browsingIntake && selected_record_id && selected_domain && (
         <section
           style={{
             marginTop: 20,

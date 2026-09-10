@@ -10,6 +10,8 @@ on:
       - "supabase/migrations/20260823015442_signal_artifact_case_links_v1.sql"
       - "server/routers/enforcement-intel.ts"
       - "server/routers/enforcement-intelligence.ts"
+      - "server/intake-pattern-catalog.ts"
+      - "server/intake-pattern-catalog.test.ts"
       - "server/signal-artifact-runtime.ts"
       - "server/signal-artifact-runtime.test.ts"
       - "server/signal-artifact-navigation.contract.test.ts"
@@ -24,10 +26,13 @@ on:
       - "client/src/components/viewfinder/**"
       - "server/anomaly-viewfinder-live.contract.test.ts"
       - "client/src/pages/StructuralDiagnosticsLens.tsx"
+      - "client/src/pages/StructuralDiagnosticsLens.test.tsx"
+      - "client/src/lib/diagnosticsView.ts"
       - "client/src/pages/ContradictionScoring.tsx"
       - "client/src/pages/ContradictionScoring.test.tsx"
       - "client/src/features/integrity-review/IntegrityReview.tsx"
       - ".github/workflows/signal-architecture-contract.yml"
+      - "tsconfig.diagnostics.json"
   push:
     branches:
       - main
@@ -39,6 +44,8 @@ on:
       - "supabase/migrations/20260823015442_signal_artifact_case_links_v1.sql"
       - "server/routers/enforcement-intel.ts"
       - "server/routers/enforcement-intelligence.ts"
+      - "server/intake-pattern-catalog.ts"
+      - "server/intake-pattern-catalog.test.ts"
       - "server/signal-artifact-runtime.ts"
       - "server/signal-artifact-runtime.test.ts"
       - "server/signal-artifact-navigation.contract.test.ts"
@@ -53,10 +60,13 @@ on:
       - "client/src/components/viewfinder/**"
       - "server/anomaly-viewfinder-live.contract.test.ts"
       - "client/src/pages/StructuralDiagnosticsLens.tsx"
+      - "client/src/pages/StructuralDiagnosticsLens.test.tsx"
+      - "client/src/lib/diagnosticsView.ts"
       - "client/src/pages/ContradictionScoring.tsx"
       - "client/src/pages/ContradictionScoring.test.tsx"
       - "client/src/features/integrity-review/IntegrityReview.tsx"
       - ".github/workflows/signal-architecture-contract.yml"
+      - "tsconfig.diagnostics.json"
 
 permissions:
   contents: read
@@ -85,5 +95,9 @@ jobs:
           client/src/components/signal-architecture/SignalEvidenceDetails.test.tsx
           client/src/pages/ContradictionScoring.test.tsx
           client/src/pages/SignalRegistry.test.tsx
+          client/src/pages/StructuralDiagnosticsLens.test.tsx
+          server/intake-pattern-catalog.test.ts
       - name: Verify formatting
         run: git diff --check
+      - name: Check diagnostics against its actual API contract
+        run: npx tsc --noEmit -p tsconfig.diagnostics.json
