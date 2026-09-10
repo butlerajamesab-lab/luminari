@@ -17,11 +17,15 @@ on:
       - "server/signal-domain2-prism-currentness.test.ts"
       - "server/signal-architecture-runtime-observability-current.test.ts"
       - "client/src/pages/SignalRegistry.tsx"
-      - "client/src/components/signal-architecture/SignalArtifactContext.tsx"
+      - "client/src/pages/SignalRegistry.test.tsx"
+      - "client/src/components/signal-architecture/**"
       - "client/src/pages/ControlRoom.tsx"
       - "client/src/pages/AnomalyViewfinder.tsx"
+      - "client/src/components/viewfinder/**"
+      - "server/anomaly-viewfinder-live.contract.test.ts"
       - "client/src/pages/StructuralDiagnosticsLens.tsx"
       - "client/src/pages/ContradictionScoring.tsx"
+      - "client/src/pages/ContradictionScoring.test.tsx"
       - "client/src/features/integrity-review/IntegrityReview.tsx"
       - ".github/workflows/signal-architecture-contract.yml"
   push:
@@ -42,11 +46,15 @@ on:
       - "server/signal-domain2-prism-currentness.test.ts"
       - "server/signal-architecture-runtime-observability-current.test.ts"
       - "client/src/pages/SignalRegistry.tsx"
-      - "client/src/components/signal-architecture/SignalArtifactContext.tsx"
+      - "client/src/pages/SignalRegistry.test.tsx"
+      - "client/src/components/signal-architecture/**"
       - "client/src/pages/ControlRoom.tsx"
       - "client/src/pages/AnomalyViewfinder.tsx"
+      - "client/src/components/viewfinder/**"
+      - "server/anomaly-viewfinder-live.contract.test.ts"
       - "client/src/pages/StructuralDiagnosticsLens.tsx"
       - "client/src/pages/ContradictionScoring.tsx"
+      - "client/src/pages/ContradictionScoring.test.tsx"
       - "client/src/features/integrity-review/IntegrityReview.tsx"
       - ".github/workflows/signal-architecture-contract.yml"
 
@@ -72,5 +80,10 @@ jobs:
           server/signal-architecture-runtime-observability-current.test.ts
           server/signal-artifact-runtime.test.ts
           server/signal-artifact-navigation.contract.test.ts
+          server/anomaly-viewfinder-live.contract.test.ts
+          client/src/components/viewfinder/ViewfinderArtifactFeed.test.tsx
+          client/src/components/signal-architecture/SignalEvidenceDetails.test.tsx
+          client/src/pages/ContradictionScoring.test.tsx
+          client/src/pages/SignalRegistry.test.tsx
       - name: Verify formatting
         run: git diff --check

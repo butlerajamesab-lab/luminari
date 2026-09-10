@@ -36,6 +36,15 @@ type ArtifactRow = {
   source_hash: string;
   occurred_at: Date | string | null;
   created_at: Date | string | null;
+  engine_id?: string | null;
+  engine_version?: string | null;
+  rule_id?: string | null;
+  rule_version?: string | null;
+  detection_rule_id?: string | null;
+  detection_rule_version?: string | null;
+  input_hash?: string | null;
+  governance_status?: string | null;
+  source_freshness_at?: Date | string | null;
 };
 
 type ArtifactDestination = {
@@ -69,7 +78,7 @@ export function signal_artifact_destination(
       home_label: "Anomaly Viewfinder",
       home_path: "/viewfinder",
       environmental_effect:
-        "This Atlas-derived observation candidate identifies a measurable recurrence, concentration, spike, or unresolved-record condition. It is a lead for human review, not a finding of wrongdoing.",
+        "This Atlas detection records a recurrence, concentration, spike, or unresolved-record condition. Inspect its saved observations and comparison statistics to assess what it supports. Linking it to a case saves context; it does not perform verification.",
     };
   }
 
@@ -139,6 +148,15 @@ function toListItem(row: ArtifactRow) {
     source_hash: String(row.source_hash),
     occurred_at: wireDate(row.occurred_at),
     created_at: wireDate(row.created_at),
+    governance_status: row.governance_status ?? null,
+    source_freshness_at: wireDate(row.source_freshness_at ?? null),
+    method: {
+      engine_id: row.engine_id ?? null,
+      engine_version: row.engine_version ?? null,
+      rule_id: row.rule_id ?? row.detection_rule_id ?? null,
+      rule_version: row.rule_version ?? row.detection_rule_version ?? null,
+      input_hash: row.input_hash ?? null,
+    },
     ...destination,
     destination_path: `${destination.home_path}?${query.toString()}`,
   };
@@ -169,7 +187,10 @@ export async function list_signal_artifacts(input: {
                source_relation || ':' || source_record_key as source_reference,
                pattern_hash as source_hash,
                first_observed_at as occurred_at,
-               created_at
+               created_at,
+               engine_id, engine_version, rule_id, rule_version, input_hash,
+               null::text as governance_status,
+               null::timestamptz as source_freshness_at
           from public.legal_patterns
          where is_current
         union all
@@ -185,7 +206,9 @@ export async function list_signal_artifacts(input: {
                primary_stream_id || ':' || live_data_signal_id::text,
                signal_hash,
                detected_at as occurred_at,
-               created_at
+               created_at,
+               engine_id, engine_version, detection_rule_id, detection_rule_version, input_hash,
+               governance_status, source_freshness_at
           from public.live_data_signals
          where is_current
         union all
@@ -201,7 +224,9 @@ export async function list_signal_artifacts(input: {
                'signal_convergences:' || convergence_id::text,
                convergence_hash,
                created_at,
-               created_at
+               created_at,
+               engine_id, engine_version, rule_id, rule_version, input_hash,
+               status, null::timestamptz
           from public.signal_convergences
          where is_current
       ), filtered as (
@@ -214,18 +239,26 @@ export async function list_signal_artifacts(input: {
              or coalesce(jurisdiction_id, '') ilike '%' || $2 || '%'
              or coalesce(source_reference, '') ilike '%' || $2 || '%')
       )
-      select filtered.*, count(*) over() as total_count
-        from filtered
-       order by occurred_at desc nulls last, created_at desc, record_id
-       limit $3 offset $4
+      select page.*, totals.total_count
+        from (select count(*) as total_count from filtered) totals
+        left join lateral (
+          select * from filtered
+           order by occurred_at desc nulls last, created_at desc, domain_code, record_id
+           limit $3 offset $4
+        ) page on true
+       order by page.occurred_at desc nulls last, page.created_at desc,
+                page.domain_code, page.record_id
     `,
     [domain, queryText, input.limit, input.offset],
   );
 
   const total = rows.length > 0 ? Number(rows[0].total_count) : 0;
-  const items = rows.map((row) => toListItem(row));
+  // The count row survives an empty/out-of-range page, including when current
+  // records are superseded while someone is browsing a later page.
+  const items = rows.filter((row) => row.record_id != null).map((row) => toListItem(row));
   const nextOffset = input.offset + items.length;
   return {
+    checked_at: new Date().toISOString(),
     items,
     total,
     limit: input.limit,
@@ -241,6 +274,70 @@ function notFound(): never {
     message: "Canonical signal artifact not found",
   });
 }
+
+/** Resolve only references saved on the selected current artifact. Matching a
+ * content hash establishes record identity, not independent corroboration. */
+export async function read_signal_source_observations(value: unknown) {
+  const refs = wireJson(value, []);
+  const allRefs = Array.isArray(refs) ? refs : [];
+  const valid = allRefs.flatMap((ref) => {
+    if (!ref || typeof ref !== "object") return [];
+    const { stream_id, offset, event_identity_hash } = ref;
+    const offsetText = typeof offset === "string" ? offset : Number.isSafeInteger(offset) ? String(offset) : "";
+    if (typeof stream_id !== "string" || !stream_id || !/^\d{1,19}$/.test(offsetText)
+      || BigInt(offsetText) > 9223372036854775807n
+      || typeof event_identity_hash !== "string" || !/^[a-f0-9]{64}$/.test(event_identity_hash)) return [];
+    return [{ stream_id, event_offset: offsetText, event_identity_hash }];
+  });
+  const selected = valid.slice(0, 100);
+  const rows = selected.length ? (await getPool().query(`
+    with refs as (
+      select * from jsonb_to_recordset($1::jsonb)
+        as ref(stream_id text, event_offset bigint, event_identity_hash text)
+    ), resolved as (
+      select ref.*, event."offset" as found_offset,
+             event."timestamp", event.source_id, event.jurisdiction_id,
+             event.payload, event.spacetime,
+             public.lighthouse_atlas_event_identity_hash_v1(
+               event.stream_id, event."timestamp", event.signal_type,
+               event.spacetime, event.provenance, event.payload,
+               event.source_id, event.jurisdiction_id, event.module_hint
+             ) = ref.event_identity_hash as hash_matches
+        from refs ref
+        left join public.signal_events event
+          on event.stream_id = ref.stream_id and event."offset" = ref.event_offset
+    )
+    select stream_id, event_offset::text, event_identity_hash,
+           case when found_offset is null then 'missing'
+                when hash_matches is true then 'matched'
+                else 'hash_mismatch' end as resolution,
+           case when hash_matches then "timestamp" end as observed_at,
+           case when hash_matches then source_id end as source_id,
+           case when hash_matches then jurisdiction_id end as jurisdiction_id,
+           case when hash_matches then payload - 'provenance_tracking' end as payload,
+           case when hash_matches then spacetime end as spacetime
+      from resolved
+     order by stream_id, event_offset
+  `, [JSON.stringify(selected)])).rows : [];
+  return {
+    reference_count: allRefs.length,
+    invalid_reference_count: allRefs.length - valid.length,
+    truncated: selected.length < valid.length,
+    observations: rows.map((row) => ({
+      stream_id: String(row.stream_id),
+      event_offset: String(row.event_offset),
+      event_identity_hash: String(row.event_identity_hash),
+      resolution: String(row.resolution),
+      observed_at: wireDate(row.observed_at),
+      source_id: row.source_id as string | null,
+      jurisdiction_id: row.jurisdiction_id as string | null,
+      payload: wireJson(row.payload, null),
+      spacetime: wireJson(row.spacetime, null),
+    })),
+  };
+}
+
+export type SignalSourceObservations = Awaited<ReturnType<typeof read_signal_source_observations>>;
 
 export async function read_signal_artifact(
   domain: SignalArtifactDomain,
@@ -343,6 +440,7 @@ export async function read_signal_artifact(
     return {
       ...toListItem({ ...row, domain_code: domain }),
       entity_resolution_status: row.entity_resolution_status,
+      source_observations: await read_signal_source_observations(row.source_event_refs),
       evidence: {
         evidence_refs: wireJson(row.evidence_refs, []),
         source_event_refs: wireJson(row.source_event_refs, []),

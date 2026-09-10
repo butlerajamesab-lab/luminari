@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertTriangle, BarChart3, Shield, Target, Clock, Users, ChevronRight, ArrowLeft, Wrench } from "lucide-react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { safeArray, safeText } from "@/lib/data-guard";
 import { SignalArtifactContext } from "@/components/signal-architecture/SignalArtifactContext";
 
@@ -42,7 +42,11 @@ function ScoreBar({ label, score, max, icon }: { label: string; score: number; m
 }
 
 export default function ContradictionScoring() {
-  const [tab, setTab] = useState("library");
+  const search = useSearch();
+  const params = new URLSearchParams(search);
+  const hasArtifact = params.get("signal_domain") === "legal_pattern" && Boolean(params.get("signal_id"));
+  const [tab, setTab] = useState(hasArtifact ? "artifact" : "library");
+  useEffect(() => { setTab(hasArtifact ? "artifact" : "library"); }, [search, hasArtifact]);
   const [domain, setDomain] = useState("criminal_justice");
   const [hasDirectEvidence, setHasDirectEvidence] = useState(false);
   const [hasCorroboratingDocs, setHasCorroboratingDocs] = useState(false);
@@ -54,7 +58,7 @@ export default function ContradictionScoring() {
   const [linkedToWeakJoint, setLinkedToWeakJoint] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
-  const allScores = trpc.enforcementIntel.scoreAllContradictions.useQuery();
+  const allScores = trpc.enforcementIntel.scoreAllContradictions.useQuery(undefined, { enabled: tab === "library" });
   const scoreRows = safeArray<any>(allScores.data);
 
   const singleScore = trpc.enforcementIntel.scoreContradiction.useQuery({
@@ -68,12 +72,11 @@ export default function ContradictionScoring() {
     affectsMultipleParties,
     hasPatternEvidence,
     linkedToWeakJoint,
-  }, { enabled: selectedId !== null || tab === "adhoc" });
+  }, { enabled: tab === "adhoc" });
 
   const [, navigate] = useLocation();
   return (
     <div className="space-y-6">
-      <SignalArtifactContext />
       {/* Back nav */}
       <div className="flex items-center justify-between">
         <button onClick={() => navigate("/architecture")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -85,20 +88,23 @@ export default function ContradictionScoring() {
       </div>
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Contradiction Scoring Engine</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Contradiction evidence and scoring</h1>
         <p className="text-muted-foreground mt-1">
-          Weighted scoring model: Legal Severity (25) + Evidence Strength (25) + Timeline Support (20) + Cross-Doc Corroboration (20) + Systemic Risk (10)
+          Inspect the selected detection's source checks. Reference library scores and ad-hoc estimates are separate tools.
         </p>
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
-          <TabsTrigger value="library">Library Scores</TabsTrigger>
+          {hasArtifact ? <TabsTrigger value="artifact">Selected detection</TabsTrigger> : null}
+          <TabsTrigger value="library">Reference library scores</TabsTrigger>
           <TabsTrigger value="adhoc">Ad-Hoc Scoring</TabsTrigger>
         </TabsList>
+        {hasArtifact ? <TabsContent value="artifact"><SignalArtifactContext /></TabsContent> : null}
 
         {/* Library Scores Tab */}
         <TabsContent value="library" className="space-y-4">
+          <p className="text-sm text-muted-foreground">These scores use the separate contradiction reference library and baseline evidence assumptions. They do not score the selected Prism detection or establish its corroboration.</p>
           {allScores.isLoading && <p className="text-muted-foreground">Loading contradiction scores...</p>}
           {scoreRows.length > 0 ? (
             <>
