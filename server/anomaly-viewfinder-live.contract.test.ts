@@ -58,9 +58,10 @@ describe("Anomaly Viewfinder live jurisdiction cutover contract", () => {
     expect(parity).toContain("MIGRATION_LEDGER_PARITY_CONTRACT=PASS");
   });
 
-  it("separates historical interpretive cards from live jurisdiction facts", () => {
-    expect(page).toContain("Interpretive layer:");
-    expect(page).toContain("not the live jurisdiction fact feed");
+  it("replaces historical cards with the canonical feeds and preserves the source-text contract", () => {
+    expect(page).not.toContain('from "./viewfinder-data"');
+    expect(page).toContain("ViewfinderArtifactFeed");
+    expect(page).toContain('domain={mode === "anomalies" ? "live_data" : "legal_pattern"}');
     expect(page).toContain("Raw source text is authoritative");
   });
 });

@@ -36,6 +36,15 @@ type ArtifactRow = {
   source_hash: string;
   occurred_at: Date | string | null;
   created_at: Date | string | null;
+  engine_id?: string | null;
+  engine_version?: string | null;
+  rule_id?: string | null;
+  rule_version?: string | null;
+  detection_rule_id?: string | null;
+  detection_rule_version?: string | null;
+  input_hash?: string | null;
+  governance_status?: string | null;
+  source_freshness_at?: Date | string | null;
 };
 
 type ArtifactDestination = {
@@ -139,6 +148,15 @@ function toListItem(row: ArtifactRow) {
     source_hash: String(row.source_hash),
     occurred_at: wireDate(row.occurred_at),
     created_at: wireDate(row.created_at),
+    governance_status: row.governance_status ?? null,
+    source_freshness_at: wireDate(row.source_freshness_at ?? null),
+    method: {
+      engine_id: row.engine_id ?? null,
+      engine_version: row.engine_version ?? null,
+      rule_id: row.rule_id ?? row.detection_rule_id ?? null,
+      rule_version: row.rule_version ?? row.detection_rule_version ?? null,
+      input_hash: row.input_hash ?? null,
+    },
     ...destination,
     destination_path: `${destination.home_path}?${query.toString()}`,
   };
@@ -169,7 +187,10 @@ export async function list_signal_artifacts(input: {
                source_relation || ':' || source_record_key as source_reference,
                pattern_hash as source_hash,
                first_observed_at as occurred_at,
-               created_at
+               created_at,
+               engine_id, engine_version, rule_id, rule_version, input_hash,
+               null::text as governance_status,
+               null::timestamptz as source_freshness_at
           from public.legal_patterns
          where is_current
         union all
@@ -185,7 +206,9 @@ export async function list_signal_artifacts(input: {
                primary_stream_id || ':' || live_data_signal_id::text,
                signal_hash,
                detected_at as occurred_at,
-               created_at
+               created_at,
+               engine_id, engine_version, detection_rule_id, detection_rule_version, input_hash,
+               governance_status, source_freshness_at
           from public.live_data_signals
          where is_current
         union all
@@ -201,7 +224,9 @@ export async function list_signal_artifacts(input: {
                'signal_convergences:' || convergence_id::text,
                convergence_hash,
                created_at,
-               created_at
+               created_at,
+               engine_id, engine_version, rule_id, rule_version, input_hash,
+               status, null::timestamptz
           from public.signal_convergences
          where is_current
       ), filtered as (
@@ -214,18 +239,26 @@ export async function list_signal_artifacts(input: {
              or coalesce(jurisdiction_id, '') ilike '%' || $2 || '%'
              or coalesce(source_reference, '') ilike '%' || $2 || '%')
       )
-      select filtered.*, count(*) over() as total_count
-        from filtered
-       order by occurred_at desc nulls last, created_at desc, record_id
-       limit $3 offset $4
+      select page.*, totals.total_count
+        from (select count(*) as total_count from filtered) totals
+        left join lateral (
+          select * from filtered
+           order by occurred_at desc nulls last, created_at desc, domain_code, record_id
+           limit $3 offset $4
+        ) page on true
+       order by page.occurred_at desc nulls last, page.created_at desc,
+                page.domain_code, page.record_id
     `,
     [domain, queryText, input.limit, input.offset],
   );
 
   const total = rows.length > 0 ? Number(rows[0].total_count) : 0;
-  const items = rows.map((row) => toListItem(row));
+  // The count row survives an empty/out-of-range page, including when current
+  // records are superseded while someone is browsing a later page.
+  const items = rows.filter((row) => row.record_id != null).map((row) => toListItem(row));
   const nextOffset = input.offset + items.length;
   return {
+    checked_at: new Date().toISOString(),
     items,
     total,
     limit: input.limit,

@@ -1,15 +1,17 @@
-import { useMemo, useState } from "react";
-import { useLocation } from "wouter";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useSearch } from "wouter";
 import { ArrowLeft, Compass, Eye, MapPin } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { SignalArtifactContext } from "@/components/signal-architecture/SignalArtifactContext";
-import { ANOMALIES, PATTERNS } from "./viewfinder-data";
+import { useAuth } from "@/core/hooks/useAuth";
+import { getLoginUrl } from "@/const";
+import { ViewfinderArtifactFeed, VIEWFINDER_REFRESH_MS, formatViewfinderDate } from "@/components/viewfinder/ViewfinderArtifactFeed";
 
 /* ═══════════════════════════════════════════════════════════════════════
    LUMINARI — ANOMALY VIEWFINDER
    Live jurisdiction facts come from v_anomaly_viewfinder_live_v1.
-   Historical anomaly/pattern cards remain interpretive analysis until
-   promoted to their own derived, provenance-bound layer.
+   Anomalies and patterns use the existing canonical Signal Registry reads.
+   Their recorded rules, evidence, and access boundaries remain authoritative.
    ═══════════════════════════════════════════════════════════════════════ */
 
 const v = {
@@ -64,6 +66,7 @@ type LiveStateData = {
   flags: string[];
   alerts: string[];
   provenance: unknown;
+  updatedAt: string | null;
 };
 
 function finiteNumber(value: unknown): number | null {
@@ -151,6 +154,7 @@ function mapLiveRow(row: any): LiveStateData {
     flags,
     alerts,
     provenance: row.provenance ?? null,
+    updatedAt: row.updated_at ? String(row.updated_at) : null,
   };
 }
 
@@ -197,6 +201,7 @@ function LiveStateDetail({ state }: { state: LiveStateData }) {
             <div style={{ color: v.muted, fontSize: 10, letterSpacing: "0.16em", textTransform: "uppercase" }}>{state.jurisdictionCode} · FIPS {state.fips}</div>
             <h2 style={{ margin: "5px 0 5px", color: v.bone, fontFamily: "Georgia, serif", fontSize: 29 }}>{state.name}</h2>
             <div style={{ color: v.smoke, fontSize: 12 }}>Population: {state.pop}</div>
+            <div style={{ color: v.smoke, fontSize: 11, marginTop: 5 }}>Profile source updated: {formatViewfinderDate(state.updatedAt)}</div>
           </div>
           <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
             <StatusPill tone={state.profileState === "corpus_fallback" ? v.amber : v.green}>{state.profileState === "corpus_fallback" ? "Corpus fallback" : "Promoted profile"}</StatusPill>
@@ -251,24 +256,40 @@ function LiveStateDetail({ state }: { state: LiveStateData }) {
   );
 }
 
-function InterpretiveNotice() {
+function ArtifactAccessNotice({ loading, returnTo }: { loading: boolean; returnTo: string }) {
   return (
-    <div style={{ border: `1px solid ${v.borderLit}`, background: "rgba(232,168,32,0.055)", color: v.smoke, borderRadius: 10, padding: "12px 14px", fontSize: 12, lineHeight: 1.55, marginBottom: 18 }}>
-      <strong style={{ color: v.gold }}>Interpretive layer:</strong> these anomaly and pattern cards are retained historical/analytical content. They are not the live jurisdiction fact feed and should not be treated as current source verification until promoted to their own provenance-bound derived layer.
+    <div style={{ border: `1px solid ${v.borderLit}`, background: v.surface, color: v.smoke, borderRadius: 10, padding: 20, fontSize: 13, lineHeight: 1.65 }}>
+      {loading ? "Checking your session…" : <>
+        <p style={{ marginTop: 0 }}>Live anomaly candidates and legal patterns use the same protected records as Signal Registry. Sign in to browse all results and inspect their evidence. Jurisdiction Spotlight and Compare remain publicly available.</p>
+        <a href={getLoginUrl(returnTo)} style={{ color: v.gold }}>Sign in to view live detections →</a>
+      </>}
     </div>
   );
 }
 
 export default function AnomalyViewfinder() {
   const [, setLocation] = useLocation();
-  const [mode, setMode] = useState<Mode>("spotlight");
+  const urlSearch = useSearch();
+  const { user, loading: authLoading } = useAuth();
+  const [mode, setMode] = useState<Mode>(() => {
+    const domain = new URLSearchParams(urlSearch).get("signal_domain");
+    return domain === "live_data" ? "anomalies" : domain === "legal_pattern" ? "patterns" : "spotlight";
+  });
+  useEffect(() => {
+    const domain = new URLSearchParams(urlSearch).get("signal_domain");
+    if (domain === "live_data") setMode("anomalies");
+    if (domain === "legal_pattern") setMode("patterns");
+  }, [urlSearch]);
   const [search, setSearch] = useState("");
   const [selectedCode, setSelectedCode] = useState("WA");
   const [sortKey, setSortKey] = useState<SortKey>("name");
 
   const viewfinderQuery = trpc.resourceDirectory.viewfinderStates.useQuery(undefined, {
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    staleTime: 0,
+    refetchInterval: VIEWFINDER_REFRESH_MS,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    retry: 1,
   });
 
   const liveStates = useMemo(
@@ -297,6 +318,8 @@ export default function AnomalyViewfinder() {
   const selectedState = liveStates.find((state) => state.jurisdictionCode === selectedCode) ?? liveStates[0] ?? null;
   const knownPortability = liveStates.filter((state) => state.port !== null).length;
   const fallbackCount = liveStates.filter((state) => state.profileState === "corpus_fallback").length;
+  const returnParams = new URLSearchParams(urlSearch);
+  returnParams.set("signal_domain", mode === "patterns" ? "legal_pattern" : "live_data");
 
   const tabs: Array<{ id: Mode; label: string }> = [
     { id: "spotlight", label: "Spotlight" },
@@ -321,12 +344,12 @@ export default function AnomalyViewfinder() {
               </div>
               <h1 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(30px, 5vw, 54px)", lineHeight: 1, margin: 0, fontWeight: 400 }}>Anomaly Viewfinder</h1>
               <p style={{ color: v.smoke, margin: "11px 0 0", maxWidth: 760, lineHeight: 1.55, fontSize: 13 }}>
-                Live jurisdiction comparisons from promoted state-directory profiles and current corpus evidence. Raw source text is authoritative; unsupported fields remain Unknown.
+                Live jurisdiction comparisons, Atlas anomaly candidates, and Prism legal patterns. Each detection retains its recorded method and evidence. Raw source text is authoritative; unsupported fields remain Unknown.
               </p>
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <StatusPill tone={v.green}>{viewfinderQuery.isLoading ? "Loading jurisdictions" : `${liveStates.length} jurisdictions live`}</StatusPill>
-              <StatusPill tone={v.blue}>Service-bound · no browser SQL</StatusPill>
+              <StatusPill tone={v.green}>{viewfinderQuery.isLoading ? "Loading jurisdictions" : viewfinderQuery.error ? "Jurisdiction refresh unavailable" : `${liveStates.length} jurisdiction profiles`}</StatusPill>
+              <StatusPill tone={v.blue}>Auto-refresh · 30 seconds</StatusPill>
               <StatusPill tone={v.amber}>Unknown stays Unknown</StatusPill>
             </div>
           </div>
@@ -336,7 +359,7 @@ export default function AnomalyViewfinder() {
       <nav style={{ borderBottom: `1px solid ${v.border}`, position: "sticky", top: 0, zIndex: 20, background: "rgba(13,13,15,0.96)", backdropFilter: "blur(12px)" }}>
         <div style={{ maxWidth: 1420, margin: "0 auto", padding: "0 22px", display: "flex", gap: 4, overflowX: "auto" }}>
           {tabs.map((tab) => (
-            <button key={tab.id} onClick={() => setMode(tab.id)} style={{ whiteSpace: "nowrap", border: 0, borderBottom: mode === tab.id ? `2px solid ${v.gold}` : "2px solid transparent", background: "transparent", color: mode === tab.id ? v.bone : v.muted, padding: "13px 15px 11px", cursor: "pointer", fontSize: 12, fontWeight: 700, letterSpacing: "0.04em" }}>
+            <button key={tab.id} aria-pressed={mode === tab.id} onClick={() => setMode(tab.id)} style={{ whiteSpace: "nowrap", border: 0, borderBottom: mode === tab.id ? `2px solid ${v.gold}` : "2px solid transparent", background: "transparent", color: mode === tab.id ? v.bone : v.muted, padding: "13px 15px 11px", cursor: "pointer", fontSize: 12, fontWeight: 700, letterSpacing: "0.04em" }}>
               {tab.label}
             </button>
           ))}
@@ -344,10 +367,18 @@ export default function AnomalyViewfinder() {
       </nav>
 
       <main style={{ maxWidth: 1420, margin: "0 auto", padding: "24px 22px 70px" }}>
-        <SignalArtifactContext />
+        {user ? <SignalArtifactContext /> : null}
         {viewfinderQuery.error ? (
           <div style={{ border: `1px solid ${v.red}66`, background: "rgba(200,64,64,0.08)", color: v.bone, padding: 16, borderRadius: 10, marginBottom: 18 }}>
-            Live jurisdiction profiles unavailable. No static state-fact fallback was used. {viewfinderQuery.error.message}
+            Live jurisdiction profiles could not be refreshed. Any profiles shown are from the last successful check. No static state-fact fallback was used.
+          </div>
+        ) : null}
+
+        {mode === "spotlight" || mode === "compare" ? (
+          <div style={{ color: v.smoke, fontSize: 12, lineHeight: 1.6, marginBottom: 18 }} role="status">
+            Checks every 30 seconds while visible. Last successful check: {formatViewfinderDate(viewfinderQuery.dataUpdatedAt ? new Date(viewfinderQuery.dataUpdatedAt).toISOString() : null)}.
+            {viewfinderQuery.fetchStatus === "paused" ? " Connection paused; showing the last successful result." : ""}
+            <button disabled={viewfinderQuery.isFetching} onClick={() => { void viewfinderQuery.refetch(); }} style={{ marginLeft: 12, background: v.surface2, color: v.gold, border: `1px solid ${v.borderLit}`, borderRadius: 7, padding: "6px 10px", cursor: "pointer" }}>{viewfinderQuery.isFetching ? "Refreshing…" : "Refresh now"}</button>
           </div>
         ) : null}
 
@@ -447,46 +478,8 @@ export default function AnomalyViewfinder() {
           </section>
         ) : null}
 
-        {mode === "anomalies" ? (
-          <section>
-            <InterpretiveNotice />
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 14 }}>
-              {ANOMALIES.map((item, index) => {
-                const tone = item.severity === "critical" ? v.red : item.severity === "warning" ? v.amber : v.blue;
-                return (
-                  <article key={`${item.title}-${index}`} style={{ background: v.surface, border: `1px solid ${v.border}`, borderTop: `2px solid ${tone}`, borderRadius: 12, padding: 18 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", marginBottom: 10 }}>
-                      <span style={{ color: tone, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase" }}>{item.type}</span>
-                      <span style={{ color: v.muted, fontSize: 9, textTransform: "uppercase" }}>{item.severity}</span>
-                    </div>
-                    <h3 style={{ color: v.bone, fontFamily: "Georgia, serif", fontWeight: 400, fontSize: 20, lineHeight: 1.25, margin: "0 0 11px" }}>{item.title}</h3>
-                    <div style={{ color: v.smoke, fontSize: 12, lineHeight: 1.65 }} dangerouslySetInnerHTML={{ __html: item.body }} />
-                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 13 }}>
-                      {item.tags.map((tag, tagIndex) => <StatusPill key={`${tag.label}-${tagIndex}`} tone={tone}>{tag.bold ? `${tag.bold} · ` : ""}{tag.label}</StatusPill>)}
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          </section>
-        ) : null}
-
-        {mode === "patterns" ? (
-          <section>
-            <InterpretiveNotice />
-            <div style={{ display: "grid", gap: 12 }}>
-              {PATTERNS.map((item) => (
-                <article key={item.num} style={{ display: "grid", gridTemplateColumns: "54px minmax(0,1fr)", gap: 15, background: v.surface, border: `1px solid ${v.border}`, borderRadius: 12, padding: 18 }}>
-                  <div style={{ color: v.gold, fontFamily: "Georgia, serif", fontSize: 26 }}>{item.num}</div>
-                  <div>
-                    <div style={{ color: v.muted, fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 5 }}>{item.category}</div>
-                    <h3 style={{ color: v.bone, fontFamily: "Georgia, serif", fontSize: 19, fontWeight: 400, margin: "0 0 8px" }}>{item.headline}</h3>
-                    <div style={{ color: v.smoke, fontSize: 12, lineHeight: 1.65 }} dangerouslySetInnerHTML={{ __html: item.body }} />
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
+        {mode === "anomalies" || mode === "patterns" ? (
+          user ? <ViewfinderArtifactFeed key={`${user.id}:${mode}`} domain={mode === "anomalies" ? "live_data" : "legal_pattern"} /> : <ArtifactAccessNotice loading={authLoading} returnTo={`/viewfinder?${returnParams.toString()}`} />
         ) : null}
 
         {mode === "about" ? (
@@ -497,8 +490,10 @@ export default function AnomalyViewfinder() {
                 ["1 · Current jurisdiction facts", "The comparison and spotlight views read from a service-role-backed live projection. The browser does not query Supabase directly."],
                 ["2 · Raw source text is authoritative", "Minimum wage, UI, TANF, filing windows, portability, tribal context, and other visible values are shown from preserved source text. Parsed numeric fields only support sorting and visual emphasis."],
                 ["3 · Unknown is a first-class result", "If the promoted profile or current corpus does not support a field, Viewfinder shows Unknown. It does not reuse the old static table, infer a value from neighboring states, or silently fill the gap."],
-                ["4 · Colorado is explicit", "Colorado currently lacks a promoted jurisdiction_snapshot row, so its profile is assembled from current provenance-bound corpus objects and promoted registry metrics. The UI labels that path as a corpus fallback."],
-                ["5 · Anomalies and patterns remain interpretive", "The historical anomaly and hidden-pattern cards are retained as analysis. They are visually separated from the live jurisdiction fact plane until they are rebuilt as derived, provenance-bound outputs."],
+                ["4 · Corpus fallbacks stay visible", "A jurisdiction without a promoted profile can use current corpus evidence where supported. That path is labeled Corpus fallback, including Colorado. A refresh checks the latest stored projection; it does not certify that every underlying source has changed or been reverified."],
+                ["5 · Anomalies use the canonical Atlas detections", "The Anomalies tab reads the same current live-data records as Signal Registry: measured recurrence, concentration, spikes, and unresolved-record conditions. Each record shows its actual rule and engine version, verification state, review state, detection time, and source freshness. A candidate is a lead for review, not a confirmed finding."],
+                ["6 · Patterns use the canonical Prism records", "The Patterns tab reads the same current legal-pattern records as Signal Registry. Inspect evidence to see source references, recorded statistics, and input and record hashes. The old ten narrative cards are no longer the data source. The separate Cross-Case Patterns workspace uses deterministic signature matching and evidence occurrences from your cases; these are distinct methods, not interchangeable counts."],
+                ["7 · Live updates and complete browsing", "Both feeds check for current records every 30 seconds while visible, on return to the page, and on reconnection. Search covers the complete feed. Pages contain up to 50 records with total counts and Next/Previous controls; there is no ten-result ceiling. Detection time belongs to the source record and never changes just because the page refreshed. Failed refreshes are labeled, and evidence access follows the existing sign-in boundary."],
               ].map(([title, body]) => (
                 <div key={title} style={{ background: v.surface, border: `1px solid ${v.border}`, borderRadius: 12, padding: 18 }}>
                   <h3 style={{ color: v.gold, fontSize: 13, margin: "0 0 8px" }}>{title}</h3>

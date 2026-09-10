@@ -20,6 +20,8 @@ on:
       - "client/src/components/signal-architecture/SignalArtifactContext.tsx"
       - "client/src/pages/ControlRoom.tsx"
       - "client/src/pages/AnomalyViewfinder.tsx"
+      - "client/src/components/viewfinder/**"
+      - "server/anomaly-viewfinder-live.contract.test.ts"
       - "client/src/pages/StructuralDiagnosticsLens.tsx"
       - "client/src/pages/ContradictionScoring.tsx"
       - "client/src/features/integrity-review/IntegrityReview.tsx"
@@ -45,6 +47,8 @@ on:
       - "client/src/components/signal-architecture/SignalArtifactContext.tsx"
       - "client/src/pages/ControlRoom.tsx"
       - "client/src/pages/AnomalyViewfinder.tsx"
+      - "client/src/components/viewfinder/**"
+      - "server/anomaly-viewfinder-live.contract.test.ts"
       - "client/src/pages/StructuralDiagnosticsLens.tsx"
       - "client/src/pages/ContradictionScoring.tsx"
       - "client/src/features/integrity-review/IntegrityReview.tsx"
@@ -72,5 +76,7 @@ jobs:
           server/signal-architecture-runtime-observability-current.test.ts
           server/signal-artifact-runtime.test.ts
           server/signal-artifact-navigation.contract.test.ts
+          server/anomaly-viewfinder-live.contract.test.ts
+          client/src/components/viewfinder/ViewfinderArtifactFeed.test.tsx
       - name: Verify formatting
         run: git diff --check

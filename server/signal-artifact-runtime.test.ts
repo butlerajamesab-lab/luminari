@@ -54,6 +54,13 @@ describe("Signal Architecture artifact runtime", () => {
         source_hash: "a".repeat(64),
         occurred_at: "2026-08-22T00:00:00.000Z",
         created_at: "2026-08-22T00:00:00.000Z",
+        engine_id: "atlas",
+        engine_version: "2.0.0",
+        rule_id: "atlas.domain3.geographic_cluster",
+        rule_version: "1.0.0",
+        input_hash: "d".repeat(64),
+        governance_status: "observation_candidate",
+        source_freshness_at: "2026-08-20T00:00:00.000Z",
         total_count: "101",
       }],
     });
@@ -64,12 +71,48 @@ describe("Signal Architecture artifact runtime", () => {
     expect(result.items[0]).toMatchObject({
       home_label: "Anomaly Viewfinder",
       destination_path: "/viewfinder?signal_domain=live_data&signal_id=00000000-0000-4000-8000-000000000001",
+      status: "supported_one_source",
+      governance_status: "observation_candidate",
+      occurred_at: "2026-08-22T00:00:00.000Z",
+      source_freshness_at: "2026-08-20T00:00:00.000Z",
+      method: {
+        engine_id: "atlas",
+        engine_version: "2.0.0",
+        rule_id: "atlas.domain3.geographic_cluster",
+        rule_version: "1.0.0",
+        input_hash: "d".repeat(64),
+      },
     });
     const sql = String(query.mock.calls[0][0]);
     expect(sql).toContain("public.legal_patterns");
     expect(sql).toContain("public.live_data_signals");
     expect(sql).toContain("public.signal_convergences");
     expect(sql).not.toContain("public.intake_signals");
+  });
+
+  it("retains the real total when a page empties after supersession", async () => {
+    query.mockResolvedValueOnce({ rows: [{ record_id: null, total_count: "49" }] });
+    const result = await list_signal_artifacts({ domain: "live_data", limit: 50, offset: 50 });
+    expect(result).toMatchObject({ items: [], total: 49, has_more: false, next_offset: null });
+    expect(query.mock.calls[0][1]).toEqual(["live_data", "", 50, 50]);
+  });
+
+  it("keeps unavailable method data unknown and binds search as a value", async () => {
+    query.mockResolvedValueOnce({ rows: [{
+      domain_code: "legal_pattern", record_id: "00000000-0000-4000-8000-000000000002",
+      artifact_type: "workflow_gap", title: "Source comparison", description: "Gap candidate",
+      jurisdiction_id: null, status: "unresolved", severity: null, confidence_score: null,
+      source_reference: null, source_hash: "b".repeat(64), occurred_at: null, created_at: null,
+      total_count: "1",
+    }] });
+    const result = await list_signal_artifacts({ domain: "legal_pattern", limit: 50, offset: 0, query: "  O'Brien  " });
+    expect(result.items[0]).toMatchObject({
+      occurred_at: null, source_freshness_at: null, governance_status: null,
+      method: { engine_id: null, engine_version: null, rule_id: null, rule_version: null, input_hash: null },
+    });
+    expect(query.mock.calls[0][1]).toEqual(["legal_pattern", "O'Brien", 50, 0]);
+    expect(query.mock.calls[0][0]).not.toContain("O'Brien");
+    expect(new Date(result.checked_at).getTime()).not.toBeNaN();
   });
 
   it("returns the full legal evidence and provenance rather than the thin recent view", async () => {
