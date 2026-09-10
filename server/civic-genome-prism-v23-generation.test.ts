@@ -16,7 +16,7 @@ const contract = readFileSync(
   "utf8",
 );
 const wrapper = readFileSync(
-  join(process.cwd(), "server", "services", "prism-rosetta-contract-v2.ts"),
+  join(process.cwd(), "server", "services", "prism-rosetta-contract-v23.ts"),
   "utf8",
 );
 const context = readFileSync(
@@ -25,14 +25,12 @@ const context = readFileSync(
 );
 
 describe("Prism Rosetta 2.3 Civic Genome generation", () => {
-  it("pins one disposition-aware 2.3 contract across active Lighthouse boundaries", () => {
-    for (const source of [contract, wrapper]) {
-      expect(source).toContain('PRISM_ROSETTA_ENGINE_VERSION = "2.3.0"');
-      expect(source).toContain('PRISM_ROSETTA_RULE_SET_VERSION = "2.3.0"');
-      expect(source).toContain(
-        "5be83f4d0d341685b244cc0d47126293f28072eabf02fc1b4e5b2d0bd41fd157",
-      );
-    }
+  it("preserves the disposition-aware 2.3 contract for explicit historical replay", () => {
+    expect(wrapper).toContain('PRISM_ROSETTA_ENGINE_VERSION = "2.3.0"');
+    expect(wrapper).toContain('PRISM_ROSETTA_RULE_SET_VERSION = "2.3.0"');
+    expect(wrapper).toContain(
+      "5be83f4d0d341685b244cc0d47126293f28072eabf02fc1b4e5b2d0bd41fd157",
+    );
   });
 
   it("binds Prism requests to the exact Docket document disposition", () => {
@@ -44,7 +42,7 @@ describe("Prism Rosetta 2.3 Civic Genome generation", () => {
     expect(context).toContain("prism_rosetta_document_context_not_unique");
   });
 
-  it("queues current and future assemblies under 2.3 without rewriting history", () => {
+  it("preserves the original 2.3 assembly enqueue migration without rewriting history", () => {
     expect(migration).toContain(
       "create or replace function public.enqueue_civic_genome_prism_verification",
     );

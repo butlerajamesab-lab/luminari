@@ -11,10 +11,6 @@ const migration = readFileSync(
   ),
   "utf8",
 );
-const contract = readFileSync(
-  join(process.cwd(), "server", "services", "prism-verification-contract.ts"),
-  "utf8",
-);
 const legacyWrapper = readFileSync(
   join(process.cwd(), "server", "services", "prism-rosetta-contract-v22.ts"),
   "utf8",
@@ -31,11 +27,10 @@ describe("Prism Rosetta 2.2 Civic Genome generation", () => {
     expect(legacyWrapper).toContain(
       "16cbe6d89170a5e21efab3cdbac25c7ef01cea7a482f2e9b701967adf6cf1b00",
     );
-    expect(contract).toContain('PRISM_ROSETTA_ENGINE_VERSION = "2.3.0"');
     expect(queue).toContain('from "./prism-rosetta-contract-v2"');
   });
 
-  it("queues current and future complete assemblies under 2.2", () => {
+  it("preserves the original 2.2 assembly enqueue migration", () => {
     expect(migration).toContain(
       "create or replace function public.enqueue_civic_genome_prism_verification",
     );

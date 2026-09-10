@@ -1,17 +1,18 @@
 import { z } from "zod";
 import {
   canonical_json,
-  deep_rosetta_binding_request_schema as v2_deep_rosetta_binding_request_schema,
-  rosetta_binding_request_schema as v2_rosetta_binding_request_schema,
+  deep_rosetta_binding_request_schema as base_deep_rosetta_binding_request_schema,
+  rosetta_binding_request_schema as base_rosetta_binding_request_schema,
   sha256_hex,
   sign_prism_request,
 } from "./prism-verification-contract";
 
-export const PRISM_ROSETTA_ENGINE_VERSION = "2.4.0";
+/** Explicit historical replay boundary; active requests use prism-rosetta-contract-v2. */
+export const PRISM_ROSETTA_ENGINE_VERSION = "2.3.0";
 export const PRISM_ROSETTA_RULE_SET_ID = "prism-rosetta-structural-binding";
-export const PRISM_ROSETTA_RULE_SET_VERSION = "2.4.0";
+export const PRISM_ROSETTA_RULE_SET_VERSION = "2.3.0";
 export const PRISM_ROSETTA_RULE_SET_HASH =
-  "78cf62b9cd452d8de62397c775fa71a2507777ebf81b1ea53915782d573768a6";
+  "5be83f4d0d341685b244cc0d47126293f28072eabf02fc1b4e5b2d0bd41fd157";
 
 const hash_schema = z.string().regex(/^[a-f0-9]{64}$/i);
 const verification_status_schema = z.enum([
@@ -26,20 +27,15 @@ const verification_status_schema = z.enum([
   "verified",
 ]);
 
-export const rosetta_binding_request_schema = v2_rosetta_binding_request_schema
+export const rosetta_binding_request_schema = base_rosetta_binding_request_schema
   .omit({ rule_set_version: true })
-  .extend({
-    rule_set_version: z.literal(PRISM_ROSETTA_RULE_SET_VERSION),
-  })
+  .extend({ rule_set_version: z.literal(PRISM_ROSETTA_RULE_SET_VERSION) })
   .strict();
 
-export const deep_rosetta_binding_request_schema =
-  v2_deep_rosetta_binding_request_schema
-    .omit({ rule_set_version: true })
-    .extend({
-      rule_set_version: z.literal(PRISM_ROSETTA_RULE_SET_VERSION),
-    })
-    .strict();
+export const deep_rosetta_binding_request_schema = base_deep_rosetta_binding_request_schema
+  .omit({ rule_set_version: true })
+  .extend({ rule_set_version: z.literal(PRISM_ROSETTA_RULE_SET_VERSION) })
+  .strict();
 
 export const prism_receipt_schema = z.object({
   verification_receipt_id: z.string().uuid(),
@@ -69,10 +65,7 @@ export type PrismReceipt = z.infer<typeof prism_receipt_schema>;
 
 export function rosetta_semantic_request_payload(
   request: DeepRosettaBindingRequest,
-): Omit<
-  DeepRosettaBindingRequest,
-  "originating_lighthouse_commit" | "originating_lighthouse_runtime_version"
-> {
+): Omit<DeepRosettaBindingRequest, "originating_lighthouse_commit" | "originating_lighthouse_runtime_version"> {
   const {
     originating_lighthouse_commit: _commit,
     originating_lighthouse_runtime_version: _runtime,
