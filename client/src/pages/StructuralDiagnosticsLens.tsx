@@ -46,6 +46,7 @@ const SEVERITY_COLORS: Record<string, string> = {
   high: "bg-orange-500/20 text-orange-400 border-orange-500/30",
   medium: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
   low: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+  unclassified: "bg-gray-500/20 text-gray-400 border-gray-500/30",
 };
 
 const SIGNAL_TYPE_ICONS: Record<string, typeof Activity> = {
@@ -56,14 +57,23 @@ const SIGNAL_TYPE_ICONS: Record<string, typeof Activity> = {
   trend_anomaly: TrendingUp,
 };
 
-function formatTimeAgo(ts: number): string {
-  const diff = Date.now() - ts;
+export function formatTimeAgo(ts: number | string | Date | null): string {
+  if (ts == null) return "Date not recorded";
+  const time = typeof ts === "number" ? ts : new Date(ts).getTime();
+  if (!Number.isFinite(time)) return "Date unresolved";
+  const diff = Date.now() - time;
   const mins = Math.floor(diff / 60_000);
   if (mins < 60) return `${mins}m ago`;
   const hours = Math.floor(mins / 60);
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
   return `${days}d ago`;
+}
+
+export function formatRecordedConfidence(value: string | null): string {
+  if (value == null || value.trim() === "") return "Not recorded";
+  const confidence = Number(value);
+  return Number.isFinite(confidence) ? `${(confidence * 100).toFixed(0)}%` : "Not recorded";
 }
 
 // ─── Interpretation Context Panel ───
@@ -239,7 +249,7 @@ export default function StructuralDiagnosticsLens() {
     const filtered = barrierClusters.data.clusters
       .map(cluster => {
         const filteredBarriers = cluster.barriers.filter(b => {
-          const text = [b.barrierType, b.name, b.description, b.domains ? JSON.stringify(b.domains) : ""].join(" ");
+          const text = [b.barrier_type, b.name, b.description, b.domains ? JSON.stringify(b.domains) : ""].join(" ");
           return matchesFilter(text);
         });
         return filteredBarriers.length > 0 ? { ...cluster, count: filteredBarriers.length, barriers: filteredBarriers } : null;
@@ -279,7 +289,7 @@ export default function StructuralDiagnosticsLens() {
     const filtered = signalPatterns.data.patterns
       .map(pattern => {
         const filteredSignals = pattern.signals.filter((s: any) => {
-          const text = [s.signalType, s.signalId, s.explanation].join(" ");
+          const text = [s.signal_type, s.domain, s.explanation].join(" ");
           return matchesFilter(text);
         });
         return filteredSignals.length > 0 ? { ...pattern, count: filteredSignals.length, signals: filteredSignals } : null;
@@ -565,13 +575,13 @@ export default function StructuralDiagnosticsLens() {
                               <div className="flex items-start justify-between mb-1">
                                 <span className="font-medium text-sm">{b.name}</span>
                                 <Badge variant="outline" className="text-xs">
-                                  {b.barrierId}
+                                  {b.barrier_id}
                                 </Badge>
                               </div>
                               <p className="text-xs text-muted-foreground">{b.description}</p>
-                              {b.whatItBlocks && (
+                              {b.what_it_blocks && (
                                 <p className="text-xs text-orange-400 mt-1">
-                                  Blocks: {typeof b.whatItBlocks === "string" ? b.whatItBlocks : JSON.stringify(b.whatItBlocks)}
+                                  Blocks: {typeof b.what_it_blocks === "string" ? b.what_it_blocks : JSON.stringify(b.what_it_blocks)}
                                 </p>
                               )}
                             </div>
@@ -734,7 +744,7 @@ export default function StructuralDiagnosticsLens() {
                       <div className="space-y-2">
                         {pattern.signals.slice(0, 3).map((s: any) => (
                           <div key={s.id} className="text-xs text-muted-foreground p-2 rounded bg-background/50">
-                            <span className="font-medium text-foreground">{s.signalId}</span>
+                            <span className="font-medium text-foreground">{s.domain}</span>
                             {" — "}
                             {s.explanation}
                           </div>
@@ -826,7 +836,7 @@ export default function StructuralDiagnosticsLens() {
                       <CardContent className="py-3 px-4">
                         <div className="flex items-center gap-2 mb-1">
                           <Satellite className="w-4 h-4 text-emerald-400" />
-                          <span className="text-xs text-muted-foreground">Active Signals</span>
+                          <span className="text-xs text-muted-foreground">Recorded Signals</span>
                         </div>
                         <div className="text-2xl font-bold text-emerald-400">{liveSignalSummary.data.totalActive}</div>
                       </CardContent>
@@ -856,9 +866,8 @@ export default function StructuralDiagnosticsLens() {
                         Live Data Intelligence
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        These signals are automatically detected from government datasets ingested through the Luminari pipeline.
-                        The system analyzes records for frequency spikes, geographic clustering, repeat entities, status delays,
-                        and year-over-year trend anomalies. Each signal includes a plain-language explanation and supporting statistics.
+                        Stored signals are grouped by their recorded type. Expand a group to inspect its available
+                        explanation, source label, and supporting data. Missing metadata is shown explicitly.
                       </p>
                     </div>
                   </div>
@@ -985,7 +994,7 @@ export default function StructuralDiagnosticsLens() {
                                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
                                       <span>{signal.jurisdiction}</span>
                                       <span className="text-border">|</span>
-                                      <span>{signal.domain.replace(/_/g, " ")}</span>
+                                      <span>{signal.domain ? signal.domain.replace(/_/g, " ") : "Domain not recorded"}</span>
                                       <span className="text-border">|</span>
                                       <span>{signal.datasetName}</span>
                                       <span className="text-border">|</span>
@@ -995,7 +1004,7 @@ export default function StructuralDiagnosticsLens() {
                                   <div className="text-right shrink-0">
                                     <div className="text-xs text-muted-foreground">Confidence</div>
                                     <div className="text-sm font-medium text-emerald-400">
-                                      {(parseFloat(signal.confidenceScore) * 100).toFixed(0)}%
+                                      {formatRecordedConfidence(signal.confidenceScore)}
                                     </div>
                                   </div>
                                 </div>
@@ -1031,7 +1040,7 @@ export default function StructuralDiagnosticsLens() {
                                     <div className="p-2 rounded bg-card/80 border border-border/20">
                                       <div className="text-[10px] text-muted-foreground">Jurisdictions</div>
                                       <div className="text-sm font-medium">
-                                        {signal.supportingStatistics.jurisdictionsAffected?.length ?? 0}
+                                        {signal.supportingStatistics.jurisdictionsAffected?.length ?? "—"}
                                       </div>
                                     </div>
                                   </div>

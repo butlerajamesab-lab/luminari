@@ -2,6 +2,7 @@ import { z } from "zod";
 import { router, protectedProcedure, publicProcedure } from "../_core/trpc";
 import { db, getPool } from "../db";
 import { read_signal_architecture } from "../signal-architecture-read-model";
+import { read_intake_pattern_catalog } from "../intake-pattern-catalog";
 import {
   SIGNAL_ARTIFACT_DOMAINS,
   SIGNAL_CASE_RELATIONSHIPS,
@@ -148,6 +149,8 @@ function mapLegalWeakJoint(row: Record<string, any>): BarrierDto {
 }
 
 export const enforcementIntelligenceRouter = router({
+  get_intake_pattern_catalog: protectedProcedure.query(() => read_intake_pattern_catalog()),
+
   get_signal_architecture: protectedProcedure
     .input(z.object({ limit: z.number().int().min(1).max(100).default(24) }).optional())
     .query(({ input }) => read_signal_architecture(input?.limit ?? 24)),

@@ -10,6 +10,8 @@ on:
       - "supabase/migrations/20260823015442_signal_artifact_case_links_v1.sql"
       - "server/routers/enforcement-intel.ts"
       - "server/routers/enforcement-intelligence.ts"
+      - "server/routers/dual-lens.ts"
+      - "server/diagnostics-router-wiring.test.ts"
       - "server/intake-pattern-catalog.ts"
       - "server/intake-pattern-catalog.test.ts"
       - "server/signal-artifact-runtime.ts"
@@ -44,6 +46,8 @@ on:
       - "supabase/migrations/20260823015442_signal_artifact_case_links_v1.sql"
       - "server/routers/enforcement-intel.ts"
       - "server/routers/enforcement-intelligence.ts"
+      - "server/routers/dual-lens.ts"
+      - "server/diagnostics-router-wiring.test.ts"
       - "server/intake-pattern-catalog.ts"
       - "server/intake-pattern-catalog.test.ts"
       - "server/signal-artifact-runtime.ts"
@@ -97,6 +101,7 @@ jobs:
           client/src/pages/SignalRegistry.test.tsx
           client/src/pages/StructuralDiagnosticsLens.test.tsx
           server/intake-pattern-catalog.test.ts
+          server/diagnostics-router-wiring.test.ts
       - name: Verify formatting
         run: git diff --check
       - name: Check diagnostics against its actual API contract
