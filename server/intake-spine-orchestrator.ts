@@ -35,6 +35,7 @@ import {
   processLayer6,
   RULE_MANIFEST_HASH as L6_RULE_HASH,
 } from './engines/intake-spine/layer-6-entity_registry';
+import { load_verified_message_author_bindings } from './intake-message-participant-assertions';
 import {
   processLayer7,
   RULE_MANIFEST_HASH as L7_RULE_HASH,
@@ -533,7 +534,13 @@ export async function execute_intake_spine_session(
   const parser_refs = source_receipts.map(dependency_ref);
 
   const l4 = processLayer4({ artifacts: parsed_artifacts });
-  const l6 = processLayer6({ artifacts: parsed_artifacts });
+  if (!session.case_uuid) throw new Error('intake_spine_orchestrator_case_identity_required');
+  const message_author_bindings = await load_verified_message_author_bindings(
+    session.intake_session_id,
+    session.case_uuid,
+    pool,
+  );
+  const l6 = processLayer6({ artifacts: parsed_artifacts, message_author_bindings });
   const l7 = processLayer7({ entities: l6.data, artifacts: parsed_artifacts });
   const l9 = processLayer9({ entities: l6.data, artifacts: parsed_artifacts });
 
@@ -562,8 +569,15 @@ export async function execute_intake_spine_session(
     session_id: session.intake_session_id,
     result: l6,
     rule_manifest_hash: L6_RULE_HASH,
-    canonical_input: { parsed_artifacts: parser_input_manifest },
-    input_refs: parser_refs,
+    canonical_input: { parsed_artifacts: parser_input_manifest, message_author_bindings },
+    input_refs: [
+      ...parser_refs,
+      ...message_author_bindings.map(binding => ({
+        type: 'verified_message_author_binding',
+        artifact_key: binding.artifact_key,
+        provenance_ref: binding.provenance_ref,
+      })),
+    ],
     receipts,
     dependencies,
     dependency_key: 'entity_registry',

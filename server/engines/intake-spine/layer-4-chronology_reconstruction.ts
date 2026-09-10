@@ -27,14 +27,15 @@ export interface ChronologyEvent {
   source_artifact_key: string;
   source_span_offset: number;
   verification_status: FactStatus;
+  event_scope?: 'case_specific' | 'facility_wide';
 }
 
 export interface Layer4Input {
   artifacts: ParsedArtifact[];
 }
 
-export const LAYER_VERSION = '2.6.0';
-export const RULE_VERSION = '2.6.0';
+export const LAYER_VERSION = '2.7.0';
+export const RULE_VERSION = '2.7.0';
 
 type DateRule = {
   regex: { source: string; flags: string };
@@ -51,6 +52,10 @@ export const RULE_MANIFEST: {
   max_events_per_semantic_sentence: 1;
   semantic_substrate_version: string;
   sms_event_date_policy: 'message_timestamp_for_explicit_care_event_sentence';
+  mixed_corpus_scope_policy: 'retain_with_case_specific_or_facility_wide_scope';
+  fragment_policy: 'reject_only_date_and_temporal_label_fragments';
+  fragment_time_regex: { source: string; flags: string };
+  fragment_remainder_regex: { source: string; flags: string };
 } = {
   date_rules: [
     {
@@ -102,6 +107,13 @@ export const RULE_MANIFEST: {
   max_events_per_semantic_sentence: 1,
   semantic_substrate_version: SEMANTIC_SUBSTRATE_VERSION,
   sms_event_date_policy: 'message_timestamp_for_explicit_care_event_sentence',
+  mixed_corpus_scope_policy: 'retain_with_case_specific_or_facility_wide_scope',
+  fragment_policy: 'reject_only_date_and_temporal_label_fragments',
+  fragment_time_regex: { source: '\\b\\d{1,2}:\\d{2}(?::\\d{2})?(?:\\s*[AP]M)?\\b', flags: 'gi' },
+  fragment_remainder_regex: {
+    source: '^(?:(?:on|at|in|as of|dated|date|time|incident date|event date|admission date|discharge date|survey date)\\s*)*$',
+    flags: 'i',
+  },
 };
 
 export const RULE_MANIFEST_HASH = computeRuleManifestHash(RULE_MANIFEST);
@@ -148,6 +160,7 @@ export function processLayer4(input: Layer4Input): EngineResult<ChronologyEvent[
     }
 
     const artifactClass = classifySemanticArtifact(artifact);
+    const eventScope = artifactClass === 'cms_2567' ? 'facility_wide' : 'case_specific';
     const surveyDate = artifactClass === 'cms_2567' ? cmsSurveyDate(artifact) : null;
 
     for (const span of semanticSpansForArtifact(artifact, artifacts, 'chronology')) {
@@ -179,6 +192,7 @@ export function processLayer4(input: Layer4Input): EngineResult<ChronologyEvent[
           source_artifact_key: artifact.artifact_key,
           source_span_offset,
           verification_status: 'document_stated',
+          event_scope: eventScope,
         });
         continue;
       }
@@ -217,6 +231,14 @@ export function processLayer4(input: Layer4Input): EngineResult<ChronologyEvent[
       const bounds = semanticSentenceBounds(span.text, primary.matchIndex);
       const event_text = span.text.substring(bounds.start, bounds.end).trim();
       if (isDeclaredNonEventSentence(event_text)) continue;
+      if (isDateOnlyFragment(event_text)) {
+        unresolved.push({
+          field: `chronology_fragment:${artifact.artifact_key}:${span.start_offset + bounds.start}`,
+          reason: 'incomplete',
+          detail: 'Date-bearing fragment contains only a date, time, or temporal label and was not promoted',
+        });
+        continue;
+      }
       const actor = extractEventActor(event_text, artifactClass === 'cms_2567');
       const source_span_offset = span.start_offset + primary.matchIndex;
       const eventIdentity = computeHash({
@@ -240,6 +262,7 @@ export function processLayer4(input: Layer4Input): EngineResult<ChronologyEvent[
         source_artifact_key: artifact.artifact_key,
         source_span_offset,
         verification_status: 'document_stated',
+        event_scope: eventScope,
       });
     }
   }
@@ -263,6 +286,22 @@ export function processLayer4(input: Layer4Input): EngineResult<ChronologyEvent[
     unresolved_dependencies: unresolved.sort((a, b) => a.field.localeCompare(b.field)),
     is_sealed: false,
   };
+}
+
+function isDateOnlyFragment(text: string): boolean {
+  // Reject known temporal shells, not unrecognized verbs. A finite predicate
+  // vocabulary cannot establish whether an arbitrary source sentence is an event.
+  let remainder = text;
+  for (const rule of DATE_RULES) {
+    rule.regex.lastIndex = 0;
+    remainder = remainder.replace(rule.regex, ' ');
+  }
+  remainder = remainder
+    .replace(regexFromManifest(RULE_MANIFEST.fragment_time_regex), ' ')
+    .replace(/[.,:;!?()[\]{}—–-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return regexFromManifest(RULE_MANIFEST.fragment_remainder_regex).test(remainder);
 }
 
 function extractEventActor(text: string, isCms2567: boolean): string | null {

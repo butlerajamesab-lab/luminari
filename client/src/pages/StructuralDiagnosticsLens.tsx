@@ -189,6 +189,17 @@ export default function StructuralDiagnosticsLens() {
   const [showReferenceContext, setShowReferenceContext] = useState(false);
   const [expandedCluster, setExpandedCluster] = useState<string | null>(null);
   const [expandedLiveGroup, setExpandedLiveGroup] = useState<string | null>(null);
+  const [doctrineOffset, setDoctrineOffset] = useState(0);
+  const [doctrineSearch, setDoctrineSearch] = useState("");
+  const [doctrineSearchQuery, setDoctrineSearchQuery] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDoctrineSearchQuery(doctrineSearch.trim().toLowerCase()), 250);
+    return () => clearTimeout(timer);
+  }, [doctrineSearch]);
+  useEffect(() => {
+    setDoctrineOffset(0);
+  }, [filterClaimType, filterJurisdiction, filterDomain, doctrineSearchQuery]);
 
   // Sync URL params on mount (in case of navigation)
   useEffect(() => {
@@ -218,13 +229,21 @@ export default function StructuralDiagnosticsLens() {
     setFilterClaimType("");
     setFilterJurisdiction("");
     setFilterDomain("");
+    setDoctrineSearch("");
+    setDoctrineSearchQuery("");
+    setDoctrineOffset(0);
     // Also clear URL params
     navigate("/diagnostics", { replace: true });
   }
 
   // Load the selected lens only; unrelated reads must not delay this table.
   const barrierClusters = trpc.dualLens.getBarrierClusters.useQuery({}, { enabled: activeTab === "barriers", select: diagnosticsView.barriers });
-  const doctrineClusters = trpc.dualLens.getDoctrineClusters.useQuery({}, { enabled: activeTab === "doctrines", select: diagnosticsView.doctrines });
+  const doctrineClusters = trpc.dualLens.getDoctrineClusters.useQuery({
+    keywords: filterKeywords,
+    search: doctrineSearchQuery,
+    offset: doctrineOffset,
+    limit: 100,
+  }, { enabled: activeTab === "doctrines", select: diagnosticsView.doctrines });
   const institutions = trpc.dualLens.getAffectedInstitutions.useQuery({}, { enabled: activeTab === "institutions", select: diagnosticsView.institutions });
   const signalPatterns = trpc.dualLens.getSignalPatterns.useQuery({}, { enabled: activeTab === "signals", select: diagnosticsView.signals });
   const systemicPaths = trpc.dualLens.getSystemicPaths.useQuery({}, { enabled: activeTab === "paths", select: diagnosticsView.paths });
@@ -258,20 +277,8 @@ export default function StructuralDiagnosticsLens() {
     return { clusters: filtered, totalBarriers: filtered.reduce((sum, c) => sum + c.count, 0) };
   }, [barrierClusters.data, filterKeywords, hasActiveFilter]);
 
-  // Filter doctrine clusters
-  const filteredDoctrineClusters = useMemo(() => {
-    if (!doctrineClusters.data || !hasActiveFilter) return doctrineClusters.data;
-    const filtered = doctrineClusters.data.clusters
-      .map(cluster => {
-        const filteredDoctrines = cluster.doctrines.filter(d => {
-          const text = [d.name, d.description, d.domains ? JSON.stringify(d.domains) : ""].join(" ");
-          return matchesFilter(text);
-        });
-        return filteredDoctrines.length > 0 ? { ...cluster, count: filteredDoctrines.length, doctrines: filteredDoctrines } : null;
-      })
-      .filter(Boolean) as typeof doctrineClusters.data.clusters;
-    return { clusters: filtered, totalDoctrines: filtered.reduce((sum, c) => sum + c.count, 0), doctrineEdges: doctrineClusters.data.doctrineEdges, doctrineEdgesAvailable: doctrineClusters.data.doctrineEdgesAvailable };
-  }, [doctrineClusters.data, filterKeywords, hasActiveFilter]);
+  // Doctrine filtering happens before pagination on the server.
+  const filteredDoctrineClusters = doctrineClusters.data;
 
   // Filter institutions
   const filteredInstitutions = useMemo(() => {
@@ -446,8 +453,13 @@ export default function StructuralDiagnosticsLens() {
                 <span className="font-medium">{stats.data.structuralDiagnostics.barriers}</span>
               </div>
               <div>
-                <span className="text-muted-foreground">Graph Edges:</span>{" "}
+                <span className="text-muted-foreground">Canonical Civic Graph Edges:</span>{" "}
                 <span className="font-medium">{stats.data.graph.available ? stats.data.graph.edges : "Unavailable"}</span>
+                {!stats.data.graph.available && stats.data.graph.reason && (
+                  <p className="max-w-md text-xs text-amber-400" role="status">
+                    {stats.data.graph.reason}
+                  </p>
+                )}
               </div>
               {liveSignalCount > 0 && (
                 <div className="flex items-center gap-1.5">
@@ -597,19 +609,18 @@ export default function StructuralDiagnosticsLens() {
 
           {/* Doctrine Map */}
           <TabsContent value="doctrines">
+            <Input aria-label="Search doctrines" placeholder="Search all doctrines" value={doctrineSearch}
+              maxLength={100} onChange={event => setDoctrineSearch(event.target.value)} className="mb-4" />
             {doctrineClusters.isLoading ? (
               <div className="text-center py-12 text-muted-foreground">Loading doctrine analysis...</div>
             ) : filteredDoctrineClusters ? (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground mb-4">
-                  {filteredDoctrineClusters.totalDoctrines} doctrines
-                  {hasActiveFilter && doctrineClusters.data && filteredDoctrineClusters.totalDoctrines !== doctrineClusters.data.totalDoctrines && (
-                    <span className="text-purple-400"> (filtered from {doctrineClusters.data.totalDoctrines})</span>
-                  )}
-                  {" "}across {filteredDoctrineClusters.clusters.length} domains
-                  {filteredDoctrineClusters.doctrineEdgesAvailable ? `, connected by ${filteredDoctrineClusters.doctrineEdges} graph edges` : " · graph connections are not available"}
+                  {filteredDoctrineClusters.totalDoctrines} matching doctrines · Showing {filteredDoctrineClusters.returnedDoctrines} on this page
+                  {" "}across {filteredDoctrineClusters.clusters.length} domains on this page
+                  {filteredDoctrineClusters.doctrineEdgesAvailable ? `, connected by ${filteredDoctrineClusters.doctrineEdges} doctrine graph edges` : ` · doctrine graph connections are unavailable${filteredDoctrineClusters.doctrineEdgesUnavailableReason ? `: ${filteredDoctrineClusters.doctrineEdgesUnavailableReason}` : ""}`}
                 </p>
-                {filteredDoctrineClusters.clusters.length === 0 && hasActiveFilter && (
+                {filteredDoctrineClusters.clusters.length === 0 && (hasActiveFilter || doctrineSearchQuery) && (
                   <Card className="border-border/30">
                     <CardContent className="py-8 text-center">
                       <Brain className="w-8 h-8 text-muted-foreground/50 mx-auto mb-2" />
@@ -630,21 +641,23 @@ export default function StructuralDiagnosticsLens() {
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-1">
-                          {cluster.doctrines.slice(0, 5).map((d: any) => (
+                          {cluster.doctrines.map((d: any) => (
                             <div key={d.id} className="text-xs text-muted-foreground flex items-center gap-2">
                               <div className="w-1.5 h-1.5 rounded-full bg-purple-400/60" />
                               <span>{d.name}</span>
                             </div>
                           ))}
-                          {cluster.doctrines.length > 5 && (
-                            <div className="text-xs text-muted-foreground pl-4">
-                              +{cluster.doctrines.length - 5} more
-                            </div>
-                          )}
                         </div>
                       </CardContent>
                     </Card>
                   ))}
+                </div>
+                <div className="flex items-center gap-3">
+                  <Button variant="outline" disabled={doctrineOffset === 0 || doctrineClusters.isFetching}
+                    onClick={() => setDoctrineOffset(Math.max(0, doctrineOffset - 100))}>Previous doctrines</Button>
+                  <span className="text-sm text-muted-foreground">Page {Math.floor(doctrineOffset / 100) + 1}</span>
+                  <Button variant="outline" disabled={filteredDoctrineClusters.nextOffset == null || doctrineClusters.isFetching}
+                    onClick={() => setDoctrineOffset(filteredDoctrineClusters.nextOffset ?? doctrineOffset)}>Next doctrines</Button>
                 </div>
               </div>
             ) : null}

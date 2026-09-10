@@ -62,7 +62,16 @@ beforeEach(() => {
         barriers: 10,
         detected_signals: 6,
       },
-      graph: { edges: 0, available: false },
+      graph: {
+        name: "canonical_civic_graph",
+        edges: null,
+        structural_edges: null,
+        semantic_edges: null,
+        unresolved_relationships: null,
+        available: false,
+        reason: "The canonical graph summary timed out. Retry after the current database load clears.",
+        contract: null,
+      },
     },
     getBarrierClusters: {
       clusters: [
@@ -79,8 +88,11 @@ beforeEach(() => {
         },
       ],
       total_doctrines: 1,
+      returned_doctrines: 1,
+      next_offset: null,
       doctrine_edges: 0,
       doctrine_edges_available: false,
+      doctrine_edges_unavailable_reason: "The doctrine graph count is unavailable.",
     },
     getAffectedInstitutions: {
       institutions: [
@@ -153,7 +165,8 @@ it("renders the snake_case API responses across every diagnostics panel", () => 
   expect(html).toContain("Structural Diagnostics");
   expect(html).toContain("7 barriers");
   expect(html).toContain("Equal protection");
-  expect(html).toContain("graph connections are not available");
+  expect(html).toContain("Showing 1 on this page");
+  expect(html).toContain("doctrine graph connections are unavailable");
   expect(html).toContain("TEST");
   expect(html).toContain(">27<");
   expect(html).toContain("out of 40 total agencies");
@@ -161,6 +174,39 @@ it("renders the snake_case API responses across every diagnostics panel", () => 
   expect(html).toContain("identified from 10 barriers");
   expect(html).toContain("Recorded Signals");
   expect(html).toContain("Unavailable");
+  expect(html).toContain("canonical graph summary timed out");
+});
+
+it("shows doctrine pagination and every doctrine returned on the current page", () => {
+  state.results.getDoctrineClusters.data = {
+    ...state.results.getDoctrineClusters.data,
+    total_doctrines: 731, returned_doctrines: 6, next_offset: 100,
+    clusters: [{ category: "general", count: 6, doctrines: Array.from({ length: 6 }, (_, i) => ({ id: i, name: `Visible doctrine ${i + 1}` })) }],
+  };
+  const html = renderToStaticMarkup(<StructuralDiagnosticsLens />);
+  expect(html).toContain("731 matching doctrines");
+  expect(html).toContain("Showing 6 on this page");
+  expect(html).toContain("Visible doctrine 6");
+  expect(html).toContain("Search all doctrines");
+  expect(html).toContain("Next doctrines");
+  expect(html).not.toMatch(/disabled=""[^>]*>Next doctrines/);
+});
+
+it("renders a verified canonical edge count when the governed graph is available", () => {
+  state.results.stats.data.graph = {
+    name: "canonical_civic_graph",
+    edges: 655,
+    structural_edges: 600,
+    semantic_edges: 55,
+    unresolved_relationships: 4,
+    available: true,
+    reason: null,
+    contract: "lighthouse_canonical_state_v2",
+  };
+  const html = renderToStaticMarkup(<StructuralDiagnosticsLens />);
+  expect(html).toContain("Canonical Civic Graph Edges:");
+  expect(html).toContain(">655<");
+  expect(html).not.toContain("canonical graph summary timed out");
 });
 
 it("distinguishes absent confidence and dates from a recorded zero", () => {

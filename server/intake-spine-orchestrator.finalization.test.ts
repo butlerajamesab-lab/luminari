@@ -52,6 +52,14 @@ describe('intake spine session finalization', () => {
     expect(orchestrator_source).toContain("and s.entry_channel = 'upload'");
   });
 
+  it('plumbs only explicit message-author bindings into entity extraction and its receipt envelope', () => {
+    expect(orchestrator_source).toContain('load_verified_message_author_bindings(');
+    expect(orchestrator_source).toContain('processLayer6({ artifacts: parsed_artifacts, message_author_bindings })');
+    expect(orchestrator_source).toContain('canonical_input: { parsed_artifacts: parser_input_manifest, message_author_bindings }');
+    expect(orchestrator_source).toContain("type: 'verified_message_author_binding'");
+    expect(orchestrator_source).not.toMatch(/message_contact_name[^\n]+author_canonical_name/);
+  });
+
   it('completes only the session row version captured before execution', async () => {
     const query = vi.fn().mockResolvedValue({
       rowCount: 1,

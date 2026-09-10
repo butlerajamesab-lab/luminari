@@ -51,16 +51,17 @@ export interface Layer7Input {
   artifacts: ParsedArtifact[];
 }
 
-export const LAYER_VERSION = '2.6.0';
-export const RULE_VERSION = '2.6.0';
+export const LAYER_VERSION = '2.6.1';
+export const RULE_VERSION = '2.6.1';
 
 type MarkerDirection = 'a_to_b' | 'b_to_a' | 'bidirectional';
-type MarkerScope = 'between_mentions' | 'post_coordinated_endpoints';
+type MarkerScope = 'between_mentions' | 'post_coordinated_endpoints' | 'post_second_endpoint';
 type MarkerManifestRow = {
   regex: { source: string; flags: string };
   type: RelationshipType;
   direction: MarkerDirection;
   scope?: MarkerScope;
+  between_prefix?: { source: string; flags: string };
 };
 
 export const RULE_MANIFEST: {
@@ -86,8 +87,9 @@ export const RULE_MANIFEST: {
     { regex: { source: 'rents from', flags: 'i' }, type: 'landlord_tenant', direction: 'b_to_a' },
     { regex: { source: 'filed (?:a )?complaint (?:with|against)', flags: 'i' }, type: 'agency_complainant', direction: 'b_to_a' },
     { regex: { source: 'represented by', flags: 'i' }, type: 'legal_representative_client', direction: 'b_to_a' },
-    { regex: { source: 'attorney for', flags: 'i' }, type: 'legal_representative_client', direction: 'a_to_b' },
+    { regex: { source: '(?<!power of )attorney for', flags: 'i' }, type: 'legal_representative_client', direction: 'a_to_b' },
     { regex: { source: '(?:is |was )?(?:the )?caregiver for', flags: 'i' }, type: 'caregiver_recipient', direction: 'a_to_b' },
+    { regex: { source: "^[’']s caregiver\\b", flags: 'i' }, type: 'caregiver_recipient', direction: 'a_to_b', scope: 'post_second_endpoint', between_prefix: { source: '^\\s*(?:am|is|was)\\s*$', flags: 'i' } },
     { regex: { source: '(?:cares|cared|caring) for', flags: 'i' }, type: 'caregiver_recipient', direction: 'a_to_b' },
     { regex: { source: 'provid(?:e|es|ed|ing) care for', flags: 'i' }, type: 'caregiver_recipient', direction: 'a_to_b' },
     { regex: { source: 'cared for by', flags: 'i' }, type: 'caregiver_recipient', direction: 'b_to_a' },
@@ -95,13 +97,14 @@ export const RULE_MANIFEST: {
     { regex: { source: '(?:resides|resided|lives|lived|stays|stayed) at', flags: 'i' }, type: 'facility_resident', direction: 'b_to_a' },
     { regex: { source: '(?:admitted|transferred) to', flags: 'i' }, type: 'facility_resident', direction: 'b_to_a' },
     { regex: { source: 'authorized representative for', flags: 'i' }, type: 'authorized_representative_subject', direction: 'a_to_b' },
-    { regex: { source: '(?:holds |has )?(?:a )?power of attorney for', flags: 'i' }, type: 'authorized_representative_subject', direction: 'a_to_b' },
+    { regex: { source: '(?:holds |has |have )?(?:a )?power of attorney for', flags: 'i' }, type: 'authorized_representative_subject', direction: 'a_to_b' },
     { regex: { source: 'married to', flags: 'i' }, type: 'family', direction: 'bidirectional' },
     { regex: { source: 'spouse', flags: 'i' }, type: 'family', direction: 'bidirectional' },
     { regex: { source: '^(?:are|were) family(?: members)?', flags: 'i' }, type: 'family', direction: 'bidirectional', scope: 'post_coordinated_endpoints' },
     { regex: { source: 'child of', flags: 'i' }, type: 'family', direction: 'b_to_a' },
     { regex: { source: 'parent of', flags: 'i' }, type: 'family', direction: 'a_to_b' },
     { regex: { source: '(?:daughter|son|mother|father|sister|brother) of', flags: 'i' }, type: 'family', direction: 'bidirectional' },
+    { regex: { source: "^[’']s (?:daughter|son|mother|father|sister|brother)\\b", flags: 'i' }, type: 'family', direction: 'bidirectional', scope: 'post_second_endpoint', between_prefix: { source: '^\\s*(?:am|is|was)\\s*$', flags: 'i' } },
     { regex: { source: 'insured by', flags: 'i' }, type: 'insurer_insured', direction: 'b_to_a' },
     { regex: { source: 'policy(?:holder)? (?:with|of)', flags: 'i' }, type: 'insurer_insured', direction: 'b_to_a' },
     { regex: { source: 'owes money to', flags: 'i' }, type: 'creditor_debtor', direction: 'b_to_a' },
@@ -134,6 +137,7 @@ const RELATIONSHIP_MARKERS = RULE_MANIFEST.markers.map(row => ({
   type: row.type,
   direction: row.direction,
   scope: row.scope ?? 'between_mentions',
+  betweenPrefix: row.between_prefix ? regexFromManifest(row.between_prefix) : null,
 }));
 
 export function processLayer7(input: Layer7Input): EngineResult<Relationship[]> {
@@ -224,6 +228,10 @@ export function processLayer7(input: Layer7Input): EngineResult<Relationship[]> 
           const betweenMentions = spanText.substring(markerSearchStart, markerSearchEnd);
 
           for (const marker of RELATIONSHIP_MARKERS) {
+            if (marker.betweenPrefix) {
+              marker.betweenPrefix.lastIndex = 0;
+              if (!marker.betweenPrefix.test(betweenMentions)) continue;
+            }
             const markerBinding = marker.scope === 'post_coordinated_endpoints'
               ? findPostCoordinatedMarkerForPair(
                   spanText,
@@ -232,7 +240,9 @@ export function processLayer7(input: Layer7Input): EngineResult<Relationship[]> 
                   j,
                   marker.pattern,
                 )
-              : findMarkerInRegion(
+              : marker.scope === 'post_second_endpoint'
+                ? findMarkerAfterSecondEndpoint(spanText, second, marker.pattern)
+                : findMarkerInRegion(
                   betweenMentions,
                   markerSearchStart,
                   marker.pattern,
@@ -303,6 +313,15 @@ export function processLayer7(input: Layer7Input): EngineResult<Relationship[]> 
     unresolved_dependencies: unresolved.sort((a, b) => a.field.localeCompare(b.field)),
     is_sealed: false,
   };
+}
+
+function findMarkerAfterSecondEndpoint(
+  spanText: string,
+  second: SpanEntityMention,
+  pattern: RegExp,
+): { match: RegExpExecArray; marker_offset: number } | null {
+  const regionStart = second.position + second.mention_text.length;
+  return findMarkerInRegion(spanText.substring(regionStart), regionStart, pattern);
 }
 
 type SpanEntityMention = {

@@ -28,6 +28,7 @@ export interface EntityMention {
   raw_text: string;
   artifact_key: string;
   span_offset: number;
+  binding_provenance_refs?: string[];
 }
 
 export interface ReviewCandidate {
@@ -39,10 +40,20 @@ export interface ReviewCandidate {
 
 export interface Layer6Input {
   artifacts: ParsedArtifact[];
+  message_author_bindings?: MessageAuthorBinding[];
 }
 
-export const LAYER_VERSION = '2.6.0';
-export const RULE_VERSION = '2.6.0';
+export interface MessageAuthorBinding {
+  artifact_key: string;
+  message_direction: 'received' | 'sent';
+  source_contact_name?: string;
+  author_canonical_name: string;
+  provenance_ref: string;
+  verification_state: 'verified';
+}
+
+export const LAYER_VERSION = '2.6.2';
+export const RULE_VERSION = '2.6.2';
 
 const ADDRESS_STATE_ABBREVIATIONS: Record<string, string> = {
   wa: 'washington', ca: 'california', or: 'oregon', ny: 'new york', tx: 'texas',
@@ -123,6 +134,8 @@ export const RULE_MANIFEST = {
   near_match_auto_merge: false,
   semantic_substrate_version: SEMANTIC_SUBSTRATE_VERSION,
   source_aware_projection: 'exclude_transport_metadata_reactions_and_content_duplicate_archive_members',
+  message_author_binding: 'explicit_verified_participant_author_mapping_only',
+  message_author_agreement: 'one_normalized_author_identity_with_all_distinct_provenance_refs',
 } as const;
 
 export const RULE_MANIFEST_HASH = computeRuleManifestHash(RULE_MANIFEST);
@@ -151,6 +164,7 @@ export function processLayer6(input: Layer6Input): EngineResult<Entity[]> {
       extraction_status: artifact.extraction_status,
       parsed_output_hash: computeHash({ extracted_text: artifact.extracted_text, spans: artifact.spans }),
     })),
+    message_author_bindings: normalizedAuthorBindings(input.message_author_bindings),
   });
   const unresolved: UnresolvedDependency[] = [];
   const entityMap = new Map<string, Entity>();
@@ -223,6 +237,24 @@ export function processLayer6(input: Layer6Input): EngineResult<Entity[]> {
 
     for (const span of semanticSpans) {
       const text = span.text;
+
+      const authorBindings = authorBindingsForSpan(span, artifact.artifact_key, input.message_author_bindings);
+      if (authorBindings.length === 1) {
+        const authorBinding = authorBindings[0];
+        const firstPersonPattern = /\b(?:I|me|my|mine|myself)\b/gi;
+        let firstPersonMatch: RegExpExecArray | null;
+        while ((firstPersonMatch = firstPersonPattern.exec(text)) !== null) {
+          addBoundEntity(entityMap, authorBinding.author_canonical_name, firstPersonMatch[0], artifact.artifact_key, span.start_offset + firstPersonMatch.index, authorBinding.provenance_refs);
+        }
+      } else if (span.source_kind === 'sms_message' && /\b(?:I|me|my|mine|myself)\b/i.test(text)) {
+        unresolved.push({
+          field: `artifact:${artifact.artifact_key}:span:${span.start_offset}:message_author`,
+          reason: 'unresolved',
+          detail: authorBindings.length === 0
+            ? 'First-person SMS author has no verified participant-author binding'
+            : 'First-person SMS author has ambiguous verified participant-author bindings',
+        });
+      }
 
       for (const pattern of PERSON_PATTERNS) {
         pattern.lastIndex = 0;
@@ -326,6 +358,62 @@ export function processLayer6(input: Layer6Input): EngineResult<Entity[]> {
     unresolved_dependencies: unresolved.sort((a, b) => a.field.localeCompare(b.field)),
     is_sealed: false,
   };
+}
+
+function addBoundEntity(
+  map: Map<string, Entity>, canonicalSourceName: string, rawMention: string,
+  artifactKey: string, offset: number, provenanceRefs: string[],
+): void {
+  const type: EntityType = 'person';
+  const canonical = normalizeEntityName(canonicalSourceName, type);
+  if (canonical.length < 2) return;
+  const mapKey = `${type}|${canonical}|global`;
+  const mention: EntityMention = { raw_text: rawMention, artifact_key: artifactKey, span_offset: offset, binding_provenance_refs: provenanceRefs };
+  const existing = map.get(mapKey);
+  if (existing) {
+    existing.raw_mentions.push(mention);
+    return;
+  }
+  map.set(mapKey, {
+    entity_id: `ent_${computeHash({ type, canonical_name: canonical, scope_key: null }).substring(0, 16)}`,
+    type, canonical_name: canonical, raw_mentions: [mention], review_candidates: [],
+  });
+}
+
+function normalizedAuthorBindings(bindings: MessageAuthorBinding[] | undefined): MessageAuthorBinding[] {
+  return [...(bindings ?? [])].sort((a, b) =>
+    a.artifact_key.localeCompare(b.artifact_key)
+    || a.message_direction.localeCompare(b.message_direction)
+    || (a.source_contact_name ?? '').localeCompare(b.source_contact_name ?? '')
+    || a.author_canonical_name.localeCompare(b.author_canonical_name)
+    || a.provenance_ref.localeCompare(b.provenance_ref));
+}
+
+function authorBindingsForSpan(
+  span: ParsedArtifact['spans'][number],
+  artifactKey: string,
+  bindings: MessageAuthorBinding[] | undefined,
+): Array<{ author_canonical_name: string; provenance_refs: string[] }> {
+  if (span.source_kind !== 'sms_message' || !span.message_direction || span.message_direction === 'unknown') return [];
+  const contact = span.message_contact_name?.replace(/\s+/g, ' ').trim().toLowerCase();
+  const matchingBindings = normalizedAuthorBindings(bindings).filter(binding =>
+    binding.verification_state === 'verified'
+    && binding.artifact_key === artifactKey
+    && binding.message_direction === span.message_direction
+    && (span.message_direction === 'sent'
+      ? true
+      : Boolean(contact && binding.source_contact_name?.replace(/\s+/g, ' ').trim().toLowerCase() === contact)));
+  const byAuthor = new Map<string, Set<string>>();
+  for (const binding of matchingBindings) {
+    const author = normalizeEntityName(binding.author_canonical_name, 'person');
+    const provenanceRefs = byAuthor.get(author) ?? new Set<string>();
+    provenanceRefs.add(binding.provenance_ref);
+    byAuthor.set(author, provenanceRefs);
+  }
+  return Array.from(byAuthor, ([author_canonical_name, provenanceRefs]) => ({
+    author_canonical_name,
+    provenance_refs: Array.from(provenanceRefs).sort(),
+  })).sort((a, b) => a.author_canonical_name.localeCompare(b.author_canonical_name));
 }
 
 export function isExcludedOrganizationToken(rawName: string): boolean {

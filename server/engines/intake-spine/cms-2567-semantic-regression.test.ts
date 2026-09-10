@@ -473,6 +473,167 @@ describe("CMS-2567 semantic-lane regression", () => {
       expect(unresolvedText).toContain(date);
     }
   });
+
+  it("separates case-specific events from facility-wide CMS evidence in the same corpus", () => {
+    const caseSentence =
+      "Cheryl Morgan was admitted to the hospital on January 5, 2026.";
+    const caseArtifact = artifactFromPages("case:care-summary.pdf", [
+      caseSentence,
+    ]);
+    const facilityArtifact = artifactFromPages("cms-2567:mixed-scope.pdf", [
+      [
+        cmsHeader("11/21/2024", "Page 1 of 1"),
+        "On 11/20/2024 Resident 45 was admitted to the hospital.",
+        cmsFooter("Page 1 of 1"),
+      ].join("\n"),
+    ]);
+    const artifacts = [facilityArtifact, caseArtifact];
+    const entities = processLayer6({ artifacts }).data;
+    const timelineEntities = entities.filter(
+      (entity) =>
+        !entity.raw_mentions.some(
+          (mention) => mention.artifact_key === caseArtifact.artifact_key,
+        ) ||
+        (entity.type === "person" && entity.canonical_name === "cheryl morgan"),
+    );
+    const chronology = processLayer4({ artifacts });
+    const timeline = processLayer9({ entities: timelineEntities, artifacts });
+    const chronologyReplay = processLayer4({ artifacts: [...artifacts].reverse() });
+    const timelineReplay = processLayer9({
+      entities: [...timelineEntities].reverse(),
+      artifacts: [...artifacts].reverse(),
+    });
+
+    expect(chronologyReplay.data).toEqual(chronology.data);
+    expect(chronologyReplay.output_hash).toBe(chronology.output_hash);
+    expect(timelineReplay.data).toEqual(timeline.data);
+    expect(timelineReplay.output_hash).toBe(timeline.output_hash);
+
+    expect(
+      chronology.data.filter((event) => event.event_scope === "case_specific"),
+    ).toEqual([
+      expect.objectContaining({
+        date: "2026-01-05",
+        event_text: caseSentence,
+        source_artifact_key: caseArtifact.artifact_key,
+      }),
+    ]);
+    expect(
+      timeline.data.filter(
+        (transition) => transition.transition_scope === "case_specific",
+      ),
+    ).toEqual([
+      expect.objectContaining({
+        to_state: "facility_hospitalization",
+        source_text: caseSentence,
+        source_artifact_key: caseArtifact.artifact_key,
+      }),
+    ]);
+    expect(
+      chronology.data.some(
+        (event) =>
+          event.source_artifact_key === facilityArtifact.artifact_key &&
+          event.event_scope === "facility_wide",
+      ),
+    ).toBe(true);
+    expect(
+      timeline.data.some(
+        (transition) =>
+          transition.source_artifact_key === facilityArtifact.artifact_key &&
+          transition.transition_scope === "facility_wide",
+      ),
+    ).toBe(true);
+  });
+
+  it.each([
+    "On January 4, 2026, John Smith visited the hospital.",
+    "On January 4, 2026, John Smith met the nurse.",
+    "On January 4, 2026, John Smith left.",
+    "On January 4, 2026, John Smith arrived.",
+    "January 4, 2026: I left.",
+  ])("retains dated narrative without a fixed verb vocabulary: %s", (sentence) => {
+    const artifact = artifactFromPages("case:dated-narrative.pdf", [sentence]);
+    const chronology = processLayer4({ artifacts: [artifact] });
+
+    expect(chronology.data).toEqual([
+      expect.objectContaining({
+        date: "2026-01-04",
+        event_text: sentence,
+        source_artifact_key: artifact.artifact_key,
+        event_scope: "case_specific",
+        verification_status: "document_stated",
+      }),
+    ]);
+    expect(chronology.unresolved_dependencies).toEqual([]);
+  });
+
+  it.each([
+    "Incident date: January 5, 2026.",
+    "January 5, 2026.",
+    "On January 5, 2026 at 12:30 PM.",
+  ])("does not promote a date-bearing label fragment: %s", (fragment) => {
+    const artifact = artifactFromPages("case:intake-label.pdf", [fragment]);
+    const chronology = processLayer4({ artifacts: [artifact] });
+
+    expect(chronology.data).toEqual([]);
+    expect(chronology.unresolved_dependencies).toEqual([
+      expect.objectContaining({
+        field: expect.stringContaining("chronology_fragment:"),
+        reason: "incomplete",
+      }),
+    ]);
+  });
+
+  it("retains a short state assertion with a verified message author", () => {
+    const artifact = artifactFromPages("case:resignation.xml", [
+      "I resigned. I was a nursing home caregiver.",
+    ]);
+    artifact.extraction_method = "sms_backup_xml";
+    artifact.spans = artifact.spans.map((span) => ({
+      ...span,
+      source_kind: "sms_message",
+      message_kind: "message",
+      message_direction: "sent",
+      occurred_at: "2026-01-04T12:30:00.000Z",
+    }));
+    const entities = processLayer6({
+      artifacts: [artifact],
+      message_author_bindings: [{
+        artifact_key: artifact.artifact_key,
+        message_direction: "sent",
+        author_canonical_name: "Cheryl Morgan",
+        provenance_ref: "case-participant-assertion:resignation-fixture",
+        verification_state: "verified",
+      }],
+    }).data;
+    const author = entities.find((entity) => entity.canonical_name === "cheryl morgan");
+    expect(author).toBeDefined();
+    const timeline = processLayer9({ artifacts: [artifact], entities });
+
+    expect(timeline.data).toEqual([
+      expect.objectContaining({
+        entity_id: author!.entity_id,
+        to_state: "resigned",
+        source_text: "I resigned.",
+        transition_date: "2026-01-04",
+        source_artifact_key: artifact.artifact_key,
+        source_span_offset: 0,
+        transition_scope: "case_specific",
+      }),
+    ]);
+    expect(timeline.unresolved_dependencies).toEqual([]);
+    const unmapped = processLayer9({
+      artifacts: [artifact],
+      entities: processLayer6({ artifacts: [artifact] }).data,
+    });
+    expect(unmapped.data).toEqual([]);
+    expect(unmapped.unresolved_dependencies).toEqual([
+      expect.objectContaining({
+        field: expect.stringContaining("transition:resigned:"),
+        reason: "unresolved",
+      }),
+    ]);
+  });
 });
 
 function artifactFromPages(
