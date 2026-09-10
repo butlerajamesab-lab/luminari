@@ -42,10 +42,10 @@ describe("unrestricted evidence upload boundary", () => {
     expect(upload_route).toContain("fileSize: 100 * 1024 * 1024");
   });
 
-  it("explicitly authenticates replacement uploads without depending on global fetch wrappers", () => {
+  it("forwards replacement session headers and cookies without depending on global fetch wrappers", () => {
     expect(replacement_modal).toContain("await uploadReplacementDocument(documentId, replaceFile)");
     expect(replacement_upload).toContain("const uploadHeaders = await getAuthenticatedRequestHeaders();");
-    expect(replacement_upload).toContain('uploadHeaders.has("x-lighthouse-supabase-session")');
+    expect(replacement_upload).not.toContain('!uploadHeaders.has("x-lighthouse-supabase-session")');
     expect(replacement_upload).toMatch(/fetch\(`\/api\/upload\/replace\/\$\{documentId\}`, \{[\s\S]*headers: uploadHeaders,[\s\S]*credentials: "include"/);
   });
 

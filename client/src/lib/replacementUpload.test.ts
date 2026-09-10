@@ -31,10 +31,23 @@ describe("replacement upload transport", () => {
     expect(await options.body.get("file").text()).toBe("replacement evidence");
   });
 
-  it("does not send file bytes when a live session cannot be obtained", async () => {
+  it("permits the server to authenticate a session cookie when no Supabase header is available", async () => {
     auth.headers.mockResolvedValue(new Headers());
+    request.mockResolvedValue(Response.json(success));
+    await expect(uploadReplacementDocument(41, file)).resolves.toEqual({ newDocumentId: 42 });
+    expect(request).toHaveBeenCalledOnce();
+    const [, options] = request.mock.calls[0];
+    expect(options.credentials).toBe("include");
+    expect(options.headers.has("x-lighthouse-supabase-session")).toBe(false);
+    expect(options.body.get("file").name).toBe("replacement.xml");
+  });
+
+  it("reports a server rejection when neither session mechanism authenticates, without retrying", async () => {
+    auth.headers.mockResolvedValue(new Headers());
+    request.mockResolvedValue(Response.json({ error: "Unauthorized" }, { status: 401 }));
     await expect(uploadReplacementDocument(41, file)).rejects.toThrow("Sign in again");
-    expect(request).not.toHaveBeenCalled();
+    expect(request).toHaveBeenCalledOnce();
+    expect(request.mock.calls[0][1].credentials).toBe("include");
   });
 
   it.each([Response.json({ error: "Unauthorized" }, { status: 401 }), new Response("Unauthorized", { status: 401 })])(

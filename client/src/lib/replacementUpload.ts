@@ -4,11 +4,9 @@ const SESSION_MESSAGE = "Your sign-in session could not be verified. Sign in aga
 const UNCONFIRMED_MESSAGE = "The server did not confirm the replacement. Refresh the document and check its replacement chain before retrying.";
 
 export async function uploadReplacementDocument(documentId: number, file: File): Promise<{ newDocumentId: number }> {
-  // Send the session explicitly: this write must not depend on global fetch wrapper order.
+  // Forward Supabase auth explicitly when available, alongside supported session cookies.
+  // The server authenticates either session before parsing or buffering multipart bytes.
   const uploadHeaders = await getAuthenticatedRequestHeaders();
-  if (!uploadHeaders.has("x-lighthouse-supabase-session")) {
-    throw new Error(SESSION_MESSAGE);
-  }
 
   const formData = new FormData();
   formData.append("file", file);
