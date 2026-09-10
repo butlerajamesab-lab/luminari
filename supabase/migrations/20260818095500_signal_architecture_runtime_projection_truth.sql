@@ -5,6 +5,45 @@
 -- This migration changes no canonical signal records and no Atlas observations.
 -- It replaces a read-only integrity projection only.
 
+-- Production already applied the successor 20260822080454 out of order.
+-- Its integrity view adds governance-state counts that this older definition
+-- cannot remove. Preserve the verified successor; fresh replay still executes
+-- the original definition in chronological order. This does not write history.
+do $migration$
+declare
+  successor_applied boolean := false;
+  successor_columns integer;
+  current_definition text;
+begin
+  if to_regclass('supabase_migrations.schema_migrations') is not null then
+    select exists (
+      select 1 from supabase_migrations.schema_migrations
+      where version = '20260822080454'
+    ) into successor_applied;
+  end if;
+
+  if successor_applied then
+    select count(*) into successor_columns
+      from information_schema.columns
+     where table_schema = 'public'
+       and table_name = 'v_signal_architecture_integrity'
+       and column_name in ('live_data_candidate_count', 'live_data_promoted_count')
+       and udt_name = 'int8';
+    select pg_get_viewdef(c.oid, true) into current_definition
+      from pg_class c join pg_namespace n on n.oid = c.relnamespace
+     where n.nspname = 'public' and c.relname = 'v_signal_architecture_integrity'
+       and c.relkind = 'v';
+    if successor_columns <> 2 or current_definition is null
+       or position('atlas_stream_runtime_projection_v1' in current_definition) = 0
+       or position('governance_status = ''observation_candidate''' in current_definition) = 0
+       or position('governance_status = ''promoted''' in current_definition) = 0 then
+      raise exception 'Recorded signal-integrity successor does not satisfy its live view contract';
+    end if;
+    alter view public.v_signal_architecture_integrity set (security_invoker = true);
+    return;
+  end if;
+
+  execute $projection$
 create or replace view public.v_signal_architecture_integrity
 with (security_invoker = true)
 as
@@ -34,3 +73,7 @@ from atlas_counts a;
 
 comment on view public.v_signal_architecture_integrity is
   'Operator-facing signal architecture metrics. Atlas corpus totals and freshness are sourced from current atlas_stream_runtime_projection_v1; legacy mixed signal counts remain quarantine-only context.';
+
+$projection$;
+end;
+$migration$;

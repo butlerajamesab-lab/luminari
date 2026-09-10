@@ -113,3 +113,25 @@ corrected foundation twice against both shapes.
 The production backlog before this rollout is 30 migrations, including the
 three September 9 repair/hardening versions. Their application and the live
 runtime checks remain separate from the successful clean-replay test.
+
+### Recorded signal-view successor
+
+After #616 merged at `13eaf4a`, production applied eight pending versions and
+reached 492 ledger entries. The next pending version, `20260818095500`, failed
+with `cannot drop columns from view`: its 13-column signal-integrity definition
+would remove `live_data_candidate_count` and `live_data_promoted_count`.
+
+Production already records `20260822080454`, whose checked-in definition adds
+those two governance-state counts while retaining the original Atlas metrics.
+The live view definition matches that successor's projection. The pending
+version therefore preserves the successor only when its ledger entry exists
+and the current view exposes both bigint counts and their expected source and
+governance filters. An inconsistent recorded successor raises an exception.
+Fresh replay still executes the original definition in chronological order.
+The pending version's repository-only checksum is updated; the applied
+successor source and production history are unchanged.
+
+The PostgreSQL fixture checks ordered replay, repeat execution against the
+recorded successor without changing its definition or counts, and rejection of
+an invalid successor. Fixture ledger entries exist only inside rolled-back
+transactions in the dedicated loopback test database.

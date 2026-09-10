@@ -180,7 +180,7 @@ APPROVED_REPOSITORY_ONLY = {
     ),
     "20260818095500": (
         "20260818095500_signal_architecture_runtime_projection_truth.sql",
-        "af52234965f8641488c56e8a3422ae8aa183287d",
+        "ab6393d74ac7f66d360229dbfe229665126d3430",
     ),
     "20260818210000": (
         "20260818210000_canonical_core_read_boundary.sql",
