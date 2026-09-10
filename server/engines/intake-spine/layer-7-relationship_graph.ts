@@ -51,14 +51,15 @@ export interface Layer7Input {
   artifacts: ParsedArtifact[];
 }
 
-export const LAYER_VERSION = '2.6.1';
-export const RULE_VERSION = '2.6.1';
+export const LAYER_VERSION = '2.6.2';
+export const RULE_VERSION = '2.6.2';
 
 type MarkerDirection = 'a_to_b' | 'b_to_a' | 'bidirectional';
 type MarkerScope = 'between_mentions' | 'post_coordinated_endpoints' | 'post_second_endpoint';
 type MarkerManifestRow = {
   regex: { source: string; flags: string };
   type: RelationshipType;
+  additional_relationship_types?: RelationshipType[];
   direction: MarkerDirection;
   scope?: MarkerScope;
   between_prefix?: { source: string; flags: string };
@@ -89,7 +90,15 @@ export const RULE_MANIFEST: {
     { regex: { source: 'represented by', flags: 'i' }, type: 'legal_representative_client', direction: 'b_to_a' },
     { regex: { source: '(?<!power of )attorney for', flags: 'i' }, type: 'legal_representative_client', direction: 'a_to_b' },
     { regex: { source: '(?:is |was )?(?:the )?caregiver for', flags: 'i' }, type: 'caregiver_recipient', direction: 'a_to_b' },
-    { regex: { source: "^[’']s caregiver\\b", flags: 'i' }, type: 'caregiver_recipient', direction: 'a_to_b', scope: 'post_second_endpoint', between_prefix: { source: '^\\s*(?:am|is|was)\\s*$', flags: 'i' } },
+    {
+      regex: { source: "^[’']s\\s+(?:sole\\s+)?caregiver\\s+(?:&|and)\\s+(?:POA|power of attorney)\\b(?!\\s+(?:for|of|to)\\b)", flags: 'i' },
+      type: 'caregiver_recipient',
+      additional_relationship_types: ['authorized_representative_subject'],
+      direction: 'a_to_b',
+      scope: 'post_second_endpoint',
+      between_prefix: { source: '^\\s*(?:am|is|was)\\s*$', flags: 'i' },
+    },
+    { regex: { source: "^[’']s\\s+(?:sole\\s+)?caregiver\\b", flags: 'i' }, type: 'caregiver_recipient', direction: 'a_to_b', scope: 'post_second_endpoint', between_prefix: { source: '^\\s*(?:am|is|was)\\s*$', flags: 'i' } },
     { regex: { source: '(?:cares|cared|caring) for', flags: 'i' }, type: 'caregiver_recipient', direction: 'a_to_b' },
     { regex: { source: 'provid(?:e|es|ed|ing) care for', flags: 'i' }, type: 'caregiver_recipient', direction: 'a_to_b' },
     { regex: { source: 'cared for by', flags: 'i' }, type: 'caregiver_recipient', direction: 'b_to_a' },
@@ -98,6 +107,7 @@ export const RULE_MANIFEST: {
     { regex: { source: '(?:admitted|transferred) to', flags: 'i' }, type: 'facility_resident', direction: 'b_to_a' },
     { regex: { source: 'authorized representative for', flags: 'i' }, type: 'authorized_representative_subject', direction: 'a_to_b' },
     { regex: { source: '(?:holds |has |have )?(?:a )?power of attorney for', flags: 'i' }, type: 'authorized_representative_subject', direction: 'a_to_b' },
+    { regex: { source: "^[’']s\\s+(?:POA|power of attorney)\\b(?!\\s+(?:for|of|to)\\b)", flags: 'i' }, type: 'authorized_representative_subject', direction: 'a_to_b', scope: 'post_second_endpoint', between_prefix: { source: '^\\s*(?:am|is|was)\\s*$', flags: 'i' } },
     { regex: { source: 'married to', flags: 'i' }, type: 'family', direction: 'bidirectional' },
     { regex: { source: 'spouse', flags: 'i' }, type: 'family', direction: 'bidirectional' },
     { regex: { source: '^(?:are|were) family(?: members)?', flags: 'i' }, type: 'family', direction: 'bidirectional', scope: 'post_coordinated_endpoints' },
@@ -135,6 +145,7 @@ export const RULE_MANIFEST_HASH = computeRuleManifestHash(RULE_MANIFEST);
 const RELATIONSHIP_MARKERS = RULE_MANIFEST.markers.map(row => ({
   pattern: regexFromManifest(row.regex),
   type: row.type,
+  relationshipTypes: [row.type, ...(row.additional_relationship_types ?? [])],
   direction: row.direction,
   scope: row.scope ?? 'between_mentions',
   betweenPrefix: row.between_prefix ? regexFromManifest(row.between_prefix) : null,
@@ -249,51 +260,57 @@ export function processLayer7(input: Layer7Input): EngineResult<Relationship[]> 
                 );
             if (!markerBinding) continue;
 
-            const textualRoles = getTextualRoles(marker.type, marker.direction);
-            if (
-              !isRelationshipRoleTypeCompatible(marker.type, textualRoles.role_first, first.entity.type)
-              || !isRelationshipRoleTypeCompatible(marker.type, textualRoles.role_second, second.entity.type)
-            ) {
-              continue;
-            }
-            const canonical = canonicalizeRelationshipEndpoints(
-              first.entity.entity_id,
-              textualRoles.role_first,
-              second.entity.entity_id,
-              textualRoles.role_second,
-              marker.type,
-            );
-            const identity = `${canonical.entity_a_id}|${canonical.role_a}|${canonical.entity_b_id}|${canonical.role_b}|${marker.type}|${canonical.direction}`;
-            const relationship_id = `rel_${computeHash(identity).substring(0, 16)}`;
-            const sourceRef: RelationshipSourceRef = {
-              artifact_key: artifact.artifact_key,
-              span_start_offset: span.start_offset,
-              span_text: spanText,
-              marker_text: markerBinding.match[0],
-              marker_offset: span.start_offset + markerBinding.marker_offset,
-            };
-
-            const existing = relationshipMap.get(relationship_id);
-            if (existing) {
-              const sourceKey = `${sourceRef.artifact_key}|${sourceRef.marker_offset}`;
-              if (!existing.source_refs.some(ref => `${ref.artifact_key}|${ref.marker_offset}` === sourceKey)) {
-                existing.source_refs.push(sourceRef);
-                existing.source_refs.sort((a, b) => a.artifact_key.localeCompare(b.artifact_key) || a.marker_offset - b.marker_offset);
+            let emittedMarker = false;
+            // One explicit compound assertion may name multiple roles for the
+            // same endpoints. This does not allow scanning unrelated markers.
+            for (const relationshipType of marker.relationshipTypes) {
+              const textualRoles = getTextualRoles(relationshipType, marker.direction);
+              if (
+                !isRelationshipRoleTypeCompatible(relationshipType, textualRoles.role_first, first.entity.type)
+                || !isRelationshipRoleTypeCompatible(relationshipType, textualRoles.role_second, second.entity.type)
+              ) {
+                continue;
               }
-            } else {
-              relationshipMap.set(relationship_id, {
-                relationship_id,
-                entity_a_id: canonical.entity_a_id,
-                entity_b_id: canonical.entity_b_id,
-                type: marker.type,
-                direction: canonical.direction,
-                role_a: canonical.role_a,
-                role_b: canonical.role_b,
-                source_refs: [sourceRef],
-              });
+              const canonical = canonicalizeRelationshipEndpoints(
+                first.entity.entity_id,
+                textualRoles.role_first,
+                second.entity.entity_id,
+                textualRoles.role_second,
+                relationshipType,
+              );
+              const identity = `${canonical.entity_a_id}|${canonical.role_a}|${canonical.entity_b_id}|${canonical.role_b}|${relationshipType}|${canonical.direction}`;
+              const relationship_id = `rel_${computeHash(identity).substring(0, 16)}`;
+              const sourceRef: RelationshipSourceRef = {
+                artifact_key: artifact.artifact_key,
+                span_start_offset: span.start_offset,
+                span_text: spanText,
+                marker_text: markerBinding.match[0],
+                marker_offset: span.start_offset + markerBinding.marker_offset,
+              };
+
+              const existing = relationshipMap.get(relationship_id);
+              if (existing) {
+                const sourceKey = `${sourceRef.artifact_key}|${sourceRef.marker_offset}`;
+                if (!existing.source_refs.some(ref => `${ref.artifact_key}|${ref.marker_offset}` === sourceKey)) {
+                  existing.source_refs.push(sourceRef);
+                  existing.source_refs.sort((a, b) => a.artifact_key.localeCompare(b.artifact_key) || a.marker_offset - b.marker_offset);
+                }
+              } else {
+                relationshipMap.set(relationship_id, {
+                  relationship_id,
+                  entity_a_id: canonical.entity_a_id,
+                  entity_b_id: canonical.entity_b_id,
+                  type: relationshipType,
+                  direction: canonical.direction,
+                  role_a: canonical.role_a,
+                  role_b: canonical.role_b,
+                  source_refs: [sourceRef],
+                });
+              }
+              emittedMarker = true;
             }
 
-            if (RULE_MANIFEST.first_marker_per_pair_per_span) break;
+            if (emittedMarker && RULE_MANIFEST.first_marker_per_pair_per_span) break;
           }
         }
       }

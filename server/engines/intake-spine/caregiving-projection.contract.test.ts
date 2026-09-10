@@ -126,6 +126,90 @@ describe('caregiving intake projection contracts', () => {
     ]));
   });
 
+  it.each([
+    'I am Rowan’s sole caregiver & POA.',
+    "I am Rowan's caregiver and power of attorney.",
+    'I said because I am Rowan’s sole caregiver & POA & he is not often able to speak for himself.',
+  ])('preserves both explicitly coordinated roles with verified authorship: %s', sentence => {
+    const artifact = smsArtifact([sentence], 'received', 'Source contact');
+    const entities = processLayer6({
+      artifacts: [artifact],
+      message_author_bindings: [authorBinding(artifact, 'received', 'Jordan', 'Source contact')],
+    }).data;
+    const result = processLayer7({ entities, artifacts: [artifact] });
+    expect(result.layer_version).toBe('2.6.2');
+    expect(result.rule_version).toBe('2.6.2');
+    expect(result.data.map(relationship => relationship.type).sort()).toEqual([
+      'authorized_representative_subject', 'caregiver_recipient',
+    ]);
+    const authorId = entities.find(entity => entity.canonical_name === 'jordan')?.entity_id;
+    const recipientId = entities.find(entity => entity.canonical_name === 'rowan')?.entity_id;
+    expect(authorId).toBeTruthy();
+    expect(recipientId).toBeTruthy();
+    for (const relationship of result.data) {
+      const authorityId = relationship.direction === 'a_to_b'
+        ? relationship.entity_a_id : relationship.entity_b_id;
+      const subjectId = relationship.direction === 'a_to_b'
+        ? relationship.entity_b_id : relationship.entity_a_id;
+      expect(authorityId).toBe(authorId);
+      expect(subjectId).toBe(recipientId);
+      expect(relationship.source_refs).toHaveLength(1);
+      const reference = relationship.source_refs[0];
+      expect(reference.artifact_key).toBe(artifact.artifact_key);
+      expect(reference.span_text).toBe(sentence);
+      expect(reference.marker_text).toMatch(/caregiver.*(?:POA|power of attorney)/);
+      expect(artifact.extracted_text!.slice(reference.marker_offset,
+        reference.marker_offset + reference.marker_text.length)).toBe(reference.marker_text);
+    }
+    expect(processLayer7({ entities: [...entities].reverse(), artifacts: [artifact] }).output_hash)
+      .toBe(result.output_hash);
+  });
+
+  it.each([
+    ['I am Rowan’s sole caregiver.', 'caregiver_recipient'],
+    ['I am Rowan’s POA.', 'authorized_representative_subject'],
+  ])('binds a single explicit possessive role: %s', (sentence, relationshipType) => {
+    const artifact = smsArtifact([sentence], 'received', 'Source contact');
+    const entities = processLayer6({
+      artifacts: [artifact],
+      message_author_bindings: [authorBinding(artifact, 'received', 'Jordan', 'Source contact')],
+    }).data;
+    expect(processLayer7({ entities, artifacts: [artifact] }).data.map(relationship => relationship.type))
+      .toEqual([relationshipType]);
+  });
+
+  it.each(['received', 'sent'] as const)('does not infer %s compound-role authorship from a contact label', direction => {
+    const artifact = smsArtifact(['I am Rowan’s sole caregiver & POA.'], direction, 'Jordan');
+    const entities = processLayer6({ artifacts: [artifact] }).data;
+    expect(processLayer7({ entities, artifacts: [artifact] }).data).toEqual([]);
+  });
+
+  it.each([
+    'I asked Rowan’s caregiver.',
+    'I am asking Rowan’s caregiver.',
+    'I asked Rowan’s sole caregiver & POA.',
+    'I am asking Rowan’s sole caregiver & POA.',
+    'I am not Rowan’s sole caregiver & POA.',
+    'I may be Rowan’s sole caregiver & POA.',
+  ])('does not turn nondeclarative possessives into roles: %s', sentence => {
+    const artifact = smsArtifact([sentence], 'received', 'Source contact');
+    const entities = processLayer6({
+      artifacts: [artifact],
+      message_author_bindings: [authorBinding(artifact, 'received', 'Jordan', 'Source contact')],
+    }).data;
+    expect(processLayer7({ entities, artifacts: [artifact] }).data).toEqual([]);
+  });
+
+  it('does not transfer a coordinated POA expressly assigned to a different recipient', () => {
+    const artifact = smsArtifact(['I am Rowan’s caregiver and POA for Taylor.'], 'received', 'Source contact');
+    const entities = processLayer6({
+      artifacts: [artifact],
+      message_author_bindings: [authorBinding(artifact, 'received', 'Jordan', 'Source contact')],
+    }).data;
+    expect(processLayer7({ entities, artifacts: [artifact] }).data.map(relationship => relationship.type))
+      .toEqual(['caregiver_recipient']);
+  });
+
   it('accepts agreeing verified author assertions and preserves all distinct provenance deterministically', () => {
     const artifact = smsArtifact(["I am Rick's caregiver."], 'received', 'Cheryl');
     const bindings = [
