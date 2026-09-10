@@ -183,3 +183,18 @@ columns, including invalid dates, numbers, and JSON. The regression first proves
 the original runtime conversion fails against the aliases, then proves both the
 preflight and the actual runtime conversion blocks succeed twice, with unchanged
 alias metadata and no privilege expansion. Applied migration files remain intact.
+
+### Existing function argument names
+
+After #617 merged at `71a32c3`, production reached 508 ledger entries. The
+pending `20260829094000` bridge migration then failed because the existing
+`public.digest(text,text)` uses input names `data` and `type`, while the source
+attempted to rename them. PostgreSQL rejects that replacement even when its
+input types and return type are unchanged.
+
+The pending source now reads and preserves existing input names for both
+bridges and uses positional parameters in their bodies. Function OIDs and
+dependent objects survive. Fresh databases retain the intended default names.
+Regression fixtures cover both naming conventions, dependent views, named
+calls, UTF-8 output, service-only grants, and two applications of the migration.
+Its repository-only checksum is updated; production history is unchanged.

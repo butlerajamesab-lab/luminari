@@ -244,7 +244,7 @@ APPROVED_REPOSITORY_ONLY = {
     ),
     "20260829094000": (
         "20260829094000_legacy_function_resolution_bridges.sql",
-        "14b8774b465db0b1dc0e563aafec51f684fd9dda",
+        "6f19e36456805bbf753c5e25f24d4eddd6ae6681",
     ),
     "20260905080000": (
         "20260905080000_strip_docx_markup_from_corpus_candidates.sql",
