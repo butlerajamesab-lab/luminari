@@ -256,6 +256,13 @@ function LiveStateDetail({ state }: { state: LiveStateData }) {
   );
 }
 
+export function viewfinderFeedPath(search: string, domain: "live_data" | "legal_pattern") {
+  const params = new URLSearchParams(search);
+  if (params.get("signal_domain") !== domain) params.delete("signal_id");
+  params.set("signal_domain", domain);
+  return `/viewfinder?${params.toString()}`;
+}
+
 function ArtifactAccessNotice({ loading, returnTo }: { loading: boolean; returnTo: string }) {
   return (
     <div style={{ border: `1px solid ${v.borderLit}`, background: v.surface, color: v.smoke, borderRadius: 10, padding: 20, fontSize: 13, lineHeight: 1.65 }}>
@@ -318,8 +325,6 @@ export default function AnomalyViewfinder() {
   const selectedState = liveStates.find((state) => state.jurisdictionCode === selectedCode) ?? liveStates[0] ?? null;
   const knownPortability = liveStates.filter((state) => state.port !== null).length;
   const fallbackCount = liveStates.filter((state) => state.profileState === "corpus_fallback").length;
-  const returnParams = new URLSearchParams(urlSearch);
-  returnParams.set("signal_domain", mode === "patterns" ? "legal_pattern" : "live_data");
 
   const tabs: Array<{ id: Mode; label: string }> = [
     { id: "spotlight", label: "Spotlight" },
@@ -479,7 +484,7 @@ export default function AnomalyViewfinder() {
         ) : null}
 
         {mode === "anomalies" || mode === "patterns" ? (
-          user ? <ViewfinderArtifactFeed key={`${user.id}:${mode}`} domain={mode === "anomalies" ? "live_data" : "legal_pattern"} /> : <ArtifactAccessNotice loading={authLoading} returnTo={`/viewfinder?${returnParams.toString()}`} />
+          user ? <ViewfinderArtifactFeed key={`${user.id}:${mode}`} domain={mode === "anomalies" ? "live_data" : "legal_pattern"} /> : <ArtifactAccessNotice loading={authLoading} returnTo={viewfinderFeedPath(urlSearch, mode === "patterns" ? "legal_pattern" : "live_data")} />
         ) : null}
 
         {mode === "about" ? (

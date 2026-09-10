@@ -17,7 +17,7 @@ vi.mock("@/core/hooks/useAuth", () => ({ useAuth: () => ({ user: state.user, loa
 vi.mock("@/components/signal-architecture/SignalArtifactContext", () => ({ SignalArtifactContext: () => null }));
 vi.mock("wouter", () => ({ useLocation: () => ["/viewfinder", vi.fn()], useSearch: () => state.search }));
 
-import AnomalyViewfinder from "@/pages/AnomalyViewfinder";
+import AnomalyViewfinder, { viewfinderFeedPath } from "@/pages/AnomalyViewfinder";
 import { ViewfinderArtifactFeed, ViewfinderEvidence, formatViewfinderDate } from "./ViewfinderArtifactFeed";
 
 function item(index: number) {
@@ -75,6 +75,16 @@ describe("Viewfinder canonical feed", () => {
     expect(html).toContain("redirect=%2Fviewfinder%3Fsignal_domain%3Dlive_data");
     expect(html).not.toContain("Current detection");
     expect(html).not.toContain("Interpretive layer");
+  });
+
+  it("preserves a deep-linked record only when returning to its original feed", () => {
+    const deepLink = "?signal_domain=live_data&signal_id=live-id";
+    expect(viewfinderFeedPath(deepLink, "live_data"))
+      .toBe("/viewfinder?signal_domain=live_data&signal_id=live-id");
+    expect(viewfinderFeedPath(deepLink, "legal_pattern"))
+      .toBe("/viewfinder?signal_domain=legal_pattern");
+    expect(viewfinderFeedPath("?signal_domain=legal_pattern&signal_id=legal-id", "live_data"))
+      .toBe("/viewfinder?signal_domain=live_data");
   });
 
   it("shows refreshed records without altering their source dates", () => {
