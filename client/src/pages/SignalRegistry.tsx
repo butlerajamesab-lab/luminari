@@ -84,6 +84,10 @@ function readable(value: string): string {
   return value.replaceAll("_", " ");
 }
 
+function accessDenied(error: { data?: { code?: string } | null } | null | undefined) {
+  return ["UNAUTHORIZED", "FORBIDDEN"].includes(error?.data?.code ?? "");
+}
+
 function collect_urls(value: unknown, urls = new Set<string>()): Set<string> {
   if (typeof value === "string" && /^https?:\/\//i.test(value)) {
     urls.add(value);
@@ -146,6 +150,7 @@ export default function SignalRegistry() {
     },
     { enabled: Boolean(user), refetchInterval: user ? 30_000 : false, refetchOnWindowFocus: true, refetchOnReconnect: true },
   );
+  const artifacts_data = accessDenied(artifacts_query.error) ? undefined : artifacts_query.data;
   const artifact_detail_query = trpc.enforcementIntel.get_signal_artifact.useQuery(
     {
       domain: selected_domain ?? "live_data",
@@ -233,7 +238,7 @@ export default function SignalRegistry() {
     );
   }
 
-  if (architecture_query.error || !architecture_query.data) {
+  if (accessDenied(architecture_query.error) || !architecture_query.data) {
     return (
       <div
         style={{
@@ -275,6 +280,9 @@ export default function SignalRegistry() {
       }}
     >
       <LayerNavBar label="Signal Architecture" route="/signal-registry" />
+
+      {architecture_query.error ? <p role="alert">Architecture refresh failed. Showing the last successful counts; they may be out of date.</p> : null}
+      {architecture_query.fetchStatus === "paused" ? <p role="status">Connection paused; showing the last successful counts.</p> : null}
 
       <header style={{ maxWidth: 1080, marginBottom: 24 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -538,26 +546,28 @@ export default function SignalRegistry() {
           }}
         >
           <span>
-            {artifacts_query.data?.total
-              ? `${format_number(offset + 1)}–${format_number(Math.min(offset + PAGE_SIZE, artifacts_query.data.total))} of ${format_number(artifacts_query.data.total)}`
+            {artifacts_data?.total
+              ? `${format_number(offset + 1)}–${format_number(Math.min(offset + PAGE_SIZE, artifacts_data.total))} of ${format_number(artifacts_data.total)}`
               : "0 artifacts"}
           </span>
           <span>No findings are inferred by this list.</span>
         </div>
 
+        {artifacts_query.error && artifacts_data ? <p role="alert" style={{ padding: "0 18px", color: palette.danger }}>Registry refresh failed. Showing the last successful results; they may be out of date.</p> : null}
+        {artifacts_query.fetchStatus === "paused" ? <p role="status" style={{ padding: "0 18px" }}>Connection paused; showing the last successful results.</p> : null}
         {artifacts_query.isLoading ? (
           <div style={{ padding: 36, display: "flex", justifyContent: "center" }}>
             <Loader2 size={24} style={{ animation: "spin 1s linear infinite" }} />
           </div>
-        ) : artifacts_query.error ? (
+        ) : artifacts_query.error && !artifacts_data ? (
           <div style={{ padding: 24, color: palette.danger }}>{artifacts_query.error.message}</div>
-        ) : artifacts_query.data?.items.length === 0 ? (
+        ) : artifacts_data?.items.length === 0 ? (
           <div style={{ padding: 28, textAlign: "center", color: palette.muted }}>
             No canonical artifacts match this filter.
           </div>
         ) : (
           <div>
-            {artifacts_query.data?.items.map((record) => {
+            {artifacts_data?.items.map((record) => {
               const meta = domain_meta[record.domain_code as keyof typeof domain_meta];
               const color = meta?.color ?? palette.text;
               return (
@@ -637,7 +647,7 @@ export default function SignalRegistry() {
           <button
             type="button"
             onClick={() => set_offset(offset + PAGE_SIZE)}
-            disabled={!artifacts_query.data?.has_more || artifacts_query.isFetching}
+            disabled={!artifacts_data?.has_more || artifacts_query.isFetching}
             style={secondary_button_style}
           >
             Next {PAGE_SIZE} <ChevronRight size={14} />

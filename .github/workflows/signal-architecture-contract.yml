@@ -17,6 +17,7 @@ on:
       - "server/signal-domain2-prism-currentness.test.ts"
       - "server/signal-architecture-runtime-observability-current.test.ts"
       - "client/src/pages/SignalRegistry.tsx"
+      - "client/src/pages/SignalRegistry.test.tsx"
       - "client/src/components/signal-architecture/**"
       - "client/src/pages/ControlRoom.tsx"
       - "client/src/pages/AnomalyViewfinder.tsx"
@@ -45,6 +46,7 @@ on:
       - "server/signal-domain2-prism-currentness.test.ts"
       - "server/signal-architecture-runtime-observability-current.test.ts"
       - "client/src/pages/SignalRegistry.tsx"
+      - "client/src/pages/SignalRegistry.test.tsx"
       - "client/src/components/signal-architecture/**"
       - "client/src/pages/ControlRoom.tsx"
       - "client/src/pages/AnomalyViewfinder.tsx"
@@ -82,5 +84,6 @@ jobs:
           client/src/components/viewfinder/ViewfinderArtifactFeed.test.tsx
           client/src/components/signal-architecture/SignalEvidenceDetails.test.tsx
           client/src/pages/ContradictionScoring.test.tsx
+          client/src/pages/SignalRegistry.test.tsx
       - name: Verify formatting
         run: git diff --check
