@@ -378,8 +378,19 @@ const CURRENT_CASE_CTE = `
         nullif(source_record->>'case_uuid',''),
         nullif(source_record->>'case_uid',''),
         nullif(lower(btrim(source_record->>'citation')),''),
-        nullif(object_ref,''),
-        md5(lower(coalesce(nullif(source_record->>'case_name',''), nullif(source_record->>'title',''), source_record->>'citation')))
+        case
+          when coalesce(
+            nullif(source_record->>'case_name',''),
+            nullif(source_record->>'title',''),
+            nullif(source_record->>'citation','')
+          ) is not null
+            then md5(lower(coalesce(
+              nullif(source_record->>'case_name',''),
+              nullif(source_record->>'title',''),
+              source_record->>'citation'
+            )))
+        end,
+        nullif(object_ref,'')
       ) as dedupe_key,
       source_record->>'citation' as citation,
       coalesce(nullif(source_record->>'case_name',''), nullif(source_record->>'title','')) as case_name,
@@ -431,8 +442,19 @@ const CURRENT_CASE_CTE = `
           nullif(source_record->>'case_uuid',''),
           nullif(source_record->>'case_uid',''),
           nullif(lower(btrim(source_record->>'citation')),''),
-          nullif(object_ref,''),
-          md5(lower(coalesce(nullif(source_record->>'case_name',''), nullif(source_record->>'title',''), source_record->>'citation')))
+          case
+            when coalesce(
+              nullif(source_record->>'case_name',''),
+              nullif(source_record->>'title',''),
+              nullif(source_record->>'citation','')
+            ) is not null
+              then md5(lower(coalesce(
+                nullif(source_record->>'case_name',''),
+                nullif(source_record->>'title',''),
+                source_record->>'citation'
+              )))
+          end,
+          nullif(object_ref,'')
         )
         order by
           case when legal_catalog_ready then 0 else 1 end,
@@ -467,7 +489,16 @@ const CURRENT_CASE_CTE = `
     select * from current_rows
     union all
     select
-      l.id::text,coalesce(l.id::text, nullif(lower(btrim(l.citation)), '')),l.citation,l.case_name,l.jurisdiction,l.domains,l.year_decided,l.court,l.summary,l.key_quotes,
+      l.id::text,
+      coalesce(
+        l.id::text,
+        nullif(lower(btrim(l.citation)), ''),
+        case
+          when coalesce(nullif(l.case_name, ''), nullif(l.title, ''), nullif(l.citation, '')) is not null
+            then md5(lower(coalesce(nullif(l.case_name, ''), nullif(l.title, ''), l.citation)))
+        end
+      ),
+      l.citation,l.case_name,l.jurisdiction,l.domains,l.year_decided,l.court,l.summary,l.key_quotes,
       l.source_url,l.title,l.opinion_text,
       coalesce(l.metadata,'{}'::jsonb) || jsonb_build_object('runtime_source','legacy_compat') as metadata,
       l.created_at,2::int as runtime_rank
@@ -475,7 +506,14 @@ const CURRENT_CASE_CTE = `
     where not exists (
       select 1
       from current_rows c
-      where c.dedupe_key = coalesce(l.id::text, nullif(lower(btrim(l.citation)), ''))
+      where c.dedupe_key = coalesce(
+        l.id::text,
+        nullif(lower(btrim(l.citation)), ''),
+        case
+          when coalesce(nullif(l.case_name, ''), nullif(l.title, ''), nullif(l.citation, '')) is not null
+            then md5(lower(coalesce(nullif(l.case_name, ''), nullif(l.title, ''), l.citation)))
+        end
+      )
     )
   )
 `;
@@ -545,7 +583,24 @@ export async function getRuntimeLegalLibraryStats(jurisdiction?: string) {
       union
       select lower(btrim(l.citation)),l.jurisdiction from public.legal_statutes l
     ), current_cases_raw as (
-      select coalesce(nullif(source_record->>'case_uuid',''),nullif(source_record->>'case_uid',''),nullif(btrim(source_record->>'citation'),''),nullif(c.object_ref,'')) as id,
+      select coalesce(
+               nullif(source_record->>'case_uuid',''),
+               nullif(source_record->>'case_uid',''),
+               nullif(btrim(source_record->>'citation'),''),
+               case
+                 when coalesce(
+                   nullif(source_record->>'case_name',''),
+                   nullif(source_record->>'title',''),
+                   nullif(source_record->>'citation','')
+                 ) is not null
+                   then md5(lower(coalesce(
+                     nullif(source_record->>'case_name',''),
+                     nullif(source_record->>'title',''),
+                     source_record->>'citation'
+                   )))
+               end,
+               nullif(c.object_ref,'')
+             ) as id,
              coalesce(nullif(source_record->>'jurisdiction_code',''),nullif(source_record->>'jurisdiction',''),nullif(c.state_code,''),nullif(c.jurisdiction,'')) as jurisdiction,
              c.legal_catalog_ready
       from public.v_lighthouse_legal_authority_catalog_v2 c
@@ -557,7 +612,24 @@ export async function getRuntimeLegalLibraryStats(jurisdiction?: string) {
       ) p on true
       where c.object_class='legal_authority'
         and (c.source_locator like 'xlsx:verified_case_law:%' or c.source_locator like 'xlsx:case_law_master:%')
-        and coalesce(nullif(source_record->>'case_uuid',''),nullif(source_record->>'case_uid',''),nullif(btrim(source_record->>'citation'),'')) is not null
+        and coalesce(
+          nullif(source_record->>'case_uuid',''),
+          nullif(source_record->>'case_uid',''),
+          nullif(btrim(source_record->>'citation'),''),
+          case
+            when coalesce(
+              nullif(source_record->>'case_name',''),
+              nullif(source_record->>'title',''),
+              nullif(source_record->>'citation','')
+            ) is not null
+              then md5(lower(coalesce(
+                nullif(source_record->>'case_name',''),
+                nullif(source_record->>'title',''),
+                source_record->>'citation'
+              )))
+          end,
+          nullif(c.object_ref,'')
+        ) is not null
     ), current_cases as (
       select
         id,
