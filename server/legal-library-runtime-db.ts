@@ -444,7 +444,20 @@ const CURRENT_CASE_CTE = `
     where coalesce(
       nullif(source_record->>'case_uuid',''),
       nullif(source_record->>'case_uid',''),
-      nullif(btrim(source_record->>'citation'),'')
+      nullif(btrim(source_record->>'citation'),''),
+      nullif(object_ref,''),
+      case
+        when coalesce(
+          nullif(source_record->>'case_name',''),
+          nullif(source_record->>'title',''),
+          nullif(source_record->>'citation','')
+        ) is not null
+          then md5(lower(coalesce(
+            nullif(source_record->>'case_name',''),
+            nullif(source_record->>'title',''),
+            source_record->>'citation'
+          )))
+      end
     ) is not null
   ), current_rows as (
     select id,dedupe_key,citation,case_name,jurisdiction,domains,year_decided,court,summary,key_quotes,
