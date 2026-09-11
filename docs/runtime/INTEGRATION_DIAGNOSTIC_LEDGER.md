@@ -28,7 +28,7 @@ Guardrails:
 
 ## Fixtures
 
-The ledger fixture lives at `/home/runner/work/luminari/luminari/config/integration-diagnostic-ledger-v1.json`.
+The ledger fixture lives at `config/integration-diagnostic-ledger-v1.json`.
 
 It records:
 
