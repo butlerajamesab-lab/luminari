@@ -241,7 +241,8 @@ export async function getCaseActionContext(
 
   const problemContext = trimmedText(input.problemContext) ?? trimmedText(caseData.category);
   const incidentDate = trimmedText(input.incidentDate) ?? caseIncidentDate(caseData as Record<string, unknown>);
-  const asOfDate = incidentDate ? trimmedText(input.asOfDate) ?? utc_today_date_only() : null;
+  const explicitAsOfDate = trimmedText(input.asOfDate);
+  const asOfDate = incidentDate ? explicitAsOfDate ?? utc_today_date_only() : explicitAsOfDate;
   const normalizedIssue = issueKey(problemContext);
   const jurisdictionCode = trimmedText(jurisdiction.code)?.toUpperCase() ?? null;
   const fallbackSurfaces: string[] = [];

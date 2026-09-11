@@ -195,4 +195,35 @@ describe("case action context", () => {
     expect(result.request.as_of_date).toBe(today());
     expect(result.workflow.filing_deadlines).toEqual([{ formId: 1 }]);
   });
+
+  it("preserves a caller-provided as_of_date even when deadline reads stay disabled", async () => {
+    mocks.getCaseById.mockResolvedValue({ id: 90, jurisdiction_id: 9, category: "Housing" });
+    mocks.getJurisdictionById.mockResolvedValue({ id: 9, code: "wa", name: "Washington" });
+    mocks.searchRuntimeStatutes.mockResolvedValue([]);
+    mocks.searchRuntimeCaseLaw.mockResolvedValue([]);
+    mocks.searchPublishableResourceDirectory.mockResolvedValue({ items: [] });
+    mocks.searchRuntimeEnforcement.mockResolvedValue([]);
+    mocks.searchRuntimeWeakJoints.mockResolvedValue([]);
+    mocks.listRuntimeContradictions.mockResolvedValue([]);
+    mocks.read_investigation_workflow.mockResolvedValue({ workflow: { immediateActions: [], timelineTasks: [], agencySteps: [] } });
+    mocks.read_enforcement_pathways.mockResolvedValue({ pathways: [] });
+    mocks.getRuntimeLegalLibraryStats.mockResolvedValue({
+      statutes: 0,
+      caseLaw: 0,
+      enforcementRecords: 0,
+      weakJoints: 0,
+      contradictions: 0,
+      currentCorpusLegalAuthorities: 0,
+      strandedCurrentCorpusStatutes: 0,
+      strandedCurrentCorpusCaseLaw: 0,
+      strandedCurrentCorpusLegalAuthorities: 0,
+    });
+    mocks.query.mockResolvedValue({ rows: [] });
+
+    const result = await getCaseActionContext({ caseId: 90, asOfDate: "2026-04-01" });
+
+    expect(mocks.list_filing_deadline_records).not.toHaveBeenCalled();
+    expect(result.request.as_of_date).toBe("2026-04-01");
+    expect(result.workflow.filing_deadlines).toEqual([]);
+  });
 });
