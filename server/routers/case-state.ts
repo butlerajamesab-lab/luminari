@@ -120,6 +120,10 @@ async function list_case_resource_links(case_id: number) {
   }
 }
 
+function case_law_commit_ref(case_law_id: number | string) {
+  return `case_law:${case_law_id}`;
+}
+
 export const caseStateRouter = router({
   get: protectedProcedure
     .input(z.object({ case_id: z.number() }))
@@ -292,6 +296,22 @@ export const caseStateRouter = router({
       }
       await update_completeness(input.case_id);
       return { success: true, statute_id: input.statute_id };
+    }),
+
+  commit_case_law: protectedProcedure
+    .input(z.object({ case_id: z.number(), case_law_id: z.union([z.number(), z.string().min(1)]) }))
+    .mutation(async ({ ctx, input }) => {
+      await verify_case_ownership(input.case_id, ctx.user.id);
+      const state = await get_or_create_case_state(input.case_id, ctx.user.id);
+      const current = (state.committedStatuteIds as Array<number | string>) || [];
+      const caseLawRef = case_law_commit_ref(input.case_law_id);
+      if (!current.includes(caseLawRef)) {
+        await db.update(caseState)
+          .set({ committedStatuteIds: [...current, caseLawRef], updatedAt: Date.now() })
+          .where(eq(caseState.caseId, input.case_id));
+      }
+      await update_completeness(input.case_id);
+      return { success: true, case_law_id: input.case_law_id, committed_ref: caseLawRef };
     }),
 
   commit_foia: protectedProcedure

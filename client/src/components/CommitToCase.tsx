@@ -105,6 +105,7 @@ export function CommitToCase({
   const commit_benefit = trpc.case_state.commit_benefit.useMutation({ onSuccess: handleSuccess, onError: handleError });
   const commit_signal = trpc.case_state.commit_signal.useMutation({ onSuccess: handleSuccess, onError: handleError });
   const commit_statute = trpc.case_state.commit_statute.useMutation({ onSuccess: handleSuccess, onError: handleError });
+  const commit_case_law = trpc.case_state.commit_case_law.useMutation({ onSuccess: handleSuccess, onError: handleError });
   const commit_foia = trpc.case_state.commit_foia.useMutation({ onSuccess: handleSuccess, onError: handleError });
   const commit_filing = trpc.case_state.commit_filing.useMutation({ onSuccess: handleSuccess, onError: handleError });
   const commit_path = trpc.case_state.commit_procedural_path.useMutation({ onSuccess: handleSuccess, onError: handleError });
@@ -114,7 +115,7 @@ export function CommitToCase({
 
   const isLoading =
     commit_finding.isPending || commit_barrier.isPending || commit_benefit.isPending ||
-    commit_signal.isPending || commit_statute.isPending || commit_foia.isPending ||
+    commit_signal.isPending || commit_statute.isPending || commit_case_law.isPending || commit_foia.isPending ||
     commit_filing.isPending || commit_path.isPending || commit_strategy.isPending ||
     commit_resource.isPending ||
     set_claim_type.isPending;
@@ -178,8 +179,10 @@ export function CommitToCase({
         commit_signal.mutate({ case_id: caseId, signal_id: numericItemId, signal_type: signalType });
         break;
       case "statute":
-      case "case_law":
         commit_statute.mutate({ case_id: caseId, statute_id: itemId! });
+        break;
+      case "case_law":
+        commit_case_law.mutate({ case_id: caseId, case_law_id: itemId! });
         break;
       case "foia":
         commit_foia.mutate({ case_id: caseId, foia_id: numericItemId });

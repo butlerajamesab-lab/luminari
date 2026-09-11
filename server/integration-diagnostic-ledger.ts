@@ -140,8 +140,9 @@ export async function buildIntegrationDiagnosticLedger() {
   const knownMismatches = [] as Array<Record<string, unknown>>;
 
   if (
-    Number(projection.legal_total ?? 0) > 0
-    && Number(legalRuntime?.currentCorpusLegalAuthorities ?? 0) === 0
+    legalRuntime
+    && Number(projection.legal_total ?? 0) > 0
+    && Number(legalRuntime.currentCorpusLegalAuthorities ?? 0) === 0
   ) {
     knownMismatches.push({
       surface: "/legal-library",
