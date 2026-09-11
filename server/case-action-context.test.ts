@@ -152,4 +152,39 @@ describe("case action context", () => {
     expect((result.workflow.investigation as any).availability.reason).toContain("required to scope investigation workflows");
     expect((result.workflow.enforcement_pathways as any).availability.reason).toContain("required to scope enforcement pathways");
   });
+
+  it("reuses the case incident date for filing deadlines when callers omit it", async () => {
+    mocks.getCaseById.mockResolvedValue({ id: 88, jurisdiction_id: 9, category: "Housing", incident_date: "2026-03-14" });
+    mocks.getJurisdictionById.mockResolvedValue({ id: 9, code: "wa", name: "Washington" });
+    mocks.searchRuntimeStatutes.mockResolvedValue([]);
+    mocks.searchRuntimeCaseLaw.mockResolvedValue([]);
+    mocks.searchPublishableResourceDirectory.mockResolvedValue({ items: [] });
+    mocks.searchRuntimeEnforcement.mockResolvedValue([]);
+    mocks.searchRuntimeWeakJoints.mockResolvedValue([]);
+    mocks.listRuntimeContradictions.mockResolvedValue([]);
+    mocks.read_investigation_workflow.mockResolvedValue({ workflow: { immediateActions: [], timelineTasks: [], agencySteps: [] } });
+    mocks.read_enforcement_pathways.mockResolvedValue({ pathways: [] });
+    mocks.list_filing_deadline_records.mockResolvedValue([{ formId: 1 }]);
+    mocks.getRuntimeLegalLibraryStats.mockResolvedValue({
+      statutes: 0,
+      caseLaw: 0,
+      enforcementRecords: 0,
+      weakJoints: 0,
+      contradictions: 0,
+      currentCorpusLegalAuthorities: 0,
+      strandedCurrentCorpusStatutes: 0,
+      strandedCurrentCorpusCaseLaw: 0,
+      strandedCurrentCorpusLegalAuthorities: 0,
+    });
+    mocks.query.mockResolvedValue({ rows: [] });
+
+    const result = await getCaseActionContext({ caseId: 88 });
+
+    expect(mocks.list_filing_deadline_records).toHaveBeenCalledWith({
+      incidentDate: "2026-03-14",
+      asOfDate: undefined,
+    });
+    expect(result.request.incident_date).toBe("2026-03-14");
+    expect(result.workflow.filing_deadlines).toEqual([{ formId: 1 }]);
+  });
 });

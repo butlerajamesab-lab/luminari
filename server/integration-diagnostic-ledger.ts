@@ -122,7 +122,7 @@ export async function buildIntegrationDiagnosticLedger() {
         runtime_surfaces: family.runtime_surfaces,
         relations,
         populated_relations: relations.filter((relation) => relation.count > 0).length,
-        canonical_objects_found: relations.reduce((sum, relation) => sum + relation.count, 0),
+        relation_row_total: relations.reduce((sum, relation) => sum + relation.count, 0),
       };
     }),
   );

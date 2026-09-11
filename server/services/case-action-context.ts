@@ -85,6 +85,10 @@ function issueKey(value: string | null): string | null {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "") || null;
 }
 
+function caseIncidentDate(caseData: Record<string, unknown>) {
+  return trimmedText(caseData.incident_date) ?? trimmedText(caseData.incidentDate);
+}
+
 async function searchWithFallback<T>(
   searchTerm: string | null,
   primary: () => Promise<T[]>,
@@ -236,6 +240,7 @@ export async function getCaseActionContext(
   }
 
   const problemContext = trimmedText(input.problemContext) ?? trimmedText(caseData.category);
+  const incidentDate = trimmedText(input.incidentDate) ?? caseIncidentDate(caseData as Record<string, unknown>);
   const normalizedIssue = issueKey(problemContext);
   const jurisdictionCode = trimmedText(jurisdiction.code)?.toUpperCase() ?? null;
   const fallbackSurfaces: string[] = [];
@@ -296,9 +301,9 @@ export async function getCaseActionContext(
               "Case category or problem context is required to scope enforcement pathways.",
             ),
           ),
-    input.incidentDate
+    incidentDate
       ? list_filing_deadline_records({
-          incidentDate: input.incidentDate,
+          incidentDate,
           asOfDate: input.asOfDate,
         })
       : Promise.resolve([]),
@@ -311,7 +316,7 @@ export async function getCaseActionContext(
   if (caseLawResult.fallbackUsed) fallbackSurfaces.push("legal.case_law");
   if (resourcesResult.fallbackUsed) fallbackSurfaces.push("resources.directory");
   if (enforcementResult.fallbackUsed) fallbackSurfaces.push("legal.enforcement");
-  if (!input.incidentDate) {
+  if (!incidentDate) {
     notes.push("Filing deadline calculations stay bounded to source text and require an incident_date; none was supplied.");
   }
   if (legalStats.strandedCurrentCorpusLegalAuthorities > 0) {
@@ -329,7 +334,7 @@ export async function getCaseActionContext(
     request: {
       problem_context: problemContext,
       issue_key: normalizedIssue,
-      incident_date: input.incidentDate ?? null,
+      incident_date: incidentDate,
       as_of_date: input.asOfDate ?? null,
       limit_per_surface: limit,
     },
