@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   read_investigation_workflow: vi.fn(),
   read_enforcement_pathways: vi.fn(),
   list_filing_deadline_records: vi.fn(),
+  utc_today_date_only: vi.fn(() => "2026-03-15"),
   query: vi.fn(),
 }));
 
@@ -47,6 +48,7 @@ vi.mock("./enforcement-pathway-runtime-compat", () => ({
 
 vi.mock("./filing-deadline-runtime-compat", () => ({
   list_filing_deadline_records: mocks.list_filing_deadline_records,
+  utc_today_date_only: mocks.utc_today_date_only,
 }));
 
 vi.mock("./db", () => ({
@@ -55,9 +57,14 @@ vi.mock("./db", () => ({
 
 import { getCaseActionContext } from "./services/case-action-context";
 
+function today() {
+  return "2026-03-15";
+}
+
 describe("case action context", () => {
   beforeEach(() => {
     Object.values(mocks).forEach((mock) => mock.mockReset());
+    mocks.utc_today_date_only.mockReturnValue("2026-03-15");
   });
 
   it("pulls populated runtime data through bounded surfaces and preserves stranded-substrate diagnostics", async () => {
@@ -95,8 +102,8 @@ describe("case action context", () => {
       if (sql.includes("case_resource_links")) {
         return { rows: [{ resource_ref: "res_1", resource_name: "Tenant Union", source_lane: "directory", created_at: 1 }] };
       }
-      if (sql.includes("v_signal_lineage")) {
-        return { rows: [{ detected_signal_id: "sig_1", signal_type: "housing_delay", jurisdiction_raw_value: "WA" }] };
+      if (sql.includes("signal_artifact_case_links_v1")) {
+        return { rows: [{ case_signal_link_id: "sig_1", signal_record_id: "live_1", relationship_type: "supports_case", title: "Housing delay signal" }] };
       }
       return { rows: [] };
     });
@@ -109,7 +116,7 @@ describe("case action context", () => {
     expect(result.resources.directory_results).toEqual([{ resource_entity_id: "res_1", resource_name: "Tenant Union" }]);
     expect(result.resources.attached_to_case).toHaveLength(1);
     expect(result.workflow.enforcement_pathways).toEqual({ pathways: [{ id: "path_1" }] });
-    expect(result.signals.lineage).toEqual([{ detected_signal_id: "sig_1", signal_type: "housing_delay", jurisdiction_raw_value: "WA" }]);
+    expect(result.signals.lineage).toEqual([{ case_signal_link_id: "sig_1", signal_record_id: "live_1", relationship_type: "supports_case", title: "Housing delay signal" }]);
     expect(result.diagnostics.fallback_surfaces).toEqual([
       "legal.statutes",
       "legal.case_law",
@@ -182,9 +189,10 @@ describe("case action context", () => {
 
     expect(mocks.list_filing_deadline_records).toHaveBeenCalledWith({
       incidentDate: "2026-03-14",
-      asOfDate: undefined,
+      asOfDate: today(),
     });
     expect(result.request.incident_date).toBe("2026-03-14");
+    expect(result.request.as_of_date).toBe(today());
     expect(result.workflow.filing_deadlines).toEqual([{ formId: 1 }]);
   });
 });

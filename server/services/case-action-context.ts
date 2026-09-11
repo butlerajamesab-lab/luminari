@@ -7,7 +7,7 @@ import {
   searchRuntimeStatutes,
   searchRuntimeWeakJoints,
 } from "../legal-library-runtime-db";
-import { list_filing_deadline_records } from "../filing-deadline-runtime-compat";
+import { list_filing_deadline_records, utc_today_date_only } from "../filing-deadline-runtime-compat";
 import { read_enforcement_pathways } from "../enforcement-pathway-runtime-compat";
 import { read_investigation_workflow } from "../investigation-workflow-runtime-compat";
 import { searchPublishableResourceDirectory } from "./resource-directory-publishable";
@@ -116,27 +116,27 @@ async function listCaseResourceLinks(caseId: number) {
   }
 }
 
-async function listSignalLineage(input: {
-  jurisdictionCode: string | null;
-  searchTerm: string | null;
+async function listCaseSignalLinks(input: {
+  caseId: number;
   limit: number;
 }) {
   try {
     const { rows } = await getPool().query(
-      `select detected_signal_id,
-              signal_type,
-              jurisdiction_raw_value,
-              confidence_score,
-              severity,
-              detected_at,
-              source_system,
-              source_connector_id
-         from public.v_signal_lineage
-        where ($1::text is null or upper(jurisdiction_raw_value) = $1)
-          and ($2::text is null or coalesce(signal_type, '') ilike $2)
-        order by detected_at desc nulls last, detected_signal_id desc
-        limit $3`,
-      [input.jurisdictionCode, input.searchTerm ? `%${input.searchTerm}%` : null, input.limit],
+      `select
+          link_id::text as case_signal_link_id,
+          domain_code,
+          coalesce(legal_pattern_id, live_data_signal_id, convergence_id, intake_signal_id)::text as signal_record_id,
+          relationship_type,
+          reviewer_notes,
+          artifact_title_snapshot as title,
+          artifact_type_snapshot as artifact_type,
+          artifact_source_hash as source_hash,
+          created_at
+         from public.signal_artifact_case_links_v1
+        where case_id = $1
+        order by created_at desc, link_id desc
+        limit $2`,
+      [input.caseId, input.limit],
     );
     return rows as Array<Record<string, unknown>>;
   } catch {
@@ -241,6 +241,7 @@ export async function getCaseActionContext(
 
   const problemContext = trimmedText(input.problemContext) ?? trimmedText(caseData.category);
   const incidentDate = trimmedText(input.incidentDate) ?? caseIncidentDate(caseData as Record<string, unknown>);
+  const asOfDate = incidentDate ? trimmedText(input.asOfDate) ?? utc_today_date_only() : null;
   const normalizedIssue = issueKey(problemContext);
   const jurisdictionCode = trimmedText(jurisdiction.code)?.toUpperCase() ?? null;
   const fallbackSurfaces: string[] = [];
@@ -304,11 +305,11 @@ export async function getCaseActionContext(
     incidentDate
       ? list_filing_deadline_records({
           incidentDate,
-          asOfDate: input.asOfDate,
+          asOfDate: asOfDate ?? undefined,
         })
       : Promise.resolve([]),
     listCaseResourceLinks(input.caseId),
-    listSignalLineage({ jurisdictionCode, searchTerm: problemContext, limit }),
+    listCaseSignalLinks({ caseId: input.caseId, limit }),
     getRuntimeLegalLibraryStats(jurisdictionCode ?? undefined),
   ]);
 
@@ -335,7 +336,7 @@ export async function getCaseActionContext(
       problem_context: problemContext,
       issue_key: normalizedIssue,
       incident_date: incidentDate,
-      as_of_date: input.asOfDate ?? null,
+      as_of_date: asOfDate,
       limit_per_surface: limit,
     },
     semantics: {
