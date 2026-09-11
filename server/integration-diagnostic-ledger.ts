@@ -25,6 +25,14 @@ function readFixture(): LedgerFixture {
 }
 
 async function countRelation(relation: string) {
+  if (!/^public\.[a-z0-9_]+$/i.test(relation)) {
+    return {
+      relation,
+      count: 0,
+      available: false,
+      error: "Unsupported relation name in integration ledger fixture",
+    };
+  }
   try {
     const { rows } = await getPool().query(`select count(*)::int as count from ${relation}`);
     return { relation, count: Number(rows[0]?.count ?? 0), available: true };
