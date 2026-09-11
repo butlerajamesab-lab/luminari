@@ -20,8 +20,41 @@ type LedgerFixture = {
   graph_edges: Array<{ edge_key: string; relation: string; description: string }>;
 };
 
-function readFixture(): LedgerFixture {
-  return JSON.parse(readFileSync(FIXTURE_PATH, "utf8")) as LedgerFixture;
+function fixtureFailure(error: string) {
+  return {
+    schema_version: "1.0.0",
+    ledger_id: "integration_diagnostic_ledger_v1",
+    reference_issue: "#383",
+    constitutional_boundary: {},
+    semantic_layers: [],
+    source_family_coverage: [],
+    graph_edge_coverage: [],
+    runtime_projection_coverage: [],
+    stranded_unpublished_records: {
+      legal_authorities: { populated: 0, visible: 0, stranded: 0 },
+      resources: { populated: 0, visible: 0, stranded: 0 },
+      workflows: { populated: 0, visible: 0, stranded: 0 },
+      case_resource_links: 0,
+      signal_case_links: 0,
+    },
+    known_surface_mismatches: [],
+    generated_at: new Date().toISOString(),
+    error,
+  };
+}
+
+function readFixture(): { fixture: LedgerFixture | null; error: string | null } {
+  try {
+    return {
+      fixture: JSON.parse(readFileSync(FIXTURE_PATH, "utf8")) as LedgerFixture,
+      error: null,
+    };
+  } catch (error) {
+    return {
+      fixture: null,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
 }
 
 async function countRelation(relation: string) {
@@ -71,7 +104,10 @@ async function readProjectionSnapshot() {
 }
 
 export async function buildIntegrationDiagnosticLedger() {
-  const fixture = readFixture();
+  const { fixture, error } = readFixture();
+  if (!fixture) {
+    return fixtureFailure(`Unable to load integration ledger fixture: ${error ?? "unknown error"}`);
+  }
   const familyCoverage = await Promise.all(
     fixture.source_families.map(async (family) => {
       const relations = await Promise.all(

@@ -371,10 +371,16 @@ const CURRENT_CASE_CTE = `
       coalesce(
         nullif(source_record->>'case_uuid',''),
         nullif(source_record->>'case_uid',''),
-        nullif(btrim(source_record->>'citation'),''),
         nullif(object_ref,''),
         md5(lower(coalesce(nullif(source_record->>'case_name',''), nullif(source_record->>'title',''), source_record->>'citation')))
       ) as id,
+      coalesce(
+        nullif(source_record->>'case_uuid',''),
+        nullif(source_record->>'case_uid',''),
+        nullif(lower(btrim(source_record->>'citation')),''),
+        nullif(object_ref,''),
+        md5(lower(coalesce(nullif(source_record->>'case_name',''), nullif(source_record->>'title',''), source_record->>'citation')))
+      ) as dedupe_key,
       source_record->>'citation' as citation,
       coalesce(nullif(source_record->>'case_name',''), nullif(source_record->>'title','')) as case_name,
       coalesce(
@@ -424,8 +430,9 @@ const CURRENT_CASE_CTE = `
         partition by coalesce(
           nullif(source_record->>'case_uuid',''),
           nullif(source_record->>'case_uid',''),
-          lower(btrim(source_record->>'citation')),
-          object_ref
+          nullif(lower(btrim(source_record->>'citation')),''),
+          nullif(object_ref,''),
+          md5(lower(coalesce(nullif(source_record->>'case_name',''), nullif(source_record->>'title',''), source_record->>'citation')))
         )
         order by
           case when legal_catalog_ready then 0 else 1 end,
@@ -440,14 +447,14 @@ const CURRENT_CASE_CTE = `
       nullif(btrim(source_record->>'citation'),'')
     ) is not null
   ), current_rows as (
-    select id,citation,case_name,jurisdiction,domains,year_decided,court,summary,key_quotes,
+    select id,dedupe_key,citation,case_name,jurisdiction,domains,year_decided,court,summary,key_quotes,
            source_url,title,opinion_text,metadata,created_at,publication_rank as runtime_rank
     from current_ranked where source_rank = 1
   ), combined as (
     select * from current_rows
     union all
     select
-      l.id,l.citation,l.case_name,l.jurisdiction,l.domains,l.year_decided,l.court,l.summary,l.key_quotes,
+      l.id::text,coalesce(l.id::text, nullif(lower(btrim(l.citation)), '')),l.citation,l.case_name,l.jurisdiction,l.domains,l.year_decided,l.court,l.summary,l.key_quotes,
       l.source_url,l.title,l.opinion_text,
       coalesce(l.metadata,'{}'::jsonb) || jsonb_build_object('runtime_source','legacy_compat') as metadata,
       l.created_at,2::int as runtime_rank
@@ -455,11 +462,7 @@ const CURRENT_CASE_CTE = `
     where not exists (
       select 1
       from current_rows c
-      where c.id = l.id::text
-         or (
-           nullif(lower(btrim(c.citation)), '') is not null
-           and lower(btrim(c.citation)) = lower(btrim(l.citation))
-         )
+      where c.dedupe_key = coalesce(l.id::text, nullif(lower(btrim(l.citation)), ''))
     )
   )
 `;
