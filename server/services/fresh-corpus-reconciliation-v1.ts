@@ -1,10 +1,11 @@
 import crypto from "node:crypto";
 import JSZip from "jszip";
+import { workbookSheets } from "./xlsx-workbook-structure";
 import { getPool } from "../db";
 import { SUPABASE_PROJECT } from "../_core/health-diagnostics";
 
-export const FRESH_CORPUS_ENGINE_VERSION = "fresh_corpus_reconciliation_v1.2.2";
-export const FRESH_CORPUS_PARSER_VERSION = "fresh_registry_typed_parser_v1.2.2";
+export const FRESH_CORPUS_ENGINE_VERSION = "fresh_corpus_reconciliation_v1.2.3";
+export const FRESH_CORPUS_PARSER_VERSION = "fresh_registry_typed_parser_v1.2.3";
 
 const STATE_NAMES: Record<string, string> = {
   Alabama: "AL", Alaska: "AK", Arizona: "AZ", Arkansas: "AR", California: "CA",
@@ -375,21 +376,11 @@ export async function forEachXlsxRow(
   }
   const workbookXml = await zip.file("xl/workbook.xml")?.async("text");
   const relsXml = await zip.file("xl/_rels/workbook.xml.rels")?.async("text");
-  if (!workbookXml || !relsXml) return 0;
-  const relationships = new Map<string, string>();
-  for (const rel of relsXml.matchAll(/<Relationship\b[^>]*Id="([^"]+)"[^>]*Target="([^"]+)"[^>]*\/?\s*>/g)) {
-    relationships.set(rel[1], rel[2].replace(/^\//, ""));
-  }
-  const sheets: Array<{ name: string; path: string }> = [];
-  for (const sheet of workbookXml.matchAll(/<sheet\b[^>]*name="([^"]+)"[^>]*r:id="([^"]+)"[^>]*\/?\s*>/g)) {
-    const target = relationships.get(sheet[2]);
-    if (!target) continue;
-    sheets.push({ name: decodeXmlEntities(sheet[1]), path: target.startsWith("xl/") ? target : `xl/${target.replace(/^\.\//, "")}` });
-  }
+  const sheets = workbookSheets(workbookXml, relsXml);
   let emitted = 0;
   for (const sheet of sheets) {
     const entry = zip.file(sheet.path);
-    if (!entry) continue;
+    if (!entry) throw new Error(`xlsx_worksheet_part_missing:${sheet.name}:${sheet.path}`);
     let header: { row: ParsedXlsxRow; columns: string[]; keys: string[] } | null = null;
     const pending: ParsedXlsxRow[] = [];
     const emit = async (parsed: ParsedXlsxRow, rowRole: XlsxSourceRow["row_role"]) => {

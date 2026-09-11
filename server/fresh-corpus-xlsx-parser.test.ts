@@ -1,6 +1,7 @@
 import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
 import { forEachXlsxRow, type XlsxSourceRow } from "./services/fresh-corpus-reconciliation-v1";
+import { parseXlsxAtomic } from "./services/fresh-corpus-atomic-v1";
 
 async function fixtureWorkbook(): Promise<Buffer> {
   const zip = new JSZip();
@@ -30,6 +31,30 @@ async function fixtureWorkbook(): Promise<Buffer> {
 }
 
 describe("fresh corpus workbook parser", () => {
+  it("reads Target-before-Id relationships and reordered sheet attributes in both parsers", async () => {
+    const zip = await JSZip.loadAsync(await fixtureWorkbook());
+    zip.file("xl/workbook.xml", `<workbook><sheets><sheet r:id='rId1' sheetId='1' name='WA Resource &amp; Directory'/></sheets></workbook>`);
+    zip.file("xl/_rels/workbook.xml.rels", `<Relationships><Relationship Type='http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet' Target='/xl/worksheets/sheet1.xml' Id='rId1'/></Relationships>`);
+    const buffer = await zip.generateAsync({ type: "nodebuffer" });
+    const rows: XlsxSourceRow[] = [];
+    expect(await forEachXlsxRow(buffer, row => { rows.push(row); })).toBe(3);
+    expect(rows[2].sheet).toBe("WA Resource & Directory");
+    expect(rows[2].values.Address).toBe("123 Main Street");
+    const atomic = await parseXlsxAtomic(buffer, "fixture", null);
+    expect(atomic).toHaveLength(1);
+    expect(atomic[0].source_relation).toBe("WA Resource & Directory");
+  });
+
+  it.each(["relationship", "worksheet", "metadata"])("fails instead of reporting success when %s is missing", async missing => {
+    const zip = await JSZip.loadAsync(await fixtureWorkbook());
+    if (missing === "relationship") zip.file("xl/_rels/workbook.xml.rels", "<Relationships/>");
+    if (missing === "worksheet") zip.remove("xl/worksheets/sheet1.xml");
+    if (missing === "metadata") zip.remove("xl/workbook.xml");
+    const buffer = await zip.generateAsync({ type: "nodebuffer" });
+    await expect(forEachXlsxRow(buffer, () => {})).rejects.toThrow(/xlsx_/);
+    await expect(parseXlsxAtomic(buffer, "fixture", null)).rejects.toThrow(/xlsx_/);
+  });
+
   it("retains preamble, header, data, address, and formula metadata", async () => {
     const rows: XlsxSourceRow[] = [];
     await forEachXlsxRow(await fixtureWorkbook(), row => { rows.push(row); });
