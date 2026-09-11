@@ -1,278 +1,223 @@
 #!/usr/bin/env python3
-"""Build the authoritative advocacy/reform intelligence SQL import lane."""
+"""Prepare rollback-only reconciliation using reviewed source and existing-row bindings.
 
+No database connection, guessed identity, table creation, or implicit field erasure.
+The manifest explicitly bounds the run; this is not a full-corpus import claim.
+"""
 from __future__ import annotations
-
 import argparse
 import csv
+import hashlib
 import io
 import json
-import re
+import math
+import os
 from pathlib import Path
-from typing import Any
+import re
+import tempfile
+import uuid
 import zipfile
+from seed_source_parsers import parse_sql_rows
 
-from build_registry import parse_sql_records, slugify_identifier
-
-EXPECTED_SOURCES = [
-    "sais_escalation_advocacy_registry.json",
-    "legal_case_law_priority1.json",
-    "20260417095403_023_seed_legislators_agencies_coalitions.sql",
-    "lighthouse_legislators_complete(2).zip",
-    "coalition_agencies_import_snake_case.json",
-    "coalition_advocacy_orgs_import_snake_case.json",
-    "advocacy_organizations_import_snake_case.json",
-    "advocacy_targets_import_snake_case.json",
-    "coalition_intelligence_complete.REPAIRED.json",
-]
+SCHEMA_PATH = Path(__file__).resolve().parents[1] / 'config/advocacy-import-schema-v1.json'
 
 
-def sql_literal(value: Any) -> str:
+def canonical_json(value):
+    return json.dumps(value, sort_keys=True, ensure_ascii=False, separators=(',', ':'), allow_nan=False)
+
+
+def digest(raw):
+    return hashlib.sha256(raw).hexdigest()
+
+
+def quote(value):
+    if '\x00' in value: raise ValueError('PostgreSQL text cannot contain NUL')
+    return "'" + value.replace("'", "''") + "'"
+
+
+def identifier(value):
+    if not re.fullmatch(r'[a-z_][a-z0-9_]*', value): raise ValueError('invalid owned identifier')
+    return '"' + value + '"'
+
+
+def sql_value(value, column):
+    kind = column['type']
     if value is None:
-        return "NULL"
-    if isinstance(value, bool):
-        return "TRUE" if value else "FALSE"
-    if isinstance(value, (int, float)):
-        return str(value)
-    if isinstance(value, list):
-        return "ARRAY[" + ", ".join(sql_literal(item) for item in value) + "]"
-    if isinstance(value, dict):
-        return "'" + json.dumps(value, ensure_ascii=False).replace("'", "''") + "'::jsonb"
-    return "'" + str(value).replace("'", "''") + "'"
+        if column['required']: raise ValueError('NULL for required column')
+        return 'NULL'
+    if kind in {'json', 'jsonb'}: return quote(canonical_json(value)) + '::' + kind
+    if kind in {'text', 'character varying', 'uuid', 'date', 'timestamp with time zone', 'timestamp without time zone'}:
+        if not isinstance(value, str): raise ValueError(f'explicit text adapter required for {kind}')
+        if kind == 'uuid': uuid.UUID(value)
+        return quote(value) + '::' + kind
+    if kind in {'smallint', 'integer', 'bigint'}:
+        if type(value) is not int: raise ValueError('integer required')
+        return str(value) + '::' + kind
+    if kind == 'boolean':
+        if type(value) is not bool: raise ValueError('boolean required')
+        return 'TRUE' if value else 'FALSE'
+    if kind in {'numeric', 'real', 'double precision'}:
+        if type(value) not in {int, float} or not math.isfinite(value): raise ValueError('finite number required')
+        return str(value) + '::' + kind
+    raise ValueError(f'unsupported target type: {kind}')
 
 
-def normalize_record(value: Any) -> dict[str, Any]:
-    if isinstance(value, dict):
-        return value
-    return {"value": value}
+def pointer(document, location):
+    if location == '': return document
+    if not location.startswith('/'): raise ValueError('JSON pointer required')
+    for token in location[1:].split('/'):
+        token = token.replace('~1', '/').replace('~0', '~')
+        if isinstance(document, list):
+            if not re.fullmatch(r'0|[1-9][0-9]*', token): raise ValueError('invalid array locator')
+            document = document[int(token)]
+        else: document = document[token]
+    return document
 
 
-def read_json(path: Path) -> Any:
-    return json.loads(path.read_text(encoding="utf-8"))
+def source_document(name, raw):
+    suffix = Path(name).suffix.lower()
+    if suffix == '.zip':
+        documents = {}
+        with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+            for member in archive.infolist():
+                if member.is_dir(): continue
+                if member.filename in documents: raise ValueError('duplicate ZIP member')
+                documents[member.filename] = source_document(member.filename, archive.read(member))
+        return documents
+    text = raw.decode('utf-8-sig')
+    if suffix == '.json': return json.loads(text)
+    if suffix in {'.jsonl', '.ndjson'}: return [json.loads(line) for line in text.splitlines() if line.strip()]
+    if suffix == '.csv':
+        reader = csv.DictReader(io.StringIO(text), strict=True)
+        rows = list(reader)
+        if not reader.fieldnames or len(set(reader.fieldnames)) != len(reader.fieldnames): raise ValueError('invalid CSV headers')
+        if any(None in row or None in row.values() for row in rows): raise ValueError('CSV cardinality mismatch')
+        return rows
+    if suffix == '.sql':
+        tables = {}
+        for table, record in parse_sql_rows(raw): tables.setdefault(table, []).append(record)
+        return tables
+    raise ValueError(f'unsupported reconciliation source: {name}')
 
 
-def read_json_records(path: Path) -> list[dict[str, Any]]:
-    payload = read_json(path)
-    if isinstance(payload, list):
-        return [normalize_record(item) for item in payload]
-    if isinstance(payload, dict):
-        return [normalize_record(payload)]
-    return [{"value": payload}]
+def schema_guard(table, contract):
+    schema, relation = table.split('.')
+    checks = []
+    for name, column in contract['columns'].items():
+        checks.append('exists (select 1 from information_schema.columns where table_schema=' + quote(schema)
+                      + ' and table_name=' + quote(relation) + ' and column_name=' + quote(name)
+                      + ' and data_type=' + quote(column['type']) + ' and is_nullable='
+                      + quote('NO' if column['required'] else 'YES') + ')')
+    primary_key = 'ARRAY[' + ','.join(quote(key) for key in contract['primary_key']) + ']::text[]'
+    checks.append('(select array_agg(a.attname::text order by k.ordinality) from pg_index i '
+                  'cross join lateral unnest(i.indkey) with ordinality k(attnum, ordinality) '
+                  'join pg_attribute a on a.attrelid=i.indrelid and a.attnum=k.attnum '
+                  'where i.indrelid=to_regclass(' + quote(table) + ') and i.indisprimary) = ' + primary_key)
+    return 'IF NOT coalesce((' + ' AND '.join(checks) + "), false) THEN RAISE EXCEPTION 'schema contract changed'; END IF;"
 
 
-def read_csv_records(raw: bytes) -> list[dict[str, Any]]:
-    reader = csv.DictReader(io.StringIO(raw.decode("utf-8", errors="replace")))
-    return [dict(row) for row in reader]
+def prepare_reconciliation(root, manifest, schema):
+    if not manifest.get('sources') or not manifest.get('bindings'): raise ValueError('explicit sources and canonical bindings required')
+    sources, artifacts = {}, []
+    for specification in manifest['sources']:
+        source_id = specification['source_id']
+        path = (root / specification['path']).resolve()
+        if not source_id or source_id in sources: raise ValueError('duplicate or missing source identity')
+        if not path.is_relative_to(root.resolve()) or not path.is_file(): raise ValueError(f'missing source: {source_id}')
+        raw = path.read_bytes()
+        if digest(raw) != specification['sha256']: raise ValueError(f'source hash mismatch: {source_id}')
+        sources[source_id] = source_document(path.name, raw)
+        artifacts.append({**specification, 'bytes': len(raw)})
+    statements, receipts, readbacks = [], [], []
+    targets, identities, contracts = set(), set(), {}
+    for binding in manifest['bindings']:
+        source_id, stable_id = binding['source_id'], binding['source_record_id']
+        if not isinstance(stable_id, str) or not stable_id.strip() or (source_id, stable_id) in identities:
+            raise ValueError('missing or duplicate stable source record identity')
+        identities.add((source_id, stable_id))
+        record = pointer(sources[source_id], binding['source_pointer'])
+        record_hash = digest(canonical_json(record).encode())
+        if record_hash != binding['source_record_sha256']: raise ValueError('source record hash mismatch')
+        table = binding['target_table']
+        contract = schema['tables'][table]
+        contracts[table] = contract
+        qualified = '.'.join(identifier(part) for part in table.split('.'))
+        identity = binding['canonical_identity']
+        if set(identity) != set(contract['primary_key']): raise ValueError('verified primary key required')
+        target = (table, canonical_json(identity))
+        if target in targets: raise ValueError('multiple bindings for one canonical row; reconcile first')
+        targets.add(target)
+        columns = contract['columns']
+        where = ' AND '.join(identifier(key) + ' = ' + sql_value(value, columns[key]) for key, value in identity.items())
+        baseline, evidence = binding['expected_existing'], binding['identity_evidence']
+        if not evidence or not set(evidence).issubset(baseline): raise ValueError('observed identity evidence required')
+        for key, location in evidence.items():
+            if pointer(record, location) != baseline[key] or baseline[key] in (None, ''): raise ValueError('canonical identity evidence disagrees')
+        checks = [identifier(key) + ' IS NOT DISTINCT FROM ' + sql_value(value, columns[key]) for key, value in baseline.items()]
+        assignments, fields = [], []
+        for key, mapping in binding['field_mapping'].items():
+            if key in identity or key not in baseline: raise ValueError('mapped non-key field requires observed baseline')
+            proposed = pointer(record, mapping['source_pointer'])
+            adapter = mapping.get('adapter', 'identity')
+            if adapter == 'json_text': proposed = canonical_json(proposed)
+            elif adapter == 'boolean_integer' and type(proposed) is bool: proposed = int(proposed)
+            elif adapter != 'identity': raise ValueError('unsupported field adapter')
+            sql_value(proposed, columns[key])
+            existing = baseline[key]
+            if proposed in (None, ''): outcome = 'preserved_absent_source_value'
+            elif existing == proposed: outcome = 'already_equal'
+            elif existing is None or isinstance(existing, str) and not existing.strip():
+                outcome = 'fill_blank'
+                assignments.append(identifier(key) + ' = ' + sql_value(proposed, columns[key]))
+            else: raise ValueError(f'nonblank canonical conflict: {source_id}:{stable_id}:{key}')
+            fields.append({'column': key, 'outcome': outcome, 'source_pointer': mapping['source_pointer']})
+        statements.append(f'PERFORM 1 FROM {qualified} WHERE {where} AND {" AND ".join(checks)} FOR UPDATE;\n'
+                          "IF NOT FOUND THEN RAISE EXCEPTION 'canonical identity or expected values changed'; END IF;")
+        if assignments: statements.append(f'UPDATE {qualified} SET {", ".join(assignments)} WHERE {where};')
+        receipt = {'source_id': source_id, 'source_sha256': next(a['sha256'] for a in artifacts if a['source_id'] == source_id),
+                   'source_record_id': stable_id, 'source_record_sha256': record_hash, 'source_pointer': binding['source_pointer'],
+                   'canonical_table': table, 'canonical_identity': identity, 'fields': fields, 'runtime_readback': 'not_measured'}
+        receipts.append(receipt)
+        readbacks.append('SELECT ' + quote(canonical_json(receipt)) + '::jsonb AS source_receipt, to_jsonb(canonical_row) AS canonical_row FROM '
+                         + qualified + ' AS canonical_row WHERE ' + where + ';')
+    body = '\n'.join([schema_guard(table, contract) for table, contract in contracts.items()] + statements)
+    sql = '-- Isolated PostgreSQL reconciliation preview; rollback is mandatory.\nBEGIN;\nSET LOCAL standard_conforming_strings = on;\n'
+    sql += 'DO ' + quote('BEGIN\n' + body + '\nEND;') + ';\n' + '\n'.join(readbacks) + '\nROLLBACK;\n'
+    return sql, {'status': 'prepared_rollback_preview', 'runtime_integration_verified': False,
+                 'scope': 'explicit_manifest_bindings_only', 'artifacts': artifacts, 'records': receipts}
 
 
-def read_zip_records(path: Path) -> list[dict[str, Any]]:
-    records: list[dict[str, Any]] = []
-    with zipfile.ZipFile(path) as archive:
-        for member in archive.infolist():
-            if member.is_dir():
-                continue
-            suffix = Path(member.filename).suffix.lower()
-            raw = archive.read(member.filename)
-            if suffix == ".json":
-                payload = json.loads(raw.decode("utf-8", errors="replace"))
-                if isinstance(payload, list):
-                    records.extend(normalize_record(item) for item in payload)
-                elif isinstance(payload, dict):
-                    for value in payload.values():
-                        if isinstance(value, list):
-                            records.extend(normalize_record(item) for item in value)
-            elif suffix == ".csv":
-                records.extend(read_csv_records(raw))
-    return records
+def atomic_write(path, content):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, name = tempfile.mkstemp(dir=path.parent)
+    try:
+        with os.fdopen(descriptor, 'w', encoding='utf-8') as stream: stream.write(content)
+        os.replace(name, path)
+    finally:
+        if os.path.exists(name): os.unlink(name)
 
 
-def canonical_key(record: dict[str, Any], *keys: str) -> str:
-    for key in keys:
-        value = record.get(key)
-        if value:
-            return str(value).strip().lower()
-    return slugify_identifier(str(record))
-
-
-def dedupe(records: list[dict[str, Any]], *keys: str) -> list[dict[str, Any]]:
-    output: list[dict[str, Any]] = []
-    seen: set[str] = set()
-    for record in records:
-        key = canonical_key(record, *keys)
-        if key in seen:
-            continue
-        seen.add(key)
-        output.append(record)
-    return output
-
-
-def extract_023(path: Path) -> dict[str, list[dict[str, Any]]]:
-    data = {
-        "legislator_contacts": [],
-        "coalition_agencies": [],
-        "coalition_networks": [],
-        "advocacy_targets": [],
-    }
-    for table_name, record in parse_sql_records(path.name, path.read_bytes()):
-        if table_name in data:
-            data[table_name].append(record)
-    return data
-
-
-def flatten_list(payload: Any, key_options: list[str]) -> list[dict[str, Any]]:
-    if isinstance(payload, list):
-        return [normalize_record(item) for item in payload]
-    if isinstance(payload, dict):
-        for key in key_options:
-            value = payload.get(key)
-            if isinstance(value, list):
-                return [normalize_record(item) for item in value]
-        flattened: list[dict[str, Any]] = []
-        for value in payload.values():
-            if isinstance(value, list):
-                flattened.extend(normalize_record(item) for item in value)
-        return flattened
-    return []
-
-
-def render_insert_block(table: str, rows: list[dict[str, Any]], conflict_column: str) -> list[str]:
-    if not rows:
-        return [f"-- no rows for {table}"]
-
-    columns: list[str] = []
-    seen: set[str] = set()
-    for row in rows:
-        for key in row.keys():
-            if key not in seen:
-                seen.add(key)
-                columns.append(key)
-
-    if conflict_column not in columns:
-        columns.insert(0, conflict_column)
-        for row in rows:
-            row.setdefault(conflict_column, slugify_identifier(json.dumps(row, sort_keys=True)))
-
-    updates = [col for col in columns if col != conflict_column]
-    update_clause = ", ".join(f"{col} = excluded.{col}" for col in updates) if updates else f"{conflict_column} = excluded.{conflict_column}"
-
-    statements: list[str] = []
-    for row in rows:
-        values = ", ".join(sql_literal(row.get(col)) for col in columns)
-        statements.append(
-            f"insert into {table} ({', '.join(columns)}) values ({values}) "
-            f"on conflict ({conflict_column}) do update set {update_clause};"
-        )
-    return statements
-
-
-def section(title: str, statements: list[str]) -> str:
-    body = "\n".join(statements)
-    return f"-- {title}\nbegin;\n{body}\ncommit;\n"
-
-
-def parse_args() -> argparse.Namespace:
+def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--source-root", required=True, help="Directory containing advocacy lane source files.")
-    parser.add_argument("--output", required=True, help="Output SQL file path.")
-    return parser.parse_args()
+    parser.add_argument('--source-root', required=True)
+    parser.add_argument('--bindings', required=True, help='Reviewed source, identity, and field manifest')
+    parser.add_argument('--output', required=True)
+    parser.add_argument('--receipt', required=True)
+    args = parser.parse_args()
+    root, bindings = Path(args.source_root).resolve(), Path(args.bindings).resolve()
+    output, receipt = Path(args.output).resolve(), Path(args.receipt).resolve()
+    if output == receipt or output == bindings or receipt == bindings or output.is_relative_to(root) or receipt.is_relative_to(root):
+        raise ValueError('outputs must be distinct and outside preserved source root')
+    try:
+        sql, result = prepare_reconciliation(root, json.loads(bindings.read_text()), json.loads(SCHEMA_PATH.read_text()))
+        atomic_write(output, sql)
+        result['sql_sha256'] = digest(sql.encode())
+        atomic_write(receipt, json.dumps(result, indent=2))
+    except Exception as error:
+        atomic_write(receipt, json.dumps({'status': 'failed', 'runtime_integration_verified': False,
+                     'error_type': type(error).__name__, 'error': str(error)}, indent=2))
+        raise
+    print(f"prepared_records={len(result['records'])}; rollback_only=true; runtime_integration_verified=false")
 
 
-def main() -> None:
-    args = parse_args()
-    root = Path(args.source_root).resolve()
-    output = Path(args.output).resolve()
-    output.parent.mkdir(parents=True, exist_ok=True)
-
-    missing = [name for name in EXPECTED_SOURCES if not (root / name).exists()]
-
-    sais_payload = read_json(root / "sais_escalation_advocacy_registry.json") if (root / "sais_escalation_advocacy_registry.json").exists() else {}
-    sais_resources = flatten_list(sais_payload, ["resources", "sais_resources"])
-    sais_routing = flatten_list(sais_payload, ["routing_items", "routing", "route_items"])
-
-    case_law = read_json_records(root / "legal_case_law_priority1.json") if (root / "legal_case_law_priority1.json").exists() else []
-
-    migration_023 = extract_023(root / "20260417095403_023_seed_legislators_agencies_coalitions.sql") if (root / "20260417095403_023_seed_legislators_agencies_coalitions.sql").exists() else {
-        "legislator_contacts": [],
-        "coalition_agencies": [],
-        "coalition_networks": [],
-        "advocacy_targets": [],
-    }
-
-    legislators_zip = read_zip_records(root / "lighthouse_legislators_complete(2).zip") if (root / "lighthouse_legislators_complete(2).zip").exists() else []
-    legislators = dedupe(migration_023["legislator_contacts"] + legislators_zip, "legislator_id", "name")
-
-    agencies_v2 = read_json_records(root / "coalition_agencies_import_snake_case.json") if (root / "coalition_agencies_import_snake_case.json").exists() else []
-    agencies = dedupe(migration_023["coalition_agencies"] + agencies_v2, "agency_id", "name")
-
-    coalition_networks = migration_023["coalition_networks"]
-
-    coalition_orgs = read_json_records(root / "coalition_advocacy_orgs_import_snake_case.json") if (root / "coalition_advocacy_orgs_import_snake_case.json").exists() else []
-
-    canonical_50 = coalition_orgs
-    comparison_49 = read_json_records(root / "advocacy_organizations_import_snake_case.json") if (root / "advocacy_organizations_import_snake_case.json").exists() else []
-    advocacy_orgs = dedupe(canonical_50 + comparison_49, "org_id", "name")
-
-    preferred_targets = read_json_records(root / "advocacy_targets_import_snake_case.json") if (root / "advocacy_targets_import_snake_case.json").exists() else []
-    targets = dedupe(preferred_targets + migration_023["advocacy_targets"], "target_id", "name")
-
-    repaired_payload = read_json(root / "coalition_intelligence_complete.REPAIRED.json") if (root / "coalition_intelligence_complete.REPAIRED.json").exists() else {}
-    media_outlets = flatten_list(repaired_payload, ["media_outlets", "media", "outlets"])
-    campaigns = flatten_list(repaired_payload, ["campaigns", "active_campaigns"])
-
-    sql_sections = [
-        "-- Authoritative advocacy/reform intelligence import lane",
-        "-- Generated by scripts/advocacy_lane_import.py",
-        f"-- Source root: {root.as_posix()}",
-        "-- Missing sources: " + (", ".join(missing) if missing else "none"),
-        "-- Deduplication: canonical advocacy org set retained; comparison set only fills missing IDs.",
-        "",
-        section(
-            "SAIS escalation resources and routing items",
-            render_insert_block("sais_resources", dedupe(sais_resources, "resource_id", "name"), "resource_id")
-            + render_insert_block("sais_routing_items", dedupe(sais_routing, "route_id", "name"), "route_id"),
-        ),
-        section(
-            "Case law priority corpus",
-            render_insert_block("legal_case_law", dedupe(case_law, "case_id", "citation", "case_name"), "case_id"),
-        ),
-        section(
-            "Legislators",
-            render_insert_block("legislator_contacts", legislators, "legislator_id"),
-        ),
-        section(
-            "Agencies",
-            render_insert_block("coalition_agencies", agencies, "agency_id"),
-        ),
-        section(
-            "Coalition networks",
-            render_insert_block("coalition_networks", dedupe(coalition_networks, "coalition_id", "name"), "coalition_id")
-            + render_insert_block("coalition_advocacy_orgs", dedupe(coalition_orgs, "org_id", "name"), "org_id"),
-        ),
-        section(
-            "Advocacy organizations",
-            render_insert_block("advocacy_organizations", advocacy_orgs, "org_id"),
-        ),
-        section(
-            "Advocacy targets",
-            render_insert_block("advocacy_targets", targets, "target_id"),
-        ),
-        section(
-            "Media outlets",
-            render_insert_block("reform_media_outlets", dedupe(media_outlets, "outlet_id", "outlet_name"), "outlet_id"),
-        ),
-        section(
-            "Active campaigns",
-            render_insert_block("reform_campaigns", dedupe(campaigns, "campaign_id", "campaign_name"), "campaign_id"),
-        ),
-    ]
-
-    output.write_text("\n".join(sql_sections), encoding="utf-8")
-    print(f"generated={output.as_posix()}")
-    print(f"missing_sources={len(missing)}")
-    print(f"advocacy_orgs={len(advocacy_orgs)}")
-    print(f"targets={len(targets)}")
-    print(f"case_law={len(case_law)}")
-
-
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__': main()

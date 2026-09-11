@@ -10,6 +10,9 @@ import io
 import json
 import re
 import shutil
+import os
+import tempfile
+from seed_source_parsers import parse_sql_rows, parse_workbook
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
@@ -17,7 +20,7 @@ from typing import Any
 from xml.etree import ElementTree
 import zipfile
 
-SUPPORTED_SUFFIXES = {".sql", ".json", ".jsonl", ".csv", ".xlsx", ".zip"}
+SUPPORTED_SUFFIXES = {".sql", ".json", ".jsonl", ".ndjson", ".csv", ".xlsx", ".zip"}
 DEFAULT_ROUTE = "/architecture-map"
 
 ROUTE_KEYWORDS: list[tuple[str, str, str]] = [
@@ -74,309 +77,22 @@ def detect_family(*hints: str) -> str:
     return "uncategorized"
 
 
-def split_sql_statements(sql_text: str) -> list[str]:
-    statements: list[str] = []
-    current: list[str] = []
-    in_single = False
-    in_double = False
-    in_line_comment = False
-    in_block_comment = False
-    dollar_quote: str | None = None
-    i = 0
-
-    while i < len(sql_text):
-        ch = sql_text[i]
-        nxt = sql_text[i + 1] if i + 1 < len(sql_text) else ""
-
-        if in_line_comment:
-            current.append(ch)
-            if ch == "\n":
-                in_line_comment = False
-            i += 1
-            continue
-
-        if in_block_comment:
-            current.append(ch)
-            if ch == "*" and nxt == "/":
-                current.append(nxt)
-                i += 2
-                in_block_comment = False
-                continue
-            i += 1
-            continue
-
-        if dollar_quote is not None:
-            current.append(ch)
-            if sql_text.startswith(dollar_quote, i):
-                for _ in range(1, len(dollar_quote)):
-                    current.append(sql_text[i + _])
-                i += len(dollar_quote)
-                dollar_quote = None
-                continue
-            i += 1
-            continue
-
-        if ch == "-" and nxt == "-" and not in_single and not in_double:
-            current.extend([ch, nxt])
-            i += 2
-            in_line_comment = True
-            continue
-
-        if ch == "/" and nxt == "*" and not in_single and not in_double:
-            current.extend([ch, nxt])
-            i += 2
-            in_block_comment = True
-            continue
-
-        if not in_single and not in_double and ch == "$":
-            match = re.match(r"\$[a-zA-Z0-9_]*\$", sql_text[i:])
-            if match:
-                token = match.group(0)
-                current.extend(token)
-                i += len(token)
-                dollar_quote = token
-                continue
-
-        if ch == "'" and not in_double:
-            if in_single and nxt == "'":
-                current.extend([ch, nxt])
-                i += 2
-                continue
-            in_single = not in_single
-            current.append(ch)
-            i += 1
-            continue
-
-        if ch == '"' and not in_single:
-            in_double = not in_double
-            current.append(ch)
-            i += 1
-            continue
-
-        if ch == ";" and not in_single and not in_double:
-            statement = "".join(current).strip()
-            if statement:
-                statements.append(statement)
-            current = []
-            i += 1
-            continue
-
-        current.append(ch)
-        i += 1
-
-    tail = "".join(current).strip()
-    if tail:
-        statements.append(tail)
-
-    return statements
-
-
-def split_top_level(text: str, delimiter: str = ",") -> list[str]:
-    pieces: list[str] = []
-    current: list[str] = []
-    depth_paren = 0
-    depth_bracket = 0
-    in_single = False
-    in_double = False
-
-    i = 0
-    while i < len(text):
-        ch = text[i]
-        nxt = text[i + 1] if i + 1 < len(text) else ""
-
-        if ch == "'" and not in_double:
-            current.append(ch)
-            if in_single and nxt == "'":
-                current.append(nxt)
-                i += 2
-                continue
-            in_single = not in_single
-            i += 1
-            continue
-
-        if ch == '"' and not in_single:
-            in_double = not in_double
-            current.append(ch)
-            i += 1
-            continue
-
-        if not in_single and not in_double:
-            if ch == "(":
-                depth_paren += 1
-            elif ch == ")":
-                depth_paren = max(0, depth_paren - 1)
-            elif ch == "[":
-                depth_bracket += 1
-            elif ch == "]":
-                depth_bracket = max(0, depth_bracket - 1)
-            elif ch == delimiter and depth_paren == 0 and depth_bracket == 0:
-                pieces.append("".join(current).strip())
-                current = []
-                i += 1
-                continue
-
-        current.append(ch)
-        i += 1
-
-    last = "".join(current).strip()
-    if last:
-        pieces.append(last)
-    return pieces
-
-
-def find_top_level_keyword(text: str, keyword: str) -> int:
-    lower = text.lower()
-    target = keyword.lower()
-    in_single = False
-    in_double = False
-    depth_paren = 0
-    depth_bracket = 0
-    i = 0
-    while i < len(text):
-        ch = text[i]
-        nxt = text[i + 1] if i + 1 < len(text) else ""
-
-        if ch == "'" and not in_double:
-            if in_single and nxt == "'":
-                i += 2
-                continue
-            in_single = not in_single
-            i += 1
-            continue
-
-        if ch == '"' and not in_single:
-            in_double = not in_double
-            i += 1
-            continue
-
-        if in_single or in_double:
-            i += 1
-            continue
-
-        if ch == "(":
-            depth_paren += 1
-        elif ch == ")":
-            depth_paren = max(0, depth_paren - 1)
-        elif ch == "[":
-            depth_bracket += 1
-        elif ch == "]":
-            depth_bracket = max(0, depth_bracket - 1)
-
-        if depth_paren == 0 and depth_bracket == 0 and lower.startswith(target, i):
-            return i
-
-        i += 1
-    return -1
-
-
-def decode_sql_literal(token: str) -> Any:
-    value = token.strip()
-    if not value:
-        return None
-
-    value = re.sub(r"::[a-zA-Z0-9_\[\]\.]+$", "", value).strip()
-
-    if value.upper() == "NULL":
-        return None
-    if value.upper() == "TRUE":
-        return True
-    if value.upper() == "FALSE":
-        return False
-
-    if value.startswith("ARRAY[") and value.endswith("]"):
-        inner = value[6:-1]
-        return [decode_sql_literal(piece) for piece in split_top_level(inner)]
-
-    if value.startswith("{") and value.endswith("}"):
-        try:
-            return json.loads(value)
-        except json.JSONDecodeError:
-            return value
-
-    if value.startswith("'") and value.endswith("'"):
-        inner = value[1:-1].replace("''", "'")
-        return inner
-
-    if re.fullmatch(r"-?\d+", value):
-        return int(value)
-    if re.fullmatch(r"-?\d+\.\d+", value):
-        return float(value)
-
-    return value
-
-
-def parse_insert_rows(statement: str) -> list[tuple[str, dict[str, Any]]]:
-    match = re.match(
-        r"^insert\s+into\s+(?:[a-zA-Z0-9_]+\.)?([a-zA-Z0-9_]+)\s*\((.*?)\)\s*values\s*(.+)$",
-        statement.strip(),
-        flags=re.IGNORECASE | re.DOTALL,
-    )
-    if not match:
-        return []
-
-    table = match.group(1)
-    columns = [piece.strip().strip('"') for piece in split_top_level(match.group(2))]
-    values_part = match.group(3).strip()
-
-    conflict_idx = find_top_level_keyword(values_part, "on conflict")
-    if conflict_idx >= 0:
-        values_part = values_part[:conflict_idx].strip()
-
-    rows: list[tuple[str, dict[str, Any]]] = []
-    depth = 0
-    start: int | None = None
-    in_single = False
-    in_double = False
-
-    for i, ch in enumerate(values_part):
-        nxt = values_part[i + 1] if i + 1 < len(values_part) else ""
-        if ch == "'" and not in_double:
-            if in_single and nxt == "'":
-                continue
-            in_single = not in_single
-        elif ch == '"' and not in_single:
-            in_double = not in_double
-
-        if in_single or in_double:
-            continue
-
-        if ch == "(":
-            if depth == 0:
-                start = i + 1
-            depth += 1
-        elif ch == ")":
-            depth -= 1
-            if depth == 0 and start is not None:
-                row_text = values_part[start:i]
-                raw_values = split_top_level(row_text)
-                row = {
-                    columns[idx]: decode_sql_literal(raw_values[idx]) if idx < len(raw_values) else None
-                    for idx in range(len(columns))
-                }
-                rows.append((table, row))
-                start = None
-
-    return rows
-
-
 def parse_sql_records(source_name: str, raw: bytes) -> list[tuple[str, dict[str, Any]]]:
-    text = raw.decode("utf-8", errors="replace")
-    output: list[tuple[str, dict[str, Any]]] = []
-    for statement in split_sql_statements(text):
-        output.extend(parse_insert_rows(statement))
-    if not output:
-        stem = slugify_identifier(Path(source_name).stem)
-        output.append((stem, {"raw_sql": text.strip()}))
-    return output
+    return parse_sql_rows(raw)
 
 
 def parse_csv_records(raw: bytes) -> list[dict[str, Any]]:
-    reader = csv.DictReader(io.StringIO(raw.decode("utf-8", errors="replace")))
-    return [dict(row) for row in reader]
+    reader = csv.DictReader(io.StringIO(raw.decode("utf-8-sig")), strict=True)
+    rows = [dict(row) for row in reader]
+    if not reader.fieldnames or len(set(reader.fieldnames)) != len(reader.fieldnames):
+        raise ValueError("missing or duplicate CSV headers")
+    if any(None in row or None in row.values() for row in rows):
+        raise ValueError("CSV column/value cardinality mismatch")
+    return rows
 
 
 def parse_json_records(source_name: str, raw: bytes) -> list[tuple[str, dict[str, Any]]]:
-    payload = json.loads(raw.decode("utf-8", errors="replace"))
+    payload = json.loads(raw.decode("utf-8-sig"))
     stem = slugify_identifier(Path(source_name).stem)
 
     if isinstance(payload, list):
@@ -391,6 +107,9 @@ def parse_json_records(source_name: str, raw: bytes) -> list[tuple[str, dict[str
                 table_name = f"{stem}__{slugify_identifier(key)}"
                 records.extend((table_name, normalize_record(item)) for item in value)
         if exploded:
+            metadata = {key: value for key, value in payload.items() if not isinstance(value, list)}
+            if metadata:
+                records.append((f"{stem}__source_metadata", {"values": metadata, "__source__": {"row_role": "metadata"}}))
             return records
         return [(stem, normalize_record(payload))]
 
@@ -400,7 +119,7 @@ def parse_json_records(source_name: str, raw: bytes) -> list[tuple[str, dict[str
 def parse_jsonl_records(source_name: str, raw: bytes) -> list[tuple[str, dict[str, Any]]]:
     stem = slugify_identifier(Path(source_name).stem)
     output: list[tuple[str, dict[str, Any]]] = []
-    for line in raw.decode("utf-8", errors="replace").splitlines():
+    for line in raw.decode("utf-8-sig").splitlines():
         if not line.strip():
             continue
         output.append((stem, normalize_record(json.loads(line))))
@@ -408,75 +127,9 @@ def parse_jsonl_records(source_name: str, raw: bytes) -> list[tuple[str, dict[st
 
 
 def parse_xlsx_records(source_name: str, raw: bytes) -> list[tuple[str, dict[str, Any]]]:
-    namespace = {
-        "ns": "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
-        "r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
-        "rel": "http://schemas.openxmlformats.org/package/2006/relationships",
-    }
+    records, _ = parse_workbook(raw)
     stem = slugify_identifier(Path(source_name).stem)
-
-    with zipfile.ZipFile(io.BytesIO(raw)) as archive:
-        shared_strings: list[str] = []
-        if "xl/sharedStrings.xml" in archive.namelist():
-            shared_root = ElementTree.fromstring(archive.read("xl/sharedStrings.xml"))
-            for si in shared_root.findall("ns:si", namespace):
-                text_parts = [t.text or "" for t in si.findall(".//ns:t", namespace)]
-                shared_strings.append("".join(text_parts))
-
-        workbook = ElementTree.fromstring(archive.read("xl/workbook.xml"))
-        rel_root = ElementTree.fromstring(archive.read("xl/_rels/workbook.xml.rels"))
-        rel_map = {
-            rel.attrib.get("Id"): rel.attrib.get("Target")
-            for rel in rel_root.findall("rel:Relationship", namespace)
-        }
-
-        output: list[tuple[str, dict[str, Any]]] = []
-
-        for sheet in workbook.findall("ns:sheets/ns:sheet", namespace):
-            sheet_name = sheet.attrib.get("name", "Sheet")
-            rel_id = sheet.attrib.get("{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id")
-            target = rel_map.get(rel_id)
-            if not target:
-                continue
-            sheet_path = f"xl/{target}" if not target.startswith("xl/") else target
-            sheet_root = ElementTree.fromstring(archive.read(sheet_path))
-
-            rows: list[list[str]] = []
-            for row in sheet_root.findall("ns:sheetData/ns:row", namespace):
-                parsed_cells: dict[int, str] = {}
-                for cell in row.findall("ns:c", namespace):
-                    ref = cell.attrib.get("r", "A1")
-                    col_letters = re.sub(r"\d", "", ref)
-                    col_idx = column_index(col_letters)
-                    value_node = cell.find("ns:v", namespace)
-                    raw_value = value_node.text if value_node is not None else ""
-                    if cell.attrib.get("t") == "s" and raw_value.isdigit():
-                        idx = int(raw_value)
-                        parsed_cells[col_idx] = shared_strings[idx] if idx < len(shared_strings) else ""
-                    else:
-                        parsed_cells[col_idx] = raw_value
-
-                max_col = max(parsed_cells.keys(), default=-1)
-                rows.append([parsed_cells.get(col, "") for col in range(max_col + 1)])
-
-            if not rows:
-                continue
-
-            headers = [slugify_identifier(col or f"col_{idx + 1}") for idx, col in enumerate(rows[0])]
-            table = f"{stem}__{slugify_identifier(sheet_name)}"
-            for row in rows[1:]:
-                record = {headers[idx]: row[idx] if idx < len(row) else "" for idx in range(len(headers))}
-                if any((value or "").strip() for value in record.values()):
-                    output.append((table, record))
-
-        return output
-
-
-def column_index(col: str) -> int:
-    value = 0
-    for ch in col:
-        value = value * 26 + (ord(ch.upper()) - 64)
-    return max(0, value - 1)
+    return [(f"{stem}__{slugify_identifier(sheet)}", record) for sheet, record in records]
 
 
 def normalize_record(value: Any) -> dict[str, Any]:
@@ -491,7 +144,7 @@ def read_loose_records(source_name: str, raw: bytes) -> list[tuple[str, dict[str
         return parse_sql_records(source_name, raw)
     if suffix == ".json":
         return parse_json_records(source_name, raw)
-    if suffix == ".jsonl":
+    if suffix in {".jsonl", ".ndjson"}:
         return parse_jsonl_records(source_name, raw)
     if suffix == ".csv":
         rows = parse_csv_records(raw)
@@ -499,12 +152,18 @@ def read_loose_records(source_name: str, raw: bytes) -> list[tuple[str, dict[str
         return [(table, row) for row in rows]
     if suffix == ".xlsx":
         return parse_xlsx_records(source_name, raw)
-    return []
+    if suffix == ".zip":
+        return []  # Container has its own receipt; members are handled separately.
+    raise ValueError(f"unsupported source format: {source_name}")
 
 
 def ensure_schema(conn: sqlite3.Connection) -> None:
     conn.executescript(
         """
+        create table if not exists worksheet_receipt (
+          asset_sha256 text not null, sheet_name text not null, counts_json text not null,
+          primary key(asset_sha256, sheet_name)
+        );
         create table if not exists source_manifest (
           id integer primary key,
           source_path text not null,
@@ -575,7 +234,9 @@ def ensure_schema(conn: sqlite3.Connection) -> None:
         select
           rr.route_path,
           rr.description,
-          count(rc.id) as correlated_records,
+          count(distinct rc.record_id) as correlated_records,
+          'keyword_hint' as measurement_kind,
+          0 as runtime_integration_verified,
           case when count(rc.id) > 0 then 1 else 0 end as is_covered,
           coalesce(group_concat(distinct rc.family), '') as covered_families
         from roots_route rr
@@ -676,7 +337,13 @@ def process_source(conn: sqlite3.Connection, source_path: str, logical_source: s
         )
         return
 
-    records = read_loose_records(source_path, raw)
+    if suffix == ".xlsx":
+        worksheet_records, sheet_receipts = parse_workbook(raw)
+        stem = slugify_identifier(Path(source_path).stem)
+        records = [(f"{stem}__{slugify_identifier(sheet)}", record) for sheet, record in worksheet_records]
+        conn.executemany("insert into worksheet_receipt values (?, ?, ?)", [(digest, sheet["sheet"], json.dumps(sheet, sort_keys=True)) for sheet in sheet_receipts])
+    else:
+        records = read_loose_records(source_path, raw)
     row_total = 0
     families_seen: set[str] = set()
     tables_seen: set[str] = set()
@@ -727,14 +394,20 @@ def collect_input_files(paths: list[Path]) -> list[Path]:
     files: list[Path] = []
     for root in paths:
         if not root.exists():
-            continue
-        if root.is_file() and root.suffix.lower() in SUPPORTED_SUFFIXES:
+            raise FileNotFoundError(f"missing input: {root}")
+        if root.is_file():
+            if root.suffix.lower() not in SUPPORTED_SUFFIXES:
+                raise ValueError(f"unsupported input: {root}")
             files.append(root)
             continue
         if root.is_dir():
             for candidate in root.rglob("*"):
-                if candidate.is_file() and candidate.suffix.lower() in SUPPORTED_SUFFIXES:
+                if candidate.is_file():
+                    if candidate.suffix.lower() not in SUPPORTED_SUFFIXES:
+                        raise ValueError(f"unsupported input: {candidate}")
                     files.append(candidate)
+    if not files:
+        raise ValueError("no input sources found")
     return sorted(set(files))
 
 
@@ -742,14 +415,17 @@ def process_zip_members(conn: sqlite3.Connection, archive_path: Path) -> None:
     raw_archive = archive_path.read_bytes()
     process_source(conn, archive_path.as_posix(), archive_path.as_posix(), raw_archive)
     with zipfile.ZipFile(io.BytesIO(raw_archive)) as archive:
+        names = [member.filename for member in archive.infolist() if not member.is_dir()]
+        if len(set(names)) != len(names):
+            raise ValueError(f"duplicate ZIP member name: {archive_path}")
         for member in archive.infolist():
             if member.is_dir():
                 continue
             member_suffix = Path(member.filename).suffix.lower()
             if member_suffix not in SUPPORTED_SUFFIXES - {".zip"}:
-                continue
+                raise ValueError(f"unsupported ZIP member: {archive_path}::{member.filename}")
             virtual_path = f"{archive_path.as_posix()}::{member.filename}"
-            process_source(conn, virtual_path, archive_path.as_posix(), archive.read(member.filename))
+            process_source(conn, virtual_path, archive_path.as_posix(), archive.read(member))
 
 
 def print_summary(conn: sqlite3.Connection) -> None:
@@ -771,7 +447,8 @@ def print_summary(conn: sqlite3.Connection) -> None:
     print(f"tables={table_count}")
     print(f"rows={row_count}")
     print(f"orphans={orphan_assets}")
-    print(f"uncovered_routes={uncovered_routes}")
+    print(f"uncovered_route_hints={uncovered_routes}")
+    print("runtime_integration_verified=false")
     print("top_tables=")
     for table_name, count in conn.execute(
         "select table_name, count(*) as c from registry_record group by table_name order by c desc, table_name limit 10"
@@ -803,21 +480,26 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     output_path = Path(args.output_db).resolve()
+    input_paths = [Path(path).resolve() for path in args.inputs]
+    failure_path = output_path.with_suffix(output_path.suffix + ".failure.json")
+    for root in input_paths:
+        for result_path in [output_path, failure_path]:
+            if result_path == root or root.is_dir() and result_path.is_relative_to(root):
+                raise ValueError("output and failure receipt must be outside preserved inputs")
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     spine_path = Path(args.spine_db).resolve() if args.spine_db else None
-    if output_path.exists():
-        output_path.unlink()
-
-    if spine_path and spine_path.exists():
-        shutil.copy2(spine_path, output_path)
-
-    conn = sqlite3.connect(output_path)
+    if spine_path and (not spine_path.is_file() or spine_path in {output_path, failure_path}):
+        raise ValueError("spine must exist and differ from output")
+    descriptor, temporary_name = tempfile.mkstemp(dir=output_path.parent, suffix=".sqlite3")
+    os.close(descriptor)
+    temporary_path = Path(temporary_name)
+    if spine_path:
+        shutil.copy2(spine_path, temporary_path)
+    conn = sqlite3.connect(temporary_path)
     try:
         ensure_schema(conn)
-        input_paths = [Path(path).resolve() for path in args.inputs]
         files = collect_input_files(input_paths)
-
         for path in files:
             if path.suffix.lower() == ".zip":
                 process_zip_members(conn, path)
@@ -826,8 +508,15 @@ def main() -> None:
 
         conn.commit()
         print_summary(conn)
-    finally:
+    except Exception as error:
         conn.close()
+        temporary_path.unlink(missing_ok=True)
+        failure_path.write_text(json.dumps({"status": "failed", "error_type": type(error).__name__,
+          "error": str(error), "output_replaced": False, "runtime_integration_verified": False}, indent=2))
+        raise
+    else:
+        conn.close()
+        os.replace(temporary_path, output_path)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,1401 @@
+{
+  "observed_on": "2026-09-11",
+  "project_ref": "wepxlinwbjrkqdzkqpar",
+  "tables": {
+    "public.active_campaigns": {
+      "columns": {
+        "advocacy_action": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "campaign_id": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "campaign_name": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "coalition_leads": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "created_at": {
+          "default": null,
+          "required": false,
+          "type": "bigint"
+        },
+        "current_stage": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "demand": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "domain": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "id": {
+          "default": "gen_random_uuid()",
+          "required": true,
+          "type": "uuid"
+        },
+        "is_active": {
+          "default": null,
+          "required": false,
+          "type": "integer"
+        },
+        "legislative_vehicle": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "next_milestone": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "primary_sponsor": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "status_stage": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "supporting_evidence": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "target_passage": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "updated_at": {
+          "default": null,
+          "required": false,
+          "type": "bigint"
+        }
+      },
+      "primary_key": [
+        "id"
+      ]
+    },
+    "public.advocacy_coalition_network": {
+      "columns": {
+        "created_at": {
+          "default": "now()",
+          "required": true,
+          "type": "timestamp with time zone"
+        },
+        "description": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "domain": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "id": {
+          "default": "gen_random_uuid()",
+          "required": true,
+          "type": "uuid"
+        },
+        "jurisdiction": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "metadata": {
+          "default": "'{}'::jsonb",
+          "required": true,
+          "type": "jsonb"
+        },
+        "network_id": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "network_name": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "source_url": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        }
+      },
+      "primary_key": [
+        "id"
+      ]
+    },
+    "public.advocacy_organizations": {
+      "columns": {
+        "added_by": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "address": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "contact_email": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "contact_phone": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "created_at": {
+          "default": null,
+          "required": false,
+          "type": "bigint"
+        },
+        "description": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "domains": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "eligibility_criteria": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "hours_of_operation": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "id": {
+          "default": "nextval('advocacy_organizations_id_seq'::regclass)",
+          "required": true,
+          "type": "integer"
+        },
+        "intake_url": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "is_verified": {
+          "default": null,
+          "required": false,
+          "type": "integer"
+        },
+        "jurisdiction": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "languages": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "name": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "org_type": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "services_offered": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "state": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "updated_at": {
+          "default": null,
+          "required": false,
+          "type": "bigint"
+        },
+        "website": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        }
+      },
+      "primary_key": [
+        "id"
+      ]
+    },
+    "public.advocacy_targets": {
+      "columns": {
+        "contact_email": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "contact_phone": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "created_at": {
+          "default": null,
+          "required": false,
+          "type": "bigint"
+        },
+        "id": {
+          "default": "gen_random_uuid()",
+          "required": true,
+          "type": "uuid"
+        },
+        "influence_score": {
+          "default": null,
+          "required": false,
+          "type": "integer"
+        },
+        "is_active": {
+          "default": null,
+          "required": false,
+          "type": "integer"
+        },
+        "issue_domains": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "jurisdiction": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "name": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "notes": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "organization": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "public_visibility_score": {
+          "default": null,
+          "required": false,
+          "type": "integer"
+        },
+        "role": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "target_id": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "updated_at": {
+          "default": null,
+          "required": false,
+          "type": "bigint"
+        }
+      },
+      "primary_key": [
+        "id"
+      ]
+    },
+    "public.coalition_advocacy_orgs": {
+      "columns": {
+        "address": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "coalition_willingness": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "contact_email": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "contact_phone": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "created_at": {
+          "default": null,
+          "required": false,
+          "type": "bigint"
+        },
+        "description": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "domains": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "eligibility_criteria": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "id": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "influence_score": {
+          "default": null,
+          "required": false,
+          "type": "integer"
+        },
+        "intake_url": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "is_verified": {
+          "default": null,
+          "required": false,
+          "type": "integer"
+        },
+        "jurisdiction": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "languages": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "name": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "notes": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "org_type": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "services_offered": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "state": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "updated_at": {
+          "default": null,
+          "required": false,
+          "type": "bigint"
+        },
+        "website": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        }
+      },
+      "primary_key": [
+        "id"
+      ]
+    },
+    "public.coalition_agencies": {
+      "columns": {
+        "acronym": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "address": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "agency_type": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "complaint_url": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "contact_email": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "contact_phone": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "created_at": {
+          "default": null,
+          "required": false,
+          "type": "bigint"
+        },
+        "domains": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "effectiveness_score": {
+          "default": null,
+          "required": false,
+          "type": "integer"
+        },
+        "enforcement_powers": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "filing_methods": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "id": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "is_active": {
+          "default": null,
+          "required": false,
+          "type": "integer"
+        },
+        "jurisdiction_level": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "name": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "notes": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "parent_agency": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "response_time_days": {
+          "default": null,
+          "required": false,
+          "type": "integer"
+        },
+        "state": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "updated_at": {
+          "default": null,
+          "required": false,
+          "type": "bigint"
+        },
+        "website": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        }
+      },
+      "primary_key": [
+        "id"
+      ]
+    },
+    "public.legal_case_law": {
+      "columns": {
+        "case_name": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "citation": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "court": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "created_at": {
+          "default": "now()",
+          "required": false,
+          "type": "timestamp with time zone"
+        },
+        "date_checked": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "domains": {
+          "default": "'[]'::jsonb",
+          "required": false,
+          "type": "jsonb"
+        },
+        "id": {
+          "default": "gen_random_uuid()",
+          "required": true,
+          "type": "uuid"
+        },
+        "jurisdiction": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "key_quotes": {
+          "default": "'[]'::jsonb",
+          "required": false,
+          "type": "jsonb"
+        },
+        "metadata": {
+          "default": "'{}'::jsonb",
+          "required": false,
+          "type": "jsonb"
+        },
+        "opinion_text": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "source_checked": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "source_url": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "summary": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "title": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "verification_status": {
+          "default": "'verified'::text",
+          "required": false,
+          "type": "text"
+        },
+        "year_decided": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        }
+      },
+      "primary_key": [
+        "id"
+      ]
+    },
+    "public.legislator_contacts": {
+      "columns": {
+        "added_by": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "chamber": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "committees": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "contact_email": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "contact_phone": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "created_at": {
+          "default": null,
+          "required": false,
+          "type": "bigint"
+        },
+        "district": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "domains": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "full_name": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "id": {
+          "default": "nextval('legislator_contacts_id_seq'::regclass)",
+          "required": true,
+          "type": "integer"
+        },
+        "jurisdiction": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "notes": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "office_address": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "party": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "state": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "term_end": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "term_start": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "title": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "updated_at": {
+          "default": null,
+          "required": false,
+          "type": "bigint"
+        },
+        "website": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        }
+      },
+      "primary_key": [
+        "id"
+      ]
+    },
+    "public.media_outlets": {
+      "columns": {
+        "audience": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "contact_email": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "coverage": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "created_at": {
+          "default": null,
+          "required": false,
+          "type": "bigint"
+        },
+        "domains": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "id": {
+          "default": "gen_random_uuid()",
+          "required": true,
+          "type": "uuid"
+        },
+        "investigative": {
+          "default": null,
+          "required": false,
+          "type": "integer"
+        },
+        "is_active": {
+          "default": null,
+          "required": false,
+          "type": "integer"
+        },
+        "outlet_id": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "outlet_name": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "outlet_type": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "partnership_potential": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "updated_at": {
+          "default": null,
+          "required": false,
+          "type": "bigint"
+        },
+        "website": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        }
+      },
+      "primary_key": [
+        "id"
+      ]
+    },
+    "sais_import.deadline_field": {
+      "columns": {
+        "candidate_id": {
+          "default": null,
+          "required": true,
+          "type": "uuid"
+        },
+        "created_at": {
+          "default": "now()",
+          "required": true,
+          "type": "timestamp with time zone"
+        },
+        "deadline_hash": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "deadline_id": {
+          "default": null,
+          "required": true,
+          "type": "uuid"
+        },
+        "deadline_kind": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "deadline_text": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "document_number": {
+          "default": null,
+          "required": true,
+          "type": "integer"
+        },
+        "resource_id": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "run_id": {
+          "default": null,
+          "required": true,
+          "type": "uuid"
+        },
+        "source_file": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "source_label": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "source_sha256": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "urgency_flags": {
+          "default": null,
+          "required": true,
+          "type": "text[]"
+        }
+      },
+      "primary_key": [
+        "deadline_id"
+      ]
+    },
+    "sais_import.import_run": {
+      "columns": {
+        "created_at": {
+          "default": "now()",
+          "required": true,
+          "type": "timestamp with time zone"
+        },
+        "deadline_field_count": {
+          "default": null,
+          "required": true,
+          "type": "integer"
+        },
+        "document_count": {
+          "default": null,
+          "required": true,
+          "type": "integer"
+        },
+        "import_version": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "manifest": {
+          "default": null,
+          "required": true,
+          "type": "jsonb"
+        },
+        "manifest_sha256": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "overlap_group_count": {
+          "default": null,
+          "required": true,
+          "type": "integer"
+        },
+        "promoted_at": {
+          "default": null,
+          "required": false,
+          "type": "timestamp with time zone"
+        },
+        "resource_count": {
+          "default": null,
+          "required": true,
+          "type": "integer"
+        },
+        "routing_item_count": {
+          "default": null,
+          "required": true,
+          "type": "integer"
+        },
+        "run_id": {
+          "default": null,
+          "required": true,
+          "type": "uuid"
+        },
+        "source_preservation": {
+          "default": null,
+          "required": true,
+          "type": "jsonb"
+        },
+        "source_registry_sha256": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "source_schema": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "staged_at": {
+          "default": null,
+          "required": false,
+          "type": "timestamp with time zone"
+        },
+        "status": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "verified_at": {
+          "default": null,
+          "required": false,
+          "type": "timestamp with time zone"
+        }
+      },
+      "primary_key": [
+        "run_id"
+      ]
+    },
+    "sais_import.overlap_candidate": {
+      "columns": {
+        "created_at": {
+          "default": "now()",
+          "required": true,
+          "type": "timestamp with time zone"
+        },
+        "normalized_value": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "overlap_hash": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "overlap_id": {
+          "default": null,
+          "required": true,
+          "type": "uuid"
+        },
+        "overlap_type": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "policy": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "resource_ids": {
+          "default": null,
+          "required": true,
+          "type": "text[]"
+        },
+        "review_state": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "run_id": {
+          "default": null,
+          "required": true,
+          "type": "uuid"
+        }
+      },
+      "primary_key": [
+        "overlap_id"
+      ]
+    },
+    "sais_import.resource_candidate": {
+      "columns": {
+        "candidate_fingerprint": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "candidate_id": {
+          "default": null,
+          "required": true,
+          "type": "uuid"
+        },
+        "canonical_target_id": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "canonical_target_table": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "category_rule_version": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "category_tags": {
+          "default": null,
+          "required": true,
+          "type": "text[]"
+        },
+        "created_at": {
+          "default": "now()",
+          "required": true,
+          "type": "timestamp with time zone"
+        },
+        "deadline_count": {
+          "default": null,
+          "required": true,
+          "type": "integer"
+        },
+        "description": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "document_domain": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "document_id": {
+          "default": null,
+          "required": true,
+          "type": "uuid"
+        },
+        "document_number": {
+          "default": null,
+          "required": true,
+          "type": "integer"
+        },
+        "emails": {
+          "default": null,
+          "required": true,
+          "type": "text[]"
+        },
+        "jurisdiction_code": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "jurisdiction_raw": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "jurisdiction_scope": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "last_verified": {
+          "default": null,
+          "required": false,
+          "type": "date"
+        },
+        "match_status": {
+          "default": "'uncompared'::text",
+          "required": true,
+          "type": "text"
+        },
+        "notes": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "official_contact": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "official_url": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "official_url_normalized": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "official_urls": {
+          "default": null,
+          "required": true,
+          "type": "jsonb"
+        },
+        "organization_type": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "phone_numbers": {
+          "default": null,
+          "required": true,
+          "type": "text[]"
+        },
+        "promotion_status": {
+          "default": "'staged'::text",
+          "required": true,
+          "type": "text"
+        },
+        "raw_record": {
+          "default": null,
+          "required": true,
+          "type": "jsonb"
+        },
+        "resource_id": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "run_id": {
+          "default": null,
+          "required": true,
+          "type": "uuid"
+        },
+        "service_type": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "source_blocks": {
+          "default": null,
+          "required": true,
+          "type": "jsonb"
+        },
+        "source_file": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "source_record_hash": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "source_sha256": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "statutory_authority": {
+          "default": null,
+          "required": false,
+          "type": "text"
+        },
+        "statutory_source_urls": {
+          "default": null,
+          "required": true,
+          "type": "jsonb"
+        },
+        "title": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "updated_at": {
+          "default": "now()",
+          "required": true,
+          "type": "timestamp with time zone"
+        },
+        "urgency_flags": {
+          "default": null,
+          "required": true,
+          "type": "text[]"
+        },
+        "verification_status": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        }
+      },
+      "primary_key": [
+        "candidate_id"
+      ]
+    },
+    "sais_import.routing_item": {
+      "columns": {
+        "category_tags": {
+          "default": null,
+          "required": true,
+          "type": "text[]"
+        },
+        "created_at": {
+          "default": "now()",
+          "required": true,
+          "type": "timestamp with time zone"
+        },
+        "document_domain": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "document_id": {
+          "default": null,
+          "required": true,
+          "type": "uuid"
+        },
+        "document_number": {
+          "default": null,
+          "required": true,
+          "type": "integer"
+        },
+        "routing_hash": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "routing_id": {
+          "default": null,
+          "required": true,
+          "type": "uuid"
+        },
+        "routing_text": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "run_id": {
+          "default": null,
+          "required": true,
+          "type": "uuid"
+        },
+        "sequence": {
+          "default": null,
+          "required": true,
+          "type": "integer"
+        },
+        "source_block_index": {
+          "default": null,
+          "required": true,
+          "type": "integer"
+        },
+        "source_file": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "source_sha256": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "urgency_flags": {
+          "default": null,
+          "required": true,
+          "type": "text[]"
+        }
+      },
+      "primary_key": [
+        "routing_id"
+      ]
+    },
+    "sais_import.source_document": {
+      "columns": {
+        "category_rule_version": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "category_tags": {
+          "default": null,
+          "required": true,
+          "type": "text[]"
+        },
+        "deadline_field_count": {
+          "default": null,
+          "required": true,
+          "type": "integer"
+        },
+        "document_domain": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "document_id": {
+          "default": null,
+          "required": true,
+          "type": "uuid"
+        },
+        "document_number": {
+          "default": null,
+          "required": true,
+          "type": "integer"
+        },
+        "resource_count": {
+          "default": null,
+          "required": true,
+          "type": "integer"
+        },
+        "routing_item_count": {
+          "default": null,
+          "required": true,
+          "type": "integer"
+        },
+        "run_id": {
+          "default": null,
+          "required": true,
+          "type": "uuid"
+        },
+        "source_file": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        },
+        "source_sha256": {
+          "default": null,
+          "required": true,
+          "type": "text"
+        }
+      },
+      "primary_key": [
+        "document_id"
+      ]
+    }
+  }
+}
