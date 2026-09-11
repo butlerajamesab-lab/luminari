@@ -9,6 +9,7 @@
  *   <CommitToCase type="benefit" itemId={program.id} />
  *   <CommitToCase type="signal" itemId={signal.id} signalType="structural" />
  *   <CommitToCase type="statute" itemId={statute.id} />
+ *   <CommitToCase type="runtime_statute" itemId={statute.runtime_entity_id} />
  *   <CommitToCase type="case_law" itemId={caseLaw.id} />
  *   <CommitToCase type="foia" itemId={foiaRequest.id} />
  *   <CommitToCase type="filing" itemId={filing.id} />
@@ -39,6 +40,7 @@ type CommitType =
   | "benefit"
   | "signal"
   | "statute"
+  | "runtime_statute"
   | "case_law"
   | "foia"
   | "filing"
@@ -49,7 +51,7 @@ type CommitType =
 
 type CommitToCaseProps = {
   type: CommitType;
-  // For item-based commits (finding, barrier, benefit, signal, statute, case_law, foia, filing)
+  // For item-based commits (finding, barrier, benefit, signal, statute, runtime_statute, case_law, foia, filing)
   itemId?: number | string;
   // For signal commits
   signalType?: "structural" | "evidentiary" | "pattern" | "resource";
@@ -105,6 +107,7 @@ export function CommitToCase({
   const commit_benefit = trpc.case_state.commit_benefit.useMutation({ onSuccess: handleSuccess, onError: handleError });
   const commit_signal = trpc.case_state.commit_signal.useMutation({ onSuccess: handleSuccess, onError: handleError });
   const commit_statute = trpc.case_state.commit_statute.useMutation({ onSuccess: handleSuccess, onError: handleError });
+  const commit_runtime_statute = trpc.case_state.commit_runtime_statute.useMutation({ onSuccess: handleSuccess, onError: handleError });
   const commit_case_law = trpc.case_state.commit_case_law.useMutation({ onSuccess: handleSuccess, onError: handleError });
   const commit_foia = trpc.case_state.commit_foia.useMutation({ onSuccess: handleSuccess, onError: handleError });
   const commit_filing = trpc.case_state.commit_filing.useMutation({ onSuccess: handleSuccess, onError: handleError });
@@ -115,7 +118,7 @@ export function CommitToCase({
 
   const isLoading =
     commit_finding.isPending || commit_barrier.isPending || commit_benefit.isPending ||
-    commit_signal.isPending || commit_statute.isPending || commit_case_law.isPending || commit_foia.isPending ||
+    commit_signal.isPending || commit_statute.isPending || commit_runtime_statute.isPending || commit_case_law.isPending || commit_foia.isPending ||
     commit_filing.isPending || commit_path.isPending || commit_strategy.isPending ||
     commit_resource.isPending ||
     set_claim_type.isPending;
@@ -140,6 +143,7 @@ export function CommitToCase({
       case "benefit": return "Benefit program saved to case.";
       case "signal": return "Signal committed to case.";
       case "statute": return "Statute attached to case.";
+      case "runtime_statute": return "Observed statute attached to case.";
       case "case_law": return "Case law attached to case.";
       case "foia": return "FOIA request tracked in case.";
       case "filing": return "Filing packet saved to case.";
@@ -180,6 +184,9 @@ export function CommitToCase({
         break;
       case "statute":
         commit_statute.mutate({ case_id: caseId, statute_id: itemId! });
+        break;
+      case "runtime_statute":
+        commit_runtime_statute.mutate({ case_id: caseId, runtime_statute_ref: String(itemId) });
         break;
       case "case_law":
         commit_case_law.mutate({ case_id: caseId, case_law_id: itemId! });

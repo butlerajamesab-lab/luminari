@@ -581,7 +581,7 @@ export async function getRuntimeLegalLibraryStats(jurisdiction?: string) {
       where c.object_class='legal_authority'
         and (c.source_locator like 'xlsx:verified_statute:%' or c.source_locator like 'xlsx:statute_master:%' or c.source_locator like 'xlsx:statute_key_text:%')
         and nullif(btrim(source_record->>'citation'),'') is not null
-    ), current_statutes as (
+    ), current_only_statutes as (
       select
         citation,
         jurisdiction,
@@ -589,7 +589,7 @@ export async function getRuntimeLegalLibraryStats(jurisdiction?: string) {
       from current_statutes_raw
       group by citation,jurisdiction
     ), combined_statutes as (
-      select citation,jurisdiction from current_statutes
+      select citation,jurisdiction from current_only_statutes
       union
       select lower(btrim(l.citation)),l.jurisdiction from public.legal_statutes l
     ), current_cases_raw as (
@@ -640,7 +640,7 @@ export async function getRuntimeLegalLibraryStats(jurisdiction?: string) {
           end,
           nullif(c.object_ref,'')
         ) is not null
-    ), current_cases as (
+    ), current_only_cases as (
       select
         id,
         jurisdiction,
@@ -648,7 +648,7 @@ export async function getRuntimeLegalLibraryStats(jurisdiction?: string) {
       from current_cases_raw
       group by id,jurisdiction
     ), combined_cases as (
-      select id,jurisdiction from current_cases
+      select id,jurisdiction from current_only_cases
       union
       select id::text,jurisdiction from public.legal_case_law
     )
@@ -659,16 +659,16 @@ export async function getRuntimeLegalLibraryStats(jurisdiction?: string) {
       (select count(*)::int from public.legal_weak_joints${jurisdictionFilter ? ` where coalesce(metadata->>'jurisdiction','') = ${jurisdictionFilter}` : ""}) as weak_joints,
       (select count(*)::int from public.legal_contradictions${jurisdictionFilter ? ` where jurisdiction = ${jurisdictionFilter}` : ""}) as contradictions,
       (
-        (select count(*)::int from current_statutes${jurisdictionFilter ? ` where jurisdiction = ${jurisdictionFilter}` : ""})
+        (select count(*)::int from current_only_statutes${jurisdictionFilter ? ` where jurisdiction = ${jurisdictionFilter}` : ""})
         +
-        (select count(*)::int from current_cases${jurisdictionFilter ? ` where jurisdiction = ${jurisdictionFilter}` : ""})
+        (select count(*)::int from current_only_cases${jurisdictionFilter ? ` where jurisdiction = ${jurisdictionFilter}` : ""})
       ) as current_corpus_legal_authorities,
-      (select count(*)::int from current_statutes where ${jurisdictionFilter ? `jurisdiction = ${jurisdictionFilter} and ` : ""}not legal_catalog_ready) as stranded_current_corpus_statutes,
-      (select count(*)::int from current_cases where ${jurisdictionFilter ? `jurisdiction = ${jurisdictionFilter} and ` : ""}not legal_catalog_ready) as stranded_current_corpus_case_law,
+      (select count(*)::int from current_only_statutes where ${jurisdictionFilter ? `jurisdiction = ${jurisdictionFilter} and ` : ""}not legal_catalog_ready) as stranded_current_corpus_statutes,
+      (select count(*)::int from current_only_cases where ${jurisdictionFilter ? `jurisdiction = ${jurisdictionFilter} and ` : ""}not legal_catalog_ready) as stranded_current_corpus_case_law,
       (
-        (select count(*)::int from current_statutes where ${jurisdictionFilter ? `jurisdiction = ${jurisdictionFilter} and ` : ""}not legal_catalog_ready)
+        (select count(*)::int from current_only_statutes where ${jurisdictionFilter ? `jurisdiction = ${jurisdictionFilter} and ` : ""}not legal_catalog_ready)
         +
-        (select count(*)::int from current_cases where ${jurisdictionFilter ? `jurisdiction = ${jurisdictionFilter} and ` : ""}not legal_catalog_ready)
+        (select count(*)::int from current_only_cases where ${jurisdictionFilter ? `jurisdiction = ${jurisdictionFilter} and ` : ""}not legal_catalog_ready)
       ) as stranded_current_corpus_legal_authorities
   `, params);
   const row = result.rows[0] ?? {};

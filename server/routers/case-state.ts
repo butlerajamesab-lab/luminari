@@ -124,6 +124,10 @@ function case_law_commit_ref(case_law_id: number | string) {
   return `case_law:${case_law_id}`;
 }
 
+function runtime_statute_commit_ref(runtime_statute_ref: string) {
+  return `runtime_statute:${runtime_statute_ref}`;
+}
+
 export const caseStateRouter = router({
   get: protectedProcedure
     .input(z.object({ case_id: z.number() }))
@@ -296,6 +300,22 @@ export const caseStateRouter = router({
       }
       await update_completeness(input.case_id);
       return { success: true, statute_id: input.statute_id };
+    }),
+
+  commit_runtime_statute: protectedProcedure
+    .input(z.object({ case_id: z.number(), runtime_statute_ref: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      await verify_case_ownership(input.case_id, ctx.user.id);
+      const state = await get_or_create_case_state(input.case_id, ctx.user.id);
+      const current = (state.committedStatuteIds as Array<number | string>) || [];
+      const runtimeStatuteRef = runtime_statute_commit_ref(input.runtime_statute_ref);
+      if (!current.includes(runtimeStatuteRef)) {
+        await db.update(caseState)
+          .set({ committedStatuteIds: [...current, runtimeStatuteRef], updatedAt: Date.now() })
+          .where(eq(caseState.caseId, input.case_id));
+      }
+      await update_completeness(input.case_id);
+      return { success: true, runtime_statute_ref: input.runtime_statute_ref, committed_ref: runtimeStatuteRef };
     }),
 
   commit_case_law: protectedProcedure

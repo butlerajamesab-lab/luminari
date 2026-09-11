@@ -668,7 +668,7 @@ function StatuteCard({ statute, navigate }: { statute: any; navigate: (path: str
             >
               <Send size={10} /> Cite in LumenSend
             </button>
-            <CommitToCase type="statute" itemId={statute.id ?? statute.runtime_entity_id} label="Attach to Case" size="sm" />
+            <CommitToCase type={statute.id ? "statute" : "runtime_statute"} itemId={statute.id ?? statute.runtime_entity_id} label="Attach to Case" size="sm" />
           </div>
         </div>
       )}
