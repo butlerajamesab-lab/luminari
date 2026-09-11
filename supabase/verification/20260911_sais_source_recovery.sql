@@ -14,6 +14,9 @@ declare
   summary sais_import.v_import_summary%rowtype;
 begin
   select * into strict summary from sais_import.v_import_summary where run_id=import_id;
+  if summary.status not in ('prepared','staged','verified','promotion_ready','promoted') then
+    raise exception 'SAIS source recovery cannot stage run in state %', summary.status;
+  end if;
   if summary.actual_documents <> 26 or summary.actual_resources <> 192
      or summary.actual_routing_items <> 260 or summary.actual_deadline_fields <> 656
      or summary.actual_overlap_groups <> 19 then
@@ -56,6 +59,13 @@ begin
   update sais_import.import_run
      set status='staged', staged_at=coalesce(staged_at,now())
    where run_id=import_id and status='prepared';
+  if not exists (
+    select 1 from sais_import.import_run where run_id=import_id
+    and status in ('staged','verified','promotion_ready','promoted')
+    and staged_at is not null
+  ) then
+    raise exception 'SAIS staging transition/readback failed';
+  end if;
 end
 $verify$;
 commit;
