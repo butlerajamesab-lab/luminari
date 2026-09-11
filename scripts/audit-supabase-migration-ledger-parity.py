@@ -283,6 +283,11 @@ APPROVED_REPOSITORY_ONLY = {
         "20260909143000_lighthouse_runtime_postgres_contract_v1.sql",
         "288d613674d5545f7673eadc08430ce26bcff089",
     ),
+    # Proposed Batch manifest extension; repository-only, not a production receipt.
+    "20260911201534": (
+        "20260911201534_batch_existing_substrate_registration.sql",
+        "1516354fbe0818f3c96e605927e51888bf0d1d7c",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {

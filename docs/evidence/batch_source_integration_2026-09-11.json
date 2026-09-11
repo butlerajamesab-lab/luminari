@@ -2453,7 +2453,10 @@
     "original_doc6_opt_in_suite_passed": 9,
     "typecheck": "passed",
     "production_build": "passed",
-    "owned_contract_guard": "passed"
+    "owned_contract_guard": "passed",
+    "migration_ledger_parity": "passed",
+    "rosetta_ownership_boundary": "passed",
+    "stale_migration_reference_audit": "passed"
   },
   "implementation_sha256": {
     "scripts/lib/batch-source-adapter.mjs": "33b8cab62f320d0d1d89dc24426187d34829f3b535fa92bf5b06fdaccf079303",
@@ -2467,6 +2470,7 @@
     "server/services/batch-source-lineage.ts": "5bfa91464d016c5e97dc61c6c02dc421d5657a9eb70ac6f44e3461bb8ecbb60a",
     "server/services/fresh-corpus-atomic-v1.ts": "2688b9fbcb6da66d7090b12f9a023bbc25ad4f6ff707b3c7db3ec0e7df24952c",
     "server/routers/batch-source-router.ts": "0e5437db4ca4a97503fc3e8ef75f3036e894073afef570ebc3cb2d607a2231b8",
-    "supabase/migrations/20260911201534_batch_existing_substrate_registration.sql": "31b02561b01fa5235d52290d67fc5a8cde92efe47a973f0a711db9e48edcf552"
+    "supabase/migrations/20260911201534_batch_existing_substrate_registration.sql": "31b02561b01fa5235d52290d67fc5a8cde92efe47a973f0a711db9e48edcf552",
+    "scripts/audit-supabase-migration-ledger-parity.py": "10b0e59f1701759d71ce2e7f941de82551db6a8c96281a054254837ffbde41c9"
   }
 }
