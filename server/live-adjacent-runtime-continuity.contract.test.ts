@@ -121,6 +121,45 @@ describe("live adjacent runtime continuity", () => {
     );
   });
 
+  it("preserves canonical legal ids while exposing a separate runtime entity key", async () => {
+    query
+      .mockResolvedValueOnce({
+        rows: [{
+          id: null,
+          runtime_entity_id: "xlsx:verified_statute:wa-rcw-1",
+          citation: "RCW 1.00.010",
+          short_title: "Test Statute",
+          jurisdiction: "WA",
+          domains: [],
+          metadata: {},
+        }],
+      })
+      .mockResolvedValueOnce({
+        rows: [{
+          id: "00000000-0000-0000-0000-000000000123",
+          runtime_entity_id: "00000000-0000-0000-0000-000000000123",
+          citation: "123 Wn.2d 456",
+          case_name: "State v. Example",
+          jurisdiction: "WA",
+          domains: [],
+          metadata: {},
+        }],
+      });
+
+    await expect(searchRuntimeStatutes({ limit: 1 })).resolves.toEqual([
+      expect.objectContaining({
+        id: null,
+        runtime_entity_id: "xlsx:verified_statute:wa-rcw-1",
+      }),
+    ]);
+    await expect(searchRuntimeCaseLaw({ limit: 1 })).resolves.toEqual([
+      expect.objectContaining({
+        id: "00000000-0000-0000-0000-000000000123",
+        runtime_entity_id: "00000000-0000-0000-0000-000000000123",
+      }),
+    ]);
+  });
+
   it("joins the API source registry through its live source_name column", () => {
     const source = read("server/routers.ts");
     expect(source).toContain("api_source_registry!inner(source_key,source_name)");

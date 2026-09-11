@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { getPool } from "./db";
+import { getRuntimeLegalLibraryStats } from "./legal-library-runtime-db";
 
 const FIXTURE_PATH = resolve(process.cwd(), "config/integration-diagnostic-ledger-v1.json");
 
@@ -135,15 +136,19 @@ export async function buildIntegrationDiagnosticLedger() {
   );
 
   const projection = await readProjectionSnapshot() as Record<string, unknown>;
+  const legalRuntime = await getRuntimeLegalLibraryStats().catch(() => null);
   const knownMismatches = [] as Array<Record<string, unknown>>;
 
-  if (Number(projection.legal_total ?? 0) > 0 && Number(projection.legal_stranded ?? 0) > 0) {
+  if (
+    Number(projection.legal_total ?? 0) > 0
+    && Number(legalRuntime?.currentCorpusLegalAuthorities ?? 0) === 0
+  ) {
     knownMismatches.push({
       surface: "/legal-library",
       authoritative_boundary: "public.v_lighthouse_legal_authority_catalog_v2",
-      break_contract: "legal_catalog_ready can strand populated current-corpus legal authorities behind an empty runtime surface",
+      break_contract: "authoritative legal substrate is populated but no current-corpus legal authorities reached the runtime surface",
       populated_substrate: Number(projection.legal_total ?? 0),
-      visible_projection: Number(projection.legal_catalog_ready ?? 0),
+      visible_projection: Number(legalRuntime?.currentCorpusLegalAuthorities ?? 0),
       stranded_records: Number(projection.legal_stranded ?? 0),
     });
   }

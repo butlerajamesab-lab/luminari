@@ -407,7 +407,7 @@ export default function LegalLibrary() {
                 />
               )}
               {searchStatutes.data?.map((s: any) => (
-                <StatuteCard key={s.id} statute={s} navigate={navigate} />
+                <StatuteCard key={s.runtime_entity_id ?? s.id ?? s.citation} statute={s} navigate={navigate} />
               ))}
               <LibraryPager offset={statuteOffset} pageSize={PAGE_SIZE} returned={searchStatutes.data?.length ?? 0} loading={searchStatutes.isFetching} onPage={setStatuteOffset} />
             </div>
@@ -431,7 +431,7 @@ export default function LegalLibrary() {
                 />
               )}
               {searchCaseLaw.data?.map((c: any) => (
-                <CaseLawCard key={c.id} caseLaw={c} navigate={navigate} />
+                <CaseLawCard key={c.runtime_entity_id ?? c.id ?? c.citation} caseLaw={c} navigate={navigate} />
               ))}
               <LibraryPager offset={caseLawOffset} pageSize={PAGE_SIZE} returned={searchCaseLaw.data?.length ?? 0} loading={searchCaseLaw.isFetching} onPage={setCaseLawOffset} />
             </div>
@@ -668,7 +668,7 @@ function StatuteCard({ statute, navigate }: { statute: any; navigate: (path: str
             >
               <Send size={10} /> Cite in LumenSend
             </button>
-            <CommitToCase type="statute" itemId={statute.id} label="Attach to Case" size="sm" />
+            <CommitToCase type="statute" itemId={statute.id ?? statute.runtime_entity_id} label="Attach to Case" size="sm" />
           </div>
         </div>
       )}
@@ -876,7 +876,7 @@ function CaseLawCard({ caseLaw, navigate }: { caseLaw: any; navigate: (path: str
             >
               <Send size={10} /> Cite in LumenSend
             </button>
-            <CommitToCase type="statute" itemId={caseLaw.id} label="Attach to Case" size="sm" />
+            <CommitToCase type="statute" itemId={caseLaw.id ?? caseLaw.runtime_entity_id} label="Attach to Case" size="sm" />
             {caseLaw.source_url && (
               <a
                 href={caseLaw.source_url}

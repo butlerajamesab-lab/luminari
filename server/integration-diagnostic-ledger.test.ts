@@ -13,7 +13,7 @@ describe("integration diagnostic ledger", () => {
     query.mockReset();
   });
 
-  it("reports populated substrate and stranded runtime mismatches from the source-controlled fixture", async () => {
+  it("reports populated substrate while only flagging legal mismatches when runtime visibility is still broken", async () => {
     query.mockImplementation(async (sql: string) => {
       if (sql.includes("from public.v_lighthouse_legal_authority_catalog_v2") && sql.includes("legal_total")) {
         return {
@@ -29,6 +29,21 @@ describe("integration diagnostic ledger", () => {
             workflow_stranded: 1,
             case_resource_links: 5,
             signal_case_links: 7,
+          }],
+        };
+      }
+      if (sql.includes("current_corpus_legal_authorities")) {
+        return {
+          rows: [{
+            statutes: 9,
+            case_law: 3,
+            enforcement_records: 2,
+            weak_joints: 1,
+            contradictions: 0,
+            current_corpus_legal_authorities: 9,
+            stranded_current_corpus_statutes: 6,
+            stranded_current_corpus_case_law: 0,
+            stranded_current_corpus_legal_authorities: 6,
           }],
         };
       }
@@ -68,10 +83,54 @@ describe("integration diagnostic ledger", () => {
       visible: 3,
       stranded: 6,
     });
+    expect(ledger.known_surface_mismatches).toEqual([]);
+  });
+
+  it("flags the legal-library surface when populated substrate still yields zero runtime legal authorities", async () => {
+    query.mockImplementation(async (sql: string) => {
+      if (sql.includes("from public.v_lighthouse_legal_authority_catalog_v2") && sql.includes("legal_total")) {
+        return {
+          rows: [{
+            legal_total: 4,
+            legal_catalog_ready: 0,
+            legal_stranded: 4,
+            resource_total: 0,
+            resource_ready: 0,
+            resource_stranded: 0,
+            workflow_total: 0,
+            workflow_ready: 0,
+            workflow_stranded: 0,
+            case_resource_links: 0,
+            signal_case_links: 0,
+          }],
+        };
+      }
+      if (sql.includes("current_corpus_legal_authorities")) {
+        return {
+          rows: [{
+            statutes: 0,
+            case_law: 0,
+            enforcement_records: 0,
+            weak_joints: 0,
+            contradictions: 0,
+            current_corpus_legal_authorities: 0,
+            stranded_current_corpus_statutes: 4,
+            stranded_current_corpus_case_law: 0,
+            stranded_current_corpus_legal_authorities: 4,
+          }],
+        };
+      }
+      return { rows: [{ count: 0 }] };
+    });
+
+    const ledger = await buildIntegrationDiagnosticLedger();
+
     expect(ledger.known_surface_mismatches).toContainEqual(
       expect.objectContaining({
         surface: "/legal-library",
-        stranded_records: 6,
+        populated_substrate: 4,
+        visible_projection: 0,
+        stranded_records: 4,
       }),
     );
   });

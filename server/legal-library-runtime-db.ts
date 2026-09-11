@@ -217,10 +217,15 @@ const CURRENT_STATUTE_CTE = `
       coalesce(
         nullif(source_record->>'statute_uuid',''),
         nullif(source_record->>'statute_uid',''),
+        nullif(source_record->>'key_text_uuid','')
+      ) as id,
+      coalesce(
+        nullif(source_record->>'statute_uuid',''),
+        nullif(source_record->>'statute_uid',''),
         nullif(source_record->>'key_text_uuid',''),
         nullif(object_ref,''),
         md5(lower(btrim(source_record->>'citation')))
-      ) as id,
+      ) as runtime_entity_id,
       source_record->>'citation' as citation,
       coalesce(nullif(source_record->>'short_title',''), nullif(source_record->>'title','')) as short_title,
       coalesce(
@@ -282,7 +287,7 @@ const CURRENT_STATUTE_CTE = `
     from current_source
     where nullif(btrim(source_record->>'citation'),'') is not null
   ), current_rows as (
-    select id,citation,short_title,jurisdiction,domains,effective_date,last_amended,summary,
+    select id,runtime_entity_id,citation,short_title,jurisdiction,domains,effective_date,last_amended,summary,
            verbatim_key_text,source_url,enforcement_agency,statute_of_limitations,
            verification_status,title,statute_text,metadata,created_at,publication_rank as runtime_rank
     from current_ranked
@@ -291,7 +296,7 @@ const CURRENT_STATUTE_CTE = `
     select * from current_rows
     union all
     select
-      l.id,l.citation,l.short_title,l.jurisdiction,l.domains,l.effective_date,l.last_amended,l.summary,
+      l.id::text,l.id::text,l.citation,l.short_title,l.jurisdiction,l.domains,l.effective_date,l.last_amended,l.summary,
       l.verbatim_key_text,l.source_url,l.enforcement_agency,l.statute_of_limitations,
       l.verification_status,l.title,l.statute_text,
       coalesce(l.metadata,'{}'::jsonb) || jsonb_build_object('runtime_source','legacy_compat') as metadata,
@@ -326,7 +331,7 @@ export async function searchRuntimeStatutes(opts: LegalRuntimeSearch) {
   params.push(limit, offset);
   const where = filters.length ? `where ${filters.join(" and ")}` : "";
   return rows(`${CURRENT_STATUTE_CTE}
-    select id,citation,short_title,jurisdiction,domains,effective_date,last_amended,summary,
+    select id,runtime_entity_id,citation,short_title,jurisdiction,domains,effective_date,last_amended,summary,
            verbatim_key_text,source_url,enforcement_agency,statute_of_limitations,
            verification_status,title,statute_text,metadata,created_at
     from combined
@@ -370,10 +375,14 @@ const CURRENT_CASE_CTE = `
     select
       coalesce(
         nullif(source_record->>'case_uuid',''),
+        nullif(source_record->>'case_uid','')
+      ) as id,
+      coalesce(
+        nullif(source_record->>'case_uuid',''),
         nullif(source_record->>'case_uid',''),
         nullif(object_ref,''),
         md5(lower(coalesce(nullif(source_record->>'case_name',''), nullif(source_record->>'title',''), source_record->>'citation')))
-      ) as id,
+      ) as runtime_entity_id,
       coalesce(
         nullif(source_record->>'case_uuid',''),
         nullif(source_record->>'case_uid',''),
@@ -482,13 +491,14 @@ const CURRENT_CASE_CTE = `
       end
     ) is not null
   ), current_rows as (
-    select id,dedupe_key,citation,case_name,jurisdiction,domains,year_decided,court,summary,key_quotes,
+    select id,runtime_entity_id,dedupe_key,citation,case_name,jurisdiction,domains,year_decided,court,summary,key_quotes,
            source_url,title,opinion_text,metadata,created_at,publication_rank as runtime_rank
     from current_ranked where source_rank = 1
   ), combined as (
     select * from current_rows
     union all
     select
+      l.id::text,
       l.id::text,
       coalesce(
         l.id::text,
@@ -541,7 +551,7 @@ export async function searchRuntimeCaseLaw(opts: LegalRuntimeSearch) {
   params.push(limit, offset);
   const where = filters.length ? `where ${filters.join(" and ")}` : "";
   return rows(`${CURRENT_CASE_CTE}
-    select id,citation,case_name,jurisdiction,domains,year_decided,court,summary,key_quotes,
+    select id,runtime_entity_id,citation,case_name,jurisdiction,domains,year_decided,court,summary,key_quotes,
            source_url,title,opinion_text,metadata,created_at
     from combined
     ${where}
