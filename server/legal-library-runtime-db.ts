@@ -166,14 +166,36 @@ function jsonDomains(row: any) {
 
 function normalizeStatuteRow(rawRow: any) {
   const row = jsonDomains(rawRow ?? {});
+  const metadata = parseObject(row.metadata);
 
   return {
     ...row,
+    id:
+      typeof row.id === "string"
+      && /^\d+$/.test(row.id)
+      && metadata.runtime_source === "legacy_compat"
+        ? Number(row.id)
+        : row.id ?? null,
     keyProvisions:
       row.keyProvisions ??
       row.key_provisions ??
       row.verbatim_key_text ??
       null,
+  };
+}
+
+function normalizeCaseLawRow(rawRow: any) {
+  const row = jsonDomains(rawRow ?? {});
+  const metadata = parseObject(row.metadata);
+
+  return {
+    ...row,
+    id:
+      typeof row.id === "string"
+      && /^\d+$/.test(row.id)
+      && metadata.runtime_source === "legacy_compat"
+        ? Number(row.id)
+        : row.id ?? null,
   };
 }
 
@@ -557,7 +579,7 @@ export async function searchRuntimeCaseLaw(opts: LegalRuntimeSearch) {
     ${where}
     order by runtime_rank, created_at desc nulls last, citation
     limit $${params.length - 1} offset $${params.length}
-  `, params).then((items) => items.map(jsonDomains));
+  `, params).then((items) => items.map(normalizeCaseLawRow));
 }
 
 export async function getRuntimeLegalLibraryStats(jurisdiction?: string) {

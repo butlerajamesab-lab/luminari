@@ -136,13 +136,13 @@ describe("live adjacent runtime continuity", () => {
       })
       .mockResolvedValueOnce({
         rows: [{
-          id: "00000000-0000-0000-0000-000000000123",
-          runtime_entity_id: "00000000-0000-0000-0000-000000000123",
+          id: "17",
+          runtime_entity_id: "17",
           citation: "123 Wn.2d 456",
           case_name: "State v. Example",
           jurisdiction: "WA",
           domains: [],
-          metadata: {},
+          metadata: { runtime_source: "legacy_compat" },
         }],
       });
 
@@ -154,8 +154,8 @@ describe("live adjacent runtime continuity", () => {
     ]);
     await expect(searchRuntimeCaseLaw({ limit: 1 })).resolves.toEqual([
       expect.objectContaining({
-        id: "00000000-0000-0000-0000-000000000123",
-        runtime_entity_id: "00000000-0000-0000-0000-000000000123",
+        id: 17,
+        runtime_entity_id: "17",
       }),
     ]);
   });
