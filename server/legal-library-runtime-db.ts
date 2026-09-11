@@ -186,6 +186,9 @@ const CURRENT_STATUTE_CTE = `
       c.source_candidate_hash,
       c.field_provenance,
       c.reconciled_at,
+      c.projection_state,
+      c.data_state,
+      c.legal_catalog_ready,
       c.state_code,
       c.jurisdiction as object_jurisdiction,
       coalesce(p.payload->'row', p.payload->'record', '{}'::jsonb) as source_record,
@@ -204,7 +207,6 @@ const CURRENT_STATUTE_CTE = `
       limit 1
     ) p on true
     where c.object_class = 'legal_authority'
-      and c.legal_catalog_ready
       and (
         c.source_locator like 'xlsx:verified_statute:%'
         or c.source_locator like 'xlsx:statute_master:%'
@@ -215,8 +217,10 @@ const CURRENT_STATUTE_CTE = `
       coalesce(
         nullif(source_record->>'statute_uuid',''),
         nullif(source_record->>'statute_uid',''),
-        nullif(source_record->>'key_text_uuid','')
-      )::uuid as id,
+        nullif(source_record->>'key_text_uuid',''),
+        nullif(object_ref,''),
+        md5(lower(btrim(source_record->>'citation')))
+      ) as id,
       source_record->>'citation' as citation,
       coalesce(nullif(source_record->>'short_title',''), nullif(source_record->>'title','')) as short_title,
       coalesce(
@@ -256,23 +260,31 @@ const CURRENT_STATUTE_CTE = `
       jsonb_build_object(
         'runtime_source','current_corpus',
         'source_type','current_corpus',
+        'publication_state',case when legal_catalog_ready then 'catalog_ready' else 'substrate_observed_not_catalog_ready' end,
         'object_ref',object_ref,
         'source_locator',source_locator,
         'artifact_key',artifact_key,
         'source_candidate_hash',source_candidate_hash,
-        'field_provenance',coalesce(field_provenance,'{}'::jsonb)
+        'field_provenance',coalesce(field_provenance,'{}'::jsonb),
+        'projection_state',projection_state,
+        'data_state',data_state
       ) as metadata,
       reconciled_at as created_at,
+      case when legal_catalog_ready then 0 else 1 end as publication_rank,
       row_number() over (
         partition by lower(btrim(source_record->>'citation'))
-        order by family_priority, reconciled_at desc, object_ref
+        order by
+          case when legal_catalog_ready then 0 else 1 end,
+          family_priority,
+          reconciled_at desc,
+          object_ref
       ) as source_rank
     from current_source
     where nullif(btrim(source_record->>'citation'),'') is not null
   ), current_rows as (
     select id,citation,short_title,jurisdiction,domains,effective_date,last_amended,summary,
            verbatim_key_text,source_url,enforcement_agency,statute_of_limitations,
-           verification_status,title,statute_text,metadata,created_at,0::int as runtime_rank
+           verification_status,title,statute_text,metadata,created_at,publication_rank as runtime_rank
     from current_ranked
     where source_rank = 1
   ), combined as (
@@ -283,7 +295,7 @@ const CURRENT_STATUTE_CTE = `
       l.verbatim_key_text,l.source_url,l.enforcement_agency,l.statute_of_limitations,
       l.verification_status,l.title,l.statute_text,
       coalesce(l.metadata,'{}'::jsonb) || jsonb_build_object('runtime_source','legacy_compat') as metadata,
-      l.created_at,1::int as runtime_rank
+      l.created_at,2::int as runtime_rank
     from public.legal_statutes l
     where not exists (
       select 1 from current_rows c where lower(btrim(c.citation)) = lower(btrim(l.citation))
@@ -333,6 +345,9 @@ const CURRENT_CASE_CTE = `
       c.source_candidate_hash,
       c.field_provenance,
       c.reconciled_at,
+      c.projection_state,
+      c.data_state,
+      c.legal_catalog_ready,
       c.state_code,
       c.jurisdiction as object_jurisdiction,
       coalesce(p.payload->'row', p.payload->'record', '{}'::jsonb) as source_record,
@@ -347,14 +362,19 @@ const CURRENT_CASE_CTE = `
       limit 1
     ) p on true
     where c.object_class = 'legal_authority'
-      and c.legal_catalog_ready
       and (
         c.source_locator like 'xlsx:verified_case_law:%'
         or c.source_locator like 'xlsx:case_law_master:%'
       )
   ), current_ranked as (
     select
-      coalesce(nullif(source_record->>'case_uuid',''), nullif(source_record->>'case_uid',''))::uuid as id,
+      coalesce(
+        nullif(source_record->>'case_uuid',''),
+        nullif(source_record->>'case_uid',''),
+        nullif(btrim(source_record->>'citation'),''),
+        nullif(object_ref,''),
+        md5(lower(coalesce(nullif(source_record->>'case_name',''), nullif(source_record->>'title',''), source_record->>'citation')))
+      ) as id,
       source_record->>'citation' as citation,
       coalesce(nullif(source_record->>'case_name',''), nullif(source_record->>'title','')) as case_name,
       coalesce(
@@ -387,24 +407,41 @@ const CURRENT_CASE_CTE = `
       jsonb_build_object(
         'runtime_source','current_corpus',
         'source_type','current_corpus',
+        'publication_state',case when legal_catalog_ready then 'catalog_ready' else 'substrate_observed_not_catalog_ready' end,
         'object_ref',object_ref,
         'source_locator',source_locator,
         'artifact_key',artifact_key,
         'source_candidate_hash',source_candidate_hash,
         'field_provenance',coalesce(field_provenance,'{}'::jsonb),
+        'projection_state',projection_state,
+        'data_state',data_state,
         'subsequent_history',source_record->'subsequent_history',
         'statutes_interpreted',source_record->'statutes_interpreted'
       ) as metadata,
       reconciled_at as created_at,
+      case when legal_catalog_ready then 0 else 1 end as publication_rank,
       row_number() over (
-        partition by coalesce(nullif(source_record->>'case_uuid',''), nullif(source_record->>'case_uid',''))
-        order by family_priority, reconciled_at desc, object_ref
+        partition by coalesce(
+          nullif(source_record->>'case_uuid',''),
+          nullif(source_record->>'case_uid',''),
+          lower(btrim(source_record->>'citation')),
+          object_ref
+        )
+        order by
+          case when legal_catalog_ready then 0 else 1 end,
+          family_priority,
+          reconciled_at desc,
+          object_ref
       ) as source_rank
     from current_source
-    where coalesce(nullif(source_record->>'case_uuid',''), nullif(source_record->>'case_uid','')) is not null
+    where coalesce(
+      nullif(source_record->>'case_uuid',''),
+      nullif(source_record->>'case_uid',''),
+      nullif(btrim(source_record->>'citation'),'')
+    ) is not null
   ), current_rows as (
     select id,citation,case_name,jurisdiction,domains,year_decided,court,summary,key_quotes,
-           source_url,title,opinion_text,metadata,created_at,0::int as runtime_rank
+           source_url,title,opinion_text,metadata,created_at,publication_rank as runtime_rank
     from current_ranked where source_rank = 1
   ), combined as (
     select * from current_rows
@@ -413,9 +450,17 @@ const CURRENT_CASE_CTE = `
       l.id,l.citation,l.case_name,l.jurisdiction,l.domains,l.year_decided,l.court,l.summary,l.key_quotes,
       l.source_url,l.title,l.opinion_text,
       coalesce(l.metadata,'{}'::jsonb) || jsonb_build_object('runtime_source','legacy_compat') as metadata,
-      l.created_at,1::int as runtime_rank
+      l.created_at,2::int as runtime_rank
     from public.legal_case_law l
-    where not exists (select 1 from current_rows c where c.id = l.id)
+    where not exists (
+      select 1
+      from current_rows c
+      where c.id = l.id::text
+         or (
+           nullif(lower(btrim(c.citation)), '') is not null
+           and lower(btrim(c.citation)) = lower(btrim(l.citation))
+         )
+    )
   )
 `;
 
@@ -458,9 +503,10 @@ export async function getRuntimeLegalLibraryStats(jurisdiction?: string) {
     return `$${params.length}`;
   })() : null;
   const result = await getPool().query(`
-    with current_statutes as (
-      select distinct lower(btrim(source_record->>'citation')) as citation,
-             coalesce(nullif(source_record->>'jurisdiction_code',''),nullif(source_record->>'jurisdiction',''),nullif(c.state_code,''),nullif(c.jurisdiction,'')) as jurisdiction
+    with current_statutes_raw as (
+      select lower(btrim(source_record->>'citation')) as citation,
+             coalesce(nullif(source_record->>'jurisdiction_code',''),nullif(source_record->>'jurisdiction',''),nullif(c.state_code,''),nullif(c.jurisdiction,'')) as jurisdiction,
+             c.legal_catalog_ready
       from public.v_lighthouse_legal_authority_catalog_v2 c
       join lateral (
         select coalesce(p.payload->'row',p.payload->'record','{}'::jsonb) as source_record
@@ -468,16 +514,21 @@ export async function getRuntimeLegalLibraryStats(jurisdiction?: string) {
         where p.candidate_hash=c.source_candidate_hash and p.artifact_key=c.artifact_key
         order by p.created_at desc limit 1
       ) p on true
-      where c.object_class='legal_authority' and c.legal_catalog_ready
+      where c.object_class='legal_authority'
         and (c.source_locator like 'xlsx:verified_statute:%' or c.source_locator like 'xlsx:statute_master:%' or c.source_locator like 'xlsx:statute_key_text:%')
         and nullif(btrim(source_record->>'citation'),'') is not null
+    ), current_statutes as (
+      select citation,jurisdiction,bool_or(legal_catalog_ready) as legal_catalog_ready
+      from current_statutes_raw
+      group by citation,jurisdiction
     ), combined_statutes as (
       select citation,jurisdiction from current_statutes
       union
       select lower(btrim(l.citation)),l.jurisdiction from public.legal_statutes l
-    ), current_cases as (
-      select distinct coalesce(nullif(source_record->>'case_uuid',''),nullif(source_record->>'case_uid',''))::uuid as id,
-             coalesce(nullif(source_record->>'jurisdiction_code',''),nullif(source_record->>'jurisdiction',''),nullif(c.state_code,''),nullif(c.jurisdiction,'')) as jurisdiction
+    ), current_cases_raw as (
+      select coalesce(nullif(source_record->>'case_uuid',''),nullif(source_record->>'case_uid',''),nullif(btrim(source_record->>'citation'),''),nullif(c.object_ref,'')) as id,
+             coalesce(nullif(source_record->>'jurisdiction_code',''),nullif(source_record->>'jurisdiction',''),nullif(c.state_code,''),nullif(c.jurisdiction,'')) as jurisdiction,
+             c.legal_catalog_ready
       from public.v_lighthouse_legal_authority_catalog_v2 c
       join lateral (
         select coalesce(p.payload->'row',p.payload->'record','{}'::jsonb) as source_record
@@ -485,12 +536,17 @@ export async function getRuntimeLegalLibraryStats(jurisdiction?: string) {
         where p.candidate_hash=c.source_candidate_hash and p.artifact_key=c.artifact_key
         order by p.created_at desc limit 1
       ) p on true
-      where c.object_class='legal_authority' and c.legal_catalog_ready
+      where c.object_class='legal_authority'
         and (c.source_locator like 'xlsx:verified_case_law:%' or c.source_locator like 'xlsx:case_law_master:%')
+        and coalesce(nullif(source_record->>'case_uuid',''),nullif(source_record->>'case_uid',''),nullif(btrim(source_record->>'citation'),'')) is not null
+    ), current_cases as (
+      select id,jurisdiction,bool_or(legal_catalog_ready) as legal_catalog_ready
+      from current_cases_raw
+      group by id,jurisdiction
     ), combined_cases as (
       select id,jurisdiction from current_cases
       union
-      select id,jurisdiction from public.legal_case_law
+      select id::text,jurisdiction from public.legal_case_law
     )
     select
       (select count(*)::int from combined_statutes${jurisdictionFilter ? ` where jurisdiction = ${jurisdictionFilter}` : ""}) as statutes,
@@ -498,7 +554,10 @@ export async function getRuntimeLegalLibraryStats(jurisdiction?: string) {
       (select count(*)::int from public.legal_enforcement_records${jurisdictionFilter ? ` where jurisdiction = ${jurisdictionFilter}` : ""}) as enforcement_records,
       (select count(*)::int from public.legal_weak_joints${jurisdictionFilter ? ` where coalesce(metadata->>'jurisdiction','') = ${jurisdictionFilter}` : ""}) as weak_joints,
       (select count(*)::int from public.legal_contradictions${jurisdictionFilter ? ` where jurisdiction = ${jurisdictionFilter}` : ""}) as contradictions,
-      (select count(*)::int from public.v_lighthouse_legal_authority_catalog_v2 where object_class='legal_authority' and legal_catalog_ready${jurisdictionFilter ? ` and coalesce(nullif(state_code,''),nullif(jurisdiction,'')) = ${jurisdictionFilter}` : ""}) as current_corpus_legal_authorities
+      (select count(*)::int from public.v_lighthouse_legal_authority_catalog_v2 where object_class='legal_authority'${jurisdictionFilter ? ` and coalesce(nullif(state_code,''),nullif(jurisdiction,'')) = ${jurisdictionFilter}` : ""}) as current_corpus_legal_authorities,
+      (select count(*)::int from current_statutes where ${jurisdictionFilter ? `jurisdiction = ${jurisdictionFilter} and ` : ""}not legal_catalog_ready) as stranded_current_corpus_statutes,
+      (select count(*)::int from current_cases where ${jurisdictionFilter ? `jurisdiction = ${jurisdictionFilter} and ` : ""}not legal_catalog_ready) as stranded_current_corpus_case_law,
+      (select count(*)::int from public.v_lighthouse_legal_authority_catalog_v2 where object_class='legal_authority' and not legal_catalog_ready${jurisdictionFilter ? ` and coalesce(nullif(state_code,''),nullif(jurisdiction,'')) = ${jurisdictionFilter}` : ""}) as stranded_current_corpus_legal_authorities
   `, params);
   const row = result.rows[0] ?? {};
   return {
@@ -508,6 +567,9 @@ export async function getRuntimeLegalLibraryStats(jurisdiction?: string) {
     weakJoints: Number(row.weak_joints ?? 0),
     contradictions: Number(row.contradictions ?? 0),
     currentCorpusLegalAuthorities: Number(row.current_corpus_legal_authorities ?? 0),
+    strandedCurrentCorpusStatutes: Number(row.stranded_current_corpus_statutes ?? 0),
+    strandedCurrentCorpusCaseLaw: Number(row.stranded_current_corpus_case_law ?? 0),
+    strandedCurrentCorpusLegalAuthorities: Number(row.stranded_current_corpus_legal_authorities ?? 0),
   };
 }
 

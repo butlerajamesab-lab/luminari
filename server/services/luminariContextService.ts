@@ -9,7 +9,8 @@
 
 import * as registryService from "./registryService";
 import * as caseService from "./caseService";
-import * as matchingService from "./matchingService";
+import { getCaseActionContext, type CaseActionContext } from "./case-action-context";
+export { getCaseActionContext } from "./case-action-context";
 
 export interface LuminariContext {
   case: {
@@ -29,16 +30,22 @@ export interface LuminariContext {
   };
   workflows: any[];
   programs: any[];
+  resources: any[];
   entities: any[];
   signals: any[];
   legal_library: any[];
   enforcement_pathways: any[];
   deadlines: any[];
+  action_context: CaseActionContext;
   diagnostics: {
     total_workflows: number;
     total_programs: number;
+    total_resources: number;
     total_entities: number;
     total_signals: number;
+    total_legal_library_records: number;
+    total_enforcement_pathways: number;
+    total_deadlines: number;
     case_status: string;
     last_updated: number;
   };
@@ -90,7 +97,27 @@ export async function getCaseContext(caseId: number): Promise<LuminariContext> {
   // Step 8: Get case notes
   const notes = await caseService.getCaseNotes(caseId);
 
-  // Step 9: Compose context
+  // Step 9: Get bounded case action context
+  const action_context = await getCaseActionContext({ caseId, limitPerSurface: 6 });
+
+  const legal_library = [
+    ...action_context.legal.statutes,
+    ...action_context.legal.case_law,
+    ...action_context.legal.enforcement,
+    ...action_context.legal.weak_joints,
+    ...action_context.legal.contradictions,
+  ];
+  const resources = action_context.resources.directory_results;
+  const enforcement_pathways =
+    (action_context.workflow.enforcement_pathways as any)?.pathways ?? [];
+  const deadlines = [
+    ...(((action_context.workflow.investigation as any)?.workflow?.immediateActions ?? []) as any[]),
+    ...(((action_context.workflow.investigation as any)?.workflow?.timelineTasks ?? []) as any[]),
+    ...(((action_context.workflow.investigation as any)?.workflow?.agencySteps ?? []) as any[]),
+    ...action_context.workflow.filing_deadlines,
+  ];
+
+  // Step 10: Compose context
   return {
     case: {
       id: caseData.id,
@@ -99,22 +126,28 @@ export async function getCaseContext(caseId: number): Promise<LuminariContext> {
       selected_workflow_id: caseData.selected_workflow_id,
       status: caseData.status,
       created_at: caseData.created_at,
-      notes: notes.map((n: any) => n.note_text),
+      notes: notes.map((n: any) => n.content ?? n.note_text).filter(Boolean),
       timeline,
     },
     jurisdiction,
     workflows,
     programs,
+    resources,
     entities,
     signals,
-    legal_library: [], // Placeholder for legal library data
-    enforcement_pathways: [], // Placeholder for enforcement pathways
-    deadlines: [], // Placeholder for deadlines
+    legal_library,
+    enforcement_pathways,
+    deadlines,
+    action_context,
     diagnostics: {
       total_workflows: workflows.length,
       total_programs: programs.length,
+      total_resources: resources.length,
       total_entities: entities.length,
       total_signals: signals.length,
+      total_legal_library_records: legal_library.length,
+      total_enforcement_pathways: enforcement_pathways.length,
+      total_deadlines: deadlines.length,
       case_status: caseData.status,
       last_updated: Date.now(),
     },

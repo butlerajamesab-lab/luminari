@@ -296,6 +296,34 @@ export const luminariRouter = router({
       }
     }),
 
+  getActionContext: protectedProcedure
+    .input(
+      z.object({
+        case_id: z.number(),
+        problem_context: z.string().optional(),
+        incident_date: z.string().optional(),
+        as_of_date: z.string().optional(),
+        limit_per_surface: z.number().int().min(1).max(25).optional(),
+      }),
+    )
+    .query(async ({ input }) => {
+      try {
+        return await luminariContextService.getCaseActionContext({
+          caseId: input.case_id,
+          problemContext: input.problem_context,
+          incidentDate: input.incident_date,
+          asOfDate: input.as_of_date,
+          limitPerSurface: input.limit_per_surface,
+        });
+      } catch (err: any) {
+        console.error("Error fetching case action context:", err);
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: err.message || "Failed to fetch case action context",
+        });
+      }
+    }),
+
   /**
    * Record validation result (Sunam write endpoint)
    * 

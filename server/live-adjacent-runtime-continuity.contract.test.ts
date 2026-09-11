@@ -9,6 +9,7 @@ vi.mock("./db", () => ({
 }));
 
 import {
+  getRuntimeLegalLibraryStats,
   searchRuntimeCaseLaw,
   searchRuntimeStatutes,
 } from "./legal-library-runtime-db";
@@ -42,6 +43,7 @@ describe("live adjacent runtime continuity", () => {
     expect(source).toContain("public.v_lighthouse_legal_authority_catalog_v2");
     expect(source).toContain("public.luminari_corpus_candidate_v1");
     expect(source).toContain("'runtime_source','current_corpus'");
+    expect(source).toContain("'publication_state',case when legal_catalog_ready then 'catalog_ready' else 'substrate_observed_not_catalog_ready' end");
     expect(source.indexOf("public.v_lighthouse_legal_authority_catalog_v2")).toBeLessThan(source.indexOf("from public.legal_statutes l"));
     expect(source.indexOf("const CURRENT_CASE_CTE")).toBeLessThan(source.indexOf("from public.legal_case_law l"));
     expect(source).not.toContain("from public.v_paginated_statutes ${where}");
@@ -84,6 +86,38 @@ describe("live adjacent runtime continuity", () => {
     expect(query).toHaveBeenCalledWith(
       expect.stringContaining("limit $2 offset $3"),
       ["%9th%", 10, 5],
+    );
+  });
+
+  it("returns legal-library stats that account for stranded current-corpus authorities", async () => {
+    query.mockResolvedValue({
+      rows: [{
+        statutes: 7,
+        case_law: 3,
+        enforcement_records: 2,
+        weak_joints: 1,
+        contradictions: 4,
+        current_corpus_legal_authorities: 11,
+        stranded_current_corpus_statutes: 5,
+        stranded_current_corpus_case_law: 2,
+        stranded_current_corpus_legal_authorities: 6,
+      }],
+    });
+
+    await expect(getRuntimeLegalLibraryStats("WA")).resolves.toEqual({
+      statutes: 7,
+      caseLaw: 3,
+      enforcementRecords: 2,
+      weakJoints: 1,
+      contradictions: 4,
+      currentCorpusLegalAuthorities: 11,
+      strandedCurrentCorpusStatutes: 5,
+      strandedCurrentCorpusCaseLaw: 2,
+      strandedCurrentCorpusLegalAuthorities: 6,
+    });
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining("stranded_current_corpus_legal_authorities"),
+      ["WA"],
     );
   });
 

@@ -33,6 +33,17 @@ export async function dispatchServiceTool(
         return { success: true, result: context };
       }
 
+      case "get_case_action_context": {
+        const context = await luminariContextService.getCaseActionContext({
+          caseId: args.case_id,
+          problemContext: args.problem_context,
+          incidentDate: args.incident_date,
+          asOfDate: args.as_of_date,
+          limitPerSurface: args.limit_per_surface,
+        });
+        return { success: true, result: context };
+      }
+
       // ── Case Data (Read) ──
       case "get_case": {
         const caseData = await caseService.getCaseById(args.case_id);
