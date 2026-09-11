@@ -242,7 +242,7 @@ export async function getCaseActionContext(
   const problemContext = trimmedText(input.problemContext) ?? trimmedText(caseData.category);
   const incidentDate = trimmedText(input.incidentDate) ?? caseIncidentDate(caseData as Record<string, unknown>);
   const explicitAsOfDate = trimmedText(input.asOfDate);
-  const asOfDate = incidentDate ? explicitAsOfDate ?? utc_today_date_only() : explicitAsOfDate;
+  const filingAsOfDate = incidentDate ? explicitAsOfDate ?? utc_today_date_only() : explicitAsOfDate;
   const normalizedIssue = issueKey(problemContext);
   const jurisdictionCode = trimmedText(jurisdiction.code)?.toUpperCase() ?? null;
   const fallbackSurfaces: string[] = [];
@@ -306,7 +306,7 @@ export async function getCaseActionContext(
     incidentDate
       ? list_filing_deadline_records({
           incidentDate,
-          asOfDate: asOfDate ?? undefined,
+          asOfDate: filingAsOfDate ?? undefined,
         })
       : Promise.resolve([]),
     listCaseResourceLinks(input.caseId),
@@ -337,7 +337,7 @@ export async function getCaseActionContext(
       problem_context: problemContext,
       issue_key: normalizedIssue,
       incident_date: incidentDate,
-      as_of_date: asOfDate,
+      as_of_date: explicitAsOfDate,
       limit_per_surface: limit,
     },
     semantics: {

@@ -192,7 +192,7 @@ describe("case action context", () => {
       asOfDate: today(),
     });
     expect(result.request.incident_date).toBe("2026-03-14");
-    expect(result.request.as_of_date).toBe(today());
+    expect(result.request.as_of_date).toBeNull();
     expect(result.workflow.filing_deadlines).toEqual([{ formId: 1 }]);
   });
 
