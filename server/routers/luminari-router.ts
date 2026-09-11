@@ -19,7 +19,9 @@ import * as caseService from "../services/caseService";
 import * as luminariContextService from "../services/luminariContextService";
 
 function luminari_read_error(err: unknown, fallbackMessage: string) {
-  const message = err instanceof Error ? err.message : String(err ?? fallbackMessage);
+  const message = err instanceof Error && err.message
+    ? err.message
+    : fallbackMessage;
   return new TRPCError({
     code: /(?:^case \d+ not found$)|(?:^jurisdiction \d+ not found in registry$)/i.test(message)
       ? "NOT_FOUND"
