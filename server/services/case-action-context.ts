@@ -13,6 +13,7 @@ import { read_investigation_workflow } from "../investigation-workflow-runtime-c
 import { searchPublishableResourceDirectory } from "./resource-directory-publishable";
 import * as caseService from "./caseService";
 import * as registryService from "./registryService";
+import { LEGAL_DOMAINS, type LegalDomain } from "../../drizzle/schema";
 
 const DEFAULT_LIMIT = 6;
 const MAX_LIMIT = 25;
@@ -83,6 +84,12 @@ function trimmedText(value: unknown): string | null {
 function issueKey(value: string | null): string | null {
   if (!value) return null;
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "") || null;
+}
+
+function toLegalDomain(value: string | null): LegalDomain | undefined {
+  return value && (LEGAL_DOMAINS as readonly string[]).includes(value)
+    ? value as LegalDomain
+    : undefined;
 }
 
 function caseIncidentDate(caseData: Record<string, unknown>) {
@@ -240,10 +247,11 @@ export async function getCaseActionContext(
   }
 
   const problemContext = trimmedText(input.problemContext) ?? trimmedText(caseData.category);
-  const incidentDate = trimmedText(input.incidentDate) ?? caseIncidentDate(caseData as Record<string, unknown>);
+  const incidentDate = trimmedText(input.incidentDate) ?? caseIncidentDate(caseData as unknown as Record<string, unknown>);
   const explicitAsOfDate = trimmedText(input.asOfDate);
   const filingAsOfDate = incidentDate ? explicitAsOfDate ?? utc_today_date_only() : explicitAsOfDate;
   const normalizedIssue = issueKey(problemContext);
+  const normalizedDomain = toLegalDomain(normalizedIssue);
   const jurisdictionCode = trimmedText(jurisdiction.code)?.toUpperCase() ?? null;
   const fallbackSurfaces: string[] = [];
   const notes: string[] = [];
@@ -279,11 +287,11 @@ export async function getCaseActionContext(
     ),
     searchWithFallback(
       normalizedIssue,
-      () => searchRuntimeEnforcement({ jurisdiction: jurisdictionCode ?? undefined, domain: normalizedIssue ?? undefined, limit }),
+      () => searchRuntimeEnforcement({ jurisdiction: jurisdictionCode ?? undefined, domain: normalizedDomain, limit }),
       () => searchRuntimeEnforcement({ jurisdiction: jurisdictionCode ?? undefined, limit }),
     ),
-    searchRuntimeWeakJoints({ jurisdiction: jurisdictionCode ?? undefined, domain: normalizedIssue ?? undefined, limit }),
-    listRuntimeContradictions({ jurisdiction: jurisdictionCode ?? undefined, domain: normalizedIssue ?? undefined, limit }),
+    searchRuntimeWeakJoints({ jurisdiction: jurisdictionCode ?? undefined, domain: normalizedDomain, limit }),
+    listRuntimeContradictions({ jurisdiction: jurisdictionCode ?? undefined, domain: normalizedDomain, limit }),
       normalizedIssue
         ? read_investigation_workflow({
             domain: normalizedIssue,

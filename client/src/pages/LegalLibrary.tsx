@@ -876,7 +876,7 @@ function CaseLawCard({ caseLaw, navigate }: { caseLaw: any; navigate: (path: str
             >
               <Send size={10} /> Cite in LumenSend
             </button>
-            <CommitToCase type="statute" itemId={caseLaw.id ?? caseLaw.runtime_entity_id} label="Attach to Case" size="sm" />
+            <CommitToCase type="case_law" itemId={caseLaw.id ?? caseLaw.runtime_entity_id} label="Attach to Case" size="sm" />
             {caseLaw.source_url && (
               <a
                 href={caseLaw.source_url}

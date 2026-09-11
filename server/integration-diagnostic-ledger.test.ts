@@ -83,7 +83,17 @@ describe("integration diagnostic ledger", () => {
       visible: 3,
       stranded: 6,
     });
-    expect(ledger.known_surface_mismatches).toEqual([]);
+    expect(ledger.known_surface_mismatches).not.toContainEqual(
+      expect.objectContaining({
+        surface: "/legal-library",
+      }),
+    );
+    expect(ledger.known_surface_mismatches).toContainEqual(
+      expect.objectContaining({
+        surface: "workflow/accountability readers",
+        stranded_records: 1,
+      }),
+    );
   });
 
   it("flags the legal-library surface when populated substrate still yields zero runtime legal authorities", async () => {

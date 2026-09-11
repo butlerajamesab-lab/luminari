@@ -9,6 +9,7 @@
  *   <CommitToCase type="benefit" itemId={program.id} />
  *   <CommitToCase type="signal" itemId={signal.id} signalType="structural" />
  *   <CommitToCase type="statute" itemId={statute.id} />
+ *   <CommitToCase type="case_law" itemId={caseLaw.id} />
  *   <CommitToCase type="foia" itemId={foiaRequest.id} />
  *   <CommitToCase type="filing" itemId={filing.id} />
  *   <CommitToCase type="resource" itemId={resource.resource_entity_id} resourceName={resource.resource_name} />
@@ -38,6 +39,7 @@ type CommitType =
   | "benefit"
   | "signal"
   | "statute"
+  | "case_law"
   | "foia"
   | "filing"
   | "proceduralPath"
@@ -47,7 +49,7 @@ type CommitType =
 
 type CommitToCaseProps = {
   type: CommitType;
-  // For item-based commits (finding, barrier, benefit, signal, statute, foia, filing)
+  // For item-based commits (finding, barrier, benefit, signal, statute, case_law, foia, filing)
   itemId?: number | string;
   // For signal commits
   signalType?: "structural" | "evidentiary" | "pattern" | "resource";
@@ -137,6 +139,7 @@ export function CommitToCase({
       case "benefit": return "Benefit program saved to case.";
       case "signal": return "Signal committed to case.";
       case "statute": return "Statute attached to case.";
+      case "case_law": return "Case law attached to case.";
       case "foia": return "FOIA request tracked in case.";
       case "filing": return "Filing packet saved to case.";
       case "proceduralPath": return `Path "${pathLabel}" set as active strategy.`;
@@ -175,6 +178,7 @@ export function CommitToCase({
         commit_signal.mutate({ case_id: caseId, signal_id: numericItemId, signal_type: signalType });
         break;
       case "statute":
+      case "case_law":
         commit_statute.mutate({ case_id: caseId, statute_id: itemId! });
         break;
       case "foia":
