@@ -122,4 +122,34 @@ describe("case action context", () => {
     expect(result.diagnostics.notes.join(" ")).toContain("observed-but-not-catalog-ready authorities");
     expect(result.semantics.finding).toContain("No findings are invented");
   });
+
+  it("refuses to widen workflow and enforcement reads when the case has no usable scope", async () => {
+    mocks.getCaseById.mockResolvedValue({ id: 77, jurisdiction_id: 9, category: "   " });
+    mocks.getJurisdictionById.mockResolvedValue({ id: 9, code: "wa", name: "Washington" });
+    mocks.searchRuntimeStatutes.mockResolvedValue([]);
+    mocks.searchRuntimeCaseLaw.mockResolvedValue([]);
+    mocks.searchPublishableResourceDirectory.mockResolvedValue({ items: [] });
+    mocks.searchRuntimeEnforcement.mockResolvedValue([]);
+    mocks.searchRuntimeWeakJoints.mockResolvedValue([]);
+    mocks.listRuntimeContradictions.mockResolvedValue([]);
+    mocks.getRuntimeLegalLibraryStats.mockResolvedValue({
+      statutes: 0,
+      caseLaw: 0,
+      enforcementRecords: 0,
+      weakJoints: 0,
+      contradictions: 0,
+      currentCorpusLegalAuthorities: 0,
+      strandedCurrentCorpusStatutes: 0,
+      strandedCurrentCorpusCaseLaw: 0,
+      strandedCurrentCorpusLegalAuthorities: 0,
+    });
+    mocks.query.mockResolvedValue({ rows: [] });
+
+    const result = await getCaseActionContext({ caseId: 77 });
+
+    expect(mocks.read_investigation_workflow).not.toHaveBeenCalled();
+    expect(mocks.read_enforcement_pathways).not.toHaveBeenCalled();
+    expect((result.workflow.investigation as any).availability.reason).toContain("required to scope investigation workflows");
+    expect((result.workflow.enforcement_pathways as any).availability.reason).toContain("required to scope enforcement pathways");
+  });
 });

@@ -140,6 +140,87 @@ async function listSignalLineage(input: {
   }
 }
 
+function unavailableScopedWorkflow(reason: string) {
+  return {
+    domain: null,
+    claimType: null,
+    agencyShort: null,
+    context: {
+      incidentDate: null,
+      hasDocuments: false,
+      hasWitnesses: false,
+    },
+    availability: {
+      status: "unavailable" as const,
+      reason,
+      source: "workflow_master/workflow_steps" as const,
+    },
+    selectedWorkflow: null,
+    availableWorkflows: [],
+    workflow: {
+      immediateActions: [],
+      recordsToRequest: [],
+      witnessTargets: [],
+      timelineTasks: [],
+      agencySteps: [],
+      riskFlags: [],
+      signalWatchList: [],
+    },
+    sourceEvidence: {
+      claimElements: {
+        status: "unavailable" as const,
+        reason,
+      },
+      deadlineSources: {
+        status: "unavailable" as const,
+        reason,
+      },
+      witnessTargets: {
+        status: "unavailable" as const,
+        reason,
+      },
+      deadlineCalculations: {
+        status: "unavailable" as const,
+        reason,
+      },
+    },
+    metadata: {
+      weakJointsConsidered: 0,
+      signalsConsidered: 0,
+      contradictionTemplatesConsidered: 0,
+      proofFrameworksConsidered: 0,
+      barriersConsidered: 0,
+      claimElementsConsidered: 0,
+    },
+  };
+}
+
+function unavailableScopedEnforcement(reason: string) {
+  return {
+    availability: {
+      status: "unavailable" as const,
+      reason,
+    },
+    matchedBy: "none" as const,
+    requested: {
+      agencyShort: null,
+      claimType: null,
+      pipelineCategory: null,
+    },
+    filterOptions: {
+      agencyShorts: [],
+      claimTypes: [],
+      pipelineCategories: [],
+    },
+    totalSourceRows: 0,
+    matchedSourceRows: 0,
+    returnedSourceRows: 0,
+    returnLimit: 0,
+    sourceContract: "current_civic_object_enforcement_pathways_v1",
+    pathways: [],
+  };
+}
+
 export async function getCaseActionContext(
   input: CaseActionContextRequest,
 ): Promise<CaseActionContext> {
@@ -196,13 +277,25 @@ export async function getCaseActionContext(
     ),
     searchRuntimeWeakJoints({ jurisdiction: jurisdictionCode ?? undefined, domain: normalizedIssue ?? undefined, limit }),
     listRuntimeContradictions({ jurisdiction: jurisdictionCode ?? undefined, domain: normalizedIssue ?? undefined, limit }),
-    read_investigation_workflow({
-      domain: normalizedIssue ?? "general",
-      claimType: problemContext ?? undefined,
-      hasDocuments: false,
-      hasWitnesses: false,
-    }),
-    read_enforcement_pathways({ pipelineCategory: normalizedIssue ?? undefined }),
+      normalizedIssue
+        ? read_investigation_workflow({
+            domain: normalizedIssue,
+            claimType: problemContext ?? undefined,
+            hasDocuments: false,
+            hasWitnesses: false,
+          })
+        : Promise.resolve(
+            unavailableScopedWorkflow(
+              "Case category or problem context is required to scope investigation workflows.",
+            ),
+          ),
+      normalizedIssue
+        ? read_enforcement_pathways({ pipelineCategory: normalizedIssue })
+        : Promise.resolve(
+            unavailableScopedEnforcement(
+              "Case category or problem context is required to scope enforcement pathways.",
+            ),
+          ),
     input.incidentDate
       ? list_filing_deadline_records({
           incidentDate: input.incidentDate,
