@@ -36,3 +36,17 @@ Expected source rows: one run, 26 documents, 192 candidates, 260 routing items,
 counts and replay `resource_fingerprint_v1`, `routing_hash_v1` and
 `deadline_hash_v1`. Source completion is separate from canonical promotion and
 from verification of the underlying legal or resource claims.
+
+## Execution receipt — September 11, 2026
+
+All 118 bounded transactions completed on Lighthouse. Recovery added 1,126
+missing source rows and preserved all 28 existing rows. Final counts are exactly
+26 documents, 192 candidates, 260 routing items, 656 deadline fields and 19
+overlap groups. Database resource, routing and deadline fingerprint replay found
+zero mismatches; source bindings have zero missing parents.
+
+The final gate in `supabase/verification/20260911_sais_source_recovery.sql`
+rechecked these invariants and moved the original run from `prepared` to `staged`
+at `2026-09-11T00:06:34.574703Z`. Its verified and promoted timestamps remain null.
+All 192 resource IDs already exist in `public.sais_resources`; this recovery
+restored source lineage rather than adding 192 new directory listings.
