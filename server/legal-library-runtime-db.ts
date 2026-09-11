@@ -521,8 +521,7 @@ export async function getRuntimeLegalLibraryStats(jurisdiction?: string) {
       select
         citation,
         jurisdiction,
-        bool_or(legal_catalog_ready) as legal_catalog_ready,
-        bool_or(not legal_catalog_ready) as has_unready_observation
+        bool_or(legal_catalog_ready) as legal_catalog_ready
       from current_statutes_raw
       group by citation,jurisdiction
     ), combined_statutes as (
@@ -547,8 +546,7 @@ export async function getRuntimeLegalLibraryStats(jurisdiction?: string) {
       select
         id,
         jurisdiction,
-        bool_or(legal_catalog_ready) as legal_catalog_ready,
-        bool_or(not legal_catalog_ready) as has_unready_observation
+        bool_or(legal_catalog_ready) as legal_catalog_ready
       from current_cases_raw
       group by id,jurisdiction
     ), combined_cases as (
@@ -563,8 +561,8 @@ export async function getRuntimeLegalLibraryStats(jurisdiction?: string) {
       (select count(*)::int from public.legal_weak_joints${jurisdictionFilter ? ` where coalesce(metadata->>'jurisdiction','') = ${jurisdictionFilter}` : ""}) as weak_joints,
       (select count(*)::int from public.legal_contradictions${jurisdictionFilter ? ` where jurisdiction = ${jurisdictionFilter}` : ""}) as contradictions,
       (select count(*)::int from public.v_lighthouse_legal_authority_catalog_v2 where object_class='legal_authority'${jurisdictionFilter ? ` and coalesce(nullif(state_code,''),nullif(jurisdiction,'')) = ${jurisdictionFilter}` : ""}) as current_corpus_legal_authorities,
-      (select count(*)::int from current_statutes where ${jurisdictionFilter ? `jurisdiction = ${jurisdictionFilter} and ` : ""}has_unready_observation) as stranded_current_corpus_statutes,
-      (select count(*)::int from current_cases where ${jurisdictionFilter ? `jurisdiction = ${jurisdictionFilter} and ` : ""}has_unready_observation) as stranded_current_corpus_case_law,
+      (select count(*)::int from current_statutes where ${jurisdictionFilter ? `jurisdiction = ${jurisdictionFilter} and ` : ""}not legal_catalog_ready) as stranded_current_corpus_statutes,
+      (select count(*)::int from current_cases where ${jurisdictionFilter ? `jurisdiction = ${jurisdictionFilter} and ` : ""}not legal_catalog_ready) as stranded_current_corpus_case_law,
       (select count(*)::int from public.v_lighthouse_legal_authority_catalog_v2 where object_class='legal_authority' and not legal_catalog_ready${jurisdictionFilter ? ` and coalesce(nullif(state_code,''),nullif(jurisdiction,'')) = ${jurisdictionFilter}` : ""}) as stranded_current_corpus_legal_authorities
   `, params);
   const row = result.rows[0] ?? {};

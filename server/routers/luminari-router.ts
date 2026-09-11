@@ -18,6 +18,16 @@ import * as registryService from "../services/registryService";
 import * as caseService from "../services/caseService";
 import * as luminariContextService from "../services/luminariContextService";
 
+function luminari_read_error(err: unknown, fallbackMessage: string) {
+  const message = err instanceof Error ? err.message : String(err ?? fallbackMessage);
+  return new TRPCError({
+    code: /(?:^case \d+ not found$)|(?:^jurisdiction \d+ not found in registry$)/i.test(message)
+      ? "NOT_FOUND"
+      : "INTERNAL_SERVER_ERROR",
+    message,
+  });
+}
+
 export const luminariRouter = router({
   /**
    * Get all jurisdictions
@@ -289,10 +299,7 @@ export const luminariRouter = router({
         return await luminariContextService.getCaseContext(input.case_id);
       } catch (err: any) {
         console.error("Error fetching case context:", err);
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: err.message || "Failed to fetch case context",
-        });
+        throw luminari_read_error(err, "Failed to fetch case context");
       }
     }),
 
@@ -317,10 +324,7 @@ export const luminariRouter = router({
         });
       } catch (err: any) {
         console.error("Error fetching case action context:", err);
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: err.message || "Failed to fetch case action context",
-        });
+        throw luminari_read_error(err, "Failed to fetch case action context");
       }
     }),
 
