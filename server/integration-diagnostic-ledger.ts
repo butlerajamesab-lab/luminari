@@ -1,209 +1,121 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { getPool } from "./db";
-import { getRuntimeLegalLibraryStats } from "./legal-library-runtime-db";
+import { getPool as get_pool } from "./db";
+import { getRuntimeLegalLibraryStats as get_runtime_legal_library_stats } from "./legal-library-runtime-db";
+import { read_availability, type read_availability_result } from "./read-availability";
 
 const FIXTURE_PATH = resolve(process.cwd(), "config/integration-diagnostic-ledger-v1.json");
-
-type LedgerFixture = {
-  schema_version: string;
-  ledger_id: string;
-  reference_issue: string;
+type ledger_fixture = {
+  schema_version: string; ledger_id: string; reference_issue: string;
   constitutional_boundary: Record<string, string>;
   semantic_layers: Array<{ kind: string; description: string }>;
-  source_families: Array<{
-    family_key: string;
-    label: string;
-    canonical_objects: string[];
+  source_families: Array<{ family_key: string; label: string; canonical_objects: string[];
     relations: Array<{ relation: string; role: string }>;
-    runtime_surfaces: Array<{ surface: string; query: string }>;
-  }>;
+    runtime_surfaces: Array<{ surface: string; query: string }> }>;
   graph_edges: Array<{ edge_key: string; relation: string; description: string }>;
 };
 
-function fixtureFailure(error: string) {
+type projection_read = {
+  visible: number | null; populated: number | null; catalog_ready: number | null; stranded: number | null;
+  availability: read_availability_result;
+};
+
+function unknown_projection(error: unknown): projection_read {
+  return { visible: null, populated: null, catalog_ready: null, stranded: null, availability: read_availability(null, error) };
+}
+
+async function count_relation(relation: string, active_only = false) {
+  try {
+    if (!/^public\.[a-z0-9_]+$/.test(relation)) throw new Error("Unsupported relation name in integration ledger fixture");
+    const { rows } = await get_pool().query(`select count(*)::int as count from ${relation}${active_only ? " where removed_at is null" : ""}`);
+    const count = measured_count(rows[0]?.count);
+    return { relation, count, available: true, ...read_availability(count) };
+  } catch (error) {
+    return { relation, count: null, available: false, ...read_availability(null, error) };
+  }
+}
+
+function measured_count(value: unknown): number {
+  if (value === null || value === undefined || value === "") throw new Error("Count was not returned by the database");
+  const count = Number(value);
+  if (!Number.isSafeInteger(count) || count < 0) throw new Error("Invalid database count");
+  return count;
+}
+
+async function read_projection(relation: string, readiness: string, predicate = "true"): Promise<projection_read> {
+  try {
+    // Identifiers come only from the three fixed calls below.
+    const { rows } = await get_pool().query(`select count(*)::int as populated,
+      count(*) filter (where ${readiness})::int as catalog_ready,
+      count(*) filter (where ${readiness} is not true)::int as stranded
+      from ${relation} where ${predicate}`);
+    const row = rows[0];
+    const populated = measured_count(row?.populated);
+    return { visible: null, populated, catalog_ready: measured_count(row?.catalog_ready), stranded: measured_count(row?.stranded),
+      availability: read_availability(populated) };
+  } catch (error) { return unknown_projection(error); }
+}
+
+export async function build_integration_diagnostic_ledger() {
+  let fixture: ledger_fixture;
+  try {
+    fixture = JSON.parse(readFileSync(FIXTURE_PATH, "utf8")) as ledger_fixture;
+    if (!Array.isArray(fixture.source_families) || !Array.isArray(fixture.graph_edges)) throw new Error("Invalid integration ledger fixture");
+  } catch (error) {
+    return {
+      schema_version: "1.0.0", ledger_id: "integration_diagnostic_ledger_v1", reference_issue: "#383",
+      source_family_coverage: [], graph_edge_coverage: [], runtime_projection_coverage: [],
+      semantic_layers: [], known_surface_mismatches: [],
+      legal_runtime_measurement: { count: null, availability: read_availability(null, error), source: "getRuntimeLegalLibraryStats" },
+      link_availability: { case_resource_links: read_availability(null, error), signal_case_links: read_availability(null, error) },
+      stranded_unpublished_records: {
+        legal_authorities: unknown_projection(error), resources: unknown_projection(error), workflows: unknown_projection(error),
+        case_resource_links: null, signal_case_links: null,
+      },
+      availability: read_availability(null, error), generated_at: new Date().toISOString(),
+    };
+  }
+  const source_family_coverage = await Promise.all(fixture.source_families.map(async family => {
+    const relations = await Promise.all(family.relations.map(async ({ relation, role }) => ({ ...await count_relation(relation), role })));
+    const complete = relations.every(relation => relation.available);
+    return { ...family, relations,
+      populated_relations: complete ? relations.filter(relation => relation.count! > 0).length : null,
+      relation_row_total: complete ? relations.reduce((sum, relation) => sum + relation.count!, 0) : null,
+      measurement_complete: complete,
+    };
+  }));
+  const graph_edge_coverage = await Promise.all(fixture.graph_edges.map(async edge => ({ ...edge, ...await count_relation(edge.relation) })));
+  const [legal, resources, workflows, case_links, signal_links] = await Promise.all([
+    read_projection("public.v_lighthouse_legal_authority_catalog_v2", "legal_catalog_ready", "object_class = 'legal_authority'"),
+    read_projection("public.v_lighthouse_resource_program_catalog_v2", "person_facing_ready"),
+    read_projection("public.v_lighthouse_workflow_accountability_catalog_v1", "workflow_catalog_ready"),
+    count_relation("public.case_resource_links", true), count_relation("public.signal_artifact_case_links_v1"),
+  ]);
+  let runtime_count: number | null = null;
+  let runtime_availability: read_availability_result;
+  try {
+    const stats = await get_runtime_legal_library_stats();
+    runtime_count = measured_count(stats.currentCorpusLegalAuthorities);
+    runtime_availability = read_availability(runtime_count);
+  } catch (error) { runtime_availability = read_availability(null, error); }
+  const known_surface_mismatches: Array<Record<string, unknown>> = [];
+  if (legal.populated !== null && legal.populated > 0 && runtime_count === 0) {
+    known_surface_mismatches.push({ surface: "/legal-library", authoritative_boundary: "public.v_lighthouse_legal_authority_catalog_v2",
+      populated_substrate: legal.populated, visible_projection: runtime_count,
+      break_contract: "populated legal substrate returned no current-corpus authorities through the runtime reader" });
+  }
   return {
-    schema_version: "1.0.0",
-    ledger_id: "integration_diagnostic_ledger_v1",
-    reference_issue: "#383",
-    constitutional_boundary: {},
-    semantic_layers: [],
-    source_family_coverage: [],
-    graph_edge_coverage: [],
-    runtime_projection_coverage: [],
+    ...fixture, generated_at: new Date().toISOString(), source_family_coverage, graph_edge_coverage,
+    runtime_projection_coverage: fixture.source_families.flatMap(family => family.runtime_surfaces.map(surface => ({
+      family_key: family.family_key, ...surface, measurement_state: "not_measured", runtime_count: null,
+    }))),
+    legal_runtime_measurement: { count: runtime_count, availability: runtime_availability, source: "getRuntimeLegalLibraryStats" },
     stranded_unpublished_records: {
-      legal_authorities: { populated: 0, visible: 0, stranded: 0 },
-      resources: { populated: 0, visible: 0, stranded: 0 },
-      workflows: { populated: 0, visible: 0, stranded: 0 },
-      case_resource_links: 0,
-      signal_case_links: 0,
+      legal_authorities: { ...legal, visible: runtime_count },
+      resources: { ...resources, visible: null }, workflows: { ...workflows, visible: null },
+      case_resource_links: case_links.count, signal_case_links: signal_links.count,
     },
-    known_surface_mismatches: [],
-    generated_at: new Date().toISOString(),
-    error,
-  };
-}
-
-function readFixture(): { fixture: LedgerFixture | null; error: string | null } {
-  try {
-    return {
-      fixture: JSON.parse(readFileSync(FIXTURE_PATH, "utf8")) as LedgerFixture,
-      error: null,
-    };
-  } catch (error) {
-    return {
-      fixture: null,
-      error: error instanceof Error ? error.message : String(error),
-    };
-  }
-}
-
-async function countRelation(relation: string) {
-  if (!/^public\.[a-z0-9_]+$/i.test(relation)) {
-    return {
-      relation,
-      count: 0,
-      available: false,
-      error: "Unsupported relation name in integration ledger fixture",
-    };
-  }
-  try {
-    const { rows } = await getPool().query(`select count(*)::int as count from ${relation}`);
-    return { relation, count: Number(rows[0]?.count ?? 0), available: true };
-  } catch (error) {
-    return {
-      relation,
-      count: 0,
-      available: false,
-      error: error instanceof Error ? error.message : String(error),
-    };
-  }
-}
-
-async function readProjectionSnapshot() {
-  try {
-    const { rows } = await getPool().query(`
-      select
-        (select count(*)::int from public.v_lighthouse_legal_authority_catalog_v2 where object_class = 'legal_authority') as legal_total,
-        (select count(*)::int from public.v_lighthouse_legal_authority_catalog_v2 where object_class = 'legal_authority' and legal_catalog_ready) as legal_catalog_ready,
-        (select count(*)::int from public.v_lighthouse_legal_authority_catalog_v2 where object_class = 'legal_authority' and not legal_catalog_ready) as legal_stranded,
-        (select count(*)::int from public.v_lighthouse_resource_program_catalog_v2) as resource_total,
-        (select count(*)::int from public.v_lighthouse_resource_program_catalog_v2 where person_facing_ready) as resource_ready,
-        (select count(*)::int from public.v_lighthouse_resource_program_catalog_v2 where not person_facing_ready) as resource_stranded,
-        (select count(*)::int from public.v_lighthouse_workflow_accountability_catalog_v1) as workflow_total,
-        (select count(*)::int from public.v_lighthouse_workflow_accountability_catalog_v1 where workflow_catalog_ready) as workflow_ready,
-        (select count(*)::int from public.v_lighthouse_workflow_accountability_catalog_v1 where not workflow_catalog_ready) as workflow_stranded,
-        (select count(*)::int from public.case_resource_links where removed_at is null) as case_resource_links,
-        (select count(*)::int from public.signal_artifact_case_links_v1) as signal_case_links
-    `);
-    return rows[0] ?? {};
-  } catch (error) {
-    return {
-      error: error instanceof Error ? error.message : String(error),
-    };
-  }
-}
-
-export async function buildIntegrationDiagnosticLedger() {
-  const { fixture, error } = readFixture();
-  if (!fixture) {
-    return fixtureFailure(`Unable to load integration ledger fixture: ${error ?? "unknown error"}`);
-  }
-  const familyCoverage = await Promise.all(
-    fixture.source_families.map(async (family) => {
-      const relations = await Promise.all(
-        family.relations.map(({ relation, role }) =>
-          countRelation(relation).then((value) => ({ ...value, role })),
-        ),
-      );
-      return {
-        family_key: family.family_key,
-        label: family.label,
-        canonical_objects: family.canonical_objects,
-        runtime_surfaces: family.runtime_surfaces,
-        relations,
-        populated_relations: relations.filter((relation) => relation.count > 0).length,
-        relation_row_total: relations.reduce((sum, relation) => sum + relation.count, 0),
-      };
-    }),
-  );
-
-  const graphEdgeCoverage = await Promise.all(
-    fixture.graph_edges.map(async (edge) => ({
-      ...edge,
-      ...(await countRelation(edge.relation)),
-    })),
-  );
-
-  const projection = await readProjectionSnapshot() as Record<string, unknown>;
-  const legalRuntime = await getRuntimeLegalLibraryStats().catch(() => null);
-  const knownMismatches = [] as Array<Record<string, unknown>>;
-
-  if (
-    legalRuntime
-    && Number(projection.legal_total ?? 0) > 0
-    && Number(legalRuntime.currentCorpusLegalAuthorities ?? 0) === 0
-  ) {
-    knownMismatches.push({
-      surface: "/legal-library",
-      authoritative_boundary: "public.v_lighthouse_legal_authority_catalog_v2",
-      break_contract: "authoritative legal substrate is populated but no current-corpus legal authorities reached the runtime surface",
-      populated_substrate: Number(projection.legal_total ?? 0),
-      visible_projection: Number(legalRuntime?.currentCorpusLegalAuthorities ?? 0),
-      stranded_records: Number(projection.legal_stranded ?? 0),
-    });
-  }
-  if (Number(projection.resource_total ?? 0) > 0 && Number(projection.resource_stranded ?? 0) > 0) {
-    knownMismatches.push({
-      surface: "/resources",
-      authoritative_boundary: "public.v_lighthouse_resource_program_catalog_v2",
-      break_contract: "person_facing_ready can lag the populated current resource/program substrate",
-      populated_substrate: Number(projection.resource_total ?? 0),
-      visible_projection: Number(projection.resource_ready ?? 0),
-      stranded_records: Number(projection.resource_stranded ?? 0),
-    });
-  }
-  if (Number(projection.workflow_total ?? 0) > 0 && Number(projection.workflow_stranded ?? 0) > 0) {
-    knownMismatches.push({
-      surface: "workflow/accountability readers",
-      authoritative_boundary: "public.v_lighthouse_workflow_accountability_catalog_v1",
-      break_contract: "workflow_catalog_ready can lag the populated accountability substrate",
-      populated_substrate: Number(projection.workflow_total ?? 0),
-      visible_projection: Number(projection.workflow_ready ?? 0),
-      stranded_records: Number(projection.workflow_stranded ?? 0),
-    });
-  }
-
-  return {
-    ...fixture,
-    generated_at: new Date().toISOString(),
-    source_family_coverage: familyCoverage,
-    graph_edge_coverage: graphEdgeCoverage,
-    runtime_projection_coverage: fixture.source_families.flatMap((family) =>
-      family.runtime_surfaces.map((surface) => ({
-        family_key: family.family_key,
-        ...surface,
-      })),
-    ),
-    stranded_unpublished_records: {
-      legal_authorities: {
-        populated: Number(projection.legal_total ?? 0),
-        visible: Number(projection.legal_catalog_ready ?? 0),
-        stranded: Number(projection.legal_stranded ?? 0),
-      },
-      resources: {
-        populated: Number(projection.resource_total ?? 0),
-        visible: Number(projection.resource_ready ?? 0),
-        stranded: Number(projection.resource_stranded ?? 0),
-      },
-      workflows: {
-        populated: Number(projection.workflow_total ?? 0),
-        visible: Number(projection.workflow_ready ?? 0),
-        stranded: Number(projection.workflow_stranded ?? 0),
-      },
-      case_resource_links: Number(projection.case_resource_links ?? 0),
-      signal_case_links: Number(projection.signal_case_links ?? 0),
-    },
-    known_surface_mismatches: knownMismatches,
+    link_availability: { case_resource_links: case_links, signal_case_links: signal_links },
+    known_surface_mismatches,
   };
 }

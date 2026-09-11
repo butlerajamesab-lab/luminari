@@ -38,3 +38,13 @@ It records:
 - runtime projection coverage
 - stranded/unpublished record accounting
 - known empty-surface vs populated-substrate mismatch classes
+
+## Availability and measurement semantics
+
+Each projection has an explicit `availability.status`: `available`, `empty`, `unavailable`, or `error`. Successful zero counts are empty. Missing relations/access failures are unavailable; other query failures are errors. Failed counts remain null with error code/message retained. One projection failure does not erase measurements from another.
+
+`catalog_ready` and `stranded` measure publication-readiness predicates. They do not establish runtime visibility. Legal `visible` is measured separately through the existing runtime statistics reader and has its own `legal_runtime_measurement.availability`; resource/workflow visibility is null until measured. The configured `runtime_projection_coverage` entries say `measurement_state: not_measured` and are not route execution evidence. Family row totals are null if any constituent count fails; totals are not distinct-entity counts.
+
+In Case Action Context, `resources.attached_to_case` and `signals.lineage` are nullable. On a successful empty query they are empty arrays. On failure they are null, with `resources.attachment_availability` or `signals.availability` retaining the failure. Consumers must inspect availability rather than treating null as zero results. Case-resource link measurements include only links whose `removed_at` is null.
+
+Regression tests cover successful emptiness, missing relations, query errors, independent surface measurements, incomplete totals, and a successful measured-zero mismatch. These checks do not certify deployment, authorization, query performance, or user-facing traversal.

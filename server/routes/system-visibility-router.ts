@@ -27,7 +27,7 @@
  */
 import express, { Request, Response } from "express";
 import { getPool } from "../db";
-import { buildIntegrationDiagnosticLedger } from "../integration-diagnostic-ledger";
+import { build_integration_diagnostic_ledger } from "../integration-diagnostic-ledger";
 import { isRegisteredClientRoute } from "../../shared/client-route-registry";
 
 const router = express.Router();
@@ -436,7 +436,7 @@ router.get("/ui-bindings", async (_req: Request, res: Response) => {
 // ─────────────────────────────────────────────
 router.get("/integration-ledger", async (_req: Request, res: Response) => {
   cacheLive(res);
-  res.json(await buildIntegrationDiagnosticLedger());
+  res.json(await build_integration_diagnostic_ledger());
 });
 
 // ─────────────────────────────────────────────

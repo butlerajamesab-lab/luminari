@@ -226,4 +226,26 @@ describe("case action context", () => {
     expect(result.request.as_of_date).toBe("2026-04-01");
     expect(result.workflow.filing_deadlines).toEqual([]);
   });
+  it.each(["empty", "error", "unavailable"])("preserves %s case link availability", async status => {
+    mocks.getCaseById.mockResolvedValue({ id: 99, jurisdiction_id: 9, category: "" });
+    mocks.getJurisdictionById.mockResolvedValue({ id: 9, code: "WA", name: "Washington" });
+    for (const reader of [mocks.searchRuntimeStatutes, mocks.searchRuntimeCaseLaw, mocks.searchRuntimeEnforcement,
+      mocks.searchRuntimeWeakJoints, mocks.listRuntimeContradictions]) reader.mockResolvedValue([]);
+    mocks.searchPublishableResourceDirectory.mockResolvedValue({ items: [] });
+    mocks.getRuntimeLegalLibraryStats.mockResolvedValue({ strandedCurrentCorpusLegalAuthorities: 0 });
+    if (status === "empty") mocks.query.mockResolvedValue({ rows: [] });
+    else mocks.query.mockRejectedValue(Object.assign(new Error("link query failed"), { code: status === "unavailable" ? "42P01" : "57014" }));
+    const result = await getCaseActionContext({ caseId: 99 });
+    expect(result.resources.attachment_availability.status).toBe(status);
+    expect(result.signals.availability.status).toBe(status);
+    if (status === "empty") {
+      expect(result.resources.attached_to_case).toEqual([]);
+      expect(result.signals.lineage).toEqual([]);
+    } else {
+      expect(result.resources.attached_to_case).toBeNull();
+      expect(result.signals.lineage).toBeNull();
+      expect(result.signals.availability.error?.message).toBe("link query failed");
+    }
+  });
+
 });

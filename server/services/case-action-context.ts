@@ -1,4 +1,5 @@
-import { getPool } from "../db";
+import { getPool as get_pool } from "../db";
+import { read_availability, type read_availability_result } from "../read-availability";
 import {
   getRuntimeLegalLibraryStats,
   listRuntimeContradictions,
@@ -54,7 +55,8 @@ export type CaseActionContext = {
   };
   resources: {
     directory_results: unknown[];
-    attached_to_case: Array<Record<string, unknown>>;
+    attached_to_case: Array<Record<string, unknown>> | null;
+    attachment_availability: read_availability_result;
   };
   workflow: {
     investigation: unknown;
@@ -62,7 +64,8 @@ export type CaseActionContext = {
     filing_deadlines: unknown[];
   };
   signals: {
-    lineage: Array<Record<string, unknown>>;
+    lineage: Array<Record<string, unknown>> | null;
+    availability: read_availability_result;
   };
   diagnostics: {
     legal_library_stats: Awaited<ReturnType<typeof getRuntimeLegalLibraryStats>>;
@@ -108,27 +111,27 @@ async function searchWithFallback<T>(
   return { items: await fallback(), fallbackUsed: true };
 }
 
-async function listCaseResourceLinks(caseId: number) {
+async function list_case_resource_links(case_id: number) {
   try {
-    const { rows } = await getPool().query(
+    const { rows } = await get_pool().query(
       `select resource_ref, resource_name, source_lane, created_at
          from public.case_resource_links
         where case_id = $1 and removed_at is null
         order by created_at desc, resource_ref`,
-      [caseId],
+      [case_id],
     );
-    return rows as Array<Record<string, unknown>>;
-  } catch {
-    return [] as Array<Record<string, unknown>>;
+    return { items: rows as Array<Record<string, unknown>>, availability: read_availability(rows.length) };
+  } catch (error) {
+    return { items: null, availability: read_availability(null, error) };
   }
 }
 
-async function listCaseSignalLinks(input: {
-  caseId: number;
+async function list_case_signal_links(input: {
+  case_id: number;
   limit: number;
 }) {
   try {
-    const { rows } = await getPool().query(
+    const { rows } = await get_pool().query(
       `select
           link_id::text as case_signal_link_id,
           domain_code,
@@ -143,11 +146,11 @@ async function listCaseSignalLinks(input: {
         where case_id = $1
         order by created_at desc, link_id desc
         limit $2`,
-      [input.caseId, input.limit],
+      [input.case_id, input.limit],
     );
-    return rows as Array<Record<string, unknown>>;
-  } catch {
-    return [] as Array<Record<string, unknown>>;
+    return { items: rows as Array<Record<string, unknown>>, availability: read_availability(rows.length) };
+  } catch (error) {
+    return { items: null, availability: read_availability(null, error) };
   }
 }
 
@@ -317,8 +320,8 @@ export async function getCaseActionContext(
           asOfDate: filingAsOfDate ?? undefined,
         })
       : Promise.resolve([]),
-    listCaseResourceLinks(input.caseId),
-    listCaseSignalLinks({ caseId: input.caseId, limit }),
+    list_case_resource_links(input.caseId),
+    list_case_signal_links({ case_id: input.caseId, limit }),
     getRuntimeLegalLibraryStats(jurisdictionCode ?? undefined),
   ]);
 
@@ -365,7 +368,8 @@ export async function getCaseActionContext(
     },
     resources: {
       directory_results: resourcesResult.items,
-      attached_to_case: attachedResources,
+      attached_to_case: attachedResources.items,
+      attachment_availability: attachedResources.availability,
     },
     workflow: {
       investigation: investigation,
@@ -373,7 +377,8 @@ export async function getCaseActionContext(
       filing_deadlines: filingDeadlines,
     },
     signals: {
-      lineage: signalLineage,
+      lineage: signalLineage.items,
+      availability: signalLineage.availability,
     },
     diagnostics: {
       legal_library_stats: legalStats,

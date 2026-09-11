@@ -1,147 +1,62 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-
 const { query } = vi.hoisted(() => ({ query: vi.fn() }));
+vi.mock("./db", () => ({ getPool: () => ({ query }) }));
+import { build_integration_diagnostic_ledger } from "./integration-diagnostic-ledger";
 
-vi.mock("./db", () => ({
-  getPool: () => ({ query }),
-}));
+function database_result(sql: string) {
+  if (sql.includes("current_corpus_legal_authorities")) return { rows: [{ current_corpus_legal_authorities: 9 }] };
+  if (sql.includes("as populated")) return { rows: [{ populated: 9, catalog_ready: 3, stranded: 6 }] };
+  return { rows: [{ count: 4 }] };
+}
 
-import { buildIntegrationDiagnosticLedger } from "./integration-diagnostic-ledger";
-
-describe("integration diagnostic ledger", () => {
-  beforeEach(() => {
-    query.mockReset();
+describe("integration diagnostic ledger availability", () => {
+  beforeEach(() => { query.mockReset(); });
+  it("separates measured runtime counts from publication readiness and route declarations", async () => {
+    query.mockImplementation(async (sql: string) => database_result(sql));
+    const result = await build_integration_diagnostic_ledger();
+    expect(result.stranded_unpublished_records.legal_authorities).toMatchObject({ populated: 9, catalog_ready: 3, stranded: 6, visible: 9 });
+    expect(result.stranded_unpublished_records.resources).toMatchObject({ populated: 9, catalog_ready: 3, visible: null });
+    expect(result.known_surface_mismatches).toEqual([]);
+    expect(result.runtime_projection_coverage.every(row => row.measurement_state === "not_measured")).toBe(true);
   });
-
-  it("reports populated substrate while only flagging legal mismatches when runtime visibility is still broken", async () => {
+  it("preserves one projection failure without erasing successful surfaces", async () => {
     query.mockImplementation(async (sql: string) => {
-      if (sql.includes("from public.v_lighthouse_legal_authority_catalog_v2") && sql.includes("legal_total")) {
-        return {
-          rows: [{
-            legal_total: 9,
-            legal_catalog_ready: 3,
-            legal_stranded: 6,
-            resource_total: 4,
-            resource_ready: 4,
-            resource_stranded: 0,
-            workflow_total: 2,
-            workflow_ready: 1,
-            workflow_stranded: 1,
-            case_resource_links: 5,
-            signal_case_links: 7,
-          }],
-        };
-      }
-      if (sql.includes("current_corpus_legal_authorities")) {
-        return {
-          rows: [{
-            statutes: 9,
-            case_law: 3,
-            enforcement_records: 2,
-            weak_joints: 1,
-            contradictions: 0,
-            current_corpus_legal_authorities: 9,
-            stranded_current_corpus_statutes: 6,
-            stranded_current_corpus_case_law: 0,
-            stranded_current_corpus_legal_authorities: 6,
-          }],
-        };
-      }
-      if (sql.includes("public.v_lighthouse_legal_authority_catalog_v2")) return { rows: [{ count: 9 }] };
-      if (sql.includes("public.luminari_corpus_candidate_v1")) return { rows: [{ count: 20 }] };
-      if (sql.includes("public.legal_statutes")) return { rows: [{ count: 2 }] };
-      if (sql.includes("public.legal_case_law")) return { rows: [{ count: 1 }] };
-      if (sql.includes("public.v_lighthouse_resource_program_catalog_v2")) return { rows: [{ count: 4 }] };
-      if (sql.includes("public.case_resource_links")) return { rows: [{ count: 5 }] };
-      if (sql.includes("public.registry_deadline_rules")) return { rows: [{ count: 8 }] };
-      if (sql.includes("public.v_lighthouse_workflow_accountability_catalog_v1")) return { rows: [{ count: 2 }] };
-      if (sql.includes("public.v_signal_lineage")) return { rows: [{ count: 6 }] };
-      if (sql.includes("public.signal_artifact_case_links_v1")) return { rows: [{ count: 7 }] };
-      if (sql.includes("public.detected_signals")) return { rows: [{ count: 6 }] };
-      if (sql.includes("public.legal_weak_joints")) return { rows: [{ count: 3 }] };
-      if (sql.includes("public.legal_contradictions")) return { rows: [{ count: 2 }] };
-      if (sql.includes("public.doctrine_graph_edges")) return { rows: [{ count: 1 }] };
-      if (sql.includes("public.v_lighthouse_case_attachable_objects_v1")) return { rows: [{ count: 12 }] };
-      if (sql.includes("public.v_lighthouse_graph_edges_v2")) return { rows: [{ count: 14 }] };
+      if (sql.includes("as populated") && sql.includes("resource_program")) throw Object.assign(new Error("resource query timed out"), { code: "57014" });
+      return database_result(sql);
+    });
+    const result = await build_integration_diagnostic_ledger();
+    expect(result.stranded_unpublished_records.resources).toMatchObject({ populated: null, catalog_ready: null, stranded: null, visible: null,
+      availability: { status: "error", error: { code: "57014", message: "resource query timed out" } } });
+    expect(result.stranded_unpublished_records.legal_authorities.populated).toBe(9);
+    expect(result.stranded_unpublished_records.workflows.populated).toBe(9);
+  });
+  it("distinguishes successful empty reads from missing relations and failed runtime measurements", async () => {
+    query.mockImplementation(async (sql: string) => {
+      if (sql.includes("signal_artifact_case_links")) throw Object.assign(new Error("relation unavailable"), { code: "42P01" });
+      if (sql.includes("current_corpus_legal_authorities")) throw new Error("runtime measurement failed");
+      if (sql.includes("as populated")) return { rows: [{ populated: 0, catalog_ready: 0, stranded: 0 }] };
       return { rows: [{ count: 0 }] };
     });
-
-    const ledger = await buildIntegrationDiagnosticLedger();
-
-    expect(ledger.ledger_id).toBe("integration_diagnostic_ledger_v1");
-    expect(ledger.reference_issue).toBe("#383");
-    expect(ledger.semantic_layers.map((layer: any) => layer.kind)).toEqual([
-      "source_record",
-      "observation",
-      "candidate",
-      "signal",
-      "convergence",
-      "finding",
-    ]);
-    expect(ledger.stranded_unpublished_records.legal_authorities).toEqual({
-      populated: 9,
-      visible: 3,
-      stranded: 6,
-    });
-    expect(ledger.known_surface_mismatches).not.toContainEqual(
-      expect.objectContaining({
-        surface: "/legal-library",
-      }),
-    );
-    expect(ledger.known_surface_mismatches).toContainEqual(
-      expect.objectContaining({
-        surface: "workflow/accountability readers",
-        stranded_records: 1,
-      }),
-    );
+    const result = await build_integration_diagnostic_ledger();
+    expect(result.stranded_unpublished_records.resources.availability.status).toBe("empty");
+    expect(result.stranded_unpublished_records.case_resource_links).toBe(0);
+    expect(result.stranded_unpublished_records.signal_case_links).toBeNull();
+    expect(result.link_availability?.signal_case_links.status).toBe("unavailable");
+    expect(result.legal_runtime_measurement).toMatchObject({ count: null, availability: { status: "error" } });
+    expect(result.known_surface_mismatches).toEqual([]);
   });
-
-  it("flags the legal-library surface when populated substrate still yields zero runtime legal authorities", async () => {
+  it("reports a mismatch only after a successful zero runtime measurement", async () => {
+    query.mockImplementation(async (sql: string) => sql.includes("current_corpus_legal_authorities")
+      ? { rows: [{ current_corpus_legal_authorities: 0 }] } : database_result(sql));
+    const result = await build_integration_diagnostic_ledger();
+    expect(result.known_surface_mismatches).toEqual([expect.objectContaining({ surface: "/legal-library", populated_substrate: 9, visible_projection: 0 })]);
+  });
+  it("does not turn failed relation counts into a complete family total", async () => {
     query.mockImplementation(async (sql: string) => {
-      if (sql.includes("from public.v_lighthouse_legal_authority_catalog_v2") && sql.includes("legal_total")) {
-        return {
-          rows: [{
-            legal_total: 4,
-            legal_catalog_ready: 0,
-            legal_stranded: 4,
-            resource_total: 0,
-            resource_ready: 0,
-            resource_stranded: 0,
-            workflow_total: 0,
-            workflow_ready: 0,
-            workflow_stranded: 0,
-            case_resource_links: 0,
-            signal_case_links: 0,
-          }],
-        };
-      }
-      if (sql.includes("current_corpus_legal_authorities")) {
-        return {
-          rows: [{
-            statutes: 0,
-            case_law: 0,
-            enforcement_records: 0,
-            weak_joints: 0,
-            contradictions: 0,
-            current_corpus_legal_authorities: 0,
-            stranded_current_corpus_statutes: 4,
-            stranded_current_corpus_case_law: 0,
-            stranded_current_corpus_legal_authorities: 4,
-          }],
-        };
-      }
-      return { rows: [{ count: 0 }] };
+      if (sql.includes("count(*)::int as count from public.legal_statutes")) throw new Error("cannot count");
+      return database_result(sql);
     });
-
-    const ledger = await buildIntegrationDiagnosticLedger();
-
-    expect(ledger.known_surface_mismatches).toContainEqual(
-      expect.objectContaining({
-        surface: "/legal-library",
-        populated_substrate: 4,
-        visible_projection: 0,
-        stranded_records: 4,
-      }),
-    );
+    const result = await build_integration_diagnostic_ledger();
+    expect(result.source_family_coverage.find(row => row.family_key === "legal")).toMatchObject({ relation_row_total: null, populated_relations: null, measurement_complete: false });
   });
 });
