@@ -53,7 +53,7 @@ describe("fresh atomic corpus parser", () => {
     for (const row of rows) {
       expect(row.atomic_record_key).toMatch(/^[0-9a-f]{64}$/);
       expect(row.record_hash).toMatch(/^[0-9a-f]{64}$/);
-      expect(row.parser_version).toBe("fresh_atomic_parser_v1.0.0");
+      expect(row.parser_version).toBe("fresh_atomic_parser_v1.0.1");
     }
   });
 });
