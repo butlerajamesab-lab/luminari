@@ -20,6 +20,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import * as registry_db from "../registry-db";
 import { pool } from "../db";
+import { loadProgramResources } from "../services/registry-program-resource-bindings";
 
 export const registryRouter = router({
   listJurisdictions: publicProcedure.query(async () => {
@@ -126,7 +127,7 @@ export const registryRouter = router({
         params,
       );
       return {
-        programs: rowsResult.rows as any[],
+        programs: await loadProgramResources(rowsResult.rows as any[], pool),
         total: Number(countResult.rows[0]?.total ?? 0),
       };
     }),
@@ -160,7 +161,7 @@ export const registryRouter = router({
          WHERE p.id = $1`,
         [input.programId],
       );
-      const program = programResult.rows[0];
+      const [program] = await loadProgramResources(programResult.rows as any[], pool);
       if (!program) throw new TRPCError({ code: "NOT_FOUND", message: "Program not found" });
 
       const oversightResult = await pool.query(
@@ -299,7 +300,7 @@ export const registryRouter = router({
       );
 
       return {
-        programs: rowsResult.rows as any[],
+        programs: await loadProgramResources(rowsResult.rows as any[], pool),
         adjacent_categories: adjacent,
       };
     }),

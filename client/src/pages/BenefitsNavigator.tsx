@@ -1250,6 +1250,11 @@ export default function BenefitsNavigator() {
                             <div className="min-w-0 flex-1">
                               <p className="text-sm font-medium text-foreground/90 leading-tight">{p.name}</p>
                               {p.agency && <p className="text-xs text-muted-foreground mt-0.5">{p.agency}</p>}
+                              {p.contact && (
+                                <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">
+                                  Contact: {p.contact}
+                                </p>
+                              )}
                               {(p.eligibility || p.apply_notes) && (
                                 <p className="text-xs text-muted-foreground/70 mt-1 line-clamp-2">
                                   {p.eligibility || p.apply_notes}
