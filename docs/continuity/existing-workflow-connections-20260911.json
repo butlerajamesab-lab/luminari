@@ -1,0 +1,19 @@
+{
+  "verification_mode": "production_loader_with_read_only_live_query_snapshot",
+  "real_case_execution": false,
+  "contract_version": "luminari.intake.governed-legal-registry.v2",
+  "registry_hash": "f3587fd515f372214c7ab0b6926db9c6376f28019a6afdc6bdc61b8c2d5a7fac",
+  "existing_master_workflows": 6,
+  "connected_source_workflows": 301,
+  "source_workflow_steps": 1555,
+  "source_stage_rows": 1589,
+  "source_jurisdictions": 55,
+  "eligible_for_existing_claim_types": 157,
+  "loaded_without_existing_claim_type_binding": 144,
+  "exercised_claim_workflow_connections": 212,
+  "held_registry_records": 181,
+  "holds_by_reason": {
+    "missing_source_workflow_binding": 181
+  },
+  "writes_performed": 0
+}
