@@ -2942,6 +2942,7 @@ import { knowledgeIngestionRouter } from "./routers/knowledge-ingestion";
 import { adminDashboardRouter } from "./routers/admin-dashboard";
 import { dualLensRouter } from "./routers/dual-lens";
 import { evidenceLayerRouter } from "./routers/evidence-layer";
+import { batch_source_router } from "./routers/batch-source-router";
 import { ingestionRouter } from "./routers/ingestion";
 import { knowledgeBackboneRouter } from "./routers/knowledge-backbone";
 import { signalGovernanceRouter } from "./routers/signal-governance";
@@ -3654,6 +3655,7 @@ export const appRouter = router({
   dualLens: dualLensRouter,
   evidenceLayer: evidenceLayerRouter,
   ingestion: ingestionRouter,
+  batch_sources: batch_source_router,
   knowledgeBackbone: knowledgeBackboneRouter,
   signalGovernance: signalGovernanceRouter,
   integrity_routing: integrity_routing_router,

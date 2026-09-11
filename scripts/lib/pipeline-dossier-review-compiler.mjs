@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { basename } from "node:path";
 import JSZip from "jszip";
 
-const COMPILER_VERSION = "pipeline_dossier_review_compiler_v1.0.0";
+const COMPILER_VERSION = "pipeline_dossier_review_compiler_v1.0.1";
 const CONTRACT_VERSION = "luminari.pipeline_dossier.review_candidate.v1.0.0";
 const REQUIRED_PROFILE_FIELDS = Object.freeze([
   "Service Type",
@@ -213,7 +213,7 @@ function extract_critical_routing(items) {
   const full_text = single_cell_text(table);
   const marker = full_text.match(/CRITICAL ROUTING, READ THIS FIRST:\s*/i);
   const body = marker ? full_text.slice(marker.index + marker[0].length) : full_text;
-  const matches = [...body.matchAll(/\((\d+)\)\s*/g)];
+  const matches = [...body.matchAll(/(?<!\S)\((\d+)\)\s+/g)];
   if (matches.length === 0) fail("critical_routing_items_missing");
   const results = matches.map((match, index) => {
     const number = Number(match[1]);
@@ -350,23 +350,38 @@ function extract_jurisdiction_entries(items) {
 }
 
 function extract_appendix(items) {
-  const table = items.find(item =>
+  const tables = items.filter(item =>
     item.type === "table"
     && item.rows.length > 1
-    && normalize_space(item.rows[0][0]) === "resource_id"
-    && item.rows[0].some(cell => normalize_space(cell) === "family_series")
-    && item.rows[0].some(cell => normalize_space(cell) === "resource_category"),
+    && normalize_space(item.rows[0][0]) === "resource_id",
   );
-  if (!table) fail("metadata_appendix_missing");
-  const header = table.rows[0].map(normalize_space);
-  return table.rows.slice(1).map((row, index) => {
-    const object = {};
-    header.forEach((key, column_index) => {
-      object[key] = normalize_space(row[column_index] ?? "");
-    });
-    if (!object.resource_id) fail("metadata_appendix_resource_id_missing", String(index + 1));
-    return object;
-  });
+  if (!tables.length) fail("metadata_appendix_missing");
+  const resources = new Map();
+  for (const table of tables) {
+    const header = table.rows[0].map(normalize_space);
+    if (new Set(header).size !== header.length) fail("metadata_duplicate_header");
+    const seen_ids = new Set();
+    for (const [index, row] of table.rows.slice(1).entries()) {
+      if (row.length !== header.length) fail("metadata_appendix_cardinality", String(index + 1));
+      const resource_id = normalize_space(row[0]);
+      if (!resource_id) fail("metadata_appendix_resource_id_missing", String(index + 1));
+      if (seen_ids.has(resource_id)) fail("metadata_duplicate_resource_id", resource_id);
+      seen_ids.add(resource_id);
+      const object = resources.get(resource_id) || {};
+      header.forEach((key, column_index) => {
+        const value = normalize_space(row[column_index]);
+        if (key in object && object[key] !== value) fail("metadata_split_table_conflict", `${resource_id}:${key}`);
+        object[key] = value;
+      });
+      resources.set(resource_id, object);
+    }
+  }
+  for (const resource of resources.values()) {
+    if (!resource.family_series || !resource.resource_category || !resource.verification_status) {
+      fail("metadata_appendix_required_field_missing", resource.resource_id);
+    }
+  }
+  return [...resources.values()];
 }
 
 function reconcile_appendix(header, resources, appendix) {

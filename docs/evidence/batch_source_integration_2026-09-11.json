@@ -1,0 +1,2472 @@
+{
+  "observed_on": "2026-09-11",
+  "scope": "original_source_replay_and_isolated_existing_substrate_readback",
+  "production_writes": 0,
+  "production_deployment_verified": false,
+  "batch": {
+    "objects": 203,
+    "bytes": 8374142,
+    "direct_private_downloads": 199,
+    "checksum_matched_reference_copies": 4,
+    "parser_observations": 193315,
+    "sais_docx_copies": 68,
+    "sais_resource_occurrences": 472,
+    "distinct_sais_resource_ids": 451,
+    "pipeline_review_candidates": 35,
+    "source_hold_codes": {
+      "sql_requires_structured_adapter": 20,
+      "archive_manifest_mismatch": 2,
+      "malformed_document_xml": 1
+    }
+  },
+  "stuff": {
+    "source_sha256": "ba8ef1fcc69fec5607bf10589b07abc005371fb6d7b183c3024401f363ef5c28",
+    "native_record_occurrences": 166,
+    "distinct_exact_native_records": 161,
+    "embedded_images": 29,
+    "ocr_text_observations": 29,
+    "ocr_engines": [
+      "tesseract.js@7.0.0"
+    ],
+    "all_images_require_review": true,
+    "incomplete_native_blocks": 1
+  },
+  "isolated_existing_reader": {
+    "scope": "isolated_postgresql_existing_schema",
+    "source_sha256": "3ad4eeb1e0f3a9dbbf79b34c9079c1c9f312d4e0bd1c34563d6dda7cde390325",
+    "source_name": "luminari-SAIS-DOC6-ANTITRUST-MONOPOLY-2026-3.docx",
+    "record_count": 753,
+    "original_source_used": true,
+    "readbacks": [
+      {
+        "source_sha256": "3ad4eeb1e0f3a9dbbf79b34c9079c1c9f312d4e0bd1c34563d6dda7cde390325",
+        "source_record_sha256": "2d119938ea430b7412a641fb0dd88894a4b82e3d0621fc3a1ca722f4197ebe35",
+        "atomic_record_key": "11059bbd3a11d8c8a2429c859efc43de029ed499a134595ec0c56c7c499f4b76",
+        "canonical_identity": {
+          "resource_id": "SAIS-AT-001"
+        },
+        "runtime_reader": "read_batch_source_lineage",
+        "runtime_surface": "batch_sources.get_batch_source_lineage",
+        "availability": "available"
+      },
+      {
+        "source_sha256": "3ad4eeb1e0f3a9dbbf79b34c9079c1c9f312d4e0bd1c34563d6dda7cde390325",
+        "source_record_sha256": "ae9ca5b1d5fd31594465c7e3935e868c22ab87ed3fa57b6e28a70f546af76e32",
+        "atomic_record_key": "3ed6e5d2428dd1e0850e8128d7d9df9813200400dac75e35bfd7e93532af7c78",
+        "canonical_identity": {
+          "resource_id": "SAIS-AT-002"
+        },
+        "runtime_reader": "read_batch_source_lineage",
+        "runtime_surface": "batch_sources.get_batch_source_lineage",
+        "availability": "available"
+      },
+      {
+        "source_sha256": "3ad4eeb1e0f3a9dbbf79b34c9079c1c9f312d4e0bd1c34563d6dda7cde390325",
+        "source_record_sha256": "28331f08b3d391511383a086aeaa57b99c02d114ad35bb5c926c1c1a157ca489",
+        "atomic_record_key": "bc4963c31df73cf7b85afb7adf4a5606a34174f324bd7d5933e6ef7cab51aa3e",
+        "canonical_identity": {
+          "resource_id": "SAIS-AT-003"
+        },
+        "runtime_reader": "read_batch_source_lineage",
+        "runtime_surface": "batch_sources.get_batch_source_lineage",
+        "availability": "available"
+      },
+      {
+        "source_sha256": "3ad4eeb1e0f3a9dbbf79b34c9079c1c9f312d4e0bd1c34563d6dda7cde390325",
+        "source_record_sha256": "93b82605cdb96b346f48fb47a2fb84b3fdc4095c8b38d4e438e3046b0a4f23ae",
+        "atomic_record_key": "b1b167050fa51ee3b42e03cc559c7c4f82e306d87d28d97bfd78c0436dda6cf4",
+        "canonical_identity": {
+          "resource_id": "SAIS-AT-004"
+        },
+        "runtime_reader": "read_batch_source_lineage",
+        "runtime_surface": "batch_sources.get_batch_source_lineage",
+        "availability": "available"
+      }
+    ],
+    "production_writes": 0
+  },
+  "sources": [
+    {
+      "source_name": "BatchExecution",
+      "source_sha256": "9415a6aba9e7dcdecb6c65c6afa6d4a694117d698f663dfd4a1a11aefb4ebfcd",
+      "byte_size": 1553,
+      "observations": 1,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "BatchExecution (1)",
+      "source_sha256": "5e19eca949c38339996485c6feaaef24ee2f1a7f7ee7eb970efe3da6aa2af2e7",
+      "byte_size": 10305,
+      "observations": 1,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "P25-CH11-title-ix-dossier-1.md",
+      "source_sha256": "04909d423bdd591745bc1758a47fb222ec8d2bef8345e7b00606c11b47733bf5",
+      "byte_size": 4896,
+      "observations": 1,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "P25-CH3-schedule-policy-career-dossier.md",
+      "source_sha256": "f7bc643e92626fcbef436e62d50e402372f27064375fe8e01b0b9565d7b8e44f",
+      "byte_size": 11149,
+      "observations": 1,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "batch-diagnostic.mjs",
+      "source_sha256": "24abc03e4a07e140b7ad3dc6815ba83917106a150c891b9fc06ed84b16b9e1c0",
+      "byte_size": 5072,
+      "observations": 1,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "batch-pipeline-direct.mjs",
+      "source_sha256": "5aeb747857e6ad88184b5e6f08752b6738691bc9be52e51b69822f3115278586",
+      "byte_size": 7545,
+      "observations": 1,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "batch-pipeline.mjs",
+      "source_sha256": "c4d062f12caf5b18ba8b8b05e6e9ac5a62b52bfc9b940ac919853d9d808ad38e",
+      "byte_size": 8836,
+      "observations": 1,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "batch2-analysis.md",
+      "source_sha256": "3060e9e00da31409f26e52ef3af57788286164d72207d60c0342dd039365ca6b",
+      "byte_size": 2870,
+      "observations": 1,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "batch3-analysis.md",
+      "source_sha256": "8db014669dcb0f261ce51c631695993b24126548163d8997d4384aa398800173",
+      "byte_size": 863,
+      "observations": 1,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "batch4-analysis.md",
+      "source_sha256": "92958264a0e4421cf3bc0c3e4ba3bd70ec4ed810df0db06b53c255ef1b8c001f",
+      "byte_size": 4667,
+      "observations": 1,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "batch_001.zip",
+      "source_sha256": "9ec2e21d147aea0ea6dcc622528088cf0f0b15b1e2759a21a6fba4f228ad7349",
+      "byte_size": 42178,
+      "observations": 505,
+      "resource_ids": [],
+      "holds": [
+        {
+          "code": "sql_requires_structured_adapter",
+          "source_sha256": "1f4aacb6c2097da7898cc95ab715760a16e8fca4c98391c976eabbb0e10dec93",
+          "member_path": "master_seed.sql"
+        }
+      ]
+    },
+    {
+      "source_name": "batch_002 (1).zip",
+      "source_sha256": "bffc5717d9c4afe9dc00eadfc690925579fe150efe3e23a7fc15f9dd1ac0f4a1",
+      "byte_size": 2978,
+      "observations": 34,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "batch_002 (2).zip",
+      "source_sha256": "3581a44bb2106c68d19bc9bea392c2d1f5d723423151f33fd9926a629882ea75",
+      "byte_size": 63993,
+      "observations": 1753,
+      "resource_ids": [],
+      "holds": [
+        {
+          "code": "sql_requires_structured_adapter",
+          "source_sha256": "8c765de44924e0193b50eebd3e6f04d8777891bf701fe57e3062be56904bd350",
+          "member_path": "master_seed.sql"
+        }
+      ]
+    },
+    {
+      "source_name": "batch_002.zip",
+      "source_sha256": "bffc5717d9c4afe9dc00eadfc690925579fe150efe3e23a7fc15f9dd1ac0f4a1",
+      "byte_size": 2978,
+      "observations": 34,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "batch_003 (1).zip",
+      "source_sha256": "488c3f96daa7b867a61c28b6b6fa3c7d39ff0df36e629c00992a5a7b3380de93",
+      "byte_size": 3400,
+      "observations": 34,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "batch_003 (2).zip",
+      "source_sha256": "be06dbf1903da2021e9400e1118406036eb9c95ef641771c9a1f45aad8930033",
+      "byte_size": 53288,
+      "observations": 765,
+      "resource_ids": [],
+      "holds": [
+        {
+          "code": "sql_requires_structured_adapter",
+          "source_sha256": "e9a8143067a07f988f80099a77415a6ce1e71fe157f5111da6e1734400f6251f",
+          "member_path": "batch_003/master_seed.sql"
+        }
+      ]
+    },
+    {
+      "source_name": "batch_003.zip",
+      "source_sha256": "488c3f96daa7b867a61c28b6b6fa3c7d39ff0df36e629c00992a5a7b3380de93",
+      "byte_size": 3400,
+      "observations": 34,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "batch_004 (1).zip",
+      "source_sha256": "81f01eae6f7a10366a25b187d50e7787cc40c376e30f8b18069ff3d8d493bebf",
+      "byte_size": 3950,
+      "observations": 193,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "batch_004.zip",
+      "source_sha256": "81f01eae6f7a10366a25b187d50e7787cc40c376e30f8b18069ff3d8d493bebf",
+      "byte_size": 3950,
+      "observations": 193,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "batch_005 (1).zip",
+      "source_sha256": "5da60a4a850ee635167f7356e58ce5402d79986681d8df7a2d38996a818d0b5c",
+      "byte_size": 3554,
+      "observations": 155,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "batch_005 (2).zip",
+      "source_sha256": "100d6ac9568a3ad7cd65a39b8aa288f5651ccc4ac31c3f3e7efc8cc39cd46e59",
+      "byte_size": 58094,
+      "observations": 786,
+      "resource_ids": [],
+      "holds": [
+        {
+          "code": "sql_requires_structured_adapter",
+          "source_sha256": "a4a78aaf50aee0a28b489f9a03cf7eb34065babc9f380d5aa2ab1d626f14a310",
+          "member_path": "batch_005/master_seed.sql"
+        }
+      ]
+    },
+    {
+      "source_name": "batch_005-3.zip",
+      "source_sha256": "5da60a4a850ee635167f7356e58ce5402d79986681d8df7a2d38996a818d0b5c",
+      "byte_size": 3554,
+      "observations": 155,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "batch_005.zip",
+      "source_sha256": "5da60a4a850ee635167f7356e58ce5402d79986681d8df7a2d38996a818d0b5c",
+      "byte_size": 3554,
+      "observations": 155,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "batch_006 (1).zip",
+      "source_sha256": "28beb57c1d74db51b6e0e0c9d1168d6ace30b8267a57132d485e6974f436283d",
+      "byte_size": 48235,
+      "observations": 838,
+      "resource_ids": [],
+      "holds": [
+        {
+          "code": "sql_requires_structured_adapter",
+          "source_sha256": "a83db6bf0fb2292cebe1e06f30b2b6e1ca0da2fb901289c5e4b8083633bf6b07",
+          "member_path": "batch_006/master_seed.sql"
+        },
+        {
+          "code": "archive_manifest_mismatch",
+          "manifest_path": "batch_006/manifest.json",
+          "member_path": "validation_report.json",
+          "expected_sha256": "6a72735959af82ea9916d01a1d67c47727f259fd50f98ffc7d875b392669b26e",
+          "actual_sha256": "94cb71e1452ba10ae4231502ddb4fce6291f89ffce618408b4a248e952bc576f",
+          "expected_bytes": 837,
+          "actual_bytes": 1448
+        }
+      ]
+    },
+    {
+      "source_name": "batch_006.zip",
+      "source_sha256": "ff42b92b880b42203d6c9a2a2e973502300cae18c78cb9f1f36a2ce7a64e7c8f",
+      "byte_size": 3014,
+      "observations": 151,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "batch_007 (1).zip",
+      "source_sha256": "55ec11e3d7f7c431d1aa918d0f6280676b53a1e123d4911371149e67174483eb",
+      "byte_size": 40799,
+      "observations": 900,
+      "resource_ids": [],
+      "holds": [
+        {
+          "code": "sql_requires_structured_adapter",
+          "source_sha256": "47d1b51af2657e2ab7e73d56e1090c23688e069d3203e7ea878e3aa9239ea534",
+          "member_path": "batch_007/master_seed.sql"
+        }
+      ]
+    },
+    {
+      "source_name": "batch_007.zip",
+      "source_sha256": "0fba4870e17ac5c569856c061bc911ddc77f02cfc4edda079020da214ce9bbd5",
+      "byte_size": 2839,
+      "observations": 141,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "batch_008 (1).zip",
+      "source_sha256": "320d43fd9fb5389dd3cae919df2685b2221a0d0eee4cdc861e89c56e1dacbfb0",
+      "byte_size": 2810,
+      "observations": 135,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "batch_008 (2).zip",
+      "source_sha256": "673ace540a74208a50a9b1acac414c1ca6b6496e225819f8c32fe8ee6bdea143",
+      "byte_size": 42953,
+      "observations": 825,
+      "resource_ids": [],
+      "holds": [
+        {
+          "code": "sql_requires_structured_adapter",
+          "source_sha256": "9199288ec3c198352de95e29e9a3842c37f09d850c1cdaa3d530529527af668c",
+          "member_path": "batch_008/master_seed.sql"
+        },
+        {
+          "code": "archive_manifest_mismatch",
+          "manifest_path": "batch_008/manifest.json",
+          "member_path": "validation_report.json",
+          "expected_sha256": "5b5082d5ed96ccf537b528410746b2bdf7195449685661fe96f9c82cc7dd9180",
+          "actual_sha256": "320ce60166ebc0317fa534314a9bf0399215035318936c4ac16205a30c8e792b",
+          "expected_bytes": 1008,
+          "actual_bytes": 1098
+        }
+      ]
+    },
+    {
+      "source_name": "batch_008.zip",
+      "source_sha256": "320d43fd9fb5389dd3cae919df2685b2221a0d0eee4cdc861e89c56e1dacbfb0",
+      "byte_size": 2810,
+      "observations": 135,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "batch_009 (1).zip",
+      "source_sha256": "85c459a34b730e1dacb87e5bec570023d108df595988cf39946952021e616e83",
+      "byte_size": 59883,
+      "observations": 1439,
+      "resource_ids": [],
+      "holds": [
+        {
+          "code": "sql_requires_structured_adapter",
+          "source_sha256": "80823c9cb5a8703086a87163a7d50f8955d6e9ca2cb1e061baed23f66c8117c3",
+          "member_path": "batch_009/master_seed.sql"
+        }
+      ]
+    },
+    {
+      "source_name": "batch_009-2.zip",
+      "source_sha256": "85c459a34b730e1dacb87e5bec570023d108df595988cf39946952021e616e83",
+      "byte_size": 59883,
+      "observations": 1439,
+      "resource_ids": [],
+      "holds": [
+        {
+          "code": "sql_requires_structured_adapter",
+          "source_sha256": "80823c9cb5a8703086a87163a7d50f8955d6e9ca2cb1e061baed23f66c8117c3",
+          "member_path": "batch_009/master_seed.sql"
+        }
+      ]
+    },
+    {
+      "source_name": "batch_009.zip",
+      "source_sha256": "8eeb6ceb9bc5bcf3bad09c041eb8ca3dc42ec102b41fb01aec0bd38570493fc9",
+      "byte_size": 3043,
+      "observations": 143,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "batch_010 (1).zip",
+      "source_sha256": "3c4b20edbcc07765f348f9352b4b34b10b1ca2c30f325cf99ec2c2fa850dfac6",
+      "byte_size": 2987,
+      "observations": 127,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "batch_010 (2).zip",
+      "source_sha256": "bb2484955dbdb0b5eb46da8a6b189ef4a6c97727f87da68049c69672dd04f60a",
+      "byte_size": 95457,
+      "observations": 4851,
+      "resource_ids": [],
+      "holds": [
+        {
+          "code": "sql_requires_structured_adapter",
+          "source_sha256": "a62f85f63ec00b76d80f20f59d6985fd05e8ff02ae9871e327f7982b929c11e9",
+          "member_path": "batch_010/master_seed.sql"
+        }
+      ]
+    },
+    {
+      "source_name": "batch_010.zip",
+      "source_sha256": "3c4b20edbcc07765f348f9352b4b34b10b1ca2c30f325cf99ec2c2fa850dfac6",
+      "byte_size": 2987,
+      "observations": 127,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "batch_011 (1).zip",
+      "source_sha256": "3d9512b6d6660767db95159662b0eb6a1f0d133058e62e0924855fb02eeb11ac",
+      "byte_size": 4182,
+      "observations": 219,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "batch_011 (2).zip",
+      "source_sha256": "716596a120bfa5237416fa00feab306e6346cac281740b06eba52cb38271ccdf",
+      "byte_size": 88408,
+      "observations": 3174,
+      "resource_ids": [],
+      "holds": [
+        {
+          "code": "sql_requires_structured_adapter",
+          "source_sha256": "98e17905e744de8ad98014d6ea1a9cf7d279cdbd4493eef2eff4802d025935e6",
+          "member_path": "batch_011/master_seed.sql"
+        }
+      ]
+    },
+    {
+      "source_name": "batch_011 (3).zip",
+      "source_sha256": "716596a120bfa5237416fa00feab306e6346cac281740b06eba52cb38271ccdf",
+      "byte_size": 88408,
+      "observations": 3174,
+      "resource_ids": [],
+      "holds": [
+        {
+          "code": "sql_requires_structured_adapter",
+          "source_sha256": "98e17905e744de8ad98014d6ea1a9cf7d279cdbd4493eef2eff4802d025935e6",
+          "member_path": "batch_011/master_seed.sql"
+        }
+      ]
+    },
+    {
+      "source_name": "batch_011 (4).zip",
+      "source_sha256": "716596a120bfa5237416fa00feab306e6346cac281740b06eba52cb38271ccdf",
+      "byte_size": 88408,
+      "observations": 3174,
+      "resource_ids": [],
+      "holds": [
+        {
+          "code": "sql_requires_structured_adapter",
+          "source_sha256": "98e17905e744de8ad98014d6ea1a9cf7d279cdbd4493eef2eff4802d025935e6",
+          "member_path": "batch_011/master_seed.sql"
+        }
+      ]
+    },
+    {
+      "source_name": "batch_011-2.zip",
+      "source_sha256": "3d9512b6d6660767db95159662b0eb6a1f0d133058e62e0924855fb02eeb11ac",
+      "byte_size": 4182,
+      "observations": 219,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "batch_011.zip",
+      "source_sha256": "3d9512b6d6660767db95159662b0eb6a1f0d133058e62e0924855fb02eeb11ac",
+      "byte_size": 4182,
+      "observations": 219,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "batch_012 (1).zip",
+      "source_sha256": "4f834837586761a6ea13971f0a412f7a4daf69db8f3d3956ce044c90736eca76",
+      "byte_size": 142494,
+      "observations": 7035,
+      "resource_ids": [],
+      "holds": [
+        {
+          "code": "sql_requires_structured_adapter",
+          "source_sha256": "521d928803ebaca64d398bdc986d069a73e375302ae8b6151bfb6fca53f487f5",
+          "member_path": "batch_012/master_seed.sql"
+        }
+      ]
+    },
+    {
+      "source_name": "batch_012 (2).zip",
+      "source_sha256": "4f834837586761a6ea13971f0a412f7a4daf69db8f3d3956ce044c90736eca76",
+      "byte_size": 142494,
+      "observations": 7035,
+      "resource_ids": [],
+      "holds": [
+        {
+          "code": "sql_requires_structured_adapter",
+          "source_sha256": "521d928803ebaca64d398bdc986d069a73e375302ae8b6151bfb6fca53f487f5",
+          "member_path": "batch_012/master_seed.sql"
+        }
+      ]
+    },
+    {
+      "source_name": "batch_012 (3).zip",
+      "source_sha256": "4f834837586761a6ea13971f0a412f7a4daf69db8f3d3956ce044c90736eca76",
+      "byte_size": 142494,
+      "observations": 7035,
+      "resource_ids": [],
+      "holds": [
+        {
+          "code": "sql_requires_structured_adapter",
+          "source_sha256": "521d928803ebaca64d398bdc986d069a73e375302ae8b6151bfb6fca53f487f5",
+          "member_path": "batch_012/master_seed.sql"
+        }
+      ]
+    },
+    {
+      "source_name": "batch_012 (4).zip",
+      "source_sha256": "4f834837586761a6ea13971f0a412f7a4daf69db8f3d3956ce044c90736eca76",
+      "byte_size": 142494,
+      "observations": 7035,
+      "resource_ids": [],
+      "holds": [
+        {
+          "code": "sql_requires_structured_adapter",
+          "source_sha256": "521d928803ebaca64d398bdc986d069a73e375302ae8b6151bfb6fca53f487f5",
+          "member_path": "batch_012/master_seed.sql"
+        }
+      ]
+    },
+    {
+      "source_name": "batch_012.zip",
+      "source_sha256": "dc3af33804f40450d7ef4fe3cd992009ca02d9abbc1ed713e08d5b00c8cd6249",
+      "byte_size": 3655,
+      "observations": 179,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "batch_013 (1).zip",
+      "source_sha256": "d0eea1176e11da6ad7b0d66749cee3073159d38ab570d6c77a9b6a1b783dee28",
+      "byte_size": 4004,
+      "observations": 234,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "batch_013 (2).zip",
+      "source_sha256": "c961eea766b28b6a5116dc18bd65b0bdd29cbc9e7b00fe2c00025af1f8786ee4",
+      "byte_size": 89977,
+      "observations": 1898,
+      "resource_ids": [],
+      "holds": [
+        {
+          "code": "sql_requires_structured_adapter",
+          "source_sha256": "d3a1b58ce86668d290ae15346923546be24ea475940987fa91d536481dba1717",
+          "member_path": "batch_013/master_seed.sql"
+        }
+      ]
+    },
+    {
+      "source_name": "batch_013 (3).zip",
+      "source_sha256": "c961eea766b28b6a5116dc18bd65b0bdd29cbc9e7b00fe2c00025af1f8786ee4",
+      "byte_size": 89977,
+      "observations": 1898,
+      "resource_ids": [],
+      "holds": [
+        {
+          "code": "sql_requires_structured_adapter",
+          "source_sha256": "d3a1b58ce86668d290ae15346923546be24ea475940987fa91d536481dba1717",
+          "member_path": "batch_013/master_seed.sql"
+        }
+      ]
+    },
+    {
+      "source_name": "batch_013-3.zip",
+      "source_sha256": "c961eea766b28b6a5116dc18bd65b0bdd29cbc9e7b00fe2c00025af1f8786ee4",
+      "byte_size": 89977,
+      "observations": 1898,
+      "resource_ids": [],
+      "holds": [
+        {
+          "code": "sql_requires_structured_adapter",
+          "source_sha256": "d3a1b58ce86668d290ae15346923546be24ea475940987fa91d536481dba1717",
+          "member_path": "batch_013/master_seed.sql"
+        }
+      ]
+    },
+    {
+      "source_name": "batch_013.zip",
+      "source_sha256": "d0eea1176e11da6ad7b0d66749cee3073159d38ab570d6c77a9b6a1b783dee28",
+      "byte_size": 4004,
+      "observations": 234,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "batch_014 (1).zip",
+      "source_sha256": "165da5ffac04c1c36cdcc7dc23a667978b9cae7ef3f2ceee33ed406ca28a4daf",
+      "byte_size": 3984,
+      "observations": 225,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "batch_014.zip",
+      "source_sha256": "165da5ffac04c1c36cdcc7dc23a667978b9cae7ef3f2ceee33ed406ca28a4daf",
+      "byte_size": 3984,
+      "observations": 225,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "batch_diagnostic_report.json",
+      "source_sha256": "46fa2dc57fa906d922e62572419550f67265dd2b8fa283ee7c9dcbb8f9b4ef84",
+      "byte_size": 34694,
+      "observations": 164,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "doj_antitrust_capture_dossier-1.md",
+      "source_sha256": "7f0ffc8c361bb7ae381407bb0df4ff684e5e333c7dbe90dfbde35282afdcd7fe",
+      "byte_size": 8404,
+      "observations": 1,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "geocod_batch_upload.csv",
+      "source_sha256": "12a740b11f3d1349205d83199ac71ca85bd32c42bec86d2aa7d311a281380765",
+      "byte_size": 505612,
+      "observations": 5564,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "kim the shit.docx",
+      "source_sha256": "0adcb775bad9a80ceed9d2eebc2fa6332307a2399542b0739ae938ad1a9b7feb",
+      "byte_size": 28416,
+      "observations": 359,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "legal_case_law_priority1.json",
+      "source_sha256": "5139c51f4eafbf77b8701466e5a4d0922fe7b8b2ecf0737acf119b88ddbce5a7",
+      "byte_size": 220455,
+      "observations": 911,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "legal_enforcement_state_combined.json",
+      "source_sha256": "bfa4fc3c0918d3502559924aa3dd16881231369782033d4c619466259bf73068",
+      "byte_size": 144149,
+      "observations": 605,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "legal_statute_key_text.json",
+      "source_sha256": "6d7097dbe7af7d9676695620706439181f30d8ab8e3003eca74973e32439edd2",
+      "byte_size": 44617,
+      "observations": 106,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "legal_statute_key_text_combined.json",
+      "source_sha256": "4f95e6c179c5555e25ccd01d6cfcc06158507e18c4e616c286140dcf1b7a50ae",
+      "byte_size": 89376,
+      "observations": 221,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "legal_weak_joints_priority4 (1).json",
+      "source_sha256": "70afc5b6b4ba182c2ca52f90b658bb71f85f5bec94f5ddfd333704d5c562bb13",
+      "byte_size": 102936,
+      "observations": 322,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-CAT28-PERSONAL-CRISIS-2026-6.docx",
+      "source_sha256": "67f34b517deef9b53d245385de9adfd818e4a442ed5bbd4dafb4b13b915b2213",
+      "byte_size": 78341,
+      "observations": 2235,
+      "resource_ids": [
+        "SAIS-PC-001",
+        "SAIS-PC-002",
+        "SAIS-PC-003",
+        "SAIS-PC-004",
+        "SAIS-PC-005",
+        "SAIS-PC-006",
+        "SAIS-PC-007",
+        "SAIS-PC-008",
+        "SAIS-PC-009",
+        "SAIS-PC-010",
+        "SAIS-PC-011",
+        "SAIS-PC-012",
+        "SAIS-PC-013",
+        "SAIS-PC-014",
+        "SAIS-PC-015",
+        "SAIS-PC-016",
+        "SAIS-PC-017",
+        "SAIS-PC-018"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-CAT29-FAMILY-CHILDREN-2026-5.docx",
+      "source_sha256": "ccb99484abf0aed756c8ad6ac692ef26ebc28f5671c30619ce41744ecee1b339",
+      "byte_size": 62327,
+      "observations": 1859,
+      "resource_ids": [
+        "SAIS-FC-001",
+        "SAIS-FC-002",
+        "SAIS-FC-003",
+        "SAIS-FC-004",
+        "SAIS-FC-005",
+        "SAIS-FC-006",
+        "SAIS-FC-007",
+        "SAIS-FC-008",
+        "SAIS-FC-009",
+        "SAIS-FC-010",
+        "SAIS-FC-011",
+        "SAIS-FC-012",
+        "SAIS-FC-013",
+        "SAIS-FC-014"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-CAT38-HEALTHCARE-INSURANCE-2026-6.docx",
+      "source_sha256": "f2a838eec92b2897370b19bc28ee4124ee1ec55fb0e8538cd85121ae7a784253",
+      "byte_size": 57240,
+      "observations": 1671,
+      "resource_ids": [
+        "SAIS-HI-001",
+        "SAIS-HI-002",
+        "SAIS-HI-003",
+        "SAIS-HI-004",
+        "SAIS-HI-005",
+        "SAIS-HI-006",
+        "SAIS-HI-007",
+        "SAIS-HI-008",
+        "SAIS-HI-009",
+        "SAIS-HI-010",
+        "SAIS-HI-011",
+        "SAIS-HI-012"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-HOUSING-HOMELESSNESS-DEEP-DIVE-2026.csv",
+      "source_sha256": "a0e20b4d2c41766704dd75264602b309ef630071cd95904f8db2d11fb35493fa",
+      "byte_size": 29944,
+      "observations": 27,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-PIPELINE-EC-001-NURSING-HOME-ABUSE-2026-6.docx",
+      "source_sha256": "88d86423e4ea2654fcf9fb7f516d2b1461410b8847b03280afaca34dfdf4c162",
+      "byte_size": 41509,
+      "observations": 1180,
+      "resource_ids": [
+        "SAIS-EC-001-01",
+        "SAIS-EC-001-02",
+        "SAIS-EC-001-03",
+        "SAIS-EC-001-04",
+        "SAIS-EC-001-05",
+        "SAIS-EC-001-06"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-PIPELINE-EC-002-ELDER-FINANCIAL-EXPLOITATION-2026-4.docx",
+      "source_sha256": "0b872ca4b97437c63a70d45ac3a0478cc54b8ee2c7cc9f4f4989c8b9ed168db2",
+      "byte_size": 43010,
+      "observations": 1175,
+      "resource_ids": [
+        "SAIS-EC-002-01",
+        "SAIS-EC-002-02",
+        "SAIS-EC-002-03",
+        "SAIS-EC-002-04",
+        "SAIS-EC-002-05",
+        "SAIS-EC-002-06"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-PIPELINE-EC-003-GUARDIANSHIP-ABUSE-2026-4.docx",
+      "source_sha256": "ae7fe0df916dce09e38a22f49ca7ee2dcc6e84d1803d03f8aa7935100bad9f35",
+      "byte_size": 41085,
+      "observations": 1180,
+      "resource_ids": [
+        "SAIS-EC-003-01",
+        "SAIS-EC-003-02",
+        "SAIS-EC-003-03",
+        "SAIS-EC-003-04",
+        "SAIS-EC-003-05",
+        "SAIS-EC-003-06"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-PIPELINE-EC-003-GUARDIANSHIP-ABUSE-2026-5.docx",
+      "source_sha256": "ae7fe0df916dce09e38a22f49ca7ee2dcc6e84d1803d03f8aa7935100bad9f35",
+      "byte_size": 41085,
+      "observations": 1180,
+      "resource_ids": [
+        "SAIS-EC-003-01",
+        "SAIS-EC-003-02",
+        "SAIS-EC-003-03",
+        "SAIS-EC-003-04",
+        "SAIS-EC-003-05",
+        "SAIS-EC-003-06"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-PIPELINE-EC-004-MEDICARE-FRAUD-2026-5.docx",
+      "source_sha256": "759368dc0fe6849d9db5291a0a76d8e1f48570decf20b74fcb24b984f75bc5a0",
+      "byte_size": 41390,
+      "observations": 1170,
+      "resource_ids": [
+        "SAIS-EC-004-01",
+        "SAIS-EC-004-02",
+        "SAIS-EC-004-03",
+        "SAIS-EC-004-04",
+        "SAIS-EC-004-05",
+        "SAIS-EC-004-06"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-PIPELINE-EC-005-ASSISTED-LIVING-COMPLAINT-2026-7.docx",
+      "source_sha256": "85667d7e5efcdde8e472d4b9ff73d23b74a90f893d9044d3f2c0d8247b867699",
+      "byte_size": 41724,
+      "observations": 1175,
+      "resource_ids": [
+        "SAIS-EC-005-01",
+        "SAIS-EC-005-02",
+        "SAIS-EC-005-03",
+        "SAIS-EC-005-04",
+        "SAIS-EC-005-05",
+        "SAIS-EC-005-06"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-PIPELINE-EC-006-ELDER-NEGLECT-2026-4.docx",
+      "source_sha256": "d9699a81e7eff7c112089421054a2027492e10868ec6ba8892ffa493d4457eac",
+      "byte_size": 41459,
+      "observations": 1185,
+      "resource_ids": [
+        "SAIS-EC-006-01",
+        "SAIS-EC-006-02",
+        "SAIS-EC-006-03",
+        "SAIS-EC-006-04",
+        "SAIS-EC-006-05",
+        "SAIS-EC-006-06"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-PIPELINE-EC-007-LONG-TERM-CARE-INSURANCE-2026-4.docx",
+      "source_sha256": "311b4a5314e8944fb1b1b6675baed6719918a90e9af32dec5cf9c16bd850b8c4",
+      "byte_size": 41631,
+      "observations": 1175,
+      "resource_ids": [
+        "SAIS-EC-007-01",
+        "SAIS-EC-007-02",
+        "SAIS-EC-007-03",
+        "SAIS-EC-007-04",
+        "SAIS-EC-007-05",
+        "SAIS-EC-007-06"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-PIPELINE-EC-008-ELDER-SELF-NEGLECT-2026-5.docx",
+      "source_sha256": "4d8217acc2c1f6248acfbdd5e59c322bd594123ae759358e47fcfd5d7dcf570b",
+      "byte_size": 43369,
+      "observations": 1195,
+      "resource_ids": [
+        "SAIS-EC-008-01",
+        "SAIS-EC-008-02",
+        "SAIS-EC-008-03",
+        "SAIS-EC-008-04",
+        "SAIS-EC-008-05",
+        "SAIS-EC-008-06"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-PIPELINE-EC-009-POWER-OF-ATTORNEY-ABUSE-2026-5.docx",
+      "source_sha256": "646a6c4d6468315a8b5b3bd00d6c3998c48e16082d1b0e14df553bfc5add3eb7",
+      "byte_size": 41663,
+      "observations": 1175,
+      "resource_ids": [
+        "SAIS-EC-009-01",
+        "SAIS-EC-009-02",
+        "SAIS-EC-009-03",
+        "SAIS-EC-009-04",
+        "SAIS-EC-009-05",
+        "SAIS-EC-009-06"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-PIPELINE-EC-010-ELDER-SCAM-RECOVERY-2026-4.docx",
+      "source_sha256": "d9a328c85da5b4c66e19c100e5e40c7a3d16e0beecc912321b194666b803411c",
+      "byte_size": 41539,
+      "observations": 1170,
+      "resource_ids": [
+        "SAIS-EC-010-01",
+        "SAIS-EC-010-02",
+        "SAIS-EC-010-03",
+        "SAIS-EC-010-04",
+        "SAIS-EC-010-05",
+        "SAIS-EC-010-06"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-PIPELINE-EC-011-HOSPICE-CARE-COMPLAINT-2026-4.docx",
+      "source_sha256": "7fadfe809a86a872d126fc4ab37e623b1e1e84b352bd29eb2b19c46049c3cb7f",
+      "byte_size": 41711,
+      "observations": 1175,
+      "resource_ids": [
+        "SAIS-EC-011-01",
+        "SAIS-EC-011-02",
+        "SAIS-EC-011-03",
+        "SAIS-EC-011-04",
+        "SAIS-EC-011-05",
+        "SAIS-EC-011-06"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-PIPELINE-PS-001-MISSING-PERSONS-2026-4.docx",
+      "source_sha256": "63d52abf1b7665aa32eebd801a273c29c9f995683483d2bab7c56690e02fe4c7",
+      "byte_size": 40751,
+      "observations": 1205,
+      "resource_ids": [
+        "SAIS-PS-001-01",
+        "SAIS-PS-001-02",
+        "SAIS-PS-001-03",
+        "SAIS-PS-001-04",
+        "SAIS-PS-001-05",
+        "SAIS-PS-001-06"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-PIPELINE-PS-002-DV-SHELTER-SAFETY-PLANNING-2026-4.docx",
+      "source_sha256": "cf1d3bd0f9f614800dc467688155cba43ba53dd4f3c722144f325229177d5359",
+      "byte_size": 41974,
+      "observations": 1210,
+      "resource_ids": [
+        "SAIS-PS-002-01",
+        "SAIS-PS-002-02",
+        "SAIS-PS-002-03",
+        "SAIS-PS-002-04",
+        "SAIS-PS-002-05",
+        "SAIS-PS-002-06"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-PIPELINE-PS-003-STALKING-HARASSMENT-2026-4.docx",
+      "source_sha256": "43a1b7f88a922679ebe98c98fd937bbde4bcc8deb438ce2c517fded04564b59d",
+      "byte_size": 40221,
+      "observations": 1190,
+      "resource_ids": [
+        "SAIS-PS-003-01",
+        "SAIS-PS-003-02",
+        "SAIS-PS-003-03",
+        "SAIS-PS-003-04",
+        "SAIS-PS-003-05",
+        "SAIS-PS-003-06"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-PIPELINE-PS-004-EMERGENCY-PROTECTIVE-ORDER-2026-5.docx",
+      "source_sha256": "cf3e28f92648ecf5d6df45b6b39b144c2f49c9885ca4ada45cfc1bced86e85f0",
+      "byte_size": 40279,
+      "observations": 1195,
+      "resource_ids": [
+        "SAIS-PS-004-01",
+        "SAIS-PS-004-02",
+        "SAIS-PS-004-03",
+        "SAIS-PS-004-04",
+        "SAIS-PS-004-05",
+        "SAIS-PS-004-06"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-PIPELINE-PS-005-VICTIM-COMPENSATION-2026-5.docx",
+      "source_sha256": "5821dd44ec06ed78dc8d048fc17d7e7d5ad617774eadbbb4a047e81fa16cc3ef",
+      "byte_size": 39824,
+      "observations": 1210,
+      "resource_ids": [
+        "SAIS-PS-005-01",
+        "SAIS-PS-005-02",
+        "SAIS-PS-005-03",
+        "SAIS-PS-005-04",
+        "SAIS-PS-005-05",
+        "SAIS-PS-005-06"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-PIPELINE-PS-006-WITNESS-PROTECTION-2026-1.docx",
+      "source_sha256": "aab244b4875f0a4036905285ee42814afb32482792721efc50547409b051f79d",
+      "byte_size": 40138,
+      "observations": 1195,
+      "resource_ids": [
+        "SAIS-PS-006-01",
+        "SAIS-PS-006-02",
+        "SAIS-PS-006-03",
+        "SAIS-PS-006-04",
+        "SAIS-PS-006-05",
+        "SAIS-PS-006-06"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-PIPELINE-PS-007-HATE-CRIME-2026-4 (1).docx",
+      "source_sha256": "9f2482652b2766e64e24cde28ace84ea256b75332c12a2e9eb02cd06d456b9af",
+      "byte_size": 40568,
+      "observations": 1200,
+      "resource_ids": [
+        "SAIS-PS-007-01",
+        "SAIS-PS-007-02",
+        "SAIS-PS-007-03",
+        "SAIS-PS-007-04",
+        "SAIS-PS-007-05",
+        "SAIS-PS-007-06"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-PIPELINE-PS-008-GUN-VIOLENCE-PREVENTION-2026-1.docx",
+      "source_sha256": "55f1a924a10f842b9b4deca40109f41bda5b0e8d8728a74e74724b5c76f04820",
+      "byte_size": 40823,
+      "observations": 1200,
+      "resource_ids": [
+        "SAIS-PS-008-01",
+        "SAIS-PS-008-02",
+        "SAIS-PS-008-03",
+        "SAIS-PS-008-04",
+        "SAIS-PS-008-05",
+        "SAIS-PS-008-06"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-PIPELINE-PS-009-CAMPUS-SAFETY-2026-1.docx",
+      "source_sha256": "61b4bed9d634aff6f94731d1bf2a948de825beedb3ae818021e1856328b87d88",
+      "byte_size": 41077,
+      "observations": 1205,
+      "resource_ids": [
+        "SAIS-PS-009-01",
+        "SAIS-PS-009-02",
+        "SAIS-PS-009-03",
+        "SAIS-PS-009-04",
+        "SAIS-PS-009-05",
+        "SAIS-PS-009-06"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-PIPELINE-PS-010-WORKPLACE-VIOLENCE-2026-4 (1).docx",
+      "source_sha256": "b24a57a52b16b67744046a4499174b3af28ed947b72fabaa2fa1b797faed83f0",
+      "byte_size": 40626,
+      "observations": 1195,
+      "resource_ids": [
+        "SAIS-PS-010-01",
+        "SAIS-PS-010-02",
+        "SAIS-PS-010-03",
+        "SAIS-PS-010-04",
+        "SAIS-PS-010-05",
+        "SAIS-PS-010-06"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-PIPELINE-PS-011-CYBERSTALKING-2026-4.docx",
+      "source_sha256": "7b5b0cc16bb40eaae5cafe4f89b7c4c5dd617642e1c4057c76f9935ac1a21d35",
+      "byte_size": 41070,
+      "observations": 1195,
+      "resource_ids": [
+        "SAIS-PS-011-01",
+        "SAIS-PS-011-02",
+        "SAIS-PS-011-03",
+        "SAIS-PS-011-04",
+        "SAIS-PS-011-05",
+        "SAIS-PS-011-06"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-PIPELINE-VP-001-IMMIGRATION-DETENTION-2026-3.docx",
+      "source_sha256": "2ec8ba3f818899a3670b769e42c7bb6881ea26bfc7acdf188f85fe2cd71d0756",
+      "byte_size": 40801,
+      "observations": 1195,
+      "resource_ids": [
+        "SAIS-VP-001-01",
+        "SAIS-VP-001-02",
+        "SAIS-VP-001-03",
+        "SAIS-VP-001-04",
+        "SAIS-VP-001-05",
+        "SAIS-VP-001-06"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-PIPELINE-VP-002-EDUCATION-DISCRIMINATION-2026-5.docx",
+      "source_sha256": "7037d9d3b551e6632c4c5c351d4b3123df4fb8462aeb5ef607856cf7f349d001",
+      "byte_size": 39565,
+      "observations": 1195,
+      "resource_ids": [
+        "SAIS-VP-002-01",
+        "SAIS-VP-002-02",
+        "SAIS-VP-002-03",
+        "SAIS-VP-002-04",
+        "SAIS-VP-002-05",
+        "SAIS-VP-002-06"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-PIPELINE-VP-003-DISABILITY-RIGHTS-2026-1.docx",
+      "source_sha256": "4b16bb163d1c07eb3b0de3e6d5e86d2959fc0382882536564d7c24da97d9169a",
+      "byte_size": 41506,
+      "observations": 1210,
+      "resource_ids": [
+        "SAIS-VP-003-01",
+        "SAIS-VP-003-02",
+        "SAIS-VP-003-03",
+        "SAIS-VP-003-04",
+        "SAIS-VP-003-05",
+        "SAIS-VP-003-06"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-PIPELINE-VP-004-LANGUAGE-ACCESS-VIOLATION-2026-1.docx",
+      "source_sha256": "07ef2bbf50a37473306624701e167dc85029a0b073eaa725c7c7edb8f4bf4691",
+      "byte_size": 39771,
+      "observations": 1200,
+      "resource_ids": [
+        "SAIS-VP-004-01",
+        "SAIS-VP-004-02",
+        "SAIS-VP-004-03",
+        "SAIS-VP-004-04",
+        "SAIS-VP-004-05",
+        "SAIS-VP-004-06"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-PIPELINE-VP-005-REFUGEE-ASYLUM-2026-3.docx",
+      "source_sha256": "963a3a18b0d8681662b834fc822159c8c6d5ecc68647a0dd831437a22fd229de",
+      "byte_size": 39678,
+      "observations": 1195,
+      "resource_ids": [
+        "SAIS-VP-005-01",
+        "SAIS-VP-005-02",
+        "SAIS-VP-005-03",
+        "SAIS-VP-005-04",
+        "SAIS-VP-005-05",
+        "SAIS-VP-005-06"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-PIPELINE-VP-006-IMMIGRATION-FRAUD-2026-3.docx",
+      "source_sha256": "b844d7d2eab70ee8616ff05c9e8a5c1e4581b925636fed1509fefb59a63b367f",
+      "byte_size": 39863,
+      "observations": 1180,
+      "resource_ids": [
+        "SAIS-VP-006-01",
+        "SAIS-VP-006-02",
+        "SAIS-VP-006-03",
+        "SAIS-VP-006-04",
+        "SAIS-VP-006-05",
+        "SAIS-VP-006-06"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-PIPELINE-VP-007-VISA-DENIAL-2026-1.docx",
+      "source_sha256": "908d2a3e1132f64876e1e689d7ccf22fb6753e4ed2434e46be3b2495661e52ad",
+      "byte_size": 38455,
+      "observations": 1170,
+      "resource_ids": [
+        "SAIS-VP-007-01",
+        "SAIS-VP-007-02",
+        "SAIS-VP-007-03",
+        "SAIS-VP-007-04",
+        "SAIS-VP-007-05",
+        "SAIS-VP-007-06"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-PIPELINE-VP-008-DEPORTATION-DEFENSE-2026-2.docx",
+      "source_sha256": "624f4f44ffe5036abe15d8148baf651d29550da1a5c7facfd9a592765ea2700a",
+      "byte_size": 40240,
+      "observations": 1190,
+      "resource_ids": [
+        "SAIS-VP-008-01",
+        "SAIS-VP-008-02",
+        "SAIS-VP-008-03",
+        "SAIS-VP-008-04",
+        "SAIS-VP-008-05",
+        "SAIS-VP-008-06"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-PIPELINE-VP-009-DACA-RENEWAL-2026-1.docx",
+      "source_sha256": "154f2767c5dacb1e6e697ad5eac4110f1c4ee5a3b398eb9845f290ece694d4be",
+      "byte_size": 39718,
+      "observations": 1180,
+      "resource_ids": [
+        "SAIS-VP-009-01",
+        "SAIS-VP-009-02",
+        "SAIS-VP-009-03",
+        "SAIS-VP-009-04",
+        "SAIS-VP-009-05",
+        "SAIS-VP-009-06"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-PIPELINE-VP-010-UNACCOMPANIED-MINOR-2026-1.docx",
+      "source_sha256": "f97678a274d0064179f8dd84a98e838c1007d3470dbf635d337e4d90fd5f3443",
+      "byte_size": 41074,
+      "observations": 1205,
+      "resource_ids": [
+        "SAIS-VP-010-01",
+        "SAIS-VP-010-02",
+        "SAIS-VP-010-03",
+        "SAIS-VP-010-04",
+        "SAIS-VP-010-05",
+        "SAIS-VP-010-06"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-PIPELINE-VP-011-HUMAN-TRAFFICKING-VICTIM-2026-2.docx",
+      "source_sha256": "c331463d428e777e5a971f4b05d626fd1f7a15f4e5e84c0a56aa857a4d5f5271",
+      "byte_size": 41452,
+      "observations": 1215,
+      "resource_ids": [
+        "SAIS-VP-011-01",
+        "SAIS-VP-011-02",
+        "SAIS-VP-011-03",
+        "SAIS-VP-011-04",
+        "SAIS-VP-011-05",
+        "SAIS-VP-011-06"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-PIPELINE-VP-012-MIGRANT-WORKER-EXPLOITATION-2026.docx",
+      "source_sha256": "469d67215338a2792500b682b1c257bb181b4b1820ba36824da76894b30edb7a",
+      "byte_size": 40795,
+      "observations": 1195,
+      "resource_ids": [
+        "SAIS-VP-012-01",
+        "SAIS-VP-012-02",
+        "SAIS-VP-012-03",
+        "SAIS-VP-012-04",
+        "SAIS-VP-012-05",
+        "SAIS-VP-012-06"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-SAIS-ALL-RECORDS-2026.ndjson",
+      "source_sha256": "5578dbf413840e7a904d599d716e643c96b5b13e916c5624fc83976f6107eb7b",
+      "byte_size": 756957,
+      "observations": 249,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-SAIS-DOC1-WRONGFUL-INCARCERATION-2026-2.docx",
+      "source_sha256": "c04c4133143c7f6f1f3eea36bed41249a5e656c1f3443556e63d300306b5bb08",
+      "byte_size": 57159,
+      "observations": 1986,
+      "resource_ids": [
+        "WIA-WC-001",
+        "WIA-WC-002",
+        "WIA-WC-003",
+        "WIA-WC-004",
+        "WIA-WC-005",
+        "WIA-WC-006",
+        "WIA-GD-001",
+        "WIA-GD-002",
+        "WIA-PT-001",
+        "WIA-PT-002",
+        "WIA-JM-001",
+        "WIA-JM-002",
+        "WIA-PP-001",
+        "WIA-PP-002",
+        "WIA-PP-003",
+        "WIA-CO-001",
+        "WIA-PC-001",
+        "WIA-PC-002",
+        "WIA-PC-003",
+        "WIA-ID-001",
+        "WIA-ID-002",
+        "WIA-IR-001",
+        "WIA-IR-002",
+        "WIA-IR-003",
+        "WIA-CC-001"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-SAIS-DOC10-ENVIRONMENTAL-INJUSTICE-2026-3.docx",
+      "source_sha256": "ba5d99ec700ab2f09cca993a80a384250cdd2afb7ee20f2fffe42b7ed9f1cb39",
+      "byte_size": 26946,
+      "observations": 752,
+      "resource_ids": [
+        "SAIS-EJ-001",
+        "SAIS-EJ-002",
+        "SAIS-EJ-003",
+        "SAIS-EJ-004"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-SAIS-DOC11-PUBLIC-BENEFITS-DENIAL-2026-4.docx",
+      "source_sha256": "22382bf325e357c7abb0ef4fbdb6605dc6613c7474dd4fc39e89ca7e0a2e676e",
+      "byte_size": 52505,
+      "observations": 1420,
+      "resource_ids": [
+        "SAIS-PB-001",
+        "SAIS-PB-002",
+        "SAIS-PB-003",
+        "SAIS-PB-004",
+        "SAIS-PB-005",
+        "SAIS-PB-006",
+        "SAIS-PB-007",
+        "SAIS-PB-008",
+        "SAIS-PB-009",
+        "SAIS-PB-010",
+        "SAIS-PB-011"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-SAIS-DOC11-PUBLIC-BENEFITS-DENIAL-2026-5.docx",
+      "source_sha256": "22382bf325e357c7abb0ef4fbdb6605dc6613c7474dd4fc39e89ca7e0a2e676e",
+      "byte_size": 52505,
+      "observations": 1420,
+      "resource_ids": [
+        "SAIS-PB-001",
+        "SAIS-PB-002",
+        "SAIS-PB-003",
+        "SAIS-PB-004",
+        "SAIS-PB-005",
+        "SAIS-PB-006",
+        "SAIS-PB-007",
+        "SAIS-PB-008",
+        "SAIS-PB-009",
+        "SAIS-PB-010",
+        "SAIS-PB-011"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-SAIS-DOC12-VETERANS-BENEFITS-VA-ACCOUNTABILITY-2026-2.docx",
+      "source_sha256": "d2b78a5717c09d0d2be9a6c62307de8b31796da984fb6c5d94ad0da18d941dad",
+      "byte_size": 48643,
+      "observations": 1262,
+      "resource_ids": [
+        "SAIS-VA-001",
+        "SAIS-VA-002",
+        "SAIS-VA-003",
+        "SAIS-VA-004",
+        "SAIS-VA-005",
+        "SAIS-VA-006",
+        "SAIS-VA-007",
+        "SAIS-VA-008",
+        "SAIS-VA-009"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-SAIS-DOC13-DISABILITY-RIGHTS-ADA-ENFORCEMENT-2026-2.docx",
+      "source_sha256": "bff5ba2ae571a088380f7db49e5c64d9558ff6ac90c9085518d2207cf29651bf",
+      "byte_size": 48996,
+      "observations": 1187,
+      "resource_ids": [
+        "SAIS-DR-001",
+        "SAIS-DR-002",
+        "SAIS-DR-003",
+        "SAIS-DR-004",
+        "SAIS-DR-005",
+        "SAIS-DR-006",
+        "SAIS-DR-007",
+        "SAIS-DR-008"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-SAIS-DOC14-INSURANCE-CLAIM-DENIALS-2026-7.docx",
+      "source_sha256": "d7b40b3153c217697857ad722b55dfcb74f3d51bf7878e9d83c4f026870ff200",
+      "byte_size": 48507,
+      "observations": 1108,
+      "resource_ids": [
+        "SAIS-IC-001",
+        "SAIS-IC-002",
+        "SAIS-IC-003",
+        "SAIS-IC-004",
+        "SAIS-IC-005",
+        "SAIS-IC-006",
+        "SAIS-IC-007"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-SAIS-DOC15-EDUCATION-RIGHTS-2026-1.docx",
+      "source_sha256": "94be65959fda04ca73a37574cfca09e4c25c155748bd3933b86ad671e0a699da",
+      "byte_size": 49130,
+      "observations": 1104,
+      "resource_ids": [
+        "SAIS-ED-001",
+        "SAIS-ED-002",
+        "SAIS-ED-003",
+        "SAIS-ED-004",
+        "SAIS-ED-005",
+        "SAIS-ED-006",
+        "SAIS-ED-007"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-SAIS-DOC16-CONSUMER-DEBT-CREDIT-2026.docx",
+      "source_sha256": "34a4cfb0e2e402eb1b68c297ca96911a9a4b955d6c357dc1adb2f5880b9c1d15",
+      "byte_size": 48045,
+      "observations": 1100,
+      "resource_ids": [
+        "SAIS-CD-001",
+        "SAIS-CD-002",
+        "SAIS-CD-003",
+        "SAIS-CD-004",
+        "SAIS-CD-005",
+        "SAIS-CD-006",
+        "SAIS-CD-007"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-SAIS-DOC17-TAXPAYER-RIGHTS-2026.docx",
+      "source_sha256": "e8817efac700b86652f261cefc5e588951fa08b783b2c5aafb89df4a5fae5090",
+      "byte_size": 46596,
+      "observations": 1021,
+      "resource_ids": [
+        "SAIS-TX-001",
+        "SAIS-TX-002",
+        "SAIS-TX-003",
+        "SAIS-TX-004",
+        "SAIS-TX-005",
+        "SAIS-TX-006"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-SAIS-DOC18-PUBLIC-BENEFITS-ACCESS-2026.docx",
+      "source_sha256": "c9ef0e8b7714131b89ba7a793fcf55b7a2d400fd09e4f599ab87b25eb56becb0",
+      "byte_size": 45377,
+      "observations": 1025,
+      "resource_ids": [
+        "SAIS-BA-001",
+        "SAIS-BA-002",
+        "SAIS-BA-003",
+        "SAIS-BA-004",
+        "SAIS-BA-005",
+        "SAIS-BA-006"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-SAIS-DOC19-CIVIL-DOCUMENTS-IDENTITY-2026.docx",
+      "source_sha256": "78c8bc4d17ee1d1697bb31875eb8dcf7e0dd2bad375c7042b344a9a5b000ea5e",
+      "byte_size": 49579,
+      "observations": 1108,
+      "resource_ids": [
+        "SAIS-CV-001",
+        "SAIS-CV-002",
+        "SAIS-CV-003",
+        "SAIS-CV-004",
+        "SAIS-CV-005",
+        "SAIS-CV-006",
+        "SAIS-CV-007"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-SAIS-DOC2-PHARMACEUTICAL-ABUSE-2026-2.docx",
+      "source_sha256": "bc9c00b3ba5f582e0512276faed163537ce049808a72d59a5e38f80c6b9e9b1e",
+      "byte_size": 43372,
+      "observations": 1290,
+      "resource_ids": [
+        "SAIS-PH-001",
+        "SAIS-PH-002",
+        "SAIS-PH-003",
+        "SAIS-PH-004",
+        "SAIS-PH-005",
+        "SAIS-PH-006",
+        "SAIS-PH-007",
+        "SAIS-PH-008",
+        "SAIS-PH-009",
+        "SAIS-PH-010",
+        "SAIS-PH-011",
+        "SAIS-PH-012",
+        "SAIS-PH-013"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-SAIS-DOC20-YOUTH-FOSTER-CARE-2026.docx",
+      "source_sha256": "a5b6d48863a3317558881200f87fc90b9ec856fa827fe3a504dfb25db84d7ce7",
+      "byte_size": 50912,
+      "observations": 1100,
+      "resource_ids": [
+        "SAIS-YF-001",
+        "SAIS-YF-002",
+        "SAIS-YF-003",
+        "SAIS-YF-004",
+        "SAIS-YF-005",
+        "SAIS-YF-006",
+        "SAIS-YF-007"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-SAIS-DOC21-ELDER-LAW-2026.docx",
+      "source_sha256": "39e8ad8a5a9e78a821ce88aa604674fedd041df8cf11a2116722ca009dc4eb00",
+      "byte_size": 48542,
+      "observations": 1025,
+      "resource_ids": [
+        "SAIS-EL-001",
+        "SAIS-EL-002",
+        "SAIS-EL-003",
+        "SAIS-EL-004",
+        "SAIS-EL-005",
+        "SAIS-EL-006"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-SAIS-DOC22-MILITARY-2026.docx",
+      "source_sha256": "669f11fa973d96d3575901460a856722af4dac0eee2d61c8bc1d8d59639ab5b3",
+      "byte_size": 48176,
+      "observations": 1025,
+      "resource_ids": [
+        "SAIS-ML-001",
+        "SAIS-ML-002",
+        "SAIS-ML-003",
+        "SAIS-ML-004",
+        "SAIS-ML-005",
+        "SAIS-ML-006"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-SAIS-DOC23-IMMIGRATION-MASTER-GUIDE-2026-1.docx",
+      "source_sha256": "d10b0b3b3213b03314ec199e146deede4912051bdd86c7e1405888101032cc87",
+      "byte_size": 52610,
+      "observations": 1104,
+      "resource_ids": [
+        "SAIS-IM-001",
+        "SAIS-IM-002",
+        "SAIS-IM-003",
+        "SAIS-IM-004",
+        "SAIS-IM-005",
+        "SAIS-IM-006",
+        "SAIS-IM-007"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-SAIS-DOC24-DIGITAL-RIGHTS-FRAUD-IDENTITY-THEFT-2026-2.docx",
+      "source_sha256": "4373994afee4664d80f66e842644ea6fc516635f0c50b62b669e5938a65cb8bf",
+      "byte_size": 46032,
+      "observations": 1025,
+      "resource_ids": [
+        "SAIS-DR2-001",
+        "SAIS-DR2-002",
+        "SAIS-DR2-003",
+        "SAIS-DR2-004",
+        "SAIS-DR2-005",
+        "SAIS-DR2-006"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-SAIS-DOC25-SMALL-BUSINESS-ENTREPRENEURSHIP-2026-1.docx",
+      "source_sha256": "a6eb70a47006cb095ff0cfbf11d78d0d8d8f2f20debf52bcd6ed80d1979cb8b7",
+      "byte_size": 49136,
+      "observations": 1025,
+      "resource_ids": [
+        "SAIS-SB-001",
+        "SAIS-SB-002",
+        "SAIS-SB-003",
+        "SAIS-SB-004",
+        "SAIS-SB-005",
+        "SAIS-SB-006"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-SAIS-DOC26-FAMILY-COURT-CORRUPTION-JUDICIAL-GAL-ACCOUNTABILITY-2026-1.docx",
+      "source_sha256": "68fd5970745ef101cf5c6ff13a09c8fce42598add0dc776e45356c96b9564ac5",
+      "byte_size": 66790,
+      "observations": 1357,
+      "resource_ids": [
+        "SAIS-FCC-001",
+        "SAIS-FCC-002",
+        "SAIS-FCC-003",
+        "SAIS-FCC-004",
+        "SAIS-FCC-005",
+        "SAIS-FCC-006",
+        "SAIS-FCC-007",
+        "SAIS-FCC-008",
+        "SAIS-FCC-009",
+        "SAIS-FCC-010"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-SAIS-DOC27-IMMEDIATE-STABILIZATION-2026.docx",
+      "source_sha256": "4f6709d0bcdbe994b4438b390f0b627bca60c6c773bc5f59c9301883dddbb38f",
+      "byte_size": 45742,
+      "observations": 1021,
+      "resource_ids": [
+        "SAIS-IS-001",
+        "SAIS-IS-002",
+        "SAIS-IS-003",
+        "SAIS-IS-004",
+        "SAIS-IS-005",
+        "SAIS-IS-006"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-SAIS-DOC28-TRIBAL-SOVEREIGNTY-ICWA-2026-1.docx",
+      "source_sha256": "28afdb04be260ada110ffb2c949d549ab8ba080d6d0f998b48baad2fae072081",
+      "byte_size": 44112,
+      "observations": 942,
+      "resource_ids": [
+        "SAIS-TR-001",
+        "SAIS-TR-002",
+        "SAIS-TR-003",
+        "SAIS-TR-004",
+        "SAIS-TR-005"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-SAIS-DOC3-CORPORATE-LANDLORD-PREDATION-2026-2.docx",
+      "source_sha256": "90f1686331b7641e7950cacb1d7b8a0bad096845c6891c09852ab4f6f7f7deb6",
+      "byte_size": 33563,
+      "observations": 934,
+      "resource_ids": [
+        "SAIS-LL-001",
+        "SAIS-LL-002",
+        "SAIS-LL-003",
+        "SAIS-LL-004",
+        "SAIS-LL-005",
+        "SAIS-LL-006",
+        "SAIS-LL-007"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-SAIS-DOC4-FINANCIAL-PREDATION-2026-2.docx",
+      "source_sha256": "eed9864ad30c57075414d1b06d113734412a24e1a7bc171efa3fb35b9b2032f1",
+      "byte_size": 31742,
+      "observations": 874,
+      "resource_ids": [
+        "SAIS-FP-001",
+        "SAIS-FP-002",
+        "SAIS-FP-003",
+        "SAIS-FP-004",
+        "SAIS-FP-005",
+        "SAIS-FP-006"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-SAIS-DOC5-DARK-MONEY-POLITICAL-CORRUPTION-2026-2.docx",
+      "source_sha256": "341142102889a8c54aca61e30dfca60cf21ddae3ea25a7a4ce8923badbed3bff",
+      "byte_size": 30181,
+      "observations": 809,
+      "resource_ids": [
+        "SAIS-DM-001",
+        "SAIS-DM-002",
+        "SAIS-DM-003",
+        "SAIS-DM-004",
+        "SAIS-DM-005"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-SAIS-DOC6-ANTITRUST-MONOPOLY-2026-3.docx",
+      "source_sha256": "3ad4eeb1e0f3a9dbbf79b34c9079c1c9f312d4e0bd1c34563d6dda7cde390325",
+      "byte_size": 28283,
+      "observations": 752,
+      "resource_ids": [
+        "SAIS-AT-001",
+        "SAIS-AT-002",
+        "SAIS-AT-003",
+        "SAIS-AT-004"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-SAIS-DOC7-REGULATORY-CAPTURE-2026-2.docx",
+      "source_sha256": "de91e22bc8ac5d4b1504bddd63c70e6b8e8d8fc2c79c37bde14c14b1de725510",
+      "byte_size": 26276,
+      "observations": 752,
+      "resource_ids": [
+        "SAIS-RC-001",
+        "SAIS-RC-002",
+        "SAIS-RC-003",
+        "SAIS-RC-004"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-SAIS-DOC8-GIG-ECONOMY-WORKER-EXPLOITATION-2026-7.docx",
+      "source_sha256": "d479ac13923fc95ebe9f0ff3a881dfba6605d749994833fa505a42c100bac954",
+      "byte_size": 26600,
+      "observations": 752,
+      "resource_ids": [
+        "SAIS-GE-001",
+        "SAIS-GE-002",
+        "SAIS-GE-003",
+        "SAIS-GE-004"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-SAIS-DOC9-DATA-PRIVACY-ALGORITHMIC-DISCRIMINATION-2026-2.docx",
+      "source_sha256": "3333ce44f5d94432809501b941d48fbda83cbaa1bd5db9dd60beb0a07de6e5c9",
+      "byte_size": 26974,
+      "observations": 752,
+      "resource_ids": [
+        "SAIS-DP-001",
+        "SAIS-DP-002",
+        "SAIS-DP-003",
+        "SAIS-DP-004"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-SAIS-DOC9-DATA-PRIVACY-ALGORITHMIC-DISCRIMINATION-2026-3.docx",
+      "source_sha256": "3333ce44f5d94432809501b941d48fbda83cbaa1bd5db9dd60beb0a07de6e5c9",
+      "byte_size": 26974,
+      "observations": 752,
+      "resource_ids": [
+        "SAIS-DP-001",
+        "SAIS-DP-002",
+        "SAIS-DP-003",
+        "SAIS-DP-004"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-VETERANS-DEEP-DIVE-2026.csv",
+      "source_sha256": "1f6b474edfd15d851e28d457f6d4c0ec3e1870b178622ee779978a3618e04953",
+      "byte_size": 44315,
+      "observations": 42,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-VETERANS-DEEP-DIVE-2026.docx",
+      "source_sha256": "889400cb692b7edcaac7eea09c4c7dbba518c80d754df24ae73c61c2a6d4cc99",
+      "byte_size": 86223,
+      "observations": 3413,
+      "resource_ids": [
+        "VET-FED-001",
+        "VET-FED-002",
+        "VET-FED-003",
+        "VET-FED-004",
+        "VET-DIS-001",
+        "VET-DIS-002",
+        "VET-DIS-003",
+        "VET-DIS-004",
+        "VET-TOX-001",
+        "VET-TOX-002",
+        "VET-TOX-003",
+        "VET-APP-001",
+        "VET-APP-002",
+        "VET-APP-003",
+        "VET-HLT-001",
+        "VET-HLT-002",
+        "VET-HLT-003",
+        "VET-HLT-004",
+        "VET-HLT-005",
+        "VET-DIS-UP-001",
+        "VET-DIS-UP-002",
+        "VET-HOU-001",
+        "VET-HOU-002",
+        "VET-HOU-003",
+        "VET-EDU-001",
+        "VET-EDU-002",
+        "VET-EMP-001",
+        "VET-EMP-002",
+        "VET-PEN-001",
+        "VET-PEN-002",
+        "VET-PEN-003",
+        "VET-CAR-001",
+        "VET-CAR-002",
+        "VET-JUS-001",
+        "VET-JUS-002",
+        "VET-WOM-001",
+        "VET-RUR-001",
+        "VET-NAT-001",
+        "VET-ADV-001",
+        "VET-ADV-002",
+        "VET-ADV-003"
+      ],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-VETERANS-DEEP-DIVE-2026.ndjson",
+      "source_sha256": "67159aaf06682b6daa9c3267d90eee6953568e6a7b72c528d75e9498345717d8",
+      "byte_size": 59834,
+      "observations": 42,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-address-audit-4.docx",
+      "source_sha256": "0adc567e07603292478f9ff7f12ad7693e33736bcd0c0fb88b710626c01f7740",
+      "byte_size": 33986,
+      "observations": 1780,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-alabama-registry-2.docx",
+      "source_sha256": "8131c071efe2a5a541b7b80d271c4c126553432d2bd40f85593c4a031abb8cb3",
+      "byte_size": 20757,
+      "observations": 537,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-alaska-registry-3.docx",
+      "source_sha256": "8964608ae537585c8bddbfabd9c045c4ce9428217ec25b19eebd328542f4c382",
+      "byte_size": 15426,
+      "observations": 413,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-american-samoa-registry-3.docx",
+      "source_sha256": "6f4315a9c11939209dcb37bc1f91e694a85f073399bf35f587126769ee690dd6",
+      "byte_size": 14899,
+      "observations": 387,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-arizona-registry-3.docx",
+      "source_sha256": "6fcc675fe237f27ffac81d6d66a38b9d5d33b106a5a6ba1a4f5f7bcd284e0d0d",
+      "byte_size": 50542,
+      "observations": 1796,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-arkansas-registry-2.docx",
+      "source_sha256": "ac07bf002de5ce9f276d2ac600fdf66b783096c118017bfeb7b3e47f14630432",
+      "byte_size": 14648,
+      "observations": 400,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-benefits-registry-4.docx",
+      "source_sha256": "3fd324b6b6ef04b3efb7704eb9501145173c44d77c8eecd2fc31f0e4909db3a5",
+      "byte_size": 34967,
+      "observations": 1785,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-california-registry-2.docx",
+      "source_sha256": "6a287f164dab15e473db1a08e2ebdaa33ec3b3a47a01e1280f795859c3af6832",
+      "byte_size": 46549,
+      "observations": 1834,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-colorado-registry-4.docx",
+      "source_sha256": "6d4056ac8cecc208b9adbdffaf0bbab6848993085dfd172094e58faee63ca113",
+      "byte_size": 28307,
+      "observations": 793,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-connecticut-registry-3.docx",
+      "source_sha256": "14053374395b9a7fc3513c06e9c0d7b227641a58f8266c7b371160c221fda48f",
+      "byte_size": 14711,
+      "observations": 400,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-contributor-guide-4.docx",
+      "source_sha256": "5ea8f9b750692e84f1829713fec2182eed740edddf5f5ed1f4c8393405c3a26b",
+      "byte_size": 20457,
+      "observations": 466,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-delaware-registry-2.docx",
+      "source_sha256": "934f39b750088b0053bb2b36ab3a5ae504d166cc21e4cefed8df4b7def033efb",
+      "byte_size": 12242,
+      "observations": 282,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-ecosystem-vision-5.docx",
+      "source_sha256": "699c7072fa50be0566f7acae4d55f5a509979b2ff215b05641109291523ed242",
+      "byte_size": 17946,
+      "observations": 1,
+      "resource_ids": [],
+      "holds": [
+        {
+          "code": "malformed_document_xml",
+          "detail": "1:28433: disallowed character in tag name",
+          "part_path": "word/document.xml"
+        }
+      ]
+    },
+    {
+      "source_name": "luminari-florida-registry-3.docx",
+      "source_sha256": "f8f80dbcae00ece404d08434347e4146d02cb2b075ca1e6d1679df6f32c3fb38",
+      "byte_size": 29821,
+      "observations": 763,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-georgia-registry-3.docx",
+      "source_sha256": "24f4b9e823c665df3001d691e9773b814761c20735f2cd71dbaf0a9100cabc23",
+      "byte_size": 30062,
+      "observations": 789,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-guam-registry-2.docx",
+      "source_sha256": "3a67ffa34266bbd264efe153e87180f33d468d756f3b4f983409ac8c4ceedbc9",
+      "byte_size": 12424,
+      "observations": 295,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-hawaii-registry-2.docx",
+      "source_sha256": "1437ee07396037d03cde3a8d9a43bfedbd1961fd678f2f9b85a0e2f8ddc90837",
+      "byte_size": 15047,
+      "observations": 413,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-idaho-registry-2.docx",
+      "source_sha256": "33c0b7239a802a38dedfbc452e461225d1ae3b96b3b04d319eb91e27eb2243de",
+      "byte_size": 12111,
+      "observations": 282,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-illinois-registry-4.docx",
+      "source_sha256": "a9c1a9cec937419a3d53f4aa9c53791461aa6e3000dd8018a56c48df48009a73",
+      "byte_size": 32422,
+      "observations": 897,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-indiana-registry-2.docx",
+      "source_sha256": "d5b739d57a3568dfb1ea178a40703218213f9f512a940a793536cadc5c656614",
+      "byte_size": 30399,
+      "observations": 818,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-iowa-registry-2.docx",
+      "source_sha256": "13dd19c0889f34e9ca13f8c7bd5f2eff2e5d324d29d58882e080b0c429d734de",
+      "byte_size": 12203,
+      "observations": 282,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-kansas-registry-1.docx",
+      "source_sha256": "857e11ae11d5999e03d605b34d9b275c967907ead6c9015d461893bbe7546925",
+      "byte_size": 12344,
+      "observations": 295,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-kentucky-registry-3.docx",
+      "source_sha256": "fc002f42cb4f898fc04ab26388d7aa06ca14787b2ecf71cb47c446d59cf22994",
+      "byte_size": 32129,
+      "observations": 870,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-louisiana-registry-2.docx",
+      "source_sha256": "72f2b1de65554925602b9acccfee5ded9d7982264e58d20e105a603adc5b7b82",
+      "byte_size": 14916,
+      "observations": 400,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-maine-registry-3.docx",
+      "source_sha256": "61f23e4e6385bbaa84df2224f1e5f8db0df007b72ef06f3e0942bd7128e1522e",
+      "byte_size": 15042,
+      "observations": 400,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-maryland-registry-2.docx",
+      "source_sha256": "d23539b53a56a09a848b09244be68c3d384c4d56a5a85d90319d2c1cbc7ab4bf",
+      "byte_size": 14724,
+      "observations": 387,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-massachusetts-registry-2.docx",
+      "source_sha256": "26dfdef91e259a05a1bbc189eb47ae45023c92b562c345457849dd1790a2d88e",
+      "byte_size": 14939,
+      "observations": 387,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-master-template-WA-3.docx",
+      "source_sha256": "3e03a08be93e729830ebf748a4df603e719df3f1eb0188c8428a6b3466f297a6",
+      "byte_size": 32803,
+      "observations": 1311,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-michigan-registry-2.docx",
+      "source_sha256": "13a0749d2b9c9a6cbf491f31916be90d2f66ea72d505533be3d23638f5e8c523",
+      "byte_size": 30917,
+      "observations": 874,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-minnesota-registry-2.docx",
+      "source_sha256": "02c2f406cbf5293f79ea800e8a4b858c6b20e878e09549e16fdc50f9ed7e21a4",
+      "byte_size": 30682,
+      "observations": 851,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-mission-control-5.html",
+      "source_sha256": "e911cab255191e886c1cfa2d9d6aba2db4a209eab6376f19b229ad59b2249064",
+      "byte_size": 51852,
+      "observations": 1,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-mississippi-registry-3.docx",
+      "source_sha256": "9592c5de473741d0553f77a095e69eae702be637908b7c8a4ef03d61274256de",
+      "byte_size": 14856,
+      "observations": 400,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-missouri-registry-3.docx",
+      "source_sha256": "acdee547bd3e7f611d1aa388363b20c46d88bb7b00f46eedaa7b2108071c4e32",
+      "byte_size": 42517,
+      "observations": 1551,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-montana-registry-3.docx",
+      "source_sha256": "57f412c83179f26e9b4a58fc9f7541f1db589b129c67ec2cd92821f384bd7f61",
+      "byte_size": 14515,
+      "observations": 400,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-nebraska-registry-3.docx",
+      "source_sha256": "97dd2ed9cc776fd3c7988243321fe650e421caf5fb79c0d318a6bddbc9c0cee1",
+      "byte_size": 14856,
+      "observations": 400,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-nevada-registry-2.docx",
+      "source_sha256": "bc6d1cb27631886160e34150ec48c02210ec7f6b8303d5fe39c24c13645fe9e5",
+      "byte_size": 11970,
+      "observations": 282,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-new-hampshire-registry-1.docx",
+      "source_sha256": "e4287838e7527d0b2c56c04765491e5cb6da4b6ed860592268e74df7be5e3240",
+      "byte_size": 14824,
+      "observations": 400,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-new-jersey-registry-2.docx",
+      "source_sha256": "80d08d812c253a1b1dae4d07f78f986cefa88195f1a181089fc9a3839cfea7df",
+      "byte_size": 15100,
+      "observations": 400,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-new-mexico-registry-3.docx",
+      "source_sha256": "88fa6e34bbf05cdcc01842a7c6cb438154301ca2ea103da5f74336ce25572137",
+      "byte_size": 14543,
+      "observations": 400,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-new-york-registry-3.docx",
+      "source_sha256": "6b76439228e4bc81f666f6cd43eb32d0c714a4e648af715ba211bad27edcf68e",
+      "byte_size": 29507,
+      "observations": 759,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-north-carolina-registry-2.docx",
+      "source_sha256": "964a9d783dad12d1399a166fd2ca3066ca74b8b1ae4f2f2f839a0aed5fbefad1",
+      "byte_size": 24386,
+      "observations": 673,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-north-dakota-registry-3.docx",
+      "source_sha256": "d89085481b6e291aae07f74b3a32239b36c4e9168e75e16190f40bbe224180d4",
+      "byte_size": 11799,
+      "observations": 256,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-north-dakota-registry-4.docx",
+      "source_sha256": "d89085481b6e291aae07f74b3a32239b36c4e9168e75e16190f40bbe224180d4",
+      "byte_size": 11799,
+      "observations": 256,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-northern-mariana-islands-registry-1.docx",
+      "source_sha256": "ce20336f47eaf65ca04e6fec6cb2b403c68d73710587bd864f84ec271fc923c2",
+      "byte_size": 11916,
+      "observations": 256,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-northern-mariana-islands-registry-2.docx",
+      "source_sha256": "ce20336f47eaf65ca04e6fec6cb2b403c68d73710587bd864f84ec271fc923c2",
+      "byte_size": 11916,
+      "observations": 256,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-ohio-registry-2.docx",
+      "source_sha256": "165a6f71153ed68f6725c0d45e5db6b4a027df2a44a4420468684275463e2bce",
+      "byte_size": 30794,
+      "observations": 851,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-oklahoma-registry-1.docx",
+      "source_sha256": "5a68ff66af1df532e683b1153f8376c00658bb15530cfaed7c789b4bf86bb346",
+      "byte_size": 12833,
+      "observations": 321,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-oregon-registry-2.docx",
+      "source_sha256": "1bc8653d891fb8e28f7240f94b5d067857d8fcc2dfe82fe7f8dd8162def81925",
+      "byte_size": 38397,
+      "observations": 1577,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-pennsylvania-registry-2.docx",
+      "source_sha256": "b64ddabbd9f7625c376ffa9ce808e0714d47422af36e403f9c52aed23226a02b",
+      "byte_size": 44315,
+      "observations": 1540,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-puerto-rico-registry-2.docx",
+      "source_sha256": "3915ef3d5bbe79ecc06366bf2beb9da56c3d87c61a5df3c972b8e0577b123869",
+      "byte_size": 15086,
+      "observations": 400,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-researcher-cheatsheet-3.docx",
+      "source_sha256": "ac224dd67fb484ea1fd6dd17a79d2d5ca4e7323797f16cfed3469ab894dbbc54",
+      "byte_size": 11423,
+      "observations": 163,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-rhode-island-registry-1.docx",
+      "source_sha256": "88e90c4a0a3019138f05dd718a3ce9c9bb0a0069abd102f37fd8bc11e6b291ce",
+      "byte_size": 14935,
+      "observations": 400,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-south-carolina-registry-1.docx",
+      "source_sha256": "430f6214093c6a57ff6c0edd4ec1714e062e9ac0917f4c0d5c21a50b56dbdc79",
+      "byte_size": 24449,
+      "observations": 679,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-south-dakota-registry-2.docx",
+      "source_sha256": "1fb81b98f0479ea77916f782416f5a76b373f5be87c92c6fece576e3373f5274",
+      "byte_size": 11964,
+      "observations": 269,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-tennessee-registry-1.docx",
+      "source_sha256": "a442dd313020b87e239cf35ad98dca0e107f7f6eeb540b01bcde18bea4580cd8",
+      "byte_size": 24622,
+      "observations": 692,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-texas-registry-2.docx",
+      "source_sha256": "73887230904f606a03b9ebe20cc3b6c2414a2c9b383875d69965130d6e90117f",
+      "byte_size": 29402,
+      "observations": 777,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-us-virgin-islands-registry-2.docx",
+      "source_sha256": "018e4434a6390cf6758798319e1f938a157e12cebf2fe31bc964d1602e359e71",
+      "byte_size": 11523,
+      "observations": 243,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-utah-registry-2.docx",
+      "source_sha256": "fb82edda5db89bd80973caf00f444acca1cca44cdce7d59d078feeaad10b6748",
+      "byte_size": 14556,
+      "observations": 400,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-vermont-registry-2.docx",
+      "source_sha256": "691ece6a4c785c55d74afb747fb6b02691cd1044f1d264d40e35a56f2d4639f2",
+      "byte_size": 12131,
+      "observations": 269,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-virginia-registry-2.docx",
+      "source_sha256": "c2eb003cb29405253b8976036b0937bef2891d6be4492262486c77af85238a6c",
+      "byte_size": 30687,
+      "observations": 821,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-washington-dc-registry-2.docx",
+      "source_sha256": "6b27099c83f95162c43173497ec31bd748589c64e0675ee3c39d3f09edbc6362",
+      "byte_size": 12851,
+      "observations": 308,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-washington-state-registry-2.docx",
+      "source_sha256": "d21ad425d44a999a8899b34f6d74595a85386dc359b1f8d9de735fe3b0bdadef",
+      "byte_size": 33520,
+      "observations": 1502,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-west-virginia-registry-2.docx",
+      "source_sha256": "bb704518106a01dd7a42c3385b95e7a9dec8033a04c1440129332e32d3316e7c",
+      "byte_size": 12305,
+      "observations": 295,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-wisconsin-registry-2.docx",
+      "source_sha256": "4076ff719c823d2ed7e1c7e3e7c1d15fa3e6f2c3178142135e07d0db35129038",
+      "byte_size": 30798,
+      "observations": 877,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "luminari-wyoming-registry-2.docx",
+      "source_sha256": "febd15a8041b5ae4f8df97d9c9513ce89418e0d2bf6bdc0b20f013b4ea588be8",
+      "byte_size": 14514,
+      "observations": 387,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "pipeline_intake_enrichment.json",
+      "source_sha256": "591c3d0949da14e728557472f352c315efb9824fe8cbdef189626acecc51367b",
+      "byte_size": 43659,
+      "observations": 258,
+      "resource_ids": [],
+      "holds": []
+    },
+    {
+      "source_name": "uber_pricing_dossier-1.md",
+      "source_sha256": "d8007bdc99b9647f60dba85e877812b009d97c20200a13f10b57a91a7512c961",
+      "byte_size": 7676,
+      "observations": 1,
+      "resource_ids": [],
+      "holds": []
+    }
+  ],
+  "not_certified": [
+    "production import",
+    "all-family canonical promotion",
+    "public consumer/UI readback for all source records",
+    "OCR completeness or factual verification"
+  ],
+  "validation": {
+    "full_vitest_suite": {
+      "passed": 1613,
+      "skipped": 2,
+      "test_files_passed": 317
+    },
+    "python_regressions_passed": 17,
+    "original_doc6_opt_in_suite_passed": 9,
+    "typecheck": "passed",
+    "production_build": "passed",
+    "owned_contract_guard": "passed"
+  },
+  "implementation_sha256": {
+    "scripts/lib/batch-source-adapter.mjs": "33b8cab62f320d0d1d89dc24426187d34829f3b535fa92bf5b06fdaccf079303",
+    "scripts/lib/corpus-docx-source.mjs": "7fd0f360e65ad2ede076bc9db01ea99f655a0b9a8a922c699fbd98b84aa7149a",
+    "scripts/lib/pipeline-dossier-review-compiler.mjs": "684ae526954e39a949e900bb00b1751e98ff88d0f820e292993a602c8fc1966d",
+    "scripts/advocacy_lane_import.py": "92cea1f8976237dbaba22b347c0921a93ae9ac605958ecc82ccc047b7d267dac",
+    "scripts/build_registry.py": "efb48ddd4586052a69a63fdb231c60706e0b412293565024d81a76f3234dabe9",
+    "scripts/seed_document_adapter.py": "7822cda04a78df240b7dd78a285c0a09545a291c6bc0e466765959baaa47231a",
+    "server/services/corpus-storage-download.ts": "d250041d55a2419d67a34086d3152fd8a95424936bb1e8db06069aadb22bddd9",
+    "server/services/batch-corpus-source.ts": "2b26afc06a9f66662559e5e9888da85b989835abd52926455082289ba8885a52",
+    "server/services/batch-source-lineage.ts": "5bfa91464d016c5e97dc61c6c02dc421d5657a9eb70ac6f44e3461bb8ecbb60a",
+    "server/services/fresh-corpus-atomic-v1.ts": "2688b9fbcb6da66d7090b12f9a023bbc25ad4f6ff707b3c7db3ec0e7df24952c",
+    "server/routers/batch-source-router.ts": "0e5437db4ca4a97503fc3e8ef75f3036e894073afef570ebc3cb2d607a2231b8",
+    "supabase/migrations/20260911201534_batch_existing_substrate_registration.sql": "31b02561b01fa5235d52290d67fc5a8cde92efe47a973f0a711db9e48edcf552"
+  }
+}

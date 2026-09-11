@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import JSZip from "jszip";
 import { getPool } from "../db";
-import { SUPABASE_PROJECT } from "../_core/health-diagnostics";
+import { download_corpus_storage_artifact } from "./corpus-storage-download";
 
 export const FRESH_CORPUS_ENGINE_VERSION = "fresh_corpus_reconciliation_v1.2.2";
 export const FRESH_CORPUS_PARSER_VERSION = "fresh_registry_typed_parser_v1.2.2";
@@ -195,30 +195,6 @@ function normalizeWebsiteDomain(value: unknown): string | null {
   }
 }
 
-function encodeStoragePath(value: string): string {
-  return value.split("/").filter(Boolean).map(encodeURIComponent).join("/");
-}
-
-function supabaseBaseUrl(): string {
-  return (process.env.SUPABASE_URL || process.env.LIGHTHOUSE_SUPABASE_URL || process.env.VITE_SUPABASE_URL || `https://${SUPABASE_PROJECT}.supabase.co`).replace(/\/+$/, "");
-}
-
-async function downloadPublicStorageArtifact(artifact: SourceArtifact): Promise<Buffer> {
-  const url = `${supabaseBaseUrl()}/storage/v1/object/public/${encodeURIComponent(artifact.bucket_id)}/${encodeStoragePath(artifact.object_name)}`;
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30_000);
-  try {
-    const response = await fetch(url, { signal: controller.signal, headers: { Accept: "application/octet-stream" } });
-    if (!response.ok) throw new Error(`storage_download_http_${response.status}`);
-    const buffer = Buffer.from(await response.arrayBuffer());
-    if (artifact.byte_size > 0 && buffer.byteLength !== Number(artifact.byte_size)) {
-      throw new Error(`storage_byte_size_mismatch_expected_${artifact.byte_size}_actual_${buffer.byteLength}`);
-    }
-    return buffer;
-  } finally {
-    clearTimeout(timeout);
-  }
-}
 
 function decodeXmlEntities(value: string): string {
   return value
@@ -1068,7 +1044,7 @@ async function processArtifact(runId: string, artifact: SourceArtifact): Promise
   }
 
   try {
-    const buffer = await downloadPublicStorageArtifact(artifact);
+    const buffer = await download_corpus_storage_artifact(artifact);
     const contentSha256 = sha256(buffer);
     const ext = artifact.object_name.toLowerCase().match(/\.[a-z0-9]+$/)?.[0] ?? "";
     let text = "";
@@ -1129,6 +1105,7 @@ async function nextArtifacts(runId: string, limit: number): Promise<SourceArtifa
       from public.luminari_corpus_source_artifact_v1 a
       left join public.luminari_corpus_rebuild_artifact_v1 r on r.run_id=$1 and r.artifact_key=a.artifact_key
      where a.storage_state='active'
+       and a.bucket_id <> 'Batch'
        and (
          r.artifact_key is null
          or (r.status='failed' and r.attempt_count < 2)

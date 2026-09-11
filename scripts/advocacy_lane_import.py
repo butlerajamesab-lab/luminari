@@ -18,6 +18,7 @@ import tempfile
 import uuid
 import zipfile
 from seed_source_parsers import parse_sql_rows
+from seed_document_adapter import parse_document_source
 
 SCHEMA_PATH = Path(__file__).resolve().parents[1] / 'config/advocacy-import-schema-v1.json'
 
@@ -76,7 +77,13 @@ def pointer(document, location):
 
 def source_document(name, raw):
     suffix = Path(name).suffix.lower()
+    if suffix == '.docx':
+        return parse_document_source(name, raw)
     if suffix == '.zip':
+        inspected = parse_document_source(name, raw)
+        if any(hold['code'] in {'archive_manifest_mismatch', 'archive_checksum_mismatch', 'manifest_entry_unsupported'}
+               for hold in inspected['holds']):
+            raise ValueError('archive integrity hold prevents canonical reconciliation')
         documents = {}
         with zipfile.ZipFile(io.BytesIO(raw)) as archive:
             for member in archive.infolist():
@@ -136,6 +143,17 @@ def prepare_reconciliation(root, manifest, schema):
             raise ValueError('missing or duplicate stable source record identity')
         identities.add((source_id, stable_id))
         record = pointer(sources[source_id], binding['source_pointer'])
+        source = sources[source_id]
+        if isinstance(source, dict) and source.get('publication_state') == 'governed_non_public':
+            if any(hold['code'] in {'malformed_document_xml', 'resource_field_conflict', 'metadata_table_cardinality',
+                                   'missing_or_duplicate_resource_id'} for hold in source.get('holds', [])):
+                raise ValueError('document integrity hold prevents canonical reconciliation')
+            if not (re.fullmatch(r'/resources/[0-9]+', binding['source_pointer'])
+                    or re.fullmatch(r'/native_records/[0-9]+/record', binding['source_pointer'])):
+                raise ValueError('document observations and OCR require explicit review before canonical binding')
+            original_id = record.get('resource_id') or record.get('uuid') or record.get('id')
+            if original_id is not None and stable_id != original_id:
+                raise ValueError('document binding must use the original source identity')
         record_hash = digest(canonical_json(record).encode())
         if record_hash != binding['source_record_sha256']: raise ValueError('source record hash mismatch')
         table = binding['target_table']
@@ -160,6 +178,7 @@ def prepare_reconciliation(root, manifest, schema):
             proposed = pointer(record, mapping['source_pointer'])
             adapter = mapping.get('adapter', 'identity')
             if adapter == 'json_text': proposed = canonical_json(proposed)
+            elif adapter == 'decimal_integer' and isinstance(proposed, str) and re.fullmatch(r'[1-9][0-9]*', proposed): proposed = int(proposed)
             elif adapter == 'boolean_integer' and type(proposed) is bool: proposed = int(proposed)
             elif adapter != 'identity': raise ValueError('unsupported field adapter')
             sql_value(proposed, columns[key])

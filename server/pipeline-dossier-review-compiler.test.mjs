@@ -113,6 +113,27 @@ function fixture_items(appendix_overrides = {}) {
 }
 
 describe("pipeline dossier review compiler", () => {
+  it("joins split appendix groups by source resource ID and rejects conflicting groups", () => {
+    const items = fixture_items();
+    const appendix = items.pop();
+    const [headers, values] = appendix.rows;
+    const split = Math.floor(headers.length / 2);
+    items.push(table([headers.slice(0, split), values.slice(0, split)]));
+    items.push(table([[headers[0], ...headers.slice(split)], [values[0], ...values.slice(split)]]));
+    const result = compile_pipeline_dossier_items({ items, source_filename: "split.docx", source_sha256: hash_a, document_xml_sha256: hash_b });
+    expect(result.validation.appendix_reconciled).toBe(true);
+    items.push(table([["resource_id", "verification_status"], [values[0], "CONFLICT"]]));
+    expect(() => compile_pipeline_dossier_items({ items, source_filename: "conflict.docx", source_sha256: hash_a, document_xml_sha256: hash_b })).toThrow("metadata_split_table_conflict");
+  });
+
+  it("retains statutory subsection numbers inside a routing step", () => {
+    const items = fixture_items();
+    items[5] = table([["TEST -- CRITICAL ROUTING, READ THIS FIRST: (1) See sec. 922(g)(8); preserve the notice. (2) Next route."]]);
+    const result = compile_pipeline_dossier_items({ items, source_filename: "routing.docx", source_sha256: hash_a, document_xml_sha256: hash_b });
+    expect(result.critical_routing).toHaveLength(2);
+    expect(result.critical_routing[0].source_text).toContain("922(g)(8)");
+  });
+
   it("compiles a pipeline-specific dossier into a deterministic non-publishing review candidate", () => {
     const first = compile_pipeline_dossier_items({
       items: fixture_items(),

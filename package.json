@@ -100,6 +100,7 @@
     "react-markdown": "^10.1.0",
     "react-resizable-panels": "^3.0.6",
     "recharts": "^2.15.2",
+    "saxes": "6.0.0",
     "sonner": "^2.0.7",
     "streamdown": "^1.4.0",
     "stripe": "^20.3.1",

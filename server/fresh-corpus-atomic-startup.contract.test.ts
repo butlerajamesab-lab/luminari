@@ -7,9 +7,9 @@ const service = readFileSync(new URL("./services/fresh-corpus-atomic-v1.ts", imp
 
 describe("fresh atomic corpus startup", () => {
   it("only resumes explicitly queued/running database work", () => {
-    expect(startup).toContain("resumeFreshAtomicCorpusPassFromDatabase");
+    expect(startup).toContain("resume_fresh_atomic_corpus_pass_from_database");
     expect(startup).toContain('background_feature_enabled("FRESH_ATOMIC_CORPUS_RESUME_ENABLED")');
-    expect(startup).not.toContain("queueFreshAtomicCorpusPass");
+    expect(startup).not.toContain("queue_fresh_atomic_corpus_pass");
     expect(service).toContain("status in ('queued','running')");
   });
 

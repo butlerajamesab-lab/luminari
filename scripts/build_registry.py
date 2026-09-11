@@ -13,6 +13,7 @@ import shutil
 import os
 import tempfile
 from seed_source_parsers import parse_sql_rows, parse_workbook
+from seed_document_adapter import parse_document_source
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
@@ -20,7 +21,7 @@ from typing import Any
 from xml.etree import ElementTree
 import zipfile
 
-SUPPORTED_SUFFIXES = {".sql", ".json", ".jsonl", ".ndjson", ".csv", ".xlsx", ".zip"}
+SUPPORTED_SUFFIXES = {".docx", ".md", ".txt", ".html", ".mjs", "", ".sql", ".json", ".jsonl", ".ndjson", ".csv", ".xlsx", ".zip"}
 DEFAULT_ROUTE = "/architecture-map"
 
 ROUTE_KEYWORDS: list[tuple[str, str, str]] = [
@@ -140,6 +141,12 @@ def normalize_record(value: Any) -> dict[str, Any]:
 
 def read_loose_records(source_name: str, raw: bytes) -> list[tuple[str, dict[str, Any]]]:
     suffix = Path(source_name).suffix.lower()
+    if suffix in {'.docx', '.md', '.txt', '.html', '.mjs', ''}:
+        parsed = parse_document_source(source_name, raw)
+        observations = [(row['source_kind'], row) for row in parsed['observations']]
+        observations.append(('source_receipt', {'source_sha256': parsed['source_sha256'],
+            'publication_state': parsed['publication_state'], 'holds': parsed['holds'], 'parts': parsed['parts']}))
+        return observations
     if suffix == ".sql":
         return parse_sql_records(source_name, raw)
     if suffix == ".json":

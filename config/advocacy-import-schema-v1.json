@@ -835,6 +835,101 @@
         "id"
       ]
     },
+    "public.sais_resources": {
+      "columns": {
+        "case_stage": {
+          "required": false,
+          "type": "text"
+        },
+        "created_at": {
+          "required": true,
+          "type": "timestamp with time zone"
+        },
+        "document_number": {
+          "required": true,
+          "type": "integer"
+        },
+        "family_key": {
+          "required": true,
+          "type": "text"
+        },
+        "jurisdiction": {
+          "required": false,
+          "type": "text"
+        },
+        "jurisdiction_level": {
+          "required": false,
+          "type": "text"
+        },
+        "last_verified_at": {
+          "required": false,
+          "type": "date"
+        },
+        "notes": {
+          "required": false,
+          "type": "text"
+        },
+        "official_contact": {
+          "required": false,
+          "type": "text"
+        },
+        "official_url": {
+          "required": false,
+          "type": "text"
+        },
+        "organization_name": {
+          "required": true,
+          "type": "text"
+        },
+        "organization_type": {
+          "required": false,
+          "type": "text"
+        },
+        "resource_category": {
+          "required": true,
+          "type": "text"
+        },
+        "resource_id": {
+          "required": true,
+          "type": "text"
+        },
+        "revision": {
+          "required": true,
+          "type": "text"
+        },
+        "service_type": {
+          "required": false,
+          "type": "text"
+        },
+        "statutory_authority": {
+          "required": false,
+          "type": "text"
+        },
+        "statutory_authority_url": {
+          "required": false,
+          "type": "text"
+        },
+        "subcategory": {
+          "required": false,
+          "type": "text"
+        },
+        "updated_at": {
+          "required": true,
+          "type": "timestamp with time zone"
+        },
+        "verification_status": {
+          "required": true,
+          "type": "text"
+        },
+        "what_it_does": {
+          "required": false,
+          "type": "text"
+        }
+      },
+      "primary_key": [
+        "resource_id"
+      ]
+    },
     "sais_import.deadline_field": {
       "columns": {
         "candidate_id": {

@@ -16,7 +16,6 @@ describe("fresh corpus reconciliation v1", () => {
     expect(foundation).toContain("luminari_corpus_source_artifact_v1");
     expect(foundation).toContain("State Enriched Registry bucket");
     expect(foundation).toContain("Everything backbone related");
-    expect(service).toContain("/storage/v1/object/public/");
     expect(service).not.toContain("registry_entity_extraction_v4");
     expect(service).not.toContain("registry_entity_staging_programs");
     expect(service).not.toContain("normalized_civic_resource");

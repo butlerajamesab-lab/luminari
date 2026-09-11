@@ -41,6 +41,25 @@ def reconciliation_fixture(root):
 
 
 class SourceParserTests(unittest.TestCase):
+    def test_native_docx_uses_shared_parser_and_can_bind_complete_records(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest = reconciliation_fixture(root)
+            payload = json.loads((root / 'legal.json').read_text())
+            stream = io.BytesIO()
+            with zipfile.ZipFile(stream, 'w') as archive:
+                text = json.dumps(payload).replace('&', '&amp;').replace('<', '&lt;')
+                archive.writestr('word/document.xml', '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>' + text + '</w:t></w:r></w:p></w:body></w:document>')
+            raw = stream.getvalue()
+            (root / 'legal.docx').write_bytes(raw)
+            manifest['sources'][0].update(path='legal.docx', sha256=digest(raw))
+            manifest['bindings'][0]['source_pointer'] = '/native_records/0/record'
+            parsed = source_document('legal.docx', raw)
+            self.assertEqual(parsed['native_records'][0]['record'], payload['case_law'][0])
+            sql, receipt = prepare_reconciliation(root, manifest, json.loads(SCHEMA_PATH.read_text()))
+            self.assertTrue(sql.endswith('ROLLBACK;\n'))
+            self.assertEqual(receipt['records'][0]['source_sha256'], digest(raw))
+
     def test_sql_apostrophes_comments_and_multiple_inserts(self):
         rows = parse_sql_rows(b"-- initial comment\nINSERT INTO legal (id,name) VALUES (1,'O''Brien'), (2,'Semi;colon'); /* middle */ INSERT INTO legal(id,name) VALUES (3,'Last');")
         self.assertEqual(rows, [('legal', {'id': 1, 'name': "O'Brien"}), ('legal', {'id': 2, 'name': 'Semi;colon'}), ('legal', {'id': 3, 'name': 'Last'})])
