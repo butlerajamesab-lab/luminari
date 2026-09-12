@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { TRPCError } from "@trpc/server";
 
 const mocks = vi.hoisted(() => ({
   query: vi.fn(),
@@ -327,5 +328,25 @@ describe("case intake continuity projection", () => {
       verification_record_count: 0,
       transition_count: 0,
     });
+  });
+
+  it("rejects invalid bridge case ids before reading downstream projections", async () => {
+    mocks.query.mockResolvedValueOnce({
+      rows: [
+        {
+          legacy_case_id: "invalid",
+          case_uuid: "e650c976-0178-4d72-9dda-092eddf3207a",
+        },
+      ],
+    });
+
+    await expect(
+      read_case_intake_continuity({ case_uuid: "e650c976-0178-4d72-9dda-092eddf3207a" }),
+    ).rejects.toMatchObject({
+      code: "NOT_FOUND",
+      message: "case_intake_continuity_bridge_invalid_case_id",
+    } satisfies Partial<TRPCError>);
+    expect(mocks.readIntegrity).not.toHaveBeenCalled();
+    expect(mocks.readLayer).not.toHaveBeenCalled();
   });
 });

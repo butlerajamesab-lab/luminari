@@ -133,6 +133,15 @@ function as_count(value: unknown): number {
   return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : 0;
 }
 
+function as_case_id(value: unknown): number {
+  const parsed = as_count(value);
+  if (parsed > 0) return parsed;
+  throw new TRPCError({
+    code: "NOT_FOUND",
+    message: "case_intake_continuity_bridge_invalid_case_id",
+  });
+}
+
 function count_value(counts: count_map, key: string) {
   counts[key] = (counts[key] ?? 0) + 1;
 }
@@ -382,7 +391,7 @@ export async function read_case_intake_continuity(
     });
   }
 
-  const case_id = as_count(bridge_row.legacy_case_id);
+  const case_id = as_case_id(bridge_row.legacy_case_id);
   const session_rows = await load_linked_sessions(bridge_row);
   const integrity = await read_case_intake_integrity_projection(case_id, {
     link_scope: "all",

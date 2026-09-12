@@ -625,7 +625,7 @@ describe("authenticated multipart document upload", () => {
       id: 501,
       caseId: 44,
       userId: 9,
-      metadata: {},
+      metadata: { existing_key: "preserve-me" },
     });
 
     const response = await post_file(contents, "init-origin.txt", {
@@ -635,6 +635,7 @@ describe("authenticated multipart document upload", () => {
 
     expect(response.status).toBe(200);
     expect(state.update_upload_session_metadata).toHaveBeenCalledWith(501, {
+      existing_key: "preserve-me",
       origin_context,
     });
     expect(state.log_audit).toHaveBeenCalledWith(expect.objectContaining({
