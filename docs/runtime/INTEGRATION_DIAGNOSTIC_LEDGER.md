@@ -1,50 +1,25 @@
-# Integration diagnostic ledger v1
+# Integration diagnostic ledger and case context
 
-This ledger is the source-controlled acceptance companion for issue #383.
+The ledger fixture is `config/integration-diagnostic-ledger-v1.json`, served under the existing administrator/system-read authentication for `/api/system/integration-ledger`. It records source families, relation counts, declared consumers, and explicit graph/link coverage. A relation count is not a distinct entity count or evidence that a UI workflow ran.
 
-## Authoritative boundaries
+Legal visibility is measured through `read_current_legal_authorities`, the existing reader shared by `canonicalCore.legalAuthorities` and Legal Library's Source Authorities tab (#639). Its inventory distinguishes ready references from held references. Readiness describes typed/jurisdiction-resolved source records; it does not verify legal accuracy or applicability. Held records retain their history and are not exposed as eligible source details. Statute/case-law compatibility readers remain separate and keep their original IDs.
 
-- Legal Library / Knowledge Backbone legal authority boundary: `public.v_lighthouse_legal_authority_catalog_v2`
-- Resource Directory boundary: `public.v_lighthouse_resource_program_catalog_v2`
-- Workflow / accountability boundary: `public.v_lighthouse_workflow_accountability_catalog_v1`
-- Case attachment boundary: `public.v_lighthouse_case_attachable_objects_v1`
-- Signal lineage boundary: `public.v_signal_lineage`
+A mismatch requires a successful zero result from the public reader while catalog-ready records exist. Failed counts remain null. Resource/workflow UI coverage remains `not_measured` until exercised. Missing relations and failed queries remain distinguishable from successful empty reads. The new ledger queries have acquisition/execution time limits; other pre-existing administrative endpoints are outside this change.
 
-## Current break in the runtime contract
+## Case identity and authorization
 
-The legal-library runtime previously required `legal_catalog_ready` before a current-corpus legal authority could appear. That meant the substrate could be populated through `v_lighthouse_legal_authority_catalog_v2` and `luminari_corpus_candidate_v1` while active runtime surfaces still rendered zero rows. This PR preserves the catalog/view boundary but stops silently treating unpublished current rows as absent: catalog-ready rows still win, and non-ready rows now surface as explicit substrate observations instead of being discarded.
+`luminari.get_action_context` and the Sunam `get_case_action_context` tool use **public.cases** IDs, matching `case_state`, `case_resource_links`, and `signal_artifact_case_links_v1`. The caller's authenticated user ID is passed outside tool arguments, and ownership is checked before reading private context. The legacy `getContext` uses its separate `luminari_cases` namespace and now requires ownership too. An unavailable legacy relation stays an error; equal numeric IDs never create a bridge.
 
-## Case Action Context contract
+Context surfaces have `items`, `availability`, `scope`, `returned`, and `has_more`. A failed surface does not erase successful surfaces. Browser lookup requires an explicit requested jurisdiction or the saved case-state jurisdiction; empty text results are not broadened. Search results are labeled browsing context, not case relationships.
 
-`case_action_context_v1` is a bounded retrieval contract that combines existing legal, resource, workflow, filing, enforcement, and signal read surfaces for a single case/problem context.
+Workflow references reuse Intake's governed registry and exact declared jurisdiction/claim bindings, including its explicit workflow aliases. Deadline references use the registry's claim-to-domain mapping and are labeled `domain_candidate_not_claim_specific`; this reader calculates no filing dates. Workflow steps are never counted as deadlines. Enforcement references require exact jurisdiction and the case's declared pipeline category. Signals are limited to existing reviewer-authored case links and retain their relationship, source snapshot, and hash.
 
-Guardrails:
+## Legal attachment lifecycle
 
-- No writes, promotions, or production mutations.
-- No new parallel schema.
-- No invented findings or convergences.
-- Returned rows keep their native semantics: source-backed observations, case links, signals, or legacy compatibility rows.
-- Filing deadlines remain source-text-only unless an incident date is supplied.
+Existing `case_state.committed_statute_ids` holds legal references; no parallel attachment table is introduced. Bare statute IDs stay compatible. Namespaced `runtime_statute:`, `case_law:`, and `legal_authority:` references are resolved exactly before a new attachment is saved. Empty or ambiguous identities cannot become browse queries. Source detail joins bind the original artifact, candidate hash, run, source locator, and source hash.
 
-## Fixtures
+Control Room lists saved references, opens the exact source through Legal Library, and removes the complete saved reference. Unavailable or no-longer-eligible records remain visible as saved unresolved references. Append/removal queries preserve other entries atomically. Mutations invalidate the commitment, reference-list, and case-context caches.
 
-The ledger fixture lives at `config/integration-diagnostic-ledger-v1.json`.
+## Verification boundaries
 
-It records:
-
-- source-family coverage
-- canonical object families per source family
-- graph-edge coverage
-- runtime projection coverage
-- stranded/unpublished record accounting
-- known empty-surface vs populated-substrate mismatch classes
-
-## Availability and measurement semantics
-
-Each projection has an explicit `availability.status`: `available`, `empty`, `unavailable`, or `error`. Successful zero counts are empty. Missing relations/access failures are unavailable; other query failures are errors. Failed counts remain null with error code/message retained. One projection failure does not erase measurements from another.
-
-`catalog_ready` and `stranded` measure publication-readiness predicates. They do not establish runtime visibility. Legal `visible` is measured separately through the existing runtime statistics reader and has its own `legal_runtime_measurement.availability`; resource/workflow visibility is null until measured. The configured `runtime_projection_coverage` entries say `measurement_state: not_measured` and are not route execution evidence. Family row totals are null if any constituent count fails; totals are not distinct-entity counts.
-
-In Case Action Context, `resources.attached_to_case` and `signals.lineage` are nullable. On a successful empty query they are empty arrays. On failure they are null, with `resources.attachment_availability` or `signals.availability` retaining the failure. Consumers must inspect availability rather than treating null as zero results. Case-resource link measurements include only links whose `removed_at` is null.
-
-Regression tests cover successful emptiness, missing relations, query errors, independent surface measurements, incomplete totals, and a successful measured-zero mismatch. These checks do not certify deployment, authorization, query performance, or user-facing traversal.
+Regression coverage includes denied ownership, distinct case namespaces, malformed/ambiguous identities, reference round trips, preservation of partial failures, empty searches, exact scope, deadline domain semantics, held-publication counts, and pagination beyond the final page. Actual emitted legal queries are captured by the opt-in `LEGAL_QUERY_CAPTURE_PATH` fixture and can be executed read-only against the live schema. Build/test results and deployed checks are recorded separately in the dated release evidence. Tests are not proof of source legal accuracy, canonical promotion, or statistical correlation validity.

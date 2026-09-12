@@ -13,7 +13,8 @@ describe("legal universe is open-ended", () => {
   });
 
   it("keeps legal authority discovery paged but complete", () => {
-    const router = read("server/routers/canonical-core-router.ts");
+    const router = read("server/routers/canonical-core-router.ts")
+      + read("server/services/current-legal-authority-reader.ts");
     expect(router).toContain("complete filtered universe");
     expect(router).toContain("legalAuthorities");
     expect(router).toContain("filtered_total");

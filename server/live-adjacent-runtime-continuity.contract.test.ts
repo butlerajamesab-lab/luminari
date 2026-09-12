@@ -8,6 +8,8 @@ vi.mock("./db", () => ({
   getPool: () => ({ query }),
 }));
 
+vi.mock("./services/current-legal-authority-reader", () => ({ read_current_legal_authorities: async () => ({ total: 11 }) }));
+
 import {
   getRuntimeLegalLibraryStats,
   searchRuntimeCaseLaw,
@@ -89,36 +91,16 @@ describe("live adjacent runtime continuity", () => {
     );
   });
 
-  it("returns legal-library stats that account for stranded current-corpus authorities", async () => {
-    query.mockResolvedValue({
-      rows: [{
-        statutes: 7,
-        case_law: 3,
-        enforcement_records: 2,
-        weak_joints: 1,
-        contradictions: 4,
-        current_corpus_legal_authorities: 11,
-        stranded_current_corpus_statutes: 5,
-        stranded_current_corpus_case_law: 2,
-        stranded_current_corpus_legal_authorities: 6,
-      }],
+  it("counts the actual list contracts and preserves unavailable counts", async () => {
+    query.mockImplementation(async (sql: string) => {
+      if (sql.includes('as enforcement_records')) return { rows: [{ enforcement_records: 2, weak_joints: 1, contradictions: 4, held_legal_references: 6 }] };
+      return { rows: [{ count: sql.includes('CURRENT_CASE_CTE') ? 3 : 7 }] };
     });
-
-    await expect(getRuntimeLegalLibraryStats("WA")).resolves.toEqual({
-      statutes: 7,
-      caseLaw: 3,
-      enforcementRecords: 2,
-      weakJoints: 1,
-      contradictions: 4,
-      currentCorpusLegalAuthorities: 11,
-      strandedCurrentCorpusStatutes: 5,
-      strandedCurrentCorpusCaseLaw: 2,
-      strandedCurrentCorpusLegalAuthorities: 6,
-    });
-    expect(query).toHaveBeenCalledWith(
-      expect.stringContaining("stranded_current_corpus_legal_authorities"),
-      ["WA"],
-    );
+    const stats = await getRuntimeLegalLibraryStats("WA");
+    expect(stats).toMatchObject({ statutes: 7, current_corpus_legal_authorities: 11, held_legal_references: 6 });
+    expect(query.mock.calls.filter(([sql]) => sql.includes('from combined'))).toHaveLength(2);
+    query.mockResolvedValue({ rows: [] });
+    await expect(getRuntimeLegalLibraryStats()).rejects.toThrow('count was not returned');
   });
 
   it("preserves canonical legal ids while exposing a separate runtime entity key", async () => {

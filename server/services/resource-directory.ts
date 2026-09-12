@@ -606,6 +606,13 @@ export async function getGovOfficeDetail(officeId: string) {
       select jsonb_build_object(
         'resource_entity_id', g.office_id,
         'canonical_id', 'govoff:' || g.office_id,
+        'office_id', g.office_id,
+        'office_type', g.office_type,
+        'agency_key', g.agency_key,
+        'source_table', 'gov_offices',
+        'locator_source_id', g.source_id,
+        'source_hash8', g.source_hash8,
+        'source_provenance', g.provenance,
         'resource_name', g.office_name,
         'source_resource_name', g.office_name,
         'resource_type', g.office_type,

@@ -14,7 +14,7 @@ export const SUNAM_SERVICE_ONLY_TOOLS = [
     type: "function" as const,
     function: {
       name: "get_case_context",
-      description: "Get unified context for a case. Returns case data, jurisdiction, workflows, programs, resources, signals, legal library pull-through, action context, and diagnostics. Service layer only - no SQL.",
+      description: "Read the separately owned legacy registry case context. This namespace is not public.cases; unavailable storage remains an error.",
       parameters: {
         type: "object",
         properties: {
@@ -30,14 +30,13 @@ export const SUNAM_SERVICE_ONLY_TOOLS = [
     type: "function" as const,
     function: {
       name: "get_case_action_context",
-      description: "Get the bounded Case Action Context for a case. Combines existing legal, resource, workflow, filing, enforcement, and signal read surfaces without inventing findings.",
+      description: "Get bounded context for an owned public.cases ID (the Lighthouse case workspace). Combines existing legal, resource, workflow, filing, enforcement, and signal read surfaces without inventing findings.",
       parameters: {
         type: "object",
         properties: {
           case_id: { type: "number", description: "The case ID to fetch context for" },
           problem_context: { type: "string", description: "Optional case/problem search text." },
-          incident_date: { type: "string", description: "Optional YYYY-MM-DD incident date for filing deadline reads." },
-          as_of_date: { type: "string", description: "Optional YYYY-MM-DD as-of date for filing deadline reads." },
+          jurisdiction: { type: "string", description: "Optional explicit jurisdiction for browsing; otherwise uses the saved case-state jurisdiction." },
           limit_per_surface: { type: "number", description: "Optional per-surface result bound (default 6, max 25)." }
         },
         required: ["case_id"],

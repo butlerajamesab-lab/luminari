@@ -19,7 +19,7 @@ describe("whole-corpus civic object runtime boundary", () => {
     expect(tools).not.toContain('name: "get_civic_object_state"');
     expect(tools).not.toContain('name: "search_civic_objects"');
     expect(executor).toContain('case "get_entities":');
-    expect(executor).toContain("dispatchServiceTool(toolName, args)");
+    expect(executor).toContain("dispatchServiceTool(toolName, args, Number(executedBy))");
   });
 
   it("preserves legacy registry entity reads while adding whole-corpus modes", () => {

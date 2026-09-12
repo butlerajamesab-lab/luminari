@@ -1,10 +1,12 @@
 import crypto from "node:crypto";
+import { StringDecoder } from "node:string_decoder";
 import JSZip from "jszip";
+import { workbookSheets, create_worksheet_validator, resolve_shared_string } from "./xlsx-workbook-structure";
 import { getPool } from "../db";
 import { SUPABASE_PROJECT } from "../_core/health-diagnostics";
 
-export const FRESH_CORPUS_ENGINE_VERSION = "fresh_corpus_reconciliation_v1.2.2";
-export const FRESH_CORPUS_PARSER_VERSION = "fresh_registry_typed_parser_v1.2.2";
+export const FRESH_CORPUS_ENGINE_VERSION = "fresh_corpus_reconciliation_v1.2.4";
+export const FRESH_CORPUS_PARSER_VERSION = "fresh_registry_typed_parser_v1.2.4";
 
 const STATE_NAMES: Record<string, string> = {
   Alabama: "AL", Alaska: "AK", Arizona: "AZ", Arkansas: "AR", California: "CA",
@@ -310,7 +312,7 @@ function parseXlsxRowXml(xml: string, shared: string[], fallbackRow: number): Pa
     const type = attrs.match(/\bt="([^"]+)"/)?.[1] ?? null;
     const style = attrs.match(/\bs="([^"]+)"/)?.[1] ?? null;
     const raw = body.match(/<v>([\s\S]*?)<\/v>/)?.[1] ?? body.match(/<is>([\s\S]*?)<\/is>/)?.[1] ?? "";
-    const value = type === "s" ? shared[Number(raw)] ?? "" : type === "inlineStr" ? xmlCellText(raw) : decodeXmlEntities(raw).trim();
+    const value = type === "s" ? resolve_shared_string(raw, shared) : type === "inlineStr" ? xmlCellText(raw) : decodeXmlEntities(raw).trim();
     const formulaXml = body.match(/<f(?:\s[^>]*)?>([\s\S]*?)<\/f>/)?.[1];
     const formula = formulaXml === undefined ? null : decodeXmlEntities(formulaXml).trim();
     values[index] = value;
@@ -326,8 +328,11 @@ async function forEachWorksheetXmlRow(
 ): Promise<void> {
   let carry = "";
   let fallbackRow = 0;
-  const processChunk = async (rawChunk: Buffer) => {
-    carry += rawChunk.toString("utf8");
+  const decoder = new StringDecoder("utf8");
+  const validator = create_worksheet_validator(entry.name);
+  const processChunk = async (text: string) => {
+    validator.consume_chunk(text);
+    carry += text;
     let rowEnd = carry.indexOf("</row>");
     while (rowEnd >= 0) {
       const throughRow = carry.slice(0, rowEnd + "</row>".length);
@@ -353,12 +358,19 @@ async function forEachWorksheetXmlRow(
     stream.on("data", (chunk: Buffer | Uint8Array | string) => {
       stream.pause();
       processing = processing
-        .then(() => processChunk(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)))
+        .then(() => processChunk(decoder.write(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))))
         .then(() => { if (!failed) stream.resume(); })
         .catch((error: unknown) => { failed = true; reject(error); });
     });
     stream.on("error", (error: unknown) => { failed = true; reject(error); });
-    stream.on("end", () => { processing.then(() => { if (!failed) resolve(); }, reject); });
+    stream.on("end", () => {
+      processing.then(async () => {
+        if (failed) return;
+        await processChunk(decoder.end());
+        validator.finish();
+        resolve();
+      }).catch(reject);
+    });
     stream.resume();
   });
 }
@@ -375,21 +387,11 @@ export async function forEachXlsxRow(
   }
   const workbookXml = await zip.file("xl/workbook.xml")?.async("text");
   const relsXml = await zip.file("xl/_rels/workbook.xml.rels")?.async("text");
-  if (!workbookXml || !relsXml) return 0;
-  const relationships = new Map<string, string>();
-  for (const rel of relsXml.matchAll(/<Relationship\b[^>]*Id="([^"]+)"[^>]*Target="([^"]+)"[^>]*\/?\s*>/g)) {
-    relationships.set(rel[1], rel[2].replace(/^\//, ""));
-  }
-  const sheets: Array<{ name: string; path: string }> = [];
-  for (const sheet of workbookXml.matchAll(/<sheet\b[^>]*name="([^"]+)"[^>]*r:id="([^"]+)"[^>]*\/?\s*>/g)) {
-    const target = relationships.get(sheet[2]);
-    if (!target) continue;
-    sheets.push({ name: decodeXmlEntities(sheet[1]), path: target.startsWith("xl/") ? target : `xl/${target.replace(/^\.\//, "")}` });
-  }
+  const sheets = workbookSheets(workbookXml, relsXml);
   let emitted = 0;
   for (const sheet of sheets) {
     const entry = zip.file(sheet.path);
-    if (!entry) continue;
+    if (!entry) throw new Error(`xlsx_worksheet_part_missing:${sheet.name}:${sheet.path}`);
     let header: { row: ParsedXlsxRow; columns: string[]; keys: string[] } | null = null;
     const pending: ParsedXlsxRow[] = [];
     const emit = async (parsed: ParsedXlsxRow, rowRole: XlsxSourceRow["row_role"]) => {

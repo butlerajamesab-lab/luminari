@@ -20,6 +20,8 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import * as registry_db from "../registry-db";
 import { pool } from "../db";
+import { loadProgramResources } from "../services/registry-program-resource-bindings";
+import { registryJurisdictionJoin } from "../services/registry-jurisdiction-sql";
 
 export const registryRouter = router({
   listJurisdictions: publicProcedure.query(async () => {
@@ -101,13 +103,7 @@ export const registryRouter = router({
                 p.apply_notes AS apply_notes, COALESCE(NULLIF(p.jurisdiction_id, ''), p.jurisdiction_id_rp) AS jurisdiction_id,
                 j.abbreviation AS state_code, j.name AS jurisdiction_name
          FROM registry_programs p
-         LEFT JOIN registry_jurisdictions j ON
-           COALESCE(NULLIF(p.jurisdiction_id, ''), p.jurisdiction_id_rp) = j.id
-           OR UPPER(COALESCE(NULLIF(p.jurisdiction_id, ''), p.jurisdiction_id_rp)) = UPPER(j.abbreviation)
-           OR LOWER(COALESCE(NULLIF(p.jurisdiction_id, ''), p.jurisdiction_id_rp)) = LOWER('us-' || j.abbreviation)
-           OR LOWER(COALESCE(NULLIF(p.jurisdiction_id, ''), p.jurisdiction_id_rp)) = LOWER('j_' || j.abbreviation)
-           OR LOWER(COALESCE(NULLIF(p.jurisdiction_id, ''), p.jurisdiction_id_rp)) =
-              LOWER('j_' || REPLACE(REGEXP_REPLACE(j.name, '\\s+\\([^)]+\\)$', ''), ' ', '_'))
+         ${registryJurisdictionJoin("COALESCE(NULLIF(p.jurisdiction_id, ''), p.jurisdiction_id_rp)", 'j')}
          ${where}
          ORDER BY p.name
          LIMIT ${limitPlaceholder} OFFSET ${offsetPlaceholder}`,
@@ -115,18 +111,12 @@ export const registryRouter = router({
       );
       const countResult = await pool.query(
         `SELECT COUNT(*) as total FROM registry_programs p
-         LEFT JOIN registry_jurisdictions j ON
-           COALESCE(NULLIF(p.jurisdiction_id, ''), p.jurisdiction_id_rp) = j.id
-           OR UPPER(COALESCE(NULLIF(p.jurisdiction_id, ''), p.jurisdiction_id_rp)) = UPPER(j.abbreviation)
-           OR LOWER(COALESCE(NULLIF(p.jurisdiction_id, ''), p.jurisdiction_id_rp)) = LOWER('us-' || j.abbreviation)
-           OR LOWER(COALESCE(NULLIF(p.jurisdiction_id, ''), p.jurisdiction_id_rp)) = LOWER('j_' || j.abbreviation)
-           OR LOWER(COALESCE(NULLIF(p.jurisdiction_id, ''), p.jurisdiction_id_rp)) =
-              LOWER('j_' || REPLACE(REGEXP_REPLACE(j.name, '\\s+\\([^)]+\\)$', ''), ' ', '_'))
+         ${registryJurisdictionJoin("COALESCE(NULLIF(p.jurisdiction_id, ''), p.jurisdiction_id_rp)", 'j')}
          ${where}`,
         params,
       );
       return {
-        programs: rowsResult.rows as any[],
+        programs: await loadProgramResources(rowsResult.rows as any[], pool),
         total: Number(countResult.rows[0]?.total ?? 0),
       };
     }),
@@ -150,17 +140,11 @@ export const registryRouter = router({
                 p.apply_notes AS apply_notes, COALESCE(NULLIF(p.jurisdiction_id, ''), p.jurisdiction_id_rp) AS jurisdiction_id,
                 j.abbreviation AS state_code, j.name AS jurisdiction_name
          FROM registry_programs p
-         LEFT JOIN registry_jurisdictions j ON
-           COALESCE(NULLIF(p.jurisdiction_id, ''), p.jurisdiction_id_rp) = j.id
-           OR UPPER(COALESCE(NULLIF(p.jurisdiction_id, ''), p.jurisdiction_id_rp)) = UPPER(j.abbreviation)
-           OR LOWER(COALESCE(NULLIF(p.jurisdiction_id, ''), p.jurisdiction_id_rp)) = LOWER('us-' || j.abbreviation)
-           OR LOWER(COALESCE(NULLIF(p.jurisdiction_id, ''), p.jurisdiction_id_rp)) = LOWER('j_' || j.abbreviation)
-           OR LOWER(COALESCE(NULLIF(p.jurisdiction_id, ''), p.jurisdiction_id_rp)) =
-              LOWER('j_' || REPLACE(REGEXP_REPLACE(j.name, '\\s+\\([^)]+\\)$', ''), ' ', '_'))
+         ${registryJurisdictionJoin("COALESCE(NULLIF(p.jurisdiction_id, ''), p.jurisdiction_id_rp)", 'j')}
          WHERE p.id = $1`,
         [input.programId],
       );
-      const program = programResult.rows[0];
+      const [program] = await loadProgramResources(programResult.rows as any[], pool);
       if (!program) throw new TRPCError({ code: "NOT_FOUND", message: "Program not found" });
 
       const oversightResult = await pool.query(
@@ -169,29 +153,17 @@ export const registryRouter = router({
                 ob.contact_rob AS contact, ob.pathway_rob AS pathway, ob.escalation_rob AS escalation,
                 ob.jurisdiction_id_rob AS jurisdiction_id
          FROM registry_oversight_bodies ob
-         LEFT JOIN registry_jurisdictions oj ON
-           ob.jurisdiction_id_rob = oj.id
-           OR UPPER(ob.jurisdiction_id_rob) = UPPER(oj.abbreviation)
-           OR LOWER(ob.jurisdiction_id_rob) = LOWER('us-' || oj.abbreviation)
-           OR LOWER(ob.jurisdiction_id_rob) = LOWER('j_' || oj.abbreviation)
-           OR LOWER(ob.jurisdiction_id_rob) =
-              LOWER('j_' || REPLACE(REGEXP_REPLACE(oj.name, '\\s+\\([^)]+\\)$', ''), ' ', '_'))
+         ${registryJurisdictionJoin('ob.jurisdiction_id_rob', 'oj')}
          WHERE ob.jurisdiction_id_rob = $1 OR oj.abbreviation = $2
          ORDER BY ob.agency_name_rob`,
         [program.jurisdiction_id, program.state_code],
       );
 
       const workflowResult = await pool.query(
-        `SELECT id, workflow_type_rw AS workflow_type, primary_statutes_rw AS primary_statutes,
-                steps_rw AS steps, deadlines_rw AS deadlines, escalation_paths_rw AS escalation_paths
+        `SELECT w.id, w.workflow_type_rw AS workflow_type, w.primary_statutes_rw AS primary_statutes,
+                w.steps_rw AS steps, w.deadlines_rw AS deadlines, w.escalation_paths_rw AS escalation_paths
          FROM registry_workflows w
-         LEFT JOIN registry_jurisdictions wj ON
-           w.jurisdiction_id_rw = wj.id
-           OR UPPER(w.jurisdiction_id_rw) = UPPER(wj.abbreviation)
-           OR LOWER(w.jurisdiction_id_rw) = LOWER('us-' || wj.abbreviation)
-           OR LOWER(w.jurisdiction_id_rw) = LOWER('j_' || wj.abbreviation)
-           OR LOWER(w.jurisdiction_id_rw) =
-              LOWER('j_' || REPLACE(REGEXP_REPLACE(wj.name, '\\s+\\([^)]+\\)$', ''), ' ', '_'))
+         ${registryJurisdictionJoin('w.jurisdiction_id_rw', 'wj')}
          WHERE w.jurisdiction_id_rw = $1 OR wj.abbreviation = $2
          ORDER BY w.workflow_type_rw`,
         [program.jurisdiction_id, program.state_code],
@@ -201,13 +173,7 @@ export const registryRouter = router({
         `SELECT p2.id, p2.name AS name, p2.agency AS agency, p2.category AS category,
                 p2.contact AS contact, p2.website AS website
          FROM registry_programs p2
-         LEFT JOIN registry_jurisdictions p2j ON
-           COALESCE(NULLIF(p2.jurisdiction_id, ''), p2.jurisdiction_id_rp) = p2j.id
-           OR UPPER(COALESCE(NULLIF(p2.jurisdiction_id, ''), p2.jurisdiction_id_rp)) = UPPER(p2j.abbreviation)
-           OR LOWER(COALESCE(NULLIF(p2.jurisdiction_id, ''), p2.jurisdiction_id_rp)) = LOWER('us-' || p2j.abbreviation)
-           OR LOWER(COALESCE(NULLIF(p2.jurisdiction_id, ''), p2.jurisdiction_id_rp)) = LOWER('j_' || p2j.abbreviation)
-           OR LOWER(COALESCE(NULLIF(p2.jurisdiction_id, ''), p2.jurisdiction_id_rp)) =
-              LOWER('j_' || REPLACE(REGEXP_REPLACE(p2j.name, '\\s+\\([^)]+\\)$', ''), ' ', '_'))
+         ${registryJurisdictionJoin("COALESCE(NULLIF(p2.jurisdiction_id, ''), p2.jurisdiction_id_rp)", 'p2j')}
          WHERE (COALESCE(NULLIF(p2.jurisdiction_id, ''), p2.jurisdiction_id_rp) = $1 OR p2j.abbreviation = $2)
            AND p2.category = $3
            AND p2.id != $4
@@ -284,13 +250,7 @@ export const registryRouter = router({
                 p.eligibility AS eligibility, p.contact AS contact, COALESCE(NULLIF(p.contact_website_norm, ''), NULLIF(p.website, '')) AS website,
                 p.apply_notes AS apply_notes, j.abbreviation AS state_code, j.name AS jurisdiction_name
          FROM registry_programs p
-         LEFT JOIN registry_jurisdictions j ON
-           COALESCE(NULLIF(p.jurisdiction_id, ''), p.jurisdiction_id_rp) = j.id
-           OR UPPER(COALESCE(NULLIF(p.jurisdiction_id, ''), p.jurisdiction_id_rp)) = UPPER(j.abbreviation)
-           OR LOWER(COALESCE(NULLIF(p.jurisdiction_id, ''), p.jurisdiction_id_rp)) = LOWER('us-' || j.abbreviation)
-           OR LOWER(COALESCE(NULLIF(p.jurisdiction_id, ''), p.jurisdiction_id_rp)) = LOWER('j_' || j.abbreviation)
-           OR LOWER(COALESCE(NULLIF(p.jurisdiction_id, ''), p.jurisdiction_id_rp)) =
-              LOWER('j_' || REPLACE(REGEXP_REPLACE(j.name, '\\s+\\([^)]+\\)$', ''), ' ', '_'))
+         ${registryJurisdictionJoin("COALESCE(NULLIF(p.jurisdiction_id, ''), p.jurisdiction_id_rp)", 'j')}
          WHERE p.category IN (${placeholders})
          ${stateFilter}
          ORDER BY p.category, p.name
@@ -299,7 +259,7 @@ export const registryRouter = router({
       );
 
       return {
-        programs: rowsResult.rows as any[],
+        programs: await loadProgramResources(rowsResult.rows as any[], pool),
         adjacent_categories: adjacent,
       };
     }),
@@ -364,13 +324,7 @@ export const registryRouter = router({
                 ob.contact_rob AS contact, ob.pathway_rob AS pathway, ob.escalation_rob AS escalation,
                 j.abbreviation AS state_code, j.name AS jurisdiction_name
          FROM registry_oversight_bodies ob
-         LEFT JOIN registry_jurisdictions j ON
-           ob.jurisdiction_id_rob = j.id
-           OR UPPER(ob.jurisdiction_id_rob) = UPPER(j.abbreviation)
-           OR LOWER(ob.jurisdiction_id_rob) = LOWER('us-' || j.abbreviation)
-           OR LOWER(ob.jurisdiction_id_rob) = LOWER('j_' || j.abbreviation)
-           OR LOWER(ob.jurisdiction_id_rob) =
-              LOWER('j_' || REPLACE(REGEXP_REPLACE(j.name, '\\s+\\([^)]+\\)$', ''), ' ', '_'))
+         ${registryJurisdictionJoin('ob.jurisdiction_id_rob', 'j')}
          ${where}
          ORDER BY ob.agency_name_rob
          LIMIT ${limitPlaceholder} OFFSET ${offsetPlaceholder}`,
@@ -378,13 +332,7 @@ export const registryRouter = router({
       );
       const countResult = await pool.query(
         `SELECT COUNT(*) as total FROM registry_oversight_bodies ob
-         LEFT JOIN registry_jurisdictions j ON
-           ob.jurisdiction_id_rob = j.id
-           OR UPPER(ob.jurisdiction_id_rob) = UPPER(j.abbreviation)
-           OR LOWER(ob.jurisdiction_id_rob) = LOWER('us-' || j.abbreviation)
-           OR LOWER(ob.jurisdiction_id_rob) = LOWER('j_' || j.abbreviation)
-           OR LOWER(ob.jurisdiction_id_rob) =
-              LOWER('j_' || REPLACE(REGEXP_REPLACE(j.name, '\\s+\\([^)]+\\)$', ''), ' ', '_'))
+         ${registryJurisdictionJoin('ob.jurisdiction_id_rob', 'j')}
          ${where}`,
         params,
       );

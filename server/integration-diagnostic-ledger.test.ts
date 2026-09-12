@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 const { query } = vi.hoisted(() => ({ query: vi.fn() }));
-vi.mock("./db", () => ({ getPool: () => ({ query }) }));
+vi.mock("./db-legacy", () => ({ query_with_diagnostics: query }));
+vi.mock("./services/current-legal-authority-reader", () => ({ read_current_legal_authorities: async () => { const result = await query("current_corpus_legal_authorities"); return { total: result.rows[0].current_corpus_legal_authorities }; } }));
 import { build_integration_diagnostic_ledger } from "./integration-diagnostic-ledger";
 
 function database_result(sql: string) {

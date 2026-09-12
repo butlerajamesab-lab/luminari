@@ -1,4 +1,5 @@
 import { getPool } from './db';
+import { connectSourceWorkflows, SOURCE_WORKFLOW_QUERY } from './engines/intake-spine/source-workflow-registry';
 import {
   GOVERNED_LEGAL_REGISTRY_CONTRACT_VERSION,
   GovernedClaimElementRecord,
@@ -59,9 +60,10 @@ function require_text(value: unknown, field: string, record_id: string | number)
  * or legacy scoring field. The resulting frozen manifest is the R input to the
  * pure Intake layers and is hashed before execution.
  */
-export async function load_governed_legal_registry(): Promise<governed_legal_registry_snapshot> {
-  const pool = getPool();
-  const [claims_result, elements_result, deadlines_result, workflows_result, steps_result] = await Promise.all([
+export async function load_governed_legal_registry(
+  pool: Pick<ReturnType<typeof getPool>, 'query'> = getPool(),
+): Promise<governed_legal_registry_snapshot> {
+  const [claims_result, elements_result, deadlines_result, workflows_result, steps_result, source_workflows_result] = await Promise.all([
     pool.query(`
       select id, claim_type_id, domain, canonical_name, description,
              governing_standards, required_evidence, allowed_evidence,
@@ -114,6 +116,7 @@ export async function load_governed_legal_registry(): Promise<governed_legal_reg
       where workflow_id is not null
       order by workflow_id, coalesce(step_order, step_number, id), id
     `),
+    pool.query(SOURCE_WORKFLOW_QUERY),
   ]);
 
   const claims: GovernedClaimRecord[] = [];
@@ -215,6 +218,7 @@ export async function load_governed_legal_registry(): Promise<governed_legal_reg
     steps: steps_by_workflow.get(Number(row.id)) || [],
   }));
 
+  const source_workflows = connectSourceWorkflows(source_workflows_result.rows);
   const manifest = normalizeGovernedLegalRegistry({
     contract_version: GOVERNED_LEGAL_REGISTRY_CONTRACT_VERSION,
     source_tables: [
@@ -223,11 +227,15 @@ export async function load_governed_legal_registry(): Promise<governed_legal_reg
       { table_name: 'legal_workflow_deadlines', posture: 'verified_deadline_registry' },
       { table_name: 'workflow_master', posture: 'procedural_workflow_registry' },
       { table_name: 'workflow_steps', posture: 'procedural_workflow_registry' },
+      { table_name: 'workflow_registry', posture: 'procedural_workflow_registry' },
+      { table_name: 'state_directory_workflow_promotion', posture: 'procedural_workflow_registry' },
+      { table_name: 'state_directory_logical_record', posture: 'procedural_workflow_registry' },
     ],
     claims,
     elements: Array.from(elements_by_key.values()),
     deadlines,
-    workflows,
+    workflows: [...workflows, ...source_workflows.workflows],
+    workflow_holds: source_workflows.holds,
   });
 
   return {

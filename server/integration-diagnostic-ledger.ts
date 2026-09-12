@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { getPool as get_pool } from "./db";
-import { getRuntimeLegalLibraryStats as get_runtime_legal_library_stats } from "./legal-library-runtime-db";
+import { query_with_diagnostics } from "./db-legacy";
+import { read_current_legal_authorities } from "./services/current-legal-authority-reader";
 import { read_availability, type read_availability_result } from "./read-availability";
 
 const FIXTURE_PATH = resolve(process.cwd(), "config/integration-diagnostic-ledger-v1.json");
@@ -24,10 +24,14 @@ function unknown_projection(error: unknown): projection_read {
   return { visible: null, populated: null, catalog_ready: null, stranded: null, availability: read_availability(null, error) };
 }
 
+async function ledger_query(sql: string) {
+  return query_with_diagnostics<Record<string, unknown>>(sql, [], { label: "integration_ledger", pool_acquire_timeout_ms: 1_000, query_timeout_ms: 5_000 });
+}
+
 async function count_relation(relation: string, active_only = false) {
   try {
     if (!/^public\.[a-z0-9_]+$/.test(relation)) throw new Error("Unsupported relation name in integration ledger fixture");
-    const { rows } = await get_pool().query(`select count(*)::int as count from ${relation}${active_only ? " where removed_at is null" : ""}`);
+    const { rows } = await ledger_query(`select count(*)::int as count from ${relation}${active_only ? " where removed_at is null" : ""}`);
     const count = measured_count(rows[0]?.count);
     return { relation, count, available: true, ...read_availability(count) };
   } catch (error) {
@@ -45,7 +49,7 @@ function measured_count(value: unknown): number {
 async function read_projection(relation: string, readiness: string, predicate = "true"): Promise<projection_read> {
   try {
     // Identifiers come only from the three fixed calls below.
-    const { rows } = await get_pool().query(`select count(*)::int as populated,
+    const { rows } = await ledger_query(`select count(*)::int as populated,
       count(*) filter (where ${readiness})::int as catalog_ready,
       count(*) filter (where ${readiness} is not true)::int as stranded
       from ${relation} where ${predicate}`);
@@ -66,7 +70,7 @@ export async function build_integration_diagnostic_ledger() {
       schema_version: "1.0.0", ledger_id: "integration_diagnostic_ledger_v1", reference_issue: "#383",
       source_family_coverage: [], graph_edge_coverage: [], runtime_projection_coverage: [],
       semantic_layers: [], known_surface_mismatches: [],
-      legal_runtime_measurement: { count: null, availability: read_availability(null, error), source: "getRuntimeLegalLibraryStats" },
+      legal_runtime_measurement: { count: null, availability: read_availability(null, error), source: "read_current_legal_authorities" },
       link_availability: { case_resource_links: read_availability(null, error), signal_case_links: read_availability(null, error) },
       stranded_unpublished_records: {
         legal_authorities: unknown_projection(error), resources: unknown_projection(error), workflows: unknown_projection(error),
@@ -94,22 +98,22 @@ export async function build_integration_diagnostic_ledger() {
   let runtime_count: number | null = null;
   let runtime_availability: read_availability_result;
   try {
-    const stats = await get_runtime_legal_library_stats();
-    runtime_count = measured_count(stats.currentCorpusLegalAuthorities);
+    const catalog = await read_current_legal_authorities({ limit: 1 });
+    runtime_count = measured_count(catalog.total);
     runtime_availability = read_availability(runtime_count);
   } catch (error) { runtime_availability = read_availability(null, error); }
   const known_surface_mismatches: Array<Record<string, unknown>> = [];
-  if (legal.populated !== null && legal.populated > 0 && runtime_count === 0) {
+  if (legal.catalog_ready !== null && legal.catalog_ready > 0 && runtime_count === 0) {
     known_surface_mismatches.push({ surface: "/legal-library", authoritative_boundary: "public.v_lighthouse_legal_authority_catalog_v2",
       populated_substrate: legal.populated, visible_projection: runtime_count,
-      break_contract: "populated legal substrate returned no current-corpus authorities through the runtime reader" });
+      break_contract: "catalog-ready legal substrate returned no current-corpus references through the runtime reader" });
   }
   return {
     ...fixture, generated_at: new Date().toISOString(), source_family_coverage, graph_edge_coverage,
     runtime_projection_coverage: fixture.source_families.flatMap(family => family.runtime_surfaces.map(surface => ({
       family_key: family.family_key, ...surface, measurement_state: "not_measured", runtime_count: null,
     }))),
-    legal_runtime_measurement: { count: runtime_count, availability: runtime_availability, source: "getRuntimeLegalLibraryStats" },
+    legal_runtime_measurement: { count: runtime_count, availability: runtime_availability, source: "read_current_legal_authorities" },
     stranded_unpublished_records: {
       legal_authorities: { ...legal, visible: runtime_count },
       resources: { ...resources, visible: null }, workflows: { ...workflows, visible: null },

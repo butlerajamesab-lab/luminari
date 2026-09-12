@@ -1,0 +1,117 @@
+{
+  "admission_changes": 0,
+  "decision": "No additional procedural admission is supported by retrieved explicit bindings.",
+  "holds": {
+    "evidence_shapes": {
+      "legacy_workflow": {
+        "escalationEmpty": 5,
+        "escalationNonempty": 15,
+        "filingMethodsType": {
+          "array": 20
+        },
+        "relatedStatutesNonempty": 8,
+        "rows": 20,
+        "withPortal": 17,
+        "withSourceCoordinates": 0,
+        "withSourceDocx": 0
+      },
+      "seeded_resource": {
+        "escalationEmpty": 161,
+        "escalationNonempty": 0,
+        "filingMethodsType": {
+          "string": 161
+        },
+        "relatedStatutesNonempty": 0,
+        "rows": 161,
+        "withPortal": 3,
+        "withSourceCoordinates": 140,
+        "withSourceDocx": 159
+      }
+    },
+    "legacy_jurisdictions": {
+      "federal_or_united_states": 14,
+      "unspecified": 3,
+      "washington": 3
+    },
+    "legacy_procedural_rows": 20,
+    "logical_canonical_bindings": 0,
+    "promotion_bindings": 0,
+    "seeded_resource_rows": 161,
+    "seeded_types": {
+      "legal_aid": 153,
+      "workflow_support": 8
+    },
+    "structured_steps_arrays": 0,
+    "total": 181
+  },
+  "inspected_relations": [
+    "workflow_registry",
+    "state_directory_workflow_promotion",
+    "state_directory_logical_record",
+    "claim_catalog",
+    "canonical_claim_catalog",
+    "claim_definitions",
+    "claim_validation_rules",
+    "claim_element_matrix",
+    "workflow_routes",
+    "workflow_definitions",
+    "procedural_paths",
+    "registry_programs",
+    "registry_programs_crosswalk",
+    "knowledge_cross_refs",
+    "luminari_canonical_id_registry",
+    "monolith_decomposition_map",
+    "substrate_candidate_disposition"
+  ],
+  "missing_claims": {
+    "active_claim_catalog_exact_ids": 0,
+    "canonical_claim_catalog_exact_ids": 0,
+    "claim_definitions_exact_ids": 0,
+    "claim_element_matrix_exact_ids": 0,
+    "claim_validation_rules_exact_ids": 0,
+    "explicit_source_payload_claim_key_records": 0
+  },
+  "needs": [
+    "144: explicit reviewed claim-type binding or separately governed claim definitions with supporting source and elements; no synonym guessing.",
+    "161: retain as existing resources; their payloads do not provide ordered procedures.",
+    "20: identity-bound immutable source records, explicit ordered steps and jurisdiction coverage before reader admission.",
+    "3 of the 20 legacy records additionally lack jurisdiction and verification status."
+  ],
+  "observed_date": "2026-09-12",
+  "production_writes": 0,
+  "resource_comparison": {
+    "explicit_crosswalk_rows": 0,
+    "jurisdiction_equal": 161,
+    "matching_pairs": 161,
+    "origin_construction_script_retrieved": false,
+    "portal_equal": 161,
+    "uuid_rule": "workflow_registry.uuid = 'rp-workflow-' || registry_programs.id",
+    "agency_equal": 161,
+    "notes_equal": 161,
+    "workflow_type_matches_program_category": 161
+  },
+  "scope": "Existing 144 source-bound claim-unmapped workflows and 181 held workflow_registry rows",
+  "unmapped_workflows": [
+    {
+      "explicit_claim_key_workflows": 0,
+      "source_records": 47,
+      "steps": 225,
+      "workflow_type": "elder_abuse",
+      "workflows": 46
+    },
+    {
+      "explicit_claim_key_workflows": 0,
+      "source_records": 52,
+      "steps": 285,
+      "workflow_type": "housing_violation",
+      "workflows": 51
+    },
+    {
+      "explicit_claim_key_workflows": 0,
+      "source_records": 48,
+      "steps": 215,
+      "workflow_type": "insurance_denial",
+      "workflows": 47
+    }
+  ]
+}

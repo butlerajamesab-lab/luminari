@@ -19,6 +19,7 @@ import * as caseService from "../services/caseService";
 import * as luminariContextService from "../services/luminariContextService";
 
 function luminari_read_error(err: unknown, fallbackMessage: string) {
+  if (err instanceof TRPCError) return err;
   const message = err instanceof Error && err.message
     ? err.message
     : fallbackMessage;
@@ -296,39 +297,19 @@ export const luminariRouter = router({
    */
   getContext: protectedProcedure
     .input(z.object({ case_id: z.number() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       try {
-        return await luminariContextService.getCaseContext(input.case_id);
+        return await luminariContextService.getCaseContext(input.case_id, ctx.user.id);
       } catch (err: any) {
         console.error("Error fetching case context:", err);
         throw luminari_read_error(err, "Failed to fetch case context");
       }
     }),
 
-  getActionContext: protectedProcedure
-    .input(
-      z.object({
-        case_id: z.number(),
-        problem_context: z.string().optional(),
-        incident_date: z.string().optional(),
-        as_of_date: z.string().optional(),
-        limit_per_surface: z.number().int().min(1).max(25).optional(),
-      }),
-    )
-    .query(async ({ input }) => {
-      try {
-        return await luminariContextService.getCaseActionContext({
-          caseId: input.case_id,
-          problemContext: input.problem_context,
-          incidentDate: input.incident_date,
-          asOfDate: input.as_of_date,
-          limitPerSurface: input.limit_per_surface,
-        });
-      } catch (err: any) {
-        console.error("Error fetching case action context:", err);
-        throw luminari_read_error(err, "Failed to fetch case action context");
-      }
-    }),
+  get_action_context: protectedProcedure
+    .input(z.object({ case_id: z.number().int().positive(), problem_context: z.string().trim().max(240).optional(),
+      jurisdiction: z.string().trim().max(80).optional(), limit_per_surface: z.number().int().min(1).max(25).optional() }))
+    .query(async ({ input, ctx }) => luminariContextService.get_case_action_context(input, ctx.user.id)),
 
   /**
    * Record validation result (Sunam write endpoint)

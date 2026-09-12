@@ -1,3 +1,5 @@
+import { TRPCError } from "@trpc/server";
+export { get_case_action_context } from "./case-action-context";
 /**
  * Luminari Context Service
  * 
@@ -9,8 +11,7 @@
 
 import * as registryService from "./registryService";
 import * as caseService from "./caseService";
-import { getCaseActionContext, type CaseActionContext } from "./case-action-context";
-export { getCaseActionContext } from "./case-action-context";
+import * as matchingService from "./matchingService";
 
 export interface LuminariContext {
   case: {
@@ -30,22 +31,16 @@ export interface LuminariContext {
   };
   workflows: any[];
   programs: any[];
-  resources: any[];
   entities: any[];
   signals: any[];
   legal_library: any[];
   enforcement_pathways: any[];
   deadlines: any[];
-  action_context: CaseActionContext;
   diagnostics: {
     total_workflows: number;
     total_programs: number;
-    total_resources: number;
     total_entities: number;
     total_signals: number;
-    total_legal_library_records: number;
-    total_enforcement_pathways: number;
-    total_deadlines: number;
     case_status: string;
     last_updated: number;
   };
@@ -62,7 +57,9 @@ export interface LuminariContext {
  * 
  * No direct SQL access - all through service layer
  */
-export async function getCaseContext(caseId: number): Promise<LuminariContext> {
+export async function getCaseContext(caseId: number, user_id: number): Promise<LuminariContext> {
+  if (!Number.isSafeInteger(user_id) || user_id <= 0) throw new TRPCError({ code: "UNAUTHORIZED" });
+  if (!await caseService.verifyCaseOwnership(caseId, user_id)) throw new TRPCError({ code: "NOT_FOUND", message: "Case not found or access denied" });
   // Step 1: Get case data
   const caseData = await caseService.getCaseById(caseId);
   if (!caseData) {
@@ -97,27 +94,7 @@ export async function getCaseContext(caseId: number): Promise<LuminariContext> {
   // Step 8: Get case notes
   const notes = await caseService.getCaseNotes(caseId);
 
-  // Step 9: Get bounded case action context
-  const action_context = await getCaseActionContext({ caseId, limitPerSurface: 6 });
-
-  const legal_library = [
-    ...action_context.legal.statutes,
-    ...action_context.legal.case_law,
-    ...action_context.legal.enforcement,
-    ...action_context.legal.weak_joints,
-    ...action_context.legal.contradictions,
-  ];
-  const resources = action_context.resources.directory_results;
-  const enforcement_pathways =
-    (action_context.workflow.enforcement_pathways as any)?.pathways ?? [];
-  const deadlines = [
-    ...(((action_context.workflow.investigation as any)?.workflow?.immediateActions ?? []) as any[]),
-    ...(((action_context.workflow.investigation as any)?.workflow?.timelineTasks ?? []) as any[]),
-    ...(((action_context.workflow.investigation as any)?.workflow?.agencySteps ?? []) as any[]),
-    ...action_context.workflow.filing_deadlines,
-  ];
-
-  // Step 10: Compose context
+  // Step 9: Compose context
   return {
     case: {
       id: caseData.id,
@@ -126,28 +103,22 @@ export async function getCaseContext(caseId: number): Promise<LuminariContext> {
       selected_workflow_id: caseData.selected_workflow_id,
       status: caseData.status,
       created_at: caseData.created_at,
-      notes: notes.map((n: any) => n.content ?? n.note_text).filter(Boolean),
+      notes: notes.map((n: any) => n.note_text),
       timeline,
     },
     jurisdiction,
     workflows,
     programs,
-    resources,
     entities,
     signals,
-    legal_library,
-    enforcement_pathways,
-    deadlines,
-    action_context,
+    legal_library: [], // Placeholder for legal library data
+    enforcement_pathways: [], // Placeholder for enforcement pathways
+    deadlines: [], // Placeholder for deadlines
     diagnostics: {
       total_workflows: workflows.length,
       total_programs: programs.length,
-      total_resources: resources.length,
       total_entities: entities.length,
       total_signals: signals.length,
-      total_legal_library_records: legal_library.length,
-      total_enforcement_pathways: enforcement_pathways.length,
-      total_deadlines: deadlines.length,
       case_status: caseData.status,
       last_updated: Date.now(),
     },
@@ -160,9 +131,9 @@ export async function getCaseContext(caseId: number): Promise<LuminariContext> {
  * Extends getCaseContext with validation and reconciliation data
  */
 export async function getCaseContextWithValidation(
-  caseId: number
+  caseId: number, user_id: number
 ): Promise<LuminariContext & { validation_results?: any[] }> {
-  const context = await getCaseContext(caseId);
+  const context = await getCaseContext(caseId, user_id);
 
   // TODO: Fetch validation results from validation_results table
   // This will be populated by the write endpoints

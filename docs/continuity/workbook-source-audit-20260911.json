@@ -1,0 +1,1617 @@
+{
+  "source_sha256": "a8edb63c60d7a7738446260f288b81a89dd5e7844d5c63532f40a3df4552eb12",
+  "sheet_count": 201,
+  "nonempty_rows": 74921,
+  "source_role": "preservation_audit",
+  "consumer_integration_verified": false,
+  "sheets": {
+    "README": {
+      "total": 133,
+      "data": 132,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "v3_13_ingest_summary": {
+      "total": 28,
+      "data": 21,
+      "header": 1,
+      "preamble": 6,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "bucket_resource": {
+      "total": 2369,
+      "data": 2368,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "bucket_resource_address": {
+      "total": 2987,
+      "data": 2986,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "bucket_resource_phone": {
+      "total": 4077,
+      "data": 4076,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "bucket_resource_email": {
+      "total": 184,
+      "data": 183,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "bucket_jurisdiction_narrative": {
+      "total": 56,
+      "data": 55,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "wa_registry_program": {
+      "total": 225,
+      "data": 224,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "national_benefits_program": {
+      "total": 273,
+      "data": 272,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "national_benefits_research_note": {
+      "total": 69,
+      "data": 68,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "federal_benefit_program": {
+      "total": 14,
+      "data": 13,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "federal_benefit_statute": {
+      "total": 14,
+      "data": 13,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "federal_benefit_deadline": {
+      "total": 16,
+      "data": 15,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "federal_benefit_provenance": {
+      "total": 41,
+      "data": 40,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "federal_legislator": {
+      "total": 13,
+      "data": 12,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "federal_legislator_committee": {
+      "total": 24,
+      "data": 23,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "federal_committee": {
+      "total": 19,
+      "data": 18,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "federal_legislator_provenance": {
+      "total": 63,
+      "data": 62,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "substrate_state_flag": {
+      "total": 7,
+      "data": 6,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "substrate_state_card": {
+      "total": 6,
+      "data": 5,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "population_engine",
+      "routing_state": "routed"
+    },
+    "substrate_state_workflow": {
+      "total": 3,
+      "data": 2,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "substrate_state_workflow_step": {
+      "total": 11,
+      "data": 10,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "substrate_state_oversight": {
+      "total": 6,
+      "data": 5,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "substrate_state_contact": {
+      "total": 7,
+      "data": 6,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "population_engine",
+      "routing_state": "routed"
+    },
+    "substrate_county_override": {
+      "total": 15,
+      "data": 14,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "population_engine",
+      "routing_state": "routed"
+    },
+    "substrate_pipeline_mapping": {
+      "total": 9,
+      "data": 8,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "substrate_lens_mapping": {
+      "total": 11,
+      "data": 10,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "substrate_portability": {
+      "total": 8,
+      "data": 7,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "clean_partial_program": {
+      "total": 115,
+      "data": 114,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "resource_directory",
+      "routing_state": "routed"
+    },
+    "territory_org_verified": {
+      "total": 18,
+      "data": 17,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "territory_fact": {
+      "total": 22,
+      "data": 21,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "territory_guidance": {
+      "total": 12,
+      "data": 11,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "pass3_policy_alert": {
+      "total": 448,
+      "data": 447,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "pass3_program_card": {
+      "total": 1802,
+      "data": 1801,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "pass3_workflow_summary": {
+      "total": 302,
+      "data": 301,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "pass3_workflow_step": {
+      "total": 1554,
+      "data": 1553,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "pass3_entity_escalation": {
+      "total": 1270,
+      "data": 1269,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "pass3_key_contact": {
+      "total": 1254,
+      "data": 1253,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "population_engine",
+      "routing_state": "routed"
+    },
+    "pass3_executive_summary": {
+      "total": 60,
+      "data": 59,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "federal_data_row": {
+      "total": 507,
+      "data": 506,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "federal_note": {
+      "total": 874,
+      "data": 873,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "federal_executive_summary": {
+      "total": 7,
+      "data": 6,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "tribal_data_row": {
+      "total": 163,
+      "data": 162,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "population_engine",
+      "routing_state": "routed"
+    },
+    "tribal_note": {
+      "total": 113,
+      "data": 112,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "tribal_executive_summary": {
+      "total": 3,
+      "data": 2,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "unrecognized_tribes_row": {
+      "total": 76,
+      "data": 75,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "unrecognized_tribes_note": {
+      "total": 49,
+      "data": 48,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "state_registry_variant_row": {
+      "total": 165,
+      "data": 164,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "state_registry_variant_note": {
+      "total": 187,
+      "data": 186,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "state_registry_variant_summary": {
+      "total": 4,
+      "data": 3,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "markdown_directory": {
+      "total": 3,
+      "data": 2,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "disability_deep_dive": {
+      "total": 26,
+      "data": 25,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "disability_deep_dive_phone": {
+      "total": 31,
+      "data": 30,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "source_document": {
+      "total": 46,
+      "data": 45,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "resource": {
+      "total": 220,
+      "data": 219,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "resource_address": {
+      "total": 229,
+      "data": 228,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "resource_phone": {
+      "total": 331,
+      "data": 330,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "resource_email": {
+      "total": 28,
+      "data": 27,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "jurisdiction_narrative": {
+      "total": 8,
+      "data": 7,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "mh_resource": {
+      "total": 164,
+      "data": 163,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "deep_dive_resource": {
+      "total": 104,
+      "data": 103,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "state_agency_crosswalk": {
+      "total": 113,
+      "data": 112,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "federal_statute": {
+      "total": 23,
+      "data": 22,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "legislator_contact": {
+      "total": 30,
+      "data": 29,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "coalition_agency": {
+      "total": 32,
+      "data": 31,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "atlas",
+      "routing_state": "routed"
+    },
+    "advocacy_target": {
+      "total": 17,
+      "data": 16,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "atlas",
+      "routing_state": "routed"
+    },
+    "corpus_import_queue": {
+      "total": 176,
+      "data": 175,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "corpus_graph_candidate_edges": {
+      "total": 11,
+      "data": 10,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "field_reference": {
+      "total": 19,
+      "data": 18,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "substrate_az_flag": {
+      "total": 9,
+      "data": 8,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "substrate_az_program": {
+      "total": 177,
+      "data": 176,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "resource_directory",
+      "routing_state": "routed"
+    },
+    "substrate_az_workflow": {
+      "total": 5,
+      "data": 4,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "substrate_az_workflow_step": {
+      "total": 25,
+      "data": 24,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "substrate_az_oversight": {
+      "total": 43,
+      "data": 42,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "substrate_az_contact": {
+      "total": 12,
+      "data": 11,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "tribal_national_framework": {
+      "total": 31,
+      "data": 30,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "tribal_national_matrix": {
+      "total": 123,
+      "data": 122,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "population_engine",
+      "routing_state": "routed"
+    },
+    "unrecognized_tribes_framework_v": {
+      "total": 27,
+      "data": 26,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "unrecognized_tribes_denial_matr": {
+      "total": 11,
+      "data": 10,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "unrecognized_tribes_gap_matrix": {
+      "total": 13,
+      "data": 12,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "alaska_tribal_framework": {
+      "total": 14,
+      "data": 13,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "alaska_tribal_tables": {
+      "total": 41,
+      "data": 40,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "population_engine",
+      "routing_state": "routed"
+    },
+    "federal_agency_authority": {
+      "total": 17,
+      "data": 16,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "agency_claim_routing": {
+      "total": 24,
+      "data": 23,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "small_employer_coverage": {
+      "total": 25,
+      "data": 24,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "federal_region_index": {
+      "total": 6,
+      "data": 5,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "federal_master_other": {
+      "total": 8,
+      "data": 7,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "sol_collision_scenario": {
+      "total": 9,
+      "data": 8,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "sol_scenario_deadline": {
+      "total": 41,
+      "data": 40,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "address_audit_finding": {
+      "total": 5,
+      "data": 4,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "address_audit_summary": {
+      "total": 11,
+      "data": 10,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "address_audit_org": {
+      "total": 191,
+      "data": 190,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "resource_directory_review",
+      "routing_state": "routed"
+    },
+    "legal_statutes_csv_import": {
+      "total": 75,
+      "data": 74,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "tolling_rule": {
+      "total": 9,
+      "data": 8,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "preclusion_entry": {
+      "total": 13,
+      "data": 12,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "master_template_program": {
+      "total": 362,
+      "data": 361,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "master_template_workflow": {
+      "total": 61,
+      "data": 60,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "master_template_oversight": {
+      "total": 82,
+      "data": 81,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "synthesized_workflow": {
+      "total": 3,
+      "data": 2,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "synthesized_pathway": {
+      "total": 2,
+      "data": 1,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "program_master": {
+      "total": 2753,
+      "data": 2752,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "resource_master": {
+      "total": 2652,
+      "data": 2651,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "signal_master": {
+      "total": 439,
+      "data": 438,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "jurisdiction_fact_master": {
+      "total": 77,
+      "data": 76,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "_master_index": {
+      "total": 8,
+      "data": 7,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "verified_statute": {
+      "total": 216,
+      "data": 215,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "verified_case_law": {
+      "total": 132,
+      "data": 131,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "verified_enforcement_agency": {
+      "total": 230,
+      "data": 229,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "verified_workflow_deadline": {
+      "total": 144,
+      "data": 143,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "verified_citations_index": {
+      "total": 3,
+      "data": 2,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "verified_failed_records": {
+      "total": 4,
+      "data": 3,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "legal_statutes_enriched": {
+      "total": 11,
+      "data": 10,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "statute_master": {
+      "total": 531,
+      "data": 530,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "case_law_master": {
+      "total": 289,
+      "data": 288,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "entity_master": {
+      "total": 309,
+      "data": 308,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "workflow_deadline_master": {
+      "total": 172,
+      "data": 171,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "_route_binding": {
+      "total": 42,
+      "data": 41,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "_next_moves": {
+      "total": 45,
+      "data": 44,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "case_statute_link": {
+      "total": 82,
+      "data": 81,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "unresolved_citation": {
+      "total": 84,
+      "data": 83,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "_schema_tables": {
+      "total": 364,
+      "data": 363,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "_schema_manifest": {
+      "total": 4340,
+      "data": 4339,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "_promotion_map": {
+      "total": 73,
+      "data": 72,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "benefits_program_master": {
+      "total": 286,
+      "data": 285,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "committee_master": {
+      "total": 14,
+      "data": 13,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "committee_membership_master": {
+      "total": 24,
+      "data": 23,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "legislator_master": {
+      "total": 13,
+      "data": 12,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "workflow_master": {
+      "total": 4,
+      "data": 3,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "escalation_master": {
+      "total": 7,
+      "data": 6,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "weak_joint_master": {
+      "total": 56,
+      "data": 55,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "barrier_tree": {
+      "total": 8,
+      "data": 7,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "claim_matrix": {
+      "total": 11,
+      "data": 10,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "coalition_intel_master": {
+      "total": 6,
+      "data": 5,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "case_instance_master": {
+      "total": 66,
+      "data": 65,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "case_finding": {
+      "total": 66,
+      "data": 65,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "case_resolution_pathway": {
+      "total": 175,
+      "data": 174,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "case_friction_source": {
+      "total": 326,
+      "data": 325,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "case_evidence": {
+      "total": 196,
+      "data": 195,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "_platform_spec_master": {
+      "total": 117,
+      "data": 116,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "platform_control_plane",
+      "routing_state": "routed"
+    },
+    "state_registry_policy_alert": {
+      "total": 1,
+      "data": 0,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "system_gap_report": {
+      "total": 7,
+      "data": 6,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "system_gap_solution": {
+      "total": 24,
+      "data": 23,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "system_gap_domain_summary": {
+      "total": 4,
+      "data": 3,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "_platform_synthesis": {
+      "total": 70,
+      "data": 69,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "pattern_registry": {
+      "total": 11,
+      "data": 10,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "kaleidoscope",
+      "routing_state": "routed"
+    },
+    "pattern_history_schema": {
+      "total": 16,
+      "data": 15,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "pattern_trends_schema": {
+      "total": 17,
+      "data": 16,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "trend_output_template": {
+      "total": 6,
+      "data": 5,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "pressure_indicator": {
+      "total": 4,
+      "data": 3,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "atlas",
+      "routing_state": "routed"
+    },
+    "strategy_path": {
+      "total": 8,
+      "data": 7,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "kaleidoscope",
+      "routing_state": "routed"
+    },
+    "strategy_path_step": {
+      "total": 33,
+      "data": 32,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "friction_score_matrix": {
+      "total": 5,
+      "data": 4,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "federal_agency_master": {
+      "total": 19,
+      "data": 18,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "federal_agency_2025_status": {
+      "total": 13,
+      "data": 12,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "atlas",
+      "routing_state": "routed"
+    },
+    "claim_routing_matrix": {
+      "total": 23,
+      "data": 22,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "sol_master": {
+      "total": 29,
+      "data": 28,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "employer_size_threshold": {
+      "total": 20,
+      "data": 19,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "federal_regional_index": {
+      "total": 7,
+      "data": 6,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "statute_key_text": {
+      "total": 43,
+      "data": 42,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "wa_oversight_body": {
+      "total": 43,
+      "data": 42,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "enforcement_intelligence",
+      "routing_state": "routed"
+    },
+    "wa_resource_directory": {
+      "total": 94,
+      "data": 93,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "resource_directory",
+      "routing_state": "routed"
+    },
+    "wa_accountability_path": {
+      "total": 8,
+      "data": 7,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "wa_workflow": {
+      "total": 7,
+      "data": 6,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "pnw_jurisdiction": {
+      "total": 144,
+      "data": 143,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "advocacy_policy_domain": {
+      "total": 13,
+      "data": 12,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "atlas",
+      "routing_state": "routed"
+    },
+    "coalition_network": {
+      "total": 11,
+      "data": 10,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "atlas",
+      "routing_state": "routed"
+    },
+    "geographic_expansion_node": {
+      "total": 8,
+      "data": 7,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "pipeline_intake": {
+      "total": 17,
+      "data": 16,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "civil_gideon_jurisdiction": {
+      "total": 57,
+      "data": 56,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "civil_gideon_routing_rule": {
+      "total": 5,
+      "data": 4,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "barrier_category": {
+      "total": 8,
+      "data": 7,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "barrier_severity_scale": {
+      "total": 6,
+      "data": 5,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "filing_template": {
+      "total": 8,
+      "data": 7,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "national_hotline": {
+      "total": 11,
+      "data": 10,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "resource_directory",
+      "routing_state": "routed"
+    },
+    "federal_resource_directory": {
+      "total": 17,
+      "data": 16,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "resource_directory",
+      "routing_state": "routed"
+    },
+    "missing_critical_form": {
+      "total": 10,
+      "data": 9,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "workflow_binding": {
+      "total": 9,
+      "data": 8,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "state_labor_board_pathway": {
+      "total": 6,
+      "data": 5,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "federal_enforcement_pathway": {
+      "total": 7,
+      "data": 6,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "prism",
+      "routing_state": "routed"
+    },
+    "intake_conversation_step": {
+      "total": 8,
+      "data": 7,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "nlu_claim_type_definition": {
+      "total": 9,
+      "data": 8,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "claim_element_matrix": {
+      "total": 6,
+      "data": 5,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "address_audit_v3_13": {
+      "total": 201,
+      "data": 200,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "advocacy_targets_v3_13": {
+      "total": 17,
+      "data": 16,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "benefits_cascade_stages": {
+      "total": 125,
+      "data": 124,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "coalition_advocacy_orgs": {
+      "total": 32,
+      "data": 31,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "domain_deep_dive_records_v3_13": {
+      "total": 1981,
+      "data": 1980,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "ingest_staging_v3_13": {
+      "total": 311,
+      "data": 310,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "legal_aid_wa_v3_13": {
+      "total": 23,
+      "data": 22,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "legal_statutes": {
+      "total": 863,
+      "data": 862,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "legislator_contacts": {
+      "total": 30,
+      "data": 29,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "luminari_batch_exports_v3_13": {
+      "total": 66,
+      "data": 65,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "luminari_uuid_exports_v3_13": {
+      "total": 216,
+      "data": 215,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "master_template_docs_v3_13": {
+      "total": 185,
+      "data": 184,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "policy_layer_docs_v3_13": {
+      "total": 148,
+      "data": 147,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "programs": {
+      "total": 496,
+      "data": 495,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "registry_programs": {
+      "total": 1003,
+      "data": 1002,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "sol_collision_analysis_v3_13": {
+      "total": 179,
+      "data": 178,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "specification_extraction_v3_13": {
+      "total": 43,
+      "data": 42,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "state_enriched_directory_v3_13": {
+      "total": 30251,
+      "data": 30250,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    },
+    "tribal_jurisdictions_addendum_v": {
+      "total": 725,
+      "data": 724,
+      "header": 1,
+      "preamble": 0,
+      "target_surface": "operator_review",
+      "routing_state": "review_required"
+    }
+  }
+}

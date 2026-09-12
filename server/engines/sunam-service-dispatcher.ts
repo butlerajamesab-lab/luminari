@@ -23,24 +23,27 @@ export interface DispatchResult {
  */
 export async function dispatchServiceTool(
   toolName: string,
-  args: Record<string, any>
+  args: Record<string, any>,
+  user_id?: number
 ): Promise<DispatchResult> {
   try {
+    const legacy_case_tools = ["get_case", "get_case_timeline", "get_case_notes", "record_validation", "record_reconciliation", "record_case_action", "add_case_note", "update_case_status"];
+    if (legacy_case_tools.includes(toolName)) {
+      if (!Number.isSafeInteger(user_id) || user_id! <= 0) return { success: false, error: "Authenticated case owner required" };
+      if (!await caseService.verifyCaseOwnership(args.case_id, user_id!)) return { success: false, error: "Case not found or access denied" };
+    }
     switch (toolName) {
       // ── Case Context (Read) ──
       case "get_case_context": {
-        const context = await luminariContextService.getCaseContext(args.case_id);
+        const context = await luminariContextService.getCaseContext(args.case_id, user_id!);
         return { success: true, result: context };
       }
 
       case "get_case_action_context": {
-        const context = await luminariContextService.getCaseActionContext({
-          caseId: args.case_id,
-          problemContext: args.problem_context,
-          incidentDate: args.incident_date,
-          asOfDate: args.as_of_date,
-          limitPerSurface: args.limit_per_surface,
-        });
+        const context = await luminariContextService.get_case_action_context({
+          case_id: args.case_id, problem_context: args.problem_context,
+          jurisdiction: args.jurisdiction, limit_per_surface: args.limit_per_surface,
+        }, user_id!);
         return { success: true, result: context };
       }
 

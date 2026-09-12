@@ -1,3 +1,4 @@
+import { read_current_legal_authorities } from "./services/current-legal-authority-reader";
 import { getPool } from "./db";
 import type { LegalDomain } from "../drizzle/schema";
 
@@ -11,6 +12,7 @@ export type LegalRuntimeSearch = {
   severity?: string;
   limit?: number;
   offset?: number;
+  record_id?: string;
 };
 
 const DEFAULT_LIMIT = 50;
@@ -57,10 +59,6 @@ function parseObject(value: unknown): Record<string, unknown> {
   } catch {
     return {};
   }
-}
-
-function key(parts: string[]) {
-  return parts.join("");
 }
 
 function firstValue(row: Record<string, any>, aliases: string[]) {
@@ -113,25 +111,25 @@ function logRuntimeRowShape(scope: string, row: Record<string, any> | undefined)
 
 function normalizeEnforcementRow(rawRow: any) {
   const row = jsonDomains(rawRow ?? {});
-  const sourceValue = firstValue(row, ["data_source", key(["data", "Source"]), "source", "source_name", "source_ref", "source_reference", "source_table", "dataset", "source_url", key(["source", "Url"]), "url", "filing_url", "complaint_url", "portal_url"]);
-  const urlValue = firstValue(row, ["source_url", key(["source", "Url"]), "url", "website", "website_url", "agency_url", "filing_url", "complaint_url", "portal_url"]) ?? (typeof sourceValue === "string" && /^https?:\/\//i.test(sourceValue) ? sourceValue : null);
+  const sourceValue = firstValue(row, ["data_source", "dataSource", "source", "source_name", "source_ref", "source_reference", "source_table", "dataset", "source_url", "sourceUrl", "url", "filing_url", "complaint_url", "portal_url"]);
+  const urlValue = firstValue(row, ["source_url", "sourceUrl", "url", "website", "website_url", "agency_url", "filing_url", "complaint_url", "portal_url"]) ?? (typeof sourceValue === "string" && /^https?:\/\//i.test(sourceValue) ? sourceValue : null);
 
   return {
     id: firstValue(row, ["id", "enforcement_id", "record_id"]),
     jurisdiction: firstValue(row, ["jurisdiction", "state", "state_code", "jurisdiction_code"]),
-    agency_name: firstValue(row, ["agency_name", "agency", "agency_short", "agency_abbreviation", "normalized_entity", key(["agency", "Name"]), key(["agency", "Short"])]),
-    complaint_type: firstValue(row, ["complaint_type", key(["complaint", "Type"]), "complaint_category", "complaint_types", "complaint", "type", "category", "program_area", "normalized_category", "action_type", "record_type", "domains"]),
+    agency_name: firstValue(row, ["agency_name", "agency", "agency_short", "agency_abbreviation", "normalized_entity", "agencyName", "agencyShort"]),
+    complaint_type: firstValue(row, ["complaint_type", "complaintType", "complaint_category", "complaint_types", "complaint", "type", "category", "program_area", "normalized_category", "action_type", "record_type", "domains"]),
     domains: normalizeDomainsValue(firstValue(row, ["domains", "domain", "legal_domains", "tags"])),
-    statutory_requirement: firstValue(row, ["statutory_requirement", key(["statutory", "Requirement"]), "statutory_authority", "authority", "requirement", "statute", "legal_authority", "authority_text", "statutory_basis"]),
-    statute_citation: firstValue(row, ["statute_citation", key(["statute", "Citation"]), "citation", "statute", "statutory_authority", "legal_authority", "authority_citation"]),
+    statutory_requirement: firstValue(row, ["statutory_requirement", "statutoryRequirement", "statutory_authority", "authority", "requirement", "statute", "legal_authority", "authority_text", "statutory_basis"]),
+    statute_citation: firstValue(row, ["statute_citation", "statuteCitation", "citation", "statute", "statutory_authority", "legal_authority", "authority_citation"]),
     outcome: firstValue(row, ["outcome", "outcomes", "case_outcome", "enforcement_outcome", "enforcement_result", "resolution", "resolution_status", "status", "result", "disposition", "action_status"]),
-    required_response_days: firstValue(row, ["required_response_days", key(["required", "Response", "Days"]), "required_days", "deadline_days", "response_timeline_days", key(["response", "Timeline", "Days"]), "timeline_days", "response_days", "statutory_response_days", "required_response_time_days"]),
-    observed_response_days: firstValue(row, ["observed_response_days", key(["observed", "Response", "Days"]), "observed_days", "actual_response_days", "actual_days", "measured_response_days", "average_response_days"]),
-    pattern_description: firstValue(row, ["pattern_description", key(["pattern", "Description"]), "description", "details", "notes", "summary", "pattern", "pattern_summary", "documented_pattern", "issue_description"]),
+    required_response_days: firstValue(row, ["required_response_days", "requiredResponseDays", "required_days", "deadline_days", "response_timeline_days", "responseTimelineDays", "timeline_days", "response_days", "statutory_response_days", "required_response_time_days"]),
+    observed_response_days: firstValue(row, ["observed_response_days", "observedResponseDays", "observed_days", "actual_response_days", "actual_days", "measured_response_days", "average_response_days"]),
+    pattern_description: firstValue(row, ["pattern_description", "patternDescription", "description", "details", "notes", "summary", "pattern", "pattern_summary", "documented_pattern", "issue_description"]),
     data_source: sourceValue,
     source_url: urlValue,
-    created_at: normalizeTimestamp(firstValue(row, ["created_at", key(["created", "At"]), "inserted_at"])),
-    updated_at: normalizeTimestamp(firstValue(row, ["updated_at", key(["updated", "At"]), "modified_at"])),
+    created_at: normalizeTimestamp(firstValue(row, ["created_at", "createdAt", "inserted_at"])),
+    updated_at: normalizeTimestamp(firstValue(row, ["updated_at", "updatedAt", "modified_at"])),
   };
 }
 
@@ -140,18 +138,18 @@ function normalizeContradictionRow(rawRow: any) {
   return {
     id: firstValue(row, ["id", "contradiction_id"]),
     title: firstValue(row, ["title", "name", "label"]),
-    doctrine_a: firstValue(row, ["doctrine_a", "doctrine_a_text", "doctrine_a_name", "doctrine_a_principle", "a_doctrine", key(["doctrine", "A"])]),
-    doctrine_a_citation: firstValue(row, ["doctrine_a_citation", "citation_a", "a_citation", key(["doctrine", "A", "Citation"]), key(["citation", "A"])]),
-    doctrine_b: firstValue(row, ["doctrine_b", "doctrine_b_text", "doctrine_b_name", "doctrine_b_principle", "b_doctrine", key(["doctrine", "B"])]),
-    doctrine_b_citation: firstValue(row, ["doctrine_b_citation", "citation_b", "b_citation", key(["doctrine", "B", "Citation"]), key(["citation", "B"])]),
-    contradiction_description: firstValue(row, ["contradiction_description", "description", "summary", "contradiction", "conflict_description", key(["contradiction", "Description"])]),
-    harm_description: firstValue(row, ["harm_description", "harm", "harms", "impact", "affected_population", key(["harm", "Description"])]),
+    doctrine_a: firstValue(row, ["doctrine_a", "doctrine_a_text", "doctrine_a_name", "doctrine_a_principle", "a_doctrine", "doctrineA"]),
+    doctrine_a_citation: firstValue(row, ["doctrine_a_citation", "citation_a", "a_citation", "doctrineACitation", "citationA"]),
+    doctrine_b: firstValue(row, ["doctrine_b", "doctrine_b_text", "doctrine_b_name", "doctrine_b_principle", "b_doctrine", "doctrineB"]),
+    doctrine_b_citation: firstValue(row, ["doctrine_b_citation", "citation_b", "b_citation", "doctrineBCitation", "citationB"]),
+    contradiction_description: firstValue(row, ["contradiction_description", "description", "summary", "contradiction", "conflict_description", "contradictionDescription"]),
+    harm_description: firstValue(row, ["harm_description", "harm", "harms", "impact", "affected_population", "harmDescription"]),
     domains: normalizeDomainsValue(firstValue(row, ["domains", "domain", "legal_domains", "tags"])),
     jurisdiction: firstValue(row, ["jurisdiction", "state", "state_code", "jurisdiction_code"]),
-    reform_status: firstValue(row, ["reform_status", "status", "reform", key(["reform", "Status"])]),
-    source_url: firstValue(row, ["source_url", key(["source", "Url"]), "url", "source", "source_reference"]),
-    created_at: normalizeTimestamp(firstValue(row, ["created_at", key(["created", "At"]), "inserted_at"])),
-    updated_at: normalizeTimestamp(firstValue(row, ["updated_at", key(["updated", "At"]), "modified_at"])),
+    reform_status: firstValue(row, ["reform_status", "status", "reform", "reformStatus"]),
+    source_url: firstValue(row, ["source_url", "sourceUrl", "url", "source", "source_reference"]),
+    created_at: normalizeTimestamp(firstValue(row, ["created_at", "createdAt", "inserted_at"])),
+    updated_at: normalizeTimestamp(firstValue(row, ["updated_at", "updatedAt", "modified_at"])),
   };
 }
 
@@ -176,7 +174,7 @@ function normalizeStatuteRow(rawRow: any) {
       && metadata.runtime_source === "legacy_compat"
         ? Number(row.id)
         : row.id ?? null,
-    keyProvisions:
+    key_provisions:
       row.keyProvisions ??
       row.key_provisions ??
       row.verbatim_key_text ??
@@ -202,7 +200,10 @@ function normalizeCaseLawRow(rawRow: any) {
 const CURRENT_STATUTE_CTE = `
   with current_source as materialized (
     select
+      c.run_id,
       c.object_ref,
+      c.source_content_sha256,
+      c.parser_version,
       c.source_locator,
       c.artifact_key,
       c.source_candidate_hash,
@@ -225,10 +226,12 @@ const CURRENT_STATUTE_CTE = `
       from public.luminari_corpus_candidate_v1 p
       where p.candidate_hash = c.source_candidate_hash
         and p.artifact_key = c.artifact_key
+        and p.run_id = c.run_id and p.source_locator = c.source_locator
       order by p.created_at desc
       limit 1
     ) p on true
     where c.object_class = 'legal_authority'
+      and c.legal_catalog_ready is true
       and (
         c.source_locator like 'xlsx:verified_statute:%'
         or c.source_locator like 'xlsx:statute_master:%'
@@ -245,8 +248,7 @@ const CURRENT_STATUTE_CTE = `
         nullif(source_record->>'statute_uuid',''),
         nullif(source_record->>'statute_uid',''),
         nullif(source_record->>'key_text_uuid',''),
-        nullif(object_ref,''),
-        md5(lower(btrim(source_record->>'citation')))
+        nullif(object_ref,'')
       ) as runtime_entity_id,
       source_record->>'citation' as citation,
       coalesce(nullif(source_record->>'short_title',''), nullif(source_record->>'title','')) as short_title,
@@ -289,6 +291,9 @@ const CURRENT_STATUTE_CTE = `
         'source_type','current_corpus',
         'publication_state',case when legal_catalog_ready then 'catalog_ready' else 'substrate_observed_not_catalog_ready' end,
         'object_ref',object_ref,
+        'run_id',run_id,
+        'source_content_sha256',source_content_sha256,
+        'parser_version',parser_version,
         'source_locator',source_locator,
         'artifact_key',artifact_key,
         'source_candidate_hash',source_candidate_hash,
@@ -299,7 +304,7 @@ const CURRENT_STATUTE_CTE = `
       reconciled_at as created_at,
       case when legal_catalog_ready then 0 else 1 end as publication_rank,
       row_number() over (
-        partition by lower(btrim(source_record->>'citation'))
+        partition by coalesce(nullif(source_record->>'statute_uuid',''), nullif(source_record->>'statute_uid',''), nullif(source_record->>'key_text_uuid',''), object_ref)
         order by
           case when legal_catalog_ready then 0 else 1 end,
           family_priority,
@@ -325,7 +330,7 @@ const CURRENT_STATUTE_CTE = `
       l.created_at,2::int as runtime_rank
     from public.legal_statutes l
     where not exists (
-      select 1 from current_rows c where lower(btrim(c.citation)) = lower(btrim(l.citation))
+      select 1 from current_rows c where c.id = l.id::text
     )
   )
 `;
@@ -334,6 +339,7 @@ export async function searchRuntimeStatutes(opts: LegalRuntimeSearch) {
   const { limit, offset } = page(opts);
   const params: unknown[] = [];
   const filters: string[] = [];
+  if (opts.record_id) { params.push(opts.record_id); filters.push(`runtime_entity_id = $${params.length}`); }
   if (opts.jurisdiction) {
     params.push(opts.jurisdiction);
     filters.push(`jurisdiction = $${params.length}`);
@@ -366,7 +372,10 @@ export async function searchRuntimeStatutes(opts: LegalRuntimeSearch) {
 const CURRENT_CASE_CTE = `
   with current_source as materialized (
     select
+      c.run_id,
       c.object_ref,
+      c.source_content_sha256,
+      c.parser_version,
       c.source_locator,
       c.artifact_key,
       c.source_candidate_hash,
@@ -385,10 +394,12 @@ const CURRENT_CASE_CTE = `
       from public.luminari_corpus_candidate_v1 p
       where p.candidate_hash = c.source_candidate_hash
         and p.artifact_key = c.artifact_key
+        and p.run_id = c.run_id and p.source_locator = c.source_locator
       order by p.created_at desc
       limit 1
     ) p on true
     where c.object_class = 'legal_authority'
+      and c.legal_catalog_ready is true
       and (
         c.source_locator like 'xlsx:verified_case_law:%'
         or c.source_locator like 'xlsx:case_law_master:%'
@@ -402,27 +413,9 @@ const CURRENT_CASE_CTE = `
       coalesce(
         nullif(source_record->>'case_uuid',''),
         nullif(source_record->>'case_uid',''),
-        nullif(object_ref,''),
-        md5(lower(coalesce(nullif(source_record->>'case_name',''), nullif(source_record->>'title',''), source_record->>'citation')))
-      ) as runtime_entity_id,
-      coalesce(
-        nullif(source_record->>'case_uuid',''),
-        nullif(source_record->>'case_uid',''),
-        nullif(lower(btrim(source_record->>'citation')),''),
-        case
-          when coalesce(
-            nullif(source_record->>'case_name',''),
-            nullif(source_record->>'title',''),
-            nullif(source_record->>'citation','')
-          ) is not null
-            then md5(lower(coalesce(
-              nullif(source_record->>'case_name',''),
-              nullif(source_record->>'title',''),
-              source_record->>'citation'
-            )))
-        end,
         nullif(object_ref,'')
-      ) as dedupe_key,
+      ) as runtime_entity_id,
+      coalesce(nullif(source_record->>'case_uuid',''), nullif(source_record->>'case_uid',''), object_ref) as dedupe_key,
       source_record->>'citation' as citation,
       coalesce(nullif(source_record->>'case_name',''), nullif(source_record->>'title','')) as case_name,
       coalesce(
@@ -457,6 +450,9 @@ const CURRENT_CASE_CTE = `
         'source_type','current_corpus',
         'publication_state',case when legal_catalog_ready then 'catalog_ready' else 'substrate_observed_not_catalog_ready' end,
         'object_ref',object_ref,
+        'run_id',run_id,
+        'source_content_sha256',source_content_sha256,
+        'parser_version',parser_version,
         'source_locator',source_locator,
         'artifact_key',artifact_key,
         'source_candidate_hash',source_candidate_hash,
@@ -469,24 +465,7 @@ const CURRENT_CASE_CTE = `
       reconciled_at as created_at,
       case when legal_catalog_ready then 0 else 1 end as publication_rank,
       row_number() over (
-        partition by coalesce(
-          nullif(source_record->>'case_uuid',''),
-          nullif(source_record->>'case_uid',''),
-          nullif(lower(btrim(source_record->>'citation')),''),
-          case
-            when coalesce(
-              nullif(source_record->>'case_name',''),
-              nullif(source_record->>'title',''),
-              nullif(source_record->>'citation','')
-            ) is not null
-              then md5(lower(coalesce(
-                nullif(source_record->>'case_name',''),
-                nullif(source_record->>'title',''),
-                source_record->>'citation'
-              )))
-          end,
-          nullif(object_ref,'')
-        )
+        partition by coalesce(nullif(source_record->>'case_uuid',''), nullif(source_record->>'case_uid',''), object_ref)
         order by
           case when legal_catalog_ready then 0 else 1 end,
           family_priority,
@@ -554,6 +533,7 @@ export async function searchRuntimeCaseLaw(opts: LegalRuntimeSearch) {
   const { limit, offset } = page(opts);
   const params: unknown[] = [];
   const filters: string[] = [];
+  if (opts.record_id) { params.push(opts.record_id); filters.push(`runtime_entity_id = $${params.length}`); }
   if (opts.jurisdiction) {
     params.push(opts.jurisdiction);
     filters.push(`jurisdiction = $${params.length}`);
@@ -583,127 +563,28 @@ export async function searchRuntimeCaseLaw(opts: LegalRuntimeSearch) {
 }
 
 export async function getRuntimeLegalLibraryStats(jurisdiction?: string) {
-  const params: unknown[] = [];
-  const jurisdictionFilter = jurisdiction ? (() => {
-    params.push(jurisdiction);
-    return `$${params.length}`;
-  })() : null;
-  const result = await getPool().query(`
-    with current_statutes_raw as (
-      select lower(btrim(source_record->>'citation')) as citation,
-             coalesce(nullif(source_record->>'jurisdiction_code',''),nullif(source_record->>'jurisdiction',''),nullif(c.state_code,''),nullif(c.jurisdiction,'')) as jurisdiction,
-             c.legal_catalog_ready
-      from public.v_lighthouse_legal_authority_catalog_v2 c
-      join lateral (
-        select coalesce(p.payload->'row',p.payload->'record','{}'::jsonb) as source_record
-        from public.luminari_corpus_candidate_v1 p
-        where p.candidate_hash=c.source_candidate_hash and p.artifact_key=c.artifact_key
-        order by p.created_at desc limit 1
-      ) p on true
-      where c.object_class='legal_authority'
-        and (c.source_locator like 'xlsx:verified_statute:%' or c.source_locator like 'xlsx:statute_master:%' or c.source_locator like 'xlsx:statute_key_text:%')
-        and nullif(btrim(source_record->>'citation'),'') is not null
-    ), current_only_statutes as (
-      select
-        citation,
-        jurisdiction,
-        bool_or(legal_catalog_ready) as legal_catalog_ready
-      from current_statutes_raw
-      group by citation,jurisdiction
-    ), combined_statutes as (
-      select citation,jurisdiction from current_only_statutes
-      union
-      select lower(btrim(l.citation)),l.jurisdiction from public.legal_statutes l
-    ), current_cases_raw as (
-      select coalesce(
-               nullif(source_record->>'case_uuid',''),
-               nullif(source_record->>'case_uid',''),
-               nullif(btrim(source_record->>'citation'),''),
-               case
-                 when coalesce(
-                   nullif(source_record->>'case_name',''),
-                   nullif(source_record->>'title',''),
-                   nullif(source_record->>'citation','')
-                 ) is not null
-                   then md5(lower(coalesce(
-                     nullif(source_record->>'case_name',''),
-                     nullif(source_record->>'title',''),
-                     source_record->>'citation'
-                   )))
-               end,
-               nullif(c.object_ref,'')
-             ) as id,
-             coalesce(nullif(source_record->>'jurisdiction_code',''),nullif(source_record->>'jurisdiction',''),nullif(c.state_code,''),nullif(c.jurisdiction,'')) as jurisdiction,
-             c.legal_catalog_ready
-      from public.v_lighthouse_legal_authority_catalog_v2 c
-      join lateral (
-        select coalesce(p.payload->'row',p.payload->'record','{}'::jsonb) as source_record
-        from public.luminari_corpus_candidate_v1 p
-        where p.candidate_hash=c.source_candidate_hash and p.artifact_key=c.artifact_key
-        order by p.created_at desc limit 1
-      ) p on true
-      where c.object_class='legal_authority'
-        and (c.source_locator like 'xlsx:verified_case_law:%' or c.source_locator like 'xlsx:case_law_master:%')
-        and coalesce(
-          nullif(source_record->>'case_uuid',''),
-          nullif(source_record->>'case_uid',''),
-          nullif(btrim(source_record->>'citation'),''),
-          case
-            when coalesce(
-              nullif(source_record->>'case_name',''),
-              nullif(source_record->>'title',''),
-              nullif(source_record->>'citation','')
-            ) is not null
-              then md5(lower(coalesce(
-                nullif(source_record->>'case_name',''),
-                nullif(source_record->>'title',''),
-                source_record->>'citation'
-              )))
-          end,
-          nullif(c.object_ref,'')
-        ) is not null
-    ), current_only_cases as (
-      select
-        id,
-        jurisdiction,
-        bool_or(legal_catalog_ready) as legal_catalog_ready
-      from current_cases_raw
-      group by id,jurisdiction
-    ), combined_cases as (
-      select id,jurisdiction from current_only_cases
-      union
-      select id::text,jurisdiction from public.legal_case_law
-    )
-    select
-      (select count(*)::int from combined_statutes${jurisdictionFilter ? ` where jurisdiction = ${jurisdictionFilter}` : ""}) as statutes,
-      (select count(*)::int from combined_cases${jurisdictionFilter ? ` where jurisdiction = ${jurisdictionFilter}` : ""}) as case_law,
-      (select count(*)::int from public.legal_enforcement_records${jurisdictionFilter ? ` where jurisdiction = ${jurisdictionFilter}` : ""}) as enforcement_records,
-      (select count(*)::int from public.legal_weak_joints${jurisdictionFilter ? ` where coalesce(metadata->>'jurisdiction','') = ${jurisdictionFilter}` : ""}) as weak_joints,
-      (select count(*)::int from public.legal_contradictions${jurisdictionFilter ? ` where jurisdiction = ${jurisdictionFilter}` : ""}) as contradictions,
-      (
-        (select count(*)::int from current_only_statutes${jurisdictionFilter ? ` where jurisdiction = ${jurisdictionFilter}` : ""})
-        +
-        (select count(*)::int from current_only_cases${jurisdictionFilter ? ` where jurisdiction = ${jurisdictionFilter}` : ""})
-      ) as current_corpus_legal_authorities,
-      (select count(*)::int from current_only_statutes where ${jurisdictionFilter ? `jurisdiction = ${jurisdictionFilter} and ` : ""}not legal_catalog_ready) as stranded_current_corpus_statutes,
-      (select count(*)::int from current_only_cases where ${jurisdictionFilter ? `jurisdiction = ${jurisdictionFilter} and ` : ""}not legal_catalog_ready) as stranded_current_corpus_case_law,
-      (
-        (select count(*)::int from current_only_statutes where ${jurisdictionFilter ? `jurisdiction = ${jurisdictionFilter} and ` : ""}not legal_catalog_ready)
-        +
-        (select count(*)::int from current_only_cases where ${jurisdictionFilter ? `jurisdiction = ${jurisdictionFilter} and ` : ""}not legal_catalog_ready)
-      ) as stranded_current_corpus_legal_authorities
-  `, params);
-  const row = result.rows[0] ?? {};
+  const params = [jurisdiction || null];
+  const [statutes, case_law, catalog, other] = await Promise.all([
+    rows(`${CURRENT_STATUTE_CTE} select count(*)::int as count from combined where ($1::text is null or jurisdiction = $1)`, params),
+    rows(`${CURRENT_CASE_CTE} select count(*)::int as count from combined where ($1::text is null or jurisdiction = $1)`, params),
+    read_current_legal_authorities({ jurisdiction, limit: 1 }),
+    rows(`select
+      (select count(*)::int from public.legal_enforcement_records where ($1::text is null or jurisdiction = $1)) as enforcement_records,
+      (select count(*)::int from public.legal_weak_joints where ($1::text is null or metadata->>'jurisdiction' = $1)) as weak_joints,
+      (select count(*)::int from public.legal_contradictions where ($1::text is null or jurisdiction = $1)) as contradictions,
+      (select count(*)::int from public.v_lighthouse_legal_authority_catalog_v2
+        where legal_catalog_ready is not true and ($1::text is null or upper(coalesce(nullif(state_code,''),jurisdiction)) = upper($1))) as held_legal_references`, params),
+  ]);
+  const count = (value: unknown): number => {
+    if (value == null || !Number.isSafeInteger(Number(value)) || Number(value) < 0) throw new Error("Legal library count was not returned");
+    return Number(value);
+  };
   return {
-    statutes: Number(row.statutes ?? 0),
-    caseLaw: Number(row.case_law ?? 0),
-    enforcementRecords: Number(row.enforcement_records ?? 0),
-    weakJoints: Number(row.weak_joints ?? 0),
-    contradictions: Number(row.contradictions ?? 0),
-    currentCorpusLegalAuthorities: Number(row.current_corpus_legal_authorities ?? 0),
-    strandedCurrentCorpusStatutes: Number(row.stranded_current_corpus_statutes ?? 0),
-    strandedCurrentCorpusCaseLaw: Number(row.stranded_current_corpus_case_law ?? 0),
-    strandedCurrentCorpusLegalAuthorities: Number(row.stranded_current_corpus_legal_authorities ?? 0),
+    statutes: count(statutes[0]?.count), case_law: count(case_law[0]?.count),
+    enforcement_records: count(other[0]?.enforcement_records), weak_joints: count(other[0]?.weak_joints),
+    contradictions: count(other[0]?.contradictions),
+    current_corpus_legal_authorities: catalog.total,
+    held_legal_references: count(other[0]?.held_legal_references),
   };
 }
 

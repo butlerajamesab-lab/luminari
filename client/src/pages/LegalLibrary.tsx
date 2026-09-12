@@ -1,6 +1,8 @@
+import { LegalSourceRecord } from "@/components/LegalSourceRecord";
 import { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/core/hooks/useAuth";
 import { CommitToCase } from "@/components/CommitToCase";
+import { Source_authority_catalog } from "@/components/source-authority-catalog";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -143,7 +145,9 @@ export default function LegalLibrary() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDomain, setSelectedDomain] = useState<string>("");
   const [selectedJurisdiction, setSelectedJurisdiction] = useState<string>("");
-  const [activeTab, setActiveTab] = useState<"statutes" | "case_law" | "enforcement" | "contradictions">("statutes");
+  const [activeTab, setActiveTab] = useState<"statutes" | "case_law" | "enforcement" | "contradictions" | "source_authorities">("statutes");
+  const legal_ref = new URLSearchParams(window.location.search).get("legal_ref");
+  const exact_reference = trpc.legalLibrary.get_reference.useQuery({ ref: legal_ref ?? "" }, { enabled: Boolean(legal_ref) });
   const [statuteOffset, setStatuteOffset] = useState(0);
   const [caseLawOffset, setCaseLawOffset] = useState(0);
   const [enforcementOffset, setEnforcementOffset] = useState(0);
@@ -202,9 +206,10 @@ export default function LegalLibrary() {
   );
 
   const tabs = [
+    { key: "source_authorities" as const, label: "Source Authorities", icon: FileText, count: null },
     { key: "statutes" as const, label: "Statutes & Regulations", icon: BookOpen, count: stats?.statutes || 0 },
-    { key: "case_law" as const, label: "Case Law", icon: Gavel, count: stats?.caseLaw || 0 },
-    { key: "enforcement" as const, label: "Enforcement Records", icon: Shield, count: stats?.enforcementRecords || 0 },
+    { key: "case_law" as const, label: "Case Law", icon: Gavel, count: stats?.case_law || 0 },
+    { key: "enforcement" as const, label: "Enforcement Records", icon: Shield, count: stats?.enforcement_records || 0 },
     { key: "contradictions" as const, label: "Systemic Contradictions", icon: AlertTriangle, count: stats?.contradictions || 0 },
   ];
 
@@ -297,10 +302,10 @@ export default function LegalLibrary() {
           }}>
             {[
               { label: "Statutes", value: stats.statutes, color: ll.purple },
-              { label: "Case Law", value: stats.caseLaw, color: ll.gold },
-              { label: "Enforcement", value: stats.enforcementRecords, color: ll.teal },
+              { label: "Case Law", value: stats.case_law, color: ll.gold },
+              { label: "Enforcement", value: stats.enforcement_records, color: ll.teal },
               { label: "Contradictions", value: stats.contradictions, color: ll.red },
-              { label: "Weak Joints", value: stats.weakJoints, color: ll.amber },
+              { label: "Weak Joints", value: stats.weak_joints, color: ll.amber },
             ].map((s) => (
               <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ fontFamily: fontMono, fontSize: 18, fontWeight: 700, color: s.color }}>{s.value}</span>
@@ -318,7 +323,7 @@ export default function LegalLibrary() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search statutes, case law, regulations..."
+              placeholder="Search statutes, case law, source authorities..."
               style={{
                 width: "100%", background: "rgba(255,255,255,0.05)",
                 border: `1px solid ${ll.cardBorder}`, borderRadius: 6,
@@ -327,7 +332,7 @@ export default function LegalLibrary() {
               }}
             />
           </div>
-          <select
+          {activeTab !== "source_authorities" && <select
             value={selectedDomain}
             onChange={(e) => setSelectedDomain(e.target.value)}
             style={{
@@ -340,7 +345,7 @@ export default function LegalLibrary() {
             {DOMAINS.map((d) => (
               <option key={d} value={d} style={{ background: ll.bg }}>{DOMAIN_LABELS[d]}</option>
             ))}
-          </select>
+          </select>}
           <input
             type="text"
             value={selectedJurisdiction}
@@ -356,7 +361,7 @@ export default function LegalLibrary() {
         </div>
 
         {/* Tabs */}
-        <div style={{ display: "flex", gap: 4, marginBottom: 24, borderBottom: `1px solid ${ll.cardBorder}`, paddingBottom: 0 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 24, borderBottom: `1px solid ${ll.cardBorder}`, paddingBottom: 0 }}>
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const active = activeTab === tab.key;
@@ -378,10 +383,10 @@ export default function LegalLibrary() {
               >
                 <Icon size={14} />
                 <span>{tab.label}</span>
-                <span style={{
+                {tab.count !== null && <span style={{
                   background: active ? "rgba(168,85,247,0.2)" : "rgba(255,255,255,0.06)",
                   borderRadius: 10, padding: "1px 8px", fontSize: 10,
-                }}>{tab.count}</span>
+                }}>{tab.count}</span>}
               </button>
             );
           })}
@@ -389,6 +394,16 @@ export default function LegalLibrary() {
 
         {/* Content area */}
         <div style={{ minHeight: 400, paddingBottom: 80 }}>
+          {activeTab === "source_authorities" && (
+            <Source_authority_catalog key={`${searchQuery}:${selectedJurisdiction}`} query={searchQuery || undefined} jurisdiction={selectedJurisdiction || undefined} />
+          )}
+          {legal_ref && <section className="mb-5 space-y-2">
+            <h2 className="font-semibold">Saved reference</h2>
+            {exact_reference.isLoading && <p>Loading the exact source reference…</p>}
+            {exact_reference.error && <p role="alert">The source could not be loaded. <button onClick={() => exact_reference.refetch()}>Retry</button></p>}
+            {exact_reference.data?.record && <LegalSourceRecord record={exact_reference.data.record} />}
+            {exact_reference.data?.status === "unresolved" && <p>{exact_reference.data.reason} The saved identity remains {legal_ref}.</p>}
+          </section>}
           {/* Statutes tab */}
           {activeTab === "statutes" && (
             <div>
@@ -424,7 +439,7 @@ export default function LegalLibrary() {
               {searchCaseLaw.data && searchCaseLaw.data.length === 0 && (
                 <EmptyState
                   title="No case law found"
-                  description={stats?.caseLaw === 0
+                  description={stats?.case_law === 0
                     ? "Case law entries will be added as the Legal Library grows. Key holdings from landmark cases affecting benefits, housing, and civil rights will be documented here."
                     : "Try adjusting your search terms or filters."}
                   icon={Gavel}
@@ -448,7 +463,7 @@ export default function LegalLibrary() {
               {enforcement.data && enforcement.data.length === 0 && (
                 <EmptyState
                   title="No enforcement records found"
-                  description={stats?.enforcementRecords === 0
+                  description={stats?.enforcement_records === 0
                     ? "Enforcement records document how agencies actually respond to complaints — response times, outcomes, and patterns. This data will be populated as the system processes real-world interactions."
                     : "Try adjusting your jurisdiction filter."}
                   icon={Shield}
@@ -580,7 +595,7 @@ function StatuteCard({ statute, navigate }: { statute: any; navigate: (path: str
           {/* Key Provisions (verbatim statutory language) */}
           {(() => {
             const parsedProvisions = (() => {
-              const value = statute.keyProvisions;
+              const value = statute.key_provisions;
               if (Array.isArray(value)) return value;
               if (typeof value !== "string" || !value.trim()) return [];
               try {

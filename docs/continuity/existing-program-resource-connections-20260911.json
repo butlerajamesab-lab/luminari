@@ -1,0 +1,29 @@
+{
+  "verification_mode": "production_reader_with_read_only_live_query_snapshot",
+  "database_project": "wepxlinwbjrkqdzkqpar",
+  "consumer": "BenefitsNavigator -> canonicalRegistry.searchPrograms -> loadProgramResources",
+  "additional_readers": ["canonicalRegistry.getProgramChain", "canonicalRegistry.getCrossAvenuePrograms"],
+  "source_path": ["registry_programs.id", "registry_entity_staging_programs.program_id", "registry_entity_extraction_v4.id", "luminari_resource_entities.source_pk", "v_luminari_resource_contact_points_current_v3_13.resource_entity_id"],
+  "connected_existing_identities": 232,
+  "with_current_contacts": 41,
+  "preserved_contact_records": 100,
+  "filled_website_fields": 40,
+  "filled_contact_fields": 41,
+  "input_programs_in_snapshot": 232,
+  "output_programs_in_snapshot": 232,
+  "new_programs": 0,
+  "writes_performed": 0,
+  "sql_gate_fixture": {
+    "execution": "SELECT-only fixtures using the live PostgreSQL relation types and production reader query",
+    "cases": 13,
+    "accepted": 1,
+    "held": 12,
+    "held_reasons": ["name conflict", "jurisdiction conflict", "hidden publication", "unverified entity", "unpromoted entity", "missing provenance", "canonical identity mismatch", "extraction identity mismatch", "duplicate source binding", "conflicting crosswalk", "ambiguous crosswalk", "crosswalk marked not best"]
+  },
+  "remaining_identity_groups": {
+    "exact_id_with_conflicting_name": 1,
+    "prefixed_ids_with_unverified_staged_entities": 2434,
+    "policy": "No automatic prefix stripping, name similarity merge, or publication promotion. Revalidate current identity and publication on every read."
+  },
+  "preservation": "Original program IDs, nonblank registry fields, all admitted contact IDs and provenance are retained. No new resource records, canonical ID rewrites, crosswalk mutations, or publication-status changes."
+}

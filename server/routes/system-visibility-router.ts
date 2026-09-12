@@ -496,7 +496,7 @@ router.get("/runtime-map", async (_req: Request, res: Response) => {
     hydration_chain,
     known_issues: [
       "restSelect() in lighthouse-gate-router.ts uses camelCase column names but DB is snake_case — causes 400 errors",
-      "Legal-library surfaces can strand populated current-corpus legal authorities when legal_catalog_ready lags the authoritative substrate",
+      "Legal source references retain typed/jurisdiction readiness; catalog readiness does not verify legal accuracy or case applicability",
       "Resource Directory exact-site pins remain unavailable until reviewed public addresses receive genuine coordinates",
     ],
   });

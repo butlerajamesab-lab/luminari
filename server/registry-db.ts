@@ -1,100 +1,64 @@
 import { db } from "./db";
 import { sql } from "drizzle-orm";
+import { registryJurisdictionJoin } from "./services/registry-jurisdiction-sql";
+
+// Keep stored text identities intact. Resolve existing legacy encodings against
+// a selected canonical jurisdiction without multiplying source rows.
+function jurisdictionFilter(source: string, jurisdictionId: string | number) {
+  const id = String(jurisdictionId);
+  return sql`(${sql.raw(source)} = ${id} OR EXISTS (
+    SELECT 1 FROM registry_jurisdictions selected_j
+    ${sql.raw(registryJurisdictionJoin(source, "matched_j"))}
+    WHERE selected_j.id = ${id}
+      AND (matched_j.id = selected_j.id OR matched_j.abbreviation = selected_j.abbreviation)
+  ))`;
+}
 
 export async function listJurisdictions() {
-  const result = await db.execute(
-    sql`SELECT * FROM registry_jurisdictions ORDER BY name`
-  );
+  const result = await db.execute(sql`SELECT * FROM registry_jurisdictions ORDER BY name, id`);
   return result.rows ?? [];
 }
 
 export async function getJurisdiction(id: string | number) {
   const result = await db.execute(
-    sql`SELECT * FROM registry_jurisdictions WHERE id = ${Number(id)} LIMIT 1`
+    sql`SELECT * FROM registry_jurisdictions WHERE id = ${String(id)} LIMIT 1`
   );
   return (result.rows ?? [])[0] ?? null;
 }
 
 export async function listPrograms(jurisdictionId?: string | number, category?: string) {
-  if (jurisdictionId && category) {
-    const result = await db.execute(
-      sql`SELECT * FROM registry_programs WHERE jurisdiction_id = ${Number(jurisdictionId)} AND category = ${category} ORDER BY name`
-    );
-    return result.rows ?? [];
-  }
-  if (jurisdictionId) {
-    const result = await db.execute(
-      sql`SELECT * FROM registry_programs WHERE jurisdiction_id = ${Number(jurisdictionId)} ORDER BY name`
-    );
-    return result.rows ?? [];
-  }
-  const result = await db.execute(
-    sql`SELECT * FROM registry_programs ORDER BY name`
-  );
+  const conditions = [];
+  if (jurisdictionId !== undefined) conditions.push(jurisdictionFilter("COALESCE(NULLIF(p.jurisdiction_id, ''), p.jurisdiction_id_rp)", jurisdictionId));
+  if (category !== undefined) conditions.push(sql`p.category = ${category}`);
+  const where = conditions.length ? sql`WHERE ${sql.join(conditions, sql` AND `)}` : sql``;
+  const result = await db.execute(sql`SELECT p.* FROM registry_programs p ${where} ORDER BY p.name, p.id`);
   return result.rows ?? [];
 }
 
 export async function listPolicyAlerts(jurisdictionId?: string | number) {
-  if (jurisdictionId) {
-    const result = await db.execute(
-      sql`SELECT * FROM registry_policy_alerts WHERE jurisdiction_id = ${Number(jurisdictionId)} ORDER BY created_at DESC`
-    );
-    return result.rows ?? [];
-  }
-  const result = await db.execute(
-    sql`SELECT * FROM registry_policy_alerts ORDER BY created_at DESC`
-  );
+  const where = jurisdictionId === undefined ? sql`` : sql`WHERE ${jurisdictionFilter("a.jurisdiction_id_rpa", jurisdictionId)}`;
+  const result = await db.execute(sql`SELECT a.* FROM registry_policy_alerts a ${where} ORDER BY a.created_at_rpa DESC, a.id`);
   return result.rows ?? [];
 }
 
 export async function listWorkflows(jurisdictionId?: string | number) {
-  if (jurisdictionId) {
-    const result = await db.execute(
-      sql`SELECT * FROM registry_workflows WHERE jurisdiction_id = ${Number(jurisdictionId)} ORDER BY name`
-    );
-    return result.rows ?? [];
-  }
-  const result = await db.execute(
-    sql`SELECT * FROM registry_workflows ORDER BY name`
-  );
+  const where = jurisdictionId === undefined ? sql`` : sql`WHERE ${jurisdictionFilter("w.jurisdiction_id_rw", jurisdictionId)}`;
+  const result = await db.execute(sql`SELECT w.* FROM registry_workflows w ${where} ORDER BY w.workflow_type_rw, w.id`);
   return result.rows ?? [];
 }
 
 export async function listOversightBodies(jurisdictionId?: string | number) {
-  if (jurisdictionId) {
-    const result = await db.execute(
-      sql`SELECT * FROM registry_oversight_bodies WHERE jurisdiction_id_rob = ${Number(jurisdictionId)} ORDER BY agency_name_rob`
-    );
-    return result.rows ?? [];
-  }
-  const result = await db.execute(
-    sql`SELECT * FROM registry_oversight_bodies ORDER BY agency_name_rob`
-  );
+  const where = jurisdictionId === undefined ? sql`` : sql`WHERE ${jurisdictionFilter("o.jurisdiction_id_rob", jurisdictionId)}`;
+  const result = await db.execute(sql`SELECT o.* FROM registry_oversight_bodies o ${where} ORDER BY o.agency_name_rob, o.id`);
   return result.rows ?? [];
 }
 
 export async function getSignals(jurisdictionId?: string | number, signalType?: string) {
-  if (jurisdictionId && signalType) {
-    const result = await db.execute(
-      sql`SELECT * FROM registry_signals WHERE jurisdiction_id = ${Number(jurisdictionId)} AND signal_type = ${signalType} ORDER BY created_at DESC`
-    );
-    return result.rows ?? [];
-  }
-  if (jurisdictionId) {
-    const result = await db.execute(
-      sql`SELECT * FROM registry_signals WHERE jurisdiction_id = ${Number(jurisdictionId)} ORDER BY created_at DESC`
-    );
-    return result.rows ?? [];
-  }
-  if (signalType) {
-    const result = await db.execute(
-      sql`SELECT * FROM registry_signals WHERE signal_type = ${signalType} ORDER BY created_at DESC`
-    );
-    return result.rows ?? [];
-  }
-  const result = await db.execute(
-    sql`SELECT * FROM registry_signals ORDER BY created_at DESC`
-  );
+  const conditions = [];
+  if (jurisdictionId !== undefined) conditions.push(jurisdictionFilter("s.jurisdiction_id_rs", jurisdictionId));
+  if (signalType !== undefined) conditions.push(sql`s.signal_type_rs = ${signalType}`);
+  const where = conditions.length ? sql`WHERE ${sql.join(conditions, sql` AND `)}` : sql``;
+  const result = await db.execute(sql`SELECT s.* FROM registry_signals s ${where} ORDER BY s.created_at_rs DESC, s.id`);
   return result.rows ?? [];
 }
 
@@ -103,15 +67,8 @@ export async function getSourceTraceability(jurisdictionId: string | number) {
 }
 
 export async function getProgramCategories(jurisdictionId?: string | number) {
-  if (jurisdictionId) {
-    const result = await db.execute(
-      sql`SELECT DISTINCT category FROM registry_programs WHERE jurisdiction_id = ${Number(jurisdictionId)} AND category IS NOT NULL ORDER BY category`
-    );
-    return (result.rows ?? []).map((r: any) => r.category);
-  }
-  const result = await db.execute(
-    sql`SELECT DISTINCT category FROM registry_programs WHERE category IS NOT NULL ORDER BY category`
-  );
+  const condition = jurisdictionId === undefined ? sql`` : sql`AND ${jurisdictionFilter("COALESCE(NULLIF(p.jurisdiction_id, ''), p.jurisdiction_id_rp)", jurisdictionId)}`;
+  const result = await db.execute(sql`SELECT DISTINCT p.category FROM registry_programs p WHERE p.category IS NOT NULL ${condition} ORDER BY p.category`);
   return (result.rows ?? []).map((r: any) => r.category);
 }
 

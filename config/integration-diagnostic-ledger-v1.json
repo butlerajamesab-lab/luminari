@@ -37,85 +37,207 @@
     {
       "family_key": "legal",
       "label": "Legal authority catalog",
-      "canonical_objects": ["legal_authority", "statute", "case_law"],
+      "canonical_objects": [
+        "legal_authority",
+        "statute",
+        "case_law"
+      ],
       "relations": [
-        { "relation": "public.v_lighthouse_legal_authority_catalog_v2", "role": "authoritative_view" },
-        { "relation": "public.luminari_corpus_candidate_v1", "role": "candidate_substrate" },
-        { "relation": "public.legal_statutes", "role": "legacy_compat_table" },
-        { "relation": "public.legal_case_law", "role": "legacy_compat_table" }
+        {
+          "relation": "public.v_lighthouse_legal_authority_catalog_v2",
+          "role": "authoritative_view"
+        },
+        {
+          "relation": "public.luminari_corpus_candidate_v1",
+          "role": "candidate_substrate"
+        },
+        {
+          "relation": "public.legal_statutes",
+          "role": "legacy_compat_table"
+        },
+        {
+          "relation": "public.legal_case_law",
+          "role": "legacy_compat_table"
+        }
       ],
       "runtime_surfaces": [
-        { "surface": "/legal-library", "query": "trpc.legalLibrary.searchStatutes/searchCaseLaw/searchEnforcement/listContradictions" },
-        { "surface": "/mission-control", "query": "trpc.canonicalCore.legalAuthorities" }
+        {
+          "surface": "/legal-library",
+          "query": "trpc.canonicalCore.legalAuthorities + legalLibrary typed/compatibility readers"
+        },
+        {
+          "surface": "/mission-control",
+          "query": "trpc.canonicalCore.legalAuthorities"
+        }
       ]
     },
     {
       "family_key": "resources",
       "label": "Resource and program directory",
-      "canonical_objects": ["resource", "program"],
+      "canonical_objects": [
+        "resource",
+        "program"
+      ],
       "relations": [
-        { "relation": "public.v_lighthouse_resource_program_catalog_v2", "role": "authoritative_view" },
-        { "relation": "public.luminari_corpus_candidate_v1", "role": "candidate_substrate" },
-        { "relation": "public.case_resource_links", "role": "case_edge" }
+        {
+          "relation": "public.v_lighthouse_resource_program_catalog_v2",
+          "role": "authoritative_view"
+        },
+        {
+          "relation": "public.luminari_corpus_candidate_v1",
+          "role": "candidate_substrate"
+        },
+        {
+          "relation": "public.case_resource_links",
+          "role": "case_edge"
+        }
       ],
       "runtime_surfaces": [
-        { "surface": "/resources", "query": "trpc.resourceDirectory.search/detail" },
-        { "surface": "/civic-map", "query": "REST civic-map coverage/detail" }
+        {
+          "surface": "/resources",
+          "query": "trpc.resourceDirectory.search/detail"
+        },
+        {
+          "surface": "/civic-map",
+          "query": "REST civic-map coverage/detail"
+        }
       ]
     },
     {
       "family_key": "workflows",
       "label": "Workflow and accountability substrate",
-      "canonical_objects": ["workflow", "deadline", "enforcement_pathway", "oversight_route"],
+      "canonical_objects": [
+        "workflow",
+        "deadline",
+        "enforcement_pathway",
+        "oversight_route"
+      ],
       "relations": [
-        { "relation": "public.v_lighthouse_workflow_accountability_catalog_v1", "role": "authoritative_view" },
-        { "relation": "public.registry_deadline_rules", "role": "canonical_table" },
-        { "relation": "public.luminari_corpus_candidate_v1", "role": "candidate_substrate" }
+        {
+          "relation": "public.v_lighthouse_workflow_accountability_catalog_v1",
+          "role": "authoritative_view"
+        },
+        {
+          "relation": "public.registry_deadline_rules",
+          "role": "canonical_table"
+        },
+        {
+          "relation": "public.luminari_corpus_candidate_v1",
+          "role": "candidate_substrate"
+        }
       ],
       "runtime_surfaces": [
-        { "surface": "case_action_context", "query": "read_investigation_workflow/read_enforcement_pathways/list_filing_deadline_records" }
+        {
+          "surface": "case_action_context",
+          "query": "load_governed_legal_registry exact jurisdiction/claim bindings; current civic-object enforcement references"
+        }
       ]
     },
     {
       "family_key": "signals",
       "label": "Signal substrate",
-      "canonical_objects": ["signal", "pattern_signal", "intake_signal"],
+      "canonical_objects": [
+        "signal",
+        "pattern_signal",
+        "intake_signal"
+      ],
       "relations": [
-        { "relation": "public.v_signal_lineage", "role": "authoritative_view" },
-        { "relation": "public.signal_artifact_case_links_v1", "role": "case_edge" },
-        { "relation": "public.detected_signals", "role": "legacy_runtime_table" }
+        {
+          "relation": "public.intake_signals",
+          "role": "domain_1"
+        },
+        {
+          "relation": "public.legal_patterns",
+          "role": "domain_2"
+        },
+        {
+          "relation": "public.live_data_signals",
+          "role": "domain_3"
+        },
+        {
+          "relation": "public.signal_convergences",
+          "role": "explicit_convergence"
+        },
+        {
+          "relation": "public.signal_artifact_case_links_v1",
+          "role": "case_edge"
+        }
       ],
       "runtime_surfaces": [
-        { "surface": "/signal-registry", "query": "trpc.signalExtraction.* / trpc.enforcementIntel.list_case_signal_artifacts" },
-        { "surface": "case_action_context", "query": "v_signal_lineage bounded reads" }
+        {
+          "surface": "/signal-registry",
+          "query": "trpc.signalExtraction.* / trpc.enforcementIntel.list_case_signal_artifacts"
+        },
+        {
+          "surface": "case_action_context",
+          "query": "signal_artifact_case_links_v1 exact case bindings"
+        }
       ]
     },
     {
       "family_key": "doctrine_weak_joints",
       "label": "Doctrine, contradictions, and weak joints",
-      "canonical_objects": ["contradiction", "weak_joint", "doctrine"],
+      "canonical_objects": [
+        "contradiction",
+        "weak_joint",
+        "doctrine"
+      ],
       "relations": [
-        { "relation": "public.legal_weak_joints", "role": "canonical_table" },
-        { "relation": "public.legal_contradictions", "role": "canonical_table" },
-        { "relation": "public.doctrine_graph_edges", "role": "graph_relation" }
+        {
+          "relation": "public.legal_weak_joints",
+          "role": "canonical_table"
+        },
+        {
+          "relation": "public.legal_contradictions",
+          "role": "canonical_table"
+        },
+        {
+          "relation": "public.doctrine_graph_edges",
+          "role": "graph_relation"
+        }
       ],
       "runtime_surfaces": [
-        { "surface": "/legal-library", "query": "trpc.legalLibrary.searchWeakJoints/listContradictions" },
-        { "surface": "/doctrine-graph", "query": "trpc.enforcementIntel.getDoctrineGraph" }
+        {
+          "surface": "/legal-library",
+          "query": "trpc.legalLibrary.searchWeakJoints/listContradictions"
+        },
+        {
+          "surface": "/doctrine-graph",
+          "query": "trpc.enforcementIntel.getDoctrineGraph"
+        }
       ]
     },
     {
       "family_key": "intake_case_links",
       "label": "Intake and case attachment substrate",
-      "canonical_objects": ["case_instance", "case_resource_link", "signal_case_link"],
+      "canonical_objects": [
+        "case_instance",
+        "case_resource_link",
+        "signal_case_link"
+      ],
       "relations": [
-        { "relation": "public.v_lighthouse_case_attachable_objects_v1", "role": "authoritative_view" },
-        { "relation": "public.case_resource_links", "role": "case_edge" },
-        { "relation": "public.signal_artifact_case_links_v1", "role": "case_edge" }
+        {
+          "relation": "public.v_lighthouse_case_attachable_objects_v1",
+          "role": "authoritative_view"
+        },
+        {
+          "relation": "public.case_resource_links",
+          "role": "case_edge"
+        },
+        {
+          "relation": "public.signal_artifact_case_links_v1",
+          "role": "case_edge"
+        }
       ],
       "runtime_surfaces": [
-        { "surface": "trpc.luminari.getContext/getActionContext", "query": "service-layer case action context" },
-        { "surface": "trpc.case_state.get", "query": "case_state resource links" }
+        {
+          "surface": "trpc.luminari.get_action_context (public.cases namespace)",
+          "query": "service-layer case action context"
+        },
+        {
+          "surface": "trpc.case_state.get",
+          "query": "case_state resource links"
+        }
       ]
     }
   ],

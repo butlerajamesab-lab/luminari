@@ -24,14 +24,17 @@ describe("retired whole-universe civic/legal explorer", () => {
 
   it("keeps bounded canonical corpus readers available without a universal explorer", () => {
     const router = read("server/routers/canonical-core-router.ts");
+    const reader = read("server/services/current-legal-authority-reader.ts");
 
     expect(router).toContain("graphNodePage: publicProcedure");
     expect(router).toContain("graphEdgePage: publicProcedure");
     expect(router).toContain("unresolvedRelationshipPage: publicProcedure");
     expect(router).toContain("legalAuthorities: publicProcedure");
     expect(router).toContain("currentObjectCounts: publicProcedure");
-    expect(router).toContain("filtered_total");
-    expect(router).toContain("window_only: true");
+    expect(router).toContain('from "../services/current-legal-authority-reader"');
+    expect(router).toContain("read_current_legal_authorities(input)");
+    expect(reader).toContain("filtered_total");
+    expect(reader).toContain("window_only: true");
   });
 
   it("keeps the Doctrine Graph governed by doctrine registry reads only", () => {
