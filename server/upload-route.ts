@@ -9,6 +9,10 @@ import { db } from "./db";
 import { documents } from "../drizzle/schema";
 import { and, eq, sql } from "drizzle-orm";
 import { cases } from "../drizzle/schema";
+import {
+  case_intake_continuity_origin_context_schema,
+  type case_intake_continuity_origin_context,
+} from "@shared/case-intake-continuity";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -70,6 +74,23 @@ async function authenticateCurrentRequest(req: Request, res: Response) {
 type AuthenticatedUploadUser = NonNullable<
   Awaited<ReturnType<typeof authenticateCurrentRequest>>
 >;
+
+function parseOriginContext(
+  value: unknown,
+): case_intake_continuity_origin_context | null {
+  try {
+    if (typeof value === "string") {
+      if (value.trim() === "") return null;
+      return case_intake_continuity_origin_context_schema.parse(
+        JSON.parse(value),
+      );
+    }
+    if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+    return case_intake_continuity_origin_context_schema.parse(value);
+  } catch {
+    return null;
+  }
+}
 
 async function requireUploadAuthentication(
   req: Request,
@@ -256,7 +277,9 @@ export function registerUploadRoute(app: Express) {
 
       // ── Create or attach to upload session ──
       const sessionIdParam = req.body.sessionId ? parseInt(req.body.sessionId) : null;
+      const requestedOriginContext = parseOriginContext(req.body.originContext);
       let sessionId: number;
+      let effectiveOriginContext = requestedOriginContext;
 
       if (sessionIdParam) {
         // Attach to existing session (multi-batch upload)
@@ -266,12 +289,18 @@ export function registerUploadRoute(app: Express) {
           return;
         }
         sessionId = sessionIdParam;
+        effectiveOriginContext =
+          parseOriginContext((existingSession as any).metadata?.origin_context) ??
+          requestedOriginContext;
       } else {
         // Create new session
         sessionId = await dbHelpers.createUploadSession({
           caseId,
           userId: user.id,
           totalFiles: files.length,
+          metadata: requestedOriginContext
+            ? { origin_context: requestedOriginContext }
+            : undefined,
         });
       }
 
@@ -337,7 +366,15 @@ export function registerUploadRoute(app: Express) {
             action: "upload_document",
             targetType: "document",
             targetId: docId,
-            details: { filename: file.originalname, fileType, fileSize: file.size, sha256Hash },
+            details: {
+              filename: file.originalname,
+              fileType,
+              fileSize: file.size,
+              sha256Hash,
+              ...(effectiveOriginContext
+                ? { origin_context: effectiveOriginContext }
+                : {}),
+            },
           });
 
           // Log pipeline event: document_uploaded

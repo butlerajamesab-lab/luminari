@@ -4,6 +4,7 @@ import { getPool } from "./db-legacy";
 import {
   INTAKE_CANONICALIZATION_VERSION,
   INTAKE_EXECUTION_CONTRACT_VERSION,
+  type IntakeCaseLinkScope,
 } from "./intake-case-layer-reader";
 import { computeHash } from "./engines/intake-spine/utils";
 import type { PreservationResult } from "./engines/intake-spine/layer-3-evidence_preservation";
@@ -76,18 +77,25 @@ function integrity_failure(message: string, cause?: unknown): never {
  */
 export async function read_case_intake_integrity_projection(
   case_id: number,
+  options?: { link_scope?: IntakeCaseLinkScope },
 ): Promise<IntakeIntegrityProjection> {
-  const result = await getPool().query(
-    `with linked_sessions as (
-       select cil.intake_session_id, cib.legacy_case_id
-         from public.case_identity_bridge cib
-         join public.case_intake_links cil on cil.case_uuid = cib.case_uuid
-         join public.intake_sessions s on s.intake_session_id = cil.intake_session_id
-        where cib.legacy_case_id = $1
+  const link_scope = options?.link_scope ?? "primary";
+  const primary_only_clause =
+    link_scope === "all"
+     ? ""
+     : `
           and cil.is_primary = true
           and cil.link_type = 'primary_projection'
           and s.session_type = 'live'
-          and s.entry_channel = 'upload'
+          and s.entry_channel = 'upload'`;
+  const result = await getPool().query(
+    `with linked_sessions as (
+      select cil.intake_session_id, cib.legacy_case_id
+        from public.case_identity_bridge cib
+        join public.case_intake_links cil on cil.case_uuid = cib.case_uuid
+        join public.intake_sessions s on s.intake_session_id = cil.intake_session_id
+       where cib.legacy_case_id = $1
+          ${primary_only_clause}
      ), source_artifacts as (
        select
          ia.artifact_id,

@@ -48,6 +48,7 @@ import { trpc } from "@/lib/trpc";
 import PlainLanguageToggle from "./PlainLanguageToggle";
 import { NotificationBell } from "./NotificationBell";
 import { resetTour } from "./OnboardingTour";
+import { CaseIntakeContinuityPanel } from "./CaseIntakeContinuityPanel";
 import {
   allNavSections,
   adminSection,
@@ -195,6 +196,14 @@ function MobileLayout({ children }: { children: React.ReactNode }) {
 
       {/* Main content with bottom padding for nav bar */}
       <main className="flex-1 p-3 pb-20">
+        {currentCaseId ? (
+          <div className="mb-3">
+            <CaseIntakeContinuityPanel
+              caseId={currentCaseId}
+              routePath={location}
+            />
+          </div>
+        ) : null}
         {children}
       </main>
 
@@ -839,7 +848,17 @@ function DesktopLayoutContent({
             onNavigate={setLocation}
           />
         )}
-        <main className="flex-1 p-6">{children}</main>
+        <main className="flex-1 p-6">
+          {currentCaseId ? (
+            <div className="mb-4">
+              <CaseIntakeContinuityPanel
+                caseId={currentCaseId}
+                routePath={location}
+              />
+            </div>
+          ) : null}
+          {children}
+        </main>
       </SidebarInset>
     </>
   );

@@ -1942,6 +1942,7 @@ export async function createUploadSession(data: {
   caseId: number;
   userId: number;
   totalFiles: number;
+  metadata?: Record<string, unknown>;
 }): Promise<number> {
   const now = Date.now();
   const [inserted] = await db.insert(uploadSessions).values({
@@ -1951,6 +1952,7 @@ export async function createUploadSession(data: {
     completedFiles: 0,
     failedFiles: 0,
     duplicateFiles: 0,
+    metadata: data.metadata ?? {},
     status: "uploading",
     createdAt: now,
     updatedAt: now,

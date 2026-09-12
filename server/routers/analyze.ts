@@ -12,10 +12,40 @@ import type { DetectedPattern } from '../engines/intake-spine/layer-10-pattern_r
 import type { CascadeChain } from '../engines/intake-spine/layer-11-cascade_registry';
 import type { ClaimCandidate } from '../engines/intake-spine/layer-12-rights_and_duties_matrix';
 import type { ActionPath } from '../engines/intake-spine/layer-14-action_paths';
+import { read_case_intake_continuity } from '../intake-case-continuity';
 
 const SHA256_RE = /^[0-9a-f]{64}$/;
 
 export const analyzeRouter = router({
+  getCaseIntakeContinuity: protectedProcedure
+    .input(z.object({
+      caseId: z.number().int().positive().optional(),
+      caseUuid: z.string().uuid().optional(),
+    }).refine(
+      input => Number(Boolean(input.caseId)) + Number(Boolean(input.caseUuid)) === 1,
+      "Provide exactly one case reference",
+    ))
+    .query(async ({ ctx, input }) => {
+      if (input.caseId) {
+        await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+        return read_case_intake_continuity({ case_id: input.caseId });
+      }
+
+      const bridge = await getPool().query<{ legacy_case_id: number | string }>(
+        `select legacy_case_id
+           from public.case_identity_bridge
+          where case_uuid = $1::uuid
+          limit 1`,
+        [input.caseUuid],
+      );
+      const case_id = Number(bridge.rows[0]?.legacy_case_id ?? 0);
+      if (!Number.isSafeInteger(case_id) || case_id <= 0) {
+        throw new Error("case_intake_continuity_bridge_not_found");
+      }
+      await db_helpers.verifyCaseOwnership(case_id, ctx.user.id);
+      return read_case_intake_continuity({ case_uuid: input.caseUuid! });
+    }),
+
   get_workflow_coverage: admin_procedure
     .input(z.object({
       status: z.enum(['all', 'claim_type_matched', 'missing_claim_binding', 'held']).default('all'),

@@ -63,9 +63,16 @@ import {
 let server: Server;
 let base_url: string;
 
-async function post_file(contents: string, filename = "proof.txt") {
+async function post_file(
+  contents: string,
+  filename = "proof.txt",
+  fields?: Record<string, string>,
+) {
   const form = new FormData();
   form.set("caseId", "44");
+  for (const [key, value] of Object.entries(fields ?? {})) {
+    form.set(key, value);
+  }
   form.append("files", new Blob([contents], { type: "text/plain" }), filename);
   return fetch(`${base_url}/api/upload`, {
     method: "POST",
@@ -479,6 +486,46 @@ describe("authenticated multipart document upload", () => {
     expect(state.log_audit).not.toHaveBeenCalled();
     expect(state.increment_upload_session_counter).toHaveBeenCalledWith(501, "duplicateFiles");
     expect(state.finalize_upload_session).toHaveBeenCalledWith(501);
+  });
+
+  it("binds launcher origin context to the authenticated upload session and audit trail", async () => {
+    const contents = "origin-bound acceptance payload";
+    const expected_hash = createHash("sha256").update(contents).digest("hex");
+    state.select_queue.push(
+      [{ id: 44, userId: 9 }],
+      [],
+      [{ count: 1 }],
+    );
+
+    const origin_context = {
+      case_id: 44,
+      case_uuid: "e650c976-0178-4d72-9dda-092eddf3207a",
+      originating_route: "/documents",
+      originating_surface: "documents",
+      user_intent: "supports",
+      related_subject: { type: "document", id: "41", label: "care-plan.pdf" },
+      from_route: "/documents",
+    };
+
+    const response = await post_file(contents, "origin.txt", {
+      originContext: JSON.stringify(origin_context),
+    });
+    expect(response.status).toBe(200);
+    await response.json();
+
+    expect(state.create_upload_session).toHaveBeenCalledWith({
+      caseId: 44,
+      userId: 9,
+      totalFiles: 1,
+      metadata: { origin_context },
+    });
+    expect(state.log_audit).toHaveBeenCalledWith(expect.objectContaining({
+      details: expect.objectContaining({
+        filename: "origin.txt",
+        sha256Hash: expected_hash,
+        origin_context,
+      }),
+    }));
   });
 });
 
