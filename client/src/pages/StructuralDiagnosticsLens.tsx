@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/core/hooks/useAuth";
 import { useWorldIndex } from "@/hooks/useWorldIndex";
 import { diagnosticsView } from "@/lib/diagnosticsView";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -176,6 +177,7 @@ export default function StructuralDiagnosticsLens() {
   const params = useMemo(() => new URLSearchParams(searchString), [searchString]);
 
   // ─── Context from Case Resolution handoff ───
+  const { user } = useAuth();
   const handoffClaimType = params.get("claimType") || "";
   const handoffJurisdiction = params.get("jurisdiction") || "";
   const handoffDomain = params.get("domain") || "";
@@ -237,22 +239,26 @@ export default function StructuralDiagnosticsLens() {
   }
 
   // Load the selected lens only; unrelated reads must not delay this table.
-  const barrierClusters = trpc.dualLens.getBarrierClusters.useQuery({}, { enabled: activeTab === "barriers", select: diagnosticsView.barriers });
+  const barrierClusters = trpc.dualLens.getBarrierClusters.useQuery({ domain: filterDomain || undefined }, { enabled: activeTab === "barriers", select: diagnosticsView.barriers });
   const doctrineClusters = trpc.dualLens.getDoctrineClusters.useQuery({
     keywords: filterKeywords,
     search: doctrineSearchQuery,
     offset: doctrineOffset,
     limit: 100,
   }, { enabled: activeTab === "doctrines", select: diagnosticsView.doctrines });
-  const institutions = trpc.dualLens.getAffectedInstitutions.useQuery({}, { enabled: activeTab === "institutions", select: diagnosticsView.institutions });
-  const signalPatterns = trpc.dualLens.getSignalPatterns.useQuery({}, { enabled: activeTab === "signals", select: diagnosticsView.signals });
-  const systemicPaths = trpc.dualLens.getSystemicPaths.useQuery({}, { enabled: activeTab === "paths", select: diagnosticsView.paths });
+  const institutions = trpc.dualLens.getAffectedInstitutions.useQuery({ domain: filterDomain || undefined }, { enabled: activeTab === "institutions", select: diagnosticsView.institutions });
+  const signalPatterns = trpc.dualLens.getSignalPatterns.useQuery({ domain: filterDomain || undefined }, { enabled: activeTab === "signals", select: diagnosticsView.signals });
+  const systemicPaths = trpc.dualLens.getSystemicPaths.useQuery({ domain: filterDomain || undefined }, { enabled: activeTab === "paths", select: diagnosticsView.paths });
+  const [liveOffset, setLiveOffset] = useState(0);
+  useEffect(() => setLiveOffset(0), [filterJurisdiction, filterDomain, filterClaimType]);
   const stats = trpc.dualLens.stats.useQuery(undefined, { select: diagnosticsView.stats });
   const detectedSignalsQuery = trpc.dualLens.getLiveSignalsForDiagnostics.useQuery({
     jurisdiction: filterJurisdiction || undefined,
     domain: filterDomain || undefined,
-  }, { enabled: activeTab === "live", select: diagnosticsView.live });
-  const liveSignalSummary = trpc.dualLens.getLiveSignalSummary.useQuery(undefined, { enabled: activeTab === "live", select: diagnosticsView.summary });
+    offset: liveOffset,
+    query: filterClaimType || undefined,
+  }, { enabled: Boolean(user) && activeTab === "live", select: diagnosticsView.live });
+  const liveSignalSummary = trpc.dualLens.getLiveSignalSummary.useQuery({ query: filterClaimType || undefined, jurisdiction: filterJurisdiction || undefined, domain: filterDomain || undefined }, { enabled: Boolean(user) && activeTab === "live", select: diagnosticsView.summary });
   const selectedQuery = { barriers: barrierClusters, doctrines: doctrineClusters, institutions, signals: signalPatterns, paths: systemicPaths, live: detectedSignalsQuery }[activeTab];
 
   // ─── Client-side filtering helpers ───
@@ -287,7 +293,7 @@ export default function StructuralDiagnosticsLens() {
       const text = [inst.agency, inst.agencyShort, inst.domain].join(" ");
       return matchesFilter(text);
     });
-    return { institutions: filtered, totalAgencies: institutions.data.totalAgencies, totalSignals: institutions.data.totalSignals };
+    return { institutions: filtered, totalAgencies: institutions.data.totalAgencies };
   }, [institutions.data, filterKeywords, hasActiveFilter]);
 
   // Filter signal patterns
@@ -312,30 +318,10 @@ export default function StructuralDiagnosticsLens() {
       const text = [p.barrier, p.doctrineLink, p.statuteLink, p.reformPath].join(" ");
       return matchesFilter(text);
     });
-    return { paths: filtered, totalBarriers: systemicPaths.data.totalBarriers, totalDoctrines: systemicPaths.data.totalDoctrines };
+    return { paths: filtered, totalBarriers: systemicPaths.data.totalBarriers };
   }, [systemicPaths.data, filterKeywords, hasActiveFilter]);
 
-  // Filter live signals
-  const filteredLiveSignals = useMemo(() => {
-    if (!detectedSignalsQuery.data || !hasActiveFilter) return detectedSignalsQuery.data;
-    const filtered = detectedSignalsQuery.data.groups
-      .map(group => {
-        const filteredSignals = group.signals.filter(s => {
-          const text = [s.signalType, s.title, s.explanation, s.jurisdiction, s.domain].join(" ");
-          return matchesFilter(text);
-        });
-        return filteredSignals.length > 0 ? { ...group, count: filteredSignals.length, signals: filteredSignals } : null;
-      })
-      .filter(Boolean) as typeof detectedSignalsQuery.data.groups;
-    return {
-      groups: filtered,
-      totalSignals: filtered.reduce((sum, g) => sum + g.count, 0),
-      uniqueTypes: filtered.length,
-      uniqueDatasets: detectedSignalsQuery.data.uniqueDatasets,
-    };
-  }, [detectedSignalsQuery.data, filterKeywords, hasActiveFilter]);
-
-  const liveSignalCount = liveSignalSummary.data?.totalActive ?? 0;
+  const liveSignalCount = user ? liveSignalSummary.data?.totalCurrent : undefined;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -359,7 +345,7 @@ export default function StructuralDiagnosticsLens() {
             <div>
               <h1 className="text-2xl font-bold">Structural Diagnostics</h1>
               <p className="text-sm text-muted-foreground">
-                Systemic patterns, barrier clusters, institutional analysis, and live data signals
+                Source comparisons, reference catalogs, and current Atlas records
               </p>
             </div>
           </div>
@@ -375,7 +361,7 @@ export default function StructuralDiagnosticsLens() {
                       Filtered from Case Resolution
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Showing systemic patterns related to{" "}
+                      Reference search context for{" "}
                       <span className="text-purple-400 font-medium">{handoffClaimType}</span>
                       {handoffJurisdiction && (
                         <> in <span className="text-purple-400 font-medium">{handoffJurisdiction}</span></>
@@ -413,7 +399,7 @@ export default function StructuralDiagnosticsLens() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__all__">All jurisdictions</SelectItem>
-                  {["j_alabama","j_american_samoa","j_arkansas","j_connecticut","j_guam","j_hawaii","j_kansas","j_louisiana","j_massachusetts","j_mississippi","j_montana","j_new_hampshire","j_north_carolina","j_north_dakota","j_northern_mariana_islands","j_oklahoma","j_puerto_rico","j_south_carolina","j_south_dakota","j_tennessee","j_us_virgin_islands","j_utah","j_wyoming"].map(j => (
+                  {(activeTab === "live" ? liveSignalSummary.data?.jurisdictions ?? [] : ["j_alabama","j_american_samoa","j_arkansas","j_connecticut","j_guam","j_hawaii","j_kansas","j_louisiana","j_massachusetts","j_mississippi","j_montana","j_new_hampshire","j_north_carolina","j_north_dakota","j_northern_mariana_islands","j_oklahoma","j_puerto_rico","j_south_carolina","j_south_dakota","j_tennessee","j_us_virgin_islands","j_utah","j_wyoming"]).map(j => (
                     <SelectItem key={j} value={j}>{j.replace(/^j_/, "").replace(/_/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase())}</SelectItem>
                   ))}
                 </SelectContent>
@@ -424,7 +410,7 @@ export default function StructuralDiagnosticsLens() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__all__">All domains</SelectItem>
-                  {["civil_rights","consumer_fraud","employment","employment_discrimination","fair_housing","food_nutrition","general","healthcare","housing","unemployment","wage_theft"].map(d => (
+                  {(activeTab === "live" ? liveSignalSummary.data?.domains ?? [] : ["civil_rights","consumer_fraud","employment","employment_discrimination","fair_housing","food_nutrition","general","healthcare","housing","unemployment","wage_theft"]).map(d => (
                     <SelectItem key={d} value={d}>{d.replace(/_/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase())}</SelectItem>
                   ))}
                 </SelectContent>
@@ -445,11 +431,11 @@ export default function StructuralDiagnosticsLens() {
                 <span className="font-medium">{stats.data.structuralDiagnostics.doctrines}</span>
               </div>
               <div>
-                <span className="text-muted-foreground">Signals:</span>{" "}
+                <span className="text-muted-foreground">Signal definitions:</span>{" "}
                 <span className="font-medium">{stats.data.structuralDiagnostics.signals}</span>
               </div>
               <div>
-                <span className="text-muted-foreground">Barriers:</span>{" "}
+                <span className="text-muted-foreground">Barrier catalog records (all scopes):</span>{" "}
                 <span className="font-medium">{stats.data.structuralDiagnostics.barriers}</span>
               </div>
               <div>
@@ -461,10 +447,10 @@ export default function StructuralDiagnosticsLens() {
                   </p>
                 )}
               </div>
-              {liveSignalCount > 0 && (
+              {liveSignalCount != null && (
                 <div className="flex items-center gap-1.5">
                   <Satellite className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="text-muted-foreground">Live Signals:</span>{" "}
+                  <span className="text-muted-foreground">Current Domain 3 records:</span>{" "}
                   <span className="font-medium text-emerald-400">{liveSignalCount}</span>
                   {liveSignalSummary.data?.lastDetectedAt && (
                     <span className="text-xs text-muted-foreground ml-1">
@@ -513,20 +499,20 @@ export default function StructuralDiagnosticsLens() {
               )}
             </TabsTrigger>
             <TabsTrigger value="signals" className="gap-2">
-              <Radio className="w-4 h-4" /> Signal Patterns
+              <Radio className="w-4 h-4" /> Signal Definitions
               {hasActiveFilter && filteredSignalPatterns && (
                 <Badge variant="outline" className="ml-1 text-[9px]">{filteredSignalPatterns.totalSignals}</Badge>
               )}
             </TabsTrigger>
             <TabsTrigger value="paths" className="gap-2">
-              <Route className="w-4 h-4" /> Systemic Paths
+              <Route className="w-4 h-4" /> Barrier References
               {hasActiveFilter && filteredSystemicPaths && (
                 <Badge variant="outline" className="ml-1 text-[9px]">{filteredSystemicPaths.paths.length}</Badge>
               )}
             </TabsTrigger>
             <TabsTrigger value="live" className="gap-2">
               <Satellite className="w-4 h-4" /> Live Data
-              {liveSignalCount > 0 && (
+              {liveSignalCount != null && (
                 <Badge className="ml-1 text-[9px] bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
                   {liveSignalCount}
                 </Badge>
@@ -541,12 +527,22 @@ export default function StructuralDiagnosticsLens() {
             ) : filteredBarrierClusters ? (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground mb-4">
-                  {filteredBarrierClusters.totalBarriers} barriers
+                  {filteredBarrierClusters.totalBarriers} civic barrier references
                   {hasActiveFilter && barrierClusters.data && filteredBarrierClusters.totalBarriers !== barrierClusters.data.totalBarriers && (
                     <span className="text-purple-400"> (filtered from {barrierClusters.data.totalBarriers})</span>
                   )}
                   {" "}grouped into {filteredBarrierClusters.clusters.length} clusters by type
                 </p>
+                <p className="text-xs text-muted-foreground">Catalog references are context; their presence does not establish a barrier in a case.</p>
+                {!!barrierClusters.data?.operational_references.length && (
+                  <details className="rounded border border-border/50 p-3 text-sm">
+                    <summary>{barrierClusters.data.operational_references.length} operational ingestion references</summary>
+                    <p className="my-2 text-xs text-muted-foreground">These records describe ingestion operations and are kept outside civic barrier counts and case alerts.</p>
+                    {barrierClusters.data.operational_references.map(row => (
+                      <div key={row.id} className="mb-2 text-xs"><strong>{row.name}</strong><p>{row.description}</p></div>
+                    ))}
+                  </details>
+                )}
                 {filteredBarrierClusters.clusters.length === 0 && hasActiveFilter && (
                   <Card className="border-border/30">
                     <CardContent className="py-8 text-center">
@@ -670,7 +666,7 @@ export default function StructuralDiagnosticsLens() {
             ) : filteredInstitutions ? (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground mb-4">
-                  {filteredInstitutions.institutions.length} institutions with detected issues
+                  {filteredInstitutions.institutions.length} institution authority references
                   {hasActiveFilter && institutions.data && filteredInstitutions.institutions.length !== institutions.data.institutions.length && (
                     <span className="text-purple-400"> (filtered from {institutions.data.institutions.length})</span>
                   )}
@@ -697,19 +693,9 @@ export default function StructuralDiagnosticsLens() {
                               <div className="text-xs text-muted-foreground">{inst.domain}</div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-4 text-xs">
-                            <div className="text-center">
-                              <div className="font-medium text-amber-400">{inst.signalCount}</div>
-                              <div className="text-muted-foreground">Signals</div>
-                            </div>
-                            <div className="text-center">
-                              <div className="font-medium text-red-400">{inst.barrierCount}</div>
-                              <div className="text-muted-foreground">Barriers</div>
-                            </div>
-                            <div className="text-center">
-                              <div className="font-bold text-orange-400">{inst.issueScore}</div>
-                              <div className="text-muted-foreground">Score</div>
-                            </div>
+                          <div className="text-xs text-muted-foreground max-w-sm">
+                            <p>Recorded authority: {inst.statute || "Not recorded"}</p>
+                            <p>Issue attribution: not established by this reference.</p>
                           </div>
                         </div>
                       </CardContent>
@@ -727,11 +713,11 @@ export default function StructuralDiagnosticsLens() {
             ) : filteredSignalPatterns ? (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground mb-4">
-                  {filteredSignalPatterns.totalSignals} signals
+                  {filteredSignalPatterns.totalSignals} signal definitions
                   {hasActiveFilter && signalPatterns.data && filteredSignalPatterns.totalSignals !== signalPatterns.data.totalSignals && (
                     <span className="text-purple-400"> (filtered from {signalPatterns.data.totalSignals})</span>
                   )}
-                  {" "}grouped into {filteredSignalPatterns.patterns.length} pattern types
+                  {" "}grouped into {filteredSignalPatterns.patterns.length} definition types. These counts describe the catalog, not observed occurrences.
                 </p>
                 {filteredSignalPatterns.patterns.length === 0 && hasActiveFilter && (
                   <Card className="border-border/30">
@@ -750,7 +736,7 @@ export default function StructuralDiagnosticsLens() {
                           <Radio className="w-4 h-4 text-cyan-400" />
                           <CardTitle className="text-sm">{pattern.type.replace(/_/g, " ")}</CardTitle>
                         </div>
-                        <Badge variant="outline">{pattern.count} signals</Badge>
+                        <Badge variant="outline">{pattern.count} definitions</Badge>
                       </div>
                     </CardHeader>
                     <CardContent>
@@ -780,17 +766,17 @@ export default function StructuralDiagnosticsLens() {
             ) : filteredSystemicPaths ? (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground mb-4">
-                  {filteredSystemicPaths.paths.length} systemic reform paths
+                  {filteredSystemicPaths.paths.length} barrier references
                   {hasActiveFilter && systemicPaths.data && filteredSystemicPaths.paths.length !== systemicPaths.data.paths.length && (
                     <span className="text-purple-400"> (filtered from {systemicPaths.data.paths.length})</span>
                   )}
-                  {" "}identified from {filteredSystemicPaths.totalBarriers} barriers
+                  {" "}from {filteredSystemicPaths.totalBarriers} civic barrier catalog records. A working route is not established by these references.
                 </p>
                 {filteredSystemicPaths.paths.length === 0 && hasActiveFilter && (
                   <Card className="border-border/30">
                     <CardContent className="py-8 text-center">
                       <Route className="w-8 h-8 text-muted-foreground/50 mx-auto mb-2" />
-                      <p className="text-sm text-muted-foreground">No systemic paths match the current filter.</p>
+                      <p className="text-sm text-muted-foreground">No barrier references match the current filter.</p>
                       <Button variant="link" size="sm" onClick={clearFilters} className="mt-2">Clear filter to see all</Button>
                     </CardContent>
                   </Card>
@@ -822,8 +808,10 @@ export default function StructuralDiagnosticsLens() {
                             )}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            <span className="text-foreground font-medium">Reform path:</span>{" "}
-                            {path.reformPath.length > 200 ? path.reformPath.slice(0, 200) + "..." : path.reformPath}
+                            <span className="text-foreground font-medium">Recorded workaround:</span>{" "}
+                            {path.reformPath || "Not recorded"}
+                            <p className="mt-2">Recorded authorities: {path.authority_refs.join("; ") || "Not recorded"}</p>
+                            <p>Reference status: {path.reference_scope.replace(/_/g, " ")}</p>
                           </div>
                         </div>
                       </div>
@@ -834,261 +822,56 @@ export default function StructuralDiagnosticsLens() {
             ) : null}
           </TabsContent>
 
-          {/* ═══════════════════════════════════════════════════════════════ */}
-          {/* LIVE DATA SIGNALS — from ingestion pipeline                   */}
-          {/* ═══════════════════════════════════════════════════════════════ */}
           <TabsContent value="live">
-            {detectedSignalsQuery.isLoading ? (
-              <div className="text-center py-12 text-muted-foreground">Loading live data signals...</div>
-            ) : (
-              <div className="space-y-6">
-                {/* Live Signal Summary Cards */}
-                {liveSignalSummary.data && liveSignalSummary.data.totalActive > 0 && (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <Card className="bg-card/50 border-border/50">
-                      <CardContent className="py-3 px-4">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Satellite className="w-4 h-4 text-emerald-400" />
-                          <span className="text-xs text-muted-foreground">Recorded Signals</span>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Current Domain 3 records retain their recorded verification and governance states.
+                Observation candidates are not promoted findings. Jurisdiction, domain, and claim-text filters apply before pagination; a text match does not establish a legal relationship.
+              </p>
+              {user && liveSignalSummary.data && (
+                <p className="text-sm">
+                  {liveSignalSummary.data.totalCurrent} current records · {liveSignalSummary.data.observation_candidates} observation candidates · {liveSignalSummary.data.promoted_signals} promoted signals
+                </p>
+              )}
+              {!user ? <p>Sign in to inspect current detections and their source records.</p> : detectedSignalsQuery.isLoading ? <p>Loading current Domain 3 records...</p> : detectedSignalsQuery.data && (
+                <>
+                  <p className="text-sm text-muted-foreground">Showing {detectedSignalsQuery.data.returned} of {detectedSignalsQuery.data.total} matching records</p>
+                  {detectedSignalsQuery.data.items.length === 0 && <p>No current Domain 3 records match this page and filter.</p>}
+                  {detectedSignalsQuery.data.items.map(signal => (
+                    <Card key={signal.record_id} className="bg-card/50 border-border/50">
+                      <CardContent className="py-4 space-y-3">
+                        <div className="flex flex-wrap justify-between gap-2">
+                          <h2 className="font-medium">{signal.title}</h2>
+                          <Badge variant="outline">{signal.governance_status ?? "Governance not recorded"}</Badge>
                         </div>
-                        <div className="text-2xl font-bold text-emerald-400">{liveSignalSummary.data.totalActive}</div>
+                        <p className="text-sm text-muted-foreground">{signal.description}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Verification: {signal.verification_state ?? "Not recorded"} · Recorded severity: {signal.severity ?? "Not recorded"} · Recorded confidence: {formatRecordedConfidence(signal.confidence_score)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {signal.jurisdiction_id ?? "Jurisdiction not recorded"} · {signal.dataset_name ?? signal.primary_stream_id ?? "Source not recorded"} · {formatTimeAgo(signal.detected_at)}
+                        </p>
+                        <details className="text-xs">
+                          <summary>Recorded statistics and method</summary>
+                          <pre className="mt-2 overflow-auto whitespace-pre-wrap break-all">{JSON.stringify({
+                            statistics: signal.supporting_statistics, signal_hash: signal.signal_hash,
+                            engine_id: signal.engine_id, engine_version: signal.engine_version,
+                            rule_id: signal.detection_rule_id, rule_version: signal.detection_rule_version,
+                            input_hash: signal.input_hash, source_freshness_at: signal.source_freshness_at,
+                          }, null, 2)}</pre>
+                        </details>
+                        <a className="text-sm text-cyan-400 underline" href={signal.destination_path}>Inspect this artifact in Anomaly Viewfinder</a>
                       </CardContent>
                     </Card>
-                    {Object.entries(liveSignalSummary.data.bySeverity).map(([severity, cnt]) => (
-                      <Card key={severity} className="bg-card/50 border-border/50">
-                        <CardContent className="py-3 px-4">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Zap className="w-4 h-4" />
-                            <span className="text-xs text-muted-foreground capitalize">{severity}</span>
-                          </div>
-                          <div className="text-2xl font-bold">
-                            <Badge className={`${SEVERITY_COLORS[severity]} text-lg px-2 py-0.5`}>{cnt}</Badge>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                  ))}
+                  <div className="flex flex-wrap gap-3 items-center">
+                    <Button variant="outline" disabled={liveOffset === 0 || detectedSignalsQuery.isFetching} onClick={() => setLiveOffset(Math.max(0, liveOffset - 100))}>Previous records</Button>
+                    <span className="text-sm">Page {Math.floor(liveOffset / 100) + 1}</span>
+                    <Button variant="outline" disabled={detectedSignalsQuery.data.next_offset == null || detectedSignalsQuery.isFetching} onClick={() => setLiveOffset(detectedSignalsQuery.data!.next_offset ?? liveOffset)}>Next records</Button>
                   </div>
-                )}
-
-                {/* Description */}
-                <div className="p-4 rounded-lg border border-emerald-500/20 bg-emerald-500/5">
-                  <div className="flex items-start gap-3">
-                    <Satellite className="w-5 h-5 text-emerald-400 mt-0.5 shrink-0" />
-                    <div>
-                      <p className="text-sm font-medium text-emerald-300 mb-1">
-                        Live Data Intelligence
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Stored signals are grouped by their recorded type. Expand a group to inspect its available
-                        explanation, source label, and supporting data. Missing metadata is shown explicitly.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Signal count summary */}
-                {filteredLiveSignals && (
-                  <p className="text-sm text-muted-foreground">
-                    {filteredLiveSignals.totalSignals} live signals
-                    {hasActiveFilter && detectedSignalsQuery.data && filteredLiveSignals.totalSignals !== detectedSignalsQuery.data.totalSignals && (
-                      <span className="text-emerald-400"> (filtered from {detectedSignalsQuery.data.totalSignals})</span>
-                    )}
-                    {" "}across {filteredLiveSignals.uniqueTypes} detection types
-                    {filteredLiveSignals.uniqueDatasets > 0 && (
-                      <> from {filteredLiveSignals.uniqueDatasets} dataset{filteredLiveSignals.uniqueDatasets !== 1 ? "s" : ""}</>
-                    )}
-                  </p>
-                )}
-
-                {/* Empty state */}
-                {filteredLiveSignals && filteredLiveSignals.totalSignals === 0 && (
-                  <Card className="border-border/30">
-                    <CardContent className="py-12 text-center">
-                      <Satellite className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {hasActiveFilter
-                          ? "No live signals match the current filter."
-                          : "No live signals detected yet."}
-                      </p>
-                      <p className="text-xs text-muted-foreground max-w-md mx-auto">
-                        {hasActiveFilter
-                          ? "Try broadening your filter criteria or clearing filters to see all signals."
-                          : "Live signals will appear here after the ingestion pipeline processes government datasets. Admins can trigger ingestion from Mission Control."}
-                      </p>
-                      {hasActiveFilter && (
-                        <Button variant="link" size="sm" onClick={clearFilters} className="mt-3">Clear filter to see all</Button>
-                      )}
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Signal Groups */}
-                {filteredLiveSignals && filteredLiveSignals.groups.map((group) => {
-                  const IconComponent = SIGNAL_TYPE_ICONS[group.type] || Activity;
-                  const isExpanded = expandedLiveGroup === group.type;
-
-                  return (
-                    <Card key={group.type} className="bg-card/50 border-border/50">
-                      <CardHeader
-                        className="cursor-pointer"
-                        onClick={() => setExpandedLiveGroup(isExpanded ? null : group.type)}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            {isExpanded ? (
-                              <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                            ) : (
-                              <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                            )}
-                            <IconComponent className="w-5 h-5 text-emerald-400" />
-                            <div>
-                              <CardTitle className="text-base capitalize">
-                                {group.type.replace(/_/g, " ")}
-                              </CardTitle>
-                              <CardDescription>
-                                {group.count} signal{group.count !== 1 ? "s" : ""} detected
-                              </CardDescription>
-                            </div>
-                          </div>
-                          <Badge variant="outline" className="text-emerald-400 border-emerald-500/30">
-                            {group.count}
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                      {isExpanded && (
-                        <CardContent className="pt-0">
-                          <div className="space-y-4">
-                            {group.signals.map((signal) => (
-                              <div
-                                key={signal.id}
-                                className="p-4 rounded-lg bg-background/50 border border-border/30 space-y-3"
-                              >
-                                {/* Signal header */}
-                                <div className="flex items-start justify-between gap-3">
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                      {signal.signalType === "repeat_entity" && (signal as any).entityRole && (
-                                        <span className="text-[10px] text-muted-foreground font-medium">
-                                          {(signal as any).entityRole === "business" || (signal as any).entityRole === "respondent" ? "Company:" : (signal as any).entityRole === "agency" ? "Agency:" : (signal as any).entityRole === "organization" ? "Organization:" : null}
-                                        </span>
-                                      )}
-                                      <span className="font-medium text-sm">
-                                        {(signal as any).canonicalEntityName && signal.signalType === "repeat_entity"
-                                          ? (signal as any).canonicalEntityName
-                                          : signal.title}
-                                      </span>
-                                      <Badge className={SEVERITY_COLORS[signal.severity] || SEVERITY_COLORS.medium}>
-                                        {signal.severity}
-                                      </Badge>
-                                      {(signal as any).entityType && signal.signalType === "repeat_entity" && (
-                                        <Badge variant="outline" className={`text-[10px] ${
-                                          (signal as any).entityType === "corporation" ? "text-blue-400 border-blue-500/30" :
-                                          (signal as any).entityType === "financial_institution" ? "text-emerald-400 border-emerald-500/30" :
-                                          (signal as any).entityType === "telecom_company" ? "text-indigo-400 border-indigo-500/30" :
-                                          (signal as any).entityType === "government_agency" ? "text-amber-400 border-amber-500/30" :
-                                          (signal as any).entityType === "landlord_entity" ? "text-orange-400 border-orange-500/30" :
-                                          (signal as any).entityType === "media_company" ? "text-pink-400 border-pink-500/30" :
-                                          "text-gray-400 border-gray-500/30"
-                                        }`}>
-                                          {((signal as any).entityType as string).replace(/_/g, " ")}
-                                        </Badge>
-                                      )}
-                                      {signal.matchesKnownPattern && (
-                                        <Badge variant="outline" className="text-purple-400 border-purple-500/30 text-[10px]">
-                                          Known Pattern
-                                        </Badge>
-                                      )}
-                                    </div>
-                                    {(signal as any).entityAliasesJson && (signal as any).entityAliasesJson.length > 0 && (
-                                      <div className="text-[10px] text-muted-foreground">
-                                        Also known as: {((signal as any).entityAliasesJson as string[]).join(", ")}
-                                      </div>
-                                    )}
-                                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                                      <span>{signal.jurisdiction}</span>
-                                      <span className="text-border">|</span>
-                                      <span>{signal.domain ? signal.domain.replace(/_/g, " ") : "Domain not recorded"}</span>
-                                      <span className="text-border">|</span>
-                                      <span>{signal.datasetName}</span>
-                                      <span className="text-border">|</span>
-                                      <span>{formatTimeAgo(signal.detectedAt)}</span>
-                                    </div>
-                                  </div>
-                                  <div className="text-right shrink-0">
-                                    <div className="text-xs text-muted-foreground">Confidence</div>
-                                    <div className="text-sm font-medium text-emerald-400">
-                                      {formatRecordedConfidence(signal.confidenceScore)}
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Explanation */}
-                                <p className="text-xs text-muted-foreground leading-relaxed">
-                                  {signal.explanation}
-                                </p>
-
-                                {/* Supporting Statistics */}
-                                {signal.supportingStatistics && (
-                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                    <div className="p-2 rounded bg-card/80 border border-border/20">
-                                      <div className="text-[10px] text-muted-foreground">Records Analyzed</div>
-                                      <div className="text-sm font-medium">
-                                        {signal.supportingStatistics.recordsAnalyzed?.toLocaleString() ?? "—"}
-                                      </div>
-                                    </div>
-                                    <div className="p-2 rounded bg-card/80 border border-border/20">
-                                      <div className="text-[10px] text-muted-foreground">Pattern Count</div>
-                                      <div className="text-sm font-medium">
-                                        {signal.supportingStatistics.patternCount?.toLocaleString() ?? "—"}
-                                      </div>
-                                    </div>
-                                    <div className="p-2 rounded bg-card/80 border border-border/20">
-                                      <div className="text-[10px] text-muted-foreground">% Affected</div>
-                                      <div className="text-sm font-medium">
-                                        {signal.supportingStatistics.percentageAffected != null
-                                          ? `${signal.supportingStatistics.percentageAffected}%`
-                                          : "—"}
-                                      </div>
-                                    </div>
-                                    <div className="p-2 rounded bg-card/80 border border-border/20">
-                                      <div className="text-[10px] text-muted-foreground">Jurisdictions</div>
-                                      <div className="text-sm font-medium">
-                                        {signal.supportingStatistics.jurisdictionsAffected?.length ?? "—"}
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* Additional Metrics */}
-                                {signal.supportingStatistics?.additionalMetrics && (
-                                  <div className="flex flex-wrap gap-2">
-                                    {Object.entries(signal.supportingStatistics.additionalMetrics).map(([key, val]) => (
-                                      <Badge key={key} variant="outline" className="text-[10px] font-normal">
-                                        {key.replace(/([A-Z])/g, " $1").trim()}: {typeof val === "number" ? (val as number).toLocaleString() : String(val)}
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                )}
-
-                                {/* Interpretation Context */}
-                                {signal.supportingStatistics?.interpretationContext && (
-                                  <InterpretationContextPanel context={signal.supportingStatistics.interpretationContext} />
-                                )}
-
-                                {/* Pattern Summary */}
-                                <div className="text-[11px] text-muted-foreground/70 italic border-t border-border/20 pt-2">
-                                  {signal.patternSummary}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      )}
-                    </Card>
-                  );
-                })}
-              </div>
-            )}
+                </>
+              )}
+            </div>
           </TabsContent>
         </Tabs>
       </div>

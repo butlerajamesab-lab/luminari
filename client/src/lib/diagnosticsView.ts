@@ -20,7 +20,6 @@ export const diagnosticsView = {
   }),
   institutions: (data: Output["getAffectedInstitutions"]) => ({
     totalAgencies: data.total_agencies,
-    totalSignals: data.total_signals,
     institutions: data.institutions.map((i) => ({
       id: i.id,
       agency: i.agency,
@@ -29,6 +28,8 @@ export const diagnosticsView = {
       signalCount: i.signal_count,
       barrierCount: i.barrier_count,
       issueScore: i.issue_score,
+      statute: i.statute,
+      attributionStatus: i.attribution_status,
     })),
   }),
   signals: (data: Output["getSignalPatterns"]) => ({
@@ -38,19 +39,11 @@ export const diagnosticsView = {
   paths: (data: Output["getSystemicPaths"]) => ({
     ...data,
     totalBarriers: data.total_barriers,
-    totalDoctrines: data.total_doctrines,
   }),
-  live: (data: Output["getLiveSignalsForDiagnostics"]) => ({
-    ...data,
-    totalSignals: data.total_signals,
-    uniqueTypes: data.unique_types,
-    uniqueDatasets: data.unique_datasets,
-  }),
+  live: (data: Output["getLiveSignalsForDiagnostics"]) => data,
   summary: (data: Output["getLiveSignalSummary"]) => ({
-    totalActive: data.total_active,
-    bySeverity: data.by_severity,
-    byDomain: data.by_domain,
-    byType: data.by_type,
+    ...data,
+    totalCurrent: data.total_current,
     lastDetectedAt: data.last_detected_at,
   }),
   stats: (data: Output["stats"]) => ({

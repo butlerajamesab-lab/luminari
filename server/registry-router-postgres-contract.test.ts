@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { registryJurisdictionJoin } from "./services/registry-jurisdiction-sql";
 
 describe("jurisdiction-aware registry query contract", () => {
   const registrySource = readFileSync(
@@ -26,8 +27,10 @@ describe("jurisdiction-aware registry query contract", () => {
     expect(registrySource).toContain("p.contact_website_norm");
     expect(registrySource).not.toContain("p.name_rp");
     expect(registrySource).not.toContain("p.website_rp");
-    expect(registrySource).toContain("LOWER('us-' || j.abbreviation)");
-    expect(registrySource).toContain("LOWER('j_' || j.abbreviation)");
+    expect(registrySource).toContain('registryJurisdictionJoin(');
+    const jurisdictionSql = registryJurisdictionJoin('p.jurisdiction_id');
+    expect(jurisdictionSql).toContain("LOWER('us-' || rj.abbreviation)");
+    expect(jurisdictionSql).toContain("LOWER('j_' || rj.abbreviation)");
   });
 
   it("passes the canonical stateCode contract from Benefits Navigator", () => {

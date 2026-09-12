@@ -6,7 +6,9 @@ const state = vi.hoisted(() => ({
   results: {} as Record<string, any>,
   reads: {} as Record<string, any>,
   world: vi.fn(),
+  user: { id: 1 } as { id: number } | null,
 }));
+vi.mock("@/core/hooks/useAuth", () => ({ useAuth: () => ({ user: state.user }) }));
 vi.mock("wouter", () => ({
   useSearch: () => "",
   useLocation: () => ["/diagnostics", vi.fn()],
@@ -53,6 +55,7 @@ import StructuralDiagnosticsLens, { formatRecordedConfidence, formatTimeAgo } fr
 
 beforeEach(() => {
   state.reads = {};
+  state.user = { id: 1 };
   state.world.mockReset();
   const responses = {
     stats: {
@@ -78,6 +81,7 @@ beforeEach(() => {
         { type: "procedural", count: 7, severity: "high", barriers: [] },
       ],
       total_barriers: 7,
+      operational_references: [{ id: 2, name: "Ingestion backlog", description: "Operational reference" }],
     },
     getDoctrineClusters: {
       clusters: [
@@ -103,7 +107,9 @@ beforeEach(() => {
           domain: "housing",
           signal_count: 12,
           barrier_count: 3,
-          issue_score: 27,
+          issue_score: null,
+          statute: "Saved authority",
+          attribution_status: "not_established",
         },
       ],
       total_agencies: 40,
@@ -133,23 +139,22 @@ beforeEach(() => {
           doctrineLink: "review",
           statuteLink: "",
           reformPath: "Clarify the review procedure",
+          authority_refs: ["Saved authority"],
+          reference_scope: "catalog_reference",
         },
       ],
       total_barriers: 10,
       total_doctrines: 15,
     },
     getLiveSignalsForDiagnostics: {
-      groups: [],
-      total_signals: 0,
-      unique_types: 0,
-      unique_datasets: 0,
+      items: [{ record_id: "current-1", title: "Current candidate", description: "Recorded recurrence",
+        governance_status: "observation_candidate", verification_state: "unresolved", signal_hash: "a".repeat(64),
+        destination_path: "/viewfinder?signal_domain=live_data&signal_id=current-1" }],
+      total: 101, returned: 1, next_offset: 100,
     },
     getLiveSignalSummary: {
-      total_active: 6,
-      by_severity: { high: 4 },
-      by_domain: {},
-      by_type: {},
-      last_detected_at: null,
+      total_current: 101, observation_candidates: 101, promoted_signals: 0,
+      by_severity: { high: 4 }, jurisdictions: ["WA"], domains: ["consumer"], last_detected_at: null,
     },
   };
   state.results = Object.fromEntries(
@@ -163,16 +168,22 @@ beforeEach(() => {
 it("renders the snake_case API responses across every diagnostics panel", () => {
   const html = renderToStaticMarkup(<StructuralDiagnosticsLens />);
   expect(html).toContain("Structural Diagnostics");
-  expect(html).toContain("7 barriers");
+  expect(html).toContain("7 civic barrier references");
   expect(html).toContain("Equal protection");
   expect(html).toContain("Showing 1 on this page");
   expect(html).toContain("doctrine graph connections are unavailable");
   expect(html).toContain("TEST");
-  expect(html).toContain(">27<");
+  expect(html).not.toContain(">27<");
+  expect(html).toContain("Issue attribution: not established");
+  expect(html).toContain("Saved authority");
   expect(html).toContain("out of 40 total agencies");
   expect(html).toContain("A recorded signal explanation");
-  expect(html).toContain("identified from 10 barriers");
-  expect(html).toContain("Recorded Signals");
+  expect(html).toContain("from 10 civic barrier catalog records");
+  expect(html).toContain("101 observation candidates");
+  expect(html).toContain("0 promoted signals");
+  expect(html).toContain("/viewfinder?signal_domain=live_data&amp;signal_id=current-1");
+  expect(html).toContain("Ingestion backlog");
+  expect(html).toContain("Next records");
   expect(html).toContain("Unavailable");
   expect(html).toContain("canonical graph summary timed out");
 });
@@ -241,10 +252,20 @@ it.each([true, false])(
     expect(html).toContain("Equal protection");
     if (cached) {
       expect(html).toContain("The last successful result remains visible");
-      expect(html).toContain("7 barriers");
+      expect(html).toContain("7 civic barrier references");
     } else {
       expect(html).toContain("Results are unavailable");
       expect(html).not.toMatch(/\b0 barriers/);
     }
   },
 );
+
+it("does not expose cached canonical records after sign-out", () => {
+  state.user = null;
+  const html = renderToStaticMarkup(<StructuralDiagnosticsLens />);
+  expect(html).toContain("Sign in to inspect current detections");
+  expect(html).not.toContain("Current candidate");
+  expect(html).not.toContain("101 observation candidates");
+  expect(state.reads.getLiveSignalsForDiagnostics.enabled).toBe(false);
+  expect(state.reads.getLiveSignalSummary.enabled).toBe(false);
+});
