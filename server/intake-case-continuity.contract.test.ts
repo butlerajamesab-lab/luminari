@@ -16,7 +16,8 @@ describe("case intake continuity wiring", () => {
     expect(continuity).toContain("from public.case_intake_links");
     expect(continuity).toContain("read_case_intake_integrity_projection(case_id, {");
     expect(continuity).toContain('link_scope: "all"');
-    expect(continuity).toContain('case_overview: "/case-overview"');
+    expect(continuity).toContain("function case_surface_href(path: string, case_id: number)");
+    expect(continuity).toContain('case_overview: case_surface_href("/case-overview", case_id)');
   });
 
   it("keeps primary and related intake sessions separate instead of auto-merging clean-room restarts", () => {
@@ -40,9 +41,11 @@ describe("case intake continuity wiring", () => {
     expect(router).toContain("originContext.case_id must match caseId");
     expect(upload_route).toContain("readRequestedOriginContext(");
     expect(upload_route).toContain('error: "Origin context case does not match upload target"');
+    expect(upload_route).toContain('error: "Origin context does not match the existing upload session"');
     expect(upload_route).toContain("metadata: requestedOriginContext");
     expect(upload_route).toContain("origin_context: effectiveOriginContext");
     expect(upload_page).toContain('formData.append("originContext", JSON.stringify(originContext))');
+    expect(upload_page).toContain("useMemo(");
   });
 
   it("wires the shared continuity panel into case workflow surfaces without duplicating page logic", () => {
@@ -56,9 +59,11 @@ describe("case intake continuity wiring", () => {
     expect(panel).toContain("trpc.analyze.getCaseIntakeContinuity.useQuery");
     expect(panel).toContain("function with_from_param(href: string)");
     expect(panel).toContain("const from = buildFromParam();");
+    expect(panel).toContain("const { setCurrentCaseId } = useCase();");
     expect(panel).toContain('setLocation(with_from_param("/upload"))');
     expect(panel).toContain("setLocation(with_from_param(link.href))");
     expect(panel).toContain("setLocation(with_from_param(href))");
     expect(panel).toContain('.filter(([label]) => label !== surface)');
+    expect(panel).toContain("setCurrentCaseId(caseId);");
   });
 });

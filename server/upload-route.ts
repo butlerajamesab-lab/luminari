@@ -311,9 +311,22 @@ export function registerUploadRoute(app: Express) {
           res.status(400).json({ error: "Invalid or mismatched upload session" });
           return;
         }
+        const storedOriginContext = parseOriginContext(
+          (existingSession as any).metadata?.origin_context,
+        );
+        if (requestedOriginContext) {
+          if (
+            !storedOriginContext
+            || JSON.stringify(requestedOriginContext) !== JSON.stringify(storedOriginContext)
+          ) {
+            res.status(400).json({
+              error: "Origin context does not match the existing upload session",
+            });
+            return;
+          }
+        }
         sessionId = sessionIdParam;
-        effectiveOriginContext =
-          parseOriginContext((existingSession as any).metadata?.origin_context);
+        effectiveOriginContext = storedOriginContext;
       } else {
         // Create new session
         sessionId = await dbHelpers.createUploadSession({

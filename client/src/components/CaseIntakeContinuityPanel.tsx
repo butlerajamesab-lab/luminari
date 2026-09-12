@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { Activity, ArrowRight, Clock3, FilePlus2, Link2, MessageSquarePlus } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { buildFromParam } from "@/lib/buildFromParam";
+import { useCase } from "@/contexts/CaseContext";
 import {
   case_intake_surface_for_path,
   write_case_intake_origin_context,
@@ -73,6 +74,7 @@ export function CaseIntakeContinuityPanel({
   surfaceOverride?: case_intake_continuity_surface;
 }) {
   const [, setLocation] = useLocation();
+  const { setCurrentCaseId } = useCase();
   const [open, setOpen] = useState(false);
   const [intent, setIntent] =
     useState<case_intake_continuity_intent>("new_evidence");
@@ -102,6 +104,7 @@ export function CaseIntakeContinuityPanel({
       from_route: from,
     });
     setOpen(false);
+    setCurrentCaseId(caseId);
     setLocation(with_from_param("/upload"));
   };
 
@@ -202,7 +205,10 @@ export function CaseIntakeContinuityPanel({
                           <button
                             key={`${session.intake_session_id}-${link.document_id}`}
                             type="button"
-                            onClick={() => setLocation(with_from_param(link.href))}
+                            onClick={() => {
+                              setCurrentCaseId(caseId);
+                              setLocation(with_from_param(link.href));
+                            }}
                             className="inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[11px] text-primary hover:bg-primary/10"
                           >
                             <Link2 className="h-3 w-3" />
@@ -234,7 +240,10 @@ export function CaseIntakeContinuityPanel({
                     variant="ghost"
                     size="sm"
                     className="h-7 gap-1 text-xs"
-                    onClick={() => setLocation(with_from_param(href))}
+                    onClick={() => {
+                      setCurrentCaseId(caseId);
+                      setLocation(with_from_param(href));
+                    }}
                   >
                     {humanize(label)}
                     <ArrowRight className="h-3 w-3" />

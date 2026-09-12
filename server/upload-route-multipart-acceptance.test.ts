@@ -564,6 +564,44 @@ describe("authenticated multipart document upload", () => {
     expect(state.create_upload_session).not.toHaveBeenCalled();
     expect(state.log_audit).not.toHaveBeenCalled();
   });
+
+  it("rejects origin context rewrites for an existing upload session", async () => {
+    state.select_queue.push([{ id: 44, userId: 9 }]);
+    state.get_upload_session.mockResolvedValue({
+      id: 501,
+      caseId: 44,
+      userId: 9,
+      metadata: {
+        origin_context: {
+          case_id: 44,
+          case_uuid: "e650c976-0178-4d72-9dda-092eddf3207a",
+          originating_route: "/documents",
+          originating_surface: "documents",
+          user_intent: "supports",
+          from_route: "/documents",
+        },
+      },
+    });
+
+    const response = await post_file("rewritten origin context", "session-origin.txt", {
+      sessionId: "501",
+      originContext: JSON.stringify({
+        case_id: 44,
+        case_uuid: "e650c976-0178-4d72-9dda-092eddf3207a",
+        originating_route: "/findings",
+        originating_surface: "findings",
+        user_intent: "contradicts",
+        from_route: "/findings",
+      }),
+    });
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({
+      error: "Origin context does not match the existing upload session",
+    });
+    expect(state.create_upload_session).not.toHaveBeenCalled();
+    expect(state.log_audit).not.toHaveBeenCalled();
+  });
 });
 
 describe("atomic replacement upload", () => {

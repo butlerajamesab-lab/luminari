@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useLocation } from "wouter";
 import { Upload as UploadIcon, FileText, CheckCircle, XCircle, X, Loader2, AlertTriangle, Lock, Shield, Clock, Timer, Link2, Info } from "lucide-react";
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { getAuthenticatedRequestHeaders } from "@/lib/session-token";
@@ -241,7 +241,10 @@ export default function Upload() {
   const [summary, setSummary] = useState<UploadSummary | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const utils = trpc.useUtils();
-  const originContext = read_case_intake_origin_context(currentCaseId);
+  const originContext = useMemo(
+    () => read_case_intake_origin_context(currentCaseId),
+    [currentCaseId],
+  );
 
   const handleFiles = useCallback((newFiles: FileList | File[]) => {
     const arr = Array.from(newFiles);

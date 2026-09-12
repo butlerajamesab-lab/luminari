@@ -36,7 +36,7 @@ export function case_intake_surface_for_path(
   ) {
     return "act";
   }
-  if (path.startsWith("/case-overview") || path === "/") return "case_overview";
+  if (path.startsWith("/case-overview")) return "case_overview";
   return null;
 }
 

@@ -143,6 +143,11 @@ function merge_counts(target: count_map, counts: count_map) {
   }
 }
 
+function case_surface_href(path: string, case_id: number) {
+  const separator = path.includes("?") ? "&" : "?";
+  return `${path}${separator}caseId=${encodeURIComponent(String(case_id))}`;
+}
+
 function session_sort(
   left: case_intake_continuity_session,
   right: case_intake_continuity_session,
@@ -535,14 +540,14 @@ export async function read_case_intake_continuity(
     related_sessions: sessions.filter((session) => !session.is_primary).sort(session_sort),
     totals,
     surface_links: {
-      case_overview: "/case-overview",
-      documents: "/documents",
-      entities: "/entities",
-      timeline: "/timeline",
-      network: "/network",
-      findings: "/findings",
-      review: "/control-room",
-      act: "/guide/" + case_id,
+      case_overview: case_surface_href("/case-overview", case_id),
+      documents: case_surface_href("/documents", case_id),
+      entities: case_surface_href("/entities", case_id),
+      timeline: case_surface_href("/timeline", case_id),
+      network: case_surface_href("/network", case_id),
+      findings: case_surface_href("/findings", case_id),
+      review: case_surface_href("/control-room", case_id),
+      act: case_surface_href("/guide/" + case_id, case_id),
     },
   };
 }
