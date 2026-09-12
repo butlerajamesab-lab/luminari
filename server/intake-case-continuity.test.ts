@@ -218,7 +218,7 @@ describe("case intake continuity projection", () => {
     expect(continuity.primary_sessions[0].document_links.map((link) => link.document_id)).toEqual([41, 42]);
     expect(continuity.surface_links.case_overview).toBe("/case-overview?caseId=11");
     expect(continuity.surface_links.review).toBe("/control-room?caseId=11");
-    expect(continuity.surface_links.act).toBe("/guide/11?caseId=11");
+    expect(continuity.surface_links.act).toBe("/guide/11");
   });
 
   it("supports canonical uuid bridge reads and preserves empty or failed states", async () => {
