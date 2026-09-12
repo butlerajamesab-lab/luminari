@@ -1,10 +1,11 @@
 import crypto from "node:crypto";
 import JSZip from "jszip";
+import { workbookSheets, create_worksheet_validator, resolve_shared_string } from "./xlsx-workbook-structure";
 import { getPool } from "../db";
 import { SUPABASE_PROJECT } from "../_core/health-diagnostics";
 
 export const ATOMIC_CORPUS_ENGINE_VERSION = "fresh_atomic_corpus_v1.0.0";
-export const ATOMIC_CORPUS_PARSER_VERSION = "fresh_atomic_parser_v1.0.0";
+export const ATOMIC_CORPUS_PARSER_VERSION = "fresh_atomic_parser_v1.0.2";
 
 const MAX_RECORDS_PER_SOURCE_FILE = 200_000;
 const MAX_RAW_EXCERPT = 8_000;
@@ -208,24 +209,22 @@ function xmlCellText(xml: string): string {
   return decodeXmlEntities(xml.replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim();
 }
 
-async function parseXlsxAtomic(buffer: Buffer, sourceFileSha256: string, containerMemberPath: string | null): Promise<AtomicRecord[]> {
+export async function parseXlsxAtomic(buffer: Buffer, sourceFileSha256: string, containerMemberPath: string | null): Promise<AtomicRecord[]> {
   const zip = await JSZip.loadAsync(buffer);
   const sharedXml = await zip.file("xl/sharedStrings.xml")?.async("text");
   const shared: string[] = [];
   if (sharedXml) for (const si of sharedXml.matchAll(/<si\b[^>]*>([\s\S]*?)<\/si>/g)) shared.push(xmlCellText(si[1]));
   const workbookXml = await zip.file("xl/workbook.xml")?.async("text");
   const relsXml = await zip.file("xl/_rels/workbook.xml.rels")?.async("text");
-  if (!workbookXml || !relsXml) return [];
-  const relationships = new Map<string, string>();
-  for (const rel of relsXml.matchAll(/<Relationship\b[^>]*Id="([^"]+)"[^>]*Target="([^"]+)"[^>]*\/?\s*>/g)) relationships.set(rel[1], rel[2].replace(/^\//, ""));
+  const sheets = workbookSheets(workbookXml, relsXml);
   const out: AtomicRecord[] = [];
   let ordinal = 0;
-  for (const sheet of workbookXml.matchAll(/<sheet\b[^>]*name="([^"]+)"[^>]*r:id="([^"]+)"[^>]*\/?\s*>/g)) {
-    const target = relationships.get(sheet[2]);
-    if (!target) continue;
-    const path = target.startsWith("xl/") ? target : `xl/${target.replace(/^\.\//, "")}`;
-    const xml = await zip.file(path)?.async("text");
-    if (!xml) continue;
+  for (const sheet of sheets) {
+    const xml = await zip.file(sheet.path)?.async("text");
+    if (!xml) throw new Error(`xlsx_worksheet_part_missing:${sheet.name}:${sheet.path}`);
+    const validator = create_worksheet_validator(sheet.name);
+    validator.consume_chunk(xml);
+    validator.finish();
     const rows: Array<{ row: number; cells: string[] }> = [];
     for (const rowMatch of xml.matchAll(/<row\b[^>]*r="(\d+)"[^>]*>([\s\S]*?)<\/row>/g)) {
       const cells: string[] = [];
@@ -238,7 +237,7 @@ async function parseXlsxAtomic(buffer: Buffer, sourceFileSha256: string, contain
         index -= 1;
         const type = attrs.match(/\bt="([^"]+)"/)?.[1] ?? "";
         const raw = body.match(/<v>([\s\S]*?)<\/v>/)?.[1] ?? body.match(/<is>([\s\S]*?)<\/is>/)?.[1] ?? "";
-        cells[index] = type === "s" ? shared[Number(raw)] ?? "" : type === "inlineStr" ? xmlCellText(raw) : decodeXmlEntities(raw).trim();
+        cells[index] = type === "s" ? resolve_shared_string(raw, shared) : type === "inlineStr" ? xmlCellText(raw) : decodeXmlEntities(raw).trim();
       }
       if (cells.some(value => compact(value))) rows.push({ row: Number(rowMatch[1]), cells });
       if (rows.length >= MAX_RECORDS_PER_SOURCE_FILE) break;
@@ -253,12 +252,12 @@ async function parseXlsxAtomic(buffer: Buffer, sourceFileSha256: string, contain
       out.push(makeAtomicRecord({
         sourceFileSha256,
         sourceKind: "xlsx_row",
-        sourceRelation: decodeXmlEntities(sheet[1]),
+        sourceRelation: sheet.name,
         rowOrdinal: ordinal,
         columnNames: Object.keys(values),
         values,
         rawExcerpt: stable(values),
-        sourceLocator: `xlsx:${decodeXmlEntities(sheet[1])}:row:${rows[i].row}`,
+        sourceLocator: `xlsx:${sheet.name}:row:${rows[i].row}`,
         containerMemberPath,
       }));
       if (out.length >= MAX_RECORDS_PER_SOURCE_FILE) return out;
