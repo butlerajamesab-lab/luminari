@@ -3,6 +3,7 @@ import type {
   case_intake_continuity_related_subject,
   case_intake_continuity_surface,
 } from "@shared/case-intake-continuity";
+import { case_intake_continuity_origin_context_schema } from "@shared/case-intake-continuity";
 
 const STORAGE_KEY = "luminari-case-intake-origin-context";
 
@@ -51,10 +52,13 @@ export function read_case_intake_origin_context(
   const stored = sessionStorage.getItem(STORAGE_KEY);
   if (!stored) return null;
   try {
-    const parsed = JSON.parse(stored) as case_intake_continuity_origin_context;
+    const parsed = case_intake_continuity_origin_context_schema.parse(
+      JSON.parse(stored),
+    );
     if (case_id && parsed.case_id !== case_id) return null;
     return parsed;
   } catch {
+    sessionStorage.removeItem(STORAGE_KEY);
     return null;
   }
 }

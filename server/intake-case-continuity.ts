@@ -112,6 +112,7 @@ export type case_intake_continuity = {
     pending_reassess_count: number;
   };
   surface_links: {
+    case_overview: string;
     documents: string;
     entities: string;
     timeline: string;
@@ -523,6 +524,7 @@ export async function read_case_intake_continuity(
     related_sessions: sessions.filter((session) => !session.is_primary).sort(session_sort),
     totals,
     surface_links: {
+      case_overview: "/case-overview",
       documents: "/documents",
       entities: "/entities",
       timeline: "/timeline",

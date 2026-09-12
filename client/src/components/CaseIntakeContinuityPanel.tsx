@@ -82,17 +82,18 @@ export function CaseIntakeContinuityPanel({
   };
   const continueToUpload = () => {
     if (!data) return;
+    const from = buildFromParam();
     write_case_intake_origin_context({
       case_id: caseId,
       case_uuid: data.case_uuid,
-      originating_route: buildFromParam(),
+      originating_route: from,
       originating_surface: surface,
       user_intent: intent,
       related_subject: relatedSubject,
-      from_route: buildFromParam(),
+      from_route: from,
     });
     setOpen(false);
-    setLocation(`/upload?from=${encodeURIComponent(buildFromParam())}`);
+    setLocation(`/upload?from=${encodeURIComponent(from)}`);
   };
 
   return (
@@ -218,7 +219,7 @@ export function CaseIntakeContinuityPanel({
                     variant="ghost"
                     size="sm"
                     className="h-7 gap-1 text-xs"
-                    onClick={() => setLocation(href)}
+                    onClick={() => setLocation(`${href}?from=${encodeURIComponent(buildFromParam())}`)}
                   >
                     {humanize(label)}
                     <ArrowRight className="h-3 w-3" />

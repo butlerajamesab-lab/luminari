@@ -16,6 +16,7 @@ describe("case intake continuity wiring", () => {
     expect(continuity).toContain("join public.case_intake_links");
     expect(continuity).toContain("read_case_intake_integrity_projection(case_id, {");
     expect(continuity).toContain('link_scope: "all"');
+    expect(continuity).toContain('case_overview: "/case-overview"');
   });
 
   it("keeps primary and related intake sessions separate instead of auto-merging clean-room restarts", () => {
@@ -51,6 +52,8 @@ describe("case intake continuity wiring", () => {
     expect(dashboard_layout).toContain('routePath={location}');
     expect(dashboard).toContain('surfaceOverride="act"');
     expect(panel).toContain("trpc.analyze.getCaseIntakeContinuity.useQuery");
-    expect(panel).toContain('setLocation(`/upload?from=${encodeURIComponent(buildFromParam())}`)');
+    expect(panel).toContain("const from = buildFromParam();");
+    expect(panel).toContain('setLocation(`/upload?from=${encodeURIComponent(from)}`)');
+    expect(panel).toContain('setLocation(`${href}?from=${encodeURIComponent(buildFromParam())}`)');
   });
 });
