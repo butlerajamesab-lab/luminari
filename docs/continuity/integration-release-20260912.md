@@ -4,7 +4,7 @@
 
 Connect the data already stored in Lighthouse to its actual application readers and detail pages. Preserve source identities, jurisdiction, provenance, and held states. Separate a deployed reader connection from source admission, a parser fix from corpus replay, and service health from cross-service delivery proof.
 
-The user authorized implementation, parallel work, GitHub integration, and deployment in this session. No production database writes were needed for the connections recorded below.
+The user authorized implementation, parallel work, GitHub integration, and deployment in this session. Reader connections reuse existing records. The native Supabase integration subsequently applied the function-only Batch manifest migration described below; Batch source registration and processing remain unperformed.
 
 ## Landed and verified
 
@@ -15,10 +15,13 @@ The user authorized implementation, parallel work, GitHub integration, and deplo
 | Source authority catalog and exact source detail in Legal Library | #639 / `213283d22b81099e07e3cfbf2b178869a823cca0` | All PR/main checks passed. Render `dep-daif7mgjo6nc73biiasg` live; browser list, detail and jurisdiction filter verified. |
 | Existing office discovery to native detail | #640 / `87840c2f19bd37dff9ece17c8ba028a11439d5f0` | All PR/main checks passed. Render `dep-daifaih5efls738tmgvg` became live; public Everett Vet Center listing/detail/source link verified. Exact 3,423 active identities verified in the database. |
 | Benefits search, contact readback and pagination | #641 / `0e934622f9ec718889d42d2dc1e48e2f0feeef07` | All PR checks passed; Render `dep-daifipoae00c73dc9njg` became live. NC/Atrium browser search expands all four contacts. Two federal API pages contain 20 distinct IDs each, with no overlap. |
+| Recorded registry classification and integration evidence | #642 / `b224fee48127720c0d6fa681d9e1d5a096630c53` | Deployed. Browser verification of two Arizona records shows Recorded federal, Unverified, and category government_agency; stored identity and jurisdiction were preserved. |
+| Owned case context, sealed intake paths and exact legal references | #636 / `f66e26ddc4bc33072158a61727a032f0eb14c854` | Merged; its Render `dep-daihlcgae00c73ddnnvg` was superseded by the verified combined deployment. Production exact legal reference readback and unauthenticated access boundaries passed; authenticated case writes were not exercised. |
+| Private Batch source integration, bounded runner and reviewed source-integrity fixes | #637 / `e247ef3946b8e807d88fa9dcd1313b2449b46e1d` | Render `dep-daihln09qbnc73f6oa8g` live at 09:29:15 UTC. All five executable main workflows passed. Native migration `20260911201534` is applied; Batch manifest and artifact receipt counts remain zero. No runner activation or source processing claimed. |
 
-The subsequent SAIS recovery merge #633 (`7e07abd3d19315d7c165aa4e1a056d01c8524059`) is live in Render `dep-daifjge8h83s739k3e40` and all five main workflows passed. It preserves the reader releases above. The prior main PR Test was cancelled by the newer push; that cancellation was not a test failure. Historical deployment IDs above identify completed releases; the latest deployment supersedes them.
+The subsequent SAIS recovery merge #633 (`7e07abd3d19315d7c165aa4e1a056d01c8524059`) became live in Render `dep-daifjge8h83s739k3e40` and all five main workflows passed. Its changes are preserved in the final combined release. The prior main PR Test was cancelled by the newer push; that cancellation was not a test failure. Historical deployment IDs above identify completed releases; the latest deployment supersedes them.
 
-The combined #635/#634/#639 tree passed 1,688 tests with two environment-dependent skips across 329 passing test files. Main `213283d` has exactly that tested application tree. Subsequent office and program-search changes have their own focused tests and release CI.
+The final application tree `6466463f9752cd332e7f02ec549ca0888223a4ac` at main `e247ef3` exactly matches the combined locally tested tree: 1,801 tests across 342 passing files, plus TypeScript. All five executable main workflows passed, including PR Test and Supabase Fresh Replay. Earlier narrower test counts remain historical checkpoints.
 
 ### Production acceptance of the registry repair
 
@@ -43,9 +46,9 @@ That NC browser sequence passed after deployment. The default scope now uses onl
 | Path | Concrete work | Boundary |
 | --- | --- | --- |
 | Office discovery | Deployed exact `gov_offices` listings and native detail | Source IDs and locators remain intact; crosswalk promotion remains separate |
-| Benefits UI search | Deployed search/contact/pagination; classification correction prepared | Preserve heterogeneous records and expose the recorded category and unresolved jurisdiction |
-| Case context / #636 | Concurrent attachment/read/remove work reconciled with actual cases, collaborator access, intake jurisdiction and sealed action paths | Combined 1,771-test suite and TypeScript passed; review found non-statute callers requiring explicit reference kinds; fix under review |
-| Source worker / #637 | Current-main integration and exact-run, bounded standalone runner prepared | 1,728-test suite, TypeScript and database replay passed; review corrections include missing download version, SQL source preservation and schema-declared arrays; no production Batch activation |
+| Benefits UI search | Search/contact/pagination and classification correction deployed | Heterogeneous records retain their IDs and expose recorded category and unresolved jurisdiction |
+| Case context / #636 | Deployed actual-case/collaborator access, intake jurisdiction, sealed action paths and explicit legal reference kinds | Exact public reference kinds and protected read boundaries verified; authenticated production case writes remain unverified |
+| Source worker / #637 | Deployed source integration and exact-run bounded runner code; native function migration applied | Missing download ETag, source-only SQL and schema-declared array corrections passed; no Batch registration, worker activation or source processing |
 
 ## Remaining source and integration work
 
@@ -60,4 +63,8 @@ That NC browser sequence passed after deployment. The default scope now uses onl
 
 ## Release follow-through
 
-Update this section with the final merged commits, Render deployment IDs, public UI/API readbacks, and any remaining concrete blockers after the parallel paths finish. Preserve unfinished work in its branch with a precise continuation point.
+The final deployed application is main `e247ef3946b8e807d88fa9dcd1313b2449b46e1d`, Render `dep-daihln09qbnc73f6oa8g`. After deployment, `/api/health` returned HTTP 200. Unauthenticated calls to `luminari.get_action_context`, `luminari.get_context` and the admin Batch lineage reader returned HTTP 401. These prove the public access boundary; no authenticated case write was verified.
+
+`legalLibrary.get_reference` resolved the exact Vermont `legal_authority` with locator `lines:576-597:statutory_authority`, enforcement reference `fce42af5-420b-4bbb-b87e-721e6a02517b`, `settlement_formula:1`, and case-law reference `42a029cb-6393-5d54-8647-72f5d29864a8`. The held authority stayed unresolved with null detail. Explicit reference kinds preserve the intended source namespace across search, detail and case-context consumers.
+
+The live native Batch migration receipt is now reconciled to the original filename and source hash in `supabase/verification/production_migration_receipts_20260912_addendum.tsv`. The function includes Batch and retains service-only execution. The read-only production check at 09:29:38 UTC found zero Batch manifest rows and zero Batch atomic artifact receipts. See `batch-main-integration-20260912.md` for the exact statement array, source binding and grants. The next source pass still requires verified runtime credentials, explicit scoped registration and bounded runner execution; no new paid service or runtime activation was performed in this release.

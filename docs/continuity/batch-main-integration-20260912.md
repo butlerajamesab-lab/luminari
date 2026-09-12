@@ -1,5 +1,43 @@
 # Batch integration with deployed workbook and intake repairs
 
+## Production migration receipt update — September 12, 09:29 UTC
+
+PR #637 merged as `e247ef3946b8e807d88fa9dcd1313b2449b46e1d`. A fresh
+read-only Lighthouse production check now confirms migration `20260911201534`,
+name `batch_existing_substrate_registration`, in `supabase_migrations.schema_migrations`.
+The native integration retained the repository's original version. No provider
+application, migration rename, DDL, synchronizer invocation or data write was
+performed for this verification. The earlier absent-migration prerequisite and
+conditional provider-renaming procedure below are historical and superseded for
+this release. Do not apply the extension again under another timestamp.
+
+The five actual ordered statements have MD5
+`b2bb07c8e9ca2ce5d2005c520df8c234`; their executable export has MD5
+`1fa771511444aa4c90c380992115cf87`. The unchanged migration source has SHA-256
+`31b02561b01fa5235d52290d67fc5a8cde92efe47a973f0a711db9e48edcf552`
+and Git blob `1516354fbe0818f3c96e605927e51888bf0d1d7c`.
+The executable export restores stripped statement terminators and joins statements
+with blank lines, so its whitespace differs from the source. Ordered SQL tokens,
+including the entire dollar-quoted function body, compare equal after excluding
+comments and top-level separators. The exact production statement array is
+retained in `docs/evidence/batch_native_migration_statements_2026-09-12.json`.
+The existing source-controlled receipt binding records these two exact hashes;
+the obsolete repository-only entry was removed.
+
+The installed synchronizer includes Batch. Its function-definition MD5 is now
+`6024bd48546329b47e1cd48a53bc7fa1` and SHA-256 is
+`e9abe9394a2e481ebf14b4a7343a7536e5f5db7a6c2e8a12b4365e21654c8a79`.
+It remains owned by `postgres`, SECURITY DEFINER with the pinned search path
+`pg_catalog, public, storage, pg_temp`; EXECUTE is granted to `service_role` and
+withheld from `anon` and `authenticated`.
+
+At `2026-09-12 09:29:38.800433+00`, Batch source-manifest rows and atomic artifact
+receipts were both **zero**. The schema prerequisite is complete; no Batch source
+registration, atomic run or canonical publication is established by this receipt.
+Runtime credentials, scoped queueing and bounded execution remain separate steps.
+
+## Earlier integration checkpoint
+
 Observed September 12, 2026. This checkpoint integrates PR #637 head
 `0af46fafd412e99d3536cc10ef96b4d81e4050a0` with main
 `fb3aac60c498417ddeb7099e3c5b98dcda72b6e3`, which includes #638, #635 and #634.
