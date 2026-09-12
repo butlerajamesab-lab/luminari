@@ -2002,6 +2002,16 @@ export async function incrementUploadSessionCounter(
   }).where(eq(uploadSessions.id, sessionId));
 }
 
+export async function updateUploadSessionMetadata(
+  sessionId: number,
+  metadata: Record<string, unknown>,
+) {
+  await db.update(uploadSessions).set({
+    metadata,
+    updatedAt: Date.now(),
+  }).where(eq(uploadSessions.id, sessionId));
+}
+
 export async function updateUploadSessionStatus(sessionId: number, status: UploadSession["status"]) {
   await db.update(uploadSessions).set({
     status,

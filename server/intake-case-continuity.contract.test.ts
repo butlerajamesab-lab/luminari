@@ -23,8 +23,10 @@ describe("case intake continuity wiring", () => {
   it("keeps primary and related intake sessions separate instead of auto-merging clean-room restarts", () => {
     const continuity = read("server/intake-case-continuity.ts");
 
-    expect(continuity).toContain("primary_sessions: sessions.filter((session) => session.is_primary)");
-    expect(continuity).toContain("related_sessions: sessions.filter((session) => !session.is_primary)");
+    expect(continuity).toContain("const primary_sessions: case_intake_continuity_session[] = [];");
+    expect(continuity).toContain("const related_sessions: case_intake_continuity_session[] = [];");
+    expect(continuity).toContain("if (session.is_primary) primary_sessions.push(session);");
+    expect(continuity).toContain("else related_sessions.push(session);");
     expect(continuity).not.toContain("auto_merge");
     expect(continuity).not.toContain("promoteCaseIntakeSignals");
   });
@@ -46,7 +48,7 @@ describe("case intake continuity wiring", () => {
     expect(upload_route).toContain("origin_context: effectiveOriginContext");
     expect(upload_page).toContain('formData.append("originContext", JSON.stringify(originContext))');
     expect(upload_page).toContain("useEffect(() => {");
-    expect(upload_page).toContain("if (originContext && !sessionId)");
+    expect(upload_route).toContain("await dbHelpers.updateUploadSessionMetadata(sessionId, nextMetadata)");
   });
 
   it("wires the shared continuity panel into case workflow surfaces without duplicating page logic", () => {
@@ -61,6 +63,7 @@ describe("case intake continuity wiring", () => {
     expect(panel).toContain("function with_from_param(href: string)");
     expect(panel).toContain("const from = buildFromParam();");
     expect(panel).toContain("const { setCurrentCaseId } = useCase();");
+    expect(panel).not.toContain("refetchInterval: 5000");
     expect(panel).toContain('setLocation(with_from_param("/upload"))');
     expect(panel).toContain("setLocation(with_from_param(link.href))");
     expect(panel).toContain("setLocation(with_from_param(href))");

@@ -462,8 +462,10 @@ export async function read_case_intake_continuity(
     active_stabilization_snapshot_count: 0,
     pending_reassess_count: 0,
   };
+  const primary_sessions: case_intake_continuity_session[] = [];
+  const related_sessions: case_intake_continuity_session[] = [];
 
-  const sessions = session_rows.map((row) => {
+  for (const row of session_rows) {
     const verification_counts = verification_by_session.get(row.intake_session_id) ?? {
       counts: {},
       total: 0,
@@ -540,14 +542,15 @@ export async function read_case_intake_continuity(
       totals.transition_verification_counts,
       session.transition_verification_counts,
     );
-    return session;
-  });
+    if (session.is_primary) primary_sessions.push(session);
+    else related_sessions.push(session);
+  }
 
   return {
     case_id,
     case_uuid: String(bridge_row.case_uuid),
-    primary_sessions: sessions.filter((session) => session.is_primary).sort(session_sort),
-    related_sessions: sessions.filter((session) => !session.is_primary).sort(session_sort),
+    primary_sessions: primary_sessions.sort(session_sort),
+    related_sessions: related_sessions.sort(session_sort),
     totals,
     surface_links: {
       case_overview: case_surface_href("/case-overview", case_id),

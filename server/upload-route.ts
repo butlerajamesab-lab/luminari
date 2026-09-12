@@ -340,8 +340,8 @@ export function registerUploadRoute(app: Express) {
         );
         if (requestedOriginContext) {
           if (
-            !storedOriginContext
-            || !originContextsMatch(requestedOriginContext, storedOriginContext)
+            storedOriginContext
+            && !originContextsMatch(requestedOriginContext, storedOriginContext)
           ) {
             res.status(400).json({
               error: "Origin context does not match the existing upload session",
@@ -350,7 +350,14 @@ export function registerUploadRoute(app: Express) {
           }
         }
         sessionId = sessionIdParam;
-        effectiveOriginContext = storedOriginContext;
+        effectiveOriginContext = storedOriginContext ?? requestedOriginContext;
+        if (requestedOriginContext && !storedOriginContext) {
+          const nextMetadata = {
+            ...((existingSession as any).metadata ?? {}),
+            origin_context: requestedOriginContext,
+          };
+          await dbHelpers.updateUploadSessionMetadata(sessionId, nextMetadata);
+        }
       } else {
         // Create new session
         sessionId = await dbHelpers.createUploadSession({

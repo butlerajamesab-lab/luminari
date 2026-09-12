@@ -13,6 +13,7 @@ const state = vi.hoisted(() => ({
   is_supabase_storage_key: vi.fn(),
   create_upload_session: vi.fn(),
   get_upload_session: vi.fn(),
+  update_upload_session_metadata: vi.fn(),
   increment_upload_session_counter: vi.fn(),
   finalize_upload_session: vi.fn(),
   create_document: vi.fn(),
@@ -45,6 +46,7 @@ vi.mock("./db", () => ({
   },
   createUploadSession: state.create_upload_session,
   getUploadSession: state.get_upload_session,
+  updateUploadSessionMetadata: state.update_upload_session_metadata,
   incrementUploadSessionCounter: state.increment_upload_session_counter,
   finalizeUploadSession: state.finalize_upload_session,
   createDocument: state.create_document,
@@ -227,6 +229,7 @@ beforeEach(() => {
   state.require_resolved_user.mockResolvedValue({ id: 9 });
   state.create_upload_session.mockResolvedValue(501);
   state.get_upload_session.mockResolvedValue({ id: 501, caseId: 44, userId: 9 });
+  state.update_upload_session_metadata.mockResolvedValue(undefined);
   state.increment_upload_session_counter.mockResolvedValue(undefined);
   state.finalize_upload_session.mockResolvedValue(undefined);
   state.create_document.mockResolvedValue(9001);
@@ -601,6 +604,44 @@ describe("authenticated multipart document upload", () => {
     });
     expect(state.create_upload_session).not.toHaveBeenCalled();
     expect(state.log_audit).not.toHaveBeenCalled();
+  });
+
+  it("initializes missing origin metadata on an existing upload session from the first valid follow-up batch", async () => {
+    const contents = "follow-up origin context";
+    const origin_context = {
+      case_id: 44,
+      case_uuid: "e650c976-0178-4d72-9dda-092eddf3207a",
+      originating_route: "/documents",
+      originating_surface: "documents",
+      user_intent: "supports",
+      from_route: "/documents",
+    };
+    state.select_queue.push(
+      [{ id: 44, userId: 9 }],
+      [],
+      [{ count: 1 }],
+    );
+    state.get_upload_session.mockResolvedValue({
+      id: 501,
+      caseId: 44,
+      userId: 9,
+      metadata: {},
+    });
+
+    const response = await post_file(contents, "init-origin.txt", {
+      sessionId: "501",
+      originContext: JSON.stringify(origin_context),
+    });
+
+    expect(response.status).toBe(200);
+    expect(state.update_upload_session_metadata).toHaveBeenCalledWith(501, {
+      origin_context,
+    });
+    expect(state.log_audit).toHaveBeenCalledWith(expect.objectContaining({
+      details: expect.objectContaining({
+        origin_context,
+      }),
+    }));
   });
 });
 

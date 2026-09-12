@@ -81,7 +81,7 @@ export function CaseIntakeContinuityPanel({
   const surface = surfaceOverride ?? case_intake_surface_for_path(routePath);
   const continuity = trpc.analyze.getCaseIntakeContinuity.useQuery(
     { caseId },
-    { enabled: !!surface, refetchInterval: 5000 },
+    { enabled: !!surface },
   );
 
   if (!surface) return null;
