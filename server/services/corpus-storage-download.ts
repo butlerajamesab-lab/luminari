@@ -14,6 +14,7 @@ export async function download_corpus_storage_artifact(
   artifact: storage_source,
   request: typeof fetch = fetch,
   environment: NodeJS.ProcessEnv = process.env,
+  cancellation_signal?: AbortSignal,
 ): Promise<Buffer> {
   const base_url = new URL(environment.SUPABASE_URL || environment.LIGHTHOUSE_SUPABASE_URL
     || environment.VITE_SUPABASE_URL || `https://${SUPABASE_PROJECT}.supabase.co`);
@@ -36,7 +37,9 @@ export async function download_corpus_storage_artifact(
     headers.Authorization = `Bearer ${service_key}`;
     headers.apikey = service_key!;
   }
-  const response = await request(url, { headers, redirect: "error", signal: AbortSignal.timeout(90_000) });
+  const download_timeout = AbortSignal.timeout(90_000);
+  const response = await request(url, { headers, redirect: "error", signal: cancellation_signal
+    ? AbortSignal.any([download_timeout, cancellation_signal]) : download_timeout });
   if (!response.ok) throw new Error(`storage_download_http_${response.status}`);
   const buffer = Buffer.from(await response.arrayBuffer());
   if (buffer.byteLength !== Number(artifact.byte_size)) throw new Error("storage_byte_size_changed");

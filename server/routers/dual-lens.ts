@@ -12,14 +12,14 @@ import {
   signalRegistry,
   doctrineRegistry,
   courtDirectory,
-  legalStatutes,
   escalationRoutes,
-  detectedSignals,
-  dataStreamRegistry,
 } from "../../drizzle/schema";
 import { enrichSignalWithInterpretation, loadInterpretationPack, getCategoryContext } from "../ingestion/interpretation-layer";
 import { query_with_diagnostics } from "../db-legacy";
 import { getCurrentCanonicalState } from "../services/current-canonical-state";
+
+import { barrier_reference_scope, reference_matches_domain, reference_strings } from "../diagnostic-reference-contract";
+import { read_diagnostic_signals, read_diagnostic_signal_summary } from "../diagnostic-signal-runtime";
 
 const DIAGNOSTICS_STATS_TIMEOUT_MS = 5_000;
 const GRAPH_EXPANSION_LIMIT_PER_DIRECTION = 25;
@@ -58,42 +58,13 @@ function as_string_array(value: unknown): string[] {
   }
 }
 
-async function load_institution_registry_snapshot(): Promise<{
-  agencies: any[];
-  signals: any[];
-  barriers: any[];
-}> {
+async function load_institution_registry_snapshot() {
   const { rows } = await query_with_diagnostics<{
-    agencies: any[];
-    signals: any[];
-    barriers: any[];
-  }>(
-    `select
-       coalesce((
-         select jsonb_agg(to_jsonb(a) order by a.id)
-         from (
-           select id, statute, agency, agency_short, domain
-           from public.agency_authority_map
-         ) a
-       ), '[]'::jsonb) as agencies,
-       coalesce((
-         select jsonb_agg(to_jsonb(s) order by s.id)
-         from (
-           select id, signal_type, explanation
-           from public.signal_registry
-         ) s
-       ), '[]'::jsonb) as signals,
-       coalesce((
-         select jsonb_agg(to_jsonb(b) order by b.id)
-         from (
-           select id, barrier_type, description
-           from public.litigation_barriers
-         ) b
-       ), '[]'::jsonb) as barriers`,
-    [],
-    { label: "dual_lens_institution_registry_snapshot" },
-  );
-  return rows[0] ?? { agencies: [], signals: [], barriers: [] };
+    id: number; statute: string | null; agency: string; agency_short: string | null; domain: string | null;
+  }>(`select id, statute, agency, agency_short, domain
+        from public.agency_authority_map order by agency, id`, [],
+    { label: "dual_lens_institution_registry_snapshot", pool_acquire_timeout_ms: 1_000, query_timeout_ms: 5_000 });
+  return rows;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -224,10 +195,11 @@ export const dualLensRouter = router({
       const allBarriers = await db.select().from(litigationBarriers);
 
       // Filter barriers relevant to the claim type
-      const keywords = input.claimType.toLowerCase().split(/[\s_-]+/);
+      const keywords = input.claimType.toLowerCase().split(/[\s_-]+/).filter(Boolean);
       const relevant = allBarriers.filter((b: any) => {
+        if (barrier_reference_scope(b) !== "catalog_reference" || !reference_matches_domain(b.domains, input.domain)) return false;
         const text = [
-          b.barrierType,
+          b.barrier_type,
           b.name,
           b.description,
           b.domains ? JSON.stringify(b.domains) : "",
@@ -244,15 +216,16 @@ export const dualLensRouter = router({
       return {
         barriers: relevant.slice(0, 10).map((b: any) => ({
           id: b.id,
-          barrier_id: b.barrierId,
+          barrier_id: b.barrier_id,
           name: b.name,
-          barrier_type: b.barrierType,
+          barrier_type: b.barrier_type,
           description: b.description,
           severity: b.severity,
-          possible_workarounds: b.possibleWorkarounds,
-          what_it_blocks: b.whatItBlocks,
+          possible_workarounds: b.possible_workarounds,
+          what_it_blocks: b.what_it_blocks,
         })),
         total_barriers: relevant.length,
+        excluded_unverified_references: allBarriers.filter((b: any) => barrier_reference_scope(b) !== "catalog_reference").length,
       };
     }),
 
@@ -515,14 +488,15 @@ export const dualLensRouter = router({
   // ═══════════════════════════════════════════════════════════════════════
 
   /**
-   * Get barrier clusters — recurring barriers grouped by type.
+   * Group civic barrier references; preserve operational rows separately.
    */
   getBarrierClusters: publicProcedure
     .input(z.object({
       domain: z.string().optional(),
     }))
     .query(async ({ input }) => {
-      const allBarriers = await db.select().from(litigationBarriers);
+      const catalog = await db.select().from(litigationBarriers);
+      const allBarriers = catalog.filter((b: any) => barrier_reference_scope(b) !== "operational_ingestion" && reference_matches_domain(b.domains, input.domain));
 
       // Group by barrier type
       const clusters: Record<string, {
@@ -538,12 +512,14 @@ export const dualLensRouter = router({
           clusters[type] = { type, count: 0, severity: b.severity ?? "low", barriers: [] };
         }
         clusters[type].count++;
-        clusters[type].barriers.push(b);
+        clusters[type].barriers.push({ ...b, reference_scope: barrier_reference_scope(b) } as typeof b);
       }
 
       return {
         clusters: Object.values(clusters).sort((a, b) => b.count - a.count),
         total_barriers: allBarriers.length,
+        source_kind: "catalog_reference" as const,
+        operational_references: catalog.filter((b: any) => barrier_reference_scope(b) === "operational_ingestion"),
       };
     }),
 
@@ -636,111 +612,56 @@ export const dualLensRouter = router({
     }),
 
   /**
-   * Get affected institutions — agencies with the most barriers and signals.
+   * Read institution authority references without inferring issue attribution.
    */
   getAffectedInstitutions: publicProcedure
-    .input(z.object({
-      domain: z.string().optional(),
-    }))
+    .input(z.object({ domain: z.string().optional() }))
     .query(async ({ input }) => {
-      const { agencies, signals, barriers } = await load_institution_registry_snapshot();
-
-      // Build institution profiles
-      const institutions = agencies.map((a: any) => {
-        const agencyText = (a.agency ?? "").toLowerCase();
-        const relatedSignals = signals.filter((s: any) => {
-          const text = [s.signal_type, s.explanation].join(" ").toLowerCase();
-          return agencyText.split(" ").some((w: string) => w.length > 3 && text.includes(w));
-        });
-        const relatedBarriers = barriers.filter((b: any) => {
-          const text = [b.barrier_type, b.description].join(" ").toLowerCase();
-          return agencyText.split(" ").some((w: string) => w.length > 3 && text.includes(w));
-        });
-
-        return {
-          id: a.id,
-          agency: a.agency,
-          agency_short: a.agency_short,
-          domain: a.domain,
-          signal_count: relatedSignals.length,
-          barrier_count: relatedBarriers.length,
-          issue_score: relatedSignals.length + relatedBarriers.length * 2,
-        };
-      }).filter((i: any) => i.issue_score > 0).sort((a: any, b: any) => b.issue_score - a.issue_score);
-
+      const agencies = await load_institution_registry_snapshot();
       return {
-        institutions: institutions.slice(0, 20),
+        source_kind: "authority_reference" as const,
+        institutions: agencies.filter(a => reference_matches_domain(a.domain, input.domain)).map(a => ({
+          ...a,
+          attribution_status: "not_established" as const,
+          // Null preserves unknown for existing consumers; word overlap is not evidence.
+          signal_count: null, barrier_count: null, issue_score: null,
+        })),
         total_agencies: agencies.length,
-        total_signals: signals.length,
       };
     }),
 
   /**
-   * Get systemic resolution paths — reform pathways based on pattern analysis.
+   * Read saved barrier authorities and workarounds without inferring routes.
    */
   getSystemicPaths: publicProcedure
-    .input(z.object({
-      domain: z.string().optional(),
-      barrierType: z.string().optional(),
-    }))
+    .input(z.object({ domain: z.string().optional(), barrierType: z.string().optional() }))
     .query(async ({ input }) => {
-      const barriers = await db.select().from(litigationBarriers);
-      const doctrines = await db.select().from(doctrineRegistry);
-      const statutes = await db.select().from(legalStatutes);
-
-      // Build systemic paths from barrier → doctrine → statute connections
-      const paths: Array<{
-        barrier: string;
-        severity: string;
-        doctrineLink: string | null;
-        statuteLink: string | null;
-        reformPath: string;
-      }> = [];
-
-      const relevantBarriers = input.barrierType
-        ? barriers.filter((b: any) => b.barrier_type === input.barrierType)
-        : barriers.filter((b: any) => b.severity === "critical" || b.severity === "high");
-
-      for (const b of relevantBarriers.slice(0, 15)) {
-        const barrierText = (b.barrier_type ?? "").toLowerCase();
-
-        // Find related doctrine
-        const relatedDoctrine = doctrines.find((d: any) => {
-          const text = [d.name, d.description].join(" ").toLowerCase();
-          return barrierText.split("_").some((w: string) => w.length > 3 && text.includes(w));
-        });
-
-        // Find related statute
-        const relatedStatute = statutes.find((s: any) => {
-          const text = [s.title, s.summary ?? ""].join(" ").toLowerCase();
-          return barrierText.split("_").some((w: string) => w.length > 3 && text.includes(w));
-        });
-
-        paths.push({
-          barrier: b.barrier_type ?? "unknown",
-          severity: b.severity ?? "medium",
-          doctrineLink: relatedDoctrine?.name ?? null,
-          statuteLink: relatedStatute?.title ?? null,
-          reformPath: as_string_array(b.possible_workarounds).join("; ") || "Further analysis needed",
-        });
-      }
-
+      const catalog = await db.select().from(litigationBarriers);
+      const barriers = catalog.filter((b: any) => barrier_reference_scope(b) !== "operational_ingestion" && reference_matches_domain(b.domains, input.domain));
+      const relevant = input.barrierType ? barriers.filter((b: any) => b.barrier_type === input.barrierType) : barriers;
       return {
-        paths,
+        source_kind: "barrier_reference" as const,
+        paths: relevant.map((b: any) => ({
+          barrier: b.barrier_type, barrier_id: b.barrier_id, severity: b.severity,
+          reference_scope: barrier_reference_scope(b),
+          authority_refs: reference_strings(b.leading_authorities),
+          doctrineLink: null, statuteLink: null,
+          reformPath: reference_strings(b.possible_workarounds).join("; "),
+          route_status: "not_established" as const,
+        })),
         total_barriers: barriers.length,
-        total_doctrines: doctrines.length,
       };
     }),
 
   /**
-   * Get signal patterns — recurring signals grouped by type.
+   * Group signal definitions. Catalog counts are not occurrence counts.
    */
   getSignalPatterns: publicProcedure
     .input(z.object({
       domain: z.string().optional(),
     }))
     .query(async ({ input }) => {
-      const signals = await db.select().from(signalRegistry);
+      const signals = (await db.select().from(signalRegistry)).filter((s: any) => reference_matches_domain(s.domain, input.domain));
 
       // Group by signal type
       const patterns: Record<string, {
@@ -761,6 +682,7 @@ export const dualLensRouter = router({
       return {
         patterns: Object.values(patterns).sort((a, b) => b.count - a.count),
         total_signals: signals.length,
+        source_kind: "signal_definition" as const,
       };
     }),
 
@@ -845,145 +767,23 @@ export const dualLensRouter = router({
    * Groups by signal type, includes explanations, stats, and dataset info.
    * Supports filtering by jurisdiction, domain, severity.
    */
-  getLiveSignalsForDiagnostics: publicProcedure
+  getLiveSignalsForDiagnostics: protectedProcedure
     .input(z.object({
-      jurisdiction: z.string().optional(),
-      domain: z.string().optional(),
+      jurisdiction: z.string().max(128).optional(), domain: z.string().max(128).optional(),
+      query: z.string().max(128).optional(),
       severity: z.enum(["critical", "high", "medium", "low"]).optional(),
-      limit: z.number().default(100),
+      limit: z.number().int().min(1).max(100).default(100),
+      offset: z.number().int().min(0).max(1_000_000).default(0),
     }))
-    .query(async ({ input }) => {
-      const conditions = [isNotNull(detectedSignals.signalId)];
-      if (input.jurisdiction) conditions.push(eq(detectedSignals.jurisdictionScope, input.jurisdiction));
-      if (input.domain) conditions.push(eq(detectedSignals.datasetId, input.domain));
-      if (input.severity) conditions.push(eq(detectedSignals.severityLevel, input.severity));
+    .query(({ input }) => read_diagnostic_signals(input)),
 
-      const signals = await db
-        .select()
-        .from(detectedSignals)
-        .where(and(...conditions))
-        .orderBy(desc(detectedSignals.detectionTimestamp))
-        .limit(input.limit);
-
-      // Enrich with dataset names
-      const datasetIds = [...new Set(signals.map((s: any) => s.datasetId).filter((id: any) => id != null && id !== ""))];
-      const datasets = datasetIds.length > 0
-        ? await db.select({ datasetId: dataStreamRegistry.streamId, datasetName: dataStreamRegistry.streamName })
-            .from(dataStreamRegistry)
-            .where(inArray(dataStreamRegistry.streamId, datasetIds as string[]))
-        : [];
-      const datasetNameMap = Object.fromEntries(datasets.map((d: any) => [d.datasetId, d.datasetName]));
-
-      // Cross-reference with signal_registry for known pattern matching
-      const knownSignals = await db.select().from(signalRegistry);
-      const knownTypes = new Set(knownSignals.map((s: any) => s.signal_type?.toLowerCase()));
-
-      // Group by signal type
-      const grouped: Record<string, {
-        type: string;
-        count: number;
-        signals: Array<{
-          id: number;
-          signalType: string;
-          title: string;
-          explanation: string;
-          patternSummary: string;
-          severity: string;
-          confidenceScore: string | null;
-          jurisdiction: string;
-          domain: string;
-          datasetId: string;
-          datasetName: string;
-          detectedAt: number | null;
-          supportingStatistics: any;
-          matchesKnownPattern: boolean;
-        }>;
-      }> = {};
-
-      for (const s of signals) {
-        const type = s.signalType;
-        if (!grouped[type]) {
-          grouped[type] = { type, count: 0, signals: [] };
-        }
-        grouped[type].count++;
-        grouped[type].signals.push({
-          id: s.signalId as any,
-          signalType: s.signalType,
-          title: s.plainLanguageExplanation,
-          explanation: s.plainLanguageExplanation,
-          patternSummary: s.plainLanguageExplanation ?? '',
-          severity: s.severityLevel || 'unclassified',
-          confidenceScore: s.confidenceScore == null ? null : String(s.confidenceScore),
-          jurisdiction: s.jurisdictionScope ?? '',
-          domain: s.datasetId ?? '',
-          datasetId: s.datasetId ?? '',
-          datasetName: datasetNameMap[s.datasetId] ?? s.datasetId ?? 'Source not recorded',
-          detectedAt: s.detectionTimestamp == null ? null : new Date(s.detectionTimestamp).getTime(),
-          supportingStatistics: s.crossSignalLinks ?? {},
-          matchesKnownPattern: knownTypes.has(s.signalType.toLowerCase()),
-        });
-      }
-
-      return {
-        groups: Object.values(grouped).sort((a, b) => b.count - a.count),
-        total_signals: signals.length,
-        unique_types: Object.keys(grouped).length,
-        unique_datasets: datasetIds.length,
-      };
-    }),
-
-  /**
-   * Get live signal summary stats for the diagnostics header.
-   */
-  getLiveSignalSummary: publicProcedure.query(async () => {
-    const [totalResult] = await db
-      .select({ count: count() })
-      .from(detectedSignals)
-      .where(isNotNull(detectedSignals.signalId));
-
-    const bySeverity = await db
-      .select({
-        severity: detectedSignals.severityLevel,
-        count: count(),
-      })
-      .from(detectedSignals)
-      .where(isNotNull(detectedSignals.signalId))
-      .groupBy(detectedSignals.severityLevel);
-
-    const byDomain = await db
-      .select({
-        domain: detectedSignals.datasetId,
-        count: count(),
-      })
-      .from(detectedSignals)
-      .where(isNotNull(detectedSignals.signalId))
-      .groupBy(detectedSignals.datasetId);
-
-    const byType = await db
-      .select({
-        signalType: detectedSignals.signalType,
-        count: count(),
-      })
-      .from(detectedSignals)
-      .where(isNotNull(detectedSignals.signalId))
-      .groupBy(detectedSignals.signalType);
-
-    // Most recent detection time
-    const [latest] = await db
-      .select({ detectedAt: detectedSignals.detectionTimestamp })
-      .from(detectedSignals)
-      .where(isNotNull(detectedSignals.signalId))
-      .orderBy(desc(detectedSignals.detectionTimestamp))
-      .limit(1);
-
-    return {
-      total_active: totalResult?.count ?? 0,
-      by_severity: Object.fromEntries(bySeverity.map((r: any) => [r.severity || "unclassified", r.count])),
-      by_domain: Object.fromEntries(byDomain.map((r: any) => [r.domain, r.count])),
-      by_type: Object.fromEntries(byType.map((r: any) => [r.signalType, r.count])),
-      last_detected_at: latest?.detectedAt ?? null,
-    };
-  }),
+  getLiveSignalSummary: protectedProcedure
+    .input(z.object({
+      jurisdiction: z.string().max(128).optional(), domain: z.string().max(128).optional(),
+      query: z.string().max(128).optional(),
+      severity: z.enum(["critical", "high", "medium", "low"]).optional(),
+    }).optional())
+    .query(({ input }) => read_diagnostic_signal_summary(input)),
 
   // ═══════════════════════════════════════════════════════════════════════
   // INTERPRETATION LAYER
@@ -1087,7 +887,7 @@ export const dualLensRouter = router({
          (select count(*)::int from public.doctrine_registry) as doctrine_count,
          (select count(*)::int from public.signal_registry) as signal_count,
          (select count(*)::int from public.court_directory) as court_count,
-         (select count(*)::int from public.detected_signals where signal_id is not null) as live_signal_count`,
+         (select count(*)::int from public.live_data_signals where is_current) as live_signal_count`,
       [],
       {
         label: "dual_lens_stats",
@@ -1147,6 +947,7 @@ export const dualLensRouter = router({
       structural_diagnostics: {
         doctrines: Number(counts.doctrine_count),
         signals: Number(counts.signal_count),
+        source_kind: "reference_catalog" as const,
         barriers: Number(counts.barrier_count),
         detected_signals: Number(counts.live_signal_count),
       },

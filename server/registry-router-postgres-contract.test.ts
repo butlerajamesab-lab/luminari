@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { registryJurisdictionJoin } from "./services/registry-jurisdiction-sql";
 
 describe("jurisdiction-aware registry query contract", () => {
   const registrySource = readFileSync(
@@ -9,6 +10,11 @@ describe("jurisdiction-aware registry query contract", () => {
   );
   const benefitsSource = readFileSync(
     fileURLToPath(new URL("../client/src/pages/BenefitsNavigator.tsx", import.meta.url)),
+    "utf8",
+  );
+
+  const benefitsRegistrySource = readFileSync(
+    fileURLToPath(new URL("../client/src/components/benefits/BenefitsRegistryPrograms.tsx", import.meta.url)),
     "utf8",
   );
 
@@ -26,26 +32,32 @@ describe("jurisdiction-aware registry query contract", () => {
     expect(registrySource).toContain("p.contact_website_norm");
     expect(registrySource).not.toContain("p.name_rp");
     expect(registrySource).not.toContain("p.website_rp");
-    expect(registrySource).toContain("LOWER('us-' || j.abbreviation)");
-    expect(registrySource).toContain("LOWER('j_' || j.abbreviation)");
+    expect(registrySource).toContain('registryJurisdictionJoin(');
+    const jurisdictionSql = registryJurisdictionJoin('p.jurisdiction_id');
+    expect(jurisdictionSql).toContain("LOWER('us-' || rj.abbreviation)");
+    expect(jurisdictionSql).toContain("LOWER('j_' || rj.abbreviation)");
   });
 
-  it("passes the canonical stateCode contract from Benefits Navigator", () => {
-    expect(benefitsSource).toContain(
-      '{ query: browseCategoryKeyword ?? "", stateCode: selectedState ?? undefined }',
-    );
-    expect(benefitsSource).not.toContain(
-      '{ query: browseCategoryKeyword ?? "", state: selectedState ?? undefined }',
-    );
+  it("connects the visible program search to the canonical stateCode contract", () => {
+    expect(benefitsSource).toContain('aria-label="Search programs"');
+    expect(benefitsSource).toContain('search_query={searchQuery}');
+    expect(benefitsSource).toContain('state_code={selectedState}');
+    expect(benefitsRegistrySource).toContain('trpc.canonicalRegistry.searchPrograms.useQuery');
+    expect(benefitsRegistrySource).toContain('{ query, state_code: state_code ?? undefined, federal_only: state_code === null, limit: REGISTRY_PAGE_SIZE, offset }');
+  });
+
+  it("uses program identity to break equal-name ties across search pages", () => {
+    const programSearch = registrySource.split('searchPrograms: publicProcedure')[1].split('getProgramChain: publicProcedure')[0];
+    expect(programSearch).toMatch(/ORDER BY p\.name, p\.id\s+LIMIT \$\{limitPlaceholder\} OFFSET \$\{offsetPlaceholder\}/);
   });
 
   it("renders the canonical registry response envelope and fails closed on bad links", () => {
-    expect(benefitsSource).toContain("registryPrograms?.programs ?? []");
-    expect(benefitsSource).toContain("registryPrograms?.total ?? 0");
-    expect(benefitsSource).not.toContain("registryPrograms.length");
-    expect(benefitsSource).not.toContain("registryPrograms.map");
-    expect(benefitsSource).toContain("normalizeRegistryWebsite");
-    expect(benefitsSource).toContain("No verified external link available");
+    expect(benefitsRegistrySource).toContain("registry_programs?.programs ?? []");
+    expect(benefitsRegistrySource).toContain("registry_programs?.total ?? 0");
+    expect(benefitsRegistrySource).not.toContain("registry_programs.length");
+    expect(benefitsRegistrySource).not.toContain("registry_programs.map");
+    expect(benefitsRegistrySource).toContain("normalize_registry_website");
+    expect(benefitsRegistrySource).toContain("No verified external link available");
   });
 
   it("keeps jurisdiction filters bound instead of interpolated", () => {

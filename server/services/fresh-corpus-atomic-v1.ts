@@ -1,12 +1,14 @@
+import { normalize_atomic_run_binding, type atomic_run_binding } from "./fresh-atomic-runner-contract";
 import crypto from "node:crypto";
 import JSZip from "jszip";
 import type { PoolClient as pool_client } from "pg";
 import { getPool as get_pool } from "../db";
 import { download_corpus_storage_artifact } from "./corpus-storage-download";
 import { parse_batch_atomic_records } from "./batch-corpus-source";
+import { workbookSheets, create_worksheet_validator, resolve_shared_string } from "./xlsx-workbook-structure";
 
 export const ATOMIC_CORPUS_ENGINE_VERSION = "fresh_atomic_corpus_v1.0.0";
-export const ATOMIC_CORPUS_PARSER_VERSION = "fresh_atomic_parser_v1.0.0";
+export const ATOMIC_CORPUS_PARSER_VERSION = "fresh_atomic_parser_v1.0.2";
 
 const MAX_RECORDS_PER_SOURCE_FILE = 200_000;
 const MAX_RAW_EXCERPT = 8_000;
@@ -188,24 +190,22 @@ function xmlCellText(xml: string): string {
   return decodeXmlEntities(xml.replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim();
 }
 
-async function parseXlsxAtomic(buffer: Buffer, sourceFileSha256: string, containerMemberPath: string | null): Promise<atomic_record[]> {
+export async function parseXlsxAtomic(buffer: Buffer, sourceFileSha256: string, containerMemberPath: string | null): Promise<atomic_record[]> {
   const zip = await JSZip.loadAsync(buffer);
   const sharedXml = await zip.file("xl/sharedStrings.xml")?.async("text");
   const shared: string[] = [];
   if (sharedXml) for (const si of sharedXml.matchAll(/<si\b[^>]*>([\s\S]*?)<\/si>/g)) shared.push(xmlCellText(si[1]));
   const workbookXml = await zip.file("xl/workbook.xml")?.async("text");
   const relsXml = await zip.file("xl/_rels/workbook.xml.rels")?.async("text");
-  if (!workbookXml || !relsXml) return [];
-  const relationships = new Map<string, string>();
-  for (const rel of relsXml.matchAll(/<Relationship\b[^>]*Id="([^"]+)"[^>]*Target="([^"]+)"[^>]*\/?\s*>/g)) relationships.set(rel[1], rel[2].replace(/^\//, ""));
+  const sheets = workbookSheets(workbookXml, relsXml);
   const out: atomic_record[] = [];
   let ordinal = 0;
-  for (const sheet of workbookXml.matchAll(/<sheet\b[^>]*name="([^"]+)"[^>]*r:id="([^"]+)"[^>]*\/?\s*>/g)) {
-    const target = relationships.get(sheet[2]);
-    if (!target) continue;
-    const path = target.startsWith("xl/") ? target : `xl/${target.replace(/^\.\//, "")}`;
-    const xml = await zip.file(path)?.async("text");
-    if (!xml) continue;
+  for (const sheet of sheets) {
+    const xml = await zip.file(sheet.path)?.async("text");
+    if (!xml) throw new Error(`xlsx_worksheet_part_missing:${sheet.name}:${sheet.path}`);
+    const validator = create_worksheet_validator(sheet.name);
+    validator.consume_chunk(xml);
+    validator.finish();
     const rows: Array<{ row: number; cells: string[] }> = [];
     for (const rowMatch of xml.matchAll(/<row\b[^>]*r="(\d+)"[^>]*>([\s\S]*?)<\/row>/g)) {
       const cells: string[] = [];
@@ -218,7 +218,7 @@ async function parseXlsxAtomic(buffer: Buffer, sourceFileSha256: string, contain
         index -= 1;
         const type = attrs.match(/\bt="([^"]+)"/)?.[1] ?? "";
         const raw = body.match(/<v>([\s\S]*?)<\/v>/)?.[1] ?? body.match(/<is>([\s\S]*?)<\/is>/)?.[1] ?? "";
-        cells[index] = type === "s" ? shared[Number(raw)] ?? "" : type === "inlineStr" ? xmlCellText(raw) : decodeXmlEntities(raw).trim();
+        cells[index] = type === "s" ? resolve_shared_string(raw, shared) : type === "inlineStr" ? xmlCellText(raw) : decodeXmlEntities(raw).trim();
       }
       if (cells.some(value => compact(value))) rows.push({ row: Number(rowMatch[1]), cells });
       if (rows.length >= MAX_RECORDS_PER_SOURCE_FILE) break;
@@ -233,12 +233,12 @@ async function parseXlsxAtomic(buffer: Buffer, sourceFileSha256: string, contain
       out.push(makeAtomicRecord({
         sourceFileSha256,
         sourceKind: "xlsx_row",
-        sourceRelation: decodeXmlEntities(sheet[1]),
+        sourceRelation: sheet.name,
         rowOrdinal: ordinal,
         columnNames: Object.keys(values),
         values,
         rawExcerpt: stable(values),
-        sourceLocator: `xlsx:${decodeXmlEntities(sheet[1])}:row:${rows[i].row}`,
+        sourceLocator: `xlsx:${sheet.name}:row:${rows[i].row}`,
         containerMemberPath,
       }));
       if (out.length >= MAX_RECORDS_PER_SOURCE_FILE) return out;
@@ -504,24 +504,25 @@ async function insert_atomic_chunk(run_id: string, artifact: source_artifact, re
   return { records_inserted, origins_inserted };
 }
 
-async function next_artifacts(run_id: string, limit: number): Promise<source_artifact[]> {
+async function next_artifacts(run_id: string, limit: number, allowed_artifact_keys?: string[]): Promise<source_artifact[]> {
   const result = await get_pool().query(`
     select a.artifact_key,a.bucket_id,a.object_name,a.byte_size,a.mimetype,a.artifact_role,a.jurisdiction_hint,a.exact_duplicate_of,a.transport_etag,a.storage_updated_at::text as storage_updated_at,a.content_sha256
       from public.luminari_corpus_source_artifact_v1 a
       join public.luminari_corpus_atomic_run_v1 active_run on active_run.run_id=$1
       left join public.luminari_corpus_atomic_artifact_v1 r on r.run_id=$1 and r.artifact_key=a.artifact_key
      where a.storage_state='active'
+       and ($3::text[] is null or a.artifact_key=any($3::text[]))
        and (not (active_run.scope ? 'artifact_keys') or active_run.scope->'artifact_keys' ? a.artifact_key)
        and (not (active_run.scope ? 'bucket_ids') or active_run.scope->'bucket_ids' ? a.bucket_id)
        and (a.bucket_id <> 'Batch' or active_run.scope->'bucket_ids' ? 'Batch' or active_run.scope->'artifact_keys' ? a.artifact_key)
        and (r.artifact_key is null or (r.status='failed' and r.attempt_count<2))
      order by a.byte_size desc,a.artifact_key
      limit $2
-  `, [run_id, limit]);
+  `, [run_id, limit, allowed_artifact_keys ?? null]);
   return result.rows.map((row: any) => ({ ...row, byte_size: Number(row.byte_size ?? 0) }));
 }
 
-async function process_artifact(run_id: string, artifact: source_artifact): Promise<void> {
+async function process_artifact(run_id: string, artifact: source_artifact, cancellation_signal?: AbortSignal): Promise<void> {
   const pool = get_pool();
   const claim = await pool.query(`insert into public.luminari_corpus_atomic_artifact_v1(run_id,artifact_key,status,attempt_count,started_at)
     values($1,$2,'running',1,now()) on conflict(run_id,artifact_key) do update set status='running',attempt_count=luminari_corpus_atomic_artifact_v1.attempt_count+1,started_at=now(),error_message=null
@@ -530,9 +531,10 @@ async function process_artifact(run_id: string, artifact: source_artifact): Prom
   if (!claim.rowCount) return;
   let client: pool_client | undefined;
   try {
-    const buffer = await download_corpus_storage_artifact(artifact);
+    const buffer = await download_corpus_storage_artifact(artifact, fetch, process.env, cancellation_signal);
     const content_sha256 = sha256(buffer);
     const records = await parse_artifact(artifact, buffer);
+    cancellation_signal?.throwIfAborted();
     client = await pool.connect();
     await client.query("BEGIN");
     const current_source = await client.query(`select 1 from public.luminari_corpus_source_artifact_v1
@@ -599,24 +601,76 @@ export async function queue_fresh_atomic_corpus_pass(scope: Record<string, unkno
   finally { client.release(); }
 }
 
-export async function resume_fresh_atomic_corpus_pass_from_database(options: { batch_size?: number; max_batches?: number } = {}) {
+
+async function assert_atomic_run_binding(binding: atomic_run_binding): Promise<void> {
+  const result = await get_pool().query(`select engine_version,status,scope
+    from public.luminari_corpus_atomic_run_v1 where run_id=$1`, [binding.expected_run_id]);
+  const run = result.rows[0];
+  if (!run || run.engine_version !== ATOMIC_CORPUS_ENGINE_VERSION
+    || !["queued", "running"].includes(run.status)) throw new Error("atomic_expected_run_unavailable");
+  const expected_scope = { bucket_ids: ["Batch"], artifact_keys: binding.allowed_artifact_keys };
+  const actual_scope = run.scope;
+  if (!actual_scope || !Array.isArray(actual_scope.artifact_keys)
+    || stable({ ...actual_scope, artifact_keys: [...actual_scope.artifact_keys].sort() }) !== stable(expected_scope)) {
+    throw new Error("atomic_expected_scope_mismatch");
+  }
+  const sources = await get_pool().query(`select count(*)::int as source_count
+    from public.luminari_corpus_source_artifact_v1
+    where storage_state='active' and bucket_id='Batch' and artifact_key=any($1::text[])`, [binding.allowed_artifact_keys]);
+  if (Number(sources.rows[0]?.source_count) !== binding.allowed_artifact_keys.length) {
+    throw new Error("atomic_expected_source_unavailable");
+  }
+}
+
+export async function resume_fresh_atomic_corpus_pass_from_database(options: {
+  batch_size?: number; max_batches?: number; max_duration_ms?: number; cancellation_signal?: AbortSignal;
+  expected_run_id?: string; allowed_artifact_keys?: string[];
+} = {}) {
+  const started_at_ms = Date.now();
+  const max_duration_ms = options.max_duration_ms ?? 900_000;
+  if (!Number.isSafeInteger(max_duration_ms) || max_duration_ms < 1 || max_duration_ms > 900_000) {
+    throw new Error("atomic_runner_invalid_budget");
+  }
+  const binding_requested = options.expected_run_id !== undefined || options.allowed_artifact_keys !== undefined;
+  const binding = binding_requested ? normalize_atomic_run_binding({
+    expected_run_id: options.expected_run_id ?? "", allowed_artifact_keys: options.allowed_artifact_keys ?? [],
+  }) : undefined;
   const pool = get_pool();
-  const active = await pool.query(`select run_id from public.luminari_corpus_atomic_run_v1 where engine_version=$1 and status in ('queued','running') order by started_at asc limit 1`, [ATOMIC_CORPUS_ENGINE_VERSION]);
-  const run_id = active.rows[0]?.run_id as string | undefined;
+  // Validate the requested identity and exact scope before any mutation or download.
+  // A bound invocation never falls back to the oldest queued run.
+  if (binding) await assert_atomic_run_binding(binding);
+  const active = binding ? null : await pool.query(`select run_id from public.luminari_corpus_atomic_run_v1 where engine_version=$1 and status in ('queued','running') order by started_at asc limit 1`, [ATOMIC_CORPUS_ENGINE_VERSION]);
+  const run_id = binding?.expected_run_id ?? active?.rows[0]?.run_id as string | undefined;
   if (!run_id) return { status: "idle" };
+  const budget_signal = AbortSignal.timeout(max_duration_ms);
+  const cancellation_signal = options.cancellation_signal
+    ? AbortSignal.any([budget_signal, options.cancellation_signal]) : budget_signal;
+  let processed = 0;
+  const stop_status = () => options.cancellation_signal?.aborted ? "stopped"
+    : budget_signal.aborted || Date.now() - started_at_ms >= max_duration_ms ? "time_budget_exhausted" : null;
+  if (stop_status()) return { status: stop_status()!, run_id, processed };
   await pool.query(`update public.luminari_corpus_atomic_run_v1 set status='running' where run_id=$1 and status='queued'`, [run_id]);
   await pool.query(`update public.luminari_corpus_atomic_artifact_v1 set status='failed',error_message='worker_lease_expired',completed_at=now()
     where run_id=$1 and status='running' and started_at < now()-interval '30 minutes'`, [run_id]);
   const batch_size = Math.max(1, Math.min(8, options.batch_size ?? 3));
   const max_batches = Math.max(1, Math.min(100, options.max_batches ?? 60));
-  let processed = 0;
   for (let batch = 0; batch < max_batches; batch += 1) {
-    const artifacts = await next_artifacts(run_id, batch_size);
-    if (!artifacts.length) { return { status: await finalize_run(run_id), run_id, processed }; }
-    for (const artifact of artifacts) { await process_artifact(run_id, artifact); processed += 1; }
+    if (stop_status()) return { status: stop_status()!, run_id, processed };
+    if (binding) await assert_atomic_run_binding(binding);
+    const artifacts = await next_artifacts(run_id, batch_size, binding?.allowed_artifact_keys);
+    if (!artifacts.length) {
+      if (binding) await assert_atomic_run_binding(binding);
+      return { status: await finalize_run(run_id), run_id, processed };
+    }
+    for (const artifact of artifacts) {
+      if (stop_status()) return { status: stop_status()!, run_id, processed };
+      if (binding) await assert_atomic_run_binding(binding);
+      await process_artifact(run_id, artifact, cancellation_signal);
+      processed += 1;
+    }
     await new Promise(resolve => setTimeout(resolve, 100));
   }
-  return { status: "yielded", run_id: run_id, processed };
+  return { status: stop_status() ?? "yielded", run_id, processed };
 }
 
 export async function get_fresh_atomic_corpus_status(run_id?: string) {

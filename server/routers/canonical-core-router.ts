@@ -26,6 +26,7 @@ import {
   readCurrentUnresolvedRelationshipPage,
 } from "../services/current-corpus-page-reader";
 import { readCurrentDiscoveryFacts } from "../services/current-discovery-facts";
+import { read_current_legal_authorities, read_current_legal_authority } from "../services/current-legal-authority-reader";
 import { reconnectAllSectors } from "../services/knowledge-reconnect";
 
 export const canonicalCoreRouter = router({
@@ -117,53 +118,12 @@ export const canonicalCoreRouter = router({
       limit: z.number().int().min(1).max(250).default(100),
       offset: z.number().int().min(0).default(0),
     }).optional())
-    .query(async ({ input }) => {
-      // Paged reader: total reports the complete filtered universe; items are one response window.
-      const value = input ?? { limit: 100, offset: 0 };
-      const params: unknown[] = [];
-      const where: string[] = ["legal_catalog_ready is true"];
-      if (value.query) {
-        params.push(`%${value.query}%`);
-        const p = `$${params.length}`;
-        where.push(`(
-          coalesce(name,'') ilike ${p}
-          or coalesce(description,'') ilike ${p}
-          or coalesce(statutory_authority,'') ilike ${p}
-          or coalesce(category,'') ilike ${p}
-          or coalesce(layer,'') ilike ${p}
-          or coalesce(jurisdiction,'') ilike ${p}
-        )`);
-      }
-      if (value.jurisdiction) {
-        params.push(value.jurisdiction.toUpperCase());
-        where.push(`upper(coalesce(state_code,jurisdiction))=$${params.length}`);
-      }
-      params.push(value.limit ?? 100, value.offset ?? 0);
-      const limitParam = `$${params.length - 1}`;
-      const offsetParam = `$${params.length}`;
-      const result = await getPool().query(
-        `select civic_object_uid,object_ref,source_object_type,object_class,target_surface,
-                run_id::text,current_run_role,current_run_engine_version,current_run_completed_at,
-                artifact_key,artifact_role,source_locator,source_content_sha256,source_candidate_hash,
-                parser_version,jurisdiction,state_code,section_name,name,organization_name,category,layer,
-                description,statutory_authority,deadline,candidate_state,source_created_at,field_provenance,
-                projection_state,projection_version,reconciled_at,data_state,legal_catalog_ready,
-                count(*) over()::int as filtered_total
-           from public.v_lighthouse_legal_authority_catalog_v2
-          where ${where.join(" and ")}
-          order by name asc nulls last,object_ref asc
-          limit ${limitParam} offset ${offsetParam}`,
-        params,
-      );
-      return {
-        total: Number(result.rows[0]?.filtered_total ?? 0),
-        limit: value.limit ?? 100,
-        offset: value.offset ?? 0,
-        items: result.rows.map(({ filtered_total: _filteredTotal, ...row }) => row),
-        catalog: "current_legal_authority_catalog_v2",
-        window_only: true,
-      };
-    }),
+    // Counts describe the complete filtered universe, even beyond the final page.
+    .query(async ({ input }) => read_current_legal_authorities(input)),
+
+  legal_authority: publicProcedure
+    .input(z.object({ object_ref: z.string().trim().min(1).max(256) }))
+    .query(async ({ input }) => read_current_legal_authority(input.object_ref)),
 
   currentObjectCounts: publicProcedure.query(async () => {
     const result = await getPool().query(`

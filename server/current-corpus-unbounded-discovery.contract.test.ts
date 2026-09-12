@@ -15,7 +15,9 @@ describe("current corpus discovery is not semantically capped", () => {
     expect(router).toContain("graphEdgePage");
     expect(router).toContain("unresolvedRelationshipPage");
     expect(router).toContain("total");
-    expect(router).toContain("window_only: true");
+    expect(router).toContain("readCurrentGraphNodePage(input ?? {})");
+    expect(router).toContain("readCurrentGraphEdgePage(input ?? {})");
+    expect(router).toContain("readCurrentUnresolvedRelationshipPage(input ?? {})");
     expect(router).toContain("must never be interpreted");
 
     expect(reader).toContain("count(*) over()::int as filtered_total");
@@ -26,10 +28,16 @@ describe("current corpus discovery is not semantically capped", () => {
 
   it("keeps the complete current legal-authority universe reachable", () => {
     const router = source("server/routers/canonical-core-router.ts");
+    const reader = source("server/services/current-legal-authority-reader.ts");
 
     expect(router).toContain("legalAuthorities");
-    expect(router).toContain("v_lighthouse_legal_authority_catalog_v2");
-    expect(router).toContain("count(*) over()::int as filtered_total");
+    expect(router).toContain('from "../services/current-legal-authority-reader"');
+    expect(router).toContain("read_current_legal_authorities(input)");
+    expect(reader).toContain("v_lighthouse_legal_authority_catalog_v2");
+    expect(reader).toContain("count(*) filter (where legal_catalog_ready is true)::int as filtered_total");
+    expect(reader).toContain("total: Number(row.filtered_total)");
+    expect(reader).toContain("window_only: true");
+    expect(reader).toContain("limit $${params.length - 1} offset $${params.length}");
     expect(router).toContain("complete filtered universe");
     expect(router).not.toContain("not trying to render thousands of graph");
   });

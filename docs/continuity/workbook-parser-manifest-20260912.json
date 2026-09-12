@@ -1,0 +1,25 @@
+{
+  "observed_date": "2026-09-12",
+  "base_main_commit": "f6c7c6e75f5fd9f7dd7e2d8484e7c677a0da702b",
+  "source_sha256": "a8edb63c60d7a7738446260f288b81a89dd5e7844d5c63532f40a3df4552eb12",
+  "atomic_parser_version": "fresh_atomic_parser_v1.0.2",
+  "typed_parser_version": "fresh_registry_typed_parser_v1.2.4",
+  "typed_engine_version": "fresh_corpus_reconciliation_v1.2.4",
+  "implementation_files_sha256": {
+    "server/services/fresh-corpus-atomic-v1.ts": "484d679bb4462fc8a291c9078ab913491bbc8249a0528f5c6611a30af80eacba",
+    "server/services/fresh-corpus-reconciliation-v1.ts": "e0d1c795b7c0e17f1b0447086a4f5ac3f01ad5f8803ab446842b3242c7379cbc",
+    "server/services/xlsx-workbook-structure.ts": "7326cd45e610b562f657f6f38957d1eaca55dc812e8bcaaf7c7e27f27c197092",
+    "server/services/registry-workbook-audit.ts": "c2c24486eb5586cec46b2e2888e047cd0d3659e20efa23a284cba2f909e7ec7e"
+  },
+  "preservation_result": {
+    "sheets": 201,
+    "nonempty_rows": 74921,
+    "data_rows": 74714,
+    "headers": 201,
+    "preamble_rows": 6
+  },
+  "validation_scope": "worksheet, sheetData, row, c structural subset; not full XML or OOXML schema validation",
+  "historical_receipts_modified": false,
+  "production_replay_performed": false,
+  "consumer_integration_verified": false
+}

@@ -162,7 +162,7 @@ it.each(["unauthenticated", "authenticated_profile_unresolved"])(
 );
 
 it("groups physical barrier and signal rows by their saved types", async () => {
-  const caller = dualLensRouter.createCaller({} as never);
+  const caller = dualLensRouter.createCaller({ user: { id: 1 }, auth: { auth_status: "authenticated" } } as never);
   const barriers = await caller.getBarrierClusters({});
   expect(barriers.clusters.map((c) => c.type)).toEqual([
     "procedural",
@@ -180,79 +180,95 @@ it("groups physical barrier and signal rows by their saved types", async () => {
 });
 
 it("returns the stored workaround text and honors the barrier-type filter", async () => {
-  const caller = dualLensRouter.createCaller({} as never);
+  const caller = dualLensRouter.createCaller({ user: { id: 1 }, auth: { auth_status: "authenticated" } } as never);
   const result = await caller.getSystemicPaths({ barrierType: "procedural" });
-  expect(result.paths).toEqual([
+  expect(result.paths).toMatchObject([
     {
       barrier: "procedural",
       severity: "high",
-      doctrineLink: "Procedural review doctrine",
-      statuteLink: "Procedural review source",
+      doctrineLink: null,
+      statuteLink: null,
       reformPath: "Document the review request; Preserve the response",
     },
   ]);
 });
 
-it("matches live detections to canonical registry types and keeps their stored description", async () => {
-  state.rows.set(detectedSignals, [
-    {
-      signalId: "live-1",
-      signalType: "repeated_denial",
-      datasetId: "public-records",
-      signalDescription: "Stored pattern description",
-      plainLanguageExplanation: "Stored explanation",
-      severityLevel: "high",
-      confidenceScore: "0.8",
-      jurisdictionScope: "WA",
-      detectionTimestamp: 1788998400000,
-      crossSignalLinks: [],
-    },
-  ]);
-  state.rows.set(dataStreamRegistry, [
-    { datasetId: "public-records", datasetName: "Public records" },
-  ]);
-  const caller = dualLensRouter.createCaller({} as never);
-  const result = await caller.getLiveSignalsForDiagnostics({});
-  expect(result.groups[0].signals[0]).toMatchObject({
-    matchesKnownPattern: true,
-    patternSummary: "Stored explanation",
-    datasetName: "Public records",
+it("reads current Domain 3 records with exact identity and no registry inference", async () => {
+  state.query.mockResolvedValueOnce({ rows: [{
+    record_id: "00000000-0000-4000-8000-000000000001", signal_type: "repeat_entity",
+    title: "Recorded recurrence", description: "Recorded explanation", primary_stream_id: "cfpb_complaints",
+    jurisdiction_id: "WA", domain: "consumer", verification_state: "unresolved",
+    governance_status: "observation_candidate", signal_hash: "a".repeat(64),
+    confidence_score: null, detected_at: null, total_count: 101,
+  }] });
+  state.rows.set(detectedSignals, [{ signalId: "legacy", plainLanguageExplanation: "Must not reappear" }]);
+  const result = await dualLensRouter.createCaller({ user: { id: 1 }, auth: { auth_status: "authenticated" } } as never).getLiveSignalsForDiagnostics({
+    jurisdiction: "WA", domain: "consumer", offset: 100,
   });
+  expect(result).toMatchObject({ total: 101, returned: 1, next_offset: null, source_relation: "public.live_data_signals" });
+  expect(result.items[0]).toMatchObject({
+    verification_state: "unresolved", governance_status: "observation_candidate",
+    signal_hash: "a".repeat(64), confidence_score: null, detected_at: null,
+    destination_path: "/viewfinder?signal_domain=live_data&signal_id=00000000-0000-4000-8000-000000000001",
+  });
+  const [sql, params] = state.query.mock.calls[0];
+  expect(sql).toContain("from public.live_data_signals");
+  expect(sql).toContain("where s.is_current");
+  expect(sql).not.toContain("detected_signals");
+  expect(params).toEqual(["WA", "consumer", null, "", 100, 100]);
+  expect(JSON.stringify(result)).not.toContain("Must not reappear");
 });
 
-it("keeps incomplete live metadata explicit without exposing additional source fields", async () => {
-  state.rows.set(detectedSignals, [
-    {
-      signalId: "live-2",
-      signalType: "missing_notice",
-      datasetId: null,
-      signalDescription: "Unpublished source description",
-      plainLanguageExplanation: "Published explanation",
-      severityLevel: null,
-      confidenceScore: null,
-      jurisdictionScope: null,
-      detectionTimestamp: null,
-      crossSignalLinks: [],
-    },
-  ]);
-  const caller = dualLensRouter.createCaller({} as never);
-  const result = await caller.getLiveSignalsForDiagnostics({});
-  expect(result.unique_datasets).toBe(0);
-  expect(result.groups[0].signals[0]).toMatchObject({
-    domain: "",
-    datasetName: "Source not recorded",
-    confidenceScore: null,
-    detectedAt: null,
-    severity: "unclassified",
-    patternSummary: "Published explanation",
-  });
-  expect(JSON.stringify(result)).not.toContain(
-    "Unpublished source description",
+it("retains totals for an empty page and rejects an unavailable total", async () => {
+  const caller = dualLensRouter.createCaller({ user: { id: 1 }, auth: { auth_status: "authenticated" } } as never);
+  state.query.mockResolvedValueOnce({ rows: [{ record_id: null, total_count: 3 }] });
+  expect(await caller.getLiveSignalsForDiagnostics({ offset: 100 })).toMatchObject({ items: [], total: 3, next_offset: null });
+  state.query.mockResolvedValueOnce({ rows: [] });
+  await expect(caller.getLiveSignalsForDiagnostics({})).rejects.toThrow("count is unavailable");
+});
+
+it("counts candidate and promoted states separately with the same page filters", async () => {
+  state.query.mockResolvedValueOnce({ rows: [{ total_current: 3, observation_candidates: 2, promoted_signals: 0,
+    by_severity: { high: 3 }, jurisdictions: ["WA"], domains: ["consumer"], last_detected_at: null }] });
+  const result = await dualLensRouter.createCaller({ user: { id: 1 }, auth: { auth_status: "authenticated" } } as never).getLiveSignalSummary({ jurisdiction: "WA", domain: "consumer" });
+  expect(result).toMatchObject({ total_current: 3, observation_candidates: 2, promoted_signals: 0 });
+  expect(state.query.mock.calls[0][1]).toEqual(["WA", "consumer", null, ""]);
+  expect(state.query.mock.calls[0][0]).toContain("governance_status = 'promoted'");
+  expect(state.query.mock.calls[0][0]).not.toContain("detected_signals");
+});
+
+it("does not turn agency name overlap into institutional issue attribution", async () => {
+  state.query.mockResolvedValueOnce({ rows: [{ id: 1, agency: "Procedural Review Agency", agency_short: "PRA", domain: "employment", statute: "Recorded authority" }] });
+  const result = await dualLensRouter.createCaller({ user: { id: 1 }, auth: { auth_status: "authenticated" } } as never).getAffectedInstitutions({ domain: "employment" });
+  expect(result.institutions).toHaveLength(1);
+  expect(result.institutions[0]).toMatchObject({ statute: "Recorded authority", signal_count: null, barrier_count: null, issue_score: null, attribution_status: "not_established" });
+  expect(state.query.mock.calls[0][0]).not.toContain("signal_registry");
+});
+
+it("keeps operational and legacy-derived records inspectable without case alerts or invented paths", async () => {
+  state.rows.get(litigationBarriers)!.push(
+    { id: 3, barrier_id: "ingestion", name: "Procedural ingestion", barrier_type: "procedural", domains: '["ingestion"]', severity: "high" },
+    { id: 4, barrier_id: "legacy", name: "Procedural legacy", barrier_type: "procedural", domains: '["employment"]', severity: "high", added_by: "derived:knowledge-derivation-phase3:live_signals", leading_authorities: '["Saved authority"]' },
   );
+  const caller = dualLensRouter.createCaller({ user: { id: 1 }, auth: { auth_status: "authenticated" } } as never);
+  const clusters = await caller.getBarrierClusters({});
+  expect(clusters.total_barriers).toBe(3);
+  expect(clusters.operational_references.map((row: any) => row.barrier_id)).toEqual(["ingestion"]);
+  const paths = await caller.getSystemicPaths({});
+  expect(paths.paths.find((row: any) => row.barrier_id === "legacy")).toMatchObject({
+    authority_refs: ["Saved authority"], doctrineLink: null, statuteLink: null, route_status: "not_established",
+  });
+  expect(paths.paths.some((row: any) => row.barrier_id === "ingestion")).toBe(false);
+  const alerts = await caller.getBarrierAlerts({ claimType: "procedural", domain: "employment" });
+  expect(alerts.barriers.map((row: any) => row.barrier_id)).toEqual(["LB-1"]);
+  expect(alerts.barriers[0]).toMatchObject({ barrier_type: "procedural", what_it_blocks: "Review" });
+  expect(alerts.excluded_unverified_references).toBe(2);
+  expect((await caller.getBarrierClusters({ domain: "housing" })).total_barriers).toBe(0);
+  expect((await caller.getSignalPatterns({ domain: "housing" })).patterns[0].type).toBe("missing_notice");
 });
 
 it("reports the governed canonical graph count and its component totals", async () => {
-  const caller = dualLensRouter.createCaller({} as never);
+  const caller = dualLensRouter.createCaller({ user: { id: 1 }, auth: { auth_status: "authenticated" } } as never);
   const result = await caller.stats();
   expect(result.graph).toEqual({
     name: "canonical_civic_graph",
@@ -268,7 +284,7 @@ it("reports the governed canonical graph count and its component totals", async 
 
 it("keeps registry stats available and explains when the graph read times out", async () => {
   state.canonical.mockRejectedValueOnce(new Error("query timeout after 7000ms"));
-  const caller = dualLensRouter.createCaller({} as never);
+  const caller = dualLensRouter.createCaller({ user: { id: 1 }, auth: { auth_status: "authenticated" } } as never);
   const result = await caller.stats();
   expect(result.structural_diagnostics).toBeDefined();
   expect(result.graph).toMatchObject({
@@ -281,7 +297,7 @@ it("keeps registry stats available and explains when the graph read times out", 
 });
 
 it("applies an explicit pool and query budget to the diagnostics summary read", async () => {
-  const caller = dualLensRouter.createCaller({} as never);
+  const caller = dualLensRouter.createCaller({ user: { id: 1 }, auth: { auth_status: "authenticated" } } as never);
   await caller.stats();
   expect(state.query).toHaveBeenCalledWith(
     expect.stringContaining("from public.strategy_claim_catalog"),
@@ -299,7 +315,7 @@ it("expands only the doctrine graph with indexed directions and a bounded result
     { direction: "outgoing", id: 1, from_id: "D-1", to_id: "S-1" },
     { direction: "incoming", id: 2, from_id: "C-1", to_id: "D-1" },
   ] });
-  const caller = dualLensRouter.createCaller({} as never);
+  const caller = dualLensRouter.createCaller({ user: { id: 1 }, auth: { auth_status: "authenticated" } } as never);
   const result = await caller.expandNode({ nodeId: "D-1", nodeType: "doctrine" });
   expect(result).toMatchObject({
     graph_name: "doctrine_graph",
@@ -317,7 +333,7 @@ it("expands only the doctrine graph with indexed directions and a bounded result
 });
 
 it("does not route foreign node types into the doctrine graph", async () => {
-  const caller = dualLensRouter.createCaller({} as never);
+  const caller = dualLensRouter.createCaller({ user: { id: 1 }, auth: { auth_status: "authenticated" } } as never);
   const result = await caller.expandNode({ nodeId: "P-1", nodeType: "pattern" });
   expect(result).toMatchObject({
     graph_name: "doctrine_graph",
@@ -340,7 +356,7 @@ it("keeps the doctrine total independent from the capped cluster rows", async ()
     if (options.label === "dual_lens_doctrine_edge_count") return Promise.resolve({ rows: [{ edge_count: 44 }] });
     throw new Error(`Unexpected query: ${options.label}`);
   });
-  const caller = dualLensRouter.createCaller({} as never);
+  const caller = dualLensRouter.createCaller({ user: { id: 1 }, auth: { auth_status: "authenticated" } } as never);
   const result = await caller.getDoctrineClusters({});
   expect(result.total_doctrines).toBe(731);
   expect(result.clusters.reduce((sum, cluster) => sum + cluster.count, 0)).toBe(500);
@@ -361,7 +377,7 @@ it("filters the full doctrine registry before paging beyond the first 500 rows",
     if (options.label === "dual_lens_doctrine_count") return Promise.resolve({ rows: [{ doctrine_count: 601 }] });
     return Promise.resolve({ rows: [{ edge_count: 44 }] });
   });
-  const result = await dualLensRouter.createCaller({} as never).getDoctrineClusters({
+  const result = await dualLensRouter.createCaller({ user: { id: 1 }, auth: { auth_status: "authenticated" } } as never).getDoctrineClusters({
     keywords: ["HOUSING"], search: "Later", offset: 600, limit: 100,
   });
   expect(result.clusters[0].doctrines[0].id).toBe(601);
@@ -375,4 +391,19 @@ it("filters the full doctrine registry before paging beyond the first 500 rows",
     expect.stringMatching(/count\(\*\)[\s\S]*where[\s\S]*unnest\(\$1::text\[\]\)/),
     [["housing"], "later"], expect.any(Object),
   );
+});
+
+it.each(["unauthenticated", "authenticated_profile_unresolved"])("protects canonical diagnostic records for %s", async auth_status => {
+  const caller = dualLensRouter.createCaller({ user: null, auth: { auth_status } } as never);
+  await expect(caller.getLiveSignalsForDiagnostics({})).rejects.toMatchObject({ code: auth_status === "unauthenticated" ? "UNAUTHORIZED" : "FORBIDDEN" });
+  await expect(caller.getLiveSignalSummary({ query: "private title" })).rejects.toMatchObject({ code: auth_status === "unauthenticated" ? "UNAUTHORIZED" : "FORBIDDEN" });
+  expect(state.query).not.toHaveBeenCalled();
+});
+
+it("binds claim text before paging and uses the same predicate for totals", async () => {
+  state.query.mockResolvedValueOnce({ rows: [{ record_id: null, total_count: 0 }] });
+  const caller = dualLensRouter.createCaller({ user: { id: 1 }, auth: { auth_status: "authenticated" } } as never);
+  await caller.getLiveSignalsForDiagnostics({ query: "EMPLOYMENT_Discrimination", offset: 100 });
+  expect(state.query.mock.calls[0][1]).toEqual([null, null, null, "employment discrimination", 100, 100]);
+  expect(state.query.mock.calls[0][0]).toMatch(/strpos[\s\S]*limit \$5 offset \$6/);
 });
