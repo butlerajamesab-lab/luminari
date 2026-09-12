@@ -12,9 +12,10 @@ The user authorized implementation, parallel work, GitHub integration, and deplo
 | --- | --- | --- |
 | Existing workflow and resource readers; jurisdiction resolution; registry reader schema repair; admin workflow coverage | #635 / `cc2cea7130396929d19f418464a270f7cab6112a` | All PR and main checks passed. Render `dep-daif2tlckfvc73907qig` live. Public program detail and search return the same original identity and four contributing contacts. |
 | Workbook relationship order, structural completeness, UTF-8 streaming, parser receipts | #634 / `fb3aac60c498417ddeb7099e3c5b98dcda72b6e3` | All PR and main checks passed. Render `dep-daif5oss728c73ah1tb0` live. Original 201-sheet workbook preservation matches an independent recount. |
-| Source authority catalog and exact source detail in Legal Library | #639 / `213283d22b81099e07e3cfbf2b178869a823cca0` | All six PR workflows passed, including the repaired source-contract tests. Deployment/readback tracked below. |
+| Source authority catalog and exact source detail in Legal Library | #639 / `213283d22b81099e07e3cfbf2b178869a823cca0` | All PR/main checks passed. Render `dep-daif7mgjo6nc73biiasg` live; browser list, detail and jurisdiction filter verified. |
+| Existing office discovery to native detail | #640 / `87840c2f19bd37dff9ece17c8ba028a11439d5f0` | All six PR workflows and automated review passed; deployment `dep-daifaih5efls738tmgvg` started. Exact 3,423 active identities verified in the database. |
 
-The combined #635/#634/#639 tree passed 1,688 tests with two environment-dependent skips across 329 passing test files. Main `213283d` has exactly that tested application tree; the only local differences at this checkpoint are continuity documents.
+The combined #635/#634/#639 tree passed 1,688 tests with two environment-dependent skips across 329 passing test files. Main `213283d` has exactly that tested application tree. Subsequent office and program-search changes have their own focused tests and release CI.
 
 ### Production acceptance of the registry repair
 
@@ -23,6 +24,14 @@ The combined #635/#634/#639 tree passed 1,688 tests with two environment-depende
 `canonicalRegistry.searchPrograms({query:'Atrium Health',stateCode:'NC'})` returns that same identity exactly once. The original registry contact/website values remain explicitly null in `registry_source_fields`; the added values are identified as enrichment from the existing resource records.
 
 The admin workflow coverage endpoint correctly returns HTTP 401 without authentication. The available browser is in public walkthrough mode, so the owner-only panel has not been exercised in an authenticated production session. Its loader, access boundary, and rendering are covered separately; this is not a claim of owner-session acceptance.
+
+### Production acceptance of source authority references
+
+The browser's Source Authorities tab shows 1,939 references, 1,762 ready and 177 held (121 conflicting jurisdictions, 56 unresolved). Opening reference `6d5d0858bedc8469c1e411dff8b3c797f9a05a21715d8bbed839a504e2e4492d` returns the same identity, the Vermont source document, locator `lines:576-597:statutory_authority`, its source and candidate hashes, and recorded authority text. Filtering to VT shows 36 references, 35 ready and one held. A held reference returns null from the public detail endpoint; a page beyond the end retains the full ready count with zero items. These remain references in source documents, not verified current legal text.
+
+### Browser-discovered program-search repair
+
+The original visible Search programs control filtered guided results only. Selecting NC and Healthcare displayed zero registry matches because a literal category label was the only database query. The follow-up connects entered text to the existing registry query with selected state, 300 ms debounce, truthful pending/error/empty states, and Previous/Next navigation over 20-record pages. Query and state changes reset the page and suppress stale rows. Equal program names now have an ID tie-breaker. Original IDs, enriched contact values and expandable contact records remain intact. Browser acceptance after deployment is NC → Search programs → Atrium Health → original `RTCELL_11948` and four contact records.
 
 ## Parallel follow-through
 

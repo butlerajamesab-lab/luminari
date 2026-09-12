@@ -129,7 +129,7 @@
       "runtime_surfaces": [
         {
           "surface": "case_action_context",
-          "query": "load_governed_legal_registry exact jurisdiction/claim bindings; current civic-object enforcement references"
+          "query": "sealed intake action-path receipts; load_governed_legal_registry declared jurisdiction/claim candidates; jurisdiction-scoped enforcement references"
         }
       ]
     },

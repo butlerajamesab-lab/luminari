@@ -30,6 +30,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { CommitToCase, FlagArea } from "@/components/CommitToCase";
 import { NextStepBar } from "@/components/NextStepBar";
+import Benefits_registry_programs from "@/components/benefits/BenefitsRegistryPrograms";
 
 /* ─── Category Icons & Colors ─── */
 
@@ -57,14 +58,6 @@ const URGENCY_META: Record<string, { label: string; color: string; bgColor: stri
   soon: { label: "Apply Soon", color: "text-amber-300", bgColor: "bg-amber-500/15 border-amber-500/30" },
   when_ready: { label: "When Ready", color: "text-blue-300", bgColor: "bg-blue-500/15 border-blue-500/30" },
 };
-
-function normalizeRegistryWebsite(value?: string | null) {
-  const trimmed = value?.trim();
-  if (!trimmed) return null;
-  if (/^https?:\/\//i.test(trimmed)) return trimmed;
-  if (/^www\./i.test(trimmed)) return `https://${trimmed}`;
-  return null;
-}
 
 /* ─── Program Card Component ─── */
 
@@ -821,18 +814,11 @@ export default function BenefitsNavigator() {
   const [detectedState, setDetectedState] = useState<string | null>(null);
   const [trackedProgramIds, setTrackedProgramIds] = useState<Set<string>>(new Set());
   const [browseCategoryKeyword, setBrowseCategoryKeyword] = useState<string | null>(null);
-  const [showRegistryExtra, setShowRegistryExtra] = useState(false);
 
   // Queries
   const { data: categories } = trpc.benefits.categories.useQuery();
   const civicMapProof = useProofEndpoint("civicMapResourceProof");
   const dshsOfficeProof = useProofEndpoint("benefitsDshsOfficeProof");
-
-  // Augment with DB registry programs when browsing a category
-  const { data: registryPrograms } = trpc.canonicalRegistry.searchPrograms.useQuery(
-    { query: browseCategoryKeyword ?? "", stateCode: selectedState ?? undefined },
-    { enabled: !!browseCategoryKeyword && browseCategoryKeyword.length > 0 },
-  );
 
   const { data: matchResults, isLoading: isMatching, refetch: refetchMatches } = trpc.benefits.match.useQuery(
     {
@@ -898,19 +884,15 @@ export default function BenefitsNavigator() {
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       results = results.filter((m: any) =>
-        m.program.name.toLowerCase().includes(q) ||
-        m.program.short_name.toLowerCase().includes(q) ||
-        m.program.description.toLowerCase().includes(q) ||
-        m.program.what_it_does.toLowerCase().includes(q)
+        (m.program.name ?? "").toLowerCase().includes(q) ||
+        (m.program.short_name ?? "").toLowerCase().includes(q) ||
+        (m.program.description ?? "").toLowerCase().includes(q) ||
+        (m.program.what_it_does ?? "").toLowerCase().includes(q)
       );
     }
 
     return results;
   }, [matchResults, selectedCategories, searchQuery]);
-
-  const registryProgramRows = registryPrograms?.programs ?? [];
-  const registryProgramTotal = registryPrograms?.total ?? 0;
-  const showRegistryRows = filteredResults.length === 0 || showRegistryExtra;
 
   const matchedProgramIds = useMemo(() => {
     if (!filteredResults) return [];
@@ -1088,6 +1070,33 @@ export default function BenefitsNavigator() {
           </CardContent>
         </Card>
 
+        {/* Search existing programs, independently of guided matching. */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            aria-label="Search programs"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search programs..."
+            className="pl-9 bg-background/50 border-border/50 text-sm h-9"
+          />
+          {searchQuery && (
+            <button
+              aria-label="Clear program search"
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        <Benefits_registry_programs
+          search_query={searchQuery}
+          browse_category_keyword={browseCategoryKeyword}
+          state_code={selectedState}
+        />
+
         {/* Results */}
         {hasSearched && matchResults && (
           <>
@@ -1125,14 +1134,10 @@ export default function BenefitsNavigator() {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-sm font-semibold text-foreground">
-                  {filteredResults.length > 0
-                    ? `${filteredResults.length} program${filteredResults.length !== 1 ? "s" : ""} found`
-                    : `${registryProgramTotal} jurisdiction registry program${registryProgramTotal !== 1 ? "s" : ""} found`}
+                  {filteredResults.length} guided program match{filteredResults.length !== 1 ? "es" : ""}
                 </h2>
                 <p className="text-xs text-muted-foreground">
-                  {filteredResults.length > 0
-                    ? "Sorted by relevance to your situation"
-                    : `Showing canonical registry results for ${selectedState || detectedState || "your selected jurisdiction"}`}
+                  Guided matches for your situation and selected category filters
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -1146,25 +1151,6 @@ export default function BenefitsNavigator() {
                   Document Checklist
                 </Button>
               </div>
-            </div>
-
-            {/* Search within results */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search programs..."
-                className="pl-9 bg-background/50 border-border/50 text-sm h-9"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
             </div>
 
             {/* Category Filters */}
@@ -1213,83 +1199,10 @@ export default function BenefitsNavigator() {
               ))}
             </div>
 
-            {filteredResults.length === 0 && registryProgramRows.length === 0 && (
-              <div className="text-center py-12">
-                <HelpCircle className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground">
-                  No programs match your current filters. Try removing some filters or describing your situation differently.
-                </p>
-              </div>
-            )}
-
-            {filteredResults.length === 0 && registryProgramRows.length > 0 && (
-              <p className="text-xs text-muted-foreground">
-                No guided matches were returned, so the jurisdiction registry results are shown below.
+            {filteredResults.length === 0 && (
+              <p className="text-sm text-muted-foreground py-4">
+                No guided programs match your current filters. Search the registry above by program or organization name, or change your guided filters.
               </p>
-            )}
-
-            {/* Registry Supplemental Programs */}
-            {registryProgramRows.length > 0 && (
-              <div className="mt-2">
-                {filteredResults.length > 0 && (
-                  <button
-                    onClick={() => setShowRegistryExtra((v) => !v)}
-                    className="flex items-center gap-2 text-xs text-primary/70 hover:text-primary transition-colors mb-2"
-                  >
-                    <ArrowRight className="w-3.5 h-3.5" />
-                    {showRegistryExtra ? "Hide" : "Also see"} {registryProgramTotal} programs in the jurisdiction registry
-                  </button>
-                )}
-                {showRegistryRows && (
-                  <div className="space-y-2">
-                    {registryProgramRows.map((p: any) => {
-                      const registryWebsite = normalizeRegistryWebsite(p.website);
-                      return (
-                        <div key={p.id} className="p-3 rounded-lg bg-card/30 border border-border/30 hover:border-border/60 transition-colors">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium text-foreground/90 leading-tight">{p.name}</p>
-                              {p.agency && <p className="text-xs text-muted-foreground mt-0.5">{p.agency}</p>}
-                              {p.contact && (
-                                <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">
-                                  Contact: {p.contact}
-                                </p>
-                              )}
-                              {(p.eligibility || p.apply_notes) && (
-                                <p className="text-xs text-muted-foreground/70 mt-1 line-clamp-2">
-                                  {p.eligibility || p.apply_notes}
-                                </p>
-                              )}
-                            </div>
-                            <div className="flex flex-col items-end gap-1 shrink-0">
-                              {(p.state_code || p.jurisdiction_name || p.jurisdiction_id) && (
-                                <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                                  {p.state_code || p.jurisdiction_name || p.jurisdiction_id}
-                                </Badge>
-                              )}
-                              {registryWebsite ? (
-                                <a
-                                  href={registryWebsite}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="inline-flex items-center gap-1 text-[10px] text-primary hover:text-primary/80"
-                                >
-                                  Visit website <ExternalLink className="w-2.5 h-2.5" />
-                                </a>
-                              ) : (
-                                <span className="text-[10px] text-muted-foreground">
-                                  No verified external link available
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
             )}
 
             {/* Bottom Help */}

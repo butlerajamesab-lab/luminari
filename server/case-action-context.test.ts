@@ -1,93 +1,146 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-const mocks = vi.hoisted(() => ({ query: vi.fn(), legal: vi.fn(), resources: vi.fn(), registry: vi.fn(), resolve: vi.fn() }));
-vi.mock('./db-legacy', () => ({ query_with_diagnostics: mocks.query }));
-vi.mock('./services/current-legal-authority-reader', () => ({ read_current_legal_authorities: mocks.legal }));
-vi.mock('./services/resource-directory-publishable', () => ({ searchPublishableResourceDirectory: mocks.resources }));
-vi.mock('./intake-governed-legal-registry', () => ({ load_governed_legal_registry: mocks.registry }));
-vi.mock('./legal-reference-runtime', () => ({ resolve_legal_reference: mocks.resolve }));
-import { get_case_action_context } from './services/case-action-context';
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { TRPCError } from "@trpc/server";
+const mocks = vi.hoisted(() => ({
+  subject: vi.fn(), authorities: vi.fn(), statutes: vi.fn(), cases: vi.fn(), enforcement: vi.fn(),
+  weak_joints: vi.fn(), contradictions: vi.fn(), stats: vi.fn(), resources: vi.fn(), paths: vi.fn(), query: vi.fn(), intake: vi.fn(), registry: vi.fn(), resolve: vi.fn(),
+}));
+vi.mock("./services/case-context-subject", () => ({ read_case_context_subject: mocks.subject }));
+vi.mock("./services/current-legal-authority-reader", () => ({ read_current_legal_authorities: mocks.authorities }));
+vi.mock("./services/case-context-reader-boundary", () => ({
+  read_case_statutes: mocks.statutes, read_case_law: mocks.cases,
+  read_case_enforcement: mocks.enforcement, read_case_weak_joints: mocks.weak_joints,
+  read_case_contradictions: mocks.contradictions, read_case_legal_stats: mocks.stats,
+  read_case_resources: mocks.resources, read_case_enforcement_pathways: mocks.paths,
+}));
+vi.mock("./db", () => ({ getPool: () => ({ query: mocks.query }) }));
+vi.mock("./intake-case-layer-reader", () => ({ read_canonical_case_layer_outputs: mocks.intake }));
+vi.mock("./intake-governed-legal-registry", () => ({ load_governed_legal_registry: mocks.registry }));
+vi.mock("./legal-reference-runtime", () => ({ resolve_legal_reference: mocks.resolve }));
+import { get_case_action_context } from "./services/case-action-context";
 
-function database(sql: string) {
-  if (sql.includes('from public.cases ')) return { rows: [{ id: 41, name: 'Case', domain: 'housing', pipeline_type: 'housing' }] };
-  if (sql.includes('from public.case_state ')) return { rows: [{ jurisdiction: 'WA', claim_type: 'test_claim', committed_statute_ids: ['case_law:abc'] }] };
-  if (sql.includes('case_resource_links')) return { rows: [{ resource_ref: 'saved_resource' }] };
-  if (sql.includes('signal_artifact_case_links_v1')) return { rows: [{ link_id: 'link', artifact_source_hash: 'preserved', relationship_type: 'context' }] };
-  return { rows: [] };
-}
 beforeEach(() => {
   Object.values(mocks).forEach(mock => mock.mockReset());
-  mocks.query.mockImplementation(async (sql: string) => database(sql));
-  mocks.legal.mockResolvedValue({ items: [{ object_ref: 'source', source_content_sha256: 'original' }] });
-  mocks.resources.mockResolvedValue({ items: [] });
-  mocks.resolve.mockResolvedValue({ committed_ref: 'case_law:abc', status: 'unresolved', record: null });
-  mocks.registry.mockResolvedValue({ rule_manifest_hash: 'rules', manifest: { claims: [{ claim_type_id: "test_claim", domain: "housing" }], workflows: [], deadlines: [] } });
+  mocks.subject.mockResolvedValue({ id: 41, user_id: 7, jurisdiction_id: null, jurisdiction: "Washington", jurisdiction_code: "WA", category: "Housing", case_namespace: "public.cases" });
+  mocks.authorities.mockResolvedValue({ items: [{ object_ref: "source-1", source_locator: "lines:1-4:statutory_authority", state_code: "WA" }] });
+  mocks.statutes.mockResolvedValue([{ id: "8b300280-3e91-4f4e-999c-5d5b43a01cbe", citation: "RCW 59.18.280" }]);
+  mocks.cases.mockResolvedValue([]); mocks.enforcement.mockResolvedValue([]); mocks.weak_joints.mockResolvedValue([]);
+  mocks.contradictions.mockResolvedValue([]); mocks.resources.mockResolvedValue({ items: [] });
+  mocks.paths.mockResolvedValue({ pathways: [] }); mocks.stats.mockResolvedValue({ statutes: 1 });
+  mocks.query.mockResolvedValue({ rows: [] });
+  mocks.intake.mockResolvedValue({ state: "not_projected", outputs: [] });
+  mocks.registry.mockResolvedValue({ rule_manifest_hash: "registry-hash", manifest: { claims: [], workflows: [], deadlines: [] } });
+  mocks.resolve.mockResolvedValue({ committed_ref: "case_law:abc", status: "unresolved", record: null });
 });
 
-describe('owned public case action context', () => {
-  it('rejects missing identity before any database read', async () => {
-    await expect(get_case_action_context({ case_id: 41 }, undefined as unknown as number)).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
-    expect(mocks.query).not.toHaveBeenCalled();
+describe("workspace case action context", () => {
+  it("retains original IDs and sources while scoping every discovery read to recorded case jurisdiction", async () => {
+    mocks.query.mockImplementation(async (sql: string, values: unknown[]) => {
+      expect(values[0]).toBe(41);
+      if (sql.includes("case_resource_links")) return { rows: [{ resource_ref: "resource-1", source_lane: "directory" }] };
+      return { rows: [{ signal_record_id: "signal-1", relationship_type: "supports_case" }] };
+    });
+    const result = await get_case_action_context({ case_id: 41, user_id: 7, limit_per_surface: 4 });
+    expect(mocks.subject).toHaveBeenCalledWith(41, 7);
+    expect(result.subject.case_namespace).toBe("public.cases");
+    expect(result.legal.statutes[0]).toMatchObject({ id: "8b300280-3e91-4f4e-999c-5d5b43a01cbe" });
+    expect(result.legal.source_authorities[0]).toMatchObject({ object_ref: "source-1", source_locator: "lines:1-4:statutory_authority" });
+    for (const reader of [mocks.authorities,mocks.statutes,mocks.cases,mocks.enforcement,mocks.weak_joints,mocks.contradictions,mocks.resources,mocks.paths]) {
+      for (const [input] of reader.mock.calls) expect(input.jurisdiction).toBe("WA");
+    }
+    expect(result.resources.attached_to_case).toEqual([{ resource_ref: "resource-1", source_lane: "directory" }]);
+    expect(result.signals.lineage).toEqual([{ signal_record_id: "signal-1", relationship_type: "supports_case" }]);
   });
-  it('rejects another owner and never reads case links or registry data', async () => {
-    mocks.query.mockResolvedValueOnce({ rows: [] });
-    await expect(get_case_action_context({ case_id: 41 }, 7)).rejects.toMatchObject({ code: 'NOT_FOUND' });
-    expect(mocks.query).toHaveBeenCalledTimes(1);
-    expect(mocks.query).toHaveBeenCalledWith(expect.stringContaining('public.cases where id = $1 and user_id = $2'), [41,7], expect.any(Object));
-    expect(mocks.registry).not.toHaveBeenCalled();
-    expect(mocks.legal).not.toHaveBeenCalled();
+
+  it.each(["FORBIDDEN", "NOT_FOUND"] as const)("performs no joins or discovery after %s", async code => {
+    mocks.subject.mockRejectedValueOnce(new TRPCError({ code }));
+    await expect(get_case_action_context({ case_id: 41, user_id: 9 })).rejects.toMatchObject({ code });
+    for (const [name,reader] of Object.entries(mocks)) if (name !== "subject") expect(reader).not.toHaveBeenCalled();
   });
-  it('preserves exact source identities and explicit relationship meaning in the canonical case namespace', async () => {
-    const result = await get_case_action_context({ case_id: 41 }, 7);
-    expect(result.case_namespace).toBe('public.cases');
-    expect(result.legal_authorities.items).toEqual([{ object_ref: 'source', source_content_sha256: 'original' }]);
-    expect(result.signals.items?.[0]).toMatchObject({ artifact_source_hash: 'preserved', relationship_type: 'context' });
-    expect(result.legal_attachments.items?.[0]).toMatchObject({ status: 'unresolved', committed_ref: 'case_law:abc' });
-    expect(mocks.query.mock.calls.every(([sql]) => !sql.includes('luminari_cases'))).toBe(true);
+
+  it("leaves missing case jurisdiction unavailable instead of loading global records", async () => {
+    mocks.subject.mockResolvedValue({ id: 41, user_id: 7, jurisdiction_code: null, jurisdiction: null, category: "Housing" });
+    const result = await get_case_action_context({ case_id: 41, user_id: 7 });
+    for (const reader of [mocks.authorities,mocks.statutes,mocks.cases,mocks.enforcement,mocks.weak_joints,mocks.contradictions,mocks.resources,mocks.paths,mocks.stats]) expect(reader).not.toHaveBeenCalled();
+    expect(result.diagnostics.unavailable_surfaces).toContain("legal.statutes");
+    expect(result.diagnostics.legal_library_stats).toBeNull();
   });
-  it('does not broaden an empty text search or infer an issue from shared words', async () => {
-    mocks.legal.mockResolvedValue({ items: [] });
-    const result = await get_case_action_context({ case_id: 41, problem_context: 'unmatched words' }, 7);
-    expect(mocks.legal).toHaveBeenCalledTimes(1);
-    expect(mocks.legal).toHaveBeenCalledWith(expect.objectContaining({ query: 'unmatched words', jurisdiction: 'WA' }));
-    expect(result.legal_authorities.availability.status).toBe('empty');
+
+  it("keeps failed attachment reads distinct from successful emptiness", async () => {
+    mocks.query.mockRejectedValue(Object.assign(new Error("missing relation"), { code: "42P01" }));
+    const result = await get_case_action_context({ case_id: 41, user_id: 7 });
+    expect(result.resources.attached_to_case).toBeNull();
+    expect(result.resources.attachment_availability.status).toBe("unavailable");
+    expect(result.signals.lineage).toBeNull();
+    expect(result.signals.availability.status).toBe("unavailable");
   });
-  it('keeps missing jurisdiction unavailable while preserving saved links', async () => {
-    mocks.query.mockImplementation(async (sql: string) => sql.includes('public.case_state') ? { rows: [] } : database(sql));
-    const result = await get_case_action_context({ case_id: 41 }, 7);
-    expect(result.legal_authorities.items).toBeNull();
-    expect(result.workflows.availability.status).toBe('unavailable');
-    expect(result.attached_resources.items).toHaveLength(1);
-    expect(mocks.registry).not.toHaveBeenCalled();
-    expect(mocks.legal).not.toHaveBeenCalled();
+
+  it("keeps empty searches empty and does not calculate deadlines from an incident date alone", async () => {
+    mocks.statutes.mockResolvedValueOnce([]).mockResolvedValueOnce([{ id: "same-source-id" }]);
+    const result = await get_case_action_context({ case_id: 41, user_id: 7, incident_date: "2026-03-01" });
+    expect(result.diagnostics.fallback_surfaces).toEqual([]);
+    expect(result.legal.statutes).toEqual([]);
+    expect(mocks.statutes).toHaveBeenCalledTimes(1);
+    expect(result.workflow.filing_deadlines).toEqual([]);
+    expect(result.diagnostics.unavailable_surfaces).toContain("workflow.filing_deadlines");
+    expect(result.diagnostics.notes.join(" ")).toContain("incident date alone");
   });
-  it('applies bounds and exact declared jurisdiction/claim filters to workflows and source deadline rules', async () => {
-    mocks.registry.mockResolvedValue({ rule_manifest_hash: 'rules', manifest: {
-      claims: [{ claim_type_id: 'test_claim', domain: 'housing' }],
-      workflows: [
-        { workflow_key: 'right', jurisdiction: 'Washington', issue_types: ['test_claim'], steps: [{ action: 'Preserve records' }] },
-        { workflow_key: 'other_state', jurisdiction: 'OR', issue_types: ['test_claim'], steps: [] },
-        { workflow_key: 'other_claim', jurisdiction: 'WA', issue_types: ['other'], steps: [] },
-      ],
-      deadlines: [
-        { registry_id: 'rule1', jurisdiction: 'WA', claim_domain: 'housing' },
-        { registry_id: 'rule2', jurisdiction: 'WA', claim_domain: 'housing' },
-        { registry_id: 'wrong', jurisdiction: 'OR', claim_domain: 'housing' },
-      ],
-    } });
-    const result = await get_case_action_context({ case_id: 41, limit_per_surface: 1 }, 7);
-    expect(result.workflows.items?.map(row => row.workflow_key)).toEqual(['right']);
-    expect(result.deadlines.items).toEqual([{ registry_id: 'rule1', jurisdiction: 'WA', claim_domain: 'housing', binding_state: 'domain_candidate_not_claim_specific', calculation_state: 'not_calculated', registry_hash: 'rules' }]);
-    expect(result.deadlines.has_more).toBe(true);
-    expect(mocks.query.mock.calls.some(([sql]) => sql.includes('agency_forms'))).toBe(false);
+
+  it("retains governed intake path receipts, workflow IDs, and currentness without recomputing them", async () => {
+    const projection = { state: "canonical_projection", outputs: [{ intake_session_id: "intake-1", output_hash: "hash-1",
+      receipt_hash: "receipt-1", projection_current: false, data: [{ path_id: "path-1", workflow_registry_id: "workflow-uuid", status: "candidate_unverified" }] }] };
+    mocks.intake.mockResolvedValueOnce(projection);
+    const result = await get_case_action_context({ case_id: 41, user_id: 7 });
+    expect(mocks.intake).toHaveBeenCalledWith(41, "action_paths");
+    expect(result.workflow.intake_action_paths).toEqual(projection);
+    expect(result.workflow.intake_action_path_availability.status).toBe("available");
   });
-  it('keeps a failed surface distinct from empty without erasing successful reads', async () => {
-    mocks.resources.mockRejectedValue(Object.assign(new Error('timeout'), { code: '57014' }));
-    mocks.registry.mockRejectedValue(Object.assign(new Error('missing table'), { code: '42P01' }));
-    const result = await get_case_action_context({ case_id: 41 }, 7);
-    expect(result.resources.items).toBeNull();
-    expect(result.resources.availability.status).toBe('error');
-    expect(result.workflows.availability.status).toBe('unavailable');
-    expect(result.legal_authorities.items).toHaveLength(1);
-    expect(result.signals.items).toHaveLength(1);
+
+  it.each(["WA", null])("emits snake_case context keys including unavailable nested surfaces for %s", async jurisdiction => {
+    mocks.subject.mockResolvedValueOnce({ id: 41, user_id: 7, jurisdiction_code: jurisdiction,
+      jurisdiction, category: "Housing", case_namespace: "public.cases" });
+    const result = await get_case_action_context({ case_id: 41, user_id: 7 });
+    const inspect = (value: unknown): void => {
+      if (Array.isArray(value)) return value.forEach(inspect);
+      if (!value || typeof value !== "object") return;
+      for (const [key, nested] of Object.entries(value)) {
+        expect(key).not.toMatch(/[a-z][A-Z]/);
+        inspect(nested);
+      }
+    };
+    inspect(result);
   });
+});
+
+it("preserves explicit saved references and isolates registry failure from sealed output", async () => {
+  mocks.subject.mockResolvedValueOnce({ id: 41, user_id: 7, jurisdiction_code: "WA", jurisdiction: "WA", claim_type: "test_claim", committed_statute_ids: ["case_law:abc"] });
+  mocks.registry.mockRejectedValueOnce(new Error("Registry unavailable"));
+  const result = await get_case_action_context({ case_id: 41, user_id: 7 });
+  expect(result.legal.attachments.items).toEqual([{ committed_ref: "case_law:abc", status: "unresolved", record: null }]);
+  expect(result.workflow.source_candidates.availability.status).toBe("error");
+  expect(result.workflow.intake_action_paths).toMatchObject({ state: "not_projected" });
+});
+
+it("matches declared workflows and deadline domains only within the browsing jurisdiction", async () => {
+  mocks.subject.mockResolvedValueOnce({ id: 41, user_id: 7, jurisdiction_code: "WA", jurisdiction: "WA", claim_type: "test_claim" });
+  mocks.registry.mockResolvedValueOnce({ rule_manifest_hash: "registry-hash", manifest: {
+    claims: [{ claim_type_id: "test_claim", domain: "housing" }],
+    workflows: [{ workflow_id: "wa-source", jurisdiction: "WA", issue_types: ["test_claim"] }, { workflow_id: "or-source", jurisdiction: "OR", issue_types: ["test_claim"] }],
+    deadlines: [{ deadline_id: "wa-deadline", jurisdiction: "WA", claim_domain: "housing" }, { deadline_id: "or-deadline", jurisdiction: "OR", claim_domain: "housing" }],
+  } });
+  const projection = { state: "canonical_projection", outputs: [{ output_hash: "sealed-WA-hash", data: [] }] };
+  mocks.intake.mockResolvedValueOnce(projection);
+  const result = await get_case_action_context({ case_id: 41, user_id: 7, jurisdiction: "OR" });
+  expect(result.request.jurisdiction_source).toBe("explicit_browse_request");
+  expect(result.subject.jurisdiction_code).toBe("WA");
+  expect(result.workflow.source_candidates.items).toEqual([expect.objectContaining({ workflow_id: "or-source", registry_hash: "registry-hash" })]);
+  expect(result.workflow.deadline_sources.items).toEqual([expect.objectContaining({ deadline_id: "or-deadline", calculation_state: "not_calculated" })]);
+  expect(result.workflow.intake_action_paths).toBe(projection);
+});
+
+it("keeps independent sources readable when one catalog fails", async () => {
+  mocks.authorities.mockRejectedValueOnce(new Error("Source catalog unavailable"));
+  const result = await get_case_action_context({ case_id: 41, user_id: 7 });
+  expect(result.diagnostics.unavailable_surfaces).toContain("legal.source_authorities");
+  expect(result.legal.statutes).toHaveLength(1);
+  expect(result.resources.attachment_availability.status).toBe("empty");
 });

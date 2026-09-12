@@ -40,7 +40,7 @@ describe('legal catalog identities and handoffs', () => {
   });
   it('keeps both public-case routers and model dispatch bound to caller identity', () => {
     const router = readFileSync('server/routers/luminari-router.ts','utf8');
-    expect(router).toContain('get_case_action_context(input, ctx.user.id)');
+    expect(router).toContain('get_case_action_context({ ...input, user_id: ctx.user.id })');
     const executor = readFileSync('server/engines/sunam-executor.ts','utf8');
     expect(executor).toContain('case "get_case_action_context":');
     expect(executor).toContain('dispatchServiceTool(toolName, args, Number(executedBy))');

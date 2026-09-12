@@ -23,3 +23,7 @@ Control Room lists saved references, opens the exact source through Legal Librar
 ## Verification boundaries
 
 Regression coverage includes denied ownership, distinct case namespaces, malformed/ambiguous identities, reference round trips, preservation of partial failures, empty searches, exact scope, deadline domain semantics, held-publication counts, and pagination beyond the final page. Actual emitted legal queries are captured by the opt-in `LEGAL_QUERY_CAPTURE_PATH` fixture and can be executed read-only against the live schema. Build/test results and deployed checks are recorded separately in the dated release evidence. Tests are not proof of source legal accuracy, canonical promotion, or statistical correlation validity.
+
+## Concurrent case-context integration
+
+The September 12 merge preserves the independent legal attachment and readback work together with workspace case identity bridges, owner/collaborator access, recorded intake jurisdiction resolution, and sealed intake action-path receipts. Legacy context inputs terminate at the router/tool boundary and owned outputs use snake_case. Both context endpoints now read authorized `public.cases` workspace identities; no same-number legacy registry identity is inferred. Explicit browsing jurisdiction is labeled separately and never rewrites sealed intake output. Declared workflow and deadline matches are source candidates; deadline text is never calculated into a case deadline. Failed source reads remain unavailable while independent surfaces remain readable.

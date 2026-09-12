@@ -1,126 +1,59 @@
-import { TRPCError } from "@trpc/server";
-export { get_case_action_context } from "./case-action-context";
 /**
  * Luminari Context Service
  * 
  * Unified context endpoint for Sunam integration
- * Composes data from registryService, caseService, and matchingService
+ * Composes authorized workspace cases and source-bound readers
  * 
  * Returns complete case context without direct SQL access
  */
 
-import * as registryService from "./registryService";
-import * as caseService from "./caseService";
-import * as matchingService from "./matchingService";
+import { read_case_timeline } from "./case-context-reader-boundary";
+import { read_availability } from "../read-availability";
+import { get_case_action_context } from "./case-action-context";
+export { get_case_action_context } from "./case-action-context";
 
-export interface LuminariContext {
-  case: {
-    id: number;
-    jurisdiction_id: number;
-    category: string;
-    selected_workflow_id: number;
-    status: string;
-    created_at: number;
-    notes?: string[];
-    timeline?: any[];
-  };
-  jurisdiction: {
-    id: number;
-    name: string;
-    code: string;
-  };
-  workflows: any[];
-  programs: any[];
-  entities: any[];
-  signals: any[];
-  legal_library: any[];
-  enforcement_pathways: any[];
-  deadlines: any[];
-  diagnostics: {
-    total_workflows: number;
-    total_programs: number;
-    total_entities: number;
-    total_signals: number;
-    case_status: string;
-    last_updated: number;
-  };
-}
+export type luminari_context = Awaited<ReturnType<typeof get_case_context>>;
 
-/**
- * Get unified context for a case
- * 
- * Composes:
- * - Case data from caseService
- * - Jurisdiction data from registryService
- * - Workflows, programs, entities, signals from registryService
- * - Case timeline and notes from caseService
- * 
- * No direct SQL access - all through service layer
- */
-export async function getCaseContext(caseId: number, user_id: number): Promise<LuminariContext> {
-  if (!Number.isSafeInteger(user_id) || user_id <= 0) throw new TRPCError({ code: "UNAUTHORIZED" });
-  if (!await caseService.verifyCaseOwnership(caseId, user_id)) throw new TRPCError({ code: "NOT_FOUND", message: "Case not found or access denied" });
-  // Step 1: Get case data
-  const caseData = await caseService.getCaseById(caseId);
-  if (!caseData) {
-    throw new Error(`Case ${caseId} not found`);
-  }
-
-  // Step 2: Get jurisdiction
-  const jurisdiction = await registryService.getJurisdictionById(
-    caseData.jurisdiction_id
-  );
-  if (!jurisdiction) {
-    throw new Error(
-      `Jurisdiction ${caseData.jurisdiction_id} not found in registry`
-    );
-  }
-
-  // Step 3: Get workflows for jurisdiction
-  const workflows = await registryService.getWorkflows(caseData.jurisdiction_id);
-
-  // Step 4: Get programs for jurisdiction
-  const programs = await registryService.getPrograms(caseData.jurisdiction_id);
-
-  // Step 5: Get entities for jurisdiction
-  const entities = await registryService.getEntities(caseData.jurisdiction_id);
-
-  // Step 6: Get signals for jurisdiction
-  const signals = await registryService.getSignals(caseData.jurisdiction_id);
-
-  // Step 7: Get case timeline
-  const timeline = await caseService.getCaseTimeline(caseId);
-
-  // Step 8: Get case notes
-  const notes = await caseService.getCaseNotes(caseId);
-
-  // Step 9: Compose context
+/** Compose context only after workspace case access and identity are verified. */
+export async function get_case_context(case_id: number, user_id: number) {
+  const action_context = await get_case_action_context({ case_id: case_id, user_id, limit_per_surface: 6 });
+  const subject = action_context.subject;
+  const timeline_result = await read_case_timeline(case_id)
+    .then(items => ({ items, availability: read_availability(items.length) }))
+    .catch(error => ({ items: null, availability: read_availability(null, error) }));
+  const legal_library = [
+    ...action_context.legal.statutes, ...action_context.legal.case_law,
+    ...action_context.legal.enforcement, ...action_context.legal.weak_joints,
+    ...action_context.legal.contradictions,
+  ];
+  const resources = action_context.resources.directory_results;
+  const enforcement_pathways = (action_context.workflow.enforcement_pathways as any)?.pathways ?? [];
   return {
     case: {
-      id: caseData.id,
-      jurisdiction_id: caseData.jurisdiction_id,
-      category: caseData.category,
-      selected_workflow_id: caseData.selected_workflow_id,
-      status: caseData.status,
-      created_at: caseData.created_at,
-      notes: notes.map((n: any) => n.note_text),
-      timeline,
+      id: subject.id, jurisdiction_id: null, category: subject.category,
+      selected_workflow_id: null, status: subject.status, created_at: subject.created_at,
+      name: subject.name, case_namespace: subject.case_namespace,
+      notes: null, timeline: timeline_result.items,
     },
-    jurisdiction,
-    workflows,
-    programs,
-    entities,
-    signals,
-    legal_library: [], // Placeholder for legal library data
-    enforcement_pathways: [], // Placeholder for enforcement pathways
-    deadlines: [], // Placeholder for deadlines
+    jurisdiction: action_context.jurisdiction,
+    workflows: [], programs: [], resources, entities: [],
+    signals: action_context.signals.lineage,
+    legal_library,
+    source_authorities: action_context.legal.source_authorities,
+    enforcement_pathways,
+    deadlines: action_context.workflow.filing_deadlines,
+    action_context,
     diagnostics: {
-      total_workflows: workflows.length,
-      total_programs: programs.length,
-      total_entities: entities.length,
-      total_signals: signals.length,
-      case_status: caseData.status,
-      last_updated: Date.now(),
+      total_workflows: null, total_programs: null, total_resources: resources.length,
+      total_entities: null, total_signals: action_context.signals.lineage?.length ?? null,
+      total_legal_library_records: legal_library.length,
+      total_source_authorities: action_context.legal.source_authorities.length,
+      total_enforcement_pathways: enforcement_pathways.length,
+      total_deadlines: null,
+      case_status: subject.status, last_updated: subject.updated_at,
+      timeline_availability: timeline_result.availability,
+      unavailable_surfaces: [...action_context.diagnostics.unavailable_surfaces, "case.notes", "registry.programs", "registry.entities"],
+      notes: ["No numeric legacy registry jurisdiction or selected-workflow identity is inferred from workspace case IDs."],
     },
   };
 }
@@ -128,12 +61,12 @@ export async function getCaseContext(caseId: number, user_id: number): Promise<L
 /**
  * Get case context with validation results
  * 
- * Extends getCaseContext with validation and reconciliation data
+ * Extends get_case_context with validation and reconciliation data
  */
-export async function getCaseContextWithValidation(
-  caseId: number, user_id: number
-): Promise<LuminariContext & { validation_results?: any[] }> {
-  const context = await getCaseContext(caseId, user_id);
+export async function get_case_context_with_validation(
+  case_id: number, user_id: number
+): Promise<luminari_context & { validation_results?: any[] }> {
+  const context = await get_case_context(case_id, user_id);
 
   // TODO: Fetch validation results from validation_results table
   // This will be populated by the write endpoints

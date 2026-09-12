@@ -14,7 +14,7 @@ export const SUNAM_SERVICE_ONLY_TOOLS = [
     type: "function" as const,
     function: {
       name: "get_case_context",
-      description: "Read the separately owned legacy registry case context. This namespace is not public.cases; unavailable storage remains an error.",
+      description: "Read authorized Lighthouse workspace context in the public.cases namespace, preserving explicit identity bridges and unavailable legacy bindings.",
       parameters: {
         type: "object",
         properties: {
