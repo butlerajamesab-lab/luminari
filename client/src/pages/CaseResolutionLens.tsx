@@ -804,8 +804,13 @@ export default function CaseResolutionLens() {
               onBack={goBack}
             />
 
+            {!!barrierQuery.data?.excluded_unverified_references && (
+              <p className="mb-3 text-sm text-muted-foreground">{barrierQuery.data.excluded_unverified_references} operational or legacy-derived references are not eligible for case alerts. Their records remain available in Structural Diagnostics.</p>
+            )}
             {barrierQuery.isLoading ? (
               <LoadingState message="Scanning for barriers..." />
+            ) : barrierQuery.error ? (
+              <p role="alert" className="text-sm">Barrier references could not be read. Retry before drawing a conclusion. <Button variant="link" onClick={() => void barrierQuery.refetch()}>Retry barrier references</Button></p>
             ) : barrierQuery.data?.barriers && barrierQuery.data.barriers.length > 0 ? (
               <div className="space-y-3">
                 {barrierQuery.data.barriers.map((b: any) => (
@@ -822,16 +827,16 @@ export default function CaseResolutionLens() {
                           "text-blue-500"
                         }`} />
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-sm">{b.name || b.barrierType}</h4>
+                          <h4 className="font-semibold text-sm">{b.name || b.barrier_type}</h4>
                           {b.description && <p className="text-xs text-muted-foreground mt-1">{b.description}</p>}
-                          {b.whatItBlocks && (
-                            <p className="text-xs text-red-400/80 mt-1">Blocks: {b.whatItBlocks}</p>
+                          {b.what_it_blocks && (
+                            <p className="text-xs text-red-400/80 mt-1">Blocks: {b.what_it_blocks}</p>
                           )}
-                          {b.possibleWorkarounds && (
+                          {b.possible_workarounds && (
                             <div className="mt-2 p-2 rounded bg-muted/30">
                               <p className="text-xs">
-                                <span className="font-medium text-emerald-400">Workaround: </span>
-                                {typeof b.possibleWorkarounds === "string" ? b.possibleWorkarounds : JSON.stringify(b.possibleWorkarounds)}
+                                <span className="font-medium text-emerald-400">Recorded workaround: </span>
+                                {typeof b.possible_workarounds === "string" ? b.possible_workarounds : JSON.stringify(b.possible_workarounds)}
                               </p>
                             </div>
                           )}
@@ -851,11 +856,11 @@ export default function CaseResolutionLens() {
               </div>
             ) : (
               <div className="space-y-4">
-                <Card className="border-emerald-500/30 bg-emerald-500/5">
+                <Card className="border-border/50 bg-card/50">
                   <CardContent className="py-6 text-center">
-                    <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
-                    <p className="text-sm font-medium">No major barriers detected</p>
-                    <p className="text-xs text-muted-foreground mt-1">Your claim path appears clear. Proceed to filing.</p>
+                    <Search className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-sm font-medium">No eligible barrier references matched</p>
+                    <p className="text-xs text-muted-foreground mt-1">This catalog search does not establish that a case has no barriers. Check the governing requirements for your situation.</p>
                   </CardContent>
                 </Card>
                 <div className="flex justify-end">

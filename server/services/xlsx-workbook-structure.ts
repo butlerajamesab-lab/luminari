@@ -1,5 +1,63 @@
 import { posix } from "node:path";
 
+/** Structural subset validation for worksheet/sheetData/row/c nesting and
+ * completion, shared by both runtime readers. This is not full XML or OOXML
+ * schema validation. Retain partial markup between chunks, not the worksheet. */
+export function create_worksheet_validator(sheet_name: string) {
+  let pending = "";
+  const stack: string[] = [];
+  let worksheet_count = 0;
+  let sheet_data_count = 0;
+  const fail = () => { throw new Error(`xlsx_invalid_worksheet_structure:${sheet_name}`); };
+  const consume_chunk = (chunk: string) => {
+    pending += chunk;
+    let start = pending.indexOf("<");
+    while (start >= 0) {
+      const comment = pending.startsWith("<!--", start);
+      const cdata = pending.startsWith("<![CDATA[", start);
+      const processing_instruction = pending.startsWith("<?", start);
+      const delimiter = comment ? "-->" : cdata ? "]]>" : processing_instruction ? "?>" : ">";
+      const end = pending.indexOf(delimiter, start + 1);
+      if (end < 0) { pending = pending.slice(start); return; }
+      const tag = pending.slice(start, end + delimiter.length);
+      pending = pending.slice(end + delimiter.length);
+      if (!comment && !cdata && !processing_instruction) {
+        const match = tag.match(/^<(\/)?(worksheet|sheetData|row|c)\b/);
+        if (match) {
+          const [, closing, name] = match;
+          if (closing) {
+            if (stack.pop() !== name) fail();
+          } else {
+            const parent = stack.at(-1);
+            if (name === "worksheet") {
+              if (parent || ++worksheet_count !== 1) fail();
+            } else if (name === "sheetData") {
+              if (parent !== "worksheet" || ++sheet_data_count !== 1) fail();
+            } else if (name === "row" ? parent !== "sheetData" : parent !== "row") fail();
+            if (!/\/\s*>$/.test(tag)) stack.push(name);
+          }
+        }
+      }
+      start = pending.indexOf("<");
+    }
+    pending = "";
+  };
+  return {
+    consume_chunk,
+    finish() {
+      if (pending || stack.length || worksheet_count !== 1 || sheet_data_count !== 1) fail();
+    },
+  };
+}
+
+export function resolve_shared_string(raw: string, shared: string[]): string {
+  const index = raw.trim();
+  if (!/^\d+$/.test(index) || Number(index) >= shared.length) {
+    throw new Error("xlsx_invalid_shared_string_reference");
+  }
+  return shared[Number(index)];
+}
+
 function decodeAttribute(value: string): string {
   return value.replace(/&(#x[0-9a-f]+|#\d+|amp|quot|apos|lt|gt);/gi, (entity, code: string) => {
     if (code.startsWith("#")) {

@@ -1,11 +1,11 @@
 import crypto from "node:crypto";
 import JSZip from "jszip";
-import { workbookSheets } from "./xlsx-workbook-structure";
+import { workbookSheets, create_worksheet_validator, resolve_shared_string } from "./xlsx-workbook-structure";
 import { getPool } from "../db";
 import { SUPABASE_PROJECT } from "../_core/health-diagnostics";
 
 export const ATOMIC_CORPUS_ENGINE_VERSION = "fresh_atomic_corpus_v1.0.0";
-export const ATOMIC_CORPUS_PARSER_VERSION = "fresh_atomic_parser_v1.0.1";
+export const ATOMIC_CORPUS_PARSER_VERSION = "fresh_atomic_parser_v1.0.2";
 
 const MAX_RECORDS_PER_SOURCE_FILE = 200_000;
 const MAX_RAW_EXCERPT = 8_000;
@@ -222,6 +222,9 @@ export async function parseXlsxAtomic(buffer: Buffer, sourceFileSha256: string, 
   for (const sheet of sheets) {
     const xml = await zip.file(sheet.path)?.async("text");
     if (!xml) throw new Error(`xlsx_worksheet_part_missing:${sheet.name}:${sheet.path}`);
+    const validator = create_worksheet_validator(sheet.name);
+    validator.consume_chunk(xml);
+    validator.finish();
     const rows: Array<{ row: number; cells: string[] }> = [];
     for (const rowMatch of xml.matchAll(/<row\b[^>]*r="(\d+)"[^>]*>([\s\S]*?)<\/row>/g)) {
       const cells: string[] = [];
@@ -234,7 +237,7 @@ export async function parseXlsxAtomic(buffer: Buffer, sourceFileSha256: string, 
         index -= 1;
         const type = attrs.match(/\bt="([^"]+)"/)?.[1] ?? "";
         const raw = body.match(/<v>([\s\S]*?)<\/v>/)?.[1] ?? body.match(/<is>([\s\S]*?)<\/is>/)?.[1] ?? "";
-        cells[index] = type === "s" ? shared[Number(raw)] ?? "" : type === "inlineStr" ? xmlCellText(raw) : decodeXmlEntities(raw).trim();
+        cells[index] = type === "s" ? resolve_shared_string(raw, shared) : type === "inlineStr" ? xmlCellText(raw) : decodeXmlEntities(raw).trim();
       }
       if (cells.some(value => compact(value))) rows.push({ row: Number(rowMatch[1]), cells });
       if (rows.length >= MAX_RECORDS_PER_SOURCE_FILE) break;
