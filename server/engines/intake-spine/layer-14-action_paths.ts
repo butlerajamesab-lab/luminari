@@ -10,7 +10,9 @@ import {
   GovernedLegalRegistryManifest,
   GovernedWorkflowRecord,
   computeGovernedLegalRegistryHash,
+  WorkflowSourceBinding,
 } from './governed-legal-registry';
+import { workflowJurisdictionCode, WORKFLOW_JURISDICTIONS } from './source-workflow-registry';
 
 export interface ActionPath {
   path_id: string;
@@ -18,7 +20,9 @@ export interface ActionPath {
   claim_candidate_id: string;
   claim_type_id: string;
   claim_type_name: string;
-  workflow_registry_id: number;
+  workflow_registry_id: number | string;
+  workflow_jurisdiction?: string | null;
+  workflow_source_binding?: WorkflowSourceBinding | null;
   workflow_key: string;
   workflow_name: string;
   authority: string | null;
@@ -54,8 +58,8 @@ export interface Layer14Input {
   governed_registry_hash: string;
 }
 
-export const LAYER_VERSION = '3.0.0';
-export const RULE_VERSION = '3.0.0';
+export const LAYER_VERSION = '3.1.0';
+export const RULE_VERSION = '3.1.0';
 
 /** Structural aliases only; these do not define legal applicability. */
 export const RULE_MANIFEST: {
@@ -63,13 +67,15 @@ export const RULE_MANIFEST: {
   no_workflow_policy: 'unresolved_no_path';
   no_expected_burden_policy: 'incomplete_foothold';
   ranking_policy: 'none_present_all_deterministically';
+  source_workflow_jurisdiction_policy: 'exact_state_or_territory_required';
+  workflow_jurisdictions: typeof WORKFLOW_JURISDICTIONS;
 } = {
   workflow_issue_aliases: {
     wrongful_termination: ['wrongful_termination'],
     eviction_unlawful: ['eviction'],
     benefits_denial: ['benefits_denial'],
     retaliation_employment: ['retaliation'],
-    discrimination_employment: ['workplace_discrimination'],
+    discrimination_employment: ['workplace_discrimination', 'employment_discrimination'],
     discrimination_housing: ['housing_discrimination'],
     wage_theft: ['wage_theft'],
     overtime_violation: ['wage_theft'],
@@ -77,6 +83,8 @@ export const RULE_MANIFEST: {
   no_workflow_policy: 'unresolved_no_path',
   no_expected_burden_policy: 'incomplete_foothold',
   ranking_policy: 'none_present_all_deterministically',
+  source_workflow_jurisdiction_policy: 'exact_state_or_territory_required',
+  workflow_jurisdictions: WORKFLOW_JURISDICTIONS,
 };
 
 export const RULE_MANIFEST_HASH = computeRuleManifestHash(RULE_MANIFEST);
@@ -121,7 +129,7 @@ export function processLayer14(input: Layer14Input): EngineResult<ActionPath[]> 
   }
 
   for (const candidate of candidates) {
-    const workflows = matchingWorkflows(candidate.claim_type_id, input.governed_registry.workflows);
+    const workflows = matchingWorkflows(candidate, input.governed_registry.workflows);
     if (workflows.length === 0) {
       unresolved.push({
         field: `action_path:${candidate.candidate_id}:workflow`,
@@ -175,6 +183,8 @@ export function processLayer14(input: Layer14Input): EngineResult<ActionPath[]> 
         claim_type_id: candidate.claim_type_id,
         claim_type_name: candidate.claim_type_name,
         workflow_registry_id: workflow.registry_id,
+        workflow_jurisdiction: workflow.jurisdiction ?? null,
+        workflow_source_binding: workflow.source_binding ?? null,
         workflow_key: workflow.workflow_key,
         workflow_name: workflow.workflow_name,
         authority: workflow.primary_agency,
@@ -222,14 +232,18 @@ export function processLayer14(input: Layer14Input): EngineResult<ActionPath[]> 
 }
 
 function matchingWorkflows(
-  claim_type_id: string,
+  candidate: ClaimCandidate,
   workflows: GovernedWorkflowRecord[],
 ): GovernedWorkflowRecord[] {
   const acceptedIssueTypes = new Set<string>([
-    claim_type_id,
-    ...(RULE_MANIFEST.workflow_issue_aliases[claim_type_id] || []),
+    candidate.claim_type_id,
+    ...(RULE_MANIFEST.workflow_issue_aliases[candidate.claim_type_id] || []),
   ]);
   return workflows
     .filter(workflow => workflow.issue_types.some(issueType => acceptedIssueTypes.has(issueType)))
-    .sort((a, b) => a.workflow_key.localeCompare(b.workflow_key) || a.registry_id - b.registry_id);
+    .filter(workflow => !workflow.source_binding || (
+      workflowJurisdictionCode(candidate.jurisdiction) !== null &&
+      workflowJurisdictionCode(candidate.jurisdiction) === workflowJurisdictionCode(workflow.jurisdiction)
+    ))
+    .sort((a, b) => a.workflow_key.localeCompare(b.workflow_key) || String(a.registry_id).localeCompare(String(b.registry_id)));
 }

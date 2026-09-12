@@ -1,4 +1,4 @@
-import { router, protectedProcedure } from '../_core/trpc';
+import { router, protectedProcedure, adminProcedure as admin_procedure } from '../_core/trpc';
 import { z } from 'zod';
 import { getPool } from '../db';
 import * as db_helpers from '../db';
@@ -16,6 +16,18 @@ import type { ActionPath } from '../engines/intake-spine/layer-14-action_paths';
 const SHA256_RE = /^[0-9a-f]{64}$/;
 
 export const analyzeRouter = router({
+  get_workflow_coverage: admin_procedure
+    .input(z.object({
+      status: z.enum(['all', 'claim_type_matched', 'missing_claim_binding', 'held']).default('all'),
+      search: z.string().trim().max(200).optional(),
+      limit: z.number().int().min(1).max(100).default(50),
+      offset: z.number().int().min(0).max(100000).default(0),
+    }).optional())
+    .query(async ({ input }) => {
+      const { read_workflow_coverage } = await import('../intake-workflow-coverage');
+      return read_workflow_coverage(input);
+    }),
+
   /**
    * Execute the governed Universal Intake Spine for the one live upload session
    * bound to this case. Preservation remains separate; this is an explicit

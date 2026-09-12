@@ -146,6 +146,13 @@ export function CaseActionPaths() {
             </CardHeader>
 
             <CardContent className="space-y-4">
+              {path.workflow_source_binding && (
+                <div className="rounded-md border border-border/60 p-3 text-xs space-y-1">
+                  <p className="font-medium">{path.workflow_jurisdiction} source workflow · {humanize(path.workflow_source_binding.verification_status)}</p>
+                  <p className="text-muted-foreground">{path.workflow_source_binding.source_files.join(", ")}</p>
+                  <p className="text-muted-foreground">These steps and deadlines reproduce the source. Applicability and current deadlines remain unresolved.</p>
+                </div>
+              )}
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 text-xs">
                 <div className="rounded-md border border-border/60 bg-muted/15 p-2.5">
                   <p className="text-[10px] text-muted-foreground">Authority</p>
@@ -177,7 +184,7 @@ export function CaseActionPaths() {
                         <p className="text-sm font-medium">{step.action}</p>
                         <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
                           {step.owner && <span>Owner: {step.owner}</span>}
-                          {step.due_rule && <span>Due: {step.due_rule}</span>}
+                          {step.due_rule && <span>{path.workflow_source_binding ? "Source deadline text" : "Due"}: {step.due_rule}</span>}
                           {step.required_document && <span>Requires: {step.required_document}</span>}
                         </div>
                         {step.failure_route && (

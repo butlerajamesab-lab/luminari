@@ -32,6 +32,7 @@ import {
 import { Link } from "wouter";
 import AtlasCommandPanel from "@/components/sovereign/AtlasCommandPanel";
 import SystemApiPanel from "@/components/sovereign/SystemApiPanel";
+import WorkflowCoveragePanel from "@/components/sovereign/WorkflowCoveragePanel";
 import { PublicWalkthroughShell } from "@/components/PublicWalkthroughShell";
 
 // ─── Export Spine Panel ───
@@ -439,6 +440,7 @@ function AdminControlPanel() {
 
   const sections = [
     { id: "system-api", label: "System API", icon: Server },
+    { id: "workflow-coverage", label: "Workflow coverage", icon: GitBranch },
     { id: "engines", label: "Engines", icon: Zap },
     { id: "streams", label: "Streams", icon: Activity },
     { id: "schema", label: "Schema", icon: Table2 },
@@ -463,7 +465,7 @@ function AdminControlPanel() {
       </div>
 
       {/* Section Tabs */}
-      <div className="flex gap-1 border-b border-border pb-1">
+      <div className="flex flex-wrap gap-1 border-b border-border pb-1">
         {sections.map(s => (
           <Button key={s.id} variant={activeSection === s.id ? "default" : "ghost"} size="sm" onClick={() => setActiveSection(s.id)}>
             <s.icon className="h-3 w-3 mr-1" /> {s.label}
@@ -472,6 +474,7 @@ function AdminControlPanel() {
       </div>
 
       {activeSection === "system-api" && <SystemApiPanel />}
+      {activeSection === "workflow-coverage" && <WorkflowCoveragePanel />}
 
       {/* Engine Manager */}
       {activeSection === "engines" && (
