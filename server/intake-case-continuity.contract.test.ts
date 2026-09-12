@@ -52,8 +52,10 @@ describe("case intake continuity wiring", () => {
     expect(dashboard_layout).toContain('routePath={location}');
     expect(dashboard).toContain('surfaceOverride="act"');
     expect(panel).toContain("trpc.analyze.getCaseIntakeContinuity.useQuery");
+    expect(panel).toContain("function with_from_param(href: string)");
     expect(panel).toContain("const from = buildFromParam();");
-    expect(panel).toContain('setLocation(`/upload?from=${encodeURIComponent(from)}`)');
-    expect(panel).toContain('setLocation(`${href}?from=${encodeURIComponent(buildFromParam())}`)');
+    expect(panel).toContain('setLocation(with_from_param("/upload"))');
+    expect(panel).toContain("setLocation(with_from_param(link.href))");
+    expect(panel).toContain("setLocation(with_from_param(href))");
   });
 });

@@ -52,6 +52,15 @@ function humanize(value: string) {
   return value.replace(/_/g, " ");
 }
 
+function with_from_param(href: string) {
+  const [path_and_query, hash = ""] = href.split("#", 2);
+  const [path, query = ""] = path_and_query.split("?", 2);
+  const params = new URLSearchParams(query);
+  params.set("from", buildFromParam());
+  const next_query = params.toString();
+  return `${path}${next_query ? `?${next_query}` : ""}${hash ? `#${hash}` : ""}`;
+}
+
 export function CaseIntakeContinuityPanel({
   caseId,
   routePath,
@@ -93,7 +102,7 @@ export function CaseIntakeContinuityPanel({
       from_route: from,
     });
     setOpen(false);
-    setLocation(`/upload?from=${encodeURIComponent(from)}`);
+    setLocation(with_from_param("/upload"));
   };
 
   return (
@@ -193,7 +202,7 @@ export function CaseIntakeContinuityPanel({
                           <button
                             key={`${session.intake_session_id}-${link.document_id}`}
                             type="button"
-                            onClick={() => setLocation(`${link.href}?from=${encodeURIComponent(buildFromParam())}`)}
+                            onClick={() => setLocation(with_from_param(link.href))}
                             className="inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[11px] text-primary hover:bg-primary/10"
                           >
                             <Link2 className="h-3 w-3" />
@@ -223,7 +232,7 @@ export function CaseIntakeContinuityPanel({
                     variant="ghost"
                     size="sm"
                     className="h-7 gap-1 text-xs"
-                    onClick={() => setLocation(`${href}?from=${encodeURIComponent(buildFromParam())}`)}
+                    onClick={() => setLocation(with_from_param(href))}
                   >
                     {humanize(label)}
                     <ArrowRight className="h-3 w-3" />

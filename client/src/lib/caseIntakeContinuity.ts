@@ -55,7 +55,10 @@ export function read_case_intake_origin_context(
     const parsed = case_intake_continuity_origin_context_schema.parse(
       JSON.parse(stored),
     );
-    if (case_id && parsed.case_id !== case_id) return null;
+    if (case_id && parsed.case_id !== case_id) {
+      sessionStorage.removeItem(STORAGE_KEY);
+      return null;
+    }
     return parsed;
   } catch {
     sessionStorage.removeItem(STORAGE_KEY);
