@@ -232,7 +232,7 @@ function TrancheBanner({ results }: { results: UploadResult[] }) {
 
 export default function Upload() {
   const { currentCaseId, currentCase } = useCase();
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const [files, setFiles] = useState<File[]>([]);
   const [results, setResults] = useState<UploadResult[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -243,7 +243,7 @@ export default function Upload() {
   const utils = trpc.useUtils();
   const originContext = useMemo(
     () => read_case_intake_origin_context(currentCaseId),
-    [currentCaseId],
+    [currentCaseId, location],
   );
 
   const handleFiles = useCallback((newFiles: FileList | File[]) => {

@@ -170,15 +170,7 @@ describe("case intake continuity projection", () => {
       layer_output_available_count: 0,
       verification_state_counts: { unresolved: 1 },
     });
-    expect(continuity.related_sessions[0].document_links).toEqual([
-      {
-        document_id: 43,
-        href: "/documents/43",
-        filename: "notes.txt",
-        source_artifact_status: "registered",
-        integrity_status: null,
-      },
-    ]);
+    expect(continuity.related_sessions[0].document_links).toEqual([]);
   });
 
   it("aggregates output, verification, and source-bound continuity counts", async () => {

@@ -401,6 +401,11 @@ export async function read_case_intake_continuity(
   ]);
 
   const artifact_status_by_session = new Map<string, count_map>();
+  const case_document_link_session_ids = new Set(
+    session_rows
+      .filter((row) => Boolean(row.is_primary))
+      .map((row) => row.intake_session_id),
+  );
   const document_links_by_session = new Map<
     string,
     case_intake_continuity_document_link[]
@@ -413,7 +418,12 @@ export async function read_case_intake_continuity(
       artifact.integrity_status ?? artifact.source_artifact_status,
     );
     artifact_status_by_session.set(artifact.intake_session_id, session_counts);
-    if (artifact.legacy_document_id === null) continue;
+    if (
+      artifact.legacy_document_id === null
+      || !case_document_link_session_ids.has(artifact.intake_session_id)
+    ) {
+      continue;
+    }
     const links = document_links_by_session.get(artifact.intake_session_id) ?? [];
     links.push({
       document_id: artifact.legacy_document_id,

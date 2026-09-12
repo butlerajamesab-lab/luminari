@@ -104,6 +104,30 @@ function readRequestedOriginContext(
   return parsed;
 }
 
+function originContextsMatch(
+  left: case_intake_continuity_origin_context,
+  right: case_intake_continuity_origin_context,
+) {
+  return (
+    left.case_id === right.case_id
+    && left.case_uuid === right.case_uuid
+    && left.originating_route === right.originating_route
+    && left.originating_surface === right.originating_surface
+    && left.user_intent === right.user_intent
+    && left.from_route === right.from_route
+    && (
+      (!left.related_subject && !right.related_subject)
+      || (
+        !!left.related_subject
+        && !!right.related_subject
+        && left.related_subject.type === right.related_subject.type
+        && left.related_subject.id === right.related_subject.id
+        && (left.related_subject.label ?? null) === (right.related_subject.label ?? null)
+      )
+    )
+  );
+}
+
 async function requireUploadAuthentication(
   req: Request,
   res: Response,
@@ -317,7 +341,7 @@ export function registerUploadRoute(app: Express) {
         if (requestedOriginContext) {
           if (
             !storedOriginContext
-            || JSON.stringify(requestedOriginContext) !== JSON.stringify(storedOriginContext)
+            || !originContextsMatch(requestedOriginContext, storedOriginContext)
           ) {
             res.status(400).json({
               error: "Origin context does not match the existing upload session",
