@@ -79,7 +79,24 @@ def detect_family(*hints: str) -> str:
 
 
 def parse_sql_records(source_name: str, raw: bytes) -> list[tuple[str, dict[str, Any]]]:
-    return parse_sql_rows(raw)
+    # Migration SQL can contain UPDATEs, functions and INSERT ... SELECT. The
+    # registry is an observation artifact, never a SQL execution environment.
+    # Preserve the complete file on unsupported syntax instead of publishing a
+    # partially extracted row set or making the default corpus build unusable.
+    try:
+        rows = parse_sql_rows(raw)
+        if rows:
+            return rows
+    except (ValueError, IndexError):
+        pass
+    return [("sql_preserved_source", {
+        "raw_sql": raw.decode("utf-8-sig"),
+        "source_sha256": hashlib.sha256(raw).hexdigest(),
+        "review_state": "held_sql_source_only",
+        "publication_state": "governed_non_public",
+        "execution_allowed": False,
+        "structured_rows_extracted": 0,
+    })]
 
 
 def parse_csv_records(raw: bytes) -> list[dict[str, Any]]:

@@ -46,6 +46,10 @@ def sql_value(value, column):
     if value is None:
         if column['required']: raise ValueError('NULL for required column')
         return 'NULL'
+    if kind == 'text[]':
+        if not isinstance(value, list) or any(item is not None and not isinstance(item, str) for item in value):
+            raise ValueError('one-dimensional text array required')
+        return 'ARRAY[' + ','.join('NULL' if item is None else quote(item) for item in value) + ']::text[]'
     if kind in {'json', 'jsonb'}: return quote(canonical_json(value)) + '::' + kind
     if kind in {'text', 'character varying', 'uuid', 'date', 'timestamp with time zone', 'timestamp without time zone'}:
         if not isinstance(value, str): raise ValueError(f'explicit text adapter required for {kind}')
@@ -111,9 +115,10 @@ def schema_guard(table, contract):
     schema, relation = table.split('.')
     checks = []
     for name, column in contract['columns'].items():
+        type_check = "data_type='ARRAY' and udt_schema='pg_catalog' and udt_name='_text'" if column['type'] == 'text[]' else 'data_type=' + quote(column['type'])
         checks.append('exists (select 1 from information_schema.columns where table_schema=' + quote(schema)
                       + ' and table_name=' + quote(relation) + ' and column_name=' + quote(name)
-                      + ' and data_type=' + quote(column['type']) + ' and is_nullable='
+                      + ' and ' + type_check + ' and is_nullable='
                       + quote('NO' if column['required'] else 'YES') + ')')
     primary_key = 'ARRAY[' + ','.join(quote(key) for key in contract['primary_key']) + ']::text[]'
     checks.append('(select array_agg(a.attname::text order by k.ordinality) from pg_index i '

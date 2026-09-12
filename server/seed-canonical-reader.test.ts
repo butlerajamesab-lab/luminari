@@ -33,10 +33,13 @@ sql,receipt=prepare_reconciliation(root,manifest,json.loads(SCHEMA_PATH.read_tex
     });
     await database.exec(`CREATE TABLE public.legal_case_law (${columns.join(",")}, PRIMARY KEY(id), UNIQUE(citation));
       CREATE TABLE public.v_lighthouse_legal_authority_catalog_v2 (
-        object_ref text, source_locator text, artifact_key text, source_candidate_hash text,
+        run_id uuid, object_ref text, source_content_sha256 text, parser_version text,
+        source_locator text, artifact_key text, source_candidate_hash text,
         field_provenance jsonb, reconciled_at timestamptz, state_code text, jurisdiction text,
-        object_class text, legal_catalog_ready boolean);
-      CREATE TABLE public.luminari_corpus_candidate_v1 (candidate_hash text, artifact_key text, payload jsonb, created_at timestamptz);
+        projection_state text, data_state text, object_class text, legal_catalog_ready boolean);
+      CREATE TABLE public.luminari_corpus_candidate_v1 (
+        run_id uuid, candidate_hash text, artifact_key text, source_locator text,
+        payload jsonb, created_at timestamptz);
       INSERT INTO public.legal_case_law(id,citation,jurisdiction,source_url)
         VALUES ('00000000-0000-0000-0000-000000000001','123 US 456','WA','https://example.org/preserved');`);
     const sql = read_file(join(directory, "preview.sql"), "utf8");

@@ -11,7 +11,7 @@ import unittest
 import zipfile
 from seed_source_parsers import SourceParseError, parse_sql_rows, parse_workbook
 from build_registry import ensure_schema, process_source, process_zip_members
-from advocacy_lane_import import canonical_json, digest, prepare_reconciliation, source_document, sql_value, SCHEMA_PATH
+from advocacy_lane_import import canonical_json, digest, prepare_reconciliation, source_document, sql_value, schema_guard, SCHEMA_PATH
 
 
 def workbook(target='worksheets/sheet1.xml', missing=False):
@@ -119,14 +119,53 @@ class SourceParserTests(unittest.TestCase):
     def test_failed_cli_does_not_replace_existing_registry(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            source = root / 'broken.sql'
-            source.write_text('INSERT INTO t SELECT 1;')
+            source = root / 'broken.json'
+            source.write_text('{"unfinished":')
             output = root / 'registry.db'
             output.write_bytes(b'previous valid artifact')
             run = subprocess.run([sys.executable, str(Path(__file__).with_name('build_registry.py')), '--output-db', str(output), '--inputs', str(source)], capture_output=True)
             self.assertNotEqual(run.returncode, 0)
             self.assertEqual(output.read_bytes(), b'previous valid artifact')
             self.assertFalse(json.loads(output.with_suffix('.db.failure.json').read_text())['output_replaced'])
+
+    def test_registry_preserves_unsupported_sql_without_partial_rows_or_execution(self):
+        raw = b"INSERT INTO t(id) VALUES(1); UPDATE t SET id=2;"
+        conn = sqlite3.connect(':memory:')
+        try:
+            ensure_schema(conn)
+            process_source(conn, 'migration.sql', 'migration.sql', raw)
+            rows = conn.execute('SELECT table_name,payload_json FROM registry_record').fetchall()
+            self.assertEqual(len(rows), 1)
+            self.assertEqual(rows[0][0], 'sql_preserved_source')
+            observation = json.loads(rows[0][1])
+            self.assertEqual(observation['raw_sql'], raw.decode())
+            self.assertEqual(observation['source_sha256'], digest(raw))
+            self.assertEqual(observation['review_state'], 'held_sql_source_only')
+            self.assertFalse(observation['execution_allowed'])
+            self.assertEqual(observation['structured_rows_extracted'], 0)
+        finally:
+            conn.close()
+
+    def test_default_cli_builds_the_repository_corpus_with_source_only_sql_holds(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / 'registry.db'
+            repository = Path(__file__).resolve().parents[1]
+            run = subprocess.run([sys.executable, str(Path(__file__).with_name('build_registry.py')),
+                                  '--output-db', str(output)], cwd=repository, capture_output=True, text=True)
+            self.assertEqual(run.returncode, 0, run.stderr)
+            self.assertIn('runtime_integration_verified=false', run.stdout)
+            conn = sqlite3.connect(output)
+            try:
+                source_name = '20260417095816_027_seed_knowledge_docs_and_sunam_protocol.sql'
+                record = conn.execute('SELECT payload_json FROM registry_record WHERE source_path LIKE ?',
+                                      ['%/' + source_name]).fetchone()
+                self.assertIsNotNone(record)
+                observation = json.loads(record[0])
+                self.assertEqual(observation['review_state'], 'held_sql_source_only')
+                self.assertFalse(observation['execution_allowed'])
+                self.assertEqual(observation['raw_sql'], (repository / 'supabase/migrations' / source_name).read_text())
+            finally:
+                conn.close()
 
 
 class ReconciliationTests(unittest.TestCase):
@@ -173,6 +212,17 @@ class ReconciliationTests(unittest.TestCase):
     def test_lists_require_explicit_adapter_for_text(self):
         with self.assertRaisesRegex(ValueError, 'explicit text adapter'): sql_value(['item'], {'type': 'text', 'required': False})
         self.assertEqual(sql_value(['item'], {'type': 'jsonb', 'required': False}), '\'["item"]\'::jsonb')
+
+    def test_text_arrays_preserve_empty_values_quotes_and_null_elements(self):
+        column = {'type': 'text[]', 'required': True}
+        self.assertEqual(sql_value([], column), 'ARRAY[]::text[]')
+        self.assertEqual(sql_value(["O'Brien", 'one,two', '', None], column), "ARRAY['O''Brien','one,two','',NULL]::text[]")
+        for invalid in [None, 'text', {'key': 'value'}, [3], [['nested']], ['nul\x00']]:
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                sql_value(invalid, column)
+        guard = schema_guard('public.array_fixture', {'primary_key': ['id'], 'columns': {
+            'id': {'type': 'text', 'required': True}, 'tags': column}})
+        self.assertIn("data_type='ARRAY' and udt_schema='pg_catalog' and udt_name='_text'", guard)
 
     def test_archive_jsonl_csv_and_manifest_are_preserved(self):
         stream = io.BytesIO()
