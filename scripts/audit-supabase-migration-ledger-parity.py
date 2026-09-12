@@ -9,6 +9,7 @@ PRODUCTION_RECEIPTS = (
     Path("supabase/verification/production_migration_receipts_20260829.tsv"),
     Path("supabase/verification/production_migration_receipts_20260909_addendum.tsv"),
     Path("supabase/verification/production_migration_receipts_20260910_addendum.tsv"),
+    Path("supabase/verification/production_migration_receipts_20260912_addendum.tsv"),
 )
 # executable_md5 is exported from each ordered production statement array by
 # trimming trailing whitespace, restoring a missing top-level terminator,
@@ -283,14 +284,15 @@ APPROVED_REPOSITORY_ONLY = {
         "20260909143000_lighthouse_runtime_postgres_contract_v1.sql",
         "288d613674d5545f7673eadc08430ce26bcff089",
     ),
-    # Proposed Batch manifest extension; repository-only, not a production receipt.
-    "20260911201534": (
-        "20260911201534_batch_existing_substrate_registration.sql",
-        "1516354fbe0818f3c96e605927e51888bf0d1d7c",
-    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
+    # Native integration receipt read from production on 2026-09-12. Ordered
+    # statement boundaries differ from the source file; SQL tokens are identical.
+    "20260911201534": (
+        "b2bb07c8e9ca2ce5d2005c520df8c234",
+        "1516354fbe0818f3c96e605927e51888bf0d1d7c",
+    ),
     "20260829105026": (
         "7d48c98ebf0c263f41446acfa4c6a6eb",
         "8649acbf35650b172adbde5eecb95afe03bed934",

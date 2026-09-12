@@ -2,8 +2,10 @@
 
 This is deployable code prepared for a deliberate, scoped source pass. It has
 not been activated, and no production source has been queued or processed by
-this checkpoint. The live manifest-function prerequisite recorded in the Batch
-integration checkpoint remains unresolved until its separate migration release.
+this checkpoint. The native integration has now applied manifest-function migration
+`20260911201534`; its production statement receipt and service-only grants were
+verified read-only on September 12 at 09:29 UTC in the Batch integration checkpoint.
+Batch manifest and atomic artifact receipt counts were still zero.
 
 ## Entry and process boundaries
 
