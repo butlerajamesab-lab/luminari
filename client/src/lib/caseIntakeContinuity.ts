@@ -5,7 +5,12 @@ import type {
 } from "@shared/case-intake-continuity";
 import { case_intake_continuity_origin_context_schema } from "@shared/case-intake-continuity";
 
-const STORAGE_KEY = "luminari-case-intake-origin-context";
+const STORAGE_KEY_PREFIX = "luminari-case-intake-origin-context:";
+const LEGACY_STORAGE_KEY = "luminari-case-intake-origin-context";
+
+function storage_key(case_id?: number | null) {
+  return case_id ? `${STORAGE_KEY_PREFIX}${case_id}` : null;
+}
 
 export function case_intake_surface_for_path(
   path: string,
@@ -43,33 +48,37 @@ export function case_intake_surface_for_path(
 export function write_case_intake_origin_context(
   value: case_intake_continuity_origin_context,
 ) {
-  sessionStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+  sessionStorage.setItem(storage_key(value.case_id)!, JSON.stringify(value));
+  sessionStorage.removeItem(LEGACY_STORAGE_KEY);
 }
 
 export function read_case_intake_origin_context(
   case_id?: number | null,
 ): case_intake_continuity_origin_context | null {
-  const stored = sessionStorage.getItem(STORAGE_KEY);
+  const key = storage_key(case_id);
+  if (!key) return null;
+  const stored = sessionStorage.getItem(key);
   if (!stored) return null;
   try {
     const parsed = case_intake_continuity_origin_context_schema.parse(
       JSON.parse(stored),
     );
     if (case_id && parsed.case_id !== case_id) {
-      sessionStorage.removeItem(STORAGE_KEY);
+      sessionStorage.removeItem(key);
       return null;
     }
     return parsed;
   } catch {
-    sessionStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem(key);
     return null;
   }
 }
 
 export function clear_case_intake_origin_context(case_id?: number | null) {
-  const stored = read_case_intake_origin_context(case_id);
-  if (!stored) return;
-  sessionStorage.removeItem(STORAGE_KEY);
+  const key = storage_key(case_id);
+  if (!key) return;
+  sessionStorage.removeItem(key);
+  sessionStorage.removeItem(LEGACY_STORAGE_KEY);
 }
 
 export function related_subject_label(
