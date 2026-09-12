@@ -352,11 +352,10 @@ export function registerUploadRoute(app: Express) {
         sessionId = sessionIdParam;
         effectiveOriginContext = storedOriginContext ?? requestedOriginContext;
         if (requestedOriginContext && !storedOriginContext) {
-          const nextMetadata = {
-            ...((existingSession as any).metadata ?? {}),
-            origin_context: requestedOriginContext,
-          };
-          await dbHelpers.updateUploadSessionMetadata(sessionId, nextMetadata);
+          await dbHelpers.updateUploadSessionOriginContext(
+            sessionId,
+            requestedOriginContext,
+          );
         }
       } else {
         // Create new session

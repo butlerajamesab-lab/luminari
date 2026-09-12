@@ -2012,6 +2012,21 @@ export async function updateUploadSessionMetadata(
   }).where(eq(uploadSessions.id, sessionId));
 }
 
+export async function updateUploadSessionOriginContext(
+  sessionId: number,
+  origin_context: Record<string, unknown>,
+) {
+  await db.update(uploadSessions).set({
+    metadata: sql`jsonb_set(
+      coalesce(${uploadSessions.metadata}, '{}'::jsonb),
+      '{origin_context}',
+      ${JSON.stringify(origin_context)}::jsonb,
+      true
+    )`,
+    updatedAt: Date.now(),
+  }).where(eq(uploadSessions.id, sessionId));
+}
+
 export async function updateUploadSessionStatus(sessionId: number, status: UploadSession["status"]) {
   await db.update(uploadSessions).set({
     status,

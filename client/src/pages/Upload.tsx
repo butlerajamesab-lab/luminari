@@ -332,10 +332,6 @@ export default function Upload() {
           originContext: originContext ?? undefined,
         });
         sessionId = result.sessionId;
-        if (originContext) {
-          clear_case_intake_origin_context(currentCaseId);
-          consumedOriginContext = true;
-        }
         // Persist to localStorage for navigation recovery
         const stored = JSON.parse(localStorage.getItem("activeUploadSessionIds") || "[]");
         stored.push(sessionId);
@@ -380,10 +376,6 @@ export default function Upload() {
           headers: uploadHeaders,
           credentials: "include",
         });
-        if (originContext && !consumedOriginContext) {
-          clear_case_intake_origin_context(currentCaseId);
-          consumedOriginContext = true;
-        }
 
         // Safely parse response — proxy/nginx may return HTML on timeout or 413
         let data: any;
@@ -411,6 +403,10 @@ export default function Upload() {
             throw new Error(`Batch limit exceeded: max ${data.maxAllowed} files per request`);
           }
           throw new Error(data.error || "Upload failed");
+        }
+        if (originContext && !consumedOriginContext) {
+          clear_case_intake_origin_context(currentCaseId);
+          consumedOriginContext = true;
         }
 
         // Capture summary from last batch

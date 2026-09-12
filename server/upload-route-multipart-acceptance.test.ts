@@ -14,6 +14,7 @@ const state = vi.hoisted(() => ({
   create_upload_session: vi.fn(),
   get_upload_session: vi.fn(),
   update_upload_session_metadata: vi.fn(),
+  update_upload_session_origin_context: vi.fn(),
   increment_upload_session_counter: vi.fn(),
   finalize_upload_session: vi.fn(),
   create_document: vi.fn(),
@@ -47,6 +48,7 @@ vi.mock("./db", () => ({
   createUploadSession: state.create_upload_session,
   getUploadSession: state.get_upload_session,
   updateUploadSessionMetadata: state.update_upload_session_metadata,
+  updateUploadSessionOriginContext: state.update_upload_session_origin_context,
   incrementUploadSessionCounter: state.increment_upload_session_counter,
   finalizeUploadSession: state.finalize_upload_session,
   createDocument: state.create_document,
@@ -230,6 +232,7 @@ beforeEach(() => {
   state.create_upload_session.mockResolvedValue(501);
   state.get_upload_session.mockResolvedValue({ id: 501, caseId: 44, userId: 9 });
   state.update_upload_session_metadata.mockResolvedValue(undefined);
+  state.update_upload_session_origin_context.mockResolvedValue(undefined);
   state.increment_upload_session_counter.mockResolvedValue(undefined);
   state.finalize_upload_session.mockResolvedValue(undefined);
   state.create_document.mockResolvedValue(9001);
@@ -634,10 +637,8 @@ describe("authenticated multipart document upload", () => {
     });
 
     expect(response.status).toBe(200);
-    expect(state.update_upload_session_metadata).toHaveBeenCalledWith(501, {
-      existing_key: "preserve-me",
-      origin_context,
-    });
+    expect(state.update_upload_session_origin_context).toHaveBeenCalledWith(501, origin_context);
+    expect(state.update_upload_session_metadata).not.toHaveBeenCalled();
     expect(state.log_audit).toHaveBeenCalledWith(expect.objectContaining({
       details: expect.objectContaining({
         origin_context,
@@ -673,7 +674,7 @@ describe("authenticated multipart document upload", () => {
     });
 
     expect(response.status).toBe(200);
-    expect(state.update_upload_session_metadata).not.toHaveBeenCalled();
+    expect(state.update_upload_session_origin_context).not.toHaveBeenCalled();
     expect(state.log_audit).toHaveBeenCalledWith(expect.objectContaining({
       details: expect.objectContaining({
         origin_context,
