@@ -592,6 +592,7 @@ export async function searchRuntimeEnforcement(opts: LegalRuntimeSearch) {
   const { limit, offset } = page(opts);
   const params: unknown[] = [];
   const filters: string[] = [];
+  if (opts.record_id) { params.push(opts.record_id); filters.push(`id::text = $${params.length}`); }
   if (opts.jurisdiction) {
     params.push(opts.jurisdiction);
     filters.push(`jurisdiction = $${params.length}`);

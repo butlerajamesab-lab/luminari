@@ -17,7 +17,7 @@ export function CaseLegalReferences({ case_id }: { case_id: number }) {
     {references.data?.items.map(item => <div key={String(item.committed_ref)} className="rounded border p-2 flex flex-wrap gap-2 justify-between">
       <div className="min-w-0 break-words">
         <a className="underline" href={`/legal-library?legal_ref=${encodeURIComponent(String(item.committed_ref))}`}>
-          {String(item.record?.name ?? item.record?.case_name ?? item.record?.short_title ?? item.record?.title ?? item.committed_ref)}
+          {String(item.record?.name ?? item.record?.case_name ?? item.record?.short_title ?? item.record?.title ?? item.record?.formula_name ?? item.record?.agency_name ?? item.committed_ref)}
         </a>
         <p className="text-xs text-muted-foreground">{item.kind ?? "Saved reference"} · {item.status}{item.reason ? ` — ${item.reason}` : ""}</p>
       </div>

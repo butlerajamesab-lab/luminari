@@ -308,6 +308,12 @@ export const caseStateRouter = router({
     .input(z.object({ case_id: z.number().int().positive(), object_ref: z.string().min(1).max(500) }))
     .mutation(({ ctx, input }) => commit_legal_reference(input.case_id,ctx.user.id,"legal_authority",input.object_ref)),
 
+  commit_source_reference: protectedProcedure
+    .input(z.object({ case_id: z.number().int().positive(),
+      kind: z.enum(["enforcement", "settlement_formula"]),
+      source_id: z.union([z.number(), z.string().min(1).max(500)]) }))
+    .mutation(({ ctx, input }) => commit_legal_reference(input.case_id, ctx.user.id, input.kind, input.source_id)),
+
   get_legal_references: protectedProcedure
     .input(z.object({ case_id: z.number().int().positive(), offset: z.number().int().min(0).default(0) }))
     .query(async ({ ctx, input }) => {
@@ -385,7 +391,7 @@ export const caseStateRouter = router({
   remove_commit: protectedProcedure
     .input(z.object({
       case_id: z.number(),
-      item_type: z.enum(["finding", "barrier", "benefit", "signal", "statute", "runtime_statute", "case_law", "legal_authority", "foia", "filing", "resource"]),
+      item_type: z.enum(["finding", "barrier", "benefit", "signal", "statute", "runtime_statute", "case_law", "legal_authority", "enforcement", "settlement_formula", "foia", "filing", "resource"]),
       item_id: z.union([z.number(),z.string().min(1).max(600)]).optional(),
       resource_ref: z.string().optional(),
     }))
@@ -405,7 +411,7 @@ export const caseStateRouter = router({
         return { success: true };
       }
 
-      if (["statute", "runtime_statute", "case_law", "legal_authority"].includes(input.item_type)) {
+      if (["statute", "runtime_statute", "case_law", "legal_authority", "enforcement", "settlement_formula"].includes(input.item_type)) {
         if (input.item_id == null) throw new Error("item_id is required for a legal reference");
         const ref = String(legal_commit_ref(input.item_type as legal_reference_kind,input.item_id));
         await getPool().query(`update public.case_state set committed_statute_ids =

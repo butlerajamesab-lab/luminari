@@ -22,3 +22,7 @@ Local verification includes public-case ownership, namespace separation, exact/m
 ## Limits
 
 No production data, source publication state, historical receipt, or schema was modified by this repair. No real case attachment was created as a deployment test. Source legal accuracy, source promotion, statistical correlation validity, private Batch execution, and corpus replay remain separately governed operations. Browser checks of public records do not constitute authenticated case-workflow acceptance.
+
+## Source-kind collision correction
+
+Review identified existing enforcement, case-law, and settlement-formula buttons that sent their IDs to `commit_statute`. The callers now declare their actual source kinds. Enforcement references resolve through the same runtime enforcement reader with an exact text ID; formulas resolve by the original `settlement_formulas.formula_id`. Namespaced references preserve each collection when identical IDs occur elsewhere. Readback and removal retain the same qualified identity. The formula button attaches a reference and does not claim to apply a calculation. Regression tests cover colliding IDs, actual UI call-site kinds, protected commit/read/remove flow, missing sources, and another owner's case.

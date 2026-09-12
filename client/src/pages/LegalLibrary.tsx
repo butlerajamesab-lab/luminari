@@ -1027,7 +1027,7 @@ function EnforcementCard({ record }: { record: any }) {
                 <ExternalLink size={10} /> File Complaint
               </a>
             )}
-            <CommitToCase type="statute" itemId={record.id} label="Add to Case" size="sm" />
+            <CommitToCase type="enforcement" itemId={record.id} label="Add to Case" size="sm" />
           </div>
         </div>
       )}

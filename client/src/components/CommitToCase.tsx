@@ -43,6 +43,8 @@ type CommitType =
   | "legal_authority"
   | "runtime_statute"
   | "case_law"
+  | "enforcement"
+  | "settlement_formula"
   | "foia"
   | "filing"
   | "proceduralPath"
@@ -110,6 +112,7 @@ export function CommitToCase({
   const commit_statute = trpc.case_state.commit_statute.useMutation({ onSuccess: handleSuccess, onError: handleError });
   const commit_runtime_statute = trpc.case_state.commit_runtime_statute.useMutation({ onSuccess: handleSuccess, onError: handleError });
   const commit_legal_authority = trpc.case_state.commit_legal_authority.useMutation({ onSuccess: handleSuccess, onError: handleError });
+  const commit_source_reference = trpc.case_state.commit_source_reference.useMutation({ onSuccess: handleSuccess, onError: handleError });
   const commit_case_law = trpc.case_state.commit_case_law.useMutation({ onSuccess: handleSuccess, onError: handleError });
   const commit_foia = trpc.case_state.commit_foia.useMutation({ onSuccess: handleSuccess, onError: handleError });
   const commit_filing = trpc.case_state.commit_filing.useMutation({ onSuccess: handleSuccess, onError: handleError });
@@ -120,7 +123,7 @@ export function CommitToCase({
 
   const isLoading =
     commit_finding.isPending || commit_barrier.isPending || commit_benefit.isPending ||
-    commit_signal.isPending || commit_statute.isPending || commit_runtime_statute.isPending || commit_case_law.isPending || commit_legal_authority.isPending || commit_foia.isPending ||
+    commit_signal.isPending || commit_statute.isPending || commit_runtime_statute.isPending || commit_case_law.isPending || commit_legal_authority.isPending || commit_source_reference.isPending || commit_foia.isPending ||
     commit_filing.isPending || commit_path.isPending || commit_strategy.isPending ||
     commit_resource.isPending ||
     set_claim_type.isPending;
@@ -150,6 +153,8 @@ export function CommitToCase({
       case "legal_authority": return "Legal source reference attached to case.";
       case "runtime_statute": return "Observed statute attached to case.";
       case "case_law": return "Case law attached to case.";
+      case "enforcement": return "Enforcement reference attached to case.";
+      case "settlement_formula": return "Settlement formula reference attached to case; no calculation was applied.";
       case "foia": return "FOIA request tracked in case.";
       case "filing": return "Filing packet saved to case.";
       case "proceduralPath": return `Path "${pathLabel}" set as active strategy.`;
@@ -198,6 +203,10 @@ export function CommitToCase({
         break;
       case "case_law":
         commit_case_law.mutate({ case_id: caseId, case_law_id: itemId! });
+        break;
+      case "enforcement":
+      case "settlement_formula":
+        commit_source_reference.mutate({ case_id: caseId, kind: type, source_id: itemId! });
         break;
       case "foia":
         commit_foia.mutate({ case_id: caseId, foia_id: numericItemId });
