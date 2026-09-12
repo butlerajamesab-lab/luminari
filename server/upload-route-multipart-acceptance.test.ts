@@ -527,6 +527,43 @@ describe("authenticated multipart document upload", () => {
       }),
     }));
   });
+
+  it("rejects invalid origin context payloads", async () => {
+    state.select_queue.push([{ id: 44, userId: 9 }]);
+
+    const response = await post_file("invalid origin context", "invalid-origin.txt", {
+      originContext: "{not-json",
+    });
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({
+      error: "Invalid origin context",
+    });
+    expect(state.create_upload_session).not.toHaveBeenCalled();
+    expect(state.log_audit).not.toHaveBeenCalled();
+  });
+
+  it("rejects mismatched origin context case bindings", async () => {
+    state.select_queue.push([{ id: 44, userId: 9 }]);
+
+    const response = await post_file("mismatched origin context", "mismatched-origin.txt", {
+      originContext: JSON.stringify({
+        case_id: 99,
+        case_uuid: "e650c976-0178-4d72-9dda-092eddf3207a",
+        originating_route: "/documents",
+        originating_surface: "documents",
+        user_intent: "supports",
+        from_route: "/documents",
+      }),
+    });
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({
+      error: "Origin context case does not match upload target",
+    });
+    expect(state.create_upload_session).not.toHaveBeenCalled();
+    expect(state.log_audit).not.toHaveBeenCalled();
+  });
 });
 
 describe("atomic replacement upload", () => {

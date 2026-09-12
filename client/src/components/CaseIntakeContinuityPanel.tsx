@@ -226,7 +226,9 @@ export function CaseIntakeContinuityPanel({
               </div>
 
               <div className="flex flex-wrap gap-2">
-                {Object.entries(data.surface_links).map(([label, href]) => (
+                {Object.entries(data.surface_links)
+                  .filter(([label]) => label !== surface)
+                  .map(([label, href]) => (
                   <Button
                     key={label}
                     variant="ghost"
@@ -237,7 +239,7 @@ export function CaseIntakeContinuityPanel({
                     {humanize(label)}
                     <ArrowRight className="h-3 w-3" />
                   </Button>
-                ))}
+                  ))}
               </div>
             </>
           )}

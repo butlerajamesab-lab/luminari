@@ -92,6 +92,18 @@ function parseOriginContext(
   }
 }
 
+function readRequestedOriginContext(
+  value: unknown,
+  caseId: number,
+): case_intake_continuity_origin_context | null | "invalid" | "mismatched" {
+  if (value === undefined || value === null) return null;
+  if (typeof value === "string" && value.trim() === "") return null;
+  const parsed = parseOriginContext(value);
+  if (!parsed) return "invalid";
+  if (parsed.case_id !== caseId) return "mismatched";
+  return parsed;
+}
+
 async function requireUploadAuthentication(
   req: Request,
   res: Response,
@@ -277,7 +289,18 @@ export function registerUploadRoute(app: Express) {
 
       // ── Create or attach to upload session ──
       const sessionIdParam = req.body.sessionId ? parseInt(req.body.sessionId) : null;
-      const requestedOriginContext = parseOriginContext(req.body.originContext);
+      const requestedOriginContext = readRequestedOriginContext(
+        req.body.originContext,
+        caseId,
+      );
+      if (requestedOriginContext === "invalid") {
+        res.status(400).json({ error: "Invalid origin context" });
+        return;
+      }
+      if (requestedOriginContext === "mismatched") {
+        res.status(400).json({ error: "Origin context case does not match upload target" });
+        return;
+      }
       let sessionId: number;
       let effectiveOriginContext = requestedOriginContext;
 
@@ -290,8 +313,7 @@ export function registerUploadRoute(app: Express) {
         }
         sessionId = sessionIdParam;
         effectiveOriginContext =
-          parseOriginContext((existingSession as any).metadata?.origin_context) ??
-          requestedOriginContext;
+          parseOriginContext((existingSession as any).metadata?.origin_context);
       } else {
         // Create new session
         sessionId = await dbHelpers.createUploadSession({

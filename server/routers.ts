@@ -1379,11 +1379,19 @@ const uploadSessionsRouter = router({
     }),
 
   create: protectedProcedure
-    .input(z.object({
-      caseId: z.number(),
-      totalFiles: z.number().min(1),
-      originContext: case_intake_continuity_origin_context_schema.optional(),
-    }))
+    .input(
+      z.object({
+        caseId: z.number(),
+        totalFiles: z.number().min(1),
+        originContext: case_intake_continuity_origin_context_schema.optional(),
+      }).refine(
+        (value) => !value.originContext || value.originContext.case_id === value.caseId,
+        {
+          message: "originContext.case_id must match caseId",
+          path: ["originContext", "case_id"],
+        },
+      ),
+    )
     .mutation(async ({ ctx, input }) => {
       await db_helpers.verifyCaseWriteAccess(input.caseId, ctx.user.id);
       const sessionId = await db_helpers.createUploadSession({

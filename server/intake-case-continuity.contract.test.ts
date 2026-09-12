@@ -37,7 +37,9 @@ describe("case intake continuity wiring", () => {
     expect(shared).toContain('"new_evidence"');
     expect(shared).toContain('"adds_context"');
     expect(router).toContain("originContext: case_intake_continuity_origin_context_schema.optional()");
-    expect(upload_route).toContain("parseOriginContext(req.body.originContext)");
+    expect(router).toContain("originContext.case_id must match caseId");
+    expect(upload_route).toContain("readRequestedOriginContext(");
+    expect(upload_route).toContain('error: "Origin context case does not match upload target"');
     expect(upload_route).toContain("metadata: requestedOriginContext");
     expect(upload_route).toContain("origin_context: effectiveOriginContext");
     expect(upload_page).toContain('formData.append("originContext", JSON.stringify(originContext))');
@@ -57,5 +59,6 @@ describe("case intake continuity wiring", () => {
     expect(panel).toContain('setLocation(with_from_param("/upload"))');
     expect(panel).toContain("setLocation(with_from_param(link.href))");
     expect(panel).toContain("setLocation(with_from_param(href))");
+    expect(panel).toContain('.filter(([label]) => label !== surface)');
   });
 });
