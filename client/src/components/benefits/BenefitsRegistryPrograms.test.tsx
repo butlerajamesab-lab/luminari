@@ -37,7 +37,7 @@ describe('Benefits Navigator registry search', () => {
     expect(html).toContain('Contact details (4)');
     expect(html).toContain('help@example.org');
     expect(html).toContain('href="https://example.org/atrium"');
-    expect(html).toContain('Showing 1–1 of 1 registry programs.');
+    expect(html).toContain('Showing 1–1 of 1 registry references.');
     expect(html).not.toContain('Searching for “Healthcare”');
   });
 
@@ -45,7 +45,7 @@ describe('Benefits Navigator registry search', () => {
     render('Atrium', 'WA');
     expect(state.read.mock.lastCall?.[0]).toEqual({ query: 'Atrium', state_code: 'WA', federal_only: false, limit: 20, offset: 0 });
     const federal_html = render('Atrium', null);
-    expect(federal_html).toContain('among federal programs only');
+    expect(federal_html).toContain('with a recorded federal jurisdiction');
     expect(federal_html).not.toContain('across all jurisdictions');
     expect(state.read.mock.lastCall?.[0]).toEqual({ query: 'Atrium', state_code: undefined, federal_only: true, limit: 20, offset: 0 });
     expect(state.read.mock.lastCall?.[0]).not.toHaveProperty('category');
@@ -65,9 +65,9 @@ describe('Benefits Navigator registry search', () => {
   it('shows pending instead of presenting cached rows or zero results as current', () => {
     state.result.isFetching = true;
     const html = render();
-    expect(html).toContain('Searching registry programs…');
+    expect(html).toContain('Searching registry references…');
     expect(html).not.toContain('Charlotte Safety Net');
-    expect(html).not.toContain('No registry programs match');
+    expect(html).not.toContain('No registry references match');
     expect(html).not.toContain('Showing 1–1 of 1');
   });
 
@@ -77,14 +77,14 @@ describe('Benefits Navigator registry search', () => {
     expect(html).toContain('Registry results are unavailable.');
     expect(html).toContain('Retry registry search');
     expect(html).not.toContain('Charlotte Safety Net');
-    expect(html).not.toContain('No registry programs match');
+    expect(html).not.toContain('No registry references match');
   });
 
   it('only reports no matches after a successful empty response', () => {
     state.result.data = undefined;
     expect(render()).toContain('Registry results have not loaded yet.');
     state.result.data = { programs: [], total: 0 };
-    expect(render()).toContain('No registry programs match this search.');
+    expect(render()).toContain('No registry references match this search.');
   });
 
   it('suppresses unsafe website navigation while preserving the record', () => {
@@ -99,10 +99,46 @@ describe('Benefits Navigator registry search', () => {
     state.result.data = { programs: Array.from({ length: 20 }, (_, i) => ({ ...program, id: `program-${i}` })), total: 41 };
     const html = render();
     expect(state.read.mock.lastCall?.[0]).toMatchObject({ limit: 20, offset: 0 });
-    expect(html).toContain('Showing 1–20 of 41 registry programs.');
+    expect(html).toContain('Showing 1–20 of 41 registry references.');
     expect(html).toContain('aria-label="Registry result pages"');
-    expect(html).toMatch(/disabled=""[^>]*>Previous programs/);
-    expect(html).not.toMatch(/disabled=""[^>]*>Next programs/);
+    expect(html).toMatch(/disabled=""[^>]*>Previous references/);
+    expect(html).not.toMatch(/disabled=""[^>]*>Next references/);
+  });
+
+  it('shows the stored federal classification as unverified without reclassifying Arizona records by name', () => {
+    state.result.data = { programs: [{
+      id: 'lmn_55bf01de3cbf5ff834187d36',
+      name: 'Arizona Department of Administration (Workers Comp Division)',
+      category: 'government_agency', jurisdiction_id: 'federal',
+    }], total: 1 };
+    const html = render('Arizona', null);
+    expect(html).toContain('data-program-id="lmn_55bf01de3cbf5ff834187d36"');
+    expect(html).toContain('Recorded category: government_agency');
+    expect(html).toContain('Recorded: federal');
+    expect(html).toContain('Jurisdiction unverified');
+    expect(html).toContain('do not establish benefit eligibility or current officeholder status');
+    expect(html).not.toContain('among federal programs only');
+    expect(html).not.toContain('Recorded: AZ');
+  });
+
+  it('labels legislator records with their stored category instead of calling them benefit programs', () => {
+    state.result.data = { programs: [{
+      id: 'lmn_4c2317371eb250e77e123278', name: 'Alexandria Ocasio-Cortez',
+      category: 'legislator', jurisdiction_id: 'federal',
+    }], total: 1 };
+    const html = render('Alexandria', null);
+    expect(html).toContain('Recorded category: legislator');
+    expect(html).toContain('Registry references');
+    expect(html).toContain('current officeholder status');
+    expect(html).not.toContain('Registry programs');
+  });
+
+  it('preserves an unknown category and jurisdiction without assigning a classification', () => {
+    state.result.data = { programs: [{ id: 'unknown-1', name: 'Unclassified source' }], total: 1 };
+    const html = render('Unclassified', null);
+    expect(html).toContain('Recorded category: Unknown');
+    expect(html).toContain('Recorded: Unknown');
+    expect(html).toContain('Jurisdiction unverified');
   });
 
   it('resets the effective page immediately when query or state changes', () => {

@@ -13,7 +13,10 @@ The user authorized implementation, parallel work, GitHub integration, and deplo
 | Existing workflow and resource readers; jurisdiction resolution; registry reader schema repair; admin workflow coverage | #635 / `cc2cea7130396929d19f418464a270f7cab6112a` | All PR and main checks passed. Render `dep-daif2tlckfvc73907qig` live. Public program detail and search return the same original identity and four contributing contacts. |
 | Workbook relationship order, structural completeness, UTF-8 streaming, parser receipts | #634 / `fb3aac60c498417ddeb7099e3c5b98dcda72b6e3` | All PR and main checks passed. Render `dep-daif5oss728c73ah1tb0` live. Original 201-sheet workbook preservation matches an independent recount. |
 | Source authority catalog and exact source detail in Legal Library | #639 / `213283d22b81099e07e3cfbf2b178869a823cca0` | All PR/main checks passed. Render `dep-daif7mgjo6nc73biiasg` live; browser list, detail and jurisdiction filter verified. |
-| Existing office discovery to native detail | #640 / `87840c2f19bd37dff9ece17c8ba028a11439d5f0` | All six PR workflows and automated review passed; deployment `dep-daifaih5efls738tmgvg` started. Exact 3,423 active identities verified in the database. |
+| Existing office discovery to native detail | #640 / `87840c2f19bd37dff9ece17c8ba028a11439d5f0` | All PR/main checks passed. Render `dep-daifaih5efls738tmgvg` became live; public Everett Vet Center listing/detail/source link verified. Exact 3,423 active identities verified in the database. |
+| Benefits search, contact readback and pagination | #641 / `0e934622f9ec718889d42d2dc1e48e2f0feeef07` | All PR checks passed; Render `dep-daifipoae00c73dc9njg` became live. NC/Atrium browser search expands all four contacts. Two federal API pages contain 20 distinct IDs each, with no overlap. |
+
+The subsequent SAIS recovery merge #633 (`7e07abd3d19315d7c165aa4e1a056d01c8524059`) is live in Render `dep-daifjge8h83s739k3e40` and all five main workflows passed. It preserves the reader releases above. The prior main PR Test was cancelled by the newer push; that cancellation was not a test failure. Historical deployment IDs above identify completed releases; the latest deployment supersedes them.
 
 The combined #635/#634/#639 tree passed 1,688 tests with two environment-dependent skips across 329 passing test files. Main `213283d` has exactly that tested application tree. Subsequent office and program-search changes have their own focused tests and release CI.
 
@@ -33,14 +36,16 @@ The browser's Source Authorities tab shows 1,939 references, 1,762 ready and 177
 
 The original visible Search programs control filtered guided results only. Selecting NC and Healthcare displayed zero registry matches because a literal category label was the only database query. The follow-up connects entered text to the existing registry query with selected state, 300 ms debounce, truthful pending/error/empty states, and Previous/Next navigation over 20-record pages. Query and state changes reset the page and suppress stale rows. Equal program names now have an ID tie-breaker. Original IDs, enriched contact values and expandable contact records remain intact. Browser acceptance after deployment is NC → Search programs → Atrium Health → original `RTCELL_11948` and four contact records.
 
+That NC browser sequence passed after deployment. The default scope now uses only recorded `federal` and `us-federal` IDs (187 references in the observed inventory; query `a` matches 183), without treating 122 `US` records as verified federal records. A later browser pass exposed two Arizona offices stored as federal and heterogeneous categories including legislators. Exact source-binding checks did not justify reassigning those IDs. The follow-up labels these as registry references and shows recorded, unverified classification; it does not claim eligibility or current officeholder status. See `benefits-registry-classification-20260912.md` for IDs, evidence and reproducible SQL.
+
 ## Parallel follow-through
 
 | Path | Concrete work | Boundary |
 | --- | --- | --- |
-| Office discovery | Connect exact `gov_offices` discovery records to native `/resource/gof_*` detail pages | 3,423 exact active office identities; do not infer resource-to-office relationships from names or domains |
-| Benefits UI search | Wire the visible Search programs control to the deployed registry search and selected state | Browser showed the control only filtered guided results; do not invent category aliases to conceal missing bindings |
-| Case context / #636 | Resolve the actual case namespace, ownership checks, and Sunam dispatch before integration | The draft reads nonexistent `luminari_cases`; signal link case IDs reference `public.cases`; preserve namespaces and authorization |
-| Source worker / #637 | Integrate private-source observations with the landed workbook resolver, versions, completeness, and Unicode fixes | Source observation and source-preserving replay are distinct from canonical/public promotion; worker activation remains explicit |
+| Office discovery | Deployed exact `gov_offices` listings and native detail | Source IDs and locators remain intact; crosswalk promotion remains separate |
+| Benefits UI search | Deployed search/contact/pagination; classification correction prepared | Preserve heterogeneous records and expose the recorded category and unresolved jurisdiction |
+| Case context / #636 | Concurrent attachment/read/remove work reconciled with actual cases, collaborator access, intake jurisdiction and sealed action paths | Combined 1,771-test suite and TypeScript passed; review found non-statute callers requiring explicit reference kinds; fix under review |
+| Source worker / #637 | Current-main integration and exact-run, bounded standalone runner prepared | 1,728-test suite, TypeScript and database replay passed; review corrections include missing download version, SQL source preservation and schema-declared arrays; no production Batch activation |
 
 ## Remaining source and integration work
 

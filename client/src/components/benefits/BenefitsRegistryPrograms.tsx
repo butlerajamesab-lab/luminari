@@ -51,15 +51,18 @@ export default function Benefits_registry_programs({ search_query, browse_catego
 
   if (!target_query) return null;
   return (
-    <section aria-label="Registry program results" aria-busy={pending} className="space-y-3">
-      <h2 className="text-sm font-semibold text-foreground">Registry programs</h2>
+    <section aria-label="Registry reference results" aria-busy={pending} className="space-y-3">
+      <h2 className="text-sm font-semibold text-foreground">Registry references</h2>
       <p className="text-xs text-muted-foreground">
-        Searching for “{target_query}”{state_code ? ` in ${state_code}` : ' among federal programs only'}.
+        Searching for “{target_query}”{state_code ? ` with a recorded ${state_code} jurisdiction` : ' with a recorded federal jurisdiction'}.
         {!search_query.trim() && ' Category names are search terms; try an organization or program name for more results.'}
+      </p>
+      <p className="text-xs text-muted-foreground">
+        These records include programs, agencies, advocacy groups, and legislators. Recorded categories and jurisdictions are unverified; they do not establish benefit eligibility or current officeholder status.
       </p>
       {pending ? (
         <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" /> Searching registry programs…
+          <Loader2 className="h-4 w-4 animate-spin" /> Searching registry references…
         </p>
       ) : error ? (
         <div role="alert" className="rounded-lg border border-amber-500/30 p-3 text-sm">
@@ -70,10 +73,10 @@ export default function Benefits_registry_programs({ search_query, browse_catego
         <>
           <p role="status" className="text-xs text-muted-foreground">
             {registry_program_total === 0
-              ? 'No registry programs match this search. Try a different program or organization name, or change the state.'
+              ? 'No registry references match this search. Try a different program or organization name, or change the state.'
               : registry_program_rows.length === 0
-                ? 'No registry programs on this page. Try the previous page.'
-                : `Showing ${offset + 1}–${offset + registry_program_rows.length} of ${registry_program_total} registry programs.`}
+                ? 'No registry references on this page. Try the previous page.'
+                : `Showing ${offset + 1}–${offset + registry_program_rows.length} of ${registry_program_total} registry references.`}
           </p>
           {registry_program_rows.map((p: any) => {
             const registry_website = normalize_registry_website(p.website);
@@ -82,6 +85,7 @@ export default function Benefits_registry_programs({ search_query, browse_catego
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-foreground/90 leading-tight">{p.name}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Recorded category: {p.category?.trim() || 'Unknown'}</p>
                     {p.agency && <p className="text-xs text-muted-foreground mt-0.5">{p.agency}</p>}
                     {p.contact && <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">Contact: {p.contact}</p>}
                     {(p.eligibility || p.apply_notes) && <p className="text-xs text-muted-foreground/70 mt-1 line-clamp-2">{p.eligibility || p.apply_notes}</p>}
@@ -97,7 +101,8 @@ export default function Benefits_registry_programs({ search_query, browse_catego
                     )}
                   </div>
                   <div className="flex flex-col items-end gap-1 shrink-0">
-                    {(p.state_code || p.jurisdiction_name || p.jurisdiction_id) && <Badge variant="outline" className="text-[10px] px-1.5 py-0">{p.state_code || p.jurisdiction_name || p.jurisdiction_id}</Badge>}
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0">Recorded: {p.jurisdiction_id?.trim() || p.state_code || p.jurisdiction_name || 'Unknown'}</Badge>
+                    <span className="text-[10px] text-muted-foreground">Jurisdiction unverified</span>
                     {registry_website ? (
                       <a href={registry_website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10px] text-primary hover:text-primary/80">
                         Visit website <ExternalLink className="w-2.5 h-2.5" />
@@ -112,12 +117,12 @@ export default function Benefits_registry_programs({ search_query, browse_catego
             <nav aria-label="Registry result pages" className="flex items-center justify-between gap-3">
               <Button variant="outline" size="sm" disabled={offset === 0}
                 onClick={() => set_page({ query: target_query, state_code, offset: Math.max(0, offset - REGISTRY_PAGE_SIZE) })}>
-                Previous programs
+                Previous references
               </Button>
               <span className="text-xs text-muted-foreground">Page {Math.floor(offset / REGISTRY_PAGE_SIZE) + 1}</span>
               <Button variant="outline" size="sm" disabled={offset + REGISTRY_PAGE_SIZE >= registry_program_total}
                 onClick={() => set_page({ query: target_query, state_code, offset: offset + REGISTRY_PAGE_SIZE })}>
-                Next programs
+                Next references
               </Button>
             </nav>
           )}
