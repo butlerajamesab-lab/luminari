@@ -48,6 +48,7 @@ describe("case intake continuity wiring", () => {
     expect(upload_route).toContain("origin_context: effectiveOriginContext");
     expect(upload_page).toContain('formData.append("originContext", JSON.stringify(originContext))');
     expect(upload_page).toContain("useEffect(() => {");
+    expect(upload_page).toContain("clear_case_intake_origin_context(currentCaseId);");
     expect(upload_route).toContain("await dbHelpers.updateUploadSessionMetadata(sessionId, nextMetadata)");
   });
 

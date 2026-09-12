@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { getAuthenticatedRequestHeaders } from "@/lib/session-token";
 import {
+  clear_case_intake_origin_context,
   read_case_intake_origin_context,
   related_subject_label,
 } from "@/lib/caseIntakeContinuity";
@@ -232,7 +233,7 @@ function TrancheBanner({ results }: { results: UploadResult[] }) {
 
 export default function Upload() {
   const { currentCaseId, currentCase } = useCase();
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
   const [files, setFiles] = useState<File[]>([]);
   const [results, setResults] = useState<UploadResult[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -246,8 +247,12 @@ export default function Upload() {
   );
 
   useEffect(() => {
-    setOriginContext(read_case_intake_origin_context(currentCaseId));
-  }, [currentCaseId, location]);
+    const nextContext = read_case_intake_origin_context(currentCaseId);
+    setOriginContext(nextContext);
+    if (nextContext) {
+      clear_case_intake_origin_context(currentCaseId);
+    }
+  }, [currentCaseId]);
 
   const handleFiles = useCallback((newFiles: FileList | File[]) => {
     const arr = Array.from(newFiles);

@@ -565,7 +565,7 @@ export async function read_case_intake_continuity(
       network: case_surface_href("/network", case_id),
       findings: case_surface_href("/findings", case_id),
       review: case_surface_href("/control-room", case_id),
-      act: "/guide/" + case_id,
+      act: case_surface_href("/guide/" + case_id, case_id),
     },
   };
 }
