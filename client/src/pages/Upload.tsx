@@ -247,11 +247,7 @@ export default function Upload() {
   );
 
   useEffect(() => {
-    const nextContext = read_case_intake_origin_context(currentCaseId);
-    setOriginContext(nextContext);
-    if (nextContext) {
-      clear_case_intake_origin_context(currentCaseId);
-    }
+    setOriginContext(read_case_intake_origin_context(currentCaseId));
   }, [currentCaseId]);
 
   const handleFiles = useCallback((newFiles: FileList | File[]) => {
@@ -324,6 +320,7 @@ export default function Upload() {
     let completed = 0;
         let registeredCount = 0;
     let lastSummary: UploadSummary | null = null;
+    let consumedOriginContext = false;
 
     // ── Create server-side upload session for multi-batch persistence ──
     let sessionId: number | null = null;
@@ -335,6 +332,10 @@ export default function Upload() {
           originContext: originContext ?? undefined,
         });
         sessionId = result.sessionId;
+        if (originContext) {
+          clear_case_intake_origin_context(currentCaseId);
+          consumedOriginContext = true;
+        }
         // Persist to localStorage for navigation recovery
         const stored = JSON.parse(localStorage.getItem("activeUploadSessionIds") || "[]");
         stored.push(sessionId);
@@ -379,6 +380,10 @@ export default function Upload() {
           headers: uploadHeaders,
           credentials: "include",
         });
+        if (originContext && !consumedOriginContext) {
+          clear_case_intake_origin_context(currentCaseId);
+          consumedOriginContext = true;
+        }
 
         // Safely parse response — proxy/nginx may return HTML on timeout or 413
         let data: any;

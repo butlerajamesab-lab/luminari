@@ -16,7 +16,8 @@ describe("case intake continuity wiring", () => {
     expect(continuity).toContain("from public.case_intake_links");
     expect(continuity).toContain("read_case_intake_integrity_projection(case_id, {");
     expect(continuity).toContain('link_scope: "all"');
-    expect(continuity).toContain("function case_surface_href(path: string, case_id: number)");
+    expect(continuity).toContain("function case_surface_href(");
+    expect(continuity).toContain("options?: { include_case_query?: boolean }");
     expect(continuity).toContain('case_overview: case_surface_href("/case-overview", case_id)');
   });
 

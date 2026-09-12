@@ -152,7 +152,12 @@ function merge_counts(target: count_map, counts: count_map) {
   }
 }
 
-function case_surface_href(path: string, case_id: number) {
+function case_surface_href(
+  path: string,
+  case_id: number,
+  options?: { include_case_query?: boolean },
+) {
+  if (options?.include_case_query === false) return path;
   const separator = path.includes("?") ? "&" : "?";
   return `${path}${separator}caseId=${encodeURIComponent(String(case_id))}`;
 }
@@ -574,7 +579,9 @@ export async function read_case_intake_continuity(
       network: case_surface_href("/network", case_id),
       findings: case_surface_href("/findings", case_id),
       review: case_surface_href("/control-room", case_id),
-      act: "/guide/" + case_id,
+      act: case_surface_href("/guide/" + case_id, case_id, {
+        include_case_query: false,
+      }),
     },
   };
 }
