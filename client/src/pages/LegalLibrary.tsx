@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/core/hooks/useAuth";
 import { CommitToCase } from "@/components/CommitToCase";
+import { Source_authority_catalog } from "@/components/source-authority-catalog";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -143,7 +144,7 @@ export default function LegalLibrary() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDomain, setSelectedDomain] = useState<string>("");
   const [selectedJurisdiction, setSelectedJurisdiction] = useState<string>("");
-  const [activeTab, setActiveTab] = useState<"statutes" | "case_law" | "enforcement" | "contradictions">("statutes");
+  const [activeTab, setActiveTab] = useState<"statutes" | "case_law" | "enforcement" | "contradictions" | "source_authorities">("statutes");
   const [statuteOffset, setStatuteOffset] = useState(0);
   const [caseLawOffset, setCaseLawOffset] = useState(0);
   const [enforcementOffset, setEnforcementOffset] = useState(0);
@@ -202,6 +203,7 @@ export default function LegalLibrary() {
   );
 
   const tabs = [
+    { key: "source_authorities" as const, label: "Source Authorities", icon: FileText, count: null },
     { key: "statutes" as const, label: "Statutes & Regulations", icon: BookOpen, count: stats?.statutes || 0 },
     { key: "case_law" as const, label: "Case Law", icon: Gavel, count: stats?.caseLaw || 0 },
     { key: "enforcement" as const, label: "Enforcement Records", icon: Shield, count: stats?.enforcementRecords || 0 },
@@ -318,7 +320,7 @@ export default function LegalLibrary() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search statutes, case law, regulations..."
+              placeholder="Search statutes, case law, source authorities..."
               style={{
                 width: "100%", background: "rgba(255,255,255,0.05)",
                 border: `1px solid ${ll.cardBorder}`, borderRadius: 6,
@@ -327,7 +329,7 @@ export default function LegalLibrary() {
               }}
             />
           </div>
-          <select
+          {activeTab !== "source_authorities" && <select
             value={selectedDomain}
             onChange={(e) => setSelectedDomain(e.target.value)}
             style={{
@@ -340,7 +342,7 @@ export default function LegalLibrary() {
             {DOMAINS.map((d) => (
               <option key={d} value={d} style={{ background: ll.bg }}>{DOMAIN_LABELS[d]}</option>
             ))}
-          </select>
+          </select>}
           <input
             type="text"
             value={selectedJurisdiction}
@@ -356,7 +358,7 @@ export default function LegalLibrary() {
         </div>
 
         {/* Tabs */}
-        <div style={{ display: "flex", gap: 4, marginBottom: 24, borderBottom: `1px solid ${ll.cardBorder}`, paddingBottom: 0 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 24, borderBottom: `1px solid ${ll.cardBorder}`, paddingBottom: 0 }}>
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const active = activeTab === tab.key;
@@ -378,10 +380,10 @@ export default function LegalLibrary() {
               >
                 <Icon size={14} />
                 <span>{tab.label}</span>
-                <span style={{
+                {tab.count !== null && <span style={{
                   background: active ? "rgba(168,85,247,0.2)" : "rgba(255,255,255,0.06)",
                   borderRadius: 10, padding: "1px 8px", fontSize: 10,
-                }}>{tab.count}</span>
+                }}>{tab.count}</span>}
               </button>
             );
           })}
@@ -389,6 +391,9 @@ export default function LegalLibrary() {
 
         {/* Content area */}
         <div style={{ minHeight: 400, paddingBottom: 80 }}>
+          {activeTab === "source_authorities" && (
+            <Source_authority_catalog key={`${searchQuery}:${selectedJurisdiction}`} query={searchQuery || undefined} jurisdiction={selectedJurisdiction || undefined} />
+          )}
           {/* Statutes tab */}
           {activeTab === "statutes" && (
             <div>
