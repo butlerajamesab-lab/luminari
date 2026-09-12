@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useLocation } from "wouter";
 import { Upload as UploadIcon, FileText, CheckCircle, XCircle, X, Loader2, AlertTriangle, Lock, Shield, Clock, Timer, Link2, Info } from "lucide-react";
-import { useState, useCallback, useMemo, useRef } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { getAuthenticatedRequestHeaders } from "@/lib/session-token";
@@ -241,10 +241,13 @@ export default function Upload() {
   const [summary, setSummary] = useState<UploadSummary | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const utils = trpc.useUtils();
-  const originContext = useMemo(
-    () => read_case_intake_origin_context(currentCaseId),
-    [currentCaseId, location],
+  const [originContext, setOriginContext] = useState(() =>
+    read_case_intake_origin_context(currentCaseId),
   );
+
+  useEffect(() => {
+    setOriginContext(read_case_intake_origin_context(currentCaseId));
+  }, [currentCaseId, location]);
 
   const handleFiles = useCallback((newFiles: FileList | File[]) => {
     const arr = Array.from(newFiles);
@@ -344,7 +347,7 @@ export default function Upload() {
       // caseId is injected from the locked case context — not user-editable
       formData.append("caseId", currentCaseId.toString());
       if (sessionId) formData.append("sessionId", sessionId.toString());
-      if (originContext) {
+      if (originContext && !sessionId) {
         formData.append("originContext", JSON.stringify(originContext));
       }
       batch.files.forEach(f => formData.append("files", f));

@@ -208,6 +208,7 @@ describe("case intake continuity projection", () => {
       inspection_observed: 1,
     });
     expect(continuity.primary_sessions[0].document_links.map((link) => link.document_id)).toEqual([41, 42]);
+    expect(continuity.primary_sessions[0].document_links[0]?.href).toBe("/documents/41?caseId=11");
     expect(continuity.surface_links.case_overview).toBe("/case-overview?caseId=11");
     expect(continuity.surface_links.review).toBe("/control-room?caseId=11");
     expect(continuity.surface_links.act).toBe("/guide/11");

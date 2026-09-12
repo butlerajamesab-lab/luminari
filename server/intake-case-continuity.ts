@@ -427,7 +427,7 @@ export async function read_case_intake_continuity(
     const links = document_links_by_session.get(artifact.intake_session_id) ?? [];
     links.push({
       document_id: artifact.legacy_document_id,
-      href: `/documents/${artifact.legacy_document_id}`,
+      href: case_surface_href(`/documents/${artifact.legacy_document_id}`, case_id),
       filename: artifact.filename,
       source_artifact_status: artifact.source_artifact_status,
       integrity_status: artifact.integrity_status,

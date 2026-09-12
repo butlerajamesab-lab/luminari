@@ -45,7 +45,8 @@ describe("case intake continuity wiring", () => {
     expect(upload_route).toContain("metadata: requestedOriginContext");
     expect(upload_route).toContain("origin_context: effectiveOriginContext");
     expect(upload_page).toContain('formData.append("originContext", JSON.stringify(originContext))');
-    expect(upload_page).toContain("useMemo(");
+    expect(upload_page).toContain("useEffect(() => {");
+    expect(upload_page).toContain("if (originContext && !sessionId)");
   });
 
   it("wires the shared continuity panel into case workflow surfaces without duplicating page logic", () => {
