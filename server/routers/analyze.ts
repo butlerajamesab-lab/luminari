@@ -1,4 +1,5 @@
 import { router, protectedProcedure, adminProcedure as admin_procedure } from '../_core/trpc';
+import { TRPCError } from "@trpc/server";
 import { z } from 'zod';
 import { getPool } from '../db';
 import * as db_helpers from '../db';
@@ -40,7 +41,10 @@ export const analyzeRouter = router({
       );
       const case_id = Number(bridge.rows[0]?.legacy_case_id ?? 0);
       if (!Number.isSafeInteger(case_id) || case_id <= 0) {
-        throw new Error("case_intake_continuity_bridge_not_found");
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "case_intake_continuity_bridge_not_found",
+        });
       }
       await db_helpers.verifyCaseOwnership(case_id, ctx.user.id);
       return read_case_intake_continuity({ case_uuid: input.caseUuid! });

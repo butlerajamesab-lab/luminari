@@ -151,6 +151,7 @@ function MobileLayout({ children }: { children: React.ReactNode }) {
 
   const allMenuItems = allNavSections.flatMap(section => section.items);
   const activeMenuItem = allMenuItems.find((item) => item.path === location);
+  const showContinuityPanel = currentCaseId && !location.startsWith("/guide/");
 
   // Stats for guided journey step detection
   const caseStatsQuery = trpc.cases.stats.useQuery(
@@ -196,7 +197,7 @@ function MobileLayout({ children }: { children: React.ReactNode }) {
 
       {/* Main content with bottom padding for nav bar */}
       <main className="flex-1 p-3 pb-20">
-        {currentCaseId ? (
+        {showContinuityPanel ? (
           <div className="mb-3">
             <CaseIntakeContinuityPanel
               caseId={currentCaseId}
@@ -557,6 +558,7 @@ function DesktopLayoutContent({
   const hasIntakeExecution = (intakeStatusQuery2.data ?? []).some(
     (session) => session.session_type === "live" && session.execution_complete,
   );
+  const showContinuityPanel = currentCaseId && !location.startsWith("/guide/");
 
   // Ctrl+K keyboard shortcut for jurisdiction search
   useEffect(() => {
@@ -849,7 +851,7 @@ function DesktopLayoutContent({
           />
         )}
         <main className="flex-1 p-6">
-          {currentCaseId ? (
+          {showContinuityPanel ? (
             <div className="mb-4">
               <CaseIntakeContinuityPanel
                 caseId={currentCaseId}

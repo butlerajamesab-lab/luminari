@@ -1,4 +1,5 @@
 import { getPool } from "./db-legacy";
+import { TRPCError } from "@trpc/server";
 import {
   read_canonical_case_layer_outputs,
   type CanonicalCaseLayerOutput,
@@ -359,7 +360,10 @@ export async function read_case_intake_continuity(
   const session_rows = await load_linked_sessions(reference);
   const bridge_row = session_rows[0];
   if (!bridge_row) {
-    throw new Error("case_intake_continuity_bridge_not_found");
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: "case_intake_continuity_bridge_not_found",
+    });
   }
 
   const case_id = as_count(bridge_row.legacy_case_id);
