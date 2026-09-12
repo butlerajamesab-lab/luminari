@@ -69,12 +69,19 @@ export const registryRouter = router({
   searchPrograms: publicProcedure
     .input(z.object({
       query: z.string().min(1),
-      stateCode: z.string().optional(),  // e.g. "WA"
+      state_code: z.string().optional(),  // e.g. "WA"
+      stateCode: z.string().optional(),  // Legacy input; normalized at this boundary.
+      federal_only: z.boolean().default(false),
       category: z.string().optional(),
       limit: z.number().min(1).max(100).default(20),
       offset: z.number().min(0).default(0),
+    }).refine(input => !(input.federal_only && (input.state_code || input.stateCode)), {
+      message: "Choose either federal-only scope or a state.",
+    }).refine(input => !input.state_code || !input.stateCode || input.state_code.trim().toUpperCase() === input.stateCode.trim().toUpperCase(), {
+      message: "Conflicting state inputs.",
     }))
     .query(async ({ input }) => {
+      const state_code = (input.state_code ?? input.stateCode)?.trim().toUpperCase();
       const conditions: string[] = [];
       const params: any[] = [];
       const bind = (value: unknown) => {
@@ -87,8 +94,12 @@ export const registryRouter = router({
         `(p.name ILIKE ${bind(q)} OR p.agency ILIKE ${bind(q)} OR p.eligibility ILIKE ${bind(q)} OR p.category ILIKE ${bind(q)})`,
       );
 
-      if (input.stateCode) {
-        conditions.push(`j.abbreviation = ${bind(input.stateCode.toUpperCase())}`);
+      if (input.federal_only) {
+        // Exact federal identifiers observed in registry_programs. "US", null,
+        // unknown and state references are not evidence of federal-only scope.
+        conditions.push(`LOWER(BTRIM(COALESCE(NULLIF(p.jurisdiction_id, ''), p.jurisdiction_id_rp))) = ANY(${bind(['federal', 'us-federal'])}::text[])`);
+      } else if (state_code) {
+        conditions.push(`j.abbreviation = ${bind(state_code)}`);
       }
       if (input.category) {
         conditions.push(`p.category ILIKE ${bind(`%${input.category}%`)}`);
@@ -105,7 +116,7 @@ export const registryRouter = router({
          FROM registry_programs p
          ${registryJurisdictionJoin("COALESCE(NULLIF(p.jurisdiction_id, ''), p.jurisdiction_id_rp)", 'j')}
          ${where}
-         ORDER BY p.name
+         ORDER BY p.name, p.id
          LIMIT ${limitPlaceholder} OFFSET ${offsetPlaceholder}`,
         [...params, input.limit, input.offset],
       );
