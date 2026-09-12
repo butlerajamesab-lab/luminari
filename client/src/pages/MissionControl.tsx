@@ -1627,7 +1627,7 @@ function KnowledgeExplorerPanel() {
                               </a>
                             )}
                             <div className="pt-2 border-t border-border/30">
-                              <CommitToCase type="statute" itemId={r.case_id ?? r.id} label="Attach to Case" size="sm" variant="outline" />
+                              <CommitToCase type="case_law" itemId={r.id} label="Attach to Case" size="sm" variant="outline" />
                             </div>
                           </div>
                         )}
@@ -1819,7 +1819,7 @@ function KnowledgeExplorerPanel() {
                               </a>
                             )}
                             <div className="pt-2 border-t border-border/30">
-                              <CommitToCase type="statute" itemId={r.id} label="Apply Formula to Case" size="sm" variant="outline" />
+                              <CommitToCase type="settlement_formula" itemId={r.id} label="Attach Formula Reference" size="sm" variant="outline" />
                             </div>
                           </div>
                         )}

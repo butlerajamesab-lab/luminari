@@ -1,3 +1,4 @@
+import { legal_commit_ref, resolve_legal_reference, type legal_reference_kind } from "../legal-reference-runtime";
 /**
  * Case State Router — The Commitment Layer
  *
@@ -57,7 +58,7 @@ function compute_completeness(state: typeof caseState.$inferSelect): {
     { key: "findings", label: "At least one finding committed", present: (state.committedFindingIds as number[]).length > 0 },
     { key: "barriers", label: "Barriers assessed", present: (state.committedBarrierIds as number[]).length > 0 },
     { key: "benefits", label: "Benefits identified", present: (state.committedBenefitIds as number[]).length > 0 },
-    { key: "statutes", label: "Relevant statutes attached", present: (state.committedStatuteIds as number[]).length > 0 },
+    { key: "statutes", label: "Legal references attached", present: (state.committedStatuteIds as number[]).length > 0 },
   ];
 
   const present = checks.filter((check) => check.present).map((check) => check.label);
@@ -118,6 +119,21 @@ async function list_case_resource_links(case_id: number) {
   } catch {
     return [] as Array<Record<string, unknown>>;
   }
+}
+
+async function commit_legal_reference(case_id: number, user_id: number, kind: legal_reference_kind, id: string | number) {
+  await verify_case_ownership(case_id, user_id);
+  const ref = legal_commit_ref(kind, id);
+  const resolved = await resolve_legal_reference(ref);
+  if (resolved.status !== "resolved") throw new Error(resolved.reason!);
+  await get_or_create_case_state(case_id, user_id);
+  await getPool().query(`update public.case_state
+    set committed_statute_ids = coalesce(committed_statute_ids,'[]'::jsonb) || jsonb_build_array($2::text), updated_at = $3
+    where case_id = $1 and user_id = $4
+      and not exists (select 1 from jsonb_array_elements_text(coalesce(committed_statute_ids,'[]'::jsonb)) value where value = $2)`,
+    [case_id, String(ref), Date.now(), user_id]);
+  await update_completeness(case_id);
+  return { success: true, committed_ref: ref, kind };
 }
 
 export const caseStateRouter = router({
@@ -280,18 +296,35 @@ export const caseStateRouter = router({
     }),
 
   commit_statute: protectedProcedure
-    .input(z.object({ case_id: z.number(), statute_id: z.union([z.number(), z.string().min(1)]) }))
-    .mutation(async ({ ctx, input }) => {
-      await verify_case_ownership(input.case_id, ctx.user.id);
-      const state = await get_or_create_case_state(input.case_id, ctx.user.id);
-      const current = (state.committedStatuteIds as Array<number | string>) || [];
-      if (!current.includes(input.statute_id)) {
-        await db.update(caseState)
-          .set({ committedStatuteIds: [...current, input.statute_id], updatedAt: Date.now() })
-          .where(eq(caseState.caseId, input.case_id));
-      }
-      await update_completeness(input.case_id);
-      return { success: true, statute_id: input.statute_id };
+    .input(z.object({ case_id: z.number().int().positive(), statute_id: z.union([z.number(),z.string().min(1).max(500)]) }))
+    .mutation(({ ctx, input }) => commit_legal_reference(input.case_id,ctx.user.id,"statute",input.statute_id)),
+  commit_runtime_statute: protectedProcedure
+    .input(z.object({ case_id: z.number().int().positive(), runtime_statute_ref: z.string().min(1).max(500) }))
+    .mutation(({ ctx, input }) => commit_legal_reference(input.case_id,ctx.user.id,"runtime_statute",input.runtime_statute_ref)),
+  commit_case_law: protectedProcedure
+    .input(z.object({ case_id: z.number().int().positive(), case_law_id: z.union([z.number(),z.string().min(1).max(500)]) }))
+    .mutation(({ ctx, input }) => commit_legal_reference(input.case_id,ctx.user.id,"case_law",input.case_law_id)),
+  commit_legal_authority: protectedProcedure
+    .input(z.object({ case_id: z.number().int().positive(), object_ref: z.string().min(1).max(500) }))
+    .mutation(({ ctx, input }) => commit_legal_reference(input.case_id,ctx.user.id,"legal_authority",input.object_ref)),
+
+  commit_source_reference: protectedProcedure
+    .input(z.object({ case_id: z.number().int().positive(),
+      kind: z.enum(["enforcement", "settlement_formula"]),
+      source_id: z.union([z.number(), z.string().min(1).max(500)]) }))
+    .mutation(({ ctx, input }) => commit_legal_reference(input.case_id, ctx.user.id, input.kind, input.source_id)),
+
+  get_legal_references: protectedProcedure
+    .input(z.object({ case_id: z.number().int().positive(), offset: z.number().int().min(0).default(0) }))
+    .query(async ({ ctx, input }) => {
+      await verify_case_ownership(input.case_id,ctx.user.id);
+      const { rows } = await getPool().query(`select committed_statute_ids from public.case_state where case_id = $1 and user_id = $2`, [input.case_id,ctx.user.id]);
+      const refs = Array.isArray(rows[0]?.committed_statute_ids) ? rows[0].committed_statute_ids as Array<string|number> : [];
+      const items = await Promise.all(refs.slice(input.offset,input.offset+25).map(async ref => {
+        try { return await resolve_legal_reference(ref); }
+        catch { return { committed_ref: ref, kind: null, id: String(ref), status: 'unavailable' as const, reason: 'Source read is unavailable; the saved reference is preserved.', record: null }; }
+      }));
+      return { items, total: refs.length, next_offset: input.offset+25 < refs.length ? input.offset+25 : null };
     }),
 
   commit_foia: protectedProcedure
@@ -358,8 +391,8 @@ export const caseStateRouter = router({
   remove_commit: protectedProcedure
     .input(z.object({
       case_id: z.number(),
-      item_type: z.enum(["finding", "barrier", "benefit", "signal", "statute", "foia", "filing", "resource"]),
-      item_id: z.number().optional(),
+      item_type: z.enum(["finding", "barrier", "benefit", "signal", "statute", "runtime_statute", "case_law", "legal_authority", "enforcement", "settlement_formula", "foia", "filing", "resource"]),
+      item_id: z.union([z.number(),z.string().min(1).max(600)]).optional(),
       resource_ref: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
@@ -378,6 +411,16 @@ export const caseStateRouter = router({
         return { success: true };
       }
 
+      if (["statute", "runtime_statute", "case_law", "legal_authority", "enforcement", "settlement_formula"].includes(input.item_type)) {
+        if (input.item_id == null) throw new Error("item_id is required for a legal reference");
+        const ref = String(legal_commit_ref(input.item_type as legal_reference_kind,input.item_id));
+        await getPool().query(`update public.case_state set committed_statute_ids =
+          coalesce((select jsonb_agg(entry order by ordinal) from jsonb_array_elements(coalesce(committed_statute_ids,'[]'::jsonb)) with ordinality as saved(entry,ordinal)
+          where entry #>> '{}' <> $2), '[]'::jsonb),updated_at = $3 where case_id = $1 and user_id = $4`,
+          [input.case_id,ref,Date.now(),ctx.user.id]);
+        await update_completeness(input.case_id);
+        return { success: true };
+      }
       const state = await get_or_create_case_state(input.case_id, ctx.user.id);
       const field_map: Record<string, keyof typeof state> = {
         finding: "committedFindingIds",

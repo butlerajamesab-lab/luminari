@@ -9,6 +9,8 @@
  *   <CommitToCase type="benefit" itemId={program.id} />
  *   <CommitToCase type="signal" itemId={signal.id} signalType="structural" />
  *   <CommitToCase type="statute" itemId={statute.id} />
+ *   <CommitToCase type="runtime_statute" itemId={statute.runtime_entity_id} />
+ *   <CommitToCase type="case_law" itemId={caseLaw.id} />
  *   <CommitToCase type="foia" itemId={foiaRequest.id} />
  *   <CommitToCase type="filing" itemId={filing.id} />
  *   <CommitToCase type="resource" itemId={resource.resource_entity_id} resourceName={resource.resource_name} />
@@ -38,6 +40,11 @@ type CommitType =
   | "benefit"
   | "signal"
   | "statute"
+  | "legal_authority"
+  | "runtime_statute"
+  | "case_law"
+  | "enforcement"
+  | "settlement_formula"
   | "foia"
   | "filing"
   | "proceduralPath"
@@ -47,7 +54,7 @@ type CommitType =
 
 type CommitToCaseProps = {
   type: CommitType;
-  // For item-based commits (finding, barrier, benefit, signal, statute, foia, filing)
+  // For item-based commits (finding, barrier, benefit, signal, statute, runtime_statute, case_law, foia, filing)
   itemId?: number | string;
   // For signal commits
   signalType?: "structural" | "evidentiary" | "pattern" | "resource";
@@ -103,6 +110,10 @@ export function CommitToCase({
   const commit_benefit = trpc.case_state.commit_benefit.useMutation({ onSuccess: handleSuccess, onError: handleError });
   const commit_signal = trpc.case_state.commit_signal.useMutation({ onSuccess: handleSuccess, onError: handleError });
   const commit_statute = trpc.case_state.commit_statute.useMutation({ onSuccess: handleSuccess, onError: handleError });
+  const commit_runtime_statute = trpc.case_state.commit_runtime_statute.useMutation({ onSuccess: handleSuccess, onError: handleError });
+  const commit_legal_authority = trpc.case_state.commit_legal_authority.useMutation({ onSuccess: handleSuccess, onError: handleError });
+  const commit_source_reference = trpc.case_state.commit_source_reference.useMutation({ onSuccess: handleSuccess, onError: handleError });
+  const commit_case_law = trpc.case_state.commit_case_law.useMutation({ onSuccess: handleSuccess, onError: handleError });
   const commit_foia = trpc.case_state.commit_foia.useMutation({ onSuccess: handleSuccess, onError: handleError });
   const commit_filing = trpc.case_state.commit_filing.useMutation({ onSuccess: handleSuccess, onError: handleError });
   const commit_path = trpc.case_state.commit_procedural_path.useMutation({ onSuccess: handleSuccess, onError: handleError });
@@ -112,7 +123,7 @@ export function CommitToCase({
 
   const isLoading =
     commit_finding.isPending || commit_barrier.isPending || commit_benefit.isPending ||
-    commit_signal.isPending || commit_statute.isPending || commit_foia.isPending ||
+    commit_signal.isPending || commit_statute.isPending || commit_runtime_statute.isPending || commit_case_law.isPending || commit_legal_authority.isPending || commit_source_reference.isPending || commit_foia.isPending ||
     commit_filing.isPending || commit_path.isPending || commit_strategy.isPending ||
     commit_resource.isPending ||
     set_claim_type.isPending;
@@ -120,6 +131,8 @@ export function CommitToCase({
   function handleSuccess() {
     setCommitted(true);
     utils.case_state.get.invalidate({ case_id: activeCaseId! });
+    utils.case_state.get_legal_references.invalidate();
+    utils.luminari.get_action_context.invalidate();
     toast.success("Committed to case", { description: getSuccessMessage() });
     onCommitted?.();
     // Reset committed state after 3s so button is re-usable
@@ -137,6 +150,11 @@ export function CommitToCase({
       case "benefit": return "Benefit program saved to case.";
       case "signal": return "Signal committed to case.";
       case "statute": return "Statute attached to case.";
+      case "legal_authority": return "Legal source reference attached to case.";
+      case "runtime_statute": return "Observed statute attached to case.";
+      case "case_law": return "Case law attached to case.";
+      case "enforcement": return "Enforcement reference attached to case.";
+      case "settlement_formula": return "Settlement formula reference attached to case; no calculation was applied.";
       case "foia": return "FOIA request tracked in case.";
       case "filing": return "Filing packet saved to case.";
       case "proceduralPath": return `Path "${pathLabel}" set as active strategy.`;
@@ -176,6 +194,19 @@ export function CommitToCase({
         break;
       case "statute":
         commit_statute.mutate({ case_id: caseId, statute_id: itemId! });
+        break;
+      case "legal_authority":
+        commit_legal_authority.mutate({ case_id: caseId, object_ref: String(itemId) });
+        break;
+      case "runtime_statute":
+        commit_runtime_statute.mutate({ case_id: caseId, runtime_statute_ref: String(itemId) });
+        break;
+      case "case_law":
+        commit_case_law.mutate({ case_id: caseId, case_law_id: itemId! });
+        break;
+      case "enforcement":
+      case "settlement_formula":
+        commit_source_reference.mutate({ case_id: caseId, kind: type, source_id: itemId! });
         break;
       case "foia":
         commit_foia.mutate({ case_id: caseId, foia_id: numericItemId });

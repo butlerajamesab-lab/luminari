@@ -1,3 +1,4 @@
+import { CommitToCase } from "./CommitToCase";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 
@@ -58,6 +59,7 @@ export function Source_authority_catalog({ query, jurisdiction }: { query?: stri
           style={{ border: "1px solid #a855f7", borderRadius: 6, padding: "6px 12px", color: "#c084fc" }}>
           {selected_ref === record.object_ref ? "Close source detail" : "Read source detail"}
         </button>
+        <CommitToCase type="legal_authority" itemId={record.object_ref} label="Attach source reference" size="sm" />
         {selected_ref === record.object_ref && <Source_authority_detail object_ref={record.object_ref} />}
       </article>)}
       <nav aria-label="Source authority pages" style={{ display: "flex", alignItems: "center", gap: 16 }}>

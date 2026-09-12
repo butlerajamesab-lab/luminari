@@ -8,7 +8,10 @@ vi.mock("./db", () => ({
   getPool: () => ({ query }),
 }));
 
+vi.mock("./services/current-legal-authority-reader", () => ({ read_current_legal_authorities: async () => ({ total: 11 }) }));
+
 import {
+  getRuntimeLegalLibraryStats,
   searchRuntimeCaseLaw,
   searchRuntimeStatutes,
 } from "./legal-library-runtime-db";
@@ -42,6 +45,7 @@ describe("live adjacent runtime continuity", () => {
     expect(source).toContain("public.v_lighthouse_legal_authority_catalog_v2");
     expect(source).toContain("public.luminari_corpus_candidate_v1");
     expect(source).toContain("'runtime_source','current_corpus'");
+    expect(source).toContain("'publication_state',case when legal_catalog_ready then 'catalog_ready' else 'substrate_observed_not_catalog_ready' end");
     expect(source.indexOf("public.v_lighthouse_legal_authority_catalog_v2")).toBeLessThan(source.indexOf("from public.legal_statutes l"));
     expect(source.indexOf("const CURRENT_CASE_CTE")).toBeLessThan(source.indexOf("from public.legal_case_law l"));
     expect(source).not.toContain("from public.v_paginated_statutes ${where}");
@@ -85,6 +89,57 @@ describe("live adjacent runtime continuity", () => {
       expect.stringContaining("limit $2 offset $3"),
       ["%9th%", 10, 5],
     );
+  });
+
+  it("counts the actual list contracts and preserves unavailable counts", async () => {
+    query.mockImplementation(async (sql: string) => {
+      if (sql.includes('as enforcement_records')) return { rows: [{ enforcement_records: 2, weak_joints: 1, contradictions: 4, held_legal_references: 6 }] };
+      return { rows: [{ count: sql.includes('CURRENT_CASE_CTE') ? 3 : 7 }] };
+    });
+    const stats = await getRuntimeLegalLibraryStats("WA");
+    expect(stats).toMatchObject({ statutes: 7, current_corpus_legal_authorities: 11, held_legal_references: 6 });
+    expect(query.mock.calls.filter(([sql]) => sql.includes('from combined'))).toHaveLength(2);
+    query.mockResolvedValue({ rows: [] });
+    await expect(getRuntimeLegalLibraryStats()).rejects.toThrow('count was not returned');
+  });
+
+  it("preserves canonical legal ids while exposing a separate runtime entity key", async () => {
+    query
+      .mockResolvedValueOnce({
+        rows: [{
+          id: null,
+          runtime_entity_id: "xlsx:verified_statute:wa-rcw-1",
+          citation: "RCW 1.00.010",
+          short_title: "Test Statute",
+          jurisdiction: "WA",
+          domains: [],
+          metadata: {},
+        }],
+      })
+      .mockResolvedValueOnce({
+        rows: [{
+          id: "17",
+          runtime_entity_id: "17",
+          citation: "123 Wn.2d 456",
+          case_name: "State v. Example",
+          jurisdiction: "WA",
+          domains: [],
+          metadata: { runtime_source: "legacy_compat" },
+        }],
+      });
+
+    await expect(searchRuntimeStatutes({ limit: 1 })).resolves.toEqual([
+      expect.objectContaining({
+        id: null,
+        runtime_entity_id: "xlsx:verified_statute:wa-rcw-1",
+      }),
+    ]);
+    await expect(searchRuntimeCaseLaw({ limit: 1 })).resolves.toEqual([
+      expect.objectContaining({
+        id: 17,
+        runtime_entity_id: "17",
+      }),
+    ]);
   });
 
   it("joins the API source registry through its live source_name column", () => {

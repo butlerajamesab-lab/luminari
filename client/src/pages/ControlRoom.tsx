@@ -1,3 +1,5 @@
+import { CaseActionContextPanel } from "@/components/CaseActionContextPanel";
+import { CaseLegalReferences } from "@/components/CaseLegalReferences";
 import { useCase } from "@/contexts/CaseContext";
 import { useAuth } from "@/core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
@@ -145,7 +147,7 @@ function CaseCompletenessPanel({ caseId }: { caseId: number }) {
           </div>
           <div className="p-2 rounded-lg bg-muted/40 text-center">
             <p className="text-base font-semibold">{committedStatutes}</p>
-            <p className="text-[9px] text-muted-foreground">Statutes</p>
+            <p className="text-[9px] text-muted-foreground">Legal references</p>
           </div>
           <div className="p-2 rounded-lg bg-muted/40 text-center col-span-1">
             <p className="text-base font-semibold truncate text-xs">{state?.claimType ? state.claimType.replace(/_/g, " ") : "—"}</p>
@@ -161,6 +163,8 @@ function CaseCompletenessPanel({ caseId }: { caseId: number }) {
           </div>
         </div>
 
+        <CaseLegalReferences key={caseId} case_id={caseId} />
+        <CaseActionContextPanel key={caseId} case_id={caseId} />
         {/* Missing items */}
         {missing.length > 0 && (
           <div className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">

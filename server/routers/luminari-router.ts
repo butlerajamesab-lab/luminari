@@ -13,10 +13,44 @@
 import { router, publicProcedure, protectedProcedure } from "../_core/trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import { case_context_input, case_action_context_input } from "../case-context-boundary";
 import * as matchingService from "../services/matchingService";
 import * as registryService from "../services/registryService";
 import * as caseService from "../services/caseService";
-import * as luminariContextService from "../services/luminariContextService";
+import * as luminari_context_service from "../services/luminariContextService";
+
+function luminari_read_error(err: unknown, fallback_message: string) {
+  if (err instanceof TRPCError) return err;
+  const message = err instanceof Error && err.message
+    ? err.message
+    : fallback_message;
+  return new TRPCError({
+    code: /(?:^case \d+ not found$)|(?:^jurisdiction \d+ not found in registry$)/i.test(message)
+      ? "NOT_FOUND"
+      : "INTERNAL_SERVER_ERROR",
+    message,
+  });
+}
+
+const get_context_procedure = protectedProcedure
+  .input(case_context_input)
+  .query(async ({ ctx, input }) => {
+    try {
+      return await luminari_context_service.get_case_context(input.case_id, ctx.user.id);
+    } catch (err) {
+      throw luminari_read_error(err, "Failed to fetch case context");
+    }
+  });
+
+const get_action_context_procedure = protectedProcedure
+  .input(case_action_context_input)
+  .query(async ({ ctx, input }) => {
+    try {
+      return await luminari_context_service.get_case_action_context({ ...input, user_id: ctx.user.id });
+    } catch (err) {
+      throw luminari_read_error(err, "Failed to fetch case action context");
+    }
+  });
 
 export const luminariRouter = router({
   /**
@@ -282,19 +316,11 @@ export const luminariRouter = router({
    * - deadlines
    * - diagnostics
    */
-  getContext: protectedProcedure
-    .input(z.object({ case_id: z.number() }))
-    .query(async ({ input }) => {
-      try {
-        return await luminariContextService.getCaseContext(input.case_id);
-      } catch (err: any) {
-        console.error("Error fetching case context:", err);
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: err.message || "Failed to fetch case context",
-        });
-      }
-    }),
+  get_context: get_context_procedure,
+  get_action_context: get_action_context_procedure,
+  // Legacy HTTP paths remain input aliases for the same normalized procedures.
+  getContext: get_context_procedure,
+  getActionContext: get_action_context_procedure,
 
   /**
    * Record validation result (Sunam write endpoint)
@@ -313,7 +339,7 @@ export const luminariRouter = router({
     )
     .mutation(async ({ input }) => {
       try {
-        await luminariContextService.recordValidationResult(input.case_id, {
+        await luminari_context_service.recordValidationResult(input.case_id, {
           validation_type: input.validation_type,
           result: input.result,
           confidence_score: input.confidence_score,
@@ -347,7 +373,7 @@ export const luminariRouter = router({
     )
     .mutation(async ({ input }) => {
       try {
-        await luminariContextService.recordReconciliation(input.case_id, {
+        await luminari_context_service.recordReconciliation(input.case_id, {
           run_id: input.run_id,
           total_rows: input.total_rows,
           discrepancy_count: input.discrepancy_count,

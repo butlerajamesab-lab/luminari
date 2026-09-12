@@ -6,6 +6,7 @@ vi.mock("@/lib/trpc", () => ({ trpc: { canonicalCore: {
   legalAuthorities: { useQuery: state.page },
   legal_authority: { useQuery: vi.fn() },
 } } }));
+vi.mock("./CommitToCase", () => ({ CommitToCase: ({ itemId }: { itemId: string }) => <button data-source-ref={itemId}>Attach source reference</button> }));
 import { Source_authority_catalog } from "./source-authority-catalog";
 
 beforeEach(() => {
@@ -27,7 +28,8 @@ it("shows source references and provenance with separate ready and held inventor
   expect(html).toContain("Iowa resource directory.docx");
   expect(html).toContain("lines:781-809:statutory_authority");
   expect(html).toContain("Read source detail");
-  expect(html).not.toContain("Attach to Case");
+  expect(html).toContain("Attach source reference");
+  expect(html).toContain('data-source-ref="source-ref-1"');
   expect(html).not.toContain("Statutory Text");
 });
 

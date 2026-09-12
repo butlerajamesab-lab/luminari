@@ -1,3 +1,4 @@
+import { resolve_legal_reference } from "../legal-reference-runtime";
 import { z } from "zod";
 import { router, publicProcedure, protectedProcedure } from "../_core/trpc";
 import {
@@ -23,6 +24,8 @@ const castDomains = (d: string[]) => d as LegalDomain[];
 const legalRecordId = z.string().uuid();
 
 export const legalLibraryRouter = router({
+  get_reference: publicProcedure.input(z.object({ ref: z.string().min(1).max(600) }))
+    .query(({ input }) => resolve_legal_reference(input.ref)),
   // ─── Stats (current corpus first, legacy compatibility preserved) ───
   stats: publicProcedure
     .input(z.object({ jurisdiction: z.string().optional() }).optional())

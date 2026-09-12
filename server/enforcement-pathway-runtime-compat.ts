@@ -1,6 +1,9 @@
 import { getPool } from "./db";
+import { workflowJurisdictionCode as jurisdiction_code } from "./engines/intake-spine/source-workflow-registry";
 
 export type EnforcementPathwayInput = {
+  jurisdiction?: string;
+  pipeline_category?: string;
   agencyShort?: string;
   claimType?: string;
   pipelineCategory?: string;
@@ -144,8 +147,8 @@ function requested_filter(input: EnforcementPathwayInput): {
   if (text_value(input.claimType) != null) {
     return { key: "claimType", value: text_value(input.claimType)! };
   }
-  if (text_value(input.pipelineCategory) != null) {
-    return { key: "pipelineCategory", value: text_value(input.pipelineCategory)! };
+  if (text_value(input.pipeline_category ?? input.pipelineCategory) != null) {
+    return { key: "pipelineCategory", value: text_value(input.pipeline_category ?? input.pipelineCategory)! };
   }
   return null;
 }
@@ -167,7 +170,11 @@ export function build_enforcement_pathway_dto(
   input: EnforcementPathwayInput,
   rows: EnforcementPathwaySourceRows,
 ) {
-  const allPathways = rows.pathways.map(row => map_pathway(row, rows.agencyForms));
+  const allPathways = rows.pathways.map(row => map_pathway(row, rows.agencyForms))
+    .filter(pathway => !input.jurisdiction || (
+      jurisdiction_code(input.jurisdiction) !== null
+      && jurisdiction_code(pathway.jurisdiction) === jurisdiction_code(input.jurisdiction)
+    ));
   const filter = requested_filter(input);
   const matchingPathways = filter == null
     ? allPathways
@@ -192,7 +199,7 @@ export function build_enforcement_pathway_dto(
     requested: {
       agencyShort: text_value(input.agencyShort),
       claimType: text_value(input.claimType),
-      pipelineCategory: text_value(input.pipelineCategory),
+      pipelineCategory: text_value(input.pipeline_category ?? input.pipelineCategory),
     },
     filterOptions: {
       agencyShorts: unique_sorted(

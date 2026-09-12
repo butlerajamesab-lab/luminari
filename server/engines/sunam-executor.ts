@@ -771,6 +771,7 @@ export async function dispatchTool(
 
       // ── SQL / Schema ──
       // ── Service Layer Tools (Sunam service-only access) ──
+      case "get_case_action_context":
       case "get_case_context":
       case "get_case":
       case "get_case_timeline":
@@ -784,7 +785,7 @@ export async function dispatchTool(
       case "record_case_action":
       case "add_case_note":
       case "update_case_status": {
-        const serviceResult = await dispatchServiceTool(toolName, args);
+        const serviceResult = await dispatchServiceTool(toolName, args, Number(executedBy));
         return { ...base, success: serviceResult.success, result: serviceResult.result, error: serviceResult.error };
       }
 

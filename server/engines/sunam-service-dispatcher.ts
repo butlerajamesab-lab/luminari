@@ -8,9 +8,10 @@
 import * as registryService from "../services/registryService";
 import * as caseService from "../services/caseService";
 import * as matchingService from "../services/matchingService";
-import * as luminariContextService from "../services/luminariContextService";
+import * as luminari_context_service from "../services/luminariContextService";
 import * as civicObjectService from "../services/civic-object-service";
 import { get_unified_signals } from "../unified-queries";
+import { case_context_input, case_action_context_input } from "../case-context-boundary";
 
 export interface DispatchResult {
   success: boolean;
@@ -23,13 +24,29 @@ export interface DispatchResult {
  */
 export async function dispatchServiceTool(
   toolName: string,
-  args: Record<string, any>
+  args: Record<string, any>,
+  authenticated_user_id?: number
 ): Promise<DispatchResult> {
   try {
+    const legacy_case_tools = ["get_case", "get_case_timeline", "get_case_notes", "record_validation", "record_reconciliation", "record_case_action", "add_case_note", "update_case_status"];
+    if (legacy_case_tools.includes(toolName)) {
+      if (!Number.isSafeInteger(authenticated_user_id) || authenticated_user_id! <= 0) return { success: false, error: "Authenticated case owner required" };
+      if (!await caseService.verifyCaseOwnership(args.case_id, authenticated_user_id!)) return { success: false, error: "Case not found or access denied" };
+    }
     switch (toolName) {
       // ── Case Context (Read) ──
       case "get_case_context": {
-        const context = await luminariContextService.getCaseContext(args.case_id);
+        const input = case_context_input.parse(args);
+        const context = await luminari_context_service.get_case_context(input.case_id, authenticated_user_id!);
+        return { success: true, result: context };
+      }
+
+      case "get_case_action_context": {
+        const input = case_action_context_input.parse(args);
+        const context = await luminari_context_service.get_case_action_context({
+          ...input,
+          user_id: authenticated_user_id!,
+        });
         return { success: true, result: context };
       }
 
@@ -147,7 +164,7 @@ export async function dispatchServiceTool(
 
       // ── Validation (Write) ──
       case "record_validation": {
-        await luminariContextService.recordValidationResult(args.case_id, {
+        await luminari_context_service.recordValidationResult(args.case_id, {
           validation_type: args.validation_type,
           result: args.result,
           confidence_score: args.confidence_score,
@@ -166,7 +183,7 @@ export async function dispatchServiceTool(
 
       // ── Reconciliation (Write) ──
       case "record_reconciliation": {
-        await luminariContextService.recordReconciliation(args.case_id, {
+        await luminari_context_service.recordReconciliation(args.case_id, {
           run_id: args.run_id,
           total_rows: args.total_rows,
           discrepancy_count: args.discrepancy_count,

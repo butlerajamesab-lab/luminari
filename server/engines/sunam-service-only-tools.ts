@@ -14,11 +14,30 @@ export const SUNAM_SERVICE_ONLY_TOOLS = [
     type: "function" as const,
     function: {
       name: "get_case_context",
-      description: "Get unified context for a case. Returns case data, jurisdiction, workflows, programs, entities, signals, and diagnostics. Service layer only - no SQL.",
+      description: "Read authorized Lighthouse workspace context in the public.cases namespace, preserving explicit identity bridges and unavailable legacy bindings.",
       parameters: {
         type: "object",
         properties: {
           case_id: { type: "number", description: "The case ID to fetch context for" },
+        },
+        required: ["case_id"],
+        additionalProperties: false,
+      },
+    },
+  },
+
+  {
+    type: "function" as const,
+    function: {
+      name: "get_case_action_context",
+      description: "Get bounded context for an owned public.cases ID (the Lighthouse case workspace). Combines existing legal, resource, workflow, filing, enforcement, and signal read surfaces without inventing findings.",
+      parameters: {
+        type: "object",
+        properties: {
+          case_id: { type: "number", description: "The case ID to fetch context for" },
+          problem_context: { type: "string", description: "Optional case/problem search text." },
+          jurisdiction: { type: "string", description: "Optional explicit jurisdiction for browsing; otherwise uses the saved case-state jurisdiction." },
+          limit_per_surface: { type: "number", description: "Optional per-surface result bound (default 6, max 25)." }
         },
         required: ["case_id"],
         additionalProperties: false,

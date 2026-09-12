@@ -1,3 +1,4 @@
+import { LegalSourceRecord } from "@/components/LegalSourceRecord";
 import { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/core/hooks/useAuth";
 import { CommitToCase } from "@/components/CommitToCase";
@@ -145,6 +146,8 @@ export default function LegalLibrary() {
   const [selectedDomain, setSelectedDomain] = useState<string>("");
   const [selectedJurisdiction, setSelectedJurisdiction] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"statutes" | "case_law" | "enforcement" | "contradictions" | "source_authorities">("statutes");
+  const legal_ref = new URLSearchParams(window.location.search).get("legal_ref");
+  const exact_reference = trpc.legalLibrary.get_reference.useQuery({ ref: legal_ref ?? "" }, { enabled: Boolean(legal_ref) });
   const [statuteOffset, setStatuteOffset] = useState(0);
   const [caseLawOffset, setCaseLawOffset] = useState(0);
   const [enforcementOffset, setEnforcementOffset] = useState(0);
@@ -205,8 +208,8 @@ export default function LegalLibrary() {
   const tabs = [
     { key: "source_authorities" as const, label: "Source Authorities", icon: FileText, count: null },
     { key: "statutes" as const, label: "Statutes & Regulations", icon: BookOpen, count: stats?.statutes || 0 },
-    { key: "case_law" as const, label: "Case Law", icon: Gavel, count: stats?.caseLaw || 0 },
-    { key: "enforcement" as const, label: "Enforcement Records", icon: Shield, count: stats?.enforcementRecords || 0 },
+    { key: "case_law" as const, label: "Case Law", icon: Gavel, count: stats?.case_law || 0 },
+    { key: "enforcement" as const, label: "Enforcement Records", icon: Shield, count: stats?.enforcement_records || 0 },
     { key: "contradictions" as const, label: "Systemic Contradictions", icon: AlertTriangle, count: stats?.contradictions || 0 },
   ];
 
@@ -299,10 +302,10 @@ export default function LegalLibrary() {
           }}>
             {[
               { label: "Statutes", value: stats.statutes, color: ll.purple },
-              { label: "Case Law", value: stats.caseLaw, color: ll.gold },
-              { label: "Enforcement", value: stats.enforcementRecords, color: ll.teal },
+              { label: "Case Law", value: stats.case_law, color: ll.gold },
+              { label: "Enforcement", value: stats.enforcement_records, color: ll.teal },
               { label: "Contradictions", value: stats.contradictions, color: ll.red },
-              { label: "Weak Joints", value: stats.weakJoints, color: ll.amber },
+              { label: "Weak Joints", value: stats.weak_joints, color: ll.amber },
             ].map((s) => (
               <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ fontFamily: fontMono, fontSize: 18, fontWeight: 700, color: s.color }}>{s.value}</span>
@@ -394,6 +397,13 @@ export default function LegalLibrary() {
           {activeTab === "source_authorities" && (
             <Source_authority_catalog key={`${searchQuery}:${selectedJurisdiction}`} query={searchQuery || undefined} jurisdiction={selectedJurisdiction || undefined} />
           )}
+          {legal_ref && <section className="mb-5 space-y-2">
+            <h2 className="font-semibold">Saved reference</h2>
+            {exact_reference.isLoading && <p>Loading the exact source reference…</p>}
+            {exact_reference.error && <p role="alert">The source could not be loaded. <button onClick={() => exact_reference.refetch()}>Retry</button></p>}
+            {exact_reference.data?.record && <LegalSourceRecord record={exact_reference.data.record} />}
+            {exact_reference.data?.status === "unresolved" && <p>{exact_reference.data.reason} The saved identity remains {legal_ref}.</p>}
+          </section>}
           {/* Statutes tab */}
           {activeTab === "statutes" && (
             <div>
@@ -412,7 +422,7 @@ export default function LegalLibrary() {
                 />
               )}
               {searchStatutes.data?.map((s: any) => (
-                <StatuteCard key={s.id} statute={s} navigate={navigate} />
+                <StatuteCard key={s.runtime_entity_id ?? s.id ?? s.citation} statute={s} navigate={navigate} />
               ))}
               <LibraryPager offset={statuteOffset} pageSize={PAGE_SIZE} returned={searchStatutes.data?.length ?? 0} loading={searchStatutes.isFetching} onPage={setStatuteOffset} />
             </div>
@@ -429,14 +439,14 @@ export default function LegalLibrary() {
               {searchCaseLaw.data && searchCaseLaw.data.length === 0 && (
                 <EmptyState
                   title="No case law found"
-                  description={stats?.caseLaw === 0
+                  description={stats?.case_law === 0
                     ? "Case law entries will be added as the Legal Library grows. Key holdings from landmark cases affecting benefits, housing, and civil rights will be documented here."
                     : "Try adjusting your search terms or filters."}
                   icon={Gavel}
                 />
               )}
               {searchCaseLaw.data?.map((c: any) => (
-                <CaseLawCard key={c.id} caseLaw={c} navigate={navigate} />
+                <CaseLawCard key={c.runtime_entity_id ?? c.id ?? c.citation} caseLaw={c} navigate={navigate} />
               ))}
               <LibraryPager offset={caseLawOffset} pageSize={PAGE_SIZE} returned={searchCaseLaw.data?.length ?? 0} loading={searchCaseLaw.isFetching} onPage={setCaseLawOffset} />
             </div>
@@ -453,7 +463,7 @@ export default function LegalLibrary() {
               {enforcement.data && enforcement.data.length === 0 && (
                 <EmptyState
                   title="No enforcement records found"
-                  description={stats?.enforcementRecords === 0
+                  description={stats?.enforcement_records === 0
                     ? "Enforcement records document how agencies actually respond to complaints — response times, outcomes, and patterns. This data will be populated as the system processes real-world interactions."
                     : "Try adjusting your jurisdiction filter."}
                   icon={Shield}
@@ -585,7 +595,7 @@ function StatuteCard({ statute, navigate }: { statute: any; navigate: (path: str
           {/* Key Provisions (verbatim statutory language) */}
           {(() => {
             const parsedProvisions = (() => {
-              const value = statute.keyProvisions;
+              const value = statute.key_provisions;
               if (Array.isArray(value)) return value;
               if (typeof value !== "string" || !value.trim()) return [];
               try {
@@ -673,7 +683,7 @@ function StatuteCard({ statute, navigate }: { statute: any; navigate: (path: str
             >
               <Send size={10} /> Cite in LumenSend
             </button>
-            <CommitToCase type="statute" itemId={statute.id} label="Attach to Case" size="sm" />
+            <CommitToCase type={statute.id ? "statute" : "runtime_statute"} itemId={statute.id ?? statute.runtime_entity_id} label="Attach to Case" size="sm" />
           </div>
         </div>
       )}
@@ -881,7 +891,7 @@ function CaseLawCard({ caseLaw, navigate }: { caseLaw: any; navigate: (path: str
             >
               <Send size={10} /> Cite in LumenSend
             </button>
-            <CommitToCase type="statute" itemId={caseLaw.id} label="Attach to Case" size="sm" />
+            <CommitToCase type="case_law" itemId={caseLaw.id ?? caseLaw.runtime_entity_id} label="Attach to Case" size="sm" />
             {caseLaw.source_url && (
               <a
                 href={caseLaw.source_url}
@@ -1017,7 +1027,7 @@ function EnforcementCard({ record }: { record: any }) {
                 <ExternalLink size={10} /> File Complaint
               </a>
             )}
-            <CommitToCase type="statute" itemId={record.id} label="Add to Case" size="sm" />
+            <CommitToCase type="enforcement" itemId={record.id} label="Add to Case" size="sm" />
           </div>
         </div>
       )}

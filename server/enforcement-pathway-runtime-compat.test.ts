@@ -106,6 +106,26 @@ describe("source-bound enforcement pathway compatibility", () => {
     });
   });
 
+  it("scopes jurisdiction before limiting the response window", () => {
+    const rows = source_rows();
+    const source = rows.pathways[0];
+    rows.pathways = [
+      ...Array.from({ length: 70 }, (_, i) => ({ ...source, id: `OR-${i}`, jurisdiction: "OR" })),
+      { ...source, id: "WA-exact", jurisdiction: "Washington" },
+    ];
+    const result = build_enforcement_pathway_dto({ agencyShort: "EEOC", jurisdiction: "WA" }, rows);
+    expect(result.pathways.map(row => row.id)).toEqual(["WA-exact"]);
+    expect(build_enforcement_pathway_dto({ jurisdiction: "unresolved" }, rows).pathways).toEqual([]);
+  });
+
+  it("accepts the normalized context pipeline filter without requiring legacy camelCase emission", () => {
+    const rows = source_rows();
+    rows.pathways[0].jurisdiction = "WA";
+    const result = build_enforcement_pathway_dto({ jurisdiction: "WA", pipeline_category: "employment_discrimination" }, rows);
+    expect(result.pathways.map(row => row.id)).toEqual(["corpus:519931a8-a3f3-49fc-b5db-f90c18d62f91"]);
+    expect(build_enforcement_pathway_dto({ jurisdiction: "WA", pipeline_category: "unmatched" }, rows).pathways).toEqual([]);
+  });
+
   it("does not infer an agency short from a pathway-name prefix", () => {
     const rows = source_rows();
     rows.pathways[0] = {

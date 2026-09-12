@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { query } = vi.hoisted(() => ({ query: vi.fn() }));
-vi.mock("../db", () => ({ getPool: () => ({ query }) }));
+vi.mock("../db-legacy", () => ({ query_with_diagnostics: query }));
 import { build_legal_authority_page_query, read_current_legal_authorities, read_current_legal_authority } from "./current-legal-authority-reader";
 
-beforeEach(() => query.mockReset());
+beforeEach(() => { query.mockReset(); });
 
 describe("current source authority reader", () => {
   it("preserves full inventory beyond the final page without publishing held records", async () => {

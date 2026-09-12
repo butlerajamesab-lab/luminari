@@ -35,7 +35,7 @@ describe("current corpus discovery is not semantically capped", () => {
     expect(router).toContain("read_current_legal_authorities(input)");
     expect(reader).toContain("v_lighthouse_legal_authority_catalog_v2");
     expect(reader).toContain("count(*) filter (where legal_catalog_ready is true)::int as filtered_total");
-    expect(reader).toContain("total: Number(row.filtered_total)");
+    expect(reader).toContain("total: count(row.filtered_total)");
     expect(reader).toContain("window_only: true");
     expect(reader).toContain("limit $${params.length - 1} offset $${params.length}");
     expect(router).toContain("complete filtered universe");

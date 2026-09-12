@@ -1,4 +1,4 @@
-import { getPool as get_pool } from "../db";
+import { query_with_diagnostics } from "../db-legacy";
 
 export type Legal_authority_reference = {
   object_ref: string;
@@ -29,6 +29,8 @@ export function build_legal_authority_page_query(input: {
   query?: string; jurisdiction?: string; limit?: number; offset?: number;
 } = {}) {
   const params: unknown[] = [];
+  const limit = Math.max(1, Math.min(250, Math.trunc(input.limit ?? 100)));
+  const offset = Math.max(0, Math.trunc(input.offset ?? 0));
   const filters = ["object_class = 'legal_authority'"];
   if (input.query) {
     params.push(`%${input.query}%`);
@@ -44,7 +46,7 @@ export function build_legal_authority_page_query(input: {
     params.push(input.jurisdiction.toUpperCase());
     filters.push(`upper(coalesce(nullif(state_code,''),jurisdiction))=$${params.length}`);
   }
-  params.push(input.limit ?? 100, input.offset ?? 0);
+  params.push(limit, offset);
   return {
     params,
     sql: `with filtered as materialized (
@@ -71,15 +73,19 @@ export async function read_current_legal_authorities(input: {
   query?: string; jurisdiction?: string; limit?: number; offset?: number;
 } = {}) {
   const query = build_legal_authority_page_query(input);
-  const result = await get_pool().query(query.sql, query.params);
+  const result = await query_with_diagnostics<Record<string, unknown>>(query.sql, query.params, { label: "legal_authority_page", pool_acquire_timeout_ms: 1_000, query_timeout_ms: 5_000 });
   const row = result.rows[0];
   if (!row) throw new Error("Legal authority inventory did not return a result");
+  const count = (value: unknown) => {
+    if (value == null || !Number.isSafeInteger(Number(value)) || Number(value) < 0) throw new Error("Legal authority count was not returned");
+    return Number(value);
+  };
   return {
-    total: Number(row.filtered_total),
-    inventory_total: Number(row.inventory_total),
-    held_total: Number(row.held_total),
-    jurisdiction_conflict_total: Number(row.jurisdiction_conflict_total),
-    jurisdiction_unresolved_total: Number(row.jurisdiction_unresolved_total),
+    total: count(row.filtered_total),
+    inventory_total: count(row.inventory_total),
+    held_total: count(row.held_total),
+    jurisdiction_conflict_total: count(row.jurisdiction_conflict_total),
+    jurisdiction_unresolved_total: count(row.jurisdiction_unresolved_total),
     limit: input.limit ?? 100,
     offset: input.offset ?? 0,
     items: row.items as Legal_authority_reference[],
@@ -90,7 +96,8 @@ export async function read_current_legal_authorities(input: {
 }
 
 export async function read_current_legal_authority(object_ref: string) {
-  const result = await get_pool().query(`
+  if (!object_ref.trim()) return null;
+  const result = await query_with_diagnostics<Legal_authority_reference>(`
     select c.*, p.payload->>'authority' as source_authority_text,
       p.payload->>'parent_resource_name' as parent_resource_name
     from (select ${reference_columns}
@@ -99,8 +106,10 @@ export async function read_current_legal_authority(object_ref: string) {
     left join lateral (
       select payload from public.luminari_corpus_candidate_v1 p
       where p.candidate_hash=c.source_candidate_hash and p.artifact_key=c.artifact_key
+        and p.run_id::text=c.run_id and p.source_locator=c.source_locator
+        and p.source_content_sha256=c.source_content_sha256
       order by p.created_at desc limit 1
-    ) p on true`, [object_ref]);
+    ) p on true`, [object_ref], { label: "legal_authority_detail", pool_acquire_timeout_ms: 1_000, query_timeout_ms: 5_000 });
   if (result.rows.length > 1) throw new Error("Legal authority reference is ambiguous");
   return (result.rows[0] as Legal_authority_reference | undefined) ?? null;
 }

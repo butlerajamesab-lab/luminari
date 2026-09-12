@@ -27,6 +27,7 @@
  */
 import express, { Request, Response } from "express";
 import { getPool } from "../db";
+import { build_integration_diagnostic_ledger } from "../integration-diagnostic-ledger";
 import { isRegisteredClientRoute } from "../../shared/client-route-registry";
 
 const router = express.Router();
@@ -404,7 +405,7 @@ router.get("/ui-bindings", async (_req: Request, res: Response) => {
     { page: "/lighthouse", component_slug: "lighthouse", queries: ["lighthouse.gateReview", "lighthouse.liveIntakeOps", "lighthouse.patternRegistry", "lighthouse.pipelineHealth", "lighthouse.signalLineage", "lighthouse.strategyProjection", "lighthouse.trendPressure"], tables: ["raw_live_signals", "ingested_records", "detected_signals", "pipeline_runs", "activation_outputs", "strategy_outputs"] },
     { page: "/civic-map", component_slug: "civic_map", queries: ["/api/civic-map/coverage", "/api/civic-map/bounds", "/api/civic-map/detail/:resource_entity_id"], tables: ["v_lighthouse_resource_program_catalog_v2", "v_luminari_resource_locations_current_v3_13"] },
     { page: "/resources", component_slug: "resource_directory", queries: ["resourceDirectory.summary", "resourceDirectory.search", "resourceDirectory.detail"], tables: ["v_lighthouse_resource_program_catalog_v2", "luminari_civic_object_reconciliation_v1", "luminari_corpus_candidate_v1"] },
-    { page: "/legal-library", component_slug: "legal_library", queries: ["canonicalCore.legalLibrary"], tables: ["legal_enforcement_records", "claim_validation_rules_v2", "remedy_feasibility_rules_v2"] },
+    { page: "/legal-library", component_slug: "legal_library", queries: ["legalLibrary.stats", "legalLibrary.searchStatutes", "legalLibrary.searchCaseLaw", "legalLibrary.searchEnforcement", "legalLibrary.searchWeakJoints", "legalLibrary.listContradictions", "canonicalCore.legalAuthorities"], tables: ["v_lighthouse_legal_authority_catalog_v2", "luminari_corpus_candidate_v1", "legal_statutes", "legal_case_law", "legal_enforcement_records", "legal_weak_joints", "legal_contradictions"] },
     { page: "/doctrine-graph", component_slug: "doctrine_graph", queries: ["enforcementIntel.getDoctrineGraph"], tables: ["doctrine_registry", "doctrine_graph_edges"] },
     { page: "/signal-registry", component_slug: "signal_registry", queries: ["signalExtraction.list", "signalExtraction.stats"], tables: ["detected_signals", "signal_flags", "signal_registry"] },
     { page: "/enforcement-intel", component_slug: "enforcement_intel", queries: ["canonicalCore.enforcementAgencies"], tables: ["legal_enforcement_records"] },
@@ -427,6 +428,15 @@ router.get("/ui-bindings", async (_req: Request, res: Response) => {
     bindings: { total: bindings.length, items: bindings },
     note: "Each binding declares the expected tRPC queries and backing tables for a frontend page. If a table is empty or missing, the page renders zero data.",
   });
+});
+
+// ─────────────────────────────────────────────
+// PHASE 2: INTEGRATION LEDGER
+// GET /api/system/integration-ledger
+// ─────────────────────────────────────────────
+router.get("/integration-ledger", async (_req: Request, res: Response) => {
+  cacheLive(res);
+  res.json(await build_integration_diagnostic_ledger());
 });
 
 // ─────────────────────────────────────────────
@@ -486,6 +496,7 @@ router.get("/runtime-map", async (_req: Request, res: Response) => {
     hydration_chain,
     known_issues: [
       "restSelect() in lighthouse-gate-router.ts uses camelCase column names but DB is snake_case — causes 400 errors",
+      "Legal source references retain typed/jurisdiction readiness; catalog readiness does not verify legal accuracy or case applicability",
       "Resource Directory exact-site pins remain unavailable until reviewed public addresses receive genuine coordinates",
     ],
   });
