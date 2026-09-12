@@ -13,7 +13,7 @@ describe("case intake continuity wiring", () => {
     expect(analyze).toContain("await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id)");
     expect(analyze).toContain("where case_uuid = $1::uuid");
     expect(continuity).toContain("from public.case_identity_bridge");
-    expect(continuity).toContain("join public.case_intake_links");
+    expect(continuity).toContain("from public.case_intake_links");
     expect(continuity).toContain("read_case_intake_integrity_projection(case_id, {");
     expect(continuity).toContain('link_scope: "all"');
     expect(continuity).toContain('case_overview: "/case-overview"');

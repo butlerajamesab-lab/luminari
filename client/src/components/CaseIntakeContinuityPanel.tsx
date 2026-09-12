@@ -125,7 +125,11 @@ export function CaseIntakeContinuityPanel({
         <CardContent className="space-y-3">
           {!data ? (
             <div className="rounded-md border border-dashed px-3 py-4 text-sm text-muted-foreground">
-              {continuity.isLoading ? "Loading intake continuity…" : "No intake continuity data is available for this case yet."}
+              {continuity.isLoading
+                ? "Loading intake continuity…"
+                : continuity.error
+                  ? continuity.error.message
+                  : "No intake continuity data is available for this case yet."}
             </div>
           ) : (
             <>

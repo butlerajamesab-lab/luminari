@@ -226,6 +226,14 @@ describe("case intake continuity projection", () => {
         {
           legacy_case_id: 11,
           case_uuid: "e650c976-0178-4d72-9dda-092eddf3207a",
+        },
+      ],
+    });
+    mocks.query.mockResolvedValueOnce({
+      rows: [
+        {
+          legacy_case_id: 11,
+          case_uuid: "e650c976-0178-4d72-9dda-092eddf3207a",
           intake_session_id: "33333333-3333-4333-8333-333333333333",
           link_type: "related_projection",
           is_primary: false,
@@ -270,6 +278,10 @@ describe("case intake continuity projection", () => {
       null,
       "e650c976-0178-4d72-9dda-092eddf3207a",
     ]);
+    expect(mocks.query.mock.calls[1]?.[1]).toEqual([
+      11,
+      "e650c976-0178-4d72-9dda-092eddf3207a",
+    ]);
     expect(continuity.primary_sessions).toEqual([]);
     expect(continuity.related_sessions[0]).toMatchObject({
       session_status: "failed",
@@ -277,6 +289,49 @@ describe("case intake continuity projection", () => {
       verification_record_count: 0,
       transition_count: 0,
       document_links: [],
+    });
+  });
+
+  it("returns an empty continuity model when the case bridge exists without linked intake sessions", async () => {
+    mocks.query.mockResolvedValueOnce({
+      rows: [
+        {
+          legacy_case_id: 11,
+          case_uuid: "e650c976-0178-4d72-9dda-092eddf3207a",
+        },
+      ],
+    });
+    mocks.query.mockResolvedValueOnce({ rows: [] });
+    mocks.readIntegrity.mockResolvedValueOnce({ artifacts: [] });
+    mocks.readLayer.mockImplementationOnce(async () => ({
+      state: "not_projected",
+      outputs: [],
+    }));
+    mocks.readLayer.mockImplementationOnce(async () => ({
+      state: "not_projected",
+      outputs: [],
+    }));
+
+    const continuity = await read_case_intake_continuity({ case_id: 11 });
+
+    expect(continuity.case_id).toBe(11);
+    expect(continuity.case_uuid).toBe("e650c976-0178-4d72-9dda-092eddf3207a");
+    expect(continuity.primary_sessions).toEqual([]);
+    expect(continuity.related_sessions).toEqual([]);
+    expect(continuity.totals).toMatchObject({
+      session_count: 0,
+      primary_session_count: 0,
+      related_session_count: 0,
+      artifact_count: 0,
+      source_artifact_count: 0,
+      completed_layer_run_count: 0,
+      sealed_layer_run_count: 0,
+      failed_layer_run_count: 0,
+      pending_layer_run_count: 0,
+      layer_output_available_count: 0,
+      unresolved_dependency_count: 0,
+      verification_record_count: 0,
+      transition_count: 0,
     });
   });
 });

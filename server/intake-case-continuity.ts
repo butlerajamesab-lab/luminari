@@ -38,6 +38,11 @@ type linked_session_row = {
   latest_reassess_at: string | null;
 };
 
+type bridge_row = {
+  legacy_case_id: number | string;
+  case_uuid: string;
+};
+
 type count_map = Record<string, number>;
 
 export type case_intake_continuity_document_link = {
@@ -215,20 +220,26 @@ function transition_counts_by_session(
   return by_session;
 }
 
-async function load_linked_sessions(reference: case_reference) {
+async function load_case_bridge(reference: case_reference) {
   const legacy_case_id = "case_id" in reference ? reference.case_id : null;
   const case_uuid = "case_uuid" in reference ? reference.case_uuid : null;
+  const result = await getPool().query<bridge_row>(
+   `select legacy_case_id, case_uuid::text as case_uuid
+      from public.case_identity_bridge
+     where ($1::integer is not null and legacy_case_id = $1)
+        or ($2::uuid is not null and case_uuid = $2::uuid)
+     limit 1`,
+   [legacy_case_id, case_uuid],
+  );
+  return result.rows[0] ?? null;
+}
+
+async function load_linked_sessions(bridge: bridge_row) {
   const result = await getPool().query<linked_session_row>(
-    `with bridge as (
-       select legacy_case_id, case_uuid
-         from public.case_identity_bridge
-        where ($1::integer is not null and legacy_case_id = $1)
-           or ($2::uuid is not null and case_uuid = $2::uuid)
-        limit 1
-     ), linked_sessions as (
+   `with linked_sessions as (
        select
-         b.legacy_case_id,
-         b.case_uuid::text as case_uuid,
+         $1::integer as legacy_case_id,
+         $2::uuid::text as case_uuid,
          cil.intake_session_id::text,
          cil.link_type,
          cil.is_primary,
@@ -239,9 +250,9 @@ async function load_linked_sessions(reference: case_reference) {
          s.completion_state,
          s.created_at::text,
          s.updated_at::text
-       from bridge b
-       join public.case_intake_links cil on cil.case_uuid = b.case_uuid
+       from public.case_intake_links cil
        join public.intake_sessions s on s.intake_session_id = cil.intake_session_id
+       where cil.case_uuid = $2::uuid
      ), latest_layer_runs as (
        select *
          from (
@@ -350,7 +361,7 @@ async function load_linked_sessions(reference: case_reference) {
      left join latest_layer_summary lls on lls.intake_session_id = ls.intake_session_id
      left join stabilization_summary ss on ss.intake_session_id = ls.intake_session_id
      order by ls.is_primary desc, ls.created_at desc, ls.intake_session_id desc`,
-    [legacy_case_id, case_uuid],
+    [as_count(bridge.legacy_case_id), bridge.case_uuid],
   );
   return result.rows;
 }
@@ -358,8 +369,7 @@ async function load_linked_sessions(reference: case_reference) {
 export async function read_case_intake_continuity(
   reference: case_reference,
 ): Promise<case_intake_continuity> {
-  const session_rows = await load_linked_sessions(reference);
-  const bridge_row = session_rows[0];
+  const bridge_row = await load_case_bridge(reference);
   if (!bridge_row) {
     throw new TRPCError({
       code: "NOT_FOUND",
@@ -368,6 +378,7 @@ export async function read_case_intake_continuity(
   }
 
   const case_id = as_count(bridge_row.legacy_case_id);
+  const session_rows = await load_linked_sessions(bridge_row);
   const integrity = await read_case_intake_integrity_projection(case_id, {
     link_scope: "all",
   });

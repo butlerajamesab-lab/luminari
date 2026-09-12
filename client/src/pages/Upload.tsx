@@ -9,7 +9,6 @@ import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { getAuthenticatedRequestHeaders } from "@/lib/session-token";
 import {
-  clear_case_intake_origin_context,
   read_case_intake_origin_context,
   related_subject_label,
 } from "@/lib/caseIntakeContinuity";
@@ -470,7 +469,6 @@ export default function Upload() {
     }
 
     if (registeredCount > 0) {
-      clear_case_intake_origin_context(currentCaseId);
       toast.info("Sources registered. Open the Universal Intake Spine when you are ready to verify preservation and run governed reconstruction.");
     } else {
       toast.error("Upload failed: no source files were registered.");
