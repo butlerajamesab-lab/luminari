@@ -9,6 +9,10 @@ import { db } from "./db";
 import { documents } from "../drizzle/schema";
 import { and, eq, sql } from "drizzle-orm";
 import { cases } from "../drizzle/schema";
+import {
+  case_intake_continuity_origin_context_schema,
+  type case_intake_continuity_origin_context,
+} from "@shared/case-intake-continuity";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -70,6 +74,59 @@ async function authenticateCurrentRequest(req: Request, res: Response) {
 type AuthenticatedUploadUser = NonNullable<
   Awaited<ReturnType<typeof authenticateCurrentRequest>>
 >;
+
+function parseOriginContext(
+  value: unknown,
+): case_intake_continuity_origin_context | null {
+  try {
+    if (typeof value === "string") {
+      if (value.trim() === "") return null;
+      return case_intake_continuity_origin_context_schema.parse(
+        JSON.parse(value),
+      );
+    }
+    if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+    return case_intake_continuity_origin_context_schema.parse(value);
+  } catch {
+    return null;
+  }
+}
+
+function readRequestedOriginContext(
+  value: unknown,
+  caseId: number,
+): case_intake_continuity_origin_context | null | "invalid" | "mismatched" {
+  if (value === undefined || value === null) return null;
+  if (typeof value === "string" && value.trim() === "") return null;
+  const parsed = parseOriginContext(value);
+  if (!parsed) return "invalid";
+  if (parsed.case_id !== caseId) return "mismatched";
+  return parsed;
+}
+
+function originContextsMatch(
+  left: case_intake_continuity_origin_context,
+  right: case_intake_continuity_origin_context,
+) {
+  return (
+    left.case_id === right.case_id
+    && left.case_uuid === right.case_uuid
+    && left.originating_route === right.originating_route
+    && left.originating_surface === right.originating_surface
+    && left.user_intent === right.user_intent
+    && left.from_route === right.from_route
+    && (
+      (!left.related_subject && !right.related_subject)
+      || (
+        !!left.related_subject
+        && !!right.related_subject
+        && left.related_subject.type === right.related_subject.type
+        && left.related_subject.id === right.related_subject.id
+        && (left.related_subject.label ?? null) === (right.related_subject.label ?? null)
+      )
+    )
+  );
+}
 
 async function requireUploadAuthentication(
   req: Request,
@@ -256,7 +313,20 @@ export function registerUploadRoute(app: Express) {
 
       // ── Create or attach to upload session ──
       const sessionIdParam = req.body.sessionId ? parseInt(req.body.sessionId) : null;
+      const requestedOriginContext = readRequestedOriginContext(
+        req.body.originContext,
+        caseId,
+      );
+      if (requestedOriginContext === "invalid") {
+        res.status(400).json({ error: "Invalid origin context" });
+        return;
+      }
+      if (requestedOriginContext === "mismatched") {
+        res.status(400).json({ error: "Origin context case does not match upload target" });
+        return;
+      }
       let sessionId: number;
+      let effectiveOriginContext = requestedOriginContext;
 
       if (sessionIdParam) {
         // Attach to existing session (multi-batch upload)
@@ -265,13 +335,37 @@ export function registerUploadRoute(app: Express) {
           res.status(400).json({ error: "Invalid or mismatched upload session" });
           return;
         }
+        const storedOriginContext = parseOriginContext(
+          (existingSession as any).metadata?.origin_context,
+        );
+        if (requestedOriginContext) {
+          if (
+            storedOriginContext
+            && !originContextsMatch(requestedOriginContext, storedOriginContext)
+          ) {
+            res.status(400).json({
+              error: "Origin context does not match the existing upload session",
+            });
+            return;
+          }
+        }
         sessionId = sessionIdParam;
+        effectiveOriginContext = storedOriginContext ?? requestedOriginContext;
+        if (requestedOriginContext && !storedOriginContext) {
+          await dbHelpers.updateUploadSessionOriginContext(
+            sessionId,
+            requestedOriginContext,
+          );
+        }
       } else {
         // Create new session
         sessionId = await dbHelpers.createUploadSession({
           caseId,
           userId: user.id,
           totalFiles: files.length,
+          metadata: requestedOriginContext
+            ? { origin_context: requestedOriginContext }
+            : undefined,
         });
       }
 
@@ -337,7 +431,15 @@ export function registerUploadRoute(app: Express) {
             action: "upload_document",
             targetType: "document",
             targetId: docId,
-            details: { filename: file.originalname, fileType, fileSize: file.size, sha256Hash },
+            details: {
+              filename: file.originalname,
+              fileType,
+              fileSize: file.size,
+              sha256Hash,
+              ...(effectiveOriginContext
+                ? { origin_context: effectiveOriginContext }
+                : {}),
+            },
           });
 
           // Log pipeline event: document_uploaded

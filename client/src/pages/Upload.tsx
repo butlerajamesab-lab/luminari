@@ -4,10 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useLocation } from "wouter";
 import { Upload as UploadIcon, FileText, CheckCircle, XCircle, X, Loader2, AlertTriangle, Lock, Shield, Clock, Timer, Link2, Info } from "lucide-react";
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { getAuthenticatedRequestHeaders } from "@/lib/session-token";
+import {
+  clear_case_intake_origin_context,
+  read_case_intake_origin_context,
+  related_subject_label,
+} from "@/lib/caseIntakeContinuity";
 import {
   Dialog,
   DialogContent,
@@ -237,6 +242,13 @@ export default function Upload() {
   const [summary, setSummary] = useState<UploadSummary | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const utils = trpc.useUtils();
+  const [originContext, setOriginContext] = useState(() =>
+    read_case_intake_origin_context(currentCaseId),
+  );
+
+  useEffect(() => {
+    setOriginContext(read_case_intake_origin_context(currentCaseId));
+  }, [currentCaseId]);
 
   const handleFiles = useCallback((newFiles: FileList | File[]) => {
     const arr = Array.from(newFiles);
@@ -308,6 +320,7 @@ export default function Upload() {
     let completed = 0;
         let registeredCount = 0;
     let lastSummary: UploadSummary | null = null;
+    let consumedOriginContext = false;
 
     // ── Create server-side upload session for multi-batch persistence ──
     let sessionId: number | null = null;
@@ -316,6 +329,7 @@ export default function Upload() {
         const result = await createSession.mutateAsync({
           caseId: currentCaseId,
           totalFiles: files.length,
+          originContext: originContext ?? undefined,
         });
         sessionId = result.sessionId;
         // Persist to localStorage for navigation recovery
@@ -330,11 +344,14 @@ export default function Upload() {
       }
     }
 
-    for (const batch of batches) {
+    for (const [batchIndex, batch] of batches.entries()) {
       const formData = new FormData();
       // caseId is injected from the locked case context — not user-editable
       formData.append("caseId", currentCaseId.toString());
       if (sessionId) formData.append("sessionId", sessionId.toString());
+      if (originContext && (!sessionId || batchIndex === 0)) {
+        formData.append("originContext", JSON.stringify(originContext));
+      }
       batch.files.forEach(f => formData.append("files", f));
 
       // Mark batch as uploading
@@ -386,6 +403,10 @@ export default function Upload() {
             throw new Error(`Batch limit exceeded: max ${data.maxAllowed} files per request`);
           }
           throw new Error(data.error || "Upload failed");
+        }
+        if (originContext && !consumedOriginContext) {
+          clear_case_intake_origin_context(currentCaseId);
+          consumedOriginContext = true;
         }
 
         // Capture summary from last batch
@@ -512,6 +533,25 @@ export default function Upload() {
           <Shield className="h-4 w-4 text-primary/50 shrink-0" />
         </CardContent>
       </Card>
+
+      {originContext && (
+        <Card className="border-cyan-500/30 bg-cyan-500/5">
+          <CardContent className="p-3 flex items-start gap-3">
+            <Info className="h-4 w-4 text-cyan-300 mt-0.5 shrink-0" />
+            <div className="space-y-1 text-xs">
+              <p className="font-medium text-foreground">
+                Adding {originContext.user_intent.replace(/_/g, " ")} from {originContext.originating_surface.replace(/_/g, " ")}
+              </p>
+              <p className="text-muted-foreground">
+                This upload stays bound to the active case and carries the originating route context through the authenticated upload session.
+                {originContext.related_subject
+                  ? ` Related item: ${related_subject_label(originContext.related_subject)}.`
+                  : ""}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Drop Zone */}
       <div

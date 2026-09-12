@@ -3368,6 +3368,7 @@ export const uploadSessions = pgTable("upload_sessions", {
   completedFiles: integer("completed_files").notNull().default(0),
   failedFiles: integer("failed_files").notNull().default(0),
   duplicateFiles: integer("duplicate_files").notNull().default(0),
+  metadata: jsonb("metadata").$type<Record<string, unknown>>().notNull().default(sql`'{}'::jsonb`),
   status: text("session_status").$type<"uploading" | "processing" | "complete" | "completed" | "failed" | "expired">().default("uploading").notNull(),
   createdAt: bigint("created_at", { mode: "number" }).notNull(),
   updatedAt: bigint("updated_at", { mode: "number" }).notNull(),

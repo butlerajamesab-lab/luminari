@@ -29,6 +29,7 @@ import { phoenixRouter } from "./routers/phoenix";
 import { sunamRouter } from "./routers/sunam";
 import { analyzeRouter } from "./routers/analyze";
 import { read_canonical_case_layer_outputs } from "./intake-case-layer-reader";
+import { case_intake_continuity_origin_context_schema } from "@shared/case-intake-continuity";
 import { adminMaintenanceRouter } from "./routers/admin-maintenance";
 import { publicAdminMaintenanceRouter } from "./routers/public-admin-maintenance";
 import { streamRegisterRouter } from "./routers/stream-register";
@@ -1378,13 +1379,28 @@ const uploadSessionsRouter = router({
     }),
 
   create: protectedProcedure
-    .input(z.object({ caseId: z.number(), totalFiles: z.number().min(1) }))
+    .input(
+      z.object({
+        caseId: z.number(),
+        totalFiles: z.number().min(1),
+        originContext: case_intake_continuity_origin_context_schema.optional(),
+      }).refine(
+        (value) => !value.originContext || value.originContext.case_id === value.caseId,
+        {
+          message: "originContext.case_id must match caseId",
+          path: ["originContext", "case_id"],
+        },
+      ),
+    )
     .mutation(async ({ ctx, input }) => {
       await db_helpers.verifyCaseWriteAccess(input.caseId, ctx.user.id);
       const sessionId = await db_helpers.createUploadSession({
         caseId: input.caseId,
         userId: ctx.user.id,
         totalFiles: input.totalFiles,
+        metadata: input.originContext
+          ? { origin_context: input.originContext }
+          : undefined,
       });
       return { sessionId };
     }),
