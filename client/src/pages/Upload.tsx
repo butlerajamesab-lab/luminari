@@ -342,12 +342,12 @@ export default function Upload() {
       }
     }
 
-    for (const batch of batches) {
+    for (const [batchIndex, batch] of batches.entries()) {
       const formData = new FormData();
       // caseId is injected from the locked case context — not user-editable
       formData.append("caseId", currentCaseId.toString());
       if (sessionId) formData.append("sessionId", sessionId.toString());
-      if (originContext && !sessionId) {
+      if (originContext && (!sessionId || batchIndex === 0)) {
         formData.append("originContext", JSON.stringify(originContext));
       }
       batch.files.forEach(f => formData.append("files", f));

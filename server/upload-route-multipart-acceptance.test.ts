@@ -643,6 +643,42 @@ describe("authenticated multipart document upload", () => {
       }),
     }));
   });
+
+  it("preserves origin context audit details for the first batch after a tracked session is created", async () => {
+    const contents = "tracked session origin context";
+    const origin_context = {
+      case_id: 44,
+      case_uuid: "e650c976-0178-4d72-9dda-092eddf3207a",
+      originating_route: "/documents",
+      originating_surface: "documents",
+      user_intent: "supports",
+      from_route: "/documents",
+    };
+    state.select_queue.push(
+      [{ id: 44, userId: 9 }],
+      [],
+      [{ count: 1 }],
+    );
+    state.get_upload_session.mockResolvedValue({
+      id: 501,
+      caseId: 44,
+      userId: 9,
+      metadata: { origin_context },
+    });
+
+    const response = await post_file(contents, "tracked-origin.txt", {
+      sessionId: "501",
+      originContext: JSON.stringify(origin_context),
+    });
+
+    expect(response.status).toBe(200);
+    expect(state.update_upload_session_metadata).not.toHaveBeenCalled();
+    expect(state.log_audit).toHaveBeenCalledWith(expect.objectContaining({
+      details: expect.objectContaining({
+        origin_context,
+      }),
+    }));
+  });
 });
 
 describe("atomic replacement upload", () => {

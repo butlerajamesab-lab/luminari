@@ -403,7 +403,12 @@ export async function read_case_intake_continuity(
   const artifact_status_by_session = new Map<string, count_map>();
   const case_document_link_session_ids = new Set(
     session_rows
-      .filter((row) => Boolean(row.is_primary))
+      .filter((row) =>
+        Boolean(row.is_primary)
+        || (
+          row.session_type !== "clean_room"
+          && row.link_type !== "clean_room_restart"
+        ))
       .map((row) => row.intake_session_id),
   );
   const document_links_by_session = new Map<
