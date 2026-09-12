@@ -50,9 +50,18 @@ function iconFor(category: string | null | undefined) {
   return "💡";
 }
 
-function FactActions({ fact }: { fact: any }) {
+export function FactActions({ fact }: { fact: any }) {
   return (
     <div className="mt-3 flex flex-wrap gap-2">
+      {fact.record_link?.record_type === 'government_office' && (
+        <Link href={fact.record_link.href}
+          className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/25 bg-amber-400/10 px-3 py-1.5 text-xs font-semibold text-amber-200">
+          <FileCheck2 className="h-3.5 w-3.5" /> View office record
+        </Link>
+      )}
+      {fact.record_link_state === 'unresolved_current_office' && (
+        <span className="text-xs text-amber-200">Current office record could not be resolved from this source identity.</span>
+      )}
       {fact.phone && (
         <a
           href={`tel:${String(fact.phone).replace(/[^0-9+]/g, "")}`}

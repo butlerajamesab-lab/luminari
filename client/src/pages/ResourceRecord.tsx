@@ -45,6 +45,13 @@ type ResourceLocation = {
 
 type ResourceRecord = {
   resource_entity_id: string;
+  office_id?: string | null;
+  office_type?: string | null;
+  agency_key?: string | null;
+  source_table?: string | null;
+  locator_source_id?: string | null;
+  source_hash8?: string | null;
+  source_provenance?: string | null;
   canonical_id?: string | null;
   resource_name: string;
   resource_type?: string | null;
@@ -325,6 +332,15 @@ export default function ResourceRecord() {
               <div className="mt-3">
                 <ProvenanceRow label="Canonical identity" value={resource.canonical_id ?? resource.resource_entity_id} />
                 <ProvenanceRow label="Record identity" value={resource.resource_entity_id} />
+                {resource.office_id && <>
+                  <ProvenanceRow label="Office identity" value={resource.office_id} />
+                  <ProvenanceRow label="Office type" value={resource.office_type} />
+                  <ProvenanceRow label="Agency key" value={resource.agency_key} />
+                  <ProvenanceRow label="Source table" value={resource.source_table} />
+                  <ProvenanceRow label="Locator source" value={resource.locator_source_id} />
+                  <ProvenanceRow label="Source hash (8)" value={resource.source_hash8} />
+                  <ProvenanceRow label="Source provenance" value={resource.source_provenance ?? 'Not recorded'} />
+                </>}
                 <ProvenanceRow label="Source reference" value={resource.publication_source_reference} />
                 <ProvenanceRow label="Provenance status" value={resource.provenance_status ? titleCase(resource.provenance_status) : null} />
                 <ProvenanceRow label="Promotion status" value={resource.promotion_status ? titleCase(resource.promotion_status) : null} />
@@ -336,6 +352,7 @@ export default function ResourceRecord() {
                 type="resource"
                 itemId={resource.resource_entity_id}
                 resourceName={resource.resource_name}
+                sourceLane={resource.office_id ? 'gov_offices' : undefined}
                 size="default"
               />
               <Link
