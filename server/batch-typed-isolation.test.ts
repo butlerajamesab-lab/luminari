@@ -50,7 +50,7 @@ it("keeps typed extraction and replay accounting independent of private copies a
       [createHash("sha256").update(bytes).digest("hex")]);
     const manifest_sync = await syncFreshCorpusSourceManifest();
     expect((await database.query("SELECT exact_duplicate_of FROM luminari_corpus_source_artifact_v1 WHERE bucket_id <> 'Batch'")).rows[0].exact_duplicate_of).toBe("Batch/source.json");
-    const request = vi.fn<typeof fetch>(async () => new Response(bytes));
+    const request = vi.fn<typeof fetch>(async () => new Response(bytes, { headers: { etag: '"v1"' } }));
     vi.stubGlobal("fetch", request);
     const run = await queueFreshCorpusRebuild({}, { manifest_sync });
     expect(await runFreshCorpusRebuildBatch(run.run_id)).toEqual({ processed: 1, remaining: 0, finalized: true });
@@ -68,6 +68,7 @@ it("keeps typed extraction and replay accounting independent of private copies a
     expect(request).toHaveBeenCalledTimes(1);
 
     await database.exec("UPDATE storage.objects SET metadata=jsonb_set(metadata,'{eTag}','\"typed-v2\"') WHERE bucket_id='Everything backbone related'");
+    request.mockResolvedValueOnce(new Response(bytes, { headers: { etag: '"typed-v2"' } }));
     const typed_change = await reconcileFreshCorpusAutomatically({ batchSize: 1, maxBatches: 2 });
     expect(typed_change.replay_required).toBe(true);
     expect(typed_change.queued?.run_id).not.toBe(run.run_id);

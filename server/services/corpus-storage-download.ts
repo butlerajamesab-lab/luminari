@@ -44,6 +44,7 @@ export async function download_corpus_storage_artifact(
   const buffer = Buffer.from(await response.arrayBuffer());
   if (buffer.byteLength !== Number(artifact.byte_size)) throw new Error("storage_byte_size_changed");
   const observed_etag = response.headers.get("etag");
+  if (artifact.transport_etag && !observed_etag) throw new Error("storage_object_version_unavailable");
   if (artifact.transport_etag && observed_etag
     && artifact.transport_etag.replace(/^W\//, "").replaceAll('"', "") !== observed_etag.replace(/^W\//, "").replaceAll('"', "")) {
     throw new Error("storage_object_version_changed");

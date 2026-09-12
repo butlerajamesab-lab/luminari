@@ -78,7 +78,7 @@ it("rejects an unavailable run and mismatched scope before database writes or so
 it("processes only the pinned run despite older queued work, yields at the batch budget, and resumes to a receipt", async () => {
   const keys = ["Batch/selected.json", "Batch/second.json"];
   const database = await isolated_substrate(keys);
-  const request = vi.fn(async () => new Response(source_bytes));
+  const request = vi.fn(async () => new Response(source_bytes, { headers: { etag: '"v1"' } }));
   vi.stubGlobal("fetch", request);
   try {
     const bound_configuration = { ...configuration, allowed_artifact_keys: keys };

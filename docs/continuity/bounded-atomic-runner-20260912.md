@@ -66,6 +66,13 @@ also has an independent pinned allowlist. An older queued run is left alone.
 Private downloads retain version/byte/hash checks and receive the cancellation
 signal; persistence still uses the existing per-artifact transaction.
 
+When a source manifest declares a transport ETag, the download must return one
+that matches. A missing response ETag is held as
+`storage_object_version_unavailable`; matching byte length alone cannot prove
+the bytes belong to the recorded source version. Independent review reproduced
+the previous same-size/missing-header acceptance and added a failing regression
+before correcting this boundary.
+
 ## Budgets, shutdown and receipts
 
 The batch budget limits attempted artifacts to batch size times batch count.

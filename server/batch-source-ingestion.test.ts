@@ -46,11 +46,13 @@ describe("Batch source preservation", () => {
     await expect(download_corpus_storage_artifact(source, request, {})).rejects.toThrow("credential_unavailable");
     request.mockResolvedValueOnce(new Response("abc", { headers: { etag: '"v2"' } }));
     await expect(download_corpus_storage_artifact(source, request, environment)).rejects.toThrow("version_changed");
+    request.mockResolvedValueOnce(new Response("xyz"));
+    await expect(download_corpus_storage_artifact(source, request, environment)).rejects.toThrow("version_unavailable");
     request.mockResolvedValueOnce(new Response("abcd"));
     await expect(download_corpus_storage_artifact(source, request, environment)).rejects.toThrow("byte_size_changed");
     request.mockResolvedValueOnce(new Response("denied", { status: 403 }));
     await expect(download_corpus_storage_artifact(source, request, environment)).rejects.toThrow("http_403");
-    expect(request).toHaveBeenCalledTimes(4);
+    expect(request).toHaveBeenCalledTimes(5);
   });
 
   it("joins split resource metadata and preserves short paragraphs, raw fragments and unverified images", async () => {
@@ -149,7 +151,7 @@ async function run_original_or_fixture(bytes: Buffer, name: string, canonical_ro
     await database.query("select public.sync_luminari_corpus_source_manifest_v2()");
     expect((await database.query("select exact_duplicate_of from luminari_corpus_source_artifact_v1")).rows.every(row => row.exact_duplicate_of === null)).toBe(true);
     vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "test_server_key");
-    const fetch_mock = vi.fn(async () => new Response(bytes));
+    const fetch_mock = vi.fn(async () => new Response(bytes, { headers: { etag: '"same_transport_etag"' } }));
     vi.stubGlobal("fetch", fetch_mock);
     const run = await queue_fresh_atomic_corpus_pass({ bucket_ids: ["Batch"], artifact_keys: [artifact_key] });
     await expect(queue_fresh_atomic_corpus_pass({ bucket_ids: ["Batch"] })).rejects.toThrow("scope_conflict");
