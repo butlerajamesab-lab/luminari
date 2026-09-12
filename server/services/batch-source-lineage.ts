@@ -40,7 +40,7 @@ export async function read_batch_source_lineage(input: { artifact_key: string; r
       exists(select 1 from public.luminari_corpus_atomic_artifact_v1 receipt
         where receipt.artifact_key=a.artifact_key and receipt.content_sha256=a.content_sha256 and receipt.status='completed') as parsed
       from public.luminari_corpus_source_artifact_v1 a where a.artifact_key=$1`, [input.artifact_key]);
-    if (source.rows[0] && (!source.rows[0].parsed || source.rows[0].storage_state !== "active")) {
+    if (!source.rows[0] || !source.rows[0].parsed || source.rows[0].storage_state !== "active") {
       return { availability: "unavailable", record_count: null, limit, publication_state: "governed_non_public",
         runtime_reader: "read_batch_source_lineage", records: null,
         error: { code: "current_source_not_parsed", detail: "The current source version has no completed extraction receipt." } };

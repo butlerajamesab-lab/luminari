@@ -4,7 +4,7 @@ import JSZip from "jszip";
 import { SaxesParser as xml_parser } from "saxes";
 import { parse_docx_document_xml, compile_pipeline_dossier_items } from "./pipeline-dossier-review-compiler.mjs";
 
-export const DOCX_SOURCE_PARSER_VERSION = "corpus_docx_source_v1.0.0";
+export const DOCX_SOURCE_PARSER_VERSION = "corpus_docx_source_v1.0.1";
 const WORD_NAMESPACE = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
 const DRAWING_NAMESPACE = "http://schemas.openxmlformats.org/drawingml/2006/main";
 const RELATIONSHIP_NAMESPACE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
@@ -191,11 +191,14 @@ export async function parse_corpus_docx(bytes, source_name, recognize_images = n
         result.holds.push({ code: "metadata_table_cardinality", source_locator }); continue;
       }
       const record = Object.fromEntries(headers.map((key, index) => [key, cells[index]]));
-      if (!record.resource_id || seen_ids.has(record.resource_id)) {
+      if (!record.resource_id) {
         result.holds.push({ code: "missing_or_duplicate_resource_id", source_locator }); continue;
       }
+      const duplicate_id = seen_ids.has(record.resource_id);
+      if (duplicate_id) result.holds.push({ code: "missing_or_duplicate_resource_id", source_locator, resource_id: record.resource_id });
       seen_ids.add(record.resource_id);
       const prior = resource_map.get(record.resource_id) || { record: {}, source_locators: [], conflicts: [] };
+      if (duplicate_id) prior.duplicate_id = true;
       for (const [key, value] of Object.entries(record)) {
         if (key in prior.record && prior.record[key] !== value) prior.conflicts.push({ field: key, values: [prior.record[key], value] });
         else prior.record[key] = value;
@@ -209,7 +212,7 @@ export async function parse_corpus_docx(bytes, source_name, recognize_images = n
     if (value.conflicts.length) result.holds.push({ code: "resource_field_conflict", resource_id: value.record.resource_id, conflicts: value.conflicts });
     observe("sais_resource_source", `docx:resource:${value.record.resource_id}`, value.record,
       { source_record_id: value.record.resource_id, source_locators: value.source_locators,
-        review_state: value.conflicts.length ? "held_field_conflict" : "source_observation" });
+        review_state: value.duplicate_id ? "held_duplicate_resource_id" : value.conflicts.length ? "held_field_conflict" : "source_observation" });
   }
   const paragraphs = descendants(document, "p");
   for (const [paragraph_index, paragraph] of paragraphs.entries()) {

@@ -95,11 +95,38 @@ describe("Batch source preservation", () => {
   });
 
   it("distinguishes query failure from a successful empty reader and refuses invented pipeline IDs", async () => {
-    const empty = await read_batch_source_lineage({ artifact_key: "Batch/empty.docx" }, { query: async () => ({ rows: [] }) } as any);
+    const missing_query = vi.fn().mockResolvedValue({ rows: [] });
+    const missing = await read_batch_source_lineage({ artifact_key: "Batch/missing.docx" }, { query: missing_query } as any);
+    const empty = await read_batch_source_lineage({ artifact_key: "Batch/empty.docx" }, { query: vi.fn()
+      .mockResolvedValueOnce({ rows: [{ parsed: true, storage_state: "active" }] }).mockResolvedValueOnce({ rows: [] }) } as any);
     const failed = await read_batch_source_lineage({ artifact_key: "Batch/empty.docx" }, { query: async () => { throw new Error("database unavailable"); } } as any);
     expect(empty).toMatchObject({ availability: "empty", record_count: 0 });
+    expect(missing).toMatchObject({ availability: "unavailable", record_count: null, records: null });
+    expect(missing_query).toHaveBeenCalledTimes(1);
     expect(failed).toMatchObject({ availability: "error", record_count: null, records: null });
     expect(reconcile_existing_sais_identity({ resource_id: "SAIS-EC-001-01", document_number: "EC-001" }, null).state).toBe("held_pipeline_contract_required");
+  });
+
+  it.each(["First", "Second"])("holds repeated resource IDs through canonical readback (%s)", async (repeated_name) => {
+    const parsed = await parse_batch_source(await document_fixture(table([
+      ["resource_id", "family_series", "document_number", "resource_category", "organization_name"],
+      ["r1", "source_family", "1", "source_category", "First"],
+      ["r1", "source_family", "1", "source_category", repeated_name],
+    ])), "duplicate.docx");
+    const observation = parsed.observations.find(row => row.source_kind === "sais_resource_source");
+    expect(observation).toMatchObject({
+      source_record_id: "r1", review_state: "held_duplicate_resource_id",
+      source_locators: ["docx:table:0:row:1", "docx:table:0:row:2"],
+    });
+    expect(parsed.holds.some(hold => hold.code === "resource_field_conflict")).toBe(repeated_name !== "First");
+    const readback = await read_batch_source_lineage({ artifact_key: "Batch/duplicate.docx", resource_id: "r1" }, { query: vi.fn()
+      .mockResolvedValueOnce({ rows: [{ parsed: true, storage_state: "active" }] })
+      .mockResolvedValueOnce({ rows: [{ source_kind: "sais_resource_source", values_json: observation,
+        existing_canonical: { resource_id: "r1", family_key: "source_family", document_number: 1,
+          resource_category: "source_category", organization_name: "First" } }] }) } as any);
+    expect(readback.records?.[0].canonical_reconciliation).toEqual({
+      state: "held_source_integrity", canonical_identity: null, source_review_state: "held_duplicate_resource_id",
+    });
   });
 
   it("holds a stale archive manifest while preserving its member records", async () => {

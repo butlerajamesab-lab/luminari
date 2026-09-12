@@ -2,7 +2,7 @@ import { extname } from "node:path";
 import JSZip from "jszip";
 import { parse_corpus_docx, inspect_zip_directory, source_sha256, canonical_source_json } from "./corpus-docx-source.mjs";
 
-export const BATCH_SOURCE_PARSER_VERSION = "batch_source_adapter_v1.0.0";
+export const BATCH_SOURCE_PARSER_VERSION = "batch_source_adapter_v1.0.1";
 
 function parse_csv(text) {
   const rows = [];
