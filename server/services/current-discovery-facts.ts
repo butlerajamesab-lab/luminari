@@ -40,6 +40,42 @@ const claimSignalSql = `(
 ) ~* '(\\$[0-9]|[0-9]+\\s*%|\\b[0-9]+\\s*(day|days|week|weeks|month|months|year|years|hour|hours)\\b|\\b(eligible|eligibility|qualify|qualifies|entitled|deadline|covers|pays|free of charge|no cost)\\b)'`;
 const factKindSql = `case when ${claimSignalSql} then 'discovery_fact' else 'resource_listing' end`;
 
+/** Follow the existing office identity; never infer a resource-to-office relationship. */
+export async function connect_discovery_office_records<T extends Record<string, any>>(
+  records: T[],
+  pool: Pick<ReturnType<typeof getPool>, 'query'>,
+) {
+  const office_ids = [...new Set(records
+    .filter(record => record.source_lane === 'gov_offices' && /^gof_[a-f0-9]{16,32}$/i.test(record.source_id ?? ''))
+    .map(record => String(record.source_id)))];
+  const offices = office_ids.length ? (await pool.query(`
+    select office_id, source_id, source_hash8, provenance
+      from public.gov_offices
+     where office_id = any($1::text[])
+       and superseded_by is null
+     order by office_id
+  `, [office_ids])).rows : [];
+  const by_id = new Map(offices.map(office => [office.office_id, office]));
+  return records.map(record => {
+    const office = record.source_lane === 'gov_offices' ? by_id.get(record.source_id) : undefined;
+    return {
+      ...record,
+      record_link: office ? {
+        record_type: 'government_office' as const,
+        record_id: office.office_id as string,
+        source_table: 'gov_offices' as const,
+        href: `/resource/${encodeURIComponent(office.office_id)}`,
+        link_basis: 'exact_source_lane_and_office_id' as const,
+        locator_source_id: office.source_id as string | null,
+        source_hash8: office.source_hash8 as string | null,
+        provenance: office.provenance as string | null,
+      } : null,
+      record_link_state: office ? 'available' as const
+        : record.source_lane === 'gov_offices' ? 'unresolved_current_office' as const : 'not_applicable' as const,
+    };
+  });
+}
+
 export async function readCurrentDiscoveryFacts(input: CurrentDiscoveryFactInput = {}) {
   const pool = getPool();
   const limit = clamp(input.limit, 1, 100, 60);
@@ -106,7 +142,9 @@ export async function readCurrentDiscoveryFacts(input: CurrentDiscoveryFactInput
     `),
   ]);
 
-  const items = pageResult.rows.map(({ filtered_total: _filteredTotal, ...row }) => row);
+  const items = await connect_discovery_office_records(
+    pageResult.rows.map(({ filtered_total: _filteredTotal, ...row }) => row), pool,
+  );
   const today = new Date().toISOString().slice(0, 10);
   // The daily spotlight rotates only through discovery facts — never office
   // listings. Falls back to the full window if none are present.
