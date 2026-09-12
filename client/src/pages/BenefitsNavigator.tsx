@@ -30,7 +30,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { CommitToCase, FlagArea } from "@/components/CommitToCase";
 import { NextStepBar } from "@/components/NextStepBar";
-import BenefitsRegistryPrograms from "@/components/benefits/BenefitsRegistryPrograms";
+import Benefits_registry_programs from "@/components/benefits/BenefitsRegistryPrograms";
 
 /* ─── Category Icons & Colors ─── */
 
@@ -1091,10 +1091,10 @@ export default function BenefitsNavigator() {
           )}
         </div>
 
-        <BenefitsRegistryPrograms
-          searchQuery={searchQuery}
-          browseCategoryKeyword={browseCategoryKeyword}
-          stateCode={selectedState}
+        <Benefits_registry_programs
+          search_query={searchQuery}
+          browse_category_keyword={browseCategoryKeyword}
+          state_code={selectedState}
         />
 
         {/* Results */}

@@ -40,10 +40,10 @@ describe("jurisdiction-aware registry query contract", () => {
 
   it("connects the visible program search to the canonical stateCode contract", () => {
     expect(benefitsSource).toContain('aria-label="Search programs"');
-    expect(benefitsSource).toContain('searchQuery={searchQuery}');
-    expect(benefitsSource).toContain('stateCode={selectedState}');
+    expect(benefitsSource).toContain('search_query={searchQuery}');
+    expect(benefitsSource).toContain('state_code={selectedState}');
     expect(benefitsRegistrySource).toContain('trpc.canonicalRegistry.searchPrograms.useQuery');
-    expect(benefitsRegistrySource).toContain('{ query, stateCode: stateCode ?? undefined, limit: REGISTRY_PAGE_SIZE, offset }');
+    expect(benefitsRegistrySource).toContain('{ query, state_code: state_code ?? undefined, federal_only: state_code === null, limit: REGISTRY_PAGE_SIZE, offset }');
   });
 
   it("uses program identity to break equal-name ties across search pages", () => {
@@ -52,11 +52,11 @@ describe("jurisdiction-aware registry query contract", () => {
   });
 
   it("renders the canonical registry response envelope and fails closed on bad links", () => {
-    expect(benefitsRegistrySource).toContain("registryPrograms?.programs ?? []");
-    expect(benefitsRegistrySource).toContain("registryPrograms?.total ?? 0");
-    expect(benefitsRegistrySource).not.toContain("registryPrograms.length");
-    expect(benefitsRegistrySource).not.toContain("registryPrograms.map");
-    expect(benefitsRegistrySource).toContain("normalizeRegistryWebsite");
+    expect(benefitsRegistrySource).toContain("registry_programs?.programs ?? []");
+    expect(benefitsRegistrySource).toContain("registry_programs?.total ?? 0");
+    expect(benefitsRegistrySource).not.toContain("registry_programs.length");
+    expect(benefitsRegistrySource).not.toContain("registry_programs.map");
+    expect(benefitsRegistrySource).toContain("normalize_registry_website");
     expect(benefitsRegistrySource).toContain("No verified external link available");
   });
 

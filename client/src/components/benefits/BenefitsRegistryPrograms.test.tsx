@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const state = vi.hoisted(() => ({ read: vi.fn(), result: {} as any }));
 vi.mock('@/lib/trpc', () => ({ trpc: { canonicalRegistry: { searchPrograms: { useQuery: state.read } } } }));
-import BenefitsRegistryPrograms, { scheduleRegistrySearch, registrySearchOffset, REGISTRY_PAGE_SIZE } from './BenefitsRegistryPrograms';
+import Benefits_registry_programs, { schedule_registry_search, registry_search_offset, REGISTRY_PAGE_SIZE } from './BenefitsRegistryPrograms';
 
 const program = {
   id: 'RTCELL_11948', name: 'Atrium Health (Charlotte Safety Net)', state_code: 'NC',
@@ -15,8 +15,8 @@ const program = {
     { contact_point_id: 'portal-1', contact_type: 'portal', contact_value: 'https://example.org/apply' },
   ],
 };
-const render = (query = 'Atrium Health', stateCode: string | null = 'NC', category: string | null = 'Healthcare') =>
-  renderToStaticMarkup(<BenefitsRegistryPrograms searchQuery={query} browseCategoryKeyword={category} stateCode={stateCode} />);
+const render = (query = 'Atrium Health', state_code: string | null = 'NC', category: string | null = 'Healthcare') =>
+  renderToStaticMarkup(<Benefits_registry_programs search_query={query} browse_category_keyword={category} state_code={state_code} />);
 
 beforeEach(() => {
   state.result = { data: { programs: [program], total: 1 }, error: null, isFetching: false, isLoading: false, refetch: vi.fn() };
@@ -28,7 +28,7 @@ describe('Benefits Navigator registry search', () => {
   it('searches entered text with the selected state and displays the retained contact records', () => {
     const html = render('  Atrium Health  ');
     expect(state.read).toHaveBeenLastCalledWith(
-      { query: 'Atrium Health', stateCode: 'NC', limit: 20, offset: 0 },
+      { query: 'Atrium Health', state_code: 'NC', federal_only: false, limit: 20, offset: 0 },
       { enabled: true, placeholderData: undefined },
     );
     expect(html).toContain('Atrium Health (Charlotte Safety Net)');
@@ -43,15 +43,17 @@ describe('Benefits Navigator registry search', () => {
 
   it('changes the query state without assigning a medical category', () => {
     render('Atrium', 'WA');
-    expect(state.read.mock.lastCall?.[0]).toEqual({ query: 'Atrium', stateCode: 'WA', limit: 20, offset: 0 });
-    render('Atrium', null);
-    expect(state.read.mock.lastCall?.[0]).toEqual({ query: 'Atrium', stateCode: undefined, limit: 20, offset: 0 });
+    expect(state.read.mock.lastCall?.[0]).toEqual({ query: 'Atrium', state_code: 'WA', federal_only: false, limit: 20, offset: 0 });
+    const federal_html = render('Atrium', null);
+    expect(federal_html).toContain('among federal programs only');
+    expect(federal_html).not.toContain('across all jurisdictions');
+    expect(state.read.mock.lastCall?.[0]).toEqual({ query: 'Atrium', state_code: undefined, federal_only: true, limit: 20, offset: 0 });
     expect(state.read.mock.lastCall?.[0]).not.toHaveProperty('category');
   });
 
   it('keeps a selected category as a literal search when no text was entered', () => {
     const html = render('');
-    expect(state.read.mock.lastCall?.[0]).toEqual({ query: 'Healthcare', stateCode: 'NC', limit: 20, offset: 0 });
+    expect(state.read.mock.lastCall?.[0]).toEqual({ query: 'Healthcare', state_code: 'NC', federal_only: false, limit: 20, offset: 0 });
     expect(html).toContain('Category names are search terms');
   });
 
@@ -104,28 +106,28 @@ describe('Benefits Navigator registry search', () => {
   });
 
   it('resets the effective page immediately when query or state changes', () => {
-    const secondPage = { query: 'Atrium', stateCode: 'NC', offset: REGISTRY_PAGE_SIZE };
-    expect(registrySearchOffset(secondPage, 'Atrium', 'NC')).toBe(20);
-    expect(registrySearchOffset(secondPage, 'Different program', 'NC')).toBe(0);
-    expect(registrySearchOffset(secondPage, 'Atrium', 'WA')).toBe(0);
-    expect(registrySearchOffset(secondPage, 'Atrium', null)).toBe(0);
-    expect(registrySearchOffset({ ...secondPage, offset: 40 }, 'Atrium', 'NC')).toBe(40);
+    const second_page = { query: 'Atrium', state_code: 'NC', offset: REGISTRY_PAGE_SIZE };
+    expect(registry_search_offset(second_page, 'Atrium', 'NC')).toBe(20);
+    expect(registry_search_offset(second_page, 'Different program', 'NC')).toBe(0);
+    expect(registry_search_offset(second_page, 'Atrium', 'WA')).toBe(0);
+    expect(registry_search_offset(second_page, 'Atrium', null)).toBe(0);
+    expect(registry_search_offset({ ...second_page, offset: 40 }, 'Atrium', 'NC')).toBe(40);
   });
 
   it('waits for a pause and cancels superseded or unmounted searches', () => {
     vi.useFakeTimers();
     const publish = vi.fn();
-    const first = scheduleRegistrySearch('Atri', publish);
+    const first = schedule_registry_search('Atri', publish);
     vi.advanceTimersByTime(200);
     first();
-    const second = scheduleRegistrySearch('Atrium Health', publish);
+    const second = schedule_registry_search('Atrium Health', publish);
     vi.advanceTimersByTime(299);
     expect(publish).not.toHaveBeenCalled();
     vi.advanceTimersByTime(1);
     expect(publish).toHaveBeenCalledTimes(1);
     expect(publish).toHaveBeenLastCalledWith('Atrium Health');
     second();
-    const unmount = scheduleRegistrySearch('Later', publish);
+    const unmount = schedule_registry_search('Later', publish);
     unmount();
     vi.advanceTimersByTime(300);
     expect(publish).toHaveBeenCalledTimes(1);
