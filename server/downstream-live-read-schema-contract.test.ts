@@ -33,9 +33,15 @@ describe("downstream live-read schema contracts", () => {
     expect(router).toContain("from public.agency_authority_map");
     expect(router).toContain("from public.doctrine_registry");
     expect(router).toContain(
-      "from public.detected_signals where signal_id is not null",
+      "from public.live_data_signals where is_current",
     );
-    expect(router).toContain("i.issue_score > 0");
+    expect(router).not.toContain("i.issue_score > 0");
+    expect(router).toContain('attribution_status: "not_established"');
+    expect(router).toContain("getLiveSignalsForDiagnostics: protectedProcedure");
+    const reader = source("server/diagnostic-signal-runtime.ts");
+    expect(reader).toContain("from public.live_data_signals s");
+    expect(reader).toContain("where s.is_current");
+    expect(reader).not.toMatch(/from public\.detected_signals/);
     expect(router).not.toContain("mysql2/promise");
     expect(router).not.toContain("gateway04.us-east-1.prod.aws.tidbcloud.com");
     expect(router).not.toContain("SELECT * FROM graph_edges");

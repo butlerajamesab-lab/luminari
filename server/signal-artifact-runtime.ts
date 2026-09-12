@@ -96,7 +96,7 @@ export function signal_artifact_destination(
       home_label: "Structural Diagnostics",
       home_path: "/diagnostics",
       environmental_effect:
-        "This verified workflow mismatch marks a weak joint in the legal or administrative process where a required modal, exception, or procedural step differs from the enrolled source.",
+        "This artifact records a workflow comparison. Inspect the recorded check, expected value, observed text, and exact source version to determine whether the mismatch concerns extraction, a rule binding, or the governing procedure. Its type alone does not establish a procedural failure.",
     };
   }
 
@@ -110,7 +110,7 @@ export function signal_artifact_destination(
       home_label: "Contradiction Scoring",
       home_path: "/contradiction-scoring",
       environmental_effect:
-        "This source-bound legal mismatch may change how a rule, exception, definition, or authority is applied. It requires corroboration before it can affect a case or escalation decision.",
+        "This artifact records a legal-source comparison. A structural binding mismatch can result from extraction or text normalization. Inspect the recorded check and exact source before treating it as a contradiction in the governing law. Linking the artifact to a case preserves context without changing its verification status.",
     };
   }
 
