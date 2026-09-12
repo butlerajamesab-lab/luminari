@@ -1,0 +1,133 @@
+import { renderToStaticMarkup } from 'react-dom/server';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const state = vi.hoisted(() => ({ read: vi.fn(), result: {} as any }));
+vi.mock('@/lib/trpc', () => ({ trpc: { canonicalRegistry: { searchPrograms: { useQuery: state.read } } } }));
+import BenefitsRegistryPrograms, { scheduleRegistrySearch, registrySearchOffset, REGISTRY_PAGE_SIZE } from './BenefitsRegistryPrograms';
+
+const program = {
+  id: 'RTCELL_11948', name: 'Atrium Health (Charlotte Safety Net)', state_code: 'NC',
+  contact: '800-555-0100', website: 'https://example.org/atrium',
+  resource_contacts: [
+    { contact_point_id: 'phone-1', contact_type: 'phone', contact_value: '800-555-0100' },
+    { contact_point_id: 'web-1', contact_type: 'website', contact_value: 'https://example.org/atrium' },
+    { contact_point_id: 'email-1', contact_type: 'email', contact_value: 'help@example.org' },
+    { contact_point_id: 'portal-1', contact_type: 'portal', contact_value: 'https://example.org/apply' },
+  ],
+};
+const render = (query = 'Atrium Health', stateCode: string | null = 'NC', category: string | null = 'Healthcare') =>
+  renderToStaticMarkup(<BenefitsRegistryPrograms searchQuery={query} browseCategoryKeyword={category} stateCode={stateCode} />);
+
+beforeEach(() => {
+  state.result = { data: { programs: [program], total: 1 }, error: null, isFetching: false, isLoading: false, refetch: vi.fn() };
+  state.read.mockReset().mockImplementation(() => state.result);
+});
+afterEach(() => vi.useRealTimers());
+
+describe('Benefits Navigator registry search', () => {
+  it('searches entered text with the selected state and displays the retained contact records', () => {
+    const html = render('  Atrium Health  ');
+    expect(state.read).toHaveBeenLastCalledWith(
+      { query: 'Atrium Health', stateCode: 'NC', limit: 20, offset: 0 },
+      { enabled: true, placeholderData: undefined },
+    );
+    expect(html).toContain('Atrium Health (Charlotte Safety Net)');
+    expect(html).toContain('data-program-id="RTCELL_11948"');
+    expect(html).toContain('Contact: 800-555-0100');
+    expect(html).toContain('Contact details (4)');
+    expect(html).toContain('help@example.org');
+    expect(html).toContain('href="https://example.org/atrium"');
+    expect(html).toContain('Showing 1–1 of 1 registry programs.');
+    expect(html).not.toContain('Searching for “Healthcare”');
+  });
+
+  it('changes the query state without assigning a medical category', () => {
+    render('Atrium', 'WA');
+    expect(state.read.mock.lastCall?.[0]).toEqual({ query: 'Atrium', stateCode: 'WA', limit: 20, offset: 0 });
+    render('Atrium', null);
+    expect(state.read.mock.lastCall?.[0]).toEqual({ query: 'Atrium', stateCode: undefined, limit: 20, offset: 0 });
+    expect(state.read.mock.lastCall?.[0]).not.toHaveProperty('category');
+  });
+
+  it('keeps a selected category as a literal search when no text was entered', () => {
+    const html = render('');
+    expect(state.read.mock.lastCall?.[0]).toEqual({ query: 'Healthcare', stateCode: 'NC', limit: 20, offset: 0 });
+    expect(html).toContain('Category names are search terms');
+  });
+
+  it('does not request an empty or whitespace-only search', () => {
+    expect(render('  ', 'NC', null)).toBe('');
+    expect(state.read.mock.lastCall?.[1].enabled).toBe(false);
+  });
+
+  it('shows pending instead of presenting cached rows or zero results as current', () => {
+    state.result.isFetching = true;
+    const html = render();
+    expect(html).toContain('Searching registry programs…');
+    expect(html).not.toContain('Charlotte Safety Net');
+    expect(html).not.toContain('No registry programs match');
+    expect(html).not.toContain('Showing 1–1 of 1');
+  });
+
+  it('shows an error with retry without claiming the registry is empty', () => {
+    state.result.error = new Error('Database timeout');
+    const html = render();
+    expect(html).toContain('Registry results are unavailable.');
+    expect(html).toContain('Retry registry search');
+    expect(html).not.toContain('Charlotte Safety Net');
+    expect(html).not.toContain('No registry programs match');
+  });
+
+  it('only reports no matches after a successful empty response', () => {
+    state.result.data = undefined;
+    expect(render()).toContain('Registry results have not loaded yet.');
+    state.result.data = { programs: [], total: 0 };
+    expect(render()).toContain('No registry programs match this search.');
+  });
+
+  it('suppresses unsafe website navigation while preserving the record', () => {
+    state.result.data = { programs: [{ ...program, website: 'javascript:alert(1)' }], total: 1 };
+    const html = render();
+    expect(html).toContain('No verified external link available');
+    expect(html).not.toContain('href="javascript:');
+    expect(html).toContain('RTCELL_11948');
+  });
+
+  it('makes later registry results reachable with bounded page requests', () => {
+    state.result.data = { programs: Array.from({ length: 20 }, (_, i) => ({ ...program, id: `program-${i}` })), total: 41 };
+    const html = render();
+    expect(state.read.mock.lastCall?.[0]).toMatchObject({ limit: 20, offset: 0 });
+    expect(html).toContain('Showing 1–20 of 41 registry programs.');
+    expect(html).toContain('aria-label="Registry result pages"');
+    expect(html).toMatch(/disabled=""[^>]*>Previous programs/);
+    expect(html).not.toMatch(/disabled=""[^>]*>Next programs/);
+  });
+
+  it('resets the effective page immediately when query or state changes', () => {
+    const secondPage = { query: 'Atrium', stateCode: 'NC', offset: REGISTRY_PAGE_SIZE };
+    expect(registrySearchOffset(secondPage, 'Atrium', 'NC')).toBe(20);
+    expect(registrySearchOffset(secondPage, 'Different program', 'NC')).toBe(0);
+    expect(registrySearchOffset(secondPage, 'Atrium', 'WA')).toBe(0);
+    expect(registrySearchOffset(secondPage, 'Atrium', null)).toBe(0);
+    expect(registrySearchOffset({ ...secondPage, offset: 40 }, 'Atrium', 'NC')).toBe(40);
+  });
+
+  it('waits for a pause and cancels superseded or unmounted searches', () => {
+    vi.useFakeTimers();
+    const publish = vi.fn();
+    const first = scheduleRegistrySearch('Atri', publish);
+    vi.advanceTimersByTime(200);
+    first();
+    const second = scheduleRegistrySearch('Atrium Health', publish);
+    vi.advanceTimersByTime(299);
+    expect(publish).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1);
+    expect(publish).toHaveBeenCalledTimes(1);
+    expect(publish).toHaveBeenLastCalledWith('Atrium Health');
+    second();
+    const unmount = scheduleRegistrySearch('Later', publish);
+    unmount();
+    vi.advanceTimersByTime(300);
+    expect(publish).toHaveBeenCalledTimes(1);
+  });
+});

@@ -105,7 +105,7 @@ export const registryRouter = router({
          FROM registry_programs p
          ${registryJurisdictionJoin("COALESCE(NULLIF(p.jurisdiction_id, ''), p.jurisdiction_id_rp)", 'j')}
          ${where}
-         ORDER BY p.name
+         ORDER BY p.name, p.id
          LIMIT ${limitPlaceholder} OFFSET ${offsetPlaceholder}`,
         [...params, input.limit, input.offset],
       );
