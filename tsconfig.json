@@ -1,5 +1,6 @@
 {
   "include": [
+    "server/fresh-atomic-runner.ts",
     "server/akb-lookup.ts",
     "server/autonomous-healer.ts",
     "server/batch-rerun.ts",

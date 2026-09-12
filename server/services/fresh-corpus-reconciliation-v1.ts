@@ -3,9 +3,9 @@ import { StringDecoder } from "node:string_decoder";
 import JSZip from "jszip";
 import { workbookSheets, create_worksheet_validator, resolve_shared_string } from "./xlsx-workbook-structure";
 import { getPool } from "../db";
-import { SUPABASE_PROJECT } from "../_core/health-diagnostics";
+import { download_corpus_storage_artifact } from "./corpus-storage-download";
 
-export const FRESH_CORPUS_ENGINE_VERSION = "fresh_corpus_reconciliation_v1.2.4";
+export const FRESH_CORPUS_ENGINE_VERSION = "fresh_corpus_reconciliation_v1.2.5";
 export const FRESH_CORPUS_PARSER_VERSION = "fresh_registry_typed_parser_v1.2.4";
 
 const STATE_NAMES: Record<string, string> = {
@@ -197,30 +197,6 @@ function normalizeWebsiteDomain(value: unknown): string | null {
   }
 }
 
-function encodeStoragePath(value: string): string {
-  return value.split("/").filter(Boolean).map(encodeURIComponent).join("/");
-}
-
-function supabaseBaseUrl(): string {
-  return (process.env.SUPABASE_URL || process.env.LIGHTHOUSE_SUPABASE_URL || process.env.VITE_SUPABASE_URL || `https://${SUPABASE_PROJECT}.supabase.co`).replace(/\/+$/, "");
-}
-
-async function downloadPublicStorageArtifact(artifact: SourceArtifact): Promise<Buffer> {
-  const url = `${supabaseBaseUrl()}/storage/v1/object/public/${encodeURIComponent(artifact.bucket_id)}/${encodeStoragePath(artifact.object_name)}`;
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30_000);
-  try {
-    const response = await fetch(url, { signal: controller.signal, headers: { Accept: "application/octet-stream" } });
-    if (!response.ok) throw new Error(`storage_download_http_${response.status}`);
-    const buffer = Buffer.from(await response.arrayBuffer());
-    if (artifact.byte_size > 0 && buffer.byteLength !== Number(artifact.byte_size)) {
-      throw new Error(`storage_byte_size_mismatch_expected_${artifact.byte_size}_actual_${buffer.byteLength}`);
-    }
-    return buffer;
-  } finally {
-    clearTimeout(timeout);
-  }
-}
 
 function decodeXmlEntities(value: string): string {
   return value
@@ -1070,7 +1046,7 @@ async function processArtifact(runId: string, artifact: SourceArtifact): Promise
   }
 
   try {
-    const buffer = await downloadPublicStorageArtifact(artifact);
+    const buffer = await download_corpus_storage_artifact(artifact);
     const contentSha256 = sha256(buffer);
     const ext = artifact.object_name.toLowerCase().match(/\.[a-z0-9]+$/)?.[0] ?? "";
     let text = "";
@@ -1127,10 +1103,15 @@ async function nextArtifacts(runId: string, limit: number): Promise<SourceArtifa
   const pool = getPool();
   const result = await pool.query(`
     select a.artifact_key,a.bucket_id,a.object_name,a.transport_etag,a.byte_size,a.mimetype,a.artifact_role,
-           a.jurisdiction_hint,a.semantic_family,a.generation_label,a.exact_duplicate_of
+           a.jurisdiction_hint,a.semantic_family,a.generation_label,
+           case when duplicate_source.bucket_id <> 'Batch' and duplicate_source.storage_state='active'
+             then a.exact_duplicate_of else null end as exact_duplicate_of
       from public.luminari_corpus_source_artifact_v1 a
+      left join public.luminari_corpus_source_artifact_v1 duplicate_source
+        on duplicate_source.artifact_key=a.exact_duplicate_of
       left join public.luminari_corpus_rebuild_artifact_v1 r on r.run_id=$1 and r.artifact_key=a.artifact_key
      where a.storage_state='active'
+       and a.bucket_id <> 'Batch'
        and (
          r.artifact_key is null
          or (r.status='failed' and r.attempt_count < 2)
@@ -1274,7 +1255,7 @@ async function finalizeRun(runId: string): Promise<void> {
   }
   const identities = await finalizeIdentities(runId);
   const candidateResult = await pool.query(`select count(*)::int as n,count(*) filter(where jurisdiction_resolution_state='conflict')::int as jurisdiction_conflicts from public.luminari_corpus_candidate_v1 where run_id=$1`, [runId]);
-  const artifactResult = await pool.query(`select count(*)::int as n from public.luminari_corpus_source_artifact_v1 where storage_state='active'`, []);
+  const artifactResult = await pool.query(`select count(*)::int as n from public.luminari_corpus_rebuild_artifact_v1 where run_id=$1`, [runId]);
   const receiptRows = await pool.query(`select artifact_key,status,receipt_hash from public.luminari_corpus_rebuild_artifact_v1 where run_id=$1 order by artifact_key`, [runId]);
   const candidateCount = Number(candidateResult.rows[0]?.n ?? 0);
   const jurisdictionConflicts = Number(candidateResult.rows[0]?.jurisdiction_conflicts ?? 0);
@@ -1296,6 +1277,7 @@ export async function runFreshCorpusRebuildBatch(runId: string, limit = 8): Prom
     left join public.luminari_corpus_rebuild_artifact_v1 r
       on r.run_id=$1 and r.artifact_key=a.artifact_key
     where a.storage_state='active'
+      and a.bucket_id <> 'Batch'
       and (
         r.artifact_key is null
         or r.status='running'
@@ -1307,8 +1289,19 @@ export async function runFreshCorpusRebuildBatch(runId: string, limit = 8): Prom
 }
 
 export async function syncFreshCorpusSourceManifest(): Promise<Record<string, unknown>> {
-  const result = await getPool().query(`select public.sync_luminari_corpus_source_manifest_v2() as receipt`);
-  return result.rows[0]?.receipt ?? {
+  const pool = getPool();
+  const result = await pool.query(`select public.sync_luminari_corpus_source_manifest_v2() as receipt`);
+  // The manifest includes private source observations; typed rebuilds have a
+  // different eligible set. Derived content hashes and observation timestamps
+  // are excluded so parsing itself does not make this source snapshot change.
+  const typed_snapshot = await pool.query(`select
+      count(*) filter(where storage_state='active')::int as typed_eligible_artifacts,
+      encode(digest(coalesce(jsonb_agg(jsonb_build_array(
+        artifact_key,storage_state,byte_size,transport_etag,mimetype,artifact_role,
+        extract(epoch from storage_updated_at)) order by artifact_key),'[]'::jsonb)::text,'sha256'),'hex')
+        as typed_source_fingerprint
+    from public.luminari_corpus_source_artifact_v1 where bucket_id <> 'Batch'`);
+  const manifest_receipt = result.rows[0]?.receipt ?? {
     contract: "fresh_corpus_continuous_manifest_v2",
     storage_objects: 0,
     active_manifest_artifacts: 0,
@@ -1316,14 +1309,15 @@ export async function syncFreshCorpusSourceManifest(): Promise<Record<string, un
     newly_missing_artifacts: 0,
     pending_extraction_artifacts: 0,
   };
+  return { ...manifest_receipt, ...typed_snapshot.rows[0] };
 }
 
 export async function queueFreshCorpusRebuild(
   scope: Record<string, unknown> = {},
-  options: { manifestSync?: Record<string, unknown> } = {},
+  options: { manifest_sync?: Record<string, unknown>; manifestSync?: Record<string, unknown> } = {},
 ): Promise<{ run_id: string; status: string; manifest_sync: Record<string, unknown> }> {
   const pool = getPool();
-  const manifestSync = options.manifestSync ?? await syncFreshCorpusSourceManifest();
+  const manifest_sync = options.manifest_sync ?? options.manifestSync ?? await syncFreshCorpusSourceManifest();
   const result = await pool.query(`with queue_lock as materialized (
       select pg_advisory_xact_lock(hashtext('fresh_corpus_rebuild:'||$1))
     ), active as materialized (
@@ -1341,8 +1335,8 @@ export async function queueFreshCorpusRebuild(
     select run_id,status from inserted
     union all
     select run_id,status from active
-    limit 1`, [FRESH_CORPUS_ENGINE_VERSION, JSON.stringify({ ...scope, manifest_sync: manifestSync, parser_version: FRESH_CORPUS_PARSER_VERSION })]);
-  return { run_id: result.rows[0].run_id, status: result.rows[0].status, manifest_sync: manifestSync };
+    limit 1`, [FRESH_CORPUS_ENGINE_VERSION, JSON.stringify({ ...scope, manifest_sync, parser_version: FRESH_CORPUS_PARSER_VERSION })]);
+  return { run_id: result.rows[0].run_id, status: result.rows[0].status, manifest_sync };
 }
 
 export async function getFreshCorpusRebuildStatus(runId?: string) {
@@ -1378,9 +1372,10 @@ export async function reconcileFreshCorpusAutomatically(
   options: { batchSize?: number; maxBatches?: number } = {},
 ) {
   const pool = getPool();
-  const manifestSync = await syncFreshCorpusSourceManifest();
+  const manifest_sync = await syncFreshCorpusSourceManifest();
   const latest = await pool.query(`
     select r.run_id,r.status,r.artifact_count,r.result_json->>'parser_version' as parser_version,
+           r.scope#>>'{manifest_sync,typed_source_fingerprint}' as typed_source_fingerprint,
            (select count(*)::int
               from public.luminari_corpus_rebuild_artifact_v1 a
              where a.run_id=r.run_id
@@ -1391,37 +1386,34 @@ export async function reconcileFreshCorpusAutomatically(
      order by completed_at desc nulls last,started_at desc
      limit 1
   `, [FRESH_CORPUS_ENGINE_VERSION]);
-  const latestRun = latest.rows[0];
-  const newOrChanged = Number(manifestSync.new_or_changed_artifacts ?? 0);
-  const newlyMissing = Number(manifestSync.newly_missing_artifacts ?? 0);
-  const activeArtifacts = Number(manifestSync.active_manifest_artifacts ?? 0);
-  const requiresReplay = !latestRun
-    || latestRun.parser_version !== FRESH_CORPUS_PARSER_VERSION
-    || Number(latestRun.artifact_count ?? 0) !== activeArtifacts
-    || Number(latestRun.nonterminal_count ?? 0) > 0
-    || newOrChanged > 0
-    || newlyMissing > 0;
+  const latest_run = latest.rows[0];
+  const active_artifacts = Number(manifest_sync.typed_eligible_artifacts ?? 0);
+  const requires_replay = !latest_run
+    || latest_run.parser_version !== FRESH_CORPUS_PARSER_VERSION
+    || Number(latest_run.artifact_count ?? 0) !== active_artifacts
+    || Number(latest_run.nonterminal_count ?? 0) > 0
+    || latest_run.typed_source_fingerprint !== manifest_sync.typed_source_fingerprint;
 
   let queued: Awaited<ReturnType<typeof queueFreshCorpusRebuild>> | null = null;
-  if (requiresReplay) {
+  if (requires_replay) {
     queued = await queueFreshCorpusRebuild({
       requested_from: "automatic_storage_manifest_reconciliation",
-      reason: !latestRun
+      reason: !latest_run
         ? "no_completed_fresh_corpus_run"
-        : latestRun.parser_version !== FRESH_CORPUS_PARSER_VERSION
+        : latest_run.parser_version !== FRESH_CORPUS_PARSER_VERSION
           ? "parser_version_changed"
-          : Number(latestRun.nonterminal_count ?? 0) > 0
+          : Number(latest_run.nonterminal_count ?? 0) > 0
             ? "nonterminal_artifact_receipts"
           : "source_changes_detected",
       source_buckets: ["State Enriched Registry bucket", "Everything backbone related"],
-    }, { manifestSync });
+    }, { manifest_sync });
   }
 
   const resumed = await resumeFreshCorpusRebuildFromDatabase(options);
   return {
     status: resumed.status,
-    manifest_sync: manifestSync,
-    replay_required: requiresReplay,
+    manifest_sync: manifest_sync,
+    replay_required: requires_replay,
     queued,
     rebuild: resumed,
   };

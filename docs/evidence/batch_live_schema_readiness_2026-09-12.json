@@ -1,0 +1,293 @@
+{
+  "project_id": "wepxlinwbjrkqdzkqpar",
+  "project_name": "Lighthouse",
+  "scope": "read_only_live_schema_and_aggregate_readiness",
+  "checked_at": "2026-09-12T06:49:16.193846+00:00",
+  "required_columns": {
+    "public.luminari_corpus_atomic_artifact_v1": [
+      "run_id",
+      "artifact_key",
+      "status",
+      "attempt_count",
+      "content_sha256",
+      "atomic_record_count",
+      "origin_count",
+      "started_at",
+      "completed_at",
+      "error_message",
+      "receipt_hash",
+      "result_json"
+    ],
+    "public.luminari_corpus_atomic_record_origin_v1": [
+      "atomic_record_key",
+      "origin_hash",
+      "run_id",
+      "artifact_key",
+      "container_member_path",
+      "source_locator"
+    ],
+    "public.luminari_corpus_atomic_record_v1": [
+      "atomic_record_key",
+      "source_file_sha256",
+      "source_kind",
+      "source_relation",
+      "row_ordinal",
+      "column_names",
+      "values_json",
+      "raw_excerpt",
+      "parser_version",
+      "record_hash"
+    ],
+    "public.luminari_corpus_atomic_run_v1": [
+      "run_id",
+      "engine_version",
+      "scope",
+      "status",
+      "artifact_count",
+      "atomic_record_count",
+      "origin_count",
+      "started_at",
+      "completed_at",
+      "receipt_hash",
+      "result_json"
+    ],
+    "public.luminari_corpus_source_artifact_v1": [
+      "artifact_key",
+      "bucket_id",
+      "object_name",
+      "transport_etag",
+      "byte_size",
+      "mimetype",
+      "artifact_role",
+      "jurisdiction_hint",
+      "semantic_family",
+      "generation_label",
+      "storage_created_at",
+      "storage_updated_at",
+      "observed_at",
+      "metadata",
+      "storage_state",
+      "storage_missing_observed_at",
+      "content_sha256",
+      "extracted_text_sha256",
+      "extraction_status",
+      "exact_duplicate_of"
+    ],
+    "public.sais_resources": [
+      "resource_id",
+      "family_key",
+      "document_number",
+      "resource_category",
+      "organization_name",
+      "organization_type",
+      "service_type",
+      "jurisdiction",
+      "jurisdiction_level",
+      "subcategory",
+      "official_url",
+      "official_contact",
+      "statutory_authority"
+    ],
+    "storage.objects": [
+      "bucket_id",
+      "name",
+      "metadata",
+      "created_at",
+      "updated_at"
+    ]
+  },
+  "column_validation": {
+    "missing_columns": [],
+    "required_column_count": 77
+  },
+  "runtime_readiness": {
+    "checked_at": "2026-09-12T06:49:16.193846+00:00",
+    "constraints": [
+      {
+        "type": "f",
+        "relation": "luminari_corpus_atomic_artifact_v1",
+        "definition": "FOREIGN KEY (artifact_key) REFERENCES luminari_corpus_source_artifact_v1(artifact_key)"
+      },
+      {
+        "type": "p",
+        "relation": "luminari_corpus_atomic_artifact_v1",
+        "definition": "PRIMARY KEY (run_id, artifact_key)"
+      },
+      {
+        "type": "f",
+        "relation": "luminari_corpus_atomic_artifact_v1",
+        "definition": "FOREIGN KEY (run_id) REFERENCES luminari_corpus_atomic_run_v1(run_id) ON DELETE CASCADE"
+      },
+      {
+        "type": "c",
+        "relation": "luminari_corpus_atomic_artifact_v1",
+        "definition": "CHECK ((status = ANY (ARRAY['queued'::text, 'running'::text, 'completed'::text, 'skipped_exact_duplicate'::text, 'failed'::text])))"
+      },
+      {
+        "type": "f",
+        "relation": "luminari_corpus_atomic_record_origin_v1",
+        "definition": "FOREIGN KEY (artifact_key) REFERENCES luminari_corpus_source_artifact_v1(artifact_key)"
+      },
+      {
+        "type": "f",
+        "relation": "luminari_corpus_atomic_record_origin_v1",
+        "definition": "FOREIGN KEY (atomic_record_key) REFERENCES luminari_corpus_atomic_record_v1(atomic_record_key) ON DELETE CASCADE"
+      },
+      {
+        "type": "c",
+        "relation": "luminari_corpus_atomic_record_origin_v1",
+        "definition": "CHECK ((origin_hash ~ '^[0-9a-f]{64}$'::text))"
+      },
+      {
+        "type": "p",
+        "relation": "luminari_corpus_atomic_record_origin_v1",
+        "definition": "PRIMARY KEY (atomic_record_key, origin_hash)"
+      },
+      {
+        "type": "f",
+        "relation": "luminari_corpus_atomic_record_origin_v1",
+        "definition": "FOREIGN KEY (run_id) REFERENCES luminari_corpus_atomic_run_v1(run_id) ON DELETE CASCADE"
+      },
+      {
+        "type": "c",
+        "relation": "luminari_corpus_atomic_record_v1",
+        "definition": "CHECK ((atomic_record_key ~ '^[0-9a-f]{64}$'::text))"
+      },
+      {
+        "type": "p",
+        "relation": "luminari_corpus_atomic_record_v1",
+        "definition": "PRIMARY KEY (atomic_record_key)"
+      },
+      {
+        "type": "c",
+        "relation": "luminari_corpus_atomic_record_v1",
+        "definition": "CHECK ((record_hash ~ '^[0-9a-f]{64}$'::text))"
+      },
+      {
+        "type": "c",
+        "relation": "luminari_corpus_atomic_record_v1",
+        "definition": "CHECK ((row_ordinal >= 0))"
+      },
+      {
+        "type": "c",
+        "relation": "luminari_corpus_atomic_record_v1",
+        "definition": "CHECK ((source_file_sha256 ~ '^[0-9a-f]{64}$'::text))"
+      },
+      {
+        "type": "p",
+        "relation": "luminari_corpus_atomic_run_v1",
+        "definition": "PRIMARY KEY (run_id)"
+      },
+      {
+        "type": "c",
+        "relation": "luminari_corpus_atomic_run_v1",
+        "definition": "CHECK ((status = ANY (ARRAY['queued'::text, 'running'::text, 'completed'::text, 'completed_with_failures'::text, 'failed'::text])))"
+      },
+      {
+        "type": "c",
+        "relation": "luminari_corpus_source_artifact_v1",
+        "definition": "CHECK ((byte_size >= 0))"
+      },
+      {
+        "type": "c",
+        "relation": "luminari_corpus_source_artifact_v1",
+        "definition": "CHECK (((content_sha256 IS NULL) OR (content_sha256 ~ '^[0-9a-f]{64}$'::text)))"
+      },
+      {
+        "type": "f",
+        "relation": "luminari_corpus_source_artifact_v1",
+        "definition": "FOREIGN KEY (exact_duplicate_of) REFERENCES luminari_corpus_source_artifact_v1(artifact_key)"
+      },
+      {
+        "type": "c",
+        "relation": "luminari_corpus_source_artifact_v1",
+        "definition": "CHECK (((extracted_text_sha256 IS NULL) OR (extracted_text_sha256 ~ '^[0-9a-f]{64}$'::text)))"
+      },
+      {
+        "type": "p",
+        "relation": "luminari_corpus_source_artifact_v1",
+        "definition": "PRIMARY KEY (artifact_key)"
+      }
+    ],
+    "batch_bucket": {
+      "exists": true,
+      "public": false
+    },
+    "table_access": [
+      {
+        "rls": true,
+        "relation": "luminari_corpus_atomic_artifact_v1",
+        "service_role_insert": true,
+        "service_role_select": true,
+        "service_role_update": true
+      },
+      {
+        "rls": true,
+        "relation": "luminari_corpus_atomic_record_origin_v1",
+        "service_role_insert": true,
+        "service_role_select": true,
+        "service_role_update": true
+      },
+      {
+        "rls": true,
+        "relation": "luminari_corpus_atomic_record_v1",
+        "service_role_insert": true,
+        "service_role_select": true,
+        "service_role_update": true
+      },
+      {
+        "rls": true,
+        "relation": "luminari_corpus_atomic_run_v1",
+        "service_role_insert": true,
+        "service_role_select": true,
+        "service_role_update": true
+      },
+      {
+        "rls": true,
+        "relation": "luminari_corpus_source_artifact_v1",
+        "service_role_insert": true,
+        "service_role_select": true,
+        "service_role_update": true
+      },
+      {
+        "rls": true,
+        "relation": "sais_resources",
+        "service_role_insert": true,
+        "service_role_select": true,
+        "service_role_update": true
+      }
+    ],
+    "batch_atomic_receipts": 0,
+    "batch_manifest_records": 0
+  },
+  "manifest_function": {
+    "name": "public.sync_luminari_corpus_source_manifest_v2()",
+    "definition_md5": "a2eb94c47feb1f1a7416c99c36bbc499",
+    "supports_batch": false,
+    "service_role_execute": true,
+    "anon_execute": false,
+    "authenticated_execute": false
+  },
+  "batch_migration": {
+    "version": "20260911201534",
+    "applied": false,
+    "objects_changed": [
+      "public.sync_luminari_corpus_source_manifest_v2()"
+    ],
+    "new_tables": [],
+    "new_columns": []
+  },
+  "admin_lineage_explain": {
+    "valid": true,
+    "analyze": false,
+    "limit": 0,
+    "data_rows_returned": 0
+  },
+  "code_only_reader": "Schema is sufficient for batch_sources.get_batch_source_lineage; current Batch manifest/receipt counts are zero, so current readback is empty.",
+  "code_only_queue": "Current synchronizer excludes Batch; selected Batch queue requests fail batch_manifest_source_missing until migration is applied.",
+  "actual_application_database_role_verified": false,
+  "worker_flags_verified": false,
+  "migration_applied_by_this_check": false,
+  "manifest_function_invoked": false,
+  "production_writes": 0
+}
