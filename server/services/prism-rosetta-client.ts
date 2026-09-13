@@ -446,7 +446,7 @@ async function mirror_receipt(receipt: PrismReceipt): Promise<void> {
 
 async function call_prism(
   request: DeepRosettaBindingRequest,
-  options: { base_url?: string; timeout_ms?: number } = {},
+  options: { base_url?: string; timeout_ms?: number; on_before_submission?: (request_id: string) => void } = {},
 ): Promise<{ receipt: PrismReceipt; attempts: number; http_status: number }> {
   const secret = process.env.PRISM_BRIDGE_SECRET;
   if (!secret) {
@@ -477,7 +477,7 @@ async function call_prism(
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeout_ms);
     try {
-      const response = await fetch(`${base_url}${path}`, {
+      const request_options = {
         method: "POST",
         headers: {
           "content-type": "application/json",
@@ -493,7 +493,10 @@ async function call_prism(
         },
         body,
         signal: controller.signal,
-      });
+      };
+      // Charge a unique request only after publication, evidence and signing are ready.
+      if (attempt === 1) options.on_before_submission?.(request.request_id);
+      const response = await fetch(`${base_url}${path}`, request_options);
       const response_body = await response.json().catch(() => ({}));
       if (response.ok) {
         const receipt = validate_receipt_integrity(
@@ -568,7 +571,7 @@ async function call_prism(
 
 export async function submit_rosetta_prism_request(
   raw_request: unknown,
-  options: { base_url?: string; timeout_ms?: number } = {},
+  options: { base_url?: string; timeout_ms?: number; on_before_submission?: (request_id: string) => void } = {},
 ): Promise<PrismReceipt> {
   const base_request = rosetta_binding_request_schema.parse(raw_request);
   const request = await enrich_rosetta_binding_request(base_request);
