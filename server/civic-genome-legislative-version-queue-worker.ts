@@ -8,6 +8,7 @@ import {
 } from "./civic-genome-legislative-version-pipeline";
 import { create_rosetta_supabase_headers } from "./rosetta-supabase-auth";
 import { background_feature_enabled } from "./runtime-role";
+import { LEGISLATIVE_NON_LEGISLATIVE_DOCUMENT_ERROR_CODE } from "./legislative-document-role";
 
 const DEFAULT_POLL_INTERVAL_MS = 1_000;
 const MIN_POLL_INTERVAL_MS = 250;
@@ -285,6 +286,7 @@ function safe_error_code(error: unknown): string {
 }
 
 function deterministic_failure(error_code: string): boolean {
+  if (error_code === LEGISLATIVE_NON_LEGISLATIVE_DOCUMENT_ERROR_CODE) return true;
   return [
     "legislative_version_not_found",
     "legislative_version_source_url_invalid",

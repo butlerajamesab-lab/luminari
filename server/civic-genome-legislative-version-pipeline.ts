@@ -15,6 +15,7 @@ import {
 import { create_rosetta_supabase_headers } from "./rosetta-supabase-auth";
 import { fetch_california_official_pdf } from "./california-legislative-source";
 import { get_amendment, get_bill_text } from "./services/legiscan";
+import { assert_legislative_document_role } from "./legislative-document-role";
 
 const PDF_PARSE_VERSION = "2.4.5";
 const WA_HTML_EXTRACTOR_VERSION = "wa-official-legislative-version-html-strip-v1";
@@ -600,6 +601,7 @@ function deterministic_reference_date(version: legislative_version_row): string 
 export async function extract_version_source(
   version: legislative_version_row,
 ): Promise<extracted_legislative_source> {
+  assert_legislative_document_role(version);
   const selected_source_url = version.source_url.trim();
   if (!selected_source_url.startsWith("https://")) {
     throw new Error("legislative_version_source_url_invalid");
@@ -1036,6 +1038,7 @@ export async function process_legislative_version(
   bill_version_id: string,
 ): Promise<legislative_version_processing_result> {
   const version = await load_version(bill_version_id);
+  assert_legislative_document_role(version);
   const source_document_id = await ensure_rosetta_source_document(version);
   const source = await extract_version_source(version);
   const content = await register_rosetta_source_content(source_document_id, source);

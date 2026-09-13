@@ -11,6 +11,7 @@ function classify(message: string) {
 
 describe("legislative version terminal failure classification", () => {
   it.each([
+    "legislative_version_non_legislative_document:fiscal_note",
     "legislative_version_source_empty",
     "legislative_version_source_fetch_failed:404",
     "docket_html_text_incomplete",
