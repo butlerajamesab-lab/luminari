@@ -49,6 +49,7 @@ import PlainLanguageToggle from "./PlainLanguageToggle";
 import { NotificationBell } from "./NotificationBell";
 import { resetTour } from "./OnboardingTour";
 import { CaseIntakeContinuityPanel } from "./CaseIntakeContinuityPanel";
+import { related_subject_for_case_path } from "@/lib/caseIntakeContinuity";
 import {
   allNavSections,
   adminSection,
@@ -202,6 +203,7 @@ function MobileLayout({ children }: { children: React.ReactNode }) {
             <CaseIntakeContinuityPanel
               caseId={currentCaseId}
               routePath={location}
+              relatedSubject={related_subject_for_case_path(location)}
             />
           </div>
         ) : null}
@@ -856,6 +858,7 @@ function DesktopLayoutContent({
               <CaseIntakeContinuityPanel
                 caseId={currentCaseId}
                 routePath={location}
+                relatedSubject={related_subject_for_case_path(location)}
               />
             </div>
           ) : null}

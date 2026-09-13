@@ -1409,6 +1409,22 @@ export function autoDetect(
     };
   });
 
+  // Every non-empty intake has a valid destination. A missing rule match is
+  // not a rejection and must not force the person back to the catalog.
+  if (suggestions.length === 0) {
+    suggestions.push({
+      pipeline_id: "other",
+      category: "general",
+      label: "General Investigation",
+      confidence: 0,
+      confidence_label: "low",
+      match_reasons: [
+        "No exact rule match; the general intake preserves the statement without forcing a category.",
+      ],
+      matched_signals: [],
+    });
+  }
+
   // Compute category affinity
   const categoryScores = new Map<string, number>();
   for (const { profile, score } of scored) {

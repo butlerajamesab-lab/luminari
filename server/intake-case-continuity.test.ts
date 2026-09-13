@@ -52,6 +52,22 @@ describe("case intake continuity projection", () => {
           active_stabilization_snapshot_count: 1,
           pending_reassess_count: 0,
           latest_reassess_at: "2026-09-15T00:00:00.000Z",
+          declared_context: {
+            entry_surface: "conversation_intake",
+            document_id: 41,
+          },
+          origin_context: {
+            case_id: 11,
+            case_uuid: "e650c976-0178-4d72-9dda-092eddf3207a",
+            originating_route: "/timeline?caseId=11&document=41",
+            originating_surface: "timeline",
+            user_intent: "adds_context",
+            related_subject: {
+              type: "document",
+              id: "41",
+              label: "care-plan.pdf",
+            },
+          },
         },
         {
           legacy_case_id: 11,
@@ -79,6 +95,8 @@ describe("case intake continuity projection", () => {
           active_stabilization_snapshot_count: 0,
           pending_reassess_count: 0,
           latest_reassess_at: null,
+          declared_context: null,
+          origin_context: null,
         },
       ],
     });
@@ -162,7 +180,22 @@ describe("case intake continuity projection", () => {
       source_artifact_count: 2,
       verification_record_count: 2,
       transition_count: 2,
+      declared_context: {
+        entry_surface: "conversation_intake",
+        document_id: 41,
+      },
+      origin_context: {
+        originating_surface: "timeline",
+        user_intent: "adds_context",
+      },
     });
+    expect(continuity.primary_sessions[0].changes).toEqual([
+      "2 preserved sources added.",
+      "4 governed outputs available.",
+      "2 verification records available.",
+      "2 state transitions recorded.",
+      "2 unresolved dependencies still need attention.",
+    ]);
     expect(continuity.related_sessions[0]).toMatchObject({
       intake_session_id: "22222222-2222-4222-8222-222222222222",
       link_type: "clean_room_restart",
@@ -172,6 +205,11 @@ describe("case intake continuity projection", () => {
       verification_state_counts: { unresolved: 1 },
     });
     expect(continuity.related_sessions[0].document_links).toEqual([]);
+    expect(continuity.related_sessions[0].changes).toEqual([
+      "1 preserved source added.",
+      "1 verification record available.",
+      "1 unresolved dependency still needs attention.",
+    ]);
   });
 
   it("aggregates output, verification, and source-bound continuity counts", async () => {
@@ -207,6 +245,10 @@ describe("case intake continuity projection", () => {
     expect(continuity.totals.transition_state_counts).toEqual({
       care_deficit_documented: 1,
       inspection_observed: 1,
+    });
+    expect(continuity.totals.transition_verification_counts).toEqual({
+      document_stated: 1,
+      supported_by_multiple_sources: 1,
     });
     expect(continuity.primary_sessions[0].document_links.map((link) => link.document_id)).toEqual([41, 42]);
     expect(continuity.primary_sessions[0].document_links[0]?.href).toBe("/documents/41?caseId=11");

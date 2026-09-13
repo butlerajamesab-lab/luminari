@@ -30,6 +30,10 @@ import { sunamRouter } from "./routers/sunam";
 import { analyzeRouter } from "./routers/analyze";
 import { read_canonical_case_layer_outputs } from "./intake-case-layer-reader";
 import { case_intake_continuity_origin_context_schema } from "@shared/case-intake-continuity";
+import { declared_intake_submission_schema } from "@shared/declared-intake-context";
+import { register_declared_intake_context } from "./declared-intake-context";
+import { build_deterministic_intake_turn } from "./intake-conversation-state";
+import { soften_intake_wording } from "./intake-conversation-assistant";
 import { adminMaintenanceRouter } from "./routers/admin-maintenance";
 import { publicAdminMaintenanceRouter } from "./routers/public-admin-maintenance";
 import { streamRegisterRouter } from "./routers/stream-register";
@@ -88,56 +92,121 @@ const activationRouter = router({
 
 // ─── Intake Router (Guided Advocacy Shell) ───
 const intakeRouter = router({
-  converse: protectedProcedure
+  converse: publicProcedure
     .input(z.object({
-      situationType: z.string(),
-      messages: z.array(z.object({ role: z.enum(["assistant", "user"]), content: z.string() })),
+      situationType: z.string().trim().min(1).max(120),
+      messages: z.array(z.object({
+        role: z.enum(["assistant", "user"]),
+        content: z.string().trim().min(1).max(20_000),
+      })).max(24),
+      conversationalWording: z.boolean().optional().default(false),
     }))
     .mutation(async ({ ctx, input }) => {
-      const { autoDetect } = await import("./intake-autodetect");
-
-      // Deterministic conversation state machine
       const userMessages = input.messages.filter(m => m.role === "user");
-      const combinedText = userMessages.map(m => m.content).join(" ");
+      const deterministic = build_deterministic_intake_turn(
+        input.situationType,
+        userMessages.map(message => message.content),
+      );
+      const wording = await soften_intake_wording({
+        deterministic_reply: deterministic.reply,
+        stage: deterministic.stage,
+        requested: input.conversationalWording && Boolean(ctx.user),
+      });
 
-      let reply: string;
-      let plan: any = null;
+      return {
+        reply: wording.reply,
+        plan: deterministic.plan,
+        assistance: {
+          mode: wording.mode,
+          scope: "wording_only" as const,
+          user_content_shared_with_model: false as const,
+          ...(input.conversationalWording && !ctx.user
+            ? { reason: "authentication_required" }
+            : wording.reason
+              ? { reason: wording.reason }
+              : {}),
+        },
+      };
+    }),
 
-      if (userMessages.length <= 1) {
-        // First exchange: ask what happened and when
-        reply = "Thank you for reaching out. I want to make sure I understand your situation clearly. Can you tell me — what happened, and when did it start? Take your time.";
-      } else if (userMessages.length <= 2) {
-        // Second exchange: ask about documents and who's involved
-        reply = "That sounds really difficult, and I appreciate you sharing that. Let me ask — do you have any documents related to this? Things like letters, emails, contracts, or official notices? Also, who are the main people or organizations involved?";
-      } else {
-        // Third+ exchange: run autoDetect and build a plan
-        const result = autoDetect({ combined_text: combinedText });
-        const topSuggestion = result.suggestions[0];
-
-        if (result.ready_to_recommend && topSuggestion) {
-          reply = `Based on what you've shared, it sounds like this involves ${topSuggestion.pipeline_id.replace(/_/g, " ")} issues. Let's get organized — I've put together a plan for what documents to gather and what steps to take next.`;
-          plan = {
-            caseName: `${input.situationType} case`,
-            caseDescription: combinedText.slice(0, 300),
-            domain: topSuggestion.pipeline_id.replace(/_/g, " "),
-            documentChecklist: [
-              { label: "Key correspondence", description: "Any letters, emails, or notices related to your situation", priority: "essential" },
-              { label: "Official documents", description: "Contracts, agreements, court orders, or agency decisions", priority: "essential" },
-              { label: "Timeline records", description: "Anything that helps establish when events occurred", priority: "helpful" },
-            ],
-            nextSteps: [
-              "Upload your documents so we can analyze them",
-              "We'll identify key findings and build your evidence",
-              "Then we'll map out your options for next steps",
-            ],
-            ready: true,
-          };
-        } else {
-          reply = "I'm getting a clearer picture. Is there anything else you'd like me to know — any deadlines coming up, or other concerns? The more context I have, the better I can help you organize your next steps.";
-        }
+  createCase: protectedProcedure
+    .input(z.object({
+      name: z.string().trim().min(1).max(240),
+      description: z.string().max(40_000).optional(),
+      domain: z.string().trim().min(1).max(120).optional(),
+      pipelineType: z.string().trim().min(1).max(120),
+      declaration: declared_intake_submission_schema,
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (input.pipelineType !== input.declaration.selected_pipeline) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "declared_intake_pipeline_mismatch",
+        });
       }
+      const id = await db_helpers.createCase(
+        ctx.user.id,
+        input.name,
+        input.description,
+        input.domain,
+        undefined,
+        input.pipelineType,
+      );
+      await db_helpers.logAudit({
+        caseId: id,
+        userId: ctx.user.id,
+        action: "create_case",
+        targetType: "case",
+        targetId: id,
+        details: {
+          domain: input.domain,
+          pipelineType: input.pipelineType,
+          entrySurface: input.declaration.entry_surface,
+        },
+      });
+      const registered = await register_declared_intake_context({
+        case_id: id,
+        user_id: ctx.user.id,
+        submission: input.declaration,
+      });
+      const { getChecklistForPipeline } = await import("./document-checklists");
+      const items = getChecklistForPipeline(input.pipelineType);
+      if (items.length > 0) await db_helpers.createChecklistItems(id, items);
+      await db_helpers.logPipelineEvent(
+        ctx.user.id,
+        input.pipelineType,
+        "intake_complete",
+      );
+      return {
+        id,
+        intakeSessionId: registered.intake_session_id,
+        declaredContextDocumentId: registered.document_id,
+      };
+    }),
 
-      return { reply, plan };
+  addContext: protectedProcedure
+    .input(z.object({
+      caseId: z.number().int().positive(),
+      declaration: declared_intake_submission_schema,
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await db_helpers.verifyCaseWriteAccess(input.caseId, ctx.user.id);
+      if (!input.declaration.origin_context) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "declared_intake_origin_context_required",
+        });
+      }
+      const registered = await register_declared_intake_context({
+        case_id: input.caseId,
+        user_id: ctx.user.id,
+        submission: input.declaration,
+      });
+      return {
+        success: true as const,
+        intakeSessionId: registered.intake_session_id,
+        declaredContextDocumentId: registered.document_id,
+      };
     }),
 
   generateActionPath: protectedProcedure
@@ -201,7 +270,7 @@ const intakeRouter = router({
     }),
 
   /** Auto-detect pipeline from free-text answers */
-  autoDetect: protectedProcedure
+  autoDetect: publicProcedure
     .input(z.object({
       what_happened: z.string().optional(),
       who_involved: z.string().optional(),
@@ -237,7 +306,7 @@ const intakeRouter = router({
     }),
 
   /** Deterministic auto-detect: runs keyword scoring directly on free text */
-  smartDetect: protectedProcedure
+  smartDetect: publicProcedure
     .input(z.object({
       text: z.string().min(1),
     }))

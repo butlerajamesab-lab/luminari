@@ -91,7 +91,7 @@ export function CaseIntakeContinuityPanel({
     setIntent(nextIntent);
     setOpen(true);
   };
-  const continueToUpload = () => {
+  const continueFromLauncher = () => {
     if (!data) return;
     const from = buildFromParam();
     write_case_intake_origin_context({
@@ -105,6 +105,12 @@ export function CaseIntakeContinuityPanel({
     });
     setOpen(false);
     setCurrentCaseId(caseId);
+    if (intent === "adds_context") {
+      setLocation(
+        `/intake?situation=other&mode=add_context&caseId=${encodeURIComponent(String(caseId))}`,
+      );
+      return;
+    }
     setLocation(with_from_param("/upload"));
   };
 
@@ -116,10 +122,10 @@ export function CaseIntakeContinuityPanel({
             <div>
               <CardTitle className="flex items-center gap-2 text-base">
                 <Activity className="h-4 w-4 text-primary" />
-                Intake Activity / What Changed
+                Intake activity
               </CardTitle>
               <p className="mt-1 text-xs text-muted-foreground">
-                Case-linked intake sessions stay separate. This surface shows the primary session, any explicitly related sessions, and their current preserved evidence and governed output posture.
+                See what each intake added, what the case has processed, and what still needs attention.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -195,8 +201,36 @@ export function CaseIntakeContinuityPanel({
                     <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-muted-foreground">
                       <span>{session.source_artifact_count} sources</span>
                       <span>{session.layer_output_available_count} outputs</span>
-                      <span>{session.verification_record_count} verification</span>
+                      <span>{session.verification_record_count} verification records</span>
                       <span>{session.transition_count} transitions</span>
+                    </div>
+
+                    {(session.declared_context?.entry_surface || session.origin_context) && (
+                      <div className="mt-3 rounded-md border bg-muted/20 px-2.5 py-2 text-[11px] text-muted-foreground">
+                        {session.declared_context?.entry_surface ? (
+                          <div>
+                            Added through <span className="font-medium text-foreground">{humanize(session.declared_context.entry_surface)}</span>
+                          </div>
+                        ) : null}
+                        {session.origin_context ? (
+                          <div className={session.declared_context?.entry_surface ? "mt-1" : ""}>
+                            From <span className="font-medium text-foreground">{humanize(session.origin_context.originating_surface)}</span>
+                            {session.origin_context.related_subject ? (
+                              <> · related to <span className="font-medium text-foreground">{related_subject_label(session.origin_context.related_subject)}</span></>
+                            ) : null}
+                            {" · "}{humanize(session.origin_context.user_intent)}
+                          </div>
+                        ) : null}
+                      </div>
+                    )}
+
+                    <div className="mt-3 rounded-md border bg-muted/20 px-2.5 py-2">
+                      <p className="text-[11px] font-medium text-foreground">What changed</p>
+                      <ul className="mt-1 space-y-1 text-[11px] text-muted-foreground">
+                        {session.changes.map((change) => (
+                          <li key={change}>{change}</li>
+                        ))}
+                      </ul>
                     </div>
 
                     {session.document_links.length > 0 && (
@@ -288,7 +322,9 @@ export function CaseIntakeContinuityPanel({
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={continueToUpload}>Continue to upload</Button>
+            <Button onClick={continueFromLauncher}>
+              {intent === "adds_context" ? "Continue to conversation" : "Continue to upload"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -86,3 +86,57 @@ export function related_subject_label(
 ) {
   return related_subject?.label ?? related_subject?.type ?? null;
 }
+
+export function related_subject_for_case_path(
+  path: string,
+): case_intake_continuity_related_subject | undefined {
+  const url = new URL(path, "https://luminari.local");
+  const document_match = url.pathname.match(/^\/documents\/(\d+)$/);
+  if (document_match) {
+    return {
+      type: "document",
+      id: document_match[1],
+      label: `Document ${document_match[1]}`,
+    };
+  }
+  const entity_match = url.pathname.match(/^\/entities\/(\d+)$/);
+  if (entity_match) {
+    return {
+      type: "entity",
+      id: entity_match[1],
+      label: `Entity ${entity_match[1]}`,
+    };
+  }
+
+  const explicit_type = url.searchParams.get("relatedType");
+  const explicit_id = url.searchParams.get("relatedId");
+  const allowed_types = new Set([
+    "document",
+    "entity",
+    "event",
+    "relationship",
+    "finding",
+    "action",
+  ]);
+  if (explicit_type && explicit_id && allowed_types.has(explicit_type)) {
+    return {
+      type: explicit_type as case_intake_continuity_related_subject["type"],
+      id: explicit_id,
+      ...(url.searchParams.get("relatedLabel")
+        ? { label: url.searchParams.get("relatedLabel")! }
+        : {}),
+    };
+  }
+
+  const timeline_document = url.pathname === "/timeline"
+    ? url.searchParams.get("document")
+    : null;
+  if (timeline_document) {
+    return {
+      type: "document",
+      id: timeline_document,
+      label: `Document ${timeline_document}`,
+    };
+  }
+  return undefined;
+}

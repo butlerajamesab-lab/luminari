@@ -7,6 +7,10 @@ import {
 import { read_case_intake_integrity_projection } from "./intake-case-integrity-projection";
 import type { VerificationRecord } from "./engines/intake-spine/layer-5-verification_gate";
 import type { StateTransition } from "./engines/intake-spine/layer-9-state_timeline";
+import {
+  case_intake_continuity_origin_context_schema,
+  type case_intake_continuity_origin_context,
+} from "@shared/case-intake-continuity";
 
 type case_reference = { case_id: number } | { case_uuid: string };
 
@@ -36,6 +40,8 @@ type linked_session_row = {
   active_stabilization_snapshot_count: number | string;
   pending_reassess_count: number | string;
   latest_reassess_at: string | null;
+  declared_context: unknown;
+  origin_context: unknown;
 };
 
 type bridge_row = {
@@ -87,6 +93,12 @@ export type case_intake_continuity_session = {
     latest_transition_completed_at: string | null;
   };
   document_links: case_intake_continuity_document_link[];
+  origin_context: case_intake_continuity_origin_context | null;
+  declared_context: {
+    entry_surface: string | null;
+    document_id: number | null;
+  } | null;
+  changes: string[];
 };
 
 export type case_intake_continuity = {
@@ -150,6 +162,47 @@ function merge_counts(target: count_map, counts: count_map) {
   for (const [key, value] of Object.entries(counts)) {
     target[key] = (target[key] ?? 0) + value;
   }
+}
+
+function parse_origin_context(value: unknown) {
+  const parsed = case_intake_continuity_origin_context_schema.safeParse(value);
+  return parsed.success ? parsed.data : null;
+}
+
+function parse_declared_context(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const record = value as Record<string, unknown>;
+  return {
+    entry_surface: typeof record.entry_surface === "string"
+      ? record.entry_surface
+      : null,
+    document_id: Number.isSafeInteger(Number(record.document_id))
+      ? Number(record.document_id)
+      : null,
+  };
+}
+
+function describe_session_changes(current: case_intake_continuity_session) {
+  const changes: string[] = [];
+  const describe_positive = (label: string, value: number, verb: string) => {
+    if (value > 0) {
+      changes.push(`${value} ${label}${value === 1 ? "" : "s"} ${verb}.`);
+    }
+  };
+
+  describe_positive("preserved source", current.source_artifact_count, "added");
+  describe_positive("governed output", current.layer_output_available_count, "available");
+  describe_positive("verification record", current.verification_record_count, "available");
+  describe_positive("state transition", current.transition_count, "recorded");
+
+  if (current.unresolved_dependency_count > 0) {
+    changes.push(
+      `${current.unresolved_dependency_count} unresolved dependenc${current.unresolved_dependency_count === 1 ? "y still needs" : "ies still need"} attention.`,
+    );
+  }
+  return changes.length > 0
+    ? changes
+    : ["This intake is linked, but no preserved source or governed output is visible yet."];
 }
 
 function case_surface_href(
@@ -267,6 +320,8 @@ async function load_linked_sessions(bridge: bridge_row) {
          s.source_label,
          s.session_status,
          s.completion_state,
+         s.metadata -> 'declared_context' as declared_context,
+         s.metadata #> '{stabilization,origin_context}' as origin_context,
          s.created_at::text,
          s.updated_at::text
        from public.case_intake_links cil
@@ -359,6 +414,8 @@ async function load_linked_sessions(bridge: bridge_row) {
        ls.source_label,
        ls.session_status,
        ls.completion_state,
+       ls.declared_context,
+       ls.origin_context,
        ls.created_at,
        ls.updated_at,
        coalesce(ac.artifact_count, 0) as artifact_count,
@@ -531,6 +588,9 @@ export async function read_case_intake_continuity(
       },
       document_links: (document_links_by_session.get(row.intake_session_id) ?? [])
         .sort((left, right) => left.document_id - right.document_id),
+      origin_context: parse_origin_context(row.origin_context),
+      declared_context: parse_declared_context(row.declared_context),
+      changes: [],
     } satisfies case_intake_continuity_session;
 
     if (session.is_primary) totals.primary_session_count += 1;
@@ -564,6 +624,10 @@ export async function read_case_intake_continuity(
     if (session.is_primary) primary_sessions.push(session);
     else related_sessions.push(session);
   }
+
+  [...primary_sessions, ...related_sessions].forEach((session) => {
+    session.changes = describe_session_changes(session);
+  });
 
   return {
     case_id,

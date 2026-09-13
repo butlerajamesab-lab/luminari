@@ -68,6 +68,9 @@ describe("case intake continuity wiring", () => {
     expect(panel).toContain("const { setCurrentCaseId } = useCase();");
     expect(panel).not.toContain("refetchInterval: 5000");
     expect(panel).toContain('setLocation(with_from_param("/upload"))');
+    expect(panel).toContain('mode=add_context&caseId=');
+    expect(panel).toContain("session.changes.map");
+    expect(panel).toContain("session.origin_context.related_subject");
     expect(panel).toContain("setLocation(with_from_param(link.href))");
     expect(panel).toContain("setLocation(with_from_param(href))");
     expect(panel).toContain('.filter(([label]) => label !== surface)');
