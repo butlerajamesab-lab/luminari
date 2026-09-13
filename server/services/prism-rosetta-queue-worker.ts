@@ -164,6 +164,14 @@ function known_transient_failure_class(error_code: string): string | null {
   if (error_code === "prism_rosetta_publication_backend_unconfigured" ||
       /^prism_rosetta_publication_lookup_failed:(401|403)$/.test(error_code)) return "authentication";
   if (error_code === "prism_rosetta_current_publication_not_eligible") return "publication_pending";
+  // Source transport can still fail after the publication lookup succeeds.
+  // Preserve retryability before the broader deterministic source-error prefix.
+  if (/^prism_rosetta_source_snapshot_failed:(408|429|5\d\d):/.test(error_code)) {
+    return "transient_upstream";
+  }
+  if (/^prism_rosetta_source_snapshot_failed:(401|403):/.test(error_code)) {
+    return "authentication";
+  }
   if (/^prism_rosetta_source_snapshot_timeout:\d+$/.test(error_code)) {
     return "timeout";
   }
