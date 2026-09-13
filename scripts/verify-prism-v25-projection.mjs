@@ -8,7 +8,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = relative => fs.readFileSync(path.join(root, relative), "utf8");
 const baseline = JSON.parse(read("server/fixtures/prism-v25/observed-v24-history.json"));
 const evaluations = JSON.parse(read("server/fixtures/prism-v25/source-backed-v25-evaluations.json"));
-const migrationPath = "supabase/migrations/20260913203322_prism_v25_generation_and_modal_correction.sql";
+const migrationPath = "supabase/migrations/20260913212226_prism_v25_generation_and_modal_correction.sql";
 const oldMigrationPath = "supabase/migrations/20260910183321_prism_v24_generation_reconciliation.sql";
 const h25 = "26e4ef9f6c0d389154d9a2259c99b6e7eb83a51c096e738a9470fb20ff04ec8b";
 const targets = ["91955a17-ecef-483b-b2b6-0fffee738cf6", "e6f0c3b6-8f1c-41fe-9c82-60afd046f122"];

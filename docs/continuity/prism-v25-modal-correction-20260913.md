@@ -2,7 +2,9 @@
 
 This is the activation contract for Lighthouse PR #656 and [Prism PR #44](https://github.com/butlerajamesab-lab/prism/pull/44). It does not claim a production correction has occurred. Actual deployment, bounded execution, and readback evidence belongs in PR #655.
 
-The active immutable identity is engine/rule version `2.5.0`, rule ID `prism-rosetta-structural-binding`, and ruleset SHA256 `26e4ef9f6c0d389154d9a2259c99b6e7eb83a51c096e738a9470fb20ff04ec8b`. The migration is `20260913203322_prism_v25_generation_and_modal_correction.sql`, SHA256 `40b36de623fe104437c465a4dafe14a349a8095f3af1f0381cf34bf24c748463`.
+The active immutable identity is engine/rule version `2.5.0`, rule ID `prism-rosetta-structural-binding`, and ruleset SHA256 `26e4ef9f6c0d389154d9a2259c99b6e7eb83a51c096e738a9470fb20ff04ec8b`. The migration is `20260913212226_prism_v25_generation_and_modal_correction.sql`, SHA256 `40b36de623fe104437c465a4dafe14a349a8095f3af1f0381cf34bf24c748463`.
+
+The CLI-generated draft version was `20260913203322`. Production applied the exact reviewed 45,513-byte SQL under native ledger version `20260913212226` on 2026-09-13 at 21:22:26 UTC. The repository filename now matches that actual version; SQL bytes are unchanged. The September 13 production receipt addendum records one statement with both statement/executable MD5 `9dc37dd0bc44461bf4602a7611f9755a`. No production or Preview ledger row was renamed, removed, or marked as applied. Post-install readback matched all nine full function definitions and access rules, preserved all four original pattern rows, and found zero 2.5 queues, runs, requests, receipts, bindings, or patterns. Runtime correction remains pending until separately authorized bounded execution.
 
 ## Deployment and bounded activation
 

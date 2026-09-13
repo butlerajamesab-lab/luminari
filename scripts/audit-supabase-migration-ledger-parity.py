@@ -17,10 +17,6 @@ PRODUCTION_RECEIPTS = (
 # joining statements with one blank line, and ending the file with one newline.
 # The sole comment-only receipt (20260517000000) intentionally gets no terminator.
 APPROVED_REPOSITORY_ONLY = {
-    "20260913203322": (
-        "20260913203322_prism_v25_generation_and_modal_correction.sql",
-        "f3269e8de787e394904aebafb0c770f0684586af",
-    ),
     "20260501203517": (
         "20260501203517_fresh_branch_signal_severity_foundation.sql",
         "8a13b1a07ae5c0b897392fe400e052e1bda2e48d",
@@ -734,4 +730,3 @@ if (
     raise SystemExit(1)
 
 print("MIGRATION_LEDGER_PARITY_CONTRACT=PASS")
-
