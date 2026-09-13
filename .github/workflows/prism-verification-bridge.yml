@@ -26,6 +26,7 @@ jobs:
           server/services/prism-rosetta-startup-activation.test.ts
           server/services/prism-rosetta-queue-worker.test.ts
           server/services/prism-rosetta-batch-budget.test.ts
+          server/prism-rosetta-worker.test.ts
           server/services/prism-rosetta-runtime-pressure.test.ts
           server/services/prism-problem-intake-client.test.ts
           server/civic-genome-legislative-version-spine.test.ts
@@ -45,4 +46,5 @@ jobs:
           server/runtime-role-boundary.contract.test.ts
           server/executor-runtime-boundary.test.ts
       - run: pnpm run build
+
 
