@@ -1,0 +1,373 @@
+{
+  "contract": "prism-v25-activation-preflight-v1",
+  "state": "new_version_not_activated",
+  "historical_cutoff": "2026-09-13T20:35:12.788816Z",
+  "projects": {
+    "prism": "ckkvxfqqakdzrcbmdimy",
+    "lighthouse": "wepxlinwbjrkqdzkqpar",
+    "rosetta": "kjzytnzkkdpdxtqtjlew"
+  },
+  "observations": {
+    "prism-before.json": {
+      "sha256": "cf0028b095e5f995e19e60bd231e26edad8a52a79f0a7e840741589d766f32bf",
+      "content": [
+        {
+          "observed_at": "2026-09-13 20:39:19.582549+00",
+          "table_name": "prism_verification_rule_sets",
+          "cutoff": "2026-09-13 20:35:12.788816+00",
+          "scope": "all prior registry rows",
+          "row_count": 8,
+          "digest": "2401543460fab9ee2241345bd972a6238ac29b4b8224a3109638476210fe1793"
+        },
+        {
+          "observed_at": "2026-09-13 20:39:19.582549+00",
+          "table_name": "prism_verification_requests",
+          "cutoff": "2026-09-13 20:35:12.788816+00",
+          "scope": "rule_set_version = 2.4.0",
+          "row_count": 52,
+          "digest": "0fd6a320955fa7e54a688df37c78b7321bcf3d19e80a0975d5a0b3ff054a104e"
+        },
+        {
+          "observed_at": "2026-09-13 20:39:19.582549+00",
+          "table_name": "prism_verification_receipts",
+          "cutoff": "2026-09-13 20:35:12.788816+00",
+          "scope": "rule_set_version = 2.4.0",
+          "row_count": 52,
+          "digest": "6576967994623cce83fedbb1d629bf8691fbffd3f7403d3313c5b77a6daed829"
+        }
+      ]
+    },
+    "prism-preservation.sql": {
+      "sha256": "d4263dc63a6f2b3be2e751cb757dd0ab69c9dc6d79abdda7a69a4b4ebce0919a",
+      "content": "select now() observed_at, 'prism_verification_rule_sets'::text as table_name,'2026-09-13 20:35:12.788816+00'::timestamptz as cutoff,'all prior registry rows'::text as scope,count(*) as row_count,encode(extensions.digest(convert_to(coalesce(string_agg(row_sha,E'\\n' order by row_sha),''),'UTF8'),'sha256'),'hex') as digest from (select encode(extensions.digest(convert_to(to_jsonb(t)::text,'UTF8'),'sha256'),'hex') as row_sha from public.prism_verification_rule_sets t where created_at<='2026-09-13 20:35:12.788816+00'::timestamptz) rows\nunion all\nselect now() observed_at, 'prism_verification_requests'::text as table_name,'2026-09-13 20:35:12.788816+00'::timestamptz as cutoff,'rule_set_version = 2.4.0'::text as scope,count(*) as row_count,encode(extensions.digest(convert_to(coalesce(string_agg(row_sha,E'\\n' order by row_sha),''),'UTF8'),'sha256'),'hex') as digest from (select encode(extensions.digest(convert_to(to_jsonb(t)::text,'UTF8'),'sha256'),'hex') as row_sha from public.prism_verification_requests t where received_at<='2026-09-13 20:35:12.788816+00'::timestamptz and rule_set_version='2.4.0') rows\nunion all\nselect now() observed_at, 'prism_verification_receipts'::text as table_name,'2026-09-13 20:35:12.788816+00'::timestamptz as cutoff,'rule_set_version = 2.4.0'::text as scope,count(*) as row_count,encode(extensions.digest(convert_to(coalesce(string_agg(row_sha,E'\\n' order by row_sha),''),'UTF8'),'sha256'),'hex') as digest from (select encode(extensions.digest(convert_to(to_jsonb(t)::text,'UTF8'),'sha256'),'hex') as row_sha from public.prism_verification_receipts t where completion_timestamp<='2026-09-13 20:35:12.788816+00'::timestamptz and rule_set_version='2.4.0') rows;\n\n"
+    },
+    "lighthouse-before.json": {
+      "sha256": "ef35494580c358640f1fc0bf0ea5fed54d2381b0add2a1d552b03200fc05a6d0",
+      "content": [
+        {
+          "cutoff": "2026-09-13 20:35:12.788816+00",
+          "digest": "eed015016366ad40990a66fa7cbb577d0bfabde0e1439917de4e821ae4a26280",
+          "observed_at": "2026-09-13 20:37:40.141433+00",
+          "row_count": 149871,
+          "table_name": "civic_genome_prism_verification_binding"
+        },
+        {
+          "cutoff": "2026-09-13 20:35:12.788816+00",
+          "digest": "5b3487529a4bc3578c71f270d22cd7d2e1f0174d0cb2b9dc4ffe4dd584dbe641",
+          "observed_at": "2026-09-13 20:37:40.141433+00",
+          "row_count": 11168,
+          "table_name": "civic_genome_prism_verification_run"
+        },
+        {
+          "cutoff": "2026-09-13 20:35:12.788816+00",
+          "digest": "18610b8caef11efdd57ec90124f067735abde279cbba01ef45230f99e7eabce5",
+          "observed_at": "2026-09-13 20:37:40.141433+00",
+          "row_count": 26407,
+          "table_name": "civic_genome_prism_verification_queue"
+        },
+        {
+          "cutoff": "2026-09-13 20:35:12.788816+00",
+          "digest": "8a842161fa3f9b2115b8e8a94a4a09e3b0cba090d4ed7d237bdb5a7599435bb6",
+          "observed_at": "2026-09-13 20:37:40.141433+00",
+          "row_count": 149871,
+          "table_name": "lighthouse_prism_verification_receipts"
+        },
+        {
+          "cutoff": "2026-09-13 20:35:12.788816+00",
+          "digest": "55058ddcd75e55a241c1ea47cb71ff5107ee5255f53f2a1ba8b5a198fbf83543",
+          "observed_at": "2026-09-13 20:37:40.141433+00",
+          "row_count": 149900,
+          "table_name": "lighthouse_prism_verification_requests"
+        }
+      ]
+    },
+    "lighthouse-preservation.sql": {
+      "sha256": "11d447aa405e168bb97a57e6bbb0d7ce8476047ec0c5d20798529273831fe707",
+      "content": "select now() observed_at, 'civic_genome_prism_verification_binding'::text as table_name,'2026-09-13 20:35:12.788816+00'::timestamptz as cutoff,count(*) as row_count,encode(extensions.digest(convert_to(coalesce(string_agg(row_sha,E'\\n' order by row_sha),''),'UTF8'),'sha256'),'hex') as digest from (select encode(extensions.digest(convert_to(to_jsonb(t)::text,'UTF8'),'sha256'),'hex') as row_sha from public.civic_genome_prism_verification_binding t where created_at<='2026-09-13 20:35:12.788816+00'::timestamptz) rows\nunion all\nselect now() observed_at, 'civic_genome_prism_verification_run'::text as table_name,'2026-09-13 20:35:12.788816+00'::timestamptz as cutoff,count(*) as row_count,encode(extensions.digest(convert_to(coalesce(string_agg(row_sha,E'\\n' order by row_sha),''),'UTF8'),'sha256'),'hex') as digest from (select encode(extensions.digest(convert_to(to_jsonb(t)::text,'UTF8'),'sha256'),'hex') as row_sha from public.civic_genome_prism_verification_run t where created_at<='2026-09-13 20:35:12.788816+00'::timestamptz) rows\nunion all\nselect now() observed_at, 'civic_genome_prism_verification_queue'::text as table_name,'2026-09-13 20:35:12.788816+00'::timestamptz as cutoff,count(*) as row_count,encode(extensions.digest(convert_to(coalesce(string_agg(row_sha,E'\\n' order by row_sha),''),'UTF8'),'sha256'),'hex') as digest from (select encode(extensions.digest(convert_to(to_jsonb(t)::text,'UTF8'),'sha256'),'hex') as row_sha from public.civic_genome_prism_verification_queue t where created_at<='2026-09-13 20:35:12.788816+00'::timestamptz) rows\nunion all\nselect now() observed_at, 'lighthouse_prism_verification_receipts'::text as table_name,'2026-09-13 20:35:12.788816+00'::timestamptz as cutoff,count(*) as row_count,encode(extensions.digest(convert_to(coalesce(string_agg(row_sha,E'\\n' order by row_sha),''),'UTF8'),'sha256'),'hex') as digest from (select encode(extensions.digest(convert_to(to_jsonb(t)::text,'UTF8'),'sha256'),'hex') as row_sha from public.lighthouse_prism_verification_receipts t where retrieved_at<='2026-09-13 20:35:12.788816+00'::timestamptz) rows\nunion all\nselect now() observed_at, 'lighthouse_prism_verification_requests'::text as table_name,'2026-09-13 20:35:12.788816+00'::timestamptz as cutoff,count(*) as row_count,encode(extensions.digest(convert_to(coalesce(string_agg(row_sha,E'\\n' order by row_sha),''),'UTF8'),'sha256'),'hex') as digest from (select encode(extensions.digest(convert_to(to_jsonb(t)::text,'UTF8'),'sha256'),'hex') as row_sha from public.lighthouse_prism_verification_requests t where created_at<='2026-09-13 20:35:12.788816+00'::timestamptz) rows;\n\n"
+    },
+    "affected-v24-cohort.json": {
+      "sha256": "28b430b2e01b70cfd67429042aad918292a97c4a69b44ca375880dcafef76d82",
+      "content": {
+        "historical_affected_receipts": [
+          {
+            "evidence_file": "prism-batch-budget-evidence.json",
+            "assembly_run_id": "a66fa200-478b-4fb6-8cd8-f83e8b48c789",
+            "queue_id": "dd81f30d-5545-455c-a859-3e1d9fe7d1d8",
+            "request_id": "prism-rosetta-v1-fa71d68f6b64284862e87921fcca6e80bbf8870571ddabe93932454535da0a3f",
+            "prism_verification_receipt_id": "2aed8661-fa43-4058-896f-63436611380d",
+            "extraction_run_id": "13464",
+            "source_document_id": 9005,
+            "trait_id": "722d5046-280a-45bf-a955-d08e7d28f0df",
+            "verification_status": "contradicted"
+          },
+          {
+            "evidence_file": "prism-batch-budget-evidence.json",
+            "assembly_run_id": "4abc23d0-4e11-4586-8b49-301d3af89795",
+            "queue_id": "3a85055a-61bf-486c-aeeb-d0e05a09c314",
+            "request_id": "prism-rosetta-v1-8df65dd4466d3fb6dcc15ba8e5954748343dda8fd584afd4da4a443f065e9cd3",
+            "prism_verification_receipt_id": "6c66e065-0a9f-4c10-b6cc-206c136cc5ba",
+            "extraction_run_id": "13697",
+            "source_document_id": 9195,
+            "trait_id": "130e9a6c-472a-401f-84c2-45d2db0a2b99",
+            "verification_status": "contradicted"
+          },
+          {
+            "evidence_file": "prism-batch-budget-evidence.json",
+            "assembly_run_id": "2dec37fc-bf41-458e-babf-5d4d8ced6792",
+            "queue_id": "3498eeeb-7733-45c4-9d8e-e14076f4c228",
+            "request_id": "prism-rosetta-v1-8b88b2d4a7bf4ad036d88d2fc9b5dcbb8392a3c9f31464b4e9ad172412f2f953",
+            "prism_verification_receipt_id": "721c9ee2-8ada-4e18-90f6-d05bea984e9f",
+            "extraction_run_id": "14125",
+            "source_document_id": 9556,
+            "trait_id": "6cb094f7-a5c7-4dbd-ae3f-91f2e399b168",
+            "verification_status": "contradicted"
+          },
+          {
+            "evidence_file": "prism-batch2-execution-evidence.json",
+            "assembly_run_id": "5322e178-52d3-4461-8979-60ad6b9a0d1c",
+            "queue_id": "2e25745e-a89c-4036-8ea8-2026a6daa974",
+            "request_id": "prism-rosetta-v1-5e8b7746b31fbced7aa630b05a94e2f0043413151a9d5b82d2512aaee612135a",
+            "prism_verification_receipt_id": "1c2fe75d-b930-4856-a6a5-57d507f4feb7",
+            "extraction_run_id": "14351",
+            "source_document_id": 9726,
+            "trait_id": "177672b4-6d80-4eba-b30f-5414f3d62666",
+            "verification_status": "contradicted"
+          },
+          {
+            "evidence_file": "prism-batch2-execution-evidence.json",
+            "assembly_run_id": "ea6d5449-f6f4-47bd-b593-2f00c14ebea6",
+            "queue_id": "393a1f14-aefe-4df5-bb0b-d2688d8af281",
+            "request_id": "prism-rosetta-v1-01d4ff539a0500473836a103f6ec2ec35dfd743f1bdd35387bd15cc181c2273c",
+            "prism_verification_receipt_id": "00341124-6051-4fb7-9c27-030c37966757",
+            "extraction_run_id": "14430",
+            "source_document_id": 9794,
+            "trait_id": "05d1431f-7823-40a0-af31-8e1784fdf9c4",
+            "verification_status": "contradicted"
+          }
+        ],
+        "requested_next_version": "2.5.0",
+        "fresh_publication_preflight_required": true,
+        "expected_new_requests": 5,
+        "operator_note": "Five assemblies, one confirmed trait each; the sixth affected span is a second step within one receipt."
+      }
+    },
+    "rosetta-publication-preflight.sql": {
+      "sha256": "4ba9794bd9590f389f2828eee11f96218114ff32c4629f2f75941de60ecdc720",
+      "content": "select now() observed_at,extraction_run_id,source_document_id,source_identity_hash,source_content_hash,output_content_hash,rule_manifest_hash,configuration_hash from public.v_civic_genome_law_view_v1 where extraction_run_id in (13464,13697,14125,14351,14430) order by extraction_run_id;\n"
+    },
+    "rosetta-publication-preflight.json": {
+      "sha256": "172375e321b8da2a6b3eae9e6e8089519d861cd8de52af15c0e69d495b2004a5",
+      "content": [
+        {
+          "observed_at": "2026-09-13 20:52:21.796725+00",
+          "extraction_run_id": 13464,
+          "source_document_id": 9005,
+          "source_identity_hash": "893c5b57cd8a5ce8cdc34969cc828d83d7b27996209bcaad785bf1c1b3916737",
+          "source_content_hash": "69270d4988df399e072725293086ec130586fe76aa9a40c8288ac0b598187590",
+          "output_content_hash": "5e8c8f22bfc3f7b435436adf640093da1dec3f33250835eef7ece2184babf4d7",
+          "rule_manifest_hash": "3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639",
+          "configuration_hash": "f3ed31dc0948fb30d49252c8c10646ec8953916e44516d263663060d032feaf1"
+        },
+        {
+          "observed_at": "2026-09-13 20:52:21.796725+00",
+          "extraction_run_id": 13697,
+          "source_document_id": 9195,
+          "source_identity_hash": "04e7b626ccfb08d2f80033d6106b9dcf4fe607147c0af3bd24262c1208e417b5",
+          "source_content_hash": "3da2095eb7b85bcd336ed2a78dd687d91081581a94df74dd2cddc159fec2726c",
+          "output_content_hash": "bdad1d9b87a7602fe534f9bc47692689a5a476b560e82c91c9e20a0de364d00d",
+          "rule_manifest_hash": "3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639",
+          "configuration_hash": "32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0"
+        },
+        {
+          "observed_at": "2026-09-13 20:52:21.796725+00",
+          "extraction_run_id": 14125,
+          "source_document_id": 9556,
+          "source_identity_hash": "37ab2ee78305265f7d93a0796080f0b3beecb4af351d1c56b5c50ca967292eb0",
+          "source_content_hash": "d9f8f66e08098ad29086a167cff4a19e55d97997c172c43ece0840287c5f5935",
+          "output_content_hash": "223f0e1f801e1e7d24620c90279855fbe082b4c2afcd13f61c4c7dbfc30a3f8e",
+          "rule_manifest_hash": "3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639",
+          "configuration_hash": "32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0"
+        },
+        {
+          "observed_at": "2026-09-13 20:52:21.796725+00",
+          "extraction_run_id": 14351,
+          "source_document_id": 9726,
+          "source_identity_hash": "23303c719cef08a2869eca6877cb15e51f9a79c575778189ce81a0794d2d6a9d",
+          "source_content_hash": "50fc65e7bbbb6087caad131a2e03dd41137082be736af17acbada1ed5490dd50",
+          "output_content_hash": "7e6b2989913cbb349056f38aff7cc3c2406e250aa22e669f4b1c574375b7f9ad",
+          "rule_manifest_hash": "3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639",
+          "configuration_hash": "8445dff7f5934991f5ff3c2fd35711b30214e96c59d117a67fd9577dc30dfa2a"
+        },
+        {
+          "observed_at": "2026-09-13 20:52:21.796725+00",
+          "extraction_run_id": 14430,
+          "source_document_id": 9794,
+          "source_identity_hash": "f74a17b4da62fc6baccde1d39c0c831db6af88c80b5f545e2cb778f6e7b16fa2",
+          "source_content_hash": "f06b3e5a25dcdffacee1d635f381c05aeb5cbccc4807cbd1505aa75317f7ace5",
+          "output_content_hash": "d9d588f987d6e458d719bacb977095100c10ff8f2248f7b2022f993dfb9bbecb",
+          "rule_manifest_hash": "3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639",
+          "configuration_hash": "8445dff7f5934991f5ff3c2fd35711b30214e96c59d117a67fd9577dc30dfa2a"
+        }
+      ]
+    },
+    "lighthouse-preflight.sql": {
+      "sha256": "7f337f4a09bdb10ab39973e0d03f705fd20e59a6df4625d48606b70d6282cf25",
+      "content": "select now() observed_at,a.assembly_run_id,a.genome_bill_id,a.source_document_id,a.extraction_run_id,a.run_status,a.verification_state,a.trait_count,a.rosetta_source_identity_hash,a.rosetta_source_content_hash,a.rosetta_output_content_hash,a.rosetta_rule_manifest_hash,a.rosetta_configuration_hash,t.trait_id,t.verification_state trait_state,(t.genome_bill_id=a.genome_bill_id and t.source_document_id=a.source_document_id and t.extraction_run_id=a.extraction_run_id) trait_identity_matches,q.queue_state historical_queue_state,q.attempt_count historical_attempt_count,q.receipt_count historical_receipt_count,(select count(*) from public.civic_genome_prism_verification_queue future where future.assembly_run_id=a.assembly_run_id and future.prism_rule_set_version='2.5.0') existing_v25_queues from(values ('a66fa200-478b-4fb6-8cd8-f83e8b48c789'::uuid,'722d5046-280a-45bf-a955-d08e7d28f0df'::uuid,'dd81f30d-5545-455c-a859-3e1d9fe7d1d8'::uuid),('4abc23d0-4e11-4586-8b49-301d3af89795'::uuid,'130e9a6c-472a-401f-84c2-45d2db0a2b99'::uuid,'3a85055a-61bf-486c-aeeb-d0e05a09c314'::uuid),('2dec37fc-bf41-458e-babf-5d4d8ced6792'::uuid,'6cb094f7-a5c7-4dbd-ae3f-91f2e399b168'::uuid,'3498eeeb-7733-45c4-9d8e-e14076f4c228'::uuid),('5322e178-52d3-4461-8979-60ad6b9a0d1c'::uuid,'177672b4-6d80-4eba-b30f-5414f3d62666'::uuid,'2e25745e-a89c-4036-8ea8-2026a6daa974'::uuid),('ea6d5449-f6f4-47bd-b593-2f00c14ebea6'::uuid,'05d1431f-7823-40a0-af31-8e1784fdf9c4'::uuid,'393a1f14-aefe-4df5-bb0b-d2688d8af281'::uuid)) selected(assembly_run_id,trait_id,queue_id) join public.civic_genome_assembly_run a using(assembly_run_id) join public.civic_genome_trait t on t.trait_id=selected.trait_id join public.civic_genome_prism_verification_queue q on q.queue_id=selected.queue_id order by a.source_document_id;\n"
+    },
+    "lighthouse-preflight.json": {
+      "sha256": "d05cd0dd4de7666925ea52c45d5599c7c975e941d784bbd22bcff0e85e781c99",
+      "content": {
+        "rows": [
+          {
+            "observed_at": "2026-09-13 20:53:30.14669+00",
+            "assembly_run_id": "a66fa200-478b-4fb6-8cd8-f83e8b48c789",
+            "genome_bill_id": "2bc31edd-4d80-4db3-b56c-1ff21c24f0d3",
+            "source_document_id": 9005,
+            "extraction_run_id": "13464",
+            "run_status": "completed",
+            "verification_state": "complete",
+            "trait_count": 1,
+            "rosetta_source_identity_hash": "893c5b57cd8a5ce8cdc34969cc828d83d7b27996209bcaad785bf1c1b3916737",
+            "rosetta_source_content_hash": "69270d4988df399e072725293086ec130586fe76aa9a40c8288ac0b598187590",
+            "rosetta_output_content_hash": "5e8c8f22bfc3f7b435436adf640093da1dec3f33250835eef7ece2184babf4d7",
+            "rosetta_rule_manifest_hash": "3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639",
+            "rosetta_configuration_hash": "f3ed31dc0948fb30d49252c8c10646ec8953916e44516d263663060d032feaf1",
+            "trait_id": "722d5046-280a-45bf-a955-d08e7d28f0df",
+            "trait_state": "confirmed",
+            "trait_identity_matches": true,
+            "historical_queue_state": "completed",
+            "historical_attempt_count": 1,
+            "historical_receipt_count": 1,
+            "existing_v25_queues": 0
+          },
+          {
+            "observed_at": "2026-09-13 20:53:30.14669+00",
+            "assembly_run_id": "4abc23d0-4e11-4586-8b49-301d3af89795",
+            "genome_bill_id": "c38480aa-c8e4-4bce-bf22-bc7c760d27e5",
+            "source_document_id": 9195,
+            "extraction_run_id": "13697",
+            "run_status": "completed",
+            "verification_state": "complete",
+            "trait_count": 1,
+            "rosetta_source_identity_hash": "04e7b626ccfb08d2f80033d6106b9dcf4fe607147c0af3bd24262c1208e417b5",
+            "rosetta_source_content_hash": "3da2095eb7b85bcd336ed2a78dd687d91081581a94df74dd2cddc159fec2726c",
+            "rosetta_output_content_hash": "bdad1d9b87a7602fe534f9bc47692689a5a476b560e82c91c9e20a0de364d00d",
+            "rosetta_rule_manifest_hash": "3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639",
+            "rosetta_configuration_hash": "32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0",
+            "trait_id": "130e9a6c-472a-401f-84c2-45d2db0a2b99",
+            "trait_state": "confirmed",
+            "trait_identity_matches": true,
+            "historical_queue_state": "completed",
+            "historical_attempt_count": 1,
+            "historical_receipt_count": 1,
+            "existing_v25_queues": 0
+          },
+          {
+            "observed_at": "2026-09-13 20:53:30.14669+00",
+            "assembly_run_id": "2dec37fc-bf41-458e-babf-5d4d8ced6792",
+            "genome_bill_id": "2023e28e-0f03-479b-86d4-2d47bd46a325",
+            "source_document_id": 9556,
+            "extraction_run_id": "14125",
+            "run_status": "completed",
+            "verification_state": "complete",
+            "trait_count": 1,
+            "rosetta_source_identity_hash": "37ab2ee78305265f7d93a0796080f0b3beecb4af351d1c56b5c50ca967292eb0",
+            "rosetta_source_content_hash": "d9f8f66e08098ad29086a167cff4a19e55d97997c172c43ece0840287c5f5935",
+            "rosetta_output_content_hash": "223f0e1f801e1e7d24620c90279855fbe082b4c2afcd13f61c4c7dbfc30a3f8e",
+            "rosetta_rule_manifest_hash": "3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639",
+            "rosetta_configuration_hash": "32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0",
+            "trait_id": "6cb094f7-a5c7-4dbd-ae3f-91f2e399b168",
+            "trait_state": "confirmed",
+            "trait_identity_matches": true,
+            "historical_queue_state": "completed",
+            "historical_attempt_count": 1,
+            "historical_receipt_count": 1,
+            "existing_v25_queues": 0
+          },
+          {
+            "observed_at": "2026-09-13 20:53:30.14669+00",
+            "assembly_run_id": "5322e178-52d3-4461-8979-60ad6b9a0d1c",
+            "genome_bill_id": "e6cf09b0-0dfe-46c7-8284-371d90bec6b6",
+            "source_document_id": 9726,
+            "extraction_run_id": "14351",
+            "run_status": "completed",
+            "verification_state": "complete",
+            "trait_count": 1,
+            "rosetta_source_identity_hash": "23303c719cef08a2869eca6877cb15e51f9a79c575778189ce81a0794d2d6a9d",
+            "rosetta_source_content_hash": "50fc65e7bbbb6087caad131a2e03dd41137082be736af17acbada1ed5490dd50",
+            "rosetta_output_content_hash": "7e6b2989913cbb349056f38aff7cc3c2406e250aa22e669f4b1c574375b7f9ad",
+            "rosetta_rule_manifest_hash": "3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639",
+            "rosetta_configuration_hash": "8445dff7f5934991f5ff3c2fd35711b30214e96c59d117a67fd9577dc30dfa2a",
+            "trait_id": "177672b4-6d80-4eba-b30f-5414f3d62666",
+            "trait_state": "confirmed",
+            "trait_identity_matches": true,
+            "historical_queue_state": "completed",
+            "historical_attempt_count": 1,
+            "historical_receipt_count": 1,
+            "existing_v25_queues": 0
+          },
+          {
+            "observed_at": "2026-09-13 20:53:30.14669+00",
+            "assembly_run_id": "ea6d5449-f6f4-47bd-b593-2f00c14ebea6",
+            "genome_bill_id": "5b17582e-9747-44cc-99f3-1300c352b177",
+            "source_document_id": 9794,
+            "extraction_run_id": "14430",
+            "run_status": "completed",
+            "verification_state": "complete",
+            "trait_count": 1,
+            "rosetta_source_identity_hash": "f74a17b4da62fc6baccde1d39c0c831db6af88c80b5f545e2cb778f6e7b16fa2",
+            "rosetta_source_content_hash": "f06b3e5a25dcdffacee1d635f381c05aeb5cbccc4807cbd1505aa75317f7ace5",
+            "rosetta_output_content_hash": "d9d588f987d6e458d719bacb977095100c10ff8f2248f7b2022f993dfb9bbecb",
+            "rosetta_rule_manifest_hash": "3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639",
+            "rosetta_configuration_hash": "8445dff7f5934991f5ff3c2fd35711b30214e96c59d117a67fd9577dc30dfa2a",
+            "trait_id": "05d1431f-7823-40a0-af31-8e1784fdf9c4",
+            "trait_state": "confirmed",
+            "trait_identity_matches": true,
+            "historical_queue_state": "completed",
+            "historical_attempt_count": 1,
+            "historical_receipt_count": 1,
+            "existing_v25_queues": 0
+          }
+        ],
+        "comparison_to_rosetta": [
+          {
+            "assembly_run_id": "a66fa200-478b-4fb6-8cd8-f83e8b48c789",
+            "public_matches": true,
+            "ready": true,
+            "observed_at": "2026-09-13 20:53:30.14669+00"
+          },
+          {
+            "assembly_run_id": "4abc23d0-4e11-4586-8b49-301d3af89795",
+            "public_matches": true,
+            "ready": true,
+            "observed_at": "2026-09-13 20:53:30.14669+00"
+          },
+          {
+            "assembly_run_id": "2dec37fc-bf41-458e-babf-5d4d8ced6792",
+            "public_matches": true,
+            "ready": true,
+            "observed_at": "2026-09-13 20:53:30.14669+00"
+          },
+          {
+            "assembly_run_id": "5322e178-52d3-4461-8979-60ad6b9a0d1c",
+            "public_matches": true,
+            "ready": true,
+            "observed_at": "2026-09-13 20:53:30.14669+00"
+          },
+          {
+            "assembly_run_id": "ea6d5449-f6f4-47bd-b593-2f00c14ebea6",
+            "public_matches": true,
+            "ready": true,
+            "observed_at": "2026-09-13 20:53:30.14669+00"
+          }
+        ]
+      }
+    }
+  },
+  "limitations": [
+    "This records preactivation state, not a production 2.5 receipt or deployment result.",
+    "Prism row-content preservation is scoped to all eight prior rule rows and all 52 existing 2.4 requests and receipts. A full-history payload scan timed out and supplies no proof.",
+    "Lighthouse fingerprints cover all records in each listed table at or before the fixed cutoff. New rows after that cutoff are excluded from the later historical comparison.",
+    "Current publication and binding checks must be revalidated at execution; they were true for all five selected assemblies at the recorded observation times."
+  ]
+}
