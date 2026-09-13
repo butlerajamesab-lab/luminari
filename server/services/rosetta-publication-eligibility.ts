@@ -2,7 +2,7 @@ import { create_rosetta_supabase_headers } from "../rosetta-supabase-auth";
 
 type rosetta_publication_binding = {
   source_document_id: number;
-  extraction_run_id: number;
+  extraction_run_id: string;
   rosetta_source_identity_hash: string;
   rosetta_source_content_hash: string;
   rosetta_output_content_hash: string;
@@ -25,9 +25,14 @@ export async function assert_rosetta_current_publication(
   const base_url = process.env.ROSETTA_SUPABASE_URL?.trim().replace(/\/+$/, "");
   const service_key = process.env.ROSETTA_SUPABASE_SERVICE_ROLE_KEY?.trim();
   if (!base_url || !service_key) throw new Error("prism_rosetta_publication_backend_unconfigured");
+  const extraction_run_id = Number(binding.extraction_run_id);
+  if (!/^[1-9][0-9]*$/.test(binding.extraction_run_id) ||
+      !Number.isSafeInteger(extraction_run_id) || extraction_run_id > 2_147_483_647) {
+    throw new Error("prism_rosetta_publication_run_id_invalid");
+  }
   const query = new URLSearchParams({
     select: "extraction_run_id,source_document_id," + hash_bindings.map(([column]) => column).join(","),
-    extraction_run_id: `eq.${binding.extraction_run_id}`,
+    extraction_run_id: `eq.${extraction_run_id}`,
     source_document_id: `eq.${binding.source_document_id}`,
     limit: "2",
   });
@@ -46,7 +51,7 @@ export async function assert_rosetta_current_publication(
     }
     const row = rows[0];
     if (!row || typeof row !== "object" ||
-        row.extraction_run_id !== binding.extraction_run_id ||
+        row.extraction_run_id !== extraction_run_id ||
         row.source_document_id !== binding.source_document_id ||
         hash_bindings.some(([column, field]) =>
           typeof row[column] !== "string" ||

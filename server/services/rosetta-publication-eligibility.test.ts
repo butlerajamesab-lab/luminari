@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { assert_rosetta_current_publication } from "./rosetta-publication-eligibility";
 
 const binding = {
-  source_document_id: 7, extraction_run_id: 12,
+  source_document_id: 7, extraction_run_id: "12",
   rosetta_source_identity_hash: "a".repeat(64),
   rosetta_source_content_hash: "b".repeat(64),
   rosetta_output_content_hash: "c".repeat(64),
@@ -50,6 +50,13 @@ describe("Rosetta publication eligibility at the Prism consumer boundary", () =>
   it.each(Object.keys(row))("rejects a changed %s", async (column) => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response([{ ...row, [column]: "different" }])));
     await expect(assert_rosetta_current_publication(binding)).rejects.toThrow("binding_mismatch");
+  });
+
+  it.each(["12oops", "0", "1e1", "2147483648"])("rejects an invalid textual run ID %s before fetching", async (extraction_run_id) => {
+    const fetch_mock = vi.fn();
+    vi.stubGlobal("fetch", fetch_mock);
+    await expect(assert_rosetta_current_publication({ ...binding, extraction_run_id })).rejects.toThrow("run_id_invalid");
+    expect(fetch_mock).not.toHaveBeenCalled();
   });
 
   it("does not cache a passing decision across later revocation", async () => {
