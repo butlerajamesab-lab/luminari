@@ -1,0 +1,43 @@
+{
+  "retrieved_at": "2026-09-13",
+  "upstream_commit": "db598c5cbdd595bbb56fa59ad30b4c0a60d1f284",
+  "official_bill_page": "https://apps.legislature.ky.gov/record/26rs/hjr81.html",
+  "sources": [
+    {
+      "source_run_id": 1002170,
+      "document_identifier": "docket:2122615:amendment:2122615:289230",
+      "document_family": "amendment",
+      "source_url": "https://apps.legislature.ky.gov/recorddocuments/note/26RS/hjr81/HCS1FN.pdf",
+      "provider_document_type": "House Committee Substitute ",
+      "description": "Fiscal Note to House Committee Substitute 1 ",
+      "expected_role": "fiscal_note"
+    },
+    {
+      "source_run_id": 1002173,
+      "document_identifier": "docket:2102075:amendment:2102075:278789",
+      "document_family": "amendment",
+      "source_url": "https://apps.legislature.ky.gov/recorddocuments/bill/26RS/HB519/HFA1.pdf",
+      "provider_document_type": "House Floor Amendment ",
+      "description": "House Floor Amendment 1 ",
+      "expected_role": "unknown"
+    },
+    {
+      "source_run_id": 1002174,
+      "document_identifier": "docket:2120966:amendment:2120966:296848",
+      "document_family": "amendment",
+      "source_url": "https://leg.colorado.gov/bill_amendments/19683/download",
+      "provider_document_type": "Second Reading Amendment L.013",
+      "description": "Second Reading Amendment L.013",
+      "expected_role": "unknown"
+    },
+    {
+      "source_run_id": 1002187,
+      "document_identifier": "docket:2112334:amendment:2112334:279417",
+      "document_family": "amendment",
+      "source_url": "https://wyoleg.gov/2026/Amends/HB0130SS001.pdf",
+      "provider_document_type": "Senate Committee Amendment HB0130SS001",
+      "description": "Senate Revenue Committee",
+      "expected_role": "unknown"
+    }
+  ]
+}
