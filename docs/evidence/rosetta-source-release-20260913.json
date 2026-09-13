@@ -1,0 +1,308 @@
+{
+  "schema_version": 1,
+  "checkpoint_date": "2026-09-13",
+  "repository": "butlerajamesab-lab/luminari",
+  "deployed_commit": "01dd5775d5e784bd8ab22b2a68d41c5c1614a22c",
+  "scope": "Read-only release and Docket operational-state verification for PRs 649, 650 and 652.",
+  "releases": [
+    {
+      "pr": 649,
+      "url": "https://github.com/butlerajamesab-lab/luminari/pull/649",
+      "head_sha": "decfae9ac52d2f0922fcb064bc3ce85b2c2b2a63",
+      "merge_sha": "c05e9fce59ae83289619c16d0ee65f97b5797ed2",
+      "merged_at": "2026-09-13T19:20:37Z"
+    },
+    {
+      "pr": 650,
+      "url": "https://github.com/butlerajamesab-lab/luminari/pull/650",
+      "head_sha": "6e863a733be6cabae7ac5c5628a873b99d0c1f88",
+      "merge_sha": "8a17b4e6cb7b012ed901099432997770371c4eba",
+      "merged_at": "2026-09-13T19:30:13Z"
+    },
+    {
+      "pr": 652,
+      "url": "https://github.com/butlerajamesab-lab/luminari/pull/652",
+      "head_sha": "89c7fcace2cc231a0b1d1de7515779d83688fb2e",
+      "merge_sha": "01dd5775d5e784bd8ab22b2a68d41c5c1614a22c",
+      "merged_at": "2026-09-13T19:54:19Z"
+    }
+  ],
+  "ancestry": {
+    "base_merge_sha": "c05e9fce59ae83289619c16d0ee65f97b5797ed2",
+    "comparison_status": "ahead",
+    "ahead_by": 9,
+    "merge_base_sha": "c05e9fce59ae83289619c16d0ee65f97b5797ed2",
+    "url": "https://github.com/butlerajamesab-lab/luminari/compare/c05e9fce59ae83289619c16d0ee65f97b5797ed2...01dd5775d5e784bd8ab22b2a68d41c5c1614a22c"
+  },
+  "deployments": [
+    {
+      "service_id": "srv-d7t4381j2pic73agtepg",
+      "service_role": "web",
+      "deploy_id": "dep-dajfur9nb5bc73djat6g",
+      "commit_sha": "01dd5775d5e784bd8ab22b2a68d41c5c1614a22c",
+      "provider_status": "live",
+      "finished_at": "2026-09-13T19:57:12.342692Z",
+      "runtime_instance": "srv-d7t4381j2pic73agtepg-tvmz9"
+    },
+    {
+      "service_id": "srv-da9c7a1f2nfc73f2ee8g",
+      "service_role": "worker",
+      "deploy_id": "dep-dajg0dfqj5pc73dg1eag",
+      "commit_sha": "01dd5775d5e784bd8ab22b2a68d41c5c1614a22c",
+      "provider_status": "live",
+      "finished_at": "2026-09-13T19:58:53.392541Z",
+      "runtime_instance": "srv-da9c7a1f2nfc73f2ee8g-glsqh"
+    }
+  ],
+  "startup_log_excerpts": {
+    "web": [
+      {
+        "id": "506064d3-416c-4b99-8ba1-a37883f6be8b",
+        "timestamp": "2026-09-13T19:57:09.96017138Z",
+        "instance": "srv-d7t4381j2pic73agtepg-tvmz9",
+        "message": "  render_git_commit: '01dd5775d5e784bd8ab22b2a68d41c5c1614a22c',"
+      },
+      {
+        "id": "4a117769-510a-4fe0-9fc5-f6b8881b489b",
+        "timestamp": "2026-09-13T19:57:09.96018334Z",
+        "instance": "srv-d7t4381j2pic73agtepg-tvmz9",
+        "message": "  runtime_role: { role: 'web', configured_value: null, valid: true }"
+      },
+      {
+        "id": "15627e7b-3cf2-4292-a397-cc66df2ad691",
+        "timestamp": "2026-09-13T19:57:09.961535243Z",
+        "instance": "srv-d7t4381j2pic73agtepg-tvmz9",
+        "message": "[RuntimeRole] HTTP-only process; background startup denied { role: 'web', configured_value: null, valid: true }"
+      }
+    ],
+    "worker": [
+      {
+        "id": "b503d209-0e90-4b01-a3d4-0e4b8a753566",
+        "timestamp": "2026-09-13T19:58:57.640721191Z",
+        "instance": "srv-da9c7a1f2nfc73f2ee8g-glsqh",
+        "message": "  runtime_role: 'worker',"
+      },
+      {
+        "id": "8bcafea4-59b7-4bed-a009-1293d289a86e",
+        "timestamp": "2026-09-13T19:58:57.640791585Z",
+        "instance": "srv-da9c7a1f2nfc73f2ee8g-glsqh",
+        "message": "  render_git_commit: '01dd5775d5e784bd8ab22b2a68d41c5c1614a22c',"
+      },
+      {
+        "id": "b18de7e7-b42e-4eaf-94de-304c199afcb2",
+        "timestamp": "2026-09-13T19:58:57.640796255Z",
+        "instance": "srv-da9c7a1f2nfc73f2ee8g-glsqh",
+        "message": "  legislative_version_queue_requested: true,"
+      },
+      {
+        "id": "9ac01531-7c38-4158-afd3-1c22138fd4d3",
+        "timestamp": "2026-09-13T19:58:57.640798515Z",
+        "instance": "srv-da9c7a1f2nfc73f2ee8g-glsqh",
+        "message": "  legislative_version_queue_enabled: false,"
+      },
+      {
+        "id": "fd2c1479-e78f-4be4-aaac-a2ec31e516f9",
+        "timestamp": "2026-09-13T19:58:57.640801615Z",
+        "instance": "srv-da9c7a1f2nfc73f2ee8g-glsqh",
+        "message": "  legislative_version_queue_recovery_scope: 'civic-genome-provider-copy-fallback-recovery-v1',"
+      },
+      {
+        "id": "da3ad34e-d3f3-493e-a8e2-6ecd8ab1cde2",
+        "timestamp": "2026-09-13T19:58:57.640804726Z",
+        "instance": "srv-da9c7a1f2nfc73f2ee8g-glsqh",
+        "message": "  legiscan_api_key_configured: false,"
+      },
+      {
+        "id": "af35ae36-4143-4f6e-ba13-a52fa90a9c32",
+        "timestamp": "2026-09-13T19:58:57.65132089Z",
+        "instance": "srv-da9c7a1f2nfc73f2ee8g-glsqh",
+        "message": "[PrismRosettaWorker] legislative_queue_disabled_missing_legiscan_api_key"
+      }
+    ]
+  },
+  "ci": {
+    "commit_sha": "01dd5775d5e784bd8ab22b2a68d41c5c1614a22c",
+    "test_files_passed": 359,
+    "tests_passed": 1960,
+    "tests_skipped": 1,
+    "included_suites": [
+      {
+        "path": "server/official-source-response.test.ts",
+        "tests": 24
+      },
+      {
+        "path": "server/legislative-document-role.test.ts",
+        "tests": 22
+      },
+      {
+        "path": "server/services/rosetta-publication-retry.test.ts",
+        "tests": 31
+      },
+      {
+        "path": "server/prism-rosetta-worker.test.ts",
+        "tests": 11
+      }
+    ],
+    "checks": [
+      {
+        "id": 103782801941,
+        "name": "Install + Build",
+        "conclusion": "success",
+        "completed_at": "2026-09-13T19:56:00Z",
+        "url": "https://github.com/butlerajamesab-lab/luminari/actions/runs/34779103221/job/103782801941"
+      },
+      {
+        "id": 103782770816,
+        "name": "Supabase Preview",
+        "conclusion": "success",
+        "completed_at": "2026-09-13T19:54:54Z",
+        "url": "https://github.com/butlerajamesab-lab/luminari/runs/103782770816"
+      },
+      {
+        "id": 103782703148,
+        "name": "Build and health check",
+        "conclusion": "success",
+        "completed_at": "2026-09-13T19:57:49Z",
+        "url": "https://github.com/butlerajamesab-lab/luminari/actions/runs/34779103195/job/103782703148"
+      },
+      {
+        "id": 103782696277,
+        "name": "verify",
+        "conclusion": "success",
+        "completed_at": "2026-09-13T19:54:34Z",
+        "url": "https://github.com/butlerajamesab-lab/luminari/actions/runs/34779103210/job/103782696277"
+      },
+      {
+        "id": 103782696264,
+        "name": "prism-bridge",
+        "conclusion": "success",
+        "completed_at": "2026-09-13T19:55:14Z",
+        "url": "https://github.com/butlerajamesab-lab/luminari/actions/runs/34779103207/job/103782696264"
+      }
+    ]
+  },
+  "live_database": {
+    "project_id": "wepxlinwbjrkqdzkqpar",
+    "tables": [
+      "public.docket_bill_source_document",
+      "public.civic_genome_bill_version",
+      "public.civic_genome_legislative_version_queue"
+    ],
+    "target_rows": [
+      {
+        "observed_at": "2026-09-13 19:58:20.744904+00",
+        "source_document_key": "amendment:2073649:285475",
+        "document_family": "amendment",
+        "description": "Fiscal Note to House Committee Amendment 1 ",
+        "source_url": "https://apps.legislature.ky.gov/recorddocuments/note/26RS/hb356/HCA1FN.pdf",
+        "provider_url": "https://legiscan.com/KY/amendment/HB356/id/285475",
+        "provider_hash": "f281379943f6b48e3a6e353d0f184b3e",
+        "provider_size": 3222,
+        "bill_version_id": "4cf540c1-0ae5-448a-8899-4e4cc6dbb99a",
+        "processing_state": "failed",
+        "failure_code": "legislative_version_pdf_text_incomplete",
+        "rosetta_extraction_run_id": null,
+        "version_updated_at": "2026-08-28 17:27:53.648568+00",
+        "queue_id": "65026c0b-afd4-49ce-9cff-39690ef0c6b3",
+        "queue_state": "permanent_failure",
+        "attempt_count": 1,
+        "last_failure_class": "deterministic_contract",
+        "last_error_code": "legislative_version_pdf_text_incomplete",
+        "next_attempt_at": "2026-08-28 17:27:53.648568+00",
+        "queue_updated_at": "2026-08-28 17:27:53.648568+00",
+        "completed_at": null
+      },
+      {
+        "observed_at": "2026-09-13 19:58:20.744904+00",
+        "source_document_key": "amendment:2122615:289230",
+        "document_family": "amendment",
+        "description": "Fiscal Note to House Committee Substitute 1 ",
+        "source_url": "https://apps.legislature.ky.gov/recorddocuments/note/26RS/hjr81/HCS1FN.pdf",
+        "provider_url": "https://legiscan.com/KY/amendment/HJR81/id/289230",
+        "provider_hash": "59e78a5500dad1bce67d0f9d3ebbde2b",
+        "provider_size": 14668,
+        "bill_version_id": "cc903489-434d-448a-a1dd-f16d027b6c55",
+        "processing_state": "failed",
+        "failure_code": "legislative_version_extraction_not_admissible:failed:rejected",
+        "rosetta_extraction_run_id": null,
+        "version_updated_at": "2026-08-28 17:27:52.883319+00",
+        "queue_id": "ca1ea414-1fab-4988-b3e0-ed60a9cf8980",
+        "queue_state": "permanent_failure",
+        "attempt_count": 1,
+        "last_failure_class": "deterministic_contract",
+        "last_error_code": "legislative_version_extraction_not_admissible:failed:rejected",
+        "next_attempt_at": "2026-08-28 17:27:52.883319+00",
+        "queue_updated_at": "2026-08-28 17:27:52.883319+00",
+        "completed_at": null
+      },
+      {
+        "observed_at": "2026-09-13 19:58:20.744904+00",
+        "source_document_key": "amendment:2128442:285932",
+        "document_family": "amendment",
+        "description": "Fiscal Note to House Committee Substitute 1 ",
+        "source_url": "https://apps.legislature.ky.gov/recorddocuments/note/26RS/hb869/HCS1FN.pdf",
+        "provider_url": "https://legiscan.com/KY/amendment/HB869/id/285932",
+        "provider_hash": "c98b15a6a921f1921d716453eade0baa",
+        "provider_size": 19422,
+        "bill_version_id": "bab1debd-108a-455f-b209-5bf08a209eac",
+        "processing_state": "failed",
+        "failure_code": "legislative_version_extraction_not_admissible:failed:rejected",
+        "rosetta_extraction_run_id": null,
+        "version_updated_at": "2026-08-28 17:27:51.784179+00",
+        "queue_id": "04e72c5f-fa62-4d3f-9b32-6514ccfc2e1a",
+        "queue_state": "permanent_failure",
+        "attempt_count": 1,
+        "last_failure_class": "deterministic_contract",
+        "last_error_code": "legislative_version_extraction_not_admissible:failed:rejected",
+        "next_attempt_at": "2026-08-28 17:27:51.784179+00",
+        "queue_updated_at": "2026-08-28 17:27:51.784179+00",
+        "completed_at": null
+      },
+      {
+        "observed_at": "2026-09-13 19:58:20.744904+00",
+        "source_document_key": "text:2067507:3329003",
+        "document_family": "text",
+        "description": null,
+        "source_url": "https://le.utah.gov/Session/2026/bills/introduced/HB0179S01.pdf",
+        "provider_url": "https://legiscan.com/UT/text/HB0179/id/3329003",
+        "provider_hash": "9fdf7ba71c84d0cd50b28263c9ddb8bb",
+        "provider_size": 46781,
+        "bill_version_id": "ee854bd4-79d4-40ed-be12-b4df10f7c7ab",
+        "processing_state": "verified_with_findings",
+        "failure_code": null,
+        "rosetta_extraction_run_id": "2462",
+        "version_updated_at": "2026-08-28 19:05:07.382994+00",
+        "queue_id": "3c2064a5-9662-4bf4-ad03-67688cb54093",
+        "queue_state": "completed",
+        "attempt_count": 2,
+        "last_failure_class": null,
+        "last_error_code": null,
+        "next_attempt_at": "2026-08-06 21:26:15.300682+00",
+        "queue_updated_at": "2026-08-06 21:26:15.300682+00",
+        "completed_at": "2026-08-06 20:24:57.869539+00"
+      }
+    ],
+    "queue_observation": {
+      "observed_at": "2026-09-13 19:59:07.910035+00",
+      "total_queue_rows": 25471,
+      "updated_since_web_deploy": 0,
+      "historical_permanent_html_incomplete": 747,
+      "permanent_html_incomplete_updated_since_web_deploy": 0,
+      "transport_rejections_updated_since_web_deploy": 0,
+      "due_eligible_or_degraded": 6184,
+      "newest_queue_update": "2026-09-01 15:33:04.031428+00"
+    },
+    "deployment_cutoff": "2026-09-13T19:57:12.342692Z"
+  },
+  "boundaries": [
+    "Both deployed runtimes contain the merged fixes. Deployment and CI do not prove a new production transport rejection or fiscal-note job was processed.",
+    "The web process reports runtime role web and denies background startup. Its logs do not establish whether its LegiScan credential is configured.",
+    "The dedicated worker reports legislative recovery requested but disabled, legiscan_api_key_configured=false, and legislative_queue_disabled_missing_legiscan_api_key.",
+    "The entrypoint additionally requires a positive LegiScan bill-text probe document ID and a successful getBillText probe before starting authorized legislative recovery. No credential was retrieved or configured in this verification.",
+    "No Docket queue rows changed after the observed deployment. The zero new permanent docket_html_text_incomplete count is an idle-window observation, not production execution proof of the repaired transport path.",
+    "All three fiscal-note terminal rows and the completed Utah row predate these releases; none was reopened or relabeled.",
+    "PR 649 retry behavior is covered by executable tests; no live outage was induced for this checkpoint.",
+    "The bounded Node 24 current-header Utah retrieval and retained-response tests are source-level evidence, not a fetch from the deployed Render runtime. Live provider fallback bytes were not verified.",
+    "This checkpoint performs no database writes, broad ingestion, queue reopening, source-history edits, or public promotion. The separately coordinated Prism batch is outside its Docket readback."
+  ]
+}
