@@ -1,4 +1,5 @@
 import { query_with_diagnostics } from "../db";
+import { assert_rosetta_current_publication } from "./rosetta-publication-eligibility";
 import { create_rosetta_supabase_headers } from "../rosetta-supabase-auth";
 import {
   canonical_json,
@@ -316,6 +317,8 @@ function validate_request_against_context(
 export async function enrich_rosetta_binding_request(
   request: RosettaBindingRequest,
 ): Promise<DeepRosettaBindingRequest> {
+  // Publication eligibility is mutable and must be checked even when immutable context is cached.
+  await assert_rosetta_current_publication(request.rosetta_binding);
   const context = await load_assembly_verification_context(request);
   const current = validate_request_against_context(request, context);
   const trait_payload = current.normalized_value_json as Record<string, unknown>;
