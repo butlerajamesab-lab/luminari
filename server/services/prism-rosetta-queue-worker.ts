@@ -70,6 +70,8 @@ let next_reconcile_at_ms = 0;
 let last_circuit_skip_open_until_ms = 0;
 let last_half_open_failure_count = 0;
 let queue_remaining_new_submissions = 0;
+const queue_submitted_request_ids = new Set<string>();
+const queue_retryable_submission_job_ids = new Set<string>();
 let submission_budget_exhausted_logged = false;
 const queue_worker_id = [
   process.env.RENDER_SERVICE_ID ?? "lighthouse",
@@ -133,6 +135,21 @@ export function prism_rosetta_queue_canary_id(
     throw new Error("prism_rosetta_queue_canary_id_invalid");
   }
   return configured.toLowerCase();
+}
+
+export function prism_rosetta_queue_batch_ids(
+  input = process.env.PRISM_ROSETTA_QUEUE_BATCH_IDS,
+  canary_input = process.env.PRISM_ROSETTA_QUEUE_CANARY_ID,
+): string[] | null {
+  const configured = input?.trim();
+  if (!configured) return null;
+  if (canary_input?.trim()) throw new Error("prism_rosetta_queue_selection_conflict");
+  const ids = configured.split(",").map((id) => id.trim().toLowerCase());
+  if (ids.length > 25 || ids.some((id) => !UUID_PATTERN.test(id)) ||
+      new Set(ids).size !== ids.length) {
+    throw new Error("prism_rosetta_queue_batch_ids_invalid");
+  }
+  return ids;
 }
 
 function queue_enabled(): boolean {
@@ -266,6 +283,7 @@ async function reconcile_completed_jobs(): Promise<void> {
           and verification.expected_trait_count = queue.expected_trait_count
           and queue.queue_state <> 'completed'
           and ($2::uuid is null or queue.queue_id = $2::uuid)
+          and ($3::uuid[] is null or queue.queue_id = any($3::uuid[]))
         order by queue.updated_at, queue.queue_id
         for update of queue skip locked
         limit $1::integer
@@ -281,7 +299,7 @@ async function reconcile_completed_jobs(): Promise<void> {
             updated_at = now()
        from candidate
       where queue.queue_id = candidate.queue_id`,
-    [RECONCILE_BATCH_SIZE, prism_rosetta_queue_canary_id()],
+    [RECONCILE_BATCH_SIZE, prism_rosetta_queue_canary_id(), prism_rosetta_queue_batch_ids()],
     {
       label: "prism_rosetta_queue_reconcile_completed",
       pool_acquire_timeout_ms: 1_000,
@@ -335,6 +353,8 @@ async function claim_next_job(): Promise<prism_rosetta_queue_job | null> {
                and verification.receipt_count = verification.expected_trait_count
           )
           and ($5::uuid is null or queue.queue_id = $5::uuid)
+          and ($6::uuid[] is null or queue.queue_id = any($6::uuid[]))
+          and ($7::uuid[] is null or queue.queue_id = any($7::uuid[]))
         order by queue.eligible_at, queue.queue_id
         for update skip locked
         limit 1
@@ -358,6 +378,8 @@ async function claim_next_job(): Promise<prism_rosetta_queue_job | null> {
       PRISM_ROSETTA_RULE_SET_VERSION,
       QUEUE_LEASE_MINUTES,
       prism_rosetta_queue_canary_id(),
+      prism_rosetta_queue_batch_ids(),
+      queue_remaining_new_submissions > 0 ? null : [...queue_retryable_submission_job_ids],
     ],
     {
       label: "prism_rosetta_queue_claim",
@@ -468,6 +490,9 @@ async function fail_job_for_processing_error(
     prior_attempt_count: job.attempt_count,
     receipt_count,
   });
+  if (decision.terminal || error instanceof PrismRosettaPartialActivationError) {
+    queue_retryable_submission_job_ids.delete(job.queue_id);
+  }
   await mark_job_failed({ job, decision, receipt_count });
   console.error("[PrismRosettaQueue] failed", {
     queue_id: job.queue_id,
@@ -491,11 +516,17 @@ async function process_job(job: prism_rosetta_queue_job): Promise<void> {
       genome_bill_id: job.genome_bill_id,
       assembly_run_id: job.assembly_run_id,
       max_new_submissions: available_new_submissions,
-      on_before_first_submission: () => {
-        // Spend the process-lifetime allowance at the exact external boundary.
-        // Database preparation failures remain retryable, while any attempted
-        // Prism request consumes the budget because acceptance may be ambiguous.
-        queue_remaining_new_submissions = 0;
+      previously_submitted_request_ids: queue_submitted_request_ids,
+      on_before_new_submission: (request_id) => {
+        if (!queue_submitted_request_ids.has(request_id)) {
+          if (queue_remaining_new_submissions <= 0) {
+            throw new PrismBoundaryError("transient_upstream", 429,
+              "prism_rosetta_submission_budget_exhausted");
+          }
+          queue_submitted_request_ids.add(request_id);
+          queue_remaining_new_submissions -= 1;
+        }
+        queue_retryable_submission_job_ids.add(job.queue_id);
       },
     });
   } catch (error) {
@@ -518,6 +549,7 @@ async function process_job(job: prism_rosetta_queue_job): Promise<void> {
       job,
       receipt_count: result.receipt_count,
     });
+    queue_retryable_submission_job_ids.delete(job.queue_id);
     console.log("[PrismRosettaQueue] completed", {
       queue_id: job.queue_id,
       assembly_run_id: job.assembly_run_id,
@@ -531,6 +563,7 @@ async function process_job(job: prism_rosetta_queue_job): Promise<void> {
     // Verification already produced the exact expected receipt population.
     // A queue-ledger completion write failure is bookkeeping, not evidence that
     // the verification failed. The bounded reconciler will close the queue row.
+    queue_retryable_submission_job_ids.delete(job.queue_id);
     console.error("[PrismRosettaQueue] completion_deferred", {
       queue_id: job.queue_id,
       assembly_run_id: job.assembly_run_id,
@@ -546,7 +579,7 @@ async function run_queue_cycle(): Promise<void> {
   queue_cycle_running = true;
   try {
     await reconcile_completed_jobs_if_due();
-    if (queue_remaining_new_submissions <= 0) {
+    if (queue_remaining_new_submissions <= 0 && queue_retryable_submission_job_ids.size === 0) {
       if (!submission_budget_exhausted_logged) {
         submission_budget_exhausted_logged = true;
         console.log("[PrismRosettaQueue] submission_budget_exhausted", {
@@ -631,10 +664,14 @@ export function start_prism_rosetta_queue_worker(): void {
   const reconcile_interval_ms = bounded_reconcile_interval();
   const max_new_submissions = bounded_queue_max_new_submissions();
   queue_remaining_new_submissions = max_new_submissions;
+  queue_submitted_request_ids.clear();
+  queue_retryable_submission_job_ids.clear();
   submission_budget_exhausted_logged = false;
   let canary_queue_id: string | null;
+  let batch_queue_ids: string[] | null;
   try {
     canary_queue_id = prism_rosetta_queue_canary_id();
+    batch_queue_ids = prism_rosetta_queue_batch_ids();
   } catch (error) {
     console.error("[PrismRosettaQueue] disabled_invalid_canary", {
       error_code: safe_error_code(error),
@@ -647,6 +684,7 @@ export function start_prism_rosetta_queue_worker(): void {
     reconcile_interval_ms,
     max_new_submissions,
     canary_queue_id,
+    batch_queue_ids,
     request_timeout_ms: prism_rosetta_request_timeout_ms(),
     circuit_failure_threshold: prism_rosetta_circuit_failure_threshold(),
     circuit_cooldown_ms: prism_rosetta_circuit_cooldown_ms(),
