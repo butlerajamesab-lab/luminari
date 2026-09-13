@@ -10,6 +10,7 @@ PRODUCTION_RECEIPTS = (
     Path("supabase/verification/production_migration_receipts_20260909_addendum.tsv"),
     Path("supabase/verification/production_migration_receipts_20260910_addendum.tsv"),
     Path("supabase/verification/production_migration_receipts_20260912_addendum.tsv"),
+    Path("supabase/verification/production_migration_receipts_20260913_addendum.tsv"),
 )
 # executable_md5 is exported from each ordered production statement array by
 # trimming trailing whitespace, restoring a missing top-level terminator,
@@ -283,10 +284,6 @@ APPROVED_REPOSITORY_ONLY = {
     "20260909143000": (
         "20260909143000_lighthouse_runtime_postgres_contract_v1.sql",
         "288d613674d5545f7673eadc08430ce26bcff089",
-    ),
-    "20260912193000": (
-        "20260912193000_add_upload_session_origin_context_metadata.sql",
-        "8565a74acf8e12951d1b47eedc23407b7cfbc5da",
     ),
 }
 
