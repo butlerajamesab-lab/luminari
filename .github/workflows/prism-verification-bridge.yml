@@ -20,6 +20,9 @@ jobs:
           pnpm exec vitest run
           server/routes/prism-verification-router.test.ts
           server/services/prism-verification-contract.test.ts
+          server/services/prism-rosetta-contract-v24.test.ts
+          server/services/prism-rosetta-contract-v25.test.ts
+          server/services/prism-rosetta-v25-scoped-replenishment.test.ts
           server/services/rosetta-publication-eligibility.test.ts
           server/services/rosetta-publication-retry.test.ts
           server/services/prism-rosetta-activation.test.ts
@@ -46,5 +49,34 @@ jobs:
           server/runtime-role-boundary.contract.test.ts
           server/executor-runtime-boundary.test.ts
       - run: pnpm run build
+
+  prism-v25-projection:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: prism_v25_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Verify actual Prism 2.5 projection and historical replay
+        run: node scripts/verify-prism-v25-projection.mjs
+        env:
+          PRISM_PROJECTION_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/prism_v25_test
 
 
