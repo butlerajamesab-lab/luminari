@@ -719,6 +719,7 @@ export default function Intake() {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={plan ? "Ask me anything else, or click 'Let's get started' above..." : "Tell me what's happening..."}
+            maxLength={20_000}
             className="min-h-[44px] max-h-[120px] resize-none text-sm"
             rows={1}
             disabled={isThinking}

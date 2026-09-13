@@ -32,6 +32,7 @@ import { read_canonical_case_layer_outputs } from "./intake-case-layer-reader";
 import { case_intake_continuity_origin_context_schema } from "@shared/case-intake-continuity";
 import { declared_intake_submission_schema } from "@shared/declared-intake-context";
 import { register_declared_intake_context } from "./declared-intake-context";
+import { create_intake_case_with_compensation } from "./intake-case-creation";
 import { build_deterministic_intake_turn } from "./intake-conversation-state";
 import { soften_intake_wording } from "./intake-conversation-assistant";
 import { adminMaintenanceRouter } from "./routers/admin-maintenance";
@@ -91,6 +92,9 @@ const activationRouter = router({
 });
 
 // ─── Intake Router (Guided Advocacy Shell) ───
+const intake_answer_text_schema = z.string().trim().max(8_000);
+const intake_combined_text_schema = z.string().trim().max(20_000);
+
 const intakeRouter = router({
   converse: publicProcedure
     .input(z.object({
@@ -144,39 +148,56 @@ const intakeRouter = router({
           message: "declared_intake_pipeline_mismatch",
         });
       }
-      const id = await db_helpers.createCase(
-        ctx.user.id,
-        input.name,
-        input.description,
-        input.domain,
-        undefined,
-        input.pipelineType,
-      );
-      await db_helpers.logAudit({
-        caseId: id,
-        userId: ctx.user.id,
-        action: "create_case",
-        targetType: "case",
-        targetId: id,
-        details: {
+      const { case_id: id, registered } = await create_intake_case_with_compensation({
+        input: {
+          user_id: ctx.user.id,
+          name: input.name,
+          description: input.description,
           domain: input.domain,
-          pipelineType: input.pipelineType,
-          entrySurface: input.declaration.entry_surface,
+          pipeline_type: input.pipelineType,
+          declaration: input.declaration,
         },
-      });
-      const registered = await register_declared_intake_context({
-        case_id: id,
-        user_id: ctx.user.id,
-        submission: input.declaration,
+        create_case: () => db_helpers.createCase(
+          ctx.user.id,
+          input.name,
+          input.description,
+          input.domain,
+          undefined,
+          input.pipelineType,
+        ),
+        register_context: case_id => register_declared_intake_context({
+          case_id,
+          user_id: ctx.user.id,
+          submission: input.declaration,
+        }),
       });
       const { getChecklistForPipeline } = await import("./document-checklists");
       const items = getChecklistForPipeline(input.pipelineType);
-      if (items.length > 0) await db_helpers.createChecklistItems(id, items);
-      await db_helpers.logPipelineEvent(
-        ctx.user.id,
-        input.pipelineType,
-        "intake_complete",
-      );
+      const post_commit_results = await Promise.allSettled([
+        db_helpers.logAudit({
+          caseId: id,
+          userId: ctx.user.id,
+          action: "create_case",
+          targetType: "case",
+          targetId: id,
+          details: {
+            domain: input.domain,
+            pipelineType: input.pipelineType,
+            entrySurface: input.declaration.entry_surface,
+          },
+        }),
+        ...(items.length > 0 ? [db_helpers.createChecklistItems(id, items)] : []),
+        db_helpers.logPipelineEvent(
+          ctx.user.id,
+          input.pipelineType,
+          "intake_complete",
+        ),
+      ]);
+      for (const result of post_commit_results) {
+        if (result.status === "rejected") {
+          console.error("[intake.createCase] post-commit side effect failed", result.reason);
+        }
+      }
       return {
         id,
         intakeSessionId: registered.intake_session_id,
@@ -272,12 +293,12 @@ const intakeRouter = router({
   /** Auto-detect pipeline from free-text answers */
   autoDetect: publicProcedure
     .input(z.object({
-      what_happened: z.string().optional(),
-      who_involved: z.string().optional(),
-      documents_available: z.string().optional(),
-      where: z.string().optional(),
-      additional_context: z.string().optional(),
-      combined_text: z.string().optional(),
+      what_happened: intake_answer_text_schema.optional(),
+      who_involved: intake_answer_text_schema.optional(),
+      documents_available: intake_answer_text_schema.optional(),
+      where: intake_answer_text_schema.optional(),
+      additional_context: intake_answer_text_schema.optional(),
+      combined_text: intake_combined_text_schema.optional(),
     }))
     .mutation(async ({ input }) => {
       const { autoDetect } = await import("./intake-autodetect");
@@ -308,7 +329,7 @@ const intakeRouter = router({
   /** Deterministic auto-detect: runs keyword scoring directly on free text */
   smartDetect: publicProcedure
     .input(z.object({
-      text: z.string().min(1),
+      text: intake_combined_text_schema.min(1),
     }))
     .mutation(async ({ input }) => {
       const { autoDetect } = await import("./intake-autodetect");

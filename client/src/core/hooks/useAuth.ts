@@ -3,6 +3,7 @@ import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
 import { clearPrivateQueryCache } from "@/core/privateQueryCache";
+import { clear_browser_private_intake_drafts } from "@/lib/intakeDraftPrivacy";
 
 type UseAuthOptions = {
   redirectOnUnauthenticated?: boolean;
@@ -22,7 +23,10 @@ export function useAuth(_options?: UseAuthOptions) {
       setLoading(false);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, newSession) => {
-      if (event === "SIGNED_OUT") clearPrivateQueryCache(queryClient);
+      if (event === "SIGNED_OUT") {
+        clearPrivateQueryCache(queryClient);
+        clear_browser_private_intake_drafts();
+      }
       setSession(newSession);
       setLoading(false);
     });
@@ -35,6 +39,7 @@ export function useAuth(_options?: UseAuthOptions) {
   const logout = useCallback(async () => {
     await supabase.auth.signOut();
     clearPrivateQueryCache(queryClient);
+    clear_browser_private_intake_drafts();
     setSession(null);
   }, [queryClient]);
 

@@ -25,10 +25,29 @@ describe("intake conversation continuity wiring", () => {
     expect(registration).toContain("Buffer.from(JSON.stringify(declaration), \"utf8\")");
     expect(registration).toContain("public.register_declared_intake_context_v1");
     expect(registration).toContain("declared_intake_context_origin_case_mismatch");
+    expect(registration).toContain("rollback_failed_declared_intake_document");
+    expect(registration).toContain("await storageDelete(stored.key)");
     expect(migration).toContain("security definer");
     expect(migration).toContain("set search_path = pg_catalog, public, extensions");
     expect(migration).toContain("revoke all on function public.register_declared_intake_context_v1");
     expect(migration).toContain("from public, anon, authenticated");
     expect(migration).toContain("to service_role");
+  });
+
+  it("bounds public deterministic intake text before keyword scanning", () => {
+    const router = read("server/routers.ts");
+
+    expect(router).toContain("const intake_answer_text_schema = z.string().trim().max(8_000)");
+    expect(router).toContain("const intake_combined_text_schema = z.string().trim().max(20_000)");
+    expect(router).toContain("text: intake_combined_text_schema.min(1)");
+  });
+
+  it("consumes upload origin context in both browser storage and live component state", () => {
+    const upload = read("client/src/pages/Upload.tsx");
+    const clear_index = upload.indexOf("clear_case_intake_origin_context(currentCaseId)");
+    const state_index = upload.indexOf("setOriginContext(null)", clear_index);
+
+    expect(clear_index).toBeGreaterThan(-1);
+    expect(state_index).toBeGreaterThan(clear_index);
   });
 });

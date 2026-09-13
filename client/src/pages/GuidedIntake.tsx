@@ -675,6 +675,7 @@ export default function GuidedIntake() {
                       onChange={(e) => setCurrentInput(e.target.value)}
                       onKeyDown={handleKeyDown}
                       placeholder="Type your answer here..."
+                      maxLength={8_000}
                       className="min-h-[80px] max-h-[200px] resize-none text-sm"
                       rows={3}
                     />

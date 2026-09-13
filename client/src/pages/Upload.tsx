@@ -406,6 +406,7 @@ export default function Upload() {
         }
         if (originContext && !consumedOriginContext) {
           clear_case_intake_origin_context(currentCaseId);
+          setOriginContext(null);
           consumedOriginContext = true;
         }
 
