@@ -17,6 +17,14 @@ import {
 } from "./prism-rosetta-client";
 import { PrismBoundaryError } from "./prism-verification-client";
 import { background_feature_enabled } from "../runtime-role";
+import {
+  prism_rosetta_queue_batch_ids,
+  prism_rosetta_queue_canary_id,
+} from "./prism-rosetta-queue-selection";
+export {
+  prism_rosetta_queue_batch_ids,
+  prism_rosetta_queue_canary_id,
+} from "./prism-rosetta-queue-selection";
 
 const DEFAULT_POLL_INTERVAL_MS = 10_000;
 const MIN_POLL_INTERVAL_MS = 5_000;
@@ -33,8 +41,6 @@ const MAX_QUEUE_MAX_NEW_SUBMISSIONS = 500;
 const DEFAULT_QUEUE_BATCH_YIELD_RETRY_SECONDS = 30;
 const MIN_QUEUE_BATCH_YIELD_RETRY_SECONDS = 5;
 const MAX_QUEUE_BATCH_YIELD_RETRY_SECONDS = 300;
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export type prism_rosetta_queue_state =
   | "eligible"
@@ -124,32 +130,6 @@ function bounded_queue_batch_yield_retry_seconds(): number {
     MIN_QUEUE_BATCH_YIELD_RETRY_SECONDS,
     MAX_QUEUE_BATCH_YIELD_RETRY_SECONDS,
   );
-}
-
-export function prism_rosetta_queue_canary_id(
-  input = process.env.PRISM_ROSETTA_QUEUE_CANARY_ID,
-): string | null {
-  const configured = input?.trim();
-  if (!configured) return null;
-  if (!UUID_PATTERN.test(configured)) {
-    throw new Error("prism_rosetta_queue_canary_id_invalid");
-  }
-  return configured.toLowerCase();
-}
-
-export function prism_rosetta_queue_batch_ids(
-  input = process.env.PRISM_ROSETTA_QUEUE_BATCH_IDS,
-  canary_input = process.env.PRISM_ROSETTA_QUEUE_CANARY_ID,
-): string[] | null {
-  const configured = input?.trim();
-  if (!configured) return null;
-  if (canary_input?.trim()) throw new Error("prism_rosetta_queue_selection_conflict");
-  const ids = configured.split(",").map((id) => id.trim().toLowerCase());
-  if (ids.length > 25 || ids.some((id) => !UUID_PATTERN.test(id)) ||
-      new Set(ids).size !== ids.length) {
-    throw new Error("prism_rosetta_queue_batch_ids_invalid");
-  }
-  return ids;
 }
 
 function queue_enabled(): boolean {
@@ -705,3 +685,4 @@ export async function stop_prism_rosetta_queue_worker(): Promise<void> {
   queue_timer = null;
   await active_queue_cycle;
 }
+

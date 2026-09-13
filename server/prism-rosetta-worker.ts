@@ -1,6 +1,10 @@
 import "dotenv/config";
 import { getPool } from "./db";
 import {
+  prism_rosetta_queue_batch_ids,
+  prism_rosetta_queue_canary_id,
+} from "./services/prism-rosetta-queue-selection";
+import {
   start_prism_rosetta_queue_worker,
   stop_prism_rosetta_queue_worker,
 } from "./services/prism-rosetta-queue-worker";
@@ -22,9 +26,10 @@ if (runtime_role.role !== "worker" || !runtime_role.valid) {
 if (!background_feature_enabled("PRISM_ROSETTA_QUEUE_ENABLED")) {
   throw new Error("prism_worker_feature_grant_required");
 }
-const canary_queue_id = process.env.PRISM_ROSETTA_QUEUE_CANARY_ID?.trim();
-if (!canary_queue_id) {
-  throw new Error("prism_worker_canary_queue_id_required");
+const canary_queue_id = prism_rosetta_queue_canary_id();
+const batch_queue_ids = prism_rosetta_queue_batch_ids();
+if (!canary_queue_id && !batch_queue_ids) {
+  throw new Error("prism_worker_queue_scope_required");
 }
 const legislative_version_queue_requested = background_feature_enabled(
   "LEGISLATIVE_VERSION_QUEUE_ENABLED",
@@ -113,6 +118,7 @@ async function start_authorized_legislative_queue(): Promise<void> {
 console.log("[PrismRosettaWorker] starting", {
   runtime_role: runtime_role.role,
   canary_queue_id,
+  batch_queue_ids,
   render_git_commit: process.env.RENDER_GIT_COMMIT ?? null,
   render_service_id: process.env.RENDER_SERVICE_ID ?? null,
   legislative_version_queue_requested,
@@ -153,3 +159,4 @@ process.once("SIGTERM", () => {
 process.once("SIGINT", () => {
   void shutdown("SIGINT");
 });
+
