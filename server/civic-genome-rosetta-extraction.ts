@@ -13,6 +13,7 @@ import {
 } from "./civic-genome-rosetta-family-orchestration";
 import { create_rosetta_supabase_headers } from "./rosetta-supabase-auth";
 import { fetch_california_official_pdf } from "./california-legislative-source";
+import { assert_official_source_response } from "./official-source-response";
 
 const PDF_PARSE_VERSION = "2.4.5";
 const WA_HTML_EXTRACTOR_VERSION = "wa-official-session-law-html-strip-v1";
@@ -197,6 +198,7 @@ async function fetch_bytes(url: string): Promise<{ bytes: Buffer; content_type: 
   const bytes = Buffer.from(await response.arrayBuffer());
   if (bytes.length === 0) throw new Error("docket_source_empty");
   if (bytes.length > MAX_SOURCE_BYTES) throw new Error("docket_source_exceeds_max_bytes");
+  assert_official_source_response(response.status, bytes);
   return { bytes, content_type: response.headers.get("content-type") };
 }
 

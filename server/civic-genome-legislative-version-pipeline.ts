@@ -16,6 +16,10 @@ import { create_rosetta_supabase_headers } from "./rosetta-supabase-auth";
 import { fetch_california_official_pdf } from "./california-legislative-source";
 import { get_amendment, get_bill_text } from "./services/legiscan";
 import { assert_legislative_document_role } from "./legislative-document-role";
+import {
+  assert_official_source_response,
+  is_official_source_rejection_error,
+} from "./official-source-response";
 
 const PDF_PARSE_VERSION = "2.4.5";
 const WA_HTML_EXTRACTOR_VERSION = "wa-official-legislative-version-html-strip-v1";
@@ -199,8 +203,13 @@ async function fetch_bytes(
     if (bytes.length > MAX_SOURCE_BYTES) {
       throw new Error("legislative_version_source_exceeds_max_bytes");
     }
+    assert_official_source_response(response.status, bytes);
     return { bytes, content_type: response.headers.get("content-type") };
   } catch (error) {
+    if (error instanceof Error && is_official_source_rejection_error(error.message)) {
+      if (!required) return null;
+      throw error;
+    }
     if (
       error instanceof Error
       && error.message.startsWith("legislative_version_")
