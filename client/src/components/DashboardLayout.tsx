@@ -48,6 +48,8 @@ import { trpc } from "@/lib/trpc";
 import PlainLanguageToggle from "./PlainLanguageToggle";
 import { NotificationBell } from "./NotificationBell";
 import { resetTour } from "./OnboardingTour";
+import { CaseIntakeContinuityPanel } from "./CaseIntakeContinuityPanel";
+import { related_subject_for_case_path } from "@/lib/caseIntakeContinuity";
 import {
   allNavSections,
   adminSection,
@@ -150,6 +152,7 @@ function MobileLayout({ children }: { children: React.ReactNode }) {
 
   const allMenuItems = allNavSections.flatMap(section => section.items);
   const activeMenuItem = allMenuItems.find((item) => item.path === location);
+  const showContinuityPanel = currentCaseId && !location.startsWith("/guide/");
 
   // Stats for guided journey step detection
   const caseStatsQuery = trpc.cases.stats.useQuery(
@@ -195,6 +198,15 @@ function MobileLayout({ children }: { children: React.ReactNode }) {
 
       {/* Main content with bottom padding for nav bar */}
       <main className="flex-1 p-3 pb-20">
+        {showContinuityPanel ? (
+          <div className="mb-3">
+            <CaseIntakeContinuityPanel
+              caseId={currentCaseId}
+              routePath={location}
+              relatedSubject={related_subject_for_case_path(location)}
+            />
+          </div>
+        ) : null}
         {children}
       </main>
 
@@ -548,6 +560,7 @@ function DesktopLayoutContent({
   const hasIntakeExecution = (intakeStatusQuery2.data ?? []).some(
     (session) => session.session_type === "live" && session.execution_complete,
   );
+  const showContinuityPanel = currentCaseId && !location.startsWith("/guide/");
 
   // Ctrl+K keyboard shortcut for jurisdiction search
   useEffect(() => {
@@ -839,7 +852,18 @@ function DesktopLayoutContent({
             onNavigate={setLocation}
           />
         )}
-        <main className="flex-1 p-6">{children}</main>
+        <main className="flex-1 p-6">
+          {showContinuityPanel ? (
+            <div className="mb-4">
+              <CaseIntakeContinuityPanel
+                caseId={currentCaseId}
+                routePath={location}
+                relatedSubject={related_subject_for_case_path(location)}
+              />
+            </div>
+          ) : null}
+          {children}
+        </main>
       </SidebarInset>
     </>
   );

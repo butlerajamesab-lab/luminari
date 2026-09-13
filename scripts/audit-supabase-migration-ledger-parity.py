@@ -10,6 +10,7 @@ PRODUCTION_RECEIPTS = (
     Path("supabase/verification/production_migration_receipts_20260909_addendum.tsv"),
     Path("supabase/verification/production_migration_receipts_20260910_addendum.tsv"),
     Path("supabase/verification/production_migration_receipts_20260912_addendum.tsv"),
+    Path("supabase/verification/production_migration_receipts_20260913_addendum.tsv"),
 )
 # executable_md5 is exported from each ordered production statement array by
 # trimming trailing whitespace, restoring a missing top-level terminator,

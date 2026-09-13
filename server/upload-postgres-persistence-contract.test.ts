@@ -78,6 +78,7 @@ describe("document upload PostgreSQL persistence contract", () => {
       completedFiles: "completed_files",
       failedFiles: "failed_files",
       duplicateFiles: "duplicate_files",
+      metadata: "metadata",
       status: "session_status",
       createdAt: "created_at",
       updatedAt: "updated_at",

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { getLoginUrl } from "@/const";
 
 /* ─── Types ─── */
 
@@ -47,6 +48,27 @@ interface AutoDetectResult {
   suggested_pre_lenses: string[];
   next_questions: IntakeQuestion[];
   ready_to_recommend: boolean;
+}
+
+const GUIDED_INTAKE_DRAFT_KEY = "luminari-guided-intake-draft:v1";
+
+type GuidedIntakeDraft = {
+  answers: Record<string, string>;
+  currentInput: string;
+  detectResult: AutoDetectResult | null;
+  selectedPipeline: string | null;
+  phase: "questions" | "suggestions" | "confirm";
+};
+
+function readGuidedIntakeDraft(): GuidedIntakeDraft | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const value = sessionStorage.getItem(GUIDED_INTAKE_DRAFT_KEY);
+    return value ? JSON.parse(value) as GuidedIntakeDraft : null;
+  } catch {
+    sessionStorage.removeItem(GUIDED_INTAKE_DRAFT_KEY);
+    return null;
+  }
 }
 
 /* ─── Category display config ─── */
@@ -149,6 +171,7 @@ function SuggestionCard({
 export default function GuidedIntake() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
+  const [restoredDraft] = useState(readGuidedIntakeDraft);
 
   // ─── Map session context (from Civic Map intake) ─────────────────
   const [mapSessionId] = useState(() => {
@@ -166,17 +189,25 @@ export default function GuidedIntake() {
   );
 
   // Questionnaire state
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answers, setAnswers] = useState<Record<string, string>>(
+    restoredDraft?.answers ?? {},
+  );
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [currentInput, setCurrentInput] = useState("");
+  const [currentInput, setCurrentInput] = useState(restoredDraft?.currentInput ?? "");
   const [isDetecting, setIsDetecting] = useState(false);
   const [isSmartDetecting, setIsSmartDetecting] = useState(false);
-  const [detectResult, setDetectResult] = useState<AutoDetectResult | null>(null);
-  const [selectedPipeline, setSelectedPipeline] = useState<string | null>(null);
+  const [detectResult, setDetectResult] = useState<AutoDetectResult | null>(
+    restoredDraft?.detectResult ?? null,
+  );
+  const [selectedPipeline, setSelectedPipeline] = useState<string | null>(
+    restoredDraft?.selectedPipeline ?? null,
+  );
   const [isCreating, setIsCreating] = useState(false);
   const [showAllSuggestions, setShowAllSuggestions] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [phase, setPhase] = useState<"questions" | "suggestions" | "confirm">("questions");
+  const [phase, setPhase] = useState<"questions" | "suggestions" | "confirm">(
+    restoredDraft?.phase ?? "questions",
+  );
   const [useSmartDetect, setUseSmartDetect] = useState(false);
   const [mapContextApplied, setMapContextApplied] = useState(false);
 
@@ -186,9 +217,19 @@ export default function GuidedIntake() {
   // tRPC mutations
   const autoDetect = trpc.intake.autoDetect.useMutation();
   const smartDetect = trpc.intake.smartDetect.useMutation();
-  const createCase = trpc.cases.create.useMutation();
+  const createCase = trpc.intake.createCase.useMutation();
   const completeMapSession = trpc.lighthouse.mapIntake.completeSession.useMutation();
   const logEvent = trpc.analytics.logEvent.useMutation();
+
+  useEffect(() => {
+    sessionStorage.setItem(GUIDED_INTAKE_DRAFT_KEY, JSON.stringify({
+      answers,
+      currentInput,
+      detectResult,
+      selectedPipeline,
+      phase,
+    } satisfies GuidedIntakeDraft));
+  }, [answers, currentInput, detectResult, selectedPipeline, phase]);
 
   // Pre-populate from map session context
   useEffect(() => {
@@ -369,14 +410,31 @@ export default function GuidedIntake() {
   // Handle case creation
   const handleCreateCase = async () => {
     if (!selectedPipeline || isCreating) return;
-    const suggestion = detectResult?.suggestions.find(s => s.pipeline_id === selectedPipeline);
+    const suggestion = detectResult?.suggestions.find(s => s.pipeline_id === selectedPipeline)
+      ?? (selectedPipeline === "other" ? {
+        pipeline_id: "other",
+        category: "general",
+        label: "General Investigation",
+        confidence: 0,
+        confidence_label: "low" as const,
+        match_reasons: [],
+        matched_signals: [],
+      } : null);
     if (!suggestion) return;
+
+    if (!user) {
+      window.location.assign(getLoginUrl(window.location.pathname + window.location.search));
+      return;
+    }
 
     setIsCreating(true);
     try {
       const caseName = `${suggestion.label} — ${new Date().toLocaleDateString()}`;
-      const description = Object.entries(answers)
-        .map(([key, val]) => `${key.replace(/_/g, " ")}: ${val}`)
+      const statements = Object.entries(answers)
+        .filter(([, value]) => value.trim())
+        .map(([prompt_id, text]) => ({ prompt_id, text }));
+      const description = statements
+        .map(({ prompt_id, text }) => `${prompt_id.replace(/_/g, " ")}: ${text}`)
         .join("\n");
 
       const result = await createCase.mutateAsync({
@@ -384,6 +442,14 @@ export default function GuidedIntake() {
         description,
         domain: CATEGORY_LABELS[suggestion.category]?.label || suggestion.category,
         pipelineType: suggestion.pipeline_id,
+        declaration: {
+          entry_surface: "guided_intake",
+          selection_basis: suggestion.pipeline_id === "other"
+            ? "general_fallback"
+            : "deterministic_rules",
+          selected_pipeline: suggestion.pipeline_id,
+          statements,
+        },
       });
 
       if (mapSessionIdNum && !Number.isNaN(mapSessionIdNum)) {
@@ -398,6 +464,7 @@ export default function GuidedIntake() {
       }
 
       logEvent.mutate({ pipelineType: suggestion.pipeline_id, eventType: "guided_intake_complete" });
+      sessionStorage.removeItem(GUIDED_INTAKE_DRAFT_KEY);
       toast.success("Your case has been created. Let's start gathering your documents.");
       setLocation(`/guide/${result.id}`);
     } catch {
@@ -406,10 +473,12 @@ export default function GuidedIntake() {
     }
   };
 
-  // Handle "Continue to conversation" — go to the old intake with the selected pipeline
+  // Continue into the conversational intake with the selected pipeline.
   const handleContinueToConversation = () => {
     if (!selectedPipeline) return;
-    logEvent.mutate({ pipelineType: selectedPipeline, eventType: "guided_to_conversation" });
+    if (user) {
+      logEvent.mutate({ pipelineType: selectedPipeline, eventType: "guided_to_conversation" });
+    }
     setLocation(`/intake?situation=${selectedPipeline}`);
   };
 
@@ -606,6 +675,7 @@ export default function GuidedIntake() {
                       onChange={(e) => setCurrentInput(e.target.value)}
                       onKeyDown={handleKeyDown}
                       placeholder="Type your answer here..."
+                      maxLength={8_000}
                       className="min-h-[80px] max-h-[200px] resize-none text-sm"
                       rows={3}
                     />
@@ -779,7 +849,7 @@ export default function GuidedIntake() {
                     size="sm"
                     className="text-xs"
                     onClick={() => {
-                      setSelectedPipeline("general_investigation");
+                      setSelectedPipeline("other");
                       setPhase("confirm");
                     }}
                   >

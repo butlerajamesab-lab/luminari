@@ -13,6 +13,8 @@ const state = vi.hoisted(() => ({
   is_supabase_storage_key: vi.fn(),
   create_upload_session: vi.fn(),
   get_upload_session: vi.fn(),
+  update_upload_session_metadata: vi.fn(),
+  update_upload_session_origin_context: vi.fn(),
   increment_upload_session_counter: vi.fn(),
   finalize_upload_session: vi.fn(),
   create_document: vi.fn(),
@@ -45,6 +47,8 @@ vi.mock("./db", () => ({
   },
   createUploadSession: state.create_upload_session,
   getUploadSession: state.get_upload_session,
+  updateUploadSessionMetadata: state.update_upload_session_metadata,
+  updateUploadSessionOriginContext: state.update_upload_session_origin_context,
   incrementUploadSessionCounter: state.increment_upload_session_counter,
   finalizeUploadSession: state.finalize_upload_session,
   createDocument: state.create_document,
@@ -63,9 +67,16 @@ import {
 let server: Server;
 let base_url: string;
 
-async function post_file(contents: string, filename = "proof.txt") {
+async function post_file(
+  contents: string,
+  filename = "proof.txt",
+  fields?: Record<string, string>,
+) {
   const form = new FormData();
   form.set("caseId", "44");
+  for (const [key, value] of Object.entries(fields ?? {})) {
+    form.set(key, value);
+  }
   form.append("files", new Blob([contents], { type: "text/plain" }), filename);
   return fetch(`${base_url}/api/upload`, {
     method: "POST",
@@ -220,6 +231,8 @@ beforeEach(() => {
   state.require_resolved_user.mockResolvedValue({ id: 9 });
   state.create_upload_session.mockResolvedValue(501);
   state.get_upload_session.mockResolvedValue({ id: 501, caseId: 44, userId: 9 });
+  state.update_upload_session_metadata.mockResolvedValue(undefined);
+  state.update_upload_session_origin_context.mockResolvedValue(undefined);
   state.increment_upload_session_counter.mockResolvedValue(undefined);
   state.finalize_upload_session.mockResolvedValue(undefined);
   state.create_document.mockResolvedValue(9001);
@@ -479,6 +492,194 @@ describe("authenticated multipart document upload", () => {
     expect(state.log_audit).not.toHaveBeenCalled();
     expect(state.increment_upload_session_counter).toHaveBeenCalledWith(501, "duplicateFiles");
     expect(state.finalize_upload_session).toHaveBeenCalledWith(501);
+  });
+
+  it("binds launcher origin context to the authenticated upload session and audit trail", async () => {
+    const contents = "origin-bound acceptance payload";
+    const expected_hash = createHash("sha256").update(contents).digest("hex");
+    state.select_queue.push(
+      [{ id: 44, userId: 9 }],
+      [],
+      [{ count: 1 }],
+    );
+
+    const origin_context = {
+      case_id: 44,
+      case_uuid: "e650c976-0178-4d72-9dda-092eddf3207a",
+      originating_route: "/documents",
+      originating_surface: "documents",
+      user_intent: "supports",
+      related_subject: { type: "document", id: "41", label: "care-plan.pdf" },
+      from_route: "/documents",
+    };
+
+    const response = await post_file(contents, "origin.txt", {
+      originContext: JSON.stringify(origin_context),
+    });
+    expect(response.status).toBe(200);
+    await response.json();
+
+    expect(state.create_upload_session).toHaveBeenCalledWith({
+      caseId: 44,
+      userId: 9,
+      totalFiles: 1,
+      metadata: { origin_context },
+    });
+    expect(state.log_audit).toHaveBeenCalledWith(expect.objectContaining({
+      details: expect.objectContaining({
+        filename: "origin.txt",
+        sha256Hash: expected_hash,
+        origin_context,
+      }),
+    }));
+  });
+
+  it("rejects invalid origin context payloads", async () => {
+    state.select_queue.push([{ id: 44, userId: 9 }]);
+
+    const response = await post_file("invalid origin context", "invalid-origin.txt", {
+      originContext: "{not-json",
+    });
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({
+      error: "Invalid origin context",
+    });
+    expect(state.create_upload_session).not.toHaveBeenCalled();
+    expect(state.log_audit).not.toHaveBeenCalled();
+  });
+
+  it("rejects mismatched origin context case bindings", async () => {
+    state.select_queue.push([{ id: 44, userId: 9 }]);
+
+    const response = await post_file("mismatched origin context", "mismatched-origin.txt", {
+      originContext: JSON.stringify({
+        case_id: 99,
+        case_uuid: "e650c976-0178-4d72-9dda-092eddf3207a",
+        originating_route: "/documents",
+        originating_surface: "documents",
+        user_intent: "supports",
+        from_route: "/documents",
+      }),
+    });
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({
+      error: "Origin context case does not match upload target",
+    });
+    expect(state.create_upload_session).not.toHaveBeenCalled();
+    expect(state.log_audit).not.toHaveBeenCalled();
+  });
+
+  it("rejects origin context rewrites for an existing upload session", async () => {
+    state.select_queue.push([{ id: 44, userId: 9 }]);
+    state.get_upload_session.mockResolvedValue({
+      id: 501,
+      caseId: 44,
+      userId: 9,
+      metadata: {
+        origin_context: {
+          case_id: 44,
+          case_uuid: "e650c976-0178-4d72-9dda-092eddf3207a",
+          originating_route: "/documents",
+          originating_surface: "documents",
+          user_intent: "supports",
+          from_route: "/documents",
+        },
+      },
+    });
+
+    const response = await post_file("rewritten origin context", "session-origin.txt", {
+      sessionId: "501",
+      originContext: JSON.stringify({
+        case_id: 44,
+        case_uuid: "e650c976-0178-4d72-9dda-092eddf3207a",
+        originating_route: "/findings",
+        originating_surface: "findings",
+        user_intent: "contradicts",
+        from_route: "/findings",
+      }),
+    });
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({
+      error: "Origin context does not match the existing upload session",
+    });
+    expect(state.create_upload_session).not.toHaveBeenCalled();
+    expect(state.log_audit).not.toHaveBeenCalled();
+  });
+
+  it("initializes missing origin metadata on an existing upload session from the first valid follow-up batch", async () => {
+    const contents = "follow-up origin context";
+    const origin_context = {
+      case_id: 44,
+      case_uuid: "e650c976-0178-4d72-9dda-092eddf3207a",
+      originating_route: "/documents",
+      originating_surface: "documents",
+      user_intent: "supports",
+      from_route: "/documents",
+    };
+    state.select_queue.push(
+      [{ id: 44, userId: 9 }],
+      [],
+      [{ count: 1 }],
+    );
+    state.get_upload_session.mockResolvedValue({
+      id: 501,
+      caseId: 44,
+      userId: 9,
+      metadata: { existing_key: "preserve-me" },
+    });
+
+    const response = await post_file(contents, "init-origin.txt", {
+      sessionId: "501",
+      originContext: JSON.stringify(origin_context),
+    });
+
+    expect(response.status).toBe(200);
+    expect(state.update_upload_session_origin_context).toHaveBeenCalledWith(501, origin_context);
+    expect(state.update_upload_session_metadata).not.toHaveBeenCalled();
+    expect(state.log_audit).toHaveBeenCalledWith(expect.objectContaining({
+      details: expect.objectContaining({
+        origin_context,
+      }),
+    }));
+  });
+
+  it("preserves origin context audit details for the first batch after a tracked session is created", async () => {
+    const contents = "tracked session origin context";
+    const origin_context = {
+      case_id: 44,
+      case_uuid: "e650c976-0178-4d72-9dda-092eddf3207a",
+      originating_route: "/documents",
+      originating_surface: "documents",
+      user_intent: "supports",
+      from_route: "/documents",
+    };
+    state.select_queue.push(
+      [{ id: 44, userId: 9 }],
+      [],
+      [{ count: 1 }],
+    );
+    state.get_upload_session.mockResolvedValue({
+      id: 501,
+      caseId: 44,
+      userId: 9,
+      metadata: { origin_context },
+    });
+
+    const response = await post_file(contents, "tracked-origin.txt", {
+      sessionId: "501",
+      originContext: JSON.stringify(origin_context),
+    });
+
+    expect(response.status).toBe(200);
+    expect(state.update_upload_session_origin_context).not.toHaveBeenCalled();
+    expect(state.log_audit).toHaveBeenCalledWith(expect.objectContaining({
+      details: expect.objectContaining({
+        origin_context,
+      }),
+    }));
   });
 });
 

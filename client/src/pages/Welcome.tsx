@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/core/hooks/useAuth";
 import { useCase } from "@/contexts/CaseContext";
 import { trpc } from "@/lib/trpc";
+import { getLoginUrl } from "@/const";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -2406,6 +2407,7 @@ export default function Welcome() {
   const [showPipelineCatalog, setShowPipelineCatalog] = useState(false);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [creatingPipeline, setCreatingPipeline] = useState<string | null>(null);
+  const pendingDirectStarted = useRef(false);
 
   const recentCases = cases && cases.length > 0 ? cases.slice(0, 3) : [];
 
@@ -2422,13 +2424,38 @@ export default function Welcome() {
 
   const logEvent = trpc.analytics.logEvent.useMutation();
 
+  useEffect(() => {
+    if (!user || pendingDirectStarted.current) return;
+    const pendingPipelineId = new URLSearchParams(window.location.search).get("direct");
+    if (!pendingPipelineId) return;
+    const pipeline = ALL_PIPELINES.find(item => item.id === pendingPipelineId);
+    if (!pipeline) return;
+    pendingDirectStarted.current = true;
+    setCreatingPipeline(pipeline.id);
+    logEvent.mutate({ pipelineType: pipeline.id, eventType: "direct_create" });
+    createCase.mutate({
+      name: pipeline.caseNameTemplate,
+      description: `Direct pipeline: ${pipeline.pipelineDescription}`,
+      domain: pipeline.domain,
+      pipelineType: pipeline.id,
+    });
+  }, [user]);
+
   const handleIntakeClick = (situationId: string) => {
-    logEvent.mutate({ pipelineType: situationId, eventType: "intake_start" });
+    if (user) {
+      logEvent.mutate({ pipelineType: situationId, eventType: "intake_start" });
+    }
     setLocation(`/intake?situation=${situationId}`);
   };
 
   const handleDirectPipeline = (pipeline: PipelineConfig) => {
     if (creatingPipeline) return;
+    if (!user) {
+      window.location.assign(
+        getLoginUrl(`/welcome?direct=${encodeURIComponent(pipeline.id)}`),
+      );
+      return;
+    }
     setCreatingPipeline(pipeline.id);
     logEvent.mutate({ pipelineType: pipeline.id, eventType: "direct_create" });
     createCase.mutate({
@@ -2572,7 +2599,7 @@ export default function Welcome() {
           {activeTab === "guided" && (
             <div className="flex flex-col items-center gap-3">
               <button
-                onClick={() => setLocation("/guided-intake")}
+                onClick={() => setLocation("/intake?situation=other&entry=conversation_intake")}
                 className="group relative w-full max-w-md rounded-xl border border-primary/30 bg-primary/5 hover:bg-primary/10 p-5 transition-all duration-200 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5"
               >
                 <div className="flex items-center gap-4">

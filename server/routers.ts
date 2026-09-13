@@ -29,6 +29,12 @@ import { phoenixRouter } from "./routers/phoenix";
 import { sunamRouter } from "./routers/sunam";
 import { analyzeRouter } from "./routers/analyze";
 import { read_canonical_case_layer_outputs } from "./intake-case-layer-reader";
+import { case_intake_continuity_origin_context_schema } from "@shared/case-intake-continuity";
+import { declared_intake_submission_schema } from "@shared/declared-intake-context";
+import { register_declared_intake_context } from "./declared-intake-context";
+import { create_intake_case_with_compensation } from "./intake-case-creation";
+import { build_deterministic_intake_turn } from "./intake-conversation-state";
+import { soften_intake_wording } from "./intake-conversation-assistant";
 import { adminMaintenanceRouter } from "./routers/admin-maintenance";
 import { publicAdminMaintenanceRouter } from "./routers/public-admin-maintenance";
 import { streamRegisterRouter } from "./routers/stream-register";
@@ -86,57 +92,142 @@ const activationRouter = router({
 });
 
 // ─── Intake Router (Guided Advocacy Shell) ───
+const intake_answer_text_schema = z.string().trim().max(8_000);
+const intake_combined_text_schema = z.string().trim().max(20_000);
+
 const intakeRouter = router({
-  converse: protectedProcedure
+  converse: publicProcedure
     .input(z.object({
-      situationType: z.string(),
-      messages: z.array(z.object({ role: z.enum(["assistant", "user"]), content: z.string() })),
+      situationType: z.string().trim().min(1).max(120),
+      messages: z.array(z.object({
+        role: z.enum(["assistant", "user"]),
+        content: z.string().trim().min(1).max(20_000),
+      })).max(24),
+      conversationalWording: z.boolean().optional().default(false),
     }))
     .mutation(async ({ ctx, input }) => {
-      const { autoDetect } = await import("./intake-autodetect");
-
-      // Deterministic conversation state machine
       const userMessages = input.messages.filter(m => m.role === "user");
-      const combinedText = userMessages.map(m => m.content).join(" ");
+      const deterministic = build_deterministic_intake_turn(
+        input.situationType,
+        userMessages.map(message => message.content),
+      );
+      const wording = await soften_intake_wording({
+        deterministic_reply: deterministic.reply,
+        stage: deterministic.stage,
+        requested: input.conversationalWording && Boolean(ctx.user),
+      });
 
-      let reply: string;
-      let plan: any = null;
+      return {
+        reply: wording.reply,
+        plan: deterministic.plan,
+        assistance: {
+          mode: wording.mode,
+          scope: "wording_only" as const,
+          user_content_shared_with_model: false as const,
+          ...(input.conversationalWording && !ctx.user
+            ? { reason: "authentication_required" }
+            : wording.reason
+              ? { reason: wording.reason }
+              : {}),
+        },
+      };
+    }),
 
-      if (userMessages.length <= 1) {
-        // First exchange: ask what happened and when
-        reply = "Thank you for reaching out. I want to make sure I understand your situation clearly. Can you tell me — what happened, and when did it start? Take your time.";
-      } else if (userMessages.length <= 2) {
-        // Second exchange: ask about documents and who's involved
-        reply = "That sounds really difficult, and I appreciate you sharing that. Let me ask — do you have any documents related to this? Things like letters, emails, contracts, or official notices? Also, who are the main people or organizations involved?";
-      } else {
-        // Third+ exchange: run autoDetect and build a plan
-        const result = autoDetect({ combined_text: combinedText });
-        const topSuggestion = result.suggestions[0];
-
-        if (result.ready_to_recommend && topSuggestion) {
-          reply = `Based on what you've shared, it sounds like this involves ${topSuggestion.pipeline_id.replace(/_/g, " ")} issues. Let's get organized — I've put together a plan for what documents to gather and what steps to take next.`;
-          plan = {
-            caseName: `${input.situationType} case`,
-            caseDescription: combinedText.slice(0, 300),
-            domain: topSuggestion.pipeline_id.replace(/_/g, " "),
-            documentChecklist: [
-              { label: "Key correspondence", description: "Any letters, emails, or notices related to your situation", priority: "essential" },
-              { label: "Official documents", description: "Contracts, agreements, court orders, or agency decisions", priority: "essential" },
-              { label: "Timeline records", description: "Anything that helps establish when events occurred", priority: "helpful" },
-            ],
-            nextSteps: [
-              "Upload your documents so we can analyze them",
-              "We'll identify key findings and build your evidence",
-              "Then we'll map out your options for next steps",
-            ],
-            ready: true,
-          };
-        } else {
-          reply = "I'm getting a clearer picture. Is there anything else you'd like me to know — any deadlines coming up, or other concerns? The more context I have, the better I can help you organize your next steps.";
+  createCase: protectedProcedure
+    .input(z.object({
+      name: z.string().trim().min(1).max(240),
+      description: z.string().max(40_000).optional(),
+      domain: z.string().trim().min(1).max(120).optional(),
+      pipelineType: z.string().trim().min(1).max(120),
+      declaration: declared_intake_submission_schema,
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (input.pipelineType !== input.declaration.selected_pipeline) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "declared_intake_pipeline_mismatch",
+        });
+      }
+      const { case_id: id, registered } = await create_intake_case_with_compensation({
+        input: {
+          user_id: ctx.user.id,
+          name: input.name,
+          description: input.description,
+          domain: input.domain,
+          pipeline_type: input.pipelineType,
+          declaration: input.declaration,
+        },
+        create_case: () => db_helpers.createCase(
+          ctx.user.id,
+          input.name,
+          input.description,
+          input.domain,
+          undefined,
+          input.pipelineType,
+        ),
+        register_context: case_id => register_declared_intake_context({
+          case_id,
+          user_id: ctx.user.id,
+          submission: input.declaration,
+        }),
+      });
+      const { getChecklistForPipeline } = await import("./document-checklists");
+      const items = getChecklistForPipeline(input.pipelineType);
+      const post_commit_results = await Promise.allSettled([
+        db_helpers.logAudit({
+          caseId: id,
+          userId: ctx.user.id,
+          action: "create_case",
+          targetType: "case",
+          targetId: id,
+          details: {
+            domain: input.domain,
+            pipelineType: input.pipelineType,
+            entrySurface: input.declaration.entry_surface,
+          },
+        }),
+        ...(items.length > 0 ? [db_helpers.createChecklistItems(id, items)] : []),
+        db_helpers.logPipelineEvent(
+          ctx.user.id,
+          input.pipelineType,
+          "intake_complete",
+        ),
+      ]);
+      for (const result of post_commit_results) {
+        if (result.status === "rejected") {
+          console.error("[intake.createCase] post-commit side effect failed", result.reason);
         }
       }
+      return {
+        id,
+        intakeSessionId: registered.intake_session_id,
+        declaredContextDocumentId: registered.document_id,
+      };
+    }),
 
-      return { reply, plan };
+  addContext: protectedProcedure
+    .input(z.object({
+      caseId: z.number().int().positive(),
+      declaration: declared_intake_submission_schema,
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await db_helpers.verifyCaseWriteAccess(input.caseId, ctx.user.id);
+      if (!input.declaration.origin_context) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "declared_intake_origin_context_required",
+        });
+      }
+      const registered = await register_declared_intake_context({
+        case_id: input.caseId,
+        user_id: ctx.user.id,
+        submission: input.declaration,
+      });
+      return {
+        success: true as const,
+        intakeSessionId: registered.intake_session_id,
+        declaredContextDocumentId: registered.document_id,
+      };
     }),
 
   generateActionPath: protectedProcedure
@@ -200,14 +291,14 @@ const intakeRouter = router({
     }),
 
   /** Auto-detect pipeline from free-text answers */
-  autoDetect: protectedProcedure
+  autoDetect: publicProcedure
     .input(z.object({
-      what_happened: z.string().optional(),
-      who_involved: z.string().optional(),
-      documents_available: z.string().optional(),
-      where: z.string().optional(),
-      additional_context: z.string().optional(),
-      combined_text: z.string().optional(),
+      what_happened: intake_answer_text_schema.optional(),
+      who_involved: intake_answer_text_schema.optional(),
+      documents_available: intake_answer_text_schema.optional(),
+      where: intake_answer_text_schema.optional(),
+      additional_context: intake_answer_text_schema.optional(),
+      combined_text: intake_combined_text_schema.optional(),
     }))
     .mutation(async ({ input }) => {
       const { autoDetect } = await import("./intake-autodetect");
@@ -236,9 +327,9 @@ const intakeRouter = router({
     }),
 
   /** Deterministic auto-detect: runs keyword scoring directly on free text */
-  smartDetect: protectedProcedure
+  smartDetect: publicProcedure
     .input(z.object({
-      text: z.string().min(1),
+      text: intake_combined_text_schema.min(1),
     }))
     .mutation(async ({ input }) => {
       const { autoDetect } = await import("./intake-autodetect");
@@ -1378,13 +1469,28 @@ const uploadSessionsRouter = router({
     }),
 
   create: protectedProcedure
-    .input(z.object({ caseId: z.number(), totalFiles: z.number().min(1) }))
+    .input(
+      z.object({
+        caseId: z.number(),
+        totalFiles: z.number().min(1),
+        originContext: case_intake_continuity_origin_context_schema.optional(),
+      }).refine(
+        (value) => !value.originContext || value.originContext.case_id === value.caseId,
+        {
+          message: "originContext.case_id must match caseId",
+          path: ["originContext", "case_id"],
+        },
+      ),
+    )
     .mutation(async ({ ctx, input }) => {
       await db_helpers.verifyCaseWriteAccess(input.caseId, ctx.user.id);
       const sessionId = await db_helpers.createUploadSession({
         caseId: input.caseId,
         userId: ctx.user.id,
         totalFiles: input.totalFiles,
+        metadata: input.originContext
+          ? { origin_context: input.originContext }
+          : undefined,
       });
       return { sessionId };
     }),

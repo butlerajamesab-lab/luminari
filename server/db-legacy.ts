@@ -1942,6 +1942,7 @@ export async function createUploadSession(data: {
   caseId: number;
   userId: number;
   totalFiles: number;
+  metadata?: Record<string, unknown>;
 }): Promise<number> {
   const now = Date.now();
   const [inserted] = await db.insert(uploadSessions).values({
@@ -1951,6 +1952,7 @@ export async function createUploadSession(data: {
     completedFiles: 0,
     failedFiles: 0,
     duplicateFiles: 0,
+    metadata: data.metadata ?? {},
     status: "uploading",
     createdAt: now,
     updatedAt: now,
@@ -1997,6 +1999,31 @@ export async function incrementUploadSessionCounter(
   await db.update(uploadSessions).set({
     [field]: sql`${uploadSessions[field]} + ${amount}`,
     updatedAt: now,
+  }).where(eq(uploadSessions.id, sessionId));
+}
+
+export async function updateUploadSessionMetadata(
+  sessionId: number,
+  metadata: Record<string, unknown>,
+) {
+  await db.update(uploadSessions).set({
+    metadata,
+    updatedAt: Date.now(),
+  }).where(eq(uploadSessions.id, sessionId));
+}
+
+export async function updateUploadSessionOriginContext(
+  sessionId: number,
+  origin_context: Record<string, unknown>,
+) {
+  await db.update(uploadSessions).set({
+    metadata: sql`jsonb_set(
+      coalesce(${uploadSessions.metadata}, '{}'::jsonb),
+      '{origin_context}',
+      ${JSON.stringify(origin_context)}::jsonb,
+      true
+    )`,
+    updatedAt: Date.now(),
   }).where(eq(uploadSessions.id, sessionId));
 }
 

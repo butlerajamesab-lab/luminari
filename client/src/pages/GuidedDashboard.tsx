@@ -25,6 +25,7 @@ import { EnforcementSuggestions } from "@/components/EnforcementSuggestions";
 import { EnforcementNextSteps, CaseEnforcementNextSteps } from "@/components/EnforcementNextSteps";
 import { SupportRecommendations } from "@/components/SupportRecommendations";
 import { IntakeSpineControl } from "@/components/lighthouse/IntakeSpineControl";
+import { CaseIntakeContinuityPanel } from "@/components/CaseIntakeContinuityPanel";
 import { toast } from "sonner";
 
 /** Step indicator component */
@@ -506,6 +507,12 @@ export default function GuidedDashboard() {
                 </Badge>
               )}
             </div>
+
+            <CaseIntakeContinuityPanel
+              caseId={caseId}
+              routePath={`/guide/${caseId}`}
+              surfaceOverride="act"
+            />
 
             {/* ─── YOUR NEXT STEPS: Enforcement Action Paths ─── */}
             {/* This appears IMMEDIATELY — no documents needed. Bridges claim → action. */}

@@ -16,6 +16,12 @@ import {
 } from "lucide-react";
 import { Streamdown } from "streamdown";
 import { toast } from "sonner";
+import { getLoginUrl } from "@/const";
+import {
+  clear_case_intake_origin_context,
+  read_case_intake_origin_context,
+} from "@/lib/caseIntakeContinuity";
+import { Switch } from "@/components/ui/switch";
 
 const SITUATION_LABELS: Record<string, string> = {
   // Personal Crisis
@@ -91,7 +97,7 @@ const SITUATION_OPENERS: Record<string, string> = {
   guardianship: "Guardianship situations involve someone's fundamental rights, and that's serious. I want to help you understand what's happening. Can you tell me about the situation? Is this about someone being placed under guardianship, or concerns about how a guardian is acting?",
   elderabuse: "I'm so sorry you're dealing with this. Suspecting that someone you care about is being hurt or neglected is one of the hardest things. Let's take this one step at a time. Can you tell me what you've noticed that concerns you?",
   // Vulnerable Populations
-  immigration: "I understand how stressful immigration matters can be. Everything you share here is private and stays in your account. Can you tell me about your situation? What's happening with your case, and are there any upcoming deadlines I should know about?",
+  immigration: "I understand how stressful immigration matters can be. Your answers remain a draft until you choose to create a case. Can you tell me about your situation? What's happening with your case, and are there any upcoming deadlines I should know about?",
   childwelfare: "I know this is an incredibly difficult time. Whether CPS is involved with your family or you're concerned about a child, we'll work through this together. Can you tell me what's happening right now?",
   education: "Your child deserves the education they were promised. When schools don't follow through on IEPs or 504 plans, it matters. Can you tell me what's happening? What is the school doing — or not doing — that concerns you?",
   section8: "Housing assistance is a lifeline, and when it's threatened, everything feels uncertain. Let's look at what's happening. Can you tell me about the situation? Is this about your voucher, your housing authority, or something else?",
@@ -117,7 +123,7 @@ const SITUATION_OPENERS: Record<string, string> = {
   nonprofitcompliance: "Concerns about how a nonprofit is being run deserve to be taken seriously — these organizations exist to serve a mission, not themselves. Can you tell me what your concern is, your relationship to the organization, and what evidence you have?",
   // Tribal Law / Indigenous Rights
   icwa: "I understand you're dealing with an ICWA case, and I want you to know — these are your sovereign rights, not just paperwork. Whether you're a parent, a tribal ICWA worker, or a family member seeking placement, we'll work through this together. Can you tell me what's happening? Has a child been removed or is there a risk of removal? Which tribal nation is involved, and has the tribe been properly notified?",
-  mmiw: "I'm so deeply sorry for what you and your family are going through. I know that many families in this situation have been dismissed or ignored by the systems that should have helped. You deserve better than that. Everything you share here is private and stays in your account. Can you tell me about your loved one? Where were they last seen, and which law enforcement agencies have you been in contact with?",
+  mmiw: "I'm so deeply sorry for what you and your family are going through. I know that many families in this situation have been dismissed or ignored by the systems that should have helped. You deserve better than that. Your answers remain a draft until you choose to create a case. Can you tell me about your loved one? Where were they last seen, and which law enforcement agencies have you been in contact with?",
   treatyrights: "Treaty rights are not requests — they are promises that were made and must be honored. I'm here to help you organize the documentary record so the truth is clear. Can you tell me what's happening? Which tribal nation and which treaty are involved, and what right is being restricted or threatened?",
   triballand: "Land and trust issues can feel like fighting a maze that was built to confuse you — and honestly, that's not far from the truth. The BIA's records are scattered across decades and offices. Let's start making sense of what you have. Can you tell me what's going on? Is this about land ownership, trust fund accounting, a lease, or something else?",
   tribalenrollment: "Enrollment is about who you are and where you belong — it's deeply personal. I understand these records can be incomplete or even deliberately obscured from the assimilation era. Let's work through what you have. Can you tell me which tribe this involves, and whether this is a new enrollment application or a challenge to a disenrollment decision?",
@@ -136,25 +142,68 @@ type IntakePlan = {
   caseName: string;
   caseDescription: string;
   domain: string;
+  pipelineType: string;
+  selectionBasis: "explicit_pipeline" | "deterministic_rules" | "general_fallback";
   documentChecklist: { label: string; description: string; priority: "essential" | "helpful" | "optional" }[];
   nextSteps: string[];
   ready: boolean;
 };
+
+type IntakeAssistance = {
+  mode: "language_model" | "deterministic";
+  scope: "wording_only";
+  user_content_shared_with_model: false;
+  reason?: string;
+};
+
+type ConversationIntakeDraft = {
+  messages: IntakeMessage[];
+  input: string;
+  plan: IntakePlan | null;
+  conversationalWording: boolean;
+};
+
+function readConversationDraft(key: string): ConversationIntakeDraft | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const value = sessionStorage.getItem(key);
+    return value ? JSON.parse(value) as ConversationIntakeDraft : null;
+  } catch {
+    sessionStorage.removeItem(key);
+    return null;
+  }
+}
 
 export default function Intake() {
   const [, setLocation] = useLocation();
   const searchString = useSearch();
   const params = useMemo(() => new URLSearchParams(searchString), [searchString]);
   const situationId = params.get("situation") || "other";
+  const existingCaseId = Number(params.get("caseId") || 0);
+  const isAddingContext = params.get("mode") === "add_context"
+    && Number.isSafeInteger(existingCaseId)
+    && existingCaseId > 0;
+  const draftKey = `luminari-conversation-intake-draft:v1:${isAddingContext ? existingCaseId : "new"}:${situationId}`;
   const { user } = useAuth();
+  const [restoredDraft] = useState(() => readConversationDraft(draftKey));
 
-  const [messages, setMessages] = useState<IntakeMessage[]>([
-    { role: "assistant", content: SITUATION_OPENERS[situationId] || SITUATION_OPENERS.other },
-  ]);
-  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState<IntakeMessage[]>(
+    restoredDraft?.messages ?? [{
+      role: "assistant",
+      content: isAddingContext
+        ? "Add the context you want preserved with this case. I will keep your words as a declared intake source and link them back to where you started."
+        : SITUATION_OPENERS[situationId] || SITUATION_OPENERS.other,
+    }],
+  );
+  const [input, setInput] = useState(restoredDraft?.input ?? "");
   const [isThinking, setIsThinking] = useState(false);
-  const [plan, setPlan] = useState<IntakePlan | null>(null);
+  const [plan, setPlan] = useState<IntakePlan | null>(restoredDraft?.plan ?? null);
   const [isCreating, setIsCreating] = useState(false);
+  const [isSavingContext, setIsSavingContext] = useState(false);
+  const [conversationalWording, setConversationalWording] = useState(
+    restoredDraft?.conversationalWording ?? false,
+  );
+  const [assistance, setAssistance] = useState<IntakeAssistance | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [autoReadEnabled, setAutoReadEnabled] = useState(false);
   const lastAutoReadIndexRef = useRef<number>(-1);
@@ -162,12 +211,22 @@ export default function Intake() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const intakeConverse = trpc.intake.converse.useMutation();
-  const createCase = trpc.cases.create.useMutation();
+  const createCase = trpc.intake.createCase.useMutation();
+  const addContext = trpc.intake.addContext.useMutation();
   const logEvent = trpc.analytics.logEvent.useMutation();
   const jurisdictionsQuery = trpc.luminari.jurisdictions.useQuery();
 
   const [selectedJurisdiction, setSelectedJurisdiction] = useState<number | null>(null);
   const [showJurisdictionStep, setShowJurisdictionStep] = useState(false);
+
+  useEffect(() => {
+    sessionStorage.setItem(draftKey, JSON.stringify({
+      messages,
+      input,
+      plan,
+      conversationalWording,
+    } satisfies ConversationIntakeDraft));
+  }, [draftKey, messages, input, plan, conversationalWording]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -218,6 +277,7 @@ export default function Intake() {
     try {
       const result = await intakeConverse.mutateAsync({
         situationType: situationId,
+        conversationalWording,
         messages: [...messages, userMsg].map((m) => ({
           role: m.role,
           content: m.content,
@@ -225,6 +285,7 @@ export default function Intake() {
       });
 
       setMessages((prev) => [...prev, { role: "assistant", content: result.reply }]);
+      setAssistance(result.assistance);
 
       if (result.plan) {
         setPlan(result.plan);
@@ -255,6 +316,12 @@ export default function Intake() {
       toast.error("Please select your jurisdiction.");
       return;
     }
+    if (!user) {
+      window.location.assign(
+        getLoginUrl(window.location.pathname + window.location.search),
+      );
+      return;
+    }
     setIsCreating(true);
     try {
       // Map situation to category
@@ -270,19 +337,83 @@ export default function Intake() {
       const userMessages = messages
         .filter((message) => message.role === "user")
         .map((message) => message.content);
+      const statements = userMessages.map((text, index) => ({
+        prompt_id: `conversation_statement_${index + 1}`,
+        text,
+      }));
       const result = await createCase.mutateAsync({
         name: plan.caseName,
         description: userMessages.join("\n\n") || plan.caseDescription,
-        domain: category,
-        pipelineType: situationId,
+        domain: plan.domain || category,
+        pipelineType: plan.pipelineType,
+        declaration: {
+          entry_surface: "conversation_intake",
+          selection_basis: plan.selectionBasis,
+          selected_pipeline: plan.pipelineType,
+          statements,
+          language_assistance: {
+            requested: conversationalWording,
+            scope: "wording_only",
+            user_content_shared_with_model: false,
+          },
+        },
       });
       
-      logEvent.mutate({ pipelineType: situationId, eventType: "intake_complete" });
+      logEvent.mutate({ pipelineType: plan.pipelineType, eventType: "intake_complete" });
+      sessionStorage.removeItem(draftKey);
       toast.success("Your case has been created. Let's look at your options.");
       setLocation(caseWorkspacePath(result.id));
     } catch (err: any) {
       toast.error(err.message || "Could not create the case. Please try again.");
       setIsCreating(false);
+    }
+  };
+
+  const handleSaveContext = async () => {
+    const userMessages = messages
+      .filter((message) => message.role === "user")
+      .map((message) => message.content.trim())
+      .filter(Boolean);
+    if (!isAddingContext || userMessages.length === 0 || isSavingContext) return;
+    const originContext = read_case_intake_origin_context(existingCaseId);
+    if (!originContext) {
+      toast.error("The case link for this context expired. Return to the case and choose Add Context again.");
+      return;
+    }
+    if (!user) {
+      window.location.assign(
+        getLoginUrl(window.location.pathname + window.location.search),
+      );
+      return;
+    }
+
+    setIsSavingContext(true);
+    try {
+      await addContext.mutateAsync({
+        caseId: existingCaseId,
+        declaration: {
+          entry_surface: "conversation_intake",
+          selection_basis: "existing_case_context",
+          selected_pipeline: situationId === "general_investigation" ? "other" : situationId,
+          statements: userMessages.map((text, index) => ({
+            prompt_id: `context_statement_${index + 1}`,
+            text,
+          })),
+          origin_context: originContext,
+          language_assistance: {
+            requested: conversationalWording,
+            scope: "wording_only",
+            user_content_shared_with_model: false,
+          },
+        },
+      });
+      sessionStorage.removeItem(draftKey);
+      clear_case_intake_origin_context(existingCaseId);
+      toast.success("Context preserved with this case.");
+      setLocation(originContext.from_route || caseWorkspacePath(existingCaseId));
+    } catch (error: any) {
+      toast.error(error?.message || "Could not preserve the context. Please try again.");
+      setIsSavingContext(false);
     }
   };
 
@@ -303,6 +434,7 @@ export default function Intake() {
     ((messages.filter((m) => m.role === "user").length) / 4) * 100,
     plan ? 100 : 90
   );
+  const userStatementCount = messages.filter(message => message.role === "user").length;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -320,7 +452,9 @@ export default function Intake() {
           </Button>
           <div className="h-4 w-px bg-border" />
           <Badge variant="outline" className="text-xs font-normal">
-            {SITUATION_LABELS[situationId] || "General"}
+            {isAddingContext
+              ? "Adding case context"
+              : SITUATION_LABELS[situationId] || "General"}
           </Badge>
         </div>
         <div className="flex items-center gap-3">
@@ -360,7 +494,11 @@ export default function Intake() {
       <div className="px-4 sm:px-6 pt-3">
         <Progress value={conversationProgress} className="h-1" />
         <p className="text-[10px] text-muted-foreground mt-1.5">
-          {plan ? "Ready to set up your case" : "Tell me more so I can help you best"}
+          {isAddingContext
+            ? "Your words will be preserved as declared case context"
+            : plan
+              ? "Ready to set up your case"
+              : "Tell me more so I can help you best"}
         </p>
       </div>
 
@@ -412,8 +550,8 @@ export default function Intake() {
           </div>
         )}
 
-        {/* Case plan card — appears when the LLM has gathered enough info */}
-        {plan && (
+        {/* Case plan card — appears when deterministic intake has enough context */}
+        {plan && !isAddingContext && (
           <div className="flex justify-start">
             <Card className="max-w-[85%] sm:max-w-[75%] border-primary/30 bg-primary/5">
               <CardContent className="p-5 space-y-4">
@@ -531,11 +669,49 @@ export default function Intake() {
           </div>
         )}
 
+        {isAddingContext && userStatementCount > 0 && (
+          <div className="flex justify-start">
+            <Card className="max-w-[85%] sm:max-w-[75%] border-primary/30 bg-primary/5">
+              <CardContent className="p-4 space-y-3">
+                <p className="text-sm font-medium">Ready to preserve this context?</p>
+                <p className="text-xs text-muted-foreground">
+                  It will be stored with the case as your statement and linked to the screen where you chose Add Context. It will not be treated as a verified fact.
+                </p>
+                <Button
+                  onClick={handleSaveContext}
+                  disabled={isSavingContext}
+                  className="w-full gap-2"
+                >
+                  {isSavingContext ? (
+                    <><Loader2 className="h-4 w-4 animate-spin" /> Preserving context…</>
+                  ) : (
+                    <><CheckCircle2 className="h-4 w-4" /> Preserve this context</>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         <div ref={messagesEndRef} />
       </div>
 
       {/* Input area */}
       <div className="border-t border-border/50 px-4 sm:px-6 py-3 bg-background shrink-0">
+        <div className="max-w-2xl mx-auto mb-2 flex items-start justify-between gap-3 rounded-md border border-border/40 bg-card/30 px-3 py-2">
+          <div>
+            <p className="text-xs font-medium text-foreground">Conversational wording</p>
+            <p className="text-[10px] leading-relaxed text-muted-foreground">
+              Optional language assistance may soften approved follow-up wording. Your statement is not sent to the model; routing and case creation remain rule-based.
+              {assistance?.mode === "language_model" ? " Wording assistance was used for the latest reply." : ""}
+            </p>
+          </div>
+          <Switch
+            checked={conversationalWording}
+            onCheckedChange={setConversationalWording}
+            aria-label="Use conversational wording assistance"
+          />
+        </div>
         <div className="max-w-2xl mx-auto flex gap-2">
           <Textarea
             ref={textareaRef}
@@ -543,6 +719,7 @@ export default function Intake() {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={plan ? "Ask me anything else, or click 'Let's get started' above..." : "Tell me what's happening..."}
+            maxLength={20_000}
             className="min-h-[44px] max-h-[120px] resize-none text-sm"
             rows={1}
             disabled={isThinking}

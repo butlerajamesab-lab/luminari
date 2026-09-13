@@ -27,6 +27,8 @@ export type CanonicalCaseLayerRead<T> = {
   outputs: CanonicalCaseLayerOutput<T>[];
 };
 
+export type IntakeCaseLinkScope = "primary" | "all";
+
 function integrity_failure(message: string, cause?: unknown): never {
   throw new TRPCError({
     code: "INTERNAL_SERVER_ERROR",
@@ -42,18 +44,25 @@ function as_array(value: unknown): any[] {
 export async function read_canonical_case_layer_outputs<T>(
   case_id: number,
   layer_name: string,
+  options?: { link_scope?: IntakeCaseLinkScope },
 ): Promise<CanonicalCaseLayerRead<T>> {
+  const link_scope = options?.link_scope ?? "primary";
+  const primary_only_clause =
+    link_scope === "all"
+     ? ""
+     : `
+          and cil.is_primary = true
+          and cil.link_type = 'primary_projection'
+          and s.session_type = 'live'
+          and s.entry_channel = 'upload'`;
   const result = await getPool().query(
     `with linked_sessions as (
-       select cil.intake_session_id
+      select cil.intake_session_id
          from public.case_identity_bridge cib
          join public.case_intake_links cil on cil.case_uuid = cib.case_uuid
          join public.intake_sessions s on s.intake_session_id = cil.intake_session_id
         where cib.legacy_case_id = $1
-          and cil.is_primary = true
-          and cil.link_type = 'primary_projection'
-          and s.session_type = 'live'
-          and s.entry_channel = 'upload'
+          ${primary_only_clause}
      ), ranked as (
        select lr.*,
               row_number() over (
