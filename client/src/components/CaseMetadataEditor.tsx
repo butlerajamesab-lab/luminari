@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
 import { Pencil, Save } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
@@ -15,15 +15,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  buildCaseMetadataCorrection,
+  type EditableCaseMetadata,
+} from "@/lib/case-metadata-correction";
 
 type CaseMetadataEditorProps = {
   caseId: number;
-  metadata: {
-    name: string | null;
-    description: string | null;
-    domain: string | null;
-    container: string | null;
-  };
+  metadata: EditableCaseMetadata;
 };
 
 export function CaseMetadataEditor({ caseId, metadata }: CaseMetadataEditorProps) {
@@ -32,15 +31,19 @@ export function CaseMetadataEditor({ caseId, metadata }: CaseMetadataEditorProps
   const [description, setDescription] = useState(metadata.description ?? "");
   const [domain, setDomain] = useState(metadata.domain ?? "");
   const [container, setContainer] = useState(metadata.container ?? "");
+  const openedWithMetadata = useRef(metadata);
   const utils = trpc.useUtils();
 
-  useEffect(() => {
-    if (!open) return;
-    setName(metadata.name ?? "");
-    setDescription(metadata.description ?? "");
-    setDomain(metadata.domain ?? "");
-    setContainer(metadata.container ?? "");
-  }, [open, metadata.name, metadata.description, metadata.domain, metadata.container]);
+  const setDialogOpen = (nextOpen: boolean) => {
+    if (nextOpen) {
+      openedWithMetadata.current = metadata;
+      setName(metadata.name ?? "");
+      setDescription(metadata.description ?? "");
+      setDomain(metadata.domain ?? "");
+      setContainer(metadata.container ?? "");
+    }
+    setOpen(nextOpen);
+  };
 
   const updateCase = trpc.cases.update.useMutation({
     onSuccess: async (result) => {
@@ -48,7 +51,7 @@ export function CaseMetadataEditor({ caseId, metadata }: CaseMetadataEditorProps
         utils.cases.get.invalidate({ id: caseId }),
         utils.cases.list.invalidate(),
       ]);
-      setOpen(false);
+      setDialogOpen(false);
       toast.success(result.changed ? "Case details corrected." : "No case details changed.");
     },
     onError: (error) => {
@@ -62,17 +65,16 @@ export function CaseMetadataEditor({ caseId, metadata }: CaseMetadataEditorProps
       toast.error("The case name cannot be blank.");
       return;
     }
-    updateCase.mutate({
-      id: caseId,
-      name: correctedName,
-      description,
-      domain,
-      container,
-    });
+    const correction = buildCaseMetadataCorrection(
+      caseId,
+      openedWithMetadata.current,
+      { name: correctedName, description, domain, container },
+    );
+    updateCase.mutate(correction);
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="gap-1.5 text-xs">
           <Pencil className="h-3.5 w-3.5" />
@@ -139,7 +141,7 @@ export function CaseMetadataEditor({ caseId, metadata }: CaseMetadataEditorProps
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)} disabled={updateCase.isPending}>
+          <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={updateCase.isPending}>
             Cancel
           </Button>
           <Button onClick={save} disabled={updateCase.isPending || !name.trim()} className="gap-1.5">

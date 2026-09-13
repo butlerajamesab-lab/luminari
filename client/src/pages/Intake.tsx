@@ -207,6 +207,7 @@ export default function Intake() {
   const [caseNameEdited, setCaseNameEdited] = useState(
     restoredDraft?.caseNameEdited ?? false,
   );
+  const caseNameEditedRef = useRef(restoredDraft?.caseNameEdited ?? false);
   const [isCreating, setIsCreating] = useState(false);
   const [isSavingContext, setIsSavingContext] = useState(false);
   const [conversationalWording, setConversationalWording] = useState(
@@ -300,7 +301,7 @@ export default function Intake() {
 
       if (result.plan) {
         setPlan(result.plan);
-        if (!caseNameEdited) {
+        if (!caseNameEditedRef.current) {
           setCaseName(result.plan.caseName);
         }
       }
@@ -595,6 +596,7 @@ export default function Intake() {
                       onChange={(event) => {
                         setCaseName(event.target.value);
                         setCaseNameEdited(true);
+                        caseNameEditedRef.current = true;
                       }}
                       maxLength={240}
                       aria-describedby="intake-case-name-help"

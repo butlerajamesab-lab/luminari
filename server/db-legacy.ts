@@ -7,6 +7,7 @@ import { Pool } from "pg";
 import { create_database_pool, get_database_host_label } from "./pg-config";
 import { get_database_pool_lease_guard_snapshot } from "./database-pool-lease-guard";
 import { create_receiver_bound_lazy_proxy } from "./lazy-receiver-bound-proxy";
+import { describe_case_metadata_changes } from "./case-metadata-correction";
 import {
   users, cases, documents, quotes, entities, entityRoles,
   relationships, relationshipEvidence, claims, findings,
@@ -765,9 +766,25 @@ export async function correctCaseMetadata(
   ownerUserId: number,
   actorUserId: number,
   data: { name?: string; description?: string | null; status?: "active" | "archived"; domain?: string | null; container?: string | null },
-  changes: Record<string, { before: string | null; after: string | null }>,
 ) {
-  await db.transaction(async (tx: any) => {
+  return db.transaction(async (tx: any) => {
+    const [current] = await tx.select({
+      name: cases.name,
+      description: cases.description,
+      status: cases.status,
+      domain: cases.domain,
+      container: cases.container,
+    })
+      .from(cases)
+      .where(and(eq(cases.id, id), eq(cases.userId, ownerUserId)))
+      .for("update");
+    if (!current) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Case not found" });
+    }
+
+    const changes = describe_case_metadata_changes(current, data);
+    if (Object.keys(changes).length === 0) return false;
+
     await tx.update(cases)
       .set({ ...data, updatedAt: Date.now() })
       .where(and(eq(cases.id, id), eq(cases.userId, ownerUserId)));
@@ -782,6 +799,7 @@ export async function correctCaseMetadata(
         source_evidence_modified: false,
       },
     });
+    return true;
   });
 }
 

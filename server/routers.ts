@@ -36,7 +36,6 @@ import { create_intake_case_with_compensation } from "./intake-case-creation";
 import { build_deterministic_intake_turn } from "./intake-conversation-state";
 import { soften_intake_wording } from "./intake-conversation-assistant";
 import {
-  describe_case_metadata_changes,
   editable_case_metadata_patch_schema,
   normalize_case_metadata_patch,
 } from "./case-metadata-correction";
@@ -630,26 +629,13 @@ const casesRouter = router({
       const { id, ...requested } = input;
       const current = await db_helpers.verifyCaseWriteAccess(id, ctx.user.id);
       const patch = normalize_case_metadata_patch(requested);
-      const changes = describe_case_metadata_changes({
-        name: current.name,
-        description: current.description,
-        status: current.status,
-        domain: current.domain,
-        container: current.container,
-      }, patch);
-
-      if (Object.keys(changes).length === 0) {
-        return { success: true as const, changed: false as const };
-      }
-
-      await db_helpers.correctCaseMetadata(
+      const changed = await db_helpers.correctCaseMetadata(
         id,
         current.userId ?? ctx.user.id,
         ctx.user.id,
         patch,
-        changes,
       );
-      return { success: true as const, changed: true as const };
+      return { success: true as const, changed };
     }),
 
   delete: protectedProcedure
