@@ -9,7 +9,7 @@ create table prism_v24_fixture.civic_genome_bill (
 create table prism_v24_fixture.civic_genome_assembly_run (
   assembly_run_id uuid primary key, genome_bill_id uuid, run_status text,
   verification_state text, trait_count integer, completed_at timestamptz, created_at timestamptz default now(),
-  source_document_id bigint,extraction_run_id text);
+  source_document_id bigint,extraction_run_id text,rosetta_source_content_hash text);
 create table prism_v24_fixture.civic_genome_trait (
   trait_id uuid primary key,genome_bill_id uuid,source_document_id bigint,
   extraction_run_id text,source_object_id text,verification_state text);
@@ -29,15 +29,16 @@ create table prism_v24_fixture.civic_genome_prism_verification_binding (
   source_document_id bigint,extraction_run_id text,source_object_id text,request_id text,
   prism_verification_receipt_id uuid,prism_engine_version text,prism_rule_set_id text,
   prism_rule_set_version text,prism_rule_set_hash text,input_hash text,output_hash text,
-  deterministic_replay_key text);
+  deterministic_replay_key text,verification_status text);
 create table prism_v24_fixture.lighthouse_prism_verification_requests (
-  request_id text primary key,rule_set_id text,rule_set_version text,input_hash text,bridge_state text);
+  request_id text primary key,rule_set_id text,rule_set_version text,input_hash text,bridge_state text,
+  source_content_hash text,evidence_document_id text);
 create table prism_v24_fixture.lighthouse_prism_verification_receipts (
   prism_verification_receipt_id uuid primary key,request_id text,prism_engine_version text,
   rule_set_id text,rule_set_version text,rule_set_hash text,input_hash text,output_hash text,
   deterministic_replay_key text,prism_completion_timestamp timestamptz,
   contradictions jsonb default '[]',supported_findings jsonb default '[]',
-  missing_evidence jsonb default '[]',unresolved_conditions jsonb default '[]');
+  missing_evidence jsonb default '[]',unresolved_conditions jsonb default '[]',verification_status text);
 create table prism_v24_fixture.legal_patterns (
   pattern_id uuid primary key default gen_random_uuid(),source_relation text,source_record_key text,
   pattern_type text,title text,description text,jurisdiction_scope jsonb default '{}',
@@ -65,10 +66,20 @@ begin
     'private.prism_v24_complete_receipt_set_v1(uuid)',
     'private.prism_v24_modal_prior_covered_v1(uuid,uuid)',
     'private.project_prism_v24_modal_successors_v1(uuid)',
+    'private.prism_v25_complete_receipt_set_v1(uuid)',
+    'private.prism_v25_modal_prior_covered_v1(uuid,uuid)',
+    'private.prism_v25_calendar_correction_evidence_v1(uuid,uuid)',
+    'private.project_prism_v25_modal_successors_v1(uuid)',
     'private.project_prism_legal_patterns_v1(uuid)',
     'public.enqueue_civic_genome_prism_v24_batch_v1(integer)',
     'public.enqueue_civic_genome_prism_verification()'
   ] loop
+    -- The current shared projector references newer generation helpers even
+    -- when these historical scenarios take its 2.4 branch. Clone their actual
+    -- installed definitions too; this verifier also remains usable before 2.5.
+    if v_function like 'private.%v25_%' and to_regprocedure(v_function) is null then
+      continue;
+    end if;
     v_definition := pg_get_functiondef(v_function::regprocedure);
     v_definition := replace(replace(v_definition, 'public.', 'prism_v24_fixture.'), 'private.', 'prism_v24_fixture.');
     -- Preserve the source-relation identity string while redirecting table access.
