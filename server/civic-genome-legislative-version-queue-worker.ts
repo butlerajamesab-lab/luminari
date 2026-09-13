@@ -9,6 +9,7 @@ import {
 import { create_rosetta_supabase_headers } from "./rosetta-supabase-auth";
 import { background_feature_enabled } from "./runtime-role";
 import { LEGISLATIVE_NON_LEGISLATIVE_DOCUMENT_ERROR_CODE } from "./legislative-document-role";
+import { is_official_source_rejection_error } from "./official-source-response";
 
 const DEFAULT_POLL_INTERVAL_MS = 1_000;
 const MIN_POLL_INTERVAL_MS = 250;
@@ -328,12 +329,16 @@ export function classify_legislative_version_failure(input: {
   const error_code = safe_error_code(input.error);
   const failure_number = input.prior_attempt_count + 1;
   const deterministic = deterministic_failure(error_code);
-  const terminal = deterministic || failure_number >= UNKNOWN_FAILURE_LIMIT;
+  const source_transport_rejection = is_official_source_rejection_error(error_code);
+  // A known upstream block must not become permanent source invalidity merely
+  // because it outlasts the retry budget for unknown errors.
+  const terminal = deterministic
+    || (!source_transport_rejection && failure_number >= UNKNOWN_FAILURE_LIMIT);
   return {
     queue_state: terminal ? "permanent_failure" : "degraded",
     failure_class: deterministic
       ? "deterministic_contract"
-      : failure_number >= UNKNOWN_FAILURE_LIMIT
+      : terminal
         ? "unknown"
         : "transient",
     error_code,

@@ -1,0 +1,15 @@
+{
+  "source_url": "https://le.utah.gov/Session/2026/bills/introduced/HB0179S01.pdf",
+  "retrieved_at": "2026-09-13",
+  "rejection_observed_http_status": 200,
+  "fixtures": {
+    "utah-http-200-request-rejected.html": {
+      "bytes": 245,
+      "sha256": "598ff3844273de762a92322e38858b8cc29c0c76a1b76f60026992f0f6d2acb9"
+    },
+    "utah-hb0179s01-original.pdf": {
+      "bytes": 46791,
+      "sha256": "c655c9453b6c759d00c218e9d06e3061893d3138938f758f45282b3e1514c4b8"
+    }
+  }
+}
