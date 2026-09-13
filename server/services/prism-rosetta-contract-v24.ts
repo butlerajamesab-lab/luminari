@@ -7,11 +7,12 @@ import {
   sign_prism_request,
 } from "./prism-verification-contract";
 
-export const PRISM_ROSETTA_ENGINE_VERSION = "2.5.0";
+/** Explicit historical replay boundary; active requests use prism-rosetta-contract-v2. */
+export const PRISM_ROSETTA_ENGINE_VERSION = "2.4.0";
 export const PRISM_ROSETTA_RULE_SET_ID = "prism-rosetta-structural-binding";
-export const PRISM_ROSETTA_RULE_SET_VERSION = "2.5.0";
+export const PRISM_ROSETTA_RULE_SET_VERSION = "2.4.0";
 export const PRISM_ROSETTA_RULE_SET_HASH =
-  "26e4ef9f6c0d389154d9a2259c99b6e7eb83a51c096e738a9470fb20ff04ec8b";
+  "78cf62b9cd452d8de62397c775fa71a2507777ebf81b1ea53915782d573768a6";
 
 const hash_schema = z.string().regex(/^[a-f0-9]{64}$/i);
 const verification_status_schema = z.enum([

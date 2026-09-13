@@ -293,11 +293,13 @@ async function reconcile_completed_jobs_if_due(): Promise<void> {
   if (now_ms < next_reconcile_at_ms) return;
   next_reconcile_at_ms = now_ms + bounded_reconcile_interval();
   await reconcile_completed_jobs();
+  // Explicit selections may reconcile their own receipts but never admit new jobs.
+  if (prism_rosetta_queue_canary_id() || prism_rosetta_queue_batch_ids()) return;
   await query_with_diagnostics(
-    `select public.enqueue_civic_genome_prism_v24_batch_v1($1::integer)`,
+    `select public.enqueue_civic_genome_prism_v25_batch_v1($1::integer)`,
     [RECONCILE_BATCH_SIZE],
     {
-      label: "prism_rosetta_queue_replenish_v24",
+      label: "prism_rosetta_queue_replenish_v25",
       pool_acquire_timeout_ms: 1_000,
       query_timeout_ms: 5_000,
     },

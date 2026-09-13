@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import * as historical from "./prism-rosetta-contract-v24";
 import * as active from "./prism-rosetta-contract-v2";
 import * as v22 from "./prism-rosetta-contract-v22";
 import * as v23 from "./prism-rosetta-contract-v23";
@@ -6,7 +7,7 @@ import * as envelope from "./prism-verification-contract";
 
 const uuid = "00000000-0000-4000-8000-000000000024";
 const sourceText = "The department, after review, must issue a notice.";
-const sourceHash = active.sha256_hex(sourceText);
+const sourceHash = historical.sha256_hex(sourceText);
 
 function requestFixture() {
   return {
@@ -16,7 +17,7 @@ function requestFixture() {
     evidence_fingerprint: sourceHash,
     source_content_hash: sourceHash,
     claim_assertion_id: "workflow-notice",
-    rule_set_id: active.PRISM_ROSETTA_RULE_SET_ID,
+    rule_set_id: historical.PRISM_ROSETTA_RULE_SET_ID,
     rule_set_version: "2.4.0",
     requested_checks: [
       "verify_identity_chain", "verify_hash_chain", "verify_source_binding",
@@ -85,9 +86,9 @@ function receiptFixture() {
     verification_receipt_id: uuid,
     request_id: "prism-rosetta-v24-contract-fixture",
     prism_engine_version: "2.4.0",
-    rule_set_id: active.PRISM_ROSETTA_RULE_SET_ID,
+    rule_set_id: historical.PRISM_ROSETTA_RULE_SET_ID,
     rule_set_version: "2.4.0",
-    rule_set_hash: active.PRISM_ROSETTA_RULE_SET_HASH,
+    rule_set_hash: historical.PRISM_ROSETTA_RULE_SET_HASH,
     input_hash: "a".repeat(64),
     output_hash: "b".repeat(64),
     status: "supported_by_one_source",
@@ -106,8 +107,8 @@ function receiptFixture() {
   };
 }
 
-describe("Prism Rosetta 2.4 consumer contract", () => {
-  it("pins both active boundaries to the upstream immutable modal-evidence definition", () => {
+describe("Prism Rosetta 2.4 explicit historical replay contract", () => {
+  it("pins the historical boundary to the unchanged upstream 2.4 definition", () => {
     // Canonical definition from Prism's rosetta-binding-contract-v24.ts.
     const definition = {
       engine_version: "2.4.0",
@@ -126,23 +127,23 @@ describe("Prism Rosetta 2.4 consumer contract", () => {
         "persist_the_evaluated_span_and_matched_modal_in_the_finding",
       ],
     };
-    const definitionHash = active.sha256_hex(active.canonical_json(definition));
+    const definitionHash = historical.sha256_hex(historical.canonical_json(definition));
     expect(definitionHash).toBe("78cf62b9cd452d8de62397c775fa71a2507777ebf81b1ea53915782d573768a6");
-    for (const contract of [active, envelope]) {
+    for (const contract of [historical]) {
       expect(contract.PRISM_ROSETTA_ENGINE_VERSION).toBe("2.4.0");
       expect(contract.PRISM_ROSETTA_RULE_SET_VERSION).toBe("2.4.0");
       expect(contract.PRISM_ROSETTA_RULE_SET_HASH).toBe(definitionHash);
     }
-    const parsed = envelope.verification_request_schema.parse(requestFixture());
-    expect(envelope.prism_contract_for_request(parsed)).toEqual({
-      engine_version: "2.4.0", rule_set_hash: definitionHash,
-    });
+    expect(historical.deep_rosetta_binding_request_schema.parse(requestFixture()).rule_set_version).toBe("2.4.0");
+    expect(active.deep_rosetta_binding_request_schema.safeParse(requestFixture()).success).toBe(false);
+    expect(envelope.verification_request_schema.safeParse(requestFixture()).success).toBe(false);
   });
 
-  it("preserves evaluated modal evidence through both active receipt boundaries", () => {
+  it("preserves evaluated modal evidence only through the historical receipt boundary", () => {
     const receipt = receiptFixture();
-    expect(active.prism_receipt_schema.parse(receipt)).toEqual(receipt);
-    expect(envelope.prism_receipt_schema.parse(receipt)).toEqual(receipt);
+    expect(historical.prism_receipt_schema.parse(receipt)).toEqual(receipt);
+    expect(active.prism_receipt_schema.safeParse(receipt).success).toBe(false);
+    expect(envelope.prism_receipt_schema.safeParse(receipt).success).toBe(false);
   });
 
   it.each([
@@ -152,7 +153,7 @@ describe("Prism Rosetta 2.4 consumer contract", () => {
     { rule_set_hash: "0".repeat(64) },
   ])("rejects a receipt with a mismatched version or hash: %j", (mismatch) => {
     const receipt = { ...receiptFixture(), ...mismatch };
-    expect(active.prism_receipt_schema.safeParse(receipt).success).toBe(false);
+    expect(historical.prism_receipt_schema.safeParse(receipt).success).toBe(false);
     expect(envelope.prism_receipt_schema.safeParse(receipt).success).toBe(false);
   });
 
@@ -166,36 +167,37 @@ describe("Prism Rosetta 2.4 consumer contract", () => {
     };
     expect(legacy.deep_rosetta_binding_request_schema.safeParse(request).success).toBe(true);
     expect(legacy.prism_receipt_schema.safeParse(receipt).success).toBe(true);
-    expect(active.deep_rosetta_binding_request_schema.safeParse(request).success).toBe(false);
+    expect(historical.deep_rosetta_binding_request_schema.safeParse(request).success).toBe(false);
     expect(envelope.verification_request_schema.safeParse(request).success).toBe(false);
-    expect(active.prism_receipt_schema.safeParse(receipt).success).toBe(false);
+    expect(historical.prism_receipt_schema.safeParse(receipt).success).toBe(false);
     expect(envelope.prism_receipt_schema.safeParse(receipt).success).toBe(false);
   });
 
   it("keeps replay identity stable across deployment metadata while separating 2.3 and 2.4", () => {
-    const request = active.deep_rosetta_binding_request_schema.parse(requestFixture());
-    const redeployed = active.deep_rosetta_binding_request_schema.parse({
+    const request = historical.deep_rosetta_binding_request_schema.parse(requestFixture());
+    const redeployed = historical.deep_rosetta_binding_request_schema.parse({
       ...request,
       originating_lighthouse_commit: "b".repeat(40),
       originating_lighthouse_runtime_version: "fixture-runtime-b",
     });
-    const semantic = active.rosetta_semantic_request_payload(request);
-    const inputHash = active.sha256_hex(active.canonical_json(semantic));
-    const replayKey = active.sha256_hex(`${active.PRISM_ROSETTA_RULE_SET_HASH}:${inputHash}`);
-    expect(active.rosetta_semantic_request_payload(redeployed)).toEqual(semantic);
+    const semantic = historical.rosetta_semantic_request_payload(request);
+    const inputHash = historical.sha256_hex(historical.canonical_json(semantic));
+    const replayKey = historical.sha256_hex(`${historical.PRISM_ROSETTA_RULE_SET_HASH}:${inputHash}`);
+    expect(historical.rosetta_semantic_request_payload(redeployed)).toEqual(semantic);
     expect(semantic).toHaveProperty("rule_set_version", "2.4.0");
     expect(semantic).not.toHaveProperty("originating_lighthouse_commit");
     expect(semantic).not.toHaveProperty("originating_lighthouse_runtime_version");
 
     const legacyRequest = v23.deep_rosetta_binding_request_schema.parse({ ...request, rule_set_version: "2.3.0" });
-    const legacyInputHash = active.sha256_hex(active.canonical_json(v23.rosetta_semantic_request_payload(legacyRequest)));
-    const legacyReplayKey = active.sha256_hex(`${v23.PRISM_ROSETTA_RULE_SET_HASH}:${legacyInputHash}`);
+    const legacyInputHash = historical.sha256_hex(historical.canonical_json(v23.rosetta_semantic_request_payload(legacyRequest)));
+    const legacyReplayKey = historical.sha256_hex(`${v23.PRISM_ROSETTA_RULE_SET_HASH}:${legacyInputHash}`);
     expect(legacyInputHash).not.toBe(inputHash);
     expect(legacyReplayKey).not.toBe(replayKey);
     // Docket disposition remains semantic evidence, unlike deployment metadata.
-    const changedDisposition = active.rosetta_semantic_request_payload({
+    const changedDisposition = historical.rosetta_semantic_request_payload({
       ...request, document_context: { ...request.document_context, adopted: false },
     });
-    expect(active.sha256_hex(active.canonical_json(changedDisposition))).not.toBe(inputHash);
+    expect(historical.sha256_hex(historical.canonical_json(changedDisposition))).not.toBe(inputHash);
   });
 });
+

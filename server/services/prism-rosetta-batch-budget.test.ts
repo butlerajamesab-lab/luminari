@@ -97,7 +97,7 @@ function fake_database(_sql: string, p: any[], o: any): any {
   const by_bill = fixtures.find((f) => f.assembly.genome_bill_id === p[0]);
   switch (o.label) {
     case "prism_rosetta_queue_reconcile_completed":
-    case "prism_rosetta_queue_replenish_v24": return { rows: [] };
+    case "prism_rosetta_queue_replenish_v25": return { rows: [] };
     case "prism_rosetta_queue_claim": {
       expect(_sql).toContain("queue.queue_state in ('eligible', 'degraded', 'receipt_partial')");
       expect(_sql).toContain("queue.queue_id = any($6::uuid[])");

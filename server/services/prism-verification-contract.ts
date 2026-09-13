@@ -7,11 +7,11 @@ export const PRISM_RULE_SET_VERSION = "1.0.0";
 export const PRISM_RULE_SET_HASH =
   "298eaf14df23f17c07dbc253fb6a2abe2f55ac9425942a46ab08f6bdd05401b0";
 
-export const PRISM_ROSETTA_ENGINE_VERSION = "2.4.0";
+export const PRISM_ROSETTA_ENGINE_VERSION = "2.5.0";
 export const PRISM_ROSETTA_RULE_SET_ID = "prism-rosetta-structural-binding";
-export const PRISM_ROSETTA_RULE_SET_VERSION = "2.4.0";
+export const PRISM_ROSETTA_RULE_SET_VERSION = "2.5.0";
 export const PRISM_ROSETTA_RULE_SET_HASH =
-  "78cf62b9cd452d8de62397c775fa71a2507777ebf81b1ea53915782d573768a6";
+  "26e4ef9f6c0d389154d9a2259c99b6e7eb83a51c096e738a9470fb20ff04ec8b";
 
 const hash_schema = z.string().regex(/^[a-f0-9]{64}$/i);
 
@@ -267,3 +267,4 @@ export function safe_equal(left: string, right: string): boolean {
   const right_buffer = Buffer.from(right, "utf8");
   return left_buffer.length === right_buffer.length && timingSafeEqual(left_buffer, right_buffer);
 }
+

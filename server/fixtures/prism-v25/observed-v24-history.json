@@ -1,0 +1,931 @@
+{
+  "fixture_only": true,
+  "description": "Observed 2.4 history for isolated regression fixtures; never install these rows in production.",
+  "tables": {
+    "civic_genome_assembly_run": [
+      {
+        "created_at": "2026-08-19T19:12:38.091262+00:00",
+        "error_code": null,
+        "input_hash": "cac8624f1ccad26b7ebc2a891708bd471b929f3386748f918eb1f77596f1582e",
+        "run_status": "completed",
+        "output_hash": "d2c7a961ecb836b54f4f8e4dbc2aa2ea53f4bbbbde06f49512769a4f180bc36d",
+        "trait_count": 1,
+        "completed_at": "2026-08-19T19:12:38.091262+00:00",
+        "rule_version": "rosetta-five-layer-plus-structural-evidence-v2",
+        "coverage_json": {
+          "help": 1,
+          "override": 1,
+          "workflow": 1,
+          "definition": 1,
+          "accountability": 1
+        },
+        "engine_version": "rosetta-genome-assembly-v2",
+        "genome_bill_id": "2023e28e-0f03-479b-86d4-2d47bd46a325",
+        "assembly_run_id": "2dec37fc-bf41-458e-babf-5d4d8ced6792",
+        "extraction_run_id": "14125",
+        "rosetta_source_url": "https://www.scstatehouse.gov/sess126_2025-2026/prever/5750_20260811.htm",
+        "source_document_id": 9556,
+        "verification_state": "complete",
+        "malformed_object_count": 0,
+        "rosetta_engine_version": "rosetta-v3-deterministic-sql-2.5.11",
+        "rosetta_source_version": "legiscan_text:3455393:Introduced:official-legislative-version-html-strip-v1",
+        "rosetta_rule_set_version": "rosetta-five-layer-structural-correctness-2.5.11",
+        "rosetta_configuration_hash": "32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0",
+        "rosetta_rule_manifest_hash": "3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639",
+        "rosetta_output_content_hash": "223f0e1f801e1e7d24620c90279855fbe082b4c2afcd13f61c4c7dbfc30a3f8e",
+        "rosetta_source_content_hash": "d9f8f66e08098ad29086a167cff4a19e55d97997c172c43ece0840287c5f5935",
+        "rosetta_source_identity_hash": "37ab2ee78305265f7d93a0796080f0b3beecb4af351d1c56b5c50ca967292eb0"
+      },
+      {
+        "created_at": "2026-08-19T14:44:36.013287+00:00",
+        "error_code": null,
+        "input_hash": "dea9eed8b1341efa14cef7c2e1781eed513608099d5b2916a9f1532dcbf61531",
+        "run_status": "completed",
+        "output_hash": "2516543818691401d8b45baf40315fc6a2522d12c4a0c2d904b3e9ced846bf83",
+        "trait_count": 1,
+        "completed_at": "2026-08-19T14:44:36.013287+00:00",
+        "rule_version": "rosetta-five-layer-plus-structural-evidence-v2",
+        "coverage_json": {
+          "help": 1,
+          "override": 1,
+          "workflow": 1,
+          "definition": 1,
+          "accountability": 1
+        },
+        "engine_version": "rosetta-genome-assembly-v2",
+        "genome_bill_id": "c38480aa-c8e4-4bce-bf22-bc7c760d27e5",
+        "assembly_run_id": "4abc23d0-4e11-4586-8b49-301d3af89795",
+        "extraction_run_id": "13697",
+        "rosetta_source_url": "https://www.scstatehouse.gov/sess126_2025-2026/prever/5758_20260811.htm",
+        "source_document_id": 9195,
+        "verification_state": "complete",
+        "malformed_object_count": 0,
+        "rosetta_engine_version": "rosetta-v3-deterministic-sql-2.5.11",
+        "rosetta_source_version": "legiscan_text:3455295:Introduced:official-legislative-version-html-strip-v1",
+        "rosetta_rule_set_version": "rosetta-five-layer-structural-correctness-2.5.11",
+        "rosetta_configuration_hash": "32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0",
+        "rosetta_rule_manifest_hash": "3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639",
+        "rosetta_output_content_hash": "bdad1d9b87a7602fe534f9bc47692689a5a476b560e82c91c9e20a0de364d00d",
+        "rosetta_source_content_hash": "3da2095eb7b85bcd336ed2a78dd687d91081581a94df74dd2cddc159fec2726c",
+        "rosetta_source_identity_hash": "04e7b626ccfb08d2f80033d6106b9dcf4fe607147c0af3bd24262c1208e417b5"
+      }
+    ],
+    "civic_genome_prism_verification_run": [
+      {
+        "created_at": "2026-09-13T20:02:48.376833+00:00",
+        "input_hash": "338aa5899704441c98f4398d466ee9d13b450c0e7aadde4b8a107f8874b66670",
+        "output_hash": "82afce374f499f9bcc83086ddbd041a917abe4d23d2d14a617fb3bda0fdcb938",
+        "completed_at": "2026-09-13T20:02:48.275953+00:00",
+        "receipt_count": 1,
+        "status_counts": {
+          "contradicted": 1
+        },
+        "genome_bill_id": "2023e28e-0f03-479b-86d4-2d47bd46a325",
+        "assembly_run_id": "2dec37fc-bf41-458e-babf-5d4d8ced6792",
+        "extraction_run_id": "14125",
+        "prism_rule_set_id": "prism-rosetta-structural-binding",
+        "source_document_id": 9556,
+        "verification_run_id": "8278806e-cf8d-4252-9cf1-7d6739b33942",
+        "expected_trait_count": 1,
+        "prism_engine_version": "2.4.0",
+        "receipt_manifest_hash": "38238f2d934b34aad6e7c5ccf3cae509010e8fb518110824f2045cd848a3e261",
+        "prism_rule_set_version": "2.4.0"
+      },
+      {
+        "created_at": "2026-09-13T20:01:00.921938+00:00",
+        "input_hash": "3ff3ac2051ec852157c9db612bd8cb808f27ba40768b74d7c8ddc6afe711440f",
+        "output_hash": "2e441e41cbf2dfddf67c20dd4ffdf0173f922ae28dddcbcf3dba21bd12372172",
+        "completed_at": "2026-09-13T20:01:00.780505+00:00",
+        "receipt_count": 1,
+        "status_counts": {
+          "contradicted": 1
+        },
+        "genome_bill_id": "c38480aa-c8e4-4bce-bf22-bc7c760d27e5",
+        "assembly_run_id": "4abc23d0-4e11-4586-8b49-301d3af89795",
+        "extraction_run_id": "13697",
+        "prism_rule_set_id": "prism-rosetta-structural-binding",
+        "source_document_id": 9195,
+        "verification_run_id": "ed39d402-800f-4e37-9684-f0633b0b689f",
+        "expected_trait_count": 1,
+        "prism_engine_version": "2.4.0",
+        "receipt_manifest_hash": "872204bd44796142624a7286e067fedcbb151749ec407cc41302de557113d539",
+        "prism_rule_set_version": "2.4.0"
+      }
+    ],
+    "civic_genome_prism_verification_binding": [
+      {
+        "trait_id": "6cb094f7-a5c7-4dbd-ae3f-91f2e399b168",
+        "binding_id": "78c3be81-6bdd-4365-8cfe-f771d444c72e",
+        "created_at": "2026-09-13T20:02:48.36405+00:00",
+        "input_hash": "ba49adabd88c09d56333adeab35288dc7b8a75d75b614aae261b7b5b5e864ff2",
+        "request_id": "prism-rosetta-v1-8b88b2d4a7bf4ad036d88d2fc9b5dcbb8392a3c9f31464b4e9ad172412f2f953",
+        "output_hash": "3f89bfaead8ed643a11a1441b42bfb96ba81db4632b7c7633b9efb19de7a923b",
+        "genome_bill_id": "2023e28e-0f03-479b-86d4-2d47bd46a325",
+        "assembly_run_id": "2dec37fc-bf41-458e-babf-5d4d8ced6792",
+        "source_object_id": "wp-v2511-37ab2ee78305265f7d93a0796080f0b3beecb4af351d1c56b5c50ca967292eb0-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001",
+        "extraction_run_id": "14125",
+        "prism_rule_set_id": "prism-rosetta-structural-binding",
+        "source_document_id": 9556,
+        "prism_rule_set_hash": "78cf62b9cd452d8de62397c775fa71a2507777ebf81b1ea53915782d573768a6",
+        "verification_status": "contradicted",
+        "prism_engine_version": "2.4.0",
+        "prism_rule_set_version": "2.4.0",
+        "deterministic_replay_key": "9316d6fdd4f8528359dfdffae3ae34e5be308c257ac978d2efd99a3b22e49e61",
+        "prism_verification_receipt_id": "721c9ee2-8ada-4e18-90f6-d05bea984e9f"
+      },
+      {
+        "trait_id": "130e9a6c-472a-401f-84c2-45d2db0a2b99",
+        "binding_id": "ff680e2b-db41-4d8e-b60c-cb1099e3615c",
+        "created_at": "2026-09-13T20:01:00.904551+00:00",
+        "input_hash": "7a21d2efb2c2250e1d79d7ed00f9024330612407748ed5a20905830a52cc0f2a",
+        "request_id": "prism-rosetta-v1-8df65dd4466d3fb6dcc15ba8e5954748343dda8fd584afd4da4a443f065e9cd3",
+        "output_hash": "9394d0a23c5f690033eae56f940bd816291753dd8687c1e57aeed9972ab6b394",
+        "genome_bill_id": "c38480aa-c8e4-4bce-bf22-bc7c760d27e5",
+        "assembly_run_id": "4abc23d0-4e11-4586-8b49-301d3af89795",
+        "source_object_id": "wp-v2511-04e7b626ccfb08d2f80033d6106b9dcf4fe607147c0af3bd24262c1208e417b5-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001",
+        "extraction_run_id": "13697",
+        "prism_rule_set_id": "prism-rosetta-structural-binding",
+        "source_document_id": 9195,
+        "prism_rule_set_hash": "78cf62b9cd452d8de62397c775fa71a2507777ebf81b1ea53915782d573768a6",
+        "verification_status": "contradicted",
+        "prism_engine_version": "2.4.0",
+        "prism_rule_set_version": "2.4.0",
+        "deterministic_replay_key": "e018774186e07fa0be23203a5e54342c35884a25f2225ee38b672636e121e6c5",
+        "prism_verification_receipt_id": "6c66e065-0a9f-4c10-b6cc-206c136cc5ba"
+      }
+    ],
+    "lighthouse_prism_verification_requests": [
+      {
+        "created_at": "2026-09-13T20:02:48.103786+00:00",
+        "input_hash": "ba49adabd88c09d56333adeab35288dc7b8a75d75b614aae261b7b5b5e864ff2",
+        "request_id": "prism-rosetta-v1-8b88b2d4a7bf4ad036d88d2fc9b5dcbb8392a3c9f31464b4e9ad172412f2f953",
+        "updated_at": "2026-09-13T20:02:48.355486+00:00",
+        "rule_set_id": "prism-rosetta-structural-binding",
+        "bridge_state": "completed",
+        "failure_class": null,
+        "superseded_at": null,
+        "requested_checks": [
+          "verify_identity_chain",
+          "verify_hash_chain",
+          "verify_source_binding",
+          "verify_rule_binding",
+          "recompute_source_hash",
+          "locate_source_evidence",
+          "verify_section_binding",
+          "verify_trait_structure",
+          "detect_cross_trait_conflicts",
+          "classify_support_state"
+        ],
+        "rule_set_version": "2.4.0",
+        "claim_assertion_id": "wp-v2511-37ab2ee78305265f7d93a0796080f0b3beecb4af351d1c56b5c50ca967292eb0-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001",
+        "lighthouse_case_id": "2023e28e-0f03-479b-86d4-2d47bd46a325",
+        "source_content_hash": "d9f8f66e08098ad29086a167cff4a19e55d97997c172c43ece0840287c5f5935",
+        "evidence_document_id": "rosetta-source-document:9556",
+        "evidence_fingerprint": "9478856c9a82f529b4490a28c986e896ca672df3a7c8226e2b809804a391b0df",
+        "superseded_by_request_id": null,
+        "originating_lighthouse_commit": "01dd5775d5e784bd8ab22b2a68d41c5c1614a22c",
+        "originating_lighthouse_runtime_version": "lighthouse-prism-rosetta-v1"
+      },
+      {
+        "created_at": "2026-09-13T20:01:00.40264+00:00",
+        "input_hash": "7a21d2efb2c2250e1d79d7ed00f9024330612407748ed5a20905830a52cc0f2a",
+        "request_id": "prism-rosetta-v1-8df65dd4466d3fb6dcc15ba8e5954748343dda8fd584afd4da4a443f065e9cd3",
+        "updated_at": "2026-09-13T20:01:00.887766+00:00",
+        "rule_set_id": "prism-rosetta-structural-binding",
+        "bridge_state": "completed",
+        "failure_class": null,
+        "superseded_at": null,
+        "requested_checks": [
+          "verify_identity_chain",
+          "verify_hash_chain",
+          "verify_source_binding",
+          "verify_rule_binding",
+          "recompute_source_hash",
+          "locate_source_evidence",
+          "verify_section_binding",
+          "verify_trait_structure",
+          "detect_cross_trait_conflicts",
+          "classify_support_state"
+        ],
+        "rule_set_version": "2.4.0",
+        "claim_assertion_id": "wp-v2511-04e7b626ccfb08d2f80033d6106b9dcf4fe607147c0af3bd24262c1208e417b5-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001",
+        "lighthouse_case_id": "c38480aa-c8e4-4bce-bf22-bc7c760d27e5",
+        "source_content_hash": "3da2095eb7b85bcd336ed2a78dd687d91081581a94df74dd2cddc159fec2726c",
+        "evidence_document_id": "rosetta-source-document:9195",
+        "evidence_fingerprint": "3728cb2c5b6dfe2fc2e9da3c91502c9c006ca82e48bec42834ab9891582834b9",
+        "superseded_by_request_id": null,
+        "originating_lighthouse_commit": "01dd5775d5e784bd8ab22b2a68d41c5c1614a22c",
+        "originating_lighthouse_runtime_version": "lighthouse-prism-rosetta-v1"
+      }
+    ],
+    "lighthouse_prism_verification_receipts": [
+      {
+        "input_hash": "7a21d2efb2c2250e1d79d7ed00f9024330612407748ed5a20905830a52cc0f2a",
+        "request_id": "prism-rosetta-v1-8df65dd4466d3fb6dcc15ba8e5954748343dda8fd584afd4da4a443f065e9cd3",
+        "output_hash": "9394d0a23c5f690033eae56f940bd816291753dd8687c1e57aeed9972ab6b394",
+        "rule_set_id": "prism-rosetta-structural-binding",
+        "retrieved_at": "2026-09-13T20:01:00.876695+00:00",
+        "rule_set_hash": "78cf62b9cd452d8de62397c775fa71a2507777ebf81b1ea53915782d573768a6",
+        "contradictions": [
+          {
+            "check": "declared_section_matches_source",
+            "finding": "structural_verification_mismatch",
+            "expected": "not_observed",
+            "observed": "Document",
+            "source_quote": "The people of the great State of South Carolina are singularly blessed with police officers, military servicemen and women, firefighters, rescue personnel, and Highway Patrol officers who serve selflessly, often putting their lives in danger in the delivery of that service; and W hereas, Officer Don William \"DJ\" Keller of the Greenwood City Police Department stands high among those men and women who have labored to ensure the safety and security of the Palmetto State and who, therefore, retain a place of honor in the hearts of its citizens; and W hereas, on Monday, May 11, 2026, Officer Keller",
+            "source_object_id": "wp-v2511-04e7b626ccfb08d2f80033d6106b9dcf4fe607147c0af3bd24262c1208e417b5-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001"
+          }
+        ],
+        "missing_evidence": [],
+        "rule_set_version": "2.4.0",
+        "supported_findings": [
+          {
+            "finding": "rosetta_identity_chain_confirmed",
+            "trait_id": "130e9a6c-472a-401f-84c2-45d2db0a2b99",
+            "source_object_id": "wp-v2511-04e7b626ccfb08d2f80033d6106b9dcf4fe607147c0af3bd24262c1208e417b5-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001"
+          },
+          {
+            "finding": "rosetta_source_binding_confirmed",
+            "source_block_id": "blk-v2511-04e7b626ccfb08d2f80033d6106b9dcf4fe607147c0af3bd24262c1208e417b5-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001",
+            "source_document_id": "9195",
+            "source_content_hash": "3da2095eb7b85bcd336ed2a78dd687d91081581a94df74dd2cddc159fec2726c"
+          },
+          {
+            "finding": "civic_genome_assembly_binding_confirmed",
+            "assembly_run_id": "4abc23d0-4e11-4586-8b49-301d3af89795",
+            "assembly_output_hash": "2516543818691401d8b45baf40315fc6a2522d12c4a0c2d904b3e9ced846bf83"
+          },
+          {
+            "finding": "rosetta_rule_binding_confirmed",
+            "extraction_run_id": "13697",
+            "rule_manifest_hash": "3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639"
+          },
+          {
+            "check": "source_snapshot_hash_recomputed",
+            "finding": "deterministic_check_passed",
+            "source_content_hash": "3da2095eb7b85bcd336ed2a78dd687d91081581a94df74dd2cddc159fec2726c"
+          },
+          {
+            "check": "snapshot_binding_source_hash",
+            "finding": "deterministic_check_passed",
+            "observed": "3da2095eb7b85bcd336ed2a78dd687d91081581a94df74dd2cddc159fec2726c"
+          },
+          {
+            "check": "snapshot_request_source_hash",
+            "finding": "deterministic_check_passed",
+            "observed": "3da2095eb7b85bcd336ed2a78dd687d91081581a94df74dd2cddc159fec2726c"
+          },
+          {
+            "check": "snapshot_source_identity",
+            "finding": "deterministic_check_passed",
+            "observed": "04e7b626ccfb08d2f80033d6106b9dcf4fe607147c0af3bd24262c1208e417b5"
+          },
+          {
+            "check": "trait_payload_hash_recomputed",
+            "finding": "deterministic_check_passed",
+            "trait_payload_hash": "db21d068ad0b53dcf3accbdcecf6cfbbb0139e4883378670b030f65de84fcbd2"
+          },
+          {
+            "check": "trait_payload_matches_peer_manifest",
+            "finding": "deterministic_check_passed",
+            "trait_id": "130e9a6c-472a-401f-84c2-45d2db0a2b99"
+          },
+          {
+            "check": "workflow_step_occurs_in_source",
+            "finding": "deterministic_check_passed",
+            "step_order": "1",
+            "source_quote": "The people of the great State of South Carolina are singularly blessed with police officers, military servicemen and women, firefighters, rescue personnel, and Highway Patrol officers who serve selflessly, often putting their lives in danger in the delivery of that service; and W hereas, Officer Don William \"DJ\" Keller of the Greenwood City Police Department stands high among those men and women who have labored to ensure the safety and security of the Palmetto State and who, therefore, retain a place of honor in the hearts of its citizens; and W hereas, on Monday, May 11, 2026, Officer Keller was killed while serving as a member of a team of officers assigned to apprehend a vehicle allegedly involved in multiple recent crimes and shootings in the area.",
+            "source_section": "not_observed",
+            "source_offset_end": "1445",
+            "source_offset_start": "682"
+          },
+          {
+            "check": "reverse_workflow_coverage",
+            "finding": "deterministic_check_passed",
+            "observed": "all detected operative modal clauses are represented"
+          },
+          {
+            "check": "workflow_modal_present",
+            "finding": "deterministic_check_passed",
+            "step_order": "1",
+            "source_quote": "The people of the great State of South Carolina are singularly blessed with police officers, military servicemen and women, firefighters, rescue personnel, and Highway Patrol officers who serve selflessly, often putting their lives in danger in the delivery of that service; and W hereas, Officer Don William \"DJ\" Keller of the Greenwood City Police Department stands high among those men and women who have labored to ensure the safety and security of the Palmetto State and who, therefore, retain a place of honor in the hearts of its citizens; and W hereas, on Monday, May 11, 2026, Officer Keller was killed while serving as a member of a team of officers assigned to apprehend a vehicle allegedly involved in multiple recent crimes and shootings in the area.",
+            "matched_modal": "may",
+            "evaluated_span": "The people of the great State of South Carolina are singularly blessed with police officers, military servicemen and women, firefighters, rescue personnel, and Highway Patrol officers who serve selflessly, often putting their lives in danger in the delivery of that service; and W hereas, Officer Don William \"DJ\" Keller of the Greenwood City Police Department stands high among those men and women who have labored to ensure the safety and security of the Palmetto State and who, therefore, retain a place of honor in the hearts of its citizens; and W hereas, on Monday, May 11, 2026, Officer Keller was killed while serving as a member of a team of officers assigned to apprehend a vehicle allegedly involved in multiple recent crimes and shootings in the area.",
+            "source_section": "not_observed",
+            "source_offset_end": "1445",
+            "source_offset_start": "682"
+          },
+          {
+            "check": "workflow_modal_polarity_matches",
+            "finding": "deterministic_check_passed",
+            "step_order": "1",
+            "source_quote": "The people of the great State of South Carolina are singularly blessed with police officers, military servicemen and women, firefighters, rescue personnel, and Highway Patrol officers who serve selflessly, often putting their lives in danger in the delivery of that service; and W hereas, Officer Don William \"DJ\" Keller of the Greenwood City Police Department stands high among those men and women who have labored to ensure the safety and security of the Palmetto State and who, therefore, retain a place of honor in the hearts of its citizens; and W hereas, on Monday, May 11, 2026, Officer Keller was killed while serving as a member of a team of officers assigned to apprehend a vehicle allegedly involved in multiple recent crimes and shootings in the area.",
+            "matched_modal": "may",
+            "evaluated_span": "The people of the great State of South Carolina are singularly blessed with police officers, military servicemen and women, firefighters, rescue personnel, and Highway Patrol officers who serve selflessly, often putting their lives in danger in the delivery of that service; and W hereas, Officer Don William \"DJ\" Keller of the Greenwood City Police Department stands high among those men and women who have labored to ensure the safety and security of the Palmetto State and who, therefore, retain a place of honor in the hearts of its citizens; and W hereas, on Monday, May 11, 2026, Officer Keller was killed while serving as a member of a team of officers assigned to apprehend a vehicle allegedly involved in multiple recent crimes and shootings in the area.",
+            "source_section": "not_observed",
+            "source_offset_end": "1445",
+            "source_offset_start": "682"
+          }
+        ],
+        "verification_status": "contradicted",
+        "prism_engine_version": "2.4.0",
+        "unresolved_conditions": [
+          {
+            "scope": "one immutable official Rosetta source snapshot replayed",
+            "condition": "independent_authoritative_source_not_supplied"
+          }
+        ],
+        "deterministic_replay_key": "e018774186e07fa0be23203a5e54342c35884a25f2225ee38b672636e121e6c5",
+        "cited_evidence_identifiers": [
+          "rosetta-object:wp-v2511-04e7b626ccfb08d2f80033d6106b9dcf4fe607147c0af3bd24262c1208e417b5-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001"
+        ],
+        "prism_completion_timestamp": "2026-09-13T20:01:00.780505+00:00",
+        "prism_verification_receipt_id": "6c66e065-0a9f-4c10-b6cc-206c136cc5ba"
+      },
+      {
+        "input_hash": "ba49adabd88c09d56333adeab35288dc7b8a75d75b614aae261b7b5b5e864ff2",
+        "request_id": "prism-rosetta-v1-8b88b2d4a7bf4ad036d88d2fc9b5dcbb8392a3c9f31464b4e9ad172412f2f953",
+        "output_hash": "3f89bfaead8ed643a11a1441b42bfb96ba81db4632b7c7633b9efb19de7a923b",
+        "rule_set_id": "prism-rosetta-structural-binding",
+        "retrieved_at": "2026-09-13T20:02:48.346857+00:00",
+        "rule_set_hash": "78cf62b9cd452d8de62397c775fa71a2507777ebf81b1ea53915782d573768a6",
+        "contradictions": [
+          {
+            "check": "declared_section_matches_source",
+            "finding": "structural_verification_mismatch",
+            "expected": "not_observed",
+            "observed": "Document",
+            "source_quote": "W hereas, Saint Paul United Methodist Church was founded in 1876 in Kingstree, under the leadership of Reverend Gamble, beginning as a congregation that worshiped in homes and later under a shed on the Burgess property; and W hereas, on May 28, 1880, the church purchased approximately one acre of land, where a wooden structure was erected and named Saint Paul Methodist Episcopal Church; and W hereas, the congregation continued to grow and faithfully served the community, constructing larger facilities in 1907 and 1946, while emphasizing Christian faith, education, service, and leadership; and ",
+            "source_object_id": "wp-v2511-37ab2ee78305265f7d93a0796080f0b3beecb4af351d1c56b5c50ca967292eb0-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001"
+          }
+        ],
+        "missing_evidence": [],
+        "rule_set_version": "2.4.0",
+        "supported_findings": [
+          {
+            "finding": "rosetta_identity_chain_confirmed",
+            "trait_id": "6cb094f7-a5c7-4dbd-ae3f-91f2e399b168",
+            "source_object_id": "wp-v2511-37ab2ee78305265f7d93a0796080f0b3beecb4af351d1c56b5c50ca967292eb0-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001"
+          },
+          {
+            "finding": "rosetta_source_binding_confirmed",
+            "source_block_id": "blk-v2511-37ab2ee78305265f7d93a0796080f0b3beecb4af351d1c56b5c50ca967292eb0-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001",
+            "source_document_id": "9556",
+            "source_content_hash": "d9f8f66e08098ad29086a167cff4a19e55d97997c172c43ece0840287c5f5935"
+          },
+          {
+            "finding": "civic_genome_assembly_binding_confirmed",
+            "assembly_run_id": "2dec37fc-bf41-458e-babf-5d4d8ced6792",
+            "assembly_output_hash": "d2c7a961ecb836b54f4f8e4dbc2aa2ea53f4bbbbde06f49512769a4f180bc36d"
+          },
+          {
+            "finding": "rosetta_rule_binding_confirmed",
+            "extraction_run_id": "14125",
+            "rule_manifest_hash": "3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639"
+          },
+          {
+            "check": "source_snapshot_hash_recomputed",
+            "finding": "deterministic_check_passed",
+            "source_content_hash": "d9f8f66e08098ad29086a167cff4a19e55d97997c172c43ece0840287c5f5935"
+          },
+          {
+            "check": "snapshot_binding_source_hash",
+            "finding": "deterministic_check_passed",
+            "observed": "d9f8f66e08098ad29086a167cff4a19e55d97997c172c43ece0840287c5f5935"
+          },
+          {
+            "check": "snapshot_request_source_hash",
+            "finding": "deterministic_check_passed",
+            "observed": "d9f8f66e08098ad29086a167cff4a19e55d97997c172c43ece0840287c5f5935"
+          },
+          {
+            "check": "snapshot_source_identity",
+            "finding": "deterministic_check_passed",
+            "observed": "37ab2ee78305265f7d93a0796080f0b3beecb4af351d1c56b5c50ca967292eb0"
+          },
+          {
+            "check": "trait_payload_hash_recomputed",
+            "finding": "deterministic_check_passed",
+            "trait_payload_hash": "db3f85814b489dbaa8be4b538dfc211b1b1623d892df2e78a2fbf53905de1583"
+          },
+          {
+            "check": "trait_payload_matches_peer_manifest",
+            "finding": "deterministic_check_passed",
+            "trait_id": "6cb094f7-a5c7-4dbd-ae3f-91f2e399b168"
+          },
+          {
+            "check": "workflow_step_occurs_in_source",
+            "finding": "deterministic_check_passed",
+            "step_order": "1",
+            "source_quote": "W hereas, Saint Paul United Methodist Church was founded in 1876 in Kingstree, under the leadership of Reverend Gamble, beginning as a congregation that worshiped in homes and later under a shed on the Burgess property; and W hereas, on May 28, 1880, the church purchased approximately one acre of land, where a wooden structure was erected and named Saint Paul Methodist Episcopal Church; and W hereas, the congregation continued to grow and faithfully served the community, constructing larger facilities in 1907 and 1946, while emphasizing Christian faith, education, service, and leadership; and W hereas, Saint Paul played an important role in providing educational opportunities for African American children through Cane Branch Elementary School and Saint Paul Elementary School, helping prepare generations of servant leaders, including Dr. Henry N.",
+            "source_section": "not_observed",
+            "source_offset_end": "1258",
+            "source_offset_start": "401"
+          },
+          {
+            "check": "reverse_workflow_coverage",
+            "finding": "deterministic_check_passed",
+            "observed": "all detected operative modal clauses are represented"
+          },
+          {
+            "check": "workflow_modal_present",
+            "finding": "deterministic_check_passed",
+            "step_order": "1",
+            "source_quote": "W hereas, Saint Paul United Methodist Church was founded in 1876 in Kingstree, under the leadership of Reverend Gamble, beginning as a congregation that worshiped in homes and later under a shed on the Burgess property; and W hereas, on May 28, 1880, the church purchased approximately one acre of land, where a wooden structure was erected and named Saint Paul Methodist Episcopal Church; and W hereas, the congregation continued to grow and faithfully served the community, constructing larger facilities in 1907 and 1946, while emphasizing Christian faith, education, service, and leadership; and W hereas, Saint Paul played an important role in providing educational opportunities for African American children through Cane Branch Elementary School and Saint Paul Elementary School, helping prepare generations of servant leaders, including Dr. Henry N.",
+            "matched_modal": "may",
+            "evaluated_span": "W hereas, Saint Paul United Methodist Church was founded in 1876 in Kingstree, under the leadership of Reverend Gamble, beginning as a congregation that worshiped in homes and later under a shed on the Burgess property; and W hereas, on May 28, 1880, the church purchased approximately one acre of land, where a wooden structure was erected and named Saint Paul Methodist Episcopal Church; and W hereas, the congregation continued to grow and faithfully served the community, constructing larger facilities in 1907 and 1946, while emphasizing Christian faith, education, service, and leadership; and W hereas, Saint Paul played an important role in providing educational opportunities for African American children through Cane Branch Elementary School and Saint Paul Elementary School, helping prepare generations of servant leaders, including Dr. Henry N.",
+            "source_section": "not_observed",
+            "source_offset_end": "1258",
+            "source_offset_start": "401"
+          },
+          {
+            "check": "workflow_modal_polarity_matches",
+            "finding": "deterministic_check_passed",
+            "step_order": "1",
+            "source_quote": "W hereas, Saint Paul United Methodist Church was founded in 1876 in Kingstree, under the leadership of Reverend Gamble, beginning as a congregation that worshiped in homes and later under a shed on the Burgess property; and W hereas, on May 28, 1880, the church purchased approximately one acre of land, where a wooden structure was erected and named Saint Paul Methodist Episcopal Church; and W hereas, the congregation continued to grow and faithfully served the community, constructing larger facilities in 1907 and 1946, while emphasizing Christian faith, education, service, and leadership; and W hereas, Saint Paul played an important role in providing educational opportunities for African American children through Cane Branch Elementary School and Saint Paul Elementary School, helping prepare generations of servant leaders, including Dr. Henry N.",
+            "matched_modal": "may",
+            "evaluated_span": "W hereas, Saint Paul United Methodist Church was founded in 1876 in Kingstree, under the leadership of Reverend Gamble, beginning as a congregation that worshiped in homes and later under a shed on the Burgess property; and W hereas, on May 28, 1880, the church purchased approximately one acre of land, where a wooden structure was erected and named Saint Paul Methodist Episcopal Church; and W hereas, the congregation continued to grow and faithfully served the community, constructing larger facilities in 1907 and 1946, while emphasizing Christian faith, education, service, and leadership; and W hereas, Saint Paul played an important role in providing educational opportunities for African American children through Cane Branch Elementary School and Saint Paul Elementary School, helping prepare generations of servant leaders, including Dr. Henry N.",
+            "source_section": "not_observed",
+            "source_offset_end": "1258",
+            "source_offset_start": "401"
+          }
+        ],
+        "verification_status": "contradicted",
+        "prism_engine_version": "2.4.0",
+        "unresolved_conditions": [
+          {
+            "scope": "one immutable official Rosetta source snapshot replayed",
+            "condition": "independent_authoritative_source_not_supplied"
+          }
+        ],
+        "deterministic_replay_key": "9316d6fdd4f8528359dfdffae3ae34e5be308c257ac978d2efd99a3b22e49e61",
+        "cited_evidence_identifiers": [
+          "rosetta-object:wp-v2511-37ab2ee78305265f7d93a0796080f0b3beecb4af351d1c56b5c50ca967292eb0-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001"
+        ],
+        "prism_completion_timestamp": "2026-09-13T20:02:48.275953+00:00",
+        "prism_verification_receipt_id": "721c9ee2-8ada-4e18-90f6-d05bea984e9f"
+      }
+    ],
+    "civic_genome_trait": [
+      {
+        "trait_id": "130e9a6c-472a-401f-84c2-45d2db0a2b99",
+        "trait_key": "wp-v2511-04e7b626ccfb08d2f80033d6106b9dcf4fe607147c0af3bd24262c1208e417b5-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001",
+        "created_at": "2026-08-19T14:44:36.013287+00:00",
+        "updated_at": "2026-08-19T14:44:36.013287+00:00",
+        "trait_class": "workflow",
+        "content_hash": "bbcdee405552058478c9849ffcf367ae1c47fccba85bdc5f6e58334e23150104",
+        "rule_version": "rosetta-five-layer-structural-correctness-2.5.11",
+        "source_trace": [
+          {
+            "source_url": "https://www.scstatehouse.gov/sess126_2025-2026/prever/5758_20260811.htm",
+            "source_span": {
+              "section_number": "Document",
+              "char_offset_end": 4069,
+              "char_offset_start": 0,
+              "block_content_hash": "3da2095eb7b85bcd336ed2a78dd687d91081581a94df74dd2cddc159fec2726c"
+            },
+            "source_version": "legiscan_text:3455295:Introduced:official-legislative-version-html-strip-v1",
+            "source_block_id": "blk-v2511-04e7b626ccfb08d2f80033d6106b9dcf4fe607147c0af3bd24262c1208e417b5-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001",
+            "source_object_id": "wp-v2511-04e7b626ccfb08d2f80033d6106b9dcf4fe607147c0af3bd24262c1208e417b5-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001",
+            "extraction_run_id": "13697",
+            "trait_map_version": "rosetta-five-layer-plus-structural-evidence-v2",
+            "source_document_id": 9195,
+            "source_object_type": "workflow_pipeline",
+            "rosetta_engine_version": "rosetta-v3-deterministic-sql-2.5.11",
+            "assembly_engine_version": "rosetta-genome-assembly-v2",
+            "rosetta_rule_set_version": "rosetta-five-layer-structural-correctness-2.5.11",
+            "rosetta_source_byte_hash": "7003c8b385148e199f8b0a84c6962908c12e2f5e7ce31f7f235025ac98eefe30",
+            "rosetta_configuration_hash": "32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0",
+            "rosetta_rule_manifest_hash": "3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639",
+            "rosetta_output_content_hash": "bdad1d9b87a7602fe534f9bc47692689a5a476b560e82c91c9e20a0de364d00d",
+            "rosetta_source_content_hash": "3da2095eb7b85bcd336ed2a78dd687d91081581a94df74dd2cddc159fec2726c",
+            "rosetta_source_identity_hash": "04e7b626ccfb08d2f80033d6106b9dcf4fe607147c0af3bd24262c1208e417b5"
+          }
+        ],
+        "signal_status": "confirmed",
+        "engine_version": "rosetta-v3-deterministic-sql-2.5.11",
+        "genome_bill_id": "c38480aa-c8e4-4bce-bf22-bc7c760d27e5",
+        "source_block_id": "blk-v2511-04e7b626ccfb08d2f80033d6106b9dcf4fe607147c0af3bd24262c1208e417b5-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001",
+        "confidence_score": 1,
+        "source_object_id": "wp-v2511-04e7b626ccfb08d2f80033d6106b9dcf4fe607147c0af3bd24262c1208e417b5-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001",
+        "extraction_run_id": "13697",
+        "trait_fingerprint": "3728cb2c5b6dfe2fc2e9da3c91502c9c006ca82e48bec42834ab9891582834b9",
+        "source_document_id": 9195,
+        "source_object_type": "workflow_pipeline",
+        "verification_state": "confirmed",
+        "methodology_version": "rosetta-five-layer-plus-structural-evidence-v2",
+        "normalized_value_json": {
+          "steps": [
+            {
+              "verb": "may",
+              "actor": "The people of the great State of South Carolina are singularly blessed with police officers, military servicemen and women, firefighters, rescue personnel, and Highway Patrol officers who serve selflessly, often putting their lives in danger in the delivery of that service; and W hereas, Officer Don William \"DJ\" Keller of the Greenwood City Police Department stands high among those men and women who have labored to ensure the safety and security of the Palmetto State and who, therefore, retain a place of honor in the hearts of its citizens; and W hereas, on Monday",
+              "step_id": "ws-v2511-04e7b626ccfb08d2f80033d6106b9dcf4fe607147c0af3bd24262c1208e417b5-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001",
+              "step_name": "The people of the great State of South Carolina are singularly blessed with police officers, military servicemen and women, firefighters, rescue personnel, and Highway Patrol officers who serve selflessly, often putting their lives in danger in the delivery of that service; and W hereas, Officer Don William \"DJ\" Keller of the Greenwood City Police Department stands high among those men and women who have labored to ensure the safety and security of the Palmetto State and who, therefore, retain a place of honor in the hearts of its citizens; and W hereas, on Monday, May 11, 2026, Officer Keller was killed while serving as a member of a team of officers assigned to apprehend a vehicle allegedly involved in multiple recent crimes and shootings in the area.",
+              "step_order": 1,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "2945e4050b7ca8bdca56f0e29354f5d839df115cd750109f51f1de8da2e4b6d2",
+                "char_offset_end": 1445,
+                "char_offset_start": 682,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Document"
+            }
+          ],
+          "pipeline_name": "Exact source obligations for Document",
+          "pipeline_type": "section_ordered_normative_modal_clauses",
+          "governing_section": "Document"
+        }
+      },
+      {
+        "trait_id": "6cb094f7-a5c7-4dbd-ae3f-91f2e399b168",
+        "trait_key": "wp-v2511-37ab2ee78305265f7d93a0796080f0b3beecb4af351d1c56b5c50ca967292eb0-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001",
+        "created_at": "2026-08-19T19:12:38.091262+00:00",
+        "updated_at": "2026-08-19T19:12:38.091262+00:00",
+        "trait_class": "workflow",
+        "content_hash": "aef72d2c0e43aa5c2d991841bf3690f59afe4ad9ea1ce1038280c587f2f54662",
+        "rule_version": "rosetta-five-layer-structural-correctness-2.5.11",
+        "source_trace": [
+          {
+            "source_url": "https://www.scstatehouse.gov/sess126_2025-2026/prever/5750_20260811.htm",
+            "source_span": {
+              "section_number": "Document",
+              "char_offset_end": 4340,
+              "char_offset_start": 0,
+              "block_content_hash": "d9f8f66e08098ad29086a167cff4a19e55d97997c172c43ece0840287c5f5935"
+            },
+            "source_version": "legiscan_text:3455393:Introduced:official-legislative-version-html-strip-v1",
+            "source_block_id": "blk-v2511-37ab2ee78305265f7d93a0796080f0b3beecb4af351d1c56b5c50ca967292eb0-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001",
+            "source_object_id": "wp-v2511-37ab2ee78305265f7d93a0796080f0b3beecb4af351d1c56b5c50ca967292eb0-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001",
+            "extraction_run_id": "14125",
+            "trait_map_version": "rosetta-five-layer-plus-structural-evidence-v2",
+            "source_document_id": 9556,
+            "source_object_type": "workflow_pipeline",
+            "rosetta_engine_version": "rosetta-v3-deterministic-sql-2.5.11",
+            "assembly_engine_version": "rosetta-genome-assembly-v2",
+            "rosetta_rule_set_version": "rosetta-five-layer-structural-correctness-2.5.11",
+            "rosetta_source_byte_hash": "a6728427b4c1b66a35dfb8bc67b0550cf1e51ba7cb7f6ff226f36a05e2a83eda",
+            "rosetta_configuration_hash": "32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0",
+            "rosetta_rule_manifest_hash": "3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639",
+            "rosetta_output_content_hash": "223f0e1f801e1e7d24620c90279855fbe082b4c2afcd13f61c4c7dbfc30a3f8e",
+            "rosetta_source_content_hash": "d9f8f66e08098ad29086a167cff4a19e55d97997c172c43ece0840287c5f5935",
+            "rosetta_source_identity_hash": "37ab2ee78305265f7d93a0796080f0b3beecb4af351d1c56b5c50ca967292eb0"
+          }
+        ],
+        "signal_status": "confirmed",
+        "engine_version": "rosetta-v3-deterministic-sql-2.5.11",
+        "genome_bill_id": "2023e28e-0f03-479b-86d4-2d47bd46a325",
+        "source_block_id": "blk-v2511-37ab2ee78305265f7d93a0796080f0b3beecb4af351d1c56b5c50ca967292eb0-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001",
+        "confidence_score": 1,
+        "source_object_id": "wp-v2511-37ab2ee78305265f7d93a0796080f0b3beecb4af351d1c56b5c50ca967292eb0-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001",
+        "extraction_run_id": "14125",
+        "trait_fingerprint": "9478856c9a82f529b4490a28c986e896ca672df3a7c8226e2b809804a391b0df",
+        "source_document_id": 9556,
+        "source_object_type": "workflow_pipeline",
+        "verification_state": "confirmed",
+        "methodology_version": "rosetta-five-layer-plus-structural-evidence-v2",
+        "normalized_value_json": {
+          "steps": [
+            {
+              "verb": "may",
+              "actor": "W hereas, Saint Paul United Methodist Church was founded in 1876 in Kingstree, under the leadership of Reverend Gamble, beginning as a congregation that worshiped in homes and later under a shed on the Burgess property; and W hereas, on",
+              "step_id": "ws-v2511-37ab2ee78305265f7d93a0796080f0b3beecb4af351d1c56b5c50ca967292eb0-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001",
+              "step_name": "W hereas, Saint Paul United Methodist Church was founded in 1876 in Kingstree, under the leadership of Reverend Gamble, beginning as a congregation that worshiped in homes and later under a shed on the Burgess property; and W hereas, on May 28, 1880, the church purchased approximately one acre of land, where a wooden structure was erected and named Saint Paul Methodist Episcopal Church; and W hereas, the congregation continued to grow and faithfully served the community, constructing larger facilities in 1907 and 1946, while emphasizing Christian faith, education, service, and leadership; and W hereas, Saint Paul played an important role in providing educational opportunities for African American children through Cane Branch Elementary School and Saint Paul Elementary School, helping prepare generations of servant leaders, including Dr. Henry N.",
+              "step_order": 1,
+              "source_span": {
+                "span_status": "resolved",
+                "raw_text_hash": "1b32c8ccd45d4f813003715c4e3dca3c9b39553cff7eaab173e60b4c1d62875e",
+                "char_offset_end": 1258,
+                "char_offset_start": 401,
+                "projection_version": "rosetta-layout-projection-v25"
+              },
+              "governing_section": "Document"
+            }
+          ],
+          "pipeline_name": "Exact source obligations for Document",
+          "pipeline_type": "section_ordered_normative_modal_clauses",
+          "governing_section": "Document"
+        }
+      }
+    ],
+    "civic_genome_bill": [
+      {
+        "state_code": "SC",
+        "genome_bill_id": "2023e28e-0f03-479b-86d4-2d47bd46a325",
+        "source_bill_url": "https://legiscan.com/SC/bill/H5750/2025",
+        "source_bill_title": "Saint Paul United Methodist Church in Kingstree 150 anniversary",
+        "source_bill_number": "H5750"
+      },
+      {
+        "state_code": "SC",
+        "genome_bill_id": "c38480aa-c8e4-4bce-bf22-bc7c760d27e5",
+        "source_bill_url": "https://legiscan.com/SC/bill/H5758/2025",
+        "source_bill_title": "Police Officer Don \"DJ\" Keller, sympathy",
+        "source_bill_number": "H5758"
+      }
+    ],
+    "civic_genome_bill_version": [
+      {
+        "chamber": null,
+        "stage_rank": 100,
+        "version_type": "introduced",
+        "genome_bill_id": "c38480aa-c8e4-4bce-bf22-bc7c760d27e5",
+        "source_bill_id": 2157267,
+        "assembly_run_id": "4abc23d0-4e11-4586-8b49-301d3af89795",
+        "bill_version_id": "2695ce9f-89f2-4fe1-a9f1-ee3610bb4eb4",
+        "document_family": "text",
+        "source_document_key": "text:2157267:3455295"
+      },
+      {
+        "chamber": null,
+        "stage_rank": 100,
+        "version_type": "introduced",
+        "genome_bill_id": "2023e28e-0f03-479b-86d4-2d47bd46a325",
+        "source_bill_id": 2157366,
+        "assembly_run_id": "2dec37fc-bf41-458e-babf-5d4d8ced6792",
+        "bill_version_id": "2a8a6a53-2a0e-499d-93db-1f6216eefb33",
+        "document_family": "text",
+        "source_document_key": "text:2157366:3455393"
+      }
+    ],
+    "legal_patterns": [
+      {
+        "authority_refs": [
+          {
+            "assembly_run_id": "2dec37fc-bf41-458e-babf-5d4d8ced6792",
+            "extraction_run_id": "14125",
+            "prior_authority_refs": [
+              {
+                "assembly_run_id": "2dec37fc-bf41-458e-babf-5d4d8ced6792",
+                "bill_url": "https://legiscan.com/SC/bill/H5750/2025",
+                "extraction_run_id": "14125",
+                "provider_hash": "6eb628581af83e14c6ba5839643504ba",
+                "source_document_id": 9556,
+                "source_document_key": "text:2157366:3455393",
+                "source_url": "https://www.scstatehouse.gov/sess126_2025-2026/prever/5750_20260811.htm",
+                "verification_run_id": "cd6c144f-3818-46a7-b599-abc8e84f5319"
+              }
+            ],
+            "prior_pattern_id": "e3a25d94-f75e-47b7-84c2-3b9f4de25a12",
+            "reassessment_evidence": [
+              {
+                "check_evaluation": {
+                  "check": "workflow_modal_present",
+                  "evaluated_span": "W hereas, Saint Paul United Methodist Church was founded in 1876 in Kingstree, under the leadership of Reverend Gamble, beginning as a congregation that worshiped in homes and later under a shed on the Burgess property; and W hereas, on May 28, 1880, the church purchased approximately one acre of land, where a wooden structure was erected and named Saint Paul Methodist Episcopal Church; and W hereas, the congregation continued to grow and faithfully served the community, constructing larger facilities in 1907 and 1946, while emphasizing Christian faith, education, service, and leadership; and W hereas, Saint Paul played an important role in providing educational opportunities for African American children through Cane Branch Elementary School and Saint Paul Elementary School, helping prepare generations of servant leaders, including Dr. Henry N.",
+                  "finding": "deterministic_check_passed",
+                  "matched_modal": "may",
+                  "source_offset_end": "1258",
+                  "source_offset_start": "401",
+                  "source_quote": "W hereas, Saint Paul United Methodist Church was founded in 1876 in Kingstree, under the leadership of Reverend Gamble, beginning as a congregation that worshiped in homes and later under a shed on the Burgess property; and W hereas, on May 28, 1880, the church purchased approximately one acre of land, where a wooden structure was erected and named Saint Paul Methodist Episcopal Church; and W hereas, the congregation continued to grow and faithfully served the community, constructing larger facilities in 1907 and 1946, while emphasizing Christian faith, education, service, and leadership; and W hereas, Saint Paul played an important role in providing educational opportunities for African American children through Cane Branch Elementary School and Saint Paul Elementary School, helping prepare generations of servant leaders, including Dr. Henry N.",
+                  "source_section": "not_observed",
+                  "step_order": "1"
+                },
+                "deterministic_replay_key": "9316d6fdd4f8528359dfdffae3ae34e5be308c257ac978d2efd99a3b22e49e61",
+                "prior_pattern_id": "e3a25d94-f75e-47b7-84c2-3b9f4de25a12",
+                "prism_verification_receipt_id": "721c9ee2-8ada-4e18-90f6-d05bea984e9f",
+                "receipt_output_hash": "3f89bfaead8ed643a11a1441b42bfb96ba81db4632b7c7633b9efb19de7a923b",
+                "request_id": "prism-rosetta-v1-8b88b2d4a7bf4ad036d88d2fc9b5dcbb8392a3c9f31464b4e9ad172412f2f953",
+                "step_order": "1",
+                "trait_id": "6cb094f7-a5c7-4dbd-ae3f-91f2e399b168"
+              }
+            ],
+            "source_document_id": 9556,
+            "verification_run_id": "8278806e-cf8d-4252-9cf1-7d6739b33942"
+          }
+        ],
+        "contradiction_refs": [],
+        "created_at": "2026-09-13T20:02:48.376833+00:00",
+        "description": "Prism 2.4 explicitly passed every previously contradicted trait/step for this check against the same source. The earlier contradiction is retained as superseded history.",
+        "enforcement_refs": [],
+        "engine_id": "prism",
+        "engine_version": "2.4.0",
+        "first_observed_at": "2026-09-13T20:02:48.275953+00:00",
+        "input_hash": "51ea7d20cee52913d7dab375297c0254389ddf00bdd4745dad5988c3b5407d7f",
+        "is_current": true,
+        "jurisdiction_scope": {
+          "assembly_run_id": "2dec37fc-bf41-458e-babf-5d4d8ced6792",
+          "bill_number": "H5750",
+          "bill_version_id": "2a8a6a53-2a0e-499d-93db-1f6216eefb33",
+          "chamber": null,
+          "document_family": "text",
+          "genome_bill_id": "2023e28e-0f03-479b-86d4-2d47bd46a325",
+          "source_bill_id": 2157366,
+          "stage_rank": 100,
+          "state_code": "SC",
+          "version_type": "introduced"
+        },
+        "pattern_hash": "cd2f6aa0f73959da3b6174e72da3dbccf7efb584e80383a42b4bae9d8ecd5946",
+        "pattern_id": "91955a17-ecef-483b-b2b6-0fffee738cf6",
+        "pattern_type": "other",
+        "rule_id": "prism-rosetta-structural-binding:workflow_modal_present",
+        "rule_version": "2.4.0",
+        "source_record_key": "verification_run:8278806e-cf8d-4252-9cf1-7d6739b33942:check:workflow_modal_present:reassessment",
+        "source_relation": "public.civic_genome_prism_verification_run",
+        "supersedes_id": "e3a25d94-f75e-47b7-84c2-3b9f4de25a12",
+        "title": "Prism modal check reassessed: workflow modal present",
+        "verification_state": "supported_one_source"
+      },
+      {
+        "authority_refs": [
+          {
+            "assembly_run_id": "4abc23d0-4e11-4586-8b49-301d3af89795",
+            "bill_url": "https://legiscan.com/SC/bill/H5758/2025",
+            "extraction_run_id": "13697",
+            "provider_hash": "eb8f22ae92fb03dcca29fdfcc1d8cff6",
+            "source_document_id": 9195,
+            "source_document_key": "text:2157267:3455295",
+            "source_url": "https://www.scstatehouse.gov/sess126_2025-2026/prever/5758_20260811.htm",
+            "verification_run_id": "ab32ab8f-2213-43f5-a123-c0d82a975a75"
+          }
+        ],
+        "contradiction_refs": [
+          {
+            "binding_output_hash": "522e43f259c13341a62350a3b27715382a290b49cbb8e32c238f3d1c35665a41",
+            "contradiction": {
+              "check": "workflow_modal_present",
+              "expected": "shall|must|may with polarity",
+              "finding": "structural_verification_mismatch",
+              "observed": "not_observed",
+              "source_quote": "The people of the great State of South Carolina are singularly blessed with police officers, military servicemen and women, firefighters, rescue personnel, and Highway Patrol officers who serve selflessly, often putting their lives in danger in the delivery of that service; and W hereas, Officer Don William \"DJ\" Keller of the Greenwood City Police Department stands high among those men and women who have labored to ensure the safety and security of the Palmetto State and who, therefore, retain a place of honor in the hearts of its citizens; and W hereas, on Monday, May 11, 2026, Officer Keller",
+              "step_order": "1"
+            },
+            "deterministic_replay_key": "24b29dfe93b3dda642e67c5b94e6bd9de106857cd18e29ac4e046746eca82b23",
+            "receipt_output_hash": "522e43f259c13341a62350a3b27715382a290b49cbb8e32c238f3d1c35665a41",
+            "request_id": "prism-rosetta-v1-a72975e0f5b4836305c1ea36b4ac608fa6e765900208a17fb5fabc1a5e4827e7",
+            "source_object_id": "wp-v2511-04e7b626ccfb08d2f80033d6106b9dcf4fe607147c0af3bd24262c1208e417b5-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001",
+            "trait_id": "130e9a6c-472a-401f-84c2-45d2db0a2b99"
+          }
+        ],
+        "created_at": "2026-08-21T21:35:19.382996+00:00",
+        "description": "Prism recorded 1 deterministic source/rule contradiction(s) for check workflow_modal_present on the provenance-bound introduced source version. This Domain 2 legal pattern preserves the verified mismatch; it does not infer motive, wrongdoing, beneficiary identity, or external influence.",
+        "enforcement_refs": [],
+        "engine_id": "prism",
+        "engine_version": "2.3.0",
+        "first_observed_at": "2026-08-21T21:35:19.289238+00:00",
+        "input_hash": "96d753f7955cf7191a791a1f2664064a08910edee975efa5928c16b1bc0a9d0b",
+        "is_current": false,
+        "jurisdiction_scope": {
+          "assembly_run_id": "4abc23d0-4e11-4586-8b49-301d3af89795",
+          "bill_number": "H5758",
+          "bill_version_id": "2695ce9f-89f2-4fe1-a9f1-ee3610bb4eb4",
+          "chamber": null,
+          "document_family": "text",
+          "genome_bill_id": "c38480aa-c8e4-4bce-bf22-bc7c760d27e5",
+          "source_bill_id": 2157267,
+          "stage_rank": 100,
+          "state_code": "SC",
+          "version_type": "introduced"
+        },
+        "pattern_hash": "8db1246fc48eb23462cc2d689d8181eec4ed0410e7f27088e85c52e32ef284ca",
+        "pattern_id": "b7ffb4ac-cb01-4f43-8ce4-42f8bb266e72",
+        "pattern_type": "workflow_gap",
+        "rule_id": "prism-rosetta-structural-binding:workflow_modal_present",
+        "rule_version": "2.3.0",
+        "source_record_key": "verification_run:ab32ab8f-2213-43f5-a123-c0d82a975a75:check:workflow_modal_present",
+        "source_relation": "public.civic_genome_prism_verification_run",
+        "supersedes_id": null,
+        "title": "SC H5758 · verified workflow modal present",
+        "verification_state": "contradicted"
+      },
+      {
+        "authority_refs": [
+          {
+            "assembly_run_id": "2dec37fc-bf41-458e-babf-5d4d8ced6792",
+            "bill_url": "https://legiscan.com/SC/bill/H5750/2025",
+            "extraction_run_id": "14125",
+            "provider_hash": "6eb628581af83e14c6ba5839643504ba",
+            "source_document_id": 9556,
+            "source_document_key": "text:2157366:3455393",
+            "source_url": "https://www.scstatehouse.gov/sess126_2025-2026/prever/5750_20260811.htm",
+            "verification_run_id": "cd6c144f-3818-46a7-b599-abc8e84f5319"
+          }
+        ],
+        "contradiction_refs": [
+          {
+            "binding_output_hash": "b564260aafb9c6aedb7c03147a88771885dc930b7d8ca3458ff65703efb90e10",
+            "contradiction": {
+              "check": "workflow_modal_present",
+              "expected": "shall|must|may with polarity",
+              "finding": "structural_verification_mismatch",
+              "observed": "not_observed",
+              "source_quote": "W hereas, Saint Paul United Methodist Church was founded in 1876 in Kingstree, under the leadership of Reverend Gamble, beginning as a congregation that worshiped in homes and later under a shed on the Burgess property; and W hereas, on May 28, 1880, the church purchased approximately one acre of land, where a wooden structure was erected and named Saint Paul Methodist Episcopal Church; and W hereas, the congregation continued to grow and faithfully served the community, constructing larger facilities in 1907 and 1946, while emphasizing Christian faith, education, service, and leadership; and ",
+              "step_order": "1"
+            },
+            "deterministic_replay_key": "a6383b997032fae6d6ed51e732ed23656682d92e9bfa58c84c58a1884248c5cc",
+            "receipt_output_hash": "b564260aafb9c6aedb7c03147a88771885dc930b7d8ca3458ff65703efb90e10",
+            "request_id": "prism-rosetta-v1-3f039d0c06d79a5b726f1de72f51c87690bb5421db1775235f2ed7123c1e27fd",
+            "source_object_id": "wp-v2511-37ab2ee78305265f7d93a0796080f0b3beecb4af351d1c56b5c50ca967292eb0-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001",
+            "trait_id": "6cb094f7-a5c7-4dbd-ae3f-91f2e399b168"
+          }
+        ],
+        "created_at": "2026-08-22T00:52:43.40704+00:00",
+        "description": "Prism recorded 1 deterministic source/rule contradiction(s) for check workflow_modal_present on the provenance-bound introduced source version. This Domain 2 legal pattern preserves the verified mismatch; it does not infer motive, wrongdoing, beneficiary identity, or external influence.",
+        "enforcement_refs": [],
+        "engine_id": "prism",
+        "engine_version": "2.3.0",
+        "first_observed_at": "2026-08-22T00:52:43.305148+00:00",
+        "input_hash": "d43f8aae6eaa633c7ac5ae5fb06c05f5bd8c92d188fc14cc54b8ccae1a66bba4",
+        "is_current": false,
+        "jurisdiction_scope": {
+          "assembly_run_id": "2dec37fc-bf41-458e-babf-5d4d8ced6792",
+          "bill_number": "H5750",
+          "bill_version_id": "2a8a6a53-2a0e-499d-93db-1f6216eefb33",
+          "chamber": null,
+          "document_family": "text",
+          "genome_bill_id": "2023e28e-0f03-479b-86d4-2d47bd46a325",
+          "source_bill_id": 2157366,
+          "stage_rank": 100,
+          "state_code": "SC",
+          "version_type": "introduced"
+        },
+        "pattern_hash": "180163a1c4bdc05722c2535e447a670f2f91d9355247a1c2f65373311e83a36e",
+        "pattern_id": "e3a25d94-f75e-47b7-84c2-3b9f4de25a12",
+        "pattern_type": "workflow_gap",
+        "rule_id": "prism-rosetta-structural-binding:workflow_modal_present",
+        "rule_version": "2.3.0",
+        "source_record_key": "verification_run:cd6c144f-3818-46a7-b599-abc8e84f5319:check:workflow_modal_present",
+        "source_relation": "public.civic_genome_prism_verification_run",
+        "supersedes_id": null,
+        "title": "SC H5750 · verified workflow modal present",
+        "verification_state": "contradicted"
+      },
+      {
+        "authority_refs": [
+          {
+            "assembly_run_id": "4abc23d0-4e11-4586-8b49-301d3af89795",
+            "extraction_run_id": "13697",
+            "prior_authority_refs": [
+              {
+                "assembly_run_id": "4abc23d0-4e11-4586-8b49-301d3af89795",
+                "bill_url": "https://legiscan.com/SC/bill/H5758/2025",
+                "extraction_run_id": "13697",
+                "provider_hash": "eb8f22ae92fb03dcca29fdfcc1d8cff6",
+                "source_document_id": 9195,
+                "source_document_key": "text:2157267:3455295",
+                "source_url": "https://www.scstatehouse.gov/sess126_2025-2026/prever/5758_20260811.htm",
+                "verification_run_id": "ab32ab8f-2213-43f5-a123-c0d82a975a75"
+              }
+            ],
+            "prior_pattern_id": "b7ffb4ac-cb01-4f43-8ce4-42f8bb266e72",
+            "reassessment_evidence": [
+              {
+                "check_evaluation": {
+                  "check": "workflow_modal_present",
+                  "evaluated_span": "The people of the great State of South Carolina are singularly blessed with police officers, military servicemen and women, firefighters, rescue personnel, and Highway Patrol officers who serve selflessly, often putting their lives in danger in the delivery of that service; and W hereas, Officer Don William \"DJ\" Keller of the Greenwood City Police Department stands high among those men and women who have labored to ensure the safety and security of the Palmetto State and who, therefore, retain a place of honor in the hearts of its citizens; and W hereas, on Monday, May 11, 2026, Officer Keller was killed while serving as a member of a team of officers assigned to apprehend a vehicle allegedly involved in multiple recent crimes and shootings in the area.",
+                  "finding": "deterministic_check_passed",
+                  "matched_modal": "may",
+                  "source_offset_end": "1445",
+                  "source_offset_start": "682",
+                  "source_quote": "The people of the great State of South Carolina are singularly blessed with police officers, military servicemen and women, firefighters, rescue personnel, and Highway Patrol officers who serve selflessly, often putting their lives in danger in the delivery of that service; and W hereas, Officer Don William \"DJ\" Keller of the Greenwood City Police Department stands high among those men and women who have labored to ensure the safety and security of the Palmetto State and who, therefore, retain a place of honor in the hearts of its citizens; and W hereas, on Monday, May 11, 2026, Officer Keller was killed while serving as a member of a team of officers assigned to apprehend a vehicle allegedly involved in multiple recent crimes and shootings in the area.",
+                  "source_section": "not_observed",
+                  "step_order": "1"
+                },
+                "deterministic_replay_key": "e018774186e07fa0be23203a5e54342c35884a25f2225ee38b672636e121e6c5",
+                "prior_pattern_id": "b7ffb4ac-cb01-4f43-8ce4-42f8bb266e72",
+                "prism_verification_receipt_id": "6c66e065-0a9f-4c10-b6cc-206c136cc5ba",
+                "receipt_output_hash": "9394d0a23c5f690033eae56f940bd816291753dd8687c1e57aeed9972ab6b394",
+                "request_id": "prism-rosetta-v1-8df65dd4466d3fb6dcc15ba8e5954748343dda8fd584afd4da4a443f065e9cd3",
+                "step_order": "1",
+                "trait_id": "130e9a6c-472a-401f-84c2-45d2db0a2b99"
+              }
+            ],
+            "source_document_id": 9195,
+            "verification_run_id": "ed39d402-800f-4e37-9684-f0633b0b689f"
+          }
+        ],
+        "contradiction_refs": [],
+        "created_at": "2026-09-13T20:01:00.921938+00:00",
+        "description": "Prism 2.4 explicitly passed every previously contradicted trait/step for this check against the same source. The earlier contradiction is retained as superseded history.",
+        "enforcement_refs": [],
+        "engine_id": "prism",
+        "engine_version": "2.4.0",
+        "first_observed_at": "2026-09-13T20:01:00.780505+00:00",
+        "input_hash": "39217cfc7690718d4ec7b6fc22317df4a190de654470b4607a309bada8c21f25",
+        "is_current": true,
+        "jurisdiction_scope": {
+          "assembly_run_id": "4abc23d0-4e11-4586-8b49-301d3af89795",
+          "bill_number": "H5758",
+          "bill_version_id": "2695ce9f-89f2-4fe1-a9f1-ee3610bb4eb4",
+          "chamber": null,
+          "document_family": "text",
+          "genome_bill_id": "c38480aa-c8e4-4bce-bf22-bc7c760d27e5",
+          "source_bill_id": 2157267,
+          "stage_rank": 100,
+          "state_code": "SC",
+          "version_type": "introduced"
+        },
+        "pattern_hash": "dfda950137828b530ebb83389364111cc5bf6d8c65f61d67fc667f330bf066e8",
+        "pattern_id": "e6f0c3b6-8f1c-41fe-9c82-60afd046f122",
+        "pattern_type": "other",
+        "rule_id": "prism-rosetta-structural-binding:workflow_modal_present",
+        "rule_version": "2.4.0",
+        "source_record_key": "verification_run:ed39d402-800f-4e37-9684-f0633b0b689f:check:workflow_modal_present:reassessment",
+        "source_relation": "public.civic_genome_prism_verification_run",
+        "supersedes_id": "b7ffb4ac-cb01-4f43-8ce4-42f8bb266e72",
+        "title": "Prism modal check reassessed: workflow modal present",
+        "verification_state": "supported_one_source"
+      }
+    ]
+  }
+}
+

@@ -1,0 +1,239 @@
+{
+  "fixture_only": true,
+  "not_a_production_receipt": true,
+  "provenance": "Actual two immutable production request bodies re-evaluated locally with new isolated fixture request IDs under canonical Prism2.5.0. No HTTP submission or production receipt exists for these fixture IDs.",
+  "rows": [
+    {
+      "fixture_only": true,
+      "prior_request_id": "prism-rosetta-v1-8b88b2d4a7bf4ad036d88d2fc9b5dcbb8392a3c9f31464b4e9ad172412f2f953",
+      "request_id": "isolated-v25-prism-rosetta-v1-8b88b2d4a7bf4ad036d88d2fc9b5dcbb8392a3c9f31464b4e9ad172412f2f953",
+      "trait_id": "6cb094f7-a5c7-4dbd-ae3f-91f2e399b168",
+      "prior_input_hash": "ba49adabd88c09d56333adeab35288dc7b8a75d75b614aae261b7b5b5e864ff2",
+      "prior_receipt_id": "721c9ee2-8ada-4e18-90f6-d05bea984e9f",
+      "rule_set_hash": "26e4ef9f6c0d389154d9a2259c99b6e7eb83a51c096e738a9470fb20ff04ec8b",
+      "input_hash": "d4bd19f4d0eea7d8cf16bc00a205b9279e066ee7e7b7068448129b943ee6738a",
+      "output_hash": "dc552bcd96ba5f08036ff33e32aab40bee6784c9462c391e4aadd58cca184400",
+      "semantic_output": {
+        "prism_engine_version": "2.5.0",
+        "rule_set_id": "prism-rosetta-structural-binding",
+        "rule_set_version": "2.5.0",
+        "status": "contradicted",
+        "supported_findings": [
+          {
+            "finding": "rosetta_identity_chain_confirmed",
+            "trait_id": "6cb094f7-a5c7-4dbd-ae3f-91f2e399b168",
+            "source_object_id": "wp-v2511-37ab2ee78305265f7d93a0796080f0b3beecb4af351d1c56b5c50ca967292eb0-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001"
+          },
+          {
+            "finding": "rosetta_source_binding_confirmed",
+            "source_document_id": "9556",
+            "source_block_id": "blk-v2511-37ab2ee78305265f7d93a0796080f0b3beecb4af351d1c56b5c50ca967292eb0-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001",
+            "source_content_hash": "d9f8f66e08098ad29086a167cff4a19e55d97997c172c43ece0840287c5f5935"
+          },
+          {
+            "finding": "civic_genome_assembly_binding_confirmed",
+            "assembly_run_id": "2dec37fc-bf41-458e-babf-5d4d8ced6792",
+            "assembly_output_hash": "d2c7a961ecb836b54f4f8e4dbc2aa2ea53f4bbbbde06f49512769a4f180bc36d"
+          },
+          {
+            "finding": "rosetta_rule_binding_confirmed",
+            "extraction_run_id": "14125",
+            "rule_manifest_hash": "3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639"
+          },
+          {
+            "finding": "deterministic_check_passed",
+            "check": "source_snapshot_hash_recomputed",
+            "source_content_hash": "d9f8f66e08098ad29086a167cff4a19e55d97997c172c43ece0840287c5f5935"
+          },
+          {
+            "finding": "deterministic_check_passed",
+            "check": "snapshot_binding_source_hash",
+            "observed": "d9f8f66e08098ad29086a167cff4a19e55d97997c172c43ece0840287c5f5935"
+          },
+          {
+            "finding": "deterministic_check_passed",
+            "check": "snapshot_request_source_hash",
+            "observed": "d9f8f66e08098ad29086a167cff4a19e55d97997c172c43ece0840287c5f5935"
+          },
+          {
+            "finding": "deterministic_check_passed",
+            "check": "snapshot_source_identity",
+            "observed": "37ab2ee78305265f7d93a0796080f0b3beecb4af351d1c56b5c50ca967292eb0"
+          },
+          {
+            "finding": "deterministic_check_passed",
+            "check": "trait_payload_hash_recomputed",
+            "trait_payload_hash": "db3f85814b489dbaa8be4b538dfc211b1b1623d892df2e78a2fbf53905de1583"
+          },
+          {
+            "finding": "deterministic_check_passed",
+            "check": "trait_payload_matches_peer_manifest",
+            "trait_id": "6cb094f7-a5c7-4dbd-ae3f-91f2e399b168"
+          },
+          {
+            "finding": "deterministic_check_passed",
+            "check": "workflow_step_occurs_in_source",
+            "source_offset_start": "401",
+            "source_offset_end": "1258",
+            "source_section": "not_observed",
+            "source_quote": "W hereas, Saint Paul United Methodist Church was founded in 1876 in Kingstree, under the leadership of Reverend Gamble, beginning as a congregation that worshiped in homes and later under a shed on the Burgess property; and W hereas, on May 28, 1880, the church purchased approximately one acre of land, where a wooden structure was erected and named Saint Paul Methodist Episcopal Church; and W hereas, the congregation continued to grow and faithfully served the community, constructing larger facilities in 1907 and 1946, while emphasizing Christian faith, education, service, and leadership; and W hereas, Saint Paul played an important role in providing educational opportunities for African American children through Cane Branch Elementary School and Saint Paul Elementary School, helping prepare generations of servant leaders, including Dr. Henry N.",
+            "step_order": "1"
+          },
+          {
+            "finding": "deterministic_check_passed",
+            "check": "reverse_workflow_coverage",
+            "observed": "all detected operative modal clauses are represented"
+          }
+        ],
+        "contradictions": [
+          {
+            "finding": "structural_verification_mismatch",
+            "check": "declared_section_matches_source",
+            "expected": "not_observed",
+            "observed": "Document",
+            "source_object_id": "wp-v2511-37ab2ee78305265f7d93a0796080f0b3beecb4af351d1c56b5c50ca967292eb0-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001",
+            "source_quote": "W hereas, Saint Paul United Methodist Church was founded in 1876 in Kingstree, under the leadership of Reverend Gamble, beginning as a congregation that worshiped in homes and later under a shed on the Burgess property; and W hereas, on May 28, 1880, the church purchased approximately one acre of land, where a wooden structure was erected and named Saint Paul Methodist Episcopal Church; and W hereas, the congregation continued to grow and faithfully served the community, constructing larger facilities in 1907 and 1946, while emphasizing Christian faith, education, service, and leadership; and "
+          },
+          {
+            "finding": "structural_verification_mismatch",
+            "check": "workflow_modal_present",
+            "source_offset_start": "401",
+            "source_offset_end": "1258",
+            "source_section": "not_observed",
+            "source_quote": "W hereas, Saint Paul United Methodist Church was founded in 1876 in Kingstree, under the leadership of Reverend Gamble, beginning as a congregation that worshiped in homes and later under a shed on the Burgess property; and W hereas, on May 28, 1880, the church purchased approximately one acre of land, where a wooden structure was erected and named Saint Paul Methodist Episcopal Church; and W hereas, the congregation continued to grow and faithfully served the community, constructing larger facilities in 1907 and 1946, while emphasizing Christian faith, education, service, and leadership; and W hereas, Saint Paul played an important role in providing educational opportunities for African American children through Cane Branch Elementary School and Saint Paul Elementary School, helping prepare generations of servant leaders, including Dr. Henry N.",
+            "step_order": "1",
+            "expected": "shall|must|may with polarity",
+            "observed": "not_observed",
+            "evaluated_span": "W hereas, Saint Paul United Methodist Church was founded in 1876 in Kingstree, under the leadership of Reverend Gamble, beginning as a congregation that worshiped in homes and later under a shed on the Burgess property; and W hereas, on May 28, 1880, the church purchased approximately one acre of land, where a wooden structure was erected and named Saint Paul Methodist Episcopal Church; and W hereas, the congregation continued to grow and faithfully served the community, constructing larger facilities in 1907 and 1946, while emphasizing Christian faith, education, service, and leadership; and W hereas, Saint Paul played an important role in providing educational opportunities for African American children through Cane Branch Elementary School and Saint Paul Elementary School, helping prepare generations of servant leaders, including Dr. Henry N."
+          }
+        ],
+        "missing_evidence": [],
+        "unresolved_conditions": [
+          {
+            "condition": "independent_authoritative_source_not_supplied",
+            "scope": "one immutable official Rosetta source snapshot replayed"
+          }
+        ],
+        "cited_evidence_identifiers": [
+          "rosetta-object:wp-v2511-37ab2ee78305265f7d93a0796080f0b3beecb4af351d1c56b5c50ca967292eb0-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001"
+        ]
+      }
+    },
+    {
+      "fixture_only": true,
+      "prior_request_id": "prism-rosetta-v1-8df65dd4466d3fb6dcc15ba8e5954748343dda8fd584afd4da4a443f065e9cd3",
+      "request_id": "isolated-v25-prism-rosetta-v1-8df65dd4466d3fb6dcc15ba8e5954748343dda8fd584afd4da4a443f065e9cd3",
+      "trait_id": "130e9a6c-472a-401f-84c2-45d2db0a2b99",
+      "prior_input_hash": "7a21d2efb2c2250e1d79d7ed00f9024330612407748ed5a20905830a52cc0f2a",
+      "prior_receipt_id": "6c66e065-0a9f-4c10-b6cc-206c136cc5ba",
+      "rule_set_hash": "26e4ef9f6c0d389154d9a2259c99b6e7eb83a51c096e738a9470fb20ff04ec8b",
+      "input_hash": "cd8535dc777ddb5439a6cf5831ce2d71d0a290ceeb22ea2a738109420fe93b89",
+      "output_hash": "327ea275b2f8a6768d73b9a2040d74e3d66b225690f748eb78add95c03b85ff7",
+      "semantic_output": {
+        "prism_engine_version": "2.5.0",
+        "rule_set_id": "prism-rosetta-structural-binding",
+        "rule_set_version": "2.5.0",
+        "status": "contradicted",
+        "supported_findings": [
+          {
+            "finding": "rosetta_identity_chain_confirmed",
+            "trait_id": "130e9a6c-472a-401f-84c2-45d2db0a2b99",
+            "source_object_id": "wp-v2511-04e7b626ccfb08d2f80033d6106b9dcf4fe607147c0af3bd24262c1208e417b5-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001"
+          },
+          {
+            "finding": "rosetta_source_binding_confirmed",
+            "source_document_id": "9195",
+            "source_block_id": "blk-v2511-04e7b626ccfb08d2f80033d6106b9dcf4fe607147c0af3bd24262c1208e417b5-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001",
+            "source_content_hash": "3da2095eb7b85bcd336ed2a78dd687d91081581a94df74dd2cddc159fec2726c"
+          },
+          {
+            "finding": "civic_genome_assembly_binding_confirmed",
+            "assembly_run_id": "4abc23d0-4e11-4586-8b49-301d3af89795",
+            "assembly_output_hash": "2516543818691401d8b45baf40315fc6a2522d12c4a0c2d904b3e9ced846bf83"
+          },
+          {
+            "finding": "rosetta_rule_binding_confirmed",
+            "extraction_run_id": "13697",
+            "rule_manifest_hash": "3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639"
+          },
+          {
+            "finding": "deterministic_check_passed",
+            "check": "source_snapshot_hash_recomputed",
+            "source_content_hash": "3da2095eb7b85bcd336ed2a78dd687d91081581a94df74dd2cddc159fec2726c"
+          },
+          {
+            "finding": "deterministic_check_passed",
+            "check": "snapshot_binding_source_hash",
+            "observed": "3da2095eb7b85bcd336ed2a78dd687d91081581a94df74dd2cddc159fec2726c"
+          },
+          {
+            "finding": "deterministic_check_passed",
+            "check": "snapshot_request_source_hash",
+            "observed": "3da2095eb7b85bcd336ed2a78dd687d91081581a94df74dd2cddc159fec2726c"
+          },
+          {
+            "finding": "deterministic_check_passed",
+            "check": "snapshot_source_identity",
+            "observed": "04e7b626ccfb08d2f80033d6106b9dcf4fe607147c0af3bd24262c1208e417b5"
+          },
+          {
+            "finding": "deterministic_check_passed",
+            "check": "trait_payload_hash_recomputed",
+            "trait_payload_hash": "db21d068ad0b53dcf3accbdcecf6cfbbb0139e4883378670b030f65de84fcbd2"
+          },
+          {
+            "finding": "deterministic_check_passed",
+            "check": "trait_payload_matches_peer_manifest",
+            "trait_id": "130e9a6c-472a-401f-84c2-45d2db0a2b99"
+          },
+          {
+            "finding": "deterministic_check_passed",
+            "check": "workflow_step_occurs_in_source",
+            "source_offset_start": "682",
+            "source_offset_end": "1445",
+            "source_section": "not_observed",
+            "source_quote": "The people of the great State of South Carolina are singularly blessed with police officers, military servicemen and women, firefighters, rescue personnel, and Highway Patrol officers who serve selflessly, often putting their lives in danger in the delivery of that service; and W hereas, Officer Don William \"DJ\" Keller of the Greenwood City Police Department stands high among those men and women who have labored to ensure the safety and security of the Palmetto State and who, therefore, retain a place of honor in the hearts of its citizens; and W hereas, on Monday, May 11, 2026, Officer Keller was killed while serving as a member of a team of officers assigned to apprehend a vehicle allegedly involved in multiple recent crimes and shootings in the area.",
+            "step_order": "1"
+          },
+          {
+            "finding": "deterministic_check_passed",
+            "check": "reverse_workflow_coverage",
+            "observed": "all detected operative modal clauses are represented"
+          }
+        ],
+        "contradictions": [
+          {
+            "finding": "structural_verification_mismatch",
+            "check": "declared_section_matches_source",
+            "expected": "not_observed",
+            "observed": "Document",
+            "source_object_id": "wp-v2511-04e7b626ccfb08d2f80033d6106b9dcf4fe607147c0af3bd24262c1208e417b5-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001",
+            "source_quote": "The people of the great State of South Carolina are singularly blessed with police officers, military servicemen and women, firefighters, rescue personnel, and Highway Patrol officers who serve selflessly, often putting their lives in danger in the delivery of that service; and W hereas, Officer Don William \"DJ\" Keller of the Greenwood City Police Department stands high among those men and women who have labored to ensure the safety and security of the Palmetto State and who, therefore, retain a place of honor in the hearts of its citizens; and W hereas, on Monday, May 11, 2026, Officer Keller"
+          },
+          {
+            "finding": "structural_verification_mismatch",
+            "check": "workflow_modal_present",
+            "source_offset_start": "682",
+            "source_offset_end": "1445",
+            "source_section": "not_observed",
+            "source_quote": "The people of the great State of South Carolina are singularly blessed with police officers, military servicemen and women, firefighters, rescue personnel, and Highway Patrol officers who serve selflessly, often putting their lives in danger in the delivery of that service; and W hereas, Officer Don William \"DJ\" Keller of the Greenwood City Police Department stands high among those men and women who have labored to ensure the safety and security of the Palmetto State and who, therefore, retain a place of honor in the hearts of its citizens; and W hereas, on Monday, May 11, 2026, Officer Keller was killed while serving as a member of a team of officers assigned to apprehend a vehicle allegedly involved in multiple recent crimes and shootings in the area.",
+            "step_order": "1",
+            "expected": "shall|must|may with polarity",
+            "observed": "not_observed",
+            "evaluated_span": "The people of the great State of South Carolina are singularly blessed with police officers, military servicemen and women, firefighters, rescue personnel, and Highway Patrol officers who serve selflessly, often putting their lives in danger in the delivery of that service; and W hereas, Officer Don William \"DJ\" Keller of the Greenwood City Police Department stands high among those men and women who have labored to ensure the safety and security of the Palmetto State and who, therefore, retain a place of honor in the hearts of its citizens; and W hereas, on Monday, May 11, 2026, Officer Keller was killed while serving as a member of a team of officers assigned to apprehend a vehicle allegedly involved in multiple recent crimes and shootings in the area."
+          }
+        ],
+        "missing_evidence": [],
+        "unresolved_conditions": [
+          {
+            "condition": "independent_authoritative_source_not_supplied",
+            "scope": "one immutable official Rosetta source snapshot replayed"
+          }
+        ],
+        "cited_evidence_identifiers": [
+          "rosetta-object:wp-v2511-04e7b626ccfb08d2f80033d6106b9dcf4fe607147c0af3bd24262c1208e417b5-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001"
+        ]
+      }
+    }
+  ]
+}
