@@ -284,6 +284,10 @@ APPROVED_REPOSITORY_ONLY = {
         "20260909143000_lighthouse_runtime_postgres_contract_v1.sql",
         "288d613674d5545f7673eadc08430ce26bcff089",
     ),
+    "20260912193000": (
+        "20260912193000_add_upload_session_origin_context_metadata.sql",
+        "8565a74acf8e12951d1b47eedc23407b7cfbc5da",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
