@@ -138,4 +138,33 @@ for (const row of originals) {
   assert.equal(row.permitted_history_preserved, true);
 }
 assert.equal(originals.filter(row => row.entire_row_unchanged_from_before_install).length, 2);
-console.log(JSON.stringify({ result: 'passed', production_receipts: 5, date_steps: dates, corrected_lineages: 2, scope: 'Recorded evidence only; no production operations.' }));
+const patterns = data.all_v25_patterns.rows.map(row => row.pattern);
+assert.equal(patterns.length, 5);
+assert.equal(new Set(patterns.map(row => row.pattern_id)).size, 5);
+assert.equal(new Set(patterns.map(row => row.jurisdiction_scope.assembly_run_id)).size, 5);
+assert.equal(patterns.filter(row => row.supersedes_id === null).length, 3);
+let projectedDates = 0;
+for (const pattern of patterns) {
+  const assembly = pattern.jurisdiction_scope.assembly_run_id;
+  const actual = one(data.actual_readback.prism_rows, row => row.assembly_id === assembly);
+  const lh = one(data.actual_readback.lighthouse_rows, row => row.assembly_id === assembly);
+  assert.equal(pattern.rule_id, 'prism-rosetta-structural-binding:workflow_modal_present');
+  assert.equal(pattern.engine_id, 'prism');
+  assert.equal(pattern.rule_version, '2.5.0');
+  assert.equal(pattern.engine_version, '2.5.0');
+  assert.equal(pattern.verification_state, 'contradicted');
+  assert.equal(pattern.is_current, true);
+  assert.equal(pattern.authority_refs[0].verification_run_id, lh.verification_run.verification_run_id);
+  const modalContradictions = actual.receipt.contradictions.filter(row => row.check === 'workflow_modal_present');
+  assert.deepEqual(pattern.contradiction_refs.map(row => row.contradiction), modalContradictions);
+  for (const proof of pattern.contradiction_refs) {
+    assert.equal(proof.request_id, actual.request_id);
+    assert.equal(proof.trait_id, actual.trait_id);
+    assert.equal(proof.receipt_output_hash, actual.receipt.output_hash);
+    assert.equal(proof.binding_output_hash, actual.receipt.output_hash);
+    assert.equal(proof.deterministic_replay_key, actual.receipt.deterministic_replay_key);
+    projectedDates++;
+  }
+}
+assert.equal(projectedDates, 6);
+console.log(JSON.stringify({ result: 'passed', production_receipts: 5, date_steps: dates, corrected_lineages: 2, new_current_patterns: 5, scope: 'Recorded evidence only; no production operations.' }));

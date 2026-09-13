@@ -8,6 +8,8 @@
     "authoritative_receipts": 5,
     "corrected_calendar_steps": 6,
     "forward_pattern_successors": 2,
+    "new_current_patterns": 5,
+    "new_patterns_without_predecessor": 3,
     "prior_pattern_payloads_preserved": 4,
     "outside_scope_v25_rows": 0,
     "claim": "Bounded correction of the five observed calendar-May receipts and two erroneous current modal successors. The original workflow assertions remain contradicted."
@@ -6119,6 +6121,521 @@
       "This verifies the two affected pattern lineages and four original pattern rows, not the entire five-receipt batch or all historical tables; those checks are owned by the root/publication verifier.",
       "The original extraction still asserts workflow structure absent from these ceremonial spans. The corrected pattern state is contradicted, preserving the observed source/rule mismatch rather than clearing it.",
       "No production mutation, replay, flag update, receipt creation, or branch edit was performed by this verification. Historical 2.4 replay prevention was executed in the isolated PostgreSQL regression suite, not by invoking production projectors."
+    ]
+  },
+  "all_v25_patterns": {
+    "schema": "lighthouse.prism-v25.all-patterns-readback.v1",
+    "project_id": "wepxlinwbjrkqdzkqpar",
+    "scope": "All legal_patterns rows with rule_version=2.5.0; full rows, including the three first observations and two successors.",
+    "query": "select now() observed_at,to_jsonb(p) pattern from public.legal_patterns p where rule_version='2.5.0' order by pattern_id;",
+    "rows": [
+      {
+        "observed_at": "2026-09-13 23:10:58.22062+00",
+        "pattern": {
+          "title": "SC H5758 · verified workflow modal present",
+          "rule_id": "prism-rosetta-structural-binding:workflow_modal_present",
+          "engine_id": "prism",
+          "created_at": "2026-09-13T22:55:11.357315+00:00",
+          "input_hash": "bd224f450e53e6c8242d4e43bf38724bdc3a85b7791dbc3341b593d86abfffa7",
+          "is_current": true,
+          "pattern_id": "32fd1e07-b07b-4041-90bb-dae8c6a07c66",
+          "description": "Prism recorded 1 deterministic source/rule contradiction(s) for check workflow_modal_present on the provenance-bound introduced source version. This Domain 2 legal pattern preserves the verified mismatch; it does not infer motive, wrongdoing, beneficiary identity, or external influence.",
+          "pattern_hash": "d721818d7199d439d2254189b7d895de62176cc5866cddd2637e80eef378aba9",
+          "pattern_type": "workflow_gap",
+          "rule_version": "2.5.0",
+          "supersedes_id": "e6f0c3b6-8f1c-41fe-9c82-60afd046f122",
+          "authority_refs": [
+            {
+              "bill_url": "https://legiscan.com/SC/bill/H5758/2025",
+              "source_url": "https://www.scstatehouse.gov/sess126_2025-2026/prever/5758_20260811.htm",
+              "provider_hash": "eb8f22ae92fb03dcca29fdfcc1d8cff6",
+              "assembly_run_id": "4abc23d0-4e11-4586-8b49-301d3af89795",
+              "correction_code": "calendar_may_is_not_an_operative_modal",
+              "prior_pattern_id": "e6f0c3b6-8f1c-41fe-9c82-60afd046f122",
+              "extraction_run_id": "13697",
+              "prior_pattern_hash": "dfda950137828b530ebb83389364111cc5bf6d8c65f61d67fc667f330bf066e8",
+              "source_document_id": 9195,
+              "correction_evidence": [
+                {
+                  "trait_id": "130e9a6c-472a-401f-84c2-45d2db0a2b99",
+                  "request_id": "prism-rosetta-v1-42151e96c6a561abe0cd3e9691a9e54e48ca9cd686841d6adbb13ae2542b36b0",
+                  "step_order": "1",
+                  "check_evaluation": {
+                    "check": "workflow_modal_present",
+                    "finding": "structural_verification_mismatch",
+                    "expected": "shall|must|may with polarity",
+                    "observed": "not_observed",
+                    "step_order": "1",
+                    "source_quote": "The people of the great State of South Carolina are singularly blessed with police officers, military servicemen and women, firefighters, rescue personnel, and Highway Patrol officers who serve selflessly, often putting their lives in danger in the delivery of that service; and W hereas, Officer Don William \"DJ\" Keller of the Greenwood City Police Department stands high among those men and women who have labored to ensure the safety and security of the Palmetto State and who, therefore, retain a place of honor in the hearts of its citizens; and W hereas, on Monday, May 11, 2026, Officer Keller was killed while serving as a member of a team of officers assigned to apprehend a vehicle allegedly involved in multiple recent crimes and shootings in the area.",
+                    "evaluated_span": "The people of the great State of South Carolina are singularly blessed with police officers, military servicemen and women, firefighters, rescue personnel, and Highway Patrol officers who serve selflessly, often putting their lives in danger in the delivery of that service; and W hereas, Officer Don William \"DJ\" Keller of the Greenwood City Police Department stands high among those men and women who have labored to ensure the safety and security of the Palmetto State and who, therefore, retain a place of honor in the hearts of its citizens; and W hereas, on Monday, May 11, 2026, Officer Keller was killed while serving as a member of a team of officers assigned to apprehend a vehicle allegedly involved in multiple recent crimes and shootings in the area.",
+                    "source_section": "not_observed",
+                    "source_offset_end": "1445",
+                    "source_offset_start": "682"
+                  },
+                  "prior_receipt_id": "6c66e065-0a9f-4c10-b6cc-206c136cc5ba",
+                  "prior_output_hash": "9394d0a23c5f690033eae56f940bd816291753dd8687c1e57aeed9972ab6b394",
+                  "receipt_output_hash": "327ea275b2f8a6768d73b9a2040d74e3d66b225690f748eb78add95c03b85ff7",
+                  "deterministic_replay_key": "bcc7f6b0de01a2170e35ec81400f7f949e4faa3801d1deacca9eea53b3eb8068",
+                  "prism_verification_receipt_id": "14e8174d-f1d7-442d-992f-81e2a17c7635"
+                }
+              ],
+              "source_document_key": "text:2157267:3455295",
+              "verification_run_id": "0ef15e60-cf80-4bf4-bda8-257b75d574c7",
+              "prior_authority_refs": [
+                {
+                  "assembly_run_id": "4abc23d0-4e11-4586-8b49-301d3af89795",
+                  "prior_pattern_id": "b7ffb4ac-cb01-4f43-8ce4-42f8bb266e72",
+                  "extraction_run_id": "13697",
+                  "source_document_id": 9195,
+                  "verification_run_id": "ed39d402-800f-4e37-9684-f0633b0b689f",
+                  "prior_authority_refs": [
+                    {
+                      "bill_url": "https://legiscan.com/SC/bill/H5758/2025",
+                      "source_url": "https://www.scstatehouse.gov/sess126_2025-2026/prever/5758_20260811.htm",
+                      "provider_hash": "eb8f22ae92fb03dcca29fdfcc1d8cff6",
+                      "assembly_run_id": "4abc23d0-4e11-4586-8b49-301d3af89795",
+                      "extraction_run_id": "13697",
+                      "source_document_id": 9195,
+                      "source_document_key": "text:2157267:3455295",
+                      "verification_run_id": "ab32ab8f-2213-43f5-a123-c0d82a975a75"
+                    }
+                  ],
+                  "reassessment_evidence": [
+                    {
+                      "trait_id": "130e9a6c-472a-401f-84c2-45d2db0a2b99",
+                      "request_id": "prism-rosetta-v1-8df65dd4466d3fb6dcc15ba8e5954748343dda8fd584afd4da4a443f065e9cd3",
+                      "step_order": "1",
+                      "check_evaluation": {
+                        "check": "workflow_modal_present",
+                        "finding": "deterministic_check_passed",
+                        "step_order": "1",
+                        "source_quote": "The people of the great State of South Carolina are singularly blessed with police officers, military servicemen and women, firefighters, rescue personnel, and Highway Patrol officers who serve selflessly, often putting their lives in danger in the delivery of that service; and W hereas, Officer Don William \"DJ\" Keller of the Greenwood City Police Department stands high among those men and women who have labored to ensure the safety and security of the Palmetto State and who, therefore, retain a place of honor in the hearts of its citizens; and W hereas, on Monday, May 11, 2026, Officer Keller was killed while serving as a member of a team of officers assigned to apprehend a vehicle allegedly involved in multiple recent crimes and shootings in the area.",
+                        "matched_modal": "may",
+                        "evaluated_span": "The people of the great State of South Carolina are singularly blessed with police officers, military servicemen and women, firefighters, rescue personnel, and Highway Patrol officers who serve selflessly, often putting their lives in danger in the delivery of that service; and W hereas, Officer Don William \"DJ\" Keller of the Greenwood City Police Department stands high among those men and women who have labored to ensure the safety and security of the Palmetto State and who, therefore, retain a place of honor in the hearts of its citizens; and W hereas, on Monday, May 11, 2026, Officer Keller was killed while serving as a member of a team of officers assigned to apprehend a vehicle allegedly involved in multiple recent crimes and shootings in the area.",
+                        "source_section": "not_observed",
+                        "source_offset_end": "1445",
+                        "source_offset_start": "682"
+                      },
+                      "prior_pattern_id": "b7ffb4ac-cb01-4f43-8ce4-42f8bb266e72",
+                      "receipt_output_hash": "9394d0a23c5f690033eae56f940bd816291753dd8687c1e57aeed9972ab6b394",
+                      "deterministic_replay_key": "e018774186e07fa0be23203a5e54342c35884a25f2225ee38b672636e121e6c5",
+                      "prism_verification_receipt_id": "6c66e065-0a9f-4c10-b6cc-206c136cc5ba"
+                    }
+                  ]
+                }
+              ],
+              "prior_immutable_payload_sha256": "f99c935f4526a343ea4b5149517faada49fe90eb9afd9a95936f6a2349e926ae"
+            }
+          ],
+          "engine_version": "2.5.0",
+          "source_relation": "public.civic_genome_prism_verification_run",
+          "enforcement_refs": [],
+          "first_observed_at": "2026-09-13T22:55:11.243114+00:00",
+          "source_record_key": "verification_run:0ef15e60-cf80-4bf4-bda8-257b75d574c7:check:workflow_modal_present",
+          "contradiction_refs": [
+            {
+              "trait_id": "130e9a6c-472a-401f-84c2-45d2db0a2b99",
+              "request_id": "prism-rosetta-v1-42151e96c6a561abe0cd3e9691a9e54e48ca9cd686841d6adbb13ae2542b36b0",
+              "contradiction": {
+                "check": "workflow_modal_present",
+                "finding": "structural_verification_mismatch",
+                "expected": "shall|must|may with polarity",
+                "observed": "not_observed",
+                "step_order": "1",
+                "source_quote": "The people of the great State of South Carolina are singularly blessed with police officers, military servicemen and women, firefighters, rescue personnel, and Highway Patrol officers who serve selflessly, often putting their lives in danger in the delivery of that service; and W hereas, Officer Don William \"DJ\" Keller of the Greenwood City Police Department stands high among those men and women who have labored to ensure the safety and security of the Palmetto State and who, therefore, retain a place of honor in the hearts of its citizens; and W hereas, on Monday, May 11, 2026, Officer Keller was killed while serving as a member of a team of officers assigned to apprehend a vehicle allegedly involved in multiple recent crimes and shootings in the area.",
+                "evaluated_span": "The people of the great State of South Carolina are singularly blessed with police officers, military servicemen and women, firefighters, rescue personnel, and Highway Patrol officers who serve selflessly, often putting their lives in danger in the delivery of that service; and W hereas, Officer Don William \"DJ\" Keller of the Greenwood City Police Department stands high among those men and women who have labored to ensure the safety and security of the Palmetto State and who, therefore, retain a place of honor in the hearts of its citizens; and W hereas, on Monday, May 11, 2026, Officer Keller was killed while serving as a member of a team of officers assigned to apprehend a vehicle allegedly involved in multiple recent crimes and shootings in the area.",
+                "source_section": "not_observed",
+                "source_offset_end": "1445",
+                "source_offset_start": "682"
+              },
+              "source_object_id": "wp-v2511-04e7b626ccfb08d2f80033d6106b9dcf4fe607147c0af3bd24262c1208e417b5-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001",
+              "binding_output_hash": "327ea275b2f8a6768d73b9a2040d74e3d66b225690f748eb78add95c03b85ff7",
+              "receipt_output_hash": "327ea275b2f8a6768d73b9a2040d74e3d66b225690f748eb78add95c03b85ff7",
+              "deterministic_replay_key": "bcc7f6b0de01a2170e35ec81400f7f949e4faa3801d1deacca9eea53b3eb8068"
+            }
+          ],
+          "jurisdiction_scope": {
+            "chamber": null,
+            "stage_rank": 100,
+            "state_code": "SC",
+            "bill_number": "H5758",
+            "version_type": "introduced",
+            "genome_bill_id": "c38480aa-c8e4-4bce-bf22-bc7c760d27e5",
+            "source_bill_id": 2157267,
+            "assembly_run_id": "4abc23d0-4e11-4586-8b49-301d3af89795",
+            "bill_version_id": "2695ce9f-89f2-4fe1-a9f1-ee3610bb4eb4",
+            "document_family": "text"
+          },
+          "verification_state": "contradicted"
+        }
+      },
+      {
+        "observed_at": "2026-09-13 23:10:58.22062+00",
+        "pattern": {
+          "title": "SC S1062 · verified workflow modal present",
+          "rule_id": "prism-rosetta-structural-binding:workflow_modal_present",
+          "engine_id": "prism",
+          "created_at": "2026-09-13T22:55:31.1868+00:00",
+          "input_hash": "bab8f67ffe7a1b01015f7919ae6e353c08bd8630067bc5fc93914428b6f57c0b",
+          "is_current": true,
+          "pattern_id": "533049d6-40ed-4ecc-8f6e-5b4a040227a0",
+          "description": "Prism recorded 2 deterministic source/rule contradiction(s) for check workflow_modal_present on the provenance-bound other_text source version. This Domain 2 legal pattern preserves the verified mismatch; it does not infer motive, wrongdoing, beneficiary identity, or external influence.",
+          "pattern_hash": "6a31cdb333ef202a536081955f28c3f7db946717a864e06cd51f52e1ef8580de",
+          "pattern_type": "workflow_gap",
+          "rule_version": "2.5.0",
+          "supersedes_id": null,
+          "authority_refs": [
+            {
+              "bill_url": "https://legiscan.com/SC/bill/S1062/2025",
+              "source_url": "https://www.scstatehouse.gov/sess126_2025-2026/prever/1062_20260505.htm",
+              "provider_hash": "d7935f3e02ca9a61e2c28e4ec1bb6de4",
+              "assembly_run_id": "5322e178-52d3-4461-8979-60ad6b9a0d1c",
+              "extraction_run_id": "14351",
+              "source_document_id": 9726,
+              "source_document_key": "text:2138605:3432081",
+              "verification_run_id": "5042c89a-59cf-4334-95f7-50d7b0ccf9ff"
+            }
+          ],
+          "engine_version": "2.5.0",
+          "source_relation": "public.civic_genome_prism_verification_run",
+          "enforcement_refs": [],
+          "first_observed_at": "2026-09-13T22:55:31.07812+00:00",
+          "source_record_key": "verification_run:5042c89a-59cf-4334-95f7-50d7b0ccf9ff:check:workflow_modal_present",
+          "contradiction_refs": [
+            {
+              "trait_id": "177672b4-6d80-4eba-b30f-5414f3d62666",
+              "request_id": "prism-rosetta-v1-e84ec9ffa9cccff94a3964db9f191de749050c39051fc01ef30e7b85f5d679a6",
+              "contradiction": {
+                "check": "workflow_modal_present",
+                "finding": "structural_verification_mismatch",
+                "expected": "shall|must|may with polarity",
+                "observed": "not_observed",
+                "step_order": "1",
+                "source_quote": ") Introduced May 5, 2026 S. 1062 Introduced by Senate Education Committee S.",
+                "evaluated_span": ") Introduced May 5, 2026 S. 1062 Introduced by Senate Education Committee S.",
+                "source_section": "not_observed",
+                "source_offset_end": "230",
+                "source_offset_start": "154"
+              },
+              "source_object_id": "wp-v2511-23303c719cef08a2869eca6877cb15e51f9a79c575778189ce81a0794d2d6a9d-8445dff7f5934991f5ff3c2fd35711b30214e96c59d117a67fd9577dc30dfa2a-0001",
+              "binding_output_hash": "6ccc83737c1c3077f2650a7027c1a90fde676444d1e9a0717fb37181c09f9a2b",
+              "receipt_output_hash": "6ccc83737c1c3077f2650a7027c1a90fde676444d1e9a0717fb37181c09f9a2b",
+              "deterministic_replay_key": "a90d45e4c961bb35f06ebfaaa7dc4d1f71fe0c3d9cfd4da4d56540c67ed30ed2"
+            },
+            {
+              "trait_id": "177672b4-6d80-4eba-b30f-5414f3d62666",
+              "request_id": "prism-rosetta-v1-e84ec9ffa9cccff94a3964db9f191de749050c39051fc01ef30e7b85f5d679a6",
+              "contradiction": {
+                "check": "workflow_modal_present",
+                "finding": "structural_verification_mismatch",
+                "expected": "shall|must|may with polarity",
+                "observed": "not_observed",
+                "step_order": "2",
+                "source_quote": "Read the first time May 5, 2026 ________ A JOINT RESOLUTION TO APPROVE REGULATIONS OF THE State Commission on Higher Education, RELATING TO Determination of Rates of Tuition and Fees, DESIGNATED AS REGULATION DOCUMENT NUMBER 5443, PURSUANT TO THE PROVISIONS OF ARTICLE 1, CHAPTER 23, TITLE 1 OF THE SOUTH CAROLINA CODE OF LAWS.",
+                "evaluated_span": "Read the first time May 5, 2026 ________ A JOINT RESOLUTION TO APPROVE REGULATIONS OF THE State Commission on Higher Education, RELATING TO Determination of Rates of Tuition and Fees, DESIGNATED AS REGULATION DOCUMENT NUMBER 5443, PURSUANT TO THE PROVISIONS OF ARTICLE 1, CHAPTER 23, TITLE 1 OF THE SOUTH CAROLINA CODE OF LAWS.",
+                "source_section": "not_observed",
+                "source_offset_end": "577",
+                "source_offset_start": "250"
+              },
+              "source_object_id": "wp-v2511-23303c719cef08a2869eca6877cb15e51f9a79c575778189ce81a0794d2d6a9d-8445dff7f5934991f5ff3c2fd35711b30214e96c59d117a67fd9577dc30dfa2a-0001",
+              "binding_output_hash": "6ccc83737c1c3077f2650a7027c1a90fde676444d1e9a0717fb37181c09f9a2b",
+              "receipt_output_hash": "6ccc83737c1c3077f2650a7027c1a90fde676444d1e9a0717fb37181c09f9a2b",
+              "deterministic_replay_key": "a90d45e4c961bb35f06ebfaaa7dc4d1f71fe0c3d9cfd4da4d56540c67ed30ed2"
+            }
+          ],
+          "jurisdiction_scope": {
+            "chamber": null,
+            "stage_rank": 375,
+            "state_code": "SC",
+            "bill_number": "S1062",
+            "version_type": "other_text",
+            "genome_bill_id": "e6cf09b0-0dfe-46c7-8284-371d90bec6b6",
+            "source_bill_id": 2138605,
+            "assembly_run_id": "5322e178-52d3-4461-8979-60ad6b9a0d1c",
+            "bill_version_id": "eedfbbb1-7d94-4be2-820e-28d54e87dba1",
+            "document_family": "text"
+          },
+          "verification_state": "contradicted"
+        }
+      },
+      {
+        "observed_at": "2026-09-13 23:10:58.22062+00",
+        "pattern": {
+          "title": "SC H5641 · verified workflow modal present",
+          "rule_id": "prism-rosetta-structural-binding:workflow_modal_present",
+          "engine_id": "prism",
+          "created_at": "2026-09-13T22:55:41.616021+00:00",
+          "input_hash": "5b42e7a9191c43dbdd6f3ce16e8c8b5b7f1dd11488f1300ff3bd72034b0fb916",
+          "is_current": true,
+          "pattern_id": "6ff5764a-eaa1-4fb8-a504-39af809c4b94",
+          "description": "Prism recorded 1 deterministic source/rule contradiction(s) for check workflow_modal_present on the provenance-bound committee_substitute source version. This Domain 2 legal pattern preserves the verified mismatch; it does not infer motive, wrongdoing, beneficiary identity, or external influence.",
+          "pattern_hash": "2f11001ac4f7befedacf6c1d08a45198d17f370daeda1b8b238451d32180c5fe",
+          "pattern_type": "workflow_gap",
+          "rule_version": "2.5.0",
+          "supersedes_id": null,
+          "authority_refs": [
+            {
+              "bill_url": "https://legiscan.com/SC/bill/H5641/2025",
+              "source_url": "https://www.scstatehouse.gov/sess126_2025-2026/prever/5641_20260505.htm",
+              "provider_hash": "6ede7c28697214a0224b8d3e25b0e57e",
+              "assembly_run_id": "ea6d5449-f6f4-47bd-b593-2f00c14ebea6",
+              "extraction_run_id": "14430",
+              "source_document_id": 9794,
+              "source_document_key": "text:2147021:3431848",
+              "verification_run_id": "eba0e109-519b-4d58-9791-4cccc3f8015e"
+            }
+          ],
+          "engine_version": "2.5.0",
+          "source_relation": "public.civic_genome_prism_verification_run",
+          "enforcement_refs": [],
+          "first_observed_at": "2026-09-13T22:55:41.502171+00:00",
+          "source_record_key": "verification_run:eba0e109-519b-4d58-9791-4cccc3f8015e:check:workflow_modal_present",
+          "contradiction_refs": [
+            {
+              "trait_id": "05d1431f-7823-40a0-af31-8e1784fdf9c4",
+              "request_id": "prism-rosetta-v1-9019a7afff24aaf93b1b5b07ee41b7981c2275dc0c69097a11ba3617cfac027e",
+              "contradiction": {
+                "check": "workflow_modal_present",
+                "finding": "structural_verification_mismatch",
+                "expected": "shall|must|may with polarity",
+                "observed": "not_observed",
+                "step_order": "1",
+                "source_quote": ") Committee Report May 5, 2026 H. 5641 Introduced by Reps.",
+                "evaluated_span": ") Committee Report May 5, 2026 H. 5641 Introduced by Reps.",
+                "source_section": "not_observed",
+                "source_offset_end": "269",
+                "source_offset_start": "211"
+              },
+              "source_object_id": "wp-v2511-f74a17b4da62fc6baccde1d39c0c831db6af88c80b5f545e2cb778f6e7b16fa2-8445dff7f5934991f5ff3c2fd35711b30214e96c59d117a67fd9577dc30dfa2a-0001",
+              "binding_output_hash": "3cce5238804248bfd95e03ae00c0d1f811921cbaee9cee560ea6b09fdbaf88ae",
+              "receipt_output_hash": "3cce5238804248bfd95e03ae00c0d1f811921cbaee9cee560ea6b09fdbaf88ae",
+              "deterministic_replay_key": "38596117bf75fcf136d0144e5ef0f93820cd6ed5cf7d1049881e8d3714bd629e"
+            }
+          ],
+          "jurisdiction_scope": {
+            "chamber": null,
+            "stage_rank": 200,
+            "state_code": "SC",
+            "bill_number": "H5641",
+            "version_type": "committee_substitute",
+            "genome_bill_id": "5b17582e-9747-44cc-99f3-1300c352b177",
+            "source_bill_id": 2147021,
+            "assembly_run_id": "ea6d5449-f6f4-47bd-b593-2f00c14ebea6",
+            "bill_version_id": "bf2e93e0-3ca5-4b82-989f-6e5e9c493af8",
+            "document_family": "text"
+          },
+          "verification_state": "contradicted"
+        }
+      },
+      {
+        "observed_at": "2026-09-13 23:10:58.22062+00",
+        "pattern": {
+          "title": "SC H5750 · verified workflow modal present",
+          "rule_id": "prism-rosetta-structural-binding:workflow_modal_present",
+          "engine_id": "prism",
+          "created_at": "2026-09-13T22:55:21.190356+00:00",
+          "input_hash": "49c31cd23323ed1d2667b0414c67fa49665be36fb4370f0b87a5ae464d1acab1",
+          "is_current": true,
+          "pattern_id": "73305412-80c8-4e42-875f-88510ecc88b8",
+          "description": "Prism recorded 1 deterministic source/rule contradiction(s) for check workflow_modal_present on the provenance-bound introduced source version. This Domain 2 legal pattern preserves the verified mismatch; it does not infer motive, wrongdoing, beneficiary identity, or external influence.",
+          "pattern_hash": "445f56659a0df2134d9414c3ed6035ce94ac80ed096cff6103c71cd5e7dc190b",
+          "pattern_type": "workflow_gap",
+          "rule_version": "2.5.0",
+          "supersedes_id": "91955a17-ecef-483b-b2b6-0fffee738cf6",
+          "authority_refs": [
+            {
+              "bill_url": "https://legiscan.com/SC/bill/H5750/2025",
+              "source_url": "https://www.scstatehouse.gov/sess126_2025-2026/prever/5750_20260811.htm",
+              "provider_hash": "6eb628581af83e14c6ba5839643504ba",
+              "assembly_run_id": "2dec37fc-bf41-458e-babf-5d4d8ced6792",
+              "correction_code": "calendar_may_is_not_an_operative_modal",
+              "prior_pattern_id": "91955a17-ecef-483b-b2b6-0fffee738cf6",
+              "extraction_run_id": "14125",
+              "prior_pattern_hash": "cd2f6aa0f73959da3b6174e72da3dbccf7efb584e80383a42b4bae9d8ecd5946",
+              "source_document_id": 9556,
+              "correction_evidence": [
+                {
+                  "trait_id": "6cb094f7-a5c7-4dbd-ae3f-91f2e399b168",
+                  "request_id": "prism-rosetta-v1-e73fdc109caa75bb814de801a1b5c3afa964a7319028068225bec165e046e91b",
+                  "step_order": "1",
+                  "check_evaluation": {
+                    "check": "workflow_modal_present",
+                    "finding": "structural_verification_mismatch",
+                    "expected": "shall|must|may with polarity",
+                    "observed": "not_observed",
+                    "step_order": "1",
+                    "source_quote": "W hereas, Saint Paul United Methodist Church was founded in 1876 in Kingstree, under the leadership of Reverend Gamble, beginning as a congregation that worshiped in homes and later under a shed on the Burgess property; and W hereas, on May 28, 1880, the church purchased approximately one acre of land, where a wooden structure was erected and named Saint Paul Methodist Episcopal Church; and W hereas, the congregation continued to grow and faithfully served the community, constructing larger facilities in 1907 and 1946, while emphasizing Christian faith, education, service, and leadership; and W hereas, Saint Paul played an important role in providing educational opportunities for African American children through Cane Branch Elementary School and Saint Paul Elementary School, helping prepare generations of servant leaders, including Dr. Henry N.",
+                    "evaluated_span": "W hereas, Saint Paul United Methodist Church was founded in 1876 in Kingstree, under the leadership of Reverend Gamble, beginning as a congregation that worshiped in homes and later under a shed on the Burgess property; and W hereas, on May 28, 1880, the church purchased approximately one acre of land, where a wooden structure was erected and named Saint Paul Methodist Episcopal Church; and W hereas, the congregation continued to grow and faithfully served the community, constructing larger facilities in 1907 and 1946, while emphasizing Christian faith, education, service, and leadership; and W hereas, Saint Paul played an important role in providing educational opportunities for African American children through Cane Branch Elementary School and Saint Paul Elementary School, helping prepare generations of servant leaders, including Dr. Henry N.",
+                    "source_section": "not_observed",
+                    "source_offset_end": "1258",
+                    "source_offset_start": "401"
+                  },
+                  "prior_receipt_id": "721c9ee2-8ada-4e18-90f6-d05bea984e9f",
+                  "prior_output_hash": "3f89bfaead8ed643a11a1441b42bfb96ba81db4632b7c7633b9efb19de7a923b",
+                  "receipt_output_hash": "dc552bcd96ba5f08036ff33e32aab40bee6784c9462c391e4aadd58cca184400",
+                  "deterministic_replay_key": "31a3252558e7770192cf2fb94ee5b765d63d9b8dd1062259118555513b89f9cc",
+                  "prism_verification_receipt_id": "15ea68e3-1593-4b63-8b04-bb03adb33f97"
+                }
+              ],
+              "source_document_key": "text:2157366:3455393",
+              "verification_run_id": "230f05eb-4a62-4b28-b93c-6dbc6c9f0946",
+              "prior_authority_refs": [
+                {
+                  "assembly_run_id": "2dec37fc-bf41-458e-babf-5d4d8ced6792",
+                  "prior_pattern_id": "e3a25d94-f75e-47b7-84c2-3b9f4de25a12",
+                  "extraction_run_id": "14125",
+                  "source_document_id": 9556,
+                  "verification_run_id": "8278806e-cf8d-4252-9cf1-7d6739b33942",
+                  "prior_authority_refs": [
+                    {
+                      "bill_url": "https://legiscan.com/SC/bill/H5750/2025",
+                      "source_url": "https://www.scstatehouse.gov/sess126_2025-2026/prever/5750_20260811.htm",
+                      "provider_hash": "6eb628581af83e14c6ba5839643504ba",
+                      "assembly_run_id": "2dec37fc-bf41-458e-babf-5d4d8ced6792",
+                      "extraction_run_id": "14125",
+                      "source_document_id": 9556,
+                      "source_document_key": "text:2157366:3455393",
+                      "verification_run_id": "cd6c144f-3818-46a7-b599-abc8e84f5319"
+                    }
+                  ],
+                  "reassessment_evidence": [
+                    {
+                      "trait_id": "6cb094f7-a5c7-4dbd-ae3f-91f2e399b168",
+                      "request_id": "prism-rosetta-v1-8b88b2d4a7bf4ad036d88d2fc9b5dcbb8392a3c9f31464b4e9ad172412f2f953",
+                      "step_order": "1",
+                      "check_evaluation": {
+                        "check": "workflow_modal_present",
+                        "finding": "deterministic_check_passed",
+                        "step_order": "1",
+                        "source_quote": "W hereas, Saint Paul United Methodist Church was founded in 1876 in Kingstree, under the leadership of Reverend Gamble, beginning as a congregation that worshiped in homes and later under a shed on the Burgess property; and W hereas, on May 28, 1880, the church purchased approximately one acre of land, where a wooden structure was erected and named Saint Paul Methodist Episcopal Church; and W hereas, the congregation continued to grow and faithfully served the community, constructing larger facilities in 1907 and 1946, while emphasizing Christian faith, education, service, and leadership; and W hereas, Saint Paul played an important role in providing educational opportunities for African American children through Cane Branch Elementary School and Saint Paul Elementary School, helping prepare generations of servant leaders, including Dr. Henry N.",
+                        "matched_modal": "may",
+                        "evaluated_span": "W hereas, Saint Paul United Methodist Church was founded in 1876 in Kingstree, under the leadership of Reverend Gamble, beginning as a congregation that worshiped in homes and later under a shed on the Burgess property; and W hereas, on May 28, 1880, the church purchased approximately one acre of land, where a wooden structure was erected and named Saint Paul Methodist Episcopal Church; and W hereas, the congregation continued to grow and faithfully served the community, constructing larger facilities in 1907 and 1946, while emphasizing Christian faith, education, service, and leadership; and W hereas, Saint Paul played an important role in providing educational opportunities for African American children through Cane Branch Elementary School and Saint Paul Elementary School, helping prepare generations of servant leaders, including Dr. Henry N.",
+                        "source_section": "not_observed",
+                        "source_offset_end": "1258",
+                        "source_offset_start": "401"
+                      },
+                      "prior_pattern_id": "e3a25d94-f75e-47b7-84c2-3b9f4de25a12",
+                      "receipt_output_hash": "3f89bfaead8ed643a11a1441b42bfb96ba81db4632b7c7633b9efb19de7a923b",
+                      "deterministic_replay_key": "9316d6fdd4f8528359dfdffae3ae34e5be308c257ac978d2efd99a3b22e49e61",
+                      "prism_verification_receipt_id": "721c9ee2-8ada-4e18-90f6-d05bea984e9f"
+                    }
+                  ]
+                }
+              ],
+              "prior_immutable_payload_sha256": "889fa2ab1c6ec038786d7666bde774e102a833e747b906cbc7adb9c8fbd97679"
+            }
+          ],
+          "engine_version": "2.5.0",
+          "source_relation": "public.civic_genome_prism_verification_run",
+          "enforcement_refs": [],
+          "first_observed_at": "2026-09-13T22:55:21.08503+00:00",
+          "source_record_key": "verification_run:230f05eb-4a62-4b28-b93c-6dbc6c9f0946:check:workflow_modal_present",
+          "contradiction_refs": [
+            {
+              "trait_id": "6cb094f7-a5c7-4dbd-ae3f-91f2e399b168",
+              "request_id": "prism-rosetta-v1-e73fdc109caa75bb814de801a1b5c3afa964a7319028068225bec165e046e91b",
+              "contradiction": {
+                "check": "workflow_modal_present",
+                "finding": "structural_verification_mismatch",
+                "expected": "shall|must|may with polarity",
+                "observed": "not_observed",
+                "step_order": "1",
+                "source_quote": "W hereas, Saint Paul United Methodist Church was founded in 1876 in Kingstree, under the leadership of Reverend Gamble, beginning as a congregation that worshiped in homes and later under a shed on the Burgess property; and W hereas, on May 28, 1880, the church purchased approximately one acre of land, where a wooden structure was erected and named Saint Paul Methodist Episcopal Church; and W hereas, the congregation continued to grow and faithfully served the community, constructing larger facilities in 1907 and 1946, while emphasizing Christian faith, education, service, and leadership; and W hereas, Saint Paul played an important role in providing educational opportunities for African American children through Cane Branch Elementary School and Saint Paul Elementary School, helping prepare generations of servant leaders, including Dr. Henry N.",
+                "evaluated_span": "W hereas, Saint Paul United Methodist Church was founded in 1876 in Kingstree, under the leadership of Reverend Gamble, beginning as a congregation that worshiped in homes and later under a shed on the Burgess property; and W hereas, on May 28, 1880, the church purchased approximately one acre of land, where a wooden structure was erected and named Saint Paul Methodist Episcopal Church; and W hereas, the congregation continued to grow and faithfully served the community, constructing larger facilities in 1907 and 1946, while emphasizing Christian faith, education, service, and leadership; and W hereas, Saint Paul played an important role in providing educational opportunities for African American children through Cane Branch Elementary School and Saint Paul Elementary School, helping prepare generations of servant leaders, including Dr. Henry N.",
+                "source_section": "not_observed",
+                "source_offset_end": "1258",
+                "source_offset_start": "401"
+              },
+              "source_object_id": "wp-v2511-37ab2ee78305265f7d93a0796080f0b3beecb4af351d1c56b5c50ca967292eb0-32088a71846348f7203163330ec308232bd141fc31ee9e681f621b320da3adc0-0001",
+              "binding_output_hash": "dc552bcd96ba5f08036ff33e32aab40bee6784c9462c391e4aadd58cca184400",
+              "receipt_output_hash": "dc552bcd96ba5f08036ff33e32aab40bee6784c9462c391e4aadd58cca184400",
+              "deterministic_replay_key": "31a3252558e7770192cf2fb94ee5b765d63d9b8dd1062259118555513b89f9cc"
+            }
+          ],
+          "jurisdiction_scope": {
+            "chamber": null,
+            "stage_rank": 100,
+            "state_code": "SC",
+            "bill_number": "H5750",
+            "version_type": "introduced",
+            "genome_bill_id": "2023e28e-0f03-479b-86d4-2d47bd46a325",
+            "source_bill_id": 2157366,
+            "assembly_run_id": "2dec37fc-bf41-458e-babf-5d4d8ced6792",
+            "bill_version_id": "2a8a6a53-2a0e-499d-93db-1f6216eefb33",
+            "document_family": "text"
+          },
+          "verification_state": "contradicted"
+        }
+      },
+      {
+        "observed_at": "2026-09-13 23:10:58.22062+00",
+        "pattern": {
+          "title": "RI H8605 · verified workflow modal present",
+          "rule_id": "prism-rosetta-structural-binding:workflow_modal_present",
+          "engine_id": "prism",
+          "created_at": "2026-09-13T22:55:01.859676+00:00",
+          "input_hash": "ab10b1932c906f8b2a6dc91c1df214a6d7acd94bc20c71f626571c9b20c0954e",
+          "is_current": true,
+          "pattern_id": "df8cb277-121b-4793-a94e-e53080ec28c4",
+          "description": "Prism recorded 1 deterministic source/rule contradiction(s) for check workflow_modal_present on the provenance-bound committee_substitute source version. This Domain 2 legal pattern preserves the verified mismatch; it does not infer motive, wrongdoing, beneficiary identity, or external influence.",
+          "pattern_hash": "cdd327d1c9d38edc4f33bcdc59307342b223817320d1b872fba99cf7ea31f6b1",
+          "pattern_type": "workflow_gap",
+          "rule_version": "2.5.0",
+          "supersedes_id": null,
+          "authority_refs": [
+            {
+              "bill_url": "https://legiscan.com/RI/bill/H8605/2026",
+              "source_url": "https://webserver.rilegislature.gov/BillText26/HouseText26/H8605A.pdf",
+              "provider_hash": "6f91efb9b91d4d8936db957ae24c6327",
+              "assembly_run_id": "a66fa200-478b-4fb6-8cd8-f83e8b48c789",
+              "extraction_run_id": "13464",
+              "source_document_id": 9005,
+              "source_document_key": "text:2152212:3446463",
+              "verification_run_id": "68297883-c702-4b53-844a-32ee32a91496"
+            }
+          ],
+          "engine_version": "2.5.0",
+          "source_relation": "public.civic_genome_prism_verification_run",
+          "enforcement_refs": [],
+          "first_observed_at": "2026-09-13T22:55:01.681486+00:00",
+          "source_record_key": "verification_run:68297883-c702-4b53-844a-32ee32a91496:check:workflow_modal_present",
+          "contradiction_refs": [
+            {
+              "trait_id": "722d5046-280a-45bf-a955-d08e7d28f0df",
+              "request_id": "prism-rosetta-v1-6c8f49e807d561b5cc8c0be1cbd268875f2d9452f818d8a636a58e669087c3d1",
+              "contradiction": {
+                "check": "workflow_modal_present",
+                "finding": "structural_verification_mismatch",
+                "expected": "shall|must|may with polarity",
+                "observed": "not_observed",
+                "step_order": "1",
+                "source_quote": "Abney\nDate Introduced: May 29, 2026\nReferred To: House Finance\nRESOLVED, That there is hereby appropriated out of any money in the treasury not\t1\notherwise appropriated for the fiscal year ending June 30, 2027 the sums stipulated to pay the\t2\nclaims of the following:\t3\nRepresentative Julie A.",
+                "evaluated_span": "Abney Date Introduced: May 29, 2026 Referred To: House Finance RESOLVED, That there is hereby appropriated out of any money in the treasury not 1 otherwise appropriated for the fiscal year ending June 30, 2027 the sums stipulated to pay the 2 claims of the following: 3 Representative Julie A.",
+                "source_section": "not_observed",
+                "source_offset_end": "566",
+                "source_offset_start": "273"
+              },
+              "source_object_id": "wp-v2511-893c5b57cd8a5ce8cdc34969cc828d83d7b27996209bcaad785bf1c1b3916737-f3ed31dc0948fb30d49252c8c10646ec8953916e44516d263663060d032feaf1-0001",
+              "binding_output_hash": "356be4a593398b24d7b088852af4d9737d88f5c25ab919dab8f3e5d4720fc696",
+              "receipt_output_hash": "356be4a593398b24d7b088852af4d9737d88f5c25ab919dab8f3e5d4720fc696",
+              "deterministic_replay_key": "f3b88ef589f4e3ddde65c77ae90cba78dbed64fc695bab6a5e62f3cf5312d6b7"
+            }
+          ],
+          "jurisdiction_scope": {
+            "chamber": null,
+            "stage_rank": 200,
+            "state_code": "RI",
+            "bill_number": "H8605",
+            "version_type": "committee_substitute",
+            "genome_bill_id": "2bc31edd-4d80-4db3-b56c-1ff21c24f0d3",
+            "source_bill_id": 2152212,
+            "assembly_run_id": "a66fa200-478b-4fb6-8cd8-f83e8b48c789",
+            "bill_version_id": "ccb63dbc-12ae-4176-9982-b2db4f60cf0c",
+            "document_family": "text"
+          },
+          "verification_state": "contradicted"
+        }
+      }
     ]
   },
   "review_and_validation": {
