@@ -37,8 +37,8 @@ interface Connection {
 const LAYER_ROUTES: Record<string, string> = {
   statutes: "/legal-library",
   case_law: "/legal-library",
-  claim_elements: "/litigation-barriers",
-  proof_frameworks: "/enforcement-intel",
+  claim_elements: "/claim-elements",
+  proof_frameworks: "/proof-frameworks",
   enforcement: "/enforcement-pathway",
   regulatory: "/enforcement-intel",
   investigation: "/investigation-workflow",

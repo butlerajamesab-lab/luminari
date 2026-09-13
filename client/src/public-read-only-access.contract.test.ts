@@ -4,13 +4,17 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(path, "utf8");
 
 describe("public read-only Lighthouse access", () => {
-  it("opens the platform catalog without manufacturing an authenticated user", () => {
+  it("keeps the bare-domain welcome mat separate from the explicit platform catalog", () => {
     const app = read("client/src/App.tsx");
     const layout = read("client/src/components/DashboardLayout.tsx");
     const catalog = read("client/src/pages/PlatformDashboard.tsx");
     const auth = read("client/src/core/hooks/useAuth.ts");
 
-    expect(app).toContain('<Route path="/"><DashboardRouter /></Route>');
+    expect(app).toContain('<Route path="/" component={PublicEntry} />');
+    expect(app).toContain('const PUBLIC_ROOT_SEEN_KEY = "luminari-public-root-seen";');
+    expect(app).toContain('setLocation("/lighthouse", { replace: true });');
+    expect(app).toContain("if (isFirstVisit) return <Welcome />;");
+    expect(app).toContain('<Route path="/dashboard"><DashboardRouter /></Route>');
     expect(app).toContain('<Route path="/" component={PlatformDashboard} />');
     expect(app).not.toContain('navigate("/login", { replace: true })');
     expect(layout).not.toContain("Authenticate\n          </Button>");
