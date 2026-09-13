@@ -756,8 +756,33 @@ export async function verifyEntityOwnership(entityId: number, userId: number) {
   return entity;
 }
 
-export async function updateCase(id: number, userId: number, data: { name?: string; description?: string; status?: "active" | "archived"; domain?: string; container?: string }) {
+export async function updateCase(id: number, userId: number, data: { name?: string; description?: string | null; status?: "active" | "archived"; domain?: string | null; container?: string | null }) {
   await db.update(cases).set({ ...data, updatedAt: Date.now() }).where(and(eq(cases.id, id), eq(cases.userId, userId)));
+}
+
+export async function correctCaseMetadata(
+  id: number,
+  ownerUserId: number,
+  actorUserId: number,
+  data: { name?: string; description?: string | null; status?: "active" | "archived"; domain?: string | null; container?: string | null },
+  changes: Record<string, { before: string | null; after: string | null }>,
+) {
+  await db.transaction(async (tx: any) => {
+    await tx.update(cases)
+      .set({ ...data, updatedAt: Date.now() })
+      .where(and(eq(cases.id, id), eq(cases.userId, ownerUserId)));
+    await insertSerializedAuditEntry(tx, {
+      caseId: id,
+      userId: actorUserId,
+      action: "correct_case_metadata",
+      targetType: "case_metadata",
+      targetId: id,
+      details: {
+        changes,
+        source_evidence_modified: false,
+      },
+    });
+  });
 }
 
 export async function deleteCase(id: number, userId: number) {

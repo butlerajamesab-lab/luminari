@@ -5,6 +5,7 @@ import { useAuth } from "@/core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -160,6 +161,8 @@ type ConversationIntakeDraft = {
   messages: IntakeMessage[];
   input: string;
   plan: IntakePlan | null;
+  caseName: string;
+  caseNameEdited: boolean;
   conversationalWording: boolean;
 };
 
@@ -198,6 +201,12 @@ export default function Intake() {
   const [input, setInput] = useState(restoredDraft?.input ?? "");
   const [isThinking, setIsThinking] = useState(false);
   const [plan, setPlan] = useState<IntakePlan | null>(restoredDraft?.plan ?? null);
+  const [caseName, setCaseName] = useState(
+    restoredDraft?.caseName ?? restoredDraft?.plan?.caseName ?? "",
+  );
+  const [caseNameEdited, setCaseNameEdited] = useState(
+    restoredDraft?.caseNameEdited ?? false,
+  );
   const [isCreating, setIsCreating] = useState(false);
   const [isSavingContext, setIsSavingContext] = useState(false);
   const [conversationalWording, setConversationalWording] = useState(
@@ -224,9 +233,11 @@ export default function Intake() {
       messages,
       input,
       plan,
+      caseName,
+      caseNameEdited,
       conversationalWording,
     } satisfies ConversationIntakeDraft));
-  }, [draftKey, messages, input, plan, conversationalWording]);
+  }, [draftKey, messages, input, plan, caseName, caseNameEdited, conversationalWording]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -289,6 +300,9 @@ export default function Intake() {
 
       if (result.plan) {
         setPlan(result.plan);
+        if (!caseNameEdited) {
+          setCaseName(result.plan.caseName);
+        }
       }
     } catch (err) {
       toast.error("Something went wrong. Please try again.");
@@ -306,6 +320,11 @@ export default function Intake() {
 
   const handleCreateCase = async () => {
     if (!plan || isCreating) return;
+    const normalizedCaseName = caseName.trim();
+    if (!normalizedCaseName) {
+      toast.error("Please give this case a name before continuing.");
+      return;
+    }
     // Show jurisdiction selector if not already shown
     if (!showJurisdictionStep) {
       setShowJurisdictionStep(true);
@@ -342,7 +361,7 @@ export default function Intake() {
         text,
       }));
       const result = await createCase.mutateAsync({
-        name: plan.caseName,
+        name: normalizedCaseName,
         description: userMessages.join("\n\n") || plan.caseDescription,
         domain: plan.domain || category,
         pipelineType: plan.pipelineType,
@@ -564,8 +583,26 @@ export default function Intake() {
 
                 <div className="space-y-3">
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Case Name</p>
-                    <p className="text-sm font-medium text-foreground">{plan.caseName}</p>
+                    <label
+                      htmlFor="intake-case-name"
+                      className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 block"
+                    >
+                      Case Name
+                    </label>
+                    <Input
+                      id="intake-case-name"
+                      value={caseName}
+                      onChange={(event) => {
+                        setCaseName(event.target.value);
+                        setCaseNameEdited(true);
+                      }}
+                      maxLength={240}
+                      aria-describedby="intake-case-name-help"
+                      className="h-9 bg-background/70 text-sm font-medium"
+                    />
+                    <p id="intake-case-name-help" className="text-[10px] text-muted-foreground mt-1.5 leading-relaxed">
+                      This is editable workspace metadata. Changing it does not alter your intake statements or uploaded source files.
+                    </p>
                   </div>
                   <div>
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">What We'll Look For</p>
@@ -626,7 +663,7 @@ export default function Intake() {
 
                 <Button
                   onClick={handleCreateCase}
-                  disabled={isCreating}
+                  disabled={isCreating || !caseName.trim()}
                   className="w-full gap-2 mt-2"
                   size="lg"
                 >
