@@ -2555,5 +2555,70 @@
       "output_hash_recomputed": true,
       "replay_key_recomputed": true
     }
-  ]
+  ],
+  "semantic_limitation": {
+    "issue": "calendar_month_may_misclassified_as_operative_modal",
+    "upstream_repository": "butlerajamesab-lab/prism",
+    "upstream_commit": "15f95c00d8a5725f44f380a448a4218c1a778f48",
+    "source_file": "src/services/rosetta-binding-contract-v24.ts",
+    "evaluator": "evaluate_workflow_modal_span",
+    "reproduced": true,
+    "scope_of_claim": "Receipt identity and hashes are verified. Operative modal correctness is not established by those guards.",
+    "historical_receipts_preserved": true,
+    "correction_status": "pending_new_immutable_rule_version_and_forward_projection_repair",
+    "observed_steps": [
+      {
+        "all_modal_tokens": [
+          {
+            "context": "ss property; and W hereas, on May 28, 1880, the church purchased approximately one ac",
+            "token": "May"
+          }
+        ],
+        "batch": 1,
+        "dates": [
+          "May 28, 1880"
+        ],
+        "evaluated_span": "W hereas, Saint Paul United Methodist Church was founded in 1876 in Kingstree, under the leadership of Reverend Gamble, beginning as a congregation that worshiped in homes and later under a shed on the Burgess property; and W hereas, on May 28, 1880, the church purchased approximately one acre of land, where a wooden structure was erected and named Saint Paul Methodist Episcopal Church; and W hereas, the congregation continued to grow and faithfully served the community, constructing larger facilities in 1907 and 1946, while emphasizing Christian faith, education, service, and leadership; and W hereas, Saint Paul played an important role in providing educational opportunities for African American children through Cane Branch Elementary School and Saint Paul Elementary School, helping prepare generations of servant leaders, including Dr. Henry N.",
+        "receipt_id": "721c9ee2-8ada-4e18-90f6-d05bea984e9f",
+        "request_id": "prism-rosetta-v1-8b88b2d4a7bf4ad036d88d2fc9b5dcbb8392a3c9f31464b4e9ad172412f2f953",
+        "step_order": "1"
+      },
+      {
+        "all_modal_tokens": [
+          {
+            "context": "ens; and W hereas, on Monday, May 11, 2026, Officer Keller was killed while serving a",
+            "token": "May"
+          }
+        ],
+        "batch": 1,
+        "dates": [
+          "May 11, 2026"
+        ],
+        "evaluated_span": "The people of the great State of South Carolina are singularly blessed with police officers, military servicemen and women, firefighters, rescue personnel, and Highway Patrol officers who serve selflessly, often putting their lives in danger in the delivery of that service; and W hereas, Officer Don William \"DJ\" Keller of the Greenwood City Police Department stands high among those men and women who have labored to ensure the safety and security of the Palmetto State and who, therefore, retain a place of honor in the hearts of its citizens; and W hereas, on Monday, May 11, 2026, Officer Keller was killed while serving as a member of a team of officers assigned to apprehend a vehicle allegedly involved in multiple recent crimes and shootings in the area.",
+        "receipt_id": "6c66e065-0a9f-4c10-b6cc-206c136cc5ba",
+        "request_id": "prism-rosetta-v1-8df65dd4466d3fb6dcc15ba8e5954748343dda8fd584afd4da4a443f065e9cd3",
+        "step_order": "1"
+      },
+      {
+        "all_modal_tokens": [
+          {
+            "context": "Abney Date Introduced: May 29, 2026 Referred To: House Finance RESOLVED, That ",
+            "token": "May"
+          }
+        ],
+        "batch": 1,
+        "dates": [
+          "May 29, 2026"
+        ],
+        "evaluated_span": "Abney Date Introduced: May 29, 2026 Referred To: House Finance RESOLVED, That there is hereby appropriated out of any money in the treasury not 1 otherwise appropriated for the fiscal year ending June 30, 2027 the sums stipulated to pay the 2 claims of the following: 3 Representative Julie A.",
+        "receipt_id": "2aed8661-fa43-4058-896f-63436611380d",
+        "request_id": "prism-rosetta-v1-fa71d68f6b64284862e87921fcca6e80bbf8870571ddabe93932454535da0a3f",
+        "step_order": "1"
+      }
+    ],
+    "affected_current_pattern_successors": [
+      "91955a17-ecef-483b-b2b6-0fffee738cf6",
+      "e6f0c3b6-8f1c-41fe-9c82-60afd046f122"
+    ]
+  }
 }
