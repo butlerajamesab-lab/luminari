@@ -107,7 +107,7 @@ def parse_docx(data, content_hash):
                         if missing:add('missing_jurisdiction_codes',location,heading,codes=missing)
                     agency_index=headers.index('agency')
                     referral_count=sum('Immigrant Legal Services Referral' in row[agency_index] for row in matrix[1:] if len(row)>agency_index)
-                    if referral_count and re.search(r'PROTECTION AND ADVOCACY|STATE LABOR|ANTI.TRAFFICKING|CHILD WELFARE',heading,re.I):
+                    if referral_count and re.search(r'PROTECTION AND ADVOCACY|STATE LABOR|ANTI.TRAFFICKING|CHILD WELFARE|STATE EDUCATION|STATE CIVIL RIGHTS',heading,re.I):
                         add('jurisdiction_heading_content_mismatch',location,heading,immigration_referral_rows=referral_count)
         for name in sorted(members):
             if not name.endswith('.rels'):continue

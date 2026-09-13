@@ -61,13 +61,20 @@ must use HTTPS. It checks that unrelated XML, resource IDs, table row counts and
 other package parts remain unchanged. Changed paragraphs preserve paragraph
 properties and the first run's styling; review mixed-format paragraphs before use.
 
+`repair_docx_pagination.py` pins the source hash, prevents rows from splitting,
+keeps dossier banners with the following content, and starts each resource section
+on a new page. It verifies that all text, table cells, resource IDs, hyperlinks,
+and unrelated package parts survive unchanged. The new pagination still requires
+page-by-page visual review; these checks do not prove that an oversized row fits.
+
 ```sh
 python scripts/repair_docx_jurisdiction_table.py --plan table-plan.json --out candidate.docx
 python scripts/repair_docx_text.py --plan text-plan.json --out candidate.docx
+python scripts/repair_docx_pagination.py --source candidate.docx --source-sha256 FULL_SHA256 --out paginated.docx
 python -m unittest discover -s scripts -p 'test_*docx*.py' -v
 ```
 
-The nine regression tests exercise wrong-generation rejection, stale or mismatched
+The eleven regression tests exercise wrong-generation rejection, stale or mismatched
 targets, missing evidence, duplicate edit locations, wrong-agency donors,
 unproven URLs and preservation of unrelated content.
 

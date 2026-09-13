@@ -10,6 +10,7 @@ from lxml import etree
 from audit_docx_corpus import NS, sha
 from repair_docx_text import apply_text_plan
 from repair_docx_jurisdiction_table import apply_plan
+from repair_docx_pagination import repair_pagination
 
 
 class SourcedRepairTests(unittest.TestCase):
@@ -103,6 +104,20 @@ class SourcedRepairTests(unittest.TestCase):
         plan['rows'][0]['source_url'] = ''
         with self.assertRaisesRegex(ValueError, 'Missing source provenance'):
             apply_plan(source, plan)
+
+    def test_pagination_preserves_every_cell_and_other_package_parts(self):
+        source = self.fixture()
+        result, _ = repair_pagination(source, sha(source))
+        self.assert_other_parts_unchanged(source, result)
+        before, after = Document(io.BytesIO(source)), Document(io.BytesIO(result))
+        self.assertEqual([p.text for p in before.paragraphs], [p.text for p in after.paragraphs])
+        self.assertEqual([[c.text for c in row.cells] for row in before.tables[0].rows],
+                         [[c.text for c in row.cells] for row in after.tables[0].rows])
+
+    def test_pagination_rejects_wrong_generation(self):
+        source = self.fixture()
+        with self.assertRaisesRegex(ValueError, 'Source generation changed'):
+            repair_pagination(source, '0' * 64)
 
 
 if __name__ == '__main__':
