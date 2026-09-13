@@ -130,6 +130,15 @@ describe("official source response integrity", () => {
     expect(get_bill_text_mock).not.toHaveBeenCalled();
   });
 
+  it.each([
+    { marker: "title", html: rejected_html.toString("utf8").replace("<title>", `<style>${"x".repeat(9000)}</style><title>`) },
+    { marker: "message", html: rejected_html.toString("utf8").replace("<body>", `<body>${"Upstream diagnostics. ".repeat(500)}`) },
+  ])("recognizes a rejection with its $marker beyond 8 KiB in the actual pipeline", async ({ html }) => {
+    fetch_mock.mockResolvedValueOnce(source_response(Buffer.from(html), "text/html"));
+    await expect(extract_version_source(version_fixture())).rejects.toThrow(rejection_error);
+    expect(get_bill_text_mock).not.toHaveBeenCalled();
+  });
+
   it("reports the observed rejection from the actual version pipeline before normalization", async () => {
     fetch_mock.mockResolvedValueOnce(source_response(rejected_html, "text/html; charset=utf-8"));
     await expect(extract_version_source(version_fixture())).rejects.toThrow(rejection_error);
