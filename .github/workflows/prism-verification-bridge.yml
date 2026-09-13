@@ -21,6 +21,7 @@ jobs:
           server/routes/prism-verification-router.test.ts
           server/services/prism-verification-contract.test.ts
           server/services/rosetta-publication-eligibility.test.ts
+          server/services/rosetta-publication-retry.test.ts
           server/services/prism-rosetta-activation.test.ts
           server/services/prism-rosetta-startup-activation.test.ts
           server/services/prism-rosetta-queue-worker.test.ts

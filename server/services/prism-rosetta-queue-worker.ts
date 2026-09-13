@@ -155,6 +155,15 @@ function safe_error_code(error: unknown): string {
 }
 
 function known_transient_failure_class(error_code: string): string | null {
+  // Owner availability and mutable publication eligibility can recover after the
+  // unknown-error budget. Keep queued work retryable without admitting it to Prism.
+  if (error_code === "prism_rosetta_publication_lookup_timeout") return "timeout";
+  if (error_code === "prism_rosetta_publication_lookup_network_failure") return "network";
+  if (/^prism_rosetta_publication_lookup_failed:(408|429|5\d\d)$/.test(error_code) ||
+      error_code === "prism_rosetta_publication_lookup_invalid_response") return "transient_upstream";
+  if (error_code === "prism_rosetta_publication_backend_unconfigured" ||
+      /^prism_rosetta_publication_lookup_failed:(401|403)$/.test(error_code)) return "authentication";
+  if (error_code === "prism_rosetta_current_publication_not_eligible") return "publication_pending";
   if (/^prism_rosetta_source_snapshot_timeout:\d+$/.test(error_code)) {
     return "timeout";
   }
@@ -169,6 +178,8 @@ function known_transient_failure_class(error_code: string): string | null {
 
 function deterministic_contract_failure(error_code: string): boolean {
   return [
+    "prism_rosetta_publication_run_id_invalid",
+    "prism_rosetta_current_publication_binding_mismatch",
     "prism_rosetta_assembly_",
     "prism_rosetta_trait_",
     "prism_rosetta_source_",

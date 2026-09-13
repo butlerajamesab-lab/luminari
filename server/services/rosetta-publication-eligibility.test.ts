@@ -42,9 +42,9 @@ describe("Rosetta publication eligibility at the Prism consumer boundary", () =>
     expect(options.headers.has("authorization")).toBe(false);
   });
 
-  it.each([[], [row, row], { data: [row] }, null])("rejects missing, ambiguous or malformed publication responses", async (rows) => {
+  it.each([[row, row], { data: [row] }, null])("rejects ambiguous or malformed publication responses", async (rows) => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(rows)));
-    await expect(assert_rosetta_current_publication(binding)).rejects.toThrow("not_eligible");
+    await expect(assert_rosetta_current_publication(binding)).rejects.toThrow("invalid_response");
   });
 
   it.each(Object.keys(row))("rejects a changed %s", async (column) => {

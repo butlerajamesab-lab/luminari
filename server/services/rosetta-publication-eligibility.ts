@@ -43,10 +43,15 @@ export async function assert_rosetta_current_publication(
       method: "GET",
       headers: create_rosetta_supabase_headers(service_key, { accept: "application/json" }),
       signal: controller.signal,
-    });
+    }).catch(() => { throw new Error("prism_rosetta_publication_lookup_network_failure"); });
     if (!response.ok) throw new Error(`prism_rosetta_publication_lookup_failed:${response.status}`);
-    const rows: unknown = await response.json();
-    if (!Array.isArray(rows) || rows.length !== 1) {
+    const rows: unknown = await response.json().catch(() => {
+      throw new Error("prism_rosetta_publication_lookup_invalid_response");
+    });
+    if (!Array.isArray(rows) || rows.length > 1) {
+      throw new Error("prism_rosetta_publication_lookup_invalid_response");
+    }
+    if (rows.length === 0) {
       throw new Error("prism_rosetta_current_publication_not_eligible");
     }
     const row = rows[0];
