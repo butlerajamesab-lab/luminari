@@ -296,42 +296,39 @@ const read_all_state_cache = async (): Promise<docket_state_cache_row[]> => {
   }));
 };
 
-const upsert_state_cache = async (row: docket_state_cache_row): Promise<void> => {
+const upsert_state_cache = async (
+  row: docket_state_cache_row,
+  projection_required: boolean,
+): Promise<void> => {
   await query_with_diagnostics(
-    `insert into public.docket_bill_state_cache (
+    `with cache_write as (
+       insert into public.docket_bill_state_cache (
        state, session_id, session_title, bills, bill_count, fetched_at, source
-     ) values ($1, $2, $3, $4::jsonb, $5, $6::timestamptz, $7)
-     on conflict (state) do update set
+       ) values ($1, $2, $3, $4::jsonb, $5, $6::timestamptz, $7)
+       on conflict (state) do update set
        session_id = excluded.session_id,
        session_title = excluded.session_title,
        bills = excluded.bills,
        bill_count = excluded.bill_count,
        fetched_at = excluded.fetched_at,
        source = excluded.source,
-       updated_at = now()`,
-    [row.state, row.session_id, row.session_title, JSON.stringify(row.bills), row.bill_count, row.fetched_at, row.source],
-    {
-      label: "docket_state_cache_upsert",
-      pool_acquire_timeout_ms: 1_000,
-      query_timeout_ms: 10_000,
-    },
-  );
-};
-
-const mark_state_projection_required = async (state: string): Promise<void> => {
-  await query_with_diagnostics(
-    `insert into public.docket_state_projection_retry
+       updated_at = now()
+       returning state
+     )
+     insert into public.docket_state_projection_retry
        (state, failure_count, retry_after, last_error_code, updated_at)
-     values ($1, 1, now(), 'request_scoped_cache_refresh_requires_projection', now())
+     select state, 1, now(), 'request_scoped_cache_refresh_requires_projection', now()
+       from cache_write
+      where $8::boolean
      on conflict (state) do update set
        retry_after = now(),
        last_error_code = excluded.last_error_code,
        updated_at = now()`,
-    [state],
+    [row.state, row.session_id, row.session_title, JSON.stringify(row.bills), row.bill_count, row.fetched_at, row.source, projection_required],
     {
-      label: "docket_state_projection_required",
+      label: "docket_state_cache_upsert",
       pool_acquire_timeout_ms: 1_000,
-      query_timeout_ms: 5_000,
+      query_timeout_ms: 10_000,
     },
   );
 };
@@ -495,10 +492,7 @@ const refresh_state_cache = async (
     source: "legiscan_get_master_list",
   };
 
-  await upsert_state_cache(row);
-  if (!project_to_civic_genome) {
-    await mark_state_projection_required(state);
-  }
+  await upsert_state_cache(row, !project_to_civic_genome);
   const civic_genome_projection: civic_genome_projection_status = project_to_civic_genome
     ? await project_refreshed_state_to_civic_genome(state)
     : {
