@@ -41,6 +41,9 @@ describe("Docket Radar live contract", () => {
     expect(page).not.toContain("warm_selected_state");
     expect(detail).toContain("source disagreement, not a contradiction within the bill");
     expect(detail).toContain("Passed · further action possible");
+    expect(page).not.toContain("enacted|failed|withdrawn");
+    expect(detail).not.toContain("enacted|failed|withdrawn");
+    expect(page).toContain("failed\\s+(?:final passage|to pass)");
     expect(page).toContain('new Date(`${value}T00:00:00`)');
     expect(detail).toContain('new Date(`${value}T00:00:00`)');
   });
@@ -63,5 +66,7 @@ describe("Docket Radar live contract", () => {
     expect(worker).toContain("await stop_docket_bill_activation_queue_worker()");
     expect(read("server/docket-state-cache-warmer.ts")).toContain("await active_cycle");
     expect(worker).toContain("await stop_docket_state_cache_warmer()");
+    expect(read("server/routes/docket.ts")).toContain('get_or_start_state_refresh(state, "background")');
+    expect(worker).toContain("await wait_for_docket_state_refreshes()");
   });
 });

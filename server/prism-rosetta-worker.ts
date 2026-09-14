@@ -20,7 +20,7 @@ import {
   resolve_lighthouse_runtime_role,
 } from "./runtime-role";
 import { get_bill_text } from "./services/legiscan";
-import { docket_router } from "./routes/docket";
+import { docket_router, wait_for_docket_state_refreshes } from "./routes/docket";
 import {
   start_docket_state_cache_warmer,
   stop_docket_state_cache_warmer,
@@ -200,6 +200,7 @@ async function shutdown(signal: string): Promise<void> {
     await new Promise<void>(resolve => docket_loopback_server!.close(() => resolve()));
     docket_loopback_server = null;
   }
+  await wait_for_docket_state_refreshes();
   await Promise.all([
     stop_prism_rosetta_queue_worker(),
     legislative_version_queue_enabled

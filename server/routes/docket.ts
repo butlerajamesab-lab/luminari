@@ -562,6 +562,12 @@ const get_or_start_state_refresh = (
   return refresh;
 };
 
+export async function wait_for_docket_state_refreshes(): Promise<void> {
+  while (state_refresh_in_flight.size > 0) {
+    await Promise.allSettled([...state_refresh_in_flight.values()]);
+  }
+}
+
 const schedule_state_refresh = (state: string): void => {
   if (!background_workers_allowed()) return;
   void get_or_start_state_refresh(state, "background").catch(() => undefined);
@@ -615,7 +621,7 @@ docket_router.get("/cache-status", async (_req, res) => {
 docket_router.post("/warm-state", async (req, res) => {
   try {
     const state = normalize_state_code(req.body?.state);
-    const refreshed = await refresh_state_cache(state);
+    const refreshed = await get_or_start_state_refresh(state, "background");
 
     return res.json({
       ok: true,
@@ -651,7 +657,7 @@ docket_router.post("/warm-next-batch", async (req, res) => {
 
     for (const state of states_to_warm) {
       try {
-        const refreshed = await refresh_state_cache(state);
+        const refreshed = await get_or_start_state_refresh(state, "background");
         results.push({
           state,
           ok: true,
@@ -768,7 +774,7 @@ docket_router.get("/state", async (req, res) => {
     // official provider list; subsequent reads become cache-first immediately.
     const refresh_mode = background_workers_allowed() ? "worker" : "request_scoped";
     const refreshed = background_workers_allowed()
-      ? await refresh_state_cache(state)
+      ? await get_or_start_state_refresh(state, "background")
       : await get_or_start_state_refresh(state, "request_scoped");
     return res.json({
       ok: true,

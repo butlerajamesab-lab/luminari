@@ -9,6 +9,7 @@ const legislative = read("server/civic-genome-legislative-version-queue-worker.t
 const prism = read("server/services/prism-rosetta-queue-worker.ts");
 const warmer = read("server/docket-state-cache-warmer.ts");
 const startup = read("server/_core/index.ts");
+const docket_worker = read("server/prism-rosetta-worker.ts");
 const db_facade = read("server/db.ts");
 
 describe("minimum Lighthouse queue stabilization", () => {
@@ -64,6 +65,7 @@ describe("minimum Lighthouse queue stabilization", () => {
     expect(warmer).toContain("if (active_cycle) return active_cycle");
     expect(warmer).toContain("active_controller?.abort()");
     expect(warmer).toContain("await active_cycle");
+    expect(docket_worker).toContain("await wait_for_docket_state_refreshes()");
     expect(warmer).toContain("/api/docket/warm-state");
     expect(warmer).toContain("for (let index = 0; index < states_to_warm.length; index += 1)");
     expect(warmer).toContain("await sleep(WARM_STATE_DELAY_MS)");
