@@ -141,14 +141,65 @@ const enrich_bills_with_radar = async (
 
   let result;
   try {
+    // Bound all aggregation to this page. Joining the global drift view first
+    // expands baseline/latest classes across the corpus before filtering bills.
+    // Keep its version selection and coverage semantics, including removed classes.
     result = await query_with_diagnostics<docket_radar_database_row>(
     `with requested(source_bill_id) as (
        select unnest($1::integer[])
-     ), bill_genome as (
+     ), bill_genome as materialized (
        select distinct on (source_bill_id) source_bill_id, genome_bill_id
        from public.civic_genome_bill_version
        where source_bill_id = any($1::integer[])
        order by source_bill_id, stage_rank desc, provider_sequence desc
+     ), scoped_versions as materialized (
+       select v.genome_bill_id, v.bill_version_id, v.base_bill_version_id,
+              v.stage_rank, v.provider_sequence, v.created_at
+       from public.civic_genome_bill_version v
+       join (select distinct genome_bill_id from bill_genome) g using (genome_bill_id)
+     ), latest as (
+       select distinct on (genome_bill_id) genome_bill_id, bill_version_id
+       from scoped_versions
+       order by genome_bill_id, stage_rank desc nulls last, provider_sequence desc nulls last
+     ), base as (
+       select distinct on (genome_bill_id) genome_bill_id, base_bill_version_id
+       from scoped_versions where base_bill_version_id is not null
+       order by genome_bill_id, created_at
+     ), selected as materialized (
+       select l.genome_bill_id, l.bill_version_id as latest_id, b.base_bill_version_id as base_id
+       from latest l left join base b using (genome_bill_id)
+     ), selected_ids as (
+       select latest_id as bill_version_id from selected
+       union
+       select base_id from selected where base_id is not null
+     ), class_counts as materialized (
+       select v.bill_version_id, t.trait_class, count(distinct t.trait_id) as n
+       from selected_ids i
+       join public.civic_genome_bill_version v using (bill_version_id)
+       join public.civic_genome_prism_verification_binding b on b.assembly_run_id = v.assembly_run_id
+       join public.civic_genome_trait t on t.trait_id = b.trait_id
+       group by v.bill_version_id, t.trait_class
+     ), covered_classes as (
+       select s.genome_bill_id, c.trait_class from selected s
+       join class_counts c on c.bill_version_id = s.latest_id
+       union
+       select s.genome_bill_id, c.trait_class from selected s
+       join class_counts c on c.bill_version_id = s.base_id
+     ), drift as (
+       select s.genome_bill_id, c.trait_class,
+              coalesce(cb.n, 0) as base_count, coalesce(cl.n, 0) as latest_count,
+              coalesce(cl.n, 0) - coalesce(cb.n, 0) as delta,
+              coalesce(bv.processing_state in ('verified', 'verified_with_findings')
+                and bv.assembly_run_id is not null and bv.prism_verification_run_id is not null, false)
+                as base_has_trait_coverage,
+              coalesce(lv.processing_state in ('verified', 'verified_with_findings')
+                and lv.assembly_run_id is not null and lv.prism_verification_run_id is not null, false)
+                as latest_has_trait_coverage
+       from selected s join covered_classes c using (genome_bill_id)
+       left join class_counts cb on cb.bill_version_id = s.base_id and cb.trait_class = c.trait_class
+       left join class_counts cl on cl.bill_version_id = s.latest_id and cl.trait_class = c.trait_class
+       left join public.civic_genome_bill_version bv on bv.bill_version_id = s.base_id
+       left join public.civic_genome_bill_version lv on lv.bill_version_id = s.latest_id
      )
      select requested.source_bill_id,
             velocity.velocity_score,
@@ -164,13 +215,15 @@ const enrich_bills_with_radar = async (
             drift.base_has_trait_coverage
             , drift.latest_has_trait_coverage
        from requested
-       left join public.docket_bill_velocity velocity
+       left join (select * from public.docket_bill_velocity
+                  where source_bill_id = any($1::integer[])) velocity
          on velocity.source_bill_id = requested.source_bill_id
        left join bill_genome
          on bill_genome.source_bill_id = requested.source_bill_id
-       left join public.docket_bill_next_floor_event next_event
+       left join (select * from public.docket_bill_next_floor_event
+                  where bill_id = any($1::integer[])) next_event
          on next_event.bill_id = requested.source_bill_id
-       left join public.docket_bill_drift_delta drift
+       left join drift
          on drift.genome_bill_id = bill_genome.genome_bill_id`,
     [bill_ids],
     {

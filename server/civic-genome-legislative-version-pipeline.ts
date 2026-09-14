@@ -77,6 +77,8 @@ type legislative_version_row = {
   latest_observed_at: string;
   source_bill_number: string;
   source_bill_title: string | null;
+  state_code?: string | null;
+  session_key?: string | null;
 };
 
 type extracted_legislative_source = {
@@ -475,7 +477,9 @@ async function load_version(bill_version_id: string): Promise<legislative_versio
             document.latest_metadata,
             document.latest_observed_at::text,
             bill.source_bill_number,
-            bill.source_bill_title
+            bill.source_bill_title,
+            bill.state_code,
+            bill.session_key
        from public.civic_genome_bill_version version
        join public.docket_bill_source_document document
          on document.source_document_key = version.source_document_key
@@ -717,6 +721,10 @@ export async function extract_version_source(
     extractor_version,
     source_metadata: {
       docket_bill_id: version.source_bill_id,
+      // Preserve the registered bill identity, including federal jurisdiction US.
+      // Procedural live/completed state is not a text-extraction eligibility gate.
+      jurisdiction: version.state_code ?? null,
+      docket_session_key: version.session_key ?? null,
       docket_source_document_key: version.source_document_key,
       docket_document_family: version.document_family,
       docket_version_type: version.version_type,

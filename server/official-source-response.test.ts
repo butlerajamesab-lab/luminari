@@ -72,6 +72,8 @@ function version_fixture(provider_copy = false) {
     latest_observed_at: "2026-09-13T00:00:00.000Z",
     source_bill_number: "HB179",
     source_bill_title: "Recorded source transport fixture",
+    state_code: "UT",
+    session_key: "2026",
   };
 }
 
@@ -103,6 +105,47 @@ afterEach(() => {
 });
 
 describe("official source response integrity", () => {
+  it.each(["US", "WA"])("preserves %s jurisdiction and session without changing text identity", async (state_code) => {
+    const version = { ...version_fixture(), state_code, session_key: "119" };
+    fetch_mock.mockImplementation(async () => source_response(legal_html, "text/html"));
+    const first = await extract_version_source(version);
+    const other_session = await extract_version_source({ ...version, session_key: "120" });
+    expect(first.source_metadata).toMatchObject({
+      jurisdiction: state_code,
+      docket_session_key: "119",
+      docket_source_document_key: version.source_document_key,
+      docket_document_family: "text",
+      docket_version_type: "committee_substitute",
+    });
+    expect(other_session.source_metadata.docket_session_key).toBe("120");
+    expect(other_session.source_content_hash).toBe(first.source_content_hash);
+    expect(other_session.source_byte_hash).toBe(first.source_byte_hash);
+    expect(other_session.source_version).toBe(first.source_version);
+    expect(first.source_metadata).not.toHaveProperty("admissibility_state");
+    expect(first.source_metadata).not.toHaveProperty("live");
+  });
+
+  it("does not invent jurisdiction or session for missing historical metadata", async () => {
+    fetch_mock.mockImplementation(async () => source_response(legal_html, "text/html"));
+    const source = await extract_version_source({ ...version_fixture(), state_code: null, session_key: null });
+    expect(source.source_metadata.jurisdiction).toBeNull();
+    expect(source.source_metadata.docket_session_key).toBeNull();
+  });
+
+  it.each(["live", "action_approaching", "completed", "stalled", "freshness_unknown"])(
+    "does not use observed procedural state %s to exclude a registered text",
+    async (procedural_state) => {
+      fetch_mock.mockImplementation(async () => source_response(legal_html, "text/html"));
+      const source = await extract_version_source({
+        ...version_fixture(),
+        latest_metadata: { procedural_state },
+      });
+      expect(source.source_text).toContain("An agency shall retain");
+      expect(source.source_metadata.registered_metadata).toEqual({ procedural_state });
+      expect(source.source_metadata).not.toHaveProperty("admissibility_state");
+    },
+  );
+
   it("recognizes the exact retained block page while preserving HTTP 200 and its bytes", () => {
     expect(rejected_html.length).toBe(245);
     expect(() => assert_official_source_response(200, rejected_html)).toThrow(rejection_error);

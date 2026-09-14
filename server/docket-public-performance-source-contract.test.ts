@@ -11,6 +11,14 @@ const public_shell = read("../client/src/DocketPublicApp.tsx");
 const docket = read("../client/src/pages/DocketRoom.tsx");
 
 describe("Docket public delivery source contract", () => {
+  it("reads Seattle retrieval time from the API snake_case contract", () => {
+    const router = read("./routers/docket.ts");
+    expect(router).toContain("fetched_at: Date.now()");
+    expect(docket).toContain("Number.isFinite(data.fetched_at)");
+    expect(docket).toContain("new Date(data.fetched_at)");
+    expect(docket).toContain("Retrieval time unavailable");
+    expect(docket).not.toContain("data.fetchedAt");
+  });
   it("keeps direct Docket visits out of the full App initial static graph", () => {
     expect(main).toContain('pathname === "/docket" || pathname.startsWith("/docket/")');
     expect(main).toContain('import("./DocketPublicApp")');
