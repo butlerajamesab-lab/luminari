@@ -769,6 +769,7 @@ export async function correctCaseMetadata(
 ) {
   return db.transaction(async (tx: any) => {
     const [current] = await tx.select({
+      userId: cases.userId,
       name: cases.name,
       description: cases.description,
       status: cases.status,
@@ -780,6 +781,18 @@ export async function correctCaseMetadata(
       .for("update");
     if (!current) {
       throw new TRPCError({ code: "NOT_FOUND", message: "Case not found" });
+    }
+
+    if (current.userId !== actorUserId) {
+      // Keep permission revocation serialized with the metadata correction.
+      // The preliminary route check cannot authorize this transaction.
+      const [collaborator] = await tx.select({ accessLevel: caseCollaborators.accessLevel })
+        .from(caseCollaborators)
+        .where(and(eq(caseCollaborators.caseId, id), eq(caseCollaborators.userId, actorUserId)))
+        .for("update");
+      if (collaborator?.accessLevel !== "WRITE") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Access denied: case metadata requires write access" });
+      }
     }
 
     const changes = describe_case_metadata_changes(current, data);

@@ -135,7 +135,10 @@ export function CaseIntakeContinuityPanel({
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              {showMetadataEditor && editableCase.data ? (
+              {showMetadataEditor
+                && !editableCase.isLoading
+                && !editableCase.isError
+                && editableCase.data?.canEditMetadata === true ? (
                 <CaseMetadataEditor
                   caseId={caseId}
                   metadata={{

@@ -598,7 +598,10 @@ const casesRouter = router({
     .query(async ({ ctx, input }) => {
       const c = await db_helpers.verifyCaseOwnership(input.id, ctx.user.id);
       const { _accessLevel, ...caseData } = c;
-      return caseData;
+      return {
+        ...caseData,
+        canEditMetadata: _accessLevel === "OWNER" || _accessLevel === "WRITE",
+      };
     }),
 
   create: protectedProcedure

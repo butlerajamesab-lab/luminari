@@ -439,7 +439,7 @@ export default function GuidedDashboard() {
     }
   }, [caseId, currentCaseId, setCurrentCaseId]);
 
-  const { data: caseData, isLoading } = trpc.cases.get.useQuery(
+  const { data: caseData, isLoading, isError } = trpc.cases.get.useQuery(
     { id: caseId! },
     { enabled: !!caseId }
   );
@@ -498,7 +498,7 @@ export default function GuidedDashboard() {
                 <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground">
                   {caseData?.name || "Your Case"}
                 </h1>
-                {caseData ? (
+                {!isError && caseData?.canEditMetadata === true ? (
                   <CaseMetadataEditor
                     caseId={caseId}
                     metadata={{
