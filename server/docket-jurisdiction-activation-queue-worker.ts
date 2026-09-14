@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { project_docket_cache_to_civic_genome } from "./civic-genome-projection";
+import { project_docket_state_cache_to_civic_genome_serialized } from "./civic-genome-projection";
 import { query_with_diagnostics } from "./db";
 import { get_bill, type legiscan_bill_detail } from "./services/legiscan";
 import { background_feature_enabled } from "./runtime-role";
@@ -44,7 +44,6 @@ export type docket_bill_activation_failure_decision = {
 let queue_timer: NodeJS.Timeout | null = null;
 let active_queue_cycle: Promise<void> | null = null;
 let queue_stopped = false;
-const state_projection_in_flight = new Map<string, Promise<void>>();
 const queue_worker_id = [
   process.env.RENDER_SERVICE_ID ?? "lighthouse",
   "docket-jurisdiction-activation",
@@ -213,33 +212,14 @@ async function civic_genome_bill_ready(source_bill_id: number): Promise<boolean>
 
 async function project_state_once(state: string): Promise<void> {
   const normalized_state = normalize_state(state);
-  const existing = state_projection_in_flight.get(normalized_state);
-  if (existing) {
-    await existing;
-    return;
-  }
-
-  const projection = (async () => {
-    const result = await project_docket_cache_to_civic_genome({
-      state_code: normalized_state,
-    });
-    console.log("[DocketJurisdictionActivation] projected_state", {
-      state: normalized_state,
-      bills_seen: result.bills_seen,
-      inserted_count: result.inserted_count,
-      updated_count: result.updated_count,
-      unchanged_count: result.unchanged_count,
-    });
-  })();
-
-  state_projection_in_flight.set(normalized_state, projection);
-  try {
-    await projection;
-  } finally {
-    if (state_projection_in_flight.get(normalized_state) === projection) {
-      state_projection_in_flight.delete(normalized_state);
-    }
-  }
+  const result = await project_docket_state_cache_to_civic_genome_serialized(normalized_state);
+  console.log("[DocketJurisdictionActivation] projected_state", {
+    state: normalized_state,
+    bills_seen: result.bills_seen,
+    inserted_count: result.inserted_count,
+    updated_count: result.updated_count,
+    unchanged_count: result.unchanged_count,
+  });
 }
 
 async function ensure_civic_genome_bill_ready(job: docket_bill_activation_job): Promise<void> {

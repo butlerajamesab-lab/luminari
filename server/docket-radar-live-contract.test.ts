@@ -71,5 +71,8 @@ describe("Docket Radar live contract", () => {
     expect(worker).toContain("await stop_docket_state_cache_warmer()");
     expect(read("server/routes/docket.ts")).toContain('get_or_start_state_refresh(state, "background")');
     expect(worker).toContain("await wait_for_docket_state_refreshes()");
+    expect(read("server/routes/docket.ts")).toContain("project_docket_state_cache_to_civic_genome_serialized(state)");
+    expect(activation_worker).toContain("project_docket_state_cache_to_civic_genome_serialized(normalized_state)");
+    expect(read("server/civic-genome-projection.ts")).toContain("docket_state_projection_in_flight");
   });
 });

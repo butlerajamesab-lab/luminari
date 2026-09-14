@@ -8,7 +8,7 @@ import {
   type legiscan_master_bill,
 } from "../services/legiscan";
 import {
-  project_docket_cache_to_civic_genome,
+  project_docket_state_cache_to_civic_genome_serialized,
   type civic_genome_projection_result,
 } from "../civic-genome-projection";
 import { query_with_diagnostics } from "../db";
@@ -437,7 +437,7 @@ const summarize_civic_genome_projection = (
 
 const project_refreshed_state_to_civic_genome = async (state: string): Promise<civic_genome_projection_status> => {
   try {
-    const projection = await project_docket_cache_to_civic_genome({ state_code: state });
+    const projection = await project_docket_state_cache_to_civic_genome_serialized(state);
     return summarize_civic_genome_projection(projection);
   } catch (error) {
     return {

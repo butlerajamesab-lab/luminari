@@ -550,3 +550,23 @@ export async function project_docket_cache_to_civic_genome(opts?: {
     results,
   };
 }
+
+const docket_state_projection_in_flight = new Map<string, Promise<civic_genome_projection_result>>();
+
+export function project_docket_state_cache_to_civic_genome_serialized(
+  state_code: string,
+): Promise<civic_genome_projection_result> {
+  const normalized_state = normalize_state_code(state_code);
+  const existing = docket_state_projection_in_flight.get(normalized_state);
+  if (existing) return existing;
+
+  const projection = project_docket_cache_to_civic_genome({ state_code: normalized_state });
+  docket_state_projection_in_flight.set(normalized_state, projection);
+  const release = () => {
+    if (docket_state_projection_in_flight.get(normalized_state) === projection) {
+      docket_state_projection_in_flight.delete(normalized_state);
+    }
+  };
+  void projection.then(release, release);
+  return projection;
+}
