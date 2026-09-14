@@ -399,8 +399,16 @@ const project_bill = async (
     );
   }
 
-  await capture_target_family_version(family_key, client);
-  const family_id = await upsert_family(family_key, bill, client);
+  let family_id: string;
+  if (existing?.rosetta_extraction_run_id) {
+    // Rosetta owns an extracted bill's family assignment. A changed Docket
+    // title/domain may alter the heuristic key, but must not mutate an unused
+    // inferred target family that the bill conflict path will not adopt.
+    family_id = existing.family_id;
+  } else {
+    await capture_target_family_version(family_key, client);
+    family_id = await upsert_family(family_key, bill, client);
+  }
 
   const { rows } = await client.query<{
     genome_bill_id: string;
