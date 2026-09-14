@@ -99,6 +99,8 @@ describe("Docket Radar live contract", () => {
     expect(detail).toContain("signed by governor|governor signed|became law");
     expect(page).toContain("(?:bill|measure|resolution)\\s+(?:has\\s+)?(?:enacted|failed");
     expect(detail).toContain("(?:bill|measure|resolution)\\s+(?:has\\s+)?(?:enacted|failed");
+    expect(page).toContain("failed(?:\\s+(?:final passage|to pass))?|postponed indefinitely");
+    expect(detail).toContain("failed(?:\\s+(?:final passage|to pass))?|postponed indefinitely");
     expect(page).toContain('new Date(`${value}T00:00:00`)');
     expect(detail).toContain('new Date(`${value}T00:00:00`)');
   });
