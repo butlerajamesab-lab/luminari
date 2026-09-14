@@ -56,5 +56,8 @@ describe("Docket Radar live contract", () => {
     expect(read("server/routes/docket.ts")).toContain("row.latest_has_trait_coverage === true");
     expect(read("client/src/pages/DocketRoom.tsx")).toContain("snapshot_is_fresh(payload.fetched_at)");
     expect(worker).toContain("const docket_worker_startup = start_docket_workers().catch");
+    const activation_worker = read("server/docket-jurisdiction-activation-queue-worker.ts");
+    expect(activation_worker).toContain("await active_queue_cycle");
+    expect(worker).toContain("await stop_docket_bill_activation_queue_worker()");
   });
 });

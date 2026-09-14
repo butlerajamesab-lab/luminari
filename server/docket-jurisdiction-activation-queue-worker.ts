@@ -42,7 +42,7 @@ export type docket_bill_activation_failure_decision = {
 };
 
 let queue_timer: NodeJS.Timeout | null = null;
-let queue_cycle_running = false;
+let active_queue_cycle: Promise<void> | null = null;
 let queue_stopped = false;
 const state_projection_in_flight = new Map<string, Promise<void>>();
 const queue_worker_id = [
@@ -459,20 +459,26 @@ export async function process_docket_bill_activation_job(
   }
 }
 
-export async function run_docket_bill_activation_queue_cycle(): Promise<void> {
-  if (queue_cycle_running || queue_stopped) return;
-  queue_cycle_running = true;
-  try {
-    const jobs = await claim_jobs(bounded_concurrency());
-    await Promise.all(jobs.map(job => process_docket_bill_activation_job(job)));
-  } catch (error) {
-    console.error("[DocketJurisdictionActivation] cycle_failed", {
-      error_class: error instanceof Error ? error.name : "unknown",
-      error_code: safe_error_code(error),
-    });
-  } finally {
-    queue_cycle_running = false;
-  }
+export function run_docket_bill_activation_queue_cycle(): Promise<void> {
+  if (active_queue_cycle) return active_queue_cycle;
+  if (queue_stopped) return Promise.resolve();
+
+  const cycle = (async () => {
+    try {
+      const jobs = await claim_jobs(bounded_concurrency());
+      await Promise.all(jobs.map(job => process_docket_bill_activation_job(job)));
+    } catch (error) {
+      console.error("[DocketJurisdictionActivation] cycle_failed", {
+        error_class: error instanceof Error ? error.name : "unknown",
+        error_code: safe_error_code(error),
+      });
+    }
+  })();
+  active_queue_cycle = cycle;
+  void cycle.finally(() => {
+    if (active_queue_cycle === cycle) active_queue_cycle = null;
+  });
+  return cycle;
 }
 
 export function start_docket_bill_activation_queue_worker(): void {
@@ -493,8 +499,9 @@ export function start_docket_bill_activation_queue_worker(): void {
   queue_timer.unref?.();
 }
 
-export function stop_docket_bill_activation_queue_worker(): void {
+export async function stop_docket_bill_activation_queue_worker(): Promise<void> {
   queue_stopped = true;
   if (queue_timer) clearInterval(queue_timer);
   queue_timer = null;
+  await active_queue_cycle;
 }
