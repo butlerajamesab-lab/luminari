@@ -60,6 +60,9 @@ describe("Docket Radar live contract", () => {
       .toContain("sync_civic_genome_lifecycle_history_v3(affected.source_bill_id)");
     expect(lifecycle_scope).not.toMatch(/update\s+public\.civic_genome_lifecycle_event_v2/i);
     expect(lifecycle_scope).not.toMatch(/delete\s+from\s+public\.civic_genome_lifecycle_event_v2/i);
+    const prefix_scope = read("supabase/migrations/20260914123335_docket_prefix_subsidiary_failure_scope.sql");
+    expect(prefix_scope).toContain("failed\\y.{0,80}\\y(amendments?|motions?)\\y");
+    expect(prefix_scope).toContain("legacy_prefix_subsidiary_failure_was_not_whole_measure_disposition");
     expect(projection).toContain('action: "unchanged"');
     expect(projection).toContain("failed(?:\\s+(?:final passage|to pass))?\\s*[.;]?\\s*$");
     expect(read("server/civic-genome-event-classifier.ts"))
