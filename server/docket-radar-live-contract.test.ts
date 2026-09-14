@@ -81,6 +81,8 @@ describe("Docket Radar live contract", () => {
       .toContain("with historical_bills as materialized");
     expect(read("server/civic-genome-external-snapshot-producer.ts"))
       .toContain("when b.updated_at <= $2::timestamptz then to_jsonb(b)");
+    expect(read("server/civic-genome-external-snapshot-producer.ts"))
+      .toContain("join historical_bills eb on eb.genome_bill_id = e.genome_bill_id");
     expect(read("server/civic-genome-family-resolution.ts"))
       .toContain("capture_family_resolution_versions");
     expect(read("supabase/migrations/20260914115743_civic_genome_projection_entity_versions.sql"))

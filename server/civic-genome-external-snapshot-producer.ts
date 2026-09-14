@@ -78,9 +78,13 @@ select jsonb_build_object(
       and t.updated_at <= $2::timestamptz
   ), '[]'::jsonb),
   'events', coalesce((
-    select jsonb_agg(to_jsonb(e) order by e.event_timestamp, e.event_id)
+    select jsonb_agg(
+      to_jsonb(e) || jsonb_build_object('family_id', f.family_id)
+      order by e.event_timestamp, e.event_id
+    )
     from public.civic_genome_event e
-    where e.family_id = f.family_id
+    join historical_bills eb on eb.genome_bill_id = e.genome_bill_id
+    where true
       and e.created_at <= $2::timestamptz
       and not exists (
         select 1
