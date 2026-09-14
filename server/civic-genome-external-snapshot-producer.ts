@@ -56,6 +56,13 @@ select jsonb_build_object(
         where correction.event_type = 'docket_classification_corrected'
           and correction.event_payload_json ->> 'superseded_event_id' = e.event_id::text
           and correction.created_at <= $2::timestamptz
+          and not exists (
+            select 1
+            from public.civic_genome_event retraction
+            where retraction.event_type = 'docket_classification_correction_retracted'
+              and retraction.event_payload_json ->> 'retracted_correction_event_id' = correction.event_id::text
+              and retraction.created_at <= $2::timestamptz
+          )
       )
   ), '[]'::jsonb),
   'lineage_edges', coalesce((

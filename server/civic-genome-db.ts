@@ -340,6 +340,12 @@ export async function list_genome_events(opts?: {
        from public.civic_genome_event correction
        where correction.event_type = 'docket_classification_corrected'
          and correction.event_payload_json ->> 'superseded_event_id' = event.event_id::text
+         and not exists (
+           select 1
+           from public.civic_genome_event retraction
+           where retraction.event_type = 'docket_classification_correction_retracted'
+             and retraction.event_payload_json ->> 'retracted_correction_event_id' = correction.event_id::text
+         )
      )
      order by event_timestamp desc
      limit $${params.length - 1} offset $${params.length}`,

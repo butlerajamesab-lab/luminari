@@ -266,7 +266,6 @@ const project_bill = async (
   const source_bill_number = bill.number;
   const bill_id = stable_uuid(`docket_room:legiscan:${bill.bill_id}`);
   const family_key = build_family_key(bill);
-  const family_id = await upsert_family(family_key, bill, client);
   const current_state_position = infer_state_position(bill);
   const docket_observation = build_structural_dna_json(state_row, bill);
   const docket_observation_hash = sha256(JSON.stringify(docket_observation));
@@ -309,6 +308,25 @@ const project_bill = async (
     existing?.current_state_position ?? null,
     current_state_position,
   );
+  const classification = classify_docket_event(bill, existing);
+  const event_type = classification.event_type;
+
+  if (existing && !should_append_event) {
+    await client.query("commit");
+    return {
+      state_code,
+      source_bill_id: bill.bill_id,
+      source_bill_number,
+      source_offset,
+      bill_id,
+      family_id: existing.family_id,
+      genome_bill_id: existing.genome_bill_id,
+      event_type,
+      action: "unchanged",
+    };
+  }
+
+  const family_id = await upsert_family(family_key, bill, client);
 
   const { rows } = await client.query<{
     genome_bill_id: string;
@@ -394,9 +412,6 @@ const project_bill = async (
 
   const genome_bill_id = rows[0].genome_bill_id;
   const persisted_family_id = rows[0].family_id;
-  const classification = classify_docket_event(bill, existing);
-  const event_type = classification.event_type;
-
   if (should_append_event) {
     await client.query(
       `insert into public.civic_genome_event (
