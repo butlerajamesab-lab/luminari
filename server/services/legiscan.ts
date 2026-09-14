@@ -8,6 +8,7 @@ export const LEGISCAN_ROLLOUT_STATES = [
   "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
   "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY",
   "DC",
+  "US",
 ] as const;
 
 const required_env = (name: string): string => {

@@ -16,6 +16,14 @@ services:
         value: production
       - key: LIGHTHOUSE_RUNTIME_ROLE
         value: worker
+      - key: DOCKET_STATE_CACHE_WARMER_ENABLED
+        value: "true"
+      - key: DOCKET_STATE_CACHE_WARMER_INTERVAL_MS
+        value: "900000"
+      - key: DOCKET_STATE_CACHE_WARMER_BATCH_SIZE
+        value: "5"
+      - key: DOCKET_BILL_ACTIVATION_QUEUE_ENABLED
+        value: "true"
       - key: PRISM_ROSETTA_QUEUE_ENABLED
         value: "true"
       - key: PRISM_ROSETTA_QUEUE_CANARY_ID

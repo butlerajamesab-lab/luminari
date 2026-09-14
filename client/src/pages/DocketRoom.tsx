@@ -52,21 +52,6 @@ const fontSerif = "'Cormorant Garamond', serif";
 const fontMono = "'IBM Plex Mono', monospace";
 const fontSans = "'Inter', system-ui, sans-serif";
 
-const DOCKET_ROOM_STRATEGY = [
-  {
-    label: "state_coverage",
-    text: "full_national_coverage — all_50_states_plus_washington_dc. legiscan_unified_schema_makes_this_practical_since_no_per_state_custom_integration_is_required. coverage_will_be_rolled_out_in_waves_pacific_northwest_and_high_priority_states_first_but_the_architecture_is_designed_for_all_52_legiscan_jurisdictions_from_the_start.",
-  },
-  {
-    label: "bill_volume",
-    text: "topic_vertical_per_state_not_exhaustive. we_pull_the_top_50_to_100_most_recently_active_bills_per_state_per_session_refresh_cycle_using_get_master_list_which_is_a_single_query_per_state_regardless_of_session_size. at_50_states_times_100_bills_equals_about_5000_bills_in_active_cache_at_any_time. get_bill_detail_is_only_fetched_on_explicit_user_click_through_never_speculatively_bulk_fetched.",
-  },
-  {
-    label: "query_strategy",
-    text: "server_side_caching_in_supabase_postgresql_eliminates_redundant_api_calls. the_math_on_the_30000_per_month_free_tier:\nget_session_list_50_states_times_1_call_equals_50_queries_one_time_per_deploy_cached_permanently_until_session_changes\nget_master_list_50_states_times_about_3_refreshes_per_day_times_30_days_equals_4500_queries_per_month\nget_bill_detail_estimated_10_to_20_user_driven_lookups_per_day_times_30_days_equals_300_to_600_queries_per_month\ntotal_estimated_about_5100_to_5150_queries_per_month_well_within_the_30000_free_tier\nno_speculative_bulk_bill_detail_fetching. all_get_master_list_results_are_cached_and_served_from_the_database. if_usage_grows_we_will_upgrade_to_a_paid_dataset_plan_which_actually_reduces_api_dependency_by_replacing_polling_with_bulk_downloads.",
-  },
-];
-
 // ── Section label map ────────────────────────────────────────────────
 const SECTION_ICONS: Record<string, any> = {
   summary: BookOpen,
@@ -570,6 +555,16 @@ type docket_bill = {
   last_action?: string;
   source_url?: string;
   url?: string;
+  radar?: {
+    velocity_score: number;
+    events_14d: number;
+    amended_7d: number;
+    next_event_date: string | null;
+    next_event_class: string | null;
+    next_event_description: string | null;
+    drift: Array<{ trait_class: string; base_count: number; latest_count: number; delta: number }>;
+    drift_coverage: boolean;
+  };
 };
 
 type docket_state_payload = {
@@ -611,37 +606,6 @@ type docket_cache_status_payload = {
   error?: string;
 };
 
-type docket_warm_state_payload = {
-  ok: boolean;
-  state?: string;
-  source?: string;
-  bill_count?: number;
-  session_id?: number;
-  session_title?: string | null;
-  fetched_at?: string;
-  message?: string;
-  error?: string;
-};
-
-type docket_warm_batch_result = {
-  state: string;
-  ok: boolean;
-  bill_count: number;
-  source: string;
-  fetched_at: string | null;
-  error?: string;
-};
-
-type docket_warm_batch_payload = {
-  ok: boolean;
-  limit?: number;
-  warmed_count?: number;
-  remaining_count?: number;
-  results?: docket_warm_batch_result[];
-  message?: string;
-  error?: string;
-};
-
 const docket_states = [
   "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
   "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
@@ -649,7 +613,39 @@ const docket_states = [
   "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
   "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY",
   "DC",
+  "US",
 ];
+
+type lifecycle_state = "live" | "action_approaching" | "completed" | "stalled" | "freshness_unknown";
+
+const valid_date = (value?: string | null): Date | null => {
+  if (!value || value.startsWith("0000-00-00")) return null;
+  const parsed = new Date(value);
+  return Number.isFinite(parsed.getTime()) ? parsed : null;
+};
+
+const lifecycle_for_bill = (bill: docket_bill, cache_fresh: boolean): lifecycle_state => {
+  if (!cache_fresh) return "freshness_unknown";
+  if (bill.radar?.next_event_date) return "action_approaching";
+  const status = Number(bill.status);
+  if ([4, 5, 6].includes(status)) return "completed";
+  const last_action = valid_date(bill.last_action_date || bill.status_date);
+  if (last_action && Date.now() - last_action.getTime() > 90 * 24 * 60 * 60 * 1000) return "stalled";
+  return "live";
+};
+
+const lifecycle_presentation: Record<lifecycle_state, { label: string; color: string; background: string }> = {
+  live: { label: "Live · changeable", color: dk.teal, background: "rgba(57,210,192,0.10)" },
+  action_approaching: { label: "Action approaching", color: dk.amber, background: dk.copperSoft },
+  completed: { label: "Completed", color: dk.green, background: "rgba(63,185,80,0.10)" },
+  stalled: { label: "Stalled", color: dk.muted, background: "rgba(125,133,144,0.10)" },
+  freshness_unknown: { label: "Freshness unknown", color: dk.muted, background: "rgba(125,133,144,0.10)" },
+};
+
+const readable_date = (value?: string | null): string => {
+  const date = valid_date(value);
+  return date ? date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "Not reported";
+};
 
 function DocketBillFeed() {
   const [selected_state, set_selected_state] = useState("WA");
@@ -663,9 +659,7 @@ function DocketBillFeed() {
   const [cache_statuses, set_cache_statuses] = useState<docket_cache_status[]>([]);
   const [cache_status_error, set_cache_status_error] = useState<string | null>(null);
   const [cache_status_loading, set_cache_status_loading] = useState(false);
-  const [warm_results, set_warm_results] = useState<docket_warm_batch_result[]>([]);
-  const [warm_error, set_warm_error] = useState<string | null>(null);
-  const [warm_loading, set_warm_loading] = useState(false);
+  const [show_completed, set_show_completed] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -760,80 +754,33 @@ function DocketBillFeed() {
     refresh_cache_status();
   }, [refresh_cache_status]);
 
-  const warm_selected_state = async () => {
-    set_warm_loading(true);
-    set_warm_error(null);
-
-    try {
-      const response = await fetch("/api/docket/warm-state", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ state: selected_state }),
-      });
-      const payload = await response.json().catch(() => ({
-        ok: false,
-        message: `api_docket_warm_state_failed_http_${response.status}`,
-      })) as docket_warm_state_payload;
-
-      if (!response.ok || !payload.ok) {
-        throw new Error(payload.error || payload.message || `api_docket_warm_state_failed_http_${response.status}`);
-      }
-
-      set_warm_results([{
-        state: payload.state || selected_state,
-        ok: true,
-        bill_count: payload.bill_count ?? 0,
-        source: payload.source || "unknown",
-        fetched_at: payload.fetched_at || null,
-      }]);
-      await refresh_cache_status();
-    } catch (error: any) {
-      set_warm_error(error?.message || "api_docket_warm_state_failed");
-    } finally {
-      set_warm_loading(false);
-    }
-  };
-
-  const warm_next_batch = async () => {
-    set_warm_loading(true);
-    set_warm_error(null);
-
-    try {
-      const response = await fetch("/api/docket/warm-next-batch", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ limit: 5 }),
-      });
-      const payload = await response.json().catch(() => ({
-        ok: false,
-        message: `api_docket_warm_next_batch_failed_http_${response.status}`,
-      })) as docket_warm_batch_payload;
-
-      if (!response.ok || !payload.ok) {
-        throw new Error(payload.error || payload.message || `api_docket_warm_next_batch_failed_http_${response.status}`);
-      }
-
-      set_warm_results(payload.results ?? []);
-      await refresh_cache_status();
-    } catch (error: any) {
-      set_warm_error(error?.message || "api_docket_warm_next_batch_failed");
-    } finally {
-      set_warm_loading(false);
-    }
-  };
-
   const bills = state_data?.bills ?? [];
   const selected_cache_status = cache_statuses.find(status => status.state === selected_state);
+  const visible_bills = bills.filter(bill => show_completed || lifecycle_for_bill(bill, selected_cache_status?.is_fresh === true) !== "completed");
 
   return (
     <div style={{ background: dk.sectionBg, border: `1px solid ${dk.steelBorder}`, borderRadius: "8px", padding: "1rem 1.25rem", marginBottom: "1.5rem" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(145px, 1fr))", gap: "0.5rem", marginBottom: "1rem" }}>
+        {[
+          ["Federal", "Connected", dk.teal],
+          ["State", "50 states + DC", dk.teal],
+          ["City", "Seattle connected", dk.steelBright],
+          ["County", "Source not connected", dk.muted],
+          ["Tribal", "Source not connected", dk.muted],
+        ].map(([level, state, color]) => (
+          <div key={level} style={{ background: dk.bg, border: `1px solid ${dk.rule}`, borderLeft: `3px solid ${color}`, borderRadius: 6, padding: "0.55rem 0.65rem" }}>
+            <div style={{ color: dk.paper, fontFamily: fontSans, fontSize: "0.78rem", fontWeight: 600 }}>{level}</div>
+            <div style={{ color, fontFamily: fontMono, fontSize: "0.62rem", marginTop: "0.2rem" }}>{state}</div>
+          </div>
+        ))}
+      </div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap", marginBottom: "0.75rem" }}>
         <div>
-          <div style={{ fontFamily: fontMono, fontSize: "0.75rem", color: dk.steelBright, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase" }}>live_bill_feed</div>
-          <p style={{ fontFamily: fontSans, fontSize: "0.82rem", color: dk.muted, margin: "0.25rem 0 0" }}>backend_cache_source_only_no_vendor_frontend_calls</p>
+          <div style={{ fontFamily: fontMono, fontSize: "0.75rem", color: dk.steelBright, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase" }}>{selected_state === "US" ? "Federal legislation" : "State legislation"}</div>
+          <p style={{ fontFamily: fontSans, fontSize: "0.82rem", color: dk.muted, margin: "0.25rem 0 0" }}>Current procedural status, movement, and upcoming action from cached official-provider records.</p>
         </div>
         <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: fontMono, fontSize: "0.72rem", color: dk.muted }}>
-          selected_state
+          Jurisdiction
           <select value={selected_state} onChange={event => set_selected_state(event.target.value)} style={{ background: dk.slate, border: `1px solid ${dk.rule}`, borderRadius: "6px", color: dk.paper, fontFamily: fontMono, fontSize: "0.78rem", padding: "0.35rem 0.5rem" }}>
             {docket_states.map(state => <option key={state} value={state}>{state}</option>)}
           </select>
@@ -841,38 +788,17 @@ function DocketBillFeed() {
       </div>
 
       <div style={{ background: dk.bg, border: `1px solid ${dk.rule}`, borderRadius: "8px", padding: "0.85rem", marginBottom: "0.9rem" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: "0.75rem", flexWrap: "wrap", marginBottom: "0.65rem" }}>
-          <div>
-            <div style={{ fontFamily: fontMono, fontSize: "0.72rem", color: dk.copper, fontWeight: 700 }}>docket_cache_control</div>
-            <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>selected_state {selected_state}</div>
-          </div>
-          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-            <button type="button" onClick={warm_selected_state} disabled={warm_loading} style={{ background: dk.copperSoft, border: `1px solid ${dk.copper}`, borderRadius: "6px", color: dk.paper, cursor: warm_loading ? "wait" : "pointer", fontFamily: fontMono, fontSize: "0.68rem", padding: "0.4rem 0.55rem" }}>warm_selected_state</button>
-            <button type="button" onClick={refresh_cache_status} disabled={cache_status_loading} style={{ background: dk.slate, border: `1px solid ${dk.rule}`, borderRadius: "6px", color: dk.paper, cursor: cache_status_loading ? "wait" : "pointer", fontFamily: fontMono, fontSize: "0.68rem", padding: "0.4rem 0.55rem" }}>refresh_cache_status</button>
-            <button type="button" onClick={warm_next_batch} disabled={warm_loading} style={{ background: dk.steelSoft, border: `1px solid ${dk.steelBorder}`, borderRadius: "6px", color: dk.paper, cursor: warm_loading ? "wait" : "pointer", fontFamily: fontMono, fontSize: "0.68rem", padding: "0.4rem 0.55rem" }}>warm_next_batch</button>
-          </div>
-        </div>
         {cache_status_loading ? <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>loading_cache_status</div> : cache_status_error ? <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.red }}>cache_status_error {cache_status_error}</div> : selected_cache_status ? (
           <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>
-            <span>has_cache {String(selected_cache_status.has_cache)}</span>
-            <span>is_fresh {String(selected_cache_status.is_fresh)}</span>
-            <span>bill_count {selected_cache_status.bill_count}</span>
-            <span>session_id {selected_cache_status.session_id ?? "unknown"}</span>
-            <span>fetched_at {selected_cache_status.fetched_at ?? "unknown"}</span>
-            <span>age_minutes {selected_cache_status.age_minutes ?? "unknown"}</span>
-            {selected_cache_status.session_title && <span>session_title {selected_cache_status.session_title}</span>}
+            <span style={{ color: selected_cache_status.is_fresh ? dk.teal : dk.amber }}>{selected_cache_status.is_fresh ? "Current source snapshot" : "Source snapshot is stale"}</span>
+            <span>{selected_cache_status.bill_count} bills</span>
+            <span>Updated {readable_date(selected_cache_status.fetched_at)}</span>
+            {selected_cache_status.session_title && <span>{selected_cache_status.session_title}</span>}
           </div>
         ) : <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>cache_status_unavailable</div>}
-        {warm_error && <div style={{ marginTop: "0.55rem", fontFamily: fontMono, fontSize: "0.68rem", color: dk.red }}>warm_error {warm_error}</div>}
-        {warm_results.length > 0 && (
-          <div style={{ display: "grid", gap: "0.35rem", marginTop: "0.65rem" }}>
-            {warm_results.map(result => (
-              <div key={`${result.state}_${result.source}_${result.fetched_at ?? "none"}`} style={{ fontFamily: fontMono, fontSize: "0.66rem", color: result.ok ? dk.cream : dk.red }}>
-                state {result.state} ok {String(result.ok)} bill_count {result.bill_count} source {result.source} fetched_at {result.fetched_at ?? "unknown"}{result.error ? ` error ${result.error}` : ""}
-              </div>
-            ))}
-          </div>
-        )}
+        <label style={{ display: "inline-flex", alignItems: "center", gap: "0.45rem", marginTop: "0.65rem", color: dk.cream, fontFamily: fontSans, fontSize: "0.78rem" }}>
+          <input type="checkbox" checked={show_completed} onChange={event => set_show_completed(event.target.checked)} /> Show completed legislation
+        </label>
       </div>
 
       {state_loading ? (
@@ -882,25 +808,29 @@ function DocketBillFeed() {
       ) : state_data ? (
         <>
           <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", fontFamily: fontMono, fontSize: "0.7rem", color: dk.muted, marginBottom: "0.85rem" }}>
-            <span>source {state_data.source || "unknown"}</span>
-            <span>fetched_at {state_data.fetched_at || "unknown"}</span>
-            <span>bill_count {state_data.bill_count ?? bills.length}</span>
-            <span>session_id {state_data.session_id ?? "unknown"}</span>
+            <span>{visible_bills.length} shown</span>
+            <span>source updated {readable_date(state_data.fetched_at)}</span>
             {state_data.session_title && <span>session_title {state_data.session_title}</span>}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "0.75rem" }}>
-            {bills.map(bill => {
+            {visible_bills.map(bill => {
               const bill_url = bill.source_url || bill.url;
+              const lifecycle = lifecycle_for_bill(bill, selected_cache_status?.is_fresh === true);
+              const lifecycle_ui = lifecycle_presentation[lifecycle];
               return (
-                <button key={bill.bill_id} onClick={() => load_bill_detail(bill.bill_id)} style={{ textAlign: "left", background: dk.cardBg, border: `1px solid ${selected_bill_id === bill.bill_id ? dk.steel : dk.cardBorder}`, borderRadius: "8px", padding: "0.85rem", cursor: "pointer" }}>
-                  <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.steelBright, marginBottom: "0.35rem" }}>bill_id {bill.bill_id} · number {bill.number || "unknown"}</div>
+                <button key={bill.bill_id} onClick={() => load_bill_detail(bill.bill_id)} style={{ textAlign: "left", background: dk.cardBg, border: `1px solid ${selected_bill_id === bill.bill_id ? dk.steel : dk.cardBorder}`, borderLeft: `4px solid ${lifecycle_ui.color}`, borderRadius: "8px", padding: "0.85rem", cursor: "pointer" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", alignItems: "center", marginBottom: "0.35rem" }}>
+                    <span style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.steelBright }}>{bill.number || `Bill ${bill.bill_id}`}</span>
+                    <span style={{ fontFamily: fontMono, fontSize: "0.62rem", color: lifecycle_ui.color, background: lifecycle_ui.background, borderRadius: 999, padding: "0.2rem 0.45rem" }}>{lifecycle_ui.label}</span>
+                  </div>
                   <div style={{ fontFamily: fontSerif, fontSize: "1rem", color: dk.paper, lineHeight: 1.25, marginBottom: "0.5rem" }}>{bill.title || "title_unavailable"}</div>
                   <div style={{ display: "grid", gap: "0.25rem", fontFamily: fontMono, fontSize: "0.66rem", color: dk.muted }}>
-                    <span>status {bill.status ?? "unknown"}</span>
-                    <span>status_date {bill.status_date || "unknown"}</span>
-                    <span>last_action_date {bill.last_action_date || "unknown"}</span>
-                    <span>last_action {bill.last_action || "unknown"}</span>
-                    {bill_url && <span>source_url <a href={bill_url} target="_blank" rel="noopener noreferrer" onClick={event => event.stopPropagation()} style={{ color: dk.steelBright }}>{bill_url}</a></span>}
+                    <span>{bill.last_action || "Latest action not reported"}</span>
+                    <span>{readable_date(bill.last_action_date || bill.status_date)}</span>
+                    {bill.radar && bill.radar.velocity_score > 0 && <span style={{ color: dk.teal }}>Movement {bill.radar.velocity_score.toFixed(1)} · {bill.radar.events_14d} events in 14 days</span>}
+                    {bill.radar?.next_event_date && <span style={{ color: dk.amber }}>{bill.radar.next_event_class?.replaceAll("_", " ")} · {readable_date(bill.radar.next_event_date)}</span>}
+                    {bill.radar?.drift_coverage && bill.radar.drift.filter(item => item.delta !== 0).map(item => <span key={item.trait_class}>{item.trait_class} {item.base_count} → {item.latest_count} ({item.delta > 0 ? "+" : ""}{item.delta})</span>)}
+                    {bill_url && <span><a href={bill_url} target="_blank" rel="noopener noreferrer" onClick={event => event.stopPropagation()} style={{ color: dk.steelBright }}>Official source</a></span>}
                   </div>
                 </button>
               );
@@ -928,8 +858,11 @@ function LegistarLiveFeed({ keyword }: { keyword?: string }) {
   const [collapsed, setCollapsed] = useState(false);
 
   const formatDate = (d: string | null) => {
-    if (!d) return null;
-    return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    if (!d || d.startsWith("0000-00-00")) return "Date not reported";
+    const parsed = new Date(d);
+    return Number.isFinite(parsed.getTime())
+      ? parsed.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+      : "Date not reported";
   };
 
   const statusColor = (status: string) => {
@@ -1128,37 +1061,9 @@ function DocketList({ onSelect }: { onSelect: (id: string) => void }) {
             </span>
           </p>
 
-          <div style={{
-            display: "grid",
-            gap: "0.75rem",
-            marginTop: "1.5rem",
-            padding: "1rem",
-            background: dk.sectionBg,
-            border: `1px solid ${dk.steelBorder}`,
-            borderRadius: "8px",
-          }}>
-            {DOCKET_ROOM_STRATEGY.map(item => (
-              <div key={item.label}>
-                <div style={{
-                  fontFamily: fontMono,
-                  fontSize: "0.72rem",
-                  color: dk.steelBright,
-                  fontWeight: 700,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.04em",
-                  marginBottom: "0.25rem",
-                }}>{item.label}</div>
-                <p style={{
-                  fontFamily: fontSans,
-                  fontSize: "0.82rem",
-                  color: dk.cream,
-                  lineHeight: 1.55,
-                  whiteSpace: "pre-line",
-                  margin: 0,
-                }}>{item.text}</p>
-              </div>
-            ))}
-          </div>
+          <p style={{ fontFamily: fontSans, fontSize: "0.84rem", color: dk.cream, lineHeight: 1.6, margin: "1.25rem 0 0", maxWidth: 760 }}>
+            Follow legislation while it can still change. Status colors describe procedure only: active movement, an approaching action, completion, inactivity, or source freshness that cannot yet be confirmed.
+          </p>
 
           {/* Stats bar */}
           {stats && (
