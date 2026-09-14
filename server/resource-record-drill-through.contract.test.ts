@@ -30,7 +30,7 @@ describe("Resource record drill-through", () => {
   it("serves both identity shapes from one detail endpoint", () => {
     expect(directoryRouter).toContain("gof_");
     expect(directoryRouter).toContain("getGovOfficeDetail");
-    expect(directoryRouter).toContain("getPublishableResourceDirectoryDetail");
+    expect(directoryRouter).toContain("get_publishable_resource_directory_detail");
   });
 
   it("carries attach-to-case through the commitment layer, hash-keyed and soft-remove", () => {

@@ -1,6 +1,12 @@
 import { useState, useMemo, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { getQueryKey } from "@trpc/react-query";
 import { useLocation, useSearch, Link } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { useCase } from "@/contexts/CaseContext";
+import { resolve_benefits_case_id } from "@shared/benefits-cascade-reference";
+import { tracked_benefit_program_ids } from "@shared/benefits-tracking-scope";
+import { Benefits_case_actions, Benefits_cascade_navigator } from "@/components/benefits/BenefitsCascadeNavigator";
 import { useAuth } from "@/core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,8 +34,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { CommitToCase, FlagArea } from "@/components/CommitToCase";
+import { FlagArea } from "@/components/CommitToCase";
 import { NextStepBar } from "@/components/NextStepBar";
+import { Benefits_directory_categories, Benefits_resource_sections } from "@/components/benefits/BenefitsResourceSections";
 import Benefits_registry_programs from "@/components/benefits/BenefitsRegistryPrograms";
 
 /* ─── Category Icons & Colors ─── */
@@ -275,8 +282,7 @@ function ProgramCard({
 
             {/* Commit to Case */}
             <div className="flex items-center gap-2 pt-1">
-              <CommitToCase type="benefit" itemId={program.program_id} label="Save to Case" />
-              <FlagArea location="benefits_navigator" targetId={program.program_id} targetType="benefit" message={`Review benefit: ${program.short_name || program.name}`} />
+              <FlagArea location="benefits_navigator" targetId={program.id} targetType="benefit" message={`Review benefit: ${program.short_name || program.name}`} />
             </div>
 
             {/* LumenSend Actions */}
@@ -284,13 +290,13 @@ function ProgramCard({
               <LumenSendButton
                 label="Apply via LumenSend"
                 type="application"
-                programId={program.program_id}
+                program_id={program.id}
                 state={stateDetected}
               />
               <LumenSendButton
                 label="Appeal Denial"
                 type="appeal"
-                programId={program.program_id}
+                program_id={program.id}
                 state={stateDetected}
                 variant="ghost"
               />
@@ -314,13 +320,13 @@ function ProgramCard({
 function LumenSendButton({
   label,
   type,
-  programId,
+  program_id,
   state,
   variant = "outline",
 }: {
   label: string;
   type: string;
-  programId?: string;
+  program_id?: string;
   state?: string | null;
   variant?: "outline" | "ghost";
 }) {
@@ -339,7 +345,7 @@ function LumenSendButton({
         e.stopPropagation();
         const params = new URLSearchParams();
         params.set("type", type);
-        if (programId) params.set("programId", programId);
+        if (program_id) params.set("programId", program_id);
         if (state) params.set("state", state);
         navigateTo(`/lumensend?${params.toString()}`);
       }}
@@ -493,14 +499,6 @@ function StateSelector({
 }
 
 
-type ProofEnvelope = Record<string, any> | any[] | null | undefined;
-
-type ResourceProofState = {
-  isLoading: boolean;
-  error: string | null;
-  payload: any;
-};
-
 const REAL_MODULE_LINKS = [
   { label: "Workshop Floor", href: "/workshop", icon: Wrench, station: "Pick a station. Move freely." },
   { label: "Control Room / Lighthouse", href: "/control-room", icon: Shield, station: "Case command" },
@@ -517,73 +515,6 @@ const REAL_MODULE_LINKS = [
   { label: "Filing Generator", href: "/filing-generator", icon: ClipboardList, station: "Shop Office" },
   { label: "Case Dashboard", href: "/workbench", icon: Building2, station: "Case workspace" },
 ];
-
-const BENEFITS_CATEGORY_GRID = [
-  { label: "Food Banks", status: "Active / verified", detail: "268 verified resources", tone: "border-green-500/30 bg-green-500/10 text-green-200" },
-  { label: "Benefits Offices", status: "Validation / unmapped", detail: "62 DSHS offices; geocoding pending", tone: "border-amber-500/30 bg-amber-500/10 text-amber-200" },
-  { label: "Healthcare", status: "Coming soon", detail: "Source not yet bridged", tone: "border-blue-500/20 bg-blue-500/5 text-blue-200" },
-  { label: "Legal Aid", status: "Coming soon", detail: "Source pending", tone: "border-sky-500/20 bg-sky-500/5 text-sky-200" },
-  { label: "Housing", status: "Validation pending", detail: "Bridge not locked", tone: "border-purple-500/20 bg-purple-500/5 text-purple-200" },
-  { label: "Nonprofits", status: "Quarantined", detail: "Needs validation", tone: "border-red-500/20 bg-red-500/5 text-red-200" },
-];
-
-function unwrapProofPayload(envelope: ProofEnvelope): any {
-  if (!envelope) return null;
-  const e: any = envelope;
-  return e?.result?.data?.json ?? e?.result?.data ?? e?.data?.json ?? e?.data ?? e;
-}
-
-function listFromProof(payload: any, keys: string[]): any[] {
-  if (Array.isArray(payload)) return payload;
-  for (const key of keys) {
-    const value = payload?.[key];
-    if (Array.isArray(value)) return value;
-  }
-  if (Array.isArray(payload?.items)) return payload.items;
-  if (Array.isArray(payload?.rows)) return payload.rows;
-  if (Array.isArray(payload?.resources)) return payload.resources;
-  if (Array.isArray(payload?.offices)) return payload.offices;
-  return [];
-}
-
-function numberFromProof(payload: any, fallback: number, keys: string[]): number {
-  for (const key of keys) {
-    const value = payload?.[key];
-    if (typeof value === "number" && Number.isFinite(value)) return value;
-    if (typeof value === "string" && value.trim() && Number.isFinite(Number(value))) return Number(value);
-  }
-  return fallback;
-}
-
-function useProofEndpoint(endpoint: string): ResourceProofState {
-  const [state, setState] = useState<ResourceProofState>({ isLoading: true, error: null, payload: null });
-
-  useEffect(() => {
-    let cancelled = false;
-    async function run() {
-      try {
-        const response = await fetch(`/api/trpc/${endpoint}`, { credentials: "same-origin" });
-        const text = await response.text();
-        const parsed = text ? JSON.parse(text) : null;
-        if (!cancelled) {
-          setState({ isLoading: false, error: response.ok ? null : `HTTP ${response.status}`, payload: unwrapProofPayload(parsed) });
-        }
-      } catch (error: any) {
-        if (!cancelled) setState({ isLoading: false, error: error?.message || "Proof endpoint unavailable", payload: null });
-      }
-    }
-    run();
-    return () => { cancelled = true; };
-  }, [endpoint]);
-
-  return state;
-}
-
-function formatResourceAddress(resource: any): string {
-  return [resource?.address_line1, resource?.address, resource?.city, resource?.state, resource?.postal_code]
-    .filter(Boolean)
-    .join(", ");
-}
 
 function BenefitsStationNav() {
   return (
@@ -619,175 +550,6 @@ function BenefitsStationNav() {
   );
 }
 
-function BenefitsCategoryNavigator() {
-  return (
-    <Card className="bg-card/50 border-border/50">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm flex items-center gap-2">
-          <Filter className="w-4 h-4 text-primary" />
-          Benefits category navigator
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {BENEFITS_CATEGORY_GRID.map((cat) => (
-            <div key={cat.label} className="rounded-lg border border-border/50 bg-background/30 p-3">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <h3 className="text-sm font-medium text-foreground">{cat.label}</h3>
-                  <p className="text-[11px] text-muted-foreground mt-1">{cat.detail}</p>
-                </div>
-                <Badge variant="outline" className={cn("text-[10px] whitespace-nowrap", cat.tone)}>{cat.status}</Badge>
-              </div>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function ResourceDirectoryProofSection({ proof }: { proof: ResourceProofState }) {
-  const payload = proof.payload;
-  const resources = listFromProof(payload, ["resources", "foodBanks", "food_banks", "items", "rows"]);
-  const total = numberFromProof(payload, 268, ["verifiedTotal", "verified_total", "total", "count", "rawRecords", "raw_records"]);
-  const visible = resources.slice(0, 20);
-
-  return (
-    <Card className="bg-card/50 border-border/50" data-proof-hook="civicMapResourceProof benefitsResourceDirectoryProof">
-      <CardHeader className="pb-2">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Utensils className="w-4 h-4 text-green-400" />
-              Food Bank Resource Directory
-            </CardTitle>
-            <p className="text-xs text-muted-foreground mt-1">Showing 20 of {total} verified resources.</p>
-          </div>
-          <Link href="/civic-map?layer=food_banks">
-            <Button size="sm" variant="outline" className="text-xs shrink-0">
-              <MapPin className="w-3.5 h-3.5 mr-1" />
-              View Food Banks on CivicMap
-            </Button>
-          </Link>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="max-h-[420px] overflow-y-auto pr-1 space-y-2 border border-border/30 rounded-lg p-2 bg-background/20">
-          {proof.isLoading && <p className="text-xs text-muted-foreground p-3">Loading verified food-bank proof...</p>}
-          {!proof.isLoading && visible.length === 0 && (
-            <p className="text-xs text-muted-foreground p-3">Verified resource count is preserved; live resource-card sample is unavailable from the proof response.</p>
-          )}
-          {visible.map((resource: any, index: number) => (
-            <div key={resource?.id ?? resource?.name ?? index} className="rounded-md border border-border/40 bg-card/40 p-3">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-medium text-foreground">{resource?.name || resource?.title || `Verified food-bank resource ${index + 1}`}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{formatResourceAddress(resource) || resource?.description || "Verified food assistance resource"}</p>
-                </div>
-                <Badge variant="outline" className="text-[10px] bg-green-500/10 border-green-500/30 text-green-300">Verified</Badge>
-              </div>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function DshsOfficeValidationSection({ proof }: { proof: ResourceProofState }) {
-  const payload = proof.payload;
-  const offices = listFromProof(payload, ["offices", "resources", "items", "rows", "normalizedRecords"]);
-  const total = numberFromProof(payload, 62, ["mapped", "normalizedRecords", "normalized_records", "rawRecords", "raw_records", "total", "count"]);
-  const precisionBreakdown = (payload as any)?.precisionBreakdown || { rooftop: 53, street: 9 };
-  const rooftopCount = Number(precisionBreakdown?.rooftop ?? 53);
-  const streetCount = Number(precisionBreakdown?.street ?? 9);
-  const visible = offices.slice(0, 62);
-
-  return (
-    <Card className="bg-card/50 border-border/50" data-proof-hook="benefitsDshsOfficeProof">
-      <CardHeader className="pb-2">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-violet-300" />
-              Benefits Offices — Validation Layer
-            </CardTitle>
-            <p className="text-xs text-muted-foreground mt-1">Validation layer — geocoded, not full statewide benefits navigator.</p>
-            <p className="text-xs text-violet-200/90 mt-1">{total} mapped offices · precision: {rooftopCount} rooftop, {streetCount} street.</p>
-          </div>
-          <Badge variant="outline" className="text-[10px] bg-violet-500/10 border-violet-500/30 text-violet-200">GEOCODED_VALIDATION_LAYER</Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="max-h-[420px] overflow-y-auto pr-1 space-y-2 border border-border/30 rounded-lg p-2 bg-background/20">
-          {proof.isLoading && <p className="text-xs text-muted-foreground p-3">Loading DSHS validation proof...</p>}
-          {!proof.isLoading && visible.length === 0 && (
-            <p className="text-xs text-muted-foreground p-3">62 DSHS normalized records are proven; address-card sample is unavailable from the proof response.</p>
-          )}
-          <Link href="/civic-map?layer=dshs_offices">
-            <Button variant="outline" size="sm" className="w-full justify-between border-violet-500/30 text-violet-100 hover:bg-violet-500/10">
-              View DSHS Offices on CivicMap
-              <Map className="w-3.5 h-3.5" />
-            </Button>
-          </Link>
-          {visible.map((office: any, index: number) => {
-            const hasPhone = Boolean(office?.phone || office?.telephone);
-            const hasCoords = office?.latitude != null && office?.longitude != null;
-            return (
-              <div key={office?.id ?? office?.name ?? index} className="rounded-md border border-border/40 bg-card/40 p-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground">{office?.name || office?.title || `DSHS benefits office record ${index + 1}`}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{office?.address_line1 || office?.address || "Address listed"}</p>
-                    <p className="text-xs text-muted-foreground/80">{[office?.city, office?.state, office?.postal_code].filter(Boolean).join(", ") || "Washington"}</p>
-                    <p className="text-[11px] text-violet-200/90 mt-1">{hasCoords ? "GEOCODED_VALIDATION_LAYER — directions enabled." : "Address listed — mapping pending."}</p>
-                  </div>
-                  <div className="flex flex-col gap-1 items-end shrink-0">
-                    <Badge variant="outline" className="text-[10px] bg-violet-500/10 border-violet-500/30 text-violet-200">{office?.geocode_precision || "mapped"}</Badge>
-                    {hasPhone && <a href={`tel:${office.phone || office.telephone}`} className="text-[10px] text-primary hover:underline">Call</a>}
-                    {hasCoords && <a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${office.latitude},${office.longitude}`)}`} target="_blank" rel="noreferrer" className="text-[10px] text-violet-200 hover:underline">Directions</a>}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        <details className="rounded-lg border border-border/40 bg-background/30 p-3">
-          <summary className="cursor-pointer text-xs font-medium text-foreground">Technical proof: benefitsDshsOfficeProof</summary>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3 text-[11px] text-muted-foreground">
-            <p><strong className="text-foreground">endpoint/hook:</strong> benefitsDshsOfficeProof</p>
-            <p><strong className="text-foreground">source_key:</strong> wa_dshs_office_locator</p>
-            <p><strong className="text-foreground">raw records:</strong> {total}</p>
-            <p><strong className="text-foreground">normalized records:</strong> {total}</p>
-            <p><strong className="text-foreground">geocode_precision:</strong> {rooftopCount} rooftop, {streetCount} street</p>
-            <p><strong className="text-foreground">status:</strong> GEOCODED_VALIDATION_LAYER</p>
-          </div>
-        </details>
-      </CardContent>
-    </Card>
-  );
-}
-
-function StagedCaseActions({ caseId }: { caseId?: number }) {
-  return (
-    <Card className="bg-card/50 border-border/50">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm flex items-center gap-2"><ClipboardList className="w-4 h-4 text-primary" />Staged case-building actions</CardTitle>
-        {!caseId && <p className="text-xs text-amber-200">CASE_CONTEXT_BRIDGE_MISSING</p>}
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-          <Button variant="outline" disabled={!caseId} className="justify-start text-xs">Save to Case</Button>
-          <Button variant="outline" disabled={!caseId} className="justify-start text-xs">Link to Current Case</Button>
-          <Button variant="outline" onClick={() => { window.location.href = "/resolve"; }} className="justify-start text-xs">Open Case Resolution</Button>
-          <Button variant="outline" onClick={() => { window.location.href = "/guided-intake"; }} className="justify-start text-xs">Open Guided Intake</Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
 /* ─── Main Benefits Navigator Page ─── */
 
 export default function BenefitsNavigator() {
@@ -801,7 +563,12 @@ export default function BenefitsNavigator() {
   const pipelineCategory = params.get("category") || undefined;
   const pipelineId = params.get("pipeline") || undefined;
   const initialState = params.get("state") || null;
-  const caseId = params.get("caseId") ? parseInt(params.get("caseId")!) : undefined;
+  const { currentCaseId: current_case_id, cases: available_cases, setCurrentCaseId: set_current_case_id } = useCase();
+  const requested_case_id = params.get("case_id") ?? params.get("caseId");
+  const case_id = resolve_benefits_case_id(requested_case_id, current_case_id, available_cases);
+  useEffect(() => {
+    if (case_id && case_id !== current_case_id) set_current_case_id(case_id);
+  }, [case_id, current_case_id, set_current_case_id]);
 
   // State
   const [situationText, setSituationText] = useState(initialText);
@@ -812,13 +579,11 @@ export default function BenefitsNavigator() {
   const [hasSearched, setHasSearched] = useState(!!initialText);
   const [selectedState, setSelectedState] = useState<string | null>(initialState);
   const [detectedState, setDetectedState] = useState<string | null>(null);
-  const [trackedProgramIds, setTrackedProgramIds] = useState<Set<string>>(new Set());
   const [browseCategoryKeyword, setBrowseCategoryKeyword] = useState<string | null>(null);
 
   // Queries
   const { data: categories } = trpc.benefits.categories.useQuery();
-  const civicMapProof = useProofEndpoint("civicMapResourceProof");
-  const dshsOfficeProof = useProofEndpoint("benefitsDshsOfficeProof");
+
 
   const { data: matchResults, isLoading: isMatching, refetch: refetchMatches } = trpc.benefits.match.useQuery(
     {
@@ -832,13 +597,24 @@ export default function BenefitsNavigator() {
 
   // Track existing applications
   const { data: existingApps } = trpc.benefitApps.list.useQuery(
-    caseId ? { caseId } : undefined,
+    case_id ? { caseId: case_id } : undefined,
     { enabled: !!user },
+  );
+  const query_client = useQueryClient();
+  // Derive badges from each record's case, including while the next query loads.
+  const tracked_program_ids = useMemo(
+    () => tracked_benefit_program_ids(user ? existingApps : undefined, case_id),
+    [existingApps, case_id, user],
   );
 
   const createApp = trpc.benefitApps.create.useMutation({
-    onSuccess: (app) => {
-      setTrackedProgramIds((prev) => new Set([...prev, app.programId]));
+    onSuccess: (app, submitted) => {
+      // Mutation variables belong to this submission, even if the selected case changed.
+      const submitted_case_id = submitted.caseId ?? null;
+      void query_client.invalidateQueries({
+        queryKey: getQueryKey(trpc.benefitApps.list, submitted_case_id ? { caseId: submitted_case_id } : undefined, "query"),
+        exact: true,
+      });
       toast.success("Application tracking started", {
         description: `You're now tracking your ${app.programName} application.`,
       });
@@ -847,13 +623,6 @@ export default function BenefitsNavigator() {
       toast.error("Failed to start tracking");
     },
   });
-
-  // Sync tracked programs from existing apps
-  useEffect(() => {
-    if (existingApps) {
-      setTrackedProgramIds(new Set(existingApps.map((a: any) => a.programId)));
-    }
-  }, [existingApps]);
 
   // Detect state from match results
   useEffect(() => {
@@ -931,10 +700,14 @@ export default function BenefitsNavigator() {
       toast.error("Please sign in to track applications");
       return;
     }
+    if (requested_case_id !== null && !case_id) {
+      toast.error("Choose a case you own before linking this application");
+      return;
+    }
     createApp.mutate({
       programId: program.id,
       programName: program.short_name || program.name,
-      caseId,
+      caseId: case_id ?? undefined,
       stateCode: selectedState || detectedState || undefined,
       applicationUrl: program.website || undefined,
       documentsNeeded: program.documents_needed || [],
@@ -1001,10 +774,14 @@ export default function BenefitsNavigator() {
 
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
         <BenefitsStationNav />
-        <BenefitsCategoryNavigator />
-        <ResourceDirectoryProofSection proof={civicMapProof} />
-        <DshsOfficeValidationSection proof={dshsOfficeProof} />
-        <StagedCaseActions caseId={caseId} />
+        <Benefits_case_actions case_id={case_id} state_code={selectedState} />
+        <Benefits_cascade_navigator case_id={case_id} state_code={selectedState} initial_scenario_id={params.get("cascade")} on_benefit_search={(query, resource_query) => {
+          setSituationText(query);
+          setSearchQuery("");
+          setBrowseCategoryKeyword(resource_query);
+          setSelectedCategories(new Set());
+          setHasSearched(true);
+        }} />
 
         {/* Search / Situation Input */}
         <Card className="bg-card/50 border-border/50">
@@ -1194,7 +971,7 @@ export default function BenefitsNavigator() {
                   isExpanded={expandedCards.has(match.program.id)}
                   onToggle={() => toggleCard(match.program.id)}
                   onTrackApplication={user ? () => handleTrackApplication(match.program) : undefined}
-                  isTracked={trackedProgramIds.has(match.program.id)}
+                  isTracked={tracked_program_ids.has(match.program.id)}
                 />
               ))}
             </div>
@@ -1212,8 +989,7 @@ export default function BenefitsNavigator() {
                   Not finding what you need?
                 </p>
                 <p className="text-xs text-muted-foreground/70 mt-1 mb-3">
-                  Call <strong className="text-foreground">2-1-1</strong> from any phone — it's free, confidential, and available 24/7.
-                  They can connect you with local resources in your area.
+                  Check whether <strong className="text-foreground">2-1-1</strong> serves your location and what hours your local service is available.
                 </p>
                 <div className="flex items-center justify-center gap-3">
                   <a
@@ -1274,9 +1050,11 @@ export default function BenefitsNavigator() {
             </div>
           </div>
         )}
+        <Benefits_directory_categories state_code={selectedState} />
+        <Benefits_resource_sections />
       </div>
       <NextStepBar
-        context="Benefits identified. Save relevant programs to your case or continue building your strategy."
+        context="Review the available programs and resources. You can track an application or continue building your case."
         steps={[
           { label: "Control Room", href: "/control-room", icon: "map", variant: "primary", description: "Review your full committed case state" },
           { label: "Procedural Paths", href: "/enforcement-pathway", icon: "scale", description: "Choose your enforcement route" },

@@ -1,0 +1,120 @@
+[
+  {
+    "description": "File wage complaint with DOL Wage & Hour Division. Federal investigator conducts audit, seeks back wages, penalties.",
+    "domain": "Administrative Investigation",
+    "id": "8630009b-f315-4667-992f-63cca3827dcd",
+    "jurisdiction": "federal",
+    "metadata": {
+      "bucket": "federal_pathways",
+      "dataset_metadata": {
+        "claim_types": 14,
+        "created": "2026-04-12",
+        "jurisdictions": 57,
+        "loading_strategy": "all_simultaneous_no_geographic_favoritism",
+        "note": "Every jurisdiction loaded equally. No state gets special treatment. Red/blue/purple states identical process quality.",
+        "total_pathways": 450,
+        "version": "1.0"
+      },
+      "ingest_batch": "luminari_full_backbone_2026_05_08",
+      "original_record": {
+        "_key": "dol_wage_hour_model",
+        "agency": "Department of Labor - Wage & Hour Division",
+        "availability": "all_jurisdictions",
+        "barriers": [
+          "Employer retaliation risk (covered but requires separate complaint)",
+          "Investigation lag time"
+        ],
+        "benefits": [
+          "Free federal enforcement",
+          "Mandatory penalties",
+          "Liquidated damages automatic",
+          "Attorney fees covered"
+        ],
+        "claim_types": [
+          "wage_theft",
+          "wrongful_termination_retaliation"
+        ],
+        "description": "File wage complaint with DOL Wage & Hour Division. Federal investigator conducts audit, seeks back wages, penalties.",
+        "historical_success_rate": "DOL recovers back wages in ~70% of complaints; federal enforcement mandatory",
+        "key_deadlines": [
+          {
+            "deadline": "3 years",
+            "description": "FLSA statute of limitations for back wages (2 years for willful, 3 years for collective)"
+          },
+          {
+            "deadline": "No filing deadline if within 3-year window",
+            "description": "No administrative deadline to file complaint"
+          }
+        ],
+        "model_type": "Administrative Investigation",
+        "pathway_id": "fed_dol_001",
+        "process_steps": [
+          {
+            "actions": [
+              "Describe unpaid wages, hours worked, pay rate, employer contact"
+            ],
+            "description": "File wage complaint online, by phone, or in writing with DOL Wage & Hour Division",
+            "name": "Complaint Filing",
+            "step": 1,
+            "timeline": "1 day"
+          },
+          {
+            "actions": [
+              "Provide time records, pay stubs, email evidence"
+            ],
+            "description": "DOL investigator audits employer payroll, interviews worker, calculates back wages",
+            "name": "Investigation",
+            "step": 2,
+            "timeline": "3-12 months"
+          },
+          {
+            "actions": [
+              "Negotiate settlement if employer disputes; DOL enforces"
+            ],
+            "description": "Investigator presents findings. Employer must pay back wages + penalties or dispute.",
+            "name": "Determination & Settlement",
+            "step": 3,
+            "timeline": "6 months after investigation start"
+          }
+        ],
+        "typical_outcomes": [
+          "Back wages recovered",
+          "Liquidated damages (equal to back wages)",
+          "Penalties ($50-100/violation)",
+          "Attorney fees mandatory"
+        ]
+      },
+      "source_file": "enforcement_pathway_models_complete.json",
+      "source_pending": true,
+      "source_sha256": "fb0fb5981a0517aaf14c9ad14ef1c13bcea91ca3caaa4d85810b162e222d9777",
+      "source_url": null
+    },
+    "pathway_id": "fed_dol_001",
+    "pathway_name": "Department of Labor - Wage & Hour Division",
+    "source_url": null
+  },
+  {
+    "description": null,
+    "domain": "wage_theft",
+    "id": "e27c8480-7ef3-4bc2-a9a0-75be3cf29198",
+    "jurisdiction": "Colorado",
+    "metadata": {
+      "bucket": "state_labor_board_pathways",
+      "original_record": {
+        "agency": "Colorado Department of Labor and Employment",
+        "pathway_id": "state_wage_co",
+        "remedies": {
+          "back_wages": "100%",
+          "damages": "penalty 35% of unpaid wages"
+        },
+        "statute_of_limitations": "3 years",
+        "success_rate": "72%"
+      },
+      "source_file": "enforcement_pathway_models_complete.json",
+      "source_key": "colorado"
+    },
+    "pathway_id": "state_wage_co",
+    "pathway_name": "Colorado Department of Labor and Employment",
+    "source_url": null
+  }
+]

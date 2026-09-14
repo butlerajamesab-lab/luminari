@@ -50,7 +50,7 @@ describe("runtime router/live schema compatibility", () => {
     expect(reader).not.toContain("statuteCitation");
   });
 
-  it("projects proof frameworks from live snake-case storage into camel DTOs", () => {
+  it("keeps proof references in snake_case with explicit source review status", () => {
     expect(architecture_router).toContain("from public.proof_frameworks");
     expect(architecture_router).toContain("claim_type");
     expect(architecture_router).toContain("elements_of_proof");
@@ -58,15 +58,15 @@ describe("runtime router/live schema compatibility", () => {
     expect(architecture_router).toContain("required_causation");
     expect(architecture_router).toContain("typical_evidence");
     expect(architecture_router).toContain("common_defenses");
-    expect(architecture_router).toContain("claimType: String(row.claim_type");
+    expect(architecture_router).toContain("claim_type: String(row.claim_type");
     expect(architecture_router).toContain(
-      "elementsOfProof: parseProofList(row.elements_of_proof)",
+      "elements_of_proof: parse_proof_list(row.elements_of_proof)",
     );
     expect(architecture_router).toContain(
-      "typicalEvidence: parseProofList(row.typical_evidence)",
+      "typical_evidence: parse_proof_list(row.typical_evidence)",
     );
     expect(architecture_router).toContain(
-      "commonDefenses: parseProofList(row.common_defenses)",
+      "common_defenses: parse_proof_list(row.common_defenses)",
     );
   });
 });

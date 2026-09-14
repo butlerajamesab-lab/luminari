@@ -547,18 +547,19 @@ function ResourceCard({ resource }: { resource: DirectoryResource }) {
 
 export default function ResourceDirectory() {
   const [, navigate] = useLocation();
-  const initialParams = useMemo(
+  const initial_params = useMemo(
     () => new URLSearchParams(window.location.search),
     [],
   );
   const [queryDraft, setQueryDraft] = useState(
-    initialParams.get("query") || "",
+    initial_params.get("query") || "",
   );
-  const [query, setQuery] = useState(initialParams.get("query") || "");
-  const [jurisdiction, setJurisdiction] = useState(
-    initialParams.get("jurisdiction") || "",
+  const [query, setQuery] = useState(initial_params.get("query") || "");
+  const initial_jurisdiction = (initial_params.get("jurisdiction") || "").trim().toUpperCase();
+  const [jurisdiction, set_jurisdiction] = useState(
+    initial_jurisdiction === "USVI" ? "VI" : initial_jurisdiction,
   );
-  const [category, setCategory] = useState(initialParams.get("category") || "");
+  const [category, setCategory] = useState(initial_params.get("category") || "");
   const [page, setPage] = useState(0);
 
   const directoryQuery = trpc.resourceDirectory.search.useQuery(
@@ -612,7 +613,7 @@ export default function ResourceDirectory() {
   function clearFilters() {
     setQueryDraft("");
     setQuery("");
-    setJurisdiction("");
+    set_jurisdiction("");
     setCategory("");
     setPage(0);
   }
@@ -691,7 +692,7 @@ export default function ResourceDirectory() {
               <select
                 value={jurisdiction}
                 onChange={(event) => {
-                  setJurisdiction(event.target.value);
+                  set_jurisdiction(event.target.value);
                   setPage(0);
                 }}
                 aria-label="Filter by jurisdiction"
@@ -728,7 +729,7 @@ export default function ResourceDirectory() {
                 },
                 {
                   value: summary?.resources_with_locations,
-                  label: "with reviewed location context",
+                  label: "with source address context",
                 },
               ].map((stat) => (
                 <div

@@ -62,7 +62,7 @@ const JURISDICTION_STORAGE_KEY = "luminari-jurisdiction";
 
 /** Known jurisdictions for autocomplete */
 const KNOWN_JURISDICTIONS = [
-  "Federal", "WA", "CA", "NY", "TX", "FL", "IL",
+  "Federal", "WA", "CA", "NY", "TX", "FL", "IL", "AS", "GU", "MP", "PR", "VI",
   "Federal/State", "Tribal/Federal",
   "AK", "AL", "AR", "AZ", "CO", "CT", "DC", "DE",
   "GA", "HI", "IA", "ID", "IN", "KS", "KY", "LA",
@@ -72,44 +72,33 @@ const KNOWN_JURISDICTIONS = [
   "VA", "VT", "WI", "WV", "WY",
 ];
 
-/** Attempt to extract jurisdiction from case domain string */
-function inferJurisdictionFromDomain(domain: string | null | undefined): string | null {
-  if (!domain) return null;
-  const d = domain.trim();
-  // Check for state abbreviations (e.g. "SDNY" → NY, "WA" → WA)
-  const stateMatch = d.match(/\b([A-Z]{2})\b/);
-  if (stateMatch) {
-    const abbr = stateMatch[1];
-    if (KNOWN_JURISDICTIONS.includes(abbr)) return abbr;
-  }
-  // Check for state names
-  const stateNames: Record<string, string> = {
-    "washington": "WA", "california": "CA", "new york": "NY", "texas": "TX",
-    "florida": "FL", "illinois": "IL", "oregon": "OR", "ohio": "OH",
-    "michigan": "MI", "georgia": "GA", "pennsylvania": "PA",
-    "colorado": "CO", "arizona": "AZ", "minnesota": "MN",
-  };
-  const lower = d.toLowerCase();
-  for (const [name, abbr] of Object.entries(stateNames)) {
-    if (lower.includes(name)) return abbr;
-  }
-  // Check for federal indicators
-  if (/\b(federal|SDNY|EDNY|CDCA|NDCA|SDTX)\b/i.test(d)) return "Federal";
-  return null;
-}
-
 export default function CaseResolutionLens() {
   const [, navigate] = useLocation();
-  const { currentCase } = useCase();
+  const { currentCase: current_case, currentCaseId: current_case_id, isLoading: case_context_loading } = useCase();
   const [step, setStep] = useState<PipelineStep>("problem");
-  const [problemText, setProblemText] = useState("");
-  const [jurisdiction, setJurisdiction] = useState("");
-  const [jurisdictionSource, setJurisdictionSource] = useState<"auto" | "manual" | "stored">("manual");
+  const [problem_text, set_problem_text] = useState("");
+  const [jurisdiction, set_jurisdiction] = useState("");
+  const [jurisdiction_source, set_jurisdiction_source] = useState<"manual" | "stored" | "link">("manual");
+  const previous_jurisdiction_case_id = useRef<number | null | undefined>(undefined);
   const [showJurisdictionSuggestions, setShowJurisdictionSuggestions] = useState(false);
   const jurisdictionRef = useRef<HTMLDivElement>(null);
-  const [selectedClaimType, setSelectedClaimType] = useState("");
-  const [selectedDomain, setSelectedDomain] = useState("");
+  const [selected_claim_type, set_selected_claim_type] = useState("");
+  const [selected_domain, set_selected_domain] = useState("");
   const [graphExpanded, setGraphExpanded] = useState(false);
+  const [deadline_forum, set_deadline_forum] = useState("");
+  const [deadline_trigger_event, set_deadline_trigger_event] = useState("");
+  const [deadline_event_date, set_deadline_event_date] = useState("");
+
+  useEffect(() => {
+    set_deadline_forum("");
+    set_deadline_trigger_event("");
+    set_deadline_event_date("");
+  }, [current_case_id, selected_claim_type]);
+
+  useEffect(() => {
+    const claim_type = new URLSearchParams(window.location.search).get("claim_type");
+    if (claim_type) { set_selected_claim_type(claim_type); setStep("proof"); }
+  }, []);
 
   // ─── Evidence Layer State ───
   const [showAddEvidence, setShowAddEvidence] = useState(false);
@@ -117,31 +106,37 @@ export default function CaseResolutionLens() {
   const [linkingEvidenceId, setLinkingEvidenceId] = useState<number | null>(null);
   const [linkingElement, setLinkingElement] = useState<{ frameworkId: number; elementNumber: number } | null>(null);
 
-  // ─── Jurisdiction Auto-Detection ───
-  // Priority: 1) Previously stored, 2) Case context, 3) Empty (manual)
+  // Jurisdiction from a link is user-supplied context, not case metadata.
+  // CaseContext has no authoritative jurisdiction field. A remembered value must
+  // never silently become a new case's jurisdiction.
   useEffect(() => {
-    // Check localStorage first
-    const stored = localStorage.getItem(JURISDICTION_STORAGE_KEY);
-    if (stored) {
-      setJurisdiction(stored);
-      setJurisdictionSource("stored");
+    if (case_context_loading) return;
+    const first_context = previous_jurisdiction_case_id.current === undefined;
+    const case_changed = !first_context && previous_jurisdiction_case_id.current !== current_case_id;
+    previous_jurisdiction_case_id.current = current_case_id;
+    if (case_changed) {
+      set_jurisdiction("");
+      set_jurisdiction_source("manual");
       return;
     }
-    // Try to infer from current case domain
-    if (currentCase) {
-      const inferred = inferJurisdictionFromDomain((currentCase as any).domain);
-      if (inferred) {
-        setJurisdiction(inferred);
-        setJurisdictionSource("auto");
-        return;
-      }
+    if (!first_context) return;
+    const requested_jurisdiction = new URLSearchParams(window.location.search).get("jurisdiction");
+    if (requested_jurisdiction && KNOWN_JURISDICTIONS.includes(requested_jurisdiction)) {
+      set_jurisdiction(requested_jurisdiction);
+      set_jurisdiction_source("link");
+      return;
     }
-  }, [currentCase]);
+    const stored = current_case_id == null ? localStorage.getItem(JURISDICTION_STORAGE_KEY) : null;
+    if (stored) {
+      set_jurisdiction(stored);
+      set_jurisdiction_source("stored");
+    }
+  }, [current_case_id, case_context_loading]);
 
   // Persist jurisdiction when user changes it
-  function updateJurisdiction(value: string) {
-    setJurisdiction(value);
-    setJurisdictionSource("manual");
+  function update_jurisdiction(value: string) {
+    set_jurisdiction(value);
+    set_jurisdiction_source("manual");
     if (value) {
       localStorage.setItem(JURISDICTION_STORAGE_KEY, value);
     } else {
@@ -170,47 +165,62 @@ export default function CaseResolutionLens() {
   const stepIndex = PIPELINE_ORDER.indexOf(step);
 
   // ─── Queries ───
-  const claimsQuery = trpc.dualLens.matchClaims.useQuery(
-    { problemDescription: problemText, jurisdiction: jurisdiction || undefined },
-    { enabled: step !== "problem" && problemText.length > 4 }
+  const claims_query = trpc.dualLens.match_claims.useQuery(
+    { problem_description: problem_text, jurisdiction: jurisdiction || undefined, category: selected_domain || undefined },
+    { enabled: step !== "problem" && problem_text.length > 4 }
   );
 
-  const proofQuery = trpc.dualLens.getProofChecklist.useQuery(
-    { claimType: selectedClaimType, domain: selectedDomain || undefined },
-    { enabled: step === "proof" && !!selectedClaimType }
+  const proof_query = trpc.dualLens.get_proof_checklist.useQuery(
+    { claim_type: selected_claim_type, domain: selected_domain || undefined },
+    { enabled: step === "proof" && !!selected_claim_type }
   );
 
-  const barrierQuery = trpc.dualLens.getBarrierAlerts.useQuery(
-    { claimType: selectedClaimType, jurisdiction: jurisdiction || undefined },
-    { enabled: step === "barriers" && !!selectedClaimType }
+  useEffect(() => {
+    const reference = proof_query.data?.source_reference;
+    if (reference && (reference.claim_type_id === selected_claim_type || reference.source_claim_id === selected_claim_type)) {
+      set_selected_domain(reference.domain);
+    }
+  }, [proof_query.data?.source_reference, selected_claim_type]);
+
+  const barrier_query = trpc.dualLens.get_barrier_alerts.useQuery(
+    { claim_type: selected_claim_type, jurisdiction: jurisdiction || undefined, domain: selected_domain || undefined },
+    { enabled: step === "barriers" && !!selected_claim_type }
   );
 
-  const agencyQuery = trpc.dualLens.findAgencyAndForum.useQuery(
-    { claimType: selectedClaimType, jurisdiction: jurisdiction || "Federal", domain: selectedDomain || undefined },
-    { enabled: step === "agency" && !!selectedClaimType }
+  const agency_query = trpc.dualLens.find_agency_and_forum.useQuery(
+    {
+      claim_type: selected_claim_type, jurisdiction, domain: selected_domain || undefined,
+      forum: deadline_forum || undefined, trigger_event: deadline_trigger_event || undefined,
+      event_date: deadline_event_date || undefined,
+    },
+    { enabled: step === "agency" && !!selected_claim_type }
   );
 
-  const actionQuery = trpc.dualLens.getNextAction.useQuery(
-    { claimType: selectedClaimType, jurisdiction: jurisdiction || "Federal", domain: selectedDomain || undefined },
-    { enabled: step === "action" && !!selectedClaimType }
+  const action_query = trpc.dualLens.get_next_action.useQuery(
+    {
+      claim_type: selected_claim_type, jurisdiction, domain: selected_domain || undefined,
+      forum: deadline_forum || undefined, trigger_event: deadline_trigger_event || undefined,
+      event_date: deadline_event_date || undefined,
+    },
+    { enabled: step === "action" && !!selected_claim_type }
   );
 
   const graphQuery = trpc.dualLens.expandNode.useQuery(
-    { nodeId: selectedClaimType, nodeType: "claim" },
-    { enabled: graphExpanded && !!selectedClaimType }
+    { nodeId: selected_claim_type, nodeType: "claim" },
+    { enabled: graphExpanded && !!selected_claim_type }
   );
 
   // Evidence queries (enabled when on proof step with a case)
   const evidenceListQuery = trpc.evidenceLayer.list.useQuery(
-    { caseId: currentCase?.id ?? 0 },
-    { enabled: !!currentCase && (step === "proof" || step === "action") }
+    { caseId: current_case?.id ?? 0 },
+    { enabled: !!current_case && (step === "proof" || step === "action") }
   );
 
   // Evidence coverage per framework
-  const firstFrameworkId = proofQuery.data?.frameworks?.[0]?.id;
+  const firstFrameworkId = proof_query.data?.frameworks?.[0]?.id;
   const coverageQuery = trpc.evidenceLayer.coverage.useQuery(
-    { caseId: currentCase?.id ?? 0, frameworkId: firstFrameworkId ?? 0 },
-    { enabled: !!currentCase && !!firstFrameworkId && step === "proof" }
+    { caseId: current_case?.id ?? 0, frameworkId: firstFrameworkId ?? 0 },
+    { enabled: !!current_case && !!firstFrameworkId && step === "proof" }
   );
 
   const addEvidenceMutation = trpc.evidenceLayer.create.useMutation({
@@ -247,12 +257,13 @@ export default function CaseResolutionLens() {
     if (prev) setStep(prev);
   }
   function startResolution() {
-    if (problemText.trim().length > 4) {
+    if (problem_text.trim().length > 4) {
       setStep("claims");
     }
   }
-  function selectClaim(claimType: string) {
-    setSelectedClaimType(claimType);
+  function select_claim(claim_type: string, domain?: string) {
+    set_selected_claim_type(claim_type);
+    set_selected_domain(domain ?? "");
     setStep("proof");
   }
 
@@ -319,8 +330,8 @@ export default function CaseResolutionLens() {
               <CardContent className="pt-6 space-y-4">
                 <Textarea
                   placeholder="Example: My landlord refused to rent to me because I use a wheelchair. I applied for an apartment and was told they don't accommodate disabled tenants..."
-                  value={problemText}
-                  onChange={(e) => setProblemText(e.target.value)}
+                  value={problem_text}
+                  onChange={(e) => set_problem_text(e.target.value)}
                   className="min-h-[140px] text-base resize-none"
                   autoFocus
                 />
@@ -330,20 +341,20 @@ export default function CaseResolutionLens() {
                       <Input
                         placeholder="State or jurisdiction (e.g., WA, California, Federal)"
                         value={jurisdiction}
-                        onChange={(e) => updateJurisdiction(e.target.value)}
+                        onChange={(e) => update_jurisdiction(e.target.value)}
                         onFocus={() => setShowJurisdictionSuggestions(true)}
                         className={`text-sm pr-20 ${
-                          jurisdictionSource === "auto" ? "border-cyan-500/30" :
-                          jurisdictionSource === "stored" ? "border-emerald-500/30" : ""
+                          jurisdiction_source === "link" ? "border-cyan-500/30" :
+                          jurisdiction_source === "stored" ? "border-emerald-500/30" : ""
                         }`}
                       />
-                      {jurisdiction && jurisdictionSource !== "manual" && (
+                      {jurisdiction && jurisdiction_source !== "manual" && (
                         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                           <Badge variant="outline" className={`text-[9px] ${
-                            jurisdictionSource === "auto" ? "border-cyan-500/30 text-cyan-400" :
+                            jurisdiction_source === "link" ? "border-cyan-500/30 text-cyan-400" :
                             "border-emerald-500/30 text-emerald-400"
                           }`}>
-                            {jurisdictionSource === "auto" ? "from case" : "remembered"}
+                            {jurisdiction_source === "link" ? "from link; confirm" : "remembered; confirm"}
                           </Badge>
                         </div>
                       )}
@@ -354,7 +365,7 @@ export default function CaseResolutionLens() {
                           <button
                             key={j}
                             onClick={() => {
-                              updateJurisdiction(j);
+                              update_jurisdiction(j);
                               setShowJurisdictionSuggestions(false);
                             }}
                             className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
@@ -367,7 +378,7 @@ export default function CaseResolutionLens() {
                   </div>
                   <Button
                     onClick={startResolution}
-                    disabled={problemText.trim().length < 5}
+                    disabled={problem_text.trim().length < 5}
                     size="lg"
                     className="gap-2"
                   >
@@ -375,7 +386,7 @@ export default function CaseResolutionLens() {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground text-center">
-                  Your description stays private. We match keywords against 97 legal claim types.
+                  We search the existing claim catalog and its individually reviewed source references. Matches are topics to explore; legal applicability still needs review.
                 </p>
               </CardContent>
             </Card>
@@ -393,7 +404,7 @@ export default function CaseResolutionLens() {
                   <button
                     key={cat.label}
                     onClick={() => {
-                      setProblemText(cat.query);
+                      set_problem_text(cat.query);
                       setStep("claims");
                     }}
                     className="flex items-center gap-2 p-3 rounded-lg border border-border/50 hover:border-primary/30 hover:bg-primary/5 transition-all text-left text-sm"
@@ -412,39 +423,35 @@ export default function CaseResolutionLens() {
           <div className="space-y-6">
             <StepHeader
               title="Matching Legal Claims"
-              description={`Based on: "${problemText.slice(0, 80)}${problemText.length > 80 ? "..." : ""}"`}
+              description={`Based on: "${problem_text.slice(0, 80)}${problem_text.length > 80 ? "..." : ""}"`}
               onBack={goBack}
             />
 
-            {claimsQuery.isLoading ? (
+            {claims_query.isLoading ? (
               <LoadingState message="Searching claim catalog..." />
-            ) : claimsQuery.data?.matches && claimsQuery.data.matches.length > 0 ? (
+            ) : claims_query.error ? (
+              <p role="alert">The claim catalog could not be read. <Button onClick={() => void claims_query.refetch()}>Retry catalog</Button></p>
+            ) : claims_query.data?.matches && claims_query.data.matches.length > 0 ? (
               <div className="grid gap-3">
-                {claimsQuery.data.matches.map((match: any) => (
+                {claims_query.data.matches.map((match: any) => (
                   <Card
                     key={match.id}
-                    className={`cursor-pointer transition-all hover:border-primary/40 hover:shadow-md ${
-                      match.confidence === "high"
-                        ? "border-emerald-500/30 bg-emerald-500/5"
-                        : match.confidence === "medium"
-                        ? "border-amber-500/20 bg-amber-500/5"
-                        : "border-border/50"
-                    }`}
-                    onClick={() => selectClaim(match.claimType)}
+                    className="cursor-pointer transition-all hover:border-primary/40 hover:shadow-md border-border/50"
+                    onClick={() => select_claim(match.claim_type, match.domain)}
                   >
                     <CardContent className="py-4 flex items-center gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold text-sm truncate">{match.claimType}</h3>
-                          <ConfidenceBadge level={match.confidence} />
+                          <h3 className="font-semibold text-sm truncate">{match.canonical_name}</h3>
+                          <Badge variant="outline">Applicability unresolved</Badge>
                         </div>
                         <p className="text-xs text-muted-foreground line-clamp-2">
-                          {match.statuteCitation || match.standardOfProof || "Click to explore proof requirements"}
+                          {match.source_claim_id ? `${match.source_claim_id} · Individually reviewed source reference` : "Existing catalog topic; source crosswalk pending"}
                         </p>
                         <div className="flex gap-2 mt-1.5 flex-wrap">
                           {match.jurisdiction && <Badge variant="outline" className="text-[10px]">{match.jurisdiction}</Badge>}
-                          {match.typicalForum && <Badge variant="outline" className="text-[10px]">{match.typicalForum}</Badge>}
-                          {match.solYears && <Badge variant="outline" className="text-[10px]">SOL: {match.solYears}y</Badge>}
+                          {match.domain && <Badge variant="outline" className="text-[10px]">{match.domain}</Badge>}
+                          <span className="text-xs text-muted-foreground">Matched terms: {match.matched_keywords.join(", ")}</span>
                         </div>
                       </div>
                       <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
@@ -463,12 +470,12 @@ export default function CaseResolutionLens() {
           <div className="space-y-6">
             <StepHeader
               title="Proof Checklist"
-              description={`What you need to prove: ${selectedClaimType}`}
+              description={`Source and proof references for: ${selected_claim_type}`}
               onBack={goBack}
             />
 
             {/* Evidence Inventory */}
-            {currentCase && (
+            {current_case && (
               <Card className="border-emerald-500/20 bg-emerald-500/5">
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
@@ -518,34 +525,47 @@ export default function CaseResolutionLens() {
               </Card>
             )}
 
-            {proofQuery.isLoading ? (
+            {proof_query.data?.source_reference && (
+              <Card><CardHeader><CardTitle>Source checklist — legal verification pending</CardTitle></CardHeader><CardContent className="space-y-3">
+                <p className="text-sm">{proof_query.data.source_reference.source_claim_id}: {proof_query.data.source_reference.canonical_name}. These are statements in the supplied document; they have not been established as the requirements for your case.</p>
+                <ol className="list-decimal pl-5 text-sm">{proof_query.data.source_reference.elements.map(element => <li key={element.paragraph_start}>{element.text} (P{element.paragraph_start})</li>)}</ol>
+                <p className="text-sm">Source proof framework: {proof_query.data.source_reference.proof_reference.text}</p>
+                <p className="text-sm">Source intersections: {proof_query.data.source_reference.intersections_reference.text}</p>
+                <p className="text-xs text-muted-foreground">{proof_query.data.source_context?.source.filename} · P{proof_query.data.source_reference.source_span.paragraph_start}–{proof_query.data.source_reference.source_span.paragraph_end}. Existing claim ID {proof_query.data.source_reference.existing_claim_catalog_id}. Evidence links require a separately reviewed proof-framework binding.</p>
+                <Button onClick={goNext}>Review related barriers <ArrowRight className="w-4 h-4 ml-2" /></Button>
+              </CardContent></Card>
+            )}
+
+            {proof_query.isLoading ? (
               <LoadingState message="Loading proof frameworks..." />
-            ) : proofQuery.data?.frameworks && proofQuery.data.frameworks.length > 0 ? (
+            ) : proof_query.error ? (
+              <p role="alert">Proof references could not be read. <Button onClick={() => void proof_query.refetch()}>Retry proof references</Button></p>
+            ) : proof_query.data?.frameworks && proof_query.data.frameworks.length > 0 ? (
               <div className="space-y-4">
-                {proofQuery.data.frameworks.map((fw: any) => {
+                {proof_query.data.frameworks.map((fw: any) => {
                   const coverageMap = coverageQuery.data?.coverageMap || {};
                   return (
                     <Card key={fw.id} className="border-border/50">
                       <CardHeader className="pb-2">
                         <CardTitle className="text-base flex items-center gap-2">
                           <Scale className="w-4 h-4 text-primary" />
-                          {fw.claimType}
+                          {fw.claim_type}
                         </CardTitle>
-                        {fw.burdenOfProof && (
+                        {fw.burden_of_proof && (
                           <CardDescription className="text-xs">
-                            Burden: <span className="text-foreground/70">{fw.burdenOfProof}</span>
+                            Burden: <span className="text-foreground/70">{fw.burden_of_proof}</span>
                           </CardDescription>
                         )}
                       </CardHeader>
                       <CardContent className="space-y-3">
                         {/* Elements of Proof with Coverage Indicators */}
-                        {fw.elementsOfProof && (
+                        {fw.elements_of_proof && (
                           <div className="space-y-2">
                             <p className="text-xs font-semibold text-muted-foreground">ELEMENTS OF PROOF</p>
                             {(() => {
-                              const elements = typeof fw.elementsOfProof === "string"
-                                ? (() => { try { return JSON.parse(fw.elementsOfProof); } catch { return [fw.elementsOfProof]; } })()
-                                : Array.isArray(fw.elementsOfProof) ? fw.elementsOfProof : [fw.elementsOfProof];
+                              const elements = typeof fw.elements_of_proof === "string"
+                                ? (() => { try { return JSON.parse(fw.elements_of_proof); } catch { return [fw.elements_of_proof]; } })()
+                                : Array.isArray(fw.elements_of_proof) ? fw.elements_of_proof : [fw.elements_of_proof];
                               return elements.map((el: any, i: number) => {
                                 const elementNum = i + 1;
                                 const coverage = coverageMap[elementNum];
@@ -579,7 +599,7 @@ export default function CaseResolutionLens() {
                                       <p className="text-sm">{typeof el === "string" ? el : el.name || el.element || JSON.stringify(el)}</p>
                                       <p className={`text-[10px] mt-0.5 ${coverageColor}`}>{coverageLabel}</p>
                                     </div>
-                                    {currentCase && evidenceListQuery.data && evidenceListQuery.data.length > 0 && (
+                                    {current_case && evidenceListQuery.data && evidenceListQuery.data.length > 0 && (
                                       <Button
                                         variant="ghost"
                                         size="sm"
@@ -600,10 +620,10 @@ export default function CaseResolutionLens() {
                         )}
 
                         {/* Coverage Summary */}
-                        {currentCase && coverageQuery.data && fw.elementsOfProof && (() => {
-                          const elements = typeof fw.elementsOfProof === "string"
-                            ? (() => { try { return JSON.parse(fw.elementsOfProof); } catch { return [fw.elementsOfProof]; } })()
-                            : Array.isArray(fw.elementsOfProof) ? fw.elementsOfProof : [fw.elementsOfProof];
+                        {current_case && coverageQuery.data && fw.elements_of_proof && (() => {
+                          const elements = typeof fw.elements_of_proof === "string"
+                            ? (() => { try { return JSON.parse(fw.elements_of_proof); } catch { return [fw.elements_of_proof]; } })()
+                            : Array.isArray(fw.elements_of_proof) ? fw.elements_of_proof : [fw.elements_of_proof];
                           const total = elements.length;
                           const covered = Object.keys(coverageQuery.data.coverageMap || {}).length;
                           const pct = total > 0 ? Math.round((covered / total) * 100) : 0;
@@ -631,21 +651,21 @@ export default function CaseResolutionLens() {
                         })()}
 
                         {/* Typical Evidence */}
-                        {fw.typicalEvidence && (
+                        {fw.typical_evidence && (
                           <div>
                             <p className="text-xs font-semibold text-muted-foreground mb-1">TYPICAL EVIDENCE</p>
                             <p className="text-xs text-muted-foreground">
-                              {typeof fw.typicalEvidence === "string" ? fw.typicalEvidence : JSON.stringify(fw.typicalEvidence)}
+                              {typeof fw.typical_evidence === "string" ? fw.typical_evidence : JSON.stringify(fw.typical_evidence)}
                             </p>
                           </div>
                         )}
 
                         {/* Common Defenses */}
-                        {fw.commonDefenses && (
+                        {fw.common_defenses && (
                           <div>
                             <p className="text-xs font-semibold text-muted-foreground mb-1">COMMON DEFENSES TO WATCH</p>
                             <p className="text-xs text-amber-400/80">
-                              {typeof fw.commonDefenses === "string" ? fw.commonDefenses : JSON.stringify(fw.commonDefenses)}
+                              {typeof fw.common_defenses === "string" ? fw.common_defenses : JSON.stringify(fw.common_defenses)}
                             </p>
                           </div>
                         )}
@@ -659,9 +679,9 @@ export default function CaseResolutionLens() {
                   </Button>
                 </div>
               </div>
-            ) : (
+            ) : proof_query.data?.source_reference ? null : (
               <div className="space-y-4">
-                <EmptyState message="No proof frameworks found for this claim type. You may need to consult a legal professional." />
+                <EmptyState message="No exact proof-framework connection has been reviewed for this claim. Related claims in the same domain cannot establish its proof requirements." />
                 <div className="flex justify-end">
                   <Button onClick={goNext} variant="outline" className="gap-2">
                     Skip to Barriers <ArrowRight className="w-4 h-4" />
@@ -725,9 +745,9 @@ export default function CaseResolutionLens() {
                   <Button variant="outline" onClick={() => setShowAddEvidence(false)}>Cancel</Button>
                   <Button
                     onClick={() => {
-                      if (!currentCase || !newEvidence.title.trim()) return;
+                      if (!current_case || !newEvidence.title.trim()) return;
                       addEvidenceMutation.mutate({
-                        caseId: currentCase.id,
+                        caseId: current_case.id,
                         title: newEvidence.title.trim(),
                         evidenceType: newEvidence.evidenceType,
                         description: newEvidence.description || undefined,
@@ -800,20 +820,20 @@ export default function CaseResolutionLens() {
           <div className="space-y-6">
             <StepHeader
               title="Barrier Alerts"
-              description="Obstacles that could block or weaken your case"
+              description="Related source topics and questions to check before deciding whether a barrier applies"
               onBack={goBack}
             />
 
-            {!!barrierQuery.data?.excluded_unverified_references && (
-              <p className="mb-3 text-sm text-muted-foreground">{barrierQuery.data.excluded_unverified_references} operational or legacy-derived references are not eligible for case alerts. Their records remain available in Structural Diagnostics.</p>
+            {!!barrier_query.data?.excluded_unverified_references && (
+              <p className="mb-3 text-sm text-muted-foreground">{barrier_query.data.excluded_unverified_references} operational or legacy-derived references are not eligible for case alerts. Their records remain available in Structural Diagnostics.</p>
             )}
-            {barrierQuery.isLoading ? (
+            {barrier_query.isLoading ? (
               <LoadingState message="Scanning for barriers..." />
-            ) : barrierQuery.error ? (
-              <p role="alert" className="text-sm">Barrier references could not be read. Retry before drawing a conclusion. <Button variant="link" onClick={() => void barrierQuery.refetch()}>Retry barrier references</Button></p>
-            ) : barrierQuery.data?.barriers && barrierQuery.data.barriers.length > 0 ? (
+            ) : barrier_query.error ? (
+              <p role="alert" className="text-sm">Barrier references could not be read. Retry before drawing a conclusion. <Button variant="link" onClick={() => void barrier_query.refetch()}>Retry barrier references</Button></p>
+            ) : barrier_query.data?.barriers && barrier_query.data.barriers.length > 0 ? (
               <div className="space-y-3">
-                {barrierQuery.data.barriers.map((b: any) => (
+                {barrier_query.data.barriers.map((b: any) => (
                   <Card key={b.id} className={`border-l-4 ${
                     b.severity === "critical" || b.severity === "high" ? "border-l-red-500 bg-red-500/5" :
                     b.severity === "medium" ? "border-l-amber-500 bg-amber-500/5" :
@@ -828,21 +848,23 @@ export default function CaseResolutionLens() {
                         }`} />
                         <div className="flex-1 min-w-0">
                           <h4 className="font-semibold text-sm">{b.name || b.barrier_type}</h4>
-                          {b.description && <p className="text-xs text-muted-foreground mt-1">{b.description}</p>}
-                          {b.what_it_blocks && (
-                            <p className="text-xs text-red-400/80 mt-1">Blocks: {b.what_it_blocks}</p>
+                          <p className="text-xs font-medium mt-1">Legal verification pending · Case applicability not assessed</p>
+                          {b.description && <p className="text-xs text-muted-foreground mt-1">Source description: {b.description}</p>}
+                          <ul className="list-disc pl-5 text-sm mt-2">{b.applicability_questions?.map((question: string) => <li key={question}>{question}</li>)}</ul>
+                          {b.impact_reference?.text && (
+                            <p className="text-xs text-red-400/80 mt-1">Source impact statement (unverified): {b.impact_reference?.text}</p>
                           )}
-                          {b.possible_workarounds && (
+                          {b.mitigation_reference?.text && (
                             <div className="mt-2 p-2 rounded bg-muted/30">
                               <p className="text-xs">
-                                <span className="font-medium text-emerald-400">Recorded workaround: </span>
-                                {typeof b.possible_workarounds === "string" ? b.possible_workarounds : JSON.stringify(b.possible_workarounds)}
+                                <span className="font-medium text-emerald-400">Source mitigation statement (unverified): </span>
+                                {typeof b.mitigation_reference?.text === "string" ? b.mitigation_reference?.text : JSON.stringify(b.mitigation_reference?.text)}
                               </p>
                             </div>
                           )}
                         </div>
                         <Badge variant={b.severity === "critical" || b.severity === "high" ? "destructive" : "outline"} className="text-[10px] shrink-0">
-                          {b.severity}
+                          Source severity: {b.severity}
                         </Badge>
                       </div>
                     </CardContent>
@@ -878,33 +900,36 @@ export default function CaseResolutionLens() {
           <div className="space-y-6">
             <StepHeader
               title="Where to File"
-              description="Agencies and courts that handle your claim type"
+              description="Review agency and court references for applicability to your claim"
               onBack={goBack}
             />
 
-            {agencyQuery.isLoading ? (
+            {agency_query.isLoading ? (
               <LoadingState message="Finding agencies and forums..." />
+            ) : agency_query.isError ? (
+              <EmptyState message="Agency and deadline references could not be loaded. No conclusion can be drawn from this failed lookup." />
             ) : (
               <div className="space-y-6">
+                <p className="text-xs text-muted-foreground">These are catalog references. Agency jurisdiction, eligibility and filing requirements still need confirmation.</p>
                 {/* Agencies */}
-                {agencyQuery.data?.agencies && agencyQuery.data.agencies.length > 0 && (
+                {agency_query.data?.agencies && agency_query.data.agencies.length > 0 && (
                   <div className="space-y-3">
                     <h3 className="text-sm font-semibold flex items-center gap-2">
                       <Building2 className="w-4 h-4 text-primary" /> Administrative Agencies
                     </h3>
-                    {agencyQuery.data.agencies.map((a: any) => (
+                    {agency_query.data.agencies.map((a: any) => (
                       <Card key={a.id} className="border-border/50 hover:border-primary/30 transition-all">
                         <CardContent className="py-4">
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1 min-w-0">
                               <h4 className="font-semibold text-sm">{a.agency}</h4>
-                              {a.agencyShort && <p className="text-xs text-primary/70">{a.agencyShort}</p>}
+                              {a.agency_short && <p className="text-xs text-primary/70">{a.agency_short}</p>}
                               {a.statute && <p className="text-xs text-muted-foreground mt-0.5">Statute: {a.statute}</p>}
-                              {a.complaintPathway && (
-                                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{a.complaintPathway}</p>
+                              {a.complaint_pathway && (
+                                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{a.complaint_pathway}</p>
                               )}
-                              {a.responseTimelineDays && (
-                                <p className="text-xs text-amber-400/80 mt-1">Response timeline: ~{a.responseTimelineDays} days</p>
+                              {a.response_timeline_days && (
+                                <p className="text-xs text-amber-400/80 mt-1">Source agency response interval: ~{a.response_timeline_days} days</p>
                               )}
                             </div>
                             {a.domain && <Badge variant="outline" className="text-[10px] shrink-0">{a.domain}</Badge>}
@@ -916,28 +941,28 @@ export default function CaseResolutionLens() {
                 )}
 
                 {/* Courts */}
-                {agencyQuery.data?.courts && agencyQuery.data.courts.length > 0 && (
+                {agency_query.data?.courts && agency_query.data.courts.length > 0 && (
                   <div className="space-y-3">
                     <h3 className="text-sm font-semibold flex items-center gap-2">
                       <Gavel className="w-4 h-4 text-primary" /> Courts
                     </h3>
-                    {agencyQuery.data.courts.map((c: any) => (
+                    {agency_query.data.courts.map((c: any) => (
                       <Card key={c.id} className="border-border/50">
                         <CardContent className="py-4">
-                          <h4 className="font-semibold text-sm">{c.courtName}</h4>
-                          <p className="text-xs text-muted-foreground">{c.courtType} — {c.jurisdiction}</p>
+                          <h4 className="font-semibold text-sm">{c.court_name}</h4>
+                          <p className="text-xs text-muted-foreground">{c.court_type} — {c.jurisdiction}</p>
                           <div className="flex flex-wrap gap-3 mt-2">
-                            {c.filingPortal && (
-                              <a href={c.filingPortal} target="_blank" rel="noopener noreferrer"
+                            {c.filing_portal && (
+                              <a href={c.filing_portal} target="_blank" rel="noopener noreferrer"
                                 className="text-xs text-primary hover:underline inline-flex items-center gap-1">
                                 Filing Portal <ArrowUpRight className="w-3 h-3" />
                               </a>
                             )}
-                            {c.clerkPhone && <span className="text-xs text-muted-foreground">Clerk: {c.clerkPhone}</span>}
-                            {c.filingFee && <span className="text-xs text-muted-foreground">Fee: {c.filingFee}</span>}
+                            {c.clerk_phone && <span className="text-xs text-muted-foreground">Clerk: {c.clerk_phone}</span>}
+                            {c.filing_fee && <span className="text-xs text-muted-foreground">Fee: {c.filing_fee}</span>}
                           </div>
                           {c.address && <p className="text-xs text-muted-foreground mt-1">{c.address}</p>}
-                          {c.proSeResources && (
+                          {c.pro_se_resources && (
                             <p className="text-xs text-emerald-400/80 mt-1">Pro se resources available</p>
                           )}
                         </CardContent>
@@ -947,66 +972,83 @@ export default function CaseResolutionLens() {
                 )}
 
                 {/* Workflows */}
-                {agencyQuery.data?.workflows && agencyQuery.data.workflows.length > 0 && (
+                {agency_query.data?.workflows && agency_query.data.workflows.length > 0 && (
                   <div className="space-y-3">
                     <h3 className="text-sm font-semibold flex items-center gap-2">
                       <FileText className="w-4 h-4 text-primary" /> Filing Workflows
                     </h3>
-                    {agencyQuery.data.workflows.map((w: any) => (
+                    {agency_query.data.workflows.map((w: any) => (
                       <Card key={w.id} className="border-border/50">
                         <CardContent className="py-4">
                           <h4 className="font-semibold text-sm">{w.title}</h4>
-                          <p className="text-xs text-muted-foreground">{w.primaryAgency} — {w.jurisdiction}</p>
-                          {w.estimatedDuration && <p className="text-xs text-muted-foreground mt-1">Duration: {w.estimatedDuration}</p>}
+                          <p className="text-xs text-muted-foreground">{w.primary_agency} — {w.jurisdiction}</p>
+                          {w.estimated_duration && <p className="text-xs text-muted-foreground mt-1">Duration: {w.estimated_duration}</p>}
                         </CardContent>
                       </Card>
                     ))}
                   </div>
                 )}
 
-                {/* Deadlines */}
-                {agencyQuery.data?.deadlines && agencyQuery.data.deadlines.length > 0 && (
-                  <div className="space-y-3">
-                    <h3 className="text-sm font-semibold flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-amber-500" /> Filing Deadlines
-                    </h3>
-                    {agencyQuery.data.deadlines.map((d: any) => (
-                      <Card key={d.id} className="border-amber-500/20 bg-amber-500/5">
-                        <CardContent className="py-3 flex items-center gap-3">
-                          <Clock className="w-4 h-4 text-amber-500 shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium">{d.deadlineType || d.claimType}</p>
-                            <p className="text-xs text-muted-foreground">{d.triggerEvent} — {d.authority || d.jurisdiction}</p>
-                          </div>
-                          {d.timeLimitDays && (
-                            <Badge className="bg-amber-500/20 text-amber-400 text-xs shrink-0">
-                              {d.timeLimitDays} days
-                            </Badge>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))}
+                {/* Source intervals remain references until applicability is established. */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-amber-500" /> Deadline references to review
+                  </h3>
+                  <p className="text-xs text-muted-foreground">{agency_query.data?.deadline_assessment.message}</p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-1">
+                      <Label htmlFor="deadline-jurisdiction">Jurisdiction to check</Label>
+                      <Input id="deadline-jurisdiction" value={jurisdiction} onChange={event => update_jurisdiction(event.target.value)} placeholder="For example, CO or Colorado" />
+                      <p className="text-xs text-muted-foreground">Confirm the jurisdiction for this situation; it is not established by the selected case.</p>
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="deadline-forum">Agency or court, if known</Label>
+                      <Input id="deadline-forum" value={deadline_forum} onChange={event => set_deadline_forum(event.target.value)} placeholder="Name of agency or court" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="deadline-trigger">Event starting the time limit</Label>
+                      <Input id="deadline-trigger" value={deadline_trigger_event} onChange={event => set_deadline_trigger_event(event.target.value)} placeholder="For example, receipt of a decision" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="deadline-event-date">Date of that event, if known</Label>
+                      <Input id="deadline-event-date" type="date" value={deadline_event_date} onChange={event => set_deadline_event_date(event.target.value)} />
+                    </div>
                   </div>
-                )}
+                  <p className="text-xs text-muted-foreground">These details are context for review. Entering them does not establish a filing date.</p>
+                  {agency_query.data?.deadlines.map(reference => (
+                    <Card key={reference.id} className="border-amber-500/20 bg-amber-500/5">
+                      <CardContent className="py-3 space-y-1">
+                        <p className="text-sm font-medium">{reference.deadline_type} — {reference.jurisdiction}</p>
+                        <p className="text-xs text-muted-foreground">Source trigger: {reference.trigger_event || "Not recorded"}</p>
+                        <p className="text-xs text-muted-foreground">Authority reference: {reference.authority || "Not recorded"}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Source interval: {reference.source_duration_days == null ? "Not recorded" : `${reference.source_duration_days} days`}. Days remaining have not been calculated.
+                        </p>
+                        {reference.extended_condition && <p className="text-xs text-muted-foreground">Possible extension condition in source: {reference.extended_condition}. Applicability is unverified.</p>}
+                      </CardContent>
+                    </Card>
+                  ))}
+                  <Button variant="outline" onClick={() => navigate("/deadline-calculator")}>Review agency filing instructions</Button>
+                </div>
 
                 {/* Escalation Routes */}
-                {agencyQuery.data?.escalations && agencyQuery.data.escalations.length > 0 && (
+                {agency_query.data?.escalations && agency_query.data.escalations.length > 0 && (
                   <div className="space-y-3">
                     <h3 className="text-sm font-semibold flex items-center gap-2">
                       <ArrowUpRight className="w-4 h-4 text-primary" /> Escalation Routes
                     </h3>
-                    {agencyQuery.data.escalations.map((e: any) => (
+                    {agency_query.data.escalations.map((e: any) => (
                       <Card key={e.id} className="border-border/50">
                         <CardContent className="py-4">
                           <h4 className="font-semibold text-sm">{e.title}</h4>
-                          {e.triggerConditions && <p className="text-xs text-muted-foreground mt-1">{e.triggerConditions}</p>}
+                          {e.trigger_conditions && <p className="text-xs text-muted-foreground mt-1">{e.trigger_conditions}</p>}
                         </CardContent>
                       </Card>
                     ))}
                   </div>
                 )}
 
-                {(!agencyQuery.data?.agencies?.length && !agencyQuery.data?.courts?.length) && (
+                {(!agency_query.data?.agencies?.length && !agency_query.data?.courts?.length) && (
                   <EmptyState message="No specific agencies or courts found for this claim type and jurisdiction combination." />
                 )}
                 <div className="flex justify-end">
@@ -1028,46 +1070,42 @@ export default function CaseResolutionLens() {
               onBack={goBack}
             />
 
-            {actionQuery.isLoading ? (
+            {action_query.isLoading ? (
               <LoadingState message="Generating your action plan..." />
-            ) : actionQuery.data ? (
+            ) : action_query.isError ? (
+              <EmptyState message="Action references could not be loaded. Deadline applicability is unknown; retry the lookup." />
+            ) : action_query.data ? (
               <div className="space-y-6">
-                {/* Urgent Deadline Alert */}
-                {actionQuery.data.hasUrgentDeadline && actionQuery.data.nearestDeadlineDays && (
-                  <Card className="border-red-500/30 bg-red-500/5">
-                    <CardContent className="py-4 flex items-center gap-3">
-                      <Clock className="w-5 h-5 text-red-500 shrink-0" />
-                      <div>
-                        <p className="text-sm font-bold text-red-400">Urgent Deadline</p>
-                        <p className="text-xs text-muted-foreground">
-                          You have approximately {actionQuery.data.nearestDeadlineDays} days to file. Act now.
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
+                <Card className="border-amber-500/30 bg-amber-500/5">
+                  <CardContent className="py-4 space-y-2">
+                    <p className="text-sm font-semibold">Filing deadline not established</p>
+                    <p className="text-xs text-muted-foreground">{action_query.data.deadline_assessment.message}</p>
+                    <Button variant="outline" onClick={() => setStep("agency")}>Review forum and triggering event</Button>
+                  </CardContent>
+                </Card>
 
                 {/* Action Items */}
-                {actionQuery.data.actions && actionQuery.data.actions.length > 0 && (
+                {action_query.data.actions && action_query.data.actions.length > 0 && (
                   <div className="space-y-3">
-                    {actionQuery.data.actions.map((action: any, i: number) => {
-                      const urgencyColors: Record<string, string> = {
+                    {action_query.data.actions.map((action: any, i: number) => {
+                      const urgency_colors: Record<string, string> = {
                         critical: "border-l-red-500 bg-red-500/5",
                         high: "border-l-amber-500 bg-amber-500/5",
                         medium: "border-l-blue-500 bg-blue-500/5",
                         low: "border-l-slate-500 bg-slate-500/5",
+                        unknown: "border-l-slate-500 bg-slate-500/5",
                       };
-                      const typeIcons: Record<string, React.ElementType> = {
+                      const type_icons: Record<string, React.ElementType> = {
                         deadline: Clock,
                         filing: FileText,
                         evidence: Search,
                         consultation: Scale,
                         research: Lightbulb,
                       };
-                      const TypeIcon = typeIcons[action.type] || Sparkles;
+                      const TypeIcon = type_icons[action.type] || Sparkles;
 
                       return (
-                        <Card key={i} className={`border-l-4 ${urgencyColors[action.urgency] || urgencyColors.medium}`}>
+                        <Card key={i} className={`border-l-4 ${urgency_colors[action.urgency] || urgency_colors.medium}`}>
                           <CardContent className="py-4">
                             <div className="flex items-start gap-3">
                               <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
@@ -1079,6 +1117,7 @@ export default function CaseResolutionLens() {
                                   <Badge variant="outline" className="text-[10px]">{action.urgency}</Badge>
                                 </div>
                                 <p className="text-xs text-muted-foreground">{action.detail}</p>
+                                {action.href && <Button variant="link" className="px-0" onClick={() => navigate(action.href)}>Open referenced guidance</Button>}
                               </div>
                               <span className="text-xs text-muted-foreground/50 shrink-0">#{action.priority}</span>
                             </div>
@@ -1104,7 +1143,7 @@ export default function CaseResolutionLens() {
                           <p className="text-sm font-medium">See the broader institutional pattern</p>
                           <p className="text-xs text-muted-foreground">
                             Explore systemic barriers, doctrine clusters, and institutional signals related to{" "}
-                            <span className="text-purple-400">{selectedClaimType}</span>
+                            <span className="text-purple-400">{selected_claim_type}</span>
                             {jurisdiction && <> in <span className="text-purple-400">{jurisdiction}</span></>}
                           </p>
                         </div>
@@ -1114,9 +1153,9 @@ export default function CaseResolutionLens() {
                         size="sm"
                         onClick={() => {
                           const params = new URLSearchParams();
-                          params.set("claimType", selectedClaimType);
+                          params.set("claimType", selected_claim_type);
                           if (jurisdiction) params.set("jurisdiction", jurisdiction);
-                          if (selectedDomain) params.set("domain", selectedDomain);
+                          if (selected_domain) params.set("domain", selected_domain);
                           navigate(`/diagnostics?${params.toString()}`);
                         }}
                         className="gap-2 border-purple-500/30 text-purple-400 hover:bg-purple-500/10 shrink-0"
@@ -1129,7 +1168,7 @@ export default function CaseResolutionLens() {
 
                 {/* Start Over + Graph Toggle */}
                 <div className="flex items-center justify-between">
-                  <Button variant="outline" onClick={() => { setStep("problem"); setProblemText(""); setSelectedClaimType(""); setSelectedDomain(""); }} className="gap-2">
+                  <Button variant="outline" onClick={() => { setStep("problem"); set_problem_text(""); set_selected_claim_type(""); set_selected_domain(""); }} className="gap-2">
                     <ArrowLeft className="w-4 h-4" /> Start New Resolution
                   </Button>
                   <Button
@@ -1149,7 +1188,7 @@ export default function CaseResolutionLens() {
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm flex items-center gap-2">
                         <Network className="w-4 h-4 text-muted-foreground" />
-                        Knowledge Graph — {selectedClaimType}
+                        Knowledge Graph — {selected_claim_type}
                       </CardTitle>
                       <CardDescription className="text-xs">
                         Connected nodes in the legal knowledge graph. This is a structural view — not your recommended path.

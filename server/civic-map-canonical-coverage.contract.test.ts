@@ -10,7 +10,7 @@ describe("Civic Map canonical coverage contract", () => {
   const router = read("./routes/civic-map-router.ts");
 
   it("uses whole-corpus breadth for jurisdiction coverage", () => {
-    expect(router).toContain("getPublishableResourceDirectorySummary");
+    expect(router).toContain("get_publishable_resource_directory_summary");
     expect(router).toContain("breadth_preserving_resource_directory_v3");
     expect(router).not.toContain("getResourceDirectorySummary as getStrictGeographySummary");
   });

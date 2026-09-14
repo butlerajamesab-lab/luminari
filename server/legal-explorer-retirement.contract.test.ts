@@ -26,9 +26,9 @@ describe("retired whole-universe civic/legal explorer", () => {
     const router = read("server/routers/canonical-core-router.ts");
     const reader = read("server/services/current-legal-authority-reader.ts");
 
-    expect(router).toContain("graphNodePage: publicProcedure");
-    expect(router).toContain("graphEdgePage: publicProcedure");
-    expect(router).toContain("unresolvedRelationshipPage: publicProcedure");
+    expect(router).toContain("graph_node_page: publicProcedure");
+    expect(router).toContain("graph_edge_page: publicProcedure");
+    expect(router).toContain("unresolved_relationship_page: publicProcedure");
     expect(router).toContain("legalAuthorities: publicProcedure");
     expect(router).toContain("currentObjectCounts: publicProcedure");
     expect(router).toContain('from "../services/current-legal-authority-reader"');

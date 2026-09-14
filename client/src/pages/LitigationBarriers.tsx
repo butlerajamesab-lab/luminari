@@ -1,3 +1,4 @@
+import { Reviewed_claim_references } from "@/components/ReviewedClaimReferences";
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import {
@@ -137,6 +138,8 @@ export default function LitigationBarriers() {
           affected domains, and practical workarounds.
         </p>
       </div>
+
+      <Reviewed_claim_references mode="barriers" />
 
       {/* Stats */}
       <div style={{ display: "flex", gap: 16, marginBottom: 20, flexWrap: "wrap" }}>

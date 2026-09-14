@@ -3,16 +3,10 @@ import { router, publicProcedure, protectedProcedure } from "../_core/trpc";
 import { db } from "../db";
 import { eq, like, and, or, desc, sql, inArray, count, gte, isNotNull } from "drizzle-orm";
 import {
-  strategyClaimCatalog,
-  proofFrameworks,
   litigationBarriers,
   agencyAuthorityMap,
-  workflowMaster,
-  deadlineRules,
   signalRegistry,
   doctrineRegistry,
-  courtDirectory,
-  escalationRoutes,
 } from "../../drizzle/schema";
 import { enrichSignalWithInterpretation, loadInterpretationPack, getCategoryContext } from "../ingestion/interpretation-layer";
 import { query_with_diagnostics } from "../db-legacy";
@@ -20,6 +14,31 @@ import { getCurrentCanonicalState } from "../services/current-canonical-state";
 
 import { barrier_reference_scope, reference_matches_domain, reference_strings } from "../diagnostic-reference-contract";
 import { read_diagnostic_signals, read_diagnostic_signal_summary } from "../diagnostic-signal-runtime";
+import { get_reviewed_claim_reference, match_catalog_claims, reviewed_barrier_references, reviewed_claim_catalog, reviewed_source_context, reviewed_proof_reference_issue, type claim_catalog_row } from "../reviewed-claim-references";
+import { assess_resolution_deadlines, deadline_jurisdiction_code, deadline_review_action } from "../resolution-deadline-contract";
+import { read_resolution_deadlines, read_resolution_workflows, read_resolution_agencies,
+  read_resolution_courts, read_resolution_escalations } from "../resolution-reference-runtime";
+
+// Normalize legacy request keys once, at the transport boundary.
+const resolution_action_input = z.preprocess((value) => {
+  const input = value as Record<string, unknown> | null;
+  if (!input || typeof input !== "object") return value;
+  return {
+    claim_type: input.claim_type ?? input.claimType,
+    jurisdiction: input.jurisdiction,
+    domain: input.domain,
+    forum: input.forum,
+    trigger_event: input.trigger_event ?? input.triggerEvent,
+    event_date: input.event_date ?? input.eventDate,
+  };
+}, z.object({
+  claim_type: z.string().trim().min(1).max(256),
+  jurisdiction: z.string().trim().max(128).default(""),
+  domain: z.string().trim().max(128).optional(),
+  forum: z.string().trim().max(256).optional(),
+  trigger_event: z.string().trim().max(512).optional(),
+  event_date: z.string().date().optional(),
+}));
 
 const DIAGNOSTICS_STATS_TIMEOUT_MS = 5_000;
 const GRAPH_EXPANSION_LIMIT_PER_DIRECTION = 25;
@@ -86,257 +105,128 @@ export const dualLensRouter = router({
 
   /**
    * Step 1: Match a user's problem description to claim types.
-   * Returns top claim matches with confidence scores.
+   * Returns topic matches with the source terms that matched; applicability is unresolved.
    */
-  matchClaims: publicProcedure
+  match_claims: publicProcedure
     .input(z.object({
-      problemDescription: z.string().min(5),
+      problem_description: z.string().min(5).optional(),
+      problemDescription: z.string().min(5).optional(), // legacy input boundary
       jurisdiction: z.string().optional(),
       category: z.string().optional(),
-    }))
+    }).transform(value => ({
+      problem_description: value.problem_description ?? value.problemDescription ?? "",
+      jurisdiction: value.jurisdiction, category: value.category,
+    })).refine(value => value.problem_description.length >= 5, "Describe the situation in at least five characters"))
     .query(async ({ input }) => {
-      const allClaims = await db.select().from(strategyClaimCatalog);
-      const keywords = input.problemDescription.toLowerCase().split(/\s+/).filter((w: string) => w.length > 3);
-
-      const scored = allClaims.map((claim: any) => {
-        const searchText = [
-          claim.claimType,
-          claim.jurisdiction,
-          claim.statuteCitation,
-          claim.notes,
-        ].filter(Boolean).join(" ").toLowerCase();
-
-        let score = 0;
-        const matchedKeywords: string[] = [];
-
-        for (const kw of keywords) {
-          if (searchText.includes(kw)) {
-            score += 1;
-            matchedKeywords.push(kw);
-          }
-        }
-
-        // Boost for jurisdiction match
-        if (input.jurisdiction && claim.jurisdiction &&
-            claim.jurisdiction.toLowerCase().includes(input.jurisdiction.toLowerCase())) {
-          score += 2;
-        }
-
-        return {
-          id: claim.id,
-          claim_type: claim.claimType,
-          jurisdiction: claim.jurisdiction,
-          statute_citation: claim.statuteCitation,
-          standard_of_proof: claim.standardOfProof,
-          typical_forum: claim.typicalForum,
-          sol_years: claim.solYears,
-          score,
-          matchedKeywords,
-          confidence: score > 4 ? "high" : score > 2 ? "medium" : score > 0 ? "low" : "none",
-        };
-      }).filter((c: any) => c.score > 0).sort((a: any, b: any) => b.score - a.score).slice(0, 10);
-
+      const { rows } = await query_with_diagnostics<claim_catalog_row>(`
+        select id, claim_type_id, canonical_name, domain, description
+        from public.claim_catalog where deprecated = 0 order by id`, [],
+        { label: "resolution_existing_claim_catalog", pool_acquire_timeout_ms: 1_000, query_timeout_ms: 5_000 });
       return {
-        matches: scored,
-        total_claims: allClaims.length,
-        query: input.problemDescription,
+        matches: match_catalog_claims(rows, input.problem_description, input.category),
+        total_claims: rows.length, query: input.problem_description,
+        jurisdiction: input.jurisdiction ?? null,
+        case_applicability: "not_assessed" as const,
       };
     }),
 
-  /**
-   * Step 2: Get proof requirements for a matched claim.
-   * Returns the proof framework with required elements.
-   */
-  getProofChecklist: publicProcedure
+  get_proof_checklist: publicProcedure
     .input(z.object({
-      claimType: z.string(),
+      claim_type: z.string().optional(), claimType: z.string().optional(), // legacy input boundary
       domain: z.string().optional(),
-    }))
+    }).transform(value => ({ claim_type: value.claim_type ?? value.claimType ?? "", domain: value.domain }))
+      .refine(value => value.claim_type.length > 0, "A claim identity is required"))
     .query(async ({ input }) => {
-      // Find matching proof frameworks
-      const frameworks = await db.select().from(proofFrameworks)
-        .where(like(proofFrameworks.claimType, `%${input.claimType}%`));
-
-      // Also try domain match if no direct match
-      let results = frameworks;
-      if (results.length === 0 && input.domain) {
-        results = await db.select().from(proofFrameworks)
-          .where(eq(proofFrameworks.domain, input.domain));
-      }
-
+      const source_reference = get_reviewed_claim_reference(input.claim_type);
+      // A source claim ID is not a proof_frameworks primary key. Do not fabricate
+      // evidence links or substitute a neighboring domain's checklist.
+      const results = source_reference ? [] : (await query_with_diagnostics<{
+        id: number; claim_type: string; domain: string; elements_of_proof: string | null;
+        burden_of_proof: string | null; standard_of_review: string | null; required_causation: string | null;
+        typical_evidence: string | null; common_defenses: string | null; key_precedents: string | null;
+      }>(`select id, claim_type, domain, elements_of_proof, burden_of_proof,
+                 standard_of_review, required_causation, typical_evidence, common_defenses, key_precedents
+            from public.proof_frameworks where claim_type = $1 order by id`, [input.claim_type],
+          { label: "resolution_exact_proof_reference", pool_acquire_timeout_ms: 1_000, query_timeout_ms: 5_000 })).rows;
+      const eligible = results.filter(row => reviewed_proof_reference_issue(row.claim_type, row.domain) === null);
       return {
-        frameworks: results.map((f: any) => ({
-          id: f.id,
-          claim_type: f.claimType,
-          domain: f.domain,
-          elements_of_proof: f.elementsOfProof,
-          burden_of_proof: f.burdenOfProof,
-          standard_of_review: f.standardOfReview,
-          required_causation: f.requiredCausation,
-          typical_evidence: f.typicalEvidence,
-          common_defenses: f.commonDefenses,
-          key_precedents: f.keyPrecedents,
+        frameworks: eligible.map(row => ({
+          id: row.id, claim_type: row.claim_type, domain: row.domain,
+          elements_of_proof: row.elements_of_proof, burden_of_proof: row.burden_of_proof,
+          standard_of_review: row.standard_of_review, required_causation: row.required_causation,
+          typical_evidence: row.typical_evidence, common_defenses: row.common_defenses,
+          key_precedents: row.key_precedents, legal_verification: "unverified" as const,
         })),
-        count: results.length,
+        count: eligible.length, source_reference,
+        excluded_misclassified_frameworks: results.length - eligible.length,
+        source_context: source_reference ? reviewed_source_context() : null,
+        evidence_link_status: source_reference ? "source_reference_not_bound_to_proof_framework" : "existing_framework_ids_only",
       };
     }),
 
-  /**
-   * Step 3: Get barrier alerts for a claim type and jurisdiction.
-   * Returns litigation barriers that could block or delay the case.
-   */
-  getBarrierAlerts: publicProcedure
+  get_barrier_alerts: publicProcedure
     .input(z.object({
-      claimType: z.string(),
-      jurisdiction: z.string().optional(),
-      domain: z.string().optional(),
-    }))
+      claim_type: z.string().optional(), claimType: z.string().optional(), // legacy input boundary
+      jurisdiction: z.string().optional(), domain: z.string().optional(),
+    }).transform(value => ({ claim_type: value.claim_type ?? value.claimType ?? "", jurisdiction: value.jurisdiction, domain: value.domain }))
+      .refine(value => value.claim_type.length > 0, "A claim identity is required"))
     .query(async ({ input }) => {
-      const allBarriers = await db.select().from(litigationBarriers);
-
-      // Filter barriers relevant to the claim type
-      const keywords = input.claimType.toLowerCase().split(/[\s_-]+/).filter(Boolean);
-      const relevant = allBarriers.filter((b: any) => {
-        if (barrier_reference_scope(b) !== "catalog_reference" || !reference_matches_domain(b.domains, input.domain)) return false;
-        const text = [
-          b.barrier_type,
-          b.name,
-          b.description,
-          b.domains ? JSON.stringify(b.domains) : "",
-        ].join(" ").toLowerCase();
-        return keywords.some((kw: string) => text.includes(kw));
-      });
-
-      // Sort by severity
-      const severityOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
-      relevant.sort((a: any, b: any) =>
-        (severityOrder[a.severity ?? "low"] ?? 3) - (severityOrder[b.severity ?? "low"] ?? 3)
-      );
-
+      const all_barriers: Array<{ domains?: unknown; added_by?: string | null }> = await db.select().from(litigationBarriers);
+      const barriers = reviewed_barrier_references(input.claim_type);
       return {
-        barriers: relevant.slice(0, 10).map((b: any) => ({
-          id: b.id,
-          barrier_id: b.barrier_id,
-          name: b.name,
-          barrier_type: b.barrier_type,
-          description: b.description,
-          severity: b.severity,
-          possible_workarounds: b.possible_workarounds,
-          what_it_blocks: b.what_it_blocks,
-        })),
-        total_barriers: relevant.length,
-        excluded_unverified_references: allBarriers.filter((b: any) => barrier_reference_scope(b) !== "catalog_reference").length,
+        barriers, total_barriers: barriers.length,
+        excluded_unverified_references: all_barriers.filter(row => barrier_reference_scope(row) !== "catalog_reference").length,
+        unmatched_catalog_references: all_barriers.filter(row => barrier_reference_scope(row) === "catalog_reference").length,
+        source_context: reviewed_source_context(),
+        case_applicability: "not_assessed" as const,
       };
     }),
+
+  get_reference_catalog: publicProcedure.query(() => ({
+    claims: reviewed_claim_catalog.claims,
+    barriers: reviewed_barrier_references(),
+    ...reviewed_source_context(),
+  })),
 
   /**
    * Step 4: Find the right agency and forum for a claim.
    * Returns agencies, courts, and filing information.
    */
-  findAgencyAndForum: publicProcedure
-    .input(z.object({
-      claimType: z.string(),
-      jurisdiction: z.string(),
-      domain: z.string().optional(),
-    }))
+  find_agency_and_forum: publicProcedure
+    .input(resolution_action_input)
     .query(async ({ input }) => {
-      const jur = input.jurisdiction.toUpperCase();
-
-      // Find matching agencies — agency_authority_map has: statute, agency, agencyShort, domain
-      const allAgencies = await db.select().from(agencyAuthorityMap);
-      const domainKeywords = (input.domain || input.claimType).toLowerCase().split(/[\s_-]+/);
-      const relevantAgencies = allAgencies.filter((a: any) => {
-        const text = [a.agency, a.agencyShort, a.domain, a.statute, a.complaintPathway,
-          a.statutoryAuthority ? JSON.stringify(a.statutoryAuthority) : ""]
-          .join(" ").toLowerCase();
-        return domainKeywords.some((kw: string) => text.includes(kw));
+      const jurisdiction_code = deadline_jurisdiction_code(input.jurisdiction);
+      const [agencies, courts, workflows, deadline_references, escalations] = await Promise.all([
+        read_resolution_agencies(), read_resolution_courts(), read_resolution_workflows(),
+        read_resolution_deadlines(), read_resolution_escalations(),
+      ]);
+      const domain_keywords = (input.domain || input.claim_type).toLowerCase().split(/[\s_-]+/).filter(word => word.length > 2);
+      const relevant_agencies = agencies.filter(reference => {
+        const text = [reference.agency, reference.agency_short, reference.domain, reference.statute,
+          reference.complaint_pathway, JSON.stringify(reference.statutory_authority)].join(" ").toLowerCase();
+        return domain_keywords.some(word => text.includes(word));
       });
-
-      // Find matching courts — court_directory has: court_id, court_name, jurisdiction, court_type
-      const courts = await db.select().from(courtDirectory);
-      const relevantCourts = courts.filter((c: any) => {
-        const text = [c.jurisdiction, c.courtName, c.courtType].join(" ").toLowerCase();
-        return text.includes(jur.toLowerCase());
-      });
-
-      // Find matching workflows — workflow_master has: title, domain, jurisdiction, primaryAgency
-      const workflows = await db.select().from(workflowMaster)
-        .where(or(
-          like(workflowMaster.jurisdiction, `%${jur}%`),
-          eq(workflowMaster.jurisdiction, "Federal"),
-        ));
-
-      const domainWorkflows = workflows.filter((w: any) => {
-        const text = [w.domain, w.primaryAgency, w.title].join(" ").toLowerCase();
-        return domainKeywords.some((kw: string) => text.includes(kw));
-      });
-
-      // Find deadlines — deadline_rules has: claimType, jurisdiction, triggerEvent, deadlineType, timeLimitDays
-      const deadlines = await db.select().from(deadlineRules);
-      const relevantDeadlines = deadlines.filter((d: any) => {
-        const text = [d.claimType, d.jurisdiction, d.triggerEvent].join(" ").toLowerCase();
-        return domainKeywords.some((kw: string) => text.includes(kw)) ||
-          (d.jurisdiction && d.jurisdiction.toUpperCase().includes(jur));
-      });
-
-      // Find escalation routes — escalation_routes has: workflowId, title, triggerConditions, routes
-      const escalations = await db.select().from(escalationRoutes);
-      const relevantEscalations = escalations.filter((e: any) => {
-        const text = [e.title, JSON.stringify(e.routes)].join(" ").toLowerCase();
-        return text.includes(jur.toLowerCase()) ||
-          domainKeywords.some((kw: string) => text.includes(kw));
-      });
-
+      const relevant_courts = jurisdiction_code ? courts.filter(reference =>
+        deadline_jurisdiction_code(reference.jurisdiction) === jurisdiction_code,
+      ) : [];
+      const relevant_workflows = jurisdiction_code ? workflows.filter(reference => {
+        const text = [reference.domain, reference.primary_agency, reference.title].join(" ").toLowerCase();
+        return deadline_jurisdiction_code(reference.jurisdiction) === jurisdiction_code &&
+          domain_keywords.some(word => text.includes(word));
+      }) : [];
+      const workflow_ids = new Set(relevant_workflows.map(reference => reference.id));
+      const relevant_escalations = escalations.filter(reference =>
+        reference.workflow_id != null && workflow_ids.has(reference.workflow_id),
+      );
+      const deadline_assessment = assess_resolution_deadlines(deadline_references, input);
       return {
-        agencies: relevantAgencies.slice(0, 8).map((a: any) => ({
-          id: a.id,
-          agency: a.agency,
-          agency_short: a.agencyShort,
-          domain: a.domain,
-          statute: a.statute,
-          complaint_pathway: a.complaintPathway,
-          complaint_types: a.complaintTypes,
-          statutory_authority: a.statutoryAuthority,
-          response_timeline_days: a.responseTimelineDays,
-        })),
-        courts: relevantCourts.slice(0, 5).map((c: any) => ({
-          id: c.id,
-          court_id: c.courtId,
-          court_name: c.courtName,
-          court_type: c.courtType,
-          jurisdiction: c.jurisdiction,
-          filing_portal: c.filingPortal,
-          clerk_phone: c.clerkPhone,
-          address: c.address,
-          filing_fee: c.filingFee,
-          pro_se_resources: c.proSeResources,
-        })),
-        workflows: domainWorkflows.slice(0, 3).map((w: any) => ({
-          id: w.id,
-          title: w.title,
-          domain: w.domain,
-          jurisdiction: w.jurisdiction,
-          primary_agency: w.primaryAgency,
-          entry_forms: w.entryForms,
-          estimated_duration: w.estimatedDuration,
-          remedies: w.remedies,
-        })),
-        deadlines: relevantDeadlines.slice(0, 5).map((d: any) => ({
-          id: d.id,
-          claim_type: d.claimType,
-          jurisdiction: d.jurisdiction,
-          deadline_type: d.deadlineType,
-          time_limit_days: d.timeLimitDays,
-          trigger_event: d.triggerEvent,
-          authority: d.authority,
-        })),
-        escalations: relevantEscalations.slice(0, 3).map((e: any) => ({
-          id: e.id,
-          title: e.title,
-          trigger_conditions: e.triggerConditions,
-          routes: e.routes,
-          escalation_priority: e.priority,
-        })),
+        reference_status: "applicability_not_established" as const,
+        agencies: relevant_agencies.slice(0, 8),
+        courts: relevant_courts.slice(0, 5),
+        workflows: relevant_workflows.slice(0, 3),
+        deadlines: deadline_assessment.references,
+        deadline_assessment,
+        escalations: relevant_escalations.slice(0, 3),
       };
     }),
 
@@ -344,63 +234,40 @@ export const dualLensRouter = router({
    * Step 5: Generate the next action recommendation.
    * Combines all resolution data into a prioritized action list.
    */
-  getNextAction: publicProcedure
-    .input(z.object({
-      claimType: z.string(),
-      jurisdiction: z.string(),
-      domain: z.string().optional(),
-    }))
+  get_next_action: publicProcedure
+    .input(resolution_action_input)
     .query(async ({ input }) => {
-      const jur = input.jurisdiction.toUpperCase();
-
-      // Gather deadlines for urgency
-      const deadlines = await db.select().from(deadlineRules);
-      const urgent = deadlines.filter((d: any) => {
-        const text = [d.claimType, d.jurisdiction].join(" ").toLowerCase();
-        const keywords = input.claimType.toLowerCase().split(/[\s_-]+/);
-        return keywords.some((kw: string) => text.includes(kw));
-      }).sort((a: any, b: any) => (a.timeLimitDays ?? 999) - (b.timeLimitDays ?? 999));
-
-      // Gather workflows for steps
-      const workflows = await db.select().from(workflowMaster)
-        .where(or(
-          like(workflowMaster.jurisdiction, `%${jur}%`),
-          eq(workflowMaster.jurisdiction, "Federal"),
-        ));
-
-      const domainKeywords = (input.domain || input.claimType).toLowerCase().split(/[\s_-]+/);
-      const matchedWorkflow = workflows.find((w: any) => {
-        const text = [w.domain, w.primaryAgency, w.title].join(" ").toLowerCase();
-        return domainKeywords.some((kw: string) => text.includes(kw));
-      });
+      const [deadline_references, workflows] = await Promise.all([
+        read_resolution_deadlines(), read_resolution_workflows(),
+      ]);
+      const deadline_assessment = assess_resolution_deadlines(deadline_references, input);
+      const jurisdiction_code = deadline_jurisdiction_code(input.jurisdiction);
+      const domain_keywords = (input.domain || input.claim_type).toLowerCase().split(/[\s_-]+/).filter(word => word.length > 2);
+      const matched_workflow = jurisdiction_code ? workflows.find(reference => {
+        const text = [reference.domain, reference.primary_agency, reference.title].join(" ").toLowerCase();
+        return deadline_jurisdiction_code(reference.jurisdiction) === jurisdiction_code &&
+          domain_keywords.some(word => text.includes(word));
+      }) : undefined;
 
       // Build action items
       const actions: Array<{
         priority: number;
         action: string;
         detail: string;
-        urgency: "critical" | "high" | "medium" | "low";
+        urgency: "critical" | "high" | "medium" | "low" | "unknown";
         type: "deadline" | "filing" | "evidence" | "consultation" | "research";
+        href?: string;
       }> = [];
 
-      // Add deadline-driven actions
-      if (urgent.length > 0) {
-        const first = urgent[0];
-        actions.push({
-          priority: 1,
-          action: `File within ${first.timeLimitDays} days`,
-          detail: `${first.deadlineType}: ${first.authority ?? "Filing deadline for this claim type"}`,
-          urgency: (first.timeLimitDays ?? 999) < 90 ? "critical" : (first.timeLimitDays ?? 999) < 180 ? "high" : "medium",
-          type: "deadline",
-        });
-      }
+      actions.push(deadline_review_action(deadline_assessment));
 
       // Add workflow-driven actions
-      if (matchedWorkflow) {
+      if (matched_workflow) {
         actions.push({
           priority: 2,
-          action: `Start ${matchedWorkflow.title} workflow`,
-          detail: `File with ${matchedWorkflow.primaryAgency} in ${matchedWorkflow.jurisdiction}`,
+          action: `Review ${matched_workflow.title} workflow`,
+          detail: `Catalog reference: ${matched_workflow.primary_agency} in ${matched_workflow.jurisdiction}. Confirm the agency, eligibility and filing requirements before using this route.`,
+          href: "/enforcement-pathway",
           urgency: "high",
           type: "filing",
         });
@@ -410,7 +277,7 @@ export const dualLensRouter = router({
       actions.push({
         priority: 3,
         action: "Gather supporting evidence",
-        detail: `Collect documents, communications, and records related to your ${input.claimType} claim`,
+        detail: `Collect documents, communications, and records related to your ${input.claim_type} claim`,
         urgency: "medium",
         type: "evidence",
       });
@@ -426,60 +293,41 @@ export const dualLensRouter = router({
 
       return {
         actions: actions.sort((a, b) => a.priority - b.priority),
-        has_urgent_deadline: urgent.length > 0 && (urgent[0].timeLimitDays ?? 999) < 180,
-        nearest_deadline_days: urgent[0]?.timeLimitDays ?? null,
-        workflow_available: !!matchedWorkflow,
+        has_urgent_deadline: deadline_assessment.has_urgent_deadline,
+        nearest_deadline_days: deadline_assessment.nearest_deadline_days,
+        deadline_assessment,
+        workflow_available: !!matched_workflow,
       };
     }),
 
   /**
-   * Full resolution pipeline — runs all 5 steps in sequence.
-   * Returns the complete case resolution package.
+   * Source-reference preview using the same identities as the stepwise lens.
+   * This does not declare a complete or applicable legal resolution.
    */
-  resolveCase: publicProcedure
+  resolve_case: publicProcedure
     .input(z.object({
-      problemDescription: z.string().min(5),
-      jurisdiction: z.string(),
-      category: z.string().optional(),
-    }))
+      problem_description: z.string().min(5).optional(), problemDescription: z.string().min(5).optional(),
+      jurisdiction: z.string(), category: z.string().optional(),
+    }).transform(value => ({ problem_description: value.problem_description ?? value.problemDescription ?? "", jurisdiction: value.jurisdiction, category: value.category }))
+      .refine(value => value.problem_description.length >= 5, "Describe the situation in at least five characters"))
     .query(async ({ input }) => {
-      const allClaims = await db.select().from(strategyClaimCatalog);
-      const keywords = input.problemDescription.toLowerCase().split(/\s+/).filter((w: string) => w.length > 3);
-
-      const topClaim = allClaims
-        .map((c: any) => {
-          const text = [c.claimType, c.jurisdiction, c.statuteCitation, c.notes].filter(Boolean).join(" ").toLowerCase();
-          const score = keywords.filter((kw: string) => text.includes(kw)).length;
-          return { ...c, score };
-        })
-        .filter((c: any) => c.score > 0)
-        .sort((a: any, b: any) => b.score - a.score)[0];
-
-      if (!topClaim) {
-        return {
-          resolved: false,
-          message: "No matching claim type found. Try describing your situation in more detail.",
-          claim_match: null,
-          proof_checklist: null,
-          barriers: null,
-          agency: null,
-          next_action: null,
-        };
-      }
-
+      const { rows } = await query_with_diagnostics<claim_catalog_row>(`
+        select id, claim_type_id, canonical_name, domain, description
+        from public.claim_catalog where deprecated = 0 order by id`, [],
+        { label: "resolution_existing_claim_catalog", pool_acquire_timeout_ms: 1_000, query_timeout_ms: 5_000 });
+      const matches = match_catalog_claims(rows, input.problem_description, input.category);
+      const claim_match = matches[0] ?? null;
+      const source_reference = claim_match ? get_reviewed_claim_reference(claim_match.claim_type) : null;
       return {
-        resolved: true,
-        message: `Matched to: ${topClaim.claimType}`,
-        claim_match: {
-          claim_type: topClaim.claimType,
-          jurisdiction: topClaim.jurisdiction,
-          statute_citation: topClaim.statuteCitation,
-          standard_of_proof: topClaim.standardOfProof,
-        },
-        proof_checklist: null,
-        barriers: null,
-        agency: null,
-        next_action: null,
+        resolved: false,
+        reference_match_found: claim_match !== null,
+        resolution_status: claim_match ? "references_available_applicability_unresolved" : "no_topic_match",
+        message: claim_match ? `Source references for ${claim_match.canonical_name}; case applicability remains unresolved.` : "No catalog topic matched the supplied description.",
+        claim_match, proof_checklist: source_reference,
+        barriers: claim_match ? reviewed_barrier_references(claim_match.claim_type) : [],
+        agency: null, next_action: null,
+        unresolved_requirements: ["claim_applicability", "forum_and_agency", "event_based_deadline", "reviewed_proof_binding"],
+        source_context: source_reference ? reviewed_source_context() : null,
       };
     }),
 

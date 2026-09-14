@@ -70,18 +70,30 @@ type ResourceRecord = {
   provenance_status?: string | null;
   publication_status?: string;
   publication_source_reference?: string | null;
+  publication_review_note?: string | null;
+  source_resource_category?: string | null;
+  source_locator?: string | null;
+  source_content_sha256?: string | null;
+  source_artifact?: { object_name?: string | null } | null;
+  source_access?: { status: string; url: string | null };
+  source_transcription_correction?: {
+    revision_id: string;
+    source_span?: unknown;
+    review_scope?: string;
+    ledgerhash?: string;
+  } | null;
   contacts?: Contact[];
   locations?: ResourceLocation[];
 };
 
-function titleCase(value: string | null | undefined): string {
+function title_case(value: string | null | undefined): string {
   if (!value) return "Other";
   return value
     .replace(/_/g, " ")
     .replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
-function formatAddress(location: ResourceLocation | undefined): string | null {
+function format_address(location: ResourceLocation | undefined): string | null {
   if (!location) return null;
   const locality = [location.city, location.state, location.postal_code]
     .filter(Boolean)
@@ -97,14 +109,19 @@ function formatAddress(location: ResourceLocation | undefined): string | null {
 function ContactRow({ contact }: { contact: Contact }) {
   const type = contact.contact_type.toLowerCase();
   if (type === "phone" || type === "hotline") {
-    const digits = (contact.contact_value.split(/[·|]/)[0] ?? "").replace(/\D/g, "");
+    const digits = (contact.contact_value.split(/[·|]/)[0] ?? "").replace(
+      /\D/g,
+      "",
+    );
     return (
       <a
         href={digits.length >= 3 ? `tel:${digits}` : undefined}
         className="flex items-center gap-3 rounded-xl border border-emerald-400/20 bg-emerald-400/5 px-4 py-3 text-sm text-emerald-100 transition hover:border-emerald-300/50"
       >
         <Phone className="h-4 w-4 shrink-0 text-emerald-300" />
-        <span className="min-w-0 flex-1 break-words">{contact.contact_value}</span>
+        <span className="min-w-0 flex-1 break-words">
+          {contact.contact_value}
+        </span>
         {contact.label && (
           <span className="shrink-0 text-[10px] uppercase tracking-widest text-slate-500">
             {contact.label}
@@ -120,7 +137,9 @@ function ContactRow({ contact }: { contact: Contact }) {
         className="flex items-center gap-3 rounded-xl border border-sky-400/20 bg-sky-400/5 px-4 py-3 text-sm text-sky-100 transition hover:border-sky-300/50"
       >
         <Mail className="h-4 w-4 shrink-0 text-sky-300" />
-        <span className="min-w-0 flex-1 break-all">{contact.contact_value}</span>
+        <span className="min-w-0 flex-1 break-all">
+          {contact.contact_value}
+        </span>
       </a>
     );
   }
@@ -148,7 +167,13 @@ function ContactRow({ contact }: { contact: Contact }) {
   );
 }
 
-function ProvenanceRow({ label, value }: { label: string; value?: string | null }) {
+function ProvenanceRow({
+  label,
+  value,
+}: {
+  label: string;
+  value?: string | null;
+}) {
   if (value === null || value === undefined || value === "") return null;
   return (
     <div className="grid grid-cols-[130px_minmax(0,1fr)] gap-3 border-b border-white/5 py-2 text-xs leading-5 last:border-0">
@@ -158,25 +183,36 @@ function ProvenanceRow({ label, value }: { label: string; value?: string | null 
   );
 }
 
+function reviewed_source_span(value: unknown): string | null {
+  if (!value || typeof value !== "object") return null;
+  const span = value as { paragraph_start?: number; paragraph_end?: number };
+  if (
+    !Number.isInteger(span.paragraph_start) ||
+    !Number.isInteger(span.paragraph_end)
+  )
+    return null;
+  return `Paragraphs ${span.paragraph_start}–${span.paragraph_end}`;
+}
+
 export default function ResourceRecord() {
   const params = useParams<{ id: string }>();
-  const recordId = params.id ?? "";
+  const record_id = params.id ?? "";
 
-  const detailQuery = trpc.resourceDirectory.detail.useQuery(
-    { resourceEntityId: recordId },
-    { enabled: recordId.length > 0, retry: 1, refetchOnWindowFocus: false },
+  const detail_query = trpc.resourceDirectory.detail.useQuery(
+    { resource_entity_id: record_id },
+    { enabled: record_id.length > 0, retry: 1, refetchOnWindowFocus: false },
   );
 
-  const resource = detailQuery.data as ResourceRecord | undefined;
+  const resource = detail_query.data as ResourceRecord | undefined;
   const locations = resource?.locations ?? [];
   const contacts = resource?.contacts ?? [];
-  const primaryLocation = locations[0];
-  const address = formatAddress(primaryLocation);
-  const hasCoordinates =
-    primaryLocation?.latitude != null && primaryLocation?.longitude != null;
-  const mapParams = new URLSearchParams();
-  if (resource?.state) mapParams.set("jurisdiction", resource.state);
-  if (hasCoordinates) mapParams.set("resource", recordId);
+  const primary_location = locations[0];
+  const address = format_address(primary_location);
+  const has_coordinates =
+    primary_location?.latitude != null && primary_location?.longitude != null;
+  const map_params = new URLSearchParams();
+  if (resource?.state) map_params.set("jurisdiction", resource.state);
+  if (has_coordinates) map_params.set("resource", record_id);
 
   return (
     <div className="min-h-screen bg-[#070b12] text-slate-100">
@@ -197,7 +233,7 @@ export default function ResourceRecord() {
       </header>
 
       <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
-        {detailQuery.isLoading && (
+        {detail_query.isLoading && (
           <div className="flex min-h-64 items-center justify-center">
             <div className="text-center">
               <Loader2 className="mx-auto h-7 w-7 animate-spin text-emerald-300" />
@@ -208,13 +244,13 @@ export default function ResourceRecord() {
           </div>
         )}
 
-        {detailQuery.error && (
+        {detail_query.error && (
           <div className="rounded-2xl border border-rose-400/25 bg-rose-400/5 p-6">
             <h1 className="font-semibold text-rose-200">
               This record could not be loaded.
             </h1>
             <p className="mt-2 text-sm text-rose-100/70">
-              {detailQuery.error.message}
+              {detail_query.error.message}
             </p>
             <Link
               href="/resource-directory"
@@ -230,7 +266,7 @@ export default function ResourceRecord() {
             <section>
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-200">
-                  {titleCase(resource.resource_category)}
+                  {title_case(resource.resource_category)}
                 </span>
                 {(resource.state || resource.jurisdiction) && (
                   <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-medium text-slate-300">
@@ -305,17 +341,21 @@ export default function ResourceRecord() {
               <div className="mt-3 flex items-start gap-3 text-sm leading-6 text-slate-200">
                 <MapPin className="mt-1 h-4 w-4 shrink-0 text-emerald-300" />
                 <div>
-                  <p>{address || "Coverage is shown by jurisdiction; no street marker is implied."}</p>
-                  {primaryLocation?.coordinate_quality && (
+                  <p>
+                    {address ||
+                      "Coverage is shown by jurisdiction; no street marker is implied."}
+                  </p>
+                  {primary_location?.coordinate_quality && (
                     <p className="mt-1 text-xs text-slate-500">
-                      Coordinates: {titleCase(primaryLocation.coordinate_quality)}
+                      Coordinates:{" "}
+                      {title_case(primary_location.coordinate_quality)}
                     </p>
                   )}
                 </div>
               </div>
-              {hasCoordinates && (
+              {has_coordinates && (
                 <Link
-                  href={`/civic-map?${mapParams.toString()}`}
+                  href={`/civic-map?${map_params.toString()}`}
                   className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-300 hover:text-emerald-200"
                 >
                   <Map className="h-3.5 w-3.5" />
@@ -329,21 +369,126 @@ export default function ResourceRecord() {
                 <ShieldCheck className="h-3.5 w-3.5 text-emerald-300" />
                 Provenance
               </h2>
+              {resource.source_access?.url && (
+                <a
+                  href={resource.source_access.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 inline-flex items-center gap-2 rounded-lg border border-emerald-300/25 px-3 py-2 text-sm text-emerald-200 hover:bg-emerald-300/10"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Open original source document
+                </a>
+              )}
+              {resource.source_access && !resource.source_access.url && (
+                <p className="mt-3 text-sm text-slate-300">
+                  {resource.source_access.status === "source_access_restricted"
+                    ? "The original document has restricted access. Its access permissions are preserved."
+                    : resource.source_access.status ===
+                        "source_version_unresolved"
+                      ? "The original document version needs review before it can be opened from this record."
+                      : "The original document is not currently available from this record."}
+                </p>
+              )}
+              {resource.publication_review_note && (
+                <p className="mt-3 text-xs leading-6 text-slate-400">
+                  Source attached. Contact details, eligibility and service
+                  availability have not been independently rechecked.
+                </p>
+              )}
+              {resource.source_transcription_correction && (
+                <p className="mt-3 text-xs leading-6 text-slate-400">
+                  This entry's transcription was corrected against its original
+                  source. The source's claims still require independent review.
+                </p>
+              )}
               <div className="mt-3">
-                <ProvenanceRow label="Canonical identity" value={resource.canonical_id ?? resource.resource_entity_id} />
-                <ProvenanceRow label="Record identity" value={resource.resource_entity_id} />
-                {resource.office_id && <>
-                  <ProvenanceRow label="Office identity" value={resource.office_id} />
-                  <ProvenanceRow label="Office type" value={resource.office_type} />
-                  <ProvenanceRow label="Agency key" value={resource.agency_key} />
-                  <ProvenanceRow label="Source table" value={resource.source_table} />
-                  <ProvenanceRow label="Locator source" value={resource.locator_source_id} />
-                  <ProvenanceRow label="Source hash (8)" value={resource.source_hash8} />
-                  <ProvenanceRow label="Source provenance" value={resource.source_provenance ?? 'Not recorded'} />
-                </>}
-                <ProvenanceRow label="Source reference" value={resource.publication_source_reference} />
-                <ProvenanceRow label="Provenance status" value={resource.provenance_status ? titleCase(resource.provenance_status) : null} />
-                <ProvenanceRow label="Promotion status" value={resource.promotion_status ? titleCase(resource.promotion_status) : null} />
+                <ProvenanceRow
+                  label="Transcription revision"
+                  value={resource.source_transcription_correction?.revision_id}
+                />
+                <ProvenanceRow
+                  label="Reviewed source span"
+                  value={reviewed_source_span(
+                    resource.source_transcription_correction?.source_span,
+                  )}
+                />
+                <ProvenanceRow
+                  label="Document"
+                  value={resource.source_artifact?.object_name}
+                />
+                <ProvenanceRow
+                  label="Source location"
+                  value={resource.source_locator}
+                />
+                <ProvenanceRow
+                  label="Recorded document hash"
+                  value={resource.source_content_sha256}
+                />
+                <ProvenanceRow
+                  label="Source category"
+                  value={resource.source_resource_category}
+                />
+                <ProvenanceRow
+                  label="Canonical identity"
+                  value={resource.canonical_id ?? resource.resource_entity_id}
+                />
+                <ProvenanceRow
+                  label="Record identity"
+                  value={resource.resource_entity_id}
+                />
+                {resource.office_id && (
+                  <>
+                    <ProvenanceRow
+                      label="Office identity"
+                      value={resource.office_id}
+                    />
+                    <ProvenanceRow
+                      label="Office type"
+                      value={resource.office_type}
+                    />
+                    <ProvenanceRow
+                      label="Agency key"
+                      value={resource.agency_key}
+                    />
+                    <ProvenanceRow
+                      label="Source table"
+                      value={resource.source_table}
+                    />
+                    <ProvenanceRow
+                      label="Locator source"
+                      value={resource.locator_source_id}
+                    />
+                    <ProvenanceRow
+                      label="Source hash (8)"
+                      value={resource.source_hash8}
+                    />
+                    <ProvenanceRow
+                      label="Source provenance"
+                      value={resource.source_provenance ?? "Not recorded"}
+                    />
+                  </>
+                )}
+                <ProvenanceRow
+                  label="Source reference"
+                  value={resource.publication_source_reference}
+                />
+                <ProvenanceRow
+                  label="Provenance status"
+                  value={
+                    resource.provenance_status
+                      ? title_case(resource.provenance_status)
+                      : null
+                  }
+                />
+                <ProvenanceRow
+                  label="Promotion status"
+                  value={
+                    resource.promotion_status
+                      ? title_case(resource.promotion_status)
+                      : null
+                  }
+                />
               </div>
             </section>
 
@@ -352,7 +497,7 @@ export default function ResourceRecord() {
                 type="resource"
                 itemId={resource.resource_entity_id}
                 resourceName={resource.resource_name}
-                sourceLane={resource.office_id ? 'gov_offices' : undefined}
+                sourceLane={resource.office_id ? "gov_offices" : undefined}
                 size="default"
               />
               <Link

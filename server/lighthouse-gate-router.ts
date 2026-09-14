@@ -462,33 +462,33 @@ const agencyMetricsRouter = router({
 
 // ─── Architecture Map Router ───
 const architectureMapRouter = router({
-  getArchitectureOverview: publicProcedure.query(async () => {
-    const [statutes, caseLaw, enforcement, programs, resources, jurisdictions, signals, cases, entities, documents] = await Promise.all([
+  get_architecture_overview: publicProcedure.query(async () => {
+    const [statutes, case_law, enforcement, programs, resources, jurisdictions, signals, cases, entities, documents] = await Promise.all([
       countTable("legal_statutes"), countTable("legal_case_law"), countTable("legal_enforcement_records"),
       countTable("registry_programs"), countTable("unified_resources"), countTable("registry_jurisdictions"),
       countTable("detected_signals"), countTable("cases"), countTable("entities"), countTable("documents"),
     ]);
     const layers = [
-      { id: "L0", name: "Raw Ingestion", description: "Source documents and uploads", order: 0, tables: [{ name: "documents", label: "Documents", count: documents }], totalRecords: documents, status: documents > 0 ? "populated" : "empty", color: "#6366f1" },
-      { id: "L1", name: "Entity Extraction", description: "Named entities and relationships", order: 1, tables: [{ name: "entities", label: "Entities", count: entities }], totalRecords: entities, status: entities > 0 ? "populated" : "empty", color: "#8b5cf6" },
-      { id: "L2", name: "Legal Knowledge", description: "Statutes, case law, enforcement", order: 2, tables: [{ name: "legal_statutes", label: "Statutes", count: statutes }, { name: "legal_case_law", label: "Case Law", count: caseLaw }, { name: "legal_enforcement_records", label: "Enforcement", count: enforcement }], totalRecords: statutes + caseLaw + enforcement, status: "populated", color: "#ec4899" },
-      { id: "L3", name: "Registry", description: "Programs, resources, jurisdictions", order: 3, tables: [{ name: "registry_programs", label: "Programs", count: programs }, { name: "unified_resources", label: "Resources", count: resources }, { name: "registry_jurisdictions", label: "Jurisdictions", count: jurisdictions }], totalRecords: programs + resources + jurisdictions, status: "populated", color: "#f59e0b" },
-      { id: "L4", name: "Signal Detection", description: "Pattern and signal analysis", order: 4, tables: [{ name: "detected_signals", label: "Signals", count: signals }], totalRecords: signals, status: signals > 0 ? "populated" : "empty", color: "#10b981" },
-      { id: "L5", name: "Case Management", description: "Cases and claims", order: 5, tables: [{ name: "cases", label: "Cases", count: cases }], totalRecords: cases, status: cases > 0 ? "populated" : "empty", color: "#06b6d4" },
+      { id: "L0", name: "Raw Ingestion", description: "Source documents and uploads", order: 0, tables: [{ name: "documents", label: "Documents", count: documents }], total_records: documents, status: documents > 0 ? "populated" : "empty", color: "#6366f1" },
+      { id: "L1", name: "Entity Extraction", description: "Named entities and relationships", order: 1, tables: [{ name: "entities", label: "Entities", count: entities }], total_records: entities, status: entities > 0 ? "populated" : "empty", color: "#8b5cf6" },
+      { id: "L2", name: "Legal Knowledge", description: "Statutes, case law, enforcement", order: 2, tables: [{ name: "legal_statutes", label: "Statutes", count: statutes }, { name: "legal_case_law", label: "Case Law", count: case_law }, { name: "legal_enforcement_records", label: "Enforcement", count: enforcement }], total_records: statutes + case_law + enforcement, status: "populated", color: "#ec4899" },
+      { id: "L3", name: "Registry", description: "Programs, resources, jurisdictions", order: 3, tables: [{ name: "registry_programs", label: "Programs", count: programs }, { name: "unified_resources", label: "Resources", count: resources }, { name: "registry_jurisdictions", label: "Jurisdictions", count: jurisdictions }], total_records: programs + resources + jurisdictions, status: "populated", color: "#f59e0b" },
+      { id: "L4", name: "Signal Detection", description: "Pattern and signal analysis", order: 4, tables: [{ name: "detected_signals", label: "Signals", count: signals }], total_records: signals, status: signals > 0 ? "populated" : "empty", color: "#10b981" },
+      { id: "L5", name: "Case Management", description: "Cases and claims", order: 5, tables: [{ name: "cases", label: "Cases", count: cases }], total_records: cases, status: cases > 0 ? "populated" : "empty", color: "#06b6d4" },
     ];
-    const totalTables = layers.reduce((sum, l) => sum + l.tables.length, 0);
-    const totalRecords = layers.reduce((sum, l) => sum + l.totalRecords, 0);
-    const populatedLayers = layers.filter(l => l.totalRecords > 0).length;
+    const total_tables = layers.reduce((sum, l) => sum + l.tables.length, 0);
+    const total_records = layers.reduce((sum, l) => sum + l.total_records, 0);
+    const populated_layers = layers.filter(l => l.total_records > 0).length;
     return {
       layers,
-      connections: [{ from: "L0", to: "L1", label: "extraction", strength: 1 }, { from: "L1", to: "L2", label: "classification", strength: 1 }, { from: "L2", to: "L4", label: "signal detection", strength: 1 }],
-      summary: { totalLayers: layers.length, totalTables, totalRecords, populatedLayers, healthyCount: populatedLayers, warningCount: 0, errorCount: layers.length - populatedLayers },
+      connections: [{ from: "L0", to: "L1", label: "extraction", relationship_state: "configured_dependency", verified_edge_count: null }, { from: "L1", to: "L2", label: "classification", relationship_state: "configured_dependency", verified_edge_count: null }, { from: "L2", to: "L4", label: "signal detection", relationship_state: "configured_dependency", verified_edge_count: null }],
+      summary: { total_layers: layers.length, total_tables, total_records, populated_layers, healthy_count: populated_layers, warning_count: 0, error_count: layers.length - populated_layers },
     };
   }),
   listClaimElements: publicProcedure.input(z.any().optional()).query(async () => []),
   listFilingTemplates: publicProcedure.input(z.any().optional()).query(async () => []),
   listInvestigationGuidance: publicProcedure.input(z.any().optional()).query(async () => []),
-  listProofFrameworks: publicProcedure.input(z.any().optional()).query(async () => []),
+  list_proof_frameworks: publicProcedure.input(z.any().optional()).query(async () => []),
 });
 
 // ─── Analytics Router ───

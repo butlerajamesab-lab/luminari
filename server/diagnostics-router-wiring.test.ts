@@ -259,10 +259,17 @@ it("keeps operational and legacy-derived records inspectable without case alerts
     authority_refs: ["Saved authority"], doctrineLink: null, statuteLink: null, route_status: "not_established",
   });
   expect(paths.paths.some((row: any) => row.barrier_id === "ingestion")).toBe(false);
-  const alerts = await caller.getBarrierAlerts({ claimType: "procedural", domain: "employment" });
-  expect(alerts.barriers.map((row: any) => row.barrier_id)).toEqual(["LB-1"]);
-  expect(alerts.barriers[0]).toMatchObject({ barrier_type: "procedural", what_it_blocks: "Review" });
+  const alerts = await caller.get_barrier_alerts({
+    claim_type: "emp_005_wage_theft_minimum_wage_violation", domain: "employment",
+  });
+  expect(alerts.barriers.map(row => row.barrier_id)).toEqual(["BAR-001", "BAR-006", "BAR-008"]);
+  expect(alerts.barriers.every(row => row.case_applicability === "not_assessed" && row.legal_verification === "unverified")).toBe(true);
+  expect(alerts.barriers.every(row => row.applicability_questions.length > 0)).toBe(true);
   expect(alerts.excluded_unverified_references).toBe(2);
+  expect(alerts.unmatched_catalog_references).toBe(2);
+  const unmapped = await caller.get_barrier_alerts({ claimType: "procedural", domain: "employment" });
+  expect(unmapped.barriers).toEqual([]);
+  expect(unmapped.case_applicability).toBe("not_assessed");
   expect((await caller.getBarrierClusters({ domain: "housing" })).total_barriers).toBe(0);
   expect((await caller.getSignalPatterns({ domain: "housing" })).patterns[0].type).toBe("missing_notice");
 });

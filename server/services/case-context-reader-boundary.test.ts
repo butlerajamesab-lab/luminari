@@ -6,7 +6,7 @@ vi.mock("../legal-library-runtime-db", () => ({
   listRuntimeContradictions: vi.fn(), searchRuntimeCaseLaw: vi.fn(),
   searchRuntimeEnforcement: vi.fn(), searchRuntimeWeakJoints: vi.fn(),
 }));
-vi.mock("./resource-directory-publishable", () => ({ searchPublishableResourceDirectory: vi.fn() }));
+vi.mock("./resource-directory-publishable", () => ({ search_publishable_resource_directory: vi.fn() }));
 vi.mock("../enforcement-pathway-runtime-compat", () => ({ read_enforcement_pathways: mocks.pathways }));
 vi.mock("../case-timeline-intake-compat", () => ({ getCaseTimelineData: mocks.timeline }));
 import { read_case_statutes, read_case_legal_stats, read_case_enforcement_pathways, read_case_timeline } from "./case-context-reader-boundary";
@@ -42,17 +42,17 @@ it("normalizes every legal-statistics key without conflating ready and held tota
   expect_snake_keys(stats);
 });
 
-it("normalizes nested enforcement DTOs and preserves exact pathway identity and source status", async () => {
+it("passes through owned enforcement DTOs and preserves exact pathway identity and source status", async () => {
   mocks.pathways.mockResolvedValueOnce({
-    availability: { status: "source_text_only", reason: "Stored source text" }, matchedBy: "pipelineCategory",
-    requested: { agencyShort: null, claimType: null, pipelineCategory: "housing" },
-    filterOptions: { agencyShorts: ["AGENCY"], claimTypes: ["claim-source"], pipelineCategories: ["housing"] },
-    totalSourceRows: 2, matchedSourceRows: 1, returnedSourceRows: 1, returnLimit: 50,
-    sourceContract: "current_civic_object_enforcement_pathways_v1",
-    pathways: [{ id: "source-uuid", pathwayId: "pathway-source-id", pathwayName: "Agency", jurisdiction: "WA",
-      domain: "housing", description: "Stored text", agencyShort: "AGENCY", claimTypes: ["claim-source"],
-      pipelineCategories: ["housing"], sourceState: "source_text_only", sourcePending: true,
-      sourceUrl: "https://example.gov", sourceFile: "source.json", sourceSha256: "source-hash", createdAt: "source-date" }],
+    availability: { status: "source_text_only", reason: "Stored source text" }, matched_by: "pipeline_category",
+    requested: { agency_short: null, claim_type: null, pipeline_category: "housing" },
+    filter_options: { agency_shorts: ["AGENCY"], claim_types: ["claim-source"], pipeline_categories: ["housing"] },
+    total_source_rows: 2, matched_source_rows: 1, returned_source_rows: 1, return_limit: 50,
+    source_contract: "enforcement_model_step_source_references_v2",
+    pathways: [{ id: "source-uuid", pathway_id: "pathway-source-id", pathway_name: "Agency", jurisdiction: "WA",
+      domain: "housing", description: "Stored text", agency_short: "AGENCY", claim_types: ["claim-source"],
+      pipeline_categories: ["housing"], source_state: "source_text_only", source_pending: true,
+      source_url: "https://example.gov", source_file: "source.json", source_sha256: "source-hash", created_at: "source-date" }],
   });
   const result = await read_case_enforcement_pathways({ jurisdiction: "WA", pipeline_category: "housing" });
   expect(mocks.pathways).toHaveBeenCalledWith({ jurisdiction: "WA", pipeline_category: "housing" });

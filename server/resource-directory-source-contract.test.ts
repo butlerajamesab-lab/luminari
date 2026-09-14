@@ -28,11 +28,11 @@ describe("current Resource Directory source contracts", () => {
     expect(embeddedDirectory).toContain("total_is_exact");
     expect(embeddedDirectory).not.toContain("const RESOURCES:");
 
-    expect(router).toContain("searchPublishableResourceDirectory");
-    expect(router).toContain("getPublishableResourceDirectorySummary");
+    expect(router).toContain("search_publishable_resource_directory");
+    expect(router).toContain("get_publishable_resource_directory_summary");
     expect(appRouter).toContain("resourceDirectory: resourceDirectoryRouter");
     expect(shim).toContain('from "./resource-directory-fast-current"');
-    expect(service).toContain("v_lighthouse_resource_program_catalog_v2");
+    expect(service).toContain("v_lighthouse_resource_program_transcribed_v1");
     expect(service).toContain("person_facing_ready");
     expect(service).toContain("DIRECTORY_UI_CATEGORY_SQL");
     expect(service).not.toContain("luminari_resource_entities");
@@ -48,10 +48,10 @@ describe("current Resource Directory source contracts", () => {
     );
 
     expect(router).toContain("max(60)");
-    expect(service).toContain("const fetchLimit = limit + 1");
+    expect(service).toContain("const fetch_limit = limit + 1");
     expect(service).toContain("limit $");
     expect(service).toContain("offset $");
-    expect(service).toContain("total_is_exact: !hasMore");
+    expect(service).toContain("total_is_exact: !has_more");
     expect(service).not.toContain("count(*) over()::int as filtered_total");
   });
 

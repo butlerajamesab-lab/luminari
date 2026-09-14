@@ -5,7 +5,7 @@ import {
   getResourceDirectoryDetail,
   getResourceDirectoryMapPoints,
 } from "../services/resource-directory";
-import { getPublishableResourceDirectorySummary } from "../services/resource-directory-publishable";
+import { get_publishable_resource_directory_summary } from "../services/resource-directory-publishable";
 import { getPool } from "../db";
 
 export const civicMapRouter = express.Router();
@@ -100,7 +100,7 @@ async function getBreadthPreservingCoverage() {
   // be aborted before any circles render. Exact physical-site counts are a
   // separate, intentionally stricter projection.
   const [breadth, mapSites, govOfficeExactSites] = await Promise.all([
-    getPublishableResourceDirectorySummary() as Promise<ResourceDirectoryBreadth>,
+    get_publishable_resource_directory_summary() as Promise<ResourceDirectoryBreadth>,
     getReviewedMapSiteCounts(),
     getGovOfficeExactSiteCount(),
   ]);
