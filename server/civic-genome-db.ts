@@ -253,7 +253,7 @@ export async function list_genome_bills(opts?: {
 
   if (opts?.family_id) {
     params.push(opts.family_id);
-    conditions.push(`event.family_id = $${params.length}`);
+    conditions.push(`family_id = $${params.length}`);
   }
   if (opts?.state_code) {
     params.push(opts.state_code);
