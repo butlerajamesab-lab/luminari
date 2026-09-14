@@ -23,6 +23,7 @@ type docket_cache_status_row = {
   fetched_at: string | null;
   is_fresh: boolean;
   requires_retry?: boolean;
+  retry_scheduled?: boolean;
 };
 
 type docket_cache_database_row = {
@@ -101,7 +102,7 @@ export function sort_docket_warm_candidates(
   states: docket_cache_status_row[],
 ): docket_cache_status_row[] {
   return states
-    .filter(row => row.is_fresh !== true || row.requires_retry === true)
+    .filter(row => row.requires_retry === true || (row.is_fresh !== true && row.retry_scheduled !== true))
     .sort((a, b) => {
       if (a.requires_retry !== b.requires_retry) return a.requires_retry ? -1 : 1;
       if (a.has_cache !== b.has_cache) return a.has_cache ? 1 : -1;
@@ -232,6 +233,7 @@ async function read_cache_status(
         && Number.isFinite(fetched_ms)
         && now_ms - fetched_ms < STATE_CACHE_TTL_MS,
       requires_retry: Boolean(cache_state?.retry_after && new Date(cache_state.retry_after).getTime() <= now_ms),
+      retry_scheduled: Boolean(cache_state?.retry_after),
     };
   });
 }

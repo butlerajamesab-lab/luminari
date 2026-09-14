@@ -61,14 +61,14 @@ export const classify_docket_event = (
     };
   }
 
-  if (/^\s*(?:failed|withdrawn|dead)\b|postponed indefinitely|\b(?:bill|measure|resolution)\s+(?:has\s+)?(?:failed|withdrawn|died)\b/.test(last_action)) {
+  if (/^\s*(?:failed|withdrawn|dead|postponed indefinitely)\b|\b(?:bill|measure|resolution)\s+(?:has\s+)?(?:failed|withdrawn|died|been\s+postponed\s+indefinitely)\b/.test(last_action)) {
     return {
       event_type: "failed",
       event_summary: summarize(bill, "appears failed, withdrawn, dead, or indefinitely postponed on the live docket"),
     };
   }
 
-  if (/amend|engrossed|substitute|revised/.test(text)) {
+  if (/amend|engrossed|substitute|revised/.test(last_action)) {
     return {
       event_type: "amended",
       event_summary: summarize(bill, "appears amended, substituted, engrossed, or revised on the live docket"),

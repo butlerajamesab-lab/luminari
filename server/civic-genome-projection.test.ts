@@ -56,6 +56,24 @@ describe("Civic Genome Docket lifecycle projection", () => {
     expect(classify_docket_event(bill, null).event_type).toBe("amended");
   });
 
+  it("does not derive amendment movement from a bill title", () => {
+    const bill = {
+      bill_id: 8,
+      number: "HB8",
+      title: "An Act amending chapter 42.",
+      last_action: "First reading; referred to committee.",
+    };
+    expect(classify_docket_event(bill, null).event_type).toBe("committee_action");
+  });
+
+  it("does not terminate a bill when only a subsidiary action is postponed", () => {
+    for (const last_action of ["Amendment postponed indefinitely.", "Motion postponed indefinitely."]) {
+      const bill = { bill_id: 9, number: "HB9", last_action };
+      expect(infer_state_position(bill)).toBe("introduced");
+      expect(classify_docket_event(bill, null).event_type).not.toBe("failed");
+    }
+  });
+
   it("preserves explicit whole-bill enactment evidence", () => {
     const bill = {
       bill_id: 5,

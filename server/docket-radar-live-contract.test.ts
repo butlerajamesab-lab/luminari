@@ -1,11 +1,20 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { sort_docket_warm_candidates } from "./docket-state-cache-warmer";
 import { LEGISCAN_ROLLOUT_STATES } from "./services/legiscan";
 
 const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
 
 describe("Docket Radar live contract", () => {
+  it("does not spend ordinary capacity on retries whose backoff has not elapsed", () => {
+    expect(sort_docket_warm_candidates([
+      { state: "AA", has_cache: false, fetched_at: null, is_fresh: false, retry_scheduled: true, requires_retry: false },
+      { state: "BB", has_cache: false, fetched_at: null, is_fresh: false, retry_scheduled: false, requires_retry: false },
+      { state: "CC", has_cache: false, fetched_at: null, is_fresh: false, retry_scheduled: true, requires_retry: true },
+    ]).map(row => row.state)).toEqual(["CC", "BB"]);
+  });
+
   it("includes Congress in the same provider-backed jurisdiction path", () => {
     expect(LEGISCAN_ROLLOUT_STATES).toContain("US");
     expect(LEGISCAN_ROLLOUT_STATES).toHaveLength(52);

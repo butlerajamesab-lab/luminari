@@ -137,7 +137,7 @@ export const infer_state_position = (bill: legiscan_master_bill): string => {
   if (/signed by governor|governor signed|became law|\b(?:bill|measure|resolution)\s+(?:has\s+)?enacted\b/.test(last_action))
     return "enacted";
   if ([5, 6].includes(status)) return "failed";
-  if (/^\s*(?:failed|withdrawn|dead|vetoed)\b|postponed indefinitely|\b(?:bill|measure|resolution)\s+(?:has\s+)?(?:failed|withdrawn|vetoed|died)\b/.test(last_action))
+  if (/^\s*(?:failed|withdrawn|dead|vetoed|postponed indefinitely)\b|\b(?:bill|measure|resolution)\s+(?:has\s+)?(?:failed|withdrawn|vetoed|died|been\s+postponed\s+indefinitely)\b/.test(last_action))
     return "failed";
   if (/passed house and senate|passed both/.test(last_action))
     return "advanced_two_chambers";
