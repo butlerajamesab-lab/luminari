@@ -51,6 +51,8 @@ describe("Docket Radar live contract", () => {
     expect(migration).toContain("COALESCE(cl.n, 0) AS latest_count");
     expect(coverage_migration).toContain("LEFT JOIN base b ON b.genome_bill_id = l.genome_bill_id");
     expect(coverage_migration).toContain("latest_has_trait_coverage");
+    expect(read("supabase/migrations/20260914082817_docket_drift_completed_verification_coverage.sql"))
+      .toContain("processing_state IN ('verified', 'verified_with_findings')");
     expect(read("server/routes/docket.ts")).toContain("row.latest_has_trait_coverage === true");
     expect(read("client/src/pages/DocketRoom.tsx")).toContain("snapshot_is_fresh(payload.fetched_at)");
     expect(worker).toContain("const docket_worker_startup = start_docket_workers().catch");
