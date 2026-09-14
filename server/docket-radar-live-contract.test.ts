@@ -63,6 +63,8 @@ describe("Docket Radar live contract", () => {
     expect(projection).toContain('action: "unchanged"');
     expect(projection).toContain("capture_projection_entity_versions");
     expect(projection).toContain("capture_target_family_version");
+    expect(projection).toContain("existing.family_id !== persisted_family_id");
+    expect(projection).toContain("refresh_family_rollups(existing.family_id, client)");
     expect(read("server/civic-genome-external-snapshot-producer.ts"))
       .toContain("civic_genome_projection_entity_version");
     expect(read("server/civic-genome-external-snapshot-producer.ts"))
