@@ -27,6 +27,7 @@ type docket_cache_status_row = {
 
 type docket_cache_database_row = {
   state: string;
+  has_cache: boolean;
   fetched_at: string | Date | null;
   retry_after: string | Date | null;
 };
@@ -196,10 +197,12 @@ async function read_cache_status(
     .filter(state => /^[A-Z]{2}$/.test(state));
 
   const cache_rows = await query_with_diagnostics<docket_cache_database_row>(
-    `select cache.state, cache.fetched_at, retry.retry_after
-       from public.docket_bill_state_cache cache
-       left join public.docket_state_projection_retry retry on retry.state = cache.state
-      where cache.state = any($1::text[])`,
+    `with configured(state) as (select unnest($1::text[]))
+     select configured.state, cache.state is not null as has_cache,
+            cache.fetched_at, retry.retry_after
+       from configured
+       left join public.docket_bill_state_cache cache on cache.state = configured.state
+       left join public.docket_state_projection_retry retry on retry.state = configured.state`,
     [configured_states],
     {
       label: "docket_state_cache_warmer_cache_rows",
@@ -209,6 +212,7 @@ async function read_cache_status(
   );
   const cache_by_state = new Map(
     cache_rows.rows.map(row => [String(row.state).toUpperCase(), {
+      has_cache: row.has_cache === true,
       fetched_at: normalized_fetched_at(row.fetched_at),
       retry_after: normalized_fetched_at(row.retry_after),
     }]),
@@ -216,8 +220,8 @@ async function read_cache_status(
   const now_ms = Date.now();
 
   return configured_states.map(state => {
-    const has_cache = cache_by_state.has(state);
     const cache_state = cache_by_state.get(state);
+    const has_cache = cache_state?.has_cache === true;
     const fetched_at = cache_state?.fetched_at ?? null;
     const fetched_ms = fetched_at ? new Date(fetched_at).getTime() : Number.NaN;
     return {
