@@ -127,14 +127,16 @@ const infer_policy_domain = (bill: legiscan_master_bill): string => {
 
 export const infer_state_position = (bill: legiscan_master_bill): string => {
   const last_action = (bill.last_action ?? "").toLowerCase();
+  const status = Number(bill.status);
 
   // An explicit effective-date action is post-enactment evidence even when
   // the cached master-list status remains the generic LegiScan "Passed" code.
   // Restrict this signal to the action field so bills *about* effective dates
   // are not falsely classified as enacted.
   if (/^\s*(?:effective date|chapter(?:ed)?|enacted)\b/.test(last_action)) return "enacted";
-  if (/signed by governor|became law|\b(?:bill|measure|resolution)\s+(?:has\s+)?enacted\b/.test(last_action))
+  if (/signed by governor|governor signed|became law|\b(?:bill|measure|resolution)\s+(?:has\s+)?enacted\b/.test(last_action))
     return "enacted";
+  if ([5, 6].includes(status)) return "failed";
   if (/^\s*(?:failed|withdrawn|dead|vetoed)\b|postponed indefinitely|\b(?:bill|measure|resolution)\s+(?:has\s+)?(?:failed|withdrawn|vetoed|died)\b/.test(last_action))
     return "failed";
   if (/passed house and senate|passed both/.test(last_action))

@@ -67,6 +67,15 @@ describe("Civic Genome Docket lifecycle projection", () => {
     expect(classify_docket_event(bill, null).event_type).toBe("enacted");
   });
 
+  it("aligns terminal provider statuses and governor-signed wording", () => {
+    const vetoed = { bill_id: 6, number: "HB6", status: 5, last_action: "Returned to chamber." };
+    const signed = { bill_id: 7, number: "HB7", status: 4, last_action: "Governor signed the bill." };
+    expect(infer_state_position(vetoed)).toBe("failed");
+    expect(classify_docket_event(vetoed, null).event_type).toBe("vetoed");
+    expect(infer_state_position(signed)).toBe("enacted");
+    expect(classify_docket_event(signed, null).event_type).toBe("enacted");
+  });
+
   it("emits a correction when derived position changes under the same observation hash", () => {
     expect(should_append_projection_event(
       "same_hash",

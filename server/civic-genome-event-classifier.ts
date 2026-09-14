@@ -24,6 +24,7 @@ export const classify_docket_event = (
 ): civic_genome_docket_event_classification => {
   const text = bill_text(bill);
   const last_action = `${bill.last_action ?? ""}`.toLowerCase();
+  const status = Number(bill.status);
 
   if (/^\s*effective date\b/.test(last_action)) {
     return {
@@ -43,6 +44,20 @@ export const classify_docket_event = (
     return {
       event_type: "vetoed",
       event_summary: summarize(bill, "appears vetoed on the live docket"),
+    };
+  }
+
+  if (status === 5) {
+    return {
+      event_type: "vetoed",
+      event_summary: summarize(bill, "has a terminal veto status on the live docket"),
+    };
+  }
+
+  if (status === 6) {
+    return {
+      event_type: "failed",
+      event_summary: summarize(bill, "has a terminal failed status on the live docket"),
     };
   }
 

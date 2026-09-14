@@ -44,6 +44,8 @@ describe("Docket Radar live contract", () => {
     expect(page).not.toMatch(/\\b\(\?:enacted\|withdrawn/);
     expect(detail).not.toMatch(/\\b\(\?:enacted\|withdrawn/);
     expect(page).toContain("effective date|enacted|withdrawn|dead|vetoed");
+    expect(page).toContain("signed by governor|governor signed|became law");
+    expect(detail).toContain("signed by governor|governor signed|became law");
     expect(page).toContain("failed\\s+(?:final passage|to pass)");
     expect(page).toContain('new Date(`${value}T00:00:00`)');
     expect(detail).toContain('new Date(`${value}T00:00:00`)');
