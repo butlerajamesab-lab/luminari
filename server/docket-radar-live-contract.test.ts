@@ -34,7 +34,7 @@ describe("Docket Radar live contract", () => {
   it("keeps refresh projection durable and bill-event writes atomic", () => {
     const routes = read("server/routes/docket.ts");
     const projection = read("server/civic-genome-projection.ts");
-    const correction = read("supabase/migrations/20260914103400_docket_event_classification_correction.sql");
+    const correction = read("supabase/migrations/20260914103304_docket_event_classification_correction.sql");
     expect(routes).toContain("mark_state_projection_required(state)");
     expect(routes).toContain("request_scoped_cache_refresh_requires_projection");
     expect(projection).toContain('await client.query("begin")');
@@ -42,6 +42,8 @@ describe("Docket Radar live contract", () => {
     expect(projection).toContain('await client.query("rollback")');
     expect(correction).toContain("classification_superseded");
     expect(correction).toContain("docket_classification_corrected");
+    expect(read("server/civic-genome-external-snapshot-producer.ts")).toContain("superseded_event_id' = e.event_id::text");
+    expect(read("supabase/migrations/20260914104100_docket_event_correction_append_only_repair.sql")).toContain("event_payload_json - 'classification_correction'");
   });
 
   it("runs refresh and activation only in the authorized worker", () => {

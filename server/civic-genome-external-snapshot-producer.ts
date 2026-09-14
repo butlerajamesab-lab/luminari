@@ -50,6 +50,13 @@ select jsonb_build_object(
     from public.civic_genome_event e
     where e.family_id = f.family_id
       and e.created_at <= $2::timestamptz
+      and not exists (
+        select 1
+        from public.civic_genome_event correction
+        where correction.event_type = 'docket_classification_corrected'
+          and correction.event_payload_json ->> 'superseded_event_id' = e.event_id::text
+          and correction.created_at <= $2::timestamptz
+      )
   ), '[]'::jsonb),
   'lineage_edges', coalesce((
     select jsonb_agg(to_jsonb(le) order by le.lineage_edge_id)

@@ -322,7 +322,7 @@ const mark_state_projection_required = async (state: string): Promise<void> => {
   await query_with_diagnostics(
     `insert into public.docket_state_projection_retry
        (state, failure_count, retry_after, last_error_code, updated_at)
-     values ($1, 0, now(), 'request_scoped_cache_refresh_requires_projection', now())
+     values ($1, 1, now(), 'request_scoped_cache_refresh_requires_projection', now())
      on conflict (state) do update set
        retry_after = now(),
        last_error_code = excluded.last_error_code,
