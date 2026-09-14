@@ -61,6 +61,11 @@ describe("Docket Radar live contract", () => {
     expect(lifecycle_scope).not.toMatch(/update\s+public\.civic_genome_lifecycle_event_v2/i);
     expect(lifecycle_scope).not.toMatch(/delete\s+from\s+public\.civic_genome_lifecycle_event_v2/i);
     expect(projection).toContain('action: "unchanged"');
+    expect(projection).toContain("capture_projection_entity_versions");
+    expect(read("server/civic-genome-external-snapshot-producer.ts"))
+      .toContain("civic_genome_projection_entity_version");
+    expect(read("supabase/migrations/20260914115743_civic_genome_projection_entity_versions.sql"))
+      .toContain("Immutable family/bill current-row versions");
   });
 
   it("runs refresh and activation only in the authorized worker", () => {

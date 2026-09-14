@@ -18,13 +18,38 @@ const HEX64 = /^[0-9a-f]{64}$/;
 
 export const CIVIC_GENOME_EXTERNAL_FAMILY_DATASET_SQL = `
 select jsonb_build_object(
-  'family', to_jsonb(f),
+  'family', coalesce((
+    select version.record_json
+    from public.civic_genome_projection_entity_version version
+    where version.entity_type = 'family'
+      and version.entity_id = f.family_id
+      and version.observed_at <= $2::timestamptz
+    order by version.observed_at desc, version.entity_version_id desc
+    limit 1
+  ), to_jsonb(f)),
   'bills', coalesce((
-    select jsonb_agg(to_jsonb(b) order by b.genome_bill_id)
+    select jsonb_agg(coalesce((
+      select version.record_json
+      from public.civic_genome_projection_entity_version version
+      where version.entity_type = 'bill'
+        and version.entity_id = b.genome_bill_id
+        and version.observed_at <= $2::timestamptz
+      order by version.observed_at desc, version.entity_version_id desc
+      limit 1
+    ), to_jsonb(b)) order by b.genome_bill_id)
     from public.civic_genome_bill b
     where b.family_id = f.family_id
       and b.created_at <= $2::timestamptz
-      and b.updated_at <= $2::timestamptz
+      and (
+        b.updated_at <= $2::timestamptz
+        or exists (
+          select 1
+          from public.civic_genome_projection_entity_version version
+          where version.entity_type = 'bill'
+            and version.entity_id = b.genome_bill_id
+            and version.observed_at <= $2::timestamptz
+        )
+      )
   ), '[]'::jsonb),
   'traits', coalesce((
     select jsonb_agg(
@@ -105,7 +130,16 @@ select jsonb_build_object(
 from public.civic_genome_family f
 where f.family_id = $1::uuid
   and f.created_at <= $2::timestamptz
-  and f.updated_at <= $2::timestamptz
+  and (
+    f.updated_at <= $2::timestamptz
+    or exists (
+      select 1
+      from public.civic_genome_projection_entity_version version
+      where version.entity_type = 'family'
+        and version.entity_id = f.family_id
+        and version.observed_at <= $2::timestamptz
+    )
+  )
 `;
 
 /**
@@ -132,6 +166,11 @@ select greatest(
     select max(greatest(b.created_at, b.updated_at))
     from public.civic_genome_bill b
     where b.family_id = f.family_id
+  ),
+  (
+    select max(version.observed_at)
+    from public.civic_genome_projection_entity_version version
+    where version.family_id = f.family_id
   ),
   (
     select max(greatest(t.created_at, t.updated_at))

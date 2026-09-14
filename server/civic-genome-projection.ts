@@ -253,6 +253,33 @@ const refresh_family_rollups = async (family_id: string, client: PoolClient): Pr
   );
 };
 
+const capture_projection_entity_versions = async (
+  family_id: string,
+  genome_bill_id: string,
+  client: PoolClient,
+): Promise<void> => {
+  await client.query(
+    `insert into public.civic_genome_projection_entity_version (
+       entity_type, entity_id, family_id, observed_at, record_hash, record_json
+     )
+     select entity_type, entity_id, family_id, observed_at,
+       encode(extensions.digest(convert_to(record_json::text, 'UTF8'), 'sha256'), 'hex'),
+       record_json
+     from (
+       select 'family'::text as entity_type, family.family_id as entity_id,
+         family.family_id, greatest(family.created_at, family.updated_at) as observed_at,
+         to_jsonb(family) as record_json
+       from public.civic_genome_family family where family.family_id = $1
+       union all
+       select 'bill'::text, bill.genome_bill_id, bill.family_id,
+         greatest(bill.created_at, bill.updated_at), to_jsonb(bill)
+       from public.civic_genome_bill bill where bill.genome_bill_id = $2
+     ) version
+     on conflict (entity_type, entity_id, record_hash) do nothing`,
+    [family_id, genome_bill_id],
+  );
+};
+
 const project_bill = async (
   state_row: docket_state_cache_row,
   bill: legiscan_master_bill,
@@ -324,6 +351,14 @@ const project_bill = async (
       event_type,
       action: "unchanged",
     };
+  }
+
+  if (existing) {
+    await capture_projection_entity_versions(
+      existing.family_id,
+      existing.genome_bill_id,
+      client,
+    );
   }
 
   const family_id = await upsert_family(family_key, bill, client);
@@ -463,6 +498,11 @@ const project_bill = async (
   }
 
   await refresh_family_rollups(persisted_family_id, client);
+  await capture_projection_entity_versions(
+    persisted_family_id,
+    genome_bill_id,
+    client,
+  );
 
   await client.query("commit");
 
