@@ -61,6 +61,9 @@ describe("Docket Radar live contract", () => {
     expect(lifecycle_scope).not.toMatch(/update\s+public\.civic_genome_lifecycle_event_v2/i);
     expect(lifecycle_scope).not.toMatch(/delete\s+from\s+public\.civic_genome_lifecycle_event_v2/i);
     expect(projection).toContain('action: "unchanged"');
+    expect(projection).toContain("failed(?:\\s+(?:final passage|to pass))?\\s*[.;]?\\s*$");
+    expect(read("server/civic-genome-event-classifier.ts"))
+      .toContain("failed(?:\\s+(?:final passage|to pass))?\\s*[.;]?\\s*$");
     expect(projection).toContain("capture_projection_entity_versions");
     expect(projection).toContain("capture_target_family_version");
     expect(projection).toContain("existing.family_id !== persisted_family_id");
