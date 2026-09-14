@@ -77,7 +77,7 @@ const readable_date = (value: unknown): string => {
 
 const status_label = (status: unknown, last_action: unknown): string => {
   const evidence = display_value(last_action).toLowerCase();
-  if ([5, 6].includes(Number(status)) || /^\s*(?:chapter(?:ed)?|effective date)\b/.test(evidence) || /\b(?:enacted|withdrawn|dead|vetoed)\b|signed by governor|became law|postponed indefinitely/.test(evidence) || /\b(?:bill|measure|resolution)\s+(?:has\s+)?failed\b|\bfailed\s+(?:final passage|to pass)\b/.test(evidence)) return "Completed";
+  if ([5, 6].includes(Number(status)) || /^\s*(?:chapter(?:ed)?|effective date|enacted|withdrawn|dead|vetoed)\b/.test(evidence) || /signed by governor|became law|postponed indefinitely/.test(evidence) || /\b(?:bill|measure|resolution)\s+(?:has\s+)?(?:failed|withdrawn|vetoed|died)\b|\bfailed\s+(?:final passage|to pass)\b/.test(evidence)) return "Completed";
   if (Number(status) === 4) return "Passed · further action possible";
   if (Number(status) === 3) return "Passed both chambers";
   if (Number(status) === 2) return "Engrossed";

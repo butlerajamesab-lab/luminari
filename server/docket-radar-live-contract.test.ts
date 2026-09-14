@@ -41,8 +41,9 @@ describe("Docket Radar live contract", () => {
     expect(page).not.toContain("warm_selected_state");
     expect(detail).toContain("source disagreement, not a contradiction within the bill");
     expect(detail).toContain("Passed · further action possible");
-    expect(page).not.toContain("enacted|failed|withdrawn");
-    expect(detail).not.toContain("enacted|failed|withdrawn");
+    expect(page).not.toMatch(/\\b\(\?:enacted\|withdrawn/);
+    expect(detail).not.toMatch(/\\b\(\?:enacted\|withdrawn/);
+    expect(page).toContain("effective date|enacted|withdrawn|dead|vetoed");
     expect(page).toContain("failed\\s+(?:final passage|to pass)");
     expect(page).toContain('new Date(`${value}T00:00:00`)');
     expect(detail).toContain('new Date(`${value}T00:00:00`)');
