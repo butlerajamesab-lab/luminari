@@ -50,6 +50,7 @@ describe("Docket Radar live contract", () => {
     expect(read("supabase/migrations/20260914104100_docket_event_correction_append_only_repair.sql")).toContain("event_payload_json - 'classification_correction'");
     expect(read("supabase/migrations/20260914110220_docket_terminal_event_classification_corrections.sql")).toContain("event.event_type in ('enacted', 'vetoed', 'failed')");
     expect(read("supabase/migrations/20260914111014_docket_subsidiary_terminal_event_corrections.sql")).toContain("(amendment|motion)");
+    expect(read("supabase/migrations/20260914111934_docket_subsidiary_terminal_phrase_corrections.sql")).toContain(".{0,80}");
   });
 
   it("runs refresh and activation only in the authorized worker", () => {
