@@ -75,5 +75,7 @@ describe("Docket Radar live contract", () => {
     expect(activation_worker).toContain("project_docket_state_cache_to_civic_genome_serialized(normalized_state)");
     expect(read("server/civic-genome-projection.ts")).toContain("docket_state_projection_in_flight");
     expect(read("server/civic-genome-projection.ts")).toContain("if (previous) await previous.catch(() => undefined)");
+    expect(read("server/routes/docket.ts")).toContain("project_to_civic_genome\n        ? await project_refreshed_state_to_civic_genome(state)");
+    expect(read("server/routes/docket.ts")).not.toContain("project_refreshed_state_to_civic_genome = async (state: string): Promise<civic_genome_projection_status> => {\n  try {");
   });
 });

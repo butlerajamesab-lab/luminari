@@ -436,16 +436,8 @@ const summarize_civic_genome_projection = (
 });
 
 const project_refreshed_state_to_civic_genome = async (state: string): Promise<civic_genome_projection_status> => {
-  try {
-    const projection = await project_docket_state_cache_to_civic_genome_serialized(state);
-    return summarize_civic_genome_projection(projection);
-  } catch (error) {
-    return {
-      ok: false,
-      projected: false,
-      error: serialize_error(error),
-    };
-  }
+  const projection = await project_docket_state_cache_to_civic_genome_serialized(state);
+  return summarize_civic_genome_projection(projection);
 };
 
 const refresh_state_cache = async (
@@ -458,11 +450,13 @@ const refresh_state_cache = async (
     return {
       source: "cache",
       row: cached,
-      civic_genome_projection: {
-        ok: true,
-        projected: false,
-        reason: "cache_fresh_no_projection",
-      },
+      civic_genome_projection: project_to_civic_genome
+        ? await project_refreshed_state_to_civic_genome(state)
+        : {
+            ok: true,
+            projected: false,
+            reason: "cache_fresh_no_projection",
+          },
     };
   }
 
