@@ -1,4 +1,5 @@
 import { createHash } from "crypto";
+import type { PoolClient } from "pg";
 import { getPool } from "./db";
 import { classify_docket_event } from "./civic-genome-event-classifier";
 import type { legiscan_master_bill } from "./services/legiscan";
@@ -188,8 +189,8 @@ export const should_append_projection_event = (
 const upsert_family = async (
   family_key: string,
   bill: legiscan_master_bill,
+  client: PoolClient,
 ): Promise<string> => {
-  const pool = getPool();
   const policy_domain = infer_policy_domain(bill);
   const family_label = normalize_bill_text(bill).slice(0, 240);
   const signature_json = {
@@ -198,7 +199,7 @@ const upsert_family = async (
     family_key,
   };
 
-  const { rows } = await pool.query<{ family_id: string }>(
+  const { rows } = await client.query<{ family_id: string }>(
     `insert into public.civic_genome_family (
        family_key,
        family_label,
@@ -221,10 +222,8 @@ const upsert_family = async (
   return rows[0].family_id;
 };
 
-const refresh_family_rollups = async (family_id: string): Promise<void> => {
-  const pool = getPool();
-
-  await pool.query(
+const refresh_family_rollups = async (family_id: string, client: PoolClient): Promise<void> => {
+  await client.query(
     `with rollup as (
        select
          count(distinct state_code) filter (where current_state_position not in ('failed'))::int as active_state_count,
@@ -260,11 +259,14 @@ const project_bill = async (
   source_offset: number,
 ): Promise<projected_bill_result> => {
   const pool = getPool();
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
   const state_code = normalize_state_code(state_row.state);
   const source_bill_number = bill.number;
   const bill_id = stable_uuid(`docket_room:legiscan:${bill.bill_id}`);
   const family_key = build_family_key(bill);
-  const family_id = await upsert_family(family_key, bill);
+  const family_id = await upsert_family(family_key, bill, client);
   const current_state_position = infer_state_position(bill);
   const docket_observation = build_structural_dna_json(state_row, bill);
   const docket_observation_hash = sha256(JSON.stringify(docket_observation));
@@ -277,7 +279,7 @@ const project_bill = async (
       ? null
       : `legiscan_status_${bill.status}`;
 
-  const { rows: existing_rows } = await pool.query<{
+  const { rows: existing_rows } = await client.query<{
     genome_bill_id: string;
     family_id: string;
     structural_dna_hash: string;
@@ -308,7 +310,7 @@ const project_bill = async (
     current_state_position,
   );
 
-  const { rows } = await pool.query<{
+  const { rows } = await client.query<{
     genome_bill_id: string;
     family_id: string;
   }>(
@@ -396,7 +398,7 @@ const project_bill = async (
   const event_type = classification.event_type;
 
   if (should_append_event) {
-    await pool.query(
+    await client.query(
       `insert into public.civic_genome_event (
          family_id,
          genome_bill_id,
@@ -445,7 +447,9 @@ const project_bill = async (
     );
   }
 
-  await refresh_family_rollups(persisted_family_id);
+  await refresh_family_rollups(persisted_family_id, client);
+
+  await client.query("commit");
 
   return {
     state_code,
@@ -462,6 +466,12 @@ const project_bill = async (
         : "unchanged"
       : "inserted",
   };
+  } catch (error) {
+    await client.query("rollback").catch(() => undefined);
+    throw error;
+  } finally {
+    client.release();
+  }
 };
 
 export async function project_docket_cache_to_civic_genome(opts?: {

@@ -31,6 +31,19 @@ describe("Docket Radar live contract", () => {
     expect(routes).not.toMatch(/upsert_state_cache\([^)]*radar/);
   });
 
+  it("keeps refresh projection durable and bill-event writes atomic", () => {
+    const routes = read("server/routes/docket.ts");
+    const projection = read("server/civic-genome-projection.ts");
+    const correction = read("supabase/migrations/20260914103400_docket_event_classification_correction.sql");
+    expect(routes).toContain("mark_state_projection_required(state)");
+    expect(routes).toContain("request_scoped_cache_refresh_requires_projection");
+    expect(projection).toContain('await client.query("begin")');
+    expect(projection).toContain('await client.query("commit")');
+    expect(projection).toContain('await client.query("rollback")');
+    expect(correction).toContain("classification_superseded");
+    expect(correction).toContain("docket_classification_corrected");
+  });
+
   it("runs refresh and activation only in the authorized worker", () => {
     const worker = read("server/prism-rosetta-worker.ts");
     const blueprint = read("render.prism-worker.yaml");

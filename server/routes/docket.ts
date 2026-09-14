@@ -318,6 +318,24 @@ const upsert_state_cache = async (row: docket_state_cache_row): Promise<void> =>
   );
 };
 
+const mark_state_projection_required = async (state: string): Promise<void> => {
+  await query_with_diagnostics(
+    `insert into public.docket_state_projection_retry
+       (state, failure_count, retry_after, last_error_code, updated_at)
+     values ($1, 0, now(), 'request_scoped_cache_refresh_requires_projection', now())
+     on conflict (state) do update set
+       retry_after = now(),
+       last_error_code = excluded.last_error_code,
+       updated_at = now()`,
+    [state],
+    {
+      label: "docket_state_projection_required",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 5_000,
+    },
+  );
+};
+
 const read_bill_detail_cache = async (bill_id: number): Promise<docket_bill_detail_cache_row | null> => {
   const result = await query_with_diagnostics<docket_bill_detail_cache_database_row>(
     `select bill_id, bill, fetched_at, source
@@ -478,6 +496,9 @@ const refresh_state_cache = async (
   };
 
   await upsert_state_cache(row);
+  if (!project_to_civic_genome) {
+    await mark_state_projection_required(state);
+  }
   const civic_genome_projection: civic_genome_projection_status = project_to_civic_genome
     ? await project_refreshed_state_to_civic_genome(state)
     : {
