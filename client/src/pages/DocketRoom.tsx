@@ -13,6 +13,7 @@ import {
 import { toast } from "sonner";
 import { VoiceReadout } from "@/components/VoiceReadout";
 import { DocketBillDetailWorkspace } from "@/components/DocketBillDetailWorkspace";
+import { docket_lifecycle as lifecycle_for_bill, type docket_lifecycle_state as lifecycle_state } from "@shared/docket-lifecycle";
 
 /* ═══════════════════════════════════════════════════════════════════════
    THE DOCKET ROOM — Structural Legislative Analysis
@@ -617,28 +618,12 @@ const docket_states = [
   "US",
 ];
 
-type lifecycle_state = "live" | "action_approaching" | "completed" | "stalled" | "freshness_unknown";
-
 const valid_date = (value?: string | null): Date | null => {
   if (!value || value.startsWith("0000-00-00")) return null;
   const parsed = /^\d{4}-\d{2}-\d{2}$/.test(value)
     ? new Date(`${value}T00:00:00`)
     : new Date(value);
   return Number.isFinite(parsed.getTime()) ? parsed : null;
-};
-
-const lifecycle_for_bill = (bill: docket_bill, cache_fresh: boolean): lifecycle_state => {
-  const status = Number(bill.status);
-  const action_evidence = (bill.last_action ?? "").toLowerCase();
-  const terminal_evidence = /^\s*(?:chapter(?:ed)?|effective date|enacted|withdrawn|dead|vetoed)\b/.test(action_evidence)
-    || /signed by governor|governor signed|became law/.test(action_evidence)
-    || /^\s*failed(?:\s+(?:final passage|to pass))?\s*[.;]?\s*$|^\s*postponed indefinitely\b|\b(?:bill|measure|resolution)\s+(?:has\s+)?(?:enacted|failed(?:\s+(?:final passage|to pass))?|withdrawn|vetoed|died|(?:been\s+)?postponed\s+indefinitely|indefinitely\s+postponed)\b/.test(action_evidence);
-  if ([5, 6].includes(status) || terminal_evidence) return "completed";
-  if (!cache_fresh) return "freshness_unknown";
-  if (bill.radar?.next_event_date) return "action_approaching";
-  const last_action = valid_date(bill.last_action_date || bill.status_date);
-  if (last_action && Date.now() - last_action.getTime() > 90 * 24 * 60 * 60 * 1000) return "stalled";
-  return "live";
 };
 
 const lifecycle_presentation: Record<lifecycle_state, { label: string; color: string; background: string }> = {
@@ -659,8 +644,9 @@ const snapshot_is_fresh = (fetched_at?: string | null): boolean => {
   return Boolean(parsed && Number.isFinite(parsed.getTime()) && Date.now() - parsed.getTime() < 8 * 60 * 60 * 1000);
 };
 
-function DocketBillFeed() {
-  const [selected_state, set_selected_state] = useState("WA");
+function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?: string }) {
+  const [preferred_state, set_selected_state] = useState("WA");
+  const selected_state = level === "federal" ? "US" : level === "state" && preferred_state === "US" ? "WA" : preferred_state;
   const [state_data, set_state_data] = useState<docket_state_payload | null>(null);
   const [state_error, set_state_error] = useState<string | null>(null);
   const [state_loading, set_state_loading] = useState(false);
@@ -778,6 +764,7 @@ function DocketBillFeed() {
     session_title: state_data.session_title ?? null,
   } : selected_cache_status;
   const visible_bills = bills
+    .filter(bill => !keyword.trim() || [bill.title, bill.number, selected_state].some(value => String(value ?? "").toLowerCase().includes(keyword.trim().toLowerCase())))
     .filter(bill => show_completed || lifecycle_for_bill(bill, snapshot_fresh) !== "completed")
     .sort((left, right) => {
       const velocity_delta = (right.radar?.velocity_score ?? 0) - (left.radar?.velocity_score ?? 0);
@@ -809,7 +796,7 @@ function DocketBillFeed() {
         <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: fontMono, fontSize: "0.72rem", color: dk.muted }}>
           Jurisdiction
           <select value={selected_state} onChange={event => set_selected_state(event.target.value)} style={{ background: dk.slate, border: `1px solid ${dk.rule}`, borderRadius: "6px", color: dk.paper, fontFamily: fontMono, fontSize: "0.78rem", padding: "0.35rem 0.5rem" }}>
-            {docket_states.map(state => <option key={state} value={state}>{state}</option>)}
+            {docket_states.filter(state => level === "federal" ? state === "US" : level === "state" ? state !== "US" : true).map(state => <option key={state} value={state}>{state}</option>)}
           </select>
         </label>
       </div>
@@ -857,7 +844,7 @@ function DocketBillFeed() {
                     {bill.radar && bill.radar.velocity_score > 0 && <span style={{ color: dk.teal }}>Movement {bill.radar.velocity_score.toFixed(1)} · {bill.radar.events_14d} events in 14 days</span>}
                     {bill.radar?.next_event_date && <span style={{ color: dk.amber }}>{bill.radar.next_event_class?.replaceAll("_", " ")} · {readable_date(bill.radar.next_event_date)}</span>}
                     {bill.radar?.drift_coverage && bill.radar.drift.filter(item => item.delta !== 0).map(item => <span key={item.trait_class}>{item.trait_class} {item.base_count} → {item.latest_count} ({item.delta > 0 ? "+" : ""}{item.delta})</span>)}
-                    {bill_url && <span><a href={bill_url} target="_blank" rel="noopener noreferrer" onClick={event => event.stopPropagation()} style={{ color: dk.steelBright }}>Official source</a></span>}
+                    {bill_url && <span><a href={bill_url} target="_blank" rel="noopener noreferrer" onClick={event => event.stopPropagation()} style={{ color: dk.steelBright }}>Source record</a></span>}
                   </div>
                 </button>
               );
@@ -938,7 +925,9 @@ function LegistarLiveFeed({ keyword }: { keyword?: string }) {
               {data.matters.length} recent matters
               {keyword && ` matching "${keyword}"`}
               {" · "}
-              {new Date(data.fetchedAt).toLocaleTimeString()}
+              {Number.isFinite(data.fetched_at)
+                ? new Date(data.fetched_at).toLocaleTimeString()
+                : "Retrieval time unavailable"}
             </span>
           )}
         </div>
@@ -1242,14 +1231,14 @@ function DocketList({ onSelect }: { onSelect: (id: string) => void }) {
       </div>
 
       {/* LegiScan Docket Bill Feed */}
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 1.5rem" }}>
-        <DocketBillFeed />
-      </div>
+      {(!filterLevel || filterLevel === "federal" || filterLevel === "state") && <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 1.5rem" }}>
+        <DocketBillFeed level={filterLevel} keyword={debouncedSearch} />
+      </div>}
 
       {/* Seattle Legistar Live Feed */}
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 1.5rem 1.5rem" }}>
+      {(!filterLevel || filterLevel === "city") && <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 1.5rem 1.5rem" }}>
         <LegistarLiveFeed keyword={debouncedSearch || undefined} />
-      </div>
+      </div>}
 
       {/* Entry cards */}
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 1.5rem 3rem" }}>

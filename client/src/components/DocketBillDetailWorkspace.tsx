@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { docket_terminal_action } from "@shared/docket-lifecycle";
 
 type bill_detail_payload = {
   source?: string;
@@ -76,8 +77,7 @@ const readable_date = (value: unknown): string => {
 };
 
 const status_label = (status: unknown, last_action: unknown): string => {
-  const evidence = display_value(last_action).toLowerCase();
-  if ([5, 6].includes(Number(status)) || /^\s*failed(?:\s+(?:final passage|to pass))?\s*[.;]?\s*$/.test(evidence) || /^\s*(?:chapter(?:ed)?|effective date|enacted|withdrawn|dead|vetoed|postponed indefinitely)\b/.test(evidence) || /signed by governor|governor signed|became law/.test(evidence) || /\b(?:bill|measure|resolution)\s+(?:has\s+)?(?:enacted|failed(?:\s+(?:final passage|to pass))?|withdrawn|vetoed|died|(?:been\s+)?postponed\s+indefinitely|indefinitely\s+postponed)\b/.test(evidence)) return "Completed";
+  if (docket_terminal_action(status, last_action)) return "Completed";
   if (Number(status) === 4) return "Passed · further action possible";
   if (Number(status) === 3) return "Passed both chambers";
   if (Number(status) === 2) return "Engrossed";
@@ -149,7 +149,7 @@ export function DocketBillDetailWorkspace({ payload }: { payload: bill_detail_pa
     status_date: first_value(bill, ["status_date", "last_action_date"]),
     session: first_value(bill, ["session", "session_name", "session_title", "session_id"]),
     state: first_value(bill, ["state", "state_id", "jurisdiction"]),
-    url: first_value(bill, ["url", "state_link", "source_url"]),
+    url: first_value(bill, ["state_link", "url", "source_url"]),
     change_hash: first_value(bill, ["change_hash"]),
     last_action: first_value(bill, ["last_action", "action"]),
     last_action_date: first_value(bill, ["last_action_date", "status_date"]),
@@ -179,7 +179,7 @@ export function DocketBillDetailWorkspace({ payload }: { payload: bill_detail_pa
         </div>
         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
           {normalized.bill_id && <a href={`/civic-genome/bill/${encodeURIComponent(String(normalized.bill_id))}`} style={{ background: palette.steel_soft, border: `1px solid ${palette.steel}`, borderRadius: 6, padding: "0.45rem 0.65rem", color: palette.steel, fontFamily: font_mono, fontSize: "0.68rem", textDecoration: "none" }}>Open in Living Civic Genome</a>}
-          {official_url && <a href={official_url} target="_blank" rel="noopener noreferrer" style={{ background: palette.steel_soft, border: `1px solid ${palette.steel}`, borderRadius: 6, padding: "0.45rem 0.65rem", color: palette.steel, fontFamily: font_mono, fontSize: "0.68rem", textDecoration: "none" }}>Open official bill</a>}
+          {official_url && <a href={official_url} target="_blank" rel="noopener noreferrer" style={{ background: palette.steel_soft, border: `1px solid ${palette.steel}`, borderRadius: 6, padding: "0.45rem 0.65rem", color: palette.steel, fontFamily: font_mono, fontSize: "0.68rem", textDecoration: "none" }}>Open source bill</a>}
         </div>
       </div>
 
