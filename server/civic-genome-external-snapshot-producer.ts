@@ -20,7 +20,10 @@ export const CIVIC_GENOME_EXTERNAL_FAMILY_DATASET_SQL = `
 with historical_bills as materialized (
   select
     b.genome_bill_id,
-    coalesce(version.record_json, to_jsonb(b)) as record_json
+    case
+      when b.updated_at <= $2::timestamptz then to_jsonb(b)
+      else version.record_json
+    end as record_json
   from public.civic_genome_bill b
   left join lateral (
     select candidate.record_json
@@ -33,18 +36,24 @@ with historical_bills as materialized (
   ) version on true
   where b.created_at <= $2::timestamptz
     and (b.updated_at <= $2::timestamptz or version.record_json is not null)
-    and coalesce(version.record_json ->> 'family_id', b.family_id::text) = $1::text
+    and case
+      when b.updated_at <= $2::timestamptz then b.family_id::text
+      else version.record_json ->> 'family_id'
+    end = $1::text
 )
 select jsonb_build_object(
-  'family', coalesce((
-    select version.record_json
-    from public.civic_genome_projection_entity_version version
-    where version.entity_type = 'family'
-      and version.entity_id = f.family_id
-      and version.observed_at <= $2::timestamptz
-    order by version.observed_at desc, version.entity_version_id desc
-    limit 1
-  ), to_jsonb(f)),
+  'family', case
+    when f.updated_at <= $2::timestamptz then to_jsonb(f)
+    else (
+      select version.record_json
+      from public.civic_genome_projection_entity_version version
+      where version.entity_type = 'family'
+        and version.entity_id = f.family_id
+        and version.observed_at <= $2::timestamptz
+      order by version.observed_at desc, version.entity_version_id desc
+      limit 1
+    )
+  end,
   'bills', coalesce((
     select jsonb_agg(b.record_json order by b.genome_bill_id)
     from historical_bills b
