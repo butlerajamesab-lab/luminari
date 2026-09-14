@@ -68,6 +68,7 @@ describe("minimum Lighthouse queue stabilization", () => {
     expect(warmer).toContain("await active_cycle");
     expect(warmer).toContain("row.is_fresh !== true || row.requires_retry === true");
     expect(warmer).toContain("Math.floor(limit / 2)");
+    expect(warmer).toContain("if (limit <= 1 && ordinary.length > 0) return ordinary.slice(0, 1)");
     expect(docket_worker).toContain("await wait_for_docket_state_refreshes()");
     expect(warmer).toContain("/api/docket/warm-state");
     expect(warmer).toContain("for (let index = 0; index < states_to_warm.length; index += 1)");

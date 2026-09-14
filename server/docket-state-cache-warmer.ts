@@ -120,6 +120,7 @@ export function select_docket_warm_batch(
 ): docket_cache_status_row[] {
   const retries = candidates.filter(row => row.requires_retry === true);
   const ordinary = candidates.filter(row => row.requires_retry !== true);
+  if (limit <= 1 && ordinary.length > 0) return ordinary.slice(0, 1);
   const retry_capacity = ordinary.length > 0 ? Math.max(1, Math.floor(limit / 2)) : limit;
   const selected_retries = retries.slice(0, retry_capacity);
   const selected_ordinary = ordinary.slice(0, limit - selected_retries.length);
@@ -276,6 +277,7 @@ export function run_docket_state_cache_warmer_cycle(port: number): Promise<void>
     for (let index = 0; index < states_to_warm.length; index += 1) {
       const candidate = states_to_warm[index];
       try {
+        await record_retry(candidate.state, new Error("projection_attempt_in_progress"));
         const payload = await warm_state(port, candidate.state, controller.signal);
         results.push({
           state: candidate.state,

@@ -79,5 +79,6 @@ describe("Docket Radar live contract", () => {
     expect(read("server/routes/docket.ts")).not.toContain("project_refreshed_state_to_civic_genome = async (state: string): Promise<civic_genome_projection_status> => {\n  try {");
     expect(read("server/docket-state-cache-warmer.ts")).toContain("public.docket_state_projection_retry");
     expect(read("server/docket-state-cache-warmer.ts")).toContain("select_docket_warm_batch(candidates, limit)");
+    expect(read("server/docket-state-cache-warmer.ts")).toContain('record_retry(candidate.state, new Error("projection_attempt_in_progress"))');
   });
 });
