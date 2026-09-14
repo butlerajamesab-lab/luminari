@@ -186,6 +186,7 @@ describe("current object connection traversal", () => {
     });
     expect((await read_current_graph_node_page({ node_type: "resource", query: "303-297-1815" })).total).toBe(1);
     expect((await read_current_graph_node_page({ node_type: "resource", query: "food_nutrition" })).total).toBe(1);
+    expect((await read_current_graph_node_page({ node_type: "resource", query: "food nutrition" })).total).toBe(1);
     expect(await read_current_graph_node_page({ query: "Denver Rescue Mission", offset: 99 })).toMatchObject({ total: 1, items: [] });
   });
   it("uses the same reviewed label and evidence on both edge and unresolved endpoints", async () => {

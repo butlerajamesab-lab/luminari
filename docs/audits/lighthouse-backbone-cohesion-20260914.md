@@ -44,4 +44,6 @@ Independent review ran 23 focused SQL, contract and rendered-component tests and
 
 The integrated follow-up passed the complete local suite: 2,160 tests passed with six intentional skips across 387 passing and two skipped files. Its production client/server build and health/authentication runtime contracts passed.
 
+PR #663's automated review then identified a display/search mismatch: `food nutrition` was shown to users but only `food_nutrition` matched. The new regression failed before the correction; all 23 focused checks passed after searching both stored category keys and their displayed space-separated forms. The earlier complete-suite result predates this final search correction; the pull request's final-commit CI provides the later release gate.
+
 Remaining work includes individual source placement beyond the reviewed samples, reconciliation of old batch identities with current canonical identities, policy-alert and other route-family connections, and jurisdiction-by-domain coverage. A populated table, repaired sample or connected route does not prove that a person has a complete solution pathway.

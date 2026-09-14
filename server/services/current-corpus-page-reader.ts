@@ -200,7 +200,9 @@ export async function read_current_graph_node_page(input: page_input & {
     conditions.push(`(coalesce(label,'') ilike ${p} or coalesce(jurisdiction_code,'') ilike ${p} or coalesce(source_locator,'') ilike ${p}
       or coalesce(presentation->>'recorded_label','') ilike ${p}
       or coalesce(presentation->>'reviewed_primary_category','') ilike ${p}
-      or coalesce((presentation->'reviewed_category_memberships')::text,'') ilike ${p})`);
+      or replace(coalesce(presentation->>'reviewed_primary_category',''),'_',' ') ilike ${p}
+      or coalesce((presentation->'reviewed_category_memberships')::text,'') ilike ${p}
+      or replace(coalesce((presentation->'reviewed_category_memberships')::text,''),'_',' ') ilike ${p})`);
   }
   const where = conditions.length ? `where ${conditions.join(" and ")}` : "";
   return read_page(
