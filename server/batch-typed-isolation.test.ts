@@ -17,7 +17,7 @@ async function isolated_typed_substrate() {
   for (const file of ["20260811204240_fresh_corpus_reconciliation_v1.sql",
     "20260811204938_fresh_corpus_rebuild_artifact_receipts_v1.sql",
     "20260815073049_fresh_corpus_continuous_manifest_v2.sql",
-    "20260911201534_batch_existing_substrate_registration.sql"]) {
+    "20260911201534_batch_existing_substrate_registration.sql", "20260914033026_corpus_retained_copy_resolution.sql"]) {
     await database.exec(readFileSync(`supabase/migrations/${file}`, "utf8"));
   }
   database_boundary.query.mockImplementation(async (sql, parameters) => {
