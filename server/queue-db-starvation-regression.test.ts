@@ -63,6 +63,7 @@ describe("minimum Lighthouse queue stabilization", () => {
     expect(warmer).toContain("const MAX_BATCH_SIZE = 10");
     expect(warmer).toContain("const DEFAULT_INTERVAL_MS = 15 * 60 * 1000");
     expect(warmer).toContain("if (active_cycle) return active_cycle");
+    expect(warmer).toContain("if (stopped) return Promise.resolve()");
     expect(warmer).toContain("active_controller?.abort()");
     expect(warmer).toContain("await active_cycle");
     expect(docket_worker).toContain("await wait_for_docket_state_refreshes()");
