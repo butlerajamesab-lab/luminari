@@ -67,7 +67,9 @@ const record_url = (value: unknown): string | null => {
 
 const readable_date = (value: unknown): string => {
   if (typeof value !== "string" || !value || value.startsWith("0000-00-00")) return "Not reported";
-  const parsed = new Date(value);
+  const parsed = /^\d{4}-\d{2}-\d{2}$/.test(value)
+    ? new Date(`${value}T00:00:00`)
+    : new Date(value);
   return Number.isFinite(parsed.getTime())
     ? parsed.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
     : "Not reported";

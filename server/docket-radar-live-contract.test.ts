@@ -16,6 +16,8 @@ describe("Docket Radar live contract", () => {
     expect(routes).toContain("enrich_bills_with_radar");
     expect(routes).toContain("public.docket_bill_velocity");
     expect(routes).toContain("public.docket_bill_next_floor_event");
+    expect(routes).toContain("from requested");
+    expect(routes).toContain("enrichment_unavailable");
     expect(routes).toContain("row.base_has_trait_coverage === true");
     expect(routes).not.toMatch(/upsert_state_cache\([^)]*radar/);
   });
@@ -37,5 +39,15 @@ describe("Docket Radar live contract", () => {
     expect(page).not.toContain("full_national_coverage");
     expect(page).not.toContain("warm_selected_state");
     expect(detail).toContain("source disagreement, not a contradiction within the bill");
+    expect(page).toContain('new Date(`${value}T00:00:00`)');
+    expect(detail).toContain('new Date(`${value}T00:00:00`)');
+  });
+
+  it("keeps removed trait classes in covered drift and settles worker startup", () => {
+    const migration = read("supabase/migrations/20260914081500_docket_drift_removed_class_coverage.sql");
+    const worker = read("server/prism-rosetta-worker.ts");
+    expect(migration).toContain("covered_classes");
+    expect(migration).toContain("COALESCE(cl.n, 0) AS latest_count");
+    expect(worker).toContain("const docket_worker_startup = start_docket_workers().catch");
   });
 });

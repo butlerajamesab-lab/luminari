@@ -115,6 +115,18 @@ type docket_radar_database_row = {
   base_has_trait_coverage: boolean | null;
 };
 
+const unavailable_radar = () => ({
+  available: false,
+  velocity_score: 0,
+  events_14d: 0,
+  amended_7d: 0,
+  next_event_date: null,
+  next_event_class: null,
+  next_event_description: null,
+  drift: [],
+  drift_coverage: false,
+});
+
 const finite_number = (value: string | number | null): number => {
   const normalized = Number(value ?? 0);
   return Number.isFinite(normalized) ? normalized : 0;
@@ -126,8 +138,18 @@ const enrich_bills_with_radar = async (
   const bill_ids = bills.map(bill => bill.bill_id).filter(Number.isSafeInteger);
   if (bill_ids.length === 0) return [];
 
-  const result = await query_with_diagnostics<docket_radar_database_row>(
-    `select velocity.source_bill_id,
+  let result;
+  try {
+    result = await query_with_diagnostics<docket_radar_database_row>(
+    `with requested(source_bill_id) as (
+       select unnest($1::integer[])
+     ), bill_genome as (
+       select distinct on (source_bill_id) source_bill_id, genome_bill_id
+       from public.civic_genome_bill_version
+       where source_bill_id = any($1::integer[])
+       order by source_bill_id, stage_rank desc, provider_sequence desc
+     )
+     select requested.source_bill_id,
             velocity.velocity_score,
             velocity.events_14d,
             velocity.amended_7d,
@@ -139,19 +161,26 @@ const enrich_bills_with_radar = async (
             drift.latest_count,
             drift.delta,
             drift.base_has_trait_coverage
-       from public.docket_bill_velocity velocity
+       from requested
+       left join public.docket_bill_velocity velocity
+         on velocity.source_bill_id = requested.source_bill_id
+       left join bill_genome
+         on bill_genome.source_bill_id = requested.source_bill_id
        left join public.docket_bill_next_floor_event next_event
-         on next_event.bill_id = velocity.source_bill_id
+         on next_event.bill_id = requested.source_bill_id
        left join public.docket_bill_drift_delta drift
-         on drift.genome_bill_id = velocity.genome_bill_id
-      where velocity.source_bill_id = any($1::integer[])`,
+         on drift.genome_bill_id = bill_genome.genome_bill_id`,
     [bill_ids],
     {
       label: "docket_radar_state_projection",
       pool_acquire_timeout_ms: 1_000,
       query_timeout_ms: 5_000,
     },
-  );
+    );
+  } catch (error) {
+    console.error("[DocketRadar] enrichment_unavailable", { error: serialize_error(error) });
+    return bills.map(bill => ({ ...bill, radar: unavailable_radar() }));
+  }
 
   const radar_by_bill = new Map<number, {
     velocity_score: number;
@@ -162,6 +191,7 @@ const enrich_bills_with_radar = async (
     next_event_description: string | null;
     drift: Array<{ trait_class: string; base_count: number; latest_count: number; delta: number }>;
     drift_coverage: boolean;
+    available: boolean;
   }>();
 
   for (const row of result.rows) {
@@ -176,6 +206,7 @@ const enrich_bills_with_radar = async (
       next_event_description: row.next_event_description,
       drift: [],
       drift_coverage: false,
+      available: true,
     };
     if (row.trait_class && row.base_has_trait_coverage === true) {
       existing.drift.push({
@@ -191,16 +222,7 @@ const enrich_bills_with_radar = async (
 
   return bills.map(bill => ({
     ...bill,
-    radar: radar_by_bill.get(bill.bill_id) ?? {
-      velocity_score: 0,
-      events_14d: 0,
-      amended_7d: 0,
-      next_event_date: null,
-      next_event_class: null,
-      next_event_description: null,
-      drift: [],
-      drift_coverage: false,
-    },
+    radar: radar_by_bill.get(bill.bill_id) ?? unavailable_radar(),
   }));
 };
 

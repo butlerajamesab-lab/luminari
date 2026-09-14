@@ -180,8 +180,7 @@ console.log("[PrismRosettaWorker] starting", {
 });
 start_prism_rosetta_queue_worker();
 const legislative_version_queue_startup = start_authorized_legislative_queue();
-const docket_worker_startup = start_docket_workers();
-void docket_worker_startup.catch(error => {
+const docket_worker_startup = start_docket_workers().catch(error => {
   console.error("[DocketWorker] startup_failed", {
     error_code: stable_legiscan_failure_code(error),
   });

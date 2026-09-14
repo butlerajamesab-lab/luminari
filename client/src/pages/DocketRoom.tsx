@@ -556,6 +556,7 @@ type docket_bill = {
   source_url?: string;
   url?: string;
   radar?: {
+    available?: boolean;
     velocity_score: number;
     events_14d: number;
     amended_7d: number;
@@ -620,7 +621,9 @@ type lifecycle_state = "live" | "action_approaching" | "completed" | "stalled" |
 
 const valid_date = (value?: string | null): Date | null => {
   if (!value || value.startsWith("0000-00-00")) return null;
-  const parsed = new Date(value);
+  const parsed = /^\d{4}-\d{2}-\d{2}$/.test(value)
+    ? new Date(`${value}T00:00:00`)
+    : new Date(value);
   return Number.isFinite(parsed.getTime()) ? parsed : null;
 };
 
@@ -686,6 +689,11 @@ function DocketBillFeed() {
         }
 
         set_state_data(payload);
+        if (payload.fetched_at) {
+          set_cache_statuses(current => current.map(status => status.state === selected_state
+            ? { ...status, fetched_at: payload.fetched_at!, bill_count: payload.bill_count ?? status.bill_count, is_fresh: true, age_minutes: 0 }
+            : status));
+        }
       } catch (error: any) {
         if (error?.name !== "AbortError") {
           set_state_error(error?.message || "api_docket_state_failed");
@@ -756,8 +764,11 @@ function DocketBillFeed() {
 
   const bills = state_data?.bills ?? [];
   const selected_cache_status = cache_statuses.find(status => status.state === selected_state);
+  const snapshot_fresh = selected_cache_status?.fetched_at === state_data?.fetched_at
+    ? selected_cache_status?.is_fresh === true
+    : Boolean(state_data?.fetched_at && Date.now() - new Date(state_data.fetched_at).getTime() < 8 * 60 * 60 * 1000);
   const visible_bills = bills
-    .filter(bill => show_completed || lifecycle_for_bill(bill, selected_cache_status?.is_fresh === true) !== "completed")
+    .filter(bill => show_completed || lifecycle_for_bill(bill, snapshot_fresh) !== "completed")
     .sort((left, right) => {
       const velocity_delta = (right.radar?.velocity_score ?? 0) - (left.radar?.velocity_score ?? 0);
       if (velocity_delta !== 0) return velocity_delta;
@@ -821,7 +832,7 @@ function DocketBillFeed() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "0.75rem" }}>
             {visible_bills.map(bill => {
               const bill_url = bill.source_url || bill.url;
-              const lifecycle = lifecycle_for_bill(bill, selected_cache_status?.is_fresh === true);
+              const lifecycle = lifecycle_for_bill(bill, snapshot_fresh);
               const lifecycle_ui = lifecycle_presentation[lifecycle];
               return (
                 <button key={bill.bill_id} onClick={() => load_bill_detail(bill.bill_id)} style={{ textAlign: "left", background: dk.cardBg, border: `1px solid ${selected_bill_id === bill.bill_id ? dk.steel : dk.cardBorder}`, borderLeft: `4px solid ${lifecycle_ui.color}`, borderRadius: "8px", padding: "0.85rem", cursor: "pointer" }}>
