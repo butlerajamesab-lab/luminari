@@ -77,7 +77,7 @@ const readable_date = (value: unknown): string => {
 
 const status_label = (status: unknown, last_action: unknown): string => {
   const evidence = display_value(last_action).toLowerCase();
-  if ([5, 6].includes(Number(status)) || /^\s*(?:chapter(?:ed)?|effective date|enacted|withdrawn|dead|vetoed|postponed indefinitely)\b/.test(evidence) || /signed by governor|governor signed|became law/.test(evidence) || /\b(?:bill|measure|resolution)\s+(?:has\s+)?(?:enacted|failed|withdrawn|vetoed|died|been\s+postponed\s+indefinitely)\b|\bfailed\s+(?:final passage|to pass)\b/.test(evidence)) return "Completed";
+  if ([5, 6].includes(Number(status)) || /^\s*(?:chapter(?:ed)?|effective date|enacted|withdrawn|dead|vetoed|postponed indefinitely)\b/.test(evidence) || /signed by governor|governor signed|became law/.test(evidence) || /\b(?:bill|measure|resolution)\s+(?:has\s+)?(?:enacted|failed|withdrawn|vetoed|died|(?:been\s+)?postponed\s+indefinitely|indefinitely\s+postponed)\b|\bfailed\s+(?:final passage|to pass)\b/.test(evidence)) return "Completed";
   if (Number(status) === 4) return "Passed · further action possible";
   if (Number(status) === 3) return "Passed both chambers";
   if (Number(status) === 2) return "Engrossed";

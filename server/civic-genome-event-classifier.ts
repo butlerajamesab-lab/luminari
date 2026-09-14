@@ -61,7 +61,7 @@ export const classify_docket_event = (
     };
   }
 
-  if (/^\s*(?:failed|withdrawn|dead|postponed indefinitely)\b|\b(?:bill|measure|resolution)\s+(?:has\s+)?(?:failed|withdrawn|died|been\s+postponed\s+indefinitely)\b/.test(last_action)) {
+  if (/^\s*(?:failed|withdrawn|dead|postponed indefinitely)\b|\b(?:bill|measure|resolution)\s+(?:has\s+)?(?:failed|withdrawn|died|(?:been\s+)?postponed\s+indefinitely|indefinitely\s+postponed)\b/.test(last_action)) {
     return {
       event_type: "failed",
       event_summary: summarize(bill, "appears failed, withdrawn, dead, or indefinitely postponed on the live docket"),
@@ -75,21 +75,21 @@ export const classify_docket_event = (
     };
   }
 
-  if (/passed house and senate|passed both/.test(text)) {
+  if (/passed house and senate|passed both/.test(last_action)) {
     return {
       event_type: "passed_two_chambers",
       event_summary: summarize(bill, "appears to have passed both chambers on the live docket"),
     };
   }
 
-  if (/passed house|passed senate/.test(text)) {
+  if (/passed house|passed senate/.test(last_action)) {
     return {
       event_type: "passed_chamber",
       event_summary: summarize(bill, "appears to have passed one chamber on the live docket"),
     };
   }
 
-  if (/committee|referred|reported/.test(text)) {
+  if (/committee|referred|reported/.test(last_action)) {
     return {
       event_type: "committee_action",
       event_summary: summarize(bill, "has committee movement on the live docket"),

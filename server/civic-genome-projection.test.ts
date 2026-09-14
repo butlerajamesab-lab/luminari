@@ -66,6 +66,16 @@ describe("Civic Genome Docket lifecycle projection", () => {
     expect(classify_docket_event(bill, null).event_type).toBe("committee_action");
   });
 
+  it("does not derive other movement from bill subject text", () => {
+    const bill = {
+      bill_id: 10,
+      number: "HB10",
+      title: "A bill concerning the judiciary committee and measures passed by the House.",
+      last_action: "First reading.",
+    };
+    expect(classify_docket_event(bill, null).event_type).toBe("docket_cache_observed");
+  });
+
   it("does not terminate a bill when only a subsidiary action is postponed", () => {
     for (const last_action of ["Amendment postponed indefinitely.", "Motion postponed indefinitely."]) {
       const bill = { bill_id: 9, number: "HB9", last_action };
@@ -73,6 +83,15 @@ describe("Civic Genome Docket lifecycle projection", () => {
       expect(classify_docket_event(bill, null).event_type).not.toBe("failed");
     }
   });
+
+  it.each(["Bill postponed indefinitely.", "Resolution indefinitely postponed."])(
+    "preserves direct whole-measure postponement evidence: %s",
+    (last_action) => {
+      const bill = { bill_id: 11, number: "HB11", last_action };
+      expect(infer_state_position(bill)).toBe("failed");
+      expect(classify_docket_event(bill, null).event_type).toBe("failed");
+    },
+  );
 
   it("preserves explicit whole-bill enactment evidence", () => {
     const bill = {
