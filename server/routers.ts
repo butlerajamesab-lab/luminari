@@ -35,6 +35,10 @@ import { register_declared_intake_context } from "./declared-intake-context";
 import { create_intake_case_with_compensation } from "./intake-case-creation";
 import { build_deterministic_intake_turn } from "./intake-conversation-state";
 import { soften_intake_wording } from "./intake-conversation-assistant";
+import {
+  editable_case_metadata_patch_schema,
+  normalize_case_metadata_patch,
+} from "./case-metadata-correction";
 import { adminMaintenanceRouter } from "./routers/admin-maintenance";
 import { publicAdminMaintenanceRouter } from "./routers/public-admin-maintenance";
 import { streamRegisterRouter } from "./routers/stream-register";
@@ -594,7 +598,10 @@ const casesRouter = router({
     .query(async ({ ctx, input }) => {
       const c = await db_helpers.verifyCaseOwnership(input.id, ctx.user.id);
       const { _accessLevel, ...caseData } = c;
-      return caseData;
+      return {
+        ...caseData,
+        canEditMetadata: _accessLevel === "OWNER" || _accessLevel === "WRITE",
+      };
     }),
 
   create: protectedProcedure
@@ -618,13 +625,20 @@ const casesRouter = router({
     }),
 
   update: protectedProcedure
-    .input(z.object({ id: z.number(), name: z.string().optional(), description: z.string().optional(), status: z.enum(["active", "archived"]).optional(), domain: z.string().optional(), container: z.string().optional() }))
+    .input(editable_case_metadata_patch_schema.extend({
+      id: z.number().int().positive(),
+    }))
     .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input;
-      await db_helpers.verifyCaseWriteAccess(id, ctx.user.id);
-      await db_helpers.updateCase(id, ctx.user.id, data);
-      await db_helpers.logAudit({ caseId: id, userId: ctx.user.id, action: "update_case", targetType: "case", targetId: id });
-      return { success: true };
+      const { id, ...requested } = input;
+      const current = await db_helpers.verifyCaseWriteAccess(id, ctx.user.id);
+      const patch = normalize_case_metadata_patch(requested);
+      const changed = await db_helpers.correctCaseMetadata(
+        id,
+        current.userId ?? ctx.user.id,
+        ctx.user.id,
+        patch,
+      );
+      return { success: true as const, changed };
     }),
 
   delete: protectedProcedure
