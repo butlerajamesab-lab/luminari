@@ -66,8 +66,9 @@ describe("minimum Lighthouse queue stabilization", () => {
     expect(warmer).toContain("if (stopped) return Promise.resolve()");
     expect(warmer).toContain("active_controller?.abort()");
     expect(warmer).toContain("await active_cycle");
-    expect(warmer).toContain("updated_at = $2::timestamptz");
-    expect(warmer).toContain("clear_retry(candidate.state, attempt_updated_at)");
+    expect(warmer).toContain("projection_attempt:${randomUUID()}");
+    expect(warmer).toContain("last_error_code = $2");
+    expect(warmer).toContain("clear_retry(candidate.state, attempt_token)");
     expect(warmer).toContain("row.requires_retry === true || (row.is_fresh !== true && row.retry_scheduled !== true)");
     expect(warmer).toContain("Math.floor(limit / 2)");
     expect(warmer).toContain("if (limit <= 1 && ordinary.length > 0) return ordinary.slice(0, 1)");

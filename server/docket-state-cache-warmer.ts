@@ -1,5 +1,6 @@
 import { query_with_diagnostics } from "./db";
 import { background_feature_enabled } from "./runtime-role";
+import { randomUUID } from "crypto";
 
 const DEFAULT_INTERVAL_MS = 15 * 60 * 1000;
 const MIN_INTERVAL_MS = 5 * 60 * 1000;
@@ -132,8 +133,8 @@ export function select_docket_warm_batch(
     : [...selected_retries, ...selected_ordinary];
 }
 
-async function record_retry(state: string, error: unknown): Promise<string> {
-  const result = await query_with_diagnostics<{ updated_at: string | Date }>(
+async function record_retry(state: string, error: unknown): Promise<void> {
+  await query_with_diagnostics(
     `insert into public.docket_state_projection_retry
        (state, failure_count, retry_after, last_error_code, updated_at)
      values ($1, 1, now() + interval '15 minutes', $2, now())
@@ -141,21 +142,17 @@ async function record_retry(state: string, error: unknown): Promise<string> {
        failure_count = least(public.docket_state_projection_retry.failure_count + 1, 1000),
        retry_after = now() + interval '15 minutes',
        last_error_code = excluded.last_error_code,
-       updated_at = now()
-     returning updated_at`,
+       updated_at = now()`,
     [state, safe_error(error)],
     { label: "docket_state_projection_retry_record", pool_acquire_timeout_ms: 1_000, query_timeout_ms: 5_000 },
   );
-  const updated_at = normalized_fetched_at(result.rows[0]?.updated_at ?? null);
-  if (!updated_at) throw new Error("docket_state_projection_retry_missing_attempt_timestamp");
-  return updated_at;
 }
 
-async function clear_retry(state: string, attempt_updated_at: string): Promise<void> {
+async function clear_retry(state: string, attempt_token: string): Promise<void> {
   await query_with_diagnostics(
     `delete from public.docket_state_projection_retry
-      where state = $1 and updated_at = $2::timestamptz`,
-    [state, attempt_updated_at],
+      where state = $1 and last_error_code = $2`,
+    [state, attempt_token],
     { label: "docket_state_projection_retry_clear", pool_acquire_timeout_ms: 1_000, query_timeout_ms: 5_000 },
   );
 }
@@ -288,14 +285,15 @@ export function run_docket_state_cache_warmer_cycle(port: number): Promise<void>
     for (let index = 0; index < states_to_warm.length; index += 1) {
       const candidate = states_to_warm[index];
       try {
-        const attempt_updated_at = await record_retry(candidate.state, new Error("projection_attempt_in_progress"));
+        const attempt_token = `projection_attempt:${randomUUID()}`;
+        await record_retry(candidate.state, new Error(attempt_token));
         const payload = await warm_state(port, candidate.state, controller.signal);
         results.push({
           state: candidate.state,
           ok: true,
           source: typeof payload.source === "string" ? payload.source : undefined,
         });
-        await clear_retry(candidate.state, attempt_updated_at);
+        await clear_retry(candidate.state, attempt_token);
       } catch (error) {
         try {
           await record_retry(candidate.state, error);

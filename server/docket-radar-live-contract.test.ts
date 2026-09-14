@@ -49,6 +49,7 @@ describe("Docket Radar live contract", () => {
     expect(read("server/civic-genome-db.ts")).toMatch(/list_genome_events[\s\S]*conditions\.push\(`event\.family_id = \$\$\{params\.length\}`\)/);
     expect(read("supabase/migrations/20260914104100_docket_event_correction_append_only_repair.sql")).toContain("event_payload_json - 'classification_correction'");
     expect(read("supabase/migrations/20260914110220_docket_terminal_event_classification_corrections.sql")).toContain("event.event_type in ('enacted', 'vetoed', 'failed')");
+    expect(read("supabase/migrations/20260914111014_docket_subsidiary_terminal_event_corrections.sql")).toContain("(amendment|motion)");
   });
 
   it("runs refresh and activation only in the authorized worker", () => {
@@ -108,7 +109,7 @@ describe("Docket Radar live contract", () => {
     expect(read("server/routes/docket.ts")).not.toContain("project_refreshed_state_to_civic_genome = async (state: string): Promise<civic_genome_projection_status> => {\n  try {");
     expect(read("server/docket-state-cache-warmer.ts")).toContain("public.docket_state_projection_retry");
     expect(read("server/docket-state-cache-warmer.ts")).toContain("select_docket_warm_batch(candidates, limit)");
-    expect(read("server/docket-state-cache-warmer.ts")).toContain('record_retry(candidate.state, new Error("projection_attempt_in_progress"))');
+    expect(read("server/docket-state-cache-warmer.ts")).toContain("await record_retry(candidate.state, new Error(attempt_token))");
     expect(read("server/docket-state-cache-warmer.ts")).toContain("with configured(state) as (select unnest($1::text[]))");
   });
 });
