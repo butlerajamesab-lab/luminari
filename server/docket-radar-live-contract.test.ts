@@ -63,6 +63,8 @@ describe("Docket Radar live contract", () => {
     const prefix_scope = read("supabase/migrations/20260914123335_docket_prefix_subsidiary_failure_scope.sql");
     expect(prefix_scope).toContain("failed\\y.{0,80}\\y(amendments?|motions?)\\y");
     expect(prefix_scope).toContain("legacy_prefix_subsidiary_failure_was_not_whole_measure_disposition");
+    expect(read("supabase/migrations/20260914123901_docket_prefix_correction_postponement_retractions.sql"))
+      .toContain("explicit_whole_measure_postponement_in_same_action");
     expect(projection).toContain('action: "unchanged"');
     expect(projection).toContain("failed(?:\\s+(?:final passage|to pass))?\\s*[.;]?\\s*$");
     expect(read("server/civic-genome-event-classifier.ts"))
