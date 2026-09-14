@@ -113,6 +113,7 @@ type docket_radar_database_row = {
   latest_count: string | number | null;
   delta: string | number | null;
   base_has_trait_coverage: boolean | null;
+  latest_has_trait_coverage: boolean | null;
 };
 
 const unavailable_radar = () => ({
@@ -161,6 +162,7 @@ const enrich_bills_with_radar = async (
             drift.latest_count,
             drift.delta,
             drift.base_has_trait_coverage
+            , drift.latest_has_trait_coverage
        from requested
        left join public.docket_bill_velocity velocity
          on velocity.source_bill_id = requested.source_bill_id
@@ -208,7 +210,7 @@ const enrich_bills_with_radar = async (
       drift_coverage: false,
       available: true,
     };
-    if (row.trait_class && row.base_has_trait_coverage === true) {
+    if (row.trait_class && row.base_has_trait_coverage === true && row.latest_has_trait_coverage === true) {
       existing.drift.push({
         trait_class: row.trait_class,
         base_count: finite_number(row.base_count),

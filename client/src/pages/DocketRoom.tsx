@@ -650,6 +650,11 @@ const readable_date = (value?: string | null): string => {
   return date ? date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "Not reported";
 };
 
+const snapshot_is_fresh = (fetched_at?: string | null): boolean => {
+  const parsed = fetched_at ? new Date(fetched_at) : null;
+  return Boolean(parsed && Number.isFinite(parsed.getTime()) && Date.now() - parsed.getTime() < 8 * 60 * 60 * 1000);
+};
+
 function DocketBillFeed() {
   const [selected_state, set_selected_state] = useState("WA");
   const [state_data, set_state_data] = useState<docket_state_payload | null>(null);
@@ -690,8 +695,9 @@ function DocketBillFeed() {
 
         set_state_data(payload);
         if (payload.fetched_at) {
+          const is_fresh = snapshot_is_fresh(payload.fetched_at);
           set_cache_statuses(current => current.map(status => status.state === selected_state
-            ? { ...status, fetched_at: payload.fetched_at!, bill_count: payload.bill_count ?? status.bill_count, is_fresh: true, age_minutes: 0 }
+            ? { ...status, fetched_at: payload.fetched_at!, bill_count: payload.bill_count ?? status.bill_count, is_fresh, age_minutes: is_fresh ? 0 : status.age_minutes }
             : status));
         }
       } catch (error: any) {
@@ -764,9 +770,9 @@ function DocketBillFeed() {
 
   const bills = state_data?.bills ?? [];
   const selected_cache_status = cache_statuses.find(status => status.state === selected_state);
-  const snapshot_fresh = selected_cache_status?.fetched_at === state_data?.fetched_at
-    ? selected_cache_status?.is_fresh === true
-    : Boolean(state_data?.fetched_at && Date.now() - new Date(state_data.fetched_at).getTime() < 8 * 60 * 60 * 1000);
+  const snapshot_fresh = state_data?.fetched_at
+    ? snapshot_is_fresh(state_data.fetched_at)
+    : selected_cache_status?.is_fresh === true;
   const visible_bills = bills
     .filter(bill => show_completed || lifecycle_for_bill(bill, snapshot_fresh) !== "completed")
     .sort((left, right) => {
