@@ -16,12 +16,14 @@ let initial_timer: NodeJS.Timeout | null = null;
 let active_cycle: Promise<void> | null = null;
 let active_controller: AbortController | null = null;
 let stopped = false;
+const retry_states = new Set<string>();
 
 type docket_cache_status_row = {
   state: string;
   has_cache: boolean;
   fetched_at: string | null;
   is_fresh: boolean;
+  requires_retry?: boolean;
 };
 
 type docket_cache_database_row = {
@@ -91,14 +93,16 @@ function sleep(ms: number): Promise<void> {
  * 2. cached-but-stale jurisdictions, oldest observation first;
  * 3. state code as a deterministic tie-breaker.
  *
- * Fresh jurisdictions are never selected by the automatic recovery loop.
+ * Fresh jurisdictions are selected only when their prior warm/projection
+ * attempt failed and therefore requires an explicit retry.
  */
 export function sort_docket_warm_candidates(
   states: docket_cache_status_row[],
 ): docket_cache_status_row[] {
   return states
-    .filter(row => row.is_fresh !== true)
+    .filter(row => row.is_fresh !== true || row.requires_retry === true)
     .sort((a, b) => {
+      if (a.requires_retry !== b.requires_retry) return a.requires_retry ? -1 : 1;
       if (a.has_cache !== b.has_cache) return a.has_cache ? 1 : -1;
       if (a.has_cache && b.has_cache) {
         const a_fetched_at = fetched_at_ms(a.fetched_at);
@@ -179,6 +183,7 @@ async function read_cache_status(
       is_fresh: has_cache
         && Number.isFinite(fetched_ms)
         && now_ms - fetched_ms < STATE_CACHE_TTL_MS,
+      requires_retry: retry_states.has(state),
     };
   });
 }
@@ -234,7 +239,9 @@ export function run_docket_state_cache_warmer_cycle(port: number): Promise<void>
           ok: true,
           source: typeof payload.source === "string" ? payload.source : undefined,
         });
+        retry_states.delete(candidate.state);
       } catch (error) {
+        retry_states.add(candidate.state);
         results.push({
           state: candidate.state,
           ok: false,
