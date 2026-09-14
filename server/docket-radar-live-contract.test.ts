@@ -54,7 +54,7 @@ describe("Docket Radar live contract", () => {
     expect(read("supabase/migrations/20260914082817_docket_drift_completed_verification_coverage.sql"))
       .toContain("processing_state IN ('verified', 'verified_with_findings')");
     expect(read("server/routes/docket.ts")).toContain("row.latest_has_trait_coverage === true");
-    expect(read("client/src/pages/DocketRoom.tsx")).toContain("snapshot_is_fresh(payload.fetched_at)");
+    expect(read("client/src/pages/DocketRoom.tsx")).toContain("const displayed_cache_status = state_data?.fetched_at");
     expect(worker).toContain("const docket_worker_startup = start_docket_workers().catch");
     const activation_worker = read("server/docket-jurisdiction-activation-queue-worker.ts");
     expect(activation_worker).toContain("await active_queue_cycle");

@@ -694,12 +694,6 @@ function DocketBillFeed() {
         }
 
         set_state_data(payload);
-        if (payload.fetched_at) {
-          const is_fresh = snapshot_is_fresh(payload.fetched_at);
-          set_cache_statuses(current => current.map(status => status.state === selected_state
-            ? { ...status, fetched_at: payload.fetched_at!, bill_count: payload.bill_count ?? status.bill_count, is_fresh, age_minutes: is_fresh ? 0 : status.age_minutes }
-            : status));
-        }
       } catch (error: any) {
         if (error?.name !== "AbortError") {
           set_state_error(error?.message || "api_docket_state_failed");
@@ -773,6 +767,12 @@ function DocketBillFeed() {
   const snapshot_fresh = state_data?.fetched_at
     ? snapshot_is_fresh(state_data.fetched_at)
     : selected_cache_status?.is_fresh === true;
+  const displayed_cache_status = state_data?.fetched_at ? {
+    is_fresh: snapshot_fresh,
+    bill_count: state_data.bill_count ?? bills.length,
+    fetched_at: state_data.fetched_at,
+    session_title: state_data.session_title ?? null,
+  } : selected_cache_status;
   const visible_bills = bills
     .filter(bill => show_completed || lifecycle_for_bill(bill, snapshot_fresh) !== "completed")
     .sort((left, right) => {
@@ -811,14 +811,14 @@ function DocketBillFeed() {
       </div>
 
       <div style={{ background: dk.bg, border: `1px solid ${dk.rule}`, borderRadius: "8px", padding: "0.85rem", marginBottom: "0.9rem" }}>
-        {cache_status_loading ? <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>loading_cache_status</div> : cache_status_error ? <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.red }}>cache_status_error {cache_status_error}</div> : selected_cache_status ? (
+        {displayed_cache_status ? (
           <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>
-            <span style={{ color: selected_cache_status.is_fresh ? dk.teal : dk.amber }}>{selected_cache_status.is_fresh ? "Current source snapshot" : "Source snapshot is stale"}</span>
-            <span>{selected_cache_status.bill_count} bills</span>
-            <span>Updated {readable_date(selected_cache_status.fetched_at)}</span>
-            {selected_cache_status.session_title && <span>{selected_cache_status.session_title}</span>}
+            <span style={{ color: displayed_cache_status.is_fresh ? dk.teal : dk.amber }}>{displayed_cache_status.is_fresh ? "Current source snapshot" : "Source snapshot is stale"}</span>
+            <span>{displayed_cache_status.bill_count} bills</span>
+            <span>Updated {readable_date(displayed_cache_status.fetched_at)}</span>
+            {displayed_cache_status.session_title && <span>{displayed_cache_status.session_title}</span>}
           </div>
-        ) : <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>cache_status_unavailable</div>}
+        ) : cache_status_loading ? <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>loading_cache_status</div> : cache_status_error ? <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.red }}>cache_status_error {cache_status_error}</div> : <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>cache_status_unavailable</div>}
         <label style={{ display: "inline-flex", alignItems: "center", gap: "0.45rem", marginTop: "0.65rem", color: dk.cream, fontFamily: fontSans, fontSize: "0.78rem" }}>
           <input type="checkbox" checked={show_completed} onChange={event => set_show_completed(event.target.checked)} /> Show completed legislation
         </label>
