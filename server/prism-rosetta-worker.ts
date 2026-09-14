@@ -1,4 +1,6 @@
 import "dotenv/config";
+import express from "express";
+import { createServer, type Server } from "node:http";
 import { getPool } from "./db";
 import {
   prism_rosetta_queue_batch_ids,
@@ -18,6 +20,15 @@ import {
   resolve_lighthouse_runtime_role,
 } from "./runtime-role";
 import { get_bill_text } from "./services/legiscan";
+import { docket_router, wait_for_docket_state_refreshes } from "./routes/docket";
+import {
+  start_docket_state_cache_warmer,
+  stop_docket_state_cache_warmer,
+} from "./docket-state-cache-warmer";
+import {
+  start_docket_bill_activation_queue_worker,
+  stop_docket_bill_activation_queue_worker,
+} from "./docket-jurisdiction-activation-queue-worker";
 
 const runtime_role = resolve_lighthouse_runtime_role();
 if (runtime_role.role !== "worker" || !runtime_role.valid) {
@@ -55,7 +66,43 @@ const legiscan_bill_text_probe_configured =
   && legiscan_bill_text_probe_document_id > 0;
 
 let legislative_version_queue_enabled = false;
+let docket_loopback_server: Server | null = null;
 let shutting_down = false;
+
+async function start_docket_workers(): Promise<void> {
+  const cache_warmer_requested = background_feature_enabled(
+    "DOCKET_STATE_CACHE_WARMER_ENABLED",
+  );
+  const activation_queue_requested = background_feature_enabled(
+    "DOCKET_BILL_ACTIVATION_QUEUE_ENABLED",
+  );
+  if (!cache_warmer_requested && !activation_queue_requested) return;
+
+  if (activation_queue_requested) {
+    start_docket_bill_activation_queue_worker();
+  }
+  if (!cache_warmer_requested) return;
+
+  const app = express();
+  app.use(express.json({ limit: "1mb" }));
+  app.use("/api/docket", docket_router);
+  const server = createServer(app);
+  await new Promise<void>((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", () => resolve());
+  });
+  docket_loopback_server = server;
+  const address = server.address();
+  if (!address || typeof address === "string") {
+    throw new Error("docket_worker_loopback_address_unavailable");
+  }
+  start_docket_state_cache_warmer(address.port);
+  console.log("[DocketWorker] started", {
+    cache_warmer_requested,
+    activation_queue_requested,
+    loopback_port: address.port,
+  });
+}
 
 function stable_legiscan_failure_code(error: unknown): string {
   const message = error instanceof Error ? error.message : "unknown";
@@ -133,6 +180,11 @@ console.log("[PrismRosettaWorker] starting", {
 });
 start_prism_rosetta_queue_worker();
 const legislative_version_queue_startup = start_authorized_legislative_queue();
+const docket_worker_startup = start_docket_workers().catch(error => {
+  console.error("[DocketWorker] startup_failed", {
+    error_code: stable_legiscan_failure_code(error),
+  });
+});
 
 const keep_alive = setInterval(() => undefined, 60_000);
 
@@ -141,7 +193,14 @@ async function shutdown(signal: string): Promise<void> {
   shutting_down = true;
   console.log("[PrismRosettaWorker] shutdown_started", { signal });
   clearInterval(keep_alive);
-  await legislative_version_queue_startup;
+  await Promise.all([legislative_version_queue_startup, docket_worker_startup]);
+  await stop_docket_state_cache_warmer();
+  await stop_docket_bill_activation_queue_worker();
+  if (docket_loopback_server) {
+    await new Promise<void>(resolve => docket_loopback_server!.close(() => resolve()));
+    docket_loopback_server = null;
+  }
+  await wait_for_docket_state_refreshes();
   await Promise.all([
     stop_prism_rosetta_queue_worker(),
     legislative_version_queue_enabled
@@ -159,4 +218,3 @@ process.once("SIGTERM", () => {
 process.once("SIGINT", () => {
   void shutdown("SIGINT");
 });
-

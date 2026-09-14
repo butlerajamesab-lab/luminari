@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { project_docket_cache_to_civic_genome } from "./civic-genome-projection";
+import { project_docket_state_cache_to_civic_genome_serialized } from "./civic-genome-projection";
 import { query_with_diagnostics } from "./db";
 import { get_bill, type legiscan_bill_detail } from "./services/legiscan";
 import { background_feature_enabled } from "./runtime-role";
@@ -42,9 +42,8 @@ export type docket_bill_activation_failure_decision = {
 };
 
 let queue_timer: NodeJS.Timeout | null = null;
-let queue_cycle_running = false;
+let active_queue_cycle: Promise<void> | null = null;
 let queue_stopped = false;
-const state_projection_in_flight = new Map<string, Promise<void>>();
 const queue_worker_id = [
   process.env.RENDER_SERVICE_ID ?? "lighthouse",
   "docket-jurisdiction-activation",
@@ -213,33 +212,14 @@ async function civic_genome_bill_ready(source_bill_id: number): Promise<boolean>
 
 async function project_state_once(state: string): Promise<void> {
   const normalized_state = normalize_state(state);
-  const existing = state_projection_in_flight.get(normalized_state);
-  if (existing) {
-    await existing;
-    return;
-  }
-
-  const projection = (async () => {
-    const result = await project_docket_cache_to_civic_genome({
-      state_code: normalized_state,
-    });
-    console.log("[DocketJurisdictionActivation] projected_state", {
-      state: normalized_state,
-      bills_seen: result.bills_seen,
-      inserted_count: result.inserted_count,
-      updated_count: result.updated_count,
-      unchanged_count: result.unchanged_count,
-    });
-  })();
-
-  state_projection_in_flight.set(normalized_state, projection);
-  try {
-    await projection;
-  } finally {
-    if (state_projection_in_flight.get(normalized_state) === projection) {
-      state_projection_in_flight.delete(normalized_state);
-    }
-  }
+  const result = await project_docket_state_cache_to_civic_genome_serialized(normalized_state);
+  console.log("[DocketJurisdictionActivation] projected_state", {
+    state: normalized_state,
+    bills_seen: result.bills_seen,
+    inserted_count: result.inserted_count,
+    updated_count: result.updated_count,
+    unchanged_count: result.unchanged_count,
+  });
 }
 
 async function ensure_civic_genome_bill_ready(job: docket_bill_activation_job): Promise<void> {
@@ -459,20 +439,26 @@ export async function process_docket_bill_activation_job(
   }
 }
 
-export async function run_docket_bill_activation_queue_cycle(): Promise<void> {
-  if (queue_cycle_running || queue_stopped) return;
-  queue_cycle_running = true;
-  try {
-    const jobs = await claim_jobs(bounded_concurrency());
-    await Promise.all(jobs.map(job => process_docket_bill_activation_job(job)));
-  } catch (error) {
-    console.error("[DocketJurisdictionActivation] cycle_failed", {
-      error_class: error instanceof Error ? error.name : "unknown",
-      error_code: safe_error_code(error),
-    });
-  } finally {
-    queue_cycle_running = false;
-  }
+export function run_docket_bill_activation_queue_cycle(): Promise<void> {
+  if (active_queue_cycle) return active_queue_cycle;
+  if (queue_stopped) return Promise.resolve();
+
+  const cycle = (async () => {
+    try {
+      const jobs = await claim_jobs(bounded_concurrency());
+      await Promise.all(jobs.map(job => process_docket_bill_activation_job(job)));
+    } catch (error) {
+      console.error("[DocketJurisdictionActivation] cycle_failed", {
+        error_class: error instanceof Error ? error.name : "unknown",
+        error_code: safe_error_code(error),
+      });
+    }
+  })();
+  active_queue_cycle = cycle;
+  void cycle.finally(() => {
+    if (active_queue_cycle === cycle) active_queue_cycle = null;
+  });
+  return cycle;
 }
 
 export function start_docket_bill_activation_queue_worker(): void {
@@ -493,8 +479,9 @@ export function start_docket_bill_activation_queue_worker(): void {
   queue_timer.unref?.();
 }
 
-export function stop_docket_bill_activation_queue_worker(): void {
+export async function stop_docket_bill_activation_queue_worker(): Promise<void> {
   queue_stopped = true;
   if (queue_timer) clearInterval(queue_timer);
   queue_timer = null;
+  await active_queue_cycle;
 }

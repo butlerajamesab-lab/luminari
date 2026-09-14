@@ -17,14 +17,46 @@ export const CIVIC_GENOME_EXTERNAL_SNAPSHOT_METHODOLOGY_VERSION =
 const HEX64 = /^[0-9a-f]{64}$/;
 
 export const CIVIC_GENOME_EXTERNAL_FAMILY_DATASET_SQL = `
+with historical_bills as materialized (
+  select
+    b.genome_bill_id,
+    case
+      when b.updated_at <= $2::timestamptz then to_jsonb(b)
+      else version.record_json
+    end as record_json
+  from public.civic_genome_bill b
+  left join lateral (
+    select candidate.record_json
+    from public.civic_genome_projection_entity_version candidate
+    where candidate.entity_type = 'bill'
+      and candidate.entity_id = b.genome_bill_id
+      and candidate.observed_at <= $2::timestamptz
+    order by candidate.observed_at desc, candidate.entity_version_id desc
+    limit 1
+  ) version on true
+  where b.created_at <= $2::timestamptz
+    and (b.updated_at <= $2::timestamptz or version.record_json is not null)
+    and case
+      when b.updated_at <= $2::timestamptz then b.family_id::text
+      else version.record_json ->> 'family_id'
+    end = $1::text
+)
 select jsonb_build_object(
-  'family', to_jsonb(f),
+  'family', case
+    when f.updated_at <= $2::timestamptz then to_jsonb(f)
+    else (
+      select version.record_json
+      from public.civic_genome_projection_entity_version version
+      where version.entity_type = 'family'
+        and version.entity_id = f.family_id
+        and version.observed_at <= $2::timestamptz
+      order by version.observed_at desc, version.entity_version_id desc
+      limit 1
+    )
+  end,
   'bills', coalesce((
-    select jsonb_agg(to_jsonb(b) order by b.genome_bill_id)
-    from public.civic_genome_bill b
-    where b.family_id = f.family_id
-      and b.created_at <= $2::timestamptz
-      and b.updated_at <= $2::timestamptz
+    select jsonb_agg(b.record_json order by b.genome_bill_id)
+    from historical_bills b
   ), '[]'::jsonb),
   'traits', coalesce((
     select jsonb_agg(
@@ -40,16 +72,34 @@ select jsonb_build_object(
       order by t.trait_id
     )
     from public.civic_genome_trait t
-    join public.civic_genome_bill tb on tb.genome_bill_id = t.genome_bill_id
-    where tb.family_id = f.family_id
+    join historical_bills tb on tb.genome_bill_id = t.genome_bill_id
+    where true
       and t.created_at <= $2::timestamptz
       and t.updated_at <= $2::timestamptz
   ), '[]'::jsonb),
   'events', coalesce((
-    select jsonb_agg(to_jsonb(e) order by e.event_timestamp, e.event_id)
+    select jsonb_agg(
+      to_jsonb(e) || jsonb_build_object('family_id', f.family_id)
+      order by e.event_timestamp, e.event_id
+    )
     from public.civic_genome_event e
-    where e.family_id = f.family_id
+    join historical_bills eb on eb.genome_bill_id = e.genome_bill_id
+    where true
       and e.created_at <= $2::timestamptz
+      and not exists (
+        select 1
+        from public.civic_genome_event correction
+        where correction.event_type = 'docket_classification_corrected'
+          and correction.event_payload_json ->> 'superseded_event_id' = e.event_id::text
+          and correction.created_at <= $2::timestamptz
+          and not exists (
+            select 1
+            from public.civic_genome_event retraction
+            where retraction.event_type = 'docket_classification_correction_retracted'
+              and retraction.event_payload_json ->> 'retracted_correction_event_id' = correction.event_id::text
+              and retraction.created_at <= $2::timestamptz
+          )
+      )
   ), '[]'::jsonb),
   'lineage_edges', coalesce((
     select jsonb_agg(to_jsonb(le) order by le.lineage_edge_id)
@@ -81,8 +131,8 @@ select jsonb_build_object(
   'unresolved_family_candidates', coalesce((
     select jsonb_agg(to_jsonb(u) order by u.observed_at, u.unresolved_candidate_id)
     from public.civic_genome_unresolved_family_candidate u
-    join public.civic_genome_bill ub on ub.genome_bill_id = u.genome_bill_id
-    where ub.family_id = f.family_id
+    join historical_bills ub on ub.genome_bill_id = u.genome_bill_id
+    where true
       and u.created_at <= $2::timestamptz
       and u.updated_at <= $2::timestamptz
       and u.observed_at <= $2::timestamptz
@@ -91,7 +141,16 @@ select jsonb_build_object(
 from public.civic_genome_family f
 where f.family_id = $1::uuid
   and f.created_at <= $2::timestamptz
-  and f.updated_at <= $2::timestamptz
+  and (
+    f.updated_at <= $2::timestamptz
+    or exists (
+      select 1
+      from public.civic_genome_projection_entity_version version
+      where version.entity_type = 'family'
+        and version.entity_id = f.family_id
+        and version.observed_at <= $2::timestamptz
+    )
+  )
 `;
 
 /**
@@ -118,6 +177,11 @@ select greatest(
     select max(greatest(b.created_at, b.updated_at))
     from public.civic_genome_bill b
     where b.family_id = f.family_id
+  ),
+  (
+    select max(version.observed_at)
+    from public.civic_genome_projection_entity_version version
+    where version.family_id = f.family_id
   ),
   (
     select max(greatest(t.created_at, t.updated_at))

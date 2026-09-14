@@ -311,19 +311,19 @@ export async function list_genome_events(opts?: {
 
   if (opts?.family_id) {
     params.push(opts.family_id);
-    conditions.push(`family_id = $${params.length}`);
+    conditions.push(`event.family_id = $${params.length}`);
   }
   if (opts?.genome_bill_id) {
     params.push(opts.genome_bill_id);
-    conditions.push(`genome_bill_id = $${params.length}`);
+    conditions.push(`event.genome_bill_id = $${params.length}`);
   }
   if (opts?.state_code) {
     params.push(opts.state_code);
-    conditions.push(`state_code = $${params.length}`);
+    conditions.push(`event.state_code = $${params.length}`);
   }
   if (opts?.event_type) {
     params.push(opts.event_type);
-    conditions.push(`event_type = $${params.length}`);
+    conditions.push(`event.event_type = $${params.length}`);
   }
 
   const where =
@@ -333,8 +333,20 @@ export async function list_genome_events(opts?: {
   params.push(limit, offset);
 
   const { rows } = await pool.query<GenomeEvent>(
-    `select * from civic_genome_event
+    `select event.* from civic_genome_event event
      ${where}
+     ${where ? "and" : "where"} not exists (
+       select 1
+       from public.civic_genome_event correction
+       where correction.event_type = 'docket_classification_corrected'
+         and correction.event_payload_json ->> 'superseded_event_id' = event.event_id::text
+         and not exists (
+           select 1
+           from public.civic_genome_event retraction
+           where retraction.event_type = 'docket_classification_correction_retracted'
+             and retraction.event_payload_json ->> 'retracted_correction_event_id' = correction.event_id::text
+         )
+     )
      order by event_timestamp desc
      limit $${params.length - 1} offset $${params.length}`,
     params,

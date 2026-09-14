@@ -9,6 +9,7 @@ const legislative = read("server/civic-genome-legislative-version-queue-worker.t
 const prism = read("server/services/prism-rosetta-queue-worker.ts");
 const warmer = read("server/docket-state-cache-warmer.ts");
 const startup = read("server/_core/index.ts");
+const docket_worker = read("server/prism-rosetta-worker.ts");
 const db_facade = read("server/db.ts");
 
 describe("minimum Lighthouse queue stabilization", () => {
@@ -61,7 +62,17 @@ describe("minimum Lighthouse queue stabilization", () => {
     expect(warmer).toContain("const DEFAULT_BATCH_SIZE = 5");
     expect(warmer).toContain("const MAX_BATCH_SIZE = 10");
     expect(warmer).toContain("const DEFAULT_INTERVAL_MS = 15 * 60 * 1000");
-    expect(warmer).toContain("if (cycle_running || stopped) return");
+    expect(warmer).toContain("if (active_cycle) return active_cycle");
+    expect(warmer).toContain("if (stopped) return Promise.resolve()");
+    expect(warmer).toContain("active_controller?.abort()");
+    expect(warmer).toContain("await active_cycle");
+    expect(warmer).toContain("projection_attempt:${randomUUID()}");
+    expect(warmer).toContain("last_error_code = $2");
+    expect(warmer).toContain("clear_retry(candidate.state, attempt_token)");
+    expect(warmer).toContain("row.requires_retry === true || (row.is_fresh !== true && row.retry_scheduled !== true)");
+    expect(warmer).toContain("Math.floor(limit / 2)");
+    expect(warmer).toContain("if (limit <= 1 && ordinary.length > 0) return ordinary.slice(0, 1)");
+    expect(docket_worker).toContain("await wait_for_docket_state_refreshes()");
     expect(warmer).toContain("/api/docket/warm-state");
     expect(warmer).toContain("for (let index = 0; index < states_to_warm.length; index += 1)");
     expect(warmer).toContain("await sleep(WARM_STATE_DELAY_MS)");

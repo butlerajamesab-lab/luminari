@@ -65,6 +65,26 @@ const record_url = (value: unknown): string | null => {
   return typeof url === "string" && /^https?:\/\//i.test(url) ? url : null;
 };
 
+const readable_date = (value: unknown): string => {
+  if (typeof value !== "string" || !value || value.startsWith("0000-00-00")) return "Not reported";
+  const parsed = /^\d{4}-\d{2}-\d{2}$/.test(value)
+    ? new Date(`${value}T00:00:00`)
+    : new Date(value);
+  return Number.isFinite(parsed.getTime())
+    ? parsed.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    : "Not reported";
+};
+
+const status_label = (status: unknown, last_action: unknown): string => {
+  const evidence = display_value(last_action).toLowerCase();
+  if ([5, 6].includes(Number(status)) || /^\s*failed(?:\s+(?:final passage|to pass))?\s*[.;]?\s*$/.test(evidence) || /^\s*(?:chapter(?:ed)?|effective date|enacted|withdrawn|dead|vetoed|postponed indefinitely)\b/.test(evidence) || /signed by governor|governor signed|became law/.test(evidence) || /\b(?:bill|measure|resolution)\s+(?:has\s+)?(?:enacted|failed(?:\s+(?:final passage|to pass))?|withdrawn|vetoed|died|(?:been\s+)?postponed\s+indefinitely|indefinitely\s+postponed)\b/.test(evidence)) return "Completed";
+  if (Number(status) === 4) return "Passed · further action possible";
+  if (Number(status) === 3) return "Passed both chambers";
+  if (Number(status) === 2) return "Engrossed";
+  if (Number(status) === 1) return "Live · changeable";
+  return "Procedural status unknown";
+};
+
 function Field({ label, value, wide = false }: { label: string; value: unknown; wide?: boolean }) {
   if (value === null || value === undefined || value === "") return null;
   return (
@@ -75,17 +95,18 @@ function Field({ label, value, wide = false }: { label: string; value: unknown; 
   );
 }
 
-function Section({ title, items, empty_text, render_item }: {
+function Section({ title, items, empty_text, render_item, default_open = false }: {
   title: string;
   items: unknown[];
   empty_text: string;
   render_item?: (item: unknown, index: number) => React.ReactNode;
+  default_open?: boolean;
 }) {
   if (items.length === 0) return null;
   return (
-    <section style={{ background: palette.bg, border: `1px solid ${palette.rule}`, borderRadius: 8, padding: "0.85rem" }}>
-      <div style={{ fontFamily: font_mono, fontSize: "0.7rem", color: palette.steel, fontWeight: 700, textTransform: "uppercase", marginBottom: "0.65rem" }}>{title}</div>
-      <div style={{ display: "grid", gap: "0.55rem" }}>
+    <details open={default_open} style={{ background: palette.bg, border: `1px solid ${palette.rule}`, borderRadius: 8, padding: "0.85rem" }}>
+      <summary style={{ cursor: "pointer", fontFamily: font_mono, fontSize: "0.7rem", color: palette.steel, fontWeight: 700, textTransform: "uppercase" }}>{title} · {items.length}</summary>
+      <div style={{ display: "grid", gap: "0.55rem", marginTop: "0.65rem" }}>
         {items.length === 0 ? <div style={{ color: palette.muted }}>{empty_text}</div> : items.map((item, index) => render_item ? render_item(item, index) : (
           <div key={index} style={{ background: palette.slate, border: `1px solid ${palette.rule}`, borderRadius: 6, padding: "0.65rem" }}>
             <div style={{ fontFamily: font_sans, fontSize: "0.82rem", color: palette.paper, lineHeight: 1.4 }}>{record_label(item)}</div>
@@ -100,7 +121,7 @@ function Section({ title, items, empty_text, render_item }: {
           </div>
         ))}
       </div>
-    </section>
+    </details>
   );
 }
 
@@ -124,6 +145,7 @@ export function DocketBillDetailWorkspace({ payload }: { payload: bill_detail_pa
     title: first_value(bill, ["title", "description", "bill_name"]),
     description: first_value(bill, ["description", "summary", "abstract"]),
     status: first_value(bill, ["status", "status_desc", "current_status"]),
+    completed: first_value(bill, ["completed"]),
     status_date: first_value(bill, ["status_date", "last_action_date"]),
     session: first_value(bill, ["session", "session_name", "session_title", "session_id"]),
     state: first_value(bill, ["state", "state_id", "jurisdiction"]),
@@ -143,6 +165,7 @@ export function DocketBillDetailWorkspace({ payload }: { payload: bill_detail_pa
   }), [bill]);
 
   const official_url = typeof normalized.url === "string" && /^https?:\/\//i.test(normalized.url) ? normalized.url : null;
+  const procedural_status = status_label(normalized.status, normalized.last_action);
 
   return (
     <div style={{ display: "grid", gap: "0.85rem" }}>
@@ -162,23 +185,20 @@ export function DocketBillDetailWorkspace({ payload }: { payload: bill_detail_pa
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(155px, 1fr))", gap: "0.75rem", background: palette.bg, border: `1px solid ${palette.rule}`, borderRadius: 8, padding: "0.85rem" }}>
         <Field label="Bill number" value={normalized.number} />
-        <Field label="Bill ID" value={normalized.bill_id} />
         <Field label="Jurisdiction" value={normalized.state} />
-        <Field label="Session" value={normalized.session} />
-        <Field label="Status" value={normalized.status} />
-        <Field label="Status date" value={normalized.status_date} />
+        <Field label="Procedural status" value={procedural_status} />
+        <Field label="Status updated" value={readable_date(typeof normalized.status_date === "string" ? normalized.status_date : null)} />
         <Field label="Last action" value={normalized.last_action} wide />
-        <Field label="Last action date" value={normalized.last_action_date} />
-        <Field label="Change hash" value={normalized.change_hash} />
+        <Field label="Last action date" value={readable_date(typeof normalized.last_action_date === "string" ? normalized.last_action_date : null)} />
       </div>
 
       {disposition_conflicts.length > 0 && (
         <section style={{ background: palette.copper_soft, border: `1px solid ${palette.copper}`, borderRadius: 8, padding: "0.85rem" }}>
           <div style={{ fontFamily: font_mono, fontSize: "0.7rem", color: palette.copper, fontWeight: 700, textTransform: "uppercase", marginBottom: "0.45rem" }}>
-            Verified enrichment · amendment disposition conflicts
+            Evidence status · amendment disposition mismatch
           </div>
           <div style={{ fontFamily: font_sans, fontSize: "0.78rem", color: palette.cream, lineHeight: 1.5, marginBottom: "0.7rem" }}>
-            Raw provider metadata remains unchanged below. Persisted Prism verification found that the official amendment source states a different disposition than the provider metadata for {disposition_conflicts.length} amendment{disposition_conflicts.length === 1 ? "" : "s"}.
+            The provider record and the separately preserved amendment source report different dispositions for {disposition_conflicts.length} amendment{disposition_conflicts.length === 1 ? "" : "s"}. This is a source disagreement, not a contradiction within the bill. Raw provider metadata remains unchanged.
           </div>
           <div style={{ display: "grid", gap: "0.55rem" }}>
             {disposition_conflicts.map(conflict => (
@@ -187,9 +207,9 @@ export function DocketBillDetailWorkspace({ payload }: { payload: bill_detail_pa
                   Amendment {conflict.amendment_id}{conflict.description ? ` · ${conflict.description}` : ""}
                 </div>
                 <div style={{ display: "flex", gap: "0.55rem", flexWrap: "wrap", marginTop: "0.4rem", fontFamily: font_mono, fontSize: "0.64rem" }}>
-                  <span style={{ color: palette.red }}>provider: {conflict.provider_observed_disposition ?? (conflict.provider_adopted ? "adopted" : "not_adopted")}</span>
-                  <span style={{ color: palette.green }}>official source: {conflict.verified_source_disposition ?? "unresolved"}</span>
-                  <span style={{ color: palette.copper }}>Prism: {conflict.verification_status}</span>
+                  <span style={{ color: palette.cream }}>Provider reports: {conflict.provider_observed_disposition ?? (conflict.provider_adopted ? "adopted" : "not_adopted")}</span>
+                  <span style={{ color: palette.cream }}>Amendment source reports: {conflict.verified_source_disposition ?? "unresolved"}</span>
+                  <span style={{ color: palette.copper }}>Review state: source disagreement</span>
                 </div>
                 <div style={{ marginTop: "0.35rem", fontFamily: font_mono, fontSize: "0.6rem", color: palette.muted, overflowWrap: "anywhere" }}>
                   receipt {conflict.prism_verification_receipt_id}
@@ -207,8 +227,8 @@ export function DocketBillDetailWorkspace({ payload }: { payload: bill_detail_pa
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "0.75rem" }}>
-        <Section title="Legislative history" items={normalized.history} empty_text="No actions returned" />
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: "0.75rem" }}>
+        <Section title="Legislative history" items={normalized.history} empty_text="No actions returned" default_open />
         <Section title="Sponsors" items={normalized.sponsors} empty_text="No sponsors returned" />
         <Section title="Committees and referrals" items={normalized.committees} empty_text="No committees returned" />
         <Section title="Bill texts and documents" items={normalized.texts} empty_text="No texts returned" />

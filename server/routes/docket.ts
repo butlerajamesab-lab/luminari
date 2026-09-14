@@ -8,7 +8,7 @@ import {
   type legiscan_master_bill,
 } from "../services/legiscan";
 import {
-  project_docket_cache_to_civic_genome,
+  project_docket_state_cache_to_civic_genome_serialized,
   type civic_genome_projection_result,
 } from "../civic-genome-projection";
 import { query_with_diagnostics } from "../db";
@@ -100,6 +100,134 @@ type docket_warm_state_result = {
   error?: string;
 };
 
+type docket_radar_database_row = {
+  source_bill_id: number;
+  velocity_score: string | number | null;
+  events_14d: string | number | null;
+  amended_7d: string | number | null;
+  next_event_date: string | Date | null;
+  next_event_class: string | null;
+  next_event_description: string | null;
+  trait_class: string | null;
+  base_count: string | number | null;
+  latest_count: string | number | null;
+  delta: string | number | null;
+  base_has_trait_coverage: boolean | null;
+  latest_has_trait_coverage: boolean | null;
+};
+
+const unavailable_radar = () => ({
+  available: false,
+  velocity_score: 0,
+  events_14d: 0,
+  amended_7d: 0,
+  next_event_date: null,
+  next_event_class: null,
+  next_event_description: null,
+  drift: [],
+  drift_coverage: false,
+});
+
+const finite_number = (value: string | number | null): number => {
+  const normalized = Number(value ?? 0);
+  return Number.isFinite(normalized) ? normalized : 0;
+};
+
+const enrich_bills_with_radar = async (
+  bills: legiscan_master_bill[],
+): Promise<Array<legiscan_master_bill & { radar: Record<string, unknown> }>> => {
+  const bill_ids = bills.map(bill => bill.bill_id).filter(Number.isSafeInteger);
+  if (bill_ids.length === 0) return [];
+
+  let result;
+  try {
+    result = await query_with_diagnostics<docket_radar_database_row>(
+    `with requested(source_bill_id) as (
+       select unnest($1::integer[])
+     ), bill_genome as (
+       select distinct on (source_bill_id) source_bill_id, genome_bill_id
+       from public.civic_genome_bill_version
+       where source_bill_id = any($1::integer[])
+       order by source_bill_id, stage_rank desc, provider_sequence desc
+     )
+     select requested.source_bill_id,
+            velocity.velocity_score,
+            velocity.events_14d,
+            velocity.amended_7d,
+            next_event.next_event_date,
+            next_event.next_event_class,
+            next_event.next_event_description,
+            drift.trait_class,
+            drift.base_count,
+            drift.latest_count,
+            drift.delta,
+            drift.base_has_trait_coverage
+            , drift.latest_has_trait_coverage
+       from requested
+       left join public.docket_bill_velocity velocity
+         on velocity.source_bill_id = requested.source_bill_id
+       left join bill_genome
+         on bill_genome.source_bill_id = requested.source_bill_id
+       left join public.docket_bill_next_floor_event next_event
+         on next_event.bill_id = requested.source_bill_id
+       left join public.docket_bill_drift_delta drift
+         on drift.genome_bill_id = bill_genome.genome_bill_id`,
+    [bill_ids],
+    {
+      label: "docket_radar_state_projection",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 5_000,
+    },
+    );
+  } catch (error) {
+    console.error("[DocketRadar] enrichment_unavailable", { error: serialize_error(error) });
+    return bills.map(bill => ({ ...bill, radar: unavailable_radar() }));
+  }
+
+  const radar_by_bill = new Map<number, {
+    velocity_score: number;
+    events_14d: number;
+    amended_7d: number;
+    next_event_date: string | null;
+    next_event_class: string | null;
+    next_event_description: string | null;
+    drift: Array<{ trait_class: string; base_count: number; latest_count: number; delta: number }>;
+    drift_coverage: boolean;
+    available: boolean;
+  }>();
+
+  for (const row of result.rows) {
+    const existing = radar_by_bill.get(row.source_bill_id) ?? {
+      velocity_score: finite_number(row.velocity_score),
+      events_14d: finite_number(row.events_14d),
+      amended_7d: finite_number(row.amended_7d),
+      next_event_date: row.next_event_date instanceof Date
+        ? row.next_event_date.toISOString().slice(0, 10)
+        : row.next_event_date,
+      next_event_class: row.next_event_class,
+      next_event_description: row.next_event_description,
+      drift: [],
+      drift_coverage: false,
+      available: true,
+    };
+    if (row.trait_class && row.base_has_trait_coverage === true && row.latest_has_trait_coverage === true) {
+      existing.drift.push({
+        trait_class: row.trait_class,
+        base_count: finite_number(row.base_count),
+        latest_count: finite_number(row.latest_count),
+        delta: finite_number(row.delta),
+      });
+      existing.drift_coverage = true;
+    }
+    radar_by_bill.set(row.source_bill_id, existing);
+  }
+
+  return bills.map(bill => ({
+    ...bill,
+    radar: radar_by_bill.get(bill.bill_id) ?? unavailable_radar(),
+  }));
+};
+
 const normalize_state_code = (state: unknown): string => {
   if (typeof state !== "string") {
     throw new Error("Missing required query parameter: state");
@@ -168,20 +296,35 @@ const read_all_state_cache = async (): Promise<docket_state_cache_row[]> => {
   }));
 };
 
-const upsert_state_cache = async (row: docket_state_cache_row): Promise<void> => {
+const upsert_state_cache = async (
+  row: docket_state_cache_row,
+  projection_required: boolean,
+): Promise<void> => {
   await query_with_diagnostics(
-    `insert into public.docket_bill_state_cache (
+    `with cache_write as (
+       insert into public.docket_bill_state_cache (
        state, session_id, session_title, bills, bill_count, fetched_at, source
-     ) values ($1, $2, $3, $4::jsonb, $5, $6::timestamptz, $7)
-     on conflict (state) do update set
+       ) values ($1, $2, $3, $4::jsonb, $5, $6::timestamptz, $7)
+       on conflict (state) do update set
        session_id = excluded.session_id,
        session_title = excluded.session_title,
        bills = excluded.bills,
        bill_count = excluded.bill_count,
        fetched_at = excluded.fetched_at,
        source = excluded.source,
+       updated_at = now()
+       returning state
+     )
+     insert into public.docket_state_projection_retry
+       (state, failure_count, retry_after, last_error_code, updated_at)
+     select state, 1, now(), 'request_scoped_cache_refresh_requires_projection', now()
+       from cache_write
+      where $8::boolean
+     on conflict (state) do update set
+       retry_after = now(),
+       last_error_code = excluded.last_error_code,
        updated_at = now()`,
-    [row.state, row.session_id, row.session_title, JSON.stringify(row.bills), row.bill_count, row.fetched_at, row.source],
+    [row.state, row.session_id, row.session_title, JSON.stringify(row.bills), row.bill_count, row.fetched_at, row.source, projection_required],
     {
       label: "docket_state_cache_upsert",
       pool_acquire_timeout_ms: 1_000,
@@ -308,16 +451,8 @@ const summarize_civic_genome_projection = (
 });
 
 const project_refreshed_state_to_civic_genome = async (state: string): Promise<civic_genome_projection_status> => {
-  try {
-    const projection = await project_docket_cache_to_civic_genome({ state_code: state });
-    return summarize_civic_genome_projection(projection);
-  } catch (error) {
-    return {
-      ok: false,
-      projected: false,
-      error: serialize_error(error),
-    };
-  }
+  const projection = await project_docket_state_cache_to_civic_genome_serialized(state);
+  return summarize_civic_genome_projection(projection);
 };
 
 const refresh_state_cache = async (
@@ -330,11 +465,13 @@ const refresh_state_cache = async (
     return {
       source: "cache",
       row: cached,
-      civic_genome_projection: {
-        ok: true,
-        projected: false,
-        reason: "cache_fresh_no_projection",
-      },
+      civic_genome_projection: project_to_civic_genome
+        ? await project_refreshed_state_to_civic_genome(state)
+        : {
+            ok: true,
+            projected: false,
+            reason: "cache_fresh_no_projection",
+          },
     };
   }
 
@@ -355,7 +492,7 @@ const refresh_state_cache = async (
     source: "legiscan_get_master_list",
   };
 
-  await upsert_state_cache(row);
+  await upsert_state_cache(row, !project_to_civic_genome);
   const civic_genome_projection: civic_genome_projection_status = project_to_civic_genome
     ? await project_refreshed_state_to_civic_genome(state)
     : {
@@ -434,6 +571,12 @@ const get_or_start_state_refresh = (
   return refresh;
 };
 
+export async function wait_for_docket_state_refreshes(): Promise<void> {
+  while (state_refresh_in_flight.size > 0) {
+    await Promise.allSettled([...state_refresh_in_flight.values()]);
+  }
+}
+
 const schedule_state_refresh = (state: string): void => {
   if (!background_workers_allowed()) return;
   void get_or_start_state_refresh(state, "background").catch(() => undefined);
@@ -455,7 +598,14 @@ docket_router.get("/jurisdictions", (_req, res) => {
   return res.json({
     ok: true,
     states: LEGISCAN_ROLLOUT_STATES,
-    note: "configured_for_50_states_plus_dc; additional_legiscan_jurisdictions_are_not_enabled_until_verified",
+    coverage: {
+      federal: { available: true, jurisdictions: ["US"] },
+      state: { available: true, jurisdictions: LEGISCAN_ROLLOUT_STATES.filter(state => state !== "US") },
+      city: { available: true, jurisdictions: ["Seattle, WA"], source: "legistar" },
+      county: { available: false, reason: "source_adapter_not_established" },
+      tribal: { available: false, reason: "source_adapter_not_established" },
+    },
+    note: "coverage_is_reported_per_level; unavailable_levels_are_never_implied",
   });
 });
 
@@ -480,7 +630,7 @@ docket_router.get("/cache-status", async (_req, res) => {
 docket_router.post("/warm-state", async (req, res) => {
   try {
     const state = normalize_state_code(req.body?.state);
-    const refreshed = await refresh_state_cache(state);
+    const refreshed = await get_or_start_state_refresh(state, "background");
 
     return res.json({
       ok: true,
@@ -516,7 +666,7 @@ docket_router.post("/warm-next-batch", async (req, res) => {
 
     for (const state of states_to_warm) {
       try {
-        const refreshed = await refresh_state_cache(state);
+        const refreshed = await get_or_start_state_refresh(state, "background");
         results.push({
           state,
           ok: true,
@@ -575,7 +725,7 @@ docket_router.get("/state", async (req, res) => {
             bill_count: refreshed.row.bill_count,
             fetched_at: refreshed.row.fetched_at,
             civic_genome_projection: refreshed.civic_genome_projection,
-            bills: refreshed.row.bills,
+            bills: await enrich_bills_with_radar(refreshed.row.bills),
           });
         } catch {
           const stale_reason = "cache_stale_request_refresh_failed";
@@ -593,7 +743,7 @@ docket_router.get("/state", async (req, res) => {
               projected: false,
               reason: stale_reason,
             },
-            bills: cached.bills,
+            bills: await enrich_bills_with_radar(cached.bills),
           });
         }
       }
@@ -615,7 +765,7 @@ docket_router.get("/state", async (req, res) => {
           projected: false,
           reason: fresh ? "cache_fresh_no_projection" : stale_reason,
         },
-        bills: cached.bills,
+        bills: await enrich_bills_with_radar(cached.bills),
       });
     }
 
@@ -633,7 +783,7 @@ docket_router.get("/state", async (req, res) => {
     // official provider list; subsequent reads become cache-first immediately.
     const refresh_mode = background_workers_allowed() ? "worker" : "request_scoped";
     const refreshed = background_workers_allowed()
-      ? await refresh_state_cache(state)
+      ? await get_or_start_state_refresh(state, "background")
       : await get_or_start_state_refresh(state, "request_scoped");
     return res.json({
       ok: true,
@@ -645,7 +795,7 @@ docket_router.get("/state", async (req, res) => {
       bill_count: refreshed.row.bill_count,
       fetched_at: refreshed.row.fetched_at,
       civic_genome_projection: refreshed.civic_genome_projection,
-      bills: refreshed.row.bills,
+      bills: await enrich_bills_with_radar(refreshed.row.bills),
     });
   } catch (error) {
     return res.status(500).json({

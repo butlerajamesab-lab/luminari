@@ -122,6 +122,35 @@ async function refresh_family_rollup(
   );
 }
 
+async function capture_family_resolution_versions(
+  client: PoolClient,
+  genome_bill_id: string,
+  family_ids: string[],
+): Promise<void> {
+  await client.query(
+    `insert into public.civic_genome_projection_entity_version (
+       entity_type, entity_id, family_id, observed_at, record_hash, record_json
+     )
+     select entity_type, entity_id, family_id, observed_at,
+       encode(extensions.digest(convert_to(record_json::text, 'UTF8'), 'sha256'), 'hex'),
+       record_json
+     from (
+       select 'family'::text entity_type, family.family_id entity_id,
+         family.family_id, greatest(family.created_at, family.updated_at) observed_at,
+         to_jsonb(family) record_json
+       from public.civic_genome_family family
+       where family.family_id = any($2::uuid[])
+       union all
+       select 'bill', bill.genome_bill_id, bill.family_id,
+         greatest(bill.created_at, bill.updated_at), to_jsonb(bill)
+       from public.civic_genome_bill bill
+       where bill.genome_bill_id = $1
+     ) version
+     on conflict (entity_type, entity_id, record_hash) do nothing`,
+    [genome_bill_id, family_ids],
+  );
+}
+
 const to_trait = (row: persisted_trait): CivicGenomeTrait => ({
   traitId: row.trait_id,
   genomeBillId: row.genome_bill_id,
@@ -349,6 +378,10 @@ export async function resolve_civic_genome_family_with_client(
     });
   }
 
+  await capture_family_resolution_versions(client, genome_bill_id, [
+    bill.family_id,
+    resolution.familyId,
+  ]);
   await client.query(
     `update public.civic_genome_bill
         set family_id = $2,
@@ -396,6 +429,10 @@ export async function resolve_civic_genome_family_with_client(
   if (resolution.familyId !== bill.family_id) {
     await refresh_family_rollup(client, resolution.familyId);
   }
+  await capture_family_resolution_versions(client, genome_bill_id, [
+    bill.family_id,
+    resolution.familyId,
+  ]);
 
   return {
     status: "assigned",

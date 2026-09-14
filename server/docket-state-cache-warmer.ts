@@ -1,5 +1,6 @@
 import { query_with_diagnostics } from "./db";
 import { background_feature_enabled } from "./runtime-role";
+import { randomUUID } from "crypto";
 
 const DEFAULT_INTERVAL_MS = 15 * 60 * 1000;
 const MIN_INTERVAL_MS = 5 * 60 * 1000;
@@ -13,7 +14,8 @@ const STATE_CACHE_TTL_MS = 8 * 60 * 60 * 1000;
 
 let interval_timer: NodeJS.Timeout | null = null;
 let initial_timer: NodeJS.Timeout | null = null;
-let cycle_running = false;
+let active_cycle: Promise<void> | null = null;
+let active_controller: AbortController | null = null;
 let stopped = false;
 
 type docket_cache_status_row = {
@@ -21,11 +23,15 @@ type docket_cache_status_row = {
   has_cache: boolean;
   fetched_at: string | null;
   is_fresh: boolean;
+  requires_retry?: boolean;
+  retry_scheduled?: boolean;
 };
 
 type docket_cache_database_row = {
   state: string;
+  has_cache: boolean;
   fetched_at: string | Date | null;
+  retry_after: string | Date | null;
 };
 
 function bounded_integer(
@@ -90,14 +96,16 @@ function sleep(ms: number): Promise<void> {
  * 2. cached-but-stale jurisdictions, oldest observation first;
  * 3. state code as a deterministic tie-breaker.
  *
- * Fresh jurisdictions are never selected by the automatic recovery loop.
+ * Fresh jurisdictions are selected only when their prior warm/projection
+ * attempt failed and therefore requires an explicit retry.
  */
 export function sort_docket_warm_candidates(
   states: docket_cache_status_row[],
 ): docket_cache_status_row[] {
   return states
-    .filter(row => row.is_fresh !== true)
+    .filter(row => row.requires_retry === true || (row.is_fresh !== true && row.retry_scheduled !== true))
     .sort((a, b) => {
+      if (a.requires_retry !== b.requires_retry) return a.requires_retry ? -1 : 1;
       if (a.has_cache !== b.has_cache) return a.has_cache ? 1 : -1;
       if (a.has_cache && b.has_cache) {
         const a_fetched_at = fetched_at_ms(a.fetched_at);
@@ -107,6 +115,46 @@ export function sort_docket_warm_candidates(
       }
       return a.state.localeCompare(b.state);
     });
+}
+
+export function select_docket_warm_batch(
+  candidates: docket_cache_status_row[],
+  limit: number,
+): docket_cache_status_row[] {
+  const retries = candidates.filter(row => row.requires_retry === true);
+  const ordinary = candidates.filter(row => row.requires_retry !== true);
+  if (limit <= 1 && ordinary.length > 0) return ordinary.slice(0, 1);
+  const retry_capacity = ordinary.length > 0 ? Math.max(1, Math.floor(limit / 2)) : limit;
+  const selected_retries = retries.slice(0, retry_capacity);
+  const selected_ordinary = ordinary.slice(0, limit - selected_retries.length);
+  const remaining = limit - selected_retries.length - selected_ordinary.length;
+  return remaining > 0
+    ? [...selected_retries, ...selected_ordinary, ...retries.slice(selected_retries.length, selected_retries.length + remaining)]
+    : [...selected_retries, ...selected_ordinary];
+}
+
+async function record_retry(state: string, error: unknown): Promise<void> {
+  await query_with_diagnostics(
+    `insert into public.docket_state_projection_retry
+       (state, failure_count, retry_after, last_error_code, updated_at)
+     values ($1, 1, now() + interval '15 minutes', $2, now())
+     on conflict (state) do update set
+       failure_count = least(public.docket_state_projection_retry.failure_count + 1, 1000),
+       retry_after = now() + interval '15 minutes',
+       last_error_code = excluded.last_error_code,
+       updated_at = now()`,
+    [state, safe_error(error)],
+    { label: "docket_state_projection_retry_record", pool_acquire_timeout_ms: 1_000, query_timeout_ms: 5_000 },
+  );
+}
+
+async function clear_retry(state: string, attempt_token: string): Promise<void> {
+  await query_with_diagnostics(
+    `delete from public.docket_state_projection_retry
+      where state = $1 and last_error_code = $2`,
+    [state, attempt_token],
+    { label: "docket_state_projection_retry_clear", pool_acquire_timeout_ms: 1_000, query_timeout_ms: 5_000 },
+  );
 }
 
 async function parse_json_response(
@@ -152,9 +200,12 @@ async function read_cache_status(
     .filter(state => /^[A-Z]{2}$/.test(state));
 
   const cache_rows = await query_with_diagnostics<docket_cache_database_row>(
-    `select state, fetched_at
-       from public.docket_bill_state_cache
-      where state = any($1::text[])`,
+    `with configured(state) as (select unnest($1::text[]))
+     select configured.state, cache.state is not null as has_cache,
+            cache.fetched_at, retry.retry_after
+       from configured
+       left join public.docket_bill_state_cache cache on cache.state = configured.state
+       left join public.docket_state_projection_retry retry on retry.state = configured.state`,
     [configured_states],
     {
       label: "docket_state_cache_warmer_cache_rows",
@@ -163,13 +214,18 @@ async function read_cache_status(
     },
   );
   const cache_by_state = new Map(
-    cache_rows.rows.map(row => [String(row.state).toUpperCase(), normalized_fetched_at(row.fetched_at)]),
+    cache_rows.rows.map(row => [String(row.state).toUpperCase(), {
+      has_cache: row.has_cache === true,
+      fetched_at: normalized_fetched_at(row.fetched_at),
+      retry_after: normalized_fetched_at(row.retry_after),
+    }]),
   );
   const now_ms = Date.now();
 
   return configured_states.map(state => {
-    const has_cache = cache_by_state.has(state);
-    const fetched_at = cache_by_state.get(state) ?? null;
+    const cache_state = cache_by_state.get(state);
+    const has_cache = cache_state?.has_cache === true;
+    const fetched_at = cache_state?.fetched_at ?? null;
     const fetched_ms = fetched_at ? new Date(fetched_at).getTime() : Number.NaN;
     return {
       state,
@@ -178,6 +234,8 @@ async function read_cache_status(
       is_fresh: has_cache
         && Number.isFinite(fetched_ms)
         && now_ms - fetched_ms < STATE_CACHE_TTL_MS,
+      requires_retry: Boolean(cache_state?.retry_after && new Date(cache_state.retry_after).getTime() <= now_ms),
+      retry_scheduled: Boolean(cache_state?.retry_after),
     };
   });
 }
@@ -208,31 +266,43 @@ async function warm_state(
   return payload;
 }
 
-export async function run_docket_state_cache_warmer_cycle(port: number): Promise<void> {
-  if (cycle_running || stopped) return;
-  cycle_running = true;
+export function run_docket_state_cache_warmer_cycle(port: number): Promise<void> {
+  if (active_cycle) return active_cycle;
+  if (stopped) return Promise.resolve();
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-  const limit = batch_size();
-  const started_at = Date.now();
-
-  try {
+  active_controller = controller;
+  const cycle = (async () => {
+    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    const limit = batch_size();
+    const started_at = Date.now();
+    try {
     const cache_states = await read_cache_status(port, controller.signal);
     const candidates = sort_docket_warm_candidates(cache_states);
-    const states_to_warm = candidates.slice(0, limit);
+    const states_to_warm = select_docket_warm_batch(candidates, limit);
     const results: Array<{ state: string; ok: boolean; source?: string; error?: string }> = [];
 
     for (let index = 0; index < states_to_warm.length; index += 1) {
       const candidate = states_to_warm[index];
       try {
+        const attempt_token = `projection_attempt:${randomUUID()}`;
+        await record_retry(candidate.state, new Error(attempt_token));
         const payload = await warm_state(port, candidate.state, controller.signal);
         results.push({
           state: candidate.state,
           ok: true,
           source: typeof payload.source === "string" ? payload.source : undefined,
         });
+        await clear_retry(candidate.state, attempt_token);
       } catch (error) {
+        try {
+          await record_retry(candidate.state, error);
+        } catch (retry_error) {
+          console.error("[DocketCacheWarmer] retry_record_failed", {
+            state: candidate.state,
+            error: safe_error(retry_error),
+          });
+        }
         results.push({
           state: candidate.state,
           ok: false,
@@ -258,18 +328,24 @@ export async function run_docket_state_cache_warmer_cycle(port: number): Promise
       remaining_count: Math.max(0, candidates.length - successful_count),
       duration_ms: Date.now() - started_at,
     });
-  } catch (error) {
-    console.error("[DocketCacheWarmer] cycle_failed", {
-      limit,
-      duration_ms: Date.now() - started_at,
-      error: controller.signal.aborted
-        ? `docket_state_cache_warmer_timeout_${REQUEST_TIMEOUT_MS}ms`
-        : safe_error(error),
-    });
-  } finally {
-    clearTimeout(timeout);
-    cycle_running = false;
-  }
+    } catch (error) {
+      console.error("[DocketCacheWarmer] cycle_failed", {
+        limit,
+        duration_ms: Date.now() - started_at,
+        error: controller.signal.aborted
+          ? `docket_state_cache_warmer_timeout_${REQUEST_TIMEOUT_MS}ms`
+          : safe_error(error),
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
+  })();
+  active_cycle = cycle;
+  void cycle.finally(() => {
+    if (active_cycle === cycle) active_cycle = null;
+    if (active_controller === controller) active_controller = null;
+  });
+  return cycle;
 }
 
 export function start_docket_state_cache_warmer(port: number): void {
@@ -302,10 +378,12 @@ export function start_docket_state_cache_warmer(port: number): void {
   interval_timer.unref?.();
 }
 
-export function stop_docket_state_cache_warmer(): void {
+export async function stop_docket_state_cache_warmer(): Promise<void> {
   stopped = true;
   if (initial_timer) clearTimeout(initial_timer);
   if (interval_timer) clearInterval(interval_timer);
   initial_timer = null;
   interval_timer = null;
+  active_controller?.abort();
+  await active_cycle;
 }

@@ -1,4 +1,5 @@
 import { createHash } from "crypto";
+import type { PoolClient } from "pg";
 import { getPool } from "./db";
 import { classify_docket_event } from "./civic-genome-event-classifier";
 import type { legiscan_master_bill } from "./services/legiscan";
@@ -127,22 +128,22 @@ const infer_policy_domain = (bill: legiscan_master_bill): string => {
 
 export const infer_state_position = (bill: legiscan_master_bill): string => {
   const last_action = (bill.last_action ?? "").toLowerCase();
-  const text =
-    `${bill.title ?? ""} ${bill.description ?? ""} ${bill.last_action ?? ""}`.toLowerCase();
+  const status = Number(bill.status);
 
   // An explicit effective-date action is post-enactment evidence even when
   // the cached master-list status remains the generic LegiScan "Passed" code.
   // Restrict this signal to the action field so bills *about* effective dates
   // are not falsely classified as enacted.
-  if (/^\s*effective date\b/.test(last_action)) return "enacted";
-  if (/chapter|enacted|signed by governor|became law/.test(text))
+  if (/^\s*(?:effective date|chapter(?:ed)?|enacted)\b/.test(last_action)) return "enacted";
+  if (/signed by governor|governor signed|became law|\b(?:bill|measure|resolution)\s+(?:has\s+)?enacted\b/.test(last_action))
     return "enacted";
-  if (/failed|withdrawn|dead|vetoed|postponed indefinitely/.test(text))
+  if ([5, 6].includes(status)) return "failed";
+  if (/^\s*failed(?:\s+(?:final passage|to pass))?\s*[.;]?\s*$|^\s*(?:withdrawn|dead|vetoed|postponed indefinitely)\b|\b(?:bill|measure|resolution)\s+(?:has\s+)?(?:failed|withdrawn|vetoed|died|(?:been\s+)?postponed\s+indefinitely|indefinitely\s+postponed)\b/.test(last_action))
     return "failed";
-  if (/passed house and senate|passed both/.test(text))
+  if (/passed house and senate|passed both/.test(last_action))
     return "advanced_two_chambers";
-  if (/passed house|passed senate/.test(text)) return "advanced_one_chamber";
-  if (/committee|referred|reported/.test(text)) return "active_in_committee";
+  if (/passed house|passed senate/.test(last_action)) return "advanced_one_chamber";
+  if (/committee|referred|reported/.test(last_action)) return "active_in_committee";
 
   return "introduced";
 };
@@ -188,8 +189,8 @@ export const should_append_projection_event = (
 const upsert_family = async (
   family_key: string,
   bill: legiscan_master_bill,
+  client: PoolClient,
 ): Promise<string> => {
-  const pool = getPool();
   const policy_domain = infer_policy_domain(bill);
   const family_label = normalize_bill_text(bill).slice(0, 240);
   const signature_json = {
@@ -198,7 +199,7 @@ const upsert_family = async (
     family_key,
   };
 
-  const { rows } = await pool.query<{ family_id: string }>(
+  const { rows } = await client.query<{ family_id: string }>(
     `insert into public.civic_genome_family (
        family_key,
        family_label,
@@ -221,10 +222,8 @@ const upsert_family = async (
   return rows[0].family_id;
 };
 
-const refresh_family_rollups = async (family_id: string): Promise<void> => {
-  const pool = getPool();
-
-  await pool.query(
+const refresh_family_rollups = async (family_id: string, client: PoolClient): Promise<void> => {
+  await client.query(
     `with rollup as (
        select
          count(distinct state_code) filter (where current_state_position not in ('failed'))::int as active_state_count,
@@ -254,17 +253,84 @@ const refresh_family_rollups = async (family_id: string): Promise<void> => {
   );
 };
 
+const capture_projection_entity_versions = async (
+  family_id: string,
+  genome_bill_id: string,
+  client: PoolClient,
+): Promise<void> => {
+  await client.query(
+    `insert into public.civic_genome_projection_entity_version (
+       entity_type, entity_id, family_id, observed_at, record_hash, record_json
+     )
+     select entity_type, entity_id, family_id, observed_at,
+       encode(extensions.digest(convert_to(record_json::text, 'UTF8'), 'sha256'), 'hex'),
+       record_json
+     from (
+       select 'family'::text as entity_type, family.family_id as entity_id,
+         family.family_id, greatest(family.created_at, family.updated_at) as observed_at,
+         to_jsonb(family) as record_json
+       from public.civic_genome_family family where family.family_id = $1
+       union all
+       select 'bill'::text, bill.genome_bill_id, bill.family_id,
+         greatest(bill.created_at, bill.updated_at), to_jsonb(bill)
+       from public.civic_genome_bill bill where bill.genome_bill_id = $2
+     ) version
+     on conflict (entity_type, entity_id, record_hash) do nothing`,
+    [family_id, genome_bill_id],
+  );
+};
+
+const capture_target_family_version = async (
+  family_key: string,
+  client: PoolClient,
+): Promise<void> => {
+  await client.query(
+    `insert into public.civic_genome_projection_entity_version (
+       entity_type, entity_id, family_id, observed_at, record_hash, record_json
+     )
+     select 'family', family.family_id, family.family_id,
+       greatest(family.created_at, family.updated_at),
+       encode(extensions.digest(convert_to(to_jsonb(family)::text, 'UTF8'), 'sha256'), 'hex'),
+       to_jsonb(family)
+     from public.civic_genome_family family
+     where family.family_key = $1
+     on conflict (entity_type, entity_id, record_hash) do nothing`,
+    [family_key],
+  );
+};
+
+const capture_family_version = async (
+  family_id: string,
+  client: PoolClient,
+): Promise<void> => {
+  await client.query(
+    `insert into public.civic_genome_projection_entity_version (
+       entity_type, entity_id, family_id, observed_at, record_hash, record_json
+     )
+     select 'family', family.family_id, family.family_id,
+       greatest(family.created_at, family.updated_at),
+       encode(extensions.digest(convert_to(to_jsonb(family)::text, 'UTF8'), 'sha256'), 'hex'),
+       to_jsonb(family)
+     from public.civic_genome_family family
+     where family.family_id = $1
+     on conflict (entity_type, entity_id, record_hash) do nothing`,
+    [family_id],
+  );
+};
+
 const project_bill = async (
   state_row: docket_state_cache_row,
   bill: legiscan_master_bill,
   source_offset: number,
 ): Promise<projected_bill_result> => {
   const pool = getPool();
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
   const state_code = normalize_state_code(state_row.state);
   const source_bill_number = bill.number;
   const bill_id = stable_uuid(`docket_room:legiscan:${bill.bill_id}`);
   const family_key = build_family_key(bill);
-  const family_id = await upsert_family(family_key, bill);
   const current_state_position = infer_state_position(bill);
   const docket_observation = build_structural_dna_json(state_row, bill);
   const docket_observation_hash = sha256(JSON.stringify(docket_observation));
@@ -277,7 +343,7 @@ const project_bill = async (
       ? null
       : `legiscan_status_${bill.status}`;
 
-  const { rows: existing_rows } = await pool.query<{
+  const { rows: existing_rows } = await client.query<{
     genome_bill_id: string;
     family_id: string;
     structural_dna_hash: string;
@@ -307,8 +373,44 @@ const project_bill = async (
     existing?.current_state_position ?? null,
     current_state_position,
   );
+  const classification = classify_docket_event(bill, existing);
+  const event_type = classification.event_type;
 
-  const { rows } = await pool.query<{
+  if (existing && !should_append_event) {
+    await client.query("commit");
+    return {
+      state_code,
+      source_bill_id: bill.bill_id,
+      source_bill_number,
+      source_offset,
+      bill_id,
+      family_id: existing.family_id,
+      genome_bill_id: existing.genome_bill_id,
+      event_type,
+      action: "unchanged",
+    };
+  }
+
+  if (existing) {
+    await capture_projection_entity_versions(
+      existing.family_id,
+      existing.genome_bill_id,
+      client,
+    );
+  }
+
+  let family_id: string;
+  if (existing?.rosetta_extraction_run_id) {
+    // Rosetta owns an extracted bill's family assignment. A changed Docket
+    // title/domain may alter the heuristic key, but must not mutate an unused
+    // inferred target family that the bill conflict path will not adopt.
+    family_id = existing.family_id;
+  } else {
+    await capture_target_family_version(family_key, client);
+    family_id = await upsert_family(family_key, bill, client);
+  }
+
+  const { rows } = await client.query<{
     genome_bill_id: string;
     family_id: string;
   }>(
@@ -392,11 +494,8 @@ const project_bill = async (
 
   const genome_bill_id = rows[0].genome_bill_id;
   const persisted_family_id = rows[0].family_id;
-  const classification = classify_docket_event(bill, existing);
-  const event_type = classification.event_type;
-
   if (should_append_event) {
-    await pool.query(
+    await client.query(
       `insert into public.civic_genome_event (
          family_id,
          genome_bill_id,
@@ -445,7 +544,18 @@ const project_bill = async (
     );
   }
 
-  await refresh_family_rollups(persisted_family_id);
+  await refresh_family_rollups(persisted_family_id, client);
+  await capture_projection_entity_versions(
+    persisted_family_id,
+    genome_bill_id,
+    client,
+  );
+  if (existing && existing.family_id !== persisted_family_id) {
+    await refresh_family_rollups(existing.family_id, client);
+    await capture_family_version(existing.family_id, client);
+  }
+
+  await client.query("commit");
 
   return {
     state_code,
@@ -462,6 +572,12 @@ const project_bill = async (
         : "unchanged"
       : "inserted",
   };
+  } catch (error) {
+    await client.query("rollback").catch(() => undefined);
+    throw error;
+  } finally {
+    client.release();
+  }
 };
 
 export async function project_docket_cache_to_civic_genome(opts?: {
@@ -549,4 +665,25 @@ export async function project_docket_cache_to_civic_genome(opts?: {
     family_count: family_ids.size,
     results,
   };
+}
+
+const docket_state_projection_in_flight = new Map<string, Promise<civic_genome_projection_result>>();
+
+export function project_docket_state_cache_to_civic_genome_serialized(
+  state_code: string,
+): Promise<civic_genome_projection_result> {
+  const normalized_state = normalize_state_code(state_code);
+  const previous = docket_state_projection_in_flight.get(normalized_state);
+  const projection = (async () => {
+    if (previous) await previous.catch(() => undefined);
+    return project_docket_cache_to_civic_genome({ state_code: normalized_state });
+  })();
+  docket_state_projection_in_flight.set(normalized_state, projection);
+  const release = () => {
+    if (docket_state_projection_in_flight.get(normalized_state) === projection) {
+      docket_state_projection_in_flight.delete(normalized_state);
+    }
+  };
+  void projection.then(release, release);
+  return projection;
 }

@@ -15,7 +15,7 @@ vi.mock("./services/legiscan", () => ({
 }));
 
 vi.mock("./civic-genome-projection", () => ({
-  project_docket_cache_to_civic_genome: project_state,
+  project_docket_state_cache_to_civic_genome_serialized: project_state,
 }));
 
 import {
@@ -147,7 +147,7 @@ describe("Docket jurisdiction activation queue", () => {
     await process_docket_bill_activation_job(job);
 
     expect(project_state).toHaveBeenCalledTimes(1);
-    expect(project_state).toHaveBeenCalledWith({ state_code: "NY" });
+    expect(project_state).toHaveBeenCalledWith("NY");
     expect(get_bill).toHaveBeenCalledTimes(1);
   });
 
