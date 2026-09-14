@@ -1,0 +1,3118 @@
+{
+  "schema_version": 1,
+  "review_kind": "manual_source_placement",
+  "reviewed_on": "2026-09-14",
+  "source": {
+    "filename": "luminari-claim-catalog.docx",
+    "sha256": "58694889277f11e4475c4983fca9804ae0c4e04b3e609aa33c5b7f9b37437de9",
+    "paragraph_convention": "Nonempty DOCX paragraphs in document/table traversal order from supplied reading representation.",
+    "storage_identity_status": "Supplied bytes not yet reconciled to a current Supabase source artifact; hash is of attached original DOCX."
+  },
+  "claims": [
+    {
+      "source_claim_id": "EMP-001",
+      "existing_claim_catalog_id": 22,
+      "claim_type_id": "emp_001_race_color_discrimination_disparate_treatment",
+      "canonical_name": "Race/Color Discrimination (Disparate Treatment)",
+      "domain": "Employment",
+      "identity_basis": "Manually reconciled source identifier and full claim title to the retrieved claim_catalog row; existing ID retained.",
+      "source_span": {
+        "paragraph_start": 177,
+        "paragraph_end": 197
+      },
+      "search_terms": [
+        "race",
+        "racial",
+        "color",
+        "discrimination",
+        "promotion",
+        "fired"
+      ],
+      "agency_reference": {
+        "paragraph_start": 178,
+        "paragraph_end": 178,
+        "text": "Domain: Employment   |   Primary Agency: EEOC (Title VII, 15+); state civil rights agency (lower thresholds)"
+      },
+      "deadline_reference": {
+        "paragraph_start": 179,
+        "paragraph_end": 179,
+        "text": "Federal SOL: 300 days EEOC (deferral state); 180 days (non-deferral)   |   State Range: 120 days (DE) — 3 years (NY, VT) — 6 years (MN private action)"
+      },
+      "coverage_reference": {
+        "paragraph_start": 180,
+        "paragraph_end": 180,
+        "text": "Employer Size: Federal: 15+. State: varies — IL/MI/MN/WI/NY/NJ/VT: all employers"
+      },
+      "authority_reference": {
+        "paragraph_start": 181,
+        "paragraph_end": 181,
+        "text": "Key Statutes: 42 USC §2000e (Title VII); 42 USC §1981 (race — no employer size min, 4yr SOL — CRITICAL for small employers); 42 USC §1983 (state actors)"
+      },
+      "elements": [
+        {
+          "paragraph_start": 183,
+          "paragraph_end": 183,
+          "text": "Plaintiff is member of protected race/color class"
+        },
+        {
+          "paragraph_start": 184,
+          "paragraph_end": 184,
+          "text": "Adverse employment action (termination, demotion, failure to hire, failure to promote)"
+        },
+        {
+          "paragraph_start": 185,
+          "paragraph_end": 185,
+          "text": "Plaintiff qualified for position or performing job satisfactorily"
+        },
+        {
+          "paragraph_start": 186,
+          "paragraph_end": 186,
+          "text": "Causal link between race and adverse action (comparator evidence, direct evidence, temporal proximity)"
+        }
+      ],
+      "proof_reference": {
+        "paragraph_start": 188,
+        "paragraph_end": 188,
+        "text": "McDonnell Douglas burden-shifting: prima facie → legitimate nondiscriminatory reason → pretext. Or direct evidence (stray remarks, documented bias)."
+      },
+      "fact_patterns": {
+        "paragraph_start": 190,
+        "paragraph_end": 190,
+        "text": "Termination after racial slur by supervisor; passed over for promotion despite higher qualifications than white peer; hired into lower-grade position than qualifications warrant; racially hostile work environment"
+      },
+      "barrier_reference": {
+        "paragraph_start": 192,
+        "paragraph_end": 192,
+        "text": "At-will doctrine; McDonnell Douglas pretext standard; arbitration agreements; mandatory arbitration clauses in employment contracts"
+      },
+      "intersections_reference": {
+        "paragraph_start": 194,
+        "paragraph_end": 194,
+        "text": "Sexual harassment (Title VII sex), disability (ADA), national origin (Title VII), wage gap (EPA)"
+      },
+      "remedies_reference": {
+        "paragraph_start": 196,
+        "paragraph_end": 196,
+        "text": "Back pay; front pay; compensatory damages (Title VII cap: $50K-$300K by employer size); punitive damages; reinstatement; injunctive relief. §1981: NO damage cap — critical for high-damage race claims."
+      },
+      "dated_note": {
+        "paragraph_start": 197,
+        "paragraph_end": 197,
+        "text": "  2025 NOTE: §1981 is the most important alternative to Title VII for race claims — no employer size minimum, 4-year SOL (Jones v. R.R. Donnelley), no damage caps, no EEOC prerequisite. Must prove intentional discrimination (no disparate impact theory). Critical for small employer cases.  "
+      },
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    },
+    {
+      "source_claim_id": "EMP-002",
+      "existing_claim_catalog_id": 23,
+      "claim_type_id": "emp_002_sex_gender_discrimination_disparate_treatment",
+      "canonical_name": "Sex/Gender Discrimination (Disparate Treatment)",
+      "domain": "Employment",
+      "identity_basis": "Manually reconciled source identifier and full claim title to the retrieved claim_catalog row; existing ID retained.",
+      "source_span": {
+        "paragraph_start": 198,
+        "paragraph_end": 218
+      },
+      "search_terms": [
+        "sex",
+        "gender",
+        "pregnancy",
+        "transgender",
+        "discrimination",
+        "paid less"
+      ],
+      "agency_reference": {
+        "paragraph_start": 199,
+        "paragraph_end": 199,
+        "text": "Domain: Employment   |   Primary Agency: EEOC (Title VII, 15+); state civil rights agency"
+      },
+      "deadline_reference": {
+        "paragraph_start": 200,
+        "paragraph_end": 200,
+        "text": "Federal SOL: 300 days   |   State Range: 120 days (DE) — 6 years (MN)"
+      },
+      "coverage_reference": {
+        "paragraph_start": 201,
+        "paragraph_end": 201,
+        "text": "Employer Size: Federal: 15+. Most states: all employers"
+      },
+      "authority_reference": {
+        "paragraph_start": 202,
+        "paragraph_end": 202,
+        "text": "Key Statutes: Title VII; Bostock v. Clayton County (2020); Price Waterhouse v. Hopkins (1989); Equal Pay Act (all employers, 2yr SOL)"
+      },
+      "elements": [
+        {
+          "paragraph_start": 204,
+          "paragraph_end": 204,
+          "text": "Plaintiff is female (or male in reverse-sex case, or LGBTQ+ under Bostock)"
+        },
+        {
+          "paragraph_start": 205,
+          "paragraph_end": 205,
+          "text": "Adverse employment action"
+        },
+        {
+          "paragraph_start": 206,
+          "paragraph_end": 206,
+          "text": "Qualified/performing satisfactorily"
+        },
+        {
+          "paragraph_start": 207,
+          "paragraph_end": 207,
+          "text": "Similarly situated comparators of other sex treated more favorably, or direct evidence"
+        }
+      ],
+      "proof_reference": {
+        "paragraph_start": 209,
+        "paragraph_end": 209,
+        "text": "McDonnell Douglas (indirect) or direct evidence. Gender stereotyping as sex discrimination (Price Waterhouse). Bostock: LGBTQ+ = sex discrimination."
+      },
+      "fact_patterns": {
+        "paragraph_start": 211,
+        "paragraph_end": 211,
+        "text": "Female employee paid less than male doing equal work; female terminated after pregnancy announcement; male supervisor favors male subordinates for promotion; transgender employee fired after transition announcement"
+      },
+      "barrier_reference": {
+        "paragraph_start": 213,
+        "paragraph_end": 213,
+        "text": "2025: Trump EO directing EEOC non-enforcement of gender identity — state agencies critical for trans claims"
+      },
+      "intersections_reference": {
+        "paragraph_start": 215,
+        "paragraph_end": 215,
+        "text": "Pregnancy (PDA, PWFA), sexual harassment, race, national origin"
+      },
+      "remedies_reference": {
+        "paragraph_start": 217,
+        "paragraph_end": 217,
+        "text": "Same as Title VII race. EPA: back pay, liquidated damages (equal to back pay for willful), no EEOC prerequisite."
+      },
+      "dated_note": {
+        "paragraph_start": 218,
+        "paragraph_end": 218,
+        "text": "  2025 NOTE: For LGBTQ+ discrimination: Bostock is binding SCOTUS law but federal enforcement suspended by EO. State civil rights agencies in protective states (CA, NY, IL, NJ, MA, CO, WA, MN, etc.) are primary route. State courts remain fully available.  "
+      },
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    },
+    {
+      "source_claim_id": "EMP-003",
+      "existing_claim_catalog_id": 24,
+      "claim_type_id": "emp_003_disability_discrimination_failure_to_accommodate",
+      "canonical_name": "Disability Discrimination — Failure to Accommodate",
+      "domain": "Employment",
+      "identity_basis": "Manually reconciled source identifier and full claim title to the retrieved claim_catalog row; existing ID retained.",
+      "source_span": {
+        "paragraph_start": 219,
+        "paragraph_end": 240
+      },
+      "search_terms": [
+        "disability",
+        "accommodation",
+        "mental health",
+        "modified schedule",
+        "leave",
+        "remote work"
+      ],
+      "agency_reference": {
+        "paragraph_start": 220,
+        "paragraph_end": 220,
+        "text": "Domain: Employment   |   Primary Agency: EEOC (ADA Title I, 15+); state civil rights agency (many cover smaller employers)"
+      },
+      "deadline_reference": {
+        "paragraph_start": 221,
+        "paragraph_end": 221,
+        "text": "Federal SOL: 300 days   |   State Range: 120 days (DE) — 6 years (MN)"
+      },
+      "coverage_reference": {
+        "paragraph_start": 222,
+        "paragraph_end": 222,
+        "text": "Employer Size: Federal: 15+. IL/MI/MN/WI/NY/NJ/VT: all employers"
+      },
+      "authority_reference": {
+        "paragraph_start": 223,
+        "paragraph_end": 223,
+        "text": "Key Statutes: ADA Title I (42 USC §12112); ADAAA 2008 (expanded disability definition); Rehabilitation Act §501/504 (federal employees/contractors)"
+      },
+      "elements": [
+        {
+          "paragraph_start": 225,
+          "paragraph_end": 225,
+          "text": "Plaintiff has disability (physical/mental impairment substantially limiting major life activity)"
+        },
+        {
+          "paragraph_start": 226,
+          "paragraph_end": 226,
+          "text": "Employer knew of disability"
+        },
+        {
+          "paragraph_start": 227,
+          "paragraph_end": 227,
+          "text": "Plaintiff requested reasonable accommodation OR accommodation was obvious"
+        },
+        {
+          "paragraph_start": 228,
+          "paragraph_end": 228,
+          "text": "Employer failed to engage in interactive process OR denied accommodation"
+        },
+        {
+          "paragraph_start": 229,
+          "paragraph_end": 229,
+          "text": "Accommodation would not have posed undue hardship"
+        }
+      ],
+      "proof_reference": {
+        "paragraph_start": 231,
+        "paragraph_end": 231,
+        "text": "Interactive process failure analysis. Undue hardship defense: nature/cost of accommodation relative to employer resources. Regarded-as-disabled theory available without actual limitation."
+      },
+      "fact_patterns": {
+        "paragraph_start": 233,
+        "paragraph_end": 233,
+        "text": "Denied modified schedule for chronic condition; denied remote work during recovery; refused leave as accommodation; forced return to work before medically cleared; terminated after exhausting FMLA leave"
+      },
+      "barrier_reference": {
+        "paragraph_start": 235,
+        "paragraph_end": 235,
+        "text": "Employer claiming undue hardship without actual cost analysis; failure to document accommodation request (always document in writing); EEOC often closes ADA cases quickly"
+      },
+      "intersections_reference": {
+        "paragraph_start": 237,
+        "paragraph_end": 237,
+        "text": "FMLA (leave as accommodation), mental health (MHPAEA if insurance), workers comp retaliation"
+      },
+      "remedies_reference": {
+        "paragraph_start": 239,
+        "paragraph_end": 239,
+        "text": "Title I: Back pay, front pay, compensatory, punitive (size-based cap), injunctive"
+      },
+      "dated_note": {
+        "paragraph_start": 240,
+        "paragraph_end": 240,
+        "text": "  2025 NOTE: Mental health conditions (depression, anxiety, PTSD, bipolar) are disabilities under ADAAA. Employers must accommodate mental health conditions same as physical. Document every accommodation request in writing. Include statement: 'I am requesting a reasonable accommodation under the ADA.'  "
+      },
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    },
+    {
+      "source_claim_id": "EMP-004",
+      "existing_claim_catalog_id": 25,
+      "claim_type_id": "emp_004_retaliation_all_employment_civil_rights",
+      "canonical_name": "Retaliation (All Employment Civil Rights)",
+      "domain": "Employment",
+      "identity_basis": "Manually reconciled source identifier and full claim title to the retrieved claim_catalog row; existing ID retained.",
+      "source_span": {
+        "paragraph_start": 241,
+        "paragraph_end": 260
+      },
+      "search_terms": [
+        "retaliation",
+        "complained",
+        "reported",
+        "hours cut",
+        "demoted",
+        "fired"
+      ],
+      "agency_reference": {
+        "paragraph_start": 242,
+        "paragraph_end": 242,
+        "text": "Domain: Employment   |   Primary Agency: EEOC (all anti-discrimination statutes); NLRB (NLRA retaliation); DOL-WHD (FLSA retaliation); OSHA (25+ whistleblower statutes)"
+      },
+      "deadline_reference": {
+        "paragraph_start": 243,
+        "paragraph_end": 243,
+        "text": "Federal SOL: EEOC: 300 days; FLSA: 2yr; NLRB: 6mo; OSHA: 30-180 days (statute-specific)   |   State Range: Varies by state retaliation law"
+      },
+      "coverage_reference": {
+        "paragraph_start": 244,
+        "paragraph_end": 244,
+        "text": "Employer Size: EEOC: 15+; FLSA/NLRB: all employers"
+      },
+      "authority_reference": {
+        "paragraph_start": 245,
+        "paragraph_end": 245,
+        "text": "Key Statutes: Title VII §704; ADA §503; ADEA §623(d); FLSA §215(a)(3); NLRA §8(a)(4); Burlington Northern (SCOTUS 2006)"
+      },
+      "elements": [
+        {
+          "paragraph_start": 247,
+          "paragraph_end": 247,
+          "text": "Protected activity (complaint, charge, testimony, opposition to discrimination, participation in investigation)"
+        },
+        {
+          "paragraph_start": 248,
+          "paragraph_end": 248,
+          "text": "Adverse action (materially adverse — not just minor, but anything that would deter reasonable employee)"
+        },
+        {
+          "paragraph_start": 249,
+          "paragraph_end": 249,
+          "text": "Causal connection (temporal proximity; escalation after complaint; changed treatment)"
+        }
+      ],
+      "proof_reference": {
+        "paragraph_start": 251,
+        "paragraph_end": 251,
+        "text": "Burlington Northern & Santa Fe Ry. v. White (2006): materially adverse standard (broader than adverse employment action in substantive claim). Temporal proximity alone can establish causation."
+      },
+      "fact_patterns": {
+        "paragraph_start": 253,
+        "paragraph_end": 253,
+        "text": "Terminated within weeks of filing EEOC charge; demoted after complaining to HR about harassment; hours cut after wage complaint to DOL; fired after telling coworkers about wage underpayment"
+      },
+      "barrier_reference": {
+        "paragraph_start": 255,
+        "paragraph_end": 255,
+        "text": "Employer documenting performance issues immediately after protected activity — preemptive documentation; arbitration clauses"
+      },
+      "intersections_reference": {
+        "paragraph_start": 257,
+        "paragraph_end": 257,
+        "text": "All discrimination claims; FLSA wage claims; NLRA concerted activity; whistleblower statutes"
+      },
+      "remedies_reference": {
+        "paragraph_start": 259,
+        "paragraph_end": 259,
+        "text": "All remedies available under underlying statute plus injunctive relief. Retaliation often stronger claim than underlying discrimination."
+      },
+      "dated_note": {
+        "paragraph_start": 260,
+        "paragraph_end": 260,
+        "text": "  2025 NOTE: Retaliation is currently the #1 claim category at EEOC (approx 55% of all charges). Even if underlying discrimination claim is weak, retaliation claim may be strong if employer overreacted to complaint.  "
+      },
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    },
+    {
+      "source_claim_id": "EMP-005",
+      "existing_claim_catalog_id": 26,
+      "claim_type_id": "emp_005_wage_theft_minimum_wage_violation",
+      "canonical_name": "Wage Theft — Minimum Wage Violation",
+      "domain": "Employment",
+      "identity_basis": "Manually reconciled source identifier and full claim title to the retrieved claim_catalog row; existing ID retained.",
+      "source_span": {
+        "paragraph_start": 261,
+        "paragraph_end": 281
+      },
+      "search_terms": [
+        "wages",
+        "wage",
+        "unpaid",
+        "underpaid",
+        "minimum wage",
+        "off the clock",
+        "paycheck"
+      ],
+      "agency_reference": {
+        "paragraph_start": 262,
+        "paragraph_end": 262,
+        "text": "Domain: Employment   |   Primary Agency: DOL-WHD (FLSA, all employers in interstate commerce); state labor agency (many have higher minimums and stronger remedies)"
+      },
+      "deadline_reference": {
+        "paragraph_start": 263,
+        "paragraph_end": 263,
+        "text": "Federal SOL: 2 years (willful: 3 years)   |   State Range: NY: 6yr; MA: 3yr; IL: 3yr; CA: 3yr; most states: 2-3yr"
+      },
+      "coverage_reference": {
+        "paragraph_start": 264,
+        "paragraph_end": 264,
+        "text": "Employer Size: FLSA: effectively all employers. No minimum."
+      },
+      "authority_reference": {
+        "paragraph_start": 265,
+        "paragraph_end": 265,
+        "text": "Key Statutes: FLSA 29 USC §206; state minimum wage laws; local ordinances (many cities $15-$20+/hr)"
+      },
+      "elements": [
+        {
+          "paragraph_start": 267,
+          "paragraph_end": 267,
+          "text": "Employment relationship (not independent contractor)"
+        },
+        {
+          "paragraph_start": 268,
+          "paragraph_end": 268,
+          "text": "Hours worked at or below minimum wage"
+        },
+        {
+          "paragraph_start": 269,
+          "paragraph_end": 269,
+          "text": "Employer failed to pay applicable minimum wage (federal $7.25/hr or higher state/local minimum)"
+        },
+        {
+          "paragraph_start": 270,
+          "paragraph_end": 270,
+          "text": "Calculation of unpaid wages"
+        }
+      ],
+      "proof_reference": {
+        "paragraph_start": 272,
+        "paragraph_end": 272,
+        "text": "Records-based: time records, pay stubs, bank records. Employer bears recordkeeping burden (FLSA). If no records, employee reasonable estimate accepted."
+      },
+      "fact_patterns": {
+        "paragraph_start": 274,
+        "paragraph_end": 274,
+        "text": "Paid flat salary that works out below minimum wage; off-the-clock work required; tipped workers not reaching minimum wage; misclassified as independent contractor to avoid minimum wage"
+      },
+      "barrier_reference": {
+        "paragraph_start": 276,
+        "paragraph_end": 276,
+        "text": "Misclassification as contractor; arbitration agreements; fear of retaliation; immigration status concerns"
+      },
+      "intersections_reference": {
+        "paragraph_start": 278,
+        "paragraph_end": 278,
+        "text": "Overtime violations, tip theft, retaliation (FLSA §215)"
+      },
+      "remedies_reference": {
+        "paragraph_start": 280,
+        "paragraph_end": 280,
+        "text": "Back wages; liquidated damages (equal to back wages for willful violation — doubles recovery); attorney fees; injunctive relief. State: NY/MA triple damages."
+      },
+      "dated_note": {
+        "paragraph_start": 281,
+        "paragraph_end": 281,
+        "text": "  2025 NOTE: Misclassification as independent contractor is primary wage theft vehicle. DOL 2024 rule narrowed contractor definition — more workers covered as employees. FLSA covers workers regardless of immigration status.  "
+      },
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    },
+    {
+      "source_claim_id": "EMP-006",
+      "existing_claim_catalog_id": 27,
+      "claim_type_id": "emp_006_wage_theft_overtime_violation",
+      "canonical_name": "Wage Theft — Overtime Violation",
+      "domain": "Employment",
+      "identity_basis": "Manually reconciled source identifier and full claim title to the retrieved claim_catalog row; existing ID retained.",
+      "source_span": {
+        "paragraph_start": 282,
+        "paragraph_end": 302
+      },
+      "search_terms": [
+        "overtime",
+        "unpaid",
+        "salary",
+        "exempt",
+        "comp time",
+        "off the clock",
+        "hours"
+      ],
+      "agency_reference": {
+        "paragraph_start": 283,
+        "paragraph_end": 283,
+        "text": "Domain: Employment   |   Primary Agency: DOL-WHD (FLSA); state labor agency"
+      },
+      "deadline_reference": {
+        "paragraph_start": 284,
+        "paragraph_end": 284,
+        "text": "Federal SOL: 2 years (willful: 3 years)   |   State Range: NY: 6yr; CA: 3yr; MA: 3yr; IL: 3yr"
+      },
+      "coverage_reference": {
+        "paragraph_start": 285,
+        "paragraph_end": 285,
+        "text": "Employer Size: All employers in interstate commerce"
+      },
+      "authority_reference": {
+        "paragraph_start": 286,
+        "paragraph_end": 286,
+        "text": "Key Statutes: FLSA 29 USC §207; 29 CFR Part 541 (exemptions); collective action under 29 USC §216(b)"
+      },
+      "elements": [
+        {
+          "paragraph_start": 288,
+          "paragraph_end": 288,
+          "text": "Employment relationship (not exempt)"
+        },
+        {
+          "paragraph_start": 289,
+          "paragraph_end": 289,
+          "text": "Hours worked exceed 40 in workweek"
+        },
+        {
+          "paragraph_start": 290,
+          "paragraph_end": 290,
+          "text": "Employer paid straight time (not 1.5x) for overtime hours, or failed to pay overtime entirely"
+        },
+        {
+          "paragraph_start": 291,
+          "paragraph_end": 291,
+          "text": "Employee is not exempt (executive, administrative, professional, outside sales, highly compensated)"
+        }
+      ],
+      "proof_reference": {
+        "paragraph_start": 293,
+        "paragraph_end": 293,
+        "text": "Exemption analysis is key: employer bears burden of proving exemption applies. DOL salary test: exempt employees must receive guaranteed salary ≥ $684/week (federal, 2024 rule under review)."
+      },
+      "fact_patterns": {
+        "paragraph_start": 295,
+        "paragraph_end": 295,
+        "text": "Salaried employee misclassified as exempt; hourly employee told 'comp time' instead of overtime pay; off-the-clock prep/cleanup time not paid; multiple employer entities evading overtime count; rounding time records down"
+      },
+      "barrier_reference": {
+        "paragraph_start": 297,
+        "paragraph_end": 297,
+        "text": "Misclassification as exempt; off-the-clock work hard to document; arbitration agreements prevent collective action"
+      },
+      "intersections_reference": {
+        "paragraph_start": 299,
+        "paragraph_end": 299,
+        "text": "Minimum wage, tip credit, retaliation"
+      },
+      "remedies_reference": {
+        "paragraph_start": 301,
+        "paragraph_end": 301,
+        "text": "Back wages; liquidated damages; attorney fees. FLSA collective actions (opt-in) allow multiple employees to join single suit."
+      },
+      "dated_note": {
+        "paragraph_start": 302,
+        "paragraph_end": 302,
+        "text": "  2025 NOTE: DOL 2024 rule raising exempt salary threshold ($684/wk → $844/wk) stayed by court. Current threshold remains $684/wk pending litigation.  "
+      },
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    },
+    {
+      "source_claim_id": "EMP-007",
+      "existing_claim_catalog_id": 28,
+      "claim_type_id": "emp_007_concerted_activity_organizing_retaliation_nlra",
+      "canonical_name": "Concerted Activity / Organizing Retaliation (NLRA)",
+      "domain": "Employment",
+      "identity_basis": "Manually reconciled source identifier and full claim title to the retrieved claim_catalog row; existing ID retained.",
+      "source_span": {
+        "paragraph_start": 303,
+        "paragraph_end": 323
+      },
+      "search_terms": [
+        "union",
+        "organizing",
+        "coworkers",
+        "concerted",
+        "wage discussion",
+        "group complaint"
+      ],
+      "agency_reference": {
+        "paragraph_start": 304,
+        "paragraph_end": 304,
+        "text": "Domain: Employment   |   Primary Agency: NLRB (regional offices, 6-month SOL — precise)"
+      },
+      "deadline_reference": {
+        "paragraph_start": 305,
+        "paragraph_end": 305,
+        "text": "Federal SOL: 6 months from when employee knew or should have known   |   State Range: State labor laws supplement (some states stronger)"
+      },
+      "coverage_reference": {
+        "paragraph_start": 306,
+        "paragraph_end": 306,
+        "text": "Employer Size: ALL employers — no size minimum"
+      },
+      "authority_reference": {
+        "paragraph_start": 307,
+        "paragraph_end": 307,
+        "text": "Key Statutes: NLRA 29 USC §7 (rights); §8(a)(1)(3) (unfair labor practices); Weingarten rights (union representation in investigatory interview)"
+      },
+      "elements": [
+        {
+          "paragraph_start": 309,
+          "paragraph_end": 309,
+          "text": "Employee engaged in concerted activity (with or on behalf of coworkers) for mutual aid or protection"
+        },
+        {
+          "paragraph_start": 310,
+          "paragraph_end": 310,
+          "text": "Activity was protected (wage discussion, collective complaint, organizing, union activity)"
+        },
+        {
+          "paragraph_start": 311,
+          "paragraph_end": 311,
+          "text": "Employer took adverse action because of protected activity"
+        },
+        {
+          "paragraph_start": 312,
+          "paragraph_end": 312,
+          "text": "No size minimum — applies to all workers"
+        }
+      ],
+      "proof_reference": {
+        "paragraph_start": 314,
+        "paragraph_end": 314,
+        "text": "Concerted activity: need not involve union. Two or more employees acting together, OR one employee acting on behalf of others. Wage discussion between two coworkers = concerted activity."
+      },
+      "fact_patterns": {
+        "paragraph_start": 316,
+        "paragraph_end": 316,
+        "text": "Fired after telling coworker their wage; terminated after group complaint to management about safety; discharged after organizing coworkers around scheduling concerns; fired for social media post about working conditions with coworkers"
+      },
+      "barrier_reference": {
+        "paragraph_start": 318,
+        "paragraph_end": 318,
+        "text": "Agricultural workers, domestic workers, independent contractors excluded from NLRA; supervisors excluded"
+      },
+      "intersections_reference": {
+        "paragraph_start": 320,
+        "paragraph_end": 320,
+        "text": "Wage retaliation (FLSA), race/sex discrimination (Title VII), immigration status (irrelevant — NLRA covers all workers)"
+      },
+      "remedies_reference": {
+        "paragraph_start": 322,
+        "paragraph_end": 322,
+        "text": "Reinstatement; back pay; cease and desist order. Limited remedies by design — punitive damages not available. Value is in protecting organizing rights."
+      },
+      "dated_note": {
+        "paragraph_start": 323,
+        "paragraph_end": 323,
+        "text": "  2025 NOTE: NLRB enforcement capacity reduced 2025 (fired board members, reduced staff). File charges to preserve rights even if enforcement uncertain. NLRB charge filing date is critical for SOL. NLRA is the MOST POWERFUL tool for workers at small employers who fall below all civil rights thresholds.  "
+      },
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    },
+    {
+      "source_claim_id": "HOU-001",
+      "existing_claim_catalog_id": 29,
+      "claim_type_id": "hou_001_housing_discrimination_race_national_origin_fha",
+      "canonical_name": "Housing Discrimination — Race/National Origin (FHA)",
+      "domain": "Housing",
+      "identity_basis": "Manually reconciled source identifier and full claim title to the retrieved claim_catalog row; existing ID retained.",
+      "source_span": {
+        "paragraph_start": 324,
+        "paragraph_end": 344
+      },
+      "search_terms": [
+        "housing",
+        "landlord",
+        "rent",
+        "race",
+        "national origin",
+        "discrimination"
+      ],
+      "agency_reference": {
+        "paragraph_start": 325,
+        "paragraph_end": 325,
+        "text": "Domain: Housing   |   Primary Agency: HUD (FHA, 1yr); state civil rights agency; federal court (2yr)"
+      },
+      "deadline_reference": {
+        "paragraph_start": 326,
+        "paragraph_end": 326,
+        "text": "Federal SOL: HUD: 1 year; federal court: 2 years   |   State Range: Most states: 1-2 years"
+      },
+      "coverage_reference": {
+        "paragraph_start": 327,
+        "paragraph_end": 327,
+        "text": "Employer Size: N/A — applies to housing providers; exemptions: owner-occupied ≤4 units (Mrs. Murphy), private clubs, religious organizations"
+      },
+      "authority_reference": {
+        "paragraph_start": 328,
+        "paragraph_end": 328,
+        "text": "Key Statutes: Fair Housing Act 42 USC §3601-3631; Texas Dept. of Housing v. Inclusive Communities Project (2015, disparate impact)"
+      },
+      "elements": [
+        {
+          "paragraph_start": 330,
+          "paragraph_end": 330,
+          "text": "Plaintiff is member of protected class (race, color, national origin)"
+        },
+        {
+          "paragraph_start": 331,
+          "paragraph_end": 331,
+          "text": "Sought housing (rental, purchase, or financing)"
+        },
+        {
+          "paragraph_start": 332,
+          "paragraph_end": 332,
+          "text": "Denied, discouraged, offered inferior terms, or subjected to different treatment"
+        },
+        {
+          "paragraph_start": 333,
+          "paragraph_end": 333,
+          "text": "Defendant's conduct was because of protected class"
+        }
+      ],
+      "proof_reference": {
+        "paragraph_start": 335,
+        "paragraph_end": 335,
+        "text": "Disparate treatment (direct/indirect evidence) or disparate impact (neutral policy with discriminatory effect, Inclusive Communities). Steering, blockbusting, and redlining are per se violations."
+      },
+      "fact_patterns": {
+        "paragraph_start": 337,
+        "paragraph_end": 337,
+        "text": "Apartment shown but then told 'unavailable' after meeting applicant; different terms offered to white vs. minority applicants; told 'neighborhood isn't right for you'; Hispanic applicant required to provide documentation white applicant was not"
+      },
+      "barrier_reference": {
+        "paragraph_start": 339,
+        "paragraph_end": 339,
+        "text": "Proving intent without direct evidence; landlord claiming legitimate non-discriminatory reason (higher income applicant, better credit); pretextual rejection"
+      },
+      "intersections_reference": {
+        "paragraph_start": 341,
+        "paragraph_end": 341,
+        "text": "Source of income (Section 8 — not federal, state/local only), disability accommodation, familial status, VAWA"
+      },
+      "remedies_reference": {
+        "paragraph_start": 343,
+        "paragraph_end": 343,
+        "text": "Actual damages; compensatory damages; punitive damages; injunctive relief; attorney fees. HUD: up to $16,000 civil penalty per violation."
+      },
+      "dated_note": {
+        "paragraph_start": 344,
+        "paragraph_end": 344,
+        "text": "  2025 NOTE: HUD remains functional for FHA enforcement. Source of income discrimination (denying Section 8/voucher holders) is not covered by federal FHA — covered in ~20 states and many cities. Flag every housing case for local SOI coverage.  "
+      },
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    },
+    {
+      "source_claim_id": "HOU-002",
+      "existing_claim_catalog_id": 30,
+      "claim_type_id": "hou_002_housing_discrimination_disability_reasonable_accommodation",
+      "canonical_name": "Housing Discrimination — Disability (Reasonable Accommodation)",
+      "domain": "Housing",
+      "identity_basis": "Manually reconciled source identifier and full claim title to the retrieved claim_catalog row; existing ID retained.",
+      "source_span": {
+        "paragraph_start": 345,
+        "paragraph_end": 365
+      },
+      "search_terms": [
+        "housing",
+        "landlord",
+        "disability",
+        "accommodation",
+        "support animal",
+        "accessible"
+      ],
+      "agency_reference": {
+        "paragraph_start": 346,
+        "paragraph_end": 346,
+        "text": "Domain: Housing   |   Primary Agency: HUD (FHA); state civil rights agency; DOJ (public housing authorities — ADA Title II)"
+      },
+      "deadline_reference": {
+        "paragraph_start": 347,
+        "paragraph_end": 347,
+        "text": "Federal SOL: 1 year (HUD)   |   State Range: 1-2 years typically"
+      },
+      "coverage_reference": {
+        "paragraph_start": 348,
+        "paragraph_end": 348,
+        "text": "Employer Size: N/A"
+      },
+      "authority_reference": {
+        "paragraph_start": 349,
+        "paragraph_end": 349,
+        "text": "Key Statutes: FHA §3604(f)(3)(B); Joint Statement on Reasonable Accommodations (HUD/DOJ 2004)"
+      },
+      "elements": [
+        {
+          "paragraph_start": 351,
+          "paragraph_end": 351,
+          "text": "Person has disability (broadly defined under FHA amendments)"
+        },
+        {
+          "paragraph_start": 352,
+          "paragraph_end": 352,
+          "text": "Requested accommodation (policy change) or modification (structural change)"
+        },
+        {
+          "paragraph_start": 353,
+          "paragraph_end": 353,
+          "text": "Accommodation/modification is reasonable (not fundamental alteration or undue burden)"
+        },
+        {
+          "paragraph_start": 354,
+          "paragraph_end": 354,
+          "text": "Housing provider refused or failed to engage in interactive process"
+        }
+      ],
+      "proof_reference": {
+        "paragraph_start": 356,
+        "paragraph_end": 356,
+        "text": "FHA disability accommodation: two-part test — (1) disability-related need, (2) accommodation is reasonable. Provider can request documentation but cannot demand medical records for obvious disability."
+      },
+      "fact_patterns": {
+        "paragraph_start": 358,
+        "paragraph_end": 358,
+        "text": "Denied emotional support animal in no-pet building; denied first-floor apartment for mobility impairment; refused permission to install grab bars; evicted after disability-related behavior incident without accommodation consideration"
+      },
+      "barrier_reference": {
+        "paragraph_start": 360,
+        "paragraph_end": 360,
+        "text": "ESA documentation scams — document from treating provider; housing provider demanding excessive documentation"
+      },
+      "intersections_reference": {
+        "paragraph_start": 362,
+        "paragraph_end": 362,
+        "text": "Section 504 (federally funded housing), ADA Title II (public housing authorities)"
+      },
+      "remedies_reference": {
+        "paragraph_start": 364,
+        "paragraph_end": 364,
+        "text": "Same as FHA. Civil penalties escalate for repeat violations."
+      },
+      "dated_note": {
+        "paragraph_start": 365,
+        "paragraph_end": 365,
+        "text": "  2025 NOTE: Emotional support animals (ESAs) are a major litigation area. FHA does NOT allow breed/weight restrictions for ESAs even if prohibited in lease. Provider may verify disability nexus only for non-obvious disabilities. HUD updated ESA guidance 2020 — providers may request documentation from treating provider.  "
+      },
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    },
+    {
+      "source_claim_id": "HOU-003",
+      "existing_claim_catalog_id": 31,
+      "claim_type_id": "hou_003_source_of_income_discrimination_housing_voucher_section_8",
+      "canonical_name": "Source of Income Discrimination (Housing Voucher/Section 8)",
+      "domain": "Housing",
+      "identity_basis": "Manually reconciled source identifier and full claim title to the retrieved claim_catalog row; existing ID retained.",
+      "source_span": {
+        "paragraph_start": 366,
+        "paragraph_end": 385
+      },
+      "search_terms": [
+        "voucher",
+        "section 8",
+        "source of income",
+        "landlord",
+        "rental"
+      ],
+      "agency_reference": {
+        "paragraph_start": 367,
+        "paragraph_end": 367,
+        "text": "Domain: Housing   |   Primary Agency: State civil rights agency (where SOI covered); local human rights commission; HUD (limited federal coverage via nondiscrimination conditions on HUD-funded landlords)"
+      },
+      "deadline_reference": {
+        "paragraph_start": 368,
+        "paragraph_end": 368,
+        "text": "Federal SOL: N/A (not federal FHA protected class)   |   State Range: Varies — check jurisdiction"
+      },
+      "coverage_reference": {
+        "paragraph_start": 369,
+        "paragraph_end": 369,
+        "text": "Employer Size: N/A"
+      },
+      "authority_reference": {
+        "paragraph_start": 370,
+        "paragraph_end": 370,
+        "text": "Key Statutes: State laws: CA, OR, WA, CO, MN, IL (Chicago), NY, NJ, CT, MA, RI, VT, ME, MD, DC, DE, ND, NE (Lincoln), TX (Austin, Dallas), FL (no state law but some cities)"
+      },
+      "elements": [
+        {
+          "paragraph_start": 372,
+          "paragraph_end": 372,
+          "text": "Plaintiff holds housing voucher (Section 8/HCV, other rental assistance)"
+        },
+        {
+          "paragraph_start": 373,
+          "paragraph_end": 373,
+          "text": "Landlord refused to rent, accept voucher, or offered inferior terms because of voucher status"
+        },
+        {
+          "paragraph_start": 374,
+          "paragraph_end": 374,
+          "text": "Jurisdiction covers source of income as protected class"
+        }
+      ],
+      "proof_reference": {
+        "paragraph_start": 376,
+        "paragraph_end": 376,
+        "text": "Direct evidence (landlord stated no Section 8); circumstantial (available to all applicants except voucher holders)."
+      },
+      "fact_patterns": {
+        "paragraph_start": 378,
+        "paragraph_end": 378,
+        "text": "'No Section 8' in rental ad; told voucher is accepted then rejected after learning it is voucher; steered to lower-quality units"
+      },
+      "barrier_reference": {
+        "paragraph_start": 380,
+        "paragraph_end": 380,
+        "text": "No federal remedy; must identify local coverage; landlords often claim other reasons"
+      },
+      "intersections_reference": {
+        "paragraph_start": 382,
+        "paragraph_end": 382,
+        "text": "Race discrimination (voucher holders disproportionately minority — can argue Title VIII pretext)"
+      },
+      "remedies_reference": {
+        "paragraph_start": 384,
+        "paragraph_end": 384,
+        "text": "Varies by jurisdiction: actual damages, civil penalties, injunctive relief"
+      },
+      "dated_note": {
+        "paragraph_start": 385,
+        "paragraph_end": 385,
+        "text": "  2025 NOTE: Source of income protection growing: multiple cities added SOI protection 2024-25. Always check current local ordinances. Where SOI not covered, consider whether race/national origin discrimination underlies voucher rejection.  "
+      },
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    },
+    {
+      "source_claim_id": "HOU-004",
+      "existing_claim_catalog_id": 32,
+      "claim_type_id": "hou_004_vawa_housing_protection_dv_sa_stalking",
+      "canonical_name": "VAWA Housing Protection (DV/SA/Stalking)",
+      "domain": "Housing",
+      "identity_basis": "Manually reconciled source identifier and full claim title to the retrieved claim_catalog row; existing ID retained.",
+      "source_span": {
+        "paragraph_start": 386,
+        "paragraph_end": 405
+      },
+      "search_terms": [
+        "vawa",
+        "domestic violence",
+        "stalking",
+        "emergency transfer",
+        "housing"
+      ],
+      "agency_reference": {
+        "paragraph_start": 387,
+        "paragraph_end": 387,
+        "text": "Domain: Housing   |   Primary Agency: HUD (VAWA protections); state DV coalitions; local housing authority"
+      },
+      "deadline_reference": {
+        "paragraph_start": 388,
+        "paragraph_end": 388,
+        "text": "Federal SOL: HUD: 1 year. Emergency transfer: immediate.   |   State Range: Varies"
+      },
+      "coverage_reference": {
+        "paragraph_start": 389,
+        "paragraph_end": 389,
+        "text": "Employer Size: N/A"
+      },
+      "authority_reference": {
+        "paragraph_start": 390,
+        "paragraph_end": 390,
+        "text": "Key Statutes: VAWA Reauthorization Act 2022; 24 CFR Part 5 Subpart L (HUD VAWA regulations); HUD VAWA emergency transfer plan requirements"
+      },
+      "elements": [
+        {
+          "paragraph_start": 392,
+          "paragraph_end": 392,
+          "text": "Person is victim of domestic violence, sexual assault, or stalking"
+        },
+        {
+          "paragraph_start": 393,
+          "paragraph_end": 393,
+          "text": "Housing is federally funded (public housing, Section 8/HCV, HOME, HOPWA, VAWA-covered programs)"
+        },
+        {
+          "paragraph_start": 394,
+          "paragraph_end": 394,
+          "text": "Landlord attempted to evict or penalize victim for incidents related to DV/SA/stalking, OR denied emergency transfer"
+        }
+      ],
+      "proof_reference": {
+        "paragraph_start": 396,
+        "paragraph_end": 396,
+        "text": "VAWA self-certification: victim can self-certify victimhood on HUD form. Provider cannot require police report or court order. Emergency transfer request: provider must document transfer plan within 14 days."
+      },
+      "fact_patterns": {
+        "paragraph_start": 398,
+        "paragraph_end": 398,
+        "text": "Eviction notice after DV incident in unit; lease termination after 911 calls; denied transfer to safe unit; bifurcated lease to evict abuser"
+      },
+      "barrier_reference": {
+        "paragraph_start": 400,
+        "paragraph_end": 400,
+        "text": "Private landlords not covered (only federally funded programs); victim may not know federal housing receives VAWA protection"
+      },
+      "intersections_reference": {
+        "paragraph_start": 402,
+        "paragraph_end": 402,
+        "text": "FHA disability (PTSD from DV), sex discrimination (DV disproportionately affects women)"
+      },
+      "remedies_reference": {
+        "paragraph_start": 404,
+        "paragraph_end": 404,
+        "text": "Injunctive relief (stop eviction); emergency transfer; VAWA certification as defense to eviction"
+      },
+      "dated_note": {
+        "paragraph_start": 405,
+        "paragraph_end": 405,
+        "text": "  2025 NOTE: VAWA 2022 expanded protections. HUD issued updated VAWA regulations. Emergency transfer right is strongest immediate protection — do not wait for investigation.  "
+      },
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    },
+    {
+      "source_claim_id": "HOU-005",
+      "existing_claim_catalog_id": 33,
+      "claim_type_id": "hou_005_illegal_eviction_lockout",
+      "canonical_name": "Illegal Eviction / Lockout",
+      "domain": "Housing",
+      "identity_basis": "Manually reconciled source identifier and full claim title to the retrieved claim_catalog row; existing ID retained.",
+      "source_span": {
+        "paragraph_start": 406,
+        "paragraph_end": 425
+      },
+      "search_terms": [
+        "eviction",
+        "lockout",
+        "locks",
+        "utilities",
+        "landlord",
+        "belongings"
+      ],
+      "agency_reference": {
+        "paragraph_start": 407,
+        "paragraph_end": 407,
+        "text": "Domain: Housing   |   Primary Agency: State court (primary remedy — emergency TRO/injunction); state AG consumer protection; local tenant protection agencies"
+      },
+      "deadline_reference": {
+        "paragraph_start": 408,
+        "paragraph_end": 408,
+        "text": "Federal SOL: N/A   |   State Range: Emergency injunction: same day — act immediately"
+      },
+      "coverage_reference": {
+        "paragraph_start": 409,
+        "paragraph_end": 409,
+        "text": "Employer Size: N/A"
+      },
+      "authority_reference": {
+        "paragraph_start": 410,
+        "paragraph_end": 410,
+        "text": "Key Statutes: State landlord-tenant laws; state consumer protection acts; URLTA (adopted in ~20 states)"
+      },
+      "elements": [
+        {
+          "paragraph_start": 412,
+          "paragraph_end": 412,
+          "text": "Landlord-tenant relationship"
+        },
+        {
+          "paragraph_start": 413,
+          "paragraph_end": 413,
+          "text": "Landlord engaged in self-help eviction: changed locks, removed belongings, shut off utilities, or constructively evicted without court order"
+        },
+        {
+          "paragraph_start": 414,
+          "paragraph_end": 414,
+          "text": "Tenant did not voluntarily vacate"
+        }
+      ],
+      "proof_reference": {
+        "paragraph_start": 416,
+        "paragraph_end": 416,
+        "text": "Self-help eviction is illegal in almost all U.S. jurisdictions. Landlord must use judicial eviction process. Emergency injunction is primary remedy."
+      },
+      "fact_patterns": {
+        "paragraph_start": 418,
+        "paragraph_end": 418,
+        "text": "Locks changed without eviction proceeding; utilities shut off; belongings placed in street; intimidation/harassment to force out"
+      },
+      "barrier_reference": {
+        "paragraph_start": 420,
+        "paragraph_end": 420,
+        "text": "Tenant may not know legal eviction requires court process; undocumented tenants may fear reporting"
+      },
+      "intersections_reference": {
+        "paragraph_start": 422,
+        "paragraph_end": 422,
+        "text": "FHA (if discrimination nexus), VAWA (DV context), municipal tenant protection ordinances"
+      },
+      "remedies_reference": {
+        "paragraph_start": 424,
+        "paragraph_end": 424,
+        "text": "Emergency TRO (immediate restoration of possession); actual damages; punitive damages in many states; attorney fees"
+      },
+      "dated_note": {
+        "paragraph_start": 425,
+        "paragraph_end": 425,
+        "text": "  2025 NOTE: Post-pandemic eviction moratorium landscape: most federal/state moratoria expired but some local protections remain. Check local just-cause eviction requirements (CA, NJ, NY, WA, OR, NM, and many cities require just cause).  "
+      },
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    },
+    {
+      "source_claim_id": "DIS-001",
+      "existing_claim_catalog_id": 34,
+      "claim_type_id": "dis_001_ada_title_ii_discrimination_by_state_local_government",
+      "canonical_name": "ADA Title II — Discrimination by State/Local Government",
+      "domain": "Disability",
+      "identity_basis": "Manually reconciled source identifier and full claim title to the retrieved claim_catalog row; existing ID retained.",
+      "source_span": {
+        "paragraph_start": 426,
+        "paragraph_end": 446
+      },
+      "search_terms": [
+        "public entity",
+        "government",
+        "disability",
+        "interpreter",
+        "courthouse",
+        "transit",
+        "jail"
+      ],
+      "agency_reference": {
+        "paragraph_start": 427,
+        "paragraph_end": 427,
+        "text": "Domain: Disability   |   Primary Agency: DOJ (enforcement — capacity reduced 2025); relevant federal agency (ED-OCR for schools, HHS-OCR for public health programs); federal court private action"
+      },
+      "deadline_reference": {
+        "paragraph_start": 428,
+        "paragraph_end": 428,
+        "text": "Federal SOL: 2 years (federal court); 180 days (agency complaint)   |   State Range: State Rehabilitation Act equivalents"
+      },
+      "coverage_reference": {
+        "paragraph_start": 429,
+        "paragraph_end": 429,
+        "text": "Employer Size: N/A — applies to all public entities regardless of size"
+      },
+      "authority_reference": {
+        "paragraph_start": 430,
+        "paragraph_end": 430,
+        "text": "Key Statutes: ADA Title II 42 USC §12131; Olmstead v. L.C. (1999, community integration mandate); Tennessee v. Lane (2004, courts); US v. Georgia (2006, prisons)"
+      },
+      "elements": [
+        {
+          "paragraph_start": 432,
+          "paragraph_end": 432,
+          "text": "Plaintiff has disability"
+        },
+        {
+          "paragraph_start": 433,
+          "paragraph_end": 433,
+          "text": "Defendant is public entity (state, local government, court, DMV, jail, transit system, school district)"
+        },
+        {
+          "paragraph_start": 434,
+          "paragraph_end": 434,
+          "text": "Plaintiff was excluded from program, service, or activity, OR denied equal access"
+        },
+        {
+          "paragraph_start": 435,
+          "paragraph_end": 435,
+          "text": "Exclusion was by reason of disability"
+        }
+      ],
+      "proof_reference": {
+        "paragraph_start": 437,
+        "paragraph_end": 437,
+        "text": "Title II does not require showing comparator. Failure to provide effective communication (sign language, captioning, large print) is per se violation. Failure to make reasonable modification to policies is violation."
+      },
+      "fact_patterns": {
+        "paragraph_start": 439,
+        "paragraph_end": 439,
+        "text": "Courthouse inaccessible for wheelchair user; DMV unable to provide sign language interpreter; jail refusing medication for psychiatric condition; transit system inaccessible; court documents not available in accessible format"
+      },
+      "barrier_reference": {
+        "paragraph_start": 441,
+        "paragraph_end": 441,
+        "text": "Sovereign immunity (states): Title II creates private right of action and abrogates sovereign immunity for most violations. Title II suits against states possible."
+      },
+      "intersections_reference": {
+        "paragraph_start": 443,
+        "paragraph_end": 443,
+        "text": "Section 504, Olmstead integration mandate, mental health system rights"
+      },
+      "remedies_reference": {
+        "paragraph_start": 445,
+        "paragraph_end": 445,
+        "text": "Injunctive relief (primary); compensatory damages (requires showing intentional discrimination for damages against state); attorney fees"
+      },
+      "dated_note": {
+        "paragraph_start": 446,
+        "paragraph_end": 446,
+        "text": "  2025 NOTE: DOJ Title II enforcement reduced. State-level disability rights organizations and protection and advocacy (P&A) systems are primary enforcement resources. P&A organizations have federally mandated access to facilities and records.  "
+      },
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    },
+    {
+      "source_claim_id": "DIS-002",
+      "existing_claim_catalog_id": 35,
+      "claim_type_id": "dis_002_ada_title_iii_public_accommodations",
+      "canonical_name": "ADA Title III — Public Accommodations",
+      "domain": "Disability",
+      "identity_basis": "Manually reconciled source identifier and full claim title to the retrieved claim_catalog row; existing ID retained.",
+      "source_span": {
+        "paragraph_start": 447,
+        "paragraph_end": 467
+      },
+      "search_terms": [
+        "public accommodation",
+        "disability",
+        "accessible",
+        "restaurant",
+        "hotel",
+        "screen reader"
+      ],
+      "agency_reference": {
+        "paragraph_start": 448,
+        "paragraph_end": 448,
+        "text": "Domain: Disability   |   Primary Agency: DOJ (enforcement); federal court (private action — 2 years)"
+      },
+      "deadline_reference": {
+        "paragraph_start": 449,
+        "paragraph_end": 449,
+        "text": "Federal SOL: 2 years   |   State Range: Varies"
+      },
+      "coverage_reference": {
+        "paragraph_start": 450,
+        "paragraph_end": 450,
+        "text": "Employer Size: N/A — ALL public accommodations"
+      },
+      "authority_reference": {
+        "paragraph_start": 451,
+        "paragraph_end": 451,
+        "text": "Key Statutes: ADA Title III 42 USC §12182; ADA Accessibility Guidelines (ADAAG); website accessibility (DOJ rule: WCAG 2.1 AA, effective 2026 for larger entities)"
+      },
+      "elements": [
+        {
+          "paragraph_start": 453,
+          "paragraph_end": 453,
+          "text": "Defendant is place of public accommodation (hotel, restaurant, retail, hospital, school, gym, theater, doctor's office — essentially all private businesses open to public)"
+        },
+        {
+          "paragraph_start": 454,
+          "paragraph_end": 454,
+          "text": "Plaintiff has disability"
+        },
+        {
+          "paragraph_start": 455,
+          "paragraph_end": 455,
+          "text": "Plaintiff denied full and equal enjoyment due to failure to remove barrier or modify policy"
+        },
+        {
+          "paragraph_start": 456,
+          "paragraph_end": 456,
+          "text": "Removal of barrier was readily achievable"
+        }
+      ],
+      "proof_reference": {
+        "paragraph_start": 458,
+        "paragraph_end": 458,
+        "text": "No employer size minimum. No disparate impact in ADA Title III — must show denial of access. Readily achievable standard: easily accomplished without much difficulty or expense."
+      },
+      "fact_patterns": {
+        "paragraph_start": 460,
+        "paragraph_end": 460,
+        "text": "Restaurant with no accessible entrance; pharmacy with inaccessible checkout counter; doctor's office refusing to provide sign language interpreter; hotel room not actually accessible as advertised; website inaccessible to screen reader"
+      },
+      "barrier_reference": {
+        "paragraph_start": 462,
+        "paragraph_end": 462,
+        "text": "Religious organizations and private clubs exempt from Title III"
+      },
+      "intersections_reference": {
+        "paragraph_start": 464,
+        "paragraph_end": 464,
+        "text": "Section 1557 (healthcare), FHA (if housing component), state disability access laws (CA Unruh Act — stronger remedies)"
+      },
+      "remedies_reference": {
+        "paragraph_start": 466,
+        "paragraph_end": 466,
+        "text": "Injunctive relief (primary in federal court — no individual damages for Title III!); attorney fees. CA Unruh Act: $4,000 per violation + actual damages — much stronger."
+      },
+      "dated_note": {
+        "paragraph_start": 467,
+        "paragraph_end": 467,
+        "text": "  2025 NOTE: Website and app accessibility now major litigation area. DOJ finalized rule (Apr 2024) requiring WCAG 2.1 Level AA compliance for state/local government websites (Title II) — effective 2026-2027. Private businesses (Title III) no mandatory standard yet but DOJ guidance.  "
+      },
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    },
+    {
+      "source_claim_id": "DIS-003",
+      "existing_claim_catalog_id": 36,
+      "claim_type_id": "dis_003_olmstead_community_integration_institutionalization",
+      "canonical_name": "Olmstead — Community Integration / Institutionalization",
+      "domain": "Disability",
+      "identity_basis": "Manually reconciled source identifier and full claim title to the retrieved claim_catalog row; existing ID retained.",
+      "source_span": {
+        "paragraph_start": 468,
+        "paragraph_end": 489
+      },
+      "search_terms": [
+        "olmstead",
+        "institution",
+        "community placement",
+        "hcbs",
+        "discharge",
+        "mental health"
+      ],
+      "agency_reference": {
+        "paragraph_start": 469,
+        "paragraph_end": 469,
+        "text": "Domain: Disability   |   Primary Agency: DOJ (Olmstead enforcement — capacity reduced 2025); state P&A system; state developmental disabilities agency; federal court §1983/Title II"
+      },
+      "deadline_reference": {
+        "paragraph_start": 470,
+        "paragraph_end": 470,
+        "text": "Federal SOL: No SOL for ongoing violation   |   State Range: N/A for ongoing institutionalization"
+      },
+      "coverage_reference": {
+        "paragraph_start": 471,
+        "paragraph_end": 471,
+        "text": "Employer Size: N/A — state programs"
+      },
+      "authority_reference": {
+        "paragraph_start": 472,
+        "paragraph_end": 472,
+        "text": "Key Statutes: ADA Title II; Olmstead v. L.C., 527 U.S. 581 (1999); 28 CFR §35.130(d) (integration regulation)"
+      },
+      "elements": [
+        {
+          "paragraph_start": 474,
+          "paragraph_end": 474,
+          "text": "Person with mental or physical disability currently institutionalized or at serious risk of institutionalization"
+        },
+        {
+          "paragraph_start": 475,
+          "paragraph_end": 475,
+          "text": "State provides services to people with disabilities in community settings"
+        },
+        {
+          "paragraph_start": 476,
+          "paragraph_end": 476,
+          "text": "Community placement is appropriate for person's condition"
+        },
+        {
+          "paragraph_start": 477,
+          "paragraph_end": 477,
+          "text": "Person does not oppose community placement"
+        },
+        {
+          "paragraph_start": 478,
+          "paragraph_end": 478,
+          "text": "Community placement can be reasonably accommodated given state's resources"
+        }
+      ],
+      "proof_reference": {
+        "paragraph_start": 480,
+        "paragraph_end": 480,
+        "text": "Olmstead v. L.C. (1999): ADA Title II integration mandate requires states to provide services in most integrated setting appropriate. States must have plan for moving people out of institutions."
+      },
+      "fact_patterns": {
+        "paragraph_start": 482,
+        "paragraph_end": 482,
+        "text": "Person with developmental disability waitlisted for community placement for years while institutionalized; person with mental health condition discharged from hospital to homeless/jail rather than community support; state cutting HCBS waiver"
+      },
+      "barrier_reference": {
+        "paragraph_start": 484,
+        "paragraph_end": 484,
+        "text": "Budget constraints defense; complexity of state Medicaid waiver system"
+      },
+      "intersections_reference": {
+        "paragraph_start": 486,
+        "paragraph_end": 486,
+        "text": "Mental health system pipeline, Medicaid HCBS waivers, disability rights"
+      },
+      "remedies_reference": {
+        "paragraph_start": 488,
+        "paragraph_end": 488,
+        "text": "Injunctive relief requiring state to provide community placement; systemic reform; attorney fees"
+      },
+      "dated_note": {
+        "paragraph_start": 489,
+        "paragraph_end": 489,
+        "text": "  2025 NOTE: Olmstead enforcement by DOJ significantly reduced. State P&A organizations and disability rights legal organizations (e.g., National Disability Rights Network members) are primary advocates. Medicaid HCBS waiver cuts are a growing Olmstead issue.  "
+      },
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    },
+    {
+      "source_claim_id": "EDU-001",
+      "existing_claim_catalog_id": 37,
+      "claim_type_id": "edu_001_idea_special_education_rights",
+      "canonical_name": "IDEA — Special Education Rights",
+      "domain": "Education",
+      "identity_basis": "Manually reconciled source identifier and full claim title to the retrieved claim_catalog row; existing ID retained.",
+      "source_span": {
+        "paragraph_start": 490,
+        "paragraph_end": 510
+      },
+      "search_terms": [
+        "idea",
+        "iep",
+        "special education",
+        "fape",
+        "school",
+        "evaluation"
+      ],
+      "agency_reference": {
+        "paragraph_start": 491,
+        "paragraph_end": 491,
+        "text": "Domain: Education   |   Primary Agency: State educational agency (due process hearing); ED-OCR (procedural violations); federal court (IDEA appeal — 2yr SOL from knew/should have known)"
+      },
+      "deadline_reference": {
+        "paragraph_start": 492,
+        "paragraph_end": 492,
+        "text": "Federal SOL: Due process: 2yr state SOL typically; ED-OCR: 180 days   |   State Range: 2 years most states; some shorter"
+      },
+      "coverage_reference": {
+        "paragraph_start": 493,
+        "paragraph_end": 493,
+        "text": "Employer Size: N/A"
+      },
+      "authority_reference": {
+        "paragraph_start": 494,
+        "paragraph_end": 494,
+        "text": "Key Statutes: IDEA 20 USC §1400; Endrew F. v. Douglas County (2017); Florence County School District v. Carter (1993, private placement reimbursement); Fry v. Napoleon Community Schools (2017, exhaustion)"
+      },
+      "elements": [
+        {
+          "paragraph_start": 496,
+          "paragraph_end": 496,
+          "text": "Child has disability that adversely affects educational performance"
+        },
+        {
+          "paragraph_start": 497,
+          "paragraph_end": 497,
+          "text": "Child has right to free appropriate public education (FAPE) in least restrictive environment (LRE)"
+        },
+        {
+          "paragraph_start": 498,
+          "paragraph_end": 498,
+          "text": "School failed to provide FAPE (inadequate IEP, failure to implement IEP, denial of services, inappropriate placement)"
+        },
+        {
+          "paragraph_start": 499,
+          "paragraph_end": 499,
+          "text": "Parent/guardian has procedural rights (IEP meetings, prior written notice, independent evaluation)"
+        }
+      ],
+      "proof_reference": {
+        "paragraph_start": 501,
+        "paragraph_end": 501,
+        "text": "Endrew F. v. Douglas County (2017): IEP must be 'reasonably calculated to enable child to make progress appropriate in light of circumstances.' Two-part test."
+      },
+      "fact_patterns": {
+        "paragraph_start": 503,
+        "paragraph_end": 503,
+        "text": "Child not evaluated for disability despite parent request; IEP not implemented by school; child placed in segregated setting without FAPE analysis; parent excluded from IEP meeting; extended school year denied"
+      },
+      "barrier_reference": {
+        "paragraph_start": 505,
+        "paragraph_end": 505,
+        "text": "Administrative exhaustion required before court. Due process hearing is first step — legal aid essential for hearings."
+      },
+      "intersections_reference": {
+        "paragraph_start": 507,
+        "paragraph_end": 507,
+        "text": "Section 504 (disability), Title VI (race disproportionality in special ed), Title IX (disability intersecting sex)"
+      },
+      "remedies_reference": {
+        "paragraph_start": 509,
+        "paragraph_end": 509,
+        "text": "Compensatory services; private school placement reimbursement; attorney fees (when parent substantially prevails). No punitive damages."
+      },
+      "dated_note": {
+        "paragraph_start": 510,
+        "paragraph_end": 510,
+        "text": "  2025 NOTE: IDEA funding disputes ongoing. Disproportionate representation of minority students in special education (both over- and under-identification) is a Title VI/IDEA intersection issue.  "
+      },
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    },
+    {
+      "source_claim_id": "EDU-002",
+      "existing_claim_catalog_id": 38,
+      "claim_type_id": "edu_002_title_ix_sexual_harassment_assault_in_educational_setting",
+      "canonical_name": "Title IX — Sexual Harassment/Assault in Educational Setting",
+      "domain": "Education",
+      "identity_basis": "Manually reconciled source identifier and full claim title to the retrieved claim_catalog row; existing ID retained.",
+      "source_span": {
+        "paragraph_start": 511,
+        "paragraph_end": 532
+      },
+      "search_terms": [
+        "title ix",
+        "school",
+        "sexual harassment",
+        "sexual assault",
+        "student"
+      ],
+      "agency_reference": {
+        "paragraph_start": 512,
+        "paragraph_end": 512,
+        "text": "Domain: Education   |   Primary Agency: ED-OCR (180 days); federal court private action (state SOL, typically 2-3 years)"
+      },
+      "deadline_reference": {
+        "paragraph_start": 513,
+        "paragraph_end": 513,
+        "text": "Federal SOL: ED-OCR: 180 days; federal court: state SOL   |   State Range: Typically 2-3 years (state personal injury SOL)"
+      },
+      "coverage_reference": {
+        "paragraph_start": 514,
+        "paragraph_end": 514,
+        "text": "Employer Size: N/A — any recipient of federal education funding"
+      },
+      "authority_reference": {
+        "paragraph_start": 515,
+        "paragraph_end": 515,
+        "text": "Key Statutes: Title IX 20 USC §1681; Gebser v. Lago Vista (1998); Davis v. Monroe County (1999); Cummings v. Premier Rehab (2022, emotional distress damages limited under Spending Clause statutes)"
+      },
+      "elements": [
+        {
+          "paragraph_start": 517,
+          "paragraph_end": 517,
+          "text": "Institution receives federal funding"
+        },
+        {
+          "paragraph_start": 518,
+          "paragraph_end": 518,
+          "text": "Plaintiff experienced sexual harassment or assault"
+        },
+        {
+          "paragraph_start": 519,
+          "paragraph_end": 519,
+          "text": "Institution had actual knowledge of harassment"
+        },
+        {
+          "paragraph_start": 520,
+          "paragraph_end": 520,
+          "text": "Institution was deliberately indifferent to known harassment"
+        },
+        {
+          "paragraph_start": 521,
+          "paragraph_end": 521,
+          "text": "Harassment denied plaintiff equal access to educational program"
+        }
+      ],
+      "proof_reference": {
+        "paragraph_start": 523,
+        "paragraph_end": 523,
+        "text": "Gebser/Davis standard: actual knowledge + deliberate indifference. Newer: hostile environment test (severe, pervasive, objectively offensive). School may be liable for employee-on-student harassment differently than peer-on-peer."
+      },
+      "fact_patterns": {
+        "paragraph_start": 525,
+        "paragraph_end": 525,
+        "text": "Student assaulted by another student; school failed to investigate; survivor punished for reporting; survivor forced to share class with assailant; school failed to provide supportive measures"
+      },
+      "barrier_reference": {
+        "paragraph_start": 527,
+        "paragraph_end": 527,
+        "text": "2025: Title IX regulations under revision by Trump administration (reverting to pre-Biden guidance). Deliberate indifference standard is high bar. OCR enforcement reduced."
+      },
+      "intersections_reference": {
+        "paragraph_start": 529,
+        "paragraph_end": 529,
+        "text": "Title VII (employees), state tort (negligence, assault), state DFCS/child protective services"
+      },
+      "remedies_reference": {
+        "paragraph_start": 531,
+        "paragraph_end": 531,
+        "text": "Compensatory damages; injunctive relief; attorney fees. Note: Cummings (2022) may limit emotional distress damages in Spending Clause cases — circuit split."
+      },
+      "dated_note": {
+        "paragraph_start": 532,
+        "paragraph_end": 532,
+        "text": "  2025 NOTE: Trump admin rescinded Biden 2022 Title IX regs. 2020 DeVos regs back in effect (more protective of accused). OCR enforcement reduced — state education agencies and private litigation are primary routes.  "
+      },
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    },
+    {
+      "source_claim_id": "CON-001",
+      "existing_claim_catalog_id": 39,
+      "claim_type_id": "con_001_predatory_lending_credit_discrimination_ecoa",
+      "canonical_name": "Predatory Lending / Credit Discrimination (ECOA)",
+      "domain": "Consumer/Financial",
+      "identity_basis": "Manually reconciled source identifier and full claim title to the retrieved claim_catalog row; existing ID retained.",
+      "source_span": {
+        "paragraph_start": 533,
+        "paragraph_end": 553
+      },
+      "search_terms": [
+        "credit",
+        "loan",
+        "lending",
+        "mortgage",
+        "ecoa",
+        "interest rate"
+      ],
+      "agency_reference": {
+        "paragraph_start": 534,
+        "paragraph_end": 534,
+        "text": "Domain: Consumer/Financial   |   Primary Agency: CFPB (reduced capacity 2025); DOJ (pattern and practice — reduced); state AG (primary 2025); federal banking regulators (OCC, FDIC, Federal Reserve)"
+      },
+      "deadline_reference": {
+        "paragraph_start": 535,
+        "paragraph_end": 535,
+        "text": "Federal SOL: ECOA: 2 years   |   State Range: State UDAP: varies"
+      },
+      "coverage_reference": {
+        "paragraph_start": 536,
+        "paragraph_end": 536,
+        "text": "Employer Size: N/A — applies to creditors"
+      },
+      "authority_reference": {
+        "paragraph_start": 537,
+        "paragraph_end": 537,
+        "text": "Key Statutes: ECOA 15 USC §1691; Fair Housing Act (housing loans); HMDA (data reporting); state UDAP; state mortgage lending laws"
+      },
+      "elements": [
+        {
+          "paragraph_start": 539,
+          "paragraph_end": 539,
+          "text": "Applicant for credit (mortgage, auto, personal loan, credit card)"
+        },
+        {
+          "paragraph_start": 540,
+          "paragraph_end": 540,
+          "text": "Denial of credit OR credit offered on inferior terms"
+        },
+        {
+          "paragraph_start": 541,
+          "paragraph_end": 541,
+          "text": "Denial or inferior terms were because of race, sex, national origin, marital status, age, or receipt of public assistance"
+        },
+        {
+          "paragraph_start": 542,
+          "paragraph_end": 542,
+          "text": "Creditor is subject to ECOA (all credit transactions)"
+        }
+      ],
+      "proof_reference": {
+        "paragraph_start": 544,
+        "paragraph_end": 544,
+        "text": "Disparate treatment (direct evidence or comparative) or disparate impact (facially neutral policy, CFPB/DOJ theory). Reverse redlining: targeting minority communities for predatory terms is also actionable."
+      },
+      "fact_patterns": {
+        "paragraph_start": 546,
+        "paragraph_end": 546,
+        "text": "Higher interest rate offered to Black applicant vs. white applicant with identical credit profile; mortgage broker steering minority borrowers to subprime loans; denial of small business loan despite strong financials; payday lender targeting low-income minority communities"
+      },
+      "barrier_reference": {
+        "paragraph_start": 548,
+        "paragraph_end": 548,
+        "text": "CFPB capacity severely reduced 2025 — state route primary; disparate impact theory contested"
+      },
+      "intersections_reference": {
+        "paragraph_start": 550,
+        "paragraph_end": 550,
+        "text": "FHA (mortgage lending), state consumer protection, FCRA (credit reporting)"
+      },
+      "remedies_reference": {
+        "paragraph_start": 552,
+        "paragraph_end": 552,
+        "text": "Actual damages; punitive damages (up to $10K ECOA); equitable relief; attorney fees. State UDAP may have treble damages."
+      },
+      "dated_note": {
+        "paragraph_start": 553,
+        "paragraph_end": 553,
+        "text": "  2025 NOTE: CFPB enforcement at historic low. State AGs (NY, CA, IL, MA, NJ, PA) are leading consumer financial civil rights enforcement. File with state AG office.  "
+      },
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    },
+    {
+      "source_claim_id": "CON-002",
+      "existing_claim_catalog_id": 40,
+      "claim_type_id": "con_002_abusive_debt_collection_fdcpa",
+      "canonical_name": "Abusive Debt Collection (FDCPA)",
+      "domain": "Consumer/Financial",
+      "identity_basis": "Manually reconciled source identifier and full claim title to the retrieved claim_catalog row; existing ID retained.",
+      "source_span": {
+        "paragraph_start": 554,
+        "paragraph_end": 574
+      },
+      "search_terms": [
+        "debt",
+        "collector",
+        "collection",
+        "fdcpa",
+        "creditor",
+        "threatening"
+      ],
+      "agency_reference": {
+        "paragraph_start": 555,
+        "paragraph_end": 555,
+        "text": "Domain: Consumer/Financial   |   Primary Agency: CFPB (reduced 2025); FTC; state AG; federal court private action (1yr SOL)"
+      },
+      "deadline_reference": {
+        "paragraph_start": 556,
+        "paragraph_end": 556,
+        "text": "Federal SOL: 1 year   |   State Range: State UDAP: varies"
+      },
+      "coverage_reference": {
+        "paragraph_start": 557,
+        "paragraph_end": 557,
+        "text": "Employer Size: N/A"
+      },
+      "authority_reference": {
+        "paragraph_start": 558,
+        "paragraph_end": 558,
+        "text": "Key Statutes: FDCPA 15 USC §1692; Regulation F (CFPB rules, Nov 2021); state debt collection laws (many stricter: NY, CA, MA)"
+      },
+      "elements": [
+        {
+          "paragraph_start": 560,
+          "paragraph_end": 560,
+          "text": "Debt is consumer debt (personal, family, household purpose)"
+        },
+        {
+          "paragraph_start": 561,
+          "paragraph_end": 561,
+          "text": "Defendant is debt collector (not original creditor collecting own debt)"
+        },
+        {
+          "paragraph_start": 562,
+          "paragraph_end": 562,
+          "text": "Debt collector used unfair, deceptive, or abusive means"
+        },
+        {
+          "paragraph_start": 563,
+          "paragraph_end": 563,
+          "text": "Communication was in connection with collection of debt"
+        }
+      ],
+      "proof_reference": {
+        "paragraph_start": 565,
+        "paragraph_end": 565,
+        "text": "Objective least-sophisticated consumer standard. FDCPA liability is strict in many circuits — technical violations actionable. Key prohibitions: calling before 8am/after 9pm, workplace calls after told not to, false statements, threats of legal action collector cannot take."
+      },
+      "fact_patterns": {
+        "paragraph_start": 567,
+        "paragraph_end": 567,
+        "text": "Collector calling employer; threatening arrest for civil debt; collecting debt past SOL without disclosure; threatening to sue when not actually planning to; contacting person who has attorney"
+      },
+      "barrier_reference": {
+        "paragraph_start": 569,
+        "paragraph_end": 569,
+        "text": "Original creditors collecting own debt not covered by FDCPA (state law may cover); confusion between FDCPA and FCRA"
+      },
+      "intersections_reference": {
+        "paragraph_start": 571,
+        "paragraph_end": 571,
+        "text": "FCRA (credit reporting), ECOA (discriminatory collection), bankruptcy stay violations"
+      },
+      "remedies_reference": {
+        "paragraph_start": 573,
+        "paragraph_end": 573,
+        "text": "Actual damages; statutory damages up to $1,000/suit ($500,000 or 1% of net worth for class actions); attorney fees. Plaintiff's attorneys take on contingency."
+      },
+      "dated_note": {
+        "paragraph_start": 574,
+        "paragraph_end": 574,
+        "text": "  2025 NOTE: FDCPA private right of action remains strong — consumer protection bar active even without CFPB. State laws often stronger (NY DCPA 2021 expansion).  "
+      },
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    },
+    {
+      "source_claim_id": "HLT-001",
+      "existing_claim_catalog_id": 41,
+      "claim_type_id": "hlt_001_aca_section_1557_healthcare_nondiscrimination",
+      "canonical_name": "ACA Section 1557 — Healthcare Nondiscrimination",
+      "domain": "Healthcare",
+      "identity_basis": "Manually reconciled source identifier and full claim title to the retrieved claim_catalog row; existing ID retained.",
+      "source_span": {
+        "paragraph_start": 575,
+        "paragraph_end": 595
+      },
+      "search_terms": [
+        "healthcare",
+        "hospital",
+        "interpreter",
+        "discrimination",
+        "insurance",
+        "1557"
+      ],
+      "agency_reference": {
+        "paragraph_start": 576,
+        "paragraph_end": 576,
+        "text": "Domain: Healthcare   |   Primary Agency: HHS-OCR (180 days); state civil rights agency; federal court (private action — SOL varies)"
+      },
+      "deadline_reference": {
+        "paragraph_start": 577,
+        "paragraph_end": 577,
+        "text": "Federal SOL: 180 days (HHS-OCR)   |   State Range: Varies"
+      },
+      "coverage_reference": {
+        "paragraph_start": 578,
+        "paragraph_end": 578,
+        "text": "Employer Size: N/A — all health programs receiving federal $"
+      },
+      "authority_reference": {
+        "paragraph_start": 579,
+        "paragraph_end": 579,
+        "text": "Key Statutes: ACA §1557 42 USC §18116; HHS regulations 45 CFR Part 92; Executive Order 13985 (equity — Biden); state health nondiscrimination laws"
+      },
+      "elements": [
+        {
+          "paragraph_start": 581,
+          "paragraph_end": 581,
+          "text": "Defendant is health program or activity receiving federal financial assistance, or health insurance marketplace"
+        },
+        {
+          "paragraph_start": 582,
+          "paragraph_end": 582,
+          "text": "Plaintiff has protected characteristic (race, color, national origin, sex, age, disability)"
+        },
+        {
+          "paragraph_start": 583,
+          "paragraph_end": 583,
+          "text": "Plaintiff was denied covered services, covered differently, or subjected to discriminatory treatment"
+        },
+        {
+          "paragraph_start": 584,
+          "paragraph_end": 584,
+          "text": "Denial or differential treatment was based on protected characteristic"
+        }
+      ],
+      "proof_reference": {
+        "paragraph_start": 586,
+        "paragraph_end": 586,
+        "text": "Parallel to Title VI, Title IX, Section 504 analysis. Language access: facilities must provide meaningful access to LEP patients (interpreter services, translated materials). LGBTQ+: contested under 2025 rule revision."
+      },
+      "fact_patterns": {
+        "paragraph_start": 588,
+        "paragraph_end": 588,
+        "text": "Hospital refusing interpreter for Deaf patient; doctor dismissing chronic pain in Black patient; insurance plan covering procedures for cisgender patients but denying for transgender patients; hospital refusing treatment based on perceived immigration status"
+      },
+      "barrier_reference": {
+        "paragraph_start": 590,
+        "paragraph_end": 590,
+        "text": "2025: Trump administration narrowing §1557 sex definition — gender identity coverage under active revision"
+      },
+      "intersections_reference": {
+        "paragraph_start": 592,
+        "paragraph_end": 592,
+        "text": "Title VI (race), Section 504 (disability), ADA Title III (hospital as public accommodation), EMTALA (emergency care)"
+      },
+      "remedies_reference": {
+        "paragraph_start": 594,
+        "paragraph_end": 594,
+        "text": "Compensatory damages; injunctive relief; attorney fees. Note Cummings (2022) may limit emotional distress under Spending Clause analysis."
+      },
+      "dated_note": {
+        "paragraph_start": 595,
+        "paragraph_end": 595,
+        "text": "  2025 NOTE: HHS-OCR still functional but enforcement priorities shifted. Gender identity protections under active revision. Language access (LEP) remains an active enforcement area.  "
+      },
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    },
+    {
+      "source_claim_id": "HLT-002",
+      "existing_claim_catalog_id": 42,
+      "claim_type_id": "hlt_002_emtala_emergency_medical_treatment",
+      "canonical_name": "EMTALA — Emergency Medical Treatment",
+      "domain": "Healthcare",
+      "identity_basis": "Manually reconciled source identifier and full claim title to the retrieved claim_catalog row; existing ID retained.",
+      "source_span": {
+        "paragraph_start": 596,
+        "paragraph_end": 616
+      },
+      "search_terms": [
+        "emergency",
+        "hospital",
+        "emtala",
+        "stabilized",
+        "discharged",
+        "screening"
+      ],
+      "agency_reference": {
+        "paragraph_start": 597,
+        "paragraph_end": 597,
+        "text": "Domain: Healthcare   |   Primary Agency: CMS (complaint); HHS-OCR (if discrimination nexus); state health department; federal court (2yr SOL, limited private right of action)"
+      },
+      "deadline_reference": {
+        "paragraph_start": 598,
+        "paragraph_end": 598,
+        "text": "Federal SOL: 2 years   |   State Range: State medical malpractice SOL often applies"
+      },
+      "coverage_reference": {
+        "paragraph_start": 599,
+        "paragraph_end": 599,
+        "text": "Employer Size: N/A — Medicare-participating hospitals with EDs"
+      },
+      "authority_reference": {
+        "paragraph_start": 600,
+        "paragraph_end": 600,
+        "text": "Key Statutes: EMTALA 42 USC §1395dd; Roberts v. Galen (1999, no discriminatory motive required)"
+      },
+      "elements": [
+        {
+          "paragraph_start": 602,
+          "paragraph_end": 602,
+          "text": "Hospital has emergency department and receives Medicare payments (virtually all hospitals)"
+        },
+        {
+          "paragraph_start": 603,
+          "paragraph_end": 603,
+          "text": "Patient presented to emergency department seeking treatment"
+        },
+        {
+          "paragraph_start": 604,
+          "paragraph_end": 604,
+          "text": "Hospital failed to provide appropriate medical screening examination"
+        },
+        {
+          "paragraph_start": 605,
+          "paragraph_end": 605,
+          "text": "Hospital transferred/discharged patient in unstable condition, OR refused to accept appropriate transfer from another hospital"
+        }
+      ],
+      "proof_reference": {
+        "paragraph_start": 607,
+        "paragraph_end": 607,
+        "text": "EMTALA is not an anti-discrimination statute — it requires equal screening and stabilization for all patients regardless of payment ability. Proof of disparate screening compared to other patients is key."
+      },
+      "fact_patterns": {
+        "paragraph_start": 609,
+        "paragraph_end": 609,
+        "text": "ER patient denied treatment because no insurance and told to leave; pregnant patient turned away before evaluation; psychiatric patient discharged before stabilized; hospital refusing to accept transfer of uninsured patient"
+      },
+      "barrier_reference": {
+        "paragraph_start": 611,
+        "paragraph_end": 611,
+        "text": "EMTALA private right of action limited; hospital physician immunity in some states; medical expert required for malpractice component"
+      },
+      "intersections_reference": {
+        "paragraph_start": 613,
+        "paragraph_end": 613,
+        "text": "Section 1557 (discrimination nexus), state tort law, Mental Health pipeline (psychiatric EMTALA)"
+      },
+      "remedies_reference": {
+        "paragraph_start": 615,
+        "paragraph_end": 615,
+        "text": "Civil monetary penalties (CMS); patient damages in private suit; hospital liability. Medical malpractice parallel claim often needed for full damages."
+      },
+      "dated_note": {
+        "paragraph_start": 616,
+        "paragraph_end": 616,
+        "text": "  2025 NOTE: EMTALA and emergency abortion: post-Dobbs conflict between EMTALA (requires stabilizing care including pregnancy complications) and state abortion bans. Still unresolved in several circuits.  "
+      },
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    },
+    {
+      "source_claim_id": "HLT-003",
+      "existing_claim_catalog_id": 43,
+      "claim_type_id": "hlt_003_mental_health_parity_violation_mhpaea",
+      "canonical_name": "Mental Health Parity Violation (MHPAEA)",
+      "domain": "Healthcare",
+      "identity_basis": "Manually reconciled source identifier and full claim title to the retrieved claim_catalog row; existing ID retained.",
+      "source_span": {
+        "paragraph_start": 617,
+        "paragraph_end": 637
+      },
+      "search_terms": [
+        "mental health",
+        "parity",
+        "treatment denied",
+        "insurance",
+        "substance use",
+        "nqtl"
+      ],
+      "agency_reference": {
+        "paragraph_start": 618,
+        "paragraph_end": 618,
+        "text": "Domain: Healthcare   |   Primary Agency: DOL (employer group plans); CMS (Medicaid MCOs, marketplace plans); state insurance commissioner (primary active enforcement); federal court (ERISA plan — 3yr SOL typically)"
+      },
+      "deadline_reference": {
+        "paragraph_start": 619,
+        "paragraph_end": 619,
+        "text": "Federal SOL: ERISA: typically 3 years; state insurance: varies   |   State Range: State parity laws often stronger: CA, NY, IL, MA, WA, OR"
+      },
+      "coverage_reference": {
+        "paragraph_start": 620,
+        "paragraph_end": 620,
+        "text": "Employer Size: N/A — insurer/plan"
+      },
+      "authority_reference": {
+        "paragraph_start": 621,
+        "paragraph_end": 621,
+        "text": "Key Statutes: MHPAEA 29 USC §1185a; ACA (expanded parity to individual and small group); 2024 Final Rule (DOL/CMS/Treasury) strengthening NQTL requirements; state parity laws"
+      },
+      "elements": [
+        {
+          "paragraph_start": 623,
+          "paragraph_end": 623,
+          "text": "Insurance plan subject to MHPAEA (employer group health plans, Medicaid MCOs, most marketplace plans)"
+        },
+        {
+          "paragraph_start": 624,
+          "paragraph_end": 624,
+          "text": "Plan provides mental health or SUD benefits"
+        },
+        {
+          "paragraph_start": 625,
+          "paragraph_end": 625,
+          "text": "Plan applied more restrictive limitations on MH/SUD than on medical/surgical benefits"
+        },
+        {
+          "paragraph_start": 626,
+          "paragraph_end": 626,
+          "text": "Limitation applied in ways that are not comparable and are not applied no more stringently"
+        }
+      ],
+      "proof_reference": {
+        "paragraph_start": 628,
+        "paragraph_end": 628,
+        "text": "Comparative analysis: what limitations apply to MH/SUD vs. analogous medical/surgical benefits? Prior authorization for SUD treatment when not required for comparable medical treatment = likely parity violation. Nonquantitative treatment limitations (NQTLs) require rigorous comparative analysis."
+      },
+      "fact_patterns": {
+        "paragraph_start": 630,
+        "paragraph_end": 630,
+        "text": "Residential SUD treatment denied while medical hospitalization covered; psychiatrist visit limit when no specialist visit limit for physical conditions; prior auth required for every SUD session; out-of-network SUD reimbursement lower than medical"
+      },
+      "barrier_reference": {
+        "paragraph_start": 632,
+        "paragraph_end": 632,
+        "text": "ERISA preempts state law claims for self-funded employer plans; complexity of NQTL analysis; need for actuary or parity expert"
+      },
+      "intersections_reference": {
+        "paragraph_start": 634,
+        "paragraph_end": 634,
+        "text": "Medicaid (CMS enforcement), disability discrimination (denial of SUD treatment as disability discrimination)"
+      },
+      "remedies_reference": {
+        "paragraph_start": 636,
+        "paragraph_end": 636,
+        "text": "ERISA: equitable relief (payment of denied benefits), attorney fees. State: varies. 2024 rule requires plans to perform and document NQTL analysis — document requests now available."
+      },
+      "dated_note": {
+        "paragraph_start": 637,
+        "paragraph_end": 637,
+        "text": "  2025 NOTE: 2024 DOL/CMS/Treasury Final Rule on parity is in effect. Plans must perform documented comparative analysis of NQTLs. Request plan's NQTL analysis as first step in parity violation investigation.  "
+      },
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    },
+    {
+      "source_claim_id": "BEN-001",
+      "existing_claim_catalog_id": 44,
+      "claim_type_id": "ben_001_medicaid_denial_wrongful_termination_or_reduction",
+      "canonical_name": "Medicaid Denial — Wrongful Termination or Reduction",
+      "domain": "Benefits",
+      "identity_basis": "Manually reconciled source identifier and full claim title to the retrieved claim_catalog row; existing ID retained.",
+      "source_span": {
+        "paragraph_start": 638,
+        "paragraph_end": 658
+      },
+      "search_terms": [
+        "medicaid",
+        "benefits",
+        "termination",
+        "denied",
+        "hearing",
+        "hcbs"
+      ],
+      "agency_reference": {
+        "paragraph_start": 639,
+        "paragraph_end": 639,
+        "text": "Domain: Benefits   |   Primary Agency: State Medicaid agency (fair hearing — exhaust first); CMS (systemic); federal court §1983 after exhaustion"
+      },
+      "deadline_reference": {
+        "paragraph_start": 640,
+        "paragraph_end": 640,
+        "text": "Federal SOL: Fair hearing request: typically 90 days from notice (some states 30 days — check immediately)   |   State Range: 90 days most states; federal court after exhaustion"
+      },
+      "coverage_reference": {
+        "paragraph_start": 641,
+        "paragraph_end": 641,
+        "text": "Employer Size: N/A"
+      },
+      "authority_reference": {
+        "paragraph_start": 642,
+        "paragraph_end": 642,
+        "text": "Key Statutes: Social Security Act §1902 (Medicaid); 42 USC §1396a; Goldberg v. Kelly (1970, due process); Edelman v. Jordan (state must repay wrongfully withheld benefits)"
+      },
+      "elements": [
+        {
+          "paragraph_start": 644,
+          "paragraph_end": 644,
+          "text": "Applicant/recipient is eligible for Medicaid under applicable state plan and federal law"
+        },
+        {
+          "paragraph_start": 645,
+          "paragraph_end": 645,
+          "text": "State denied, terminated, or reduced benefits without adequate basis"
+        },
+        {
+          "paragraph_start": 646,
+          "paragraph_end": 646,
+          "text": "Adequate notice was not provided (10 days advance notice required for planned action)"
+        },
+        {
+          "paragraph_start": 647,
+          "paragraph_end": 647,
+          "text": "Fair hearing right was not afforded"
+        }
+      ],
+      "proof_reference": {
+        "paragraph_start": 649,
+        "paragraph_end": 649,
+        "text": "Due process: Mathews v. Eldridge balancing test. State must provide: adequate written notice stating specific reason; opportunity to request fair hearing; continuation of benefits pending hearing if requested timely."
+      },
+      "fact_patterns": {
+        "paragraph_start": 651,
+        "paragraph_end": 651,
+        "text": "Medicaid terminated without notice; managed care organization denied service authorization; HCBS waiver terminated; benefits reduced without individualized assessment; agency applied wrong income calculation"
+      },
+      "barrier_reference": {
+        "paragraph_start": 653,
+        "paragraph_end": 653,
+        "text": "Fair hearing deadlines are absolute — missing them usually bars further appeal. Claimants often don't know rights. Request continuation of benefits when requesting hearing."
+      },
+      "intersections_reference": {
+        "paragraph_start": 655,
+        "paragraph_end": 655,
+        "text": "Olmstead (community integration), MHPAEA (parity in managed care), disability rights"
+      },
+      "remedies_reference": {
+        "paragraph_start": 657,
+        "paragraph_end": 657,
+        "text": "Reinstatement of benefits; back payment of wrongfully denied benefits; attorney fees in some §1983 circuits"
+      },
+      "dated_note": {
+        "paragraph_start": 658,
+        "paragraph_end": 658,
+        "text": "  2025 NOTE: Medicaid redeterminations following COVID continuous enrollment ended 2023-24. Millions disenrolled. Many disenrollments were procedurally improper — strong fair hearing cases for improper termination.  "
+      },
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    },
+    {
+      "source_claim_id": "BEN-002",
+      "existing_claim_catalog_id": 45,
+      "claim_type_id": "ben_002_snap_food_stamps_wrongful_denial_or_termination",
+      "canonical_name": "SNAP (Food Stamps) — Wrongful Denial or Termination",
+      "domain": "Benefits",
+      "identity_basis": "Manually reconciled source identifier and full claim title to the retrieved claim_catalog row; existing ID retained.",
+      "source_span": {
+        "paragraph_start": 659,
+        "paragraph_end": 679
+      },
+      "search_terms": [
+        "snap",
+        "food stamps",
+        "benefits",
+        "denied",
+        "terminated",
+        "expedited"
+      ],
+      "agency_reference": {
+        "paragraph_start": 660,
+        "paragraph_end": 660,
+        "text": "Domain: Benefits   |   Primary Agency: State SNAP agency (fair hearing); USDA FNS (appeal of state hearing; systemic review); federal court"
+      },
+      "deadline_reference": {
+        "paragraph_start": 661,
+        "paragraph_end": 661,
+        "text": "Federal SOL: Fair hearing: 90 days from adverse action   |   State Range: Same"
+      },
+      "coverage_reference": {
+        "paragraph_start": 662,
+        "paragraph_end": 662,
+        "text": "Employer Size: N/A"
+      },
+      "authority_reference": {
+        "paragraph_start": 663,
+        "paragraph_end": 663,
+        "text": "Key Statutes: Food and Nutrition Act 7 USC §2011; 7 CFR Part 273 (fair hearing regulations); Goldberg v. Kelly due process applies"
+      },
+      "elements": [
+        {
+          "paragraph_start": 665,
+          "paragraph_end": 665,
+          "text": "Household is eligible based on income/resource limits"
+        },
+        {
+          "paragraph_start": 666,
+          "paragraph_end": 666,
+          "text": "State denied or terminated SNAP without basis"
+        },
+        {
+          "paragraph_start": 667,
+          "paragraph_end": 667,
+          "text": "Notice was inadequate or hearing right denied"
+        },
+        {
+          "paragraph_start": 668,
+          "paragraph_end": 668,
+          "text": "Expedited (emergency) processing was not provided when required (within 7 days for eligible households)"
+        }
+      ],
+      "proof_reference": {
+        "paragraph_start": 670,
+        "paragraph_end": 670,
+        "text": "Eligibility analysis: gross income test, net income test, resource test, categorical eligibility. Expedited households: gross monthly income under $150 AND liquid resources under $100, OR combined income and resources less than monthly rent/mortgage AND utilities."
+      },
+      "fact_patterns": {
+        "paragraph_start": 672,
+        "paragraph_end": 672,
+        "text": "SNAP denied based on categorical eligibility interpretation error; benefits terminated when household member got small job; expedited SNAP not processed within 7 days; immigrant household denied SNAP for eligible citizen children"
+      },
+      "barrier_reference": {
+        "paragraph_start": 674,
+        "paragraph_end": 674,
+        "text": "Citizen children in mixed-status households are often eligible even if parents are not — common misconception"
+      },
+      "intersections_reference": {
+        "paragraph_start": 676,
+        "paragraph_end": 676,
+        "text": "WIC, Medicaid, TANF — often co-administered and co-denied"
+      },
+      "remedies_reference": {
+        "paragraph_start": 678,
+        "paragraph_end": 678,
+        "text": "Reinstatement; back benefits; emergency SNAP through court order"
+      },
+      "dated_note": {
+        "paragraph_start": 679,
+        "paragraph_end": 679,
+        "text": "  2025 NOTE: SNAP ABAWD (Able-Bodied Adults Without Dependents) work requirement rules in active litigation. Several states expanding work requirements beyond federal minimum. Immigration enforcement creating chilling effect on eligible households — document eligibility proactively.  "
+      },
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    },
+    {
+      "source_claim_id": "BEN-003",
+      "existing_claim_catalog_id": 46,
+      "claim_type_id": "ben_003_social_security_disability_ssdi_ssi_denial",
+      "canonical_name": "Social Security Disability — SSDI/SSI Denial",
+      "domain": "Benefits",
+      "identity_basis": "Manually reconciled source identifier and full claim title to the retrieved claim_catalog row; existing ID retained.",
+      "source_span": {
+        "paragraph_start": 680,
+        "paragraph_end": 700
+      },
+      "search_terms": [
+        "ssdi",
+        "ssi",
+        "social security",
+        "disability benefits",
+        "alj",
+        "denied"
+      ],
+      "agency_reference": {
+        "paragraph_start": 681,
+        "paragraph_end": 681,
+        "text": "Domain: Benefits   |   Primary Agency: SSA (initial → reconsideration → ALJ hearing → Appeals Council → federal court)"
+      },
+      "deadline_reference": {
+        "paragraph_start": 682,
+        "paragraph_end": 682,
+        "text": "Federal SOL: 60 days at each appeal level (plus 5 days for mailing)   |   State Range: Federal court appeal: 60 days from AC denial"
+      },
+      "coverage_reference": {
+        "paragraph_start": 683,
+        "paragraph_end": 683,
+        "text": "Employer Size: N/A"
+      },
+      "authority_reference": {
+        "paragraph_start": 684,
+        "paragraph_end": 684,
+        "text": "Key Statutes: Social Security Act Titles II and XVI; 20 CFR Parts 404 and 416; Mascio v. Colvin; Arakas v. Commissioner"
+      },
+      "elements": [
+        {
+          "paragraph_start": 686,
+          "paragraph_end": 686,
+          "text": "Claimant has severe medically determinable impairment(s)"
+        },
+        {
+          "paragraph_start": 687,
+          "paragraph_end": 687,
+          "text": "Impairment(s) meet or equal a listed impairment, OR claimant cannot perform past work AND cannot perform any work in national economy given age/education/RFC"
+        },
+        {
+          "paragraph_start": 688,
+          "paragraph_end": 688,
+          "text": "Disability expected to last 12+ months or result in death"
+        },
+        {
+          "paragraph_start": 689,
+          "paragraph_end": 689,
+          "text": "For SSDI: sufficient work credits. For SSI: income/resource limits met."
+        }
+      ],
+      "proof_reference": {
+        "paragraph_start": 691,
+        "paragraph_end": 691,
+        "text": "Five-step sequential evaluation. RFC (Residual Functional Capacity) assessment critical. Medical-vocational grid rules. Treating source opinion weight under post-2017 rules. Consultative examination limitations."
+      },
+      "fact_patterns": {
+        "paragraph_start": 693,
+        "paragraph_end": 693,
+        "text": "Initial denial without examination; ALJ rejecting treating doctor opinion without adequate explanation; hearing decision ignoring documented mental health limitations; grid rules applied incorrectly for age/education"
+      },
+      "barrier_reference": {
+        "paragraph_start": 695,
+        "paragraph_end": 695,
+        "text": "Unrepresented claimants have far worse outcomes at ALJ hearings — legal aid representation is the single biggest factor. SSI: does NOT apply in territories."
+      },
+      "intersections_reference": {
+        "paragraph_start": 697,
+        "paragraph_end": 697,
+        "text": "Medicaid (SSI categorical eligibility), Medicare (SSDI after 24 months), disability discrimination, Olmstead"
+      },
+      "remedies_reference": {
+        "paragraph_start": 699,
+        "paragraph_end": 699,
+        "text": "Award of benefits; back benefits; attorney fees (25% of back benefits, up to $7,200 — paid from back benefits award)"
+      },
+      "dated_note": {
+        "paragraph_start": 700,
+        "paragraph_end": 700,
+        "text": "  2025 NOTE: ALJ hearing wait times 12-18+ months. SSA facing staffing reductions. Legal representation at ALJ stage critical. For territory residents: SSDI applies; SSI does not.  "
+      },
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    },
+    {
+      "source_claim_id": "TRB-001",
+      "existing_claim_catalog_id": 47,
+      "claim_type_id": "trb_001_icwa_violation_improper_state_court_child_custody_proceeding",
+      "canonical_name": "ICWA Violation — Improper State Court Child Custody Proceeding",
+      "domain": "Tribal/Indigenous",
+      "identity_basis": "Manually reconciled source identifier and full claim title to the retrieved claim_catalog row; existing ID retained.",
+      "source_span": {
+        "paragraph_start": 701,
+        "paragraph_end": 720
+      },
+      "search_terms": [
+        "icwa",
+        "tribal",
+        "indian child",
+        "foster care",
+        "custody",
+        "adoption"
+      ],
+      "agency_reference": {
+        "paragraph_start": 702,
+        "paragraph_end": 702,
+        "text": "Domain: Tribal/Indigenous   |   Primary Agency: Tribal court (primary jurisdiction on/near reservation); BIA; state court (must comply with ICWA); ACF"
+      },
+      "deadline_reference": {
+        "paragraph_start": 703,
+        "paragraph_end": 703,
+        "text": "Federal SOL: Act immediately — ICWA applies at the moment of the proceeding   |   State Range: Immediate action required — intervene in state proceeding"
+      },
+      "coverage_reference": {
+        "paragraph_start": 704,
+        "paragraph_end": 704,
+        "text": "Employer Size: N/A"
+      },
+      "authority_reference": {
+        "paragraph_start": 705,
+        "paragraph_end": 705,
+        "text": "Key Statutes: ICWA 25 USC §1901; BIA ICWA Guidelines (2015/2016); Haaland v. Brackeen (2023, ICWA constitutional); 25 CFR Part 23"
+      },
+      "elements": [
+        {
+          "paragraph_start": 707,
+          "paragraph_end": 707,
+          "text": "Child is an 'Indian child' under ICWA (member of or eligible for membership in federally recognized tribe AND has biological parent who is tribal member)"
+        },
+        {
+          "paragraph_start": 708,
+          "paragraph_end": 708,
+          "text": "State child custody proceeding is pending (foster care, termination of parental rights, adoptive placement)"
+        },
+        {
+          "paragraph_start": 709,
+          "paragraph_end": 709,
+          "text": "Required ICWA procedures were not followed (notice to tribe, BIA; active efforts; placement preferences; expert witnesses; higher standards of proof)"
+        }
+      ],
+      "proof_reference": {
+        "paragraph_start": 711,
+        "paragraph_end": 711,
+        "text": "ICWA mandates: (1) notice to tribe and BIA for any Indian child custody proceeding; (2) active efforts (beyond reasonable efforts) to prevent family breakup; (3) placement preferences (extended family → other tribal members → other Indian families); (4) qualified expert witness on tribal child-rearing standards; (5) beyond reasonable doubt standard for TPR."
+      },
+      "fact_patterns": {
+        "paragraph_start": 713,
+        "paragraph_end": 713,
+        "text": "State agency failed to inquire about tribal membership; tribe not notified of foster care proceeding; placement made with non-Native family without exhausting placement preferences; TPR pursued without active efforts documentation"
+      },
+      "barrier_reference": {
+        "paragraph_start": 715,
+        "paragraph_end": 715,
+        "text": "States (especially SD — documented violations) with history of non-compliance. Tribal enrollment verification delays. Child welfare agencies not asking about tribal membership at intake."
+      },
+      "intersections_reference": {
+        "paragraph_start": 717,
+        "paragraph_end": 717,
+        "text": "ADA Title II (disability of parent as factor), VAWA (DV-involved families), state child welfare due process"
+      },
+      "remedies_reference": {
+        "paragraph_start": 719,
+        "paragraph_end": 719,
+        "text": "Invalidation of state court orders not complying with ICWA; transfer to tribal court; placement with tribal family members"
+      },
+      "dated_note": {
+        "paragraph_start": 720,
+        "paragraph_end": 720,
+        "text": "  2025 NOTE: Haaland v. Brackeen (2023) upheld ICWA against equal protection, anticommandeering, and other challenges. ICWA constitutional and binding. South Dakota under federal monitoring for ICWA compliance. BIA ICWA compliance oversight active.  "
+      },
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    },
+    {
+      "source_claim_id": "IMM-001",
+      "existing_claim_catalog_id": 48,
+      "claim_type_id": "imm_001_national_origin_discrimination_language_access_denial",
+      "canonical_name": "National Origin Discrimination / Language Access Denial",
+      "domain": "Immigration Intersection",
+      "identity_basis": "Manually reconciled source identifier and full claim title to the retrieved claim_catalog row; existing ID retained.",
+      "source_span": {
+        "paragraph_start": 721,
+        "paragraph_end": 741
+      },
+      "search_terms": [
+        "national origin",
+        "language",
+        "interpreter",
+        "accent",
+        "translated",
+        "english"
+      ],
+      "agency_reference": {
+        "paragraph_start": 722,
+        "paragraph_end": 722,
+        "text": "Domain: Immigration Intersection   |   Primary Agency: EEOC (employment, 15+); HHS-OCR (healthcare); ED-OCR (schools); HUD (housing); DOJ CRT (pattern; LEP enforcement); state agencies"
+      },
+      "deadline_reference": {
+        "paragraph_start": 723,
+        "paragraph_end": 723,
+        "text": "Federal SOL: EEOC: 300 days; agency complaints: 180 days   |   State Range: Varies"
+      },
+      "coverage_reference": {
+        "paragraph_start": 724,
+        "paragraph_end": 724,
+        "text": "Employer Size: Employment: 15+. Services (Title VI): all federally funded entities"
+      },
+      "authority_reference": {
+        "paragraph_start": 725,
+        "paragraph_end": 725,
+        "text": "Key Statutes: Title VII §703 (national origin); Title VI 42 USC §2000d; Former EO 13166 (revoked by EO 14224 on March 1, 2025); 28 CFR Part 42 (DOJ LEP guidance)"
+      },
+      "elements": [
+        {
+          "paragraph_start": 727,
+          "paragraph_end": 727,
+          "text": "Person has limited English proficiency (LEP) or was discriminated against based on national origin/accent"
+        },
+        {
+          "paragraph_start": 728,
+          "paragraph_end": 728,
+          "text": "Defendant receives federal funding (or is employer with 15+)"
+        },
+        {
+          "paragraph_start": 729,
+          "paragraph_end": 729,
+          "text": "Person was denied meaningful access to services due to language, OR subjected to adverse action because of national origin/accent"
+        },
+        {
+          "paragraph_start": 730,
+          "paragraph_end": 730,
+          "text": "Language policy was not justified by business necessity (employment) or had discriminatory intent (services)"
+        }
+      ],
+      "proof_reference": {
+        "paragraph_start": 732,
+        "paragraph_end": 732,
+        "text": "Executive Order 13166 was revoked by Executive Order 14224 on March 1, 2025. The new order does not itself require agencies to end services in other languages and must be implemented consistently with applicable law. Language-assistance obligations must be checked under the law, regulations and current rules that apply to the particular program; do not rely on the revoked order as current authority. Employment decisions based on accent may violate Title VII. EEOC guidance permits reliance on an accent only where the employer has evidence that effective spoken English is required for the job and the accent materially interferes with that communication; customer or coworker preference is insufficient."
+      },
+      "fact_patterns": {
+        "paragraph_start": 734,
+        "paragraph_end": 734,
+        "text": "Hospital refusing to provide interpreter — relying on child to interpret; school refusing to translate IEP documents; government agency not providing translated notices; employer terminating employee for accent despite adequate communication; employee harassed for speaking Spanish"
+      },
+      "barrier_reference": {
+        "paragraph_start": 736,
+        "paragraph_end": 736,
+        "text": "Executive Order 13166 was revoked by Executive Order 14224 on March 1, 2025. The new order does not itself require agencies to end services in other languages and must be implemented consistently with applicable law. Language-assistance obligations must be checked under the law, regulations and current rules that apply to the particular program; do not rely on the revoked order as current authority. DOJ states that LEP.gov operations are suspended pending review. Status checked 2026-09-13."
+      },
+      "intersections_reference": {
+        "paragraph_start": 738,
+        "paragraph_end": 738,
+        "text": "Race/ethnicity discrimination, immigration enforcement chilling effect, EMTALA, IDEA"
+      },
+      "remedies_reference": {
+        "paragraph_start": 740,
+        "paragraph_end": 740,
+        "text": "Employment: Title VII remedies. Services: corrective action, injunctive relief, civil penalties (federal funding termination as ultimate remedy)"
+      },
+      "dated_note": {
+        "paragraph_start": 741,
+        "paragraph_end": 741,
+        "text": "  2025 NOTE: Immigration enforcement climate creating chilling effect on LEP communities accessing services — health, education, housing. Document access barriers even if person declines to file.  "
+      },
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    }
+  ],
+  "barriers": [
+    {
+      "barrier_id": "BAR-001",
+      "name": "Mandatory Arbitration Agreement",
+      "source_domain": "All Employment",
+      "source_severity": "high",
+      "description": {
+        "paragraph_start": 753,
+        "paragraph_end": 753,
+        "text": "Pre-dispute arbitration agreements in employment contracts or as condition of employment that waive right to court. May also prohibit class actions."
+      },
+      "impact_reference": {
+        "paragraph_start": 801,
+        "paragraph_end": 801,
+        "text": "Impact: Eliminates federal/state court access; may require individual arbitration instead of EEOC-preserved right to sue. Some arbitration clauses also waive class/collective action rights."
+      },
+      "mitigation_reference": {
+        "paragraph_start": 802,
+        "paragraph_end": 802,
+        "text": "Mitigation: Check if EEOC charge right is preserved (it is — EEOC can sue on worker's behalf). Check if state law limits enforceability (CA PAGA cannot be waived; IL recent changes). Sexual harassment/assault arbitration waivers banned by Ending Forced Arbitration of Sexual Assault and Sexual Harassment Act (2022)."
+      },
+      "source_spans": [
+        {
+          "paragraph_start": 749,
+          "paragraph_end": 753
+        },
+        {
+          "paragraph_start": 799,
+          "paragraph_end": 802
+        }
+      ],
+      "related_source_claim_ids": [
+        "EMP-001",
+        "EMP-004",
+        "EMP-005",
+        "EMP-006"
+      ],
+      "relationship_status": "reviewed_topic_reference_not_case_applicability",
+      "applicability_questions": [
+        "Does a relevant agreement exist, and what claims and parties does it cover?",
+        "Which forum, statutory exceptions and enforceability rules govern this agreement?"
+      ],
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    },
+    {
+      "barrier_id": "BAR-002",
+      "name": "At-Will Employment Doctrine",
+      "source_domain": "Employment",
+      "source_severity": "medium",
+      "description": {
+        "paragraph_start": 758,
+        "paragraph_end": 758,
+        "text": "Default US rule: employer can terminate for any reason or no reason, as long as not an illegal reason."
+      },
+      "impact_reference": {
+        "paragraph_start": 805,
+        "paragraph_end": 805,
+        "text": "Impact: Creates 'pretext' burden — must show termination was for illegal reason, not just arbitrary reason."
+      },
+      "mitigation_reference": {
+        "paragraph_start": 806,
+        "paragraph_end": 806,
+        "text": "Mitigation: Circumstantial evidence: temporal proximity; comparator evidence; employer shifting explanations; pretext argument. Focus on timeline and documentation of protected activity."
+      },
+      "source_spans": [
+        {
+          "paragraph_start": 754,
+          "paragraph_end": 758
+        },
+        {
+          "paragraph_start": 803,
+          "paragraph_end": 806
+        }
+      ],
+      "related_source_claim_ids": [
+        "EMP-001",
+        "EMP-002",
+        "EMP-004"
+      ],
+      "relationship_status": "reviewed_topic_reference_not_case_applicability",
+      "applicability_questions": [
+        "Was there termination or another adverse employment action?",
+        "What jurisdiction, contract and claimed protected activity apply?"
+      ],
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    },
+    {
+      "barrier_id": "BAR-003",
+      "name": "Qualified Immunity",
+      "source_domain": "Police/Government",
+      "source_severity": "high",
+      "description": {
+        "paragraph_start": 763,
+        "paragraph_end": 763,
+        "text": "Doctrine shielding government officials from §1983 liability unless they violated 'clearly established' constitutional right."
+      },
+      "impact_reference": {
+        "paragraph_start": 809,
+        "paragraph_end": 809,
+        "text": "Impact: Effectively immunizes most individual officer defendants even for serious constitutional violations. Case against agency (municipality — Monell) is usually more viable."
+      },
+      "mitigation_reference": {
+        "paragraph_start": 810,
+        "paragraph_end": 810,
+        "text": "Mitigation: Monell claim against municipality (policy or custom causing violation). State tort claims often not subject to qualified immunity. State law civil rights claims in states that have abolished or limited qualified immunity (CO, NM, NJ, NY, MA)."
+      },
+      "source_spans": [
+        {
+          "paragraph_start": 759,
+          "paragraph_end": 763
+        },
+        {
+          "paragraph_start": 807,
+          "paragraph_end": 810
+        }
+      ],
+      "related_source_claim_ids": [],
+      "relationship_status": "reviewed_topic_reference_not_case_applicability",
+      "applicability_questions": [
+        "Is the defendant an individual official, municipality, state or another entity?",
+        "What claim and form of relief are asserted? Immunities cannot be transferred between them."
+      ],
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    },
+    {
+      "barrier_id": "BAR-004",
+      "name": "Administrative Exhaustion Requirement",
+      "source_domain": "Employment/Benefits",
+      "source_severity": "high",
+      "description": {
+        "paragraph_start": 768,
+        "paragraph_end": 768,
+        "text": "Must complete administrative process (EEOC charge, state agency, Medicaid fair hearing) before filing in court."
+      },
+      "impact_reference": {
+        "paragraph_start": 813,
+        "paragraph_end": 813,
+        "text": "Impact: Missing administrative deadline forecloses court access. Procedural trap for unrepresented claimants."
+      },
+      "mitigation_reference": {
+        "paragraph_start": 814,
+        "paragraph_end": 814,
+        "text": "Mitigation: File administrative charge immediately at intake — SOL protection even if investigation capacity limited. Do not wait to gather all evidence before filing charge."
+      },
+      "source_spans": [
+        {
+          "paragraph_start": 764,
+          "paragraph_end": 768
+        },
+        {
+          "paragraph_start": 811,
+          "paragraph_end": 814
+        }
+      ],
+      "related_source_claim_ids": [
+        "EMP-001",
+        "EMP-002",
+        "EMP-003",
+        "EMP-004",
+        "EDU-001",
+        "BEN-001",
+        "BEN-002",
+        "BEN-003"
+      ],
+      "relationship_status": "reviewed_topic_reference_not_case_applicability",
+      "applicability_questions": [
+        "Which administrative process is required for this specific cause of action and remedy?",
+        "What notice, event date, prior filing and exception evidence exists?"
+      ],
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    },
+    {
+      "barrier_id": "BAR-005",
+      "name": "ERISA Preemption (Employee Benefits)",
+      "source_domain": "Benefits/Employment",
+      "source_severity": "high",
+      "description": {
+        "paragraph_start": 773,
+        "paragraph_end": 773,
+        "text": "ERISA preempts most state law claims relating to employer-provided benefit plans (health, disability, pension)."
+      },
+      "impact_reference": {
+        "paragraph_start": 817,
+        "paragraph_end": 817,
+        "text": "Impact: State tort claims, state contract claims, and punitive damages generally unavailable for self-funded employer plan claims. Limited to ERISA equitable remedies."
+      },
+      "mitigation_reference": {
+        "paragraph_start": 818,
+        "paragraph_end": 818,
+        "text": "Mitigation: ERISA parity claims (MHPAEA); ERISA §502(a) breach of fiduciary duty; §510 retaliation. State insurance laws apply to fully-insured plans (not self-funded). Check whether plan is self-funded or insured."
+      },
+      "source_spans": [
+        {
+          "paragraph_start": 769,
+          "paragraph_end": 773
+        },
+        {
+          "paragraph_start": 815,
+          "paragraph_end": 818
+        }
+      ],
+      "related_source_claim_ids": [
+        "HLT-003"
+      ],
+      "relationship_status": "reviewed_topic_reference_not_case_applicability",
+      "applicability_questions": [
+        "What kind of plan is involved, and is it self-funded, insured or outside ERISA?",
+        "What benefit, parity or other cause of action and remedy is being considered?"
+      ],
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    },
+    {
+      "barrier_id": "BAR-006",
+      "name": "Short Statute of Limitations (Employment)",
+      "source_domain": "Employment",
+      "source_severity": "critical",
+      "description": {
+        "paragraph_start": 778,
+        "paragraph_end": 778,
+        "text": "Employment discrimination SOLs range from 120 days (DE) to 6 years (MN). Most are 180-300 days administrative."
+      },
+      "impact_reference": {
+        "paragraph_start": 821,
+        "paragraph_end": 821,
+        "text": "Impact: Claims are permanently barred after SOL. Missing by one day = no claim. Equitable tolling limited."
+      },
+      "mitigation_reference": {
+        "paragraph_start": 822,
+        "paragraph_end": 822,
+        "text": "Mitigation: File EEOC charge on DAY ONE of intake. Do not wait. State agencies with longer SOLs may preserve claims federal SOL has cut off."
+      },
+      "source_spans": [
+        {
+          "paragraph_start": 774,
+          "paragraph_end": 778
+        },
+        {
+          "paragraph_start": 819,
+          "paragraph_end": 822
+        }
+      ],
+      "related_source_claim_ids": [
+        "EMP-001",
+        "EMP-002",
+        "EMP-003",
+        "EMP-004",
+        "EMP-005",
+        "EMP-006",
+        "EMP-007"
+      ],
+      "relationship_status": "reviewed_topic_reference_not_case_applicability",
+      "applicability_questions": [
+        "Which forum and event starts each potentially relevant clock?",
+        "Are there independent clocks, receipt dates, tolling or preserved filings requiring review?"
+      ],
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    },
+    {
+      "barrier_id": "BAR-007",
+      "name": "No State Remedy (Civil Rights Gap States)",
+      "source_domain": "Employment",
+      "source_severity": "critical",
+      "description": {
+        "paragraph_start": 783,
+        "paragraph_end": 783,
+        "text": "AL, MS, GA (private), NC (private), AR have no effective state employment civil rights enforcement for private sector."
+      },
+      "impact_reference": {
+        "paragraph_start": 825,
+        "paragraph_end": 825,
+        "text": "Impact: EEOC exclusively. No state agency investigation. For employers under 15: virtually no remedy."
+      },
+      "mitigation_reference": {
+        "paragraph_start": 826,
+        "paragraph_end": 826,
+        "text": "Mitigation: 42 USC §1981 for race claims (no size minimum, 4yr SOL, no damage caps). FLSA/NLRA for wage and concerted activity. State tort: WDPOP, IIED. Private bar referral."
+      },
+      "source_spans": [
+        {
+          "paragraph_start": 779,
+          "paragraph_end": 783
+        },
+        {
+          "paragraph_start": 823,
+          "paragraph_end": 826
+        }
+      ],
+      "related_source_claim_ids": [
+        "EMP-001",
+        "EMP-002",
+        "EMP-003",
+        "EMP-004"
+      ],
+      "relationship_status": "reviewed_topic_reference_not_case_applicability",
+      "applicability_questions": [
+        "What jurisdiction, employer type, size and protected basis apply?",
+        "Does a court remedy exist even if an administrative enforcement office does not?"
+      ],
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    },
+    {
+      "barrier_id": "BAR-008",
+      "name": "Immigration Status Fear",
+      "source_domain": "All",
+      "source_severity": "high",
+      "description": {
+        "paragraph_start": 788,
+        "paragraph_end": 788,
+        "text": "Undocumented or mixed-status workers and families may fear filing complaints due to immigration enforcement concerns."
+      },
+      "impact_reference": {
+        "paragraph_start": 829,
+        "paragraph_end": 829,
+        "text": "Impact: Systematic underreporting of labor, housing, and civil rights violations in immigrant communities."
+      },
+      "mitigation_reference": {
+        "paragraph_start": 830,
+        "paragraph_end": 830,
+        "text": "Mitigation: FLSA, NLRA, EEOC explicitly protect workers regardless of immigration status. Confidentiality protocols. Provide information in native language. Community organizations as bridges. U-visa for crime victims who cooperate with law enforcement."
+      },
+      "source_spans": [
+        {
+          "paragraph_start": 784,
+          "paragraph_end": 788
+        },
+        {
+          "paragraph_start": 827,
+          "paragraph_end": 830
+        }
+      ],
+      "related_source_claim_ids": [
+        "EMP-005",
+        "HOU-005",
+        "BEN-002",
+        "IMM-001"
+      ],
+      "relationship_status": "reviewed_topic_reference_not_case_applicability",
+      "applicability_questions": [
+        "What safe language and communication access does the person want?",
+        "What program-specific eligibility, confidentiality and reporting rules require review? Do not infer immigration status."
+      ],
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    },
+    {
+      "barrier_id": "BAR-009",
+      "name": "Proof of Intent (Employment Discrimination)",
+      "source_domain": "Employment",
+      "source_severity": "medium",
+      "description": {
+        "paragraph_start": 793,
+        "paragraph_end": 793,
+        "text": "Most employment discrimination claims require proving discriminatory intent, not just bad outcome."
+      },
+      "impact_reference": {
+        "paragraph_start": 833,
+        "paragraph_end": 833,
+        "text": "Impact: Circumstantial evidence required in most cases. Direct evidence rare. McDonnell Douglas burden-shifting is the primary framework."
+      },
+      "mitigation_reference": {
+        "paragraph_start": 834,
+        "paragraph_end": 834,
+        "text": "Mitigation: Document: comparator employees; supervisor comments; shifts in treatment after protected activity; employer's inconsistent explanations; statistical evidence of workforce demographics."
+      },
+      "source_spans": [
+        {
+          "paragraph_start": 789,
+          "paragraph_end": 793
+        },
+        {
+          "paragraph_start": 831,
+          "paragraph_end": 834
+        }
+      ],
+      "related_source_claim_ids": [
+        "EMP-001",
+        "EMP-002",
+        "EMP-004",
+        "HOU-001"
+      ],
+      "relationship_status": "reviewed_topic_reference_not_case_applicability",
+      "applicability_questions": [
+        "Which theory requires intent, causation or a different standard?",
+        "What comparator, timing, direct statement or record evidence exists?"
+      ],
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    },
+    {
+      "barrier_id": "BAR-010",
+      "name": "Federal Enforcement Reduction (2025)",
+      "source_domain": "All Federal Claims",
+      "source_severity": "high",
+      "description": {
+        "paragraph_start": 798,
+        "paragraph_end": 798,
+        "text": "EEOC, DOJ CRT, CFPB, ED-OCR all operating at significantly reduced enforcement capacity under 2025 administration changes."
+      },
+      "impact_reference": {
+        "paragraph_start": 837,
+        "paragraph_end": 837,
+        "text": "Impact: Charges may not be investigated; right to sue letters issued quickly without investigation; consent decrees ended."
+      },
+      "mitigation_reference": {
+        "paragraph_start": 838,
+        "paragraph_end": 838,
+        "text": "Mitigation: File federal charges to preserve rights + pursue state agencies aggressively + consider private litigation faster than prior years."
+      },
+      "source_spans": [
+        {
+          "paragraph_start": 794,
+          "paragraph_end": 798
+        },
+        {
+          "paragraph_start": 835,
+          "paragraph_end": 838
+        }
+      ],
+      "related_source_claim_ids": [
+        "EMP-002",
+        "EMP-003",
+        "EMP-007",
+        "DIS-001",
+        "DIS-003",
+        "EDU-002",
+        "CON-001",
+        "HLT-001"
+      ],
+      "relationship_status": "reviewed_topic_reference_not_case_applicability",
+      "applicability_questions": [
+        "What current operational evidence establishes agency capacity or intake availability?",
+        "Which independent filing or community-support options remain available? Source 2025 observations are not current verification."
+      ],
+      "legal_verification": "unverified",
+      "case_applicability": "not_assessed",
+      "automatic_legal_actions_allowed": false
+    }
+  ],
+  "review_issues": [
+    {
+      "issue_id": "CLAIM-REVIEW-001",
+      "paragraphs": [
+        118,
+        535
+      ],
+      "reason": "ECOA limitations assertion requires current primary-authority review. Do not convert to a deadline."
+    },
+    {
+      "issue_id": "CLAIM-REVIEW-002",
+      "paragraphs": [
+        695,
+        700
+      ],
+      "reason": "Blanket SSI territory exclusion conflicts with supplied American Samoa directory treatment of CNMI; resolve program and jurisdiction individually."
+    },
+    {
+      "issue_id": "CLAIM-REVIEW-003",
+      "paragraphs": [
+        451,
+        467
+      ],
+      "reason": "Title III entry combines a web accessibility rule with a note expressly distinguishing Title II and Title III. Do not transfer a Title II rule to Title III."
+    },
+    {
+      "issue_id": "CLAIM-REVIEW-004",
+      "paragraphs": [
+        783,
+        825,
+        826
+      ],
+      "reason": "No state remedy/EEOC exclusively language must distinguish administrative agency availability, court remedy, employer coverage and alternative causes."
+    },
+    {
+      "issue_id": "CLAIM-REVIEW-005",
+      "paragraphs": [
+        768,
+        813,
+        814,
+        821,
+        822
+      ],
+      "reason": "Exhaustion and missed-deadline outcomes are overbroad without claim/forum/trigger/exception review. No universal day-one filing instruction or expired-case verdict."
+    },
+    {
+      "issue_id": "CLAIM-REVIEW-006",
+      "paragraphs": [
+        798,
+        835,
+        837,
+        838
+      ],
+      "reason": "Federal capacity assertions are explicitly dated 2025; current agency operation and available alternatives remain unverified."
+    },
+    {
+      "issue_id": "CLAIM-REVIEW-007",
+      "paragraphs": [
+        197,
+        251,
+        280,
+        302,
+        396,
+        470,
+        637,
+        642,
+        699,
+        707,
+        720
+      ],
+      "reason": "Causation, remedy, numerical duration, eligibility and status assertions need pinpoint primary-authority review before use as legal conclusions."
+    },
+    {
+      "issue_id": "CLAIM-REVIEW-008",
+      "paragraphs": [
+        732,
+        736
+      ],
+      "reason": "Language-access passages have an explicit later status-check date. Preserve this sample version separately from unmatched enriched source variants."
+    },
+    {
+      "issue_id": "CLAIM-REVIEW-009",
+      "paragraphs": [
+        763,
+        809,
+        810
+      ],
+      "reason": "Qualified immunity is a separate Section 1983 topic. No exact Section 1983 claim exists in these 27 detailed entries; do not treat an ADA Title II claim as equivalent. Connect the existing Section 1983 catalog only after its elements and defendant/remedy scope are reviewed."
+    }
+  ],
+  "policy": {
+    "legal_verification": "unverified",
+    "automatic_legal_actions_allowed": false,
+    "source_text_is_legal_authority": false,
+    "automatic_identity_merge_allowed": false
+  }
+}

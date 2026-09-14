@@ -2,7 +2,7 @@ import { router, publicProcedure } from '../trpc';
 import { getArchitectureMapRuntimeState } from '../services/architecture-map-runtime-service';
 
 export const architectureMapCompatRouter = router({
-  getArchitectureOverview: publicProcedure.query(() => {
+  get_architecture_overview: publicProcedure.query(() => {
     const runtime = getArchitectureMapRuntimeState();
 
     return {

@@ -12,7 +12,7 @@ import {
   searchRuntimeWeakJoints as read_case_weak_joints,
   type LegalRuntimeSearch as legal_runtime_search,
 } from "../legal-library-runtime-db";
-import { searchPublishableResourceDirectory as read_case_resources } from "./resource-directory-publishable";
+import { search_publishable_resource_directory as read_case_resources } from "./resource-directory-publishable";
 import { read_enforcement_pathways } from "../enforcement-pathway-runtime-compat";
 import { getCaseTimelineData as read_legacy_timeline } from "../case-timeline-intake-compat";
 
@@ -30,45 +30,7 @@ export async function read_case_legal_stats(jurisdiction: string) {
 }
 
 export async function read_case_enforcement_pathways(input: { pipeline_category: string; jurisdiction: string }) {
-  const source = await read_enforcement_pathways(input);
-  return {
-    availability: source.availability,
-    matched_by: source.matchedBy === "agencyShort" ? "agency_short"
-      : source.matchedBy === "claimType" ? "claim_type"
-      : source.matchedBy === "pipelineCategory" ? "pipeline_category" : source.matchedBy,
-    requested: {
-      agency_short: source.requested.agencyShort,
-      claim_type: source.requested.claimType,
-      pipeline_category: source.requested.pipelineCategory,
-    },
-    filter_options: {
-      agency_shorts: source.filterOptions.agencyShorts,
-      claim_types: source.filterOptions.claimTypes,
-      pipeline_categories: source.filterOptions.pipelineCategories,
-    },
-    total_source_rows: source.totalSourceRows,
-    matched_source_rows: source.matchedSourceRows,
-    returned_source_rows: source.returnedSourceRows,
-    return_limit: source.returnLimit,
-    source_contract: source.sourceContract,
-    pathways: source.pathways.map(pathway => ({
-      id: pathway.id,
-      pathway_id: pathway.pathwayId,
-      pathway_name: pathway.pathwayName,
-      jurisdiction: pathway.jurisdiction,
-      domain: pathway.domain,
-      description: pathway.description,
-      agency_short: pathway.agencyShort,
-      claim_types: pathway.claimTypes,
-      pipeline_categories: pathway.pipelineCategories,
-      source_state: pathway.sourceState,
-      source_pending: pathway.sourcePending,
-      source_url: pathway.sourceUrl,
-      source_file: pathway.sourceFile,
-      source_sha256: pathway.sourceSha256,
-      created_at: pathway.createdAt,
-    })),
-  };
+  return read_enforcement_pathways(input);
 }
 
 export async function read_case_timeline(case_id: number) {

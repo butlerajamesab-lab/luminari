@@ -1,5 +1,6 @@
 import type { BenefitApplication } from "../drizzle/schema";
 import { getPool } from "./db-legacy";
+import { TRPCError } from "@trpc/server";
 
 type BenefitApplicationInput = {
   userId: number;
@@ -82,7 +83,11 @@ export async function createBenefitApplication(data: BenefitApplicationInput): P
        user_id, case_id, program_id, program_name, benefit_app_status,
        state_code, application_url, documents_needed, documents_submitted,
        created_at, updated_at
-     ) values ($1, $2, $3, $4, 'not_started', $5, $6, $7, $8, $9, $9)
+     ) select $1, $2, $3, $4, 'not_started', $5, $6, $7, $8, $9, $9
+       where $2::text is null or exists (
+         select 1 from public.cases
+         where id::text = $2::text and user_id = $1
+       )
      returning ${BENEFIT_APPLICATION_COLUMNS}`,
     [
       data.userId,
@@ -96,6 +101,7 @@ export async function createBenefitApplication(data: BenefitApplicationInput): P
       now,
     ],
   );
+  if (!rows[0]) throw new TRPCError({ code: "FORBIDDEN", message: "Choose a case you own before linking this application." });
   return normalizeBenefitApplication(rows[0]);
 }
 

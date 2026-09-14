@@ -8,12 +8,37 @@ import {
   claimDetectionRules, claimDetectionResults,
   evidenceRecords, elementStrength,
   contradictionScores, contradictionTemplates,
-  claimViability, deadlineRules,
+  claimViability,
   weakJointTriggers, weakJointHits,
   legalWeakJoints,
   proofFrameworks, claimElementMatrix,
 } from "../../drizzle/schema";
 import { withEngineTracking, ENGINE_IDS } from "../engine-entrypoint-wrapper";
+import { assess_resolution_deadlines } from "../resolution-deadline-contract";
+import { read_resolution_deadlines } from "../resolution-reference-runtime";
+
+type detected_deadline_claim = {
+  claim_type: (typeof claimDetectionResults.$inferSelect)["claimType"];
+  confidence_score: (typeof claimDetectionResults.$inferSelect)["confidenceScore"];
+};
+
+const case_deadline_input = z.preprocess((value) => {
+  const input = value as Record<string, unknown> | null;
+  if (!input || typeof input !== "object") return value;
+  return {
+    case_id: input.case_id ?? input.caseId,
+    jurisdiction: input.jurisdiction,
+    forum: input.forum,
+    trigger_event: input.trigger_event ?? input.triggerEvent,
+    event_date: input.event_date ?? input.eventDate,
+  };
+}, z.object({
+  case_id: z.number().int().positive(),
+  jurisdiction: z.string().trim().max(128).default(""),
+  forum: z.string().trim().max(256).optional(),
+  trigger_event: z.string().trim().max(512).optional(),
+  event_date: z.string().date().optional(),
+}));
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CLAIM VIABILITY ENGINE — Computation Pipeline
@@ -200,99 +225,30 @@ export const viabilityEngineRouter = router({
       };
     }),
 
-  // ─── T3: Evaluate SOL/Deadline Status ────────────────────────────────
-  // Input: caseId, incidentDate (Unix ms)
-  // Process: For each detected claim, look up deadline_rules and compute
-  //          days remaining, status (valid/warning/expired/unknown)
-  // Output: SOL status per claim type (used in T7 viability)
-  evaluateDeadlines: protectedProcedure
-    .input(z.object({
-      caseId: z.number(),
-      incidentDate: z.number(), // Unix timestamp ms
-      jurisdiction: z.string().default("federal"),
-    }))
+  // T3: Review source references. A generic incident date is not a bound trigger.
+  evaluate_deadlines: protectedProcedure
+    .input(case_deadline_input)
     .query(async ({ input }) => {
-      // Get detected claims for this case
-      const detected = await db.select().from(claimDetectionResults)
-        .where(eq(claimDetectionResults.caseId, input.caseId));
-
+      const detected: detected_deadline_claim[] = (await db.select().from(claimDetectionResults)
+        .where(eq(claimDetectionResults.caseId, input.case_id)))
+        .map((row: typeof claimDetectionResults.$inferSelect) => ({ claim_type: row.claimType, confidence_score: row.confidenceScore }));
       if (detected.length === 0) {
         return { results: [], message: "No detected claims. Run claim detection first (T2)." };
       }
-
-      // Get all deadline rules
-      const allRules = await db.select().from(deadlineRules);
-
-      const now = Date.now();
-      const daysSinceIncident = Math.floor((now - input.incidentDate) / (1000 * 60 * 60 * 24));
-
-      const results = detected.map((d: any) => {
-        // Find matching deadline rules for this claim type and jurisdiction
-        const matchingRules = allRules.filter((r: any) =>
-          r.claimType.toLowerCase() === d.claimType.toLowerCase() &&
-          (r.jurisdiction === input.jurisdiction || r.jurisdiction === "federal" || r.jurisdiction === "all")
-        );
-
-        // Find the SOL rule specifically
-        const solRule = matchingRules.find((r: any) => r.deadlineType === "statute_of_limitations");
-        const filingRule = matchingRules.find((r: any) => r.deadlineType === "filing");
-        const exhaustionRule = matchingRules.find((r: any) => r.deadlineType === "administrative_exhaustion");
-
-        // Use the most restrictive deadline
-        const primaryRule = solRule || filingRule || exhaustionRule;
-
-        if (!primaryRule || !primaryRule.timeLimitDays) {
-          return {
-            claim_type: d.claimType,
-            confidence_score: d.confidenceScore,
-            sol_status: "unknown" as const,
-            sol_days_remaining: null,
-            deadline_type: null,
-            tolling_possible: false,
-            notes: "No deadline rule found for this claim type/jurisdiction.",
-          };
-        }
-
-        const daysRemaining = primaryRule.timeLimitDays - daysSinceIncident;
-        const warningThreshold = primaryRule.warningThresholdDays ?? 30;
-        const criticalThreshold = primaryRule.criticalThresholdDays ?? 7;
-
-        let solStatus: "valid" | "warning" | "expired" | "unknown";
-        if (daysRemaining <= 0) solStatus = "expired";
-        else if (daysRemaining <= criticalThreshold) solStatus = "warning";
-        else if (daysRemaining <= warningThreshold) solStatus = "warning";
-        else solStatus = "valid";
-
-        // Check if extended deadline applies
-        let extendedNote = "";
-        if (daysRemaining <= 0 && primaryRule.extendedLimitDays) {
-          const extendedRemaining = primaryRule.extendedLimitDays - daysSinceIncident;
-          if (extendedRemaining > 0) {
-            solStatus = "warning";
-            extendedNote = ` Extended deadline available (${primaryRule.extendedCondition}): ${extendedRemaining} days remaining.`;
-          }
-        }
-
+      const references = await read_resolution_deadlines();
+      const results = detected.map(claim => {
+        const deadline_assessment = assess_resolution_deadlines(references, { ...input, claim_type: claim.claim_type });
         return {
-          claim_type: d.claimType,
-          confidence_score: d.confidenceScore,
-          solStatus,
-          sol_days_remaining: Math.max(0, daysRemaining),
-          deadline_type: primaryRule.deadlineType,
-          time_limit_days: primaryRule.timeLimitDays,
-          tolling_possible: primaryRule.tollingPossible,
-          tolling_conditions: primaryRule.tollingConditions,
-          authority: primaryRule.authority,
-          notes: `${daysRemaining} days since incident. Deadline: ${primaryRule.timeLimitDays} days.${extendedNote}`,
-          all_matching_deadlines: matchingRules.map((r: any) => ({
-            type: r.deadlineType,
-            days: r.timeLimitDays,
-            authority: r.authority,
-          })),
+          ...claim,
+          sol_status: "unknown" as const,
+          sol_days_remaining: null,
+          deadline_type: null,
+          tolling_possible: null,
+          notes: deadline_assessment.message,
+          deadline_assessment,
         };
       });
-
-      return { results, daysSinceIncident };
+      return { results, message: "Deadline applicability remains unresolved pending a reviewed authority, forum and triggering event." };
     }),
 
   // ─── T4: Evaluate Element Strength ───────────────────────────────────
@@ -608,159 +564,138 @@ export const viabilityEngineRouter = router({
     }),
 
   // ─── T7: Compute Final Viability ────────────────────────────────────
-  // Input: caseId, incidentDate, jurisdiction
+  // Input: case_id, jurisdiction and optional forum/event context
   // Process: Aggregate all pipeline outputs into a final viability score
   //          per detected claim type.
   // Output: Rows inserted into claim_viability table
-  computeViability: protectedProcedure
-    .input(z.object({
-      caseId: z.number(),
-      incidentDate: z.number(),
-      jurisdiction: z.string().default("federal"),
-    }))
+  compute_viability: protectedProcedure
+    .input(case_deadline_input)
     .mutation(async ({ input }) => {
       const now = Date.now();
 
       // Gather all pipeline data
-      const detected = await db.select().from(claimDetectionResults)
-        .where(eq(claimDetectionResults.caseId, input.caseId));
-      const elements = await db.select().from(elementStrength)
-        .where(eq(elementStrength.caseId, input.caseId));
+      const detected: detected_deadline_claim[] = (await db.select().from(claimDetectionResults)
+        .where(eq(claimDetectionResults.caseId, input.case_id)))
+        .map((row: typeof claimDetectionResults.$inferSelect) => ({ claim_type: row.claimType, confidence_score: row.confidenceScore }));
+      const elements = (await db.select().from(elementStrength)
+        .where(eq(elementStrength.caseId, input.case_id)))
+        .map((row: typeof elementStrength.$inferSelect) => ({ claim_type: row.claimType, strength_score: row.strengthScore, element: row.element }));
       const contradictions = await db.select().from(contradictionScores)
-        .where(eq(contradictionScores.caseId, input.caseId));
-      const wjHits = await db.select().from(weakJointHits)
-        .where(eq(weakJointHits.caseId, input.caseId));
-      const evidence = await db.select().from(evidenceRecords)
-        .where(eq(evidenceRecords.caseId, input.caseId));
+        .where(eq(contradictionScores.caseId, input.case_id));
+      const weak_joint_hits = await db.select().from(weakJointHits)
+        .where(eq(weakJointHits.caseId, input.case_id));
+      const evidence = (await db.select().from(evidenceRecords)
+        .where(eq(evidenceRecords.caseId, input.case_id)))
+        .map((row: typeof evidenceRecords.$inferSelect) => ({ related_claim: row.relatedClaim, reliability_class: row.reliabilityClass }));
 
       // Get deadline data
-      const allDeadlineRules = await db.select().from(deadlineRules);
-      const daysSinceIncident = Math.floor((now - input.incidentDate) / (1000 * 60 * 60 * 24));
+      const deadline_references = await read_resolution_deadlines();
 
       if (detected.length === 0) {
         return { viability: [], message: "No detected claims. Run the full pipeline first." };
       }
 
       // Clear previous viability records
-      await db.delete(claimViability).where(eq(claimViability.caseId, input.caseId));
+      await db.delete(claimViability).where(eq(claimViability.caseId, input.case_id));
 
       const results = [];
       for (const detection of detected) {
         // Element analysis
-        const claimElements = elements.filter((e: any) => e.claimType === detection.claimType);
-        const satisfied = claimElements.filter((e: any) => parseFloat(String(e.strengthScore)) >= 0.4);
-        const missing = claimElements.filter((e: any) => parseFloat(String(e.strengthScore)) < 0.4);
+        const claim_elements = elements.filter((e: any) => e.claim_type === detection.claim_type);
+        const satisfied = claim_elements.filter((e: any) => parseFloat(String(e.strength_score)) >= 0.4);
+        const missing = claim_elements.filter((e: any) => parseFloat(String(e.strength_score)) < 0.4);
 
-        // SOL analysis
-        const solRule = allDeadlineRules.find((r: any) =>
-          r.claimType.toLowerCase() === detection.claimType.toLowerCase() &&
-          (r.jurisdiction === input.jurisdiction || r.jurisdiction === "federal") &&
-          r.deadlineType === "statute_of_limitations"
-        );
-        let solStatus: "valid" | "warning" | "expired" | "unknown" = "unknown";
-        let solDaysRemaining: number | null = null;
-        if (solRule?.timeLimitDays) {
-          solDaysRemaining = solRule.timeLimitDays - daysSinceIncident;
-          if (solDaysRemaining <= 0) solStatus = "expired";
-          else if (solDaysRemaining <= (solRule.warningThresholdDays ?? 30)) solStatus = "warning";
-          else solStatus = "valid";
-        }
+        // Catalog intervals cannot establish SOL status or penalize viability.
+        const deadline_assessment = assess_resolution_deadlines(deadline_references, {
+          ...input, claim_type: detection.claim_type,
+        });
+        const sol_status = "unknown" as const;
+        const sol_days_remaining = null;
 
         // Evidence sufficiency
-        const claimEvidence = evidence.filter((e: any) =>
-          e.relatedClaim?.toLowerCase().includes(detection.claimType.toLowerCase())
+        const claim_evidence = evidence.filter((e: any) =>
+          e.related_claim?.toLowerCase().includes(detection.claim_type.toLowerCase())
         );
-        let evidenceSufficiency: "strong" | "moderate" | "weak" | "insufficient";
-        const primaryCount = claimEvidence.filter((e: any) => e.reliabilityClass === "primary").length;
-        const totalEvidence = claimEvidence.length;
-        if (primaryCount >= 2 && totalEvidence >= 4) evidenceSufficiency = "strong";
-        else if (primaryCount >= 1 && totalEvidence >= 2) evidenceSufficiency = "moderate";
-        else if (totalEvidence >= 1) evidenceSufficiency = "weak";
-        else evidenceSufficiency = "insufficient";
+        let evidence_sufficiency: "strong" | "moderate" | "weak" | "insufficient";
+        const primary_count = claim_evidence.filter((e: any) => e.reliability_class === "primary").length;
+        const total_evidence = claim_evidence.length;
+        if (primary_count >= 2 && total_evidence >= 4) evidence_sufficiency = "strong";
+        else if (primary_count >= 1 && total_evidence >= 2) evidence_sufficiency = "moderate";
+        else if (total_evidence >= 1) evidence_sufficiency = "weak";
+        else evidence_sufficiency = "insufficient";
 
         // Contradiction impact
-        const contradictionCount = contradictions.length;
-        const weakJointCount = wjHits.length;
+        const contradiction_count = contradictions.length;
+        const weak_joint_count = weak_joint_hits.length;
 
         // Compute confidence score (weighted formula)
-        const detectionConfidence = parseFloat(String(detection.confidenceScore));
-        const elementScore = claimElements.length > 0
-          ? satisfied.length / claimElements.length
+        const detection_confidence = parseFloat(String(detection.confidence_score));
+        const element_score = claim_elements.length > 0
+          ? satisfied.length / claim_elements.length
           : 0.5;
-        const solPenalty = solStatus === "expired" ? 0.3 : solStatus === "warning" ? 0.1 : 0;
-        const contradictionPenalty = Math.min(0.2, contradictionCount * 0.05);
-        const evidenceBonus = evidenceSufficiency === "strong" ? 0.15
-          : evidenceSufficiency === "moderate" ? 0.08
-          : evidenceSufficiency === "weak" ? 0.03
+        const contradiction_penalty = Math.min(0.2, contradiction_count * 0.05);
+        const evidence_bonus = evidence_sufficiency === "strong" ? 0.15
+          : evidence_sufficiency === "moderate" ? 0.08
+          : evidence_sufficiency === "weak" ? 0.03
           : 0;
 
-        const confidenceScore = Math.max(0, Math.min(1,
-          (detectionConfidence * 0.25) +
-          (elementScore * 0.35) +
-          evidenceBonus -
-          solPenalty -
-          contradictionPenalty
+        const confidence_score = Math.max(0, Math.min(1,
+          (detection_confidence * 0.25) +
+          (element_score * 0.35) +
+          evidence_bonus -
+          contradiction_penalty
         ));
 
         // Recommended evidence
-        const recommendedEvidence = missing.map((m: any) => `Evidence needed for: ${m.element}`);
-        if (evidenceSufficiency === "insufficient" || evidenceSufficiency === "weak") {
-          recommendedEvidence.push("Gather primary source documents (sworn testimony, court filings)");
+        const recommended_evidence = missing.map((m: any) => `Evidence needed for: ${m.element}`);
+        if (evidence_sufficiency === "insufficient" || evidence_sufficiency === "weak") {
+          recommended_evidence.push("Gather primary source documents (sworn testimony, court filings)");
         }
 
-        // Recommended action
-        let recommendedAction = "";
-        if (solStatus === "expired") {
-          recommendedAction = `SOL has expired for ${detection.claimType}. Evaluate tolling arguments or alternative claims.`;
-        } else if (solStatus === "warning") {
-          recommendedAction = `SOL deadline approaching (${solDaysRemaining} days). Prioritize filing preparation.`;
-        } else if (confidenceScore >= 0.6) {
-          recommendedAction = `Strong viability. Proceed with formal complaint preparation.`;
-        } else if (confidenceScore >= 0.3) {
-          recommendedAction = `Moderate viability. Gather additional evidence before filing.`;
-        } else {
-          recommendedAction = `Low viability. Consider alternative legal theories or additional investigation.`;
-        }
+        // Evidence strength does not establish whether filing is timely.
+        const recommended_action = `Review deadline applicability before acting on the evidence assessment. ${deadline_assessment.message}`;
 
         // Agency routing
-        const frameworks = await db.select().from(proofFrameworks);
+        const frameworks = (await db.select().from(proofFrameworks))
+          .map((row: typeof proofFrameworks.$inferSelect) => ({ claim_type: row.claimType, domain: row.domain }));
         const framework = frameworks.find((f: any) =>
-          f.claimType.toLowerCase().includes(detection.claimType.toLowerCase())
+          f.claim_type.toLowerCase().includes(detection.claim_type.toLowerCase())
         );
 
         await db.insert(claimViability).values({
-          caseId: input.caseId,
-          claimType: detection.claimType,
+          caseId: input.case_id,
+          claimType: detection.claim_type,
           elementsSatisfied: satisfied.map((s: any) => s.element),
           elementsMissing: missing.map((m: any) => m.element),
-          confidenceScore: confidenceScore.toFixed(2),
-          solStatus,
-          solDaysRemaining: solDaysRemaining !== null ? Math.max(0, solDaysRemaining) : null,
-          evidenceSufficiency,
-          recommendedEvidence,
-          recommendedAction,
+          confidenceScore: confidence_score.toFixed(2),
+          solStatus: sol_status,
+          solDaysRemaining: sol_days_remaining,
+          evidenceSufficiency: evidence_sufficiency,
+          recommendedEvidence: recommended_evidence,
+          recommendedAction: recommended_action,
           agencyRouting: framework?.domain || null,
-          contradictionCount,
-          weakJointCount,
+          contradictionCount: contradiction_count,
+          weakJointCount: weak_joint_count,
           evaluatedAt: now,
         });
 
         results.push({
-          claimType: detection.claimType,
-          confidenceScore: parseFloat(confidenceScore.toFixed(2)),
-          solStatus,
-          solDaysRemaining,
-          evidenceSufficiency,
-          elementsSatisfied: satisfied.length,
-          elementsMissing: missing.length,
-          contradictionCount,
-          weakJointCount,
-          recommendedAction,
+          claim_type: detection.claim_type,
+          confidence_score: parseFloat(confidence_score.toFixed(2)),
+          sol_status,
+          sol_days_remaining,
+          deadline_assessment,
+          evidence_sufficiency: evidence_sufficiency,
+          elements_satisfied: satisfied.length,
+          elements_missing: missing.length,
+          contradiction_count: contradiction_count,
+          weak_joint_count: weak_joint_count,
+          recommended_action,
         });
       }
 
       return {
-        viability: results.sort((a, b) => b.confidenceScore - a.confidenceScore),
+        viability: results.sort((a, b) => b.confidence_score - a.confidence_score),
         message: `Computed viability for ${results.length} claim types.`,
       };
     }),
@@ -790,7 +725,7 @@ export const viabilityEngineRouter = router({
             "evaluateElements",
             "detectContradictions",
             "checkWeakJoints",
-            "computeViability",
+            "compute_viability",
           ],
           message: `Pipeline ready for case ${input.caseId}. Call each stage mutation in order.`,
         };

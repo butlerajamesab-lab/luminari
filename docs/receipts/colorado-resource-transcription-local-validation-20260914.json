@@ -1,0 +1,20 @@
+{
+  "validation": "actual_migration_in_pglite_0_5_8",
+  "observed_source_sha256": "8b37624175d4b9d6f31c8d207ac1ffb0a4c2648c479cfaba0c1405600e3fb24d",
+  "records": 24,
+  "transcribed_fields": 144,
+  "raw_projection_unchanged": true,
+  "identity_and_publication_states_unchanged": true,
+  "remote_writes": 0,
+  "legal_verification": "not_performed",
+  "remaining": "Source category interpretation remains separately proposed; source assertions are not independently verified.",
+  "dedicated_legal_authority_deadline_fields_unchanged": true,
+  "service_role_successor_and_retraction": "pass_without_update_privilege",
+  "application_sql_sha256": "6ee2bb84325d8f8c78ef853b174c889d33b685cf9ecf83794de538cef7beb073",
+  "application_first_apply": "24_current_applicable_receipts",
+  "application_exact_replay": "24_stored_24_current_no_duplicates",
+  "application_stale_before_replay": "rejected_no_new_writes",
+  "application_post_insert_failure": "all_24_inserts_rolled_back",
+  "postgres_contract_tests": 7,
+  "application_transaction_tests": 2
+}

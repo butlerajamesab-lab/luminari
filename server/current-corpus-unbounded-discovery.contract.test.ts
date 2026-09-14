@@ -11,16 +11,16 @@ describe("current corpus discovery is not semantically capped", () => {
     const router = source("server/routers/canonical-core-router.ts");
     const reader = source("server/services/current-corpus-page-reader.ts");
 
-    expect(router).toContain("graphNodePage");
-    expect(router).toContain("graphEdgePage");
-    expect(router).toContain("unresolvedRelationshipPage");
+    expect(router).toContain("graph_node_page");
+    expect(router).toContain("graph_edge_page");
+    expect(router).toContain("unresolved_relationship_page");
     expect(router).toContain("total");
-    expect(router).toContain("readCurrentGraphNodePage(input ?? {})");
-    expect(router).toContain("readCurrentGraphEdgePage(input ?? {})");
-    expect(router).toContain("readCurrentUnresolvedRelationshipPage(input ?? {})");
+    expect(router).toContain("read_current_graph_node_page(input ?? {})");
+    expect(router).toContain("read_current_graph_edge_page(input ?? {})");
+    expect(router).toContain("read_current_unresolved_relationship_page(input ?? {})");
     expect(router).toContain("must never be interpreted");
 
-    expect(reader).toContain("count(*) over()::int as filtered_total");
+    expect(reader).toContain("select count(*)::int from filtered");
     expect(reader).toContain("window_only: true");
     expect(reader).toContain("v_lighthouse_graph_nodes_v1");
     expect(reader).toContain("v_lighthouse_graph_edges_v2");

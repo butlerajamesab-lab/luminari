@@ -735,34 +735,38 @@ export const enforcementIntelligenceRouter = router({
   }),
 
   // ═══ Source-bound enforcement pathway reference snapshot ═══
-  getEnforcementPathway: publicProcedure
+  get_enforcement_pathway: publicProcedure
     .input(z.object({
+      jurisdiction: z.string().trim().min(1).optional(),
+      agency_short: z.string().trim().min(1).optional(),
+      agency_name: z.string().trim().min(1).optional(),
+      claim_type: z.string().trim().min(1).optional(),
+      pipeline_category: z.string().trim().min(1).optional(),
+      pathway_id: z.string().trim().min(1).optional(),
+      // Temporarily accept old callers only at this boundary.
       agencyShort: z.string().trim().min(1).optional(),
       claimType: z.string().trim().min(1).optional(),
       pipelineCategory: z.string().trim().min(1).optional(),
-    }).refine(input => [
-      input.agencyShort,
-      input.claimType,
-      input.pipelineCategory,
-    ].filter(Boolean).length <= 1, {
-      message: "Select only one enforcement pathway filter at a time",
-    }))
+    }).transform(input => ({
+      jurisdiction: input.jurisdiction,
+      agency_short: input.agency_short ?? input.agencyShort,
+      agency_name: input.agency_name,
+      claim_type: input.claim_type ?? input.claimType,
+      pipeline_category: input.pipeline_category ?? input.pipelineCategory,
+      pathway_id: input.pathway_id,
+    })))
     .query(({ input }) => read_enforcement_pathways(input)),
 
-  // ═══ List ALL enforcement pathway models from DB ═══
-  listAllPathways: publicProcedure
+  // ═══ All model references, with jurisdiction scoped before the return limit ═══
+  list_all_pathways: publicProcedure
     .input(z.object({
       jurisdiction: z.string().optional(),
       domain: z.string().optional(),
     }).optional())
     .query(async ({ input }) => {
-      const snapshot = await read_enforcement_pathways({});
-      const jurisdiction = input?.jurisdiction?.trim().toLowerCase();
+      const snapshot = await read_enforcement_pathways({ jurisdiction: input?.jurisdiction });
       const domain = input?.domain?.trim().toLowerCase();
-      return snapshot.pathways.filter(pathway =>
-        (!jurisdiction || pathway.jurisdiction?.toLowerCase().includes(jurisdiction))
-        && (!domain || pathway.domain?.toLowerCase().includes(domain)),
-      );
+      return snapshot.pathways.filter(pathway => !domain || pathway.domain?.toLowerCase() === domain);
     }),
 
   // ═══ Agencies with an operative filing form ═══

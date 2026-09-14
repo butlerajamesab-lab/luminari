@@ -21,9 +21,10 @@ import {
   getCurrentUnresolvedRelationships,
 } from "../services/current-canonical-state";
 import {
-  readCurrentGraphEdgePage,
-  readCurrentGraphNodePage,
-  readCurrentUnresolvedRelationshipPage,
+  read_current_graph_edge_page,
+  read_current_graph_node_page,
+  read_current_graph_source,
+  read_current_unresolved_relationship_page,
 } from "../services/current-corpus-page-reader";
 import { readCurrentDiscoveryFacts } from "../services/current-discovery-facts";
 import { read_current_legal_authorities, read_current_legal_authority } from "../services/current-legal-authority-reader";
@@ -74,32 +75,38 @@ export const canonicalCoreRouter = router({
       return getCurrentUnresolvedRelationships(input ?? {});
     }),
 
-  graphNodePage: publicProcedure
+  graph_node_page: publicProcedure
     .input(z.object({
-      nodeType: z.string().trim().max(80).optional(),
+      node_type: z.string().trim().max(80).optional(),
+      node_id: z.string().trim().max(180).optional(),
       query: z.string().trim().max(240).optional(),
       limit: z.number().int().min(1).max(250).default(100),
       offset: z.number().int().min(0).default(0),
     }).optional())
-    .query(async ({ input }) => readCurrentGraphNodePage(input ?? {})),
+    .query(async ({ input }) => read_current_graph_node_page(input ?? {})),
 
-  graphEdgePage: publicProcedure
+  graph_node_source: publicProcedure
+    .input(z.object({ node_id: z.string().trim().min(1).max(180) }))
+    .query(async ({ input }) => read_current_graph_source(input.node_id)),
+
+  graph_edge_page: publicProcedure
     .input(z.object({
-      edgeType: z.string().trim().max(80).optional(),
-      nodeId: z.string().trim().max(180).optional(),
-      semanticOnly: z.boolean().default(false),
+      edge_type: z.string().trim().max(80).optional(),
+      node_id: z.string().trim().max(180).optional(),
+      semantic_only: z.boolean().default(false),
       limit: z.number().int().min(1).max(250).default(100),
       offset: z.number().int().min(0).default(0),
     }).optional())
-    .query(async ({ input }) => readCurrentGraphEdgePage(input ?? {})),
+    .query(async ({ input }) => read_current_graph_edge_page(input ?? {})),
 
-  unresolvedRelationshipPage: publicProcedure
+  unresolved_relationship_page: publicProcedure
     .input(z.object({
-      relationshipType: z.string().trim().max(80).optional(),
+      relationship_type: z.string().trim().max(80).optional(),
+      node_id: z.string().trim().max(180).optional(),
       limit: z.number().int().min(1).max(250).default(100),
       offset: z.number().int().min(0).default(0),
     }).optional())
-    .query(async ({ input }) => readCurrentUnresolvedRelationshipPage(input ?? {})),
+    .query(async ({ input }) => read_current_unresolved_relationship_page(input ?? {})),
 
   discoveryFacts: publicProcedure
     .input(z.object({

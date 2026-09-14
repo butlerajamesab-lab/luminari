@@ -1,5 +1,6 @@
+import { reviewed_proof_reference_issue } from "../reviewed-claim-references";
 import { z } from "zod";
-import { publicProcedure, router } from "../_core/trpc";
+import { publicProcedure as public_procedure, router } from "../_core/trpc";
 import { db, getPool } from "../db";
 import { eq, count } from "drizzle-orm";
 import {
@@ -46,13 +47,10 @@ import {
 
 async function count_public_table(table_name: string): Promise<number> {
   const allowed = new Set(["contacts"]);
-  if (!allowed.has(table_name)) return 0;
-  try {
-    const result = await getPool().query(`select count(*)::int as c from public.${table_name}`);
-    return Number(result.rows[0]?.c ?? 0);
-  } catch {
-    return 0;
-  }
+  if (!allowed.has(table_name)) throw new Error("Unregistered architecture table");
+  const result = await getPool().query(`select count(*)::int as c from public.${table_name}`);
+  if (result.rows[0]?.c == null) throw new Error("Architecture count unavailable");
+  return Number(result.rows[0].c);
 }
 
 async function read_current_substrate_snapshot() {
@@ -61,44 +59,44 @@ async function read_current_substrate_snapshot() {
       `select public.get_lighthouse_civic_object_snapshot_v1() as snapshot`,
     );
     const snapshot = result.rows[0]?.snapshot ?? {};
-    const byClass = Array.isArray(snapshot.by_class) ? snapshot.by_class : [];
+    const by_class = Array.isArray(snapshot.by_class) ? snapshot.by_class : [];
     return {
       availability: "available",
       source: "get_lighthouse_civic_object_snapshot_v1",
-      generatedAt: snapshot.generated_at ?? null,
-      totalCurrentObjects: Number(snapshot.total_current_objects ?? 0),
-      typedReady: Number(snapshot.typed_ready ?? 0),
-      jurisdictionReady: Number(snapshot.jurisdiction_ready ?? 0),
-      withAccessPoint: Number(snapshot.with_access_point ?? 0),
-      directAccessReady: Number(snapshot.direct_access_ready ?? 0),
-      unresolvedOrHeld: Number(snapshot.unresolved_or_held ?? 0),
-      objectClasses: byClass.map((row: Record<string, unknown>) => ({
-        objectClass: String(row.object_class ?? "unknown"),
-        targetSurface: String(row.target_surface ?? "unrouted"),
-        objectCount: Number(row.object_count ?? 0),
-        typedReadyCount: Number(row.typed_ready_count ?? 0),
-        jurisdictionReadyCount: Number(row.jurisdiction_ready_count ?? 0),
-        directAccessReadyCount: Number(row.direct_access_ready_count ?? 0),
-        unresolvedOrHeldCount: Number(row.unresolved_or_held_count ?? 0),
+      generated_at: snapshot.generated_at ?? null,
+      total_current_objects: Number(snapshot.total_current_objects ?? 0),
+      typed_ready: Number(snapshot.typed_ready ?? 0),
+      jurisdiction_ready: Number(snapshot.jurisdiction_ready ?? 0),
+      with_access_point: Number(snapshot.with_access_point ?? 0),
+      direct_access_ready: Number(snapshot.direct_access_ready ?? 0),
+      unresolved_or_held: Number(snapshot.unresolved_or_held ?? 0),
+      object_classes: by_class.map((row: Record<string, unknown>) => ({
+        object_class: String(row.object_class ?? "unknown"),
+        target_surface: String(row.target_surface ?? "unrouted"),
+        object_count: Number(row.object_count ?? 0),
+        typed_ready_count: Number(row.typed_ready_count ?? 0),
+        jurisdiction_ready_count: Number(row.jurisdiction_ready_count ?? 0),
+        direct_access_ready_count: Number(row.direct_access_ready_count ?? 0),
+        unresolved_or_held_count: Number(row.unresolved_or_held_count ?? 0),
       })),
     };
   } catch {
     return {
       availability: "unavailable",
       source: "get_lighthouse_civic_object_snapshot_v1",
-      generatedAt: null,
-      totalCurrentObjects: 0,
-      typedReady: 0,
-      jurisdictionReady: 0,
-      withAccessPoint: 0,
-      directAccessReady: 0,
-      unresolvedOrHeld: 0,
-      objectClasses: [],
+      generated_at: null,
+      total_current_objects: null,
+      typed_ready: null,
+      jurisdiction_ready: null,
+      with_access_point: null,
+      direct_access_ready: null,
+      unresolved_or_held: null,
+      object_classes: [],
     };
   }
 }
 
-function parseProofList(value: unknown): string[] {
+function parse_proof_list(value: unknown): string[] {
   if (Array.isArray(value)) return value.filter(v => v != null).map(String);
   if (typeof value !== "string" || value.trim() === "") return [];
   try {
@@ -109,7 +107,7 @@ function parseProofList(value: unknown): string[] {
   }
 }
 
-function proofTime(value: unknown): number | string | null {
+function proof_time(value: unknown): number | string | null {
   if (value == null) return null;
   if (value instanceof Date) return value.toISOString();
   if (typeof value === "number") return value;
@@ -120,25 +118,32 @@ function proofTime(value: unknown): number | string | null {
   return String(value);
 }
 
-function mapProofFramework(row: Record<string, any>) {
+function map_proof_framework(row: Record<string, any>) {
+  const issue = reviewed_proof_reference_issue(String(row.claim_type ?? ""), row.domain ?? null);
+  const recorded_reference = {
+    elements_of_proof: parse_proof_list(row.elements_of_proof),
+    burden_of_proof: row.burden_of_proof == null ? null : String(row.burden_of_proof),
+    standard_of_review: row.standard_of_review == null ? null : String(row.standard_of_review),
+    required_causation: row.required_causation == null ? null : String(row.required_causation),
+    typical_evidence: parse_proof_list(row.typical_evidence),
+    common_defenses: parse_proof_list(row.common_defenses),
+    key_precedents: parse_proof_list(row.key_precedents),
+  };
   return {
-    id: Number(row.id),
-    claimType: String(row.claim_type ?? ""),
-    domain: String(row.domain ?? ""),
-    elementsOfProof: parseProofList(row.elements_of_proof),
-    burdenOfProof: row.burden_of_proof == null ? null : String(row.burden_of_proof),
-    standardOfReview: row.standard_of_review == null ? null : String(row.standard_of_review),
-    requiredCausation: row.required_causation == null ? null : String(row.required_causation),
-    typicalEvidence: parseProofList(row.typical_evidence),
-    commonDefenses: parseProofList(row.common_defenses),
-    keyPrecedents: parseProofList(row.key_precedents),
+    id: Number(row.id), claim_type: String(row.claim_type ?? ""), domain: String(row.domain ?? ""),
+    ...recorded_reference,
+    elements_of_proof: issue ? [] : recorded_reference.elements_of_proof,
     notes: row.notes == null ? null : String(row.notes),
-    createdAt: proofTime(row.created_at),
-    updatedAt: proofTime(row.updated_at),
+    created_at: proof_time(row.created_at), updated_at: proof_time(row.updated_at),
+    legal_verification: "unverified", case_applicability: "not_assessed",
+    review_status: issue ? "needs_source_repair" : "not_independently_verified",
+    review_issue: issue,
+    validated_proof_available: false,
+    recorded_reference,
   };
 }
 
-const proofFrameworkProjection = `
+const proof_framework_projection = `
   select id, claim_type, domain, elements_of_proof, burden_of_proof,
          standard_of_review, required_causation, typical_evidence,
          common_defenses, key_precedents, notes, created_at, updated_at
@@ -149,45 +154,47 @@ export const architectureMapRouter = router({
   // ═══════════════════════════════════════════════════
   // PROOF FRAMEWORKS
   // ═══════════════════════════════════════════════════
-  listProofFrameworks: publicProcedure
+  list_proof_frameworks: public_procedure
     .input(z.object({ domain: z.string().optional(), search: z.string().optional() }).optional())
     .query(async ({ input }) => {
       const { rows } = await getPool().query(
-        `${proofFrameworkProjection}
+        `${proof_framework_projection}
          where ($1::text is null or domain = $1)
            and ($2::text is null or claim_type ilike '%' || $2 || '%')
          order by domain, claim_type, id`,
         [input?.domain ?? null, input?.search ?? null],
       );
-      return rows.map(mapProofFramework);
+      return rows.map(map_proof_framework);
     }),
 
-  getProofFramework: publicProcedure
+  get_proof_framework: public_procedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
       const { rows } = await getPool().query(
-        `${proofFrameworkProjection} where id = $1 limit 1`,
+        `${proof_framework_projection} where id = $1 limit 1`,
         [input.id],
       );
-      return rows[0] == null ? null : mapProofFramework(rows[0]);
+      return rows[0] == null ? null : map_proof_framework(rows[0]);
     }),
 
-  getProofByClaimType: publicProcedure
-    .input(z.object({ claimType: z.string() }))
+  get_proof_by_claim_type: public_procedure
+    .input(z.object({ claim_type: z.string().optional(), claimType: z.string().optional() })
+      .transform(value => ({ claim_type: value.claim_type ?? value.claimType ?? "" }))
+      .refine(value => value.claim_type.length > 0, "A claim identity is required"))
     .query(async ({ input }) => {
       const { rows } = await getPool().query(
-        `${proofFrameworkProjection}
-         where claim_type ilike '%' || $1 || '%'
+        `${proof_framework_projection}
+         where claim_type = $1
          order by domain, claim_type, id`,
-        [input.claimType],
+        [input.claim_type],
       );
-      return rows.map(mapProofFramework);
+      return rows.map(map_proof_framework);
     }),
 
   // ═══════════════════════════════════════════════════
   // CLAIM ELEMENT MATRIX
   // ═══════════════════════════════════════════════════
-  listClaimElements: publicProcedure
+  listClaimElements: public_procedure
     .input(z.object({ claimType: z.string().optional(), domain: z.string().optional() }).optional())
     .query(async ({ input }) => {
       let q = db.select().from(claimElementMatrix);
@@ -196,7 +203,7 @@ export const architectureMapRouter = router({
       return q.orderBy(claimElementMatrix.claimType, claimElementMatrix.elementOrder);
     }),
 
-  getClaimElementsByType: publicProcedure
+  getClaimElementsByType: public_procedure
     .input(z.object({ claimType: z.string() }))
     .query(async ({ input }) => {
       return db.select().from(claimElementMatrix)
@@ -207,7 +214,7 @@ export const architectureMapRouter = router({
   // ═══════════════════════════════════════════════════
   // INVESTIGATION GUIDANCE
   // ═══════════════════════════════════════════════════
-  listInvestigationGuidance: publicProcedure
+  listInvestigationGuidance: public_procedure
     .input(z.object({ agencyShort: z.string().optional(), pipelineCategory: z.string().optional() }).optional())
     .query(async ({ input }) => {
       return list_live_investigation_guidance({
@@ -216,7 +223,7 @@ export const architectureMapRouter = router({
       });
     }),
 
-  getInvestigationGuidance: publicProcedure
+  getInvestigationGuidance: public_procedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
       return get_live_investigation_guidance(input.id);
@@ -225,7 +232,7 @@ export const architectureMapRouter = router({
   // ═══════════════════════════════════════════════════
   // FILING GENERATOR
   // ═══════════════════════════════════════════════════
-  listFilingTemplates: publicProcedure
+  listFilingTemplates: public_procedure
     .input(z.object({ agencyShort: z.string().optional(), pipelineCategory: z.string().optional() }).optional())
     .query(async ({ input }) => {
       return list_live_filing_templates({
@@ -234,13 +241,13 @@ export const architectureMapRouter = router({
       });
     }),
 
-  getFilingTemplate: publicProcedure
+  getFilingTemplate: public_procedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
       return get_live_filing_template(input.id);
     }),
 
-  getFilingReadiness: publicProcedure
+  getFilingReadiness: public_procedure
     .input(z.object({ claimType: z.string(), agencyShort: z.string() }))
     .query(async ({ input }) => {
       const template = await find_live_filing_template(
@@ -262,47 +269,47 @@ export const architectureMapRouter = router({
   // ═══════════════════════════════════════════════════
   // ARCHITECTURE MAP — SYSTEM OVERVIEW
   // ═══════════════════════════════════════════════════
-  getArchitectureOverview: publicProcedure.query(async () => {
+  get_architecture_overview: public_procedure.query(async () => {
     // This is a live current-object substrate readout. It is intentionally
     // separate from the eight governed seed layers below so broad corpus
     // records cannot inflate or redefine legal-layer completion.
-    const currentSubstratePromise = read_current_substrate_snapshot();
+    const current_substrate_promise = read_current_substrate_snapshot();
 
     // Count records in every configured seed/library table to build the architecture map.
     // These counts measure seed coverage, not national corpus completion.
     const [
-      statuteCount,
-      caseLawCount,
-      weakJointCount,
-      contradictionCount,
-      enforcementRecordCount,
-      statuteClauseCount,
-      doctrineCount,
-      doctrineEdgeCount,
-      barrierCount,
-      signalCount,
-      narrativeCount,
-      workflowCount,
-      contradictionTemplateCount,
-      agencyAuthCount,
-      interagencyCount,
-      agencyFormCount,
-      guidanceCount,
-      penaltyCount,
-      viabilityCount,
-      pipelineMapCount,
-      intakeEnrichCount,
-      timelineRuleCount,
-      timelineSignalCount,
-      evidenceSourceCount,
-      proofFrameworkCount,
-      claimElementCount,
-      investigationGuidanceCount,
-      filingGeneratorCount,
-      registrySignalCount,
-      liveSignalCount,
-      registryWorkflowCount,
-      contactCount,
+      statute_count,
+      case_law_count,
+      weak_joint_count,
+      contradiction_count,
+      enforcement_record_count,
+      statute_clause_count,
+      doctrine_count,
+      doctrine_edge_count,
+      barrier_count,
+      signal_count,
+      narrative_count,
+      workflow_count,
+      contradiction_template_count,
+      agency_auth_count,
+      interagency_count,
+      agency_form_count,
+      guidance_count,
+      penalty_count,
+      viability_count,
+      pipeline_map_count,
+      intake_enrich_count,
+      timeline_rule_count,
+      timeline_signal_count,
+      evidence_source_count,
+      proof_framework_count,
+      claim_element_count,
+      investigation_guidance_count,
+      filing_generator_count,
+      registry_signal_count,
+      live_signal_count,
+      registry_workflow_count,
+      contact_count,
     ] = await Promise.all([
       db.select({ c: count() }).from(legalStatutes).then((r: any[]) => r[0]?.c ?? 0),
       db.select({ c: count() }).from(legalCaseLaw).then((r: any[]) => r[0]?.c ?? 0),
@@ -337,7 +344,7 @@ export const architectureMapRouter = router({
       db.select({ c: count() }).from(registryWorkflows).then((r: any[]) => r[0]?.c ?? 0),
       count_public_table("contacts"),
     ]);
-    const currentSubstrate = await currentSubstratePromise;
+    const current_substrate = await current_substrate_promise;
 
     // Build the 8-layer architecture
     const layers = [
@@ -347,11 +354,11 @@ export const architectureMapRouter = router({
         description: "Federal and state statutes, regulations, and statutory clauses that define legal prohibitions and authority.",
         order: 1,
         tables: [
-          { name: "legal_statutes", label: "Statutes", count: statuteCount },
-          { name: "legal_statute_clauses", label: "Statute Clauses", count: statuteClauseCount },
+          { name: "legal_statutes", label: "Statutes", count: statute_count },
+          { name: "legal_statute_clauses", label: "Statute Clauses", count: statute_clause_count },
         ],
-        totalRecords: statuteCount + statuteClauseCount,
-        status: (statuteCount + statuteClauseCount) > 0 ? "populated" : "empty",
+        total_records: statute_count + statute_clause_count,
+        status: (statute_count + statute_clause_count) > 0 ? "populated" : "empty",
         color: "#3b82f6",
       },
       {
@@ -360,12 +367,12 @@ export const architectureMapRouter = router({
         description: "Federal and state court decisions that interpret statutes and establish legal standards.",
         order: 2,
         tables: [
-          { name: "legal_case_law", label: "Case Law", count: caseLawCount },
-          { name: "doctrine_registry", label: "Doctrines", count: doctrineCount },
-          { name: "doctrine_graph_edges", label: "Doctrine Connections", count: doctrineEdgeCount },
+          { name: "legal_case_law", label: "Case Law", count: case_law_count },
+          { name: "doctrine_registry", label: "Doctrines", count: doctrine_count },
+          { name: "doctrine_graph_edges", label: "Doctrine Connections", count: doctrine_edge_count },
         ],
-        totalRecords: caseLawCount + doctrineCount + doctrineEdgeCount,
-        status: (caseLawCount + doctrineCount) > 0 ? "populated" : "empty",
+        total_records: case_law_count + doctrine_count + doctrine_edge_count,
+        status: (case_law_count + doctrine_count) > 0 ? "populated" : "empty",
         color: "#8b5cf6",
       },
       {
@@ -374,10 +381,10 @@ export const architectureMapRouter = router({
         description: "What must be proven for each claim type. Element-by-element breakdown with evidence types and strength indicators.",
         order: 3,
         tables: [
-          { name: "claim_element_matrix", label: "Claim Elements", count: claimElementCount },
+          { name: "claim_element_matrix", label: "Claim Elements", count: claim_element_count },
         ],
-        totalRecords: claimElementCount,
-        status: claimElementCount > 0 ? "populated" : "empty",
+        total_records: claim_element_count,
+        status: claim_element_count > 0 ? "populated" : "empty",
         color: "#06b6d4",
       },
       {
@@ -386,12 +393,12 @@ export const architectureMapRouter = router({
         description: "How elements are proven. Burden-shifting frameworks, causation standards, typical evidence, and common defenses.",
         order: 4,
         tables: [
-          { name: "proof_frameworks", label: "Proof Frameworks", count: proofFrameworkCount },
-          { name: "contradiction_templates", label: "Contradiction Templates", count: contradictionTemplateCount },
-          { name: "legal_contradictions", label: "Contradictions", count: contradictionCount },
+          { name: "proof_frameworks", label: "Proof Frameworks", count: proof_framework_count },
+          { name: "contradiction_templates", label: "Contradiction Templates", count: contradiction_template_count },
+          { name: "legal_contradictions", label: "Contradictions", count: contradiction_count },
         ],
-        totalRecords: proofFrameworkCount + contradictionTemplateCount + contradictionCount,
-        status: proofFrameworkCount > 0 ? "populated" : "empty",
+        total_records: proof_framework_count + contradiction_template_count + contradiction_count,
+        status: proof_framework_count > 0 ? "populated" : "empty",
         color: "#10b981",
       },
       {
@@ -400,16 +407,16 @@ export const architectureMapRouter = router({
         description: "Agency authority, enforcement pathways, canonical contact infrastructure, forms, penalties, viability rules, and interagency referrals.",
         order: 5,
         tables: [
-          { name: "agency_authority_map", label: "Agency Authority", count: agencyAuthCount },
-          { name: "contacts", label: "Canonical Contacts", count: contactCount },
-          { name: "agency_forms", label: "Agency Forms", count: agencyFormCount },
-          { name: "enforcement_penalties", label: "Penalties", count: penaltyCount },
-          { name: "enforcement_viability_rules", label: "Viability Rules", count: viabilityCount },
-          { name: "interagency_referrals", label: "Referrals", count: interagencyCount },
-          { name: "legal_enforcement_records", label: "Enforcement Records", count: enforcementRecordCount },
+          { name: "agency_authority_map", label: "Agency Authority", count: agency_auth_count },
+          { name: "contacts", label: "Canonical Contacts", count: contact_count },
+          { name: "agency_forms", label: "Agency Forms", count: agency_form_count },
+          { name: "enforcement_penalties", label: "Penalties", count: penalty_count },
+          { name: "enforcement_viability_rules", label: "Viability Rules", count: viability_count },
+          { name: "interagency_referrals", label: "Referrals", count: interagency_count },
+          { name: "legal_enforcement_records", label: "Enforcement Records", count: enforcement_record_count },
         ],
-        totalRecords: agencyAuthCount + contactCount + agencyFormCount + penaltyCount + viabilityCount + interagencyCount + enforcementRecordCount,
-        status: (agencyAuthCount + agencyFormCount + contactCount) > 0 ? "populated" : "empty",
+        total_records: agency_auth_count + contact_count + agency_form_count + penalty_count + viability_count + interagency_count + enforcement_record_count,
+        status: (agency_auth_count + agency_form_count + contact_count) > 0 ? "populated" : "empty",
         color: "#f59e0b",
       },
       {
@@ -418,10 +425,10 @@ export const architectureMapRouter = router({
         description: "Agency guidance documents, regulatory interpretations, and compliance standards.",
         order: 6,
         tables: [
-          { name: "regulatory_guidance", label: "Guidance Documents", count: guidanceCount },
+          { name: "regulatory_guidance", label: "Guidance Documents", count: guidance_count },
         ],
-        totalRecords: guidanceCount,
-        status: guidanceCount > 0 ? "populated" : "empty",
+        total_records: guidance_count,
+        status: guidance_count > 0 ? "populated" : "empty",
         color: "#ef4444",
       },
       {
@@ -430,14 +437,14 @@ export const architectureMapRouter = router({
         description: "Investigation guidance, filing templates, workflow definitions, and evidence source catalogs.",
         order: 7,
         tables: [
-          { name: "investigation_guidance", label: "Investigation Guidance", count: investigationGuidanceCount },
-          { name: "filing_generator", label: "Filing Templates", count: filingGeneratorCount },
-          { name: "workflow_definitions", label: "Workflows", count: workflowCount },
-          { name: "registry_workflows", label: "Registry Workflows", count: registryWorkflowCount },
-          { name: "evidence_sources", label: "Evidence Sources", count: evidenceSourceCount },
+          { name: "investigation_guidance", label: "Investigation Guidance", count: investigation_guidance_count },
+          { name: "filing_generator", label: "Filing Templates", count: filing_generator_count },
+          { name: "workflow_definitions", label: "Workflows", count: workflow_count },
+          { name: "registry_workflows", label: "Registry Workflows", count: registry_workflow_count },
+          { name: "evidence_sources", label: "Evidence Sources", count: evidence_source_count },
         ],
-        totalRecords: investigationGuidanceCount + filingGeneratorCount + workflowCount + registryWorkflowCount + evidenceSourceCount,
-        status: (investigationGuidanceCount + filingGeneratorCount + registryWorkflowCount) > 0 ? "populated" : "empty",
+        total_records: investigation_guidance_count + filing_generator_count + workflow_count + registry_workflow_count + evidence_source_count,
+        status: (investigation_guidance_count + filing_generator_count + registry_workflow_count) > 0 ? "populated" : "empty",
         color: "#ec4899",
       },
       {
@@ -446,57 +453,56 @@ export const architectureMapRouter = router({
         description: "Pattern detection signals, weak joints, litigation barriers, narrative templates, and pipeline intelligence.",
         order: 8,
         tables: [
-          { name: "signal_registry", label: "Signal Types", count: signalCount },
-          { name: "registry_signals", label: "Registry Signals", count: registrySignalCount },
-          { name: "live_signals", label: "Live Signals", count: liveSignalCount },
-          { name: "legal_weak_joints", label: "Weak Joints", count: weakJointCount },
-          { name: "litigation_barriers", label: "Barriers", count: barrierCount },
-          { name: "narrative_templates", label: "Narratives", count: narrativeCount },
-          { name: "pipeline_intelligence_map", label: "Pipeline Map", count: pipelineMapCount },
-          { name: "pipeline_intake_enrichments", label: "Intake Enrichments", count: intakeEnrichCount },
-          { name: "timeline_rules", label: "Timeline Rules", count: timelineRuleCount },
-          { name: "timeline_signals", label: "Timeline Signals", count: timelineSignalCount },
+          { name: "signal_registry", label: "Signal Types", count: signal_count },
+          { name: "registry_signals", label: "Registry Signals", count: registry_signal_count },
+          { name: "live_signals", label: "Live Signals", count: live_signal_count },
+          { name: "legal_weak_joints", label: "Weak Joints", count: weak_joint_count },
+          { name: "litigation_barriers", label: "Barriers", count: barrier_count },
+          { name: "narrative_templates", label: "Narratives", count: narrative_count },
+          { name: "pipeline_intelligence_map", label: "Pipeline Map", count: pipeline_map_count },
+          { name: "pipeline_intake_enrichments", label: "Intake Enrichments", count: intake_enrich_count },
+          { name: "timeline_rules", label: "Timeline Rules", count: timeline_rule_count },
+          { name: "timeline_signals", label: "Timeline Signals", count: timeline_signal_count },
         ],
-        totalRecords: signalCount + registrySignalCount + liveSignalCount + weakJointCount + barrierCount + narrativeCount + pipelineMapCount + intakeEnrichCount + timelineRuleCount + timelineSignalCount,
-        status: (signalCount + registrySignalCount + liveSignalCount + weakJointCount) > 0 ? "populated" : "empty",
+        total_records: signal_count + registry_signal_count + live_signal_count + weak_joint_count + barrier_count + narrative_count + pipeline_map_count + intake_enrich_count + timeline_rule_count + timeline_signal_count,
+        status: (signal_count + registry_signal_count + live_signal_count + weak_joint_count) > 0 ? "populated" : "empty",
         color: "#6366f1",
       },
     ];
 
     const connections = [
-      { from: "statutes", to: "case_law", label: "Statutes interpreted by case law", strength: Math.min(statuteCount, caseLawCount) },
-      { from: "case_law", to: "claim_elements", label: "Case law defines claim elements", strength: Math.min(caseLawCount, claimElementCount) },
-      { from: "claim_elements", to: "proof_frameworks", label: "Elements proven through frameworks", strength: Math.min(claimElementCount, proofFrameworkCount) },
-      { from: "proof_frameworks", to: "enforcement", label: "Frameworks guide enforcement pathways", strength: Math.min(proofFrameworkCount, agencyAuthCount) },
-      { from: "enforcement", to: "regulatory", label: "Enforcement informed by guidance", strength: Math.min(agencyAuthCount, guidanceCount) },
-      { from: "regulatory", to: "investigation", label: "Guidance shapes investigation approach", strength: Math.min(guidanceCount, investigationGuidanceCount) },
-      { from: "investigation", to: "intelligence", label: "Investigation feeds signal detection", strength: Math.min(investigationGuidanceCount, signalCount) },
-      { from: "intelligence", to: "statutes", label: "Signals trigger statutory analysis (feedback loop)", strength: Math.min(signalCount, statuteCount) },
-      { from: "statutes", to: "enforcement", label: "Statutes define agency authority", strength: Math.min(statuteCount, agencyAuthCount) },
-      { from: "case_law", to: "proof_frameworks", label: "Precedent establishes proof standards", strength: Math.min(caseLawCount, proofFrameworkCount) },
-      { from: "claim_elements", to: "investigation", label: "Elements drive investigation focus", strength: Math.min(claimElementCount, investigationGuidanceCount) },
-      { from: "intelligence", to: "proof_frameworks", label: "Weak joints expose proof gaps", strength: Math.min(weakJointCount, proofFrameworkCount) },
+      { from: "statutes", to: "case_law", label: "Statutes interpreted by case law", relationship_state: "configured_dependency", verified_edge_count: null },
+      { from: "case_law", to: "claim_elements", label: "Case law defines claim elements", relationship_state: "configured_dependency", verified_edge_count: null },
+      { from: "claim_elements", to: "proof_frameworks", label: "Elements proven through frameworks", relationship_state: "configured_dependency", verified_edge_count: null },
+      { from: "proof_frameworks", to: "enforcement", label: "Frameworks guide enforcement pathways", relationship_state: "configured_dependency", verified_edge_count: null },
+      { from: "enforcement", to: "regulatory", label: "Enforcement informed by guidance", relationship_state: "configured_dependency", verified_edge_count: null },
+      { from: "regulatory", to: "investigation", label: "Guidance shapes investigation approach", relationship_state: "configured_dependency", verified_edge_count: null },
+      { from: "investigation", to: "intelligence", label: "Investigation feeds signal detection", relationship_state: "configured_dependency", verified_edge_count: null },
+      { from: "intelligence", to: "statutes", label: "Signals trigger statutory analysis (feedback loop)", relationship_state: "configured_dependency", verified_edge_count: null },
+      { from: "statutes", to: "enforcement", label: "Statutes define agency authority", relationship_state: "configured_dependency", verified_edge_count: null },
+      { from: "case_law", to: "proof_frameworks", label: "Precedent establishes proof standards", relationship_state: "configured_dependency", verified_edge_count: null },
+      { from: "claim_elements", to: "investigation", label: "Elements drive investigation focus", relationship_state: "configured_dependency", verified_edge_count: null },
+      { from: "intelligence", to: "proof_frameworks", label: "Weak joints expose proof gaps", relationship_state: "configured_dependency", verified_edge_count: null },
     ];
 
-    const totalRecords = layers.reduce((sum, l) => sum + l.totalRecords, 0);
-    const totalTables = layers.reduce((sum, l) => sum + l.tables.length, 0);
-    const populatedLayers = layers.filter(l => l.status === "populated").length;
-    const seedCoveragePercent = Math.round((populatedLayers / layers.length) * 100);
+    const total_records = layers.reduce((sum, l) => sum + l.total_records, 0);
+    const total_tables = layers.reduce((sum, l) => sum + l.tables.length, 0);
+    const populated_layers = layers.filter(l => l.status === "populated").length;
+    const seed_coverage_percent = Math.round((populated_layers / layers.length) * 100);
 
     return {
       layers,
       connections,
       summary: {
-        totalRecords,
-        totalTables,
-        totalLayers: layers.length,
+        total_records,
+        total_tables,
         total_layers: layers.length,
-        populatedLayers,
-        seedCoveragePercent,
-        completion_percent: seedCoveragePercent,
+        populated_layers,
+        seed_coverage_percent,
+        completion_percent: seed_coverage_percent,
         completion_label: "Seed coverage",
         completion_caveat: "Configured seed-layer coverage only. Not national/full-corpus completion.",
-        currentSubstrate,
+        current_substrate,
       },
     };
   }),

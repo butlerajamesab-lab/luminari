@@ -142,9 +142,11 @@ describe("live adjacent runtime continuity", () => {
     ]);
   });
 
-  it("joins the API source registry through its live source_name column", () => {
-    const source = read("server/routers.ts");
-    expect(source).toContain("api_source_registry!inner(source_key,source_name)");
-    expect(source).not.toContain("api_source_registry!inner(source_key,name)");
+  it("keeps the proof route bound to the adapter using the live source identity columns", () => {
+    expect(read("server/routers.ts")).toContain('read_benefits_resource_proof("benefits_office", "benefitsDshsOfficeProof")');
+    const source = read("server/benefits-resource-proof.ts");
+    expect(source).toContain("s.id = n.source_id and s.source_key = $2");
+    expect(source).not.toContain("s.name");
+    // Exact SQL execution and returned cards are covered by benefits-resource-proof.test.ts.
   });
 });

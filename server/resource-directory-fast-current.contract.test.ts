@@ -1,18 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { resourceDisplayText } from "./services/resource-directory-fast-current";
+import { resource_display_text } from "./services/resource-directory-fast-current";
 
 describe("current resource directory read contract", () => {
   it("renders preserved multilingual object strings without mutating raw source storage", () => {
     expect(
-      resourceDisplayText(
+      resource_display_text(
         "{'english': 'Guam Behavioral Health and Wellness Center (GBHWC)', 'local': 'Dipattamenton Salut Hinasso'}",
       ),
     ).toBe("Guam Behavioral Health and Wellness Center (GBHWC)");
     expect(
-      resourceDisplayText('{"english":"Legal Aid","local":"Ayuda Legal"}'),
+      resource_display_text('{"english":"Legal Aid","local":"Ayuda Legal"}'),
     ).toBe("Legal Aid");
-    expect(resourceDisplayText("Plain source name")).toBe("Plain source name");
+    expect(resource_display_text("Plain source name")).toBe("Plain source name");
   });
 
   it("uses the current resource/program civic-object catalog instead of the repeated-lane breadth view", () => {
@@ -20,9 +20,9 @@ describe("current resource directory read contract", () => {
       "server/services/resource-directory-fast-current.ts",
       "utf8",
     );
-    expect(source).toContain("public.v_lighthouse_resource_program_catalog_v2");
+    expect(source).toContain("public.v_lighthouse_resource_program_classified_v1");
     expect(source).toContain("with catalog as materialized");
-    expect(source).toContain("has_more: hasMore");
+    expect(source).toContain("has_more,");
     expect(source).not.toContain("count(*) over()::int as filtered_total");
     expect(source).not.toContain("v_lighthouse_resource_directory_breadth_v3");
   });
@@ -33,9 +33,9 @@ describe("current resource directory read contract", () => {
       "utf8",
     );
     expect(source).toContain("SUMMARY_CACHE_TTL_MS");
-    expect(source).toContain("summaryInFlight");
-    expect(source).toContain("const fetchLimit = limit + 1");
-    expect(source).toContain("total_is_exact: !hasMore");
+    expect(source).toContain("summary_in_flight");
+    expect(source).toContain("const fetch_limit = limit + 1");
+    expect(source).toContain("total_is_exact: !has_more");
   });
 
   it("uses the existing twelve-category presentation contract without rewriting source category text", () => {
@@ -53,7 +53,7 @@ describe("current resource directory read contract", () => {
       "server/services/resource-directory-fast-current.ts",
       "utf8",
     );
-    expect(source).toContain("source_resource_name: rawName");
-    expect(source).toContain("resource_name: displayName");
+    expect(source).toContain("source_resource_name: raw_name");
+    expect(source).toContain("resource_name: display_name");
   });
 });

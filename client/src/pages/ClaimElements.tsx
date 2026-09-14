@@ -1,3 +1,4 @@
+import { Reviewed_claim_references } from "@/components/ReviewedClaimReferences";
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { useCase } from "@/contexts/CaseContext";
@@ -255,6 +256,8 @@ export default function ClaimElements() {
           Case applicability is separated from the global legal library. A case candidate is a governed structural match, not a legal conclusion, and its elements remain unresolved until the downstream claim-proof system evaluates them.
         </p>
       </div>
+
+      <Reviewed_claim_references mode="claims" />
 
       <section className="space-y-3">
         <div className="flex items-center gap-2">

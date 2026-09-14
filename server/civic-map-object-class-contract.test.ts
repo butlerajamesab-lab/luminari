@@ -10,8 +10,8 @@ describe("Civic Map resource/program boundary", () => {
     expect(service).toContain("active_directory_records");
     expect(service).toContain("direct_resource_count");
     expect(service).toContain("program_count");
-    expect(service).toContain("sum(direct_resource_count)::int");
-    expect(service).toContain("sum(program_count)::int");
+    expect(service).toContain("count(*) filter(where object_class='resource')::int as direct_resource_count");
+    expect(service).toContain("count(*) filter(where object_class='program')::int as program_count");
   });
 
   it("labels combined jurisdiction totals as directory records", () => {
