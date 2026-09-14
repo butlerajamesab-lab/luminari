@@ -625,10 +625,10 @@ const valid_date = (value?: string | null): Date | null => {
 };
 
 const lifecycle_for_bill = (bill: docket_bill, cache_fresh: boolean): lifecycle_state => {
-  if (!cache_fresh) return "freshness_unknown";
-  if (bill.radar?.next_event_date) return "action_approaching";
   const status = Number(bill.status);
   if ([4, 5, 6].includes(status)) return "completed";
+  if (!cache_fresh) return "freshness_unknown";
+  if (bill.radar?.next_event_date) return "action_approaching";
   const last_action = valid_date(bill.last_action_date || bill.status_date);
   if (last_action && Date.now() - last_action.getTime() > 90 * 24 * 60 * 60 * 1000) return "stalled";
   return "live";
@@ -756,7 +756,13 @@ function DocketBillFeed() {
 
   const bills = state_data?.bills ?? [];
   const selected_cache_status = cache_statuses.find(status => status.state === selected_state);
-  const visible_bills = bills.filter(bill => show_completed || lifecycle_for_bill(bill, selected_cache_status?.is_fresh === true) !== "completed");
+  const visible_bills = bills
+    .filter(bill => show_completed || lifecycle_for_bill(bill, selected_cache_status?.is_fresh === true) !== "completed")
+    .sort((left, right) => {
+      const velocity_delta = (right.radar?.velocity_score ?? 0) - (left.radar?.velocity_score ?? 0);
+      if (velocity_delta !== 0) return velocity_delta;
+      return (valid_date(right.last_action_date)?.getTime() ?? 0) - (valid_date(left.last_action_date)?.getTime() ?? 0);
+    });
 
   return (
     <div style={{ background: dk.sectionBg, border: `1px solid ${dk.steelBorder}`, borderRadius: "8px", padding: "1rem 1.25rem", marginBottom: "1.5rem" }}>
