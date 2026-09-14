@@ -2,18 +2,57 @@ import { query_with_diagnostics } from "../db";
 import { ENV } from "../_core/env";
 import { resource_source_access } from "./resource-source-access";
 
+/** The graph view's artifact branch, projected before any civic-object payload
+ * hydration. Anchors still require a current object reference; a storage row
+ * alone never creates a graph node or permission to open a source.
+ */
+function current_artifact_nodes() {
+  return `select 'artifact:' || md5(c.artifact_key) as node_id,'source_artifact'::text as node_type,
+          coalesce(nullif(a.object_name,''),c.artifact_key) as label,null::text as jurisdiction_code,
+          'derived_anchor'::text as node_origin,
+          case when a.extraction_status is null or a.extraction_status like 'fresh_%' then 'ready' else 'observed' end as node_state,
+          null::text as object_ref,c.artifact_key,'artifact:0'::text as source_locator,
+          a.content_sha256 as source_content_sha256,null::text as source_candidate_hash,
+          jsonb_build_object('artifact_role',a.artifact_role,'semantic_family',a.semantic_family,'extraction_status',a.extraction_status) as metadata
+     from (select distinct artifact_key from public.v_lighthouse_civic_object_current_v1 where artifact_key is not null) c
+     left join public.luminari_corpus_source_artifact_v1 a on a.artifact_key=c.artifact_key`;
+}
+
+function current_jurisdiction_nodes() {
+  return `select 'jurisdiction:' || jurisdiction_code as node_id,'jurisdiction'::text as node_type,
+          jurisdiction_code as label,jurisdiction_code,'derived_anchor'::text as node_origin,'ready'::text as node_state,
+          null::text as object_ref,null::text as artifact_key,null::text as source_locator,
+          null::text as source_content_sha256,null::text as source_candidate_hash,
+          jsonb_build_object('basis','current_civic_object_jurisdiction') as metadata
+     from (select distinct coalesce(nullif(state_code,''),nullif(jurisdiction,'')) as jurisdiction_code
+       from public.v_lighthouse_civic_object_current_v1) c where jurisdiction_code is not null`;
+}
+
 export async function read_current_graph_source(node_id: string) {
+  // Jurisdiction anchors do not carry a source artifact. Neither they nor
+  // unknown graph ID namespaces can establish a document-opening permission.
+  if (!node_id.startsWith("artifact:") && !node_id.startsWith("object:"))
+    return { node_id, source_access: resource_source_access(undefined, ENV.lighthouseSupabaseUrl) };
+  // Source access needs only exact current identity and its expected hash. The
+  // broad graph view also hydrates every action payload, which is unnecessary
+  // for this check and competes with the selected record's relationship page.
+  const source_nodes = node_id.startsWith("artifact:") ? current_artifact_nodes()
+    : `select 'object:' || civic_object_uid as node_id,artifact_key,source_content_sha256
+        from public.v_lighthouse_civic_object_current_v1`;
   const { rows } = await query_with_diagnostics<Record<string, any>>(
-    `select n.node_id,n.source_content_sha256 as expected_sha256,
+    `with bound_nodes as materialized (
+       select node_id,artifact_key,source_content_sha256 from (${source_nodes}) source_nodes where node_id=$1
+     )
+     select n.node_id,n.source_content_sha256 as expected_sha256,
             a.bucket_id,a.object_name,a.storage_state,a.storage_updated_at,a.content_sha256,
             b.public as bucket_public,(o.id is not null) as object_present,
             o.updated_at as object_updated_at,
             (a.storage_updated_at = o.updated_at) as storage_version_matches
-       from public.v_lighthouse_graph_nodes_v1 n
+       from bound_nodes n
        left join public.luminari_corpus_source_artifact_v1 a on a.artifact_key=n.artifact_key
        left join storage.buckets b on b.id=a.bucket_id
        left join storage.objects o on o.bucket_id=a.bucket_id and o.name=a.object_name
-      where n.node_id=$1 limit 1`,
+      where (select count(*) from bound_nodes)=1`,
     [node_id],
     { label: "current_graph_bound_source_access", pool_acquire_timeout_ms: 1_000, query_timeout_ms: 5_000 },
   );
@@ -205,13 +244,17 @@ export async function read_current_graph_node_page(input: page_input & {
       or replace(coalesce((presentation->'reviewed_category_memberships')::text,''),'_',' ') ilike ${p})`);
   }
   const where = conditions.length ? `where ${conditions.join(" and ")}` : "";
+  const node_source = input.node_type?.trim() === "source_artifact" || input.node_id?.trim().startsWith("artifact:")
+    ? `(${current_artifact_nodes()})`
+    : input.node_type?.trim() === "jurisdiction" || input.node_id?.trim().startsWith("jurisdiction:")
+      ? `(${current_jurisdiction_nodes()})` : "public.v_lighthouse_graph_nodes_v1";
   return read_page(
     `select * from (
        select n.node_id,n.node_type,${reviewed_resource_label("n.label", "n.object_ref")} as label,
               n.jurisdiction_code,n.node_origin,n.node_state,n.object_ref,n.artifact_key,n.source_locator,
               n.source_content_sha256,n.source_candidate_hash,n.metadata,
               ${reviewed_resource_presentation("n.label", "n.metadata->>'category'")} as presentation
-         from public.v_lighthouse_graph_nodes_v1 n
+         from ${node_source} n
          left join reviewed_resources r on ${reviewed_resource_binding("n", "r", true)}
       ) presented_nodes ${where}`,
     "case when node_origin='civic_object' then 0 else 1 end,node_type,label,node_id",

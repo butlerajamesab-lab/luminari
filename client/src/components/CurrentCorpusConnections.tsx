@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useLocation, useSearch } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,13 @@ import { current_object_inspection_route } from "../../../shared/architecture-ro
 
 type corpus_row = Record<string, unknown>;
 const text_value = (value: unknown) => typeof value === "string" && value.trim() ? value : "Not recorded";
+
+function use_scoped_offset(scope: string): [number, (value: number) => void] {
+  const [page, set_page] = useState({ scope, offset: 0 });
+  // Derive the first window during navigation, before queries run. An effect
+  // would first request the new identity at the previous identity's offset.
+  return [page.scope === scope ? page.offset : 0, offset => set_page({ scope, offset })];
+}
 
 export function ResourceReviewPresentation({ value }: { value: unknown }) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
@@ -44,27 +51,32 @@ export default function CurrentCorpusConnections({ object_classes }: { object_cl
   const params = new URLSearchParams(search);
   const object_class = params.get("object_class") ?? "";
   const selected_node_id = params.get("node_id") ?? "";
-  const [query, set_query] = useState("");
-  const [submitted_query, set_submitted_query] = useState("");
-  const [offset, set_offset] = useState(0);
-  const [edge_offset, set_edge_offset] = useState(0);
-  const [unresolved_offset, set_unresolved_offset] = useState(0);
-  useEffect(() => { set_offset(0); set_edge_offset(0); set_unresolved_offset(0); }, [object_class, selected_node_id, submitted_query]);
+  const [search_state, set_search_state] = useState({ object_class, query: "", submitted_query: "" });
+  const query = search_state.object_class === object_class ? search_state.query : "";
+  const submitted_query = search_state.object_class === object_class ? search_state.submitted_query : "";
+  const scope = JSON.stringify([object_class, selected_node_id, submitted_query]);
+  const [offset, set_offset] = use_scoped_offset(scope);
+  const [edge_offset, set_edge_offset] = use_scoped_offset(scope);
+  const [unresolved_offset, set_unresolved_offset] = use_scoped_offset(scope);
   const node_page = trpc.canonicalCore.graph_node_page.useQuery({
     node_type: object_class || undefined, query: submitted_query || undefined, limit: 25, offset,
-  }, { enabled: Boolean(object_class), staleTime: 30_000 });
+  }, { enabled: Boolean(object_class) && !selected_node_id, staleTime: 30_000 });
   const selected_page = trpc.canonicalCore.graph_node_page.useQuery({
     node_id: selected_node_id || undefined, limit: 1,
   }, { enabled: Boolean(selected_node_id), staleTime: 30_000 });
+  // Load the exact record before its dependent reads. Browsing the whole class
+  // alongside selection used to launch four expensive graph scans in one batch.
+  const selection_loaded = Boolean(selected_node_id) && selected_page.isSuccess && selected_page.data?.total === 1
+    && selected_page.data.items[0]?.node_id === selected_node_id;
   const selected_source = trpc.canonicalCore.graph_node_source.useQuery({ node_id: selected_node_id },
-    { enabled: Boolean(selected_node_id), staleTime: 30_000 });
+    { enabled: selection_loaded, staleTime: 30_000 });
   const edge_page = trpc.canonicalCore.graph_edge_page.useQuery({
     node_id: selected_node_id || undefined, semantic_only: false, limit: 25, offset: edge_offset,
-  }, { enabled: Boolean(selected_node_id), staleTime: 30_000 });
+  }, { enabled: selection_loaded, staleTime: 30_000 });
   const unresolved_page = trpc.canonicalCore.unresolved_relationship_page.useQuery({
     node_id: selected_node_id || undefined, limit: 25, offset: unresolved_offset,
-  }, { enabled: Boolean(selected_node_id), staleTime: 30_000 });
-  const selected = selected_page.data?.items[0] as corpus_row | undefined;
+  }, { enabled: selection_loaded && !edge_page.isFetching && (edge_page.isSuccess || edge_page.isError), staleTime: 30_000 });
+  const selected = selection_loaded ? selected_page.data?.items[0] as corpus_row | undefined : undefined;
 
   return <Card id="current-object-connections" className="border-cyan-400/20">
     <CardHeader><CardTitle>Current records and connections</CardTitle>
@@ -79,15 +91,16 @@ export default function CurrentCorpusConnections({ object_classes }: { object_cl
             {[...new Set([...object_classes, "source_artifact", "jurisdiction", ...(object_class ? [object_class] : [])])].map(value => <option key={value} value={value}>{value.replace(/_/g, " ")}</option>)}
           </select>
         </label>
-        <form className="flex gap-2" onSubmit={(event) => { event.preventDefault(); set_submitted_query(query); set_offset(0); }}>
-          <input aria-label="Search current records" className="rounded border bg-background px-2 text-sm" value={query} maxLength={240} onChange={(event) => set_query(event.target.value)} placeholder="Name, reviewed category, jurisdiction or source location" />
+        <form className="flex gap-2" onSubmit={(event) => { event.preventDefault(); set_search_state({ object_class, query, submitted_query: query }); set_offset(0); navigate(current_object_inspection_route(object_class)); }}>
+          <input aria-label="Search current records" className="rounded border bg-background px-2 text-sm" value={query} maxLength={240} onChange={(event) => set_search_state({ object_class, query: event.target.value, submitted_query })} placeholder="Name, reviewed category, jurisdiction or source location" />
           <Button size="sm" variant="outline" disabled={!object_class}>Search records</Button>
         </form>
       </div>
       {!object_class && <p className="text-sm text-muted-foreground">Choose a class above or select “Inspect records and connections” on a class card.</p>}
-      {object_class && node_page.isLoading && <p role="status">Loading current records…</p>}
-      {node_page.error && <p role="alert">Current records could not be loaded. The record count is unknown. <button className="underline" onClick={() => node_page.refetch()}>Retry</button></p>}
-      {object_class && node_page.data && <>
+      {selected_node_id && object_class && <Button size="sm" variant="outline" onClick={() => navigate(current_object_inspection_route(object_class))}>Browse this record class</Button>}
+      {!selected_node_id && object_class && node_page.isLoading && <p role="status">Loading current records…</p>}
+      {!selected_node_id && node_page.error && <p role="alert">Current records could not be loaded. The record count is unknown. <button className="underline" onClick={() => node_page.refetch()}>Retry</button></p>}
+      {!selected_node_id && object_class && node_page.data && <>
         <PageControls total={node_page.data.total} offset={offset} set_offset={set_offset} />
         <div className="space-y-2">{node_page.data.items.map((item: corpus_row) => <button type="button" key={String(item.node_id)}
           className="block w-full rounded border border-white/10 p-3 text-left hover:bg-white/5"
@@ -100,7 +113,8 @@ export default function CurrentCorpusConnections({ object_classes }: { object_cl
       {selected_node_id && <section className="space-y-3 rounded border border-white/10 p-4" aria-label="Selected record connections">
         {selected_page.isLoading && <p role="status">Loading selected record…</p>}
         {selected_page.error && <p role="alert">The selected record could not be loaded. <button className="underline" onClick={() => selected_page.refetch()}>Retry</button></p>}
-        {selected_page.data && !selected && <p>This record is not in the current projection. Its source identity has not been substituted.</p>}
+        {selected_page.data?.total === 0 && <p>This record is not in the current projection. Its source identity has not been substituted.</p>}
+        {selected_page.data && selected_page.data.total > 1 && <p>This identity matches multiple current records. A source record has not been chosen for you.</p>}
         {selected && <>
           <h3 className="font-semibold">{text_value(selected.label)}</h3>
           <dl className="grid gap-1 text-xs break-words">
@@ -111,7 +125,8 @@ export default function CurrentCorpusConnections({ object_classes }: { object_cl
           </dl>
           <ResourceReviewPresentation value={selected.presentation} />
           {selected_source.data?.source_access.url ? <a className="text-sm text-cyan-200 underline" href={selected_source.data.source_access.url} target="_blank" rel="noopener noreferrer">Open original source document</a>
-            : <p className="text-xs text-muted-foreground">{selected_source.error ? "Source access could not be checked." : selected_source.isLoading ? "Checking source access…" : selected_source.data?.source_access.status === "source_access_restricted" ? "This source requires authorized access." : "An accessible, version-bound original source has not been established."}</p>}
+            : selected_source.error ? <p role="alert" className="text-xs">Source access could not be checked. <button className="underline" onClick={() => selected_source.refetch()}>Retry source access</button></p>
+              : <p className="text-xs text-muted-foreground">{selected_source.isLoading ? "Checking source access…" : selected_source.data?.source_access.status === "source_access_restricted" ? "This source requires authorized access." : "An accessible, version-bound original source has not been established."}</p>}
         </>}
         <h4 className="font-medium">Recorded relationships</h4>
         {edge_page.isLoading && <p role="status">Loading recorded relationships…</p>}
