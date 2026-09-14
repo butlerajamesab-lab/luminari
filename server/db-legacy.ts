@@ -7,6 +7,7 @@ import { Pool } from "pg";
 import { create_database_pool, get_database_host_label } from "./pg-config";
 import { get_database_pool_lease_guard_snapshot } from "./database-pool-lease-guard";
 import { create_receiver_bound_lazy_proxy } from "./lazy-receiver-bound-proxy";
+import { describe_case_metadata_changes } from "./case-metadata-correction";
 import {
   users, cases, documents, quotes, entities, entityRoles,
   relationships, relationshipEvidence, claims, findings,
@@ -756,8 +757,63 @@ export async function verifyEntityOwnership(entityId: number, userId: number) {
   return entity;
 }
 
-export async function updateCase(id: number, userId: number, data: { name?: string; description?: string; status?: "active" | "archived"; domain?: string; container?: string }) {
+export async function updateCase(id: number, userId: number, data: { name?: string; description?: string | null; status?: "active" | "archived"; domain?: string | null; container?: string | null }) {
   await db.update(cases).set({ ...data, updatedAt: Date.now() }).where(and(eq(cases.id, id), eq(cases.userId, userId)));
+}
+
+export async function correctCaseMetadata(
+  id: number,
+  ownerUserId: number,
+  actorUserId: number,
+  data: { name?: string; description?: string | null; status?: "active" | "archived"; domain?: string | null; container?: string | null },
+) {
+  return db.transaction(async (tx: any) => {
+    const [current] = await tx.select({
+      userId: cases.userId,
+      name: cases.name,
+      description: cases.description,
+      status: cases.status,
+      domain: cases.domain,
+      container: cases.container,
+    })
+      .from(cases)
+      .where(and(eq(cases.id, id), eq(cases.userId, ownerUserId)))
+      .for("update");
+    if (!current) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Case not found" });
+    }
+
+    if (current.userId !== actorUserId) {
+      // Keep permission revocation serialized with the metadata correction.
+      // The preliminary route check cannot authorize this transaction.
+      const [collaborator] = await tx.select({ accessLevel: caseCollaborators.accessLevel })
+        .from(caseCollaborators)
+        .where(and(eq(caseCollaborators.caseId, id), eq(caseCollaborators.userId, actorUserId)))
+        .for("update");
+      if (collaborator?.accessLevel !== "WRITE") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Access denied: case metadata requires write access" });
+      }
+    }
+
+    const changes = describe_case_metadata_changes(current, data);
+    if (Object.keys(changes).length === 0) return false;
+
+    await tx.update(cases)
+      .set({ ...data, updatedAt: Date.now() })
+      .where(and(eq(cases.id, id), eq(cases.userId, ownerUserId)));
+    await insertSerializedAuditEntry(tx, {
+      caseId: id,
+      userId: actorUserId,
+      action: "correct_case_metadata",
+      targetType: "case_metadata",
+      targetId: id,
+      details: {
+        changes,
+        source_evidence_modified: false,
+      },
+    });
+    return true;
+  });
 }
 
 export async function deleteCase(id: number, userId: number) {

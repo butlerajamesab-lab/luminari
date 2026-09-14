@@ -25,7 +25,7 @@ async function isolated_substrate(artifact_keys = configuration.allowed_artifact
   const initial = read_file("supabase/migrations/20260811204240_fresh_corpus_reconciliation_v1.sql", "utf8");
   await database.exec(initial.slice(0, initial.indexOf("create table if not exists public.luminari_corpus_rebuild_run_v1")));
   for (const file of ["20260815073049_fresh_corpus_continuous_manifest_v2.sql",
-    "20260911201534_batch_existing_substrate_registration.sql", "20260812044452_fresh_corpus_atomic_record_substrate.sql"]) {
+    "20260911201534_batch_existing_substrate_registration.sql", "20260914033026_corpus_retained_copy_resolution.sql", "20260812044452_fresh_corpus_atomic_record_substrate.sql"]) {
     await database.exec(read_file(`supabase/migrations/${file}`, "utf8"));
   }
   await database.exec("CREATE TABLE canonical_sentinel(id text primary key,body text); INSERT INTO canonical_sentinel VALUES('original','unchanged');");

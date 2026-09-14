@@ -3,7 +3,7 @@ import crypto from "node:crypto";
 import JSZip from "jszip";
 import type { PoolClient as pool_client } from "pg";
 import { getPool as get_pool } from "../db";
-import { download_corpus_storage_artifact } from "./corpus-storage-download";
+import { download_resolved_corpus_artifact } from "./corpus-source-resolution";
 import { parse_batch_atomic_records } from "./batch-corpus-source";
 import { workbookSheets, create_worksheet_validator, resolve_shared_string } from "./xlsx-workbook-structure";
 
@@ -531,7 +531,7 @@ async function process_artifact(run_id: string, artifact: source_artifact, cance
   if (!claim.rowCount) return;
   let client: pool_client | undefined;
   try {
-    const buffer = await download_corpus_storage_artifact(artifact, fetch, process.env, cancellation_signal);
+    const buffer = await download_resolved_corpus_artifact(artifact, fetch, process.env, cancellation_signal);
     const content_sha256 = sha256(buffer);
     const records = await parse_artifact(artifact, buffer);
     cancellation_signal?.throwIfAborted();

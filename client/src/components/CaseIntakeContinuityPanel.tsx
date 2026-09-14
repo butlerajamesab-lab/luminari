@@ -4,6 +4,7 @@ import { Activity, ArrowRight, Clock3, FilePlus2, Link2, MessageSquarePlus } fro
 import { trpc } from "@/lib/trpc";
 import { buildFromParam } from "@/lib/buildFromParam";
 import { useCase } from "@/contexts/CaseContext";
+import { CaseMetadataEditor } from "@/components/CaseMetadataEditor";
 import {
   case_intake_surface_for_path,
   write_case_intake_origin_context,
@@ -83,6 +84,11 @@ export function CaseIntakeContinuityPanel({
     { caseId },
     { enabled: !!surface },
   );
+  const showMetadataEditor = !routePath.startsWith("/guide/");
+  const editableCase = trpc.cases.get.useQuery(
+    { id: caseId },
+    { enabled: showMetadataEditor },
+  );
 
   if (!surface) return null;
 
@@ -129,6 +135,20 @@ export function CaseIntakeContinuityPanel({
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
+              {showMetadataEditor
+                && !editableCase.isLoading
+                && !editableCase.isError
+                && editableCase.data?.canEditMetadata === true ? (
+                <CaseMetadataEditor
+                  caseId={caseId}
+                  metadata={{
+                    name: editableCase.data.name,
+                    description: editableCase.data.description,
+                    domain: editableCase.data.domain,
+                    container: editableCase.data.container,
+                  }}
+                />
+              ) : null}
               <Button size="sm" className="gap-2" onClick={() => openLauncher("new_evidence")}>
                 <FilePlus2 className="h-3.5 w-3.5" />
                 Add Evidence

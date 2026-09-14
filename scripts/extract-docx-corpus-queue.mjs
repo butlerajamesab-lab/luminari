@@ -5,6 +5,7 @@ import { promisify } from "node:util";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { read_registered_queue_storage } from "./lib/corpus-queue-storage-resolution.mjs";
 import {
   create_pool,
   get_table_columns,
@@ -122,7 +123,7 @@ async function buffer_from_public_storage_url(row) {
   return fetch_storage_buffer(build_public_storage_url(row), null, "public-storage-url-download");
 }
 
-async function get_docx_source(row) {
+async function get_docx_source(row, pool) {
   const attempts = [];
   const raw_text = existing_raw_text(row);
   attempts[`push`]({ source: "corpus_import_queue.raw_text", status: raw_text ? "selected" : "empty" });
@@ -131,6 +132,11 @@ async function get_docx_source(row) {
   const staged_buffer = buffer_from_row(row);
   attempts[`push`]({ source: "corpus_import_queue.base64_payload", status: staged_buffer?.length ? "selected" : "empty" });
   if (staged_buffer?.length) return { buffer: staged_buffer, raw_text: null, source: "corpus_import_queue.base64_payload", attempts };
+
+  // A registered source must pass manifest/version/hash checks. Errors are not
+  // retried through weaker public/render paths or a different generation.
+  const registered = await read_registered_queue_storage(row, pool);
+  if (registered) return registered;
 
   try {
     const storage_buffer = await buffer_from_authenticated_storage(row);
@@ -317,7 +323,7 @@ async function main() {
     for (const row of rows) {
       const row_report = { id: row.id ?? null, source_name: row.source_name ?? null, storage_bucket: row.storage_bucket ?? null, storage_path: row.storage_path ?? null, byte_size: row.byte_size ?? null, sha256: row.sha256 ?? null, content_type: row.content_type ?? null, source_ext: row.source_ext ?? null, target_hint: row.target_hint ?? null, previous_status: row.import_status ?? null, action: args.apply ? "pending" : "would-extract", status: null, character_count: 0, line_count: 0, parser_name: report.parser.name, parser_version: report.parser.version, extracted_at: null, error: null, binary_source: null, binary_source_attempts: [], public_storage_url: build_public_storage_url(row), next_step: "Extract raw text first; then run Form Signal Extraction v3 and route candidates through existing gates." };
       try {
-        const source = await get_docx_source(row);
+        const source = await get_docx_source(row, pool);
         if (!source.buffer && !source.raw_text) { row_report.action = "blocked_missing_binary_source"; row_report.status = "docx_extraction_failed"; row_report.error = "No raw_text, no base64_payload, authenticated Storage REST download failed/unavailable, authenticated render Storage fallback failed/unavailable, and public Storage URL fallback failed/unavailable."; row_report.binary_source_attempts = source.attempts; report.rows[`push`](row_report); continue; }
         const extracted = source.raw_text ? { raw_text: source.raw_text, entries: safe_json(row.payload, {})?.docx_extraction?.parser_entries ?? [] } : await extract_docx_text(source.buffer);
         const raw_text = extracted.raw_text;

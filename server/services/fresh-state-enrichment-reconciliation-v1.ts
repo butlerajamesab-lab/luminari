@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import JSZip from "jszip";
 import { getPool } from "../db";
-import { SUPABASE_PROJECT } from "../_core/health-diagnostics";
+import { download_resolved_corpus_artifact } from "./corpus-source-resolution";
 import { background_feature_enabled } from "../runtime-role";
 
 export const STATE_ENRICHMENT_ENGINE_VERSION = "fresh_state_enrichment_reconciliation_v1.0.0";
@@ -151,27 +151,8 @@ async function extractDocxText(buffer: Buffer): Promise<string> {
   return wordXmlToText(xml);
 }
 
-function encodeStoragePath(value: string): string {
-  return value.split("/").filter(Boolean).map(encodeURIComponent).join("/");
-}
-
-function storageBaseUrl(): string {
-  return (process.env.SUPABASE_URL || process.env.LIGHTHOUSE_SUPABASE_URL || process.env.VITE_SUPABASE_URL || `https://${SUPABASE_PROJECT}.supabase.co`).replace(/\/+$/, "");
-}
-
 async function downloadArtifact(artifact: SourceArtifact): Promise<Buffer> {
-  const url = `${storageBaseUrl()}/storage/v1/object/public/${encodeURIComponent(artifact.bucket_id)}/${encodeStoragePath(artifact.object_name)}`;
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30_000);
-  try {
-    const response = await fetch(url, { signal: controller.signal, headers: { Accept: "application/octet-stream" } });
-    if (!response.ok) throw new Error(`storage_download_http_${response.status}`);
-    const buffer = Buffer.from(await response.arrayBuffer());
-    if (artifact.byte_size > 0 && buffer.byteLength !== artifact.byte_size) throw new Error(`storage_byte_size_mismatch_expected_${artifact.byte_size}_actual_${buffer.byteLength}`);
-    return buffer;
-  } finally {
-    clearTimeout(timeout);
-  }
+  return download_resolved_corpus_artifact(artifact);
 }
 
 export function parseStateEnrichmentText(text: string): ParsedResource[] {
