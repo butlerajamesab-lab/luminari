@@ -146,6 +146,7 @@ async function isolated_substrate() {
   await database.exec(initial.slice(0, initial.indexOf("create table if not exists public.luminari_corpus_rebuild_run_v1")));
   await database.exec(read_file(resolve("supabase/migrations/20260815073049_fresh_corpus_continuous_manifest_v2.sql"), "utf8"));
   await database.exec(read_file(resolve("supabase/migrations/20260911201534_batch_existing_substrate_registration.sql"), "utf8"));
+  await database.exec(read_file(resolve("supabase/migrations/20260914033026_corpus_retained_copy_resolution.sql"), "utf8"));
   await database.exec(read_file(resolve("supabase/migrations/20260812044452_fresh_corpus_atomic_record_substrate.sql"), "utf8"));
   const snapshot = JSON.parse(read_file(resolve("config/advocacy-import-schema-v1.json"), "utf8"));
   const contract = snapshot.tables["public.sais_resources"];

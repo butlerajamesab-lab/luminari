@@ -3,7 +3,7 @@ import { StringDecoder } from "node:string_decoder";
 import JSZip from "jszip";
 import { workbookSheets, create_worksheet_validator, resolve_shared_string } from "./xlsx-workbook-structure";
 import { getPool } from "../db";
-import { download_corpus_storage_artifact } from "./corpus-storage-download";
+import { download_resolved_corpus_artifact } from "./corpus-source-resolution";
 
 export const FRESH_CORPUS_ENGINE_VERSION = "fresh_corpus_reconciliation_v1.2.5";
 export const FRESH_CORPUS_PARSER_VERSION = "fresh_registry_typed_parser_v1.2.4";
@@ -1046,7 +1046,7 @@ async function processArtifact(runId: string, artifact: SourceArtifact): Promise
   }
 
   try {
-    const buffer = await download_corpus_storage_artifact(artifact);
+    const buffer = await download_resolved_corpus_artifact(artifact);
     const contentSha256 = sha256(buffer);
     const ext = artifact.object_name.toLowerCase().match(/\.[a-z0-9]+$/)?.[0] ?? "";
     let text = "";
