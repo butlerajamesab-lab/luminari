@@ -48,6 +48,7 @@ describe("Docket Radar live contract", () => {
     expect(read("server/civic-genome-db.ts")).toMatch(/list_genome_bills[\s\S]*conditions\.push\(`family_id = \$\$\{params\.length\}`\)/);
     expect(read("server/civic-genome-db.ts")).toMatch(/list_genome_events[\s\S]*conditions\.push\(`event\.family_id = \$\$\{params\.length\}`\)/);
     expect(read("supabase/migrations/20260914104100_docket_event_correction_append_only_repair.sql")).toContain("event_payload_json - 'classification_correction'");
+    expect(read("supabase/migrations/20260914110220_docket_terminal_event_classification_corrections.sql")).toContain("event.event_type in ('enacted', 'vetoed', 'failed')");
   });
 
   it("runs refresh and activation only in the authorized worker", () => {
