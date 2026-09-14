@@ -195,55 +195,62 @@ export const analyzeRouter = router({
            s.session_status,
            s.completion_state,
            s.created_at::text,
-           count(distinct ia.artifact_id) filter (
-             where ia.artifact_type = 'source_document'
-               and coalesce(d.document_resolution, 'active') = 'active'
-           ) as source_artifact_count,
-           count(distinct ilr.layer_run_id) as layer_run_count,
-           count(distinct ilr.layer_run_id) filter (where ilr.is_sealed = true) as sealed_layer_run_count,
-           array_agg(distinct ilr.layer_name order by ilr.layer_name) filter (
-             where ilr.run_status = 'completed'
-               and ilr.is_sealed = true
-               and ilr.receipt ->> 'receipt_type' = 'layer_execution'
-               and ilr.receipt ->> 'execution_contract_version' = 'luminari.intake.layer-execution.v1'
-               and ilr.canonicalization_version = 'luminari.intake.canonical-json.v2'
-           ) as sealed_layer_names,
-           (array_agg(ilr.receipt_hash order by ilr.sealed_at desc nulls last)
-             filter (where ilr.receipt_hash ~ '^[0-9a-f]{64}$'))[1] as latest_receipt_hash,
+           artifact_stats.source_artifact_count,
+           layer_stats.layer_run_count,
+           layer_stats.sealed_layer_run_count,
+           layer_stats.sealed_layer_names,
+           layer_stats.latest_receipt_hash,
            s.metadata #>> '{last_governed_execution,jurisdiction}' as last_governed_jurisdiction,
            s.metadata #>> '{last_governed_execution,rule_as_of}' as last_governed_rule_as_of,
            s.metadata ->> 'runtime_projection_invalidated_at' as projection_invalidated_at,
-           (
-             select max(audit.created_at)::text
-               from public.audit_trail audit
-              where audit.case_id = cib.legacy_case_id
-                and audit.action = 'run_intake_spine'
-                and (case
-                  when pg_catalog.pg_input_is_valid(audit.details, 'jsonb')
-                  then audit.details::jsonb ->> 'intake_session_id'
-                end) = s.intake_session_id::text
-           ) as last_successful_review_epoch_ms
+           audit_stats.last_successful_review_epoch_ms
          from public.intake_sessions s
          join public.case_intake_links cil
            on cil.intake_session_id = s.intake_session_id
          join public.case_identity_bridge cib
            on cib.case_uuid = cil.case_uuid
-         left join public.intake_artifacts ia
-           on ia.intake_session_id = s.intake_session_id
-         left join public.documents d
-           on coalesce(ia.metadata ->> 'legacy_document_id', '') ~ '^[0-9]+$'
-          and d.id = (ia.metadata ->> 'legacy_document_id')::integer
-          and d.case_id = cib.legacy_case_id
-         left join public.intake_layer_runs ilr
-           on ilr.intake_session_id = s.intake_session_id
+         left join lateral (
+           select count(*) as source_artifact_count
+             from public.intake_artifacts ia
+             left join public.documents d
+               on coalesce(ia.metadata ->> 'legacy_document_id', '') ~ '^[0-9]+$'
+              and d.id = (ia.metadata ->> 'legacy_document_id')::integer
+              and d.case_id = cib.legacy_case_id
+            where ia.intake_session_id = s.intake_session_id
+              and ia.artifact_type = 'source_document'
+              and coalesce(d.document_resolution, 'active') = 'active'
+         ) artifact_stats on true
+         left join lateral (
+           select
+             count(*) as layer_run_count,
+             count(*) filter (where ilr.is_sealed = true) as sealed_layer_run_count,
+             array_agg(distinct ilr.layer_name order by ilr.layer_name) filter (
+               where ilr.run_status = 'completed'
+                 and ilr.is_sealed = true
+                 and ilr.receipt ->> 'receipt_type' = 'layer_execution'
+                 and ilr.receipt ->> 'execution_contract_version' = 'luminari.intake.layer-execution.v1'
+                 and ilr.canonicalization_version = 'luminari.intake.canonical-json.v2'
+             ) as sealed_layer_names,
+             (array_agg(ilr.receipt_hash order by ilr.sealed_at desc nulls last)
+               filter (where ilr.receipt_hash ~ '^[0-9a-f]{64}$'))[1] as latest_receipt_hash
+             from public.intake_layer_runs ilr
+            where ilr.intake_session_id = s.intake_session_id
+         ) layer_stats on true
+         left join lateral (
+           select max(audit.created_at)::text as last_successful_review_epoch_ms
+             from public.audit_trail audit
+            where audit.case_id = cib.legacy_case_id
+              and audit.action = 'run_intake_spine'
+              and (case
+                when pg_catalog.pg_input_is_valid(audit.details, 'jsonb')
+                then audit.details::jsonb ->> 'intake_session_id'
+              end) = s.intake_session_id::text
+         ) audit_stats on true
         where cib.legacy_case_id = $1
           and cil.is_primary = true
           and cil.link_type = 'primary_projection'
           and s.session_type = 'live'
           and s.entry_channel = 'upload'
-        group by s.intake_session_id, s.session_type, s.entry_channel, s.source_label,
-                 s.session_status, s.completion_state, s.created_at, s.metadata,
-                 cib.legacy_case_id
         order by s.created_at asc`,
         [input.caseId],
       );
