@@ -13,7 +13,8 @@ const STATE_CACHE_TTL_MS = 8 * 60 * 60 * 1000;
 
 let interval_timer: NodeJS.Timeout | null = null;
 let initial_timer: NodeJS.Timeout | null = null;
-let cycle_running = false;
+let active_cycle: Promise<void> | null = null;
+let active_controller: AbortController | null = null;
 let stopped = false;
 
 type docket_cache_status_row = {
@@ -208,16 +209,17 @@ async function warm_state(
   return payload;
 }
 
-export async function run_docket_state_cache_warmer_cycle(port: number): Promise<void> {
-  if (cycle_running || stopped) return;
-  cycle_running = true;
+export function run_docket_state_cache_warmer_cycle(port: number): Promise<void> {
+  if (active_cycle) return active_cycle;
+  if (stopped) return Promise.resolve();
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-  const limit = batch_size();
-  const started_at = Date.now();
-
-  try {
+  active_controller = controller;
+  const cycle = (async () => {
+    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    const limit = batch_size();
+    const started_at = Date.now();
+    try {
     const cache_states = await read_cache_status(port, controller.signal);
     const candidates = sort_docket_warm_candidates(cache_states);
     const states_to_warm = candidates.slice(0, limit);
@@ -258,18 +260,24 @@ export async function run_docket_state_cache_warmer_cycle(port: number): Promise
       remaining_count: Math.max(0, candidates.length - successful_count),
       duration_ms: Date.now() - started_at,
     });
-  } catch (error) {
-    console.error("[DocketCacheWarmer] cycle_failed", {
-      limit,
-      duration_ms: Date.now() - started_at,
-      error: controller.signal.aborted
-        ? `docket_state_cache_warmer_timeout_${REQUEST_TIMEOUT_MS}ms`
-        : safe_error(error),
-    });
-  } finally {
-    clearTimeout(timeout);
-    cycle_running = false;
-  }
+    } catch (error) {
+      console.error("[DocketCacheWarmer] cycle_failed", {
+        limit,
+        duration_ms: Date.now() - started_at,
+        error: controller.signal.aborted
+          ? `docket_state_cache_warmer_timeout_${REQUEST_TIMEOUT_MS}ms`
+          : safe_error(error),
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
+  })();
+  active_cycle = cycle;
+  void cycle.finally(() => {
+    if (active_cycle === cycle) active_cycle = null;
+    if (active_controller === controller) active_controller = null;
+  });
+  return cycle;
 }
 
 export function start_docket_state_cache_warmer(port: number): void {
@@ -302,10 +310,12 @@ export function start_docket_state_cache_warmer(port: number): void {
   interval_timer.unref?.();
 }
 
-export function stop_docket_state_cache_warmer(): void {
+export async function stop_docket_state_cache_warmer(): Promise<void> {
   stopped = true;
   if (initial_timer) clearTimeout(initial_timer);
   if (interval_timer) clearInterval(interval_timer);
   initial_timer = null;
   interval_timer = null;
+  active_controller?.abort();
+  await active_cycle;
 }

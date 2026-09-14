@@ -194,7 +194,7 @@ async function shutdown(signal: string): Promise<void> {
   console.log("[PrismRosettaWorker] shutdown_started", { signal });
   clearInterval(keep_alive);
   await Promise.all([legislative_version_queue_startup, docket_worker_startup]);
-  stop_docket_state_cache_warmer();
+  await stop_docket_state_cache_warmer();
   await stop_docket_bill_activation_queue_worker();
   if (docket_loopback_server) {
     await new Promise<void>(resolve => docket_loopback_server!.close(() => resolve()));

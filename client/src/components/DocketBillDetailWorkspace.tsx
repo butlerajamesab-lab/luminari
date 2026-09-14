@@ -75,9 +75,9 @@ const readable_date = (value: unknown): string => {
     : "Not reported";
 };
 
-const status_label = (status: unknown, lifecycle_text: unknown, last_action: unknown): string => {
-  const evidence = display_value(lifecycle_text).toLowerCase();
-  if ([5, 6].includes(Number(status)) || /^\s*effective date\b/i.test(display_value(last_action)) || /chapter|enacted|signed by governor|became law|failed|withdrawn|dead|vetoed|postponed indefinitely/.test(evidence)) return "Completed";
+const status_label = (status: unknown, last_action: unknown): string => {
+  const evidence = display_value(last_action).toLowerCase();
+  if ([5, 6].includes(Number(status)) || /^\s*(?:chapter(?:ed)?|effective date)\b/.test(evidence) || /\b(?:enacted|failed|withdrawn|dead|vetoed)\b|signed by governor|became law|postponed indefinitely/.test(evidence)) return "Completed";
   if (Number(status) === 4) return "Passed · further action possible";
   if (Number(status) === 3) return "Passed both chambers";
   if (Number(status) === 2) return "Engrossed";
@@ -165,7 +165,7 @@ export function DocketBillDetailWorkspace({ payload }: { payload: bill_detail_pa
   }), [bill]);
 
   const official_url = typeof normalized.url === "string" && /^https?:\/\//i.test(normalized.url) ? normalized.url : null;
-  const procedural_status = status_label(normalized.status, `${display_value(normalized.title)} ${display_value(normalized.description)} ${display_value(normalized.last_action)}`, normalized.last_action);
+  const procedural_status = status_label(normalized.status, normalized.last_action);
 
   return (
     <div style={{ display: "grid", gap: "0.85rem" }}>

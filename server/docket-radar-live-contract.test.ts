@@ -61,5 +61,7 @@ describe("Docket Radar live contract", () => {
     const activation_worker = read("server/docket-jurisdiction-activation-queue-worker.ts");
     expect(activation_worker).toContain("await active_queue_cycle");
     expect(worker).toContain("await stop_docket_bill_activation_queue_worker()");
+    expect(read("server/docket-state-cache-warmer.ts")).toContain("await active_cycle");
+    expect(worker).toContain("await stop_docket_state_cache_warmer()");
   });
 });
