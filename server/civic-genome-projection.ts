@@ -280,6 +280,25 @@ const capture_projection_entity_versions = async (
   );
 };
 
+const capture_target_family_version = async (
+  family_key: string,
+  client: PoolClient,
+): Promise<void> => {
+  await client.query(
+    `insert into public.civic_genome_projection_entity_version (
+       entity_type, entity_id, family_id, observed_at, record_hash, record_json
+     )
+     select 'family', family.family_id, family.family_id,
+       greatest(family.created_at, family.updated_at),
+       encode(extensions.digest(convert_to(to_jsonb(family)::text, 'UTF8'), 'sha256'), 'hex'),
+       to_jsonb(family)
+     from public.civic_genome_family family
+     where family.family_key = $1
+     on conflict (entity_type, entity_id, record_hash) do nothing`,
+    [family_key],
+  );
+};
+
 const project_bill = async (
   state_row: docket_state_cache_row,
   bill: legiscan_master_bill,
@@ -361,6 +380,7 @@ const project_bill = async (
     );
   }
 
+  await capture_target_family_version(family_key, client);
   const family_id = await upsert_family(family_key, bill, client);
 
   const { rows } = await client.query<{
