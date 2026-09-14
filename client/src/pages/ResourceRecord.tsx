@@ -56,6 +56,17 @@ type ResourceRecord = {
   resource_name: string;
   resource_type?: string | null;
   resource_category?: string | null;
+  directory_categories?: string[];
+  category_review?: {
+    revision_id: string;
+    source_heading?: { quoted_text?: string; paragraph?: number };
+    secondary_memberships?: Array<{
+      category: string;
+      basis: string;
+      evidence_quote: string;
+      source_paragraph: string;
+    }>;
+  } | null;
   jurisdiction?: string | null;
   jurisdiction_scope?: string | null;
   state?: string | null;
@@ -268,6 +279,16 @@ export default function ResourceRecord() {
                 <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-200">
                   {title_case(resource.resource_category)}
                 </span>
+                {resource.directory_categories
+                  ?.filter((value) => value !== resource.resource_category)
+                  .map((value) => (
+                    <span
+                      key={value}
+                      className="rounded-full border border-white/10 px-2.5 py-1 text-[11px] text-slate-300"
+                    >
+                      {title_case(value)}
+                    </span>
+                  ))}
                 {(resource.state || resource.jurisdiction) && (
                   <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-medium text-slate-300">
                     {resource.state || resource.jurisdiction}
@@ -404,6 +425,23 @@ export default function ResourceRecord() {
               )}
               <div className="mt-3">
                 <ProvenanceRow
+                  label="Classification revision"
+                  value={resource.category_review?.revision_id}
+                />
+                <ProvenanceRow
+                  label="Source section"
+                  value={resource.category_review?.source_heading?.quoted_text}
+                />
+                {resource.category_review?.secondary_memberships?.map(
+                  (membership) => (
+                    <ProvenanceRow
+                      key={membership.category}
+                      label={title_case(membership.category)}
+                      value={`Reviewed service interpretation: “${membership.evidence_quote}” (${membership.source_paragraph})`}
+                    />
+                  ),
+                )}
+                <ProvenanceRow
                   label="Transcription revision"
                   value={resource.source_transcription_correction?.revision_id}
                 />
@@ -426,7 +464,7 @@ export default function ResourceRecord() {
                   value={resource.source_content_sha256}
                 />
                 <ProvenanceRow
-                  label="Source category"
+                  label="Stored category"
                   value={resource.source_resource_category}
                 />
                 <ProvenanceRow

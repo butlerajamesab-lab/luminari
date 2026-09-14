@@ -1,0 +1,1083 @@
+-- Exact 24-record navigation-classification application, separate from literal
+-- transcription. This batch expects the separately reviewed transcription
+-- receipts to be current; the category ledger itself remains independent.
+-- Requires both resource transcription and category schema migrations first.
+begin isolation level serializable;
+set local role service_role;
+set local lock_timeout='3s';
+set local statement_timeout='30s';
+select pg_advisory_xact_lock(hashtextextended('colorado_resource_categories_20260914',0));
+do $apply_categories$
+declare
+  v_receipts jsonb := $category_receipts_20260914$[
+  {
+    "civic_object_uid": "corpus:abd611213bb84ef8ae7a04f7d262b4713acc422f98695600c6481fb06db21fd0",
+    "object_ref": "abd611213bb84ef8ae7a04f7d262b4713acc422f98695600c6481fb06db21fd0",
+    "resource_entity_id": "0f09d5ac-6bd6-c7a1-1619-7cd2f9a822a2",
+    "run_id": "3e8da646-0fa0-4991-9cf1-df3e4de1e028",
+    "artifact_key": "State Enriched Registry bucket/luminari-colorado-ENRICHED-PASS2-2026.docx",
+    "source_content_sha256": "8b37624175d4b9d6f31c8d207ac1ffb0a4c2648c479cfaba0c1405600e3fb24d",
+    "source_candidate_hash": "df6ddecccf6c09664d367b93d27d401be24c1954075f2f5fe5ebc2096374745e",
+    "source_locator": "lines:52-56",
+    "revision_id": "e49d1562-2747-565b-9abf-cb1832a4168c",
+    "supersedes_revision_id": null,
+    "operation": "classify",
+    "before_category": null,
+    "before_layer": "layer_1",
+    "primary_category": "food_nutrition",
+    "source_heading": {
+      "paragraph": 65,
+      "xpath": "/w:document/w:body/w:p[25]",
+      "quoted_text": "Food & Nutrition"
+    },
+    "source_record_span": {
+      "part": "word/document.xml",
+      "paragraph_start": 67,
+      "paragraph_end": 71,
+      "xpath_start": "/w:document/w:body/w:tbl[11]/w:tr/w:tc/w:p[1]",
+      "xpath_end": "/w:document/w:body/w:tbl[11]/w:tr/w:tc/w:p[5]"
+    },
+    "source_text": "Food & Nutrition\nColorado SNAP / Food Assistance (CDHS)\n1575 Sherman St, Denver, CO 80203\n📞 303-866-5700  ·  peak.colorado.gov\nEligibility: Income < 130% FPL. Administered by Colorado Dept of Human Services (CDHS) through county Departments of Social/Human Services.\nApply / Notes: Apply at peak.colorado.gov (online — functional). ABAWD work requirements active. Each of Colorado's 64 counties administers locally. Denver SNAP: 720-944-3666. El Paso County: 719-444-5445.",
+    "secondary_memberships": [],
+    "review_scope": "navigation_classification_only",
+    "review_method": "individual_source_heading_and_service_review",
+    "review_ledger_sha256": "bdacd48b3f3c557f340120478236ae80130568984f4faa4a8c526b1746a5f7a1",
+    "reviewed_by": "codex_individual_source_category_review_20260914",
+    "review_note": "The reviewed block P67–P71 belongs to source section \"Food & Nutrition\". Map the section to existing directory category food_nutrition; preserve service-role details separately. Secondary memberships are interpretations of named source services. Underlying facts remain source assertions; admission and legal verification unchanged."
+  },
+  {
+    "civic_object_uid": "corpus:54cd7af7466722508c84663ab9011aadc03d62ba8d22ac68e8897900b636571b",
+    "object_ref": "54cd7af7466722508c84663ab9011aadc03d62ba8d22ac68e8897900b636571b",
+    "resource_entity_id": "5e760a0e-4300-c000-958a-df72f756d4c9",
+    "run_id": "3e8da646-0fa0-4991-9cf1-df3e4de1e028",
+    "artifact_key": "State Enriched Registry bucket/luminari-colorado-ENRICHED-PASS2-2026.docx",
+    "source_content_sha256": "8b37624175d4b9d6f31c8d207ac1ffb0a4c2648c479cfaba0c1405600e3fb24d",
+    "source_candidate_hash": "c89ef47f225cca26867761450b92e4b5915c8586bd82a53838450d5683e6e11a",
+    "source_locator": "lines:58-62",
+    "revision_id": "1e3d7d27-d51a-5388-a1f1-ee1274a32a32",
+    "supersedes_revision_id": null,
+    "operation": "classify",
+    "before_category": "food_nutrition",
+    "before_layer": "layer_1",
+    "primary_category": "food_nutrition",
+    "source_heading": {
+      "paragraph": 65,
+      "xpath": "/w:document/w:body/w:p[25]",
+      "quoted_text": "Food & Nutrition"
+    },
+    "source_record_span": {
+      "part": "word/document.xml",
+      "paragraph_start": 73,
+      "paragraph_end": 77,
+      "xpath_start": "/w:document/w:body/w:tbl[12]/w:tr/w:tc/w:p[1]",
+      "xpath_end": "/w:document/w:body/w:tbl[12]/w:tr/w:tc/w:p[5]"
+    },
+    "source_text": "Food & Nutrition\nFood Bank of the Rockies (Denver/Metro)\n10700 E 45th Ave, Denver, CO 80239\n📞 303-371-9250  ·  foodbankrockies.org\nEligibility: Metro Denver, northern Colorado, and Wyoming — 31-county service area, 800+ partner agencies.\nApply / Notes: foodbankrockies.org — largest food bank in Colorado. Drives multiple SNAP enrollment assistance events.",
+    "secondary_memberships": [],
+    "review_scope": "navigation_classification_only",
+    "review_method": "individual_source_heading_and_service_review",
+    "review_ledger_sha256": "bdacd48b3f3c557f340120478236ae80130568984f4faa4a8c526b1746a5f7a1",
+    "reviewed_by": "codex_individual_source_category_review_20260914",
+    "review_note": "The reviewed block P73–P77 belongs to source section \"Food & Nutrition\". Map the section to existing directory category food_nutrition; preserve service-role details separately. Secondary memberships are interpretations of named source services. Underlying facts remain source assertions; admission and legal verification unchanged."
+  },
+  {
+    "civic_object_uid": "corpus:a355e33e849887947415a041e23078d225248ea5a8e376f5ae0e201c994b0f4a",
+    "object_ref": "a355e33e849887947415a041e23078d225248ea5a8e376f5ae0e201c994b0f4a",
+    "resource_entity_id": "c67024c3-b5cc-cc49-9369-dac0ef93cd70",
+    "run_id": "3e8da646-0fa0-4991-9cf1-df3e4de1e028",
+    "artifact_key": "State Enriched Registry bucket/luminari-colorado-ENRICHED-PASS2-2026.docx",
+    "source_content_sha256": "8b37624175d4b9d6f31c8d207ac1ffb0a4c2648c479cfaba0c1405600e3fb24d",
+    "source_candidate_hash": "1cc1c53f579a7af80d2967ee35a316bf17ea077e4bb0d1e98cdbfa9063b3dd5e",
+    "source_locator": "lines:64-68",
+    "revision_id": "4c285231-8124-5ce1-87bd-6994f3d76e0c",
+    "supersedes_revision_id": null,
+    "operation": "classify",
+    "before_category": null,
+    "before_layer": "layer_1",
+    "primary_category": "food_nutrition",
+    "source_heading": {
+      "paragraph": 65,
+      "xpath": "/w:document/w:body/w:p[25]",
+      "quoted_text": "Food & Nutrition"
+    },
+    "source_record_span": {
+      "part": "word/document.xml",
+      "paragraph_start": 79,
+      "paragraph_end": 83,
+      "xpath_start": "/w:document/w:body/w:tbl[13]/w:tr/w:tc/w:p[1]",
+      "xpath_end": "/w:document/w:body/w:tbl[13]/w:tr/w:tc/w:p[5]"
+    },
+    "source_text": "Food & Nutrition\nCare and Share Food Bank (Colorado Springs / Southern CO)\n2605 Preamble Pt, Colorado Springs, CO 80915\n📞 719-528-1247  ·  careandshare.org\nEligibility: 21-county service area in southern Colorado including Pueblo, Alamosa, and El Paso County.\nApply / Notes: careandshare.org — primary food bank for southern Colorado. Also routes to Western Colorado Community Foundation for rural western slope food access.",
+    "secondary_memberships": [],
+    "review_scope": "navigation_classification_only",
+    "review_method": "individual_source_heading_and_service_review",
+    "review_ledger_sha256": "bdacd48b3f3c557f340120478236ae80130568984f4faa4a8c526b1746a5f7a1",
+    "reviewed_by": "codex_individual_source_category_review_20260914",
+    "review_note": "The reviewed block P79–P83 belongs to source section \"Food & Nutrition\". Map the section to existing directory category food_nutrition; preserve service-role details separately. Secondary memberships are interpretations of named source services. Underlying facts remain source assertions; admission and legal verification unchanged."
+  },
+  {
+    "civic_object_uid": "corpus:c463cababdd461a1e90eb8b8b7dac39f194f2488a0283c9a211a4eebfb1ab451",
+    "object_ref": "c463cababdd461a1e90eb8b8b7dac39f194f2488a0283c9a211a4eebfb1ab451",
+    "resource_entity_id": "d67f54cf-f41b-19e2-a8f8-6fb6dabd8954",
+    "run_id": "3e8da646-0fa0-4991-9cf1-df3e4de1e028",
+    "artifact_key": "State Enriched Registry bucket/luminari-colorado-ENRICHED-PASS2-2026.docx",
+    "source_content_sha256": "8b37624175d4b9d6f31c8d207ac1ffb0a4c2648c479cfaba0c1405600e3fb24d",
+    "source_candidate_hash": "87c5f11255053414f7f10054f0a7c8048be5d0ae384bf46c0b0e012c2cdd2e82",
+    "source_locator": "lines:77-81",
+    "revision_id": "39d84c00-6813-51c7-b5f1-fd0a9cb59d20",
+    "supersedes_revision_id": null,
+    "operation": "classify",
+    "before_category": null,
+    "before_layer": "layer_1",
+    "primary_category": "healthcare",
+    "source_heading": {
+      "paragraph": 91,
+      "xpath": "/w:document/w:body/w:p[31]",
+      "quoted_text": "Healthcare"
+    },
+    "source_record_span": {
+      "part": "word/document.xml",
+      "paragraph_start": 93,
+      "paragraph_end": 97,
+      "xpath_start": "/w:document/w:body/w:tbl[15]/w:tr/w:tc/w:p[1]",
+      "xpath_end": "/w:document/w:body/w:tbl[15]/w:tr/w:tc/w:p[5]"
+    },
+    "source_text": "Healthcare\nHealth First Colorado (Medicaid — HCPF)\n1570 Grant St, Denver, CO 80203\n📞 800-221-3943  ·  colorado.gov/hcpf\nEligibility: Adults 19–64 to 138% FPL. NO coverage gap. Expanded 2013. Comprehensive benefits including vision and dental.\nApply / Notes: peak.colorado.gov — apply online. Managed care plans (RAEs): Regional Accountable Entities cover specific geographic regions. Undocumented immigrants: limited emergency Medicaid only — route to Denver Health for primary care.",
+    "secondary_memberships": [],
+    "review_scope": "navigation_classification_only",
+    "review_method": "individual_source_heading_and_service_review",
+    "review_ledger_sha256": "bdacd48b3f3c557f340120478236ae80130568984f4faa4a8c526b1746a5f7a1",
+    "reviewed_by": "codex_individual_source_category_review_20260914",
+    "review_note": "The reviewed block P93–P97 belongs to source section \"Healthcare\". Map the section to existing directory category healthcare; preserve service-role details separately. Secondary memberships are interpretations of named source services. Underlying facts remain source assertions; admission and legal verification unchanged."
+  },
+  {
+    "civic_object_uid": "corpus:2efedc7ab4c238911662690ecbdab4d235654191b241c8fcac94e3a7ca73a7f0",
+    "object_ref": "2efedc7ab4c238911662690ecbdab4d235654191b241c8fcac94e3a7ca73a7f0",
+    "resource_entity_id": "7d90045f-b310-95b3-af12-dd243b7570e5",
+    "run_id": "3e8da646-0fa0-4991-9cf1-df3e4de1e028",
+    "artifact_key": "State Enriched Registry bucket/luminari-colorado-ENRICHED-PASS2-2026.docx",
+    "source_content_sha256": "8b37624175d4b9d6f31c8d207ac1ffb0a4c2648c479cfaba0c1405600e3fb24d",
+    "source_candidate_hash": "93c556f1f6a69ecc992a6a0ef043afdfea59d89545f3ee8334b5d1642bb718bf",
+    "source_locator": "lines:83-87",
+    "revision_id": "a8060833-2de8-5146-a6bb-9fe295d3946d",
+    "supersedes_revision_id": null,
+    "operation": "classify",
+    "before_category": "healthcare",
+    "before_layer": "layer_1",
+    "primary_category": "healthcare",
+    "source_heading": {
+      "paragraph": 91,
+      "xpath": "/w:document/w:body/w:p[31]",
+      "quoted_text": "Healthcare"
+    },
+    "source_record_span": {
+      "part": "word/document.xml",
+      "paragraph_start": 99,
+      "paragraph_end": 103,
+      "xpath_start": "/w:document/w:body/w:tbl[16]/w:tr/w:tc/w:p[1]",
+      "xpath_end": "/w:document/w:body/w:tbl[16]/w:tr/w:tc/w:p[5]"
+    },
+    "source_text": "Healthcare\nDenver Health (Denver Safety Net — FQHC + Hospital)\n777 Bannock St, Denver, CO 80204\n📞 303-436-6000  ·  denverhealth.org\nEligibility: Denver residents — public hospital + 11 FQHCs; charity care for uninsured; sliding scale.\nApply / Notes: denverhealth.org — Level 1 trauma center + comprehensive FQHC network. Primary safety net for uninsured/underinsured Denver. Financial assistance covers income < 250% FPL at reduced cost. All language services available.",
+    "secondary_memberships": [],
+    "review_scope": "navigation_classification_only",
+    "review_method": "individual_source_heading_and_service_review",
+    "review_ledger_sha256": "bdacd48b3f3c557f340120478236ae80130568984f4faa4a8c526b1746a5f7a1",
+    "reviewed_by": "codex_individual_source_category_review_20260914",
+    "review_note": "The reviewed block P99–P103 belongs to source section \"Healthcare\". Map the section to existing directory category healthcare; preserve service-role details separately. Secondary memberships are interpretations of named source services. Underlying facts remain source assertions; admission and legal verification unchanged."
+  },
+  {
+    "civic_object_uid": "corpus:1fde66e2f4f8077f0da18c1bb5c4cb800a53805910e0d085e2ab1879639f70eb",
+    "object_ref": "1fde66e2f4f8077f0da18c1bb5c4cb800a53805910e0d085e2ab1879639f70eb",
+    "resource_entity_id": "50dc8a17-e09c-84e9-8509-8e3a95fd3c74",
+    "run_id": "3e8da646-0fa0-4991-9cf1-df3e4de1e028",
+    "artifact_key": "State Enriched Registry bucket/luminari-colorado-ENRICHED-PASS2-2026.docx",
+    "source_content_sha256": "8b37624175d4b9d6f31c8d207ac1ffb0a4c2648c479cfaba0c1405600e3fb24d",
+    "source_candidate_hash": "5de2bd88599546b57132db9740703f44357b9c07a05c0b71aa72a6c95a5c1d5e",
+    "source_locator": "lines:89-93",
+    "revision_id": "44f4c0f8-9b22-5883-ab9a-0f08904e95f7",
+    "supersedes_revision_id": null,
+    "operation": "classify",
+    "before_category": "healthcare",
+    "before_layer": "layer_1",
+    "primary_category": "healthcare",
+    "source_heading": {
+      "paragraph": 91,
+      "xpath": "/w:document/w:body/w:p[31]",
+      "quoted_text": "Healthcare"
+    },
+    "source_record_span": {
+      "part": "word/document.xml",
+      "paragraph_start": 105,
+      "paragraph_end": 109,
+      "xpath_start": "/w:document/w:body/w:tbl[17]/w:tr/w:tc/w:p[1]",
+      "xpath_end": "/w:document/w:body/w:tbl[17]/w:tr/w:tc/w:p[5]"
+    },
+    "source_text": "Healthcare\nUC Health / University of Colorado Hospital\n12605 E 16th Ave, Aurora, CO 80045\n📞 720-848-0000  ·  uchealth.org\nEligibility: Aurora/metro Denver — academic medical center + financial assistance program for uninsured.\nApply / Notes: uchealth.org — financial assistance for income < 250% FPL. Also Children's Hospital Colorado (720-777-1234) for pediatric care.",
+    "secondary_memberships": [],
+    "review_scope": "navigation_classification_only",
+    "review_method": "individual_source_heading_and_service_review",
+    "review_ledger_sha256": "bdacd48b3f3c557f340120478236ae80130568984f4faa4a8c526b1746a5f7a1",
+    "reviewed_by": "codex_individual_source_category_review_20260914",
+    "review_note": "The reviewed block P105–P109 belongs to source section \"Healthcare\". Map the section to existing directory category healthcare; preserve service-role details separately. Secondary memberships are interpretations of named source services. Underlying facts remain source assertions; admission and legal verification unchanged."
+  },
+  {
+    "civic_object_uid": "corpus:45602b8f38fa68973f8bb7d1648b1196964bd51fd9c5b76ab72e047201e97230",
+    "object_ref": "45602b8f38fa68973f8bb7d1648b1196964bd51fd9c5b76ab72e047201e97230",
+    "resource_entity_id": "d3ae4c03-912d-34f5-6c4b-8d0c6d04c88e",
+    "run_id": "3e8da646-0fa0-4991-9cf1-df3e4de1e028",
+    "artifact_key": "State Enriched Registry bucket/luminari-colorado-ENRICHED-PASS2-2026.docx",
+    "source_content_sha256": "8b37624175d4b9d6f31c8d207ac1ffb0a4c2648c479cfaba0c1405600e3fb24d",
+    "source_candidate_hash": "bc1247d02de41f51b4112f92b163fa5246a689b06e392f33bdb845140779b9f3",
+    "source_locator": "lines:95-100",
+    "revision_id": "8620f03a-fcee-5d5c-a27f-aaa93a4ef578",
+    "supersedes_revision_id": null,
+    "operation": "classify",
+    "before_category": null,
+    "before_layer": "layer_1",
+    "primary_category": "healthcare",
+    "source_heading": {
+      "paragraph": 91,
+      "xpath": "/w:document/w:body/w:p[31]",
+      "quoted_text": "Healthcare"
+    },
+    "source_record_span": {
+      "part": "word/document.xml",
+      "paragraph_start": 111,
+      "paragraph_end": 115,
+      "xpath_start": "/w:document/w:body/w:tbl[18]/w:tr/w:tc/w:p[1]",
+      "xpath_end": "/w:document/w:body/w:tbl[18]/w:tr/w:tc/w:p[5]"
+    },
+    "source_text": "Healthcare\nColorado Community Health Network (FQHCs Statewide)\n1580 Logan St Ste 510, Denver, CO 80203\n📞 303-861-5165  ·  cchn.org\nEligibility: Anyone regardless of insurance — 20+ FQHCs, 180+ sites statewide; sliding scale.\nApply / Notes: cchn.org — find nearest FQHC: findahealthcenter.hrsa.gov. Key: Mountain Family Health Centers (western slope: 970-945-2840), Salud Family Health (northern CO: 970-352-6911), Clinica Tepeyac (Denver Latino: 303-296-0771).",
+    "secondary_memberships": [],
+    "review_scope": "navigation_classification_only",
+    "review_method": "individual_source_heading_and_service_review",
+    "review_ledger_sha256": "bdacd48b3f3c557f340120478236ae80130568984f4faa4a8c526b1746a5f7a1",
+    "reviewed_by": "codex_individual_source_category_review_20260914",
+    "review_note": "The reviewed block P111–P115 belongs to source section \"Healthcare\". Map the section to existing directory category healthcare; preserve service-role details separately. Secondary memberships are interpretations of named source services. Underlying facts remain source assertions; admission and legal verification unchanged."
+  },
+  {
+    "civic_object_uid": "corpus:492fb8e6a38516b5310040d7f2fe946884ed126cf992e36e43b0fe7ac30a0940",
+    "object_ref": "492fb8e6a38516b5310040d7f2fe946884ed126cf992e36e43b0fe7ac30a0940",
+    "resource_entity_id": "cb72cc25-099b-e632-6667-4069496ba145",
+    "run_id": "3e8da646-0fa0-4991-9cf1-df3e4de1e028",
+    "artifact_key": "State Enriched Registry bucket/luminari-colorado-ENRICHED-PASS2-2026.docx",
+    "source_content_sha256": "8b37624175d4b9d6f31c8d207ac1ffb0a4c2648c479cfaba0c1405600e3fb24d",
+    "source_candidate_hash": "7b2de1f700079f3482063c441113d38cb79cf9602f04c48f684e85b36442e673",
+    "source_locator": "lines:102-106",
+    "revision_id": "e6618187-b5d7-516a-afd8-ce30cede67bd",
+    "supersedes_revision_id": null,
+    "operation": "classify",
+    "before_category": "housing",
+    "before_layer": "layer_1",
+    "primary_category": "housing",
+    "source_heading": {
+      "paragraph": 117,
+      "xpath": "/w:document/w:body/w:p[37]",
+      "quoted_text": "Housing & Rent Assistance"
+    },
+    "source_record_span": {
+      "part": "word/document.xml",
+      "paragraph_start": 119,
+      "paragraph_end": 123,
+      "xpath_start": "/w:document/w:body/w:tbl[19]/w:tr/w:tc/w:p[1]",
+      "xpath_end": "/w:document/w:body/w:tbl[19]/w:tr/w:tc/w:p[5]"
+    },
+    "source_text": "Housing & Rent Assistance\nColorado Division of Housing (DOH) / CDHS\n1313 Sherman St, Denver, CO 80203\n📞 303-864-7810  ·  cdola.colorado.gov/housing\nEligibility: Low-income Colorado renters — emergency rental assistance, HOME program, state-funded emergency housing.\nApply / Notes: cdola.colorado.gov/housing — state-level coordination. Denver Office of Housing Stability (HOST): 720-913-1600. Colorado Springs Housing Authority: 719-323-6550.",
+    "secondary_memberships": [],
+    "review_scope": "navigation_classification_only",
+    "review_method": "individual_source_heading_and_service_review",
+    "review_ledger_sha256": "bdacd48b3f3c557f340120478236ae80130568984f4faa4a8c526b1746a5f7a1",
+    "reviewed_by": "codex_individual_source_category_review_20260914",
+    "review_note": "The reviewed block P119–P123 belongs to source section \"Housing & Rent Assistance\". Map the section to existing directory category housing; preserve service-role details separately. Secondary memberships are interpretations of named source services. Underlying facts remain source assertions; admission and legal verification unchanged."
+  },
+  {
+    "civic_object_uid": "corpus:eec4c218908a05c496bb3b0a0bfce9294722eea4f840af0d97894b219bc3e4bd",
+    "object_ref": "eec4c218908a05c496bb3b0a0bfce9294722eea4f840af0d97894b219bc3e4bd",
+    "resource_entity_id": "aac4dead-77dd-3411-f6b5-b4cecb3dab59",
+    "run_id": "3e8da646-0fa0-4991-9cf1-df3e4de1e028",
+    "artifact_key": "State Enriched Registry bucket/luminari-colorado-ENRICHED-PASS2-2026.docx",
+    "source_content_sha256": "8b37624175d4b9d6f31c8d207ac1ffb0a4c2648c479cfaba0c1405600e3fb24d",
+    "source_candidate_hash": "3a57b8dc1bafbbff1bcd63a2fa794ee5a20823e429f7b772a75e709fb660b881",
+    "source_locator": "lines:108-112",
+    "revision_id": "cb508365-7996-5bae-ab23-e578840f16b5",
+    "supersedes_revision_id": null,
+    "operation": "classify",
+    "before_category": null,
+    "before_layer": "layer_1",
+    "primary_category": "housing",
+    "source_heading": {
+      "paragraph": 117,
+      "xpath": "/w:document/w:body/w:p[37]",
+      "quoted_text": "Housing & Rent Assistance"
+    },
+    "source_record_span": {
+      "part": "word/document.xml",
+      "paragraph_start": 125,
+      "paragraph_end": 129,
+      "xpath_start": "/w:document/w:body/w:tbl[20]/w:tr/w:tc/w:p[1]",
+      "xpath_end": "/w:document/w:body/w:tbl[20]/w:tr/w:tc/w:p[5]"
+    },
+    "source_text": "Housing & Rent Assistance\nColorado Coalition for the Homeless (CCH)\n2111 Champa St, Denver, CO 80205\n📞 303-595-9561  ·  coloradocoalition.org\nEligibility: Metro Denver unhoused and at-risk individuals — shelter, transitional housing, permanent supportive housing, health care (FQHC), legal services.\nApply / Notes: coloradocoalition.org — largest homeless services provider in Colorado. FQHC services embedded. Legal clinic on-site. Key entry point for Denver's unhoused population.",
+    "secondary_memberships": [
+      {
+        "category": "healthcare",
+        "basis": "reviewed_interpretation_of_source_service",
+        "source_paragraph": "P129",
+        "evidence_quote": "FQHC services embedded"
+      },
+      {
+        "category": "legal_civil_rights",
+        "basis": "reviewed_interpretation_of_source_service",
+        "source_paragraph": "P129",
+        "evidence_quote": "Legal clinic on-site"
+      }
+    ],
+    "review_scope": "navigation_classification_only",
+    "review_method": "individual_source_heading_and_service_review",
+    "review_ledger_sha256": "bdacd48b3f3c557f340120478236ae80130568984f4faa4a8c526b1746a5f7a1",
+    "reviewed_by": "codex_individual_source_category_review_20260914",
+    "review_note": "The reviewed block P125–P129 belongs to source section \"Housing & Rent Assistance\". Map the section to existing directory category housing; preserve service-role details separately. Secondary memberships are interpretations of named source services. Underlying facts remain source assertions; admission and legal verification unchanged."
+  },
+  {
+    "civic_object_uid": "corpus:293dcdb82a759a9c7f6f10aa8cd96300d03fbc2dfefadfa1175d70210231d2d0",
+    "object_ref": "293dcdb82a759a9c7f6f10aa8cd96300d03fbc2dfefadfa1175d70210231d2d0",
+    "resource_entity_id": "0843bdf8-015f-ae3a-7c84-638d2d810a9c",
+    "run_id": "3e8da646-0fa0-4991-9cf1-df3e4de1e028",
+    "artifact_key": "State Enriched Registry bucket/luminari-colorado-ENRICHED-PASS2-2026.docx",
+    "source_content_sha256": "8b37624175d4b9d6f31c8d207ac1ffb0a4c2648c479cfaba0c1405600e3fb24d",
+    "source_candidate_hash": "51ccf98e1dfc657636d7d66446787a16b532f4582ad99e74eba88ea922a819ec",
+    "source_locator": "lines:114-118",
+    "revision_id": "9539a9b7-5ca1-5760-8c4e-44cd80e62a17",
+    "supersedes_revision_id": null,
+    "operation": "classify",
+    "before_category": null,
+    "before_layer": "layer_1",
+    "primary_category": "housing",
+    "source_heading": {
+      "paragraph": 117,
+      "xpath": "/w:document/w:body/w:p[37]",
+      "quoted_text": "Housing & Rent Assistance"
+    },
+    "source_record_span": {
+      "part": "word/document.xml",
+      "paragraph_start": 131,
+      "paragraph_end": 135,
+      "xpath_start": "/w:document/w:body/w:tbl[21]/w:tr/w:tc/w:p[1]",
+      "xpath_end": "/w:document/w:body/w:tbl[21]/w:tr/w:tc/w:p[5]"
+    },
+    "source_text": "Housing & Rent Assistance\nColorado Legal Services (CLS)\n1905 Sherman St Ste 400, Denver, CO 80203\n📞 303-837-1313  ·  coloradolegalservices.org\nEligibility: Statewide income-qualified — housing, family, benefits, DV, consumer, immigration; rural outreach.\nApply / Notes: coloradolegalservices.org — statewide legal aid with offices in Denver, Pueblo, Grand Junction, Colorado Springs, Fort Collins, Alamosa. Western slope: Grand Junction office (970-242-6121).",
+    "secondary_memberships": [
+      {
+        "category": "legal_civil_rights",
+        "basis": "reviewed_interpretation_of_source_service",
+        "source_paragraph": "P135",
+        "evidence_quote": "statewide legal aid"
+      }
+    ],
+    "review_scope": "navigation_classification_only",
+    "review_method": "individual_source_heading_and_service_review",
+    "review_ledger_sha256": "bdacd48b3f3c557f340120478236ae80130568984f4faa4a8c526b1746a5f7a1",
+    "reviewed_by": "codex_individual_source_category_review_20260914",
+    "review_note": "The reviewed block P131–P135 belongs to source section \"Housing & Rent Assistance\". Map the section to existing directory category housing; preserve service-role details separately. Secondary memberships are interpretations of named source services. Underlying facts remain source assertions; admission and legal verification unchanged."
+  },
+  {
+    "civic_object_uid": "corpus:d84ce4dc423d0191b01880984d5043412713f45f017a93fe9291c7187265aef4",
+    "object_ref": "d84ce4dc423d0191b01880984d5043412713f45f017a93fe9291c7187265aef4",
+    "resource_entity_id": "c54c0888-b532-2c51-2045-67cad336b0ef",
+    "run_id": "3e8da646-0fa0-4991-9cf1-df3e4de1e028",
+    "artifact_key": "State Enriched Registry bucket/luminari-colorado-ENRICHED-PASS2-2026.docx",
+    "source_content_sha256": "8b37624175d4b9d6f31c8d207ac1ffb0a4c2648c479cfaba0c1405600e3fb24d",
+    "source_candidate_hash": "10f8bb6b7d75e2932849e4a7146cd8623f58c217092253adef358a663d2a6283",
+    "source_locator": "lines:120-125",
+    "revision_id": "9f3baf72-4967-5b70-8888-ef5c112758d6",
+    "supersedes_revision_id": null,
+    "operation": "classify",
+    "before_category": "cash_assistance_income",
+    "before_layer": "layer_1",
+    "primary_category": "housing",
+    "source_heading": {
+      "paragraph": 117,
+      "xpath": "/w:document/w:body/w:p[37]",
+      "quoted_text": "Housing & Rent Assistance"
+    },
+    "source_record_span": {
+      "part": "word/document.xml",
+      "paragraph_start": 137,
+      "paragraph_end": 141,
+      "xpath_start": "/w:document/w:body/w:tbl[22]/w:tr/w:tc/w:p[1]",
+      "xpath_end": "/w:document/w:body/w:tbl[22]/w:tr/w:tc/w:p[5]"
+    },
+    "source_text": "Housing & Rent Assistance\nDenver Rescue Mission\n6100 Smith Rd, Denver, CO 80216\n📞 303-297-1815  ·  denverrescuemission.org\nEligibility: Metro Denver unhoused adults — emergency shelter, meals, recovery, case management.\nApply / Notes: denverrescuemission.org — largest emergency shelter in Denver. Routes to HOST and Colorado Coalition for longer-term housing resources.",
+    "secondary_memberships": [
+      {
+        "category": "food_nutrition",
+        "basis": "reviewed_interpretation_of_source_service",
+        "source_paragraph": "P140",
+        "evidence_quote": "meals"
+      }
+    ],
+    "review_scope": "navigation_classification_only",
+    "review_method": "individual_source_heading_and_service_review",
+    "review_ledger_sha256": "bdacd48b3f3c557f340120478236ae80130568984f4faa4a8c526b1746a5f7a1",
+    "reviewed_by": "codex_individual_source_category_review_20260914",
+    "review_note": "The reviewed block P137–P141 belongs to source section \"Housing & Rent Assistance\". Map the section to existing directory category housing; preserve service-role details separately. Secondary memberships are interpretations of named source services. Underlying facts remain source assertions; admission and legal verification unchanged."
+  },
+  {
+    "civic_object_uid": "corpus:5842c90893e24e5b42702848b7066f14a53eaa29cb7e09a8f32ef14f0c6a85c4",
+    "object_ref": "5842c90893e24e5b42702848b7066f14a53eaa29cb7e09a8f32ef14f0c6a85c4",
+    "resource_entity_id": "e1a97b29-abb4-a0bb-c14f-a64837e622c4",
+    "run_id": "3e8da646-0fa0-4991-9cf1-df3e4de1e028",
+    "artifact_key": "State Enriched Registry bucket/luminari-colorado-ENRICHED-PASS2-2026.docx",
+    "source_content_sha256": "8b37624175d4b9d6f31c8d207ac1ffb0a4c2648c479cfaba0c1405600e3fb24d",
+    "source_candidate_hash": "86b1f83f5966bd1e5380f3ad88f391b90cda5956d63b1af5ea99a7d921d653f1",
+    "source_locator": "lines:127-131",
+    "revision_id": "1c235419-43c8-5747-8f6d-24dbfa338635",
+    "supersedes_revision_id": null,
+    "operation": "classify",
+    "before_category": null,
+    "before_layer": "layer_1",
+    "primary_category": "safety_crisis",
+    "source_heading": {
+      "paragraph": 143,
+      "xpath": "/w:document/w:body/w:p[43]",
+      "quoted_text": "Domestic Violence & Safety"
+    },
+    "source_record_span": {
+      "part": "word/document.xml",
+      "paragraph_start": 145,
+      "paragraph_end": 149,
+      "xpath_start": "/w:document/w:body/w:tbl[23]/w:tr/w:tc/w:p[1]",
+      "xpath_end": "/w:document/w:body/w:tbl[23]/w:tr/w:tc/w:p[5]"
+    },
+    "source_text": "Domestic Violence & Safety\nColorado DV Hotline / CCADV\n1330 S Federal Blvd, Denver, CO 80219\n📞 303-831-9959  ·  ccadv.org\nEligibility: 24/7 statewide — crisis, shelter referral, safety planning; multilingual.\nApply / Notes: ccadv.org — Colorado Coalition Against Domestic Violence coordinates 50+ local programs. Also SAVA Center (Denver sexual assault: 303-322-7273). Spanish-language line available.",
+    "secondary_memberships": [
+      {
+        "category": "housing",
+        "basis": "reviewed_interpretation_of_source_service",
+        "source_paragraph": "P148",
+        "evidence_quote": "shelter referral"
+      }
+    ],
+    "review_scope": "navigation_classification_only",
+    "review_method": "individual_source_heading_and_service_review",
+    "review_ledger_sha256": "bdacd48b3f3c557f340120478236ae80130568984f4faa4a8c526b1746a5f7a1",
+    "reviewed_by": "codex_individual_source_category_review_20260914",
+    "review_note": "The reviewed block P145–P149 belongs to source section \"Domestic Violence & Safety\". Map the section to existing directory category safety_crisis; preserve service-role details separately. Secondary memberships are interpretations of named source services. Underlying facts remain source assertions; admission and legal verification unchanged."
+  },
+  {
+    "civic_object_uid": "corpus:e4516767ddc533a03d48849c56b7a902c0c491cdeb9913a48b73bda0bec6ce54",
+    "object_ref": "e4516767ddc533a03d48849c56b7a902c0c491cdeb9913a48b73bda0bec6ce54",
+    "resource_entity_id": "31020d7c-665b-8339-a04a-f5d215ee6539",
+    "run_id": "3e8da646-0fa0-4991-9cf1-df3e4de1e028",
+    "artifact_key": "State Enriched Registry bucket/luminari-colorado-ENRICHED-PASS2-2026.docx",
+    "source_content_sha256": "8b37624175d4b9d6f31c8d207ac1ffb0a4c2648c479cfaba0c1405600e3fb24d",
+    "source_candidate_hash": "44beecef20aabeb29411889ad1c248ada864d6d5b9352020e72663a62561692a",
+    "source_locator": "lines:133-138",
+    "revision_id": "f4f46611-8ee7-51d0-87d3-1a8594156342",
+    "supersedes_revision_id": null,
+    "operation": "classify",
+    "before_category": null,
+    "before_layer": "layer_1",
+    "primary_category": "safety_crisis",
+    "source_heading": {
+      "paragraph": 143,
+      "xpath": "/w:document/w:body/w:p[43]",
+      "quoted_text": "Domestic Violence & Safety"
+    },
+    "source_record_span": {
+      "part": "word/document.xml",
+      "paragraph_start": 151,
+      "paragraph_end": 155,
+      "xpath_start": "/w:document/w:body/w:tbl[24]/w:tr/w:tc/w:p[1]",
+      "xpath_end": "/w:document/w:body/w:tbl[24]/w:tr/w:tc/w:p[5]"
+    },
+    "source_text": "Domestic Violence & Safety\nSafeHouse Denver\n1649 Downing St, Denver, CO 80218\n📞 303-318-9989  ·  safehousedenver.org\nEligibility: Denver area DV survivors — emergency shelter, counseling, legal advocacy, transitional housing.\nApply / Notes: safehousedenver.org — primary Denver DV shelter. Routes to Colorado Legal Services for protection orders.",
+    "secondary_memberships": [
+      {
+        "category": "housing",
+        "basis": "reviewed_interpretation_of_source_service",
+        "source_paragraph": "P154",
+        "evidence_quote": "emergency shelter"
+      },
+      {
+        "category": "legal_civil_rights",
+        "basis": "reviewed_interpretation_of_source_service",
+        "source_paragraph": "P154",
+        "evidence_quote": "legal advocacy"
+      }
+    ],
+    "review_scope": "navigation_classification_only",
+    "review_method": "individual_source_heading_and_service_review",
+    "review_ledger_sha256": "bdacd48b3f3c557f340120478236ae80130568984f4faa4a8c526b1746a5f7a1",
+    "reviewed_by": "codex_individual_source_category_review_20260914",
+    "review_note": "The reviewed block P151–P155 belongs to source section \"Domestic Violence & Safety\". Map the section to existing directory category safety_crisis; preserve service-role details separately. Secondary memberships are interpretations of named source services. Underlying facts remain source assertions; admission and legal verification unchanged."
+  },
+  {
+    "civic_object_uid": "corpus:8e4cf4d47edbd68f5751813c64645673736cd164c72e8186cb41c8f352029901",
+    "object_ref": "8e4cf4d47edbd68f5751813c64645673736cd164c72e8186cb41c8f352029901",
+    "resource_entity_id": "c7231e67-1b96-3755-409b-fc090cadcf4f",
+    "run_id": "3e8da646-0fa0-4991-9cf1-df3e4de1e028",
+    "artifact_key": "State Enriched Registry bucket/luminari-colorado-ENRICHED-PASS2-2026.docx",
+    "source_content_sha256": "8b37624175d4b9d6f31c8d207ac1ffb0a4c2648c479cfaba0c1405600e3fb24d",
+    "source_candidate_hash": "25185967883d26b52b2b9e77971b8350075007406f05d7d42e3307f5bd3a91ef",
+    "source_locator": "lines:140-144",
+    "revision_id": "6be8dbd6-c9ad-5845-a26c-f7b7e834a2ec",
+    "supersedes_revision_id": null,
+    "operation": "classify",
+    "before_category": null,
+    "before_layer": "layer_1",
+    "primary_category": "legal_civil_rights",
+    "source_heading": {
+      "paragraph": 157,
+      "xpath": "/w:document/w:body/w:p[47]",
+      "quoted_text": "Legal Aid"
+    },
+    "source_record_span": {
+      "part": "word/document.xml",
+      "paragraph_start": 159,
+      "paragraph_end": 163,
+      "xpath_start": "/w:document/w:body/w:tbl[25]/w:tr/w:tc/w:p[1]",
+      "xpath_end": "/w:document/w:body/w:tbl[25]/w:tr/w:tc/w:p[5]"
+    },
+    "source_text": "Legal Aid\nColorado Legal Services (CLS) — Denver\n1905 Sherman St Ste 400, Denver, CO 80203\n📞 303-837-1313  ·  coloradolegalservices.org\nEligibility: Denver / metro and statewide — housing (eviction), family, benefits, DV, consumer, immigration, farmworker.\nApply / Notes: coloradolegalservices.org — primary statewide legal aid. Emergency triage for eviction.",
+    "secondary_memberships": [
+      {
+        "category": "housing",
+        "basis": "reviewed_interpretation_of_source_service",
+        "source_paragraph": "P162",
+        "evidence_quote": "housing (eviction)"
+      },
+      {
+        "category": "safety_crisis",
+        "basis": "reviewed_interpretation_of_source_service",
+        "source_paragraph": "P162",
+        "evidence_quote": "DV"
+      }
+    ],
+    "review_scope": "navigation_classification_only",
+    "review_method": "individual_source_heading_and_service_review",
+    "review_ledger_sha256": "bdacd48b3f3c557f340120478236ae80130568984f4faa4a8c526b1746a5f7a1",
+    "reviewed_by": "codex_individual_source_category_review_20260914",
+    "review_note": "The reviewed block P159–P163 belongs to source section \"Legal Aid\". Map the section to existing directory category legal_civil_rights; preserve service-role details separately. Secondary memberships are interpretations of named source services. Underlying facts remain source assertions; admission and legal verification unchanged."
+  },
+  {
+    "civic_object_uid": "corpus:dade90b946c61ef89b624131968680950137350e56c38c5a30f07361764acabd",
+    "object_ref": "dade90b946c61ef89b624131968680950137350e56c38c5a30f07361764acabd",
+    "resource_entity_id": "c4fd1435-c67e-e3be-af2d-ee7e483b91f6",
+    "run_id": "3e8da646-0fa0-4991-9cf1-df3e4de1e028",
+    "artifact_key": "State Enriched Registry bucket/luminari-colorado-ENRICHED-PASS2-2026.docx",
+    "source_content_sha256": "8b37624175d4b9d6f31c8d207ac1ffb0a4c2648c479cfaba0c1405600e3fb24d",
+    "source_candidate_hash": "c29ab551632d15a8ff9f8c7abb52b43f4ad6a53184d9488b79a23283d4dc731c",
+    "source_locator": "lines:146-150",
+    "revision_id": "d38968f1-0751-5251-b519-1e3d0f01d429",
+    "supersedes_revision_id": null,
+    "operation": "classify",
+    "before_category": null,
+    "before_layer": "layer_1",
+    "primary_category": "legal_civil_rights",
+    "source_heading": {
+      "paragraph": 157,
+      "xpath": "/w:document/w:body/w:p[47]",
+      "quoted_text": "Legal Aid"
+    },
+    "source_record_span": {
+      "part": "word/document.xml",
+      "paragraph_start": 165,
+      "paragraph_end": 169,
+      "xpath_start": "/w:document/w:body/w:tbl[26]/w:tr/w:tc/w:p[1]",
+      "xpath_end": "/w:document/w:body/w:tbl[26]/w:tr/w:tc/w:p[5]"
+    },
+    "source_text": "Legal Aid\nColorado Lawyer's Committee / Metro Volunteer Lawyers\n789 Sherman St Ste 300, Denver, CO 80203\n📞 303-825-1097  ·  coloradolawyerscommittee.org\nEligibility: Metro Denver — civil rights, discrimination, housing, immigration pro bono.\nApply / Notes: coloradolawyerscommittee.org — also Colorado Lawyer's Committee Civil Rights Project.",
+    "secondary_memberships": [
+      {
+        "category": "housing",
+        "basis": "reviewed_interpretation_of_source_service",
+        "source_paragraph": "P168",
+        "evidence_quote": "housing"
+      }
+    ],
+    "review_scope": "navigation_classification_only",
+    "review_method": "individual_source_heading_and_service_review",
+    "review_ledger_sha256": "bdacd48b3f3c557f340120478236ae80130568984f4faa4a8c526b1746a5f7a1",
+    "reviewed_by": "codex_individual_source_category_review_20260914",
+    "review_note": "The reviewed block P165–P169 belongs to source section \"Legal Aid\". Map the section to existing directory category legal_civil_rights; preserve service-role details separately. Secondary memberships are interpretations of named source services. Underlying facts remain source assertions; admission and legal verification unchanged."
+  },
+  {
+    "civic_object_uid": "corpus:9d9800d28995d9c983f52d38881a9b20384470b97a9533b5e18a7c15cf6e43d9",
+    "object_ref": "9d9800d28995d9c983f52d38881a9b20384470b97a9533b5e18a7c15cf6e43d9",
+    "resource_entity_id": "7424640e-04de-b5cb-b20f-924e0aea9b09",
+    "run_id": "3e8da646-0fa0-4991-9cf1-df3e4de1e028",
+    "artifact_key": "State Enriched Registry bucket/luminari-colorado-ENRICHED-PASS2-2026.docx",
+    "source_content_sha256": "8b37624175d4b9d6f31c8d207ac1ffb0a4c2648c479cfaba0c1405600e3fb24d",
+    "source_candidate_hash": "4d6947958cbce1ff3932f1132f9c311489bd50c116d89057c0e61680767c498c",
+    "source_locator": "lines:152-157",
+    "revision_id": "d582dd04-a2e8-566f-8e77-3f132c7216c9",
+    "supersedes_revision_id": null,
+    "operation": "classify",
+    "before_category": null,
+    "before_layer": "layer_1",
+    "primary_category": "legal_civil_rights",
+    "source_heading": {
+      "paragraph": 157,
+      "xpath": "/w:document/w:body/w:p[47]",
+      "quoted_text": "Legal Aid"
+    },
+    "source_record_span": {
+      "part": "word/document.xml",
+      "paragraph_start": 171,
+      "paragraph_end": 175,
+      "xpath_start": "/w:document/w:body/w:tbl[27]/w:tr/w:tc/w:p[1]",
+      "xpath_end": "/w:document/w:body/w:tbl[27]/w:tr/w:tc/w:p[5]"
+    },
+    "source_text": "Legal Aid\nCAIR Coalition Colorado / Rocky Mountain Immigrant Advocacy Network (RMIAN)\n12600 W Colfax Ave Ste B-400, Lakewood, CO 80215\n📞 303-433-2812  ·  rmian.org\nEligibility: Immigrants and detained individuals — immigration legal services, detention representation, DACA.\nApply / Notes: rmian.org — primary immigration legal services in Colorado. Also Colorado Immigrant Rights Coalition (CIRC): 303-592-8899.",
+    "secondary_memberships": [],
+    "review_scope": "navigation_classification_only",
+    "review_method": "individual_source_heading_and_service_review",
+    "review_ledger_sha256": "bdacd48b3f3c557f340120478236ae80130568984f4faa4a8c526b1746a5f7a1",
+    "reviewed_by": "codex_individual_source_category_review_20260914",
+    "review_note": "The reviewed block P171–P175 belongs to source section \"Legal Aid\". Map the section to existing directory category legal_civil_rights; preserve service-role details separately. Secondary memberships are interpretations of named source services. Underlying facts remain source assertions; admission and legal verification unchanged."
+  },
+  {
+    "civic_object_uid": "corpus:e9d59359dda39e69dc8a75e1ad7817e27018be83033ad02e8a189a92ad9ecc66",
+    "object_ref": "e9d59359dda39e69dc8a75e1ad7817e27018be83033ad02e8a189a92ad9ecc66",
+    "resource_entity_id": "ccd67478-086c-5209-60e4-38d5d1ad9284",
+    "run_id": "3e8da646-0fa0-4991-9cf1-df3e4de1e028",
+    "artifact_key": "State Enriched Registry bucket/luminari-colorado-ENRICHED-PASS2-2026.docx",
+    "source_content_sha256": "8b37624175d4b9d6f31c8d207ac1ffb0a4c2648c479cfaba0c1405600e3fb24d",
+    "source_candidate_hash": "fbfe7628b196d1131847e94bfee9af82c393645649ff88a6bc6264205b31611a",
+    "source_locator": "lines:159-163",
+    "revision_id": "c783491d-883e-5766-8b14-5cd3cdf5ab95",
+    "supersedes_revision_id": null,
+    "operation": "classify",
+    "before_category": null,
+    "before_layer": "layer_1",
+    "primary_category": "cash_assistance",
+    "source_heading": {
+      "paragraph": 177,
+      "xpath": "/w:document/w:body/w:p[52]",
+      "quoted_text": "Cash Assistance & Income"
+    },
+    "source_record_span": {
+      "part": "word/document.xml",
+      "paragraph_start": 179,
+      "paragraph_end": 183,
+      "xpath_start": "/w:document/w:body/w:tbl[28]/w:tr/w:tc/w:p[1]",
+      "xpath_end": "/w:document/w:body/w:tbl[28]/w:tr/w:tc/w:p[5]"
+    },
+    "source_text": "Cash Assistance & Income\nColorado Works (TANF — CDHS)\n1575 Sherman St, Denver, CO 80203\n📞 303-866-5700  ·  colorado.gov/cdhs\nEligibility: Families with children — up to $508/month for family of 3. Federal 60-month limit.\nApply / Notes: peak.colorado.gov or county Dept of Social/Human Services. Work requirement 20–35 hrs/week. Pair with SNAP, Health First Colorado, CCAP, LEAP, emergency rental assistance.",
+    "secondary_memberships": [],
+    "review_scope": "navigation_classification_only",
+    "review_method": "individual_source_heading_and_service_review",
+    "review_ledger_sha256": "bdacd48b3f3c557f340120478236ae80130568984f4faa4a8c526b1746a5f7a1",
+    "reviewed_by": "codex_individual_source_category_review_20260914",
+    "review_note": "The reviewed block P179–P183 belongs to source section \"Cash Assistance & Income\". Map the section to existing directory category cash_assistance; preserve service-role details separately. Secondary memberships are interpretations of named source services. Underlying facts remain source assertions; admission and legal verification unchanged."
+  },
+  {
+    "civic_object_uid": "corpus:1a133aa2f70050b43204063200162008362827a01d7e0fae846ba17351ddd4da",
+    "object_ref": "1a133aa2f70050b43204063200162008362827a01d7e0fae846ba17351ddd4da",
+    "resource_entity_id": "b3555839-f5e5-11a6-1c94-f795f01546b5",
+    "run_id": "3e8da646-0fa0-4991-9cf1-df3e4de1e028",
+    "artifact_key": "State Enriched Registry bucket/luminari-colorado-ENRICHED-PASS2-2026.docx",
+    "source_content_sha256": "8b37624175d4b9d6f31c8d207ac1ffb0a4c2648c479cfaba0c1405600e3fb24d",
+    "source_candidate_hash": "b2db652f7249417dcdb48de7478e9daecec2948aaacdd88dfcd4870e0df7fdae",
+    "source_locator": "lines:165-170",
+    "revision_id": "4485b000-e553-59b6-8a79-8fcab8807dd4",
+    "supersedes_revision_id": null,
+    "operation": "classify",
+    "before_category": null,
+    "before_layer": "layer_1",
+    "primary_category": "cash_assistance",
+    "source_heading": {
+      "paragraph": 177,
+      "xpath": "/w:document/w:body/w:p[52]",
+      "quoted_text": "Cash Assistance & Income"
+    },
+    "source_record_span": {
+      "part": "word/document.xml",
+      "paragraph_start": 185,
+      "paragraph_end": 189,
+      "xpath_start": "/w:document/w:body/w:tbl[29]/w:tr/w:tc/w:p[1]",
+      "xpath_end": "/w:document/w:body/w:tbl[29]/w:tr/w:tc/w:p[5]"
+    },
+    "source_text": "Cash Assistance & Income\nColorado UI (CDLE — Dept of Labor & Employment)\n633 17th St Ste 201, Denver, CO 80202\n📞 303-318-9000  ·  myui.colorado.gov\nEligibility: Workers who lost job through no fault — up to $781/week, 26 weeks maximum.\nApply / Notes: myui.colorado.gov — file online. 20-day appeal deadline from determination mailing. Colorado UI has improved system reliability in recent years.",
+    "secondary_memberships": [
+      {
+        "category": "employment_labor",
+        "basis": "reviewed_interpretation_of_source_service",
+        "source_paragraph": "P188",
+        "evidence_quote": "Workers who lost job"
+      }
+    ],
+    "review_scope": "navigation_classification_only",
+    "review_method": "individual_source_heading_and_service_review",
+    "review_ledger_sha256": "bdacd48b3f3c557f340120478236ae80130568984f4faa4a8c526b1746a5f7a1",
+    "reviewed_by": "codex_individual_source_category_review_20260914",
+    "review_note": "The reviewed block P185–P189 belongs to source section \"Cash Assistance & Income\". Map the section to existing directory category cash_assistance; preserve service-role details separately. Secondary memberships are interpretations of named source services. Underlying facts remain source assertions; admission and legal verification unchanged."
+  },
+  {
+    "civic_object_uid": "corpus:ea46881e083aa0539329aa4fe410f3958b4e4d725b9d55d9b89e52dbd4558180",
+    "object_ref": "ea46881e083aa0539329aa4fe410f3958b4e4d725b9d55d9b89e52dbd4558180",
+    "resource_entity_id": "138c3d37-73bc-2357-ce2d-cba65019d8f7",
+    "run_id": "3e8da646-0fa0-4991-9cf1-df3e4de1e028",
+    "artifact_key": "State Enriched Registry bucket/luminari-colorado-ENRICHED-PASS2-2026.docx",
+    "source_content_sha256": "8b37624175d4b9d6f31c8d207ac1ffb0a4c2648c479cfaba0c1405600e3fb24d",
+    "source_candidate_hash": "672a45b5bf1cb29fa733a7cf6f34471403b9ae175a078d7441b99a207367a833",
+    "source_locator": "lines:172-176",
+    "revision_id": "8961ce0a-3403-5940-bdd6-8a1a8e0838b6",
+    "supersedes_revision_id": null,
+    "operation": "classify",
+    "before_category": null,
+    "before_layer": "layer_1",
+    "primary_category": "utilities",
+    "source_heading": {
+      "paragraph": 191,
+      "xpath": "/w:document/w:body/w:p[56]",
+      "quoted_text": "Utilities"
+    },
+    "source_record_span": {
+      "part": "word/document.xml",
+      "paragraph_start": 193,
+      "paragraph_end": 197,
+      "xpath_start": "/w:document/w:body/w:tbl[30]/w:tr/w:tc/w:p[1]",
+      "xpath_end": "/w:document/w:body/w:tbl[30]/w:tr/w:tc/w:p[5]"
+    },
+    "source_text": "Utilities\nColorado LEAP (Low-Income Energy Assistance Program)\n1575 Sherman St, Denver, CO 80203\n📞 866-432-8435  ·  cdhs.colorado.gov/leap\nEligibility: Income < 60% state median income — heating, cooling, crisis shutoff prevention, weatherization.\nApply / Notes: cdhs.colorado.gov/leap — apply through local community-based organizations. Opens November 1. Crisis component year-round. Xcel Energy Renewable Energy Assistance Program (REAP) and Black Hills Energy both have low-income discount programs.",
+    "secondary_memberships": [],
+    "review_scope": "navigation_classification_only",
+    "review_method": "individual_source_heading_and_service_review",
+    "review_ledger_sha256": "bdacd48b3f3c557f340120478236ae80130568984f4faa4a8c526b1746a5f7a1",
+    "reviewed_by": "codex_individual_source_category_review_20260914",
+    "review_note": "The reviewed block P193–P197 belongs to source section \"Utilities\". Map the section to existing directory category utilities; preserve service-role details separately. Secondary memberships are interpretations of named source services. Underlying facts remain source assertions; admission and legal verification unchanged."
+  },
+  {
+    "civic_object_uid": "corpus:3a98d6d6cfc708af7c9179b20ec291f03d90c2e0c7c45ca2013b2603f03d963f",
+    "object_ref": "3a98d6d6cfc708af7c9179b20ec291f03d90c2e0c7c45ca2013b2603f03d963f",
+    "resource_entity_id": "44fa74da-8c6c-9fd1-9b79-8430a0f33672",
+    "run_id": "3e8da646-0fa0-4991-9cf1-df3e4de1e028",
+    "artifact_key": "State Enriched Registry bucket/luminari-colorado-ENRICHED-PASS2-2026.docx",
+    "source_content_sha256": "8b37624175d4b9d6f31c8d207ac1ffb0a4c2648c479cfaba0c1405600e3fb24d",
+    "source_candidate_hash": "f7bb16bb7a42b68f032018d8c45ef6852213330563e52988aa164b3d60dd7acf",
+    "source_locator": "lines:178-197",
+    "revision_id": "6a54e354-77a4-53ce-ae5b-554c6d2f651e",
+    "supersedes_revision_id": null,
+    "operation": "classify",
+    "before_category": null,
+    "before_layer": "layer_1",
+    "primary_category": "utilities",
+    "source_heading": {
+      "paragraph": 191,
+      "xpath": "/w:document/w:body/w:p[56]",
+      "quoted_text": "Utilities"
+    },
+    "source_record_span": {
+      "part": "word/document.xml",
+      "paragraph_start": 199,
+      "paragraph_end": 203,
+      "xpath_start": "/w:document/w:body/w:tbl[31]/w:tr/w:tc/w:p[1]",
+      "xpath_end": "/w:document/w:body/w:tbl[31]/w:tr/w:tc/w:p[5]"
+    },
+    "source_text": "Utilities\nColorado PUC (Public Utilities Commission)\n1560 Broadway Ste 250, Denver, CO 80202\n📞 303-894-2000  ·  puc.colorado.gov\nEligibility: Utility shutoff complaints — winter shutoff protection November 1–April 15 for gas and electric regulated utilities.\nApply / Notes: puc.colorado.gov — file complaint online or by phone; winter shutoff moratorium is meaningful given Colorado temperatures; medical certification halts shutoff year-round.",
+    "secondary_memberships": [],
+    "review_scope": "navigation_classification_only",
+    "review_method": "individual_source_heading_and_service_review",
+    "review_ledger_sha256": "bdacd48b3f3c557f340120478236ae80130568984f4faa4a8c526b1746a5f7a1",
+    "reviewed_by": "codex_individual_source_category_review_20260914",
+    "review_note": "The reviewed block P199–P203 belongs to source section \"Utilities\". Map the section to existing directory category utilities; preserve service-role details separately. Secondary memberships are interpretations of named source services. Underlying facts remain source assertions; admission and legal verification unchanged."
+  },
+  {
+    "civic_object_uid": "corpus:5bc9757b30ebc96d6eeb3e32bac49f13dd7a2435cd4416f213d1e13907e873ff",
+    "object_ref": "5bc9757b30ebc96d6eeb3e32bac49f13dd7a2435cd4416f213d1e13907e873ff",
+    "resource_entity_id": "47e843d4-bd40-dbe1-c234-1d27aaf1a4ea",
+    "run_id": "3e8da646-0fa0-4991-9cf1-df3e4de1e028",
+    "artifact_key": "State Enriched Registry bucket/luminari-colorado-ENRICHED-PASS2-2026.docx",
+    "source_content_sha256": "8b37624175d4b9d6f31c8d207ac1ffb0a4c2648c479cfaba0c1405600e3fb24d",
+    "source_candidate_hash": "a451465afa2b07f6977da95eed8b4e0b9496da914b34fdbb396956070af1d42b",
+    "source_locator": "lines:201-205",
+    "revision_id": "37e18e8e-6cf9-5adc-ae4b-69c01c527d9e",
+    "supersedes_revision_id": null,
+    "operation": "classify",
+    "before_category": null,
+    "before_layer": "layer_1",
+    "primary_category": "tribal",
+    "source_heading": {
+      "paragraph": 223,
+      "xpath": "/w:document/w:body/w:p[75]",
+      "quoted_text": "Tribal Nations — Southern Ute and Ute Mountain Ute"
+    },
+    "source_record_span": {
+      "part": "word/document.xml",
+      "paragraph_start": 227,
+      "paragraph_end": 231,
+      "xpath_start": "/w:document/w:body/w:tbl[33]/w:tr/w:tc/w:p[1]",
+      "xpath_end": "/w:document/w:body/w:tbl[33]/w:tr/w:tc/w:p[5]"
+    },
+    "source_text": "Tribal Nations — Southern Ute and Ute Mountain Ute\nSouthern Ute Indian Tribe — Social Services\n116 Mouache Dr, Ignacio, CO 81137\n📞 970-563-0100  ·  southernute-nsn.gov\nEligibility: Enrolled Southern Ute members — tribal TANF, housing, health (Ute Indian Health), elder, youth, child welfare (ICWA).\nApply / Notes: southernute-nsn.gov — comprehensive tribal social services. Southern Ute Indian Health Service: 970-563-4581. Durango satellite office for tribal members in Durango area.",
+    "secondary_memberships": [
+      {
+        "category": "cash_assistance",
+        "basis": "reviewed_interpretation_of_source_service",
+        "source_paragraph": "P230",
+        "evidence_quote": "tribal TANF"
+      },
+      {
+        "category": "housing",
+        "basis": "reviewed_interpretation_of_source_service",
+        "source_paragraph": "P230",
+        "evidence_quote": "housing"
+      },
+      {
+        "category": "healthcare",
+        "basis": "reviewed_interpretation_of_source_service",
+        "source_paragraph": "P230",
+        "evidence_quote": "health"
+      }
+    ],
+    "review_scope": "navigation_classification_only",
+    "review_method": "individual_source_heading_and_service_review",
+    "review_ledger_sha256": "bdacd48b3f3c557f340120478236ae80130568984f4faa4a8c526b1746a5f7a1",
+    "reviewed_by": "codex_individual_source_category_review_20260914",
+    "review_note": "The reviewed block P227–P231 belongs to source section \"Tribal Nations — Southern Ute and Ute Mountain Ute\". Map the section to existing directory category tribal; preserve service-role details separately. Secondary memberships are interpretations of named source services. Underlying facts remain source assertions; admission and legal verification unchanged."
+  },
+  {
+    "civic_object_uid": "corpus:79ee378087374a94a6c8cfcd7f3b2c35476be1ab0f83270790dae440a40df75b",
+    "object_ref": "79ee378087374a94a6c8cfcd7f3b2c35476be1ab0f83270790dae440a40df75b",
+    "resource_entity_id": "cc245ce5-ab78-6372-5573-bd9fc0c4e622",
+    "run_id": "3e8da646-0fa0-4991-9cf1-df3e4de1e028",
+    "artifact_key": "State Enriched Registry bucket/luminari-colorado-ENRICHED-PASS2-2026.docx",
+    "source_content_sha256": "8b37624175d4b9d6f31c8d207ac1ffb0a4c2648c479cfaba0c1405600e3fb24d",
+    "source_candidate_hash": "3c371bf04767f716c88c576b61f33aa4c567ed26a3d73dca6230f11628e9f3d6",
+    "source_locator": "lines:207-211",
+    "revision_id": "0f4ec6bb-1d5e-5b62-8794-345ec0c37aca",
+    "supersedes_revision_id": null,
+    "operation": "classify",
+    "before_category": null,
+    "before_layer": "layer_1",
+    "primary_category": "tribal",
+    "source_heading": {
+      "paragraph": 223,
+      "xpath": "/w:document/w:body/w:p[75]",
+      "quoted_text": "Tribal Nations — Southern Ute and Ute Mountain Ute"
+    },
+    "source_record_span": {
+      "part": "word/document.xml",
+      "paragraph_start": 233,
+      "paragraph_end": 237,
+      "xpath_start": "/w:document/w:body/w:tbl[34]/w:tr/w:tc/w:p[1]",
+      "xpath_end": "/w:document/w:body/w:tbl[34]/w:tr/w:tc/w:p[5]"
+    },
+    "source_text": "Tribal Nations — Southern Ute and Ute Mountain Ute\nUte Mountain Ute Tribe — Social Services\nTown of Towaoc, Towaoc, CO 81334\n📞 970-565-3751  ·  utemountain.org\nEligibility: Enrolled Ute Mountain Ute members — tribal TANF, housing, health (Ute Mountain Health Center), child welfare.\nApply / Notes: utemountain.org — tribal headquarters in Towaoc. Ute Mountain Health Center: 970-565-4441. Tribal lands extend into Utah and New Mexico.",
+    "secondary_memberships": [
+      {
+        "category": "cash_assistance",
+        "basis": "reviewed_interpretation_of_source_service",
+        "source_paragraph": "P236",
+        "evidence_quote": "tribal TANF"
+      },
+      {
+        "category": "housing",
+        "basis": "reviewed_interpretation_of_source_service",
+        "source_paragraph": "P236",
+        "evidence_quote": "housing"
+      },
+      {
+        "category": "healthcare",
+        "basis": "reviewed_interpretation_of_source_service",
+        "source_paragraph": "P236",
+        "evidence_quote": "health"
+      }
+    ],
+    "review_scope": "navigation_classification_only",
+    "review_method": "individual_source_heading_and_service_review",
+    "review_ledger_sha256": "bdacd48b3f3c557f340120478236ae80130568984f4faa4a8c526b1746a5f7a1",
+    "reviewed_by": "codex_individual_source_category_review_20260914",
+    "review_note": "The reviewed block P233–P237 belongs to source section \"Tribal Nations — Southern Ute and Ute Mountain Ute\". Map the section to existing directory category tribal; preserve service-role details separately. Secondary memberships are interpretations of named source services. Underlying facts remain source assertions; admission and legal verification unchanged."
+  },
+  {
+    "civic_object_uid": "corpus:d473958389e482eb8fc7d123e151c4b061802469cbf565adb553e45b487f110f",
+    "object_ref": "d473958389e482eb8fc7d123e151c4b061802469cbf565adb553e45b487f110f",
+    "resource_entity_id": "093dd3ff-9fb6-ebc8-6502-f7090c4ab149",
+    "run_id": "3e8da646-0fa0-4991-9cf1-df3e4de1e028",
+    "artifact_key": "State Enriched Registry bucket/luminari-colorado-ENRICHED-PASS2-2026.docx",
+    "source_content_sha256": "8b37624175d4b9d6f31c8d207ac1ffb0a4c2648c479cfaba0c1405600e3fb24d",
+    "source_candidate_hash": "2000542a9219b943d54db0f3b496aa71e7e57faeba6cc7fc8cff062ee93e7180",
+    "source_locator": "lines:213-217",
+    "revision_id": "fd157b40-517c-59be-9c0d-330eb14419dc",
+    "supersedes_revision_id": null,
+    "operation": "classify",
+    "before_category": null,
+    "before_layer": "layer_1",
+    "primary_category": "tribal",
+    "source_heading": {
+      "paragraph": 223,
+      "xpath": "/w:document/w:body/w:p[75]",
+      "quoted_text": "Tribal Nations — Southern Ute and Ute Mountain Ute"
+    },
+    "source_record_span": {
+      "part": "word/document.xml",
+      "paragraph_start": 239,
+      "paragraph_end": 243,
+      "xpath_start": "/w:document/w:body/w:tbl[35]/w:tr/w:tc/w:p[1]",
+      "xpath_end": "/w:document/w:body/w:tbl[35]/w:tr/w:tc/w:p[5]"
+    },
+    "source_text": "Tribal Nations — Southern Ute and Ute Mountain Ute\nIHS Phoenix Area Office (covers CO tribes)\n40 N Central Ave Ste 600, Phoenix, AZ 85004\n📞 602-364-5039  ·  ihs.gov/phoenix\nEligibility: AI/AN enrolled members — IHS health services for CO tribes; Phoenix Area covers southern Rockies.\nApply / Notes: ihs.gov/phoenix — primary IHS contact for Colorado tribes. For urban AI/AN in Denver: Denver Indian Health and Family Services (303-953-8271 / denverindian.org).",
+    "secondary_memberships": [
+      {
+        "category": "healthcare",
+        "basis": "reviewed_interpretation_of_source_service",
+        "source_paragraph": "P242",
+        "evidence_quote": "IHS health services"
+      }
+    ],
+    "review_scope": "navigation_classification_only",
+    "review_method": "individual_source_heading_and_service_review",
+    "review_ledger_sha256": "bdacd48b3f3c557f340120478236ae80130568984f4faa4a8c526b1746a5f7a1",
+    "reviewed_by": "codex_individual_source_category_review_20260914",
+    "review_note": "The reviewed block P239–P243 belongs to source section \"Tribal Nations — Southern Ute and Ute Mountain Ute\". Map the section to existing directory category tribal; preserve service-role details separately. Secondary memberships are interpretations of named source services. Underlying facts remain source assertions; admission and legal verification unchanged."
+  },
+  {
+    "civic_object_uid": "corpus:6ecc7f8ba56c2e771487d775b567af038a5f25569dc7e72778700ed6c1713900",
+    "object_ref": "6ecc7f8ba56c2e771487d775b567af038a5f25569dc7e72778700ed6c1713900",
+    "resource_entity_id": "8880f952-1b91-30b4-6ebc-d5f8940344d1",
+    "run_id": "3e8da646-0fa0-4991-9cf1-df3e4de1e028",
+    "artifact_key": "State Enriched Registry bucket/luminari-colorado-ENRICHED-PASS2-2026.docx",
+    "source_content_sha256": "8b37624175d4b9d6f31c8d207ac1ffb0a4c2648c479cfaba0c1405600e3fb24d",
+    "source_candidate_hash": "49e17b7070a0946388299b7185a241019947a3c2faf8e6d3bd1c307d25c314b0",
+    "source_locator": "lines:219-322",
+    "revision_id": "f956ef9a-1b64-562d-bcbf-0e16743c88f6",
+    "supersedes_revision_id": null,
+    "operation": "classify",
+    "before_category": null,
+    "before_layer": "layer_1",
+    "primary_category": "tribal",
+    "source_heading": {
+      "paragraph": 223,
+      "xpath": "/w:document/w:body/w:p[75]",
+      "quoted_text": "Tribal Nations — Southern Ute and Ute Mountain Ute"
+    },
+    "source_record_span": {
+      "part": "word/document.xml",
+      "paragraph_start": 245,
+      "paragraph_end": 249,
+      "xpath_start": "/w:document/w:body/w:tbl[36]/w:tr/w:tc/w:p[1]",
+      "xpath_end": "/w:document/w:body/w:tbl[36]/w:tr/w:tc/w:p[5]"
+    },
+    "source_text": "Tribal Nations — Southern Ute and Ute Mountain Ute\nDenver Indian Health and Family Services\n1633 Fillmore St Ste 200, Denver, CO 80206\n📞 303-953-8271  ·  denverindian.org\nEligibility: Urban AI/AN Denver area — health services, social services, cultural programs, ICWA navigation.\nApply / Notes: denverindian.org — primary urban Indian resource for Denver metro AI/AN residents not affiliated with Southern Ute or Ute Mountain.",
+    "secondary_memberships": [
+      {
+        "category": "healthcare",
+        "basis": "reviewed_interpretation_of_source_service",
+        "source_paragraph": "P248",
+        "evidence_quote": "health services"
+      }
+    ],
+    "review_scope": "navigation_classification_only",
+    "review_method": "individual_source_heading_and_service_review",
+    "review_ledger_sha256": "bdacd48b3f3c557f340120478236ae80130568984f4faa4a8c526b1746a5f7a1",
+    "reviewed_by": "codex_individual_source_category_review_20260914",
+    "review_note": "The reviewed block P245–P249 belongs to source section \"Tribal Nations — Southern Ute and Ute Mountain Ute\". Map the section to existing directory category tribal; preserve service-role details separately. Secondary memberships are interpretations of named source services. Underlying facts remain source assertions; admission and legal verification unchanged."
+  }
+]
+$category_receipts_20260914$::jsonb;
+  v_transcription_ids jsonb := $transcription_ids${"abd611213bb84ef8ae7a04f7d262b4713acc422f98695600c6481fb06db21fd0":"f225f057-cc7a-9e9f-45b7-99481d03f0f6","54cd7af7466722508c84663ab9011aadc03d62ba8d22ac68e8897900b636571b":"abd3b529-5276-f621-5b8a-f7791715442f","a355e33e849887947415a041e23078d225248ea5a8e376f5ae0e201c994b0f4a":"b6d91b7d-ea35-5993-4753-f67a53beaf94","c463cababdd461a1e90eb8b8b7dac39f194f2488a0283c9a211a4eebfb1ab451":"5a62b4cb-4c5b-c3e1-6a8d-17968506a6ad","2efedc7ab4c238911662690ecbdab4d235654191b241c8fcac94e3a7ca73a7f0":"17680f94-b446-0ea9-c83d-f451282a8dd2","1fde66e2f4f8077f0da18c1bb5c4cb800a53805910e0d085e2ab1879639f70eb":"c36311e9-598c-6959-7b1d-a5d27de8eab9","45602b8f38fa68973f8bb7d1648b1196964bd51fd9c5b76ab72e047201e97230":"c4ed2491-c577-a61f-e855-93aeb1541f90","492fb8e6a38516b5310040d7f2fe946884ed126cf992e36e43b0fe7ac30a0940":"90ea56d9-d1bc-4087-bf34-47028d54ea0d","eec4c218908a05c496bb3b0a0bfce9294722eea4f840af0d97894b219bc3e4bd":"a743bd07-0e70-41e1-7f26-127e9f336c8d","293dcdb82a759a9c7f6f10aa8cd96300d03fbc2dfefadfa1175d70210231d2d0":"cc911494-456a-4d0e-f0af-08582d90ed17","d84ce4dc423d0191b01880984d5043412713f45f017a93fe9291c7187265aef4":"ceb45af5-e9a6-4c3c-f768-55c7ff044361","5842c90893e24e5b42702848b7066f14a53eaa29cb7e09a8f32ef14f0c6a85c4":"0a32ec75-ea72-d857-5f05-ba6854dcfb29","e4516767ddc533a03d48849c56b7a902c0c491cdeb9913a48b73bda0bec6ce54":"8dc38890-d39b-4aca-b450-b2e8236d4f8d","8e4cf4d47edbd68f5751813c64645673736cd164c72e8186cb41c8f352029901":"a1cb5dde-cfbb-eab4-c91e-54ae8f8ccd92","dade90b946c61ef89b624131968680950137350e56c38c5a30f07361764acabd":"3d627cfb-daf2-c443-886f-bd6a22e3c9b3","9d9800d28995d9c983f52d38881a9b20384470b97a9533b5e18a7c15cf6e43d9":"66b2c28e-3418-b590-5c78-a88f1baf6a7c","e9d59359dda39e69dc8a75e1ad7817e27018be83033ad02e8a189a92ad9ecc66":"fcb5c719-e9b4-798f-1b9b-8e1993c5bad9","1a133aa2f70050b43204063200162008362827a01d7e0fae846ba17351ddd4da":"055234be-bf99-a4e3-6a52-b191c8fa9ee3","ea46881e083aa0539329aa4fe410f3958b4e4d725b9d55d9b89e52dbd4558180":"a91a7f41-c498-9736-55e4-4948dad88105","3a98d6d6cfc708af7c9179b20ec291f03d90c2e0c7c45ca2013b2603f03d963f":"ad2cae4e-66be-293e-0b88-edd7945f45ca","5bc9757b30ebc96d6eeb3e32bac49f13dd7a2435cd4416f213d1e13907e873ff":"605eecc3-a36f-ec8f-8cee-9abc7069ea6a","79ee378087374a94a6c8cfcd7f3b2c35476be1ab0f83270790dae440a40df75b":"de5e0ce1-c07b-fd3c-b601-0d6e32023dfd","d473958389e482eb8fc7d123e151c4b061802469cbf565adb553e45b487f110f":"6655aa8b-66b7-d7ee-2890-9b57b3dfee57","6ecc7f8ba56c2e771487d775b567af038a5f25569dc7e72778700ed6c1713900":"2d35cf9d-3802-bbcb-4a7b-31855698fd5f"}$transcription_ids$::jsonb;
+  v_receipt jsonb;
+  v_current jsonb;
+  v_stored jsonb;
+  v_originals jsonb := '{}'::jsonb;
+  v_expected_memberships jsonb;
+  v_count integer;
+  v_existing integer := 0;
+  v_inserted integer;
+begin
+  if jsonb_typeof(v_receipts)<>'array' or jsonb_array_length(v_receipts)<>24
+    or (select count(distinct value->>'revision_id') from jsonb_array_elements(v_receipts))<>24
+    or (select count(distinct value->>'object_ref') from jsonb_array_elements(v_receipts))<>24 then
+    raise exception 'colorado_category_expected_24_distinct_receipts';
+  end if;
+  for v_receipt in select value from jsonb_array_elements(v_receipts) loop
+    if v_receipt->>'review_scope'<>'navigation_classification_only'
+      or v_receipt->>'operation'<>'classify'
+      or v_receipt->'supersedes_revision_id'<>'null'::jsonb
+      or v_receipt->>'source_content_sha256'<>'8b37624175d4b9d6f31c8d207ac1ffb0a4c2648c479cfaba0c1405600e3fb24d'
+      or v_receipt->>'review_ledger_sha256'<>'bdacd48b3f3c557f340120478236ae80130568984f4faa4a8c526b1746a5f7a1' then
+      raise exception 'colorado_category_packet_scope_changed';
+    end if;
+    select count(*),(jsonb_agg(to_jsonb(v))->0) into v_count,v_current
+    from public.v_lighthouse_resource_program_transcribed_v1 v
+    where v.civic_object_uid=v_receipt->>'civic_object_uid'
+      and v.object_ref=v_receipt->>'object_ref' and v.run_id=(v_receipt->>'run_id')::uuid
+      and v.artifact_key=v_receipt->>'artifact_key'
+      and v.source_content_sha256=v_receipt->>'source_content_sha256'
+      and v.source_candidate_hash=v_receipt->>'source_candidate_hash'
+      and v.source_locator=v_receipt->>'source_locator'
+      and v.object_class='resource' and v.person_facing_ready is true;
+    if v_count<>1 or public.luminari_stable_uuid_v1(v_receipt->>'object_ref')
+      <>(v_receipt->>'resource_entity_id')::uuid then
+      raise exception 'colorado_category_current_binding_changed: %',v_receipt->>'object_ref';
+    end if;
+    if (v_current->'category') is distinct from v_receipt->'before_category'
+      or (v_current->'layer') is distinct from v_receipt->'before_layer' then
+      raise exception 'colorado_category_before_classification_changed: %',v_receipt->>'object_ref';
+    end if;
+    if v_current#>>'{source_transcription_correction,revision_id}'
+      is distinct from v_transcription_ids->>(v_receipt->>'object_ref') then
+      raise exception 'colorado_category_expected_transcription_not_current: %',v_receipt->>'object_ref';
+    end if;
+    v_originals:=v_originals||jsonb_build_object(v_receipt->>'object_ref',v_current);
+    if exists(select 1 from public.luminari_resource_category_revision_v1
+      where supersedes_revision_id=(v_receipt->>'revision_id')::uuid) then
+      raise exception 'colorado_category_receipt_superseded_requires_new_review';
+    end if;
+    select to_jsonb(r)-'revision_sequence'-'created_at' into v_stored
+    from public.luminari_resource_category_revision_v1 r where revision_id=(v_receipt->>'revision_id')::uuid;
+    if found then
+      if v_stored is distinct from v_receipt then raise exception 'colorado_category_existing_receipt_differs'; end if;
+      v_existing:=v_existing+1;
+    end if;
+  end loop;
+  insert into public.luminari_resource_category_revision_v1 (civic_object_uid, object_ref, resource_entity_id, run_id, artifact_key, source_content_sha256, source_candidate_hash, source_locator, revision_id, supersedes_revision_id, operation, before_category, before_layer, primary_category, source_heading, source_record_span, source_text, secondary_memberships, review_scope, review_method, review_ledger_sha256, reviewed_by, review_note)
+  select civic_object_uid, object_ref, resource_entity_id, run_id, artifact_key, source_content_sha256, source_candidate_hash, source_locator, revision_id, supersedes_revision_id, operation, before_category, before_layer, primary_category, source_heading, source_record_span, source_text, secondary_memberships, review_scope, review_method, review_ledger_sha256, reviewed_by, review_note from jsonb_populate_recordset(null::public.luminari_resource_category_revision_v1,v_receipts)
+  on conflict(revision_id) do nothing;
+  get diagnostics v_inserted=row_count;
+  if v_inserted<>24-v_existing then raise exception 'colorado_category_unexpected_insert_count'; end if;
+  for v_receipt in select value from jsonb_array_elements(v_receipts) loop
+    v_expected_memberships:=jsonb_build_array(v_receipt->>'primary_category')||coalesce(
+      (select jsonb_agg(m.value->>'category' order by m.ordinality)
+       from jsonb_array_elements(v_receipt->'secondary_memberships') with ordinality m(value,ordinality)),'[]'::jsonb);
+    select count(*),(jsonb_agg(to_jsonb(v))->0) into v_count,v_current
+    from public.v_lighthouse_resource_program_classified_v1 v
+    where v.civic_object_uid=v_receipt->>'civic_object_uid' and v.object_ref=v_receipt->>'object_ref'
+      and v.category_review->>'revision_id'=v_receipt->>'revision_id';
+    if v_count<>1 or v_current->>'reviewed_primary_category' is distinct from v_receipt->>'primary_category'
+      or v_current->'reviewed_category_memberships' is distinct from v_expected_memberships
+      or v_current#>>'{category_review,primary_basis}' is distinct from 'reviewed_source_heading_mapping'
+      or v_current#>'{category_review,source_heading}' is distinct from v_receipt->'source_heading'
+      or v_current#>'{category_review,source_record_span}' is distinct from v_receipt->'source_record_span'
+      or v_current#>'{category_review,secondary_memberships}' is distinct from v_receipt->'secondary_memberships' then
+      raise exception 'colorado_category_projection_mismatch';
+    end if;
+    if (v_current-array['reviewed_primary_category','reviewed_category_memberships','category_review'])
+      is distinct from v_originals->(v_receipt->>'object_ref') then
+      raise exception 'colorado_category_unreviewed_projection_fields_changed';
+    end if;
+    select count(*),(jsonb_agg(to_jsonb(v))->0) into v_count,v_current
+    from public.v_lighthouse_resource_program_transcribed_v1 v
+    where v.civic_object_uid=v_receipt->>'civic_object_uid' and v.object_ref=v_receipt->>'object_ref';
+    if v_count<>1 or v_current is distinct from v_originals->(v_receipt->>'object_ref') then
+      raise exception 'colorado_category_transcribed_source_changed';
+    end if;
+    select to_jsonb(r)-'revision_sequence'-'created_at' into v_stored
+    from public.luminari_resource_category_revision_v1 r where revision_id=(v_receipt->>'revision_id')::uuid;
+    if v_stored is distinct from v_receipt then raise exception 'colorado_category_committed_receipt_mismatch'; end if;
+  end loop;
+end;
+$apply_categories$;
+commit;
+select jsonb_build_object(
+  'stored_receipts',(select count(*) from public.luminari_resource_category_revision_v1
+    where review_ledger_sha256='bdacd48b3f3c557f340120478236ae80130568984f4faa4a8c526b1746a5f7a1' and operation='classify'),
+  'current_classified_resources',(select count(*) from public.v_lighthouse_resource_program_classified_v1
+    where category_review->>'review_ledger_sha256'='bdacd48b3f3c557f340120478236ae80130568984f4faa4a8c526b1746a5f7a1'),
+  'current_memberships',(select sum(cardinality(reviewed_category_memberships)) from public.v_lighthouse_resource_program_classified_v1
+    where category_review->>'review_ledger_sha256'='bdacd48b3f3c557f340120478236ae80130568984f4faa4a8c526b1746a5f7a1'),
+  'review_scope','navigation_classification_only','source_content_sha256','8b37624175d4b9d6f31c8d207ac1ffb0a4c2648c479cfaba0c1405600e3fb24d'
+) as colorado_category_application;

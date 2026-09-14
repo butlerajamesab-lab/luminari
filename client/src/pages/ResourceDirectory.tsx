@@ -74,6 +74,7 @@ type DirectoryResource = {
   source_resource_name: string;
   resource_type?: string | null;
   resource_category?: string | null;
+  directory_categories?: string[];
   jurisdiction?: string | null;
   jurisdiction_scope?: string | null;
   state?: string | null;
@@ -100,6 +101,7 @@ type DirectorySummary = {
   inactive_resources: number;
   jurisdiction_count: number;
   category_count: number;
+  category_counts_overlap?: boolean;
   contact_count: number;
   resources_with_contacts: number;
   location_count: number;
@@ -449,6 +451,16 @@ function ResourceCard({ resource }: { resource: DirectoryResource }) {
         <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-200">
           {categoryLabel(resource.resource_category)}
         </span>
+        {resource.directory_categories
+          ?.filter((value) => value !== resource.resource_category)
+          .map((value) => (
+            <span
+              key={value}
+              className="rounded-full border border-white/10 px-2.5 py-1 text-[11px] text-slate-300"
+            >
+              {categoryLabel(value)}
+            </span>
+          ))}
         <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-medium text-slate-300">
           {stateName}
         </span>
@@ -555,11 +567,15 @@ export default function ResourceDirectory() {
     initial_params.get("query") || "",
   );
   const [query, setQuery] = useState(initial_params.get("query") || "");
-  const initial_jurisdiction = (initial_params.get("jurisdiction") || "").trim().toUpperCase();
+  const initial_jurisdiction = (initial_params.get("jurisdiction") || "")
+    .trim()
+    .toUpperCase();
   const [jurisdiction, set_jurisdiction] = useState(
     initial_jurisdiction === "USVI" ? "VI" : initial_jurisdiction,
   );
-  const [category, setCategory] = useState(initial_params.get("category") || "");
+  const [category, setCategory] = useState(
+    initial_params.get("category") || "",
+  );
   const [page, setPage] = useState(0);
 
   const directoryQuery = trpc.resourceDirectory.search.useQuery(
@@ -757,6 +773,12 @@ export default function ResourceDirectory() {
               <h2 className="mt-1 font-serif text-2xl font-semibold text-white">
                 Twelve governed resource categories
               </h2>
+              {summary?.category_counts_overlap && (
+                <p className="mt-2 text-xs text-slate-400">
+                  A resource can appear in more than one category. Overall and
+                  jurisdiction totals count each record once.
+                </p>
+              )}
             </div>
             {category && (
               <button

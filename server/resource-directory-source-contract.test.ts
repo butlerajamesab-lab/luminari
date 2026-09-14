@@ -32,7 +32,7 @@ describe("current Resource Directory source contracts", () => {
     expect(router).toContain("get_publishable_resource_directory_summary");
     expect(appRouter).toContain("resourceDirectory: resourceDirectoryRouter");
     expect(shim).toContain('from "./resource-directory-fast-current"');
-    expect(service).toContain("v_lighthouse_resource_program_transcribed_v1");
+    expect(service).toContain("v_lighthouse_resource_program_classified_v1");
     expect(service).toContain("person_facing_ready");
     expect(service).toContain("DIRECTORY_UI_CATEGORY_SQL");
     expect(service).not.toContain("luminari_resource_entities");

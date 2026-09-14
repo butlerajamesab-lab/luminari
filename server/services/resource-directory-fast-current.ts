@@ -10,8 +10,8 @@ export type publishable_resource_directory_search_input = {
   offset?: number;
 };
 
-const PROJECTION_CONTRACT = "lighthouse_resource_directory_current_v4";
-const DIRECTORY_VIEW = "public.v_lighthouse_resource_program_transcribed_v1";
+const PROJECTION_CONTRACT = "lighthouse_resource_directory_current_v5";
+const DIRECTORY_VIEW = "public.v_lighthouse_resource_program_classified_v1";
 // Reuses the reviewed service change from PR #612. The original source code
 // remains available on each row; this is presentation alias normalization.
 const JURISDICTION_CODE_SQL = `case upper(btrim(coalesce(state_code,jurisdiction))) when 'USVI' then 'VI' else upper(btrim(coalesce(state_code,jurisdiction))) end`;
@@ -22,11 +22,11 @@ function normalized_jurisdiction(value: unknown): string | null {
 }
 const SUMMARY_CACHE_TTL_MS = 5 * 60 * 1000;
 // Reuse the governed twelve-category vocabulary and precedence already
-// declared by v_lighthouse_resource_directory_whole_corpus_v2. The bounded
-// public reader classifies only source category/layer labels so summary and
-// filtering never scan long descriptions merely to draw navigation. Raw
-// source category text is preserved separately and never rewritten.
-const DIRECTORY_UI_CATEGORY_SQL = `case
+// declared by v_lighthouse_resource_directory_whole_corpus_v2. Exact-source
+// reviewed memberships take precedence. Unreviewed rows retain the existing
+// category/layer fallback; navigation never scans descriptions. Raw source
+// category text is preserved separately and never rewritten.
+const DIRECTORY_UI_CATEGORY_SQL = `coalesce(reviewed_primary_category, case
   when lower(concat_ws(' ',coalesce(category,''),coalesce(layer,''))) ~ '(food|nutrition|snap|wic|pantry|meal)' then 'food_nutrition'
   when lower(concat_ws(' ',coalesce(category,''),coalesce(layer,''))) ~ '(mental health|behavioral health|substance|recovery|healthcare|health care|clinic|hospital|medical|medicaid|medicare)' then 'healthcare'
   when lower(concat_ws(' ',coalesce(category,''),coalesce(layer,''))) ~ '(housing|shelter|rent|homeless|eviction|mortgage)' then 'housing'
@@ -39,7 +39,8 @@ const DIRECTORY_UI_CATEGORY_SQL = `case
   when lower(concat_ws(' ',coalesce(category,''),coalesce(layer,''))) ~ '(veteran|military|va benefit)' then 'veterans'
   when lower(concat_ws(' ',coalesce(category,''),coalesce(layer,''))) ~ '(cash assistance|income support|tanf|ssi|ssdi|public assistance|benefit)' then 'cash_assistance'
   else 'general_resource'
-end`;
+end)`;
+const DIRECTORY_CATEGORY_MEMBERSHIP_SQL = `coalesce(reviewed_category_memberships,array[${DIRECTORY_UI_CATEGORY_SQL}])`;
 
 let summary_cache: {
   expires_at: number;
@@ -219,6 +220,10 @@ function map_resource_row(row: any) {
     source_resource_name: raw_name,
     resource_type: String(row.object_class ?? "resource"),
     resource_category: category,
+    directory_categories: Array.isArray(row.reviewed_category_memberships)
+      ? row.reviewed_category_memberships
+      : [category],
+    category_review: row.category_review ?? null,
     source_resource_category: row.category ?? row.layer ?? null,
     jurisdiction,
     source_state: row.state_code ?? null,
@@ -231,7 +236,13 @@ function map_resource_row(row: any) {
     description: row.description ?? null,
     eligibility_summary: row.eligibility_summary ?? null,
     apply_notes: row.apply_notes ?? null,
-    service_categories: unique_strings([category, row.layer, row.object_class]),
+    service_categories: unique_strings([
+      ...(Array.isArray(row.reviewed_category_memberships)
+        ? row.reviewed_category_memberships
+        : [category]),
+      row.layer,
+      row.object_class,
+    ]),
     verification_status:
       row.data_state ?? row.projection_state ?? "source_attached",
     promotion_status: row.person_facing_ready
@@ -302,9 +313,9 @@ async function load_publishable_resource_directory_summary(): Promise<
   const pool = get_pool();
   const result = await pool.query(`
     with catalog as materialized (
-      select object_class,phone,email,website_url,address,
+      select object_ref,object_class,phone,email,website_url,address,
              ${JURISDICTION_CODE_SQL} as jurisdiction_code,
-             person_facing_ready,${DIRECTORY_UI_CATEGORY_SQL} as ui_category
+             person_facing_ready,${DIRECTORY_CATEGORY_MEMBERSHIP_SQL} as directory_categories
         from ${DIRECTORY_VIEW}
     ), totals as (
       select count(*)::int as total_resources,
@@ -320,29 +331,23 @@ async function load_publishable_resource_directory_summary(): Promise<
              count(*) filter(where person_facing_ready)::int as person_facing_ready_count,
              count(*) filter(where not person_facing_ready)::int as source_preserved_pending_count
         from catalog
+    ), memberships as (
+      select c.object_ref,c.jurisdiction_code,m.category_key
+        from catalog c cross join lateral unnest(c.directory_categories) m(category_key)
     ), category_rows as (
-      select ui_category as id,
-             count(*)::int as item_count
-        from catalog
-       group by 1
+      select category_key as id,count(distinct object_ref)::int as item_count
+        from memberships group by category_key
     ), jurisdiction_category_rows as (
-      select jurisdiction_code as code,
-             ui_category as category_key,
-             count(*)::int as category_count,
-             count(*) filter(where object_class='resource')::int as direct_resource_count,
-             count(*) filter(where object_class='program')::int as program_count
-        from catalog
-       where jurisdiction_code is not null
-       group by 1,2
+      select jurisdiction_code as code,category_key,count(distinct object_ref)::int as category_count
+        from memberships where jurisdiction_code is not null group by jurisdiction_code,category_key
     ), jurisdiction_rows as (
-      select code,
-             sum(category_count)::int as item_count,
-             sum(direct_resource_count)::int as direct_resource_count,
-             sum(program_count)::int as program_count,
-             jsonb_object_agg(category_key,category_count order by category_key) as categories
-        from jurisdiction_category_rows
-       where code is not null and code <> ''
-       group by code
+      select c.jurisdiction_code as code,count(*)::int as item_count,
+             count(*) filter(where c.object_class='resource')::int as direct_resource_count,
+             count(*) filter(where c.object_class='program')::int as program_count,
+             (select jsonb_object_agg(j.category_key,j.category_count order by j.category_key)
+                from jurisdiction_category_rows j where j.code=c.jurisdiction_code) as categories
+        from catalog c where c.jurisdiction_code is not null and c.jurisdiction_code<>''
+        group by c.jurisdiction_code
     )
     select to_jsonb(totals) as totals,
            coalesce((
@@ -386,6 +391,7 @@ async function load_publishable_resource_directory_summary(): Promise<
     inactive_resources: 0,
     jurisdiction_count: finite_number(totals.jurisdiction_count),
     category_count: categories.length,
+    category_counts_overlap: true,
     contact_count: finite_number(totals.contact_count),
     resources_with_contacts: finite_number(totals.resources_with_contacts),
     location_count: finite_number(totals.location_count),
@@ -416,7 +422,7 @@ async function load_publishable_resource_directory_summary(): Promise<
       },
     ],
     current_snapshot: {
-      snapshot_id: "current-resource-program-catalog-v4",
+      snapshot_id: "current-resource-program-catalog-v5",
       snapshot_version: PROJECTION_CONTRACT,
       receipt_hash: null,
       activated_at: null,
@@ -464,7 +470,7 @@ export async function search_publishable_resource_directory(
   }
   if (input.category) {
     params.push(input.category);
-    where.push(`${DIRECTORY_UI_CATEGORY_SQL}=$${params.length}`);
+    where.push(`$${params.length}=any(${DIRECTORY_CATEGORY_MEMBERSHIP_SQL})`);
   }
   if (input.query?.trim()) {
     params.push(`%${input.query.trim()}%`);
@@ -500,7 +506,7 @@ export async function search_publishable_resource_directory(
        address,eligibility_summary,apply_notes,description,filing_portal,filing_portal_url,statutory_authority,
        deadline,hours,languages,organization_type,candidate_state,source_created_at,field_provenance,
        has_access_point,projection_state,projection_version,reconciled_at,typed_ready,jurisdiction_ready,
-       direct_access_ready,data_state,catalog_kind,person_facing_ready,source_transcription_correction
+       direct_access_ready,data_state,catalog_kind,person_facing_ready,source_transcription_correction,reviewed_primary_category,reviewed_category_memberships,category_review
      from ${DIRECTORY_VIEW}
      ${where_sql}
      order by name asc nulls last,organization_name asc nulls last,object_ref asc
@@ -523,7 +529,7 @@ export async function search_publishable_resource_directory(
     offset,
     items: page_rows.map(map_resource_row),
     current_snapshot: {
-      snapshot_id: "current-resource-program-catalog-v4",
+      snapshot_id: "current-resource-program-catalog-v5",
       snapshot_version: PROJECTION_CONTRACT,
       receipt_hash: null,
     },

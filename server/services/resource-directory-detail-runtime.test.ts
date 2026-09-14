@@ -87,7 +87,7 @@ describe("resource search/detail continuity", () => {
     });
     const result = await search_publishable_resource_directory({});
     expect(query.mock.calls[0][0]).toContain(
-      "v_lighthouse_resource_program_transcribed_v1",
+      "v_lighthouse_resource_program_classified_v1",
     );
     expect(query.mock.calls[0][0]).toContain("source_transcription_correction");
     expect(result.items[0]).toMatchObject({

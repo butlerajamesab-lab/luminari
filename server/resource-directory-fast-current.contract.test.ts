@@ -20,7 +20,7 @@ describe("current resource directory read contract", () => {
       "server/services/resource-directory-fast-current.ts",
       "utf8",
     );
-    expect(source).toContain("public.v_lighthouse_resource_program_transcribed_v1");
+    expect(source).toContain("public.v_lighthouse_resource_program_classified_v1");
     expect(source).toContain("with catalog as materialized");
     expect(source).toContain("has_more,");
     expect(source).not.toContain("count(*) over()::int as filtered_total");

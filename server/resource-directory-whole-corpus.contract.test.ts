@@ -23,7 +23,7 @@ describe("Resource Directory whole-corpus cutover contract", () => {
 
   it("routes the publishable service to the current whole-corpus projection", () => {
     expect(alias).toContain('./resource-directory-fast-current');
-    expect(service).toContain('public.v_lighthouse_resource_program_transcribed_v1');
+    expect(service).toContain('public.v_lighthouse_resource_program_classified_v1');
     expect(service).toContain('person_facing_ready');
     expect(service).not.toContain('from public.luminari_resource_snapshot_identity_v1');
     expect(service).not.toContain('from public.luminari_resource_snapshot_v1');
