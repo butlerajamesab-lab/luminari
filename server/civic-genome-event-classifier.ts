@@ -32,21 +32,21 @@ export const classify_docket_event = (
     };
   }
 
-  if (/signed by governor|governor signed|became law|chapter/.test(text)) {
+  if (/^\s*(?:chapter(?:ed)?|enacted)\b|signed by governor|governor signed|became law|\b(?:bill|measure|resolution)\s+(?:has\s+)?enacted\b/.test(last_action)) {
     return {
       event_type: "enacted",
       event_summary: summarize(bill, "appears enacted or chaptered on the live docket"),
     };
   }
 
-  if (/veto/.test(text)) {
+  if (/^\s*vetoed\b|\b(?:bill|measure|resolution)\s+(?:has\s+)?vetoed\b/.test(last_action)) {
     return {
       event_type: "vetoed",
       event_summary: summarize(bill, "appears vetoed on the live docket"),
     };
   }
 
-  if (/failed|withdrawn|dead|postponed indefinitely/.test(text)) {
+  if (/^\s*(?:failed|withdrawn|dead)\b|postponed indefinitely|\b(?:bill|measure|resolution)\s+(?:has\s+)?(?:failed|withdrawn|died)\b/.test(last_action)) {
     return {
       event_type: "failed",
       event_summary: summarize(bill, "appears failed, withdrawn, dead, or indefinitely postponed on the live docket"),

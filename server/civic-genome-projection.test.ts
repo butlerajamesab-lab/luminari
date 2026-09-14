@@ -45,6 +45,28 @@ describe("Civic Genome Docket lifecycle projection", () => {
     })).toBe("advanced_one_chamber");
   });
 
+  it("does not persist terminal state from a topic or subsidiary action", () => {
+    const bill = {
+      bill_id: 4,
+      number: "HB4",
+      title: "Amending chapter 42.",
+      last_action: "Amendment withdrawn.",
+    };
+    expect(infer_state_position(bill)).toBe("introduced");
+    expect(classify_docket_event(bill, null).event_type).toBe("amended");
+  });
+
+  it("preserves explicit whole-bill enactment evidence", () => {
+    const bill = {
+      bill_id: 5,
+      number: "HB5",
+      status: 4,
+      last_action: "Bill enacted as Chapter 12.",
+    };
+    expect(infer_state_position(bill)).toBe("enacted");
+    expect(classify_docket_event(bill, null).event_type).toBe("enacted");
+  });
+
   it("emits a correction when derived position changes under the same observation hash", () => {
     expect(should_append_projection_event(
       "same_hash",

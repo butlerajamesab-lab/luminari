@@ -632,7 +632,7 @@ const lifecycle_for_bill = (bill: docket_bill, cache_fresh: boolean): lifecycle_
   const action_evidence = (bill.last_action ?? "").toLowerCase();
   const terminal_evidence = /^\s*(?:chapter(?:ed)?|effective date|enacted|withdrawn|dead|vetoed)\b/.test(action_evidence)
     || /signed by governor|became law|postponed indefinitely/.test(action_evidence)
-    || /\b(?:bill|measure|resolution)\s+(?:has\s+)?(?:failed|withdrawn|vetoed|died)\b|\bfailed\s+(?:final passage|to pass)\b/.test(action_evidence);
+    || /\b(?:bill|measure|resolution)\s+(?:has\s+)?(?:enacted|failed|withdrawn|vetoed|died)\b|\bfailed\s+(?:final passage|to pass)\b/.test(action_evidence);
   if ([5, 6].includes(status) || terminal_evidence) return "completed";
   if (!cache_fresh) return "freshness_unknown";
   if (bill.radar?.next_event_date) return "action_approaching";
