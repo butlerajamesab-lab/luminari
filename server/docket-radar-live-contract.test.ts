@@ -52,6 +52,14 @@ describe("Docket Radar live contract", () => {
     expect(read("supabase/migrations/20260914111014_docket_subsidiary_terminal_event_corrections.sql")).toContain("(amendment|motion)");
     expect(read("supabase/migrations/20260914111934_docket_subsidiary_terminal_phrase_corrections.sql")).toContain(".{0,80}");
     expect(read("supabase/migrations/20260914112732_docket_subsidiary_correction_retractions.sql")).toContain("docket_classification_correction_retracted");
+    const lifecycle_scope = read("supabase/migrations/20260914114306_docket_lifecycle_subsidiary_disposition_scope.sql");
+    expect(lifecycle_scope).toContain("civic_genome_normalized_source_history_v3_unscoped");
+    expect(lifecycle_scope).toContain("is_subsidiary_disposition");
+    expect(lifecycle_scope).toContain("bill|measure|resolution");
+    expect(read("supabase/migrations/20260914114916_docket_lifecycle_subsidiary_reconcile_corrected_1_of_4.sql"))
+      .toContain("sync_civic_genome_lifecycle_history_v3(affected.source_bill_id)");
+    expect(lifecycle_scope).not.toMatch(/update\s+public\.civic_genome_lifecycle_event_v2/i);
+    expect(lifecycle_scope).not.toMatch(/delete\s+from\s+public\.civic_genome_lifecycle_event_v2/i);
     expect(projection).toContain('action: "unchanged"');
   });
 
