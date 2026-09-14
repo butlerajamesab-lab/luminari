@@ -44,7 +44,7 @@ describe("Docket Radar live contract", () => {
   });
 
   it("keeps removed trait classes in covered drift and settles worker startup", () => {
-    const migration = read("supabase/migrations/20260914081500_docket_drift_removed_class_coverage.sql");
+    const migration = read("supabase/migrations/20260914080801_docket_drift_removed_class_coverage.sql");
     const worker = read("server/prism-rosetta-worker.ts");
     expect(migration).toContain("covered_classes");
     expect(migration).toContain("COALESCE(cl.n, 0) AS latest_count");
