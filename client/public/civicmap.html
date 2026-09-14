@@ -798,7 +798,7 @@
       <button class="button" id="resetButton" type="button">
         ↺ <span>Reset</span>
       </button>
-      <a class="button primary" id="directoryButton" href="/resources">
+      <a class="button primary" id="directoryButton" href="/resource-directory">
         ☰ <span>Open Directory</span>
       </a>
     </div>
@@ -1224,7 +1224,7 @@
       const suffix = directoryParams.toString()
         ? `?${directoryParams.toString()}`
         : "";
-      document.getElementById("directoryButton").href = `/resources${suffix}`;
+      document.getElementById("directoryButton").href = `/resource-directory${suffix}`;
     }
 
     function updateBrowserState() {
@@ -1404,7 +1404,7 @@
         </section>
         <section class="detail-section">
           <div class="actions">
-            <a class="action primary" href="/resources?${directoryParams.toString()}">
+            <a class="action primary" href="/resource-directory?${directoryParams.toString()}">
               Open ${escapeHtml(meta.name)} directory
             </a>
           </div>
@@ -1621,7 +1621,7 @@
           <div class="actions">
             <a class="action primary" href="/resource/${encodeURIComponent(resource.resource_entity_id)}">View full record</a>
             ${actions.join("")}
-            <a class="action" href="/resources?${directoryParams.toString()}">Open in Directory</a>
+            <a class="action" href="/resource-directory?${directoryParams.toString()}">Open in Directory</a>
           </div>
         </section>
       `;
