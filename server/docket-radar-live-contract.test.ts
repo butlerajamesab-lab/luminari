@@ -35,10 +35,12 @@ describe("Docket Radar live contract", () => {
     const page = read("client/src/pages/DocketRoom.tsx");
     const detail = read("client/src/components/DocketBillDetailWorkspace.tsx");
     expect(page).toContain("Live · changeable");
+    expect(page).not.toContain("[4, 5, 6].includes(status)");
     expect(page).toContain("Freshness unknown");
     expect(page).not.toContain("full_national_coverage");
     expect(page).not.toContain("warm_selected_state");
     expect(detail).toContain("source disagreement, not a contradiction within the bill");
+    expect(detail).toContain("Passed · further action possible");
     expect(page).toContain('new Date(`${value}T00:00:00`)');
     expect(detail).toContain('new Date(`${value}T00:00:00`)');
   });

@@ -629,7 +629,10 @@ const valid_date = (value?: string | null): Date | null => {
 
 const lifecycle_for_bill = (bill: docket_bill, cache_fresh: boolean): lifecycle_state => {
   const status = Number(bill.status);
-  if ([4, 5, 6].includes(status)) return "completed";
+  const lifecycle_evidence = `${bill.title ?? ""} ${bill.description ?? ""} ${bill.last_action ?? ""}`.toLowerCase();
+  const terminal_evidence = /^\s*effective date\b/i.test(bill.last_action ?? "")
+    || /chapter|enacted|signed by governor|became law|failed|withdrawn|dead|vetoed|postponed indefinitely/.test(lifecycle_evidence);
+  if ([5, 6].includes(status) || terminal_evidence) return "completed";
   if (!cache_fresh) return "freshness_unknown";
   if (bill.radar?.next_event_date) return "action_approaching";
   const last_action = valid_date(bill.last_action_date || bill.status_date);
