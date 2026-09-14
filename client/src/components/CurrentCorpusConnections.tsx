@@ -8,6 +8,26 @@ import { current_object_inspection_route } from "../../../shared/architecture-ro
 type corpus_row = Record<string, unknown>;
 const text_value = (value: unknown) => typeof value === "string" && value.trim() ? value : "Not recorded";
 
+export function ResourceReviewPresentation({ value }: { value: unknown }) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const presentation = value as corpus_row;
+  const categories = Array.isArray(presentation.reviewed_category_memberships)
+    ? presentation.reviewed_category_memberships.filter((category): category is string => typeof category === "string") : [];
+  const primary = typeof presentation.reviewed_primary_category === "string" ? presentation.reviewed_primary_category : null;
+  const secondary = categories.filter(category => category !== primary);
+  const transcription = presentation.source_transcription_correction as corpus_row | null;
+  const classification = presentation.category_review as corpus_row | null;
+  return <div className="space-y-1 rounded border border-cyan-400/15 p-2 text-xs">
+    {primary && <p>Reviewed primary category: {primary.replace(/_/g, " ")}</p>}
+    {secondary.length > 0 && <p>Additional service interpretations: {secondary.map(category => category.replace(/_/g, " ")).join(" · ")}</p>}
+    <p>Stored label: {text_value(presentation.recorded_label)}</p>
+    <p>Stored category: {text_value(presentation.recorded_category)}</p>
+    {Boolean(transcription?.revision_id) && <p className="break-all">Transcription receipt: {text_value(transcription?.revision_id)}</p>}
+    {Boolean(classification?.revision_id) && <p className="break-all">Classification receipt: {text_value(classification?.revision_id)}</p>}
+    <p className="text-muted-foreground">Source transcription and navigation review do not verify service suitability or legal applicability.</p>
+  </div>;
+}
+
 function PageControls({ total, offset, set_offset }: {
   total: number; offset: number; set_offset: (value: number) => void;
 }) {
@@ -60,7 +80,7 @@ export default function CurrentCorpusConnections({ object_classes }: { object_cl
           </select>
         </label>
         <form className="flex gap-2" onSubmit={(event) => { event.preventDefault(); set_submitted_query(query); set_offset(0); }}>
-          <input aria-label="Search current records" className="rounded border bg-background px-2 text-sm" value={query} maxLength={240} onChange={(event) => set_query(event.target.value)} placeholder="Name, jurisdiction or source location" />
+          <input aria-label="Search current records" className="rounded border bg-background px-2 text-sm" value={query} maxLength={240} onChange={(event) => set_query(event.target.value)} placeholder="Name, reviewed category, jurisdiction or source location" />
           <Button size="sm" variant="outline" disabled={!object_class}>Search records</Button>
         </form>
       </div>
@@ -89,6 +109,7 @@ export default function CurrentCorpusConnections({ object_classes }: { object_cl
             <div><dt className="inline font-semibold">Source location: </dt><dd className="inline">{text_value(selected.source_locator)}</dd></div>
             <div><dt className="inline font-semibold">Source SHA-256: </dt><dd className="inline">{text_value(selected.source_content_sha256)}</dd></div>
           </dl>
+          <ResourceReviewPresentation value={selected.presentation} />
           {selected_source.data?.source_access.url ? <a className="text-sm text-cyan-200 underline" href={selected_source.data.source_access.url} target="_blank" rel="noopener noreferrer">Open original source document</a>
             : <p className="text-xs text-muted-foreground">{selected_source.error ? "Source access could not be checked." : selected_source.isLoading ? "Checking source access…" : selected_source.data?.source_access.status === "source_access_restricted" ? "This source requires authorized access." : "An accessible, version-bound original source has not been established."}</p>}
         </>}
@@ -102,10 +123,12 @@ export default function CurrentCorpusConnections({ object_classes }: { object_cl
             const other_id = outgoing ? edge.to_node_id : edge.from_node_id;
             const other_type = outgoing ? edge.to_node_type : edge.from_node_type;
             const label = outgoing ? edge.to_label : edge.from_label;
+            const presentation = outgoing ? edge.to_presentation : edge.from_presentation;
             return <div key={String(edge.edge_id)} className="rounded border border-white/10 p-2 text-xs">
               <div>{outgoing ? "Outgoing" : "Incoming"} · {text_value(edge.edge_type)} · {text_value(edge.evidence_state)}</div>
               {other_type ? <button className="mt-1 text-cyan-200 underline" onClick={() => navigate(current_object_inspection_route(String(other_type), String(other_id)))}>{text_value(label ?? other_id)}</button> : <p>Target not in current projection: {text_value(other_id)}</p>}
               <p className="break-all text-muted-foreground">Evidence: {text_value(edge.evidence_hash)}</p>
+              <ResourceReviewPresentation value={presentation} />
             </div>;
           })}
           {edge_page.data.total === 0 && <p className="text-sm">No recorded relationships were returned for this exact identity.</p>}
