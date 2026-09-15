@@ -74,7 +74,13 @@ const KNOWN_JURISDICTIONS = [
 
 export default function CaseResolutionLens() {
   const [, navigate] = useLocation();
-  const { currentCase: current_case, currentCaseId: current_case_id, isLoading: case_context_loading } = useCase();
+  const {
+    currentCase: current_case,
+    currentCaseId: current_case_id,
+    cases,
+    setCurrentCaseId: set_current_case_id,
+    isLoading: case_context_loading,
+  } = useCase();
   const [step, setStep] = useState<PipelineStep>("problem");
   const [problem_text, set_problem_text] = useState("");
   const [jurisdiction, set_jurisdiction] = useState("");
@@ -100,6 +106,20 @@ export default function CaseResolutionLens() {
     if (claim_type) { set_selected_claim_type(claim_type); setStep("proof"); }
   }, []);
 
+  // A case carried by a Resolve link is applied only when that exact case is
+  // present in the authenticated user's case list. Invalid, unavailable and
+  // cross-account identifiers never replace the current case.
+  useEffect(() => {
+    if (case_context_loading || !cases) return;
+    const requested_case = new URLSearchParams(window.location.search).get("case_id");
+    if (!requested_case || !/^[1-9]\d*$/.test(requested_case)) return;
+    const requested_case_id = Number(requested_case);
+    if (!Number.isSafeInteger(requested_case_id)) return;
+    if (requested_case_id !== current_case_id && cases.some(candidate => candidate.id === requested_case_id)) {
+      set_current_case_id(requested_case_id);
+    }
+  }, [case_context_loading, cases, current_case_id, set_current_case_id]);
+
   // ─── Evidence Layer State ───
   const [showAddEvidence, setShowAddEvidence] = useState(false);
   const [newEvidence, setNewEvidence] = useState({ title: "", evidenceType: "other", description: "", sourceName: "" });
@@ -114,13 +134,18 @@ export default function CaseResolutionLens() {
     const first_context = previous_jurisdiction_case_id.current === undefined;
     const case_changed = !first_context && previous_jurisdiction_case_id.current !== current_case_id;
     previous_jurisdiction_case_id.current = current_case_id;
+    const requested_jurisdiction = new URLSearchParams(window.location.search).get("jurisdiction");
     if (case_changed) {
-      set_jurisdiction("");
-      set_jurisdiction_source("manual");
+      if (requested_jurisdiction && KNOWN_JURISDICTIONS.includes(requested_jurisdiction)) {
+        set_jurisdiction(requested_jurisdiction);
+        set_jurisdiction_source("link");
+      } else {
+        set_jurisdiction("");
+        set_jurisdiction_source("manual");
+      }
       return;
     }
     if (!first_context) return;
-    const requested_jurisdiction = new URLSearchParams(window.location.search).get("jurisdiction");
     if (requested_jurisdiction && KNOWN_JURISDICTIONS.includes(requested_jurisdiction)) {
       set_jurisdiction(requested_jurisdiction);
       set_jurisdiction_source("link");

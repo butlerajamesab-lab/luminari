@@ -63,6 +63,9 @@ describe("Docket Radar live contract", () => {
     const prefix_scope = read("supabase/migrations/20260914123335_docket_prefix_subsidiary_failure_scope.sql");
     expect(prefix_scope).toContain("failed\\y.{0,80}\\y(amendments?|motions?)\\y");
     expect(prefix_scope).toContain("legacy_prefix_subsidiary_failure_was_not_whole_measure_disposition");
+    const prefix_reconcile = read("supabase/migrations/20260915070000_docket_prefix_subsidiary_failure_reconcile.sql");
+    expect(prefix_reconcile).toContain("civic_genome_normalized_source_history_v3_scope_v1(null)");
+    expect(prefix_reconcile).toContain("sync_civic_genome_lifecycle_history_v3(affected.source_bill_id)");
     expect(read("supabase/migrations/20260914123901_docket_prefix_correction_postponement_retractions.sql"))
       .toContain("explicit_whole_measure_postponement_in_same_action");
     expect(projection).toContain('action: "unchanged"');

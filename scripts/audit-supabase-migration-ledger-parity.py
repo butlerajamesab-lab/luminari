@@ -286,6 +286,12 @@ APPROVED_REPOSITORY_ONLY = {
         "20260909143000_lighthouse_runtime_postgres_contract_v1.sql",
         "288d613674d5545f7673eadc08430ce26bcff089",
     ),
+    # Forward migration pending production application through the normal
+    # Supabase deployment gate.
+    "20260915070000": (
+        "20260915070000_docket_prefix_subsidiary_failure_reconcile.sql",
+        "6beb3ff76c5cf26adc7963cc99dda2bb1ed92667",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
