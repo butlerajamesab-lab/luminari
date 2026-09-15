@@ -4,6 +4,14 @@ import { rosetta_evaluation_schema, type RosettaEvaluation } from "../shared/ros
 const ROSETTA_EVALUATION_TIMEOUT_MS = 10_000;
 const ROSETTA_STANDALONE_URL = "https://rosetta-v3-platform.onrender.com";
 
+export function get_rosetta_review_base_url(): string {
+  const url = new URL(process.env.ROSETTA_REVIEW_BASE_URL?.trim() || ROSETTA_STANDALONE_URL);
+  if (url.protocol !== "https:" || url.username || url.password) {
+    throw new Error("invalid_rosetta_review_base_url");
+  }
+  return url.origin;
+}
+
 type version_binding = {
   bill_version_id: string;
   version_type: string;
@@ -35,10 +43,7 @@ export async function get_civic_genome_rosetta_evaluation(input: {
     [input.genome_bill_id, input.bill_version_id ?? null],
   );
   const binding = rows[0] ?? null;
-  const base_url = new URL(process.env.ROSETTA_REVIEW_BASE_URL?.trim() || ROSETTA_STANDALONE_URL);
-  if (base_url.protocol !== "https:" || base_url.username || base_url.password) {
-    throw new Error("invalid_rosetta_review_base_url");
-  }
+  const base_url = get_rosetta_review_base_url();
   const review_url = new URL("/review", base_url).toString();
   if (!binding?.source_document_id || !/^[0-9a-f]{64}$/.test(binding.source_content_hash ?? "")) {
     return { binding, availability: "binding_missing", review_url, evaluation: null };

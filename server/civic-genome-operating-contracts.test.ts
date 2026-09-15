@@ -68,6 +68,16 @@ beforeEach(() => {
 });
 
 describe("Civic Genome operating contracts", () => {
+  it("advertises the configured Rosetta review host for all navigation", async () => {
+    vi.stubEnv("ROSETTA_REVIEW_BASE_URL", "https://review.example.org/");
+    query.mockResolvedValue({ rows: [] });
+    try {
+      const result = await get_civic_genome_operating_contracts();
+      expect(result.contracts.find(contract => contract.service_key === "rosetta")?.external_url).toBe("https://review.example.org");
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
   it("reports Atlas as unbound, active deep Prism verification, and only Rosetta with a standalone external service", async () => {
     query
       .mockResolvedValueOnce({

@@ -66,6 +66,14 @@ describe("Civic Genome saved Rosetta evaluation", () => {
     expect((await get_civic_genome_rosetta_evaluation({ genome_bill_id })).evaluation?.status).toBe(status);
   });
 
+  it("uses the configured host for both data reads and exact reader links", async () => {
+    vi.stubEnv("ROSETTA_REVIEW_BASE_URL", "https://review.example.org/");
+    fetch_mock.mockResolvedValue(Response.json(detail()));
+    const result = await get_civic_genome_rosetta_evaluation({ genome_bill_id });
+    expect(new URL(String(fetch_mock.mock.calls[0][0])).origin).toBe("https://review.example.org");
+    expect(new URL(result.review_url).origin).toBe("https://review.example.org");
+  });
+
   it.each([null, { ...binding, source_document_id: null }, { ...binding, source_content_hash: null }, { ...binding, source_content_hash: "bad" }])("does not infer missing source identity", async missing => {
     query.mockResolvedValue({ rows: missing ? [missing] : [] });
     const result = await get_civic_genome_rosetta_evaluation({ genome_bill_id });

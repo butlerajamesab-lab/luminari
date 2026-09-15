@@ -217,6 +217,8 @@ export default function CivicGenomePage() {
     const returned_keys = new Set(observed_contracts.map(contract => contract.service_key));
     return [...observed_contracts, ...explicit_empty_contracts.filter(contract => !returned_keys.has(contract.service_key))];
   }, [operating_contracts.data, operating_contracts.isSuccess]);
+  const rosetta_service_url = contracts.find(contract => contract.service_key === "rosetta")?.external_url;
+  const rosetta_review_url = rosetta_service_url ? new URL("/review", rosetta_service_url).toString() : null;
 
   const search = (event: React.FormEvent) => {
     event.preventDefault();
@@ -243,7 +245,7 @@ export default function CivicGenomePage() {
         <button type="submit" style={{ background: p.green_soft, border: `1px solid ${p.green}`, color: p.green, borderRadius: 10, padding: ".65rem 1rem", fontFamily: mono, fontSize: ".72rem", cursor: "pointer" }}>Open genome record</button>
       </form>
 
-      <p style={{ margin: "0 0 1rem", fontSize: ".85rem" }}><a href="https://rosetta-v3-platform.onrender.com/review" target="_blank" rel="noopener noreferrer" style={{ color: "#91c9f7" }}>Browse Rosetta evaluation results</a> <span style={{ color: p.muted }}>· inspect laws by passed, failed, held, or unprocessed status</span></p>
+      {rosetta_review_url && <p style={{ margin: "0 0 1rem", fontSize: ".85rem" }}><a href={rosetta_review_url} target="_blank" rel="noopener noreferrer" style={{ color: "#91c9f7" }}>Browse Rosetta evaluation results</a> <span style={{ color: p.muted }}>· inspect laws by passed, failed, held, or unprocessed status</span></p>}
 
       {selected && bill_detail.isSuccess && <RosettaEvaluation key={selected.genome_bill_id} genome_bill_id={selected.genome_bill_id} current_version={current_version} published_version={published_version}/>}
 
