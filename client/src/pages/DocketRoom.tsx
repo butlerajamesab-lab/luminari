@@ -657,7 +657,7 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
   const [cache_statuses, set_cache_statuses] = useState<docket_cache_status[]>([]);
   const [cache_status_error, set_cache_status_error] = useState<string | null>(null);
   const [cache_status_loading, set_cache_status_loading] = useState(false);
-  const [show_completed, set_show_completed] = useState(false);
+  const [show_completed, set_show_completed] = useState(true);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -1088,7 +1088,7 @@ function DocketList({ onSelect }: { onSelect: (id: string) => void }) {
               fontFamily: fontMono, fontSize: "0.8rem", color: dk.muted,
               flexWrap: "wrap",
             }}>
-              <span><strong style={{ color: dk.paper }}>{stats.total}</strong> entries analyzed</span>
+              <span><strong style={{ color: dk.paper }}>{stats.total}</strong> submitted entries</span>
               {Object.entries(stats.byLevel || {}).map(([level, count]) => (
                 <span key={level}>
                   <strong style={{ color: dk.steelBright }}>{count as number}</strong> {JURISDICTION_LEVEL_LABELS[level] || level}
@@ -1251,7 +1251,7 @@ function DocketList({ onSelect }: { onSelect: (id: string) => void }) {
           <div style={{ textAlign: "center", padding: "4rem 0", color: dk.muted }}>
             <Gavel size={32} style={{ margin: "0 auto 1rem", opacity: 0.3 }} />
             <p style={{ fontFamily: fontSans, fontSize: "0.95rem" }}>
-              {debouncedSearch ? `No entries matching "${debouncedSearch}"` : "No entries found."}
+              {debouncedSearch ? `No submitted entries matching "${debouncedSearch}"` : "No submitted entries. Cached legislation is listed above."}
             </p>
             {debouncedSearch && (
               <button
