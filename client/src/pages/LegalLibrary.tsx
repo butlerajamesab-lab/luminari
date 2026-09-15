@@ -139,7 +139,7 @@ function LibraryPager({
 }
 
 export default function LegalLibrary() {
-  const PAGE_SIZE = 100;
+  const PAGE_SIZE = 25;
   const { isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
