@@ -112,7 +112,7 @@ export default function CaseResolutionLens() {
   useEffect(() => {
     if (case_context_loading || !cases) return;
     const requested_case = new URLSearchParams(window.location.search).get("case_id");
-    if (!requested_case || !/^[1-9]\\d*$/.test(requested_case)) return;
+    if (!requested_case || !/^[1-9]\d*$/.test(requested_case)) return;
     const requested_case_id = Number(requested_case);
     if (!Number.isSafeInteger(requested_case_id)) return;
     if (requested_case_id !== current_case_id && cases.some(candidate => candidate.id === requested_case_id)) {
@@ -134,13 +134,18 @@ export default function CaseResolutionLens() {
     const first_context = previous_jurisdiction_case_id.current === undefined;
     const case_changed = !first_context && previous_jurisdiction_case_id.current !== current_case_id;
     previous_jurisdiction_case_id.current = current_case_id;
+    const requested_jurisdiction = new URLSearchParams(window.location.search).get("jurisdiction");
     if (case_changed) {
-      set_jurisdiction("");
-      set_jurisdiction_source("manual");
+      if (requested_jurisdiction && KNOWN_JURISDICTIONS.includes(requested_jurisdiction)) {
+        set_jurisdiction(requested_jurisdiction);
+        set_jurisdiction_source("link");
+      } else {
+        set_jurisdiction("");
+        set_jurisdiction_source("manual");
+      }
       return;
     }
     if (!first_context) return;
-    const requested_jurisdiction = new URLSearchParams(window.location.search).get("jurisdiction");
     if (requested_jurisdiction && KNOWN_JURISDICTIONS.includes(requested_jurisdiction)) {
       set_jurisdiction(requested_jurisdiction);
       set_jurisdiction_source("link");
