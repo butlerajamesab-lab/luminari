@@ -4,6 +4,7 @@ import { useAuth } from "@/core/hooks/useAuth";
 import { safeArray } from "@/lib/data-guard";
 import { trpc } from "@/lib/trpc";
 import { PrismProof } from "@/components/civic-genome/PrismProof";
+import { RosettaEvaluation } from "@/components/civic-genome/RosettaEvaluation";
 import {
   Activity,
   ArrowLeft,
@@ -241,6 +242,10 @@ export default function CivicGenomePage() {
         </div>
         <button type="submit" style={{ background: p.green_soft, border: `1px solid ${p.green}`, color: p.green, borderRadius: 10, padding: ".65rem 1rem", fontFamily: mono, fontSize: ".72rem", cursor: "pointer" }}>Open genome record</button>
       </form>
+
+      <p style={{ margin: "0 0 1rem", fontSize: ".85rem" }}><a href="https://rosetta-v3-platform.onrender.com/review" target="_blank" rel="noopener noreferrer" style={{ color: "#91c9f7" }}>Browse Rosetta evaluation results</a> <span style={{ color: p.muted }}>· inspect laws by passed, failed, held, or unprocessed status</span></p>
+
+      {selected && bill_detail.isSuccess && <RosettaEvaluation key={selected.genome_bill_id} genome_bill_id={selected.genome_bill_id} current_version={current_version} published_version={published_version}/>}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: ".75rem", marginBottom: "1.25rem" }}>
         <Metric label="Families" value={stats.data?.total_families ?? "—"}/><Metric label="Bills" value={stats.data?.total_bills ?? "—"}/><Metric label="Events" value={stats.data?.total_events ?? "—"}/><Metric label="Observed states" value={stats.data?.observed_state_count ?? "—"}/><Metric label="Cross-state families" value={stats.data?.cross_state_family_count ?? "—"}/>
