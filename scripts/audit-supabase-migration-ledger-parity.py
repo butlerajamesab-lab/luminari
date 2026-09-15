@@ -290,7 +290,7 @@ APPROVED_REPOSITORY_ONLY = {
     # Supabase deployment gate.
     "20260915070000": (
         "20260915070000_docket_prefix_subsidiary_failure_reconcile.sql",
-        "8b3a2c718247b613dbec3f9d52b075df33419150",
+        "6beb3ff76c5cf26adc7963cc99dda2bb1ed92667",
     ),
 }
 
