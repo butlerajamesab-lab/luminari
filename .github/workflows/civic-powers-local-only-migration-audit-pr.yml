@@ -1,0 +1,16 @@
+name: Civic Powers local-only migration audit
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  find-local-only:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: List local migration versions absent from production ledger
+        run: python3 scripts/civic-powers-local-only-migration-audit.py
