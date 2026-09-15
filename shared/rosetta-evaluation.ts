@@ -7,9 +7,13 @@ const extraction_run_id = z.union([z.number().int().positive(), z.string().regex
 const attempt = z.object({
   attempt_id: z.string().uuid(),
   source_registry_id: z.string().uuid(),
+  source_document_id: z.number().int().positive(),
+  source_content_hash: hash,
   extraction_run_id: extraction_run_id.nullable(),
   engine_version: z.string(),
-  rule_set_version: z.string().optional(),
+  rule_set_version: z.string(),
+  configuration_hash: hash,
+  output_content_hash: hash.nullable(),
   status: z.string(),
   failure_class: z.string().nullable().optional(),
   identity_valid: z.boolean().optional(),
@@ -39,6 +43,13 @@ export const rosetta_evaluation_schema = z.object({
   selected_attempt: attempt.nullable(),
   attempts: z.array(attempt),
   law_view: z.object({
+    extraction_run_id: z.number().int().positive(),
+    source_document_id: z.number().int().positive(),
+    source_content_hash: hash,
+    engine_version: z.string(),
+    rule_set_version: z.string(),
+    configuration_hash: hash,
+    output_content_hash: hash.nullable(),
     objects: z.array(z.object({
       layer: z.enum(["help", "workflow", "accountability", "override", "definition"]),
       key: z.string(),
@@ -52,9 +63,28 @@ export const rosetta_evaluation_schema = z.object({
     })),
     coverage: z.unknown(),
   }).nullable(),
-  validation_results: z.array(z.unknown()),
-  source_receipt: z.unknown(),
-  extraction_manifest: z.unknown(),
+  validation_results: z.array(z.object({
+    extraction_run_id: z.number().int().positive(),
+    test_name: z.string(),
+    test_result: z.string(),
+    failure_count: z.number().int().nullable(),
+    details: z.unknown().optional(),
+  })),
+  source_receipt: z.object({
+    source_document_id: z.number().int().positive(),
+    source_content_id: z.string().uuid(),
+    source_content_hash: hash,
+  }).nullable(),
+  extraction_manifest: z.object({
+    extraction_run_id: z.number().int().positive(),
+    source_document_id: z.number().int().positive(),
+    source_content_id: z.string().uuid(),
+    source_hash: hash,
+    engine_version: z.string(),
+    rule_set_version: z.string(),
+    configuration_hash: hash,
+    output_hash: hash.nullable(),
+  }).nullable(),
 });
 
 export type RosettaEvaluation = z.infer<typeof rosetta_evaluation_schema>;

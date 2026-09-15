@@ -60,22 +60,52 @@ export async function get_civic_genome_rosetta_evaluation(input: {
     }
     if (!response.ok) throw new Error(`rosetta_evaluation_read_failed:${response.status}`);
     const evaluation = rosetta_evaluation_schema.parse(await response.json());
-    if (evaluation.status === "passed" && (!evaluation.selected_attempt
-      || evaluation.selected_attempt.identity_valid !== true
-      || evaluation.selected_attempt.all_validators_pass !== true
-      || !(evaluation.selected_attempt.validator_count! > 0))) {
-      throw new Error("rosetta_evaluation_pass_evidence_missing");
-    }
+    const source = evaluation.source;
+    const attempt = evaluation.selected_attempt;
+    const run_id = attempt?.extraction_run_id;
     if (evaluation.source.source_document_id !== binding.source_document_id
       || evaluation.source.source_content_hash !== binding.source_content_hash
-      || (evaluation.selected_attempt && evaluation.selected_attempt.source_registry_id !== evaluation.source.source_registry_id)
-      || evaluation.attempts.some(attempt => attempt.source_registry_id !== evaluation.source.source_registry_id)
+      || (attempt && (attempt.source_registry_id !== source.source_registry_id
+        || attempt.source_document_id !== source.source_document_id || attempt.source_content_hash !== source.source_content_hash))
+      || evaluation.attempts.some(item => item.source_registry_id !== source.source_registry_id
+        || item.source_document_id !== source.source_document_id || item.source_content_hash !== source.source_content_hash)
+      || (evaluation.law_view && (evaluation.law_view.extraction_run_id !== run_id
+        || evaluation.law_view.source_document_id !== source.source_document_id
+        || evaluation.law_view.source_content_hash !== source.source_content_hash
+        || evaluation.law_view.engine_version !== attempt?.engine_version
+        || evaluation.law_view.rule_set_version !== attempt?.rule_set_version
+        || evaluation.law_view.configuration_hash !== attempt?.configuration_hash
+        || evaluation.law_view.output_content_hash !== attempt?.output_content_hash))
       || evaluation.law_view?.objects.some(object =>
-        String(object.extraction_run_id) !== String(evaluation.selected_attempt?.extraction_run_id))) {
+        String(object.extraction_run_id) !== String(run_id))
+      || evaluation.validation_results.some(row => row.extraction_run_id !== run_id)
+      || (evaluation.extraction_manifest && (evaluation.extraction_manifest.extraction_run_id !== run_id
+        || evaluation.extraction_manifest.source_document_id !== source.source_document_id
+        || evaluation.extraction_manifest.source_content_id !== source.source_content_id
+        || evaluation.extraction_manifest.source_hash !== source.source_content_hash
+        || evaluation.extraction_manifest.engine_version !== attempt?.engine_version
+        || evaluation.extraction_manifest.rule_set_version !== attempt?.rule_set_version
+        || evaluation.extraction_manifest.configuration_hash !== attempt?.configuration_hash
+        || evaluation.extraction_manifest.output_hash !== attempt?.output_content_hash))
+      || (evaluation.source_receipt && (evaluation.source_receipt.source_document_id !== source.source_document_id
+        || evaluation.source_receipt.source_content_id !== source.source_content_id
+        || evaluation.source_receipt.source_content_hash !== source.source_content_hash))) {
       throw new Error("rosetta_evaluation_source_identity_mismatch");
     }
-    const detail_url = new URL(`/review/laws/${encodeURIComponent(evaluation.source.source_registry_id)}`, base_url);
-    if (evaluation.selected_attempt) detail_url.searchParams.set("attempt_id", evaluation.selected_attempt.attempt_id);
+    if (evaluation.status === "passed") {
+      const version = /^rosetta-v3-deterministic-sql-(2\.5\.(?:28|29|30|32|33))$/.exec(attempt?.engine_version ?? "")?.[1];
+      const suffix = version?.replaceAll(".", "");
+      const expected = ["canonical_rows_source_bound", `exact_source_structure_v${suffix}`, "five_layer_coverage",
+        `independent_structure_v${suffix}`, "no_pending_coverage", "output_hash_verified", "source_bytes_receipted",
+        "source_hash_verified", "structural_correctness_v2"].sort();
+      if (!version || !evaluation.law_view || !evaluation.extraction_manifest || !evaluation.source_receipt
+        || evaluation.validation_results.length !== 9
+        || JSON.stringify(evaluation.validation_results.map(row => row.test_name).sort()) !== JSON.stringify(expected)
+        || evaluation.validation_results.some(row => row.test_result !== "pass" || row.failure_count !== 0)) {
+        throw new Error("rosetta_evaluation_pass_evidence_missing");
+      }
+    }
+    const detail_url = new URL(`/review/${encodeURIComponent(source.source_registry_id)}${attempt ? `/${encodeURIComponent(attempt.attempt_id)}` : ""}`, base_url);
     return { binding, availability: "available", review_url: detail_url.toString(), evaluation };
   } catch (error) {
     if (controller.signal.aborted) throw new Error("rosetta_evaluation_read_timeout");
