@@ -6,6 +6,7 @@ import {
   type civic_genome_rosetta_law_view,
 } from "./civic-genome-rosetta-contract";
 import { get_kaleidoscope_civic_genome_contract } from "./civic-genome-kaleidoscope-contract";
+import { get_rosetta_review_base_url } from "./civic-genome-rosetta-evaluation";
 
 export type civic_genome_contract_state =
   | "operational"
@@ -53,7 +54,6 @@ type atlas_contract_counts = {
   latest_bridged_at: string | null;
 };
 
-const ROSETTA_STANDALONE_URL = "https://rosetta-v3-platform.onrender.com";
 const PRISM_DEEP_RULE_SET_ID = "prism-rosetta-structural-binding";
 const PRISM_DEEP_RULE_SET_VERSION = "2.0.0";
 
@@ -137,7 +137,7 @@ export async function get_civic_genome_operating_contracts(): Promise<civic_geno
       {
         service_key: "rosetta",
         display_name: "Rosetta",
-        external_url: ROSETTA_STANDALONE_URL,
+        external_url: get_rosetta_review_base_url(),
         role: "Structural law extraction",
         state: rosetta_assembly_count > 0 ? "operational" : "waiting",
         state_label: rosetta_assembly_count > 0 ? "Operational" : "Waiting for validated extraction",

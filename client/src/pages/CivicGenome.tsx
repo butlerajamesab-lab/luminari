@@ -4,6 +4,7 @@ import { useAuth } from "@/core/hooks/useAuth";
 import { safeArray } from "@/lib/data-guard";
 import { trpc } from "@/lib/trpc";
 import { PrismProof } from "@/components/civic-genome/PrismProof";
+import { RosettaEvaluation } from "@/components/civic-genome/RosettaEvaluation";
 import {
   Activity,
   ArrowLeft,
@@ -216,6 +217,8 @@ export default function CivicGenomePage() {
     const returned_keys = new Set(observed_contracts.map(contract => contract.service_key));
     return [...observed_contracts, ...explicit_empty_contracts.filter(contract => !returned_keys.has(contract.service_key))];
   }, [operating_contracts.data, operating_contracts.isSuccess]);
+  const rosetta_service_url = contracts.find(contract => contract.service_key === "rosetta")?.external_url;
+  const rosetta_review_url = rosetta_service_url ? new URL("/review", rosetta_service_url).toString() : null;
 
   const search = (event: React.FormEvent) => {
     event.preventDefault();
@@ -241,6 +244,10 @@ export default function CivicGenomePage() {
         </div>
         <button type="submit" style={{ background: p.green_soft, border: `1px solid ${p.green}`, color: p.green, borderRadius: 10, padding: ".65rem 1rem", fontFamily: mono, fontSize: ".72rem", cursor: "pointer" }}>Open genome record</button>
       </form>
+
+      {rosetta_review_url && <p style={{ margin: "0 0 1rem", fontSize: ".85rem" }}><a href={rosetta_review_url} target="_blank" rel="noopener noreferrer" style={{ color: "#91c9f7" }}>Browse Rosetta evaluation results</a> <span style={{ color: p.muted }}>· inspect laws by passed, failed, held, or unprocessed status</span></p>}
+
+      {selected && bill_detail.isSuccess && <RosettaEvaluation key={selected.genome_bill_id} genome_bill_id={selected.genome_bill_id} current_version={current_version} published_version={published_version}/>}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: ".75rem", marginBottom: "1.25rem" }}>
         <Metric label="Families" value={stats.data?.total_families ?? "—"}/><Metric label="Bills" value={stats.data?.total_bills ?? "—"}/><Metric label="Events" value={stats.data?.total_events ?? "—"}/><Metric label="Observed states" value={stats.data?.observed_state_count ?? "—"}/><Metric label="Cross-state families" value={stats.data?.cross_state_family_count ?? "—"}/>
