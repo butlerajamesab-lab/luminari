@@ -13,9 +13,9 @@ begin
     from public.civic_genome_normalized_source_history_v3_scope_v1(null) event
     where event.source_bill_id is not null
       and lower(event.action_text)
-        ~ '^[[:space:]]*failed\\y.{0,80}\\y(amendments?|motions?)\\y'
+        ~ '^[[:space:]]*failed\y.{0,80}\y(amendments?|motions?)\y'
       and lower(event.action_text) !~
-        '\\y(bill|measure|resolution)\\y[[:space:]]+(has[[:space:]]+)?(failed|withdrawn|vetoed|died|((been[[:space:]]+)?postponed[[:space:]]+indefinitely)|indefinitely[[:space:]]+postponed)\\y'
+        '\y(bill|measure|resolution)\y[[:space:]]+(has[[:space:]]+)?(failed|withdrawn|vetoed|died|((been[[:space:]]+)?postponed[[:space:]]+indefinitely)|indefinitely[[:space:]]+postponed)\y'
       and (
         event.event_type in ('failed', 'vetoed')
         or event.state_position_after = 'failed'
