@@ -852,7 +852,7 @@ export async function process_legislative_version_job(
   try {
     result = await process_legislative_version(job.bill_version_id);
   } catch (error) {
-    const current_status = /^rosetta_public_current_docket_result_(awaiting_analysis|requires_review|unavailable)$/.exec(safe_error_code(error));
+    const current_status = /^rosetta_public_current_docket_result_(awaiting_analysis|requires_review|unavailable|awaiting_publication)$/.exec(safe_error_code(error));
     if (current_status) {
       // Waiting on Rosetta is not a failed decomposition and consumes no retry.
       // Resume only after an explicit reconciliation observes a new current result.

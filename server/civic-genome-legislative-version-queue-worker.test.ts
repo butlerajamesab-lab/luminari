@@ -398,7 +398,7 @@ describe("legislative version queue", () => {
   });
 });
 
-it.each(["awaiting_analysis", "requires_review", "unavailable"])("holds %s without consuming attempts or starting another pass", async status => {
+it.each(["awaiting_analysis", "requires_review", "unavailable", "awaiting_publication"])("holds %s without consuming attempts or starting another pass", async status => {
  process_version.mockRejectedValueOnce(new Error(`rosetta_public_current_docket_result_${status}`));
  await process_legislative_version_job(job);
  expect(process_version).toHaveBeenCalledOnce();

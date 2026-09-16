@@ -21,7 +21,7 @@ vi.mock("./civic-genome-rosetta-evaluation", () => ({
   load_rosetta_current_docket_result_for_binding: load_current,
 }));
 
-import { assemble_rosetta_structural_dna, assert_exact_docket_source_binding_for_assembly } from "./civic-genome-rosetta-assembly";
+import { assert_current_result_publication_target, assemble_rosetta_structural_dna, assert_exact_docket_source_binding_for_assembly } from "./civic-genome-rosetta-assembly";
 
 const request = {
   genome_bill_id: "00000000-0000-4000-8000-000000000001",
@@ -262,4 +262,16 @@ describe("Civic Genome Rosetta assembly gate", () => {
       "rosetta_public_current_docket_result_extraction_run_mismatch",
     );
   });
+});
+
+it("holds an otherwise complete candidate before publication without changing the target", async () => {
+  query.mockResolvedValueOnce({ rows: [{ engine_version: "older", rule_set_version, rule_manifest_hash }] });
+  await expect(assert_current_result_publication_target({ engine_version, rule_set_version, rule_manifest_hash } as any))
+    .rejects.toThrow("awaiting_publication");
+  expect(query).toHaveBeenCalledOnce();
+  expect(query.mock.calls[0][0].trim()).toMatch(/^select /);
+});
+it("allows the exact promoted tuple", async () => {
+  query.mockResolvedValueOnce({ rows: [{ engine_version, rule_set_version, rule_manifest_hash }] });
+  await expect(assert_current_result_publication_target({ engine_version, rule_set_version, rule_manifest_hash } as any)).resolves.toBeUndefined();
 });

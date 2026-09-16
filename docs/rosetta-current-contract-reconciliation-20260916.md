@@ -53,3 +53,11 @@ and activate a cost-checked bounded projection refresh worker. Existing generati
 upgrade/legacy extraction workers need further review before claiming all ingestion
 paths follow the current one-pass execution model. The public authority remains
 v2.5.11 until separate governed promotion succeeds.
+
+Production preflight found the existing `civic_genome_guard_rosetta_assembly_target_v1`
+trigger requires the promoted target tuple. It remains v2.5.11; the traced
+candidate is v2.5.28. Assembly now checks this boundary before transactional writes
+and emits `rosetta_public_current_docket_result_awaiting_publication`. The queue
+holds that result without consuming attempts. Current display and structural
+transport are verified; published assembly closure is blocked by promotion.
+The migration/guard is not disabled and no target is rewritten to force success.

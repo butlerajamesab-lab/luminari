@@ -1031,8 +1031,6 @@ export async function process_legislative_version(
     coverage: current.coverage, receipt_source: "current_docket_projection",
   };
   if (!Number.isSafeInteger(extraction.extraction_run_id)) throw new Error("rosetta_current_extraction_run_invalid");
-  await record_extracted(bill_version_id, extraction);
-
   const assembly = await assemble_rosetta_and_resolve_family({
     genome_bill_id: version.genome_bill_id,
     source_document_id,
@@ -1040,6 +1038,7 @@ export async function process_legislative_version(
     source_document_key: version.source_document_key,
     source_content_hash: source.source_content_hash,
   });
+  await record_extracted(bill_version_id, extraction);
   await record_assembled(bill_version_id, assembly);
 
   return {

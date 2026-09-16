@@ -445,6 +445,21 @@ async function bind_source_identity(
   }
 }
 
+/** A current candidate is not permission to write a published Genome assembly. */
+export async function assert_current_result_publication_target(
+  result: NonNullable<RosettaPublicCurrentDocketResult["current_result"]>,
+): Promise<void> {
+  const { rows } = await getPool().query<{ engine_version: string; rule_set_version: string; rule_manifest_hash: string }>(
+    `select engine_version, rule_set_version, rule_manifest_hash
+       from public.civic_genome_rosetta_generation_target where target_name='current'`,
+  );
+  const target = rows[0];
+  if (!target || target.engine_version !== result.engine_version || target.rule_set_version !== result.rule_set_version
+    || target.rule_manifest_hash.toLowerCase() !== result.rule_manifest_hash.toLowerCase()) {
+    throw new Error("rosetta_public_current_docket_result_awaiting_publication");
+  }
+}
+
 export async function assemble_rosetta_structural_dna(
   request: rosetta_genome_assembly_request,
 ): Promise<rosetta_genome_assembly_result> {
@@ -455,6 +470,7 @@ export async function assemble_rosetta_structural_dna(
     throw new Error("rosetta_public_current_docket_result_source_content_hash_mismatch");
   }
   assert_current_result_matches_view(current_result, view);
+  await assert_current_result_publication_target(current_result);
   const assembly = resolve_assembly_contract(view);
   const source_identity = {
     source_document_id: view.source_document_id,
