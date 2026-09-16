@@ -21,6 +21,8 @@ export type rosetta_genome_assembly_request = {
   genome_bill_id: string;
   source_document_id: number;
   extraction_run_id?: number;
+  source_document_key?: string;
+  source_content_hash?: string;
 };
 
 export type rosetta_genome_assembly_result = {
@@ -212,6 +214,17 @@ async function load_view(
 async function load_exact_docket_assembly_binding(
   request: rosetta_genome_assembly_request,
 ): Promise<docket_assembly_binding> {
+  const has_explicit_key = typeof request.source_document_key === "string"
+    && request.source_document_key.length > 0;
+  const has_explicit_hash = /^[0-9a-f]{64}$/.test(request.source_content_hash ?? "");
+  if (has_explicit_key !== has_explicit_hash) {
+    throw new Error(has_explicit_key
+      ? "rosetta_current_docket_bound_result_source_content_hash_missing"
+      : "rosetta_current_docket_bound_result_source_document_key_missing");
+  }
+  if (!has_explicit_key && request.extraction_run_id === undefined) {
+    throw new Error("rosetta_current_docket_bound_result_exact_selector_missing");
+  }
   const { rows } = await getPool().query<{
     source_document_key: string | null;
     source_content_hash: string | null;
@@ -220,13 +233,15 @@ async function load_exact_docket_assembly_binding(
             receipt_json ->> 'source_content_hash' as source_content_hash
        from public.civic_genome_bill_version
       where genome_bill_id = $1::uuid
-        and rosetta_source_document_id = $2
-        and ($3::text is null or rosetta_extraction_run_id = $3::text)
+        and ($2::text is null or source_document_key = $2::text)
+        and ($3::text is null or receipt_json ->> 'source_content_hash' = $3::text)
+        and ($4::text is null or rosetta_extraction_run_id = $4::text)
       order by stage_rank desc, provider_sequence desc, updated_at desc, bill_version_id
       limit 2`,
     [
       request.genome_bill_id,
-      request.source_document_id,
+      has_explicit_key ? request.source_document_key : null,
+      has_explicit_hash ? request.source_content_hash : null,
       request.extraction_run_id === undefined ? null : String(request.extraction_run_id),
     ],
   );
@@ -242,6 +257,12 @@ async function load_exact_docket_assembly_binding(
   }
   if (!/^[0-9a-f]{64}$/.test(binding.source_content_hash ?? "")) {
     throw new Error("rosetta_current_docket_bound_result_source_content_hash_missing");
+  }
+  if (has_explicit_key && binding.source_document_key !== request.source_document_key) {
+    throw new Error("rosetta_current_docket_bound_result_source_document_key_mismatch");
+  }
+  if (has_explicit_hash && binding.source_content_hash !== request.source_content_hash) {
+    throw new Error("rosetta_current_docket_bound_result_source_content_hash_mismatch");
   }
   return {
     source_document_key: binding.source_document_key,

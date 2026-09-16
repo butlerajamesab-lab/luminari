@@ -1088,6 +1088,8 @@ export async function process_legislative_version(
     genome_bill_id: version.genome_bill_id,
     source_document_id,
     extraction_run_id: extraction.extraction_run_id,
+    source_document_key: version.source_document_key,
+    source_content_hash: source.source_content_hash,
   });
   await record_assembled(bill_version_id, assembly);
 

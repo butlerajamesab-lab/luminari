@@ -19,10 +19,12 @@ const request = {
   genome_bill_id: "00000000-0000-4000-8000-000000000001",
   source_document_id: 5631,
   extraction_run_id: 9821,
+  source_document_key: "text:5631:9821",
+  source_content_hash: "a".repeat(64),
 };
 
-const source_document_key = "text:5631:9821";
-const source_content_hash = "a".repeat(64);
+const source_document_key = request.source_document_key;
+const source_content_hash = request.source_content_hash;
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -42,8 +44,9 @@ describe("Civic Genome Rosetta assembly gate", () => {
       source_content_hash,
     });
     expect(String(query.mock.calls[0][0])).toContain("source_document_key");
+    expect(String(query.mock.calls[0][0])).toContain("source_document_key = $2::text");
     expect(String(query.mock.calls[0][0])).toContain(
-      "receipt_json ->> 'source_content_hash' as source_content_hash",
+      "receipt_json ->> 'source_content_hash' = $3::text",
     );
     expect(load_review).toHaveBeenCalledWith({
       source_document_key,
@@ -66,5 +69,17 @@ describe("Civic Genome Rosetta assembly gate", () => {
       request,
       { source_content_hash } as any,
     )).rejects.toThrow("rosetta_current_docket_bound_result_source_document_key_missing");
+  });
+
+  it("does not allow document-id-only assembly fallback", async () => {
+    await expect(assert_exact_docket_source_binding_for_assembly(
+      {
+        genome_bill_id: request.genome_bill_id,
+        source_document_id: request.source_document_id,
+      },
+      { source_content_hash } as any,
+    )).rejects.toThrow("rosetta_current_docket_bound_result_exact_selector_missing");
+    expect(query).not.toHaveBeenCalled();
+    expect(load_review).not.toHaveBeenCalled();
   });
 });
