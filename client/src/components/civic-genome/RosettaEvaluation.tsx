@@ -5,7 +5,7 @@ const mono = "'IBM Plex Mono', monospace";
 const muted = "#a7bdb4";
 const border = "1px solid rgba(82,193,145,.22)";
 const statuses = {
-  complete: "Complete",
+  complete: "Decomposition complete",
   requires_review: "Requires review",
   awaiting_analysis: "Awaiting analysis",
   unavailable: "Unavailable",
@@ -60,7 +60,7 @@ export function RosettaEvaluation({ genome_bill_id, current_version, published_v
 
   return <section aria-label="Rosetta evaluation results" style={{ background: "rgba(13,30,25,.88)", border, borderRadius: 12, padding: "1rem", marginBottom: "1.25rem" }}>
     <div style={{ display: "flex", justifyContent: "space-between", gap: ".8rem", flexWrap: "wrap", alignItems: "center" }}>
-      <h2 style={{ margin: 0, fontSize: "1.2rem" }}>Current Rosetta result {current_result && <span style={{ fontFamily: mono, fontSize: ".85rem", color: muted }}>· {current_result.engine_version}</span>}</h2>
+      <h2 style={{ margin: 0, fontSize: "1.2rem" }}>Rosetta decomposition {current_result && <span style={{ fontFamily: mono, fontSize: ".85rem", color: muted }}>· {current_result.engine_version}</span>}</h2>
       {current_docket_result && <strong style={{ color: colors[current_docket_result.status], fontFamily: mono }}>{statuses[current_docket_result.status]}</strong>}
     </div>
     <p style={{ color: muted, fontSize: ".83rem", lineHeight: 1.5 }}>Inspect Rosetta’s current bounded result for this exact source version. Historical attempts and review-detail artifacts are not loaded here.</p>

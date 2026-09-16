@@ -19,7 +19,7 @@ const binding = {
 };
 const fetch_mock = vi.fn();
 
-function currentResult(status: "complete" | "requires_review" | "awaiting_analysis" | "unavailable" = "complete") {
+function current_result_fixture(status: "complete" | "requires_review" | "awaiting_analysis" | "unavailable" = "complete") {
   return {
     contract: "rosetta-public-current-docket-result-v1",
     docket_source_key: source_document_key,
@@ -57,7 +57,7 @@ afterEach(() => {
 
 describe("Civic Genome current Rosetta result", () => {
   it("reads only the bounded current-docket endpoint with exact key and hash", async () => {
-    fetch_mock.mockResolvedValue(Response.json(currentResult()));
+    fetch_mock.mockResolvedValue(Response.json(current_result_fixture()));
     const result = await get_civic_genome_rosetta_evaluation({ genome_bill_id, bill_version_id });
     expect(query).toHaveBeenCalledOnce();
     expect(query.mock.calls[0][0]).toContain("where genome_bill_id = $1::uuid");
@@ -78,7 +78,7 @@ describe("Civic Genome current Rosetta result", () => {
   it.each(["requires_review", "awaiting_analysis", "unavailable"] as const)(
     "preserves explicit non-assembly state %s without fallback",
     async status => {
-      fetch_mock.mockResolvedValue(Response.json(currentResult(status)));
+      fetch_mock.mockResolvedValue(Response.json(current_result_fixture(status)));
       const result = await get_civic_genome_rosetta_evaluation({ genome_bill_id });
       expect(result.current_docket_result?.status).toBe(status);
       expect(result.current_docket_result?.current_result).toBeNull();
@@ -88,7 +88,7 @@ describe("Civic Genome current Rosetta result", () => {
 
   it("uses the configured host for both data reads and exact reader links", async () => {
     vi.stubEnv("ROSETTA_REVIEW_BASE_URL", "https://review.example.org/");
-    fetch_mock.mockResolvedValue(Response.json(currentResult()));
+    fetch_mock.mockResolvedValue(Response.json(current_result_fixture()));
     const result = await get_civic_genome_rosetta_evaluation({ genome_bill_id });
     expect(new URL(String(fetch_mock.mock.calls[0][0])).origin).toBe("https://review.example.org");
     expect(new URL(result.review_url).origin).toBe("https://review.example.org");
@@ -110,7 +110,7 @@ describe("Civic Genome current Rosetta result", () => {
 
   it("rejects a stale key result", async () => {
     fetch_mock.mockResolvedValue(Response.json({
-      ...currentResult(),
+      ...current_result_fixture(),
       docket_source_key: "text:9999:9821",
     }));
     await expect(get_civic_genome_rosetta_evaluation({ genome_bill_id })).rejects.toThrow(
@@ -120,7 +120,7 @@ describe("Civic Genome current Rosetta result", () => {
 
   it("rejects a stale hash result", async () => {
     fetch_mock.mockResolvedValue(Response.json({
-      ...currentResult(),
+      ...current_result_fixture(),
       source_content_hash: "b".repeat(64),
     }));
     await expect(get_civic_genome_rosetta_evaluation({ genome_bill_id })).rejects.toThrow(
@@ -130,7 +130,7 @@ describe("Civic Genome current Rosetta result", () => {
 
   it.each([
     undefined,
-    { ...currentResult(), contract: "rosetta-public-current-docket-result-v0" },
+    { ...current_result_fixture(), contract: "rosetta-public-current-docket-result-v0" },
   ])("rejects a missing or mismatched public current contract: %j", async payload => {
     fetch_mock.mockResolvedValue(payload === undefined
       ? Response.json({})
@@ -140,10 +140,25 @@ describe("Civic Genome current Rosetta result", () => {
 
   it("rejects a historical review-detail payload on the current-only path", async () => {
     fetch_mock.mockResolvedValue(Response.json({
-      ...currentResult(),
+      ...current_result_fixture(),
       selected_attempt: { attempt_id: "legacy" },
     }));
     await expect(get_civic_genome_rosetta_evaluation({ genome_bill_id })).rejects.toThrow();
+  });
+
+  it.each([
+    { ...current_result_fixture(), current_result: null },
+    { ...current_result_fixture(), coverage: { attempts: [] } },
+    { ...current_result_fixture(), coverage: { definition: { status: "populated", route_history: [] } } },
+    { ...current_result_fixture(), validation_summary: { validator_count: 9, historical_validation: [] } },
+    ...(["requires_review", "awaiting_analysis", "unavailable"] as const).map(status => ({ ...current_result_fixture(), status })),
+    ...["rejected", "pending"].map(admissibility_state => ({ ...current_result_fixture(), current_result: { ...current_result_fixture().current_result!, admissibility_state } })),
+    ...[0, "0", "00", "-1", "1.5", Number.MAX_SAFE_INTEGER + 1].map(extraction_run_id => ({ ...current_result_fixture(), current_result: { ...current_result_fixture().current_result!, extraction_run_id } })),
+    ...["yesterday", "2026-09-15", "2026-09-15T06:00:00"].map(completed_at => ({ ...current_result_fixture(), current_result: { ...current_result_fixture().current_result!, completed_at } })),
+  ])("rejects inconsistent or malformed current result %# without fallback", async payload => {
+    fetch_mock.mockResolvedValue(Response.json(payload));
+    await expect(get_civic_genome_rosetta_evaluation({ genome_bill_id })).rejects.toThrow();
+    expect(fetch_mock).toHaveBeenCalledOnce();
   });
 
   it("distinguishes an absent current result from a bound source", async () => {

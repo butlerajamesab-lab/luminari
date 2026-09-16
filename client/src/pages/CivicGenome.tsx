@@ -344,11 +344,14 @@ export default function CivicGenomePage() {
         </aside>
 
         <main style={{ display: "grid", gap: ".8rem" }}>
+          <details style={panel}>
+            <summary style={{ cursor: "pointer", color: p.muted, fontFamily: sans }}>Published snapshot and assembly history</summary>
+            <p style={{ color: p.muted, fontFamily: sans, fontSize: ".78rem", lineHeight: 1.5 }}>These preserved publications are separate from the Rosetta decomposition displayed above. Their Prism findings apply only to the preserved output.</p>
           <section style={panel}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: ".75rem", flexWrap: "wrap" }}>
               <div>
-                <div style={{ fontFamily: mono, fontSize: ".68rem", color: p.green }}>CURRENT SNAPSHOT VALIDATION</div>
-                <div style={{ marginTop: ".25rem", color: p.muted, fontFamily: sans, fontSize: ".72rem" }}>{current_version ? `${current_version.version_type} · ${current_version.processing_state}` : "Current version not observed"}</div>
+                <div style={{ fontFamily: mono, fontSize: ".68rem", color: p.green }}>PUBLISHED SNAPSHOT VALIDATION</div>
+                <div style={{ marginTop: ".25rem", color: p.muted, fontFamily: sans, fontSize: ".72rem" }}>{published_version ? `${published_version.version_type} · ${published_version.processing_state}` : "Published version not observed"}</div>
               </div>
               <button type="button" onClick={() => set_defects_only(value => !value)} style={{ background: defects_only ? p.green_soft : p.soft, border: `1px solid ${defects_only ? p.green : p.border}`, color: defects_only ? p.green : p.muted, borderRadius: 8, padding: ".5rem .7rem", fontFamily: mono, fontSize: ".62rem", cursor: "pointer" }}>{defects_only ? "Show all metadata" : "Show defects only"}</button>
             </div>
@@ -367,6 +370,8 @@ export default function CivicGenomePage() {
           </section>
 
           <section style={panel}><div style={{ display: "flex", alignItems: "center", gap: ".5rem", fontFamily: mono, color: p.green, fontSize: ".7rem", marginBottom: ".75rem" }}><ShieldCheck size={15}/> Assembly history</div>{assembly_runs.length ? <div style={{ display: "grid", gap: ".55rem" }}>{assembly_runs.map(run => <div key={run.assembly_run_id} style={{ background: p.soft, borderRadius: 8, padding: ".7rem" }}><div style={{ display: "flex", justifyContent: "space-between", gap: ".75rem", flexWrap: "wrap" }}><span style={{ fontFamily: mono, color: p.green, fontSize: ".65rem" }}>{run.verification_state} · {run.run_status}</span><span style={{ fontFamily: mono, color: p.muted, fontSize: ".61rem" }}>{run.completed_at ? new Date(run.completed_at).toLocaleString() : "not completed"}</span></div><div style={{ fontFamily: mono, color: p.muted, fontSize: ".61rem", marginTop: ".4rem", overflowWrap: "anywhere" }}>traits {run.trait_count} · engine {run.engine_version} · rule {run.rule_version}<br/>input {run.input_hash}<br/>output {run.output_hash}</div></div>)}</div> : <Empty>No assembly runs have been persisted for this bill.</Empty>}</section>
+
+          </details>
 
           <section style={panel}><div style={{ display: "flex", alignItems: "center", gap: ".5rem", fontFamily: mono, color: p.green, fontSize: ".7rem", marginBottom: ".75rem" }}><BookOpen size={15}/> Family bills</div><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: ".6rem" }}>{family_bill_items.map(item => { const sibling_source_id = source_id_from_bill(item); const card = <><div style={{ fontFamily: mono, color: p.green, fontSize: ".66rem" }}>{item.state_code} · {item.source_bill_number}</div><div style={{ fontFamily: sans, fontSize: ".82rem", marginTop: ".35rem" }}>{item.source_bill_title || "Untitled bill"}</div></>; const style = { display: "block", background: item.genome_bill_id === selected.genome_bill_id ? p.green_soft : p.soft, border: `1px solid ${p.border}`, borderRadius: 8, padding: ".75rem", color: p.paper, textDecoration: "none" } as const; return sibling_source_id ? <Link key={item.genome_bill_id} href={`/civic-genome/bill/${encodeURIComponent(sibling_source_id)}`}><a style={style}>{card}</a></Link> : <div key={item.genome_bill_id} style={style}>{card}</div>; })}</div></section>
 

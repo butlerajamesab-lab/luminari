@@ -17,10 +17,10 @@ describe("Rosetta evaluation reader", () => {
     } } });
     const html = render();
     expect(use_query.mock.calls[0][0]).toEqual({ genome_bill_id: "genome", bill_version_id: "current-version" });
-    expect(html).toContain("Complete");
+    expect(html).toContain("Decomposition complete");
     expect(html).toContain("2.5.33");
     expect(html).toContain("Current result is assembly-ready.");
-    expect(html).toContain("Current Rosetta result");
+    expect(html).toContain("Rosetta decomposition");
     expect(html).toContain("Historical attempts and review-detail artifacts are not loaded here");
     expect(html).toContain("Copy reference for feedback");
     expect(html).toContain("Docket source key: text:123:456");

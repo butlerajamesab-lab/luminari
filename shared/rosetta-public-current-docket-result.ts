@@ -1,8 +1,22 @@
 import { z } from "zod";
 
 const hash = z.string().regex(/^[0-9a-f]{64}$/i);
-const extraction_run_id = z.union([z.number().int().positive(), z.string().regex(/^\d+$/)]);
-const passthrough_object = z.record(z.string(), z.unknown());
+const extraction_run_id = z.union([
+  z.number().int().positive().safe(),
+  z.string().regex(/^[1-9]\d*$/),
+]);
+const layer_coverage = z.object({
+  status: z.enum(["populated", "not_applicable", "pending_extraction", "extraction_failed"]),
+  reason: z.string().max(500).nullable().optional(),
+  validated_at: z.string().datetime({ offset: true }).nullable().optional(),
+}).strict();
+const coverage = z.object({
+  help: layer_coverage.optional(),
+  workflow: layer_coverage.optional(),
+  accountability: layer_coverage.optional(),
+  override: layer_coverage.optional(),
+  definition: layer_coverage.optional(),
+}).strict();
 
 export const rosetta_public_current_docket_result_status = z.enum([
   "complete",
@@ -24,13 +38,24 @@ export const rosetta_public_current_docket_result_schema = z.object({
     rule_set_version: z.string().min(1),
     rule_manifest_hash: hash,
     configuration_hash: hash,
-    completed_at: z.string().min(1),
-    admissibility_state: z.string().min(1),
+    completed_at: z.string().datetime({ offset: true }),
+    admissibility_state: z.literal("admissible"),
   }).strict().nullable(),
-  coverage: passthrough_object,
-  validation_summary: passthrough_object,
-  public_reason: z.string(),
-}).strict();
+  coverage,
+  validation_summary: z.object({
+    terminal: z.boolean().optional(),
+    validator_count: z.number().int().nonnegative().safe().optional(),
+  }).strict(),
+  public_reason: z.string().max(500),
+}).strict().superRefine((value, context) => {
+  if ((value.status === "complete") !== (value.current_result !== null)) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["current_result"],
+      message: "Only a complete status may carry an admissible current result, and it must carry one.",
+    });
+  }
+});
 
 export type RosettaPublicCurrentDocketResult = z.infer<
   typeof rosetta_public_current_docket_result_schema

@@ -1,8 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { query, load_current } = vi.hoisted(() => ({
+const { query, load_current, load_exact_view, load_latest_view } = vi.hoisted(() => ({
   query: vi.fn(),
   load_current: vi.fn(),
+  load_exact_view: vi.fn(),
+  load_latest_view: vi.fn(),
+}));
+
+vi.mock("./civic-genome-rosetta-contract", async import_original => ({
+  ...await import_original<typeof import("./civic-genome-rosetta-contract")>(),
+  get_rosetta_law_view_by_extraction_run: load_exact_view,
+  get_latest_rosetta_law_view_by_source_document: load_latest_view,
 }));
 
 vi.mock("./db", () => ({
@@ -13,7 +21,7 @@ vi.mock("./civic-genome-rosetta-evaluation", () => ({
   load_rosetta_current_docket_result_for_binding: load_current,
 }));
 
-import { assert_exact_docket_source_binding_for_assembly } from "./civic-genome-rosetta-assembly";
+import { assemble_rosetta_structural_dna, assert_exact_docket_source_binding_for_assembly } from "./civic-genome-rosetta-assembly";
 
 const request = {
   genome_bill_id: "00000000-0000-4000-8000-000000000001",
@@ -59,7 +67,7 @@ beforeEach(() => {
 });
 
 describe("Civic Genome Rosetta assembly gate", () => {
-  function currentResponse(overrides: Record<string, unknown> = {}) {
+  function current_response(overrides: Record<string, unknown> = {}) {
     return {
       contract: "rosetta-public-current-docket-result-v1",
       docket_source_key: source_document_key,
@@ -128,7 +136,7 @@ describe("Civic Genome Rosetta assembly gate", () => {
   });
 
   it("maps explicit non-assembly statuses without fallback or retry work", async () => {
-    load_current.mockResolvedValueOnce(currentResponse({
+    load_current.mockResolvedValueOnce(current_response({
       status: "awaiting_analysis",
       current_result: null,
     }));
@@ -185,8 +193,45 @@ describe("Civic Genome Rosetta assembly gate", () => {
     expect(load_current).not.toHaveBeenCalled();
   });
 
+  it.each(["requires_review", "awaiting_analysis", "unavailable"])(
+    "does not read assembly data when current result is %s", async status => {
+      load_current.mockResolvedValueOnce(current_response({ status, current_result: null }));
+      await expect(assemble_rosetta_structural_dna(request)).rejects.toThrow(
+        `rosetta_public_current_docket_result_${status}`,
+      );
+      expect(load_exact_view).not.toHaveBeenCalled();
+      expect(load_latest_view).not.toHaveBeenCalled();
+      expect(query).toHaveBeenCalledOnce();
+    },
+  );
+
+  it("cannot use an extraction run to infer a missing key and hash", async () => {
+    await expect(assemble_rosetta_structural_dna({
+      genome_bill_id: request.genome_bill_id,
+      source_document_id: request.source_document_id,
+      extraction_run_id: request.extraction_run_id,
+    })).rejects.toThrow("rosetta_public_current_docket_result_exact_selector_missing");
+    expect(query).not.toHaveBeenCalled();
+    expect(load_current).not.toHaveBeenCalled();
+    expect(load_exact_view).not.toHaveBeenCalled();
+    expect(load_latest_view).not.toHaveBeenCalled();
+  });
+
+  it("selects the authorized exact run before requesting assembly data, without fallback", async () => {
+    load_exact_view.mockResolvedValueOnce(null);
+    await expect(assemble_rosetta_structural_dna({
+      ...request, extraction_run_id: undefined,
+    })).rejects.toThrow("rosetta_law_view_not_found");
+    expect(load_current).toHaveBeenCalledOnce();
+    expect(load_exact_view).toHaveBeenCalledOnce();
+    expect(load_exact_view).toHaveBeenCalledWith(request.extraction_run_id);
+    expect(load_current.mock.invocationCallOrder[0]).toBeLessThan(load_exact_view.mock.invocationCallOrder[0]);
+    expect(load_latest_view).not.toHaveBeenCalled();
+    expect(query).toHaveBeenCalledOnce();
+  });
+
   it("requires a current result to assemble", async () => {
-    load_current.mockResolvedValueOnce(currentResponse({
+    load_current.mockResolvedValueOnce(current_response({
       status: "complete",
       current_result: null,
       public_reason: "No current result.",
@@ -197,7 +242,7 @@ describe("Civic Genome Rosetta assembly gate", () => {
   });
 
   it("rejects a stale current result extraction or output hash", async () => {
-    load_current.mockResolvedValueOnce(currentResponse({
+    load_current.mockResolvedValueOnce(current_response({
       current_result: {
         extraction_run_id: request.extraction_run_id + 1,
         output_content_hash,
