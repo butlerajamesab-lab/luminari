@@ -1,7 +1,7 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { render_civic_genome_human_report } from "./civic-genome-human-report";
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 
 it.each(["summary", "detailed"] as const)("exports %s evidence while all source versions await decomposition", async mode => {
   const fetch = vi.fn();
@@ -10,7 +10,7 @@ it.each(["summary", "detailed"] as const)("exports %s evidence while all source 
     source_bill_id: 2034656,
     bill_detail: {
       bill: { source_bill_number: "HB3633", source_bill_title: "Example" },
-      structural_dna: { traits: [], validation_summary: {} },
+      structural_dna: { traits: [{trait_class: "duty", trait_key: "unbound-claim"}], validation_summary: { supported: 999 } },
       current_version: { version_type: "introduced", source_document_id: null },
     },
     bill_versions: [
@@ -24,5 +24,21 @@ it.each(["summary", "detailed"] as const)("exports %s evidence while all source 
   expect(report).toContain("BILLS-119hr3633rs.pdf");
   expect(report.indexOf("text:2034656:3")).toBeLessThan(report.indexOf("text:2034656:4"));
   expect(report).not.toContain("javascript:");
+  expect(report).not.toContain("unbound-claim");
+  expect(report).not.toContain("<b>999</b>");
+  expect(report.indexOf("text:2034656:4")).toBeLessThan(report.indexOf("unsafe"));
   expect(fetch).not.toHaveBeenCalled();
+});
+
+
+it("does not mislabel a missing bound source as pending decomposition", async () => {
+  vi.stubEnv("ROSETTA_SUPABASE_URL", "https://rosetta.test");
+  vi.stubEnv("ROSETTA_SUPABASE_SERVICE_ROLE_KEY", "sb_secret_test");
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("[]", { status: 200 })));
+  await expect(render_civic_genome_human_report({
+    source_bill_id: 1, bill_detail: {
+      bill: {}, structural_dna: { traits: [], validation_summary: {} },
+      current_version: { source_document_id: 7 },
+    },
+  }, "summary")).rejects.toThrow("civic_genome_human_report_verified_source_text_unavailable");
 });

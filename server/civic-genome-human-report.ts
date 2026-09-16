@@ -466,17 +466,20 @@ function safe_url(value: unknown): string | null {
   } catch { return null; }
 }
 
+function compare_source_versions(left: json_record, right: json_record): number {
+  const left_date = string_value(left.provider_date);
+  const right_date = string_value(right.provider_date);
+  if (!left_date && right_date) return 1;
+  if (left_date && !right_date) return -1;
+  return (left_date ?? "").localeCompare(right_date ?? "") ||
+    Number(left.provider_sequence ?? 0) - Number(right.provider_sequence ?? 0);
+}
+
 function version_table(
   versions: json_record[],
   source_by_document: Map<number, rosetta_source_content>,
 ): string {
-  const ordered = [...versions].sort((left, right) => {
-    const date_order = String(left.provider_date ?? "").localeCompare(String(right.provider_date ?? ""));
-    if (date_order) return date_order;
-    return (
-      Number(left.provider_sequence ?? 0) - Number(right.provider_sequence ?? 0)
-    );
-  });
+  const ordered = [...versions].sort(compare_source_versions);
   return `<table><thead><tr><th>Stage / source identity</th><th>State</th><th>Rosetta source</th><th>Run</th><th>Source copy</th></tr></thead><tbody>${ordered
     .map((version) => {
       const source_document_id = positive_integer(
@@ -527,16 +530,19 @@ export async function render_civic_genome_human_report(
     source_rows.map((row) => [row.source_document_id, row]),
   );
   const final_source = final_source_document_id ? source_by_document.get(final_source_document_id) : undefined;
+  if (final_source_document_id && !final_source?.source_text) {
+    throw new Error("civic_genome_human_report_verified_source_text_unavailable");
+  }
   const final_source_uses_provider_copy = final_source ? is_provider_copy_fallback(final_source) : false;
   const source_gap = !final_source
     ? '<section class="panel"><h2>Source decomposition pending</h2><p class="warn">No exact Rosetta source copy is attached for this snapshot. This report contains available source-version metadata and procedural observations only; it does not establish validated bill content or amendment effects.</p></section>'
     : "";
 
-  const traits = as_records(structural_dna.traits);
-  const validation = as_record(structural_dna.validation_summary) ?? {};
+  const traits = final_source ? as_records(structural_dna.traits) : [];
+  const validation = final_source ? as_record(structural_dna.validation_summary) ?? {} : {};
   const family_assignment = as_record(bill_detail.family_assignment);
-  const all_traits = as_records(root.all_structural_traits);
-  const all_runs = as_records(root.all_assembly_runs);
+  const all_traits = final_source ? as_records(root.all_structural_traits) : [];
+  const all_runs = final_source ? as_records(root.all_assembly_runs) : [];
   const events = as_records(root.bill_events);
   const presented_events = events.map((event) => ({
     event,
@@ -633,7 +639,7 @@ export async function render_civic_genome_human_report(
     <div class="break"></div>
     ${versions
       .slice()
-      .sort((a, b) => String(a.provider_date ?? "").localeCompare(String(b.provider_date ?? "")) || Number(a.provider_sequence ?? 0) - Number(b.provider_sequence ?? 0))
+      .sort(compare_source_versions)
       .map((version) => {
         const source_document_id = positive_integer(
           version.rosetta_source_document_id,
