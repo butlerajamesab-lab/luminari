@@ -282,13 +282,14 @@ export async function assert_exact_docket_source_binding_for_assembly(
   if (!evaluation) {
     throw new Error("rosetta_current_docket_bound_result_missing");
   }
-  if (evaluation.law_view) {
-    if (evaluation.law_view.source_document_id !== view.source_document_id) {
-      throw new Error("rosetta_current_docket_bound_result_source_document_id_mismatch");
-    }
-    if (String(evaluation.law_view.extraction_run_id) !== String(view.extraction_run_id)) {
-      throw new Error("rosetta_current_docket_bound_result_extraction_run_mismatch");
-    }
+  if (!evaluation.law_view) {
+    throw new Error("rosetta_current_docket_bound_result_law_view_missing");
+  }
+  if (evaluation.law_view.source_document_id !== view.source_document_id) {
+    throw new Error("rosetta_current_docket_bound_result_source_document_id_mismatch");
+  }
+  if (String(evaluation.law_view.extraction_run_id) !== String(view.extraction_run_id)) {
+    throw new Error("rosetta_current_docket_bound_result_extraction_run_mismatch");
   }
   return binding;
 }

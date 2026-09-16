@@ -120,4 +120,19 @@ describe("Civic Genome Rosetta assembly gate", () => {
     expect(query).not.toHaveBeenCalled();
     expect(load_review).not.toHaveBeenCalled();
   });
+
+  it("requires a resolved law view in the exact docket-bound review payload", async () => {
+    load_review.mockResolvedValueOnce({
+      current_docket_bound_result: {},
+      law_view: null,
+    });
+    await expect(assert_exact_docket_source_binding_for_assembly(
+      request,
+      {
+        source_document_id: request.source_document_id,
+        extraction_run_id: request.extraction_run_id,
+        source_content_hash,
+      } as any,
+    )).rejects.toThrow("rosetta_current_docket_bound_result_law_view_missing");
+  });
 });
