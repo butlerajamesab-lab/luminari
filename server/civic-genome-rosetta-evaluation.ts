@@ -189,12 +189,14 @@ export async function get_civic_genome_rosetta_evaluation(input: {
   }
   if (evaluation.status === "passed") {
     const version = /^rosetta-v3-deterministic-sql-(\d+\.\d+\.\d+)$/.exec(attempt?.engine_version ?? "")?.[1];
+    if (!version || !ROSETTA_SUPPORTED_PASS_EVIDENCE_ENGINE_VERSIONS.has(version)) {
+      throw new Error("rosetta_evaluation_pass_evidence_missing");
+    }
     const suffix = version?.replaceAll(".", "");
     const expected = ["canonical_rows_source_bound", `exact_source_structure_v${suffix}`, "five_layer_coverage",
       `independent_structure_v${suffix}`, "no_pending_coverage", "output_hash_verified", "source_bytes_receipted",
       "source_hash_verified", "structural_correctness_v2"].sort();
-    if (!version || !ROSETTA_SUPPORTED_PASS_EVIDENCE_ENGINE_VERSIONS.has(version)
-      || !evaluation.law_view || !evaluation.extraction_manifest || !evaluation.source_receipt
+    if (!evaluation.law_view || !evaluation.extraction_manifest || !evaluation.source_receipt
       || evaluation.validation_results.length !== 9
       || JSON.stringify(evaluation.validation_results.map(row => row.test_name).sort()) !== JSON.stringify(expected)
       || evaluation.validation_results.some(row => row.test_result !== "pass" || row.failure_count !== 0)) {
