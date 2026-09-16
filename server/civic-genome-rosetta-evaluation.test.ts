@@ -9,8 +9,9 @@ const bill_version_id = "00000000-0000-4000-8000-000000000002";
 const source_registry_id = "00000000-0000-4000-8000-000000000003";
 const other_id = "00000000-0000-4000-8000-000000000004";
 const attempt_id = "00000000-0000-4000-8000-000000000005";
+const source_document_key = "text:5631:9821";
 const source_content_hash = "a".repeat(64);
-const binding = { bill_version_id, version_type: "enrolled", source_document_id: 5631, source_content_hash };
+const binding = { bill_version_id, version_type: "enrolled", source_document_key, source_document_id: 5631, source_content_hash };
 const fetch_mock = vi.fn();
 
 function detail(version = "2.5.33") {
@@ -25,6 +26,11 @@ function detail(version = "2.5.33") {
     contract: "rosetta-review-law-v1", observed_at: "2026-09-15T06:00:00Z", publication_status: "candidate", status: "passed",
     failure_class: null, parser_invoked: false, evidence_created: false,
     source: { source_registry_id, source_document_id: 5631, source_content_id: other_id, source_content_hash, source_url: "https://example.org/law", document_name: "Example law", document_identifier: "2028058" },
+    current_docket_bound_result: {
+      contract: "rosetta-current-docket-bound-result-v1",
+      source_document_key,
+      source_content_hash,
+    },
     selected_attempt: attempt, attempts: [attempt],
     law_view: { extraction_run_id: 9821, source_document_id: 5631, source_content_hash, engine_version, rule_set_version, configuration_hash, output_content_hash, objects: [{ layer: "definition", key: "term", source_object_type: "term_definition", source_object_id: "term-1", source_block_id: "block-1", extraction_run_id: "9821", normalized_value: { defined_term: "term", definition: "Example." }, confidence: 1, confirmed: true }], coverage: {} },
     validation_results: names.map(test_name => ({ extraction_run_id: 9821, test_name, test_result: "pass", failure_count: 0 })),
@@ -51,8 +57,9 @@ describe("Civic Genome saved Rosetta evaluation", () => {
     expect(query.mock.calls[0][1]).toEqual([genome_bill_id, bill_version_id]);
     const url = new URL(String(fetch_mock.mock.calls[0][0]));
     expect(url.pathname).toBe("/api/review/laws/resolve");
-    expect(url.searchParams.get("source_document_id")).toBe("5631");
+    expect(url.searchParams.get("source_document_key")).toBe(source_document_key);
     expect(url.searchParams.get("source_content_hash")).toBe(source_content_hash);
+    expect(url.searchParams.get("source_document_id")).toBeNull();
     expect(fetch_mock.mock.calls[0][1]).toMatchObject({ method: "GET", redirect: "error" });
     expect(fetch_mock.mock.calls[0][1]).not.toHaveProperty("body");
     expect(result.review_url).toBe(`https://rosetta-v3-platform.onrender.com/review/${source_registry_id}/${attempt_id}`);
@@ -74,12 +81,72 @@ describe("Civic Genome saved Rosetta evaluation", () => {
     expect(new URL(result.review_url).origin).toBe("https://review.example.org");
   });
 
-  it.each([null, { ...binding, source_document_id: null }, { ...binding, source_content_hash: null }, { ...binding, source_content_hash: "bad" }])("does not infer missing source identity", async missing => {
+  it.each([null, { ...binding, source_document_key: null }, { ...binding, source_document_id: null }, { ...binding, source_content_hash: null }, { ...binding, source_content_hash: "bad" }])("does not infer missing source identity", async missing => {
     query.mockResolvedValue({ rows: missing ? [missing] : [] });
     const result = await get_civic_genome_rosetta_evaluation({ genome_bill_id });
     expect(result.availability).toBe("binding_missing");
     expect(result.evaluation).toBeNull();
     expect(fetch_mock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a key mismatch in the current docket compact payload", async () => {
+    fetch_mock.mockResolvedValue(Response.json({
+      ...detail(),
+      current_docket_bound_result: {
+        contract: "rosetta-current-docket-bound-result-v1",
+        source_document_key: "text:9999:9821",
+        source_content_hash,
+      },
+    }));
+    await expect(get_civic_genome_rosetta_evaluation({ genome_bill_id })).rejects.toThrow(
+      "rosetta_current_docket_bound_result_source_document_key_mismatch",
+    );
+  });
+
+  it("rejects a hash mismatch in the current docket compact payload", async () => {
+    fetch_mock.mockResolvedValue(Response.json({
+      ...detail(),
+      current_docket_bound_result: {
+        contract: "rosetta-current-docket-bound-result-v1",
+        source_document_key,
+        source_content_hash: "b".repeat(64),
+      },
+    }));
+    await expect(get_civic_genome_rosetta_evaluation({ genome_bill_id })).rejects.toThrow(
+      "rosetta_current_docket_bound_result_source_content_hash_mismatch",
+    );
+  });
+
+  it.each([
+    undefined,
+    null,
+    { contract: "rosetta-current-docket-bound-result-v0", source_document_key, source_content_hash },
+  ])("rejects a missing or mismatched compact docket payload: %j", async current_docket_bound_result => {
+    fetch_mock.mockResolvedValue(Response.json({
+      ...detail(),
+      current_docket_bound_result,
+    }));
+    await expect(get_civic_genome_rosetta_evaluation({ genome_bill_id })).rejects.toThrow(
+      current_docket_bound_result
+        ? "rosetta_current_docket_bound_result_contract_mismatch"
+        : "rosetta_current_docket_bound_result_missing",
+    );
+  });
+
+  it("does not fall back to a document-id-only resolve selector", async () => {
+    fetch_mock.mockResolvedValue(Response.json({
+      ...detail(),
+      current_docket_bound_result: {
+        contract: "rosetta-current-docket-bound-result-v1",
+        source_content_hash,
+      },
+    }));
+    await expect(get_civic_genome_rosetta_evaluation({ genome_bill_id })).rejects.toThrow(
+      "rosetta_current_docket_bound_result_source_document_key_missing",
+    );
+    const url = new URL(String(fetch_mock.mock.calls[0][0]));
+    expect(url.searchParams.get("source_document_key")).toBe(source_document_key);
+    expect(url.searchParams.get("source_document_id")).toBeNull();
   });
 
   it("distinguishes an absent evaluation from an unprocessed source", async () => {
