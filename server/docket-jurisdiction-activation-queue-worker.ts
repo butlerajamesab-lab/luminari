@@ -123,6 +123,17 @@ export function classify_docket_bill_activation_failure(input: {
   prior_attempt_count: number;
 }): docket_bill_activation_failure_decision {
   const error_code = safe_error_code(input.error);
+  // A missing worker credential prevents a source request from being made.
+  // Preserve the attempt audit while keeping infrastructure failure retryable.
+  if (error_code === "Missing_required_environment_variable:_LEGISCAN_API_KEY") {
+    return {
+      queue_state: "degraded",
+      failure_class: "transient",
+      error_code,
+      retry_delay_seconds: 300,
+      terminal: false,
+    };
+  }
   const failure_number = input.prior_attempt_count + 1;
   const deterministic = deterministic_failure(error_code);
   const terminal = deterministic || failure_number >= UNKNOWN_FAILURE_LIMIT;
