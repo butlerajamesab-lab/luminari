@@ -278,8 +278,17 @@ export async function assert_exact_docket_source_binding_for_assembly(
   if (binding.source_content_hash !== view.source_content_hash) {
     throw new Error("rosetta_current_docket_bound_result_source_content_hash_mismatch");
   }
-  if (!(await load_rosetta_review_detail_for_docket_binding(binding))) {
+  const evaluation = await load_rosetta_review_detail_for_docket_binding(binding);
+  if (!evaluation) {
     throw new Error("rosetta_current_docket_bound_result_missing");
+  }
+  if (evaluation.law_view) {
+    if (evaluation.law_view.source_document_id !== view.source_document_id) {
+      throw new Error("rosetta_current_docket_bound_result_source_document_id_mismatch");
+    }
+    if (String(evaluation.law_view.extraction_run_id) !== String(view.extraction_run_id)) {
+      throw new Error("rosetta_current_docket_bound_result_extraction_run_mismatch");
+    }
   }
   return binding;
 }

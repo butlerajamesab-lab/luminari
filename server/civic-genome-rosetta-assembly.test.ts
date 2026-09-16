@@ -31,7 +31,13 @@ beforeEach(() => {
   query.mockResolvedValue({
     rows: [{ source_document_key, source_content_hash }],
   });
-  load_review.mockResolvedValue({ current_docket_bound_result: {} });
+  load_review.mockResolvedValue({
+    current_docket_bound_result: {},
+    law_view: {
+      source_document_id: request.source_document_id,
+      extraction_run_id: request.extraction_run_id,
+    },
+  });
 });
 
 describe("Civic Genome Rosetta assembly gate", () => {
@@ -69,6 +75,19 @@ describe("Civic Genome Rosetta assembly gate", () => {
       request,
       { source_content_hash } as any,
     )).rejects.toThrow("rosetta_current_docket_bound_result_source_document_key_missing");
+  });
+
+  it("rejects a non-unique local Docket binding", async () => {
+    query.mockResolvedValueOnce({
+      rows: [
+        { source_document_key, source_content_hash },
+        { source_document_key, source_content_hash },
+      ],
+    });
+    await expect(assert_exact_docket_source_binding_for_assembly(
+      request,
+      { source_content_hash } as any,
+    )).rejects.toThrow("rosetta_current_docket_bound_result_local_binding_not_unique");
   });
 
   it("does not allow document-id-only assembly fallback", async () => {
