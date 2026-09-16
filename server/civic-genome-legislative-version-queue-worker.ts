@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { legislative_current_source_scope } from "./legislative-current-source-scope";
 
 import { query_with_diagnostics } from "./db";
 import { run_with_database_job_context } from "./db-request-context";
@@ -358,6 +359,7 @@ export function is_legislative_version_shared_provider_outage(
 
 async function reconcile_completed_jobs(
   recovery_contract_scope: string | null,
+  current_sources: boolean,
 ): Promise<void> {
   await query_with_diagnostics(
     `with candidate as (
@@ -373,6 +375,7 @@ async function reconcile_completed_jobs(
             $2::text is null
             or version.receipt_json->>'source_fallback_recovery_contract' = $2
           )
+          and (not $3::boolean or not (coalesce(version.receipt_json, '{}'::jsonb) ? 'source_fallback_recovery_contract'))
         order by queue.updated_at, queue.queue_id
         for update of queue skip locked
         limit $1::integer
@@ -387,7 +390,7 @@ async function reconcile_completed_jobs(
             updated_at = now()
        from candidate
       where queue.queue_id = candidate.queue_id`,
-    [RECONCILE_BATCH_SIZE, recovery_contract_scope],
+    [RECONCILE_BATCH_SIZE, recovery_contract_scope, current_sources],
     {
       label: "legislative_version_queue_reconcile_completed",
       pool_acquire_timeout_ms: 1_000,
@@ -398,17 +401,19 @@ async function reconcile_completed_jobs(
 
 async function reconcile_completed_jobs_if_due(
   recovery_contract_scope: string | null,
+  current_sources: boolean,
 ): Promise<void> {
   const now_ms = Date.now();
   if (now_ms < next_reconcile_at_ms) return;
   next_reconcile_at_ms = now_ms + bounded_reconcile_interval();
-  await reconcile_completed_jobs(recovery_contract_scope);
+  await reconcile_completed_jobs(recovery_contract_scope, current_sources);
 }
 
 async function claim_jobs(
   limit: number,
   oldest_unbound_docket_identifiers: string[],
   recovery_contract_scope: string | null,
+  current_sources: boolean,
 ): Promise<legislative_version_queue_job[]> {
   const result = await query_with_diagnostics<legislative_version_queue_job>(
     `with current_sessions as (
@@ -421,6 +426,7 @@ async function claim_jobs(
               ) as last_attempt_at,
               max(queue.next_attempt_at) filter (
                 where queue.queue_state = 'degraded'
+                  and queue.last_failure_class is distinct from 'awaiting_current_result'
                   and queue.next_attempt_at > now()
               ) as blocked_until
          from public.civic_genome_legislative_version_queue queue
@@ -432,6 +438,7 @@ async function claim_jobs(
             $8::text is null
             or version.receipt_json->>'source_fallback_recovery_contract' = $8
           )
+          and (not $9::boolean or not (coalesce(version.receipt_json, '{}'::jsonb) ? 'source_fallback_recovery_contract'))
           and (
             queue.attempt_count > 0
             or (
@@ -527,6 +534,7 @@ async function claim_jobs(
             $8::text is null
             or version.receipt_json->>'source_fallback_recovery_contract' = $8
           )
+          and (not $9::boolean or not (coalesce(version.receipt_json, '{}'::jsonb) ? 'source_fallback_recovery_contract'))
           and coalesce(source_host.blocked_until, '-infinity'::timestamptz) <= now()
         order by case when recovery.is_durable_content_recovery then 0 else 1 end,
                  case when recovery.is_durable_content_recovery
@@ -604,6 +612,7 @@ async function claim_jobs(
       DURABLE_CONTENT_RECOVERY_MAX_ATTEMPTS,
       DURABLE_CONTENT_RECOVERY_RETRY_SECONDS,
       recovery_contract_scope,
+      current_sources,
     ],
     {
       label: "legislative_version_queue_claim",
@@ -916,8 +925,9 @@ export async function run_legislative_version_queue_cycle(): Promise<void> {
   try {
     const recovery_contract_scope =
       legislative_version_queue_recovery_contract_scope();
-    await reconcile_completed_jobs_if_due(recovery_contract_scope);
-    if (!recovery_contract_scope) {
+    const current_sources = legislative_current_source_scope();
+    await reconcile_completed_jobs_if_due(recovery_contract_scope, current_sources);
+    if (!recovery_contract_scope && !current_sources) {
       try {
         const classified_count = await classify_hidden_rosetta_terminal_rejections();
         if (classified_count > 0) {
@@ -935,7 +945,7 @@ export async function run_legislative_version_queue_cycle(): Promise<void> {
       }
     }
     let oldest_unbound_docket_identifiers: string[] = [];
-    if (!recovery_contract_scope) {
+    if (!recovery_contract_scope && !current_sources) {
       try {
         oldest_unbound_docket_identifiers = await load_oldest_unbound_docket_identifiers();
       } catch (error) {
@@ -947,9 +957,10 @@ export async function run_legislative_version_queue_cycle(): Promise<void> {
       }
     }
     const jobs = await claim_jobs(
-      recovery_contract_scope ? 1 : bounded_concurrency(),
+      recovery_contract_scope || current_sources ? 1 : bounded_concurrency(),
       oldest_unbound_docket_identifiers,
       recovery_contract_scope,
+      current_sources,
     );
     await Promise.all(jobs.map(job => run_with_database_job_context(
       { label: "legislative_version_queue_job", job_id: job.queue_id },
