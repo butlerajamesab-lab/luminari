@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { legislative_current_source_scope } from "./legislative-current-source-scope";
 
 import { query_with_diagnostics } from "./db";
 import { run_with_database_job_context } from "./db-request-context";
@@ -421,6 +422,7 @@ async function claim_jobs(
               ) as last_attempt_at,
               max(queue.next_attempt_at) filter (
                 where queue.queue_state = 'degraded'
+                  and queue.last_failure_class is distinct from 'awaiting_current_result'
                   and queue.next_attempt_at > now()
               ) as blocked_until
          from public.civic_genome_legislative_version_queue queue
@@ -916,8 +918,9 @@ export async function run_legislative_version_queue_cycle(): Promise<void> {
   try {
     const recovery_contract_scope =
       legislative_version_queue_recovery_contract_scope();
+    const current_sources = legislative_current_source_scope();
     await reconcile_completed_jobs_if_due(recovery_contract_scope);
-    if (!recovery_contract_scope) {
+    if (!recovery_contract_scope && !current_sources) {
       try {
         const classified_count = await classify_hidden_rosetta_terminal_rejections();
         if (classified_count > 0) {
@@ -935,7 +938,7 @@ export async function run_legislative_version_queue_cycle(): Promise<void> {
       }
     }
     let oldest_unbound_docket_identifiers: string[] = [];
-    if (!recovery_contract_scope) {
+    if (!recovery_contract_scope && !current_sources) {
       try {
         oldest_unbound_docket_identifiers = await load_oldest_unbound_docket_identifiers();
       } catch (error) {
@@ -947,7 +950,7 @@ export async function run_legislative_version_queue_cycle(): Promise<void> {
       }
     }
     const jobs = await claim_jobs(
-      recovery_contract_scope ? 1 : bounded_concurrency(),
+      recovery_contract_scope || current_sources ? 1 : bounded_concurrency(),
       oldest_unbound_docket_identifiers,
       recovery_contract_scope,
     );

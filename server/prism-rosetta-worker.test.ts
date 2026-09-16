@@ -41,6 +41,8 @@ describe("dedicated Prism worker entrypoint selection", () => {
     vi.stubEnv("LIGHTHOUSE_RUNTIME_ROLE", "worker");
     vi.stubEnv("PRISM_ROSETTA_QUEUE_ENABLED", "true");
     vi.stubEnv("LEGISLATIVE_VERSION_QUEUE_ENABLED", "false");
+    vi.stubEnv("LEGISLATIVE_VERSION_CURRENT_SOURCES_ENABLED", "false");
+    vi.stubEnv("LEGISLATIVE_VERSION_QUEUE_RECOVERY_CONTRACT_SCOPE", "");
     vi.stubEnv("PRISM_ROSETTA_QUEUE_CANARY_ID", "");
     vi.stubEnv("PRISM_ROSETTA_QUEUE_BATCH_IDS", "");
   });
@@ -69,6 +71,26 @@ describe("dedicated Prism worker entrypoint selection", () => {
     await vi.advanceTimersByTimeAsync(0);
     expect(boundaries.stop_prism).toHaveBeenCalledTimes(1);
     expect(boundaries.pool_end).toHaveBeenCalledTimes(1);
+  });
+
+  it("starts ordinary source intake only with its explicit scope and provider probe", async () => {
+    vi.stubEnv("PRISM_ROSETTA_QUEUE_CANARY_ID", uuid(1));
+    vi.stubEnv("LEGISLATIVE_VERSION_QUEUE_ENABLED", "true");
+    vi.stubEnv("LEGISLATIVE_VERSION_CURRENT_SOURCES_ENABLED", "true");
+    vi.stubEnv("LEGISCAN_API_KEY", "test-only");
+    vi.stubEnv("LEGISCAN_BILL_TEXT_PROBE_DOCUMENT_ID", "123");
+    boundaries.bill_text.mockResolvedValue({});
+    await import("./prism-rosetta-worker");
+    await vi.advanceTimersByTimeAsync(0);
+    expect(boundaries.bill_text).toHaveBeenCalledWith(123);
+    expect(boundaries.start_legislative).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not broaden intake merely because its queue flag is enabled", async () => {
+    vi.stubEnv("PRISM_ROSETTA_QUEUE_CANARY_ID", uuid(1));
+    vi.stubEnv("LEGISLATIVE_VERSION_QUEUE_ENABLED", "true");
+    await expect(import("./prism-rosetta-worker")).rejects.toThrow("prism_worker_legislative_recovery_scope_required");
+    expect(boundaries.start_legislative).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -103,4 +125,3 @@ describe("dedicated Prism worker entrypoint selection", () => {
     expect(signals.size).toBe(0);
   });
 });
-

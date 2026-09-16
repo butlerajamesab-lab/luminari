@@ -51,6 +51,7 @@ beforeEach(() => {
   vi.stubEnv("ROSETTA_SUPABASE_URL", "https://rosetta.example.test");
   vi.stubEnv("ROSETTA_SUPABASE_SERVICE_ROLE_KEY", "sb_secret_test");
   vi.stubEnv("LEGISLATIVE_VERSION_QUEUE_RECOVERY_CONTRACT_SCOPE", "");
+  vi.stubEnv("LEGISLATIVE_VERSION_CURRENT_SOURCES_ENABLED", "false");
   query.mockResolvedValue({ rows: [] });
   rosetta_fetch.mockImplementation(async (input: string | URL | Request) => (
     String(input).includes("rosetta_classify_terminal_rejections_v1")
@@ -118,6 +119,16 @@ describe("legislative version queue", () => {
     expect(claim_call?.[1][7]).toBe(provider_fallback_recovery_contract);
   });
 
+  it("admits ordinary current sources without invoking retired repair controls", async () => {
+    vi.stubEnv("LEGISLATIVE_VERSION_CURRENT_SOURCES_ENABLED", "true");
+    await run_legislative_version_queue_cycle();
+    expect(rosetta_fetch).not.toHaveBeenCalled();
+    const claim = query.mock.calls.find(call => call[2]?.label === "legislative_version_queue_claim");
+    expect(claim).toBeTruthy();
+    expect(claim?.[1][2]).toBe(1);
+    expect(claim?.[1][3]).toEqual([]);
+    expect(claim?.[1][7]).toBeNull();
+  });
   it("uses bounded exponential retry timing", () => {
     expect(legislative_version_retry_delay_seconds(1)).toBe(30);
     expect(legislative_version_retry_delay_seconds(2)).toBe(60);

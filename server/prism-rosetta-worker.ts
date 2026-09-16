@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { legislative_current_source_scope } from "./legislative-current-source-scope";
 import express from "express";
 import { createServer, type Server } from "node:http";
 import { getPool } from "./db";
@@ -45,13 +46,15 @@ if (!canary_queue_id && !batch_queue_ids) {
 const legislative_version_queue_requested = background_feature_enabled(
   "LEGISLATIVE_VERSION_QUEUE_ENABLED",
 );
+const legislative_current_sources = legislative_version_queue_requested
+  && legislative_current_source_scope();
 const legislative_version_queue_recovery_scope =
   legislative_version_queue_requested
     ? legislative_version_queue_recovery_contract_scope()
     : null;
 if (
   legislative_version_queue_requested &&
-  !legislative_version_queue_recovery_scope
+  !legislative_version_queue_recovery_scope && !legislative_current_sources
 ) {
   throw new Error("prism_worker_legislative_recovery_scope_required");
 }
@@ -171,6 +174,7 @@ console.log("[PrismRosettaWorker] starting", {
   legislative_version_queue_requested,
   legislative_version_queue_enabled,
   legislative_version_queue_recovery_scope,
+  legislative_current_sources,
   legiscan_api_key_configured,
   legiscan_bill_text_probe_configured,
   legiscan_bill_text_probe_document_id:
