@@ -290,7 +290,7 @@ export async function assert_exact_docket_source_binding_for_assembly(
   }
   if (
     request.extraction_run_id !== undefined
-    && String(evaluation.law_view.extraction_run_id) !== String(view.extraction_run_id)
+    && String(evaluation.law_view.extraction_run_id) !== String(request.extraction_run_id)
   ) {
     throw new Error("rosetta_current_docket_bound_result_extraction_run_mismatch");
   }
