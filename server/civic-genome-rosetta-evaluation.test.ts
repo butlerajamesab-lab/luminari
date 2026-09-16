@@ -36,7 +36,7 @@ function current_result_fixture(status: "complete" | "requires_review" | "awaiti
       completed_at: "2026-09-15T06:00:00Z",
       admissibility_state: "admissible",
     } : null,
-    coverage: { definition: { status: "populated" } },
+    coverage: Object.fromEntries(["help", "workflow", "accountability", "override", "definition"].map(key => [key, { status: "populated" }])),
     validation_summary: { terminal: status === "complete", validator_count: status === "complete" ? 9 : 0 },
     public_reason: status === "complete" ? "Current result is assembly-ready." : `Current result is ${status}.`,
   };

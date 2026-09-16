@@ -132,7 +132,8 @@ describe("Civic Genome Rosetta assembly gate", () => {
       source_document_key,
       source_content_hash,
     });
-    expect(query.mock.calls[0][1][3]).toBeNull();
+    expect(query.mock.calls[0][1]).toHaveLength(3);
+    expect(String(query.mock.calls[0][0])).not.toContain("rosetta_extraction_run_id =");
   });
 
   it("maps explicit non-assembly statuses without fallback or retry work", async () => {

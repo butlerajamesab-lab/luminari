@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const hash = z.string().regex(/^[0-9a-f]{64}$/i);
+const hash = z.string().regex(/^[0-9a-f]{64}$/i).transform(value => value.toLowerCase());
 const extraction_run_id = z.union([
   z.number().int().positive().safe(),
   z.string().regex(/^[1-9]\d*$/),
@@ -48,6 +48,14 @@ export const rosetta_public_current_docket_result_schema = z.object({
   }).strict(),
   public_reason: z.string().max(500),
 }).strict().superRefine((value, context) => {
+  if (value.status === "complete" && (
+    ["help", "workflow", "accountability", "override", "definition"].some(key => {
+      const layer = value.coverage[key as keyof typeof value.coverage];
+      return !layer || !["populated", "not_applicable"].includes(layer.status);
+    }) || value.validation_summary.terminal !== true || value.validation_summary.validator_count !== 9
+  )) {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ["coverage"], message: "Complete results require all five terminal layers and nine validators." });
+  }
   if (value.source_registry_id === null && value.status !== "unavailable") {
     context.addIssue({ code: z.ZodIssueCode.custom, path: ["source_registry_id"], message: "A known source is required for this status." });
   }

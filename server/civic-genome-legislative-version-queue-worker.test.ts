@@ -397,3 +397,15 @@ describe("legislative version queue", () => {
     expect(query).not.toHaveBeenCalled();
   });
 });
+
+it.each(["awaiting_analysis", "requires_review", "unavailable"])("holds %s without consuming attempts or starting another pass", async status => {
+ process_version.mockRejectedValueOnce(new Error(`rosetta_public_current_docket_result_${status}`));
+ await process_legislative_version_job(job);
+ expect(process_version).toHaveBeenCalledOnce();
+ expect(query).toHaveBeenCalledOnce();
+ const sql = query.mock.calls[0][0];
+ expect(sql).toContain("'infinity'::timestamptz");
+ expect(sql).toContain("awaiting_current_result");
+ expect(sql).not.toContain("attempt_count = attempt_count + 1");
+ expect(sql).not.toContain("processing_state = 'failed'");
+});

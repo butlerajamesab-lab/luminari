@@ -21,8 +21,8 @@ export type rosetta_genome_assembly_request = {
   genome_bill_id: string;
   source_document_id: number;
   extraction_run_id?: number;
-  source_document_key?: string;
-  source_content_hash?: string;
+  source_document_key: string;
+  source_content_hash: string;
 };
 
 export type rosetta_genome_assembly_result = {
@@ -249,14 +249,12 @@ async function load_exact_docket_assembly_binding(
       where genome_bill_id = $1::uuid
         and ($2::text is null or source_document_key = $2::text)
         and ($3::text is null or receipt_json ->> 'source_content_hash' = $3::text)
-        and ($4::text is null or rosetta_extraction_run_id = $4::text)
       order by stage_rank desc, provider_sequence desc, updated_at desc, bill_version_id
       limit 2`,
     [
       request.genome_bill_id,
       has_explicit_key ? request.source_document_key : null,
       explicit_hash,
-      request.extraction_run_id === undefined ? null : String(request.extraction_run_id),
     ],
   );
   if (rows.length === 0) {

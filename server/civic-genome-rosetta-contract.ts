@@ -323,6 +323,9 @@ export async function get_rosetta_current_docket_structure(input: {
     });
     if (!response.ok) throw new Error(`rosetta_current_handoff_unavailable:${response.status}`);
     const row = await response.json() as rosetta_export_row;
+    if (is_record(row)) for (const key of ["source_content_hash", "output_content_hash", "rule_manifest_hash", "configuration_hash"] as const) {
+      if (typeof row[key] === "string") row[key] = row[key].toLowerCase();
+    }
     if (!is_record(row) || row.extraction_run_id !== input.extraction_run_id
       || row.source_content_hash !== input.source_content_hash || row.output_content_hash !== input.output_content_hash) {
       throw new Error("rosetta_current_handoff_identity_mismatch");
