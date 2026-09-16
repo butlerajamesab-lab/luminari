@@ -6,6 +6,7 @@ import {
   ROSETTA_HANDOFF_STRUCTURAL_REPRESENTATION_V2,
   type civic_genome_rosetta_law_view,
 } from "./civic-genome-rosetta-contract";
+import { load_rosetta_review_detail_for_docket_binding } from "./civic-genome-rosetta-evaluation";
 import { adaptRosettaToGenomeTraits, hashValue } from "./civic-genome/assembly-engine";
 
 export const ROSETTA_GENOME_ENGINE_VERSION = "rosetta-genome-assembly-v1";
@@ -39,6 +40,11 @@ type assembly_contract = {
   engine_version: string;
   rule_version: string;
   structural_evidence: boolean;
+};
+
+type docket_assembly_binding = {
+  source_document_key: string;
+  source_content_hash: string;
 };
 
 function is_record(value: unknown): value is Record<string, unknown> {
@@ -203,6 +209,60 @@ async function load_view(
   return view;
 }
 
+async function load_exact_docket_assembly_binding(
+  request: rosetta_genome_assembly_request,
+): Promise<docket_assembly_binding> {
+  const { rows } = await getPool().query<{
+    source_document_key: string | null;
+    source_content_hash: string | null;
+  }>(
+    `select source_document_key,
+            receipt_json ->> 'source_content_hash' as source_content_hash
+       from public.civic_genome_bill_version
+      where genome_bill_id = $1::uuid
+        and rosetta_source_document_id = $2
+        and ($3::text is null or rosetta_extraction_run_id = $3::text)
+      order by stage_rank desc, provider_sequence desc, updated_at desc, bill_version_id
+      limit 2`,
+    [
+      request.genome_bill_id,
+      request.source_document_id,
+      request.extraction_run_id === undefined ? null : String(request.extraction_run_id),
+    ],
+  );
+  if (rows.length === 0) {
+    throw new Error("rosetta_current_docket_bound_result_local_binding_missing");
+  }
+  if (rows.length !== 1) {
+    throw new Error("rosetta_current_docket_bound_result_local_binding_not_unique");
+  }
+  const binding = rows[0];
+  if (!binding.source_document_key) {
+    throw new Error("rosetta_current_docket_bound_result_source_document_key_missing");
+  }
+  if (!/^[0-9a-f]{64}$/.test(binding.source_content_hash ?? "")) {
+    throw new Error("rosetta_current_docket_bound_result_source_content_hash_missing");
+  }
+  return {
+    source_document_key: binding.source_document_key,
+    source_content_hash: binding.source_content_hash as string,
+  };
+}
+
+export async function assert_exact_docket_source_binding_for_assembly(
+  request: rosetta_genome_assembly_request,
+  view: civic_genome_rosetta_law_view,
+): Promise<docket_assembly_binding> {
+  const binding = await load_exact_docket_assembly_binding(request);
+  if (binding.source_content_hash !== view.source_content_hash) {
+    throw new Error("rosetta_current_docket_bound_result_source_content_hash_mismatch");
+  }
+  if (!(await load_rosetta_review_detail_for_docket_binding(binding))) {
+    throw new Error("rosetta_current_docket_bound_result_missing");
+  }
+  return binding;
+}
+
 async function bind_source_identity(
   client: PoolClient,
   genome_bill_id: string,
@@ -297,6 +357,7 @@ export async function assemble_rosetta_structural_dna(
   request: rosetta_genome_assembly_request,
 ): Promise<rosetta_genome_assembly_result> {
   const view = await load_view(request);
+  await assert_exact_docket_source_binding_for_assembly(request, view);
   const assembly = resolve_assembly_contract(view);
   const source_identity = {
     source_document_id: view.source_document_id,

@@ -40,6 +40,12 @@ export const rosetta_evaluation_schema = z.object({
     parent_source_registry_id: z.string().uuid().nullable().optional(),
     revision_kind: z.string().nullable().optional(),
   }),
+  current_docket_bound_result: z.object({
+    contract: z.string().optional(),
+    source_document_key: z.string().min(1).optional(),
+    docket_source_key: z.string().min(1).optional(),
+    source_content_hash: hash.optional(),
+  }).passthrough().nullable().optional(),
   selected_attempt: attempt.nullable(),
   attempts: z.array(attempt),
   law_view: z.object({
