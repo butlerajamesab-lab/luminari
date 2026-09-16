@@ -67,6 +67,25 @@ beforeEach(() => {
 });
 
 describe("Docket jurisdiction activation queue", () => {
+  it("keeps missing worker credentials retryable while retaining attempt audit", async () => {
+    const error = new Error("Missing required environment variable: LEGISCAN_API_KEY");
+    expect(classify_docket_bill_activation_failure({ error, prior_attempt_count: 99 }))
+      .toMatchObject({ queue_state: "degraded", terminal: false, retry_delay_seconds: 300 });
+    get_bill.mockRejectedValueOnce(error);
+    await process_docket_bill_activation_job({ ...job, attempt_count: 4 });
+    const failure_call = query.mock.calls.find(call => call[2]?.label === "docket_bill_activation_queue_fail");
+    expect(failure_call?.[0]).toContain("attempt_count = attempt_count + 1");
+    expect(failure_call?.[1]?.[1]).toBe("degraded");
+    expect(query.mock.calls.some(call => String(call[0]).includes("register_docket_legislative_version_spine"))).toBe(false);
+  });
+
+  it("retains terminal safeguards for unknown and deterministic source failures", () => {
+    expect(classify_docket_bill_activation_failure({ error: new Error("unexpected_failure"), prior_attempt_count: 4 }))
+      .toMatchObject({ terminal: true, failure_class: "unknown" });
+    expect(classify_docket_bill_activation_failure({ error: new Error("rosetta_source_identity_binding_changed"), prior_attempt_count: 0 }))
+      .toMatchObject({ terminal: true, failure_class: "deterministic_contract" });
+  });
+
   it("uses bounded exponential retry timing", () => {
     expect(docket_bill_activation_retry_delay_seconds(1)).toBe(15);
     expect(docket_bill_activation_retry_delay_seconds(2)).toBe(30);
