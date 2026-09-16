@@ -88,7 +88,17 @@ export type civic_genome_version_snapshot = {
   processing_state: string;
 };
 
+export type civic_genome_source_version = civic_genome_version_snapshot & {
+  provider_sequence: number;
+  provider_date: string | null;
+  source_url: string;
+  provider_document_type: string;
+  predecessor_bill_version_id: string | null;
+  base_bill_version_id: string | null;
+};
+
 export type civic_genome_bill_detail = {
+  source_versions: civic_genome_source_version[];
   bill: GenomeBill;
   current_version: civic_genome_version_snapshot | null;
   published_version: civic_genome_version_snapshot | null;
@@ -133,12 +143,14 @@ export async function get_civic_genome_bill_detail(
     published_processing_state: string | null;
   }>(
     `with current_version as (
-       select bill_version_id, source_document_key, version_type,
-              rosetta_source_document_id, rosetta_extraction_run_id,
-              processing_state
-         from public.civic_genome_bill_version
-        where genome_bill_id = $1
-        order by stage_rank desc, provider_sequence desc, updated_at desc
+       select version.bill_version_id, version.source_document_key, version.version_type,
+              version.rosetta_source_document_id, version.rosetta_extraction_run_id,
+              version.processing_state
+         from public.civic_genome_bill_version version
+         join public.docket_bill_source_document document using (source_document_key)
+        where version.genome_bill_id = $1 and version.document_family = 'text'
+        order by document.provider_date desc nulls last, version.provider_sequence desc,
+                 version.source_document_key desc
         limit 1
      ), published_version as (
        select bill_version_id, source_document_key, version_type,
@@ -166,6 +178,20 @@ export async function get_civic_genome_bill_detail(
             published.processing_state as published_processing_state
        from current_version current
        full join published_version published on true`,
+    [genome_bill_id],
+  );
+  const source_versions_result = await pool.query<civic_genome_source_version>(
+    `select version.bill_version_id, version.source_document_key, version.version_type,
+            version.rosetta_source_document_id::integer as source_document_id,
+            version.rosetta_extraction_run_id as extraction_run_id, version.processing_state,
+            version.provider_sequence, document.provider_date::text, document.source_url,
+            document.provider_document_type, version.predecessor_bill_version_id,
+            version.base_bill_version_id
+       from public.civic_genome_bill_version version
+       join public.docket_bill_source_document document using (source_document_key)
+      where version.genome_bill_id = $1
+      order by document.provider_date asc nulls last, version.provider_sequence,
+               version.source_document_key`,
     [genome_bill_id],
   );
   const version_selection = version_selection_result.rows[0] ?? null;
@@ -336,6 +362,7 @@ export async function get_civic_genome_bill_detail(
 
   return {
     bill,
+    source_versions: source_versions_result.rows,
     current_version,
     published_version,
     structural_dna: {

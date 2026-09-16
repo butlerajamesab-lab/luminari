@@ -247,7 +247,7 @@ export default function CivicGenomePage() {
 
       {rosetta_review_url && <p style={{ margin: "0 0 1rem", fontSize: ".85rem" }}><a href={rosetta_review_url} target="_blank" rel="noopener noreferrer" style={{ color: "#91c9f7" }}>Browse Rosetta evaluation results</a> <span style={{ color: p.muted }}>· inspect laws by passed, failed, held, or unprocessed status</span></p>}
 
-      {selected && bill_detail.isSuccess && <RosettaEvaluation key={selected.genome_bill_id} genome_bill_id={selected.genome_bill_id} current_version={current_version} published_version={published_version}/>}
+      {selected && bill_detail.isSuccess && <RosettaEvaluation key={selected.genome_bill_id} genome_bill_id={selected.genome_bill_id} source_versions={bill_detail.data?.source_versions ?? []} current_version={current_version} published_version={published_version}/>}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: ".75rem", marginBottom: "1.25rem" }}>
         <Metric label="Families" value={stats.data?.total_families ?? "—"}/><Metric label="Bills" value={stats.data?.total_bills ?? "—"}/><Metric label="Events" value={stats.data?.total_events ?? "—"}/><Metric label="Observed states" value={stats.data?.observed_state_count ?? "—"}/><Metric label="Cross-state families" value={stats.data?.cross_state_family_count ?? "—"}/>

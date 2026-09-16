@@ -214,10 +214,13 @@ async function build_single_bill_export(source_bill_id: number) {
   const [versions_result, lineage_result, all_traits_result, all_runs_result] =
     await Promise.all([
       pool.query(
-        `select *
-         from public.civic_genome_bill_version
-        where genome_bill_id = $1
-        order by stage_rank desc, provider_sequence desc, created_at desc, bill_version_id desc`,
+        `select version.*, document.source_url, document.provider_date,
+                document.provider_document_type
+         from public.civic_genome_bill_version version
+         join public.docket_bill_source_document document using (source_document_key)
+        where version.genome_bill_id = $1
+        order by document.provider_date asc nulls last, version.provider_sequence,
+                 version.source_document_key`,
         [bill.genome_bill_id],
       ),
       pool.query(
