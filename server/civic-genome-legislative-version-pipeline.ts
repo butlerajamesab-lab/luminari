@@ -1,3 +1,4 @@
+import { load_rosetta_current_docket_result_for_binding } from "./civic-genome-rosetta-evaluation";
 import { createHash } from "node:crypto";
 import { PDFParse } from "pdf-parse";
 
@@ -38,6 +39,12 @@ const MAX_PROVIDER_COPY_BASE64_LENGTH = Math.ceil(MAX_SOURCE_BYTES / 3) * 4;
 export const LEGISLATIVE_VERSION_PROVIDER_SHARED_OUTAGE_ERROR_CODE =
   "legislative_version_provider_fallback_shared_service_unavailable";
 
+export type current_legislative_extraction_receipt = Omit<rosetta_extraction_receipt, "run_version" | "replayed"> & {
+  run_version: null;
+  replayed: null;
+  receipt_source: "current_docket_projection";
+};
+
 export type legislative_version_processing_result = {
   bill_version_id: string;
   genome_bill_id: string;
@@ -46,7 +53,7 @@ export type legislative_version_processing_result = {
   document_family: "text" | "amendment";
   version_type: string;
   rosetta_source_document_id: number;
-  extraction: rosetta_extraction_receipt;
+  extraction: current_legislative_extraction_receipt;
   assembly: rosetta_family_orchestration_result;
 };
 
@@ -769,77 +776,6 @@ export async function extract_version_source(
   };
 }
 
-async function invoke_rosetta_extraction(
-  source_document_id: number,
-  source: extracted_legislative_source,
-  reference_date: string,
-): Promise<rosetta_extraction_receipt> {
-  const base_url = required_environment("ROSETTA_SUPABASE_URL");
-  const service_role_key = required_environment("ROSETTA_SUPABASE_SERVICE_ROLE_KEY");
-  const headers = create_rosetta_supabase_headers(service_role_key, {
-    accept: "application/json",
-    "content-type": "application/json",
-  });
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), ROSETTA_REQUEST_TIMEOUT_MS);
-  try {
-    const response = await fetch(`${base_url}/rest/v1/rpc/run_rosetta_v3_extraction`, {
-      method: "POST",
-      headers,
-      signal: controller.signal,
-      body: JSON.stringify({
-        p_source_document_id: source_document_id,
-        p_source_text: source.source_text,
-        p_expected_source_content_hash: source.source_content_hash,
-        p_source_url: source.source_url,
-        p_source_version: source.source_version,
-        p_media_type: source.media_type,
-        p_source_byte_hash: source.source_byte_hash,
-        p_source_provider_hash: source.provider_hash,
-        p_reference_date: reference_date,
-        p_text_extractor_version: source.extractor_version,
-        p_source_metadata: source.source_metadata,
-      }),
-    });
-    const response_body = await response.text();
-    if (!response.ok) {
-      throw new Error(
-        `legislative_version_rosetta_extraction_failed:${response.status}:${response_body.slice(0, 1_000)}`,
-      );
-    }
-
-    let payload: unknown;
-    try {
-      payload = JSON.parse(response_body);
-    } catch {
-      throw new Error("invalid_legislative_version_extraction_receipt_json");
-    }
-    const receipt = Array.isArray(payload) ? payload[0] : payload;
-    if (!as_record(receipt)) {
-      throw new Error("invalid_legislative_version_extraction_receipt");
-    }
-    return receipt as unknown as rosetta_extraction_receipt;
-  } catch (error) {
-    if (
-      error instanceof Error
-      && (
-        error.message.startsWith("legislative_version_rosetta_extraction_failed:")
-        || error.message.startsWith("invalid_legislative_version_extraction_receipt")
-      )
-    ) {
-      throw error;
-    }
-    if (controller.signal.aborted) {
-      throw new Error(
-        `legislative_version_rosetta_extraction_timeout:${ROSETTA_REQUEST_TIMEOUT_MS}`,
-      );
-    }
-    const cause = error instanceof Error ? error.name : "unknown";
-    throw new Error(`legislative_version_rosetta_extraction_network_failed:${cause}`);
-  } finally {
-    clearTimeout(timeout);
-  }
-}
 
 async function register_rosetta_source_content(
   source_document_id: number,
@@ -983,7 +919,7 @@ async function record_source_ingested(
 
 async function record_extracted(
   bill_version_id: string,
-  extraction: rosetta_extraction_receipt,
+  extraction: current_legislative_extraction_receipt,
 ): Promise<void> {
   await getPool().query(
     `update public.civic_genome_bill_version
@@ -998,7 +934,8 @@ async function record_extracted(
               'rosetta_configuration_hash', $6::text,
               'rosetta_output_content_hash', $7::text,
               'rosetta_run_version', $8::integer,
-              'rosetta_replayed', $9::boolean
+              'rosetta_replayed', $9::boolean,
+              'rosetta_receipt_source', 'current_docket_projection'
             ),
             updated_at = now()
       where bill_version_id = $1::uuid`,
@@ -1066,29 +1003,42 @@ export async function process_legislative_version(
     content,
   );
 
-  const extraction = await invoke_rosetta_extraction(
+  // Ingestion is separate from processing. This consumer never starts a second
+  // legacy-engine pass to obtain a handoff; Rosetta owns execution and routing.
+  const current = await load_rosetta_current_docket_result_for_binding({
+    source_document_key: version.source_document_key,
+    source_content_hash: source.source_content_hash,
+  });
+  if (!current || current.status !== "complete" || !current.current_result) {
+    await getPool().query(`update public.civic_genome_bill_version
+      set processing_state='source_ingested', failure_code=$2,
+          receipt_json=receipt_json || jsonb_build_object('current_rosetta_status',$3::text), updated_at=now()
+      where bill_version_id=$1::uuid`,
+    [bill_version_id, `rosetta_public_current_docket_result_${current?.status ?? "unavailable"}`, current?.status ?? "unavailable"]);
+    throw new Error(`rosetta_public_current_docket_result_${current?.status ?? "unavailable"}`);
+  }
+  const extraction: current_legislative_extraction_receipt = {
+    ...current.current_result,
+    extraction_run_id: Number(current.current_result.extraction_run_id),
     source_document_id,
-    source,
-    deterministic_reference_date(version),
-  );
-  if (extraction.source_document_id !== source_document_id) {
-    throw new Error("legislative_version_extraction_source_document_mismatch");
-  }
-  if (extraction.run_status !== "completed" || extraction.admissibility_state !== "admissible") {
-    throw new Error(
-      `legislative_version_extraction_not_admissible:${extraction.run_status}:${extraction.admissibility_state}`,
-    );
-  }
-  if (!extraction.output_content_hash) {
-    throw new Error("legislative_version_extraction_output_hash_missing");
-  }
-  await record_extracted(bill_version_id, extraction);
-
+    source_content_id: content.source_content_id,
+    source_identity_hash: content.source_identity_hash,
+    source_content_hash: source.source_content_hash,
+    source_byte_hash: source.source_byte_hash,
+    source_url: source.source_url,
+    source_version: source.source_version,
+    run_status: "completed", run_version: null, replayed: null,
+    coverage: current.coverage, receipt_source: "current_docket_projection",
+  };
+  if (!Number.isSafeInteger(extraction.extraction_run_id)) throw new Error("rosetta_current_extraction_run_invalid");
   const assembly = await assemble_rosetta_and_resolve_family({
     genome_bill_id: version.genome_bill_id,
     source_document_id,
     extraction_run_id: extraction.extraction_run_id,
+    source_document_key: version.source_document_key,
+    source_content_hash: source.source_content_hash,
   });
+  await record_extracted(bill_version_id, extraction);
   await record_assembled(bill_version_id, assembly);
 
   return {

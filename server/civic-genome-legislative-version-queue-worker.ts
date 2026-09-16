@@ -852,6 +852,19 @@ export async function process_legislative_version_job(
   try {
     result = await process_legislative_version(job.bill_version_id);
   } catch (error) {
+    const current_status = /^rosetta_public_current_docket_result_(awaiting_analysis|requires_review|unavailable|awaiting_publication)$/.exec(safe_error_code(error));
+    if (current_status) {
+      // Waiting on Rosetta is not a failed decomposition and consumes no retry.
+      // Resume only after an explicit reconciliation observes a new current result.
+      await query_with_diagnostics(`update public.civic_genome_legislative_version_queue
+        set queue_state='degraded', next_attempt_at='infinity'::timestamptz,
+            locked_at=null, locked_by=null, last_failure_class='awaiting_current_result',
+            last_error_code=$2, updated_at=now()
+        where queue_id=$1::uuid and locked_by=$3`,
+      [job.queue_id, safe_error_code(error), queue_worker_id],
+      { label: "legislative_version_await_current", pool_acquire_timeout_ms: 1000, query_timeout_ms: 5000 });
+      return;
+    }
     if (is_legislative_version_shared_provider_outage(error)) {
       pause_legislative_version_queue_after_shared_provider_outage();
       try {

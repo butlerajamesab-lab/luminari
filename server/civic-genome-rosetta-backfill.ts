@@ -1,5 +1,4 @@
 import { getPool } from "./db";
-import { get_latest_rosetta_law_view_by_source_document } from "./civic-genome-rosetta-contract";
 import { assemble_rosetta_and_resolve_family } from "./civic-genome-rosetta-family-orchestration";
 
 export const ROSETTA_BACKFILL_MAX_BATCH = 50;
@@ -8,6 +7,8 @@ export type explicit_rosetta_binding = {
   genome_bill_id: string;
   source_document_id: number;
   extraction_run_id?: number;
+  source_document_key: string;
+  source_content_hash: string;
 };
 
 export type explicit_rosetta_backfill_item = {
@@ -72,12 +73,6 @@ export async function backfill_explicit_rosetta_bindings(
     }
 
     try {
-      const view = await get_latest_rosetta_law_view_by_source_document(binding.source_document_id);
-      if (!view) throw new Error("rosetta_law_view_not_found");
-      if (binding.extraction_run_id !== undefined && view.extraction_run_id !== binding.extraction_run_id) {
-        throw new Error("rosetta_extraction_run_identity_mismatch");
-      }
-
       const result = await assemble_rosetta_and_resolve_family(binding);
       items.push({
         genome_bill_id: binding.genome_bill_id,

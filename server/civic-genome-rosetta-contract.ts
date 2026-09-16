@@ -1,5 +1,6 @@
 import type { ProvenanceState, RosettaLawObject, RosettaLawView, RosettaLayer } from "./civic-genome/assembly-contract";
 import { create_rosetta_supabase_headers } from "./rosetta-supabase-auth";
+import { get_rosetta_review_base_url } from "./civic-genome-rosetta-evaluation";
 
 const rosetta_layers: RosettaLayer[] = [
   "help",
@@ -300,6 +301,40 @@ export async function get_rosetta_law_view_by_extraction_run(
   });
   const rows = await request_rosetta_rows(query);
   return rows[0] ? normalize_export_row(rows[0]) : null;
+}
+
+/** Read only the candidate structure selected by the compact current contract. */
+export async function get_rosetta_current_docket_structure(input: {
+  source_document_key: string;
+  source_content_hash: string;
+  extraction_run_id: number;
+  output_content_hash: string;
+}): Promise<civic_genome_rosetta_law_view> {
+  const token = process.env.ROSETTA_CURRENT_HANDOFF_TOKEN;
+  if (!token || token.length < 32) throw new Error("rosetta_current_handoff_not_configured");
+  const url = new URL("/api/internal/current-docket-structure", get_rosetta_review_base_url());
+  for (const [key, value] of Object.entries(input)) url.searchParams.set(key, String(value));
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), ROSETTA_CONTRACT_TIMEOUT_MS);
+  try {
+    const response = await fetch(url, {
+      method: "GET", redirect: "error", signal: controller.signal,
+      headers: { accept: "application/json", "x-rosetta-handoff-token": token },
+    });
+    if (!response.ok) throw new Error(`rosetta_current_handoff_unavailable:${response.status}`);
+    const row = await response.json() as rosetta_export_row;
+    if (is_record(row)) for (const key of ["source_content_hash", "output_content_hash", "rule_manifest_hash", "configuration_hash"] as const) {
+      if (typeof row[key] === "string") row[key] = row[key].toLowerCase();
+    }
+    if (!is_record(row) || row.extraction_run_id !== input.extraction_run_id
+      || row.source_content_hash !== input.source_content_hash || row.output_content_hash !== input.output_content_hash) {
+      throw new Error("rosetta_current_handoff_identity_mismatch");
+    }
+    return normalize_export_row(row);
+  } catch (error) {
+    if (controller.signal.aborted) throw new Error("rosetta_current_handoff_timeout");
+    throw error;
+  } finally { clearTimeout(timeout); }
 }
 
 export async function get_latest_rosetta_law_view_by_source_document(

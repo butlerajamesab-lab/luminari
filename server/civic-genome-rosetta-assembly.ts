@@ -1,11 +1,12 @@
 import type { PoolClient } from "pg";
 import { getPool } from "./db";
 import {
-  get_latest_rosetta_law_view_by_source_document,
-  get_rosetta_law_view_by_extraction_run,
+  get_rosetta_current_docket_structure,
   ROSETTA_HANDOFF_STRUCTURAL_REPRESENTATION_V2,
   type civic_genome_rosetta_law_view,
 } from "./civic-genome-rosetta-contract";
+import { load_rosetta_current_docket_result_for_binding } from "./civic-genome-rosetta-evaluation";
+import type { RosettaPublicCurrentDocketResult } from "../shared/rosetta-public-current-docket-result";
 import { adaptRosettaToGenomeTraits, hashValue } from "./civic-genome/assembly-engine";
 
 export const ROSETTA_GENOME_ENGINE_VERSION = "rosetta-genome-assembly-v1";
@@ -20,6 +21,8 @@ export type rosetta_genome_assembly_request = {
   genome_bill_id: string;
   source_document_id: number;
   extraction_run_id?: number;
+  source_document_key: string;
+  source_content_hash: string;
 };
 
 export type rosetta_genome_assembly_result = {
@@ -39,6 +42,11 @@ type assembly_contract = {
   engine_version: string;
   rule_version: string;
   structural_evidence: boolean;
+};
+
+type docket_assembly_binding = {
+  source_document_key: string;
+  source_content_hash: string;
 };
 
 function is_record(value: unknown): value is Record<string, unknown> {
@@ -194,13 +202,157 @@ function assert_view_identity(
 
 async function load_view(
   request: rosetta_genome_assembly_request,
+  current_result: NonNullable<RosettaPublicCurrentDocketResult["current_result"]>,
 ): Promise<civic_genome_rosetta_law_view> {
-  const view = request.extraction_run_id === undefined
-    ? await get_latest_rosetta_law_view_by_source_document(request.source_document_id)
-    : await get_rosetta_law_view_by_extraction_run(request.extraction_run_id);
+  const extraction_run_id = Number(current_result.extraction_run_id);
+  if (!Number.isSafeInteger(extraction_run_id) || extraction_run_id <= 0) {
+    throw new Error("rosetta_public_current_docket_result_extraction_run_invalid");
+  }
+  const view = await get_rosetta_current_docket_structure({
+    source_document_key: request.source_document_key!,
+    source_content_hash: request.source_content_hash!.toLowerCase(),
+    extraction_run_id,
+    output_content_hash: current_result.output_content_hash,
+  });
   if (!view) throw new Error("rosetta_law_view_not_found");
+  if (String(view.extraction_run_id) !== String(current_result.extraction_run_id)) {
+    throw new Error("rosetta_public_current_docket_result_extraction_run_mismatch");
+  }
   assert_view_identity(request, view);
   return view;
+}
+
+async function load_exact_docket_assembly_binding(
+  request: rosetta_genome_assembly_request,
+): Promise<docket_assembly_binding> {
+  const has_explicit_key = typeof request.source_document_key === "string"
+    && request.source_document_key.length > 0;
+  const has_explicit_hash = /^[0-9a-f]{64}$/i.test(request.source_content_hash ?? "");
+  const explicit_hash = has_explicit_hash
+    ? request.source_content_hash!.toLowerCase()
+    : null;
+  if (has_explicit_key !== has_explicit_hash) {
+    throw new Error(has_explicit_key
+      ? "rosetta_public_current_docket_result_source_content_hash_missing"
+      : "rosetta_public_current_docket_result_source_document_key_missing");
+  }
+  if (!has_explicit_key) {
+    throw new Error("rosetta_public_current_docket_result_exact_selector_missing");
+  }
+  const { rows } = await getPool().query<{
+    source_document_key: string | null;
+    source_content_hash: string | null;
+  }>(
+    `select source_document_key,
+            receipt_json ->> 'source_content_hash' as source_content_hash
+       from public.civic_genome_bill_version
+      where genome_bill_id = $1::uuid
+        and ($2::text is null or source_document_key = $2::text)
+        and ($3::text is null or receipt_json ->> 'source_content_hash' = $3::text)
+      order by stage_rank desc, provider_sequence desc, updated_at desc, bill_version_id
+      limit 2`,
+    [
+      request.genome_bill_id,
+      has_explicit_key ? request.source_document_key : null,
+      explicit_hash,
+    ],
+  );
+  if (rows.length === 0) {
+    throw new Error("rosetta_public_current_docket_result_local_binding_missing");
+  }
+  if (rows.length !== 1) {
+    throw new Error("rosetta_public_current_docket_result_local_binding_not_unique");
+  }
+  const binding = rows[0];
+  if (!binding.source_document_key) {
+    throw new Error("rosetta_public_current_docket_result_source_document_key_missing");
+  }
+  if (!/^[0-9a-f]{64}$/.test(binding.source_content_hash ?? "")) {
+    throw new Error("rosetta_public_current_docket_result_source_content_hash_missing");
+  }
+  if (has_explicit_key && binding.source_document_key !== request.source_document_key) {
+    throw new Error("rosetta_public_current_docket_result_source_document_key_mismatch");
+  }
+  if (explicit_hash && binding.source_content_hash !== explicit_hash) {
+    throw new Error("rosetta_public_current_docket_result_source_content_hash_mismatch");
+  }
+  return {
+    source_document_key: binding.source_document_key,
+    source_content_hash: binding.source_content_hash as string,
+  };
+}
+
+export async function assert_exact_docket_source_binding_for_assembly(
+  request: rosetta_genome_assembly_request,
+  view: civic_genome_rosetta_law_view,
+): Promise<docket_assembly_binding> {
+  if (view.source_document_id !== request.source_document_id) {
+    throw new Error("rosetta_source_document_identity_mismatch");
+  }
+  const binding = await load_exact_docket_assembly_binding(request);
+  if (binding.source_content_hash !== view.source_content_hash) {
+    throw new Error("rosetta_public_current_docket_result_source_content_hash_mismatch");
+  }
+  const current_result = await load_assembly_ready_current_result(request, binding);
+  assert_current_result_matches_view(current_result, view);
+  return binding;
+}
+
+async function load_assembly_ready_current_result(
+  request: rosetta_genome_assembly_request,
+  binding: docket_assembly_binding,
+): Promise<NonNullable<RosettaPublicCurrentDocketResult["current_result"]>> {
+  const current_docket_result = await load_rosetta_current_docket_result_for_binding(binding);
+  if (!current_docket_result) {
+    throw new Error("rosetta_public_current_docket_result_missing");
+  }
+  if (current_docket_result.status === "requires_review") {
+    throw new Error("rosetta_public_current_docket_result_requires_review");
+  }
+  if (current_docket_result.status === "awaiting_analysis") {
+    throw new Error("rosetta_public_current_docket_result_awaiting_analysis");
+  }
+  if (current_docket_result.status === "unavailable") {
+    throw new Error("rosetta_public_current_docket_result_unavailable");
+  }
+  if (!current_docket_result.current_result) {
+    throw new Error("rosetta_public_current_docket_result_current_result_missing");
+  }
+  if (current_docket_result.current_result.admissibility_state !== "admissible") {
+    throw new Error("rosetta_public_current_docket_result_not_admissible");
+  }
+  if (
+    request.extraction_run_id !== undefined
+    && String(current_docket_result.current_result.extraction_run_id)
+      !== String(request.extraction_run_id)
+  ) {
+    throw new Error("rosetta_public_current_docket_result_extraction_run_mismatch");
+  }
+  return current_docket_result.current_result;
+}
+
+function assert_current_result_matches_view(
+  current_result: NonNullable<RosettaPublicCurrentDocketResult["current_result"]>,
+  view: civic_genome_rosetta_law_view,
+): void {
+  if (String(current_result.extraction_run_id) !== String(view.extraction_run_id)) {
+    throw new Error("rosetta_public_current_docket_result_extraction_run_mismatch");
+  }
+  if (current_result.output_content_hash !== view.output_content_hash) {
+    throw new Error("rosetta_public_current_docket_result_output_content_hash_mismatch");
+  }
+  if (current_result.engine_version !== view.engine_version) {
+    throw new Error("rosetta_public_current_docket_result_engine_version_mismatch");
+  }
+  if (current_result.rule_set_version !== view.rule_set_version) {
+    throw new Error("rosetta_public_current_docket_result_rule_set_version_mismatch");
+  }
+  if (current_result.rule_manifest_hash !== view.rule_manifest_hash) {
+    throw new Error("rosetta_public_current_docket_result_rule_manifest_hash_mismatch");
+  }
+  if (current_result.configuration_hash !== view.configuration_hash) {
+    throw new Error("rosetta_public_current_docket_result_configuration_hash_mismatch");
+  }
 }
 
 async function bind_source_identity(
@@ -293,10 +445,32 @@ async function bind_source_identity(
   }
 }
 
+/** A current candidate is not permission to write a published Genome assembly. */
+export async function assert_current_result_publication_target(
+  result: NonNullable<RosettaPublicCurrentDocketResult["current_result"]>,
+): Promise<void> {
+  const { rows } = await getPool().query<{ engine_version: string; rule_set_version: string; rule_manifest_hash: string }>(
+    `select engine_version, rule_set_version, rule_manifest_hash
+       from public.civic_genome_rosetta_generation_target where target_name='current'`,
+  );
+  const target = rows[0];
+  if (!target || target.engine_version !== result.engine_version || target.rule_set_version !== result.rule_set_version
+    || target.rule_manifest_hash.toLowerCase() !== result.rule_manifest_hash.toLowerCase()) {
+    throw new Error("rosetta_public_current_docket_result_awaiting_publication");
+  }
+}
+
 export async function assemble_rosetta_structural_dna(
   request: rosetta_genome_assembly_request,
 ): Promise<rosetta_genome_assembly_result> {
-  const view = await load_view(request);
+  const binding = await load_exact_docket_assembly_binding(request);
+  const current_result = await load_assembly_ready_current_result(request, binding);
+  const view = await load_view(request, current_result);
+  if (binding.source_content_hash !== view.source_content_hash) {
+    throw new Error("rosetta_public_current_docket_result_source_content_hash_mismatch");
+  }
+  assert_current_result_matches_view(current_result, view);
+  await assert_current_result_publication_target(current_result);
   const assembly = resolve_assembly_contract(view);
   const source_identity = {
     source_document_id: view.source_document_id,

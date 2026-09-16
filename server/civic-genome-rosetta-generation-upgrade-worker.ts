@@ -1,3 +1,4 @@
+import { load_queued_docket_binding } from "./civic-genome-docket-binding";
 import { randomUUID } from "node:crypto";
 
 import { query_with_diagnostics } from "./db";
@@ -550,8 +551,10 @@ export async function process_rosetta_generation_upgrade_job(
   job: upgrade_job,
 ): Promise<void> {
   try {
+    const binding = await load_queued_docket_binding(job);
     const receipt = await replay_job(job);
     const assembly = await assemble_rosetta_and_resolve_family({
+      ...binding,
       genome_bill_id: job.genome_bill_id,
       source_document_id: job.source_document_id,
       extraction_run_id: receipt.extraction_run_id,

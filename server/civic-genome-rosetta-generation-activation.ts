@@ -29,10 +29,12 @@ export async function run_rosetta_generation_activation_from_environment(): Prom
   const source_document_raw = process.env.ROSETTA_GENOME_ACTIVATION_SOURCE_DOCUMENT_ID?.trim();
   const extraction_run_raw = process.env.ROSETTA_GENOME_ACTIVATION_EXTRACTION_RUN_ID?.trim();
 
-  const configured = [genome_bill_id, source_document_raw, extraction_run_raw]
+  const source_document_key = process.env.ROSETTA_GENOME_ACTIVATION_SOURCE_DOCUMENT_KEY?.trim();
+  const source_content_hash = process.env.ROSETTA_GENOME_ACTIVATION_SOURCE_CONTENT_HASH?.trim().toLowerCase();
+  const configured = [genome_bill_id, source_document_raw, extraction_run_raw, source_document_key, source_content_hash]
     .filter(value => Boolean(value)).length;
   if (configured === 0) return null;
-  if (configured !== 3) throw new Error("rosetta_genome_activation_configuration_incomplete");
+  if (configured !== 5 || !/^[0-9a-f]{64}$/.test(source_content_hash ?? "")) throw new Error("rosetta_genome_activation_configuration_incomplete");
 
   const source_document_id = required_integer(
     "ROSETTA_GENOME_ACTIVATION_SOURCE_DOCUMENT_ID",
@@ -47,6 +49,8 @@ export async function run_rosetta_generation_activation_from_environment(): Prom
     genome_bill_id: genome_bill_id as string,
     source_document_id,
     extraction_run_id,
+    source_document_key: source_document_key!,
+    source_content_hash: source_content_hash!,
   });
 
   const receipt: rosetta_generation_activation_result = {

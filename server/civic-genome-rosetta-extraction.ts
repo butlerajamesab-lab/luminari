@@ -1,3 +1,4 @@
+import { load_queued_docket_binding } from "./civic-genome-docket-binding";
 import { createHash } from "node:crypto";
 import { PDFParse } from "pdf-parse";
 
@@ -481,7 +482,10 @@ export async function process_docket_bill_through_rosetta_and_genome(
   source_bill_id: number,
 ): Promise<docket_rosetta_pipeline_result> {
   const { ingestion, extraction } = await run_docket_bill_through_rosetta(source_bill_id);
+  const binding = await load_queued_docket_binding({ genome_bill_id: ingestion.genome_bill_id,
+    source_document_id: ingestion.source_document_id, source_content_hash: extraction.source_content_hash });
   const assembly = await assemble_rosetta_and_resolve_family({
+    ...binding,
     genome_bill_id: ingestion.genome_bill_id,
     source_document_id: ingestion.source_document_id,
     extraction_run_id: extraction.extraction_run_id,

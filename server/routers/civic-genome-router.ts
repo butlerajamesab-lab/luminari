@@ -109,6 +109,8 @@ export const civicGenomeRouter = router({
       genome_bill_id: uuid_param,
       source_document_id: positive_integer_param,
       extraction_run_id: positive_integer_param.optional(),
+      source_document_key: z.string().min(1).max(512),
+      source_content_hash: z.string().regex(/^[0-9a-f]{64}$/i),
     }))
     .mutation(async ({ input }) => assemble_rosetta_and_resolve_family(input)),
 
@@ -118,6 +120,8 @@ export const civicGenomeRouter = router({
         genome_bill_id: uuid_param,
         source_document_id: positive_integer_param,
         extraction_run_id: positive_integer_param.optional(),
+      source_document_key: z.string().min(1).max(512),
+      source_content_hash: z.string().regex(/^[0-9a-f]{64}$/i),
       })).min(1).max(50),
     }))
     .mutation(async ({ input }) => backfill_explicit_rosetta_bindings(input.bindings)),
