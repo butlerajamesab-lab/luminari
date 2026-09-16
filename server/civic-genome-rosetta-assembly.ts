@@ -6,7 +6,7 @@ import {
   ROSETTA_HANDOFF_STRUCTURAL_REPRESENTATION_V2,
   type civic_genome_rosetta_law_view,
 } from "./civic-genome-rosetta-contract";
-import { load_rosetta_review_detail_for_docket_binding } from "./civic-genome-rosetta-evaluation";
+import { load_rosetta_current_docket_result_for_binding } from "./civic-genome-rosetta-evaluation";
 import { adaptRosettaToGenomeTraits, hashValue } from "./civic-genome/assembly-engine";
 
 export const ROSETTA_GENOME_ENGINE_VERSION = "rosetta-genome-assembly-v1";
@@ -222,11 +222,11 @@ async function load_exact_docket_assembly_binding(
     : null;
   if (has_explicit_key !== has_explicit_hash) {
     throw new Error(has_explicit_key
-      ? "rosetta_current_docket_bound_result_source_content_hash_missing"
-      : "rosetta_current_docket_bound_result_source_document_key_missing");
+      ? "rosetta_public_current_docket_result_source_content_hash_missing"
+      : "rosetta_public_current_docket_result_source_document_key_missing");
   }
   if (!has_explicit_key && request.extraction_run_id === undefined) {
-    throw new Error("rosetta_current_docket_bound_result_exact_selector_missing");
+    throw new Error("rosetta_public_current_docket_result_exact_selector_missing");
   }
   const { rows } = await getPool().query<{
     source_document_key: string | null;
@@ -249,23 +249,23 @@ async function load_exact_docket_assembly_binding(
     ],
   );
   if (rows.length === 0) {
-    throw new Error("rosetta_current_docket_bound_result_local_binding_missing");
+    throw new Error("rosetta_public_current_docket_result_local_binding_missing");
   }
   if (rows.length !== 1) {
-    throw new Error("rosetta_current_docket_bound_result_local_binding_not_unique");
+    throw new Error("rosetta_public_current_docket_result_local_binding_not_unique");
   }
   const binding = rows[0];
   if (!binding.source_document_key) {
-    throw new Error("rosetta_current_docket_bound_result_source_document_key_missing");
+    throw new Error("rosetta_public_current_docket_result_source_document_key_missing");
   }
   if (!/^[0-9a-f]{64}$/.test(binding.source_content_hash ?? "")) {
-    throw new Error("rosetta_current_docket_bound_result_source_content_hash_missing");
+    throw new Error("rosetta_public_current_docket_result_source_content_hash_missing");
   }
   if (has_explicit_key && binding.source_document_key !== request.source_document_key) {
-    throw new Error("rosetta_current_docket_bound_result_source_document_key_mismatch");
+    throw new Error("rosetta_public_current_docket_result_source_document_key_mismatch");
   }
   if (explicit_hash && binding.source_content_hash !== explicit_hash) {
-    throw new Error("rosetta_current_docket_bound_result_source_content_hash_mismatch");
+    throw new Error("rosetta_public_current_docket_result_source_content_hash_mismatch");
   }
   return {
     source_document_key: binding.source_document_key,
@@ -282,26 +282,54 @@ export async function assert_exact_docket_source_binding_for_assembly(
   }
   const binding = await load_exact_docket_assembly_binding(request);
   if (binding.source_content_hash !== view.source_content_hash) {
-    throw new Error("rosetta_current_docket_bound_result_source_content_hash_mismatch");
+    throw new Error("rosetta_public_current_docket_result_source_content_hash_mismatch");
   }
-  const evaluation = await load_rosetta_review_detail_for_docket_binding(binding);
-  if (!evaluation) {
-    throw new Error("rosetta_current_docket_bound_result_missing");
+  const current_docket_result = await load_rosetta_current_docket_result_for_binding(binding);
+  if (!current_docket_result) {
+    throw new Error("rosetta_public_current_docket_result_missing");
   }
-  if (!evaluation.law_view) {
-    throw new Error("rosetta_current_docket_bound_result_law_view_missing");
+  if (current_docket_result.status === "requires_review") {
+    throw new Error("rosetta_public_current_docket_result_requires_review");
   }
-  if (evaluation.law_view.source_document_id !== view.source_document_id) {
-    throw new Error("rosetta_current_docket_bound_result_source_document_id_mismatch");
+  if (current_docket_result.status === "awaiting_analysis") {
+    throw new Error("rosetta_public_current_docket_result_awaiting_analysis");
   }
-  if (String(evaluation.law_view.extraction_run_id) !== String(view.extraction_run_id)) {
-    throw new Error("rosetta_current_docket_bound_result_extraction_run_mismatch");
+  if (current_docket_result.status === "unavailable") {
+    throw new Error("rosetta_public_current_docket_result_unavailable");
+  }
+  if (!current_docket_result.current_result) {
+    throw new Error("rosetta_public_current_docket_result_current_result_missing");
+  }
+  if (current_docket_result.current_result.admissibility_state !== "admissible") {
+    throw new Error("rosetta_public_current_docket_result_not_admissible");
+  }
+  if (
+    String(current_docket_result.current_result.extraction_run_id)
+    !== String(view.extraction_run_id)
+  ) {
+    throw new Error("rosetta_public_current_docket_result_extraction_run_mismatch");
   }
   if (
     request.extraction_run_id !== undefined
-    && String(evaluation.law_view.extraction_run_id) !== String(request.extraction_run_id)
+    && String(current_docket_result.current_result.extraction_run_id)
+      !== String(request.extraction_run_id)
   ) {
-    throw new Error("rosetta_current_docket_bound_result_extraction_run_mismatch");
+    throw new Error("rosetta_public_current_docket_result_extraction_run_mismatch");
+  }
+  if (current_docket_result.current_result.output_content_hash !== view.output_content_hash) {
+    throw new Error("rosetta_public_current_docket_result_output_content_hash_mismatch");
+  }
+  if (current_docket_result.current_result.engine_version !== view.engine_version) {
+    throw new Error("rosetta_public_current_docket_result_engine_version_mismatch");
+  }
+  if (current_docket_result.current_result.rule_set_version !== view.rule_set_version) {
+    throw new Error("rosetta_public_current_docket_result_rule_set_version_mismatch");
+  }
+  if (current_docket_result.current_result.rule_manifest_hash !== view.rule_manifest_hash) {
+    throw new Error("rosetta_public_current_docket_result_rule_manifest_hash_mismatch");
+  }
+  if (current_docket_result.current_result.configuration_hash !== view.configuration_hash) {
+    throw new Error("rosetta_public_current_docket_result_configuration_hash_mismatch");
   }
   return binding;
 }
