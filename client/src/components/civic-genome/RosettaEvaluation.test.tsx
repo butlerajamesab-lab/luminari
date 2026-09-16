@@ -18,7 +18,7 @@ describe("Rosetta evaluation reader", () => {
     } } });
     const html = render();
     expect(use_query.mock.calls[0][0]).toEqual({ genome_bill_id: "genome", bill_version_id: "current-version" });
-    expect(html).toContain("Failed");
+    expect(html).toContain("Decomposition failed");
     expect(html).toContain("2.5.33");
     expect(html).toContain("final_validation_failed");
     expect(html).toContain("A resident lives in this state.");

@@ -11,7 +11,7 @@ const layers = [
 const mono = "'IBM Plex Mono', monospace";
 const muted = "#a7bdb4";
 const border = "1px solid rgba(82,193,145,.22)";
-const statuses = { passed: "Passed", failed: "Failed", held: "Held", unprocessed: "Unprocessed", processing: "Processing" };
+const statuses = { passed: "Decomposition complete", failed: "Decomposition failed", held: "Decomposition held", unprocessed: "Not yet decomposed", processing: "Decomposition in progress" };
 const colors = { passed: "#59d89c", failed: "#ffabab", held: "#efcb85", unprocessed: muted, processing: "#91c9f7" };
 
 function readable_value(value: unknown, depth = 0): ReactNode {
@@ -56,10 +56,10 @@ export function RosettaEvaluation({ genome_bill_id, current_version, published_v
 
   return <section aria-label="Rosetta evaluation results" style={{ background: "rgba(13,30,25,.88)", border, borderRadius: 12, padding: "1rem", marginBottom: "1.25rem" }}>
     <div style={{ display: "flex", justifyContent: "space-between", gap: ".8rem", flexWrap: "wrap", alignItems: "center" }}>
-      <h2 style={{ margin: 0, fontSize: "1.2rem" }}>Evaluation results {selected_attempt && <span style={{ fontFamily: mono, fontSize: ".85rem", color: muted }}>· {selected_attempt.engine_version}</span>}</h2>
+      <h2 style={{ margin: 0, fontSize: "1.2rem" }}>Rosetta decomposition {selected_attempt && <span style={{ fontFamily: mono, fontSize: ".85rem", color: muted }}>· {selected_attempt.engine_version}</span>}</h2>
       {evaluation && <strong style={{ color: colors[evaluation.status], fontFamily: mono }}>{statuses[evaluation.status]}</strong>}
     </div>
-    <p style={{ color: muted, fontSize: ".83rem", lineHeight: 1.5 }}>Inspect Rosetta’s saved candidate analysis for this exact source version. These results retain their evaluation status; the published Genome snapshot and Prism findings appear below.</p>
+    <p style={{ color: muted, fontSize: ".83rem", lineHeight: 1.5 }}>Rosetta’s saved candidate analysis for this exact source version is shown here. Status describes decomposition, not whether the legislation passed. Earlier publications and their Prism findings are available under Published snapshot and assembly history.</p>
     <div style={{ display: "flex", gap: ".7rem", flexWrap: "wrap", alignItems: "center", marginBottom: ".8rem" }}>
       {versions.length > 0 && <label style={{ fontSize: ".8rem" }}>Source version {" "}<select aria-label="Evaluation source version" value={selected_id ?? ""} onChange={event => { set_selected_version_id(event.target.value); set_copied(false); }} style={{ padding: ".4rem", background: "#122e24", color: "#edf7f2", border, borderRadius: 6 }}>
         {versions.map(item => <option key={item.bill_version_id} value={item.bill_version_id}>{item.version_type}{item.bill_version_id === current_version?.bill_version_id ? " · current source" : " · published source"}</option>)}
