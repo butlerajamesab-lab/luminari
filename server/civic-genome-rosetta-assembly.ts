@@ -1,7 +1,7 @@
 import type { PoolClient } from "pg";
 import { getPool } from "./db";
 import {
-  get_rosetta_law_view_by_extraction_run,
+  get_rosetta_current_docket_structure,
   ROSETTA_HANDOFF_STRUCTURAL_REPRESENTATION_V2,
   type civic_genome_rosetta_law_view,
 } from "./civic-genome-rosetta-contract";
@@ -208,7 +208,12 @@ async function load_view(
   if (!Number.isSafeInteger(extraction_run_id) || extraction_run_id <= 0) {
     throw new Error("rosetta_public_current_docket_result_extraction_run_invalid");
   }
-  const view = await get_rosetta_law_view_by_extraction_run(extraction_run_id);
+  const view = await get_rosetta_current_docket_structure({
+    source_document_key: request.source_document_key!,
+    source_content_hash: request.source_content_hash!.toLowerCase(),
+    extraction_run_id,
+    output_content_hash: current_result.output_content_hash,
+  });
   if (!view) throw new Error("rosetta_law_view_not_found");
   if (String(view.extraction_run_id) !== String(current_result.extraction_run_id)) {
     throw new Error("rosetta_public_current_docket_result_extraction_run_mismatch");

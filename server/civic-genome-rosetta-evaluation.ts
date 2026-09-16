@@ -123,7 +123,9 @@ export async function get_civic_genome_rosetta_evaluation(input: {
   return {
     binding,
     availability: "available",
-    review_url: new URL(`/review/${encodeURIComponent(current_docket_result.source_registry_id)}`, base_url).toString(),
+    review_url: current_docket_result.source_registry_id
+      ? new URL(`/review/${encodeURIComponent(current_docket_result.source_registry_id)}`, base_url).toString()
+      : review_url,
     current_docket_result,
   };
 }

@@ -9,7 +9,7 @@ const { query, load_current, load_exact_view, load_latest_view } = vi.hoisted(()
 
 vi.mock("./civic-genome-rosetta-contract", async import_original => ({
   ...await import_original<typeof import("./civic-genome-rosetta-contract")>(),
-  get_rosetta_law_view_by_extraction_run: load_exact_view,
+  get_rosetta_current_docket_structure: load_exact_view,
   get_latest_rosetta_law_view_by_source_document: load_latest_view,
 }));
 
@@ -224,7 +224,9 @@ describe("Civic Genome Rosetta assembly gate", () => {
     })).rejects.toThrow("rosetta_law_view_not_found");
     expect(load_current).toHaveBeenCalledOnce();
     expect(load_exact_view).toHaveBeenCalledOnce();
-    expect(load_exact_view).toHaveBeenCalledWith(request.extraction_run_id);
+    expect(load_exact_view).toHaveBeenCalledWith({
+      source_document_key, source_content_hash, extraction_run_id: request.extraction_run_id, output_content_hash,
+    });
     expect(load_current.mock.invocationCallOrder[0]).toBeLessThan(load_exact_view.mock.invocationCallOrder[0]);
     expect(load_latest_view).not.toHaveBeenCalled();
     expect(query).toHaveBeenCalledOnce();

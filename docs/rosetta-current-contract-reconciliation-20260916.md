@@ -6,14 +6,14 @@ The consumer requires the exact Docket source key and content hash before readin
 
 The public response validator rejects complete-without-result, non-complete-with-result, non-admissible results, invalid run IDs, and timestamps without a time zone. Coverage accepts only the five named layers with status, optional reason, and optional validation timestamp. Validation summary accepts only terminal and validator count. Unknown nested fields are rejected, preventing attempts and historical payloads from entering through extensible objects. The merged main-branch separation of published snapshot/history remains in place; the compact UI uses “Decomposition complete.”
 
-## Deployment blockers
+## Paired implementation and deployment gates
 
-- Rosetta PR #122, inspected at `c82a1bfa70994147c5016adefc73ec43085d3925`, adds a field to the historical review response. It does not supply the dedicated `/api/public/current-docket-result` endpoint consumed here.
-- The existing Rosetta review reader evaluates attempt and stage history. It cannot simply be wrapped by a public endpoint whose contract explicitly excludes those reads. A bounded exact-key/hash current read model and its authorized writer still need implementation and verification. Selecting the highest engine version is not an authority rule.
-- Assembly reads `public.v_civic_genome_law_view_v1`, while the current candidate runs are stored separately. An exact run ID alone does not establish matching storage namespaces. The full receipt comparisons here fail closed, but the candidate structural export still needs an exact-source integration proof.
-- The paired producer must implement the strict coverage and validation-summary field allowlists in `shared/rosetta-public-current-docket-result.ts`.
+- Rosetta PR #122 now implements a dedicated compact endpoint backed by an exact-key/hash projection. Its internal writer validates authorized source-route ancestry and terminal evidence. Public reads do not scan attempts, cohorts, or historical validation.
+- Current assembly uses `/api/internal/current-docket-structure`, authenticated by `ROSETTA_CURRENT_HANDOFF_TOKEN`, rather than the public-generation view. Its key/hash/run/output selector must still match the producer's current projection; a changed selection fails closed.
+- The producer and consumer enforce named coverage fields and a compact validation summary. Unknown source identities are represented only as unavailable, with no fabricated registry UUID.
+- Deploy the database migration and Rosetta producer first, configure the shared server-only handoff credential, verify the projection and its live cost, then deploy the consumer. Complete executed CI/review and a real persisted assembly trace before calling the integration closed.
 
-Keep this PR in draft until the paired producer, structural export, and executed CI are verified. Do not deploy the consumer alone. No engine promotion, processing rerun, or production database mutation is part of this revision.
+Do not deploy the consumer alone. No engine promotion or source processing rerun is part of these paired revisions. Projection refresh is separate from source processing and never runs on a public read.
 
 ## Verification
 

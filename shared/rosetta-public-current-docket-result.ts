@@ -29,7 +29,7 @@ export const rosetta_public_current_docket_result_schema = z.object({
   contract: z.literal("rosetta-public-current-docket-result-v1"),
   docket_source_key: z.string().min(1),
   source_content_hash: hash,
-  source_registry_id: z.string().uuid(),
+  source_registry_id: z.string().uuid().nullable(),
   status: rosetta_public_current_docket_result_status,
   current_result: z.object({
     extraction_run_id,
@@ -48,6 +48,9 @@ export const rosetta_public_current_docket_result_schema = z.object({
   }).strict(),
   public_reason: z.string().max(500),
 }).strict().superRefine((value, context) => {
+  if (value.source_registry_id === null && value.status !== "unavailable") {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ["source_registry_id"], message: "A known source is required for this status." });
+  }
   if ((value.status === "complete") !== (value.current_result !== null)) {
     context.addIssue({
       code: z.ZodIssueCode.custom,
