@@ -128,6 +128,8 @@ describe("legislative version queue", () => {
     expect(claim?.[1][2]).toBe(1);
     expect(claim?.[1][3]).toEqual([]);
     expect(claim?.[1][7]).toBeNull();
+    expect(claim?.[1][8]).toBe(true);
+    expect(claim?.[0]).toContain("not $9::boolean or not (coalesce(version.receipt_json");
   });
   it("uses bounded exponential retry timing", () => {
     expect(legislative_version_retry_delay_seconds(1)).toBe(30);
