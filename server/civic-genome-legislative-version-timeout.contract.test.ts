@@ -26,12 +26,8 @@ describe("legislative version external request bounds", () => {
     expect(source_fetch).toContain("legislative_version_source_fetch_timeout");
   });
 
-  it("bounds Rosetta metadata and extraction calls above the observed current-engine tail", () => {
+  it("bounds Rosetta metadata and registration calls while consuming current results", () => {
     const metadata = function_source("rosetta_request", "ensure_rosetta_corpus");
-    const extraction = function_source(
-      "invoke_rosetta_extraction",
-      "register_rosetta_source_content",
-    );
     const registration = function_source(
       "register_rosetta_source_content",
       "record_source_ingested",
@@ -39,7 +35,7 @@ describe("legislative version external request bounds", () => {
 
     expect(pipeline).toContain("const ROSETTA_REQUEST_TIMEOUT_MS = 150_000");
     expect(pipeline).not.toContain("const ROSETTA_REQUEST_TIMEOUT_MS = 60_000");
-    for (const source of [metadata, registration, extraction]) {
+    for (const source of [metadata, registration]) {
       expect(source).toContain("const controller = new AbortController()");
       expect(source).toContain("await response.text()");
       expect(source.indexOf("await response.text()"))
@@ -49,6 +45,11 @@ describe("legislative version external request bounds", () => {
     expect(registration).toContain(
       "legislative_version_rosetta_content_registration_timeout",
     );
-    expect(extraction).toContain("legislative_version_rosetta_extraction_timeout");
+    expect(pipeline).not.toContain("invoke_rosetta_extraction");
+    expect(pipeline).not.toContain("run_rosetta_v3_extraction");
+    expect(pipeline).toContain("await load_rosetta_current_docket_result_for_binding({");
+    const reader = readFileSync(join(process.cwd(), "server", "civic-genome-rosetta-evaluation.ts"), "utf8");
+    expect(reader).toContain("signal: controller.signal");
+    expect(reader.indexOf("await response.json()" )).toBeLessThan(reader.indexOf("clearTimeout(timeout)"));
   });
 });
