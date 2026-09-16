@@ -44,7 +44,11 @@ describe("Civic Genome Rosetta assembly gate", () => {
   it("accepts only the exact Docket source key and hash for assembly", async () => {
     await expect(assert_exact_docket_source_binding_for_assembly(
       request,
-      { source_content_hash } as any,
+      {
+        source_document_id: request.source_document_id,
+        extraction_run_id: request.extraction_run_id,
+        source_content_hash,
+      } as any,
     )).resolves.toEqual({
       source_document_key,
       source_content_hash,
@@ -64,7 +68,11 @@ describe("Civic Genome Rosetta assembly gate", () => {
   it("rejects a hash mismatch before assembly proceeds", async () => {
     await expect(assert_exact_docket_source_binding_for_assembly(
       request,
-      { source_content_hash: "b".repeat(64) } as any,
+      {
+        source_document_id: request.source_document_id,
+        extraction_run_id: request.extraction_run_id,
+        source_content_hash: "b".repeat(64),
+      } as any,
     )).rejects.toThrow("rosetta_current_docket_bound_result_source_content_hash_mismatch");
     expect(load_review).not.toHaveBeenCalled();
   });
@@ -73,7 +81,11 @@ describe("Civic Genome Rosetta assembly gate", () => {
     query.mockResolvedValueOnce({ rows: [{ source_document_key: null, source_content_hash }] });
     await expect(assert_exact_docket_source_binding_for_assembly(
       request,
-      { source_content_hash } as any,
+      {
+        source_document_id: request.source_document_id,
+        extraction_run_id: request.extraction_run_id,
+        source_content_hash,
+      } as any,
     )).rejects.toThrow("rosetta_current_docket_bound_result_source_document_key_missing");
   });
 
@@ -86,7 +98,11 @@ describe("Civic Genome Rosetta assembly gate", () => {
     });
     await expect(assert_exact_docket_source_binding_for_assembly(
       request,
-      { source_content_hash } as any,
+      {
+        source_document_id: request.source_document_id,
+        extraction_run_id: request.extraction_run_id,
+        source_content_hash,
+      } as any,
     )).rejects.toThrow("rosetta_current_docket_bound_result_local_binding_not_unique");
   });
 
@@ -96,7 +112,10 @@ describe("Civic Genome Rosetta assembly gate", () => {
         genome_bill_id: request.genome_bill_id,
         source_document_id: request.source_document_id,
       },
-      { source_content_hash } as any,
+      {
+        source_document_id: request.source_document_id,
+        source_content_hash,
+      } as any,
     )).rejects.toThrow("rosetta_current_docket_bound_result_exact_selector_missing");
     expect(query).not.toHaveBeenCalled();
     expect(load_review).not.toHaveBeenCalled();
