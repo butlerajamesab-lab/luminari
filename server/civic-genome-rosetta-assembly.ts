@@ -277,6 +277,9 @@ export async function assert_exact_docket_source_binding_for_assembly(
   request: rosetta_genome_assembly_request,
   view: civic_genome_rosetta_law_view,
 ): Promise<docket_assembly_binding> {
+  if (view.source_document_id !== request.source_document_id) {
+    throw new Error("rosetta_source_document_identity_mismatch");
+  }
   const binding = await load_exact_docket_assembly_binding(request);
   if (binding.source_content_hash !== view.source_content_hash) {
     throw new Error("rosetta_current_docket_bound_result_source_content_hash_mismatch");

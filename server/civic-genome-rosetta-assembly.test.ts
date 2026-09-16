@@ -97,6 +97,18 @@ describe("Civic Genome Rosetta assembly gate", () => {
     expect(load_review).not.toHaveBeenCalled();
   });
 
+  it("rejects a source-document mismatch before assembly proceeds", async () => {
+    await expect(assert_exact_docket_source_binding_for_assembly(
+      request,
+      {
+        source_document_id: request.source_document_id + 1,
+        extraction_run_id: request.extraction_run_id,
+        source_content_hash,
+      } as any,
+    )).rejects.toThrow("rosetta_source_document_identity_mismatch");
+    expect(query).not.toHaveBeenCalled();
+  });
+
   it("rejects a missing local Docket source key binding", async () => {
     query.mockResolvedValueOnce({ rows: [{ source_document_key: null, source_content_hash }] });
     await expect(assert_exact_docket_source_binding_for_assembly(
