@@ -5,6 +5,13 @@ const ROSETTA_EVALUATION_TIMEOUT_MS = 10_000;
 const ROSETTA_STANDALONE_URL = "https://rosetta-v3-platform.onrender.com";
 export const ROSETTA_CURRENT_DOCKET_BOUND_RESULT_CONTRACT =
   "rosetta-current-docket-bound-result-v1";
+const ROSETTA_SUPPORTED_PASS_EVIDENCE_ENGINE_VERSIONS = new Set([
+  "2.5.28",
+  "2.5.29",
+  "2.5.30",
+  "2.5.32",
+  "2.5.33",
+]);
 
 export function get_rosetta_review_base_url(): string {
   const url = new URL(process.env.ROSETTA_REVIEW_BASE_URL?.trim() || ROSETTA_STANDALONE_URL);
@@ -186,7 +193,8 @@ export async function get_civic_genome_rosetta_evaluation(input: {
     const expected = ["canonical_rows_source_bound", `exact_source_structure_v${suffix}`, "five_layer_coverage",
       `independent_structure_v${suffix}`, "no_pending_coverage", "output_hash_verified", "source_bytes_receipted",
       "source_hash_verified", "structural_correctness_v2"].sort();
-    if (!version || !evaluation.law_view || !evaluation.extraction_manifest || !evaluation.source_receipt
+    if (!version || !ROSETTA_SUPPORTED_PASS_EVIDENCE_ENGINE_VERSIONS.has(version)
+      || !evaluation.law_view || !evaluation.extraction_manifest || !evaluation.source_receipt
       || evaluation.validation_results.length !== 9
       || JSON.stringify(evaluation.validation_results.map(row => row.test_name).sort()) !== JSON.stringify(expected)
       || evaluation.validation_results.some(row => row.test_result !== "pass" || row.failure_count !== 0)) {
