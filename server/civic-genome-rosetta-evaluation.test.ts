@@ -205,7 +205,7 @@ describe("Civic Genome saved Rosetta evaluation", () => {
     await expect(get_civic_genome_rosetta_evaluation({ genome_bill_id })).rejects.toThrow("rosetta_evaluation_pass_evidence_missing");
   });
 
-  it.each(["2.5.28", "2.5.29", "2.5.30", "2.5.32", "2.5.33"])("accepts the exact nine validators for %s without optional summary flags", async version => {
+  it.each(["2.5.28", "2.5.29", "2.5.30", "2.5.32", "2.5.33", "2.5.34"])("accepts the exact nine validators for %s without optional summary flags", async version => {
     fetch_mock.mockResolvedValue(Response.json(detail(version)));
     expect((await get_civic_genome_rosetta_evaluation({ genome_bill_id })).evaluation?.status).toBe("passed");
   });

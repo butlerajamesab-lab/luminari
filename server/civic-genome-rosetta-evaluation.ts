@@ -181,7 +181,7 @@ export async function get_civic_genome_rosetta_evaluation(input: {
     throw new Error("rosetta_evaluation_source_identity_mismatch");
   }
   if (evaluation.status === "passed") {
-    const version = /^rosetta-v3-deterministic-sql-(2\.5\.(?:28|29|30|32|33))$/.exec(attempt?.engine_version ?? "")?.[1];
+    const version = /^rosetta-v3-deterministic-sql-(\d+\.\d+\.\d+)$/.exec(attempt?.engine_version ?? "")?.[1];
     const suffix = version?.replaceAll(".", "");
     const expected = ["canonical_rows_source_bound", `exact_source_structure_v${suffix}`, "five_layer_coverage",
       `independent_structure_v${suffix}`, "no_pending_coverage", "output_hash_verified", "source_bytes_receipted",
