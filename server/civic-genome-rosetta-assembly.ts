@@ -216,7 +216,10 @@ async function load_exact_docket_assembly_binding(
 ): Promise<docket_assembly_binding> {
   const has_explicit_key = typeof request.source_document_key === "string"
     && request.source_document_key.length > 0;
-  const has_explicit_hash = /^[0-9a-f]{64}$/.test(request.source_content_hash ?? "");
+  const has_explicit_hash = /^[0-9a-f]{64}$/i.test(request.source_content_hash ?? "");
+  const explicit_hash = has_explicit_hash
+    ? request.source_content_hash!.toLowerCase()
+    : null;
   if (has_explicit_key !== has_explicit_hash) {
     throw new Error(has_explicit_key
       ? "rosetta_current_docket_bound_result_source_content_hash_missing"
@@ -241,7 +244,7 @@ async function load_exact_docket_assembly_binding(
     [
       request.genome_bill_id,
       has_explicit_key ? request.source_document_key : null,
-      has_explicit_hash ? request.source_content_hash : null,
+      explicit_hash,
       request.extraction_run_id === undefined ? null : String(request.extraction_run_id),
     ],
   );
@@ -261,7 +264,7 @@ async function load_exact_docket_assembly_binding(
   if (has_explicit_key && binding.source_document_key !== request.source_document_key) {
     throw new Error("rosetta_current_docket_bound_result_source_document_key_mismatch");
   }
-  if (has_explicit_hash && binding.source_content_hash !== request.source_content_hash) {
+  if (explicit_hash && binding.source_content_hash !== explicit_hash) {
     throw new Error("rosetta_current_docket_bound_result_source_content_hash_mismatch");
   }
   return {

@@ -65,6 +65,26 @@ describe("Civic Genome Rosetta assembly gate", () => {
     expect(load_review.mock.calls[0][0]).not.toHaveProperty("source_document_id");
   });
 
+  it("allows an exact key-and-hash selector without an extraction run id", async () => {
+    await expect(assert_exact_docket_source_binding_for_assembly(
+      {
+        genome_bill_id: request.genome_bill_id,
+        source_document_id: request.source_document_id,
+        source_document_key,
+        source_content_hash: source_content_hash.toUpperCase(),
+      },
+      {
+        source_document_id: request.source_document_id,
+        extraction_run_id: request.extraction_run_id,
+        source_content_hash,
+      } as any,
+    )).resolves.toEqual({
+      source_document_key,
+      source_content_hash,
+    });
+    expect(query.mock.calls[0][1][3]).toBeNull();
+  });
+
   it("rejects a hash mismatch before assembly proceeds", async () => {
     await expect(assert_exact_docket_source_binding_for_assembly(
       request,
