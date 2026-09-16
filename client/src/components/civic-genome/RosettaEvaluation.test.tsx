@@ -21,7 +21,7 @@ describe("Rosetta evaluation reader", () => {
     expect(html).toContain("2.5.33");
     expect(html).toContain("Current result is assembly-ready.");
     expect(html).toContain("Rosetta decomposition");
-    expect(html).toContain("Historical attempts and review-detail artifacts are not loaded here");
+    expect(html).toContain("Read each legislative text version and inspect its own current-engine validation");
     expect(html).toContain("Copy reference for feedback");
     expect(html).toContain("Docket source key: text:123:456");
     expect(html).not.toContain("Attempt:");
@@ -53,4 +53,21 @@ describe("Rosetta evaluation reader", () => {
     expect(html).not.toContain("Attempt:");
     expect(html).not.toContain("candidate analysis");
   });
+});
+
+
+it("keeps every text selectable and exposes the selected version's predecessor", () => {
+  use_query.mockReturnValue({ data: { availability: "binding_missing", review_url: "https://example.org/review" } });
+  const versions = [1, 2, 3, 4].map(n => ({
+    bill_version_id: `v${n}`, version_type: "introduced", provider_sequence: n,
+    source_document_key: `text:2034656:${n}`, processing_state: "registered",
+    source_url: `https://www.congress.gov/119/bills/hr3633/BILLS-119hr3633${n === 4 ? "rs" : "ih"}.pdf`,
+    predecessor_bill_version_id: n > 1 ? `v${n - 1}` : null,
+  }));
+  const html = renderToStaticMarkup(<RosettaEvaluation genome_bill_id="genome" current_version={versions[3]} published_version={null} source_versions={versions}/>);
+  expect((html.match(/<option /g) ?? []).length).toBe(4);
+  expect(html).toContain("RS · text 4 · latest full text");
+  expect(html).toContain("Preceding text:");
+  expect(html).toContain("Read this bill text");
+  expect(use_query.mock.calls[0][0]).toEqual({ genome_bill_id: "genome", bill_version_id: "v4" });
 });

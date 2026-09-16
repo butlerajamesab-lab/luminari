@@ -458,25 +458,35 @@ function source_block(
   </section>`;
 }
 
+function safe_url(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  try {
+    const parsed = new URL(value);
+    return ["https:", "http:"].includes(parsed.protocol) ? parsed.href : null;
+  } catch { return null; }
+}
+
+function compare_source_versions(left: json_record, right: json_record): number {
+  const left_date = string_value(left.provider_date);
+  const right_date = string_value(right.provider_date);
+  if (!left_date && right_date) return 1;
+  if (left_date && !right_date) return -1;
+  return (left_date ?? "").localeCompare(right_date ?? "") ||
+    Number(left.provider_sequence ?? 0) - Number(right.provider_sequence ?? 0);
+}
+
 function version_table(
   versions: json_record[],
   source_by_document: Map<number, rosetta_source_content>,
 ): string {
-  const ordered = [...versions].sort((left, right) => {
-    const left_rank = Number(left.stage_rank ?? 0);
-    const right_rank = Number(right.stage_rank ?? 0);
-    if (left_rank !== right_rank) return left_rank - right_rank;
-    return (
-      Number(left.provider_sequence ?? 0) - Number(right.provider_sequence ?? 0)
-    );
-  });
-  return `<table><thead><tr><th>Stage</th><th>State</th><th>Rosetta source</th><th>Run</th><th>Source copy</th></tr></thead><tbody>${ordered
+  const ordered = [...versions].sort(compare_source_versions);
+  return `<table><thead><tr><th>Stage / source identity</th><th>State</th><th>Rosetta source</th><th>Run</th><th>Source copy</th></tr></thead><tbody>${ordered
     .map((version) => {
       const source_document_id = positive_integer(
         version.rosetta_source_document_id,
       );
       return `<tr>
-      <td>${html(human_key(version.version_type))}</td>
+      <td>${html(human_key(version.version_type))}<br><span class="mono">${html(version.source_document_key ?? "")}</span><br>${html(format_date(version.provider_date))}${safe_url(version.source_url) ? `<br><a href="${html(safe_url(version.source_url))}">Read source text</a>` : ""}</td>
       <td>${html(human_key(version.processing_state))}</td>
       <td class="mono">${html(source_document_id ?? "Not observed")}</td>
       <td class="mono">${html(version.rosetta_extraction_run_id ?? "Not observed")}</td>
@@ -509,30 +519,30 @@ export async function render_civic_genome_human_report(
     published_version?.source_document_id ??
       current_version?.source_document_id,
   );
-  if (!final_source_document_id)
-    throw new Error("civic_genome_human_report_verified_source_not_bound");
 
   const source_document_ids = versions
     .map((version) => positive_integer(version.rosetta_source_document_id))
     .filter((value): value is number => Boolean(value));
-  if (!source_document_ids.includes(final_source_document_id))
+  if (final_source_document_id && !source_document_ids.includes(final_source_document_id))
     source_document_ids.push(final_source_document_id);
   const source_rows = await load_rosetta_source_content(source_document_ids);
   const source_by_document = new Map(
     source_rows.map((row) => [row.source_document_id, row]),
   );
-  const final_source = source_by_document.get(final_source_document_id);
-  if (!final_source?.source_text)
-    throw new Error(
-      "civic_genome_human_report_verified_source_text_unavailable",
-    );
-  const final_source_uses_provider_copy = is_provider_copy_fallback(final_source);
+  const final_source = final_source_document_id ? source_by_document.get(final_source_document_id) : undefined;
+  if (final_source_document_id && !final_source?.source_text) {
+    throw new Error("civic_genome_human_report_verified_source_text_unavailable");
+  }
+  const final_source_uses_provider_copy = final_source ? is_provider_copy_fallback(final_source) : false;
+  const source_gap = !final_source
+    ? '<section class="panel"><h2>Source decomposition pending</h2><p class="warn">No exact Rosetta source copy is attached for this snapshot. This report contains available source-version metadata and procedural observations only; it does not establish validated bill content or amendment effects.</p></section>'
+    : "";
 
-  const traits = as_records(structural_dna.traits);
-  const validation = as_record(structural_dna.validation_summary) ?? {};
+  const traits = final_source ? as_records(structural_dna.traits) : [];
+  const validation = final_source ? as_record(structural_dna.validation_summary) ?? {} : {};
   const family_assignment = as_record(bill_detail.family_assignment);
-  const all_traits = as_records(root.all_structural_traits);
-  const all_runs = as_records(root.all_assembly_runs);
+  const all_traits = final_source ? as_records(root.all_structural_traits) : [];
+  const all_runs = final_source ? as_records(root.all_assembly_runs) : [];
   const events = as_records(root.bill_events);
   const presented_events = events.map((event) => ({
     event,
@@ -629,7 +639,7 @@ export async function render_civic_genome_human_report(
     <div class="break"></div>
     ${versions
       .slice()
-      .sort((a, b) => Number(a.stage_rank ?? 0) - Number(b.stage_rank ?? 0))
+      .sort(compare_source_versions)
       .map((version) => {
         const source_document_id = positive_integer(
           version.rosetta_source_document_id,
@@ -690,10 +700,12 @@ export async function render_civic_genome_human_report(
     <p class="subhead">These are source-event dates. Rosetta extraction receipts and Lighthouse observation receipts retain their own separately labeled timestamps.</p>
   </section>
 
+  ${source_gap}
+  ${mode === "summary" ? `<section class="panel"><h2>Legislative text versions</h2>${version_table(versions, source_by_document)}</section>` : ""}
   ${summary_pending_section}
 
   <section class="panel">
-    <span class="eyebrow">Current verified structural state</span>
+    <span class="eyebrow">${final_source ? "Recorded structural state" : "Decomposition unavailable"}</span>
     <h2>What the current Civic Genome snapshot contains</h2>
     <div class="grid">
       ${layer_summary || '<div class="metric"><span class="label">Structural traits</span><b>None observed</b></div>'}
@@ -711,10 +723,10 @@ export async function render_civic_genome_human_report(
   ${detailed_sections}
 
   <div class="break"></div>
-  ${source_block(final_source, {
+  ${final_source ? source_block(final_source, {
     official: `${human_key(published_version?.version_type ?? current_version?.version_type ?? "authoritative")} — full authoritative source used by Rosetta`,
     provider_copy: `${human_key(published_version?.version_type ?? current_version?.version_type ?? "source")} — full verified provider copy analyzed by Rosetta`,
-  }, true)}
+  }, true) : ""}
 
   <footer>
     <div>Exported: ${html(format_date(root.exported_at))}</div>

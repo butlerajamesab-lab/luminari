@@ -28,18 +28,28 @@ function readable_value(value: unknown, depth = 0): ReactNode {
   </div>)}</dl>;
 }
 
-type version = { bill_version_id: string; version_type: string };
+type version = { bill_version_id: string; version_type: string; source_document_key?: string;
+  source_url?: string; provider_date?: string | null; provider_sequence?: number;
+  processing_state?: string; predecessor_bill_version_id?: string | null; base_bill_version_id?: string | null };
+function version_label(item: version) {
+  const code = item.source_url?.match(/BILLS-\d+[a-z]+\d+([a-z]+)\.pdf$/i)?.[1]?.toUpperCase();
+  return [code ?? item.version_type, item.provider_date, item.provider_sequence ? `text ${item.provider_sequence}` : null].filter(Boolean).join(" · ");
+}
 
-export function RosettaEvaluation({ genome_bill_id, current_version, published_version }: {
+export function RosettaEvaluation({ genome_bill_id, current_version, published_version, source_versions = [] }: {
+  source_versions?: version[];
   genome_bill_id: string;
   current_version: version | null;
   published_version: version | null;
 }) {
   const [selected_version_id, set_selected_version_id] = useState<string | undefined>();
   const [copied, set_copied] = useState(false);
-  const versions = [current_version, published_version].filter((item, index, all): item is version =>
+  const versions = [...source_versions, current_version, published_version].filter((item, index, all): item is version =>
     item !== null && all.findIndex(other => other?.bill_version_id === item.bill_version_id) === index);
-  const selected_id = selected_version_id ?? current_version?.bill_version_id;
+  const selected_id = versions.some(item => item.bill_version_id === selected_version_id) ? selected_version_id : current_version?.bill_version_id;
+  const selected_source = versions.find(item => item.bill_version_id === selected_id);
+  const predecessor = versions.find(item => item.bill_version_id === selected_source?.predecessor_bill_version_id);
+  const base = versions.find(item => item.bill_version_id === selected_source?.base_bill_version_id);
   const result = trpc.civicGenome.get_rosetta_evaluation.useQuery(
     { genome_bill_id, bill_version_id: selected_id },
     { retry: false, refetchOnWindowFocus: false },
@@ -63,14 +73,21 @@ export function RosettaEvaluation({ genome_bill_id, current_version, published_v
       <h2 style={{ margin: 0, fontSize: "1.2rem" }}>Rosetta decomposition {current_result && <span style={{ fontFamily: mono, fontSize: ".85rem", color: muted }}>· {current_result.engine_version}</span>}</h2>
       {current_docket_result && <strong style={{ color: colors[current_docket_result.status], fontFamily: mono }}>{statuses[current_docket_result.status]}</strong>}
     </div>
-    <p style={{ color: muted, fontSize: ".83rem", lineHeight: 1.5 }}>Inspect Rosetta’s current bounded result for this exact source version. Historical attempts and review-detail artifacts are not loaded here.</p>
+    <p style={{ color: muted, fontSize: ".83rem", lineHeight: 1.5 }}>Read each legislative text version and inspect its own current-engine validation. A missing result remains pending for that exact source; procedural events do not replace bill text.</p>
     <div style={{ display: "flex", gap: ".7rem", flexWrap: "wrap", alignItems: "center", marginBottom: ".8rem" }}>
       {versions.length > 0 && <label style={{ fontSize: ".8rem" }}>Source version {" "}<select aria-label="Evaluation source version" value={selected_id ?? ""} onChange={event => { set_selected_version_id(event.target.value); set_copied(false); }} style={{ padding: ".4rem", background: "#122e24", color: "#edf7f2", border, borderRadius: 6 }}>
-        {versions.map(item => <option key={item.bill_version_id} value={item.bill_version_id}>{item.version_type}{item.bill_version_id === current_version?.bill_version_id ? " · current source" : " · published source"}</option>)}
+        {versions.map(item => <option key={item.bill_version_id} value={item.bill_version_id}>{version_label(item)}{item.bill_version_id === current_version?.bill_version_id ? " · latest full text" : ""}</option>)}
       </select></label>}
       <button type="button" disabled={result.isFetching} onClick={() => result.refetch()} style={{ padding: ".4rem .7rem", background: "transparent", color: "#59d89c", border, borderRadius: 6, cursor: "pointer" }}>{result.isFetching ? "Reading…" : "Refresh saved results"}</button>
       {result.data && <a href={result.data.review_url} target="_blank" rel="noopener noreferrer" style={{ color: "#91c9f7", fontSize: ".8rem" }}>Open Rosetta reader</a>}
     </div>
+    {selected_source && <div style={{ color: muted, fontSize: ".83rem", marginBottom: ".8rem" }}>
+      <p>Source: {selected_source.source_document_key} · {selected_source.processing_state ?? "State unavailable"}</p>
+      {selected_source.source_url && <a href={selected_source.source_url} target="_blank" rel="noopener noreferrer" style={{ color: "#91c9f7" }}>Read this bill text</a>}
+      {predecessor && <p>Preceding text: <button type="button" onClick={() => set_selected_version_id(predecessor.bill_version_id)}>{version_label(predecessor)}</button></p>}
+      {base && <p>Recorded amendment base: <button type="button" onClick={() => set_selected_version_id(base.bill_version_id)}>{version_label(base)}</button></p>}
+      <p>The preceding text is a recorded version relationship; it does not by itself establish adoption or an amendment’s legal effect.</p>
+    </div>}
     {result.isLoading ? <p role="status">Reading saved result…</p> : result.error ? <p role="alert" style={{ color: "#ffabab" }}>Rosetta current result could not be read. Refresh to try again; the bounded status is unknown.</p> : result.data?.availability === "binding_missing" ? <p style={{ color: muted }}>This source version does not yet have an exact Rosetta document and content-hash binding. Use the Rosetta reader to choose a source explicitly.</p> : result.data?.availability === "not_in_evaluation" ? <p style={{ color: muted }}>No current Rosetta result is available for this exact source version.</p> : current_docket_result ? <>
       <p style={{ fontSize: ".82rem", color: muted }}>{result.data?.binding?.version_type} · source key {current_docket_result.docket_source_key}</p>
       <p style={{ color: colors[current_docket_result.status], overflowWrap: "anywhere" }}>{current_docket_result.public_reason}</p>
