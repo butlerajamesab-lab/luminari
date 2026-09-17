@@ -173,7 +173,7 @@ export function DocketBillDetailWorkspace({
     status: first_value(bill, ["status"]),
     status_text: first_value(bill, ["status_desc", "current_status"]),
     completed: first_value(bill, ["completed"]),
-    status_date: first_value(bill, ["status_date", "last_action_date"]),
+    status_date: first_value(bill, ["status_date"]),
     session: first_value(bill, ["session", "session_name", "session_title", "session_id"]),
     state: first_value(bill, ["state", "state_id", "jurisdiction"]),
     url: first_value(bill, ["state_link", "url", "source_url"]),
