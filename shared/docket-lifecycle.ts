@@ -111,7 +111,7 @@ const parse_effective_date = (value: unknown): { date: string | null; state: doc
 
 const terminal_clause_patterns = [
   /\b(?:bill|measure|resolution)\s+(?:has\s+)?(?:enacted|failed(?:\s+(?:final passage|to pass))?|withdrawn|vetoed|expired|died|dead|(?:been\s+)?postponed\s+indefinitely|indefinitely\s+postponed)\b/,
-  /^\s*(?:chapter(?:ed)?|enacted|withdrawn|dead|vetoed|expired|approved|signed|became law)\b/,
+  /^\s*(?:chapter(?:ed)?|enacted|withdrawn|dead|vetoed|expired|approved|signed|became law|postponed indefinitely|indefinitely postponed)\b/,
   /^\s*failed(?:\s+(?:final passage|to pass))?\s*[.;]?\s*$/,
   /\b(?:signed|approved) by (?:the )?(?:governor|president)\b|\b(?:governor|president) signed\b|\bbecame law\b/,
 ] as const;

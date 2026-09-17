@@ -14,6 +14,7 @@ describe("Docket procedure presentation", () => {
     "Became law",
     "Chaptered",
     "Failed final passage.",
+    "Postponed indefinitely",
     "Amendment failed; bill postponed indefinitely",
     "Bill enacted as amended",
   ])("recognizes whole-measure terminal disposition: %s", action => {
