@@ -6,6 +6,7 @@ import {
   type civic_genome_rosetta_law_view,
 } from "./civic-genome-rosetta-contract";
 import { get_kaleidoscope_civic_genome_contract } from "./civic-genome-kaleidoscope-contract";
+import { get_rosetta_review_base_url } from "./civic-genome-rosetta-evaluation";
 
 export type civic_genome_contract_state =
   | "operational"
@@ -53,7 +54,6 @@ type atlas_contract_counts = {
   latest_bridged_at: string | null;
 };
 
-const ROSETTA_STANDALONE_URL = "https://rosetta-v3-platform.onrender.com";
 const PRISM_DEEP_RULE_SET_ID = "prism-rosetta-structural-binding";
 const PRISM_DEEP_RULE_SET_VERSION = "2.0.0";
 
@@ -137,7 +137,7 @@ export async function get_civic_genome_operating_contracts(): Promise<civic_geno
       {
         service_key: "rosetta",
         display_name: "Rosetta",
-        external_url: ROSETTA_STANDALONE_URL,
+        external_url: get_rosetta_review_base_url(),
         role: "Structural law extraction",
         state: rosetta_assembly_count > 0 ? "operational" : "waiting",
         state_label: rosetta_assembly_count > 0 ? "Operational" : "Waiting for validated extraction",
@@ -345,7 +345,7 @@ export async function get_civic_genome_rosetta_pipeline_status(
       source_bill_id,
       genome_bill_id: bill?.genome_bill_id ?? null,
       ...current_version_fields,
-      source_document_id: null,
+      source_document_id: current_source_document_id,
       extraction_run_id: null,
       run_status: null,
       provenance_state: null,
@@ -354,34 +354,25 @@ export async function get_civic_genome_rosetta_pipeline_status(
       ...published_fields,
       can_assemble: false,
       contract_state: "contract_error",
-      contract_message: "Rosetta's exact law-view export could not be observed.",
+      contract_message: current_source_document_id != null
+        ? "The exact source copy is recorded, but Rosetta's law-view export could not be observed. Active extraction has not been established."
+        : "Rosetta's exact law-view export could not be observed.",
     };
   }
 
   const view = rosetta_result.view;
   if (!view) {
-    if (published_source_document_id != null) {
-      return {
-        source_bill_id,
-        genome_bill_id: bill?.genome_bill_id ?? null,
-        ...current_version_fields,
-        source_document_id: null,
-        extraction_run_id: null,
-        run_status: null,
-        provenance_state: null,
-        object_count: 0,
-        coverage: {},
-        ...published_fields,
-        can_assemble: false,
-        contract_state: "current_pending",
-        contract_message: `The current ${version_selection?.current_version_type ?? "bill"} source is processing automatically. The latest verified ${version_selection?.published_version_type ?? "prior"} snapshot remains published until it completes.`,
-      };
-    }
+    // A missing extraction result is not evidence that the registered source is missing.
+    const prior_snapshot_available = published_source_document_id != null
+      && published_source_document_id !== current_source_document_id;
+    const source_message = current_source_document_id != null
+      ? "The exact source copy is recorded; no Rosetta extraction result is available. Active execution has not been established."
+      : "No exact Rosetta source copy is attached to this Docket version.";
     return {
       source_bill_id,
       genome_bill_id: bill?.genome_bill_id ?? null,
       ...current_version_fields,
-      source_document_id: null,
+      source_document_id: current_source_document_id,
       extraction_run_id: null,
       run_status: null,
       provenance_state: null,
@@ -389,8 +380,14 @@ export async function get_civic_genome_rosetta_pipeline_status(
       coverage: {},
       ...published_fields,
       can_assemble: false,
-      contract_state: "not_handed_off",
-      contract_message: "No exact Rosetta source document exists for this Docket bill.",
+      contract_state: prior_snapshot_available
+        ? "current_pending"
+        : current_source_document_id != null
+          ? "waiting_for_extraction"
+          : "not_handed_off",
+      contract_message: prior_snapshot_available
+        ? `${source_message} The latest verified ${version_selection?.published_version_type ?? "prior"} snapshot remains published; it is not a result for the current version.`
+        : source_message,
     };
   }
 
@@ -427,7 +424,7 @@ export async function get_civic_genome_rosetta_pipeline_status(
   const message = state === "assembled"
     ? "This exact completed Rosetta run is already assembled."
     : state === "current_pending"
-      ? `The current ${version_selection?.current_version_type ?? "bill"} source is processing automatically. The latest verified ${version_selection?.published_version_type ?? "prior"} snapshot remains published until it completes.`
+      ? `The current ${version_selection?.current_version_type ?? "bill"} source is not yet verified and assembled. The latest verified ${version_selection?.published_version_type ?? "prior"} snapshot remains published; active execution is not established by this status.`
     : state === "ready_for_assembly"
       ? "A completed, provenance-valid Rosetta run is ready for deterministic assembly."
       : state === "blocked"
