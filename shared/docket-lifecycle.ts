@@ -191,72 +191,44 @@ export function resolve_docket_lifecycle(
     };
   }
 
-  if (session_is_current !== true) {
-    return {
-      procedural_state: session_is_current === false ? "stalled" : "unknown",
-      is_terminal: false,
-      is_changeable: false,
-      live_feed_eligible: false,
-      effective_state,
-      effective_date: effective.date,
-      freshness_state,
-      next_event_date: as_text(bill.radar?.next_event_date) ?? null,
-      status_date: as_text(bill.status_date) ?? null,
-      last_action_date: as_text(bill.last_action_date) ?? null,
-    };
-  }
-
+  let procedural_state: docket_lifecycle_state;
   if (next_event_ms !== null && next_event_ms >= now) {
-    return {
-      procedural_state: "action_approaching",
-      is_terminal: false,
-      is_changeable: true,
-      live_feed_eligible: true,
-      effective_state,
-      effective_date: effective.date,
-      freshness_state,
-      next_event_date: as_text(bill.radar?.next_event_date) ?? null,
-      status_date: as_text(bill.status_date) ?? null,
-      last_action_date: as_text(bill.last_action_date) ?? null,
-    };
+    procedural_state = "action_approaching";
+  } else {
+    const recent_movement = [last_action_ms, status_ms].some(
+      value => value !== null && value <= now && now - value <= ACTIVE_MOVEMENT_WINDOW_MS,
+    );
+    const radar_activity = [
+      as_number(bill.radar?.velocity_score),
+      as_number(bill.radar?.events_14d),
+      as_number(bill.radar?.amended_7d),
+    ].some(value => value !== null && value > 0);
+
+    if (recent_movement || radar_activity) {
+      procedural_state = "live";
+    } else {
+      const last_known_activity_ms = [last_action_ms, status_ms].reduce<number | null>(
+        (latest, value) => value !== null && (latest === null || value > latest) ? value : latest,
+        null,
+      );
+      procedural_state =
+        last_known_activity_ms !== null && last_known_activity_ms <= now && now - last_known_activity_ms > STALLED_AFTER_MS
+          ? "stalled"
+          : session_is_current === false
+            ? "stalled"
+            : "unknown";
+    }
   }
 
-  const recent_movement = [last_action_ms, status_ms].some(
-    value => value !== null && value <= now && now - value <= ACTIVE_MOVEMENT_WINDOW_MS,
-  );
-  const radar_activity = [
-    as_number(bill.radar?.velocity_score),
-    as_number(bill.radar?.events_14d),
-    as_number(bill.radar?.amended_7d),
-  ].some(value => value !== null && value > 0);
+  const live_feed_eligible =
+    session_is_current === true
+    && (procedural_state === "live" || procedural_state === "action_approaching");
 
-  if (recent_movement || radar_activity) {
-    return {
-      procedural_state: "live",
-      is_terminal: false,
-      is_changeable: true,
-      live_feed_eligible: true,
-      effective_state,
-      effective_date: effective.date,
-      freshness_state,
-      next_event_date: as_text(bill.radar?.next_event_date) ?? null,
-      status_date: as_text(bill.status_date) ?? null,
-      last_action_date: as_text(bill.last_action_date) ?? null,
-    };
-  }
-
-  const last_known_activity_ms = [last_action_ms, status_ms].reduce<number | null>(
-    (latest, value) => value !== null && (latest === null || value > latest) ? value : latest,
-    null,
-  );
   return {
-    procedural_state:
-      last_known_activity_ms !== null && now - last_known_activity_ms > STALLED_AFTER_MS
-        ? "stalled"
-        : "unknown",
+    procedural_state,
     is_terminal: false,
-    is_changeable: false,
-    live_feed_eligible: false,
+    is_changeable: live_feed_eligible,
+    live_feed_eligible,
     effective_state,
     effective_date: effective.date,
     freshness_state,
