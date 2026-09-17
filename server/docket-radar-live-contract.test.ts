@@ -106,23 +106,27 @@ describe("Docket Radar live contract", () => {
     const detail = read("client/src/components/DocketBillDetailWorkspace.tsx");
     expect(page).toContain("Live · changeable");
     expect(page).not.toContain("[4, 5, 6].includes(status)");
-    expect(page).toContain("Freshness unknown");
+    expect(page).toContain("Source freshness unknown");
     expect(page).not.toContain("full_national_coverage");
     expect(page).not.toContain("warm_selected_state");
     expect(detail).toContain("source disagreement, not a contradiction within the bill");
-    expect(detail).toContain("Passed · further action possible");
+    expect(detail).toContain("Analysis / submission state");
     expect(page).not.toMatch(/\\b\(\?:enacted\|withdrawn/);
     expect(detail).not.toMatch(/\\b\(\?:enacted\|withdrawn/);
-    expect(page).toContain("docket_lifecycle as lifecycle_for_bill");
-    expect(detail).toContain("docket_terminal_action(status, last_action)");
+    expect(page).toContain("resolve_docket_lifecycle");
+    expect(detail).toContain("resolve_docket_lifecycle");
     const lifecycle = read("shared/docket-lifecycle.ts");
-    expect(lifecycle).toContain("effective date|enacted|withdrawn|dead|vetoed");
+    expect(lifecycle).toContain("effective_immediately");
+    expect(lifecycle).toContain("live_feed_eligible");
     expect(lifecycle).toContain("(?:bill|measure|resolution)\\s+(?:has\\s+)?(?:enacted|failed");
     expect(lifecycle).toContain("(?:amendments?|motions?)");
     expect(page).toContain('<DocketBillFeed level={filterLevel} keyword={debouncedSearch} />');
     expect(page).toContain('level === "federal" ? "US"');
     expect(page).toContain('new Date(`${value}T00:00:00`)');
     expect(detail).toContain('new Date(`${value}T00:00:00`)');
+    expect(lifecycle).toContain('new Date(`${value}T00:00:00`)');
+    expect(read("server/routes/docket.ts")).toContain("session_current");
+    expect(read("server/routes/docket.ts")).toContain("refresh_state");
   });
 
   it("keeps removed trait classes in covered drift and settles worker startup", () => {
