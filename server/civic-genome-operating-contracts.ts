@@ -7,6 +7,7 @@ import {
 } from "./civic-genome-rosetta-contract";
 import { get_kaleidoscope_civic_genome_contract } from "./civic-genome-kaleidoscope-contract";
 import { get_rosetta_review_base_url } from "./civic-genome-rosetta-evaluation";
+import { describeUnobservedCurrentResult, isCurrentResultHold } from "../shared/civic-genome-pipeline-observation";
 
 export type civic_genome_contract_state =
   | "operational"
@@ -212,6 +213,7 @@ export async function get_civic_genome_operating_contracts(): Promise<civic_geno
 export type civic_genome_rosetta_pipeline_state =
   | "not_handed_off"
   | "current_pending"
+  | "awaiting_current_result"
   | "waiting_for_extraction"
   | "ready_for_assembly"
   | "assembled"
@@ -235,6 +237,11 @@ export type civic_genome_rosetta_pipeline_status = {
   published_extraction_run_id: number | null;
   published_provenance_state: string | null;
   published_object_count: number;
+  queue_state: string | null;
+  queue_attempt_count: number | null;
+  queue_last_failure_class: string | null;
+  queue_next_attempt_at: string | null;
+  queue_locked_at: string | null;
   can_assemble: boolean;
   contract_state: civic_genome_rosetta_pipeline_state;
   contract_message: string;
@@ -259,9 +266,15 @@ export async function get_civic_genome_rosetta_pipeline_status(
       published_processing_state: string | null;
       published_source_document_id: number | null;
       published_extraction_run_id: string | null;
+      queue_state: string | null;
+      queue_attempt_count: number | null;
+      queue_last_failure_class: string | null;
+      queue_next_attempt_at: string | null;
+      queue_locked_at: string | null;
     }>(
       `with current_version as (
-         select version_type,
+         select bill_version_id,
+                version_type,
                 processing_state,
                 rosetta_source_document_id,
                 rosetta_extraction_run_id
@@ -288,9 +301,21 @@ export async function get_civic_genome_rosetta_pipeline_status(
               published.version_type as published_version_type,
               published.processing_state as published_processing_state,
               published.rosetta_source_document_id::integer as published_source_document_id,
-              published.rosetta_extraction_run_id as published_extraction_run_id
+              published.rosetta_extraction_run_id as published_extraction_run_id,
+              queue.queue_state,
+              queue.attempt_count as queue_attempt_count,
+              queue.last_failure_class as queue_last_failure_class,
+              queue.next_attempt_at::text as queue_next_attempt_at,
+              queue.locked_at::text as queue_locked_at
          from current_version current
-         full join published_version published on true`,
+         full join published_version published on true
+         left join lateral (
+           select queue_state, attempt_count, last_failure_class, next_attempt_at, locked_at
+             from public.civic_genome_legislative_version_queue
+            where bill_version_id = current.bill_version_id
+            order by updated_at desc, queue_id
+            limit 1
+         ) queue on true`,
       [source_bill_id],
     ),
   ]);
@@ -324,6 +349,11 @@ export async function get_civic_genome_rosetta_pipeline_status(
   const current_version_fields = {
     current_version_type: version_selection?.current_version_type ?? null,
     current_processing_state: version_selection?.current_processing_state ?? null,
+    queue_state: version_selection?.queue_state ?? null,
+    queue_attempt_count: version_selection?.queue_attempt_count ?? null,
+    queue_last_failure_class: version_selection?.queue_last_failure_class ?? null,
+    queue_next_attempt_at: version_selection?.queue_next_attempt_at ?? null,
+    queue_locked_at: version_selection?.queue_locked_at ?? null,
   };
   const published_view = published_source_document_id === current_source_document_id
     ? rosetta_result.view
@@ -345,6 +375,7 @@ export async function get_civic_genome_rosetta_pipeline_status(
       source_bill_id,
       genome_bill_id: bill?.genome_bill_id ?? null,
       ...current_version_fields,
+      // A failed result read cannot erase an independently recorded source binding.
       source_document_id: current_source_document_id,
       extraction_run_id: null,
       run_status: null,
@@ -355,19 +386,20 @@ export async function get_civic_genome_rosetta_pipeline_status(
       can_assemble: false,
       contract_state: "contract_error",
       contract_message: current_source_document_id != null
-        ? "The exact source copy is recorded, but Rosetta's law-view export could not be observed. Active extraction has not been established."
+        ? "The exact source binding is recorded, but Rosetta's current law-view export could not be observed. Result unavailability does not mean source absence."
         : "Rosetta's exact law-view export could not be observed.",
     };
   }
 
   const view = rosetta_result.view;
   if (!view) {
-    // A missing extraction result is not evidence that the registered source is missing.
     const prior_snapshot_available = published_source_document_id != null
       && published_source_document_id !== current_source_document_id;
-    const source_message = current_source_document_id != null
-      ? "The exact source copy is recorded; no Rosetta extraction result is available. Active execution has not been established."
-      : "No exact Rosetta source copy is attached to this Docket version.";
+    const held = isCurrentResultHold(current_version_fields);
+    const current_message = describeUnobservedCurrentResult({
+      source_document_id: current_source_document_id,
+      ...current_version_fields,
+    });
     return {
       source_bill_id,
       genome_bill_id: bill?.genome_bill_id ?? null,
@@ -380,14 +412,12 @@ export async function get_civic_genome_rosetta_pipeline_status(
       coverage: {},
       ...published_fields,
       can_assemble: false,
-      contract_state: prior_snapshot_available
-        ? "current_pending"
-        : current_source_document_id != null
-          ? "waiting_for_extraction"
-          : "not_handed_off",
+      contract_state: held ? "awaiting_current_result"
+        : prior_snapshot_available ? "current_pending"
+          : current_source_document_id != null ? "waiting_for_extraction" : "not_handed_off",
       contract_message: prior_snapshot_available
-        ? `${source_message} The latest verified ${version_selection?.published_version_type ?? "prior"} snapshot remains published; it is not a result for the current version.`
-        : source_message,
+        ? `${current_message} The latest verified ${version_selection?.published_version_type ?? "prior"} snapshot remains published separately; it is not a current-version result.`
+        : current_message,
     };
   }
 
@@ -424,7 +454,7 @@ export async function get_civic_genome_rosetta_pipeline_status(
   const message = state === "assembled"
     ? "This exact completed Rosetta run is already assembled."
     : state === "current_pending"
-      ? `The current ${version_selection?.current_version_type ?? "bill"} source is not yet verified and assembled. The latest verified ${version_selection?.published_version_type ?? "prior"} snapshot remains published; active execution is not established by this status.`
+      ? `The current ${version_selection?.current_version_type ?? "bill"} version has not completed governed publication. The latest verified ${version_selection?.published_version_type ?? "prior"} snapshot remains published separately. No active worker execution is inferred.`
     : state === "ready_for_assembly"
       ? "A completed, provenance-valid Rosetta run is ready for deterministic assembly."
       : state === "blocked"

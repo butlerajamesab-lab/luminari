@@ -5,6 +5,7 @@ import { safeArray } from "@/lib/data-guard";
 import { trpc } from "@/lib/trpc";
 import { PrismProof } from "@/components/civic-genome/PrismProof";
 import { RosettaEvaluation } from "@/components/civic-genome/RosettaEvaluation";
+import { pipelineExtractionPresentation, pipelinePublicationPresentation } from "../../../shared/civic-genome-pipeline-observation";
 import {
   Activity,
   ArrowLeft,
@@ -69,7 +70,7 @@ const source_id_from_bill = (bill: { source_bill_id?: unknown; structural_dna_js
 
 const contract_state_color = (state: string) => {
   if (["active", "assembled", "completed", "operational", "ready", "ready_for_assembly"].includes(state)) return p.green;
-  if (["available_unbound", "current_pending", "in_progress", "waiting"].includes(state)) return "#e6ba66";
+  if (["available_unbound", "current_pending", "awaiting_current_result", "waiting_for_extraction", "in_progress", "waiting"].includes(state)) return "#e6ba66";
   if (["blocked", "contract_error", "error", "unavailable"].includes(state)) return "#ef8b8b";
   return p.muted;
 };
@@ -284,19 +285,20 @@ export default function CivicGenomePage() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: ".75rem", flexWrap: "wrap", marginBottom: ".75rem" }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: ".5rem", fontFamily: mono, color: p.green, fontSize: ".7rem" }}><GitBranch size={15}/> Exact bill pipeline</div>
-            <p style={{ margin: ".35rem 0 0", color: p.muted, fontFamily: sans, fontSize: ".78rem" }}>Docket source {source_bill_id} · decomposition, verification, and publication run automatically for every admissible source snapshot.</p>
+            <p style={{ margin: ".35rem 0 0", color: p.muted, fontFamily: sans, fontSize: ".78rem" }}>Docket source {source_bill_id} · source acquisition, decomposition, verification, and publication are separate evidence-backed steps.</p>
           </div>
           <span style={{ fontFamily: mono, color: p.muted, fontSize: ".61rem" }}>{is_admin ? "authenticated administrator" : "read boundary"}</span>
         </div>
-        {auth_loading || auth_identity.isLoading ? <Empty>Checking pipeline visibility…</Empty> : !is_admin ? <Empty>The source text and published analytical objects remain available below. Detailed processing receipts are restricted to operators.</Empty> : rosetta_pipeline.isLoading ? <Empty>Reading the automatic Docket-to-Rosetta pipeline…</Empty> : rosetta_pipeline.error ? <Empty>Pipeline lookup failed: {rosetta_pipeline.error.message}</Empty> : rosetta_pipeline.data ? <>
+        {auth_loading || auth_identity.isLoading ? <Empty>Checking pipeline visibility…</Empty> : !is_admin ? <Empty>The source text and published analytical objects remain available below. Detailed processing receipts are restricted to operators.</Empty> : rosetta_pipeline.isLoading ? <Empty>Reading the Docket-to-Rosetta pipeline observations…</Empty> : rosetta_pipeline.error ? <Empty>Pipeline lookup failed: {rosetta_pipeline.error.message}</Empty> : rosetta_pipeline.data ? <>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: ".6rem" }}>
             {[
               { label: "Docket source", value: String(rosetta_pipeline.data.source_bill_id), detail: "Exact source identifier" },
               { label: "Genome record", value: rosetta_pipeline.data.genome_bill_id ? "Bound" : "Not assembled", detail: rosetta_pipeline.data.genome_bill_id ?? "No Genome UUID" },
-              { label: "Current source", value: rosetta_pipeline.data.source_document_id ? "Bound" : rosetta_pipeline.data.current_version_type ? "Queued" : "Not observed", detail: rosetta_pipeline.data.source_document_id ? `document ${rosetta_pipeline.data.source_document_id}` : rosetta_pipeline.data.current_version_type ? `${rosetta_pipeline.data.current_version_type} · ${rosetta_pipeline.data.current_processing_state ?? "registered"}` : "No source version observed" },
-              { label: "Current extraction", value: rosetta_pipeline.data.run_status ?? (rosetta_pipeline.data.current_version_type ? "Pending" : "Not started"), detail: rosetta_pipeline.data.extraction_run_id ? `run ${rosetta_pipeline.data.extraction_run_id}` : "Automatic worker owns this transition" },
-              { label: "Current provenance", value: rosetta_pipeline.data.provenance_state ?? "Pending", detail: `${rosetta_pipeline.data.object_count ?? 0} current-version Rosetta objects reported` },
-              { label: "Publication", value: rosetta_pipeline.data.contract_state === "assembled" ? "Published" : rosetta_pipeline.data.published_source_document_id ? "Available" : "Processing", detail: rosetta_pipeline.data.contract_state === "assembled" ? "Current snapshot decomposed and verified" : rosetta_pipeline.data.published_source_document_id ? `Latest verified ${rosetta_pipeline.data.published_version_type ?? "prior"} snapshot · document ${rosetta_pipeline.data.published_source_document_id}` : "Automatic pipeline is resolving this snapshot" },
+              { label: "Current source", value: rosetta_pipeline.data.source_document_id != null ? "Source preserved" : "Binding not observed", detail: rosetta_pipeline.data.source_document_id != null ? `document ${rosetta_pipeline.data.source_document_id}` : rosetta_pipeline.data.current_version_type ? `${rosetta_pipeline.data.current_version_type} · ${rosetta_pipeline.data.current_processing_state ?? "registered"}` : "No source version observed" },
+              { label: "Current extraction", ...pipelineExtractionPresentation(rosetta_pipeline.data) },
+              { label: "Current provenance", value: rosetta_pipeline.data.provenance_state ?? "Not observed", detail: `${rosetta_pipeline.data.object_count ?? 0} current-version Rosetta objects reported` },
+              { label: "Publication", ...pipelinePublicationPresentation(rosetta_pipeline.data) },
+              { label: "Queue observation", value: rosetta_pipeline.data.queue_state ?? "Not observed", detail: rosetta_pipeline.data.queue_last_failure_class ?? "No recorded failure class; this is not an execution heartbeat" },
             ].map(stage => <div key={stage.label} style={{ background: p.soft, border: `1px solid ${p.border}`, borderRadius: 8, padding: ".7rem" }}>
               <div style={{ fontFamily: mono, color: p.muted, fontSize: ".58rem", textTransform: "uppercase" }}>{stage.label}</div>
               <div style={{ fontFamily: sans, color: stage.value === "Ready" || stage.value === "Bound" ? p.green : p.paper, fontWeight: 650, fontSize: ".82rem", marginTop: ".25rem" }}>{stage.value}</div>
@@ -304,11 +306,12 @@ export default function CivicGenomePage() {
             </div>)}
           </div>
           <div style={{ marginTop: ".65rem", background: p.soft, border: `1px solid ${p.border}`, borderRadius: 8, padding: ".7rem" }}>
-            <div style={{ fontFamily: mono, color: contract_state_color(rosetta_pipeline.data.contract_state), fontSize: ".62rem", textTransform: "uppercase" }}>{rosetta_pipeline.data.contract_state}</div>
+            <div style={{ fontFamily: mono, color: contract_state_color(rosetta_pipeline.data.contract_state), fontSize: ".62rem", textTransform: "uppercase" }}>{rosetta_pipeline.data.contract_state.replaceAll("_", " ")}</div>
             <div style={{ color: p.muted, fontFamily: sans, fontSize: ".75rem", lineHeight: 1.45, marginTop: ".3rem" }}>{rosetta_pipeline.data.contract_message}</div>
+            <div style={{ color: p.muted, fontFamily: mono, fontSize: ".61rem", marginTop: ".45rem" }}>Recorded attempts: {rosetta_pipeline.data.queue_attempt_count ?? "not observed"} · Next attempt: {rosetta_pipeline.data.queue_next_attempt_at === "infinity" ? "No automatic retry scheduled" : rosetta_pipeline.data.queue_next_attempt_at ?? "not observed"}</div>
             {rosetta_pipeline.data.coverage != null && <details style={{ marginTop: ".45rem" }}><summary style={{ cursor: "pointer", color: p.green, fontFamily: mono, fontSize: ".61rem" }}>Rosetta layer coverage</summary><Value value={rosetta_pipeline.data.coverage}/></details>}
           </div>
-          <p style={{ margin: ".65rem 0 0", fontFamily: sans, color: p.muted, fontSize: ".72rem" }}>No operator action is required. Transient failures retry automatically; permanent failures are retained for operator repair without weakening the authoritative source record.</p>
+          <p style={{ margin: ".65rem 0 0", fontFamily: sans, color: p.muted, fontSize: ".72rem" }}>Current-result holds require reconciliation after an exact Rosetta result becomes available. Retry scheduling and recorded attempts are shown separately; source records and failure history remain preserved.</p>
         </> : <Empty>No pipeline record was returned. No Rosetta binding or assembly state is inferred.</Empty>}
       </section>}
 
@@ -321,7 +324,7 @@ export default function CivicGenomePage() {
         <button onClick={() => bill_lookup.refetch()} disabled={bill_lookup.isFetching} style={{ background: p.green_soft, border: `1px solid ${p.green}`, color: p.green, borderRadius: 8, padding: ".6rem .85rem", fontFamily: mono, fontSize: ".7rem", cursor: bill_lookup.isFetching ? "wait" : "pointer" }}>{bill_lookup.isFetching ? "Retrying…" : "Retry genome lookup"}</button>
         <details style={{ marginTop: ".7rem" }}><summary style={{ cursor: "pointer", color: p.muted, fontFamily: mono, fontSize: ".62rem" }}>Technical detail</summary><div style={{ marginTop: ".35rem", color: p.muted, fontFamily: mono, fontSize: ".62rem", overflowWrap: "anywhere" }}>{bill_lookup.error.message}</div></details>
       </div> : !selected ? <div style={panel}>
-        <h2 style={{ fontFamily: serif, marginTop: 0 }}>Automatic processing pending</h2><p style={{ color: p.muted, fontFamily: sans, lineHeight: 1.6 }}>No Civic Genome record is published for this Docket bill yet. Ingestion automatically queues Rosetta decomposition and Prism verification; no button press is required. The tracked Docket source remains intact while processing completes.</p>
+        <h2 style={{ fontFamily: serif, marginTop: 0 }}>Genome record not observed</h2><p style={{ color: p.muted, fontFamily: sans, lineHeight: 1.6 }}>No Civic Genome record was returned for this Docket bill. This lookup does not establish whether acquisition, decomposition, or verification is running. The tracked source remains separate from these derived results.</p>
       </div> : <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,280px),1fr))", gap: "1rem", alignItems: "start" }}>
         <aside style={{ display: "grid", gap: ".8rem" }}>
           <section style={panel}><div style={{ fontFamily: mono, fontSize: ".68rem", color: p.green }}>SELECTED BILL</div><h2 style={{ fontFamily: serif, margin: ".45rem 0", fontSize: "1.45rem" }}>{selected.source_bill_number}</h2><div style={{ fontFamily: sans, lineHeight: 1.5 }}>{selected.source_bill_title || "Untitled bill"}</div><div style={{ display: "grid", gap: ".35rem", fontFamily: mono, color: p.muted, fontSize: ".66rem", marginTop: ".75rem" }}><span>{selected.state_code} · {selected.session_key}</span><span>status {selected.bill_status || "unknown"}</span><span>position {selected.current_state_position}</span><span>last action {date(selected.last_action_at)}</span></div>{selected.source_bill_url && <a href={selected.source_bill_url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", marginTop: ".75rem", color: p.green, fontFamily: mono, fontSize: ".66rem" }}>Tracked source</a>}<p style={{ margin: ".7rem 0 0", color: p.muted, fontFamily: sans, fontSize: ".7rem", lineHeight: 1.45 }}>Source snapshots are authoritative artifacts. Rosetta decomposition and Prism verification are derived metadata and may carry explicit defects.</p></section>
@@ -362,7 +365,7 @@ export default function CivicGenomePage() {
               <Metric label="Duplicates" value={validation_summary?.duplicates ?? "—"}/>
               <Metric label="Missing section" value={validation_summary?.missing_section ?? "—"}/>
             </div>
-            {structural_snapshot_state === "previous_verified" && published_version && <div style={{ marginTop: ".7rem", padding: ".65rem .75rem", border: `1px solid ${p.green}`, borderRadius: 8, background: p.green_soft, color: p.paper, fontFamily: sans, fontSize: ".75rem", lineHeight: 1.45 }}>The current {current_version?.version_type ?? "bill"} source is processing automatically. Structural DNA and verification below remain available from the latest verified {published_version.version_type} snapshot; they are not being presented as current-version results.</div>}
+            {structural_snapshot_state === "previous_verified" && published_version && <div style={{ marginTop: ".7rem", padding: ".65rem .75rem", border: `1px solid ${p.green}`, borderRadius: 8, background: p.green_soft, color: p.paper, fontFamily: sans, fontSize: ".75rem", lineHeight: 1.45 }}>A current {current_version?.version_type ?? "bill"} publication has not been established. Structural DNA and verification below remain available from the latest verified {published_version.version_type} snapshot; they are not being presented as current-version results.</div>}
           </section>
           <section style={panel}>
             <div style={{ display: "flex", alignItems: "center", gap: ".5rem", fontFamily: mono, color: p.green, fontSize: ".7rem", marginBottom: ".75rem" }}><Braces size={15}/> Structural DNA</div>

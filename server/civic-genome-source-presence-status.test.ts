@@ -55,8 +55,8 @@ describe("Civic Genome source presence without a Rosetta result", () => {
     expect(result.extraction_run_id).toBeNull();
     expect(result.run_status).toBeNull();
     expect(result.can_assemble).toBe(false);
-    expect(result.contract_message).toContain("source copy is recorded");
-    expect(result.contract_message).toContain("Active execution has not been established");
+    expect(result.contract_message).toContain("exact source is preserved");
+    expect(result.contract_message).toContain("Active execution is not established by source acquisition");
     expect(result.contract_message).not.toContain("processing automatically");
     expect(query).toHaveBeenCalledTimes(1);
   });
@@ -69,7 +69,7 @@ describe("Civic Genome source presence without a Rosetta result", () => {
     expect(result.contract_state).toBe("contract_error");
     expect(result.extraction_run_id).toBeNull();
     expect(result.can_assemble).toBe(false);
-    expect(result.contract_message).toContain("source copy is recorded");
+    expect(result.contract_message).toContain("source binding is recorded");
     expect(result.contract_message).not.toContain("No exact Rosetta source");
   });
 
@@ -82,7 +82,7 @@ describe("Civic Genome source presence without a Rosetta result", () => {
     expect(result.extraction_run_id).toBeNull();
     expect(result.contract_state).toBe("current_pending");
     expect(result.contract_message).toContain("remains published");
-    expect(result.contract_message).toContain("not a result for the current version");
+    expect(result.contract_message).toContain("not a current-version result");
     expect(result.can_assemble).toBe(false);
   });
 
@@ -101,7 +101,7 @@ describe("Civic Genome source presence without a Rosetta result", () => {
     const result = await get_civic_genome_rosetta_pipeline_status(2034656);
     expect(result.source_document_id).toBeNull();
     expect(result.contract_state).toBe("not_handed_off");
-    expect(result.contract_message).toContain("attached to this Docket version");
+    expect(result.contract_message).toContain("No exact Rosetta source binding was observed for the selected Docket version");
     expect(result.contract_message).not.toContain("exists for this Docket bill");
     expect(get_by_source).not.toHaveBeenCalled();
     expect(get_by_identifier).not.toHaveBeenCalled();
@@ -133,7 +133,7 @@ describe("Civic Genome source presence without a Rosetta result", () => {
     const result = await get_civic_genome_rosetta_pipeline_status(2034656);
     expect(result.source_document_id).toBeNull();
     expect(result.contract_state).toBe("contract_error");
-    expect(result.contract_message).not.toContain("source copy is recorded");
+    expect(result.contract_message).not.toContain("source binding is recorded");
     expect(result.can_assemble).toBe(false);
   });
 });
