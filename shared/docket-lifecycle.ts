@@ -95,6 +95,14 @@ const parse_date_ms = (value: unknown): number | null => {
 const date_only = (value: unknown): string | null =>
   typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
 
+const local_day_string = (value: number): string => {
+  const date = new Date(value);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 const parse_effective_date = (value: unknown): { date: string | null; state: docket_effective_status_state | null } => {
   const text = as_text(value);
   if (!text) return { date: null, state: null };
@@ -114,7 +122,9 @@ const terminal_clause_patterns = [
 ] as const;
 
 const clause_is_terminal = (clause: string): boolean => {
-  if (/\b(?:amendments?|motions?)\b/.test(clause)) return false;
+  const mentions_subsidiary = /\b(?:amendments?|motions?)\b/.test(clause);
+  const mentions_whole_measure = /\b(?:bill|measure|resolution)\b/.test(clause);
+  if (mentions_subsidiary && !mentions_whole_measure) return false;
   return terminal_clause_patterns.some(pattern => pattern.test(clause));
 };
 
@@ -147,7 +157,7 @@ export function resolve_docket_lifecycle(
   if (effective.state === "effective_now" && effective.date) {
     const effective_day = date_only(effective.date);
     if (effective_day) {
-      if (effective_day > new Date(now).toISOString().slice(0, 10)) {
+      if (effective_day > local_day_string(now)) {
         effective_state = "effective_future";
       }
     } else {

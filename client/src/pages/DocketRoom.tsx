@@ -785,12 +785,13 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
     displayed_cache_status?.refresh_state
       ?? (displayed_cache_status?.is_fresh === true ? "fresh" : "unknown")
   ];
+  const current_session_flag = state_data ? state_data.session_current ?? null : true;
   const visible_bills = bills
     .filter(bill => !keyword.trim() || [bill.title, bill.number, selected_state].some(value => String(value ?? "").toLowerCase().includes(keyword.trim().toLowerCase())))
     .filter(bill => {
       const resolution = resolve_docket_lifecycle({
         ...bill,
-        session: { is_current: state_data?.session_current ?? null },
+        session: { is_current: current_session_flag },
         freshness: {
           state: state_data?.refresh_state,
           is_fresh: snapshot_fresh,
@@ -866,7 +867,7 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
               const bill_url = bill.source_url || bill.url;
               const resolution = resolve_docket_lifecycle({
                 ...bill,
-                session: { is_current: state_data.session_current ?? null },
+                session: { is_current: current_session_flag },
                 freshness: {
                   state: state_data.refresh_state,
                   is_fresh: snapshot_fresh,

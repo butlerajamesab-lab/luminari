@@ -15,6 +15,7 @@ describe("Docket procedure presentation", () => {
     "Chaptered",
     "Failed final passage.",
     "Amendment failed; bill postponed indefinitely",
+    "Bill enacted as amended",
   ])("recognizes whole-measure terminal disposition: %s", action => {
     expect(docket_terminal_action(4, action)).toBe(true);
   });
@@ -61,6 +62,18 @@ describe("Docket procedure presentation", () => {
       effective_date: "2026-09-30",
       session: { is_current: true },
     }, Date.parse("2026-09-17T00:00:00Z"))).toBe("completed");
+  });
+
+  it("treats a same-day effective date as effective now", () => {
+    const resolution = resolve_docket_lifecycle({
+      status: 4,
+      status_text: "Signed by the Governor",
+      effective_date: "2026-09-17",
+      session: { is_current: true },
+    }, Date.parse("2026-09-17T20:00:00Z"));
+
+    expect(resolution.procedural_state).toBe("completed");
+    expect(resolution.effective_state).toBe("effective_now");
   });
 
   it("does not let freshness overwrite terminal procedure", () => {
