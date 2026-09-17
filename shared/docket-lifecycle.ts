@@ -87,7 +87,7 @@ const as_bool = (value: unknown): boolean | null => {
 const parse_date_ms = (value: unknown): number | null => {
   if (typeof value !== "string" || !value || value.startsWith("0000-00-00")) return null;
   const parsed = /^\d{4}-\d{2}-\d{2}$/.test(value)
-    ? new Date(`${value}T00:00:00`)
+    ? new Date(`${value}T00:00:00Z`)
     : new Date(value);
   return Number.isFinite(parsed.getTime()) ? parsed.getTime() : null;
 };
@@ -95,13 +95,8 @@ const parse_date_ms = (value: unknown): number | null => {
 const date_only = (value: unknown): string | null =>
   typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
 
-const local_day_string = (value: number): string => {
-  const date = new Date(value);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
+const utc_day_string = (value: number): string =>
+  new Date(value).toISOString().slice(0, 10);
 
 const parse_effective_date = (value: unknown): { date: string | null; state: docket_effective_status_state | null } => {
   const text = as_text(value);
@@ -157,7 +152,7 @@ export function resolve_docket_lifecycle(
   if (effective.state === "effective_now" && effective.date) {
     const effective_day = date_only(effective.date);
     if (effective_day) {
-      if (effective_day > local_day_string(now)) {
+      if (effective_day > utc_day_string(now)) {
         effective_state = "effective_future";
       }
     } else {
@@ -295,7 +290,6 @@ export function resolve_docket_source_freshness(
   const is_fresh = bill.freshness?.is_fresh;
   if (is_fresh === true) return "fresh";
   if (is_fresh === false) return "stale";
-  if (bill.freshness?.last_observed_at) return "stale";
   return "unknown";
 }
 

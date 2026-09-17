@@ -779,17 +779,18 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
     bill_count: state_data.bill_count ?? bills.length,
     fetched_at: state_data.fetched_at,
     session_title: state_data.session_title ?? null,
-    refresh_state: state_data.refresh_state ?? (snapshot_fresh ? "fresh" : "unknown"),
+    refresh_state: state_data?.refresh_state ?? (snapshot_fresh ? "fresh" : "unknown"),
   } : selected_cache_status;
   const displayed_refresh = freshness_presentation[
     displayed_cache_status?.refresh_state
       ?? (displayed_cache_status?.is_fresh === true ? "fresh" : "unknown")
   ];
   const current_session_flag = state_data ? state_data.session_current ?? null : true;
-  const visible_bills = bills
+  const resolved_bills = bills
     .filter(bill => !keyword.trim() || [bill.title, bill.number, selected_state].some(value => String(value ?? "").toLowerCase().includes(keyword.trim().toLowerCase())))
-    .filter(bill => {
-      const resolution = resolve_docket_lifecycle({
+    .map(bill => ({
+      bill,
+      resolution: resolve_docket_lifecycle({
         ...bill,
         session: { is_current: current_session_flag },
         freshness: {
@@ -797,13 +798,13 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
           is_fresh: snapshot_fresh,
           last_observed_at: state_data?.fetched_at ?? null,
         },
-      });
-      return show_completed || resolution.live_feed_eligible;
-    })
+      }),
+    }))
+    .filter(({ resolution }) => show_completed || resolution.live_feed_eligible)
     .sort((left, right) => {
-      const velocity_delta = (right.radar?.velocity_score ?? 0) - (left.radar?.velocity_score ?? 0);
+      const velocity_delta = (right.bill.radar?.velocity_score ?? 0) - (left.bill.radar?.velocity_score ?? 0);
       if (velocity_delta !== 0) return velocity_delta;
-      return (valid_date(right.last_action_date)?.getTime() ?? 0) - (valid_date(left.last_action_date)?.getTime() ?? 0);
+      return (valid_date(right.bill.last_action_date)?.getTime() ?? 0) - (valid_date(left.bill.last_action_date)?.getTime() ?? 0);
     });
 
   return (
@@ -858,22 +859,13 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
       ) : state_data ? (
         <>
           <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", fontFamily: fontMono, fontSize: "0.7rem", color: dk.muted, marginBottom: "0.85rem" }}>
-            <span>{visible_bills.length} shown</span>
+            <span>{resolved_bills.length} shown</span>
             <span>source updated {readable_date(state_data.fetched_at)}</span>
             {state_data.session_title && <span>session_title {state_data.session_title}</span>}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "0.75rem" }}>
-            {visible_bills.map(bill => {
+            {resolved_bills.map(({ bill, resolution }) => {
               const bill_url = bill.source_url || bill.url;
-              const resolution = resolve_docket_lifecycle({
-                ...bill,
-                session: { is_current: current_session_flag },
-                freshness: {
-                  state: state_data.refresh_state,
-                  is_fresh: snapshot_fresh,
-                  last_observed_at: state_data.fetched_at ?? null,
-                },
-              });
               const lifecycle_ui = lifecycle_presentation[resolution.procedural_state];
               return (
                 <button key={bill.bill_id} onClick={() => load_bill_detail(bill.bill_id)} style={{ textAlign: "left", background: dk.cardBg, border: `1px solid ${selected_bill_id === bill.bill_id ? dk.steel : dk.cardBorder}`, borderLeft: `4px solid ${lifecycle_ui.color}`, borderRadius: "8px", padding: "0.85rem", cursor: "pointer" }}>
@@ -896,7 +888,7 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
                 </button>
               );
             })}
-            {visible_bills.length === 0 && (
+            {resolved_bills.length === 0 && (
               <div style={{ gridColumn: "1 / -1", background: dk.bg, border: `1px solid ${dk.rule}`, borderRadius: "8px", padding: "1rem", color: dk.muted, fontFamily: fontSans, fontSize: "0.82rem", lineHeight: 1.5 }}>
                 No current changeable legislation is available in this live feed. Turn on “Show completed and non-live legislation” to inspect completed, inactive, or conservatively unclassified records.
               </div>
