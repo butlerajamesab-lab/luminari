@@ -8,6 +8,7 @@ on:
       - server/civic-genome-operating-contracts.ts
       - server/civic-genome-operating-contracts.test.ts
       - server/civic-genome-operating-contracts-ui.test.ts
+      - server/civic-genome-source-presence-status.test.ts
       - server/civic-genome-pipeline-observation.test.ts
       - server/civic-genome-pipeline-result-arrival.test.ts
       - client/src/pages/CivicGenome.tsx
@@ -33,6 +34,7 @@ jobs:
           pnpm vitest run
           server/civic-genome-operating-contracts.test.ts
           server/civic-genome-operating-contracts-ui.test.ts
+          server/civic-genome-source-presence-status.test.ts
           server/civic-genome-pipeline-observation.test.ts
           server/civic-genome-pipeline-result-arrival.test.ts
           server/civic-genome-legislative-version-queue-worker.test.ts
