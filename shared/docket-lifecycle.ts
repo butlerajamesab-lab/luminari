@@ -92,6 +92,9 @@ const parse_date_ms = (value: unknown): number | null => {
   return Number.isFinite(parsed.getTime()) ? parsed.getTime() : null;
 };
 
+const date_only = (value: unknown): string | null =>
+  typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
+
 const parse_effective_date = (value: unknown): { date: string | null; state: docket_effective_status_state | null } => {
   const text = as_text(value);
   if (!text) return { date: null, state: null };
@@ -142,9 +145,16 @@ export function resolve_docket_lifecycle(
   const effective = parse_effective_date(bill.effective_date);
   let effective_state = effective.state ?? "effective_date_unknown";
   if (effective.state === "effective_now" && effective.date) {
-    const effective_ms = parse_date_ms(effective.date);
-    if (effective_ms !== null && effective_ms > now) {
-      effective_state = "effective_future";
+    const effective_day = date_only(effective.date);
+    if (effective_day) {
+      if (effective_day > new Date(now).toISOString().slice(0, 10)) {
+        effective_state = "effective_future";
+      }
+    } else {
+      const effective_ms = parse_date_ms(effective.date);
+      if (effective_ms !== null && effective_ms > now) {
+        effective_state = "effective_future";
+      }
     }
   }
 
