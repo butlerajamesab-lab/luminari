@@ -1,0 +1,39 @@
+name: Civic Genome source observation
+
+on:
+  pull_request:
+    paths:
+      - shared/civic-genome-pipeline-observation.ts
+      - server/civic-genome-operating-contracts.ts
+      - server/civic-genome-operating-contracts.test.ts
+      - server/civic-genome-operating-contracts-ui.test.ts
+      - server/civic-genome-pipeline-observation.test.ts
+      - client/src/pages/CivicGenome.tsx
+      - .github/workflows/civic-genome-source-observation.yml
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Verify source identity, holds, UI bindings, and worker boundaries
+        run: >-
+          pnpm vitest run
+          server/civic-genome-operating-contracts.test.ts
+          server/civic-genome-operating-contracts-ui.test.ts
+          server/civic-genome-pipeline-observation.test.ts
+          server/civic-genome-legislative-version-queue-worker.test.ts
+      - name: Build Lighthouse
+        run: pnpm run build
+      - name: Build shared worker
+        run: pnpm run build:prism-worker
