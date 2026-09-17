@@ -141,7 +141,7 @@ export async function get_civic_genome_operating_contracts(): Promise<civic_geno
         role: "Structural law extraction",
         state: rosetta_assembly_count > 0 ? "operational" : "waiting",
         state_label: rosetta_assembly_count > 0 ? "Operational" : "Waiting for validated extraction",
-        detail: `${rosetta_binding_count} explicit source bindings and ${rosetta_assembly_count} completed assemblies are materialized.`,
+        detail: `${rosettata_binding_count} explicit source bindings and ${rosetta_assembly_count} completed assemblies are materialized.`,
         observed_count: rosetta_assembly_count,
         bound_count: rosetta_binding_count,
         last_observed_at: null,
@@ -345,7 +345,7 @@ export async function get_civic_genome_rosetta_pipeline_status(
       source_bill_id,
       genome_bill_id: bill?.genome_bill_id ?? null,
       ...current_version_fields,
-      source_document_id: null,
+      source_document_id: current_source_document_id,
       extraction_run_id: null,
       run_status: null,
       provenance_state: null,
@@ -365,7 +365,7 @@ export async function get_civic_genome_rosetta_pipeline_status(
         source_bill_id,
         genome_bill_id: bill?.genome_bill_id ?? null,
         ...current_version_fields,
-        source_document_id: null,
+        source_document_id: current_source_document_id,
         extraction_run_id: null,
         run_status: null,
         provenance_state: null,
@@ -374,14 +374,16 @@ export async function get_civic_genome_rosetta_pipeline_status(
         ...published_fields,
         can_assemble: false,
         contract_state: "current_pending",
-        contract_message: `The current ${version_selection?.current_version_type ?? "bill"} source is processing automatically. The latest verified ${version_selection?.published_version_type ?? "prior"} snapshot remains published until it completes.`,
+        contract_message: current_source_document_id != null
+          ? `The current ${version_selection?.current_version_type ?? "bill"} source is preserved, but its Rosetta result is not available. The latest verified ${version_selection?.published_version_type ?? "prior"} snapshot remains published.`
+          : `No exact source binding is recorded for the current ${version_selection?.current_version_type ?? "bill"} version. The latest verified ${version_selection?.published_version_type ?? "prior"} snapshot remains published.`,
       };
     }
     return {
       source_bill_id,
       genome_bill_id: bill?.genome_bill_id ?? null,
       ...current_version_fields,
-      source_document_id: null,
+      source_document_id: current_source_document_id,
       extraction_run_id: null,
       run_status: null,
       provenance_state: null,
@@ -389,8 +391,10 @@ export async function get_civic_genome_rosetta_pipeline_status(
       coverage: {},
       ...published_fields,
       can_assemble: false,
-      contract_state: "not_handed_off",
-      contract_message: "No exact Rosetta source document exists for this Docket bill.",
+      contract_state: current_source_document_id != null ? "waiting_for_extraction" : "not_handed_off",
+      contract_message: current_source_document_id != null
+        ? "The exact Rosetta source is preserved, but its extraction result is not available. Active execution is not established by this status."
+        : "No exact Rosetta source binding is recorded for this Docket bill.",
     };
   }
 
@@ -427,7 +431,7 @@ export async function get_civic_genome_rosetta_pipeline_status(
   const message = state === "assembled"
     ? "This exact completed Rosetta run is already assembled."
     : state === "current_pending"
-      ? `The current ${version_selection?.current_version_type ?? "bill"} source is processing automatically. The latest verified ${version_selection?.published_version_type ?? "prior"} snapshot remains published until it completes.`
+      ? `The current ${version_selection?.current_version_type ?? "bill"} version has not reached a verified assembly. The latest verified ${version_selection?.published_version_type ?? "prior"} snapshot remains published.`
     : state === "ready_for_assembly"
       ? "A completed, provenance-valid Rosetta run is ready for deterministic assembly."
       : state === "blocked"
