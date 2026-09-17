@@ -36,19 +36,25 @@ export function pipelinePublicationPresentation(observation: CivicGenomePipeline
     return { value: "Published", detail: "Current snapshot decomposed and verified" };
   }
   if (observation.published_source_document_id != null) {
+    const same_source = observation.published_source_document_id === observation.source_document_id;
     return {
-      value: "Prior snapshot available",
-      detail: `Latest verified ${observation.published_version_type ?? "prior"} snapshot · document ${observation.published_source_document_id}. This is not a current-version result.`,
+      value: same_source ? "Saved snapshot available" : "Prior snapshot available",
+      detail: same_source
+        ? `Saved publication · document ${observation.published_source_document_id}. The current result could not be confirmed as assembled.`
+        : `Latest verified ${observation.published_version_type ?? "prior"} snapshot · document ${observation.published_source_document_id}. This is not a current-version result.`,
     };
   }
   if (observation.contract_state === "contract_error") {
     return { value: "Status unavailable", detail: "The current result could not be read. No publication is inferred." };
   }
-  if (isCurrentResultHold(observation) || observation.contract_state === "awaiting_current_result") {
-    return { value: "Held — awaiting result", detail: "Source acquisition is not decomposition or publication. The current-result hold must be reconciled before processing can continue." };
-  }
   if (observation.contract_state === "blocked") {
     return { value: "Blocked", detail: "No current publishable result has been established." };
+  }
+  if (isCurrentResultHold(observation) || observation.contract_state === "awaiting_current_result") {
+    if (observation.extraction_run_id != null && observation.run_status?.toLowerCase() === "completed") {
+      return { value: "Held — reconciliation needed", detail: "A completed extraction is reported, but the queue hold remains. This does not establish governed publication." };
+    }
+    return { value: "Held — awaiting result", detail: "Source acquisition is not decomposition or publication. The current-result hold must be reconciled before processing can continue." };
   }
   if (observation.contract_state === "ready_for_assembly") {
     return { value: "Not yet published", detail: "A decomposition result is available; governed assembly and publication are separate steps." };
@@ -66,9 +72,6 @@ export function pipelineExtractionPresentation(observation: CivicGenomePipelineO
   if (observation.contract_state === "contract_error") {
     return { value: "Status unavailable", detail: "The current Rosetta result could not be read." };
   }
-  if (isCurrentResultHold(observation) || observation.contract_state === "awaiting_current_result") {
-    return { value: "Held — awaiting result", detail: "No active decomposition is established by this hold." };
-  }
   if (observation.extraction_run_id != null && observation.run_status != null) {
     const state = observation.run_status.toLowerCase();
     return {
@@ -77,6 +80,9 @@ export function pipelineExtractionPresentation(observation: CivicGenomePipelineO
           : state === "failed" ? "Decomposition failed" : observation.run_status,
       detail: `run ${observation.extraction_run_id} · reported run state, not a worker heartbeat`,
     };
+  }
+  if (isCurrentResultHold(observation) || observation.contract_state === "awaiting_current_result") {
+    return { value: "Held — awaiting result", detail: "No active decomposition is established by this hold." };
   }
   return {
     value: "No result observed",
