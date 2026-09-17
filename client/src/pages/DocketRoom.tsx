@@ -792,8 +792,12 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
       bill,
       resolution: resolve_docket_lifecycle({
         ...bill,
-        session: { is_current: current_session_flag },
+        session: {
+          ...(bill as { session?: Record<string, unknown> }).session,
+          is_current: current_session_flag,
+        },
         freshness: {
+          ...(bill as { freshness?: Record<string, unknown> }).freshness,
           state: state_data?.refresh_state,
           is_fresh: snapshot_fresh,
           last_observed_at: state_data?.fetched_at ?? null,

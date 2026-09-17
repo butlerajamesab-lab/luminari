@@ -126,7 +126,7 @@ const clause_is_terminal = (clause: string): boolean => {
 export function docket_terminal_action(status: unknown, ...evidence: unknown[]): boolean {
   if ([5, 6].includes(Number(status))) return true;
   return evidence
-    .flatMap(value => as_text(value) ? as_text(value)!.split(/[;\n]/) : [])
+    .flatMap(value => as_text(value) ? as_text(value)!.split(/[;.\n]/) : [])
     .some(clause => clause_is_terminal(clause.toLowerCase()));
 }
 
