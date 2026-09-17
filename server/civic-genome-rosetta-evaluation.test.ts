@@ -191,20 +191,20 @@ describe("Civic Genome current Rosetta result", () => {
   });
 
   it("rejects a stale key result", async () => {
-    fetch_mock.mockResolvedValue(Response.json({
-      ...current_result_fixture(),
-      docket_source_key: "text:9999:9821",
-    }));
+    const stale = current_result_fixture();
+    stale.docket_source_key = "text:9999:9821";
+    stale.current_source_status.source_document_key = "text:9999:9821";
+    fetch_mock.mockResolvedValue(Response.json(stale));
     await expect(get_civic_genome_rosetta_evaluation({ genome_bill_id })).rejects.toThrow(
       "rosetta_public_current_docket_result_source_document_key_mismatch",
     );
   });
 
   it("rejects a stale hash result", async () => {
-    fetch_mock.mockResolvedValue(Response.json({
-      ...current_result_fixture(),
-      source_content_hash: "b".repeat(64),
-    }));
+    const stale = current_result_fixture();
+    stale.source_content_hash = "b".repeat(64);
+    stale.current_source_status.source_content_hash = "b".repeat(64);
+    fetch_mock.mockResolvedValue(Response.json(stale));
     await expect(get_civic_genome_rosetta_evaluation({ genome_bill_id })).rejects.toThrow(
       "rosetta_public_current_docket_result_source_content_hash_mismatch",
     );
