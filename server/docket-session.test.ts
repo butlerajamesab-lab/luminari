@@ -20,14 +20,14 @@ describe("Docket session currentness", () => {
     })).toBe(false);
   });
 
-  it("fails closed when session flags conflict", () => {
+  it("prefers the provider prior flag when session flags conflict", () => {
     expect(legiscan_session_is_current({
       session_id: 3,
       prior: 0,
       sine_die: 1,
       year_start: 2026,
       year_end: 2026,
-    })).toBe(null);
+    })).toBe(true);
   });
 
   it("prefers an active current session over a newer completed one", () => {

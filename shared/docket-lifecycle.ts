@@ -192,7 +192,7 @@ export function resolve_docket_lifecycle(
   }
 
   let procedural_state: docket_lifecycle_state;
-  if (next_event_ms !== null && next_event_ms >= now) {
+  if (session_is_current === true && next_event_ms !== null && next_event_ms >= now) {
     procedural_state = "action_approaching";
   } else {
     const recent_movement = [last_action_ms, status_ms].some(

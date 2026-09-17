@@ -146,6 +146,18 @@ describe("Docket procedure presentation", () => {
     expect(resolution.live_feed_eligible).toBe(false);
   });
 
+  it("does not treat future events in a non-current session as approaching action", () => {
+    const resolution = resolve_docket_lifecycle({
+      status: 1,
+      last_action_date: "2026-01-01",
+      radar: { next_event_date: "2026-09-20" },
+      session: { is_current: false },
+    }, Date.parse("2026-09-17T00:00:00Z"));
+
+    expect(resolution.procedural_state).toBe("stalled");
+    expect(resolution.live_feed_eligible).toBe(false);
+  });
+
   it("fails closed when current session evidence is missing", () => {
     expect(() => resolve_docket_lifecycle({
       status: 1,
