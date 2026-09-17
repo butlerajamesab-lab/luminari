@@ -18,10 +18,11 @@ export const legiscan_session_is_current = (
   session: legiscan_session | null | undefined,
 ): boolean | null => {
   if (!session) return null;
-  if (as_bool(session.prior) === true) return false;
-  if (as_bool(session.sine_die) === true) return false;
-  if (as_bool(session.prior) === false) return true;
-  if (as_bool(session.sine_die) === false) return true;
+  const prior = as_bool(session.prior);
+  const sine_die = as_bool(session.sine_die);
+  if (prior !== null && sine_die !== null && prior !== sine_die) return null;
+  if (prior === true || sine_die === true) return false;
+  if (prior === false || sine_die === false) return true;
   return null;
 };
 

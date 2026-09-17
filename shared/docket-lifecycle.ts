@@ -152,7 +152,13 @@ export function resolve_docket_lifecycle(
   if (effective.state === "effective_now" && effective.date) {
     const effective_day = date_only(effective.date);
     if (effective_day) {
-      if (effective_day > utc_day_string(now)) {
+      const effective_day_ms = parse_date_ms(effective_day);
+      const current_day_ms = parse_date_ms(utc_day_string(now));
+      if (
+        effective_day_ms !== null
+        && current_day_ms !== null
+        && effective_day_ms > current_day_ms
+      ) {
         effective_state = "effective_future";
       }
     } else {

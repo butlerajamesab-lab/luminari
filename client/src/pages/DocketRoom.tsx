@@ -785,7 +785,7 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
     displayed_cache_status?.refresh_state
       ?? (displayed_cache_status?.is_fresh === true ? "fresh" : "unknown")
   ];
-  const current_session_flag = state_data ? state_data.session_current ?? null : true;
+  const current_session_flag = state_data?.session_current ?? null;
   const resolved_bills = bills
     .filter(bill => !keyword.trim() || [bill.title, bill.number, selected_state].some(value => String(value ?? "").toLowerCase().includes(keyword.trim().toLowerCase())))
     .map(bill => ({

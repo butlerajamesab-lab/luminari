@@ -8,7 +8,6 @@ describe("Docket session currentness", () => {
   it("treats sine die and prior sessions as non-current", () => {
     expect(legiscan_session_is_current({
       session_id: 1,
-      prior: 0,
       sine_die: 1,
       year_start: 2025,
       year_end: 2025,
@@ -16,10 +15,19 @@ describe("Docket session currentness", () => {
     expect(legiscan_session_is_current({
       session_id: 2,
       prior: 1,
-      sine_die: 0,
       year_start: 2026,
       year_end: 2026,
     })).toBe(false);
+  });
+
+  it("fails closed when session flags conflict", () => {
+    expect(legiscan_session_is_current({
+      session_id: 3,
+      prior: 0,
+      sine_die: 1,
+      year_start: 2026,
+      year_end: 2026,
+    })).toBe(null);
   });
 
   it("prefers an active current session over a newer completed one", () => {
@@ -34,7 +42,7 @@ describe("Docket session currentness", () => {
   it("falls back to the newest available session when no current session can be established", () => {
     const selected = pick_preferred_legiscan_session([
       { session_id: 2024, prior: 1, year_start: 2024, year_end: 2024 },
-      { session_id: 2025, prior: 0, sine_die: 1, year_start: 2025, year_end: 2025 },
+      { session_id: 2025, prior: 1, sine_die: 1, year_start: 2025, year_end: 2025 },
     ]);
 
     expect(selected?.session_id).toBe(2025);
