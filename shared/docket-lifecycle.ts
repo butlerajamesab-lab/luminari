@@ -63,7 +63,7 @@ const ACTIVE_MOVEMENT_WINDOW_MS = 45 * DAY_MS;
 const immediate_effective_pattern =
   /\b(?:effective\s+immediately|immediately\s+effective|upon\s+signature|upon\s+approval|upon\s+enactment|upon\s+becoming\s+law)\b/i;
 const terminal_status_pattern =
-  /\b(?:enacted|signed|approved|chaptered|chapter\s+number(?:ed)?|became law|vetoed|failed|withdrawn|expired|dead|adopted|passed)\b/i;
+  /\b(?:enacted|signed|approved|chaptered|chapter\s+number(?:ed)?|became law|vetoed|failed|withdrawn|expired|dead|adopted|passed(?:\s+(?:final passage|both chambers))?)\b/i;
 
 const as_text = (value: unknown): string | null =>
   typeof value === "string" && value.trim() ? value.trim() : null;
@@ -87,7 +87,7 @@ const as_bool = (value: unknown): boolean | null => {
 const parse_date_ms = (value: unknown): number | null => {
   if (typeof value !== "string" || !value || value.startsWith("0000-00-00")) return null;
   const parsed = /^\d{4}-\d{2}-\d{2}$/.test(value)
-    ? new Date(`${value}T00:00:00`)
+    ? new Date(`${value}T00:00:00Z`)
     : new Date(value);
   return Number.isFinite(parsed.getTime()) ? parsed.getTime() : null;
 };
@@ -95,13 +95,8 @@ const parse_date_ms = (value: unknown): number | null => {
 const date_only = (value: unknown): string | null =>
   typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
 
-const local_day_string = (value: number): string => {
-  const date = new Date(value);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
+const utc_day_string = (value: number): string =>
+  new Date(value).toISOString().slice(0, 10);
 
 const parse_effective_date = (
   value: unknown,
@@ -164,7 +159,7 @@ export function resolve_docket_lifecycle(
   let effective_state = effective.state ?? "effective_date_unknown";
   if (effective.state === "effective_now" && effective.timestamp_ms !== null) {
     if (effective.is_date_only) {
-      const current_day_ms = parse_date_ms(local_day_string(now));
+      const current_day_ms = parse_date_ms(utc_day_string(now));
       if (
         current_day_ms !== null
         && effective.timestamp_ms > current_day_ms

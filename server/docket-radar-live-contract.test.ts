@@ -124,7 +124,7 @@ describe("Docket Radar live contract", () => {
     expect(page).toContain('level === "federal" ? "US"');
     expect(page).toContain('new Date(`${value}T00:00:00`)');
     expect(detail).toContain('new Date(`${value}T00:00:00`)');
-    expect(lifecycle).toContain('new Date(`${value}T00:00:00`)');
+    expect(lifecycle).toContain('new Date(`${value}T00:00:00Z`)');
     expect(read("server/routes/docket.ts")).toContain("session_current");
     expect(read("server/routes/docket.ts")).toContain("refresh_state");
   });
