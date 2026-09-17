@@ -141,7 +141,7 @@ export async function get_civic_genome_operating_contracts(): Promise<civic_geno
         role: "Structural law extraction",
         state: rosetta_assembly_count > 0 ? "operational" : "waiting",
         state_label: rosetta_assembly_count > 0 ? "Operational" : "Waiting for validated extraction",
-        detail: `${rosettata_binding_count} explicit source bindings and ${rosetta_assembly_count} completed assemblies are materialized.`,
+        detail: `${rosetta_binding_count} explicit source bindings and ${rosetta_assembly_count} completed assemblies are materialized.`,
         observed_count: rosetta_assembly_count,
         bound_count: rosetta_binding_count,
         last_observed_at: null,
