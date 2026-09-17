@@ -151,7 +151,7 @@ export function resolve_docket_lifecycle(
   const last_action_ms = parse_date_ms(bill.last_action_date ?? null);
   const status_ms = parse_date_ms(bill.status_date ?? null);
   const completed = as_bool(bill.completed);
-  const session_is_current = bill.session?.is_current;
+  const session_is_current = as_bool(bill.session?.is_current);
   const freshness_state = resolve_docket_source_freshness(bill);
   const terminal = completed === true || docket_terminal_action(
     bill.status,
