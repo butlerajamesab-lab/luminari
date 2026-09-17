@@ -77,6 +77,17 @@ describe("Docket procedure presentation", () => {
     expect(resolution.effective_state).toBe("effective_now");
   });
 
+  it("treats future effective timestamps as future", () => {
+    const resolution = resolve_docket_lifecycle({
+      status: 4,
+      status_text: "Signed by the Governor",
+      effective_date: "2026-09-17T23:00:00-07:00",
+      session: { is_current: true },
+    }, Date.parse("2026-09-17T20:00:00Z"));
+
+    expect(resolution.effective_state).toBe("effective_future");
+  });
+
   it("does not let freshness overwrite terminal procedure", () => {
     const resolution = resolve_docket_lifecycle({
       status: 5,
@@ -107,6 +118,18 @@ describe("Docket procedure presentation", () => {
       radar: { events_14d: 3, next_event_date: "2026-09-20" },
       session: { is_current: true },
     }, Date.parse("2026-09-17T00:00:00Z"))).toBe(true);
+  });
+
+  it("does not treat future activity timestamps as live movement", () => {
+    const resolution = resolve_docket_lifecycle({
+      status: 1,
+      last_action: "Referred to committee",
+      last_action_date: "2026-10-10",
+      session: { is_current: true },
+    }, Date.parse("2026-09-17T00:00:00Z"));
+
+    expect(resolution.procedural_state).toBe("unknown");
+    expect(resolution.live_feed_eligible).toBe(false);
   });
 
   it("excludes old completed-session records from the live feed", () => {

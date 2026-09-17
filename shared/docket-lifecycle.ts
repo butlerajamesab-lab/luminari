@@ -98,15 +98,23 @@ const date_only = (value: unknown): string | null =>
 const utc_day_string = (value: number): string =>
   new Date(value).toISOString().slice(0, 10);
 
-const parse_effective_date = (value: unknown): { date: string | null; state: docket_effective_status_state | null } => {
+const parse_effective_date = (
+  value: unknown,
+): {
+  date: string | null;
+  state: docket_effective_status_state | null;
+  timestamp_ms: number | null;
+  is_date_only: boolean;
+} => {
   const text = as_text(value);
-  if (!text) return { date: null, state: null };
+  if (!text) return { date: null, state: null, timestamp_ms: null, is_date_only: false };
   if (immediate_effective_pattern.test(text)) {
-    return { date: text, state: "effective_immediately" };
+    return { date: text, state: "effective_immediately", timestamp_ms: null, is_date_only: false };
   }
-  return parse_date_ms(text) === null
-    ? { date: text, state: null }
-    : { date: text, state: "effective_now" };
+  const timestamp_ms = parse_date_ms(text);
+  return timestamp_ms === null
+    ? { date: text, state: null, timestamp_ms: null, is_date_only: false }
+    : { date: text, state: "effective_now", timestamp_ms, is_date_only: Boolean(date_only(text)) };
 };
 
 const terminal_clause_patterns = [
@@ -149,23 +157,17 @@ export function resolve_docket_lifecycle(
 
   const effective = parse_effective_date(bill.effective_date);
   let effective_state = effective.state ?? "effective_date_unknown";
-  if (effective.state === "effective_now" && effective.date) {
-    const effective_day = date_only(effective.date);
-    if (effective_day) {
-      const effective_day_ms = parse_date_ms(effective_day);
+  if (effective.state === "effective_now" && effective.timestamp_ms !== null) {
+    if (effective.is_date_only) {
       const current_day_ms = parse_date_ms(utc_day_string(now));
       if (
-        effective_day_ms !== null
-        && current_day_ms !== null
-        && effective_day_ms > current_day_ms
+        current_day_ms !== null
+        && effective.timestamp_ms > current_day_ms
       ) {
         effective_state = "effective_future";
       }
-    } else {
-      const effective_ms = parse_date_ms(effective.date);
-      if (effective_ms !== null && effective_ms > now) {
-        effective_state = "effective_future";
-      }
+    } else if (effective.timestamp_ms > now) {
+      effective_state = "effective_future";
     }
   }
 
@@ -215,7 +217,7 @@ export function resolve_docket_lifecycle(
   }
 
   const recent_movement = [last_action_ms, status_ms].some(
-    value => value !== null && now - value <= ACTIVE_MOVEMENT_WINDOW_MS,
+    value => value !== null && value <= now && now - value <= ACTIVE_MOVEMENT_WINDOW_MS,
   );
   const radar_activity = [
     as_number(bill.radar?.velocity_score),
@@ -238,7 +240,10 @@ export function resolve_docket_lifecycle(
     };
   }
 
-  const last_known_activity_ms = last_action_ms ?? status_ms;
+  const last_known_activity_ms = [last_action_ms, status_ms].reduce<number | null>(
+    (latest, value) => value !== null && (latest === null || value > latest) ? value : latest,
+    null,
+  );
   return {
     procedural_state:
       last_known_activity_ms !== null && now - last_known_activity_ms > STALLED_AFTER_MS
