@@ -13,7 +13,11 @@ import {
 import { toast } from "sonner";
 import { VoiceReadout } from "@/components/VoiceReadout";
 import { DocketBillDetailWorkspace } from "@/components/DocketBillDetailWorkspace";
-import { docket_lifecycle as lifecycle_for_bill, type docket_lifecycle_state as lifecycle_state } from "@shared/docket-lifecycle";
+import {
+  resolve_docket_lifecycle,
+  type docket_lifecycle_state as lifecycle_state,
+  type docket_source_freshness_state,
+} from "@shared/docket-lifecycle";
 
 /* ═══════════════════════════════════════════════════════════════════════
    THE DOCKET ROOM — Structural Legislative Analysis
@@ -551,9 +555,11 @@ type docket_bill = {
   number?: string;
   title?: string;
   status?: string | number;
+  status_desc?: string;
   status_date?: string;
   last_action_date?: string;
   last_action?: string;
+  effective_date?: string;
   source_url?: string;
   url?: string;
   radar?: {
@@ -575,8 +581,10 @@ type docket_state_payload = {
   source?: string;
   session_id?: number;
   session_title?: string | null;
+  session_current?: boolean | null;
   bill_count?: number;
   fetched_at?: string;
+  refresh_state?: docket_source_freshness_state;
   bills?: docket_bill[];
   message?: string;
 };
@@ -586,6 +594,7 @@ type docket_bill_detail_payload = {
   source?: string;
   bill_id?: number;
   fetched_at?: string;
+  refresh_state?: docket_source_freshness_state;
   bill?: Record<string, unknown>;
   message?: string;
 };
@@ -599,6 +608,7 @@ type docket_cache_status = {
   fetched_at: string | null;
   age_minutes: number | null;
   is_fresh: boolean;
+  refresh_state?: docket_source_freshness_state;
 };
 
 type docket_cache_status_payload = {
@@ -631,7 +641,14 @@ const lifecycle_presentation: Record<lifecycle_state, { label: string; color: st
   action_approaching: { label: "Action approaching", color: dk.amber, background: dk.copperSoft },
   completed: { label: "Completed", color: dk.green, background: "rgba(63,185,80,0.10)" },
   stalled: { label: "Stalled", color: dk.muted, background: "rgba(125,133,144,0.10)" },
-  freshness_unknown: { label: "Freshness unknown", color: dk.muted, background: "rgba(125,133,144,0.10)" },
+  unknown: { label: "Unknown", color: dk.muted, background: "rgba(125,133,144,0.10)" },
+};
+
+const freshness_presentation: Record<docket_source_freshness_state, { label: string; color: string }> = {
+  fresh: { label: "Source fresh", color: dk.teal },
+  stale: { label: "Source stale", color: dk.amber },
+  unknown: { label: "Source freshness unknown", color: dk.muted },
+  refresh_paused: { label: "Refresh paused", color: dk.amber },
 };
 
 const readable_date = (value?: string | null): string => {
@@ -762,10 +779,26 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
     bill_count: state_data.bill_count ?? bills.length,
     fetched_at: state_data.fetched_at,
     session_title: state_data.session_title ?? null,
+    refresh_state: state_data.refresh_state ?? (snapshot_fresh ? "fresh" : "unknown"),
   } : selected_cache_status;
+  const displayed_refresh = freshness_presentation[
+    displayed_cache_status?.refresh_state
+      ?? (displayed_cache_status?.is_fresh === true ? "fresh" : "unknown")
+  ];
   const visible_bills = bills
     .filter(bill => !keyword.trim() || [bill.title, bill.number, selected_state].some(value => String(value ?? "").toLowerCase().includes(keyword.trim().toLowerCase())))
-    .filter(bill => show_completed || lifecycle_for_bill(bill, snapshot_fresh) !== "completed")
+    .filter(bill => {
+      const resolution = resolve_docket_lifecycle({
+        ...bill,
+        session: { is_current: state_data?.session_current ?? null },
+        freshness: {
+          state: state_data?.refresh_state,
+          is_fresh: snapshot_fresh,
+          last_observed_at: state_data?.fetched_at ?? null,
+        },
+      });
+      return show_completed || resolution.live_feed_eligible;
+    })
     .sort((left, right) => {
       const velocity_delta = (right.radar?.velocity_score ?? 0) - (left.radar?.velocity_score ?? 0);
       if (velocity_delta !== 0) return velocity_delta;
@@ -804,14 +837,16 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
       <div style={{ background: dk.bg, border: `1px solid ${dk.rule}`, borderRadius: "8px", padding: "0.85rem", marginBottom: "0.9rem" }}>
         {displayed_cache_status ? (
           <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>
-            <span style={{ color: displayed_cache_status.is_fresh ? dk.teal : dk.amber }}>{displayed_cache_status.is_fresh ? "Current source snapshot" : "Source snapshot is stale"}</span>
+            <span style={{ color: displayed_refresh.color }}>{displayed_refresh.label}</span>
             <span>{displayed_cache_status.bill_count} bills</span>
-            <span>Updated {readable_date(displayed_cache_status.fetched_at)}</span>
+            <span>Last source observation {readable_date(displayed_cache_status.fetched_at)}</span>
             {displayed_cache_status.session_title && <span>{displayed_cache_status.session_title}</span>}
+            {state_data?.session_current === false && <span>Completed session</span>}
+            {state_data?.session_current === null && state_data?.session_title && <span>Session currentness unknown</span>}
           </div>
         ) : cache_status_loading ? <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>loading_cache_status</div> : cache_status_error ? <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.red }}>cache_status_error {cache_status_error}</div> : <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>cache_status_unavailable</div>}
         <label style={{ display: "inline-flex", alignItems: "center", gap: "0.45rem", marginTop: "0.65rem", color: dk.cream, fontFamily: fontSans, fontSize: "0.78rem" }}>
-          <input type="checkbox" checked={show_completed} onChange={event => set_show_completed(event.target.checked)} /> Show completed legislation
+          <input type="checkbox" checked={show_completed} onChange={event => set_show_completed(event.target.checked)} /> Show completed and non-live legislation
         </label>
       </div>
 
@@ -829,8 +864,16 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "0.75rem" }}>
             {visible_bills.map(bill => {
               const bill_url = bill.source_url || bill.url;
-              const lifecycle = lifecycle_for_bill(bill, snapshot_fresh);
-              const lifecycle_ui = lifecycle_presentation[lifecycle];
+              const resolution = resolve_docket_lifecycle({
+                ...bill,
+                session: { is_current: state_data.session_current ?? null },
+                freshness: {
+                  state: state_data.refresh_state,
+                  is_fresh: snapshot_fresh,
+                  last_observed_at: state_data.fetched_at ?? null,
+                },
+              });
+              const lifecycle_ui = lifecycle_presentation[resolution.procedural_state];
               return (
                 <button key={bill.bill_id} onClick={() => load_bill_detail(bill.bill_id)} style={{ textAlign: "left", background: dk.cardBg, border: `1px solid ${selected_bill_id === bill.bill_id ? dk.steel : dk.cardBorder}`, borderLeft: `4px solid ${lifecycle_ui.color}`, borderRadius: "8px", padding: "0.85rem", cursor: "pointer" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", alignItems: "center", marginBottom: "0.35rem" }}>
@@ -841,6 +884,9 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
                   <div style={{ display: "grid", gap: "0.25rem", fontFamily: fontMono, fontSize: "0.66rem", color: dk.muted }}>
                     <span>{bill.last_action || "Latest action not reported"}</span>
                     <span>{readable_date(bill.last_action_date || bill.status_date)}</span>
+                    {resolution.effective_state === "effective_immediately" && <span style={{ color: dk.green }}>Effective immediately</span>}
+                    {resolution.effective_state === "effective_now" && <span style={{ color: dk.green }}>Effective now</span>}
+                    {resolution.effective_state === "effective_future" && resolution.effective_date && <span style={{ color: dk.green }}>Takes effect {readable_date(resolution.effective_date)}</span>}
                     {bill.radar && bill.radar.velocity_score > 0 && <span style={{ color: dk.teal }}>Movement {bill.radar.velocity_score.toFixed(1)} · {bill.radar.events_14d} events in 14 days</span>}
                     {bill.radar?.next_event_date && <span style={{ color: dk.amber }}>{bill.radar.next_event_class?.replaceAll("_", " ")} · {readable_date(bill.radar.next_event_date)}</span>}
                     {bill.radar?.drift_coverage && bill.radar.drift.filter(item => item.delta !== 0).map(item => <span key={item.trait_class}>{item.trait_class} {item.base_count} → {item.latest_count} ({item.delta > 0 ? "+" : ""}{item.delta})</span>)}
@@ -849,11 +895,16 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
                 </button>
               );
             })}
+            {visible_bills.length === 0 && (
+              <div style={{ gridColumn: "1 / -1", background: dk.bg, border: `1px solid ${dk.rule}`, borderRadius: "8px", padding: "1rem", color: dk.muted, fontFamily: fontSans, fontSize: "0.82rem", lineHeight: 1.5 }}>
+                No current changeable legislation is available in this live feed. Turn on “Show completed and non-live legislation” to inspect completed, inactive, or conservatively unclassified records.
+              </div>
+            )}
           </div>
           {selected_bill_id && (
             <div style={{ marginTop: "1rem", background: dk.slate, border: `1px solid ${dk.rule}`, borderRadius: "8px", padding: "0.85rem" }}>
               <div style={{ fontFamily: fontMono, fontSize: "0.72rem", color: dk.steelBright, marginBottom: "0.5rem" }}>bill_detail_click_through bill_id {selected_bill_id}</div>
-              {bill_detail_loading ? <div style={{ fontFamily: fontMono, fontSize: "0.72rem", color: dk.muted }}>loading_bill_detail</div> : bill_detail_error ? <div style={{ fontFamily: fontMono, fontSize: "0.72rem", color: dk.red }}>error {bill_detail_error}</div> : bill_detail ? <DocketBillDetailWorkspace payload={bill_detail} /> : null}
+              {bill_detail_loading ? <div style={{ fontFamily: fontMono, fontSize: "0.72rem", color: dk.muted }}>loading_bill_detail</div> : bill_detail_error ? <div style={{ fontFamily: fontMono, fontSize: "0.72rem", color: dk.red }}>error {bill_detail_error}</div> : bill_detail ? <DocketBillDetailWorkspace payload={bill_detail} session_current={state_data.session_current ?? null} /> : null}
             </div>
           )}
         </>
@@ -1078,7 +1129,7 @@ function DocketList({ onSelect }: { onSelect: (id: string) => void }) {
           </p>
 
           <p style={{ fontFamily: fontSans, fontSize: "0.84rem", color: dk.cream, lineHeight: 1.6, margin: "1.25rem 0 0", maxWidth: 760 }}>
-            Follow legislation while it can still change. Status colors describe procedure only: active movement, an approaching action, completion, inactivity, or source freshness that cannot yet be confirmed.
+            Follow legislation while it can still change. Status colors describe procedure only: active movement, an approaching action, completion, or inactivity. Effective dates, source freshness, and submission availability are shown separately.
           </p>
 
           {/* Stats bar */}

@@ -8,6 +8,10 @@ import {
   type legiscan_master_bill,
 } from "../services/legiscan";
 import {
+  legiscan_session_is_current,
+  pick_preferred_legiscan_session,
+} from "../docket-session";
+import {
   project_docket_state_cache_to_civic_genome_serialized,
   type civic_genome_projection_result,
 } from "../civic-genome-projection";
@@ -435,16 +439,22 @@ const is_fresh = (fetched_at: string, ttl_ms = cache_ttl_ms): boolean => {
 
 const pick_active_session = async (state: string) => {
   const sessions = await get_session_list(state);
+  return pick_preferred_legiscan_session(sessions);
+};
 
-  const current = sessions
-    .filter(session => !session.prior)
-    .sort((a, b) => {
-      const a_year = a.year_end ?? a.year_start ?? 0;
-      const b_year = b.year_end ?? b.year_start ?? 0;
-      return b_year - a_year;
-    })[0];
-
-  return current ?? sessions[0];
+const read_session_currentness = async (
+  state: string,
+  session_id: number | null | undefined,
+): Promise<boolean | null> => {
+  if (!Number.isSafeInteger(session_id)) return null;
+  try {
+    const sessions = await get_session_list(state);
+    return legiscan_session_is_current(
+      sessions.find(session => session.session_id === session_id),
+    );
+  } catch {
+    return null;
+  }
 };
 
 const age_minutes = (fetched_at: string | null): number | null => {
@@ -768,6 +778,7 @@ docket_router.get("/state", async (req, res) => {
       if (!fresh && request_refresh_attempt_allowed(state)) {
         try {
           const refreshed = await get_or_start_state_refresh(state, "request_scoped");
+          const session_current = await read_session_currentness(state, refreshed.row.session_id);
           return res.json({
             ok: true,
             source: refreshed.source,
@@ -775,21 +786,26 @@ docket_router.get("/state", async (req, res) => {
             state,
             session_id: refreshed.row.session_id,
             session_title: refreshed.row.session_title,
+            session_current,
             bill_count: refreshed.row.bill_count,
             fetched_at: refreshed.row.fetched_at,
+            refresh_state: "fresh",
             civic_genome_projection: refreshed.civic_genome_projection,
             bills: await enrich_bills_with_radar(refreshed.row.bills),
           });
         } catch {
           const stale_reason = "cache_stale_request_refresh_failed";
+          const session_current = await read_session_currentness(state, cached.session_id);
           return res.json({
             ok: true,
             source: stale_reason,
             state,
             session_id: cached.session_id,
             session_title: cached.session_title,
+            session_current,
             bill_count: cached.bill_count,
             fetched_at: cached.fetched_at,
+            refresh_state: "stale",
             refresh_retry_after: retry_after_iso(state),
             civic_genome_projection: {
               ok: true,
@@ -804,6 +820,7 @@ docket_router.get("/state", async (req, res) => {
       const stale_reason = background_workers_allowed()
         ? "cache_stale_refreshing"
         : "cache_stale_worker_paused";
+      const session_current = await read_session_currentness(state, cached.session_id);
 
       return res.json({
         ok: true,
@@ -811,8 +828,10 @@ docket_router.get("/state", async (req, res) => {
         state,
         session_id: cached.session_id,
         session_title: cached.session_title,
+        session_current,
         bill_count: cached.bill_count,
         fetched_at: cached.fetched_at,
+        refresh_state: fresh ? "fresh" : stale_reason === "cache_stale_worker_paused" ? "refresh_paused" : "stale",
         civic_genome_projection: {
           ok: true,
           projected: false,
@@ -838,6 +857,7 @@ docket_router.get("/state", async (req, res) => {
     const refreshed = background_workers_allowed()
       ? await get_or_start_state_refresh(state, "background")
       : await get_or_start_state_refresh(state, "request_scoped");
+    const session_current = await read_session_currentness(state, refreshed.row.session_id);
     return res.json({
       ok: true,
       source: refreshed.source,
@@ -845,8 +865,10 @@ docket_router.get("/state", async (req, res) => {
       state,
       session_id: refreshed.row.session_id,
       session_title: refreshed.row.session_title,
+       session_current,
       bill_count: refreshed.row.bill_count,
       fetched_at: refreshed.row.fetched_at,
+      refresh_state: "fresh",
       civic_genome_projection: refreshed.civic_genome_projection,
       bills: await enrich_bills_with_radar(refreshed.row.bills),
     });
@@ -869,6 +891,7 @@ docket_router.get("/bill/:bill_id", async (req, res) => {
         source: "cache",
         bill_id,
         fetched_at: cached.fetched_at,
+        refresh_state: "fresh",
         bill: cached.bill,
       });
     }
@@ -879,6 +902,7 @@ docket_router.get("/bill/:bill_id", async (req, res) => {
         source: "cache_stale_worker_paused",
         bill_id,
         fetched_at: cached.fetched_at,
+        refresh_state: "refresh_paused",
         bill: cached.bill,
       });
     }
@@ -907,6 +931,7 @@ docket_router.get("/bill/:bill_id", async (req, res) => {
       source: cached ? "legiscan_refresh_stale_cache" : "legiscan_refresh_empty_cache",
       bill_id,
       fetched_at: row.fetched_at,
+      refresh_state: "fresh",
       bill,
     });
   } catch (error) {

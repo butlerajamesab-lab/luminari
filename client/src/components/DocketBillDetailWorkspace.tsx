@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
 import { trpc } from "@/lib/trpc";
-import { docket_terminal_action } from "@shared/docket-lifecycle";
+import { resolve_docket_lifecycle, type docket_source_freshness_state } from "@shared/docket-lifecycle";
 
 type bill_detail_payload = {
   source?: string;
   fetched_at?: string;
+  refresh_state?: docket_source_freshness_state;
   bill?: Record<string, unknown>;
 };
 
@@ -76,13 +77,32 @@ const readable_date = (value: unknown): string => {
     : "Not reported";
 };
 
-const status_label = (status: unknown, last_action: unknown): string => {
-  if (docket_terminal_action(status, last_action)) return "Completed";
-  if (Number(status) === 4) return "Passed · further action possible";
-  if (Number(status) === 3) return "Passed both chambers";
-  if (Number(status) === 2) return "Engrossed";
-  if (Number(status) === 1) return "Live · changeable";
-  return "Procedural status unknown";
+const procedural_status_labels = {
+  live: "Live · changeable",
+  action_approaching: "Action approaching",
+  completed: "Completed",
+  stalled: "Stalled / inactive",
+  unknown: "Procedural status unknown",
+} as const;
+
+const operational_status_label = (
+  state: ReturnType<typeof resolve_docket_lifecycle>["effective_state"],
+  effective_date: string | null,
+): string => {
+  if (state === "effective_immediately") return "Effective immediately";
+  if (state === "effective_now") return "Effective now";
+  if (state === "effective_future" && effective_date) return `Takes effect ${readable_date(effective_date)}`;
+  return "Effective date not supplied";
+};
+
+const source_freshness_label = (
+  state: ReturnType<typeof resolve_docket_lifecycle>["freshness_state"],
+  fetched_at?: string,
+): string => {
+  if (state === "fresh") return "Source fresh";
+  if (state === "refresh_paused") return "Refresh paused";
+  if (state === "stale") return fetched_at ? `Source stale · last source observation ${readable_date(fetched_at)}` : "Source stale";
+  return "Source freshness unknown";
 };
 
 function Field({ label, value, wide = false }: { label: string; value: unknown; wide?: boolean }) {
@@ -125,7 +145,13 @@ function Section({ title, items, empty_text, render_item, default_open = false }
   );
 }
 
-export function DocketBillDetailWorkspace({ payload }: { payload: bill_detail_payload }) {
+export function DocketBillDetailWorkspace({
+  payload,
+  session_current = null,
+}: {
+  payload: bill_detail_payload;
+  session_current?: boolean | null;
+}) {
   const [show_raw, set_show_raw] = useState(false);
   const bill = is_record(payload.bill) ? payload.bill : {};
   const raw_bill_id = first_value(bill, ["bill_id", "id"]);
@@ -145,6 +171,7 @@ export function DocketBillDetailWorkspace({ payload }: { payload: bill_detail_pa
     title: first_value(bill, ["title", "description", "bill_name"]),
     description: first_value(bill, ["description", "summary", "abstract"]),
     status: first_value(bill, ["status", "status_desc", "current_status"]),
+    status_text: first_value(bill, ["status_desc", "current_status"]),
     completed: first_value(bill, ["completed"]),
     status_date: first_value(bill, ["status_date", "last_action_date"]),
     session: first_value(bill, ["session", "session_name", "session_title", "session_id"]),
@@ -162,10 +189,35 @@ export function DocketBillDetailWorkspace({ payload }: { payload: bill_detail_pa
     subjects: as_array(first_value(bill, ["subjects", "topics"])),
     calendar: as_array(first_value(bill, ["calendar", "calendar_entries"])),
     progress: as_array(first_value(bill, ["progress"])),
+    effective_date: first_value(bill, ["effective_date", "date_effective", "effective", "effective_on"]),
   }), [bill]);
 
   const official_url = typeof normalized.url === "string" && /^https?:\/\//i.test(normalized.url) ? normalized.url : null;
-  const procedural_status = status_label(normalized.status, normalized.last_action);
+  const lifecycle = resolve_docket_lifecycle({
+    status: normalized.status,
+    status_text: normalized.status_text,
+    completed: normalized.completed,
+    last_action: normalized.last_action,
+    last_action_date: typeof normalized.last_action_date === "string" ? normalized.last_action_date : null,
+    status_date: typeof normalized.status_date === "string" ? normalized.status_date : null,
+    effective_date: normalized.effective_date,
+    session: { is_current: session_current },
+    freshness: {
+      state: payload.refresh_state,
+      source: payload.source,
+      last_observed_at: payload.fetched_at,
+    },
+  });
+  const procedural_status = procedural_status_labels[lifecycle.procedural_state];
+  const analysis_status = !valid_bill_id
+    ? "Analysis unavailable"
+    : verified_enrichment.isLoading
+      ? "Processing"
+      : verified_enrichment.isError
+        ? "Analysis unavailable"
+        : disposition_conflicts.length > 0
+          ? "Held — source disagreement"
+          : "No separate analysis state supplied";
 
   return (
     <div style={{ display: "grid", gap: "0.85rem" }}>
@@ -187,6 +239,9 @@ export function DocketBillDetailWorkspace({ payload }: { payload: bill_detail_pa
         <Field label="Bill number" value={normalized.number} />
         <Field label="Jurisdiction" value={normalized.state} />
         <Field label="Procedural status" value={procedural_status} />
+        <Field label="Operational status" value={operational_status_label(lifecycle.effective_state, lifecycle.effective_date)} />
+        <Field label="Source freshness" value={source_freshness_label(lifecycle.freshness_state, payload.fetched_at)} />
+        <Field label="Analysis / submission state" value={analysis_status} />
         <Field label="Status updated" value={readable_date(typeof normalized.status_date === "string" ? normalized.status_date : null)} />
         <Field label="Last action" value={normalized.last_action} wide />
         <Field label="Last action date" value={readable_date(typeof normalized.last_action_date === "string" ? normalized.last_action_date : null)} />

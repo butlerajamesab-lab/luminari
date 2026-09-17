@@ -132,7 +132,7 @@ describe("official source response integrity", () => {
     expect(source.source_metadata.docket_session_key).toBeNull();
   });
 
-  it.each(["live", "action_approaching", "completed", "stalled", "freshness_unknown"])(
+  it.each(["live", "action_approaching", "completed", "stalled", "unknown"])(
     "does not use observed procedural state %s to exclude a registered text",
     async (procedural_state) => {
       fetch_mock.mockImplementation(async () => source_response(legal_html, "text/html"));
