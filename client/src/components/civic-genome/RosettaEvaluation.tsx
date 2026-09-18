@@ -103,7 +103,7 @@ export function RosettaEvaluation({ genome_bill_id, current_version, published_v
       <h2 style={{ margin: 0, fontSize: "1.2rem" }}>{selected_source?.document_family === "amendment" ? "Rosetta amendment status" : "Rosetta decomposition"} {current_result && <span style={{ fontFamily: mono, fontSize: ".85rem", color: muted }}>· {current_result.engine_version}</span>}</h2>
       {status_label && <strong style={{ color: status_color, fontFamily: mono }}>{status_label}</strong>}
     </div>
-    <p style={{ color: muted, fontSize: ".83rem", lineHeight: 1.5 }}>Read each legislative text version and inspect its own current-engine validation. Source preservation, current admission, processing, and completion are separate states.</p>
+    <p style={{ color: muted, fontSize: ".83rem", lineHeight: 1.5 }}>Inspect each exact legislative source. Full-text versions are decomposable snapshots; amendment artifacts are deltas that require an exact base and are not decomposed by themselves. Source preservation, current admission, processing, and completion are separate states.</p>
     <div style={{ display: "flex", gap: ".7rem", flexWrap: "wrap", alignItems: "center", marginBottom: ".8rem" }}>
       {versions.length > 0 && <label style={{ fontSize: ".8rem" }}>Source version {" "}<select aria-label="Evaluation source version" value={selected_id ?? ""} onChange={event => { set_selected_version_id(event.target.value); set_copied(false); }} style={{ padding: ".4rem", background: "#122e24", color: "#edf7f2", border, borderRadius: 6 }}>
         {versions.map(item => <option key={item.bill_version_id} value={item.bill_version_id}>{version_label(item)}{item.bill_version_id === current_version?.bill_version_id ? " · latest full text" : ""}</option>)}
