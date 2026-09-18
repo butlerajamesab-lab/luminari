@@ -32,7 +32,7 @@ describe("current legislative amendment/source-role contract", () => {
   it("resolves bases from explicit amendment language and proved chronology, not URL stems", () => {
     expect(resolver).toContain("parse_amendment_target_reference");
     expect(resolver).toContain("louisiana_official_document_sequence");
-    expect(resolver).toContain("latest matching text");
+    expect(resolver).toContain(".sort((a, b) => b.sequence - a.sequence)");
     expect(resolver).not.toContain("source_stem");
     expect(migration).toContain("legacy source-stem amendment base inference was not found");
     expect(migration).toContain("base.source_stem = document.source_stem");
