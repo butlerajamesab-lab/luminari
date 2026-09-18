@@ -166,6 +166,7 @@ async function getFreshSessionToken(): Promise<string | null> {
 const nativeFetch = globalThis.fetch.bind(globalThis);
 const AUTHENTICATED_REST_PREFIXES = [
   "/api/db-diagnostic",
+  "/api/corpus-footprint",
   "/api/system/",
   "/api/conveyor/",
   "/api/ingestion-control/",

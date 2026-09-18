@@ -3,6 +3,7 @@ import { getAuthenticatedRequestHeaders } from "@/lib/session-token";
 const PROTECTED_REST_PREFIXES = [
   "/api/executor",
   "/api/system",
+  "/api/corpus-footprint",
   "/api/atlas",
   "/api/ingestion-control",
   "/api/upload",
