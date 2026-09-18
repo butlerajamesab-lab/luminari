@@ -117,6 +117,34 @@ const registered_client_route_patterns = new Set<string>(
   REGISTERED_CLIENT_ROUTE_PATTERNS,
 );
 
+function normalizeClientRoutePath(path: string): string {
+  const pathname = path.split(/[?#]/, 1)[0] || "/";
+  if (!pathname.startsWith("/")) return pathname;
+  return pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
+}
+
+function matchesRegisteredPattern(pathname: string, pattern: string): boolean {
+  const path_segments = pathname.split("/").filter(Boolean);
+  const pattern_segments = pattern.split("/").filter(Boolean);
+
+  if (path_segments.length !== pattern_segments.length) return false;
+
+  return pattern_segments.every((segment, index) => {
+    if (segment.startsWith(":")) return path_segments[index]?.length > 0;
+    return segment === path_segments[index];
+  });
+}
+
+/**
+ * Returns true for both registered route patterns and concrete paths that
+ * satisfy a registered parameterized route.
+ */
 export function isRegisteredClientRoute(path: string): boolean {
-  return registered_client_route_patterns.has(path);
+  const pathname = normalizeClientRoutePath(path);
+
+  if (registered_client_route_patterns.has(pathname)) return true;
+
+  return REGISTERED_CLIENT_ROUTE_PATTERNS.some((pattern) =>
+    matchesRegisteredPattern(pathname, pattern),
+  );
 }
