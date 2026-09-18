@@ -1192,7 +1192,6 @@ export function start_legislative_version_queue_worker(): void {
     }, current_result_observation_interval_ms);
     current_result_observation_timer.unref?.();
   }
-}
 
   if (amendment_source_completion_enabled) {
     schedule_amendment_source_completion();
