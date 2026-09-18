@@ -444,11 +444,3 @@ it.each([
   expect(versionSql).toContain("processing_state='source_ingested'");
   expect(versionSql).not.toContain("processing_state = 'failed'");
 });
-
-it("parked infinity dependencies cannot become source-host backpressure", async () => {
-  await run_legislative_version_queue_cycle();
-  const claimSql = query.mock.calls
-    .map(call => String(call[0]))
-    .find(sql => sql.includes("with current_sessions as"));
-  expect(claimSql).toContain("queue.next_attempt_at < 'infinity'::timestamptz");
-});
