@@ -441,8 +441,8 @@ async function claim_jobs(
               ) as last_attempt_at,
               max(queue.next_attempt_at) filter (
                 where queue.queue_state = 'degraded'
-                  and queue.last_failure_class is distinct from 'awaiting_current_result'
                   and queue.next_attempt_at > now()
+                  and queue.next_attempt_at < 'infinity'::timestamptz
               ) as blocked_until
          from public.civic_genome_legislative_version_queue queue
          join public.civic_genome_bill_version version
@@ -869,6 +869,72 @@ async function mark_job_failed(input: {
   });
 }
 
+type amendment_dependency_hold = {
+  failure_class:
+    | "awaiting_amendment_attachment"
+    | "awaiting_amendment_base"
+    | "awaiting_delta_executor";
+  error_code: string;
+};
+
+function amendment_dependency_hold_for(error: unknown): amendment_dependency_hold | null {
+  const error_code = safe_error_code(error);
+  if (error_code.startsWith("legislative_amendment_attachment_unresolved:")
+    || error_code === "legislative_amendment_attachment_state_unresolved") {
+    return { failure_class: "awaiting_amendment_attachment", error_code };
+  }
+  if (error_code === "legislative_amendment_base_content_unavailable") {
+    return { failure_class: "awaiting_amendment_base", error_code };
+  }
+  if (error_code === "legislative_amendment_delta_execution_contract_unavailable") {
+    return { failure_class: "awaiting_delta_executor", error_code };
+  }
+  return null;
+}
+
+async function park_amendment_dependency(
+  job: legislative_version_queue_job,
+  hold: amendment_dependency_hold,
+): Promise<void> {
+  await query_with_diagnostics(
+    `update public.civic_genome_legislative_version_queue
+        set queue_state='degraded',
+            next_attempt_at='infinity'::timestamptz,
+            locked_at=null,
+            locked_by=null,
+            last_failure_class=$2::text,
+            last_error_code=$3::text,
+            updated_at=now()
+      where queue_id=$1::uuid
+        and locked_by=$4`,
+    [job.queue_id, hold.failure_class, hold.error_code, queue_worker_id],
+    {
+      label: "legislative_version_amendment_dependency_hold",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 5_000,
+    },
+  );
+  await query_with_diagnostics(
+    `update public.civic_genome_bill_version
+        set processing_state='source_ingested',
+            failure_code=$2::text,
+            receipt_json=coalesce(receipt_json,'{}'::jsonb)
+              || jsonb_build_object(
+                'amendment_dependency_state',$3::text,
+                'amendment_dependency_code',$2::text,
+                'amendment_dependency_observed_at',now()
+              ),
+            updated_at=now()
+      where bill_version_id=$1::uuid`,
+    [job.bill_version_id, hold.error_code, hold.failure_class],
+    {
+      label: "legislative_version_record_amendment_dependency",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 5_000,
+    },
+  );
+}
+
 export async function process_legislative_version_job(
   job: legislative_version_queue_job,
 ): Promise<void> {
@@ -876,6 +942,13 @@ export async function process_legislative_version_job(
   try {
     result = await process_legislative_version(job.bill_version_id);
   } catch (error) {
+    const amendment_hold = amendment_dependency_hold_for(error);
+    if (amendment_hold) {
+      // Attachment/base/delta-executor dependencies are parked evidence states,
+      // not decomposition failures and not retries. They consume no queue attempt.
+      await park_amendment_dependency(job, amendment_hold);
+      return;
+    }
     const current_status = /^rosetta_public_current_docket_result_(awaiting_analysis|requires_review|unavailable|awaiting_publication)$/.exec(safe_error_code(error));
     if (current_status) {
       // Waiting on Rosetta is not a failed decomposition and consumes no retry.
