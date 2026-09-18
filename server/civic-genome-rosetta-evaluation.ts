@@ -103,6 +103,7 @@ export async function get_civic_genome_rosetta_evaluation(input: {
        from public.civic_genome_bill_version
       where genome_bill_id = $1::uuid
         and ($2::uuid is null or bill_version_id = $2::uuid)
+        and ($2::uuid is not null or document_family = 'text')
       order by stage_rank desc, provider_sequence desc, updated_at desc, bill_version_id
       limit 1`,
     [input.genome_bill_id, input.bill_version_id ?? null],
