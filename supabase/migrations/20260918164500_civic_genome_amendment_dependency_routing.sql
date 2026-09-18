@@ -108,23 +108,7 @@ revoke all on function public.wake_civic_genome_amendments_for_base_v1()
 grant execute on function public.wake_civic_genome_amendments_for_base_v1()
   to service_role;
 
--- Reclassify only the legacy current-result holds for amendment artifacts.
--- This does not reset attempt_count and does not touch permanent failures.
--- The worker will preserve/reuse exact source content, resolve the base, append
--- an attachment receipt, then park in the correct dependency lane.
-update public.civic_genome_legislative_version_queue queue
-   set queue_state='eligible',
-       next_attempt_at=now(),
-       locked_at=null,
-       locked_by=null,
-       last_failure_class=null,
-       last_error_code=null,
-       updated_at=now()
-  from public.civic_genome_bill_version version
- where version.bill_version_id=queue.bill_version_id
-   and version.document_family='amendment'
-   and queue.queue_state='degraded'
-   and queue.last_failure_class='awaiting_current_result'
-   and queue.next_attempt_at='infinity'::timestamptz
-   and queue.locked_at is null
-   and queue.locked_by is null;
+-- Historical amendment activation is intentionally not performed in this
+-- schema migration. The new pre-decomposition resolver must be deployed first.
+-- After runtime verification, existing parked amendment rows can be reopened as
+-- one class under the new worker. This avoids an old-code eligibility window.
