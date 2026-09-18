@@ -161,6 +161,7 @@ export async function get_civic_genome_bill_detail(
               processing_state
          from public.civic_genome_bill_version
         where genome_bill_id = $1
+          and document_family = 'text'
           and processing_state in ('verified', 'verified_with_findings')
           and rosetta_source_document_id is not null
           and assembly_run_id is not null
