@@ -9,6 +9,7 @@ import {
 } from "./civic-genome-legislative-version-pipeline";
 import { create_rosetta_supabase_headers } from "./rosetta-supabase-auth";
 import { reconcile_awaiting_current_results } from "./civic-genome-current-result-reconciliation";
+import { reconcile_preserved_amendment_sources } from "./civic-genome-amendment-source-completion";
 import { background_feature_enabled } from "./runtime-role";
 import { LEGISLATIVE_NON_LEGISLATIVE_DOCUMENT_ERROR_CODE } from "./legislative-document-role";
 import { is_official_source_rejection_error } from "./official-source-response";
@@ -29,6 +30,7 @@ const MAX_RECONCILE_INTERVAL_MS = 15 * 60_000;
 const DEFAULT_CURRENT_RESULT_OBSERVATION_INTERVAL_MS = 5_000;
 const MIN_CURRENT_RESULT_OBSERVATION_INTERVAL_MS = 1_000;
 const MAX_CURRENT_RESULT_OBSERVATION_INTERVAL_MS = 60_000;
+const AMENDMENT_SOURCE_COMPLETION_INTERVAL_MS = 1_000;
 const ROSETTA_TERMINAL_CLASSIFIER_LIMIT = 250;
 const ROSETTA_BACKLOG_SELECTOR_LIMIT = 100;
 const ROSETTA_CONTROL_REQUEST_TIMEOUT_MS = 10_000;
@@ -74,6 +76,8 @@ let queue_timer: NodeJS.Timeout | null = null;
 let active_queue_cycle: Promise<void> | null = null;
 let current_result_observation_timer: NodeJS.Timeout | null = null;
 let active_current_result_observation: Promise<void> | null = null;
+let amendment_source_completion_timer: NodeJS.Timeout | null = null;
+let active_amendment_source_completion: Promise<void> | null = null;
 let queue_cycle_running = false;
 let queue_stopped = false;
 let queue_shutdown_requested = false;
@@ -545,6 +549,13 @@ async function claim_jobs(
             or queue.locked_at < now() - make_interval(mins => $2::integer)
           )
           and version.processing_state not in ('verified', 'verified_with_findings')
+          and not (
+            version.document_family='amendment'
+            and version.processing_state='source_ingested'
+            and version.receipt_json->>'rosetta_source_content_id'
+                  ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+            and version.receipt_json->>'source_content_hash' ~ '^[0-9A-Fa-f]{64}$'
+          )
           and (
             $8::text is null
             or version.receipt_json->>'source_fallback_recovery_contract' = $8
@@ -1102,6 +1113,33 @@ function schedule_current_result_observation(): void {
 }
 
 
+async function run_amendment_source_completion_cycle(): Promise<void> {
+  if (queue_stopped) return;
+  try {
+    const summary = await reconcile_preserved_amendment_sources();
+    if (summary.checked > 0 || summary.transient > 0) {
+      console.log("[AmendmentSourceCompletion] cycle_complete", summary);
+    }
+  } catch (error) {
+    console.error("[AmendmentSourceCompletion] cycle_failed", {
+      error_class: error instanceof Error ? error.name : "unknown",
+      error_code: safe_error_code(error),
+    });
+  }
+}
+
+function schedule_amendment_source_completion(): void {
+  if (active_amendment_source_completion || queue_stopped) return;
+  const cycle = run_amendment_source_completion_cycle();
+  active_amendment_source_completion = cycle;
+  void cycle.finally(() => {
+    if (active_amendment_source_completion === cycle) {
+      active_amendment_source_completion = null;
+    }
+  });
+}
+
+
 export function start_legislative_version_queue_worker(): void {
   if (queue_timer || !queue_enabled()) return;
   let recovery_contract_scope: string | null;
@@ -1127,6 +1165,7 @@ export function start_legislative_version_queue_worker(): void {
     !recovery_contract_scope;
   const current_result_observation_interval_ms =
     bounded_current_result_observation_interval();
+  const amendment_source_completion_enabled = !recovery_contract_scope;
   console.log("[LegislativeVersionQueue] started", {
     worker_id: queue_worker_id,
     interval_ms,
@@ -1135,6 +1174,8 @@ export function start_legislative_version_queue_worker(): void {
     recovery_contract_scope,
     current_result_observation_enabled,
     current_result_observation_interval_ms,
+    amendment_source_completion_enabled,
+    amendment_source_completion_interval_ms: AMENDMENT_SOURCE_COMPLETION_INTERVAL_MS,
     lease_minutes: QUEUE_LEASE_MINUTES,
     priority_scope: "oldest_unbound_docket_then_current_session_latest_version_host_fairness",
   });
@@ -1151,6 +1192,14 @@ export function start_legislative_version_queue_worker(): void {
     }, current_result_observation_interval_ms);
     current_result_observation_timer.unref?.();
   }
+
+  if (amendment_source_completion_enabled) {
+    schedule_amendment_source_completion();
+    amendment_source_completion_timer = setInterval(() => {
+      schedule_amendment_source_completion();
+    }, AMENDMENT_SOURCE_COMPLETION_INTERVAL_MS);
+    amendment_source_completion_timer.unref?.();
+  }
 }
 
 export async function stop_legislative_version_queue_worker(): Promise<void> {
@@ -1162,9 +1211,14 @@ export async function stop_legislative_version_queue_worker(): Promise<void> {
     clearInterval(current_result_observation_timer);
   }
   current_result_observation_timer = null;
+  if (amendment_source_completion_timer) {
+    clearInterval(amendment_source_completion_timer);
+  }
+  amendment_source_completion_timer = null;
   wake_shared_provider_release_retries();
   await Promise.all([
     active_queue_cycle,
     active_current_result_observation,
+    active_amendment_source_completion,
   ]);
 }

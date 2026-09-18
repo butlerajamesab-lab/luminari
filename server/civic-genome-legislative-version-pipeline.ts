@@ -74,6 +74,7 @@ type legislative_version_row = {
   chamber: string | null;
   predecessor_bill_version_id: string | null;
   base_bill_version_id: string | null;
+  receipt_json: Record<string, unknown>;
   provider_document_id: string;
   provider_document_type: string;
   source_url: string;
@@ -497,6 +498,7 @@ async function load_version(bill_version_id: string): Promise<legislative_versio
             version.chamber,
             version.predecessor_bill_version_id::text,
             version.base_bill_version_id::text,
+            version.receipt_json,
             document.provider_document_id::text,
             document.provider_document_type,
             document.source_url,
@@ -626,9 +628,14 @@ async function persist_amendment_base_identity(
   }
 }
 
+type amendment_source_basis = Pick<
+  extracted_legislative_source,
+  "source_text" | "source_content_hash" | "source_url"
+>;
+
 async function resolve_current_amendment_attachment(
   version: legislative_version_row,
-  source: extracted_legislative_source,
+  source: amendment_source_basis,
 ): Promise<amendment_attachment_context | null> {
   if (version.document_family !== "amendment") return null;
   const candidates = await load_amendment_base_candidates(version);
@@ -1025,8 +1032,8 @@ async function register_rosetta_source_content(
 }
 
 async function register_rosetta_amendment_attachment(
-  source: extracted_legislative_source,
-  content: rosetta_source_content_receipt,
+  source_content_id: string,
+  source_content_hash: string,
   context: amendment_attachment_context,
 ): Promise<rosetta_amendment_attachment_receipt> {
   if (context.resolution.status !== "resolved") {
@@ -1053,7 +1060,7 @@ async function register_rosetta_amendment_attachment(
         signal: controller.signal,
         body: JSON.stringify({
           p_source_document_key: context.resolution.evidence.amendment_source_document_key,
-          p_source_content_hash: source.source_content_hash,
+          p_source_content_hash: source_content_hash,
           p_base_source_document_key: context.resolution.base.source_document_key,
           p_base_source_content_hash: context.resolution.base.source_content_hash,
           p_relationship_basis: context.resolution.relationship_basis,
@@ -1079,9 +1086,9 @@ async function register_rosetta_amendment_attachment(
     if (
       !receipt
       || receipt.contract !== "rosetta-current-amendment-attachment-receipt-v1"
-      || receipt.source_content_id !== content.source_content_id
+      || receipt.source_content_id !== source_content_id
       || receipt.source_document_key !== context.resolution.evidence.amendment_source_document_key
-      || receipt.source_content_hash !== source.source_content_hash
+      || receipt.source_content_hash !== source_content_hash
       || receipt.base_source_document_key !== context.resolution.base.source_document_key
       || receipt.base_source_content_hash !== context.resolution.base.source_content_hash
       || receipt.relationship_basis !== context.resolution.relationship_basis
@@ -1167,6 +1174,129 @@ async function record_amendment_attachment(
       receipt.recorded_at,
     ],
   );
+}
+
+
+type preserved_amendment_source = amendment_source_basis & {
+  source_content_id: string;
+};
+
+async function load_preserved_amendment_source(
+  version: legislative_version_row,
+): Promise<preserved_amendment_source> {
+  if (version.document_family !== "amendment") {
+    throw new Error("legislative_amendment_source_completion_requires_amendment");
+  }
+  const receipt = as_record(version.receipt_json);
+  const source_content_id = String(receipt?.rosetta_source_content_id ?? "").trim();
+  const source_content_hash = String(receipt?.source_content_hash ?? "").trim().toLowerCase();
+  if (
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      source_content_id,
+    )
+    || !/^[0-9a-f]{64}$/.test(source_content_hash)
+  ) {
+    throw new Error("legislative_amendment_preserved_source_identity_missing");
+  }
+
+  const query = new URLSearchParams({
+    select: "source_content_id,source_content_hash,source_text,source_url,source_metadata",
+    source_content_id: `eq.${source_content_id}`,
+    source_content_hash: `eq.${source_content_hash}`,
+    limit: "2",
+  });
+  const rows = await rosetta_request(
+    `source_document_content?${query.toString()}`,
+    { method: "GET" },
+  );
+  if (rows.length !== 1) {
+    throw new Error("legislative_amendment_preserved_source_absent_or_ambiguous");
+  }
+  const row = rows[0];
+  const metadata = as_record(row.source_metadata);
+  if (
+    row.source_content_id !== source_content_id
+    || row.source_content_hash !== source_content_hash
+    || metadata?.docket_source_document_key !== version.source_document_key
+    || String(metadata?.docket_document_family ?? "").trim().toLowerCase() !== "amendment"
+  ) {
+    throw new Error("legislative_amendment_preserved_source_identity_mismatch");
+  }
+  const source_text = typeof row.source_text === "string" ? row.source_text : "";
+  const source_url = typeof row.source_url === "string" ? row.source_url.trim() : "";
+  if (!source_text.trim() || !source_url.startsWith("https://")) {
+    throw new Error("legislative_amendment_preserved_source_incomplete");
+  }
+  return {
+    source_content_id,
+    source_content_hash,
+    source_text,
+    source_url,
+  };
+}
+
+export type amendment_source_completion_result = {
+  failure_class:
+    | "awaiting_amendment_attachment"
+    | "awaiting_amendment_base"
+    | "awaiting_delta_executor";
+  error_code: string;
+};
+
+/**
+ * Complete the source basis for an already-preserved amendment.
+ *
+ * This function does not fetch provider bytes, register source content, invoke
+ * Rosetta decomposition, read a one-source current result, replay, or retry an
+ * execution edge. It only resolves exact amendment -> base identity, appends
+ * the existing immutable attachment receipt, and reports the dependency lane
+ * in which the amendment must park before delta execution.
+ */
+export async function reconcile_preserved_amendment_source_basis(
+  bill_version_id: string,
+): Promise<amendment_source_completion_result> {
+  const version = await load_version(bill_version_id);
+  if (version.document_family !== "amendment") {
+    throw new Error("legislative_amendment_source_completion_requires_amendment");
+  }
+  const source = await load_preserved_amendment_source(version);
+  const attachment = await resolve_current_amendment_attachment(version, source);
+  if (!attachment || attachment.resolution.status === "unresolved") {
+    const reason = attachment?.resolution.status === "unresolved"
+      ? attachment.resolution.reason
+      : "attachment_resolution_missing";
+    return {
+      failure_class: "awaiting_amendment_attachment",
+      error_code: `legislative_amendment_attachment_unresolved:${reason}`,
+    };
+  }
+  if (attachment.resolution.status === "awaiting_base_content") {
+    return {
+      failure_class: "awaiting_amendment_base",
+      error_code: "legislative_amendment_base_content_unavailable",
+    };
+  }
+  if (!attachment.attachment_state) {
+    return {
+      failure_class: "awaiting_amendment_attachment",
+      error_code: "legislative_amendment_attachment_state_unresolved",
+    };
+  }
+
+  const receipt = await register_rosetta_amendment_attachment(
+    source.source_content_id,
+    source.source_content_hash,
+    attachment,
+  );
+  await record_amendment_attachment(
+    bill_version_id,
+    attachment,
+    receipt,
+  );
+  return {
+    failure_class: "awaiting_delta_executor",
+    error_code: "legislative_amendment_delta_execution_contract_unavailable",
+  };
 }
 
 async function record_source_ingested(
@@ -1313,8 +1443,8 @@ export async function process_legislative_version(
       throw new Error("legislative_amendment_attachment_state_unresolved");
     }
     const attachment_receipt = await register_rosetta_amendment_attachment(
-      source,
-      content,
+      content.source_content_id,
+      source.source_content_hash,
       attachment,
     );
     await record_amendment_attachment(
