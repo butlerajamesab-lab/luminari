@@ -530,7 +530,7 @@ export async function render_civic_genome_human_report(
     source_rows.map((row) => [row.source_document_id, row]),
   );
   const final_source = final_source_document_id ? source_by_document.get(final_source_document_id) : undefined;
-  if (final_source_document_id && !final_source?.source_text) {
+  if (published_version?.source_document_id && !final_source?.source_text) {
     throw new Error("civic_genome_human_report_verified_source_text_unavailable");
   }
   const final_source_uses_provider_copy = final_source ? is_provider_copy_fallback(final_source) : false;
