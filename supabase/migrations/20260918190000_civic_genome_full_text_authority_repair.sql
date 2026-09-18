@@ -65,16 +65,21 @@ for each row execute function public.enforce_civic_genome_full_text_rosetta_auth
 comment on function public.enforce_civic_genome_full_text_rosetta_authority_v1() is
   'Fail-closed bill-level Rosetta ownership guard. A non-null bill Rosetta pointer must identify a source document owned by a full-text Civic Genome version. Amendment delta assemblies remain version-scoped provenance.';
 
--- Preserve historical amendment outputs, but explicitly remove bill-level authority.
-update public.civic_genome_bill_version
-   set receipt_json = receipt_json || jsonb_build_object(
-         'bill_level_authority', 'non_authoritative_amendment',
-         'bill_level_authority_reason', 'amendment_delta_not_complete_state'
-       ),
-       updated_at = now()
- where document_family = 'amendment'
-   and rosetta_extraction_run_id is not null
-   and coalesce(receipt_json->>'bill_level_authority','') <> 'non_authoritative_amendment';
+-- Amendment outputs remain immutable, version-scoped provenance. Their
+-- non-authoritative status is derived from document_family='amendment' and
+-- enforced by the bill-level trigger/selection contract; do not rewrite every
+-- historical amendment receipt merely to restate that invariant.
+--
+-- The two pre-existing bill triggers below rebuild lifecycle and Docket spine
+-- projections whenever structural_dna_json changes. This repair changes only
+-- Rosetta authority metadata, so invoking those unrelated reconstructions for
+-- every repaired bill would be both semantically unnecessary and operationally
+-- expensive. ALTER TABLE holds the table write lock for this transaction, so no
+-- concurrent bill mutation can bypass those triggers while they are disabled.
+alter table public.civic_genome_bill
+  disable trigger civic_genome_bill_lifecycle_event_time_v3;
+alter table public.civic_genome_bill
+  disable trigger civic_genome_legislative_version_spine_registration;
 
 -- Rebind only bills whose current bill-level pointer is amendment-owned and for
 -- which an already-complete, exact-bound full-text assembly exists.
@@ -224,6 +229,11 @@ update public.civic_genome_bill bill
  where bill.genome_bill_id = unresolved.genome_bill_id
    and coalesce(bill.structural_dna_json->>'docket_observation_hash','') ~ '^[0-9a-f]{64}$';
 
+alter table public.civic_genome_bill
+  enable trigger civic_genome_bill_lifecycle_event_time_v3;
+alter table public.civic_genome_bill
+  enable trigger civic_genome_legislative_version_spine_registration;
+
 -- Radar structural drift must compare complete bill-text states. Amendment rows
 -- remain available as attachment/provenance evidence but cannot become "latest law".
 create or replace view public.docket_bill_drift_delta
@@ -290,6 +300,7 @@ do $verify$
 declare
   v_amendment_owned integer;
   v_missing_authority_hash integer;
+  v_disabled_bill_triggers integer;
 begin
   select count(*)::integer
     into v_amendment_owned
@@ -315,6 +326,23 @@ begin
 
   if v_missing_authority_hash <> 0 then
     raise exception 'civic_genome_unavailable_bill_hash_invalid:%', v_missing_authority_hash;
+  end if;
+
+  select count(*)::integer
+    into v_disabled_bill_triggers
+    from pg_catalog.pg_trigger trigger_row
+    join pg_catalog.pg_class relation on relation.oid=trigger_row.tgrelid
+    join pg_catalog.pg_namespace namespace on namespace.oid=relation.relnamespace
+   where namespace.nspname='public'
+     and relation.relname='civic_genome_bill'
+     and trigger_row.tgname in (
+       'civic_genome_bill_lifecycle_event_time_v3',
+       'civic_genome_legislative_version_spine_registration'
+     )
+     and trigger_row.tgenabled <> 'O';
+
+  if v_disabled_bill_triggers <> 0 then
+    raise exception 'civic_genome_bill_projection_trigger_not_restored:%', v_disabled_bill_triggers;
   end if;
 end;
 $verify$;
