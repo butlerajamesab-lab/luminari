@@ -990,7 +990,7 @@ async function register_rosetta_source_content(
       || typeof receipt.source_content_id !== "string"
       || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
         .test(receipt.source_content_id)
-      || receipt.source_content_hash !== source_content_hash
+      || receipt.source_content_hash !== source.source_content_hash
       || receipt.source_byte_hash !== source.source_byte_hash
       || typeof receipt.source_identity_hash !== "string"
       || !/^[0-9a-f]{64}$/.test(receipt.source_identity_hash)
