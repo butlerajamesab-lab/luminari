@@ -94,11 +94,43 @@ describe("workbench router case identity", () => {
 
   it("uses the shared ownership check (owner + collaborator) instead of a local owner_ref lookup", () => {
     expect(workbench).not.toContain("owner_ref");
-    expect(workbench).toMatch(/import \{ db, verifyCaseOwnership \} from "\.\.\/db"/);
+    expect(workbench).toMatch(/import \{ getPool, verifyCaseOwnership \} from "\.\.\/db"/);
   });
 
   it("does not cast case ids to any to silence the schema mismatch", () => {
     expect(workbench).not.toContain("input.caseId as any");
     expect(workbench).not.toContain("const caseId = input.caseId as any");
+  });
+
+  it("reads live physical columns directly instead of the drifted Drizzle declarations", () => {
+    // The Drizzle tables it used to import declare camelCase physical names
+    // (caseId, flagType, evidenceId, ...) and uuid case_id on integer tables.
+    expect(workbench).not.toMatch(/from "\.\.\/\.\.\/drizzle\/schema"/);
+    expect(workbench).not.toMatch(/from "drizzle-orm"/);
+    expect(workbench).toContain("getPool().query(");
+  });
+
+  it("never selects columns that do not exist in the live schema", () => {
+    // Flagged by review on PR #677: claims.pipeline_run_id, claims.created_at,
+    // findings.finding_text and findings.confidence_label are not live columns.
+    const selects = workbench.match(/SELECT[\s\S]*?FROM public\.\w+/g) ?? [];
+    expect(selects.length).toBeGreaterThan(10);
+    for (const select of selects) {
+      expect(select).not.toMatch(/\bpipeline_run_id\b/);
+      expect(select).not.toMatch(/\bfinding_text\b/);
+      expect(select).not.toMatch(/\bconfidence_label\b/);
+    }
+    const claimsSelects = selects.filter(s => /FROM public\.claims\b/.test(s) && !/COUNT\(/.test(s));
+    expect(claimsSelects.length).toBeGreaterThan(0);
+    for (const select of claimsSelects) expect(select).not.toMatch(/\bcreated_at\b/);
+  });
+
+  it("compares the integer checked flag numerically, and only ::text-compares the uuid-keyed satellites", () => {
+    expect(workbench).toContain("checked <> 0");
+    expect(workbench).not.toContain("checked = true");
+    expect(workbench).toMatch(/FROM public\.events\s+WHERE case_id::text = \$1::text/);
+    expect(workbench).toMatch(/FROM public\.evidence_items ei\s+WHERE ei\.case_id::text = \$1::text/);
+    expect(workbench).toMatch(/FROM public\.claims\s+WHERE case_id = \$1/);
+    expect(workbench).toMatch(/FROM public\.findings\s+WHERE case_id = \$1/);
   });
 });
