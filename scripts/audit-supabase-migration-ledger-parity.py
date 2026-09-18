@@ -298,6 +298,11 @@ APPROVED_REPOSITORY_ONLY = {
         "20260918152000_civic_genome_current_result_arrival_reconciliation.sql",
         "3d919b94f17e5509d4610610c9518d04a1616f7e",
     ),
+    # Forward amendment-dependency routing migration pending production apply.
+    "20260918164500": (
+        "20260918164500_civic_genome_amendment_dependency_routing.sql",
+        "24f60f2c1863adc00094ef43c63c6bbec89a0f53",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {

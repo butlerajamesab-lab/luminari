@@ -82,6 +82,7 @@ export type family_assignment_status = {
 export type civic_genome_version_snapshot = {
   bill_version_id: string;
   source_document_key: string;
+  document_family: "text" | "amendment";
   version_type: string;
   source_document_id: number | null;
   extraction_run_id: string | null;
@@ -131,19 +132,21 @@ export async function get_civic_genome_bill_detail(
   const version_selection_result = await pool.query<{
     current_bill_version_id: string | null;
     current_source_document_key: string | null;
+    current_document_family: "text" | "amendment" | null;
     current_version_type: string | null;
     current_source_document_id: number | null;
     current_extraction_run_id: string | null;
     current_processing_state: string | null;
     published_bill_version_id: string | null;
     published_source_document_key: string | null;
+    published_document_family: "text" | "amendment" | null;
     published_version_type: string | null;
     published_source_document_id: number | null;
     published_extraction_run_id: string | null;
     published_processing_state: string | null;
   }>(
     `with current_version as (
-       select version.bill_version_id, version.source_document_key, version.version_type,
+       select version.bill_version_id, version.source_document_key, version.document_family, version.version_type,
               version.rosetta_source_document_id, version.rosetta_extraction_run_id,
               version.processing_state
          from public.civic_genome_bill_version version
@@ -153,7 +156,7 @@ export async function get_civic_genome_bill_detail(
                  version.source_document_key desc
         limit 1
      ), published_version as (
-       select bill_version_id, source_document_key, version_type,
+       select bill_version_id, source_document_key, document_family, version_type,
               rosetta_source_document_id, rosetta_extraction_run_id,
               processing_state
          from public.civic_genome_bill_version
@@ -166,12 +169,14 @@ export async function get_civic_genome_bill_detail(
      )
      select current.bill_version_id as current_bill_version_id,
             current.source_document_key as current_source_document_key,
+            current.document_family as current_document_family,
             current.version_type as current_version_type,
             current.rosetta_source_document_id::integer as current_source_document_id,
             current.rosetta_extraction_run_id as current_extraction_run_id,
             current.processing_state as current_processing_state,
             published.bill_version_id as published_bill_version_id,
             published.source_document_key as published_source_document_key,
+            published.document_family as published_document_family,
             published.version_type as published_version_type,
             published.rosetta_source_document_id::integer as published_source_document_id,
             published.rosetta_extraction_run_id as published_extraction_run_id,
@@ -181,7 +186,7 @@ export async function get_civic_genome_bill_detail(
     [genome_bill_id],
   );
   const source_versions_result = await pool.query<civic_genome_source_version>(
-    `select version.bill_version_id, version.source_document_key, version.version_type,
+    `select version.bill_version_id, version.source_document_key, version.document_family, version.version_type,
             version.rosetta_source_document_id::integer as source_document_id,
             version.rosetta_extraction_run_id as extraction_run_id, version.processing_state,
             version.provider_sequence, document.provider_date::text, document.source_url,
@@ -199,6 +204,7 @@ export async function get_civic_genome_bill_detail(
     ? {
       bill_version_id: version_selection.current_bill_version_id,
       source_document_key: version_selection.current_source_document_key ?? "",
+      document_family: version_selection.current_document_family ?? "text",
       version_type: version_selection.current_version_type ?? "unknown",
       source_document_id: version_selection.current_source_document_id,
       extraction_run_id: version_selection.current_extraction_run_id,
@@ -209,6 +215,7 @@ export async function get_civic_genome_bill_detail(
     ? {
       bill_version_id: version_selection.published_bill_version_id,
       source_document_key: version_selection.published_source_document_key ?? "",
+      document_family: version_selection.published_document_family ?? "text",
       version_type: version_selection.published_version_type ?? "unknown",
       source_document_id: version_selection.published_source_document_id,
       extraction_run_id: version_selection.published_extraction_run_id,

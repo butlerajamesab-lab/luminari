@@ -42,7 +42,7 @@ function readable_value(value: unknown, depth = 0): ReactNode {
   </div>)}</dl>;
 }
 
-type version = { bill_version_id: string; version_type: string; source_document_key?: string;
+type version = { bill_version_id: string; document_family?: "text" | "amendment"; version_type: string; source_document_key?: string;
   source_url?: string; provider_date?: string | null; provider_sequence?: number;
   processing_state?: string; predecessor_bill_version_id?: string | null; base_bill_version_id?: string | null };
 function version_label(item: version) {
@@ -100,10 +100,10 @@ export function RosettaEvaluation({ genome_bill_id, current_version, published_v
 
   return <section aria-label="Rosetta evaluation results" style={{ background: "rgba(13,30,25,.88)", border, borderRadius: 12, padding: "1rem", marginBottom: "1.25rem" }}>
     <div style={{ display: "flex", justifyContent: "space-between", gap: ".8rem", flexWrap: "wrap", alignItems: "center" }}>
-      <h2 style={{ margin: 0, fontSize: "1.2rem" }}>Rosetta decomposition {current_result && <span style={{ fontFamily: mono, fontSize: ".85rem", color: muted }}>· {current_result.engine_version}</span>}</h2>
+      <h2 style={{ margin: 0, fontSize: "1.2rem" }}>{selected_source?.document_family === "amendment" ? "Rosetta amendment status" : "Rosetta decomposition"} {current_result && <span style={{ fontFamily: mono, fontSize: ".85rem", color: muted }}>· {current_result.engine_version}</span>}</h2>
       {status_label && <strong style={{ color: status_color, fontFamily: mono }}>{status_label}</strong>}
     </div>
-    <p style={{ color: muted, fontSize: ".83rem", lineHeight: 1.5 }}>Read each legislative text version and inspect its own current-engine validation. Source preservation, current admission, processing, and completion are separate states.</p>
+    <p style={{ color: muted, fontSize: ".83rem", lineHeight: 1.5 }}>Inspect each exact legislative source. Full-text versions are decomposable snapshots; amendment artifacts are deltas that require an exact base and are not decomposed by themselves. Source preservation, current admission, processing, and completion are separate states.</p>
     <div style={{ display: "flex", gap: ".7rem", flexWrap: "wrap", alignItems: "center", marginBottom: ".8rem" }}>
       {versions.length > 0 && <label style={{ fontSize: ".8rem" }}>Source version {" "}<select aria-label="Evaluation source version" value={selected_id ?? ""} onChange={event => { set_selected_version_id(event.target.value); set_copied(false); }} style={{ padding: ".4rem", background: "#122e24", color: "#edf7f2", border, borderRadius: 6 }}>
         {versions.map(item => <option key={item.bill_version_id} value={item.bill_version_id}>{version_label(item)}{item.bill_version_id === current_version?.bill_version_id ? " · latest full text" : ""}</option>)}
@@ -113,7 +113,7 @@ export function RosettaEvaluation({ genome_bill_id, current_version, published_v
     </div>
     {selected_source && <div style={{ color: muted, fontSize: ".83rem", marginBottom: ".8rem" }}>
       <p>Source: {selected_source.source_document_key} · {selected_source.processing_state ?? "State unavailable"}</p>
-      {selected_source.source_url && <a href={selected_source.source_url} target="_blank" rel="noopener noreferrer" style={{ color: "#91c9f7" }}>Read this bill text</a>}
+      {selected_source.source_url && <a href={selected_source.source_url} target="_blank" rel="noopener noreferrer" style={{ color: "#91c9f7" }}>{selected_source.document_family === "amendment" ? "Official amendment artifact" : "Official text for this version"}</a>}
       {predecessor && <p>Preceding text: <button type="button" onClick={() => set_selected_version_id(predecessor.bill_version_id)}>{version_label(predecessor)}</button></p>}
       {base && <p>Recorded amendment base: <button type="button" onClick={() => set_selected_version_id(base.bill_version_id)}>{version_label(base)}</button></p>}
       <p>The preceding text is a recorded version relationship; it does not by itself establish adoption or an amendment’s legal effect.</p>
