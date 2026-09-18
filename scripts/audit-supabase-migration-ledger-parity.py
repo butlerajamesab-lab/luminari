@@ -301,7 +301,7 @@ APPROVED_REPOSITORY_ONLY = {
     # Forward amendment-dependency routing migration pending production apply.
     "20260918164500": (
         "20260918164500_civic_genome_amendment_dependency_routing.sql",
-        "3cf43841bf26cd7136901e4865700ad93245970b",
+        "27cd9f5747386d663af724c77d57cdc0658d93d9",
     ),
 }
 
