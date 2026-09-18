@@ -308,6 +308,7 @@ describe("legislative version queue", () => {
     expect(claim_sql).toContain("currency.is_current desc");
     expect(claim_sql).toContain("source_host.last_attempt_at asc nulls first");
     expect(claim_sql).toContain("source_host.blocked_until");
+    expect(claim_sql).toContain("queue.next_attempt_at < 'infinity'::timestamptz");
     expect(claim_sql).toContain("split_part(lower(document.source_url), '/', 3)");
     expect(claim_sql).toContain("version.processing_state not in ('verified', 'verified_with_findings')");
     expect(claim_sql).toContain("queue.queue_state = 'permanent_failure'");
@@ -421,4 +422,33 @@ it.each(["awaiting_analysis", "requires_review", "unavailable", "awaiting_public
  expect(sql).toContain("awaiting_current_result");
  expect(sql).not.toContain("attempt_count = attempt_count + 1");
  expect(sql).not.toContain("processing_state = 'failed'");
+});
+
+
+it.each([
+  ["legislative_amendment_attachment_unresolved:exact_target_version_ambiguous", "awaiting_amendment_attachment"],
+  ["legislative_amendment_attachment_state_unresolved", "awaiting_amendment_attachment"],
+  ["legislative_amendment_base_content_unavailable", "awaiting_amendment_base"],
+  ["legislative_amendment_delta_execution_contract_unavailable", "awaiting_delta_executor"],
+])("parks amendment dependency %s without consuming a queue attempt", async (errorCode, failureClass) => {
+  process_version.mockRejectedValueOnce(new Error(errorCode));
+  await process_legislative_version_job({ ...job, document_family: "amendment" });
+
+  expect(process_version).toHaveBeenCalledOnce();
+  expect(query).toHaveBeenCalledTimes(2);
+  const queueSql = String(query.mock.calls[0][0]);
+  const versionSql = String(query.mock.calls[1][0]);
+  expect(queueSql).toContain("next_attempt_at='infinity'::timestamptz");
+  expect(queueSql).not.toContain("attempt_count = attempt_count + 1");
+  expect(query.mock.calls[0][1][1]).toBe(failureClass);
+  expect(versionSql).toContain("processing_state='source_ingested'");
+  expect(versionSql).not.toContain("processing_state = 'failed'");
+});
+
+it("parked infinity dependencies cannot become source-host backpressure", async () => {
+  await run_legislative_version_queue_cycle();
+  const claimSql = query.mock.calls
+    .map(call => String(call[0]))
+    .find(sql => sql.includes("with current_sessions as"));
+  expect(claimSql).toContain("queue.next_attempt_at < 'infinity'::timestamptz");
 });
