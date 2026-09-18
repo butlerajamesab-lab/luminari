@@ -538,7 +538,122 @@ async function load_amendment_base_candidates(
             candidate.provider_sequence,
             document.source_url,
             case
-              when candidate.receipt_json->>'source_content_hash' ~ '^[0-9a-fA-F]{64}
+              when candidate.receipt_json->>'source_content_hash' ~ '^[0-9a-fA-F]{64}$'
+                then lower(candidate.receipt_json->>'source_content_hash')
+              else null
+            end as source_content_hash
+       from public.civic_genome_bill_version candidate
+       join public.docket_bill_source_document document
+         on document.source_document_key=candidate.source_document_key
+      where candidate.genome_bill_id=$1::uuid
+        and candidate.document_family='text'
+      order by candidate.stage_rank,candidate.provider_sequence,candidate.bill_version_id`,
+    [version.genome_bill_id],
+  );
+  return result.rows;
+}
+
+function amendment_attachment_state(
+  version: legislative_version_row,
+): "proposed" | "adopted" | null {
+  if (version.adopted === true) return "adopted";
+  if (version.adopted === false) return "proposed";
+  const label = version.provider_document_type.toLowerCase();
+  if (label.includes("adopted")) return "adopted";
+  if (label.includes("proposed") || label.includes("draft")) return "proposed";
+  return null;
+}
+
+async function persist_amendment_base_identity(
+  version: legislative_version_row,
+  base: amendment_base_candidate,
+): Promise<void> {
+  const client = await getPool().connect();
+  try {
+    await client.query("begin");
+    const source = await client.query<{ base_source_document_key: string | null }>(
+      `select base_source_document_key
+         from public.docket_bill_source_document
+        where source_document_key=$1::text
+        for update`,
+      [version.source_document_key],
+    );
+    if (source.rows.length !== 1) {
+      throw new Error("legislative_amendment_source_identity_missing");
+    }
+    const existing_source_base = source.rows[0].base_source_document_key;
+    if (existing_source_base && existing_source_base !== base.source_document_key) {
+      throw new Error("legislative_amendment_base_identity_conflict");
+    }
+
+    const genome = await client.query<{ base_bill_version_id: string | null }>(
+      `select base_bill_version_id::text
+         from public.civic_genome_bill_version
+        where bill_version_id=$1::uuid
+        for update`,
+      [version.bill_version_id],
+    );
+    if (genome.rows.length !== 1) {
+      throw new Error("legislative_amendment_genome_version_missing");
+    }
+    const existing_version_base = genome.rows[0].base_bill_version_id;
+    if (existing_version_base && existing_version_base !== base.bill_version_id) {
+      throw new Error("legislative_amendment_base_version_conflict");
+    }
+
+    await client.query(
+      `update public.docket_bill_source_document
+          set base_source_document_key=$2::text,
+              updated_at=now()
+        where source_document_key=$1::text
+          and base_source_document_key is null`,
+      [version.source_document_key, base.source_document_key],
+    );
+    await client.query(
+      `update public.civic_genome_bill_version
+          set base_bill_version_id=$2::uuid,
+              updated_at=now()
+        where bill_version_id=$1::uuid
+          and base_bill_version_id is null`,
+      [version.bill_version_id, base.bill_version_id],
+    );
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+async function resolve_current_amendment_attachment(
+  version: legislative_version_row,
+  source: extracted_legislative_source,
+): Promise<amendment_attachment_context | null> {
+  if (version.document_family !== "amendment") return null;
+  const candidates = await load_amendment_base_candidates(version);
+  const resolution = resolve_amendment_base({
+    source_text: source.source_text,
+    source_bill_number: version.source_bill_number,
+    state_code: version.state_code,
+    amendment_source_document_key: version.source_document_key,
+    amendment_source_content_hash: source.source_content_hash,
+    amendment_source_url: source.source_url,
+    candidates,
+  });
+  if (resolution.status === "resolved" || resolution.status === "awaiting_base_content") {
+    await persist_amendment_base_identity(version, resolution.base);
+  }
+  return {
+    resolution,
+    attachment_state: amendment_attachment_state(version),
+  };
+}
+
+async function rosetta_request(
+  path: string,
+  init: RequestInit,
+): Promise<rosetta_row[]> {
   const base_url = required_environment("ROSETTA_SUPABASE_URL");
   const service_role_key = required_environment("ROSETTA_SUPABASE_SERVICE_ROLE_KEY");
   const headers = create_rosetta_supabase_headers(service_role_key, init.headers);
