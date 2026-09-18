@@ -308,6 +308,11 @@ APPROVED_REPOSITORY_ONLY = {
         "20260918190000_civic_genome_full_text_authority_repair.sql",
         "f586278c875c144c25037253dd921964965ba27d",
     ),
+    # Forward Docket/Rosetta boundary repair pending production apply.
+    "20260918215000": (
+        "20260918215000_docket_refresh_registration_only.sql",
+        "4ab843418dd191d76492c3e4aa63b6a731726b80",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
