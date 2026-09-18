@@ -34,8 +34,15 @@ describe("current-result observation lane contract", () => {
 
     expect(worker).toContain("function schedule_current_result_observation");
     expect(worker).toContain("current_result_observation_timer = setInterval");
-    expect(worker).toContain("!recovery_contract_scope && !current_sources");
+    expect(worker).toContain("current_result_observation_enabled =\n    !recovery_contract_scope");
+    expect(worker).not.toContain("!recovery_contract_scope && !current_sources");
     expect(worker).toContain("active_current_result_observation");
+  });
+
+  it("keeps result observation active during ordinary current-source intake", () => {
+    expect(worker).toContain("Current-source intake and result-arrival observation are independent");
+    expect(worker).toContain("const current_sources = legislative_current_source_scope()");
+    expect(worker).toContain("current_result_observation_enabled =\n    !recovery_contract_scope");
   });
 
   it("can wake a hold but cannot invoke Rosetta execution or consume queue attempts", () => {
