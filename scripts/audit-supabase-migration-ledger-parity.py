@@ -303,6 +303,11 @@ APPROVED_REPOSITORY_ONLY = {
         "20260918164500_civic_genome_amendment_dependency_routing.sql",
         "24f60f2c1863adc00094ef43c63c6bbec89a0f53",
     ),
+    # Forward full-text authority repair pending production apply.
+    "20260918190000": (
+        "20260918190000_civic_genome_full_text_authority_repair.sql",
+        "f586278c875c144c25037253dd921964965ba27d",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
