@@ -224,6 +224,7 @@ async function discover_candidates(
          join current_sessions current_session
            on current_session.state = bill.state_code
           and current_session.session_key = bill.session_key
+        where version.document_family = 'text'
      )
      select version.bill_version_id::text,
             version.genome_bill_id::text,
