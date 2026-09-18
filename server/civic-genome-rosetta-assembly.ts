@@ -309,7 +309,10 @@ async function load_assembly_ready_current_result(
   request: rosetta_genome_assembly_request,
   binding: docket_assembly_binding,
 ): Promise<NonNullable<RosettaPublicCurrentDocketResult["current_result"]>> {
-  const current_docket_result = await load_rosetta_current_docket_result_for_binding(binding);
+  const current_docket_result = await load_rosetta_current_docket_result_for_binding({
+    source_document_key: binding.source_document_key,
+    source_content_hash: binding.source_content_hash,
+  });
   if (!current_docket_result) {
     throw new Error("rosetta_public_current_docket_result_missing");
   }
