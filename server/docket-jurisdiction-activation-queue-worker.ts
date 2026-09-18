@@ -297,7 +297,9 @@ function normalize_registration_receipt(value: unknown): docket_bill_activation_
 
 async function register_legislative_versions(source_bill_id: number): Promise<docket_bill_activation_receipt> {
   const result = await query_with_diagnostics<{ receipt: unknown }>(
-    // Radar/source activation owns acquisition and registration only.\n    // Rosetta execution must be authorized independently after source state is complete.\n    `select public.register_docket_legislative_version_spine($1::integer, false) as receipt`,
+    // Radar/source activation owns acquisition and registration only.
+    // Rosetta execution must be authorized independently after source state is complete.
+    `select public.register_docket_legislative_version_spine($1::integer, false) as receipt`,
     [source_bill_id],
     {
       label: "docket_bill_activation_register_version_spine",
