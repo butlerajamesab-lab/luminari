@@ -35,7 +35,12 @@ describe("current-result observation lane contract", () => {
     expect(worker).toContain("function schedule_current_result_observation");
     expect(worker).toContain("current_result_observation_timer = setInterval");
     expect(worker).toContain("current_result_observation_enabled =\n    !recovery_contract_scope");
-    expect(worker).not.toContain("!recovery_contract_scope && !current_sources");
+    const enablement = worker.slice(
+      worker.indexOf("const current_result_observation_enabled"),
+      worker.indexOf("const current_result_observation_interval_ms"),
+    );
+    expect(enablement).toContain("!recovery_contract_scope");
+    expect(enablement).not.toContain("current_sources");
     expect(worker).toContain("active_current_result_observation");
   });
 
