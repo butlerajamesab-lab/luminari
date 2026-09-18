@@ -9,6 +9,7 @@ import {
 } from "./civic-genome-legislative-version-pipeline";
 import { create_rosetta_supabase_headers } from "./rosetta-supabase-auth";
 import { reconcile_awaiting_current_results } from "./civic-genome-current-result-reconciliation";
+import { reconcile_preserved_amendment_sources } from "./civic-genome-amendment-source-completion";
 import { background_feature_enabled } from "./runtime-role";
 import { LEGISLATIVE_NON_LEGISLATIVE_DOCUMENT_ERROR_CODE } from "./legislative-document-role";
 import { is_official_source_rejection_error } from "./official-source-response";
@@ -29,6 +30,7 @@ const MAX_RECONCILE_INTERVAL_MS = 15 * 60_000;
 const DEFAULT_CURRENT_RESULT_OBSERVATION_INTERVAL_MS = 5_000;
 const MIN_CURRENT_RESULT_OBSERVATION_INTERVAL_MS = 1_000;
 const MAX_CURRENT_RESULT_OBSERVATION_INTERVAL_MS = 60_000;
+const AMENDMENT_SOURCE_COMPLETION_INTERVAL_MS = 1_000;
 const ROSETTA_TERMINAL_CLASSIFIER_LIMIT = 250;
 const ROSETTA_BACKLOG_SELECTOR_LIMIT = 100;
 const ROSETTA_CONTROL_REQUEST_TIMEOUT_MS = 10_000;
@@ -74,6 +76,8 @@ let queue_timer: NodeJS.Timeout | null = null;
 let active_queue_cycle: Promise<void> | null = null;
 let current_result_observation_timer: NodeJS.Timeout | null = null;
 let active_current_result_observation: Promise<void> | null = null;
+let amendment_source_completion_timer: NodeJS.Timeout | null = null;
+let active_amendment_source_completion: Promise<void> | null = null;
 let queue_cycle_running = false;
 let queue_stopped = false;
 let queue_shutdown_requested = false;
@@ -545,6 +549,1304 @@ async function claim_jobs(
             or queue.locked_at < now() - make_interval(mins => $2::integer)
           )
           and version.processing_state not in ('verified', 'verified_with_findings')
+          and not (
+            version.document_family='amendment'
+            and version.processing_state='source_ingested'
+            and version.receipt_json->>'rosetta_source_content_id'
+                  ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}
+            $8::text is null
+            or version.receipt_json->>'source_fallback_recovery_contract' = $8
+          )
+          and (not $9::boolean or not (coalesce(version.receipt_json, '{}'::jsonb) ? 'source_fallback_recovery_contract'))
+          and coalesce(source_host.blocked_until, '-infinity'::timestamptz) <= now()
+        order by case when recovery.is_durable_content_recovery then 0 else 1 end,
+                 case when recovery.is_durable_content_recovery
+                   then array_position($4::text[], rosetta_identity.document_identifier)
+                 end asc nulls last,
+                 case when queue.priority < 0 then 0 else 1 end,
+                 (current_session.state is not null) desc,
+                 currency.is_current desc,
+                 source_host.last_attempt_at asc nulls first,
+                 case when currency.is_current then version.stage_rank else 0 end desc,
+                 queue.priority,
+                 queue.created_at,
+                 queue.queue_id
+        for update of queue, version skip locked
+        limit $3::integer
+     ), marked_version as (
+       update public.civic_genome_bill_version version
+          set receipt_json = coalesce(version.receipt_json, '{}'::jsonb)
+                || jsonb_build_object(
+                  'durable_content_recovery_v1',
+                  jsonb_build_object(
+                    'contract', $5::text,
+                    'document_identifier', candidate.document_identifier,
+                    'attempt_ordinal',
+                      candidate.prior_recovery_attempts + 1,
+                    'first_selected_at', coalesce(
+                      version.receipt_json
+                        #>> '{durable_content_recovery_v1,first_selected_at}',
+                      version.receipt_json
+                        #>> '{durable_content_recovery_v1,selected_at}',
+                      now()::text
+                    ),
+                    'selected_at', now(),
+                    'worker_identity', $1::text,
+                    'prior_queue_state', candidate.prior_queue_state,
+                    'prior_attempt_count', candidate.prior_attempt_count
+                  )
+                ),
+              updated_at = now()
+         from candidate
+        where candidate.is_durable_content_recovery
+          and version.bill_version_id = candidate.bill_version_id
+       returning version.bill_version_id
+     )
+     update public.civic_genome_legislative_version_queue queue
+        set queue_state = 'submitted',
+            locked_at = now(),
+            locked_by = $1,
+            updated_at = now()
+       from candidate
+       join public.civic_genome_bill_version version
+         on version.bill_version_id = candidate.bill_version_id
+      join public.docket_bill_source_document document
+        on document.source_document_key = version.source_document_key
+      left join marked_version
+        on marked_version.bill_version_id = version.bill_version_id
+      where queue.queue_id = candidate.queue_id
+        and version.bill_version_id = queue.bill_version_id
+      returning queue.queue_id::text,
+                version.bill_version_id::text,
+                version.source_document_key,
+                version.source_bill_id,
+                version.document_family,
+                version.version_type,
+                candidate.prior_queue_state,
+                queue.attempt_count,
+                candidate.document_identifier,
+                candidate.is_durable_content_recovery as durable_content_recovery`,
+    [
+      queue_worker_id,
+      QUEUE_LEASE_MINUTES,
+      limit,
+      oldest_unbound_docket_identifiers,
+      DURABLE_CONTENT_RECOVERY_CONTRACT,
+      DURABLE_CONTENT_RECOVERY_MAX_ATTEMPTS,
+      DURABLE_CONTENT_RECOVERY_RETRY_SECONDS,
+      recovery_contract_scope,
+      current_sources,
+    ],
+    {
+      label: "legislative_version_queue_claim",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 5_000,
+    },
+  );
+  return result.rows;
+}
+
+function pause_legislative_version_queue_after_shared_provider_outage(): void {
+  queue_stopped = true;
+  if (queue_timer) clearInterval(queue_timer);
+  queue_timer = null;
+}
+
+function restorable_queue_state(
+  prior_queue_state: legislative_version_queue_job["prior_queue_state"],
+): legislative_version_queue_job["prior_queue_state"] {
+  // A stale submitted lease cannot be restored without a lock because it would
+  // no longer satisfy the queue's reclaim predicate. Degraded preserves its
+  // retryability while the process-wide provider pause prevents another claim.
+  return prior_queue_state === "submitted" ? "degraded" : prior_queue_state;
+}
+
+async function release_job_after_shared_provider_outage(
+  job: legislative_version_queue_job,
+): Promise<void> {
+  const result = await query_with_diagnostics<{ queue_id: string }>(
+    `with released as (
+       update public.civic_genome_legislative_version_queue queue
+          set queue_state = $2,
+              locked_at = null,
+              locked_by = null,
+              updated_at = now()
+        where queue.queue_id = $1::uuid
+          and queue.locked_by = $3
+          and queue.attempt_count = $4::integer
+       returning queue.queue_id::text
+     )
+     select released.queue_id
+       from released
+     union all
+     select queue.queue_id::text
+       from public.civic_genome_legislative_version_queue queue
+      where queue.queue_id = $1::uuid
+        and queue.queue_state = $2
+        and queue.locked_at is null
+        and queue.locked_by is null
+        and queue.attempt_count = $4::integer
+        and not exists (select 1 from released)`,
+    [
+      job.queue_id,
+      restorable_queue_state(job.prior_queue_state),
+      queue_worker_id,
+      job.attempt_count,
+    ],
+    {
+      label: "legislative_version_queue_release_shared_provider_outage",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 5_000,
+    },
+  );
+  if (result.rows.length !== 1) {
+    throw new Error("legislative_version_queue_shared_provider_release_failed");
+  }
+}
+
+function shared_provider_release_retry_delay_ms(
+  release_attempt: number,
+): number {
+  return Math.min(
+    SHARED_PROVIDER_RELEASE_RETRY_MAX_MS,
+    SHARED_PROVIDER_RELEASE_RETRY_MIN_MS
+      * (2 ** Math.min(5, Math.max(0, release_attempt - 1))),
+  );
+}
+
+function wait_for_shared_provider_release_retry(delay_ms: number): Promise<void> {
+  return new Promise(resolve => {
+    let timer: NodeJS.Timeout;
+    const finish = (): void => {
+      shared_provider_release_waiters.delete(timer);
+      resolve();
+    };
+    timer = setTimeout(finish, delay_ms);
+    shared_provider_release_waiters.set(timer, finish);
+  });
+}
+
+function wake_shared_provider_release_retries(): void {
+  for (const [timer, finish] of shared_provider_release_waiters) {
+    clearTimeout(timer);
+    finish();
+  }
+}
+
+async function finalize_shared_provider_release(
+  job: legislative_version_queue_job,
+): Promise<void> {
+  let release_attempt = 0;
+  while (true) {
+    release_attempt += 1;
+    try {
+      await release_job_after_shared_provider_outage(job);
+      if (release_attempt > 1) {
+        console.log("[LegislativeVersionQueue] shared_provider_release_recovered", {
+          queue_id: job.queue_id,
+          bill_version_id: job.bill_version_id,
+          release_attempt,
+        });
+      }
+      return;
+    } catch (release_error) {
+      if (queue_shutdown_requested) throw release_error;
+      const retry_delay_ms = shared_provider_release_retry_delay_ms(
+        release_attempt,
+      );
+      console.error("[LegislativeVersionQueue] shared_provider_release_retry", {
+        queue_id: job.queue_id,
+        bill_version_id: job.bill_version_id,
+        attempt_count: job.attempt_count,
+        release_attempt,
+        retry_delay_ms,
+        error_code: safe_error_code(release_error),
+      });
+      await wait_for_shared_provider_release_retry(retry_delay_ms);
+    }
+  }
+}
+
+async function mark_job_completed(input: {
+  job: legislative_version_queue_job;
+  assembly_run_id: string;
+}): Promise<void> {
+  await query_with_diagnostics(
+    `update public.civic_genome_legislative_version_queue
+        set queue_state = 'completed',
+            attempt_count = attempt_count + 1,
+            completed_at = now(),
+            locked_at = null,
+            locked_by = null,
+            last_failure_class = null,
+            last_error_code = null,
+            updated_at = now()
+      where queue_id = $1::uuid
+        and locked_by = $2`,
+    [input.job.queue_id, queue_worker_id],
+    {
+      label: "legislative_version_queue_complete",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 5_000,
+    },
+  );
+  console.log("[LegislativeVersionQueue] completed", {
+    queue_id: input.job.queue_id,
+    bill_version_id: input.job.bill_version_id,
+    source_document_key: input.job.source_document_key,
+    source_bill_id: input.job.source_bill_id,
+    document_family: input.job.document_family,
+    version_type: input.job.version_type,
+    document_identifier: input.job.document_identifier,
+    durable_content_recovery: input.job.durable_content_recovery,
+    assembly_run_id: input.assembly_run_id,
+  });
+}
+
+async function mark_job_failed(input: {
+  job: legislative_version_queue_job;
+  decision: legislative_version_failure_decision;
+}): Promise<void> {
+  await query_with_diagnostics(
+    `update public.civic_genome_legislative_version_queue queue
+        set queue_state = $2,
+            attempt_count = attempt_count + 1,
+            next_attempt_at = case
+              when $5::boolean then queue.next_attempt_at
+              else now() + make_interval(secs => $6::integer)
+            end,
+            locked_at = null,
+            locked_by = null,
+            last_failure_class = $3,
+            last_error_code = $4,
+            updated_at = now()
+      where queue.queue_id = $1::uuid
+        and queue.locked_by = $7`,
+    [
+      input.job.queue_id,
+      input.decision.queue_state,
+      input.decision.failure_class,
+      input.decision.error_code,
+      input.decision.terminal,
+      input.decision.retry_delay_seconds,
+      queue_worker_id,
+    ],
+    {
+      label: "legislative_version_queue_fail",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 5_000,
+    },
+  );
+
+  await query_with_diagnostics(
+    `update public.civic_genome_bill_version
+        set processing_state = 'failed',
+            failure_code = $2,
+            receipt_json = receipt_json || jsonb_build_object(
+              'failure_class', $3::text,
+              'failure_code', $2::text,
+              'failed_at', now()
+            ),
+            updated_at = now()
+      where bill_version_id = $1::uuid`,
+    [
+      input.job.bill_version_id,
+      input.decision.error_code,
+      input.decision.failure_class,
+    ],
+    {
+      label: "legislative_version_record_failure",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 5_000,
+    },
+  );
+
+  console.error("[LegislativeVersionQueue] failed", {
+    queue_id: input.job.queue_id,
+    bill_version_id: input.job.bill_version_id,
+    source_document_key: input.job.source_document_key,
+    source_bill_id: input.job.source_bill_id,
+    document_family: input.job.document_family,
+    version_type: input.job.version_type,
+    document_identifier: input.job.document_identifier,
+    durable_content_recovery: input.job.durable_content_recovery,
+    queue_state: input.decision.queue_state,
+    failure_class: input.decision.failure_class,
+    error_code: input.decision.error_code,
+    retry_delay_seconds: input.decision.retry_delay_seconds,
+  });
+}
+
+type amendment_dependency_hold = {
+  failure_class:
+    | "awaiting_amendment_attachment"
+    | "awaiting_amendment_base"
+    | "awaiting_delta_executor";
+  error_code: string;
+};
+
+function amendment_dependency_hold_for(error: unknown): amendment_dependency_hold | null {
+  const error_code = safe_error_code(error);
+  if (error_code.startsWith("legislative_amendment_attachment_unresolved:")
+    || error_code === "legislative_amendment_attachment_state_unresolved") {
+    return { failure_class: "awaiting_amendment_attachment", error_code };
+  }
+  if (error_code === "legislative_amendment_base_content_unavailable") {
+    return { failure_class: "awaiting_amendment_base", error_code };
+  }
+  if (error_code === "legislative_amendment_delta_execution_contract_unavailable") {
+    return { failure_class: "awaiting_delta_executor", error_code };
+  }
+  return null;
+}
+
+async function park_amendment_dependency(
+  job: legislative_version_queue_job,
+  hold: amendment_dependency_hold,
+): Promise<void> {
+  await query_with_diagnostics(
+    `update public.civic_genome_legislative_version_queue
+        set queue_state='degraded',
+            next_attempt_at='infinity'::timestamptz,
+            locked_at=null,
+            locked_by=null,
+            last_failure_class=$2::text,
+            last_error_code=$3::text,
+            updated_at=now()
+      where queue_id=$1::uuid
+        and locked_by=$4`,
+    [job.queue_id, hold.failure_class, hold.error_code, queue_worker_id],
+    {
+      label: "legislative_version_amendment_dependency_hold",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 5_000,
+    },
+  );
+  await query_with_diagnostics(
+    `update public.civic_genome_bill_version
+        set processing_state='source_ingested',
+            failure_code=$2::text,
+            receipt_json=coalesce(receipt_json,'{}'::jsonb)
+              || jsonb_build_object(
+                'amendment_dependency_state',$3::text,
+                'amendment_dependency_code',$2::text,
+                'amendment_dependency_observed_at',now()
+              ),
+            updated_at=now()
+      where bill_version_id=$1::uuid`,
+    [job.bill_version_id, hold.error_code, hold.failure_class],
+    {
+      label: "legislative_version_record_amendment_dependency",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 5_000,
+    },
+  );
+}
+
+export async function process_legislative_version_job(
+  job: legislative_version_queue_job,
+): Promise<void> {
+  let result: Awaited<ReturnType<typeof process_legislative_version>>;
+  try {
+    result = await process_legislative_version(job.bill_version_id);
+  } catch (error) {
+    const amendment_hold = amendment_dependency_hold_for(error);
+    if (amendment_hold) {
+      // Attachment/base/delta-executor dependencies are parked evidence states,
+      // not decomposition failures and not retries. They consume no queue attempt.
+      await park_amendment_dependency(job, amendment_hold);
+      return;
+    }
+    const current_status = /^rosetta_public_current_docket_result_(awaiting_analysis|requires_review|unavailable|awaiting_publication)$/.exec(safe_error_code(error));
+    if (current_status) {
+      // Waiting on Rosetta is not a failed decomposition and consumes no retry.
+      // Resume only after an explicit reconciliation observes a new current result.
+      await query_with_diagnostics(`update public.civic_genome_legislative_version_queue
+        set queue_state='degraded', next_attempt_at='infinity'::timestamptz,
+            locked_at=null, locked_by=null, last_failure_class='awaiting_current_result',
+            last_error_code=$2, updated_at=now()
+        where queue_id=$1::uuid and locked_by=$3`,
+      [job.queue_id, safe_error_code(error), queue_worker_id],
+      { label: "legislative_version_await_current", pool_acquire_timeout_ms: 1000, query_timeout_ms: 5000 });
+      return;
+    }
+    if (is_legislative_version_shared_provider_outage(error)) {
+      pause_legislative_version_queue_after_shared_provider_outage();
+      try {
+        await finalize_shared_provider_release(job);
+      } catch (release_error) {
+        console.error("[LegislativeVersionQueue] shared_provider_release_failed", {
+          queue_id: job.queue_id,
+          bill_version_id: job.bill_version_id,
+          attempt_count: job.attempt_count,
+          error_code: safe_error_code(release_error),
+        });
+        throw release_error;
+      }
+      console.error("[LegislativeVersionQueue] paused_shared_provider_outage", {
+        queue_id: job.queue_id,
+        bill_version_id: job.bill_version_id,
+        attempt_count: job.attempt_count,
+        restored_queue_state: restorable_queue_state(job.prior_queue_state),
+        error_code: LEGISLATIVE_VERSION_PROVIDER_SHARED_OUTAGE_ERROR_CODE,
+      });
+      return;
+    }
+    const decision = classify_legislative_version_failure({
+      error,
+      prior_attempt_count: job.attempt_count,
+    });
+    await mark_job_failed({ job, decision });
+    return;
+  }
+
+  try {
+    await mark_job_completed({
+      job,
+      assembly_run_id: result.assembly.assembly_run_id,
+    });
+  } catch (error) {
+    console.error("[LegislativeVersionQueue] completion_deferred", {
+      queue_id: job.queue_id,
+      bill_version_id: job.bill_version_id,
+      assembly_run_id: result.assembly.assembly_run_id,
+      error_code: safe_error_code(error),
+    });
+  }
+}
+
+export async function run_legislative_version_queue_cycle(): Promise<void> {
+  if (queue_cycle_running || queue_stopped) return;
+  queue_cycle_running = true;
+  try {
+    const recovery_contract_scope =
+      legislative_version_queue_recovery_contract_scope();
+    const current_sources = legislative_current_source_scope();
+    await reconcile_completed_jobs_if_due(recovery_contract_scope, current_sources);
+    if (!recovery_contract_scope && !current_sources) {
+      try {
+        const classified_count = await classify_hidden_rosetta_terminal_rejections();
+        if (classified_count > 0) {
+          console.log("[LegislativeVersionQueue] terminal_repairs_classified", {
+            classified_count,
+            contract: "rosetta-terminal-rejection-repair-v1",
+          });
+        }
+      } catch (error) {
+        // Classification is fail-closed in Rosetta: terminal runs stay rejected.
+        // A control-surface outage must not stop unrelated queue work.
+        console.error("[LegislativeVersionQueue] terminal_classifier_failed", {
+          error_code: safe_error_code(error),
+        });
+      }
+    }
+    let oldest_unbound_docket_identifiers: string[] = [];
+    if (!recovery_contract_scope && !current_sources) {
+      try {
+        oldest_unbound_docket_identifiers = await load_oldest_unbound_docket_identifiers();
+      } catch (error) {
+        // The recovery selector is supplemental. An unavailable Rosetta control
+        // surface must not stop ordinary eligible/degraded queue processing.
+        console.error("[LegislativeVersionQueue] backlog_selector_failed", {
+          error_code: safe_error_code(error),
+        });
+      }
+    }
+    const jobs = await claim_jobs(
+      recovery_contract_scope || current_sources ? 1 : bounded_concurrency(),
+      oldest_unbound_docket_identifiers,
+      recovery_contract_scope,
+      current_sources,
+    );
+    await Promise.all(jobs.map(job => run_with_database_job_context(
+      { label: "legislative_version_queue_job", job_id: job.queue_id },
+      () => process_legislative_version_job(job),
+    )));
+  } catch (error) {
+    console.error("[LegislativeVersionQueue] cycle_failed", {
+      error_class: error instanceof Error ? error.name : "unknown",
+      error_code: safe_error_code(error),
+    });
+  } finally {
+    queue_cycle_running = false;
+  }
+}
+
+function schedule_legislative_version_queue_cycle(): void {
+  if (active_queue_cycle) return;
+  const cycle = run_legislative_version_queue_cycle();
+  active_queue_cycle = cycle;
+  void cycle.finally(() => {
+    if (active_queue_cycle === cycle) active_queue_cycle = null;
+  });
+}
+
+async function run_current_result_observation_cycle(): Promise<void> {
+  if (queue_stopped) return;
+  try {
+    const summary = await reconcile_awaiting_current_results();
+    if (summary.woken > 0 || summary.read_errors > 0) {
+      console.log("[CurrentResultReconciliation] cycle_complete", summary);
+    }
+  } catch (error) {
+    // Result observation is supplemental. It must never stop fresh legislative
+    // source processing or mutate a hold without an exact completed result.
+    console.error("[CurrentResultReconciliation] cycle_failed", {
+      error_class: error instanceof Error ? error.name : "unknown",
+      error_code: safe_error_code(error),
+    });
+  }
+}
+
+function schedule_current_result_observation(): void {
+  if (active_current_result_observation || queue_stopped) return;
+  const observation = run_current_result_observation_cycle();
+  active_current_result_observation = observation;
+  void observation.finally(() => {
+    if (active_current_result_observation === observation) {
+      active_current_result_observation = null;
+    }
+  });
+}
+
+
+async function run_amendment_source_completion_cycle(): Promise<void> {
+  if (queue_stopped) return;
+  try {
+    const summary = await reconcile_preserved_amendment_sources();
+    if (summary.checked > 0 || summary.transient > 0) {
+      console.log("[AmendmentSourceCompletion] cycle_complete", summary);
+    }
+  } catch (error) {
+    // This lane only reconciles already-preserved source basis. Failure here
+    // cannot stop fresh source intake or authorize Rosetta execution.
+    console.error("[AmendmentSourceCompletion] cycle_failed", {
+      error_class: error instanceof Error ? error.name : "unknown",
+      error_code: safe_error_code(error),
+    });
+  }
+}
+
+function schedule_amendment_source_completion(): void {
+  if (active_amendment_source_completion || queue_stopped) return;
+  const cycle = run_amendment_source_completion_cycle();
+  active_amendment_source_completion = cycle;
+  void cycle.finally(() => {
+    if (active_amendment_source_completion === cycle) {
+      active_amendment_source_completion = null;
+    }
+  });
+}
+
+
+export function start_legislative_version_queue_worker(): void {
+  if (queue_timer || !queue_enabled()) return;
+  let recovery_contract_scope: string | null;
+  let current_sources = false;
+  try {
+    recovery_contract_scope =
+      legislative_version_queue_recovery_contract_scope();
+    current_sources = legislative_current_source_scope();
+  } catch (error) {
+    console.error("[LegislativeVersionQueue] disabled_invalid_scope", {
+      error_code: safe_error_code(error),
+    });
+    return;
+  }
+  queue_stopped = false;
+  queue_shutdown_requested = false;
+  const interval_ms = bounded_poll_interval();
+  const concurrency = recovery_contract_scope ? 1 : bounded_concurrency();
+  const reconcile_interval_ms = bounded_reconcile_interval();
+  // Current-source intake and result-arrival observation are independent
+  // lanes. Only an explicit recovery-contract scope isolates this worker.
+  const current_result_observation_enabled =
+    !recovery_contract_scope;
+  const current_result_observation_interval_ms =
+    bounded_current_result_observation_interval();
+  const amendment_source_completion_enabled = !recovery_contract_scope;
+  console.log("[LegislativeVersionQueue] started", {
+    worker_id: queue_worker_id,
+    interval_ms,
+    reconcile_interval_ms,
+    concurrency,
+    recovery_contract_scope,
+    current_result_observation_enabled,
+    current_result_observation_interval_ms,
+    amendment_source_completion_enabled,
+    amendment_source_completion_interval_ms: AMENDMENT_SOURCE_COMPLETION_INTERVAL_MS,
+    lease_minutes: QUEUE_LEASE_MINUTES,
+    priority_scope: "oldest_unbound_docket_then_current_session_latest_version_host_fairness",
+  });
+  schedule_legislative_version_queue_cycle();
+  queue_timer = setInterval(() => {
+    schedule_legislative_version_queue_cycle();
+  }, interval_ms);
+  queue_timer.unref?.();
+
+  if (current_result_observation_enabled) {
+    schedule_current_result_observation();
+    current_result_observation_timer = setInterval(() => {
+      schedule_current_result_observation();
+    }, current_result_observation_interval_ms);
+    current_result_observation_timer.unref?.();
+  }
+
+  if (amendment_source_completion_enabled) {
+    schedule_amendment_source_completion();
+    amendment_source_completion_timer = setInterval(() => {
+      schedule_amendment_source_completion();
+    }, AMENDMENT_SOURCE_COMPLETION_INTERVAL_MS);
+    amendment_source_completion_timer.unref?.();
+  }
+}
+
+export async function stop_legislative_version_queue_worker(): Promise<void> {
+  queue_stopped = true;
+  queue_shutdown_requested = true;
+  if (queue_timer) clearInterval(queue_timer);
+  queue_timer = null;
+  if (current_result_observation_timer) {
+    clearInterval(current_result_observation_timer);
+  }
+  current_result_observation_timer = null;
+  if (amendment_source_completion_timer) {
+    clearInterval(amendment_source_completion_timer);
+  }
+  amendment_source_completion_timer = null;
+  wake_shared_provider_release_retries();
+  await Promise.all([
+    active_queue_cycle,
+    active_current_result_observation,
+    active_amendment_source_completion,
+  ]);
+}
+
+            and version.receipt_json->>'source_content_hash' ~ '^[0-9A-Fa-f]{64}
+            $8::text is null
+            or version.receipt_json->>'source_fallback_recovery_contract' = $8
+          )
+          and (not $9::boolean or not (coalesce(version.receipt_json, '{}'::jsonb) ? 'source_fallback_recovery_contract'))
+          and coalesce(source_host.blocked_until, '-infinity'::timestamptz) <= now()
+        order by case when recovery.is_durable_content_recovery then 0 else 1 end,
+                 case when recovery.is_durable_content_recovery
+                   then array_position($4::text[], rosetta_identity.document_identifier)
+                 end asc nulls last,
+                 case when queue.priority < 0 then 0 else 1 end,
+                 (current_session.state is not null) desc,
+                 currency.is_current desc,
+                 source_host.last_attempt_at asc nulls first,
+                 case when currency.is_current then version.stage_rank else 0 end desc,
+                 queue.priority,
+                 queue.created_at,
+                 queue.queue_id
+        for update of queue, version skip locked
+        limit $3::integer
+     ), marked_version as (
+       update public.civic_genome_bill_version version
+          set receipt_json = coalesce(version.receipt_json, '{}'::jsonb)
+                || jsonb_build_object(
+                  'durable_content_recovery_v1',
+                  jsonb_build_object(
+                    'contract', $5::text,
+                    'document_identifier', candidate.document_identifier,
+                    'attempt_ordinal',
+                      candidate.prior_recovery_attempts + 1,
+                    'first_selected_at', coalesce(
+                      version.receipt_json
+                        #>> '{durable_content_recovery_v1,first_selected_at}',
+                      version.receipt_json
+                        #>> '{durable_content_recovery_v1,selected_at}',
+                      now()::text
+                    ),
+                    'selected_at', now(),
+                    'worker_identity', $1::text,
+                    'prior_queue_state', candidate.prior_queue_state,
+                    'prior_attempt_count', candidate.prior_attempt_count
+                  )
+                ),
+              updated_at = now()
+         from candidate
+        where candidate.is_durable_content_recovery
+          and version.bill_version_id = candidate.bill_version_id
+       returning version.bill_version_id
+     )
+     update public.civic_genome_legislative_version_queue queue
+        set queue_state = 'submitted',
+            locked_at = now(),
+            locked_by = $1,
+            updated_at = now()
+       from candidate
+       join public.civic_genome_bill_version version
+         on version.bill_version_id = candidate.bill_version_id
+      join public.docket_bill_source_document document
+        on document.source_document_key = version.source_document_key
+      left join marked_version
+        on marked_version.bill_version_id = version.bill_version_id
+      where queue.queue_id = candidate.queue_id
+        and version.bill_version_id = queue.bill_version_id
+      returning queue.queue_id::text,
+                version.bill_version_id::text,
+                version.source_document_key,
+                version.source_bill_id,
+                version.document_family,
+                version.version_type,
+                candidate.prior_queue_state,
+                queue.attempt_count,
+                candidate.document_identifier,
+                candidate.is_durable_content_recovery as durable_content_recovery`,
+    [
+      queue_worker_id,
+      QUEUE_LEASE_MINUTES,
+      limit,
+      oldest_unbound_docket_identifiers,
+      DURABLE_CONTENT_RECOVERY_CONTRACT,
+      DURABLE_CONTENT_RECOVERY_MAX_ATTEMPTS,
+      DURABLE_CONTENT_RECOVERY_RETRY_SECONDS,
+      recovery_contract_scope,
+      current_sources,
+    ],
+    {
+      label: "legislative_version_queue_claim",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 5_000,
+    },
+  );
+  return result.rows;
+}
+
+function pause_legislative_version_queue_after_shared_provider_outage(): void {
+  queue_stopped = true;
+  if (queue_timer) clearInterval(queue_timer);
+  queue_timer = null;
+}
+
+function restorable_queue_state(
+  prior_queue_state: legislative_version_queue_job["prior_queue_state"],
+): legislative_version_queue_job["prior_queue_state"] {
+  // A stale submitted lease cannot be restored without a lock because it would
+  // no longer satisfy the queue's reclaim predicate. Degraded preserves its
+  // retryability while the process-wide provider pause prevents another claim.
+  return prior_queue_state === "submitted" ? "degraded" : prior_queue_state;
+}
+
+async function release_job_after_shared_provider_outage(
+  job: legislative_version_queue_job,
+): Promise<void> {
+  const result = await query_with_diagnostics<{ queue_id: string }>(
+    `with released as (
+       update public.civic_genome_legislative_version_queue queue
+          set queue_state = $2,
+              locked_at = null,
+              locked_by = null,
+              updated_at = now()
+        where queue.queue_id = $1::uuid
+          and queue.locked_by = $3
+          and queue.attempt_count = $4::integer
+       returning queue.queue_id::text
+     )
+     select released.queue_id
+       from released
+     union all
+     select queue.queue_id::text
+       from public.civic_genome_legislative_version_queue queue
+      where queue.queue_id = $1::uuid
+        and queue.queue_state = $2
+        and queue.locked_at is null
+        and queue.locked_by is null
+        and queue.attempt_count = $4::integer
+        and not exists (select 1 from released)`,
+    [
+      job.queue_id,
+      restorable_queue_state(job.prior_queue_state),
+      queue_worker_id,
+      job.attempt_count,
+    ],
+    {
+      label: "legislative_version_queue_release_shared_provider_outage",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 5_000,
+    },
+  );
+  if (result.rows.length !== 1) {
+    throw new Error("legislative_version_queue_shared_provider_release_failed");
+  }
+}
+
+function shared_provider_release_retry_delay_ms(
+  release_attempt: number,
+): number {
+  return Math.min(
+    SHARED_PROVIDER_RELEASE_RETRY_MAX_MS,
+    SHARED_PROVIDER_RELEASE_RETRY_MIN_MS
+      * (2 ** Math.min(5, Math.max(0, release_attempt - 1))),
+  );
+}
+
+function wait_for_shared_provider_release_retry(delay_ms: number): Promise<void> {
+  return new Promise(resolve => {
+    let timer: NodeJS.Timeout;
+    const finish = (): void => {
+      shared_provider_release_waiters.delete(timer);
+      resolve();
+    };
+    timer = setTimeout(finish, delay_ms);
+    shared_provider_release_waiters.set(timer, finish);
+  });
+}
+
+function wake_shared_provider_release_retries(): void {
+  for (const [timer, finish] of shared_provider_release_waiters) {
+    clearTimeout(timer);
+    finish();
+  }
+}
+
+async function finalize_shared_provider_release(
+  job: legislative_version_queue_job,
+): Promise<void> {
+  let release_attempt = 0;
+  while (true) {
+    release_attempt += 1;
+    try {
+      await release_job_after_shared_provider_outage(job);
+      if (release_attempt > 1) {
+        console.log("[LegislativeVersionQueue] shared_provider_release_recovered", {
+          queue_id: job.queue_id,
+          bill_version_id: job.bill_version_id,
+          release_attempt,
+        });
+      }
+      return;
+    } catch (release_error) {
+      if (queue_shutdown_requested) throw release_error;
+      const retry_delay_ms = shared_provider_release_retry_delay_ms(
+        release_attempt,
+      );
+      console.error("[LegislativeVersionQueue] shared_provider_release_retry", {
+        queue_id: job.queue_id,
+        bill_version_id: job.bill_version_id,
+        attempt_count: job.attempt_count,
+        release_attempt,
+        retry_delay_ms,
+        error_code: safe_error_code(release_error),
+      });
+      await wait_for_shared_provider_release_retry(retry_delay_ms);
+    }
+  }
+}
+
+async function mark_job_completed(input: {
+  job: legislative_version_queue_job;
+  assembly_run_id: string;
+}): Promise<void> {
+  await query_with_diagnostics(
+    `update public.civic_genome_legislative_version_queue
+        set queue_state = 'completed',
+            attempt_count = attempt_count + 1,
+            completed_at = now(),
+            locked_at = null,
+            locked_by = null,
+            last_failure_class = null,
+            last_error_code = null,
+            updated_at = now()
+      where queue_id = $1::uuid
+        and locked_by = $2`,
+    [input.job.queue_id, queue_worker_id],
+    {
+      label: "legislative_version_queue_complete",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 5_000,
+    },
+  );
+  console.log("[LegislativeVersionQueue] completed", {
+    queue_id: input.job.queue_id,
+    bill_version_id: input.job.bill_version_id,
+    source_document_key: input.job.source_document_key,
+    source_bill_id: input.job.source_bill_id,
+    document_family: input.job.document_family,
+    version_type: input.job.version_type,
+    document_identifier: input.job.document_identifier,
+    durable_content_recovery: input.job.durable_content_recovery,
+    assembly_run_id: input.assembly_run_id,
+  });
+}
+
+async function mark_job_failed(input: {
+  job: legislative_version_queue_job;
+  decision: legislative_version_failure_decision;
+}): Promise<void> {
+  await query_with_diagnostics(
+    `update public.civic_genome_legislative_version_queue queue
+        set queue_state = $2,
+            attempt_count = attempt_count + 1,
+            next_attempt_at = case
+              when $5::boolean then queue.next_attempt_at
+              else now() + make_interval(secs => $6::integer)
+            end,
+            locked_at = null,
+            locked_by = null,
+            last_failure_class = $3,
+            last_error_code = $4,
+            updated_at = now()
+      where queue.queue_id = $1::uuid
+        and queue.locked_by = $7`,
+    [
+      input.job.queue_id,
+      input.decision.queue_state,
+      input.decision.failure_class,
+      input.decision.error_code,
+      input.decision.terminal,
+      input.decision.retry_delay_seconds,
+      queue_worker_id,
+    ],
+    {
+      label: "legislative_version_queue_fail",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 5_000,
+    },
+  );
+
+  await query_with_diagnostics(
+    `update public.civic_genome_bill_version
+        set processing_state = 'failed',
+            failure_code = $2,
+            receipt_json = receipt_json || jsonb_build_object(
+              'failure_class', $3::text,
+              'failure_code', $2::text,
+              'failed_at', now()
+            ),
+            updated_at = now()
+      where bill_version_id = $1::uuid`,
+    [
+      input.job.bill_version_id,
+      input.decision.error_code,
+      input.decision.failure_class,
+    ],
+    {
+      label: "legislative_version_record_failure",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 5_000,
+    },
+  );
+
+  console.error("[LegislativeVersionQueue] failed", {
+    queue_id: input.job.queue_id,
+    bill_version_id: input.job.bill_version_id,
+    source_document_key: input.job.source_document_key,
+    source_bill_id: input.job.source_bill_id,
+    document_family: input.job.document_family,
+    version_type: input.job.version_type,
+    document_identifier: input.job.document_identifier,
+    durable_content_recovery: input.job.durable_content_recovery,
+    queue_state: input.decision.queue_state,
+    failure_class: input.decision.failure_class,
+    error_code: input.decision.error_code,
+    retry_delay_seconds: input.decision.retry_delay_seconds,
+  });
+}
+
+type amendment_dependency_hold = {
+  failure_class:
+    | "awaiting_amendment_attachment"
+    | "awaiting_amendment_base"
+    | "awaiting_delta_executor";
+  error_code: string;
+};
+
+function amendment_dependency_hold_for(error: unknown): amendment_dependency_hold | null {
+  const error_code = safe_error_code(error);
+  if (error_code.startsWith("legislative_amendment_attachment_unresolved:")
+    || error_code === "legislative_amendment_attachment_state_unresolved") {
+    return { failure_class: "awaiting_amendment_attachment", error_code };
+  }
+  if (error_code === "legislative_amendment_base_content_unavailable") {
+    return { failure_class: "awaiting_amendment_base", error_code };
+  }
+  if (error_code === "legislative_amendment_delta_execution_contract_unavailable") {
+    return { failure_class: "awaiting_delta_executor", error_code };
+  }
+  return null;
+}
+
+async function park_amendment_dependency(
+  job: legislative_version_queue_job,
+  hold: amendment_dependency_hold,
+): Promise<void> {
+  await query_with_diagnostics(
+    `update public.civic_genome_legislative_version_queue
+        set queue_state='degraded',
+            next_attempt_at='infinity'::timestamptz,
+            locked_at=null,
+            locked_by=null,
+            last_failure_class=$2::text,
+            last_error_code=$3::text,
+            updated_at=now()
+      where queue_id=$1::uuid
+        and locked_by=$4`,
+    [job.queue_id, hold.failure_class, hold.error_code, queue_worker_id],
+    {
+      label: "legislative_version_amendment_dependency_hold",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 5_000,
+    },
+  );
+  await query_with_diagnostics(
+    `update public.civic_genome_bill_version
+        set processing_state='source_ingested',
+            failure_code=$2::text,
+            receipt_json=coalesce(receipt_json,'{}'::jsonb)
+              || jsonb_build_object(
+                'amendment_dependency_state',$3::text,
+                'amendment_dependency_code',$2::text,
+                'amendment_dependency_observed_at',now()
+              ),
+            updated_at=now()
+      where bill_version_id=$1::uuid`,
+    [job.bill_version_id, hold.error_code, hold.failure_class],
+    {
+      label: "legislative_version_record_amendment_dependency",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 5_000,
+    },
+  );
+}
+
+export async function process_legislative_version_job(
+  job: legislative_version_queue_job,
+): Promise<void> {
+  let result: Awaited<ReturnType<typeof process_legislative_version>>;
+  try {
+    result = await process_legislative_version(job.bill_version_id);
+  } catch (error) {
+    const amendment_hold = amendment_dependency_hold_for(error);
+    if (amendment_hold) {
+      // Attachment/base/delta-executor dependencies are parked evidence states,
+      // not decomposition failures and not retries. They consume no queue attempt.
+      await park_amendment_dependency(job, amendment_hold);
+      return;
+    }
+    const current_status = /^rosetta_public_current_docket_result_(awaiting_analysis|requires_review|unavailable|awaiting_publication)$/.exec(safe_error_code(error));
+    if (current_status) {
+      // Waiting on Rosetta is not a failed decomposition and consumes no retry.
+      // Resume only after an explicit reconciliation observes a new current result.
+      await query_with_diagnostics(`update public.civic_genome_legislative_version_queue
+        set queue_state='degraded', next_attempt_at='infinity'::timestamptz,
+            locked_at=null, locked_by=null, last_failure_class='awaiting_current_result',
+            last_error_code=$2, updated_at=now()
+        where queue_id=$1::uuid and locked_by=$3`,
+      [job.queue_id, safe_error_code(error), queue_worker_id],
+      { label: "legislative_version_await_current", pool_acquire_timeout_ms: 1000, query_timeout_ms: 5000 });
+      return;
+    }
+    if (is_legislative_version_shared_provider_outage(error)) {
+      pause_legislative_version_queue_after_shared_provider_outage();
+      try {
+        await finalize_shared_provider_release(job);
+      } catch (release_error) {
+        console.error("[LegislativeVersionQueue] shared_provider_release_failed", {
+          queue_id: job.queue_id,
+          bill_version_id: job.bill_version_id,
+          attempt_count: job.attempt_count,
+          error_code: safe_error_code(release_error),
+        });
+        throw release_error;
+      }
+      console.error("[LegislativeVersionQueue] paused_shared_provider_outage", {
+        queue_id: job.queue_id,
+        bill_version_id: job.bill_version_id,
+        attempt_count: job.attempt_count,
+        restored_queue_state: restorable_queue_state(job.prior_queue_state),
+        error_code: LEGISLATIVE_VERSION_PROVIDER_SHARED_OUTAGE_ERROR_CODE,
+      });
+      return;
+    }
+    const decision = classify_legislative_version_failure({
+      error,
+      prior_attempt_count: job.attempt_count,
+    });
+    await mark_job_failed({ job, decision });
+    return;
+  }
+
+  try {
+    await mark_job_completed({
+      job,
+      assembly_run_id: result.assembly.assembly_run_id,
+    });
+  } catch (error) {
+    console.error("[LegislativeVersionQueue] completion_deferred", {
+      queue_id: job.queue_id,
+      bill_version_id: job.bill_version_id,
+      assembly_run_id: result.assembly.assembly_run_id,
+      error_code: safe_error_code(error),
+    });
+  }
+}
+
+export async function run_legislative_version_queue_cycle(): Promise<void> {
+  if (queue_cycle_running || queue_stopped) return;
+  queue_cycle_running = true;
+  try {
+    const recovery_contract_scope =
+      legislative_version_queue_recovery_contract_scope();
+    const current_sources = legislative_current_source_scope();
+    await reconcile_completed_jobs_if_due(recovery_contract_scope, current_sources);
+    if (!recovery_contract_scope && !current_sources) {
+      try {
+        const classified_count = await classify_hidden_rosetta_terminal_rejections();
+        if (classified_count > 0) {
+          console.log("[LegislativeVersionQueue] terminal_repairs_classified", {
+            classified_count,
+            contract: "rosetta-terminal-rejection-repair-v1",
+          });
+        }
+      } catch (error) {
+        // Classification is fail-closed in Rosetta: terminal runs stay rejected.
+        // A control-surface outage must not stop unrelated queue work.
+        console.error("[LegislativeVersionQueue] terminal_classifier_failed", {
+          error_code: safe_error_code(error),
+        });
+      }
+    }
+    let oldest_unbound_docket_identifiers: string[] = [];
+    if (!recovery_contract_scope && !current_sources) {
+      try {
+        oldest_unbound_docket_identifiers = await load_oldest_unbound_docket_identifiers();
+      } catch (error) {
+        // The recovery selector is supplemental. An unavailable Rosetta control
+        // surface must not stop ordinary eligible/degraded queue processing.
+        console.error("[LegislativeVersionQueue] backlog_selector_failed", {
+          error_code: safe_error_code(error),
+        });
+      }
+    }
+    const jobs = await claim_jobs(
+      recovery_contract_scope || current_sources ? 1 : bounded_concurrency(),
+      oldest_unbound_docket_identifiers,
+      recovery_contract_scope,
+      current_sources,
+    );
+    await Promise.all(jobs.map(job => run_with_database_job_context(
+      { label: "legislative_version_queue_job", job_id: job.queue_id },
+      () => process_legislative_version_job(job),
+    )));
+  } catch (error) {
+    console.error("[LegislativeVersionQueue] cycle_failed", {
+      error_class: error instanceof Error ? error.name : "unknown",
+      error_code: safe_error_code(error),
+    });
+  } finally {
+    queue_cycle_running = false;
+  }
+}
+
+function schedule_legislative_version_queue_cycle(): void {
+  if (active_queue_cycle) return;
+  const cycle = run_legislative_version_queue_cycle();
+  active_queue_cycle = cycle;
+  void cycle.finally(() => {
+    if (active_queue_cycle === cycle) active_queue_cycle = null;
+  });
+}
+
+async function run_current_result_observation_cycle(): Promise<void> {
+  if (queue_stopped) return;
+  try {
+    const summary = await reconcile_awaiting_current_results();
+    if (summary.woken > 0 || summary.read_errors > 0) {
+      console.log("[CurrentResultReconciliation] cycle_complete", summary);
+    }
+  } catch (error) {
+    // Result observation is supplemental. It must never stop fresh legislative
+    // source processing or mutate a hold without an exact completed result.
+    console.error("[CurrentResultReconciliation] cycle_failed", {
+      error_class: error instanceof Error ? error.name : "unknown",
+      error_code: safe_error_code(error),
+    });
+  }
+}
+
+function schedule_current_result_observation(): void {
+  if (active_current_result_observation || queue_stopped) return;
+  const observation = run_current_result_observation_cycle();
+  active_current_result_observation = observation;
+  void observation.finally(() => {
+    if (active_current_result_observation === observation) {
+      active_current_result_observation = null;
+    }
+  });
+}
+
+
+export function start_legislative_version_queue_worker(): void {
+  if (queue_timer || !queue_enabled()) return;
+  let recovery_contract_scope: string | null;
+  let current_sources = false;
+  try {
+    recovery_contract_scope =
+      legislative_version_queue_recovery_contract_scope();
+    current_sources = legislative_current_source_scope();
+  } catch (error) {
+    console.error("[LegislativeVersionQueue] disabled_invalid_scope", {
+      error_code: safe_error_code(error),
+    });
+    return;
+  }
+  queue_stopped = false;
+  queue_shutdown_requested = false;
+  const interval_ms = bounded_poll_interval();
+  const concurrency = recovery_contract_scope ? 1 : bounded_concurrency();
+  const reconcile_interval_ms = bounded_reconcile_interval();
+  // Current-source intake and result-arrival observation are independent
+  // lanes. Only an explicit recovery-contract scope isolates this worker.
+  const current_result_observation_enabled =
+    !recovery_contract_scope;
+  const current_result_observation_interval_ms =
+    bounded_current_result_observation_interval();
+  console.log("[LegislativeVersionQueue] started", {
+    worker_id: queue_worker_id,
+    interval_ms,
+    reconcile_interval_ms,
+    concurrency,
+    recovery_contract_scope,
+    current_result_observation_enabled,
+    current_result_observation_interval_ms,
+    lease_minutes: QUEUE_LEASE_MINUTES,
+    priority_scope: "oldest_unbound_docket_then_current_session_latest_version_host_fairness",
+  });
+  schedule_legislative_version_queue_cycle();
+  queue_timer = setInterval(() => {
+    schedule_legislative_version_queue_cycle();
+  }, interval_ms);
+  queue_timer.unref?.();
+
+  if (current_result_observation_enabled) {
+    schedule_current_result_observation();
+    current_result_observation_timer = setInterval(() => {
+      schedule_current_result_observation();
+    }, current_result_observation_interval_ms);
+    current_result_observation_timer.unref?.();
+  }
+}
+
+export async function stop_legislative_version_queue_worker(): Promise<void> {
+  queue_stopped = true;
+  queue_shutdown_requested = true;
+  if (queue_timer) clearInterval(queue_timer);
+  queue_timer = null;
+  if (current_result_observation_timer) {
+    clearInterval(current_result_observation_timer);
+  }
+  current_result_observation_timer = null;
+  wake_shared_provider_release_retries();
+  await Promise.all([
+    active_queue_cycle,
+    active_current_result_observation,
+  ]);
+}
+
+          )
           and (
             $8::text is null
             or version.receipt_json->>'source_fallback_recovery_contract' = $8
