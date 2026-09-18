@@ -37,7 +37,7 @@ services:
       - key: PRISM_ROSETTA_REQUEST_TIMEOUT_MS
         value: "15000"
       - key: LEGISLATIVE_VERSION_QUEUE_ENABLED
-        value: "true"
+        value: "false"
       - key: LEGISLATIVE_VERSION_QUEUE_CONCURRENCY
         value: "1"
       - key: LEGISLATIVE_VERSION_QUEUE_POLL_MS
