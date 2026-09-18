@@ -16,6 +16,20 @@ const colors = {
   awaiting_analysis: "#91c9f7",
   unavailable: muted,
 };
+const precise_statuses = {
+  complete: "Decomposition complete",
+  processing: "Rosetta processing",
+  held: "Rosetta held",
+  failed: "Rosetta failed",
+  not_admitted: "Source preserved · not admitted",
+};
+const precise_colors = {
+  complete: "#59d89c",
+  processing: "#91c9f7",
+  held: "#efcb85",
+  failed: "#ffabab",
+  not_admitted: "#efcb85",
+};
 
 function readable_value(value: unknown, depth = 0): ReactNode {
   if (value == null) return <span style={{ color: muted }}>Not reported</span>;
@@ -32,8 +46,7 @@ type version = { bill_version_id: string; version_type: string; source_document_
   source_url?: string; provider_date?: string | null; provider_sequence?: number;
   processing_state?: string; predecessor_bill_version_id?: string | null; base_bill_version_id?: string | null };
 function version_label(item: version) {
-  const code = item.source_url?.match(/BILLS-\d+[a-z]+\d+([a-z]+)\.pdf$/i)?.[1]?.toUpperCase();
-  return [code ?? item.version_type, item.provider_date, item.provider_sequence ? `text ${item.provider_sequence}` : null].filter(Boolean).join(" · ");
+  return [item.version_type, item.provider_date, item.provider_sequence ? `text ${item.provider_sequence}` : null].filter(Boolean).join(" · ");
 }
 
 export function RosettaEvaluation({ genome_bill_id, current_version, published_version, source_versions = [] }: {
@@ -56,24 +69,41 @@ export function RosettaEvaluation({ genome_bill_id, current_version, published_v
   );
   const current_docket_result = result.data?.current_docket_result;
   const current_result = current_docket_result?.current_result;
+  const precise = current_docket_result?.current_source_status;
+  const status_label = precise ? precise_statuses[precise.state] : current_docket_result ? statuses[current_docket_result.status] : null;
+  const status_color = precise ? precise_colors[precise.state] : current_docket_result ? colors[current_docket_result.status] : muted;
+  const precise_message = precise?.state === "not_admitted"
+    ? "The exact source is preserved in Rosetta, but it has not been admitted to the declared current processing route."
+    : precise?.state === "processing"
+      ? "Rosetta has a current processing attempt for this exact source."
+      : precise?.state === "held"
+        ? `Rosetta is holding this exact source${precise.held_reason ? `: ${precise.held_reason.replaceAll("_", " ")}` : "."}`
+        : precise?.state === "failed"
+          ? `Rosetta recorded a current failure${precise.failure_stage ? ` at ${precise.failure_stage.replaceAll("_", " ")}` : ""}${precise.failure_code ? ` (${precise.failure_code})` : ""}.`
+          : current_docket_result?.public_reason;
   const reference = current_docket_result ? [
-    `Rosetta ${current_docket_result.status} current result`,
+    `Rosetta ${precise?.state ?? current_docket_result.status} current result`,
     `Civic Genome version: ${result.data?.binding?.bill_version_id}`,
-    `Source registry: ${current_docket_result.source_registry_id}`,
+    `Rosetta source document: ${precise?.rosetta_source_document_id ?? result.data?.binding?.source_document_id ?? "none"}`,
+    `Source registry: ${precise?.rosetta_source_registry_id ?? current_docket_result.source_registry_id ?? "none"}`,
     `Docket source key: ${current_docket_result.docket_source_key}`,
     `Content SHA-256: ${current_docket_result.source_content_hash}`,
-    `Extraction run: ${current_result?.extraction_run_id ?? "none"}`,
-    `Engine: ${current_result?.engine_version ?? "not ready"}`,
-    `Reason: ${current_docket_result.public_reason}`,
+    `Stage: ${precise?.stage_id ?? "none"}`,
+    `Attempt: ${precise?.attempt_id ?? "none"}`,
+    `Extraction run: ${current_result?.extraction_run_id ?? precise?.extraction_run_id ?? "none"}`,
+    `Engine: ${current_result?.engine_version ?? precise?.current_engine_version ?? "not admitted"}`,
+    `Held reason: ${precise?.held_reason ?? "none"}`,
+    `Failure: ${precise?.failure_code ?? "none"}`,
+    `Reason: ${precise_message ?? current_docket_result.public_reason}`,
     result.data?.review_url,
   ].join("\n") : "";
 
   return <section aria-label="Rosetta evaluation results" style={{ background: "rgba(13,30,25,.88)", border, borderRadius: 12, padding: "1rem", marginBottom: "1.25rem" }}>
     <div style={{ display: "flex", justifyContent: "space-between", gap: ".8rem", flexWrap: "wrap", alignItems: "center" }}>
       <h2 style={{ margin: 0, fontSize: "1.2rem" }}>Rosetta decomposition {current_result && <span style={{ fontFamily: mono, fontSize: ".85rem", color: muted }}>· {current_result.engine_version}</span>}</h2>
-      {current_docket_result && <strong style={{ color: colors[current_docket_result.status], fontFamily: mono }}>{statuses[current_docket_result.status]}</strong>}
+      {status_label && <strong style={{ color: status_color, fontFamily: mono }}>{status_label}</strong>}
     </div>
-    <p style={{ color: muted, fontSize: ".83rem", lineHeight: 1.5 }}>Read each legislative text version and inspect its own current-engine validation. A missing result remains pending for that exact source; procedural events do not replace bill text.</p>
+    <p style={{ color: muted, fontSize: ".83rem", lineHeight: 1.5 }}>Read each legislative text version and inspect its own current-engine validation. Source preservation, current admission, processing, and completion are separate states.</p>
     <div style={{ display: "flex", gap: ".7rem", flexWrap: "wrap", alignItems: "center", marginBottom: ".8rem" }}>
       {versions.length > 0 && <label style={{ fontSize: ".8rem" }}>Source version {" "}<select aria-label="Evaluation source version" value={selected_id ?? ""} onChange={event => { set_selected_version_id(event.target.value); set_copied(false); }} style={{ padding: ".4rem", background: "#122e24", color: "#edf7f2", border, borderRadius: 6 }}>
         {versions.map(item => <option key={item.bill_version_id} value={item.bill_version_id}>{version_label(item)}{item.bill_version_id === current_version?.bill_version_id ? " · latest full text" : ""}</option>)}
@@ -90,8 +120,9 @@ export function RosettaEvaluation({ genome_bill_id, current_version, published_v
     </div>}
     {result.isLoading ? <p role="status">Reading saved result…</p> : result.error ? <p role="alert" style={{ color: "#ffabab" }}>Rosetta current result could not be read. Refresh to try again; the bounded status is unknown.</p> : result.data?.availability === "binding_missing" ? <p style={{ color: muted }}>This source version does not yet have an exact Rosetta document and content-hash binding. Use the Rosetta reader to choose a source explicitly.</p> : result.data?.availability === "not_in_evaluation" ? <p style={{ color: muted }}>No current Rosetta result is available for this exact source version.</p> : current_docket_result ? <>
       <p style={{ fontSize: ".82rem", color: muted }}>{result.data?.binding?.version_type} · source key {current_docket_result.docket_source_key}</p>
-      <p style={{ color: colors[current_docket_result.status], overflowWrap: "anywhere" }}>{current_docket_result.public_reason}</p>
+      <p style={{ color: status_color, overflowWrap: "anywhere" }}>{precise_message ?? current_docket_result.public_reason}</p>
       <details style={{ marginTop: ".9rem" }} open={Boolean(current_result)}><summary style={{ cursor: "pointer", color: "#59d89c" }}>Current result, validation summary, and coverage</summary>
+        {precise && <div style={{ marginTop: ".6rem", fontSize: ".8rem" }}>{readable_value(precise)}</div>}
         <div style={{ marginTop: ".6rem", fontSize: ".8rem" }}>{readable_value(current_result)}</div>
         <div style={{ marginTop: ".6rem", fontSize: ".8rem" }}>{readable_value(current_docket_result.validation_summary)}</div>
         <div style={{ marginTop: ".6rem", fontSize: ".8rem" }}>{readable_value(current_docket_result.coverage)}</div>
