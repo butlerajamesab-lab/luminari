@@ -292,6 +292,12 @@ APPROVED_REPOSITORY_ONLY = {
         "20260915070000_docket_prefix_subsidiary_failure_reconcile.sql",
         "6beb3ff76c5cf26adc7963cc99dda2bb1ed92667",
     ),
+    # Forward migration pending production application through the normal
+    # Supabase deployment gate.
+    "20260918152000": (
+        "20260918152000_civic_genome_current_result_arrival_reconciliation.sql",
+        "3d919b94f17e5509d4610610c9518d04a1616f7e",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
