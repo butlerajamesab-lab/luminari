@@ -3168,6 +3168,29 @@ const actionPathsRouter = router({
 
 // ─── Resource Verification Router: lifecycle management for unified resources ───
 
+// Column projection for unified_resources. The live table is snake_case;
+// the admin UI reads camelCase, so every read aliases explicitly.
+const UNIFIED_RESOURCE_ADMIN_COLUMNS = `
+  id, name, description,
+  resource_type AS "resourceType", domain,
+  urgency_level AS "urgencyLevel", state_code AS "stateCode",
+  jurisdiction_type AS "jurisdictionType",
+  phone, website, email, agency, category,
+  (is_active <> 0) AS "isActive",
+  verification_status AS "verificationStatus",
+  flagged_reason AS "flaggedReason", verified_by AS "verifiedBy",
+  last_verified_at AS "lastVerifiedAt",
+  created_at AS "createdAt", updated_at AS "updatedAt",
+  source_table AS "sourceTable", source_id AS "sourceId"`;
+
+const UNIFIED_RESOURCE_SORT_COLUMNS = {
+  name: "name",
+  lastVerifiedAt: "last_verified_at",
+  updatedAt: "updated_at",
+  domain: "domain",
+  verificationStatus: "verification_status",
+} as const;
+
 const resourceVerificationRouter = router({
   // List resources with filters for admin panel
   list: protectedProcedure
@@ -3185,62 +3208,53 @@ const resourceVerificationRouter = router({
     .query(async ({ input }) => {
       const { pool: rawPool } = await import("./db");
       const offset = (input.page - 1) * input.pageSize;
-      
-      let where = "WHERE 1=1";
-      const params: any[] = [];
-      
+
+      const conditions: string[] = [];
+      const params: unknown[] = [];
+      const bind = (value: unknown) => { params.push(value); return `$${params.length}`; };
+
       if (input.verificationStatus !== "all") {
-        where += " AND verificationStatus = ?";
-        params.push(input.verificationStatus);
+        conditions.push(`verification_status = ${bind(input.verificationStatus)}`);
       }
       if (input.domain) {
-        where += " AND domain = ?";
-        params.push(input.domain);
+        conditions.push(`domain = ${bind(input.domain)}`);
       }
       if (input.resourceType) {
-        where += " AND resourceType = ?";
-        params.push(input.resourceType);
+        conditions.push(`resource_type = ${bind(input.resourceType)}`);
       }
       if (input.staleOnly) {
         const ninetyDaysAgo = Date.now() - 90 * 24 * 60 * 60 * 1000;
-        where += " AND (lastVerifiedAt IS NULL OR lastVerifiedAt < ?)";
-        params.push(ninetyDaysAgo);
+        conditions.push(`(last_verified_at IS NULL OR last_verified_at < ${bind(ninetyDaysAgo)})`);
       }
       if (input.search) {
-        where += " AND (name LIKE ? OR agency LIKE ? OR description LIKE ?)";
-        const s = `%${input.search}%`;
-        params.push(s, s, s);
+        const s = bind(`%${input.search}%`);
+        conditions.push(`(name ILIKE ${s} OR agency ILIKE ${s} OR description ILIKE ${s})`);
       }
-      
-      const orderCol = {
-        name: "name",
-        lastVerifiedAt: "lastVerifiedAt",
-        updatedAt: "updatedAt",
-        domain: "domain",
-        verificationStatus: "verificationStatus",
-      }[input.sortBy];
+      const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+
+      const orderCol = UNIFIED_RESOURCE_SORT_COLUMNS[input.sortBy];
       const orderDir = input.sortDir === "desc" ? "DESC" : "ASC";
-      // Null-safe sort for lastVerifiedAt
-      const nullSort = input.sortBy === "lastVerifiedAt" && input.sortDir === "asc" 
-        ? `ORDER BY ${orderCol} IS NULL DESC, ${orderCol} ${orderDir}`
-        : `ORDER BY ${orderCol} ${orderDir}`;
-      
-      const [rows] = await rawPool.query(
-        `SELECT id, name, description, resourceType, domain, urgencyLevel, stateCode, jurisdictionType,
-                phone, website, email, agency, category, isActive, verificationStatus, flaggedReason,
-                verifiedBy, lastVerifiedAt, createdAt, updatedAt, sourceTable, sourceId
-         FROM unified_resources ${where} ${nullSort} LIMIT ? OFFSET ?`,
-        [...params, input.pageSize, offset]
+      // Surface never-verified rows first when ascending on verification age.
+      const orderBy = input.sortBy === "lastVerifiedAt" && input.sortDir === "asc"
+        ? `ORDER BY ${orderCol} ASC NULLS FIRST`
+        : `ORDER BY ${orderCol} ${orderDir} NULLS LAST`;
+
+      const countResult = await rawPool.query(
+        `SELECT COUNT(*)::bigint AS total FROM unified_resources ${where}`,
+        params,
       );
-      
-      const [countResult] = await rawPool.query(
-        `SELECT COUNT(*) as total FROM unified_resources ${where}`,
-        params
+      const total = Number(countResult.rows[0]?.total ?? 0);
+
+      const limitParam = bind(input.pageSize);
+      const offsetParam = bind(offset);
+      const rows = await rawPool.query(
+        `SELECT ${UNIFIED_RESOURCE_ADMIN_COLUMNS}
+         FROM unified_resources ${where} ${orderBy} LIMIT ${limitParam} OFFSET ${offsetParam}`,
+        params,
       );
-      const total = Number((countResult as any)[0]?.total || 0);
-      
+
       return {
-        resources: rows as any[],
+        resources: rows.rows,
         total,
         page: input.page,
         page_size: input.pageSize,
@@ -3256,8 +3270,10 @@ const resourceVerificationRouter = router({
       const now = Date.now();
       const verifiedBy = ctx.user?.name || ctx.user?.open_id || "admin";
       await rawPool.query(
-        `UPDATE unified_resources SET verificationStatus = 'verified', lastVerifiedAt = ?, verifiedBy = ?, flaggedReason = NULL, updatedAt = ? WHERE id = ?`,
-        [now, verifiedBy, now, input.resourceId]
+        `UPDATE unified_resources
+         SET verification_status = 'verified', last_verified_at = $1, verified_by = $2, flagged_reason = NULL, updated_at = $3
+         WHERE id = $4`,
+        [now, verifiedBy, now, input.resourceId],
       );
       return { success: true, resource_id: input.resourceId, verified_at: now, verifiedBy };
     }),
@@ -3269,10 +3285,11 @@ const resourceVerificationRouter = router({
       const { pool: rawPool } = await import("./db");
       const now = Date.now();
       const verifiedBy = ctx.user?.name || ctx.user?.open_id || "admin";
-      const placeholders = input.resourceIds.map(() => "?").join(",");
       await rawPool.query(
-        `UPDATE unified_resources SET verificationStatus = 'verified', lastVerifiedAt = ?, verifiedBy = ?, flaggedReason = NULL, updatedAt = ? WHERE id IN (${placeholders})`,
-        [now, verifiedBy, now, ...input.resourceIds]
+        `UPDATE unified_resources
+         SET verification_status = 'verified', last_verified_at = $1, verified_by = $2, flagged_reason = NULL, updated_at = $3
+         WHERE id = ANY($4::int[])`,
+        [now, verifiedBy, now, input.resourceIds],
       );
       return { success: true, count: input.resourceIds.length, verified_at: now };
     }),
@@ -3288,13 +3305,18 @@ const resourceVerificationRouter = router({
       const now = Date.now();
       const flaggedBy = ctx.user?.name || ctx.user?.open_id || "admin";
       await rawPool.query(
-        `UPDATE unified_resources SET verificationStatus = 'flagged', flaggedReason = ?, verifiedBy = ?, updatedAt = ? WHERE id = ?`,
-        [input.reason, flaggedBy, now, input.resourceId]
+        `UPDATE unified_resources
+         SET verification_status = 'flagged', flagged_reason = $1, verified_by = $2, updated_at = $3
+         WHERE id = $4`,
+        [input.reason, flaggedBy, now, input.resourceId],
       );
       // Emit RESOURCE_STALE signal so matcher penalizes and transmission blocks this resource
       try {
-        const [resRow] = await rawPool.query(`SELECT name, domain, stateCode FROM unified_resources WHERE id = ? LIMIT 1`, [input.resourceId]) as any;
-        const res = (resRow as any[])[0];
+        const resRow = await rawPool.query(
+          `SELECT name, domain, state_code AS "stateCode" FROM unified_resources WHERE id = $1 LIMIT 1`,
+          [input.resourceId],
+        );
+        const res = resRow.rows[0];
         await emitSignal({
           effectType: "RESOURCE_STALE",
           targetTable: "unified_resources",
@@ -3318,13 +3340,16 @@ const resourceVerificationRouter = router({
       const { pool: rawPool } = await import("./db");
       const now = Date.now();
       await rawPool.query(
-        `UPDATE unified_resources SET isActive = false, updatedAt = ? WHERE id = ?`,
-        [now, input.resourceId]
+        `UPDATE unified_resources SET is_active = 0, updated_at = $1 WHERE id = $2`,
+        [now, input.resourceId],
       );
       // Emit RESOURCE_STALE signal — resource is now inactive
       try {
-        const [resRow] = await rawPool.query(`SELECT name, domain, stateCode FROM unified_resources WHERE id = ? LIMIT 1`, [input.resourceId]) as any;
-        const res = (resRow as any[])[0];
+        const resRow = await rawPool.query(
+          `SELECT name, domain, state_code AS "stateCode" FROM unified_resources WHERE id = $1 LIMIT 1`,
+          [input.resourceId],
+        );
+        const res = resRow.rows[0];
         await emitSignal({
           effectType: "RESOURCE_STALE",
           targetTable: "unified_resources",
@@ -3348,8 +3373,8 @@ const resourceVerificationRouter = router({
       const { pool: rawPool } = await import("./db");
       const now = Date.now();
       await rawPool.query(
-        `UPDATE unified_resources SET isActive = true, updatedAt = ? WHERE id = ?`,
-        [now, input.resourceId]
+        `UPDATE unified_resources SET is_active = 1, updated_at = $1 WHERE id = $2`,
+        [now, input.resourceId],
       );
       // Resolve RESOURCE_STALE signals — resource is active again
       try {
@@ -3362,85 +3387,89 @@ const resourceVerificationRouter = router({
   audit: protectedProcedure.query(async () => {
     const { pool: rawPool } = await import("./db");
     const ninetyDaysAgo = Date.now() - 90 * 24 * 60 * 60 * 1000;
-    
+
     // Overall stats
-    const [statsRows] = await rawPool.query(`
-      SELECT 
-        COUNT(*) as total,
-        SUM(CASE WHEN isActive = true THEN 1 ELSE 0 END) as active,
-        SUM(CASE WHEN isActive = false THEN 1 ELSE 0 END) as inactive,
-        SUM(CASE WHEN verificationStatus = 'verified' THEN 1 ELSE 0 END) as verified,
-        SUM(CASE WHEN verificationStatus = 'unverified' THEN 1 ELSE 0 END) as unverified,
-        SUM(CASE WHEN verificationStatus = 'flagged' THEN 1 ELSE 0 END) as flagged,
-        SUM(CASE WHEN lastVerifiedAt IS NULL OR lastVerifiedAt < ? THEN 1 ELSE 0 END) as stale
+    const statsRows = await rawPool.query(`
+      SELECT
+        COUNT(*)::bigint AS total,
+        COUNT(*) FILTER (WHERE is_active <> 0)::bigint AS active,
+        COUNT(*) FILTER (WHERE is_active = 0)::bigint AS inactive,
+        COUNT(*) FILTER (WHERE verification_status = 'verified')::bigint AS verified,
+        COUNT(*) FILTER (WHERE verification_status = 'unverified')::bigint AS unverified,
+        COUNT(*) FILTER (WHERE verification_status = 'flagged')::bigint AS flagged,
+        COUNT(*) FILTER (WHERE last_verified_at IS NULL OR last_verified_at < $1)::bigint AS stale
       FROM unified_resources
     `, [ninetyDaysAgo]);
-    const stats = (statsRows as any)[0];
-    
+    const stats = statsRows.rows[0] ?? {};
+
     // Breakdown by domain
-    const [domainRows] = await rawPool.query(`
-      SELECT domain, 
-        COUNT(*) as total,
-        SUM(CASE WHEN verificationStatus = 'verified' THEN 1 ELSE 0 END) as verified,
-        SUM(CASE WHEN verificationStatus = 'flagged' THEN 1 ELSE 0 END) as flagged,
-        SUM(CASE WHEN lastVerifiedAt IS NULL OR lastVerifiedAt < ? THEN 1 ELSE 0 END) as stale
-      FROM unified_resources WHERE isActive = true
+    const domainRows = await rawPool.query(`
+      SELECT domain,
+        COUNT(*)::bigint AS total,
+        COUNT(*) FILTER (WHERE verification_status = 'verified')::bigint AS verified,
+        COUNT(*) FILTER (WHERE verification_status = 'flagged')::bigint AS flagged,
+        COUNT(*) FILTER (WHERE last_verified_at IS NULL OR last_verified_at < $1)::bigint AS stale
+      FROM unified_resources WHERE is_active <> 0
       GROUP BY domain ORDER BY total DESC
     `, [ninetyDaysAgo]);
-    
+
     // Breakdown by resource type
-    const [typeRows] = await rawPool.query(`
-      SELECT resourceType,
-        COUNT(*) as total,
-        SUM(CASE WHEN verificationStatus = 'verified' THEN 1 ELSE 0 END) as verified,
-        SUM(CASE WHEN verificationStatus = 'flagged' THEN 1 ELSE 0 END) as flagged
-      FROM unified_resources WHERE isActive = true
-      GROUP BY resourceType ORDER BY total DESC
+    const typeRows = await rawPool.query(`
+      SELECT resource_type AS "resourceType",
+        COUNT(*)::bigint AS total,
+        COUNT(*) FILTER (WHERE verification_status = 'verified')::bigint AS verified,
+        COUNT(*) FILTER (WHERE verification_status = 'flagged')::bigint AS flagged
+      FROM unified_resources WHERE is_active <> 0
+      GROUP BY resource_type ORDER BY total DESC
     `);
-    
-    // Top 10 stale resources (oldest lastVerifiedAt)
-    const [staleRows] = await rawPool.query(`
-      SELECT id, name, domain, resourceType, lastVerifiedAt, verificationStatus, agency
-      FROM unified_resources 
-      WHERE isActive = true AND (lastVerifiedAt IS NULL OR lastVerifiedAt < ?)
-      ORDER BY lastVerifiedAt ASC
+
+    // Top 10 stale resources (oldest last_verified_at, never-verified first)
+    const staleRows = await rawPool.query(`
+      SELECT id, name, domain, resource_type AS "resourceType",
+             last_verified_at AS "lastVerifiedAt", verification_status AS "verificationStatus", agency
+      FROM unified_resources
+      WHERE is_active <> 0 AND (last_verified_at IS NULL OR last_verified_at < $1)
+      ORDER BY last_verified_at ASC NULLS FIRST
       LIMIT 10
     `, [ninetyDaysAgo]);
-    
+
     // All flagged resources
-    const [flaggedRows] = await rawPool.query(`
-      SELECT id, name, domain, resourceType, flaggedReason, verifiedBy, updatedAt, agency
-      FROM unified_resources 
-      WHERE verificationStatus = 'flagged'
-      ORDER BY updatedAt DESC
+    const flaggedRows = await rawPool.query(`
+      SELECT id, name, domain, resource_type AS "resourceType",
+             flagged_reason AS "flaggedReason", verified_by AS "verifiedBy", updated_at AS "updatedAt", agency
+      FROM unified_resources
+      WHERE verification_status = 'flagged'
+      ORDER BY updated_at DESC
     `);
-    
+
+    const total = Number(stats.total ?? 0);
+    const verified = Number(stats.verified ?? 0);
     return {
       stats: {
-        total: Number(stats.total),
-        active: Number(stats.active),
-        inactive: Number(stats.inactive),
-        verified: Number(stats.verified),
-        unverified: Number(stats.unverified),
-        flagged: Number(stats.flagged),
-        stale: Number(stats.stale),
-        health_score: stats.total > 0 ? Math.round((Number(stats.verified) / Number(stats.total)) * 100) : 0,
+        total,
+        active: Number(stats.active ?? 0),
+        inactive: Number(stats.inactive ?? 0),
+        verified,
+        unverified: Number(stats.unverified ?? 0),
+        flagged: Number(stats.flagged ?? 0),
+        stale: Number(stats.stale ?? 0),
+        health_score: total > 0 ? Math.round((verified / total) * 100) : 0,
       },
-      by_domain: (domainRows as any[]).map(r => ({
+      by_domain: domainRows.rows.map((r: Record<string, unknown>) => ({
         domain: r.domain,
         total: Number(r.total),
         verified: Number(r.verified),
         flagged: Number(r.flagged),
         stale: Number(r.stale),
       })),
-      by_type: (typeRows as any[]).map(r => ({
+      by_type: typeRows.rows.map((r: Record<string, unknown>) => ({
         resource_type: r.resourceType,
         total: Number(r.total),
         verified: Number(r.verified),
         flagged: Number(r.flagged),
       })),
-      stale_resources: staleRows as any[],
-      flagged_resources: flaggedRows as any[],
+      stale_resources: staleRows.rows,
+      flagged_resources: flaggedRows.rows,
     };
   }),
 
@@ -3449,11 +3478,17 @@ const resourceVerificationRouter = router({
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
       const { pool: rawPool } = await import("./db");
-      const [rows] = await rawPool.query(
-        `SELECT * FROM unified_resources WHERE id = ?`,
-        [input.id]
+      const rows = await rawPool.query(
+        `SELECT ${UNIFIED_RESOURCE_ADMIN_COLUMNS},
+                need_types AS "needTypes", jurisdiction_id AS "jurisdictionId", address,
+                hard_eligibility AS "hardEligibility", soft_signals AS "softSignals",
+                matching_pipeline_types AS "matchingPipelineTypes",
+                match_explanation_template AS "matchExplanationTemplate",
+                eligibility_notes AS "eligibilityNotes", apply_notes AS "applyNotes"
+         FROM unified_resources WHERE id = $1`,
+        [input.id],
       );
-      const resource = (rows as any[])[0];
+      const resource = rows.rows[0];
       if (!resource) throw new TRPCError({ code: "NOT_FOUND", message: "Resource not found" });
       return resource;
     }),
@@ -3461,11 +3496,11 @@ const resourceVerificationRouter = router({
   // Get filter options for the admin panel
   filterOptions: protectedProcedure.query(async () => {
     const { pool: rawPool } = await import("./db");
-    const [domains] = await rawPool.query(`SELECT DISTINCT domain FROM unified_resources ORDER BY domain`);
-    const [types] = await rawPool.query(`SELECT DISTINCT resourceType FROM unified_resources ORDER BY resourceType`);
+    const domains = await rawPool.query(`SELECT DISTINCT domain FROM unified_resources WHERE domain IS NOT NULL ORDER BY domain`);
+    const types = await rawPool.query(`SELECT DISTINCT resource_type AS "resourceType" FROM unified_resources WHERE resource_type IS NOT NULL ORDER BY resource_type`);
     return {
-      domains: (domains as any[]).map(r => r.domain),
-      resource_types: (types as any[]).map(r => r.resourceType),
+      domains: domains.rows.map((r: Record<string, unknown>) => r.domain as string),
+      resource_types: types.rows.map((r: Record<string, unknown>) => r.resourceType as string),
     };
   }),
 });
@@ -3538,16 +3573,16 @@ const supportMatcherRouter = router({
 
   stats: publicProcedure.query(async () => {
     const { pool: rawPool } = await import("./db");
-    const [rows] = await rawPool.query(`
-      SELECT 
-        COUNT(*) as total,
-        SUM(CASE WHEN isActive = true THEN 1 ELSE 0 END) as active,
-        COUNT(DISTINCT domain) as domains,
-        COUNT(DISTINCT resourceType) as resource_types,
-        COUNT(DISTINCT stateCode) as states
+    const result = await rawPool.query(`
+      SELECT
+        COUNT(*)::bigint AS total,
+        COUNT(*) FILTER (WHERE is_active <> 0)::bigint AS active,
+        COUNT(DISTINCT domain)::bigint AS domains,
+        COUNT(DISTINCT resource_type)::bigint AS resource_types,
+        COUNT(DISTINCT state_code)::bigint AS states
       FROM unified_resources
     `);
-    const row = (rows as any)[0];
+    const row = result.rows[0];
     return {
       total: Number(row?.total || 0),
       active: Number(row?.active || 0),

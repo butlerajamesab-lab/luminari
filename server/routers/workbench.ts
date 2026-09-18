@@ -10,7 +10,7 @@
  */
 import { z } from "zod";
 import { router, protectedProcedure } from "../_core/trpc";
-import { db } from "../db";
+import { db, verifyCaseOwnership } from "../db";
 import {
   cases,
   documents,
@@ -30,32 +30,19 @@ import {
   entityRoles,
 } from "../../drizzle/schema";
 import { eq, and, sql, desc, count } from "drizzle-orm";
+import type { AnyPgColumn } from "drizzle-orm/pg-core";
 
 // ─── Helpers ───
 
-type CaseIdInput = string;
-
-type WorkbenchCaseRow = {
-  id: string;
-  owner_ref: string | null;
-};
-
-async function verifyCaseOwnership(
-  caseId: CaseIdInput,
-  userId: number | string,
-) {
-  const result = await db.execute(sql<WorkbenchCaseRow>`
-    SELECT id, owner_ref
-    FROM cases
-    WHERE id = ${caseId}
-    LIMIT 1
-  `);
-  const [c] = result.rows;
-  if (!c || (c.owner_ref !== null && c.owner_ref !== String(userId))) {
-    throw new Error("Case not found or access denied");
-  }
-  return c;
-}
+/**
+ * The live case spine is integer-keyed (public.cases.id serial). A few
+ * satellite tables (events, evidence_items, claims) were declared with a
+ * uuid case_id ahead of the spine migration. Comparing through ::text keeps
+ * the query valid for either column type; rows simply do not match until
+ * those tables are re-keyed to the integer spine.
+ */
+const matchesCase = (column: AnyPgColumn, caseId: number) =>
+  sql`${column}::text = ${String(caseId)}`;
 
 // ─── Router ───
 
@@ -64,10 +51,10 @@ export const workbenchRouter = router({
    * Full workbench overview — aggregates counts and recent items
    */
   overview: protectedProcedure
-    .input(z.object({ caseId: z.string().uuid() }))
+    .input(z.object({ caseId: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {
       await verifyCaseOwnership(input.caseId, ctx.user.id);
-      const caseId = input.caseId as any;
+      const caseId = input.caseId;
 
       // Parallel queries for all counts
       const [
@@ -88,43 +75,43 @@ export const workbenchRouter = router({
         [missingCount],
         [foiaCount],
       ] = await Promise.all([
-        db.select().from(cases).where(eq(cases.id, caseId)),
+        db.select().from(cases).where(sql`${cases.id}::text = ${String(caseId)}`),
         db
           .select({ c: sql<number>`COUNT(*)` })
           .from(documents)
-          .where(eq(documents.caseId, caseId)),
+          .where(matchesCase(documents.caseId, caseId)),
         db
           .select({ c: sql<number>`COUNT(*)` })
           .from(entities)
-          .where(eq(entities.caseId, caseId)),
+          .where(matchesCase(entities.caseId, caseId)),
         db
           .select({ c: sql<number>`COUNT(*)` })
           .from(claims)
-          .where(eq(claims.caseId, caseId)),
+          .where(matchesCase(claims.caseId, caseId)),
         db
           .select({ c: sql<number>`COUNT(*)` })
           .from(events)
-          .where(eq(events.caseId, caseId)),
+          .where(matchesCase(events.caseId, caseId)),
         db
           .select({ c: sql<number>`COUNT(*)` })
           .from(findings)
-          .where(eq(findings.caseId, caseId)),
+          .where(matchesCase(findings.caseId, caseId)),
         db
           .select({ c: sql<number>`COUNT(*)` })
           .from(signalFlags)
-          .where(eq(signalFlags.caseId, caseId)),
+          .where(matchesCase(signalFlags.caseId, caseId)),
         db
           .select({ c: sql<number>`COUNT(*)` })
           .from(quotes)
-          .where(eq(quotes.caseId, caseId)),
+          .where(matchesCase(quotes.caseId, caseId)),
         db
           .select({ c: sql<number>`COUNT(*)` })
           .from(relationships)
-          .where(eq(relationships.caseId, caseId)),
+          .where(matchesCase(relationships.caseId, caseId)),
         db
           .select({ c: sql<number>`COUNT(*)` })
           .from(evidenceItems)
-          .where(eq(evidenceItems.caseId, caseId)),
+          .where(matchesCase(evidenceItems.caseId, caseId)),
         // proof links require join through evidence items
         db
           .select({ c: sql<number>`COUNT(*)` })
@@ -133,7 +120,7 @@ export const workbenchRouter = router({
             evidenceItems,
             eq(evidenceProofLinks.evidenceId, evidenceItems.id),
           )
-          .where(eq(evidenceItems.caseId, caseId)),
+          .where(matchesCase(evidenceItems.caseId, caseId)),
         db
           .select({ c: sql<number>`COUNT(*)` })
           .from(evidenceEventLinks)
@@ -141,28 +128,28 @@ export const workbenchRouter = router({
             evidenceItems,
             eq(evidenceEventLinks.evidenceId, evidenceItems.id),
           )
-          .where(eq(evidenceItems.caseId, caseId)),
+          .where(matchesCase(evidenceItems.caseId, caseId)),
         db
           .select({ c: sql<number>`COUNT(*)` })
           .from(checklistItems)
-          .where(eq(checklistItems.caseId, caseId)),
+          .where(matchesCase(checklistItems.caseId, caseId)),
         db
           .select({ c: sql<number>`COUNT(*)` })
           .from(checklistItems)
           .where(
             and(
-              eq(checklistItems.caseId, caseId),
+              matchesCase(checklistItems.caseId, caseId),
               eq(checklistItems.checked, true),
             ),
           ),
         db
           .select({ c: sql<number>`COUNT(*)` })
           .from(missingRecords)
-          .where(eq(missingRecords.caseId, caseId)),
+          .where(matchesCase(missingRecords.caseId, caseId)),
         db
           .select({ c: sql<number>`COUNT(*)` })
           .from(foiaRequests)
-          .where(eq(foiaRequests.caseId, caseId)),
+          .where(matchesCase(foiaRequests.caseId, caseId)),
       ]);
 
       return {
@@ -191,7 +178,7 @@ export const workbenchRouter = router({
    * Parts Checklist — what is present, what is missing
    */
   checklist: protectedProcedure
-    .input(z.object({ caseId: z.string().uuid() }))
+    .input(z.object({ caseId: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {
       await verifyCaseOwnership(input.caseId, ctx.user.id);
 
@@ -199,12 +186,12 @@ export const workbenchRouter = router({
         db
           .select()
           .from(checklistItems)
-          .where(eq(checklistItems.caseId, input.caseId as any))
+          .where(matchesCase(checklistItems.caseId, input.caseId))
           .orderBy(checklistItems.sortOrder),
         db
           .select()
           .from(missingRecords)
-          .where(eq(missingRecords.caseId, input.caseId as any))
+          .where(matchesCase(missingRecords.caseId, input.caseId))
           .orderBy(desc(missingRecords.detectedAt)),
       ]);
 
@@ -216,7 +203,7 @@ export const workbenchRouter = router({
    */
   evidenceSummary: protectedProcedure
     .input(
-      z.object({ caseId: z.string().uuid(), limit: z.number().default(20) }),
+      z.object({ caseId: z.number().int().positive(), limit: z.number().default(20) }),
     )
     .query(async ({ ctx, input }) => {
       await verifyCaseOwnership(input.caseId, ctx.user.id);
@@ -224,7 +211,7 @@ export const workbenchRouter = router({
       const items = await db
         .select()
         .from(evidenceItems)
-        .where(eq(evidenceItems.caseId, input.caseId as any))
+        .where(matchesCase(evidenceItems.caseId, input.caseId))
         .orderBy(desc(evidenceItems.createdAt))
         .limit(input.limit);
 
@@ -257,7 +244,7 @@ export const workbenchRouter = router({
    */
   recentActivity: protectedProcedure
     .input(
-      z.object({ caseId: z.string().uuid(), limit: z.number().default(15) }),
+      z.object({ caseId: z.number().int().positive(), limit: z.number().default(15) }),
     )
     .query(async ({ ctx, input }) => {
       await verifyCaseOwnership(input.caseId, ctx.user.id);
@@ -272,7 +259,7 @@ export const workbenchRouter = router({
             created_at: events.createdAt,
           })
           .from(events)
-          .where(eq(events.caseId, input.caseId as any))
+          .where(matchesCase(events.caseId, input.caseId))
           .orderBy(desc(events.createdAt))
           .limit(input.limit),
         db
@@ -284,7 +271,7 @@ export const workbenchRouter = router({
             created_at: findings.createdAt,
           })
           .from(findings)
-          .where(eq(findings.caseId, input.caseId as any))
+          .where(matchesCase(findings.caseId, input.caseId))
           .orderBy(desc(findings.createdAt))
           .limit(input.limit),
         db
@@ -296,7 +283,7 @@ export const workbenchRouter = router({
             created_at: signalFlags.snapshotId,
           })
           .from(signalFlags)
-          .where(eq(signalFlags.caseId, input.caseId as any))
+          .where(matchesCase(signalFlags.caseId, input.caseId))
           .orderBy(desc(signalFlags.snapshotId))
           .limit(input.limit),
       ]);
@@ -313,10 +300,10 @@ export const workbenchRouter = router({
    * Returns prioritized list of recommended actions
    */
   nextSteps: protectedProcedure
-    .input(z.object({ caseId: z.string().uuid() }))
+    .input(z.object({ caseId: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {
       await verifyCaseOwnership(input.caseId, ctx.user.id);
-      const caseId = input.caseId as any;
+      const caseId = input.caseId;
 
       const [
         [docCount],
@@ -333,45 +320,45 @@ export const workbenchRouter = router({
         db
           .select({ c: sql<number>`COUNT(*)` })
           .from(documents)
-          .where(eq(documents.caseId, caseId)),
+          .where(matchesCase(documents.caseId, caseId)),
         db
           .select({ c: sql<number>`COUNT(*)` })
           .from(claims)
-          .where(eq(claims.caseId, caseId)),
+          .where(matchesCase(claims.caseId, caseId)),
         db
           .select({ c: sql<number>`COUNT(*)` })
           .from(events)
-          .where(eq(events.caseId, caseId)),
+          .where(matchesCase(events.caseId, caseId)),
         db
           .select({ c: sql<number>`COUNT(*)` })
           .from(findings)
-          .where(eq(findings.caseId, caseId)),
+          .where(matchesCase(findings.caseId, caseId)),
         db
           .select({ c: sql<number>`COUNT(*)` })
           .from(evidenceItems)
-          .where(eq(evidenceItems.caseId, caseId)),
+          .where(matchesCase(evidenceItems.caseId, caseId)),
         db
           .select({ c: sql<number>`COUNT(*)` })
           .from(checklistItems)
-          .where(eq(checklistItems.caseId, caseId)),
+          .where(matchesCase(checklistItems.caseId, caseId)),
         db
           .select({ c: sql<number>`COUNT(*)` })
           .from(checklistItems)
           .where(
             and(
-              eq(checklistItems.caseId, caseId),
+              matchesCase(checklistItems.caseId, caseId),
               eq(checklistItems.checked, true),
             ),
           ),
         db
           .select({ c: sql<number>`COUNT(*)` })
           .from(missingRecords)
-          .where(eq(missingRecords.caseId, caseId)),
+          .where(matchesCase(missingRecords.caseId, caseId)),
         db
           .select({ c: sql<number>`COUNT(*)` })
           .from(foiaRequests)
-          .where(eq(foiaRequests.caseId, caseId)),
-        db.select().from(cases).where(eq(cases.id, caseId)),
+          .where(matchesCase(foiaRequests.caseId, caseId)),
+        db.select().from(cases).where(sql`${cases.id}::text = ${String(caseId)}`),
       ]);
 
       const steps: {
@@ -507,7 +494,7 @@ export const workbenchRouter = router({
    * Claims breakdown — grouped by type with status
    */
   claimsBreakdown: protectedProcedure
-    .input(z.object({ caseId: z.string().uuid() }))
+    .input(z.object({ caseId: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {
       await verifyCaseOwnership(input.caseId, ctx.user.id);
 
@@ -521,7 +508,7 @@ export const workbenchRouter = router({
           created_at: claims.createdAt,
         })
         .from(claims)
-        .where(eq(claims.caseId, input.caseId as any))
+        .where(matchesCase(claims.caseId, input.caseId))
         .orderBy(desc(claims.createdAt));
 
       return allClaims;

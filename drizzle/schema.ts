@@ -3081,15 +3081,17 @@ export type InsertWorkflowStep = typeof workflowSteps.$inferInsert;
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  openId: varchar("openId", { length: 64 }).notNull().unique(),
+  // Column names mirror the live public.users table (snake_case), which
+  // server/db-legacy.ts also targets directly with raw SQL.
+  openId: text("open_id").notNull().unique(),
   name: text("name"),
-  email: varchar("email", { length: 320 }),
-  loginMethod: varchar("loginMethod", { length: 64 }),
-  role: pgEnum("users_role_enum", ["user", "admin"])("role").default("user").notNull(),
-  plan: pgEnum("users_plan_enum", ["free", "advocacy", "family_advocacy", "analyst", "professional", "enterprise"])("plan").default("free").notNull(),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull(),
-  updatedAt: bigint("updatedAt", { mode: "number" }).notNull(),
-  lastSignedIn: bigint("lastSignedIn", { mode: "number" }).notNull(),
+  email: text("email"),
+  loginMethod: text("login_method"),
+  role: text("role").$type<"user" | "admin">().default("user").notNull(),
+  plan: text("plan").$type<"free" | "advocacy" | "family_advocacy" | "analyst" | "professional" | "enterprise">().default("free").notNull(),
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
+  updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
+  lastSignedIn: bigint("last_signed_in", { mode: "number" }).notNull(),
 });
 
 export type User = typeof users.$inferSelect;
