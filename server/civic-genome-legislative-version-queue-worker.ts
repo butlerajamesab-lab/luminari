@@ -1048,8 +1048,10 @@ export function start_legislative_version_queue_worker(): void {
   const interval_ms = bounded_poll_interval();
   const concurrency = recovery_contract_scope ? 1 : bounded_concurrency();
   const reconcile_interval_ms = bounded_reconcile_interval();
+  // Current-source intake and result-arrival observation are independent
+  // lanes. Only an explicit recovery-contract scope isolates this worker.
   const current_result_observation_enabled =
-    !recovery_contract_scope && !current_sources;
+    !recovery_contract_scope;
   const current_result_observation_interval_ms =
     bounded_current_result_observation_interval();
   console.log("[LegislativeVersionQueue] started", {
