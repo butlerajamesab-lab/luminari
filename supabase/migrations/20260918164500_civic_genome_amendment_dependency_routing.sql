@@ -5,6 +5,57 @@
 -- exists. Parked dependency rows must never consume retries or block sibling
 -- legislative source lanes.
 
+-- Retire the completed-bill-era URL-stem base inference. Exact amendment bases
+-- are now resolved only after source acquisition from source-stated target
+-- evidence plus a proved jurisdictional chronology when necessary.
+do $migration$
+declare
+  v_sql text;
+  v_old text := $old$
+  update public.docket_bill_source_document document
+     set base_source_document_key = (
+       select base.source_document_key
+       from public.docket_bill_source_document base
+       where base.source_bill_id = document.source_bill_id
+         and base.document_family = 'text'
+         and base.source_stem = document.source_stem
+       order by base.provider_sequence desc, base.provider_document_id desc
+       limit 1
+     ), updated_at = now()
+   where document.source_bill_id = p_source_bill_id
+     and document.document_family = 'amendment';
+$old$;
+  v_new text := $new$
+  -- Amendment base identity is intentionally unresolved at registration time.
+  -- URL/source_stem similarity is not legislative attachment evidence.
+$new$;
+begin
+  select pg_get_functiondef(
+    'public.register_docket_legislative_version_spine(integer,boolean)'::regprocedure
+  ) into v_sql;
+
+  if v_sql is null then
+    raise exception 'register_docket_legislative_version_spine is missing';
+  end if;
+  if position(v_old in v_sql)=0 then
+    raise exception 'legacy source-stem amendment base inference was not found';
+  end if;
+
+  v_sql:=replace(v_sql,v_old,v_new);
+  execute v_sql;
+
+  select pg_get_functiondef(
+    'public.register_docket_legislative_version_spine(integer,boolean)'::regprocedure
+  ) into v_sql;
+  if position('base.source_stem = document.source_stem' in v_sql)<>0 then
+    raise exception 'legacy source-stem amendment base inference remains installed';
+  end if;
+end;
+$migration$;
+
+comment on function public.register_docket_legislative_version_spine(integer,boolean) is
+  'Registers provider-declared bill text and amendment artifacts and preserves observations. Text predecessor lineage remains deterministic. Amendment base identity is not inferred from URL/source stems; it is attached later from exact source-stated evidence.';
+
 create or replace function public.wake_civic_genome_amendments_for_base_v1()
 returns trigger
 language plpgsql
