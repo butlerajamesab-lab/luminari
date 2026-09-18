@@ -27,7 +27,7 @@ beforeAll(async () => {
  await db.exec(`
  create table civic_genome_bill_version (
   genome_bill_id text, bill_version_id text primary key, source_bill_id integer,
-  base_bill_version_id text, stage_rank integer, provider_sequence integer,
+  document_family text, base_bill_version_id text, stage_rank integer, provider_sequence integer,
   created_at integer, assembly_run_id text, prism_verification_run_id text, processing_state text
  );
  create table civic_genome_prism_verification_binding (assembly_run_id text, trait_id text);
@@ -35,15 +35,15 @@ beforeAll(async () => {
  create table docket_bill_velocity (source_bill_id integer, velocity_score integer, events_14d integer, amended_7d integer);
  create table docket_bill_next_floor_event (bill_id integer, next_event_date text, next_event_class text, next_event_description text);
  insert into civic_genome_bill_version values
- ('a','a0',1,null,0,0,0,'a0','p','verified'),
- ('a','a1',1,'a0',1,1,1,'a1','p','verified_with_findings'),
- ('a','a2',1,'a1',2,2,2,'a2','p','verified'),
- ('a','anull',1,null,null,null,3,'anull',null,'pending'),
- ('b','b0',2,null,0,0,0,'b0',null,'pending'),
- ('b','b1',2,'b0',1,1,1,'b1','p','verified'),
- ('c','c0',3,null,0,0,0,'c0','p','verified'),
- ('d','d0',4,null,0,0,0,null,null,'pending'),
- ('outside','o0',99,null,0,0,0,'o0','p','verified');
+ ('a','a0',1,'text',null,0,0,0,'a0','p','verified'),
+ ('a','a1',1,'text','a0',1,1,1,'a1','p','verified_with_findings'),
+ ('a','a2',1,'text','a1',2,2,2,'a2','p','verified'),
+ ('a','anull',1,'text',null,null,null,3,'anull',null,'pending'),
+ ('b','b0',2,'text',null,0,0,0,'b0',null,'pending'),
+ ('b','b1',2,'text','b0',1,1,1,'b1','p','verified'),
+ ('c','c0',3,'text',null,0,0,0,'c0','p','verified'),
+ ('d','d0',4,'text',null,0,0,0,null,null,'pending'),
+ ('outside','o0',99,'text',null,0,0,0,'o0','p','verified');
  insert into civic_genome_trait values ('h0','HELP'),('h2','HELP'),('old','OVERRIDES'),('new','WORKFLOW'),('other','DEFINITIONS');
  insert into civic_genome_prism_verification_binding values
  ('a0','h0'),('a0','h0'),('a0','old'),('a1','other'),('a2','h2'),('a2','new'),
