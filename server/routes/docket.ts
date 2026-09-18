@@ -158,12 +158,13 @@ const enrich_bills_with_radar = async (
        order by source_bill_id, stage_rank desc, provider_sequence desc
      ), scoped_versions as materialized (
        select v.genome_bill_id, v.bill_version_id, v.base_bill_version_id,
-              v.stage_rank, v.provider_sequence, v.created_at
+              v.document_family, v.stage_rank, v.provider_sequence, v.created_at
        from public.civic_genome_bill_version v
        join (select distinct genome_bill_id from bill_genome) g using (genome_bill_id)
      ), latest as (
        select distinct on (genome_bill_id) genome_bill_id, bill_version_id
        from scoped_versions
+       where document_family = 'text'
        order by genome_bill_id, stage_rank desc nulls last, provider_sequence desc nulls last
      ), base as (
        select distinct on (genome_bill_id) genome_bill_id, base_bill_version_id

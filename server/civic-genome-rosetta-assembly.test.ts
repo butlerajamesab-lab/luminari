@@ -42,7 +42,7 @@ const configuration_hash = "c".repeat(64);
 beforeEach(() => {
   vi.clearAllMocks();
   query.mockResolvedValue({
-    rows: [{ source_document_key, source_content_hash }],
+    rows: [{ source_document_key, source_content_hash, document_family: "text" }],
   });
   load_current.mockResolvedValue({
     contract: "rosetta-public-current-docket-result-v1",
@@ -109,6 +109,7 @@ describe("Civic Genome Rosetta assembly gate", () => {
     await expect(assert_exact_docket_source_binding_for_assembly(request, view())).resolves.toEqual({
       source_document_key,
       source_content_hash,
+      document_family: "text",
     });
     expect(String(query.mock.calls[0][0])).toContain("source_document_key = $2::text");
     expect(String(query.mock.calls[0][0])).toContain("receipt_json ->> 'source_content_hash' = $3::text");
@@ -131,6 +132,7 @@ describe("Civic Genome Rosetta assembly gate", () => {
     )).resolves.toEqual({
       source_document_key,
       source_content_hash,
+      document_family: "text",
     });
     expect(query.mock.calls[0][1]).toHaveLength(3);
     expect(String(query.mock.calls[0][0])).not.toContain("rosetta_extraction_run_id =");
@@ -164,7 +166,7 @@ describe("Civic Genome Rosetta assembly gate", () => {
   });
 
   it("rejects a missing local Docket source key binding", async () => {
-    query.mockResolvedValueOnce({ rows: [{ source_document_key: null, source_content_hash }] });
+    query.mockResolvedValueOnce({ rows: [{ source_document_key: null, source_content_hash, document_family: "text" }] });
     await expect(assert_exact_docket_source_binding_for_assembly(request, view())).rejects.toThrow(
       "rosetta_public_current_docket_result_source_document_key_missing",
     );
@@ -173,8 +175,8 @@ describe("Civic Genome Rosetta assembly gate", () => {
   it("rejects a non-unique local Docket binding", async () => {
     query.mockResolvedValueOnce({
       rows: [
-        { source_document_key, source_content_hash },
-        { source_document_key, source_content_hash },
+        { source_document_key, source_content_hash, document_family: "text" },
+        { source_document_key, source_content_hash, document_family: "text" },
       ],
     });
     await expect(assert_exact_docket_source_binding_for_assembly(request, view())).rejects.toThrow(

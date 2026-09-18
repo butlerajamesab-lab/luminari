@@ -47,6 +47,7 @@ type assembly_contract = {
 type docket_assembly_binding = {
   source_document_key: string;
   source_content_hash: string;
+  document_family: "text" | "amendment";
 };
 
 function is_record(value: unknown): value is Record<string, unknown> {
@@ -242,9 +243,11 @@ async function load_exact_docket_assembly_binding(
   const { rows } = await getPool().query<{
     source_document_key: string | null;
     source_content_hash: string | null;
+    document_family: string | null;
   }>(
     `select source_document_key,
-            receipt_json ->> 'source_content_hash' as source_content_hash
+            receipt_json ->> 'source_content_hash' as source_content_hash,
+            document_family
        from public.civic_genome_bill_version
       where genome_bill_id = $1::uuid
         and ($2::text is null or source_document_key = $2::text)
@@ -276,9 +279,13 @@ async function load_exact_docket_assembly_binding(
   if (explicit_hash && binding.source_content_hash !== explicit_hash) {
     throw new Error("rosetta_public_current_docket_result_source_content_hash_mismatch");
   }
+  if (binding.document_family !== "text" && binding.document_family !== "amendment") {
+    throw new Error("rosetta_public_current_docket_result_document_family_invalid");
+  }
   return {
     source_document_key: binding.source_document_key,
     source_content_hash: binding.source_content_hash as string,
+    document_family: binding.document_family,
   };
 }
 
@@ -302,7 +309,10 @@ async function load_assembly_ready_current_result(
   request: rosetta_genome_assembly_request,
   binding: docket_assembly_binding,
 ): Promise<NonNullable<RosettaPublicCurrentDocketResult["current_result"]>> {
-  const current_docket_result = await load_rosetta_current_docket_result_for_binding(binding);
+  const current_docket_result = await load_rosetta_current_docket_result_for_binding({
+    source_document_key: binding.source_document_key,
+    source_content_hash: binding.source_content_hash,
+  });
   if (!current_docket_result) {
     throw new Error("rosetta_public_current_docket_result_missing");
   }
@@ -790,7 +800,8 @@ export async function assemble_rosetta_structural_dna(
       }
     }
 
-    await client.query(
+    if (binding.document_family === "text") {
+      await client.query(
       `update public.civic_genome_bill
           set rosetta_extraction_run_id = $2::text,
               structural_dna_hash = $3::text,
@@ -841,7 +852,8 @@ export async function assemble_rosetta_structural_dna(
         persisted_structural_representations.length,
         view.handoff_contract_version,
       ],
-    );
+      );
+    }
 
     await client.query("commit");
     return {

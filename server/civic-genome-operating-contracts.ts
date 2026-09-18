@@ -280,6 +280,7 @@ export async function get_civic_genome_rosetta_pipeline_status(
                 rosetta_extraction_run_id
            from public.civic_genome_bill_version
           where source_bill_id = $1
+            and document_family = 'text'
           order by stage_rank desc, provider_sequence desc, updated_at desc
           limit 1
        ), published_version as (
@@ -289,6 +290,7 @@ export async function get_civic_genome_rosetta_pipeline_status(
                 rosetta_extraction_run_id
            from public.civic_genome_bill_version
           where source_bill_id = $1
+            and document_family = 'text'
             and processing_state in ('verified', 'verified_with_findings')
             and rosetta_source_document_id is not null
             and assembly_run_id is not null
