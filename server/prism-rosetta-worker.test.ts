@@ -5,6 +5,8 @@ const boundaries = vi.hoisted(() => ({
   stop_prism: vi.fn(async () => undefined),
   start_legislative: vi.fn(),
   stop_legislative: vi.fn(async () => undefined),
+  start_current_result_observer: vi.fn(),
+  stop_current_result_observer: vi.fn(async () => undefined),
   recovery_scope: vi.fn(() => null),
   bill_text: vi.fn(),
   pool_end: vi.fn(async () => undefined),
@@ -18,7 +20,9 @@ vi.mock("./services/prism-rosetta-queue-worker", () => ({
 }));
 vi.mock("./civic-genome-legislative-version-queue-worker", () => ({
   legislative_version_queue_recovery_contract_scope: boundaries.recovery_scope,
+  start_current_result_observation_worker: boundaries.start_current_result_observer,
   start_legislative_version_queue_worker: boundaries.start_legislative,
+  stop_current_result_observation_worker: boundaries.stop_current_result_observer,
   stop_legislative_version_queue_worker: boundaries.stop_legislative,
 }));
 vi.mock("./services/legiscan", () => ({ get_bill_text: boundaries.bill_text }));
@@ -64,12 +68,14 @@ describe("dedicated Prism worker entrypoint selection", () => {
     }
     await import("./prism-rosetta-worker");
     expect(boundaries.start_prism).toHaveBeenCalledTimes(1);
+    expect(boundaries.start_current_result_observer).toHaveBeenCalledTimes(1);
     expect(boundaries.start_legislative).not.toHaveBeenCalled();
     expect(signals.has("SIGTERM")).toBe(true);
     expect(signals.has("SIGINT")).toBe(true);
     signals.get("SIGTERM")?.();
     await vi.advanceTimersByTimeAsync(0);
     expect(boundaries.stop_prism).toHaveBeenCalledTimes(1);
+    expect(boundaries.stop_current_result_observer).toHaveBeenCalledTimes(1);
     expect(boundaries.pool_end).toHaveBeenCalledTimes(1);
   });
 
