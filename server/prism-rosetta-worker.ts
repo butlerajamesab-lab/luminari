@@ -26,6 +26,7 @@ import {
 } from "./runtime-role";
 import { get_bill_text } from "./services/legiscan";
 import { docket_router, wait_for_docket_state_refreshes } from "./routes/docket";
+import { start_foia_gov_refresh_worker, stop_foia_gov_refresh_worker } from "./foia-gov-refresh-worker";
 import {
   start_docket_state_cache_warmer,
   stop_docket_state_cache_warmer,
@@ -182,6 +183,7 @@ console.log("[PrismRosettaWorker] starting", {
   legislative_current_sources,
   legiscan_api_key_configured,
   legiscan_bill_text_probe_configured,
+  foia_gov_refresh_enabled,
   legiscan_bill_text_probe_document_id:
     legiscan_bill_text_probe_configured
       ? legiscan_bill_text_probe_document_id
@@ -193,6 +195,7 @@ if (!legislative_version_queue_recovery_scope) {
   current_result_observation_enabled = true;
 }
 const legislative_version_queue_startup = start_authorized_legislative_queue();
+const foia_gov_refresh_enabled = start_foia_gov_refresh_worker();
 const docket_worker_startup = start_docket_workers().catch(error => {
   console.error("[DocketWorker] startup_failed", {
     error_code: stable_legiscan_failure_code(error),
@@ -207,6 +210,7 @@ async function shutdown(signal: string): Promise<void> {
   console.log("[PrismRosettaWorker] shutdown_started", { signal });
   clearInterval(keep_alive);
   await Promise.all([legislative_version_queue_startup, docket_worker_startup]);
+  await stop_foia_gov_refresh_worker();
   await stop_docket_state_cache_warmer();
   await stop_docket_bill_activation_queue_worker();
   if (docket_loopback_server) {
