@@ -21,6 +21,21 @@ describe("public read-only Lighthouse access", () => {
     expect(auth).not.toContain("inspection");
   });
 
+  it("supports single-operator public reads without granting anonymous writes", () => {
+    const auth = read("client/src/core/hooks/useAuth.ts");
+    const trpcAuth = read("server/_core/trpc.ts");
+
+    expect(auth).toContain('VITE_SINGLE_OPERATOR_PUBLIC_READ === "1"');
+    expect(auth).toContain("SINGLE_OPERATOR_READ_USER");
+    expect(auth).toContain("authenticated: false");
+    expect(auth).toContain("isAuthenticated: Boolean(session)");
+
+    expect(trpcAuth).toContain('process.env.SINGLE_OPERATOR_PUBLIC_READ === "1"');
+    expect(trpcAuth).toContain('process.env.SINGLE_OPERATOR_PUBLIC_READ_USER_ID ?? "1"');
+    expect(trpcAuth).toContain('if (opts.type !== "query") return null');
+    expect(trpcAuth).toContain("singleOperatorQueryUser(opts)");
+  });
+
   it("does not turn a protected background read into a login wall", () => {
     const entry = read("client/src/main.tsx");
     const queryStart = entry.indexOf("queryClient.getQueryCache().subscribe");
