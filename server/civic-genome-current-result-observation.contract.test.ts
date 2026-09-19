@@ -53,9 +53,14 @@ describe("current-result observation lane contract", () => {
     expect(worker).toContain("export async function stop_current_result_observation_worker");
     expect(runtime).toContain("start_current_result_observation_worker()");
     expect(runtime).toContain("stop_current_result_observation_worker()");
-    const start = runtime.indexOf("start_current_result_observation_worker()");
-    const authorized = runtime.indexOf("start_authorized_legislative_queue()");
-    expect(start).toBeGreaterThanOrEqual(0);
+    const runtime_start = runtime.indexOf("start_prism_rosetta_queue_worker();");
+    const start = runtime.indexOf("start_current_result_observation_worker();", runtime_start);
+    const authorized = runtime.indexOf(
+      "const legislative_version_queue_startup = start_authorized_legislative_queue();",
+      runtime_start,
+    );
+    expect(runtime_start).toBeGreaterThanOrEqual(0);
+    expect(start).toBeGreaterThan(runtime_start);
     expect(authorized).toBeGreaterThan(start);
   });
 
