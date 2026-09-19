@@ -64,15 +64,16 @@ function send_json_attachment(
   res.send(JSON.stringify(payload, null, 2));
 }
 
-function send_html_attachment(
+function send_html(
   res: Response,
   filename: string,
   payload: string,
+  disposition: "attachment" | "inline" = "attachment",
 ) {
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.setHeader(
     "Content-Disposition",
-    `attachment; filename=\"${safe_filename(filename)}.html\"`,
+    `${disposition}; filename=\"${safe_filename(filename)}.html\"`,
   );
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
   res.send(payload);
@@ -343,6 +344,7 @@ async function send_human_bill_report(
   res: Response,
   source_bill_id: number,
   mode: civic_genome_report_mode,
+  disposition: "attachment" | "inline" = "attachment",
 ) {
   const payload = await build_single_bill_export(source_bill_id);
   if (!payload)
@@ -355,12 +357,41 @@ async function send_human_bill_report(
   const report = humanize_report_headings(
     await render_civic_genome_human_report(human_payload, mode),
   );
-  return send_html_attachment(
+  return send_html(
     res,
     `civic-genome-${source_bill_id}-${selected.state_code ?? "state"}-${selected.source_bill_number ?? "bill"}-${mode}`,
     report,
+    disposition,
   );
 }
+
+civic_genome_export_router.get(
+  "/bill/:source_bill_id/summary/view",
+  async (req, res) => {
+    const source_bill_id = positive_integer(req.params.source_bill_id);
+    if (!source_bill_id)
+      return res
+        .status(400)
+        .json({ ok: false, error: "invalid_source_bill_id" });
+
+    try {
+      return await send_human_bill_report(
+        res,
+        source_bill_id,
+        "summary",
+        "inline",
+      );
+    } catch (error) {
+      console.error("[CivicGenomeExport] inline summary report failed", {
+        source_bill_id,
+        error,
+      });
+      return res
+        .status(500)
+        .json({ ok: false, error: "civic_genome_summary_report_failed" });
+    }
+  },
+);
 
 civic_genome_export_router.get(
   "/bill/:source_bill_id/summary",
