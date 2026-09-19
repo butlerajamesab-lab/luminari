@@ -610,7 +610,7 @@ export async function parseDocxStructuredCandidates(ctx: ParseContext, buffer: B
       if (!Object.keys(values).length) continue;
       const rawExcerpt = row.cells.join(" | ").slice(0, 8000);
       const sourceLocator = "docx:table:" + tableIndex + ":row:" + row.rowIndex;
-      const payload = {
+      const payload: Record<string, unknown> = {
         parser_rule: isProgramTable ? "native_docx_program_row"
           : isWorkflowTable ? "native_docx_workflow_row" : "native_docx_oversight_row",
         table_index: tableIndex,
@@ -618,6 +618,7 @@ export async function parseDocxStructuredCandidates(ctx: ParseContext, buffer: B
         source_headers: sourceHeaders,
         source_cells: row.cells,
         source_values: values,
+        row: values,
         section_context: sectionContext,
       };
 
@@ -631,6 +632,25 @@ export async function parseDocxStructuredCandidates(ctx: ParseContext, buffer: B
         const eligibility = nullable(values.eligibility, 5000);
         const notes = nullable(applyRaw, 5000);
         const category = inferCategory(sectionContext, name + " " + (eligibility ?? "") + " " + (notes ?? ""));
+        const statutoryAuthority = nullable(
+          values.statutory_authority ?? values.statute_apply ?? values.statute_citation ?? values.authority,
+          5000,
+        );
+        const filingPortal = nullable(
+          values.filing_complaint_portal ?? values.filing_portal ?? values.application_url
+            ?? (applyContact.website ? applyRaw : null),
+          5000,
+        );
+        payload.fields = {
+          phone: contact.phone,
+          email: contact.email ?? applyContact.email,
+          website_url: contact.website ?? applyContact.website,
+          eligibility_summary: eligibility,
+          apply_notes: notes,
+          category,
+          statutory_authority: statutoryAuthority,
+          filing_portal: filingPortal,
+        };
         out.push(candidate(ctx, {
           candidate_type: "program",
           source_locator: sourceLocator,
@@ -665,6 +685,14 @@ export async function parseDocxStructuredCandidates(ctx: ParseContext, buffer: B
           values.agency_contact ? "Agency/contact: " + values.agency_contact : "",
           values.deadline ?? values.fl_deadline ?? values.wa_deadline ?? "",
         ].filter(Boolean).join("\n");
+        payload.fields = {
+          phone: contact.phone,
+          email: contact.email,
+          website_url: contact.website,
+          apply_notes: nullable(values.documents_needed, 5000),
+          statutory_authority: nullable(values.statutory_authority ?? values.authority, 5000),
+          filing_portal: nullable(values.filing_portal ?? values.application_url ?? contact.website, 5000),
+        };
         out.push(candidate(ctx, {
           candidate_type: "workflow",
           source_locator: sourceLocator,
@@ -698,6 +726,13 @@ export async function parseDocxStructuredCandidates(ctx: ParseContext, buffer: B
         values.what_to_report ? "What to report: " + values.what_to_report : "",
         values.complaint_pathway ? "Complaint pathway: " + values.complaint_pathway : "",
       ].filter(Boolean).join("\n");
+      payload.fields = {
+        phone: contact.phone,
+        email: contact.email,
+        website_url: contact.website,
+        filing_portal: nullable(values.complaint_pathway, 5000),
+        statutory_authority: nullable(values.statutory_authority ?? values.authority, 5000),
+      };
       out.push(candidate(ctx, {
         candidate_type: "oversight_body",
         source_locator: sourceLocator,
