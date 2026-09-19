@@ -75,8 +75,8 @@ type legislative_version_row = {
   predecessor_bill_version_id: string | null;
   base_bill_version_id: string | null;
   receipt_json: Record<string, unknown>;
-  source_identity_namespace: "provider" | "official_terminal";
-  source_artifact_id: string | null;
+  source_identity_namespace?: "provider" | "official_terminal";
+  source_artifact_id?: string | null;
   provider_document_id: string | null;
   provider_document_type: string;
   source_url: string;
@@ -303,7 +303,7 @@ function provider_copy_contract_for(
   version: legislative_version_row,
   official_source_url: string,
 ): provider_copy_contract | null {
-  if (version.source_identity_namespace !== "provider") return null;
+  if (version.source_identity_namespace === "official_terminal") return null;
   const provider_url = String(version.provider_url ?? "").trim();
   const provider_hash = String(version.provider_hash ?? "").trim().toLowerCase();
   const provider_size_text = String(version.provider_size ?? "").trim();
@@ -906,8 +906,8 @@ export async function extract_version_source(
       docket_chamber: version.chamber,
       docket_predecessor_source_document_key: version.predecessor_source_document_key,
       docket_base_source_document_key: version.base_source_document_key,
-      docket_source_identity_namespace: version.source_identity_namespace,
-      docket_source_artifact_id: version.source_artifact_id,
+      docket_source_identity_namespace: version.source_identity_namespace ?? "provider",
+      docket_source_artifact_id: version.source_artifact_id ?? null,
       docket_provider_document_id: version.provider_document_id
         ? Number(version.provider_document_id)
         : null,
