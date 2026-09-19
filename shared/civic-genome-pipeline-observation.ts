@@ -32,6 +32,12 @@ export function describeUnobservedCurrentResult(observation: Pick<CivicGenomePip
 }
 
 export function pipelinePublicationPresentation(observation: CivicGenomePipelineObservation): { value: string; detail: string } {
+  if (observation.contract_state === "awaiting_publication") {
+    return {
+      value: "Awaiting generation publication",
+      detail: "Decomposition is complete for the exact source, but Civic Genome assembly/publication is held until the governed current generation authorizes this result.",
+    };
+  }
   if (observation.contract_state === "assembled") {
     return { value: "Published", detail: "Current snapshot decomposed and verified" };
   }
