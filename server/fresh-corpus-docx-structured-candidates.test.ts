@@ -65,6 +65,13 @@ describe("native DOCX typed candidate extraction", () => {
       table_index: 1,
       row_index: 3,
       section_context: "Food & Nutrition",
+      fields: {
+        phone: "855-432-7587",
+        website_url: "healthearizonaplus.gov",
+        eligibility_summary: "Income under 130% FPL",
+        apply_notes: "Apply at healthearizonaplus.gov",
+        filing_portal: "Apply at healthearizonaplus.gov",
+      },
     });
   });
 });
