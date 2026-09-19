@@ -313,6 +313,11 @@ APPROVED_REPOSITORY_ONLY = {
         "20260918215000_docket_refresh_registration_only.sql",
         "4ab843418dd191d76492c3e4aa63b6a731726b80",
     ),
+    # Forward official-terminal source identity migration pending production apply.
+    "20260919043000": (
+        "20260919043000_official_terminal_source_identity.sql",
+        "aa76163ca65fc5237cca72ff11ad9888d2d4798d",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
