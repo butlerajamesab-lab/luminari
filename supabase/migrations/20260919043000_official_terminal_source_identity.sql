@@ -71,6 +71,7 @@ declare
   v_version_fingerprint text;
   v_bill_version_id uuid;
   v_artifact_slug text;
+  v_artifact_hash text;
 begin
   if p_source_bill_id is null or p_source_bill_id <= 0 then
     raise exception using errcode='22023',message='official_terminal_source_bill_id_invalid';
