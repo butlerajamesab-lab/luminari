@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://luminari.local/schemas/cross_domain_caregiving_intake_fixture.v1.schema.json",
+  "title": "Public-safe cross-domain caregiving universal intake fixture v1",
+  "type": "object",
+  "required": [
+    "fixture_metadata",
+    "fixture_entry",
+    "source_manifest",
+    "expected_stabilization",
+    "expected_layers",
+    "cross_cutting_assertions",
+    "negative_assertions",
+    "test_slices",
+    "acceptance_criteria"
+  ],
+  "properties": {
+    "fixture_metadata": {
+      "type": "object",
+      "required": [
+        "fixture_id",
+        "fixture_version",
+        "fixture_purpose",
+        "source_truth_rule"
+      ]
+    },
+    "fixture_entry": {
+      "type": "object",
+      "required": [
+        "synthetic_composite_narrative_for_testing",
+        "narrative_status",
+        "entry_channel"
+      ]
+    },
+    "source_manifest": {
+      "type": "object",
+      "required": ["artifacts", "document_groups"],
+      "properties": {
+        "artifacts": { "type": "array", "minItems": 1 },
+        "document_groups": { "type": "array" }
+      }
+    },
+    "expected_stabilization": { "type": "array", "minItems": 1 },
+    "expected_layers": {
+      "type": "object",
+      "required": [
+        "raw_intake_capture",
+        "evidence_preservation",
+        "chronology_reconstruction",
+        "entity_registry",
+        "relationship_graph",
+        "power_dynamics_registry",
+        "state_timeline",
+        "pattern_registry",
+        "cascade_registry",
+        "rights_and_duties_matrix",
+        "translation_layer",
+        "action_paths"
+      ]
+    },
+    "cross_cutting_assertions": { "type": "object" },
+    "negative_assertions": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "test_slices": { "type": "array", "minItems": 1 },
+    "acceptance_criteria": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": false
+}

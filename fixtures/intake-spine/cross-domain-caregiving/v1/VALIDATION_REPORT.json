@@ -1,0 +1,30 @@
+{
+  "fixture_id": "intake_spine_fixture_cross_domain_caregiving_v1",
+  "fixture_version": "1.0.0",
+  "sha256": "9dbfcfec74cf04a30a42bc7819d9f88cbf46e176e8f9e7e1ee590c063340d701",
+  "counts": {
+    "source_artifacts": 18,
+    "stabilization_checkpoints": 6,
+    "raw_intake_capture": 1,
+    "evidence_preservation": 1,
+    "chronology_reconstruction": 30,
+    "entity_registry": 15,
+    "relationship_graph": 8,
+    "power_dynamics_registry": 2,
+    "state_timeline": 7,
+    "pattern_registry": 10,
+    "cascade_registry": 5,
+    "rights_and_duties_matrix": 8,
+    "translation_layer": 5,
+    "action_paths": 6,
+    "test_slices": 10
+  },
+  "privacy_check": "passed",
+  "forbidden_identifiers_checked": [
+    "personal names",
+    "facility identity",
+    "source archive owner name",
+    "email addresses",
+    "phone numbers"
+  ]
+}
