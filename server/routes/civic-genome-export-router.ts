@@ -6,6 +6,8 @@ import {
 import { getPool } from "../db";
 import { get_civic_genome_bill_detail } from "../civic-genome-bill-detail";
 import { get_genome_bill_by_source_id } from "../civic-genome-source-id";
+import { load_rosetta_current_docket_result_for_binding } from "../civic-genome-rosetta-evaluation";
+import { get_rosetta_current_docket_structure } from "../civic-genome-rosetta-contract";
 import {
   render_civic_genome_human_report,
   type civic_genome_report_mode,
@@ -247,6 +249,49 @@ async function build_single_bill_export(source_bill_id: number) {
       ),
     ]);
 
+  const current_version_row = versions_result.rows.find(
+    (version) => version.bill_version_id === detail.current_version?.bill_version_id,
+  ) as Record<string, unknown> | undefined;
+  const current_receipt = as_record(current_version_row?.receipt_json);
+  const current_source_key = string_value(current_version_row?.source_document_key);
+  const current_source_hash = string_value(current_receipt?.source_content_hash);
+  let current_rosetta_result: unknown = null;
+  let current_rosetta_structure: unknown = null;
+  let current_rosetta_read_error: string | null = null;
+
+  if (
+    current_source_key
+    && current_source_hash
+    && /^[0-9a-f]{64}$/i.test(current_source_hash)
+  ) {
+    try {
+      current_rosetta_result = await load_rosetta_current_docket_result_for_binding({
+        source_document_key: current_source_key,
+        source_content_hash: current_source_hash,
+      });
+      const result_record = as_record(current_rosetta_result);
+      const exact_result = as_record(result_record?.current_result);
+      const extraction_run_id = positive_integer(exact_result?.extraction_run_id);
+      const output_content_hash = string_value(exact_result?.output_content_hash);
+      if (
+        result_record?.status === "complete"
+        && extraction_run_id
+        && output_content_hash
+        && /^[0-9a-f]{64}$/i.test(output_content_hash)
+      ) {
+        current_rosetta_structure = await get_rosetta_current_docket_structure({
+          source_document_key: current_source_key,
+          source_content_hash: current_source_hash.toLowerCase(),
+          extraction_run_id,
+          output_content_hash: output_content_hash.toLowerCase(),
+        });
+      }
+    } catch (error) {
+      current_rosetta_read_error =
+        error instanceof Error ? error.message : "current_rosetta_read_failed";
+    }
+  }
+
   const [
     family,
     family_bills,
@@ -302,6 +347,13 @@ async function build_single_bill_export(source_bill_id: number) {
     genome_bill_id: bill.genome_bill_id,
     bill_detail: detail,
     bill_versions: versions_result.rows,
+    current_rosetta: {
+      source_document_key: current_source_key,
+      source_content_hash: current_source_hash,
+      result: current_rosetta_result,
+      structure: current_rosetta_structure,
+      read_error: current_rosetta_read_error,
+    },
     all_structural_traits: all_traits_result.rows,
     all_assembly_runs: all_runs_result.rows,
     bill_temporal_facts: temporal_facts,
