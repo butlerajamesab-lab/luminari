@@ -869,7 +869,7 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "0.75rem" }}>
             {resolved_bills.map(({ bill, resolution }) => {
-              const bill_url = bill.source_url || bill.url;
+              const bill_url = bill.url || bill.source_url;
               const lifecycle_ui = lifecycle_presentation[resolution.procedural_state];
               return (
                 <button key={bill.bill_id} onClick={() => load_bill_detail(bill.bill_id)} style={{ textAlign: "left", background: dk.cardBg, border: `1px solid ${selected_bill_id === bill.bill_id ? dk.steel : dk.cardBorder}`, borderLeft: `4px solid ${lifecycle_ui.color}`, borderRadius: "8px", padding: "0.85rem", cursor: "pointer" }}>
