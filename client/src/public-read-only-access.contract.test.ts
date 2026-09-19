@@ -33,6 +33,15 @@ describe("public read-only Lighthouse access", () => {
     expect(trpcAuth).toContain('process.env.SINGLE_OPERATOR_PUBLIC_READ === "1"');
     expect(trpcAuth).toContain('process.env.SINGLE_OPERATOR_PUBLIC_READ_USER_ID ?? "1"');
     expect(trpcAuth).toContain('if (opts.type !== "query") return null');
+    expect(trpcAuth).toContain("SINGLE_OPERATOR_PUBLIC_READ_PREFIXES");
+    expect(trpcAuth).toContain('"enforcementIntel."');
+    const publicReadScope = trpcAuth.slice(
+      trpcAuth.indexOf("const SINGLE_OPERATOR_PUBLIC_READ_PREFIXES"),
+      trpcAuth.indexOf("function singleOperatorQueryUser"),
+    );
+    expect(publicReadScope).not.toContain('"cases."');
+    expect(publicReadScope).not.toContain('"documents."');
+    expect(publicReadScope).not.toContain('"provenance."');
     expect(trpcAuth).toContain("singleOperatorQueryUser(opts)");
   });
 
