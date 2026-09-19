@@ -70,13 +70,11 @@ describe("current-result observation lane contract", () => {
     expect(worker).toContain("current_result_observation_enabled =\n    !recovery_contract_scope");
   });
 
-  it("can wake a hold but cannot invoke Rosetta execution or consume queue attempts", () => {
-    expect(reconciler).toContain(
-      "load_rosetta_current_docket_result_for_binding",
-    );
-    expect(reconciler).toContain("current?.status !== \"complete\"");
-    expect(reconciler).toContain("queue_state = 'eligible'");
-    expect(reconciler).toContain("last_failure_class = null");
+  it("attaches a complete exact result without invoking Rosetta execution or consuming queue attempts", () => {
+    expect(reconciler).toContain("attach_completed_current_result");
+    expect(reconciler).toContain("queue_state = 'completed'");
+    expect(reconciler).toContain("version.rosetta_extraction_run_id = $5::text");
+    expect(reconciler).toContain("version.assembly_run_id = $6::uuid");
     expect(reconciler).toContain(
       "rosetta_public_current_docket_result_awaiting_publication",
     );
@@ -84,11 +82,11 @@ describe("current-result observation lane contract", () => {
       /run_rosetta|invoke_rosetta|start_class_stage|class_stage_execute|replay_execute|replay_claim/i,
     );
 
-    const wake = reconciler.slice(
-      reconciler.indexOf("async function wake_completed_current_result"),
+    const complete = reconciler.slice(
+      reconciler.indexOf("async function complete_attached_current_result"),
       reconciler.indexOf("async function observe_candidate"),
     );
-    expect(wake).not.toContain("attempt_count");
+    expect(complete).not.toContain("attempt_count =");
   });
 
   it("uses a dedicated observation cursor and preserves the monotonicity guard", () => {
