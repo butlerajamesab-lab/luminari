@@ -131,13 +131,13 @@ export function parseDocxXmlAtomicRows(xml: string, sourceFileSha256: string, co
   let ordinal = 0;
   let tableIndex = 0;
   const tableRanges: Array<[number, number]> = [];
-  for (const tableMatch of xml.matchAll(/<w:tbl\\b[\\s\\S]*?<\\/w:tbl>/g)) {
+  for (const tableMatch of xml.matchAll(/<w:tbl\b[\s\S]*?<\/w:tbl>/g)) {
     tableIndex += 1;
     tableRanges.push([tableMatch.index ?? 0, (tableMatch.index ?? 0) + tableMatch[0].length]);
-    const rows = Array.from(tableMatch[0].matchAll(/<w:tr\\b[\\s\\S]*?<\\/w:tr>/g))
+    const rows = Array.from(tableMatch[0].matchAll(/<w:tr\b[\s\S]*?<\/w:tr>/g))
       .map((rowMatch, index) => ({
         rowIndex: index + 1,
-        cells: Array.from(rowMatch[0].matchAll(/<w:tc\\b[\\s\\S]*?<\\/w:tc>/g)).map(cell => wordText(cell[0])),
+        cells: Array.from(rowMatch[0].matchAll(/<w:tc\b[\s\S]*?<\/w:tc>/g)).map(cell => wordText(cell[0])),
       }))
       .filter(row => row.cells.some(Boolean));
 
@@ -189,9 +189,9 @@ export function parseDocxXmlAtomicRows(xml: string, sourceFileSha256: string, co
     }
   }
 
-  const xmlWithoutTables = xml.replace(/<w:tbl\\b[\\s\\S]*?<\\/w:tbl>/g, "\n");
+  const xmlWithoutTables = xml.replace(/<w:tbl\b[\s\S]*?<\/w:tbl>/g, "\n");
   let paragraphIndex = 0;
-  for (const paragraphMatch of xmlWithoutTables.matchAll(/<w:p\\b[\\s\\S]*?<\\/w:p>/g)) {
+  for (const paragraphMatch of xmlWithoutTables.matchAll(/<w:p\b[\s\S]*?<\/w:p>/g)) {
     paragraphIndex += 1;
     const text = wordText(paragraphMatch[0]);
     if (text.length < 12) continue;
