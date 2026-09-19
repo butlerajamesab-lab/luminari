@@ -511,6 +511,8 @@ async function load_version(bill_version_id: string): Promise<legislative_versio
               ''
             ) as source_artifact_id,
             document.provider_document_id::text,
+            document.source_identity_namespace,
+            document.source_artifact_id,
             document.provider_document_type,
             document.source_url,
             document.provider_url,
