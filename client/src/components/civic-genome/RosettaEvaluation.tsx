@@ -121,7 +121,7 @@ export function RosettaEvaluation({ genome_bill_id, current_version, published_v
     {result.isLoading ? <p role="status">Reading saved result…</p> : result.error ? <p role="alert" style={{ color: "#ffabab" }}>Rosetta current result could not be read. Refresh to try again; the bounded status is unknown.</p> : result.data?.availability === "binding_missing" ? <p style={{ color: muted }}>This source version does not yet have an exact Rosetta document and content-hash binding. Use the Rosetta reader to choose a source explicitly.</p> : result.data?.availability === "not_in_evaluation" ? <p style={{ color: muted }}>No current Rosetta result is available for this exact source version.</p> : current_docket_result ? <>
       <p style={{ fontSize: ".82rem", color: muted }}>{result.data?.binding?.version_type} · source key {current_docket_result.docket_source_key}</p>
       <p style={{ color: status_color, overflowWrap: "anywhere" }}>{precise_message ?? current_docket_result.public_reason}</p>
-      <details style={{ marginTop: ".9rem" }} open={Boolean(current_result)}><summary style={{ cursor: "pointer", color: "#59d89c" }}>Current result, validation summary, and coverage</summary>
+      <details style={{ marginTop: ".9rem" }}><summary style={{ cursor: "pointer", color: "#59d89c" }}>Current result, validation summary, and coverage</summary>
         {precise && <div style={{ marginTop: ".6rem", fontSize: ".8rem" }}>{readable_value(precise)}</div>}
         <div style={{ marginTop: ".6rem", fontSize: ".8rem" }}>{readable_value(current_result)}</div>
         <div style={{ marginTop: ".6rem", fontSize: ".8rem" }}>{readable_value(current_docket_result.validation_summary)}</div>
