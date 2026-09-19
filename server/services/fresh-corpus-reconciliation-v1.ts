@@ -5,8 +5,8 @@ import { workbookSheets, create_worksheet_validator, resolve_shared_string } fro
 import { getPool } from "../db";
 import { download_resolved_corpus_artifact } from "./corpus-source-resolution";
 
-export const FRESH_CORPUS_ENGINE_VERSION = "fresh_corpus_reconciliation_v1.2.6";
-export const FRESH_CORPUS_PARSER_VERSION = "fresh_registry_typed_parser_v1.2.5";
+export const FRESH_CORPUS_ENGINE_VERSION = "fresh_corpus_reconciliation_v1.2.7";
+export const FRESH_CORPUS_PARSER_VERSION = "fresh_registry_typed_parser_v1.2.6";
 
 const STATE_NAMES: Record<string, string> = {
   Alabama: "AL", Alaska: "AK", Arizona: "AZ", Arkansas: "AR", California: "CA",
@@ -27,28 +27,34 @@ const VALID_STATE_CODES = new Set(Object.values(STATE_NAMES));
 const RESOURCE_LABELS = new Map<string, string>([
   ["address", "address"], ["phone", "phone"], ["telephone", "phone"],
   ["email", "email"], ["website", "website_url"], ["web site", "website_url"], ["url", "website_url"],
+  ["official url", "website_url"], ["official website", "website_url"],
   ["eligibility", "eligibility_summary"], ["apply / notes", "apply_notes"], ["apply notes", "apply_notes"],
   ["application / notes", "apply_notes"], ["application", "apply_notes"], ["notes", "apply_notes"],
   ["service type", "category"], ["organization", "organization_name"], ["agency", "organization_name"],
-  ["filing / complaint portal", "filing_portal"], ["complaint pathway", "filing_portal"],
+  ["filing / complaint portal", "filing_portal"], ["filing portal", "filing_portal"],
+  ["application portal", "filing_portal"], ["complaint pathway", "filing_portal"],
   ["what it does for people", "description"], ["description", "description"],
-  ["statutory authority", "statutory_authority"], ["statute / apply", "statutory_authority"],
+  ["statutory authority", "statutory_authority"], ["statutory authority url", "statutory_authority"],
+  ["statute / apply", "statutory_authority"], ["statute url", "statutory_authority"],
+  ["statute citation", "statutory_authority"], ["authority url", "statutory_authority"],
   ["layer", "source_layer"], ["program", "program_name"],
 ]);
 
+// Prefer specific service domains over umbrella terms so source-authored labels
+// remain useful without exploding the public directory into one-off categories.
 const SECTION_CATEGORY: Array<[RegExp, string]> = [
-  [/food|nutrition|snap|wic/i, "food_nutrition"],
-  [/health|medicaid|medical|behavioral/i, "healthcare"],
-  [/housing|rent|tenant|homeless/i, "housing"],
-  [/domestic violence|safety|victim|sexual assault/i, "domestic_violence_safety"],
-  [/legal aid|legal services|court help/i, "legal_aid"],
-  [/cash assistance|income|tanf|unemployment/i, "cash_assistance_income"],
+  [/domestic violence|sexual assault|victim services|victim advocacy|protective order|safety planning/i, "domestic_violence_safety"],
+  [/legal aid|legal services|court help|legal assistance|civil legal/i, "legal_aid"],
+  [/mental health|behavioral health|crisis counseling|psychiatr/i, "mental_health"],
+  [/disability|developmental disabilit|protection and advocacy/i, "disability"],
+  [/tribal|indigenous|native american|reservation/i, "tribal_indigenous"],
+  [/immigration|refugee|asylum/i, "immigration"],
+  [/labor|employment|wage|unfair labor/i, "labor_employment"],
   [/utilit|energy|liheap|heat relief/i, "utilities"],
-  [/tribal|indigenous|native american/i, "tribal_indigenous"],
-  [/labor|employment|wage/i, "labor_employment"],
-  [/immigration|refugee/i, "immigration"],
-  [/disability/i, "disability"],
-  [/mental health/i, "mental_health"],
+  [/cash assistance|income support|tanf|unemployment/i, "cash_assistance_income"],
+  [/food|nutrition|snap|wic|food bank/i, "food_nutrition"],
+  [/housing|rent|tenant|homeless|shelter/i, "housing"],
+  [/health|medicaid|medical|healthcare/i, "healthcare"],
 ];
 
 const IDENTITY_TYPES = new Set(["resource", "organization", "agency", "legislator", "advocacy_target", "enforcement_pathway"]);
@@ -758,6 +764,31 @@ export async function parseDocxStructuredCandidates(ctx: ParseContext, buffer: B
   return out;
 }
 
+
+type UnlabeledResourceValueKind = "website_url" | "email" | "phone" | "address" | "filing_portal";
+
+function classifyUnlabeledResourceValue(line: string): UnlabeledResourceValueKind | null {
+  const value = compact(line);
+  if (!value) return null;
+  if (/^https?:\/\/\S+$/i.test(value)
+    || /^(?:www\.)?[a-z0-9-]+(?:\.[a-z0-9-]+)+(?:\/\S*)?$/i.test(value)) return "website_url";
+  if (/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(value)) return "email";
+  if (/^(?:\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}(?:\s*(?:x|ext\.?)\s*\d+)?$/i.test(value)) return "phone";
+  if (/^(?:P\.?\s*O\.?\s*Box\b|\d{1,6}\s+\S.+\b(?:street|st\.?|avenue|ave\.?|road|rd\.?|boulevard|blvd\.?|drive|dr\.?|lane|ln\.?|highway|hwy\.?|way|court|ct\.?|circle|cir\.?)\b)/i.test(value)
+    || /\b[A-Z]{2}\s+\d{5}(?:-\d{4})?\b/.test(value)) return "address";
+  if (/^(?:no dedicated portal|no online portal|use (?:the )?(?:phone|website)|apply (?:online|at|through)|file (?:online|at|through)|submit (?:online|at|through)|portal\b)/i.test(value)) {
+    return "filing_portal";
+  }
+  return null;
+}
+
+function appendResourceField(fields: Record<string, string>, key: string, value: string): void {
+  const cleaned = compact(value);
+  if (!cleaned) return;
+  if (!fields[key]) fields[key] = cleaned;
+  else if (!fields[key].includes(cleaned)) fields[key] += " | " + cleaned;
+}
+
 function parseResourceCandidates(ctx: ParseContext): Candidate[] {
   const rawLines = ctx.text.split(/\r?\n/);
   const lineRecords = rawLines.flatMap((rawLine, sourceIndex) =>
@@ -782,11 +813,11 @@ function parseResourceCandidates(ctx: ParseContext): Candidate[] {
         section_name: current.section,
         name: title.slice(0, 500),
         organization_name: title.slice(0, 500),
-        category: fields.category || inferCategory(current.section, excerpt),
+        category: inferCategory(current.section, `${fields.category ?? ""}\n${excerpt}`) || nullable(fields.category, 300),
         layer: fields.source_layer || inferLayer(current.section),
         phone: nullable(fields.phone, 1000),
-        email: nullable(fields.email, 1000),
-        website_url: nullable(fields.website_url || fields.filing_portal, 2000),
+        email: nullable(fields.email || docxContactParts(excerpt).email, 1000),
+        website_url: nullable(fields.website_url || docxContactParts(excerpt).website || fields.filing_portal, 2000),
         address: nullable(fields.address, 2000),
         eligibility_summary: nullable(fields.eligibility_summary, 5000),
         apply_notes: nullable(fields.apply_notes, 5000),
@@ -794,9 +825,11 @@ function parseResourceCandidates(ctx: ParseContext): Candidate[] {
         raw_excerpt: excerpt,
         payload: {
           fields,
+          source_service_type: fields.category ?? null,
+          canonical_category: inferCategory(current.section, `${fields.category ?? ""}\n${excerpt}`),
           artifact_role: ctx.artifact.artifact_role,
           verified_marker: /\bVERIFIED\b/i.test(current.title),
-          parser_rule: "typed_label_value_resource_block",
+          parser_rule: "typed_label_value_resource_block_v2",
           source_preservation: fieldCount === 1 ? "sparse_typed_record_preserved" : "typed_record_preserved",
         },
         excerptForJurisdiction: `${title}\n${fields.address ?? ""}\n${excerpt.slice(0, 800)}`,
@@ -845,9 +878,22 @@ function parseResourceCandidates(ctx: ParseContext): Candidate[] {
           value = lines[j]; current.end = lineRecords[j].sourceLine; i = j;
         }
       }
-      if (value) current.fields[key] = current.fields[key] ? `${current.fields[key]} | ${value}` : value;
+      if (value) appendResourceField(current.fields, key, value);
       current.sourceLines.push(`${labelRaw}: ${value}`);
       current.end = Math.max(current.end, sourceLine);
+      continue;
+    }
+
+    const unlabeledValueKind = classifyUnlabeledResourceValue(line);
+    if (unlabeledValueKind) {
+      if (current) {
+        appendResourceField(current.fields, unlabeledValueKind, line);
+        current.sourceLines.push(line);
+        current.end = Math.max(current.end, sourceLine);
+      }
+      // Access points and addresses are evidence for an identity, never
+      // identities themselves. If no record is open, preserve source bytes
+      // but do not manufacture a civic object from the value.
       continue;
     }
 
