@@ -330,6 +330,21 @@ async function cache_bill_detail(
   );
 }
 
+async function register_refreshed_provider_spine(source_bill_id: number): Promise<void> {
+  await query_with_diagnostics(
+    `select public.register_docket_legislative_version_spine(
+       $1::integer,
+       false
+     ) as receipt`,
+    [source_bill_id],
+    {
+      label: "civic_genome_final_source_register_refreshed_provider_spine",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 10_000,
+    },
+  );
+}
+
 async function read_result(
   candidate: final_source_reconciliation_candidate,
 ): Promise<final_source_reconciliation_result> {
@@ -368,6 +383,7 @@ export async function reconcile_civic_genome_final_source_candidate(
 ): Promise<final_source_reconciliation_result> {
   const bill = await get_bill(candidate.source_bill_id);
   await cache_bill_detail(candidate.source_bill_id, bill);
+  await register_refreshed_provider_spine(candidate.source_bill_id);
   const refreshed = await read_result(candidate);
   if (refreshed.final_version_present) return refreshed;
 
