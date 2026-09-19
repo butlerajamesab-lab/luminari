@@ -561,7 +561,7 @@ function parseResourceCandidates(ctx: ParseContext): Candidate[] {
     const fields = current.fields;
     const fieldCount = Object.keys(fields).length;
     const hasContact = Boolean(fields.phone || fields.website_url || fields.email || fields.address || fields.filing_portal);
-    const title = compact(current.title).replace(/\s+\[(?:[A-Z0-9_-]+)\]\s+(?:VERIFIED|UNVERIFIED.*)$/i, "").replace(/\s+(?:VERIFIED|UNVERIFIED.*)$/i, "").trim();
+    const title = compact(current.title).replace(/\s+\[[^\]]{1,80}\]\s+(?:VERIFIED|UNVERIFIED.*)$/i, "").replace(/\s+(?:VERIFIED|UNVERIFIED.*)$/i, "").trim();
     const malformedTitle = !title || /^(field|information|program|organization|phone|website|eligibility|address|notes)$/i.test(title);
     if (!malformedTitle && fieldCount >= 1 && (hasContact || fields.eligibility_summary || fields.description)) {
       const excerpt = current.sourceLines.join("\n").slice(0, 8000);
@@ -645,7 +645,7 @@ function parseResourceCandidates(ctx: ParseContext): Candidate[] {
       return "";
     })();
     const titleCandidate = !isSectionHeading(line) && line.length >= 4 && line.length <= 300
-      && (RESOURCE_LABELS.has(normalizeLabel(nextNonEmpty)) || /^[^:]{4,240}\s+\[[A-Z0-9_-]+\]\s+(?:VERIFIED|UNVERIFIED)/i.test(line));
+      && (RESOURCE_LABELS.has(normalizeLabel(nextNonEmpty)) || /^[^:]{4,240}\s+\[[^\]]{1,80}\]\s+(?:VERIFIED|UNVERIFIED)/i.test(line));
     if (titleCandidate) {
       flush(); current = { title: line, start: sourceLine, end: sourceLine, fields: {}, sourceLines: [line], section }; continue;
     }
