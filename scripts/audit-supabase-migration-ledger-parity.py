@@ -316,7 +316,7 @@ APPROVED_REPOSITORY_ONLY = {
     # Forward official-terminal source identity migration pending production apply.
     "20260919043000": (
         "20260919043000_official_terminal_source_identity.sql",
-        "aa76163ca65fc5237cca72ff11ad9888d2d4798d",
+        "c452a24dde27bfb2597397cbbe64657916fa5958",
     ),
 }
 
