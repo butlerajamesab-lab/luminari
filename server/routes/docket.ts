@@ -104,11 +104,6 @@ type docket_warm_state_result = {
   error?: string;
 };
 
-type docket_official_source_database_row = {
-  source_bill_id: number;
-  official_source_url: string | null;
-};
-
 type docket_radar_database_row = {
   source_bill_id: number;
   velocity_score: string | number | null;
@@ -144,37 +139,9 @@ const finite_number = (value: string | number | null): number => {
 
 const enrich_bills_with_radar = async (
   bills: legiscan_master_bill[],
-): Promise<Array<legiscan_master_bill & { source_url?: string; radar: Record<string, unknown> }>> => {
+): Promise<Array<legiscan_master_bill & { radar: Record<string, unknown> }>> => {
   const bill_ids = bills.map(bill => bill.bill_id).filter(Number.isSafeInteger);
   if (bill_ids.length === 0) return [];
-
-  // User-facing source links must resolve to the same official bill authority
-  // as the detail workspace. Keep the provider URL untouched as provenance.
-  const official_source_by_bill = new Map<number, string>();
-  try {
-    const official_sources = await query_with_diagnostics<docket_official_source_database_row>(
-      `select bill_id as source_bill_id,
-              nullif(bill ->> 'state_link', '') as official_source_url
-         from public.docket_bill_detail_cache
-        where bill_id = any($1::integer[])`,
-      [bill_ids],
-      {
-        label: "docket_state_official_source_projection",
-        pool_acquire_timeout_ms: 1_000,
-        query_timeout_ms: 5_000,
-      },
-    );
-    for (const row of official_sources.rows) {
-      if (row.official_source_url) official_source_by_bill.set(row.source_bill_id, row.official_source_url);
-    }
-  } catch (error) {
-    console.error("[DocketSource] official_source_projection_unavailable", { error: serialize_error(error) });
-  }
-
-  const bills_with_official_source = bills.map(bill => {
-    const source_url = official_source_by_bill.get(bill.bill_id);
-    return source_url ? { ...bill, source_url } : { ...bill };
-  });
 
   let result;
   try {
@@ -272,7 +239,7 @@ const enrich_bills_with_radar = async (
     );
   } catch (error) {
     console.error("[DocketRadar] enrichment_unavailable", { error: serialize_error(error) });
-    return bills_with_official_source.map(bill => ({ ...bill, radar: unavailable_radar() }));
+    return bills.map(bill => ({ ...bill, radar: unavailable_radar() }));
   }
 
   const radar_by_bill = new Map<number, {
@@ -313,7 +280,7 @@ const enrich_bills_with_radar = async (
     radar_by_bill.set(row.source_bill_id, existing);
   }
 
-  return bills_with_official_source.map(bill => ({
+  return bills.map(bill => ({
     ...bill,
     radar: radar_by_bill.get(bill.bill_id) ?? unavailable_radar(),
   }));
