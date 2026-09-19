@@ -6,6 +6,10 @@ const worker = readFileSync(
   join(process.cwd(), "server", "civic-genome-legislative-version-queue-worker.ts"),
   "utf8",
 );
+const runtime = readFileSync(
+  join(process.cwd(), "server", "prism-rosetta-worker.ts"),
+  "utf8",
+);
 const reconciler = readFileSync(
   join(process.cwd(), "server", "civic-genome-current-result-reconciliation.ts"),
   "utf8",
@@ -42,6 +46,22 @@ describe("current-result observation lane contract", () => {
     expect(enablement).toContain("!recovery_contract_scope");
     expect(enablement).not.toContain("current_sources");
     expect(worker).toContain("active_current_result_observation");
+  });
+
+  it("starts result observation even when legislative execution is disabled", () => {
+    expect(worker).toContain("export function start_current_result_observation_worker");
+    expect(worker).toContain("export async function stop_current_result_observation_worker");
+    expect(runtime).toContain("start_current_result_observation_worker()");
+    expect(runtime).toContain("stop_current_result_observation_worker()");
+    const runtime_start = runtime.indexOf("start_prism_rosetta_queue_worker();");
+    const start = runtime.indexOf("start_current_result_observation_worker();", runtime_start);
+    const authorized = runtime.indexOf(
+      "const legislative_version_queue_startup = start_authorized_legislative_queue();",
+      runtime_start,
+    );
+    expect(runtime_start).toBeGreaterThanOrEqual(0);
+    expect(start).toBeGreaterThan(runtime_start);
+    expect(authorized).toBeGreaterThan(start);
   });
 
   it("keeps result observation active during ordinary current-source intake", () => {

@@ -76,6 +76,7 @@ let queue_timer: NodeJS.Timeout | null = null;
 let active_queue_cycle: Promise<void> | null = null;
 let current_result_observation_timer: NodeJS.Timeout | null = null;
 let active_current_result_observation: Promise<void> | null = null;
+let current_result_observation_stopped = false;
 let amendment_source_completion_timer: NodeJS.Timeout | null = null;
 let active_amendment_source_completion: Promise<void> | null = null;
 let queue_cycle_running = false;
@@ -1085,7 +1086,7 @@ function schedule_legislative_version_queue_cycle(): void {
 }
 
 async function run_current_result_observation_cycle(): Promise<void> {
-  if (queue_stopped) return;
+  if (current_result_observation_stopped) return;
   try {
     const summary = await reconcile_awaiting_current_results();
     if (summary.woken > 0 || summary.read_errors > 0) {
@@ -1102,7 +1103,7 @@ async function run_current_result_observation_cycle(): Promise<void> {
 }
 
 function schedule_current_result_observation(): void {
-  if (active_current_result_observation || queue_stopped) return;
+  if (active_current_result_observation || current_result_observation_stopped) return;
   const observation = run_current_result_observation_cycle();
   active_current_result_observation = observation;
   void observation.finally(() => {
@@ -1111,6 +1112,24 @@ function schedule_current_result_observation(): void {
     }
   });
 }
+
+export function start_current_result_observation_worker(): void {
+  if (current_result_observation_timer) return;
+  current_result_observation_stopped = false;
+  const interval_ms = bounded_current_result_observation_interval();
+  console.log("[CurrentResultReconciliation] started", { interval_ms });
+  schedule_current_result_observation();
+  current_result_observation_timer = setInterval(() => {
+    schedule_current_result_observation();
+  }, interval_ms);
+  current_result_observation_timer.unref?.();
+}
+
+export async function stop_current_result_observation_worker(): Promise<void> {
+  current_result_observation_stopped = true;
+  await active_current_result_observation;
+}
+
 
 
 async function run_amendment_source_completion_cycle(): Promise<void> {
@@ -1186,11 +1205,7 @@ export function start_legislative_version_queue_worker(): void {
   queue_timer.unref?.();
 
   if (current_result_observation_enabled) {
-    schedule_current_result_observation();
-    current_result_observation_timer = setInterval(() => {
-      schedule_current_result_observation();
-    }, current_result_observation_interval_ms);
-    current_result_observation_timer.unref?.();
+    start_current_result_observation_worker();
   }
 
   if (amendment_source_completion_enabled) {
@@ -1218,7 +1233,6 @@ export async function stop_legislative_version_queue_worker(): Promise<void> {
   wake_shared_provider_release_retries();
   await Promise.all([
     active_queue_cycle,
-    active_current_result_observation,
     active_amendment_source_completion,
   ]);
 }
