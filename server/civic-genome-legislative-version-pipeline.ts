@@ -75,6 +75,9 @@ type legislative_version_row = {
   predecessor_bill_version_id: string | null;
   base_bill_version_id: string | null;
   receipt_json: Record<string, unknown>;
+  rosetta_source_document_id: number | null;
+  rosetta_extraction_run_id: string | null;
+  assembly_run_id: string | null;
   provider_document_id: string;
   provider_document_type: string;
   source_url: string;
@@ -499,6 +502,9 @@ async function load_version(bill_version_id: string): Promise<legislative_versio
             version.predecessor_bill_version_id::text,
             version.base_bill_version_id::text,
             version.receipt_json,
+            version.rosetta_source_document_id,
+            version.rosetta_extraction_run_id::text,
+            version.assembly_run_id::text,
             document.provider_document_id::text,
             document.provider_document_type,
             document.source_url,
@@ -1360,7 +1366,9 @@ async function record_extracted(
               'rosetta_output_content_hash', $7::text,
               'rosetta_run_version', $8::integer,
               'rosetta_replayed', $9::boolean,
-              'rosetta_receipt_source', 'current_docket_projection'
+              'rosetta_receipt_source', 'current_docket_projection',
+              'current_rosetta_status', 'complete',
+              'current_rosetta_observed_at', now()
             ),
             updated_at = now()
       where bill_version_id = $1::uuid`,
@@ -1411,6 +1419,119 @@ async function record_assembled(
       assembly.family_resolution.status,
     ],
   );
+}
+
+
+export type completed_current_result_attachment = {
+  bill_version_id: string;
+  source_document_key: string;
+  extraction_run_id: number;
+  assembly_run_id: string;
+};
+
+/**
+ * Attach a completed Rosetta current-source result to an already-preserved
+ * Civic Genome text version without fetching provider bytes, registering
+ * source content, or invoking Rosetta execution.
+ *
+ * The exact source key + content hash are read from the immutable source
+ * receipt already persisted on the version. A non-complete current result is
+ * observational only and returns null.
+ */
+export async function attach_completed_current_result(
+  bill_version_id: string,
+): Promise<completed_current_result_attachment | null> {
+  const version = await load_version(bill_version_id);
+  if (version.document_family !== "text") {
+    throw new Error("current_result_attachment_requires_text_version");
+  }
+
+  const source_document_id = Number(version.rosetta_source_document_id);
+  const source_content_hash = String(
+    version.receipt_json.source_content_hash ?? "",
+  ).trim().toLowerCase();
+  const source_content_id = String(
+    version.receipt_json.rosetta_source_content_id ?? "",
+  ).trim();
+  const source_identity_hash = String(
+    version.receipt_json.rosetta_source_identity_hash ?? "",
+  ).trim().toLowerCase();
+  const source_byte_hash = String(
+    version.receipt_json.source_byte_hash ?? "",
+  ).trim().toLowerCase();
+  const source_version = String(
+    version.receipt_json.source_version ?? "",
+  ).trim();
+  const source_url = String(
+    version.receipt_json.source_url ?? version.source_url ?? "",
+  ).trim();
+
+  if (
+    !Number.isSafeInteger(source_document_id)
+    || source_document_id <= 0
+    || !/^[0-9a-f]{64}$/.test(source_content_hash)
+    || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(source_content_id)
+    || !/^[0-9a-f]{64}$/.test(source_identity_hash)
+    || !/^[0-9a-f]{64}$/.test(source_byte_hash)
+    || !source_version
+    || !source_url.startsWith("https://")
+  ) {
+    throw new Error("current_result_attachment_source_receipt_incomplete");
+  }
+
+  const current = await load_rosetta_current_docket_result_for_binding({
+    source_document_key: version.source_document_key,
+    source_content_hash,
+  });
+  if (!current || current.status !== "complete" || !current.current_result) {
+    return null;
+  }
+
+  const extraction_run_id = Number(current.current_result.extraction_run_id);
+  const projected_source_document_id = Number(
+    current.current_source_status?.rosetta_source_document_id ?? source_document_id,
+  );
+  if (
+    !Number.isSafeInteger(extraction_run_id)
+    || extraction_run_id <= 0
+    || projected_source_document_id !== source_document_id
+  ) {
+    throw new Error("current_result_attachment_projection_identity_mismatch");
+  }
+
+  const extraction: current_legislative_extraction_receipt = {
+    ...current.current_result,
+    extraction_run_id,
+    source_document_id,
+    source_content_id,
+    source_identity_hash,
+    source_content_hash,
+    source_byte_hash,
+    source_url,
+    source_version,
+    run_status: "completed",
+    run_version: null,
+    replayed: null,
+    coverage: current.coverage,
+    receipt_source: "current_docket_projection",
+  };
+
+  const assembly = await assemble_rosetta_and_resolve_family({
+    genome_bill_id: version.genome_bill_id,
+    source_document_id,
+    extraction_run_id,
+    source_document_key: version.source_document_key,
+    source_content_hash,
+  });
+  await record_extracted(bill_version_id, extraction);
+  await record_assembled(bill_version_id, assembly);
+
+  return {
+    bill_version_id,
+    source_document_key: version.source_document_key,
+    extraction_run_id,
+    assembly_run_id: assembly.assembly_run_id,
+  };
 }
 
 export async function process_legislative_version(

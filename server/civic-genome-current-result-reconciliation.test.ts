@@ -1,16 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { query, load_current } = vi.hoisted(() => ({
+const { query, attach_current } = vi.hoisted(() => ({
   query: vi.fn(),
-  load_current: vi.fn(),
+  attach_current: vi.fn(),
 }));
 
 vi.mock("./db", () => ({
   query_with_diagnostics: query,
 }));
 
-vi.mock("./civic-genome-rosetta-evaluation", () => ({
-  load_rosetta_current_docket_result_for_binding: load_current,
+vi.mock("./civic-genome-legislative-version-pipeline", () => ({
+  attach_completed_current_result: attach_current,
 }));
 
 import { reconcile_awaiting_current_results } from "./civic-genome-current-result-reconciliation";
@@ -27,60 +27,54 @@ beforeEach(() => {
 });
 
 describe("current Rosetta result arrival reconciliation", () => {
-  it("wakes only an exact held key/hash after Rosetta reports complete", async () => {
+  it("attaches only an exact current key/hash and completes the queue without consuming an attempt", async () => {
     query
       .mockResolvedValueOnce({ rows: [candidate] })
       .mockResolvedValueOnce({ rows: [{ queue_id: candidate.queue_id }] });
-    load_current.mockResolvedValue({
-      status: "complete",
-      current_result: { extraction_run_id: 1014063 },
+    attach_current.mockResolvedValue({
+      bill_version_id: candidate.bill_version_id,
+      source_document_key: candidate.source_document_key,
+      extraction_run_id: 1014063,
+      assembly_run_id: "11111111-1111-4111-8111-111111111111",
     });
 
     await expect(reconcile_awaiting_current_results({ limit: 1, concurrency: 1 }))
       .resolves.toEqual({
         checked: 1,
-        woken: 1,
+        attached: 1,
         still_held: 0,
         read_errors: 0,
       });
 
-    expect(load_current).toHaveBeenCalledWith({
-      source_document_key: candidate.source_document_key,
-      source_content_hash: candidate.source_content_hash,
-    });
+    expect(attach_current).toHaveBeenCalledWith(candidate.bill_version_id);
 
     const claim_sql = String(query.mock.calls[0][0]);
+    expect(claim_sql).toContain("version.document_family = 'text'");
+    expect(claim_sql).toContain("version.processing_state = 'source_ingested'");
+    expect(claim_sql).toContain("version.rosetta_extraction_run_id is null");
+    expect(claim_sql).toContain("not exists (");
+    expect(claim_sql).toContain("queue.queue_state = 'eligible'");
+    expect(claim_sql).toContain("queue.attempt_count = 0");
     expect(claim_sql).toContain("last_failure_class = 'awaiting_current_result'");
-    expect(claim_sql).toContain("next_attempt_at = 'infinity'::timestamptz");
-    expect(claim_sql).toContain("current_result_checked_at nulls first");
     expect(claim_sql).toContain("current_docket_result_awaiting_publication");
 
-    const wake_sql = String(query.mock.calls[1][0]);
-    expect(wake_sql).toContain("queue_state = 'eligible'");
-    expect(wake_sql).toContain("last_failure_class = null");
-    expect(wake_sql).toContain("last_error_code = null");
-    expect(wake_sql).toContain("version.source_document_key = $3::text");
-    expect(wake_sql).toContain("lower(version.receipt_json->>'source_content_hash') = $4::text");
-    expect(wake_sql).not.toContain("attempt_count");
-    expect(query.mock.calls[1][1]).toEqual([
-      candidate.queue_id,
-      candidate.bill_version_id,
-      candidate.source_document_key,
-      candidate.source_content_hash,
-    ]);
+    const complete_sql = String(query.mock.calls[1][0]);
+    expect(complete_sql).toContain("queue_state = 'completed'");
+    expect(complete_sql).toContain("version.source_document_key = $3::text");
+    expect(complete_sql).toContain("lower(version.receipt_json->>'source_content_hash') = $4::text");
+    expect(complete_sql).toContain("version.rosetta_extraction_run_id = $5::text");
+    expect(complete_sql).toContain("version.assembly_run_id = $6::uuid");
+    expect(complete_sql).not.toContain("attempt_count =");
   });
 
-  it("leaves an exact hold parked when Rosetta is not complete", async () => {
+  it("leaves a source observed when Rosetta has no complete current result", async () => {
     query.mockResolvedValueOnce({ rows: [candidate] });
-    load_current.mockResolvedValue({
-      status: "awaiting_analysis",
-      current_result: null,
-    });
+    attach_current.mockResolvedValue(null);
 
     await expect(reconcile_awaiting_current_results({ limit: 1, concurrency: 1 }))
       .resolves.toEqual({
         checked: 1,
-        woken: 0,
+        attached: 0,
         still_held: 1,
         read_errors: 0,
       });
@@ -91,14 +85,16 @@ describe("current Rosetta result arrival reconciliation", () => {
     );
   });
 
-  it("records a read error without changing queue eligibility", async () => {
+  it("records an attachment/read error without changing queue state", async () => {
     query.mockResolvedValueOnce({ rows: [candidate] });
-    load_current.mockRejectedValue(new Error("rosetta_public_current_docket_result_read_timeout"));
+    attach_current.mockRejectedValue(
+      new Error("current_result_attachment_source_receipt_incomplete"),
+    );
 
     await expect(reconcile_awaiting_current_results({ limit: 1, concurrency: 1 }))
       .resolves.toEqual({
         checked: 1,
-        woken: 0,
+        attached: 0,
         still_held: 0,
         read_errors: 1,
       });
