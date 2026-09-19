@@ -1,5 +1,8 @@
 import { query_with_diagnostics } from "./db";
-import { load_rosetta_current_docket_result_for_binding } from "./civic-genome-rosetta-evaluation";
+import {
+  attach_completed_current_result,
+  type completed_current_result_attachment,
+} from "./civic-genome-legislative-version-pipeline";
 
 const DEFAULT_BATCH_SIZE = 50;
 const MAX_BATCH_SIZE = 100;
@@ -15,7 +18,7 @@ type held_current_result_candidate = {
 
 export type current_result_reconciliation_summary = {
   checked: number;
-  woken: number;
+  attached: number;
   still_held: number;
   read_errors: number;
 };
@@ -42,15 +45,40 @@ async function claim_held_current_result_candidates(
          from public.civic_genome_legislative_version_queue queue
          join public.civic_genome_bill_version version
            on version.bill_version_id = queue.bill_version_id
-        where queue.queue_state = 'degraded'
-          and queue.last_failure_class = 'awaiting_current_result'
-          and queue.last_error_code is distinct from
-              'rosetta_public_current_docket_result_awaiting_publication'
-          and queue.next_attempt_at = 'infinity'::timestamptz
-          and queue.locked_at is null
-          and queue.locked_by is null
+        where version.document_family = 'text'
+          and version.processing_state = 'source_ingested'
+          and version.rosetta_extraction_run_id is null
+          and version.assembly_run_id is null
           and version.source_document_key is not null
           and version.receipt_json->>'source_content_hash' ~ '^[0-9A-Fa-f]{64}$'
+          and not exists (
+            select 1
+              from public.civic_genome_bill_version newer
+             where newer.genome_bill_id = version.genome_bill_id
+               and newer.document_family = 'text'
+               and (
+                 newer.stage_rank > version.stage_rank
+                 or (
+                   newer.stage_rank = version.stage_rank
+                   and newer.provider_sequence > version.provider_sequence
+                 )
+               )
+          )
+          and (
+            (
+              queue.queue_state = 'degraded'
+              and queue.last_failure_class = 'awaiting_current_result'
+              and queue.last_error_code is distinct from
+                  'rosetta_public_current_docket_result_awaiting_publication'
+              and queue.next_attempt_at = 'infinity'::timestamptz
+            )
+            or (
+              queue.queue_state = 'eligible'
+              and queue.attempt_count = 0
+            )
+          )
+          and queue.locked_at is null
+          and queue.locked_by is null
         order by queue.current_result_checked_at nulls first,
                  queue.updated_at,
                  queue.queue_id
@@ -78,12 +106,14 @@ async function claim_held_current_result_candidates(
   return result.rows;
 }
 
-async function wake_completed_current_result(
+async function complete_attached_current_result(
   candidate: held_current_result_candidate,
+  attachment: completed_current_result_attachment,
 ): Promise<boolean> {
   const result = await query_with_diagnostics<{ queue_id: string }>(
     `update public.civic_genome_legislative_version_queue queue
-        set queue_state = 'eligible',
+        set queue_state = 'completed',
+            completed_at = coalesce(queue.completed_at, now()),
             next_attempt_at = now(),
             locked_at = null,
             locked_by = null,
@@ -97,11 +127,9 @@ async function wake_completed_current_result(
         and version.bill_version_id = $2::uuid
         and version.source_document_key = $3::text
         and lower(version.receipt_json->>'source_content_hash') = $4::text
-        and queue.queue_state = 'degraded'
-        and queue.last_failure_class = 'awaiting_current_result'
-        and queue.last_error_code is distinct from
-            'rosetta_public_current_docket_result_awaiting_publication'
-        and queue.next_attempt_at = 'infinity'::timestamptz
+        and version.rosetta_extraction_run_id = $5::text
+        and version.assembly_run_id = $6::uuid
+        and queue.queue_state in ('degraded', 'eligible')
         and queue.locked_at is null
         and queue.locked_by is null
       returning queue.queue_id::text`,
@@ -110,9 +138,11 @@ async function wake_completed_current_result(
       candidate.bill_version_id,
       candidate.source_document_key,
       candidate.source_content_hash,
+      String(attachment.extraction_run_id),
+      attachment.assembly_run_id,
     ],
     {
-      label: "legislative_version_current_result_arrived",
+      label: "legislative_version_current_result_attached",
       pool_acquire_timeout_ms: 1_000,
       query_timeout_ms: 5_000,
     },
@@ -122,14 +152,15 @@ async function wake_completed_current_result(
 
 async function observe_candidate(
   candidate: held_current_result_candidate,
-): Promise<"woken" | "held" | "read_error"> {
+): Promise<"attached" | "held" | "read_error"> {
   try {
-    const current = await load_rosetta_current_docket_result_for_binding({
-      source_document_key: candidate.source_document_key,
-      source_content_hash: candidate.source_content_hash,
-    });
-    if (current?.status !== "complete" || !current.current_result) return "held";
-    return await wake_completed_current_result(candidate) ? "woken" : "held";
+    const attachment = await attach_completed_current_result(
+      candidate.bill_version_id,
+    );
+    if (!attachment) return "held";
+    return await complete_attached_current_result(candidate, attachment)
+      ? "attached"
+      : "held";
   } catch (error) {
     console.error("[CurrentResultReconciliation] observation_failed", {
       queue_id: candidate.queue_id,
@@ -142,12 +173,13 @@ async function observe_candidate(
 }
 
 /**
- * Observe parked current-result holds without invoking Rosetta execution.
+ * Observe exact current-source rows and attach completed Rosetta results without
+ * invoking source acquisition or Rosetta execution.
  *
- * A row is reopened only after Rosetta returns a complete result for the exact
- * source_document_key + SHA-256 pair already preserved on the bill version.
- * The queue attempt counter and prior source/decomposition receipts are never
- * rewritten here.
+ * A row is completed only after the exact source_document_key + SHA-256 pair
+ * already preserved on the bill version resolves to a complete current result,
+ * that result is assembled into Civic Genome, and the persisted extraction/assembly
+ * identities match the queue row. No queue attempt is consumed here.
  */
 export async function reconcile_awaiting_current_results(input: {
   limit?: number;
@@ -163,7 +195,7 @@ export async function reconcile_awaiting_current_results(input: {
   const candidates = await claim_held_current_result_candidates(limit);
   const summary: current_result_reconciliation_summary = {
     checked: candidates.length,
-    woken: 0,
+    attached: 0,
     still_held: 0,
     read_errors: 0,
   };
@@ -173,7 +205,7 @@ export async function reconcile_awaiting_current_results(input: {
       candidates.slice(offset, offset + concurrency).map(observe_candidate),
     );
     for (const outcome of outcomes) {
-      if (outcome === "woken") summary.woken += 1;
+      if (outcome === "attached") summary.attached += 1;
       else if (outcome === "read_error") summary.read_errors += 1;
       else summary.still_held += 1;
     }
