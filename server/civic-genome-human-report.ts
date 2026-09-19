@@ -352,25 +352,25 @@ function render_current_rosetta_layer(
         const key = string_value(object.key) ?? "Recorded Rosetta object";
         const source_block_id = string_value(object.sourceBlockId ?? object.source_block_id);
         const confidence = object.confidence;
-        return \`<article class="trait rosetta-layer-object">
+        return `<article class="trait rosetta-layer-object">
           <div class="trait-head">
-            <div><span class="label">\${html(layer_label)}</span><h3>\${html(human_key(key))}</h3></div>
-            <div class="trait-status good">\${html(human_key(status))}</div>
+            <div><span class="label">${html(layer_label)}</span><h3>${html(human_key(key))}</h3></div>
+            <div class="trait-status good">${html(human_key(status))}</div>
           </div>
-          \${render_value(object.normalizedValue ?? object.normalized_value)}
+          ${render_value(object.normalizedValue ?? object.normalized_value)}
           <div class="source-header">
-            \${source_block_id ? \`<div><b>Source location:</b> <span class="mono">\${html(source_block_id)}</span></div>\` : ""}
-            <div><b>Confidence:</b> \${html(confidence ?? "Not observed")}</div>
+            ${source_block_id ? `<div><b>Source location:</b> <span class="mono">${html(source_block_id)}</span></div>` : ""}
+            <div><b>Confidence:</b> ${html(confidence ?? "Not observed")}</div>
           </div>
-        </article>\`;
+        </article>`;
       }).join("")
-    : \`<p class="muted">No objects recorded. Layer status: <b>\${html(human_key(status))}</b>\${coverage_entry?.reason ? \` · \${html(coverage_entry.reason)}\` : ""}.</p>\`;
+    : `<p class="muted">No objects recorded. Layer status: <b>${html(human_key(status))}</b>${coverage_entry?.reason ? ` · ${html(coverage_entry.reason)}` : ""}.</p>`;
 
-  return \`<section class="panel rosetta-layer">
+  return `<section class="panel rosetta-layer">
     <span class="eyebrow">Rosetta five-layer decomposition</span>
-    <h2>\${html(layer_label)}</h2>
-    \${content}
-  </section>\`;
+    <h2>${html(layer_label)}</h2>
+    ${content}
+  </section>`;
 }
 
 function render_current_rosetta_decomposition(
@@ -394,17 +394,17 @@ function render_current_rosetta_decomposition(
     const reason = string_value(result?.public_reason)
       ?? string_value(current_rosetta.read_error)
       ?? "Exact current-source decomposition is not complete.";
-    return \`<section class="panel">
+    return `<section class="panel">
       <span class="eyebrow">Rosetta five-layer decomposition</span>
-      <h2>Current decomposition \${html(human_key(status))}</h2>
-      <p class="muted">\${html(reason)}</p>
+      <h2>Current decomposition ${html(human_key(status))}</h2>
+      <p class="muted">${html(reason)}</p>
       <div class="grid">
-        \${ROSETTA_LAYER_ORDER.map(([key, label]) => {
+        ${ROSETTA_LAYER_ORDER.map(([key, label]) => {
           const entry = as_record(coverage[key]);
-          return \`<div class="metric"><span class="label">\${html(label)}</span><b>\${html(human_key(entry?.status ?? "not observed"))}</b></div>\`;
+          return `<div class="metric"><span class="label">${html(label)}</span><b>${html(human_key(entry?.status ?? "not observed"))}</b></div>`;
         }).join("")}
       </div>
-    </section>\`;
+    </section>`;
   }
 
   const engine = string_value(structure.engine_version)
@@ -412,29 +412,29 @@ function render_current_rosetta_decomposition(
   const run_id = positive_integer(structure.extraction_run_id)
     ?? positive_integer(as_record(result.current_result)?.extraction_run_id);
 
-  return \`
+  return `
     <section class="panel">
       <span class="eyebrow">Rosetta five-layer decomposition</span>
       <h2>Current exact-source structure</h2>
       <p class="subhead">This is the current Rosetta decomposition for the exact Docket source key and content hash. It is separate from Prism verification and from historical Civic Genome assembly snapshots.</p>
       <div class="grid">
-        \${ROSETTA_LAYER_ORDER.map(([key, label]) => {
+        ${ROSETTA_LAYER_ORDER.map(([key, label]) => {
           const entry = as_record(coverage[key]);
           const count = objects.filter(object => string_value(object.layer) === key).length;
           const status_value = string_value(entry?.status) ?? "not_observed";
-          return \`<div class="metric"><span class="label">\${html(label)}</span><b>\${html(human_key(status_value))}\${count ? \` · \${count}\` : ""}</b></div>\`;
+          return `<div class="metric"><span class="label">${html(label)}</span><b>${html(human_key(status_value))}${count ? ` · ${count}` : ""}</b></div>`;
         }).join("")}
       </div>
       <div class="source-header">
-        <div><b>Engine:</b> <span class="mono">\${html(engine ?? "Not observed")}</span></div>
-        <div><b>Extraction run:</b> <span class="mono">\${html(run_id ?? "Not observed")}</span></div>
-        <div><b>Source registry:</b> <span class="mono">\${html(source_registry_id ?? "Not observed")}</span></div>
+        <div><b>Engine:</b> <span class="mono">${html(engine ?? "Not observed")}</span></div>
+        <div><b>Extraction run:</b> <span class="mono">${html(run_id ?? "Not observed")}</span></div>
+        <div><b>Source registry:</b> <span class="mono">${html(source_registry_id ?? "Not observed")}</span></div>
       </div>
     </section>
-    \${ROSETTA_LAYER_ORDER.map(([key, label]) =>
+    ${ROSETTA_LAYER_ORDER.map(([key, label]) =>
       render_current_rosetta_layer(key, label, coverage, objects)
     ).join("")}
-  \`;
+  `;
 }
 
 function proof_rows(
