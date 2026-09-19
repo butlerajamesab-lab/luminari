@@ -7,6 +7,8 @@ const boundaries = vi.hoisted(() => ({
   stop_legislative: vi.fn(async () => undefined),
   start_current_result_observer: vi.fn(),
   stop_current_result_observer: vi.fn(async () => undefined),
+  start_final_source: vi.fn(),
+  stop_final_source: vi.fn(),
   recovery_scope: vi.fn(() => null),
   bill_text: vi.fn(),
   pool_end: vi.fn(async () => undefined),
@@ -26,6 +28,10 @@ vi.mock("./civic-genome-legislative-version-queue-worker", () => ({
   stop_legislative_version_queue_worker: boundaries.stop_legislative,
 }));
 vi.mock("./services/legiscan", () => ({ get_bill_text: boundaries.bill_text }));
+vi.mock("./civic-genome-final-source-reconciliation-worker", () => ({
+  start_civic_genome_final_source_reconciliation_worker: boundaries.start_final_source,
+  stop_civic_genome_final_source_reconciliation_worker: boundaries.stop_final_source,
+}));
 
 const uuid = (value: number) => `00000000-0000-4000-8000-${String(value).padStart(12, "0")}`;
 let signals: Map<string | symbol, (...args: any[]) => void>;
@@ -47,6 +53,7 @@ describe("dedicated Prism worker entrypoint selection", () => {
     vi.stubEnv("LEGISLATIVE_VERSION_QUEUE_ENABLED", "false");
     vi.stubEnv("LEGISLATIVE_VERSION_CURRENT_SOURCES_ENABLED", "false");
     vi.stubEnv("LEGISLATIVE_VERSION_QUEUE_RECOVERY_CONTRACT_SCOPE", "");
+    vi.stubEnv("CIVIC_GENOME_FINAL_SOURCE_RECONCILIATION_ENABLED", "false");
     vi.stubEnv("PRISM_ROSETTA_QUEUE_CANARY_ID", "");
     vi.stubEnv("PRISM_ROSETTA_QUEUE_BATCH_IDS", "");
   });
@@ -77,6 +84,17 @@ describe("dedicated Prism worker entrypoint selection", () => {
     expect(boundaries.stop_prism).toHaveBeenCalledTimes(1);
     expect(boundaries.stop_current_result_observer).toHaveBeenCalledTimes(1);
     expect(boundaries.pool_end).toHaveBeenCalledTimes(1);
+  });
+
+  it("starts final-source reconciliation independently when explicitly enabled", async () => {
+    vi.stubEnv("PRISM_ROSETTA_QUEUE_CANARY_ID", uuid(1));
+    vi.stubEnv("CIVIC_GENOME_FINAL_SOURCE_RECONCILIATION_ENABLED", "true");
+    await import("./prism-rosetta-worker");
+    await vi.advanceTimersByTimeAsync(0);
+    expect(boundaries.start_final_source).toHaveBeenCalledTimes(1);
+    signals.get("SIGTERM")?.();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(boundaries.stop_final_source).toHaveBeenCalledTimes(1);
   });
 
   it("starts ordinary source intake only with its explicit scope and provider probe", async () => {
