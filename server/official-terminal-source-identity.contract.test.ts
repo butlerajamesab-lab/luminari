@@ -22,4 +22,14 @@ describe("official terminal source identity contract", () => {
     expect(sql).toContain("verified_terminal_source");
     expect(sql).toContain("supplements_provider_text_chain");
   });
+
+  it("reuses the original provider sequence on idempotent artifact replay", () => {
+    const existing = sql.indexOf(
+      "select provider_sequence,predecessor_source_document_key",
+    );
+    const allocate = sql.indexOf("select coalesce(max(provider_sequence),0)+1");
+    expect(existing).toBeGreaterThan(-1);
+    expect(allocate).toBeGreaterThan(existing);
+    expect(sql).toContain("if v_provider_sequence is null then");
+  });
 });
