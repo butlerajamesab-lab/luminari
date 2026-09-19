@@ -13,7 +13,9 @@ import {
 } from "./services/prism-rosetta-queue-worker";
 import {
   legislative_version_queue_recovery_contract_scope,
+  start_current_result_observation_worker,
   start_legislative_version_queue_worker,
+  stop_current_result_observation_worker,
   stop_legislative_version_queue_worker,
 } from "./civic-genome-legislative-version-queue-worker";
 import {
@@ -69,6 +71,7 @@ const legiscan_bill_text_probe_configured =
   && legiscan_bill_text_probe_document_id > 0;
 
 let legislative_version_queue_enabled = false;
+let current_result_observation_enabled = false;
 let docket_loopback_server: Server | null = null;
 let shutting_down = false;
 
@@ -183,6 +186,10 @@ console.log("[PrismRosettaWorker] starting", {
       : null,
 });
 start_prism_rosetta_queue_worker();
+if (!legislative_version_queue_recovery_scope) {
+  start_current_result_observation_worker();
+  current_result_observation_enabled = true;
+}
 const legislative_version_queue_startup = start_authorized_legislative_queue();
 const docket_worker_startup = start_docket_workers().catch(error => {
   console.error("[DocketWorker] startup_failed", {
@@ -207,6 +214,9 @@ async function shutdown(signal: string): Promise<void> {
   await wait_for_docket_state_refreshes();
   await Promise.all([
     stop_prism_rosetta_queue_worker(),
+    current_result_observation_enabled
+      ? stop_current_result_observation_worker()
+      : Promise.resolve(),
     legislative_version_queue_enabled
       ? stop_legislative_version_queue_worker()
       : Promise.resolve(),
