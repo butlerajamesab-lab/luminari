@@ -19,6 +19,10 @@ const rosetta = readFileSync(
   join(root, "client", "src", "components", "civic-genome", "RosettaEvaluation.tsx"),
   "utf8",
 );
+const humanReport = readFileSync(
+  join(root, "server", "civic-genome-human-report.ts"),
+  "utf8",
+);
 
 describe("Civic Genome human-readable primary view", () => {
   it("reuses the existing summary renderer for an inline same-origin view", () => {
@@ -43,5 +47,21 @@ describe("Civic Genome human-readable primary view", () => {
   it("keeps the verbose Rosetta result tree collapsed by default", () => {
     expect(rosetta).toContain("Current result, validation summary, and coverage");
     expect(rosetta).not.toContain('open={Boolean(current_result)}');
+  });
+
+  it("renders the system-wide Rosetta five-layer contract from exact current-source structure", () => {
+    for (const layer of ["HELP", "WORKFLOW", "ACCOUNTABILITY", "OVERRIDES", "DEFINITIONS"]) {
+      expect(humanReport).toContain(layer);
+    }
+    expect(router).toContain("load_rosetta_current_docket_result_for_binding");
+    expect(router).toContain("get_rosetta_current_docket_structure");
+    expect(humanReport).toContain("Current exact-source structure");
+  });
+
+  it("deep-links a selected bill to its exact Rosetta source registry when available", () => {
+    expect(page).toContain("exact_rosetta_evaluation");
+    expect(page).toContain("exact_rosetta_review_url");
+    expect(page).toContain("Open this law in Rosetta");
+    expect(page).toContain("exact source-bound Rosetta breakdown");
   });
 });
