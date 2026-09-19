@@ -189,7 +189,7 @@ export function parseDocxXmlAtomicRows(xml: string, sourceFileSha256: string, co
     }
   }
 
-  const xmlWithoutTables = xml.replace(/<w:tbl\\b[\\s\\S]*?<\\/w:tbl>/g, "\\n");
+  const xmlWithoutTables = xml.replace(/<w:tbl\\b[\\s\\S]*?<\\/w:tbl>/g, "\n");
   let paragraphIndex = 0;
   for (const paragraphMatch of xmlWithoutTables.matchAll(/<w:p\\b[\\s\\S]*?<\\/w:p>/g)) {
     paragraphIndex += 1;
