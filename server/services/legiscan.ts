@@ -233,7 +233,7 @@ export const get_session_list = async (state: string): Promise<legiscan_session[
   return data.sessions;
 };
 
-export const get_master_list = async (session_id: number): Promise<legiscan_master_bill[]> => {
+export const get_master_list_full = async (session_id: number): Promise<legiscan_master_bill[]> => {
   const data = await legiscan_request<{
     status: "OK";
     masterlist: Record<string, legiscan_master_bill | { session?: unknown }>;
@@ -252,10 +252,13 @@ export const get_master_list = async (session_id: number): Promise<legiscan_mast
     .sort((a, b) => {
       const a_date = a.last_action_date ?? a.status_date ?? "";
       const b_date = b.last_action_date ?? b.status_date ?? "";
-      return b_date.localeCompare(a_date);
-    })
-    .slice(0, 100);
+      if (a_date !== b_date) return b_date.localeCompare(a_date);
+      return a.bill_id - b.bill_id;
+    });
 };
+
+export const get_master_list = async (session_id: number): Promise<legiscan_master_bill[]> =>
+  (await get_master_list_full(session_id)).slice(0, 100);
 
 export const get_bill = async (bill_id: number): Promise<legiscan_bill_detail> => {
   const data = await legiscan_request<{
