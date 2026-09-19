@@ -1489,7 +1489,7 @@ export async function attach_completed_current_result(
 
   const extraction_run_id = Number(current.current_result.extraction_run_id);
   const projected_source_document_id = Number(
-    current.current_result.source_document_id ?? source_document_id,
+    current.current_source_status?.rosetta_source_document_id ?? source_document_id,
   );
   if (
     !Number.isSafeInteger(extraction_run_id)
