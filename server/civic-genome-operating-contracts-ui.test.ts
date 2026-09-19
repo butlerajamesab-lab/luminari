@@ -8,10 +8,11 @@ const source = readFileSync(
 );
 
 describe("Civic Genome standalone service links", () => {
-  it("renders only declared external contract URLs as safe links", () => {
+  it("uses the exact Rosetta source link when available and declared external URLs as fallback", () => {
     expect(source).toContain("external_url: string | null");
     expect(source).toContain("contract.external_url &&");
-    expect(source).toContain("href={contract.external_url}");
+    expect(source).toContain("const exact_rosetta_review_url = exact_rosetta_evaluation.data?.review_url ?? null");
+    expect(source).toContain('href={contract.service_key === "rosetta" && exact_rosetta_review_url ? exact_rosetta_review_url : contract.external_url}');
     expect(source).toContain('target="_blank"');
     expect(source).toContain('rel="noopener noreferrer"');
     expect(source).not.toContain("dangerouslySetInnerHTML");
