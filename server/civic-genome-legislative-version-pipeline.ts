@@ -873,6 +873,29 @@ export async function extract_version_source(
       : null,
   ].filter(Boolean).join(":");
   const source_content_hash = sha256(source_text);
+  const extraction_provenance =
+    media_type.toLowerCase() === "text/html"
+    || media_type.toLowerCase() === "application/xhtml+xml"
+      ? {
+          text_extractor_version: extractor_version,
+          content_extraction_receipt: {
+            contract: "rosetta-html-content-extraction-v1",
+            extractor_version,
+            raw_source_sha256: source_byte_hash,
+            extracted_text_sha256: source_content_hash,
+            navigation_removed: true,
+            action_tables_removed: true,
+            vote_chrome_removed: true,
+            acquisition_source: "lighthouse-legiscan-current-source-v1",
+            provider_copy_hash_verified:
+              source_fetch_mode === "provider_copy_fallback",
+            provider_copy_size_verified:
+              source_fetch_mode === "provider_copy_fallback",
+            extraction_text_url,
+            extraction_text_byte_hash,
+          },
+        }
+      : {};
 
   return {
     source_text,
@@ -929,6 +952,7 @@ export async function extract_version_source(
       california_session_bootstrapped: california_pdf?.session_bootstrapped ?? false,
       registered_metadata: version.latest_metadata,
       registered_observed_at: version.latest_observed_at,
+      ...extraction_provenance,
     },
   };
 }
