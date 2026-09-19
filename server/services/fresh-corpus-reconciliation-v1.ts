@@ -789,7 +789,7 @@ function appendResourceField(fields: Record<string, string>, key: string, value:
   else if (!fields[key].includes(cleaned)) fields[key] += " | " + cleaned;
 }
 
-function parseResourceCandidates(ctx: ParseContext): Candidate[] {
+export function parseResourceCandidates(ctx: ParseContext): Candidate[] {
   const rawLines = ctx.text.split(/\r?\n/);
   const lineRecords = rawLines.flatMap((rawLine, sourceIndex) =>
     docxStructuredCellsToLines(rawLine).map(text => ({ text, sourceLine: sourceIndex + 1 })));
@@ -816,8 +816,8 @@ function parseResourceCandidates(ctx: ParseContext): Candidate[] {
         category: inferCategory(current.section, `${fields.category ?? ""}\n${excerpt}`) || nullable(fields.category, 300),
         layer: fields.source_layer || inferLayer(current.section),
         phone: nullable(fields.phone, 1000),
-        email: nullable(fields.email || docxContactParts(excerpt).email, 1000),
-        website_url: nullable(fields.website_url || docxContactParts(excerpt).website || fields.filing_portal, 2000),
+        email: nullable(docxContactParts(fields.email ?? "").email || docxContactParts(excerpt).email, 1000),
+        website_url: nullable(docxContactParts(fields.website_url ?? "").website || docxContactParts(excerpt).website || docxContactParts(fields.filing_portal ?? "").website, 2000),
         address: nullable(fields.address, 2000),
         eligibility_summary: nullable(fields.eligibility_summary, 5000),
         apply_notes: nullable(fields.apply_notes, 5000),
