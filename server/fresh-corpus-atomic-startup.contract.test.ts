@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const startup = readFileSync(new URL("./services/fresh-corpus-atomic-startup.ts", import.meta.url), "utf8");
 const core = readFileSync(new URL("./_core/index.ts", import.meta.url), "utf8");
+const worker = readFileSync(new URL("./prism-rosetta-worker.ts", import.meta.url), "utf8");
 const service = readFileSync(new URL("./services/fresh-corpus-atomic-v1.ts", import.meta.url), "utf8");
 
 describe("fresh atomic corpus startup", () => {
@@ -11,6 +12,11 @@ describe("fresh atomic corpus startup", () => {
     expect(startup).toContain('background_feature_enabled("FRESH_ATOMIC_CORPUS_RESUME_ENABLED")');
     expect(startup).not.toContain("queue_fresh_atomic_corpus_pass");
     expect(service).toContain("status in ('queued','running')");
+  });
+
+  it("is mounted by the long-lived worker so explicitly queued work can advance", () => {
+    expect(worker).toContain('import "./services/fresh-corpus-atomic-startup"');
+    expect(worker).toContain('import "./workers/corpus-import-queue-worker"');
   });
 
   it("is mounted inertly by the web server and never executes SQL artifacts", () => {

@@ -286,6 +286,11 @@ APPROVED_REPOSITORY_ONLY = {
         "20260909143000_lighthouse_runtime_postgres_contract_v1.sql",
         "288d613674d5545f7673eadc08430ce26bcff089",
     ),
+    # Source-first breadth-preserving current-state merge pending production apply.
+    "20260919070000": (
+        "20260919070000_source_first_civic_current_merge_v1.sql",
+        "53251a99b3cec91094febb149b218725b4ead0a8",
+    ),
     # Forward migration pending production application through the normal
     # Supabase deployment gate.
     "20260915070000": (

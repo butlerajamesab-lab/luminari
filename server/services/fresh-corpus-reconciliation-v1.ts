@@ -5,8 +5,8 @@ import { workbookSheets, create_worksheet_validator, resolve_shared_string } fro
 import { getPool } from "../db";
 import { download_resolved_corpus_artifact } from "./corpus-source-resolution";
 
-export const FRESH_CORPUS_ENGINE_VERSION = "fresh_corpus_reconciliation_v1.2.5";
-export const FRESH_CORPUS_PARSER_VERSION = "fresh_registry_typed_parser_v1.2.4";
+export const FRESH_CORPUS_ENGINE_VERSION = "fresh_corpus_reconciliation_v1.2.6";
+export const FRESH_CORPUS_PARSER_VERSION = "fresh_registry_typed_parser_v1.2.5";
 
 const STATE_NAMES: Record<string, string> = {
   Alabama: "AL", Alaska: "AK", Arizona: "AZ", Arkansas: "AR", California: "CA",
@@ -547,6 +547,217 @@ export function docxStructuredCellsToLines(rawLine: string): string[] {
   return lines;
 }
 
+
+function docxHeaderKey(value: string): string {
+  return compact(value).toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[/]+/g, " ")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+function docxContactParts(value: string): { phone: string | null; email: string | null; website: string | null } {
+  const raw = compact(value);
+  const phone = raw.match(/(?:\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}(?:\s*(?:x|ext\.?)\s*\d+)?/i)?.[0] ?? null;
+  const email = raw.match(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i)?.[0] ?? null;
+  const explicitUrl = raw.match(/https?:\/\/[^\s,;)]+/i)?.[0] ?? null;
+  const bareDomain = explicitUrl ? null : raw.match(/\b(?:www\.)?[a-z0-9-]+(?:\.[a-z0-9-]+)+(?:\/[^\s,;)]*)?/i)?.[0] ?? null;
+  return { phone, email, website: explicitUrl ?? bareDomain };
+}
+
+export async function parseDocxStructuredCandidates(ctx: ParseContext, buffer: Buffer): Promise<Candidate[]> {
+  const zip = await JSZip.loadAsync(buffer);
+  const xml = await zip.file("word/document.xml")?.async("text");
+  if (!xml) throw new Error("docx_missing_word_document_xml");
+
+  const out: Candidate[] = [];
+  let tableIndex = 0;
+  for (const tableMatch of xml.matchAll(/<w:tbl\b[\s\S]*?<\/w:tbl>/g)) {
+    tableIndex += 1;
+    const rows = Array.from(tableMatch[0].matchAll(/<w:tr\b[\s\S]*?<\/w:tr>/g)).map((rowMatch, index) => ({
+      rowIndex: index + 1,
+      cells: Array.from(rowMatch[0].matchAll(/<w:tc\b[\s\S]*?<\/w:tc>/g))
+        .map(cell => compact(wordXmlToText(cell[0]))),
+    })).filter(row => row.cells.some(Boolean));
+    if (!rows.length) continue;
+
+    const headerIndex = rows.findIndex(row => row.cells.filter(Boolean).length >= 2);
+    if (headerIndex < 0) continue;
+    const sourceHeaders = rows[headerIndex].cells.map((value, index) => compact(value) || ("column_" + (index + 1)));
+    const headerKeys = sourceHeaders.map(docxHeaderKey);
+    const keySet = new Set(headerKeys);
+    const isProgramTable = keySet.has("program")
+      && (keySet.has("eligibility") || keySet.has("apply_notes") || keySet.has("phone_contact") || keySet.has("layer"));
+    const isWorkflowTable = keySet.has("workflow")
+      || (keySet.has("situation") && (keySet.has("step") || keySet.has("documents_needed") || keySet.has("agency_contact")));
+    const isOversightTable = keySet.has("oversight_body")
+      || (keySet.has("jurisdiction") && (keySet.has("complaint_pathway") || keySet.has("what_to_report")));
+    if (!isProgramTable && !isWorkflowTable && !isOversightTable) continue;
+
+    let sectionContext: string | null = null;
+    for (let index = headerIndex + 1; index < rows.length; index += 1) {
+      const row = rows[index];
+      const nonempty = row.cells.filter(Boolean);
+      if (nonempty.length === 1) {
+        sectionContext = nonempty[0];
+        continue;
+      }
+      const values: Record<string, string> = {};
+      row.cells.forEach((value, cellIndex) => {
+        if (!value) return;
+        values[headerKeys[cellIndex] ?? ("column_" + (cellIndex + 1))] = value;
+      });
+      if (!Object.keys(values).length) continue;
+      const rawExcerpt = row.cells.join(" | ").slice(0, 8000);
+      const sourceLocator = "docx:table:" + tableIndex + ":row:" + row.rowIndex;
+      const payload: Record<string, unknown> = {
+        parser_rule: isProgramTable ? "native_docx_program_row"
+          : isWorkflowTable ? "native_docx_workflow_row" : "native_docx_oversight_row",
+        table_index: tableIndex,
+        row_index: row.rowIndex,
+        source_headers: sourceHeaders,
+        source_cells: row.cells,
+        source_values: values,
+        row: values,
+        section_context: sectionContext,
+      };
+
+      if (isProgramTable) {
+        const name = nullable(values.program, 500);
+        if (!name) continue;
+        const contactRaw = compact(values.phone_contact ?? values.contact ?? values.phone ?? "");
+        const contact = docxContactParts(contactRaw);
+        const applyRaw = compact(values.apply_notes ?? values.application_notes ?? values.application ?? "");
+        const applyContact = docxContactParts(applyRaw);
+        const eligibility = nullable(values.eligibility, 5000);
+        const notes = nullable(applyRaw, 5000);
+        const category = inferCategory(sectionContext, name + " " + (eligibility ?? "") + " " + (notes ?? ""));
+        const statutoryAuthority = nullable(
+          values.statutory_authority ?? values.statute_apply ?? values.statute_citation ?? values.authority,
+          5000,
+        );
+        const filingPortal = nullable(
+          values.filing_complaint_portal ?? values.filing_portal ?? values.application_url
+            ?? (applyContact.website ? applyRaw : null),
+          5000,
+        );
+        payload.fields = {
+          phone: contact.phone,
+          email: contact.email ?? applyContact.email,
+          website_url: contact.website ?? applyContact.website,
+          eligibility_summary: eligibility,
+          apply_notes: notes,
+          category,
+          statutory_authority: statutoryAuthority,
+          filing_portal: filingPortal,
+        };
+        out.push(candidate(ctx, {
+          candidate_type: "program",
+          source_locator: sourceLocator,
+          section_name: nullable(sectionContext, 500),
+          name,
+          organization_name: null,
+          category,
+          layer: nullable(values.layer, 300),
+          phone: nullable(contact.phone, 1000),
+          email: nullable(contact.email ?? applyContact.email, 1000),
+          website_url: nullable(contact.website ?? applyContact.website, 2000),
+          address: null,
+          eligibility_summary: eligibility,
+          apply_notes: notes,
+          description: null,
+          raw_excerpt: rawExcerpt,
+          payload,
+          excerptForJurisdiction: (sectionContext ?? "") + " " + name + " " + rawExcerpt,
+          candidateState: "typed_preserved",
+        }));
+        continue;
+      }
+
+      if (isWorkflowTable) {
+        const name = nullable(values.workflow ?? values.situation ?? values.step, 500);
+        if (!name) continue;
+        const contactRaw = compact(values.agency_contact ?? values.contact ?? "");
+        const contact = docxContactParts(contactRaw);
+        const description = [
+          values.step ? "Step: " + values.step : "",
+          values.documents_needed ? "Documents needed: " + values.documents_needed : "",
+          values.agency_contact ? "Agency/contact: " + values.agency_contact : "",
+          values.deadline ?? values.fl_deadline ?? values.wa_deadline ?? "",
+        ].filter(Boolean).join("\n");
+        payload.fields = {
+          phone: contact.phone,
+          email: contact.email,
+          website_url: contact.website,
+          apply_notes: nullable(values.documents_needed, 5000),
+          statutory_authority: nullable(values.statutory_authority ?? values.authority, 5000),
+          filing_portal: nullable(values.filing_portal ?? values.application_url ?? contact.website, 5000),
+        };
+        out.push(candidate(ctx, {
+          candidate_type: "workflow",
+          source_locator: sourceLocator,
+          section_name: nullable(sectionContext, 500) ?? "layer_2_workflow",
+          name,
+          organization_name: nullable(values.agency_contact, 500),
+          category: "workflow",
+          layer: "layer_2",
+          phone: nullable(contact.phone, 1000),
+          email: nullable(contact.email, 1000),
+          website_url: nullable(contact.website, 2000),
+          address: null,
+          eligibility_summary: null,
+          apply_notes: nullable(values.documents_needed, 5000),
+          description: nullable(description || rawExcerpt, 5000),
+          raw_excerpt: rawExcerpt,
+          payload,
+          excerptForJurisdiction: (sectionContext ?? "") + " " + rawExcerpt,
+          candidateState: "typed_preserved",
+        }));
+        continue;
+      }
+
+      const name = nullable(values.oversight_body ?? values.entity_type ?? values.organization, 500);
+      if (!name) continue;
+      const contactRaw = compact(values.contact ?? "");
+      const pathwayRaw = compact(values.complaint_pathway ?? "");
+      const contact = docxContactParts(contactRaw + " " + pathwayRaw);
+      const description = [
+        values.jurisdiction ? "Jurisdiction: " + values.jurisdiction : "",
+        values.what_to_report ? "What to report: " + values.what_to_report : "",
+        values.complaint_pathway ? "Complaint pathway: " + values.complaint_pathway : "",
+      ].filter(Boolean).join("\n");
+      payload.fields = {
+        phone: contact.phone,
+        email: contact.email,
+        website_url: contact.website,
+        filing_portal: nullable(values.complaint_pathway, 5000),
+        statutory_authority: nullable(values.statutory_authority ?? values.authority, 5000),
+      };
+      out.push(candidate(ctx, {
+        candidate_type: "oversight_body",
+        source_locator: sourceLocator,
+        section_name: nullable(sectionContext, 500) ?? "layer_3_accountability",
+        name,
+        organization_name: name,
+        category: "accountability",
+        layer: "layer_3",
+        phone: nullable(contact.phone, 1000),
+        email: nullable(contact.email, 1000),
+        website_url: nullable(contact.website, 2000),
+        address: null,
+        eligibility_summary: null,
+        apply_notes: nullable(values.complaint_pathway, 5000),
+        description: nullable(description || rawExcerpt, 5000),
+        raw_excerpt: rawExcerpt,
+        payload,
+        excerptForJurisdiction: (values.jurisdiction ?? "") + " " + (sectionContext ?? "") + " " + rawExcerpt,
+        candidateState: "typed_preserved",
+      }));
+    }
+  }
+  return out;
+}
+
 function parseResourceCandidates(ctx: ParseContext): Candidate[] {
   const rawLines = ctx.text.split(/\r?\n/);
   const lineRecords = rawLines.flatMap((rawLine, sourceIndex) =>
@@ -561,7 +772,7 @@ function parseResourceCandidates(ctx: ParseContext): Candidate[] {
     const fields = current.fields;
     const fieldCount = Object.keys(fields).length;
     const hasContact = Boolean(fields.phone || fields.website_url || fields.email || fields.address || fields.filing_portal);
-    const title = compact(current.title).replace(/\s+\[(?:[A-Z0-9_-]+)\]\s+(?:VERIFIED|UNVERIFIED.*)$/i, "").replace(/\s+(?:VERIFIED|UNVERIFIED.*)$/i, "").trim();
+    const title = compact(current.title).replace(/\s+\[[^\]]{1,80}\]\s+(?:VERIFIED|UNVERIFIED.*)$/i, "").replace(/\s+(?:VERIFIED|UNVERIFIED.*)$/i, "").trim();
     const malformedTitle = !title || /^(field|information|program|organization|phone|website|eligibility|address|notes)$/i.test(title);
     if (!malformedTitle && fieldCount >= 1 && (hasContact || fields.eligibility_summary || fields.description)) {
       const excerpt = current.sourceLines.join("\n").slice(0, 8000);
@@ -645,7 +856,7 @@ function parseResourceCandidates(ctx: ParseContext): Candidate[] {
       return "";
     })();
     const titleCandidate = !isSectionHeading(line) && line.length >= 4 && line.length <= 300
-      && (RESOURCE_LABELS.has(normalizeLabel(nextNonEmpty)) || /^[^:]{4,240}\s+\[[A-Z0-9_-]+\]\s+(?:VERIFIED|UNVERIFIED)/i.test(line));
+      && (RESOURCE_LABELS.has(normalizeLabel(nextNonEmpty)) || /^[^:]{4,240}\s+\[[^\]]{1,80}\]\s+(?:VERIFIED|UNVERIFIED)/i.test(line));
     if (titleCandidate) {
       flush(); current = { title: line, start: sourceLine, end: sourceLine, fields: {}, sourceLines: [line], section }; continue;
     }
@@ -894,10 +1105,15 @@ async function parseArtifact(ctx: ParseContext, buffer: Buffer): Promise<Candida
   if (ext === ".csv") return parseCsvCandidates(ctx);
   if (ext === ".xlsx") throw new Error("xlsx_requires_bounded_batch_parser");
   if (ext === ".docx" || ext === ".md" || ext === ".txt") {
+    const structured = ext === ".docx" ? await parseDocxStructuredCandidates(ctx, buffer) : [];
+    const hasPrograms = structured.some(item => item.candidate_type === "program");
+    const hasWorkflows = structured.some(item => item.candidate_type === "workflow");
+    const hasOversight = structured.some(item => item.candidate_type === "oversight_body");
     const candidates = [
-      ...parseResourceCandidates(ctx),
-      ...parseWorkflowCandidates(ctx),
-      ...parseOversightCandidates(ctx),
+      ...structured,
+      ...(hasPrograms ? [] : parseResourceCandidates(ctx)),
+      ...(hasWorkflows ? [] : parseWorkflowCandidates(ctx)),
+      ...(hasOversight ? [] : parseOversightCandidates(ctx)),
       ...parsePolicyCandidates(ctx),
     ];
     if (!candidates.length || !/^state_(?:enrichment|resource_directory|registry)_source$/.test(ctx.artifact.artifact_role)) {

@@ -1,4 +1,6 @@
 import "dotenv/config";
+import "./services/fresh-corpus-atomic-startup";
+import "./workers/corpus-import-queue-worker";
 import { legislative_current_source_scope } from "./legislative-current-source-scope";
 import express from "express";
 import { createServer, type Server } from "node:http";
