@@ -75,7 +75,9 @@ type legislative_version_row = {
   predecessor_bill_version_id: string | null;
   base_bill_version_id: string | null;
   receipt_json: Record<string, unknown>;
-  provider_document_id: string;
+  source_identity_namespace: "provider" | "official_terminal";
+  source_artifact_id: string | null;
+  provider_document_id: string | null;
   provider_document_type: string;
   source_url: string;
   provider_url: string | null;
@@ -301,6 +303,7 @@ function provider_copy_contract_for(
   version: legislative_version_row,
   official_source_url: string,
 ): provider_copy_contract | null {
+  if (version.source_identity_namespace !== "provider") return null;
   const provider_url = String(version.provider_url ?? "").trim();
   const provider_hash = String(version.provider_hash ?? "").trim().toLowerCase();
   const provider_size_text = String(version.provider_size ?? "").trim();
@@ -499,6 +502,8 @@ async function load_version(bill_version_id: string): Promise<legislative_versio
             version.predecessor_bill_version_id::text,
             version.base_bill_version_id::text,
             version.receipt_json,
+            document.source_identity_namespace,
+            document.source_artifact_id,
             document.provider_document_id::text,
             document.provider_document_type,
             document.source_url,
@@ -860,18 +865,22 @@ export async function extract_version_source(
     throw new Error("legislative_version_source_format_unsupported");
   }
 
-  const family_prefix = version.document_family === "text"
-    ? "legiscan_text"
-    : "legiscan_amendment";
-  const source_version = [
-    family_prefix,
-    version.provider_document_id,
-    version.provider_document_type,
-    extractor_version,
-    source_fetch_mode === "provider_copy_fallback"
-      ? PROVIDER_COPY_FALLBACK_VERSION
-      : null,
-  ].filter(Boolean).join(":");
+  const source_version = version.source_identity_namespace === "official_terminal"
+    ? [
+        "official_text",
+        version.source_artifact_id,
+        version.provider_document_type,
+        extractor_version,
+      ].filter(Boolean).join(":")
+    : [
+        version.document_family === "text" ? "legiscan_text" : "legiscan_amendment",
+        version.provider_document_id,
+        version.provider_document_type,
+        extractor_version,
+        source_fetch_mode === "provider_copy_fallback"
+          ? PROVIDER_COPY_FALLBACK_VERSION
+          : null,
+      ].filter(Boolean).join(":");
   const source_content_hash = sha256(source_text);
 
   return {
@@ -897,7 +906,11 @@ export async function extract_version_source(
       docket_chamber: version.chamber,
       docket_predecessor_source_document_key: version.predecessor_source_document_key,
       docket_base_source_document_key: version.base_source_document_key,
-      docket_provider_document_id: Number(version.provider_document_id),
+      docket_source_identity_namespace: version.source_identity_namespace,
+      docket_source_artifact_id: version.source_artifact_id,
+      docket_provider_document_id: version.provider_document_id
+        ? Number(version.provider_document_id)
+        : null,
       docket_provider_document_type: version.provider_document_type,
       docket_provider_hash: version.provider_hash,
       docket_provider_size: version.provider_size ? Number(version.provider_size) : null,
