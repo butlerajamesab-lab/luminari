@@ -146,6 +146,16 @@ export default function CivicGenomePage() {
   const structural_snapshot_state = bill_detail.data?.structural_dna.snapshot_state ?? "unavailable";
   const current_version = bill_detail.data?.current_version ?? null;
   const published_version = bill_detail.data?.published_version ?? null;
+  const exact_rosetta_evaluation = trpc.civicGenome.get_rosetta_evaluation.useQuery(
+    {
+      genome_bill_id: selected?.genome_bill_id ?? "00000000-0000-0000-0000-000000000000",
+      bill_version_id: current_version?.bill_version_id,
+    },
+    {
+      enabled: Boolean(selected?.genome_bill_id && current_version?.bill_version_id),
+      ...stable_read_options,
+    },
+  );
   const family_assignment = bill_detail.data?.family_assignment ?? null;
   const grouped_traits = useMemo(() => {
     const groups = new Map<string, typeof traits>();
@@ -220,7 +230,9 @@ export default function CivicGenomePage() {
     return [...observed_contracts, ...explicit_empty_contracts.filter(contract => !returned_keys.has(contract.service_key))];
   }, [operating_contracts.data, operating_contracts.isSuccess]);
   const rosetta_service_url = contracts.find(contract => contract.service_key === "rosetta")?.external_url;
-  const rosetta_review_url = rosetta_service_url ? new URL("/review", rosetta_service_url).toString() : null;
+  const generic_rosetta_review_url = rosetta_service_url ? new URL("/review", rosetta_service_url).toString() : null;
+  const exact_rosetta_review_url = exact_rosetta_evaluation.data?.review_url ?? null;
+  const rosetta_review_url = exact_rosetta_review_url ?? generic_rosetta_review_url;
 
   const search = (event: React.FormEvent) => {
     event.preventDefault();
@@ -247,7 +259,7 @@ export default function CivicGenomePage() {
         <button type="submit" style={{ background: p.green_soft, border: `1px solid ${p.green}`, color: p.green, borderRadius: 10, padding: ".65rem 1rem", fontFamily: mono, fontSize: ".72rem", cursor: "pointer" }}>Open genome record</button>
       </form>
 
-      {rosetta_review_url && <p style={{ margin: "0 0 1rem", fontSize: ".85rem" }}><a href={rosetta_review_url} target="_blank" rel="noopener noreferrer" style={{ color: "#91c9f7" }}>Browse Rosetta evaluation results</a> <span style={{ color: p.muted }}>· inspect laws by passed, failed, held, or unprocessed status</span></p>}
+      {rosetta_review_url && <p style={{ margin: "0 0 1rem", fontSize: ".85rem" }}><a href={rosetta_review_url} target="_blank" rel="noopener noreferrer" style={{ color: "#91c9f7" }}>{exact_rosetta_review_url ? "Open this law in Rosetta" : "Browse Rosetta evaluation results"}</a> <span style={{ color: p.muted }}>{exact_rosetta_review_url ? "· exact source-bound Rosetta breakdown" : "· inspect laws by passed, failed, held, or unprocessed status"}</span></p>}
 
       {selected && bill_detail.isSuccess && valid_source_bill_id && numeric_source_bill_id !== null && <>
         <CivicGenomeHumanReportFrame source_bill_id={numeric_source_bill_id}/>
@@ -281,7 +293,7 @@ export default function CivicGenomePage() {
             </div>
             <div style={{ fontFamily: mono, color: p.green, fontSize: ".61rem" }}>{contract.role}</div>
             <div style={{ fontFamily: sans, color: p.muted, fontSize: ".73rem", lineHeight: 1.45 }}>{contract.detail}</div>
-            {contract.external_url && <a href={contract.external_url} target="_blank" rel="noopener noreferrer" style={{ alignSelf: "flex-start", color: "#7dd3fc", fontFamily: mono, fontSize: ".62rem", fontWeight: 700, textDecoration: "underline", textUnderlineOffset: 3 }}>Open {contract.display_name} service</a>}
+            {contract.external_url && <a href={contract.service_key === "rosetta" && exact_rosetta_review_url ? exact_rosetta_review_url : contract.external_url} target="_blank" rel="noopener noreferrer" style={{ alignSelf: "flex-start", color: "#7dd3fc", fontFamily: mono, fontSize: ".62rem", fontWeight: 700, textDecoration: "underline", textUnderlineOffset: 3 }}>{contract.service_key === "rosetta" && exact_rosetta_review_url ? "Open this law in Rosetta" : `Open ${contract.display_name} service`}</a>}
             <div style={{ display: "flex", gap: ".8rem", flexWrap: "wrap", fontFamily: mono, color: p.muted, fontSize: ".58rem" }}>
               <span>observed {contract.observed_count ?? "not reported"}</span>
               <span>bound {contract.bound_count ?? "not reported"}</span>
