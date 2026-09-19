@@ -502,8 +502,14 @@ async function load_version(bill_version_id: string): Promise<legislative_versio
             version.predecessor_bill_version_id::text,
             version.base_bill_version_id::text,
             version.receipt_json,
-            document.source_identity_namespace,
-            document.source_artifact_id,
+            coalesce(
+              to_jsonb(document) ->> 'source_identity_namespace',
+              'provider'
+            ) as source_identity_namespace,
+            nullif(
+              to_jsonb(document) ->> 'source_artifact_id',
+              ''
+            ) as source_artifact_id,
             document.provider_document_id::text,
             document.provider_document_type,
             document.source_url,
