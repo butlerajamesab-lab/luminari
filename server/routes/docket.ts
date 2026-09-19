@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   get_bill,
   get_master_list,
+  get_master_list_full,
   get_session_list,
   LEGISCAN_ROLLOUT_STATES,
   type legiscan_bill_detail,
@@ -85,7 +86,8 @@ type civic_genome_projection_status =
         | "request_scoped_cache_refresh_only"
         | "cache_stale_refreshing"
         | "cache_stale_worker_paused"
-        | "cache_stale_request_refresh_failed";
+        | "cache_stale_request_refresh_failed"
+        | "provider_session_not_current";
     };
 
 type docket_state_refresh_result = {
@@ -391,6 +393,42 @@ const upsert_state_cache = async (
   );
 };
 
+const upsert_current_session_snapshot = async (
+  state: string,
+  session_id: number,
+  session_title: string | null,
+  provider_current: boolean,
+  bills: legiscan_master_bill[],
+  fetched_at: string,
+): Promise<void> => {
+  await query_with_diagnostics(
+    `insert into public.docket_current_session_snapshot (
+       state, session_id, session_title, provider_current,
+       bills, bill_count, snapshot_hash, fetched_at, source
+     ) values (
+       $1, $2, $3, $4, $5::jsonb, $6,
+       encode(extensions.digest(convert_to(($5::jsonb)::text, 'UTF8'), 'sha256'), 'hex'),
+       $7::timestamptz, 'legiscan_get_master_list'
+     )
+     on conflict (state) do update set
+       session_id = excluded.session_id,
+       session_title = excluded.session_title,
+       provider_current = excluded.provider_current,
+       bills = excluded.bills,
+       bill_count = excluded.bill_count,
+       snapshot_hash = excluded.snapshot_hash,
+       fetched_at = excluded.fetched_at,
+       source = excluded.source,
+       updated_at = now()`,
+    [state, session_id, session_title, provider_current, JSON.stringify(bills), bills.length, fetched_at],
+    {
+      label: "docket_current_session_snapshot_upsert",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 15_000,
+    },
+  );
+};
+
 const read_bill_detail_cache = async (bill_id: number): Promise<docket_bill_detail_cache_row | null> => {
   const result = await query_with_diagnostics<docket_bill_detail_cache_database_row>(
     `select bill_id, bill, fetched_at, source
@@ -539,31 +577,47 @@ const refresh_state_cache = async (
     };
   }
 
-  const session = await pick_active_session(state);
+  const sessions = await get_session_list(state);
+  const session = pick_preferred_legiscan_session(sessions);
 
   if (!session?.session_id) {
     throw new Error(`no_legiscan_sessions_found_for_${state}`);
   }
 
-  const bills = await get_master_list(session.session_id);
+  const session_current = legiscan_session_is_current(session);
+  const full_session_bills = await get_master_list_full(session.session_id);
+  const bills = full_session_bills.slice(0, 100);
+  const fetched_at = new Date().toISOString();
+  const session_title = session.session_title ?? session.session_name ?? session.name ?? null;
   const row: docket_state_cache_row = {
     state,
     session_id: session.session_id,
-    session_title: session.session_title ?? session.session_name ?? session.name ?? null,
+    session_title,
     bills,
     bill_count: bills.length,
-    fetched_at: new Date().toISOString(),
+    fetched_at,
     source: "legiscan_get_master_list",
   };
 
-  await upsert_state_cache(row, !project_to_civic_genome);
-  const civic_genome_projection: civic_genome_projection_status = project_to_civic_genome
-    ? await project_refreshed_state_to_civic_genome(state)
-    : {
-        ok: true,
-        projected: false,
-        reason: "request_scoped_cache_refresh_only",
-      };
+  await upsert_current_session_snapshot(
+    state,
+    session.session_id,
+    session_title,
+    session_current,
+    full_session_bills,
+    fetched_at,
+  );
+  await upsert_state_cache(row, !project_to_civic_genome || !session_current);
+  const civic_genome_projection: civic_genome_projection_status =
+    project_to_civic_genome && session_current
+      ? await project_refreshed_state_to_civic_genome(state)
+      : {
+          ok: true,
+          projected: false,
+          reason: project_to_civic_genome
+            ? "provider_session_not_current"
+            : "request_scoped_cache_refresh_only",
+        };
 
   return {
     source: cached ? "legiscan_refresh_stale_cache" : "legiscan_refresh_empty_cache",
