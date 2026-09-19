@@ -5,6 +5,16 @@ import { useQueryClient } from "@tanstack/react-query";
 import { clearPrivateQueryCache } from "@/core/privateQueryCache";
 import { clear_browser_private_intake_drafts } from "@/lib/intakeDraftPrivacy";
 
+const SINGLE_OPERATOR_PUBLIC_READ = import.meta.env.VITE_SINGLE_OPERATOR_PUBLIC_READ === "1";
+
+const SINGLE_OPERATOR_READ_USER = {
+  id: "single-operator-public-read",
+  email: "",
+  name: "Single Operator",
+  role: "admin",
+  authenticated: false,
+};
+
 type UseAuthOptions = {
   redirectOnUnauthenticated?: boolean;
   redirectPath?: string;
@@ -50,7 +60,7 @@ export function useAuth(_options?: UseAuthOptions) {
       name: session.user.email?.split("@")[0] ?? "User",
       role: "admin",
       authenticated: true,
-    } : null,
+    } : SINGLE_OPERATOR_PUBLIC_READ ? SINGLE_OPERATOR_READ_USER : null,
     loading,
     error: null,
     isAuthenticated: Boolean(session),
