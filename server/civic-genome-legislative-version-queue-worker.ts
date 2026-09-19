@@ -1089,7 +1089,7 @@ async function run_current_result_observation_cycle(): Promise<void> {
   if (current_result_observation_stopped) return;
   try {
     const summary = await reconcile_awaiting_current_results();
-    if (summary.woken > 0 || summary.read_errors > 0) {
+    if (summary.attached > 0 || summary.read_errors > 0) {
       console.log("[CurrentResultReconciliation] cycle_complete", summary);
     }
   } catch (error) {
