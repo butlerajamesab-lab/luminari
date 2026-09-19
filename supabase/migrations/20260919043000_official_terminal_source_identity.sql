@@ -105,20 +105,30 @@ begin
   end if;
   v_source_document_key:=format('official_text:%s:%s',p_source_bill_id,v_artifact_slug);
 
-  select coalesce(max(provider_sequence),0)+1
-    into v_provider_sequence
+  -- Idempotent replay keeps the original ordering identity. A newly observed
+  -- official terminal artifact receives the next text sequence exactly once.
+  select provider_sequence,predecessor_source_document_key
+    into v_provider_sequence,v_predecessor_source_document_key
   from public.docket_bill_source_document
-  where source_bill_id=p_source_bill_id
-    and document_family='text';
+  where source_document_key=v_source_document_key
+  for update;
 
-  select source_document_key
-    into v_predecessor_source_document_key
-  from public.docket_bill_source_document
-  where source_bill_id=p_source_bill_id
-    and document_family='text'
-    and source_document_key<>v_source_document_key
-  order by provider_sequence desc,stage_rank desc,created_at desc
-  limit 1;
+  if v_provider_sequence is null then
+    select coalesce(max(provider_sequence),0)+1
+      into v_provider_sequence
+    from public.docket_bill_source_document
+    where source_bill_id=p_source_bill_id
+      and document_family='text';
+
+    select source_document_key
+      into v_predecessor_source_document_key
+    from public.docket_bill_source_document
+    where source_bill_id=p_source_bill_id
+      and document_family='text'
+      and source_document_key<>v_source_document_key
+    order by provider_sequence desc,stage_rank desc,created_at desc
+    limit 1;
+  end if;
 
   v_metadata:=jsonb_build_object(
     'source_bill_id',p_source_bill_id,
