@@ -118,6 +118,19 @@ describe("Civic Genome provider-copy source fallback", () => {
       provider_copy_api_document_id: 99,
       docket_official_source_url: expect.stringContaining("legislature.vermont.gov"),
       provider_copy_locator_url: "https://legiscan.com/VT/text/S0001/id/99",
+      text_extractor_version: "official-legislative-version-html-strip-v1",
+      content_extraction_receipt: {
+        contract: "rosetta-html-content-extraction-v1",
+        extractor_version: "official-legislative-version-html-strip-v1",
+        raw_source_sha256: createHash("sha256").update(source).digest("hex"),
+        extracted_text_sha256: extracted.source_content_hash,
+        navigation_removed: true,
+        action_tables_removed: true,
+        vote_chrome_removed: true,
+        acquisition_source: "lighthouse-legiscan-current-source-v1",
+        provider_copy_hash_verified: true,
+        provider_copy_size_verified: true,
+      },
     });
   });
 
