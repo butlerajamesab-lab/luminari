@@ -35,8 +35,47 @@ function singleOperatorPublicReadUser(): RuntimeUser | null {
   };
 }
 
-function singleOperatorQueryUser(opts: { type: string }): RuntimeUser | null {
+const SINGLE_OPERATOR_PUBLIC_READ_PREFIXES = [
+  "architectureMap.",
+  "campaignEngine.",
+  "canonicalCore.",
+  "claimValidation.",
+  "coalitionAdvocacy.",
+  "coalitionIntelligence.",
+  "enforcementIntel.",
+  "engines.",
+  "enginesV2.",
+  "enginesV3.",
+  "enginesV4.",
+  "evidenceConfidence.",
+  "ingestion.",
+  "interventionNetwork.",
+  "knowledgeHealth.",
+  "knowledgeIngestion.",
+  "legalLibrary.",
+  "lighthouse.",
+  "operationalWorkflow.",
+  "policyImpact.",
+  "proceduralPathEngine.",
+  "reformPackage.",
+  "registry.",
+  "remedyFeasibility.",
+  "remedyTemplate.",
+  "resourceDirectory.",
+  "s76.",
+  "settlementCalculator.",
+  "signalGovernance.",
+  "streams.",
+  "system.",
+  "systemHardeningPipeline.",
+  "timeTravel.",
+  "trendEngine.",
+  "unified.",
+] as const;
+
+function singleOperatorQueryUser(opts: { type: string; path: string }): RuntimeUser | null {
   if (opts.type !== "query") return null;
+  if (!SINGLE_OPERATOR_PUBLIC_READ_PREFIXES.some(prefix => opts.path.startsWith(prefix))) return null;
   return singleOperatorPublicReadUser();
 }
 
