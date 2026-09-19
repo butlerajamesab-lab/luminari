@@ -16,6 +16,7 @@ describe("fresh atomic corpus startup", () => {
 
   it("is mounted by the long-lived worker so explicitly queued work can advance", () => {
     expect(worker).toContain('import "./services/fresh-corpus-atomic-startup"');
+    expect(worker).toContain('import "./workers/corpus-import-queue-worker"');
   });
 
   it("is mounted inertly by the web server and never executes SQL artifacts", () => {
