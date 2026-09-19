@@ -8,6 +8,8 @@ const DEFAULT_BATCH_SIZE = 50;
 const MAX_BATCH_SIZE = 100;
 const DEFAULT_CONCURRENCY = 5;
 const MAX_CONCURRENCY = 10;
+const AWAITING_PUBLICATION_CODE =
+  "rosetta_public_current_docket_result_awaiting_publication";
 
 type held_current_result_candidate = {
   queue_id: string;
@@ -19,6 +21,7 @@ type held_current_result_candidate = {
 export type current_result_reconciliation_summary = {
   checked: number;
   attached: number;
+  awaiting_publication: number;
   still_held: number;
   read_errors: number;
 };
@@ -46,8 +49,7 @@ async function claim_held_current_result_candidates(
          join public.civic_genome_bill_version version
            on version.bill_version_id = queue.bill_version_id
         where version.document_family = 'text'
-          and version.processing_state = 'source_ingested'
-          and version.rosetta_extraction_run_id is null
+          and version.processing_state in ('source_ingested', 'extracted')
           and version.assembly_run_id is null
           and version.source_document_key is not null
           and version.receipt_json->>'source_content_hash' ~ '^[0-9A-Fa-f]{64}$'
@@ -66,15 +68,38 @@ async function claim_held_current_result_candidates(
           )
           and (
             (
-              queue.queue_state = 'degraded'
-              and queue.last_failure_class = 'awaiting_current_result'
-              and queue.last_error_code is distinct from
-                  'rosetta_public_current_docket_result_awaiting_publication'
-              and queue.next_attempt_at = 'infinity'::timestamptz
+              version.rosetta_extraction_run_id is null
+              and (
+                (
+                  queue.queue_state = 'degraded'
+                  and queue.last_failure_class = 'awaiting_current_result'
+                  and queue.last_error_code is distinct from
+                      'rosetta_public_current_docket_result_awaiting_publication'
+                  and queue.next_attempt_at = 'infinity'::timestamptz
+                )
+                or (
+                  queue.queue_state = 'eligible'
+                  and queue.attempt_count = 0
+                )
+              )
             )
             or (
-              queue.queue_state = 'eligible'
-              and queue.attempt_count = 0
+              version.rosetta_extraction_run_id is not null
+              and queue.queue_state = 'degraded'
+              and queue.last_failure_class = 'awaiting_publication'
+              and queue.last_error_code =
+                  'rosetta_public_current_docket_result_awaiting_publication'
+              and queue.next_attempt_at = 'infinity'::timestamptz
+              and version.receipt_json->>'current_publication_status' = 'awaiting_publication'
+              and exists (
+                select 1
+                  from public.civic_genome_rosetta_generation_target target
+                 where target.target_name = 'current'
+                   and target.engine_version = version.receipt_json->>'rosetta_engine_version'
+                   and target.rule_set_version = version.receipt_json->>'rosetta_rule_set_version'
+                   and lower(target.rule_manifest_hash) =
+                       lower(version.receipt_json->>'rosetta_rule_manifest_hash')
+              )
             )
           )
           and queue.locked_at is null
@@ -110,6 +135,7 @@ async function complete_attached_current_result(
   candidate: held_current_result_candidate,
   attachment: completed_current_result_attachment,
 ): Promise<boolean> {
+  if (attachment.state !== "assembled" || !attachment.assembly_run_id) return false;
   const result = await query_with_diagnostics<{ queue_id: string }>(
     `update public.civic_genome_legislative_version_queue queue
         set queue_state = 'completed',
@@ -150,14 +176,65 @@ async function complete_attached_current_result(
   return result.rows.length === 1;
 }
 
+async function park_awaiting_publication(
+  candidate: held_current_result_candidate,
+  attachment: completed_current_result_attachment,
+): Promise<boolean> {
+  if (attachment.state !== "awaiting_publication") return false;
+  const result = await query_with_diagnostics<{ queue_id: string }>(
+    `update public.civic_genome_legislative_version_queue queue
+        set queue_state = 'degraded',
+            next_attempt_at = 'infinity'::timestamptz,
+            locked_at = null,
+            locked_by = null,
+            last_failure_class = 'awaiting_publication',
+            last_error_code = $5::text,
+            current_result_checked_at = now(),
+            updated_at = now()
+       from public.civic_genome_bill_version version
+      where queue.queue_id = $1::uuid
+        and version.bill_version_id = queue.bill_version_id
+        and version.bill_version_id = $2::uuid
+        and version.source_document_key = $3::text
+        and lower(version.receipt_json->>'source_content_hash') = $4::text
+        and version.rosetta_extraction_run_id = $6::text
+        and version.assembly_run_id is null
+        and version.processing_state = 'extracted'
+        and version.receipt_json->>'current_publication_status' = 'awaiting_publication'
+        and queue.queue_state in ('degraded', 'eligible')
+        and queue.locked_at is null
+        and queue.locked_by is null
+      returning queue.queue_id::text`,
+    [
+      candidate.queue_id,
+      candidate.bill_version_id,
+      candidate.source_document_key,
+      candidate.source_content_hash,
+      AWAITING_PUBLICATION_CODE,
+      String(attachment.extraction_run_id),
+    ],
+    {
+      label: "legislative_version_current_result_awaiting_publication",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 5_000,
+    },
+  );
+  return result.rows.length === 1;
+}
+
 async function observe_candidate(
   candidate: held_current_result_candidate,
-): Promise<"attached" | "held" | "read_error"> {
+): Promise<"attached" | "awaiting_publication" | "held" | "read_error"> {
   try {
     const attachment = await attach_completed_current_result(
       candidate.bill_version_id,
     );
     if (!attachment) return "held";
+    if (attachment.state === "awaiting_publication") {
+      return await park_awaiting_publication(candidate, attachment)
+        ? "awaiting_publication"
+        : "held";
+    }
     return await complete_attached_current_result(candidate, attachment)
       ? "attached"
       : "held";
@@ -173,13 +250,14 @@ async function observe_candidate(
 }
 
 /**
- * Observe exact current-source rows and attach completed Rosetta results without
- * invoking source acquisition or Rosetta execution.
+ * Observe exact current-source rows and record completed Rosetta extraction
+ * truth without invoking source acquisition or Rosetta execution.
  *
- * A row is completed only after the exact source_document_key + SHA-256 pair
- * already preserved on the bill version resolves to a complete current result,
- * that result is assembled into Civic Genome, and the persisted extraction/assembly
- * identities match the queue row. No queue attempt is consumed here.
+ * Publication remains separately governed. If the exact completed result does
+ * not match Civic Genome's current generation target, extraction is persisted
+ * and the row parks as awaiting_publication. The row becomes eligible for
+ * assembly automatically only after that target matches the recorded engine,
+ * rule set, and manifest. No queue attempt is consumed here.
  */
 export async function reconcile_awaiting_current_results(input: {
   limit?: number;
@@ -196,6 +274,7 @@ export async function reconcile_awaiting_current_results(input: {
   const summary: current_result_reconciliation_summary = {
     checked: candidates.length,
     attached: 0,
+    awaiting_publication: 0,
     still_held: 0,
     read_errors: 0,
   };
@@ -206,6 +285,7 @@ export async function reconcile_awaiting_current_results(input: {
     );
     for (const outcome of outcomes) {
       if (outcome === "attached") summary.attached += 1;
+      else if (outcome === "awaiting_publication") summary.awaiting_publication += 1;
       else if (outcome === "read_error") summary.read_errors += 1;
       else summary.still_held += 1;
     }

@@ -20,6 +20,19 @@ describe("result arrival does not erase independent queue or publication evidenc
     expect(pipelinePublicationPresentation(arrived).value).toBe("Held — reconciliation needed");
   });
 
+  it("shows a completed extraction separately from its generation publication hold", () => {
+    const publicationHeld = {
+      ...held,
+      contract_state: "awaiting_publication",
+      extraction_run_id: 1014064,
+      run_status: "completed",
+      queue_last_failure_class: "awaiting_publication",
+    };
+    expect(pipelineExtractionPresentation(publicationHeld).value).toBe("Decomposition complete");
+    expect(pipelinePublicationPresentation(publicationHeld).value).toBe("Awaiting generation publication");
+    expect(pipelinePublicationPresentation(publicationHeld).detail).toContain("governed current generation");
+  });
+
   it("does not label a saved publication of the same source as a prior source", () => {
     const result = pipelinePublicationPresentation({ ...held, contract_state: "contract_error", published_source_document_id: 19607 });
     expect(result.value).toBe("Saved snapshot available");

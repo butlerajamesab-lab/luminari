@@ -70,7 +70,7 @@ const source_id_from_bill = (bill: { source_bill_id?: unknown; structural_dna_js
 
 const contract_state_color = (state: string) => {
   if (["active", "assembled", "completed", "operational", "ready", "ready_for_assembly"].includes(state)) return p.green;
-  if (["available_unbound", "current_pending", "awaiting_current_result", "waiting_for_extraction", "in_progress", "waiting"].includes(state)) return "#e6ba66";
+  if (["available_unbound", "current_pending", "awaiting_current_result", "awaiting_publication", "waiting_for_extraction", "in_progress", "waiting"].includes(state)) return "#e6ba66";
   if (["blocked", "contract_error", "error", "unavailable"].includes(state)) return "#ef8b8b";
   return p.muted;
 };
@@ -311,7 +311,7 @@ export default function CivicGenomePage() {
             <div style={{ color: p.muted, fontFamily: mono, fontSize: ".61rem", marginTop: ".45rem" }}>Recorded attempts: {rosetta_pipeline.data.queue_attempt_count ?? "not observed"} · Next attempt: {rosetta_pipeline.data.queue_next_attempt_at === "infinity" ? "No automatic retry scheduled" : rosetta_pipeline.data.queue_next_attempt_at ?? "not observed"}</div>
             {rosetta_pipeline.data.coverage != null && <details style={{ marginTop: ".45rem" }}><summary style={{ cursor: "pointer", color: p.green, fontFamily: mono, fontSize: ".61rem" }}>Rosetta layer coverage</summary><Value value={rosetta_pipeline.data.coverage}/></details>}
           </div>
-          <p style={{ margin: ".65rem 0 0", fontFamily: sans, color: p.muted, fontSize: ".72rem" }}>Current-result holds require reconciliation after an exact Rosetta result becomes available. Retry scheduling and recorded attempts are shown separately; source records and failure history remain preserved.</p>
+          <p style={{ margin: ".65rem 0 0", fontFamily: sans, color: p.muted, fontSize: ".72rem" }}>Current-result and publication-generation holds are shown separately from execution. A completed extraction does not imply governed assembly or publication; source records and failure history remain preserved.</p>
         </> : <Empty>No pipeline record was returned. No Rosetta binding or assembly state is inferred.</Empty>}
       </section>}
 

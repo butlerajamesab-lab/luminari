@@ -70,9 +70,11 @@ describe("current-result observation lane contract", () => {
     expect(worker).toContain("current_result_observation_enabled =\n    !recovery_contract_scope");
   });
 
-  it("attaches a complete exact result without invoking Rosetta execution or consuming queue attempts", () => {
+  it("records complete extraction truth while keeping publication separately governed", () => {
     expect(reconciler).toContain("attach_completed_current_result");
     expect(reconciler).toContain("queue_state = 'completed'");
+    expect(reconciler).toContain("last_failure_class = 'awaiting_publication'");
+    expect(reconciler).toContain("civic_genome_rosetta_generation_target");
     expect(reconciler).toContain("version.rosetta_extraction_run_id = $5::text");
     expect(reconciler).toContain("version.assembly_run_id = $6::uuid");
     expect(reconciler).toContain(
@@ -87,6 +89,12 @@ describe("current-result observation lane contract", () => {
       reconciler.indexOf("async function observe_candidate"),
     );
     expect(complete).not.toContain("attempt_count =");
+    const publicationHold = reconciler.slice(
+      reconciler.indexOf("async function park_awaiting_publication"),
+      reconciler.indexOf("async function observe_candidate"),
+    );
+    expect(publicationHold).toContain("next_attempt_at = 'infinity'::timestamptz");
+    expect(publicationHold).not.toContain("attempt_count =");
   });
 
   it("uses a dedicated observation cursor and preserves the monotonicity guard", () => {
