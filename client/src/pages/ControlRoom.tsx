@@ -321,6 +321,7 @@ function StrategyPathsPanel({ caseId }: { caseId: number }) {
     { refetchInterval: 15000, retry: false }
   );
   const isLoading = actionPathProjection.isLoading;
+  const actionPathProjectionCompleted = actionPathProjection.data?.projection_state === "canonical_projection";
   const paths = useMemo(() => (actionPathProjection.data?.outputs ?? []).flatMap(output =>
     output.paths.map(path => ({
       ...path,
@@ -387,8 +388,8 @@ function StrategyPathsPanel({ caseId }: { caseId: number }) {
         {sortedPaths.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <Target className="h-8 w-8 mx-auto mb-2 opacity-40" />
-            <p className="text-sm">No governed action paths yet.</p>
-            <p className="text-xs mt-1">Run the Universal Intake Spine to produce unranked Layer 14 candidates.</p>
+            <p className="text-sm">{actionPathProjectionCompleted ? "Intake Spine completed with no governed action paths." : "No sealed Layer 14 action-path projection exists yet."}</p>
+            <p className="text-xs mt-1">{actionPathProjectionCompleted ? "The current routing rules produced a completed-zero result. Review case routing coverage and unresolved prerequisites rather than rerunning the same sealed evidence." : "Complete the governed Intake Spine before interpreting this as a zero-path result."}</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -652,6 +653,7 @@ function NextActionsPanel({ caseId }: { caseId: number }) {
     { refetchInterval: 15000, retry: false }
   );
   const isLoading = projection.isLoading;
+  const actionPathProjectionCompleted = projection.data?.projection_state === "canonical_projection";
   const packets = useMemo(() => (projection.data?.outputs ?? []).flatMap(output =>
     output.paths.flatMap(path => path.next_steps.map(step => ({
       id: `${path.path_id}:${step.step_number}`,
@@ -701,8 +703,8 @@ function NextActionsPanel({ caseId }: { caseId: number }) {
         {packets.length === 0 ? (
           <div className="text-center py-6 text-muted-foreground">
             <Zap className="h-8 w-8 mx-auto mb-2 opacity-40" />
-            <p className="text-sm">No governed next actions yet.</p>
-            <p className="text-xs mt-1">Run the Universal Intake Spine to produce Layer 14 action candidates.</p>
+            <p className="text-sm">{actionPathProjectionCompleted ? "Intake Spine completed with no governed next actions." : "No sealed Layer 14 next-action projection exists yet."}</p>
+            <p className="text-xs mt-1">{actionPathProjectionCompleted ? "The current action-path rules produced zero next steps. Review routing coverage and unresolved prerequisites." : "Complete the governed Intake Spine before interpreting this as a zero-action result."}</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -754,6 +756,7 @@ function PatternSignalsPanel({ caseId }: { caseId: number }) {
     { refetchInterval: 30000, retry: false },
   );
   const infLoading = projection.isLoading;
+  const structuralProjectionCompleted = projection.data?.projection_state === "canonical_projection";
   const patterns = (projection.data?.pattern_outputs ?? []).flatMap(output => output.patterns);
   const cascades = (projection.data?.cascade_outputs ?? []).flatMap(output => output.cascades);
   const inferences = patterns.map(pattern => ({
@@ -814,8 +817,8 @@ function PatternSignalsPanel({ caseId }: { caseId: number }) {
         {totalSignals === 0 ? (
           <div className="text-center py-6 text-muted-foreground">
             <Eye className="h-8 w-8 mx-auto mb-2 opacity-40" />
-            <p className="text-sm">No pattern signals detected yet.</p>
-            <p className="text-xs mt-1">Run the Universal Intake Spine to execute Layers 10 and 11.</p>
+            <p className="text-sm">{structuralProjectionCompleted ? "Layers 10 and 11 completed with no structural signals." : "No sealed structural-signal projection exists yet."}</p>
+            <p className="text-xs mt-1">{structuralProjectionCompleted ? "This is a completed-zero result under the current pattern and cascade rules, not an instruction to rerun the same evidence." : "Complete the governed Intake Spine before interpreting this as a zero-signal result."}</p>
           </div>
         ) : (
           <div className="space-y-3">
