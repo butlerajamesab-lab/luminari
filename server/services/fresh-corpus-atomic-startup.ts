@@ -28,8 +28,7 @@ const private_storage_credential_available = Boolean(
 if (process.env.NODE_ENV === "production"
   && background_feature_enabled("FRESH_ATOMIC_CORPUS_RESUME_ENABLED")) {
   if (!private_storage_credential_available) {
-    console.error("[fresh_atomic_corpus] disabled_missing_private_storage_credential");
-  } else {
-    schedule_atomic_resume(30_000);
+    console.warn("[fresh_atomic_corpus] private_batch_unavailable_missing_storage_credential");
   }
+  schedule_atomic_resume(30_000);
 }
