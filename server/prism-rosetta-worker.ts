@@ -34,6 +34,10 @@ import {
   start_docket_bill_activation_queue_worker,
   stop_docket_bill_activation_queue_worker,
 } from "./docket-jurisdiction-activation-queue-worker";
+import {
+  start_civic_genome_final_source_reconciliation_worker,
+  stop_civic_genome_final_source_reconciliation_worker,
+} from "./civic-genome-final-source-reconciliation-worker";
 
 const runtime_role = resolve_lighthouse_runtime_role();
 if (runtime_role.role !== "worker" || !runtime_role.valid) {
@@ -84,10 +88,20 @@ async function start_docket_workers(): Promise<void> {
   const activation_queue_requested = background_feature_enabled(
     "DOCKET_BILL_ACTIVATION_QUEUE_ENABLED",
   );
-  if (!cache_warmer_requested && !activation_queue_requested) return;
+  const final_source_reconciliation_requested = background_feature_enabled(
+    "CIVIC_GENOME_FINAL_SOURCE_RECONCILIATION_ENABLED",
+  );
+  if (
+    !cache_warmer_requested
+    && !activation_queue_requested
+    && !final_source_reconciliation_requested
+  ) return;
 
   if (activation_queue_requested) {
     start_docket_bill_activation_queue_worker();
+  }
+  if (final_source_reconciliation_requested) {
+    start_civic_genome_final_source_reconciliation_worker();
   }
   if (!cache_warmer_requested) return;
 
@@ -209,6 +223,7 @@ async function shutdown(signal: string): Promise<void> {
   await Promise.all([legislative_version_queue_startup, docket_worker_startup]);
   await stop_docket_state_cache_warmer();
   await stop_docket_bill_activation_queue_worker();
+  stop_civic_genome_final_source_reconciliation_worker();
   if (docket_loopback_server) {
     await new Promise<void>(resolve => docket_loopback_server!.close(() => resolve()));
     docket_loopback_server = null;
