@@ -27,7 +27,7 @@ beforeEach(() => {
 });
 
 describe("current Rosetta result arrival reconciliation", () => {
-  it("attaches only an exact current key/hash and completes the queue without consuming an attempt", async () => {
+  it("attaches an exact authorized result and completes the queue without consuming an attempt", async () => {
     query
       .mockResolvedValueOnce({ rows: [candidate] })
       .mockResolvedValueOnce({ rows: [{ queue_id: candidate.queue_id }] });
@@ -35,6 +35,7 @@ describe("current Rosetta result arrival reconciliation", () => {
       bill_version_id: candidate.bill_version_id,
       source_document_key: candidate.source_document_key,
       extraction_run_id: 1014063,
+      state: "assembled",
       assembly_run_id: "11111111-1111-4111-8111-111111111111",
     });
 
@@ -42,6 +43,7 @@ describe("current Rosetta result arrival reconciliation", () => {
       .resolves.toEqual({
         checked: 1,
         attached: 1,
+        awaiting_publication: 0,
         still_held: 0,
         read_errors: 0,
       });
@@ -50,21 +52,49 @@ describe("current Rosetta result arrival reconciliation", () => {
 
     const claim_sql = String(query.mock.calls[0][0]);
     expect(claim_sql).toContain("version.document_family = 'text'");
-    expect(claim_sql).toContain("version.processing_state = 'source_ingested'");
-    expect(claim_sql).toContain("version.rosetta_extraction_run_id is null");
-    expect(claim_sql).toContain("not exists (");
+    expect(claim_sql).toContain("version.processing_state in ('source_ingested', 'extracted')");
+    expect(claim_sql).toContain("version.assembly_run_id is null");
     expect(claim_sql).toContain("queue.queue_state = 'eligible'");
     expect(claim_sql).toContain("queue.attempt_count = 0");
     expect(claim_sql).toContain("last_failure_class = 'awaiting_current_result'");
-    expect(claim_sql).toContain("current_docket_result_awaiting_publication");
+    expect(claim_sql).toContain("last_failure_class = 'awaiting_publication'");
+    expect(claim_sql).toContain("civic_genome_rosetta_generation_target");
 
     const complete_sql = String(query.mock.calls[1][0]);
     expect(complete_sql).toContain("queue_state = 'completed'");
-    expect(complete_sql).toContain("version.source_document_key = $3::text");
-    expect(complete_sql).toContain("lower(version.receipt_json->>'source_content_hash') = $4::text");
     expect(complete_sql).toContain("version.rosetta_extraction_run_id = $5::text");
     expect(complete_sql).toContain("version.assembly_run_id = $6::uuid");
     expect(complete_sql).not.toContain("attempt_count =");
+  });
+
+  it("parks a completed exact extraction when the publication generation is not authorized", async () => {
+    query
+      .mockResolvedValueOnce({ rows: [candidate] })
+      .mockResolvedValueOnce({ rows: [{ queue_id: candidate.queue_id }] });
+    attach_current.mockResolvedValue({
+      bill_version_id: candidate.bill_version_id,
+      source_document_key: candidate.source_document_key,
+      extraction_run_id: 1014064,
+      state: "awaiting_publication",
+      assembly_run_id: null,
+    });
+
+    await expect(reconcile_awaiting_current_results({ limit: 1, concurrency: 1 }))
+      .resolves.toEqual({
+        checked: 1,
+        attached: 0,
+        awaiting_publication: 1,
+        still_held: 0,
+        read_errors: 0,
+      });
+
+    const park_sql = String(query.mock.calls[1][0]);
+    expect(park_sql).toContain("queue_state = 'degraded'");
+    expect(park_sql).toContain("next_attempt_at = 'infinity'::timestamptz");
+    expect(park_sql).toContain("last_failure_class = 'awaiting_publication'");
+    expect(park_sql).toContain("rosetta_extraction_run_id = $6::text");
+    expect(park_sql).toContain("assembly_run_id is null");
+    expect(park_sql).not.toContain("attempt_count =");
   });
 
   it("leaves a source observed when Rosetta has no complete current result", async () => {
@@ -75,6 +105,7 @@ describe("current Rosetta result arrival reconciliation", () => {
       .resolves.toEqual({
         checked: 1,
         attached: 0,
+        awaiting_publication: 0,
         still_held: 1,
         read_errors: 0,
       });
@@ -85,7 +116,7 @@ describe("current Rosetta result arrival reconciliation", () => {
     );
   });
 
-  it("records an attachment/read error without changing queue state", async () => {
+  it("records a read error without changing queue state", async () => {
     query.mockResolvedValueOnce({ rows: [candidate] });
     attach_current.mockRejectedValue(
       new Error("current_result_attachment_source_receipt_incomplete"),
@@ -95,6 +126,7 @@ describe("current Rosetta result arrival reconciliation", () => {
       .resolves.toEqual({
         checked: 1,
         attached: 0,
+        awaiting_publication: 0,
         still_held: 0,
         read_errors: 1,
       });

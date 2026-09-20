@@ -1426,7 +1426,8 @@ export type completed_current_result_attachment = {
   bill_version_id: string;
   source_document_key: string;
   extraction_run_id: number;
-  assembly_run_id: string;
+  state: "assembled" | "awaiting_publication";
+  assembly_run_id: string | null;
 };
 
 /**
@@ -1516,22 +1517,59 @@ export async function attach_completed_current_result(
     receipt_source: "current_docket_projection",
   };
 
-  const assembly = await assemble_rosetta_and_resolve_family({
-    genome_bill_id: version.genome_bill_id,
-    source_document_id,
-    extraction_run_id,
-    source_document_key: version.source_document_key,
-    source_content_hash,
-  });
+  // Extraction truth is independent of Civic Genome publication authority.
+  // Persist the exact completed run before testing the generation gate so the
+  // read model never reports "No result observed" for a result Rosetta has
+  // already sealed and exposed by exact key + hash.
   await record_extracted(bill_version_id, extraction);
-  await record_assembled(bill_version_id, assembly);
 
-  return {
-    bill_version_id,
-    source_document_key: version.source_document_key,
-    extraction_run_id,
-    assembly_run_id: assembly.assembly_run_id,
-  };
+  try {
+    const assembly = await assemble_rosetta_and_resolve_family({
+      genome_bill_id: version.genome_bill_id,
+      source_document_id,
+      extraction_run_id,
+      source_document_key: version.source_document_key,
+      source_content_hash,
+    });
+    await record_assembled(bill_version_id, assembly);
+    return {
+      bill_version_id,
+      source_document_key: version.source_document_key,
+      extraction_run_id,
+      state: "assembled",
+      assembly_run_id: assembly.assembly_run_id,
+    };
+  } catch (error) {
+    if (
+      error instanceof Error
+      && error.message === "rosetta_public_current_docket_result_awaiting_publication"
+    ) {
+      await getPool().query(
+        `update public.civic_genome_bill_version
+            set processing_state='extracted',
+                failure_code='rosetta_public_current_docket_result_awaiting_publication',
+                receipt_json=coalesce(receipt_json,'{}'::jsonb)
+                  || jsonb_build_object(
+                    'current_rosetta_status','complete',
+                    'current_publication_status','awaiting_publication',
+                    'current_publication_observed_at',now()
+                  ),
+                updated_at=now()
+          where bill_version_id=$1::uuid
+            and rosetta_extraction_run_id=$2::text
+            and assembly_run_id is null`,
+        [bill_version_id, String(extraction_run_id)],
+      );
+      return {
+        bill_version_id,
+        source_document_key: version.source_document_key,
+        extraction_run_id,
+        state: "awaiting_publication",
+        assembly_run_id: null,
+      };
+    }
+    throw error;
+  }
 }
 
 export async function process_legislative_version(

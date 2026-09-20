@@ -102,6 +102,36 @@ describe("exact source acquisition is independent of extraction availability", (
     expect(query.mock.calls[0][0]).toContain("where bill_version_id = current.bill_version_id");
   });
 
+  it("reports a persisted complete extraction while its generation publication is held", async () => {
+    selectVersion({
+      current_processing_state: "extracted",
+      current_extraction_run_id: "1014064",
+      current_rosetta_status: "complete",
+      current_publication_status: "awaiting_publication",
+      queue_state: "degraded",
+      queue_attempt_count: 0,
+      queue_last_failure_class: "awaiting_publication",
+      queue_last_error_code: "rosetta_public_current_docket_result_awaiting_publication",
+      queue_next_attempt_at: "infinity",
+      queue_locked_at: null,
+    });
+    const result = await get_civic_genome_rosetta_pipeline_status(2036748);
+    expect(result).toMatchObject({
+      source_document_id: 19607,
+      extraction_run_id: 1014064,
+      run_status: "completed",
+      contract_state: "awaiting_publication",
+      can_assemble: false,
+      queue_state: "degraded",
+      queue_attempt_count: 0,
+      queue_last_failure_class: "awaiting_publication",
+    });
+    expect(result.contract_message).toContain("decomposition is complete");
+    expect(result.contract_message).toContain("publication generation");
+    expect(pipelineExtractionPresentation(result).value).toBe("Decomposition complete");
+    expect(pipelinePublicationPresentation(result).value).toBe("Awaiting generation publication");
+  });
+
   it("does not turn transport degradation into a current-result hold", async () => {
     selectVersion({ queue_state: "degraded", queue_last_failure_class: "transient" });
     const result = await get_civic_genome_rosetta_pipeline_status(1939033);
