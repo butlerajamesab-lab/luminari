@@ -19,7 +19,17 @@ function schedule_atomic_resume(delay_ms: number) {
   }, delay_ms).unref();
 }
 
+const private_storage_credential_available = Boolean(
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+    || process.env.LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY
+    || process.env.SUPABASE_SERVICE_KEY,
+);
+
 if (process.env.NODE_ENV === "production"
   && background_feature_enabled("FRESH_ATOMIC_CORPUS_RESUME_ENABLED")) {
-  schedule_atomic_resume(30_000);
+  if (!private_storage_credential_available) {
+    console.error("[fresh_atomic_corpus] disabled_missing_private_storage_credential");
+  } else {
+    schedule_atomic_resume(30_000);
+  }
 }

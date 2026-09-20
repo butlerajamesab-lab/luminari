@@ -14,6 +14,13 @@ describe("fresh atomic corpus startup", () => {
     expect(service).toContain("status in ('queued','running')");
   });
 
+  it("requires a private Storage server credential before scheduling Batch work", () => {
+    expect(startup).toContain("private_storage_credential_available");
+    expect(startup).toContain("SUPABASE_SERVICE_ROLE_KEY");
+    expect(startup).toContain("LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY");
+    expect(startup).toContain("disabled_missing_private_storage_credential");
+  });
+
   it("is mounted by the long-lived worker so explicitly queued work can advance", () => {
     expect(worker).toContain('import "./services/fresh-corpus-atomic-startup"');
     expect(worker).toContain('import "./workers/corpus-import-queue-worker"');
