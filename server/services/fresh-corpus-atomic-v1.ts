@@ -8,7 +8,7 @@ import { parse_batch_atomic_records } from "./batch-corpus-source";
 import { workbookSheets, create_worksheet_validator, resolve_shared_string } from "./xlsx-workbook-structure";
 
 export const ATOMIC_CORPUS_ENGINE_VERSION = "fresh_atomic_corpus_v1.0.0";
-export const ATOMIC_CORPUS_PARSER_VERSION = "fresh_atomic_parser_v1.0.3";
+export const ATOMIC_CORPUS_PARSER_VERSION = "fresh_atomic_parser_v1.0.4";
 
 const MAX_RECORDS_PER_SOURCE_FILE = 200_000;
 const MAX_RAW_EXCERPT = 8_000;
@@ -126,96 +126,131 @@ function wordText(xml: string): string {
   return compact(values.join(" "));
 }
 
-export function parseDocxXmlAtomicRows(xml: string, sourceFileSha256: string, containerMemberPath: string | null = null): atomic_record[] {
+
+function parseDocxXmlAtomicRowsFromPart(
+  xml: string,
+  sourceFileSha256: string,
+  containerMemberPath: string | null,
+  partName: string,
+  startingOrdinal: number,
+): { records: atomic_record[]; nextOrdinal: number } {
   const out: atomic_record[] = [];
-  let ordinal = 0;
+  let ordinal = startingOrdinal;
   let tableIndex = 0;
-  const tableRanges: Array<[number, number]> = [];
-  for (const tableMatch of xml.matchAll(/<w:tbl\b[\s\S]*?<\/w:tbl>/g)) {
-    tableIndex += 1;
-    tableRanges.push([tableMatch.index ?? 0, (tableMatch.index ?? 0) + tableMatch[0].length]);
-    const rows = Array.from(tableMatch[0].matchAll(/<w:tr\b[\s\S]*?<\/w:tr>/g))
-      .map((rowMatch, index) => ({
-        rowIndex: index + 1,
-        cells: Array.from(rowMatch[0].matchAll(/<w:tc\b[\s\S]*?<\/w:tc>/g)).map(cell => wordText(cell[0])),
-      }))
-      .filter(row => row.cells.some(Boolean));
-
-    const headerIndex = rows.findIndex(row => row.cells.filter(Boolean).length >= 2);
-    const headers = headerIndex >= 0
-      ? rows[headerIndex].cells.map((value, index) => compact(value) || `column_${index + 1}`)
-      : [];
-    let sectionContext: string | null = null;
-
-    for (let index = 0; index < rows.length; index += 1) {
-      const row = rows[index];
-      ordinal += 1;
-      let rowRole: "header" | "section" | "data" = "data";
-      let values: Record<string, unknown>;
-
-      if (index === headerIndex) {
-        rowRole = "header";
-        values = { row_role: rowRole, source_headers: row.cells };
-      } else if (row.cells.filter(Boolean).length === 1) {
-        rowRole = "section";
-        sectionContext = row.cells.find(Boolean) ?? null;
-        values = { row_role: rowRole, section_context: sectionContext };
-      } else if (headers.length) {
-        values = { row_role: rowRole };
-        row.cells.forEach((value, cellIndex) => {
-          const header = headers[cellIndex] ?? `column_${cellIndex + 1}`;
-          values[header] = value;
-        });
-        if (sectionContext) values.section_context = sectionContext;
-      } else {
-        values = { row_role: rowRole };
-        row.cells.forEach((value, cellIndex) => {
-          values[`column_${cellIndex + 1}`] = value;
-        });
-      }
-
-      out.push(makeAtomicRecord({
-        sourceFileSha256,
-        sourceKind: "docx_table_row",
-        sourceRelation: `table_${tableIndex}`,
-        rowOrdinal: ordinal,
-        columnNames: Object.keys(values),
-        values,
-        rawExcerpt: row.cells.join(" | "),
-        sourceLocator: `docx:table:${tableIndex}:row:${row.rowIndex}`,
-        containerMemberPath,
-      }));
-      if (out.length >= MAX_RECORDS_PER_SOURCE_FILE) return out;
-    }
-  }
-
-  const xmlWithoutTables = xml.replace(/<w:tbl\b[\s\S]*?<\/w:tbl>/g, "\n");
   let paragraphIndex = 0;
-  for (const paragraphMatch of xmlWithoutTables.matchAll(/<w:p\b[\s\S]*?<\/w:p>/g)) {
+  const mainDocument = partName === "document";
+  const blocks = xml.matchAll(/<w:tbl\b[\s\S]*?<\/w:tbl>|<w:p\b[\s\S]*?<\/w:p>/g);
+
+  for (const blockMatch of blocks) {
+    const block = blockMatch[0];
+    if (block.startsWith("<w:tbl")) {
+      tableIndex += 1;
+      const rows = Array.from(block.matchAll(/<w:tr\b[\s\S]*?<\/w:tr>/g))
+        .map((rowMatch, index) => ({
+          rowIndex: index + 1,
+          cells: Array.from(rowMatch[0].matchAll(/<w:tc\b[\s\S]*?<\/w:tc>/g)).map(cell => wordText(cell[0])),
+        }))
+        .filter(row => row.cells.some(Boolean));
+
+      const headerIndex = rows.findIndex(row => row.cells.filter(Boolean).length >= 2);
+      const headers = headerIndex >= 0
+        ? rows[headerIndex].cells.map((value, index) => compact(value) || `column_${index + 1}`)
+        : [];
+      let sectionContext: string | null = null;
+
+      for (let index = 0; index < rows.length; index += 1) {
+        const row = rows[index];
+        ordinal += 1;
+        let rowRole: "header" | "section" | "data" = "data";
+        let values: Record<string, unknown>;
+
+        if (index === headerIndex) {
+          rowRole = "header";
+          values = { row_role: rowRole, source_headers: row.cells };
+        } else if (row.cells.filter(Boolean).length === 1) {
+          rowRole = "section";
+          sectionContext = row.cells.find(Boolean) ?? null;
+          values = { row_role: rowRole, section_context: sectionContext };
+        } else if (headers.length) {
+          values = { row_role: rowRole };
+          row.cells.forEach((value, cellIndex) => {
+            const header = headers[cellIndex] ?? `column_${cellIndex + 1}`;
+            values[header] = value;
+          });
+          if (sectionContext) values.section_context = sectionContext;
+        } else {
+          values = { row_role: rowRole };
+          row.cells.forEach((value, cellIndex) => {
+            values[`column_${cellIndex + 1}`] = value;
+          });
+        }
+
+        out.push(makeAtomicRecord({
+          sourceFileSha256,
+          sourceKind: "docx_table_row",
+          sourceRelation: mainDocument ? `table_${tableIndex}` : `${partName}:table_${tableIndex}`,
+          rowOrdinal: ordinal,
+          columnNames: Object.keys(values),
+          values,
+          rawExcerpt: row.cells.join(" | "),
+          sourceLocator: mainDocument
+            ? `docx:table:${tableIndex}:row:${row.rowIndex}`
+            : `docx:${partName}:table:${tableIndex}:row:${row.rowIndex}`,
+          containerMemberPath,
+        }));
+        if (out.length >= MAX_RECORDS_PER_SOURCE_FILE) return { records: out, nextOrdinal: ordinal };
+      }
+      continue;
+    }
+
     paragraphIndex += 1;
-    const text = wordText(paragraphMatch[0]);
-    if (text.length < 12) continue;
+    const text = wordText(block);
+    if (!text) continue;
     ordinal += 1;
     out.push(makeAtomicRecord({
       sourceFileSha256,
       sourceKind: "document_paragraph",
-      sourceRelation: "document_body",
+      sourceRelation: mainDocument ? "document_body" : partName,
       rowOrdinal: ordinal,
-      values: { text },
+      values: { text, document_part: partName },
       rawExcerpt: text,
-      sourceLocator: `docx:paragraph:${paragraphIndex}`,
+      sourceLocator: mainDocument
+        ? `docx:paragraph:${paragraphIndex}`
+        : `docx:${partName}:paragraph:${paragraphIndex}`,
       containerMemberPath,
     }));
     if (out.length >= MAX_RECORDS_PER_SOURCE_FILE) break;
   }
-  return out;
+  return { records: out, nextOrdinal: ordinal };
+}
+
+export function parseDocxXmlAtomicRows(
+  xml: string,
+  sourceFileSha256: string,
+  containerMemberPath: string | null = null,
+): atomic_record[] {
+  return parseDocxXmlAtomicRowsFromPart(xml, sourceFileSha256, containerMemberPath, "document", 0).records;
 }
 
 async function parseDocxAtomic(buffer: Buffer, sourceFileSha256: string, containerMemberPath: string | null): Promise<atomic_record[]> {
   const zip = await JSZip.loadAsync(buffer);
-  const documentXml = await zip.file("word/document.xml")?.async("text");
-  if (!documentXml) return [];
-  return parseDocxXmlAtomicRows(documentXml, sourceFileSha256, containerMemberPath);
+  const names = Object.keys(zip.files)
+    .filter(name => /^word\/(document|header\d+|footer\d+|footnotes|endnotes|comments)\.xml$/i.test(name))
+    .sort((a, b) => (a === "word/document.xml" ? -1 : b === "word/document.xml" ? 1 : a.localeCompare(b)));
+  if (!names.includes("word/document.xml")) return [];
+
+  const out: atomic_record[] = [];
+  let ordinal = 0;
+  for (const name of names) {
+    const xml = await zip.file(name)?.async("text");
+    if (!xml) continue;
+    const partName = name.replace(/^word\//, "").replace(/\.xml$/i, "");
+    const parsed = parseDocxXmlAtomicRowsFromPart(xml, sourceFileSha256, containerMemberPath, partName, ordinal);
+    out.push(...parsed.records);
+    ordinal = parsed.nextOrdinal;
+    if (out.length >= MAX_RECORDS_PER_SOURCE_FILE) return out.slice(0, MAX_RECORDS_PER_SOURCE_FILE);
+  }
+  return out;
 }
 
 function xmlCellText(xml: string): string {
