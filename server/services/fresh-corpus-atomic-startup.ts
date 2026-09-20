@@ -2,7 +2,9 @@ import { resume_fresh_atomic_corpus_pass_from_database } from "./fresh-corpus-at
 import { background_feature_enabled } from "../runtime-role";
 
 // A queued scoped pass must also run after startup, and a bounded yield must resume.
-// This loop remains confined to the explicitly enabled background runtime.
+// This loop remains confined to the explicitly enabled background runtime. Storage
+// visibility is resolved per object by corpus-storage-download rather than frozen
+// into startup policy.
 function schedule_atomic_resume(delay_ms: number) {
   setTimeout(() => {
     void resume_fresh_atomic_corpus_pass_from_database({ batch_size: 3, max_batches: 60 })
@@ -19,16 +21,7 @@ function schedule_atomic_resume(delay_ms: number) {
   }, delay_ms).unref();
 }
 
-const private_storage_credential_available = Boolean(
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-    || process.env.LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY
-    || process.env.SUPABASE_SERVICE_KEY,
-);
-
 if (process.env.NODE_ENV === "production"
   && background_feature_enabled("FRESH_ATOMIC_CORPUS_RESUME_ENABLED")) {
-  if (!private_storage_credential_available) {
-    console.warn("[fresh_atomic_corpus] private_batch_unavailable_missing_storage_credential");
-  }
   schedule_atomic_resume(30_000);
 }
