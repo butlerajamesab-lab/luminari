@@ -15,14 +15,14 @@ describe("fresh atomic corpus startup", () => {
     expect(service).toContain("status in ('queued','running')");
   });
 
-  it("continues public-corpus replay without weakening the private Batch boundary", () => {
-    expect(startup).toContain("private_storage_credential_available");
-    expect(startup).toContain("SUPABASE_SERVICE_ROLE_KEY");
-    expect(startup).toContain("LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY");
-    expect(startup).toContain("private_batch_unavailable_missing_storage_credential");
+  it("resolves public/private Storage policy per object without disabling public replay", () => {
     expect(startup).toContain("schedule_atomic_resume(30_000)");
-    expect(storage).toContain('const private_bucket = artifact.bucket_id === "Batch"');
-    expect(storage).toContain('if (private_bucket && !service_key) throw new Error("private_storage_server_credential_unavailable")');
+    expect(startup).not.toContain("private_storage_credential_available");
+    expect(storage).toContain('"public"');
+    expect(storage).toContain('"authenticated"');
+    expect(storage).toContain("if (public_response.ok)");
+    expect(storage).toContain("SUPABASE_SERVICE_ROLE_KEY");
+    expect(storage).toContain("LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY");
   });
 
   it("is mounted by the long-lived worker so explicitly queued work can advance", () => {
