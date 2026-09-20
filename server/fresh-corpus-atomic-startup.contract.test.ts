@@ -5,6 +5,7 @@ const startup = readFileSync(new URL("./services/fresh-corpus-atomic-startup.ts"
 const core = readFileSync(new URL("./_core/index.ts", import.meta.url), "utf8");
 const worker = readFileSync(new URL("./prism-rosetta-worker.ts", import.meta.url), "utf8");
 const service = readFileSync(new URL("./services/fresh-corpus-atomic-v1.ts", import.meta.url), "utf8");
+const storage = readFileSync(new URL("./services/corpus-storage-download.ts", import.meta.url), "utf8");
 
 describe("fresh atomic corpus startup", () => {
   it("only resumes explicitly queued/running database work", () => {
@@ -14,11 +15,14 @@ describe("fresh atomic corpus startup", () => {
     expect(service).toContain("status in ('queued','running')");
   });
 
-  it("requires a private Storage server credential before scheduling Batch work", () => {
-    expect(startup).toContain("private_storage_credential_available");
-    expect(startup).toContain("SUPABASE_SERVICE_ROLE_KEY");
-    expect(startup).toContain("LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY");
-    expect(startup).toContain("disabled_missing_private_storage_credential");
+  it("resolves public/private Storage policy per object without disabling public replay", () => {
+    expect(startup).toContain("schedule_atomic_resume(30_000)");
+    expect(startup).not.toContain("private_storage_credential_available");
+    expect(storage).toContain('"public"');
+    expect(storage).toContain('"authenticated"');
+    expect(storage).toContain("if (public_response.ok)");
+    expect(storage).toContain("SUPABASE_SERVICE_ROLE_KEY");
+    expect(storage).toContain("LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY");
   });
 
   it("is mounted by the long-lived worker so explicitly queued work can advance", () => {

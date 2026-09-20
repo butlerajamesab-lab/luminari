@@ -36,23 +36,36 @@ describe("Batch source preservation", () => {
     await expect(member.queue_batch_source_observations({ artifact_keys: ["Batch/private.docx"] })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
-  it("authenticates private storage, checks exact bytes and versions, and never retries publicly", async () => {
+  it("reads public storage directly and falls back to authenticated storage without changing source verification", async () => {
     const source = { bucket_id: "Batch", object_name: "SAIS one.docx", byte_size: 3, transport_etag: '"v1"' };
-    const request = vi.fn().mockResolvedValue(new Response("abc", { headers: { etag: '"v1"' } }));
     const environment = { SUPABASE_URL: "https://test.supabase.co", SUPABASE_SERVICE_ROLE_KEY: "test_server_key" };
-    expect(await download_corpus_storage_artifact(source, request, environment)).toEqual(Buffer.from("abc"));
-    expect(request).toHaveBeenCalledWith("https://test.supabase.co/storage/v1/object/authenticated/Batch/SAIS%20one.docx",
+
+    const public_request = vi.fn().mockResolvedValue(new Response("abc", { headers: { etag: '"v1"' } }));
+    expect(await download_corpus_storage_artifact(source, public_request, environment)).toEqual(Buffer.from("abc"));
+    expect(public_request).toHaveBeenCalledOnce();
+    expect(public_request).toHaveBeenCalledWith("https://test.supabase.co/storage/v1/object/public/Batch/SAIS%20one.docx",
+      expect.objectContaining({ redirect: "error", headers: { Accept: "application/octet-stream" } }));
+
+    const private_request = vi.fn()
+      .mockResolvedValueOnce(new Response("denied", { status: 403 }))
+      .mockResolvedValueOnce(new Response("abc", { headers: { etag: '"v1"' } }));
+    expect(await download_corpus_storage_artifact(source, private_request, environment)).toEqual(Buffer.from("abc"));
+    expect(private_request).toHaveBeenNthCalledWith(2,
+      "https://test.supabase.co/storage/v1/object/authenticated/Batch/SAIS%20one.docx",
       expect.objectContaining({ redirect: "error", headers: expect.objectContaining({ Authorization: "Bearer test_server_key" }) }));
-    await expect(download_corpus_storage_artifact(source, request, {})).rejects.toThrow("credential_unavailable");
-    request.mockResolvedValueOnce(new Response("abc", { headers: { etag: '"v2"' } }));
-    await expect(download_corpus_storage_artifact(source, request, environment)).rejects.toThrow("version_changed");
-    request.mockResolvedValueOnce(new Response("xyz"));
-    await expect(download_corpus_storage_artifact(source, request, environment)).rejects.toThrow("version_unavailable");
-    request.mockResolvedValueOnce(new Response("abcd"));
-    await expect(download_corpus_storage_artifact(source, request, environment)).rejects.toThrow("byte_size_changed");
-    request.mockResolvedValueOnce(new Response("denied", { status: 403 }));
-    await expect(download_corpus_storage_artifact(source, request, environment)).rejects.toThrow("http_403");
-    expect(request).toHaveBeenCalledTimes(5);
+
+    const no_key = vi.fn().mockResolvedValue(new Response("denied", { status: 403 }));
+    await expect(download_corpus_storage_artifact(source, no_key, { SUPABASE_URL: "https://test.supabase.co" })).rejects.toThrow("http_403");
+    expect(no_key).toHaveBeenCalledOnce();
+
+    const changed = vi.fn().mockResolvedValue(new Response("abc", { headers: { etag: '"v2"' } }));
+    await expect(download_corpus_storage_artifact(source, changed, environment)).rejects.toThrow("version_changed");
+
+    const missing_version = vi.fn().mockResolvedValue(new Response("xyz"));
+    await expect(download_corpus_storage_artifact(source, missing_version, environment)).rejects.toThrow("version_unavailable");
+
+    const wrong_size = vi.fn().mockResolvedValue(new Response("abcd", { headers: { etag: '"v1"' } }));
+    await expect(download_corpus_storage_artifact(source, wrong_size, environment)).rejects.toThrow("byte_size_changed");
   });
 
   it("joins split resource metadata and preserves short paragraphs, raw fragments and unverified images", async () => {
