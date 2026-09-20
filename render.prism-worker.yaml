@@ -16,6 +16,12 @@ services:
         value: production
       - key: LIGHTHOUSE_RUNTIME_ROLE
         value: worker
+      - key: LIGHTHOUSE_SUPABASE_URL
+        value: https://wepxlinwbjrkqdzkqpar.supabase.co
+      - key: LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: FRESH_ATOMIC_CORPUS_RESUME_ENABLED
+        value: "false"
       - key: DOCKET_STATE_CACHE_WARMER_ENABLED
         value: "true"
       - key: DOCKET_STATE_CACHE_WARMER_INTERVAL_MS
