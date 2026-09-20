@@ -14,6 +14,7 @@ import type { CascadeChain } from '../engines/intake-spine/layer-11-cascade_regi
 import type { ClaimCandidate } from '../engines/intake-spine/layer-12-rights_and_duties_matrix';
 import type { ActionPath } from '../engines/intake-spine/layer-14-action_paths';
 import { read_case_intake_continuity } from '../intake-case-continuity';
+import { read_case_pipeline_candidate_projection } from '../case-pipeline-candidate-projection';
 
 const SHA256_RE = /^[0-9a-f]{64}$/;
 
@@ -377,6 +378,20 @@ export const analyzeRouter = router({
           records: output.data,
         })),
       };
+    }),
+
+  /**
+   * Deterministic case-to-pipeline candidate projection over the current sealed
+   * intake evidence. This reuses the existing pipeline signal registry and the
+   * reviewed dossier route projection. A pipeline candidate is routing context,
+   * not a claim, finding, or legal conclusion. Facility-wide survey context is
+   * accounted for but is not allowed to masquerade as case-specific evidence.
+   */
+  getIntakePipelineCandidateProjection: protectedProcedure
+    .input(z.object({ caseId: z.number().int().positive() }))
+    .query(async ({ ctx, input }) => {
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      return read_case_pipeline_candidate_projection(input.caseId);
     }),
 
   /**
