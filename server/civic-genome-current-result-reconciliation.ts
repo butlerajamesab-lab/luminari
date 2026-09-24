@@ -6,8 +6,14 @@ import {
 
 const DEFAULT_BATCH_SIZE = 50;
 const MAX_BATCH_SIZE = 100;
-const DEFAULT_CONCURRENCY = 5;
-const MAX_CONCURRENCY = 10;
+const DEFAULT_CONCURRENCY = 2;
+const MAX_CONCURRENCY = 5;
+// A held source is an observation state, not work to retry continuously.
+// Re-observe at a bounded cadence so a Rosetta outage cannot become a
+// corpus-wide request storm.
+const DEFAULT_REOBSERVE_AFTER_MS = 5 * 60_000;
+const MIN_REOBSERVE_AFTER_MS = 60_000;
+const MAX_REOBSERVE_AFTER_MS = 60 * 60_000;
 
 type held_current_result_candidate = {
   queue_id: string;
@@ -35,6 +41,7 @@ function bounded_integer(
 
 async function claim_held_current_result_candidates(
   limit: number,
+  reobserve_after_ms: number,
 ): Promise<held_current_result_candidate[]> {
   const result = await query_with_diagnostics<held_current_result_candidate>(
     `with candidate as materialized (
@@ -79,6 +86,11 @@ async function claim_held_current_result_candidates(
           )
           and queue.locked_at is null
           and queue.locked_by is null
+          and (
+            queue.current_result_checked_at is null
+            or queue.current_result_checked_at
+                 <= now() - make_interval(secs => ($2::integer / 1000))
+          )
         order by queue.current_result_checked_at nulls first,
                  queue.updated_at,
                  queue.queue_id
@@ -96,7 +108,7 @@ async function claim_held_current_result_candidates(
      )
      select * from observed
      order by queue_id`,
-    [limit],
+    [limit, reobserve_after_ms],
     {
       label: "legislative_version_current_result_observation_claim",
       pool_acquire_timeout_ms: 1_000,
@@ -192,7 +204,13 @@ export async function reconcile_awaiting_current_results(input: {
     1,
     MAX_CONCURRENCY,
   );
-  const candidates = await claim_held_current_result_candidates(limit);
+  const reobserve_after_ms = bounded_integer(
+    Number.parseInt(process.env.LEGISLATIVE_VERSION_CURRENT_RESULT_REOBSERVE_MS ?? "", 10),
+    DEFAULT_REOBSERVE_AFTER_MS,
+    MIN_REOBSERVE_AFTER_MS,
+    MAX_REOBSERVE_AFTER_MS,
+  );
+  const candidates = await claim_held_current_result_candidates(limit, reobserve_after_ms);
   const summary: current_result_reconciliation_summary = {
     checked: candidates.length,
     attached: 0,
