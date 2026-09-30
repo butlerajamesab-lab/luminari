@@ -16,7 +16,7 @@ const worker = readFileSync(
   "utf8",
 );
 const migration = readFileSync(
-  join(root, "supabase", "migrations", "20260918164500_civic_genome_amendment_dependency_routing.sql"),
+  join(root, "supabase", "migrations", "20260918172503_civic_genome_amendment_dependency_routing.sql"),
   "utf8",
 );
 const genomePage = readFileSync(
