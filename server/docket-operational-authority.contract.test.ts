@@ -12,6 +12,14 @@ const legiscan = fs.readFileSync(
   new URL("./services/legiscan.ts", import.meta.url),
   "utf8",
 );
+const pipeline = fs.readFileSync(
+  new URL("./civic-genome-legislative-version-pipeline.ts", import.meta.url),
+  "utf8",
+);
+const docket_route = fs.readFileSync(
+  new URL("./routes/docket.ts", import.meta.url),
+  "utf8",
+);
 const authority_migration = fs.readFileSync(
   new URL(
     "../supabase/migrations/20260930170000_docket_operational_authority_lock.sql",
@@ -61,6 +69,27 @@ describe("Docket operational authority lock", () => {
     );
     expect(authority_migration).toContain(
       "create trigger enqueue_docket_current_authoritative_version_v1",
+    );
+  });
+
+  it("renews authority for verified sources without rerunning unchanged semantics", () => {
+    expect(pipeline).toContain(
+      "export async function refresh_verified_docket_operational_authority",
+    );
+    expect(pipeline).toContain(
+      "const source_changed = prior_source_content_hash !== source.source_content_hash",
+    );
+    expect(queue_worker).toContain(
+      "refresh_verified_docket_operational_authority",
+    );
+    expect(queue_worker).toContain(
+      "or current_authority.source_document_key is null",
+    );
+  });
+
+  it("treats a prior-calendar-year cache as stale instead of leaving current authority empty", () => {
+    expect(docket_route).toContain(
+      "fetched.getUTCFullYear() !== now.getUTCFullYear()",
     );
   });
 });
