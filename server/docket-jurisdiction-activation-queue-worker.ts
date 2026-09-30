@@ -137,21 +137,6 @@ export function classify_docket_bill_activation_failure(input: {
       terminal: false,
     };
   }
-  if (
-    error_code === "missing_rosetta_supabase_url"
-    || error_code === "missing_rosetta_supabase_service_role_key"
-    || error_code.startsWith("rosetta_docket_state_epoch_timeout:")
-    || error_code.startsWith("rosetta_docket_state_epoch_network_failed:")
-    || /^rosetta_docket_state_epoch_failed:(429|5[0-9]{2}):/.test(error_code)
-  ) {
-    return {
-      queue_state: "degraded",
-      failure_class: "transient",
-      error_code,
-      retry_delay_seconds: 300,
-      terminal: false,
-    };
-  }
   const failure_number = input.prior_attempt_count + 1;
   const deterministic = deterministic_failure(error_code);
   const terminal = deterministic || failure_number >= UNKNOWN_FAILURE_LIMIT;
