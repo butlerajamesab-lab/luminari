@@ -17,6 +17,7 @@ import { create_rosetta_supabase_headers } from "./rosetta-supabase-auth";
 import { fetch_california_official_pdf } from "./california-legislative-source";
 import { get_amendment, get_bill_text } from "./services/legiscan";
 import { assert_legislative_document_role } from "./legislative-document-role";
+import { decode_legislative_html_bytes } from "./legislative-html-byte-decoder";
 import {
   resolve_amendment_base,
   type amendment_base_candidate,
@@ -30,6 +31,7 @@ import {
 const PDF_PARSE_VERSION = "2.4.5";
 const WA_HTML_EXTRACTOR_VERSION = "wa-official-legislative-version-html-strip-v1";
 const OFFICIAL_HTML_EXTRACTOR_VERSION = "official-legislative-version-html-strip-v1";
+const OFFICIAL_HTML_WINDOWS_1252_EXTRACTOR_VERSION = "official-legislative-version-html-windows-1252-strip-v1";
 const PDF_EXTRACTOR_VERSION = `pdf-parse-${PDF_PARSE_VERSION}-legislative-version-v1`;
 const CA_PDF_EXTRACTOR_VERSION = `ca-official-legislative-version-pdf-v1+${PDF_EXTRACTOR_VERSION}`;
 const MAX_SOURCE_BYTES = 25 * 1024 * 1024;
@@ -910,6 +912,8 @@ export async function extract_version_source(
   let media_type: string;
   let extraction_text_url = source_url;
   let extraction_text_byte_hash = source_byte_hash;
+  let raw_source_charset: "utf-8" | "windows-1252" | null = null;
+  let raw_source_charset_source: "declared" | "default" | "utf8_replacement_fallback" | null = null;
 
   if (html_url) {
     const html = await fetch_bytes(html_url, false);
@@ -934,8 +938,13 @@ export async function extract_version_source(
       : PDF_EXTRACTOR_VERSION;
     media_type = "application/pdf";
   } else if (source_is_html(official.bytes, official.content_type)) {
-    source_text = normalize_official_html(official.bytes.toString("utf8"));
-    extractor_version = OFFICIAL_HTML_EXTRACTOR_VERSION;
+    const decoded = decode_legislative_html_bytes(official.bytes, official.content_type);
+    source_text = normalize_official_html(decoded.text);
+    raw_source_charset = decoded.charset;
+    raw_source_charset_source = decoded.charset_source;
+    extractor_version = decoded.charset === "windows-1252"
+      ? OFFICIAL_HTML_WINDOWS_1252_EXTRACTOR_VERSION
+      : OFFICIAL_HTML_EXTRACTOR_VERSION;
     media_type = "text/html";
   } else {
     throw new Error("legislative_version_source_format_unsupported");
@@ -1000,6 +1009,9 @@ export async function extract_version_source(
           : null,
       extraction_text_url,
       extraction_text_byte_hash,
+      raw_source_charset,
+      raw_source_charset_source,
+      stored_text_charset: "UTF-8",
       source_url_rewritten: source_url !== selected_source_url,
       source_fetch_mode,
       provider_copy_fallback_used: source_fetch_mode === "provider_copy_fallback",
