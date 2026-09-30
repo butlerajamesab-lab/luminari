@@ -1,10 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { query, get_bill, project_state, publish_epoch } = vi.hoisted(() => ({
+const { query, get_bill, project_state } = vi.hoisted(() => ({
   query: vi.fn(),
   get_bill: vi.fn(),
   project_state: vi.fn(),
-  publish_epoch: vi.fn(),
 }));
 
 vi.mock("./db", () => ({
@@ -19,10 +18,6 @@ vi.mock("./civic-genome-projection", () => ({
   project_docket_state_cache_to_civic_genome_serialized: project_state,
 }));
 
-vi.mock("./docket-rosetta-authority", () => ({
-  publish_rosetta_docket_state_epoch: publish_epoch,
-}));
-
 import {
   classify_docket_bill_activation_failure,
   docket_bill_activation_retry_delay_seconds,
@@ -33,8 +28,6 @@ const job = {
   queue_id: "11111111-1111-4111-8111-111111111111",
   source_bill_id: 2043400,
   state: "NY",
-  session_id: 2250,
-  cache_fetched_at: "2026-09-30T15:00:00.000Z",
   summary_fingerprint: "a".repeat(64),
   observed_change_hash: "change-1",
   attempt_count: 0,
@@ -53,7 +46,6 @@ const registration_receipt = {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  publish_epoch.mockResolvedValue(undefined);
   project_state.mockResolvedValue({
     bills_seen: 100,
     inserted_count: 100,
@@ -123,11 +115,6 @@ describe("Docket jurisdiction activation queue", () => {
   it("fetches exact bill detail and registers every official source in the existing version spine", async () => {
     await process_docket_bill_activation_job(job);
 
-    expect(publish_epoch).toHaveBeenCalledWith({
-      state: job.state,
-      session_id: job.session_id,
-      cache_fetched_at: job.cache_fetched_at,
-    });
     expect(get_bill).toHaveBeenCalledTimes(1);
     expect(get_bill).toHaveBeenCalledWith(job.source_bill_id);
     expect(query.mock.calls.some(call => String(call[0]).includes("insert into public.docket_bill_detail_cache"))).toBe(true);
