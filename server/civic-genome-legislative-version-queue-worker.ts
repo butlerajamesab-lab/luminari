@@ -56,6 +56,7 @@ export type legislative_version_queue_job = {
   attempt_count: number;
   document_identifier: string;
   durable_content_recovery: boolean;
+  docket_operational_authority_required: boolean;
 };
 
 type rosetta_unbound_docket_source = {
@@ -636,7 +637,9 @@ async function claim_jobs(
                 candidate.prior_queue_state,
                 queue.attempt_count,
                 candidate.document_identifier,
-                candidate.is_durable_content_recovery as durable_content_recovery`,
+                candidate.is_durable_content_recovery as durable_content_recovery,
+                ($9::boolean and not candidate.is_durable_content_recovery)
+                  as docket_operational_authority_required`,
     [
       queue_worker_id,
       QUEUE_LEASE_MINUTES,
@@ -959,7 +962,9 @@ export async function process_legislative_version_job(
 ): Promise<void> {
   let result: Awaited<ReturnType<typeof process_legislative_version>>;
   try {
-    result = await process_legislative_version(job.bill_version_id);
+    result = await process_legislative_version(job.bill_version_id, {
+      require_docket_operational_authority: job.docket_operational_authority_required,
+    });
   } catch (error) {
     const amendment_hold = amendment_dependency_hold_for(error);
     if (amendment_hold) {
