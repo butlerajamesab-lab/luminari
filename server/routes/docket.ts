@@ -21,6 +21,7 @@ import {
   resolve_lighthouse_runtime_role,
 } from "../runtime-role";
 import { docket_request_scoped_refresh_allowed } from "../docket-request-refresh-policy";
+import { publish_rosetta_docket_state_epoch } from "../docket-rosetta-authority";
 
 const cache_ttl_ms = 8 * 60 * 60 * 1000;
 const bill_detail_cache_ttl_ms = 24 * 60 * 60 * 1000;
@@ -389,6 +390,12 @@ const upsert_state_cache = async (
       query_timeout_ms: 10_000,
     },
   );
+
+  await publish_rosetta_docket_state_epoch({
+    state: row.state,
+    session_id: row.session_id,
+    cache_fetched_at: row.fetched_at,
+  });
 };
 
 const read_bill_detail_cache = async (bill_id: number): Promise<docket_bill_detail_cache_row | null> => {
