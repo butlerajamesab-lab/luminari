@@ -148,8 +148,14 @@ select
           'activation_id', ranked.activation_id,
           'state', ranked.state,
           'session_id', ranked.session_id,
-          'cache_fetched_at', ranked.cache_fetched_at,
-          'docket_detail_fetched_at', ranked.docket_detail_fetched_at,
+          'cache_fetched_at', to_char(
+            ranked.cache_fetched_at at time zone 'UTC',
+            'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'
+          ),
+          'docket_detail_fetched_at', to_char(
+            ranked.docket_detail_fetched_at at time zone 'UTC',
+            'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'
+          ),
           'source_bill_id', ranked.source_bill_id,
           'source_document_key', ranked.source_document_key,
           'provider_document_id', ranked.provider_document_id,
