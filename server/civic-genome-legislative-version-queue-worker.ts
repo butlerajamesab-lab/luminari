@@ -6,6 +6,7 @@ import { run_with_database_job_context } from "./db-request-context";
 import {
   LEGISLATIVE_VERSION_PROVIDER_SHARED_OUTAGE_ERROR_CODE,
   process_legislative_version,
+  refresh_verified_docket_operational_authority,
 } from "./civic-genome-legislative-version-pipeline";
 import { create_rosetta_supabase_headers } from "./rosetta-supabase-auth";
 import { reconcile_awaiting_current_results } from "./civic-genome-current-result-reconciliation";
@@ -389,6 +390,9 @@ async function reconcile_completed_jobs(
          from public.civic_genome_legislative_version_queue queue
          join public.civic_genome_bill_version version
            on version.bill_version_id = queue.bill_version_id
+         left join public.docket_current_authoritative_source_v1 current_authority
+           on current_authority.source_bill_id = version.source_bill_id
+          and current_authority.source_document_key = version.source_document_key
         where version.assembly_run_id is not null
           and version.processing_state in ('assembled', 'verification_partial', 'verified')
           and queue.queue_state <> 'completed'
@@ -397,6 +401,10 @@ async function reconcile_completed_jobs(
             or version.receipt_json->>'source_fallback_recovery_contract' = $2
           )
           and (not $3::boolean or not (coalesce(version.receipt_json, '{}'::jsonb) ? 'source_fallback_recovery_contract'))
+          and (
+            not $3::boolean
+            or current_authority.source_document_key is null
+          )
         order by queue.updated_at, queue.queue_id
         for update of queue skip locked
         limit $1::integer
@@ -553,7 +561,13 @@ async function claim_jobs(
             queue.locked_at is null
             or queue.locked_at < now() - make_interval(mins => $2::integer)
           )
-          and version.processing_state not in ('verified', 'verified_with_findings')
+          and (
+            version.processing_state not in ('verified', 'verified_with_findings')
+            or (
+              $9::boolean
+              and current_authority.source_document_key is not null
+            )
+          )
           and not (
             version.document_family='amendment'
             and version.processing_state='source_ingested'
@@ -962,6 +976,23 @@ export async function process_legislative_version_job(
 ): Promise<void> {
   let result: Awaited<ReturnType<typeof process_legislative_version>>;
   try {
+    if (job.docket_operational_authority_required) {
+      const authority_refresh = await refresh_verified_docket_operational_authority(
+        job.bill_version_id,
+      );
+      if (
+        authority_refresh.eligible
+        && !authority_refresh.source_changed
+        && authority_refresh.assembly_run_id
+      ) {
+        await mark_job_completed({
+          job,
+          assembly_run_id: authority_refresh.assembly_run_id,
+        });
+        return;
+      }
+    }
+
     result = job.docket_operational_authority_required
       ? await process_legislative_version(job.bill_version_id, {
           require_docket_operational_authority: true,
