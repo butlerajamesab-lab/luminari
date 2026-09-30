@@ -77,6 +77,7 @@ type legislative_version_row = {
   predecessor_bill_version_id: string | null;
   base_bill_version_id: string | null;
   receipt_json: Record<string, unknown>;
+  processing_state: string;
   rosetta_source_document_id: number | null;
   rosetta_extraction_run_id: string | null;
   assembly_run_id: string | null;
@@ -532,6 +533,7 @@ async function load_version(bill_version_id: string): Promise<legislative_versio
             version.predecessor_bill_version_id::text,
             version.base_bill_version_id::text,
             version.receipt_json,
+            version.processing_state,
             version.rosetta_source_document_id,
             version.rosetta_extraction_run_id::text,
             version.assembly_run_id::text,
@@ -1568,6 +1570,76 @@ async function record_assembled(
       assembly.family_resolution.status,
     ],
   );
+}
+
+
+export type verified_docket_authority_refresh = {
+  eligible: boolean;
+  source_changed: boolean;
+  assembly_run_id: string | null;
+  source_content_hash: string | null;
+  prior_source_content_hash: string | null;
+};
+
+export async function refresh_verified_docket_operational_authority(
+  bill_version_id: string,
+): Promise<verified_docket_authority_refresh> {
+  const version = await load_version(bill_version_id);
+  if (
+    version.document_family !== "text"
+    || !["verified", "verified_with_findings"].includes(version.processing_state)
+    || !version.assembly_run_id
+  ) {
+    return {
+      eligible: false,
+      source_changed: true,
+      assembly_run_id: version.assembly_run_id,
+      source_content_hash: null,
+      prior_source_content_hash: null,
+    };
+  }
+
+  const authority = await load_docket_operational_authority(version);
+  const source_document_id = await ensure_rosetta_source_document(version);
+  const source = await extract_version_source(version, authority);
+  const durable = await register_rosetta_source_content(source_document_id, source);
+  await register_rosetta_docket_operational_authority(durable, source, authority);
+
+  const prior_source_content_hash = String(
+    version.receipt_json.source_content_hash ?? "",
+  ).trim().toLowerCase();
+  const source_changed = prior_source_content_hash !== source.source_content_hash;
+
+  await getPool().query(
+    `update public.civic_genome_bill_version
+        set receipt_json = coalesce(receipt_json, '{}'::jsonb)
+          || jsonb_build_object(
+            'docket_authority_sha256', $2::text,
+            'docket_authority_cache_fetched_at', $3::timestamptz,
+            'docket_authority_detail_fetched_at', $4::timestamptz,
+            'docket_authority_observed_source_content_hash', $5::text,
+            'docket_authority_source_changed', $6::boolean,
+            'docket_authority_observed_at', now()
+          ),
+            updated_at = now()
+      where bill_version_id = $1::uuid`,
+    [
+      bill_version_id,
+      authority.authority_sha256,
+      authority.cache_fetched_at,
+      authority.docket_detail_fetched_at,
+      source.source_content_hash,
+      source_changed,
+    ],
+  );
+
+  return {
+    eligible: true,
+    source_changed,
+    assembly_run_id: version.assembly_run_id,
+    source_content_hash: source.source_content_hash,
+    prior_source_content_hash: prior_source_content_hash || null,
+  };
 }
 
 
