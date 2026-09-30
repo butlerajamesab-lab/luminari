@@ -962,9 +962,11 @@ export async function process_legislative_version_job(
 ): Promise<void> {
   let result: Awaited<ReturnType<typeof process_legislative_version>>;
   try {
-    result = await process_legislative_version(job.bill_version_id, {
-      require_docket_operational_authority: job.docket_operational_authority_required,
-    });
+    result = job.docket_operational_authority_required
+      ? await process_legislative_version(job.bill_version_id, {
+          require_docket_operational_authority: true,
+        })
+      : await process_legislative_version(job.bill_version_id);
   } catch (error) {
     const amendment_hold = amendment_dependency_hold_for(error);
     if (amendment_hold) {
