@@ -171,3 +171,86 @@ grant select on public.docket_current_authoritative_source_v1 to service_role;
 
 comment on view public.docket_current_authoritative_source_v1 is
   'Docket-owned live authority projection. One current text identity per bill, only after a fresh current-session activation and matching detail observation. Historical versions are excluded from operational eligibility.';
+
+
+create or replace function public.enqueue_docket_current_authoritative_version_v1()
+returns trigger
+language plpgsql
+security definer
+set search_path = 'pg_catalog', 'public'
+as $function$
+declare
+  v_priority integer;
+begin
+  if new.document_family <> 'text' then
+    return new;
+  end if;
+
+  if not exists (
+    select 1
+    from public.docket_current_authoritative_source_v1 authority
+    where authority.bill_version_id = new.bill_version_id
+      and authority.source_bill_id = new.source_bill_id
+      and authority.source_document_key = new.source_document_key
+  ) then
+    return new;
+  end if;
+
+  v_priority := (new.stage_rank * 1000) + new.provider_sequence;
+
+  insert into public.civic_genome_legislative_version_queue (
+    bill_version_id,
+    queue_state,
+    priority,
+    attempt_count,
+    next_attempt_at,
+    completed_at,
+    locked_at,
+    locked_by,
+    last_failure_class,
+    last_error_code
+  )
+  values (
+    new.bill_version_id,
+    'eligible',
+    v_priority,
+    0,
+    now(),
+    null,
+    null,
+    null,
+    null,
+    null
+  )
+  on conflict (bill_version_id) do update
+     set queue_state = 'eligible',
+         priority = excluded.priority,
+         attempt_count = 0,
+         next_attempt_at = now(),
+         completed_at = null,
+         locked_at = null,
+         locked_by = null,
+         last_failure_class = null,
+         last_error_code = null,
+         updated_at = now();
+
+  return new;
+end;
+$function$;
+
+revoke all on function public.enqueue_docket_current_authoritative_version_v1()
+  from public, anon, authenticated;
+grant execute on function public.enqueue_docket_current_authoritative_version_v1()
+  to service_role;
+
+drop trigger if exists enqueue_docket_current_authoritative_version_v1
+  on public.civic_genome_bill_version;
+
+create trigger enqueue_docket_current_authoritative_version_v1
+after insert or update of version_fingerprint, provider_sequence, stage_rank
+on public.civic_genome_bill_version
+for each row
+execute function public.enqueue_docket_current_authoritative_version_v1();
+
+comment on function public.enqueue_docket_current_authoritative_version_v1() is
+  'Re-arms only the exact Docket-authoritative current text version. Historical registered versions remain audit/parser-addressable but cannot enter the ordinary live execution queue.';
