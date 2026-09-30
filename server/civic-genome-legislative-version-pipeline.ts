@@ -1148,7 +1148,14 @@ async function register_rosetta_docket_operational_authority(
   const rows = await rosetta_request("rpc/rosetta_admit_docket_operational_source_v1", {
     method: "POST",
     body: JSON.stringify({
+      p_activation_id: authority.activation_id,
+      p_state: authority.state,
+      p_session_id: authority.session_id,
+      p_source_bill_id: authority.source_bill_id,
       p_source_document_key: authority.source_document_key,
+      p_provider_document_id: Number(authority.provider_document_id),
+      p_provider_hash: authority.provider_hash,
+      p_provider_date: authority.provider_date,
       p_source_content_hash: source.source_content_hash,
       p_docket_authority_sha256: authority.authority_sha256,
       p_docket_cache_fetched_at: authority.cache_fetched_at,
