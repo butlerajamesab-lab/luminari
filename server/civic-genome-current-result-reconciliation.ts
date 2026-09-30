@@ -52,6 +52,9 @@ async function claim_held_current_result_candidates(
          from public.civic_genome_legislative_version_queue queue
          join public.civic_genome_bill_version version
            on version.bill_version_id = queue.bill_version_id
+         join public.docket_current_authoritative_source_v1 current_authority
+           on current_authority.source_bill_id = version.source_bill_id
+          and current_authority.source_document_key = version.source_document_key
         where version.document_family = 'text'
           and version.processing_state = 'source_ingested'
           and version.rosetta_extraction_run_id is null

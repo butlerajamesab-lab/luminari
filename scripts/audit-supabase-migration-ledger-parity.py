@@ -318,6 +318,12 @@ APPROVED_REPOSITORY_ONLY = {
         "20260918215000_docket_refresh_registration_only.sql",
         "4ab843418dd191d76492c3e4aa63b6a731726b80",
     ),
+    # Docket live-authority lock pending production application through the
+    # normal Supabase deployment gate.
+    "20260930170000": (
+        "20260930170000_docket_operational_authority_lock.sql",
+        "2b6681b47d7fb8a4b5da8e31f6aadddd931edd0c",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {

@@ -253,8 +253,7 @@ export const get_master_list = async (session_id: number): Promise<legiscan_mast
       const a_date = a.last_action_date ?? a.status_date ?? "";
       const b_date = b.last_action_date ?? b.status_date ?? "";
       return b_date.localeCompare(a_date);
-    })
-    .slice(0, 100);
+    });
 };
 
 export const get_bill = async (bill_id: number): Promise<legiscan_bill_detail> => {

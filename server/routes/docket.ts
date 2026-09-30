@@ -435,6 +435,12 @@ const is_fresh = (fetched_at: string, ttl_ms = cache_ttl_ms): boolean => {
     return false;
   }
 
+  const fetched = new Date(fetched_ms);
+  const now = new Date();
+  if (fetched.getUTCFullYear() !== now.getUTCFullYear()) {
+    return false;
+  }
+
   return Date.now() - fetched_ms < ttl_ms;
 };
 
