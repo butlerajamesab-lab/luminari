@@ -1,0 +1,66 @@
+import fs from "node:fs";
+
+import { describe, expect, it } from "vitest";
+
+import { decode_legislative_html_bytes } from "./legislative-html-byte-decoder";
+
+const queue_worker = fs.readFileSync(
+  new URL("./civic-genome-legislative-version-queue-worker.ts", import.meta.url),
+  "utf8",
+);
+const legiscan = fs.readFileSync(
+  new URL("./services/legiscan.ts", import.meta.url),
+  "utf8",
+);
+const authority_migration = fs.readFileSync(
+  new URL(
+    "../supabase/migrations/20260930170000_docket_operational_authority_lock.sql",
+    import.meta.url,
+  ),
+  "utf8",
+);
+
+describe("Docket operational authority lock", () => {
+  it("decodes Windows-1252 bytes before legislative HTML normalization", () => {
+    const bytes = Buffer.from([
+      0x3c, 0x68, 0x74, 0x6d, 0x6c, 0x3e,
+      0x93, 0x74, 0x65, 0x73, 0x74, 0x94,
+      0x3c, 0x2f, 0x68, 0x74, 0x6d, 0x6c, 0x3e,
+    ]);
+    const decoded = decode_legislative_html_bytes(bytes, "text/html");
+
+    expect(decoded.charset).toBe("windows-1252");
+    expect(decoded.charset_source).toBe("utf8_replacement_fallback");
+    expect(decoded.text).toContain("“test”");
+    expect(decoded.text).not.toContain("\uFFFD");
+  });
+
+  it("does not truncate the live master list to an arbitrary 100-bill window", () => {
+    expect(legiscan).not.toContain(".slice(0, 100)");
+    expect(legiscan).not.toContain(".slice(0,100)");
+  });
+
+  it("makes Docket authority a hard current-source claim predicate", () => {
+    expect(queue_worker).toContain(
+      "join public.docket_current_authoritative_source_v1 current_authority",
+    );
+    expect(queue_worker).toContain(
+      "or current_authority.source_document_key is not null",
+    );
+  });
+
+  it("keeps historical rows out of operational eligibility at the database boundary", () => {
+    expect(authority_migration).toContain(
+      "create or replace view public.docket_current_authoritative_source_v1",
+    );
+    expect(authority_migration).toContain(
+      "where ranked.authority_rank = 1",
+    );
+    expect(authority_migration).toContain(
+      "extract(year from cache.fetched_at at time zone 'UTC')",
+    );
+    expect(authority_migration).toContain(
+      "create trigger enqueue_docket_current_authoritative_version_v1",
+    );
+  });
+});
