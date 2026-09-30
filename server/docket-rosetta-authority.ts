@@ -57,12 +57,19 @@ export async function publish_rosetta_docket_state_epoch(
       );
     }
   } catch (error) {
+    if (
+      error instanceof Error
+      && error.message.startsWith("rosetta_docket_state_epoch_failed:")
+    ) {
+      throw error;
+    }
     if (controller.signal.aborted) {
       throw new Error(
         `rosetta_docket_state_epoch_timeout:${DOCKET_AUTHORITY_REQUEST_TIMEOUT_MS}`,
       );
     }
-    throw error;
+    const cause = error instanceof Error ? error.name : "unknown";
+    throw new Error(`rosetta_docket_state_epoch_network_failed:${cause}`);
   } finally {
     clearTimeout(timeout);
   }
