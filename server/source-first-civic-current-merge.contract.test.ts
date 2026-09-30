@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-const migration = readFileSync(new URL("../supabase/migrations/20260919070000_source_first_civic_current_merge_v1.sql", import.meta.url), "utf8");
+const migration = readFileSync(new URL("../supabase/migrations/20260919070543_source_first_civic_current_merge_v1.sql", import.meta.url), "utf8");
 
 describe("source-first civic current merge", () => {
   it("does not let one newer partial run erase earlier valid source candidates", () => {

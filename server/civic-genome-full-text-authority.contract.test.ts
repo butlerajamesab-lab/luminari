@@ -7,16 +7,19 @@ const operating = readFileSync(new URL("./civic-genome-operating-contracts.ts", 
 const evaluation = readFileSync(new URL("./civic-genome-rosetta-evaluation.ts", import.meta.url), "utf8");
 const generationUpgrade = readFileSync(new URL("./civic-genome-rosetta-generation-upgrade-worker.ts", import.meta.url), "utf8");
 const docket = readFileSync(new URL("./routes/docket.ts", import.meta.url), "utf8");
-const migration = readFileSync(
-  new URL("../supabase/migrations/20260918190000_civic_genome_full_text_authority_repair.sql", import.meta.url),
+const archivedMigration = readFileSync(
+  new URL(
+    "../supabase/migration_archive/unapplied_20260930/20260918190000_civic_genome_full_text_authority_repair.sql",
+    import.meta.url,
+  ),
   "utf8",
 );
 
-describe("Civic Genome full-text authority contract", () => {
+describe("archived Civic Genome full-text authority design contract", () => {
   it("prevents amendment assemblies from overwriting bill-level Rosetta truth", () => {
     expect(assembly).toContain('if (binding.document_family === "text")');
     expect(assembly).toContain("update public.civic_genome_bill");
-    expect(migration).toContain("civic_genome_bill_rosetta_authority_requires_full_text");
+    expect(archivedMigration).toContain("civic_genome_bill_rosetta_authority_requires_full_text");
   });
 
   it("keeps bill-level current and published selectors on full text", () => {
@@ -29,13 +32,13 @@ describe("Civic Genome full-text authority contract", () => {
 
   it("uses full-text states for Radar structural latest while preserving amendment bases", () => {
     expect(docket).toMatch(/latest as[\s\S]*where document_family = 'text'/);
-    expect(migration).toMatch(/latest as[\s\S]*where document_family = 'text'/);
-    expect(migration).toContain("where base_bill_version_id is not null");
+    expect(archivedMigration).toMatch(/latest as[\s\S]*where document_family = 'text'/);
+    expect(archivedMigration).toContain("where base_bill_version_id is not null");
   });
 
   it("quarantines historical amendment outputs without deleting provenance", () => {
-    expect(migration).toContain("'bill_level_authority', 'non_authoritative_amendment'");
-    expect(migration).toContain("'rosetta_authority_state', 'unavailable'");
-    expect(migration).not.toMatch(/delete\s+from\s+public\.civic_genome_(bill_version|assembly_run|trait)/i);
+    expect(archivedMigration).toContain("'bill_level_authority', 'non_authoritative_amendment'");
+    expect(archivedMigration).toContain("'rosetta_authority_state', 'unavailable'");
+    expect(archivedMigration).not.toMatch(/delete\s+from\s+public\.civic_genome_(bill_version|assembly_run|trait)/i);
   });
 });

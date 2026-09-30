@@ -17,7 +17,7 @@ describe("Docket refresh / Rosetta execution boundary", () => {
 
   it("keeps automatic cache and Genome registration non-executing", () => {
     const migration = read(
-      "supabase/migrations/20260918215000_docket_refresh_registration_only.sql",
+      "supabase/migrations/20260918214924_docket_refresh_registration_only.sql",
     );
     expect(migration).toContain(
       "register_docket_legislative_version_spine(new.bill_id, false)",

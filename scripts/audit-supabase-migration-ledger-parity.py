@@ -12,6 +12,7 @@ PRODUCTION_RECEIPTS = (
     Path("supabase/verification/production_migration_receipts_20260912_addendum.tsv"),
     Path("supabase/verification/production_migration_receipts_20260913_addendum.tsv"),
     Path("supabase/verification/production_migration_receipts_20260914_addendum.tsv"),
+    Path("supabase/verification/production_migration_receipts_20260930_addendum.tsv"),
 )
 # executable_md5 is exported from each ordered production statement array by
 # trimming trailing whitespace, restoring a missing top-level terminator,
@@ -286,37 +287,11 @@ APPROVED_REPOSITORY_ONLY = {
         "20260909143000_lighthouse_runtime_postgres_contract_v1.sql",
         "288d613674d5545f7673eadc08430ce26bcff089",
     ),
-    # Source-first breadth-preserving current-state merge pending production apply.
-    "20260919070000": (
-        "20260919070000_source_first_civic_current_merge_v1.sql",
-        "53251a99b3cec91094febb149b218725b4ead0a8",
-    ),
     # Forward migration pending production application through the normal
     # Supabase deployment gate.
     "20260915070000": (
         "20260915070000_docket_prefix_subsidiary_failure_reconcile.sql",
         "6beb3ff76c5cf26adc7963cc99dda2bb1ed92667",
-    ),
-    # Forward migration pending production application through the normal
-    # Supabase deployment gate.
-    "20260918152000": (
-        "20260918152000_civic_genome_current_result_arrival_reconciliation.sql",
-        "3d919b94f17e5509d4610610c9518d04a1616f7e",
-    ),
-    # Forward amendment-dependency routing migration pending production apply.
-    "20260918164500": (
-        "20260918164500_civic_genome_amendment_dependency_routing.sql",
-        "24f60f2c1863adc00094ef43c63c6bbec89a0f53",
-    ),
-    # Forward full-text authority repair pending production apply.
-    "20260918190000": (
-        "20260918190000_civic_genome_full_text_authority_repair.sql",
-        "f586278c875c144c25037253dd921964965ba27d",
-    ),
-    # Forward Docket/Rosetta boundary repair pending production apply.
-    "20260918215000": (
-        "20260918215000_docket_refresh_registration_only.sql",
-        "4ab843418dd191d76492c3e4aa63b6a731726b80",
     ),
     # Docket live-authority lock pending production application through the
     # normal Supabase deployment gate.
@@ -327,6 +302,25 @@ APPROVED_REPOSITORY_ONLY = {
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
+    # Production ledger reconciliation captured 2026-09-30.
+    # These files are the source-controlled SQL corresponding to the exact
+    # production migration identities restored from supabase_migrations.
+    "20260918162308": (
+        "ac2b0c2c0cf6a0332611b110a93ad07b",
+        "3d919b94f17e5509d4610610c9518d04a1616f7e",
+    ),
+    "20260918172503": (
+        "a8a8f07c208305e2e5bd35df13981fb1",
+        "24f60f2c1863adc00094ef43c63c6bbec89a0f53",
+    ),
+    "20260918214924": (
+        "1211dd669f36a6a56621a39d7b99ede1",
+        "4ab843418dd191d76492c3e4aa63b6a731726b80",
+    ),
+    "20260919070543": (
+        "6393d8135c72d8ca64c4eae84b658757",
+        "53251a99b3cec91094febb149b218725b4ead0a8",
+    ),
     # Native integration receipt read from production on 2026-09-12. Ordered
     # statement boundaries differ from the source file; SQL tokens are identical.
     "20260911201534": (
