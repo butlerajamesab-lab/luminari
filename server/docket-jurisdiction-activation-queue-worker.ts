@@ -4,6 +4,7 @@ import { project_docket_state_cache_to_civic_genome_serialized } from "./civic-g
 import { query_with_diagnostics } from "./db";
 import { get_bill, type legiscan_bill_detail } from "./services/legiscan";
 import { background_feature_enabled } from "./runtime-role";
+import { publish_rosetta_docket_state_epoch } from "./docket-rosetta-authority";
 
 const DEFAULT_POLL_INTERVAL_MS = 1_000;
 const MIN_POLL_INTERVAL_MS = 250;
@@ -17,6 +18,8 @@ export type docket_bill_activation_job = {
   queue_id: string;
   source_bill_id: number;
   state: string;
+  session_id: number;
+  cache_fetched_at: string;
   summary_fingerprint: string;
   observed_change_hash: string | null;
   attempt_count: number;
@@ -156,11 +159,17 @@ async function claim_jobs(limit: number): Promise<docket_bill_activation_job[]> 
   const result = await query_with_diagnostics<docket_bill_activation_job>(
     `with candidate as (
        select queue.queue_id,
-              jurisdiction.state
+              jurisdiction.state,
+              jurisdiction.session_id,
+              jurisdiction.cache_fetched_at
          from public.docket_bill_processing_queue queue
          cross join lateral (
-           select binding.state
+           select binding.state,
+                  activation.session_id,
+                  activation.cache_fetched_at
              from public.docket_jurisdiction_activation_bill binding
+             join public.docket_jurisdiction_activation_run activation
+               on activation.activation_id = binding.activation_id
             where binding.queue_id = queue.queue_id
             order by binding.created_at desc, binding.activation_id desc
             limit 1
@@ -191,6 +200,8 @@ async function claim_jobs(limit: number): Promise<docket_bill_activation_job[]> 
       returning queue.queue_id::text,
                 queue.source_bill_id,
                 candidate.state,
+                candidate.session_id,
+                candidate.cache_fetched_at::text,
                 queue.summary_fingerprint,
                 queue.observed_change_hash,
                 queue.attempt_count`,
@@ -413,6 +424,11 @@ export async function process_docket_bill_activation_job(
 ): Promise<void> {
   let receipt: docket_bill_activation_receipt;
   try {
+    await publish_rosetta_docket_state_epoch({
+      state: job.state,
+      session_id: job.session_id,
+      cache_fetched_at: job.cache_fetched_at,
+    });
     await ensure_civic_genome_bill_ready(job);
     const bill = await get_bill(job.source_bill_id);
     await cache_bill_detail(job.source_bill_id, bill);
