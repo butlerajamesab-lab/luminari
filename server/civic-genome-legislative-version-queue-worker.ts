@@ -482,6 +482,9 @@ async function claim_jobs(
            on bill.genome_bill_id = version.genome_bill_id
          join public.docket_bill_source_document document
            on document.source_document_key = version.source_document_key
+         left join public.docket_current_authoritative_source_v1 current_authority
+           on current_authority.source_bill_id = version.source_bill_id
+          and current_authority.source_document_key = version.source_document_key
          left join current_sessions current_session
            on current_session.state = bill.state_code
           and current_session.session_key = bill.session_key
@@ -562,6 +565,10 @@ async function claim_jobs(
             or version.receipt_json->>'source_fallback_recovery_contract' = $8
           )
           and (not $9::boolean or not (coalesce(version.receipt_json, '{}'::jsonb) ? 'source_fallback_recovery_contract'))
+          and (
+            not $9::boolean
+            or current_authority.source_document_key is not null
+          )
           and coalesce(source_host.blocked_until, '-infinity'::timestamptz) <= now()
         order by case when recovery.is_durable_content_recovery then 0 else 1 end,
                  case when recovery.is_durable_content_recovery
