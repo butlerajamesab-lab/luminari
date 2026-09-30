@@ -322,7 +322,7 @@ APPROVED_REPOSITORY_ONLY = {
     # normal Supabase deployment gate.
     "20260930170000": (
         "20260930170000_docket_operational_authority_lock.sql",
-        "620ae1b3e49db6a617ca1a9854b445885268153f",
+        "2b6681b47d7fb8a4b5da8e31f6aadddd931edd0c",
     ),
 }
 
