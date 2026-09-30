@@ -97,6 +97,34 @@ type legislative_version_row = {
   session_key?: string | null;
 };
 
+type docket_operational_authority_row = {
+  contract: "lighthouse-docket-operational-authority-v1";
+  activation_id: string;
+  state: string;
+  session_id: number;
+  cache_fetched_at: string;
+  docket_detail_fetched_at: string;
+  source_bill_id: number;
+  source_document_key: string;
+  provider_document_id: string;
+  provider_hash: string | null;
+  provider_date: string | null;
+  bill_version_id: string;
+  authority_sha256: string;
+};
+
+type rosetta_docket_operational_authority_receipt = {
+  contract: "rosetta-docket-operational-authority-v1";
+  source_document_key: string;
+  source_content_id: string;
+  source_content_hash: string;
+  source_registry_id: string;
+  docket_authority_sha256: string;
+  docket_cache_fetched_at: string;
+  docket_detail_fetched_at: string;
+  admitted_at: string;
+};
+
 type extracted_legislative_source = {
   source_text: string;
   source_content_hash: string;
@@ -535,6 +563,52 @@ async function load_version(bill_version_id: string): Promise<legislative_versio
   return row;
 }
 
+async function load_docket_operational_authority(
+  version: legislative_version_row,
+): Promise<docket_operational_authority_row> {
+  const result = await getPool().query<docket_operational_authority_row>(
+    `select contract,
+            activation_id::text,
+            state,
+            session_id,
+            cache_fetched_at::text,
+            docket_detail_fetched_at::text,
+            source_bill_id,
+            source_document_key,
+            provider_document_id::text,
+            provider_hash,
+            provider_date::text,
+            bill_version_id::text,
+            authority_sha256
+       from public.docket_current_authoritative_source_v1
+      where bill_version_id = $1::uuid
+        and source_bill_id = $2::integer
+        and source_document_key = $3::text
+      limit 2`,
+    [version.bill_version_id, version.source_bill_id, version.source_document_key],
+  );
+  if (result.rows.length !== 1) {
+    throw new Error("legislative_version_not_docket_operational_authority");
+  }
+  const authority = result.rows[0];
+  const cache_ms = Date.parse(authority.cache_fetched_at);
+  const detail_ms = Date.parse(authority.docket_detail_fetched_at);
+  if (
+    authority.contract !== "lighthouse-docket-operational-authority-v1"
+    || authority.source_bill_id !== version.source_bill_id
+    || authority.source_document_key !== version.source_document_key
+    || authority.bill_version_id !== version.bill_version_id
+    || authority.provider_document_id !== String(version.provider_document_id)
+    || !/^[0-9a-f]{64}$/.test(authority.authority_sha256)
+    || !Number.isFinite(cache_ms)
+    || !Number.isFinite(detail_ms)
+    || detail_ms < cache_ms
+  ) {
+    throw new Error("legislative_version_docket_operational_authority_invalid");
+  }
+  return authority;
+}
+
 async function load_amendment_base_candidates(
   version: legislative_version_row,
 ): Promise<amendment_base_candidate[]> {
@@ -783,6 +857,7 @@ function deterministic_reference_date(version: legislative_version_row): string 
 
 export async function extract_version_source(
   version: legislative_version_row,
+  authority: docket_operational_authority_row | null = null,
 ): Promise<extracted_legislative_source> {
   assert_legislative_document_role(version);
   const selected_source_url = version.source_url.trim();
@@ -935,6 +1010,22 @@ export async function extract_version_source(
       california_session_bootstrapped: california_pdf?.session_bootstrapped ?? false,
       registered_metadata: version.latest_metadata,
       registered_observed_at: version.latest_observed_at,
+      docket_operational_authority: authority
+        ? {
+            contract: authority.contract,
+            activation_id: authority.activation_id,
+            state: authority.state,
+            session_id: authority.session_id,
+            cache_fetched_at: authority.cache_fetched_at,
+            docket_detail_fetched_at: authority.docket_detail_fetched_at,
+            source_bill_id: authority.source_bill_id,
+            source_document_key: authority.source_document_key,
+            provider_document_id: Number(authority.provider_document_id),
+            provider_hash: authority.provider_hash,
+            provider_date: authority.provider_date,
+            authority_sha256: authority.authority_sha256,
+          }
+        : null,
     },
   };
 }
@@ -1035,6 +1126,38 @@ async function register_rosetta_source_content(
   } finally {
     clearTimeout(timeout);
   }
+}
+
+async function register_rosetta_docket_operational_authority(
+  content: rosetta_source_content_receipt,
+  source: extracted_legislative_source,
+  authority: docket_operational_authority_row,
+): Promise<rosetta_docket_operational_authority_receipt> {
+  const rows = await rosetta_request("rpc/rosetta_admit_docket_operational_source_v1", {
+    method: "POST",
+    body: JSON.stringify({
+      p_source_document_key: authority.source_document_key,
+      p_source_content_hash: source.source_content_hash,
+      p_docket_authority_sha256: authority.authority_sha256,
+      p_docket_cache_fetched_at: authority.cache_fetched_at,
+      p_docket_detail_fetched_at: authority.docket_detail_fetched_at,
+    }),
+  });
+  const receipt = as_record(rows[0]);
+  if (
+    !receipt
+    || receipt.contract !== "rosetta-docket-operational-authority-v1"
+    || receipt.source_document_key !== authority.source_document_key
+    || receipt.source_content_id !== content.source_content_id
+    || receipt.source_content_hash !== source.source_content_hash
+    || receipt.docket_authority_sha256 !== authority.authority_sha256
+    || typeof receipt.source_registry_id !== "string"
+    || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(receipt.source_registry_id)
+    || typeof receipt.admitted_at !== "string"
+  ) {
+    throw new Error("invalid_rosetta_docket_operational_authority_receipt");
+  }
+  return receipt as unknown as rosetta_docket_operational_authority_receipt;
 }
 
 async function register_rosetta_amendment_attachment(
@@ -1310,6 +1433,7 @@ async function record_source_ingested(
   source_document_id: number,
   source: extracted_legislative_source,
   content: rosetta_source_content_receipt,
+  authority: docket_operational_authority_row | null,
 ): Promise<void> {
   await getPool().query(
     `update public.civic_genome_bill_version
@@ -1327,7 +1451,10 @@ async function record_source_ingested(
               'rosetta_source_identity_hash', $9::text,
               'durable_source_content_contract', $10::text,
               'durable_source_content_replayed', $11::boolean,
-              'durable_source_content_registered_at', $12::timestamptz
+              'durable_source_content_registered_at', $12::timestamptz,
+              'docket_authority_sha256', $13::text,
+              'docket_authority_cache_fetched_at', $14::timestamptz,
+              'docket_authority_detail_fetched_at', $15::timestamptz
             ),
             updated_at = now()
       where bill_version_id = $1::uuid`,
@@ -1344,6 +1471,9 @@ async function record_source_ingested(
       content.contract,
       content.replayed,
       content.registered_at,
+      authority?.authority_sha256 ?? null,
+      authority?.cache_fetched_at ?? null,
+      authority?.docket_detail_fetched_at ?? null,
     ],
   );
 }
@@ -1442,6 +1572,7 @@ export async function attach_completed_current_result(
   bill_version_id: string,
 ): Promise<completed_current_result_attachment | null> {
   const version = await load_version(bill_version_id);
+  const authority = await load_docket_operational_authority(version);
   if (version.document_family !== "text") {
     throw new Error("current_result_attachment_requires_text_version");
   }
@@ -1465,6 +1596,9 @@ export async function attach_completed_current_result(
   const source_url = String(
     version.receipt_json.source_url ?? version.source_url ?? "",
   ).trim();
+  const docket_authority_sha256 = String(
+    version.receipt_json.docket_authority_sha256 ?? "",
+  ).trim().toLowerCase();
 
   if (
     !Number.isSafeInteger(source_document_id)
@@ -1475,6 +1609,7 @@ export async function attach_completed_current_result(
     || !/^[0-9a-f]{64}$/.test(source_byte_hash)
     || !source_version
     || !source_url.startsWith("https://")
+    || docket_authority_sha256 !== authority.authority_sha256
   ) {
     throw new Error("current_result_attachment_source_receipt_incomplete");
   }
@@ -1536,17 +1671,25 @@ export async function attach_completed_current_result(
 
 export async function process_legislative_version(
   bill_version_id: string,
+  options: { require_docket_operational_authority?: boolean } = {},
 ): Promise<legislative_version_processing_result> {
   const version = await load_version(bill_version_id);
   assert_legislative_document_role(version);
+  const authority = options.require_docket_operational_authority === true
+    ? await load_docket_operational_authority(version)
+    : null;
   const source_document_id = await ensure_rosetta_source_document(version);
-  const source = await extract_version_source(version);
+  const source = await extract_version_source(version, authority);
   const content = await register_rosetta_source_content(source_document_id, source);
+  if (authority) {
+    await register_rosetta_docket_operational_authority(content, source, authority);
+  }
   await record_source_ingested(
     bill_version_id,
     source_document_id,
     source,
     content,
+    authority,
   );
 
   if (version.document_family === "amendment") {
