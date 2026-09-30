@@ -831,6 +831,25 @@ async function mark_job_completed(input: {
   });
 }
 
+async function finalize_completed_job(
+  job: legislative_version_queue_job,
+  assembly_run_id: string,
+): Promise<void> {
+  try {
+    await mark_job_completed({ job, assembly_run_id });
+  } catch (error) {
+    // Completion-ledger bookkeeping cannot turn already-produced evidence into
+    // a processing failure. Preserve the successful result and leave the lease
+    // for the existing completion reconciliation path.
+    console.error("[LegislativeVersionQueue] completion_deferred", {
+      queue_id: job.queue_id,
+      bill_version_id: job.bill_version_id,
+      assembly_run_id,
+      error_code: safe_error_code(error),
+    });
+  }
+}
+
 async function mark_job_failed(input: {
   job: legislative_version_queue_job;
   decision: legislative_version_failure_decision;
@@ -985,10 +1004,10 @@ export async function process_legislative_version_job(
         && !authority_refresh.source_changed
         && authority_refresh.assembly_run_id
       ) {
-        await mark_job_completed({
+        await finalize_completed_job(
           job,
-          assembly_run_id: authority_refresh.assembly_run_id,
-        });
+          authority_refresh.assembly_run_id,
+        );
         return;
       }
     }
@@ -1049,19 +1068,10 @@ export async function process_legislative_version_job(
     return;
   }
 
-  try {
-    await mark_job_completed({
-      job,
-      assembly_run_id: result.assembly.assembly_run_id,
-    });
-  } catch (error) {
-    console.error("[LegislativeVersionQueue] completion_deferred", {
-      queue_id: job.queue_id,
-      bill_version_id: job.bill_version_id,
-      assembly_run_id: result.assembly.assembly_run_id,
-      error_code: safe_error_code(error),
-    });
-  }
+  await finalize_completed_job(
+    job,
+    result.assembly.assembly_run_id,
+  );
 }
 
 export async function run_legislative_version_queue_cycle(): Promise<void> {
