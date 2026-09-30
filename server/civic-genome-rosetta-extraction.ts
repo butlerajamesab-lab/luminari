@@ -15,10 +15,12 @@ import {
 import { create_rosetta_supabase_headers } from "./rosetta-supabase-auth";
 import { fetch_california_official_pdf } from "./california-legislative-source";
 import { assert_official_source_response } from "./official-source-response";
+import { decode_legislative_html_bytes } from "./legislative-html-byte-decoder";
 
 const PDF_PARSE_VERSION = "2.4.5";
 const WA_HTML_EXTRACTOR_VERSION = "wa-official-session-law-html-strip-v1";
 const OFFICIAL_HTML_EXTRACTOR_VERSION = "official-legislative-html-strip-v1";
+const OFFICIAL_HTML_WINDOWS_1252_EXTRACTOR_VERSION = "official-legislative-version-html-windows-1252-strip-v1";
 const PDF_EXTRACTOR_VERSION = `pdf-parse-${PDF_PARSE_VERSION}-getText-v1`;
 const CA_PDF_EXTRACTOR_VERSION = `ca-official-bill-pdf-v1+${PDF_EXTRACTOR_VERSION}`;
 const MAX_SOURCE_BYTES = 25 * 1024 * 1024;
@@ -344,6 +346,8 @@ async function extract_source(
   let media_type: string;
   let extraction_text_url: string = source_url;
   let extraction_text_byte_hash: string = source_byte_hash;
+  let raw_source_charset: "utf-8" | "windows-1252" | null = null;
+  let raw_source_charset_source: "declared" | "default" | "utf8_replacement_fallback" | null = null;
 
   if (html_url) {
     const html = await fetch_bytes(html_url);
@@ -365,9 +369,14 @@ async function extract_source(
       : PDF_EXTRACTOR_VERSION;
     media_type = "application/pdf";
   } else if (source_is_html(official.bytes, official.content_type)) {
-    source_text = normalize_official_html(official.bytes.toString("utf8"));
-    source_version = `legiscan_text:${doc_id}:${document_type}:${OFFICIAL_HTML_EXTRACTOR_VERSION}`;
-    extractor_version = OFFICIAL_HTML_EXTRACTOR_VERSION;
+    const decoded = decode_legislative_html_bytes(official.bytes, official.content_type);
+    source_text = normalize_official_html(decoded.text);
+    raw_source_charset = decoded.charset;
+    raw_source_charset_source = decoded.charset_source;
+    extractor_version = decoded.charset === "windows-1252"
+      ? OFFICIAL_HTML_WINDOWS_1252_EXTRACTOR_VERSION
+      : OFFICIAL_HTML_EXTRACTOR_VERSION;
+    source_version = `legiscan_text:${doc_id}:${document_type}:${extractor_version}`;
     media_type = "text/html";
   } else {
     throw new Error("docket_official_source_format_unsupported");
@@ -400,6 +409,9 @@ async function extract_source(
       docket_source_content_type: official.content_type,
       extraction_text_url,
       extraction_text_byte_hash,
+      raw_source_charset,
+      raw_source_charset_source,
+      stored_text_charset: "UTF-8",
       fetched_at: cached.fetched_at,
     },
   };
