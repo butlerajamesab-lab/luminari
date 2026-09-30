@@ -6,6 +6,44 @@ export type legislative_html_decoding = {
   charset_source: "declared" | "default" | "utf8_replacement_fallback";
 };
 
+const WINDOWS_1252_EXTENSION: Readonly<Record<number, string>> = Object.freeze({
+  0x80: "\u20AC",
+  0x82: "\u201A",
+  0x83: "\u0192",
+  0x84: "\u201E",
+  0x85: "\u2026",
+  0x86: "\u2020",
+  0x87: "\u2021",
+  0x88: "\u02C6",
+  0x89: "\u2030",
+  0x8A: "\u0160",
+  0x8B: "\u2039",
+  0x8C: "\u0152",
+  0x8E: "\u017D",
+  0x91: "\u2018",
+  0x92: "\u2019",
+  0x93: "\u201C",
+  0x94: "\u201D",
+  0x95: "\u2022",
+  0x96: "\u2013",
+  0x97: "\u2014",
+  0x98: "\u02DC",
+  0x99: "\u2122",
+  0x9A: "\u0161",
+  0x9B: "\u203A",
+  0x9C: "\u0153",
+  0x9E: "\u017E",
+  0x9F: "\u0178",
+});
+
+function decode_windows_1252(buffer: Buffer): string {
+  let decoded = "";
+  for (const byte of buffer) {
+    decoded += WINDOWS_1252_EXTENSION[byte] ?? String.fromCharCode(byte);
+  }
+  return decoded;
+}
+
 function normalize_charset(value: string): string {
   const charset = value.trim().toLowerCase();
   if (
@@ -50,7 +88,7 @@ export function decode_legislative_html_bytes(
   const declared_charset = sniff_declared_charset(buffer, content_type);
   if (declared_charset === "windows-1252") {
     return {
-      text: new TextDecoder("windows-1252", { fatal: false }).decode(buffer),
+      text: decode_windows_1252(buffer),
       charset: "windows-1252",
       charset_source: "declared",
     };
@@ -59,7 +97,7 @@ export function decode_legislative_html_bytes(
   const utf8 = new TextDecoder("utf-8", { fatal: false }).decode(buffer);
   if (utf8.includes("\uFFFD")) {
     return {
-      text: new TextDecoder("windows-1252", { fatal: false }).decode(buffer),
+      text: decode_windows_1252(buffer),
       charset: "windows-1252",
       charset_source: "utf8_replacement_fallback",
     };
