@@ -6,6 +6,7 @@ import * as db_helpers from '../db';
 import { execute_intake_spine_session, INTAKE_SPINE_LAYER_NAMES } from '../intake-spine-orchestrator';
 import { read_canonical_case_layer_outputs } from '../intake-case-layer-reader';
 import { read_case_intake_integrity_projection } from '../intake-case-integrity-projection';
+import { read_case_source_semantic_coverage } from '../intake-source-semantic-coverage';
 import { promoteCaseIntakeSignals } from '../intake-signal-promotion';
 import { resolve_intake_review_status } from '../intake-review-status';
 import type { VerificationRecord } from '../engines/intake-spine/layer-5-verification_gate';
@@ -346,6 +347,21 @@ export const analyzeRouter = router({
     .query(async ({ ctx, input }) => {
       await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
       return read_case_intake_integrity_projection(input.caseId);
+    }),
+
+  /**
+   * Minimum source-to-semantics accounting. Preservation alone is not
+   * interpretation: each source is compared against the current sealed
+   * chronology/entity/relationship/state projections. A positive contribution
+   * proves only that the source is used somewhere downstream; it does not prove
+   * that every meaningful fact in the source was interpreted. Zero-use image
+   * sources are explicitly marked interpretation-unproven.
+   */
+  getIntakeSourceSemanticCoverage: protectedProcedure
+    .input(z.object({ caseId: z.number().int().positive() }))
+    .query(async ({ ctx, input }) => {
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      return read_case_source_semantic_coverage(input.caseId);
     }),
 
   /**

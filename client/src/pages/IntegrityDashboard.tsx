@@ -61,6 +61,10 @@ export default function IntegrityDashboard() {
     { caseId: currentCaseId! },
     { enabled: !!currentCaseId, refetchInterval: 5000, retry: false },
   );
+  const semanticCoverage = trpc.analyze.getIntakeSourceSemanticCoverage.useQuery(
+    { caseId: currentCaseId! },
+    { enabled: !!currentCaseId, refetchInterval: 5000, retry: false },
+  );
   const documents = trpc.documents.list.useQuery(
     { caseId: currentCaseId! },
     { enabled: !!currentCaseId },
@@ -75,6 +79,7 @@ export default function IntegrityDashboard() {
     void utils.documents.list.invalidate();
     void utils.documents.listResolved.invalidate();
     void utils.analyze.getIntakeIntegrityProjection.invalidate();
+    void utils.analyze.getIntakeSourceSemanticCoverage.invalidate();
     void utils.analyze.getIntakeSpineStatus.invalidate();
   };
 
@@ -123,6 +128,10 @@ export default function IntegrityDashboard() {
   const projection = integrity.data;
   const pendingCount = projection.source_artifact_count - projection.projected_artifact_count;
   const blockedCount = projection.quarantined_count + projection.referenced_missing_count;
+  const semantic = semanticCoverage.data;
+  const semanticByArtifact = new Map(
+    (semantic?.artifacts ?? []).map(artifact => [artifact.artifact_id, artifact]),
+  );
 
   return (
     <div className="space-y-5">
@@ -149,6 +158,42 @@ export default function IntegrityDashboard() {
         <Metric label="Blocked" value={blockedCount} tone={blockedCount > 0 ? "bad" : "good"} />
       </div>
 
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Metric label="Sources used downstream" value={semantic?.sources_with_some_semantic_use ?? 0} tone={semantic?.sources_with_some_semantic_use ? "good" : "default"} />
+        <Metric label="Interpretation review" value={semantic?.sources_requiring_interpretation_review ?? 0} tone={(semantic?.sources_requiring_interpretation_review ?? 0) > 0 ? "bad" : "good"} />
+        <Metric label="Images unproven" value={semantic?.image_sources_requiring_interpretation_review ?? 0} tone={(semantic?.image_sources_requiring_interpretation_review ?? 0) > 0 ? "bad" : "good"} />
+        <Metric label="Other sources unproven" value={semantic?.non_image_sources_requiring_interpretation_review ?? 0} tone={(semantic?.non_image_sources_requiring_interpretation_review ?? 0) > 0 ? "bad" : "good"} />
+      </div>
+
+      {semanticCoverage.error && (
+        <Card className="border-amber-500/30 bg-amber-950/20">
+          <CardContent className="flex items-start gap-3 p-4 text-sm text-amber-200/80">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            Source-to-semantic coverage is unavailable. Preservation status is still shown separately and is not being treated as proof of interpretation.
+          </CardContent>
+        </Card>
+      )}
+
+      {(semantic?.image_sources_requiring_interpretation_review ?? 0) > 0 && (
+        <Card className="border-amber-500/30 bg-amber-950/20">
+          <CardContent className="flex items-start gap-3 p-4 text-sm text-amber-100/80">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <div>
+              <p className="font-medium text-amber-100">Image interpretation is not proven for {semantic?.image_sources_requiring_interpretation_review} source{semantic?.image_sources_requiring_interpretation_review === 1 ? "" : "s"}.</p>
+              <p className="mt-1 text-xs text-amber-200/70">
+                These preserved images contribute zero source-bound chronology events, entity mentions, relationship references, or state transitions in the current sealed projections. This is an interpretation gap, not a preservation failure.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {semantic?.projection_state === "canonical_projection" && (
+        <p className="text-xs text-muted-foreground">
+          Semantic coverage is a minimum accounting gate only. A source appearing downstream proves some use; it does not prove that every meaningful fact in that source was interpreted.
+        </p>
+      )}
+
       {projection.projection_state === "not_run" && (
         <Card className="border-blue-500/30 bg-blue-950/20">
           <CardContent className="p-4 text-sm text-blue-200/80">
@@ -174,6 +219,7 @@ export default function IntegrityDashboard() {
             const document = artifact.legacy_document_id ? documentById.get(artifact.legacy_document_id) : null;
             const status = artifact.integrity_status ?? "registered";
             const blocked = status === "quarantined" || status === "referenced_missing";
+            const semanticArtifact = semanticByArtifact.get(artifact.artifact_id);
             return (
               <div key={artifact.artifact_id} className="flex flex-wrap items-center gap-3 rounded-md border p-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-md bg-muted"><FileText className="h-4 w-4" /></div>
@@ -185,6 +231,25 @@ export default function IntegrityDashboard() {
                 <Badge variant="outline" className={blocked ? "border-red-500/40 text-red-300" : status === "preserved" ? "border-emerald-500/40 text-emerald-300" : "border-blue-500/40 text-blue-300"}>
                   {status.replace(/_/g, " ")}
                 </Badge>
+                {semanticArtifact && (
+                  <div className="min-w-[190px] space-y-1">
+                    <Badge
+                      variant="outline"
+                      className={
+                        semanticArtifact.interpretation_state === "some_semantic_use"
+                          ? "border-cyan-500/40 text-cyan-300"
+                          : semanticArtifact.requires_interpretation_review
+                            ? "border-amber-500/40 text-amber-300"
+                            : "border-muted-foreground/30 text-muted-foreground"
+                      }
+                    >
+                      {semanticArtifact.interpretation_state.replace(/_/g, " ")}
+                    </Badge>
+                    <p className="text-[10px] text-muted-foreground">
+                      {semanticArtifact.contribution_counts.chronology_events} events · {semanticArtifact.contribution_counts.entity_mentions} entity mentions · {semanticArtifact.contribution_counts.relationship_refs} relationship refs · {semanticArtifact.contribution_counts.state_transitions} transitions
+                    </p>
+                  </div>
+                )}
                 {document && (
                   <div className="flex gap-1">
                     <Button variant="ghost" size="sm" className="gap-1" onClick={() => setModal({ type: "replace", docId: document.id, docName: document.filename, caseId: document.caseId })}>
