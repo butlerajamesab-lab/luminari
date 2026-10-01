@@ -530,20 +530,6 @@ async function claim_jobs(
                     <= now() - make_interval(secs => $7::integer)
               as is_durable_content_recovery
          ) recovery
-         cross join lateral (
-           select not exists (
-             select 1
-               from public.civic_genome_bill_version newer
-              where newer.genome_bill_id = version.genome_bill_id
-                and (
-                  newer.stage_rank > version.stage_rank
-                  or (
-                    newer.stage_rank = version.stage_rank
-                    and newer.provider_sequence > version.provider_sequence
-                  )
-                )
-           ) as is_current
-         ) currency
         where (
             (
               queue.next_attempt_at <= now()
@@ -591,9 +577,7 @@ async function claim_jobs(
                  end asc nulls last,
                  case when queue.priority < 0 then 0 else 1 end,
                  (current_session.state is not null) desc,
-                 currency.is_current desc,
                  source_host.last_attempt_at asc nulls first,
-                 case when currency.is_current then version.stage_rank else 0 end desc,
                  queue.priority,
                  queue.created_at,
                  queue.queue_id
