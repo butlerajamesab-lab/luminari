@@ -127,6 +127,9 @@ describe("Docket operational authority lock", () => {
     expect(lineage_final_migration).toContain(
       "update public.civic_genome_legislative_version_queue queue",
     );
+    expect(lineage_final_migration).toContain(
+      "Historical versions remain registered but are not made operational current.",
+    );
   });
 
   it("does not recompute stage-rank currentness inside the queue claim", () => {
