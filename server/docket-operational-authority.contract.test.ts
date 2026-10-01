@@ -44,9 +44,9 @@ const predecessor_index_migration = fs.readFileSync(
   "utf8",
 );
 
-const lineage_probe_migration = fs.readFileSync(
+const lineage_final_migration = fs.readFileSync(
   new URL(
-    "../supabase/migrations/20261001033000_docket_lineage_leaf_index_probe.sql",
+    "../supabase/migrations/20261001230000_finalize_docket_lineage_authority_handoff.sql",
     import.meta.url,
   ),
   "utf8",
@@ -106,20 +106,26 @@ describe("Docket operational authority lock", () => {
     expect(predecessor_index_migration).toContain(
       "predecessor_bill_version_id",
     );
-    expect(lineage_probe_migration).toContain(
+    expect(lineage_final_migration).toContain(
       "from public.civic_genome_bill_version successor",
     );
-    expect(lineage_probe_migration).toContain(
+    expect(lineage_final_migration).toContain(
       "successor.predecessor_bill_version_id = candidate.bill_version_id",
     );
-    expect(lineage_probe_migration).toContain(
+    expect(lineage_final_migration).toContain(
       "successor.genome_bill_id = candidate.genome_bill_id",
     );
-    expect(lineage_probe_migration).not.toContain(
+    expect(lineage_final_migration).not.toContain(
       "from eligible successor",
     );
-    expect(lineage_probe_migration).toContain(
+    expect(lineage_final_migration).not.toContain(
+      "join public.docket_bill_source_document successor_document",
+    );
+    expect(lineage_final_migration).toContain(
       "update of version_fingerprint, provider_sequence, stage_rank, predecessor_bill_version_id",
+    );
+    expect(lineage_final_migration).toContain(
+      "update public.civic_genome_legislative_version_queue queue",
     );
   });
 
