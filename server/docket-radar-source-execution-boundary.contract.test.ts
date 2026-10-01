@@ -30,10 +30,16 @@ describe("Docket refresh / Rosetta execution boundary", () => {
     );
   });
 
-  it("does not auto-start legislative execution in the production worker blueprint", () => {
+  it("runs the existing legislative worker only in ordinary current-source scope", () => {
     const blueprint = read("render.prism-worker.yaml");
     expect(blueprint).toMatch(
-      /- key: LEGISLATIVE_VERSION_QUEUE_ENABLED\s+value: "false"/,
+      /- key: LEGISLATIVE_VERSION_QUEUE_ENABLED\s+value: "true"/,
+    );
+    expect(blueprint).toMatch(
+      /- key: LEGISLATIVE_VERSION_CURRENT_SOURCES_ENABLED\s+value: "true"/,
+    );
+    expect(blueprint).toMatch(
+      /- key: LEGISLATIVE_VERSION_QUEUE_RECOVERY_CONTRACT_SCOPE\s+value: ""/,
     );
   });
 });

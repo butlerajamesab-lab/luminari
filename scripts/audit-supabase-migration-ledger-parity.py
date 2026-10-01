@@ -299,6 +299,20 @@ APPROVED_REPOSITORY_ONLY = {
         "20260930170000_docket_operational_authority_lock.sql",
         "2b6681b47d7fb8a4b5da8e31f6aadddd931edd0c",
     ),
+    # Docket lineage authority repair migrations pending production application
+    # through the normal Supabase deployment gate.
+    "20261001030640": (
+        "20261001030640_civic_genome_predecessor_claim_index.sql",
+        "9875a001f7e5f5e272ed01221913264815d7970e",
+    ),
+    "20261001033000": (
+        "20261001033000_docket_lineage_leaf_index_probe.sql",
+        "5210ccef9bd0c6d7f425318c4c04d7aec2b29aff",
+    ),
+    "20261001230000": (
+        "20261001230000_finalize_docket_lineage_authority_handoff.sql",
+        "f0c315d66d8e3bbbdf310ee7f12189056b5261f7",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
