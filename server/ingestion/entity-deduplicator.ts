@@ -293,7 +293,7 @@ export async function backfillEntityClassifications(): Promise<{
     })
     .from(detectedSignals)
     .where(
-      sql`${detectedSignals.signalType} = 'repeat_entity' AND ${detectedSignals.entityRole} IS NULL AND ${detectedSignals.escalationStatus} != 'suppressed'`
+      sql`${detectedSignals.signalType} = 'repeat_entity' AND ${detectedSignals.entityRole} IS NULL AND ${detectedSignals.escalationStatus} IS DISTINCT FROM 'suppressed'`
     );
 
   const byType: Record<string, number> = {};
@@ -308,26 +308,23 @@ export async function backfillEntityClassifications(): Promise<{
     const classification = classifyEntity(entityName);
     byType[classification.entityType] = (byType[classification.entityType] ?? 0) + 1;
 
-    // Update the signal with classification
-    await db
-      .update(detectedSignals)
-      .set({
-        entityRole: classification.entityType,
-        confidenceScore: Number(classification.confidence.toFixed(4)),
-        entityId: classification.canonicalName,
-      } as any)
-      .where(eq(detectedSignals.signalId, signal.id));
+    // detected_signals is a read-only compatibility view in production.
+    // Persist classification only to its canonical legacy base relation and
+    // do not overwrite signal-confidence fields with entity confidence.
+    const shouldSuppress = classification.entityType === "individual_person";
+    await db.execute(sql`
+      update public.detected_signals_base
+         set entity_role = ${classification.entityType},
+             entity_id = ${classification.canonicalName},
+             escalation_status = case
+               when ${shouldSuppress} then 'suppressed'
+               else escalation_status
+             end
+       where signal_id = ${signal.id}
+    `);
 
     classified++;
-
-    // If individual_person, deactivate the signal (suppress it)
-    if (classification.entityType === "individual_person") {
-      await db
-        .update(detectedSignals)
-        .set({ escalationStatus: 'suppressed' } as any)
-        .where(eq(detectedSignals.signalId, signal.id));
-      suppressed++;
-    }
+    if (shouldSuppress) suppressed++;
   }
 
   return { total: unclassified.length, classified, suppressed, byType };
