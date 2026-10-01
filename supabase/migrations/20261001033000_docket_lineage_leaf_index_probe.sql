@@ -68,13 +68,8 @@ lineage_leaf as (
   where not exists (
     select 1
     from public.civic_genome_bill_version successor
-    join public.docket_bill_source_document successor_document
-      on successor_document.source_bill_id = candidate.source_bill_id
-     and successor_document.source_document_key = successor.source_document_key
-     and successor_document.document_family = 'text'
-     and successor_document.latest_observed_at = candidate.docket_detail_fetched_at
     where successor.predecessor_bill_version_id = candidate.bill_version_id
-      and successor.source_bill_id = candidate.source_bill_id
+      and successor.genome_bill_id = candidate.genome_bill_id
       and successor.document_family = 'text'
   )
 )
@@ -130,4 +125,13 @@ revoke all on public.docket_current_authoritative_source_v1
 grant select on public.docket_current_authoritative_source_v1 to service_role;
 
 comment on view public.docket_current_authoritative_source_v1 is
-  'Docket-owned live authority projection resolved by the existing Civic Genome predecessor graph. Successor detection probes the indexed physical version table; stage-rank ordering is not authority.';
+  'Docket-owned live authority projection resolved by the full Civic Genome predecessor graph. Current Docket observation filters candidate leaves only; stage-rank ordering is not authority.';
+
+drop trigger if exists enqueue_docket_current_authoritative_version_v1
+  on public.civic_genome_bill_version;
+
+create trigger enqueue_docket_current_authoritative_version_v1
+after insert or update of version_fingerprint, provider_sequence, stage_rank, predecessor_bill_version_id
+on public.civic_genome_bill_version
+for each row
+execute function public.enqueue_docket_current_authoritative_version_v1();
