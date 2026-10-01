@@ -112,8 +112,14 @@ describe("Docket operational authority lock", () => {
     expect(lineage_probe_migration).toContain(
       "successor.predecessor_bill_version_id = candidate.bill_version_id",
     );
+    expect(lineage_probe_migration).toContain(
+      "successor.genome_bill_id = candidate.genome_bill_id",
+    );
     expect(lineage_probe_migration).not.toContain(
       "from eligible successor",
+    );
+    expect(lineage_probe_migration).toContain(
+      "update of version_fingerprint, provider_sequence, stage_rank, predecessor_bill_version_id",
     );
   });
 
