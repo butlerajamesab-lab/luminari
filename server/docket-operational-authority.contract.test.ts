@@ -28,6 +28,14 @@ const authority_migration = fs.readFileSync(
   "utf8",
 );
 
+const lineage_handoff_migration = fs.readFileSync(
+  new URL(
+    "../supabase/migrations/20261001022607_restore_docket_lineage_authority_handoff.sql",
+    import.meta.url,
+  ),
+  "utf8",
+);
+
 describe("Docket operational authority lock", () => {
   it("decodes Windows-1252 bytes before legislative HTML normalization", () => {
     const bytes = Buffer.from([
@@ -57,18 +65,21 @@ describe("Docket operational authority lock", () => {
     );
   });
 
-  it("keeps historical rows out of operational eligibility at the database boundary", () => {
-    expect(authority_migration).toContain(
-      "create or replace view public.docket_current_authoritative_source_v1",
-    );
-    expect(authority_migration).toContain(
-      "where ranked.authority_rank = 1",
-    );
-    expect(authority_migration).toContain(
-      "extract(year from cache.fetched_at at time zone 'UTC')",
-    );
+  it("resolves operational currentness through the existing predecessor graph", () => {
     expect(authority_migration).toContain(
       "create trigger enqueue_docket_current_authoritative_version_v1",
+    );
+    expect(lineage_handoff_migration).toContain(
+      "successor.predecessor_bill_version_id = candidate.bill_version_id",
+    );
+    expect(lineage_handoff_migration).toContain(
+      "from lineage_leaf leaf",
+    );
+    expect(lineage_handoff_migration).not.toContain(
+      "order by\n        document.stage_rank desc",
+    );
+    expect(lineage_handoff_migration).toContain(
+      "extract(year from cache.fetched_at at time zone 'UTC')",
     );
   });
 
