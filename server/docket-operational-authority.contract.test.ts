@@ -36,6 +36,22 @@ const lineage_handoff_migration = fs.readFileSync(
   "utf8",
 );
 
+const predecessor_index_migration = fs.readFileSync(
+  new URL(
+    "../supabase/migrations/20261001030640_civic_genome_predecessor_claim_index.sql",
+    import.meta.url,
+  ),
+  "utf8",
+);
+
+const lineage_probe_migration = fs.readFileSync(
+  new URL(
+    "../supabase/migrations/20261001033000_docket_lineage_leaf_index_probe.sql",
+    import.meta.url,
+  ),
+  "utf8",
+);
+
 describe("Docket operational authority lock", () => {
   it("decodes Windows-1252 bytes before legislative HTML normalization", () => {
     const bytes = Buffer.from([
@@ -80,6 +96,34 @@ describe("Docket operational authority lock", () => {
     );
     expect(lineage_handoff_migration).toContain(
       "extract(year from cache.fetched_at at time zone 'UTC')",
+    );
+  });
+
+  it("probes the indexed physical predecessor table instead of rescanning eligible", () => {
+    expect(predecessor_index_migration).toContain(
+      "idx_civic_genome_bill_version_predecessor",
+    );
+    expect(predecessor_index_migration).toContain(
+      "predecessor_bill_version_id",
+    );
+    expect(lineage_probe_migration).toContain(
+      "from public.civic_genome_bill_version successor",
+    );
+    expect(lineage_probe_migration).toContain(
+      "successor.predecessor_bill_version_id = candidate.bill_version_id",
+    );
+    expect(lineage_probe_migration).not.toContain(
+      "from eligible successor",
+    );
+  });
+
+  it("does not recompute stage-rank currentness inside the queue claim", () => {
+    expect(queue_worker).not.toContain("currency.is_current");
+    expect(queue_worker).not.toContain(
+      "newer.stage_rank > version.stage_rank",
+    );
+    expect(queue_worker).not.toContain(
+      "newer.provider_sequence > version.provider_sequence",
     );
   });
 
