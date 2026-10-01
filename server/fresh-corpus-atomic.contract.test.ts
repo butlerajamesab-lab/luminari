@@ -27,9 +27,10 @@ describe("fresh atomic corpus parser", () => {
     expect(rows[3].values_json).toMatchObject({ id: "s2", title: "Statute Two" });
   });
 
-  it("extracts DOCX table rows and body paragraphs as separate atomic records", () => {
+  it("preserves DOCX paragraph/table order and retains short meaningful paragraphs", () => {
     const xml = `
       <w:document xmlns:w="urn:test"><w:body>
+        <w:p><w:r><w:t>Routing note before table</w:t></w:r></w:p>
         <w:tbl><w:tr>
           <w:tc><w:p><w:r><w:t>Name</w:t></w:r></w:p></w:tc>
           <w:tc><w:p><w:r><w:t>Phone</w:t></w:r></w:p></w:tc>
@@ -37,12 +38,21 @@ describe("fresh atomic corpus parser", () => {
           <w:tc><w:p><w:r><w:t>Resource A</w:t></w:r></w:p></w:tc>
           <w:tc><w:p><w:r><w:t>555-555-1212</w:t></w:r></w:p></w:tc>
         </w:tr></w:tbl>
+        <w:p><w:r><w:t>WA</w:t></w:r></w:p>
         <w:p><w:r><w:t>This is a separate source-bound policy paragraph.</w:t></w:r></w:p>
       </w:body></w:document>`;
 
     const rows = parseDocxXmlAtomicRows(xml, HASH);
-    expect(rows.filter(row => row.source_kind === "docx_table_row")).toHaveLength(2);
-    expect(rows.filter(row => row.source_kind === "document_paragraph")).toHaveLength(1);
+    expect(rows.map(row => row.source_kind)).toEqual([
+      "document_paragraph",
+      "docx_table_row",
+      "docx_table_row",
+      "document_paragraph",
+      "document_paragraph",
+    ]);
+    expect(rows.map(row => row.row_ordinal)).toEqual([1, 2, 3, 4, 5]);
+    expect(rows[0].raw_excerpt).toBe("Routing note before table");
+    expect(rows[3].raw_excerpt).toBe("WA");
     expect(rows.at(-1)?.raw_excerpt).toContain("separate source-bound policy paragraph");
   });
 
@@ -53,7 +63,7 @@ describe("fresh atomic corpus parser", () => {
     for (const row of rows) {
       expect(row.atomic_record_key).toMatch(/^[0-9a-f]{64}$/);
       expect(row.record_hash).toMatch(/^[0-9a-f]{64}$/);
-      expect(row.parser_version).toBe("fresh_atomic_parser_v1.0.3");
+      expect(row.parser_version).toBe("fresh_atomic_parser_v1.0.4");
     }
   });
 });

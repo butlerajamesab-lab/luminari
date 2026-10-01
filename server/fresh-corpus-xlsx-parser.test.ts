@@ -44,7 +44,7 @@ describe("fresh corpus workbook parser", () => {
     const atomic = await parseXlsxAtomic(buffer, "fixture", null);
     expect(atomic).toHaveLength(1);
     expect(atomic[0].source_relation).toBe("WA Resource & Directory");
-    expect(atomic[0].parser_version).toBe("fresh_atomic_parser_v1.0.3");
+    expect(atomic[0].parser_version).toBe("fresh_atomic_parser_v1.0.4");
   });
 
   it.each(["relationship", "worksheet", "metadata"])("fails instead of reporting success when %s is missing", async missing => {
