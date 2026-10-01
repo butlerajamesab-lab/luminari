@@ -299,6 +299,11 @@ APPROVED_REPOSITORY_ONLY = {
         "20260930170000_docket_operational_authority_lock.sql",
         "2b6681b47d7fb8a4b5da8e31f6aadddd931edd0c",
     ),
+    # Forward class-first Legal Library read model pending production apply.
+    "20260920221500": (
+        "20260920221500_legal_authority_class_first_current_v1.sql",
+        "e815a138c8495b6b5d0ffbba15a417fc3e1e7d11",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
