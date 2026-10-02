@@ -1,5 +1,48 @@
+import { reserve_legiscan_api_request } from "../legiscan-api-budget";
+
 const legiscan_base_url = "https://api.legiscan.com/";
 const LEGISCAN_REQUEST_TIMEOUT_MS = 30_000;
+const DEFAULT_LEGISCAN_MIN_REQUEST_INTERVAL_MS = 550;
+
+let provider_rate_gate: Promise<void> = Promise.resolve();
+let next_provider_request_at_ms = 0;
+
+const sleep = (ms: number): Promise<void> =>
+  new Promise(resolve => setTimeout(resolve, ms));
+
+const configured_legiscan_min_request_interval_ms = (): number => {
+  if (process.env.NODE_ENV === "test") return 0;
+  const raw = process.env.LEGISCAN_MIN_REQUEST_INTERVAL_MS?.trim();
+  if (!raw) return DEFAULT_LEGISCAN_MIN_REQUEST_INTERVAL_MS;
+  if (!/^\d+$/.test(raw)) {
+    throw new Error("legiscan_invalid_min_request_interval_ms");
+  }
+  const value = Number(raw);
+  if (!Number.isSafeInteger(value) || value < 500 || value > 60_000) {
+    throw new Error("legiscan_invalid_min_request_interval_ms");
+  }
+  return value;
+};
+
+async function wait_for_legiscan_rate_slot(): Promise<void> {
+  const interval_ms = configured_legiscan_min_request_interval_ms();
+  if (interval_ms <= 0) return;
+
+  let release!: () => void;
+  const prior = provider_rate_gate;
+  provider_rate_gate = new Promise<void>(resolve => {
+    release = resolve;
+  });
+
+  await prior;
+  try {
+    const wait_ms = Math.max(0, next_provider_request_at_ms - Date.now());
+    if (wait_ms > 0) await sleep(wait_ms);
+    next_provider_request_at_ms = Date.now() + interval_ms;
+  } finally {
+    release();
+  }
+}
 
 export const LEGISCAN_ROLLOUT_STATES = [
   "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
@@ -179,6 +222,8 @@ const legiscan_request = async <payload>(
   }
 
   try {
+    await wait_for_legiscan_rate_slot();
+    await reserve_legiscan_api_request(op);
     const response = await fetch(url, { signal: controller.signal });
 
     if (!response.ok) {
