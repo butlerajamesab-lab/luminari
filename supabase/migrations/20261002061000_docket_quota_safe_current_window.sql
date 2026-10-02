@@ -6,13 +6,67 @@
 -- another getBill request.
 
 -- The September 30 live-observation trigger deliberately reopened every
--- unchanged completed bill generation on each cache refresh. That behavior is
--- incompatible with a bounded provider budget: changed fingerprints already
--- create distinct queue generations, so unchanged fingerprints must retain
--- their completed state.
+-- unchanged completed bill generation on each cache refresh. Changed
+-- fingerprints already create distinct queue generations, so unchanged
+-- completed generations must remain terminal. Keep the existing trigger name
+-- only as a narrow rehabilitation hook for rows that were incorrectly made
+-- permanent by shared provider capacity/rate failures.
 drop trigger if exists docket_bill_live_observation_rearm_v1
   on public.docket_jurisdiction_activation_bill;
-drop function if exists public.rearm_docket_bill_detail_on_live_observation_v1();
+
+create or replace function public.rearm_docket_bill_detail_on_live_observation_v1()
+returns trigger
+language plpgsql
+security definer
+set search_path = 'pg_catalog', 'public'
+as $function$
+begin
+  update public.docket_bill_processing_queue q
+     set queue_state = 'degraded',
+         attempt_count = 0,
+         next_attempt_at = greatest(
+           now(),
+           date_trunc('month', q.updated_at) + interval '1 month 5 minutes'
+         ),
+         completed_at = null,
+         locked_at = null,
+         locked_by = null,
+         last_failure_class = 'transient',
+         receipt_json = coalesce(q.receipt_json, '{}'::jsonb)
+           || jsonb_build_object(
+                'legiscan_provider_capacity_reclassification_v1',
+                jsonb_build_object(
+                  'prior_queue_state', q.queue_state,
+                  'prior_attempt_count', q.attempt_count,
+                  'provider_error_code', q.last_error_code,
+                  'activation_id', new.activation_id,
+                  'state', new.state,
+                  'session_id', new.session_id,
+                  'source_bill_id', new.source_bill_id,
+                  'reclassified_at', now()
+                )
+              ),
+         updated_at = now()
+   where q.queue_id = new.queue_id
+     and q.queue_state = 'permanent_failure'
+     and (
+       q.last_error_code like 'legiscan_http_429_while_calling_%'
+       or q.last_error_code like 'legiscan_shared_api_error_while_calling_%'
+     )
+     and q.locked_at is null
+     and q.locked_by is null;
+
+  return new;
+end;
+$function$;
+
+revoke all on function public.rearm_docket_bill_detail_on_live_observation_v1()
+  from public, anon, authenticated;
+
+create trigger docket_bill_live_observation_rearm_v1
+after insert on public.docket_jurisdiction_activation_bill
+for each row
+execute function public.rearm_docket_bill_detail_on_live_observation_v1();
 
 create or replace view public.docket_current_authoritative_source_v1
 with (security_invoker = true)
@@ -155,6 +209,79 @@ grant select on public.docket_current_authoritative_source_v1 to service_role;
 
 comment on view public.docket_current_authoritative_source_v1 is
   'Docket live authority for the current 100-bill jurisdiction window. Unchanged summary generations reuse their completed detail receipt; historical versions remain preserved but are not current.';
+
+-- Repair only currently visible top-100 generations that were made
+-- permanent by the provider's shared/rate-limit state. Their prior terminal
+-- classification is retained in the appended receipt before the retry counter
+-- is reset. Rows outside the current cached window remain historical.
+with current_provider_failures as materialized (
+  select distinct queue.queue_id
+  from public.docket_bill_state_cache cache
+  join public.docket_jurisdiction_activation_run activation
+    on activation.state = cache.state
+   and activation.session_id = cache.session_id
+   and activation.cache_fetched_at = cache.fetched_at
+  join public.docket_jurisdiction_activation_bill binding
+    on binding.activation_id = activation.activation_id
+   and binding.state = activation.state
+   and binding.session_id = activation.session_id
+  join public.docket_bill_processing_queue queue
+    on queue.queue_id = binding.queue_id
+   and queue.source_bill_id = binding.source_bill_id
+  where queue.queue_state = 'permanent_failure'
+    and (
+      queue.last_error_code like 'legiscan_http_429_while_calling_%'
+      or queue.last_error_code like 'legiscan_shared_api_error_while_calling_%'
+    )
+    and exists (
+      select 1
+      from jsonb_array_elements(cache.bills)
+        with ordinality as current_bill(value, ordinality)
+      where current_bill.ordinality <= 100
+        and coalesce(current_bill.value ->> 'bill_id', '') ~ '^[0-9]+update public.civic_genome_legislative_version_queue queue
+   set queue_state='eligible',
+       attempt_count=0,
+       next_attempt_at=now(),
+       completed_at=null,
+       locked_at=null,
+       locked_by=null,
+       last_failure_class=null,
+       last_error_code=null,
+       updated_at=now()
+  from public.docket_current_authoritative_source_v1 authority
+ where queue.bill_version_id=authority.bill_version_id
+   and queue.locked_at is null
+   and queue.locked_by is null;
+
+        and (current_bill.value ->> 'bill_id')::integer = binding.source_bill_id
+    )
+)
+update public.docket_bill_processing_queue queue
+   set queue_state = 'degraded',
+       attempt_count = 0,
+       next_attempt_at = greatest(
+         now(),
+         date_trunc('month', queue.updated_at) + interval '1 month 5 minutes'
+       ),
+       completed_at = null,
+       locked_at = null,
+       locked_by = null,
+       last_failure_class = 'transient',
+       receipt_json = coalesce(queue.receipt_json, '{}'::jsonb)
+         || jsonb_build_object(
+              'legiscan_provider_capacity_reclassification_v1',
+              jsonb_build_object(
+                'prior_queue_state', queue.queue_state,
+                'prior_attempt_count', queue.attempt_count,
+                'provider_error_code', queue.last_error_code,
+                'reclassified_at', now()
+              )
+            ),
+       updated_at = now()
+  from current_provider_failures current
+ where queue.queue_id = current.queue_id
+   and queue.locked_at is null
+   and queue.locked_by is null;
 
 update public.civic_genome_legislative_version_queue queue
    set queue_state='eligible',
