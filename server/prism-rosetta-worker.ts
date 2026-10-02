@@ -72,7 +72,10 @@ const legiscan_bill_text_probe_configured =
   Number.isSafeInteger(legiscan_bill_text_probe_document_id)
   && legiscan_bill_text_probe_document_id > 0;
 
+const LEGISLATIVE_PROVIDER_PROBE_RETRY_MS = 60 * 60 * 1000;
+
 let legislative_version_queue_enabled = false;
+let legislative_probe_retry_timer: NodeJS.Timeout | null = null;
 let current_result_observation_enabled = false;
 let docket_loopback_server: Server | null = null;
 let shutting_down = false;
@@ -120,8 +123,31 @@ function stable_legiscan_failure_code(error: unknown): string {
     : "unknown_legiscan_probe_failure";
 }
 
+function schedule_legislative_provider_probe_retry(error_code: string): void {
+  if (
+    legislative_probe_retry_timer
+    || shutting_down
+    || legislative_version_queue_enabled
+    || !legislative_version_queue_requested
+    || !error_code.startsWith("legiscan_")
+  ) {
+    return;
+  }
+
+  legislative_probe_retry_timer = setTimeout(() => {
+    legislative_probe_retry_timer = null;
+    void start_authorized_legislative_queue();
+  }, LEGISLATIVE_PROVIDER_PROBE_RETRY_MS);
+  legislative_probe_retry_timer.unref?.();
+
+  console.log("[PrismRosettaWorker] legislative_queue_probe_retry_scheduled", {
+    error_code,
+    retry_ms: LEGISLATIVE_PROVIDER_PROBE_RETRY_MS,
+  });
+}
+
 async function start_authorized_legislative_queue(): Promise<void> {
-  if (!legislative_version_queue_requested) return;
+  if (!legislative_version_queue_requested || legislative_version_queue_enabled) return;
   if (!legiscan_api_key_configured) {
     console.error(
       "[PrismRosettaWorker] legislative_queue_disabled_missing_legiscan_api_key",
@@ -141,10 +167,12 @@ async function start_authorized_legislative_queue(): Promise<void> {
   try {
     await get_bill_text(legiscan_bill_text_probe_document_id);
   } catch (error) {
+    const error_code = stable_legiscan_failure_code(error);
     console.error(
       "[PrismRosettaWorker] legislative_queue_disabled_legiscan_bill_text_probe_failed",
-      { error_code: stable_legiscan_failure_code(error) },
+      { error_code },
     );
+    schedule_legislative_provider_probe_retry(error_code);
     return;
   }
 
@@ -153,6 +181,10 @@ async function start_authorized_legislative_queue(): Promise<void> {
       "[PrismRosettaWorker] legislative_queue_start_skipped_during_shutdown",
     );
     return;
+  }
+  if (legislative_probe_retry_timer) {
+    clearTimeout(legislative_probe_retry_timer);
+    legislative_probe_retry_timer = null;
   }
   try {
     start_legislative_version_queue_worker();
@@ -206,6 +238,10 @@ async function shutdown(signal: string): Promise<void> {
   shutting_down = true;
   console.log("[PrismRosettaWorker] shutdown_started", { signal });
   clearInterval(keep_alive);
+  if (legislative_probe_retry_timer) {
+    clearTimeout(legislative_probe_retry_timer);
+    legislative_probe_retry_timer = null;
+  }
   await Promise.all([legislative_version_queue_startup, docket_worker_startup]);
   await stop_docket_state_cache_warmer();
   await stop_docket_bill_activation_queue_worker();
