@@ -150,11 +150,9 @@ export function classify_docket_bill_activation_failure(input: {
       failure_class: "transient",
       error_code,
       retry_delay_seconds:
-        error_code === "legiscan_local_monthly_budget_exhausted"
-          ? 3_600
-          : error_code === "legiscan_shared_provider_circuit_open"
-            ? 3_600
-            : 3_600,
+        error_code === "Missing_required_environment_variable:_LEGISCAN_API_KEY"
+          ? 300
+          : 3_600,
       terminal: false,
       consume_attempt: false,
     };
