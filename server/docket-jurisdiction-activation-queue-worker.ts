@@ -5,10 +5,10 @@ import { query_with_diagnostics } from "./db";
 import { get_bill, type legiscan_bill_detail } from "./services/legiscan";
 import { background_feature_enabled } from "./runtime-role";
 
-const DEFAULT_POLL_INTERVAL_MS = 1_000;
+const DEFAULT_POLL_INTERVAL_MS = 5_000;
 const MIN_POLL_INTERVAL_MS = 250;
 const MAX_POLL_INTERVAL_MS = 60_000;
-const DEFAULT_CONCURRENCY = 4;
+const DEFAULT_CONCURRENCY = 1;
 const MAX_CONCURRENCY = 32;
 const QUEUE_LEASE_MINUTES = 30;
 const UNKNOWN_FAILURE_LIMIT = 5;
@@ -39,6 +39,7 @@ export type docket_bill_activation_failure_decision = {
   error_code: string;
   retry_delay_seconds: number;
   terminal: boolean;
+  consume_attempt: boolean;
 };
 
 let queue_timer: NodeJS.Timeout | null = null;
@@ -103,6 +104,12 @@ function safe_error_code(error: unknown): string {
     .slice(0, 500) || "unknown_docket_bill_activation_failure";
 }
 
+function shared_provider_failure(error_code: string): boolean {
+  return error_code.startsWith("legiscan_shared_api_error_while_calling_")
+    || error_code.startsWith("legiscan_http_429_while_calling_")
+    || error_code === "legiscan_local_monthly_budget_exhausted";
+}
+
 function deterministic_failure(error_code: string): boolean {
   return [
     "docket_bill_activation_invalid_detail",
@@ -123,17 +130,25 @@ export function classify_docket_bill_activation_failure(input: {
   prior_attempt_count: number;
 }): docket_bill_activation_failure_decision {
   const error_code = safe_error_code(input.error);
-  // A missing worker credential prevents a source request from being made.
-  // Preserve the attempt audit while keeping infrastructure failure retryable.
-  if (error_code === "Missing_required_environment_variable:_LEGISCAN_API_KEY") {
+
+  // Provider/account capacity is infrastructure state, not a defect in the
+  // legislative source. Preserve the queue item and do not spend its terminal
+  // failure counter while the shared provider is unavailable.
+  if (
+    error_code === "Missing_required_environment_variable:_LEGISCAN_API_KEY"
+    || shared_provider_failure(error_code)
+  ) {
     return {
       queue_state: "degraded",
       failure_class: "transient",
       error_code,
-      retry_delay_seconds: 300,
+      retry_delay_seconds:
+        error_code === "legiscan_local_monthly_budget_exhausted" ? 3_600 : 900,
       terminal: false,
+      consume_attempt: false,
     };
   }
+
   const failure_number = input.prior_attempt_count + 1;
   const deterministic = deterministic_failure(error_code);
   const terminal = deterministic || failure_number >= UNKNOWN_FAILURE_LIMIT;
@@ -149,6 +164,7 @@ export function classify_docket_bill_activation_failure(input: {
       ? 0
       : docket_bill_activation_retry_delay_seconds(failure_number),
     terminal,
+    consume_attempt: true,
   };
 }
 
@@ -379,7 +395,7 @@ async function mark_job_failed(input: {
   await query_with_diagnostics(
     `update public.docket_bill_processing_queue queue
         set queue_state = $2,
-            attempt_count = attempt_count + 1,
+            attempt_count = attempt_count + case when $8::boolean then 1 else 0 end,
             next_attempt_at = case
               when $5::boolean then queue.next_attempt_at
               else now() + make_interval(secs => $6::integer)
@@ -404,6 +420,7 @@ async function mark_job_failed(input: {
       input.decision.terminal,
       input.decision.retry_delay_seconds,
       queue_worker_id,
+      input.decision.consume_attempt,
     ],
     {
       label: "docket_bill_activation_queue_fail",
@@ -420,6 +437,7 @@ async function mark_job_failed(input: {
     failure_class: input.decision.failure_class,
     error_code: input.decision.error_code,
     retry_delay_seconds: input.decision.retry_delay_seconds,
+    consume_attempt: input.decision.consume_attempt,
   });
 }
 
