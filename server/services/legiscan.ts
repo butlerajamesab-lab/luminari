@@ -3,9 +3,11 @@ import { reserve_legiscan_api_request } from "../legiscan-api-budget";
 const legiscan_base_url = "https://api.legiscan.com/";
 const LEGISCAN_REQUEST_TIMEOUT_MS = 30_000;
 const DEFAULT_LEGISCAN_MIN_REQUEST_INTERVAL_MS = 550;
+const DEFAULT_LEGISCAN_SHARED_PROVIDER_COOLDOWN_MS = 60 * 60 * 1000;
 
 let provider_rate_gate: Promise<void> = Promise.resolve();
 let next_provider_request_at_ms = 0;
+let shared_provider_blocked_until_ms = 0;
 
 const sleep = (ms: number): Promise<void> =>
   new Promise(resolve => setTimeout(resolve, ms));
@@ -23,6 +25,35 @@ const configured_legiscan_min_request_interval_ms = (): number => {
   }
   return value;
 };
+
+const configured_legiscan_shared_provider_cooldown_ms = (): number => {
+  if (process.env.NODE_ENV === "test") return 0;
+  const raw = process.env.LEGISCAN_SHARED_PROVIDER_COOLDOWN_MS?.trim();
+  if (!raw) return DEFAULT_LEGISCAN_SHARED_PROVIDER_COOLDOWN_MS;
+  if (!/^\d+$/.test(raw)) {
+    throw new Error("legiscan_invalid_shared_provider_cooldown_ms");
+  }
+  const value = Number(raw);
+  if (!Number.isSafeInteger(value) || value < 60_000 || value > 24 * 60 * 60 * 1000) {
+    throw new Error("legiscan_invalid_shared_provider_cooldown_ms");
+  }
+  return value;
+};
+
+function open_shared_provider_circuit(): void {
+  const cooldown_ms = configured_legiscan_shared_provider_cooldown_ms();
+  if (cooldown_ms <= 0) return;
+  shared_provider_blocked_until_ms = Math.max(
+    shared_provider_blocked_until_ms,
+    Date.now() + cooldown_ms,
+  );
+}
+
+function assert_shared_provider_circuit_closed(): void {
+  if (Date.now() < shared_provider_blocked_until_ms) {
+    throw new Error("legiscan_shared_provider_circuit_open");
+  }
+}
 
 async function wait_for_legiscan_rate_slot(): Promise<void> {
   const interval_ms = configured_legiscan_min_request_interval_ms();
@@ -222,11 +253,16 @@ const legiscan_request = async <payload>(
   }
 
   try {
+    assert_shared_provider_circuit_closed();
     await wait_for_legiscan_rate_slot();
+    assert_shared_provider_circuit_closed();
     await reserve_legiscan_api_request(op);
     const response = await fetch(url, { signal: controller.signal });
 
     if (!response.ok) {
+      if (response.status === 429 || response.status >= 500) {
+        open_shared_provider_circuit();
+      }
       throw new Error(`legiscan_http_${response.status}_while_calling_${op}`);
     }
 
@@ -239,6 +275,7 @@ const legiscan_request = async <payload>(
 
     if (data.status === "ERROR") {
       const scope = classify_provider_alert_scope(op, data.alert?.message);
+      if (scope === "shared") open_shared_provider_circuit();
       // Provider alert text is untrusted and can echo credentials or other
       // request details. Expose only a stable, non-sensitive error category.
       throw new Error(`legiscan_${scope}_api_error_while_calling_${op}`);
