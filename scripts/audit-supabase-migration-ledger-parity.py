@@ -313,6 +313,15 @@ APPROVED_REPOSITORY_ONLY = {
         "20261001230000_finalize_docket_lineage_authority_handoff.sql",
         "f0c315d66d8e3bbbdf310ee7f12189056b5261f7",
     ),
+    # LegiScan 10k/month quota-safety repair pending normal production apply.
+    "20261002060000": (
+        "20261002060000_legiscan_public_api_budget.sql",
+        "e518dbbf10c3178c105bdd32126c0f3ce5307037",
+    ),
+    "20261002061000": (
+        "20261002061000_docket_quota_safe_current_window.sql",
+        "c7cb3876d2fc8fba3e57516163b42b9cf72e9848",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {

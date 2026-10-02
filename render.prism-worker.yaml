@@ -30,6 +30,10 @@ services:
         value: "5"
       - key: DOCKET_BILL_ACTIVATION_QUEUE_ENABLED
         value: "true"
+      - key: DOCKET_BILL_ACTIVATION_CONCURRENCY
+        value: "1"
+      - key: DOCKET_BILL_ACTIVATION_QUEUE_POLL_MS
+        value: "5000"
       - key: PRISM_ROSETTA_QUEUE_ENABLED
         value: "true"
       - key: PRISM_ROSETTA_QUEUE_CANARY_ID
@@ -54,6 +58,12 @@ services:
         value: "60000"
       - key: LEGISLATIVE_VERSION_QUEUE_RECOVERY_CONTRACT_SCOPE
         value: ""
+      - key: LEGISCAN_MONTHLY_REQUEST_BUDGET
+        value: "9000"
+      - key: LEGISCAN_MIN_REQUEST_INTERVAL_MS
+        value: "550"
+      - key: LEGISCAN_SHARED_PROVIDER_COOLDOWN_MS
+        value: "3600000"
       - key: LEGISCAN_API_KEY
         sync: false
       - key: LEGISCAN_BILL_TEXT_PROBE_DOCUMENT_ID

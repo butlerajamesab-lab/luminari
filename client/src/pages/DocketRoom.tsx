@@ -658,7 +658,7 @@ const readable_date = (value?: string | null): string => {
 
 const snapshot_is_fresh = (fetched_at?: string | null): boolean => {
   const parsed = fetched_at ? new Date(fetched_at) : null;
-  return Boolean(parsed && Number.isFinite(parsed.getTime()) && Date.now() - parsed.getTime() < 8 * 60 * 60 * 1000);
+  return Boolean(parsed && Number.isFinite(parsed.getTime()) && Date.now() - parsed.getTime() < 24 * 60 * 60 * 1000);
 };
 
 function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?: string }) {

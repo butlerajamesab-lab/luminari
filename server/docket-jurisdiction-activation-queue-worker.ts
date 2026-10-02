@@ -5,10 +5,10 @@ import { query_with_diagnostics } from "./db";
 import { get_bill, type legiscan_bill_detail } from "./services/legiscan";
 import { background_feature_enabled } from "./runtime-role";
 
-const DEFAULT_POLL_INTERVAL_MS = 1_000;
+const DEFAULT_POLL_INTERVAL_MS = 5_000;
 const MIN_POLL_INTERVAL_MS = 250;
 const MAX_POLL_INTERVAL_MS = 60_000;
-const DEFAULT_CONCURRENCY = 4;
+const DEFAULT_CONCURRENCY = 1;
 const MAX_CONCURRENCY = 32;
 const QUEUE_LEASE_MINUTES = 30;
 const UNKNOWN_FAILURE_LIMIT = 5;
@@ -39,6 +39,7 @@ export type docket_bill_activation_failure_decision = {
   error_code: string;
   retry_delay_seconds: number;
   terminal: boolean;
+  consume_attempt: boolean;
 };
 
 let queue_timer: NodeJS.Timeout | null = null;
@@ -103,6 +104,19 @@ function safe_error_code(error: unknown): string {
     .slice(0, 500) || "unknown_docket_bill_activation_failure";
 }
 
+function shared_provider_failure(error_code: string): boolean {
+  return error_code.startsWith("legiscan_shared_api_error_while_calling_")
+    || error_code.startsWith("legiscan_http_429_while_calling_")
+    || /^legiscan_http_5\d\d_while_calling_/.test(error_code)
+    || error_code.startsWith("legiscan_network_")
+    || error_code.startsWith("legiscan_request_timeout_while_calling_")
+    || error_code.startsWith("legiscan_invalid_json_while_calling_")
+    || error_code.startsWith("legiscan_invalid_status_while_calling_")
+    || error_code === "legiscan_shared_provider_circuit_open"
+    || error_code === "legiscan_local_monthly_budget_exhausted"
+    || error_code === "legiscan_budget_guard_unavailable";
+}
+
 function deterministic_failure(error_code: string): boolean {
   return [
     "docket_bill_activation_invalid_detail",
@@ -123,17 +137,27 @@ export function classify_docket_bill_activation_failure(input: {
   prior_attempt_count: number;
 }): docket_bill_activation_failure_decision {
   const error_code = safe_error_code(input.error);
-  // A missing worker credential prevents a source request from being made.
-  // Preserve the attempt audit while keeping infrastructure failure retryable.
-  if (error_code === "Missing_required_environment_variable:_LEGISCAN_API_KEY") {
+
+  // Provider/account capacity is infrastructure state, not a defect in the
+  // legislative source. Preserve the queue item and do not spend its terminal
+  // failure counter while the shared provider is unavailable.
+  if (
+    error_code === "Missing_required_environment_variable:_LEGISCAN_API_KEY"
+    || shared_provider_failure(error_code)
+  ) {
     return {
       queue_state: "degraded",
       failure_class: "transient",
       error_code,
-      retry_delay_seconds: 300,
+      retry_delay_seconds:
+        error_code === "Missing_required_environment_variable:_LEGISCAN_API_KEY"
+          ? 300
+          : 3_600,
       terminal: false,
+      consume_attempt: false,
     };
   }
+
   const failure_number = input.prior_attempt_count + 1;
   const deterministic = deterministic_failure(error_code);
   const terminal = deterministic || failure_number >= UNKNOWN_FAILURE_LIMIT;
@@ -149,6 +173,7 @@ export function classify_docket_bill_activation_failure(input: {
       ? 0
       : docket_bill_activation_retry_delay_seconds(failure_number),
     terminal,
+    consume_attempt: true,
   };
 }
 
@@ -156,16 +181,31 @@ async function claim_jobs(limit: number): Promise<docket_bill_activation_job[]> 
   const result = await query_with_diagnostics<docket_bill_activation_job>(
     `with candidate as (
        select queue.queue_id,
-              jurisdiction.state
+              activation.state
          from public.docket_bill_processing_queue queue
-         cross join lateral (
-           select binding.state
-             from public.docket_jurisdiction_activation_bill binding
-            where binding.queue_id = queue.queue_id
-            order by binding.created_at desc, binding.activation_id desc
-            limit 1
-         ) jurisdiction
-        where queue.next_attempt_at <= now()
+         join public.docket_jurisdiction_activation_bill binding
+           on binding.queue_id = queue.queue_id
+          and binding.source_bill_id = queue.source_bill_id
+         join public.docket_jurisdiction_activation_run activation
+           on activation.activation_id = binding.activation_id
+          and activation.state = binding.state
+          and activation.session_id = binding.session_id
+         join public.docket_bill_state_cache cache
+           on cache.state = activation.state
+          and cache.session_id = activation.session_id
+          and cache.fetched_at = activation.cache_fetched_at
+        where cache.fetched_at >= now() - interval '24 hours'
+          and extract(year from cache.fetched_at at time zone 'UTC')
+              = extract(year from current_timestamp at time zone 'UTC')
+          and exists (
+            select 1
+            from jsonb_array_elements(cache.bills)
+              with ordinality as current_bill(value, ordinality)
+            where current_bill.ordinality <= 100
+              and coalesce(current_bill.value ->> 'bill_id', '') ~ '^[0-9]+$'
+              and (current_bill.value ->> 'bill_id')::integer = queue.source_bill_id
+          )
+          and queue.next_attempt_at <= now()
           and (
             queue.queue_state in ('eligible', 'degraded')
             or (
@@ -364,7 +404,7 @@ async function mark_job_failed(input: {
   await query_with_diagnostics(
     `update public.docket_bill_processing_queue queue
         set queue_state = $2,
-            attempt_count = attempt_count + 1,
+            attempt_count = attempt_count + case when $8::boolean then 1 else 0 end,
             next_attempt_at = case
               when $5::boolean then queue.next_attempt_at
               else now() + make_interval(secs => $6::integer)
@@ -389,6 +429,7 @@ async function mark_job_failed(input: {
       input.decision.terminal,
       input.decision.retry_delay_seconds,
       queue_worker_id,
+      input.decision.consume_attempt,
     ],
     {
       label: "docket_bill_activation_queue_fail",
@@ -405,6 +446,7 @@ async function mark_job_failed(input: {
     failure_class: input.decision.failure_class,
     error_code: input.decision.error_code,
     retry_delay_seconds: input.decision.retry_delay_seconds,
+    consume_attempt: input.decision.consume_attempt,
   });
 }
 

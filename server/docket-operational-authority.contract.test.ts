@@ -20,6 +20,17 @@ const docket_route = fs.readFileSync(
   new URL("./routes/docket.ts", import.meta.url),
   "utf8",
 );
+const activation_worker = fs.readFileSync(
+  new URL("./docket-jurisdiction-activation-queue-worker.ts", import.meta.url),
+  "utf8",
+);
+const quota_window_migration = fs.readFileSync(
+  new URL(
+    "../supabase/migrations/20261002061000_docket_quota_safe_current_window.sql",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const authority_migration = fs.readFileSync(
   new URL(
     "../supabase/migrations/20260930170000_docket_operational_authority_lock.sql",
@@ -67,9 +78,39 @@ describe("Docket operational authority lock", () => {
     expect(decoded.text).not.toContain("\uFFFD");
   });
 
-  it("does not truncate the live master list to an arbitrary 100-bill window", () => {
+  it("keeps the provider master list complete but bounds Docket acquisition to the 100 most recent bills", () => {
     expect(legiscan).not.toContain(".slice(0, 100)");
     expect(legiscan).not.toContain(".slice(0,100)");
+    expect(docket_route).toContain("const current_bill_window_limit = 100");
+    expect(docket_route).toContain(".slice(0, current_bill_window_limit)");
+  });
+
+  it("uses one daily Docket snapshot without spending provider calls on cached page reads", () => {
+    expect(docket_route).toContain("const cache_ttl_ms = 24 * 60 * 60 * 1000");
+    expect(docket_route).not.toContain("read_session_currentness");
+    expect(docket_route).not.toContain('get_or_start_state_refresh(state, "request_scoped")');
+    expect(docket_route).toContain("session_current: null");
+    expect(docket_route).toContain("Provider acquisition is worker-owned.");
+  });
+
+  it("claims bill-detail work only from the exact current 100-bill cache generation", () => {
+    expect(activation_worker).toContain("join public.docket_bill_state_cache cache");
+    expect(activation_worker).toContain("cache.fetched_at = activation.cache_fetched_at");
+    expect(activation_worker).toContain("cache.fetched_at >= now() - interval '24 hours'");
+    expect(activation_worker).toContain("current_bill.ordinality <= 100");
+    expect(activation_worker).toContain("binding.queue_id = queue.queue_id");
+  });
+
+  it("reuses completed unchanged bill-detail generations instead of refetching for a newer cache timestamp", () => {
+    expect(quota_window_migration).toContain("queue.queue_state = 'completed'");
+    expect(quota_window_migration).toContain("detail.fetched_at >= queue.created_at");
+    expect(quota_window_migration).not.toContain("detail.fetched_at >= current.cache_fetched_at");
+    expect(quota_window_migration).toContain("current_bill.ordinality <= 100");
+    expect(quota_window_migration).toContain("interval '24 hours'");
+    expect(quota_window_migration).toContain("q.queue_state = 'permanent_failure'");
+    expect(quota_window_migration).toContain("legiscan_http_429_while_calling_%");
+    expect(quota_window_migration).toContain("legiscan_shared_api_error_while_calling_%");
+    expect(quota_window_migration).toContain("legiscan_provider_capacity_reclassification_v1");
   });
 
   it("makes Docket authority a hard current-source claim predicate", () => {
