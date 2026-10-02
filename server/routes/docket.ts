@@ -8,7 +8,6 @@ import {
   type legiscan_master_bill,
 } from "../services/legiscan";
 import {
-  legiscan_session_is_current,
   pick_preferred_legiscan_session,
 } from "../docket-session";
 import {
@@ -22,8 +21,9 @@ import {
 } from "../runtime-role";
 import { docket_request_scoped_refresh_allowed } from "../docket-request-refresh-policy";
 
-const cache_ttl_ms = 8 * 60 * 60 * 1000;
+const cache_ttl_ms = 24 * 60 * 60 * 1000;
 const bill_detail_cache_ttl_ms = 24 * 60 * 60 * 1000;
+const current_bill_window_limit = 100;
 const warm_state_delay_ms = 750;
 const warm_next_batch_default_limit = 5;
 const warm_next_batch_max_limit = 10;
@@ -449,21 +449,6 @@ const pick_active_session = async (state: string) => {
   return pick_preferred_legiscan_session(sessions);
 };
 
-const read_session_currentness = async (
-  state: string,
-  session_id: number | null | undefined,
-): Promise<boolean | null> => {
-  if (!Number.isSafeInteger(session_id)) return null;
-  try {
-    const sessions = await get_session_list(state);
-    return legiscan_session_is_current(
-      sessions.find(session => session.session_id === session_id),
-    );
-  } catch {
-    return null;
-  }
-};
-
 const age_minutes = (fetched_at: string | null): number | null => {
   if (!fetched_at) {
     return null;
@@ -551,7 +536,8 @@ const refresh_state_cache = async (
     throw new Error(`no_legiscan_sessions_found_for_${state}`);
   }
 
-  const bills = await get_master_list(session.session_id);
+  const bills = (await get_master_list(session.session_id))
+    .slice(0, current_bill_window_limit);
   const row: docket_state_cache_row = {
     state,
     session_id: session.session_id,
@@ -785,7 +771,6 @@ docket_router.get("/state", async (req, res) => {
       if (!fresh && request_refresh_attempt_allowed(state)) {
         try {
           const refreshed = await get_or_start_state_refresh(state, "request_scoped");
-          const session_current = await read_session_currentness(state, refreshed.row.session_id);
           return res.json({
             ok: true,
             source: refreshed.source,
@@ -793,7 +778,7 @@ docket_router.get("/state", async (req, res) => {
             state,
             session_id: refreshed.row.session_id,
             session_title: refreshed.row.session_title,
-            session_current,
+            session_current: true,
             bill_count: refreshed.row.bill_count,
             fetched_at: refreshed.row.fetched_at,
             refresh_state: "fresh",
@@ -802,14 +787,13 @@ docket_router.get("/state", async (req, res) => {
           });
         } catch {
           const stale_reason = "cache_stale_request_refresh_failed";
-          const session_current = await read_session_currentness(state, cached.session_id);
           return res.json({
             ok: true,
             source: stale_reason,
             state,
             session_id: cached.session_id,
             session_title: cached.session_title,
-            session_current,
+            session_current: null,
             bill_count: cached.bill_count,
             fetched_at: cached.fetched_at,
             refresh_state: "stale",
@@ -827,15 +811,13 @@ docket_router.get("/state", async (req, res) => {
       const stale_reason = background_workers_allowed()
         ? "cache_stale_refreshing"
         : "cache_stale_worker_paused";
-      const session_current = await read_session_currentness(state, cached.session_id);
-
       return res.json({
         ok: true,
         source: fresh ? "cache" : stale_reason,
         state,
         session_id: cached.session_id,
         session_title: cached.session_title,
-        session_current,
+        session_current: null,
         bill_count: cached.bill_count,
         fetched_at: cached.fetched_at,
         refresh_state: fresh ? "fresh" : stale_reason === "cache_stale_worker_paused" ? "refresh_paused" : "stale",
@@ -864,7 +846,6 @@ docket_router.get("/state", async (req, res) => {
     const refreshed = background_workers_allowed()
       ? await get_or_start_state_refresh(state, "background")
       : await get_or_start_state_refresh(state, "request_scoped");
-    const session_current = await read_session_currentness(state, refreshed.row.session_id);
     return res.json({
       ok: true,
       source: refreshed.source,
@@ -872,7 +853,7 @@ docket_router.get("/state", async (req, res) => {
       state,
       session_id: refreshed.row.session_id,
       session_title: refreshed.row.session_title,
-      session_current,
+      session_current: true,
       bill_count: refreshed.row.bill_count,
       fetched_at: refreshed.row.fetched_at,
       refresh_state: "fresh",
