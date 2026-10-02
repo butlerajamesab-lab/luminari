@@ -52,22 +52,33 @@ export async function reserve_legiscan_api_request(
   if (process.env.NODE_ENV === "test") return null;
 
   const monthly_budget = configured_legiscan_monthly_request_budget();
-  const result = await query_with_diagnostics<legiscan_budget_receipt>(
-    `select month_start::text,
-            request_ordinal,
-            remaining
-       from public.reserve_legiscan_api_request_v1(
-         $1::text,
-         $2::integer,
-         $3::text
-       )`,
-    [operation, monthly_budget, service_identity()],
-    {
-      label: "legiscan_api_request_budget_reserve",
-      pool_acquire_timeout_ms: 1_000,
-      query_timeout_ms: 5_000,
-    },
-  );
+  let result;
+  try {
+    result = await query_with_diagnostics<legiscan_budget_receipt>(
+      `select month_start::text,
+              request_ordinal,
+              remaining
+         from public.reserve_legiscan_api_request_v1(
+           $1::text,
+           $2::integer,
+           $3::text
+         )`,
+      [operation, monthly_budget, service_identity()],
+      {
+        label: "legiscan_api_request_budget_reserve",
+        pool_acquire_timeout_ms: 1_000,
+        query_timeout_ms: 5_000,
+      },
+    );
+  } catch (error) {
+    if (
+      error instanceof Error
+      && error.message.includes("legiscan_local_monthly_budget_exhausted")
+    ) {
+      throw new Error("legiscan_local_monthly_budget_exhausted");
+    }
+    throw new Error("legiscan_budget_guard_unavailable");
+  }
 
   const receipt = result.rows[0];
   if (
