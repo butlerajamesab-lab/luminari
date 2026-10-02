@@ -156,16 +156,31 @@ async function claim_jobs(limit: number): Promise<docket_bill_activation_job[]> 
   const result = await query_with_diagnostics<docket_bill_activation_job>(
     `with candidate as (
        select queue.queue_id,
-              jurisdiction.state
+              activation.state
          from public.docket_bill_processing_queue queue
-         cross join lateral (
-           select binding.state
-             from public.docket_jurisdiction_activation_bill binding
-            where binding.queue_id = queue.queue_id
-            order by binding.created_at desc, binding.activation_id desc
-            limit 1
-         ) jurisdiction
-        where queue.next_attempt_at <= now()
+         join public.docket_jurisdiction_activation_bill binding
+           on binding.queue_id = queue.queue_id
+          and binding.source_bill_id = queue.source_bill_id
+         join public.docket_jurisdiction_activation_run activation
+           on activation.activation_id = binding.activation_id
+          and activation.state = binding.state
+          and activation.session_id = binding.session_id
+         join public.docket_bill_state_cache cache
+           on cache.state = activation.state
+          and cache.session_id = activation.session_id
+          and cache.fetched_at = activation.cache_fetched_at
+        where cache.fetched_at >= now() - interval '24 hours'
+          and extract(year from cache.fetched_at at time zone 'UTC')
+              = extract(year from current_timestamp at time zone 'UTC')
+          and exists (
+            select 1
+            from jsonb_array_elements(cache.bills)
+              with ordinality as current_bill(value, ordinality)
+            where current_bill.ordinality <= 100
+              and coalesce(current_bill.value ->> 'bill_id', '') ~ '^[0-9]+$'
+              and (current_bill.value ->> 'bill_id')::integer = queue.source_bill_id
+          )
+          and queue.next_attempt_at <= now()
           and (
             queue.queue_state in ('eligible', 'degraded')
             or (
