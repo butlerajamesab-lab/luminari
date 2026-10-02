@@ -107,7 +107,14 @@ function safe_error_code(error: unknown): string {
 function shared_provider_failure(error_code: string): boolean {
   return error_code.startsWith("legiscan_shared_api_error_while_calling_")
     || error_code.startsWith("legiscan_http_429_while_calling_")
-    || error_code === "legiscan_local_monthly_budget_exhausted";
+    || /^legiscan_http_5\d\d_while_calling_/.test(error_code)
+    || error_code.startsWith("legiscan_network_")
+    || error_code.startsWith("legiscan_request_timeout_while_calling_")
+    || error_code.startsWith("legiscan_invalid_json_while_calling_")
+    || error_code.startsWith("legiscan_invalid_status_while_calling_")
+    || error_code === "legiscan_shared_provider_circuit_open"
+    || error_code === "legiscan_local_monthly_budget_exhausted"
+    || error_code === "legiscan_budget_guard_unavailable";
 }
 
 function deterministic_failure(error_code: string): boolean {
@@ -143,7 +150,11 @@ export function classify_docket_bill_activation_failure(input: {
       failure_class: "transient",
       error_code,
       retry_delay_seconds:
-        error_code === "legiscan_local_monthly_budget_exhausted" ? 3_600 : 900,
+        error_code === "legiscan_local_monthly_budget_exhausted"
+          ? 3_600
+          : error_code === "legiscan_shared_provider_circuit_open"
+            ? 3_600
+            : 3_600,
       terminal: false,
       consume_attempt: false,
     };
