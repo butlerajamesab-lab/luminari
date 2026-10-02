@@ -238,7 +238,52 @@ with current_provider_failures as materialized (
       from jsonb_array_elements(cache.bills)
         with ordinality as current_bill(value, ordinality)
       where current_bill.ordinality <= 100
-        and coalesce(current_bill.value ->> 'bill_id', '') ~ '^[0-9]+$'\n        and (current_bill.value ->> 'bill_id')::integer = binding.source_bill_id
+        and coalesce(current_bill.value ->> 'bill_id', '') ~ '^[0-9]+
+    )
+)
+update public.docket_bill_processing_queue queue
+   set queue_state = 'degraded',
+       attempt_count = 0,
+       next_attempt_at = greatest(
+         now(),
+         date_trunc('month', queue.updated_at) + interval '1 month 5 minutes'
+       ),
+       completed_at = null,
+       locked_at = null,
+       locked_by = null,
+       last_failure_class = 'transient',
+       receipt_json = coalesce(queue.receipt_json, '{}'::jsonb)
+         || jsonb_build_object(
+              'legiscan_provider_capacity_reclassification_v1',
+              jsonb_build_object(
+                'prior_queue_state', queue.queue_state,
+                'prior_attempt_count', queue.attempt_count,
+                'provider_error_code', queue.last_error_code,
+                'reclassified_at', now()
+              )
+            ),
+       updated_at = now()
+  from current_provider_failures current
+ where queue.queue_id = current.queue_id
+   and queue.locked_at is null
+   and queue.locked_by is null;
+
+update public.civic_genome_legislative_version_queue queue
+   set queue_state='eligible',
+       attempt_count=0,
+       next_attempt_at=now(),
+       completed_at=null,
+       locked_at=null,
+       locked_by=null,
+       last_failure_class=null,
+       last_error_code=null,
+       updated_at=now()
+  from public.docket_current_authoritative_source_v1 authority
+ where queue.bill_version_id=authority.bill_version_id
+   and queue.locked_at is null
+   and queue.locked_by is null;
+
+        and (current_bill.value ->> 'bill_id')::integer = binding.source_bill_id
     )
 )
 update public.docket_bill_processing_queue queue
