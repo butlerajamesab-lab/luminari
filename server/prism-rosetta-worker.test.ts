@@ -92,6 +92,28 @@ describe("dedicated Prism worker entrypoint selection", () => {
     expect(boundaries.start_legislative).toHaveBeenCalledTimes(1);
   });
 
+  it("retries the existing provider probe and starts intake when provider capacity returns", async () => {
+    vi.stubEnv("PRISM_ROSETTA_QUEUE_CANARY_ID", uuid(1));
+    vi.stubEnv("LEGISLATIVE_VERSION_QUEUE_ENABLED", "true");
+    vi.stubEnv("LEGISLATIVE_VERSION_CURRENT_SOURCES_ENABLED", "true");
+    vi.stubEnv("LEGISCAN_API_KEY", "test-only");
+    vi.stubEnv("LEGISCAN_BILL_TEXT_PROBE_DOCUMENT_ID", "123");
+    boundaries.bill_text
+      .mockRejectedValueOnce(new Error("legiscan_shared_api_error_while_calling_get_bill_text"))
+      .mockResolvedValueOnce({});
+
+    await import("./prism-rosetta-worker");
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(boundaries.bill_text).toHaveBeenCalledTimes(1);
+    expect(boundaries.start_legislative).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(60 * 60 * 1000);
+
+    expect(boundaries.bill_text).toHaveBeenCalledTimes(2);
+    expect(boundaries.start_legislative).toHaveBeenCalledTimes(1);
+  });
+
   it("does not broaden intake merely because its queue flag is enabled", async () => {
     vi.stubEnv("PRISM_ROSETTA_QUEUE_CANARY_ID", uuid(1));
     vi.stubEnv("LEGISLATIVE_VERSION_QUEUE_ENABLED", "true");
