@@ -88,8 +88,9 @@ describe("Docket operational authority lock", () => {
   it("uses one daily Docket snapshot without spending provider calls on cached page reads", () => {
     expect(docket_route).toContain("const cache_ttl_ms = 24 * 60 * 60 * 1000");
     expect(docket_route).not.toContain("read_session_currentness");
+    expect(docket_route).not.toContain('get_or_start_state_refresh(state, "request_scoped")');
     expect(docket_route).toContain("session_current: null");
-    expect(docket_route).toContain("session_current: true");
+    expect(docket_route).toContain("Provider acquisition is worker-owned.");
   });
 
   it("claims bill-detail work only from the exact current 100-bill cache generation", () => {
@@ -106,6 +107,10 @@ describe("Docket operational authority lock", () => {
     expect(quota_window_migration).not.toContain("detail.fetched_at >= current.cache_fetched_at");
     expect(quota_window_migration).toContain("current_bill.ordinality <= 100");
     expect(quota_window_migration).toContain("interval '24 hours'");
+    expect(quota_window_migration).toContain("q.queue_state = 'permanent_failure'");
+    expect(quota_window_migration).toContain("legiscan_http_429_while_calling_%");
+    expect(quota_window_migration).toContain("legiscan_shared_api_error_while_calling_%");
+    expect(quota_window_migration).toContain("legiscan_provider_capacity_reclassification_v1");
   });
 
   it("makes Docket authority a hard current-source claim predicate", () => {
