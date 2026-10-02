@@ -62,6 +62,8 @@ services:
         value: "9000"
       - key: LEGISCAN_MIN_REQUEST_INTERVAL_MS
         value: "550"
+      - key: LEGISCAN_SHARED_PROVIDER_COOLDOWN_MS
+        value: "3600000"
       - key: LEGISCAN_API_KEY
         sync: false
       - key: LEGISCAN_BILL_TEXT_PROBE_DOCUMENT_ID
