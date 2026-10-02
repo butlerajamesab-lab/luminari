@@ -5,6 +5,15 @@
 -- generation remains valid; a newer cache timestamp alone must not spend
 -- another getBill request.
 
+-- The September 30 live-observation trigger deliberately reopened every
+-- unchanged completed bill generation on each cache refresh. That behavior is
+-- incompatible with a bounded provider budget: changed fingerprints already
+-- create distinct queue generations, so unchanged fingerprints must retain
+-- their completed state.
+drop trigger if exists docket_bill_live_observation_rearm_v1
+  on public.docket_jurisdiction_activation_bill;
+drop function if exists public.rearm_docket_bill_detail_on_live_observation_v1();
+
 create or replace view public.docket_current_authoritative_source_v1
 with (security_invoker = true)
 as
