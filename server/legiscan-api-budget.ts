@@ -22,7 +22,7 @@ export function configured_legiscan_monthly_request_budget(
   const raw = environment.LEGISCAN_MONTHLY_REQUEST_BUDGET?.trim();
   if (!raw) return DEFAULT_LEGISCAN_MONTHLY_REQUEST_BUDGET;
   if (!/^\d+$/.test(raw)) {
-    throw new Error("invalid_legiscan_monthly_request_budget");
+    throw new Error("legiscan_invalid_monthly_request_budget");
   }
   const value = Number(raw);
   if (
@@ -30,7 +30,7 @@ export function configured_legiscan_monthly_request_budget(
     || value < 1
     || value > MAX_LEGISCAN_MONTHLY_REQUEST_BUDGET
   ) {
-    throw new Error("invalid_legiscan_monthly_request_budget");
+    throw new Error("legiscan_invalid_monthly_request_budget");
   }
   return value;
 }
