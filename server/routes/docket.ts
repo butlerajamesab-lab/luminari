@@ -19,7 +19,6 @@ import {
   background_workers_allowed,
   resolve_lighthouse_runtime_role,
 } from "../runtime-role";
-import { docket_request_scoped_refresh_allowed } from "../docket-request-refresh-policy";
 
 const cache_ttl_ms = 24 * 60 * 60 * 1000;
 const bill_detail_cache_ttl_ms = 24 * 60 * 60 * 1000;
@@ -579,9 +578,6 @@ const retry_after_iso = (state: string): string | null => {
     : null;
 };
 
-const request_refresh_attempt_allowed = (state: string): boolean =>
-  docket_request_scoped_refresh_allowed(state) && retry_after_iso(state) === null;
-
 const get_or_start_state_refresh = (
   state: string,
   trigger: "background" | "request_scoped",
@@ -766,99 +762,43 @@ docket_router.get("/state", async (req, res) => {
     const state = normalize_state_code(req.query.state);
     const cached = await read_state_cache(state);
 
-    if (cached) {
-      const fresh = is_fresh(cached.fetched_at);
-      if (!fresh && request_refresh_attempt_allowed(state)) {
-        try {
-          const refreshed = await get_or_start_state_refresh(state, "request_scoped");
-          return res.json({
-            ok: true,
-            source: refreshed.source,
-            refresh_mode: "request_scoped",
-            state,
-            session_id: refreshed.row.session_id,
-            session_title: refreshed.row.session_title,
-            session_current: true,
-            bill_count: refreshed.row.bill_count,
-            fetched_at: refreshed.row.fetched_at,
-            refresh_state: "fresh",
-            civic_genome_projection: refreshed.civic_genome_projection,
-            bills: await enrich_bills_with_radar(refreshed.row.bills),
-          });
-        } catch {
-          const stale_reason = "cache_stale_request_refresh_failed";
-          return res.json({
-            ok: true,
-            source: stale_reason,
-            state,
-            session_id: cached.session_id,
-            session_title: cached.session_title,
-            session_current: null,
-            bill_count: cached.bill_count,
-            fetched_at: cached.fetched_at,
-            refresh_state: "stale",
-            refresh_retry_after: retry_after_iso(state),
-            civic_genome_projection: {
-              ok: true,
-              projected: false,
-              reason: stale_reason,
-            },
-            bills: await enrich_bills_with_radar(cached.bills),
-          });
-        }
-      }
-      if (!fresh) schedule_state_refresh(state);
-      const stale_reason = background_workers_allowed()
-        ? "cache_stale_refreshing"
-        : "cache_stale_worker_paused";
-      return res.json({
-        ok: true,
-        source: fresh ? "cache" : stale_reason,
-        state,
-        session_id: cached.session_id,
-        session_title: cached.session_title,
-        session_current: null,
-        bill_count: cached.bill_count,
-        fetched_at: cached.fetched_at,
-        refresh_state: fresh ? "fresh" : stale_reason === "cache_stale_worker_paused" ? "refresh_paused" : "stale",
-        civic_genome_projection: {
-          ok: true,
-          projected: false,
-          reason: fresh ? "cache_fresh_no_projection" : stale_reason,
-        },
-        bills: await enrich_bills_with_radar(cached.bills),
-      });
-    }
-
-    if (!background_workers_allowed() && !request_refresh_attempt_allowed(state)) {
+    if (!cached) {
       return res.status(503).json({
         ok: false,
-        error: "background_runtime_required",
-        message: "No cached Docket state is available while refresh work is paused.",
-        refresh_retry_after: retry_after_iso(state),
+        error: "docket_state_cache_unavailable",
+        message: "No cached Docket state is available. Provider acquisition is worker-owned.",
         runtime_role: resolve_lighthouse_runtime_role(),
       });
     }
 
-    // No cached source exists. The first acquisition must still retrieve the
-    // official provider list; subsequent reads become cache-first immediately.
-    const refresh_mode = background_workers_allowed() ? "worker" : "request_scoped";
-    const refreshed = background_workers_allowed()
-      ? await get_or_start_state_refresh(state, "background")
-      : await get_or_start_state_refresh(state, "request_scoped");
+    const fresh = is_fresh(cached.fetched_at);
+    if (!fresh && background_workers_allowed()) {
+      schedule_state_refresh(state);
+    }
+    const stale_reason = background_workers_allowed()
+      ? "cache_stale_refreshing"
+      : "cache_stale_worker_paused";
+
     return res.json({
       ok: true,
-      source: refreshed.source,
-      refresh_mode,
+      source: fresh ? "cache" : stale_reason,
       state,
-      session_id: refreshed.row.session_id,
-      session_title: refreshed.row.session_title,
-      session_current: true,
-      bill_count: refreshed.row.bill_count,
-      fetched_at: refreshed.row.fetched_at,
-      refresh_state: "fresh",
-      civic_genome_projection: refreshed.civic_genome_projection,
-      bills: await enrich_bills_with_radar(refreshed.row.bills),
+      session_id: cached.session_id,
+      session_title: cached.session_title,
+      session_current: null,
+      bill_count: cached.bill_count,
+      fetched_at: cached.fetched_at,
+      refresh_state: fresh
+        ? "fresh"
+        : stale_reason === "cache_stale_worker_paused"
+          ? "refresh_paused"
+          : "stale",
+      civic_genome_projection: {
+        ok: true,
+        projected: false,
+        reason: fresh ? "cache_fresh_no_projection" : stale_reason,
+      },
+      bills: await enrich_bills_with_radar(cached.bills),
     });
   } catch (error) {
     return res.status(500).json({
