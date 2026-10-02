@@ -33,6 +33,9 @@ describe("LegiScan public API budget", () => {
     expect(fetchIndex).toBeGreaterThan(reserveIndex);
     expect(provider).toContain("DEFAULT_LEGISCAN_MIN_REQUEST_INTERVAL_MS = 550");
     expect(provider).toContain("await wait_for_legiscan_rate_slot()");
+    expect(provider).toContain("DEFAULT_LEGISCAN_SHARED_PROVIDER_COOLDOWN_MS = 60 * 60 * 1000");
+    expect(provider).toContain("assert_shared_provider_circuit_closed()");
+    expect(provider).toContain("open_shared_provider_circuit()");
   });
 
   it("uses an append-only monthly ledger with an atomic budget reservation", () => {
@@ -61,6 +64,16 @@ describe("LegiScan public API budget", () => {
     );
     expect(blueprint).toMatch(
       /DOCKET_BILL_ACTIVATION_QUEUE_POLL_MS\s+value: "5000"/,
+    );
+    expect(blueprint).toMatch(
+      /LEGISCAN_SHARED_PROVIDER_COOLDOWN_MS\s+value: "3600000"/,
+    );
+    const webBlueprint = read("render.yaml");
+    expect(webBlueprint).toMatch(
+      /DOCKET_REQUEST_SCOPED_REFRESH_ENABLED\s+value: "false"/,
+    );
+    expect(webBlueprint).toMatch(
+      /DOCKET_REQUEST_SCOPED_REFRESH_STATES\s+value: ""/,
     );
   });
 });
