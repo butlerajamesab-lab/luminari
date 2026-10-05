@@ -21,26 +21,13 @@ function normalized_jurisdiction(value: unknown): string | null {
   return code === "USVI" ? "VI" : code;
 }
 const SUMMARY_CACHE_TTL_MS = 5 * 60 * 1000;
-// Reuse the governed twelve-category vocabulary and precedence already
-// declared by v_lighthouse_resource_directory_whole_corpus_v2. Exact-source
-// reviewed memberships take precedence. Unreviewed rows retain the existing
-// category/layer fallback; navigation never scans descriptions. Raw source
-// category text is preserved separately and never rewritten.
-const DIRECTORY_UI_CATEGORY_SQL = `coalesce(reviewed_primary_category, case
-  when lower(concat_ws(' ',coalesce(category,''),coalesce(layer,''))) ~ '(food|nutrition|snap|wic|pantry|meal)' then 'food_nutrition'
-  when lower(concat_ws(' ',coalesce(category,''),coalesce(layer,''))) ~ '(mental health|behavioral health|substance|recovery|healthcare|health care|clinic|hospital|medical|medicaid|medicare)' then 'healthcare'
-  when lower(concat_ws(' ',coalesce(category,''),coalesce(layer,''))) ~ '(housing|shelter|rent|homeless|eviction|mortgage)' then 'housing'
-  when lower(concat_ws(' ',coalesce(category,''),coalesce(layer,''))) ~ '(domestic violence|sexual assault|crisis|safety|trafficking|victim)' then 'safety_crisis'
-  when lower(concat_ws(' ',coalesce(category,''),coalesce(layer,''))) ~ '(legal aid|legal service|civil rights|attorney|lawyer|court help)' then 'legal_civil_rights'
-  when lower(concat_ws(' ',coalesce(category,''),coalesce(layer,''))) ~ '(utility|utilities|energy|electric|water|heating|liheap)' then 'utilities'
-  when lower(concat_ws(' ',coalesce(category,''),coalesce(layer,''))) ~ '(tribal|indigenous|native american|american indian|alaska native)' then 'tribal'
-  when lower(concat_ws(' ',coalesce(category,''),coalesce(layer,''))) ~ '(employment|workforce|labor|job|unemployment|wage)' then 'employment_labor'
-  when lower(concat_ws(' ',coalesce(category,''),coalesce(layer,''))) ~ '(disability|disabled|ada|developmental)' then 'disability'
-  when lower(concat_ws(' ',coalesce(category,''),coalesce(layer,''))) ~ '(veteran|military|va benefit)' then 'veterans'
-  when lower(concat_ws(' ',coalesce(category,''),coalesce(layer,''))) ~ '(cash assistance|income support|tanf|ssi|ssdi|public assistance|benefit)' then 'cash_assistance'
-  else 'general_resource'
-end)`;
-const DIRECTORY_CATEGORY_MEMBERSHIP_SQL = `coalesce(reviewed_category_memberships,array[${DIRECTORY_UI_CATEGORY_SQL}])`;
+// A directory navigation category is a reviewed, source-bound placement—not
+// a classifier result. The source's literal category and layer remain visible
+// separately, but may not be silently translated into a user-facing category.
+// Each reviewed membership is bound by the append-only category ledger to the
+// exact source artifact, hash, heading, and record span.
+const DIRECTORY_UI_CATEGORY_SQL = "reviewed_primary_category";
+const DIRECTORY_CATEGORY_MEMBERSHIP_SQL = "coalesce(reviewed_category_memberships,array[]::text[])";
 
 let summary_cache: {
   expires_at: number;
@@ -197,7 +184,7 @@ function map_resource_row(row: any) {
   );
   const display_name =
     resource_display_text(row.name ?? row.organization_name) || "[unnamed]";
-  const category = String(row.ui_category ?? "general_resource");
+  const category = row.ui_category == null ? null : String(row.ui_category);
   const state = normalized_jurisdiction(row.state_code);
   const jurisdiction = normalized_jurisdiction(row.jurisdiction) ?? state;
   const resource_id = stable_resource_id(row);
@@ -222,7 +209,7 @@ function map_resource_row(row: any) {
     resource_category: category,
     directory_categories: Array.isArray(row.reviewed_category_memberships)
       ? row.reviewed_category_memberships
-      : [category],
+      : [],
     category_review: row.category_review ?? null,
     source_resource_category: row.category ?? row.layer ?? null,
     jurisdiction,
@@ -239,7 +226,7 @@ function map_resource_row(row: any) {
     service_categories: unique_strings([
       ...(Array.isArray(row.reviewed_category_memberships)
         ? row.reviewed_category_memberships
-        : [category]),
+        : []),
       row.layer,
       row.object_class,
     ]),
@@ -329,6 +316,8 @@ async function load_publishable_resource_directory_summary(): Promise<
              count(*) filter(where object_class='resource')::int as direct_resource_count,
              count(*) filter(where object_class='program')::int as program_count,
              count(*) filter(where person_facing_ready)::int as person_facing_ready_count,
+             count(*) filter(where cardinality(directory_categories) > 0)::int as category_reviewed_count,
+             count(*) filter(where cardinality(directory_categories) = 0)::int as category_review_pending_count,
              count(*) filter(where not person_facing_ready)::int as source_preserved_pending_count
         from catalog
     ), memberships as (
@@ -401,6 +390,8 @@ async function load_publishable_resource_directory_summary(): Promise<
     direct_resource_count: finite_number(totals.direct_resource_count),
     program_count: finite_number(totals.program_count),
     person_facing_ready_count: finite_number(totals.person_facing_ready_count),
+    category_reviewed_count: finite_number(totals.category_reviewed_count),
+    category_review_pending_count: finite_number(totals.category_review_pending_count),
     source_preserved_pending_count: finite_number(
       totals.source_preserved_pending_count,
     ),

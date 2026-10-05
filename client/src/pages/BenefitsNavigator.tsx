@@ -1017,9 +1017,10 @@ export default function BenefitsNavigator() {
         {/* Browse All Categories (when no search) */}
         {!hasSearched && categories && (
           <div>
-            <h2 className="text-sm font-semibold text-foreground mb-3">
-              Or browse by category
+            <h2 className="text-sm font-semibold text-foreground mb-1">
+              Guided benefit starting points
             </h2>
+            <p className="text-xs text-muted-foreground mb-3">These are the navigator's curated guidance programs. Source-directory records and their reviewed categories are shown separately below.</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {categories.map((cat: any) => {
                 const meta = CATEGORY_META[cat.category];

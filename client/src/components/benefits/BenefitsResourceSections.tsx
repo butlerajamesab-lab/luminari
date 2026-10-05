@@ -15,12 +15,13 @@ export function Benefits_directory_categories({ state_code }: { state_code: stri
   const result = trpc.resourceDirectory.summary.useQuery();
   return <Card><CardHeader><CardTitle className="text-sm">Browse available resource categories</CardTitle></CardHeader>
     <CardContent>
-      <p className="text-xs text-muted-foreground mb-3">Counts cover the whole directory. {state_code ? `Links open with ${state_code} selected.` : "Choose a jurisdiction in the directory to narrow the results."} A listing does not establish eligibility or availability.</p>
+      <p className="text-xs text-muted-foreground mb-3">Counts are source-bound, individually reviewed navigation placements. {state_code ? `Links open with ${state_code} selected.` : "Choose a jurisdiction in the directory to narrow the results."} A listing does not establish eligibility or availability.</p>
       {result.isLoading ? <p role="status">Loading resource categories…</p> : result.error ? <p role="alert">Resource categories could not load. <Button variant="link" onClick={() => result.refetch()}>Retry</Button></p> :
+        <>{result.data?.category_review_pending_count > 0 && <p className="text-xs text-muted-foreground mb-3">{Number(result.data.category_review_pending_count).toLocaleString()} current records remain available by search, but are not yet placed in a reviewed navigation category.</p>}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">{result.data?.categories?.map((category: { id: string; count: number }) =>
           <Link key={category.id} href={benefits_directory_href(category.id, state_code)} className="rounded border p-3 text-sm hover:bg-muted/30">
             {category.id.replaceAll("_", " ")} <span className="text-muted-foreground">({category.count})</span>
-          </Link>)}</div>}
+          </Link>)}</div></>}
     </CardContent>
   </Card>;
 }

@@ -277,7 +277,7 @@ function titleCase(value: string | null | undefined): string {
 }
 
 function categoryLabel(category: string | null | undefined): string {
-  if (!category) return "Other";
+  if (!category) return "Pending reviewed placement";
   return (
     CATEGORY_CONFIG[category as keyof typeof CATEGORY_CONFIG]?.label ??
     titleCase(category)

@@ -35,6 +35,7 @@ describe("current Resource Directory source contracts", () => {
     expect(service).toContain("v_lighthouse_resource_program_classified_v1");
     expect(service).toContain("person_facing_ready");
     expect(service).toContain("DIRECTORY_UI_CATEGORY_SQL");
+    expect(service).toContain('const DIRECTORY_UI_CATEGORY_SQL = "reviewed_primary_category"');
     expect(service).not.toContain("luminari_resource_entities");
     expect(service).not.toContain("v_luminari_resource_source_candidates");
     expect(service).not.toContain("normalized_civic_resource");

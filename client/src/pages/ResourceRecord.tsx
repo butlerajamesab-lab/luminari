@@ -98,7 +98,7 @@ type ResourceRecord = {
 };
 
 function title_case(value: string | null | undefined): string {
-  if (!value) return "Other";
+  if (!value) return "Pending reviewed placement";
   return value
     .replace(/_/g, " ")
     .replace(/\b\w/g, (character) => character.toUpperCase());
