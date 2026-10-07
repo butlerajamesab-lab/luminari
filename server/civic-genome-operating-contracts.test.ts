@@ -4,10 +4,12 @@ const {
   query,
   get_bill,
   get_rosetta_view,
+  get_kaleidoscope,
 } = vi.hoisted(() => ({
   query: vi.fn(),
   get_bill: vi.fn(),
   get_rosetta_view: vi.fn(),
+  get_kaleidoscope: vi.fn(),
 }));
 
 vi.mock("./db", () => ({
@@ -21,6 +23,10 @@ vi.mock("./civic-genome-source-id", () => ({
 vi.mock("./civic-genome-rosetta-contract", () => ({
   get_latest_rosetta_law_view_by_document_identifier: get_rosetta_view,
   get_latest_rosetta_law_view_by_source_document: get_rosetta_view,
+}));
+
+vi.mock("./civic-genome-kaleidoscope-contract", () => ({
+  get_kaleidoscope_civic_genome_contract: get_kaleidoscope,
 }));
 
 import {
@@ -65,6 +71,19 @@ beforeEach(() => {
   vi.clearAllMocks();
   query.mockResolvedValue({ rows: [] });
   get_bill.mockResolvedValue({ genome_bill_id });
+  get_kaleidoscope.mockResolvedValue({
+    service_key: "kaleidoscope",
+    display_name: "Kaleidoscope",
+    external_url: null,
+    role: "Authenticated immutable baseline consumer",
+    state: "bound_not_projected",
+    state_label: "Source bound, projection not executed",
+    detail: "18 durable bindings; no projection executed.",
+    observed_count: 18,
+    bound_count: 18,
+    last_observed_at: null,
+    boundary: "Projection state is separate from binding state.",
+  });
 });
 
 describe("Civic Genome operating contracts", () => {
