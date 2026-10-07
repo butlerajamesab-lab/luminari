@@ -60,7 +60,7 @@ function normalize_hash(value: string): string {
   return value.toLowerCase();
 }
 
-function normalize_unit(value: unknown, source_length: number): current_rosetta_live_unit {
+function normalize_unit(value: unknown): current_rosetta_live_unit {
   const row = as_record(value);
   if (!row) throw new Error("current_rosetta_live_unit_invalid");
   const unit_ord = integer_value(row.unit_ord);
@@ -71,8 +71,7 @@ function normalize_unit(value: unknown, source_length: number): current_rosetta_
     unit_ord == null || unit_ord < 0 ||
     (section_ord != null && section_ord < 0) ||
     raw_start == null || raw_start < 0 ||
-    raw_end == null || raw_end < raw_start ||
-    raw_end > source_length
+    raw_end == null || raw_end < raw_start
   ) {
     throw new Error("current_rosetta_live_unit_span_invalid");
   }
@@ -151,7 +150,7 @@ export async function get_current_rosetta_live_detail(input: {
     }
 
     const units = Array.isArray(payload.units)
-      ? payload.units.map(unit => normalize_unit(unit, source_text.length))
+      ? payload.units.map(normalize_unit)
       : [];
     return {
       contract: "rosetta-rule-live-detail-v1",
