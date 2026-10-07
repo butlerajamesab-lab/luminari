@@ -207,6 +207,7 @@ function required_rosetta_config() {
 
 async function load_rosetta_source_content(
   source_document_ids: number[],
+  expected_hash_by_document: Map<number, string> = new Map(),
 ): Promise<rosetta_source_content[]> {
   const unique_ids = [
     ...new Set(
@@ -258,6 +259,12 @@ async function load_rosetta_source_content(
       !source_url ||
       !source_content_hash ||
       !source_identity_hash
+    )
+      continue;
+    const expected_hash = expected_hash_by_document.get(source_document_id);
+    if (
+      expected_hash &&
+      source_content_hash.toLowerCase() !== expected_hash.toLowerCase()
     )
       continue;
     seen.add(source_document_id);
@@ -555,7 +562,12 @@ export async function build_current_law_report_snapshot(
   const bill_detail = as_record(root?.bill_detail);
   const current_version = as_record(bill_detail?.current_version);
   const source_document_id = positive_integer(current_version?.source_document_id);
-  if (!source_document_id) {
+  const source_content_hash = string_value(current_version?.source_content_hash);
+  if (
+    !source_document_id ||
+    !source_content_hash ||
+    !/^[0-9a-f]{64}$/i.test(source_content_hash)
+  ) {
     return {
       current_version,
       source: null,
@@ -564,7 +576,10 @@ export async function build_current_law_report_snapshot(
       rosetta_error: null,
     };
   }
-  const [source] = await load_rosetta_source_content([source_document_id]);
+  const [source] = await load_rosetta_source_content(
+    [source_document_id],
+    new Map([[source_document_id, source_content_hash]]),
+  );
   if (!source) {
     return {
       current_version,
