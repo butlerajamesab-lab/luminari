@@ -7,6 +7,7 @@ import { getPool } from "../db";
 import { get_civic_genome_bill_detail } from "../civic-genome-bill-detail";
 import { get_genome_bill_by_source_id } from "../civic-genome-source-id";
 import {
+  build_current_law_report_snapshot,
   render_civic_genome_human_report,
   type civic_genome_report_mode,
 } from "../civic-genome-human-report";
@@ -361,6 +362,106 @@ async function send_human_bill_report(
     report,
   );
 }
+
+civic_genome_export_router.get(
+  "/bill/:source_bill_id/report",
+  async (req, res) => {
+    const source_bill_id = positive_integer(req.params.source_bill_id);
+    if (!source_bill_id)
+      return res
+        .status(400)
+        .json({ ok: false, error: "invalid_source_bill_id" });
+
+    try {
+      return await send_human_bill_report(
+        res,
+        source_bill_id,
+        "law_decomposition",
+      );
+    } catch (error) {
+      console.error("[CivicGenomeExport] law/decomposition report failed", {
+        source_bill_id,
+        error,
+      });
+      return res
+        .status(500)
+        .json({ ok: false, error: "current_law_decomposition_report_failed" });
+    }
+  },
+);
+
+civic_genome_export_router.get(
+  "/bill/:source_bill_id/machine",
+  async (req, res) => {
+    const source_bill_id = positive_integer(req.params.source_bill_id);
+    if (!source_bill_id)
+      return res
+        .status(400)
+        .json({ ok: false, error: "invalid_source_bill_id" });
+
+    try {
+      const payload = await build_single_bill_export(source_bill_id);
+      if (!payload)
+        return res
+          .status(404)
+          .json({ ok: false, error: "civic_genome_bill_not_found" });
+      const snapshot = await build_current_law_report_snapshot(payload);
+      const selected = payload.bill_detail.bill;
+      const machine_payload = {
+        export_type: "current_law_presentation_export",
+        export_contract: "current-law-presentation-json-v1",
+        exported_at: new Date().toISOString(),
+        source_bill_id,
+        genome_bill_id: payload.genome_bill_id,
+        composition_scope: ["docket", "civic_genome", "rosetta"],
+        bill_identity: {
+          state_code: selected.state_code ?? null,
+          session_key: selected.session_key ?? null,
+          source_bill_number: selected.source_bill_number ?? null,
+          source_bill_title: selected.source_bill_title ?? null,
+          bill_status: selected.bill_status ?? null,
+        },
+        current_version: snapshot.current_version,
+        rosetta_availability: snapshot.rosetta_availability,
+        rosetta_error: snapshot.rosetta_error,
+        source_identity: snapshot.source
+          ? {
+              source_content_id: snapshot.source.source_content_id,
+              source_document_id: snapshot.source.source_document_id,
+              source_content_hash: snapshot.source.source_content_hash,
+              source_byte_hash: snapshot.source.source_byte_hash,
+              source_identity_hash: snapshot.source.source_identity_hash,
+              source_version: snapshot.source.source_version,
+              source_url: snapshot.source.source_url,
+            }
+          : null,
+        rosetta_current: snapshot.rosetta,
+        civic_genome_context: {
+          family: payload.family,
+          family_bills: payload.family_bills,
+          lineage_edges: payload.lineage_edges,
+          bill_temporal_facts: payload.bill_temporal_facts,
+          bill_events: payload.bill_events,
+        },
+        interpretation:
+          "The current-source Rosetta object is exact-source-bound and selected-runtime only. Historical decomposition is not substituted when a current Rosetta result is unavailable.",
+      };
+      return send_json_attachment(
+        res,
+        `current-law-${source_bill_id}-${selected.state_code ?? "state"}-${selected.source_bill_number ?? "bill"}`,
+        machine_payload,
+      );
+    } catch (error) {
+      console.error("[CivicGenomeExport] current law machine export failed", {
+        source_bill_id,
+        error,
+      });
+      return res
+        .status(500)
+        .json({ ok: false, error: "current_law_machine_export_failed" });
+    }
+  },
+);
 
 civic_genome_export_router.get(
   "/bill/:source_bill_id/summary",
