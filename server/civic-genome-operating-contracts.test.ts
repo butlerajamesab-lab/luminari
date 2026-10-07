@@ -110,7 +110,9 @@ describe("Civic Genome operating contracts", () => {
     expect(rosetta?.detail).not.toContain("https://");
     expect(rosetta?.boundary).toContain("without duplicating it");
     expect(result.contracts.filter(contract => contract.external_url !== null)).toEqual([rosetta]);
-    expect(atlas?.state).toBe("available_unbound");
+    expect(atlas?.state).toBe("stale");
+    expect(atlas?.state_label).toBe("Lighthouse bridge stale");
+    expect(atlas?.detail).toContain("current Atlas-to-Lighthouse delivery is not established");
     expect(atlas?.observed_count).toBe(63);
     expect(atlas?.bound_count).toBe(0);
     expect(prism?.state).toBe("operational");
@@ -123,8 +125,34 @@ describe("Civic Genome operating contracts", () => {
     expect(local_query).toContain("prism_rule_set_version = $2");
     expect(local_params).toEqual([
       "prism-rosetta-structural-binding",
-      "2.0.0",
+      "2.5.0",
     ]);
+  });
+
+  it("keeps a fresh Atlas bridge distinct from a stale bridge", async () => {
+    query
+      .mockResolvedValueOnce({
+        rows: [{
+          bill_count: "1",
+          latest_bill_observed_at: "2026-10-07T00:00:00.000Z",
+          rosetta_binding_count: "0",
+          rosetta_assembly_count: "0",
+          relationship_count: "0",
+          comparison_matrix_count: "0",
+          comparison_state_cell_count: "0",
+          prism_deep_binding_count: "0",
+          prism_deep_run_count: "0",
+          prism_legacy_binding_count: "0",
+          latest_prism_deep_bound_at: null,
+        }],
+      })
+      .mockResolvedValueOnce({
+        rows: [{ signal_count: "63", latest_bridged_at: new Date().toISOString() }],
+      });
+
+    const result = await get_civic_genome_operating_contracts();
+    const atlas = result.contracts.find(contract => contract.service_key === "atlas");
+    expect(atlas?.state).toBe("available_unbound");
   });
 
   it("never enables assembly for an in-progress Rosetta run", async () => {
