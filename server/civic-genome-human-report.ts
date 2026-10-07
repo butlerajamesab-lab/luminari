@@ -526,7 +526,7 @@ function render_current_rosetta_comparison(detail: current_rosetta_live_detail |
         : unit.disposition === "DELETED"
           ? '<span class="layer-pill">Deleted source span</span>'
           : '<span class="layer-pill">Unresolved source span</span>';
-    const source_text = unit.raw_text || detail.source.source_text.slice(unit.raw_start, unit.raw_end);
+    const source_text = unit.raw_text || "Source span text unavailable";
     const effective_text = unit.effective_text ?? unit.raw_text;
     return `<div class="comparison-row">
       <div class="comparison-source">
