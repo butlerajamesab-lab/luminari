@@ -96,7 +96,11 @@ describe("Civic Genome operating contracts", () => {
         }],
       })
       .mockResolvedValueOnce({
-        rows: [{ signal_count: "63", latest_bridged_at: "2026-07-30T00:00:00.000Z" }],
+        rows: [{
+          signal_count: "63",
+          latest_bridged_at: "2026-07-30T00:00:00.000Z",
+          latest_current_atlas_observation_at: "2026-10-07T06:51:58.596Z",
+        }],
       });
 
     const result = await get_civic_genome_operating_contracts();
@@ -112,7 +116,7 @@ describe("Civic Genome operating contracts", () => {
     expect(result.contracts.filter(contract => contract.external_url !== null)).toEqual([rosetta]);
     expect(atlas?.state).toBe("stale");
     expect(atlas?.state_label).toBe("Lighthouse bridge stale");
-    expect(atlas?.detail).toContain("current Atlas-to-Lighthouse delivery is not established");
+    expect(atlas?.detail).toContain("Lighthouse bridge is behind current Atlas observation truth");
     expect(atlas?.observed_count).toBe(63);
     expect(atlas?.bound_count).toBe(0);
     expect(prism?.state).toBe("operational");
@@ -147,7 +151,11 @@ describe("Civic Genome operating contracts", () => {
         }],
       })
       .mockResolvedValueOnce({
-        rows: [{ signal_count: "63", latest_bridged_at: new Date().toISOString() }],
+        rows: [{
+          signal_count: "63",
+          latest_bridged_at: "2026-10-07T06:51:58.596Z",
+          latest_current_atlas_observation_at: "2026-10-07T06:51:58.596Z",
+        }],
       });
 
     const result = await get_civic_genome_operating_contracts();
