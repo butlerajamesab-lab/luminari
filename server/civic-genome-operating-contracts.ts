@@ -12,6 +12,7 @@ import { describeUnobservedCurrentResult, isCurrentResultHold } from "../shared/
 export type civic_genome_contract_state =
   | "operational"
   | "available_unbound"
+  | "bound_not_projected"
   | "stale"
   | "waiting"
   | "ready_empty"
@@ -143,6 +144,7 @@ export async function get_civic_genome_operating_contracts(): Promise<civic_geno
       atlas.latest_bridged_at,
       atlas.latest_current_atlas_observation_at,
     );
+  const kaleidoscope_contract = await get_kaleidoscope_civic_genome_contract();
 
   return {
     generated_at,
@@ -228,10 +230,7 @@ export async function get_civic_genome_operating_contracts(): Promise<civic_geno
         last_observed_at: null,
         boundary: "Viewfinder reads Civic Genome comparison projections and does not mutate source observations.",
       },
-      {
-        ...get_kaleidoscope_civic_genome_contract(),
-        external_url: null,
-      },
+      kaleidoscope_contract,
       {
         service_key: "esquire",
         display_name: "Esquire",
