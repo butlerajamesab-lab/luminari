@@ -12,6 +12,7 @@ import { describeUnobservedCurrentResult, isCurrentResultHold } from "../shared/
 export type civic_genome_contract_state =
   | "operational"
   | "available_unbound"
+  | "stale"
   | "waiting"
   | "ready_empty"
   | "not_established"
@@ -56,7 +57,18 @@ type atlas_contract_counts = {
 };
 
 const PRISM_DEEP_RULE_SET_ID = "prism-rosetta-structural-binding";
-const PRISM_DEEP_RULE_SET_VERSION = "2.0.0";
+const PRISM_DEEP_RULE_SET_VERSION = "2.5.0";
+export const ATLAS_BRIDGE_STALE_AFTER_MS = 24 * 60 * 60 * 1000;
+
+export function atlas_bridge_is_stale(
+  last_observed_at: string | null | undefined,
+  now_ms: number = Date.now(),
+): boolean {
+  if (!last_observed_at) return true;
+  const observed_ms = Date.parse(last_observed_at);
+  if (!Number.isFinite(observed_ms)) return true;
+  return now_ms - observed_ms > ATLAS_BRIDGE_STALE_AFTER_MS;
+}
 
 const count = (value: string | undefined): number => {
   const parsed = Number.parseInt(value ?? "0", 10);
@@ -118,9 +130,13 @@ export async function get_civic_genome_operating_contracts(): Promise<civic_geno
   const prism_deep_binding_count = count(local?.prism_deep_binding_count);
   const prism_deep_run_count = count(local?.prism_deep_run_count);
   const prism_legacy_binding_count = count(local?.prism_legacy_binding_count);
+  const generated_at = new Date().toISOString();
+  const atlas_bridge_stale = atlas !== null
+    && atlas_signal_count > 0
+    && atlas_bridge_is_stale(atlas.latest_bridged_at, Date.parse(generated_at));
 
   return {
-    generated_at: new Date().toISOString(),
+    generated_at,
     contracts: [
       {
         service_key: "docket",
@@ -153,11 +169,25 @@ export async function get_civic_genome_operating_contracts(): Promise<civic_geno
         display_name: "Atlas",
         external_url: null,
         role: "Verified signal reference",
-        state: atlas === null ? "unavailable" : atlas_signal_count > 0 ? "available_unbound" : "ready_empty",
-        state_label: atlas === null ? "Verified export unavailable" : atlas_signal_count > 0 ? "Available, not Genome-bound" : "Verified export empty",
+        state: atlas === null
+          ? "unavailable"
+          : atlas_bridge_stale
+            ? "stale"
+            : atlas_signal_count > 0
+              ? "available_unbound"
+              : "ready_empty",
+        state_label: atlas === null
+          ? "Verified export unavailable"
+          : atlas_bridge_stale
+            ? "Lighthouse bridge stale"
+            : atlas_signal_count > 0
+              ? "Available, not Genome-bound"
+              : "Verified export empty",
         detail: atlas === null
           ? "The verified Atlas export could not be observed."
-          : `${atlas_signal_count} verified Atlas signals are available; no bill-level Civic Genome binding is asserted.`,
+          : atlas_bridge_stale
+            ? `${atlas_signal_count} verified Atlas bridge rows are preserved, but the newest bridge observation is ${atlas.latest_bridged_at ?? "unknown"}; current Atlas-to-Lighthouse delivery is not established.`
+            : `${atlas_signal_count} verified Atlas signals are available; no bill-level Civic Genome binding is asserted.`,
         observed_count: atlas_signal_count,
         bound_count: 0,
         last_observed_at: atlas?.latest_bridged_at ?? null,
