@@ -4,10 +4,12 @@ const {
   query,
   get_bill,
   get_rosetta_view,
+  get_kaleidoscope,
 } = vi.hoisted(() => ({
   query: vi.fn(),
   get_bill: vi.fn(),
   get_rosetta_view: vi.fn(),
+  get_kaleidoscope: vi.fn(),
 }));
 
 vi.mock("./db", () => ({
@@ -21,6 +23,10 @@ vi.mock("./civic-genome-source-id", () => ({
 vi.mock("./civic-genome-rosetta-contract", () => ({
   get_latest_rosetta_law_view_by_document_identifier: get_rosetta_view,
   get_latest_rosetta_law_view_by_source_document: get_rosetta_view,
+}));
+
+vi.mock("./civic-genome-kaleidoscope-contract", () => ({
+  get_kaleidoscope_civic_genome_contract: get_kaleidoscope,
 }));
 
 import {
@@ -65,6 +71,19 @@ beforeEach(() => {
   vi.clearAllMocks();
   query.mockResolvedValue({ rows: [] });
   get_bill.mockResolvedValue({ genome_bill_id });
+  get_kaleidoscope.mockResolvedValue({
+    service_key: "kaleidoscope",
+    display_name: "Kaleidoscope",
+    external_url: null,
+    role: "Authenticated immutable baseline consumer",
+    state: "bound_not_projected",
+    state_label: "Source bound, projection not executed",
+    detail: "18 durable bindings; no projection executed.",
+    observed_count: 18,
+    bound_count: 18,
+    last_observed_at: null,
+    boundary: "Projection state is separate from binding state.",
+  });
 });
 
 describe("Civic Genome operating contracts", () => {
@@ -96,7 +115,11 @@ describe("Civic Genome operating contracts", () => {
         }],
       })
       .mockResolvedValueOnce({
-        rows: [{ signal_count: "63", latest_bridged_at: "2026-07-30T00:00:00.000Z" }],
+        rows: [{
+          signal_count: "63",
+          latest_bridged_at: "2026-07-30T00:00:00.000Z",
+          latest_current_atlas_observation_at: "2026-10-07T06:51:58.596Z",
+        }],
       });
 
     const result = await get_civic_genome_operating_contracts();
@@ -110,7 +133,9 @@ describe("Civic Genome operating contracts", () => {
     expect(rosetta?.detail).not.toContain("https://");
     expect(rosetta?.boundary).toContain("without duplicating it");
     expect(result.contracts.filter(contract => contract.external_url !== null)).toEqual([rosetta]);
-    expect(atlas?.state).toBe("available_unbound");
+    expect(atlas?.state).toBe("stale");
+    expect(atlas?.state_label).toBe("Lighthouse bridge stale");
+    expect(atlas?.detail).toContain("Lighthouse bridge is behind current Atlas observation truth");
     expect(atlas?.observed_count).toBe(63);
     expect(atlas?.bound_count).toBe(0);
     expect(prism?.state).toBe("operational");
@@ -123,8 +148,38 @@ describe("Civic Genome operating contracts", () => {
     expect(local_query).toContain("prism_rule_set_version = $2");
     expect(local_params).toEqual([
       "prism-rosetta-structural-binding",
-      "2.0.0",
+      "2.5.0",
     ]);
+  });
+
+  it("keeps a fresh Atlas bridge distinct from a stale bridge", async () => {
+    query
+      .mockResolvedValueOnce({
+        rows: [{
+          bill_count: "1",
+          latest_bill_observed_at: "2026-10-07T00:00:00.000Z",
+          rosetta_binding_count: "0",
+          rosetta_assembly_count: "0",
+          relationship_count: "0",
+          comparison_matrix_count: "0",
+          comparison_state_cell_count: "0",
+          prism_deep_binding_count: "0",
+          prism_deep_run_count: "0",
+          prism_legacy_binding_count: "0",
+          latest_prism_deep_bound_at: null,
+        }],
+      })
+      .mockResolvedValueOnce({
+        rows: [{
+          signal_count: "63",
+          latest_bridged_at: "2026-10-07T06:51:58.596Z",
+          latest_current_atlas_observation_at: "2026-10-07T06:51:58.596Z",
+        }],
+      });
+
+    const result = await get_civic_genome_operating_contracts();
+    const atlas = result.contracts.find(contract => contract.service_key === "atlas");
+    expect(atlas?.state).toBe("available_unbound");
   });
 
   it("never enables assembly for an in-progress Rosetta run", async () => {

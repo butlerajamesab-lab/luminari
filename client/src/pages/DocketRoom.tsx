@@ -552,6 +552,12 @@ function MySubmissions({
 
 type docket_bill = {
   bill_id: number;
+  search_context?: {
+    state: string;
+    session_title: string | null;
+    fetched_at: string;
+    corpus_source: "detail_cache" | "state_cache";
+  };
   number?: string;
   title?: string;
   status?: string | number;
@@ -586,6 +592,24 @@ type docket_state_payload = {
   fetched_at?: string;
   refresh_state?: docket_source_freshness_state;
   bills?: docket_bill[];
+  message?: string;
+};
+
+type docket_search_payload = {
+  ok: boolean;
+  contract?: "docket-full-corpus-search-v1";
+  source?: "preserved_docket_cache";
+  query?: string;
+  state_scope?: string | null;
+  result_count?: number;
+  limit?: number;
+  results?: Array<{
+    state: string;
+    session_title: string | null;
+    fetched_at: string;
+    corpus_source: "detail_cache" | "state_cache";
+    bill: docket_bill;
+  }>;
   message?: string;
 };
 
@@ -675,6 +699,16 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
   const [cache_status_error, set_cache_status_error] = useState<string | null>(null);
   const [cache_status_loading, set_cache_status_loading] = useState(false);
   const [show_completed, set_show_completed] = useState(false);
+  const [search_data, set_search_data] = useState<docket_search_payload | null>(null);
+  const [search_error, set_search_error] = useState<string | null>(null);
+  const [search_loading, set_search_loading] = useState(false);
+  const search_term = keyword.trim();
+  const search_active = search_term.length >= 2;
+  const search_state_scope = level === "federal"
+    ? "US"
+    : level === "state"
+      ? selected_state
+      : null;
 
   useEffect(() => {
     const controller = new AbortController();
@@ -716,6 +750,52 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
 
     return () => controller.abort();
   }, [selected_state]);
+
+  useEffect(() => {
+    if (!search_active) {
+      set_search_data(null);
+      set_search_error(null);
+      set_search_loading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const load_search = async () => {
+      set_search_loading(true);
+      set_search_error(null);
+      set_search_data(null);
+      set_selected_bill_id(null);
+      set_bill_detail(null);
+      set_bill_detail_error(null);
+
+      try {
+        const params = new URLSearchParams({ q: search_term, limit: "25" });
+        if (search_state_scope) params.set("state", search_state_scope);
+        const response = await fetch(`/api/docket/search?${params.toString()}`, {
+          signal: controller.signal,
+        });
+        const payload = await response.json().catch(() => ({
+          ok: false,
+          message: `api_docket_search_failed_http_${response.status}`,
+        })) as docket_search_payload;
+        if (!response.ok || !payload.ok) {
+          throw new Error(
+            payload.message || `api_docket_search_failed_http_${response.status}`,
+          );
+        }
+        set_search_data(payload);
+      } catch (error: any) {
+        if (error?.name !== "AbortError") {
+          set_search_error(error?.message || "api_docket_search_failed");
+        }
+      } finally {
+        if (!controller.signal.aborted) set_search_loading(false);
+      }
+    };
+
+    void load_search();
+    return () => controller.abort();
+  }, [search_active, search_term, search_state_scope]);
 
   const load_bill_detail = async (bill_id: number) => {
     set_selected_bill_id(bill_id);
@@ -786,30 +866,57 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
       ?? (displayed_cache_status?.is_fresh === true ? "fresh" : "unknown")
   ];
   const current_session_flag = state_data?.session_current ?? null;
-  const resolved_bills = bills
-    .filter(bill => !keyword.trim() || [bill.title, bill.number, selected_state].some(value => String(value ?? "").toLowerCase().includes(keyword.trim().toLowerCase())))
-    .map(bill => ({
-      bill,
-      resolution: resolve_docket_lifecycle({
-        ...bill,
-        session: {
-          ...(bill as { session?: Record<string, unknown> }).session,
-          is_current: current_session_flag,
-        },
-        freshness: {
-          ...(bill as { freshness?: Record<string, unknown> }).freshness,
-          state: state_data?.refresh_state,
-          is_fresh: snapshot_fresh,
-          last_observed_at: state_data?.fetched_at ?? null,
-        },
-      }),
-    }))
-    .filter(({ resolution }) => show_completed || resolution.live_feed_eligible)
+
+  const search_bills = (search_data?.results ?? []).map(result => ({
+    ...result.bill,
+    search_context: {
+      state: result.state,
+      session_title: result.session_title,
+      fetched_at: result.fetched_at,
+      corpus_source: result.corpus_source,
+    },
+  }));
+
+  const candidate_bills = search_active ? search_bills : bills;
+  const resolved_bills = candidate_bills
+    .map(bill => {
+      const search_context = bill.search_context;
+      const result_fresh = search_context
+        ? snapshot_is_fresh(search_context.fetched_at)
+        : snapshot_fresh;
+      return {
+        bill,
+        resolution: resolve_docket_lifecycle({
+          ...bill,
+          session: {
+            ...(bill as { session?: Record<string, unknown> }).session,
+            is_current: search_context ? null : current_session_flag,
+          },
+          freshness: {
+            ...(bill as { freshness?: Record<string, unknown> }).freshness,
+            state: search_context
+              ? (result_fresh ? "fresh" : "refresh_paused")
+              : state_data?.refresh_state,
+            is_fresh: result_fresh,
+            last_observed_at: search_context?.fetched_at ?? state_data?.fetched_at ?? null,
+          },
+        }),
+      };
+    })
+    .filter(({ resolution }) =>
+      search_active || show_completed || resolution.live_feed_eligible
+    )
     .sort((left, right) => {
+      if (search_active) return 0;
       const velocity_delta = (right.bill.radar?.velocity_score ?? 0) - (left.bill.radar?.velocity_score ?? 0);
       if (velocity_delta !== 0) return velocity_delta;
-      return (valid_date(right.bill.last_action_date)?.getTime() ?? 0) - (valid_date(left.bill.last_action_date)?.getTime() ?? 0);
+      return (valid_date(right.bill.last_action_date)?.getTime() ?? 0)
+        - (valid_date(left.bill.last_action_date)?.getTime() ?? 0);
     });
+
+  const active_loading = search_active ? search_loading : state_loading;
+  const active_error = search_active ? search_error : state_error;
+  const active_ready = search_active ? search_data !== null : state_data !== null;
 
   return (
     <div style={{ background: dk.sectionBg, border: `1px solid ${dk.steelBorder}`, borderRadius: "8px", padding: "1rem 1.25rem", marginBottom: "1.5rem" }}>
@@ -841,7 +948,14 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
       </div>
 
       <div style={{ background: dk.bg, border: `1px solid ${dk.rule}`, borderRadius: "8px", padding: "0.85rem", marginBottom: "0.9rem" }}>
-        {displayed_cache_status ? (
+        {search_active ? (
+          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>
+            <span style={{ color: dk.teal }}>Full preserved Docket corpus search</span>
+            <span>{search_data?.result_count ?? 0} result{(search_data?.result_count ?? 0) === 1 ? "" : "s"}</span>
+            <span>{search_state_scope ? `jurisdiction ${search_state_scope}` : "all cached jurisdictions"}</span>
+            <span>current-session visibility does not limit search</span>
+          </div>
+        ) : displayed_cache_status ? (
           <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>
             <span style={{ color: displayed_refresh.color }}>{displayed_refresh.label}</span>
             <span>{displayed_cache_status.bill_count} bills</span>
@@ -851,21 +965,25 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
             {state_data?.session_current === null && state_data?.session_title && <span>Session currentness unknown</span>}
           </div>
         ) : cache_status_loading ? <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>loading_cache_status</div> : cache_status_error ? <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.red }}>cache_status_error {cache_status_error}</div> : <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>cache_status_unavailable</div>}
-        <label style={{ display: "inline-flex", alignItems: "center", gap: "0.45rem", marginTop: "0.65rem", color: dk.cream, fontFamily: fontSans, fontSize: "0.78rem" }}>
+        {!search_active && <label style={{ display: "inline-flex", alignItems: "center", gap: "0.45rem", marginTop: "0.65rem", color: dk.cream, fontFamily: fontSans, fontSize: "0.78rem" }}>
           <input type="checkbox" checked={show_completed} onChange={event => set_show_completed(event.target.checked)} /> Show completed and non-live legislation
-        </label>
+        </label>}
       </div>
 
-      {state_loading ? (
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: dk.muted, fontFamily: fontMono, fontSize: "0.75rem" }}><Loader2 size={14} className="animate-spin" /> loading_state_bills</div>
-      ) : state_error ? (
-        <div style={{ color: dk.red, fontFamily: fontMono, fontSize: "0.75rem" }}>error {state_error}</div>
-      ) : state_data ? (
+      {active_loading ? (
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: dk.muted, fontFamily: fontMono, fontSize: "0.75rem" }}><Loader2 size={14} className="animate-spin" /> {search_active ? "searching_preserved_docket_corpus" : "loading_state_bills"}</div>
+      ) : active_error ? (
+        <div style={{ color: dk.red, fontFamily: fontMono, fontSize: "0.75rem" }}>error {active_error}</div>
+      ) : active_ready ? (
         <>
           <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", fontFamily: fontMono, fontSize: "0.7rem", color: dk.muted, marginBottom: "0.85rem" }}>
             <span>{resolved_bills.length} shown</span>
-            <span>source updated {readable_date(state_data.fetched_at)}</span>
-            {state_data.session_title && <span>session_title {state_data.session_title}</span>}
+            {search_active
+              ? <span>preserved Docket search · {search_data?.contract ?? "docket-full-corpus-search-v1"}</span>
+              : <>
+                  <span>source updated {readable_date(state_data?.fetched_at)}</span>
+                  {state_data?.session_title && <span>session_title {state_data.session_title}</span>}
+                </>}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "0.75rem" }}>
             {resolved_bills.map(({ bill, resolution }) => {
@@ -879,6 +997,7 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
                   </div>
                   <div style={{ fontFamily: fontSerif, fontSize: "1rem", color: dk.paper, lineHeight: 1.25, marginBottom: "0.5rem" }}>{bill.title || "title_unavailable"}</div>
                   <div style={{ display: "grid", gap: "0.25rem", fontFamily: fontMono, fontSize: "0.66rem", color: dk.muted }}>
+                    {bill.search_context && <span style={{ color: dk.steelBright }}>{bill.search_context.state} · {bill.search_context.session_title ?? "session not reported"} · {bill.search_context.corpus_source.replace("_", " ")}</span>}
                     <span>{bill.last_action || "Latest action not reported"}</span>
                     <span>{readable_date(bill.last_action_date || bill.status_date)}</span>
                     {resolution.effective_state === "effective_immediately" && <span style={{ color: dk.green }}>Effective immediately</span>}
@@ -894,14 +1013,16 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
             })}
             {resolved_bills.length === 0 && (
               <div style={{ gridColumn: "1 / -1", background: dk.bg, border: `1px solid ${dk.rule}`, borderRadius: "8px", padding: "1rem", color: dk.muted, fontFamily: fontSans, fontSize: "0.82rem", lineHeight: 1.5 }}>
-                No current changeable legislation is available in this live feed. Turn on “Show completed and non-live legislation” to inspect completed, inactive, or conservatively unclassified records.
+                {search_active
+                  ? `No preserved Docket records match “${search_term}”.`
+                  : "No current changeable legislation is available in this live feed. Turn on “Show completed and non-live legislation” to inspect completed, inactive, or conservatively unclassified records."}
               </div>
             )}
           </div>
           {selected_bill_id && (
             <div style={{ marginTop: "1rem", background: dk.slate, border: `1px solid ${dk.rule}`, borderRadius: "8px", padding: "0.85rem" }}>
               <div style={{ fontFamily: fontMono, fontSize: "0.72rem", color: dk.steelBright, marginBottom: "0.5rem" }}>bill_detail_click_through bill_id {selected_bill_id}</div>
-              {bill_detail_loading ? <div style={{ fontFamily: fontMono, fontSize: "0.72rem", color: dk.muted }}>loading_bill_detail</div> : bill_detail_error ? <div style={{ fontFamily: fontMono, fontSize: "0.72rem", color: dk.red }}>error {bill_detail_error}</div> : bill_detail ? <DocketBillDetailWorkspace payload={bill_detail} session_current={state_data.session_current ?? null} /> : null}
+              {bill_detail_loading ? <div style={{ fontFamily: fontMono, fontSize: "0.72rem", color: dk.muted }}>loading_bill_detail</div> : bill_detail_error ? <div style={{ fontFamily: fontMono, fontSize: "0.72rem", color: dk.red }}>error {bill_detail_error}</div> : bill_detail ? <DocketBillDetailWorkspace payload={bill_detail} session_current={search_active ? null : state_data?.session_current ?? null} /> : null}
             </div>
           )}
         </>

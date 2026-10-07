@@ -1,6 +1,10 @@
 import { create_rosetta_supabase_headers } from "./rosetta-supabase-auth";
+import {
+  get_current_rosetta_live_detail,
+  type current_rosetta_live_detail,
+} from "./current-law-rosetta-live";
 
-export type civic_genome_report_mode = "summary" | "detailed";
+export type civic_genome_report_mode = "summary" | "detailed" | "law_decomposition";
 
 type json_record = Record<string, unknown>;
 
@@ -203,6 +207,7 @@ function required_rosetta_config() {
 
 async function load_rosetta_source_content(
   source_document_ids: number[],
+  expected_hash_by_document: Map<number, string> = new Map(),
 ): Promise<rosetta_source_content[]> {
   const unique_ids = [
     ...new Set(
@@ -254,6 +259,12 @@ async function load_rosetta_source_content(
       !source_url ||
       !source_content_hash ||
       !source_identity_hash
+    )
+      continue;
+    const expected_hash = expected_hash_by_document.get(source_document_id);
+    if (
+      expected_hash &&
+      source_content_hash.toLowerCase() !== expected_hash.toLowerCase()
     )
       continue;
     seen.add(source_document_id);
@@ -322,8 +333,35 @@ function report_css(): string {
     summary { cursor: pointer; font-weight: 700; }
     .source-header { display: grid; gap: 5px; margin: 10px 0 12px; font-size: .82rem; }
     .break { break-before: page; }
+    .state-split { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+    .state-card { border: 1px solid #dfe9e4; border-radius: 9px; padding: 14px; background: #f8fbf9; }
+    .comparison { margin-top: 18px; border: 1px solid #d8e3dd; border-radius: 12px; overflow: hidden; background: #fff; }
+    .comparison-head { display: grid; grid-template-columns: minmax(0,1.08fr) minmax(0,.92fr); background: #eef5f1; border-bottom: 1px solid #d8e3dd; }
+    .comparison-head > div { padding: 13px 16px; font-weight: 800; }
+    .comparison-head > div + div { border-left: 1px solid #d8e3dd; }
+    .comparison-row { display: grid; grid-template-columns: minmax(0,1.08fr) minmax(0,.92fr); border-top: 1px solid #edf1ef; break-inside: avoid; }
+    .comparison-row:first-of-type { border-top: 0; }
+    .comparison-source, .comparison-analysis { padding: 14px 16px; min-width: 0; }
+    .comparison-analysis { border-left: 1px solid #d8e3dd; background: #fbfdfc; }
+    .comparison-source pre { margin: 7px 0 0; padding: 0; border: 0; background: transparent; white-space: pre-wrap; overflow-wrap: anywhere; font: .79rem/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+    .layer-pill { display: inline-block; margin: 0 6px 6px 0; padding: 3px 7px; border: 1px solid #bed8cc; border-radius: 999px; background: #eef8f3; color: #0b7048; font: 800 .68rem ui-monospace,SFMono-Regular,Menlo,monospace; }
+    .unit-meta { color: #697b73; font: .68rem ui-monospace,SFMono-Regular,Menlo,monospace; }
+    .analysis-text { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .82rem; line-height: 1.5; }
     footer { margin-top: 36px; color: #6c7d75; font-size: .78rem; border-top: 1px solid #d8e3dd; padding-top: 14px; }
-    @media print { body { background: #fff; } main { max-width: none; padding: 20px; } .panel { box-shadow: none; } a { color: inherit; text-decoration: none; } details > summary { display: none; } details > * { display: block !important; } }
+    @media (max-width: 760px) {
+      .state-split, .comparison-head, .comparison-row { grid-template-columns: 1fr; }
+      .comparison-head > div + div, .comparison-analysis { border-left: 0; border-top: 1px solid #d8e3dd; }
+    }
+    @media print {
+      body { background: #fff; }
+      main { max-width: none; padding: 20px; }
+      .panel { box-shadow: none; }
+      a { color: inherit; text-decoration: none; }
+      details > summary { display: none; }
+      details > * { display: block !important; }
+      .comparison-head, .comparison-row { grid-template-columns: minmax(0,1.08fr) minmax(0,.92fr); }
+      .comparison-analysis { border-left: 1px solid #d8e3dd; border-top: 0; }
+    }
   `;
 }
 
@@ -458,6 +496,122 @@ function source_block(
   </section>`;
 }
 
+const current_layer_labels: Record<string, string> = {
+  H: "Help",
+  W: "Workflow",
+  A: "Accountability",
+  O: "Override",
+  D: "Definition",
+  R: "Rule · current classifier",
+};
+
+function current_rosetta_layer_counts(detail: current_rosetta_live_detail | null): json_record {
+  return as_record(detail?.decomposition?.layer_counts) ?? {};
+}
+
+function render_current_rosetta_comparison(detail: current_rosetta_live_detail | null): string {
+  if (!detail) {
+    return `<section class="panel"><span class="eyebrow">Law ↔ Rosetta</span><h2>Current decomposition not available</h2><p class="warn">The exact current source remains identifiable, but no selected-runtime Rosetta decomposition is available for this source. Historical decomposition is not substituted.</p></section>`;
+  }
+  if (!detail.decomposition) {
+    const hold = detail.hold_receipt;
+    return `<section class="panel"><span class="eyebrow">Law ↔ Rosetta</span><h2>No decomposed current result</h2><p class="warn">Rosetta has no selected-runtime decomposition for this exact source.${hold ? ` Hold: ${html(hold.gate ?? hold.reason ?? "recorded")}` : ""}</p></section>`;
+  }
+
+  const rows = detail.units.map((unit) => {
+    const labels = unit.layers.length
+      ? unit.layers.map(layer => `<span class="layer-pill">${html(current_layer_labels[layer] ?? layer)}</span>`).join("")
+      : unit.disposition === "STRUCT"
+        ? '<span class="layer-pill">Structure block</span>'
+        : unit.disposition === "DELETED"
+          ? '<span class="layer-pill">Deleted source span</span>'
+          : '<span class="layer-pill">Unresolved source span</span>';
+    const source_text = unit.raw_text || "Source span text unavailable";
+    const effective_text = unit.effective_text ?? unit.raw_text;
+    return `<div class="comparison-row">
+      <div class="comparison-source">
+        <div class="unit-meta">section ${html(unit.section_ord ?? "—")} · span ${html(unit.raw_start)}–${html(unit.raw_end)}</div>
+        <pre>${html(source_text)}</pre>
+      </div>
+      <div class="comparison-analysis">
+        <div>${labels}</div>
+        <div class="unit-meta">unit ${html(unit.unit_ord)} · ${html(unit.disposition ?? unit.kind ?? "classified")}</div>
+        ${effective_text && effective_text !== source_text ? `<div class="analysis-text">${html(effective_text)}</div>` : ""}
+      </div>
+    </div>`;
+  }).join("");
+
+  return `<section class="comparison">
+    <div class="comparison-head"><div>LAW · exact preserved source spans</div><div>ROSETTA · selected-runtime decomposition</div></div>
+    ${rows || '<div class="comparison-row"><div class="comparison-source">No source-bound units recorded.</div><div class="comparison-analysis">No decomposition objects recorded.</div></div>'}
+  </section>`;
+}
+
+export type current_law_report_snapshot = {
+  current_version: json_record | null;
+  source: rosetta_source_content | null;
+  rosetta: current_rosetta_live_detail | null;
+  rosetta_availability: "available" | "not_observed" | "error";
+  rosetta_error: string | null;
+};
+
+export async function build_current_law_report_snapshot(
+  payload: unknown,
+): Promise<current_law_report_snapshot> {
+  const root = as_record(payload);
+  const bill_detail = as_record(root?.bill_detail);
+  const current_version = as_record(bill_detail?.current_version);
+  const source_document_id = positive_integer(current_version?.source_document_id);
+  const source_content_hash = string_value(current_version?.source_content_hash);
+  if (
+    !source_document_id ||
+    !source_content_hash ||
+    !/^[0-9a-f]{64}$/i.test(source_content_hash)
+  ) {
+    return {
+      current_version,
+      source: null,
+      rosetta: null,
+      rosetta_availability: "not_observed",
+      rosetta_error: null,
+    };
+  }
+  const [source] = await load_rosetta_source_content(
+    [source_document_id],
+    new Map([[source_document_id, source_content_hash]]),
+  );
+  if (!source) {
+    return {
+      current_version,
+      source: null,
+      rosetta: null,
+      rosetta_availability: "not_observed",
+      rosetta_error: null,
+    };
+  }
+  try {
+    const rosetta = await get_current_rosetta_live_detail({
+      source_content_id: source.source_content_id,
+      source_content_hash: source.source_content_hash,
+    });
+    return {
+      current_version,
+      source,
+      rosetta,
+      rosetta_availability: rosetta ? "available" : "not_observed",
+      rosetta_error: null,
+    };
+  } catch (error) {
+    return {
+      current_version,
+      source,
+      rosetta: null,
+      rosetta_availability: "error",
+      rosetta_error: error instanceof Error ? error.message : "current_rosetta_read_failed",
+    };
+  }
+}
+
 function safe_url(value: unknown): string | null {
   if (typeof value !== "string") return null;
   try {
@@ -563,6 +717,12 @@ export async function render_civic_genome_human_report(
   const family = as_record(root.family);
   const temporal_facts = as_record(root.bill_temporal_facts);
   const detailed = mode === "detailed";
+  const law_decomposition = mode === "law_decomposition";
+  const current_snapshot = law_decomposition
+    ? await build_current_law_report_snapshot(root)
+    : null;
+  const current_rosetta = current_snapshot?.rosetta ?? null;
+  const current_layer_counts = current_rosetta_layer_counts(current_rosetta);
 
   const trait_groups = new Map<string, json_record[]>();
   for (const trait of traits) {
@@ -581,7 +741,7 @@ export async function render_civic_genome_human_report(
   const bill_title = string_value(bill.source_bill_title) ?? "Untitled bill";
   const state = string_value(bill.state_code) ?? "Unknown jurisdiction";
   const session = string_value(bill.session_key) ?? "Unknown session";
-  const report_title = `${bill_number} — ${mode === "summary" ? "Civic Genome Summary" : "Civic Genome Detailed Report"}`;
+  const report_title = `${bill_number} — ${mode === "summary" ? "Civic Genome Summary" : mode === "detailed" ? "Civic Genome Detailed Report" : "Law ↔ Rosetta Report"}`;
 
   const summary_pending_section = mode === "summary" && pending_events.length > 0
     ? `
@@ -603,6 +763,40 @@ export async function render_civic_genome_human_report(
     </section>`,
     )
     .join("");
+
+  const current_analysis_state = law_decomposition
+    ? `<section class="panel">
+      <span class="eyebrow">Current law and analysis state</span>
+      <div class="state-split">
+        <div class="state-card">
+          <span class="label">LAW</span>
+          <h3>${html(version_label(current_version))}</h3>
+          <p>${html(current_version?.source_document_key ?? "Exact source key not observed")}</p>
+          <div class="unit-meta">Source document ${html(current_snapshot?.source?.source_document_id ?? "not observed")} · content ${html(current_snapshot?.source?.source_content_id ?? "not observed")}</div>
+        </div>
+        <div class="state-card">
+          <span class="label">ANALYSIS</span>
+          <h3>${current_rosetta?.decomposition ? html(human_key(current_rosetta.decomposition.outcome ?? "decomposed")) : current_snapshot?.rosetta_availability === "error" ? "Current Rosetta read unavailable" : "Current decomposition not observed"}</h3>
+          <p>${current_rosetta ? html(current_rosetta.target.ruleset_version ?? "Selected runtime") : "Historical decomposition is not substituted."}</p>
+          ${current_snapshot?.rosetta_error ? `<div class="unit-meta">${html(current_snapshot.rosetta_error)}</div>` : ""}
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <span class="eyebrow">Current Rosetta coverage</span>
+      <h2>Selected-runtime decomposition</h2>
+      <div class="grid">
+        ${["H","W","A","O","D","R"].map(layer => `<div class="metric"><span class="label">${html(current_layer_labels[layer])}</span><b>${html(current_layer_counts[layer] ?? 0)}</b></div>`).join("")}
+        <div class="metric"><span class="label">Units</span><b>${html(current_rosetta?.decomposition?.unit_count ?? current_rosetta?.units.length ?? 0)}</b></div>
+        <div class="metric"><span class="label">Sections</span><b>${html(current_rosetta?.decomposition?.section_count ?? current_rosetta?.sections.length ?? 0)}</b></div>
+      </div>
+      <p class="subhead">R is displayed exactly as the selected Rosetta runtime classifies it. This presentation does not promote Rule into Civic Genome's permanent canonical ontology.</p>
+    </section>
+
+    ${render_current_rosetta_comparison(current_rosetta)}
+  `
+    : "";
 
   const detailed_sections = detailed
     ? `
@@ -676,7 +870,7 @@ export async function render_civic_genome_human_report(
     <span class="eyebrow">Luminari · Living Civic Genome</span>
     <h1>${html(report_title)}</h1>
     <p class="subhead">${html(state)} · ${html(session)} · ${html(bill_title)}</p>
-    <p class="subhead">This report is rendered from existing Docket, Civic Genome, Rosetta, and Prism records. It does not re-run analysis, infer motive, or rewrite historical receipts.</p>
+    <p class="subhead">${law_decomposition ? "This report binds the exact current source copy to Rosetta’s selected-runtime decomposition. Historical decomposition is not substituted when a current result is unavailable." : "This report is rendered from existing Docket, Civic Genome, Rosetta, and Prism records. It does not re-run analysis, infer motive, or rewrite historical receipts."}</p>
   </header>
 
   <section class="panel">
@@ -700,10 +894,11 @@ export async function render_civic_genome_human_report(
     <p class="subhead">These are source-event dates. Rosetta extraction receipts and Lighthouse observation receipts retain their own separately labeled timestamps.</p>
   </section>
 
-  ${source_gap}
+  ${law_decomposition ? (current_snapshot?.source ? "" : `<section class="panel"><h2>Current source unavailable</h2><p class="warn">The exact current source copy is not attached; the report will not substitute a historical source.</p></section>`) : source_gap}
   ${mode === "summary" ? `<section class="panel"><h2>Legislative text versions</h2>${version_table(versions, source_by_document)}</section>` : ""}
   ${summary_pending_section}
 
+  ${law_decomposition ? current_analysis_state : `
   <section class="panel">
     <span class="eyebrow">${final_source ? "Recorded structural state" : "Decomposition unavailable"}</span>
     <h2>What the current Civic Genome snapshot contains</h2>
@@ -718,20 +913,27 @@ export async function render_civic_genome_human_report(
     ${final_source_uses_provider_copy ? '<p class="warn">Support counts reflect deterministic checks against a hash- and byte-size-verified provider copy. They do not assert that Rosetta retrieved or independently confirmed the analyzed text from the official legislative source.</p>' : ""}
   </section>
 
-  ${current_traits_html || '<section class="panel"><h2>No published structural traits</h2><p class="muted">No structural DNA objects are attached to the highest verified snapshot.</p></section>'}
+  ${current_traits_html || '<section class="panel"><h2>No published structural traits</h2><p class="muted">No structural DNA objects are attached to the highest verified snapshot.</p></section>'}`}
 
-  ${detailed_sections}
+  ${law_decomposition ? "" : detailed_sections}
 
   <div class="break"></div>
-  ${final_source ? source_block(final_source, {
-    official: `${human_key(published_version?.version_type ?? current_version?.version_type ?? "authoritative")} — full authoritative source used by Rosetta`,
-    provider_copy: `${human_key(published_version?.version_type ?? current_version?.version_type ?? "source")} — full verified provider copy analyzed by Rosetta`,
-  }, true) : ""}
+  ${law_decomposition
+    ? current_snapshot?.source
+      ? source_block(current_snapshot.source, {
+          official: `${human_key(current_version?.version_type ?? "current")} — full exact current source`,
+          provider_copy: `${human_key(current_version?.version_type ?? "current")} — full verified provider copy for the exact current source`,
+        }, false)
+      : ""
+    : final_source ? source_block(final_source, {
+        official: `${human_key(published_version?.version_type ?? current_version?.version_type ?? "authoritative")} — full authoritative source used by Rosetta`,
+        provider_copy: `${human_key(published_version?.version_type ?? current_version?.version_type ?? "source")} — full verified provider copy analyzed by Rosetta`,
+      }, true) : ""}
 
   <footer>
     <div>Exported: ${html(format_date(root.exported_at))}</div>
     <div>Source bill ID: ${html(source_bill_id)} · Genome bill ID: <span class="mono">${html(root.genome_bill_id)}</span></div>
-    <div>Machine JSON remains available as the technical companion export.</div>
+    <div>${law_decomposition ? "The companion Machine JSON carries the same current-source identity and selected-runtime Rosetta record." : "Machine JSON remains available as the technical companion export."}</div>
   </footer>
 </main>
 </body>

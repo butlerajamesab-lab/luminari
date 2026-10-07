@@ -12,6 +12,8 @@ import { describeUnobservedCurrentResult, isCurrentResultHold } from "../shared/
 export type civic_genome_contract_state =
   | "operational"
   | "available_unbound"
+  | "bound_not_projected"
+  | "stale"
   | "waiting"
   | "ready_empty"
   | "not_established"
@@ -53,10 +55,24 @@ type local_contract_counts = {
 type atlas_contract_counts = {
   signal_count: string;
   latest_bridged_at: string | null;
+  latest_current_atlas_observation_at: string | null;
 };
 
 const PRISM_DEEP_RULE_SET_ID = "prism-rosetta-structural-binding";
-const PRISM_DEEP_RULE_SET_VERSION = "2.0.0";
+const PRISM_DEEP_RULE_SET_VERSION = "2.5.0";
+
+export function atlas_bridge_is_stale(
+  latest_bridged_at: string | null | undefined,
+  latest_current_atlas_observation_at: string | null | undefined,
+): boolean {
+  if (!latest_current_atlas_observation_at) return false;
+  if (!latest_bridged_at) return true;
+  const bridge_ms = Date.parse(latest_bridged_at);
+  const atlas_ms = Date.parse(latest_current_atlas_observation_at);
+  if (!Number.isFinite(atlas_ms)) return false;
+  if (!Number.isFinite(bridge_ms)) return true;
+  return bridge_ms < atlas_ms;
+}
 
 const count = (value: string | undefined): number => {
   const parsed = Number.parseInt(value ?? "0", 10);
@@ -99,9 +115,13 @@ export async function get_civic_genome_operating_contracts(): Promise<civic_geno
   try {
     const atlas_result = await pool.query<atlas_contract_counts>(
       `select
-         count(*)::text as signal_count,
-         max(bridged_at)::text as latest_bridged_at
-       from public.v_atlas_lighthouse_bridge_v1_verified`,
+         (select count(*)::text
+            from public.v_atlas_lighthouse_bridge_v1_verified) as signal_count,
+         (select max(bridged_at)::text
+            from public.v_atlas_lighthouse_bridge_v1_verified) as latest_bridged_at,
+         (select max(latest_observed_at)::text
+            from public.atlas_stream_runtime_projection_v1
+           where is_current) as latest_current_atlas_observation_at`,
     );
     atlas = atlas_result.rows[0] ?? null;
   } catch {
@@ -118,9 +138,16 @@ export async function get_civic_genome_operating_contracts(): Promise<civic_geno
   const prism_deep_binding_count = count(local?.prism_deep_binding_count);
   const prism_deep_run_count = count(local?.prism_deep_run_count);
   const prism_legacy_binding_count = count(local?.prism_legacy_binding_count);
+  const generated_at = new Date().toISOString();
+  const atlas_bridge_stale = atlas !== null
+    && atlas_bridge_is_stale(
+      atlas.latest_bridged_at,
+      atlas.latest_current_atlas_observation_at,
+    );
+  const kaleidoscope_contract = await get_kaleidoscope_civic_genome_contract();
 
   return {
-    generated_at: new Date().toISOString(),
+    generated_at,
     contracts: [
       {
         service_key: "docket",
@@ -153,11 +180,25 @@ export async function get_civic_genome_operating_contracts(): Promise<civic_geno
         display_name: "Atlas",
         external_url: null,
         role: "Verified signal reference",
-        state: atlas === null ? "unavailable" : atlas_signal_count > 0 ? "available_unbound" : "ready_empty",
-        state_label: atlas === null ? "Verified export unavailable" : atlas_signal_count > 0 ? "Available, not Genome-bound" : "Verified export empty",
+        state: atlas === null
+          ? "unavailable"
+          : atlas_bridge_stale
+            ? "stale"
+            : atlas_signal_count > 0
+              ? "available_unbound"
+              : "ready_empty",
+        state_label: atlas === null
+          ? "Verified export unavailable"
+          : atlas_bridge_stale
+            ? "Lighthouse bridge stale"
+            : atlas_signal_count > 0
+              ? "Available, not Genome-bound"
+              : "Verified export empty",
         detail: atlas === null
           ? "The verified Atlas export could not be observed."
-          : `${atlas_signal_count} verified Atlas signals are available; no bill-level Civic Genome binding is asserted.`,
+          : atlas_bridge_stale
+            ? `${atlas_signal_count} verified Atlas bridge rows are preserved through ${atlas.latest_bridged_at ?? "unknown"}, while current Atlas runtime observations extend through ${atlas.latest_current_atlas_observation_at ?? "unknown"}; the Lighthouse bridge is behind current Atlas observation truth.`
+            : `${atlas_signal_count} verified Atlas signals are available; no bill-level Civic Genome binding is asserted.`,
         observed_count: atlas_signal_count,
         bound_count: 0,
         last_observed_at: atlas?.latest_bridged_at ?? null,
@@ -189,10 +230,7 @@ export async function get_civic_genome_operating_contracts(): Promise<civic_geno
         last_observed_at: null,
         boundary: "Viewfinder reads Civic Genome comparison projections and does not mutate source observations.",
       },
-      {
-        ...get_kaleidoscope_civic_genome_contract(),
-        external_url: null,
-      },
+      kaleidoscope_contract,
       {
         service_key: "esquire",
         display_name: "Esquire",
