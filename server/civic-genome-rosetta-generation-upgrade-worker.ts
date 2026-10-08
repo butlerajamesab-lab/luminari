@@ -243,6 +243,7 @@ async function discover_candidates(
          on binding.source_document_id = version.rosetta_source_document_id
       where version.rn = 1
         and version.rosetta_source_document_id is not null
+        and version.processing_state in ('verified_with_findings', 'verified', 'assembled')
         and (
           binding.source_document_id is null
           or binding.rosetta_engine_version is distinct from $1
