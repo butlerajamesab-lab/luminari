@@ -47,6 +47,14 @@ export function CivicGenomeExportDock() {
   >
     {source_bill_id ? <>
       {export_link(
+        `/api/civic-genome/export/bill/${encodeURIComponent(source_bill_id)}/summary`,
+        "Summary report",
+      )}
+      {export_link(
+        `/api/civic-genome/export/bill/${encodeURIComponent(source_bill_id)}/detailed`,
+        "Detailed report",
+      )}
+      {export_link(
         `/api/civic-genome/export/bill/${encodeURIComponent(source_bill_id)}/report`,
         "Law ↔ Rosetta report",
       )}

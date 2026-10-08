@@ -142,10 +142,16 @@ describe("Civic Genome export contract", () => {
     expect(dock).toContain(
       "/api/civic-genome/export/bill/${encodeURIComponent(source_bill_id)}/machine",
     );
+    expect(dock).toContain(
+      "/api/civic-genome/export/bill/${encodeURIComponent(source_bill_id)}/summary",
+    );
+    expect(dock).toContain(
+      "/api/civic-genome/export/bill/${encodeURIComponent(source_bill_id)}/detailed",
+    );
+    expect(dock).toContain("Summary report");
+    expect(dock).toContain("Detailed report");
     expect(dock).toContain("Law ↔ Rosetta report");
     expect(dock).toContain("Machine JSON");
-    expect(dock).not.toContain("Summary report");
-    expect(dock).not.toContain("Detailed report");
     expect(dock).toContain("Technical data · current 100");
   });
 
