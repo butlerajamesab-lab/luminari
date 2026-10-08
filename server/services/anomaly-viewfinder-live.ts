@@ -1,6 +1,6 @@
 import { getPool } from "../db";
 
-const VIEWFINDER_VIEW = "public.v_anomaly_viewfinder_live_v1";
+const VIEWFINDER_VIEW = "public.mv_anomaly_viewfinder_live_v1";
 
 export async function getLiveAnomalyViewfinderStates() {
   const result = await getPool().query(`
