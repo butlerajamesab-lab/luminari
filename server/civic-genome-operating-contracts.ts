@@ -43,9 +43,12 @@ type local_contract_counts = {
   latest_bill_observed_at: string | null;
   rosetta_binding_count: string;
   rosetta_assembly_count: string;
+  latest_rosetta_assembled_at: string | null;
   relationship_count: string;
+  latest_relationship_at: string | null;
   comparison_matrix_count: string;
   comparison_state_cell_count: string;
+  latest_comparison_matrix_at: string | null;
   prism_deep_binding_count: string;
   prism_deep_run_count: string;
   prism_legacy_binding_count: string;
@@ -87,9 +90,12 @@ export async function get_civic_genome_operating_contracts(): Promise<civic_geno
        (select max(updated_at)::text from public.civic_genome_bill) as latest_bill_observed_at,
        (select count(*)::text from public.civic_genome_rosetta_source_binding) as rosetta_binding_count,
        (select count(*)::text from public.civic_genome_assembly_run where run_status = 'completed') as rosetta_assembly_count,
+       (select max(completed_at)::text from public.civic_genome_assembly_run where run_status = 'completed') as latest_rosetta_assembled_at,
        (select count(*)::text from public.civic_genome_relationship where validation_state <> 'rejected') as relationship_count,
+       (select max(updated_at)::text from public.civic_genome_relationship where validation_state <> 'rejected') as latest_relationship_at,
        (select count(*)::text from public.civic_genome_comparison_matrix) as comparison_matrix_count,
        (select count(*)::text from public.civic_genome_comparison_state_cell) as comparison_state_cell_count,
+       (select max(created_at)::text from public.civic_genome_comparison_matrix) as latest_comparison_matrix_at,
        (select count(*)::text
           from public.civic_genome_prism_verification_binding
          where prism_rule_set_id = $1
@@ -172,7 +178,7 @@ export async function get_civic_genome_operating_contracts(): Promise<civic_geno
         detail: `${rosetta_binding_count} explicit source bindings and ${rosetta_assembly_count} completed assemblies are materialized.`,
         observed_count: rosetta_assembly_count,
         bound_count: rosetta_binding_count,
-        last_observed_at: null,
+        last_observed_at: local?.latest_rosetta_assembled_at ?? null,
         boundary: "Rosetta owns five-layer extraction. Civic Genome accepts only completed, provenance-valid law-view outputs; Lighthouse links to the standalone service without duplicating it.",
       },
       {
@@ -227,7 +233,7 @@ export async function get_civic_genome_operating_contracts(): Promise<civic_geno
         detail: `${comparison_matrix_count} comparison matrices and ${comparison_state_cell_count} jurisdiction cells are materialized.`,
         observed_count: comparison_state_cell_count,
         bound_count: comparison_matrix_count,
-        last_observed_at: null,
+        last_observed_at: local?.latest_comparison_matrix_at ?? null,
         boundary: "Viewfinder reads Civic Genome comparison projections and does not mutate source observations.",
       },
       kaleidoscope_contract,
@@ -241,7 +247,7 @@ export async function get_civic_genome_operating_contracts(): Promise<civic_geno
         detail: `${relationship_count} validated or observed Genome relationships are available; no Esquire packet binding is asserted.`,
         observed_count: relationship_count,
         bound_count: 0,
-        last_observed_at: null,
+        last_observed_at: local?.latest_relationship_at ?? null,
         boundary: "Esquire may package validated downstream outputs but does not own Civic Genome evidence.",
       },
     ],
