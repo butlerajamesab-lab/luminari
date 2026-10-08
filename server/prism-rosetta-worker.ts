@@ -34,6 +34,22 @@ import {
   start_docket_bill_activation_queue_worker,
   stop_docket_bill_activation_queue_worker,
 } from "./docket-jurisdiction-activation-queue-worker";
+import {
+  start_rosetta_generation_activation_queue_worker,
+  stop_rosetta_generation_activation_queue_worker,
+} from "./civic-genome-rosetta-generation-queue-worker";
+import {
+  start_rosetta_generation_target_sync,
+  stop_rosetta_generation_target_sync,
+} from "./civic-genome-rosetta-generation-target-sync";
+import {
+  start_rosetta_generation_upgrade_worker,
+  stop_rosetta_generation_upgrade_worker,
+} from "./civic-genome-rosetta-generation-upgrade-worker";
+import {
+  start_civic_genome_final_source_reconciliation_worker,
+  stop_civic_genome_final_source_reconciliation_worker,
+} from "./civic-genome-final-source-reconciliation-worker";
 
 const runtime_role = resolve_lighthouse_runtime_role();
 if (runtime_role.role !== "worker" || !runtime_role.valid) {
@@ -220,6 +236,10 @@ console.log("[PrismRosettaWorker] starting", {
       : null,
 });
 start_prism_rosetta_queue_worker();
+start_rosetta_generation_activation_queue_worker();
+start_rosetta_generation_target_sync();
+start_rosetta_generation_upgrade_worker();
+start_civic_genome_final_source_reconciliation_worker();
 if (!legislative_version_queue_recovery_scope) {
   start_current_result_observation_worker();
   current_result_observation_enabled = true;
@@ -252,6 +272,10 @@ async function shutdown(signal: string): Promise<void> {
   await wait_for_docket_state_refreshes();
   await Promise.all([
     stop_prism_rosetta_queue_worker(),
+    stop_rosetta_generation_activation_queue_worker(),
+    stop_rosetta_generation_target_sync(),
+    stop_rosetta_generation_upgrade_worker(),
+    stop_civic_genome_final_source_reconciliation_worker(),
     current_result_observation_enabled
       ? stop_current_result_observation_worker()
       : Promise.resolve(),
