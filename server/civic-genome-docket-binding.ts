@@ -4,10 +4,9 @@ import { getPool } from "./db";
  * This does not select a Rosetta result. Multiple source identities are rejected;
  * no latest-version or document-ID fallback is sent to Rosetta.
  *
- * Legacy bills assembled before rosetta_source_identity_hash was written into
- * receipt_json match on source_document_id + source_content_hash alone; that
- * path is taken only when the field is absent. Bills that carry a hash are still
- * required to match exactly.
+ * Bills must carry rosetta_source_identity_hash in receipt_json; old-era bills
+ * without this field are excluded from the upgrade queue entirely at discovery
+ * time and will never reach this function.
  */
 export async function load_queued_docket_binding(input: {
   genome_bill_id: string;
@@ -23,7 +22,6 @@ export async function load_queued_docket_binding(input: {
         and (
           $4::text is null
           or receipt_json->>'rosetta_source_identity_hash'=$4
-          or receipt_json->>'rosetta_source_identity_hash' is null
         )
       limit 2`,
     [input.genome_bill_id, input.source_document_id, input.source_content_hash?.toLowerCase() ?? null, input.source_identity_hash ?? null],
