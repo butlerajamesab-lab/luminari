@@ -39,6 +39,7 @@ import {
 } from "../civic-genome-operating-contracts";
 import { get_docket_verified_enrichment } from "../docket-verified-enrichment";
 import { background_workers_allowed } from "../runtime-role";
+import { orchestrate_civic_genome_rosetta_complete } from "../civic-genome-rosetta-complete-orchestration";
 
 const uuid_param = z.string().uuid();
 const source_bill_id_param = z.coerce.number().int().positive();
@@ -70,6 +71,18 @@ export const civicGenomeRouter = router({
 
   operating_contracts: publicProcedure
     .query(async () => get_civic_genome_operating_contracts()),
+
+  orchestrate_rosetta_complete: workerAdminProcedure
+    .input(z.object({
+      state_code: z.string().max(10).optional(),
+      limit: z.number().min(1).max(20000).optional(),
+      ingestion_batch_size: z.number().min(1).max(50).optional(),
+    }).optional())
+    .mutation(async ({ input }) => orchestrate_civic_genome_rosetta_complete({
+      state_code: input?.state_code,
+      limit: input?.limit,
+      ingestion_batch_size: input?.ingestion_batch_size,
+    })),
 
   project_from_docket_cache: workerAdminProcedure
     .input(z.object({
