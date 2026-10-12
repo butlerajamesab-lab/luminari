@@ -62,7 +62,7 @@ type atlas_contract_counts = {
 };
 
 const PRISM_DEEP_RULE_SET_ID = "prism-rosetta-structural-binding";
-const PRISM_DEEP_RULE_SET_VERSION = "2.5.0";
+const PRISM_DEEP_RULE_SET_VERSION_DEFAULT = "2.5.0";
 
 export function atlas_bridge_is_stale(
   latest_bridged_at: string | null | undefined,
@@ -83,6 +83,10 @@ const count = (value: string | undefined): number => {
 };
 
 export async function get_civic_genome_operating_contracts(): Promise<civic_genome_operating_contracts> {
+  // This is a query selection, not an assertion that Prism itself is running
+  // the configured version. The observed binding counts remain authoritative.
+  const prism_deep_rule_set_version =
+    process.env.PRISM_DEEP_RULE_SET_VERSION?.trim() || PRISM_DEEP_RULE_SET_VERSION_DEFAULT;
   const pool = getPool();
   const local_result = await pool.query<local_contract_counts>(
     `select
@@ -113,7 +117,7 @@ export async function get_civic_genome_operating_contracts(): Promise<civic_geno
           from public.civic_genome_prism_verification_binding
          where prism_rule_set_id = $1
            and prism_rule_set_version = $2) as latest_prism_deep_bound_at`,
-    [PRISM_DEEP_RULE_SET_ID, PRISM_DEEP_RULE_SET_VERSION],
+    [PRISM_DEEP_RULE_SET_ID, prism_deep_rule_set_version],
   );
   const local = local_result.rows[0];
 
@@ -217,7 +221,7 @@ export async function get_civic_genome_operating_contracts(): Promise<civic_geno
         role: "Deterministic source replay and structural verification",
         state: prism_deep_run_count > 0 ? "operational" : prism_deep_binding_count > 0 ? "available_unbound" : "ready_empty",
         state_label: prism_deep_run_count > 0 ? "Operational" : prism_deep_binding_count > 0 ? "Deep receipts available" : "No deep verification receipts",
-        detail: `${prism_deep_binding_count} independently replayed trait receipts across ${prism_deep_run_count} complete deep verification runs are materialized; ${prism_legacy_binding_count} legacy binding-only receipts remain preserved.`,
+        detail: `${prism_deep_binding_count} independently replayed trait receipts across ${prism_deep_run_count} complete deep verification runs are materialized; ${prism_legacy_binding_count} legacy binding-only receipts remain preserved. Counts are scoped to configured ruleset ${prism_deep_rule_set_version}; this configuration alone does not verify Prism's active target.`,
         observed_count: prism_deep_binding_count,
         bound_count: prism_deep_binding_count,
         last_observed_at: local?.latest_prism_deep_bound_at ?? null,
