@@ -61,7 +61,10 @@ describe("Lighthouse web/background runtime boundary", () => {
     expect(docket_routes).toContain('error: "background_runtime_required"');
     expect(docket_routes).toContain('source: "cache_stale_worker_paused"');
     expect(civic_genome_router).toContain("const workerAdminProcedure = adminProcedure.use");
-    expect(civic_genome_router.match(/workerAdminProcedure/g)?.length).toBe(8);
+    // Eight guarded commands plus their shared workerAdminProcedure declaration.
+    // The newly added complete-orchestration command must use the same worker gate.
+    expect(civic_genome_router).toContain("orchestrate_rosetta_complete: workerAdminProcedure");
+    expect(civic_genome_router.match(/workerAdminProcedure/g)?.length).toBe(9);
     for (const mutation of [
       "reenableStream",
       "resetFailureCounters",
