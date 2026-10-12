@@ -705,6 +705,9 @@ export async function render_civic_genome_human_report(
   const family_assignment = as_record(bill_detail.family_assignment);
   const all_traits = final_source ? as_records(root.all_structural_traits) : [];
   const all_runs = final_source ? as_records(root.all_assembly_runs) : [];
+  const export_warnings = Array.isArray(root.export_warnings)
+    ? root.export_warnings.filter((value): value is string => typeof value === "string")
+    : [];
   const events = as_records(root.bill_events);
   const presented_events = events.map((event) => ({
     event,
@@ -902,6 +905,9 @@ export async function render_civic_genome_human_report(
     <p class="subhead">These are source-event dates. Rosetta extraction receipts and Lighthouse observation receipts retain their own separately labeled timestamps.</p>
   </section>
 
+  ${export_warnings.length > 0
+    ? `<section class="panel"><h2>Export provenance warnings</h2><ul>${export_warnings.map(warning => `<li>${html(warning)}</li>`).join("")}</ul></section>`
+    : ""}
   ${law_decomposition ? (current_snapshot?.source ? "" : `<section class="panel"><h2>Current source unavailable</h2><p class="warn">The exact current source copy is not attached; the report will not substitute a historical source.</p></section>`) : source_gap}
   ${mode === "summary" ? `<section class="panel"><h2>Legislative text versions</h2>${version_table(versions, source_by_document)}</section>` : ""}
   ${summary_pending_section}
