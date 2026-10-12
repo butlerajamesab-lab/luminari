@@ -942,10 +942,14 @@ export async function render_civic_genome_human_report(
     : final_source ? source_block(final_source, {
         official: historical_source_only
           ? `${human_key(published_version?.version_type ?? "historical")} — historical source, not current`
-          : `${human_key(current_version?.version_type ?? "current")} — full authoritative source used by Rosetta`,
+          : current_structural_snapshot_available
+            ? `${human_key(current_version?.version_type ?? "current")} — full authoritative source used by Rosetta`
+            : `${human_key(current_version?.version_type ?? "current")} — current source text, structural verification unavailable`,
         provider_copy: historical_source_only
           ? `${human_key(published_version?.version_type ?? "historical")} — historical verified provider copy, not current`
-          : `${human_key(current_version?.version_type ?? "current")} — full verified provider copy analyzed by Rosetta`,
+          : current_structural_snapshot_available
+            ? `${human_key(current_version?.version_type ?? "current")} — full verified provider copy analyzed by Rosetta`
+            : `${human_key(current_version?.version_type ?? "current")} — provider source copy, structural verification unavailable`,
       }, true) : ""}
 
   <footer>
