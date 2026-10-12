@@ -105,7 +105,7 @@ export type civic_genome_bill_detail = {
   current_version: civic_genome_version_snapshot | null;
   published_version: civic_genome_version_snapshot | null;
   structural_dna: {
-    snapshot_state: "current" | "previous_verified" | "unavailable";
+    snapshot_state: "current" | "unavailable";
     traits: persisted_genome_trait[];
     assembly_runs: persisted_genome_assembly_run[];
     validation_summary: {
@@ -235,15 +235,16 @@ export async function get_civic_genome_bill_detail(
       processing_state: version_selection.published_processing_state ?? "verified",
     }
     : null;
-  const display_version = current_version?.processing_state === "verified"
+  // Only the current version's own verified and source-bound extraction is eligible
+  // for the structural DNA panel. Historical published output stays in lineage.
+  const current_structure_verified = (
+    current_version?.processing_state === "verified"
     || current_version?.processing_state === "verified_with_findings"
-    ? current_version
-    : published_version;
-  const snapshot_state = display_version == null
-    ? "unavailable"
-    : display_version.bill_version_id === current_version?.bill_version_id
-      ? "current"
-      : "previous_verified";
+  ) && current_version.source_document_id !== null
+    && current_version.extraction_run_id !== null
+    && /^[0-9a-f]{64}$/i.test(current_version.source_content_hash ?? "");
+  const display_version = current_structure_verified ? current_version : null;
+  const snapshot_state = display_version === null ? "unavailable" : "current";
 
   const [traits_result, runs_result, family_result, resolution_result] = await Promise.all([
     pool.query<persisted_genome_trait>(
