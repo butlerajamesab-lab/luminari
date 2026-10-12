@@ -669,10 +669,14 @@ export async function render_civic_genome_human_report(
   const versions = as_records(root.bill_versions);
   const current_version = as_record(bill_detail.current_version);
   const published_version = as_record(bill_detail.published_version);
-  const final_source_document_id = positive_integer(
-    published_version?.source_document_id ??
-      current_version?.source_document_id,
-  );
+  const current_source_document_id = positive_integer(current_version?.source_document_id);
+  const published_source_document_id = positive_integer(published_version?.source_document_id);
+  const final_source_document_id = current_source_document_id ?? published_source_document_id;
+  // A fallback to the verified published version is history, not current analysis.
+  const historical_source_only = current_source_document_id === null
+    && published_source_document_id !== null;
+  const current_structural_snapshot_available =
+    structural_dna.snapshot_state === "current" && !historical_source_only;
 
   const source_document_ids = versions
     .map((version) => positive_integer(version.rosetta_source_document_id))
@@ -684,16 +688,20 @@ export async function render_civic_genome_human_report(
     source_rows.map((row) => [row.source_document_id, row]),
   );
   const final_source = final_source_document_id ? source_by_document.get(final_source_document_id) : undefined;
-  if (published_version?.source_document_id && !final_source?.source_text) {
+  if (final_source_document_id && !final_source?.source_text) {
     throw new Error("civic_genome_human_report_verified_source_text_unavailable");
   }
   const final_source_uses_provider_copy = final_source ? is_provider_copy_fallback(final_source) : false;
   const source_gap = !final_source
     ? '<section class="panel"><h2>Source decomposition pending</h2><p class="warn">No exact Rosetta source copy is attached for this snapshot. This report contains available source-version metadata and procedural observations only; it does not establish validated bill content or amendment effects.</p></section>'
-    : "";
+    : historical_source_only
+      ? '<section class="panel"><h2>Current source not established</h2><p class="warn">The historical verified source is available below for lineage inspection only. Its text, traits, and verification are not represented as the current version.</p></section>'
+      : "";
 
-  const traits = final_source ? as_records(structural_dna.traits) : [];
-  const validation = final_source ? as_record(structural_dna.validation_summary) ?? {} : {};
+  const traits = final_source && current_structural_snapshot_available
+    ? as_records(structural_dna.traits) : [];
+  const validation = final_source && current_structural_snapshot_available
+    ? as_record(structural_dna.validation_summary) ?? {} : {};
   const family_assignment = as_record(bill_detail.family_assignment);
   const all_traits = final_source ? as_records(root.all_structural_traits) : [];
   const all_runs = final_source ? as_records(root.all_assembly_runs) : [];
@@ -900,8 +908,8 @@ export async function render_civic_genome_human_report(
 
   ${law_decomposition ? current_analysis_state : `
   <section class="panel">
-    <span class="eyebrow">${final_source ? "Recorded structural state" : "Decomposition unavailable"}</span>
-    <h2>What the current Civic Genome snapshot contains</h2>
+    <span class="eyebrow">${current_structural_snapshot_available ? "Recorded structural state" : "Decomposition unavailable"}</span>
+    <h2>${current_structural_snapshot_available ? "What the current Civic Genome snapshot contains" : "Current structural snapshot unavailable"}</h2>
     <div class="grid">
       ${layer_summary || '<div class="metric"><span class="label">Structural traits</span><b>None observed</b></div>'}
       <div class="metric"><span class="label">${final_source_uses_provider_copy ? "Provider-copy text supported" : "Official-source supported"}</span><b>${html(validation.supported ?? 0)}</b></div>
@@ -926,8 +934,12 @@ export async function render_civic_genome_human_report(
         }, false)
       : ""
     : final_source ? source_block(final_source, {
-        official: `${human_key(published_version?.version_type ?? current_version?.version_type ?? "authoritative")} — full authoritative source used by Rosetta`,
-        provider_copy: `${human_key(published_version?.version_type ?? current_version?.version_type ?? "source")} — full verified provider copy analyzed by Rosetta`,
+        official: historical_source_only
+          ? `${human_key(published_version?.version_type ?? "historical")} — historical source, not current`
+          : `${human_key(current_version?.version_type ?? "current")} — full authoritative source used by Rosetta`,
+        provider_copy: historical_source_only
+          ? `${human_key(published_version?.version_type ?? "historical")} — historical verified provider copy, not current`
+          : `${human_key(current_version?.version_type ?? "current")} — full verified provider copy analyzed by Rosetta`,
       }, true) : ""}
 
   <footer>
