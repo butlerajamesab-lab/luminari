@@ -189,6 +189,28 @@ function temporal_v2_unavailable(error: unknown): boolean {
   return code === "42P01" || code === "42883" || code === "42703";
 }
 
+// This is an existence probe, not a health or data-coverage assertion.
+// Per-bill fallbacks remain explicit when current views return no rows.
+export type civic_genome_temporal_schema_availability = {
+  lifecycle_current_v3: boolean;
+  lifecycle_history_v3: boolean;
+  temporal_facts_v2: boolean;
+  momentum_v2: boolean;
+};
+
+export async function get_civic_genome_temporal_schema_availability():
+  Promise<civic_genome_temporal_schema_availability> {
+  const { rows } = await getPool().query<civic_genome_temporal_schema_availability>(
+    `select
+       to_regclass('public.v_civic_genome_lifecycle_event_current_v3') is not null as lifecycle_current_v3,
+       to_regclass('public.v_civic_genome_lifecycle_event_history_v3') is not null as lifecycle_history_v3,
+       to_regclass('public.v_civic_genome_bill_temporal_facts_v2') is not null as temporal_facts_v2,
+       to_regprocedure('public.civic_genome_family_momentum_event_time_v2(uuid,timestamp with time zone)') is not null as momentum_v2`,
+  );
+  if (!rows[0]) throw new Error("civic_genome_temporal_schema_probe_empty");
+  return rows[0];
+}
+
 // ─── Families ────────────────────────────────────────────────────────────────
 
 export async function list_genome_families(opts?: {
