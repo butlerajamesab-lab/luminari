@@ -32,18 +32,16 @@ it.each(["summary", "detailed"] as const)("exports %s evidence while all source 
   expect(fetch).not.toHaveBeenCalled();
 });
 
-it("renders an explicit gap when the current source identity exists without preserved text", async () => {
+it("fails closed when the chosen current source has no preserved text", async () => {
   vi.stubEnv("ROSETTA_SUPABASE_URL", "https://rosetta.test");
   vi.stubEnv("ROSETTA_SUPABASE_SERVICE_ROLE_KEY", "sb_secret_test");
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("[]", { status: 200 })));
-  const report = await render_civic_genome_human_report({
+  await expect(render_civic_genome_human_report({
     source_bill_id: 1, bill_detail: {
       bill: {}, structural_dna: { traits: [], validation_summary: {} },
       current_version: { source_document_id: 7, processing_state: "failed" },
     },
-  }, "summary");
-  expect(report).toContain("Source decomposition pending");
-  expect(report).toContain("No exact Rosetta source copy is attached");
+  }, "summary")).rejects.toThrow("civic_genome_human_report_verified_source_text_unavailable");
 });
 
 it("still fails closed when a published verified source loses its exact text", async () => {
@@ -57,4 +55,35 @@ it("still fails closed when a published verified source loses its exact text", a
       published_version: { source_document_id: 7, processing_state: "verified" },
     },
   }, "summary")).rejects.toThrow("civic_genome_human_report_verified_source_text_unavailable");
+});
+
+it("keeps a historical source separate when current structural DNA is unavailable", async () => {
+  vi.stubEnv("ROSETTA_SUPABASE_URL", "https://rosetta.test");
+  vi.stubEnv("ROSETTA_SUPABASE_SERVICE_ROLE_KEY", "sb_secret_test");
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify([{
+    source_document_id: 9,
+    source_content_id: "11111111-1111-4111-8111-111111111111",
+    source_version: "published-historical-v1",
+    source_text: "Historical verified source text.",
+    source_content_hash: "a".repeat(64),
+    source_byte_hash: "b".repeat(64),
+    created_at: "2026-01-01T00:00:00Z",
+  }]), { status: 200 })));
+  const report = await render_civic_genome_human_report({
+    source_bill_id: 1,
+    bill_detail: {
+      bill: {},
+      structural_dna: {
+        snapshot_state: "unavailable",
+        traits: [{ trait_class: "duty", trait_key: "not_current_claim" }],
+        validation_summary: { supported: 22 },
+      },
+      current_version: { source_document_id: null, version_type: "enrolled" },
+      published_version: { source_document_id: 9, version_type: "amendment", processing_state: "verified" },
+    },
+  }, "summary");
+  expect(report).toContain("historical source, not current");
+  expect(report).toContain("Current structural snapshot unavailable");
+  expect(report).not.toContain("not_current_claim");
+  expect(report).not.toContain("<b>22</b>");
 });
