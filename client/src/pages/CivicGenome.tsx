@@ -48,6 +48,61 @@ type operating_contract = {
   boundary: string;
 };
 
+const NOT_ESTABLISHED_CONTRACTS: operating_contract[] = [
+      {
+        service_key: "atlas",
+        display_name: "Atlas",
+        external_url: null,
+        role: "Verified signal reference",
+        state: "not_established",
+        state_label: "No Genome binding",
+        detail: "No exact Atlas-to-Civic-Genome binding was returned.",
+        observed_count: null,
+        bound_count: 0,
+        last_observed_at: null,
+        boundary: "Signals remain Atlas-owned; Civic Genome may reference only explicit bindings.",
+      },
+      {
+        service_key: "prism",
+        display_name: "Prism",
+        external_url: null,
+        role: "Reasoning and findings",
+        state: "not_established",
+        state_label: "Contract not established",
+        detail: "No Civic Genome identity seam or Prism ingest envelope was returned.",
+        observed_count: null,
+        bound_count: 0,
+        last_observed_at: null,
+        boundary: "Rosetta and Civic Genome do not write findings directly into Prism.",
+      },
+      {
+        service_key: "viewfinder",
+        display_name: "Viewfinder",
+        external_url: null,
+        role: "Comparison materialization",
+        state: "not_established",
+        state_label: "No materialized comparison",
+        detail: "No Civic Genome comparison matrix or state cell was returned.",
+        observed_count: 0,
+        bound_count: 0,
+        last_observed_at: null,
+        boundary: "Comparison artifacts remain explicit, versioned outputs.",
+      },
+      {
+        service_key: "kaleidoscope",
+        display_name: "Kaleidoscope",
+        external_url: null,
+        role: "Projection and scenario reference",
+        state: "not_established",
+        state_label: "Contract not established",
+        detail: "No Civic Genome projection contract was returned.",
+        observed_count: null,
+        bound_count: 0,
+        last_observed_at: null,
+        boundary: "Projections do not mutate source observations or Genome-owned structure.",
+      },
+];
+
 const source_id_from_bill = (bill: { source_bill_id?: unknown; structural_dna_json?: unknown }): string | null => {
   const direct_value = bill.source_bill_id;
   if (
@@ -158,66 +213,19 @@ export default function CivicGenomePage() {
     return [...groups.entries()];
   }, [defects_only, traits]);
   const panel = { background: p.panel, border: `1px solid ${p.border}`, borderRadius: 12, padding: "1rem" } as const;
-  const contracts = useMemo(() => {
-    const observed_contracts = safeArray<operating_contract>(operating_contracts.data?.contracts);
-    if (!operating_contracts.isSuccess) return observed_contracts;
-    const explicit_empty_contracts: operating_contract[] = [
-      {
-        service_key: "atlas",
-        display_name: "Atlas",
-        external_url: null,
-        role: "Verified signal reference",
-        state: "not_established",
-        state_label: "No Genome binding",
-        detail: "No exact Atlas-to-Civic-Genome binding was returned.",
-        observed_count: null,
-        bound_count: 0,
-        last_observed_at: null,
-        boundary: "Signals remain Atlas-owned; Civic Genome may reference only explicit bindings.",
-      },
-      {
-        service_key: "prism",
-        display_name: "Prism",
-        external_url: null,
-        role: "Reasoning and findings",
-        state: "not_established",
-        state_label: "Contract not established",
-        detail: "No Civic Genome identity seam or Prism ingest envelope was returned.",
-        observed_count: null,
-        bound_count: 0,
-        last_observed_at: null,
-        boundary: "Rosetta and Civic Genome do not write findings directly into Prism.",
-      },
-      {
-        service_key: "viewfinder",
-        display_name: "Viewfinder",
-        external_url: null,
-        role: "Comparison materialization",
-        state: "not_established",
-        state_label: "No materialized comparison",
-        detail: "No Civic Genome comparison matrix or state cell was returned.",
-        observed_count: 0,
-        bound_count: 0,
-        last_observed_at: null,
-        boundary: "Comparison artifacts remain explicit, versioned outputs.",
-      },
-      {
-        service_key: "kaleidoscope",
-        display_name: "Kaleidoscope",
-        external_url: null,
-        role: "Projection and scenario reference",
-        state: "not_established",
-        state_label: "Contract not established",
-        detail: "No Civic Genome projection contract was returned.",
-        observed_count: null,
-        bound_count: 0,
-        last_observed_at: null,
-        boundary: "Projections do not mutate source observations or Genome-owned structure.",
-      },
+  const contracts = useMemo(
+    () => safeArray<operating_contract>(operating_contracts.data?.contracts),
+    [operating_contracts.data],
+  );
+  // Presentation-only placeholders must never become server observations or
+  // affect cross-service navigation and policy decisions.
+  const display_contracts = useMemo(() => {
+    const returned_keys = new Set(contracts.map(contract => contract.service_key));
+    return [
+      ...contracts,
+      ...NOT_ESTABLISHED_CONTRACTS.filter(template => !returned_keys.has(template.service_key)),
     ];
-    const returned_keys = new Set(observed_contracts.map(contract => contract.service_key));
-    return [...observed_contracts, ...explicit_empty_contracts.filter(contract => !returned_keys.has(contract.service_key))];
-  }, [operating_contracts.data, operating_contracts.isSuccess]);
+  }, [contracts]);
   const rosetta_service_url = contracts.find(contract => contract.service_key === "rosetta")?.external_url;
   const rosetta_review_url = rosetta_service_url ? new URL("/review", rosetta_service_url).toString() : null;
 
@@ -262,8 +270,8 @@ export default function CivicGenomePage() {
           </div>
           <span style={{ fontFamily: mono, color: p.muted, fontSize: ".61rem" }}>read-only service ledger</span>
         </div>
-        {operating_contracts.isLoading ? <Empty>Reading the Civic Genome service ledger…</Empty> : operating_contracts.error ? <Empty>Operating contract lookup failed: {operating_contracts.error.message}</Empty> : contracts.length ? <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))", gap: ".65rem" }}>
-          {contracts.map(contract => <article key={contract.service_key} style={{ background: p.soft, border: `1px solid ${p.border}`, borderRadius: 9, padding: ".8rem", display: "grid", alignContent: "start", gap: ".45rem" }}>
+        {operating_contracts.isLoading ? <Empty>Reading the Civic Genome service ledger…</Empty> : operating_contracts.error ? <Empty>Operating contract lookup failed: {operating_contracts.error.message}</Empty> : display_contracts.length ? <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))", gap: ".65rem" }}>
+          {display_contracts.map(contract => <article key={contract.service_key} style={{ background: p.soft, border: `1px solid ${p.border}`, borderRadius: 9, padding: ".8rem", display: "grid", alignContent: "start", gap: ".45rem" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: ".5rem" }}>
               <strong style={{ fontFamily: sans, fontSize: ".87rem" }}>{contract.display_name}</strong>
               <span style={{ color: contract_state_color(contract.state), fontFamily: mono, fontSize: ".59rem", textTransform: "uppercase", textAlign: "right" }}>{contract.state_label}</span>
@@ -365,7 +373,7 @@ export default function CivicGenomePage() {
               <Metric label="Duplicates" value={validation_summary?.duplicates ?? "—"}/>
               <Metric label="Missing section" value={validation_summary?.missing_section ?? "—"}/>
             </div>
-            {structural_snapshot_state === "previous_verified" && published_version && <div style={{ marginTop: ".7rem", padding: ".65rem .75rem", border: `1px solid ${p.green}`, borderRadius: 8, background: p.green_soft, color: p.paper, fontFamily: sans, fontSize: ".75rem", lineHeight: 1.45 }}>A current {current_version?.version_type ?? "bill"} publication has not been established. Structural DNA and verification below remain available from the latest verified {published_version.version_type} snapshot; they are not being presented as current-version results.</div>}
+            {structural_snapshot_state === "unavailable" && current_version && <div style={{ marginTop: ".7rem", padding: ".65rem .75rem", border: `1px solid ${p.green}`, borderRadius: 8, background: p.green_soft, color: p.paper, fontFamily: sans, fontSize: ".75rem", lineHeight: 1.45 }}>The current {current_version.version_type} has no verified, source-bound structural snapshot. Structural DNA is unavailable for this version. {published_version ? `The historical verified ${published_version.version_type} snapshot remains separately identifiable; its traits have not been substituted here.` : "No previous verified structural snapshot was observed."}</div>}
           </section>
           <section style={panel}>
             <div style={{ display: "flex", alignItems: "center", gap: ".5rem", fontFamily: mono, color: p.green, fontSize: ".7rem", marginBottom: ".75rem" }}><Braces size={15}/> Structural DNA</div>
