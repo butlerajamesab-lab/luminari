@@ -20,6 +20,7 @@ import {
   get_genome_stats,
 } from "../civic-genome-db";
 import { get_genome_bill_by_source_id } from "../civic-genome-source-id";
+import { sanitize_genome_bill_public_read } from "../civic-genome-public-read-sanitizer";
 import { project_docket_cache_to_civic_genome } from "../civic-genome-projection";
 import { resolve_or_assemble_docket_bill } from "../civic-genome-single-bill-assembly";
 import { process_docket_bill_through_rosetta_and_genome } from "../civic-genome-rosetta-extraction";
@@ -165,11 +166,14 @@ export const civicGenomeRouter = router({
       limit: z.number().min(1).max(200).optional(),
       offset: z.number().min(0).optional(),
     }).optional())
-    .query(async ({ input }) => list_genome_bills(input ?? {})),
+    .query(async ({ input }) => (await list_genome_bills(input ?? {})).map(sanitize_genome_bill_public_read)),
 
   get_bill: publicProcedure
     .input(z.object({ genome_bill_id: uuid_param }))
-    .query(async ({ input }) => get_genome_bill(input.genome_bill_id)),
+    .query(async ({ input }) => {
+      const bill = await get_genome_bill(input.genome_bill_id);
+      return bill ? sanitize_genome_bill_public_read(bill) : null;
+    }),
 
   get_bill_detail: publicProcedure
     .input(z.object({ genome_bill_id: uuid_param }))
@@ -181,7 +185,10 @@ export const civicGenomeRouter = router({
 
   get_bill_by_source_id: publicProcedure
     .input(z.object({ source_bill_id: source_bill_id_param }))
-    .query(async ({ input }) => get_genome_bill_by_source_id(input.source_bill_id)),
+    .query(async ({ input }) => {
+      const bill = await get_genome_bill_by_source_id(input.source_bill_id);
+      return bill ? sanitize_genome_bill_public_read(bill) : null;
+    }),
 
   get_docket_verified_enrichment: publicProcedure
     .input(z.object({ source_bill_id: source_bill_id_param }))
