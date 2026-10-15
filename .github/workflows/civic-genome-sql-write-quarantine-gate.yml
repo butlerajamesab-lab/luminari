@@ -3,6 +3,10 @@ name: Civic Genome SQL writer quarantine gate
 on:
   pull_request:
     paths:
+      - 'server/civic-genome-source-only-snapshot.ts'
+      - 'server/civic-genome-source-only-snapshot.test.ts'
+      - 'server/civic-genome-projection.ts'
+      - 'server/civic-genome-family-resolution.ts'
       - 'supabase/migration_sources/civic_genome_rosetta_sql_write_quarantine_v1.sql'
       - 'supabase/verification/civic_genome_sql_quarantine_fixture_v1.sql'
       - 'supabase/verification/civic_genome_sql_quarantine_assert_v1.sql'
@@ -48,3 +52,18 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/migration_sources/civic_genome_rosetta_sql_write_quarantine_v1.sql
       - name: Assert rejection, Docket continuity, and purge-safe DELETE
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/verification/civic_genome_sql_quarantine_assert_v1.sql
+
+  source-snapshot-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Typecheck snapshot projection writer changes
+        run: pnpm check
+      - name: Verify new snapshots use source-only projection
+        run: pnpm exec vitest run server/civic-genome-source-only-snapshot.test.ts server/civic-genome-projection.test.ts server/civic-genome-family-resolution.test.ts
