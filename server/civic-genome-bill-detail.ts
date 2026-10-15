@@ -127,8 +127,19 @@ export async function get_civic_genome_bill_detail(
     `select * from public.civic_genome_bill where genome_bill_id = $1 limit 1`,
     [genome_bill_id],
   );
-  const bill = bill_result.rows[0];
-  if (!bill) return null;
+  const persisted_bill = bill_result.rows[0];
+  if (!persisted_bill) return null;
+  // The bill's source identity is canonical, but embedded Rosetta payloads are
+  // not. Keep Docket-sourced keys (including source_bill_id for navigation)
+  // without returning either legacy decomposition carrier or its old hash.
+  const source_structural_dna = { ...(persisted_bill.structural_dna_json ?? {}) };
+  delete source_structural_dna.rosetta_source_receipt;
+  delete source_structural_dna.rosetta_assembly;
+  const bill: GenomeBill = {
+    ...persisted_bill,
+    structural_dna_json: source_structural_dna,
+    structural_dna_hash: "",
+  };
 
   const version_selection_result = await pool.query<{
     current_bill_version_id: string | null;
