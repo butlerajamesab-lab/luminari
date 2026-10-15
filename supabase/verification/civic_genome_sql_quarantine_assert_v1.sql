@@ -51,6 +51,19 @@ SELECT public.expect_genome_write_rejected(
 SELECT public.expect_genome_write_rejected(
   'UPDATE public.civic_genome_rosetta_generation_upgrade_queue SET queue_state=''completed'' WHERE id=1');
 
+-- New sealed source-only snapshots are permitted. Old sealed history is
+-- retained and cannot be changed; old payloads may never be copied forward.
+SELECT public.expect_genome_write_rejected(
+  'INSERT INTO public.civic_genome_projection_entity_version(version_id,entity_type,record_hash,record_json) VALUES (2,''bill'',''invalid-new'',''{"structural_dna_json":{"rosetta_assembly":{"engine":"old"}}}'')');
+SELECT public.expect_genome_write_rejected(
+  'INSERT INTO public.civic_genome_projection_entity_version(version_id,entity_type,record_hash,record_json) VALUES (2,''bill'',''invalid-new'',''{"rosetta_extraction_run_id":"old-run"}'')');
+SELECT public.expect_genome_write_rejected(
+  'UPDATE public.civic_genome_projection_entity_version SET record_json=''{}'' WHERE version_id=1');
+INSERT INTO public.civic_genome_projection_entity_version(version_id,entity_type,record_hash,record_json)
+VALUES (2,'bill','canonical-source','{"structural_dna_json":{"source_bill_id":200},"rosetta_extraction_run_id":null}');
+INSERT INTO public.civic_genome_projection_entity_version(version_id,entity_type,record_hash,record_json)
+VALUES (3,'family','family-source','{"family_id":"ok"}');
+
 -- Docket source operations stay open; old derived values stay untouched
 -- until physical deletion. Legitimate source hash/version updates still work.
 INSERT INTO public.civic_genome_bill(id,structural_dna_json,structural_dna_hash)
@@ -79,6 +92,12 @@ DO $verify$
 BEGIN
   IF (SELECT structural_dna_json ->> 'source_bill_id' FROM public.civic_genome_bill WHERE id=2) <> '200' THEN
     RAISE EXCEPTION 'Docket identity was modified';
+  END IF;
+  IF (SELECT count(*) FROM public.civic_genome_projection_entity_version WHERE version_id=1 AND record_hash='legacy-snapshot-hash') <> 1 THEN
+    RAISE EXCEPTION 'Sealed original snapshot was changed';
+  END IF;
+  IF (SELECT count(*) FROM public.civic_genome_projection_entity_version WHERE version_id=2 AND record_hash='canonical-source') <> 1 THEN
+    RAISE EXCEPTION 'Source-only snapshot insertion was blocked';
   END IF;
   IF (SELECT structural_dna_json ? 'rosetta_assembly' FROM public.civic_genome_bill WHERE id=2) THEN
     RAISE EXCEPTION 'Expected old assembly key to be removable';
