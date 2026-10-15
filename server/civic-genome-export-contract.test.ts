@@ -45,6 +45,19 @@ describe("Civic Genome export contract", () => {
     expect(route).not.toContain("clipboard");
   });
 
+  it("holds unverified legacy decomposition out of technical and human exports", () => {
+    expect(route).toContain("legacy_rosetta_structural_derivatives_withheld_pending_independent_selected_runtime_attestation");
+    expect(route).toContain("all_structural_traits: all_traits_result.rows");
+    expect(route).toContain("all_assembly_runs: all_runs_result.rows");
+    expect(route).toContain("const all_traits_result = { rows: [], rowCount: 0 }");
+    expect(route).toContain("const all_runs_result = { rows: [], rowCount: 0 }");
+    expect(route).not.toMatch(/from public\.civic_genome_trait\b/);
+    expect(route).not.toMatch(/from public\.civic_genome_assembly_run\b/);
+    expect(route).toContain("version.source_document_key");
+    expect(route).toContain("document.source_url");
+    expect(route).not.toContain("select version.*");
+  });
+
   it("keeps deep single-bill export read-only and provenance-rich", () => {
     expect(route).toContain('export_type: "civic_genome_bill_export"');
     expect(route).toContain("bill_versions: versions_result.rows");
