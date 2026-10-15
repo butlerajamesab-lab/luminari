@@ -156,6 +156,37 @@ CREATE TRIGGER zz_civic_genome_block_bill_version_rosetta_receipt_v1
 BEFORE INSERT OR UPDATE ON public.civic_genome_bill_version
 FOR EACH ROW EXECUTE FUNCTION public.civic_genome_block_bill_version_rosetta_receipt_v1();
 
+
+-- New bill projection version rows may only carry source metadata. Historical
+-- sealed snapshots are never rewritten; their original hashes remain intact.
+-- No UPDATE of existing historical records (append-only governance).
+CREATE OR REPLACE FUNCTION public.civic_genome_guard_source_only_history_v1()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = pg_catalog, public
+AS $body$
+BEGIN
+  IF TG_OP = 'UPDATE' THEN
+    RAISE EXCEPTION USING ERRCODE='55000',
+      MESSAGE='civic_genome_projection_history_append_only';
+  END IF;
+  IF NEW.entity_type = 'bill'
+     AND (
+       coalesce(NEW.record_json->'structural_dna_json','{}'::jsonb)
+         ?| array['rosetta_assembly','rosetta_source_receipt']
+       OR nullif(NEW.record_json->>'rosetta_extraction_run_id','') IS NOT NULL
+     ) THEN
+    RAISE EXCEPTION USING ERRCODE='55000',
+      MESSAGE='civic_genome_historical_rosetta_payload_quarantined';
+  END IF;
+  RETURN NEW;
+END;
+$body$;
+
+CREATE TRIGGER zz_civic_genome_guard_source_only_history_v1
+BEFORE INSERT OR UPDATE ON public.civic_genome_projection_entity_version
+FOR EACH ROW EXECUTE FUNCTION public.civic_genome_guard_source_only_history_v1();
+
 -- Queue admission is allowed for source bookkeeping but no old work may
 -- transition to running/completed. Fencing the actual derivative writes above
 -- remains authoritative if a queue is manipulated by another caller.
