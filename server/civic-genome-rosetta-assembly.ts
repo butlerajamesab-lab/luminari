@@ -1,5 +1,6 @@
 import type { PoolClient } from "pg";
 import { getPool } from "./db";
+import { assert_genome_rosetta_publication_admitted } from "./civic-genome-rosetta-publication-quarantine";
 import {
   get_rosetta_current_docket_structure,
   ROSETTA_HANDOFF_STRUCTURAL_REPRESENTATION_V2,
@@ -459,6 +460,8 @@ async function bind_source_identity(
 export async function assert_current_result_publication_target(
   result: NonNullable<RosettaPublicCurrentDocketResult["current_result"]>,
 ): Promise<void> {
+  // A matching stored target is not independent selected-runtime authority.
+  assert_genome_rosetta_publication_admitted();
   const { rows } = await getPool().query<{ engine_version: string; rule_set_version: string; rule_manifest_hash: string }>(
     `select engine_version, rule_set_version, rule_manifest_hash
        from public.civic_genome_rosetta_generation_target where target_name='current'`,
@@ -473,6 +476,8 @@ export async function assert_current_result_publication_target(
 export async function assemble_rosetta_structural_dna(
   request: rosetta_genome_assembly_request,
 ): Promise<rosetta_genome_assembly_result> {
+  // Before any source fetch, receipt replay, transaction, or upsert.
+  assert_genome_rosetta_publication_admitted();
   const binding = await load_exact_docket_assembly_binding(request);
   const current_result = await load_assembly_ready_current_result(request, binding);
   const view = await load_view(request, current_result);

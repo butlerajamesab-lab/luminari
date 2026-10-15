@@ -1,0 +1,30 @@
+name: Rosetta Genome writer quarantine gate
+
+on:
+  pull_request:
+    paths:
+      - 'server/civic-genome-rosetta-publication-quarantine.ts'
+      - 'server/civic-genome-rosetta-assembly.ts'
+      - 'server/civic-genome-rosetta-assembly.test.ts'
+      - 'server/civic-genome-rosetta-generation-queue-worker.ts'
+      - 'server/civic-genome-rosetta-generation-upgrade-worker.ts'
+      - 'server/civic-genome-rosetta-generation-target-sync.ts'
+      - 'server/rosetta-genome-writer-quarantine.contract.test.ts'
+      - '.github/workflows/rosetta-genome-writer-quarantine-gate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  quarantine-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Prove writers fail closed before DB or Rosetta side effects
+        run: pnpm exec vitest run server/rosetta-genome-writer-quarantine.contract.test.ts server/civic-genome-rosetta-assembly.test.ts

@@ -1,6 +1,7 @@
 import { query_with_diagnostics } from "./db";
 import { fetch_rosetta_current_generation } from "./civic-genome-rosetta-generation-upgrade-worker";
 import { background_feature_enabled } from "./runtime-role";
+import { is_genome_rosetta_publication_quarantined } from "./civic-genome-rosetta-publication-quarantine";
 
 const DEFAULT_INTERVAL_MS = 30_000;
 const MIN_INTERVAL_MS = 5_000;
@@ -11,7 +12,7 @@ let running = false;
 let stopped = false;
 
 function enabled(): boolean {
-  return background_feature_enabled("ROSETTA_GENOME_TARGET_SYNC_ENABLED");
+  return !is_genome_rosetta_publication_quarantined() && background_feature_enabled("ROSETTA_GENOME_TARGET_SYNC_ENABLED");
 }
 
 function interval_ms(): number {
@@ -21,6 +22,7 @@ function interval_ms(): number {
 }
 
 export async function sync_rosetta_generation_target_once(): Promise<void> {
+  if (is_genome_rosetta_publication_quarantined()) return; // do not propagate legacy generation receipts
   if (running || stopped) return;
   running = true;
   try {

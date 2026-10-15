@@ -199,7 +199,7 @@ describe("Civic Genome Rosetta assembly gate", () => {
   it.each(["requires_review", "awaiting_analysis", "unavailable"])(
     "does not read assembly data when current result is %s", async status => {
       load_current.mockResolvedValueOnce(current_response({ status, current_result: null }));
-      await expect(assemble_rosetta_structural_dna(request)).rejects.toThrow(
+      await expect(assert_exact_docket_source_binding_for_assembly(request, view())).rejects.toThrow(
         `rosetta_public_current_docket_result_${status}`,
       );
       expect(load_exact_view).not.toHaveBeenCalled();
@@ -209,30 +209,25 @@ describe("Civic Genome Rosetta assembly gate", () => {
   );
 
   it("cannot use an extraction run to infer a missing key and hash", async () => {
-    await expect(assemble_rosetta_structural_dna({
+    await expect(assert_exact_docket_source_binding_for_assembly({
       genome_bill_id: request.genome_bill_id,
       source_document_id: request.source_document_id,
       extraction_run_id: request.extraction_run_id,
-    })).rejects.toThrow("rosetta_public_current_docket_result_exact_selector_missing");
+    } as any, view())).rejects.toThrow("rosetta_public_current_docket_result_exact_selector_missing");
     expect(query).not.toHaveBeenCalled();
     expect(load_current).not.toHaveBeenCalled();
     expect(load_exact_view).not.toHaveBeenCalled();
     expect(load_latest_view).not.toHaveBeenCalled();
   });
 
-  it("selects the authorized exact run before requesting assembly data, without fallback", async () => {
-    load_exact_view.mockResolvedValueOnce(null);
+  it("blocks structural assembly at the entry point before any legacy read or write", async () => {
     await expect(assemble_rosetta_structural_dna({
       ...request, extraction_run_id: undefined,
-    })).rejects.toThrow("rosetta_law_view_not_found");
-    expect(load_current).toHaveBeenCalledOnce();
-    expect(load_exact_view).toHaveBeenCalledOnce();
-    expect(load_exact_view).toHaveBeenCalledWith({
-      source_document_key, source_content_hash, extraction_run_id: request.extraction_run_id, output_content_hash,
-    });
-    expect(load_current.mock.invocationCallOrder[0]).toBeLessThan(load_exact_view.mock.invocationCallOrder[0]);
+    })).rejects.toThrow("civic_genome_rosetta_publication_quarantined_pending_independent_selected_runtime_attestation");
+    expect(query).not.toHaveBeenCalled();
+    expect(load_current).not.toHaveBeenCalled();
+    expect(load_exact_view).not.toHaveBeenCalled();
     expect(load_latest_view).not.toHaveBeenCalled();
-    expect(query).toHaveBeenCalledOnce();
   });
 
   it("requires a current result to assemble", async () => {
@@ -266,14 +261,16 @@ describe("Civic Genome Rosetta assembly gate", () => {
   });
 });
 
-it("holds an otherwise complete candidate before publication without changing the target", async () => {
+it("does not allow a stale target tuple to grant authority", async () => {
   query.mockResolvedValueOnce({ rows: [{ engine_version: "older", rule_set_version, rule_manifest_hash }] });
   await expect(assert_current_result_publication_target({ engine_version, rule_set_version, rule_manifest_hash } as any))
-    .rejects.toThrow("awaiting_publication");
-  expect(query).toHaveBeenCalledOnce();
-  expect(query.mock.calls[0][0].trim()).toMatch(/^select /);
+    .rejects.toThrow("civic_genome_rosetta_publication_quarantined_pending_independent_selected_runtime_attestation");
+  expect(query).not.toHaveBeenCalled();
 });
-it("allows the exact promoted tuple", async () => {
+
+it("does not treat even an exact stored target match as independent attestation", async () => {
   query.mockResolvedValueOnce({ rows: [{ engine_version, rule_set_version, rule_manifest_hash }] });
-  await expect(assert_current_result_publication_target({ engine_version, rule_set_version, rule_manifest_hash } as any)).resolves.toBeUndefined();
+  await expect(assert_current_result_publication_target({ engine_version, rule_set_version, rule_manifest_hash } as any))
+    .rejects.toThrow("civic_genome_rosetta_publication_quarantined_pending_independent_selected_runtime_attestation");
+  expect(query).not.toHaveBeenCalled();
 });
