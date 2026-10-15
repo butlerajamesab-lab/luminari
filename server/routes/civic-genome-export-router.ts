@@ -212,40 +212,37 @@ async function build_single_bill_export(source_bill_id: number) {
   if (!detail) return null;
 
   const pool = getPool();
-  const [versions_result, lineage_result, all_traits_result, all_runs_result] =
-    await Promise.all([
-      pool.query(
-        `select version.*, document.source_url, document.provider_date,
-                document.provider_document_type
+  // Quarantine exported structural derivatives until an independent selected-
+  // runtime source/assembly admission contract exists. Historical traits and
+  // runs must NOT be exported merely because their local status says verified.
+  // Preserve only Docket source/version identity, original source locations,
+  // legislative lineage, and source-event chronology.
+  const [versions_result, lineage_result] = await Promise.all([
+    pool.query(
+      `select version.bill_version_id, version.genome_bill_id,
+              version.source_document_key, version.source_bill_id,
+              version.document_family, version.version_type,
+              version.provider_sequence, version.stage_rank, version.chamber,
+              version.predecessor_bill_version_id, version.base_bill_version_id,
+              version.version_fingerprint, version.created_at, version.updated_at,
+              document.source_url, document.provider_date, document.provider_document_type
          from public.civic_genome_bill_version version
          join public.docket_bill_source_document document using (source_document_key)
         where version.genome_bill_id = $1
         order by document.provider_date asc nulls last, version.provider_sequence,
                  version.source_document_key`,
-        [bill.genome_bill_id],
-      ),
-      pool.query(
-        `select *
+      [bill.genome_bill_id],
+    ),
+    pool.query(
+      `select *
          from public.bill_lineage_edge
         where from_bill_id = $1 or to_bill_id = $1
         order by created_at desc, lineage_edge_id desc`,
-        [bill.genome_bill_id],
-      ),
-      pool.query(
-        `select *
-         from public.civic_genome_trait
-        where genome_bill_id = $1
-        order by created_at asc, trait_class, trait_key, trait_id`,
-        [bill.genome_bill_id],
-      ),
-      pool.query(
-        `select *
-         from public.civic_genome_assembly_run
-        where genome_bill_id = $1
-        order by created_at asc, assembly_run_id asc`,
-        [bill.genome_bill_id],
-      ),
-    ]);
+      [bill.genome_bill_id],
+    ),
+  ]);
+  const all_traits_result = { rows: [], rowCount: 0 };
+  const all_runs_result = { rows: [], rowCount: 0 };
 
   const [
     family,
@@ -296,6 +293,7 @@ async function build_single_bill_export(source_bill_id: number) {
 
   return {
     export_type: "civic_genome_bill_export",
+    export_warnings: ["legacy_rosetta_structural_derivatives_withheld_pending_independent_selected_runtime_attestation"],
     export_contract: EXPORT_CONTRACT,
     exported_at: new Date().toISOString(),
     source_bill_id,
@@ -336,7 +334,7 @@ async function build_single_bill_export(source_bill_id: number) {
       ? "Legislative event time, Lighthouse observation time, and extraction time are separate. Momentum is replayed over confirmed source event time from the latest source revision; future-dated provider records remain preserved and explicitly pending, while superseded rows and tombstones remain preserved history but are not current truth."
       : "Event-time chronology v2 is unavailable for this bill; legacy mixed-time projection rows are preserved and explicitly labeled.",
     interpretation:
-      "This is a source-preserving Civic Genome export. Historical versions, legacy projections, and receipts are preserved as history; export does not re-run or mutate Rosetta, Prism, Docket, or Civic Genome state.",
+      "This is a source-only Civic Genome export. Historical Rosetta-derived traits, runs, and unproven receipts are withheld. Source-version identity, Docket events, and legislative lineage remain readable. No Rosetta, Prism, Docket, or Genome mutation occurs.",
   };
 }
 
