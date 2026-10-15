@@ -669,22 +669,28 @@ export async function render_civic_genome_human_report(
   const versions = as_records(root.bill_versions);
   const current_version = as_record(bill_detail.current_version);
   const published_version = as_record(bill_detail.published_version);
-  const final_source_document_id = positive_integer(
-    published_version?.source_document_id ??
-      current_version?.source_document_id,
-  );
-
-  const source_document_ids = versions
-    .map((version) => positive_integer(version.rosetta_source_document_id))
-    .filter((value): value is number => Boolean(value));
+  // A historic Rosetta source document ID is not current-runtime authority.
+  // A source-only Genome export has no admitted structural snapshot and must
+  // never resolve a previous verified source as a substitute for current law.
+  const current_structural_source_attested = structural_dna.snapshot_state === "current";
+  const final_source_document_id = current_structural_source_attested
+    ? positive_integer(current_version?.source_document_id)
+    : null;
+  const source_document_ids = current_structural_source_attested
+    ? versions
+      .map((version) => positive_integer(version.rosetta_source_document_id))
+      .filter((value): value is number => Boolean(value))
+    : [];
   if (final_source_document_id && !source_document_ids.includes(final_source_document_id))
     source_document_ids.push(final_source_document_id);
-  const source_rows = await load_rosetta_source_content(source_document_ids);
+  const source_rows = source_document_ids.length > 0
+    ? await load_rosetta_source_content(source_document_ids)
+    : [];
   const source_by_document = new Map(
     source_rows.map((row) => [row.source_document_id, row]),
   );
   const final_source = final_source_document_id ? source_by_document.get(final_source_document_id) : undefined;
-  if (published_version?.source_document_id && !final_source?.source_text) {
+  if (current_structural_source_attested && final_source_document_id && !final_source?.source_text) {
     throw new Error("civic_genome_human_report_verified_source_text_unavailable");
   }
   const final_source_uses_provider_copy = final_source ? is_provider_copy_fallback(final_source) : false;

@@ -1,5 +1,6 @@
 import { getPool } from "./db";
 import type { GenomeBill } from "./civic-genome-db";
+import { sanitize_genome_bill_public_read } from "./civic-genome-public-read-sanitizer";
 
 export type persisted_genome_trait = {
   trait_id: string;
@@ -127,8 +128,9 @@ export async function get_civic_genome_bill_detail(
     `select * from public.civic_genome_bill where genome_bill_id = $1 limit 1`,
     [genome_bill_id],
   );
-  const bill = bill_result.rows[0];
-  if (!bill) return null;
+  const persisted_bill = bill_result.rows[0];
+  if (!persisted_bill) return null;
+  const bill: GenomeBill = sanitize_genome_bill_public_read(persisted_bill);
 
   const version_selection_result = await pool.query<{
     current_bill_version_id: string | null;
@@ -235,100 +237,16 @@ export async function get_civic_genome_bill_detail(
       processing_state: version_selection.published_processing_state ?? "verified",
     }
     : null;
-  const display_version = current_version?.processing_state === "verified"
-    || current_version?.processing_state === "verified_with_findings"
-    ? current_version
-    : published_version;
-  const snapshot_state = display_version == null
-    ? "unavailable"
-    : display_version.bill_version_id === current_version?.bill_version_id
-      ? "current"
-      : "previous_verified";
+  // Temporary contamination fence: a processing_state label (including
+  // "verified_with_findings") and an older published version cannot establish
+  // selected-runtime provenance. Production has no version -> assembly-run
+  // bindings, no assembly runs, and a stale legacy generation target. Until a
+  // separate, independently attested current-runtime admission contract exists,
+  // structural output MUST be unavailable rather than inferred from labels.
+  // Docket source/version history and family identity remain readable.
+  const snapshot_state = "unavailable" as const;
 
-  const [traits_result, runs_result, family_result, resolution_result] = await Promise.all([
-    pool.query<persisted_genome_trait>(
-      `select
-         trait.trait_id,
-         trait.genome_bill_id,
-         trait.trait_class,
-         trait.trait_key,
-         trait.normalized_value_json,
-         trait.source_object_type,
-         trait.source_object_id,
-         trait.source_block_id,
-         trait.source_document_id,
-         trait.extraction_run_id,
-         trait.confidence_score,
-         trait.signal_status,
-         case
-           when prism.binding_id is null
-             then 'Rosetta ' || trait.verification_state || ' · Prism not_observed'
-           else 'Rosetta ' || trait.verification_state || ' · Prism ' || prism.verification_status
-         end as verification_state,
-         trait.verification_state as rosetta_verification_state,
-         prism.verification_status as prism_verification_status,
-         prism.prism_verification_receipt_id::text as prism_verification_receipt_id,
-         prism.prism_engine_version,
-         prism.prism_rule_set_version,
-         prism.prism_rule_set_hash,
-         prism.input_hash as prism_input_hash,
-         prism.output_hash as prism_output_hash,
-         prism.deterministic_replay_key as prism_deterministic_replay_key,
-         prism.created_at::text as prism_bound_at,
-         case
-           when prism.binding_id is null then null
-           when prism.prism_rule_set_version = '2.0.0' then 'independent_source_replay'
-           else 'binding_only'
-         end as prism_proof_scope,
-         coalesce(prism.supported_findings, '[]'::jsonb) as prism_supported_findings,
-         coalesce(prism.contradictions, '[]'::jsonb) as prism_contradictions,
-         coalesce(prism.missing_evidence, '[]'::jsonb) as prism_missing_evidence,
-         coalesce(prism.unresolved_conditions, '[]'::jsonb) as prism_unresolved_conditions,
-         coalesce(prism.cited_evidence_identifiers, '[]'::jsonb) as prism_cited_evidence_identifiers,
-         trait.trait_fingerprint,
-         trait.engine_version,
-         trait.rule_version,
-         trait.content_hash,
-         trait.source_trace,
-         trait.created_at,
-         trait.updated_at
-       from public.civic_genome_trait trait
-       left join lateral (
-         select binding.*,
-                receipt.supported_findings,
-                receipt.contradictions,
-                receipt.missing_evidence,
-                receipt.unresolved_conditions,
-                receipt.cited_evidence_identifiers
-           from public.civic_genome_prism_verification_binding binding
-           left join public.lighthouse_prism_verification_receipts receipt
-             on receipt.request_id = binding.request_id
-          where binding.trait_id = trait.trait_id
-          order by binding.created_at desc, binding.binding_id desc
-          limit 1
-       ) prism on true
-       where trait.genome_bill_id = $1
-         and $2::bigint is not null
-         and trait.source_document_id = $2::bigint
-         and $3::text is not null
-         and trait.extraction_run_id = $3::text
-       order by trait.trait_class, trait.trait_key, trait.trait_fingerprint`,
-      [
-        genome_bill_id,
-        display_version?.source_document_id ?? null,
-        display_version?.extraction_run_id ?? null,
-      ],
-    ),
-    pool.query<persisted_genome_assembly_run>(
-      `select *
-         from public.civic_genome_assembly_run
-        where genome_bill_id = $1
-          and $2::bigint is not null
-          and source_document_id = $2::bigint
-        order by created_at desc, assembly_run_id desc
-        limit 25`,
-      [genome_bill_id, display_version?.source_document_id ?? null],
-    ),
+  const [family_result, resolution_result] = await Promise.all([
     pool.query<{ signature_json: Record<string, unknown> }>(
       `select signature_json
          from public.civic_genome_family
@@ -356,7 +274,7 @@ export async function get_civic_genome_bill_detail(
       ? "unresolved"
       : "provisional";
 
-  const current_traits = traits_result.rows;
+  const current_traits: persisted_genome_trait[] = [];
   const duplicate_keys = new Map<string, number>();
   for (const trait of current_traits) {
     const key = `${trait.trait_class}\u001f${trait.content_hash}`;
@@ -388,7 +306,7 @@ export async function get_civic_genome_bill_detail(
     structural_dna: {
       snapshot_state,
       traits: current_traits,
-      assembly_runs: runs_result.rows,
+      assembly_runs: [],
       validation_summary,
     },
     family_assignment: {
