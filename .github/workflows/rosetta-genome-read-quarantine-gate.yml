@@ -28,5 +28,7 @@ jobs:
           node-version: '22'
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: TypeScript check of complete branch
+        run: pnpm check
       - name: Prove legacy detail and export fallback is contained
         run: pnpm exec vitest run server/civic-genome-public-read-sanitizer.test.ts server/civic-genome-bill-detail.test.ts server/civic-genome-export-contract.test.ts server/civic-genome-human-report-temporal-status.test.ts
