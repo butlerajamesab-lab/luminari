@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { query_with_diagnostics } from "./db";
 import { assemble_rosetta_and_resolve_family } from "./civic-genome-rosetta-family-orchestration";
 import { background_feature_enabled } from "./runtime-role";
+import { assert_genome_rosetta_publication_admitted, is_genome_rosetta_publication_quarantined } from "./civic-genome-rosetta-publication-quarantine";
 
 const DEFAULT_POLL_INTERVAL_MS = 10_000;
 const MIN_POLL_INTERVAL_MS = 5_000;
@@ -37,7 +38,7 @@ function bounded_poll_interval(): number {
 }
 
 function queue_enabled(): boolean {
-  return background_feature_enabled("ROSETTA_GENOME_ACTIVATION_QUEUE_ENABLED");
+  return !is_genome_rosetta_publication_quarantined() && background_feature_enabled("ROSETTA_GENOME_ACTIVATION_QUEUE_ENABLED");
 }
 
 function safe_error_code(error: unknown): string {
@@ -153,6 +154,7 @@ async function mark_job_failed(input: {
 export async function process_rosetta_generation_activation_job(
   job: rosetta_generation_activation_queue_job,
 ): Promise<void> {
+  assert_genome_rosetta_publication_admitted();
   try {
     const binding = await load_queued_docket_binding(job);
     const result = await assemble_rosetta_and_resolve_family({
@@ -191,6 +193,7 @@ export async function process_rosetta_generation_activation_job(
 }
 
 export async function run_rosetta_generation_activation_queue_cycle(): Promise<void> {
+  if (is_genome_rosetta_publication_quarantined()) return; // never claim or mark queued work
   if (queue_cycle_running || queue_stopped) return;
   queue_cycle_running = true;
   try {
