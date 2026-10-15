@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { sanitize_genome_bill_public_read } from "./civic-genome-public-read-sanitizer";
 import type { GenomeBill } from "./civic-genome-db";
 
@@ -38,5 +40,15 @@ describe("public Genome bill source identity boundary", () => {
     expect(result.source_bill_url).toBe(bill.source_bill_url);
     expect(bill.structural_dna_json).toHaveProperty("rosetta_assembly");
     expect(bill.structural_dna_json).toHaveProperty("rosetta_source_receipt");
+  });
+  it("routes public list and ID queries through the sanitizer", () => {
+    const router = readFileSync(join(process.cwd(), "server/routers/civic-genome-router.ts"), "utf8");
+    const detail = readFileSync(join(process.cwd(), "server/civic-genome-bill-detail.ts"), "utf8");
+    const exportRoute = readFileSync(join(process.cwd(), "server/routes/civic-genome-export-router.ts"), "utf8");
+    expect(router).toContain("list_genome_bills(input ?? {})).map(sanitize_genome_bill_public_read)");
+    expect(router).toContain("return bill ? sanitize_genome_bill_public_read(bill) : null");
+    expect(detail).toContain("sanitize_genome_bill_public_read(persisted_bill)");
+    expect(exportRoute).toContain("family_bills: family_bills.map(sanitize_genome_bill_public_read)");
+    expect(exportRoute).not.toMatch(/from public\\.civic_genome_trait\\b/);
   });
 });
