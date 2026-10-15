@@ -1,3 +1,4 @@
+import { sanitize_genome_bill_public_read } from "../civic-genome-public-read-sanitizer";
 import { Router, type Response } from "express";
 import {
   civic_genome_meaningful_unresolved,
@@ -311,7 +312,7 @@ async function build_single_bill_export(source_bill_id: number) {
     legacy_projection_events: legacy_events,
     lineage_edges: lineage_result.rows,
     family,
-    family_bills,
+    family_bills: family_bills.map(sanitize_genome_bill_public_read),
     family_momentum_snapshots: momentum,
     legacy_observation_snapshots: legacy_momentum,
     counts: {
