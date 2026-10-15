@@ -1,3 +1,4 @@
+import { CIVIC_GENOME_SOURCE_ONLY_BILL_RECORD_SQL } from "./civic-genome-source-only-snapshot";
 import type { PoolClient } from "pg";
 import { getPool } from "./db";
 import { resolveFamily, stableStringify } from "./civic-genome/assembly-engine";
@@ -142,7 +143,8 @@ async function capture_family_resolution_versions(
        where family.family_id = any($2::uuid[])
        union all
        select 'bill', bill.genome_bill_id, bill.family_id,
-         greatest(bill.created_at, bill.updated_at), to_jsonb(bill)
+         greatest(bill.created_at, bill.updated_at),
+          (${CIVIC_GENOME_SOURCE_ONLY_BILL_RECORD_SQL})
        from public.civic_genome_bill bill
        where bill.genome_bill_id = $1
      ) version
