@@ -10,6 +10,7 @@ on:
       - 'supabase/migration_sources/civic_genome_rosetta_sql_write_quarantine_v1.sql'
       - 'supabase/verification/civic_genome_sql_quarantine_fixture_v1.sql'
       - 'supabase/verification/civic_genome_sql_quarantine_assert_v1.sql'
+      - 'supabase/verification/civic_genome_rosetta_sql_write_quarantine_v1_ROLLBACK.sql'
       - '.github/workflows/civic-genome-sql-write-quarantine-gate.yml'
 
 permissions:
@@ -52,6 +53,18 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/migration_sources/civic_genome_rosetta_sql_write_quarantine_v1.sql
       - name: Assert rejection, Docket continuity, and purge-safe DELETE
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/verification/civic_genome_sql_quarantine_assert_v1.sql
+      - name: Prove exact rollback restores original table privileges
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -f supabase/verification/civic_genome_rosetta_sql_write_quarantine_v1_ROLLBACK.sql
+          psql -X -v ON_ERROR_STOP=1 -Atqc "
+            DO \$\$ BEGIN
+              IF EXISTS (SELECT 1 FROM pg_trigger WHERE tgname LIKE 'zz_civic_genome_%' AND NOT tgisinternal)
+                 OR NOT has_table_privilege('service_role','public.civic_genome_trait','INSERT')
+                 OR NOT has_table_privilege('service_role','public.civic_genome_assembly_run','UPDATE') THEN
+                RAISE EXCEPTION 'Rollback privileges or triggers incorrect';
+              END IF;
+            END \$\$;"
+
 
   source-snapshot-contract:
     runs-on: ubuntu-latest
