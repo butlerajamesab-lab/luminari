@@ -17,7 +17,7 @@ beforeEach(() => {
 
 function queue_bill(version: Record<string, unknown>, source_versions: unknown[] = []) {
   query
-    .mockResolvedValueOnce({ rows: [{ genome_bill_id, family_id }] })
+    .mockResolvedValueOnce({ rows: [{ genome_bill_id, family_id, structural_dna_hash: "legacy-hash", structural_dna_json: { source_bill_id: 1944851, source_provider: "docket", rosetta_source_receipt: { fake: "legacy" }, rosetta_assembly: { fake: "legacy" } } }] })
     .mockResolvedValueOnce({ rows: [version] })
     .mockResolvedValueOnce({ rows: source_versions })
     .mockResolvedValueOnce({ rows: [{ signature_json: {} }] })
@@ -49,6 +49,8 @@ describe("Civic Genome contaminated structural read fence", () => {
     expect(result?.current_version?.source_document_id).toBe(369);
     expect(result?.published_version?.source_document_id).toBe(369);
     expect(result?.source_versions).toHaveLength(1);
+    expect(result?.bill.structural_dna_json).toEqual({ source_bill_id: 1944851, source_provider: "docket" });
+    expect(result?.bill.structural_dna_hash).toBe("");
     expect(result?.structural_dna.snapshot_state).toBe("unavailable");
     expect(result?.structural_dna.traits).toEqual([]);
     expect(result?.structural_dna.assembly_runs).toEqual([]);
