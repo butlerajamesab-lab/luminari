@@ -165,8 +165,14 @@ LANGUAGE plpgsql
 SET search_path = pg_catalog, public
 AS $body$
 BEGIN
-  IF NEW.queue_state IN ('running','completed')
-    AND (TG_OP = 'INSERT' OR NEW.queue_state IS DISTINCT FROM OLD.queue_state) THEN
+  IF TG_OP = 'INSERT' THEN
+    IF NEW.queue_state IN ('running','completed') THEN
+      RAISE EXCEPTION USING ERRCODE='55000',
+        MESSAGE='civic_genome_rosetta_queue_execution_quarantined',
+        DETAIL=TG_TABLE_NAME;
+    END IF;
+  ELSIF NEW.queue_state IN ('running','completed')
+      AND NEW.queue_state IS DISTINCT FROM OLD.queue_state THEN
     RAISE EXCEPTION USING ERRCODE='55000',
       MESSAGE='civic_genome_rosetta_queue_execution_quarantined',
       DETAIL=TG_TABLE_NAME;
