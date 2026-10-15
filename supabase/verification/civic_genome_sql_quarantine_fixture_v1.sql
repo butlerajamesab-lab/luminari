@@ -7,6 +7,12 @@ CREATE TABLE public.civic_genome_rosetta_source_binding (id integer PRIMARY KEY)
 CREATE TABLE public.civic_genome_rosetta_generation_target (id integer PRIMARY KEY, engine_version text);
 CREATE TABLE public.civic_genome_rosetta_generation_activation_queue (id integer PRIMARY KEY, queue_state text NOT NULL DEFAULT 'eligible');
 CREATE TABLE public.civic_genome_rosetta_generation_upgrade_queue (id integer PRIMARY KEY, queue_state text NOT NULL DEFAULT 'eligible');
+CREATE TABLE public.civic_genome_projection_entity_version (
+  version_id integer PRIMARY KEY,
+  entity_type text NOT NULL,
+  record_json jsonb NOT NULL,
+  record_hash text NOT NULL
+);
 CREATE TABLE public.civic_genome_bill (
   id integer PRIMARY KEY,
   structural_dna_json jsonb NOT NULL DEFAULT '{}'::jsonb,
@@ -32,6 +38,9 @@ INSERT INTO public.civic_genome_bill(id,structural_dna_json,structural_dna_hash,
 VALUES (2,'{"source_bill_id":200,"rosetta_assembly":{"engine":"old"},"rosetta_source_receipt":{"run":"old"}}','legacy-hash','legacy-run');
 INSERT INTO public.civic_genome_bill_version(id,processing_state,rosetta_extraction_run_id,receipt_json)
 VALUES (2,'verified_with_findings','legacy-run','{"provider_hash":"valid-source","rosetta_engine_version":"legacy","assembly_trait_count":7}');
+
+INSERT INTO public.civic_genome_projection_entity_version (version_id,entity_type,record_json,record_hash)
+VALUES (1,'bill','{"genome_bill_id":"source-id","structural_dna_json":{"source_bill_id":200,"rosetta_assembly":{"engine":"old"}},"rosetta_extraction_run_id":"legacy"}','legacy-snapshot-hash');
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE
   public.civic_genome_trait,public.civic_genome_assembly_run,
