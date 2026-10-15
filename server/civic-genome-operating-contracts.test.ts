@@ -152,6 +152,22 @@ describe("Civic Genome operating contracts", () => {
     ]);
   });
 
+  it("uses an explicitly configured Prism ruleset without asserting its active deployment", async () => {
+    vi.stubEnv("PRISM_DEEP_RULE_SET_VERSION", "3.1.0");
+    try {
+      query.mockResolvedValue({ rows: [] });
+      const result = await get_civic_genome_operating_contracts();
+      expect(query.mock.calls[0]?.[1]).toEqual([
+        "prism-rosetta-structural-binding",
+        "3.1.0",
+      ]);
+      expect(result.contracts.find(contract => contract.service_key === "prism")?.detail)
+        .toContain("this configuration alone does not verify Prism's active target");
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it("keeps a fresh Atlas bridge distinct from a stale bridge", async () => {
     query
       .mockResolvedValueOnce({

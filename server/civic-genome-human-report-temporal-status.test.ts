@@ -55,6 +55,7 @@ describe("Civic Genome human report temporal status", () => {
           bill_status: "active",
         },
         structural_dna: {
+          snapshot_state: "current",
           traits: [{
             trait_class: "duty",
             trait_key: "fixture_support",
@@ -66,7 +67,7 @@ describe("Civic Genome human report temporal status", () => {
         current_version: {
           source_document_id: 7,
           version_type: "introduced",
-          processing_state: "assembled",
+          processing_state: "verified",
         },
         published_version: null,
         family_assignment: null,

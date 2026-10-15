@@ -51,6 +51,11 @@ describe("Civic Genome export contract", () => {
     expect(route).toContain("all_structural_traits: all_traits_result.rows");
     expect(route).toContain("all_assembly_runs: all_runs_result.rows");
     expect(route).toContain("bill_events: events");
+    expect(route).toContain("export_warnings,");
+    expect(route).toContain("temporal_schema_availability,");
+    expect(route).toContain("temporal_data_selection:");
+    expect(route).toContain("Legacy v1 events substituted:");
+    expect(route).toContain("Legacy observation-time momentum substituted:");
     expect(route).toContain("lifecycle_event_history");
     expect(route).toContain("lifecycle_supersession_receipts");
     expect(route).toContain("lineage_edges: lineage_result.rows");
@@ -70,6 +75,7 @@ describe("Civic Genome export contract", () => {
     expect(humanReport).toContain("source_document_content");
     expect(humanReport).toContain("source_text");
     expect(humanReport).toContain("Full source text used by Rosetta");
+    expect(humanReport).toContain("Export provenance warnings");
     expect(humanReport).toContain("source_content_hash");
     expect(humanReport).toContain("source_byte_hash");
     expect(humanReport).toContain("source_identity_hash");

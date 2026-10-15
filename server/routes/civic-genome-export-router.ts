@@ -13,6 +13,7 @@ import {
 } from "../civic-genome-human-report";
 import {
   get_genome_family,
+  get_civic_genome_temporal_schema_availability,
   get_genome_bill_temporal_facts_v2,
   get_genome_stats,
   list_event_time_momentum_snapshots_v2,
@@ -275,6 +276,21 @@ async function build_single_bill_export(source_bill_id: number) {
     list_momentum_snapshots({ family_id: bill.family_id, limit: 365 }),
     get_genome_bill_temporal_facts_v2(bill.genome_bill_id),
   ]);
+  const temporal_schema_availability = await get_civic_genome_temporal_schema_availability();
+  const export_warnings: string[] = [];
+  for (const [dependency, present] of Object.entries(temporal_schema_availability)) {
+    if (!present) export_warnings.push(
+      `Temporal schema dependency ${dependency} not installed; its current data cannot be established.`,
+    );
+  }
+  const lifecycle_uses_legacy = lifecycle_events.length === 0 && legacy_events.length > 0;
+  const momentum_uses_legacy = event_time_momentum.length === 0 && legacy_momentum.length > 0;
+  if (lifecycle_uses_legacy) export_warnings.push(
+    "Legacy v1 events substituted: no current lifecycle v3 rows were returned. Whether this reflects empty current data or a tolerated read error is not established.",
+  );
+  if (momentum_uses_legacy) export_warnings.push(
+    "Legacy observation-time momentum substituted: no event-time v2 rows were returned. Whether this reflects empty current data or a tolerated read error is not established.",
+  );
   const events =
     lifecycle_events.length > 0
       ? lifecycle_events
@@ -298,6 +314,14 @@ async function build_single_bill_export(source_bill_id: number) {
     export_type: "civic_genome_bill_export",
     export_contract: EXPORT_CONTRACT,
     exported_at: new Date().toISOString(),
+    export_warnings,
+    temporal_schema_availability,
+    temporal_data_selection: {
+      lifecycle: lifecycle_events.length > 0 ? "current_v3" : lifecycle_uses_legacy ? "legacy_v1_fallback" : "no_rows_observed",
+      momentum: event_time_momentum.length > 0 ? "event_time_v2" : momentum_uses_legacy ? "observation_time_v1_fallback" : "no_rows_observed",
+      temporal_facts: temporal_facts ? "v2_observed" : "not_observed",
+      lifecycle_history: lifecycle_event_history.length > 0 ? "v3_observed" : "no_rows_observed",
+    },
     source_bill_id,
     genome_bill_id: bill.genome_bill_id,
     bill_detail: detail,

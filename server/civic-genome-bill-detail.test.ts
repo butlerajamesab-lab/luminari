@@ -110,7 +110,7 @@ describe("Civic Genome Prism trait projection", () => {
     await expect(get_civic_genome_bill_detail(genome_bill_id)).resolves.toBeNull();
   });
 
-  it("shows the latest verified structural snapshot without labeling it current", async () => {
+  it("reports unavailable when the current version is not verified", async () => {
     query
       .mockResolvedValueOnce({
         rows: [{
@@ -147,8 +147,9 @@ describe("Civic Genome Prism trait projection", () => {
     expect(result?.current_version?.source_document_id).toBeNull();
     expect(result?.published_version?.source_document_id).toBe(4725);
     expect(result?.published_version?.source_content_hash).toBe("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
-    expect(result?.structural_dna.snapshot_state).toBe("previous_verified");
-    expect(query.mock.calls[3]?.[1]).toEqual([genome_bill_id, 4725, "7023"]);
-    expect(query.mock.calls[4]?.[1]).toEqual([genome_bill_id, 4725]);
+    expect(result?.structural_dna.snapshot_state).toBe("unavailable");
+    expect(result?.structural_dna.traits).toEqual([]);
+    expect(query.mock.calls[3]?.[1]).toEqual([genome_bill_id, null, null]);
+    expect(query.mock.calls[4]?.[1]).toEqual([genome_bill_id, null]);
   });
 });

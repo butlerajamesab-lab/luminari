@@ -19,13 +19,21 @@ describe("Civic Genome standalone service links", () => {
 
   it("keeps explicit empty contracts external-link free", () => {
     const fallback_section = source.slice(
-      source.indexOf("const explicit_empty_contracts"),
-      source.indexOf("const returned_keys"),
+      source.indexOf("const NOT_ESTABLISHED_CONTRACTS"),
+      source.indexOf("const source_id_from_bill"),
     );
     expect(fallback_section).toContain('service_key: "atlas"');
     expect(fallback_section).toContain('service_key: "prism"');
     expect(fallback_section).toContain('service_key: "viewfinder"');
     expect(fallback_section).toContain('service_key: "kaleidoscope"');
     expect(fallback_section.match(/external_url: null/g)).toHaveLength(4);
+    const observed_section = source.slice(
+      source.indexOf("const contracts = useMemo("),
+      source.indexOf("const display_contracts = useMemo("),
+    );
+    expect(observed_section).toContain("safeArray<operating_contract>(operating_contracts.data?.contracts)");
+    expect(observed_section).not.toContain("NOT_ESTABLISHED_CONTRACTS");
+    expect(source).toContain("NOT_ESTABLISHED_CONTRACTS.filter(template => !returned_keys.has(template.service_key))");
+    expect(source).toContain('const rosetta_service_url = contracts.find(contract => contract.service_key === "rosetta")');
   });
 });
