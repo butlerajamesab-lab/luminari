@@ -5,7 +5,7 @@ import { ensure_supabase_user_profile } from "./user-onboarding";
 vi.mock("./db", () => ({ getPool: vi.fn() }));
 
 function prepare_client(existing_role?: string, should_fail_insert = false) {
-  const query = vi.fn(async (statement: string) => {
+  const query = vi.fn(async (statement: string, _params?: unknown[]) => {
     if (statement.startsWith("select role from public.users")) {
       return { rows: existing_role ? [{ role: existing_role }] : [] };
     }
