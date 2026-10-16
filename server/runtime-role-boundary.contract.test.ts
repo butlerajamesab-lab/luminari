@@ -68,7 +68,7 @@ describe("Lighthouse web/background runtime boundary", () => {
       "backfill_explicit_rosetta_bindings", "resolve_family",
     ];
     const actual_worker_mutations = [...civic_genome_router.matchAll(
-      /^\\s+([a-z_]+): workerAdminProcedure\\b/gm,
+      /^\s+([a-z_]+): workerAdminProcedure\b/gm,
     )].map(match => match[1]);
     expect(actual_worker_mutations.sort()).toEqual(expected_worker_mutations.sort());
     for (const mutation of [
