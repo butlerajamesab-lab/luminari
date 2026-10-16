@@ -24,7 +24,9 @@ describe("Lighthouse public entry source contract", () => {
     expect(client_const).toContain('new URLSearchParams({ interactive: "1" })');
     expect(client_const).toContain('return `/login?${params.toString()}`;');
     expect(login).toContain('supabase.auth.signInWithPassword');
-    expect(login).toContain('navigate(getSafeRedirectPath(), { replace: true });');
+    expect(login).toContain('supabase.auth.signUp({');
+    expect(login).toContain('bootstrap.mutateAsync()');
+    expect(login).toContain('navigate(getSafeRedirectPath(fallback), { replace: true });');
   });
 
   it("does not turn anonymous browsing into anonymous case access", () => {

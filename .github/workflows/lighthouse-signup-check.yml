@@ -1,0 +1,35 @@
+name: Lighthouse signup focused check
+
+on:
+  pull_request:
+    paths:
+      - "client/src/pages/Login.tsx"
+      - "client/src/pages/InviteLanding.tsx"
+      - "client/src/pages/Lighthouse.tsx"
+      - "client/src/core/hooks/useAuth.ts"
+      - "server/_core/context.ts"
+      - "server/routers.ts"
+      - "server/user-onboarding.ts"
+      - "server/user-onboarding.test.ts"
+      - "server/lighthouse-public-entry-source-contract.test.ts"
+      - ".github/workflows/lighthouse-signup-check.yml"
+  workflow_dispatch:
+
+jobs:
+  signup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - name: Verify focused authentication contracts
+        run: pnpm exec vitest run server/user-onboarding.test.ts server/lighthouse-public-entry-source-contract.test.ts server/onboarding-tour-nonblocking.contract.test.ts
+      - name: Type-check application
+        run: pnpm exec tsc --noEmit
+      - name: Compile browser
+        run: pnpm exec vite build
