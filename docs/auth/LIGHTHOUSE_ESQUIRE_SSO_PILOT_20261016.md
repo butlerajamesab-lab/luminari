@@ -28,3 +28,21 @@ Official references:
 - https://supabase.com/docs/guides/auth/oauth-server/getting-started
 - https://supabase.com/docs/guides/auth/custom-oauth-providers
 - https://supabase.com/docs/guides/auth/auth-identity-linking
+
+## 2026-10-16 production readiness receipt (read-only, retrieved)
+
+- Lighthouse Supabase project: wepxlinwbjrkqdzkqpar.
+- Verified auth.users: 1; verified email users: 1.
+- **OAuth clients registered: 0**. This blocks Esquire client authorization regardless of frontend readiness.
+- Canonical query: verification/lighthouse_sso_identity_readiness.sql. Executed directly against hosted Lighthouse: `blocked_no_oauth_clients_registered`.
+- Independent issuer verifier: `node scripts/check-lighthouse-oidc-issuer.mjs` (GET-only, no credentials). The result can prove issuer metadata and asymmetric public signing keys, **not** hosted client setup or working SSO.
+- GitHub Actions > Lighthouse OIDC issuer readiness > Run workflow > verify_live can rerun the read-only public issuer check.
+- Do not set VITE_LIGHTHOUSE_OAUTH_CONSENT_ENABLED=true yet.
+
+### Operator-required Lighthouse setup
+
+1. In the Lighthouse Supabase project open Authentication > OAuth Server.
+2. Verify current signing algorithm and supported OIDC discovery; use asymmetric signing keys for OIDC, with a documented rotation plan.
+3. Enable OAuth 2.1, set Authorization Path to `/oauth/consent`, and confirm Lighthouse's Site URL is the chosen production hostname.
+4. In OAuth Apps register the Esquire client, using the **exact callback URI shown by Esquire's Custom OIDC provider UI**. Use a confidential client and secure the secret using hosted secrets.
+5. Re-run the SQL receipt. Only then check metadata availability and Esquire provider configuration; do not enable user traffic yet.
