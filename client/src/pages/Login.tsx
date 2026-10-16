@@ -1,10 +1,11 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useLocation } from "wouter";
 import { supabase } from "@/lib/supabase";
 import { trpc } from "@/lib/trpc";
 
 const DEFAULT_MEMBER_PATH = "/welcome";
 const DEFAULT_ADMIN_PATH = "/sovereign-control";
+const PUBLIC_ENTRY_PATH = "/lighthouse";
 
 function getSafeRedirectPath(fallback: string): string {
   if (typeof window === "undefined") return fallback;
@@ -16,6 +17,11 @@ function getSafeRedirectPath(fallback: string): string {
   return redirect;
 }
 
+function isInteractiveLoginRequested(): boolean {
+  if (typeof window === "undefined") return false;
+  return new URLSearchParams(window.location.search).get("interactive") === "1";
+}
+
 function getInitialMode(): "signin" | "signup" {
   if (typeof window === "undefined") return "signin";
   return new URLSearchParams(window.location.search).get("mode") === "signup" ? "signup" : "signin";
@@ -23,6 +29,8 @@ function getInitialMode(): "signin" | "signup" {
 
 export default function Login() {
   const [, navigate] = useLocation();
+  const interactiveLogin = isInteractiveLoginRequested();
+  const utils = trpc.useUtils();
   const [mode, setMode] = useState<"signin" | "signup">(getInitialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,6 +39,12 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const bootstrap = trpc.auth.bootstrap.useMutation();
+
+  useEffect(() => {
+    if (!interactiveLogin) {
+      navigate(PUBLIC_ENTRY_PATH, { replace: true });
+    }
+  }, [interactiveLogin, navigate]);
 
   const changeMode = (nextMode: "signin" | "signup") => {
     setMode(nextMode);
@@ -75,6 +89,7 @@ export default function Login() {
       // profile exists. The server derives identity from the verified
       // session and assigns 'user' / 'free' to new profiles.
       const profile = await bootstrap.mutateAsync();
+      await utils.auth.me.invalidate();
       const fallback = profile.role === "admin" ? DEFAULT_ADMIN_PATH : DEFAULT_MEMBER_PATH;
       navigate(getSafeRedirectPath(fallback), { replace: true });
     } catch (failure) {
@@ -83,6 +98,8 @@ export default function Login() {
       setBusy(false);
     }
   };
+
+  if (!interactiveLogin) return null;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4 py-8">
