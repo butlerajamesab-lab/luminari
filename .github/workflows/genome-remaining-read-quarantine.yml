@@ -37,3 +37,4 @@ jobs:
           server/civic-genome-atlas-handoff.test.ts
           server/civic-genome-kaleidoscope-handoff.test.ts
           server/civic-genome-prism-snapshot-handoff.test.ts
+      - run: pnpm build
