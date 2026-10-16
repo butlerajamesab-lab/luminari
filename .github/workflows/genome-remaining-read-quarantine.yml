@@ -6,6 +6,7 @@ on:
       - 'server/civic-genome-external-snapshot-producer.test.ts'
       - 'server/services/prism-rosetta-structural-context.ts'
       - 'server/services/rosetta-publication-retry.test.ts'
+      - 'server/services/prism-rosetta-batch-budget.test.ts'
       - 'server/genome-remaining-read-quarantine.test.ts'
       - 'server/civic-genome-rosetta-publication-quarantine.ts'
       - '.github/workflows/genome-remaining-read-quarantine.yml'
@@ -30,6 +31,7 @@ jobs:
           server/civic-genome-external-snapshot-producer.test.ts
           server/services/rosetta-publication-retry.test.ts
           server/services/prism-rosetta-contract-v25.test.ts
+          server/services/prism-rosetta-batch-budget.test.ts
           server/civic-genome-atlas-handoff.test.ts
           server/civic-genome-kaleidoscope-handoff.test.ts
           server/civic-genome-prism-snapshot-handoff.test.ts
