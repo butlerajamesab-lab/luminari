@@ -40,6 +40,42 @@ DECLARE
     'docket_authority_observed_source_content_hash',
     'docket_authority_source_changed'
   ];
+  -- Exactly the derivative receipt keys observed in the reviewed production
+  -- 9,428-row population. NEVER infer safe deletion from a key prefix:
+  -- a future rosetta_* or prism_* field may be new source authority.
+  v_retired_receipt_keys text[] := ARRAY[
+    'assembly_engine_version', 'assembly_input_hash', 'assembly_output_hash',
+    'assembly_replayed', 'assembly_rule_version', 'assembly_run_id',
+    'assembly_trait_count', 'assembly_verification_state', 'automatic_reprocess_v24',
+    'automatic_reprocess_v24_completed_at', 'current_rosetta_status', 'durable_content_recovery_v1',
+    'durable_source_content_replayed', 'failed_at', 'failure_class',
+    'failure_code', 'family_resolution_status', 'legislative_version_recovery_contract',
+    'legislative_version_recovery_previous_failure_code', 'legislative_version_recovery_previous_queue_attempt_count', 'legislative_version_recovery_previous_queue_error_code',
+    'legislative_version_recovery_previous_queue_failure_class', 'legislative_version_recovery_reason', 'legislative_version_recovery_requeued_at',
+    'legislative_version_recovery_target_engine_version', 'legislative_version_recovery_target_rule_manifest_hash', 'legislative_version_recovery_target_rule_set_version',
+    'lighthouse_v2511_marked_reprint_handoff_previous_failure_code', 'lighthouse_v2511_marked_reprint_handoff_previous_queue_attempt_count', 'lighthouse_v2511_marked_reprint_handoff_previous_queue_error_code',
+    'lighthouse_v2511_marked_reprint_handoff_previous_queue_failure_class', 'lighthouse_v2511_marked_reprint_handoff_prior_rosetta_extraction_run_id', 'lighthouse_v2511_marked_reprint_handoff_recovery_reason',
+    'lighthouse_v2511_marked_reprint_handoff_requeued_at', 'lighthouse_v2511_marked_reprint_post_cutover_previous_failure_code', 'lighthouse_v2511_marked_reprint_post_cutover_previous_queue_attempt_count',
+    'lighthouse_v2511_marked_reprint_post_cutover_previous_queue_error_code', 'lighthouse_v2511_marked_reprint_post_cutover_previous_queue_failure_class', 'lighthouse_v2511_marked_reprint_post_cutover_prior_rosetta_extraction_run_id',
+    'lighthouse_v2511_marked_reprint_post_cutover_requeued_at', 'lighthouse_v2511_marked_reprint_post_cutover_retry_reason', 'pre_v22_current_generation',
+    'prior_processing_attempts', 'prism_completed_at', 'prism_engine_version',
+    'prism_expected_trait_count', 'prism_output_hash', 'prism_receipt_count',
+    'prism_receipt_manifest_hash', 'prism_rosetta_stale_context_previous_assembly_run_id', 'prism_rosetta_stale_context_previous_attempt_count',
+    'prism_rosetta_stale_context_previous_error_code', 'prism_rosetta_stale_context_previous_expected_trait_count', 'prism_rosetta_stale_context_previous_extraction_run_id',
+    'prism_rosetta_stale_context_previous_failure_class', 'prism_rosetta_stale_context_queue_id', 'prism_rosetta_stale_context_reason',
+    'prism_rosetta_stale_context_replacement_assembly_run_id', 'prism_rosetta_stale_context_replacement_extraction_run_id', 'prism_rosetta_stale_context_replacement_queue_state',
+    'prism_rosetta_stale_context_replacement_trait_count', 'prism_rosetta_stale_context_superseded_at', 'prism_rosetta_stale_context_supersession_contract',
+    'prism_rosetta_stale_context_sweeper_contract', 'prism_rosetta_stale_context_swept_at', 'prism_rule_set_id',
+    'prism_rule_set_version', 'prism_status_counts', 'prism_verification_run_id',
+    'prism_version_state', 'rosetta_configuration_hash', 'rosetta_engine_version',
+    'rosetta_extraction_run_id', 'rosetta_generation_upgrade_at', 'rosetta_generation_upgrade_contract',
+    'rosetta_output_content_hash', 'rosetta_replayed', 'rosetta_rule_manifest_hash',
+    'rosetta_rule_set_version', 'rosetta_run_version', 'source_fallback_recovery_canary_pause_v1',
+    'source_fallback_recovery_canary_v1', 'source_fallback_recovery_contract', 'source_fallback_recovery_not_before',
+    'source_fallback_recovery_previous_attempt_count', 'source_fallback_recovery_previous_failure_code', 'source_fallback_recovery_previous_queue_error_code',
+    'source_fallback_recovery_previous_queue_failure_class', 'source_fallback_recovery_reason', 'source_fallback_recovery_requeued_at',
+    'terminal_state_reconciled_at', 'terminal_state_regression_prevented'
+  ];
   v_count bigint;
   v_queue_count bigint;
   v_changed bigint;
@@ -174,14 +210,16 @@ BEGIN
       MESSAGE='genome_version_retirement_source_or_engine_population_mismatch';
   END IF;
 
-  -- Reject unknown keys: no bulk string-prefix deletion that could discard
-  -- a new/legitimate source field. Explicit allowlist wins over the retire regex.
+  -- Every receipt key must be individually classified from the exact
+  -- production census: source-only (preserve) OR retired derivative (remove).
+  -- A newly introduced rosetta_/assembly_/prism_ field is UNKNOWN, not
+  -- automatically deletable. The entire transaction rolls back on drift.
   SELECT array_agg(DISTINCT e.key ORDER BY e.key) INTO v_unrecognized_keys
   FROM public.civic_genome_bill_version v
   JOIN retirement_version_source_manifest t USING(bill_version_id)
   CROSS JOIN LATERAL jsonb_each(v.receipt_json) e(key,value)
   WHERE NOT e.key=ANY(v_source_receipt_keys)
-    AND e.key !~ '^(rosetta_|assembly_|prism_|source_fallback_recovery_|legislative_version_recovery_|lighthouse_v2511_|automatic_reprocess_v24|terminal_state_|pre_v22_current_generation$|prior_processing_attempts$|current_rosetta_status$|family_resolution_status$|failure_code$|failure_class$|failed_at$|durable_content_recovery_v1$|durable_source_content_replayed$)';
+    AND NOT e.key=ANY(v_retired_receipt_keys);
   IF v_unrecognized_keys IS NOT NULL THEN
     RAISE EXCEPTION USING ERRCODE='55000',
       MESSAGE='genome_version_retirement_unrecognized_receipt_fields',
