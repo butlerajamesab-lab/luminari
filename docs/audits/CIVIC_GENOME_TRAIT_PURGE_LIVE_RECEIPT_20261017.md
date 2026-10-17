@@ -40,3 +40,9 @@ Fresh independent Rosetta readback at 2026-10-17T02:12:05.960893+00:00 reports i
 Still present and quarantined: 3,082 current bill legacy assembly payloads, 9,428 version receipts with legacy engine metadata and 104,741 historical snapshots with embedded legacy assembly. No historical row was deleted or rewritten. These need separate source-reference reconciliation and explicit source-only historical retirement provenance. No engine admission or automatic replay was initiated.
 
 The dedicated PostgreSQL 17 test passed; broad suite retains its three pre-existing failures and the unrelated Viewfinder migration parity/cron replay issues remain. No checks were suppressed. Successful purge rollback means transaction failure restores pre-state; there is no operational rollback that republishes the successfully retired traits.
+
+## HTTP observations and replay limitation
+
+After the purge, GET /api/health returned 200. The first GET /api/docket/search?q=housing&limit=2 returned 500: Render diagnostics at 2026-10-17T02:13:53.322Z record docket_full_corpus_search failing after 5,003 ms at its existing 5,000 ms query deadline (Query read timeout). A repeat returned 200, two preserved source results and explicit structural quarantine; its source query took 3,630 ms at 02:14:20.597Z. The retrieved route SQL reads Docket detail/state caches and source Radar facts. This is one recovered probe, not general performance or intake proof; no timeout or query behavior was changed.
+
+The canonical file is the verbatim production-state-pinned migration, not an empty-database replay recipe. Its 99,159-row census guard will intentionally refuse a different starting state, including an empty target. Full clean replay is not established: the existing cron failure occurs earlier, and any future replay strategy must explicitly account for this production-only data cut without weakening its installed-state guards or fabricating ledger parity.

@@ -28,3 +28,5 @@ PR #732 prepared the exact bounded trait purge and PostgreSQL 17 failure/rollbac
 6. Independently validate the new engine's source/rule/read/output binding, held cases, gold evaluation and migration provenance before admission. Keep deterministic execution, no AI/LLM canonical authority and no retired-engine fallback.
 
 The inherited three broad-suite failures and separate Viewfinder migration parity/cron replay issues remain explicit; no checks suppressed.
+
+Post-purge HTTP health returned 200; Docket search hit its 5-second query deadline once and then succeeded with source results and structural quarantine. Search performance remains a separate observed limitation. The verbatim production-pinned purge file is not an empty-database replay recipe; clean replay remains unproven and needs an explicit strategy for this guarded data cut.

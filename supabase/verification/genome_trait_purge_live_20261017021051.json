@@ -185,6 +185,18 @@
   },
   "limitations": [
     "Conservation checks cover scalar metadata, JSON sizes and sealed history metadata; not independent original-artifact byte validation.",
-    "Current bill/version payloads and historical assembly snapshots remain."
-  ]
+    "Current bill/version payloads and historical assembly snapshots remain.",
+    "Verbatim production-state-pinned SQL is not an empty-database replay recipe; clean replay remains unproven."
+  ],
+  "http_observations": {
+    "health_status": 200,
+    "search_first_status": 500,
+    "search_failure": "Query read timeout",
+    "search_query_timeout_ms": 5000,
+    "search_first_query_ms": 5003,
+    "search_repeat_status": 200,
+    "search_repeat_query_ms": 3630,
+    "search_repeat_results": 2,
+    "structural_quarantine": true
+  }
 }
