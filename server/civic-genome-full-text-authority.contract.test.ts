@@ -23,8 +23,8 @@ describe("archived Civic Genome full-text authority design contract", () => {
   });
 
   it("keeps current bill-level selectors on full text and refuses historical published-run status", () => {
-    expect(billDetail).toMatch(/published_version as[\\s\\S]*document_family = 'text'/);
-    expect(operating).toMatch(/current_version as[\\s\\S]*document_family = 'text'/);
+    expect(billDetail).toMatch(/published_version as[\s\S]*document_family = 'text'/);
+    expect(operating).toMatch(/current_version as[\s\S]*document_family = 'text'/);
     expect(operating).toContain("source_document_key as current_source_document_key");
     expect(operating).toContain("load_rosetta_current_docket_result_for_binding");
     expect(operating).not.toContain("published_version as");
