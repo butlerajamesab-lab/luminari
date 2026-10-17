@@ -1,39 +1,107 @@
 {
-  "lighthouse": {
-    "counts": {
-      "bills": 39408,
-      "events": 265446,
-      "traits": 99159,
-      "history": 520443,
-      "families": 35203,
-      "versions": 38498
+  "observed_at": "2026-10-17T02:11:59.011967+00:00",
+  "trait_purge": {
+    "status": "applied_verified",
+    "migration": {
+      "name": "purge_disqualified_genome_traits_20261017",
+      "version": "20261017021051",
+      "statement_md5": "d8cc8bd7ec06d2c9884d451050528d48",
+      "statement_count": 1,
+      "statement_length": 22038,
+      "statement_array_md5": "9dbc5f3a8cd4b67014f1ec8f28c02a6b"
     },
-    "observed_at": "2026-10-17T01:03:11.923768+00:00",
-    "quarantined_views": [
+    "source_blob": "96b7e647e00719e79899052d8bfaafe3482726b5",
+    "trait_count": 0,
+    "executed_sql_archive": "supabase/verification/applied/20261017021051_purge_disqualified_genome_traits_20261017.sql",
+    "canonical_replay_blob": "65715cbd21195a5103d20f47ae4b78c15e523d1d"
+  },
+  "lighthouse_postflight": {
+    "fences": [
       {
-        "acl": "{postgres=arwdDxtm/postgres}",
-        "name": "v_civic_genome_prism_verification_status"
+        "name": "zz_civic_genome_block_bill_rosetta_payload_v1",
+        "table": "civic_genome_bill",
+        "enabled": "O",
+        "body_md5": "ec8e3e387f823d806f926bd92585ec6e"
       },
       {
-        "acl": "{postgres=arwdDxtm/postgres}",
-        "name": "docket_bill_drift_delta"
+        "name": "zz_civic_genome_block_rosetta_trait_write_v1",
+        "table": "civic_genome_trait",
+        "enabled": "O",
+        "body_md5": "87ffdb41a744456fb3863f2a0574b30c"
       },
       {
-        "acl": "{postgres=arwdDxtm/postgres}",
-        "name": "docket_bill_impact_callouts"
+        "name": "zz_civic_genome_block_rosetta_source_binding_write_v1",
+        "table": "civic_genome_rosetta_source_binding",
+        "enabled": "O",
+        "body_md5": "87ffdb41a744456fb3863f2a0574b30c"
       },
       {
-        "acl": "{postgres=arwdDxtm/postgres}",
-        "name": "docket_bill_obligation_checklist"
+        "name": "zz_civic_genome_block_rosetta_assembly_write_v1",
+        "table": "civic_genome_assembly_run",
+        "enabled": "O",
+        "body_md5": "87ffdb41a744456fb3863f2a0574b30c"
+      },
+      {
+        "name": "zz_civic_genome_block_rosetta_activation_execution_v1",
+        "table": "civic_genome_rosetta_generation_activation_queue",
+        "enabled": "O",
+        "body_md5": "38c9a5480b91a640fe27776a7f0340bc"
+      },
+      {
+        "name": "zz_civic_genome_block_bill_version_rosetta_receipt_v1",
+        "table": "civic_genome_bill_version",
+        "enabled": "O",
+        "body_md5": "b29c9699c7831806f7ddcf346e309e22"
+      },
+      {
+        "name": "zz_civic_genome_block_rosetta_upgrade_execution_v1",
+        "table": "civic_genome_rosetta_generation_upgrade_queue",
+        "enabled": "O",
+        "body_md5": "38c9a5480b91a640fe27776a7f0340bc"
+      },
+      {
+        "name": "zz_civic_genome_block_rosetta_target_write_v1",
+        "table": "civic_genome_rosetta_generation_target",
+        "enabled": "O",
+        "body_md5": "87ffdb41a744456fb3863f2a0574b30c"
+      },
+      {
+        "name": "zz_civic_genome_block_rosetta_structural_representation_write_v",
+        "table": "civic_genome_rosetta_structural_representation",
+        "enabled": "O",
+        "body_md5": "87ffdb41a744456fb3863f2a0574b30c"
+      },
+      {
+        "name": "zz_civic_genome_guard_source_only_history_v1",
+        "table": "civic_genome_projection_entity_version",
+        "enabled": "O",
+        "body_md5": "8c281d2d552148d50059c665e5f6aabf"
       }
     ],
-    "legacy_bill_payloads": 3082,
-    "legacy_history_payloads": 104741,
-    "legacy_version_receipts": 9428
+    "ledger": {
+      "name": "purge_disqualified_genome_traits_20261017",
+      "version": "20261017021051",
+      "statement_md5": "d8cc8bd7ec06d2c9884d451050528d48",
+      "statement_count": 1,
+      "statement_length": 22038,
+      "statement_array_md5": "9dbc5f3a8cd4b67014f1ec8f28c02a6b"
+    },
+    "traits": 0,
+    "bindings": 0,
+    "trait_acl": "{postgres=arwdDxtm/postgres,service_role=dDxtm/postgres}",
+    "observed_at": "2026-10-17T02:11:59.011967+00:00",
+    "trait_select_access": {
+      "anon": false,
+      "service_role": false,
+      "authenticated": false
+    },
+    "remaining_bill_payloads": 3082,
+    "remaining_history_payloads": 104741,
+    "remaining_version_receipts": 9428
   },
-  "rosetta": {
-    "observed_at": "2026-10-17T01:03:23.872902+00:00",
-    "current_target": {
+  "rosetta_postflight": {
+    "observed_at": "2026-10-17T02:12:05.960893+00:00",
+    "selected_runtime": {
       "contract": "rosetta-rule-runtime-target-v1",
       "selected_at": "2026-10-12T06:20:24.697643+00:00",
       "selected_by": "v12-amendatory-reprint-ca-mn-ne-wy",
@@ -47,22 +115,13 @@
       "read_contract_configured": true,
       "installed_read_contract_sha256": "0fba7a298abd713d9ccf925a37716b06000d1b27146d4ade53a246acc73392ea"
     },
-    "legacy_namespace_absent": true,
-    "canonical_source_content_count": 19464,
-    "canonical_source_document_count": 27700
+    "source_content_count": 19464,
+    "source_document_count": 27700,
+    "legacy_namespace_absent": true
   },
-  "trait_purge": {
-    "status": "prepared_merged_deployed_not_applied",
-    "merge_commit": "863bbf68f31864b229d4aedff2790cd71bc5aa93",
-    "sql_blob": "96b7e647e00719e79899052d8bfaafe3482726b5",
-    "ci": "https://github.com/butlerajamesab-lab/luminari/actions/runs/38986169231/job/117258031657",
-    "apply_request": "interrupted_before_result",
-    "readback": {
-      "observed_at": "2026-10-17T01:02:29.198956Z",
-      "ledger": null,
-      "trait_count": 99159,
-      "binding_count": 0,
-      "enabled_write_fence_count": 10
-    }
+  "remaining": {
+    "current_bill_payloads": 3082,
+    "version_receipts": 9428,
+    "historical_payloads": 104741
   }
 }
