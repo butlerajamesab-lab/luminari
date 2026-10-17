@@ -17,15 +17,11 @@ describe("Civic Genome standalone service links", () => {
     expect(source).not.toContain("dangerouslySetInnerHTML");
   });
 
-  it("keeps explicit empty contracts external-link free", () => {
-    const fallback_section = source.slice(
-      source.indexOf("const explicit_empty_contracts"),
-      source.indexOf("const returned_keys"),
-    );
-    expect(fallback_section).toContain('service_key: "atlas"');
-    expect(fallback_section).toContain('service_key: "prism"');
-    expect(fallback_section).toContain('service_key: "viewfinder"');
-    expect(fallback_section).toContain('service_key: "kaleidoscope"');
-    expect(fallback_section.match(/external_url: null/g)).toHaveLength(4);
+  it("does not fabricate missing upstream contract entries or zero counts", () => {
+    expect(source).toContain("missing_contract_keys");
+    expect(source).toContain("Their status and counts are unobserved, not zero.");
+    expect(source).toContain("operating_contracts.data?.contracts");
+    expect(source).not.toContain("explicit_empty_contracts");
+    expect(source).not.toContain("const returned_keys");
   });
 });

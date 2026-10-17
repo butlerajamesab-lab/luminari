@@ -158,66 +158,18 @@ export default function CivicGenomePage() {
     return [...groups.entries()];
   }, [defects_only, traits]);
   const panel = { background: p.panel, border: `1px solid ${p.border}`, borderRadius: 12, padding: "1rem" } as const;
-  const contracts = useMemo(() => {
-    const observed_contracts = safeArray<operating_contract>(operating_contracts.data?.contracts);
-    if (!operating_contracts.isSuccess) return observed_contracts;
-    const explicit_empty_contracts: operating_contract[] = [
-      {
-        service_key: "atlas",
-        display_name: "Atlas",
-        external_url: null,
-        role: "Verified signal reference",
-        state: "not_established",
-        state_label: "No Genome binding",
-        detail: "No exact Atlas-to-Civic-Genome binding was returned.",
-        observed_count: null,
-        bound_count: 0,
-        last_observed_at: null,
-        boundary: "Signals remain Atlas-owned; Civic Genome may reference only explicit bindings.",
-      },
-      {
-        service_key: "prism",
-        display_name: "Prism",
-        external_url: null,
-        role: "Reasoning and findings",
-        state: "not_established",
-        state_label: "Contract not established",
-        detail: "No Civic Genome identity seam or Prism ingest envelope was returned.",
-        observed_count: null,
-        bound_count: 0,
-        last_observed_at: null,
-        boundary: "Rosetta and Civic Genome do not write findings directly into Prism.",
-      },
-      {
-        service_key: "viewfinder",
-        display_name: "Viewfinder",
-        external_url: null,
-        role: "Comparison materialization",
-        state: "not_established",
-        state_label: "No materialized comparison",
-        detail: "No Civic Genome comparison matrix or state cell was returned.",
-        observed_count: 0,
-        bound_count: 0,
-        last_observed_at: null,
-        boundary: "Comparison artifacts remain explicit, versioned outputs.",
-      },
-      {
-        service_key: "kaleidoscope",
-        display_name: "Kaleidoscope",
-        external_url: null,
-        role: "Projection and scenario reference",
-        state: "not_established",
-        state_label: "Contract not established",
-        detail: "No Civic Genome projection contract was returned.",
-        observed_count: null,
-        bound_count: 0,
-        last_observed_at: null,
-        boundary: "Projections do not mutate source observations or Genome-owned structure.",
-      },
-    ];
-    const returned_keys = new Set(observed_contracts.map(contract => contract.service_key));
-    return [...observed_contracts, ...explicit_empty_contracts.filter(contract => !returned_keys.has(contract.service_key))];
-  }, [operating_contracts.data, operating_contracts.isSuccess]);
+  // Never fabricate integration health, counts, or provenance if the server
+  // omits a ledger entry. Missing entries are visible reconciliation gaps.
+  const expected_contract_keys = [
+    "docket", "rosetta", "atlas", "prism", "viewfinder", "kaleidoscope", "esquire",
+  ] as const;
+  const contracts = useMemo(
+    () => safeArray<operating_contract>(operating_contracts.data?.contracts),
+    [operating_contracts.data],
+  );
+  const missing_contract_keys = operating_contracts.isSuccess
+    ? expected_contract_keys.filter(key => !contracts.some(contract => contract.service_key === key))
+    : [];
   const rosetta_service_url = contracts.find(contract => contract.service_key === "rosetta")?.external_url;
   const rosetta_review_url = rosetta_service_url ? new URL("/review", rosetta_service_url).toString() : null;
 
@@ -262,6 +214,7 @@ export default function CivicGenomePage() {
           </div>
           <span style={{ fontFamily: mono, color: p.muted, fontSize: ".61rem" }}>read-only service ledger</span>
         </div>
+        {missing_contract_keys.length > 0 && <p role="status" style={{ margin: "0 0 .8rem", color: p.muted, fontFamily: sans, fontSize: ".8rem" }}>Operating-contract response incomplete: {missing_contract_keys.join(", ")} not returned. Their status and counts are unobserved, not zero.</p>}
         {operating_contracts.isLoading ? <Empty>Reading the Civic Genome service ledger…</Empty> : operating_contracts.error ? <Empty>Operating contract lookup failed: {operating_contracts.error.message}</Empty> : contracts.length ? <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))", gap: ".65rem" }}>
           {contracts.map(contract => <article key={contract.service_key} style={{ background: p.soft, border: `1px solid ${p.border}`, borderRadius: 9, padding: ".8rem", display: "grid", alignContent: "start", gap: ".45rem" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: ".5rem" }}>
