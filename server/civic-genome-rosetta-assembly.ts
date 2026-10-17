@@ -10,13 +10,8 @@ import { load_rosetta_current_docket_result_for_binding } from "./civic-genome-r
 import type { RosettaPublicCurrentDocketResult } from "../shared/rosetta-public-current-docket-result";
 import { adaptRosettaToGenomeTraits, hashValue } from "./civic-genome/assembly-engine";
 
-export const ROSETTA_GENOME_ENGINE_VERSION = "rosetta-genome-assembly-v1";
-export const ROSETTA_GENOME_RULE_VERSION = "rosetta-five-layer-trait-map-v1";
 export const ROSETTA_GENOME_STRUCTURAL_ENGINE_VERSION = "rosetta-genome-assembly-v2";
 export const ROSETTA_GENOME_STRUCTURAL_RULE_VERSION = "rosetta-five-layer-plus-structural-evidence-v2";
-export const ROSETTA_V2511_ENGINE_VERSION = "rosetta-v3-deterministic-sql-2.5.11";
-export const ROSETTA_V2511_RULE_SET_VERSION = "rosetta-five-layer-structural-correctness-2.5.11";
-export const ROSETTA_V2511_RULE_MANIFEST_HASH = "3602eb80fee71a4009bf7a04c521fec62e2d1f17f8ea5b027500905cd8366639";
 
 export type rosetta_genome_assembly_request = {
   genome_bill_id: string;
@@ -60,37 +55,19 @@ function verification_state(view: civic_genome_rosetta_law_view): "complete" | "
   return view.law_view.provenanceState === "complete" && covered === 5 ? "complete" : "partial";
 }
 
-export function is_v2511_marked_full_text_reprint_handoff(
-  view: civic_genome_rosetta_law_view,
-): boolean {
-  return view.handoff_contract_version === ROSETTA_HANDOFF_STRUCTURAL_REPRESENTATION_V2
-    && view.document_type === "bill_amendment"
-    && view.engine_version === ROSETTA_V2511_ENGINE_VERSION
-    && view.rule_set_version === ROSETTA_V2511_RULE_SET_VERSION
-    && view.rule_manifest_hash === ROSETTA_V2511_RULE_MANIFEST_HASH
-    && view.run_status?.toLowerCase() === "completed"
-    && view.admissibility_state === "admissible"
-    && view.law_view.provenanceState === "complete"
-    && verification_state(view) === "complete"
-    && view.law_view.objects.length === 0
-    && view.structural_representations.length === 0;
-}
-
-function resolve_assembly_contract(view: civic_genome_rosetta_law_view): assembly_contract {
-  if (view.handoff_contract_version === ROSETTA_HANDOFF_STRUCTURAL_REPRESENTATION_V2) {
-    return {
-      engine_version: ROSETTA_GENOME_STRUCTURAL_ENGINE_VERSION,
-      rule_version: ROSETTA_GENOME_STRUCTURAL_RULE_VERSION,
-      structural_evidence: true,
-    };
-  }
-  if (view.structural_representations.length > 0) {
-    throw new Error("rosetta_structural_evidence_without_supported_handoff_contract");
+/**
+ * A Genome adapter is selected by its published handoff contract, never by a
+ * named Rosetta engine generation. Unsupported contracts fail closed rather
+ * than silently falling back to the retired v1 trait-map contract.
+ */
+export function resolve_assembly_contract(view: civic_genome_rosetta_law_view): assembly_contract {
+  if (view.handoff_contract_version !== ROSETTA_HANDOFF_STRUCTURAL_REPRESENTATION_V2) {
+    throw new Error("rosetta_assembly_handoff_contract_unsupported");
   }
   return {
-    engine_version: ROSETTA_GENOME_ENGINE_VERSION,
-    rule_version: ROSETTA_GENOME_RULE_VERSION,
-    structural_evidence: false,
+    engine_version: ROSETTA_GENOME_STRUCTURAL_ENGINE_VERSION,
+    rule_version: ROSETTA_GENOME_STRUCTURAL_RULE_VERSION,
+    structural_evidence: true,
   };
 }
 
@@ -112,7 +89,7 @@ function assert_source_span(metadata: Record<string, unknown> | undefined, prefi
   }
 }
 
-function assert_view_identity(
+export function assert_view_identity(
   request: rosetta_genome_assembly_request,
   view: civic_genome_rosetta_law_view,
 ): void {
@@ -151,9 +128,8 @@ function assert_view_identity(
   }
   if (view.law_view.objects.length === 0) {
     if (view.structural_representations.length === 0) {
-      if (!is_v2511_marked_full_text_reprint_handoff(view)) {
-        throw new Error("rosetta_completed_run_has_no_operative_or_structural_evidence");
-      }
+      // No old engine's "complete" label excuses the absence of evidence.
+      throw new Error("rosetta_completed_run_has_no_operative_or_structural_evidence");
     } else {
       if (!contract.structural_evidence) {
         throw new Error("rosetta_completed_run_has_no_operative_or_structural_evidence");
@@ -501,7 +477,8 @@ export async function assemble_rosetta_structural_dna(
     media_type: view.media_type,
   };
   const source_identity_hash = view.source_identity_hash as string;
-  const legacy_source_receipt = {
+  const source_receipt = {
+    handoff_contract_version: view.handoff_contract_version,
     engine_version: view.engine_version,
     rule_set_version: view.rule_set_version,
     rule_manifest_hash: view.rule_manifest_hash,
@@ -513,10 +490,6 @@ export async function assemble_rosetta_structural_dna(
     output_content_hash: view.output_content_hash,
     source_url: view.source_url,
     source_version: view.source_version,
-  };
-  const source_receipt = {
-    handoff_contract_version: view.handoff_contract_version,
-    ...legacy_source_receipt,
   };
   const objects_by_id = new Map(
     view.law_view.objects.map(object => [object.sourceObjectId, object]),
@@ -596,16 +569,6 @@ export async function assemble_rosetta_structural_dna(
     };
   });
 
-  const legacy_input = {
-    genome_bill_id: request.genome_bill_id,
-    source_identity,
-    source_receipt: legacy_source_receipt,
-    extraction_run_id: view.extraction_run_id,
-    run_version: view.run_version,
-    law_view: view.law_view,
-    engine_version: ROSETTA_GENOME_ENGINE_VERSION,
-    rule_version: ROSETTA_GENOME_RULE_VERSION,
-  };
   const structural_input = {
     genome_bill_id: request.genome_bill_id,
     source_identity,
@@ -617,13 +580,11 @@ export async function assemble_rosetta_structural_dna(
     engine_version: assembly.engine_version,
     rule_version: assembly.rule_version,
   };
-  const input_hash = hashValue(assembly.structural_evidence ? structural_input : legacy_input);
-  const output_hash = assembly.structural_evidence
-    ? hashValue({
-        traits: persisted_traits,
-        structural_representations: persisted_structural_representations,
-      })
-    : hashValue(persisted_traits);
+  const input_hash = hashValue(structural_input);
+  const output_hash = hashValue({
+    traits: persisted_traits,
+    structural_representations: persisted_structural_representations,
+  });
   const state = verification_state(view);
   const pool = getPool();
   const client = await pool.connect();
