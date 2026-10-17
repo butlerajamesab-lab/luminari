@@ -551,7 +551,9 @@ civic_genome_export_router.get("/current", async (req, res) => {
     ]);
     const export_bills = bills.map((bill) => ({
       source_bill_id: source_bill_id_from_bill(bill),
-      ...bill,
+      // Current technical exports share the same no-legacy publication boundary
+      // as bill detail, family lists and tRPC. Preserve source IDs and Docket data.
+      ...sanitize_genome_bill_public_read(bill),
     }));
 
     const payload = {
