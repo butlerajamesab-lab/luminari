@@ -1,19 +1,21 @@
--- PREPARED ONLY. Not an applied migration, not approved for production.
+-- GUARDED SOURCE-ONLY RETIREMENT. SQL must execute only once after verified
+-- permanent legacy worker retirement and old-lease retirement. Never replay.
 -- Retire obsolete engine-specific Genome bill-version interpretations WITHOUT
 -- deleting a single Docket bill, source document, bill version, family, event,
 -- legal source hash, full-text source provenance field or lineage edge.
 --
--- Production read-only identity pins 2026-10-17:
+-- Production independently recomputed identity pins 2026-10-17:
 --   9,428 old Rosetta extraction IDs, six disqualified engine identities;
 --   9,428 exactly source-key-bound Docket source documents; no unmatched source;
---   9,428 related legislative queues; 20 still SUBMITTED/leased at preflight.
+--   9,428 related legislative queues; 20 expired leases retired, 0 held.
 --   Full version-row SHA-256: 3727cfd4ac781b812c941755c1cce0a8da233945bcc2dc36f060ad06dbf17121
---   Full queue-row SHA-256: d962de134fc866b7ab6217db0c1864bc1c51666cb1e94629c5bad81d1661b49b
+--   Full queue-row SHA-256: 792a67d68533bb57b88143c0335c53859c3294b580dc030c444a542b62ab238d
 --
--- This SQL MUST currently refuse live execution due to 20 submitted/leased
--- queue rows. FIRST deploy + independently verify permanent conveyor retirement
--- (#743), then separately reconcile those leases without invoking an engine
--- or provider. Re-census and replace pins via independent review afterwards.
+-- Prerequisites independently met: PR #743 merged at
+-- 5a8b61ddea5dd0722e93b9f1c6cbce87efb21fda, live on both Lighthouse web
+-- and canary; 20 old leases retired by exact #745 SQL (0 live locks).
+-- The ordered FULL QUEUE SHA-256 below was freshly recomputed after retirement.
+-- All source-row and version SHA-256 pins remain unchanged.
 --
 -- Source fields are explicitly ALLOWED, never determined by "not rosetta".
 -- Two-phase status reset (terminal -> registered -> source_ingested) is essential:
@@ -239,7 +241,7 @@ BEGIN
 
   IF v_queue_count <> 9428
      OR v_queue_id_hash IS DISTINCT FROM '9631349f707d971600fef4f3c095f996c1a58cafb7c27df36649c0ee9b28aa58'
-     OR v_queue_hash IS DISTINCT FROM 'd962de134fc866b7ab6217db0c1864bc1c51666cb1e94629c5bad81d1661b49b'
+     OR v_queue_hash IS DISTINCT FROM '792a67d68533bb57b88143c0335c53859c3294b580dc030c444a542b62ab238d'
      OR EXISTS(
        SELECT 1 FROM public.civic_genome_legislative_version_queue q
        JOIN retirement_version_source_manifest t USING(bill_version_id)
