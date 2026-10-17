@@ -21,7 +21,7 @@ vi.mock("./civic-genome-rosetta-evaluation", () => ({
   load_rosetta_current_docket_result_for_binding: load_current,
 }));
 
-import { assert_current_result_publication_target, assemble_rosetta_structural_dna, assert_exact_docket_source_binding_for_assembly } from "./civic-genome-rosetta-assembly";
+import { assert_current_result_publication_target, assemble_rosetta_structural_dna, assert_exact_docket_source_binding_for_assembly, assert_view_identity, resolve_assembly_contract } from "./civic-genome-rosetta-assembly";
 
 const request = {
   genome_bill_id: "00000000-0000-4000-8000-000000000001",
@@ -63,6 +63,82 @@ beforeEach(() => {
     coverage: {},
     validation_summary: {},
     public_reason: "Current result is assembly-ready.",
+  });
+});
+
+
+describe("engine-agnostic assembly acceptance (pure, even under publication quarantine)", () => {
+  function candidate(overrides: Record<string, unknown> = {}): any {
+    return {
+      source_document_id: request.source_document_id,
+      extraction_run_id: request.extraction_run_id,
+      handoff_contract_version: "rosetta-civic-genome-handoff-v2",
+      engine_version: "future-certified-engine-selected-at-runtime",
+      rule_set_version: "future-rules-selected-at-runtime",
+      rule_manifest_hash: "b".repeat(64),
+      configuration_hash: "c".repeat(64),
+      source_identity_hash: "e".repeat(64),
+      source_content_hash,
+      output_content_hash,
+      source_url: "https://legislature.example.gov/bill",
+      source_version: "source-version:verified",
+      document_type: "bill_amendment",
+      run_status: "completed",
+      admissibility_state: "admissible",
+      structural_representations: [],
+      law_view: {
+        provenanceState: "complete",
+        coverage: { help: 1, workflow: 1, accountability: 1, override: 1, definition: 1 },
+        objects: [],
+      },
+      ...overrides,
+    };
+  }
+
+  it("accepts a supported handoff independent of the originating engine name", () => {
+    const v = candidate({
+      law_view: {
+        provenanceState: "complete",
+        coverage: { help: 1, workflow: 1, accountability: 1, override: 1, definition: 1 },
+        objects: [{
+          extractionRunId: String(request.extraction_run_id),
+          sourceObjectType: "operative_clause",
+          sourceBlockId: "source-block-1",
+          metadata: { source_span: { char_offset_start: 0, char_offset_end: 10, block_content_hash: "f".repeat(64) } },
+        }],
+      },
+    });
+    expect(() => assert_view_identity(request, v)).not.toThrow();
+    expect(resolve_assembly_contract(v).structural_evidence).toBe(true);
+  });
+
+  it.each([
+    "rosetta-v3-deterministic-sql-2.5.11",
+    "rosetta-rule-ref-v12",
+    "future-certified-engine-selected-at-runtime",
+  ])("refuses an evidence-empty completed candidate regardless of engine (%s)", engine => {
+    expect(() => assert_view_identity(request, candidate({ engine_version: engine })))
+      .toThrow("rosetta_completed_run_has_no_operative_or_structural_evidence");
+  });
+
+  it.each(["rosetta-civic-genome-handoff-v1", null, undefined])(
+    "refuses unsupported or missing contracts without a legacy v1 fallback (%s)", contract => {
+      expect(() => resolve_assembly_contract(candidate({ handoff_contract_version: contract })))
+        .toThrow("rosetta_assembly_handoff_contract_unsupported");
+    },
+  );
+
+  it("retains structural-only amendment evidence when specifically source-bound", () => {
+    const v = candidate({
+      structural_representations: [{
+        extraction_run_id: String(request.extraction_run_id),
+        representation_type: "source_stated_amendment_operation",
+        normalized_value: { operative_effect_applied: false },
+        source_block_id: "block-a",
+        metadata: { source_span: { char_offset_start: 1, char_offset_end: 12, block_content_hash: "f".repeat(64) } },
+      }],
+    });
+    expect(() => assert_view_identity(request, v)).not.toThrow();
   });
 });
 

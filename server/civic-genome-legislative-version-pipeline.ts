@@ -1541,15 +1541,18 @@ async function record_assembled(
   bill_version_id: string,
   assembly: rosetta_family_orchestration_result,
 ): Promise<void> {
-  await getPool().query(
-    `update public.civic_genome_bill_version
+  // An assembly receipt must describe the actual persisted Genome adapter
+  // run. It must not stamp a historical hardcoded engine/mapping onto every
+  // future selected-runtime result. This is a provenance join, not a retry.
+  const result = await getPool().query(
+    `update public.civic_genome_bill_version version
         set assembly_run_id = $2::uuid,
             processing_state = 'assembled',
             failure_code = null,
-            receipt_json = receipt_json || jsonb_build_object(
+            receipt_json = coalesce(version.receipt_json, '{}'::jsonb) || jsonb_build_object(
               'assembly_run_id', $2::uuid,
-              'assembly_engine_version', 'rosetta-genome-assembly-v1',
-              'assembly_rule_version', 'rosetta-five-layer-trait-map-v1',
+              'assembly_engine_version', run.engine_version,
+              'assembly_rule_version', run.rule_version,
               'assembly_input_hash', $3::text,
               'assembly_output_hash', $4::text,
               'assembly_trait_count', $5::integer,
@@ -1558,7 +1561,15 @@ async function record_assembled(
               'family_resolution_status', $8::text
             ),
             updated_at = now()
-      where bill_version_id = $1::uuid`,
+       from public.civic_genome_assembly_run run
+      where version.bill_version_id = $1::uuid
+        and run.assembly_run_id = $2::uuid
+        and run.genome_bill_id = version.genome_bill_id
+        and run.input_hash = $3::text
+        and run.output_hash = $4::text
+        and nullif(run.engine_version, '') is not null
+        and nullif(run.rule_version, '') is not null
+      returning version.bill_version_id`,
     [
       bill_version_id,
       assembly.assembly_run_id,
@@ -1570,8 +1581,10 @@ async function record_assembled(
       assembly.family_resolution.status,
     ],
   );
+  if (result.rows.length !== 1) {
+    throw new Error("civic_genome_assembly_receipt_exact_run_missing_or_mismatched");
+  }
 }
-
 
 export type verified_docket_authority_refresh = {
   eligible: boolean;
