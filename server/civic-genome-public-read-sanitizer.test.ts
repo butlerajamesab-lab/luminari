@@ -49,6 +49,9 @@ describe("public Genome bill source identity boundary", () => {
     expect(router).toContain("return bill ? sanitize_genome_bill_public_read(bill) : null");
     expect(detail).toContain("sanitize_genome_bill_public_read(persisted_bill)");
     expect(exportRoute).toContain("family_bills: family_bills.map(sanitize_genome_bill_public_read)");
+    // The 100-bill download must not expose stored legacy interpretation fields.
+    expect(exportRoute).toContain("...sanitize_genome_bill_public_read(bill)");
+    expect(exportRoute).not.toMatch(/source_bill_id: source_bill_id_from_bill\(bill\),\s*\.\.\.bill,/);
     expect(exportRoute).not.toMatch(/from public\\.civic_genome_trait\\b/);
   });
 });
