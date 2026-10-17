@@ -5,6 +5,7 @@ on:
       - 'server/routes/docket.ts'
       - 'server/docket-radar-scoped-query.test.ts'
       - 'server/docket-radar-live-contract.test.ts'
+      - 'server/civic-genome-full-text-authority.contract.test.ts'
       - 'client/src/pages/DocketRoom.tsx'
       - 'supabase/migration_sources/retire_genome_legacy_structural_view_access_20261016.sql'
       - 'supabase/verification/genome_legacy_structural_views_20261016.json'
@@ -25,7 +26,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
-      - run: pnpm exec vitest run server/docket-radar-scoped-query.test.ts server/docket-radar-live-contract.test.ts server/docket-radar-source-execution-boundary.contract.test.ts server/genome-remaining-read-quarantine.test.ts
+      - run: pnpm exec vitest run server/docket-radar-scoped-query.test.ts server/docket-radar-live-contract.test.ts server/docket-radar-source-execution-boundary.contract.test.ts server/genome-remaining-read-quarantine.test.ts server/civic-genome-full-text-authority.contract.test.ts
       - run: pnpm build
   structural-views-postgres:
     runs-on: ubuntu-latest
