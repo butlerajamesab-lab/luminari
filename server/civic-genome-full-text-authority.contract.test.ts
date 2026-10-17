@@ -30,8 +30,11 @@ describe("archived Civic Genome full-text authority design contract", () => {
     expect(generationUpgrade).toContain("where version.document_family = 'text'");
   });
 
-  it("uses full-text states for Radar structural latest while preserving amendment bases", () => {
-    expect(docket).toMatch(/latest as[\s\S]*where document_family = 'text'/);
+  it("preserves archived full-text amendment bases while current Radar is quarantined", () => {
+    // The archived design stays inspectable; it must not require live legacy publication.
+    expect(docket).toContain('structural_state: "quarantined"');
+    expect(docket).toContain("structural_reason: GENOME_ROSETTA_PUBLICATION_QUARANTINE_REASON");
+    expect(docket).not.toContain("existing.drift.push");
     expect(archivedMigration).toMatch(/latest as[\s\S]*where document_family = 'text'/);
     expect(archivedMigration).toContain("where base_bill_version_id is not null");
   });

@@ -578,6 +578,7 @@ type docket_bill = {
     next_event_description: string | null;
     drift: Array<{ trait_class: string; base_count: number; latest_count: number; delta: number }>;
     drift_coverage: boolean;
+    structural_state?: "quarantined";
   };
 };
 
@@ -1005,6 +1006,7 @@ function DocketBillFeed({ level = "", keyword = "" }: { level?: string; keyword?
                     {resolution.effective_state === "effective_future" && resolution.effective_date && <span style={{ color: dk.green }}>Takes effect {readable_date(resolution.effective_date)}</span>}
                     {bill.radar && bill.radar.velocity_score > 0 && <span style={{ color: dk.teal }}>Movement {bill.radar.velocity_score.toFixed(1)} · {bill.radar.events_14d} events in 14 days</span>}
                     {bill.radar?.next_event_date && <span style={{ color: dk.amber }}>{bill.radar.next_event_class?.replaceAll("_", " ")} · {readable_date(bill.radar.next_event_date)}</span>}
+                    {bill.radar?.structural_state === "quarantined" && <span>Structural comparison unavailable</span>}
                     {bill.radar?.drift_coverage && bill.radar.drift.filter(item => item.delta !== 0).map(item => <span key={item.trait_class}>{item.trait_class} {item.base_count} → {item.latest_count} ({item.delta > 0 ? "+" : ""}{item.delta})</span>)}
                     {bill_url && <span><a href={bill_url} target="_blank" rel="noopener noreferrer" onClick={event => event.stopPropagation()} style={{ color: dk.steelBright }}>Source record</a></span>}
                   </div>
