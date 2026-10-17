@@ -331,7 +331,7 @@ SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
     # Four-view permission retirement applied and read back on 2026-10-17.
     "20261017000912": (
         "0dcc197ff30adf74f88ed4d358f572dd",
-        "96ea612ebc405182c04127af5dc66e24bb54715d",
+        "1fc17005d93bd6ece8b50614da58a4fa82cd71cf",
     ),
     # Production ledger reconciliation captured 2026-09-30.
     # These files are the source-controlled SQL corresponding to the exact
