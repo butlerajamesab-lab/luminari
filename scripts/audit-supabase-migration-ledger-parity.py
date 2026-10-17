@@ -328,6 +328,11 @@ APPROVED_REPOSITORY_ONLY = {
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
+    # Bounded physical trait purge applied and independently read back on 2026-10-17.
+    "20261017021051": (
+        "d8cc8bd7ec06d2c9884d451050528d48",
+        "96b7e647e00719e79899052d8bfaafe3482726b5",
+    ),
     # Four-view permission retirement applied and read back on 2026-10-17.
     "20261017000912": (
         "0dcc197ff30adf74f88ed4d358f572dd",

@@ -1,0 +1,190 @@
+{
+  "observed_at": "2026-10-17T02:11:59.011967+00:00",
+  "migration": {
+    "name": "purge_disqualified_genome_traits_20261017",
+    "version": "20261017021051",
+    "statement_md5": "d8cc8bd7ec06d2c9884d451050528d48",
+    "statement_count": 1,
+    "statement_length": 22038,
+    "statement_array_md5": "9dbc5f3a8cd4b67014f1ec8f28c02a6b"
+  },
+  "source_blob": "96b7e647e00719e79899052d8bfaafe3482726b5",
+  "conservation_before": {
+    "public.civic_genome_bill": {
+      "count": 39408,
+      "sum_0": "-1485196510762223165576",
+      "sum_1": "-266211721846791885686"
+    },
+    "public.civic_genome_event": {
+      "count": 265446,
+      "sum_0": "2149629714878522928087",
+      "sum_1": "1728799202921590119112"
+    },
+    "public.civic_genome_family": {
+      "count": 35203,
+      "sum_0": "575857663064092475616",
+      "sum_1": "-2257023083249662180736"
+    },
+    "public.docket_bill_detail_cache": {
+      "count": 13769,
+      "sum_0": "782895099332592812279",
+      "sum_1": "409801408326941749157"
+    },
+    "public.civic_genome_bill_version": {
+      "count": 38498,
+      "sum_0": "1427269320986304811744",
+      "sum_1": "-1689289744663089190055"
+    },
+    "public.civic_genome_projection_entity_version": {
+      "count": 520443,
+      "sum_0": "-1738168987362828101168",
+      "sum_1": "-1605075030008305936152"
+    }
+  },
+  "conservation_after": {
+    "public.civic_genome_bill": {
+      "count": 39408,
+      "sum_0": "-1485196510762223165576",
+      "sum_1": "-266211721846791885686"
+    },
+    "public.civic_genome_event": {
+      "count": 265446,
+      "sum_0": "2149629714878522928087",
+      "sum_1": "1728799202921590119112"
+    },
+    "public.civic_genome_family": {
+      "count": 35203,
+      "sum_0": "575857663064092475616",
+      "sum_1": "-2257023083249662180736"
+    },
+    "public.docket_bill_detail_cache": {
+      "count": 13769,
+      "sum_0": "782895099332592812279",
+      "sum_1": "409801408326941749157"
+    },
+    "public.civic_genome_bill_version": {
+      "count": 38498,
+      "sum_0": "1427269320986304811744",
+      "sum_1": "-1689289744663089190055"
+    },
+    "public.civic_genome_projection_entity_version": {
+      "count": 520443,
+      "sum_0": "-1738168987362828101168",
+      "sum_1": "-1605075030008305936152"
+    }
+  },
+  "conservation_equal": true,
+  "lighthouse_postflight": {
+    "fences": [
+      {
+        "name": "zz_civic_genome_block_bill_rosetta_payload_v1",
+        "table": "civic_genome_bill",
+        "enabled": "O",
+        "body_md5": "ec8e3e387f823d806f926bd92585ec6e"
+      },
+      {
+        "name": "zz_civic_genome_block_rosetta_trait_write_v1",
+        "table": "civic_genome_trait",
+        "enabled": "O",
+        "body_md5": "87ffdb41a744456fb3863f2a0574b30c"
+      },
+      {
+        "name": "zz_civic_genome_block_rosetta_source_binding_write_v1",
+        "table": "civic_genome_rosetta_source_binding",
+        "enabled": "O",
+        "body_md5": "87ffdb41a744456fb3863f2a0574b30c"
+      },
+      {
+        "name": "zz_civic_genome_block_rosetta_assembly_write_v1",
+        "table": "civic_genome_assembly_run",
+        "enabled": "O",
+        "body_md5": "87ffdb41a744456fb3863f2a0574b30c"
+      },
+      {
+        "name": "zz_civic_genome_block_rosetta_activation_execution_v1",
+        "table": "civic_genome_rosetta_generation_activation_queue",
+        "enabled": "O",
+        "body_md5": "38c9a5480b91a640fe27776a7f0340bc"
+      },
+      {
+        "name": "zz_civic_genome_block_bill_version_rosetta_receipt_v1",
+        "table": "civic_genome_bill_version",
+        "enabled": "O",
+        "body_md5": "b29c9699c7831806f7ddcf346e309e22"
+      },
+      {
+        "name": "zz_civic_genome_block_rosetta_upgrade_execution_v1",
+        "table": "civic_genome_rosetta_generation_upgrade_queue",
+        "enabled": "O",
+        "body_md5": "38c9a5480b91a640fe27776a7f0340bc"
+      },
+      {
+        "name": "zz_civic_genome_block_rosetta_target_write_v1",
+        "table": "civic_genome_rosetta_generation_target",
+        "enabled": "O",
+        "body_md5": "87ffdb41a744456fb3863f2a0574b30c"
+      },
+      {
+        "name": "zz_civic_genome_block_rosetta_structural_representation_write_v",
+        "table": "civic_genome_rosetta_structural_representation",
+        "enabled": "O",
+        "body_md5": "87ffdb41a744456fb3863f2a0574b30c"
+      },
+      {
+        "name": "zz_civic_genome_guard_source_only_history_v1",
+        "table": "civic_genome_projection_entity_version",
+        "enabled": "O",
+        "body_md5": "8c281d2d552148d50059c665e5f6aabf"
+      }
+    ],
+    "ledger": {
+      "name": "purge_disqualified_genome_traits_20261017",
+      "version": "20261017021051",
+      "statement_md5": "d8cc8bd7ec06d2c9884d451050528d48",
+      "statement_count": 1,
+      "statement_length": 22038,
+      "statement_array_md5": "9dbc5f3a8cd4b67014f1ec8f28c02a6b"
+    },
+    "traits": 0,
+    "bindings": 0,
+    "trait_acl": "{postgres=arwdDxtm/postgres,service_role=dDxtm/postgres}",
+    "observed_at": "2026-10-17T02:11:59.011967+00:00",
+    "trait_select_access": {
+      "anon": false,
+      "service_role": false,
+      "authenticated": false
+    },
+    "remaining_bill_payloads": 3082,
+    "remaining_history_payloads": 104741,
+    "remaining_version_receipts": 9428
+  },
+  "rosetta_postflight": {
+    "observed_at": "2026-10-17T02:12:05.960893+00:00",
+    "selected_runtime": {
+      "contract": "rosetta-rule-runtime-target-v1",
+      "selected_at": "2026-10-12T06:20:24.697643+00:00",
+      "selected_by": "v12-amendatory-reprint-ca-mn-ne-wy",
+      "identity_valid": true,
+      "ruleset_sha256": "0dcbf20bc25197104d52d2dad5b7a56cbe576c5928e3536ac5d7ec5ff6bcabed",
+      "ruleset_version": "rosetta-rule-ref-v12",
+      "read_identity_valid": true,
+      "read_contract_sha256": "0fba7a298abd713d9ccf925a37716b06000d1b27146d4ade53a246acc73392ea",
+      "engine_identity_valid": true,
+      "installed_ruleset_sha256": "0dcbf20bc25197104d52d2dad5b7a56cbe576c5928e3536ac5d7ec5ff6bcabed",
+      "read_contract_configured": true,
+      "installed_read_contract_sha256": "0fba7a298abd713d9ccf925a37716b06000d1b27146d4ade53a246acc73392ea"
+    },
+    "source_content_count": 19464,
+    "source_document_count": 27700,
+    "legacy_namespace_absent": true
+  },
+  "live_probes": {
+    "role_reads_denied": 3,
+    "privileged_trait_insert_blocked": true,
+    "retained_probe_mutations": 0
+  },
+  "limitations": [
+    "Conservation checks cover scalar metadata, JSON sizes and sealed history metadata; not independent original-artifact byte validation.",
+    "Current bill/version payloads and historical assembly snapshots remain."
+  ]
+}
