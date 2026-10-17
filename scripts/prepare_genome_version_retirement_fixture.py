@@ -65,7 +65,7 @@ def main() -> None:
         raise SystemExit("usage: prepare_genome_version_retirement_fixture.py /tmp/pinned.sql")
     dest = Path(sys.argv[1])
     source = SOURCE.read_text()
-    if "PREPARED ONLY." not in source or "DO $retire_obsolete_genome_version_receipts$" not in source:
+    if "-- GUARDED SOURCE-ONLY RETIREMENT." not in source or "DO $retire_obsolete_genome_version_receipts$" not in source:
         raise SystemExit("Unexpected production candidate — refusing fixture substitution")
     count = int(sql("SELECT count(*) FROM public.civic_genome_bill_version WHERE rosetta_extraction_run_id IS NOT NULL;"))
     queue_count = int(sql("""SELECT count(*) FROM public.civic_genome_legislative_version_queue q
