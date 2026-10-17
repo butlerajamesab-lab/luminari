@@ -3,12 +3,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const {
   query,
   get_bill,
-  get_rosetta_view,
+  get_current,
   get_kaleidoscope,
 } = vi.hoisted(() => ({
   query: vi.fn(),
   get_bill: vi.fn(),
-  get_rosetta_view: vi.fn(),
+  get_current: vi.fn(),
   get_kaleidoscope: vi.fn(),
 }));
 
@@ -20,9 +20,9 @@ vi.mock("./civic-genome-source-id", () => ({
   get_genome_bill_by_source_id: get_bill,
 }));
 
-vi.mock("./civic-genome-rosetta-contract", () => ({
-  get_latest_rosetta_law_view_by_document_identifier: get_rosetta_view,
-  get_latest_rosetta_law_view_by_source_document: get_rosetta_view,
+vi.mock("./civic-genome-rosetta-evaluation", async import_original => ({
+  ...await import_original<typeof import("./civic-genome-rosetta-evaluation")>(),
+  load_rosetta_current_docket_result_for_binding: get_current,
 }));
 
 vi.mock("./civic-genome-kaleidoscope-contract", () => ({
@@ -36,34 +36,32 @@ import {
 
 const genome_bill_id = "11111111-1111-4111-8111-111111111111";
 
-function completed_view() {
+const exact_source_key = "text:2093644:3456";
+const exact_source_hash = "a".repeat(64);
+function selected_result() {
   return {
-    extraction_run_id: 11,
-    source_document_id: 4,
-    corpus_id: 1,
-    document_name: "HB 2681",
-    document_type: "bill",
-    document_identifier: "2093644",
-    run_version: 1,
-    run_status: "completed",
-    confidence_threshold: 0.75,
-    created_at: "2026-07-31T00:00:00.000Z",
-    completed_at: "2026-07-31T00:01:00.000Z",
-    law_view: {
-      objects: [{
-        layer: "help",
-        key: "eligible_person",
-        normalizedValue: { class: "resident" },
-        sourceObjectType: "eligibility_rule",
-        sourceObjectId: "object-1",
-        sourceBlockId: "block-1",
-        extractionRunId: "11",
-        confidence: 0.95,
-        confirmed: true,
-      }],
-      coverage: { help: 1, workflow: 0, accountability: 0, override: 0, definition: 0 },
-      provenanceState: "partial",
+    docket_source_key: exact_source_key,
+    source_content_hash: exact_source_hash,
+    status: "complete",
+    current_result: {
+      extraction_run_id: 11,
+      output_content_hash: "b".repeat(64),
+      engine_version: "runtime-selected-new-generation",
+      rule_set_version: "runtime-selected-rules",
+      rule_manifest_hash: "c".repeat(64),
+      configuration_hash: "d".repeat(64),
+      admissibility_state: "admissible",
     },
+  };
+}
+function selected_version(extra: Record<string, unknown> = {}) {
+  return {
+    current_version_type: "chaptered",
+    current_processing_state: "source_ingested",
+    current_source_document_id: 44,
+    current_source_document_key: exact_source_key,
+    current_source_content_hash: exact_source_hash,
+    ...extra,
   };
 }
 
@@ -182,73 +180,65 @@ describe("Civic Genome operating contracts", () => {
     expect(atlas?.state).toBe("available_unbound");
   });
 
-  it("never enables assembly for an in-progress Rosetta run", async () => {
-    const view = completed_view();
-    view.run_status = "in_progress";
-    view.completed_at = null;
-    view.law_view.objects = [];
-    get_rosetta_view.mockResolvedValue(view);
-
+  it("does not claim a current result when the exact binding is absent", async () => {
+    query.mockResolvedValueOnce({ rows: [selected_version({ current_source_content_hash: null })] });
     const result = await get_civic_genome_rosetta_pipeline_status(2093644);
     expect(result.contract_state).toBe("waiting_for_extraction");
     expect(result.can_assemble).toBe(false);
+    expect(get_current).not.toHaveBeenCalled();
+    expect(result.object_count).toBeNull();
   });
 
-  it("enables only an unassembled completed provenance-valid run", async () => {
-    get_rosetta_view.mockResolvedValue(completed_view());
-    query.mockResolvedValueOnce({ rows: [] });
-
+  it("observes an exact selected-runtime result without bypassing publication quarantine", async () => {
+    query.mockResolvedValueOnce({ rows: [selected_version()] });
+    get_current.mockResolvedValue(selected_result());
     const result = await get_civic_genome_rosetta_pipeline_status(2093644);
-    expect(result.contract_state).toBe("ready_for_assembly");
-    expect(result.can_assemble).toBe(true);
-  });
-
-  it("reports a Rosetta contract failure without failing the whole page", async () => {
-    get_rosetta_view.mockRejectedValue(new Error("missing_rosetta_supabase_url"));
-
-    const result = await get_civic_genome_rosetta_pipeline_status(2093644);
-    expect(result.contract_state).toBe("contract_error");
+    expect(get_current).toHaveBeenCalledWith({
+      source_document_key: exact_source_key,
+      source_content_hash: exact_source_hash,
+    });
+    expect(result.source_document_id).toBe(44);
+    expect(result.extraction_run_id).toBe(11);
+    expect(result.run_status).toBe("completed");
+    expect(result.object_count).toBeNull();
+    expect(result.coverage).toBeNull();
+    expect(result.contract_state).toBe("awaiting_current_result");
     expect(result.can_assemble).toBe(false);
   });
 
-  it("resolves the newest version by its exact Rosetta source document", async () => {
-    query.mockResolvedValueOnce({ rows: [{
-      current_version_type: "chaptered",
-      current_processing_state: "verified",
-      current_source_document_id: 44,
-      published_version_type: "chaptered",
-      published_processing_state: "verified",
-      published_source_document_id: 44,
-      published_extraction_run_id: "11",
-    }] });
-    get_rosetta_view.mockResolvedValue(completed_view());
-
-    await get_civic_genome_rosetta_pipeline_status(2093644);
-
-    expect(get_rosetta_view).toHaveBeenCalledWith(44);
-    expect(query.mock.calls[0]?.[0]).toContain("civic_genome_bill_version");
-    expect(query.mock.calls[0]?.[0]).toContain("order by stage_rank desc");
-  });
-
-  it("keeps the prior verified snapshot explicitly published while the current version is pending", async () => {
-    query.mockResolvedValueOnce({ rows: [{
-      current_version_type: "chaptered",
-      current_processing_state: "registered",
-      current_source_document_id: null,
-      published_version_type: "house_amendment",
-      published_processing_state: "verified_with_findings",
-      published_source_document_id: 44,
-      published_extraction_run_id: "11",
-    }] });
-    get_rosetta_view.mockResolvedValue(completed_view());
-
+  it("refuses a selected result that disagrees with the exact Docket key", async () => {
+    query.mockResolvedValueOnce({ rows: [selected_version()] });
+    get_current.mockResolvedValue({
+      ...selected_result(), docket_source_key: "text:someone-else:0001",
+    });
     const result = await get_civic_genome_rosetta_pipeline_status(2093644);
-
-    expect(get_rosetta_view).toHaveBeenCalledWith(44);
-    expect(result.source_document_id).toBeNull();
-    expect(result.published_source_document_id).toBe(44);
-    expect(result.published_version_type).toBe("house_amendment");
-    expect(result.contract_state).toBe("current_pending");
-    expect(result.contract_message).toContain("remains published");
+    expect(result.contract_state).toBe("contract_error");
+    expect(result.extraction_run_id).toBeNull();
+    expect(result.can_assemble).toBe(false);
   });
+
+  it("reports selected-runtime read errors without reading historical results", async () => {
+    query.mockResolvedValueOnce({ rows: [selected_version()] });
+    get_current.mockRejectedValue(new Error("rosetta_result_read_unavailable"));
+    const result = await get_civic_genome_rosetta_pipeline_status(2093644);
+    expect(result.contract_state).toBe("contract_error");
+    expect(result.can_assemble).toBe(false);
+    expect(result.contract_message).toContain("No historical result is substituted");
+  });
+
+  it("never resurrects previously verified versions from old receipts", async () => {
+    query.mockResolvedValueOnce({ rows: [selected_version({
+      published_source_document_id: 33,
+      published_extraction_run_id: "7",
+      published_processing_state: "verified_with_findings",
+    })] });
+    get_current.mockResolvedValue(null);
+    const result = await get_civic_genome_rosetta_pipeline_status(2093644);
+    expect(result.published_source_document_id).toBeNull();
+    expect(result.published_extraction_run_id).toBeNull();
+    expect(result.published_object_count).toBeNull();
+    expect(result.contract_state).toBe("waiting_for_extraction");
+    expect(result.contract_message).not.toContain("remains published");
+  });
+
 });
