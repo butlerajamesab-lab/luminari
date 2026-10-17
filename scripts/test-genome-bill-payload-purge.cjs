@@ -71,7 +71,7 @@ q(tx("alter table public.civic_genome_bill disable trigger zz_civic_genome_block
 q(tx("create function public.fixture_extra_trigger() returns trigger language plpgsql as $$begin return new;end$$;create trigger extra after update on public.civic_genome_bill for each row execute function public.fixture_extra_trigger();"+cut),false,/trigger boundary changed/);
 q(tx(cut.replace(' -- NARROW_GUARD_TEST_POINT'," raise exception 'forced after temporary guard install';")),false,/forced after temporary guard install/);
 q(tx(cut.replace(' EXECUTE lifecycle_definition;'," RAISE EXCEPTION 'forced after payload update';\n EXECUTE lifecycle_definition;")),false,/forced after payload update/);
-q(tx(cut.replace(" current_manifest:='{}'::jsonb;"," insert into public.civic_genome_event(event_payload_json) values('{\"forbidden\":true}');\n current_manifest:='{}'::jsonb;")),false,/metadata conservation failed/);
+q(tx(cut.replace(" current_manifest:='{}'::jsonb;"," insert into public.civic_genome_event(event_payload_json) values('{\"forbidden\":true}');\n current_manifest:='{}'::jsonb;")),false,/DETAIL:[\\s\\S]*public\\.civic_genome_event:/);
 assert.equal(state(),before,'every rejected cut rolls back data, temporary trigger bodies and permissions');
 const removal="structural_dna_json=structural_dna_json-array['rosetta_assembly','rosetta_source_receipt'],structural_dna_hash='',rosetta_extraction_run_id=null";
 for(const edit of [
