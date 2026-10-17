@@ -79,7 +79,7 @@ describe("dedicated Prism worker entrypoint selection", () => {
     expect(boundaries.pool_end).toHaveBeenCalledTimes(1);
   });
 
-  it("starts ordinary source intake only with its explicit scope and provider probe", async () => {
+  it("keeps current-result observation running while refusing retired source intake and all provider probes", async () => {
     vi.stubEnv("PRISM_ROSETTA_QUEUE_CANARY_ID", uuid(1));
     vi.stubEnv("LEGISLATIVE_VERSION_QUEUE_ENABLED", "true");
     vi.stubEnv("LEGISLATIVE_VERSION_CURRENT_SOURCES_ENABLED", "true");
@@ -88,11 +88,13 @@ describe("dedicated Prism worker entrypoint selection", () => {
     boundaries.bill_text.mockResolvedValue({});
     await import("./prism-rosetta-worker");
     await vi.advanceTimersByTimeAsync(0);
-    expect(boundaries.bill_text).toHaveBeenCalledWith(123);
-    expect(boundaries.start_legislative).toHaveBeenCalledTimes(1);
+    expect(boundaries.start_prism).toHaveBeenCalledOnce();
+    expect(boundaries.start_current_result_observer).toHaveBeenCalledOnce();
+    expect(boundaries.bill_text).not.toHaveBeenCalled();
+    expect(boundaries.start_legislative).not.toHaveBeenCalled();
   });
 
-  it("retries the existing provider probe and starts intake when provider capacity returns", async () => {
+  it("never revives the hourly LegiScan probe even after provider capacity would recover", async () => {
     vi.stubEnv("PRISM_ROSETTA_QUEUE_CANARY_ID", uuid(1));
     vi.stubEnv("LEGISLATIVE_VERSION_QUEUE_ENABLED", "true");
     vi.stubEnv("LEGISLATIVE_VERSION_CURRENT_SOURCES_ENABLED", "true");
@@ -104,14 +106,11 @@ describe("dedicated Prism worker entrypoint selection", () => {
 
     await import("./prism-rosetta-worker");
     await vi.advanceTimersByTimeAsync(0);
+    expect(boundaries.bill_text).not.toHaveBeenCalled();
 
-    expect(boundaries.bill_text).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(3 * 60 * 60 * 1000);
+    expect(boundaries.bill_text).not.toHaveBeenCalled();
     expect(boundaries.start_legislative).not.toHaveBeenCalled();
-
-    await vi.advanceTimersByTimeAsync(60 * 60 * 1000);
-
-    expect(boundaries.bill_text).toHaveBeenCalledTimes(2);
-    expect(boundaries.start_legislative).toHaveBeenCalledTimes(1);
   });
 
   it("does not broaden intake merely because its queue flag is enabled", async () => {

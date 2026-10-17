@@ -25,6 +25,7 @@ import {
   resolve_lighthouse_runtime_role,
 } from "./runtime-role";
 import { get_bill_text } from "./services/legiscan";
+import { is_legacy_genome_decomposition_conveyor_retired } from "./civic-genome-legacy-decomposition-retirement";
 import { docket_router, wait_for_docket_state_refreshes } from "./routes/docket";
 import {
   start_docket_state_cache_warmer,
@@ -140,6 +141,9 @@ function stable_legiscan_failure_code(error: unknown): string {
 }
 
 function schedule_legislative_provider_probe_retry(error_code: string): void {
+  // The old conveyor is permanently retired. Never schedule a probe, even
+  // after a future certified Rosetta engine is selected or quota recovers.
+  if (is_legacy_genome_decomposition_conveyor_retired()) return;
   if (
     legislative_probe_retry_timer
     || shutting_down
@@ -163,6 +167,10 @@ function schedule_legislative_provider_probe_retry(error_code: string): void {
 }
 
 async function start_authorized_legislative_queue(): Promise<void> {
+  // Guard BEFORE get_bill_text, configuration probing or retry scheduling.
+  // A current-result reader is independent; this obsolete auto-execution
+  // startup is not an API-health probe or a future-engine admission gate.
+  if (is_legacy_genome_decomposition_conveyor_retired()) return;
   if (!legislative_version_queue_requested || legislative_version_queue_enabled) return;
   if (!legiscan_api_key_configured) {
     console.error(

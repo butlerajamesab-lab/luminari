@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { PDFParse } from "pdf-parse";
 
 import { getPool } from "./db";
+import { assert_legacy_genome_decomposition_conveyor_available } from "./civic-genome-legacy-decomposition-retirement";
 import {
   assemble_rosetta_and_resolve_family,
   type rosetta_family_orchestration_result,
@@ -1764,6 +1765,9 @@ export async function process_legislative_version(
   bill_version_id: string,
   options: { require_docket_operational_authority?: boolean } = {},
 ): Promise<legislative_version_processing_result> {
+  // Docket remains canonical. Retired Lighthouse-origin Rosetta processing,
+  // automatic fallback and provider API pulls cannot be invoked directly.
+  assert_legacy_genome_decomposition_conveyor_available();
   const version = await load_version(bill_version_id);
   assert_legislative_document_role(version);
   const authority = options.require_docket_operational_authority === true
