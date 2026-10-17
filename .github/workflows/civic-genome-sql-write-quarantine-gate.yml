@@ -55,10 +55,10 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/migration_sources/civic_genome_rosetta_sql_write_quarantine_v1.sql
       - name: Install prepared submitted-state claim fence in disposable PostgreSQL
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/migration_sources/civic_genome_activation_submitted_claim_fence_20261017.sql
-      - name: Assert submitted claim, lease-reclaim, and queue cleanup semantics
-        run: psql -X -v ON_ERROR_STOP=1 -f supabase/verification/civic_genome_activation_submitted_claim_assert_20261017.sql
       - name: Assert rejection, Docket continuity, and purge-safe DELETE
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/verification/civic_genome_sql_quarantine_assert_v1.sql
+      - name: Assert submitted claim, lease-reclaim, and queue cleanup semantics
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/verification/civic_genome_activation_submitted_claim_assert_20261017.sql
       - name: Prove exact rollback restores original table privileges
         run: |
           psql -X -v ON_ERROR_STOP=1 -f supabase/verification/civic_genome_rosetta_sql_write_quarantine_v1_ROLLBACK.sql
