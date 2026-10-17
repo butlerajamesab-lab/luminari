@@ -1,3 +1,4 @@
+import { assert_genome_rosetta_publication_admitted } from "./civic-genome-rosetta-publication-quarantine";
 import { CIVIC_GENOME_SOURCE_ONLY_BILL_RECORD_SQL } from "./civic-genome-source-only-snapshot";
 import type { PoolClient } from "pg";
 import { getPool } from "./db";
@@ -224,6 +225,7 @@ function build_exact_confirmed_trait_matches(
 export async function resolve_civic_genome_family(
   genome_bill_id: string,
 ): Promise<family_resolution_result> {
+  assert_genome_rosetta_publication_admitted();
   const pool = getPool();
   const client = await pool.connect();
 
@@ -247,6 +249,7 @@ export async function resolve_civic_genome_family_with_client(
   client: PoolClient,
   genome_bill_id: string,
 ): Promise<family_resolution_result> {
+  assert_genome_rosetta_publication_admitted();
   const bill_result = await client.query<bill_identity>(
     `select bill.genome_bill_id, bill.family_id, family.policy_domain
        from public.civic_genome_bill bill
