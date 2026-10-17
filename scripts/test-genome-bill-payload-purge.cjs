@@ -38,6 +38,23 @@ create trigger civic_genome_legislative_version_spine_registration after insert 
 const prior=fs.readFileSync('supabase/migration_sources/civic_genome_rosetta_sql_write_quarantine_v1.sql','utf8');q(prior);
 q("insert into supabase_migrations.schema_migrations values('20261015135444','civic_genome_rosetta_sql_write_quarantine_v1',array["+lit(prior)+"]),('20261017021051','purge_disqualified_genome_traits_20261017',array['fixture trait retirement']);");
 const source=fs.readFileSync('supabase/migration_sources/purge_disqualified_genome_bill_payloads_20261017.sql','utf8');
+// Regression: physical JSONB/TOAST byte length can change after an UPDATE
+// while its source meaning is unchanged. Guard the logical content instead.
+// Retain all six fields across BOTH pre/post, BOTH hash seeds.
+for (const protected_field of [
+  'procedural_lifecycle_json',
+  'jurisdiction_lineage_json',
+  'constitutional_dependency_json',
+  'fiscal_effects_json',
+  'enforcement_graph_json',
+  'downstream_impact_graph_json',
+]) {
+  assert.equal(source.split(`md5(t.${protected_field}::text)`).length-1,4,
+    `bill metadata ${protected_field} must be protected in both seeds and phases`);
+  assert.ok(!source.includes(`pg_column_size(t.${protected_field})`),
+    `bill metadata ${protected_field} must not rely on storage representation`);
+}
+
 const crypto=require('node:crypto');
 const sha=s=>crypto.createHash('sha256').update(s).digest('hex');
 const sourceManifest=JSON.parse(fs.readFileSync('supabase/verification/genome_bill_source_reconciliation_20261017.json','utf8'));
