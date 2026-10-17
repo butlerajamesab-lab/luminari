@@ -15,6 +15,7 @@ PRODUCTION_RECEIPTS = (
     Path("supabase/verification/production_migration_receipts_20260930_addendum.tsv"),
     Path("supabase/verification/production_migration_receipts_20261007_addendum.tsv"),
     Path("supabase/verification/production_migration_receipts_20261015_addendum.tsv"),
+    Path("supabase/verification/production_migration_receipts_20261017_addendum.tsv"),
 )
 # executable_md5 is exported from each ordered production statement array by
 # trimming trailing whitespace, restoring a missing top-level terminator,
@@ -327,6 +328,11 @@ APPROVED_REPOSITORY_ONLY = {
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
+    # Four-view permission retirement applied and read back on 2026-10-17.
+    "20261017000912": (
+        "0dcc197ff30adf74f88ed4d358f572dd",
+        "96ea612ebc405182c04127af5dc66e24bb54715d",
+    ),
     # Production ledger reconciliation captured 2026-09-30.
     # These files are the source-controlled SQL corresponding to the exact
     # production migration identities restored from supabase_migrations.
