@@ -32,7 +32,7 @@ PRODUCTION_DATA_PINS = {
     "version_ids": "f8c650f609b97cd409c7faa2a3712229be59bd97a32f051086040fb3706e4724",
     "version_rows": "3727cfd4ac781b812c941755c1cce0a8da233945bcc2dc36f060ad06dbf17121",
     "queue_ids": "9631349f707d971600fef4f3c095f996c1a58cafb7c27df36649c0ee9b28aa58",
-    "queue_rows": "d962de134fc866b7ab6217db0c1864bc1c51666cb1e94629c5bad81d1661b49b",
+    "queue_rows": "792a67d68533bb57b88143c0335c53859c3294b580dc030c444a542b62ab238d",
 }
 
 def sql(statement: str) -> str:
