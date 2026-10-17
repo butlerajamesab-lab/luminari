@@ -11,7 +11,9 @@
       "statement_array_md5": "9dbc5f3a8cd4b67014f1ec8f28c02a6b"
     },
     "source_blob": "96b7e647e00719e79899052d8bfaafe3482726b5",
-    "trait_count": 0
+    "trait_count": 0,
+    "executed_sql_archive": "supabase/verification/applied/20261017021051_purge_disqualified_genome_traits_20261017.sql",
+    "canonical_replay_blob": "65715cbd21195a5103d20f47ae4b78c15e523d1d"
   },
   "lighthouse_postflight": {
     "fences": [

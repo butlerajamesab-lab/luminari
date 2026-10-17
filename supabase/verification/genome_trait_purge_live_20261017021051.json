@@ -186,7 +186,7 @@
   "limitations": [
     "Conservation checks cover scalar metadata, JSON sizes and sealed history metadata; not independent original-artifact byte validation.",
     "Current bill/version payloads and historical assembly snapshots remain.",
-    "Verbatim production-state-pinned SQL is not an empty-database replay recipe; clean replay remains unproven."
+    "Full repository reset remains blocked at an earlier unrelated cron migration; dedicated PostgreSQL tests cover the canonical empty-state replay variant."
   ],
   "http_observations": {
     "health_status": 200,
@@ -198,5 +198,13 @@
     "search_repeat_query_ms": 3630,
     "search_repeat_results": 2,
     "structural_quarantine": true
+  },
+  "executed_sql_archive": "supabase/verification/applied/20261017021051_purge_disqualified_genome_traits_20261017.sql",
+  "canonical_replay": {
+    "path": "supabase/migrations/20261017021051_purge_disqualified_genome_traits_20261017.sql",
+    "git_blob": "65715cbd21195a5103d20f47ae4b78c15e523d1d",
+    "md5": "3ff8e77d87c695e516c994dd50e661c5",
+    "status": "empty_only_permission_finalization",
+    "historical_data_delete": false
   }
 }

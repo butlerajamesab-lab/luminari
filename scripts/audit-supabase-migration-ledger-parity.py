@@ -328,11 +328,6 @@ APPROVED_REPOSITORY_ONLY = {
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
-    # Bounded physical trait purge applied and independently read back on 2026-10-17.
-    "20261017021051": (
-        "d8cc8bd7ec06d2c9884d451050528d48",
-        "96b7e647e00719e79899052d8bfaafe3482726b5",
-    ),
     # Four-view permission retirement applied and read back on 2026-10-17.
     "20261017000912": (
         "0dcc197ff30adf74f88ed4d358f572dd",
@@ -554,6 +549,11 @@ SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
 }
 
 REPLAY_ALIAS_RECEIPTS = {
+    # Empty-only final permission state; never replays the historical DELETE.
+    "20261017021051": (
+        "d8cc8bd7ec06d2c9884d451050528d48",
+        "65715cbd21195a5103d20f47ae4b78c15e523d1d",
+    ),
     "20260805210000": (
         "0b055159913ace8294a93fb659ddbd68",
         "2fa30df60f163da3c54dbe55e447bb553d2b7b04",
@@ -589,6 +589,36 @@ def git_blob_sha1(path: Path) -> str:
     body = path.read_bytes()
     header = f"blob {len(body)}\0".encode()
     return hashlib.sha1(header + body).hexdigest()
+
+
+# Executed production SQL stays immutable and independently hash-checked when
+# automatic fresh replay uses a distinct, explicitly pinned empty-state variant.
+VERBATIM_PRODUCTION_SQL_RECEIPTS = {
+    "20261017021051": (
+        "supabase/verification/applied/20261017021051_purge_disqualified_genome_traits_20261017.sql",
+        "d8cc8bd7ec06d2c9884d451050528d48",
+        "96b7e647e00719e79899052d8bfaafe3482726b5",
+    ),
+}
+
+def verify_verbatim_production_receipts(entries, production_by_version, replay_alias_receipts):
+    violations = []
+    for version, (archive_name, expected_md5, expected_blob) in entries.items():
+        path = Path(archive_name)
+        receipts = production_by_version.get(version, [])
+        if len(receipts) != 1 or receipts[0].get("statements_md5") != expected_md5:
+            violations.append((version, "production_receipt_mismatch"))
+        if not path.is_file():
+            violations.append((version, "archive_missing"))
+        elif hashlib.md5(path.read_bytes()).hexdigest() != expected_md5 or git_blob_sha1(path) != expected_blob:
+            violations.append((version, "archive_bytes_changed"))
+        alias = replay_alias_receipts.get(version)
+        canonical = Path("supabase/migrations") / path.name
+        if alias is None or alias[0] != expected_md5 or not canonical.is_file():
+            violations.append((version, "replay_alias_missing_or_mismatched"))
+        elif git_blob_sha1(canonical) != alias[1]:
+            violations.append((version, "replay_source_changed"))
+    return violations
 
 
 receipt_rows: list[dict[str, str]] = []
@@ -722,6 +752,10 @@ for version in sorted(approved_repository_only_versions & local_versions):
                 )
                 break
 
+verbatim_production_mismatches = verify_verbatim_production_receipts(
+    VERBATIM_PRODUCTION_SQL_RECEIPTS, production_by_version, REPLAY_ALIAS_RECEIPTS
+)
+
 print(f"PRODUCTION_RECEIPT_COUNT={len(receipt_rows)}")
 print(f"PRODUCTION_VERSION_COUNT={len(production_versions)}")
 print(f"LOCAL_14_DIGIT_COUNT={len(local_versions)}")
@@ -783,8 +817,14 @@ for (
         f"{version}|{name}|{production_version}|{production_name}|{statements_md5}"
     )
 
+print(f"VERBATIM_PRODUCTION_SQL_RECEIPT_COUNT={len(VERBATIM_PRODUCTION_SQL_RECEIPTS)}")
+print(f"VERBATIM_PRODUCTION_SQL_MISMATCH_COUNT={len(verbatim_production_mismatches)}")
+for version, reason in verbatim_production_mismatches:
+    print(f"VERBATIM_PRODUCTION_SQL_MISMATCH={version}|{reason}")
+
 if (
-    missing_production
+    verbatim_production_mismatches
+    or missing_production
     or missing_repository_only
     or unexpected_local
     or duplicates
