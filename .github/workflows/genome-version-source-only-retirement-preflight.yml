@@ -101,8 +101,15 @@ jobs:
           # The old regex wrongly allowed ANY rosetta_*, assembly_*, prism_* key.
           # A future key under each prefix must fail as unknown, not be removed.
           for unknown_key in rosetta_future_source_proof assembly_new_docket_evidence prism_new_source_identity; do
+            # Only in disposable fixture: simulate a PREEXISTING unexpected
+            # field from before the installed write-quarantine trigger.
+            # Restore that trigger before executing the purge candidate.
             psql -X -v ON_ERROR_STOP=1 -c \
-              "update public.civic_genome_bill_version set receipt_json=receipt_json||jsonb_build_object('$unknown_key','source-needs-review') where source_bill_id=1;"
+              "BEGIN;
+               ALTER TABLE public.civic_genome_bill_version DISABLE TRIGGER zz_civic_genome_block_bill_version_rosetta_receipt_v1;
+               UPDATE public.civic_genome_bill_version SET receipt_json=receipt_json||jsonb_build_object('$unknown_key','source-needs-review') WHERE source_bill_id=1;
+               ALTER TABLE public.civic_genome_bill_version ENABLE TRIGGER zz_civic_genome_block_bill_version_rosetta_receipt_v1;
+               COMMIT;"
             python3 scripts/prepare_genome_version_retirement_fixture.py "/tmp/prefix-$unknown_key.sql"
             if psql -X -v ON_ERROR_STOP=1 -f "/tmp/prefix-$unknown_key.sql" > "/tmp/prefix-$unknown_key.log" 2>&1; then
               echo "UNSAFE: retired-prefix wildcard deleted an unreviewed '$unknown_key' source field"
