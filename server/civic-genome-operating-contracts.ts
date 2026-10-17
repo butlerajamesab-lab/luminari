@@ -378,7 +378,8 @@ export async function get_civic_genome_rosetta_pipeline_status(
   if (
     !source_document_id
     || !version?.current_source_document_key
-    || !/^[0-9a-f]{64}$/i.test(version.current_source_content_hash ?? "")
+    || !version.current_source_content_hash
+    || !/^[0-9a-f]{64}$/i.test(version.current_source_content_hash)
   ) {
     return {
       ...unobserved,
