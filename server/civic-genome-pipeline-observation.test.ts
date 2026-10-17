@@ -9,14 +9,14 @@ import {
   type CivicGenomePipelineObservation,
 } from "../shared/civic-genome-pipeline-observation";
 
-const { query, getBill, bySource, byIdentifier } = vi.hoisted(() => ({
-  query: vi.fn(), getBill: vi.fn(), bySource: vi.fn(), byIdentifier: vi.fn(),
+const { query, getBill, currentResult } = vi.hoisted(() => ({
+  query: vi.fn(), getBill: vi.fn(), currentResult: vi.fn(),
 }));
 vi.mock("./db", () => ({ getPool: () => ({ query }) }));
 vi.mock("./civic-genome-source-id", () => ({ get_genome_bill_by_source_id: getBill }));
-vi.mock("./civic-genome-rosetta-contract", () => ({
-  get_latest_rosetta_law_view_by_source_document: bySource,
-  get_latest_rosetta_law_view_by_document_identifier: byIdentifier,
+vi.mock("./civic-genome-rosetta-evaluation", () => ({
+  get_rosetta_review_base_url: () => "https://rosetta.example.test",
+  load_rosetta_current_docket_result_for_binding: currentResult,
 }));
 import { get_civic_genome_rosetta_pipeline_status } from "./civic-genome-operating-contracts";
 
@@ -39,15 +39,15 @@ const held = {
   queue_locked_at: null,
 };
 
+const source_document_key = "text:1939033:19607";
+const source_content_hash = "a".repeat(64);
 function selectVersion(overrides: Record<string, unknown> = {}) {
   query.mockResolvedValueOnce({ rows: [{
     current_version_type: "introduced",
     current_processing_state: "source_ingested",
     current_source_document_id: 19607,
-    published_version_type: null,
-    published_processing_state: null,
-    published_source_document_id: null,
-    published_extraction_run_id: null,
+    current_source_document_key: source_document_key,
+    current_source_content_hash: source_content_hash,
     ...overrides,
   }] });
 }
@@ -56,35 +56,31 @@ beforeEach(() => {
   vi.resetAllMocks();
   query.mockResolvedValue({ rows: [] });
   getBill.mockResolvedValue({ genome_bill_id: "11111111-1111-4111-8111-111111111111" });
-  bySource.mockResolvedValue(null);
-  byIdentifier.mockResolvedValue(null);
+  currentResult.mockResolvedValue(null);
 });
 
-describe("exact source acquisition is independent of extraction availability", () => {
-  it("preserves an acquired source when no extraction exists", async () => {
+describe("exact source acquisition is independent of selected-runtime extraction", () => {
+  it("preserves an acquired source without fabricating extraction", async () => {
     selectVersion();
     const result = await get_civic_genome_rosetta_pipeline_status(1939033);
-    expect(bySource).toHaveBeenCalledWith(19607);
-    expect(byIdentifier).not.toHaveBeenCalled();
+    expect(currentResult).toHaveBeenCalledWith({ source_document_key, source_content_hash });
     expect(result.source_document_id).toBe(19607);
     expect(result.extraction_run_id).toBeNull();
     expect(result.contract_state).toBe("waiting_for_extraction");
     expect(result.can_assemble).toBe(false);
-    expect(result.contract_message).toContain("exact source is preserved");
-    expect(result.contract_message).not.toContain("No exact Rosetta source document exists");
   });
 
-  it("preserves source identity when the Rosetta read fails", async () => {
+  it("preserves exact source identity when current result read fails", async () => {
     selectVersion();
-    bySource.mockRejectedValue(new Error("temporary_owner_timeout"));
+    currentResult.mockRejectedValue(new Error("temporary_owner_timeout"));
     const result = await get_civic_genome_rosetta_pipeline_status(1939033);
     expect(result.source_document_id).toBe(19607);
     expect(result.contract_state).toBe("contract_error");
     expect(result.can_assemble).toBe(false);
-    expect(result.contract_message).toContain("does not mean source absence");
+    expect(result.contract_message).toContain("exact Docket source binding is preserved");
   });
 
-  it("reports an exact current-result hold without inventing an attempt or run", async () => {
+  it("reports a held current result without inventing a run", async () => {
     selectVersion({
       queue_state: "degraded", queue_attempt_count: 0,
       queue_last_failure_class: "awaiting_current_result",
@@ -98,27 +94,28 @@ describe("exact source acquisition is independent of extraction availability", (
       queue_last_failure_class: "awaiting_current_result",
       queue_next_attempt_at: "infinity", queue_locked_at: null,
     });
-    expect(result.contract_message).toContain("not evidence of active decomposition");
+    expect(result.contract_message).toContain("No older decomposition");
     expect(query.mock.calls[0][0]).toContain("where bill_version_id = current.bill_version_id");
   });
 
-  it("does not turn transport degradation into a current-result hold", async () => {
+  it("does not treat unrelated transport degradation as current-result hold", async () => {
     selectVersion({ queue_state: "degraded", queue_last_failure_class: "transient" });
     const result = await get_civic_genome_rosetta_pipeline_status(1939033);
     expect(result.contract_state).toBe("waiting_for_extraction");
     expect(result.queue_last_failure_class).toBe("transient");
   });
 
-  it("does not infer global source absence from an unbound version", async () => {
-    selectVersion({ current_source_document_id: null, current_processing_state: "registered" });
+  it("does not infer original source absence from unbound current version", async () => {
+    selectVersion({ current_source_document_id: null, current_source_document_key: null,
+      current_source_content_hash: null, current_processing_state: "registered" });
     const result = await get_civic_genome_rosetta_pipeline_status(1939033);
     expect(result.contract_state).toBe("not_handed_off");
     expect(result.source_document_id).toBeNull();
-    expect(bySource).not.toHaveBeenCalled();
+    expect(currentResult).not.toHaveBeenCalled();
     expect(result.contract_message).toContain("does not establish that the source bytes are absent elsewhere");
   });
 
-  it("keeps missing queue evidence unknown rather than reporting zero attempts", async () => {
+  it("preserves unknown queue state rather than returning a fake zero", async () => {
     selectVersion();
     const result = await get_civic_genome_rosetta_pipeline_status(1939033);
     expect(result.queue_state).toBeNull();
@@ -126,27 +123,23 @@ describe("exact source acquisition is independent of extraction availability", (
     expect(result.queue_next_attempt_at).toBeNull();
   });
 
-  it("retains both source identities while a different prior publication exists", async () => {
+  it("does not resurface an old published version in the current pipeline", async () => {
     selectVersion({ published_version_type: "engrossed", published_source_document_id: 44,
       published_processing_state: "verified", published_extraction_run_id: "11" });
     const result = await get_civic_genome_rosetta_pipeline_status(1939033);
     expect(result.source_document_id).toBe(19607);
-    expect(result.published_source_document_id).toBe(44);
-    expect(result.published_extraction_run_id).toBe(11);
-    expect(result.contract_state).toBe("current_pending");
-    expect(result.contract_message).toContain("remains published separately");
-    expect(result.contract_message).not.toContain("processing automatically");
+    expect(result.published_source_document_id).toBeNull();
+    expect(result.published_extraction_run_id).toBeNull();
+    expect(result.contract_state).toBe("waiting_for_extraction");
     expect(result.can_assemble).toBe(false);
   });
 
-  it("reports a hold even when a separate older publication is retained", async () => {
+  it("keeps an actual current-result hold independent of old saved receipts", async () => {
     selectVersion({ queue_state: "degraded", queue_last_failure_class: "awaiting_current_result",
-      published_version_type: "engrossed", published_source_document_id: 44,
-      published_processing_state: "verified", published_extraction_run_id: "11" });
+      published_version_type: "engrossed", published_source_document_id: 44 });
     const result = await get_civic_genome_rosetta_pipeline_status(1939033);
     expect(result.contract_state).toBe("awaiting_current_result");
-    expect(result.source_document_id).toBe(19607);
-    expect(result.published_source_document_id).toBe(44);
+    expect(result.published_source_document_id).toBeNull();
     expect(result.can_assemble).toBe(false);
   });
 });
@@ -168,10 +161,11 @@ describe("evidence-based pipeline presentation", () => {
     expect(pipelinePublicationPresentation(held).value).toBe("Held — awaiting result");
     expect(pipelineExtractionPresentation(held).value).toBe("Held — awaiting result");
   });
-  it("keeps a prior snapshot distinct from the pending current result", () => {
+  it("never presents an unproven historical receipt as saved publication", () => {
     const prior = pipelinePublicationPresentation({ ...held, published_source_document_id: 44, published_version_type: "engrossed" });
-    expect(prior.value).toBe("Prior snapshot available");
-    expect(prior.detail).toContain("not a current-version result");
+    expect(prior.value).toBe("Held — awaiting result");
+    expect(prior.detail).not.toContain("Latest verified");
+    expect(prior.detail).not.toContain("saved");
   });
   it("does not turn read failure into a publication or extraction verdict", () => {
     const unavailable = { ...held, contract_state: "contract_error" };
