@@ -6,6 +6,13 @@ const { query, process_version, rosetta_fetch } = vi.hoisted(() => ({
   rosetta_fetch: vi.fn(),
 }));
 
+// Existing tests exercise retired algorithms as isolated fixtures only.
+// This mock is never used by production; the runtime gate stays fail-closed.
+vi.mock("./civic-genome-legacy-decomposition-retirement", () => ({
+  is_legacy_genome_decomposition_conveyor_retired: () => false,
+  assert_legacy_genome_decomposition_conveyor_available: () => {},
+}));
+
 vi.mock("./db", () => ({
   query_with_diagnostics: query,
 }));
