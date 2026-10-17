@@ -23,7 +23,7 @@ exception
   when invalid_text_representation then return new;
   when sqlstate 'P0002' then return new;
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.sync_civic_genome_lifecycle_from_bill_v3()
  RETURNS trigger
@@ -49,4 +49,4 @@ begin
   );
   return new;
 end;
-$function$
+$function$;

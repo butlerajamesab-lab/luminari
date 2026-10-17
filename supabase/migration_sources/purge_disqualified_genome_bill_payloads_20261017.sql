@@ -62,6 +62,8 @@ WHEN 'public.civic_genome_projection_entity_version' THEN EXECUTE 'SELECT jsonb_
  current_manifest:=current_manifest||jsonb_build_object(surface.table_name,manifest_row);
 END LOOP;
  before_manifest:=current_manifest;
+ SELECT encode(extensions.digest(convert_to(string_agg(encode(extensions.digest(convert_to(jsonb_build_array(genome_bill_id::text,structural_dna_json#>>'{rosetta_assembly,source_document_id}',structural_dna_json#>>'{rosetta_source_receipt,source_url}',structural_dna_json#>>'{rosetta_source_receipt,source_version}',structural_dna_json#>>'{rosetta_source_receipt,source_byte_hash}',structural_dna_json#>>'{rosetta_source_receipt,source_content_hash}',structural_dna_json#>>'{rosetta_source_receipt,source_identity_hash}',structural_dna_json#>>'{rosetta_source_receipt,source_provider_hash}')::text,'UTF8'),'sha256'),'hex'),'' ORDER BY genome_bill_id),'UTF8'),'sha256'),'hex') INTO observed_hash FROM public.civic_genome_bill WHERE structural_dna_json ? 'rosetta_source_receipt';
+ IF observed_hash IS DISTINCT FROM '37866c7080591b553d46392334f5ee096db945f702a35bd5c499c9a6a9d16f74' THEN RAISE EXCEPTION 'archived source-reference manifest differs'; END IF;
  -- Both exact original functions are restored before commit. Triggers stay
  -- enabled throughout. This predicate cannot skip any source or timestamp edit.
  retirement_guard := $guard$

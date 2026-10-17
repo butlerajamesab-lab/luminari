@@ -38,12 +38,22 @@ create trigger civic_genome_legislative_version_spine_registration after insert 
 const prior=fs.readFileSync('supabase/migration_sources/civic_genome_rosetta_sql_write_quarantine_v1.sql','utf8');q(prior);
 q("insert into supabase_migrations.schema_migrations values('20261015135444','civic_genome_rosetta_sql_write_quarantine_v1',array["+lit(prior)+"]),('20261017021051','purge_disqualified_genome_traits_20261017',array['fixture trait retirement']);");
 const source=fs.readFileSync('supabase/migration_sources/purge_disqualified_genome_bill_payloads_20261017.sql','utf8');
+const crypto=require('node:crypto');
+const sha=s=>crypto.createHash('sha256').update(s).digest('hex');
+const sourceManifest=JSON.parse(fs.readFileSync('supabase/verification/genome_bill_source_reconciliation_20261017.json','utf8'));
+const sourceKeys=['source_url','source_version','source_byte_hash','source_content_hash','source_identity_hash','source_provider_hash'];
+assert.equal(sourceManifest.rows.length,3082);
+assert.equal(new Set(sourceManifest.rows.map(r=>r.genome_bill_id)).size,3082);
+for(const r of sourceManifest.rows){assert.deepEqual(Object.keys(r.source_reference).sort(),[...sourceKeys].sort());assert.equal(r.exact_matches,1);assert.equal(r.stored_text_hash_valid,1);assert.equal(Number(r.historical_source_document_id),r.canonical_source_document_id);}
+const referenceHash=sha(sourceManifest.rows.map(r=>sha('['+[r.genome_bill_id,r.historical_source_document_id,...sourceKeys.map(k=>r.source_reference[k])].map(x=>JSON.stringify(x)).join(', ')+']')).join(''));
+assert.equal(referenceHash,'37866c7080591b553d46392334f5ee096db945f702a35bd5c499c9a6a9d16f74','archived source tuples match live ordered hash and prepared purge pin');
 let cut=source.replaceAll('68ad3ca961b016b0a6a37c94f2861199',q("select md5(statements[1]) from supabase_migrations.schema_migrations where version='20261015135444';"))
  .replaceAll('d8cc8bd7ec06d2c9884d451050528d48',q("select md5(statements[1]) from supabase_migrations.schema_migrations where version='20261017021051';"))
  .replaceAll('matched<>3082','matched<>1').replaceAll('removed<>3082','removed<>1')
  .replaceAll("tgattr::text='15'","tgattr::text='2'");
 const hash=(clean=false)=>q("select encode(extensions.digest(convert_to(string_agg(encode(extensions.digest(convert_to("+(clean?"(to_jsonb(b)||jsonb_build_object('structural_dna_json',b.structural_dna_json-array['rosetta_assembly','rosetta_source_receipt'],'rosetta_extraction_run_id',null,'structural_dna_hash',''))":"to_jsonb(b)")+"::text,'UTF8'),'sha256'),'hex'),'' order by genome_bill_id),'UTF8'),'sha256'),'hex') from public.civic_genome_bill b where id=2;");
 cut=cut.replace('9ceb049cd1d9575952d1a13fbeea4a52280d149d2c63c6ec5e30dff1ebbdd988',hash()).replace('f3e2f74463124a6f4a98958dd5a32d49560e33a065c25c439a232109e1f7ebab',hash(true));
+cut=cut.replace(referenceHash,q("select encode(extensions.digest(convert_to(string_agg(encode(extensions.digest(convert_to(jsonb_build_array(genome_bill_id::text,structural_dna_json#>>'{rosetta_assembly,source_document_id}',structural_dna_json#>>'{rosetta_source_receipt,source_url}',structural_dna_json#>>'{rosetta_source_receipt,source_version}',structural_dna_json#>>'{rosetta_source_receipt,source_byte_hash}',structural_dna_json#>>'{rosetta_source_receipt,source_content_hash}',structural_dna_json#>>'{rosetta_source_receipt,source_identity_hash}',structural_dna_json#>>'{rosetta_source_receipt,source_provider_hash}')::text,'UTF8'),'sha256'),'hex'),'' order by genome_bill_id),'UTF8'),'sha256'),'hex') from public.civic_genome_bill where structural_dna_json ? 'rosetta_source_receipt';"));
 for(const f of ['sync_civic_genome_lifecycle_from_bill_v3()','try_register_docket_legislative_version_spine_from_genome()']){
  const expected=f.startsWith('sync')?'3aa7a70a64b116272641c70d6d79ea2e':'72e6de7ac25173268d226cecf2653bc0';
  assert.equal(q('select md5(pg_get_functiondef('+lit('public.'+f)+'::regprocedure));'),expected,'original live trigger is reproduced exactly');
