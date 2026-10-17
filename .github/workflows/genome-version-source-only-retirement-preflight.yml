@@ -96,6 +96,24 @@ jobs:
           test "$(psql -X -Atqc 'select count(*) from public.civic_genome_legislative_version_queue')" = 6
           psql -X -v ON_ERROR_STOP=1 -c \
             "update public.civic_genome_bill_version set receipt_json=receipt_json-'future_docket_source_semantic' where source_bill_id=1;"
+      - name: Prove unfamiliar engine-prefixed source keys are never silently deleted
+        run: |
+          # The old regex wrongly allowed ANY rosetta_*, assembly_*, prism_* key.
+          # A future key under each prefix must fail as unknown, not be removed.
+          for unknown_key in rosetta_future_source_proof assembly_new_docket_evidence prism_new_source_identity; do
+            psql -X -v ON_ERROR_STOP=1 -c \
+              "update public.civic_genome_bill_version set receipt_json=receipt_json||jsonb_build_object('$unknown_key','source-needs-review') where source_bill_id=1;"
+            python3 scripts/prepare_genome_version_retirement_fixture.py "/tmp/prefix-$unknown_key.sql"
+            if psql -X -v ON_ERROR_STOP=1 -f "/tmp/prefix-$unknown_key.sql" > "/tmp/prefix-$unknown_key.log" 2>&1; then
+              echo "UNSAFE: retired-prefix wildcard deleted an unreviewed '$unknown_key' source field"
+              exit 1
+            fi
+            grep -q 'genome_version_retirement_unrecognized_receipt_fields' "/tmp/prefix-$unknown_key.log"
+            test "$(psql -X -Atqc "select (receipt_json ? '$unknown_key')::text from public.civic_genome_bill_version where source_bill_id=1")" = t
+            test "$(psql -X -Atqc 'select count(*) from public.civic_genome_legislative_version_queue')" = 6
+            psql -X -v ON_ERROR_STOP=1 -c \
+              "update public.civic_genome_bill_version set receipt_json=receipt_json-'$unknown_key' where source_bill_id=1;"
+          done
       - name: Prove fixture-only exact deletion and full source/identity conservation
         run: |
           python3 scripts/prepare_genome_version_retirement_fixture.py /tmp/fixture-success.sql
