@@ -90,7 +90,9 @@ BEGIN
     OR EXISTS(
       SELECT 1 FROM public.civic_genome_legislative_version_queue q
       JOIN genome_expired_legacy_lease_scope s USING(queue_id)
-      JOIN public.civic_genome_bill_version v USING(bill_version_id)
+      JOIN public.civic_genome_bill_version v
+        ON v.bill_version_id=q.bill_version_id
+       AND v.bill_version_id=s.bill_version_id
       WHERE q.locked_at IS NULL
          OR q.locked_by IS NULL
          OR q.locked_at>=now()-interval '14 days'
