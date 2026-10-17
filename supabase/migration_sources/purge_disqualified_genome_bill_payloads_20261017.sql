@@ -111,7 +111,12 @@ WHEN 'public.civic_genome_projection_entity_version' THEN EXECUTE 'SELECT jsonb_
  ELSE RAISE EXCEPTION 'unknown protection surface'; END CASE;
  current_manifest:=current_manifest||jsonb_build_object(surface.table_name,manifest_row);
 END LOOP;
- IF current_manifest IS DISTINCT FROM before_manifest THEN RAISE EXCEPTION 'protected source/version/event/history metadata conservation failed'; END IF;
+ IF current_manifest IS DISTINCT FROM before_manifest THEN
+   RAISE EXCEPTION 'protected source/version/event/history metadata conservation failed'
+     USING DETAIL = (SELECT string_agg(format('%s: before=%s after=%s', k, before_manifest->k, current_manifest->k), E'\n' ORDER BY k)
+                     FROM jsonb_object_keys(before_manifest || current_manifest) k
+                     WHERE before_manifest->k IS DISTINCT FROM current_manifest->k);
+ END IF;
  IF NOT EXISTS(SELECT 1 FROM supabase_migrations.schema_migrations WHERE version='20261015135444'
  AND name='civic_genome_rosetta_sql_write_quarantine_v1' AND cardinality(statements)=1 AND md5(statements[1])='68ad3ca961b016b0a6a37c94f2861199') THEN RAISE EXCEPTION 'database write quarantine ledger differs'; END IF;
  WITH expected(table_name,trigger_name,body_md5,enabled) AS(VALUES ('civic_genome_trait','zz_civic_genome_block_rosetta_trait_write_v1','87ffdb41a744456fb3863f2a0574b30c','O'),('civic_genome_assembly_run','zz_civic_genome_block_rosetta_assembly_write_v1','87ffdb41a744456fb3863f2a0574b30c','O'),('civic_genome_rosetta_structural_representation','zz_civic_genome_block_rosetta_structural_representation_write_v','87ffdb41a744456fb3863f2a0574b30c','O'),('civic_genome_rosetta_source_binding','zz_civic_genome_block_rosetta_source_binding_write_v1','87ffdb41a744456fb3863f2a0574b30c','O'),('civic_genome_rosetta_generation_target','zz_civic_genome_block_rosetta_target_write_v1','87ffdb41a744456fb3863f2a0574b30c','O'),('civic_genome_bill','zz_civic_genome_block_bill_rosetta_payload_v1','ec8e3e387f823d806f926bd92585ec6e','O'),('civic_genome_bill_version','zz_civic_genome_block_bill_version_rosetta_receipt_v1','b29c9699c7831806f7ddcf346e309e22','O'),('civic_genome_projection_entity_version','zz_civic_genome_guard_source_only_history_v1','8c281d2d552148d50059c665e5f6aabf','O'),('civic_genome_rosetta_generation_activation_queue','zz_civic_genome_block_rosetta_activation_execution_v1','38c9a5480b91a640fe27776a7f0340bc','O'),('civic_genome_rosetta_generation_upgrade_queue','zz_civic_genome_block_rosetta_upgrade_execution_v1','38c9a5480b91a640fe27776a7f0340bc','O'))
