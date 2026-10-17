@@ -1,0 +1,105 @@
+name: Civic Genome obsolete version receipt retirement preflight
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migration_sources/purge_disqualified_genome_version_receipts_20261017_PREPARED.sql'
+      - 'supabase/verification/genome_version_retirement_fixture_20261017.sql'
+      - 'supabase/verification/genome_version_retirement_assert_20261017.sql'
+      - 'scripts/prepare_genome_version_retirement_fixture.py'
+      - '.github/workflows/genome-version-source-only-retirement-preflight.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  exact-retirement-postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: genome_retirement_test
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d genome_retirement_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: genome_retirement_test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure PostgreSQL client
+        run: |
+          if ! command -v psql >/dev/null; then
+            sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
+          fi
+      - name: Seed discarded-engine outputs and one live lease, with original Docket source
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/verification/genome_version_retirement_fixture_20261017.sql
+      - name: Prove a direct verified-to-source-ingested update is silently rejected
+        run: |
+          psql -X -v ON_ERROR_STOP=1 <<'SQL'
+          BEGIN;
+          UPDATE public.civic_genome_bill_version
+             SET processing_state='source_ingested'
+           WHERE source_bill_id=1;
+          DO $verify$
+          BEGIN
+            IF (SELECT processing_state FROM public.civic_genome_bill_version WHERE source_bill_id=1) <> 'verified' THEN
+              RAISE EXCEPTION 'fixture failed to reproduce production terminal-state restoration';
+            END IF;
+          END;$verify$;
+          ROLLBACK;
+          SQL
+      - name: Prove production identity pins refuse unrelated fixture rows without writes
+        run: |
+          if psql -X -v ON_ERROR_STOP=1 \
+             -f supabase/migration_sources/purge_disqualified_genome_version_receipts_20261017_PREPARED.sql > /tmp/prod-pin-refusal.log 2>&1; then
+            echo "UNSAFE: production version retirement pins accepted unrelated fixture"
+            exit 1
+          fi
+          grep -q 'genome_version_retirement_trigger_body_or_scope_drift' /tmp/prod-pin-refusal.log
+          test "$(psql -X -Atqc 'select count(*) from public.civic_genome_bill_version')" = 6
+          test "$(psql -X -Atqc 'select count(*) from public.civic_genome_legislative_version_queue')" = 6
+      - name: Prove even exact fixture pins refuse a submitted/leased job
+        run: |
+          python3 scripts/prepare_genome_version_retirement_fixture.py /tmp/fixture-lease-test.sql
+          if psql -X -v ON_ERROR_STOP=1 -f /tmp/fixture-lease-test.sql > /tmp/lease-refusal.log 2>&1; then
+            echo "UNSAFE: candidate deleted a leased queue job"
+            exit 1
+          fi
+          grep -q 'genome_version_retirement_queue_drift_or_active_lease' /tmp/lease-refusal.log
+          test "$(psql -X -Atqc 'select count(*) from public.civic_genome_bill_version where rosetta_extraction_run_id is not null')" = 6
+          test "$(psql -X -Atqc 'select count(*) from public.civic_genome_legislative_version_queue')" = 6
+      - name: Simulate separate verified worker retirement and released lease
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -c \
+            "update public.civic_genome_legislative_version_queue set queue_state='permanent_failure', locked_at=null, locked_by=null where queue_state='submitted';"
+          test "$(psql -X -Atqc "select count(*) from public.civic_genome_legislative_version_queue where queue_state='submitted' or locked_at is not null or locked_by is not null")" = 0
+      - name: Prove unknown source receipt keys fail closed, without deletion
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -c \
+            "update public.civic_genome_bill_version set receipt_json=receipt_json||'{\"future_docket_source_semantic\":\"unknown\"}'::jsonb where source_bill_id=1;"
+          python3 scripts/prepare_genome_version_retirement_fixture.py /tmp/fixture-unknown-key.sql
+          if psql -X -v ON_ERROR_STOP=1 -f /tmp/fixture-unknown-key.sql > /tmp/unknown-key-refusal.log 2>&1; then
+            echo "UNSAFE: candidate dropped an unrecognized source field"
+            exit 1
+          fi
+          grep -q 'genome_version_retirement_unrecognized_receipt_fields' /tmp/unknown-key-refusal.log
+          test "$(psql -X -Atqc 'select count(*) from public.civic_genome_legislative_version_queue')" = 6
+          psql -X -v ON_ERROR_STOP=1 -c \
+            "update public.civic_genome_bill_version set receipt_json=receipt_json-'future_docket_source_semantic' where source_bill_id=1;"
+      - name: Prove fixture-only exact deletion and full source/identity conservation
+        run: |
+          python3 scripts/prepare_genome_version_retirement_fixture.py /tmp/fixture-success.sql
+          psql -X -v ON_ERROR_STOP=1 -f /tmp/fixture-success.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/verification/genome_version_retirement_assert_20261017.sql
+          test "$(psql -X -Atqc "select count(*) from public.civic_genome_bill_version where rosetta_extraction_run_id is null and processing_state='source_ingested'")" = 6
+          test "$(psql -X -Atqc 'select count(*) from public.civic_genome_legislative_version_queue')" = 0
