@@ -514,7 +514,7 @@ export async function observe_current_genome_assembly_input_identity(
   current_result: NonNullable<RosettaPublicCurrentDocketResult["current_result"]>,
 ) {
   const view = await load_view(request, current_result);
-  if (request.source_content_hash.toLowerCase() !== view.source_content_hash.toLowerCase()) {
+  if (!view.source_content_hash || request.source_content_hash.toLowerCase() !== view.source_content_hash.toLowerCase()) {
     throw new Error("rosetta_public_current_docket_result_source_content_hash_mismatch");
   }
   assert_current_result_matches_view(current_result, view);
