@@ -42,17 +42,34 @@ export function parse_args(argv = process.argv.slice(2)) {
   return args;
 }
 
+/**
+ * Audit jobs are independent processes; they cannot import the TypeScript
+ * server pool. Apply the same verified PostgreSQL TLS boundary here instead
+ * of silently accepting untrusted pooler certificates.
+ */
+export function audit_database_pool_options(connection_string, environment = process.env) {
+  const url = new URL(connection_string);
+  for (const key of ["sslmode", "sslcert", "sslkey", "sslrootcert", "pgbouncer", "connect_timeout"]) {
+    url.searchParams.delete(key);
+  }
+  const ca = environment.DATABASE_SSL_CA_PEM?.replace(/\\n/g, "\n").trim();
+  if (ca && !ca.includes("-----BEGIN CERTIFICATE-----")) {
+    throw new Error("DATABASE_SSL_CA_PEM must contain a PEM-encoded CA certificate");
+  }
+  return {
+    connectionString: url.toString(),
+    connectionTimeoutMillis: 10000,
+    ssl: ca ? { rejectUnauthorized: true, ca } : { rejectUnauthorized: true },
+    max: 3,
+  };
+}
+
 export function create_pool(label = "corpus-audit") {
   const connection_string = process.env.DATABASE_URL?.trim();
   if (!connection_string) {
     return { pool: null, database_status: "DATABASE_URL is not configured; database audit sections will be marked unavailable." };
   }
-  const pool = new Pool({
-    connectionString: connection_string,
-    connectionTimeoutMillis: 10000,
-    ssl: { rejectUnauthorized: false },
-    max: 3,
-  });
+  const pool = new Pool(audit_database_pool_options(connection_string));
   pool.on("error", (err) => console.error(`[${label}] unexpected postgres pool error`, err));
   return { pool, database_status: "configured" };
 }
