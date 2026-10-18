@@ -301,8 +301,25 @@ revoke all on public.mv_anomaly_viewfinder_live_v1 from anon;
 revoke all on public.mv_anomaly_viewfinder_live_v1 from authenticated;
 grant select on public.mv_anomaly_viewfinder_live_v1 to service_role;
 
-select cron.schedule(
-  'refresh_mv_anomaly_viewfinder_live_v1',
-  '*/30 * * * *',
-  $$refresh materialized view concurrently public.mv_anomaly_viewfinder_live_v1$$
-);
+-- On production Supabase, pg_cron is installed and the schedule is mandatory.
+-- Local and preview Supabase replay stacks need not expose that extension:
+-- replay creates the same cached Viewfinder structure, while truthfully
+-- leaving scheduled refresh unconfigured rather than fabricating a cron job.
+-- The original installed production statement is retained byte-for-byte in
+-- supabase/verification/applied; replay divergence is pinned in the audit.
+do $viewfinder_refresh_schedule$
+begin
+  if to_regclass('cron.job') is not null
+     and to_regprocedure('cron.schedule(text,text,text)') is not null then
+    execute $viewfinder_cron$
+      select cron.schedule(
+        'refresh_mv_anomaly_viewfinder_live_v1',
+        '*/30 * * * *',
+        $refresh$refresh materialized view concurrently public.mv_anomaly_viewfinder_live_v1$refresh$
+      )
+    $viewfinder_cron$;
+  else
+    raise notice 'viewfinder_pg_cron_unavailable_refresh_not_scheduled';
+  end if;
+end
+$viewfinder_refresh_schedule$;

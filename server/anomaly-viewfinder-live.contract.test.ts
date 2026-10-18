@@ -74,4 +74,17 @@ describe("Anomaly Viewfinder live jurisdiction cutover contract", () => {
     expect(page).toContain('domain={mode === "anomalies" ? "live_data" : "legal_pattern"}');
     expect(page).toContain("Raw source text is authoritative");
   });
+  it("replays Viewfinder without silently claiming pg_cron in disposable databases", () => {
+    const applied = read("../supabase/verification/applied/20261008165231_anomaly_viewfinder_materialized_v1.sql");
+    expect(applied).toContain("select cron.schedule(");
+    expect(materializedMigration).toContain("to_regclass('cron.job')");
+    expect(materializedMigration).toContain("to_regprocedure('cron.schedule(text,text,text)')");
+    expect(materializedMigration).toContain("viewfinder_pg_cron_unavailable_refresh_not_scheduled");
+    expect(materializedMigration).toContain("refresh materialized view concurrently public.mv_anomaly_viewfinder_live_v1");
+    expect(parity).toContain('"20261008165231"');
+    expect(parity).toContain('"3e581fb3463802ffa2296715b87bdadd"');
+    expect(parity).toContain('"671161c8174d5f82805e0ac7ba03791cdf346be0"');
+    expect(parity).toContain('"e42f2336952dd26928ddabc2ecaa34305613ffef"');
+  });
+
 });

@@ -551,6 +551,13 @@ SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
 }
 
 REPLAY_ALIAS_RECEIPTS = {
+    # Fresh Supabase replay lacks pg_cron. Production-applied SQL is preserved
+    # byte-for-byte under verification/applied; replay skips only cron.schedule
+    # when the capability is absent and never fabricates a refresh job.
+    "20261008165231": (
+        "3e581fb3463802ffa2296715b87bdadd",
+        "671161c8174d5f82805e0ac7ba03791cdf346be0",
+    ),
     # Empty-only final permission state; never replays the historical DELETE.
     "20261017021051": (
         "d8cc8bd7ec06d2c9884d451050528d48",
@@ -596,6 +603,12 @@ def git_blob_sha1(path: Path) -> str:
 # Executed production SQL stays immutable and independently hash-checked when
 # automatic fresh replay uses a distinct, explicitly pinned empty-state variant.
 VERBATIM_PRODUCTION_SQL_RECEIPTS = {
+    # Original SQL from Supabase production migration ledger (1 statement).
+    "20261008165231": (
+        "supabase/verification/applied/20261008165231_anomaly_viewfinder_materialized_v1.sql",
+        "3e581fb3463802ffa2296715b87bdadd",
+        "e42f2336952dd26928ddabc2ecaa34305613ffef",
+    ),
     "20261017021051": (
         "supabase/verification/applied/20261017021051_purge_disqualified_genome_traits_20261017.sql",
         "d8cc8bd7ec06d2c9884d451050528d48",
