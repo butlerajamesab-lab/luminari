@@ -11,7 +11,7 @@ describe("Anomaly Viewfinder live jurisdiction cutover contract", () => {
   const service = read("./services/anomaly-viewfinder-live.ts");
   const router = read("./routers/resource-directory.ts");
   const migration = read("../supabase/migrations/20260816111545_anomaly_viewfinder_live_jurisdiction_projection_v1.sql");
-  const materializedMigration = read("../supabase/migrations/20261008170000_anomaly_viewfinder_materialized_v1.sql");
+  const materializedMigration = read("../supabase/migrations/20261008165231_anomaly_viewfinder_materialized_v1.sql");
   const parity = read("../scripts/audit-supabase-migration-ledger-parity.py");
   const productionReceipts = read("../supabase/verification/production_migration_receipts_20260829.tsv");
 
