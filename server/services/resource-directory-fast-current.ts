@@ -361,8 +361,14 @@ async function load_publishable_resource_directory_summary(): Promise<
       from totals
   `);
 
-  const summary_row = result.rows[0] ?? {};
-  const totals = summary_row.totals ?? {};
+  const summary_row = result.rows[0];
+  // A PostgreSQL aggregate returns one totals row even for an empty catalog.
+  // No row or missing totals means the read failed its contract: never display
+  // fabricated empty coverage as a successful Resource Directory response.
+  if (!summary_row || !summary_row.totals || typeof summary_row.totals.total_resources !== "number") {
+    throw new Error("resource_directory_summary_incomplete");
+  }
+  const totals = summary_row.totals;
   const categories = Array.isArray(summary_row.categories)
     ? summary_row.categories
     : [];
