@@ -5,6 +5,7 @@ import { is_genome_rosetta_publication_quarantined } from "./civic-genome-rosett
 import { get_kaleidoscope_civic_genome_contract } from "./civic-genome-kaleidoscope-contract";
 import { get_rosetta_review_base_url } from "./civic-genome-rosetta-evaluation";
 import { describeUnobservedCurrentResult, isCurrentResultHold } from "../shared/civic-genome-pipeline-observation";
+import { ROSETTA_GENOME_STRUCTURAL_ENGINE_VERSION, ROSETTA_GENOME_STRUCTURAL_RULE_VERSION } from "./civic-genome-rosetta-assembly";
 
 export type civic_genome_contract_state =
   | "operational"
@@ -306,6 +307,10 @@ export async function get_civic_genome_rosetta_pipeline_status(
       current_source_document_id: number | null;
       current_source_document_key: string | null;
       current_source_content_hash: string | null;
+      current_assembly_run_id: string | null;
+      current_assembly_input_hash: string | null;
+      current_assembly_engine_version: string | null;
+      current_assembly_rule_version: string | null;
       queue_state: string | null;
       queue_attempt_count: number | null;
       queue_last_failure_class: string | null;
@@ -316,7 +321,11 @@ export async function get_civic_genome_rosetta_pipeline_status(
          select bill_version_id, version_type, processing_state,
                 rosetta_source_document_id::integer as current_source_document_id,
                 source_document_key as current_source_document_key,
-                receipt_json ->> 'source_content_hash' as current_source_content_hash
+                receipt_json ->> 'source_content_hash' as current_source_content_hash,
+                assembly_run_id::text as current_assembly_run_id,
+                receipt_json ->> 'assembly_input_hash' as current_assembly_input_hash,
+                receipt_json ->> 'assembly_engine_version' as current_assembly_engine_version,
+                receipt_json ->> 'assembly_rule_version' as current_assembly_rule_version
            from public.civic_genome_bill_version
           where source_bill_id = $1
             and document_family = 'text'
@@ -328,6 +337,10 @@ export async function get_civic_genome_rosetta_pipeline_status(
               current.current_source_document_id,
               current.current_source_document_key,
               current.current_source_content_hash,
+              current.current_assembly_run_id,
+              current.current_assembly_input_hash,
+              current.current_assembly_engine_version,
+              current.current_assembly_rule_version,
               queue.queue_state,
               queue.attempt_count as queue_attempt_count,
               queue.last_failure_class as queue_last_failure_class,
@@ -460,12 +473,23 @@ export async function get_civic_genome_rosetta_pipeline_status(
     && Number.isSafeInteger(Number(current.extraction_run_id))
     && Number(current.extraction_run_id) > 0
     && /^[0-9a-f]{64}$/i.test(current.output_content_hash ?? "")
+    // The bill-version receipt is joined to its persisted assembly in the
+    // canonical record_assembled writer; without that run + input hash, there
+    // is no proof that the current Genome adapter already assembled the view.
+    && /^[0-9a-f]{64}$/i.test(version.current_assembly_input_hash ?? "")
+    && /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(version.current_assembly_run_id ?? "")
+    && version.current_assembly_engine_version === ROSETTA_GENOME_STRUCTURAL_ENGINE_VERSION
+    && version.current_assembly_rule_version === ROSETTA_GENOME_STRUCTURAL_RULE_VERSION
   ) {
     const existing = await getPool().query<{ assembled: boolean }>(
       `select exists (
          select 1 from public.civic_genome_assembly_run
           where genome_bill_id = $1::uuid
             and source_document_id = $2::bigint
+            and assembly_run_id = $9::uuid
+            and engine_version = $10::text
+            and rule_version = $11::text
+            and lower(input_hash) = lower($12::text)
             and extraction_run_id = $3::text
             and rosetta_engine_version = $4::text
             and rosetta_rule_set_version = $5::text
@@ -485,6 +509,10 @@ export async function get_civic_genome_rosetta_pipeline_status(
         current.rule_manifest_hash,
         version.current_source_content_hash,
         current.output_content_hash,
+        version.current_assembly_run_id,
+        ROSETTA_GENOME_STRUCTURAL_ENGINE_VERSION,
+        ROSETTA_GENOME_STRUCTURAL_RULE_VERSION,
+        version.current_assembly_input_hash,
       ],
     );
     assembled = existing.rows[0]?.assembled === true;
