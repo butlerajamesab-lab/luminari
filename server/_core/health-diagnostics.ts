@@ -148,7 +148,6 @@ async function getDeepSnapshot(force = false) {
 async function buildDatabaseDiagnostic(force = false): Promise<DatabaseDiagnosticResponse> {
   const timestamp = new Date().toISOString();
   const database_url = process.env.DATABASE_URL ? "configured" : "missing";
-  const pool_base = get_pool_runtime_configuration();
   let database_version: string | null = null;
   let acquisition_latency_ms: number | null = null;
   let status: DatabaseDiagnosticResponse["database_status"] = "database_connected";
@@ -169,7 +168,8 @@ async function buildDatabaseDiagnostic(force = false): Promise<DatabaseDiagnosti
   try { deep = await getDeepSnapshot(force); } catch (err) { last_refresh_error = sanitizeError(err); deep = { snapshot: null, age_ms: null, refreshing: false, stale: false, last_refresh_error }; }
   const snapshot = deep.snapshot;
   return {
-    ok: status !== "database_unreachable",
+    // Only a successful live database probe constitutes database readiness.
+    ok: status === "database_connected",
     runtime: "active",
     database: status === "database_connected" ? "connected" : status === "application_pool_saturated" ? "pool_saturated" : "unreachable",
     database_status: status,
@@ -178,7 +178,8 @@ async function buildDatabaseDiagnostic(force = false): Promise<DatabaseDiagnosti
     database_version,
     supabase_project: SUPABASE_PROJECT,
     public_tables: snapshot?.tables.length ?? null,
-    pool: { ...pool_base, acquisition_latency_ms, recent_timeout_count: recent_pool_timeout_count },
+    // Snapshot after the probe: a lazy pool may not exist before first use.
+    pool: { ...get_pool_runtime_configuration(), acquisition_latency_ms, recent_timeout_count: recent_pool_timeout_count },
     auth_profile_resolution: "configured",
     current_deployment_commit: process.env.RENDER_GIT_COMMIT || null,
     db_diagnostic: {
@@ -205,7 +206,7 @@ export async function getDatabaseDiagnostic(options: { force?: boolean } = {}): 
 export async function sendDatabaseDiagnostic(res: Response, force = false) {
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
   const payload = await getDatabaseDiagnostic({ force });
-  res.status(payload.database_status === "database_unreachable" ? 503 : 200).json(payload);
+  res.status(payload.ok ? 200 : 503).json(payload);
 }
 
 export const __health_diagnostics_test = {
