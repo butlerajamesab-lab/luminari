@@ -16,6 +16,8 @@ PRODUCTION_RECEIPTS = (
     Path("supabase/verification/production_migration_receipts_20261007_addendum.tsv"),
     Path("supabase/verification/production_migration_receipts_20261015_addendum.tsv"),
     Path("supabase/verification/production_migration_receipts_20261017_addendum.tsv"),
+    # Exact Supabase-assigned identity for the installed October 8 Viewfinder SQL.
+    Path("supabase/verification/production_migration_receipts_20261018_addendum.tsv"),
 )
 # executable_md5 is exported from each ordered production statement array by
 # trimming trailing whitespace, restoring a missing top-level terminator,
@@ -549,6 +551,21 @@ SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
 }
 
 REPLAY_ALIAS_RECEIPTS = {
+    # Production-applied four-view retirement SQL is archived unchanged.
+    # Fresh replay demands the same 4-view/10-trigger ACL and hash checks,
+    # but checks the previous local migration by identity, not production
+    # statements-array formatting.
+    "20261017000912": (
+        "0dcc197ff30adf74f88ed4d358f572dd",
+        "2291d56d4b6e97773ad4354a9b2d8740aadc7392",
+    ),
+    # Fresh Supabase replay lacks pg_cron. Production-applied SQL is preserved
+    # byte-for-byte under verification/applied; replay skips only cron.schedule
+    # when the capability is absent and never fabricates a refresh job.
+    "20261008165231": (
+        "3e581fb3463802ffa2296715b87bdadd",
+        "671161c8174d5f82805e0ac7ba03791cdf346be0",
+    ),
     # Empty-only final permission state; never replays the historical DELETE.
     "20261017021051": (
         "d8cc8bd7ec06d2c9884d451050528d48",
@@ -594,6 +611,18 @@ def git_blob_sha1(path: Path) -> str:
 # Executed production SQL stays immutable and independently hash-checked when
 # automatic fresh replay uses a distinct, explicitly pinned empty-state variant.
 VERBATIM_PRODUCTION_SQL_RECEIPTS = {
+    # Exact SQL of the applied four-view retirement, untouched by local replay.
+    "20261017000912": (
+        "supabase/verification/applied/20261017000912_retire_genome_legacy_structural_view_access_20261016.sql",
+        "0dcc197ff30adf74f88ed4d358f572dd",
+        "1fc17005d93bd6ece8b50614da58a4fa82cd71cf",
+    ),
+    # Original SQL from Supabase production migration ledger (1 statement).
+    "20261008165231": (
+        "supabase/verification/applied/20261008165231_anomaly_viewfinder_materialized_v1.sql",
+        "3e581fb3463802ffa2296715b87bdadd",
+        "e42f2336952dd26928ddabc2ecaa34305613ffef",
+    ),
     "20261017021051": (
         "supabase/verification/applied/20261017021051_purge_disqualified_genome_traits_20261017.sql",
         "d8cc8bd7ec06d2c9884d451050528d48",

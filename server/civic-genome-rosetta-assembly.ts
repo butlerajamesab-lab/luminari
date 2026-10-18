@@ -449,19 +449,15 @@ export async function assert_current_result_publication_target(
   }
 }
 
-export async function assemble_rosetta_structural_dna(
-  request: rosetta_genome_assembly_request,
-): Promise<rosetta_genome_assembly_result> {
-  // Before any source fetch, receipt replay, transaction, or upsert.
-  assert_genome_rosetta_publication_admitted();
-  const binding = await load_exact_docket_assembly_binding(request);
-  const current_result = await load_assembly_ready_current_result(request, binding);
-  const view = await load_view(request, current_result);
-  if (binding.source_content_hash !== view.source_content_hash) {
-    throw new Error("rosetta_public_current_docket_result_source_content_hash_mismatch");
-  }
-  assert_current_result_matches_view(current_result, view);
-  await assert_current_result_publication_target(current_result);
+/**
+ * The same canonical assembly replay fingerprint is consumed by the writer and
+ * the read-only status observer. A Rosetta result hash alone is not a Genome
+ * assembly hash: the adapter contract and structural input are also included.
+ */
+export function current_genome_assembly_input_identity(
+  genome_bill_id: string,
+  view: civic_genome_rosetta_law_view,
+) {
   const assembly = resolve_assembly_contract(view);
   const source_identity = {
     source_document_id: view.source_document_id,
@@ -491,6 +487,59 @@ export async function assemble_rosetta_structural_dna(
     source_url: view.source_url,
     source_version: view.source_version,
   };
+  
+  const structural_input = {
+    genome_bill_id,
+    source_identity,
+    source_receipt,
+    extraction_run_id: view.extraction_run_id,
+    run_version: view.run_version,
+    law_view: view.law_view,
+    structural_representations: view.structural_representations,
+    engine_version: assembly.engine_version,
+    rule_version: assembly.rule_version,
+  };
+  return {
+    source_identity,
+    source_receipt,
+    input_hash: hashValue(structural_input),
+    engine_version: assembly.engine_version,
+    rule_version: assembly.rule_version,
+  };
+}
+
+/** Read-only current selected-result proof used to prevent false "assembled" labels. */
+export async function observe_current_genome_assembly_input_identity(
+  request: rosetta_genome_assembly_request,
+  current_result: NonNullable<RosettaPublicCurrentDocketResult["current_result"]>,
+) {
+  const view = await load_view(request, current_result);
+  if (!view.source_content_hash || request.source_content_hash.toLowerCase() !== view.source_content_hash.toLowerCase()) {
+    throw new Error("rosetta_public_current_docket_result_source_content_hash_mismatch");
+  }
+  assert_current_result_matches_view(current_result, view);
+  const { input_hash, engine_version, rule_version } =
+    current_genome_assembly_input_identity(request.genome_bill_id, view);
+  return { input_hash, engine_version, rule_version };
+}
+
+export async function assemble_rosetta_structural_dna(
+  request: rosetta_genome_assembly_request,
+): Promise<rosetta_genome_assembly_result> {
+  // Before any source fetch, receipt replay, transaction, or upsert.
+  assert_genome_rosetta_publication_admitted();
+  const binding = await load_exact_docket_assembly_binding(request);
+  const current_result = await load_assembly_ready_current_result(request, binding);
+  const view = await load_view(request, current_result);
+  if (binding.source_content_hash !== view.source_content_hash) {
+    throw new Error("rosetta_public_current_docket_result_source_content_hash_mismatch");
+  }
+  assert_current_result_matches_view(current_result, view);
+  await assert_current_result_publication_target(current_result);
+  const assembly = resolve_assembly_contract(view);
+  const { source_identity, source_receipt, input_hash } =
+    current_genome_assembly_input_identity(request.genome_bill_id, view);
+  const source_identity_hash = view.source_identity_hash as string;
   const objects_by_id = new Map(
     view.law_view.objects.map(object => [object.sourceObjectId, object]),
   );
@@ -569,18 +618,6 @@ export async function assemble_rosetta_structural_dna(
     };
   });
 
-  const structural_input = {
-    genome_bill_id: request.genome_bill_id,
-    source_identity,
-    source_receipt,
-    extraction_run_id: view.extraction_run_id,
-    run_version: view.run_version,
-    law_view: view.law_view,
-    structural_representations: view.structural_representations,
-    engine_version: assembly.engine_version,
-    rule_version: assembly.rule_version,
-  };
-  const input_hash = hashValue(structural_input);
   const output_hash = hashValue({
     traits: persisted_traits,
     structural_representations: persisted_structural_representations,
