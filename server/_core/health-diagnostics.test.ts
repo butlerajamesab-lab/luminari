@@ -108,6 +108,63 @@ describe("health diagnostics cache and semantics", () => {
     expect(response.database_status).toBe("application_pool_saturated");
     expect(response.database).toBe("pool_saturated");
     expect(response.application_pool_saturated).toBe(true);
+    expect(response.ok).toBe(false);
     expect(response.database_status).not.toBe("database_unreachable");
   });
+  it("serves HTTP 503 rather than HTTP 200 when the pool is saturated", async () => {
+    dbMock.classify_db_error.mockReturnValue("pool_acquire_timeout");
+    dbMock.query_with_diagnostics.mockRejectedValue(new Error("pool acquire timed out"));
+    const res = {
+      setHeader: vi.fn(),
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
+    };
+    await moduleUnderTest.sendDatabaseDiagnostic(res as any, true);
+    expect(res.status).toHaveBeenCalledWith(503);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      ok: false,
+      database_status: "application_pool_saturated",
+    }));
+  });
+
+  it("serves HTTP 200 only after a successful live database probe", async () => {
+    const res = {
+      setHeader: vi.fn(),
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
+    };
+    await moduleUnderTest.sendDatabaseDiagnostic(res as any, true);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      ok: true,
+      database_status: "database_connected",
+    }));
+  });
+
+  it("samples actual pool statistics after the live probe initializes the pool", async () => {
+    let initialized = false;
+    dbMock.get_pool_runtime_configuration.mockImplementation(() => ({
+      pool_total_count: initialized ? 1 : 0,
+      pool_idle_count: initialized ? 1 : 0,
+      pool_waiting_count: 0,
+      pool_max: initialized ? 25 : 5,
+      host: "test",
+      connection_timeout_ms: 5000,
+      idle_timeout_ms: 10000,
+      max_uses: 7500,
+      statement_timeout_ms: null,
+      query_timeout_ms: null,
+      keep_alive: true,
+    }));
+    const originalQuery = dbMock.query_with_diagnostics.getMockImplementation()!;
+    dbMock.query_with_diagnostics.mockImplementation(async (...args: any[]) => {
+      initialized = true;
+      return originalQuery(...args);
+    });
+    const response = await getDatabaseDiagnostic({ force: true });
+    expect(response.pool.pool_max).toBe(25);
+    expect(response.pool.pool_total_count).toBe(1);
+    expect(dbMock.get_pool_runtime_configuration).toHaveBeenCalledTimes(1);
+  });
+
 });
