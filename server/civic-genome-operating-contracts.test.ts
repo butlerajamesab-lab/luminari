@@ -296,7 +296,12 @@ describe("Civic Genome operating contracts", () => {
   it("requires an exact existing assembly match; an old assembly cannot suppress new work", async () => {
     is_quarantined.mockReturnValue(false);
     query
-      .mockResolvedValueOnce({ rows: [selected_version()] })
+      .mockResolvedValueOnce({ rows: [selected_version({
+        current_assembly_run_id: "22222222-2222-4222-8222-222222222222",
+        current_assembly_input_hash: "e".repeat(64),
+        current_assembly_engine_version: "rosetta-genome-assembly-v2",
+        current_assembly_rule_version: "rosetta-five-layer-plus-structural-evidence-v2",
+      })] })
       .mockResolvedValueOnce({ rows: [{
         engine_version: "runtime-selected-new-generation",
         rule_set_version: "runtime-selected-rules",
