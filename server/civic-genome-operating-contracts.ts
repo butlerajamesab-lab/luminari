@@ -450,6 +450,46 @@ export async function get_civic_genome_rosetta_pipeline_status(
       && selected.rule_set_version === current.rule_set_version
       && selected.rule_manifest_hash.toLowerCase() === current.rule_manifest_hash.toLowerCase();
   }
+  // A certified prior assembly must be identified by the *same* current source,
+  // execution, generation and output hashes. Never consult a generation-blind
+  // "latest" row, and never query historical assemblies while quarantined.
+  let assembled = false;
+  if (
+    admitted
+    && bill?.genome_bill_id
+    && Number.isSafeInteger(Number(current.extraction_run_id))
+    && Number(current.extraction_run_id) > 0
+    && /^[0-9a-f]{64}$/i.test(current.output_content_hash ?? "")
+  ) {
+    const existing = await getPool().query<{ assembled: boolean }>(
+      `select exists (
+         select 1 from public.civic_genome_assembly_run
+          where genome_bill_id = $1::uuid
+            and source_document_id = $2::bigint
+            and extraction_run_id = $3::text
+            and rosetta_engine_version = $4::text
+            and rosetta_rule_set_version = $5::text
+            and lower(rosetta_rule_manifest_hash) = lower($6::text)
+            and lower(rosetta_source_content_hash) = lower($7::text)
+            and lower(rosetta_output_content_hash) = lower($8::text)
+            and run_status = 'completed'
+            and verification_state = 'complete'
+            and malformed_object_count = 0
+       ) as assembled`,
+      [
+        bill.genome_bill_id,
+        source_document_id,
+        String(current.extraction_run_id),
+        current.engine_version,
+        current.rule_set_version,
+        current.rule_manifest_hash,
+        version.current_source_content_hash,
+        current.output_content_hash,
+      ],
+    );
+    assembled = existing.rows[0]?.assembled === true;
+  }
+
   return {
     ...shared,
     extraction_run_id: Number(current.extraction_run_id),
@@ -457,10 +497,12 @@ export async function get_civic_genome_rosetta_pipeline_status(
     provenance_state: null, // Public current result has no object-level provenance layer.
     object_count: null, // Object counts are not supplied by the current result API.
     coverage: null, // Layer status receipts are nonnumeric; never fabricate coverage.
-    can_assemble: admitted,
-    contract_state: admitted ? "ready_for_assembly" : "awaiting_current_result",
+    can_assemble: admitted && !assembled,
+    contract_state: admitted ? (assembled ? "assembled" : "ready_for_assembly") : "awaiting_current_result",
     contract_message: admitted
-      ? "An exact current-result receipt agrees with the selected-runtime target. Assembly is separately governed."
+      ? (assembled
+          ? "The exact selected-runtime source, execution, and generation already have a completed verified assembly."
+          : "An exact current-result receipt agrees with the selected-runtime target. Assembly is separately governed.")
       : "A selected-runtime result exists, but Genome publication is quarantined or its generation target is unverified. No historic output is substituted.",
   };
 }
