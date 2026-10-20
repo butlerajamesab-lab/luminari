@@ -244,7 +244,7 @@ describe("exact source resolution and bounded remote reads", () => {
     ["410", new Error("current_rosetta_live_read_failed:410"), "rosetta_v12_live_rule_http_410"],
     ["timeout", new Error("current_rosetta_live_read_timeout"), "rosetta_v12_live_rule_timeout"],
   ])("fails closed on V12 live-detail %s (distinct from retired errors)", async (_name, response, reason) => {
-    fetch_mock.mockResolvedValue(Response.json([row()]));
+    fetch_mock.mockImplementation(async () => Response.json([row()]));
     if (response === null) get_live.mockResolvedValue(null);
     else get_live.mockRejectedValue(response);
     const result = await inspect_v12_admission_for_binding(binding);
