@@ -59,6 +59,8 @@ export type v12_admission_receipt = {
   admission_state: "admitted" | "held" | "failed" | "rejected";
   admitted: boolean;
   reason: string | null;
+  hold_receipt: record | null;
+  failure_receipts: unknown[];
 };
 
 export type v12_admission_result = {
@@ -89,6 +91,8 @@ export function v12_receipt_for_binding(binding: v12_genome_binding): v12_admiss
     admission_state: "rejected",
     admitted: false,
     reason: null,
+    hold_receipt: null,
+    failure_receipts: [],
   };
 }
 
@@ -287,6 +291,15 @@ export async function inspect_v12_admission_for_binding(binding: v12_genome_bind
       throw new Error("rosetta_v12_live_rule_invalid");
     }
     if (!detail) throw new Error("rosetta_v12_live_rule_http_404");
+    // Retain observed provenance and negative receipts on rejected decisions.
+    // None of these observations constitutes admission or a write capability.
+    receipt.ruleset_version = required_text(detail.target.ruleset_version) ? detail.target.ruleset_version : null;
+    receipt.ruleset_sha256 = HASH.test(String(detail.target.ruleset_sha256 ?? ""))
+      ? String(detail.target.ruleset_sha256).toLowerCase() : null;
+    receipt.selected_at = date_valid(detail.target.selected_at) ? detail.target.selected_at : null;
+    receipt.output_sha256 = v12_output_sha256(detail);
+    receipt.hold_receipt = detail.hold_receipt;
+    receipt.failure_receipts = detail.failure_receipts;
     // Real runs always receive null until independent certification exists.
     const certification = await read_v12_certification_receipt(source, detail.target);
     return admit_v12_live_detail(binding, source, detail, certification);
