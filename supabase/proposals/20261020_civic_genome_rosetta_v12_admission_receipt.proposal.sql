@@ -20,6 +20,8 @@ create table public.civic_genome_rosetta_v12_admission_receipt (
   admission_state text not null check (admission_state in ('admitted', 'held', 'failed', 'rejected')),
   admitted boolean not null,
   reason text,
+  hold_receipt jsonb,
+  failure_receipts jsonb not null default '[]'::jsonb check (jsonb_typeof(failure_receipts) = 'array'),
   observed_at timestamptz not null default now(),
   constraint civic_genome_v12_admission_state_consistent check (
     (admitted and admission_state='admitted'
