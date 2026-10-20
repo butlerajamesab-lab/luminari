@@ -114,9 +114,8 @@ describe("Docket operational authority lock", () => {
   });
 
   it("materializes bounded top-100 cache identities before historical activation joins", () => {
-    // Both the governed current-source view and the provider-failure recovery
-    // must unpack each state cache once; never repeat a JSON membership EXISTS
-    // for each of the hundreds of thousands of historical binding rows.
+    // Both governed current-source view and provider-failure recovery must
+    // unpack each state cache once, not once per historical activation binding.
     const [authoritySql, recoverySql = ""] = quota_window_migration.split(
       "-- Repair only currently visible top-100 generations",
     );
@@ -125,98 +124,7 @@ describe("Docket operational authority lock", () => {
       expect(section).toContain("select distinct");
       expect(section).toContain("jsonb_array_elements(cache.bills)");
       expect(section).toContain("current_bill.ordinality <= 100");
-      expect(section).toContain("coalesce(current_bill.value ->> 'bill_id', '') ~ '^[0-9]+
-    expect(queue_worker).toContain(
-      "join public.docket_current_authoritative_source_v1 current_authority",
-    );
-    expect(queue_worker).toContain(
-      "or current_authority.source_document_key is not null",
-    );
-  });
-
-  it("resolves operational currentness through the existing predecessor graph", () => {
-    expect(authority_migration).toContain(
-      "create trigger enqueue_docket_current_authoritative_version_v1",
-    );
-    expect(lineage_handoff_migration).toContain(
-      "successor.predecessor_bill_version_id = candidate.bill_version_id",
-    );
-    expect(lineage_handoff_migration).toContain(
-      "from lineage_leaf leaf",
-    );
-    expect(lineage_handoff_migration).not.toContain(
-      "order by\n        document.stage_rank desc",
-    );
-    expect(lineage_handoff_migration).toContain(
-      "extract(year from cache.fetched_at at time zone 'UTC')",
-    );
-  });
-
-  it("probes the indexed physical predecessor table instead of rescanning eligible", () => {
-    expect(predecessor_index_migration).toContain(
-      "idx_civic_genome_bill_version_predecessor",
-    );
-    expect(predecessor_index_migration).toContain(
-      "predecessor_bill_version_id",
-    );
-    expect(lineage_final_migration).toContain(
-      "from public.civic_genome_bill_version successor",
-    );
-    expect(lineage_final_migration).toContain(
-      "successor.predecessor_bill_version_id = candidate.bill_version_id",
-    );
-    expect(lineage_final_migration).toContain(
-      "successor.genome_bill_id = candidate.genome_bill_id",
-    );
-    expect(lineage_final_migration).not.toContain(
-      "from eligible successor",
-    );
-    expect(lineage_final_migration).not.toContain(
-      "join public.docket_bill_source_document successor_document",
-    );
-    expect(lineage_final_migration).toContain(
-      "update of version_fingerprint, provider_sequence, stage_rank, predecessor_bill_version_id",
-    );
-    expect(lineage_final_migration).toContain(
-      "update public.civic_genome_legislative_version_queue queue",
-    );
-    expect(lineage_final_migration).toContain(
-      "Historical versions remain registered but are not made operational current.",
-    );
-  });
-
-  it("does not recompute stage-rank currentness inside the queue claim", () => {
-    expect(queue_worker).not.toContain("currency.is_current");
-    expect(queue_worker).not.toContain(
-      "newer.stage_rank > version.stage_rank",
-    );
-    expect(queue_worker).not.toContain(
-      "newer.provider_sequence > version.provider_sequence",
-    );
-  });
-
-  it("renews authority for verified sources without rerunning unchanged semantics", () => {
-    expect(pipeline).toContain(
-      "export async function refresh_verified_docket_operational_authority",
-    );
-    expect(pipeline).toContain(
-      "const source_changed = prior_source_content_hash !== source.source_content_hash",
-    );
-    expect(queue_worker).toContain(
-      "refresh_verified_docket_operational_authority",
-    );
-    expect(queue_worker).toContain(
-      "or current_authority.source_document_key is null",
-    );
-  });
-
-  it("treats a prior-calendar-year cache as stale instead of leaving current authority empty", () => {
-    expect(docket_route).toContain(
-      "fetched.getUTCFullYear() !== now.getUTCFullYear()",
-    );
-  });
-});
-");
+      expect(section).toContain("coalesce(current_bill.value ->> 'bill_id', '') ~ '^[0-9]+$'");
       expect(section).toContain("activation.cache_fetched_at = current_bill.fetched_at");
       expect(section).toContain("binding.source_bill_id = current_bill.source_bill_id");
       expect(section).not.toMatch(/and exists\s*\(\s*select\s+1\s+from\s+jsonb_array_elements\(cache\.bills\)/);
