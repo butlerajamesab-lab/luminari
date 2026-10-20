@@ -554,12 +554,14 @@ SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
 
 REPLAY_ALIAS_RECEIPTS = {
     # Production-applied four-view retirement SQL is archived unchanged.
+    # The replay-only alias also recognizes the exact pre-cut ACL state on
+    # disposable Supabase previews; production applied bytes are NOT changed.
     # Fresh replay demands the same 4-view/10-trigger ACL and hash checks,
     # but checks the previous local migration by identity, not production
     # statements-array formatting.
     "20261017000912": (
         "0dcc197ff30adf74f88ed4d358f572dd",
-        "2291d56d4b6e97773ad4354a9b2d8740aadc7392",
+        "83c9f0d8d688f123d3bb6b0ca4244d0b86afa99c",
     ),
     # Fresh Supabase replay lacks pg_cron. Production-applied SQL is preserved
     # byte-for-byte under verification/applied; replay skips only cron.schedule
