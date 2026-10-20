@@ -71,7 +71,26 @@ execute function public.rearm_docket_bill_detail_on_live_observation_v1();
 create or replace view public.docket_current_authoritative_source_v1
 with (security_invoker = true)
 as
-with current_activation as materialized (
+-- Materialize the current cache's bounded membership once per jurisdiction.
+-- The former correlated EXISTS unpacked the entire JSON master list for each
+-- activation binding (over 400k in production), defeating current-100 bounds.
+-- DISTINCT preserves the old EXISTS membership semantics if a source repeats.
+with current_top_bill_ids as materialized (
+  select distinct
+    cache.state,
+    cache.session_id,
+    cache.fetched_at,
+    (current_bill.value ->> 'bill_id')::integer as source_bill_id
+  from public.docket_bill_state_cache cache
+  cross join lateral jsonb_array_elements(cache.bills)
+    with ordinality as current_bill(value, ordinality)
+  where cache.fetched_at >= now() - interval '24 hours'
+    and extract(year from cache.fetched_at at time zone 'UTC')
+        = extract(year from current_timestamp at time zone 'UTC')
+    and current_bill.ordinality <= 100
+    and coalesce(current_bill.value ->> 'bill_id', '') ~ '^[0-9]+$'
+),
+current_activation as materialized (
   select
     activation.activation_id,
     activation.state,
@@ -79,30 +98,20 @@ with current_activation as materialized (
     activation.cache_fetched_at,
     binding.queue_id,
     binding.source_bill_id
-  from public.docket_bill_state_cache cache
+  from current_top_bill_ids current_bill
   join public.docket_jurisdiction_activation_run activation
-    on activation.state = cache.state
-   and activation.session_id = cache.session_id
-   and activation.cache_fetched_at = cache.fetched_at
+    on activation.state = current_bill.state
+   and activation.session_id = current_bill.session_id
+   and activation.cache_fetched_at = current_bill.fetched_at
   join public.docket_jurisdiction_activation_bill binding
     on binding.activation_id = activation.activation_id
    and binding.state = activation.state
    and binding.session_id = activation.session_id
+   and binding.source_bill_id = current_bill.source_bill_id
   join public.docket_bill_processing_queue queue
     on queue.queue_id = binding.queue_id
    and queue.source_bill_id = binding.source_bill_id
    and queue.queue_state = 'completed'
-  where cache.fetched_at >= now() - interval '24 hours'
-    and extract(year from cache.fetched_at at time zone 'UTC')
-        = extract(year from current_timestamp at time zone 'UTC')
-    and exists (
-      select 1
-      from jsonb_array_elements(cache.bills)
-        with ordinality as current_bill(value, ordinality)
-      where current_bill.ordinality <= 100
-        and coalesce(current_bill.value ->> 'bill_id', '') ~ '^[0-9]+$'
-        and (current_bill.value ->> 'bill_id')::integer = binding.source_bill_id
-    )
 ),
 eligible as materialized (
   select
@@ -214,17 +223,33 @@ comment on view public.docket_current_authoritative_source_v1 is
 -- permanent by the provider's shared/rate-limit state. Their prior terminal
 -- classification is retained in the appended receipt before the retry counter
 -- is reset. Rows outside the current cached window remain historical.
-with current_provider_failures as materialized (
-  select distinct queue.queue_id
+-- Unpack the up-to-100 current bill identities exactly once per cache,
+-- not for every historical activation/binding. Retain all old eligibility,
+-- provider-error, and queue-lock guards; never widen the recovery population.
+with current_top_bill_ids as materialized (
+  select distinct
+    cache.state,
+    cache.session_id,
+    cache.fetched_at,
+    (current_bill.value ->> 'bill_id')::integer as source_bill_id
   from public.docket_bill_state_cache cache
+  cross join lateral jsonb_array_elements(cache.bills)
+    with ordinality as current_bill(value, ordinality)
+  where current_bill.ordinality <= 100
+    and coalesce(current_bill.value ->> 'bill_id', '') ~ '^[0-9]+$'
+),
+current_provider_failures as materialized (
+  select distinct queue.queue_id
+  from current_top_bill_ids current_bill
   join public.docket_jurisdiction_activation_run activation
-    on activation.state = cache.state
-   and activation.session_id = cache.session_id
-   and activation.cache_fetched_at = cache.fetched_at
+    on activation.state = current_bill.state
+   and activation.session_id = current_bill.session_id
+   and activation.cache_fetched_at = current_bill.fetched_at
   join public.docket_jurisdiction_activation_bill binding
     on binding.activation_id = activation.activation_id
    and binding.state = activation.state
    and binding.session_id = activation.session_id
+   and binding.source_bill_id = current_bill.source_bill_id
   join public.docket_bill_processing_queue queue
     on queue.queue_id = binding.queue_id
    and queue.source_bill_id = binding.source_bill_id
@@ -232,14 +257,6 @@ with current_provider_failures as materialized (
     and (
       queue.last_error_code like 'legiscan_http_429_while_calling_%'
       or queue.last_error_code like 'legiscan_shared_api_error_while_calling_%'
-    )
-    and exists (
-      select 1
-      from jsonb_array_elements(cache.bills)
-        with ordinality as current_bill(value, ordinality)
-      where current_bill.ordinality <= 100
-        and coalesce(current_bill.value ->> 'bill_id', '') ~ '^[0-9]+$'
-        and (current_bill.value ->> 'bill_id')::integer = binding.source_bill_id
     )
 )
 update public.docket_bill_processing_queue queue

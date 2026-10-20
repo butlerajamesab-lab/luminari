@@ -21,7 +21,29 @@ describe("four-view production retirement versus zero-state replay", () => {
     expect(parity).toContain('"20261017000912"');
     expect(parity).toContain('"0dcc197ff30adf74f88ed4d358f572dd"');
     expect(parity).toContain('"1fc17005d93bd6ece8b50614da58a4fa82cd71cf"');
-    expect(parity).toContain('"2291d56d4b6e97773ad4354a9b2d8740aadc7392"');
+    expect(parity).toContain('"83c9f0d8d688f123d3bb6b0ca4244d0b86afa99c"');
+  });
+
+  it("requires exact safe prior ACL variants and completes the full protected permission cut", () => {
+    // Three Docket views may enter replay with service_role SELECT already
+    // revoked. Each may match only one of two pinned ACLs, not an arbitrary
+    // safer-looking or more-permissive ACL. Prism has exactly one allowed ACL.
+    expect(replay).toContain("WITH approved_prior(name,acl) AS(VALUES");
+    expect((replay.match(/service_role=arwdDxtm\/postgres/g) ?? []).length).toBe(3);
+    expect((replay.match(/service_role=Dxtm\/postgres/g) ?? []).length).toBe(3);
+    expect((replay.match(/service_role=r\/postgres/g) ?? []).length).toBe(1);
+    expect(replay).toContain("SELECT count(DISTINCT c.oid) INTO matched");
+    expect(replay).toContain("c.relacl::text=a.acl");
+    expect(replay).toContain("original structural view ACL differs");
+    expect(replay).toContain("original structural view access differs");
+    expect(replay).toContain("CROSS JOIN (VALUES ('anon'),('authenticated'),('service_role'))");
+    expect(replay).toContain("e.name <> 'public.v_civic_genome_prism_verification_status'");
+    expect(replay).toContain("IS NOT DISTINCT FROM (r.role_name='service_role')");
+    expect(replay).toContain("REVOKE ALL PRIVILEGES ON TABLE public.docket_bill_drift_delta");
+    expect(replay).toContain("non-owner structural view privileges remain");
+    expect(replay).toContain("structural view application SELECT remains");
+    expect(replay).toContain("view cut observed row conservation drift");
+    expect(applied).not.toContain("WITH approved_prior");
   });
 
   it("requires the prior quarantine migration and unchanged permission/trigger fences", () => {
