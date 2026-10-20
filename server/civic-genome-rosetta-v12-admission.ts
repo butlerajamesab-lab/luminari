@@ -1,20 +1,22 @@
 import { createHash } from "node:crypto";
 import { get_current_rosetta_live_detail, type current_rosetta_live_detail } from "./current-law-rosetta-live";
 import { create_rosetta_supabase_headers } from "./rosetta-supabase-auth";
+import { get_rosetta_review_base_url } from "./rosetta-review-url";
 
 /**
  * Lighthouse-only V12 admission proposal. Reads Rosetta's existing source-content
  * REST endpoint (the same source used by civic-genome-human-report) and live-rule
  * endpoint. No Rosetta writes, no generation-target writes, no Genome publication.
  *
- * A Rosetta-issued, independently retrieved certification receipt is not yet
- * available (Rosetta inventory 2.22); the production provider MUST return null.
+ * Rosetta's read-only receipt attests exact-source output integrity. It does not
+ * establish semantic correctness or grant publication authority.
  */
 type record = Record<string, unknown>;
 const HASH = /^[a-f0-9]{64}$/i;
 const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
 const CANONICAL_LAYERS = new Set(["H", "W", "A", "O", "D"]);
 const RESOLUTION_TIMEOUT_MS = 10_000;
+const CERTIFICATION_TIMEOUT_MS = 10_000;
 
 export type v12_genome_binding = {
   bill_version_id?: string;
@@ -42,6 +44,17 @@ export type v12_certification_receipt = {
   output_sha256: string;
   certification_sha256: string;
   certified_at: string;
+  attestation_type: "source_bound_output_integrity_v1";
+  verified_invariants: {
+    source_text_sha256_matches: true;
+    unit_source_slices_match: true;
+    unit_text_hashes_match: true;
+    section_spans_within_source: true;
+    hold_receipt_absent: true;
+    failure_receipts_absent: true;
+    unit_count: number;
+    section_count: number;
+  };
 };
 
 export type v12_admission_receipt = {
@@ -186,8 +199,10 @@ export function verify_v12_certification(
   output_sha256: string,
 ): string {
   if (!receipt) throw new Error("rosetta_v12_certification_receipt_missing");
+  const invariants = receipt?.verified_invariants;
   if (
     receipt.contract !== "rosetta-v12-certification-receipt-v1"
+    || receipt.attestation_type !== "source_bound_output_integrity_v1"
     || receipt.source_content_id.toLowerCase() !== source.source_content_id.toLowerCase()
     || receipt.source_document_id !== source.source_document_id
     || receipt.source_content_hash.toLowerCase() !== source.source_content_hash
@@ -196,6 +211,14 @@ export function verify_v12_certification(
     || receipt.output_sha256.toLowerCase() !== output_sha256
     || !HASH.test(receipt.certification_sha256)
     || !date_valid(receipt.certified_at)
+    || invariants?.source_text_sha256_matches !== true
+    || invariants?.unit_source_slices_match !== true
+    || invariants?.unit_text_hashes_match !== true
+    || invariants?.section_spans_within_source !== true
+    || invariants?.hold_receipt_absent !== true
+    || invariants?.failure_receipts_absent !== true
+    || !Number.isSafeInteger(invariants?.unit_count) || invariants.unit_count <= 0
+    || !Number.isSafeInteger(invariants?.section_count) || invariants.section_count <= 0
   ) throw new Error("rosetta_v12_certification_receipt_mismatch");
   return receipt.certification_sha256.toLowerCase();
 }
@@ -261,14 +284,62 @@ export function admit_v12_live_detail(
 }
 
 /**
- * Deliberately unavailable until Rosetta publishes a separately attested
- * read-only certification contract. NEVER source this from /api/live-rule.
+ * Fetch Rosetta's separate, capability-gated output-integrity receipt. This is
+ * intentionally a distinct route from /api/live-rule; identity and all
+ * source/ruleset/output bindings are rechecked by verify_v12_certification.
  */
 export async function read_v12_certification_receipt(
-  _source: v12_source_resolution,
+  source: v12_source_resolution,
   _target: record,
 ): Promise<v12_certification_receipt | null> {
-  return null;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), CERTIFICATION_TIMEOUT_MS);
+  try {
+    const response = await fetch(
+      `${get_rosetta_review_base_url()}/api/v12-certification/${encodeURIComponent(source.source_content_id)}`,
+      {
+        method: "GET",
+        headers: { accept: "application/json" },
+        signal: controller.signal,
+        redirect: "error",
+      },
+    );
+    if (!response.ok) throw new Error(`rosetta_v12_certification_receipt_http_${response.status}`);
+    const value: unknown = await response.json();
+    const row = as_record(value);
+    if (
+      !row
+      || row.contract !== "rosetta-v12-certification-receipt-v1"
+      || row.attestation_type !== "source_bound_output_integrity_v1"
+      || !required_text(row.source_content_id)
+      || !Number.isSafeInteger(row.source_document_id)
+      || !required_text(row.source_content_hash)
+      || !required_text(row.ruleset_version)
+      || !required_text(row.ruleset_sha256)
+      || !required_text(row.output_sha256)
+      || !required_text(row.certification_sha256)
+      || !required_text(row.certified_at)
+    ) throw new Error("rosetta_v12_certification_receipt_response_invalid");
+    const invariants = as_record(row.verified_invariants);
+    if (
+      !invariants
+      || invariants.source_text_sha256_matches !== true
+      || invariants.unit_source_slices_match !== true
+      || invariants.unit_text_hashes_match !== true
+      || invariants.section_spans_within_source !== true
+      || invariants.hold_receipt_absent !== true
+      || invariants.failure_receipts_absent !== true
+      || !Number.isSafeInteger(invariants.unit_count) || Number(invariants.unit_count) <= 0
+      || !Number.isSafeInteger(invariants.section_count) || Number(invariants.section_count) <= 0
+    ) throw new Error("rosetta_v12_certification_receipt_invariants_invalid");
+    return row as unknown as v12_certification_receipt;
+  } catch (error) {
+    if (controller.signal.aborted) throw new Error("rosetta_v12_certification_receipt_timeout");
+    if (error instanceof Error && error.message.startsWith("rosetta_v12_certification_receipt_")) throw error;
+    throw new Error("rosetta_v12_certification_receipt_network_error");
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export async function inspect_v12_admission_for_binding(binding: v12_genome_binding): Promise<v12_admission_result> {
