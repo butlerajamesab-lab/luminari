@@ -273,6 +273,7 @@ describe("exact source resolution and bounded remote reads", () => {
       admitted: false, admission_state: "held", reason: "rosetta_v12_hold_receipt_present",
       hold_receipt: { reason: "awaiting_certification" },
     });
+    expect(fetch_mock).toHaveBeenCalledTimes(1); // source resolution only
     const failing = detail();
     failing.failure_receipts = [{ code: "stage_failed" }];
     get_live.mockResolvedValue(failing);
@@ -281,6 +282,7 @@ describe("exact source resolution and bounded remote reads", () => {
       admission_state: "failed", reason: "rosetta_v12_failure_receipts_present",
       failure_receipts: [{ code: "stage_failed" }],
     });
+    expect(fetch_mock).toHaveBeenCalledTimes(2); // one source resolution per inspection
   });
 
   it("consumes the separate source-bound integrity receipt and preserves its limited scope", async () => {
@@ -305,8 +307,14 @@ describe("exact source resolution and bounded remote reads", () => {
     weak.attestation_type = "semantic_certification";
     expect(() => admit_v12_live_detail(binding, source, data, weak))
       .toThrow("rosetta_v12_certification_receipt_mismatch");
-    const incomplete = cert(data);
-    incomplete.verified_invariants.unit_source_slices_match = false as never;
+    const complete = cert(data);
+    const incomplete = {
+      ...complete,
+      verified_invariants: {
+        ...complete.verified_invariants,
+        unit_source_slices_match: false,
+      },
+    } as unknown as v12_certification_receipt;
     expect(() => admit_v12_live_detail(binding, source, data, incomplete))
       .toThrow("rosetta_v12_certification_receipt_mismatch");
   });
