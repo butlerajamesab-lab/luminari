@@ -1,5 +1,6 @@
 import { require_v12_admission_for_binding } from "./civic-genome-rosetta-v12-admission";
 import { assert_genome_rosetta_publication_admitted } from "./civic-genome-rosetta-publication-quarantine";
+import { assert_legacy_genome_decomposition_conveyor_available } from "./civic-genome-legacy-decomposition-retirement";
 import { createHash } from "node:crypto";
 import { PDFParse } from "pdf-parse";
 
@@ -1736,9 +1737,9 @@ export async function process_legislative_version(
   bill_version_id: string,
   options: { require_docket_operational_authority?: boolean } = {},
 ): Promise<legislative_version_processing_result> {
-  // Docket remains canonical. Retired Lighthouse-origin Rosetta processing,
-  // automatic fallback and provider API pulls cannot be invoked directly.
-  assert_genome_rosetta_publication_admitted();
+  // This old automatic conveyor remains permanently retired, even if
+  // V12 admission or the separate publication quarantine later changes.
+  assert_legacy_genome_decomposition_conveyor_available();
   const version = await load_version(bill_version_id);
   assert_legislative_document_role(version);
   const authority = options.require_docket_operational_authority === true
