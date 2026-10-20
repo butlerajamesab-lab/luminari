@@ -90,6 +90,17 @@ function cert(payload: current_rosetta_live_detail): v12_certification_receipt {
     output_sha256: v12_output_sha256(payload),
     certification_sha256: "c".repeat(64),
     certified_at: "2026-10-20T09:10:00Z",
+    attestation_type: "source_bound_output_integrity_v1",
+    verified_invariants: {
+      source_text_sha256_matches: true,
+      unit_source_slices_match: true,
+      unit_text_hashes_match: true,
+      section_spans_within_source: true,
+      hold_receipt_absent: true,
+      failure_receipts_absent: true,
+      unit_count: 1,
+      section_count: 1,
+    },
   };
 }
 function row() {
@@ -272,14 +283,44 @@ describe("exact source resolution and bounded remote reads", () => {
     });
   });
 
-  it("production admission remains blocked until independent Rosetta certification exists", async () => {
-    fetch_mock.mockResolvedValue(Response.json([row()]));
+  it("consumes the separate source-bound integrity receipt and preserves its limited scope", async () => {
+    const data = deep_clone(detail());
+    fetch_mock
+      .mockResolvedValueOnce(Response.json([row()]))
+      .mockResolvedValueOnce(Response.json(cert(data)));
+    get_live.mockResolvedValue(data);
+    const result = await inspect_v12_admission_for_binding(binding);
+    expect(result.receipt).toMatchObject({
+      admitted: true, admission_state: "admitted", reason: null,
+      ruleset_sha256, source_content_hash, output_sha256: v12_output_sha256(data),
+    });
+    const receiptUrl = new URL(String(fetch_mock.mock.calls[1][0]));
+    expect(receiptUrl.pathname).toBe(`/api/v12-certification/${source_content_id}`);
+    expect(fetch_mock.mock.calls[1][1]).toMatchObject({ method: "GET", redirect: "error" });
+  });
+
+  it("rejects a receipt that omits or weakens the declared integrity scope", () => {
+    const data = detail();
+    const weak = cert(data);
+    weak.attestation_type = "semantic_certification";
+    expect(() => admit_v12_live_detail(binding, source, data, weak))
+      .toThrow("rosetta_v12_certification_receipt_mismatch");
+    const incomplete = cert(data);
+    incomplete.verified_invariants.unit_source_slices_match = false as never;
+    expect(() => admit_v12_live_detail(binding, source, data, incomplete))
+      .toThrow("rosetta_v12_certification_receipt_mismatch");
+  });
+
+  it("fails closed when the Rosetta receipt endpoint has no matching receipt", async () => {
+    fetch_mock
+      .mockResolvedValueOnce(Response.json([row()]))
+      .mockResolvedValueOnce(new Response("missing", { status: 404 }));
     get_live.mockResolvedValue(deep_clone(detail()));
     const result = await inspect_v12_admission_for_binding(binding);
     expect(result.receipt).toMatchObject({
-      admitted: false, admission_state: "rejected",
-      reason: "rosetta_v12_certification_receipt_missing",
-      ruleset_sha256, source_content_hash,
+      admitted: false,
+      admission_state: "rejected",
+      reason: "rosetta_v12_certification_receipt_http_404",
     });
   });
 });
