@@ -1,9 +1,9 @@
-import { load_rosetta_current_docket_result_for_binding } from "./civic-genome-rosetta-evaluation";
+import { require_v12_admission_for_binding } from "./civic-genome-rosetta-v12-admission";
+import { assert_genome_rosetta_publication_admitted } from "./civic-genome-rosetta-publication-quarantine";
 import { createHash } from "node:crypto";
 import { PDFParse } from "pdf-parse";
 
 import { getPool } from "./db";
-import { assert_legacy_genome_decomposition_conveyor_available } from "./civic-genome-legacy-decomposition-retirement";
 import {
   assemble_rosetta_and_resolve_family,
   type rosetta_family_orchestration_result,
@@ -1676,6 +1676,7 @@ export type completed_current_result_attachment = {
 export async function attach_completed_current_result(
   bill_version_id: string,
 ): Promise<completed_current_result_attachment | null> {
+  assert_genome_rosetta_publication_admitted();
   const version = await load_version(bill_version_id);
   const authority = await load_docket_operational_authority(version);
   if (version.document_family !== "text") {
@@ -1719,59 +1720,16 @@ export async function attach_completed_current_result(
     throw new Error("current_result_attachment_source_receipt_incomplete");
   }
 
-  const current = await load_rosetta_current_docket_result_for_binding({
-    source_document_key: version.source_document_key,
-    source_content_hash,
-  });
-  if (!current || current.status !== "complete" || !current.current_result) {
-    return null;
-  }
-
-  const extraction_run_id = Number(current.current_result.extraction_run_id);
-  const projected_source_document_id = Number(
-    current.current_source_status?.rosetta_source_document_id ?? source_document_id,
-  );
-  if (
-    !Number.isSafeInteger(extraction_run_id)
-    || extraction_run_id <= 0
-    || projected_source_document_id !== source_document_id
-  ) {
-    throw new Error("current_result_attachment_projection_identity_mismatch");
-  }
-
-  const extraction: current_legislative_extraction_receipt = {
-    ...current.current_result,
-    extraction_run_id,
-    source_document_id,
-    source_content_id,
-    source_identity_hash,
-    source_content_hash,
-    source_byte_hash,
-    source_url,
-    source_version,
-    run_status: "completed",
-    run_version: null,
-    replayed: null,
-    coverage: current.coverage,
-    receipt_source: "current_docket_projection",
-  };
-
-  const assembly = await assemble_rosetta_and_resolve_family({
-    genome_bill_id: version.genome_bill_id,
-    source_document_id,
-    extraction_run_id,
-    source_document_key: version.source_document_key,
-    source_content_hash,
-  });
-  await record_extracted(bill_version_id, extraction);
-  await record_assembled(bill_version_id, assembly);
-
-  return {
+  await require_v12_admission_for_binding({
     bill_version_id,
     source_document_key: version.source_document_key,
-    extraction_run_id,
-    assembly_run_id: assembly.assembly_run_id,
-  };
+    rosetta_source_document_id: source_document_id,
+    source_content_hash,
+    rosetta_source_content_id: source_content_id,
+  });
+  // V12 is not compatible with the retired structural handoff/assembly adapter.
+  // This is an observation lane only until separately reviewed publication work.
+  throw new Error("rosetta_v12_genome_assembly_adapter_unavailable");
 }
 
 export async function process_legislative_version(
@@ -1780,7 +1738,7 @@ export async function process_legislative_version(
 ): Promise<legislative_version_processing_result> {
   // Docket remains canonical. Retired Lighthouse-origin Rosetta processing,
   // automatic fallback and provider API pulls cannot be invoked directly.
-  assert_legacy_genome_decomposition_conveyor_available();
+  assert_genome_rosetta_publication_admitted();
   const version = await load_version(bill_version_id);
   assert_legislative_document_role(version);
   const authority = options.require_docket_operational_authority === true
@@ -1832,51 +1790,13 @@ export async function process_legislative_version(
 
   // Ingestion is separate from processing. This consumer never starts a second
   // legacy-engine pass to obtain a handoff; Rosetta owns execution and routing.
-  const current = await load_rosetta_current_docket_result_for_binding({
-    source_document_key: version.source_document_key,
-    source_content_hash: source.source_content_hash,
-  });
-  if (!current || current.status !== "complete" || !current.current_result) {
-    await getPool().query(`update public.civic_genome_bill_version
-      set processing_state='source_ingested', failure_code=$2,
-          receipt_json=receipt_json || jsonb_build_object('current_rosetta_status',$3::text), updated_at=now()
-      where bill_version_id=$1::uuid`,
-    [bill_version_id, `rosetta_public_current_docket_result_${current?.status ?? "unavailable"}`, current?.status ?? "unavailable"]);
-    throw new Error(`rosetta_public_current_docket_result_${current?.status ?? "unavailable"}`);
-  }
-  const extraction: current_legislative_extraction_receipt = {
-    ...current.current_result,
-    extraction_run_id: Number(current.current_result.extraction_run_id),
-    source_document_id,
-    source_content_id: content.source_content_id,
-    source_identity_hash: content.source_identity_hash,
-    source_content_hash: source.source_content_hash,
-    source_byte_hash: source.source_byte_hash,
-    source_url: source.source_url,
-    source_version: source.source_version,
-    run_status: "completed", run_version: null, replayed: null,
-    coverage: current.coverage, receipt_source: "current_docket_projection",
-  };
-  if (!Number.isSafeInteger(extraction.extraction_run_id)) throw new Error("rosetta_current_extraction_run_invalid");
-  const assembly = await assemble_rosetta_and_resolve_family({
-    genome_bill_id: version.genome_bill_id,
-    source_document_id,
-    extraction_run_id: extraction.extraction_run_id,
-    source_document_key: version.source_document_key,
-    source_content_hash: source.source_content_hash,
-  });
-  await record_extracted(bill_version_id, extraction);
-  await record_assembled(bill_version_id, assembly);
-
-  return {
+  await require_v12_admission_for_binding({
     bill_version_id,
-    genome_bill_id: version.genome_bill_id,
     source_document_key: version.source_document_key,
-    source_bill_id: version.source_bill_id,
-    document_family: version.document_family,
-    version_type: version.version_type,
     rosetta_source_document_id: source_document_id,
-    extraction,
-    assembly,
-  };
+    source_content_hash: source.source_content_hash,
+    rosetta_source_content_id: content.source_content_id,
+  });
+  // Do not hand a V12 decomposition to a legacy five-layer assembler.
+  throw new Error("rosetta_v12_genome_assembly_adapter_unavailable");
 }
