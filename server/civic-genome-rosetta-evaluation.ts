@@ -1,4 +1,5 @@
 import { getPool } from "./db";
+import type { RosettaPublicCurrentDocketResult } from "../shared/rosetta-public-current-docket-result";
 import { inspect_v12_admission_for_binding, type v12_admission_receipt } from "./civic-genome-rosetta-v12-admission";
 export { get_rosetta_review_base_url } from "./rosetta-review-url";
 import { get_rosetta_review_base_url } from "./rosetta-review-url";
@@ -28,7 +29,7 @@ export type civic_genome_rosetta_evaluation = {
   availability: "available" | "binding_missing" | "not_in_evaluation" | "held" | "failed" | "rejected";
   review_url: string;
   /** Retired public contract is never populated, including for V12 success. */
-  current_docket_result: null;
+  current_docket_result: RosettaPublicCurrentDocketResult | null;
   v12_admission: v12_admission_receipt | null;
 };
 
