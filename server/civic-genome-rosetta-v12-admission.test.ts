@@ -105,7 +105,7 @@ beforeEach(() => {
   vi.resetAllMocks();
   vi.stubGlobal("fetch", fetch_mock);
   vi.stubEnv("ROSETTA_SUPABASE_URL", "https://rosetta-db.example.test");
-  vi.stubEnv("ROSETTA_SUPABASE_SERVICE_ROLE_KEY", "fixture-only-key");
+  vi.stubEnv("ROSETTA_SUPABASE_SERVICE_ROLE_KEY", "sb_secret_fixture_only");
 });
 afterEach(() => {
   vi.unstubAllGlobals();
