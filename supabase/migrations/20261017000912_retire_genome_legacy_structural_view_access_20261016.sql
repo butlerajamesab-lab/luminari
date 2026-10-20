@@ -8,9 +8,42 @@ BEGIN
  SELECT count(*) INTO matched FROM expected e JOIN pg_class c ON c.oid=to_regclass(e.name)
  WHERE c.relkind='v' AND pg_get_userbyid(c.relowner)='postgres' AND md5(pg_get_viewdef(c.oid,true))=e.definition_md5;
  IF matched<>4 THEN RAISE EXCEPTION 'structural view definition or ownership changed'; END IF;
- WITH original(name,acl) AS(VALUES ('public.docket_bill_drift_delta','{postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres}'),('public.docket_bill_impact_callouts','{postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres}'),('public.docket_bill_obligation_checklist','{postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres}'),('public.v_civic_genome_prism_verification_status','{postgres=arwdDxtm/postgres,service_role=r/postgres}')) SELECT count(*) INTO matched FROM original o JOIN pg_class c ON c.oid=to_regclass(o.name) WHERE c.relacl::text=o.acl;
+
+ -- Production's original four-view cutoff began from service_role SELECT.
+ -- Fresh replay may reach the same cut after the earlier source-only fence
+ -- already removed SELECT on the three Docket structural views. Accept only
+ -- those two exact ACL fingerprints; never accept anon/authenticated access,
+ -- unknown privileges, view-body drift or a missing trigger.
+ WITH approved_prior(name,acl) AS(VALUES
+ ('public.docket_bill_drift_delta','{postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres}'),
+ ('public.docket_bill_drift_delta','{postgres=arwdDxtm/postgres,service_role=Dxtm/postgres}'),
+ ('public.docket_bill_impact_callouts','{postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres}'),
+ ('public.docket_bill_impact_callouts','{postgres=arwdDxtm/postgres,service_role=Dxtm/postgres}'),
+ ('public.docket_bill_obligation_checklist','{postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres}'),
+ ('public.docket_bill_obligation_checklist','{postgres=arwdDxtm/postgres,service_role=Dxtm/postgres}'),
+ ('public.v_civic_genome_prism_verification_status','{postgres=arwdDxtm/postgres,service_role=r/postgres}'))
+ SELECT count(DISTINCT c.oid) INTO matched
+ FROM approved_prior a JOIN pg_class c ON c.oid=to_regclass(a.name)
+ WHERE c.relacl::text=a.acl;
  IF matched<>4 THEN RAISE EXCEPTION 'original structural view ACL differs'; END IF;
- SELECT count(*) INTO matched FROM (VALUES ('public.docket_bill_drift_delta','5cd3a477021b9794d0eaa46f7bc4b0e4'),('public.docket_bill_impact_callouts','e2b811f7140ee5f08fe20b517a14e334'),('public.docket_bill_obligation_checklist','2bd5ce9396cb757ccf8072377c73eb67'),('public.v_civic_genome_prism_verification_status','c0707929b3015ddcf537498ef01f01cb'))e(name,definition_md5) CROSS JOIN(VALUES('anon'),('authenticated'),('service_role'))r(role_name) WHERE has_table_privilege(r.role_name,to_regclass(e.name),'SELECT') IS NOT DISTINCT FROM (r.role_name='service_role');
+
+ -- Preserve original role boundary: anon/authenticated cannot read any of
+ -- the four views, and Prism's verification view must have its exact
+ -- service_role-only SELECT before the final cutoff. The three Docket views
+ -- may have already lost service_role SELECT in the earlier safe replay.
+ SELECT count(*) INTO matched
+ FROM (VALUES
+   ('public.docket_bill_drift_delta'),
+   ('public.docket_bill_impact_callouts'),
+   ('public.docket_bill_obligation_checklist'),
+   ('public.v_civic_genome_prism_verification_status')) e(name)
+ CROSS JOIN (VALUES ('anon'),('authenticated'),('service_role')) r(role_name)
+ WHERE CASE WHEN r.role_name='service_role'
+                 AND e.name <> 'public.v_civic_genome_prism_verification_status'
+            THEN TRUE
+            ELSE has_table_privilege(r.role_name,to_regclass(e.name),'SELECT')
+                 IS NOT DISTINCT FROM (r.role_name='service_role')
+       END;
  IF matched<>12 THEN RAISE EXCEPTION 'original structural view access differs'; END IF;
  -- In zero-state Supabase replay, migration statement packaging differs from
  -- the independently archived production receipt. Require the prior write
