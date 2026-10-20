@@ -11,7 +11,7 @@ import { get_rosetta_review_base_url } from "./rosetta-review-url";
  */
 export async function load_rosetta_current_docket_result_for_binding(
   _input: { source_document_key: string; source_content_hash: string },
-): Promise<never> {
+): Promise<RosettaPublicCurrentDocketResult | null> {
   throw new Error("rosetta_v12_legacy_current_docket_reader_retired");
 }
 
