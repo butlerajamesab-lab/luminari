@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { map_v12_live_target_for_genome } from "./civic-genome-rosetta-generation-target-sync";
 import type { v12_admission_receipt } from "./civic-genome-rosetta-v12-admission";
 
