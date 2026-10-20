@@ -318,14 +318,16 @@ APPROVED_REPOSITORY_ONLY = {
         "20261001230000_finalize_docket_lineage_authority_handoff.sql",
         "f0c315d66d8e3bbbdf310ee7f12189056b5261f7",
     ),
-    # LegiScan 10k/month quota-safety repair pending normal production apply.
+    # LegiScan quota-safe repair remains repository-only, not installed in
+    # production. This exact Git blob includes bounded current-window joins
+    # validated against live read-only eligibility probes (2026-10-19).
     "20261002060000": (
         "20261002060000_legiscan_public_api_budget.sql",
         "e518dbbf10c3178c105bdd32126c0f3ce5307037",
     ),
     "20261002061000": (
         "20261002061000_docket_quota_safe_current_window.sql",
-        "c7cb3876d2fc8fba3e57516163b42b9cf72e9848",
+        "33b9d4aa115696877d5a0c6288ba9d9563deca3f",
     ),
 }
 
