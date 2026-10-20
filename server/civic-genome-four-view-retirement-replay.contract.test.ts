@@ -21,7 +21,7 @@ describe("four-view production retirement versus zero-state replay", () => {
     expect(parity).toContain('"20261017000912"');
     expect(parity).toContain('"0dcc197ff30adf74f88ed4d358f572dd"');
     expect(parity).toContain('"1fc17005d93bd6ece8b50614da58a4fa82cd71cf"');
-    expect(parity).toContain('"2291d56d4b6e97773ad4354a9b2d8740aadc7392"');
+    expect(parity).toContain('"83c9f0d8d688f123d3bb6b0ca4244d0b86afa99c"');
   });
 
   it("requires exact safe prior ACL variants and completes the full protected permission cut", () => {
