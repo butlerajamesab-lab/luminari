@@ -253,7 +253,7 @@ describe("exact source resolution and bounded remote reads", () => {
   });
 
   it("marks raw held and failed receipts distinctly and keeps them visible", async () => {
-    fetch_mock.mockResolvedValue(Response.json([row()]));
+    fetch_mock.mockImplementation(async () => Response.json([row()]));
     const data = detail();
     data.hold_receipt = { reason: "awaiting_certification" };
     get_live.mockResolvedValue(data);
