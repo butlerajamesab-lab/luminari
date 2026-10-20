@@ -371,8 +371,14 @@ export async function inspect_v12_admission_for_binding(binding: v12_genome_bind
     receipt.output_sha256 = v12_output_sha256(detail);
     receipt.hold_receipt = detail.hold_receipt;
     receipt.failure_receipts = detail.failure_receipts;
-    // Real runs always receive null until independent certification exists.
-    const certification = await read_v12_certification_receipt(source, detail.target);
+    // Preserve held/failed observations without asking Rosetta for a receipt
+    // that its integrity contract correctly refuses to issue for those states.
+    const certificationEligible = detail.decomposition?.outcome === "decomposed"
+      && !detail.hold_receipt
+      && detail.failure_receipts.length === 0;
+    const certification = certificationEligible
+      ? await read_v12_certification_receipt(source, detail.target)
+      : null;
     return admit_v12_live_detail(binding, source, detail, certification);
   } catch (error) {
     const reason = error instanceof Error ? error.message : "rosetta_v12_unexpected_rejection";
