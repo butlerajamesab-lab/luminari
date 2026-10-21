@@ -19,53 +19,57 @@ type target_identity = {
   engine_version: string;
   rule_set_version: string;
   rule_manifest_hash: string;
-  validation_test_name: string;
+  read_contract_sha256: string;
   promoted_at: string;
 };
 
 /**
- * Proposed Lighthouse target mapping, NOT an assertion that the missing
- * fields are currently present in Rosetta's published live-detail response.
+ * Verified current_target_v1 mapping (no separate V-series engine version):
+ *   engine_version      <- target.ruleset_version
+ *   rule_set_version    <- target.ruleset_version
+ *   rule_manifest_hash  <- target.ruleset_sha256
+ *   promoted_at         <- target.selected_at
+ *   read_contract_sha256 <- target.read_contract_sha256
  *
- * engine_version       <- target.engine_version (must be explicitly attested)
- * rule_set_version     <- target.ruleset_version
- * rule_manifest_hash   <- target.ruleset_sha256
- * promoted_at          <- target.selected_at (selection-time ordering proposal)
- * validation_test_name <- target.validation_test_name (must be attested)
- *
- * There is no legitimate inferred engine_version or validation_test_name.
- * Rosetta currently exposes ruleset identity, but those additional values
- * are not verified here. Missing fields block target synchronization.
+ * Three selected-runtime identity flags MUST be true and the installed ruleset
+ * SHA-256 MUST equal the selected ruleset SHA-256. There is no source for
+ * validation_test_name; the legacy six-argument SQL observer must not be used.
  */
 export function map_v12_live_target_for_genome(
   target: Record<string, unknown>,
   receipt: v12_admission_receipt,
 ): target_identity {
-  const engine_version = target.engine_version;
   const rule_set_version = target.ruleset_version;
   const rule_manifest_hash = target.ruleset_sha256;
-  const validation_test_name = target.validation_test_name;
+  const installed_ruleset_sha256 = target.installed_ruleset_sha256;
+  const read_contract_sha256 = target.read_contract_sha256;
   const promoted_at = target.selected_at;
   if (
     receipt.admitted !== true
-    || !receipt.certification_sha256
-    || typeof engine_version !== "string" || !engine_version.trim()
+    || !/^[a-f0-9]{64}$/i.test(receipt.certification_sha256 ?? "")
+    || target.identity_valid !== true
+    || target.engine_identity_valid !== true
+    || target.read_identity_valid !== true
     || typeof rule_set_version !== "string" || !rule_set_version.trim()
     || typeof rule_manifest_hash !== "string" || !/^[a-f0-9]{64}$/i.test(rule_manifest_hash)
-    || typeof validation_test_name !== "string" || !validation_test_name.trim()
+    || typeof installed_ruleset_sha256 !== "string" || !/^[a-f0-9]{64}$/i.test(installed_ruleset_sha256)
+    || installed_ruleset_sha256.toLowerCase() !== rule_manifest_hash.toLowerCase()
+    || typeof read_contract_sha256 !== "string" || !/^[a-f0-9]{64}$/i.test(read_contract_sha256)
     || typeof promoted_at !== "string" || !Number.isFinite(Date.parse(promoted_at))
     || receipt.ruleset_version !== rule_set_version
     || receipt.ruleset_sha256 !== rule_manifest_hash.toLowerCase()
+    || receipt.installed_ruleset_sha256 !== installed_ruleset_sha256.toLowerCase()
+    || receipt.read_contract_sha256 !== read_contract_sha256.toLowerCase()
     || receipt.selected_at !== promoted_at
   ) {
     throw new Error("rosetta_v12_generation_target_identity_unattested");
   }
   return {
     contract: "rosetta-rule-live-detail-v1",
-    engine_version,
+    engine_version: rule_set_version,
     rule_set_version,
     rule_manifest_hash: rule_manifest_hash.toLowerCase(),
-    validation_test_name,
+    read_contract_sha256: read_contract_sha256.toLowerCase(),
     promoted_at,
   };
 }
@@ -129,13 +133,15 @@ export async function sync_rosetta_generation_target_once(): Promise<void> {
 
     // Unreachable while quarantine stays return true and certification is absent.
     await query_with_diagnostics(
-      "select public.civic_genome_observe_rosetta_generation_target_v1($1,$2,$3,$4,$5,$6::timestamptz) as receipt",
+      // PROPOSED V12-only observer; not installed while quarantine is closed.
+      // The old observer requires a nonexistent validation_test_name and is forbidden.
+      "select public.civic_genome_observe_rosetta_generation_target_v12($1,$2,$3,$4,$5,$6::timestamptz) as receipt",
       [
         target.contract,
         target.engine_version,
         target.rule_set_version,
         target.rule_manifest_hash,
-        target.validation_test_name,
+        target.read_contract_sha256,
         target.promoted_at,
       ],
       {
