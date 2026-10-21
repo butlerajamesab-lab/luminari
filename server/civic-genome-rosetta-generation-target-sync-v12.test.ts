@@ -46,6 +46,10 @@ describe("V12 target-column mapping — current_target_v1 fixtures", () => {
       rule_set_version: target.ruleset_version,
       rule_manifest_hash: target.ruleset_sha256,
       read_contract_sha256: target.read_contract_sha256,
+      installed_ruleset_sha256: target.installed_ruleset_sha256,
+      identity_valid: true,
+      engine_identity_valid: true,
+      read_identity_valid: true,
       promoted_at: target.selected_at,
     });
     expect(target).not.toHaveProperty("engine_version");
