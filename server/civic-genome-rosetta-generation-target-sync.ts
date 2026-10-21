@@ -20,6 +20,10 @@ type target_identity = {
   rule_set_version: string;
   rule_manifest_hash: string;
   read_contract_sha256: string;
+  installed_ruleset_sha256: string;
+  identity_valid: true;
+  engine_identity_valid: true;
+  read_identity_valid: true;
   promoted_at: string;
 };
 
@@ -70,6 +74,10 @@ export function map_v12_live_target_for_genome(
     rule_set_version,
     rule_manifest_hash: rule_manifest_hash.toLowerCase(),
     read_contract_sha256: read_contract_sha256.toLowerCase(),
+    installed_ruleset_sha256: installed_ruleset_sha256.toLowerCase(),
+    identity_valid: true,
+    engine_identity_valid: true,
+    read_identity_valid: true,
     promoted_at,
   };
 }
@@ -135,7 +143,7 @@ export async function sync_rosetta_generation_target_once(): Promise<void> {
     await query_with_diagnostics(
       // PROPOSED V12-only observer; not installed while quarantine is closed.
       // The old observer requires a nonexistent validation_test_name and is forbidden.
-      "select public.civic_genome_observe_rosetta_generation_target_v12($1,$2,$3,$4,$5,$6::timestamptz) as receipt",
+      "select public.civic_genome_observe_rosetta_generation_target_v12($1,$2,$3,$4,$5,$6::timestamptz,$7,$8,$9,$10) as receipt",
       [
         target.contract,
         target.engine_version,
@@ -143,6 +151,10 @@ export async function sync_rosetta_generation_target_once(): Promise<void> {
         target.rule_manifest_hash,
         target.read_contract_sha256,
         target.promoted_at,
+        target.identity_valid,
+        target.engine_identity_valid,
+        target.read_identity_valid,
+        target.installed_ruleset_sha256,
       ],
       {
         label: "rosetta_v12_generation_target_sync",
