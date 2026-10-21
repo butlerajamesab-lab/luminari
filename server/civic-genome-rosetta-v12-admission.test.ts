@@ -44,9 +44,12 @@ function detail(): current_rosetta_live_detail {
     observed_at: "2026-10-20T10:00:00Z",
     target: {
       identity_valid: true,
-      engine_version: "selected-runtime-version",
+      engine_identity_valid: true,
+      read_identity_valid: true,
       ruleset_version: "rosetta-rule-ref-v12",
       ruleset_sha256,
+      installed_ruleset_sha256: ruleset_sha256,
+      read_contract_sha256: "e".repeat(64),
       selected_at: "2026-10-20T09:00:00Z",
     },
     source: {
@@ -131,6 +134,8 @@ describe("V12 certified admission — fixtures only", () => {
       admitted: true, reason: null, admission_state: "admitted",
       source_content_id, source_document_id: 42, source_content_hash,
       ruleset_version: "rosetta-rule-ref-v12", ruleset_sha256,
+      installed_ruleset_sha256: ruleset_sha256,
+      read_contract_sha256: "e".repeat(64),
       selected_at: "2026-10-20T09:00:00Z",
       output_sha256: v12_output_sha256(data),
     });
@@ -158,6 +163,13 @@ describe("V12 certified admission — fixtures only", () => {
 
   it.each([
     ["identity_valid", { identity_valid: false }, "rosetta_v12_target_identity_invalid"],
+    ["engine_identity_valid", { engine_identity_valid: false }, "rosetta_v12_target_identity_invalid"],
+    ["read_identity_valid", { read_identity_valid: false }, "rosetta_v12_target_identity_invalid"],
+    ["missing engine_identity_valid", { engine_identity_valid: undefined }, "rosetta_v12_target_identity_invalid"],
+    ["missing read_identity_valid", { read_identity_valid: undefined }, "rosetta_v12_target_identity_invalid"],
+    ["installed_ruleset_sha256", { installed_ruleset_sha256: null }, "rosetta_v12_target_provenance_missing"],
+    ["read_contract_sha256", { read_contract_sha256: null }, "rosetta_v12_target_provenance_missing"],
+    ["installed SHA mismatch", { installed_ruleset_sha256: "c".repeat(64) }, "rosetta_v12_installed_ruleset_sha256_mismatch"],
     ["ruleset_version", { ruleset_version: null }, "rosetta_v12_target_provenance_missing"],
     ["ruleset_sha256", { ruleset_sha256: null }, "rosetta_v12_target_provenance_missing"],
     ["selected_at", { selected_at: null }, "rosetta_v12_target_provenance_missing"],
@@ -295,6 +307,7 @@ describe("exact source resolution and bounded remote reads", () => {
     expect(result.receipt).toMatchObject({
       admitted: true, admission_state: "admitted", reason: null,
       ruleset_sha256, source_content_hash, output_sha256: v12_output_sha256(data),
+      installed_ruleset_sha256: ruleset_sha256, read_contract_sha256: "e".repeat(64),
     });
     const receiptUrl = new URL(String(fetch_mock.mock.calls[1][0]));
     expect(receiptUrl.pathname).toBe(`/api/v12-certification/${source_content_id}`);
