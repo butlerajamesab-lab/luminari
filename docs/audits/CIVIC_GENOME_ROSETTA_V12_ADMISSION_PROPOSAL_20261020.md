@@ -24,10 +24,12 @@ Newest-record heuristics and source-document-only matches are forbidden.
 1. Exact key/document/content ID and source SHA-256:
    `rosetta_v12_source_identity_mismatch`,
    `rosetta_v12_source_text_hash_mismatch`.
-2. Selected target must say `identity_valid===true`, and expose exact
-   `ruleset_version`, `ruleset_sha256`, `selected_at`.
-   Errors: `rosetta_v12_target_identity_invalid`,
-   `rosetta_v12_target_provenance_missing`.
+2. The selected `current_target_v1` requires `identity_valid`,
+   `engine_identity_valid`, and `read_identity_valid` all exactly `true`,
+   plus `installed_ruleset_sha256 == ruleset_sha256`. Validate nonempty
+   `ruleset_version`, SHA-256 `ruleset_sha256` and `read_contract_sha256`,
+   and valid `selected_at`. A missing or false identity, absent hash, or
+   installed-hash mismatch fails closed with a named V12 rejection.
 3. Keep `hold_receipt` and `failure_receipts` visible with state `held` or
    `failed`. Never substitute a previous decomposition. Only
    `decomposition.outcome='decomposed'` can continue.
@@ -36,12 +38,10 @@ Newest-record heuristics and source-document-only matches are forbidden.
    as JavaScript string slice units; incompatible Rosetta offset semantics
    fail closed, and require a documented cross-runtime agreement.
 5. Compute a local SHA-256 over the exact JSON output projection
-   `{decomposition,sections,units,markup_events}`. Compare to a separate
-   source/ruleset/output-bound certification receipt. **Rosetta has not yet
-   published that certification receipt or read RPC** (inventory 2.22);
-   the production provider intentionally returns null. Result:
-   `rosetta_v12_certification_receipt_missing`. The receipt type is
-   a *proposed matching interface*, not an assertion of a Rosetta contract.
+   `{decomposition,sections,units,markup_events}`. Compare it with a separate
+   source/ruleset/output-bound V12 certification receipt from the dedicated
+   read-only endpoint. If absent or mismatched, reject. Receipt availability
+   in live Rosetta is not implied by the fixture tests.
 6. The reader preserves Rosetta R, but the derived canonical-layer projection
    includes only H/W/A/O/D. No R-containing Genome publication is implemented.
 
@@ -49,34 +49,50 @@ All failures are named `rosetta_v12_*`; HTTP 404, HTTP 410, and timeout have
 distinct codes. Any absent certification produces rejected, not admitted.
 Even a hypothetical fixture admission cannot trigger a Genome assembly.
 
-## Proposed target-column mapping, not applied
-The existing Lighthouse table and observer (not modified) require this tuple:
+## Corrected V12 current-target mapping (not applied)
 
-| Lighthouse field | Live selected target input | Fail-closed behavior |
+Rosetta's verified live `current_target_v1` has **no** separate
+`engine_version` and **no** `validation_test_name`. Those cannot be
+invented by Lighthouse. The following is the exact contract implemented by
+`map_v12_live_target_for_genome`:
+
+| Lighthouse field | Verified Rosetta input | Rule |
 |---|---|---|
-| `engine_version` | `target.engine_version` | reject if absent; do not assume a V12 engine name from a ruleset |
-| `rule_set_version` | `target.ruleset_version` | exact nonempty string |
-| `rule_manifest_hash` | `target.ruleset_sha256` | exact lowercase SHA-256 |
-| `validation_test_name` | `target.validation_test_name` | reject if absent; certification SHA is **not** a test name |
-| `promoted_at` | `target.selected_at` | proposed timestamp mapping, requiring review of selection vs promotion semantics |
-| `contract` | `rosetta-rule-live-detail-v1` | fixed identity of the read contract, not a claim about legacy generation RPC |
+| `engine_version` | `target.ruleset_version` | Same V-series ruleset identity, no separate engine version |
+| `rule_set_version` | `target.ruleset_version` | Exact nonempty string |
+| `rule_manifest_hash` | `target.ruleset_sha256` | Valid SHA-256 |
+| `promoted_at` | `target.selected_at` | Selection-time timestamp |
+| `read_contract_sha256` | `target.read_contract_sha256` | Exact read-contract SHA-256, retained in admission receipt |
+| `installed_ruleset_sha256` | `target.installed_ruleset_sha256` | Must equal `ruleset_sha256` |
+| `identity_valid`, `engine_identity_valid`, `read_identity_valid` | The three live target flags | All must be exactly true |
+| `validation_test_name` | **No Rosetta source** | Never fabricate or populate for V12 |
 
-The live-detail *presentation fixture* previously included
-`identity_valid`, `ruleset_version`, and `ruleset_sha256`, but did not
-establish `engine_version`, `validation_test_name`, or `selected_at`.
-These fields remain **unverified** in production. The mapper rejects missing
-values. No `rosetta_current_generation_v1()` call remains in target sync.
+The V12 mapper refuses an incomplete or invalid target and also checks
+against the source-bound admission receipt, including
+`read_contract_sha256` and installed ruleset hash. The old Lighthouse
+`civic_genome_observe_rosetta_generation_target_v1` RPC has a required
+`validation_test_name` and **cannot be reused** for V12.
 
-A future explicit bill-version selector
-`ROSETTA_GENOME_TARGET_SOURCE_BILL_VERSION_ID` is required: arbitrary
-latest-source sampling is not authority for a global target. The observer
-remains behind both the publication quarantine and the missing certification.
+The sync function references a **proposed** V12-specific observer:
+`public.civic_genome_observe_rosetta_generation_target_v12`. It is **not
+installed or called in this PR**. The SQL design lives outside the executable
+migration tree at
+`supabase/proposals/20261020_civic_genome_rosetta_v12_target_observer.proposal.sql`.
+It proposes nullable `validation_test_name`, dedicated read-contract and
+installed-hash fields, exact identity flags, and strict monotonic selection.
+An additional approval and SQL write-quarantine review are required before
+applying it. With `is_genome_rosetta_publication_quarantined()` returning
+`true`, target-sync returns before any source read or database write.
+
+No `rosetta_current_generation_v1()` call is made. No generation target is
+selected by this PR.
 
 ## Proposed append-only ledger
 `supabase/proposals/20261020_civic_genome_rosetta_v12_admission_receipt.proposal.sql`
 is deliberately **not** under `supabase/migrations`. It stores bill-version,
 source key/id/hash, target ruleset/hash/selection, local output SHA-256,
-certification SHA-256, admitted boolean, state, reason and held/failed evidence.
+certification SHA-256, `read_contract_sha256`, installed ruleset SHA-256,
+admitted boolean, state, reason and held/failed evidence.
 It is neither installed nor populated. A separately reviewed SQL write
 quarantine fence and receipt writer are required before any rollout.
 
@@ -95,6 +111,8 @@ quarantine fence and receipt writer are required before any rollout.
 - Existing reconciliation SQL and historical tests refer to legacy
   `rosetta_public_current_docket_result_*` queue hold codes. No database
   migration or historic row conversion has been attempted.
-- Rosetta's independent V12 certification interface, canonical output hash
-  encoding, byte/character offset semantics, and trustworthy target-engine
-  and validation-test identities have not been proved at this boundary.
+- Independent V12 certification availability, canonical output hash encoding,
+  and byte/character offset semantics require separate verification. The V-series
+  has no separate engine-version or validation-test-name identity.
+- The V12 target observer SQL and its surrounding database write quarantine
+  remain unapplied; the installed legacy observer cannot accept V12 provenance.
