@@ -85,7 +85,12 @@ describe("V12 target-column mapping — current_target_v1 fixtures", () => {
     expect(sync).toContain("civic_genome_observe_rosetta_generation_target_v12");
     expect(sync).not.toContain("civic_genome_observe_rosetta_generation_target_v1(");
     expect(sync).not.toContain("target.validation_test_name");
-    expect(sync).not.toContain("target.engine_version");
+    const mapper = sync.slice(
+      sync.indexOf("export function map_v12_live_target_for_genome("),
+      sync.indexOf("function enabled():"),
+    );
+    // The mapped Lighthouse tuple may have engine_version; the Rosetta input does not.
+    expect(mapper).not.toContain("target.engine_version");
     const quarantine = readFileSync(new URL("./civic-genome-rosetta-publication-quarantine.ts", import.meta.url), "utf8");
     expect(quarantine).toContain("return true;");
   });
