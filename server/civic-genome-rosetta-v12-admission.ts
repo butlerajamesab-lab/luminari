@@ -66,6 +66,8 @@ export type v12_admission_receipt = {
   source_content_hash: string;
   ruleset_version: string | null;
   ruleset_sha256: string | null;
+  installed_ruleset_sha256: string | null;
+  read_contract_sha256: string | null;
   selected_at: string | null;
   output_sha256: string | null;
   certification_sha256: string | null;
@@ -98,6 +100,8 @@ export function v12_receipt_for_binding(binding: v12_genome_binding): v12_admiss
     source_content_hash: binding.source_content_hash.toLowerCase(),
     ruleset_version: null,
     ruleset_sha256: null,
+    installed_ruleset_sha256: null,
+    read_contract_sha256: null,
     selected_at: null,
     output_sha256: null,
     certification_sha256: null,
@@ -246,12 +250,25 @@ export function admit_v12_live_detail(
     throw new Error("rosetta_v12_source_text_hash_mismatch");
   }
   const target = detail.target;
-  if (target.identity_valid !== true) throw new Error("rosetta_v12_target_identity_invalid");
-  if (!required_text(target.ruleset_version) || !HASH.test(String(target.ruleset_sha256 ?? "")) || !date_valid(target.selected_at)) {
+  if (target.identity_valid !== true
+    || target.engine_identity_valid !== true
+    || target.read_identity_valid !== true) {
+    throw new Error("rosetta_v12_target_identity_invalid");
+  }
+  if (!required_text(target.ruleset_version)
+    || !HASH.test(String(target.ruleset_sha256 ?? ""))
+    || !HASH.test(String(target.installed_ruleset_sha256 ?? ""))
+    || !HASH.test(String(target.read_contract_sha256 ?? ""))
+    || !date_valid(target.selected_at)) {
     throw new Error("rosetta_v12_target_provenance_missing");
+  }
+  if (String(target.installed_ruleset_sha256).toLowerCase() !== String(target.ruleset_sha256).toLowerCase()) {
+    throw new Error("rosetta_v12_installed_ruleset_sha256_mismatch");
   }
   receipt.ruleset_version = target.ruleset_version;
   receipt.ruleset_sha256 = String(target.ruleset_sha256).toLowerCase();
+  receipt.installed_ruleset_sha256 = String(target.installed_ruleset_sha256).toLowerCase();
+  receipt.read_contract_sha256 = String(target.read_contract_sha256).toLowerCase();
   receipt.selected_at = target.selected_at;
   if (detail.hold_receipt) throw new Error("rosetta_v12_hold_receipt_present");
   if (detail.failure_receipts.length) throw new Error("rosetta_v12_failure_receipts_present");
@@ -368,6 +385,10 @@ export async function inspect_v12_admission_for_binding(binding: v12_genome_bind
     receipt.ruleset_sha256 = HASH.test(String(detail.target.ruleset_sha256 ?? ""))
       ? String(detail.target.ruleset_sha256).toLowerCase() : null;
     receipt.selected_at = date_valid(detail.target.selected_at) ? detail.target.selected_at : null;
+    receipt.installed_ruleset_sha256 = HASH.test(String(detail.target.installed_ruleset_sha256 ?? ""))
+      ? String(detail.target.installed_ruleset_sha256).toLowerCase() : null;
+    receipt.read_contract_sha256 = HASH.test(String(detail.target.read_contract_sha256 ?? ""))
+      ? String(detail.target.read_contract_sha256).toLowerCase() : null;
     receipt.output_sha256 = v12_output_sha256(detail);
     receipt.hold_receipt = detail.hold_receipt;
     receipt.failure_receipts = detail.failure_receipts;
