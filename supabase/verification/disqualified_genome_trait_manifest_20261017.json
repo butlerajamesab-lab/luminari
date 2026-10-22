@@ -1,0 +1,52 @@
+{
+  "engines": [
+    {
+      "row_count": 727,
+      "engine_version": "rosetta-v3-deterministic-sql-1.0.0"
+    },
+    {
+      "row_count": 12,
+      "engine_version": "rosetta-v3-deterministic-sql-2.0.0"
+    },
+    {
+      "row_count": 136,
+      "engine_version": "rosetta-v3-deterministic-sql-2.1.0"
+    },
+    {
+      "row_count": 1626,
+      "engine_version": "rosetta-v3-deterministic-sql-2.2.0"
+    },
+    {
+      "row_count": 50057,
+      "engine_version": "rosetta-v3-deterministic-sql-2.3.0"
+    },
+    {
+      "row_count": 21300,
+      "engine_version": "rosetta-v3-deterministic-sql-2.4.0"
+    },
+    {
+      "row_count": 919,
+      "engine_version": "rosetta-v3-deterministic-sql-2.5.10"
+    },
+    {
+      "row_count": 21038,
+      "engine_version": "rosetta-v3-deterministic-sql-2.5.11"
+    },
+    {
+      "row_count": 3344,
+      "engine_version": "rosetta-v3-deterministic-sql-2.5.8"
+    }
+  ],
+  "delete_role": true,
+  "incoming_fk": [
+    {
+      "oid": "118162",
+      "name": "civic_genome_prism_verification_binding_trait_id_fkey",
+      "type": "a",
+      "table": "civic_genome_prism_verification_binding",
+      "definition": "FOREIGN KEY (trait_id) REFERENCES civic_genome_trait(trait_id)"
+    }
+  ],
+  "binding_count": 0,
+  "trait_row_manifest_sha256": "4c1ee67896649daee438bdc847da6dbef71f5eea37a2186d51f617ad6f170f0c"
+}

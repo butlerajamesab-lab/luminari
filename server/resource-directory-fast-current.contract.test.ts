@@ -38,14 +38,16 @@ describe("current resource directory read contract", () => {
     expect(source).toContain("total_is_exact: !has_more");
   });
 
-  it("uses the existing twelve-category presentation contract without rewriting source category text", () => {
+  it("uses only individually reviewed category placements without rewriting source category text", () => {
     const source = readFileSync(
       "server/services/resource-directory-fast-current.ts",
       "utf8",
     );
     expect(source).toContain("DIRECTORY_UI_CATEGORY_SQL");
     expect(source).toContain("source_resource_category:");
-    expect(source).toContain("else 'general_resource'");
+    expect(source).toContain('const DIRECTORY_UI_CATEGORY_SQL = "reviewed_primary_category"');
+    expect(source).toContain('coalesce(reviewed_category_memberships,array[]::text[])');
+    expect(source).not.toContain("lower(concat_ws(' '");
   });
 
   it("keeps raw source name and presentation name separate", () => {

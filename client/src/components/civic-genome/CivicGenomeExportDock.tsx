@@ -55,8 +55,12 @@ export function CivicGenomeExportDock() {
         "Detailed report",
       )}
       {export_link(
-        `/api/civic-genome/export/bill/${encodeURIComponent(source_bill_id)}`,
-        "Technical JSON",
+        `/api/civic-genome/export/bill/${encodeURIComponent(source_bill_id)}/report`,
+        "Law ↔ Rosetta report",
+      )}
+      {export_link(
+        `/api/civic-genome/export/bill/${encodeURIComponent(source_bill_id)}/machine`,
+        "Machine JSON",
       )}
     </> : export_link(
       "/api/civic-genome/export/current?limit=100",

@@ -1,0 +1,82 @@
+name: Civic Genome SQL writer quarantine gate
+
+on:
+  pull_request:
+    paths:
+      - 'server/civic-genome-source-only-snapshot.ts'
+      - 'server/civic-genome-source-only-snapshot.test.ts'
+      - 'server/civic-genome-projection.ts'
+      - 'server/civic-genome-family-resolution.ts'
+      - 'supabase/migration_sources/civic_genome_rosetta_sql_write_quarantine_v1.sql'
+      - 'supabase/verification/civic_genome_sql_quarantine_fixture_v1.sql'
+      - 'supabase/verification/civic_genome_sql_quarantine_assert_v1.sql'
+      - 'supabase/verification/civic_genome_rosetta_sql_write_quarantine_v1_ROLLBACK.sql'
+      - '.github/workflows/civic-genome-sql-write-quarantine-gate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  isolated-postgres-fence:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: genome_quarantine_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d genome_quarantine_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: genome_quarantine_test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure PostgreSQL client
+        run: |
+          if ! command -v psql >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq postgresql-client
+          fi
+      - name: Create disposable source and historical derivative fixtures
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/verification/civic_genome_sql_quarantine_fixture_v1.sql
+      - name: Compile and install candidate database fence in isolated PostgreSQL
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/migration_sources/civic_genome_rosetta_sql_write_quarantine_v1.sql
+      - name: Assert rejection, Docket continuity, and purge-safe DELETE
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/verification/civic_genome_sql_quarantine_assert_v1.sql
+      - name: Prove exact rollback restores original table privileges
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -f supabase/verification/civic_genome_rosetta_sql_write_quarantine_v1_ROLLBACK.sql
+          psql -X -v ON_ERROR_STOP=1 -Atqc "
+            DO \$\$ BEGIN
+              IF EXISTS (SELECT 1 FROM pg_trigger WHERE tgname LIKE 'zz_civic_genome_%' AND NOT tgisinternal)
+                 OR NOT has_table_privilege('service_role','public.civic_genome_trait','INSERT')
+                 OR NOT has_table_privilege('service_role','public.civic_genome_assembly_run','UPDATE') THEN
+                RAISE EXCEPTION 'Rollback privileges or triggers incorrect';
+              END IF;
+            END \$\$;"
+
+
+  source-snapshot-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Typecheck snapshot projection writer changes
+        run: pnpm check
+      - name: Verify new snapshots use source-only projection
+        run: pnpm exec vitest run server/civic-genome-source-only-snapshot.test.ts server/civic-genome-projection.test.ts server/civic-genome-family-resolution.test.ts

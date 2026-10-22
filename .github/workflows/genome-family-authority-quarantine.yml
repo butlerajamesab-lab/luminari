@@ -1,0 +1,24 @@
+name: Genome family authority quarantine
+on:
+  pull_request:
+    paths:
+      - 'server/civic-genome-family-resolution.ts'
+      - 'server/civic-genome-family-resolution.test.ts'
+      - 'server/civic-genome-family-resolution-quarantine.test.ts'
+      - '.github/workflows/genome-family-authority-quarantine.yml'
+permissions:
+  contents: read
+jobs:
+  family-quarantine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      - run: pnpm exec vitest run server/civic-genome-family-resolution-quarantine.test.ts server/civic-genome-family-resolution.test.ts server/genome-remaining-read-quarantine.test.ts
+      - run: pnpm build

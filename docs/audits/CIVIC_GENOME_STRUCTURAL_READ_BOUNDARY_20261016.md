@@ -1,0 +1,13 @@
+# Civic Genome structural views and Radar — prepared 2026-10-16
+
+A fresh catalog check found four legacy structural views with service_role SELECT and no anon/authenticated SELECT: docket_bill_drift_delta, docket_bill_impact_callouts, docket_bill_obligation_checklist and v_civic_genome_prism_verification_status. The bounded reverse dependency/name search found no dependent views/materialized views or function-body consumers. Owner/administrator access remains distinct.
+
+Docket Radar separately aggregated traits and verification bindings inline. Revoking the four named views could not close that path. Its active query now reads only source velocity and next-floor calendar data. Comparison counts are NULL, coverage is false and structural_state is quarantined; the mapper cannot append drift from old labels. The UI says “Structural comparison unavailable.” It does not claim a successful zero delta. Source ingestion, caches, events and calendar/velocity queries are preserved.
+
+The prepared permission-only SQL pins all four view bodies, owners, exact original ACLs, the canonical write-fence ledger statement and all ten enabled quarantine triggers/function identities. It revokes all privileges from PUBLIC/anon/authenticated/service_role, requires owner-only residual ACLs and compares data counts. No view body, source row, sealed snapshot or derivative row is modified. The guarded rollback restores exactly the original four view ACLs; never an automatic fallback.
+
+Tests execute the actual current Radar SQL against convincing old verified/binding fixtures, requiring source facts and NULL comparison fields. The disposable PostgreSQL 17 test installs the real existing write quarantine, substitutes only fixture body/ledger hashes, tests actual role SELECT denial and separate privileged forensic access, confirms ordinary Docket metadata UPDATE and rejected derivative INSERT, rejects definition/ACL/fence drift and proves transactional rollback after all revocations.
+
+Production SQL application is separate from merge/deployment. Record the assigned Supabase migration ID and exact statement in the canonical ledger/receipt process. This code must be deployed before applying the view access cut. A deployed commit plus unit tests does not independently prove every runtime branch; use a bounded read-only Docket search to verify the observed quarantine state.
+
+The current census remains 99,159 legacy traits, 3,082 current assembly payloads, 9,428 version engine receipts and 104,741 historical embedded payloads. No downstream purge occurs here. Sealed-history removal requires explicit source-preserving provenance handling; no silent hash rewrite. Protected Viewfinder, Atlas signals, intake and Rosetta V12 are untouched.

@@ -61,7 +61,16 @@ describe("Lighthouse web/background runtime boundary", () => {
     expect(docket_routes).toContain('error: "background_runtime_required"');
     expect(docket_routes).toContain('source: "cache_stale_worker_paused"');
     expect(civic_genome_router).toContain("const workerAdminProcedure = adminProcedure.use");
-    expect(civic_genome_router.match(/workerAdminProcedure/g)?.length).toBe(8);
+    const expected_worker_mutations = [
+      "orchestrate_rosetta_complete", "project_from_docket_cache",
+      "resolve_or_assemble_docket_bill", "ingest_docket_bill_to_rosetta_source",
+      "process_docket_bill_through_rosetta", "assemble_rosetta_structural_dna",
+      "backfill_explicit_rosetta_bindings", "resolve_family",
+    ];
+    const actual_worker_mutations = [...civic_genome_router.matchAll(
+      /^\s+([a-z_]+): workerAdminProcedure\b/gm,
+    )].map(match => match[1]);
+    expect(actual_worker_mutations.sort()).toEqual(expected_worker_mutations.sort());
     for (const mutation of [
       "reenableStream",
       "resetFailureCounters",

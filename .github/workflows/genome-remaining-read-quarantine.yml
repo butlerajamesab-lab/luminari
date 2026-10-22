@@ -1,0 +1,40 @@
+name: Genome remaining interpretation read quarantine
+on:
+  pull_request:
+    paths:
+      - 'server/civic-genome-external-snapshot-producer.ts'
+      - 'server/civic-genome-external-snapshot-producer.test.ts'
+      - 'server/services/prism-rosetta-structural-context.ts'
+      - 'server/services/rosetta-publication-retry.test.ts'
+      - 'server/services/prism-rosetta-batch-budget.test.ts'
+      - 'server/genome-remaining-read-quarantine.test.ts'
+      - 'server/runtime-role-boundary.contract.test.ts'
+      - 'server/civic-genome-rosetta-publication-quarantine.ts'
+      - '.github/workflows/genome-remaining-read-quarantine.yml'
+permissions:
+  contents: read
+jobs:
+  read-quarantine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      - run: >-
+          pnpm exec vitest run
+          server/genome-remaining-read-quarantine.test.ts
+          server/runtime-role-boundary.contract.test.ts
+          server/civic-genome-external-snapshot-contract.test.ts
+          server/civic-genome-external-snapshot-producer.test.ts
+          server/services/rosetta-publication-retry.test.ts
+          server/services/prism-rosetta-contract-v25.test.ts
+          server/services/prism-rosetta-batch-budget.test.ts
+          server/civic-genome-atlas-handoff.test.ts
+          server/civic-genome-kaleidoscope-handoff.test.ts
+          server/civic-genome-prism-snapshot-handoff.test.ts
+      - run: pnpm build
