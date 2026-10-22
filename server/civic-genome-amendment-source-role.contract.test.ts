@@ -48,7 +48,7 @@ describe("current legislative amendment/source-role contract", () => {
     const resolve = body.indexOf("resolve_current_amendment_attachment");
     const attach = body.indexOf("register_rosetta_amendment_attachment");
     const deltaHold = body.indexOf("legislative_amendment_delta_execution_contract_unavailable");
-    const currentRead = body.indexOf("load_rosetta_current_docket_result_for_binding");
+    const currentRead = body.indexOf("require_v12_admission_for_binding");
     expect(preserve).toBeGreaterThanOrEqual(0);
     expect(record).toBeGreaterThan(preserve);
     expect(resolve).toBeGreaterThan(record);

@@ -5,6 +5,9 @@ const { query, attach_current } = vi.hoisted(() => ({
   attach_current: vi.fn(),
 }));
 
+vi.mock("./civic-genome-rosetta-publication-quarantine", () => ({
+  is_genome_rosetta_publication_quarantined: () => false,
+}));
 vi.mock("./db", () => ({
   query_with_diagnostics: query,
 }));

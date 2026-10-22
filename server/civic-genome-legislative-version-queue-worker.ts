@@ -1016,9 +1016,9 @@ export async function process_legislative_version_job(
       await park_amendment_dependency(job, amendment_hold);
       return;
     }
-    const current_status = /^rosetta_public_current_docket_result_(awaiting_analysis|requires_review|unavailable|awaiting_publication)$/.exec(safe_error_code(error));
+    const current_status = /^rosetta_v12_(certification_receipt_missing|live_rule_http_404|hold_receipt_present|failure_receipts_present|decomposition_not_decomposed|genome_assembly_adapter_unavailable)$/.exec(safe_error_code(error));
     if (current_status) {
-      // Waiting on Rosetta is not a failed decomposition and consumes no retry.
+      // V12 held, failed, missing certification and adapter-blocked states retain their distinct\n      // exact reason and consume no retry. Never substitute a historical decomposition.
       // Resume only after an explicit reconciliation observes a new current result.
       await query_with_diagnostics(`update public.civic_genome_legislative_version_queue
         set queue_state='degraded', next_attempt_at='infinity'::timestamptz,

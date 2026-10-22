@@ -99,6 +99,7 @@ export const REGISTERED_CLIENT_ROUTE_PATTERNS = [
   "/resolve",
   "/diagnostics",
   "/mudroom",
+  "/oauth/consent",
   "/login",
   "/workshop",
   "/workbench/:caseId",

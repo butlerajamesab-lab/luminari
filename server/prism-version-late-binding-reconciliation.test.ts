@@ -13,10 +13,12 @@ describe("Prism bill-version late-binding reconciliation", () => {
   const pipeline = read_repo_file("./civic-genome-legislative-version-pipeline.ts");
 
   it("covers the observed assembly-link race without changing canonical Prism runs", () => {
-    const assemblyComplete = pipeline.indexOf("await assemble_rosetta_and_resolve_family");
-    const versionBinding = pipeline.indexOf("await record_assembled(bill_version_id, assembly)");
-    expect(assemblyComplete).toBeGreaterThanOrEqual(0);
-    expect(versionBinding).toBeGreaterThan(assemblyComplete);
+    // The historical SQL race still exists as an archival migration, but the
+    // V12 source path cannot reuse the legacy assembly and Prism handoff.
+    expect(pipeline).toContain("await require_v12_admission_for_binding({");
+    expect(pipeline).toContain('throw new Error("rosetta_v12_genome_assembly_adapter_unavailable")');
+    expect(pipeline).not.toContain("await assemble_rosetta_and_resolve_family");
+    expect(pipeline).not.toContain("await record_assembled(bill_version_id, assembly)");
 
     expect(migration).toContain(
       "create trigger civic_genome_bill_version_prism_late_binding",

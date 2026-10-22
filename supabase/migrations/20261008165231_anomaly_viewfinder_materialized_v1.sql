@@ -1,13 +1,3 @@
--- Materialized view for Anomaly Viewfinder jurisdiction profiles.
---
--- The live view v_anomaly_viewfinder_live_v1 re-scans
--- luminari_civic_object_reconciliation_v1 (275k+ rows) 8+ times per request
--- via correlated subqueries, causing 8-second timeouts under any real load.
--- This materialized view runs that scan once every 30 minutes via pg_cron and
--- serves all concurrent reads from the cached result at sub-millisecond latency.
---
--- The live view is preserved unchanged as the data source for the refresh job.
-
 create materialized view public.mv_anomaly_viewfinder_live_v1 as
 with snapshot as (
   select
@@ -300,23 +290,36 @@ from all_profiles;
 comment on materialized view public.mv_anomaly_viewfinder_live_v1 is
   'Materialized cache of v_anomaly_viewfinder_live_v1. Refreshed every 30 minutes by pg_cron. Serves all concurrent Anomaly Viewfinder jurisdiction reads at sub-millisecond latency. Refresh is concurrent — reads never block during refresh.';
 
--- Indexes for fast jurisdiction lookups.
 create unique index mv_anomaly_viewfinder_live_v1_jurisdiction_code_idx
   on public.mv_anomaly_viewfinder_live_v1 (jurisdiction_code);
 
 create index mv_anomaly_viewfinder_live_v1_jurisdiction_name_idx
   on public.mv_anomaly_viewfinder_live_v1 (jurisdiction_name);
 
--- Grant service_role read access (matches the live view grant).
 revoke all on public.mv_anomaly_viewfinder_live_v1 from public;
 revoke all on public.mv_anomaly_viewfinder_live_v1 from anon;
 revoke all on public.mv_anomaly_viewfinder_live_v1 from authenticated;
 grant select on public.mv_anomaly_viewfinder_live_v1 to service_role;
 
--- Schedule a concurrent refresh every 30 minutes via pg_cron.
--- Concurrent refresh requires the unique index above to already exist.
-select cron.schedule(
-  'refresh_mv_anomaly_viewfinder_live_v1',
-  '*/30 * * * *',
-  $$refresh materialized view concurrently public.mv_anomaly_viewfinder_live_v1$$
-);
+-- On production Supabase, pg_cron is installed and the schedule is mandatory.
+-- Local and preview Supabase replay stacks need not expose that extension:
+-- replay creates the same cached Viewfinder structure, while truthfully
+-- leaving scheduled refresh unconfigured rather than fabricating a cron job.
+-- The original installed production statement is retained byte-for-byte in
+-- supabase/verification/applied; replay divergence is pinned in the audit.
+do $viewfinder_refresh_schedule$
+begin
+  if to_regclass('cron.job') is not null
+     and to_regprocedure('cron.schedule(text,text,text)') is not null then
+    execute $viewfinder_cron$
+      select cron.schedule(
+        'refresh_mv_anomaly_viewfinder_live_v1',
+        '*/30 * * * *',
+        $refresh$refresh materialized view concurrently public.mv_anomaly_viewfinder_live_v1$refresh$
+      )
+    $viewfinder_cron$;
+  else
+    raise notice 'viewfinder_pg_cron_unavailable_refresh_not_scheduled';
+  end if;
+end
+$viewfinder_refresh_schedule$;
