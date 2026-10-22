@@ -318,14 +318,16 @@ APPROVED_REPOSITORY_ONLY = {
         "20261001230000_finalize_docket_lineage_authority_handoff.sql",
         "f0c315d66d8e3bbbdf310ee7f12189056b5261f7",
     ),
-    # LegiScan 10k/month quota-safety repair pending normal production apply.
+    # LegiScan quota-safe repair remains repository-only, not installed in
+    # production. This exact Git blob includes bounded current-window joins
+    # validated against live read-only eligibility probes (2026-10-19).
     "20261002060000": (
         "20261002060000_legiscan_public_api_budget.sql",
         "e518dbbf10c3178c105bdd32126c0f3ce5307037",
     ),
     "20261002061000": (
         "20261002061000_docket_quota_safe_current_window.sql",
-        "c7cb3876d2fc8fba3e57516163b42b9cf72e9848",
+        "33b9d4aa115696877d5a0c6288ba9d9563deca3f",
     ),
 }
 
@@ -552,12 +554,14 @@ SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
 
 REPLAY_ALIAS_RECEIPTS = {
     # Production-applied four-view retirement SQL is archived unchanged.
+    # The replay-only alias also recognizes the exact pre-cut ACL state on
+    # disposable Supabase previews; production applied bytes are NOT changed.
     # Fresh replay demands the same 4-view/10-trigger ACL and hash checks,
     # but checks the previous local migration by identity, not production
     # statements-array formatting.
     "20261017000912": (
         "0dcc197ff30adf74f88ed4d358f572dd",
-        "2291d56d4b6e97773ad4354a9b2d8740aadc7392",
+        "83c9f0d8d688f123d3bb6b0ca4244d0b86afa99c",
     ),
     # Fresh Supabase replay lacks pg_cron. Production-applied SQL is preserved
     # byte-for-byte under verification/applied; replay skips only cron.schedule
