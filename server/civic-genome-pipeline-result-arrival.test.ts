@@ -20,10 +20,11 @@ describe("result arrival does not erase independent queue or publication evidenc
     expect(pipelinePublicationPresentation(arrived).value).toBe("Held — reconciliation needed");
   });
 
-  it("does not label a saved publication of the same source as a prior source", () => {
+  it("does not let old saved-publication metadata override a current-result read failure", () => {
     const result = pipelinePublicationPresentation({ ...held, contract_state: "contract_error", published_source_document_id: 19607 });
-    expect(result.value).toBe("Saved snapshot available");
-    expect(result.detail).not.toContain("not a current-version result");
+    expect(result.value).toBe("Status unavailable");
+    expect(result.detail).toContain("No publication is inferred");
+    expect(result.detail).not.toContain("Saved snapshot");
   });
 
   it("keeps a rejected result blocked when stale hold metadata remains", () => {

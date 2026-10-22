@@ -1,11 +1,13 @@
 import { emitSignal, resolveSignalsForTarget } from "./live-signal-emitter";
 import { z } from "zod";
 import { signalExtractionRouter } from "./routers/signal-extraction-router";
-import { router, publicProcedure, protectedProcedure, adminProcedure } from "./_core/trpc";
+import { router, publicProcedure, protectedProcedure, authenticatedProcedure, adminProcedure } from "./_core/trpc";
 import { systemRouter } from "./_core/systemRouter";
 import * as db_helpers from "./db";
 import { db } from "./db";
 import { TRPCError } from "@trpc/server";
+import { fetchSupabaseAuthUser } from "./_core/context";
+import { ensure_supabase_user_profile } from "./user-onboarding";
 import { eq, desc, and, sql } from "drizzle-orm";
 import { runDedupScan } from "./entity-dedup";
 import { runClaimBackfill } from "./claim-backfill";
@@ -1448,6 +1450,31 @@ const presentationsRouter = router({
 const authRouter = router({
   me: publicProcedure.query(async ({ ctx }) => {
     return ctx.user ?? null;
+  }),
+  // A verified Supabase session can bootstrap a free runtime profile.
+  // This is the only registration write and never grants an admin role.
+  bootstrap: authenticatedProcedure.mutation(async ({ ctx }) => {
+    const raw_token = ctx.req.headers["x-lighthouse-supabase-session"];
+    const session_token = Array.isArray(raw_token) ? raw_token[0] : raw_token;
+    if (!session_token) {
+      throw new TRPCError({ code: "UNAUTHORIZED", message: "Supabase session required." });
+    }
+
+    let identity: { id?: string; email?: string } | null = null;
+    try {
+      identity = await fetchSupabaseAuthUser(session_token);
+    } catch {
+      throw new TRPCError({ code: "UNAUTHORIZED", message: "Could not verify Supabase session." });
+    }
+    if (!identity?.id) {
+      throw new TRPCError({ code: "UNAUTHORIZED", message: "Verified account identity required." });
+    }
+
+    try {
+      return await ensure_supabase_user_profile(identity.id, identity.email ?? null);
+    } catch {
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Account profile could not be prepared. Please try again." });
+    }
   }),
   logout: protectedProcedure.mutation(async ({ ctx }) => {
     // Cookie clearing is handled by the framework

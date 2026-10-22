@@ -1,4 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// Historical wire/hash and transaction fixtures only. Real publication refusal is
+// exercised with the actual gate in genome-remaining-read-quarantine.test.ts.
+vi.mock("./civic-genome-rosetta-publication-quarantine", () => ({
+  assert_genome_rosetta_publication_admitted: vi.fn(),
+}));
 import {
   CIVIC_GENOME_EXTERNAL_FAMILY_CURRENT_CURSOR_SQL,
   CIVIC_GENOME_EXTERNAL_FAMILY_DATASET_SQL,

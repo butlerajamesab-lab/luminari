@@ -17,7 +17,7 @@ describe("Docket refresh / Rosetta execution boundary", () => {
 
   it("keeps automatic cache and Genome registration non-executing", () => {
     const migration = read(
-      "supabase/migrations/20260918215000_docket_refresh_registration_only.sql",
+      "supabase/migrations/20260918214924_docket_refresh_registration_only.sql",
     );
     expect(migration).toContain(
       "register_docket_legislative_version_spine(new.bill_id, false)",
@@ -30,10 +30,16 @@ describe("Docket refresh / Rosetta execution boundary", () => {
     );
   });
 
-  it("does not auto-start legislative execution in the production worker blueprint", () => {
+  it("runs the existing legislative worker only in ordinary current-source scope", () => {
     const blueprint = read("render.prism-worker.yaml");
     expect(blueprint).toMatch(
-      /- key: LEGISLATIVE_VERSION_QUEUE_ENABLED\s+value: "false"/,
+      /- key: LEGISLATIVE_VERSION_QUEUE_ENABLED\s+value: "true"/,
+    );
+    expect(blueprint).toMatch(
+      /- key: LEGISLATIVE_VERSION_CURRENT_SOURCES_ENABLED\s+value: "true"/,
+    );
+    expect(blueprint).toMatch(
+      /- key: LEGISLATIVE_VERSION_QUEUE_RECOVERY_CONTRACT_SCOPE\s+value: ""/,
     );
   });
 });

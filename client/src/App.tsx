@@ -100,6 +100,7 @@ import CaseResolutionLens from "./pages/CaseResolutionLens";
 import StructuralDiagnosticsLens from "./pages/StructuralDiagnosticsLens";
 import Mudroom from "./pages/Mudroom";
 import Login from "./pages/Login";
+import OAuthConsent from "./pages/OAuthConsent";
 import WorkshopFloor from "./pages/WorkshopFloor";
 import WorkbenchDashboard from "./pages/WorkbenchDashboard";
 import EvidenceLab from "./pages/EvidenceLab";
@@ -163,6 +164,7 @@ function App() {
           <PlainLanguageProvider>
             <CaseProvider>
               <Switch>
+                <Route path="/oauth/consent" component={OAuthConsent} />
                 <Route path="/welcome" component={Welcome} />
                 <Route path="/intake"><ValidationRouteWrapper><Intake /></ValidationRouteWrapper></Route>
                 <Route path="/case/:id"><ValidationRouteWrapper><Case /></ValidationRouteWrapper></Route>
