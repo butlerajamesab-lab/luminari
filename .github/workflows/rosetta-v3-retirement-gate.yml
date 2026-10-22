@@ -1,0 +1,25 @@
+name: Rosetta V3 retirement gate
+
+on:
+  pull_request:
+    paths:
+      - 'server/civic-genome-rosetta-extraction.ts'
+      - 'server/civic-genome-rosetta-control-repair.ts'
+      - 'server/rosetta-v3-retirement.contract.test.ts'
+      - '.github/workflows/rosetta-v3-retirement-gate.yml'
+
+jobs:
+  retirement-contract:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Prove V3 retirement and preserved source transport
+        run: pnpm exec vitest run server/rosetta-v3-retirement.contract.test.ts server/official-source-response.test.ts

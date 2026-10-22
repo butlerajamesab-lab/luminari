@@ -1,3 +1,4 @@
+import { assert_genome_rosetta_publication_admitted } from "./civic-genome-rosetta-publication-quarantine";
 import { getPool } from "./db";
 import { computeCanonicalHash } from "./lib/determinism";
 import {
@@ -665,6 +666,9 @@ export function build_civic_genome_family_snapshot_v1(
   input_dataset: civic_genome_external_family_dataset_v1,
   options: civic_genome_external_snapshot_build_options_v1,
 ): civic_genome_external_snapshot_v1 {
+  // Historical full-row/trait exports cannot acquire a new receipt while interpretation is quarantined.
+  // Reject before inspecting input/options, opening a transaction, reading sealed history or hashing an export.
+  assert_genome_rosetta_publication_admitted();
   const as_of = iso(options.as_of, "as_of");
   const generated_at = iso(options.generated_at ?? new Date().toISOString(), "generated_at");
   const family_id = text(input_dataset.family.family_id) ?? fail("family.family_id is missing");
@@ -866,6 +870,9 @@ export async function produce_civic_genome_family_snapshot_v1(
   options: civic_genome_external_snapshot_build_options_v1,
   dependencies: { pool?: query_pool } = {},
 ): Promise<civic_genome_external_snapshot_v1> {
+  // Historical full-row/trait exports cannot acquire a new receipt while interpretation is quarantined.
+  // Reject before inspecting input/options, opening a transaction, reading sealed history or hashing an export.
+  assert_genome_rosetta_publication_admitted();
   const as_of = iso(options.as_of, "as_of");
   const { as_of: _as_of, ...build_options } = options;
   return within_civic_genome_external_snapshot_transaction(dependencies, client =>
@@ -882,6 +889,9 @@ export async function produce_current_civic_genome_family_snapshot_v1(
   options: civic_genome_external_current_snapshot_build_options_v1,
   dependencies: { pool?: query_pool } = {},
 ): Promise<civic_genome_external_snapshot_v1> {
+  // Historical full-row/trait exports cannot acquire a new receipt while interpretation is quarantined.
+  // Reject before inspecting input/options, opening a transaction, reading sealed history or hashing an export.
+  assert_genome_rosetta_publication_admitted();
   const as_of_floor = iso(options.as_of_floor, "as_of_floor");
   const { as_of_floor: _as_of_floor, ...build_options } = options;
   return within_civic_genome_external_snapshot_transaction(dependencies, async client => {

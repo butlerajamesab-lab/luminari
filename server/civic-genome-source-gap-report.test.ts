@@ -52,7 +52,7 @@ it("still fails closed when a published verified source loses its exact text", a
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("[]", { status: 200 })));
   await expect(render_civic_genome_human_report({
     source_bill_id: 1, bill_detail: {
-      bill: {}, structural_dna: { traits: [], validation_summary: {} },
+      bill: {}, structural_dna: { snapshot_state: "current", traits: [], validation_summary: {} },
       current_version: { source_document_id: 7, processing_state: "verified" },
       published_version: { source_document_id: 7, processing_state: "verified" },
     },

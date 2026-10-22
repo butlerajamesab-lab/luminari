@@ -11,6 +11,7 @@ describe("Anomaly Viewfinder live jurisdiction cutover contract", () => {
   const service = read("./services/anomaly-viewfinder-live.ts");
   const router = read("./routers/resource-directory.ts");
   const migration = read("../supabase/migrations/20260816111545_anomaly_viewfinder_live_jurisdiction_projection_v1.sql");
+  const materializedMigration = read("../supabase/migrations/20261008165231_anomaly_viewfinder_materialized_v1.sql");
   const parity = read("../scripts/audit-supabase-migration-ledger-parity.py");
   const productionReceipts = read("../supabase/verification/production_migration_receipts_20260829.tsv");
 
@@ -31,7 +32,10 @@ describe("Anomaly Viewfinder live jurisdiction cutover contract", () => {
   it("routes the browser through the existing governed tRPC seam", () => {
     expect(router).toContain("viewfinderStates: publicProcedure.query");
     expect(router).toContain("getLiveAnomalyViewfinderStates");
-    expect(service).toContain('public.v_anomaly_viewfinder_live_v1');
+    // The governed tRPC route uses the installed materialized reader, not the
+    // historical full-scan live view. Do not weaken this to a generic view match.
+    expect(service).toContain('public.mv_anomaly_viewfinder_live_v1');
+    expect(service).not.toContain('const VIEWFINDER_VIEW = "public.v_anomaly_viewfinder_live_v1"');
     expect(service).not.toMatch(/\$\{\s*input/i);
   });
 
@@ -40,6 +44,12 @@ describe("Anomaly Viewfinder live jurisdiction cutover contract", () => {
     expect(migration).toContain("revoke all on public.v_anomaly_viewfinder_live_v1 from anon");
     expect(migration).toContain("revoke all on public.v_anomaly_viewfinder_live_v1 from authenticated");
     expect(migration).toContain("grant select on public.v_anomaly_viewfinder_live_v1 to service_role");
+    expect(materializedMigration).toContain("revoke all on public.mv_anomaly_viewfinder_live_v1 from public");
+    expect(materializedMigration).toContain("revoke all on public.mv_anomaly_viewfinder_live_v1 from anon");
+    expect(materializedMigration).toContain("revoke all on public.mv_anomaly_viewfinder_live_v1 from authenticated");
+    expect(materializedMigration).toContain("grant select on public.mv_anomaly_viewfinder_live_v1 to service_role");
+    expect(materializedMigration).toContain("create unique index mv_anomaly_viewfinder_live_v1_jurisdiction_code_idx");
+    expect(materializedMigration).toContain("refresh materialized view concurrently public.mv_anomaly_viewfinder_live_v1");
   });
 
   it("preserves source-bound Colorado fallback and provenance", () => {
@@ -64,4 +74,17 @@ describe("Anomaly Viewfinder live jurisdiction cutover contract", () => {
     expect(page).toContain('domain={mode === "anomalies" ? "live_data" : "legal_pattern"}');
     expect(page).toContain("Raw source text is authoritative");
   });
+  it("replays Viewfinder without silently claiming pg_cron in disposable databases", () => {
+    const applied = read("../supabase/verification/applied/20261008165231_anomaly_viewfinder_materialized_v1.sql");
+    expect(applied).toContain("select cron.schedule(");
+    expect(materializedMigration).toContain("to_regclass('cron.job')");
+    expect(materializedMigration).toContain("to_regprocedure('cron.schedule(text,text,text)')");
+    expect(materializedMigration).toContain("viewfinder_pg_cron_unavailable_refresh_not_scheduled");
+    expect(materializedMigration).toContain("refresh materialized view concurrently public.mv_anomaly_viewfinder_live_v1");
+    expect(parity).toContain('"20261008165231"');
+    expect(parity).toContain('"3e581fb3463802ffa2296715b87bdadd"');
+    expect(parity).toContain('"671161c8174d5f82805e0ac7ba03791cdf346be0"');
+    expect(parity).toContain('"e42f2336952dd26928ddabc2ecaa34305613ffef"');
+  });
+
 });

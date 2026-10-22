@@ -39,13 +39,15 @@ describe("minimum Lighthouse queue stabilization", () => {
     expect(legislative).toContain("for update of queue skip locked");
     expect(legislative).toContain("reconcile_completed_jobs_if_due");
     expect(legislative).toContain("[LegislativeVersionQueue] completion_deferred");
-    const completion_start = legislative.indexOf("await mark_job_completed({");
-    const next_cycle_start = legislative.indexOf(
-      "export async function run_legislative_version_queue_cycle",
+    const completion_start = legislative.indexOf("async function finalize_completed_job(");
+    const completion_end = legislative.indexOf(
+      "async function mark_job_failed",
       completion_start,
     );
-    const completion_path = legislative.slice(completion_start, next_cycle_start);
+    const completion_path = legislative.slice(completion_start, completion_end);
     expect(completion_start).toBeGreaterThan(-1);
+    expect(completion_end).toBeGreaterThan(completion_start);
+    expect(completion_path).toContain("await mark_job_completed({ job, assembly_run_id })");
     expect(completion_path).toContain("[LegislativeVersionQueue] completion_deferred");
     expect(completion_path).not.toContain("mark_job_failed");
   });

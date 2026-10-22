@@ -10,7 +10,7 @@ const MAX_BATCH_SIZE = 10;
 const INITIAL_DELAY_MS = 30_000;
 const REQUEST_TIMEOUT_MS = 180_000;
 const WARM_STATE_DELAY_MS = 750;
-const STATE_CACHE_TTL_MS = 8 * 60 * 60 * 1000;
+const STATE_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 let interval_timer: NodeJS.Timeout | null = null;
 let initial_timer: NodeJS.Timeout | null = null;

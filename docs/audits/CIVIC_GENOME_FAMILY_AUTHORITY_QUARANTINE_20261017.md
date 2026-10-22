@@ -1,0 +1,9 @@
+# Civic Genome family authority quarantine — 2026-10-17
+
+The current persistent family resolver uses weighted-confirmed-traits-v2. Its two exported async entry points previously reached stored trait rows without the shared publication gate; a stored confirmed label does not establish source or selected-runtime validity. This cut closes both entries before pool/client access, transaction creation, identity lookup, trait comparison, reassignment, event rewrites, candidate receipts or snapshot writes.
+
+Existing bill/family identities remain unchanged. This does not validate inherited memberships, choose new families, remove source evidence, promote a runtime or change Docket source registration. Pure deterministic candidate-materialization and score fixtures remain inspectable and tested; they are not canonical admission proof. The new tests invoke the actual closed gate, use a hostile caller-owned client and assert no queries or connection acquisition.
+
+A fresh read-only trait census found 99,159 rows across nine disqualified engine identities. Ordered SHA-256 of their complete JSON rows: 4c1ee67896649daee438bdc847da6dbef71f5eea37a2186d51f617ad6f170f0c. The only incoming trait FK is a NO ACTION verification-binding FK; the binding table is empty. No physical deletion is part of this code cut. A separate atomic purge must recheck those facts, all writer fences, delete-trigger/FK drift, and source/identity/event/history conservation before committing. Sealed history and current receipts need separate source-preserving retirement contracts; they must not be silently rewritten.
+
+Validation: targeted actual-gate tests, unchanged pure resolver tests, remaining-reader quarantine tests, full TypeScript and production builds. CI results and deployment are recorded separately from this design.

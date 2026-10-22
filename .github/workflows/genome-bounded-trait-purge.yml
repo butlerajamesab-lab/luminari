@@ -1,0 +1,44 @@
+name: Genome bounded trait purge
+on:
+  pull_request:
+    paths:
+      - 'supabase/migration_sources/purge_disqualified_genome_traits_20261017.sql'
+      - 'supabase/verification/disqualified_genome_trait_manifest_20261017.json'
+      - 'scripts/test-genome-trait-purge.cjs'
+      - '.github/workflows/genome-bounded-trait-purge.yml'
+      - 'supabase/migrations/20261017021051_purge_disqualified_genome_traits_20261017.sql'
+      - 'supabase/verification/applied/20261017021051_purge_disqualified_genome_traits_20261017.sql'
+      - 'scripts/audit-supabase-migration-ledger-parity.py'
+      - 'scripts/test-genome-production-replay-receipt.py'
+permissions:
+  contents: read
+jobs:
+  trait-purge-postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: fixture_only
+          POSTGRES_DB: genome_quarantine_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d genome_quarantine_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: fixture_only
+      PGDATABASE: genome_quarantine_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: sudo apt-get update -qq && sudo apt-get install -y postgresql-client
+      - run: node scripts/test-genome-trait-purge.cjs
+      - run: python3 scripts/test-genome-production-replay-receipt.py
