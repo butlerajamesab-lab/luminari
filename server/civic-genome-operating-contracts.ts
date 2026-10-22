@@ -5,6 +5,7 @@ import { is_genome_rosetta_publication_quarantined } from "./civic-genome-rosett
 import { get_kaleidoscope_civic_genome_contract } from "./civic-genome-kaleidoscope-contract";
 import { get_rosetta_review_base_url } from "./civic-genome-rosetta-evaluation";
 import { describeUnobservedCurrentResult, isCurrentResultHold } from "../shared/civic-genome-pipeline-observation";
+import { ROSETTA_GENOME_STRUCTURAL_ENGINE_VERSION, ROSETTA_GENOME_STRUCTURAL_RULE_VERSION } from "./civic-genome-rosetta-assembly";
 
 export type civic_genome_contract_state =
   | "operational"
@@ -306,6 +307,10 @@ export async function get_civic_genome_rosetta_pipeline_status(
       current_source_document_id: number | null;
       current_source_document_key: string | null;
       current_source_content_hash: string | null;
+      current_assembly_run_id: string | null;
+      current_assembly_input_hash: string | null;
+      current_assembly_engine_version: string | null;
+      current_assembly_rule_version: string | null;
       queue_state: string | null;
       queue_attempt_count: number | null;
       queue_last_failure_class: string | null;
@@ -316,7 +321,11 @@ export async function get_civic_genome_rosetta_pipeline_status(
          select bill_version_id, version_type, processing_state,
                 rosetta_source_document_id::integer as current_source_document_id,
                 source_document_key as current_source_document_key,
-                receipt_json ->> 'source_content_hash' as current_source_content_hash
+                receipt_json ->> 'source_content_hash' as current_source_content_hash,
+                assembly_run_id::text as current_assembly_run_id,
+                receipt_json ->> 'assembly_input_hash' as current_assembly_input_hash,
+                receipt_json ->> 'assembly_engine_version' as current_assembly_engine_version,
+                receipt_json ->> 'assembly_rule_version' as current_assembly_rule_version
            from public.civic_genome_bill_version
           where source_bill_id = $1
             and document_family = 'text'
@@ -328,6 +337,10 @@ export async function get_civic_genome_rosetta_pipeline_status(
               current.current_source_document_id,
               current.current_source_document_key,
               current.current_source_content_hash,
+              current.current_assembly_run_id,
+              current.current_assembly_input_hash,
+              current.current_assembly_engine_version,
+              current.current_assembly_rule_version,
               queue.queue_state,
               queue.attempt_count as queue_attempt_count,
               queue.last_failure_class as queue_last_failure_class,
@@ -450,6 +463,61 @@ export async function get_civic_genome_rosetta_pipeline_status(
       && selected.rule_set_version === current.rule_set_version
       && selected.rule_manifest_hash.toLowerCase() === current.rule_manifest_hash.toLowerCase();
   }
+  // A certified prior assembly must be identified by the *same* current source,
+  // execution, generation and output hashes. Never consult a generation-blind
+  // "latest" row, and never query historical assemblies while quarantined.
+  let assembled = false;
+  if (
+    admitted
+    && bill?.genome_bill_id
+    && Number.isSafeInteger(Number(current.extraction_run_id))
+    && Number(current.extraction_run_id) > 0
+    && /^[0-9a-f]{64}$/i.test(current.output_content_hash ?? "")
+    // The bill-version receipt is joined to its persisted assembly in the
+    // canonical record_assembled writer; without that run + input hash, there
+    // is no proof that the current Genome adapter already assembled the view.
+    && /^[0-9a-f]{64}$/i.test(version.current_assembly_input_hash ?? "")
+    && /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(version.current_assembly_run_id ?? "")
+    && version.current_assembly_engine_version === ROSETTA_GENOME_STRUCTURAL_ENGINE_VERSION
+    && version.current_assembly_rule_version === ROSETTA_GENOME_STRUCTURAL_RULE_VERSION
+  ) {
+    const existing = await getPool().query<{ assembled: boolean }>(
+      `select exists (
+         select 1 from public.civic_genome_assembly_run
+          where genome_bill_id = $1::uuid
+            and source_document_id = $2::bigint
+            and assembly_run_id = $9::uuid
+            and engine_version = $10::text
+            and rule_version = $11::text
+            and lower(input_hash) = lower($12::text)
+            and extraction_run_id = $3::text
+            and rosetta_engine_version = $4::text
+            and rosetta_rule_set_version = $5::text
+            and lower(rosetta_rule_manifest_hash) = lower($6::text)
+            and lower(rosetta_source_content_hash) = lower($7::text)
+            and lower(rosetta_output_content_hash) = lower($8::text)
+            and run_status = 'completed'
+            and verification_state = 'complete'
+            and malformed_object_count = 0
+       ) as assembled`,
+      [
+        bill.genome_bill_id,
+        source_document_id,
+        String(current.extraction_run_id),
+        current.engine_version,
+        current.rule_set_version,
+        current.rule_manifest_hash,
+        version.current_source_content_hash,
+        current.output_content_hash,
+        version.current_assembly_run_id,
+        ROSETTA_GENOME_STRUCTURAL_ENGINE_VERSION,
+        ROSETTA_GENOME_STRUCTURAL_RULE_VERSION,
+        version.current_assembly_input_hash,
+      ],
+    );
+    assembled = existing.rows[0]?.assembled === true;
+  }
+
   return {
     ...shared,
     extraction_run_id: Number(current.extraction_run_id),
@@ -457,10 +525,12 @@ export async function get_civic_genome_rosetta_pipeline_status(
     provenance_state: null, // Public current result has no object-level provenance layer.
     object_count: null, // Object counts are not supplied by the current result API.
     coverage: null, // Layer status receipts are nonnumeric; never fabricate coverage.
-    can_assemble: admitted,
-    contract_state: admitted ? "ready_for_assembly" : "awaiting_current_result",
+    can_assemble: admitted && !assembled,
+    contract_state: admitted ? (assembled ? "assembled" : "ready_for_assembly") : "awaiting_current_result",
     contract_message: admitted
-      ? "An exact current-result receipt agrees with the selected-runtime target. Assembly is separately governed."
+      ? (assembled
+          ? "The exact selected-runtime source, execution, and generation already have a completed verified assembly."
+          : "An exact current-result receipt agrees with the selected-runtime target. Assembly is separately governed.")
       : "A selected-runtime result exists, but Genome publication is quarantined or its generation target is unverified. No historic output is substituted.",
   };
 }

@@ -113,6 +113,38 @@ describe("Docket operational authority lock", () => {
     expect(quota_window_migration).toContain("legiscan_provider_capacity_reclassification_v1");
   });
 
+  it("materializes bounded top-100 cache identities before historical activation joins", () => {
+    // Both governed current-source view and provider-failure recovery must
+    // unpack each state cache once, not once per historical activation binding.
+    const [authoritySql, recoverySql = ""] = quota_window_migration.split(
+      "-- Repair only currently visible top-100 generations",
+    );
+    for (const section of [authoritySql, recoverySql]) {
+      expect(section).toContain("current_top_bill_ids as materialized");
+      expect(section).toContain("select distinct");
+      expect(section).toContain("jsonb_array_elements(cache.bills)");
+      expect(section).toContain("current_bill.ordinality <= 100");
+      expect(section).toContain("coalesce(current_bill.value ->> 'bill_id', '') ~ '^[0-9]+$'");
+      expect(section).toContain("activation.cache_fetched_at = current_bill.fetched_at");
+      expect(section).toContain("binding.source_bill_id = current_bill.source_bill_id");
+      expect(section).not.toMatch(/and exists\s*\(\s*select\s+1\s+from\s+jsonb_array_elements\(cache\.bills\)/);
+    }
+    expect(
+      quota_window_migration.match(/jsonb_array_elements\(cache\.bills\)/g),
+    ).toHaveLength(2);
+    expect(authoritySql).toContain("cache.fetched_at >= now() - interval '24 hours'");
+    expect(authoritySql).toContain("extract(year from cache.fetched_at at time zone 'UTC')");
+    expect(authoritySql).toContain("queue.queue_state = 'completed'");
+    expect(recoverySql).toContain("queue.queue_state = 'permanent_failure'");
+    expect(recoverySql).toContain("queue.last_error_code like 'legiscan_http_429_while_calling_%'");
+    expect(recoverySql).toContain("queue.last_error_code like 'legiscan_shared_api_error_while_calling_%'");
+    expect(recoverySql).toContain("queue.locked_at is null");
+    expect(recoverySql).toContain("queue.locked_by is null");
+    expect(recoverySql).toContain("prior_queue_state");
+    expect(recoverySql).toContain("prior_attempt_count");
+    expect(recoverySql).toContain("provider_error_code");
+  });
+
   it("makes Docket authority a hard current-source claim predicate", () => {
     expect(queue_worker).toContain(
       "join public.docket_current_authoritative_source_v1 current_authority",

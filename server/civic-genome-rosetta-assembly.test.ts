@@ -128,6 +128,20 @@ describe("engine-agnostic assembly acceptance (pure, even under publication quar
     },
   );
 
+  it("fails closed when a supposedly complete structural view has no source-content hash", () => {
+    const v = candidate({
+      source_content_hash: null,
+      structural_representations: [{
+        extraction_run_id: String(request.extraction_run_id),
+        representation_type: "source_stated_amendment_operation",
+        normalized_value: { operative_effect_applied: false },
+        source_block_id: "block-a",
+        metadata: { source_span: { char_offset_start: 1, char_offset_end: 12, block_content_hash: "f".repeat(64) } },
+      }],
+    });
+    expect(() => assert_view_identity(request, v)).toThrow("rosetta_admissible_run_missing_receipt");
+  });
+
   it("retains structural-only amendment evidence when specifically source-bound", () => {
     const v = candidate({
       structural_representations: [{

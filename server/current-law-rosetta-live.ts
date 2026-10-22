@@ -1,4 +1,4 @@
-import { get_rosetta_review_base_url } from "./civic-genome-rosetta-evaluation";
+import { get_rosetta_review_base_url } from "./rosetta-review-url";
 
 const CURRENT_ROSETTA_LAYERS = new Set(["H", "W", "A", "O", "D", "R"]);
 const CURRENT_ROSETTA_LIVE_TIMEOUT_MS = 10_000;
