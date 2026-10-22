@@ -1,0 +1,163 @@
+{
+  "before": {
+    "views": [
+      {
+        "acl": "{postgres=arwdDxtm/postgres,service_role=r/postgres}",
+        "anon": false,
+        "name": "v_civic_genome_prism_verification_status",
+        "service_role": true,
+        "authenticated": false,
+        "definition_md5": "c0707929b3015ddcf537498ef01f01cb"
+      },
+      {
+        "acl": "{postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+        "anon": false,
+        "name": "docket_bill_drift_delta",
+        "service_role": true,
+        "authenticated": false,
+        "definition_md5": "5cd3a477021b9794d0eaa46f7bc4b0e4"
+      },
+      {
+        "acl": "{postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+        "anon": false,
+        "name": "docket_bill_impact_callouts",
+        "service_role": true,
+        "authenticated": false,
+        "definition_md5": "e2b811f7140ee5f08fe20b517a14e334"
+      },
+      {
+        "acl": "{postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+        "anon": false,
+        "name": "docket_bill_obligation_checklist",
+        "service_role": true,
+        "authenticated": false,
+        "definition_md5": "2bd5ce9396cb757ccf8072377c73eb67"
+      }
+    ],
+    "counts": {
+      "bills": 39408,
+      "events": 265446,
+      "traits": 99159,
+      "history": 520443,
+      "families": 35203,
+      "versions": 38498
+    },
+    "observed_at": "2026-10-17T00:04:57.770787+00:00"
+  },
+  "after": {
+    "views": [
+      {
+        "acl": "{postgres=arwdDxtm/postgres}",
+        "anon": false,
+        "name": "v_civic_genome_prism_verification_status",
+        "service_role": false,
+        "authenticated": false,
+        "definition_md5": "c0707929b3015ddcf537498ef01f01cb"
+      },
+      {
+        "acl": "{postgres=arwdDxtm/postgres}",
+        "anon": false,
+        "name": "docket_bill_drift_delta",
+        "service_role": false,
+        "authenticated": false,
+        "definition_md5": "5cd3a477021b9794d0eaa46f7bc4b0e4"
+      },
+      {
+        "acl": "{postgres=arwdDxtm/postgres}",
+        "anon": false,
+        "name": "docket_bill_impact_callouts",
+        "service_role": false,
+        "authenticated": false,
+        "definition_md5": "e2b811f7140ee5f08fe20b517a14e334"
+      },
+      {
+        "acl": "{postgres=arwdDxtm/postgres}",
+        "anon": false,
+        "name": "docket_bill_obligation_checklist",
+        "service_role": false,
+        "authenticated": false,
+        "definition_md5": "2bd5ce9396cb757ccf8072377c73eb67"
+      }
+    ],
+    "counts": {
+      "bills": 39408,
+      "events": 265446,
+      "traits": 99159,
+      "history": 520443,
+      "families": 35203,
+      "versions": 38498
+    },
+    "ledger": {
+      "name": "retire_genome_legacy_structural_view_access_20261016",
+      "version": "20261017000912",
+      "statement_md5": "0dcc197ff30adf74f88ed4d358f572dd",
+      "statement_count": 1,
+      "statement_length": 8684,
+      "statement_array_md5": "2d464a8a5d7d803636ae8902d2214ee5"
+    },
+    "observed_at": "2026-10-17T00:09:26.534374+00:00",
+    "fence_triggers": [
+      {
+        "name": "zz_civic_genome_block_bill_rosetta_payload_v1",
+        "table": "civic_genome_bill",
+        "enabled": "O",
+        "body_md5": "ec8e3e387f823d806f926bd92585ec6e"
+      },
+      {
+        "name": "zz_civic_genome_block_rosetta_trait_write_v1",
+        "table": "civic_genome_trait",
+        "enabled": "O",
+        "body_md5": "87ffdb41a744456fb3863f2a0574b30c"
+      },
+      {
+        "name": "zz_civic_genome_block_rosetta_source_binding_write_v1",
+        "table": "civic_genome_rosetta_source_binding",
+        "enabled": "O",
+        "body_md5": "87ffdb41a744456fb3863f2a0574b30c"
+      },
+      {
+        "name": "zz_civic_genome_block_rosetta_assembly_write_v1",
+        "table": "civic_genome_assembly_run",
+        "enabled": "O",
+        "body_md5": "87ffdb41a744456fb3863f2a0574b30c"
+      },
+      {
+        "name": "zz_civic_genome_block_rosetta_activation_execution_v1",
+        "table": "civic_genome_rosetta_generation_activation_queue",
+        "enabled": "O",
+        "body_md5": "38c9a5480b91a640fe27776a7f0340bc"
+      },
+      {
+        "name": "zz_civic_genome_block_bill_version_rosetta_receipt_v1",
+        "table": "civic_genome_bill_version",
+        "enabled": "O",
+        "body_md5": "b29c9699c7831806f7ddcf346e309e22"
+      },
+      {
+        "name": "zz_civic_genome_block_rosetta_upgrade_execution_v1",
+        "table": "civic_genome_rosetta_generation_upgrade_queue",
+        "enabled": "O",
+        "body_md5": "38c9a5480b91a640fe27776a7f0340bc"
+      },
+      {
+        "name": "zz_civic_genome_block_rosetta_target_write_v1",
+        "table": "civic_genome_rosetta_generation_target",
+        "enabled": "O",
+        "body_md5": "87ffdb41a744456fb3863f2a0574b30c"
+      },
+      {
+        "name": "zz_civic_genome_block_rosetta_structural_representation_write_v",
+        "table": "civic_genome_rosetta_structural_representation",
+        "enabled": "O",
+        "body_md5": "87ffdb41a744456fb3863f2a0574b30c"
+      },
+      {
+        "name": "zz_civic_genome_guard_source_only_history_v1",
+        "table": "civic_genome_projection_entity_version",
+        "enabled": "O",
+        "body_md5": "8c281d2d552148d50059c665e5f6aabf"
+      }
+    ]
+  },
+  "role_context_denials": 12
+}

@@ -79,7 +79,7 @@ describe("dedicated Prism worker entrypoint selection", () => {
     expect(boundaries.pool_end).toHaveBeenCalledTimes(1);
   });
 
-  it("starts ordinary source intake only with its explicit scope and provider probe", async () => {
+  it("keeps current-result observation running while refusing retired source intake and all provider probes", async () => {
     vi.stubEnv("PRISM_ROSETTA_QUEUE_CANARY_ID", uuid(1));
     vi.stubEnv("LEGISLATIVE_VERSION_QUEUE_ENABLED", "true");
     vi.stubEnv("LEGISLATIVE_VERSION_CURRENT_SOURCES_ENABLED", "true");
@@ -88,8 +88,29 @@ describe("dedicated Prism worker entrypoint selection", () => {
     boundaries.bill_text.mockResolvedValue({});
     await import("./prism-rosetta-worker");
     await vi.advanceTimersByTimeAsync(0);
-    expect(boundaries.bill_text).toHaveBeenCalledWith(123);
-    expect(boundaries.start_legislative).toHaveBeenCalledTimes(1);
+    expect(boundaries.start_prism).toHaveBeenCalledOnce();
+    expect(boundaries.start_current_result_observer).toHaveBeenCalledOnce();
+    expect(boundaries.bill_text).not.toHaveBeenCalled();
+    expect(boundaries.start_legislative).not.toHaveBeenCalled();
+  });
+
+  it("never revives the hourly LegiScan probe even after provider capacity would recover", async () => {
+    vi.stubEnv("PRISM_ROSETTA_QUEUE_CANARY_ID", uuid(1));
+    vi.stubEnv("LEGISLATIVE_VERSION_QUEUE_ENABLED", "true");
+    vi.stubEnv("LEGISLATIVE_VERSION_CURRENT_SOURCES_ENABLED", "true");
+    vi.stubEnv("LEGISCAN_API_KEY", "test-only");
+    vi.stubEnv("LEGISCAN_BILL_TEXT_PROBE_DOCUMENT_ID", "123");
+    boundaries.bill_text
+      .mockRejectedValueOnce(new Error("legiscan_shared_api_error_while_calling_get_bill_text"))
+      .mockResolvedValueOnce({});
+
+    await import("./prism-rosetta-worker");
+    await vi.advanceTimersByTimeAsync(0);
+    expect(boundaries.bill_text).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(3 * 60 * 60 * 1000);
+    expect(boundaries.bill_text).not.toHaveBeenCalled();
+    expect(boundaries.start_legislative).not.toHaveBeenCalled();
   });
 
   it("does not broaden intake merely because its queue flag is enabled", async () => {

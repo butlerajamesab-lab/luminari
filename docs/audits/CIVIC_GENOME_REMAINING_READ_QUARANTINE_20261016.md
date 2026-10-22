@@ -1,0 +1,13 @@
+# Remaining Civic Genome interpretation readers — containment, 2026-10-16
+
+Rosetta physically removed the disqualified rosetta_v2513 namespace under migration 20261016213208, with canonical sources and selected V12 conserved. Lighthouse's independent database still holds 99,159 traits, 3,082 current bill assembly payloads, 9,428 version receipts with Rosetta metadata, 8,601 receipt-only assembly claims and 104,741 historical embedded payloads. Its actual assembly-run table and relational version assembly links remain zero. This is a fresh census, not a claim of valid structure.
+
+This change adds the existing unconditional selected-runtime quarantine at the first executable line of all three external family snapshot production/build entry points and Prism structural-context enrichment. It rejects before options/input access, pool acquisition, source/peer queries, cache access, owner lookup or export hashing. Matching old hashes or an old verified label cannot produce a new successful snapshot receipt.
+
+The old full-row snapshot methodology is unavailable. It is not silently changed to a redacted snapshot with the same identity/hash, nor represented as an empty successful export. Existing sealed records are not rewritten. A separately versioned source-only or independently admitted structural export is future work. Current legislative sources, identities, events and Docket metadata remain stored and writable under the existing DB fence.
+
+The shared base producer also precedes Atlas-specific version enrichment; rejection prevents that inherited full-row export path without changing Atlas signals, intake, the Atlas producer/handoff source, Viewfinder or any external receiver. Optional startup snapshot proof already catches rejection; startup must remain available. No delivery is initiated by tests or verification.
+
+Existing historical hash/transaction and transport/retry unit fixtures explicitly stub only the new publication gate to retain their independent contracts. The separate new test uses the REAL gate and hostile input/dependency getters to prove no input, hash, database or network side effect. No test is skipped or assertion suppressed. Tests do not establish production execution until the exact merged commit is deployed and independently observed.
+
+The four SQL views and their direct/privileged consumers remain a separate DB-access boundary. No view grants or derivative rows are modified by this code change. Historical snapshots and other derivatives are not physically purged here. Do not promote the stale Lighthouse generation target or release the quarantine without independent source/runtime/output admission proof.

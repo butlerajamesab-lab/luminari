@@ -10,6 +10,13 @@ const { load_query, queue_query, fetch_mock, ingest_mock, get_bill_text_mock } =
   ingest_mock: vi.fn(),
   get_bill_text_mock: vi.fn(),
 }));
+// Existing tests exercise retired algorithms as isolated fixtures only.
+// This mock is never used by production; the runtime gate stays fail-closed.
+vi.mock("./civic-genome-legacy-decomposition-retirement", () => ({
+  is_legacy_genome_decomposition_conveyor_retired: () => false,
+  assert_legacy_genome_decomposition_conveyor_available: () => {},
+}));
+
 vi.mock("./db", () => ({
   getPool: () => ({ query: load_query }),
   query_with_diagnostics: queue_query,

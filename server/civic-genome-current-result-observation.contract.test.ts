@@ -19,7 +19,7 @@ const migration = readFileSync(
     process.cwd(),
     "supabase",
     "migrations",
-    "20260918152000_civic_genome_current_result_arrival_reconciliation.sql",
+    "20260918162308_civic_genome_current_result_arrival_reconciliation.sql",
   ),
   "utf8",
 );

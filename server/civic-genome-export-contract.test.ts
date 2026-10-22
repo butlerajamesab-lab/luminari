@@ -45,6 +45,19 @@ describe("Civic Genome export contract", () => {
     expect(route).not.toContain("clipboard");
   });
 
+  it("holds unverified legacy decomposition out of technical and human exports", () => {
+    expect(route).toContain("legacy_rosetta_structural_derivatives_withheld_pending_independent_selected_runtime_attestation");
+    expect(route).toContain("all_structural_traits: all_traits_result.rows");
+    expect(route).toContain("all_assembly_runs: all_runs_result.rows");
+    expect(route).toContain("const all_traits_result = { rows: [], rowCount: 0 }");
+    expect(route).toContain("const all_runs_result = { rows: [], rowCount: 0 }");
+    expect(route).not.toMatch(/from public\.civic_genome_trait\b/);
+    expect(route).not.toMatch(/from public\.civic_genome_assembly_run\b/);
+    expect(route).toContain("version.source_document_key");
+    expect(route).toContain("document.source_url");
+    expect(route).not.toContain("select version.*");
+  });
+
   it("keeps deep single-bill export read-only and provenance-rich", () => {
     expect(route).toContain('export_type: "civic_genome_bill_export"');
     expect(route).toContain("bill_versions: versions_result.rows");
@@ -126,24 +139,44 @@ describe("Civic Genome export contract", () => {
     expect(route).toContain("max_limit: MULTI_EXPORT_LIMIT");
   });
 
-  it("mounts the export route and makes human reports primary on bill pages", () => {
+  it("mounts distinct current-law human and machine exports on bill pages", () => {
     expect(index).toContain("civic_genome_export_router");
     expect(index).toContain(
       'app.use("/api/civic-genome/export", civic_genome_export_router)',
     );
     expect(main).toContain("CivicGenomeExportDock");
+    expect(route).toContain('"/bill/:source_bill_id/report"');
+    expect(route).toContain('"/bill/:source_bill_id/machine"');
+    expect(route).toContain('"law_decomposition"');
+    expect(route).toContain('"current-law-presentation-json-v1"');
+    expect(dock).toContain(
+      "/api/civic-genome/export/bill/${encodeURIComponent(source_bill_id)}/report",
+    );
+    expect(dock).toContain(
+      "/api/civic-genome/export/bill/${encodeURIComponent(source_bill_id)}/machine",
+    );
     expect(dock).toContain(
       "/api/civic-genome/export/bill/${encodeURIComponent(source_bill_id)}/summary",
     );
     expect(dock).toContain(
       "/api/civic-genome/export/bill/${encodeURIComponent(source_bill_id)}/detailed",
     );
-    expect(dock).toContain(
-      "/api/civic-genome/export/bill/${encodeURIComponent(source_bill_id)}",
-    );
     expect(dock).toContain("Summary report");
     expect(dock).toContain("Detailed report");
-    expect(dock).toContain("Technical JSON");
+    expect(dock).toContain("Law ↔ Rosetta report");
+    expect(dock).toContain("Machine JSON");
     expect(dock).toContain("Technical data · current 100");
+  });
+
+  it("renders the current law report from exact selected-runtime Rosetta data without historical fallback", () => {
+    expect(humanReport).toContain('"law_decomposition"');
+    expect(humanReport).toContain("get_current_rosetta_live_detail");
+    expect(humanReport).toContain("LAW · exact preserved source spans");
+    expect(humanReport).toContain("ROSETTA · selected-runtime decomposition");
+    expect(humanReport).toContain("Historical decomposition is not substituted");
+    expect(humanReport).toContain("Rule · current classifier");
+    expect(humanReport).toContain(
+      "does not promote Rule into Civic Genome's permanent canonical ontology",
+    );
   });
 });

@@ -3,6 +3,10 @@ import { getPool } from "./db";
 /** Resolve a persisted local source identity for an existing queue job.
  * This does not select a Rosetta result. Multiple source identities are rejected;
  * no latest-version or document-ID fallback is sent to Rosetta.
+ *
+ * Bills must carry rosetta_source_identity_hash in receipt_json; old-era bills
+ * without this field are excluded from the upgrade queue entirely at discovery
+ * time and will never reach this function.
  */
 export async function load_queued_docket_binding(input: {
   genome_bill_id: string;
@@ -15,7 +19,10 @@ export async function load_queued_docket_binding(input: {
        from public.civic_genome_bill_version
       where genome_bill_id=$1::uuid and rosetta_source_document_id=$2::integer
         and ($3::text is null or receipt_json->>'source_content_hash'=$3)
-        and ($4::text is null or receipt_json->>'rosetta_source_identity_hash'=$4)
+        and (
+          $4::text is null
+          or receipt_json->>'rosetta_source_identity_hash'=$4
+        )
       limit 2`,
     [input.genome_bill_id, input.source_document_id, input.source_content_hash?.toLowerCase() ?? null, input.source_identity_hash ?? null],
   );

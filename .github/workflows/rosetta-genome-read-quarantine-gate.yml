@@ -1,0 +1,34 @@
+name: Rosetta Genome read quarantine gate
+
+on:
+  pull_request:
+    paths:
+      - 'server/civic-genome-public-read-sanitizer.ts'
+      - 'server/civic-genome-public-read-sanitizer.test.ts'
+      - 'server/routers/civic-genome-router.ts'
+      - 'server/civic-genome-bill-detail.ts'
+      - 'server/civic-genome-bill-detail.test.ts'
+      - 'server/civic-genome-human-report.ts'
+      - 'server/civic-genome-human-report-temporal-status.test.ts'
+      - 'server/routes/civic-genome-export-router.ts'
+      - 'server/civic-genome-export-contract.test.ts'
+      - '.github/workflows/rosetta-genome-read-quarantine-gate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  quarantine-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: TypeScript check of complete branch
+        run: pnpm check
+      - name: Prove legacy detail and export fallback is contained
+        run: pnpm exec vitest run server/civic-genome-public-read-sanitizer.test.ts server/civic-genome-bill-detail.test.ts server/civic-genome-export-contract.test.ts server/civic-genome-human-report-temporal-status.test.ts

@@ -1,0 +1,58 @@
+name: Genome structural read boundary
+on:
+  pull_request:
+    paths:
+      - 'server/routes/docket.ts'
+      - 'server/docket-radar-scoped-query.test.ts'
+      - 'server/docket-radar-live-contract.test.ts'
+      - 'server/civic-genome-full-text-authority.contract.test.ts'
+      - 'client/src/pages/DocketRoom.tsx'
+      - 'supabase/migration_sources/retire_genome_legacy_structural_view_access_20261016.sql'
+      - 'supabase/verification/genome_legacy_structural_views_20261016.json'
+      - 'supabase/verification/retire_genome_legacy_structural_view_access_20261016_ROLLBACK.sql'
+      - 'scripts/test-genome-structural-view-retirement.cjs'
+      - '.github/workflows/genome-structural-read-boundary.yml'
+permissions:
+  contents: read
+jobs:
+  source-radar-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      - run: pnpm exec vitest run server/docket-radar-scoped-query.test.ts server/docket-radar-live-contract.test.ts server/docket-radar-source-execution-boundary.contract.test.ts server/genome-remaining-read-quarantine.test.ts server/civic-genome-full-text-authority.contract.test.ts
+      - run: pnpm build
+  structural-views-postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: fixture_only
+          POSTGRES_DB: genome_quarantine_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d genome_quarantine_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: fixture_only
+      PGDATABASE: genome_quarantine_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: sudo apt-get update -qq && sudo apt-get install -y postgresql-client
+      - run: node scripts/test-genome-structural-view-retirement.cjs

@@ -45,6 +45,7 @@ async function getInviteSessionToken(): Promise<string | null> {
 export default function InviteLanding() {
   const { token } = useParams<{ token: string }>();
   const { isAuthenticated, loading: authLoading } = useAuth();
+  const bootstrap = trpc.auth.bootstrap.useMutation();
   const [, setLocation] = useLocation();
   const [redeemed, setRedeemed] = useState(false);
   const [redeemPending, setRedeemPending] = useState(false);
@@ -62,6 +63,9 @@ export default function InviteLanding() {
     setRedeemError(null);
     setRedeemAttempted(true);
     try {
+      // Ensure a newly registered Supabase identity has a Lighthouse profile
+      // before attempting transactional invite redemption.
+      await bootstrap.mutateAsync();
       const sessionToken = await getInviteSessionToken();
       if (!sessionToken) {
         throw new Error("Sign in before redeeming this invite.");
@@ -99,8 +103,7 @@ export default function InviteLanding() {
   }, [isAuthenticated, validation?.valid, token, redeemed, redeemAttempted]);
 
   const handleLogin = () => {
-    sessionStorage.setItem("luminari-invite-return", `/invite/${token}`);
-    window.location.href = getLoginUrl();
+    window.location.href = getLoginUrl(`/invite/${token}`);
   };
 
   if (isLoading || authLoading) {
@@ -195,6 +198,16 @@ export default function InviteLanding() {
                   <Button onClick={handleLogin} className="w-full" size="lg">
                     Sign In to Redeem
                     <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      window.location.href = getLoginUrl(`/invite/${token}`) + "&mode=signup";
+                    }}
+                    variant="outline"
+                    className="w-full"
+                    size="lg"
+                  >
+                    New to Luminari? Create Account
                   </Button>
                 </div>
               )}
