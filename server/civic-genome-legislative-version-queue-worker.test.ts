@@ -6,6 +6,13 @@ const { query, process_version, rosetta_fetch } = vi.hoisted(() => ({
   rosetta_fetch: vi.fn(),
 }));
 
+// Existing tests exercise retired algorithms as isolated fixtures only.
+// This mock is never used by production; the runtime gate stays fail-closed.
+vi.mock("./civic-genome-legacy-decomposition-retirement", () => ({
+  is_legacy_genome_decomposition_conveyor_retired: () => false,
+  assert_legacy_genome_decomposition_conveyor_available: () => {},
+}));
+
 vi.mock("./db", () => ({
   query_with_diagnostics: query,
 }));
@@ -292,7 +299,7 @@ describe("legislative version queue", () => {
     expect(query.mock.calls[0][1][0]).toBe(job.queue_id);
   });
 
-  it("prioritizes current Docket sessions, then current versions, while preserving source-host backpressure", async () => {
+  it("prioritizes current Docket sessions while preserving source-host backpressure", async () => {
     await run_legislative_version_queue_cycle();
 
     const claim_sql = query.mock.calls
@@ -305,7 +312,6 @@ describe("legislative version queue", () => {
     expect(claim_sql).toContain("current_session.state = bill.state_code");
     expect(claim_sql).toContain("current_session.session_key = bill.session_key");
     expect(claim_sql).toContain("(current_session.state is not null) desc");
-    expect(claim_sql).toContain("currency.is_current desc");
     expect(claim_sql).toContain("source_host.last_attempt_at asc nulls first");
     expect(claim_sql).toContain("source_host.blocked_until");
     expect(claim_sql).toContain("queue.next_attempt_at < 'infinity'::timestamptz");
@@ -332,11 +338,12 @@ describe("legislative version queue", () => {
     expect(claim_call?.[1][7]).toBeNull();
 
     const currentSessionOrder = claim_sql.indexOf("(current_session.state is not null) desc");
-    const currentVersionOrder = claim_sql.indexOf("currency.is_current desc");
     const hostFairnessOrder = claim_sql.indexOf("source_host.last_attempt_at asc nulls first");
     expect(currentSessionOrder).toBeGreaterThanOrEqual(0);
-    expect(currentVersionOrder).toBeGreaterThan(currentSessionOrder);
-    expect(hostFairnessOrder).toBeGreaterThan(currentVersionOrder);
+    expect(hostFairnessOrder).toBeGreaterThan(currentSessionOrder);
+    expect(claim_sql).not.toContain("currency.is_current");
+    expect(claim_sql).not.toContain("newer.stage_rank > version.stage_rank");
+    expect(claim_sql).not.toContain("newer.provider_sequence > version.provider_sequence");
   });
 
   it("continues ordinary queue claims when the supplemental Rosetta selector is unavailable", async () => {
@@ -412,8 +419,8 @@ describe("legislative version queue", () => {
   });
 });
 
-it.each(["awaiting_analysis", "requires_review", "unavailable", "awaiting_publication"])("holds %s without consuming attempts or starting another pass", async status => {
- process_version.mockRejectedValueOnce(new Error(`rosetta_public_current_docket_result_${status}`));
+it.each(["certification_receipt_missing", "live_rule_http_404", "hold_receipt_present", "failure_receipts_present", "decomposition_not_decomposed", "genome_assembly_adapter_unavailable"])("holds V12 %s without consuming attempts or starting another pass", async status => {
+ process_version.mockRejectedValueOnce(new Error(`rosetta_v12_${status}`));
  await process_legislative_version_job(job);
  expect(process_version).toHaveBeenCalledOnce();
  expect(query).toHaveBeenCalledOnce();

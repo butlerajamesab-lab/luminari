@@ -35,15 +35,9 @@ export function pipelinePublicationPresentation(observation: CivicGenomePipeline
   if (observation.contract_state === "assembled") {
     return { value: "Published", detail: "Current snapshot decomposed and verified" };
   }
-  if (observation.published_source_document_id != null) {
-    const same_source = observation.published_source_document_id === observation.source_document_id;
-    return {
-      value: same_source ? "Saved snapshot available" : "Prior snapshot available",
-      detail: same_source
-        ? `Saved publication · document ${observation.published_source_document_id}. The current result could not be confirmed as assembled.`
-        : `Latest verified ${observation.published_version_type ?? "prior"} snapshot · document ${observation.published_source_document_id}. This is not a current-version result.`,
-    };
-  }
+  // Retired-generation receipt labels and historical published_source_document_id
+  // are not independent current-result authority. Never present them as a
+  // saved or prior verification fallback, even when a caller retains metadata.
   if (observation.contract_state === "contract_error") {
     return { value: "Status unavailable", detail: "The current result could not be read. No publication is inferred." };
   }

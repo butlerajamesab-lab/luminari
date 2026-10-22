@@ -1,0 +1,73 @@
+name: Civic Genome obsolete family candidate retirement preflight
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migration_sources/purge_disqualified_genome_family_candidates_20261017_PREPARED.sql'
+      - 'supabase/verification/genome_family_candidate_retirement_fixture_20261017.sql'
+      - '.github/workflows/genome-family-candidate-retirement-preflight.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  retired-family-disposable-proof:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: genome_retirement_test
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d genome_retirement_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: genome_retirement_test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client when absent
+        run: |
+          if ! command -v psql >/dev/null; then
+            sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
+          fi
+      - name: Seed one source-only Docket and 8713 invalid family candidates
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/verification/genome_family_candidate_retirement_fixture_20261017.sql
+      - name: Prove production manifest fails closed against another population
+        run: |
+          if psql -X -v ON_ERROR_STOP=1 -f supabase/migration_sources/purge_disqualified_genome_family_candidates_20261017_PREPARED.sql > /tmp/retirement-refusal.log 2>&1; then
+            echo "FAILED: production-pinned retirement accepted unrelated identities"
+            exit 1
+          fi
+          grep -q 'genome_family_retirement_exact_manifest_drift' /tmp/retirement-refusal.log
+          test "$(psql -Atqc 'select count(*) from public.civic_genome_unresolved_family_candidate')" = "8713"
+          test "$(psql -Atqc 'select count(*) from public.docket_bill_detail_cache')" = "1"
+      - name: Prove identical transaction deletes only exact approved fixture population
+        run: |
+          id_hash="$(psql -Atqc "select encode(extensions.digest(convert_to(string_agg(unresolved_candidate_id::text,'' order by unresolved_candidate_id),'UTF8'),'sha256'),'hex') from public.civic_genome_unresolved_family_candidate")"
+          row_hash="$(psql -Atqc "select encode(extensions.digest(convert_to(string_agg(encode(extensions.digest(convert_to(to_jsonb(c)::text,'UTF8'),'sha256'),'hex'),'' order by unresolved_candidate_id),'UTF8'),'sha256'),'hex') from public.civic_genome_unresolved_family_candidate c")"
+          python3 - "$id_hash" "$row_hash" <<'PY'
+          from pathlib import Path
+          import sys
+          original=Path("supabase/migration_sources/purge_disqualified_genome_family_candidates_20261017_PREPARED.sql").read_text()
+          old_id="200aa0159005c2900021593119c08cfb6ccd2489ab0f227bcaa03ff1bc659784"
+          old_row="fbe7f0a79fcf4bbd8399d1c241b595e6d13e39b4da327406cc30be61b2a69e77"
+          assert original.count(old_id)==1 and original.count(old_row)==2
+          output=original.replace(old_id,sys.argv[1]).replace(old_row,sys.argv[2])
+          Path("/tmp/retirement-fixture-only.sql").write_text(output)
+          PY
+          psql -X -v ON_ERROR_STOP=1 -f /tmp/retirement-fixture-only.sql
+          test "$(psql -Atqc 'select count(*) from public.civic_genome_unresolved_family_candidate')" = "0"
+          test "$(psql -Atqc 'select count(*) from public.docket_bill_detail_cache')" = "1"
+          test "$(psql -Atqc 'select count(*) from public.docket_bill_source_document')" = "1"
+          test "$(psql -Atqc 'select count(*) from public.civic_genome_bill')" = "1"
+          test "$(psql -Atqc 'select count(*) from public.civic_genome_family')" = "1"
+          test "$(psql -Atqc 'select count(*) from public.civic_genome_event')" = "1"

@@ -1,0 +1,27 @@
+name: Lighthouse OAuth consent pilot
+
+on:
+  pull_request:
+    paths:
+      - "client/src/pages/OAuthConsent.tsx"
+      - "client/src/App.tsx"
+      - "server/lighthouse-oauth-consent.contract.test.ts"
+      - "docs/auth/LIGHTHOUSE_ESQUIRE_SSO_PILOT_20261016.md"
+      - ".github/workflows/lighthouse-oauth-pilot-check.yml"
+  workflow_dispatch:
+
+jobs:
+  consent:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec vitest run server/lighthouse-oauth-consent.contract.test.ts server/lighthouse-public-entry-source-contract.test.ts
+      - run: pnpm exec tsc --noEmit
+      - run: pnpm exec vite build

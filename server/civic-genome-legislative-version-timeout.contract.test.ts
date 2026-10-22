@@ -47,8 +47,8 @@ describe("legislative version external request bounds", () => {
     );
     expect(pipeline).not.toContain("invoke_rosetta_extraction");
     expect(pipeline).not.toContain("run_rosetta_v3_extraction");
-    expect(pipeline).toContain("await load_rosetta_current_docket_result_for_binding({");
-    const reader = readFileSync(join(process.cwd(), "server", "civic-genome-rosetta-evaluation.ts"), "utf8");
+    expect(pipeline).toContain("await require_v12_admission_for_binding({");
+    const reader = readFileSync(join(process.cwd(), "server", "current-law-rosetta-live.ts"), "utf8");
     expect(reader).toContain("signal: controller.signal");
     expect(reader.indexOf("await response.json()" )).toBeLessThan(reader.indexOf("clearTimeout(timeout)"));
   });

@@ -26,6 +26,11 @@ vi.mock("./prism-rosetta-client", () => ({
 vi.mock("./prism-verification-client", () => ({ PrismBoundaryError: class extends Error {} }));
 vi.mock("../runtime-role", () => ({ background_feature_enabled: vi.fn() }));
 
+// Isolate transport/retry policy; the actual quarantine is proved separately.
+vi.mock("../civic-genome-rosetta-publication-quarantine", () => ({
+  assert_genome_rosetta_publication_admitted: vi.fn(),
+}));
+
 const binding = {
   source_document_id: 7, extraction_run_id: "12",
   rosetta_source_identity_hash: "a".repeat(64), rosetta_source_content_hash: "b".repeat(64),

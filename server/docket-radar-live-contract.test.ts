@@ -27,7 +27,7 @@ describe("Docket Radar live contract", () => {
     expect(routes).toContain("public.docket_bill_next_floor_event");
     expect(routes).toContain("from requested");
     expect(routes).toContain("enrichment_unavailable");
-    expect(routes).toContain("row.base_has_trait_coverage === true");
+    expect(routes).toContain('structural_state: "quarantined"');
     expect(routes).not.toMatch(/upsert_state_cache\([^)]*radar/);
   });
 
@@ -139,7 +139,7 @@ describe("Docket Radar live contract", () => {
     expect(coverage_migration).toContain("latest_has_trait_coverage");
     expect(read("supabase/migrations/20260914082817_docket_drift_completed_verification_coverage.sql"))
       .toContain("processing_state IN ('verified', 'verified_with_findings')");
-    expect(read("server/routes/docket.ts")).toContain("row.latest_has_trait_coverage === true");
+    expect(read("server/routes/docket.ts")).toContain("structural_reason: GENOME_ROSETTA_PUBLICATION_QUARANTINE_REASON");
     expect(read("client/src/pages/DocketRoom.tsx")).toContain("const displayed_cache_status = state_data?.fetched_at");
     expect(worker).toContain("const docket_worker_startup = start_docket_workers().catch");
     const activation_worker = read("server/docket-jurisdiction-activation-queue-worker.ts");
