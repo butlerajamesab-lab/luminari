@@ -1,4 +1,3 @@
-import { load_queued_docket_binding } from "./civic-genome-docket-binding";
 import { createHash } from "node:crypto";
 import { PDFParse } from "pdf-parse";
 
@@ -9,10 +8,8 @@ import {
   type rosetta_source_ingestion_result,
 } from "./civic-genome-rosetta-source-ingestion";
 import {
-  assemble_rosetta_and_resolve_family,
   type rosetta_family_orchestration_result,
 } from "./civic-genome-rosetta-family-orchestration";
-import { create_rosetta_supabase_headers } from "./rosetta-supabase-auth";
 import { fetch_california_official_pdf } from "./california-legislative-source";
 import { assert_official_source_response } from "./official-source-response";
 import { decode_legislative_html_bytes } from "./legislative-html-byte-decoder";
@@ -92,12 +89,6 @@ type extracted_source = {
   extractor_version: string;
   source_metadata: Record<string, unknown>;
 };
-
-function required_environment(name: string): string {
-  const value = process.env[name]?.trim();
-  if (!value) throw new Error(`missing_${name.toLowerCase()}`);
-  return value.replace(/\/$/, "");
-}
 
 function sha256(value: Buffer | string): string {
   return createHash("sha256").update(value).digest("hex");
@@ -418,41 +409,13 @@ async function extract_source(
 }
 
 async function invoke_rosetta_extraction(
-  source_document_id: number,
-  source: extracted_source,
-  reference_date: string,
+  _source_document_id: number,
+  _source: extracted_source,
+  _reference_date: string,
 ): Promise<rosetta_extraction_receipt> {
-  const base_url = required_environment("ROSETTA_SUPABASE_URL");
-  const service_role_key = required_environment("ROSETTA_SUPABASE_SERVICE_ROLE_KEY");
-  const headers = create_rosetta_supabase_headers(service_role_key, {
-    accept: "application/json",
-    "content-type": "application/json",
-  });
-  const response = await fetch(`${base_url}/rest/v1/rpc/run_rosetta_v3_extraction`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      p_source_document_id: source_document_id,
-      p_source_text: source.source_text,
-      p_expected_source_content_hash: source.source_content_hash,
-      p_source_url: source.source_url,
-      p_source_version: source.source_version,
-      p_media_type: source.media_type,
-      p_source_byte_hash: source.source_byte_hash,
-      p_source_provider_hash: source.provider_hash,
-      p_reference_date: reference_date,
-      p_text_extractor_version: source.extractor_version,
-      p_source_metadata: source.source_metadata,
-    }),
-  });
-  if (!response.ok) {
-    const preview = (await response.text()).slice(0, 1_000);
-    throw new Error(`rosetta_extraction_failed:${response.status}:${preview}`);
-  }
-  const payload: unknown = await response.json();
-  const receipt = Array.isArray(payload) ? payload[0] : payload;
-  if (!as_record(receipt)) throw new Error("invalid_rosetta_extraction_receipt");
-  return receipt as unknown as rosetta_extraction_receipt;
+  // The v2.5.x / V3 extraction RPC is retired in production. Never fall back
+  // to its historical output or present that output as a current Rosetta result.
+  throw new Error("rosetta_legacy_v3_extraction_retired_use_current_runtime");
 }
 
 function deterministic_reference_date(cached: cached_docket_bill): string {
@@ -491,23 +454,11 @@ export async function run_docket_bill_through_rosetta(
 }
 
 export async function process_docket_bill_through_rosetta_and_genome(
-  source_bill_id: number,
+  _source_bill_id: number,
 ): Promise<docket_rosetta_pipeline_result> {
-  const { ingestion, extraction } = await run_docket_bill_through_rosetta(source_bill_id);
-  const binding = await load_queued_docket_binding({ genome_bill_id: ingestion.genome_bill_id,
-    source_document_id: ingestion.source_document_id, source_content_hash: extraction.source_content_hash });
-  const assembly = await assemble_rosetta_and_resolve_family({
-    ...binding,
-    genome_bill_id: ingestion.genome_bill_id,
-    source_document_id: ingestion.source_document_id,
-    extraction_run_id: extraction.extraction_run_id,
-  });
-
-  return {
-    source_bill_id,
-    genome_bill_id: ingestion.genome_bill_id,
-    ingestion,
-    extraction,
-    assembly,
-  };
+  // This historical admin/startup orchestration path cannot prove current
+  // selected-runtime identity. Reject *before* creating any source handoff,
+  // extraction run, Genome assembly, or contaminated publication.
+  // The independent source-only handoff and selected-runtime paths remain.
+  throw new Error("rosetta_legacy_v3_pipeline_retired_use_current_runtime");
 }

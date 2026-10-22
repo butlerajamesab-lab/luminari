@@ -12,6 +12,10 @@ import { create_rosetta_supabase_headers } from "./rosetta-supabase-auth";
 import { reconcile_awaiting_current_results } from "./civic-genome-current-result-reconciliation";
 import { reconcile_preserved_amendment_sources } from "./civic-genome-amendment-source-completion";
 import { background_feature_enabled } from "./runtime-role";
+import {
+  assert_legacy_genome_decomposition_conveyor_available,
+  is_legacy_genome_decomposition_conveyor_retired,
+} from "./civic-genome-legacy-decomposition-retirement";
 import { LEGISLATIVE_NON_LEGISLATIVE_DOCUMENT_ERROR_CODE } from "./legislative-document-role";
 import { is_official_source_rejection_error } from "./official-source-response";
 
@@ -159,6 +163,7 @@ export function is_exact_docket_document_identifier(value: string): boolean {
 }
 
 export async function classify_hidden_rosetta_terminal_rejections(): Promise<number> {
+  assert_legacy_genome_decomposition_conveyor_available();
   const base_url = required_environment("ROSETTA_SUPABASE_URL").replace(/\/$/, "");
   const service_role_key = required_environment("ROSETTA_SUPABASE_SERVICE_ROLE_KEY");
   const headers = create_rosetta_supabase_headers(service_role_key);
@@ -224,6 +229,7 @@ export async function classify_hidden_rosetta_terminal_rejections(): Promise<num
 }
 
 export async function load_oldest_unbound_docket_identifiers(): Promise<string[]> {
+  assert_legacy_genome_decomposition_conveyor_available();
   const base_url = required_environment("ROSETTA_SUPABASE_URL").replace(/\/$/, "");
   const service_role_key = required_environment("ROSETTA_SUPABASE_SERVICE_ROLE_KEY");
   const headers = create_rosetta_supabase_headers(service_role_key);
@@ -977,6 +983,7 @@ async function park_amendment_dependency(
 export async function process_legislative_version_job(
   job: legislative_version_queue_job,
 ): Promise<void> {
+  assert_legacy_genome_decomposition_conveyor_available();
   let result: Awaited<ReturnType<typeof process_legislative_version>>;
   try {
     if (job.docket_operational_authority_required) {
@@ -1009,9 +1016,9 @@ export async function process_legislative_version_job(
       await park_amendment_dependency(job, amendment_hold);
       return;
     }
-    const current_status = /^rosetta_public_current_docket_result_(awaiting_analysis|requires_review|unavailable|awaiting_publication)$/.exec(safe_error_code(error));
+    const current_status = /^rosetta_v12_(certification_receipt_missing|live_rule_http_404|hold_receipt_present|failure_receipts_present|decomposition_not_decomposed|genome_assembly_adapter_unavailable)$/.exec(safe_error_code(error));
     if (current_status) {
-      // Waiting on Rosetta is not a failed decomposition and consumes no retry.
+      // V12 held, failed, missing certification and adapter-blocked states retain their distinct\n      // exact reason and consume no retry. Never substitute a historical decomposition.
       // Resume only after an explicit reconciliation observes a new current result.
       await query_with_diagnostics(`update public.civic_genome_legislative_version_queue
         set queue_state='degraded', next_attempt_at='infinity'::timestamptz,
@@ -1059,6 +1066,8 @@ export async function process_legislative_version_job(
 }
 
 export async function run_legislative_version_queue_cycle(): Promise<void> {
+  // No DB claim, provider pull, Rosetta control call or replay from this lane.
+  if (is_legacy_genome_decomposition_conveyor_retired()) return;
   if (queue_cycle_running || queue_stopped) return;
   queue_cycle_running = true;
   try {
@@ -1199,6 +1208,7 @@ function schedule_amendment_source_completion(): void {
 
 
 export function start_legislative_version_queue_worker(): void {
+  if (is_legacy_genome_decomposition_conveyor_retired()) return;
   if (queue_timer || !queue_enabled()) return;
   let recovery_contract_scope: string | null;
   let current_sources = false;

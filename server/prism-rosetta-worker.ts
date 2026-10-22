@@ -25,6 +25,7 @@ import {
   resolve_lighthouse_runtime_role,
 } from "./runtime-role";
 import { get_bill_text } from "./services/legiscan";
+import { is_legacy_genome_decomposition_conveyor_retired } from "./civic-genome-legacy-decomposition-retirement";
 import { docket_router, wait_for_docket_state_refreshes } from "./routes/docket";
 import {
   start_docket_state_cache_warmer,
@@ -34,6 +35,22 @@ import {
   start_docket_bill_activation_queue_worker,
   stop_docket_bill_activation_queue_worker,
 } from "./docket-jurisdiction-activation-queue-worker";
+import {
+  start_rosetta_generation_activation_queue_worker,
+  stop_rosetta_generation_activation_queue_worker,
+} from "./civic-genome-rosetta-generation-queue-worker";
+import {
+  start_rosetta_generation_target_sync,
+  stop_rosetta_generation_target_sync,
+} from "./civic-genome-rosetta-generation-target-sync";
+import {
+  start_rosetta_generation_upgrade_worker,
+  stop_rosetta_generation_upgrade_worker,
+} from "./civic-genome-rosetta-generation-upgrade-worker";
+import {
+  start_civic_genome_final_source_reconciliation_worker,
+  stop_civic_genome_final_source_reconciliation_worker,
+} from "./civic-genome-final-source-reconciliation-worker";
 
 const runtime_role = resolve_lighthouse_runtime_role();
 if (runtime_role.role !== "worker" || !runtime_role.valid) {
@@ -124,6 +141,9 @@ function stable_legiscan_failure_code(error: unknown): string {
 }
 
 function schedule_legislative_provider_probe_retry(error_code: string): void {
+  // The old conveyor is permanently retired. Never schedule a probe, even
+  // after a future certified Rosetta engine is selected or quota recovers.
+  if (is_legacy_genome_decomposition_conveyor_retired()) return;
   if (
     legislative_probe_retry_timer
     || shutting_down
@@ -147,6 +167,10 @@ function schedule_legislative_provider_probe_retry(error_code: string): void {
 }
 
 async function start_authorized_legislative_queue(): Promise<void> {
+  // Guard BEFORE get_bill_text, configuration probing or retry scheduling.
+  // A current-result reader is independent; this obsolete auto-execution
+  // startup is not an API-health probe or a future-engine admission gate.
+  if (is_legacy_genome_decomposition_conveyor_retired()) return;
   if (!legislative_version_queue_requested || legislative_version_queue_enabled) return;
   if (!legiscan_api_key_configured) {
     console.error(
@@ -220,6 +244,10 @@ console.log("[PrismRosettaWorker] starting", {
       : null,
 });
 start_prism_rosetta_queue_worker();
+start_rosetta_generation_activation_queue_worker();
+start_rosetta_generation_target_sync();
+start_rosetta_generation_upgrade_worker();
+start_civic_genome_final_source_reconciliation_worker();
 if (!legislative_version_queue_recovery_scope) {
   start_current_result_observation_worker();
   current_result_observation_enabled = true;
@@ -252,6 +280,10 @@ async function shutdown(signal: string): Promise<void> {
   await wait_for_docket_state_refreshes();
   await Promise.all([
     stop_prism_rosetta_queue_worker(),
+    stop_rosetta_generation_activation_queue_worker(),
+    stop_rosetta_generation_target_sync(),
+    stop_rosetta_generation_upgrade_worker(),
+    stop_civic_genome_final_source_reconciliation_worker(),
     current_result_observation_enabled
       ? stop_current_result_observation_worker()
       : Promise.resolve(),

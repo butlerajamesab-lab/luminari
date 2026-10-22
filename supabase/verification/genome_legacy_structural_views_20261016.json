@@ -1,0 +1,122 @@
+{
+  "observed_date": "2026-10-16",
+  "views": [
+    {
+      "acl": "{postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+      "name": "docket_bill_drift_delta",
+      "owner": "postgres",
+      "definition": " WITH version_traits AS (\n         SELECT DISTINCT bv.genome_bill_id,\n            bv.bill_version_id,\n            t.trait_class,\n            t.trait_id\n           FROM civic_genome_bill_version bv\n             JOIN civic_genome_prism_verification_binding b ON b.assembly_run_id = bv.assembly_run_id\n             JOIN civic_genome_trait t ON t.trait_id = b.trait_id\n        ), class_counts AS (\n         SELECT version_traits.genome_bill_id,\n            version_traits.bill_version_id,\n            version_traits.trait_class,\n            count(*) AS n\n           FROM version_traits\n          GROUP BY version_traits.genome_bill_id, version_traits.bill_version_id, version_traits.trait_class\n        ), latest AS (\n         SELECT DISTINCT ON (civic_genome_bill_version.genome_bill_id) civic_genome_bill_version.genome_bill_id,\n            civic_genome_bill_version.bill_version_id\n           FROM civic_genome_bill_version\n          ORDER BY civic_genome_bill_version.genome_bill_id, civic_genome_bill_version.stage_rank DESC NULLS LAST, civic_genome_bill_version.provider_sequence DESC NULLS LAST\n        ), base AS (\n         SELECT DISTINCT ON (civic_genome_bill_version.genome_bill_id) civic_genome_bill_version.genome_bill_id,\n            civic_genome_bill_version.base_bill_version_id\n           FROM civic_genome_bill_version\n          WHERE civic_genome_bill_version.base_bill_version_id IS NOT NULL\n          ORDER BY civic_genome_bill_version.genome_bill_id, civic_genome_bill_version.created_at\n        ), extraction_coverage AS (\n         SELECT civic_genome_bill_version.bill_version_id,\n            true AS has_trait_coverage\n           FROM civic_genome_bill_version\n          WHERE (civic_genome_bill_version.processing_state = ANY (ARRAY['verified'::text, 'verified_with_findings'::text])) AND civic_genome_bill_version.assembly_run_id IS NOT NULL AND civic_genome_bill_version.prism_verification_run_id IS NOT NULL\n        ), covered_classes AS (\n         SELECT l.genome_bill_id,\n            l.bill_version_id AS latest_bill_version_id,\n            b.base_bill_version_id,\n            cc.trait_class\n           FROM latest l\n             LEFT JOIN base b ON b.genome_bill_id = l.genome_bill_id\n             JOIN class_counts cc ON cc.bill_version_id = l.bill_version_id OR cc.bill_version_id = b.base_bill_version_id\n          GROUP BY l.genome_bill_id, l.bill_version_id, b.base_bill_version_id, cc.trait_class\n        )\n SELECT c.genome_bill_id,\n    c.trait_class,\n    COALESCE(cb.n, 0::bigint) AS base_count,\n    COALESCE(cl.n, 0::bigint) AS latest_count,\n    COALESCE(cl.n, 0::bigint) - COALESCE(cb.n, 0::bigint) AS delta,\n    COALESCE(bc.has_trait_coverage, false) AS base_has_trait_coverage,\n    COALESCE(lc.has_trait_coverage, false) AS latest_has_trait_coverage\n   FROM covered_classes c\n     LEFT JOIN class_counts cb ON cb.bill_version_id = c.base_bill_version_id AND cb.trait_class = c.trait_class\n     LEFT JOIN class_counts cl ON cl.bill_version_id = c.latest_bill_version_id AND cl.trait_class = c.trait_class\n     LEFT JOIN extraction_coverage bc ON bc.bill_version_id = c.base_bill_version_id\n     LEFT JOIN extraction_coverage lc ON lc.bill_version_id = c.latest_bill_version_id;",
+      "definition_md5": "5cd3a477021b9794d0eaa46f7bc4b0e4"
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+      "name": "docket_bill_impact_callouts",
+      "owner": "postgres",
+      "definition": " WITH latest AS (\n         SELECT DISTINCT ON (civic_genome_bill_version.genome_bill_id) civic_genome_bill_version.genome_bill_id,\n            civic_genome_bill_version.bill_version_id,\n            civic_genome_bill_version.assembly_run_id\n           FROM civic_genome_bill_version\n          ORDER BY civic_genome_bill_version.genome_bill_id, civic_genome_bill_version.stage_rank DESC NULLS LAST, civic_genome_bill_version.provider_sequence DESC NULLS LAST\n        ), bill_map AS (\n         SELECT DISTINCT civic_genome_lifecycle_event_v2.genome_bill_id,\n            civic_genome_lifecycle_event_v2.state_code,\n            civic_genome_lifecycle_event_v2.source_bill_id\n           FROM civic_genome_lifecycle_event_v2\n        )\n SELECT bm.state_code,\n    bm.source_bill_id AS bill_id,\n    t.genome_bill_id,\n    t.trait_id,\n    t.trait_key,\n        CASE t.normalized_value_json ->> 'override_type'::text\n            WHEN 'source_stated_exception'::text THEN 'exception'::text\n            WHEN 'source_stated_condition'::text THEN 'condition'::text\n            WHEN 'source_stated_limitation'::text THEN 'limitation'::text\n            WHEN 'source_stated_amendment_operation'::text THEN 'amendment_operation'::text\n            ELSE 'unclassified'::text\n        END AS callout_type,\n    t.normalized_value_json ->> 'override_condition'::text AS condition_text,\n    t.normalized_value_json ->> 'override_scope'::text AS scope_text,\n    t.normalized_value_json ->> 'overridden_authority'::text AS overridden_authority,\n    t.normalized_value_json ->> 'governing_section'::text AS governing_section,\n    t.normalized_value_json ->> 'granting_actor'::text AS granting_actor,\n    t.normalized_value_json ->> 'temporal_status'::text AS temporal_status,\n    t.trait_fingerprint,\n    t.extraction_run_id,\n    t.methodology_version\n   FROM civic_genome_trait t\n     JOIN latest l ON l.genome_bill_id = t.genome_bill_id\n     JOIN bill_map bm ON bm.genome_bill_id = t.genome_bill_id\n  WHERE t.trait_class = 'override'::text AND (EXISTS ( SELECT 1\n           FROM civic_genome_prism_verification_binding b\n          WHERE b.trait_id = t.trait_id AND b.assembly_run_id = l.assembly_run_id));",
+      "definition_md5": "e2b811f7140ee5f08fe20b517a14e334"
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+      "name": "docket_bill_obligation_checklist",
+      "owner": "postgres",
+      "definition": " WITH latest AS (\n         SELECT DISTINCT ON (civic_genome_bill_version.genome_bill_id) civic_genome_bill_version.genome_bill_id,\n            civic_genome_bill_version.bill_version_id,\n            civic_genome_bill_version.assembly_run_id\n           FROM civic_genome_bill_version\n          ORDER BY civic_genome_bill_version.genome_bill_id, civic_genome_bill_version.stage_rank DESC NULLS LAST, civic_genome_bill_version.provider_sequence DESC NULLS LAST\n        ), bill_map AS (\n         SELECT DISTINCT civic_genome_lifecycle_event_v2.genome_bill_id,\n            civic_genome_lifecycle_event_v2.state_code,\n            civic_genome_lifecycle_event_v2.source_bill_id\n           FROM civic_genome_lifecycle_event_v2\n        )\n SELECT bm.state_code,\n    bm.source_bill_id AS bill_id,\n    t.genome_bill_id,\n    t.trait_id,\n    s.step ->> 'step_id'::text AS step_id,\n    (s.step ->> 'step_order'::text)::integer AS step_order,\n    s.step ->> 'verb'::text AS verb,\n    s.step ->> 'actor'::text AS actor,\n    s.step ->> 'step_name'::text AS step_text,\n    s.step ->> 'governing_section'::text AS governing_section,\n        CASE\n            WHEN (s.step ->> 'verb'::text) = 'may'::text THEN 'right_or_option'::text\n            WHEN (s.step ->> 'verb'::text) = ANY (ARRAY['may not'::text, 'shall not'::text, 'must not'::text]) THEN 'prohibition'::text\n            WHEN (s.step ->> 'verb'::text) = ANY (ARRAY['shall'::text, 'must'::text]) THEN 'mandate'::text\n            ELSE 'unclassified'::text\n        END AS tray,\n        CASE\n            WHEN (s.step ->> 'actor'::text) IS NULL THEN 'unknown'::text\n            WHEN (s.step ->> 'actor'::text) ~* 'department|commission|agency|state|county|counties|treasurer|assessor|legislature|board|court|officer|official|superintendent|sheriff|chief|marshal|committee|authority|district|municipal|city|town|tribal|tribe'::text THEN 'institution'::text\n            ELSE 'person_or_other'::text\n        END AS actor_kind,\n    t.trait_fingerprint,\n    t.extraction_run_id,\n    t.methodology_version\n   FROM civic_genome_trait t\n     JOIN latest l ON l.genome_bill_id = t.genome_bill_id\n     JOIN bill_map bm ON bm.genome_bill_id = t.genome_bill_id\n     CROSS JOIN LATERAL jsonb_array_elements(t.normalized_value_json -> 'steps'::text) s(step)\n  WHERE t.trait_class = 'workflow'::text AND (EXISTS ( SELECT 1\n           FROM civic_genome_prism_verification_binding b\n          WHERE b.trait_id = t.trait_id AND b.assembly_run_id = l.assembly_run_id));",
+      "definition_md5": "2bd5ce9396cb757ccf8072377c73eb67"
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres,service_role=r/postgres}",
+      "name": "v_civic_genome_prism_verification_status",
+      "owner": "postgres",
+      "definition": " SELECT trait.trait_id,\n    trait.genome_bill_id,\n    trait.trait_class,\n    trait.trait_key,\n    trait.source_object_id,\n    trait.content_hash AS trait_content_hash,\n    binding.binding_id,\n    binding.assembly_run_id,\n    binding.request_id,\n    binding.prism_verification_receipt_id,\n    binding.prism_engine_version,\n    binding.prism_rule_set_id,\n    binding.prism_rule_set_version,\n    binding.verification_status,\n    binding.input_hash,\n    binding.output_hash,\n    binding.deterministic_replay_key,\n    binding.created_at AS verified_at\n   FROM civic_genome_trait trait\n     LEFT JOIN civic_genome_prism_verification_binding binding ON binding.trait_id = trait.trait_id;",
+      "definition_md5": "c0707929b3015ddcf537498ef01f01cb"
+    }
+  ],
+  "counts": {
+    "traits": 99159,
+    "bill_payloads": 3082,
+    "history_payloads": 104741,
+    "version_receipts": 9428
+  },
+  "writer_fence": {
+    "fence": [
+      {
+        "name": "zz_civic_genome_block_rosetta_trait_write_v1",
+        "table": "civic_genome_trait",
+        "enabled": "O",
+        "body_md5": "87ffdb41a744456fb3863f2a0574b30c",
+        "definition": "CREATE TRIGGER zz_civic_genome_block_rosetta_trait_write_v1 BEFORE INSERT OR UPDATE ON public.civic_genome_trait FOR EACH ROW EXECUTE FUNCTION civic_genome_block_rosetta_derivative_write_v1()"
+      },
+      {
+        "name": "zz_civic_genome_block_rosetta_assembly_write_v1",
+        "table": "civic_genome_assembly_run",
+        "enabled": "O",
+        "body_md5": "87ffdb41a744456fb3863f2a0574b30c",
+        "definition": "CREATE TRIGGER zz_civic_genome_block_rosetta_assembly_write_v1 BEFORE INSERT OR UPDATE ON public.civic_genome_assembly_run FOR EACH ROW EXECUTE FUNCTION civic_genome_block_rosetta_derivative_write_v1()"
+      },
+      {
+        "name": "zz_civic_genome_block_rosetta_structural_representation_write_v",
+        "table": "civic_genome_rosetta_structural_representation",
+        "enabled": "O",
+        "body_md5": "87ffdb41a744456fb3863f2a0574b30c",
+        "definition": "CREATE TRIGGER zz_civic_genome_block_rosetta_structural_representation_write_v BEFORE INSERT OR UPDATE ON public.civic_genome_rosetta_structural_representation FOR EACH ROW EXECUTE FUNCTION civic_genome_block_rosetta_derivative_write_v1()"
+      },
+      {
+        "name": "zz_civic_genome_block_rosetta_source_binding_write_v1",
+        "table": "civic_genome_rosetta_source_binding",
+        "enabled": "O",
+        "body_md5": "87ffdb41a744456fb3863f2a0574b30c",
+        "definition": "CREATE TRIGGER zz_civic_genome_block_rosetta_source_binding_write_v1 BEFORE INSERT OR UPDATE ON public.civic_genome_rosetta_source_binding FOR EACH ROW EXECUTE FUNCTION civic_genome_block_rosetta_derivative_write_v1()"
+      },
+      {
+        "name": "zz_civic_genome_block_rosetta_target_write_v1",
+        "table": "civic_genome_rosetta_generation_target",
+        "enabled": "O",
+        "body_md5": "87ffdb41a744456fb3863f2a0574b30c",
+        "definition": "CREATE TRIGGER zz_civic_genome_block_rosetta_target_write_v1 BEFORE INSERT OR UPDATE ON public.civic_genome_rosetta_generation_target FOR EACH ROW EXECUTE FUNCTION civic_genome_block_rosetta_derivative_write_v1()"
+      },
+      {
+        "name": "zz_civic_genome_block_bill_rosetta_payload_v1",
+        "table": "civic_genome_bill",
+        "enabled": "O",
+        "body_md5": "ec8e3e387f823d806f926bd92585ec6e",
+        "definition": "CREATE TRIGGER zz_civic_genome_block_bill_rosetta_payload_v1 BEFORE INSERT OR UPDATE ON public.civic_genome_bill FOR EACH ROW EXECUTE FUNCTION civic_genome_block_bill_rosetta_payload_v1()"
+      },
+      {
+        "name": "zz_civic_genome_block_bill_version_rosetta_receipt_v1",
+        "table": "civic_genome_bill_version",
+        "enabled": "O",
+        "body_md5": "b29c9699c7831806f7ddcf346e309e22",
+        "definition": "CREATE TRIGGER zz_civic_genome_block_bill_version_rosetta_receipt_v1 BEFORE INSERT OR UPDATE ON public.civic_genome_bill_version FOR EACH ROW EXECUTE FUNCTION civic_genome_block_bill_version_rosetta_receipt_v1()"
+      },
+      {
+        "name": "zz_civic_genome_guard_source_only_history_v1",
+        "table": "civic_genome_projection_entity_version",
+        "enabled": "O",
+        "body_md5": "8c281d2d552148d50059c665e5f6aabf",
+        "definition": "CREATE TRIGGER zz_civic_genome_guard_source_only_history_v1 BEFORE INSERT OR UPDATE ON public.civic_genome_projection_entity_version FOR EACH ROW EXECUTE FUNCTION civic_genome_guard_source_only_history_v1()"
+      },
+      {
+        "name": "zz_civic_genome_block_rosetta_activation_execution_v1",
+        "table": "civic_genome_rosetta_generation_activation_queue",
+        "enabled": "O",
+        "body_md5": "38c9a5480b91a640fe27776a7f0340bc",
+        "definition": "CREATE TRIGGER zz_civic_genome_block_rosetta_activation_execution_v1 BEFORE INSERT OR UPDATE ON public.civic_genome_rosetta_generation_activation_queue FOR EACH ROW EXECUTE FUNCTION civic_genome_block_rosetta_queue_execution_v1()"
+      },
+      {
+        "name": "zz_civic_genome_block_rosetta_upgrade_execution_v1",
+        "table": "civic_genome_rosetta_generation_upgrade_queue",
+        "enabled": "O",
+        "body_md5": "38c9a5480b91a640fe27776a7f0340bc",
+        "definition": "CREATE TRIGGER zz_civic_genome_block_rosetta_upgrade_execution_v1 BEFORE INSERT OR UPDATE ON public.civic_genome_rosetta_generation_upgrade_queue FOR EACH ROW EXECUTE FUNCTION civic_genome_block_rosetta_queue_execution_v1()"
+      }
+    ],
+    "ledger": [
+      {
+        "name": "civic_genome_rosetta_sql_write_quarantine_v1",
+        "count": 1,
+        "version": "20261015135444",
+        "statement_md5": "68ad3ca961b016b0a6a37c94f2861199",
+        "statements_md5": "2c5997fbdf61ff150c08366fab087278"
+      }
+    ]
+  }
+}

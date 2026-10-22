@@ -26,6 +26,8 @@ describe("Docket bill detail workspace", () => {
   });
 
   it("shows completed procedure separately from a future effective date", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-17T00:00:00Z"));
     const html = renderToStaticMarkup(
       <DocketBillDetailWorkspace
         session_current={true}
@@ -51,6 +53,7 @@ describe("Docket bill detail workspace", () => {
     expect(html).toContain("Operational status");
     expect(html).toContain("Takes effect Oct 1, 2026");
     expect(html).not.toContain("Live · changeable");
+    vi.useRealTimers();
   });
 
   it("keeps stale freshness separate from completed procedure", () => {

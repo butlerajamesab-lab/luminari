@@ -1,4 +1,5 @@
 import { query_with_diagnostics } from "./db";
+import { is_genome_rosetta_publication_quarantined } from "./civic-genome-rosetta-publication-quarantine";
 import {
   attach_completed_current_result,
   type completed_current_result_attachment,
@@ -200,6 +201,11 @@ export async function reconcile_awaiting_current_results(input: {
   limit?: number;
   concurrency?: number;
 } = {}): Promise<current_result_reconciliation_summary> {
+  // This observer claims and updates queue rows. It must never run while the
+  // independent V12 certification or Genome publication boundary is closed.
+  if (is_genome_rosetta_publication_quarantined()) {
+    return { checked: 0, attached: 0, still_held: 0, read_errors: 0 };
+  }
   const limit = bounded_integer(input.limit, DEFAULT_BATCH_SIZE, 1, MAX_BATCH_SIZE);
   const concurrency = bounded_integer(
     input.concurrency,
