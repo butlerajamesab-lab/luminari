@@ -41,6 +41,22 @@ export function sanitize_database_url_for_pg(connection_string: string): string 
   }
 }
 
+/**
+ * Keep TLS peer and hostname verification enabled for Supabase Postgres.
+ * DATABASE_SSL_CA_PEM is optional when the issuer is already trusted by
+ * Node.js, but is needed when the service uses a private CA chain.
+ * The complete PEM is provisioned through the Render environment, never code.
+ */
+export function get_database_tls_options(environment: NodeJS.ProcessEnv = process.env): { rejectUnauthorized: true; ca?: string } {
+  const configured_ca = environment.DATABASE_SSL_CA_PEM?.replace(/\\n/g, "\n").trim();
+  if (configured_ca && !configured_ca.includes("-----BEGIN CERTIFICATE-----")) {
+    throw new Error("DATABASE_SSL_CA_PEM must contain a PEM-encoded CA certificate");
+  }
+  return configured_ca
+    ? { rejectUnauthorized: true, ca: configured_ca }
+    : { rejectUnauthorized: true };
+}
+
 export function get_database_host_label(connection_string = get_database_url()): string {
   if (!connection_string) return "unconfigured";
   try {
@@ -85,7 +101,7 @@ export function create_database_pool(options: database_pool_options = {}): Pool 
   const pool = new Pool({
     connectionString: sanitized_connection_string,
     connectionTimeoutMillis: connection_timeout_millis,
-    ssl: { rejectUnauthorized: false },
+    ssl: get_database_tls_options(),
     idleTimeoutMillis: idle_timeout_millis,
     maxUses: max_uses,
     keepAlive: keep_alive,
@@ -105,6 +121,6 @@ export function create_database_pool(options: database_pool_options = {}): Pool 
   // settings are unsupported, and EventEmitter listeners are not awaited.
   // A fire-and-forget setup query can therefore race the caller's first query.
   // query_timeout is enforced by node-postgres on each client instead.
-  console.log(`[${label}] PostgreSQL pool initialized via sanitized DATABASE_URL with SSL. Host: ${get_database_host_label(connection_string)}`);
+  console.log(`[${label}] PostgreSQL pool initialized via sanitized DATABASE_URL with verified TLS. Host: ${get_database_host_label(connection_string)}`);
   return pool;
 }
