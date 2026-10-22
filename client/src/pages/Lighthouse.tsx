@@ -2468,7 +2468,7 @@ export default function Lighthouse() {
                 Ready to start? Create a free account to upload documents, run analysis, and build your case.
               </p>
               <button
-                onClick={() => { window.location.href = getLoginUrl(); }}
+                onClick={() => { window.location.href = getLoginUrl() + "&mode=signup"; }}
                 style={{
                   fontFamily: fontMono, fontSize: 12, letterSpacing: "0.05em",
                   color: lh.ink, background: lh.gold,

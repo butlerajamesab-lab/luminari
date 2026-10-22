@@ -1,3 +1,4 @@
+import { assert_genome_rosetta_publication_admitted } from "../civic-genome-rosetta-publication-quarantine";
 import { query_with_diagnostics } from "../db";
 import { assert_rosetta_current_publication } from "./rosetta-publication-eligibility";
 import { create_rosetta_supabase_headers } from "../rosetta-supabase-auth";
@@ -317,6 +318,8 @@ function validate_request_against_context(
 export async function enrich_rosetta_binding_request(
   request: RosettaBindingRequest,
 ): Promise<DeepRosettaBindingRequest> {
+  // Reject before owner lookup, cached context, source reads or peer-trait queries.
+  assert_genome_rosetta_publication_admitted();
   // Publication eligibility is mutable and must be checked even when immutable context is cached.
   await assert_rosetta_current_publication(request.rosetta_binding);
   const context = await load_assembly_verification_context(request);

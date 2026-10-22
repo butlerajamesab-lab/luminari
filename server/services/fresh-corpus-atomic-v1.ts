@@ -8,7 +8,7 @@ import { parse_batch_atomic_records } from "./batch-corpus-source";
 import { workbookSheets, create_worksheet_validator, resolve_shared_string } from "./xlsx-workbook-structure";
 
 export const ATOMIC_CORPUS_ENGINE_VERSION = "fresh_atomic_corpus_v1.0.0";
-export const ATOMIC_CORPUS_PARSER_VERSION = "fresh_atomic_parser_v1.0.2";
+export const ATOMIC_CORPUS_PARSER_VERSION = "fresh_atomic_parser_v1.0.3";
 
 const MAX_RECORDS_PER_SOURCE_FILE = 200_000;
 const MAX_RAW_EXCERPT = 8_000;
@@ -134,14 +134,46 @@ export function parseDocxXmlAtomicRows(xml: string, sourceFileSha256: string, co
   for (const tableMatch of xml.matchAll(/<w:tbl\b[\s\S]*?<\/w:tbl>/g)) {
     tableIndex += 1;
     tableRanges.push([tableMatch.index ?? 0, (tableMatch.index ?? 0) + tableMatch[0].length]);
-    let rowIndex = 0;
-    for (const rowMatch of tableMatch[0].matchAll(/<w:tr\b[\s\S]*?<\/w:tr>/g)) {
-      rowIndex += 1;
-      const cells = Array.from(rowMatch[0].matchAll(/<w:tc\b[\s\S]*?<\/w:tc>/g)).map(cell => wordText(cell[0]));
-      if (!cells.some(Boolean)) continue;
+    const rows = Array.from(tableMatch[0].matchAll(/<w:tr\b[\s\S]*?<\/w:tr>/g))
+      .map((rowMatch, index) => ({
+        rowIndex: index + 1,
+        cells: Array.from(rowMatch[0].matchAll(/<w:tc\b[\s\S]*?<\/w:tc>/g)).map(cell => wordText(cell[0])),
+      }))
+      .filter(row => row.cells.some(Boolean));
+
+    const headerIndex = rows.findIndex(row => row.cells.filter(Boolean).length >= 2);
+    const headers = headerIndex >= 0
+      ? rows[headerIndex].cells.map((value, index) => compact(value) || `column_${index + 1}`)
+      : [];
+    let sectionContext: string | null = null;
+
+    for (let index = 0; index < rows.length; index += 1) {
+      const row = rows[index];
       ordinal += 1;
-      const values: Record<string, unknown> = {};
-      cells.forEach((value, index) => { values[`column_${index + 1}`] = value; });
+      let rowRole: "header" | "section" | "data" = "data";
+      let values: Record<string, unknown>;
+
+      if (index === headerIndex) {
+        rowRole = "header";
+        values = { row_role: rowRole, source_headers: row.cells };
+      } else if (row.cells.filter(Boolean).length === 1) {
+        rowRole = "section";
+        sectionContext = row.cells.find(Boolean) ?? null;
+        values = { row_role: rowRole, section_context: sectionContext };
+      } else if (headers.length) {
+        values = { row_role: rowRole };
+        row.cells.forEach((value, cellIndex) => {
+          const header = headers[cellIndex] ?? `column_${cellIndex + 1}`;
+          values[header] = value;
+        });
+        if (sectionContext) values.section_context = sectionContext;
+      } else {
+        values = { row_role: rowRole };
+        row.cells.forEach((value, cellIndex) => {
+          values[`column_${cellIndex + 1}`] = value;
+        });
+      }
+
       out.push(makeAtomicRecord({
         sourceFileSha256,
         sourceKind: "docx_table_row",
@@ -149,8 +181,8 @@ export function parseDocxXmlAtomicRows(xml: string, sourceFileSha256: string, co
         rowOrdinal: ordinal,
         columnNames: Object.keys(values),
         values,
-        rawExcerpt: cells.join(" | "),
-        sourceLocator: `docx:table:${tableIndex}:row:${rowIndex}`,
+        rawExcerpt: row.cells.join(" | "),
+        sourceLocator: `docx:table:${tableIndex}:row:${row.rowIndex}`,
         containerMemberPath,
       }));
       if (out.length >= MAX_RECORDS_PER_SOURCE_FILE) return out;

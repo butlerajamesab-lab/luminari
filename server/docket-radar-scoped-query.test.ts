@@ -3,31 +3,15 @@ import { readFileSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 const source = readFileSync("server/routes/docket.ts", "utf8");
-// Execute the actual route SQL, not a separately maintained approximation.
+// Execute the actual current route SQL against convincing legacy coverage fixtures.
 const query = source.match(/`(with requested\(source_bill_id\)[\s\S]*?)`,\s*\[bill_ids\]/)![1];
-const canonicalQuery = `with requested(source_bill_id) as (select unnest($1::integer[])),
-bill_genome as (
- select distinct on (source_bill_id) source_bill_id, genome_bill_id
- from public.civic_genome_bill_version where source_bill_id = any($1::integer[])
- order by source_bill_id, stage_rank desc, provider_sequence desc
-)
-select requested.source_bill_id, velocity.velocity_score, velocity.events_14d,
- velocity.amended_7d, next_event.next_event_date, next_event.next_event_class,
- next_event.next_event_description, drift.trait_class, drift.base_count,
- drift.latest_count, drift.delta, drift.base_has_trait_coverage, drift.latest_has_trait_coverage
-from requested
-left join public.docket_bill_velocity velocity using (source_bill_id)
-left join bill_genome using (source_bill_id)
-left join public.docket_bill_next_floor_event next_event on next_event.bill_id = requested.source_bill_id
-left join public.docket_bill_drift_delta drift on drift.genome_bill_id = bill_genome.genome_bill_id`;
-
 let db: PGlite;
 beforeAll(async () => {
  db = new PGlite();
  await db.exec(`
  create table civic_genome_bill_version (
   genome_bill_id text, bill_version_id text primary key, source_bill_id integer,
-  base_bill_version_id text, stage_rank integer, provider_sequence integer,
+  document_family text, base_bill_version_id text, stage_rank integer, provider_sequence integer,
   created_at integer, assembly_run_id text, prism_verification_run_id text, processing_state text
  );
  create table civic_genome_prism_verification_binding (assembly_run_id text, trait_id text);
@@ -35,15 +19,15 @@ beforeAll(async () => {
  create table docket_bill_velocity (source_bill_id integer, velocity_score integer, events_14d integer, amended_7d integer);
  create table docket_bill_next_floor_event (bill_id integer, next_event_date text, next_event_class text, next_event_description text);
  insert into civic_genome_bill_version values
- ('a','a0',1,null,0,0,0,'a0','p','verified'),
- ('a','a1',1,'a0',1,1,1,'a1','p','verified_with_findings'),
- ('a','a2',1,'a1',2,2,2,'a2','p','verified'),
- ('a','anull',1,null,null,null,3,'anull',null,'pending'),
- ('b','b0',2,null,0,0,0,'b0',null,'pending'),
- ('b','b1',2,'b0',1,1,1,'b1','p','verified'),
- ('c','c0',3,null,0,0,0,'c0','p','verified'),
- ('d','d0',4,null,0,0,0,null,null,'pending'),
- ('outside','o0',99,null,0,0,0,'o0','p','verified');
+ ('a','a0',1,'text',null,0,0,0,'a0','p','verified'),
+ ('a','a1',1,'text','a0',1,1,1,'a1','p','verified_with_findings'),
+ ('a','a2',1,'text','a1',2,2,2,'a2','p','verified'),
+ ('a','anull',1,'text',null,null,null,3,'anull',null,'pending'),
+ ('b','b0',2,'text',null,0,0,0,'b0',null,'pending'),
+ ('b','b1',2,'text','b0',1,1,1,'b1','p','verified'),
+ ('c','c0',3,'text',null,0,0,0,'c0','p','verified'),
+ ('d','d0',4,'text',null,0,0,0,null,null,'pending'),
+ ('outside','o0',99,'text',null,0,0,0,'o0','p','verified');
  insert into civic_genome_trait values ('h0','HELP'),('h2','HELP'),('old','OVERRIDES'),('new','WORKFLOW'),('other','DEFINITIONS');
  insert into civic_genome_prism_verification_binding values
  ('a0','h0'),('a0','h0'),('a0','old'),('a1','other'),('a2','h2'),('a2','new'),
@@ -55,28 +39,31 @@ beforeAll(async () => {
 }, 30_000);
 afterAll(async () => { await db?.close(); });
 
-const sorted = (rows: unknown[]) => rows.map(row => JSON.stringify(row)).sort();
-describe("request-scoped Docket radar SQL", () => {
- it("matches canonical drift for removed/new classes, duplicate bindings, missing coverage, null ranks and absent bills", async () => {
+describe("source-only Docket radar during structural quarantine", () => {
+ it("retains source velocity/calendar while refusing apparent legacy drift coverage", async () => {
   const ids = [1,2,3,4,777];
   const actual = (await db.query<Record<string, unknown>>(query, [ids])).rows;
-  const expected = (await db.query(canonicalQuery, [ids])).rows;
-  expect(sorted(actual)).toEqual(sorted(expected));
-  expect(actual.find(r => r.source_bill_id === 1 && r.trait_class === "OVERRIDES"))
-   .toMatchObject({ base_count: 1, latest_count: 0, delta: -1, base_has_trait_coverage: true, latest_has_trait_coverage: true });
-  expect(actual.find(r => r.source_bill_id === 2)).toMatchObject({ base_has_trait_coverage: false });
+  expect(actual.map(r => r.source_bill_id).sort()).toEqual(ids.sort());
+  expect(actual.find(r => r.source_bill_id === 1)).toMatchObject({
+   velocity_score: 3, events_14d: 2, amended_7d: 1,
+   next_event_date: "2026-09-15", next_event_class: "floor_action",
+  });
+  for (const row of actual) expect(row).toMatchObject({
+   trait_class: null, base_count: null, latest_count: null, delta: null,
+   base_has_trait_coverage: false, latest_has_trait_coverage: false,
+  });
   expect(actual.some(r => r.source_bill_id === 99)).toBe(false);
  });
  it("preserves an empty request", async () => {
   expect((await db.query(query, [[]])).rows).toEqual([]);
  });
- it("scopes before aggregation and retains the five-second budget", () => {
-  expect(query).toContain("scoped_versions as materialized");
-  expect(query).toContain("from selected_ids i");
-  expect(query).toContain("count(distinct t.trait_id)");
-  expect(query).not.toContain("public.docket_bill_drift_delta");
+ it("does not read interpretations and retains the five-second budget", () => {
+  expect(query).not.toMatch(/civic_genome_|rosetta|trait_id|count\(distinct/i);
   expect(query).toMatch(/public.docket_bill_velocity\s+where source_bill_id = any\(\$1/);
   expect(query).toMatch(/public.docket_bill_next_floor_event\s+where bill_id = any\(\$1/);
+  expect(source).toContain('structural_state: "quarantined"');
+  expect(source).toContain("structural_reason: GENOME_ROSETTA_PUBLICATION_QUARANTINE_REASON");
+  expect(source).not.toContain("existing.drift.push");
   expect(source).toMatch(/label: "docket_radar_state_projection",\s*pool_acquire_timeout_ms: 1_000,\s*query_timeout_ms: 5_000/);
  });
 });

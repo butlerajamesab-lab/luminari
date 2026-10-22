@@ -1,9 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import { trpc } from "@/lib/trpc";
 import { useQueryClient } from "@tanstack/react-query";
 import { clearPrivateQueryCache } from "@/core/privateQueryCache";
 import { clear_browser_private_intake_drafts } from "@/lib/intakeDraftPrivacy";
+
+const SINGLE_OPERATOR_PUBLIC_READ = import.meta.env.VITE_SINGLE_OPERATOR_PUBLIC_READ === "1";
+
+const SINGLE_OPERATOR_READ_USER = {
+  id: "single-operator-public-read",
+  email: "",
+  name: "Single Operator",
+  role: "admin",
+  authenticated: false,
+};
 
 type UseAuthOptions = {
   redirectOnUnauthenticated?: boolean;
@@ -36,6 +47,15 @@ export function useAuth(_options?: UseAuthOptions) {
     };
   }, [queryClient]);
 
+  // UI role must come from the server-resolved Lighthouse profile, never
+  // from the existence of a Supabase session or editable user metadata.
+  const auth_identity = trpc.auth.me.useQuery(undefined, {
+    enabled: Boolean(session),
+    retry: false,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  });
+
   const logout = useCallback(async () => {
     await supabase.auth.signOut();
     clearPrivateQueryCache(queryClient);
@@ -48,13 +68,13 @@ export function useAuth(_options?: UseAuthOptions) {
       id: session.user.id,
       email: session.user.email ?? "",
       name: session.user.email?.split("@")[0] ?? "User",
-      role: "admin",
+      role: auth_identity.data?.role ?? "user",
       authenticated: true,
-    } : null,
+    } : SINGLE_OPERATOR_PUBLIC_READ ? SINGLE_OPERATOR_READ_USER : null,
     loading,
     error: null,
     isAuthenticated: Boolean(session),
-  }), [session, loading]);
+  }), [session, loading, auth_identity.data?.role]);
 
   return {
     ...state,

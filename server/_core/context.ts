@@ -214,7 +214,7 @@ function getForwardedSupabaseSession(req?: CreateExpressContextOptions["req"]): 
   return match?.[1]?.trim() || null;
 }
 
-async function fetchSupabaseAuthUser(sessionValue: string, signal?: AbortSignal): Promise<SupabaseAuthUser | null> {
+export async function fetchSupabaseAuthUser(sessionValue: string, signal?: AbortSignal): Promise<SupabaseAuthUser | null> {
   const config = getSupabaseConfig();
   if (!config) {
     console.warn("[CONTEXT] Supabase auth REST unavailable; missing URL or key env vars");

@@ -12,6 +12,12 @@ PRODUCTION_RECEIPTS = (
     Path("supabase/verification/production_migration_receipts_20260912_addendum.tsv"),
     Path("supabase/verification/production_migration_receipts_20260913_addendum.tsv"),
     Path("supabase/verification/production_migration_receipts_20260914_addendum.tsv"),
+    Path("supabase/verification/production_migration_receipts_20260930_addendum.tsv"),
+    Path("supabase/verification/production_migration_receipts_20261007_addendum.tsv"),
+    Path("supabase/verification/production_migration_receipts_20261015_addendum.tsv"),
+    Path("supabase/verification/production_migration_receipts_20261017_addendum.tsv"),
+    # Exact Supabase-assigned identity for the installed October 8 Viewfinder SQL.
+    Path("supabase/verification/production_migration_receipts_20261018_addendum.tsv"),
 )
 # executable_md5 is exported from each ordered production statement array by
 # trimming trailing whitespace, restoring a missing top-level terminator,
@@ -292,9 +298,64 @@ APPROVED_REPOSITORY_ONLY = {
         "20260915070000_docket_prefix_subsidiary_failure_reconcile.sql",
         "6beb3ff76c5cf26adc7963cc99dda2bb1ed92667",
     ),
+    # Docket live-authority lock pending production application through the
+    # normal Supabase deployment gate.
+    "20260930170000": (
+        "20260930170000_docket_operational_authority_lock.sql",
+        "2b6681b47d7fb8a4b5da8e31f6aadddd931edd0c",
+    ),
+    # Docket lineage authority repair migrations pending production application
+    # through the normal Supabase deployment gate.
+    "20261001030640": (
+        "20261001030640_civic_genome_predecessor_claim_index.sql",
+        "9875a001f7e5f5e272ed01221913264815d7970e",
+    ),
+    "20261001033000": (
+        "20261001033000_docket_lineage_leaf_index_probe.sql",
+        "5210ccef9bd0c6d7f425318c4c04d7aec2b29aff",
+    ),
+    "20261001230000": (
+        "20261001230000_finalize_docket_lineage_authority_handoff.sql",
+        "f0c315d66d8e3bbbdf310ee7f12189056b5261f7",
+    ),
+    # LegiScan quota-safe repair remains repository-only, not installed in
+    # production. This exact Git blob includes bounded current-window joins
+    # validated against live read-only eligibility probes (2026-10-19).
+    "20261002060000": (
+        "20261002060000_legiscan_public_api_budget.sql",
+        "e518dbbf10c3178c105bdd32126c0f3ce5307037",
+    ),
+    "20261002061000": (
+        "20261002061000_docket_quota_safe_current_window.sql",
+        "33b9d4aa115696877d5a0c6288ba9d9563deca3f",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
+    # Four-view permission retirement applied and read back on 2026-10-17.
+    "20261017000912": (
+        "0dcc197ff30adf74f88ed4d358f572dd",
+        "1fc17005d93bd6ece8b50614da58a4fa82cd71cf",
+    ),
+    # Production ledger reconciliation captured 2026-09-30.
+    # These files are the source-controlled SQL corresponding to the exact
+    # production migration identities restored from supabase_migrations.
+    "20260918162308": (
+        "ac2b0c2c0cf6a0332611b110a93ad07b",
+        "3d919b94f17e5509d4610610c9518d04a1616f7e",
+    ),
+    "20260918172503": (
+        "a8a8f07c208305e2e5bd35df13981fb1",
+        "24f60f2c1863adc00094ef43c63c6bbec89a0f53",
+    ),
+    "20260918214924": (
+        "1211dd669f36a6a56621a39d7b99ede1",
+        "4ab843418dd191d76492c3e4aa63b6a731726b80",
+    ),
+    "20260919070543": (
+        "6393d8135c72d8ca64c4eae84b658757",
+        "53251a99b3cec91094febb149b218725b4ead0a8",
+    ),
     # Native integration receipt read from production on 2026-09-12. Ordered
     # statement boundaries differ from the source file; SQL tokens are identical.
     "20260911201534": (
@@ -492,6 +553,28 @@ SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
 }
 
 REPLAY_ALIAS_RECEIPTS = {
+    # Production-applied four-view retirement SQL is archived unchanged.
+    # The replay-only alias also recognizes the exact pre-cut ACL state on
+    # disposable Supabase previews; production applied bytes are NOT changed.
+    # Fresh replay demands the same 4-view/10-trigger ACL and hash checks,
+    # but checks the previous local migration by identity, not production
+    # statements-array formatting.
+    "20261017000912": (
+        "0dcc197ff30adf74f88ed4d358f572dd",
+        "83c9f0d8d688f123d3bb6b0ca4244d0b86afa99c",
+    ),
+    # Fresh Supabase replay lacks pg_cron. Production-applied SQL is preserved
+    # byte-for-byte under verification/applied; replay skips only cron.schedule
+    # when the capability is absent and never fabricates a refresh job.
+    "20261008165231": (
+        "3e581fb3463802ffa2296715b87bdadd",
+        "671161c8174d5f82805e0ac7ba03791cdf346be0",
+    ),
+    # Empty-only final permission state; never replays the historical DELETE.
+    "20261017021051": (
+        "d8cc8bd7ec06d2c9884d451050528d48",
+        "65715cbd21195a5103d20f47ae4b78c15e523d1d",
+    ),
     "20260805210000": (
         "0b055159913ace8294a93fb659ddbd68",
         "2fa30df60f163da3c54dbe55e447bb553d2b7b04",
@@ -527,6 +610,48 @@ def git_blob_sha1(path: Path) -> str:
     body = path.read_bytes()
     header = f"blob {len(body)}\0".encode()
     return hashlib.sha1(header + body).hexdigest()
+
+
+# Executed production SQL stays immutable and independently hash-checked when
+# automatic fresh replay uses a distinct, explicitly pinned empty-state variant.
+VERBATIM_PRODUCTION_SQL_RECEIPTS = {
+    # Exact SQL of the applied four-view retirement, untouched by local replay.
+    "20261017000912": (
+        "supabase/verification/applied/20261017000912_retire_genome_legacy_structural_view_access_20261016.sql",
+        "0dcc197ff30adf74f88ed4d358f572dd",
+        "1fc17005d93bd6ece8b50614da58a4fa82cd71cf",
+    ),
+    # Original SQL from Supabase production migration ledger (1 statement).
+    "20261008165231": (
+        "supabase/verification/applied/20261008165231_anomaly_viewfinder_materialized_v1.sql",
+        "3e581fb3463802ffa2296715b87bdadd",
+        "e42f2336952dd26928ddabc2ecaa34305613ffef",
+    ),
+    "20261017021051": (
+        "supabase/verification/applied/20261017021051_purge_disqualified_genome_traits_20261017.sql",
+        "d8cc8bd7ec06d2c9884d451050528d48",
+        "96b7e647e00719e79899052d8bfaafe3482726b5",
+    ),
+}
+
+def verify_verbatim_production_receipts(entries, production_by_version, replay_alias_receipts):
+    violations = []
+    for version, (archive_name, expected_md5, expected_blob) in entries.items():
+        path = Path(archive_name)
+        receipts = production_by_version.get(version, [])
+        if len(receipts) != 1 or receipts[0].get("statements_md5") != expected_md5:
+            violations.append((version, "production_receipt_mismatch"))
+        if not path.is_file():
+            violations.append((version, "archive_missing"))
+        elif hashlib.md5(path.read_bytes()).hexdigest() != expected_md5 or git_blob_sha1(path) != expected_blob:
+            violations.append((version, "archive_bytes_changed"))
+        alias = replay_alias_receipts.get(version)
+        canonical = Path("supabase/migrations") / path.name
+        if alias is None or alias[0] != expected_md5 or not canonical.is_file():
+            violations.append((version, "replay_alias_missing_or_mismatched"))
+        elif git_blob_sha1(canonical) != alias[1]:
+            violations.append((version, "replay_source_changed"))
+    return violations
 
 
 receipt_rows: list[dict[str, str]] = []
@@ -660,6 +785,10 @@ for version in sorted(approved_repository_only_versions & local_versions):
                 )
                 break
 
+verbatim_production_mismatches = verify_verbatim_production_receipts(
+    VERBATIM_PRODUCTION_SQL_RECEIPTS, production_by_version, REPLAY_ALIAS_RECEIPTS
+)
+
 print(f"PRODUCTION_RECEIPT_COUNT={len(receipt_rows)}")
 print(f"PRODUCTION_VERSION_COUNT={len(production_versions)}")
 print(f"LOCAL_14_DIGIT_COUNT={len(local_versions)}")
@@ -721,8 +850,14 @@ for (
         f"{version}|{name}|{production_version}|{production_name}|{statements_md5}"
     )
 
+print(f"VERBATIM_PRODUCTION_SQL_RECEIPT_COUNT={len(VERBATIM_PRODUCTION_SQL_RECEIPTS)}")
+print(f"VERBATIM_PRODUCTION_SQL_MISMATCH_COUNT={len(verbatim_production_mismatches)}")
+for version, reason in verbatim_production_mismatches:
+    print(f"VERBATIM_PRODUCTION_SQL_MISMATCH={version}|{reason}")
+
 if (
-    missing_production
+    verbatim_production_mismatches
+    or missing_production
     or missing_repository_only
     or unexpected_local
     or duplicates

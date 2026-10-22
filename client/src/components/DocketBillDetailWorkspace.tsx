@@ -176,7 +176,7 @@ export function DocketBillDetailWorkspace({
     status_date: first_value(bill, ["status_date"]),
     session: first_value(bill, ["session", "session_name", "session_title", "session_id"]),
     state: first_value(bill, ["state", "state_id", "jurisdiction"]),
-    url: first_value(bill, ["state_link", "url", "source_url"]),
+    url: first_value(bill, ["url", "state_link", "source_url"]),
     change_hash: first_value(bill, ["change_hash"]),
     last_action: first_value(bill, ["last_action", "action"]),
     last_action_date: first_value(bill, ["last_action_date", "status_date"]),

@@ -16,6 +16,12 @@ services:
         value: production
       - key: LIGHTHOUSE_RUNTIME_ROLE
         value: worker
+      - key: LIGHTHOUSE_SUPABASE_URL
+        value: https://wepxlinwbjrkqdzkqpar.supabase.co
+      - key: LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: FRESH_ATOMIC_CORPUS_RESUME_ENABLED
+        value: "false"
       - key: DOCKET_STATE_CACHE_WARMER_ENABLED
         value: "true"
       - key: DOCKET_STATE_CACHE_WARMER_INTERVAL_MS
@@ -24,6 +30,10 @@ services:
         value: "5"
       - key: DOCKET_BILL_ACTIVATION_QUEUE_ENABLED
         value: "true"
+      - key: DOCKET_BILL_ACTIVATION_CONCURRENCY
+        value: "1"
+      - key: DOCKET_BILL_ACTIVATION_QUEUE_POLL_MS
+        value: "5000"
       - key: PRISM_ROSETTA_QUEUE_ENABLED
         value: "true"
       - key: PRISM_ROSETTA_QUEUE_CANARY_ID
@@ -38,6 +48,8 @@ services:
         value: "15000"
       - key: LEGISLATIVE_VERSION_QUEUE_ENABLED
         value: "true"
+      - key: LEGISLATIVE_VERSION_CURRENT_SOURCES_ENABLED
+        value: "true"
       - key: LEGISLATIVE_VERSION_QUEUE_CONCURRENCY
         value: "1"
       - key: LEGISLATIVE_VERSION_QUEUE_POLL_MS
@@ -45,7 +57,13 @@ services:
       - key: LEGISLATIVE_VERSION_QUEUE_RECONCILE_MS
         value: "60000"
       - key: LEGISLATIVE_VERSION_QUEUE_RECOVERY_CONTRACT_SCOPE
-        value: civic-genome-provider-copy-fallback-recovery-v1
+        value: ""
+      - key: LEGISCAN_MONTHLY_REQUEST_BUDGET
+        value: "9000"
+      - key: LEGISCAN_MIN_REQUEST_INTERVAL_MS
+        value: "550"
+      - key: LEGISCAN_SHARED_PROVIDER_COOLDOWN_MS
+        value: "3600000"
       - key: LEGISCAN_API_KEY
         sync: false
       - key: LEGISCAN_BILL_TEXT_PROBE_DOCUMENT_ID

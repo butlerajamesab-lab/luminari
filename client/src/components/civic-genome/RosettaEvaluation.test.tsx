@@ -149,6 +149,26 @@ it("keeps every text selectable, uses stored version metadata, and exposes the p
   expect(html).toContain("RH · text 2");
   expect(html).toContain("RS · text 4 · latest full text");
   expect(html).toContain("Preceding text:");
-  expect(html).toContain("Read this bill text");
+  expect(html).toContain("Official text for this version");
   expect(use_query.mock.calls[0][0]).toEqual({ genome_bill_id: "genome", bill_version_id: "v4" });
+});
+
+
+it("labels an amendment as an artifact rather than decomposable bill text", () => {
+  use_query.mockReturnValue({ data: { availability: "binding_missing", review_url: "https://example.org/review" } });
+  const amendment = {
+    bill_version_id: "a1",
+    document_family: "amendment" as const,
+    version_type: "house_amendment",
+    provider_sequence: 1,
+    source_document_key: "amendment:2127296:291247",
+    processing_state: "source_ingested",
+    source_url: "https://www.legis.la.gov/Legis/ViewDocument.aspx?d=1456692",
+  };
+  const html = renderToStaticMarkup(
+    <RosettaEvaluation genome_bill_id="genome" current_version={amendment} published_version={null} source_versions={[amendment]}/>,
+  );
+  expect(html).toContain("Rosetta amendment status");
+  expect(html).toContain("Official amendment artifact");
+  expect(html).not.toContain("Official text for this version");
 });

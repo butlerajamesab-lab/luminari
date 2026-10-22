@@ -1,0 +1,33 @@
+name: Lighthouse OIDC issuer readiness
+
+on:
+  pull_request:
+    paths:
+      - "scripts/check-lighthouse-oidc-issuer.mjs"
+      - "tests/lighthouse-oidc-issuer-readiness.test.mjs"
+      - "verification/lighthouse_sso_identity_readiness.sql"
+      - ".github/workflows/lighthouse-oidc-issuer-readiness.yml"
+  workflow_dispatch:
+    inputs:
+      verify_live:
+        description: "Read-only check of production OAuth discovery and public signing keys"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  issuer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Check issuer security contracts offline
+        run: node --test tests/lighthouse-oidc-issuer-readiness.test.mjs
+      - name: Optional live public OIDC metadata preflight (no secrets)
+        if: github.event_name == 'workflow_dispatch' && inputs.verify_live
+        run: node scripts/check-lighthouse-oidc-issuer.mjs
