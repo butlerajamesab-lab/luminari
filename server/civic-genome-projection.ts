@@ -1,3 +1,4 @@
+import { CIVIC_GENOME_SOURCE_ONLY_BILL_RECORD_SQL } from "./civic-genome-source-only-snapshot";
 import { createHash } from "crypto";
 import type { PoolClient } from "pg";
 import { getPool } from "./db";
@@ -272,7 +273,8 @@ const capture_projection_entity_versions = async (
        from public.civic_genome_family family where family.family_id = $1
        union all
        select 'bill'::text, bill.genome_bill_id, bill.family_id,
-         greatest(bill.created_at, bill.updated_at), to_jsonb(bill)
+         greatest(bill.created_at, bill.updated_at),
+          (${CIVIC_GENOME_SOURCE_ONLY_BILL_RECORD_SQL})
        from public.civic_genome_bill bill where bill.genome_bill_id = $2
      ) version
      on conflict (entity_type, entity_id, record_hash) do nothing`,

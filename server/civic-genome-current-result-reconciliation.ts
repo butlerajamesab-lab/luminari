@@ -1,4 +1,5 @@
 import { query_with_diagnostics } from "./db";
+import { is_genome_rosetta_publication_quarantined } from "./civic-genome-rosetta-publication-quarantine";
 import {
   attach_completed_current_result,
   type completed_current_result_attachment,
@@ -6,8 +7,14 @@ import {
 
 const DEFAULT_BATCH_SIZE = 50;
 const MAX_BATCH_SIZE = 100;
-const DEFAULT_CONCURRENCY = 5;
-const MAX_CONCURRENCY = 10;
+const DEFAULT_CONCURRENCY = 2;
+const MAX_CONCURRENCY = 5;
+// A held source is an observation state, not work to retry continuously.
+// Re-observe at a bounded cadence so a Rosetta outage cannot become a
+// corpus-wide request storm.
+const DEFAULT_REOBSERVE_AFTER_MS = 5 * 60_000;
+const MIN_REOBSERVE_AFTER_MS = 60_000;
+const MAX_REOBSERVE_AFTER_MS = 60 * 60_000;
 
 type held_current_result_candidate = {
   queue_id: string;
@@ -35,6 +42,7 @@ function bounded_integer(
 
 async function claim_held_current_result_candidates(
   limit: number,
+  reobserve_after_ms: number,
 ): Promise<held_current_result_candidate[]> {
   const result = await query_with_diagnostics<held_current_result_candidate>(
     `with candidate as materialized (
@@ -45,6 +53,9 @@ async function claim_held_current_result_candidates(
          from public.civic_genome_legislative_version_queue queue
          join public.civic_genome_bill_version version
            on version.bill_version_id = queue.bill_version_id
+         join public.docket_current_authoritative_source_v1 current_authority
+           on current_authority.source_bill_id = version.source_bill_id
+          and current_authority.source_document_key = version.source_document_key
         where version.document_family = 'text'
           and version.processing_state = 'source_ingested'
           and version.rosetta_extraction_run_id is null
@@ -79,6 +90,11 @@ async function claim_held_current_result_candidates(
           )
           and queue.locked_at is null
           and queue.locked_by is null
+          and (
+            queue.current_result_checked_at is null
+            or queue.current_result_checked_at
+                 <= now() - make_interval(secs => ($2::integer / 1000))
+          )
         order by queue.current_result_checked_at nulls first,
                  queue.updated_at,
                  queue.queue_id
@@ -96,7 +112,7 @@ async function claim_held_current_result_candidates(
      )
      select * from observed
      order by queue_id`,
-    [limit],
+    [limit, reobserve_after_ms],
     {
       label: "legislative_version_current_result_observation_claim",
       pool_acquire_timeout_ms: 1_000,
@@ -185,6 +201,11 @@ export async function reconcile_awaiting_current_results(input: {
   limit?: number;
   concurrency?: number;
 } = {}): Promise<current_result_reconciliation_summary> {
+  // This observer claims and updates queue rows. It must never run while the
+  // independent V12 certification or Genome publication boundary is closed.
+  if (is_genome_rosetta_publication_quarantined()) {
+    return { checked: 0, attached: 0, still_held: 0, read_errors: 0 };
+  }
   const limit = bounded_integer(input.limit, DEFAULT_BATCH_SIZE, 1, MAX_BATCH_SIZE);
   const concurrency = bounded_integer(
     input.concurrency,
@@ -192,7 +213,13 @@ export async function reconcile_awaiting_current_results(input: {
     1,
     MAX_CONCURRENCY,
   );
-  const candidates = await claim_held_current_result_candidates(limit);
+  const reobserve_after_ms = bounded_integer(
+    Number.parseInt(process.env.LEGISLATIVE_VERSION_CURRENT_RESULT_REOBSERVE_MS ?? "", 10),
+    DEFAULT_REOBSERVE_AFTER_MS,
+    MIN_REOBSERVE_AFTER_MS,
+    MAX_REOBSERVE_AFTER_MS,
+  );
+  const candidates = await claim_held_current_result_candidates(limit, reobserve_after_ms);
   const summary: current_result_reconciliation_summary = {
     checked: candidates.length,
     attached: 0,
