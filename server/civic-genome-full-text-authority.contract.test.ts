@@ -22,16 +22,22 @@ describe("archived Civic Genome full-text authority design contract", () => {
     expect(archivedMigration).toContain("civic_genome_bill_rosetta_authority_requires_full_text");
   });
 
-  it("keeps bill-level current and published selectors on full text", () => {
+  it("keeps current bill-level selectors on full text and refuses historical published-run status", () => {
     expect(billDetail).toMatch(/published_version as[\s\S]*document_family = 'text'/);
     expect(operating).toMatch(/current_version as[\s\S]*document_family = 'text'/);
-    expect(operating).toMatch(/published_version as[\s\S]*document_family = 'text'/);
+    expect(operating).toContain("source_document_key as current_source_document_key");
+    expect(operating).toContain("load_rosetta_current_docket_result_for_binding");
+    expect(operating).not.toContain("published_version as");
+    expect(operating).not.toContain("get_latest_rosetta_law_view_by_source_document");
     expect(evaluation).toContain("and ($2::uuid is not null or document_family = 'text')");
     expect(generationUpgrade).toContain("where version.document_family = 'text'");
   });
 
-  it("uses full-text states for Radar structural latest while preserving amendment bases", () => {
-    expect(docket).toMatch(/latest as[\s\S]*where document_family = 'text'/);
+  it("preserves archived full-text amendment bases while current Radar is quarantined", () => {
+    // The archived design stays inspectable; it must not require live legacy publication.
+    expect(docket).toContain('structural_state: "quarantined"');
+    expect(docket).toContain("structural_reason: GENOME_ROSETTA_PUBLICATION_QUARANTINE_REASON");
+    expect(docket).not.toContain("existing.drift.push");
     expect(archivedMigration).toMatch(/latest as[\s\S]*where document_family = 'text'/);
     expect(archivedMigration).toContain("where base_bill_version_id is not null");
   });

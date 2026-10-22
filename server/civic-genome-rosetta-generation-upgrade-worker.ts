@@ -5,6 +5,7 @@ import { query_with_diagnostics } from "./db";
 import { assemble_rosetta_and_resolve_family } from "./civic-genome-rosetta-family-orchestration";
 import { create_rosetta_supabase_headers } from "./rosetta-supabase-auth";
 import { background_feature_enabled } from "./runtime-role";
+import { assert_genome_rosetta_publication_admitted, is_genome_rosetta_publication_quarantined } from "./civic-genome-rosetta-publication-quarantine";
 
 const DEFAULT_POLL_INTERVAL_MS = 10_000;
 const MIN_POLL_INTERVAL_MS = 5_000;
@@ -91,7 +92,7 @@ function bounded_poll_interval(): number {
 }
 
 function worker_enabled(): boolean {
-  return background_feature_enabled("ROSETTA_GENOME_UPGRADE_QUEUE_ENABLED");
+  return !is_genome_rosetta_publication_quarantined() && background_feature_enabled("ROSETTA_GENOME_UPGRADE_QUEUE_ENABLED");
 }
 
 export function rosetta_generation_upgrade_retry_delay_seconds(
@@ -243,6 +244,8 @@ async function discover_candidates(
          on binding.source_document_id = version.rosetta_source_document_id
       where version.rn = 1
         and version.rosetta_source_document_id is not null
+        and version.processing_state in ('verified_with_findings', 'verified', 'assembled')
+        and version.receipt_json->>'rosetta_source_identity_hash' is not null
         and (
           binding.source_document_id is null
           or binding.rosetta_engine_version is distinct from $1
@@ -278,6 +281,7 @@ async function discover_candidates(
 }
 
 export async function discover_rosetta_generation_upgrades(): Promise<number> {
+  assert_genome_rosetta_publication_admitted(); // prevent legacy generation discovery/enqueues
   const generation = await fetch_rosetta_current_generation();
   const candidates = await discover_candidates(generation);
   let inserted = 0;
@@ -551,6 +555,7 @@ async function mark_failed(job: upgrade_job, error: unknown): Promise<void> {
 export async function process_rosetta_generation_upgrade_job(
   job: upgrade_job,
 ): Promise<void> {
+  assert_genome_rosetta_publication_admitted(); // before Rosetta replay RPC or queue writes
   try {
     const binding = await load_queued_docket_binding(job);
     const receipt = await replay_job(job);
@@ -584,6 +589,7 @@ export async function process_rosetta_generation_upgrade_job(
 }
 
 export async function run_rosetta_generation_upgrade_cycle(): Promise<void> {
+  if (is_genome_rosetta_publication_quarantined()) return; // skip discovery, replay and job claims
   if (cycle_running || stopped) return;
   cycle_running = true;
   try {

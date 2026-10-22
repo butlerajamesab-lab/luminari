@@ -1,0 +1,129 @@
+-- Production-only, separately reviewed data retirement. Never an engine admission.
+-- Protected bill metadata fingerprints hash JSONB SEMANTIC CONTENT using
+-- md5(jsonb::text), not pg_column_size: unchanged JSONB may have different
+-- TOAST/compression size after row updates. This preserves the two-seed,
+-- six-surface count/hash conservation checks and exact SHA-256 row proof.
+-- Original source tuples are conserved in Rosetta canonical storage and the
+-- source-only reconciliation manifest. No source/version/history rows are deleted.
+DO $bill_payload_purge$
+DECLARE
+ matched bigint; removed bigint; observed_hash text; expected_clean_hash text;
+ lifecycle_definition text; spine_definition text; retirement_guard text;
+ before_manifest jsonb; current_manifest jsonb := '{}'::jsonb;
+ manifest_row jsonb; surface record;
+BEGIN
+ PERFORM set_config('lock_timeout','3s',true);
+ PERFORM set_config('statement_timeout','120s',true);
+ LOCK TABLE public.civic_genome_bill IN ACCESS EXCLUSIVE MODE;
+ IF NOT EXISTS(SELECT 1 FROM pg_class WHERE oid='public.civic_genome_bill'::regclass AND relkind='r' AND pg_get_userbyid(relowner)='postgres' AND NOT relforcerowsecurity)
+ OR EXISTS(SELECT 1 FROM pg_inherits WHERE inhrelid='public.civic_genome_bill'::regclass OR inhparent='public.civic_genome_bill'::regclass)
+ OR EXISTS(SELECT 1 FROM pg_rewrite WHERE ev_class='public.civic_genome_bill'::regclass)
+ THEN RAISE EXCEPTION 'bill table shape changed'; END IF;
+ IF (SELECT count(*) FROM pg_trigger WHERE tgrelid='public.civic_genome_bill'::regclass AND NOT tgisinternal)<>3
+ OR NOT EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid='public.civic_genome_bill'::regclass AND tgname='civic_genome_bill_lifecycle_event_time_v3' AND tgenabled='O' AND tgtype=21 AND tgfoid='public.sync_civic_genome_lifecycle_from_bill_v3()'::regprocedure AND tgattr::text='15')
+ OR NOT EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid='public.civic_genome_bill'::regclass AND tgname='civic_genome_legislative_version_spine_registration' AND tgenabled='O' AND tgtype=21 AND tgfoid='public.try_register_docket_legislative_version_spine_from_genome()'::regprocedure AND tgattr::text='15')
+ OR NOT EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid='public.civic_genome_bill'::regclass AND tgname='zz_civic_genome_block_bill_rosetta_payload_v1' AND tgenabled='O' AND tgtype=23 AND tgfoid='public.civic_genome_block_bill_rosetta_payload_v1()'::regprocedure)
+ THEN RAISE EXCEPTION 'bill trigger boundary changed'; END IF;
+ SELECT pg_get_functiondef('public.sync_civic_genome_lifecycle_from_bill_v3()'::regprocedure) INTO lifecycle_definition;
+ SELECT pg_get_functiondef('public.try_register_docket_legislative_version_spine_from_genome()'::regprocedure) INTO spine_definition;
+ IF md5(lifecycle_definition) IS DISTINCT FROM '3aa7a70a64b116272641c70d6d79ea2e'
+ OR md5(spine_definition) IS DISTINCT FROM '72e6de7ac25173268d226cecf2653bc0'
+ OR EXISTS(SELECT 1 FROM pg_proc WHERE oid IN('public.sync_civic_genome_lifecycle_from_bill_v3()'::regprocedure,'public.try_register_docket_legislative_version_spine_from_genome()'::regprocedure)
+ AND (pg_get_userbyid(proowner)<>'postgres' OR proacl::text IS DISTINCT FROM '{postgres=X/postgres,service_role=X/postgres}'))
+ THEN RAISE EXCEPTION 'bill trigger implementation or authority changed'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM supabase_migrations.schema_migrations WHERE version='20261015135444'
+ AND name='civic_genome_rosetta_sql_write_quarantine_v1' AND cardinality(statements)=1 AND md5(statements[1])='68ad3ca961b016b0a6a37c94f2861199') THEN RAISE EXCEPTION 'database write quarantine ledger differs'; END IF;
+ WITH expected(table_name,trigger_name,body_md5,enabled) AS(VALUES ('civic_genome_trait','zz_civic_genome_block_rosetta_trait_write_v1','87ffdb41a744456fb3863f2a0574b30c','O'),('civic_genome_assembly_run','zz_civic_genome_block_rosetta_assembly_write_v1','87ffdb41a744456fb3863f2a0574b30c','O'),('civic_genome_rosetta_structural_representation','zz_civic_genome_block_rosetta_structural_representation_write_v','87ffdb41a744456fb3863f2a0574b30c','O'),('civic_genome_rosetta_source_binding','zz_civic_genome_block_rosetta_source_binding_write_v1','87ffdb41a744456fb3863f2a0574b30c','O'),('civic_genome_rosetta_generation_target','zz_civic_genome_block_rosetta_target_write_v1','87ffdb41a744456fb3863f2a0574b30c','O'),('civic_genome_bill','zz_civic_genome_block_bill_rosetta_payload_v1','ec8e3e387f823d806f926bd92585ec6e','O'),('civic_genome_bill_version','zz_civic_genome_block_bill_version_rosetta_receipt_v1','b29c9699c7831806f7ddcf346e309e22','O'),('civic_genome_projection_entity_version','zz_civic_genome_guard_source_only_history_v1','8c281d2d552148d50059c665e5f6aabf','O'),('civic_genome_rosetta_generation_activation_queue','zz_civic_genome_block_rosetta_activation_execution_v1','38c9a5480b91a640fe27776a7f0340bc','O'),('civic_genome_rosetta_generation_upgrade_queue','zz_civic_genome_block_rosetta_upgrade_execution_v1','38c9a5480b91a640fe27776a7f0340bc','O'))
+ SELECT count(*) INTO matched FROM expected e JOIN pg_trigger t ON t.tgrelid=to_regclass(e.table_name) AND t.tgname=e.trigger_name WHERE NOT t.tgisinternal AND t.tgenabled::text=e.enabled AND md5(pg_get_functiondef(t.tgfoid))=e.body_md5;
+ IF matched<>10 THEN RAISE EXCEPTION 'database write quarantine changed'; END IF;
+ IF EXISTS(SELECT 1 FROM public.civic_genome_trait) THEN RAISE EXCEPTION 'trait purge prerequisite absent'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM supabase_migrations.schema_migrations WHERE version='20261017021051' AND name='purge_disqualified_genome_traits_20261017' AND cardinality(statements)=1 AND md5(statements[1])='d8cc8bd7ec06d2c9884d451050528d48')
+ THEN RAISE EXCEPTION 'trait purge ledger differs'; END IF;
+ CREATE TEMP TABLE genome_bill_payload_retirement_ids ON COMMIT DROP AS
+ SELECT genome_bill_id FROM public.civic_genome_bill
+ WHERE structural_dna_json ? 'rosetta_assembly' OR structural_dna_json ? 'rosetta_source_receipt' OR rosetta_extraction_run_id IS NOT NULL;
+ SELECT count(*) INTO matched FROM genome_bill_payload_retirement_ids;
+ IF matched<>3082 THEN RAISE EXCEPTION 'bill target count differs'; END IF;
+ IF EXISTS(SELECT 1 FROM public.civic_genome_bill b JOIN genome_bill_payload_retirement_ids ids USING(genome_bill_id)
+ WHERE NOT (b.structural_dna_json ?& ARRAY['rosetta_assembly','rosetta_source_receipt']) OR b.rosetta_extraction_run_id IS NULL
+ OR NOT EXISTS(SELECT 1 FROM public.civic_genome_bill_version v WHERE v.genome_bill_id=b.genome_bill_id))
+ THEN RAISE EXCEPTION 'bill source/version coverage differs'; END IF;
+ SELECT encode(extensions.digest(convert_to(string_agg(encode(extensions.digest(convert_to(to_jsonb(b)::text,'UTF8'),'sha256'),'hex'),'' ORDER BY b.genome_bill_id),'UTF8'),'sha256'),'hex'),
+ encode(extensions.digest(convert_to(string_agg(encode(extensions.digest(convert_to((to_jsonb(b)||jsonb_build_object('structural_dna_json',b.structural_dna_json-ARRAY['rosetta_assembly','rosetta_source_receipt'],'rosetta_extraction_run_id',NULL,'structural_dna_hash',''))::text,'UTF8'),'sha256'),'hex'),'' ORDER BY b.genome_bill_id),'UTF8'),'sha256'),'hex')
+ INTO observed_hash,expected_clean_hash FROM public.civic_genome_bill b JOIN genome_bill_payload_retirement_ids ids USING(genome_bill_id);
+ IF observed_hash IS DISTINCT FROM '9ceb049cd1d9575952d1a13fbeea4a52280d149d2c63c6ec5e30dff1ebbdd988'
+ OR expected_clean_hash IS DISTINCT FROM 'f3e2f74463124a6f4a98958dd5a32d49560e33a065c25c439a232109e1f7ebab'
+ THEN RAISE EXCEPTION 'bill full-row manifest differs'; END IF;
+ FOR surface IN SELECT * FROM (VALUES ('public.civic_genome_bill','genome_bill_id'),('public.civic_genome_bill_version','bill_version_id'),('public.civic_genome_family','family_id'),('public.docket_bill_detail_cache','bill_id'),('public.civic_genome_event','event_id'),('public.civic_genome_projection_entity_version','entity_version_id')) p(table_name,key_name) LOOP
+ CASE surface.table_name
+ WHEN 'public.civic_genome_bill' THEN EXECUTE 'SELECT jsonb_build_object(''count'',count(*),''sum_0'',sum(hashtextextended(ROW(t.genome_bill_id,t.family_id,t.bill_id,t.state_code,t.session_key,t.source_bill_number,t.source_bill_title,t.source_bill_url,t.bill_status,t.introduced_at,t.last_action_at,t.enacted_at,md5(t.procedural_lifecycle_json::text),md5(t.jurisdiction_lineage_json::text),md5(t.constitutional_dependency_json::text),md5(t.fiscal_effects_json::text),md5(t.enforcement_graph_json::text),md5(t.downstream_impact_graph_json::text),t.current_state_position,t.created_at,t.updated_at,t.effective_at,t.last_observed_at,t.lifecycle_temporal_contract)::text,0)::numeric)::text,''sum_1'',sum(hashtextextended(ROW(t.genome_bill_id,t.family_id,t.bill_id,t.state_code,t.session_key,t.source_bill_number,t.source_bill_title,t.source_bill_url,t.bill_status,t.introduced_at,t.last_action_at,t.enacted_at,md5(t.procedural_lifecycle_json::text),md5(t.jurisdiction_lineage_json::text),md5(t.constitutional_dependency_json::text),md5(t.fiscal_effects_json::text),md5(t.enforcement_graph_json::text),md5(t.downstream_impact_graph_json::text),t.current_state_position,t.created_at,t.updated_at,t.effective_at,t.last_observed_at,t.lifecycle_temporal_contract)::text,1)::numeric)::text) FROM public.civic_genome_bill t' INTO manifest_row;
+WHEN 'public.civic_genome_bill_version' THEN EXECUTE 'SELECT jsonb_build_object(''count'',count(*),''sum_0'',sum(hashtextextended(ROW(t.bill_version_id,t.genome_bill_id,t.source_document_key,t.source_bill_id,t.document_family,t.version_type,t.provider_sequence,t.stage_rank,t.chamber,t.predecessor_bill_version_id,t.base_bill_version_id,t.version_fingerprint,t.rosetta_source_document_id,t.rosetta_extraction_run_id,t.assembly_run_id,t.prism_verification_run_id,t.processing_state,t.failure_code,pg_column_size(t.receipt_json),t.created_at,t.updated_at)::text,0)::numeric)::text,''sum_1'',sum(hashtextextended(ROW(t.bill_version_id,t.genome_bill_id,t.source_document_key,t.source_bill_id,t.document_family,t.version_type,t.provider_sequence,t.stage_rank,t.chamber,t.predecessor_bill_version_id,t.base_bill_version_id,t.version_fingerprint,t.rosetta_source_document_id,t.rosetta_extraction_run_id,t.assembly_run_id,t.prism_verification_run_id,t.processing_state,t.failure_code,pg_column_size(t.receipt_json),t.created_at,t.updated_at)::text,1)::numeric)::text) FROM public.civic_genome_bill_version t' INTO manifest_row;
+WHEN 'public.civic_genome_family' THEN EXECUTE 'SELECT jsonb_build_object(''count'',count(*),''sum_0'',sum(hashtextextended(ROW(t.family_id,t.family_key,t.family_label,t.policy_domain,t.family_status,t.first_seen_at,t.last_seen_at,t.first_enacted_at,t.last_event_at,t.active_state_count,t.introduced_state_count,t.enacted_state_count,t.failed_state_count,t.momentum_score,t.acceleration_score,t.collapse_score,pg_column_size(t.signature_json),t.created_at,t.updated_at)::text,0)::numeric)::text,''sum_1'',sum(hashtextextended(ROW(t.family_id,t.family_key,t.family_label,t.policy_domain,t.family_status,t.first_seen_at,t.last_seen_at,t.first_enacted_at,t.last_event_at,t.active_state_count,t.introduced_state_count,t.enacted_state_count,t.failed_state_count,t.momentum_score,t.acceleration_score,t.collapse_score,pg_column_size(t.signature_json),t.created_at,t.updated_at)::text,1)::numeric)::text) FROM public.civic_genome_family t' INTO manifest_row;
+WHEN 'public.docket_bill_detail_cache' THEN EXECUTE 'SELECT jsonb_build_object(''count'',count(*),''sum_0'',sum(hashtextextended(ROW(t.bill_id,pg_column_size(t.bill),t.fetched_at,t.source,t.created_at,t.updated_at)::text,0)::numeric)::text,''sum_1'',sum(hashtextextended(ROW(t.bill_id,pg_column_size(t.bill),t.fetched_at,t.source,t.created_at,t.updated_at)::text,1)::numeric)::text) FROM public.docket_bill_detail_cache t' INTO manifest_row;
+WHEN 'public.civic_genome_event' THEN EXECUTE 'SELECT jsonb_build_object(''count'',count(*),''sum_0'',sum(hashtextextended(ROW(t.event_id,t.family_id,t.genome_bill_id,t.bill_id,t.state_code,t.event_type,t.event_timestamp,t.prior_status,t.next_status,t.amendment_version,pg_column_size(t.source_trace),pg_column_size(t.event_payload_json),t.created_at)::text,0)::numeric)::text,''sum_1'',sum(hashtextextended(ROW(t.event_id,t.family_id,t.genome_bill_id,t.bill_id,t.state_code,t.event_type,t.event_timestamp,t.prior_status,t.next_status,t.amendment_version,pg_column_size(t.source_trace),pg_column_size(t.event_payload_json),t.created_at)::text,1)::numeric)::text) FROM public.civic_genome_event t' INTO manifest_row;
+WHEN 'public.civic_genome_projection_entity_version' THEN EXECUTE 'SELECT jsonb_build_object(''count'',count(*),''sum_0'',sum(hashtextextended(ROW(t.entity_version_id,t.entity_type,t.entity_id,t.family_id,t.observed_at,t.record_hash,t.created_at)::text,0)::numeric)::text,''sum_1'',sum(hashtextextended(ROW(t.entity_version_id,t.entity_type,t.entity_id,t.family_id,t.observed_at,t.record_hash,t.created_at)::text,1)::numeric)::text) FROM public.civic_genome_projection_entity_version t' INTO manifest_row;
+ ELSE RAISE EXCEPTION 'unknown protection surface'; END CASE;
+ current_manifest:=current_manifest||jsonb_build_object(surface.table_name,manifest_row);
+END LOOP;
+ before_manifest:=current_manifest;
+ SELECT encode(extensions.digest(convert_to(string_agg(encode(extensions.digest(convert_to(jsonb_build_array(genome_bill_id::text,structural_dna_json#>>'{rosetta_assembly,source_document_id}',structural_dna_json#>>'{rosetta_source_receipt,source_url}',structural_dna_json#>>'{rosetta_source_receipt,source_version}',structural_dna_json#>>'{rosetta_source_receipt,source_byte_hash}',structural_dna_json#>>'{rosetta_source_receipt,source_content_hash}',structural_dna_json#>>'{rosetta_source_receipt,source_identity_hash}',structural_dna_json#>>'{rosetta_source_receipt,source_provider_hash}')::text,'UTF8'),'sha256'),'hex'),'' ORDER BY genome_bill_id),'UTF8'),'sha256'),'hex') INTO observed_hash FROM public.civic_genome_bill WHERE structural_dna_json ? 'rosetta_source_receipt';
+ IF observed_hash IS DISTINCT FROM '37866c7080591b553d46392334f5ee096db945f702a35bd5c499c9a6a9d16f74' THEN RAISE EXCEPTION 'archived source-reference manifest differs'; END IF;
+ -- Both exact original functions are restored before commit. Triggers stay
+ -- enabled throughout. This predicate cannot skip any source or timestamp edit.
+ retirement_guard := $guard$
+  if TG_OP = 'UPDATE' then
+   if OLD.structural_dna_json ?& array['rosetta_assembly','rosetta_source_receipt']
+    and OLD.rosetta_extraction_run_id is not null
+    and OLD.structural_dna_json#>>'{rosetta_source_receipt,engine_version}' = any(array[
+     'rosetta-v3-deterministic-sql-2.2.0','rosetta-v3-deterministic-sql-2.3.0','rosetta-v3-deterministic-sql-2.4.0',
+     'rosetta-v3-deterministic-sql-2.5.8','rosetta-v3-deterministic-sql-2.5.10','rosetta-v3-deterministic-sql-2.5.11'])
+    and NEW.structural_dna_json = OLD.structural_dna_json-array['rosetta_assembly','rosetta_source_receipt']
+    and NEW.rosetta_extraction_run_id is null and NEW.structural_dna_hash = ''
+    and (to_jsonb(NEW)-array['structural_dna_json','structural_dna_hash','rosetta_extraction_run_id'])
+      is not distinct from (to_jsonb(OLD)-array['structural_dna_json','structural_dna_hash','rosetta_extraction_run_id'])
+   then return NEW; end if;
+  end if;
+ $guard$;
+ IF strpos(lifecycle_definition,E'begin\n')=0 OR strpos(spine_definition,E'begin\n')=0 THEN RAISE EXCEPTION 'trigger insertion point missing'; END IF;
+ EXECUTE overlay(lifecycle_definition placing retirement_guard from strpos(lifecycle_definition,E'begin\n')+6 for 0);
+ EXECUTE overlay(spine_definition placing retirement_guard from strpos(spine_definition,E'begin\n')+6 for 0);
+ -- NARROW_GUARD_TEST_POINT
+ UPDATE public.civic_genome_bill b SET
+ structural_dna_json=b.structural_dna_json-ARRAY['rosetta_assembly','rosetta_source_receipt'],
+ structural_dna_hash='',rosetta_extraction_run_id=NULL
+ FROM genome_bill_payload_retirement_ids ids WHERE b.genome_bill_id=ids.genome_bill_id;
+ GET DIAGNOSTICS removed=ROW_COUNT;
+ IF removed<>3082 OR EXISTS(SELECT 1 FROM public.civic_genome_bill WHERE structural_dna_json ? 'rosetta_assembly' OR structural_dna_json ? 'rosetta_source_receipt' OR rosetta_extraction_run_id IS NOT NULL)
+ THEN RAISE EXCEPTION 'bill payload removal count differs'; END IF;
+ SELECT encode(extensions.digest(convert_to(string_agg(encode(extensions.digest(convert_to(to_jsonb(b)::text,'UTF8'),'sha256'),'hex'),'' ORDER BY b.genome_bill_id),'UTF8'),'sha256'),'hex') INTO observed_hash
+ FROM public.civic_genome_bill b JOIN genome_bill_payload_retirement_ids ids USING(genome_bill_id);
+ IF observed_hash IS DISTINCT FROM expected_clean_hash THEN RAISE EXCEPTION 'source-only exact row conservation failed'; END IF;
+ EXECUTE lifecycle_definition;
+ EXECUTE spine_definition;
+ IF pg_get_functiondef('public.sync_civic_genome_lifecycle_from_bill_v3()'::regprocedure) IS DISTINCT FROM lifecycle_definition
+ OR pg_get_functiondef('public.try_register_docket_legislative_version_spine_from_genome()'::regprocedure) IS DISTINCT FROM spine_definition
+ THEN RAISE EXCEPTION 'trigger restoration failed'; END IF;
+ current_manifest:='{}'::jsonb;
+ FOR surface IN SELECT * FROM (VALUES ('public.civic_genome_bill','genome_bill_id'),('public.civic_genome_bill_version','bill_version_id'),('public.civic_genome_family','family_id'),('public.docket_bill_detail_cache','bill_id'),('public.civic_genome_event','event_id'),('public.civic_genome_projection_entity_version','entity_version_id')) p(table_name,key_name) LOOP
+ CASE surface.table_name
+ WHEN 'public.civic_genome_bill' THEN EXECUTE 'SELECT jsonb_build_object(''count'',count(*),''sum_0'',sum(hashtextextended(ROW(t.genome_bill_id,t.family_id,t.bill_id,t.state_code,t.session_key,t.source_bill_number,t.source_bill_title,t.source_bill_url,t.bill_status,t.introduced_at,t.last_action_at,t.enacted_at,md5(t.procedural_lifecycle_json::text),md5(t.jurisdiction_lineage_json::text),md5(t.constitutional_dependency_json::text),md5(t.fiscal_effects_json::text),md5(t.enforcement_graph_json::text),md5(t.downstream_impact_graph_json::text),t.current_state_position,t.created_at,t.updated_at,t.effective_at,t.last_observed_at,t.lifecycle_temporal_contract)::text,0)::numeric)::text,''sum_1'',sum(hashtextextended(ROW(t.genome_bill_id,t.family_id,t.bill_id,t.state_code,t.session_key,t.source_bill_number,t.source_bill_title,t.source_bill_url,t.bill_status,t.introduced_at,t.last_action_at,t.enacted_at,md5(t.procedural_lifecycle_json::text),md5(t.jurisdiction_lineage_json::text),md5(t.constitutional_dependency_json::text),md5(t.fiscal_effects_json::text),md5(t.enforcement_graph_json::text),md5(t.downstream_impact_graph_json::text),t.current_state_position,t.created_at,t.updated_at,t.effective_at,t.last_observed_at,t.lifecycle_temporal_contract)::text,1)::numeric)::text) FROM public.civic_genome_bill t' INTO manifest_row;
+WHEN 'public.civic_genome_bill_version' THEN EXECUTE 'SELECT jsonb_build_object(''count'',count(*),''sum_0'',sum(hashtextextended(ROW(t.bill_version_id,t.genome_bill_id,t.source_document_key,t.source_bill_id,t.document_family,t.version_type,t.provider_sequence,t.stage_rank,t.chamber,t.predecessor_bill_version_id,t.base_bill_version_id,t.version_fingerprint,t.rosetta_source_document_id,t.rosetta_extraction_run_id,t.assembly_run_id,t.prism_verification_run_id,t.processing_state,t.failure_code,pg_column_size(t.receipt_json),t.created_at,t.updated_at)::text,0)::numeric)::text,''sum_1'',sum(hashtextextended(ROW(t.bill_version_id,t.genome_bill_id,t.source_document_key,t.source_bill_id,t.document_family,t.version_type,t.provider_sequence,t.stage_rank,t.chamber,t.predecessor_bill_version_id,t.base_bill_version_id,t.version_fingerprint,t.rosetta_source_document_id,t.rosetta_extraction_run_id,t.assembly_run_id,t.prism_verification_run_id,t.processing_state,t.failure_code,pg_column_size(t.receipt_json),t.created_at,t.updated_at)::text,1)::numeric)::text) FROM public.civic_genome_bill_version t' INTO manifest_row;
+WHEN 'public.civic_genome_family' THEN EXECUTE 'SELECT jsonb_build_object(''count'',count(*),''sum_0'',sum(hashtextextended(ROW(t.family_id,t.family_key,t.family_label,t.policy_domain,t.family_status,t.first_seen_at,t.last_seen_at,t.first_enacted_at,t.last_event_at,t.active_state_count,t.introduced_state_count,t.enacted_state_count,t.failed_state_count,t.momentum_score,t.acceleration_score,t.collapse_score,pg_column_size(t.signature_json),t.created_at,t.updated_at)::text,0)::numeric)::text,''sum_1'',sum(hashtextextended(ROW(t.family_id,t.family_key,t.family_label,t.policy_domain,t.family_status,t.first_seen_at,t.last_seen_at,t.first_enacted_at,t.last_event_at,t.active_state_count,t.introduced_state_count,t.enacted_state_count,t.failed_state_count,t.momentum_score,t.acceleration_score,t.collapse_score,pg_column_size(t.signature_json),t.created_at,t.updated_at)::text,1)::numeric)::text) FROM public.civic_genome_family t' INTO manifest_row;
+WHEN 'public.docket_bill_detail_cache' THEN EXECUTE 'SELECT jsonb_build_object(''count'',count(*),''sum_0'',sum(hashtextextended(ROW(t.bill_id,pg_column_size(t.bill),t.fetched_at,t.source,t.created_at,t.updated_at)::text,0)::numeric)::text,''sum_1'',sum(hashtextextended(ROW(t.bill_id,pg_column_size(t.bill),t.fetched_at,t.source,t.created_at,t.updated_at)::text,1)::numeric)::text) FROM public.docket_bill_detail_cache t' INTO manifest_row;
+WHEN 'public.civic_genome_event' THEN EXECUTE 'SELECT jsonb_build_object(''count'',count(*),''sum_0'',sum(hashtextextended(ROW(t.event_id,t.family_id,t.genome_bill_id,t.bill_id,t.state_code,t.event_type,t.event_timestamp,t.prior_status,t.next_status,t.amendment_version,pg_column_size(t.source_trace),pg_column_size(t.event_payload_json),t.created_at)::text,0)::numeric)::text,''sum_1'',sum(hashtextextended(ROW(t.event_id,t.family_id,t.genome_bill_id,t.bill_id,t.state_code,t.event_type,t.event_timestamp,t.prior_status,t.next_status,t.amendment_version,pg_column_size(t.source_trace),pg_column_size(t.event_payload_json),t.created_at)::text,1)::numeric)::text) FROM public.civic_genome_event t' INTO manifest_row;
+WHEN 'public.civic_genome_projection_entity_version' THEN EXECUTE 'SELECT jsonb_build_object(''count'',count(*),''sum_0'',sum(hashtextextended(ROW(t.entity_version_id,t.entity_type,t.entity_id,t.family_id,t.observed_at,t.record_hash,t.created_at)::text,0)::numeric)::text,''sum_1'',sum(hashtextextended(ROW(t.entity_version_id,t.entity_type,t.entity_id,t.family_id,t.observed_at,t.record_hash,t.created_at)::text,1)::numeric)::text) FROM public.civic_genome_projection_entity_version t' INTO manifest_row;
+ ELSE RAISE EXCEPTION 'unknown protection surface'; END CASE;
+ current_manifest:=current_manifest||jsonb_build_object(surface.table_name,manifest_row);
+END LOOP;
+ IF current_manifest IS DISTINCT FROM before_manifest THEN
+   RAISE EXCEPTION 'protected source/version/event/history metadata conservation failed'
+     USING DETAIL = (SELECT string_agg(format('%s: before=%s after=%s', k, before_manifest->k, current_manifest->k), E'\n' ORDER BY k)
+                     FROM jsonb_object_keys(before_manifest || current_manifest) k
+                     WHERE before_manifest->k IS DISTINCT FROM current_manifest->k);
+ END IF;
+ IF NOT EXISTS(SELECT 1 FROM supabase_migrations.schema_migrations WHERE version='20261015135444'
+ AND name='civic_genome_rosetta_sql_write_quarantine_v1' AND cardinality(statements)=1 AND md5(statements[1])='68ad3ca961b016b0a6a37c94f2861199') THEN RAISE EXCEPTION 'database write quarantine ledger differs'; END IF;
+ WITH expected(table_name,trigger_name,body_md5,enabled) AS(VALUES ('civic_genome_trait','zz_civic_genome_block_rosetta_trait_write_v1','87ffdb41a744456fb3863f2a0574b30c','O'),('civic_genome_assembly_run','zz_civic_genome_block_rosetta_assembly_write_v1','87ffdb41a744456fb3863f2a0574b30c','O'),('civic_genome_rosetta_structural_representation','zz_civic_genome_block_rosetta_structural_representation_write_v','87ffdb41a744456fb3863f2a0574b30c','O'),('civic_genome_rosetta_source_binding','zz_civic_genome_block_rosetta_source_binding_write_v1','87ffdb41a744456fb3863f2a0574b30c','O'),('civic_genome_rosetta_generation_target','zz_civic_genome_block_rosetta_target_write_v1','87ffdb41a744456fb3863f2a0574b30c','O'),('civic_genome_bill','zz_civic_genome_block_bill_rosetta_payload_v1','ec8e3e387f823d806f926bd92585ec6e','O'),('civic_genome_bill_version','zz_civic_genome_block_bill_version_rosetta_receipt_v1','b29c9699c7831806f7ddcf346e309e22','O'),('civic_genome_projection_entity_version','zz_civic_genome_guard_source_only_history_v1','8c281d2d552148d50059c665e5f6aabf','O'),('civic_genome_rosetta_generation_activation_queue','zz_civic_genome_block_rosetta_activation_execution_v1','38c9a5480b91a640fe27776a7f0340bc','O'),('civic_genome_rosetta_generation_upgrade_queue','zz_civic_genome_block_rosetta_upgrade_execution_v1','38c9a5480b91a640fe27776a7f0340bc','O'))
+ SELECT count(*) INTO matched FROM expected e JOIN pg_trigger t ON t.tgrelid=to_regclass(e.table_name) AND t.tgname=e.trigger_name WHERE NOT t.tgisinternal AND t.tgenabled::text=e.enabled AND md5(pg_get_functiondef(t.tgfoid))=e.body_md5;
+ IF matched<>10 THEN RAISE EXCEPTION 'database write quarantine changed'; END IF;
+END $bill_payload_purge$;

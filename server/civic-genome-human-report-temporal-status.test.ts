@@ -55,6 +55,7 @@ describe("Civic Genome human report temporal status", () => {
           bill_status: "active",
         },
         structural_dna: {
+          snapshot_state: "current", // separately attested fixture; labels alone do not admit a snapshot
           traits: [{
             trait_class: "duty",
             trait_key: "fixture_support",
@@ -162,5 +163,18 @@ describe("Civic Genome human report temporal status", () => {
     expect(amendment_report).toContain(
       "through LegiScan's authenticated getAmendment API and verified its exact hash and byte size before parsing",
     );
+
+    const held_payload = JSON.parse(JSON.stringify(payload));
+    held_payload.bill_detail.structural_dna.snapshot_state = "unavailable";
+    held_payload.bill_detail.current_version.source_document_id = null;
+    held_payload.bill_detail.published_version = {
+      source_document_id: 7,
+      version_type: "introduced",
+      processing_state: "verified",
+    };
+    const held_report = await render_civic_genome_human_report(held_payload, "summary");
+    expect(held_report).toContain("Source decomposition pending");
+    expect(held_report).not.toContain("Analyzed source fixture.");
+    expect(held_report).not.toContain("Verified provider copy");
   });
 });

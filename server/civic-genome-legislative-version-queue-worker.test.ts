@@ -6,6 +6,13 @@ const { query, process_version, rosetta_fetch } = vi.hoisted(() => ({
   rosetta_fetch: vi.fn(),
 }));
 
+// Existing tests exercise retired algorithms as isolated fixtures only.
+// This mock is never used by production; the runtime gate stays fail-closed.
+vi.mock("./civic-genome-legacy-decomposition-retirement", () => ({
+  is_legacy_genome_decomposition_conveyor_retired: () => false,
+  assert_legacy_genome_decomposition_conveyor_available: () => {},
+}));
+
 vi.mock("./db", () => ({
   query_with_diagnostics: query,
 }));
@@ -412,8 +419,8 @@ describe("legislative version queue", () => {
   });
 });
 
-it.each(["awaiting_analysis", "requires_review", "unavailable", "awaiting_publication"])("holds %s without consuming attempts or starting another pass", async status => {
- process_version.mockRejectedValueOnce(new Error(`rosetta_public_current_docket_result_${status}`));
+it.each(["certification_receipt_missing", "live_rule_http_404", "hold_receipt_present", "failure_receipts_present", "decomposition_not_decomposed", "genome_assembly_adapter_unavailable"])("holds V12 %s without consuming attempts or starting another pass", async status => {
+ process_version.mockRejectedValueOnce(new Error(`rosetta_v12_${status}`));
  await process_legislative_version_job(job);
  expect(process_version).toHaveBeenCalledOnce();
  expect(query).toHaveBeenCalledOnce();

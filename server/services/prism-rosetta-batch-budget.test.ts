@@ -10,6 +10,11 @@ import { reset_prism_rosetta_circuit } from "./prism-rosetta-client";
 
 vi.mock("../db", () => ({ query_with_diagnostics: vi.fn() }));
 vi.mock("../runtime-role", () => ({ background_feature_enabled: () => true }));
+// Isolate bounded submission/transport contracts from the real publication hold.
+// The unmocked gate is exercised by genome-remaining-read-quarantine.test.ts.
+vi.mock("../civic-genome-rosetta-publication-quarantine", () => ({
+  assert_genome_rosetta_publication_admitted: vi.fn(),
+}));
 // Exercise the real queue, activation, source transport, client and receipt
 // integrity checks. Contract shape validation has its own independent suite.
 vi.mock("./prism-verification-contract", async () => {
