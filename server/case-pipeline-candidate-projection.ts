@@ -8,6 +8,21 @@ import type { StateTransition } from "./engines/intake-spine/layer-9-state_timel
 
 export const CASE_PIPELINE_CANDIDATE_CONTRACT_VERSION = "luminari.case.pipeline-candidate.v1";
 
+// The intake pipeline registry (server/config/pipeline_types.json) and the
+// reviewed action routes view key the same situation differently. The
+// registry id "nursing" never matches a reviewed route, whose situation_key
+// is "nursing_home_abuse" (six reviewed routes in production). Candidates are
+// therefore emitted under the canonical situation key so the reviewed-route
+// join can succeed; the detector's matched signals and evidence refs are
+// carried through unchanged.
+const CANONICAL_PIPELINE_KEY_ALIASES: Record<string, string> = {
+  nursing: "nursing_home_abuse",
+};
+
+function canonical_pipeline_id(pipeline_id: string): string {
+  return CANONICAL_PIPELINE_KEY_ALIASES[pipeline_id] ?? pipeline_id;
+}
+
 export type CasePipelineEvidenceRef = {
   evidence_kind: "case_metadata" | "chronology_event" | "relationship" | "state_transition" | "entity_mention";
   source_id: string;
@@ -199,9 +214,10 @@ export function derive_case_pipeline_candidates(input: {
 
   const candidates = detection.suggestions.map(suggestion => {
     const evidence_refs = evidence_for_suggestion(suggestion, units);
-    const reviewed = reviewed_routes.get(suggestion.pipeline_id) ?? { route_count: 0, access_point_count: 0 };
+    const pipeline_id = canonical_pipeline_id(suggestion.pipeline_id);
+    const reviewed = reviewed_routes.get(pipeline_id) ?? { route_count: 0, access_point_count: 0 };
     return {
-      pipeline_id: suggestion.pipeline_id,
+      pipeline_id,
       category: suggestion.category,
       label: suggestion.label,
       confidence: suggestion.confidence,
