@@ -723,7 +723,11 @@ export async function getGovOfficeExactSiteCount() {
         and superseded_by is null
     `
   );
-  return Number(rows[0]?.gov_office_exact_sites ?? 0);
+  const count = rows[0]?.gov_office_exact_sites;
+  if (count == null || !Number.isFinite(Number(count))) {
+    throw new Error("gov_office_exact_site_count_missing");
+  }
+  return Number(count);
 }
 
 export function clearResourceDirectorySummaryCache() {

@@ -87,20 +87,19 @@ async function getReviewedMapSiteCounts() {
       )::int as exact_mappable_resources
     from public.v_luminari_resource_locations_current_v3_13
   `);
-  return result.rows[0] ?? {
-    verified_physical_sites: 0,
-    exact_mappable_resources: 0,
-  };
+  const counts = result.rows[0];
+  if (!counts || counts.verified_physical_sites == null || counts.exact_mappable_resources == null) {
+    throw new Error("civic_map_reviewed_site_counts_missing");
+  }
+  return counts;
 }
 
-async function getBreadthPreservingCoverage() {
-  // The jurisdiction coverage layer is canonical whole-corpus breadth. Do not
-  // block it on the legacy resource-entity summary, which performs much
-  // heavier joins and can cause the public map's primary coverage request to
-  // be aborted before any circles render. Exact physical-site counts are a
-  // separate, intentionally stricter projection.
-  const [breadth, mapSites, govOfficeExactSites] = await Promise.all([
-    get_publishable_resource_directory_summary() as Promise<ResourceDirectoryBreadth>,
+async function loadBreadthPreservingCoverage() {
+  // The exact current-corpus summary is the expensive authoritative boundary.
+  // Do not start two more database reads while it is pending or already failed.
+  // Concurrent /health and /coverage requests must reuse the same calculation.
+  const breadth = await get_publishable_resource_directory_summary() as ResourceDirectoryBreadth;
+  const [mapSites, govOfficeExactSites] = await Promise.all([
     getReviewedMapSiteCounts(),
     getGovOfficeExactSiteCount(),
   ]);
@@ -117,6 +116,20 @@ async function getBreadthPreservingCoverage() {
       "reviewed_v3_13_locations + gov_offices_official_coordinates",
     coverage_source: "breadth_preserving_resource_directory_v3",
   };
+}
+
+let coverage_in_flight: ReturnType<typeof loadBreadthPreservingCoverage> | null = null;
+
+/** One in-flight coverage refresh across CivicMap health and map coverage requests. */
+export async function getBreadthPreservingCoverage() {
+  if (coverage_in_flight) return coverage_in_flight;
+  const request = loadBreadthPreservingCoverage();
+  coverage_in_flight = request;
+  try {
+    return await request;
+  } finally {
+    if (coverage_in_flight === request) coverage_in_flight = null;
+  }
 }
 
 civicMapRouter.get("/health", async (_req: Request, res: Response) => {
