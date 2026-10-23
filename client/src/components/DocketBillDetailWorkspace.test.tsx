@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 
 const { use_query } = vi.hoisted(() => ({ use_query: vi.fn() }));
@@ -15,8 +15,14 @@ import { DocketBillDetailWorkspace } from "./DocketBillDetailWorkspace";
 
 describe("Docket bill detail workspace", () => {
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-17T12:00:00Z"));
     vi.resetAllMocks();
     use_query.mockReturnValue({ data: { amendment_disposition_conflicts: [] }, isLoading: false, isError: false });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("shows completed procedure separately from a future effective date", () => {
