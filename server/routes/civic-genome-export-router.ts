@@ -1,3 +1,4 @@
+import { sanitize_genome_bill_public_read } from "../civic-genome-public-read-sanitizer";
 import { Router, type Response } from "express";
 import {
   civic_genome_meaningful_unresolved,
@@ -9,6 +10,7 @@ import { get_genome_bill_by_source_id } from "../civic-genome-source-id";
 import { load_rosetta_current_docket_result_for_binding } from "../civic-genome-rosetta-evaluation";
 import { get_rosetta_current_docket_structure } from "../civic-genome-rosetta-contract";
 import {
+  build_current_law_report_snapshot,
   render_civic_genome_human_report,
   type civic_genome_report_mode,
 } from "../civic-genome-human-report";
@@ -214,40 +216,37 @@ async function build_single_bill_export(source_bill_id: number) {
   if (!detail) return null;
 
   const pool = getPool();
-  const [versions_result, lineage_result, all_traits_result, all_runs_result] =
-    await Promise.all([
-      pool.query(
-        `select version.*, document.source_url, document.provider_date,
-                document.provider_document_type
+  // Quarantine exported structural derivatives until an independent selected-
+  // runtime source/assembly admission contract exists. Historical traits and
+  // runs must NOT be exported merely because their local status says verified.
+  // Preserve only Docket source/version identity, original source locations,
+  // legislative lineage, and source-event chronology.
+  const [versions_result, lineage_result] = await Promise.all([
+    pool.query(
+      `select version.bill_version_id, version.genome_bill_id,
+              version.source_document_key, version.source_bill_id,
+              version.document_family, version.version_type,
+              version.provider_sequence, version.stage_rank, version.chamber,
+              version.predecessor_bill_version_id, version.base_bill_version_id,
+              version.version_fingerprint, version.created_at, version.updated_at,
+              document.source_url, document.provider_date, document.provider_document_type
          from public.civic_genome_bill_version version
          join public.docket_bill_source_document document using (source_document_key)
         where version.genome_bill_id = $1
         order by document.provider_date asc nulls last, version.provider_sequence,
                  version.source_document_key`,
-        [bill.genome_bill_id],
-      ),
-      pool.query(
-        `select *
+      [bill.genome_bill_id],
+    ),
+    pool.query(
+      `select *
          from public.bill_lineage_edge
         where from_bill_id = $1 or to_bill_id = $1
         order by created_at desc, lineage_edge_id desc`,
-        [bill.genome_bill_id],
-      ),
-      pool.query(
-        `select *
-         from public.civic_genome_trait
-        where genome_bill_id = $1
-        order by created_at asc, trait_class, trait_key, trait_id`,
-        [bill.genome_bill_id],
-      ),
-      pool.query(
-        `select *
-         from public.civic_genome_assembly_run
-        where genome_bill_id = $1
-        order by created_at asc, assembly_run_id asc`,
-        [bill.genome_bill_id],
-      ),
-    ]);
+      [bill.genome_bill_id],
+    ),
+  ]);
+  const all_traits_result = { rows: [], rowCount: 0 };
+  const all_runs_result = { rows: [], rowCount: 0 };
 
   const current_version_row = versions_result.rows.find(
     (version) => version.bill_version_id === detail.current_version?.bill_version_id,
@@ -341,6 +340,7 @@ async function build_single_bill_export(source_bill_id: number) {
 
   return {
     export_type: "civic_genome_bill_export",
+    export_warnings: ["legacy_rosetta_structural_derivatives_withheld_pending_independent_selected_runtime_attestation"],
     export_contract: EXPORT_CONTRACT,
     exported_at: new Date().toISOString(),
     source_bill_id,
@@ -365,7 +365,7 @@ async function build_single_bill_export(source_bill_id: number) {
     legacy_projection_events: legacy_events,
     lineage_edges: lineage_result.rows,
     family,
-    family_bills,
+    family_bills: family_bills.map(sanitize_genome_bill_public_read),
     family_momentum_snapshots: momentum,
     legacy_observation_snapshots: legacy_momentum,
     counts: {
@@ -388,7 +388,7 @@ async function build_single_bill_export(source_bill_id: number) {
       ? "Legislative event time, Lighthouse observation time, and extraction time are separate. Momentum is replayed over confirmed source event time from the latest source revision; future-dated provider records remain preserved and explicitly pending, while superseded rows and tombstones remain preserved history but are not current truth."
       : "Event-time chronology v2 is unavailable for this bill; legacy mixed-time projection rows are preserved and explicitly labeled.",
     interpretation:
-      "This is a source-preserving Civic Genome export. Historical versions, legacy projections, and receipts are preserved as history; export does not re-run or mutate Rosetta, Prism, Docket, or Civic Genome state.",
+      "This is a source-only Civic Genome export. Historical Rosetta-derived traits, runs, and unproven receipts are withheld. Source-version identity, Docket events, and legislative lineage remain readable. No Rosetta, Prism, Docket, or Genome mutation occurs.",
   };
 }
 
@@ -441,6 +441,106 @@ civic_genome_export_router.get(
       return res
         .status(500)
         .json({ ok: false, error: "civic_genome_summary_report_failed" });
+    }
+  },
+);
+
+civic_genome_export_router.get(
+  "/bill/:source_bill_id/report",
+  async (req, res) => {
+    const source_bill_id = positive_integer(req.params.source_bill_id);
+    if (!source_bill_id)
+      return res
+        .status(400)
+        .json({ ok: false, error: "invalid_source_bill_id" });
+
+    try {
+      return await send_human_bill_report(
+        res,
+        source_bill_id,
+        "law_decomposition",
+      );
+    } catch (error) {
+      console.error("[CivicGenomeExport] law/decomposition report failed", {
+        source_bill_id,
+        error,
+      });
+      return res
+        .status(500)
+        .json({ ok: false, error: "current_law_decomposition_report_failed" });
+    }
+  },
+);
+
+civic_genome_export_router.get(
+  "/bill/:source_bill_id/machine",
+  async (req, res) => {
+    const source_bill_id = positive_integer(req.params.source_bill_id);
+    if (!source_bill_id)
+      return res
+        .status(400)
+        .json({ ok: false, error: "invalid_source_bill_id" });
+
+    try {
+      const payload = await build_single_bill_export(source_bill_id);
+      if (!payload)
+        return res
+          .status(404)
+          .json({ ok: false, error: "civic_genome_bill_not_found" });
+      const snapshot = await build_current_law_report_snapshot(payload);
+      const selected = payload.bill_detail.bill;
+      const machine_payload = {
+        export_type: "current_law_presentation_export",
+        export_contract: "current-law-presentation-json-v1",
+        exported_at: new Date().toISOString(),
+        source_bill_id,
+        genome_bill_id: payload.genome_bill_id,
+        composition_scope: ["docket", "civic_genome", "rosetta"],
+        bill_identity: {
+          state_code: selected.state_code ?? null,
+          session_key: selected.session_key ?? null,
+          source_bill_number: selected.source_bill_number ?? null,
+          source_bill_title: selected.source_bill_title ?? null,
+          bill_status: selected.bill_status ?? null,
+        },
+        current_version: snapshot.current_version,
+        rosetta_availability: snapshot.rosetta_availability,
+        rosetta_error: snapshot.rosetta_error,
+        source_identity: snapshot.source
+          ? {
+              source_content_id: snapshot.source.source_content_id,
+              source_document_id: snapshot.source.source_document_id,
+              source_content_hash: snapshot.source.source_content_hash,
+              source_byte_hash: snapshot.source.source_byte_hash,
+              source_identity_hash: snapshot.source.source_identity_hash,
+              source_version: snapshot.source.source_version,
+              source_url: snapshot.source.source_url,
+            }
+          : null,
+        rosetta_current: snapshot.rosetta,
+        civic_genome_context: {
+          family: payload.family,
+          family_bills: payload.family_bills,
+          lineage_edges: payload.lineage_edges,
+          bill_temporal_facts: payload.bill_temporal_facts,
+          bill_events: payload.bill_events,
+        },
+        interpretation:
+          "The current-source Rosetta object is exact-source-bound and selected-runtime only. Historical decomposition is not substituted when a current Rosetta result is unavailable.",
+      };
+      return send_json_attachment(
+        res,
+        `current-law-${source_bill_id}-${selected.state_code ?? "state"}-${selected.source_bill_number ?? "bill"}`,
+        machine_payload,
+      );
+    } catch (error) {
+      console.error("[CivicGenomeExport] current law machine export failed", {
+        source_bill_id,
+        error,
+      });
+      return res
+        .status(500)
+        .json({ ok: false, error: "current_law_machine_export_failed" });
     }
   },
 );
