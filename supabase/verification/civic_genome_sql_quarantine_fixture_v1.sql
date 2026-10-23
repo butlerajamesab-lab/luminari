@@ -33,6 +33,9 @@ INSERT INTO public.civic_genome_trait (id) VALUES (1);
 INSERT INTO public.civic_genome_assembly_run (id,rosetta_engine_version) VALUES (1,NULL);
 INSERT INTO public.civic_genome_rosetta_generation_target (id,engine_version) VALUES (1,'rosetta-v3-deterministic-sql-2.5.40');
 INSERT INTO public.civic_genome_rosetta_generation_activation_queue (id) VALUES (1);
+-- Historical leased claim, inserted before either quarantine is installed.
+-- Tests must prove that even a same-state lease rewrite is rejected.
+INSERT INTO public.civic_genome_rosetta_generation_activation_queue (id,queue_state) VALUES (2,'submitted');
 INSERT INTO public.civic_genome_rosetta_generation_upgrade_queue (id) VALUES (1);
 INSERT INTO public.civic_genome_bill(id,structural_dna_json,structural_dna_hash,rosetta_extraction_run_id)
 VALUES (2,'{"source_bill_id":200,"rosetta_assembly":{"engine":"old"},"rosetta_source_receipt":{"run":"old"}}','legacy-hash','legacy-run');
