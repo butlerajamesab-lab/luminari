@@ -208,6 +208,10 @@ export default function ClaimElements() {
     { caseId: currentCaseId! },
     { enabled: !!currentCaseId, retry: false },
   );
+  const pipelineProjection = trpc.analyze.getIntakePipelineCandidateProjection.useQuery(
+    { caseId: currentCaseId! },
+    { enabled: !!currentCaseId, retry: false },
+  );
 
   const domains = useMemo(() => {
     if (!data) return [];
@@ -258,6 +262,100 @@ export default function ClaimElements() {
       </div>
 
       <Reviewed_claim_references mode="claims" />
+
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <GitBranch className="h-4 w-4 text-cyan-400" />
+          <h2 className="text-lg font-semibold">Possible case routes</h2>
+          {currentCaseId && <Badge variant="outline" className="text-[10px]">Case {currentCaseId}</Badge>}
+          {pipelineProjection.data?.selected_pipeline_key ? (
+            <Badge variant="outline" className="text-[10px] text-emerald-300 border-emerald-400/30">
+              Selected: {pipelineProjection.data.selected_pipeline_key.replace(/_/g, " ")}
+            </Badge>
+          ) : currentCaseId ? (
+            <Badge variant="outline" className="text-[10px] text-amber-300 border-amber-400/30">
+              No case route selected
+            </Badge>
+          ) : null}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Deterministic routing candidates from the sealed case evidence. These candidates organize relevant pipeline knowledge; they do not establish a claim, finding, or legal conclusion. Facility-wide survey context is counted separately from case-specific evidence.
+        </p>
+
+        {!currentCaseId ? (
+          <Card className="border-dashed">
+            <CardContent className="p-5 text-sm text-muted-foreground">
+              Select a case to inspect evidence-bound routing candidates.
+            </CardContent>
+          </Card>
+        ) : pipelineProjection.isLoading ? (
+          <div className="space-y-2">{[1, 2].map(i => <div key={i} className="h-20 bg-white/5 rounded-lg animate-pulse" />)}</div>
+        ) : pipelineProjection.error ? (
+          <Card className="border-red-500/30">
+            <CardContent className="p-5 text-sm text-red-300">
+              Case routing projection is unavailable: {pipelineProjection.error.message}
+            </CardContent>
+          </Card>
+        ) : pipelineProjection.data?.projection_state !== "canonical_projection" ? (
+          <Card className="border-dashed">
+            <CardContent className="p-5 text-sm text-muted-foreground">
+              The sealed evidence layers needed for case routing have not all been projected yet.
+            </CardContent>
+          </Card>
+        ) : (pipelineProjection.data?.candidates?.length ?? 0) === 0 ? (
+          <Card className="border-dashed">
+            <CardContent className="p-5 text-sm text-muted-foreground">
+              No pipeline candidate matched the currently sealed case-specific evidence. This does not mean the case has no issues; it means the current deterministic routing vocabulary produced no match.
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-2">
+            {(pipelineProjection.data?.candidates ?? []).slice(0, 6).map((candidate: any) => (
+              <Card key={candidate.pipeline_id} className="border-white/10">
+                <CardContent className="p-4 space-y-2.5">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-medium text-white">{candidate.label}</p>
+                        <Badge variant="outline" className="text-[9px] text-amber-300 border-amber-400/30">
+                          Candidate — unverified
+                        </Badge>
+                        <Badge variant="outline" className="text-[9px]">{candidate.category}</Badge>
+                      </div>
+                      <p className="mt-1 text-[10px] text-muted-foreground">
+                        <code>{candidate.pipeline_id}</code> · {candidate.confidence_label} routing confidence · {candidate.evidence_refs.length} source-bound matches
+                      </p>
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className={candidate.reviewed_route_count > 0
+                        ? "text-[9px] text-emerald-300 border-emerald-400/30"
+                        : "text-[9px] text-muted-foreground"}
+                    >
+                      {candidate.reviewed_route_count > 0
+                        ? `${candidate.reviewed_route_count} reviewed routes available`
+                        : "No reviewed route bound"}
+                    </Badge>
+                  </div>
+                  {candidate.evidence_refs.length > 0 && (
+                    <div className="space-y-1">
+                      {candidate.evidence_refs.slice(0, 3).map((ref: any) => (
+                        <div key={`${candidate.pipeline_id}:${ref.evidence_kind}:${ref.source_id}`} className="flex items-start gap-2 text-xs text-white/70">
+                          <GitBranch className="h-3 w-3 mt-0.5 text-cyan-400 shrink-0" />
+                          <span className="line-clamp-2">{ref.source_text}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+            <p className="text-[10px] text-muted-foreground">
+              Evidence accounting: {pipelineProjection.data?.source_counts.case_specific_events ?? 0} case-specific events · {pipelineProjection.data?.source_counts.facility_wide_events ?? 0} facility-wide context events · {pipelineProjection.data?.source_counts.relationships ?? 0} explicit relationships · {pipelineProjection.data?.source_counts.case_specific_transitions ?? 0} case-specific transitions.
+            </p>
+          </div>
+        )}
+      </section>
 
       <section className="space-y-3">
         <div className="flex items-center gap-2">
