@@ -60,7 +60,9 @@ export default function OAuthConsent() {
     void (async () => {
       try {
         const { data: identity, error: auth_error } = await supabase.auth.getUser();
-        if (auth_error) throw auth_error;
+        // No Supabase session is the ordinary first-time OAuth path, not a
+        // fatal consent failure. All other Auth errors remain explicit.
+        if (auth_error && auth_error.name !== "AuthSessionMissingError") throw auth_error;
         if (!identity.user) {
           const return_path = "/oauth/consent?" + new URLSearchParams({
             authorization_id,
@@ -101,8 +103,8 @@ export default function OAuthConsent() {
     setActing(true);
     try {
       const result = approve
-        ? await supabase.auth.oauth.approveAuthorization(authorization_id)
-        : await supabase.auth.oauth.denyAuthorization(authorization_id);
+        ? await supabase.auth.oauth.approveAuthorization(authorization_id, { skipBrowserRedirect: true })
+        : await supabase.auth.oauth.denyAuthorization(authorization_id, { skipBrowserRedirect: true });
       if (result.error) throw result.error;
       const redirect_url = verifiedRedirect(result.data?.redirect_url);
       if (!redirect_url) throw new Error("Authorization destination was invalid.");
