@@ -551,7 +551,7 @@ civic_genome_export_router.get("/current", async (req, res) => {
     ]);
     const export_bills = bills.map((bill) => ({
       source_bill_id: source_bill_id_from_bill(bill),
-      ...bill,
+      ...sanitize_genome_bill_public_read(bill),
     }));
 
     const payload = {
@@ -559,7 +559,7 @@ civic_genome_export_router.get("/current", async (req, res) => {
       export_contract: EXPORT_CONTRACT,
       exported_at: new Date().toISOString(),
       interpretation:
-        "Each returned row is a Civic Genome bill record as currently stored. This export is read-only and does not replay historical failures or mutate any upstream owner.",
+        "Each returned row is a source-preserving Civic Genome bill projection with unverified Rosetta derivatives withheld. This export is read-only and does not replay historical failures or mutate any upstream owner.",
       total_bill_count: stats.total_bills,
       returned_bill_count: export_bills.length,
       offset,

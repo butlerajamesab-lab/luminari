@@ -41,6 +41,35 @@ describe("public Genome bill source identity boundary", () => {
     expect(bill.structural_dna_json).toHaveProperty("rosetta_assembly");
     expect(bill.structural_dna_json).toHaveProperty("rosetta_source_receipt");
   });
+  it("the serialized current-export row cannot disclose historical derivatives", () => {
+    const bill = {
+      genome_bill_id: "id-17",
+      source_bill_number: "HB 12",
+      rosetta_extraction_run_id: "secret-legacy-run",
+      structural_dna_hash: "secret-legacy-hash",
+      structural_dna_json: {
+        source_bill_id: 77,
+        source_provider: "LegiScan",
+        rosetta_source_receipt: { source_content_hash: "secret-legacy-receipt" },
+        rosetta_assembly: { diagnostics: "secret-legacy-assembly" },
+      },
+    } as unknown as GenomeBill;
+    const export_row = {
+      source_bill_id: 77,
+      ...sanitize_genome_bill_public_read(bill),
+    };
+    const serialized = JSON.stringify(export_row);
+    expect(serialized).not.toContain("secret-legacy-run");
+    expect(serialized).not.toContain("secret-legacy-hash");
+    expect(serialized).not.toContain("secret-legacy-receipt");
+    expect(serialized).not.toContain("secret-legacy-assembly");
+    expect(export_row.structural_dna_json).toEqual({
+      source_bill_id: 77,
+      source_provider: "LegiScan",
+    });
+    expect(bill.rosetta_extraction_run_id).toBe("secret-legacy-run");
+    expect(bill.structural_dna_json).toHaveProperty("rosetta_assembly");
+  });
   it("routes public list and ID queries through the sanitizer", () => {
     const router = readFileSync(join(process.cwd(), "server/routers/civic-genome-router.ts"), "utf8");
     const detail = readFileSync(join(process.cwd(), "server/civic-genome-bill-detail.ts"), "utf8");
@@ -49,6 +78,8 @@ describe("public Genome bill source identity boundary", () => {
     expect(router).toContain("return bill ? sanitize_genome_bill_public_read(bill) : null");
     expect(detail).toContain("sanitize_genome_bill_public_read(persisted_bill)");
     expect(exportRoute).toContain("family_bills: family_bills.map(sanitize_genome_bill_public_read)");
+    expect(exportRoute).toContain("...sanitize_genome_bill_public_read(bill),");
+    expect(exportRoute).not.toMatch(/source_bill_id:\s*source_bill_id_from_bill\(bill\),\s*\.\.\.bill\s*[,}]/);
     expect(exportRoute).not.toMatch(/from public\\.civic_genome_trait\\b/);
   });
 });
