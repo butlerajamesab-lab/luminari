@@ -54,6 +54,17 @@ describe("Sovereign Control system API panel", () => {
     );
   });
 
+  it("exposes one-click, authenticated local JSON export without widening the API", () => {
+    expect(panel).toContain("fetchSystemDiagnosticExport()");
+    expect(panel).toContain("Export Diagnostics JSON");
+    expect(panel).toContain('type: "application/json"');
+    expect(panel).toContain("URL.createObjectURL(blob)");
+    expect(panel).toContain("link.download = filename");
+    expect(panel).toContain("Export failed:");
+    expect(panel).toContain("No file was produced.");
+    expect(panel).not.toContain("x-lighthouse-system-read-token");
+  });
+
   it("renders each live response inline with status and duration", () => {
     expect(panel).toContain("diagnosticRun.status");
     expect(panel).toContain("diagnosticRun.duration_ms");
