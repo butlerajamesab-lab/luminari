@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Activity,
   Database,
+  Download,
   ExternalLink,
   Loader2,
   Play,
@@ -15,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { fetchSystemDiagnosticExport } from "./system-diagnostics-export";
 
 type SystemHealth = {
   status: string;
@@ -166,6 +168,9 @@ export default function SystemApiPanel() {
   const [diagnosticRun, setDiagnosticRun] = useState<DiagnosticRun | null>(
     null,
   );
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [exportStatus, setExportStatus] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -260,6 +265,36 @@ export default function SystemApiPanel() {
     }
   }, []);
 
+  const exportDiagnostics = useCallback(async () => {
+    setIsExporting(true);
+    setExportError(null);
+    setExportStatus(null);
+    try {
+      const snapshot = await fetchSystemDiagnosticExport();
+      const filename = `lighthouse-system-diagnostics-${snapshot.exported_at.replace(/[:.]/g, "-")}.json`;
+      const blob = new Blob([JSON.stringify(snapshot, null, 2) + "\n"], {
+        type: "application/json",
+      });
+      const objectUrl = URL.createObjectURL(blob);
+      try {
+        const link = document.createElement("a");
+        link.href = objectUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      } finally {
+        // Give mobile browsers time to consume the blob before revocation.
+        window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+      }
+      setExportStatus(`JSON download initiated: ${filename}`);
+    } catch (error) {
+      setExportError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsExporting(false);
+    }
+  }, []);
+
   const normalizedSearch = search.trim().toLowerCase();
   const frontendRoutes = useMemo(() => {
     const items = routes?.frontend.routes ?? [];
@@ -292,24 +327,52 @@ export default function SystemApiPanel() {
             <Server className="h-5 w-5 text-cyan-400" /> System API
           </h3>
           <p className="text-sm text-muted-foreground">
-            Owner-authenticated, read-only visibility into Lighthouse health and
-            route inventory.
+            Owner-authenticated, read-only visibility into Lighthouse health,
+            routes, and structural database metadata.
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => void load()}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <RefreshCw className="mr-2 h-4 w-4" />
-          )}
-          Refresh
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void exportDiagnostics()}
+            disabled={isLoading || isExporting || runningPath !== null}
+          >
+            {isExporting ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="mr-2 h-4 w-4" />
+            )}
+            Export Diagnostics JSON
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void load()}
+            disabled={isLoading || isExporting}
+          >
+            {isLoading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="mr-2 h-4 w-4" />
+            )}
+            Refresh
+          </Button>
+        </div>
       </div>
+
+      <p className="text-xs text-muted-foreground">
+        Export retrieves fresh health, route, table, view, and foreign-key metadata
+        through your administrator session. No records, secrets, or database changes.
+      </p>
+      {exportError && (
+        <div role="alert" className="rounded border border-red-500/30 bg-red-950/20 p-3 text-sm text-red-300">
+          Export failed: {exportError}. No file was produced.
+        </div>
+      )}
+      {exportStatus && (
+        <div role="status" className="text-sm text-muted-foreground">{exportStatus}</div>
+      )}
 
       <Card className="border-cyan-500/30 bg-cyan-950/10">
         <CardHeader className="pb-3">
@@ -329,7 +392,7 @@ export default function SystemApiPanel() {
                 variant="outline"
                 className="h-auto min-h-16 justify-start whitespace-normal p-3 text-left"
                 onClick={() => void runDiagnostic(diagnostic.path)}
-                disabled={runningPath !== null}
+                disabled={runningPath !== null || isExporting}
               >
                 {runningPath === diagnostic.path ? (
                   <Loader2 className="mr-3 h-4 w-4 shrink-0 animate-spin" />
@@ -562,7 +625,7 @@ export default function SystemApiPanel() {
                         variant="ghost"
                         size="sm"
                         onClick={() => void runDiagnostic(mount.path)}
-                        disabled={runningPath !== null}
+                        disabled={runningPath !== null || isExporting}
                       >
                         {runningPath === mount.path ? (
                           <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
