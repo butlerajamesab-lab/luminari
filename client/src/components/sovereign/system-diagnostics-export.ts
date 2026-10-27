@@ -34,7 +34,7 @@ function isCompleteCollection(
   requiredFields: readonly string[],
 ): boolean {
   if (!isObject(value) || !Array.isArray(value.items)) return false;
-  if (!Number.isSafeInteger(value.total) || (value.total as number) < 0) return false;
+  if (typeof value.total !== "number" || !Number.isSafeInteger(value.total) || value.total < 0) return false;
   if (value.total !== value.items.length) return false;
   return value.items.every(
     (item: unknown) =>
@@ -54,35 +54,31 @@ function requireValidResponse(path: DiagnosticPath, value: unknown): JsonObject 
       throw new Error(`${path} returned an incomplete health response.`);
     }
   } else if (path === "/api/system/routes") {
-    if (
-      !hasText(value, "timestamp") ||
-      !isCompleteCollection(value.frontend, ["path", "component_slug", "layer"]) ||
-      !isCompleteCollection(value.backend, ["method", "path", "source"])
-    ) {
-      // Route inventories use "routes"/"mounts" instead of the schema's "items".
-      const frontend = isObject(value.frontend) ? value.frontend : null;
-      const backend = isObject(value.backend) ? value.backend : null;
-      const validRoutes =
-        frontend !== null &&
-        backend !== null &&
-        Array.isArray(frontend.routes) &&
-        Array.isArray(backend.mounts) &&
-        Number.isSafeInteger(frontend.total) &&
-        Number.isSafeInteger(backend.total) &&
-        frontend.total === frontend.routes.length &&
-        backend.total === backend.mounts.length &&
-        frontend.routes.every((item: unknown) =>
-          isObject(item) && !("error" in item) &&
-          hasText(item, "path") && hasText(item, "component_slug") &&
-          hasText(item, "layer") && typeof item.registered === "boolean"
-        ) &&
-        backend.mounts.every((item: unknown) =>
-          isObject(item) && !("error" in item) &&
-          hasText(item, "method") && hasText(item, "path") && hasText(item, "source")
-        );
-      if (!hasText(value, "timestamp") || !validRoutes) {
-        throw new Error(`${path} returned an incomplete route inventory.`);
-      }
+    const frontend = isObject(value.frontend) ? value.frontend : null;
+    const backend = isObject(value.backend) ? value.backend : null;
+    const validRoutes =
+      hasText(value, "timestamp") &&
+      frontend !== null &&
+      backend !== null &&
+      Array.isArray(frontend.routes) &&
+      Array.isArray(backend.mounts) &&
+      typeof frontend.total === "number" &&
+      typeof backend.total === "number" &&
+      Number.isSafeInteger(frontend.total) &&
+      Number.isSafeInteger(backend.total) &&
+      frontend.total === frontend.routes.length &&
+      backend.total === backend.mounts.length &&
+      frontend.routes.every((item: unknown) =>
+        isObject(item) && !("error" in item) &&
+        hasText(item, "path") && hasText(item, "component_slug") &&
+        hasText(item, "layer") && typeof item.registered === "boolean"
+      ) &&
+      backend.mounts.every((item: unknown) =>
+        isObject(item) && !("error" in item) &&
+        hasText(item, "method") && hasText(item, "path") && hasText(item, "source")
+      );
+    if (!validRoutes) {
+      throw new Error(`${path} returned an incomplete route inventory.`);
     }
   } else if (
     !hasText(value, "timestamp") ||
