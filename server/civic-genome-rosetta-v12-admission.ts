@@ -185,12 +185,38 @@ export async function resolve_v12_source_content(
   }
 }
 
-/** Hash only the exact selected decomposition output, independent of UI metadata. */
+/**
+ * Hash the exact Rosetta JSONB-wire unit objects, not the presentation reader's
+ * reconstructed units (which remove source hashes/rules and change nested key
+ * order). The producer and consumer share these four TOP-LEVEL keys in order.
+ * Validate every normalized unit against the raw source to prevent admitting
+ * a displayed/assembled classification inconsistent with the hashed bytes.
+ */
 export function v12_output_sha256(detail: current_rosetta_live_detail): string {
+  const raw_units = detail.source_bound_raw_units;
+  if (!Array.isArray(raw_units) || raw_units.length !== detail.units.length) {
+    throw new Error("rosetta_v12_wire_projection_unavailable");
+  }
+  for (let i = 0; i < raw_units.length; i++) {
+    const raw = as_record(raw_units[i]);
+    const unit = detail.units[i];
+    if (!raw
+      || raw.unit_ord !== unit.unit_ord
+      || raw.section_ord !== unit.section_ord
+      || raw.kind !== unit.kind
+      || raw.disposition !== unit.disposition
+      || raw.raw_start !== unit.raw_start
+      || raw.raw_end !== unit.raw_end
+      || raw.raw_text !== unit.raw_text
+      || raw.effective_text !== unit.effective_text
+      || !Array.isArray(raw.layers)
+      || JSON.stringify(raw.layers) !== JSON.stringify(unit.layers)
+    ) throw new Error("rosetta_v12_wire_unit_projection_mismatch");
+  }
   const canonical = {
     decomposition: detail.decomposition,
     sections: detail.sections,
-    units: detail.units,
+    units: raw_units,
     markup_events: detail.markup_events,
   };
   return sha256(JSON.stringify(canonical));
