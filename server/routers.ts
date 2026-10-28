@@ -16,6 +16,7 @@ import { assertActionAllowed } from "./gate-helpers";
 import { hardDeleteCase as canonical_hard_delete_case, hardDeleteDocument as canonical_hard_delete_document } from "./hard-delete-canonical";
 import { getDailySpotlight, getCategorySpotlight, getContextualSpotlights, getDiscoveryCategories, getAllSpotlights, generateShareText } from "./benefits-discovery";
 import { coalitionIntelligenceRouter } from "./routers/coalition-intelligence-router";
+import { legislatorsRouter } from "./routers/legislators-router";
 import { mathEngineRouter } from "./routers/math-engine-router";
 import { campaignEngineRouter } from "./routers/campaign-engine-router";
 import { datasetConnectorRouter } from "./routers/dataset-connector-router";
@@ -3732,6 +3733,7 @@ export const appRouter = router({
   proceduralPathEngine: proceduralPathEngineRouter,
   systemHardeningPipeline: systemHardeningPipelineRouter,
   coalitionIntelligence: coalitionIntelligenceRouter,
+  legislators: legislatorsRouter,
   campaignEngine: campaignEngineRouter,
   datasetConnector: datasetConnectorRouter,
   knowledgeHealth: knowledgeHealthRouter,
