@@ -112,9 +112,18 @@ interface ComposeFormProps {
   initialContext?: string | null;
   initialProgramId?: string | null;
   initialOversight?: string | null;
+  initialSituation?: string | null;
 }
 
-function ComposeForm({ onDraftCreated, initialDocType, initialState, initialContext, initialProgramId, initialOversight }: ComposeFormProps) {
+function ComposeForm({
+  onDraftCreated,
+  initialDocType,
+  initialState,
+  initialContext,
+  initialProgramId,
+  initialOversight,
+  initialSituation,
+}: ComposeFormProps) {
   const { user } = useAuth();
   const [step, setStep] = useState<"type" | "context" | "compose" | "preflight">(
     initialDocType ? "context" : "type"
@@ -128,7 +137,7 @@ function ComposeForm({ onDraftCreated, initialDocType, initialState, initialCont
   const [senderAddress, setSenderAddress] = useState("");
   const [senderEmail, setSenderEmail] = useState(user?.email || "");
   const [senderPhone, setSenderPhone] = useState("");
-  const [situation, setSituation] = useState("");
+  const [situation, setSituation] = useState(initialSituation || "");
   const [additionalContext, setAdditionalContext] = useState("");
 
   // Load programs/oversight for selected state
@@ -746,6 +755,7 @@ export default function LumenSendPage() {
   const [initialContext, setInitialContext] = useState<string | null>(null);
   const [initialProgramId, setInitialProgramId] = useState<string | null>(null);
   const [initialOversight, setInitialOversight] = useState<string | null>(null);
+  const [initialSituation, setInitialSituation] = useState<string | null>(null);
 
   // Parse URL parameters for deep-linking from Lighthouse / Civic Map / etc.
   useEffect(() => {
@@ -756,6 +766,7 @@ export default function LumenSendPage() {
     const pid = params.get("programId");
     const ob = params.get("oversight");
     const docType = params.get("documentType");
+    const sit = params.get("situation");
     if (type) {
       setInitialDocType(type);
       setView("compose");
@@ -768,8 +779,9 @@ export default function LumenSendPage() {
       setInitialDocType(docType);
       setView("compose");
     }
+    if (sit) setInitialSituation(sit);
     // Clean URL params after reading
-    if (type || state || ctx || pid || ob || docType) {
+    if (type || state || ctx || pid || ob || docType || sit) {
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, []);
@@ -816,6 +828,7 @@ export default function LumenSendPage() {
               initialContext={initialContext}
               initialProgramId={initialProgramId}
               initialOversight={initialOversight}
+              initialSituation={initialSituation}
             />
           </div>
         )}

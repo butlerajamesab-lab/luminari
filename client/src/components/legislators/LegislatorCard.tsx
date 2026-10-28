@@ -8,7 +8,9 @@
  * A present phone renders as a tel: link and a present email as a
  * mailto: link; a contact_method fallback is not an address and stays
  * plain text. The card links out to LumenSend compose (inquiry, with
- * the member's name and office as context) and attaches the member to
+ * a manual context — the context parameter only accepts the server's
+ * fixed context-type enum, never member text — and the member's name
+ * and office as the situation seed) and attaches the member to
  * a case through the shared CommitToCase resource path (member_key as
  * the resource ref). It never writes legislator data itself.
  */
@@ -337,7 +339,7 @@ export default function LegislatorCard({
         <button
           onClick={() =>
             navigate(
-              `/lumensend?type=inquiry&context=${encodeURIComponent(lumenSendContext)}`,
+              `/lumensend?type=inquiry&context=manual&situation=${encodeURIComponent(lumenSendContext)}`,
             )
           }
           style={{
