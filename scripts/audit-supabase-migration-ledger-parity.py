@@ -498,7 +498,7 @@ SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
     ),
     "20260731195927": (
         "2460b6b7ce5381d2dc778b9b89dfbc9d",
-        "782c9b7ce5381d2dc778b9b89dfbc9d",
+        "3c6c31d78272705cbd9ae11b3ebf898ce71edce0",
     ),
     "20260805194900": (
         "ed9f769f67de34a7c27d14e91e552a55",
@@ -728,7 +728,7 @@ for version in sorted(production_versions & local_versions):
         continue
     receipt = production_by_version[version][0]
     path = local_by_version[version][0]
-    expected_name = f"{version}_{receipt[name]}.sql"
+    expected_name = f"{version}_{receipt['name']}.sql"
     if path.name != expected_name:
         name_mismatches.append((version, path.name, expected_name))
     actual_md5 = hashlib.md5(path.read_bytes()).hexdigest()
