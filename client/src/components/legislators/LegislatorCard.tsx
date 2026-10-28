@@ -5,10 +5,16 @@
  * renders through this component so member data has exactly one shape.
  * It never invents, infers, or fills in a missing value: absent phone,
  * email, website, or bio renders as an honest "not listed" line.
- * It performs no write or contact action — it only renders the official
- * contact info stored on the member row.
+ * A present phone renders as a tel: link and a present email as a
+ * mailto: link; a contact_method fallback is not an address and stays
+ * plain text. The card links out to LumenSend compose (inquiry, with
+ * the member's name and office as context) and attaches the member to
+ * a case through the shared CommitToCase resource path (member_key as
+ * the resource ref). It never writes legislator data itself.
  */
 import { useState } from "react";
+import { useLocation } from "wouter";
+import { CommitToCase } from "../CommitToCase";
 
 /**
  * Explicit member shape, mirroring the legislators router's output
@@ -167,13 +173,26 @@ export default function LegislatorCard({
   member: LegislatorMember;
 }) {
   const [photoFailed, setPhotoFailed] = useState(false);
+  const [, navigate] = useLocation();
   const showPhoto = Boolean(member.photo_url) && !photoFailed;
   const stateName = STATE_NAMES[member.state] ?? member.state;
+  // Email renders as a mailto link ONLY when the stored value is a real
+  // address. A contact_method fallback ("contact form on official website")
+  // is not an address and stays plain text, never a fabricated mailto.
   const emailLine = member.email
     ? member.email
     : member.contact_method
       ? member.contact_method
       : "Not listed";
+  const contactLinkStyle = { color: "#7eb3e8", textDecoration: "none" };
+  const lumenSendContext = [
+    member.full_name,
+    chamberDisplay(member.level, member.chamber),
+    stateName,
+    districtLabel(member.level, member.district, member.representation),
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <article
@@ -256,13 +275,29 @@ export default function LegislatorCard({
           <dt style={{ color: "rgba(240,236,228,0.64)", minWidth: 72 }}>
             Phone
           </dt>
-          <dd style={{ margin: 0 }}>{member.phone ?? "Not listed"}</dd>
+          <dd style={{ margin: 0 }}>
+            {member.phone ? (
+              <a href={`tel:${member.phone}`} style={contactLinkStyle}>
+                {member.phone}
+              </a>
+            ) : (
+              "Not listed"
+            )}
+          </dd>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <dt style={{ color: "rgba(240,236,228,0.64)", minWidth: 72 }}>
             Email
           </dt>
-          <dd style={{ margin: 0 }}>{emailLine}</dd>
+          <dd style={{ margin: 0 }}>
+            {member.email ? (
+              <a href={`mailto:${member.email}`} style={contactLinkStyle}>
+                {member.email}
+              </a>
+            ) : (
+              emailLine
+            )}
+          </dd>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <dt style={{ color: "rgba(240,236,228,0.64)", minWidth: 72 }}>Web</dt>
@@ -290,6 +325,42 @@ export default function LegislatorCard({
           </div>
         ) : null}
       </dl>
+
+      <div
+        style={{
+          display: "flex",
+          gap: 8,
+          marginTop: "1rem",
+          flexWrap: "wrap",
+        }}
+      >
+        <button
+          onClick={() =>
+            navigate(
+              `/lumensend?type=inquiry&context=${encodeURIComponent(lumenSendContext)}`,
+            )
+          }
+          style={{
+            background: "rgba(52,211,153,0.1)",
+            border: "1px solid rgba(52,211,153,0.3)",
+            borderRadius: 4,
+            padding: "6px 12px",
+            cursor: "pointer",
+            fontSize: "0.85rem",
+            color: "#34d399",
+          }}
+        >
+          Message in LumenSend
+        </button>
+        <CommitToCase
+          type="resource"
+          itemId={member.member_key}
+          resourceName={member.full_name}
+          sourceLane="legislators"
+          label="Attach to Case"
+          size="sm"
+        />
+      </div>
 
       {member.committees.length > 0 ? (
         <div style={{ marginTop: "1rem" }}>
