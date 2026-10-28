@@ -36,6 +36,10 @@ export type current_rosetta_live_detail = {
   decomposition: json_record | null;
   sections: unknown[];
   units: current_rosetta_live_unit[];
+  /** Original JSONB-wire unit objects, without presentation normalization.
+   *  Required for exact source-bound V12 output SHA parity; never use these
+   *  objects as a canonical Genome assembly or publication input. */
+  source_bound_raw_units: unknown[] | null;
   markup_events: unknown[];
   hold_receipt: json_record | null;
   failure_receipts: unknown[];
@@ -171,6 +175,7 @@ export async function get_current_rosetta_live_detail(input: {
       decomposition: as_record(payload.decomposition),
       sections: Array.isArray(payload.sections) ? payload.sections : [],
       units,
+      source_bound_raw_units: Array.isArray(payload.units) ? payload.units : null,
       markup_events: Array.isArray(payload.markup_events) ? payload.markup_events : [],
       hold_receipt: as_record(payload.hold_receipt),
       failure_receipts: Array.isArray(payload.failure_receipts) ? payload.failure_receipts : [],
