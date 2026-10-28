@@ -340,7 +340,7 @@ APPROVED_REPOSITORY_ONLY = {
     ),
     "20261028000002": (
         "20261028000002_seed_legislators_federal.sql",
-        "76b17577d0cc6c5f895df9c28397e6e3a58fac7d",
+        "c3879ff31ead80d1063da0386497ed3cb54d39f4",
     ),
     "20261028000003": (
         "20261028000003_seed_legislators_ak.sql",
@@ -552,7 +552,7 @@ APPROVED_REPOSITORY_ONLY = {
     ),
     "20261028000055": (
         "20261028000055_seed_tribal_leaders.sql",
-        "b88161595e598e502e07f5ad2fccc6aa0ca949e2",
+        "92bac0ad8f33ea5bd16dd5b61883e93d9f6e70f2",
     ),
 }
 
