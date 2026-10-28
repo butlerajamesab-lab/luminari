@@ -224,6 +224,24 @@ export function verify_v12_certification(
     || !Number.isSafeInteger(invariants?.unit_count) || invariants.unit_count <= 0
     || !Number.isSafeInteger(invariants?.section_count) || invariants.section_count <= 0
   ) throw new Error("rosetta_v12_certification_receipt_mismatch");
+  // Producer #325 hashes exactly these source-bound fields, in this order,
+  // before appending certification_sha256. A syntactically valid but fabricated
+  // digest must never be accepted as receipt integrity.
+  const unsigned_receipt = {
+    contract: receipt.contract,
+    source_content_id: receipt.source_content_id,
+    source_document_id: receipt.source_document_id,
+    source_content_hash: receipt.source_content_hash,
+    ruleset_version: receipt.ruleset_version,
+    ruleset_sha256: receipt.ruleset_sha256,
+    output_sha256: receipt.output_sha256,
+    certified_at: receipt.certified_at,
+    attestation_type: receipt.attestation_type,
+    verified_invariants: receipt.verified_invariants,
+  };
+  if (sha256(JSON.stringify(unsigned_receipt)) !== receipt.certification_sha256.toLowerCase()) {
+    throw new Error("rosetta_v12_certification_receipt_digest_mismatch");
+  }
   return receipt.certification_sha256.toLowerCase();
 }
 
