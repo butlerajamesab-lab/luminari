@@ -39,6 +39,17 @@ const fetch_mock = vi.fn();
 const deep_clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
 function detail(): current_rosetta_live_detail {
+  const units: current_rosetta_live_detail["units"] = [{
+    unit_ord: 1,
+    section_ord: 1,
+    kind: "sentence",
+    disposition: "OPERATIVE",
+    layers: ["W", "R"],
+    raw_start: 0,
+    raw_end: source_text.length,
+    raw_text: source_text,
+    effective_text: source_text,
+  }];
   return {
     contract: "rosetta-rule-live-detail-v1",
     observed_at: "2026-10-20T10:00:00Z",
@@ -66,17 +77,8 @@ function detail(): current_rosetta_live_detail {
     },
     decomposition: { outcome: "decomposed" },
     sections: [{ section_ord: 1 }],
-    units: [{
-      unit_ord: 1,
-      section_ord: 1,
-      kind: "sentence",
-      disposition: "OPERATIVE",
-      layers: ["W", "R"],
-      raw_start: 0,
-      raw_end: source_text.length,
-      raw_text: source_text,
-      effective_text: source_text,
-    }],
+    units,
+    source_bound_raw_units: units,
     markup_events: [],
     hold_receipt: null,
     failure_receipts: [],
@@ -133,7 +135,7 @@ describe("V12 certified admission — fixtures only", () => {
     // Native PostgreSQL JSONB printed these fields in this order in the
     // read-only production query, not the order Civic Genome hashes.
     const postgres_wire = {
-      units: data.units,
+      units: data.source_bound_raw_units,
       sections: data.sections,
       decomposition: data.decomposition,
       markup_events: data.markup_events,
@@ -141,7 +143,7 @@ describe("V12 certified admission — fixtures only", () => {
     const contract = {
       decomposition: data.decomposition,
       sections: data.sections,
-      units: data.units,
+      units: data.source_bound_raw_units,
       markup_events: data.markup_events,
     };
     const hash_json = (value: unknown) =>
@@ -157,6 +159,22 @@ describe("V12 certified admission — fixtures only", () => {
       ...cert(data),
       output_sha256: hash_json(postgres_wire),
     })).toThrow("rosetta_v12_certification_receipt_mismatch");
+  });
+
+  it("rejects missing raw producer units and divergence from normalized presentation units", () => {
+    const missing = detail();
+    missing.source_bound_raw_units = null;
+    expect(() => v12_output_sha256(missing)).toThrow("rosetta_v12_wire_projection_unavailable");
+    expect(() => admit_v12_live_detail(binding, source, missing, cert(detail())))
+      .toThrow("rosetta_v12_wire_projection_unavailable");
+
+    const mismatched = detail();
+    mismatched.source_bound_raw_units = mismatched.units.map(unit => ({ ...unit, layers: ["A"] }));
+    expect(() => v12_output_sha256(mismatched)).toThrow("rosetta_v12_wire_unit_projection_mismatch");
+    const preserved = detail();
+    const original = v12_output_sha256(preserved);
+    preserved.source_bound_raw_units = preserved.units.map(unit => ({ ...unit, rules: ["new-producer-rule"] }));
+    expect(v12_output_sha256(preserved)).not.toEqual(original);
   });
 
   it("admits exact selected-runtime source, ruleset, decomposition, spans and independent certification", () => {
