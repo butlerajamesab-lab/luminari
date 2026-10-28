@@ -127,7 +127,7 @@ APPROVED_REPOSITORY_ONLY = {
     ),
     "20260809130000": (
         "20260809130000_case_workflow_tables_foundation.sql",
-        "9a9de75477c9f07d69e8b07f4f9a1508d51270da",
+        "9af9eb8ffa3712d179ebc947febe9d7a8bbf7eab",
     ),
     "20260810070000": (
         "20260810070000_registry_resource_realms_foundation.sql",
@@ -155,7 +155,7 @@ APPROVED_REPOSITORY_ONLY = {
     ),
     "20260815081130": (
         "20260815081130_case_surface_tables_foundation.sql",
-        "ecafec1f688a5e25a25b3d266b7d8f094816ea10d840238",
+        "ecafec1f6885d269c49f3688474271a2114f9d8b",
     ),
     "20260816063000": (
         "20260816063000_visibility_legacy_tables_foundation.sql",
@@ -291,7 +291,7 @@ APPROVED_REPOSITORY_ONLY = {
     ),
     "20260909143000": (
         "20260909143000_lighthouse_runtime_postgres_contract_v1.sql",
-        "288d613674d5545f7673aec08430ce26bcff089",
+        "288d613674d5545f7673eadc08430ce26bcff089",
     ),
     # Forward migration pending production application through the normal
     # Supabase deployment gate.
@@ -347,12 +347,12 @@ SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
     # These files are the source-controlled SQL corresponding to the exact
     # production migration identities restored from supabase_migrations.
     "20260918162308": (
-        "ac2b0c2c0cf6a0332611b110a93e1",
+        "ac2b0c2c0cf6a0332611b110a93ad07b",
         "3d919b94f17e5509d4610610c9518d04a1616f7e",
     ),
     "20260918172503": (
         "a8a8f07c208305e2e5bd35df13981fb1",
-        "24fcf2c1863adc00094ef43c63c6bbec89a0f53",
+        "24f60f2c1863adc00094ef43c63c6bbec89a0f53",
     ),
     "20260918214924": (
         "1211dd669f36a6a56621a39d7b99ede1",
@@ -382,7 +382,7 @@ SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
     ),
     "20260513200250": (
         "b35feafe3cc54edfe240be1fc1a34570",
-        "56acd505d15f5dfd5f22ef5d3f3c6c10",
+        "56acd505d15f5dfd5f22ef5cba53d47716653c10",
     ),
     "20260516063117": (
         "6c7b42e71d68aa2d1025a5f0e3f2045f",
@@ -458,7 +458,7 @@ SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
     ),
     "20260729110336": (
         "3fda3f180634c3d6d26e2f53a6e74465",
-        "8d957dd6002f9b729682393578e01",
+        "8d957dd6002f9b729682393c315fad18509ae57b",
     ),
     "20260730134202": (
         "7b7cedac8471435b59561a80856efa64",
@@ -478,7 +478,7 @@ SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
     ),
     "20260731005055": (
         "fe76430d43efe6491bc7a964c7689d5a",
-        "0edfa8224d0d42308e62f5b50298aa382657e97eb",
+        "0edfa8224d0d42308e62f5b50298aa38265e97eb",
     ),
     "20260731012842": (
         "9dd8cc9361ba1f56da1186946340c9da",
