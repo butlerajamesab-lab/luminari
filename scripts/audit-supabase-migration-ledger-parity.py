@@ -334,6 +334,226 @@ APPROVED_REPOSITORY_ONLY = {
         "20260920221500_legal_authority_class_first_current_v1.sql",
         "e815a138c8495b6b5d0ffbba15a417fc3e1e7d11",
     ),
+    "20261028000001": (
+        "20261028000001_legislators_new_format_schema.sql",
+        "a852fdaa3ec04da36fa6a6c7d72276759bc1a6e6",
+    ),
+    "20261028000002": (
+        "20261028000002_seed_legislators_federal.sql",
+        "76b17577d0cc6c5f895df9c28397e6e3a58fac7d",
+    ),
+    "20261028000003": (
+        "20261028000003_seed_legislators_ak.sql",
+        "c0a145414704154c5e76bdbcb76682fecddab0a6",
+    ),
+    "20261028000004": (
+        "20261028000004_seed_legislators_al.sql",
+        "b3048bc81182c5b63095c76a1df845f0af328478",
+    ),
+    "20261028000005": (
+        "20261028000005_seed_legislators_ar.sql",
+        "0b9d3dacae7e63bbe140ed5fc2cbfa932ac19044",
+    ),
+    "20261028000006": (
+        "20261028000006_seed_legislators_az.sql",
+        "b591213710e559e061731f78caa98340552d8563",
+    ),
+    "20261028000007": (
+        "20261028000007_seed_legislators_ca.sql",
+        "0a4b03d4c95463aad068bdf8ebf9c29f0b6c8c89",
+    ),
+    "20261028000008": (
+        "20261028000008_seed_legislators_co.sql",
+        "a7616791940e591c59a1accfabec12373a84780f",
+    ),
+    "20261028000009": (
+        "20261028000009_seed_legislators_ct.sql",
+        "e21f990db925a5254f77145f9182c77266aed089",
+    ),
+    "20261028000010": (
+        "20261028000010_seed_legislators_de.sql",
+        "becb0b5c4f112bd6a2de0a2d078ab498a0469b1d",
+    ),
+    "20261028000011": (
+        "20261028000011_seed_legislators_fl.sql",
+        "120efd056528fb2ef67a88265ccc317d5761a30d",
+    ),
+    "20261028000012": (
+        "20261028000012_seed_legislators_ga.sql",
+        "cfbc477c43524f9c760989c2ecda498b5c78ef2f",
+    ),
+    "20261028000013": (
+        "20261028000013_seed_legislators_hi.sql",
+        "ea86db5b35dfb76735fa5869855778a27ab090bf",
+    ),
+    "20261028000014": (
+        "20261028000014_seed_legislators_ia.sql",
+        "40f4599fdecd079202622915f2519681b3df707f",
+    ),
+    "20261028000015": (
+        "20261028000015_seed_legislators_id.sql",
+        "f8b8b4fc41c9f2be638ce8e4b565cd318a602d8b",
+    ),
+    "20261028000016": (
+        "20261028000016_seed_legislators_il.sql",
+        "a13dd8285ea2499e91b5d7c36d04a4e673edd93d",
+    ),
+    "20261028000017": (
+        "20261028000017_seed_legislators_in.sql",
+        "407ac7b07d85b02901a7aac24582ebc2c5f99f86",
+    ),
+    "20261028000018": (
+        "20261028000018_seed_legislators_ks.sql",
+        "dc1d94079bbb96eb49cbd0fcc74f3ddabfbcd833",
+    ),
+    "20261028000019": (
+        "20261028000019_seed_legislators_ky.sql",
+        "82f0163cde997a019a37410a7412792836b808f5",
+    ),
+    "20261028000020": (
+        "20261028000020_seed_legislators_la.sql",
+        "586db5f4f1773d1856c248feaf1fbc9560f81bb3",
+    ),
+    "20261028000021": (
+        "20261028000021_seed_legislators_ma.sql",
+        "c16c5117a396a649f33f1e27710af38ec8393257",
+    ),
+    "20261028000022": (
+        "20261028000022_seed_legislators_md.sql",
+        "961d903492b2b618c3450d4f8111841f14f8a72a",
+    ),
+    "20261028000023": (
+        "20261028000023_seed_legislators_me.sql",
+        "1c5c25bcdd25668a7c47a2a4a43ae6f3191a1519",
+    ),
+    "20261028000024": (
+        "20261028000024_seed_legislators_mi.sql",
+        "04ff188f8e146cbe7d3ff317ca973115e7898170",
+    ),
+    "20261028000025": (
+        "20261028000025_seed_legislators_mn.sql",
+        "2b09d4bb129e6c206154b0f85137f76360cf6ac3",
+    ),
+    "20261028000026": (
+        "20261028000026_seed_legislators_mo.sql",
+        "6149963cbfb7f5dbfe08dc1b5c56f0a280bab77e",
+    ),
+    "20261028000027": (
+        "20261028000027_seed_legislators_ms.sql",
+        "cfaa1627f39ff77309a7f069c70b3a1aa6bf636f",
+    ),
+    "20261028000028": (
+        "20261028000028_seed_legislators_mt.sql",
+        "f9034f1a6e3bddb7b0d8e5d690ca6a4aff306243",
+    ),
+    "20261028000029": (
+        "20261028000029_seed_legislators_nc.sql",
+        "36e3b3a4279b0bc410df033deb17487d82af344f",
+    ),
+    "20261028000030": (
+        "20261028000030_seed_legislators_nd.sql",
+        "e8b726a648ab0de42604ecaf5ee672c416d6de96",
+    ),
+    "20261028000031": (
+        "20261028000031_seed_legislators_ne.sql",
+        "887cf40537c1e434a764635b3b0393b162a936e1",
+    ),
+    "20261028000032": (
+        "20261028000032_seed_legislators_nh.sql",
+        "c85a09fba0f1f56861759295eeb9cff321b63325",
+    ),
+    "20261028000033": (
+        "20261028000033_seed_legislators_nj.sql",
+        "c3ade6608dfafa7b433db13a8979857b65d44265",
+    ),
+    "20261028000034": (
+        "20261028000034_seed_legislators_nm.sql",
+        "8db1174d92e4478a6d95e1ccb2b5218c5ea90085",
+    ),
+    "20261028000035": (
+        "20261028000035_seed_legislators_nv.sql",
+        "f4c0b400cc52fc4e82f67e169d337f95e0151cf9",
+    ),
+    "20261028000036": (
+        "20261028000036_seed_legislators_ny.sql",
+        "476d13d63d84a5a53ee1f9c4fa7f6d8daf6a96fd",
+    ),
+    "20261028000037": (
+        "20261028000037_seed_legislators_oh.sql",
+        "6e66e0448d94bbf6ee668ecf7293a338d97a10f4",
+    ),
+    "20261028000038": (
+        "20261028000038_seed_legislators_ok.sql",
+        "a0ddd3e4b08f3b8ecae2357efb6c04e24f061c21",
+    ),
+    "20261028000039": (
+        "20261028000039_seed_legislators_or.sql",
+        "8a9e7c546b3abbfcd24ba98de6223702ffe82132",
+    ),
+    "20261028000040": (
+        "20261028000040_seed_legislators_pa.sql",
+        "5482659c93e279101bea0f35f80915d815981810",
+    ),
+    "20261028000041": (
+        "20261028000041_seed_legislators_ri.sql",
+        "09ffcf335a73923570f9902ec3efa0e3e83b9358",
+    ),
+    "20261028000042": (
+        "20261028000042_seed_legislators_sc.sql",
+        "c445d8ff14ada71c9bf87b9c8485715b8496ef23",
+    ),
+    "20261028000043": (
+        "20261028000043_seed_legislators_sd.sql",
+        "15303dcf71a72a2dcc3f45a5c439065dfd341e84",
+    ),
+    "20261028000044": (
+        "20261028000044_seed_legislators_tn.sql",
+        "d920a2a33a722c613d61899868d5b8d4aa821ff5",
+    ),
+    "20261028000045": (
+        "20261028000045_seed_legislators_tx.sql",
+        "2e3f3705e3c953bf478af405c9946810c38b8422",
+    ),
+    "20261028000046": (
+        "20261028000046_seed_legislators_ut.sql",
+        "193343cffd987ebba0c8a0e18e8e0748a084c566",
+    ),
+    "20261028000047": (
+        "20261028000047_seed_legislators_va.sql",
+        "0cc7d12b984764f7859aeeb1ed2ba0474d3dd6ad",
+    ),
+    "20261028000048": (
+        "20261028000048_seed_legislators_vt.sql",
+        "4e66c5f054398e90e7746926249adaa482b27a69",
+    ),
+    "20261028000049": (
+        "20261028000049_seed_legislators_wa.sql",
+        "e360cc3fba70103598c828e483bd1f40789c1b19",
+    ),
+    "20261028000050": (
+        "20261028000050_seed_legislators_wi.sql",
+        "71629677980252f09792c99b45c24ba471e1a029",
+    ),
+    "20261028000051": (
+        "20261028000051_seed_legislators_wv.sql",
+        "b51581a3cc8ddcf22c5c52f290b0963d547d4391",
+    ),
+    "20261028000052": (
+        "20261028000052_seed_legislators_wy.sql",
+        "10a2a7eb629ec54e85fa3e7d21d913e025ff87ce",
+    ),
+    "20261028000053": (
+        "20261028000053_seed_legislators_dc.sql",
+        "f81a2e21376a72730943b883e788b48408124d98",
+    ),
+    "20261028000054": (
+        "20261028000054_seed_legislators_pr.sql",
+        "3cbedf9fbcff055afb6641f9d18d4a11a050f7a6",
+    ),
+    "20261028000055": (
+        "20261028000055_seed_tribal_leaders.sql",
+        "b88161595e598e502e07f5ad2fccc6aa0ca949e2",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
