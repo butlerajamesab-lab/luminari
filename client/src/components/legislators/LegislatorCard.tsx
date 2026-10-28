@@ -132,12 +132,24 @@ function chamberDisplay(level: string, chamber: string): string {
 /**
  * District label: numeric districts become "District N". Stored
  * non-numeric values render verbatim ("At-Large", "Ward N"). A federal
- * district of "0" is the delegate seat, labeled "At-Large Delegate".
+ * district of "0" is at-large — but it is NOT always a delegate seat:
+ * single-district states (AK, DE, ND, SD, VT, WY) elect a voting
+ * at-large representative, while AS, DC, GU, MP, PR, VI send a
+ * non-voting delegate. The stored representation decides which label
+ * applies; without it, "At-Large" is the honest neutral label.
  * A missing district (e.g. a senator) renders as "Statewide".
  */
-function districtLabel(level: string, district: string | null): string {
+function districtLabel(
+  level: string,
+  district: string | null,
+  representation: string | null,
+): string {
   if (!district) return "Statewide";
-  if (level === "federal" && district === "0") return "At-Large Delegate";
+  if (level === "federal" && district === "0") {
+    return representation?.includes("delegate")
+      ? "At-Large Delegate"
+      : "At-Large";
+  }
   if (/^[0-9]+$/.test(district)) return `District ${district}`;
   return district;
 }
@@ -217,7 +229,11 @@ export default function LegislatorCard({
             {" · "}
             {stateName}
             {" · "}
-            {districtLabel(member.level, member.district)}
+            {districtLabel(
+              member.level,
+              member.district,
+              member.representation,
+            )}
           </p>
           {member.party ? (
             <p style={{ margin: 0, color: "rgba(240,236,228,0.64)" }}>

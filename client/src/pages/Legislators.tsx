@@ -39,7 +39,12 @@ type ResolveResult =
   | { needsDistrict: true; validDistricts: string[] };
 
 function districtOptionLabel(level: "federal" | "state", district: string) {
-  if (level === "federal" && district === "0") return "At-Large Delegate";
+  // Federal "0" is at-large, but NOT always a delegate seat: single-district
+  // states elect a voting at-large representative, while the territories
+  // and DC send a non-voting delegate. The picker only carries district
+  // strings, so it uses the neutral "At-Large" label; the card, which has
+  // the stored representation, makes the precise distinction.
+  if (level === "federal" && district === "0") return "At-Large";
   if (/^[0-9]+$/.test(district)) return `District ${district}`;
   return district;
 }
