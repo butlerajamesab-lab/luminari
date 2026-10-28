@@ -127,6 +127,37 @@ afterEach(() => {
 });
 
 describe("V12 certified admission — fixtures only", () => {
+  it("uses the four-field independent V12 producer hash contract, not PostgreSQL JSONB wire order", () => {
+    const data = detail();
+    // Native PostgreSQL JSONB printed these fields in this order in the
+    // read-only production query, not the order Civic Genome hashes.
+    const postgres_wire = {
+      units: data.units,
+      sections: data.sections,
+      decomposition: data.decomposition,
+      markup_events: data.markup_events,
+    };
+    const contract = {
+      decomposition: data.decomposition,
+      sections: data.sections,
+      units: data.units,
+      markup_events: data.markup_events,
+    };
+    const hash_json = (value: unknown) =>
+      createHash("sha256").update(JSON.stringify(value), "utf8").digest("hex");
+    expect(hash_json(postgres_wire)).not.toEqual(hash_json(contract));
+    expect(v12_output_sha256(data)).toEqual(hash_json(contract));
+    const accepted = admit_v12_live_detail(binding, source, data, {
+      ...cert(data),
+      output_sha256: hash_json(contract),
+    });
+    expect(accepted.receipt.admitted).toBe(true);
+    expect(() => admit_v12_live_detail(binding, source, data, {
+      ...cert(data),
+      output_sha256: hash_json(postgres_wire),
+    })).toThrow("rosetta_v12_certification_receipt_mismatch");
+  });
+
   it("admits exact selected-runtime source, ruleset, decomposition, spans and independent certification", () => {
     const data = detail();
     const output = admit_v12_live_detail(binding, source, data, cert(data));
