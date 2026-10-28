@@ -83,7 +83,7 @@ function detail(): current_rosetta_live_detail {
   };
 }
 function cert(payload: current_rosetta_live_detail): v12_certification_receipt {
-  return {
+  const unsigned = {
     contract: "rosetta-v12-certification-receipt-v1",
     source_content_id,
     source_document_id: 42,
@@ -91,7 +91,6 @@ function cert(payload: current_rosetta_live_detail): v12_certification_receipt {
     ruleset_version: "rosetta-rule-ref-v12",
     ruleset_sha256,
     output_sha256: v12_output_sha256(payload),
-    certification_sha256: "c".repeat(64),
     certified_at: "2026-10-20T09:10:00Z",
     attestation_type: "source_bound_output_integrity_v1",
     verified_invariants: {
@@ -105,7 +104,9 @@ function cert(payload: current_rosetta_live_detail): v12_certification_receipt {
       section_count: 1,
     },
   };
+  return { ...unsigned, certification_sha256: createHash("sha256").update(JSON.stringify(unsigned), "utf8").digest("hex") };
 }
+
 function row() {
   return {
     source_content_id,
@@ -239,6 +240,18 @@ describe("V12 certified admission — fixtures only", () => {
     data.units[0].raw_start = raw_start;
     data.units[0].raw_end = raw_end;
     expect(() => admit_v12_live_detail(binding, source, data, cert(data))).toThrow(reason);
+  });
+
+  it("refuses a forged 64-character certification digest despite matching source and output", () => {
+    const data = detail();
+    const verified = cert(data);
+    expect(admit_v12_live_detail(binding, source, data, verified).receipt.admitted).toBe(true);
+    expect(() => admit_v12_live_detail(binding, source, data, {
+      ...verified, certification_sha256: "c".repeat(64),
+    })).toThrow("rosetta_v12_certification_receipt_digest_mismatch");
+    const changed = { ...verified, verified_invariants: { ...verified.verified_invariants, unit_count: 2 } };
+    expect(() => admit_v12_live_detail(binding, source, data, changed))
+      .toThrow("rosetta_v12_certification_receipt_digest_mismatch");
   });
 
   it("fails closed on missing independent certification (e)", () => {
