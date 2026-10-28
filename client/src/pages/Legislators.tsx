@@ -12,7 +12,9 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
-import LegislatorCard from "@/components/legislators/LegislatorCard";
+import LegislatorCard, {
+  chamberDisplay,
+} from "@/components/legislators/LegislatorCard";
 import type { LegislatorMember } from "@/components/legislators/LegislatorCard";
 
 const tone = {
@@ -230,11 +232,77 @@ function ResolveSection({
   );
 }
 
+type StateChamber = "upper" | "lower" | "legislature";
+
+function stateChamberDistrictLabel(chamber: string): string {
+  if (chamber === "upper") return "Senate district";
+  if (chamber === "lower") return "House district";
+  return "Legislative district";
+}
+
+/**
+ * One state chamber's picker + cards. Chambers use different district
+ * systems (Minnesota: senator in 7, representatives in 7A/7B), so each
+ * chamber gets its own district selection and its own resolve call —
+ * a single state district value cannot identify both chambers' members.
+ */
+function StateChamberSection({
+  state,
+  chamber,
+}: {
+  state: string;
+  chamber: StateChamber;
+}) {
+  const [district, setDistrict] = useState("");
+
+  const districtsQuery = trpc.legislators.districts.useQuery(
+    { state, level: "state", chamber },
+    { enabled: state !== "" },
+  );
+  const resolveQuery = trpc.legislators.resolve.useQuery(
+    {
+      state,
+      level: "state",
+      chamber,
+      district: district === "" ? undefined : district,
+    },
+    { enabled: state !== "" },
+  );
+
+  const districtList =
+    (districtsQuery.data as { districts: string[] } | undefined)?.districts ??
+    [];
+  const result = resolveQuery.data as ResolveResult | undefined;
+
+  return (
+    <>
+      <div style={{ marginTop: "1.5rem" }}>
+        <DistrictPicker
+          id={`state-district-${chamber}`}
+          label={stateChamberDistrictLabel(chamber)}
+          level="state"
+          districts={districtList}
+          value={district}
+          onChange={setDistrict}
+          allLabel="Pick a district"
+        />
+      </div>
+      <ResolveSection
+        title={chamberDisplay("state", chamber)}
+        level="state"
+        result={result}
+        isLoading={resolveQuery.isLoading}
+        isError={resolveQuery.isError}
+        onPickDistrict={setDistrict}
+      />
+    </>
+  );
+}
+
 export default function Legislators() {
   const [state, setState] = useState("");
   const [level, setLevel] = useState<Level>("federal");
   const [federalDistrict, setFederalDistrict] = useState("");
-  const [stateDistrict, setStateDistrict] = useState("");
 
   const statesQuery = trpc.legislators.states.useQuery();
   const metaQuery = trpc.legislators.meta.useQuery();
@@ -243,7 +311,7 @@ export default function Legislators() {
     { state, level: "federal" },
     { enabled: state !== "" && level !== "state" },
   );
-  const stateDistrictsQuery = trpc.legislators.districts.useQuery(
+  const stateChambersQuery = trpc.legislators.chambers.useQuery(
     { state, level: "state" },
     { enabled: state !== "" && level !== "federal" },
   );
@@ -256,24 +324,14 @@ export default function Legislators() {
     },
     { enabled: state !== "" && level !== "state" },
   );
-  const stateResolveQuery = trpc.legislators.resolve.useQuery(
-    {
-      state,
-      level: "state",
-      district: stateDistrict === "" ? undefined : stateDistrict,
-    },
-    { enabled: state !== "" && level !== "federal" },
-  );
 
   const pickState = (next: string) => {
     setState(next);
     setFederalDistrict("");
-    setStateDistrict("");
   };
   const pickLevel = (next: Level) => {
     setLevel(next);
     setFederalDistrict("");
-    setStateDistrict("");
   };
 
   // Explicit result shapes: AppRouter inference is broken repo-wide
@@ -296,11 +354,10 @@ export default function Legislators() {
   const federalDistrictList =
     (federalDistrictsQuery.data as { districts: string[] } | undefined)
       ?.districts ?? [];
-  const stateDistrictList =
-    (stateDistrictsQuery.data as { districts: string[] } | undefined)
-      ?.districts ?? [];
+  const stateChambers =
+    (stateChambersQuery.data as { chambers: string[] } | undefined)?.chambers ??
+    [];
   const federalResult = federalResolveQuery.data as ResolveResult | undefined;
-  const stateResult = stateResolveQuery.data as ResolveResult | undefined;
 
   return (
     <main
@@ -455,17 +512,6 @@ export default function Legislators() {
                 allLabel="Full federal delegation"
               />
             ) : null}
-            {state !== "" && level !== "federal" ? (
-              <DistrictPicker
-                id="state-district"
-                label="Legislative district"
-                level="state"
-                districts={stateDistrictList}
-                value={stateDistrict}
-                onChange={setStateDistrict}
-                allLabel="Pick a district"
-              />
-            ) : null}
           </div>
         )}
 
@@ -486,14 +532,28 @@ export default function Legislators() {
               />
             ) : null}
             {level !== "federal" ? (
-              <ResolveSection
-                title={level === "both" ? "State" : "Your state legislators"}
-                level="state"
-                result={stateResult}
-                isLoading={stateResolveQuery.isLoading}
-                isError={stateResolveQuery.isError}
-                onPickDistrict={setStateDistrict}
-              />
+              stateChambersQuery.isLoading ? (
+                <p style={{ color: tone.muted, marginTop: "2rem" }}>
+                  Loading state chambers…
+                </p>
+              ) : stateChambersQuery.isError ? (
+                <p style={{ color: "#f87171", marginTop: "2rem" }}>
+                  Could not load state chambers. Please try again.
+                </p>
+              ) : stateChambers.length === 0 ? (
+                <p style={{ color: tone.muted, marginTop: "2rem" }}>
+                  No state-level roster for this jurisdiction in this base —
+                  only its federal delegate is listed.
+                </p>
+              ) : (
+                stateChambers.map((chamber) => (
+                  <StateChamberSection
+                    key={`${state}-${chamber}`}
+                    state={state}
+                    chamber={chamber as StateChamber}
+                  />
+                ))
+              )
             ) : null}
           </>
         )}

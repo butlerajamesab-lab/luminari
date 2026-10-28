@@ -120,7 +120,7 @@ const STATE_NAMES: Record<string, string> = {
   VI: "U.S. Virgin Islands",
 };
 
-function chamberDisplay(level: string, chamber: string): string {
+export function chamberDisplay(level: string, chamber: string): string {
   if (level === "federal" && chamber === "senate") return "U.S. Senate";
   if (level === "federal" && chamber === "house") return "U.S. House";
   if (level === "state" && chamber === "upper") return "State Senate";

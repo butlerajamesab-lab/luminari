@@ -160,27 +160,76 @@ function attachCommittees<T extends MemberRow>(
   }));
 }
 
+/**
+ * Distinct districts for one state + level, numeric-aware order.
+ *
+ * PostgreSQL rejects ORDER BY expressions that do not appear in a
+ * SELECT DISTINCT list, so the distinct set is selected in a subquery
+ * and the ordering is applied outside it. Ordering: pure numerics
+ * numerically first, then letter-suffixed districts by numeric prefix
+ * (so 9A precedes 10A), then non-numeric values alphabetically
+ * (At-Large, Ward N).
+ */
 async function fetchDistricts(
   state: string,
   level: "federal" | "state",
+  chamber?: "upper" | "lower" | "legislature",
 ): Promise<string[]> {
   const chamberFilter =
-    level === "federal" ? sql`AND chamber = 'house'` : sql``;
+    level === "federal"
+      ? sql`AND chamber = 'house'`
+      : chamber
+        ? sql`AND chamber = ${chamber}`
+        : sql``;
   const rows = await queryRows<{ district: string }>(sql`
-    SELECT DISTINCT district
-    FROM public.legislators
-    WHERE state = ${state}
-      AND level = ${level}
-      AND status = 'current'
-      AND district IS NOT NULL
-      AND district <> ''
-      ${chamberFilter}
+    SELECT district FROM (
+      SELECT DISTINCT district
+      FROM public.legislators
+      WHERE state = ${state}
+        AND level = ${level}
+        AND status = 'current'
+        AND district IS NOT NULL
+        AND district <> ''
+        ${chamberFilter}
+    ) AS d
     ORDER BY
       CASE WHEN district ~ '^[0-9]+$' THEN 0 ELSE 1 END,
-      CASE WHEN district ~ '^[0-9]+$' THEN CAST(district AS INTEGER) END,
+      CASE WHEN district ~ '^[0-9]+' THEN CAST(SUBSTRING(district FROM '^[0-9]+') AS INTEGER) END,
       district
   `);
   return rows.map((row) => row.district);
+}
+
+/** Distinct chambers present for one state + level, Senate first. */
+async function fetchChambers(
+  state: string,
+  level: "federal" | "state",
+): Promise<string[]> {
+  const rows = await queryRows<{ chamber: string }>(sql`
+    SELECT chamber FROM (
+      SELECT DISTINCT chamber
+      FROM public.legislators
+      WHERE state = ${state}
+        AND level = ${level}
+        AND status = 'current'
+        AND chamber IS NOT NULL
+        AND chamber <> ''
+    ) AS c
+    ORDER BY
+      CASE WHEN chamber = 'upper' THEN 0
+           WHEN chamber = 'lower' THEN 1
+           WHEN chamber = 'legislature' THEN 2
+           ELSE 3 END,
+      chamber
+  `);
+  return rows.map((row) => row.chamber);
+}
+
+/** Singular noun for a state chamber, for held notices. */
+function stateChamberNoun(chamber: string): string {
+  if (chamber === "upper") return "state senator";
+  if (chamber === "lower") return "state representative";
+  return "legislator";
 }
 
 const stateInput = z
@@ -189,7 +238,7 @@ const stateInput = z
   .regex(/^[A-Za-z]{2}$/, "state must be a 2-letter code")
   .transform((value) => value.toUpperCase());
 
-const levelInput = z.enum(["federal", "state", "both"]);
+const levelInput = z.enum(["federal", "state"]);
 
 export const legislatorsRouter = router({
   /** Distinct state codes present in the table, with display names. */
@@ -213,10 +262,29 @@ export const legislatorsRouter = router({
       z.object({
         state: stateInput,
         level: z.enum(["federal", "state"]),
+        chamber: z.enum(["upper", "lower", "legislature"]).optional(),
       }),
     )
     .query(async ({ input }) => {
-      return { districts: await fetchDistricts(input.state, input.level) };
+      return {
+        districts: await fetchDistricts(
+          input.state,
+          input.level,
+          input.chamber,
+        ),
+      };
+    }),
+
+  /** Distinct chambers present for one state + level (state use). */
+  chambers: publicProcedure
+    .input(
+      z.object({
+        state: stateInput,
+        level: z.enum(["federal", "state"]),
+      }),
+    )
+    .query(async ({ input }) => {
+      return { chambers: await fetchChambers(input.state, input.level) };
     }),
 
   /**
@@ -227,22 +295,39 @@ export const legislatorsRouter = router({
    *   the response carries held: true with the valid district list — the
    *   resolver never guesses a different district.
    * - Federal, no district: the full federal delegation, delegation: true.
-   * - State + district: state members for that district, or held.
-   * - State, no district: needsDistrict, never a member dump.
-   * - Both: the federal part and the state part combined under the same
-   *   rules; both without district returns the federal delegation plus
-   *   state needsDistrict.
+   * - State + chamber + district: members of that chamber for that
+   *   district, or held. Chamber is REQUIRED for state level: chambers
+   *   use different district systems (Minnesota elects a senator in 7
+   *   and representatives in 7A/7B), so one district value cannot
+   *   identify a resident's state legislators. A state query without a
+   *   chamber is rejected rather than answered incompletely.
+   * - State + chamber, no district: needsDistrict, never a member dump.
+   * - There is no combined federal+state level here: callers resolve
+   *   each level separately (the hub page does), because a single
+   *   district value cannot serve both levels either.
    */
   resolve: publicProcedure
     .input(
-      z.object({
-        state: stateInput,
-        level: levelInput,
-        district: z.string().trim().min(1).max(20).optional(),
-      }),
+      z
+        .object({
+          state: stateInput,
+          level: levelInput,
+          district: z.string().trim().min(1).max(20).optional(),
+          chamber: z.enum(["upper", "lower", "legislature"]).optional(),
+        })
+        .superRefine((val, ctx) => {
+          if (val.level === "state" && !val.chamber) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message:
+                "chamber is required for state-level resolution: upper, lower, or legislature",
+              path: ["chamber"],
+            });
+          }
+        }),
     )
     .query(async ({ input }) => {
-      const { state, level, district } = input;
+      const { state, level, district, chamber } = input;
 
       const fetchSenators = () =>
         queryRows<MemberRow>(sql`
@@ -281,19 +366,16 @@ export const legislatorsRouter = router({
           LIMIT 100
         `);
 
-      const fetchStateMembers = (districtValue: string) =>
+      const fetchStateMembers = (districtValue: string, chamberValue: string) =>
         queryRows<MemberRow>(sql`
           SELECT ${MEMBER_COLUMNS}
           FROM public.legislators
           WHERE state = ${state}
             AND level = 'state'
+            AND chamber = ${chamberValue}
             AND district = ${districtValue}
             AND status = 'current'
-          ORDER BY
-            CASE WHEN chamber = 'upper' THEN 0
-                 WHEN chamber = 'lower' THEN 1
-                 ELSE 2 END,
-            full_name
+          ORDER BY full_name
           LIMIT 100
         `);
 
@@ -325,67 +407,24 @@ export const legislatorsRouter = router({
         return { members: attachCommittees(members, committees) };
       }
 
-      if (level === "state") {
-        if (!district) {
-          return {
-            needsDistrict: true as const,
-            validDistricts: await fetchDistricts(state, "state"),
-          };
-        }
-        const members = await fetchStateMembers(district);
-        const committees = await fetchCommitteesFor(
-          members.map((m) => m.member_key),
-        );
-        if (members.length === 0) {
-          return {
-            members: [],
-            held: true as const,
-            reason: `No state legislators found for legislative district ${district} in ${STATE_NAMES[state] ?? state}.`,
-            validDistricts: await fetchDistricts(state, "state"),
-          };
-        }
-        return { members: attachCommittees(members, committees) };
-      }
-
-      // level === "both": federal part + state part under the same rules.
-      const federalDistricts = await fetchDistricts(state, "federal");
-      const stateDistricts = await fetchDistricts(state, "state");
+      // level === "state": chamber is guaranteed by input validation.
+      const chamberValue = chamber as "upper" | "lower" | "legislature";
       if (!district) {
-        const members = await fetchDelegation();
-        const committees = await fetchCommitteesFor(
-          members.map((m) => m.member_key),
-        );
         return {
-          members: attachCommittees(members, committees),
-          delegation: true as const,
           needsDistrict: true as const,
-          validDistricts: stateDistricts,
+          validDistricts: await fetchDistricts(state, "state", chamberValue),
         };
       }
-      const senators = await fetchSenators();
-      const house = await fetchHouseMember(district);
-      const stateMembers = await fetchStateMembers(district);
-      const members = [...senators, ...house, ...stateMembers];
+      const members = await fetchStateMembers(district, chamberValue);
       const committees = await fetchCommitteesFor(
         members.map((m) => m.member_key),
       );
-      const heldReasons: string[] = [];
-      if (house.length === 0) {
-        heldReasons.push(
-          `No House member found for congressional district ${district} in ${STATE_NAMES[state] ?? state}.`,
-        );
-      }
-      if (stateMembers.length === 0) {
-        heldReasons.push(
-          `No state legislators found for legislative district ${district} in ${STATE_NAMES[state] ?? state}.`,
-        );
-      }
-      if (heldReasons.length > 0) {
+      if (members.length === 0) {
         return {
-          members: attachCommittees(members, committees),
+          members: [],
           held: true as const,
-          reason: heldReasons.join(" "),
-          validDistricts: { federal: federalDistricts, state: stateDistricts },
+          reason: `No ${stateChamberNoun(chamberValue)} found for legislative district ${district} in ${STATE_NAMES[state] ?? state}.`,
+          validDistricts: await fetchDistricts(state, "state", chamberValue),
         };
       }
       return { members: attachCommittees(members, committees) };
