@@ -73,6 +73,7 @@ import MobileBottomNav from "./components/MobileBottomNav";
 import AgencyMetrics from "./pages/AgencyMetrics";
 import CivilGideon from "./pages/CivilGideon";
 import native_nations_hub_page from "./pages/NativeNationsHub";
+import Legislators from "./pages/Legislators";
 import recognition_atlas_page from "./pages/RecognitionAtlas";
 import recognition_atlas_tribe_page from "./pages/RecognitionAtlasTribe";
 import recognition_atlas_layer_page from "./pages/RecognitionAtlasLayer";
@@ -204,6 +205,7 @@ function App() {
                 <Route path="/agency-metrics" component={AgencyMetrics} />
                 <Route path="/civil-gideon" component={CivilGideon} />
                 <Route path="/native-nations" component={native_nations_hub_page} />
+                <Route path="/legislators" component={Legislators} />
                 <Route path="/recognition-gideon" component={recognition_gideon_page} />
                 <Route path="/recognition-atlas/:tribe_id/:layer_slug" component={recognition_atlas_layer_page} />
                 <Route path="/recognition-atlas/:tribe_id" component={recognition_atlas_tribe_page} />
