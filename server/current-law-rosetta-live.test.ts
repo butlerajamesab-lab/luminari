@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("./civic-genome-rosetta-evaluation", () => ({
@@ -5,6 +6,7 @@ vi.mock("./civic-genome-rosetta-evaluation", () => ({
 }));
 
 import { get_current_rosetta_live_detail } from "./current-law-rosetta-live";
+import { v12_output_sha256 } from "./civic-genome-rosetta-v12-admission";
 
 const fetch_mock = vi.fn();
 const source_content_id = "11111111-1111-4111-8111-111111111111";
@@ -76,6 +78,60 @@ describe("current Rosetta live presentation reader", () => {
     const url = new URL(String(fetch_mock.mock.calls[0][0]));
     expect(url.pathname).toBe(`/api/live-rule/${source_content_id}`);
     expect(fetch_mock.mock.calls[0][1]).toMatchObject({ method: "GET", redirect: "error" });
+  });
+
+  it("hashes the real JSONB-shaped nested unit wire, never the normalized UI projection", async () => {
+    // Matches Rosetta production rosetta_rule_live_detail_v1: to_jsonb(u)
+    // plus raw_text, effective_text and deleted_spans. PostgreSQL's nested
+    // JSONB key order is deliberately distinct from normalize_unit's order.
+    const wire_unit = {
+      path: "Section 1",
+      rules: ["v12:section"],
+      kind: "sentence",
+      layers: ["W", "R"],
+      raw_end: source_text.length,
+      raw_text: source_text,
+      unit_ord: 1,
+      text_sha256: createHash("sha256").update(source_text).digest("hex"),
+      raw_start: 0,
+      section_ord: 1,
+      disposition: "OPERATIVE",
+      effective_text: source_text,
+      deleted_spans: [],
+      source_content_id,
+      ruleset_version: "rosetta-rule-ref-v12",
+    };
+    const raw_payload = {
+      ...fixture,
+      target: { ...fixture.target, ruleset_version: "rosetta-rule-ref-v12" },
+      units: [wire_unit],
+      decomposition: { outcome: "decomposed", unit_count: 1, section_count: 1 },
+      sections: [{ section_ord: 1, raw_start: 0, raw_end: source_text.length }],
+    };
+    const producer_output = {
+      decomposition: raw_payload.decomposition,
+      sections: raw_payload.sections,
+      units: raw_payload.units,
+      markup_events: raw_payload.markup_events,
+    };
+    const producer_sha = createHash("sha256").update(JSON.stringify(producer_output), "utf8").digest("hex");
+    fetch_mock.mockResolvedValue(Response.json(raw_payload));
+    const normalized = await get_current_rosetta_live_detail({ source_content_id, source_content_hash });
+    expect(normalized).not.toBeNull();
+    if (!normalized) throw new Error("test_reader_missing");
+    expect(normalized.units[0]).not.toHaveProperty("text_sha256");
+    expect(normalized.units[0]).not.toHaveProperty("rules");
+    expect(normalized.source_bound_raw_units).toEqual([wire_unit]);
+    expect(v12_output_sha256(normalized)).toBe(producer_sha);
+    const lossy_sha = createHash("sha256").update(JSON.stringify({
+      decomposition: normalized.decomposition,
+      sections: normalized.sections,
+      units: normalized.units,
+      markup_events: normalized.markup_events,
+    }), "utf8").digest("hex");
+    expect(lossy_sha).not.toBe(producer_sha);
+    normalized.units[0].layers = ["A"];
+    expect(() => v12_output_sha256(normalized)).toThrow("rosetta_v12_wire_unit_projection_mismatch");
   });
 
   it("returns null for a source with no selected-runtime result", async () => {

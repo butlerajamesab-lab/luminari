@@ -39,6 +39,17 @@ const fetch_mock = vi.fn();
 const deep_clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
 function detail(): current_rosetta_live_detail {
+  const units: current_rosetta_live_detail["units"] = [{
+    unit_ord: 1,
+    section_ord: 1,
+    kind: "sentence",
+    disposition: "OPERATIVE",
+    layers: ["W", "R"],
+    raw_start: 0,
+    raw_end: source_text.length,
+    raw_text: source_text,
+    effective_text: source_text,
+  }];
   return {
     contract: "rosetta-rule-live-detail-v1",
     observed_at: "2026-10-20T10:00:00Z",
@@ -66,24 +77,15 @@ function detail(): current_rosetta_live_detail {
     },
     decomposition: { outcome: "decomposed" },
     sections: [{ section_ord: 1 }],
-    units: [{
-      unit_ord: 1,
-      section_ord: 1,
-      kind: "sentence",
-      disposition: "OPERATIVE",
-      layers: ["W", "R"],
-      raw_start: 0,
-      raw_end: source_text.length,
-      raw_text: source_text,
-      effective_text: source_text,
-    }],
+    units,
+    source_bound_raw_units: units,
     markup_events: [],
     hold_receipt: null,
     failure_receipts: [],
   };
 }
 function cert(payload: current_rosetta_live_detail): v12_certification_receipt {
-  return {
+  const unsigned = {
     contract: "rosetta-v12-certification-receipt-v1",
     source_content_id,
     source_document_id: 42,
@@ -91,7 +93,6 @@ function cert(payload: current_rosetta_live_detail): v12_certification_receipt {
     ruleset_version: "rosetta-rule-ref-v12",
     ruleset_sha256,
     output_sha256: v12_output_sha256(payload),
-    certification_sha256: "c".repeat(64),
     certified_at: "2026-10-20T09:10:00Z",
     attestation_type: "source_bound_output_integrity_v1",
     verified_invariants: {
@@ -105,7 +106,9 @@ function cert(payload: current_rosetta_live_detail): v12_certification_receipt {
       section_count: 1,
     },
   };
+  return { ...unsigned, certification_sha256: createHash("sha256").update(JSON.stringify(unsigned), "utf8").digest("hex") };
 }
+
 function row() {
   return {
     source_content_id,
@@ -127,6 +130,53 @@ afterEach(() => {
 });
 
 describe("V12 certified admission — fixtures only", () => {
+  it("uses the four-field independent V12 producer hash contract, not PostgreSQL JSONB wire order", () => {
+    const data = detail();
+    // Native PostgreSQL JSONB printed these fields in this order in the
+    // read-only production query, not the order Civic Genome hashes.
+    const postgres_wire = {
+      units: data.source_bound_raw_units,
+      sections: data.sections,
+      decomposition: data.decomposition,
+      markup_events: data.markup_events,
+    };
+    const contract = {
+      decomposition: data.decomposition,
+      sections: data.sections,
+      units: data.source_bound_raw_units,
+      markup_events: data.markup_events,
+    };
+    const hash_json = (value: unknown) =>
+      createHash("sha256").update(JSON.stringify(value), "utf8").digest("hex");
+    expect(hash_json(postgres_wire)).not.toEqual(hash_json(contract));
+    expect(v12_output_sha256(data)).toEqual(hash_json(contract));
+    const accepted = admit_v12_live_detail(binding, source, data, {
+      ...cert(data),
+      output_sha256: hash_json(contract),
+    });
+    expect(accepted.receipt.admitted).toBe(true);
+    expect(() => admit_v12_live_detail(binding, source, data, {
+      ...cert(data),
+      output_sha256: hash_json(postgres_wire),
+    })).toThrow("rosetta_v12_certification_receipt_mismatch");
+  });
+
+  it("rejects missing raw producer units and divergence from normalized presentation units", () => {
+    const missing = detail();
+    missing.source_bound_raw_units = null;
+    expect(() => v12_output_sha256(missing)).toThrow("rosetta_v12_wire_projection_unavailable");
+    expect(() => admit_v12_live_detail(binding, source, missing, cert(detail())))
+      .toThrow("rosetta_v12_wire_projection_unavailable");
+
+    const mismatched = detail();
+    mismatched.source_bound_raw_units = mismatched.units.map(unit => ({ ...unit, layers: ["A"] }));
+    expect(() => v12_output_sha256(mismatched)).toThrow("rosetta_v12_wire_unit_projection_mismatch");
+    const preserved = detail();
+    const original = v12_output_sha256(preserved);
+    preserved.source_bound_raw_units = preserved.units.map(unit => ({ ...unit, rules: ["new-producer-rule"] }));
+    expect(v12_output_sha256(preserved)).not.toEqual(original);
+  });
+
   it("admits exact selected-runtime source, ruleset, decomposition, spans and independent certification", () => {
     const data = detail();
     const output = admit_v12_live_detail(binding, source, data, cert(data));
@@ -208,6 +258,18 @@ describe("V12 certified admission — fixtures only", () => {
     data.units[0].raw_start = raw_start;
     data.units[0].raw_end = raw_end;
     expect(() => admit_v12_live_detail(binding, source, data, cert(data))).toThrow(reason);
+  });
+
+  it("refuses a forged 64-character certification digest despite matching source and output", () => {
+    const data = detail();
+    const verified = cert(data);
+    expect(admit_v12_live_detail(binding, source, data, verified).receipt.admitted).toBe(true);
+    expect(() => admit_v12_live_detail(binding, source, data, {
+      ...verified, certification_sha256: "c".repeat(64),
+    })).toThrow("rosetta_v12_certification_receipt_digest_mismatch");
+    const changed = { ...verified, verified_invariants: { ...verified.verified_invariants, unit_count: 2 } };
+    expect(() => admit_v12_live_detail(binding, source, data, changed))
+      .toThrow("rosetta_v12_certification_receipt_digest_mismatch");
   });
 
   it("fails closed on missing independent certification (e)", () => {
