@@ -325,7 +325,8 @@ export function admit_v12_live_detail(
   receipt.ruleset_sha256 = String(target.ruleset_sha256).toLowerCase();
   receipt.installed_ruleset_sha256 = String(target.installed_ruleset_sha256).toLowerCase();
   receipt.read_contract_sha256 = String(target.read_contract_sha256).toLowerCase();
-  receipt.selected_at = target.selected_at;
+  // Shared provenance validator has already required a parseable string.
+  receipt.selected_at = String(target.selected_at);
   if (detail.hold_receipt) throw new Error("rosetta_v12_hold_receipt_present");
   if (detail.failure_receipts.length) throw new Error("rosetta_v12_failure_receipts_present");
   if (detail.decomposition?.outcome !== "decomposed") {
