@@ -294,11 +294,6 @@ export function admit_v12_live_detail(
     throw new Error("rosetta_v12_source_text_hash_mismatch");
   }
   const target = detail.target;
-  // This legacy V12 admission algorithm cannot certify a newly selected
-  // generation. The selected-generation endpoint never downgrades either.
-  if (target.ruleset_version !== "rosetta-rule-ref-v12") {
-    throw new Error("rosetta_v12_selected_generation_unsupported");
-  }
   if (target.identity_valid !== true
     || target.engine_identity_valid !== true
     || target.read_identity_valid !== true) {
@@ -313,6 +308,11 @@ export function admit_v12_live_detail(
   }
   if (String(target.installed_ruleset_sha256).toLowerCase() !== String(target.ruleset_sha256).toLowerCase()) {
     throw new Error("rosetta_v12_installed_ruleset_sha256_mismatch");
+  }
+  // Preserve the missing/invalid provenance error separately from a
+  // well-formed but unsupported selected generation.
+  if (target.ruleset_version !== "rosetta-rule-ref-v12") {
+    throw new Error("rosetta_v12_selected_generation_unsupported");
   }
   receipt.ruleset_version = target.ruleset_version;
   receipt.ruleset_sha256 = String(target.ruleset_sha256).toLowerCase();
@@ -455,6 +455,9 @@ export async function inspect_v12_admission_for_binding(binding: v12_genome_bind
     receipt.failure_receipts = detail.failure_receipts;
     // A valid V13 output is not a V12 certificate. Do not call a V12
     // producer, even if the source has a decomposed row.
+    if (!required_text(detail.target.ruleset_version)) {
+      throw new Error("rosetta_v12_target_provenance_missing");
+    }
     if (detail.target.ruleset_version !== "rosetta-rule-ref-v12") {
       throw new Error("rosetta_v12_selected_generation_unsupported");
     }
