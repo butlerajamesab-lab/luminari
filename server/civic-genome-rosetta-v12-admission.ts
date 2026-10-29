@@ -410,7 +410,10 @@ export async function read_v12_certification_receipt(
     return row as unknown as v12_certification_receipt;
   } catch (error) {
     if (controller.signal.aborted) throw new Error("rosetta_v12_certification_receipt_timeout");
-    if (error instanceof Error && error.message.startsWith("rosetta_v12_certification_receipt_")) throw error;
+    if (error instanceof Error && (
+      error.message.startsWith("rosetta_v12_certification_receipt_")
+      || error.message === "rosetta_v12_selected_generation_unsupported"
+    )) throw error;
     throw new Error("rosetta_v12_certification_receipt_network_error");
   } finally {
     clearTimeout(timeout);
