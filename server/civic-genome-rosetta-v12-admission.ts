@@ -90,6 +90,27 @@ const required_text = (x: unknown): x is string => typeof x === "string" && x.tr
 const date_valid = (x: unknown): x is string => required_text(x) && Number.isFinite(Date.parse(x));
 const sha256 = (x: string): string => createHash("sha256").update(x, "utf8").digest("hex");
 
+// Share the same validation before either direct admission or a remote
+// integrity-material fetch. A malformed V13 identity is NOT a valid
+// "unsupported generation" result; it is invalid provenance.
+function validate_v12_target_provenance(target: record): void {
+  if (target.identity_valid !== true
+    || target.engine_identity_valid !== true
+    || target.read_identity_valid !== true) {
+    throw new Error("rosetta_v12_target_identity_invalid");
+  }
+  if (!required_text(target.ruleset_version)
+    || !HASH.test(String(target.ruleset_sha256 ?? ""))
+    || !HASH.test(String(target.installed_ruleset_sha256 ?? ""))
+    || !HASH.test(String(target.read_contract_sha256 ?? ""))
+    || !date_valid(target.selected_at)) {
+    throw new Error("rosetta_v12_target_provenance_missing");
+  }
+  if (String(target.installed_ruleset_sha256).toLowerCase() !== String(target.ruleset_sha256).toLowerCase()) {
+    throw new Error("rosetta_v12_installed_ruleset_sha256_mismatch");
+  }
+}
+
 export function v12_receipt_for_binding(binding: v12_genome_binding): v12_admission_receipt {
   return {
     contract: "civic-genome-rosetta-v12-admission-v1",
@@ -294,21 +315,7 @@ export function admit_v12_live_detail(
     throw new Error("rosetta_v12_source_text_hash_mismatch");
   }
   const target = detail.target;
-  if (target.identity_valid !== true
-    || target.engine_identity_valid !== true
-    || target.read_identity_valid !== true) {
-    throw new Error("rosetta_v12_target_identity_invalid");
-  }
-  if (!required_text(target.ruleset_version)
-    || !HASH.test(String(target.ruleset_sha256 ?? ""))
-    || !HASH.test(String(target.installed_ruleset_sha256 ?? ""))
-    || !HASH.test(String(target.read_contract_sha256 ?? ""))
-    || !date_valid(target.selected_at)) {
-    throw new Error("rosetta_v12_target_provenance_missing");
-  }
-  if (String(target.installed_ruleset_sha256).toLowerCase() !== String(target.ruleset_sha256).toLowerCase()) {
-    throw new Error("rosetta_v12_installed_ruleset_sha256_mismatch");
-  }
+  validate_v12_target_provenance(target);
   // Preserve the missing/invalid provenance error separately from a
   // well-formed but unsupported selected generation.
   if (target.ruleset_version !== "rosetta-rule-ref-v12") {
@@ -360,6 +367,7 @@ export async function read_v12_certification_receipt(
   source: v12_source_resolution,
   _target: record,
 ): Promise<v12_certification_receipt | null> {
+  validate_v12_target_provenance(_target);
   if (_target.ruleset_version !== "rosetta-rule-ref-v12") {
     throw new Error("rosetta_v12_selected_generation_unsupported");
   }
@@ -453,11 +461,10 @@ export async function inspect_v12_admission_for_binding(binding: v12_genome_bind
     receipt.output_sha256 = v12_output_sha256(detail);
     receipt.hold_receipt = detail.hold_receipt;
     receipt.failure_receipts = detail.failure_receipts;
-    // A valid V13 output is not a V12 certificate. Do not call a V12
-    // producer, even if the source has a decomposed row.
-    if (!required_text(detail.target.ruleset_version)) {
-      throw new Error("rosetta_v12_target_provenance_missing");
-    }
+    // Validate ALL target identity/provenance fields first. V13 may be a
+    // valid unsupported generation; malformed V13 is invalid provenance.
+    // Neither state may call an older-generation producer.
+    validate_v12_target_provenance(detail.target);
     if (detail.target.ruleset_version !== "rosetta-rule-ref-v12") {
       throw new Error("rosetta_v12_selected_generation_unsupported");
     }
