@@ -294,6 +294,11 @@ export function admit_v12_live_detail(
     throw new Error("rosetta_v12_source_text_hash_mismatch");
   }
   const target = detail.target;
+  // This legacy V12 admission algorithm cannot certify a newly selected
+  // generation. The selected-generation endpoint never downgrades either.
+  if (target.ruleset_version !== "rosetta-rule-ref-v12") {
+    throw new Error("rosetta_v12_selected_generation_unsupported");
+  }
   if (target.identity_valid !== true
     || target.engine_identity_valid !== true
     || target.read_identity_valid !== true) {
@@ -345,19 +350,24 @@ export function admit_v12_live_detail(
 }
 
 /**
- * Fetch Rosetta's separate, capability-gated output-integrity receipt. This is
- * intentionally a distinct route from /api/live-rule; identity and all
- * source/ruleset/output bindings are rechecked by verify_v12_certification.
+ * Fetch the selected-generation integrity endpoint. V12's receipt is accepted
+ * only while V12 is selected; V13 or any future generation MUST have its own
+ * explicitly reviewed producer before admission. No downgrade or fallback.
+ * This is distinct from /api/live-rule; receipt identity and source/ruleset/
+ * output bindings are independently rechecked by verify_v12_certification.
  */
 export async function read_v12_certification_receipt(
   source: v12_source_resolution,
   _target: record,
 ): Promise<v12_certification_receipt | null> {
+  if (_target.ruleset_version !== "rosetta-rule-ref-v12") {
+    throw new Error("rosetta_v12_selected_generation_unsupported");
+  }
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), CERTIFICATION_TIMEOUT_MS);
   try {
     const response = await fetch(
-      `${get_rosetta_review_base_url()}/api/v12-certification/${encodeURIComponent(source.source_content_id)}`,
+      `${get_rosetta_review_base_url()}/api/current-integrity/${encodeURIComponent(source.source_content_id)}`,
       {
         method: "GET",
         headers: { accept: "application/json" },
@@ -365,6 +375,10 @@ export async function read_v12_certification_receipt(
         redirect: "error",
       },
     );
+    if (response.status === 409) {
+      // Selected V13+ without a certified material adapter must remain blocked.
+      throw new Error("rosetta_v12_selected_generation_unsupported");
+    }
     if (!response.ok) throw new Error(`rosetta_v12_certification_receipt_http_${response.status}`);
     const value: unknown = await response.json();
     const row = as_record(value);
@@ -436,6 +450,11 @@ export async function inspect_v12_admission_for_binding(binding: v12_genome_bind
     receipt.output_sha256 = v12_output_sha256(detail);
     receipt.hold_receipt = detail.hold_receipt;
     receipt.failure_receipts = detail.failure_receipts;
+    // A valid V13 output is not a V12 certificate. Do not call a V12
+    // producer, even if the source has a decomposed row.
+    if (detail.target.ruleset_version !== "rosetta-rule-ref-v12") {
+      throw new Error("rosetta_v12_selected_generation_unsupported");
+    }
     // Preserve held/failed observations without asking Rosetta for a receipt
     // that its integrity contract correctly refuses to issue for those states.
     const certificationEligible = detail.decomposition?.outcome === "decomposed"
