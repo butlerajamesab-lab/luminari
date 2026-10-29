@@ -416,6 +416,32 @@ describe("exact source resolution and bounded remote reads", () => {
     expect(fetch_mock).toHaveBeenCalledTimes(1); // source resolution only, no V12 fallback
   });
 
+  it.each([
+    ["missing V13 read SHA", { read_contract_sha256: null }, "rosetta_v12_target_provenance_missing"],
+    ["invalid V13 selection time", { selected_at: "unparseable" }, "rosetta_v12_target_provenance_missing"],
+    ["invalid V13 target identity", { read_identity_valid: false }, "rosetta_v12_target_identity_invalid"],
+    ["mismatched installed V13 SHA", { installed_ruleset_sha256: "f".repeat(64) }, "rosetta_v12_installed_ruleset_sha256_mismatch"],
+  ])("classifies %s before unsupported generation and does not fetch a receipt",
+    async (_label, invalid, expectedReason) => {
+      const data = detail();
+      data.target = {
+        ...data.target,
+        ruleset_version: "rosetta-rule-ref-v13",
+        ...invalid,
+      };
+      expect(() => admit_v12_live_detail(binding, source, data, cert(data)))
+        .toThrow(expectedReason);
+      fetch_mock.mockResolvedValueOnce(Response.json([row()]));
+      get_live.mockResolvedValue(deep_clone(data));
+      const result = await inspect_v12_admission_for_binding(binding);
+      expect(result.receipt).toMatchObject({
+        admitted: false,
+        admission_state: "rejected",
+        reason: expectedReason,
+      });
+      expect(fetch_mock).toHaveBeenCalledTimes(1);
+    });
+
   it("fails closed when the selected integrity route returns 409 for an unregistered V13 producer", async () => {
     fetch_mock
       .mockResolvedValueOnce(Response.json([row()]))
