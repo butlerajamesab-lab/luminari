@@ -372,7 +372,7 @@ describe("exact source resolution and bounded remote reads", () => {
       installed_ruleset_sha256: ruleset_sha256, read_contract_sha256: "e".repeat(64),
     });
     const receiptUrl = new URL(String(fetch_mock.mock.calls[1][0]));
-    expect(receiptUrl.pathname).toBe(`/api/v12-certification/${source_content_id}`);
+    expect(receiptUrl.pathname).toBe(`/api/current-integrity/${source_content_id}`);
     expect(fetch_mock.mock.calls[1][1]).toMatchObject({ method: "GET", redirect: "error" });
   });
 
@@ -392,6 +392,47 @@ describe("exact source resolution and bounded remote reads", () => {
     } as unknown as v12_certification_receipt;
     expect(() => admit_v12_live_detail(binding, source, data, incomplete))
       .toThrow("rosetta_v12_certification_receipt_mismatch");
+  });
+
+  it("rejects a selected V13 before accepting even a syntactically valid V12 receipt", () => {
+    const data = detail();
+    data.target.ruleset_version = "rosetta-rule-ref-v13";
+    expect(() => admit_v12_live_detail(binding, source, data, cert(data)))
+      .toThrow("rosetta_v12_selected_generation_unsupported");
+  });
+
+  it("does not fetch a V12 receipt for a selected V13 source", async () => {
+    fetch_mock.mockResolvedValueOnce(Response.json([row()]));
+    const data = detail();
+    data.target.ruleset_version = "rosetta-rule-ref-v13";
+    get_live.mockResolvedValue(data);
+    const result = await inspect_v12_admission_for_binding(binding);
+    expect(result.receipt).toMatchObject({
+      admitted: false,
+      admission_state: "rejected",
+      reason: "rosetta_v12_selected_generation_unsupported",
+      ruleset_version: "rosetta-rule-ref-v13",
+    });
+    expect(fetch_mock).toHaveBeenCalledTimes(1); // source resolution only, no V12 fallback
+  });
+
+  it("fails closed when the selected integrity route returns 409 for an unregistered V13 producer", async () => {
+    fetch_mock
+      .mockResolvedValueOnce(Response.json([row()]))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        contract: "rosetta-current-integrity-unavailable-v1",
+        selected_ruleset_version: "rosetta-rule-ref-v13",
+        reason: "current_integrity_selected_generation_not_certified",
+        publication_eligible: false,
+      }), { status: 409, headers: { "content-type": "application/json" } }));
+    get_live.mockResolvedValue(deep_clone(detail()));
+    const result = await inspect_v12_admission_for_binding(binding);
+    expect(result.receipt).toMatchObject({
+      admitted: false, admission_state: "rejected",
+      reason: "rosetta_v12_selected_generation_unsupported",
+    });
+    expect(String(fetch_mock.mock.calls[1][0])).toContain("/api/current-integrity/");
+    expect(fetch_mock).toHaveBeenCalledTimes(2); // no fallback / third fetch
   });
 
   it("fails closed when the Rosetta receipt endpoint has no matching receipt", async () => {
