@@ -256,6 +256,34 @@ export function v12_output_sha256(detail: current_rosetta_live_detail): string {
   return sha256(JSON.stringify(canonical));
 }
 
+function verify_selected_integrity_provenance(
+  receipt: v12_certification_receipt | record,
+  target: record,
+): void {
+    // /api/live-rule and /api/current-integrity are separate HTTP reads.
+    // The producer's one-statement snapshot binds selection to its material,
+    // but the consumer must also compare that selection with the earlier
+    // detail read. No silent reader-SHA or selected-at transition is admitted.
+    const selection = as_record(receipt.selected_integrity_provenance);
+    if (!selection
+      || selection.identity_valid !== true
+      || selection.engine_identity_valid !== true
+      || selection.read_identity_valid !== true
+      || selection.read_contract_configured !== true
+      || selection.ruleset_version !== target.ruleset_version
+      || !HASH.test(String(selection.ruleset_sha256 ?? ""))
+      || String(selection.ruleset_sha256).toLowerCase() !== String(target.ruleset_sha256).toLowerCase()
+      || !HASH.test(String(selection.installed_ruleset_sha256 ?? ""))
+      || String(selection.installed_ruleset_sha256).toLowerCase() !== String(target.ruleset_sha256).toLowerCase()
+      || !HASH.test(String(selection.read_contract_sha256 ?? ""))
+      || String(selection.read_contract_sha256).toLowerCase() !== String(target.read_contract_sha256).toLowerCase()
+      || !HASH.test(String(selection.installed_read_contract_sha256 ?? ""))
+      || String(selection.installed_read_contract_sha256).toLowerCase() !== String(target.read_contract_sha256).toLowerCase()
+      || selection.selected_at !== target.selected_at) {
+      throw new Error("rosetta_v12_certification_receipt_selected_snapshot_mismatch");
+    }
+}
+
 export function verify_v12_certification(
   receipt: v12_certification_receipt | null,
   source: v12_source_resolution,
@@ -302,6 +330,9 @@ export function verify_v12_certification(
   if (sha256(JSON.stringify(unsigned_receipt)) !== receipt.certification_sha256.toLowerCase()) {
     throw new Error("rosetta_v12_certification_receipt_digest_mismatch");
   }
+  // Every admission path, including direct callers, must bind the selected
+  // read identity from the producing endpoint to this detail's target.
+  verify_selected_integrity_provenance(receipt, target);
   return receipt.certification_sha256.toLowerCase();
 }
 
@@ -429,28 +460,7 @@ export async function read_v12_certification_receipt(
       || !Number.isSafeInteger(invariants.unit_count) || Number(invariants.unit_count) <= 0
       || !Number.isSafeInteger(invariants.section_count) || Number(invariants.section_count) <= 0
     ) throw new Error("rosetta_v12_certification_receipt_invariants_invalid");
-    // /api/live-rule and /api/current-integrity are separate HTTP reads.
-    // The producer's one-statement snapshot binds selection to its material,
-    // but the consumer must also compare that selection with the earlier
-    // detail read. No silent reader-SHA or selected-at transition is admitted.
-    const selection = as_record(row.selected_integrity_provenance);
-    if (!selection
-      || selection.identity_valid !== true
-      || selection.engine_identity_valid !== true
-      || selection.read_identity_valid !== true
-      || selection.read_contract_configured !== true
-      || selection.ruleset_version !== _target.ruleset_version
-      || !HASH.test(String(selection.ruleset_sha256 ?? ""))
-      || String(selection.ruleset_sha256).toLowerCase() !== String(_target.ruleset_sha256).toLowerCase()
-      || !HASH.test(String(selection.installed_ruleset_sha256 ?? ""))
-      || String(selection.installed_ruleset_sha256).toLowerCase() !== String(_target.ruleset_sha256).toLowerCase()
-      || !HASH.test(String(selection.read_contract_sha256 ?? ""))
-      || String(selection.read_contract_sha256).toLowerCase() !== String(_target.read_contract_sha256).toLowerCase()
-      || !HASH.test(String(selection.installed_read_contract_sha256 ?? ""))
-      || String(selection.installed_read_contract_sha256).toLowerCase() !== String(_target.read_contract_sha256).toLowerCase()
-      || selection.selected_at !== _target.selected_at) {
-      throw new Error("rosetta_v12_certification_receipt_selected_snapshot_mismatch");
-    }
+    verify_selected_integrity_provenance(row, _target);
     return row as unknown as v12_certification_receipt;
   } catch (error) {
     if (controller.signal.aborted) throw new Error("rosetta_v12_certification_receipt_timeout");
