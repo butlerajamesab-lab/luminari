@@ -45,6 +45,19 @@ export type v12_certification_receipt = {
   certification_sha256: string;
   certified_at: string;
   attestation_type: "source_bound_output_integrity_v1";
+  /** Only the generation-aware /api/current-integrity endpoint supplies this. */
+  selected_integrity_provenance?: {
+    ruleset_version: string;
+    ruleset_sha256: string;
+    installed_ruleset_sha256: string;
+    read_contract_sha256: string;
+    installed_read_contract_sha256: string;
+    selected_at: string;
+    identity_valid: true;
+    engine_identity_valid: true;
+    read_identity_valid: true;
+    read_contract_configured: true;
+  };
   verified_invariants: {
     source_text_sha256_matches: true;
     unit_source_slices_match: true;
@@ -89,6 +102,27 @@ const as_record = (x: unknown): record | null =>
 const required_text = (x: unknown): x is string => typeof x === "string" && x.trim().length > 0;
 const date_valid = (x: unknown): x is string => required_text(x) && Number.isFinite(Date.parse(x));
 const sha256 = (x: string): string => createHash("sha256").update(x, "utf8").digest("hex");
+
+// Share the same validation before either direct admission or a remote
+// integrity-material fetch. A malformed V13 identity is NOT a valid
+// "unsupported generation" result; it is invalid provenance.
+function validate_v12_target_provenance(target: record): void {
+  if (target.identity_valid !== true
+    || target.engine_identity_valid !== true
+    || target.read_identity_valid !== true) {
+    throw new Error("rosetta_v12_target_identity_invalid");
+  }
+  if (!required_text(target.ruleset_version)
+    || !HASH.test(String(target.ruleset_sha256 ?? ""))
+    || !HASH.test(String(target.installed_ruleset_sha256 ?? ""))
+    || !HASH.test(String(target.read_contract_sha256 ?? ""))
+    || !date_valid(target.selected_at)) {
+    throw new Error("rosetta_v12_target_provenance_missing");
+  }
+  if (String(target.installed_ruleset_sha256).toLowerCase() !== String(target.ruleset_sha256).toLowerCase()) {
+    throw new Error("rosetta_v12_installed_ruleset_sha256_mismatch");
+  }
+}
 
 export function v12_receipt_for_binding(binding: v12_genome_binding): v12_admission_receipt {
   return {
@@ -222,6 +256,34 @@ export function v12_output_sha256(detail: current_rosetta_live_detail): string {
   return sha256(JSON.stringify(canonical));
 }
 
+function verify_selected_integrity_provenance(
+  receipt: v12_certification_receipt | record,
+  target: record,
+): void {
+    // /api/live-rule and /api/current-integrity are separate HTTP reads.
+    // The producer's one-statement snapshot binds selection to its material,
+    // but the consumer must also compare that selection with the earlier
+    // detail read. No silent reader-SHA or selected-at transition is admitted.
+    const selection = as_record(receipt.selected_integrity_provenance);
+    if (!selection
+      || selection.identity_valid !== true
+      || selection.engine_identity_valid !== true
+      || selection.read_identity_valid !== true
+      || selection.read_contract_configured !== true
+      || selection.ruleset_version !== target.ruleset_version
+      || !HASH.test(String(selection.ruleset_sha256 ?? ""))
+      || String(selection.ruleset_sha256).toLowerCase() !== String(target.ruleset_sha256).toLowerCase()
+      || !HASH.test(String(selection.installed_ruleset_sha256 ?? ""))
+      || String(selection.installed_ruleset_sha256).toLowerCase() !== String(target.ruleset_sha256).toLowerCase()
+      || !HASH.test(String(selection.read_contract_sha256 ?? ""))
+      || String(selection.read_contract_sha256).toLowerCase() !== String(target.read_contract_sha256).toLowerCase()
+      || !HASH.test(String(selection.installed_read_contract_sha256 ?? ""))
+      || String(selection.installed_read_contract_sha256).toLowerCase() !== String(target.read_contract_sha256).toLowerCase()
+      || selection.selected_at !== target.selected_at) {
+      throw new Error("rosetta_v12_certification_receipt_selected_snapshot_mismatch");
+    }
+}
+
 export function verify_v12_certification(
   receipt: v12_certification_receipt | null,
   source: v12_source_resolution,
@@ -268,6 +330,9 @@ export function verify_v12_certification(
   if (sha256(JSON.stringify(unsigned_receipt)) !== receipt.certification_sha256.toLowerCase()) {
     throw new Error("rosetta_v12_certification_receipt_digest_mismatch");
   }
+  // Every admission path, including direct callers, must bind the selected
+  // read identity from the producing endpoint to this detail's target.
+  verify_selected_integrity_provenance(receipt, target);
   return receipt.certification_sha256.toLowerCase();
 }
 
@@ -294,26 +359,18 @@ export function admit_v12_live_detail(
     throw new Error("rosetta_v12_source_text_hash_mismatch");
   }
   const target = detail.target;
-  if (target.identity_valid !== true
-    || target.engine_identity_valid !== true
-    || target.read_identity_valid !== true) {
-    throw new Error("rosetta_v12_target_identity_invalid");
-  }
-  if (!required_text(target.ruleset_version)
-    || !HASH.test(String(target.ruleset_sha256 ?? ""))
-    || !HASH.test(String(target.installed_ruleset_sha256 ?? ""))
-    || !HASH.test(String(target.read_contract_sha256 ?? ""))
-    || !date_valid(target.selected_at)) {
-    throw new Error("rosetta_v12_target_provenance_missing");
-  }
-  if (String(target.installed_ruleset_sha256).toLowerCase() !== String(target.ruleset_sha256).toLowerCase()) {
-    throw new Error("rosetta_v12_installed_ruleset_sha256_mismatch");
+  validate_v12_target_provenance(target);
+  // Preserve the missing/invalid provenance error separately from a
+  // well-formed but unsupported selected generation.
+  if (target.ruleset_version !== "rosetta-rule-ref-v12") {
+    throw new Error("rosetta_v12_selected_generation_unsupported");
   }
   receipt.ruleset_version = target.ruleset_version;
   receipt.ruleset_sha256 = String(target.ruleset_sha256).toLowerCase();
   receipt.installed_ruleset_sha256 = String(target.installed_ruleset_sha256).toLowerCase();
   receipt.read_contract_sha256 = String(target.read_contract_sha256).toLowerCase();
-  receipt.selected_at = target.selected_at;
+  // Shared provenance validator has already required a parseable string.
+  receipt.selected_at = String(target.selected_at);
   if (detail.hold_receipt) throw new Error("rosetta_v12_hold_receipt_present");
   if (detail.failure_receipts.length) throw new Error("rosetta_v12_failure_receipts_present");
   if (detail.decomposition?.outcome !== "decomposed") {
@@ -345,19 +402,25 @@ export function admit_v12_live_detail(
 }
 
 /**
- * Fetch Rosetta's separate, capability-gated output-integrity receipt. This is
- * intentionally a distinct route from /api/live-rule; identity and all
- * source/ruleset/output bindings are rechecked by verify_v12_certification.
+ * Fetch the selected-generation integrity endpoint. V12's receipt is accepted
+ * only while V12 is selected; V13 or any future generation MUST have its own
+ * explicitly reviewed producer before admission. No downgrade or fallback.
+ * This is distinct from /api/live-rule; receipt identity and source/ruleset/
+ * output bindings are independently rechecked by verify_v12_certification.
  */
 export async function read_v12_certification_receipt(
   source: v12_source_resolution,
   _target: record,
 ): Promise<v12_certification_receipt | null> {
+  validate_v12_target_provenance(_target);
+  if (_target.ruleset_version !== "rosetta-rule-ref-v12") {
+    throw new Error("rosetta_v12_selected_generation_unsupported");
+  }
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), CERTIFICATION_TIMEOUT_MS);
   try {
     const response = await fetch(
-      `${get_rosetta_review_base_url()}/api/v12-certification/${encodeURIComponent(source.source_content_id)}`,
+      `${get_rosetta_review_base_url()}/api/current-integrity/${encodeURIComponent(source.source_content_id)}`,
       {
         method: "GET",
         headers: { accept: "application/json" },
@@ -365,6 +428,10 @@ export async function read_v12_certification_receipt(
         redirect: "error",
       },
     );
+    if (response.status === 409) {
+      // Selected V13+ without a certified material adapter must remain blocked.
+      throw new Error("rosetta_v12_selected_generation_unsupported");
+    }
     if (!response.ok) throw new Error(`rosetta_v12_certification_receipt_http_${response.status}`);
     const value: unknown = await response.json();
     const row = as_record(value);
@@ -393,10 +460,14 @@ export async function read_v12_certification_receipt(
       || !Number.isSafeInteger(invariants.unit_count) || Number(invariants.unit_count) <= 0
       || !Number.isSafeInteger(invariants.section_count) || Number(invariants.section_count) <= 0
     ) throw new Error("rosetta_v12_certification_receipt_invariants_invalid");
+    verify_selected_integrity_provenance(row, _target);
     return row as unknown as v12_certification_receipt;
   } catch (error) {
     if (controller.signal.aborted) throw new Error("rosetta_v12_certification_receipt_timeout");
-    if (error instanceof Error && error.message.startsWith("rosetta_v12_certification_receipt_")) throw error;
+    if (error instanceof Error && (
+      error.message.startsWith("rosetta_v12_certification_receipt_")
+      || error.message === "rosetta_v12_selected_generation_unsupported"
+    )) throw error;
     throw new Error("rosetta_v12_certification_receipt_network_error");
   } finally {
     clearTimeout(timeout);
@@ -436,6 +507,13 @@ export async function inspect_v12_admission_for_binding(binding: v12_genome_bind
     receipt.output_sha256 = v12_output_sha256(detail);
     receipt.hold_receipt = detail.hold_receipt;
     receipt.failure_receipts = detail.failure_receipts;
+    // Validate ALL target identity/provenance fields first. V13 may be a
+    // valid unsupported generation; malformed V13 is invalid provenance.
+    // Neither state may call an older-generation producer.
+    validate_v12_target_provenance(detail.target);
+    if (detail.target.ruleset_version !== "rosetta-rule-ref-v12") {
+      throw new Error("rosetta_v12_selected_generation_unsupported");
+    }
     // Preserve held/failed observations without asking Rosetta for a receipt
     // that its integrity contract correctly refuses to issue for those states.
     const certificationEligible = detail.decomposition?.outcome === "decomposed"

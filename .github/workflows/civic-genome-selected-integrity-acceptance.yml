@@ -1,0 +1,67 @@
+name: Civic Genome selected-generation integrity acceptance
+
+on:
+  push:
+    branches:
+      - feat/civic-genome-selected-integrity-fail-closed-20261029
+    paths:
+      - 'server/civic-genome-rosetta-v12-admission.ts'
+      - 'server/civic-genome-rosetta-v12-admission.test.ts'
+      - '.github/workflows/civic-genome-selected-integrity-acceptance.yml'
+  pull_request:
+    paths:
+      - 'server/civic-genome-rosetta-v12-admission.ts'
+      - 'server/civic-genome-rosetta-v12-admission.test.ts'
+      - '.github/workflows/civic-genome-selected-integrity-acceptance.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: genome-selected-integrity-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  selected-integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NODE_ENV: test
+    steps:
+      - name: Checkout actual branch head, never a synthetic PR merge
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify exact test commit
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+          echo "SELECTED_INTEGRITY_EXACT_HEAD:${EXPECTED_HEAD}"
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '20'
+          cache: pnpm
+      - name: Install exact locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Execute actual Civic Genome admission and current-law reader tests
+        run: >-
+          pnpm exec vitest run
+          server/civic-genome-rosetta-v12-admission.test.ts
+          server/current-law-rosetta-live.test.ts
+      - name: Compile TypeScript against full repository
+        run: pnpm exec tsc -p tsconfig.ci.json --noEmit --pretty false
+      - name: Confirm selected route and no fallback remain in source
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F '/api/current-integrity/' server/civic-genome-rosetta-v12-admission.ts
+          ! grep -F '/api/v12-certification/' server/civic-genome-rosetta-v12-admission.ts
+          grep -F 'rosetta_v12_selected_generation_unsupported' server/civic-genome-rosetta-v12-admission.ts
+          echo 'PASS_CIVIC_GENOME_SELECTED_GENERATION_FAIL_CLOSED'
