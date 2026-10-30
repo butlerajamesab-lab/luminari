@@ -106,7 +106,22 @@ function cert(payload: current_rosetta_live_detail): v12_certification_receipt {
       section_count: 1,
     },
   };
-  return { ...unsigned, certification_sha256: createHash("sha256").update(JSON.stringify(unsigned), "utf8").digest("hex") };
+  return {
+    ...unsigned,
+    certification_sha256: createHash("sha256").update(JSON.stringify(unsigned), "utf8").digest("hex"),
+    selected_integrity_provenance: {
+      ruleset_version: payload.target.ruleset_version as string,
+      ruleset_sha256: payload.target.ruleset_sha256 as string,
+      installed_ruleset_sha256: payload.target.installed_ruleset_sha256 as string,
+      read_contract_sha256: payload.target.read_contract_sha256 as string,
+      installed_read_contract_sha256: payload.target.read_contract_sha256 as string,
+      selected_at: payload.target.selected_at as string,
+      identity_valid: true as const,
+      engine_identity_valid: true as const,
+      read_identity_valid: true as const,
+      read_contract_configured: true as const,
+    },
+  };
 }
 
 function row() {
@@ -392,6 +407,44 @@ describe("exact source resolution and bounded remote reads", () => {
     } as unknown as v12_certification_receipt;
     expect(() => admit_v12_live_detail(binding, source, data, incomplete))
       .toThrow("rosetta_v12_certification_receipt_mismatch");
+  });
+
+  it.each([
+    ["reader SHA changed", { read_contract_sha256: "a".repeat(64) }],
+    ["selection timestamp changed", { selected_at: "2026-10-20T09:00:01Z" }],
+    ["reader installation SHA changed", { installed_read_contract_sha256: "f".repeat(64) }],
+    ["reader contract unconfigured", { read_contract_configured: false }],
+  ])("rejects selected-integrity snapshot drift: %s, without fallback", async (_name, mutation) => {
+    const data = deep_clone(detail());
+    const certificate = cert(data);
+    certificate.selected_integrity_provenance = {
+      ...certificate.selected_integrity_provenance!, ...mutation,
+    };
+    fetch_mock
+      .mockResolvedValueOnce(Response.json([row()]))
+      .mockResolvedValueOnce(Response.json(certificate));
+    get_live.mockResolvedValue(data);
+    const result = await inspect_v12_admission_for_binding(binding);
+    expect(result.receipt).toMatchObject({
+      admitted: false, admission_state: "rejected",
+      reason: "rosetta_v12_certification_receipt_selected_snapshot_mismatch",
+    });
+    expect(fetch_mock).toHaveBeenCalledTimes(2);
+    expect(String(fetch_mock.mock.calls[1][0])).toContain("/api/current-integrity/");
+  });
+
+  it("rejects a missing selected snapshot provenance rather than accepting V12-only material", async () => {
+    const data = deep_clone(detail());
+    const certificate = cert(data);
+    delete certificate.selected_integrity_provenance;
+    fetch_mock
+      .mockResolvedValueOnce(Response.json([row()]))
+      .mockResolvedValueOnce(Response.json(certificate));
+    get_live.mockResolvedValue(data);
+    const result = await inspect_v12_admission_for_binding(binding);
+    expect(result.receipt.reason).toBe("rosetta_v12_certification_receipt_selected_snapshot_mismatch");
+    expect(result.receipt.admitted).toBe(false);
+    expect(fetch_mock).toHaveBeenCalledTimes(2);
   });
 
   it("rejects a selected V13 before accepting even a syntactically valid V12 receipt", () => {
