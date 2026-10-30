@@ -364,7 +364,7 @@ export function admit_v12_live_detail(
   // Preserve the missing/invalid provenance error separately from a
   // well-formed but unsupported selected generation.
   require_v12_selected_genome_adapter(target.ruleset_version);
-  receipt.ruleset_version = target.ruleset_version;
+  receipt.ruleset_version = String(target.ruleset_version);
   receipt.ruleset_sha256 = String(target.ruleset_sha256).toLowerCase();
   receipt.installed_ruleset_sha256 = String(target.installed_ruleset_sha256).toLowerCase();
   receipt.read_contract_sha256 = String(target.read_contract_sha256).toLowerCase();
