@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { get_current_rosetta_live_detail, type current_rosetta_live_detail } from "./current-law-rosetta-live";
 import { create_rosetta_supabase_headers } from "./rosetta-supabase-auth";
+import { require_v12_selected_genome_adapter } from "./civic-genome-rosetta-selected-integrity-adapters";
 import { get_rosetta_review_base_url } from "./rosetta-review-url";
 
 /**
@@ -362,10 +363,8 @@ export function admit_v12_live_detail(
   validate_v12_target_provenance(target);
   // Preserve the missing/invalid provenance error separately from a
   // well-formed but unsupported selected generation.
-  if (target.ruleset_version !== "rosetta-rule-ref-v12") {
-    throw new Error("rosetta_v12_selected_generation_unsupported");
-  }
-  receipt.ruleset_version = target.ruleset_version;
+  require_v12_selected_genome_adapter(target.ruleset_version);
+  receipt.ruleset_version = String(target.ruleset_version);
   receipt.ruleset_sha256 = String(target.ruleset_sha256).toLowerCase();
   receipt.installed_ruleset_sha256 = String(target.installed_ruleset_sha256).toLowerCase();
   receipt.read_contract_sha256 = String(target.read_contract_sha256).toLowerCase();
@@ -413,9 +412,7 @@ export async function read_v12_certification_receipt(
   _target: record,
 ): Promise<v12_certification_receipt | null> {
   validate_v12_target_provenance(_target);
-  if (_target.ruleset_version !== "rosetta-rule-ref-v12") {
-    throw new Error("rosetta_v12_selected_generation_unsupported");
-  }
+  require_v12_selected_genome_adapter(_target.ruleset_version);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), CERTIFICATION_TIMEOUT_MS);
   try {
@@ -511,9 +508,7 @@ export async function inspect_v12_admission_for_binding(binding: v12_genome_bind
     // valid unsupported generation; malformed V13 is invalid provenance.
     // Neither state may call an older-generation producer.
     validate_v12_target_provenance(detail.target);
-    if (detail.target.ruleset_version !== "rosetta-rule-ref-v12") {
-      throw new Error("rosetta_v12_selected_generation_unsupported");
-    }
+    require_v12_selected_genome_adapter(detail.target.ruleset_version);
     // Preserve held/failed observations without asking Rosetta for a receipt
     // that its integrity contract correctly refuses to issue for those states.
     const certificationEligible = detail.decomposition?.outcome === "decomposed"

@@ -7,11 +7,15 @@ on:
     paths:
       - 'server/civic-genome-rosetta-v12-admission.ts'
       - 'server/civic-genome-rosetta-v12-admission.test.ts'
+      - 'server/civic-genome-rosetta-selected-integrity-adapters.ts'
+      - 'server/civic-genome-rosetta-selected-integrity-adapters.test.ts'
       - '.github/workflows/civic-genome-selected-integrity-acceptance.yml'
   pull_request:
     paths:
       - 'server/civic-genome-rosetta-v12-admission.ts'
       - 'server/civic-genome-rosetta-v12-admission.test.ts'
+      - 'server/civic-genome-rosetta-selected-integrity-adapters.ts'
+      - 'server/civic-genome-rosetta-selected-integrity-adapters.test.ts'
       - '.github/workflows/civic-genome-selected-integrity-acceptance.yml'
   workflow_dispatch:
 
@@ -54,6 +58,7 @@ jobs:
         run: >-
           pnpm exec vitest run
           server/civic-genome-rosetta-v12-admission.test.ts
+          server/civic-genome-rosetta-selected-integrity-adapters.test.ts
           server/current-law-rosetta-live.test.ts
       - name: Compile TypeScript against full repository
         run: pnpm exec tsc -p tsconfig.ci.json --noEmit --pretty false
@@ -63,5 +68,8 @@ jobs:
           set -euo pipefail
           grep -F '/api/current-integrity/' server/civic-genome-rosetta-v12-admission.ts
           ! grep -F '/api/v12-certification/' server/civic-genome-rosetta-v12-admission.ts
-          grep -F 'rosetta_v12_selected_generation_unsupported' server/civic-genome-rosetta-v12-admission.ts
+          grep -F 'require_v12_selected_genome_adapter' server/civic-genome-rosetta-v12-admission.ts
+          grep -F 'rosetta_v12_selected_generation_unsupported' server/civic-genome-rosetta-selected-integrity-adapters.ts
+          ! grep -F 'rosetta-rule-ref-v13' server/civic-genome-rosetta-selected-integrity-adapters.ts
+          ! grep -F 'publication_authority: true' server/civic-genome-rosetta-selected-integrity-adapters.ts
           echo 'PASS_CIVIC_GENOME_SELECTED_GENERATION_FAIL_CLOSED'
