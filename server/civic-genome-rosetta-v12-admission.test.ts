@@ -374,6 +374,21 @@ describe("exact source resolution and bounded remote reads", () => {
     expect(fetch_mock).toHaveBeenCalledTimes(2); // one source resolution per inspection
   });
 
+  it.each([
+    ["missing selected read provenance", null],
+    ["changed read SHA", { read_contract_sha256: "a".repeat(64) }],
+    ["changed installed read SHA", { installed_read_contract_sha256: "a".repeat(64) }],
+    ["changed selection timestamp", { selected_at: "2026-10-20T09:10:00Z" }],
+    ["missing configured read contract", { read_contract_configured: false }],
+  ])("direct V12 admission rejects %s, not just the HTTP inspection path", (_label, mutation) => {
+    const data = detail();
+    const candidate = cert(data);
+    if (mutation === null) delete candidate.selected_integrity_provenance;
+    else Object.assign(candidate.selected_integrity_provenance!, mutation);
+    expect(() => admit_v12_live_detail(binding, source, data, candidate))
+      .toThrow("rosetta_v12_certification_receipt_selected_snapshot_mismatch");
+  });
+
   it("consumes the separate source-bound integrity receipt and preserves its limited scope", async () => {
     const data = deep_clone(detail());
     fetch_mock
