@@ -1,0 +1,76 @@
+{
+ "staged_date": "2026-10-30",
+ "files_only": true,
+ "loaded_anywhere": false,
+ "source_hashes": {
+  "/home/hatch/workspace/user/files/luminari-VETERANS-DEEP-DIVE-2026_160_d9s0.docx": "c3373ac7b5eb62abfa4ef5e6aa40a316e48d1999cda718118767a436d2a12be9",
+  "/home/hatch/workspace/user/files/luminari-VETERANS-DEEP-DIVE-2026_161_iros.ndjson": "67159aaf06682b6daa9c3267d90eee6953568e6a7b72c528d75e9498345717d8",
+  "/home/hatch/workspace/user/files/luminari-VETERANS-DEEP-DIVE-2026_162_mcam.csv": "1f6b474edfd15d851e28d457f6d4c0ec3e1870b178622ee779978a3618e04953",
+  "/home/hatch/workspace/user/files/luminari-SAIS-DOC12-VETERANS-BENEFITS-VA-ACCOUNTABILITY-2026_159_spf9.docx": "d2b78a5717c09d0d2be9a6c62307de8b31796da984fb6c5d94ad0da18d941dad"
+ },
+ "duplicate_deduped": "file _163 is byte-identical to _161 (SHA-256 67159aaf06682b6daa9c3267d90eee6953568e6a7b72c528d75e9498345717d8), deduped silently per Alexander's rule",
+ "deep_dive_resources": {
+  "rows": 41,
+  "unique_ids": 41,
+  "csv_asserted_identical_to_ndjson": true,
+  "verification": {
+   "VERIFIED": 41
+  },
+  "jurisdiction_levels": {
+   "national": 40,
+   "state": 1
+  },
+  "address_kinds": {
+   "other_text": 4,
+   "resolution_instruction": 34,
+   "postal_address": 3
+  },
+  "field_holds": [
+   "VET-FED-004",
+   "VET-APP-002",
+   "VET-ADV-001"
+  ],
+  "map_points": 0
+ },
+ "routing_notes": {
+  "rows": 38,
+  "numbered": "1-38 complete, in order"
+ },
+ "sais_doc12_resources": {
+  "rows": 9,
+  "unique_ids": 9,
+  "verification": {
+   "VERIFIED": 9
+  },
+  "deadline_fields_per_row": 5
+ },
+ "state_contacts": {
+  "rows": 112,
+  "avenues": {
+   "deep_dive_contacts": 56,
+   "sais_doc12_agencies": 56
+  },
+  "verification": {
+   "VERIFIED": 56,
+   "UNVERIFIED": 56
+  },
+  "held": 56,
+  "american_samoa_deep_dive_contact": "Federal VA benefits hotline: 800-827-1000",
+  "reconciled": false
+ },
+ "statutes": {
+  "rows": 34,
+  "avenues": {
+   "deep_dive_statutes": 24,
+   "sais_doc12_statutes": 10
+  },
+  "deduplicated": false
+ },
+ "not_done_here": [
+  "no canonical_id minted (rule awaits Alexander's approval)",
+  "no Help/Workflow/Accountability layer split",
+  "no cross-avenue contact reconciliation",
+  "no statute-set deduplication",
+  "no load into any environment"
+ ]
+}
