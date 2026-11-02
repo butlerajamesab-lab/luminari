@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { project_docket_state_cache_to_civic_genome_serialized } from "./civic-genome-projection";
 import { query_with_diagnostics } from "./db";
+import { accept_docket_bill_detail } from "./docket-bill-detail-acceptance";
 import { get_bill, type legiscan_bill_detail } from "./services/legiscan";
 import { background_feature_enabled } from "./runtime-role";
 
@@ -283,34 +284,7 @@ async function ensure_civic_genome_bill_ready(job: docket_bill_activation_job): 
 
 async function cache_bill_detail(source_bill_id: number, bill: legiscan_bill_detail): Promise<void> {
   if (!as_record(bill)) throw new Error("docket_bill_activation_invalid_detail");
-  await query_with_diagnostics(
-    `insert into public.docket_bill_detail_cache (
-       bill_id,
-       bill,
-       fetched_at,
-       source,
-       created_at,
-       updated_at
-     ) values (
-       $1,
-       $2::jsonb,
-       now(),
-       'legiscan_get_bill_jurisdiction_activation',
-       now(),
-       now()
-     )
-     on conflict (bill_id) do update
-       set bill = excluded.bill,
-           fetched_at = excluded.fetched_at,
-           source = excluded.source,
-           updated_at = now()`,
-    [source_bill_id, JSON.stringify(bill)],
-    {
-      label: "docket_bill_activation_cache_detail",
-      pool_acquire_timeout_ms: 1_000,
-      query_timeout_ms: 10_000,
-    },
-  );
+  await accept_docket_bill_detail({ bill_id: source_bill_id, bill, source: "legiscan_get_bill_jurisdiction_activation", label: "docket_bill_activation_cache_detail" });
 }
 
 function normalize_registration_receipt(value: unknown): docket_bill_activation_receipt {

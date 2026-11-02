@@ -1,4 +1,5 @@
 import { query_with_diagnostics } from "./db";
+import { accept_docket_bill_detail } from "./docket-bill-detail-acceptance";
 import { get_bill, type legiscan_bill_detail } from "./services/legiscan";
 import { background_feature_enabled } from "./runtime-role";
 
@@ -138,42 +139,9 @@ async function list_candidates(limit: number): Promise<final_source_reconciliati
   return result.rows;
 }
 
-async function cache_bill_detail(
-  source_bill_id: number,
-  bill: legiscan_bill_detail,
-): Promise<void> {
-  if (!as_record(bill)) {
-    throw new Error("civic_genome_final_source_reconciliation_invalid_bill_detail");
-  }
-
-  await query_with_diagnostics(
-    `insert into public.docket_bill_detail_cache (
-       bill_id,
-       bill,
-       fetched_at,
-       source,
-       created_at,
-       updated_at
-     ) values (
-       $1,
-       $2::jsonb,
-       now(),
-       'legiscan_get_bill_final_source_reconciliation',
-       now(),
-       now()
-     )
-     on conflict (bill_id) do update
-       set bill = excluded.bill,
-           fetched_at = excluded.fetched_at,
-           source = excluded.source,
-           updated_at = now()`,
-    [source_bill_id, JSON.stringify(bill)],
-    {
-      label: "civic_genome_final_source_reconciliation_cache_detail",
-      pool_acquire_timeout_ms: 1_000,
-      query_timeout_ms: 30_000,
-    },
-  );
+async function cache_bill_detail(source_bill_id: number, bill: legiscan_bill_detail): Promise<void> {
+  if (!as_record(bill)) throw new Error("civic_genome_final_source_reconciliation_invalid_bill_detail");
+  await accept_docket_bill_detail({ bill_id: source_bill_id, bill, source: "legiscan_get_bill_final_source_reconciliation", label: "civic_genome_final_source_reconciliation_cache_detail" });
 }
 
 async function read_result(

@@ -16,6 +16,7 @@ import {
   type civic_genome_projection_result,
 } from "../civic-genome-projection";
 import { query_with_diagnostics } from "../db";
+import { accept_docket_bill_detail } from "../docket-bill-detail-acceptance";
 import {
   background_workers_allowed,
   resolve_lighthouse_runtime_role,
@@ -544,22 +545,7 @@ const read_bill_detail_cache = async (bill_id: number): Promise<docket_bill_deta
 };
 
 const upsert_bill_detail_cache = async (row: docket_bill_detail_cache_row): Promise<void> => {
-  await query_with_diagnostics(
-    `insert into public.docket_bill_detail_cache (
-       bill_id, bill, fetched_at, source
-     ) values ($1, $2::jsonb, $3::timestamptz, $4)
-     on conflict (bill_id) do update set
-       bill = excluded.bill,
-       fetched_at = excluded.fetched_at,
-       source = excluded.source,
-       updated_at = now()`,
-    [row.bill_id, JSON.stringify(row.bill), row.fetched_at, row.source],
-    {
-      label: "docket_bill_detail_cache_upsert",
-      pool_acquire_timeout_ms: 1_000,
-      query_timeout_ms: 10_000,
-    },
-  );
+  await accept_docket_bill_detail({ bill_id: row.bill_id, bill: row.bill, source: row.source, label: "docket_bill_detail_cache_upsert" });
 };
 
 const is_fresh = (fetched_at: string, ttl_ms = cache_ttl_ms): boolean => {
