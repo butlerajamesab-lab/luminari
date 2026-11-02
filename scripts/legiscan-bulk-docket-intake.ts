@@ -3,6 +3,8 @@ import { basename, resolve } from "node:path";
 import { createHash } from "node:crypto";
 import JSZip from "jszip";
 import { accept_docket_bill_detail, preserve_docket_archive_auxiliary } from "../server/docket-bill-detail-acceptance";
+import { project_docket_bulk_bill_to_civic_genome } from "../server/civic-genome-projection";
+import { query_with_diagnostics } from "../server/db";
 
 type manifest_archive = { archive: string; sha256: string; bytes: number; jurisdiction: string };
 type record_kind = "bill" | "person" | "roll_call";
@@ -34,7 +36,7 @@ const result = {
   mode: applying ? "apply" : "dry_run",
   manifest_sha256,
   archives: [] as Array<Record<string, unknown>>,
-  totals: { bill: 0, person: 0, roll_call: 0, invalid: 0, inserted: 0, existing_preserved: 0 },
+  totals: { bill: 0, person: 0, roll_call: 0, invalid: 0, inserted: 0, existing_preserved: 0, held: 0 },
 };
 const seen = new Set<number>();
 for (const archive_path of archive_arguments) {
@@ -51,7 +53,7 @@ for (const archive_path of archive_arguments) {
     kind: record_kind; payload: Record<string, unknown>; id: number;
     path: string; member_hash: string;
   }> = [];
-  const counts = { bill: 0, person: 0, roll_call: 0, invalid: 0, inserted: 0, existing_preserved: 0 };
+  const counts = { bill: 0, person: 0, roll_call: 0, invalid: 0, inserted: 0, existing_preserved: 0, held: 0 };
   for (const file of members) {
     const marker = file.name.includes("/bill/") ? "bill" :
       file.name.includes("/people/") ? "person" :
@@ -89,6 +91,29 @@ for (const archive_path of archive_arguments) {
       });
       if (outcome.disposition === "inserted") counts.inserted += 1;
       if (outcome.disposition === "existing_preserved") counts.existing_preserved += 1;
+      // Completing an interrupted archive ingest is idempotent. No re-fetch.
+      // Do not project an old ZIP over an API-owned canonical bill.
+      if (outcome.stored_source === "legiscan_bulk_json") {
+        try {
+          await project_docket_bulk_bill_to_civic_genome({
+            bill: member.payload, archive_sha256: receipt.archive_sha256,
+            member_path: receipt.member_path,
+          });
+          const registration = await query_with_diagnostics<{ receipt: Record<string, unknown> }>(
+            "select public.register_docket_legislative_version_spine($1::integer, false) as receipt",
+            [member.id],
+            { label: "docket_bulk_register_official_sources", pool_acquire_timeout_ms: 1_000, query_timeout_ms: 30_000 },
+          );
+          if (Number(registration.rows[0]?.receipt?.registered_document_count ?? 0) === 0) {
+            counts.held += 1;
+            console.error("[HOLD] bulk_source_document_unavailable bill_id=" + member.id);
+          }
+        } catch (error) {
+          counts.held += 1;
+          console.error("[HOLD] bulk_projection_or_registration_failed bill_id=" + member.id +
+            " error=" + (error instanceof Error ? error.message : "unknown"));
+        }
+      }
     } else {
       await preserve_docket_archive_auxiliary({
         kind: member.kind, payload: member.payload, provider_record_id: member.id,
@@ -102,3 +127,4 @@ for (const archive_path of archive_arguments) {
 }
 writeFileSync(resolve(report_path), JSON.stringify(result, null, 2) + "\n");
 console.log("report=" + resolve(report_path));
+if (result.totals.held > 0) process.exitCode = 1;
