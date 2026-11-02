@@ -100,7 +100,8 @@ export async function accept_docket_bill_detail(input: docket_accept_input):
     " on conflict (archive_sha256,member_path) do nothing returning disposition",
     ") select coalesce((select disposition from recorded),'already_recorded') as disposition,",
     " exists(select 1 from inserted) as cache_inserted,",
-    " (select source from public.docket_bill_detail_cache where bill_id=$1) as stored_source",
+    " coalesce((select 'legiscan_bulk_json' from inserted limit 1),",
+    " (select source from public.docket_bill_detail_cache where bill_id=$1)) as stored_source",
   ].join("\n");
   const result = await query_with_diagnostics<{ disposition: string; cache_inserted: boolean; stored_source: string }>(
     sql, [input.bill_id, JSON.stringify(input.bill), archive.archive_sha256, archive.member_path,
