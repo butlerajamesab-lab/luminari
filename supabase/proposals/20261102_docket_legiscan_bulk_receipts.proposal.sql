@@ -1,5 +1,4 @@
--- Draft PR migration. This version was first applied in isolated Supabase Preview only.
--- Production installation requires separate review, approval and merge.
+-- PREPARED PROPOSAL ONLY. Production requires separate migration-ledger approval.
 -- Source-bound append-only receipts for LegiScan's bulk ZIP transport.
 create table if not exists public.docket_legiscan_bulk_member_receipt (
   archive_sha256 text not null check (archive_sha256 ~ '^[0-9a-f]{64}$'),
