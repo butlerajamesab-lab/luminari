@@ -42,7 +42,7 @@ export function validate_docket_bill_identity(bill_id: number, bill: unknown, ar
 }
 
 export async function accept_docket_bill_detail(input: docket_accept_input):
-  Promise<{ disposition: string; cache_inserted: boolean }> {
+  Promise<{ disposition: string; cache_inserted: boolean; stored_source?: string }> {
   const is_archive = input.source === "legiscan_bulk_json";
   validate_docket_bill_identity(input.bill_id, input.bill, is_archive);
   if (is_archive !== Boolean(input.archive)) throw new Error("docket_bulk_archive_receipt_required");
@@ -99,9 +99,10 @@ export async function accept_docket_bill_detail(input: docket_accept_input):
     "  case when exists(select 1 from inserted) then 'inserted' else 'existing_preserved' end)",
     " on conflict (archive_sha256,member_path) do nothing returning disposition",
     ") select coalesce((select disposition from recorded),'already_recorded') as disposition,",
-    " exists(select 1 from inserted) as cache_inserted",
+    " exists(select 1 from inserted) as cache_inserted,",
+    " (select source from public.docket_bill_detail_cache where bill_id=$1) as stored_source",
   ].join("\n");
-  const result = await query_with_diagnostics<{ disposition: string; cache_inserted: boolean }>(
+  const result = await query_with_diagnostics<{ disposition: string; cache_inserted: boolean; stored_source: string }>(
     sql, [input.bill_id, JSON.stringify(input.bill), archive.archive_sha256, archive.member_path,
       archive.member_sha256, Number(input.bill.session_id), String(input.bill.state),
       typeof input.bill.change_hash === "string" ? input.bill.change_hash : null,
