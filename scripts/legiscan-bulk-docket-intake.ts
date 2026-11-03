@@ -5,8 +5,9 @@ import JSZip from "jszip";
 import { accept_docket_bill_detail, preserve_docket_archive_auxiliary } from "../server/docket-bill-detail-acceptance";
 import { project_docket_bulk_bill_to_civic_genome } from "../server/civic-genome-projection";
 import { query_with_diagnostics } from "../server/db";
+import { parse_docket_bulk_json_member } from "../server/docket-bulk-json-member";
 
-type manifest_archive = { archive: string; sha256: string; bytes: number; jurisdiction: string };
+type manifest_archive = { archive: string; sha256: string; bytes: number; jurisdiction: string; session_ids: string };
 type record_kind = "bill" | "person" | "roll_call";
 const sha = (buffer: Buffer) => createHash("sha256").update(buffer).digest("hex");
 
@@ -55,27 +56,17 @@ for (const archive_path of archive_arguments) {
   }> = [];
   const counts = { bill: 0, person: 0, roll_call: 0, invalid: 0, inserted: 0, existing_preserved: 0, held: 0 };
   for (const file of members) {
-    const marker = file.name.includes("/bill/") ? "bill" :
-      file.name.includes("/people/") ? "person" :
-      file.name.includes("/vote/") ? "roll_call" : null;
-    if (!marker) throw new Error("docket_bulk_unrecognized_json_member: " + file.name);
     const raw = await file.async("nodebuffer");
-    const json = JSON.parse(raw.toString("utf8"));
-    const payload = json?.[marker];
-    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
-      throw new Error("docket_bulk_invalid_member_payload: " + file.name);
-    }
-    const id = Number(payload[marker === "bill" ? "bill_id" : marker === "person" ? "people_id" : "roll_call_id"]);
-    if (!Number.isSafeInteger(id) || id < 1) throw new Error("docket_bulk_invalid_member_id: " + file.name);
-    if (marker === "bill") {
-      if (payload.state !== expected.jurisdiction ||
-          !Number.isSafeInteger(Number(payload.session_id)) || Number(payload.session_id) < 1 ||
-          !String(payload.bill_number || "").trim()) throw new Error("docket_bulk_bill_identity_mismatch: " + file.name);
+    const parsed = parse_docket_bulk_json_member(
+      file.name, raw, expected.jurisdiction, expected.session_ids,
+    );
+    const { kind, payload, id } = parsed;
+    if (kind === "bill") {
       if (seen.has(id)) throw new Error("docket_bulk_repeated_bill_id_across_archives: " + id);
       seen.add(id);
     }
-    counts[marker] += 1;
-    staged.push({ kind: marker, payload, id, path: file.name, member_hash: sha(raw) });
+    counts[kind] += 1;
+    staged.push({ kind, payload, id, path: file.name, member_hash: sha(raw) });
   }
   // Parse and validate the WHOLE archive before making any write for that archive.
   for (const member of staged) {
