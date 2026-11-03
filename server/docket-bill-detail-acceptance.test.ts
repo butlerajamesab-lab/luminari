@@ -27,13 +27,17 @@ describe("LegiScan API/bulk shared Docket bill acceptance", () => {
   });
   it("archive acceptance uses insert-only cache and atomic receipt, never Rosetta", async () => {
     query.mockResolvedValueOnce({ rows: [] });
-    query.mockResolvedValueOnce({ rows: [{ disposition: "inserted", cache_inserted: true }] });
+    query.mockResolvedValueOnce({ rows: [{ disposition: "inserted", cache_inserted: true, activation_id: "00000000-0000-4000-8000-000000000001" }] });
     const outcome = await accept_docket_bill_detail({ bill_id: bill.bill_id, bill, source: "legiscan_bulk_json", archive });
     const sql = String(query.mock.calls[1][0]);
     expect(sql).toContain("on conflict (bill_id) do nothing");
     expect(sql).toContain("docket_legiscan_bulk_member_receipt");
+    expect(sql).toContain("register_docket_jurisdiction_activation(");
+    expect(sql).toContain("from inserted");
+    expect(sql).not.toContain("docket_bill_state_cache");
     expect(sql).not.toContain("rosetta");
     expect(outcome.disposition).toBe("inserted");
+    expect(outcome.activation_id).toBe("00000000-0000-4000-8000-000000000001");
   });
   it("preserves auxiliary legislator and roll call evidence without inventing bill details", async () => {
     query.mockResolvedValue({ rows: [] });
