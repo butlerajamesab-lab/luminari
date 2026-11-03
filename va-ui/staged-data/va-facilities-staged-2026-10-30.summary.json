@@ -1,0 +1,38 @@
+{
+ "source_file": "/home/hatch/workspace/database-reset/sources/va-facilities-sandbox-full-2026-10-30.json",
+ "source_sha256": "95afd269f7d35b1d8997d126789ea87ea5466a70427edd2e1d6b9f605a61e2fd",
+ "source_env": "sandbox",
+ "rows_staged": 2591,
+ "unique_keys": 2591,
+ "by_type": {
+  "va_cemetery": 333,
+  "va_benefits_facility": 441,
+  "vet_center": 417,
+  "va_health_facility": 1400
+ },
+ "by_status": {
+  "NORMAL": 2309,
+  "COMING_SOON": 5,
+  "NOTICE": 43,
+  "TEMPORARY_CLOSURE": 16,
+  "VIRTUAL_CARE": 6,
+  "LIMITED": 59,
+  "TEMPORARY_LOCATION": 11,
+  "CLOSED": 142
+ },
+ "jurisdictions": 58,
+ "wa": 50,
+ "or": 38,
+ "held": 4,
+ "held_keys": [
+  "vha_568PB",
+  "vha_568PC",
+  "vha_568PD",
+  "vha_676PA"
+ ],
+ "map_points": 2591,
+ "mobile": 190,
+ "with_services": 2000,
+ "without_services": 591,
+ "verification_status": "DIRECTORY for all rows (sandbox baseline)"
+}
