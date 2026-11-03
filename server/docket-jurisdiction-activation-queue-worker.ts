@@ -200,16 +200,32 @@ async function claim_jobs(limit: number): Promise<docket_bill_activation_job[]> 
           and cache.session_id = activation.session_id
           and cache.fetched_at = activation.cache_fetched_at
         where (
-           (
-             cache.fetched_at >= now() - interval '24 hours'
-             and extract(year from cache.fetched_at at time zone 'UTC')
-                 = extract(year from current_timestamp at time zone 'UTC')
-             and exists (
-               select 1
-               from jsonb_array_elements(cache.bills)
-                 with ordinality as current_bill(value, ordinality)
-               where current_bill.ordinality <= 100
-                 and coalesce(current_bill.value ->> 'bill_id', '') ~ '^[0-9]+
+          (
+            cache.fetched_at >= now() - interval '24 hours'
+            and extract(year from cache.fetched_at at time zone 'UTC')
+                = extract(year from current_timestamp at time zone 'UTC')
+            and exists (
+              select 1
+              from jsonb_array_elements(cache.bills)
+                with ordinality as current_bill(value, ordinality)
+              where current_bill.ordinality <= 100
+                and coalesce(current_bill.value ->> 'bill_id', '') ~ '^[0-9]+$'
+                and (current_bill.value ->> 'bill_id')::integer = queue.source_bill_id
+            )
+          )
+          or (
+            activation.source = 'legiscan_bulk_json'
+            and exists (
+              select 1 from public.docket_bill_detail_cache detail
+              where detail.bill_id = queue.source_bill_id
+                and detail.source = 'legiscan_bulk_json'
+                and detail.fetched_at = activation.cache_fetched_at
+                and detail.bill ->> 'state' = activation.state
+                and detail.bill ->> 'session_id' = activation.session_id::text
+            )
+          )
+        )
+          and queue.next_attempt_at <= now()
           and (
             queue.queue_state in ('eligible', 'degraded')
             or (
@@ -479,7 +495,7 @@ export async function process_docket_bill_activation_job(
   let receipt: docket_bill_activation_receipt;
   try {
     if (job.activation_source === "legiscan_bulk_json") {
-      // Reuse already verified archive bytes, not a paid network getBill call.
+      // Use verified archived bill detail; never spend credits on a second getBill.
       const archive = await read_docket_archive_detail(job);
       await ensure_civic_genome_bill_ready(job, archive);
     } else {
@@ -487,7 +503,7 @@ export async function process_docket_bill_activation_job(
       const bill = await get_bill(job.source_bill_id);
       await cache_bill_detail(job.source_bill_id, bill);
     }
-    // Identical registration and lifecycle disposition for both transports.
+    // Identical source registration and queue state transitions for both transports.
     receipt = await register_legislative_versions(job.source_bill_id);
   } catch (error) {
     const decision = classify_docket_bill_activation_failure({
