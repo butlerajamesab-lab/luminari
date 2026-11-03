@@ -19,14 +19,7 @@ const archive_arguments = process.argv.filter(x => x.startsWith("--archive=")).m
 const manifest_path = option("manifest");
 const report_path = option("report") || "legiscan-bulk-preflight.json";
 const applying = process.argv.includes("--apply");
-// No Lighthouse DB/worker modules are evaluated during offline dry-run.
-// The original ZIP manifest and every JSON member can be verified with no
-// database credentials, network transport, or implicit scheduler startup.
-const writer_modules = applying ? await Promise.all([
-  import("../server/docket-bill-detail-acceptance"),
-  import("../server/civic-genome-projection"),
-  import("../server/db"),
-]) : null;
+
 if (!manifest_path || archive_arguments.length === 0) {
   throw new Error("usage: tsx scripts/legiscan-bulk-docket-intake.ts --manifest=<baseline_manifest.json> --archive=<ZIP> [--archive=<ZIP>] [--report=<json>] [--apply]");
 }
@@ -40,6 +33,16 @@ if (applying) {
     throw new Error("docket_bulk_apply_requires_exact_manifest_approval_and_trigger_acknowledgment");
   }
 }
+// Only load any Docket writer module after the exact manifest approval check.
+// Dry-run remains fully offline; unauthorized --apply cannot initialize the DB.
+// No Lighthouse DB/worker modules are evaluated during offline dry-run.
+// The original ZIP manifest and every JSON member can be verified with no
+// database credentials, network transport, or implicit scheduler startup.
+const writer_modules = applying ? await Promise.all([
+  import("../server/docket-bill-detail-acceptance"),
+  import("../server/civic-genome-projection"),
+  import("../server/db"),
+]) : null;
 const inventory = new Map(manifest.archives.map(item => [item.archive, item]));
 const result = {
   mode: applying ? "apply" : "dry_run",
