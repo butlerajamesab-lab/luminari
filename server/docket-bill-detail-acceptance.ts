@@ -42,7 +42,7 @@ export function validate_docket_bill_identity(bill_id: number, bill: unknown, ar
 }
 
 export async function accept_docket_bill_detail(input: docket_accept_input):
-  Promise<{ disposition: string; cache_inserted: boolean; stored_source?: string }> {
+  Promise<{ disposition: string; cache_inserted: boolean; stored_source?: string; activation_id?: string | null }> {
   const is_archive = input.source === "legiscan_bulk_json";
   validate_docket_bill_identity(input.bill_id, input.bill, is_archive);
   if (is_archive !== Boolean(input.archive)) throw new Error("docket_bulk_archive_receipt_required");
@@ -83,14 +83,15 @@ export async function accept_docket_bill_detail(input: docket_accept_input):
     throw new Error("docket_bulk_existing_bill_identity_conflict");
   }
 
-  // Atomic archive receipt and cache insertion. Existing Docket triggers run
-  // for a NEW bill exactly as they do after the API's getBill payload.
-  // fetched_at = local ARCHIVE INGEST time, not a claimed upstream API fetch.
+  // Archive transport feeds the SAME Docket activation function as the live
+  // getMasterList trigger. This is one atomic accept + receipt + activation;
+  // it cannot overwrite the current per-state live master-list cache.
+  // fetched_at is local ingest time, never a claimed upstream API fetch.
   const sql = [
     "with inserted as (",
     " insert into public.docket_bill_detail_cache (bill_id,bill,fetched_at,source,created_at,updated_at)",
     " values ($1,$2::jsonb,now(),'legiscan_bulk_json',now(),now())",
-    " on conflict (bill_id) do nothing returning bill_id",
+    " on conflict (bill_id) do nothing returning bill_id, fetched_at",
     "), recorded as (",
     " insert into public.docket_legiscan_bulk_member_receipt",
     " (archive_sha256,member_path,member_sha256,member_kind,provider_record_id,bill_id,session_id,state,",
@@ -98,12 +99,25 @@ export async function accept_docket_bill_detail(input: docket_accept_input):
     " values ($3,$4,$5,'bill',$1,$1,$6,$7,$8,$9::timestamptz,",
     "  case when exists(select 1 from inserted) then 'inserted' else 'existing_preserved' end)",
     " on conflict (archive_sha256,member_path) do nothing returning disposition",
-    ") select coalesce((select disposition from recorded),'already_recorded') as disposition,",
+    "), activated as (",
+    " select public.register_docket_jurisdiction_activation(",
+    "  $7::text, $6::integer, null::text,",
+    "  jsonb_build_array(jsonb_build_object(",
+    "   'bill_id', $1::integer, 'number', $2::jsonb->>'bill_number',",
+    "   'title', $2::jsonb->>'title', 'description', $2::jsonb->>'description',",
+    "   'status', $2::jsonb->'status', 'status_date', $2::jsonb->>'status_date',",
+    "   'last_action', $2::jsonb->>'last_action',",
+    "   'last_action_date', $2::jsonb->>'last_action_date',",
+    "   'change_hash', $2::jsonb->>'change_hash')),",
+    "  1::integer, inserted.fetched_at, 'legiscan_bulk_json'::text",
+    " ) as activation_id from inserted",
+    ") select coalesce((select disposition from recorded),'already_recorded') as disposition,
     " exists(select 1 from inserted) as cache_inserted,",
     " coalesce((select 'legiscan_bulk_json' from inserted limit 1),",
-    " (select source from public.docket_bill_detail_cache where bill_id=$1)) as stored_source",
+    " (select source from public.docket_bill_detail_cache where bill_id=$1)) as stored_source,",
+    " (select activation_id::text from activated) as activation_id",
   ].join("\n");
-  const result = await query_with_diagnostics<{ disposition: string; cache_inserted: boolean; stored_source: string }>(
+  const result = await query_with_diagnostics<{ disposition: string; cache_inserted: boolean; stored_source: string; activation_id: string | null }>(
     sql, [input.bill_id, JSON.stringify(input.bill), archive.archive_sha256, archive.member_path,
       archive.member_sha256, Number(input.bill.session_id), String(input.bill.state),
       typeof input.bill.change_hash === "string" ? input.bill.change_hash : null,
