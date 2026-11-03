@@ -26,7 +26,7 @@ describe("LegiScan bulk JSON folder-to-envelope adapter", () => {
   it.each([
     ["people/7855.json", "people", { people_id: 7855 }],
     ["vote/1481116.json", "vote", { roll_call_id: 1481116 }],
-    ["bill/HB1.json", "bill", { bill_id: 1895956, session_id: 2159, state: "MT", bill_number: "HB1" }],
+    ["bill/HB1.json", "bills", { bill_id: 1895956, session_id: 2159, state: "MT", bill_number: "HB1" }],
   ])("fails closed on wrong JSON wrapper for %s", (path, wrapper, obj) => {
     expect(() => parse(root + "/" + path, data(wrapper, obj), state, session))
       .toThrow("docket_bulk_wrong_member_wrapper");
