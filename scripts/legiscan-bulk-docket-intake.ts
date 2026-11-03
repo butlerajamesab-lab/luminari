@@ -2,9 +2,9 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { basename, resolve } from "node:path";
 import { createHash } from "node:crypto";
 import JSZip from "jszip";
-import { accept_docket_bill_detail, preserve_docket_archive_auxiliary } from "../server/docket-bill-detail-acceptance";
-import { project_docket_bulk_bill_to_civic_genome } from "../server/civic-genome-projection";
-import { query_with_diagnostics } from "../server/db";
+
+
+
 import { parse_docket_bulk_json_member } from "../server/docket-bulk-json-member";
 
 type manifest_archive = { archive: string; sha256: string; bytes: number; jurisdiction: string; session_ids: string };
@@ -19,6 +19,14 @@ const archive_arguments = process.argv.filter(x => x.startsWith("--archive=")).m
 const manifest_path = option("manifest");
 const report_path = option("report") || "legiscan-bulk-preflight.json";
 const applying = process.argv.includes("--apply");
+// No Lighthouse DB/worker modules are evaluated during offline dry-run.
+// The original ZIP manifest and every JSON member can be verified with no
+// database credentials, network transport, or implicit scheduler startup.
+const writer_modules = applying ? await Promise.all([
+  import("../server/docket-bill-detail-acceptance"),
+  import("../server/civic-genome-projection"),
+  import("../server/db"),
+]) : null;
 if (!manifest_path || archive_arguments.length === 0) {
   throw new Error("usage: tsx scripts/legiscan-bulk-docket-intake.ts --manifest=<baseline_manifest.json> --archive=<ZIP> [--archive=<ZIP>] [--report=<json>] [--apply]");
 }
@@ -71,6 +79,11 @@ for (const archive_path of archive_arguments) {
   // Parse and validate the WHOLE archive before making any write for that archive.
   for (const member of staged) {
     if (!applying) continue;
+    if (!writer_modules) throw new Error("docket_bulk_writer_modules_unavailable");
+    const [acceptance, genome, database] = writer_modules;
+    const { accept_docket_bill_detail, preserve_docket_archive_auxiliary } = acceptance;
+    const { project_docket_bulk_bill_to_civic_genome } = genome;
+    const { query_with_diagnostics } = database;
     const receipt = {
       archive_sha256: expected.sha256.toLowerCase(),
       member_path: member.path,
