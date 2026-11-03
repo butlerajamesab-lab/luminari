@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { query, get_bill, project_state } = vi.hoisted(() => ({
+const { query, get_bill, project_state, project_archive } = vi.hoisted(() => ({
   query: vi.fn(),
   get_bill: vi.fn(),
   project_state: vi.fn(),
+  project_archive: vi.fn(),
 }));
 
 vi.mock("./db", () => ({
@@ -16,6 +17,7 @@ vi.mock("./services/legiscan", () => ({
 
 vi.mock("./civic-genome-projection", () => ({
   project_docket_state_cache_to_civic_genome_serialized: project_state,
+  project_docket_bulk_bill_to_civic_genome: project_archive,
 }));
 
 import {
@@ -28,6 +30,8 @@ const job = {
   queue_id: "11111111-1111-4111-8111-111111111111",
   source_bill_id: 2043400,
   state: "NY",
+  session_id: 99,
+  activation_source: "legiscan_get_master_list",
   summary_fingerprint: "a".repeat(64),
   observed_change_hash: "change-1",
   attempt_count: 0,
@@ -52,6 +56,7 @@ beforeEach(() => {
     updated_count: 0,
     unchanged_count: 0,
   });
+  project_archive.mockResolvedValue({ action: "inserted" });
   get_bill.mockResolvedValue({
     bill_id: job.source_bill_id,
     bill_number: "A09058",
@@ -209,6 +214,59 @@ describe("Docket jurisdiction activation queue", () => {
     expect(failure_call?.[1]?.[1]).toBe("degraded");
     expect(failure_call?.[1]?.[2]).toBe("transient");
     expect(failure_call?.[1]?.[3]).toBe("projection_database_unavailable");
+  });
+
+  it("uses a verified archived bill in the existing activation worker without LegiScan API credits", async () => {
+    const archive_bill = { bill_id: job.source_bill_id, state: "NY", session_id: 99,
+      bill_number: "A09058", last_action_date: "2026-11-03", texts: [] };
+    query.mockImplementation(async (sql: string) => {
+      if (sql.includes("select exists")) return { rows: [{ ready: true }] };
+      if (sql.includes("receipt.archive_sha256")) {
+        return { rows: [{ bill: archive_bill, archive_sha256: "a".repeat(64),
+          member_path: "NY/2025-2026/bill/A09058.json" }] };
+      }
+      if (sql.includes("register_docket_legislative_version_spine")) {
+        return { rows: [{ receipt: registration_receipt }] };
+      }
+      return { rows: [] };
+    });
+    await process_docket_bill_activation_job({
+      ...job, activation_source: "legiscan_bulk_json",
+    });
+    expect(get_bill).not.toHaveBeenCalled();
+    expect(project_state).not.toHaveBeenCalled();
+    expect(query.mock.calls.some(call =>
+      String(call[0]).includes("register_docket_legislative_version_spine"))).toBe(true);
+    const terminal_call = query.mock.calls.find(call =>
+      call[2]?.label === "docket_bill_activation_queue_terminal");
+    expect(terminal_call?.[1]?.[1]).toBe("completed");
+  });
+
+  it("projects a missing Genome bill from archive provenance through the same deterministic projector", async () => {
+    let readiness = 0;
+    query.mockImplementation(async (sql: string) => {
+      if (sql.includes("select exists")) return { rows: [{ ready: ++readiness > 1 }] };
+      if (sql.includes("receipt.archive_sha256")) {
+        return { rows: [{ bill: { bill_id: job.source_bill_id, state: "NY",
+            session_id: 99, bill_number: "A09058", last_action_date: "2026-11-03" },
+          archive_sha256: "b".repeat(64), member_path: "NY/2025-2026/bill/A09058.json" }] };
+      }
+      if (sql.includes("register_docket_legislative_version_spine")) {
+        return { rows: [{ receipt: registration_receipt }] };
+      }
+      return { rows: [] };
+    });
+    await process_docket_bill_activation_job({
+      ...job, activation_source: "legiscan_bulk_json",
+    });
+    expect(get_bill).not.toHaveBeenCalled();
+    expect(project_archive).toHaveBeenCalledTimes(1);
+    expect(project_archive.mock.calls[0]?.[0]).toMatchObject({
+      archive_sha256: "b".repeat(64),
+      member_path: "NY/2025-2026/bill/A09058.json",
+    });
+    expect(query.mock.calls.some(call =>
+      call[2]?.label === "docket_bill_activation_queue_terminal")).toBe(true);
   });
 
   it("does not invent a failure after provider/cache/version registration already succeeded", async () => {
