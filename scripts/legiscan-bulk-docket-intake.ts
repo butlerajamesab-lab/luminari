@@ -40,15 +40,13 @@ if (applying) {
 // database credentials, network transport, or implicit scheduler startup.
 const writer_modules = applying ? await Promise.all([
   import("../server/docket-bill-detail-acceptance"),
-  import("../server/civic-genome-projection"),
-  import("../server/db"),
 ]) : null;
 const inventory = new Map(manifest.archives.map(item => [item.archive, item]));
 const result = {
   mode: applying ? "apply" : "dry_run",
   manifest_sha256,
   archives: [] as Array<Record<string, unknown>>,
-  totals: { bill: 0, person: 0, roll_call: 0, invalid: 0, inserted: 0, existing_preserved: 0, held: 0 },
+  totals: { bill: 0, person: 0, roll_call: 0, invalid: 0, inserted: 0, activated: 0, existing_preserved: 0, held: 0 },
 };
 const seen = new Set<number>();
 for (const archive_path of archive_arguments) {
@@ -65,7 +63,7 @@ for (const archive_path of archive_arguments) {
     kind: record_kind; payload: Record<string, unknown>; id: number;
     path: string; member_hash: string;
   }> = [];
-  const counts = { bill: 0, person: 0, roll_call: 0, invalid: 0, inserted: 0, existing_preserved: 0, held: 0 };
+  const counts = { bill: 0, person: 0, roll_call: 0, invalid: 0, inserted: 0, activated: 0, existing_preserved: 0, held: 0 };
   for (const file of members) {
     const raw = await file.async("nodebuffer");
     const parsed = parse_docket_bulk_json_member(
@@ -83,10 +81,8 @@ for (const archive_path of archive_arguments) {
   for (const member of staged) {
     if (!applying) continue;
     if (!writer_modules) throw new Error("docket_bulk_writer_modules_unavailable");
-    const [acceptance, genome, database] = writer_modules;
+    const [acceptance] = writer_modules;
     const { accept_docket_bill_detail, preserve_docket_archive_auxiliary } = acceptance;
-    const { project_docket_bulk_bill_to_civic_genome } = genome;
-    const { query_with_diagnostics } = database;
     const receipt = {
       archive_sha256: expected.sha256.toLowerCase(),
       member_path: member.path,
@@ -98,28 +94,14 @@ for (const archive_path of archive_arguments) {
       });
       if (outcome.disposition === "inserted") counts.inserted += 1;
       if (outcome.disposition === "existing_preserved") counts.existing_preserved += 1;
-      // Completing an interrupted archive ingest is idempotent. No re-fetch.
-      // Do not project an old ZIP over an API-owned canonical bill.
-      if (outcome.stored_source === "legiscan_bulk_json") {
-        try {
-          await project_docket_bulk_bill_to_civic_genome({
-            bill: member.payload, archive_sha256: receipt.archive_sha256,
-            member_path: receipt.member_path,
-          });
-          const registration = await query_with_diagnostics<{ receipt: Record<string, unknown> }>(
-            "select public.register_docket_legislative_version_spine($1::integer, false) as receipt",
-            [member.id],
-            { label: "docket_bulk_register_official_sources", pool_acquire_timeout_ms: 1_000, query_timeout_ms: 30_000 },
-          );
-          if (Number(registration.rows[0]?.receipt?.registered_document_count ?? 0) === 0) {
-            counts.held += 1;
-            console.error("[HOLD] bulk_source_document_unavailable bill_id=" + member.id);
-          }
-        } catch (error) {
-          counts.held += 1;
-          console.error("[HOLD] bulk_projection_or_registration_failed bill_id=" + member.id +
-            " error=" + (error instanceof Error ? error.message : "unknown"));
+      // The canonical Docket activation queue now owns projection,
+      // legislative version registration, source holds, and receipts.
+      // The archive reader never independently executes those stages.
+      if (outcome.disposition === "inserted") {
+        if (!outcome.activation_id) {
+          throw new Error("docket_bulk_canonical_activation_missing_bill_id_" + member.id);
         }
+        counts.activated += 1;
       }
     } else {
       await preserve_docket_archive_auxiliary({
