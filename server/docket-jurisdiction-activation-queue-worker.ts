@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { project_docket_state_cache_to_civic_genome_serialized } from "./civic-genome-projection";
+import { project_docket_bulk_bill_to_civic_genome, project_docket_state_cache_to_civic_genome_serialized } from "./civic-genome-projection";
 import { query_with_diagnostics } from "./db";
 import { accept_docket_bill_detail } from "./docket-bill-detail-acceptance";
 import { get_bill, type legiscan_bill_detail } from "./services/legiscan";
@@ -18,6 +18,8 @@ export type docket_bill_activation_job = {
   queue_id: string;
   source_bill_id: number;
   state: string;
+  session_id: number;
+  activation_source: string;
   summary_fingerprint: string;
   observed_change_hash: string | null;
   attempt_count: number;
@@ -182,7 +184,9 @@ async function claim_jobs(limit: number): Promise<docket_bill_activation_job[]> 
   const result = await query_with_diagnostics<docket_bill_activation_job>(
     `with candidate as (
        select queue.queue_id,
-              activation.state
+              activation.state,
+              activation.session_id,
+              activation.source as activation_source
          from public.docket_bill_processing_queue queue
          join public.docket_jurisdiction_activation_bill binding
            on binding.queue_id = queue.queue_id
@@ -191,21 +195,397 @@ async function claim_jobs(limit: number): Promise<docket_bill_activation_job[]> 
            on activation.activation_id = binding.activation_id
           and activation.state = binding.state
           and activation.session_id = binding.session_id
-         join public.docket_bill_state_cache cache
+         left join public.docket_bill_state_cache cache
            on cache.state = activation.state
           and cache.session_id = activation.session_id
           and cache.fetched_at = activation.cache_fetched_at
-        where cache.fetched_at >= now() - interval '24 hours'
-          and extract(year from cache.fetched_at at time zone 'UTC')
-              = extract(year from current_timestamp at time zone 'UTC')
-          and exists (
-            select 1
-            from jsonb_array_elements(cache.bills)
-              with ordinality as current_bill(value, ordinality)
-            where current_bill.ordinality <= 100
-              and coalesce(current_bill.value ->> 'bill_id', '') ~ '^[0-9]+$'
-              and (current_bill.value ->> 'bill_id')::integer = queue.source_bill_id
+        where (
+           (
+             cache.fetched_at >= now() - interval '24 hours'
+             and extract(year from cache.fetched_at at time zone 'UTC')
+                 = extract(year from current_timestamp at time zone 'UTC')
+             and exists (
+               select 1
+               from jsonb_array_elements(cache.bills)
+                 with ordinality as current_bill(value, ordinality)
+               where current_bill.ordinality <= 100
+                 and coalesce(current_bill.value ->> 'bill_id', '') ~ '^[0-9]+
+          and (
+            queue.queue_state in ('eligible', 'degraded')
+            or (
+              queue.queue_state = 'submitted'
+              and queue.locked_at < now() - make_interval(mins => $2::integer)
+            )
           )
+          and (
+            queue.locked_at is null
+            or queue.locked_at < now() - make_interval(mins => $2::integer)
+          )
+        order by queue.created_at, queue.queue_id
+        for update of queue skip locked
+        limit $3::integer
+     )
+     update public.docket_bill_processing_queue queue
+        set queue_state = 'submitted',
+            locked_at = now(),
+            locked_by = $1,
+            updated_at = now()
+       from candidate
+      where queue.queue_id = candidate.queue_id
+      returning queue.queue_id::text,
+                queue.source_bill_id,
+                candidate.state,
+                candidate.session_id,
+                candidate.activation_source,
+                queue.summary_fingerprint,
+                queue.observed_change_hash,
+                queue.attempt_count`,
+    [queue_worker_id, QUEUE_LEASE_MINUTES, limit],
+    {
+      label: "docket_bill_activation_queue_claim",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 5_000,
+    },
+  );
+  return result.rows;
+}
+
+async function civic_genome_bill_ready(source_bill_id: number): Promise<boolean> {
+  const result = await query_with_diagnostics<{ ready: boolean }>(
+    `select exists (
+       select 1
+       from public.civic_genome_bill bill
+       where bill.structural_dna_json ->> 'source_bill_id' = $1::text
+     ) as ready`,
+    [source_bill_id],
+    {
+      label: "docket_bill_activation_genome_readiness",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 5_000,
+    },
+  );
+  return result.rows[0]?.ready === true;
+}
+
+async function project_state_once(state: string): Promise<void> {
+  const normalized_state = normalize_state(state);
+  const result = await project_docket_state_cache_to_civic_genome_serialized(normalized_state);
+  console.log("[DocketJurisdictionActivation] projected_state", {
+    state: normalized_state,
+    bills_seen: result.bills_seen,
+    inserted_count: result.inserted_count,
+    updated_count: result.updated_count,
+    unchanged_count: result.unchanged_count,
+  });
+}
+
+async function read_docket_archive_detail(job: docket_bill_activation_job): Promise<{
+  bill: legiscan_bill_detail;
+  archive_sha256: string;
+  member_path: string;
+}> {
+  const result = await query_with_diagnostics<{
+    bill: legiscan_bill_detail; archive_sha256: string; member_path: string;
+  }>(
+    `select detail.bill, receipt.archive_sha256, receipt.member_path
+       from public.docket_bill_detail_cache detail
+       join public.docket_legiscan_bulk_member_receipt receipt
+         on receipt.bill_id = detail.bill_id
+        and receipt.member_kind = 'bill'
+        and receipt.disposition = 'inserted'
+      where detail.bill_id = $1::integer
+        and detail.source = 'legiscan_bulk_json'
+        and detail.bill ->> 'state' = $2::text
+        and detail.bill ->> 'session_id' = $3::text
+      order by receipt.imported_at asc, receipt.member_path asc
+      limit 1`,
+    [job.source_bill_id, job.state, String(job.session_id)],
+    {
+      label: "docket_bill_activation_archive_source_read",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 5_000,
+    },
+  );
+  const row = result.rows[0];
+  if (!row) throw new Error("docket_bulk_verified_receipt_or_cache_missing");
+  return row;
+}
+
+async function ensure_civic_genome_bill_ready(
+  job: docket_bill_activation_job,
+  archive?: { bill: legiscan_bill_detail; archive_sha256: string; member_path: string },
+): Promise<void> {
+  if (await civic_genome_bill_ready(job.source_bill_id)) return;
+  if (archive) {
+    // Both transports use the existing deterministic project_bill engine.
+    await project_docket_bulk_bill_to_civic_genome({
+      bill: archive.bill,
+      archive_sha256: archive.archive_sha256,
+      member_path: archive.member_path,
+    });
+  } else {
+    await project_state_once(job.state);
+  }
+  if (!await civic_genome_bill_ready(job.source_bill_id)) {
+    throw new Error("docket_civic_genome_projection_missing_after_refresh");
+  }
+}
+
+async function cache_bill_detail(source_bill_id: number, bill: legiscan_bill_detail): Promise<void> {
+  if (!as_record(bill)) throw new Error("docket_bill_activation_invalid_detail");
+  await accept_docket_bill_detail({ bill_id: source_bill_id, bill, source: "legiscan_get_bill_jurisdiction_activation", label: "docket_bill_activation_cache_detail" });
+}
+
+function normalize_registration_receipt(value: unknown): docket_bill_activation_receipt {
+  const receipt = as_record(value);
+  if (!receipt) throw new Error("docket_bill_activation_invalid_registration_receipt");
+  const normalized: docket_bill_activation_receipt = {
+    source_bill_id: Number(receipt.source_bill_id),
+    genome_bill_id: String(receipt.genome_bill_id ?? ""),
+    registered_document_count: Number(receipt.registered_document_count ?? 0),
+    text_version_count: Number(receipt.text_version_count ?? 0),
+    amendment_count: Number(receipt.amendment_count ?? 0),
+    matched_amendment_base_count: Number(receipt.matched_amendment_base_count ?? 0),
+    queued_or_refreshed_count: Number(receipt.queued_or_refreshed_count ?? 0),
+    docket_fetched_at: String(receipt.docket_fetched_at ?? ""),
+  };
+  if (!Number.isSafeInteger(normalized.source_bill_id) || normalized.source_bill_id <= 0) {
+    throw new Error("docket_bill_activation_invalid_registration_receipt");
+  }
+  if (!normalized.genome_bill_id) {
+    throw new Error("docket_bill_activation_invalid_registration_receipt");
+  }
+  return normalized;
+}
+
+async function register_legislative_versions(source_bill_id: number): Promise<docket_bill_activation_receipt> {
+  const result = await query_with_diagnostics<{ receipt: unknown }>(
+    // Radar/source activation owns acquisition and registration only.
+    // Rosetta execution must be authorized independently after source state is complete.
+    `select public.register_docket_legislative_version_spine($1::integer, false) as receipt`,
+    [source_bill_id],
+    {
+      label: "docket_bill_activation_register_version_spine",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 30_000,
+    },
+  );
+  return normalize_registration_receipt(result.rows[0]?.receipt);
+}
+
+async function mark_job_terminal(input: {
+  job: docket_bill_activation_job;
+  queue_state: "completed" | "source_unavailable";
+  receipt: docket_bill_activation_receipt;
+}): Promise<void> {
+  await query_with_diagnostics(
+    `update public.docket_bill_processing_queue
+        set queue_state = $2,
+            attempt_count = attempt_count + 1,
+            completed_at = now(),
+            locked_at = null,
+            locked_by = null,
+            last_failure_class = null,
+            last_error_code = null,
+            receipt_json = receipt_json || $3::jsonb,
+            updated_at = now()
+      where queue_id = $1::uuid
+        and locked_by = $4`,
+    [
+      input.job.queue_id,
+      input.queue_state,
+      JSON.stringify({
+        ...input.receipt,
+        terminal_state: input.queue_state,
+        completed_at: new Date().toISOString(),
+      }),
+      queue_worker_id,
+    ],
+    {
+      label: "docket_bill_activation_queue_terminal",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 5_000,
+    },
+  );
+
+  console.log("[DocketJurisdictionActivation] completed", {
+    queue_id: input.job.queue_id,
+    source_bill_id: input.job.source_bill_id,
+    state: input.job.state,
+    queue_state: input.queue_state,
+    registered_document_count: input.receipt.registered_document_count,
+    text_version_count: input.receipt.text_version_count,
+    amendment_count: input.receipt.amendment_count,
+    queued_or_refreshed_count: input.receipt.queued_or_refreshed_count,
+  });
+}
+
+async function mark_job_failed(input: {
+  job: docket_bill_activation_job;
+  decision: docket_bill_activation_failure_decision;
+}): Promise<void> {
+  await query_with_diagnostics(
+    `update public.docket_bill_processing_queue queue
+        set queue_state = $2,
+            attempt_count = attempt_count + case when $8::boolean then 1 else 0 end,
+            next_attempt_at = case
+              when $5::boolean then queue.next_attempt_at
+              else now() + make_interval(secs => $6::integer)
+            end,
+            locked_at = null,
+            locked_by = null,
+            last_failure_class = $3,
+            last_error_code = $4,
+            receipt_json = receipt_json || jsonb_build_object(
+              'failure_class', $3::text,
+              'failure_code', $4::text,
+              'failed_at', now()
+            ),
+            updated_at = now()
+      where queue.queue_id = $1::uuid
+        and queue.locked_by = $7`,
+    [
+      input.job.queue_id,
+      input.decision.queue_state,
+      input.decision.failure_class,
+      input.decision.error_code,
+      input.decision.terminal,
+      input.decision.retry_delay_seconds,
+      queue_worker_id,
+      input.decision.consume_attempt,
+    ],
+    {
+      label: "docket_bill_activation_queue_fail",
+      pool_acquire_timeout_ms: 1_000,
+      query_timeout_ms: 5_000,
+    },
+  );
+
+  console.error("[DocketJurisdictionActivation] failed", {
+    queue_id: input.job.queue_id,
+    source_bill_id: input.job.source_bill_id,
+    state: input.job.state,
+    queue_state: input.decision.queue_state,
+    failure_class: input.decision.failure_class,
+    error_code: input.decision.error_code,
+    retry_delay_seconds: input.decision.retry_delay_seconds,
+    consume_attempt: input.decision.consume_attempt,
+  });
+}
+
+export async function process_docket_bill_activation_job(
+  job: docket_bill_activation_job,
+): Promise<void> {
+  let receipt: docket_bill_activation_receipt;
+  try {
+    if (job.activation_source === "legiscan_bulk_json") {
+      // Reuse already verified archive bytes, not a paid network getBill call.
+      const archive = await read_docket_archive_detail(job);
+      await ensure_civic_genome_bill_ready(job, archive);
+    } else {
+      await ensure_civic_genome_bill_ready(job);
+      const bill = await get_bill(job.source_bill_id);
+      await cache_bill_detail(job.source_bill_id, bill);
+    }
+    // Identical registration and lifecycle disposition for both transports.
+    receipt = await register_legislative_versions(job.source_bill_id);
+  } catch (error) {
+    const decision = classify_docket_bill_activation_failure({
+      error,
+      prior_attempt_count: job.attempt_count,
+    });
+    await mark_job_failed({ job, decision });
+    return;
+  }
+
+  const queue_state = receipt.registered_document_count > 0
+    ? "completed" as const
+    : "source_unavailable" as const;
+  try {
+    await mark_job_terminal({
+      job,
+      queue_state,
+      receipt,
+    });
+  } catch (error) {
+    // The provider fetch, cache write and version-spine registration already
+    // succeeded. A terminal queue-ledger write failure is bookkeeping only;
+    // leaving the lease in place allows the existing stale-lease retry path to
+    // replay the idempotent registration rather than inventing a false failure.
+    console.error("[DocketJurisdictionActivation] completion_deferred", {
+      queue_id: job.queue_id,
+      source_bill_id: job.source_bill_id,
+      state: job.state,
+      intended_queue_state: queue_state,
+      genome_bill_id: receipt.genome_bill_id,
+      registered_document_count: receipt.registered_document_count,
+      error_code: safe_error_code(error),
+    });
+  }
+}
+
+export function run_docket_bill_activation_queue_cycle(): Promise<void> {
+  if (active_queue_cycle) return active_queue_cycle;
+  if (queue_stopped) return Promise.resolve();
+
+  const cycle = (async () => {
+    try {
+      const jobs = await claim_jobs(bounded_concurrency());
+      await Promise.all(jobs.map(job => process_docket_bill_activation_job(job)));
+    } catch (error) {
+      console.error("[DocketJurisdictionActivation] cycle_failed", {
+        error_class: error instanceof Error ? error.name : "unknown",
+        error_code: safe_error_code(error),
+      });
+    }
+  })();
+  active_queue_cycle = cycle;
+  void cycle.finally(() => {
+    if (active_queue_cycle === cycle) active_queue_cycle = null;
+  });
+  return cycle;
+}
+
+export function start_docket_bill_activation_queue_worker(): void {
+  if (queue_timer || !queue_enabled()) return;
+  queue_stopped = false;
+  const interval_ms = bounded_poll_interval();
+  const concurrency = bounded_concurrency();
+  console.log("[DocketJurisdictionActivation] started", {
+    worker_id: queue_worker_id,
+    interval_ms,
+    concurrency,
+    lease_minutes: QUEUE_LEASE_MINUTES,
+  });
+  void run_docket_bill_activation_queue_cycle();
+  queue_timer = setInterval(() => {
+    void run_docket_bill_activation_queue_cycle();
+  }, interval_ms);
+  queue_timer.unref?.();
+}
+
+export async function stop_docket_bill_activation_queue_worker(): Promise<void> {
+  queue_stopped = true;
+  if (queue_timer) clearInterval(queue_timer);
+  queue_timer = null;
+  await active_queue_cycle;
+}
+
+                 and (current_bill.value ->> 'bill_id')::integer = queue.source_bill_id
+             )
+           )
+           or (
+             activation.source = 'legiscan_bulk_json'
+             and exists (
+               select 1 from public.docket_bill_detail_cache detail
+               where detail.bill_id = queue.source_bill_id
+                 and detail.source = 'legiscan_bulk_json'
+                 and detail.fetched_at = activation.cache_fetched_at
+                 and detail.bill ->> 'state' = activation.state
+                 and detail.bill ->> 'session_id' = activation.session_id::text
+             )
+           )
+        )
           and queue.next_attempt_at <= now()
           and (
             queue.queue_state in ('eligible', 'degraded')
