@@ -111,7 +111,7 @@ export async function accept_docket_bill_detail(input: docket_accept_input):
     "   'change_hash', $2::jsonb->>'change_hash')),",
     "  1::integer, inserted.fetched_at, 'legiscan_bulk_json'::text",
     " ) as activation_id from inserted",
-    ") select coalesce((select disposition from recorded),'already_recorded') as disposition,
+    ") select coalesce((select disposition from recorded),'already_recorded') as disposition,",
     " exists(select 1 from inserted) as cache_inserted,",
     " coalesce((select 'legiscan_bulk_json' from inserted limit 1),",
     " (select source from public.docket_bill_detail_cache where bill_id=$1)) as stored_source,",
