@@ -81,6 +81,29 @@ describe("Docket jurisdiction activation queue", () => {
       .toBe("legiscan_bulk_json");
   });
 
+  it("settles superseded archive leases from immutable receipts without claiming API work", async () => {
+    const original = process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
+    process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE = "legiscan_bulk_json";
+    try {
+      await run_docket_bill_activation_queue_cycle();
+      const claim = query.mock.calls.find(call =>
+        call[2]?.label === "docket_bill_activation_queue_claim");
+      const sql = String(claim?.[0] ?? "");
+      expect(sql).toContain("with superseded as (");
+      expect(sql).toContain("activation.source = 'legiscan_bulk_json'");
+      expect(sql).toContain("receipt.disposition = 'inserted'");
+      expect(sql).toContain("detail.source like 'legiscan_get_bill%'");
+      expect(sql).toContain("superseded_by_live_api");
+      expect(sql).toContain("queue.queue_state = 'submitted'");
+      expect(sql).toContain("queue.locked_at < now() - make_interval(mins => $2::integer)");
+      expect(sql).toContain("not exists (select 1 from superseded");
+      expect(get_bill).not.toHaveBeenCalled();
+    } finally {
+      if (original === undefined) delete process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
+      else process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE = original;
+    }
+  });
+
   it("claims only archive-origin activations when the credit-free source scope is selected", async () => {
     const original = process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
     process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE = "legiscan_bulk_json";
