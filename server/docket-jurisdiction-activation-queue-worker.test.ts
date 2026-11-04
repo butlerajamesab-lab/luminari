@@ -24,6 +24,8 @@ import {
   classify_docket_bill_activation_failure,
   docket_bill_activation_retry_delay_seconds,
   process_docket_bill_activation_job,
+  resolve_docket_activation_source_scope,
+  run_docket_bill_activation_queue_cycle,
 } from "./docket-jurisdiction-activation-queue-worker";
 
 const job = {
@@ -72,6 +74,44 @@ beforeEach(() => {
 });
 
 describe("Docket jurisdiction activation queue", () => {
+  it("fails closed for an invalid activation source scope", () => {
+    expect(resolve_docket_activation_source_scope({ DOCKET_BILL_ACTIVATION_SOURCE_SCOPE: "archive_or_api" }))
+      .toThrow("docket_bill_activation_invalid_source_scope");
+    expect(resolve_docket_activation_source_scope({ DOCKET_BILL_ACTIVATION_SOURCE_SCOPE: "legiscan_bulk_json" }))
+      .toBe("legiscan_bulk_json");
+  });
+
+  it("claims only archive-origin activations when the credit-free source scope is selected", async () => {
+    const original = process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
+    process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE = "legiscan_bulk_json";
+    try {
+      await run_docket_bill_activation_queue_cycle();
+      const claim = query.mock.calls.find(call =>
+        call[2]?.label === "docket_bill_activation_queue_claim");
+      expect(claim).toBeDefined();
+      expect(String(claim?.[0])).toContain("activation.source = $4::text");
+      expect(claim?.[1]?.[3]).toBe("legiscan_bulk_json");
+      expect(get_bill).not.toHaveBeenCalled();
+    } finally {
+      if (original === undefined) delete process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
+      else process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE = original;
+    }
+  });
+
+  it("rejects a non-archive job without spending LegiScan credits in archive-only mode", async () => {
+    const original = process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
+    process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE = "legiscan_bulk_json";
+    try {
+      await expect(process_docket_bill_activation_job(job))
+        .rejects.toThrow("docket_archive_worker_non_archive_job_refused");
+      expect(get_bill).not.toHaveBeenCalled();
+      expect(query).not.toHaveBeenCalled();
+    } finally {
+      if (original === undefined) delete process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
+      else process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE = original;
+    }
+  });
+
   it("keeps missing worker credentials retryable while retaining attempt audit", async () => {
     const error = new Error("Missing required environment variable: LEGISCAN_API_KEY");
     expect(classify_docket_bill_activation_failure({ error, prior_attempt_count: 99 }))
