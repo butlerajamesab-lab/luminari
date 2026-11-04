@@ -336,7 +336,7 @@ APPROVED_REPOSITORY_ONLY = {
     # or separately authorized ZIP import.
     "20261104084300": (
         "20261104084300_docket_legiscan_bulk_source_admission_v1.sql",
-        "c880ce81dd7fd76db0f5a4fd865b17b6d77867e3",
+        "b852571c8aa1d3ff675cdcaf5cce565d7d480487",
     ),
     # Forward class-first Legal Library read model pending production apply.
     "20260920221500": (
