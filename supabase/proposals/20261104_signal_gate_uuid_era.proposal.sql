@@ -13,6 +13,12 @@
 --   trigger), so bridged candidates are never gate-evaluated.
 --
 -- This proposal, in order:
+--   0. compat.sunam_gate_log — a pass-through view over the gate
+--      log — depends on the column and blocks the type change
+--      (first apply attempt failed on exactly this, ERROR 0A000,
+--      before anything was applied). It is dropped here and
+--      re-created verbatim from its live definition after the
+--      ALTER (step 1b).
 --   1. sunam_gate_log.live_signal_id integer -> text (lossless: the
 --      1,214 historical integer ids render identically as text; the
 --      column is a log reference only — the gate's decision is
@@ -27,9 +33,35 @@
 --      Its promote_gate_signal call is untouched (already uuid-era).
 -- =====================================================================
 
+-- 0. Preserve the dependent compat view across the type change.
+DROP VIEW compat.sunam_gate_log;
+
 -- 1. The gate log's id reference becomes era-agnostic.
 ALTER TABLE public.sunam_gate_log
     ALTER COLUMN live_signal_id TYPE text USING live_signal_id::text;
+
+-- 1b. The compat view, re-created verbatim from its live definition.
+CREATE VIEW compat.sunam_gate_log AS
+SELECT id,
+    decision,
+    threshold,
+    threshold_id,
+    reason,
+    "timestamp",
+    live_signal_id,
+    signal_fingerprint,
+    signal_type,
+    dataset_id,
+    sunam_score,
+    threshold_used,
+    decision_reason,
+    promoted_signal_id,
+    staging_id,
+    actor,
+    decided_at,
+    created_at,
+    score_breakdown
+   FROM sunam_gate_log sgl;
 
 -- 2. The gate, text-id form (body identical to the live integer form).
 CREATE OR REPLACE FUNCTION public.process_live_signal_through_gate(p_live_signal_id text, p_signal_type text, p_source_system text, p_source_connector_id text, p_jurisdiction_raw_value text, p_dataset_id text, p_confidence_score numeric, p_severity text, p_detected_at timestamp with time zone, p_source_url text, p_generation_method text, p_record_origin text, p_verification_status text, p_evidence_payload jsonb, p_provenance_metadata jsonb, p_raw_payload jsonb)
