@@ -3,7 +3,7 @@ const { query } = vi.hoisted(() => ({ query: vi.fn() }));
 vi.mock("./db", () => ({ query_with_diagnostics: query }));
 import { accept_docket_bill_detail, validate_docket_bill_identity, preserve_docket_archive_auxiliary } from "./docket-bill-detail-acceptance";
 
-const bill = { bill_id: 1895956, session_id: 2159, state: "MT", bill_number: "HB1", change_hash: "a" };
+const bill = { bill_id: 1895956, session_id: 2159, state: "MT", bill_number: "HB1", change_hash: "a", status_date: "2026-06-01" };
 const archive = { archive_sha256: "a".repeat(64), member_path: "MT/2025-2025_Regular_Session/bill/HB1.json", member_sha256: "b".repeat(64) };
 
 beforeEach(() => { query.mockReset(); });
@@ -39,6 +39,23 @@ describe("LegiScan API/bulk shared Docket bill acceptance", () => {
     expect(outcome.disposition).toBe("inserted");
     expect(outcome.activation_id).toBe("00000000-0000-4000-8000-000000000001");
   });
+  it("preserves source-chronology-held bill detail without starting Docket activation", async () => {
+    const undated = { ...bill, status_date: undefined, history: [] };
+    query.mockResolvedValueOnce({ rows: [] });
+    query.mockResolvedValueOnce({ rows: [{
+      disposition: "held_chronology", cache_inserted: true, activation_id: null,
+    }] });
+    const result = await accept_docket_bill_detail({
+      bill_id: bill.bill_id, bill: undated, source: "legiscan_bulk_json", archive,
+    });
+    const sql = String(query.mock.calls[1][0]);
+    expect(sql).toContain("where not $10::boolean");
+    expect(sql).toContain("'held_chronology'");
+    expect(query.mock.calls[1][1][9]).toBe(true);
+    expect(result.disposition).toBe("held_chronology");
+    expect(result.activation_id).toBeNull();
+  });
+
   it("preserves auxiliary legislator and roll call evidence without inventing bill details", async () => {
     query.mockResolvedValue({ rows: [] });
     await preserve_docket_archive_auxiliary({ kind: "roll_call", payload: { roll_call_id: 15 }, provider_record_id: 15, state: "MT", archive });
