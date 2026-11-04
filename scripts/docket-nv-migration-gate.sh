@@ -28,19 +28,21 @@ python3 - "$REF" <<'PY'
 import os, re, sys
 from urllib.parse import urlsplit, parse_qsl
 ref = sys.argv[1]
-url = urlsplit(os.environ['LIGHTHOUSE_PRODUCTION_DATABASE_URL'])
-host = (url.hostname or '').lower()
 try:
+    url = urlsplit(os.environ['LIGHTHOUSE_PRODUCTION_DATABASE_URL'])
+    host = (url.hostname or '').lower()
     port = url.port
     opts = parse_qsl(url.query, strict_parsing=True, keep_blank_values=True)
-except ValueError:
-    sys.exit('BLOCKED: database URL has invalid port or query parameters')
-direct = host == f'db.{ref}.supabase.co' and url.username == 'postgres'
+    username = url.username
+    has_password = bool(url.password)
+except (ValueError, UnicodeError):
+    sys.exit('BLOCKED: invalid database URL')
+direct = host == f'db.{ref}.supabase.co' and username == 'postgres'
 pooler = (re.fullmatch(r'aws-[0-9]+-[a-z0-9-]+\.pooler\.supabase\.com', host) is not None
-          and url.username == f'postgres.{ref}')
+          and username == f'postgres.{ref}')
 # Reject connection-override query parameters such as host= or service=.
 safe_query = len(opts) <= 1 and all(k == 'sslmode' and v in ('require','verify-full') for k, v in opts)
-valid = (url.scheme in ('postgres', 'postgresql') and bool(url.password) and
+valid = (url.scheme in ('postgres', 'postgresql') and has_password and
          port == 5432 and url.path == '/postgres' and not url.fragment and
          (direct or pooler) and safe_query)
 if not valid:
