@@ -23,7 +23,7 @@ describe("LegiScan bulk preflight does not initialize Lighthouse database runtim
 
   it("keeps ZIP intake bounded to one decoded member at a time while still prevalidating the whole archive", () => {
     expect(runner).toContain("const staged: Array<{");
-    expect(runner).toContain("staged.push({ kind, id, path: file.name, member_hash: sha(raw) })");
+    expect(runner).toContain("staged.push({ kind, id, path: file.name, member_hash: sha(raw), hold_reason })");
     expect(runner).not.toContain("staged.push({ kind, payload, id,");
     expect(runner).toContain('const member_bytes = await member_file.async("nodebuffer")');
     expect(runner).toContain("sha(member_bytes) !== member.member_hash");
