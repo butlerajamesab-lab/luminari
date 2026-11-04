@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { query_with_diagnostics } from "./db";
+import { docket_bulk_source_event_date } from "./docket-bulk-json-member";
 import type { legiscan_bill_detail } from "./services/legiscan";
 
 /** Both HTTP getBill and a validated bulk ZIP member enter through this function. */
@@ -62,6 +63,9 @@ export async function accept_docket_bill_detail(input: docket_accept_input):
   }
 
   const archive = input.archive!;
+  // A provider bill lacking event chronology still belongs in searchable
+  // Docket source cache, but cannot be activated for Genome projection.
+  const chronology_held = !docket_bulk_source_event_date(input.bill as Record<string, unknown>);
   require_sha(archive.archive_sha256, "archive_sha256");
   require_sha(archive.member_sha256, "member_sha256");
   if (!archive.member_path || archive.member_path.startsWith("/") ||
@@ -97,7 +101,9 @@ export async function accept_docket_bill_detail(input: docket_accept_input):
     " (archive_sha256,member_path,member_sha256,member_kind,provider_record_id,bill_id,session_id,state,",
     "  change_hash,source_observed_at,disposition)",
     " values ($3,$4,$5,'bill',$1,$1,$6,$7,$8,$9::timestamptz,",
-    "  case when exists(select 1 from inserted) then 'inserted' else 'existing_preserved' end)",
+    "  case when exists(select 1 from inserted) then",
+    "    case when $10::boolean then 'held_chronology' else 'inserted' end",
+    "  else 'existing_preserved' end)",
     " on conflict (archive_sha256,member_path) do nothing returning disposition",
     "), activated as (",
     " select public.register_docket_jurisdiction_activation(",
@@ -110,7 +116,7 @@ export async function accept_docket_bill_detail(input: docket_accept_input):
     "   'last_action_date', $2::jsonb->>'last_action_date',",
     "   'change_hash', $2::jsonb->>'change_hash')),",
     "  1::integer, inserted.fetched_at, 'legiscan_bulk_json'::text",
-    " ) as activation_id from inserted",
+    " ) as activation_id from inserted where not $10::boolean",
     ") select coalesce((select disposition from recorded),'already_recorded') as disposition,",
     " exists(select 1 from inserted) as cache_inserted,",
     " coalesce((select 'legiscan_bulk_json' from inserted limit 1),",
@@ -121,7 +127,7 @@ export async function accept_docket_bill_detail(input: docket_accept_input):
     sql, [input.bill_id, JSON.stringify(input.bill), archive.archive_sha256, archive.member_path,
       archive.member_sha256, Number(input.bill.session_id), String(input.bill.state),
       typeof input.bill.change_hash === "string" ? input.bill.change_hash : null,
-      archive.source_observed_at ?? null],
+      archive.source_observed_at ?? null, chronology_held],
     { label: "docket_bulk_canonical_accept", pool_acquire_timeout_ms: 1_000, query_timeout_ms: 30_000 },
   );
   return result.rows[0] || { disposition: "unknown", cache_inserted: false };
