@@ -11,10 +11,12 @@ const runner = join(process.cwd(), "node_modules", ".bin", "tsx");
 const script = join(process.cwd(), "scripts", "legiscan-bulk-docket-intake.ts");
 const root = "MT/2025-2025_Regular_Session";
 
-async function make_fixture(dir: string) {
+async function make_fixture(dir: string, withSourceDate = true) {
   const zip = new JSZip();
   zip.file(root + "/bill/HB1.json", JSON.stringify({
-    bill: { bill_id: 1895956, state: "MT", session_id: 2159, bill_number: "HB1", texts: [] },
+    bill: { bill_id: 1895956, state: "MT", session_id: 2159, bill_number: "HB1", texts: [],
+      ...(withSourceDate ? { status_date: "2026-06-01" } : {}),
+    },
   }));
   zip.file(root + "/people/7855.json", JSON.stringify({ person: { people_id: 7855, name: "Fixture Legislator" } }));
   zip.file(root + "/vote/1481116.json", JSON.stringify({ roll_call: { roll_call_id: 1481116, bill_id: 1895956 } }));
@@ -47,6 +49,31 @@ describe("LegiScan bulk CLI offline provider-parity", () => {
       expect(report.mode).toBe("dry_run");
       expect(report.totals).toMatchObject({ bill: 1, person: 1, roll_call: 1, invalid: 0 });
       expect(output).toContain('"mode":"dry_run"');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }, 30_000);
+
+  it("reports missing source chronology as a hold and exits nonzero before any DB import", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "docket-bulk-held-"));
+    try {
+      const paths = await make_fixture(dir, false);
+      const result = spawnSync(runner, [
+        script, "--manifest=" + paths.manifestPath, "--archive=" + paths.archivePath,
+        "--report=" + paths.reportPath,
+      ], {
+        cwd: process.cwd(), encoding: "utf8",
+        env: { PATH: process.env.PATH || "", NODE_ENV: "test" },
+        timeout: 25_000,
+      });
+      const report = JSON.parse(readFileSync(paths.reportPath, "utf8"));
+      expect(result.status).toBe(1);
+      expect(report.totals).toMatchObject({ bill: 1, held: 1, invalid: 0 });
+      expect(report.archives[0].holds).toEqual([{
+        bill_id: 1895956,
+        member_path: root + "/bill/HB1.json",
+        reason: "missing_source_event_date",
+      }]);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
