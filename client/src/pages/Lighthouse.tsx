@@ -1754,6 +1754,17 @@ export default function Lighthouse() {
             Civic Map
           </button>
           <button
+            onClick={() => navigate("/veterans/facilities")}
+            style={{
+              fontFamily: fontMono, fontSize: 11, letterSpacing: "0.05em",
+              color: "#7eb3e8", background: "transparent", border: "none", cursor: "pointer", padding: "6px 12px",
+              display: "flex", alignItems: "center", gap: 5,
+            }}
+          >
+            <Shield size={12} />
+            Veterans
+          </button>
+          <button
             onClick={() => navigate("/viewfinder")}
             style={{
               fontFamily: fontMono, fontSize: 11, letterSpacing: "0.05em",
