@@ -24,6 +24,6 @@ create index if not exists docket_legiscan_bulk_member_receipt_bill
 -- Public-schema tables must fail closed through both RLS and privileges.
 -- Only the service-role writer may SELECT or append source receipts. 
 alter table public.docket_legiscan_bulk_member_receipt enable row level security;
-revoke all on public.docket_legiscan_bulk_member_receipt from public, anon, authenticated;
+revoke all on public.docket_legiscan_bulk_member_receipt from public, anon, authenticated, service_role;
 grant select, insert on public.docket_legiscan_bulk_member_receipt to service_role;
 -- No UPDATE/DELETE grants or public policies. No Rosetta execution authorized.
