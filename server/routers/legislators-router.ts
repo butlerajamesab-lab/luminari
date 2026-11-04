@@ -16,6 +16,7 @@ import { z } from "zod";
 import { router, publicProcedure } from "../_core/trpc";
 import { sql, type SQL } from "drizzle-orm";
 import { db } from "../db";
+import { lookupAddressDistricts } from "../legislators-geocode";
 
 /** Display names for every state code present in the base. */
 const STATE_NAMES: Record<string, string> = {
@@ -428,6 +429,83 @@ export const legislatorsRouter = router({
         };
       }
       return { members: attachCommittees(members, committees) };
+    }),
+
+  /**
+   * Resolve a street address to the state + districts this hub serves.
+   *
+   * Most visitors do not know their district numbers, so the hub
+   * accepts the one locator they do know and resolves its districts
+   * through the U.S. Census Bureau Geocoder (see legislators-geocode).
+   * The address is used for this single lookup and never stored.
+   *
+   * Honest shapes only: matched / no_match / unavailable. Every
+   * district handed back is validated against the districts actually
+   * present in the base; a Census district with no roster behind it
+   * is dropped and named in droppedDistricts — the page never selects
+   * a district the base cannot answer for. Nebraska's unicameral
+   * chamber ("legislature" in the base) is reported by the Census in
+   * its Upper SLD layer; that mapping is made here, where the base's
+   * own chamber list is known.
+   */
+  byAddress: publicProcedure
+    .input(z.object({ address: z.string().trim().min(6).max(300) }))
+    .query(async ({ input }) => {
+      const outcome = await lookupAddressDistricts(input.address);
+      if (outcome.status !== "matched") {
+        return outcome;
+      }
+      const { match } = outcome;
+      const droppedDistricts: string[] = [];
+
+      let federalDistrict: string | null = null;
+      if (match.federalDistrict !== null) {
+        const valid = await fetchDistricts(match.state, "federal");
+        if (valid.includes(match.federalDistrict)) {
+          federalDistrict = match.federalDistrict;
+        } else {
+          droppedDistricts.push(
+            `Congressional district ${match.federalDistrict}`,
+          );
+        }
+      }
+
+      const chambers = await fetchChambers(match.state, "state");
+      const stateDistricts: Record<string, string> = {};
+      const consider = async (
+        chamber: "upper" | "lower" | "legislature",
+        district: string | null,
+        label: string,
+      ) => {
+        if (district === null || !chambers.includes(chamber)) {
+          return;
+        }
+        const valid = await fetchDistricts(match.state, "state", chamber);
+        if (valid.includes(district)) {
+          stateDistricts[chamber] = district;
+        } else {
+          droppedDistricts.push(`${label} ${district}`);
+        }
+      };
+      if (chambers.length === 1 && chambers[0] === "legislature") {
+        await consider(
+          "legislature",
+          match.upperDistrict,
+          "Legislative district",
+        );
+      } else {
+        await consider("upper", match.upperDistrict, "Senate district");
+        await consider("lower", match.lowerDistrict, "House district");
+      }
+
+      return {
+        status: "matched" as const,
+        matchedAddress: match.matchedAddress,
+        state: match.state,
+        federalDistrict,
+        stateDistricts,
+        droppedDistricts,
+      };
     }),
 
   /** One current member + committees, or null. Detail path for cards. */
