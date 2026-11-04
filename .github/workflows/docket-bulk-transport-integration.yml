@@ -10,6 +10,8 @@ on:
       - "server/docket-bulk-json-member.ts"
       - "server/docket-bill-detail-acceptance.ts"
       - "server/docket-jurisdiction-activation-queue-worker.ts"
+      - "server/pg-config.ts"
+      - "server/pg-config.test.ts"
       - "supabase/proposals/20261102_docket_legiscan_bulk_receipts.proposal.sql"
       - "supabase/verification/docket_bulk_transport_ci_fixture.sql"
   workflow_dispatch:
