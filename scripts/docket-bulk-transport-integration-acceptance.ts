@@ -97,7 +97,8 @@ try {
   });
 
   const first = reportAssertion(runApply(), report, "initial import");
-  assert.equal(first.totals.inserted, 2);
+  // One activated bill and one separately preserved held bill.
+  assert.equal(first.totals.inserted, 1);
   assert.equal(first.totals.activated, 1);
   const count = async (sql: string): Promise<number> =>
     Number((await pool.query(sql)).rows[0].count);
