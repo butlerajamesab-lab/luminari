@@ -62,7 +62,11 @@ select
  and (select count(*) from public.docket_bill_detail_cache where source = 'legiscan_bulk_json') = 0;
 SQL
 read_preimage() {
-  psql --dbname="$LIGHTHOUSE_PRODUCTION_DATABASE_URL" -XAtq -v ON_ERROR_STOP=1 -c "$PREIMAGE" | tr -d '\r\n'
+  local value
+  if ! value="$(psql --dbname="$LIGHTHOUSE_PRODUCTION_DATABASE_URL" -XAtq -v ON_ERROR_STOP=1 -c "$PREIMAGE" 2>/dev/null)"; then
+    fail 'Production preimage readback failed; raw database diagnostics withheld'
+  fi
+  printf '%s' "$value" | tr -d '\r\n'
 }
 [[ "$(read_preimage)" == t ]] || fail 'Production preimage differs from reviewed 565-migration/trigger/empty-archive baseline'
 LOG="$(mktemp)"
@@ -112,5 +116,6 @@ select
  and not has_table_privilege('anon','public.docket_legiscan_bulk_member_receipt','select')
  and not has_table_privilege('authenticated','public.docket_legiscan_bulk_member_receipt','select');
 SQL
-[[ "$(psql --dbname="$LIGHTHOUSE_PRODUCTION_DATABASE_URL" -XAtq -v ON_ERROR_STOP=1 -c "$POSTFLIGHT" | tr -d '\r\n')" == t ]] || fail 'Post-install receipt RLS/ACL/trigger/migration verification failed'
+POSTFLIGHT_RESULT="$(psql --dbname="$LIGHTHOUSE_PRODUCTION_DATABASE_URL" -XAtq -v ON_ERROR_STOP=1 -c "$POSTFLIGHT" 2>/dev/null)" || fail 'Post-install readback failed; raw database diagnostics withheld'
+[[ "$(printf '%s' "$POSTFLIGHT_RESULT" | tr -d '\r\n')" == t ]] || fail 'Post-install receipt RLS/ACL/trigger/migration verification failed' 
 echo 'PASS: the two reviewed migration versions are installed. Nevada bill import and separate archive-only worker remain unstarted.'
