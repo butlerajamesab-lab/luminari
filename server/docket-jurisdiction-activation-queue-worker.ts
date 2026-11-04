@@ -83,6 +83,21 @@ function queue_enabled(): boolean {
   return background_feature_enabled("DOCKET_BILL_ACTIVATION_QUEUE_ENABLED");
 }
 
+/**
+ * Restrict the existing canonical worker to provenance-bearing ZIP activations
+ * when running the credit-free Docket archive host. Default preserves the
+ * current live API worker's existing behavior.
+ */
+export type docket_activation_source_scope = "all" | "legiscan_bulk_json";
+
+export function resolve_docket_activation_source_scope(
+  environment: NodeJS.ProcessEnv = process.env,
+): docket_activation_source_scope {
+  const configured = environment.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE ?? "all";
+  if (configured === "all" || configured === "legiscan_bulk_json") return configured;
+  throw new Error("docket_bill_activation_invalid_source_scope");
+}
+
 function as_record(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value)
     ? value as Record<string, unknown>
@@ -225,6 +240,7 @@ async function claim_jobs(limit: number): Promise<docket_bill_activation_job[]> 
             )
           )
         )
+          and ($4::text = 'all' or activation.source = $4::text)
           and queue.next_attempt_at <= now()
           and (
             queue.queue_state in ('eligible', 'degraded')
@@ -256,7 +272,7 @@ async function claim_jobs(limit: number): Promise<docket_bill_activation_job[]> 
                 queue.summary_fingerprint,
                 queue.observed_change_hash,
                 queue.attempt_count`,
-    [queue_worker_id, QUEUE_LEASE_MINUTES, limit],
+    [queue_worker_id, QUEUE_LEASE_MINUTES, limit, resolve_docket_activation_source_scope()],
     {
       label: "docket_bill_activation_queue_claim",
       pool_acquire_timeout_ms: 1_000,
@@ -492,6 +508,12 @@ async function mark_job_failed(input: {
 export async function process_docket_bill_activation_job(
   job: docket_bill_activation_job,
 ): Promise<void> {
+  // Even if a caller bypasses claim_jobs, the archive-only host never makes
+  // live provider requests for a non-archive job.
+  if (resolve_docket_activation_source_scope() === "legiscan_bulk_json"
+      && job.activation_source !== "legiscan_bulk_json") {
+    throw new Error("docket_archive_worker_non_archive_job_refused");
+  }
   let receipt: docket_bill_activation_receipt;
   try {
     if (job.activation_source === "legiscan_bulk_json") {
@@ -564,6 +586,7 @@ export function run_docket_bill_activation_queue_cycle(): Promise<void> {
 
 export function start_docket_bill_activation_queue_worker(): void {
   if (queue_timer || !queue_enabled()) return;
+  const source_scope = resolve_docket_activation_source_scope();
   queue_stopped = false;
   const interval_ms = bounded_poll_interval();
   const concurrency = bounded_concurrency();
@@ -572,6 +595,7 @@ export function start_docket_bill_activation_queue_worker(): void {
     interval_ms,
     concurrency,
     lease_minutes: QUEUE_LEASE_MINUTES,
+    source_scope,
   });
   void run_docket_bill_activation_queue_cycle();
   queue_timer = setInterval(() => {
