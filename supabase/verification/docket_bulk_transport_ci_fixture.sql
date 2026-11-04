@@ -65,7 +65,7 @@ begin
   insert into public.docket_jurisdiction_activation_run(
     activation_id,state,session_id,source,cache_fetched_at
   ) values(v_activation,p_state,p_session_id,p_source,p_fetched_at);
-  for v_bill in select value from jsonb_array_elements(p_bills) value loop
+  for v_bill in select member.value from jsonb_array_elements(p_bills) as member(value) loop
     v_bill_id := (v_bill->>'bill_id')::integer;
     insert into public.docket_bill_processing_queue(
       source_bill_id,queue_state,observed_change_hash
