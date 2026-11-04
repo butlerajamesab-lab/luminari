@@ -7,6 +7,7 @@
     "dev": "NODE_ENV=development tsx watch server/core/index.ts",
     "build": "vite build && esbuild server/_core/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist && ([ ! -d server/config ] || cp -r server/config dist/config) && pnpm run check:health-contracts",
     "build:prism-worker": "esbuild server/prism-rosetta-worker.ts --platform=node --packages=external --bundle --format=esm --outfile=dist/prism-rosetta-worker.js",
+    "build:docket-archive-worker": "esbuild server/docket-archive-activation-worker.ts --platform=node --packages=external --bundle --format=esm --outfile=dist/docket-archive-activation-worker.js",
     "build:atomic-runner": "esbuild server/fresh-atomic-runner.ts --platform=node --packages=external --bundle --format=esm --outfile=dist/fresh-atomic-runner.js",
     "start:atomic-runner": "node dist/fresh-atomic-runner.js",
     "prestart": "pnpm build",
