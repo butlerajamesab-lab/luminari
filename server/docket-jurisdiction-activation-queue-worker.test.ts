@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { query, get_bill, project_state } = vi.hoisted(() => ({
+const { query, get_bill, project_state, project_archive } = vi.hoisted(() => ({
   query: vi.fn(),
   get_bill: vi.fn(),
   project_state: vi.fn(),
+  project_archive: vi.fn(),
 }));
 
 vi.mock("./db", () => ({
@@ -16,18 +17,23 @@ vi.mock("./services/legiscan", () => ({
 
 vi.mock("./civic-genome-projection", () => ({
   project_docket_state_cache_to_civic_genome_serialized: project_state,
+  project_docket_bulk_bill_to_civic_genome: project_archive,
 }));
 
 import {
   classify_docket_bill_activation_failure,
   docket_bill_activation_retry_delay_seconds,
   process_docket_bill_activation_job,
+  resolve_docket_activation_source_scope,
+  run_docket_bill_activation_queue_cycle,
 } from "./docket-jurisdiction-activation-queue-worker";
 
 const job = {
   queue_id: "11111111-1111-4111-8111-111111111111",
   source_bill_id: 2043400,
   state: "NY",
+  session_id: 99,
+  activation_source: "legiscan_get_master_list",
   summary_fingerprint: "a".repeat(64),
   observed_change_hash: "change-1",
   attempt_count: 0,
@@ -52,6 +58,7 @@ beforeEach(() => {
     updated_count: 0,
     unchanged_count: 0,
   });
+  project_archive.mockResolvedValue({ action: "inserted" });
   get_bill.mockResolvedValue({
     bill_id: job.source_bill_id,
     bill_number: "A09058",
@@ -67,6 +74,85 @@ beforeEach(() => {
 });
 
 describe("Docket jurisdiction activation queue", () => {
+  it("fails closed for an invalid activation source scope", () => {
+    expect(() => resolve_docket_activation_source_scope({ DOCKET_BILL_ACTIVATION_SOURCE_SCOPE: "archive_or_api" }))
+      .toThrow("docket_bill_activation_invalid_source_scope");
+    expect(resolve_docket_activation_source_scope({ DOCKET_BILL_ACTIVATION_SOURCE_SCOPE: "legiscan_bulk_json" }))
+      .toBe("legiscan_bulk_json");
+  });
+
+  it("keeps the legacy live-API claim independent of the uninstalled archive receipt table", async () => {
+    const original = process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
+    delete process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
+    try {
+      await run_docket_bill_activation_queue_cycle();
+      const claim = query.mock.calls.find(call =>
+        call[2]?.label === "docket_bill_activation_queue_claim");
+      expect(claim).toBeDefined();
+      const sql = String(claim?.[0] ?? "");
+      expect(sql).toContain("select queue.queue_id from public.docket_bill_processing_queue queue where false");
+      expect(sql).not.toContain("docket_legiscan_bulk_member_receipt");
+      expect(claim?.[1]?.[3]).toBe("all");
+    } finally {
+      if (original === undefined) delete process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
+      else process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE = original;
+    }
+  });
+
+  it("settles superseded archive leases from immutable receipts without claiming API work", async () => {
+    const original = process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
+    process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE = "legiscan_bulk_json";
+    try {
+      await run_docket_bill_activation_queue_cycle();
+      const claim = query.mock.calls.find(call =>
+        call[2]?.label === "docket_bill_activation_queue_claim");
+      const sql = String(claim?.[0] ?? "");
+      expect(sql).toContain("with superseded as (");
+      expect(sql).toContain("activation.source = 'legiscan_bulk_json'");
+      expect(sql).toContain("receipt.disposition = 'inserted'");
+      expect(sql).toContain("detail.source like 'legiscan_get_bill%'");
+      expect(sql).toContain("superseded_by_live_api");
+      expect(sql).toContain("queue.queue_state = 'submitted'");
+      expect(sql).toContain("queue.locked_at < now() - make_interval(mins => $2::integer)");
+      expect(sql).toContain("not exists (select 1 from superseded");
+      expect(get_bill).not.toHaveBeenCalled();
+    } finally {
+      if (original === undefined) delete process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
+      else process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE = original;
+    }
+  });
+
+  it("claims only archive-origin activations when the credit-free source scope is selected", async () => {
+    const original = process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
+    process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE = "legiscan_bulk_json";
+    try {
+      await run_docket_bill_activation_queue_cycle();
+      const claim = query.mock.calls.find(call =>
+        call[2]?.label === "docket_bill_activation_queue_claim");
+      expect(claim).toBeDefined();
+      expect(String(claim?.[0])).toContain("activation.source = $4::text");
+      expect(claim?.[1]?.[3]).toBe("legiscan_bulk_json");
+      expect(get_bill).not.toHaveBeenCalled();
+    } finally {
+      if (original === undefined) delete process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
+      else process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE = original;
+    }
+  });
+
+  it("rejects a non-archive job without spending LegiScan credits in archive-only mode", async () => {
+    const original = process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
+    process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE = "legiscan_bulk_json";
+    try {
+      await expect(process_docket_bill_activation_job(job))
+        .rejects.toThrow("docket_archive_worker_non_archive_job_refused");
+      expect(get_bill).not.toHaveBeenCalled();
+      expect(query).not.toHaveBeenCalled();
+    } finally {
+      if (original === undefined) delete process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
+      else process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE = original;
+    }
+  });
+
   it("keeps missing worker credentials retryable while retaining attempt audit", async () => {
     const error = new Error("Missing required environment variable: LEGISCAN_API_KEY");
     expect(classify_docket_bill_activation_failure({ error, prior_attempt_count: 99 }))
@@ -209,6 +295,59 @@ describe("Docket jurisdiction activation queue", () => {
     expect(failure_call?.[1]?.[1]).toBe("degraded");
     expect(failure_call?.[1]?.[2]).toBe("transient");
     expect(failure_call?.[1]?.[3]).toBe("projection_database_unavailable");
+  });
+
+  it("uses a verified archived bill in the existing activation worker without LegiScan API credits", async () => {
+    const archive_bill = { bill_id: job.source_bill_id, state: "NY", session_id: 99,
+      bill_number: "A09058", last_action_date: "2026-11-03", texts: [] };
+    query.mockImplementation(async (sql: string) => {
+      if (sql.includes("select exists")) return { rows: [{ ready: true }] };
+      if (sql.includes("receipt.archive_sha256")) {
+        return { rows: [{ bill: archive_bill, archive_sha256: "a".repeat(64),
+          member_path: "NY/2025-2026/bill/A09058.json" }] };
+      }
+      if (sql.includes("register_docket_legislative_version_spine")) {
+        return { rows: [{ receipt: registration_receipt }] };
+      }
+      return { rows: [] };
+    });
+    await process_docket_bill_activation_job({
+      ...job, activation_source: "legiscan_bulk_json",
+    });
+    expect(get_bill).not.toHaveBeenCalled();
+    expect(project_state).not.toHaveBeenCalled();
+    expect(query.mock.calls.some(call =>
+      String(call[0]).includes("register_docket_legislative_version_spine"))).toBe(true);
+    const terminal_call = query.mock.calls.find(call =>
+      call[2]?.label === "docket_bill_activation_queue_terminal");
+    expect(terminal_call?.[1]?.[1]).toBe("completed");
+  });
+
+  it("projects a missing Genome bill from archive provenance through the same deterministic projector", async () => {
+    let readiness = 0;
+    query.mockImplementation(async (sql: string) => {
+      if (sql.includes("select exists")) return { rows: [{ ready: ++readiness > 1 }] };
+      if (sql.includes("receipt.archive_sha256")) {
+        return { rows: [{ bill: { bill_id: job.source_bill_id, state: "NY",
+            session_id: 99, bill_number: "A09058", last_action_date: "2026-11-03" },
+          archive_sha256: "b".repeat(64), member_path: "NY/2025-2026/bill/A09058.json" }] };
+      }
+      if (sql.includes("register_docket_legislative_version_spine")) {
+        return { rows: [{ receipt: registration_receipt }] };
+      }
+      return { rows: [] };
+    });
+    await process_docket_bill_activation_job({
+      ...job, activation_source: "legiscan_bulk_json",
+    });
+    expect(get_bill).not.toHaveBeenCalled();
+    expect(project_archive).toHaveBeenCalledTimes(1);
+    expect(project_archive.mock.calls[0]?.[0]).toMatchObject({
+      archive_sha256: "b".repeat(64),
+      member_path: "NY/2025-2026/bill/A09058.json",
+    });
+    expect(query.mock.calls.some(call =>
+      call[2]?.label === "docket_bill_activation_queue_terminal")).toBe(true);
   });
 
   it("does not invent a failure after provider/cache/version registration already succeeded", async () => {

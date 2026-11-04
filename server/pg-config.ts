@@ -50,6 +50,28 @@ export function get_database_host_label(connection_string = get_database_url()):
   }
 }
 
+/**
+ * The isolated CI PostgreSQL service does not expose TLS. Disable TLS only
+ * for explicit test-mode loopback hosts; every production or remote database
+ * retains the current SSL connection behavior byte-for-byte.
+ */
+export function resolve_database_ssl(
+  connection_string: string,
+  environment: { NODE_ENV?: string } = process.env,
+): false | { rejectUnauthorized: false } {
+  if (environment.NODE_ENV === "test") {
+    try {
+      const host = new URL(connection_string).hostname;
+      if (host === "localhost" || host === "127.0.0.1" || host === "::1" || host === "[::1]") {
+        return false;
+      }
+    } catch {
+      // Unknown URLs never disable TLS.
+    }
+  }
+  return { rejectUnauthorized: false };
+}
+
 export function create_database_pool(options: database_pool_options = {}): Pool {
   const label = options.label ?? "DB";
   const connection_string = get_database_url();
@@ -85,7 +107,7 @@ export function create_database_pool(options: database_pool_options = {}): Pool 
   const pool = new Pool({
     connectionString: sanitized_connection_string,
     connectionTimeoutMillis: connection_timeout_millis,
-    ssl: { rejectUnauthorized: false },
+    ssl: resolve_database_ssl(sanitized_connection_string),
     idleTimeoutMillis: idle_timeout_millis,
     maxUses: max_uses,
     keepAlive: keep_alive,

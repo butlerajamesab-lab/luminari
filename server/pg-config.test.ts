@@ -25,7 +25,7 @@ vi.mock("pg", () => ({
   },
 }));
 
-import { create_database_pool } from "./pg-config";
+import { create_database_pool, resolve_database_ssl } from "./pg-config";
 
 const original_database_url = process.env.DATABASE_URL;
 
@@ -39,6 +39,24 @@ describe("canonical PostgreSQL pool configuration", () => {
   afterEach(() => {
     if (original_database_url === undefined) delete process.env.DATABASE_URL;
     else process.env.DATABASE_URL = original_database_url;
+  });
+
+  it("never disables SSL for production or for any remote test database", () => {
+    const remote = "postgresql://user:password@pooler.example.com:6543/postgres";
+    const loopback = "postgresql://postgres:postgres@localhost:5432/app";
+    expect(resolve_database_ssl(remote, { NODE_ENV: "test" }))
+      .toEqual({ rejectUnauthorized: false });
+    expect(resolve_database_ssl(loopback, { NODE_ENV: "production" }))
+      .toEqual({ rejectUnauthorized: false });
+    expect(resolve_database_ssl("invalid-url", { NODE_ENV: "test" }))
+      .toEqual({ rejectUnauthorized: false });
+  });
+
+  it("disables SSL only for explicit disposable local test PostgreSQL", () => {
+    const local = "postgresql://postgres:postgres@127.0.0.1:5432/app";
+    expect(resolve_database_ssl(local, { NODE_ENV: "test" })).toBe(false);
+    expect(resolve_database_ssl("postgresql://postgres:postgres@localhost:5432/app",
+      { NODE_ENV: "test" })).toBe(false);
   });
 
   it("uses a client-side timeout without a racing connect listener", () => {

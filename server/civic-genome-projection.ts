@@ -13,6 +13,8 @@ type docket_state_cache_row = {
   bill_count: number;
   fetched_at: string;
   source: string;
+  archive_sha256?: string;
+  archive_member_path?: string;
 };
 
 type projected_bill_result = {
@@ -159,8 +161,9 @@ const build_structural_dna_json = (
   state_row: docket_state_cache_row,
   bill: legiscan_master_bill,
 ) => ({
-  source_layer: "docket_room_cache",
+  source_layer: state_row.source === "legiscan_bulk_json_derived_bill" ? "docket_room_bulk_archive" : "docket_room_cache",
   source_provider: state_row.source,
+  ...(state_row.archive_sha256 ? { source_archive_sha256: state_row.archive_sha256, archive_member_path: state_row.archive_member_path } : {}),
   state_code: state_row.state,
   session_id: state_row.session_id,
   session_title: state_row.session_title,
@@ -526,8 +529,9 @@ const project_bill = async (
         bill.change_hash ?? null,
         JSON.stringify([
           {
-            source_layer: "docket_room_cache",
-            source_table: "docket_bill_state_cache",
+            source_layer: state_row.source === "legiscan_bulk_json_derived_bill" ? "docket_room_bulk_archive" : "docket_room_cache",
+            source_table: state_row.source === "legiscan_bulk_json_derived_bill" ? "docket_legiscan_bulk_member_receipt" : "docket_bill_state_cache",
+            ...(state_row.archive_sha256 ? { archive_sha256: state_row.archive_sha256, archive_member_path: state_row.archive_member_path } : {}),
             state_code,
             session_id: state_row.session_id,
             source_bill_id: bill.bill_id,
@@ -667,6 +671,64 @@ export async function project_docket_cache_to_civic_genome(opts?: {
     family_count: family_ids.size,
     results,
   };
+}
+
+
+/**
+ * The ZIP transport reuses the same deterministic bill projector as the API.
+ * It never claims that an archive-derived summary was a getMasterList response.
+ */
+export async function project_docket_bulk_bill_to_civic_genome(input: {
+  bill: Record<string, unknown>;
+  archive_sha256: string;
+  member_path: string;
+}): Promise<projected_bill_result> {
+  const bill = input.bill;
+  const bill_id = Number(bill.bill_id);
+  const session_id = Number(bill.session_id);
+  const state = typeof bill.state === "string" ? bill.state : "";
+  if (!Number.isSafeInteger(bill_id) || bill_id < 1 ||
+      !Number.isSafeInteger(session_id) || session_id < 1 ||
+      !/^(?:[A-Z]{2}|US)$/.test(state) ||
+      typeof bill.bill_number !== "string" || !bill.bill_number.trim() ||
+      !/^[a-f0-9]{64}$/i.test(input.archive_sha256) || !input.member_path) {
+    throw new Error("docket_bulk_projection_invalid_source_identity");
+  }
+  const provider_date = (value: unknown): string | null =>
+    typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+    value !== "0000-00-00" && !Number.isNaN(Date.parse(value)) ? value : null;
+  const history = Array.isArray(bill.history) ? bill.history
+    .filter((v): v is Record<string, unknown> => v !== null && typeof v === "object" && !Array.isArray(v))
+    .map(v => ({ date: provider_date(v.date), action: typeof v.action === "string" ? v.action : null }))
+    .filter(v => v.date !== null)
+    .sort((a,b) => String(a.date).localeCompare(String(b.date))) : [];
+  const latest_history = history.at(-1);
+  const action_date = provider_date(bill.last_action_date) || latest_history?.date || provider_date(bill.status_date);
+  if (!action_date) throw new Error("docket_bulk_projection_missing_source_event_date");
+  const session = bill.session && typeof bill.session === "object" && !Array.isArray(bill.session)
+    ? bill.session as Record<string, unknown> : {};
+  const master: legiscan_master_bill = {
+    bill_id,
+    number: bill.bill_number,
+    title: typeof bill.title === "string" ? bill.title : undefined,
+    description: typeof bill.description === "string" ? bill.description : undefined,
+    url: typeof bill.url === "string" ? bill.url : undefined,
+    change_hash: typeof bill.change_hash === "string" ? bill.change_hash : undefined,
+    status: typeof bill.status === "number" ? bill.status : undefined,
+    status_date: provider_date(bill.status_date) || undefined,
+    last_action: typeof bill.last_action === "string" ? bill.last_action : latest_history?.action || undefined,
+    last_action_date: action_date,
+  };
+  const row: docket_state_cache_row = {
+    state, session_id,
+    session_title: typeof session.session_title === "string" ? session.session_title : null,
+    bills: [master], bill_count: 1,
+    fetched_at: "",
+    source: "legiscan_bulk_json_derived_bill",
+    archive_sha256: input.archive_sha256,
+    archive_member_path: input.member_path,
+  };
+  return project_bill(row, master, 0);
 }
 
 const docket_state_projection_in_flight = new Map<string, Promise<civic_genome_projection_result>>();

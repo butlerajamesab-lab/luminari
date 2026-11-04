@@ -1,0 +1,73 @@
+name: Docket bulk transport integration (isolated PostgreSQL)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/docket-bulk-transport-integration.yml"
+      - "scripts/legiscan-bulk-docket-intake.ts"
+      - "scripts/docket-bulk-transport-integration-acceptance.ts"
+      - "server/docket-bulk-json-member.ts"
+      - "server/docket-bill-detail-acceptance.ts"
+      - "server/docket-jurisdiction-activation-queue-worker.ts"
+      - "server/pg-config.ts"
+      - "server/pg-config.test.ts"
+      - "supabase/proposals/20261102_docket_legiscan_bulk_receipts.proposal.sql"
+      - "supabase/verification/docket_bulk_transport_ci_fixture.sql"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  zip-to-docket-queue:
+    name: Real ZIP CLI / Docket worker / PostgreSQL
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: app
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d app"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/app
+      NODE_ENV: test
+      DOCKET_BILL_ACTIVATION_SOURCE_SCOPE: legiscan_bulk_json
+      DOCKET_BILL_ACTIVATION_CONCURRENCY: "1"
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v7
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node 20
+        uses: actions/setup-node@v7
+        with:
+          node-version: "20"
+          cache: pnpm
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Apply explicitly isolated test-only Docket wiring fixture
+        env:
+          PGPASSWORD: postgres
+        run: >-
+          psql -h localhost -U postgres -d app -v ON_ERROR_STOP=1
+          -f supabase/verification/docket_bulk_transport_ci_fixture.sql
+      - name: Apply proposed receipts only in disposable CI DB
+        env:
+          PGPASSWORD: postgres
+        run: >-
+          psql -h localhost -U postgres -d app -v ON_ERROR_STOP=1
+          -f supabase/proposals/20261102_docket_legiscan_bulk_receipts.proposal.sql
+      - name: Verify real TypeScript ZIP admission, duplicate hold, and worker stale-lease recovery
+        run: pnpm exec tsx scripts/docket-bulk-transport-integration-acceptance.ts
