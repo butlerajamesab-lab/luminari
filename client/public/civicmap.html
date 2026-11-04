@@ -1009,6 +1009,7 @@
       (layerParam ? (LAYER_TO_CATEGORY[layerParam] ?? "") : "");
     let selectedJurisdiction = params.get("jurisdiction") || "";
     let selectedResource = params.get("resource") || "";
+    let requestedFacility = params.get("facility") || "";
     let coverage = null;
     let coverageRows = [];
     let exactPoints = [];
@@ -1024,6 +1025,7 @@
     let map = null;
     let coverageLayer = null;
     let exactLayer = null;
+    let facilityLayer = null;
     let mapReady = false;
 
     function initMap() {
@@ -1067,6 +1069,7 @@
 
       coverageLayer = L.layerGroup().addTo(map);
       exactLayer = L.layerGroup().addTo(map);
+      facilityLayer = L.layerGroup().addTo(map);
 
       // Unconditional invalidateSize passes to fix the tile "jigsaw"
       // scramble that appears on iOS Safari (and sometimes desktop) when
@@ -1632,6 +1635,70 @@
       return `<div class="detail-row"><span>${escapeHtml(label)}</span><span>${escapeHtml(String(value).replace(/_/g, " "))}</span></div>`;
     }
 
+    // Deep link from a VA facility card (/civic-map?facility=<key>):
+    // the React shell forwards the query string into this frame.
+    // Resolve the facility through the vaFacilities router — the
+    // same seeded base the card came from — and fly to its source
+    // coordinates with a marked pin. An unknown key or a record
+    // without coordinates leaves the map at its default view with
+    // an honest status note; no location is ever invented.
+    async function focusFacility(facilityKey) {
+      try {
+        const input = encodeURIComponent(
+          JSON.stringify({ json: { facilityKey } })
+        );
+        const response = await fetch(
+          `/api/trpc/vaFacilities.facility?input=${input}`,
+          { cache: "no-store", headers: { Accept: "application/json" } }
+        );
+        const payload = await response.json();
+        const data = payload?.result?.data?.json;
+        if (!response.ok || !data || data.held || !data.facility) {
+          throw new Error("Facility not in the directory base");
+        }
+        const facility = data.facility;
+        const latitude = Number(facility.latitude);
+        const longitude = Number(facility.longitude);
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+          throw new Error("Facility carries no source coordinates");
+        }
+        facilityLayer.clearLayers();
+        const icon = L.divIcon({
+          className: "exact-site-icon",
+          html: '<div class="exact-site-pin"></div>',
+          iconSize: [20, 24],
+          iconAnchor: [10, 24],
+        });
+        const marker = L.marker([latitude, longitude], {
+          icon,
+          title: facility.name,
+          keyboard: true,
+        });
+        const locality = [facility.physical_city, facility.physical_state]
+          .filter(Boolean)
+          .join(", ");
+        const addressLines = [facility.physical_address1, locality]
+          .filter(Boolean)
+          .map((line) => escapeHtml(line))
+          .join("<br>");
+        marker.bindTooltip(
+          `<strong>${escapeHtml(facility.name)}</strong>` +
+            (addressLines ? `<br>${addressLines}` : "") +
+            "<br>VA facility",
+          { className: "map-tooltip", direction: "top", offset: [0, -18] }
+        );
+        marker.addTo(facilityLayer);
+        map.flyTo([latitude, longitude], 14, { duration: 0.8 });
+        setTimeout(() => marker.openTooltip(), 900);
+      } catch (error) {
+        console.error("Civic Map facility focus failed", error);
+        setStatus(
+          "That VA facility could not be located from this link.",
+          true
+        );
+      }
+    }
+
     async function loadCoverage() {
       try {
         const response = await fetch("/api/civic-map/coverage", {
@@ -1691,6 +1758,9 @@
         if (requestedResource) {
           openResource(requestedResource);
         }
+        if (requestedFacility) {
+          focusFacility(requestedFacility);
+        }
       } catch (error) {
         console.error("Civic Map coverage load failed", error);
         setStatus("Resource Directory coverage could not be loaded.", true);
@@ -1711,6 +1781,8 @@
       activeCategory = "";
       selectedJurisdiction = "";
       selectedResource = "";
+      requestedFacility = "";
+      if (facilityLayer) facilityLayer.clearLayers();
       document.getElementById("categorySelect").value = "";
       document.getElementById("jurisdictionSearch").value = "";
       document.getElementById("sidebar").classList.remove("open");
