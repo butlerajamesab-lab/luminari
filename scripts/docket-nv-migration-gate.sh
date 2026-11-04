@@ -25,14 +25,24 @@ for program in python3 psql supabase; do command -v "$program" >/dev/null 2>&1 |
 # Fail closed if this URL points to an unrecognized host/project. It must be a
 # Supabase direct URL (db.<ref>.supabase.co) or the project-scoped pooler user.
 python3 - "$REF" <<'PY'
-import os, sys
-from urllib.parse import urlsplit
+import os, re, sys
+from urllib.parse import urlsplit, parse_qsl
 ref = sys.argv[1]
 url = urlsplit(os.environ['LIGHTHOUSE_PRODUCTION_DATABASE_URL'])
-valid = url.scheme in ('postgres', 'postgresql') and bool(url.password) and (
-    (url.hostname or '').lower() == f'db.{ref}.supabase.co'
-    or (url.username or '') == f'postgres.{ref}'
-)
+host = (url.hostname or '').lower()
+try:
+    port = url.port
+    opts = parse_qsl(url.query, strict_parsing=True)
+except ValueError:
+    sys.exit('BLOCKED: database URL has invalid port or query parameters')
+direct = host == f'db.{ref}.supabase.co' and url.username == 'postgres'
+pooler = (re.fullmatch(r'aws-[0-9]+-[a-z0-9-]+\.pooler\.supabase\.com', host) is not None
+          and url.username == f'postgres.{ref}')
+# Reject connection-override query parameters such as host= or service=.
+safe_query = len(opts) <= 1 and all(k == 'sslmode' and v in ('require','verify-full') for k, v in opts)
+valid = (url.scheme in ('postgres', 'postgresql') and bool(url.password) and
+         port == 5432 and url.path == '/postgres' and not url.fragment and
+         (direct or pooler) and safe_query)
 if not valid:
     sys.exit('BLOCKED: database URL does not identify the exact Lighthouse Supabase project')
 PY
