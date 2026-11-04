@@ -59,9 +59,11 @@ for (const archive_path of archive_arguments) {
   const zip = await JSZip.loadAsync(bytes, { checkCRC32: true });
   const members = Object.values(zip.files).filter(file => !file.dir && file.name.endsWith(".json"))
     .sort((a,b) => a.name.localeCompare(b.name));
+  // Validate the whole archive with one member at a time. Retain only
+  // identity and hash metadata, never decoded payloads from every member.
+  // US / NY ZIPs can expand to hundreds of megabytes.
   const staged: Array<{
-    kind: record_kind; payload: Record<string, unknown>; id: number;
-    path: string; member_hash: string;
+    kind: record_kind; id: number; path: string; member_hash: string;
   }> = [];
   const counts = { bill: 0, person: 0, roll_call: 0, invalid: 0, inserted: 0, activated: 0, existing_preserved: 0, held: 0 };
   for (const file of members) {
@@ -75,12 +77,28 @@ for (const archive_path of archive_arguments) {
       seen.add(id);
     }
     counts[kind] += 1;
-    staged.push({ kind, payload, id, path: file.name, member_hash: sha(raw) });
+    staged.push({ kind, id, path: file.name, member_hash: sha(raw) });
   }
   // Parse and validate the WHOLE archive before making any write for that archive.
   for (const member of staged) {
     if (!applying) continue;
     if (!writer_modules) throw new Error("docket_bulk_writer_modules_unavailable");
+    // Re-read a single validated ZIP entry only when applying. The first pass
+    // has already accepted every member's shape and archive identity. This
+    // second pass is the same source byte stream, bound to its checked hash;
+    // interruptions resume idempotently via the canonical cache/receipt path.
+    const member_file = zip.file(member.path);
+    if (!member_file) throw new Error("docket_bulk_member_missing_after_validation");
+    const member_bytes = await member_file.async("nodebuffer");
+    if (sha(member_bytes) !== member.member_hash) {
+      throw new Error("docket_bulk_member_changed_after_validation");
+    }
+    const current = parse_docket_bulk_json_member(
+      member.path, member_bytes, expected.jurisdiction, expected.session_ids,
+    );
+    if (current.kind !== member.kind || current.id !== member.id) {
+      throw new Error("docket_bulk_member_identity_changed_after_validation");
+    }
     const [acceptance] = writer_modules;
     const { accept_docket_bill_detail, preserve_docket_archive_auxiliary } = acceptance;
     const receipt = {
@@ -90,7 +108,7 @@ for (const archive_path of archive_arguments) {
     };
     if (member.kind === "bill") {
       const outcome = await accept_docket_bill_detail({
-        bill_id: member.id, bill: member.payload, source: "legiscan_bulk_json", archive: receipt,
+        bill_id: member.id, bill: current.payload, source: "legiscan_bulk_json", archive: receipt,
       });
       if (outcome.disposition === "inserted") counts.inserted += 1;
       if (outcome.disposition === "existing_preserved") counts.existing_preserved += 1;
@@ -105,7 +123,7 @@ for (const archive_path of archive_arguments) {
       }
     } else {
       await preserve_docket_archive_auxiliary({
-        kind: member.kind, payload: member.payload, provider_record_id: member.id,
+        kind: member.kind, payload: current.payload, provider_record_id: member.id,
         state: expected.jurisdiction, archive: receipt,
       });
     }
