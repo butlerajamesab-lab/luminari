@@ -196,8 +196,11 @@ export function classify_docket_bill_activation_failure(input: {
 }
 
 async function claim_jobs(limit: number): Promise<docket_bill_activation_job[]> {
-  const result = await query_with_diagnostics<docket_bill_activation_job>(
-    `with superseded as (
+  const source_scope = resolve_docket_activation_source_scope();
+  // The legacy live API worker must never depend on proposal-only receipt DDL.
+  // The receipt-bound settlement SQL is available only to the archive host.
+  const supersession_sql = source_scope === "legiscan_bulk_json"
+    ? `
        -- A newer canonical API detail can replace an archive cache row before
        -- its archive activation is claimed. Settle only provenance-verified
        -- archive queue items, not live API jobs or unrelated old backlog.
@@ -242,7 +245,11 @@ async function claim_jobs(limit: number): Promise<docket_bill_activation_job[]> 
             or (queue.queue_state = 'submitted'
                 and queue.locked_at < now() - make_interval(mins => $2::integer))
           )
-        returning queue.queue_id
+        returning queue.queue_id`
+    : `select queue.queue_id from public.docket_bill_processing_queue queue where false`;
+  const result = await query_with_diagnostics<docket_bill_activation_job>(
+    `with superseded as (
+       ${supersession_sql}
      ), candidate as (
        select queue.queue_id,
               activation.state,
@@ -320,7 +327,7 @@ async function claim_jobs(limit: number): Promise<docket_bill_activation_job[]> 
                 queue.summary_fingerprint,
                 queue.observed_change_hash,
                 queue.attempt_count`,
-    [queue_worker_id, QUEUE_LEASE_MINUTES, limit, resolve_docket_activation_source_scope()],
+    [queue_worker_id, QUEUE_LEASE_MINUTES, limit, source_scope],
     {
       label: "docket_bill_activation_queue_claim",
       pool_acquire_timeout_ms: 1_000,
