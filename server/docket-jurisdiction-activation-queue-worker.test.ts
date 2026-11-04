@@ -81,6 +81,24 @@ describe("Docket jurisdiction activation queue", () => {
       .toBe("legiscan_bulk_json");
   });
 
+  it("keeps the legacy live-API claim independent of the uninstalled archive receipt table", async () => {
+    const original = process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
+    delete process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
+    try {
+      await run_docket_bill_activation_queue_cycle();
+      const claim = query.mock.calls.find(call =>
+        call[2]?.label === "docket_bill_activation_queue_claim");
+      expect(claim).toBeDefined();
+      const sql = String(claim?.[0] ?? "");
+      expect(sql).toContain("select queue.queue_id from public.docket_bill_processing_queue queue where false");
+      expect(sql).not.toContain("docket_legiscan_bulk_member_receipt");
+      expect(claim?.[1]?.[3]).toBe("all");
+    } finally {
+      if (original === undefined) delete process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
+      else process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE = original;
+    }
+  });
+
   it("settles superseded archive leases from immutable receipts without claiming API work", async () => {
     const original = process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE;
     process.env.DOCKET_BILL_ACTIVATION_SOURCE_SCOPE = "legiscan_bulk_json";
