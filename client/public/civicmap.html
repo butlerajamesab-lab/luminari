@@ -1758,12 +1758,17 @@
         if (requestedResource) {
           openResource(requestedResource);
         }
-        if (requestedFacility) {
-          focusFacility(requestedFacility);
-        }
       } catch (error) {
         console.error("Civic Map coverage load failed", error);
         setStatus("Resource Directory coverage could not be loaded.", true);
+      }
+
+      // The VA facility deep link resolves through its own data
+      // plane (the vaFacilities router), independent of the
+      // directory coverage above — it runs even when that coverage
+      // failed, so a facility card's click still lands on the spot.
+      if (requestedFacility) {
+        focusFacility(requestedFacility);
       }
     }
 
