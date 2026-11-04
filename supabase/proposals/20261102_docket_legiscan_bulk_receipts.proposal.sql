@@ -14,7 +14,7 @@ create table if not exists public.docket_legiscan_bulk_member_receipt (
   payload_json jsonb,
   source_observed_at timestamptz,
   imported_at timestamptz not null default now(),
-  disposition text not null check (disposition in ('inserted','existing_preserved','source_preserved')),
+  disposition text not null check (disposition in ('inserted','existing_preserved','source_preserved','held_chronology')),
   primary key (archive_sha256,member_path),
   check ((member_kind='bill' and bill_id=provider_record_id and session_id is not null)
     or (member_kind in ('person','roll_call') and bill_id is null))
