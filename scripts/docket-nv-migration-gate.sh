@@ -32,7 +32,7 @@ url = urlsplit(os.environ['LIGHTHOUSE_PRODUCTION_DATABASE_URL'])
 host = (url.hostname or '').lower()
 try:
     port = url.port
-    opts = parse_qsl(url.query, strict_parsing=True)
+    opts = parse_qsl(url.query, strict_parsing=True, keep_blank_values=True)
 except ValueError:
     sys.exit('BLOCKED: database URL has invalid port or query parameters')
 direct = host == f'db.{ref}.supabase.co' and url.username == 'postgres'
