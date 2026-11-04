@@ -1,0 +1,36 @@
+# PROPOSAL ONLY: no service is created or started by merging this file.
+# Runs the EXISTING Docket activation worker, with source claim restricted to
+# archive-backed jobs. No LegiScan API key, Rosetta credentials, cache warmer,
+# or unrelated Prism worker startup is configured.
+services:
+  - type: worker
+    name: lighthouse-docket-archive
+    runtime: node
+    plan: starter
+    region: oregon
+    branch: main
+    autoDeployTrigger: off
+    buildCommand: >-
+      corepack pnpm install --frozen-lockfile && corepack pnpm build:docket-archive-worker
+    startCommand: >-
+      NODE_ENV=production node dist/docket-archive-activation-worker.js
+    maxShutdownDelaySeconds: 300
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: LIGHTHOUSE_RUNTIME_ROLE
+        value: worker
+      - key: LIGHTHOUSE_SUPABASE_URL
+        value: https://wepxlinwbjrkqdzkqpar.supabase.co
+      - key: LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: DOCKET_BILL_ACTIVATION_QUEUE_ENABLED
+        value: "true"
+      - key: DOCKET_BILL_ACTIVATION_SOURCE_SCOPE
+        value: legiscan_bulk_json
+      - key: DOCKET_BILL_ACTIVATION_CONCURRENCY
+        value: "5"
+      - key: DOCKET_BILL_ACTIVATION_QUEUE_POLL_MS
+        value: "5000"
