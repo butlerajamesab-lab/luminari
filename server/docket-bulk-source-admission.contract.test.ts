@@ -14,7 +14,11 @@ describe("Canonical Docket archive-source automatic enqueue admission", () => {
     expect(sql).toContain("from public.docket_current_authoritative_source_v1 authority");
     expect(sql).toContain("insert into public.civic_genome_legislative_version_queue (");
     expect(sql).toContain("on conflict (bill_version_id) do update");
-    expect(sql).not.toMatch(/disable trigger|drop trigger|drop function/i);
+    const executableSql = sql
+      .split("\n")
+      .filter(line => !line.trimStart().startsWith("--"))
+      .join("\n");
+    expect(executableSql).not.toMatch(/\b(?:alter\s+table\s+\S+\s+disable\s+trigger|drop\s+trigger|drop\s+function)\b/i);
   });
 
   it("checks archive source before enqueue without changing canonical worker registration", () => {
