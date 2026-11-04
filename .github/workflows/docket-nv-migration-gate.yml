@@ -48,6 +48,8 @@ jobs:
       DOCKET_NV_MIGRATION_APPROVAL: ${{ inputs.install_approval }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - uses: supabase/setup-cli@v1
         with:
           version: 2.116.0
