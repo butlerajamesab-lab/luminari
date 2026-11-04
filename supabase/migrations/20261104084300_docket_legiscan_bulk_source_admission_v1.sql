@@ -45,7 +45,7 @@ create index docket_legiscan_bulk_member_receipt_bill
 -- Public-schema tables must fail closed through both RLS and privileges.
 -- Only the service-role writer may SELECT or append source receipts. 
 alter table public.docket_legiscan_bulk_member_receipt enable row level security;
-revoke all on public.docket_legiscan_bulk_member_receipt from public, anon, authenticated;
+revoke all on public.docket_legiscan_bulk_member_receipt from public, anon, authenticated, service_role;
 grant select, insert on public.docket_legiscan_bulk_member_receipt to service_role;
 -- No UPDATE/DELETE grants or public policies. No Rosetta execution authorized.
 
@@ -143,6 +143,17 @@ begin
      or has_table_privilege('anon', 'public.docket_legiscan_bulk_member_receipt', 'insert')
      or has_table_privilege('authenticated', 'public.docket_legiscan_bulk_member_receipt', 'insert')
   then raise exception 'docket_bulk_receipts_public_access_regression';
+  end if;
+  -- service_role is a BYPASSRLS role in Supabase. Table ACL must remain
+  -- append-only even when database default privileges have granted more.
+  if not has_table_privilege('service_role', 'public.docket_legiscan_bulk_member_receipt', 'select')
+     or not has_table_privilege('service_role', 'public.docket_legiscan_bulk_member_receipt', 'insert')
+     or has_table_privilege('service_role', 'public.docket_legiscan_bulk_member_receipt', 'update')
+     or has_table_privilege('service_role', 'public.docket_legiscan_bulk_member_receipt', 'delete')
+     or has_table_privilege('service_role', 'public.docket_legiscan_bulk_member_receipt', 'truncate')
+     or has_table_privilege('service_role', 'public.docket_legiscan_bulk_member_receipt', 'references')
+     or has_table_privilege('service_role', 'public.docket_legiscan_bulk_member_receipt', 'trigger')
+  then raise exception 'docket_bulk_receipts_service_role_append_only_acl_regression';
   end if;
   if not (
     select p.prosecdef from pg_proc p
