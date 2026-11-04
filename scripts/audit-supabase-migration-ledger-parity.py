@@ -330,6 +330,14 @@ APPROVED_REPOSITORY_ONLY = {
         "20261002061000_docket_quota_safe_current_window.sql",
         "33b9d4aa115696877d5a0c6288ba9d9563deca3f",
     ),
+    # Docket ZIP source-admission release candidate is repository-only.
+    # Exact Git blob pinned; no production installation or ledger rewrite.
+    # This is NOT a waiver for migration acceptance, runtime admission,
+    # or separately authorized ZIP import.
+    "20261104084300": (
+        "20261104084300_docket_legiscan_bulk_source_admission_v1.sql",
+        "c880ce81dd7fd76db0f5a4fd865b17b6d77867e3",
+    ),
     # Forward class-first Legal Library read model pending production apply.
     "20260920221500": (
         "20260920221500_legal_authority_class_first_current_v1.sql",
