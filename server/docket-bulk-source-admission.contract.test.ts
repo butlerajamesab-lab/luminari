@@ -7,6 +7,11 @@ describe("Canonical Docket archive-source automatic enqueue admission", () => {
     "utf8",
   );
   const worker = readFileSync("server/docket-jurisdiction-activation-queue-worker.ts", "utf8");
+  const acl_hardening = readFileSync(
+    "supabase/migrations/20261104090500_docket_legiscan_receipt_append_only_acl.sql",
+    "utf8",
+  );
+
 
   it("retains the installed trigger function and the API-owned source route", () => {
     expect(sql).toContain("CREATE OR REPLACE FUNCTION public.enqueue_docket_current_authoritative_version_v1()");
@@ -19,6 +24,22 @@ describe("Canonical Docket archive-source automatic enqueue admission", () => {
       .filter(line => !line.trimStart().startsWith("--"))
       .join("\n");
     expect(executableSql).not.toMatch(/\b(?:alter\s+table\s+\S+\s+disable\s+trigger|drop\s+trigger|drop\s+function)\b/i);
+  });
+
+  it("preserves the applied first migration and enforces append-only service ACL forward-only", () => {
+    expect(acl_hardening).toContain("20261104084300");
+    expect(acl_hardening).toContain(
+      "revoke all on public.docket_legiscan_bulk_member_receipt from service_role;"
+    );
+    expect(acl_hardening).toContain(
+      "grant select, insert on public.docket_legiscan_bulk_member_receipt to service_role;"
+    );
+    for (const forbidden of ["update", "delete", "truncate", "references", "trigger"]) {
+      expect(acl_hardening).toContain(
+        "has_table_privilege('service_role','public.docket_legiscan_bulk_member_receipt','" + forbidden + "')"
+      );
+    }
+    expect(acl_hardening).toContain("docket_bulk_receipts_service_role_append_only_acl_regression");
   });
 
   it("checks archive source before enqueue without changing canonical worker registration", () => {
