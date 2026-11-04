@@ -75,3 +75,26 @@ export function parse_docket_bulk_json_member(
     id,
   };
 }
+
+/**
+ * Source chronology required by the existing deterministic Docket bill
+ * projector. A missing event date is a source hold, not malformed identity:
+ * the original bill must remain preservable/searchable without inventing time.
+ */
+export function docket_bulk_source_event_date(bill: Record<string, unknown>): string | null {
+  const provider_date = (value: unknown): string | null =>
+    typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)
+      && value !== "0000-00-00" && !Number.isNaN(Date.parse(value)) ? value : null;
+  const history = Array.isArray(bill.history)
+    ? bill.history
+      .filter((value): value is Record<string, unknown> =>
+        value !== null && typeof value === "object" && !Array.isArray(value))
+      .map(item => provider_date(item.date))
+      .filter((value): value is string => value !== null)
+      .sort()
+    : [];
+  return provider_date(bill.last_action_date)
+    || history.at(-1)
+    || provider_date(bill.status_date)
+    || null;
+}
