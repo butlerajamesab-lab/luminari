@@ -9,7 +9,7 @@
  * state-without-district stops at a prompt, and unknown districts stop
  * at a held notice with the valid district list.
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import LegislatorCard, {
@@ -29,6 +29,19 @@ const tone = {
 };
 
 type Level = "federal" | "state" | "both";
+
+/** Shape of legislators.byAddress, cast explicitly like the other payloads. */
+type AddressResult =
+  | {
+      status: "matched";
+      matchedAddress: string;
+      state: string;
+      federalDistrict: string | null;
+      stateDistricts: Record<string, string>;
+      droppedDistricts: string[];
+    }
+  | { status: "no_match" }
+  | { status: "unavailable" };
 
 type ResolveResult =
   | { members: LegislatorMember[]; delegation?: true }
@@ -249,11 +262,26 @@ function stateChamberDistrictLabel(chamber: string): string {
 function StateChamberSection({
   state,
   chamber,
+  resolvedDistrict,
+  resolutionKey,
 }: {
   state: string;
   chamber: StateChamber;
+  /** District resolved from the visitor's address, when one was. */
+  resolvedDistrict?: string;
+  /** Changes with every new address resolution, so a repeat lookup re-applies. */
+  resolutionKey?: number;
 }) {
   const [district, setDistrict] = useState("");
+
+  // An address resolution selects this chamber's district; afterwards
+  // the picker is the visitor's again — manual picks are never overridden
+  // except by a new resolution.
+  useEffect(() => {
+    if (resolvedDistrict) {
+      setDistrict(resolvedDistrict);
+    }
+  }, [resolvedDistrict, resolutionKey]);
 
   const districtsQuery = trpc.legislators.districts.useQuery(
     { state, level: "state", chamber },
@@ -304,8 +332,39 @@ export default function Legislators() {
   const [level, setLevel] = useState<Level>("federal");
   const [federalDistrict, setFederalDistrict] = useState("");
 
+  // Address on-ramp: most visitors do not know their district numbers,
+  // so the address they do know resolves state + districts (U.S. Census
+  // Bureau Geocoder, via legislators.byAddress) and sets the pickers
+  // below. The pickers remain fully usable on their own.
+  const [address, setAddress] = useState("");
+  const [submittedAddress, setSubmittedAddress] = useState("");
+  const [resolution, setResolution] = useState<{
+    state: string;
+    stateDistricts: Record<string, string>;
+    key: number;
+  } | null>(null);
+
   const statesQuery = trpc.legislators.states.useQuery();
   const metaQuery = trpc.legislators.meta.useQuery();
+  const addressQuery = trpc.legislators.byAddress.useQuery(
+    { address: submittedAddress },
+    { enabled: submittedAddress !== "" },
+  );
+  const addressResult = addressQuery.data as AddressResult | undefined;
+
+  useEffect(() => {
+    if (!addressResult || addressResult.status !== "matched") {
+      return;
+    }
+    setState(addressResult.state);
+    setLevel("both");
+    setFederalDistrict(addressResult.federalDistrict ?? "");
+    setResolution({
+      state: addressResult.state,
+      stateDistricts: addressResult.stateDistricts,
+      key: Date.now(),
+    });
+  }, [addressResult]);
 
   const federalDistrictsQuery = trpc.legislators.districts.useQuery(
     { state, level: "federal" },
@@ -376,9 +435,10 @@ export default function Legislators() {
           Who represents me
         </h1>
         <p style={{ color: tone.muted, lineHeight: 1.7, margin: "0 0 1.5rem" }}>
-          Pick your state, then your level and district, to see your current
-          legislators and their committees. Contact details shown here are the
-          officials&apos; own published details — nothing is invented.
+          Enter your address — or pick your state, then your level and
+          district — to see your current legislators and their committees.
+          Contact details shown here are the officials&apos; own published
+          details — nothing is invented.
         </p>
 
         <section
@@ -426,6 +486,102 @@ export default function Legislators() {
             </>
           ) : null}
         </section>
+
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            setSubmittedAddress(address.trim());
+          }}
+          style={{
+            border: `1px solid ${tone.card_border}`,
+            background: tone.card_bg,
+            borderRadius: 14,
+            padding: "1rem",
+            marginBottom: "1.5rem",
+          }}
+        >
+          <label style={{ display: "grid", gap: 6, fontSize: "0.9rem" }}>
+            Find yours by address — no district number needed
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <input
+                value={address}
+                onChange={(event) => setAddress(event.target.value)}
+                placeholder="Street address, city, state — e.g. 600 4th Ave, Seattle, WA"
+                autoComplete="street-address"
+                style={{
+                  flex: "1 1 320px",
+                  background: tone.card_bg,
+                  color: tone.paper,
+                  border: `1px solid ${tone.card_border}`,
+                  borderRadius: 10,
+                  padding: "0.6rem 0.75rem",
+                  fontSize: "1rem",
+                }}
+              />
+              <button
+                type="submit"
+                disabled={address.trim().length < 6 || addressQuery.isFetching}
+                style={{
+                  background: "rgba(212,160,23,0.18)",
+                  color: tone.gold,
+                  border: `1px solid ${tone.gold}`,
+                  borderRadius: 999,
+                  padding: "0.6rem 1.1rem",
+                  cursor: "pointer",
+                  fontSize: "0.95rem",
+                }}
+              >
+                Find my districts
+              </button>
+            </div>
+          </label>
+          {submittedAddress !== "" && addressQuery.isFetching ? (
+            <p style={{ color: tone.muted, margin: "0.75rem 0 0" }}>
+              Looking up your districts…
+            </p>
+          ) : addressResult?.status === "matched" ? (
+            <p style={{ margin: "0.75rem 0 0", lineHeight: 1.7 }}>
+              Matched: {addressResult.matchedAddress} —{" "}
+              {[
+                addressResult.federalDistrict !== null
+                  ? `Congressional ${districtOptionLabel("federal", addressResult.federalDistrict)}`
+                  : null,
+                ...Object.entries(addressResult.stateDistricts).map(
+                  ([chamber, district]) =>
+                    `${stateChamberDistrictLabel(chamber)} ${district}`,
+                ),
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+              . Districts by the U.S. Census Bureau geocoder; the pickers
+              below are set to yours.
+              {addressResult.droppedDistricts.length > 0
+                ? ` Not in the current roster base: ${addressResult.droppedDistricts.join(", ")}.`
+                : ""}
+            </p>
+          ) : addressResult?.status === "no_match" ? (
+            <p style={{ margin: "0.75rem 0 0", lineHeight: 1.7 }}>
+              The Census Bureau geocoder couldn&apos;t match that address.
+              Check the spelling — or pick your state and district below.
+            </p>
+          ) : addressResult?.status === "unavailable" ? (
+            <p style={{ margin: "0.75rem 0 0", lineHeight: 1.7 }}>
+              The district lookup is unavailable right now. You can still
+              pick your state and district below.
+            </p>
+          ) : (
+            <p
+              style={{
+                color: tone.muted,
+                margin: "0.75rem 0 0",
+                fontSize: "0.92rem",
+              }}
+            >
+              Your address is sent to the U.S. Census Bureau for this one
+              lookup and is not stored.
+            </p>
+          )}
+        </form>
 
         {statesQuery.isLoading ? (
           <p style={{ color: tone.muted }}>Loading states…</p>
@@ -551,6 +707,12 @@ export default function Legislators() {
                     key={`${state}-${chamber}`}
                     state={state}
                     chamber={chamber as StateChamber}
+                    resolvedDistrict={
+                      resolution && resolution.state === state
+                        ? resolution.stateDistricts[chamber]
+                        : undefined
+                    }
+                    resolutionKey={resolution?.key}
                   />
                 ))
               )
