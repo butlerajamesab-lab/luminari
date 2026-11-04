@@ -72,6 +72,7 @@ export const REGISTERED_CLIENT_ROUTE_PATTERNS = [
   "/civil-gideon",
   "/native-nations",
   "/legislators",
+  "/veterans/facilities",
   "/recognition-gideon",
   "/recognition-atlas/:tribe_id/:layer_slug",
   "/recognition-atlas/:tribe_id",
