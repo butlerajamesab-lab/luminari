@@ -5,7 +5,7 @@ import JSZip from "jszip";
 
 
 
-import { parse_docket_bulk_json_member } from "../server/docket-bulk-json-member";
+import { docket_bulk_source_event_date, parse_docket_bulk_json_member } from "../server/docket-bulk-json-member";
 
 type manifest_archive = { archive: string; sha256: string; bytes: number; jurisdiction: string; session_ids: string };
 type record_kind = "bill" | "person" | "roll_call";
@@ -63,9 +63,10 @@ for (const archive_path of archive_arguments) {
   // identity and hash metadata, never decoded payloads from every member.
   // US / NY ZIPs can expand to hundreds of megabytes.
   const staged: Array<{
-    kind: record_kind; id: number; path: string; member_hash: string;
+    kind: record_kind; id: number; path: string; member_hash: string; hold_reason: string | null;
   }> = [];
   const counts = { bill: 0, person: 0, roll_call: 0, invalid: 0, inserted: 0, activated: 0, existing_preserved: 0, held: 0 };
+  const holds: Array<{ bill_id: number; member_path: string; reason: string }> = [];
   for (const file of members) {
     const raw = await file.async("nodebuffer");
     const parsed = parse_docket_bulk_json_member(
@@ -77,7 +78,13 @@ for (const archive_path of archive_arguments) {
       seen.add(id);
     }
     counts[kind] += 1;
-    staged.push({ kind, id, path: file.name, member_hash: sha(raw) });
+    const hold_reason = kind === "bill" && !docket_bulk_source_event_date(payload)
+      ? "missing_source_event_date" : null;
+    if (hold_reason) {
+      counts.held += 1;
+      holds.push({ bill_id: id, member_path: file.name, reason: hold_reason });
+    }
+    staged.push({ kind, id, path: file.name, member_hash: sha(raw), hold_reason });
   }
   // Parse and validate the WHOLE archive before making any write for that archive.
   for (const member of staged) {
@@ -112,6 +119,12 @@ for (const archive_path of archive_arguments) {
       });
       if (outcome.disposition === "inserted") counts.inserted += 1;
       if (outcome.disposition === "existing_preserved") counts.existing_preserved += 1;
+      if (member.hold_reason && outcome.disposition === "inserted") {
+        throw new Error("docket_bulk_held_chronology_was_activated_bill_id_" + member.id);
+      }
+      if (!member.hold_reason && outcome.disposition === "held_chronology") {
+        throw new Error("docket_bulk_unexpected_chronology_hold_bill_id_" + member.id);
+      }
       // The canonical Docket activation queue now owns projection,
       // legislative version registration, source holds, and receipts.
       // The archive reader never independently executes those stages.
@@ -129,7 +142,7 @@ for (const archive_path of archive_arguments) {
     }
   }
   for (const key of Object.keys(counts) as Array<keyof typeof counts>) result.totals[key] += counts[key];
-  result.archives.push({ archive: name, sha256: expected.sha256, ...counts });
+  result.archives.push({ archive: name, sha256: expected.sha256, ...counts, holds });
   console.log(JSON.stringify({ archive: name, ...counts, mode: result.mode }));
 }
 writeFileSync(resolve(report_path), JSON.stringify(result, null, 2) + "\n");
