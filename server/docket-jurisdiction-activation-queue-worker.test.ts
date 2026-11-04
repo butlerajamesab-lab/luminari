@@ -75,7 +75,7 @@ beforeEach(() => {
 
 describe("Docket jurisdiction activation queue", () => {
   it("fails closed for an invalid activation source scope", () => {
-    expect(resolve_docket_activation_source_scope({ DOCKET_BILL_ACTIVATION_SOURCE_SCOPE: "archive_or_api" }))
+    expect(() => resolve_docket_activation_source_scope({ DOCKET_BILL_ACTIVATION_SOURCE_SCOPE: "archive_or_api" }))
       .toThrow("docket_bill_activation_invalid_source_scope");
     expect(resolve_docket_activation_source_scope({ DOCKET_BILL_ACTIVATION_SOURCE_SCOPE: "legiscan_bulk_json" }))
       .toBe("legiscan_bulk_json");
