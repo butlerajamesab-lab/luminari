@@ -531,6 +531,105 @@ ALTER TABLE public.docket_bill_source_document
 ALTER TABLE public.docket_bill_source_document
   VALIDATE CONSTRAINT docket_amendment_requires_attached_text_base_v1;
 
+-- New attachments must carry actual source-stated evidence, not a
+-- historical URL-stem coincidence or an arbitrary nonnull foreign key.
+-- Existing 2,101 legacy links are NOT certified; this trigger does not
+-- retrofit a false proof. Separate review must remove any without evidence.
+CREATE OR REPLACE FUNCTION public.guard_docket_amendment_source_attachment_v1()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = 'pg_catalog', 'public'
+AS $guard$
+BEGIN
+  IF NEW.document_family <> 'amendment' THEN RETURN NEW; END IF;
+
+  IF TG_OP='UPDATE'
+     AND NEW.base_source_document_key IS NOT DISTINCT FROM OLD.base_source_document_key
+     AND NEW.source_bill_id IS NOT DISTINCT FROM OLD.source_bill_id
+     AND NEW.document_family IS NOT DISTINCT FROM OLD.document_family
+  THEN RETURN NEW; END IF;
+
+  IF NEW.base_source_document_key IS NULL
+     OR NOT EXISTS (
+       SELECT 1 FROM public.docket_bill_source_document base
+       WHERE base.source_document_key=NEW.base_source_document_key
+         AND base.document_family='text'
+         AND base.source_bill_id=NEW.source_bill_id
+     )
+  THEN
+    RAISE EXCEPTION USING ERRCODE='23514',
+      MESSAGE='docket_amendment_base_not_verified_same_bill_text';
+  END IF;
+
+  IF coalesce(NEW.latest_metadata->>'relationship_basis','')
+       <> 'official_explicit_reference'
+     OR coalesce(NEW.latest_metadata->>'attachment_evidence_hash','')
+       !~ '^[0-9a-f]{64}  IF EXISTS (SELECT 1 FROM public.docket_bill_source_document
+      WHERE document_family='amendment' AND base_source_document_key IS NULL)
+  OR EXISTS (SELECT 1 FROM public.civic_genome_bill_version
+      WHERE document_family='amendment' AND base_bill_version_id IS NULL)
+  OR (SELECT count(*) FROM public.docket_bill_source_document
+      WHERE document_family='amendment' AND base_source_document_key IS NOT NULL)
+      NOT IN (0,2101)
+  OR (SELECT count(*) FROM public.civic_genome_bill_version
+      WHERE document_family='amendment' AND base_bill_version_id IS NOT NULL)
+      NOT IN (0,2101)
+  OR (SELECT count(*) FROM public.docket_bill_source_document
+      WHERE document_family='amendment' AND base_source_document_key IS NOT NULL)
+     <> (SELECT count(*) FROM public.civic_genome_bill_version
+      WHERE document_family='amendment' AND base_bill_version_id IS NOT NULL)
+  THEN RAISE EXCEPTION 'Post-delete invariant failed; transaction rolled back';
+  END IF;
+  RAISE NOTICE 'PASS: zero unbased derived amendment documents and versions';
+END
+$verify$;
+COMMIT;
+
+     OR coalesce(NEW.latest_metadata->>'base_source_content_hash','')
+       !~ '^[0-9a-f]{64}  IF EXISTS (SELECT 1 FROM public.docket_bill_source_document
+      WHERE document_family='amendment' AND base_source_document_key IS NULL)
+  OR EXISTS (SELECT 1 FROM public.civic_genome_bill_version
+      WHERE document_family='amendment' AND base_bill_version_id IS NULL)
+  OR (SELECT count(*) FROM public.docket_bill_source_document
+      WHERE document_family='amendment' AND base_source_document_key IS NOT NULL)
+      NOT IN (0,2101)
+  OR (SELECT count(*) FROM public.civic_genome_bill_version
+      WHERE document_family='amendment' AND base_bill_version_id IS NOT NULL)
+      NOT IN (0,2101)
+  OR (SELECT count(*) FROM public.docket_bill_source_document
+      WHERE document_family='amendment' AND base_source_document_key IS NOT NULL)
+     <> (SELECT count(*) FROM public.civic_genome_bill_version
+      WHERE document_family='amendment' AND base_bill_version_id IS NOT NULL)
+  THEN RAISE EXCEPTION 'Post-delete invariant failed; transaction rolled back';
+  END IF;
+  RAISE NOTICE 'PASS: zero unbased derived amendment documents and versions';
+END
+$verify$;
+COMMIT;
+
+  THEN
+    RAISE EXCEPTION USING ERRCODE='23514',
+      MESSAGE='docket_amendment_missing_explicit_source_attachment_receipt';
+  END IF;
+  RETURN NEW;
+END
+$guard$;
+
+DROP TRIGGER IF EXISTS docket_amendment_source_attachment_guard_v1
+  ON public.docket_bill_source_document;
+CREATE TRIGGER docket_amendment_source_attachment_guard_v1
+BEFORE INSERT OR UPDATE OF
+  base_source_document_key,source_bill_id,document_family
+ON public.docket_bill_source_document
+FOR EACH ROW WHEN (NEW.document_family='amendment')
+EXECUTE FUNCTION public.guard_docket_amendment_source_attachment_v1();
+
+REVOKE ALL ON FUNCTION public.guard_docket_amendment_source_attachment_v1()
+  FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.guard_docket_amendment_source_attachment_v1()
+  TO service_role;
+
 DO $verify$
 BEGIN
   IF EXISTS (SELECT 1 FROM public.docket_bill_source_document
