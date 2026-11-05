@@ -1,0 +1,58 @@
+name: Docket Nevada exact-version production migration gate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/docket-nv-migration-gate.yml'
+      - 'scripts/docket-nv-migration-gate.sh'
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: 'preflight is READ-ONLY; install changes the production database'
+        type: choice
+        options: [preflight, install]
+        default: preflight
+        required: true
+      install_approval:
+        description: 'For install only, type INSTALL_LIGHTHOUSE_NV_EXACT_20261104084300_20261104090500'
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lighthouse-nv-exact-migration-release
+  cancel-in-progress: false
+
+jobs:
+  static-check:
+    name: Offline review of release script
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: bash -n scripts/docket-nv-migration-gate.sh
+      - name: Reject accidental production migration changes in release script
+        run: |
+          ! grep -E 'supabase migration repair|DROP TABLE|TRUNCATE TABLE|DELETE FROM' scripts/docket-nv-migration-gate.sh
+
+  release:
+    name: Verified production migration preflight or explicit installation
+    needs: [static-check]
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      LIGHTHOUSE_PRODUCTION_DATABASE_URL: ${{ secrets.LIGHTHOUSE_PRODUCTION_DATABASE_URL }}
+      DOCKET_NV_MIGRATION_APPROVAL: ${{ inputs.install_approval }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.116.0
+      - name: Check precise release preimage, dry-run, and optional explicit installation
+        shell: bash
+        run: bash scripts/docket-nv-migration-gate.sh '${{ inputs.operation }}'
