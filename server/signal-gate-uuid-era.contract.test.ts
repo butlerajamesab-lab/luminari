@@ -43,6 +43,16 @@ const batchProposal = readFileSync(
   "utf8",
 );
 
+// The compat view body is extracted from the proposal itself, so
+// the harness view and the proposal's re-creation can never drift.
+const compatViewBody = (() => {
+  const match = gateProposal.match(
+    /CREATE VIEW compat\.sunam_gate_log AS\s+([\s\S]*?);\n/,
+  );
+  if (!match) throw new Error("proposal carries no compat view body");
+  return match[1];
+})();
+
 let database: PGlite;
 
 const CANDIDATE_FRESH = "aa000000-0000-4000-8000-000000000001";
@@ -73,7 +83,14 @@ beforeAll(async () => {
       composite_score numeric, decision public.gate_decision,
       decision_reason text, score_breakdown jsonb,
       input_snapshot jsonb, escalation_trigger text,
-      evaluated_at timestamptz
+      evaluated_at timestamptz,
+      -- Extra columns the production compat view passes through
+      -- (harness scaffolding; the view text itself is verbatim).
+      id bigint, threshold numeric, threshold_id text, reason text,
+      "timestamp" timestamptz, signal_fingerprint text,
+      sunam_score text, threshold_used numeric,
+      promoted_signal_id text, staging_id text, actor text,
+      decided_at timestamptz, created_at timestamptz
     );
     insert into public.sunam_gate_log (live_signal_id, signal_type, decision)
       values (12345, 'legacy_signal', 'HOLD');
@@ -212,6 +229,9 @@ beforeAll(async () => {
     end;
     $fn$;
 
+    create schema compat;
+    create view compat.sunam_gate_log as ${compatViewBody};
+
     create table public.live_data_signals (
       live_data_signal_id uuid primary key,
       signal_type text, title text, description text,
@@ -257,6 +277,18 @@ describe("signal gate UUID-era proposals", () => {
         where signal_type='legacy_signal'`,
     );
     expect(seed.rows[0].live_signal_id).toBe("12345");
+  });
+
+  it("preserves the dependent compat view across the type change", async () => {
+    // The first production apply attempt failed on exactly this
+    // dependency (ERROR 0A000) before changing anything; the
+    // proposal now drops and re-creates the view verbatim.
+    const viaView = await database.query<{ live_signal_id: string }>(
+      `select live_signal_id from compat.sunam_gate_log
+        where signal_type='legacy_signal'`,
+    );
+    expect(viaView.rows).toHaveLength(1);
+    expect(viaView.rows[0].live_signal_id).toBe("12345");
   });
 
   it("executes the real gate scoring body for a text (uuid-era) id", async () => {
