@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
  * existing base-linked amendments.
  */
 const migration = readFileSync(
-  "supabase/migrations/20261105051000_remove_unbased_amendment_derived_records_v1.sql",
+  "supabase/proposals/20261105_remove_unbased_amendment_derived_records_v1.proposal.sql",
   "utf8",
 );
 
