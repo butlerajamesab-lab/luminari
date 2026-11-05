@@ -43,6 +43,15 @@ describe("Docket unbased amendment removal and readmission prevention", () => {
     expect(migration).not.toMatch(/DELETE FROM public\.civic_genome_bill\s/i);
   });
 
+  it("requires attached-text identity and an explicit evidence receipt for newly attached amendments", () => {
+    expect(migration).toContain("guard_docket_amendment_source_attachment_v1");
+    expect(migration).toContain("base.document_family='text'");
+    expect(migration).toContain("base.source_bill_id=NEW.source_bill_id");
+    expect(migration).toContain("official_explicit_reference");
+    expect(migration).toContain("attachment_evidence_hash");
+    expect(migration).toContain("base_source_content_hash");
+  });
+
   it("keeps exact identifiers for later independent Rosetta-source deletion", () => {
     expect(migration).toContain("docket_unbased_amendment_removal_receipt_v1");
     expect(migration).toContain("rosetta_source_document_id");
