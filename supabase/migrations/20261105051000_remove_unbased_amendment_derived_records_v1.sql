@@ -63,10 +63,16 @@ BEGIN
     WHERE v.document_family='amendment'
       AND v.base_bill_version_id IS NULL;
 
-  IF n_source<>7264 OR n_version<>7264
-     OR n_structural_bound<>2101 OR n_selfref<>0
-     OR n_observations<>7438 OR n_queue<>4942
-  THEN
+  -- Existing production corpus, or completely empty disposable replay.
+  -- Never treat an intermediate/partial seeded state as a certified target.
+  IF NOT (
+       (n_source=7264 AND n_version=7264
+        AND n_structural_bound=2101 AND n_selfref=0
+        AND n_observations=7438 AND n_queue=4942)
+       OR
+       (n_source=0 AND n_version=0 AND n_structural_bound=0
+        AND n_selfref=0 AND n_observations=0 AND n_queue=0)
+  ) THEN
     RAISE EXCEPTION 'unbased deletion manifest drift: source %, versions %, bound %, selfref %, observations %, queue %',
        n_source,n_version,n_structural_bound,n_selfref,n_observations,n_queue;
   END IF;
@@ -81,7 +87,8 @@ BEGIN
   ) THEN RAISE EXCEPTION 'version/document base correspondence changed';
   END IF;
 
-  RAISE NOTICE 'Preflight passed: 7264 derived amendments, 4942 queues, 7438 observations; preserve 2101 linked amendments';
+  RAISE NOTICE 'Preflight passed: % derived amendments, % queues, % observations; % linked preserved',
+    n_source,n_queue,n_observations,n_structural_bound;
 END
 $preflight$;
 
@@ -452,11 +459,18 @@ WHERE d.document_family='amendment'
 
 DO $target_manifest$
 BEGIN
-  IF (SELECT count(*) FROM _docket_unbased_amendment_targets)<>7264 THEN
+  IF (SELECT count(*) FROM _docket_unbased_amendment_targets) NOT IN (0,7264) THEN
     RAISE EXCEPTION 'locked target set changed; refuse partial cleanup';
   END IF;
-  IF (SELECT count(*) FROM _docket_unbased_amendment_targets
-      WHERE rosetta_source_document_id IS NOT NULL)<>3783 THEN
+  IF NOT (
+       ((SELECT count(*) FROM _docket_unbased_amendment_targets)=7264
+        AND (SELECT count(*) FROM _docket_unbased_amendment_targets
+             WHERE rosetta_source_document_id IS NOT NULL)=3783)
+       OR
+       ((SELECT count(*) FROM _docket_unbased_amendment_targets)=0
+        AND (SELECT count(*) FROM _docket_unbased_amendment_targets
+             WHERE rosetta_source_document_id IS NOT NULL)=0)
+     ) THEN
     RAISE EXCEPTION 'Rosetta binding manifest changed; preserve cross-service reconciliation';
   END IF;
 END
@@ -488,7 +502,8 @@ BEGIN
   IF (SELECT count(*) FROM
         public.docket_unbased_amendment_removal_receipt_v1
         WHERE deletion_release=
-          '20261105051000_remove_unbased_amendment_derived_records_v1')<>7264
+          '20261105051000_remove_unbased_amendment_derived_records_v1')
+       <> (SELECT count(*) FROM _docket_unbased_amendment_targets)
   THEN RAISE EXCEPTION 'Purge identifier receipt incomplete; rollback';
   END IF;
 END
@@ -523,9 +538,15 @@ BEGIN
   OR EXISTS (SELECT 1 FROM public.civic_genome_bill_version
       WHERE document_family='amendment' AND base_bill_version_id IS NULL)
   OR (SELECT count(*) FROM public.docket_bill_source_document
-      WHERE document_family='amendment' AND base_source_document_key IS NOT NULL)<>2101
+      WHERE document_family='amendment' AND base_source_document_key IS NOT NULL)
+      NOT IN (0,2101)
   OR (SELECT count(*) FROM public.civic_genome_bill_version
-      WHERE document_family='amendment' AND base_bill_version_id IS NOT NULL)<>2101
+      WHERE document_family='amendment' AND base_bill_version_id IS NOT NULL)
+      NOT IN (0,2101)
+  OR (SELECT count(*) FROM public.docket_bill_source_document
+      WHERE document_family='amendment' AND base_source_document_key IS NOT NULL)
+     <> (SELECT count(*) FROM public.civic_genome_bill_version
+      WHERE document_family='amendment' AND base_bill_version_id IS NOT NULL)
   THEN RAISE EXCEPTION 'Post-delete invariant failed; transaction rolled back';
   END IF;
   RAISE NOTICE 'PASS: zero unbased derived amendment documents and versions';
