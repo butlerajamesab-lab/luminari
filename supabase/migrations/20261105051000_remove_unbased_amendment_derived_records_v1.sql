@@ -5,6 +5,8 @@
 -- The existing 2,101 structurally bound amendments are NOT certified by this
 -- migration: attachment-proof review remains an independent gate.
 --
+-- A minimal restricted-access identifier receipt is retained ONLY for
+-- independent deletion of detached Rosetta source IDs in the other service.
 -- The canonical version registration function is source-bound to its exact
 -- observed production SHA; if it changed, this migration aborts rather than
 -- installing a function from the wrong lineage.
@@ -459,6 +461,38 @@ BEGIN
   END IF;
 END
 $target_manifest$;
+
+-- This is a tombstone receipt containing identifiers ONLY (no source payload,
+-- no derived amendment row). It preserves the exact 3,783 Rosetta source IDs
+-- needed for independent cross-service deletion rather than orphaning them.
+CREATE TABLE IF NOT EXISTS public.docket_unbased_amendment_removal_receipt_v1 (
+  source_document_key text PRIMARY KEY,
+  bill_version_id uuid NOT NULL,
+  rosetta_source_document_id bigint,
+  deletion_release text NOT NULL
+    DEFAULT '20261105051000_remove_unbased_amendment_derived_records_v1',
+  recorded_at timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE public.docket_unbased_amendment_removal_receipt_v1
+  ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.docket_unbased_amendment_removal_receipt_v1
+  FROM PUBLIC, anon, authenticated;
+
+INSERT INTO public.docket_unbased_amendment_removal_receipt_v1
+  (source_document_key,bill_version_id,rosetta_source_document_id)
+SELECT source_document_key,bill_version_id,rosetta_source_document_id
+FROM _docket_unbased_amendment_targets;
+
+DO $receipt_guard$
+BEGIN
+  IF (SELECT count(*) FROM
+        public.docket_unbased_amendment_removal_receipt_v1
+        WHERE deletion_release=
+          '20261105051000_remove_unbased_amendment_derived_records_v1')<>7264
+  THEN RAISE EXCEPTION 'Purge identifier receipt incomplete; rollback';
+  END IF;
+END
+$receipt_guard$;
 
 -- Deleting version rows cascades their dedicated queue entries.
 DELETE FROM public.civic_genome_bill_version v
