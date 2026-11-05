@@ -1,0 +1,55 @@
+name: Docket unbased amendment populated acceptance
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/docket-unbased-amendment-populated-acceptance.yml"
+      - "supabase/proposals/20261105_remove_unbased_amendment_derived_records_v1.proposal.sql"
+      - "supabase/verification/docket_unbased_amendment_populated_*.sql"
+      - "supabase/migrations/**"
+  workflow_dispatch:
+
+concurrency:
+  group: docket-unbased-amendment-populated-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-populated:
+    name: Full-schema exact-population SQL proof
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout candidate exact head
+        uses: actions/checkout@v7
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.116.0
+
+      - name: Start isolated database
+        run: supabase db start
+
+      - name: Replay mainline full schema without unapproved deletion migration
+        run: supabase db reset --local --no-seed --debug
+
+      - name: Seed exact production-sized synthetic cohort
+        run: >-
+          psql postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          -X -v ON_ERROR_STOP=1
+          -f supabase/verification/docket_unbased_amendment_populated_fixture_20261105.sql
+
+      - name: Apply prepared cleanup ONLY to disposable database
+        run: >-
+          psql postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          -X -v ON_ERROR_STOP=1
+          -f supabase/proposals/20261105_remove_unbased_amendment_derived_records_v1.proposal.sql
+
+      - name: Verify deletion counts, cross-service IDs, raw-source survival and no reentry
+        run: >-
+          psql postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          -X -v ON_ERROR_STOP=1
+          -f supabase/verification/docket_unbased_amendment_populated_verify_20261105.sql
