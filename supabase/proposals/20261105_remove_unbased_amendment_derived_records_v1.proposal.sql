@@ -531,10 +531,8 @@ ALTER TABLE public.docket_bill_source_document
 ALTER TABLE public.docket_bill_source_document
   VALIDATE CONSTRAINT docket_amendment_requires_attached_text_base_v1;
 
--- New attachments must carry actual source-stated evidence, not a
--- historical URL-stem coincidence or an arbitrary nonnull foreign key.
--- Existing 2,101 legacy links are NOT certified; this trigger does not
--- retrofit a false proof. Separate review must remove any without evidence.
+-- Newly attached amendments require exact same-bill text and explicit evidence.
+-- Existing 2101 historical links are not certified by this legacy shape.
 CREATE OR REPLACE FUNCTION public.guard_docket_amendment_source_attachment_v1()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -543,13 +541,11 @@ SET search_path = 'pg_catalog', 'public'
 AS $guard$
 BEGIN
   IF NEW.document_family <> 'amendment' THEN RETURN NEW; END IF;
-
   IF TG_OP='UPDATE'
      AND NEW.base_source_document_key IS NOT DISTINCT FROM OLD.base_source_document_key
      AND NEW.source_bill_id IS NOT DISTINCT FROM OLD.source_bill_id
      AND NEW.document_family IS NOT DISTINCT FROM OLD.document_family
   THEN RETURN NEW; END IF;
-
   IF NEW.base_source_document_key IS NULL
      OR NOT EXISTS (
        SELECT 1 FROM public.docket_bill_source_document base
@@ -561,53 +557,12 @@ BEGIN
     RAISE EXCEPTION USING ERRCODE='23514',
       MESSAGE='docket_amendment_base_not_verified_same_bill_text';
   END IF;
-
   IF coalesce(NEW.latest_metadata->>'relationship_basis','')
        <> 'official_explicit_reference'
      OR coalesce(NEW.latest_metadata->>'attachment_evidence_hash','')
-       !~ '^[0-9a-f]{64}  IF EXISTS (SELECT 1 FROM public.docket_bill_source_document
-      WHERE document_family='amendment' AND base_source_document_key IS NULL)
-  OR EXISTS (SELECT 1 FROM public.civic_genome_bill_version
-      WHERE document_family='amendment' AND base_bill_version_id IS NULL)
-  OR (SELECT count(*) FROM public.docket_bill_source_document
-      WHERE document_family='amendment' AND base_source_document_key IS NOT NULL)
-      NOT IN (0,2101)
-  OR (SELECT count(*) FROM public.civic_genome_bill_version
-      WHERE document_family='amendment' AND base_bill_version_id IS NOT NULL)
-      NOT IN (0,2101)
-  OR (SELECT count(*) FROM public.docket_bill_source_document
-      WHERE document_family='amendment' AND base_source_document_key IS NOT NULL)
-     <> (SELECT count(*) FROM public.civic_genome_bill_version
-      WHERE document_family='amendment' AND base_bill_version_id IS NOT NULL)
-  THEN RAISE EXCEPTION 'Post-delete invariant failed; transaction rolled back';
-  END IF;
-  RAISE NOTICE 'PASS: zero unbased derived amendment documents and versions';
-END
-$verify$;
-COMMIT;
-
+       !~ '^[0-9a-f]{64}$'
      OR coalesce(NEW.latest_metadata->>'base_source_content_hash','')
-       !~ '^[0-9a-f]{64}  IF EXISTS (SELECT 1 FROM public.docket_bill_source_document
-      WHERE document_family='amendment' AND base_source_document_key IS NULL)
-  OR EXISTS (SELECT 1 FROM public.civic_genome_bill_version
-      WHERE document_family='amendment' AND base_bill_version_id IS NULL)
-  OR (SELECT count(*) FROM public.docket_bill_source_document
-      WHERE document_family='amendment' AND base_source_document_key IS NOT NULL)
-      NOT IN (0,2101)
-  OR (SELECT count(*) FROM public.civic_genome_bill_version
-      WHERE document_family='amendment' AND base_bill_version_id IS NOT NULL)
-      NOT IN (0,2101)
-  OR (SELECT count(*) FROM public.docket_bill_source_document
-      WHERE document_family='amendment' AND base_source_document_key IS NOT NULL)
-     <> (SELECT count(*) FROM public.civic_genome_bill_version
-      WHERE document_family='amendment' AND base_bill_version_id IS NOT NULL)
-  THEN RAISE EXCEPTION 'Post-delete invariant failed; transaction rolled back';
-  END IF;
-  RAISE NOTICE 'PASS: zero unbased derived amendment documents and versions';
-END
-$verify$;
-COMMIT;
-
+       !~ '^[0-9a-f]{64}$'
   THEN
     RAISE EXCEPTION USING ERRCODE='23514',
       MESSAGE='docket_amendment_missing_explicit_source_attachment_receipt';
