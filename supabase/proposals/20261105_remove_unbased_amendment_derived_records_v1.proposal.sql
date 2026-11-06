@@ -425,7 +425,19 @@ begin
       and version.processing_state not in ('verified', 'verified_with_findings')
       and (
         version.document_family <> 'amendment'
-        or version.base_bill_version_id is not null
+        or (
+          version.base_bill_version_id is not null
+          and coalesce(
+            version.receipt_json #>> '{amendment_attachment_v1,relationship_basis}',
+            ''
+          ) = 'official_explicit_reference'
+          and version.receipt_json #>> '{amendment_attachment_v1,base_bill_version_id}'
+            = version.base_bill_version_id::text
+          and coalesce(
+            version.receipt_json #>> '{amendment_attachment_v1,attachment_evidence_hash}',
+            ''
+          ) ~ '^[0-9a-f]{64}$'
+        )
       )
     on conflict (bill_version_id) do update set
       queue_state = case
