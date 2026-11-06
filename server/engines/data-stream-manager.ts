@@ -8,12 +8,30 @@
  * - View stream health and statistics
  *
  * Runtime note:
- * The unified query layer owns data_stream_registry reads and emits one
- * canonical snake_case shape for Sovereign Control, Mission Control, and Sunam.
+ * READS (getStreamsWithHealth / getStreamDetail / getStreamStats) come from the
+ * CANONICAL Atlas runtime projection — the same reader Mission Control uses
+ * (server/canonical-atlas-stream-queries.ts over
+ * public.atlas_stream_runtime_projection_v1). Stream runtime state is owned by
+ * Atlas and projected into Lighthouse DB; this module no longer reads the
+ * retired local scheduler registry (data_stream_registry) for display.
+ *
+ * Per-stream and total signals_generated are overlaid from the canonical
+ * Domain 3 signal surface (public.live_data_signals, current rows, via
+ * server/canonical-live-signal-queries.ts) — the same semantics the legacy
+ * reader applied — because the projection itself carries no signal counts.
+ *
+ * WRITES (createStream / updateStream / deleteStream) still target
+ * data_stream_registry: they administer the local registry record only and no
+ * longer change what the read path renders. Retiring or rewiring those writes
+ * is a separate governed decision.
  */
 import { db } from "../db";
 import { sql } from "drizzle-orm";
-import { get_unified_ingestion_metrics, get_unified_ingestion_summary } from "../unified-queries";
+import {
+  get_canonical_atlas_stream_metrics,
+  get_canonical_atlas_stream_summary,
+} from "../canonical-atlas-stream-queries";
+import { get_canonical_live_signal_summary } from "../canonical-live-signal-queries";
 
 export const STREAM_TYPES = [
   { id: "government_complaints", label: "Government Complaints", description: "Consumer complaints filed with government agencies" },
@@ -34,10 +52,24 @@ export const UPDATE_FREQUENCIES = [
   { id: "manual", label: "Manual Only" },
 ] as const;
 
-type CanonicalStream = Awaited<ReturnType<typeof get_unified_ingestion_metrics>>[number];
+type CanonicalStream = Awaited<ReturnType<typeof get_canonical_atlas_stream_metrics>>[number];
+
+/**
+ * Overlay canonical Domain 3 signal counts onto projection stream rows.
+ * The projection carries observation counts, not signal counts; the canonical
+ * live-signal summary is the same source Mission Control reads, so Sovereign's
+ * per-stream signals_generated and totals stay identical to Mission Control's.
+ */
+async function withCanonicalSignals<T extends { stream_id: string; signals_generated: number }>(streams: T[]): Promise<T[]> {
+  const signal_summary = await get_canonical_live_signal_summary({});
+  return streams.map((stream) => ({
+    ...stream,
+    signals_generated: signal_summary.by_stream[stream.stream_id] ?? 0,
+  }));
+}
 
 async function listCanonicalStreams(): Promise<CanonicalStream[]> {
-  return get_unified_ingestion_metrics();
+  return withCanonicalSignals(await get_canonical_atlas_stream_metrics());
 }
 
 /** Get all streams with health stats — includes self-healing columns */
@@ -47,7 +79,7 @@ export async function getStreamsWithHealth() {
 
 /** Get stream detail with recent activity */
 export async function getStreamDetail(stream_id: string) {
-  const [stream] = await get_unified_ingestion_metrics({ stream_id });
+  const [stream] = await withCanonicalSignals(await get_canonical_atlas_stream_metrics({ stream_id }));
   if (!stream) return null;
 
   return {
@@ -158,9 +190,20 @@ export async function deleteStream(stream_id: string) {
 
 /** Get stream statistics */
 export async function getStreamStats() {
-  const summary = await get_unified_ingestion_summary();
+  const [summary, signal_summary] = await Promise.all([
+    get_canonical_atlas_stream_summary(),
+    get_canonical_live_signal_summary({}),
+  ]);
   return {
     ...summary,
+    // The projection summary reports total_signals_generated as 0 because the
+    // projection carries no signal counts. Sovereign's headline number is the
+    // canonical Domain 3 count — the same override the legacy reader applied —
+    // sourced from public.live_data_signals via the canonical signal summary.
+    total_signals_generated: signal_summary.total_signals,
+    canonical_live_data_signals: signal_summary.total_signals,
+    signal_counter_semantics:
+      "total_signals_generated reflects current canonical Domain 3 outputs (public.live_data_signals, current, governance_status <> 'rejected'); per-stream signals_generated uses the same source grouped by primary stream",
     by_type: STREAM_TYPES.map((type) => ({
       type: type.id,
       label: type.label,
