@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const query = vi.hoisted(() => vi.fn());
-vi.mock("../db", () => ({ getPool: () => ({ query }) }));
+vi.mock("../db", () => ({
+  getPool: () => ({ query }),
+  query_with_diagnostics: (text: string, values: unknown[]) => query(text, values),
+}));
 vi.mock("../_core/env", () => ({ ENV: {} }));
 vi.mock("./resource-source-access", () => ({ resource_source_access: vi.fn() }));
 

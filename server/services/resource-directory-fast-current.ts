@@ -1,4 +1,4 @@
-import { getPool as get_pool } from "../db";
+import { getPool as get_pool, query_with_diagnostics } from "../db";
 import { ENV } from "../_core/env";
 import { resource_source_access } from "./resource-source-access";
 
@@ -21,6 +21,14 @@ function normalized_jurisdiction(value: unknown): string | null {
   return code === "USVI" ? "VI" : code;
 }
 const SUMMARY_CACHE_TTL_MS = 5 * 60 * 1000;
+// The classified-catalog summary is the one read in this service whose cost
+// is structural: measured ~16 s against production (21,647-row classified
+// catalog), while the pool default query timeout is 8 s — every cold
+// Civic Map /coverage and /health call died on it. This read alone gets a
+// bounded 45 s: ~3x the measured cost, still under the pool's 60 s
+// client-lease guard. The 5-minute cache and in-flight coalescing below
+// mean the cost is paid at most once per cache window.
+const SUMMARY_QUERY_TIMEOUT_MS = 45_000;
 // A directory navigation category is a reviewed, source-bound placement—not
 // a classifier result. The source's literal category and layer remain visible
 // separately, but may not be silently translated into a user-facing category.
@@ -297,8 +305,7 @@ function map_resource_row(row: any) {
 async function load_publishable_resource_directory_summary(): Promise<
   Record<string, unknown>
 > {
-  const pool = get_pool();
-  const result = await pool.query(`
+  const result = await query_with_diagnostics(`
     with catalog as materialized (
       select object_ref,object_class,phone,email,website_url,address,
              ${JURISDICTION_CODE_SQL} as jurisdiction_code,
@@ -359,7 +366,11 @@ async function load_publishable_resource_directory_summary(): Promise<
                from jurisdiction_rows
            ),'[]'::jsonb) as jurisdictions
       from totals
-  `);
+  `, [], {
+    label: "resource_directory_summary",
+    pool_acquire_timeout_ms: 5000,
+    query_timeout_ms: SUMMARY_QUERY_TIMEOUT_MS,
+  });
 
   const summary_row = result.rows[0];
   // A PostgreSQL aggregate returns one totals row even for an empty catalog.

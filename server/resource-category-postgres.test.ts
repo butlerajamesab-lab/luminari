@@ -3,7 +3,10 @@ import { readFileSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 const connection = vi.hoisted(() => ({ query: vi.fn() }));
-vi.mock("./db", () => ({ getPool: () => connection }));
+vi.mock("./db", () => ({
+  getPool: () => connection,
+  query_with_diagnostics: (sql: string, params: unknown[]) => connection.query(sql, params),
+}));
 import {
   get_publishable_resource_directory_summary,
   search_publishable_resource_directory,
