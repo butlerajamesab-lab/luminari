@@ -287,38 +287,43 @@ begin
       'provider_payload', v_document
     );
     v_metadata_hash := encode(public.digest(convert_to(v_metadata::text, 'UTF8'), 'sha256'), 'hex');
-    insert into public.docket_bill_source_document (
-      source_document_key, source_bill_id, provider_document_id, document_family,
-      provider_document_type, normalized_version_type, provider_sequence, stage_rank,
-      chamber, source_url, provider_url, provider_hash, provider_size, provider_date,
-      adopted, description, source_stem, latest_metadata, latest_observed_at
-    ) values (
-      v_source_document_key, p_source_bill_id, v_provider_document_id, v_document_family,
-      v_provider_type, v_version_type, v_sequence::integer, v_stage_rank,
-      v_chamber, v_source_url, v_provider_url, v_provider_hash, v_provider_size,
-      v_provider_date, v_adopted, v_description, v_source_stem, v_metadata, v_fetched_at
-    ) on conflict (source_document_key) do update set
-      provider_document_type = excluded.provider_document_type,
-      normalized_version_type = excluded.normalized_version_type,
-      provider_sequence = excluded.provider_sequence,
-      stage_rank = excluded.stage_rank,
-      chamber = excluded.chamber,
-      source_url = excluded.source_url,
-      provider_url = excluded.provider_url,
-      provider_hash = excluded.provider_hash,
-      provider_size = excluded.provider_size,
-      provider_date = coalesce(excluded.provider_date, docket_bill_source_document.provider_date),
-      adopted = excluded.adopted,
-      description = excluded.description,
-      source_stem = excluded.source_stem,
-      latest_metadata = excluded.latest_metadata,
-      latest_observed_at = excluded.latest_observed_at,
-      updated_at = now();
-    insert into public.docket_bill_source_document_observation (
-      source_document_key, metadata_hash, metadata_json, docket_fetched_at
-    ) values (v_source_document_key, v_metadata_hash, v_metadata, v_fetched_at)
-    on conflict (source_document_key, metadata_hash) do nothing;
-    v_registered := v_registered + 1;
+
+    -- Only refresh pre-existing source records; never create a new amendment
+    -- from unverified provider metadata during canonical bill registration.
+    update public.docket_bill_source_document target
+       set provider_document_type = v_provider_type,
+           normalized_version_type = v_version_type,
+           provider_sequence = v_sequence::integer,
+           stage_rank = v_stage_rank,
+           chamber = v_chamber,
+           source_url = v_source_url,
+           provider_url = v_provider_url,
+           provider_hash = v_provider_hash,
+           provider_size = v_provider_size,
+           provider_date = coalesce(v_provider_date,target.provider_date),
+           adopted = v_adopted,
+           description = v_description,
+           source_stem = v_source_stem,
+           latest_metadata = target.latest_metadata || v_metadata,
+           latest_observed_at = v_fetched_at,
+           updated_at = now()
+     where target.source_document_key = v_source_document_key
+       and target.source_bill_id = p_source_bill_id
+       and target.document_family = 'amendment'
+       and target.base_source_document_key is not null
+       and exists (
+         select 1 from public.docket_bill_source_document base
+         where base.source_document_key = target.base_source_document_key
+           and base.source_bill_id = p_source_bill_id
+           and base.document_family = 'text'
+       );
+    if found then
+      insert into public.docket_bill_source_document_observation
+        (source_document_key, metadata_hash, metadata_json, docket_fetched_at)
+      values (v_source_document_key, v_metadata_hash, v_metadata, v_fetched_at)
+      on conflict (source_document_key, metadata_hash) do nothing;
+      v_registered := v_registered + 1;
+    end if;
   end loop;
 
   update public.docket_bill_source_document document
