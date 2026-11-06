@@ -35,6 +35,11 @@ BEGIN
     THEN RAISE EXCEPTION 'registration function changed: %, no writes', actual_md5;
   END IF;
 
+  IF md5(pg_get_functiondef('public.wake_civic_genome_amendments_for_base_v1()'::regprocedure))
+     IS DISTINCT FROM '95385ac910458cab2defd38e111836b8'
+  THEN RAISE EXCEPTION 'amendment wake-up function changed; no writes';
+  END IF;
+
   SELECT count(*) INTO n_source
     FROM public.docket_bill_source_document
     WHERE document_family='amendment' AND base_source_document_key IS NULL;
@@ -463,7 +468,50 @@ end;
 $function$;
 
 -- The derived version insert above is also filtered to attached amendments;
--- queue eligibility now requires a base version id.
+-- queue eligibility now requires an explicit attached-base receipt.
+-- Preserve original wake behavior for documented attached amendments,
+-- but never reactivate historical base guesses without an explicit receipt.
+CREATE OR REPLACE FUNCTION public.wake_civic_genome_amendments_for_base_v1()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'pg_catalog', 'public', 'pg_temp'
+AS $function$
+begin
+  if new.document_family <> 'text'
+     or coalesce(new.receipt_json->>'source_content_hash','') !~ '^[0-9a-fA-F]{64}$'
+     or (
+       coalesce(old.receipt_json->>'source_content_hash','')
+       = coalesce(new.receipt_json->>'source_content_hash','')
+     )
+  then
+    return new;
+  end if;
+
+  update public.civic_genome_legislative_version_queue queue
+     set queue_state='eligible',
+         next_attempt_at=now(),
+         locked_at=null,
+         locked_by=null,
+         last_failure_class=null,
+         last_error_code=null,
+         updated_at=now()
+    from public.civic_genome_bill_version amendment
+   where amendment.base_bill_version_id=new.bill_version_id
+     and amendment.document_family='amendment'
+     and coalesce(amendment.receipt_json #>> '{amendment_attachment_v1,relationship_basis}', '') = 'official_explicit_reference'
+     and amendment.receipt_json #>> '{amendment_attachment_v1,base_bill_version_id}' = amendment.base_bill_version_id::text
+     and coalesce(amendment.receipt_json #>> '{amendment_attachment_v1,attachment_evidence_hash}', '') ~ '^[0-9a-f]{64}$'
+     and queue.bill_version_id=amendment.bill_version_id
+     and queue.queue_state='degraded'
+     and queue.last_failure_class='awaiting_amendment_base'
+     and queue.next_attempt_at='infinity'::timestamptz
+     and queue.locked_at is null
+     and queue.locked_by is null;
+
+  return new;
+end;
+$function$;
+
 CREATE TEMP TABLE _docket_unbased_amendment_targets
   ON COMMIT DROP AS
 SELECT d.source_document_key, v.bill_version_id, v.rosetta_source_document_id
