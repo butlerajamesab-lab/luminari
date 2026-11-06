@@ -166,3 +166,55 @@ BEGIN
  RAISE NOTICE 'PASS: cache trigger and explicit registration do not recreate unbased amendments; original source preserved';
 END
 $no_reentry$;
+
+-- The 2,101 historical source-stem-linked amendments have no independently
+-- verified amendment_attachment_v1 receipts. Registration must NOT queue them.
+SELECT public.register_docket_legislative_version_spine(1900000000,true)
+  AS safe_registration_no_unverified_amendment_queue;
+
+DO $no_guess_queue$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM public.civic_genome_legislative_version_queue q
+    JOIN public.civic_genome_bill_version v USING(bill_version_id)
+    WHERE v.document_family='amendment' AND q.queue_state='eligible'
+      AND v.genome_bill_id=(
+        SELECT genome_bill_id FROM public.civic_genome_bill
+        WHERE structural_dna_json->>'source_bill_id'='1900000000'
+      )
+  ) THEN
+    RAISE EXCEPTION 'Unverified legacy base link became eligible';
+  END IF;
+  RAISE NOTICE 'PASS: unverified historic base links do not re-enter eligible queue on registration';
+END
+$no_guess_queue$;
+
+-- The independent base-content wake trigger is a second potential route.
+-- A recognized text content hash must not wake a guessed amendment base.
+INSERT INTO public.civic_genome_legislative_version_queue
+  (bill_version_id,queue_state,next_attempt_at,last_failure_class)
+SELECT bill_version_id,'degraded','infinity'::timestamptz,'awaiting_amendment_base'
+FROM public.civic_genome_bill_version
+WHERE source_document_key='amendment:1900000000:1000001'
+ON CONFLICT (bill_version_id) DO NOTHING;
+
+UPDATE public.civic_genome_bill_version
+  SET receipt_json=receipt_json ||
+    jsonb_build_object('source_content_hash',repeat('c',64))
+WHERE source_document_key='text:1900000000:9000000';
+
+DO $no_unverified_wake$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM public.civic_genome_legislative_version_queue q
+    JOIN public.civic_genome_bill_version v USING(bill_version_id)
+    WHERE v.source_document_key='amendment:1900000000:1000001'
+      AND q.queue_state='degraded'
+      AND q.last_failure_class='awaiting_amendment_base'
+      AND q.next_attempt_at='infinity'::timestamptz
+  ) THEN
+    RAISE EXCEPTION 'Unverified legacy amendment was incorrectly woken';
+  END IF;
+  RAISE NOTICE 'PASS: text base arrival does not wake unverified legacy amendment';
+END
+$no_unverified_wake$;
