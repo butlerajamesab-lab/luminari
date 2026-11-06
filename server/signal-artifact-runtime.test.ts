@@ -275,3 +275,77 @@ describe("Signal Architecture artifact runtime", () => {
     expect(insertValues[12]).toMatch(/^[0-9a-f]{64}$/);
   });
 });
+
+describe("legacy evidence door (quarantined rows)", () => {
+  beforeEach(() => {
+    query.mockReset();
+    verifyCaseOwnership.mockReset();
+    verifyCaseWriteAccess.mockReset();
+  });
+
+  it("routes legacy evidence back to Signal Architecture as read-only evidence", () => {
+    const destination = signal_artifact_destination("legacy_evidence", "weak_joint");
+    expect(destination.home_path).toBe("/signal-registry");
+    expect(destination.home_label).toBe("Signal Architecture");
+    expect(destination.environmental_effect).toContain("not a governed artifact");
+  });
+
+  it("lists legacy rows only under the explicit legacy filter, mapped as evidence", async () => {
+    query.mockResolvedValueOnce({
+      rows: [{
+        domain_code: "legacy_evidence",
+        record_id: "extraction_staging:1163",
+        artifact_type: "geographic_cluster",
+        title: "Geographic concentration",
+        description: "A staged legacy row.",
+        jurisdiction_id: "us_wa",
+        status: "promoted",
+        severity: "high",
+        confidence_score: "0.93",
+        source_reference: "detected_signals:extraction_staging:1163",
+        source_hash: "c".repeat(64),
+        occurred_at: "2026-11-05T11:00:47.940Z",
+        created_at: "2026-11-05T11:00:47.940Z",
+        total_count: "1433",
+      }],
+    });
+    const result = await list_signal_artifacts({ domain: "legacy_evidence", limit: 50, offset: 0 });
+    expect(result).toMatchObject({ total: 1433, has_more: true });
+    expect(result.items[0]).toMatchObject({
+      domain_code: "legacy_evidence",
+      record_id: "extraction_staging:1163",
+      status: "promoted",
+      home_label: "Signal Architecture",
+    });
+    const sql = String(query.mock.calls[0][0]);
+    // Every legacy branch is gated on the explicit filter value, so the
+    // rows can never leak into the "all domains" listing.
+    expect(sql).toContain("public.signal_registry");
+    expect(sql).toContain("public.raw_live_signals");
+    expect(sql).toContain("public.extraction_staging");
+    expect(sql).toContain("public.live_signals");
+    expect(sql).toContain("where $1::text = 'legacy_evidence'");
+    expect(query.mock.calls[0][1]).toEqual(["legacy_evidence", "", 50, 0]);
+  });
+
+  it("refuses artifact detail for legacy rows without touching the database", async () => {
+    await expect(
+      read_signal_artifact("legacy_evidence", "extraction_staging:1163"),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect(query).not.toHaveBeenCalled();
+  });
+
+  it("refuses case links for legacy rows (connect routes through the same read guard)", async () => {
+    verifyCaseWriteAccess.mockResolvedValueOnce(undefined);
+    await expect(
+      connect_signal_artifact_to_case({
+        domain: "legacy_evidence",
+        record_id: "extraction_staging:1163",
+        case_id: 11,
+        relationship_type: "context",
+        user_id: 1,
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect(query).not.toHaveBeenCalled();
+  });
+});

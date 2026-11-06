@@ -12,20 +12,27 @@ describe("Signal Architecture artifact navigation contract", () => {
   const context = read("../client/src/components/signal-architecture/SignalArtifactContext.tsx");
   const controlRoom = read("../client/src/pages/ControlRoom.tsx");
 
-  it("keeps Atlas ownership and reads only Lighthouse canonical projections", () => {
+  it("keeps Atlas ownership: canonical reads stay canonical; legacy evidence is gated and read-only", () => {
     expect(runtime).toContain("public.legal_patterns");
     expect(runtime).toContain("public.live_data_signals");
     expect(runtime).toContain("public.signal_convergences");
     expect(runtime).not.toMatch(/insert into public\.(legal_patterns|live_data_signals|signal_convergences)/i);
     expect(runtime).not.toContain("public.detected_signals");
-    expect(runtime).not.toContain("public.live_signals");
+    // 2026-11-05 (Alexander's direction): the quarantined legacy rows get
+    // a door. They may be READ only inside branches gated on the explicit
+    // legacy_evidence filter — one gate per legacy branch — and the read
+    // guard keeps them out of artifact detail and case links.
+    expect(runtime).toContain("public.live_signals");
+    expect((runtime.match(/\$1::text = 'legacy_evidence'/g) ?? []).length)
+      .toBeGreaterThanOrEqual(4);
+    expect(runtime).toContain("Legacy evidence rows are read-only");
   });
 
   it("makes the domain browser paginated, searchable, and click-through", () => {
     expect(page).toContain("list_signal_artifacts.useQuery");
     expect(page).toContain("Next {PAGE_SIZE}");
     expect(page).toContain("Previous {PAGE_SIZE}");
-    expect(page).toContain("Canonical artifact explorer");
+    expect(page).toContain("Signal explorer");
     expect(page).toContain("open_artifact(record.domain_code, record.record_id)");
     expect(page).toContain("Open in {artifact_detail_query.data.home_label}");
   });
