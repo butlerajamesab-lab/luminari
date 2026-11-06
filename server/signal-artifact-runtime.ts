@@ -559,13 +559,14 @@ export async function read_legacy_evidence(recordId: string) {
   const matched = sourceObservations.observations
     .filter((observation) => observation.resolution === "matched").length;
 
-  // The resolver checks Lighthouse's LOCAL copy of Atlas events
-  // (55,768 rows against Atlas's 740,063) — references that miss
-  // locally are not thereby false: the event may exist in Atlas
-  // without being mirrored here (verified first-hand 2026-11-06 for
-  // the first governed promotion: all 25 of its references are
-  // absent locally, and reference #1 matches Atlas's stored event
-  // hash exactly). The verdict keeps that distinction explicit.
+  // The resolver checks Lighthouse's LOCAL copy of Atlas events —
+  // partial in aggregate (55,768 rows against Atlas's 740,063 raw
+  // observations), so a reference that misses locally is labeled
+  // exactly that, never "false": the event may exist in Atlas
+  // without being mirrored here. (The first governed promotion's 50
+  // references — the staging row's embedded refs plus its candidate's
+  // saved refs — all matched locally, verified live 2026-11-06.) The
+  // verdict keeps the distinction explicit.
   const verdict = matched > 0
     ? "observations"
     : sourceObservations.reference_count > 0
