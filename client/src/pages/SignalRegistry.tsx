@@ -170,6 +170,11 @@ export default function SignalRegistry() {
       refetchOnReconnect: true,
     },
   );
+  const [selected_legacy_id, set_selected_legacy_id] = useState<string | null>(null);
+  const legacy_evidence_query = trpc.enforcementIntel.get_legacy_evidence.useQuery(
+    { record_id: selected_legacy_id ?? "" },
+    { enabled: Boolean(user) && !browsingIntake && selected_legacy_id != null },
+  );
   const cases_query = trpc.cases.list.useQuery(undefined, {
     enabled: Boolean(user) && !browsingIntake && selected_domain !== "legacy_evidence" && selected_record_id != null,
   });
@@ -190,6 +195,7 @@ export default function SignalRegistry() {
   useEffect(() => {
     set_selected_domain(is_artifact_domain(url_domain) ? url_domain : undefined);
     set_selected_record_id(url_record_id);
+    set_selected_legacy_id(null);
     set_offset(0);
   }, [url_domain, url_record_id]);
 
@@ -207,6 +213,7 @@ export default function SignalRegistry() {
     if (domain !== "case_intake" && !is_artifact_domain(domain)) return;
     set_selected_domain(is_artifact_domain(domain) ? domain : undefined);
     set_selected_record_id(null);
+    set_selected_legacy_id(null);
     set_offset(0);
     navigate(`/signal-registry?domain=${domain}`);
     window.setTimeout(() => {
@@ -217,6 +224,7 @@ export default function SignalRegistry() {
   function open_artifact(domain: ArtifactDomain, record_id: string) {
     set_selected_domain(domain);
     set_selected_record_id(record_id);
+    set_selected_legacy_id(null);
     const params = new URLSearchParams({ signal_domain: domain, signal_id: record_id });
     navigate(`/signal-registry?${params.toString()}`);
   }
@@ -521,6 +529,7 @@ export default function SignalRegistry() {
               const value = event.target.value;
               set_selected_domain(is_artifact_domain(value) ? value : undefined);
               set_selected_record_id(null);
+              set_selected_legacy_id(null);
               set_offset(0);
               navigate(value === "all" ? "/signal-registry" : `/signal-registry?domain=${value}`);
             }}
@@ -588,7 +597,12 @@ export default function SignalRegistry() {
                   type="button"
                   key={`${record.domain_code}:${record.record_id}`}
                   onClick={() => {
-                    if (record.domain_code !== "legacy_evidence") {
+                    if (record.domain_code === "legacy_evidence") {
+                      set_selected_legacy_id(record.record_id);
+                      window.setTimeout(() => {
+                        document.getElementById("legacy-evidence-pane")?.scrollIntoView({ behavior: "smooth" });
+                      }, 0);
+                    } else {
                       open_artifact(record.domain_code, record.record_id);
                     }
                   }}
@@ -596,7 +610,8 @@ export default function SignalRegistry() {
                     width: "100%",
                     color: palette.text,
                     background:
-                      selected_record_id === record.record_id
+                      selected_record_id === record.record_id ||
+                      selected_legacy_id === record.record_id
                         ? `${color}12`
                         : "transparent",
                     padding: "14px 18px",
@@ -607,7 +622,7 @@ export default function SignalRegistry() {
                     gap: 16,
                     alignItems: "start",
                     textAlign: "left",
-                    cursor: record.domain_code === "legacy_evidence" ? "default" : "pointer",
+                    cursor: "pointer",
                   }}
                   className="signal-artifact-row"
                 >
@@ -617,8 +632,8 @@ export default function SignalRegistry() {
                     </div>
                     <div style={{ marginTop: 4, fontWeight: 650 }}>{record.title}</div>
                     {record.domain_code === "legacy_evidence" ? (
-                      <div style={{ marginTop: 7, color: palette.muted, fontSize: 11 }}>
-                        Kept as evidence · read-only · not a governed artifact
+                      <div style={{ marginTop: 7, color, fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}>
+                        See what backs this row <ExternalLink size={11} />
                       </div>
                     ) : (
                       <div style={{ marginTop: 7, color, fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}>
@@ -650,9 +665,7 @@ export default function SignalRegistry() {
                     <div style={{ marginTop: 5, color: palette.muted }}>
                       {format_date(record.occurred_at)}
                     </div>
-                    {record.domain_code !== "legacy_evidence" && (
-                      <ChevronRight size={16} color={color} style={{ margin: "8px 0 0 auto" }} />
-                    )}
+                    <ChevronRight size={16} color={color} style={{ margin: "8px 0 0 auto" }} />
                   </div>
                 </button>
               );
@@ -679,6 +692,144 @@ export default function SignalRegistry() {
           </button>
         </div>
       </section>}
+
+      {!browsingIntake && selected_legacy_id && (
+        <section
+          id="legacy-evidence-pane"
+          style={{
+            marginTop: 20,
+            background: palette.surface,
+            border: `1px solid rgba(248,113,113,0.32)`,
+            borderRadius: 12,
+            padding: 18,
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: 12 }}>
+            <div>
+              <h3 style={{ margin: 0, fontSize: 17 }}>What backs this row</h3>
+              <p style={{ margin: "5px 0 0", color: palette.muted, fontSize: 12 }}>
+                {selected_legacy_id}
+                {legacy_evidence_query.data ? ` · stored in ${legacy_evidence_query.data.source_relation}` : ""}
+                {" "}· read-only — viewing evidence does not make this a governed artifact
+              </p>
+            </div>
+            <button type="button" onClick={() => set_selected_legacy_id(null)} style={secondary_button_style}>
+              Close
+            </button>
+          </div>
+
+          {legacy_evidence_query.isLoading ? (
+            <div style={{ padding: 28, display: "flex", justifyContent: "center" }}>
+              <Loader2 size={24} style={{ animation: "spin 1s linear infinite" }} />
+            </div>
+          ) : legacy_evidence_query.error ? (
+            <div style={{ color: palette.danger, marginTop: 14 }}>{legacy_evidence_query.error.message}</div>
+          ) : legacy_evidence_query.data ? (
+            <div style={{ marginTop: 14 }}>
+              {legacy_evidence_query.data.verdict === "observations" ? (
+                <p style={{ margin: 0, padding: "10px 12px", borderRadius: 8, background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.3)", lineHeight: 1.55, fontSize: 13 }}>
+                  This row is backed by Atlas observations. Each one below was checked against its content hash: a match means the observation stored in Atlas is exactly the one this row points at.
+                </p>
+              ) : legacy_evidence_query.data.verdict === "references_unresolved" ? (
+                <p style={{ margin: 0, padding: "10px 12px", borderRadius: 8, background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.3)", lineHeight: 1.55, fontSize: 13 }}>
+                  This row points at specific Atlas observations — each listed below with its stream, its position, and its content hash. Lighthouse keeps only a partial local copy of Atlas's events, and these are not in it, so they cannot be opened from this page. The pointers are shown in full so the claim can be checked against Atlas itself.
+                </p>
+              ) : legacy_evidence_query.data.verdict === "citations_only" ? (
+                <p style={{ margin: 0, padding: "10px 12px", borderRadius: 8, background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.3)", lineHeight: 1.55, fontSize: 13 }}>
+                  This row names its sources in its own text, listed below — but it holds no observation references that can be opened and checked. The citations are shown exactly as written in the row; they have not been independently verified here.
+                </p>
+              ) : (
+                <p style={{ margin: 0, padding: "10px 12px", borderRadius: 8, background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.32)", lineHeight: 1.55, fontSize: 13 }}>
+                  This row carries no source reference, no quote, and no linked observations. The text you saw in the list is everything that exists for it — an assertion without backing.
+                </p>
+              )}
+
+              {legacy_evidence_query.data.source_observations.reference_count > 0 && (
+                <div style={{ marginTop: 16 }}>
+                  <h4 style={{ margin: "0 0 8px", fontSize: 13, textTransform: "uppercase", letterSpacing: 0.6, color: palette.muted }}>
+                    Source observations ({legacy_evidence_query.data.source_observations.reference_count} referenced)
+                  </h4>
+                  <div style={{ display: "grid", gap: 8 }}>
+                    {legacy_evidence_query.data.source_observations.observations.map((observation) => (
+                      <div
+                        key={`${observation.stream_id}:${observation.event_offset}`}
+                        style={{ border: `1px solid ${palette.border}`, borderRadius: 8, padding: "10px 12px", fontSize: 12 }}
+                      >
+                        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", color: palette.muted }}>
+                          <span style={{ color: palette.text }}>{observation.stream_id}</span>
+                          <span>offset {observation.event_offset}</span>
+                          <span style={{ color: observation.resolution === "matched" ? palette.convergence : palette.danger }}>
+                            {observation.resolution === "matched" ? "hash matched" : observation.resolution === "hash_mismatch" ? "hash mismatch" : "not in Lighthouse's local copy"}
+                          </span>
+                          {observation.observed_at && <span>{format_date(observation.observed_at)}</span>}
+                          {observation.jurisdiction_id && <span>{observation.jurisdiction_id}</span>}
+                          {observation.source_id && <span>source: {observation.source_id}</span>}
+                        </div>
+                        {observation.payload != null && (
+                          <details style={{ marginTop: 8 }}>
+                            <summary style={{ cursor: "pointer", color: palette.muted }}>Observation contents</summary>
+                            <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", fontSize: 11, lineHeight: 1.5, margin: "8px 0 0" }}>
+                              {JSON.stringify(observation.payload, null, 2)}
+                            </pre>
+                          </details>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {Object.keys(legacy_evidence_query.data.citations).length > 0 && (
+                <div style={{ marginTop: 16 }}>
+                  <h4 style={{ margin: "0 0 8px", fontSize: 13, textTransform: "uppercase", letterSpacing: 0.6, color: palette.muted }}>
+                    Named in the row itself
+                  </h4>
+                  <div style={{ display: "grid", gap: 8, fontSize: 13, lineHeight: 1.55 }}>
+                    {Object.entries(legacy_evidence_query.data.citations).map(([key, value]) => (
+                      <div key={key}>
+                        <span style={{ color: palette.muted }}>{readable(key)}: </span>
+                        {Array.isArray(value) ? (
+                          <ul style={{ margin: "4px 0 0", paddingLeft: 18 }}>
+                            {value.map((item, index) => (
+                              <li key={index}>{typeof item === "string" ? item : JSON.stringify(item)}</li>
+                            ))}
+                          </ul>
+                        ) : typeof value === "object" && value != null ? (
+                          <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", fontSize: 11, lineHeight: 1.5, margin: "4px 0 0" }}>
+                            {JSON.stringify(value, null, 2)}
+                          </pre>
+                        ) : (
+                          <span>{String(value)}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <details style={{ marginTop: 16 }}>
+                <summary style={{ cursor: "pointer", color: palette.muted, fontSize: 13 }}>
+                  Everything this row carries ({legacy_evidence_query.data.fields.length} fields, exactly as stored)
+                </summary>
+                <div style={{ display: "grid", gap: 6, marginTop: 10, fontSize: 12 }}>
+                  {legacy_evidence_query.data.fields.map((field) => (
+                    <div key={field.key} style={{ display: "grid", gridTemplateColumns: "minmax(140px, 0.3fr) 1fr", gap: 10 }}>
+                      <span style={{ color: palette.muted }}>{field.key}</span>
+                      <span style={{ wordBreak: "break-word", whiteSpace: "pre-wrap" }}>
+                        {field.value == null
+                          ? "— empty"
+                          : typeof field.value === "object"
+                            ? JSON.stringify(field.value)
+                            : String(field.value)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </details>
+            </div>
+          ) : null}
+        </section>
+      )}
 
       {!browsingIntake && selected_record_id && selected_domain && selected_domain !== "legacy_evidence" && (
         <section
