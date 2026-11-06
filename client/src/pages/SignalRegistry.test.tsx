@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, expect, it, vi } from "vitest";
 
-const state = vi.hoisted(() => ({ feed: {} as any, architecture: {} as any, search: "", cases: vi.fn(), artifacts: vi.fn(), detail: vi.fn(), catalog: {} as any }));
+const state = vi.hoisted(() => ({ feed: {} as any, architecture: {} as any, search: "", cases: vi.fn(), artifacts: vi.fn(), detail: vi.fn(), legacy: vi.fn(), catalog: {} as any }));
 vi.mock("wouter", () => ({ useSearch: () => state.search, useLocation: () => ["/signal-registry", vi.fn()] }));
 vi.mock("@/core/hooks/useAuth", () => ({ useAuth: () => ({ user: { id: 1 } }) }));
 vi.mock("@/components/LayerNavBar", () => ({ LayerNavBar: () => null }));
@@ -13,6 +13,7 @@ vi.mock("@/lib/trpc", () => ({ trpc: {
     get_signal_architecture: { useQuery: () => state.architecture },
     list_signal_artifacts: { useQuery: state.artifacts },
     get_signal_artifact: { useQuery: state.detail },
+    get_legacy_evidence: { useQuery: state.legacy },
     get_intake_pattern_catalog: { useQuery: () => state.catalog },
     connect_signal_artifact_to_case: { useMutation: () => ({}) },
   },
@@ -24,6 +25,7 @@ beforeEach(() => {
   state.cases.mockReset().mockReturnValue({ data: [] });
   state.artifacts.mockReset().mockImplementation(() => state.feed);
   state.detail.mockReset().mockReturnValue({ data: undefined });
+  state.legacy.mockReset().mockReturnValue({ data: undefined, error: null, isLoading: false });
   state.catalog = { data: { rules: [{ rule_id: "example_rule", rule_version: "2.2.0", pattern_type: "example_structural_match", description: "Complaint followed by termination", required_sequence: [{ to_state: "complaint_filed" }, { to_state: "terminated" }], time_window_days: 90, min_independent_source_artifacts: 2, same_entity: true }], history: [], retained_records: 6019, chronology_observations: 6019, distinct_pattern_occurrences: 0 }, error: null, isLoading: false };
   state.architecture = { data: { domains: [], integrity: { intake_signal_count: 0, legal_pattern_count: 0, live_data_signal_count: 1, legacy_detected_signals_count: 0, legacy_live_signals_count: 0 } }, error: null, isLoading: false };
   state.feed = { data: { total: 1, has_more: false, items: [{ domain_code: "live_data", record_id: "1", artifact_type: "frequency_spike", title: "Saved detection", description: "Preserved observation", status: "unresolved", occurred_at: null }] }, error: null, isLoading: false };

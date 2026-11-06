@@ -16,6 +16,7 @@ import {
   connect_signal_artifact_to_case,
   list_case_signal_artifacts,
   list_signal_artifacts,
+  read_legacy_evidence,
   read_signal_artifact,
   read_signal_source_observations,
   signal_artifact_destination,
@@ -347,5 +348,131 @@ describe("legacy evidence door (quarantined rows)", () => {
       }),
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
     expect(query).not.toHaveBeenCalled();
+  });
+
+  it("rejects malformed legacy evidence ids without touching the database", async () => {
+    await expect(read_legacy_evidence("not-a-legacy-id"))
+      .rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(read_legacy_evidence("extraction_staging:abc"))
+      .rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(query).not.toHaveBeenCalled();
+  });
+
+  it("reports a missing legacy row honestly", async () => {
+    query.mockResolvedValueOnce({ rows: [] });
+    await expect(read_legacy_evidence("live_signals:999"))
+      .rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
+  it("gives verdict 'none' to a registry row whose only content is its own assertion", async () => {
+    query.mockResolvedValueOnce({
+      rows: [{
+        id: 150013, signal_type: "inconsistency_272694", domain: "lane_272694",
+        trigger_patterns: "[\"inconsistency_272694\"]",
+        linked_doctrine: null, linked_weak_joints: null,
+        linked_contradiction_templates: null, severity: "critical",
+        explanation: "Complete signal with quote reference",
+        recommended_next_steps: null, added_by: null,
+        created_at: "1778732999137", updated_at: "1778732999137",
+        cluster_id: "inconsistency_272694:lane_272694",
+        route_to_pattern_engine: 1, route_to_strategy_engine: 0,
+        route_to_procedural_engine: 0,
+      }],
+    });
+    const result = await read_legacy_evidence("signal_registry:150013");
+    expect(result.verdict).toBe("none");
+    expect(result.citations).toEqual({});
+    expect(result.source_observations.reference_count).toBe(0);
+    expect(result.fields.length).toBeGreaterThan(10);
+  });
+
+  it("surfaces a weak-joint row's own named sources as citations_only", async () => {
+    query.mockResolvedValueOnce({
+      rows: [{
+        id: 150058, signal_type: "weak_joint", domain: "[\"healthcare\"]",
+        trigger_patterns: "[\"CMS Proposed Rule (2023)\", \"GAO-15-6\"]",
+        linked_doctrine: "Nursing Home Staffing", linked_weak_joints: "WJ-ELD-001",
+        linked_contradiction_templates: null, severity: "high",
+        explanation: "Federal law requires sufficient staffing...",
+        recommended_next_steps: "CMS proposed rule...",
+        added_by: "legal_weak_joints_priority4",
+        created_at: "1779182593768", updated_at: "1779182593768",
+        cluster_id: "WJ-ELD-001",
+        route_to_pattern_engine: 1, route_to_strategy_engine: 1,
+        route_to_procedural_engine: 1,
+      }],
+    });
+    const result = await read_legacy_evidence("signal_registry:150058");
+    expect(result.verdict).toBe("citations_only");
+    expect(result.citations).toMatchObject({
+      linked_weak_joints: "WJ-ELD-001",
+      linked_doctrine: "Nursing Home Staffing",
+    });
+    expect((result.citations as any).named_sources).toHaveLength(2);
+  });
+
+  it("resolves a promoted staging row's candidate observations through the gate link", async () => {
+    query.mockResolvedValueOnce({
+      rows: [{
+        id: 2, signal_type: "cross_jurisdiction_recurrence",
+        title: "cross_jurisdiction_recurrence",
+        gate_decision: "promoted", gate_log_id: "20c57ec1-6791-48db-9d0a-0afb18a6afb7",
+        supporting_statistics: null, signal_fingerprint: "f".repeat(32),
+      }],
+    });
+    query.mockResolvedValueOnce({
+      rows: [{
+        source_event_refs: [{
+          stream_id: "cfpb_complaints",
+          offset: 1778372879521173,
+          event_identity_hash: "a".repeat(64),
+        }],
+      }],
+    });
+    query.mockResolvedValueOnce({
+      rows: [{
+        stream_id: "cfpb_complaints", event_offset: "1778372879521173",
+        event_identity_hash: "a".repeat(64), resolution: "matched",
+        observed_at: new Date("2026-05-09T00:00:00.000Z"),
+        source_id: "cfpb", jurisdiction_id: "us_federal",
+        payload: { narrative: "checked" }, spacetime: null,
+      }],
+    });
+    const result = await read_legacy_evidence("extraction_staging:2");
+    expect(result.verdict).toBe("observations");
+    expect(result.source_observations.observations).toHaveLength(1);
+    expect(result.source_observations.observations[0].resolution).toBe("matched");
+    expect(String(query.mock.calls[1][0])).toContain("sunam_gate_log");
+  });
+
+  it("keeps unresolved references distinct from no evidence at all", async () => {
+    query.mockResolvedValueOnce({
+      rows: [{
+        id: 3, signal_type: "cross_category_entity",
+        gate_decision: "promoted", gate_log_id: "g".padEnd(36, "0"),
+        supporting_statistics: null, signal_fingerprint: "e".repeat(32),
+      }],
+    });
+    query.mockResolvedValueOnce({
+      rows: [{
+        source_event_refs: [{
+          stream_id: "cfpb_complaints",
+          offset: 1778372879521174,
+          event_identity_hash: "b".repeat(64),
+        }],
+      }],
+    });
+    query.mockResolvedValueOnce({
+      rows: [{
+        stream_id: "cfpb_complaints", event_offset: "1778372879521174",
+        event_identity_hash: "b".repeat(64), resolution: "missing",
+        observed_at: null, source_id: null, jurisdiction_id: null,
+        payload: null, spacetime: null,
+      }],
+    });
+    const result = await read_legacy_evidence("extraction_staging:3");
+    expect(result.verdict).toBe("references_unresolved");
+    expect(result.source_observations.reference_count).toBe(1);
+    expect(result.source_observations.observations[0].resolution).toBe("missing");
   });
 });

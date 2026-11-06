@@ -435,6 +435,161 @@ export async function read_signal_source_observations(value: unknown) {
 
 export type SignalSourceObservations = Awaited<ReturnType<typeof read_signal_source_observations>>;
 
+const LEGACY_EVIDENCE_SOURCES = {
+  signal_registry: "public.signal_registry",
+  raw_live_signals: "public.raw_live_signals",
+  extraction_staging: "public.extraction_staging",
+  live_signals: "public.live_signals",
+} as const;
+
+export type LegacyEvidenceSource = keyof typeof LEGACY_EVIDENCE_SOURCES;
+
+function jsonSafe(value: unknown): unknown {
+  if (typeof value === "bigint") return value.toString();
+  if (value instanceof Date) return value.toISOString();
+  if (Array.isArray(value)) return value.map(jsonSafe);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([k, v]) => [k, jsonSafe(v)]),
+    );
+  }
+  return value ?? null;
+}
+
+function stringList(value: unknown): string[] {
+  const parsed = wireJson(value, value);
+  if (Array.isArray(parsed)) return parsed.map((item) => String(item));
+  if (typeof parsed === "string" && parsed.trim()) return [parsed];
+  return [];
+}
+
+/**
+ * Read-only evidence view for a quarantined legacy row (Alexander's
+ * direction, 2026-11-06: "You should be able to click through them and
+ * actually be able to see the evidence"). Returns the complete source
+ * row — nothing hidden — plus whatever backing the row actually has:
+ * resolvable Atlas observation references (verified by content hash
+ * through the same resolver the governed artifacts use) and citations
+ * written in the row itself. Where a row carries neither, the verdict
+ * says so in plain terms instead of letting the assertion pose as
+ * evidence. This never makes the row a canonical artifact: no detail
+ * contract, no case links — read_signal_artifact still refuses it.
+ */
+export async function read_legacy_evidence(recordId: string) {
+  const match = /^(signal_registry|raw_live_signals|extraction_staging|live_signals):(\d{1,19})$/.exec(recordId.trim());
+  if (!match) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Legacy evidence id must name one of its source tables and a numeric row id.",
+    });
+  }
+  const source = match[1] as LegacyEvidenceSource;
+  const relation = LEGACY_EVIDENCE_SOURCES[source];
+  const pool = getPool();
+  const { rows } = await pool.query(
+    `select * from ${relation} where id = $1`,
+    [match[2]],
+  );
+  const row = rows[0] as Record<string, unknown> | undefined;
+  if (!row) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: "That legacy row no longer exists in its source table.",
+    });
+  }
+
+  // Citations written in the row itself, exactly as stored. A trigger
+  // pattern that merely repeats the row's own signal_type names no
+  // source and does not count as a citation.
+  const citations: Record<string, unknown> = {};
+  if (source === "signal_registry") {
+    const patterns = stringList(row.trigger_patterns)
+      .filter((pattern) => pattern !== String(row.signal_type ?? ""));
+    if (patterns.length) citations.named_sources = patterns;
+    if (row.linked_doctrine) citations.linked_doctrine = row.linked_doctrine;
+    if (row.linked_weak_joints) citations.linked_weak_joints = row.linked_weak_joints;
+    if (row.linked_contradiction_templates) {
+      citations.linked_contradiction_templates = row.linked_contradiction_templates;
+    }
+    if (row.recommended_next_steps) citations.recommended_next_steps = row.recommended_next_steps;
+    if (row.added_by) citations.added_by = row.added_by;
+  }
+  if (source === "live_signals") {
+    const summary = stringList(row.pattern_summary);
+    if (summary.length) citations.pattern_summary = summary;
+    const stats = wireJson(row.supporting_statistics, null);
+    if (stats) citations.supporting_statistics = stats;
+  }
+  if (source === "raw_live_signals") {
+    if (row.source_id) citations.source_record_id = row.source_id;
+    const metadata = wireJson(row.metadata, null);
+    if (metadata) citations.metadata = metadata;
+    if (row.latitude || row.longitude) {
+      citations.coordinates = { latitude: row.latitude, longitude: row.longitude };
+    }
+  }
+
+  // Resolvable observation references. Staging rows can carry them in
+  // their stored statistics; governed promotions also link back to
+  // their candidate through the gate log — chase that link so the
+  // candidate's own saved references resolve too.
+  let refs: unknown = [];
+  if (source === "extraction_staging") {
+    const stats = wireJson(row.supporting_statistics, null) as
+      | Record<string, unknown>
+      | null;
+    const embedded = stats?.evidence_refs ?? stats?.source_event_refs;
+    if (Array.isArray(embedded)) refs = embedded;
+    if (row.gate_log_id) {
+      const linked = await pool.query(
+        `select lds.source_event_refs
+           from public.sunam_gate_log gl
+           join public.live_data_signals lds
+             on lds.live_data_signal_id::text = gl.live_signal_id
+          where gl.gate_log_id = $1`,
+        [String(row.gate_log_id)],
+      );
+      const candidateRefs = linked.rows[0]?.source_event_refs;
+      if (Array.isArray(candidateRefs)) {
+        refs = [...(refs as unknown[]), ...candidateRefs];
+      }
+    }
+  }
+  const sourceObservations = await read_signal_source_observations(refs);
+  const matched = sourceObservations.observations
+    .filter((observation) => observation.resolution === "matched").length;
+
+  // The resolver checks Lighthouse's LOCAL copy of Atlas events
+  // (55,768 rows against Atlas's 740,063) — references that miss
+  // locally are not thereby false: the event may exist in Atlas
+  // without being mirrored here (verified first-hand 2026-11-06 for
+  // the first governed promotion: all 25 of its references are
+  // absent locally, and reference #1 matches Atlas's stored event
+  // hash exactly). The verdict keeps that distinction explicit.
+  const verdict = matched > 0
+    ? "observations"
+    : sourceObservations.reference_count > 0
+      ? "references_unresolved"
+      : Object.keys(citations).length > 0
+        ? "citations_only"
+        : "none";
+
+  return {
+    checked_at: new Date().toISOString(),
+    record_id: recordId.trim(),
+    source_relation: relation,
+    verdict,
+    citations,
+    source_observations: sourceObservations,
+    fields: Object.entries(row).map(([key, value]) => ({
+      key,
+      value: jsonSafe(value),
+    })),
+  };
+}
+
+export type LegacyEvidence = Awaited<ReturnType<typeof read_legacy_evidence>>;
+
 export async function read_signal_artifact(
   domain: SignalArtifactDomain,
   recordId: string,
