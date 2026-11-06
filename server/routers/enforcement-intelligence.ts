@@ -9,6 +9,7 @@ import {
   connect_signal_artifact_to_case,
   list_case_signal_artifacts,
   list_signal_artifacts,
+  read_legacy_evidence,
   read_signal_artifact,
 } from "../signal-artifact-runtime";
 import { list_filing_deadline_records } from "../filing-deadline-runtime-compat";
@@ -163,6 +164,12 @@ export const enforcementIntelligenceRouter = router({
       query: z.string().trim().max(200).optional(),
     }))
     .query(({ input }) => list_signal_artifacts(input)),
+
+  get_legacy_evidence: protectedProcedure
+    .input(z.object({
+      record_id: z.string().trim().min(3).max(90),
+    }))
+    .query(({ input }) => read_legacy_evidence(input.record_id)),
 
   get_signal_artifact: protectedProcedure
     .input(z.object({
