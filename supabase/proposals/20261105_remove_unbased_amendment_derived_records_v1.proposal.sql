@@ -350,7 +350,7 @@ begin
   insert into public.civic_genome_bill_version (
     genome_bill_id, source_document_key, source_bill_id, document_family,
     version_type, provider_sequence, stage_rank, chamber,
-    version_fingerprint, receipt_json
+    version_fingerprint, receipt_json, base_bill_version_id
   )
   select v_genome_bill_id, document.source_document_key, document.source_bill_id,
          document.document_family, document.normalized_version_type,
@@ -373,20 +373,29 @@ begin
            'source_url', document.source_url,
            'provider_hash', document.provider_hash,
            'registered_at', now()
-         )
+         ),
+         case when document.document_family='amendment'
+              then attached_base.bill_version_id else null end
   from public.docket_bill_source_document document
+  left join public.docket_bill_source_document source_base
+    on source_base.source_document_key=document.base_source_document_key
+   and source_base.source_bill_id=document.source_bill_id
+   and source_base.document_family='text'
+  left join public.civic_genome_bill_version attached_base
+    on attached_base.source_document_key=source_base.source_document_key
+   and attached_base.genome_bill_id=v_genome_bill_id
+   and attached_base.document_family='text'
   where document.source_bill_id = p_source_bill_id
     and (
-      document.document_family <> 'amendment'
+      document.document_family='text'
       or (
-        document.base_source_document_key is not null
-        and exists (
-          select 1
-          from public.docket_bill_source_document base
-          where base.source_document_key = document.base_source_document_key
-            and base.source_bill_id = document.source_bill_id
-            and base.document_family = 'text'
-        )
+        document.document_family='amendment'
+        and attached_base.bill_version_id is not null
+        and document.latest_metadata->>'relationship_basis'='official_explicit_reference'
+        and coalesce(document.latest_metadata->>'attachment_evidence_hash','')
+          ~ '^[0-9a-f]{64}$'
+        and coalesce(document.latest_metadata->>'base_source_content_hash','')
+          ~ '^[0-9a-f]{64}$'
       )
     )
   on conflict (genome_bill_id, source_document_key) do update set
@@ -397,11 +406,15 @@ begin
     chamber = excluded.chamber,
     version_fingerprint = excluded.version_fingerprint,
     receipt_json = public.civic_genome_bill_version.receipt_json || excluded.receipt_json,
+    base_bill_version_id = coalesce(
+      public.civic_genome_bill_version.base_bill_version_id,
+      excluded.base_bill_version_id
+    ),
     updated_at = now();
 
   update public.civic_genome_bill_version version
      set predecessor_bill_version_id = predecessor.bill_version_id,
-         base_bill_version_id = base.bill_version_id,
+         base_bill_version_id = coalesce(base.bill_version_id, version.base_bill_version_id),
          updated_at = now()
   from public.docket_bill_source_document document
   left join public.civic_genome_bill_version predecessor
@@ -595,6 +608,15 @@ ALTER TABLE public.docket_bill_source_document
 
 ALTER TABLE public.docket_bill_source_document
   VALIDATE CONSTRAINT docket_amendment_requires_attached_text_base_v1;
+
+-- Protect version records independently of Docket source-document insert
+-- constraints: no writer may create a NULL-base derived amendment version.
+ALTER TABLE public.civic_genome_bill_version
+  ADD CONSTRAINT civic_genome_amendment_requires_base_version_v1
+  CHECK (document_family <> 'amendment' OR base_bill_version_id IS NOT NULL)
+  NOT VALID;
+ALTER TABLE public.civic_genome_bill_version
+  VALIDATE CONSTRAINT civic_genome_amendment_requires_base_version_v1;
 
 -- Newly attached amendments require exact same-bill text and explicit evidence.
 -- Existing 2101 historical links are not certified by this legacy shape.
