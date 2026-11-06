@@ -61,9 +61,14 @@ const domain_meta = {
     color: palette.convergence,
     short_label: "End-stage",
   },
+  legacy_evidence: {
+    icon: AlertTriangle,
+    color: palette.danger,
+    short_label: "Legacy",
+  },
 } as const;
 
-const artifact_domains = ["legal_pattern", "live_data", "convergence"] as const;
+const artifact_domains = ["legal_pattern", "live_data", "convergence", "legacy_evidence"] as const;
 type ArtifactDomain = typeof artifact_domains[number];
 
 const relationship_types = [
@@ -159,14 +164,14 @@ export default function SignalRegistry() {
       record_id: selected_record_id ?? "",
     },
     {
-      enabled: Boolean(user) && !browsingIntake && selected_domain != null && selected_record_id != null,
+      enabled: Boolean(user) && !browsingIntake && selected_domain != null && selected_domain !== "legacy_evidence" && selected_record_id != null,
       refetchInterval: user ? 30_000 : false,
       refetchOnWindowFocus: true,
       refetchOnReconnect: true,
     },
   );
   const cases_query = trpc.cases.list.useQuery(undefined, {
-    enabled: Boolean(user) && !browsingIntake && selected_record_id != null,
+    enabled: Boolean(user) && !browsingIntake && selected_domain !== "legacy_evidence" && selected_record_id != null,
   });
   const utils = trpc.useUtils();
   const connect_mutation = trpc.enforcementIntel.connect_signal_artifact_to_case.useMutation({
@@ -289,8 +294,9 @@ export default function SignalRegistry() {
           </h1>
         </div>
         <p style={{ color: palette.muted, lineHeight: 1.6, marginBottom: 0 }}>
-          Three independent source domains. No source mixing. Convergence occurs only after
-          each domain has produced its own provenance-bound output.
+          Signals are kept in three separate groups, by where they came from, and the
+          groups are never blended. A signal counts as confirmed only when all three
+          groups have independently produced a matching record of their own.
         </p>
       </header>
 
@@ -308,7 +314,7 @@ export default function SignalRegistry() {
             <div style={metric_value_style}>{format_number(integrity.atlas_unique_observation_count)}</div>
             <div style={metric_label_style}>Unique Atlas observations</div>
             <div style={metric_note_style}>
-              {format_number(integrity.atlas_raw_observation_count)} historical rows; {format_number(integrity.atlas_replay_observation_count)} replay rows preserved
+              {format_number(integrity.atlas_raw_observation_count)} records pulled in, in total. {format_number(integrity.atlas_replay_observation_count)} of them were repeat deliveries of observations already counted, so they are not counted twice.
             </div>
           </div>
         </div>
@@ -322,9 +328,9 @@ export default function SignalRegistry() {
                   integrity.live_data_signal_count,
               )}
             </div>
-            <div style={metric_label_style}>Governed source-domain records</div>
+            <div style={metric_label_style}>Records in the three signal domains</div>
             <div style={metric_note_style}>
-              Domain 3: {format_number(integrity.live_data_candidate_count)} candidates · {format_number(integrity.live_data_promoted_count)} promoted signals
+              The three domain cards below, added together. Each domain counts only its own records, from its own table.
             </div>
           </div>
         </div>
@@ -333,10 +339,15 @@ export default function SignalRegistry() {
           <div>
             <div style={metric_value_style}>{format_number(integrity.convergence_count)}</div>
             <div style={metric_label_style}>Three-domain convergences</div>
-            <div style={metric_note_style}>Requires one record from every domain</div>
+            <div style={metric_note_style}>Forms only when a matching record exists in all three domains at once</div>
           </div>
         </div>
-        <div style={{ ...metric_card_style, borderColor: "rgba(248,113,113,0.32)" }}>
+        <button
+          type="button"
+          onClick={() => choose_domain("legacy_evidence")}
+          style={{ ...metric_card_style, borderColor: "rgba(248,113,113,0.32)", textAlign: "left", cursor: "pointer", color: palette.text, width: "100%" }}
+          aria-label="Browse the older signal rows kept as evidence"
+        >
           <AlertTriangle size={18} color={palette.danger} />
           <div>
             <div style={metric_value_style}>
@@ -344,10 +355,12 @@ export default function SignalRegistry() {
                 integrity.legacy_detected_signals_count + integrity.legacy_live_signals_count,
               )}
             </div>
-            <div style={metric_label_style}>Legacy mixed rows quarantined</div>
-            <div style={metric_note_style}>Preserved as evidence; not canonicalized</div>
+            <div style={metric_label_style}>Older signal rows, kept as evidence</div>
+            <div style={metric_note_style}>
+              {format_number(integrity.legacy_detected_signals_count)} rows from the older detected-signals surface and {format_number(integrity.legacy_live_signals_count)} from the oldest signals table — all written before the three domains were separated. They are kept for the record and do not count as governed signals. Click to browse them.
+            </div>
           </div>
-        </div>
+        </button>
       </section>
 
       <section
@@ -372,7 +385,7 @@ export default function SignalRegistry() {
           const displayDescription = isCaseIntake
             ? "Retained intake observations include individual chronology events and historical processing records. Explore pattern meanings, matching conditions, and recorded pattern history."
             : isLiveData
-              ? `${format_number(integrity.live_data_candidate_count)} governed observation candidates and ${format_number(integrity.live_data_promoted_count)} promoted canonical signals projected from Atlas. Candidates are not findings.`
+              ? `${format_number(integrity.live_data_candidate_count)} current observation candidates from Atlas, and ${format_number(integrity.live_data_promoted_count)} promoted signals. A candidate is an observation, not a finding.`
             : domain.description;
 
           return (
@@ -476,9 +489,9 @@ export default function SignalRegistry() {
           }}
         >
           <div>
-            <h2 style={{ margin: 0, fontSize: 19 }}>Canonical artifact explorer</h2>
+            <h2 style={{ margin: 0, fontSize: 19 }}>Signal explorer</h2>
             <p style={{ margin: "5px 0 0", color: palette.muted, fontSize: 13 }}>
-              Browse Domain 2, Domain 3, and convergence evidence. Select Domain 1 above to explore intake pattern definitions and history.
+              Browse Domain 2, Domain 3, and convergence records — or open the older rows kept as evidence, from before the domains were separated. Select Domain 1 above to explore intake pattern definitions and history.
             </p>
           </div>
           <div style={{ color: palette.muted, fontSize: 12, display: "flex", gap: 6 }}>
@@ -518,6 +531,7 @@ export default function SignalRegistry() {
             <option value="legal_pattern">Domain 2 · Legal patterns</option>
             <option value="live_data">Domain 3 · Atlas records</option>
             <option value="convergence">Three-domain convergence</option>
+            <option value="legacy_evidence">Older rows · kept as evidence</option>
           </select>
           <label style={{ position: "relative" }}>
             <Search size={15} style={{ position: "absolute", left: 11, top: 11, color: palette.muted }} />
@@ -560,7 +574,9 @@ export default function SignalRegistry() {
           <div style={{ padding: 24, color: palette.danger }}>{artifacts_query.error.message}</div>
         ) : artifacts_data?.items.length === 0 ? (
           <div style={{ padding: 28, textAlign: "center", color: palette.muted }}>
-            No canonical artifacts match this filter.
+            {selected_domain === "legacy_evidence"
+              ? "No legacy evidence rows match this filter."
+              : "No canonical artifacts match this filter."}
           </div>
         ) : (
           <div>
@@ -571,7 +587,11 @@ export default function SignalRegistry() {
                 <button
                   type="button"
                   key={`${record.domain_code}:${record.record_id}`}
-                  onClick={() => open_artifact(record.domain_code, record.record_id)}
+                  onClick={() => {
+                    if (record.domain_code !== "legacy_evidence") {
+                      open_artifact(record.domain_code, record.record_id);
+                    }
+                  }}
                   style={{
                     width: "100%",
                     color: palette.text,
@@ -587,7 +607,7 @@ export default function SignalRegistry() {
                     gap: 16,
                     alignItems: "start",
                     textAlign: "left",
-                    cursor: "pointer",
+                    cursor: record.domain_code === "legacy_evidence" ? "default" : "pointer",
                   }}
                   className="signal-artifact-row"
                 >
@@ -596,9 +616,15 @@ export default function SignalRegistry() {
                       {readable(record.domain_code)} · {readable(record.artifact_type)}
                     </div>
                     <div style={{ marginTop: 4, fontWeight: 650 }}>{record.title}</div>
-                    <div style={{ marginTop: 7, color, fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}>
-                      Opens in {record.home_label} <ExternalLink size={11} />
-                    </div>
+                    {record.domain_code === "legacy_evidence" ? (
+                      <div style={{ marginTop: 7, color: palette.muted, fontSize: 11 }}>
+                        Kept as evidence · read-only · not a governed artifact
+                      </div>
+                    ) : (
+                      <div style={{ marginTop: 7, color, fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}>
+                        Opens in {record.home_label} <ExternalLink size={11} />
+                      </div>
+                    )}
                   </div>
                   <div>
                     <div style={{ color: palette.muted, lineHeight: 1.45, fontSize: 13 }}>
@@ -624,7 +650,9 @@ export default function SignalRegistry() {
                     <div style={{ marginTop: 5, color: palette.muted }}>
                       {format_date(record.occurred_at)}
                     </div>
-                    <ChevronRight size={16} color={color} style={{ margin: "8px 0 0 auto" }} />
+                    {record.domain_code !== "legacy_evidence" && (
+                      <ChevronRight size={16} color={color} style={{ margin: "8px 0 0 auto" }} />
+                    )}
                   </div>
                 </button>
               );
@@ -652,7 +680,7 @@ export default function SignalRegistry() {
         </div>
       </section>}
 
-      {!browsingIntake && selected_record_id && selected_domain && (
+      {!browsingIntake && selected_record_id && selected_domain && selected_domain !== "legacy_evidence" && (
         <section
           style={{
             marginTop: 20,

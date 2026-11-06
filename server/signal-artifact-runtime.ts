@@ -8,6 +8,7 @@ export const SIGNAL_ARTIFACT_DOMAINS = [
   "legal_pattern",
   "live_data",
   "convergence",
+  "legacy_evidence",
 ] as const;
 
 export type SignalArtifactDomain = typeof SIGNAL_ARTIFACT_DOMAINS[number];
@@ -79,6 +80,15 @@ export function signal_artifact_destination(
       home_path: "/viewfinder",
       environmental_effect:
         "This Atlas detection records a recurrence, concentration, spike, or unresolved-record condition. Inspect its saved observations and comparison statistics to assess what it supports. Linking it to a case saves context; it does not perform verification.",
+    };
+  }
+
+  if (domain === "legacy_evidence") {
+    return {
+      home_label: "Signal Architecture",
+      home_path: "/signal-registry",
+      environmental_effect:
+        "This row was written before the three signal domains were separated, so it blends sources the current architecture keeps apart. It is preserved as evidence: it can be browsed and searched here, but it is not a governed artifact, it carries no verification, and it cannot be linked to a case.",
     };
   }
 
@@ -229,6 +239,92 @@ export async function list_signal_artifacts(input: {
                status, null::timestamptz
           from public.signal_convergences
          where is_current
+        union all
+        -- Legacy evidence (quarantined): rows written before the three
+        -- domains were separated. They surface ONLY under the explicit
+        -- legacy_evidence filter, never under "all domains", and they
+        -- stay read-only: no artifact detail, no case links. The three
+        -- detected-signals branches below mirror the source tables the
+        -- detected_signals union view is built from, so the counts here
+        -- reconcile with v_signal_architecture_integrity.
+        select 'legacy_evidence'::text,
+               'signal_registry:' || sr.id::text,
+               sr.signal_type,
+               sr.signal_type,
+               coalesce(sr.explanation, ''),
+               null::text,
+               'registered',
+               sr.severity,
+               0::numeric,
+               'detected_signals:signal_registry:' || sr.id::text,
+               md5('signal_registry:' || sr.id::text || ':' || sr.signal_type
+                 || ':' || sr.created_at::text || ':' || coalesce(sr.explanation, '')),
+               to_timestamp(sr.created_at / 1000.0),
+               to_timestamp(sr.created_at / 1000.0),
+               null::text, null::text, null::text, null::text, null::text,
+               null::text,
+               null::timestamptz
+          from public.signal_registry sr
+         where $1::text = 'legacy_evidence'
+        union all
+        select 'legacy_evidence'::text,
+               'raw_live_signals:' || rls.id::text,
+               rls.signal_type,
+               rls.signal_type,
+               coalesce(rls.value, ''),
+               null::text,
+               'live',
+               null::text,
+               0::numeric,
+               'detected_signals:raw_live_signals:' || rls.id::text,
+               md5('raw_live_signals:' || rls.id::text || ':' || rls.signal_type
+                 || ':' || rls."timestamp"::text || ':' || coalesce(rls.value, '')),
+               to_timestamp(rls."timestamp" / 1000.0),
+               to_timestamp(rls.created_at / 1000.0),
+               null::text, null::text, null::text, null::text, null::text,
+               null::text,
+               null::timestamptz
+          from public.raw_live_signals rls
+         where $1::text = 'legacy_evidence'
+        union all
+        select 'legacy_evidence'::text,
+               'extraction_staging:' || es.id::text,
+               es.signal_type,
+               coalesce(es.title, es.signal_type),
+               coalesce(es.explanation, ''),
+               es.jurisdiction,
+               coalesce(es.gate_decision, 'staged'),
+               es.severity,
+               case when es.raw_confidence_score ~ '^[0-9]+(\.[0-9]+)?$'
+                    then es.raw_confidence_score::numeric end,
+               'detected_signals:extraction_staging:' || es.id::text,
+               es.signal_fingerprint,
+               to_timestamp(es.staged_at / 1000.0),
+               to_timestamp(es.created_at / 1000.0),
+               null::text, null::text, null::text, null::text, null::text,
+               coalesce(es.gate_decision, 'staged'),
+               null::timestamptz
+          from public.extraction_staging es
+         where $1::text = 'legacy_evidence'
+        union all
+        select 'legacy_evidence'::text,
+               'live_signals:' || ls.id::text,
+               ls.signal_type,
+               coalesce(ls.title, ls.signal_type),
+               coalesce(ls.explanation, ''),
+               ls.jurisdiction,
+               coalesce(ls.status, 'legacy'),
+               ls.severity,
+               ls.confidence_score,
+               'live_signals:' || ls.id::text,
+               ls.signal_fingerprint,
+               to_timestamp(ls.detected_at / 1000.0),
+               to_timestamp(ls.created_at / 1000.0),
+               null::text, null::text, null::text, null::text, null::text,
+               null::text,
+               null::timestamptz
+          from public.live_signals ls
+         where $1::text = 'legacy_evidence'
       ), filtered as (
         select *
           from artifacts
@@ -343,6 +439,13 @@ export async function read_signal_artifact(
   domain: SignalArtifactDomain,
   recordId: string,
 ) {
+  if (domain === "legacy_evidence") {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message:
+        "Legacy evidence rows are read-only in the explorer list. They are not canonical artifacts, so they have no artifact detail and cannot be linked to a case.",
+    });
+  }
   const pool = getPool();
   if (domain === "legal_pattern") {
     const { rows } = await pool.query(

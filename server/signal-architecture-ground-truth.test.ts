@@ -164,10 +164,16 @@ describe("canonical three-domain signal architecture", () => {
 
   it("renders the canonical architecture instead of the mixed legacy registry", () => {
     expect(page).toContain("get_signal_architecture.useQuery");
-    expect(page).toContain("Three independent source domains");
+    // Header copy rewritten in plain language 2026-11-05 on Alexander's
+    // direction (the old dialect pins — "Three independent source
+    // domains", "Legacy mixed rows quarantined" — are superseded; the
+    // legacy bucket is now labeled as evidence and opens into the
+    // explorer).
+    expect(page).toContain("kept in three separate groups");
     expect(page).toContain("Unique Atlas observations");
-    expect(page).toContain("historical rows");
-    expect(page).toContain("replay rows preserved");
-    expect(page).toContain("Legacy mixed rows quarantined");
+    expect(page).toContain("records pulled in, in total");
+    expect(page).toContain("repeat deliveries");
+    expect(page).toContain("Older signal rows, kept as evidence");
+    expect(page).toContain("Click to browse them");
   });
 });
