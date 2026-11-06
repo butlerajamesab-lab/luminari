@@ -27,7 +27,10 @@ describe("Docket unbased amendment removal and readmission prevention", () => {
     expect(migration).toContain("jsonb_array_elements(coalesce(v_bill -> 'amendments', '[]'::jsonb))");
     expect(migration).toContain("candidate.base_source_document_key");
     expect(migration).toContain("and base.document_family = 'text'");
-    expect(migration).toContain("document.document_family <> 'amendment'");
+    expect(migration).toContain("document.document_family='amendment'");
+    expect(migration).toContain("attached_base.bill_version_id is not null");
+    expect(migration).toContain("civic_genome_amendment_requires_base_version_v1");
+    expect(migration).toContain("VALIDATE CONSTRAINT civic_genome_amendment_requires_base_version_v1");
     expect(migration).toContain("version.base_bill_version_id is not null");
     expect(migration).toContain("amendment_attachment_v1,relationship_basis");
     expect(migration).toContain("amendment_attachment_v1,base_bill_version_id");
