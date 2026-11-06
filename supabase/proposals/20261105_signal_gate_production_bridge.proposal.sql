@@ -15,7 +15,7 @@
 -- `column "gate_log_id" does not exist`; no data changed.
 --
 -- This bridge adapts the SQL chain to production's tables:
---   1. Three ADDITIVE identity columns (uuid, defaulted,
+--   1. Two ADDITIVE identity columns (uuid, defaulted,
 --      unique where they anchor joins). Existing writers are
 --      untouched: every added column has a default or is nullable,
 --      and no existing column changes name, type, or meaning.
@@ -35,14 +35,19 @@
 --      written in production shape, linked by gate_decision_id;
 --      the gate log back-filled with promoted_signal_id, the TS
 --      estate's own convention).
--- AMENDMENT (2026-11-05, before apply): public.detected_signals is
--- a VIEW over public.detected_signals_base (verified first-hand via
--- pg_get_viewdef after the first apply attempt failed safe on
--- `ALTER action ADD COLUMN cannot be performed on views` and rolled
--- back in full — no statement from that attempt persists). The
--- additive identity column and the promoter's write therefore target
--- detected_signals_base; the gate's duplicate check keeps reading
--- the view. The view's own column list is deliberately untouched.
+-- AMENDMENT (2026-11-05, before apply — supersedes the first
+-- amendment note): public.detected_signals is a UNION VIEW over
+-- signal_registry, raw_live_signals, and extraction_staging
+-- (through detected_signals_base), verified first-hand via
+-- pg_get_viewdef after TWO apply attempts failed safe on
+-- `ALTER action ADD COLUMN cannot be performed on views` and
+-- rolled back in full — no statement from either attempt persists.
+-- Promoted signals surface through the view's extraction_staging
+-- branch (signal_id = promoted_signal_id, approval_status =
+-- gate_decision), so the promoter's write lands there as a row
+-- marked 'promoted'; no identity column is added on the detected
+-- side. The gate's duplicate check keeps reading the view. The
+-- views' definitions are deliberately untouched.
 -- The wrapper, the integer shim, and run_signal_promotion_batch_v1
 -- are NOT changed: the gate again returns a real uuid gate_log_id,
 -- which is all they ever needed.
@@ -59,10 +64,6 @@ ALTER TABLE public.extraction_staging
 CREATE INDEX extraction_staging_gate_log_id_idx
     ON public.extraction_staging (gate_log_id);
 
-ALTER TABLE public.detected_signals_base
-    ADD COLUMN detected_signal_id uuid DEFAULT gen_random_uuid();
-CREATE UNIQUE INDEX detected_signals_base_detected_signal_id_key
-    ON public.detected_signals_base (detected_signal_id);
 
 -- 2. The gate, production-bridged (body generated from the live def).
 CREATE OR REPLACE FUNCTION public.process_live_signal_through_gate(p_live_signal_id text, p_signal_type text, p_source_system text, p_source_connector_id text, p_jurisdiction_raw_value text, p_dataset_id text, p_confidence_score numeric, p_severity text, p_detected_at timestamp with time zone, p_source_url text, p_generation_method text, p_record_origin text, p_verification_status text, p_evidence_payload jsonb, p_provenance_metadata jsonb, p_raw_payload jsonb)
@@ -408,37 +409,39 @@ BEGIN
     )
     RETURNING promotion_id INTO v_promotion_id;
 
-    -- Write to detected_signals (the only legitimate write path)
-    -- BRIDGE: production column shape. The row's uuid identity is
-    -- generated here and stored in both detected_signal_id and
-    -- signal_id; gate_decision_id links back to the gate log's
-    -- integer id. Evidence lands in supporting_statistics (the
-    -- production table has no evidence/provenance columns;
-    -- provenance remains on the source live_data_signals row and
-    -- in the gate's stored score breakdown). confidence_score
-    -- follows the estate's integer-percent convention; the exact
-    -- 0..1 value is preserved in confidence_score_raw.
+    -- Write the promoted signal (the only legitimate write path)
+    -- BRIDGE (amended): production detected_signals is a UNION VIEW
+    -- (signal_registry + raw_live_signals + extraction_staging);
+    -- promoted signals surface through its extraction_staging
+    -- branch, keyed by promoted_signal_id, with approval_status
+    -- read from gate_decision. So the constitutional write lands
+    -- as a staging row marked 'promoted', carrying this module's
+    -- generated uuid as promoted_signal_id — the same uuid the
+    -- promotion log records as detected_signal_id. staged_at
+    -- carries the candidate's own detection time (the view reads
+    -- it as detected_at). live_signal_id stays NULL: the staging
+    -- column is integer-era; the candidate's uuid is reachable
+    -- through gate_log_id -> sunam_gate_log.live_signal_id.
     v_detected_signal_id := gen_random_uuid();
-    INSERT INTO detected_signals_base (
-        id, detected_signal_id, signal_id,
-        live_signal_id, signal_type, dataset_id,
-        jurisdiction, severity,
-        confidence_score, confidence_score_raw,
-        sunam_score, sunam_threshold_id, sunam_status,
-        gate_decision_id, supporting_statistics,
-        detected_at, detection_timestamp, created_at, updated_at
+    INSERT INTO extraction_staging (
+        signal_type, dataset_id, jurisdiction, severity, title,
+        supporting_statistics, raw_confidence_score,
+        signal_fingerprint, sunam_score, sunam_threshold,
+        score_breakdown, gate_decision, gate_reason,
+        promoted_signal_id, promoted_at, gate_log_id,
+        staged_at, created_at, updated_at
     ) VALUES (
-        (SELECT COALESCE(MAX(id), 0) + 1 FROM detected_signals_base),
-        v_detected_signal_id, v_detected_signal_id::TEXT,
-        p_live_signal_id::TEXT, p_signal_type, v_gate_log.dataset_id,
-        p_jurisdiction_raw_value, p_severity,
-        (p_confidence_score * 100)::INTEGER, p_confidence_score::TEXT,
-        v_gate_log.sunam_score, v_gate_log.threshold_id,
-        COALESCE(p_signal_status, 'active'),
-        v_gate_log.id,
+        p_signal_type, v_gate_log.dataset_id, p_jurisdiction_raw_value,
+        p_severity, p_signal_type,
         COALESCE(p_evidence_payload, '{}'::JSONB)::TEXT,
+        p_confidence_score::TEXT,
+        v_gate_log.signal_fingerprint, v_gate_log.sunam_score,
+        v_gate_log.threshold_used, v_gate_log.score_breakdown,
+        'promoted', v_gate_log.decision_reason,
+        v_detected_signal_id::TEXT,
+        to_char(NOW() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
+        p_gate_log_id,
         (EXTRACT(EPOCH FROM COALESCE(p_detected_at, NOW())) * 1000)::BIGINT,
-        (EXTRACT(EPOCH FROM NOW()) * 1000)::BIGINT,
         (EXTRACT(EPOCH FROM NOW()) * 1000)::BIGINT,
         (EXTRACT(EPOCH FROM NOW()) * 1000)::BIGINT
     )
