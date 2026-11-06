@@ -153,7 +153,9 @@ END;
 $function$`;
 
 // Production-shaped harness tables (DDL generated from production
-// information_schema, 2026-11-05; pre-bridge state).
+// information_schema, 2026-11-05; pre-bridge state). NOTE:
+// detected_signals is a VIEW over detected_signals_base in
+// production; the harness models both, from the harvested def.
 const harnessDdl = `CREATE TABLE public.threshold_profiles (
       profile_id uuid DEFAULT gen_random_uuid() NOT NULL,
       profile_name text NOT NULL,
@@ -236,7 +238,7 @@ const harnessDdl = `CREATE TABLE public.threshold_profiles (
       updated_at bigint
     );
 
-    CREATE TABLE public.detected_signals (
+    CREATE TABLE public.detected_signals_base (
       id integer,
       live_signal_id text,
       case_id text,
@@ -292,11 +294,7 @@ const harnessDdl = `CREATE TABLE public.threshold_profiles (
       signal_id text,
       parent_record_id text,
       sunam_status text,
-      forensic_logic text,
-      finding_id uuid,
-      snapshot_id uuid,
-      pipeline_run_id uuid,
-      signal_description text
+      forensic_logic text
     );
 
     CREATE TABLE public.signal_promotion_log (
@@ -350,6 +348,70 @@ const harnessDdl = `CREATE TABLE public.threshold_profiles (
       atlas_semantic_key text
     );`;
 
+// Production's detected_signals view, verbatim (pg_get_viewdef).
+const detectedSignalsView = `CREATE VIEW public.detected_signals AS
+SELECT id,
+    live_signal_id,
+    case_id,
+    signal_type,
+    dataset_id,
+    jurisdiction,
+    domain,
+    severity,
+    title,
+    explanation,
+    pattern_summary,
+    supporting_statistics,
+    confidence_score_raw,
+    sunam_score,
+    sunam_threshold_id,
+    approval_status,
+    approved_at,
+    actionable_at,
+    detected_at,
+    created_at,
+    detection_timestamp,
+    confidence_score,
+    source_record_ids,
+    extraction_timestamp,
+    data_version,
+    jurisdiction_scope,
+    severity_level,
+    affected_entities,
+    entity_id,
+    geographic_focus,
+    observed_value,
+    expected_value,
+    threshold_value,
+    percentage_change,
+    time_window_start,
+    time_window_end,
+    escalation_status,
+    reviewed_by,
+    review_notes,
+    external_reference_id,
+    updated_at,
+    entity_role,
+    complaint_category,
+    complaint_subcategory,
+    narrative_actions_taken,
+    narrative_reasoning,
+    historical_trend_context,
+    cross_signal_links,
+    deviation,
+    pattern_type_id,
+    gate_decision_id,
+    plain_language_explanation,
+    signal_id,
+    parent_record_id,
+    sunam_status,
+    forensic_logic,
+    NULL::uuid AS finding_id,
+    NULL::uuid AS snapshot_id,
+    NULL::uuid AS pipeline_run_id,
+    explanation AS signal_description
+   FROM detected_signals_base b;;`;
+
 // Production's three threshold profiles, verbatim values.
 const profileSeed = `INSERT INTO public.threshold_profiles (profile_id, profile_name, dataset_id, jurisdiction_scope, source_tier, weight_provenance_confidence, weight_jurisdiction_validity, weight_source_trust_tier, weight_duplicate_probability, weight_extraction_completeness, weight_temporal_relevance, weight_schema_validity, weight_contradiction_flags, promote_threshold, stage_threshold, hold_threshold, escalate_on_contradiction, escalate_on_zero_provenance, escalate_on_unknown_source, is_default, is_active, description, created_at, updated_at) VALUES
        ('d3b93f03-8f91-4076-8475-02e50240f0e1', 'global_default', NULL, NULL, NULL, '0.2000', '0.1500', '0.1500', '0.1000', '0.1500', '0.1000', '0.1000', '0.0500', '0.6500', '0.4000', '0.2000', true, true, false, true, true, 'Global default threshold profile. All signals not matching a specific dataset/jurisdiction profile use this.', '2026-05-14 02:37:00.578173+00', '2026-05-14 02:37:00.578173+00'),
@@ -371,6 +433,7 @@ beforeAll(async () => {
     CREATE SEQUENCE public.extraction_staging_id_seq;
   `);
   await database.exec(harnessDdl);
+  await database.exec(detectedSignalsView);
   await database.exec(
     `CREATE SCHEMA compat; CREATE VIEW compat.sunam_gate_log AS ${compatViewBody};`,
   );
@@ -552,7 +615,7 @@ describe("signal gate production bridge", () => {
     expect(logRow.rows[0].promoted_signal_id).toBe(fresh.detected_signal_id);
 
     const detected = await database.query<any>(
-      `SELECT * FROM public.detected_signals
+      `SELECT * FROM public.detected_signals_base
         WHERE detected_signal_id = $1`,
       [fresh.detected_signal_id],
     );
@@ -561,6 +624,14 @@ describe("signal gate production bridge", () => {
     expect(detected.rows[0].live_signal_id).toBe(CANDIDATE_FRESH);
     expect(detected.rows[0].signal_id).toBe(fresh.detected_signal_id);
     expect(detected.rows[0].sunam_score).toBe(logRow.rows[0].sunam_score);
+
+    // The promoted row is visible through the production view.
+    const viaView = await database.query<any>(
+      `SELECT signal_id FROM public.detected_signals
+        WHERE signal_id = $1`,
+      [fresh.detected_signal_id],
+    );
+    expect(viaView.rows).toHaveLength(1);
 
     // Stale candidate: staging row bridged by gate_log_id, and the
     // log row back-filled with the staging id.
@@ -582,7 +653,7 @@ describe("signal gate production bridge", () => {
     const before = await database.query<any>(
       `SELECT (SELECT count(*)::int FROM public.sunam_gate_log) AS logs,
               (SELECT count(*)::int FROM public.signal_promotion_log) AS promos,
-              (SELECT count(*)::int FROM public.detected_signals) AS detected,
+              (SELECT count(*)::int FROM public.detected_signals_base) AS detected,
               (SELECT count(*)::int FROM public.extraction_staging) AS staging`,
     );
     const batch = await database.query<{ r: any }>(
@@ -592,7 +663,7 @@ describe("signal gate production bridge", () => {
     const after = await database.query<any>(
       `SELECT (SELECT count(*)::int FROM public.sunam_gate_log) AS logs,
               (SELECT count(*)::int FROM public.signal_promotion_log) AS promos,
-              (SELECT count(*)::int FROM public.detected_signals) AS detected,
+              (SELECT count(*)::int FROM public.detected_signals_base) AS detected,
               (SELECT count(*)::int FROM public.extraction_staging) AS staging`,
     );
     expect(after.rows[0]).toEqual(before.rows[0]);

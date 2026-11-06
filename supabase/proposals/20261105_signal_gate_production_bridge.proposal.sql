@@ -35,6 +35,14 @@
 --      written in production shape, linked by gate_decision_id;
 --      the gate log back-filled with promoted_signal_id, the TS
 --      estate's own convention).
+-- AMENDMENT (2026-11-05, before apply): public.detected_signals is
+-- a VIEW over public.detected_signals_base (verified first-hand via
+-- pg_get_viewdef after the first apply attempt failed safe on
+-- `ALTER action ADD COLUMN cannot be performed on views` and rolled
+-- back in full — no statement from that attempt persists). The
+-- additive identity column and the promoter's write therefore target
+-- detected_signals_base; the gate's duplicate check keeps reading
+-- the view. The view's own column list is deliberately untouched.
 -- The wrapper, the integer shim, and run_signal_promotion_batch_v1
 -- are NOT changed: the gate again returns a real uuid gate_log_id,
 -- which is all they ever needed.
@@ -51,10 +59,10 @@ ALTER TABLE public.extraction_staging
 CREATE INDEX extraction_staging_gate_log_id_idx
     ON public.extraction_staging (gate_log_id);
 
-ALTER TABLE public.detected_signals
+ALTER TABLE public.detected_signals_base
     ADD COLUMN detected_signal_id uuid DEFAULT gen_random_uuid();
-CREATE UNIQUE INDEX detected_signals_detected_signal_id_key
-    ON public.detected_signals (detected_signal_id);
+CREATE UNIQUE INDEX detected_signals_base_detected_signal_id_key
+    ON public.detected_signals_base (detected_signal_id);
 
 -- 2. The gate, production-bridged (body generated from the live def).
 CREATE OR REPLACE FUNCTION public.process_live_signal_through_gate(p_live_signal_id text, p_signal_type text, p_source_system text, p_source_connector_id text, p_jurisdiction_raw_value text, p_dataset_id text, p_confidence_score numeric, p_severity text, p_detected_at timestamp with time zone, p_source_url text, p_generation_method text, p_record_origin text, p_verification_status text, p_evidence_payload jsonb, p_provenance_metadata jsonb, p_raw_payload jsonb)
@@ -411,7 +419,7 @@ BEGIN
     -- follows the estate's integer-percent convention; the exact
     -- 0..1 value is preserved in confidence_score_raw.
     v_detected_signal_id := gen_random_uuid();
-    INSERT INTO detected_signals (
+    INSERT INTO detected_signals_base (
         id, detected_signal_id, signal_id,
         live_signal_id, signal_type, dataset_id,
         jurisdiction, severity,
@@ -420,7 +428,7 @@ BEGIN
         gate_decision_id, supporting_statistics,
         detected_at, detection_timestamp, created_at, updated_at
     ) VALUES (
-        (SELECT COALESCE(MAX(id), 0) + 1 FROM detected_signals),
+        (SELECT COALESCE(MAX(id), 0) + 1 FROM detected_signals_base),
         v_detected_signal_id, v_detected_signal_id::TEXT,
         p_live_signal_id::TEXT, p_signal_type, v_gate_log.dataset_id,
         p_jurisdiction_raw_value, p_severity,
