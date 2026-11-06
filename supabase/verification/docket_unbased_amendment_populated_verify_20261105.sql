@@ -125,6 +125,26 @@ VALUES ('amendment:1900000000:3000004',1900000000,3000004,
           'attachment_evidence_hash',repeat('e',64),
           'base_source_content_hash',repeat('f',64)),now());
 
+-- Direct genome-version writes are protected independently of the source
+-- document. Even a source with a non-null base cannot create a version that
+-- lacks its own base-version identity.
+DO $negative_direct_version$
+BEGIN
+  BEGIN
+    INSERT INTO public.civic_genome_bill_version
+      (genome_bill_id,source_document_key,source_bill_id,document_family,
+       version_type,provider_sequence,stage_rank,version_fingerprint)
+    SELECT g.genome_bill_id,'amendment:1900000000:3000004',
+           1900000000,'amendment','house_amendment',4,250,repeat('e',64)
+    FROM public.civic_genome_bill g
+    WHERE g.structural_dna_json->>'source_bill_id'='1900000000';
+    RAISE EXCEPTION 'FAIL: direct unbased genome version admitted';
+  EXCEPTION WHEN check_violation THEN
+    RAISE NOTICE 'PASS: direct unbased genome version rejected';
+  END;
+END
+$negative_direct_version$;
+
 -- The archived source remains available, including a still-unattached
 -- amendment. Its mention must not recreate a derived unbased record.
 UPDATE public.docket_bill_detail_cache
@@ -166,6 +186,25 @@ BEGIN
  RAISE NOTICE 'PASS: cache trigger and explicit registration do not recreate unbased amendments; original source preserved';
 END
 $no_reentry$;
+
+-- A separately admitted, evidence-shaped, same-bill amendment can
+-- acquire its base version; it is still not eligible without the independent
+-- finished attachment receipt.
+DO $positive_derived_version$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.civic_genome_bill_version amended
+    JOIN public.civic_genome_bill_version base
+      ON base.bill_version_id=amended.base_bill_version_id
+    WHERE amended.source_document_key='amendment:1900000000:3000004'
+      AND base.source_document_key='text:1900000000:9000000'
+  ) THEN
+    RAISE EXCEPTION 'Evidence-linked amendment was not registered with its base';
+  END IF;
+  RAISE NOTICE 'PASS: evidence-linked amendment version carries exact base ID';
+END
+$positive_derived_version$;
 
 -- The 2,101 historical source-stem-linked amendments have no independently
 -- verified amendment_attachment_v1 receipts. Registration must NOT queue them.
