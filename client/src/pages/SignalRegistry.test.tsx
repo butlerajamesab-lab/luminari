@@ -27,7 +27,7 @@ beforeEach(() => {
   state.detail.mockReset().mockReturnValue({ data: undefined });
   state.legacy.mockReset().mockReturnValue({ data: undefined, error: null, isLoading: false });
   state.catalog = { data: { rules: [{ rule_id: "example_rule", rule_version: "2.2.0", pattern_type: "example_structural_match", description: "Complaint followed by termination", required_sequence: [{ to_state: "complaint_filed" }, { to_state: "terminated" }], time_window_days: 90, min_independent_source_artifacts: 2, same_entity: true }], history: [], retained_records: 6019, chronology_observations: 6019, distinct_pattern_occurrences: 0 }, error: null, isLoading: false };
-  state.architecture = { data: { domains: [], integrity: { intake_signal_count: 0, legal_pattern_count: 0, live_data_signal_count: 1, legacy_detected_signals_count: 0, legacy_live_signals_count: 0 } }, error: null, isLoading: false };
+  state.architecture = { data: { domains: [], integrity: { intake_signal_count: 0, legal_pattern_count: 0, live_data_signal_count: 1, legacy_detected_signals_count: 0, legacy_live_signals_count: 0, legacy_families: { cited_legal_analysis_count: 55, retired_detector_stub_count: 118, early_source_record_count: 91, gate_staging_history_count: 1154, governed_staging_promotion_count: 9, bridged_live_signal_count: 6 } } }, error: null, isLoading: false };
   state.feed = { data: { total: 1, has_more: false, items: [{ domain_code: "live_data", record_id: "1", artifact_type: "frequency_spike", title: "Saved detection", description: "Preserved observation", status: "unresolved", occurred_at: null }] }, error: null, isLoading: false };
 });
 

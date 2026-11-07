@@ -34,6 +34,12 @@ describe("global signal architecture read boundary", () => {
           intake_signal_count: 12,
           legacy_status: "quarantined",
           atlas_status: "current",
+          cited_legal_analysis_count: 55,
+          retired_detector_stub_count: 118,
+          early_source_record_count: 91,
+          gate_staging_history_count: 1154,
+          governed_staging_promotion_count: 9,
+          legacy_live_signals_count: 6,
         },
         recent_records: [{
           domain_code: "case_intake",
@@ -67,6 +73,17 @@ describe("global signal architecture read boundary", () => {
       current_record_count: 8,
     });
     expect(result.integrity.intake_signal_count).toBe(12);
+    // Per-family classification (LEGACY-FAMILY-AUDIT-2026-11-06): the read
+    // model surfaces the audit's family counts, with the bridged live
+    // signals taken from the view's live-signals count.
+    expect(result.integrity.legacy_families).toEqual({
+      cited_legal_analysis_count: 55,
+      retired_detector_stub_count: 118,
+      early_source_record_count: 91,
+      gate_staging_history_count: 1154,
+      governed_staging_promotion_count: 9,
+      bridged_live_signal_count: 6,
+    });
     expect(result.recent_records).toEqual([expect.objectContaining({
       domain_code: "legal_pattern",
       record_id: "public-pattern-id",

@@ -64,9 +64,21 @@ const domain_meta = {
   legacy_evidence: {
     icon: AlertTriangle,
     color: palette.danger,
-    short_label: "Legacy",
+    short_label: "Older rows",
   },
 } as const;
+
+const legacy_family_labels: Record<string, string> = {
+  signal_registry: "Cited legal analysis",
+  raw_live_signals: "Early source record",
+  extraction_staging: "Gate history",
+  live_signals: "Bridged source record",
+};
+
+function legacy_family_label(record_id: string): string {
+  const source = record_id.split(":")[0] ?? "";
+  return legacy_family_labels[source] ?? "Older row";
+}
 
 const artifact_domains = ["legal_pattern", "live_data", "convergence", "legacy_evidence"] as const;
 type ArtifactDomain = typeof artifact_domains[number];
@@ -278,6 +290,22 @@ export default function SignalRegistry() {
   }
 
   const { domains, integrity } = architecture_query.data;
+  const legacy_families = (integrity as any).legacy_families as
+    | {
+        cited_legal_analysis_count: number;
+        retired_detector_stub_count: number;
+        early_source_record_count: number;
+        gate_staging_history_count: number;
+        governed_staging_promotion_count: number;
+        bridged_live_signal_count: number;
+      }
+    | undefined;
+  const legacy_listed_total = legacy_families
+    ? legacy_families.cited_legal_analysis_count +
+      legacy_families.early_source_record_count +
+      legacy_families.gate_staging_history_count +
+      legacy_families.bridged_live_signal_count
+    : integrity.legacy_detected_signals_count + integrity.legacy_live_signals_count;
 
   return (
     <div
@@ -354,18 +382,28 @@ export default function SignalRegistry() {
           type="button"
           onClick={() => choose_domain("legacy_evidence")}
           style={{ ...metric_card_style, borderColor: "rgba(248,113,113,0.32)", textAlign: "left", cursor: "pointer", color: palette.text, width: "100%" }}
-          aria-label="Browse the older signal rows kept as evidence"
+          aria-label="Browse the older rows, classified by family"
         >
           <AlertTriangle size={18} color={palette.danger} />
           <div>
             <div style={metric_value_style}>
-              {format_number(
-                integrity.legacy_detected_signals_count + integrity.legacy_live_signals_count,
-              )}
+              {format_number(legacy_listed_total)}
             </div>
-            <div style={metric_label_style}>Older signal rows, kept as evidence</div>
+            <div style={metric_label_style}>Older rows, classified by family</div>
             <div style={metric_note_style}>
-              {format_number(integrity.legacy_detected_signals_count)} rows from the older detected-signals surface and {format_number(integrity.legacy_live_signals_count)} from the oldest signals table — all written before the three domains were separated. They are kept for the record and do not count as governed signals. Click to browse them.
+              {legacy_families ? (
+                <>
+                  {format_number(legacy_families.cited_legal_analysis_count)} cited legal analysis ·{" "}
+                  {format_number(legacy_families.early_source_record_count)} early source records ·{" "}
+                  {format_number(legacy_families.bridged_live_signal_count)} bridged bills ·{" "}
+                  {format_number(legacy_families.gate_staging_history_count)} gate-staging history. Not listed
+                  as signals: {format_number(legacy_families.retired_detector_stub_count)} retired detector
+                  rows (kept in place) and {format_number(legacy_families.governed_staging_promotion_count)}{" "}
+                  governed promotions, which count under Domain 3. Click to browse the listed rows.
+                </>
+              ) : (
+                <>Classified by family under the November 2026 audit. Click to browse them.</>
+              )}
             </div>
           </div>
         </button>
@@ -540,7 +578,7 @@ export default function SignalRegistry() {
             <option value="legal_pattern">Domain 2 · Legal patterns</option>
             <option value="live_data">Domain 3 · Atlas records</option>
             <option value="convergence">Three-domain convergence</option>
-            <option value="legacy_evidence">Older rows · kept as evidence</option>
+            <option value="legacy_evidence">Older rows · by family</option>
           </select>
           <label style={{ position: "relative" }}>
             <Search size={15} style={{ position: "absolute", left: 11, top: 11, color: palette.muted }} />
@@ -584,7 +622,7 @@ export default function SignalRegistry() {
         ) : artifacts_data?.items.length === 0 ? (
           <div style={{ padding: 28, textAlign: "center", color: palette.muted }}>
             {selected_domain === "legacy_evidence"
-              ? "No legacy evidence rows match this filter."
+              ? "No older rows match this filter."
               : "No canonical artifacts match this filter."}
           </div>
         ) : (
@@ -628,7 +666,10 @@ export default function SignalRegistry() {
                 >
                   <div>
                     <div style={{ color, fontSize: 11, textTransform: "uppercase" }}>
-                      {readable(record.domain_code)} · {readable(record.artifact_type)}
+                      {record.domain_code === "legacy_evidence"
+                        ? legacy_family_label(record.record_id)
+                        : readable(record.domain_code)}{" "}
+                      · {readable(record.artifact_type)}
                     </div>
                     <div style={{ marginTop: 4, fontWeight: 650 }}>{record.title}</div>
                     {record.domain_code === "legacy_evidence" ? (

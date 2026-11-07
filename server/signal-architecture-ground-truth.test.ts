@@ -168,12 +168,14 @@ describe("canonical three-domain signal architecture", () => {
     // direction (the old dialect pins — "Three independent source
     // domains", "Legacy mixed rows quarantined" — are superseded; the
     // legacy bucket is now labeled as evidence and opens into the
-    // explorer).
+    // explorer). Superseded again 2026-11-06: the per-family audit
+    // (LEGACY-FAMILY-AUDIT-2026-11-06, adopted on Alexander's "Onward")
+    // replaced the single bucket with the family classification.
     expect(page).toContain("kept in three separate groups");
     expect(page).toContain("Unique Atlas observations");
     expect(page).toContain("records pulled in, in total");
     expect(page).toContain("repeat deliveries");
-    expect(page).toContain("Older signal rows, kept as evidence");
-    expect(page).toContain("Click to browse them");
+    expect(page).toContain("Older rows, classified by family");
+    expect(page).toContain("Click to browse the listed rows");
   });
 });

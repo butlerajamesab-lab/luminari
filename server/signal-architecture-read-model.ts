@@ -144,6 +144,31 @@ export async function read_signal_architecture(limit: number) {
         integrity.latest_atlas_observation_at == null
           ? null
           : new Date(integrity.latest_atlas_observation_at).toISOString(),
+      // Per-family classification of the older rows (determinations of
+      // LEGACY-FAMILY-AUDIT-2026-11-06, adopted 2026-11-06): the single
+      // legacy bucket decomposed into what the rows actually are. The raw
+      // legacy counts above stay for compatibility; these are the figures
+      // the page presents.
+      legacy_families: {
+        cited_legal_analysis_count: to_count(
+          integrity.cited_legal_analysis_count,
+        ),
+        retired_detector_stub_count: to_count(
+          integrity.retired_detector_stub_count,
+        ),
+        early_source_record_count: to_count(
+          integrity.early_source_record_count,
+        ),
+        gate_staging_history_count: to_count(
+          integrity.gate_staging_history_count,
+        ),
+        governed_staging_promotion_count: to_count(
+          integrity.governed_staging_promotion_count,
+        ),
+        bridged_live_signal_count: to_count(
+          integrity.legacy_live_signals_count,
+        ),
+      },
       legacy_status: String(integrity.legacy_status ?? "unknown"),
       atlas_status: String(integrity.atlas_status ?? "unknown"),
     },
