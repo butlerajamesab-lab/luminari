@@ -326,6 +326,13 @@ describe("legacy evidence door (quarantined rows)", () => {
     expect(sql).toContain("public.extraction_staging");
     expect(sql).toContain("public.live_signals");
     expect(sql).toContain("where $1::text = 'legacy_evidence'");
+    // Family determinations (LEGACY-FAMILY-AUDIT-2026-11-06): the registry
+    // branch lists only the cited weak-joint analysis (the generated
+    // detector rows are retired from the surface), and the staging branch
+    // lists only gate history (the governed promotions are Domain 3
+    // records, not legacy rows).
+    expect(sql).toContain("sr.signal_type = 'weak_joint'");
+    expect(sql).toContain("coalesce(es.gate_decision, 'staged') = 'staged'");
     expect(query.mock.calls[0][1]).toEqual(["legacy_evidence", "", 50, 0]);
   });
 

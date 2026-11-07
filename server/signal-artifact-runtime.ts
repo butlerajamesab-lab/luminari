@@ -240,13 +240,20 @@ export async function list_signal_artifacts(input: {
           from public.signal_convergences
          where is_current
         union all
-        -- Legacy evidence (quarantined): rows written before the three
-        -- domains were separated. They surface ONLY under the explicit
-        -- legacy_evidence filter, never under "all domains", and they
-        -- stay read-only: no artifact detail, no case links. The three
-        -- detected-signals branches below mirror the source tables the
-        -- detected_signals union view is built from, so the counts here
-        -- reconcile with v_signal_architecture_integrity.
+        -- Older rows, classified by family (determinations of
+        -- LEGACY-FAMILY-AUDIT-2026-11-06, adopted 2026-11-06). They
+        -- surface ONLY under the explicit legacy_evidence filter, never
+        -- under "all domains", and they stay read-only: no artifact
+        -- detail, no case links. The branches below list the families
+        -- that remain on the signal surface: cited weak-joint legal
+        -- analysis (signal_registry 'weak_joint' only — the generated
+        -- detector rows are retired from this surface, preserved in
+        -- their table), early source records (raw_live_signals),
+        -- gate-staging history (extraction_staging 'staged' only — the
+        -- 'promoted' rows are governed Domain 3 records and are not
+        -- listed here), and bridged live signals (live_signals).
+        -- Listed 1,306 + retired 118 + promotions counted in Domain 3
+        -- (9) reconciles with the former 1,433 legacy total.
         select 'legacy_evidence'::text,
                'signal_registry:' || sr.id::text,
                sr.signal_type,
@@ -266,6 +273,7 @@ export async function list_signal_artifacts(input: {
                null::timestamptz
           from public.signal_registry sr
          where $1::text = 'legacy_evidence'
+           and sr.signal_type = 'weak_joint'
         union all
         select 'legacy_evidence'::text,
                'raw_live_signals:' || rls.id::text,
@@ -306,6 +314,7 @@ export async function list_signal_artifacts(input: {
                null::timestamptz
           from public.extraction_staging es
          where $1::text = 'legacy_evidence'
+           and coalesce(es.gate_decision, 'staged') = 'staged'
         union all
         select 'legacy_evidence'::text,
                'live_signals:' || ls.id::text,
