@@ -48,7 +48,16 @@ export function validateManifest(raw: unknown): BaselineManifest {
   }
   const names = new Set<string>();
   const shaSet = new Set<string>();
+  const normalized: BaselineArchive[] = [];
   for (const item of manifest.archives) {
+    // The source manifest omits zero-count categories (NV has no "vote" key).
+    // Normalize only the in-memory metadata. Never alter the manifest's bytes,
+    // which the canonical importer independently verifies by exact SHA-256.
+    const kinds = item?.types && {
+      bill: item.types.bill ?? 0,
+      vote: item.types.vote ?? 0,
+      people: item.types.people ?? 0
+    };
     if (!item || typeof item.archive !== "string" || !zipName.test(item.archive) ||
         typeof item.sha256 !== "string" || !hash.test(item.sha256) ||
         item.archive.includes("/") || item.archive.includes("\\") || item.archive.includes("..") ||
@@ -57,10 +66,8 @@ export function validateManifest(raw: unknown): BaselineManifest {
         !item.archive.startsWith(item.jurisdiction + "_") ||
         typeof item.session_ids !== "string" || !/^[0-9]+(?:;[0-9]+)*$/.test(item.session_ids) ||
         !Number.isSafeInteger(item.json) || item.json < 1 ||
-        !item.types || !["bill", "vote", "people"].every(k =>
-          Number.isSafeInteger(item.types[k as keyof BaselineArchive["types"]]) &&
-          item.types[k as keyof BaselineArchive["types"]] >= 0) ||
-        item.json !== item.types.bill + item.types.vote + item.types.people) {
+        !kinds || !Object.values(kinds).every(n => Number.isSafeInteger(n) && n >= 0) ||
+        item.json !== kinds.bill + kinds.vote + kinds.people) {
       throw new Error("docket_storage_invalid_manifest_entry: " + String(item?.archive));
     }
     if (names.has(item.archive) || shaSet.has(item.sha256)) {
@@ -68,8 +75,9 @@ export function validateManifest(raw: unknown): BaselineManifest {
     }
     names.add(item.archive);
     shaSet.add(item.sha256);
+    normalized.push({ ...item, types: kinds });
   }
-  return manifest;
+  return { ...manifest, archives: normalized };
 }
 export function receiptState(entry: BaselineArchive, counts: ReceiptCounts):
   "not_started" | "partial" | "complete" | "held" {
