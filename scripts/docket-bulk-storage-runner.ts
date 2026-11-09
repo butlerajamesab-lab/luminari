@@ -126,6 +126,74 @@ async function readCounts(entry: BaselineArchive): Promise<ReceiptCounts> {
   );
   return result.rows[0] as ReceiptCounts;
 }
+async function assertProductionGuards(): Promise<void> {
+  const m = await pool.query(
+    "select count(*)::int as n from supabase_migrations.schema_migrations " +
+    "where version in ('20261104084300','20261104090500')"
+  );
+  if (m.rows[0]?.n !== 2) throw new Error("docket_storage_required_migrations_changed");
+  const f = await pool.query(
+    "select md5(pg_get_functiondef(" +
+    "'public.enqueue_docket_current_authoritative_version_v1()'::regprocedure)) as value"
+  );
+  if (f.rows[0]?.value !== "4315a2fc6e7fe6cb75bd34aeb53ec614") {
+    throw new Error("docket_storage_activation_function_changed");
+  }
+}
+async function assertPreexistingBillIdentities(entry: BaselineArchive,
+                                               zipped: string): Promise<void> {
+  // Check all bill IDs BEFORE the first write so a late collision cannot
+  // strand earlier members in a partially committed archive.
+  const zip = await JSZip.loadAsync(readFileSync(zipped), { checkCRC32: true });
+  const billMembers = Object.values(zip.files).filter(file =>
+    !file.dir && file.name.includes("/bill/") && file.name.endsWith(".json"));
+  const expected = new Map<number, { state: string; session: string }>();
+  for (const file of billMembers) {
+    const parsed = JSON.parse((await file.async("nodebuffer")).toString("utf8"));
+    const bill = parsed?.bill;
+    const billId = Number(bill?.bill_id);
+    if (!Number.isSafeInteger(billId) || billId < 1 ||
+        bill?.state !== entry.jurisdiction ||
+        !entry.session_ids.split(";").includes(String(bill?.session_id)) ||
+        expected.has(billId)) {
+      throw new Error("docket_storage_invalid_source_bill_identity: " + file.name);
+    }
+    expected.set(billId, { state: bill.state, session: String(bill.session_id) });
+  }
+  if (expected.size !== entry.types.bill) {
+    throw new Error("docket_storage_source_bill_count_mismatch: " + entry.archive);
+  }
+  const ids = [...expected.keys()];
+  for (let i = 0; i < ids.length; i += 500) {
+    const chunk = ids.slice(i, i + 500);
+    const result = await pool.query(
+      "select bill_id,bill->>'state' as state,bill->>'session_id' as session " +
+      "from public.docket_bill_detail_cache where bill_id=any($1::integer[])",
+      [chunk]
+    );
+    for (const row of result.rows) {
+      const identity = expected.get(row.bill_id);
+      if (!identity || identity.state !== row.state ||
+          identity.session !== row.session) {
+        throw new Error("docket_storage_cached_bill_identity_conflict: " + row.bill_id);
+      }
+    }
+  }
+}
+async function assertBillReceiptCache(entry: BaselineArchive): Promise<void> {
+  const result = await pool.query(
+    "select count(*)::int as missing from " +
+    "public.docket_legiscan_bulk_member_receipt r " +
+    "left join public.docket_bill_detail_cache d on d.bill_id=r.bill_id " +
+    "where r.archive_sha256=$1 and r.member_kind='bill' and " +
+    "(d.bill_id is null or d.bill->>'state' is distinct from $2 or " +
+    "d.bill->>'session_id' <> all(string_to_array($3,';')))",
+    [entry.sha256, entry.jurisdiction, entry.session_ids]
+  );
+  if (result.rows[0]?.missing !== 0) {
+    throw new Error("docket_storage_bill_cache_missing_or_mismatched: " + entry.archive);
+  }
+}
 async function assertExistingMemberHashes(entry: BaselineArchive, zipped: string): Promise<void> {
   const rows = await pool.query(
     "select member_path,member_sha256 from public.docket_legiscan_bulk_member_receipt " +
@@ -180,6 +248,7 @@ async function main(): Promise<void> {
     const manifest = validateManifest(JSON.parse(manifestBytes.toString("utf8")));
     const manifestFile = join(temporary, "baseline.json");
     writeFileSync(manifestFile, manifestBytes, { flag: "wx" });
+    await assertProductionGuards();
     const objects = await listObjects();
     const names = objects.map(x => x.name);
     const entries = jurisdiction
@@ -223,6 +292,7 @@ async function main(): Promise<void> {
       if (item.state === "partial") await assertExistingMemberHashes(item.entry, local);
       await runCanonicalImporter(manifestFile, local, report, false);
       if (mode === "apply") {
+        await assertPreexistingBillIdentities(item.entry, local);
         console.log("APPLY " + item.entry.archive);
         await runCanonicalImporter(manifestFile, local,
           join(temporary, item.entry.jurisdiction + "-apply.json"), true);
@@ -232,6 +302,7 @@ async function main(): Promise<void> {
           throw new Error("docket_storage_postapply_incomplete: " +
             item.entry.archive + " saved=" + stats.total + "/" + item.entry.json);
         }
+        await assertBillReceiptCache(item.entry);
         console.log("PASS SOURCE RECEIPTS " + item.entry.archive +
           " " + stats.total + "/" + item.entry.json + " holds=" + stats.held);
       } else {
