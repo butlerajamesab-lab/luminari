@@ -1,0 +1,35 @@
+name: Docket one-archive cron latch (offline only)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/docket-bulk-continuous-guard.ts"
+      - "scripts/docket-bulk-continuous-guard.test.ts"
+      - "scripts/docket-bulk-storage-continuous.ts"
+      - "ops/render-docket-bulk-continuous.yaml"
+      - ".github/workflows/docket-bulk-continuous-safety.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  one-at-a-time-fail-closed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Test fail-closed Storage latches and canonical runner boundary
+        run: pnpm exec vitest run scripts/docket-bulk-continuous-guard.test.ts
+      - name: Type check cron and test files
+        run: pnpm exec tsc --noEmit
