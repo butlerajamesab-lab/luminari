@@ -94,6 +94,9 @@ describe("Docket one-archive durable stop latch", () => {
   it("only allows canonical source runner in apply mode and one-archive bound", () => {
     const runner = readFileSync("scripts/docket-bulk-storage-continuous.ts", "utf8");
     expect(runner).toContain("scripts/docket-bulk-storage-runner.ts");
+    // Exercise the exported status decoder above, and prevent the production
+    // HEAD adapter from drifting back to a 404-only implementation.
+    expect(runner).toContain("return markerPresentFromHttpStatus(response.status);");
     expect(runner).toContain('"--apply", "--acknowledge-docket-triggers", "--max-archives=1"');
     expect(runner).toContain("DOCKET_BULK_ARCHIVE_APPLY_APPROVED_SHA256");
     expect(runner).toContain('LEGISCAN_API_KEY: ""');
