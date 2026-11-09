@@ -29,6 +29,8 @@ test("normalized Storage object names support upload-only suffix, not new legisl
 test("receipt states are exact-count based; existing partial receipts are not treated as complete", () => {
   assert.equal(receiptState(entry, receipt()), "not_started");
   assert.equal(receiptState(entry, receipt({ total: 2, bill: 2 })), "partial");
+  assert.equal(receiptState(entry, receipt({ total: 6, bill: 2, roll_call: 3, person: 1, held: 1 })), "held");
+  assert.throws(() => receiptState(entry, receipt({ total: 2, bill: 1, person: 1, held: 2 })), /integrity_mismatch/);
   assert.equal(receiptState(entry, receipt({ total: 6, bill: 2, roll_call: 3, person: 1 })), "complete");
   assert.throws(() => receiptState(entry, receipt({ total: 6, bill: 3, roll_call: 2, person: 1 })), /integrity_mismatch/);
   assert.throws(() => receiptState(entry, receipt({ total: 7, bill: 2, roll_call: 3, person: 2 })), /integrity_mismatch/);
