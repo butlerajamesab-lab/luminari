@@ -51,6 +51,7 @@ export function validateManifest(raw: unknown): BaselineManifest {
   for (const item of manifest.archives) {
     if (!item || typeof item.archive !== "string" || !zipName.test(item.archive) ||
         typeof item.sha256 !== "string" || !hash.test(item.sha256) ||
+        item.archive.includes("/") || item.archive.includes("\\") || item.archive.includes("..") ||
         !Number.isSafeInteger(item.bytes) || item.bytes < 1 ||
         !/^(?:[A-Z]{2}|US)$/.test(item.jurisdiction) ||
         !item.archive.startsWith(item.jurisdiction + "_") ||
