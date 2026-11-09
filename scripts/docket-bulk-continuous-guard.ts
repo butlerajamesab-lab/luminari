@@ -8,6 +8,14 @@
 export const DOCKET_ACTIVE_MARKER = "_docket_intake_control/active.json";
 export const DOCKET_DONE_MARKER = "_docket_intake_control/complete.json";
 
+/** Supabase Storage object HEAD uses 400 or 404 when the object is absent. */
+export function markerPresentFromHttpStatus(status: number): boolean {
+  if (status === 200) return true;
+  if (status === 400 || status === 404) return false;
+  throw new Error("docket_continuous_marker_read_failed_HTTP_" + status);
+}
+
+
 export type DocketGuardStore = {
   exists(path: string): Promise<boolean>;
   create(path: string, body: string): Promise<void>;
