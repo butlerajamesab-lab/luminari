@@ -1,0 +1,32 @@
+name: Docket Storage source runner safety (no production)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/docket-bulk-storage-plan.ts"
+      - "scripts/docket-bulk-storage-plan.test.ts"
+      - "scripts/docket-bulk-storage-runner.ts"
+      - ".github/workflows/docket-bulk-storage-source-runner.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  storage-source-guardrails:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact commit
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Validate source-only planner and approval gates
+        run: pnpm exec vitest run scripts/docket-bulk-storage-plan.test.ts
