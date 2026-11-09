@@ -9,7 +9,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { spawn } from "node:child_process";
 import {
-  DOCKET_ACTIVE_MARKER, DOCKET_DONE_MARKER, runOneArchiveGuarded,
+  DOCKET_ACTIVE_MARKER, DOCKET_DONE_MARKER, markerPresentFromHttpStatus, runOneArchiveGuarded,
   type DocketGuardStore, type DocketImportOutcome
 } from "./docket-bulk-continuous-guard";
 import { BASELINE_MANIFEST_SHA256 } from "./docket-bulk-storage-plan";
@@ -37,9 +37,7 @@ const guardStore: DocketGuardStore = {
     const url = projectUrl + "/storage/v1/object/" + BUCKET + "/" +
       path.split("/").map(encodeURIComponent).join("/");
     const response = await fetch(url, { method: "HEAD", headers });
-    if (response.status === 200) return true;
-    if (response.status === 404) return false;
-    throw new Error("docket_continuous_marker_read_failed_HTTP_" + response.status);
+    return markerPresentFromHttpStatus(response.status);
   },
   async create(path, body) {
     const { error } = await storage.upload(path, Buffer.from(body, "utf8"), {
