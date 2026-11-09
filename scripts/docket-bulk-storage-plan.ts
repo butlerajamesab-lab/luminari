@@ -71,17 +71,19 @@ export function validateManifest(raw: unknown): BaselineManifest {
   return manifest;
 }
 export function receiptState(entry: BaselineArchive, counts: ReceiptCounts):
-  "not_started" | "partial" | "complete" {
+  "not_started" | "partial" | "complete" | "held" {
   const values = Object.values(counts);
   if (values.some(v => !Number.isSafeInteger(v) || v < 0) ||
       counts.wrong_identity > 0 ||
       counts.total !== counts.bill + counts.roll_call + counts.person ||
+      counts.held > counts.bill ||
       counts.total > entry.json ||
       counts.bill > entry.types.bill ||
       counts.roll_call > entry.types.vote ||
       counts.person > entry.types.people) {
     throw new Error("docket_storage_receipt_integrity_mismatch: " + entry.archive);
   }
+  if (counts.held > 0) return "held";
   if (counts.total === 0) return "not_started";
   if (counts.total === entry.json) {
     if (counts.bill !== entry.types.bill || counts.roll_call !== entry.types.vote ||
