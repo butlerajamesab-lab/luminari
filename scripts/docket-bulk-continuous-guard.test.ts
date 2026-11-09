@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  DOCKET_ACTIVE_MARKER, DOCKET_DONE_MARKER, runOneArchiveGuarded,
+  DOCKET_ACTIVE_MARKER, DOCKET_DONE_MARKER, markerPresentFromHttpStatus, runOneArchiveGuarded,
   type DocketGuardStore
 } from "./docket-bulk-continuous-guard";
 import { readFileSync } from "node:fs";
@@ -24,6 +24,18 @@ function fakeStore(existing: string[] = []) {
 }
 
 describe("Docket one-archive durable stop latch", () => {
+  it("classifies Supabase missing-object HEAD statuses 400 and 404 as absent", () => {
+    expect(markerPresentFromHttpStatus(200)).toBe(true);
+    expect(markerPresentFromHttpStatus(400)).toBe(false);
+    expect(markerPresentFromHttpStatus(404)).toBe(false);
+  });
+  it("fails closed on invalid credentials, permissions and Storage outages", () => {
+    for (const status of [0, 201, 301, 401, 403, 409, 429, 500, 502, 503]) {
+      expect(() => markerPresentFromHttpStatus(status)).toThrow(
+        "docket_continuous_marker_read_failed_HTTP_" + status
+      );
+    }
+  });
   it("halts every subsequent run on a stranded guard without starting an import", async () => {
     const f = fakeStore([DOCKET_ACTIVE_MARKER]);
     let calls = 0;
