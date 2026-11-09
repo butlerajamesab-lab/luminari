@@ -46,6 +46,13 @@ test("original manifest guard requires 60 unique, fully attributed archival iden
   const result = validateManifest({ archives });
   assert.equal(result.archives.length, 60);
   assert.match(BASELINE_MANIFEST_SHA256, /^[a-f0-9]{64}$/);
+  const omittedZeroCategory = archives.map(x => ({ ...x, types: { ...x.types } }));
+  omittedZeroCategory[0].types = { bill: 2, people: 1 } as typeof entry.types;
+  omittedZeroCategory[0].json = 3;
+  const normalized = validateManifest({ archives: omittedZeroCategory });
+  assert.equal(normalized.archives[0].types.vote, 0);
+  assert.equal(normalized.archives[0].types.bill, 2);
+  assert.equal(normalized.archives[0].json, 3);
   assert.throws(() => validateManifest({ archives: archives.slice(1) }), /count_mismatch/);
   const duplicate = archives.map(x => ({...x}));
   duplicate[1].archive = duplicate[0].archive;
