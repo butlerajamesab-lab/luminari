@@ -1,0 +1,241 @@
+/**
+ * Source-only Storage -> existing canonical Docket CLI.
+ *
+ * This program NEVER starts a worker, calls LegiScan, runs migrations, changes
+ * Docket routing, or publishes anything. --plan is the default. --verify does
+ * a full offline archive preflight. --apply requires exact-manifest approval,
+ * explicit trigger acknowledgment, and a bounded archive count.
+ *
+ * Examples:
+ *   pnpm exec tsx scripts/docket-bulk-storage-runner.ts --plan
+ *   pnpm exec tsx scripts/docket-bulk-storage-runner.ts --verify --max-archives=1
+ *   DOCKET_BULK_ARCHIVE_APPLY_APPROVED_SHA256=<verified_sha> \
+ *     pnpm exec tsx scripts/docket-bulk-storage-runner.ts \
+ *     --apply --acknowledge-docket-triggers --max-archives=1
+ */
+import { createHash } from "node:crypto";
+import { createReadStream, createWriteStream, readFileSync, writeFileSync } from "node:fs";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { Readable } from "node:stream";
+import { pipeline } from "node:stream/promises";
+import { spawn } from "node:child_process";
+import JSZip from "jszip";
+import { Pool } from "pg";
+import {
+  BASELINE_MANIFEST_SHA256, BASELINE_PILOT_OBJECT, chooseStorageObject,
+  receiptState, validateManifest, type BaselineArchive, type ReceiptCounts
+} from "./docket-bulk-storage-plan";
+
+const PROJECT_REF = "wepxlinwbjrkqdzkqpar";
+const PILOT_BUNDLE_SHA256 =
+  "08e7348bdf64f1fa0c1cac41c40b2b1a38a111e2631e1985c635477f31cd5a45";
+const args = process.argv.slice(2);
+const flag = (name: string) => args.includes("--" + name);
+const opt = (name: string) => {
+  const arg = args.find(x => x.startsWith("--" + name + "="));
+  return arg?.slice(name.length + 3) || null;
+};
+const modeFlags = ["plan", "verify", "apply"].filter(flag);
+if (modeFlags.length > 1) throw new Error("docket_storage_choose_only_one_mode");
+const mode = modeFlags[0] || "plan";
+const maxArchives = Number(opt("max-archives") || "1");
+if (!Number.isInteger(maxArchives) || maxArchives < 1 || maxArchives > 5) {
+  throw new Error("docket_storage_max_archives_must_be_1_to_5");
+}
+const jurisdiction = opt("state");
+if (jurisdiction && !/^(?:[A-Z]{2}|US)$/.test(jurisdiction)) {
+  throw new Error("docket_storage_invalid_state");
+}
+if (args.some(x => !["--plan", "--verify", "--apply", "--acknowledge-docket-triggers"].includes(x)
+                 && !/^--(?:max-archives|state)=/.test(x))) {
+  throw new Error("docket_storage_unknown_argument");
+}
+const authorized = flag("acknowledge-docket-triggers") &&
+  process.env.DOCKET_BULK_ARCHIVE_APPLY_APPROVED_SHA256 === BASELINE_MANIFEST_SHA256;
+if (mode === "apply" && !authorized) {
+  throw new Error("docket_storage_apply_requires_exact_manifest_approval_and_trigger_acknowledgment");
+}
+if (mode !== "apply" && flag("acknowledge-docket-triggers")) {
+  throw new Error("docket_storage_trigger_acknowledgment_only_for_apply");
+}
+
+const storageKey = process.env.LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY ||
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+const storageUrl = (process.env.SUPABASE_URL ||
+  "https://" + PROJECT_REF + ".supabase.co").replace(/\/$/, "");
+const databaseUrl = process.env.DATABASE_URL;
+if (!storageKey || !databaseUrl ||
+    new URL(storageUrl).host !== PROJECT_REF + ".supabase.co" ||
+    !databaseUrl.includes(PROJECT_REF)) {
+  throw new Error("docket_storage_missing_credentials_or_wrong_production_project");
+}
+const root = storageUrl + "/storage/v1";
+const headers = { apikey: storageKey, Authorization: "Bearer " + storageKey };
+const pool = new Pool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 10000 });
+
+function sha(bytes: Buffer): string {
+  return createHash("sha256").update(bytes).digest("hex");
+}
+async function fileHash(file: string): Promise<string> {
+  const digest = createHash("sha256");
+  for await (const chunk of createReadStream(file)) digest.update(chunk);
+  return digest.digest("hex");
+}
+async function storageDownload(name: string, output: string): Promise<void> {
+  const response = await fetch(root + "/object/authenticated/Docket/" + encodeURIComponent(name),
+    { headers });
+  if (!response.ok || !response.body) {
+    throw new Error("docket_storage_download_failed: " + name + " HTTP " + response.status);
+  }
+  await pipeline(Readable.fromWeb(response.body as any), createWriteStream(output, { flags: "wx" }));
+}
+type StorageObject = { name: string; metadata?: { size?: number | string } };
+async function listObjects(): Promise<StorageObject[]> {
+  const result: StorageObject[] = [];
+  for (let offset = 0; offset < 10000; offset += 100) {
+    const response = await fetch(root + "/object/list/Docket", {
+      method: "POST",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({ prefix: "", limit: 100, offset,
+        sortBy: { column: "name", order: "asc" } })
+    });
+    if (!response.ok) throw new Error("docket_storage_list_failed_HTTP_" + response.status);
+    const page: unknown = await response.json();
+    if (!Array.isArray(page) ||
+        page.some(x => !x || typeof x.name !== "string")) {
+      throw new Error("docket_storage_invalid_list_response");
+    }
+    result.push(...page as StorageObject[]);
+    if (page.length < 100) return result;
+  }
+  throw new Error("docket_storage_object_listing_exceeds_bound");
+}
+async function readCounts(entry: BaselineArchive): Promise<ReceiptCounts> {
+  const result = await pool.query(
+    "select count(*)::int as total, " +
+    "count(*) filter(where member_kind='bill')::int as bill, " +
+    "count(*) filter(where member_kind='roll_call')::int as roll_call, " +
+    "count(*) filter(where member_kind='person')::int as person, " +
+    "count(*) filter(where disposition='held_chronology')::int as held, " +
+    "count(*) filter(where state is distinct from $2 or " +
+    "(member_kind='bill' and session_id::text <> all(string_to_array($3,';'))))::int as wrong_identity " +
+    "from public.docket_legiscan_bulk_member_receipt where archive_sha256=$1",
+    [entry.sha256, entry.jurisdiction, entry.session_ids]
+  );
+  return result.rows[0] as ReceiptCounts;
+}
+async function assertExistingMemberHashes(entry: BaselineArchive, zipped: string): Promise<void> {
+  const rows = await pool.query(
+    "select member_path,member_sha256 from public.docket_legiscan_bulk_member_receipt " +
+    "where archive_sha256=$1 order by member_path",
+    [entry.sha256]
+  );
+  if (rows.rowCount === 0) return;
+  const zip = await JSZip.loadAsync(readFileSync(zipped), { checkCRC32: true });
+  for (const row of rows.rows) {
+    const member = zip.file(row.member_path);
+    if (!member || sha(await member.async("nodebuffer")) !== row.member_sha256) {
+      throw new Error("docket_storage_existing_receipt_hash_conflict: " + row.member_path);
+    }
+  }
+}
+async function runCanonicalImporter(manifestFile: string, archiveFile: string,
+                                    reportFile: string, apply: boolean): Promise<void> {
+  const command = [
+    "exec", "tsx", "scripts/legiscan-bulk-docket-intake.ts",
+    "--manifest=" + manifestFile, "--archive=" + archiveFile,
+    "--report=" + reportFile
+  ];
+  if (apply) command.push("--apply", "--acknowledge-docket-triggers");
+  const exitCode = await new Promise<number>((resolve, reject) => {
+    const child = spawn("pnpm", command, {
+      cwd: process.cwd(), stdio: "inherit",
+      env: { ...process.env, LEGISCAN_API_KEY: "" }
+    });
+    child.on("error", reject);
+    child.on("exit", (code, signal) => {
+      if (signal) return reject(new Error("docket_storage_cli_signal_" + signal));
+      resolve(code ?? 1);
+    });
+  });
+  if (exitCode !== 0) throw new Error("docket_storage_canonical_cli_failed_exit_" + exitCode);
+}
+async function main(): Promise<void> {
+  const temporary = await mkdtemp(join(tmpdir(), "docket-storage-"));
+  try {
+    const bundle = join(temporary, "pilot.zip");
+    await storageDownload(BASELINE_PILOT_OBJECT, bundle);
+    if (await fileHash(bundle) !== PILOT_BUNDLE_SHA256) {
+      throw new Error("docket_storage_pilot_bundle_sha256_mismatch");
+    }
+    const pilot = await JSZip.loadAsync(readFileSync(bundle), { checkCRC32: true });
+    const entry = pilot.file("legislative_baseline_manifest.json");
+    if (!entry) throw new Error("docket_storage_manifest_not_in_pilot");
+    const manifestBytes = await entry.async("nodebuffer");
+    if (sha(manifestBytes) !== BASELINE_MANIFEST_SHA256) {
+      throw new Error("docket_storage_manifest_sha256_mismatch");
+    }
+    const manifest = validateManifest(JSON.parse(manifestBytes.toString("utf8")));
+    const manifestFile = join(temporary, "baseline.json");
+    writeFileSync(manifestFile, manifestBytes, { flag: "wx" });
+    const objects = await listObjects();
+    const names = objects.map(x => x.name);
+    const entries = jurisdiction
+      ? manifest.archives.filter(x => x.jurisdiction === jurisdiction)
+      : manifest.archives;
+    let complete = 0, remaining = 0, processed = 0;
+    const pending: Array<{ entry: BaselineArchive; objectName: string; state: string }> = [];
+    for (const source of entries) {
+      const objectName = chooseStorageObject(source.archive, names);
+      const object = objects.find(x => x.name === objectName)!;
+      if (object.metadata?.size != null && Number(object.metadata.size) !== source.bytes) {
+        throw new Error("docket_storage_object_size_mismatch: " + objectName);
+      }
+      const state = receiptState(source, await readCounts(source));
+      if (state === "complete") complete++;
+      else { remaining++; pending.push({ entry: source, objectName, state }); }
+      console.log(JSON.stringify({
+        archive: source.archive, storage_object: objectName,
+        expected_json: source.json, receipt_state: state
+      }));
+    }
+    console.log(JSON.stringify({ mode, inventoried: entries.length, complete,
+      remaining, selected_count: Math.min(maxArchives, pending.length) }));
+    if (mode === "plan") return;
+    for (const item of pending.slice(0, maxArchives)) {
+      const local = join(temporary, item.entry.archive);
+      const report = join(temporary, item.entry.jurisdiction + "-preflight.json");
+      console.log("VALIDATE " + item.entry.archive);
+      await storageDownload(item.objectName, local);
+      if ((await fileHash(local)) !== item.entry.sha256) {
+        throw new Error("docket_storage_archive_sha256_mismatch: " + item.objectName);
+      }
+      if (item.state === "partial") await assertExistingMemberHashes(item.entry, local);
+      await runCanonicalImporter(manifestFile, local, report, false);
+      if (mode === "apply") {
+        console.log("APPLY " + item.entry.archive);
+        await runCanonicalImporter(manifestFile, local,
+          join(temporary, item.entry.jurisdiction + "-apply.json"), true);
+        const stats = await readCounts(item.entry);
+        const result = receiptState(item.entry, stats);
+        if (result !== "complete") {
+          throw new Error("docket_storage_postapply_incomplete: " +
+            item.entry.archive + " saved=" + stats.total + "/" + item.entry.json);
+        }
+        console.log("PASS SOURCE RECEIPTS " + item.entry.archive +
+          " " + stats.total + "/" + item.entry.json + " holds=" + stats.held);
+      } else {
+        console.log("PASS OFFLINE PREFLIGHT " + item.entry.archive);
+      }
+      processed++;
+      await rm(local, { force: true });
+    }
+    console.log(JSON.stringify({ result: "complete", mode, processed }));
+  } finally {
+    await pool.end();
+    await rm(temporary, { recursive: true, force: true });
+  }
+}
+await main();
