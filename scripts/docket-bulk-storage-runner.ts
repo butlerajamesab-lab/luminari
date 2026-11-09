@@ -258,11 +258,15 @@ async function main(): Promise<void> {
     const pending: Array<{ entry: BaselineArchive; objectName: string; state: string }> = [];
     for (const source of entries) {
       const state = receiptState(source, await readCounts(source));
+      if (state === "held") {
+        throw new Error("docket_storage_chronology_hold_requires_review: " + source.archive);
+      }
       // First thirteen archives were staged in older batch bundles, not
       // necessarily as standalone Storage objects. Do not demand a second
       // upload for an already-complete, receipt-verified archive.
       let objectName: string | null = null;
       if (state === "complete") {
+        await assertBillReceiptCache(source);
         complete++;
       } else {
         objectName = chooseStorageObject(source.archive, names);
