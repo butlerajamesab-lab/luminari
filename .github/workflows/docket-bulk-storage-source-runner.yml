@@ -29,4 +29,4 @@ jobs:
       - name: Install locked dependencies
         run: pnpm install --frozen-lockfile
       - name: Validate source-only planner and approval gates
-        run: pnpm exec tsx --test scripts/docket-bulk-storage-plan.test.ts
+        run: pnpm exec vitest run scripts/docket-bulk-storage-plan.test.ts
