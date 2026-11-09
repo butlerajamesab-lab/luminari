@@ -22,7 +22,7 @@ import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { spawn } from "node:child_process";
 import JSZip from "jszip";
-import { Pool } from "pg";
+import { create_database_pool } from "../server/pg-config";
 import {
   BASELINE_MANIFEST_SHA256, BASELINE_PILOT_OBJECT, chooseStorageObject,
   receiptState, validateManifest, type BaselineArchive, type ReceiptCounts
@@ -73,7 +73,7 @@ if (!storageKey || !databaseUrl ||
 }
 const root = storageUrl + "/storage/v1";
 const headers = { apikey: storageKey, Authorization: "Bearer " + storageKey };
-const pool = new Pool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 10000 });
+const pool = create_database_pool({ label: "DocketStorage", max: 1, connection_timeout_millis: 10000 });
 
 function sha(bytes: Buffer): string {
   return createHash("sha256").update(bytes).digest("hex");
