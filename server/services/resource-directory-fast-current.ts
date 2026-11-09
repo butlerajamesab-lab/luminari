@@ -12,6 +12,29 @@ export type publishable_resource_directory_search_input = {
 
 const PROJECTION_CONTRACT = "lighthouse_resource_directory_current_v5";
 const DIRECTORY_VIEW = "public.v_lighthouse_resource_program_classified_v1";
+// The classified view is the directory's authoritative read, and it is
+// slow by construction: a search-shaped read measured 13.7 s against
+// production on 2026-11-09, while the shared pool caps every query at
+// 8 s (db-legacy query_timeout_millis) — so summary/search/detail
+// died as 500s at ~8.25 s whenever the summary cache was cold. These
+// three reads go through the diagnostics path with a bounded 45 s
+// budget, the same pattern the Civic Map coverage read received in
+// PR #782. The budget restores the door; it does not make the view
+// fast — the durable fix remains a materialized catalog.
+const DIRECTORY_VIEW_QUERY_TIMEOUT_MS = 45_000;
+const DIRECTORY_VIEW_POOL_ACQUIRE_TIMEOUT_MS = 15_000;
+
+function query_directory_view<T = any>(
+  text: string,
+  values: unknown[],
+  label: string,
+) {
+  return query_with_diagnostics<T>(text, values, {
+    label,
+    pool_acquire_timeout_ms: DIRECTORY_VIEW_POOL_ACQUIRE_TIMEOUT_MS,
+    query_timeout_ms: DIRECTORY_VIEW_QUERY_TIMEOUT_MS,
+  });
+}
 // Reuses the reviewed service change from PR #612. The original source code
 // remains available on each row; this is presentation alias normalization.
 const JURISDICTION_CODE_SQL = `case upper(btrim(coalesce(state_code,jurisdiction))) when 'USVI' then 'VI' else upper(btrim(coalesce(state_code,jurisdiction))) end`;
@@ -21,14 +44,6 @@ function normalized_jurisdiction(value: unknown): string | null {
   return code === "USVI" ? "VI" : code;
 }
 const SUMMARY_CACHE_TTL_MS = 5 * 60 * 1000;
-// The classified-catalog summary is the one read in this service whose cost
-// is structural: measured ~16 s against production (21,647-row classified
-// catalog), while the pool default query timeout is 8 s — every cold
-// Civic Map /coverage and /health call died on it. This read alone gets a
-// bounded 45 s: ~3x the measured cost, still under the pool's 60 s
-// client-lease guard. The 5-minute cache and in-flight coalescing below
-// mean the cost is paid at most once per cache window.
-const SUMMARY_QUERY_TIMEOUT_MS = 45_000;
 // A directory navigation category is a reviewed, source-bound placement—not
 // a classifier result. The source's literal category and layer remain visible
 // separately, but may not be silently translated into a user-facing category.
@@ -305,7 +320,7 @@ function map_resource_row(row: any) {
 async function load_publishable_resource_directory_summary(): Promise<
   Record<string, unknown>
 > {
-  const result = await query_with_diagnostics(`
+  const result = await query_directory_view(`
     with catalog as materialized (
       select object_ref,object_class,phone,email,website_url,address,
              ${JURISDICTION_CODE_SQL} as jurisdiction_code,
@@ -366,11 +381,7 @@ async function load_publishable_resource_directory_summary(): Promise<
                from jurisdiction_rows
            ),'[]'::jsonb) as jurisdictions
       from totals
-  `, [], {
-    label: "resource_directory_summary",
-    pool_acquire_timeout_ms: 5000,
-    query_timeout_ms: SUMMARY_QUERY_TIMEOUT_MS,
-  });
+  `, [], "resource_directory_summary");
 
   const summary_row = result.rows[0];
   // A PostgreSQL aggregate returns one totals row even for an empty catalog.
@@ -466,7 +477,6 @@ export async function get_publishable_resource_directory_summary() {
 export async function search_publishable_resource_directory(
   input: publishable_resource_directory_search_input = {},
 ) {
-  const pool = get_pool();
   const limit = Math.min(Math.max(Number(input.limit ?? 24), 1), 60);
   const offset = Math.max(Number(input.offset ?? 0), 0);
   const params: unknown[] = [];
@@ -504,7 +514,7 @@ export async function search_publishable_resource_directory(
   const limit_param = `$${params.length - 1}`;
   const offset_param = `$${params.length}`;
 
-  const result = await pool.query(
+  const result = await query_directory_view(
     `select
        public.luminari_stable_uuid_v1(object_ref) as resource_entity_id,
        civic_object_uid,object_ref,source_object_type,object_class,target_surface,run_id::text,
@@ -520,6 +530,7 @@ export async function search_publishable_resource_directory(
      order by name asc nulls last,organization_name asc nulls last,object_ref asc
      limit ${limit_param} offset ${offset_param}`,
     params,
+    "resource_directory_search",
   );
 
   const has_more = result.rows.length > limit;
@@ -550,13 +561,14 @@ export async function get_publishable_resource_directory_detail(
   resource_entity_id: string,
 ) {
   const pool = get_pool();
-  const result = await pool.query(
+  const result = await query_directory_view(
     `select public.luminari_stable_uuid_v1(object_ref) as resource_entity_id,v.*,
             ${DIRECTORY_UI_CATEGORY_SQL} as ui_category
        from ${DIRECTORY_VIEW} v
       where public.luminari_stable_uuid_v1(object_ref)=$1::uuid
       limit 1`,
     [resource_entity_id],
+    "resource_directory_detail",
   );
   const row = result.rows[0];
   if (!row) return null;

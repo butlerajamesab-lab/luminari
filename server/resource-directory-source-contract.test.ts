@@ -153,3 +153,25 @@ describe("directory-first Civic Map source contracts", () => {
     );
   });
 });
+
+describe("Resource Directory classified-view query budget (2026-11-09)", () => {
+  it("routes every classified-view read through the bounded diagnostics path", () => {
+    const service = source(
+      "server/services/resource-directory-fast-current.ts",
+    );
+
+    // The pool caps queries at 8 s (db-legacy query_timeout_millis)
+    // and the classified view measures ~13.7 s, so the three view
+    // reads (summary, search, detail) must not use pool.query.
+    expect(service).toContain("query_with_diagnostics");
+    expect(service).toContain("DIRECTORY_VIEW_QUERY_TIMEOUT_MS = 45_000");
+    expect(service).toContain('"resource_directory_summary"');
+    expect(service).toContain('"resource_directory_search"');
+    expect(service).toContain('"resource_directory_detail"');
+
+    expect(service).toContain("function query_directory_view");
+    const view_reads = service.match(/query_directory_view\(/g) ?? [];
+    // Exactly three call sites: summary, search, detail.
+    expect(view_reads.length).toBe(3);
+  });
+});
