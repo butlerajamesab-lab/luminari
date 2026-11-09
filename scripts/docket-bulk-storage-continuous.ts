@@ -53,9 +53,9 @@ const guardStore: DocketGuardStore = {
     if (path !== DOCKET_ACTIVE_MARKER) {
       throw new Error("docket_continuous_forbidden_marker_removal");
     }
-    const { data, error } = await storage.remove([path]);
-    if (error || !data?.some(x => x.name === path.split("/").at(-1))) {
-      throw new Error("docket_continuous_marker_release_not_confirmed: " + String(error?.message || "no matching object"));
+    const { error } = await storage.remove([path]);
+    if (error || await guardStore.exists(path)) {
+      throw new Error("docket_continuous_marker_release_not_confirmed: " + String(error?.message || "still exists"));
     }
   },
 };
