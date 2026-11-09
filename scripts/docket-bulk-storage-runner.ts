@@ -188,14 +188,22 @@ async function main(): Promise<void> {
     let complete = 0, remaining = 0, processed = 0;
     const pending: Array<{ entry: BaselineArchive; objectName: string; state: string }> = [];
     for (const source of entries) {
-      const objectName = chooseStorageObject(source.archive, names);
-      const object = objects.find(x => x.name === objectName)!;
-      if (object.metadata?.size != null && Number(object.metadata.size) !== source.bytes) {
-        throw new Error("docket_storage_object_size_mismatch: " + objectName);
-      }
       const state = receiptState(source, await readCounts(source));
-      if (state === "complete") complete++;
-      else { remaining++; pending.push({ entry: source, objectName, state }); }
+      // First thirteen archives were staged in older batch bundles, not
+      // necessarily as standalone Storage objects. Do not demand a second
+      // upload for an already-complete, receipt-verified archive.
+      let objectName: string | null = null;
+      if (state === "complete") {
+        complete++;
+      } else {
+        objectName = chooseStorageObject(source.archive, names);
+        const object = objects.find(x => x.name === objectName)!;
+        if (object.metadata?.size != null && Number(object.metadata.size) !== source.bytes) {
+          throw new Error("docket_storage_object_size_mismatch: " + objectName);
+        }
+        remaining++;
+        pending.push({ entry: source, objectName, state });
+      }
       console.log(JSON.stringify({
         archive: source.archive, storage_object: objectName,
         expected_json: source.json, receipt_state: state
