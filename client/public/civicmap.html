@@ -938,6 +938,9 @@
       CT: { name: "Connecticut", coordinates: [41.6, -72.7] },
       DE: { name: "Delaware", coordinates: [39.0, -75.5] },
       DC: { name: "District of Columbia", coordinates: [38.907, -77.037] },
+      // Nationwide-scope records (coverage code "US") have no single
+      // location: they are counted and listed, but draw no circle.
+      US: { name: "Nationwide", coordinates: null },
       FL: { name: "Florida", coordinates: [28.5, -82.4] },
       GA: { name: "Georgia", coordinates: [32.7, -83.3] },
       GU: { name: "Guam", coordinates: [13.44, 144.79] },
@@ -1272,6 +1275,7 @@
 
         shownRecords += count;
         shownJurisdictions += 1;
+        if (!meta.coordinates) continue;
         const size = markerSize(count);
         const selected = row.code === selectedJurisdiction ? " selected" : "";
         const icon = L.divIcon({
@@ -1345,9 +1349,15 @@
       updateBrowserState();
       updateDirectoryLink(code);
       renderCoverage();
-      map.flyTo(meta.coordinates, code === "AK" ? 4 : 6, {
-        duration: 0.8,
-      });
+      if (meta.coordinates) {
+        map.flyTo(meta.coordinates, code === "AK" ? 4 : 6, {
+          duration: 0.8,
+        });
+      } else {
+        // Viewport center only (same country view as reset) — the
+        // nationwide collection itself has no location.
+        map.flyTo([38.5, -96.5], 4, { duration: 0.8 });
+      }
 
       const count = visibleCount(row);
       const directResourceCount = Number(row.direct_resource_count || 0);
@@ -1382,9 +1392,13 @@
         <section class="detail-section">
           <div class="detail-heading">What this map means</div>
           <p class="detail-copy">
-            This circle represents the Resource Directory collection for
+            ${meta.coordinates
+              ? `This circle represents the Resource Directory collection for
             ${escapeHtml(meta.name)}. It is a coverage summary, not a street
-            address or a bundle of duplicated points.
+            address or a bundle of duplicated points.`
+              : `This collection is nationwide in scope, so it has no single
+            map circle. Its records are counted in the totals above and
+            listed in the directory.`}
           </p>
         </section>
         <section class="detail-section">
@@ -1462,7 +1476,7 @@
           `&south=${encodeURIComponent(south)}` +
           `&east=${encodeURIComponent(east)}` +
           `&west=${encodeURIComponent(west)}` +
-          "&limit=1200",
+          "&limit=2000",
           { cache: "no-store", headers: { Accept: "application/json" } }
         );
         const payload = await response.json();
