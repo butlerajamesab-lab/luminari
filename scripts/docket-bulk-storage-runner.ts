@@ -120,7 +120,7 @@ async function readCounts(entry: BaselineArchive): Promise<ReceiptCounts> {
     "count(*) filter(where member_kind='person')::int as person, " +
     "count(*) filter(where disposition='held_chronology')::int as held, " +
     "count(*) filter(where state is distinct from $2 or " +
-    "(member_kind='bill' and session_id::text <> all(string_to_array($3,';'))))::int as wrong_identity " +
+    "(member_kind='bill' and (session_id::text = any(string_to_array($3,';'))) is not true))::int as wrong_identity " +
     "from public.docket_legiscan_bulk_member_receipt where archive_sha256=$1",
     [entry.sha256, entry.jurisdiction, entry.session_ids]
   );
@@ -187,7 +187,7 @@ async function assertBillReceiptCache(entry: BaselineArchive): Promise<void> {
     "left join public.docket_bill_detail_cache d on d.bill_id=r.bill_id " +
     "where r.archive_sha256=$1 and r.member_kind='bill' and " +
     "(d.bill_id is null or d.bill->>'state' is distinct from $2 or " +
-    "d.bill->>'session_id' <> all(string_to_array($3,';')))",
+    "(d.bill->>'session_id' = any(string_to_array($3,';'))) is not true)",
     [entry.sha256, entry.jurisdiction, entry.session_ids]
   );
   if (result.rows[0]?.missing !== 0) {
