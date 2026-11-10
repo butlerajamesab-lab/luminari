@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { query } = vi.hoisted(() => ({ query: vi.fn() }));
-vi.mock("../db", () => ({ getPool: () => ({ query }) }));
+const { query, query_with_diagnostics } = vi.hoisted(() => ({
+  query: vi.fn(),
+  query_with_diagnostics: vi.fn(),
+}));
+vi.mock("../db", () => ({ getPool: () => ({ query }), query_with_diagnostics }));
 vi.mock("../_core/env", () => ({
   ENV: { lighthouseSupabaseUrl: "https://example.supabase.co" },
 }));
@@ -24,24 +27,27 @@ const row = {
   source_content_sha256: "a".repeat(64),
 };
 
-beforeEach(() => query.mockReset());
+beforeEach(() => {
+  query.mockReset();
+  query_with_diagnostics.mockReset();
+});
 
 describe("resource search/detail continuity", () => {
   it("applies the same presentation category and territory to search and detail, without inventing structured address geography", async () => {
-    query.mockResolvedValueOnce({ rows: [row] });
+    query_with_diagnostics.mockResolvedValueOnce({ rows: [row] });
     const search = await search_publishable_resource_directory({
       jurisdiction: "USVI",
     });
-    expect(query.mock.calls[0][1][0]).toBe("VI");
+    expect(query_with_diagnostics.mock.calls[0][1][0]).toBe("VI");
+    query_with_diagnostics.mockResolvedValueOnce({ rows: [row] });
     query
-      .mockResolvedValueOnce({ rows: [row] })
       .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [] });
     const detail = await get_publishable_resource_directory_detail(
       row.resource_entity_id,
     );
-    expect(query.mock.calls[1][0]).toContain("as ui_category");
+    expect(query_with_diagnostics.mock.calls[1][0]).toContain("as ui_category");
     expect(detail).toMatchObject({
       resource_entity_id: row.resource_entity_id,
       resource_category: search.items[0].resource_category,
@@ -55,16 +61,16 @@ describe("resource search/detail continuity", () => {
   });
 
   it("binds provenance lookup to the current row's candidate and artifact, with no request-supplied storage path", async () => {
+    query_with_diagnostics.mockResolvedValueOnce({ rows: [row] });
     query
-      .mockResolvedValueOnce({ rows: [row] })
       .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [] });
     await get_publishable_resource_directory_detail(row.resource_entity_id);
-    expect(query.mock.calls[1][1]).toEqual([row.object_ref]);
-    expect(query.mock.calls[2][1]).toEqual([row.artifact_key]);
-    expect(query.mock.calls[2][0]).toContain("storage.buckets");
-    expect(query.mock.calls[2][0]).toContain("storage.objects");
+    expect(query.mock.calls[0][1]).toEqual([row.object_ref]);
+    expect(query.mock.calls[1][1]).toEqual([row.artifact_key]);
+    expect(query.mock.calls[1][0]).toContain("storage.buckets");
+    expect(query.mock.calls[1][0]).toContain("storage.objects");
   });
 
   it("renders reviewed transcription while preserving original fields and the existing publication state", async () => {
@@ -74,7 +80,7 @@ describe("resource search/detail continuity", () => {
       before_fields: { name: "Phone line accidentally used as a name" },
       after_fields: { name: "Denver Rescue Mission" },
     };
-    query.mockResolvedValueOnce({
+    query_with_diagnostics.mockResolvedValueOnce({
       rows: [
         {
           ...row,
@@ -86,10 +92,10 @@ describe("resource search/detail continuity", () => {
       ],
     });
     const result = await search_publishable_resource_directory({});
-    expect(query.mock.calls[0][0]).toContain(
+    expect(query_with_diagnostics.mock.calls[0][0]).toContain(
       "v_lighthouse_resource_program_classified_v1",
     );
-    expect(query.mock.calls[0][0]).toContain("source_transcription_correction");
+    expect(query_with_diagnostics.mock.calls[0][0]).toContain("source_transcription_correction");
     expect(result.items[0]).toMatchObject({
       resource_entity_id: row.resource_entity_id,
       resource_name: "Denver Rescue Mission",
