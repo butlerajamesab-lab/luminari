@@ -1,6 +1,15 @@
+import { readFileSync } from "node:fs";
+
 import { describe, expect, it } from "vitest";
 
 import {
+  ENTITY_INSERT_COLUMNS,
+  LOCATION_INSERT_COLUMNS,
+  LOCATION_VALUE_COLUMNS,
+  SOURCE_FAMILY_KEY,
+  SOURCE_TABLE,
+  buildEntityInsert,
+  buildLocationInsert,
   buildSiteKey,
   classifySegment,
   extractZip5,
@@ -172,5 +181,130 @@ describe("projectRows", () => {
     expect(census.physical_sites).toBe(1);
     expect(sites).toHaveLength(1);
     expect(sites[0].members.map((m) => m.civic_object_uid)).toEqual(["uid-a", "uid-b"]);
+  });
+});
+
+// Write-path contract tests. The column fixtures below are the LIVE
+// production schema, read from information_schema on 2026-11-10 —
+// the write path is tested against the real tables, not against the
+// runner's own assumptions (the failure mode behind both PR #791
+// review findings).
+const LIVE_LOCATION_COLUMNS = [
+  "location_id",
+  "resource_entity_id",
+  "address_line1",
+  "address_line2",
+  "city",
+  "county",
+  "state",
+  "postal_code",
+  "country",
+  "latitude",
+  "longitude",
+  "coordinate_quality",
+  "geocode_source",
+  "source_table",
+  "source_pk",
+  "metadata",
+  "created_at",
+];
+// NOT NULL live location columns: location_id and created_at carry
+// defaults; coordinate_quality and metadata must be supplied (their
+// defaults do not excuse a null parameter).
+const LIVE_LOCATION_NOT_NULL = ["location_id", "coordinate_quality", "metadata", "created_at"];
+const LIVE_LOCATION_DEFAULTED = ["location_id", "created_at"];
+
+const LIVE_ENTITY_NOT_NULL = [
+  "resource_entity_id",
+  "resource_name",
+  "metadata",
+  "verification_status",
+  "promotion_status",
+  "provenance_status",
+];
+
+function fixtureSites() {
+  const { sites } = projectRows([
+    {
+      civic_object_uid: "uid-a",
+      name: "Example Org",
+      organization_name: null,
+      state_code: "IL",
+      address: "120 S LaSalle St Ste 900, Chicago, IL 60603",
+    },
+  ]);
+  return sites;
+}
+
+describe("write path — entity insert contract", () => {
+  it("supplies every NOT NULL entity column", () => {
+    for (const col of LIVE_ENTITY_NOT_NULL) {
+      expect(ENTITY_INSERT_COLUMNS).toContain(col);
+    }
+  });
+  it("binds the registered family key as the source_family_key parameter", () => {
+    const { text, params } = buildEntityInsert(fixtureSites());
+    const familyIdx = ENTITY_INSERT_COLUMNS.indexOf("source_family_key");
+    expect(params[familyIdx]).toBe(SOURCE_FAMILY_KEY);
+    expect(params).toHaveLength(ENTITY_INSERT_COLUMNS.length);
+    expect(text).toContain(`(${ENTITY_INSERT_COLUMNS.join(", ")})`);
+    expect(text).toContain("on conflict (canonical_id) do nothing");
+  });
+});
+
+describe("write path — location insert contract", () => {
+  it("targets only columns that exist on the live locations table", () => {
+    for (const col of LOCATION_INSERT_COLUMNS) {
+      expect(LIVE_LOCATION_COLUMNS).toContain(col);
+    }
+  });
+  it("supplies the NOT NULL columns that have no usable default for parameters", () => {
+    for (const col of LIVE_LOCATION_NOT_NULL) {
+      if (LIVE_LOCATION_DEFAULTED.includes(col)) {
+        expect(LOCATION_INSERT_COLUMNS).not.toContain(col);
+      } else {
+        expect(LOCATION_INSERT_COLUMNS).toContain(col);
+      }
+    }
+  });
+  it("aligns VALUES tuples with the derived-table alias list", () => {
+    const { text, params } = buildLocationInsert(fixtureSites());
+    expect(text).toContain(`as v(${LOCATION_VALUE_COLUMNS.join(", ")})`);
+    const match = /from \(values (.+)\)\s+as v\(/s.exec(text);
+    expect(match).not.toBeNull();
+    const slots = match[1].split(",");
+    expect(slots).toHaveLength(LOCATION_VALUE_COLUMNS.length);
+    expect(params).toHaveLength(LOCATION_VALUE_COLUMNS.length);
+  });
+  it("casts the UUID and JSONB parameters explicitly", () => {
+    const { text } = buildLocationInsert(fixtureSites());
+    expect(text).toContain("$1::uuid");
+    expect(text).toContain(`$${LOCATION_VALUE_COLUMNS.length}::jsonb`);
+  });
+  it("binds source_table and metadata parameters in alias order", () => {
+    const { params } = buildLocationInsert(fixtureSites());
+    expect(params[LOCATION_VALUE_COLUMNS.indexOf("source_table")]).toBe(SOURCE_TABLE);
+    const metadata = JSON.parse(params[LOCATION_VALUE_COLUMNS.indexOf("metadata")]);
+    expect(metadata.projection_version).toBe("catalog_site_projection_v1");
+  });
+});
+
+describe("write path — family registration (migration)", () => {
+  const migration = readFileSync(
+    new URL(
+      "../supabase/migrations/20261109211500_catalog_site_projection_v1.sql",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  it("registers the runner's family key in the family contracts", () => {
+    expect(migration).toContain("insert into public.luminari_document_family_contracts");
+    expect(migration).toContain(`'${SOURCE_FAMILY_KEY}'`);
+    expect(migration).toContain("on conflict (family_key) do nothing");
+  });
+  it("ships in the same migration that creates the projection link table", () => {
+    expect(migration).toContain(
+      "create table if not exists public.luminari_catalog_site_source_rows",
+    );
   });
 });

@@ -50,6 +50,7 @@ function loadPg() {
 
 export const PROJECTION_VERSION = "catalog_site_projection_v1";
 export const SOURCE_TABLE = "catalog_site_projection_v1";
+export const SOURCE_FAMILY_KEY = "catalog_site_projection";
 
 const UUID_NAME_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -261,23 +262,39 @@ function chunk(items, size) {
   return out;
 }
 
-async function applySites(client, sites) {
-  let entities = 0;
-  let locations = 0;
-  let links = 0;
-  for (const batch of chunk(sites, 250)) {
-    const values = [];
-    const params = [];
-    batch.forEach((s, i) => {
-      const b = i * 17;
-      values.push(
-        `($${b + 1},$${b + 2},$${b + 3},$${b + 4},$${b + 5},$${b + 6},$${b + 7},$${b + 8},$${b + 9},$${b + 10},$${b + 11},$${b + 12},$${b + 13},$${b + 14},$${b + 15},$${b + 16},$${b + 17})`,
-      );
-      params.push(
-        s.entity_id,
-        s.canonical_id,
-        "catalog_site_projection",
-        SOURCE_TABLE,
+export const ENTITY_INSERT_COLUMNS = [
+  "resource_entity_id",
+  "canonical_id",
+  "source_family_key",
+  "source_table",
+  "source_pk",
+  "source_hash",
+  "resource_name",
+  "resource_type",
+  "resource_category",
+  "layer",
+  "jurisdiction",
+  "state",
+  "city",
+  "verification_status",
+  "promotion_status",
+  "provenance_status",
+  "metadata",
+];
+
+/** Build the entity insert for a batch of sites (pure; unit-tested). */
+export function buildEntityInsert(sites) {
+  const values = [];
+  const params = [];
+  sites.forEach((s, i) => {
+    const b = i * ENTITY_INSERT_COLUMNS.length;
+    const slots = ENTITY_INSERT_COLUMNS.map((_, j) => `$${b + j + 1}`);
+    values.push(`(${slots.join(",")})`);
+    params.push(
+      s.entity_id,
+      s.canonical_id,
+      SOURCE_FAMILY_KEY,
+      SOURCE_TABLE,
         s.source_pk,
         null, // source_hash: the site key hash lives in source_pk; no single source hash exists
         s.org_name,
@@ -299,55 +316,106 @@ async function applySites(client, sites) {
           source_row_count: s.members.length,
         }),
       );
-    });
-    const res = await client.query(
-      `insert into public.luminari_resource_entities
-         (resource_entity_id, canonical_id, source_family_key, source_table,
-          source_pk, source_hash, resource_name, resource_type,
-          resource_category, layer, jurisdiction, state, city,
-          verification_status, promotion_status, provenance_status, metadata)
-       values ${values.join(",")}
-       on conflict (canonical_id) do nothing`,
-      params,
+  });
+  const text = `
+    insert into public.luminari_resource_entities
+       (${ENTITY_INSERT_COLUMNS.join(", ")})
+     values ${values.join(",")}
+     on conflict (canonical_id) do nothing`;
+  return { text, params };
+}
+
+export const LOCATION_INSERT_COLUMNS = [
+  "resource_entity_id",
+  "address_line1",
+  "city",
+  "state",
+  "postal_code",
+  "country",
+  "latitude",
+  "longitude",
+  "coordinate_quality",
+  "geocode_source",
+  "source_table",
+  "source_pk",
+  "metadata",
+];
+
+export const LOCATION_VALUE_COLUMNS = [
+  "resource_entity_id",
+  "address_line1",
+  "city",
+  "state",
+  "postal_code",
+  "source_table",
+  "source_pk",
+  "metadata",
+];
+
+const LOCATION_DERIVED_EXPRESSIONS = {
+  country: "'US'",
+  latitude: "null",
+  longitude: "null",
+  coordinate_quality: "'not_geocoded_projection'",
+  geocode_source: "null",
+};
+
+/**
+ * Build the base-location insert for a batch of sites (pure;
+ * unit-tested). Each VALUES tuple supplies exactly the eight
+ * parameterized columns named by the derived-table alias list; the
+ * remaining destination columns are derived literals in the SELECT
+ * list. The UUID and JSONB parameters are cast explicitly — in a
+ * standalone VALUES relation they otherwise resolve as text and the
+ * insert fails (PR #791 review finding).
+ */
+export function buildLocationInsert(sites) {
+  const values = [];
+  const params = [];
+  sites.forEach((s, i) => {
+    const b = i * LOCATION_VALUE_COLUMNS.length;
+    values.push(
+      `($${b + 1}::uuid,$${b + 2},$${b + 3},$${b + 4},$${b + 5},$${b + 6},$${b + 7},$${b + 8}::jsonb)`,
     );
+    params.push(
+      s.entity_id,
+      s.components.street,
+      s.components.city,
+      s.state,
+      s.components.zip5,
+      SOURCE_TABLE,
+      s.source_pk,
+      JSON.stringify({ projection_version: PROJECTION_VERSION, site_key: s.key, site_kind: s.kind }),
+    );
+  });
+  const selectList = LOCATION_INSERT_COLUMNS.map((col) =>
+    LOCATION_VALUE_COLUMNS.includes(col) ? `v.${col}` : LOCATION_DERIVED_EXPRESSIONS[col],
+  ).join(", ");
+  const text = `
+    insert into public.luminari_resource_locations
+       (${LOCATION_INSERT_COLUMNS.join(", ")})
+     select ${selectList}
+       from (values ${values.join(",")})
+         as v(${LOCATION_VALUE_COLUMNS.join(", ")})
+      where not exists (
+        select 1 from public.luminari_resource_locations existing
+         where existing.source_table = v.source_table
+           and existing.source_pk = v.source_pk)`;
+  return { text, params };
+}
+
+async function applySites(client, sites) {
+  let entities = 0;
+  let locations = 0;
+  let links = 0;
+  for (const batch of chunk(sites, 250)) {
+    const { text, params } = buildEntityInsert(batch);
+    const res = await client.query(text, params);
     entities += res.rowCount;
   }
   for (const batch of chunk(sites, 250)) {
-    const plainValues = [];
-    const plainParams = [];
-    batch.forEach((s, i) => {
-      const b = i * 8;
-      plainValues.push(
-        `($${b + 1},$${b + 2},$${b + 3},$${b + 4},$${b + 5},'US',null,null,'not_geocoded_projection',null,$${b + 6},$${b + 7},$${b + 8})`,
-      );
-      plainParams.push(
-        s.entity_id,
-        s.components.street,
-        s.components.city,
-        s.state,
-        s.components.zip5,
-        SOURCE_TABLE,
-        s.source_pk,
-        JSON.stringify({ projection_version: PROJECTION_VERSION, site_key: s.key, site_kind: s.kind }),
-      );
-    });
-    const res = await client.query(
-      `insert into public.luminari_resource_locations
-         (resource_entity_id, address_line1, city, state, postal_code,
-          country, latitude, longitude, coordinate_quality, geocode_source,
-          source_table, source_pk, metadata)
-       select v.resource_entity_id, v.address_line1, v.city, v.state,
-              v.postal_code, 'US', null, null, 'not_geocoded_projection',
-              null, v.source_table, v.source_pk, v.metadata
-         from (values ${plainValues.join(",")})
-           as v(resource_entity_id, address_line1, city, state, postal_code,
-                source_table, source_pk, metadata)
-        where not exists (
-          select 1 from public.luminari_resource_locations existing
-           where existing.source_table = v.source_table
-             and existing.source_pk = v.source_pk)`,
-      plainParams,
-    );
+    const { text, params } = buildLocationInsert(batch);
+    const res = await client.query(text, params);
     locations += res.rowCount;
   }
   const linkRows = [];

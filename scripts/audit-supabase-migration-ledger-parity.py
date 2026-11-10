@@ -350,6 +350,16 @@ APPROVED_REPOSITORY_ONLY = {
         "20260920221500_legal_authority_class_first_current_v1.sql",
         "e815a138c8495b6b5d0ffbba15a417fc3e1e7d11",
     ),
+    # Catalog site projection v1 (PR #791): registers the
+    # catalog_site_projection document family and creates the
+    # projection link table. Repository-only pending the separately
+    # approved production installation that follows the merge.
+    # Exact Git blob pinned; no production installation or ledger
+    # rewrite is implied by this entry.
+    "20261109211500": (
+        "20261109211500_catalog_site_projection_v1.sql",
+        "775d8933024c6c2509922cdbaee375f6d6e33719",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
