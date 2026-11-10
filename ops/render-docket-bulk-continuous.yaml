@@ -1,0 +1,32 @@
+# Dedicated cron runner for pre-approved source-only Docket ingestion.
+# This is a separate Blueprint to avoid adopting/changing existing LIGHTHOUSE.
+# Plan before approval. Never run without exact source-manifest approval.
+services:
+  - type: cron
+    name: lighthouse-docket-one-archive
+    runtime: node
+    plan: 1c-2g
+    region: oregon
+    repo: https://github.com/butlerajamesab-lab/luminari
+    branch: main
+    autoDeployTrigger: off
+    schedule: "*/30 * * * *"
+    buildCommand: corepack pnpm install --frozen-lockfile --prod=false
+    startCommand: corepack pnpm exec tsx scripts/docket-bulk-storage-continuous.ts
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SUPABASE_URL
+        value: https://wepxlinwbjrkqdzkqpar.supabase.co
+      - key: DATABASE_URL
+        fromService:
+          type: web
+          name: "LIGHTHOUSE "
+          envVarKey: DATABASE_URL
+      - key: LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY
+        fromService:
+          type: web
+          name: "LIGHTHOUSE "
+          envVarKey: LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY
+      - key: DOCKET_BULK_ARCHIVE_APPLY_APPROVED_SHA256
+        value: c0fda81b255685a7e9bb55083195cbbeafe922afab78b50a2daa0eab9695bb80
