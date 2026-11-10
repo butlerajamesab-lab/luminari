@@ -14,7 +14,6 @@ import {
   SOURCE_TABLE,
   VA_BENEFITS_TYPES,
   VA_CLINICAL_TYPES,
-  VA_SAFETY_PRIMARY_TYPES,
   buildEntityInsert,
   buildLinkInsert,
   buildLocationInsert,
@@ -134,7 +133,7 @@ describe("categoriesForOffice — VA at office_type grain", () => {
       );
     }
   });
-  it("adds the safety_crisis membership only for va_vamc among clinical types", () => {
+  it("adds the safety_crisis membership for va_vamc and vet centers among clinical types", () => {
     expect(
       categoriesForOffice({ agency_key: "veterans_affairs", office_type: "va_vamc" }),
     ).toEqual({ primary: "healthcare", memberships: ["safety_crisis"] });
@@ -142,11 +141,11 @@ describe("categoriesForOffice — VA at office_type grain", () => {
       categoriesForOffice({ agency_key: "veterans_affairs", office_type: "va_pccboc" }),
     ).toEqual({ primary: "healthcare", memberships: [] });
   });
-  it("maps vet centers to safety_crisis primary (readjustment counseling)", () => {
-    for (const t of VA_SAFETY_PRIMARY_TYPES) {
+  it("maps vet centers to healthcare primary with the safety_crisis membership (U1, corrected 2026-11-10)", () => {
+    for (const t of ["va_vtcr", "va_mvctr"]) {
       expect(categoriesForOffice({ agency_key: "veterans_affairs", office_type: t })).toEqual({
-        primary: "safety_crisis",
-        memberships: [],
+        primary: "healthcare",
+        memberships: ["safety_crisis"],
       });
     }
   });

@@ -83,15 +83,17 @@ export const VA_CLINICAL_TYPES = new Set([
   "va_vamc",
   "va_pccboc",
   "va_mscboc",
+  "va_vtcr",
+  "va_mvctr",
   "va_hcc",
   "va_clc",
   "va_drrtp",
   "va_mcs",
 ]);
-// Vet centers (readjustment counseling) -> safety_crisis primary:
-// U1 assigns them the safety_crisis membership alongside va_vamc and
-// no other primary, so crisis counseling is their primary need.
-export const VA_SAFETY_PRIMARY_TYPES = new Set(["va_vtcr", "va_mvctr"]);
+// Clinical types that also carry the safety_crisis membership (U1):
+// medical centers (crisis doors, like hospital EDs) and vet centers
+// (readjustment counseling). Primary stays healthcare for all of them.
+export const VA_SAFETY_MEMBERSHIP_TYPES = new Set(["va_vamc", "va_vtcr", "va_mvctr"]);
 // VA outreach / benefits offices -> cash_assistance primary.
 export const VA_BENEFITS_TYPES = new Set(["va_oos"]);
 
@@ -106,11 +108,8 @@ export function categoriesForOffice(office) {
     if (VA_CLINICAL_TYPES.has(t)) {
       return {
         primary: "healthcare",
-        memberships: t === "va_vamc" ? ["safety_crisis"] : [],
+        memberships: VA_SAFETY_MEMBERSHIP_TYPES.has(t) ? ["safety_crisis"] : [],
       };
-    }
-    if (VA_SAFETY_PRIMARY_TYPES.has(t)) {
-      return { primary: "safety_crisis", memberships: [] };
     }
     if (VA_BENEFITS_TYPES.has(t)) {
       return { primary: "cash_assistance", memberships: [] };
