@@ -3,7 +3,7 @@ import {
   DOCKET_ACTIVE_MARKER, DOCKET_DONE_MARKER, markerPresentFromHttpStatus, runOneArchiveGuarded,
   type DocketGuardStore
 } from "./docket-bulk-continuous-guard";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 function fakeStore(existing: string[] = []) {
   const markers = new Set(existing);
@@ -90,6 +90,19 @@ describe("Docket one-archive durable stop latch", () => {
     f.store.remove = async () => { throw new Error("storage_unavailable"); };
     await expect(runOneArchiveGuarded(f.store, async () => ({complete:false}))).rejects.toThrow("storage_unavailable");
     expect(f.markers.has(DOCKET_ACTIVE_MARKER)).toBe(true);
+  });
+  it("points the isolated Render cron at an existing committed script on main", () => {
+    const yaml = readFileSync("ops/render-docket-bulk-continuous.yaml", "utf8");
+    const path = "scripts/docket-bulk-storage-continuous.ts";
+    expect(existsSync(path)).toBe(true);
+    expect(yaml).toContain("type: cron");
+    expect(yaml).toContain("branch: main");
+    expect(yaml).toContain("autoDeployTrigger: off");
+    expect(yaml).toContain('schedule: "*/30 * * * *"');
+    expect(yaml).toContain("startCommand: corepack pnpm exec tsx " + path);
+    expect(yaml).toContain("name: \"LIGHTHOUSE \"");
+    expect(yaml).toContain("DOCKET_BULK_ARCHIVE_APPLY_APPROVED_SHA256");
+    expect(yaml).not.toMatch(/(?:LEGISCAN_API_KEY|type: worker|autoDeployTrigger: commit)/);
   });
   it("only allows canonical source runner in apply mode and one-archive bound", () => {
     const runner = readFileSync("scripts/docket-bulk-storage-continuous.ts", "utf8");
