@@ -524,6 +524,7 @@ export async function getResourceDirectoryMapPoints(
             e.resource_name
           ) as resource_name,
           e.resource_category,
+          null::text as agency_key,
           e.state,
           l.location_id::text as location_id,
           l.address_line1,
@@ -555,6 +556,7 @@ export async function getResourceDirectoryMapPoints(
           g.office_id::text as resource_entity_id,
           g.office_name as resource_name,
           'government_office'::text as resource_category,
+          g.agency_key as agency_key,
           g.state,
           null::text as location_id,
           g.address_full as address_line1,
@@ -578,7 +580,7 @@ export async function getResourceDirectoryMapPoints(
           and g.lng between $4 and $5
       )
       select
-        resource_entity_id, resource_name, resource_category, state,
+        resource_entity_id, resource_name, resource_category, agency_key, state,
         location_id, address_line1, address_line2, city, county,
         location_state, postal_code, latitude, longitude,
         coordinate_quality, manual_location_kind, manual_source_reference

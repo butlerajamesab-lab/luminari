@@ -360,6 +360,15 @@
       color: white;
     }
 
+    .category-key button.family-off {
+      opacity: 0.45;
+    }
+
+    .category-key button.family-off .category-key-dot {
+      background: transparent;
+      box-shadow: inset 0 0 0 2px var(--category-color, var(--green));
+    }
+
     .category-key-dot {
       width: 8px;
       height: 8px;
@@ -865,6 +874,10 @@
       </div>
       <span class="field-label" style="margin-top:14px;">Resource key</span>
       <div class="category-key" id="categoryKey"></div>
+      <div id="familyLegend" style="display:none;">
+        <span class="field-label" style="margin-top:14px;">Government offices &amp; facilities</span>
+        <div class="category-key" id="familyKey"></div>
+      </div>
     </section>
 
     <section class="panel-section">
@@ -925,6 +938,31 @@
       utilities: "#38bdf8",
       cash_assistance: "#a3e635",
       veterans: "#818cf8",
+    };
+
+    // Government-office families (public.gov_offices agency_key values).
+    // Colors are deliberately distinct from CATEGORY_COLORS above so a
+    // facility pin never reads as a directory-category pin.
+    const FAMILY_META = {
+      veterans_affairs: { label: "Veterans Affairs", color: "#6d28d9" },
+      ssa: { label: "Social Security", color: "#65a30d" },
+      hud: { label: "HUD Field Offices", color: "#92400e" },
+      public_housing_authority: {
+        label: "Housing Authorities",
+        color: "#db2777",
+      },
+      american_job_center: {
+        label: "American Job Centers",
+        color: "#1d4ed8",
+      },
+      apprenticeship: { label: "Apprenticeship Offices", color: "#c026d3" },
+      native_american: {
+        label: "Native American Services",
+        color: "#9a3412",
+      },
+      hospital: { label: "Hospitals", color: "#047857" },
+      health_center: { label: "Health Centers", color: "#0f766e" },
+      law_enforcement: { label: "Law Enforcement", color: "#dc2626" },
     };
 
     const JURISDICTIONS = {
@@ -1016,6 +1054,7 @@
     let coverage = null;
     let coverageRows = [];
     let exactPoints = [];
+    const hiddenFamilies = new Set();
     let exactRequestSequence = 0;
     let exactReloadTimer = null;
 
@@ -1434,17 +1473,76 @@
       document.getElementById("sidebar").classList.add("open");
     }
 
+    function renderFamilyLegend() {
+      const counts = new Map();
+      for (const point of exactPoints) {
+        if (point.resource_category !== "government_office") continue;
+        if (!FAMILY_META[point.agency_key]) continue;
+        counts.set(
+          point.agency_key,
+          (counts.get(point.agency_key) || 0) + 1
+        );
+      }
+      const section = document.getElementById("familyLegend");
+      const container = document.getElementById("familyKey");
+      if (!section || !container) return;
+      if (counts.size === 0) {
+        section.style.display = "none";
+        container.innerHTML = "";
+        return;
+      }
+      section.style.display = "";
+      const entries = [...counts.entries()]
+        .map(([key, count]) => ({ key, count, ...FAMILY_META[key] }))
+        .sort(
+          (a, b) => b.count - a.count || a.label.localeCompare(b.label)
+        );
+      container.innerHTML = entries
+        .map((entry) => {
+          const off = hiddenFamilies.has(entry.key);
+          return `
+            <button type="button" class="${off ? "family-off" : ""}" data-family="${escapeHtml(entry.key)}" aria-pressed="${off ? "false" : "true"}">
+              <span class="category-key-dot" style="--category-color:${escapeHtml(entry.color)}"></span>
+              <span>${escapeHtml(entry.label)}</span>
+              <strong>${formatCount(entry.count)}</strong>
+            </button>
+          `;
+        })
+        .join("");
+      container.querySelectorAll("button").forEach((button) => {
+        button.addEventListener("click", () => {
+          const key = button.dataset.family;
+          if (hiddenFamilies.has(key)) {
+            hiddenFamilies.delete(key);
+          } else {
+            hiddenFamilies.add(key);
+          }
+          renderExactPoints();
+        });
+      });
+    }
+
     function renderExactPoints() {
       exactLayer.clearLayers();
+      let renderedCount = 0;
       for (const point of exactPoints) {
         const latitude = Number(point.latitude);
         const longitude = Number(point.longitude);
         if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
           continue;
         }
+        const family =
+          point.resource_category === "government_office"
+            ? FAMILY_META[point.agency_key]
+            : undefined;
+        if (family && hiddenFamilies.has(point.agency_key)) {
+          continue;
+        }
         const icon = L.divIcon({
           className: "exact-site-icon",
-          html: '<div class="exact-site-pin"></div>',
+          html: family
+            ? `<div class="exact-site-pin" style="background:${escapeHtml(family.color)}"></div>`
+            : '<div class="exact-site-pin"></div>',
           iconSize: [20, 24],
           iconAnchor: [10, 24],
         });
@@ -1454,13 +1552,18 @@
           keyboard: true,
         });
         marker.bindTooltip(
-          `<strong>${escapeHtml(point.resource_name)}</strong><br>Exact public site`,
+          family
+            ? `<strong>${escapeHtml(point.resource_name)}</strong><br>${escapeHtml(family.label)} · Exact public site`
+            : `<strong>${escapeHtml(point.resource_name)}</strong><br>Exact public site`,
           { className: "map-tooltip", direction: "top", offset: [0, -18] }
         );
         marker.on("click", () => openResource(point.resource_entity_id));
         marker.addTo(exactLayer);
+        renderedCount += 1;
       }
-
+      document.getElementById("exactLegendCount").textContent =
+        formatCount(renderedCount);
+      renderFamilyLegend();
     }
 
     async function loadExactPoints() {
