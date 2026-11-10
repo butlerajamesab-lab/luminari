@@ -360,6 +360,16 @@ APPROVED_REPOSITORY_ONLY = {
         "20261109211500_catalog_site_projection_v1.sql",
         "775d8933024c6c2509922cdbaee375f6d6e33719",
     ),
+    # Gov office projection v1: registers the gov_office_projection
+    # document family and creates the anchor-office projection link
+    # table. Repository-only pending the separately approved
+    # production installation that follows the merge. Exact Git blob
+    # pinned; no production installation or ledger rewrite is
+    # implied by this entry.
+    "20261110160000": (
+        "20261110160000_gov_office_projection_v1.sql",
+        "9d2b3ae281ef25afd3c9a2abb455e2949be745f1",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
