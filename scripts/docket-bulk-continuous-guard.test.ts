@@ -43,6 +43,19 @@ describe("Docket one-archive durable stop latch", () => {
     expect(calls).toBe(0);
     expect(f.events).toEqual(["exists:" + DOCKET_ACTIVE_MARKER]);
   });
+  it("remains paused if a crash left active and complete markers together", async () => {
+    const f = fakeStore([DOCKET_ACTIVE_MARKER, DOCKET_DONE_MARKER]);
+    let calls = 0;
+    const status = await runOneArchiveGuarded(f.store, async () => {
+      calls++;
+      return { complete: true };
+    });
+    expect(status).toBe("paused");
+    expect(calls).toBe(0);
+    expect(f.events).toEqual(["exists:" + DOCKET_ACTIVE_MARKER]);
+    expect(f.markers.has(DOCKET_ACTIVE_MARKER)).toBe(true);
+    expect(f.markers.has(DOCKET_DONE_MARKER)).toBe(true);
+  });
   it("does nothing after all 60 sources are recorded complete", async () => {
     const f = fakeStore([DOCKET_DONE_MARKER]);
     let calls = 0;
