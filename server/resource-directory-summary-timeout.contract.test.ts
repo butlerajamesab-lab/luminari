@@ -6,14 +6,23 @@ const service = readFileSync(
   "utf8",
 );
 
-describe("Resource Directory summary timeout contract", () => {
-  it("runs the classified-catalog summary under a bounded per-query timeout", () => {
-    // The summary measures ~16 s against production; the pool default is 8 s.
-    // It must go through the diagnostics helper with its own ceiling, not the
-    // bare pool, or every cold Civic Map /coverage and /health call fails.
-    expect(service).toContain("const SUMMARY_QUERY_TIMEOUT_MS = 45_000;");
-    expect(service).toContain("query_with_diagnostics(`");
-    expect(service).toContain('label: "resource_directory_summary"');
-    expect(service).toContain("query_timeout_ms: SUMMARY_QUERY_TIMEOUT_MS");
+describe("Resource Directory classified-view query timeout contract", () => {
+  it("uses the bounded diagnostic query wrapper for summary, search, and detail", () => {
+    // The source view takes 13–16 seconds on cold reads. All classified
+    // catalog queries share a reviewed 45-second query budget and a bounded
+    // 15-second pool-acquisition budget; never fall back to the 8-second pool.
+    expect(service).toContain("const DIRECTORY_VIEW_QUERY_TIMEOUT_MS = 45_000;");
+    expect(service).toContain("const DIRECTORY_VIEW_POOL_ACQUIRE_TIMEOUT_MS = 15_000;");
+    expect(service).toContain("return query_with_diagnostics<T>(text, values, {");
+    expect(service).toContain("pool_acquire_timeout_ms: DIRECTORY_VIEW_POOL_ACQUIRE_TIMEOUT_MS");
+    expect(service).toContain("query_timeout_ms: DIRECTORY_VIEW_QUERY_TIMEOUT_MS");
+    expect(service).toContain("const result = await query_directory_view(");
+    for (const label of [
+      "resource_directory_summary",
+      "resource_directory_search",
+      "resource_directory_detail",
+    ]) {
+      expect(service).toContain('"' + label + '"');
+    }
   });
 });
