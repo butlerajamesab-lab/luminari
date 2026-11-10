@@ -42,6 +42,13 @@ import crypto from 'node:crypto';
 // pg is imported dynamically in main() so the pure helpers in
 // this module stay loadable (and testable) without the driver.
 
+// The Census batch geocoder's current host. The legacy host
+// (geocodews.census.gov) does not resolve from the deploy
+// environment (verified 2026-11-09: ENOTFOUND from a Render job,
+// while geocoding.geo.census.gov answers the same service and
+// returned a match for the probe address).
+export const CENSUS_BATCH_URL = 'https://geocoding.geo.census.gov/geocoder/locations/addressbatch';
+
 export const REVIEW_VERSION = 'v3_14_approval_wave_v3';
 export const WAVE_ID = 'approval-wave-2026-11-09';
 export const GEOCODE_SOURCE = 'us_census_geocoder_batch (Public_AR_Current / Current_Current, 2026-11-09)';
@@ -222,7 +229,7 @@ async function geocodeBatch(targets) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 600_000);
   try {
-    const response = await fetch('https://geocodews.census.gov/geocoder/locations/addressbatch', {
+    const response = await fetch(CENSUS_BATCH_URL, {
       method: 'POST',
       body: form,
       signal: controller.signal,
