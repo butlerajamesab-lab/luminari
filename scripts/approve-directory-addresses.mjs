@@ -22,7 +22,7 @@
 //   (counted, listed) — multi-site organizations need the
 //   network treatment, not a silent pick.
 // - A mailing address (street field leading with "PO Box") is
-//   reviewed and recorded with disposition mailing_address_only
+//   reviewed and recorded with disposition replace_with_mailing
 //   and map_eligible=false. A post-office box is not a physical
 //   public site and never becomes a pin.
 // - Coordinates are asserted ONLY from a Census match. A
@@ -123,6 +123,48 @@ export function parseGeocodeResults(text) {
   return byId;
 }
 
+// The resolution-ledger contract (supabase/migrations/
+// 20260731001606_v3_13_manual_location_reconciliation.sql), enforced by
+// the table itself and verified against the live rows it already holds:
+// - resolution_id is a primary key with NO default: the writer supplies it.
+// - The disposition vocabulary is closed; a mailing address is
+//   'replace_with_mailing' (there is no 'mailing_address_only').
+// - reviewed_address is jsonb — a JSON string is admissible — and must be
+//   non-null exactly for the replace_* dispositions.
+// - malformed_location_ids must name at least one superseded location
+//   row (cardinality >= 1).
+// - map_eligible must equal (disposition = 'replace_with_physical').
+// This builder is pure so the contract is testable without a database.
+export function buildResolutionValues(t, manifestSha, resolutionId = crypto.randomUUID()) {
+  const fullAddress = [t.street, `${t.city}, ${t.state} ${t.postalCode}`.trim()].filter(Boolean).join(', ');
+  const disposition = t.mailing ? 'replace_with_mailing' : 'replace_with_physical';
+  return [
+    resolutionId,
+    t.resource_entity_id,
+    REVIEW_VERSION,
+    t.state,
+    t.resource_name,
+    t.resource_name,
+    disposition,
+    JSON.stringify(fullAddress),
+    t.mailing ? 'mailing_address' : 'physical_site',
+    disposition === 'replace_with_physical',
+    'directory_record_approval_wave',
+    `${WAVE_ID}: source location ${t.source_location_id}`,
+    t.mailing
+      ? 'Reviewed in the 2026-11-09 approval wave (Alexander: approve the addressed records). Mailing address only — not a physical public site, so it is recorded but not map-eligible.'
+      : 'Approved in the 2026-11-09 approval wave (Alexander: approve the addressed records). Address is the resource\u2019s own directory-record address; coordinates come only from the US Census batch geocoder.',
+    t.malformed_location_ids,
+    JSON.stringify({
+      review_method: 'deterministic_address_approval_wave_v1',
+      decision_ordinality: 1,
+      coordinates_asserted: false,
+      source_rows_preserved: true,
+      wave_manifest_sha256: manifestSha,
+    }),
+  ];
+}
+
 async function fetchTargets(client) {
   const { rows } = await client.query(`
     select l.resource_entity_id,
@@ -149,7 +191,12 @@ async function fetchTargets(client) {
   for (const [resourceId, group] of byResource) {
     const distinct = new Map(group.map((r) => [JSON.stringify(r.address_key), r]));
     if (distinct.size > 1) { skippedMulti.push(resourceId); continue; }
-    targets.push(distinct.values().next().value);
+    const representative = distinct.values().next().value;
+    // The ledger requires the resolution to name the location rows it
+    // supersedes (malformed_location_ids, cardinality >= 1): every
+    // current location row this resource carries at this address.
+    representative.malformed_location_ids = group.map((r) => r.source_location_id);
+    targets.push(representative);
   }
   const { rows: done } = await client.query(
     `select distinct resource_entity_id from public.luminari_resource_location_resolutions where review_version = $1`,
@@ -239,38 +286,15 @@ async function main() {
       await client.query('begin');
       try {
         for (const { target: t, geo } of decisions) {
-          const fullAddress = [t.street, `${t.city}, ${t.state} ${t.postalCode}`.trim()].filter(Boolean).join(', ');
           const { rows: [resolution] } = await client.query(
             `insert into public.luminari_resource_location_resolutions (
-               resource_entity_id, review_version, jurisdiction_state, resource_name,
+               resolution_id, resource_entity_id, review_version, jurisdiction_state, resource_name,
                live_resource_name_at_review, disposition, reviewed_address, location_kind,
                map_eligible, source_type, source_reference, review_note,
                malformed_location_ids, metadata, reviewed_at, updated_at
-             ) values ($1,$2,$3,$4,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,now(),now())
+             ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,now(),now())
              returning resolution_id`,
-            [
-              t.resource_entity_id,
-              REVIEW_VERSION,
-              t.state,
-              t.resource_name,
-              t.mailing ? 'mailing_address_only' : 'replace_with_physical',
-              fullAddress,
-              t.mailing ? 'mailing_address' : 'physical_site',
-              !t.mailing,
-              'directory_record_approval_wave',
-              `${WAVE_ID}: source location ${t.source_location_id}`,
-              t.mailing
-                ? 'Reviewed in the 2026-11-09 approval wave (Alexander: approve the addressed records). Mailing address only — not a physical public site, so it is recorded but not map-eligible.'
-                : 'Approved in the 2026-11-09 approval wave (Alexander: approve the addressed records). Address is the resource\u2019s own directory-record address; coordinates come only from the US Census batch geocoder.',
-              [],
-              JSON.stringify({
-                review_method: 'deterministic_address_approval_wave_v1',
-                decision_ordinality: 1,
-                coordinates_asserted: false,
-                source_rows_preserved: true,
-                wave_manifest_sha256: manifestSha,
-              }),
-            ],
+            buildResolutionValues(t, manifestSha),
           );
           summary.inserted_resolutions += 1;
           await client.query(

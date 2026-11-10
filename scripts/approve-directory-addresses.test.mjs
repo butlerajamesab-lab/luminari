@@ -7,6 +7,7 @@ import {
   streetForGeocoder,
   buildBatchCsv,
   parseGeocodeResults,
+  buildResolutionValues,
 } from './approve-directory-addresses.mjs';
 
 test('PO Box variants are mailing addresses; street addresses are not', () => {
@@ -28,6 +29,30 @@ test('street field drops a duplicated trailing City, ST ZIP', () => {
 test('batch CSV quotes fields containing commas', () => {
   const csv = buildBatchCsv([{ street: '100 Main St, Apt 2', city: 'Seattle', state: 'WA', postalCode: '98101' }]);
   assert.equal(csv, '1,"100 Main St, Apt 2",Seattle,WA,98101\n');
+});
+
+test('resolution values conform to the ledger schema contract', () => {
+  // Contract: supabase/migrations/20260731001606_v3_13_manual_location_reconciliation.sql
+  const base = {
+    resource_entity_id: 'res-1', resource_name: 'Example Org', street: '100 Main St',
+    city: 'Seattle', state: 'WA', postalCode: '98101', mailing: false,
+    source_location_id: 'loc-1', malformed_location_ids: ['loc-1'],
+  };
+  const v = buildResolutionValues(base, 'manifest', '11111111-1111-1111-1111-111111111111');
+  assert.equal(v[0], '11111111-1111-1111-1111-111111111111'); // resolution_id supplied — the PK has no default
+  assert.equal(v[6], 'replace_with_physical');
+  assert.equal(JSON.parse(v[7]), '100 Main St, Seattle, WA 98101'); // reviewed_address is jsonb (JSON string)
+  assert.equal(v[9], true); // map_eligible == (disposition = 'replace_with_physical')
+  assert.ok(Array.isArray(v[13]) && v[13].length >= 1); // malformed_location_ids cardinality >= 1
+
+  const m = buildResolutionValues(
+    { ...base, mailing: true, street: 'PO Box 12' },
+    'manifest',
+    '22222222-2222-2222-2222-222222222222',
+  );
+  assert.equal(m[6], 'replace_with_mailing'); // closed vocabulary — 'mailing_address_only' is not in it
+  assert.equal(m[9], false);
+  assert.equal(JSON.parse(m[7]), 'PO Box 12, Seattle, WA 98101');
 });
 
 test('geocode results: exact, non-exact, tie and no-match are labeled honestly', () => {
