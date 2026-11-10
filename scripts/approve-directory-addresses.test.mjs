@@ -10,9 +10,17 @@ import {
   buildBatchCsv,
   parseGeocodeResults,
   buildResolutionValues,
+  CENSUS_BATCH_URL,
 } from './approve-directory-addresses.mjs';
 
 describe('address approval wave helpers', () => {
+  it('targets the Census geocoder host that resolves from the deploy environment', () => {
+    // geocodews.census.gov is ENOTFOUND from Render (verified 2026-11-09);
+    // geocoding.geo.census.gov is the Census's current host for the same service.
+    expect(CENSUS_BATCH_URL).toBe('https://geocoding.geo.census.gov/geocoder/locations/addressbatch');
+  });
+
+
   it('treats PO Box variants as mailing addresses; street addresses are not', () => {
     expect(isMailingAddress('P.O. Box 85200')).toBe(true);
     expect(isMailingAddress('PO Box 12')).toBe(true);
