@@ -577,13 +577,17 @@ export async function getResourceDirectoryMapPoints(
           and g.lat between $2 and $3
           and g.lng between $4 and $5
       )
-      select *
+      select
+        resource_entity_id, resource_name, resource_category, state,
+        location_id, address_line1, address_line2, city, county,
+        location_state, postal_code, latitude, longitude,
+        coordinate_quality, manual_location_kind, manual_source_reference
       from (
-        select * from reviewed_sites
+        select 0 as lane_rank, rs.* from reviewed_sites rs
         union all
-        select * from gov_office_sites
+        select 1 as lane_rank, gs.* from gov_office_sites gs
       ) points
-      order by resource_name, location_id
+      order by lane_rank, resource_name, location_id
       limit $6
     `,
     [
