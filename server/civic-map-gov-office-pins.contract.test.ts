@@ -89,6 +89,10 @@ describe("Civic Map family distinction (F1)", () => {
     }
   });
 
+  it("clears hidden families on map reset", () => {
+    expect(page).toContain("hiddenFamilies.clear()");
+  });
+
   it("wires family toggles into pin rendering and the legend", () => {
     expect(page).toContain("hiddenFamilies");
     expect(page).toContain("renderFamilyLegend");
