@@ -24,7 +24,8 @@ import { spawn } from "node:child_process";
 import JSZip from "jszip";
 import { createClient } from "@supabase/supabase-js";
 import {
-  DOCKET_QUARANTINE_PREFIX, archiveQuarantinePath, classifyArchiveLocalPreflightFailure,
+  DOCKET_QUARANTINE_PREFIX, archiveQuarantinePath,
+  classifyArchiveLocalPreflightFailure, classifyArchiveLocalPreapplyFailure,
   makeArchiveQuarantine, validateArchiveQuarantine,
   type ArchiveLocalPreflightFailure, type DocketArchiveQuarantine
 } from "./docket-bulk-archive-quarantine";
@@ -342,14 +343,16 @@ async function main(): Promise<void> {
         }));
         continue;
       }
-      if (state === "held") {
-        throw new Error("docket_storage_chronology_hold_requires_review: " + source.archive);
-      }
+      // An existing partial archive with held source receipts is an
+      // archive-local review case, not permission to reapply those members.
+      // It will be quarantined after original member-hash reconciliation.
       // First thirteen archives were staged in older batch bundles, not
       // necessarily as standalone Storage objects. Do not demand a second
       // upload for an already-complete, receipt-verified archive.
       let objectName: string | null = null;
-      let sourceIssue: ArchiveLocalPreflightFailure | null = null;
+      let sourceIssue: ArchiveLocalPreflightFailure | null = state === "held"
+        ? { reason_code: "docket_storage_unquarantined_partial_holds", member_path: null }
+        : null;
       if (state === "complete") {
         await assertBillReceiptCache(source);
         complete++;
@@ -415,7 +418,18 @@ async function main(): Promise<void> {
       const report = join(temporary, item.entry.jurisdiction + "-preflight.json");
       console.log("VALIDATE " + item.entry.archive);
       if (item.sourceIssue) {
-        await quarantineSelectedArchive(item, item.sourceIssue, null);
+        if (item.state === "held" && item.sourceIssue.reason_code ===
+            "docket_storage_unquarantined_partial_holds" && item.objectName) {
+          await storageDownload(item.objectName, local);
+          if ((await fileHash(local)) !== item.entry.sha256) {
+            throw new Error("docket_quarantine_partial_archive_sha_mismatch");
+          }
+          await quarantineSelectedArchive(item, item.sourceIssue, local);
+        } else {
+          // If partial receipts exist but the original ZIP is unavailable or
+          // corrupt, the global latch must remain until source proof is restored.
+          await quarantineSelectedArchive(item, item.sourceIssue, null);
+        }
         return;
       }
       if (!item.objectName) throw new Error("docket_storage_selected_archive_object_missing");
@@ -435,7 +449,16 @@ async function main(): Promise<void> {
         return;
       }
       if (mode === "apply") {
-        await assertPreexistingBillIdentities(item.entry, local);
+        try {
+          await assertPreexistingBillIdentities(item.entry, local);
+        } catch (error) {
+          const localCause = classifyArchiveLocalPreapplyFailure(error);
+          if (!localCause) throw error;
+          // Identity check performs zero source writes and cannot overwrite
+          // existing Docket identities; preserve its exact failure receipt.
+          await quarantineSelectedArchive(item, localCause, local);
+          return;
+        }
         console.log("APPLY " + item.entry.archive);
         await runCanonicalImporter(manifestFile, local,
           join(temporary, item.entry.jurisdiction + "-apply.json"), true);
