@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  archiveQuarantinePath, classifyArchiveLocalPreflightFailure,
+  archiveQuarantinePath, classifyArchiveLocalPreflightFailure, classifyArchiveLocalPreapplyFailure,
   makeArchiveQuarantine, validateArchiveQuarantine
 } from "./docket-bulk-archive-quarantine";
 import type { BaselineArchive, ReceiptCounts } from "./docket-bulk-storage-plan";
@@ -35,6 +35,25 @@ describe("Archive-local quarantine preserves strict failure evidence", () => {
     ]) {
       expect(classifyArchiveLocalPreflightFailure(message)).toBeNull();
     }
+  });
+
+  it("accepts only recognized read-only identity conflicts for isolation", () => {
+    expect(classifyArchiveLocalPreapplyFailure(
+      new Error("docket_storage_cached_bill_identity_conflict: 2102049")
+    )).toEqual({
+      reason_code: "docket_storage_cached_bill_identity_conflict",
+      member_path: "2102049",
+    });
+    expect(classifyArchiveLocalPreapplyFailure(
+      new Error("docket_storage_source_bill_count_mismatch: AZ_2026.zip")
+    )?.reason_code).toBe("docket_storage_source_bill_count_mismatch");
+    expect(classifyArchiveLocalPreapplyFailure(
+      new Error("docket_storage_invalid_source_bill_identity: AZ/section/bill/SR1001.json")
+    )?.reason_code).toBe("docket_storage_invalid_source_bill_identity");
+    expect(classifyArchiveLocalPreapplyFailure(new Error("connection refused"))).toBeNull();
+    expect(classifyArchiveLocalPreapplyFailure(
+      new Error("docket_storage_activation_function_changed")
+    )).toBeNull();
   });
 
   it("pins a durable record to exact manifest and archive SHA, not a filename alone", () => {
