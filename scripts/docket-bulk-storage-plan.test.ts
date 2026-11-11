@@ -70,7 +70,7 @@ test("Storage runner is opt-in; existing canonical importer and no paid API call
   assert.match(source, /const mode = modeFlags\[0\] \|\| "plan"/);
   assert.match(source, /validateArchiveQuarantine\(/);
   assert.match(source, /listObjects\(DOCKET_QUARANTINE_PREFIX\)/);
-  assert.match(source, /quarantineObjects.has\(source.sha256 \+ "\\.json"\)/);
+  assert.ok(source.includes('quarantineObjects.has(source.sha256 + ".json")'));
   assert.match(source, /quarantineSelectedArchive\(/);
   assert.match(source, /sourceIssue: ArchiveLocalPreflightFailure/);
   assert.match(source, /pending\.push\(\{ entry: source, objectName, state, sourceIssue \}\)/);
