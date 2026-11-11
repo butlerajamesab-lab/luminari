@@ -310,7 +310,10 @@ async function main(): Promise<void> {
       ? manifest.archives.filter(x => x.jurisdiction === jurisdiction)
       : manifest.archives;
     let complete = 0, remaining = 0, processed = 0, quarantined = 0;
-    const pending: Array<{ entry: BaselineArchive; objectName: string; state: string }> = [];
+    const pending: Array<{
+      entry: BaselineArchive; objectName: string | null; state: string;
+      sourceIssue: ArchiveLocalPreflightFailure | null;
+    }> = [];
     const quarantineObjects = new Set(objects.map(x => x.name));
     for (const source of entries) {
       const counts = await readCounts(source);
@@ -340,17 +343,29 @@ async function main(): Promise<void> {
       // necessarily as standalone Storage objects. Do not demand a second
       // upload for an already-complete, receipt-verified archive.
       let objectName: string | null = null;
+      let sourceIssue: ArchiveLocalPreflightFailure | null = null;
       if (state === "complete") {
         await assertBillReceiptCache(source);
         complete++;
       } else {
-        objectName = chooseStorageObject(source.archive, names);
-        const object = objects.find(x => x.name === objectName)!;
-        if (object.metadata?.size != null && Number(object.metadata.size) !== source.bytes) {
-          throw new Error("docket_storage_object_size_mismatch: " + objectName);
+        try {
+          objectName = chooseStorageObject(source.archive, names);
+        } catch (error) {
+          if (!(error instanceof Error) ||
+              !error.message.startsWith("docket_storage_ambiguous_or_missing_archive:")) throw error;
+          sourceIssue = {
+            reason_code: "docket_storage_ambiguous_or_missing_archive",
+            member_path: null,
+          };
+        }
+        if (objectName) {
+          const object = objects.find(x => x.name === objectName)!;
+          if (object.metadata?.size != null && Number(object.metadata.size) !== source.bytes) {
+            sourceIssue = { reason_code: "docket_storage_object_size_mismatch", member_path: null };
+          }
         }
         remaining++;
-        pending.push({ entry: source, objectName, state });
+        pending.push({ entry: source, objectName, state, sourceIssue });
       }
       console.log(JSON.stringify({
         archive: source.archive, storage_object: objectName,
@@ -366,35 +381,51 @@ async function main(): Promise<void> {
         processed: 0, quarantined, remaining }));
       return;
     }
+    const quarantineSelectedArchive = async (
+      item: (typeof pending)[number], failure: ArchiveLocalPreflightFailure,
+      originalZip: string | null,
+    ): Promise<void> => {
+      if (mode !== "apply") throw new Error("docket_quarantine_requires_apply_mode");
+      const counts = await readCounts(item.entry);
+      if (receiptState(item.entry, counts) !== item.state) {
+        throw new Error("docket_quarantine_source_receipt_state_drift");
+      }
+      if (counts.total > 0) {
+        // A partial archive can be isolated ONLY if every existing member
+        // hash and cache identity is reconciled against the exact original ZIP.
+        if (!originalZip) throw new Error("docket_quarantine_partial_missing_original");
+        await assertExistingMemberHashes(item.entry, originalZip);
+        await assertBillReceiptCache(item.entry);
+      }
+      const evidence = await persistArchiveQuarantine(item.entry, failure, counts);
+      console.log("DOCKET_SOURCE_ARCHIVE_QUARANTINED " + item.entry.archive +
+        " reason=" + evidence.reason_code + " source_receipts=" + counts.total);
+      console.log(JSON.stringify({ result: "quarantined", mode,
+        processed, archive: item.entry.archive, archive_sha256: item.entry.sha256,
+        reason_code: evidence.reason_code }));
+    };
     for (const item of pending.slice(0, maxArchives)) {
       const local = join(temporary, item.entry.archive);
       const report = join(temporary, item.entry.jurisdiction + "-preflight.json");
       console.log("VALIDATE " + item.entry.archive);
+      if (item.sourceIssue) {
+        await quarantineSelectedArchive(item, item.sourceIssue, null);
+        return;
+      }
+      if (!item.objectName) throw new Error("docket_storage_selected_archive_object_missing");
       await storageDownload(item.objectName, local);
       if ((await fileHash(local)) !== item.entry.sha256) {
-        throw new Error("docket_storage_archive_sha256_mismatch: " + item.objectName);
+        await quarantineSelectedArchive(item,
+          { reason_code: "docket_storage_archive_sha256_mismatch", member_path: null }, null);
+        return;
       }
       if (item.state === "partial") await assertExistingMemberHashes(item.entry, local);
       try {
         await runCanonicalImporter(manifestFile, local, report, false);
       } catch (error) {
         if (!(error instanceof ArchiveLocalPreflightRejection) || mode !== "apply") throw error;
-        // The canonical CLI ran with --apply absent; no database writer was
-        // loaded. Check the existing receipts and bill cache before quarantining.
-        const counts = await readCounts(item.entry);
-        if (receiptState(item.entry, counts) !== item.state) {
-          throw new Error("docket_quarantine_preflight_receipt_state_drift");
-        }
-        if (counts.total > 0) {
-          await assertExistingMemberHashes(item.entry, local);
-          await assertBillReceiptCache(item.entry);
-        }
-        const evidence = await persistArchiveQuarantine(item.entry, error.evidence, counts);
-        console.log("DOCKET_SOURCE_ARCHIVE_QUARANTINED " + item.entry.archive +
-          " reason=" + evidence.reason_code + " source_receipts=" + counts.total);
-        console.log(JSON.stringify({ result: "quarantined", mode,
-          processed, archive: item.entry.archive, archive_sha256: item.entry.sha256,
-          reason_code: evidence.reason_code }));
+        // The canonical CLI ran without --apply; no database writer was loaded.
+        await quarantineSelectedArchive(item, error.evidence, local);
         return;
       }
       if (mode === "apply") {
