@@ -5,34 +5,45 @@ function source(path: string) {
   return readFileSync(path, "utf-8");
 }
 
-describe("Civic Map government-office pin wire", () => {
-  const service = source("server/services/resource-directory.ts");
+// U3 cutover (2026-11-10): government offices no longer reach the map
+// through a locator-table lane. The U2 projection made them catalog
+// entities, and pins are catalog locations — one lane, one system, per
+// Alexander's unification ruling. This contract replaces the two-lane
+// gov-office pin contract that preceded it.
+describe("Civic Map unified catalog pins", () => {
+  const service = source("server/services/resource-directory-unified.ts");
   const router = source("server/routes/civic-map-router.ts");
 
-  it("admits official government-office coordinates into the exact-site points query", () => {
-    expect(service).toContain("gov_office_sites");
-    expect(service).toContain("public.gov_offices");
-    expect(service).toContain("g.superseded_by is null");
-    expect(service).toContain("g.lat is not null");
-    expect(service).toContain("g.lng is not null");
-    // The reviewed v3_13 lane remains the first arm — nothing was displaced.
-    expect(service).toContain("l.manual_map_eligible is true");
-    expect(service).toContain("reviewed_sites");
+  it("serves exact-site points from catalog entities and their stored locations", () => {
+    expect(service).toContain("public.luminari_resource_entities");
+    expect(service).toContain("public.luminari_resource_locations");
+    expect(service).toContain("l.latitude is not null");
+    expect(service).toContain("l.longitude is not null");
   });
 
-  it("keeps the two provenance lanes distinguishable in the point source label", () => {
-    expect(router).toContain("reviewed_v3_13_exact_public_sites");
-    expect(router).toContain("gov_offices_official_coordinates");
+  it("does not read the gov_offices locator table as a map lane", () => {
+    const points_sql = service.slice(
+      service.indexOf("build_unified_map_points_sql"),
+    );
+    expect(points_sql).not.toContain("public.gov_offices");
+    expect(service).not.toContain("gov_office_sites");
+    expect(service).not.toContain("reviewed_sites");
   });
 
-  it("accepts hash-derived gof_ office identities on the detail endpoint", () => {
+  it("labels the points source as the unified catalog", () => {
+    expect(router).toContain("unified_catalog_exact_sites");
+    expect(router).toContain("get_unified_catalog_map_points");
+  });
+
+  it("accepts hash-derived gof_ office identities on the detail endpoint and resolves them in the catalog", () => {
     expect(router).toContain("isGovOfficeId");
-    expect(router).toContain("getGovOfficeDetail");
-    expect(service).toContain("getGovOfficeDetail");
+    expect(router).toContain("get_unified_catalog_detail");
+    expect(service).toContain("canonical_id = $1");
   });
 
-  it("reports government-office exact sites as their own counter", () => {
-    expect(router).toContain("gov_office_exact_sites");
-    expect(service).toContain("getGovOfficeExactSiteCount");
+  it("governs pins with the category filter", () => {
+    expect(router).toContain("parseCategory");
+    expect(service).toContain("e.resource_category = $5");
+    expect(service).toContain("$5 = any(coalesce(e.service_categories");
   });
 });

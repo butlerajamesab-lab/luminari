@@ -1,14 +1,12 @@
 import {
   ArrowLeft,
   ExternalLink,
-  FileCheck2,
   Globe2,
   Loader2,
   Mail,
   Map,
   MapPin,
   Phone,
-  ShieldCheck,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { Link, useParams } from "wouter";
@@ -98,7 +96,7 @@ type ResourceRecord = {
 };
 
 function title_case(value: string | null | undefined): string {
-  if (!value) return "Pending reviewed placement";
+  if (!value) return "";
   return value
     .replace(/_/g, " ")
     .replace(/\b\w/g, (character) => character.toUpperCase());
@@ -178,33 +176,6 @@ function ContactRow({ contact }: { contact: Contact }) {
   );
 }
 
-function ProvenanceRow({
-  label,
-  value,
-}: {
-  label: string;
-  value?: string | null;
-}) {
-  if (value === null || value === undefined || value === "") return null;
-  return (
-    <div className="grid grid-cols-[130px_minmax(0,1fr)] gap-3 border-b border-white/5 py-2 text-xs leading-5 last:border-0">
-      <span className="text-slate-500">{label}</span>
-      <span className="break-words font-mono text-slate-300">{value}</span>
-    </div>
-  );
-}
-
-function reviewed_source_span(value: unknown): string | null {
-  if (!value || typeof value !== "object") return null;
-  const span = value as { paragraph_start?: number; paragraph_end?: number };
-  if (
-    !Number.isInteger(span.paragraph_start) ||
-    !Number.isInteger(span.paragraph_end)
-  )
-    return null;
-  return `Paragraphs ${span.paragraph_start}–${span.paragraph_end}`;
-}
-
 export default function ResourceRecord() {
   const params = useParams<{ id: string }>();
   const record_id = params.id ?? "";
@@ -238,7 +209,7 @@ export default function ResourceRecord() {
           </Link>
           <div className="h-6 w-px bg-white/10" />
           <p className="truncate text-[11px] text-slate-500">
-            Canonical record
+            Resource record
           </p>
         </div>
       </header>
@@ -249,7 +220,7 @@ export default function ResourceRecord() {
             <div className="text-center">
               <Loader2 className="mx-auto h-7 w-7 animate-spin text-emerald-300" />
               <p className="mt-3 text-sm text-slate-400">
-                Loading the canonical record
+                Loading the resource
               </p>
             </div>
           </div>
@@ -276,9 +247,11 @@ export default function ResourceRecord() {
           <>
             <section>
               <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-200">
-                  {title_case(resource.resource_category)}
-                </span>
+                {resource.resource_category && (
+                  <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-200">
+                    {title_case(resource.resource_category)}
+                  </span>
+                )}
                 {resource.directory_categories
                   ?.filter((value) => value !== resource.resource_category)
                   .map((value) => (
@@ -292,12 +265,6 @@ export default function ResourceRecord() {
                 {(resource.state || resource.jurisdiction) && (
                   <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-medium text-slate-300">
                     {resource.state || resource.jurisdiction}
-                  </span>
-                )}
-                {resource.verification_status && (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-sky-400/20 bg-sky-400/10 px-2.5 py-1 text-[11px] font-medium text-sky-200">
-                    <FileCheck2 className="h-3 w-3" />
-                    {resource.verification_status}
                   </span>
                 )}
               </div>
@@ -364,14 +331,8 @@ export default function ResourceRecord() {
                 <div>
                   <p>
                     {address ||
-                      "Coverage is shown by jurisdiction; no street marker is implied."}
+                      "Coverage is shown by area; no street address is published for this resource."}
                   </p>
-                  {primary_location?.coordinate_quality && (
-                    <p className="mt-1 text-xs text-slate-500">
-                      Coordinates:{" "}
-                      {title_case(primary_location.coordinate_quality)}
-                    </p>
-                  )}
                 </div>
               </div>
               {has_coordinates && (
@@ -385,151 +346,10 @@ export default function ResourceRecord() {
               )}
             </section>
 
-            <section className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-              <h2 className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
-                <ShieldCheck className="h-3.5 w-3.5 text-emerald-300" />
-                Provenance
-              </h2>
-              {resource.source_access?.url && (
-                <a
-                  href={resource.source_access.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-4 inline-flex items-center gap-2 rounded-lg border border-emerald-300/25 px-3 py-2 text-sm text-emerald-200 hover:bg-emerald-300/10"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  Open original source document
-                </a>
-              )}
-              {resource.source_access && !resource.source_access.url && (
-                <p className="mt-3 text-sm text-slate-300">
-                  {resource.source_access.status === "source_access_restricted"
-                    ? "The original document has restricted access. Its access permissions are preserved."
-                    : resource.source_access.status ===
-                        "source_version_unresolved"
-                      ? "The original document version needs review before it can be opened from this record."
-                      : "The original document is not currently available from this record."}
-                </p>
-              )}
-              {resource.publication_review_note && (
-                <p className="mt-3 text-xs leading-6 text-slate-400">
-                  Source attached. Contact details, eligibility and service
-                  availability have not been independently rechecked.
-                </p>
-              )}
-              {resource.source_transcription_correction && (
-                <p className="mt-3 text-xs leading-6 text-slate-400">
-                  This entry's transcription was corrected against its original
-                  source. The source's claims still require independent review.
-                </p>
-              )}
-              <div className="mt-3">
-                <ProvenanceRow
-                  label="Classification revision"
-                  value={resource.category_review?.revision_id}
-                />
-                <ProvenanceRow
-                  label="Source section"
-                  value={resource.category_review?.source_heading?.quoted_text}
-                />
-                {resource.category_review?.secondary_memberships?.map(
-                  (membership) => (
-                    <ProvenanceRow
-                      key={membership.category}
-                      label={title_case(membership.category)}
-                      value={`Reviewed service interpretation: “${membership.evidence_quote}” (${membership.source_paragraph})`}
-                    />
-                  ),
-                )}
-                <ProvenanceRow
-                  label="Transcription revision"
-                  value={resource.source_transcription_correction?.revision_id}
-                />
-                <ProvenanceRow
-                  label="Reviewed source span"
-                  value={reviewed_source_span(
-                    resource.source_transcription_correction?.source_span,
-                  )}
-                />
-                <ProvenanceRow
-                  label="Document"
-                  value={resource.source_artifact?.object_name}
-                />
-                <ProvenanceRow
-                  label="Source location"
-                  value={resource.source_locator}
-                />
-                <ProvenanceRow
-                  label="Recorded document hash"
-                  value={resource.source_content_sha256}
-                />
-                <ProvenanceRow
-                  label="Stored category"
-                  value={resource.source_resource_category}
-                />
-                <ProvenanceRow
-                  label="Canonical identity"
-                  value={resource.canonical_id ?? resource.resource_entity_id}
-                />
-                <ProvenanceRow
-                  label="Record identity"
-                  value={resource.resource_entity_id}
-                />
-                {resource.office_id && (
-                  <>
-                    <ProvenanceRow
-                      label="Office identity"
-                      value={resource.office_id}
-                    />
-                    <ProvenanceRow
-                      label="Office type"
-                      value={resource.office_type}
-                    />
-                    <ProvenanceRow
-                      label="Agency key"
-                      value={resource.agency_key}
-                    />
-                    <ProvenanceRow
-                      label="Source table"
-                      value={resource.source_table}
-                    />
-                    <ProvenanceRow
-                      label="Locator source"
-                      value={resource.locator_source_id}
-                    />
-                    <ProvenanceRow
-                      label="Source hash (8)"
-                      value={resource.source_hash8}
-                    />
-                    <ProvenanceRow
-                      label="Source provenance"
-                      value={resource.source_provenance ?? "Not recorded"}
-                    />
-                  </>
-                )}
-                <ProvenanceRow
-                  label="Source reference"
-                  value={resource.publication_source_reference}
-                />
-                <ProvenanceRow
-                  label="Provenance status"
-                  value={
-                    resource.provenance_status
-                      ? title_case(resource.provenance_status)
-                      : null
-                  }
-                />
-                <ProvenanceRow
-                  label="Promotion status"
-                  value={
-                    resource.promotion_status
-                      ? title_case(resource.promotion_status)
-                      : null
-                  }
-                />
-              </div>
-            </section>
-
+            {/* Person-facing surface (Alexander, 2026-11-10): no provenance
+                machinery here — document hashes, source rows, and stored
+                category labels stay in the governed tables and inspector
+                surfaces, not in front of a person looking for help. */}
             <section className="mt-8 flex flex-wrap items-center gap-3 border-t border-white/10 pt-6">
               <CommitToCase
                 type="resource"

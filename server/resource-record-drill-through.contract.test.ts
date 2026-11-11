@@ -29,8 +29,13 @@ describe("Resource record drill-through", () => {
 
   it("serves both identity shapes from one detail endpoint", () => {
     expect(directoryRouter).toContain("gof_");
-    expect(directoryRouter).toContain("getGovOfficeDetail");
-    expect(directoryRouter).toContain("get_publishable_resource_directory_detail");
+    // U3 (unification ruling, 2026-11-10): one unified detail function serves
+    // both identity shapes — entity UUIDs and the gof_ office keys the U2
+    // projection preserved as canonical_id. The pre-U3 pair
+    // (getGovOfficeDetail / get_publishable_resource_directory_detail) is gone.
+    expect(directoryRouter).toContain("get_unified_catalog_detail");
+    expect(directoryRouter).not.toContain("getGovOfficeDetail");
+    expect(directoryRouter).not.toContain("get_publishable_resource_directory_detail");
   });
 
   it("carries attach-to-case through the commitment layer, hash-keyed and soft-remove", () => {
