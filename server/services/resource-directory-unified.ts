@@ -71,7 +71,16 @@ const UUID_NAME_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const BARE_HEX_NAME_PATTERN = /^[0-9a-f]{24,}$/i;
 const ARTIFACT_PREFIX_PATTERN = /^luminari[-_]/i;
-const ARTIFACT_ENRICHED_PATTERN = /enriched/i;
+// The artifact shape is 'enriched' as a hyphen/underscore-delimited
+// token in a pipeline pass label (luminari-oregon-ENRICHED-PASS3-2026,
+// something_ENRICHED_v2) — not the bare word. The original blanket
+// clause rejected ANY name containing "enriched", including the
+// genuine Westchester Enriched Sciences Magnets (a real LAUSD school
+// in the gov-office projection, held out of the catalog by its own
+// real name). Narrowed 2026-11-10 to the delimited-token shape; the
+// census verified exactly one catalog entity changes state under the
+// narrowed rule (Westchester itself).
+const ARTIFACT_ENRICHED_PATTERN = /(^|[-_])enriched([-_]|$)/i;
 
 /**
  * The person-facing name test, mirrored in SQL by person_facing_name_sql.
@@ -96,7 +105,7 @@ export function person_facing_name_sql(expression: string): string {
     and ${expression} !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
     and ${expression} !~* '^[0-9a-f]{24,}$'
     and ${expression} !~* '^luminari[-_]'
-    and ${expression} !~* 'enriched'
+    and ${expression} !~* '(^|[-_])enriched([-_]|$)'
   )`;
 }
 
