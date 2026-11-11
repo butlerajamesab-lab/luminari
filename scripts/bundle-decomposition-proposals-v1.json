@@ -1,0 +1,5363 @@
+[
+ {
+  "bundle_entity_id": "00b298e4-939c-de4f-b166-b3bfe0273602",
+  "bundle_canonical_id": "csp_ms_2cae21c8734dbf6ee4e4",
+  "family": "catalog_site_projection_v1",
+  "state": "MS",
+  "city": "Choctaw",
+  "jurisdiction": "MS",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-mississippi-ENRICHED-PASS3-2026",
+  "shape": "shared_site_split",
+  "n_rows_total": 4,
+  "n_attributed": 4,
+  "names": [
+   {
+    "program_name": "Choctaw Health Center — IHS Compact (MBCI Primary Health)",
+    "norm_name": "choctaw health center — ihs compact (mbci primary health)",
+    "minted_entity_id": "87cfaa64-26b8-d866-01e1-90ebf60cc2d4",
+    "minted_canonical_id": "bdp_ms_c39f2b47338adb5bf152",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:05c03ab431a78f982f015672ddd29fe0b6582957cef439d370fcd4056b2ea1b3",
+      "sheet": "pass3_program_card",
+      "row": 716,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "601-656-2211",
+      "website": "choctaw.org"
+     },
+     {
+      "uid": "corpus:7d4bb2d228bc665b97f998d2c6c3ee316cc359c1a8e8a4524bfe852914f9a3d8",
+      "sheet": "pass3_program_card",
+      "row": 716,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "601-656-2211",
+      "website": "choctaw.org"
+     }
+    ],
+    "phones": [
+     "6016562211"
+    ],
+    "websites": [
+     "choctaw.org"
+    ],
+    "site_keys": [
+     "210 reservation rd"
+    ],
+    "own_address_text": "210 Reservation Rd, Choctaw MS 39350 (Neshoba County)"
+   },
+   {
+    "program_name": "Choctaw Health Center — MBCI IHS (Pearl River Reservation)",
+    "norm_name": "choctaw health center — mbci ihs (pearl river reservation)",
+    "minted_entity_id": "644d5b84-e53c-7bd3-949e-2fb1689f1392",
+    "minted_canonical_id": "bdp_ms_be883c51c81cdf8c3613",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:4ab198bdb6f95d12eb85ea001b559fb23614338abca14ee5db6c94280f030dc7",
+      "sheet": "pass3_program_card",
+      "row": 690,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "601-656-2211",
+      "website": "choctaw.org"
+     },
+     {
+      "uid": "corpus:7c9ae672285f0f881f3c7756fae78e5716ba13241c127ebd9c0a13f5a8159855",
+      "sheet": "pass3_program_card",
+      "row": 690,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "601-656-2211",
+      "website": "choctaw.org"
+     }
+    ],
+    "phones": [
+     "6016562211"
+    ],
+    "websites": [
+     "choctaw.org"
+    ],
+    "site_keys": [
+     "210 reservation rd"
+    ],
+    "own_address_text": "210 Reservation Rd, Choctaw MS 39350 (Neshoba County)"
+   }
+  ],
+  "assignment": {
+   "choctaw health center — ihs compact (mbci primary health)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": false,
+    "city": "Choctaw"
+   },
+   "choctaw health center — mbci ihs (pearl river reservation)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": false,
+    "city": "Choctaw"
+   }
+  },
+  "location_descriptors": [
+   {
+    "location_id": "b2c5281f-93d3-400f-88f6-16a61920205e",
+    "site_key": "210 reservation rd",
+    "has_coords": false,
+    "city": "Choctaw"
+   }
+  ],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "024fe101-70da-435c-d680-7c655727a7e3",
+  "bundle_canonical_id": "csp_gu_4451d98b55e5710c0315",
+  "family": "catalog_site_projection_v1",
+  "state": "GU",
+  "city": "Mangilao",
+  "jurisdiction": "GU",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-guam-ENRICHED-PASS3-2026-3",
+  "shape": "shared_site_split",
+  "n_rows_total": 4,
+  "n_attributed": 4,
+  "names": [
+   {
+    "program_name": "Guam Medicaid / MedQuam (DPHSS)",
+    "norm_name": "guam medicaid / medquam (dphss)",
+    "minted_entity_id": "90346a76-14f5-1846-884f-75d9f8b97c1e",
+    "minted_canonical_id": "bdp_gu_6b10fcb484c6fa9d4405",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:bf658ae37a4e4c4321fb92f1549a2ea6a64b77695ba1bd5f8886cabbed112dda",
+      "sheet": "pass3_program_card",
+      "row": 297,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "671-735-7150 dphss.guam.gov",
+      "website": "dphss.guam.gov"
+     },
+     {
+      "uid": "corpus:ceb8a8c1bb513cf0d1ee22543d5c3a548d32d8b5def471caa5fa3086f8080e06",
+      "sheet": "pass3_program_card",
+      "row": 297,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "671-735-7150 dphss.guam.gov",
+      "website": "dphss.guam.gov"
+     }
+    ],
+    "phones": [
+     "6717357150"
+    ],
+    "websites": [
+     "dphss.guam.gov"
+    ],
+    "site_keys": [
+     "123 chalan kareta"
+    ],
+    "own_address_text": "123 Chalan Kareta, Mangilao GU 96913"
+   },
+   {
+    "program_name": "Guam SNAP (DPHSS)",
+    "norm_name": "guam snap (dphss)",
+    "minted_entity_id": "141a53a1-7e7a-b915-d8d8-ad0280ef324f",
+    "minted_canonical_id": "bdp_gu_746e112b0ea22fb5dc44",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:4e2445d4f6e8e1e31a27709dfe822538e7350f2066c5adf57f405a15ab966b0f",
+      "sheet": "pass3_program_card",
+      "row": 302,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "671-735-7150 dphss.guam.gov",
+      "website": "dphss.guam.gov"
+     },
+     {
+      "uid": "corpus:b359222852f8cdfd0a605076876c20d1a565f5d1b07eac912c0cba5bcbc33262",
+      "sheet": "pass3_program_card",
+      "row": 302,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "671-735-7150 dphss.guam.gov",
+      "website": "dphss.guam.gov"
+     }
+    ],
+    "phones": [
+     "6717357150"
+    ],
+    "websites": [
+     "dphss.guam.gov"
+    ],
+    "site_keys": [
+     "123 chalan kareta"
+    ],
+    "own_address_text": "123 Chalan Kareta, Mangilao GU 96913"
+   }
+  ],
+  "assignment": {
+   "guam medicaid / medquam (dphss)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Mangilao"
+   },
+   "guam snap (dphss)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Mangilao"
+   }
+  },
+  "location_descriptors": [
+   {
+    "location_id": "f02e1f55-af92-45d1-b3c9-4e8e79f80ad2",
+    "site_key": "123 chalan kareta",
+    "has_coords": true,
+    "city": "Mangilao"
+   }
+  ],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "07c9d642-3070-8cd9-e59e-5ec8bd4b87ec",
+  "bundle_canonical_id": "csp_oh_ef77cc90a9595b1c8e3b",
+  "family": "catalog_site_projection_v1",
+  "state": "OH",
+  "city": "Columbus",
+  "jurisdiction": "OH",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-ohio-ENRICHED-PASS3-2026",
+  "shape": "shared_site_split",
+  "n_rows_total": 4,
+  "n_attributed": 4,
+  "names": [
+   {
+    "program_name": "Legal Aid Columbus (Franklin County)",
+    "norm_name": "legal aid columbus (franklin county)",
+    "minted_entity_id": "ed40d713-c8d3-f097-6ea6-2bc52c0b9bf0",
+    "minted_canonical_id": "bdp_oh_cfd4fc79f2625fed3efc",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:2a7a07776afb4b3504ebeac2b2a5ee03e8e971823f41303710ec4e1c18daea54",
+      "sheet": "pass3_program_card",
+      "row": 1022,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "614-224-8374",
+      "website": "columbuslegalaid.org"
+     },
+     {
+      "uid": "corpus:ef9991da24e8f4ca1018d50b9d1ef72e7232e927df135ee7e0dfd50ff5c1bf07",
+      "sheet": "pass3_program_card",
+      "row": 1022,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "614-224-8374",
+      "website": "columbuslegalaid.org"
+     }
+    ],
+    "phones": [
+     "6142248374"
+    ],
+    "websites": [
+     "columbuslegalaid.org"
+    ],
+    "site_keys": [
+     "88 e broad st"
+    ],
+    "own_address_text": "88 E Broad St Ste 1400, Columbus OH 43215"
+   },
+   {
+    "program_name": "Legal Aid Society of Columbus — Same-Day Eviction Triage",
+    "norm_name": "legal aid society of columbus — same-day eviction triage",
+    "minted_entity_id": "e36bd4e2-c2fa-df11-2c39-0ce4d4a0c90b",
+    "minted_canonical_id": "bdp_oh_e71000696ca5bb92b63b",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:6ce42206ddbc890aec92d3365dee320969adb336df82c8192149268e0fc1a31e",
+      "sheet": "pass3_program_card",
+      "row": 1010,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "614-224-8374",
+      "website": "columbuslegalaid.org"
+     },
+     {
+      "uid": "corpus:d01c883982ce75e9ebfcac08dbdf28254e5b4ea008e15c24ef1478291acf9059",
+      "sheet": "pass3_program_card",
+      "row": 1010,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "614-224-8374",
+      "website": "columbuslegalaid.org"
+     }
+    ],
+    "phones": [
+     "6142248374"
+    ],
+    "websites": [
+     "columbuslegalaid.org"
+    ],
+    "site_keys": [
+     "88 e broad st"
+    ],
+    "own_address_text": "88 E Broad St Ste 1400, Columbus OH 43215"
+   }
+  ],
+  "assignment": {
+   "legal aid columbus (franklin county)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Columbus"
+   },
+   "legal aid society of columbus — same-day eviction triage": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Columbus"
+   }
+  },
+  "location_descriptors": [
+   {
+    "location_id": "f4a46983-06ab-44f6-ab95-e718394f26dd",
+    "site_key": "88 e broad st",
+    "has_coords": true,
+    "city": "Columbus"
+   }
+  ],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "0b94567c-51f7-bfe8-bdd7-ef46ac7fd0c3",
+  "bundle_canonical_id": "crp_pr_7e505191d492f2d86a78",
+  "family": "catalog_remainder_projection_v1",
+  "state": "PR",
+  "city": null,
+  "jurisdiction": "PR",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-puerto-rico-ENRICHED-PASS3-2026-1",
+  "shape": "shared_site_split",
+  "n_rows_total": 6,
+  "n_attributed": 6,
+  "names": [
+   {
+    "program_name": "Coordinadora Paz para la Mujer (Statewide DV Network)",
+    "norm_name": "coordinadora paz para la mujer (statewide dv network)",
+    "minted_entity_id": "7b23d3a4-a2c1-faa2-f0fd-52a9632b0f83",
+    "minted_canonical_id": "bdp_pr_3e09f0a36a4660e8cc24",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:3dfb2d8b5315dbae099f2326907b28fc68ea7d017568cf374d0276c73bd8c237",
+      "sheet": "pass3_program_card",
+      "row": 1158,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "787-281-7579 PR DV Hotline: 787-722-2323",
+      "website": "pazparalamujer.org"
+     },
+     {
+      "uid": "corpus:a5f61e7107cf0e1f2a881d033970fc5cdadcf366187650a910e485c7807c1298",
+      "sheet": "pass3_program_card",
+      "row": 1158,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "787-281-7579 PR DV Hotline: 787-722-2323",
+      "website": "pazparalamujer.org"
+     }
+    ],
+    "phones": [],
+    "websites": [
+     "pazparalamujer.org"
+    ],
+    "site_keys": [
+     "calle mayaguez 63"
+    ],
+    "own_address_text": "Calle Mayaguez 63, San Juan PR 00917"
+   },
+   {
+    "program_name": "FEMA Individual Assistance (Disaster Recovery)",
+    "norm_name": "fema individual assistance (disaster recovery)",
+    "minted_entity_id": "7867786a-dba5-5030-7109-49bd75f37530",
+    "minted_canonical_id": "bdp_pr_981df57efc1faef5fb86",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:52e8ed369e0adeb658488f19c8914aa98ff303ae10995d59640348eb9e320d29",
+      "sheet": "pass3_program_card",
+      "row": 1162,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "800-621-3362 disasterassistance.gov cdbg-dr.pr.gov",
+      "website": "disasterassistance.gov cdbg-dr.pr.gov"
+     },
+     {
+      "uid": "corpus:f4962312e3d17b0e108865ac2ae0be20bdf3aec9e354a95cf4c89da7d9527ad8",
+      "sheet": "pass3_program_card",
+      "row": 1162,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "800-621-3362 disasterassistance.gov cdbg-dr.pr.gov",
+      "website": "disasterassistance.gov cdbg-dr.pr.gov"
+     }
+    ],
+    "phones": [
+     "8006213362"
+    ],
+    "websites": [
+     "disasterassistance.gov cdbg-dr.pr.gov"
+    ],
+    "site_keys": [],
+    "own_address_text": null
+   },
+   {
+    "program_name": "PR FQHCs (ASSAL -- Statewide)",
+    "norm_name": "pr fqhcs (assal -- statewide)",
+    "minted_entity_id": "64ec3483-f299-3e96-f2c7-fac379409f9f",
+    "minted_canonical_id": "bdp_pr_383be0f135eb0d4c4085",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:6b7a585c41afc82d0ea7e2b836b43cc67828920fff3d5cde6fbc41fd951829f0",
+      "sheet": "pass3_program_card",
+      "row": 1153,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "787-765-2929 findahealthcenter.hrsa.gov",
+      "website": "findahealthcenter.hrsa.gov"
+     },
+     {
+      "uid": "corpus:e2c77ea5f8aaea2e427c0032b56ff8f7f912b0e0fb28d4a13516f43968dd083e",
+      "sheet": "pass3_program_card",
+      "row": 1153,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "787-765-2929 findahealthcenter.hrsa.gov",
+      "website": "findahealthcenter.hrsa.gov"
+     }
+    ],
+    "phones": [
+     "7877652929"
+    ],
+    "websites": [
+     "findahealthcenter.hrsa.gov"
+    ],
+    "site_keys": [],
+    "own_address_text": null
+   }
+  ],
+  "assignment": {
+   "coordinadora paz para la mujer (statewide dv network)": {
+    "clones": [],
+    "fresh": null,
+    "has_coords": false,
+    "city": null
+   },
+   "fema individual assistance (disaster recovery)": {
+    "clones": [],
+    "fresh": null,
+    "has_coords": false,
+    "city": null
+   },
+   "pr fqhcs (assal -- statewide)": {
+    "clones": [],
+    "fresh": null,
+    "has_coords": false,
+    "city": null
+   }
+  },
+  "location_descriptors": [],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "0f4f1a0b-2508-321b-e31d-ff7f1e697e29",
+  "bundle_canonical_id": "csp_al_045f7f6df1cea088a95d",
+  "family": "catalog_site_projection_v1",
+  "state": "AL",
+  "city": "Montgomery",
+  "jurisdiction": "AL",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-alabama-ENRICHED-PASS3-2026-3",
+  "shape": "shared_site_split",
+  "n_rows_total": 4,
+  "n_attributed": 4,
+  "names": [
+   {
+    "program_name": "Alabama Appleseed Center for Law & Justice",
+    "norm_name": "alabama appleseed center for law & justice",
+    "minted_entity_id": "2aec98e3-d829-2da9-3699-27f93a0f26ac",
+    "minted_canonical_id": "bdp_al_b93f9fb12f928a13c560",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:632b903a77195927c46390c7dd16b806cc3586c400ca63f889c2eaed5a1af145",
+      "sheet": "pass3_program_card",
+      "row": 26,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "334-264-1500",
+      "website": "alabamaappleseed.org"
+     },
+     {
+      "uid": "corpus:a6dbba9022285e9f85c74042d58f775eede771cfde5d03b64308e6e299090615",
+      "sheet": "pass3_program_card",
+      "row": 26,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "334-264-1500",
+      "website": "alabamaappleseed.org"
+     }
+    ],
+    "phones": [
+     "3342641500"
+    ],
+    "websites": [
+     "alabamaappleseed.org"
+    ],
+    "site_keys": [
+     "400 s union st"
+    ],
+    "own_address_text": "400 S Union St Ste 490, Montgomery, AL 36104"
+   },
+   {
+    "program_name": "Alabama Appleseed — Reentry / Fines & Fees",
+    "norm_name": "alabama appleseed — reentry / fines & fees",
+    "minted_entity_id": "0535d483-3ec6-4df6-eda5-5881cd0fdb46",
+    "minted_canonical_id": "bdp_al_3e5d8daa9a07650358e2",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:67f1bf6c561e3f169edac8fec2a53b81cb5dbcc3e4689d19f50e124a89a293f1",
+      "sheet": "pass3_program_card",
+      "row": 35,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "334-264-1500",
+      "website": "alabamaappleseed.org"
+     },
+     {
+      "uid": "corpus:9907109dd287fb3e725f5370a7aae13644a75d89bf945688dd40e8591cae551f",
+      "sheet": "pass3_program_card",
+      "row": 35,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "334-264-1500",
+      "website": "alabamaappleseed.org"
+     }
+    ],
+    "phones": [
+     "3342641500"
+    ],
+    "websites": [
+     "alabamaappleseed.org"
+    ],
+    "site_keys": [
+     "400 s union st"
+    ],
+    "own_address_text": "400 S Union St Ste 490, Montgomery, AL 36104"
+   }
+  ],
+  "assignment": {
+   "alabama appleseed center for law & justice": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Montgomery"
+   },
+   "alabama appleseed — reentry / fines & fees": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Montgomery"
+   }
+  },
+  "location_descriptors": [
+   {
+    "location_id": "dbbd6a0f-ca93-47fd-a94e-645741496dae",
+    "site_key": "400 s union st",
+    "has_coords": true,
+    "city": "Montgomery"
+   }
+  ],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "121c3729-812e-1aef-0233-3f6a0d0274c6",
+  "bundle_canonical_id": "crp_nh_cc89fcf1f11b7a91a3b2",
+  "family": "catalog_remainder_projection_v1",
+  "state": "NH",
+  "city": null,
+  "jurisdiction": "NH",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-new-hampshire-ENRICHED-PASS3-2026",
+  "shape": "shared_site_split",
+  "n_rows_total": 8,
+  "n_attributed": 8,
+  "names": [
+   {
+    "program_name": "Elliot Health System -- Manchester Safety Net",
+    "norm_name": "elliot health system -- manchester safety net",
+    "minted_entity_id": "afd5ab56-179b-280b-b9d4-76382735d455",
+    "minted_canonical_id": "bdp_nh_35ed5ca7f5b270d3adb8",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:b3994548772dd8d4f9ff6f00106743a48f274f582b30eaf6a2f57cb39f59eb1e",
+      "sheet": "pass3_program_card",
+      "row": 837,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "603-669-5300 Financial assistance: 603-663-5577",
+      "website": "elliothospital.org"
+     },
+     {
+      "uid": "corpus:f7bb5a24e3415a25b6431c6049633abd1dcd509306464022ce48096bacf73f31",
+      "sheet": "pass3_program_card",
+      "row": 837,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "603-669-5300 Financial assistance: 603-663-5577",
+      "website": "elliothospital.org"
+     }
+    ],
+    "phones": [],
+    "websites": [
+     "elliothospital.org"
+    ],
+    "site_keys": [
+     "one elliot way"
+    ],
+    "own_address_text": "One Elliot Way, Manchester NH 03103"
+   },
+   {
+    "program_name": "NH LIHEAP (Life-Critical Winters)",
+    "norm_name": "nh liheap (life-critical winters)",
+    "minted_entity_id": "1d709dfb-0463-e8da-9ef7-9349add9bff3",
+    "minted_canonical_id": "bdp_nh_7e731bba503731cd46f8",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:2730cdb96850e12b77ef50cd1d55f24f6c4c438067d116d1eda270513959cb4c",
+      "sheet": "pass3_program_card",
+      "row": 848,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "603-271-9700 211 Southern NH Services Manchester: 603-668-8010 CAP BM Concord: 603-225-3295",
+      "website": "nh.gov/dhhs/liheap 211nh.org"
+     },
+     {
+      "uid": "corpus:eef77f1abf6e3748f28093e5ab4b242012dbe67e6248d3a29292bd33a19b10ad",
+      "sheet": "pass3_program_card",
+      "row": 848,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "603-271-9700 211 Southern NH Services Manchester: 603-668-8010 CAP BM Concord: 603-225-3295",
+      "website": "nh.gov/dhhs/liheap 211nh.org"
+     }
+    ],
+    "phones": [],
+    "websites": [
+     "nh.gov"
+    ],
+    "site_keys": [
+     "129 pleasant st"
+    ],
+    "own_address_text": "129 Pleasant St, Concord NH 03301 CAAs statewide"
+   },
+   {
+    "program_name": "NH SNAP (DHHS)",
+    "norm_name": "nh snap (dhhs)",
+    "minted_entity_id": "0e5d0767-0ee8-4cb6-9a77-298ff3038203",
+    "minted_canonical_id": "bdp_nh_4b5c5687699fc9c3b44a",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:0bdac46044fee861947fece03349d34b5ada0bb6ffdf4d332d8d2bbe1415d000",
+      "sheet": "pass3_program_card",
+      "row": 841,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "800-852-3345 Manchester: 603-668-2330 Nashua: 603-882-6000 Concord: 603-271-9700 North Country: 603-788-4845 nh.gov/dhhs/snap",
+      "website": "nh.gov/dhhs/snap"
+     },
+     {
+      "uid": "corpus:f2a35081d841bef03b6a01728d2ba0d3a59819b0138ce62137a27deadc94383b",
+      "sheet": "pass3_program_card",
+      "row": 841,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "800-852-3345 Manchester: 603-668-2330 Nashua: 603-882-6000 Concord: 603-271-9700 North Country: 603-788-4845 nh.gov/dhhs/snap",
+      "website": "nh.gov/dhhs/snap"
+     }
+    ],
+    "phones": [],
+    "websites": [
+     "nh.gov"
+    ],
+    "site_keys": [
+     "129 pleasant st"
+    ],
+    "own_address_text": "129 Pleasant St, Concord NH 03301 District offices statewide"
+   },
+   {
+    "program_name": "NH TANF / Family Assistance Program (DHHS)",
+    "norm_name": "nh tanf / family assistance program (dhhs)",
+    "minted_entity_id": "09345115-de91-c549-b118-be0d7f6d848f",
+    "minted_canonical_id": "bdp_nh_166e12a8545963e191e3",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:0686c1a1539968fc7b18a2b77b9230d53452b55727a9a8bc53e55af273c96c58",
+      "sheet": "pass3_program_card",
+      "row": 846,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "800-852-3345",
+      "website": "nh.gov/dhhs/tanf"
+     },
+     {
+      "uid": "corpus:e74d5ac74e9bb257ec7abc1ad3fae0e6af3cca3ed647aebd19f38c8bf052410b",
+      "sheet": "pass3_program_card",
+      "row": 846,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "800-852-3345",
+      "website": "nh.gov/dhhs/tanf"
+     }
+    ],
+    "phones": [
+     "8008523345"
+    ],
+    "websites": [
+     "nh.gov"
+    ],
+    "site_keys": [
+     "129 pleasant st"
+    ],
+    "own_address_text": "129 Pleasant St, Concord NH 03301 District offices"
+   }
+  ],
+  "assignment": {
+   "elliot health system -- manchester safety net": {
+    "clones": [],
+    "fresh": {
+     "street": "One Elliot Way",
+     "city": "Manchester",
+     "state": "NH",
+     "zip5": "03103"
+    },
+    "has_coords": false,
+    "city": "Manchester"
+   },
+   "nh liheap (life-critical winters)": {
+    "clones": [],
+    "fresh": {
+     "street": "129 Pleasant St",
+     "city": "Concord",
+     "state": "NH",
+     "zip5": "03301"
+    },
+    "has_coords": false,
+    "city": "Concord"
+   },
+   "nh snap (dhhs)": {
+    "clones": [],
+    "fresh": {
+     "street": "129 Pleasant St",
+     "city": "Concord",
+     "state": "NH",
+     "zip5": "03301"
+    },
+    "has_coords": false,
+    "city": "Concord"
+   },
+   "nh tanf / family assistance program (dhhs)": {
+    "clones": [],
+    "fresh": {
+     "street": "129 Pleasant St",
+     "city": "Concord",
+     "state": "NH",
+     "zip5": "03301"
+    },
+    "has_coords": false,
+    "city": "Concord"
+   }
+  },
+  "location_descriptors": [],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "15278ad0-d0f1-be00-c34d-2a051bcb0cda",
+  "bundle_canonical_id": "csp_ks_03c7bd337073fb196cfa",
+  "family": "catalog_site_projection_v1",
+  "state": "KS",
+  "city": "Dodge City",
+  "jurisdiction": "KS",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-kansas-ENRICHED-PASS3-2026",
+  "shape": "shared_site_split",
+  "n_rows_total": 4,
+  "n_attributed": 4,
+  "names": [
+   {
+    "program_name": "High Plains Mental Health Center (Dodge City / SW Kansas FQHC + Behavioral Health)",
+    "norm_name": "high plains mental health center (dodge city / sw kansas fqhc + behavioral health)",
+    "minted_entity_id": "de98eaf8-0ddd-c42c-2494-c67d9d874605",
+    "minted_canonical_id": "bdp_ks_660fb771d5cef1941c0a",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:4f33a316d2b9731779ed35aefefc94bbf1898440a13489b7e608e766993ae403",
+      "sheet": "pass3_program_card",
+      "row": 447,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "620-227-8566",
+      "website": "highplainsmentalhealth.com"
+     },
+     {
+      "uid": "corpus:8e46f2f6dac8eb4d1cb2c7f745d91677738591349b764dbb0b428da3b4c22797",
+      "sheet": "pass3_program_card",
+      "row": 447,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "620-227-8566",
+      "website": "highplainsmentalhealth.com"
+     }
+    ],
+    "phones": [
+     "6202278566"
+    ],
+    "websites": [
+     "highplainsmentalhealth.com"
+    ],
+    "site_keys": [
+     "208 e 7th st"
+    ],
+    "own_address_text": "208 E 7th St, Dodge City KS 67801 (Ford County)"
+   },
+   {
+    "program_name": "High Plains Mental Health DV Program (SW Kansas)",
+    "norm_name": "high plains mental health dv program (sw kansas)",
+    "minted_entity_id": "2e7c06b5-84af-ede9-5712-a3a2cded7bef",
+    "minted_canonical_id": "bdp_ks_d4cf73b81694a4fdafb4",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:9f2c31485fdb42c006e119348d5a8fdbff3a5c27978c02fc731c5ffbc3378251",
+      "sheet": "pass3_program_card",
+      "row": 460,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "620-227-8566 (24/7)",
+      "website": "highplainsmentalhealth.com"
+     },
+     {
+      "uid": "corpus:a34f67178b2add144f09978c3b7676f988fce692561a32934a4413db7ddeffa8",
+      "sheet": "pass3_program_card",
+      "row": 460,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "620-227-8566 (24/7)",
+      "website": "highplainsmentalhealth.com"
+     }
+    ],
+    "phones": [],
+    "websites": [
+     "highplainsmentalhealth.com"
+    ],
+    "site_keys": [
+     "208 e 7th st"
+    ],
+    "own_address_text": "208 E 7th St, Dodge City KS 67801"
+   }
+  ],
+  "assignment": {
+   "high plains mental health center (dodge city / sw kansas fqhc + behavioral health)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": false,
+    "city": "Dodge City"
+   },
+   "high plains mental health dv program (sw kansas)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": false,
+    "city": "Dodge City"
+   }
+  },
+  "location_descriptors": [
+   {
+    "location_id": "c8155d29-7d1d-4fa5-8253-641862cefe5d",
+    "site_key": "208 e 7th st",
+    "has_coords": false,
+    "city": "Dodge City"
+   }
+  ],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "17d8e8f9-ad71-0f98-ed1d-dedd70cabc7f",
+  "bundle_canonical_id": "csp_in_928731937603a35ded38",
+  "family": "catalog_site_projection_v1",
+  "state": "IN",
+  "city": "Indianapolis",
+  "jurisdiction": "IN",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-indiana-ENRICHED-PASS3-2026-1",
+  "shape": "shared_site_split",
+  "n_rows_total": 4,
+  "n_attributed": 4,
+  "names": [
+   {
+    "program_name": "Indianapolis Legal Services (ILS) — Same-Day Eviction Triage",
+    "norm_name": "indianapolis legal services (ils) — same-day eviction triage",
+    "minted_entity_id": "55742267-2662-080d-d0de-5a35e752b332",
+    "minted_canonical_id": "bdp_in_e3736a064624c923620c",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:34ca51c02c19343570c33292c06312026123220ca2678d7498e3effa4407e762",
+      "sheet": "pass3_program_card",
+      "row": 401,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "317-635-9538",
+      "website": "indyls.org"
+     },
+     {
+      "uid": "corpus:c35ed79fe2305168a3121f4d5678d74175bdac7cb3f47f7750c29cb70572d629",
+      "sheet": "pass3_program_card",
+      "row": 401,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "317-635-9538",
+      "website": "indyls.org"
+     }
+    ],
+    "phones": [
+     "3176359538"
+    ],
+    "websites": [
+     "indyls.org"
+    ],
+    "site_keys": [
+     "151 n delaware st"
+    ],
+    "own_address_text": "151 N Delaware St Ste 1800, Indianapolis, IN 46204"
+   },
+   {
+    "program_name": "Indianapolis Legal Services (Marion County)",
+    "norm_name": "indianapolis legal services (marion county)",
+    "minted_entity_id": "52edea62-a5ef-9ba0-ee6b-435f3cfa3406",
+    "minted_canonical_id": "bdp_in_8b14332770d445045f21",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:037ff43d151d1651977372ea9baf534c393cfeb43058f2234c6c7d7cf7e0830c",
+      "sheet": "pass3_program_card",
+      "row": 409,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "317-635-9538",
+      "website": "indyls.org"
+     },
+     {
+      "uid": "corpus:daa9e0118eef50840ae7413636e8ba83af19927c8e6b690979b3b854ddc82448",
+      "sheet": "pass3_program_card",
+      "row": 409,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "317-635-9538",
+      "website": "indyls.org"
+     }
+    ],
+    "phones": [
+     "3176359538"
+    ],
+    "websites": [
+     "indyls.org"
+    ],
+    "site_keys": [
+     "151 n delaware st"
+    ],
+    "own_address_text": "151 N Delaware St Ste 1800, Indianapolis, IN 46204"
+   }
+  ],
+  "assignment": {
+   "indianapolis legal services (ils) — same-day eviction triage": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Indianapolis"
+   },
+   "indianapolis legal services (marion county)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Indianapolis"
+   }
+  },
+  "location_descriptors": [
+   {
+    "location_id": "f63aaaac-5046-46f9-b451-3f110bee7ede",
+    "site_key": "151 n delaware st",
+    "has_coords": true,
+    "city": "Indianapolis"
+   }
+  ],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "1e342c44-98bd-7b7d-cdc5-0a8c0d41235f",
+  "bundle_canonical_id": "csp_ne_9ebbc20b61a58f77f8aa",
+  "family": "catalog_site_projection_v1",
+  "state": "NE",
+  "city": "Omaha",
+  "jurisdiction": "NE",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-nebraska-ENRICHED-PASS3-2026",
+  "shape": "shared_site_split",
+  "n_rows_total": 4,
+  "n_attributed": 4,
+  "names": [
+   {
+    "program_name": "OneWorld Community Health Centers (Omaha — Immigrant/Refugee FQHC)",
+    "norm_name": "oneworld community health centers (omaha — immigrant/refugee fqhc)",
+    "minted_entity_id": "daa5deb3-2b13-a74f-59e2-4bdb2814a10d",
+    "minted_canonical_id": "bdp_ne_4398d39b39b3cf060d02",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:7d79f51d116a9ab542fa25eb3fcf2c544afb7e2c1fe9e6a43bc9f98f177f1008",
+      "sheet": "pass3_program_card",
+      "row": 781,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "402-734-4110",
+      "website": "oneworldomaha.org"
+     },
+     {
+      "uid": "corpus:961930fd5cdf88ec39399f7d3cbf6eef48a68cce2449985f92bce6793e55a479",
+      "sheet": "pass3_program_card",
+      "row": 781,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "402-734-4110",
+      "website": "oneworldomaha.org"
+     }
+    ],
+    "phones": [
+     "4027344110"
+    ],
+    "websites": [
+     "oneworldomaha.org"
+    ],
+    "site_keys": [
+     "4920 s 30th st"
+    ],
+    "own_address_text": "4920 S 30th St, Omaha NE 68107 (South Omaha main)"
+   },
+   {
+    "program_name": "OneWorld DV Services (Immigrant/Meatpacking Community DV)",
+    "norm_name": "oneworld dv services (immigrant/meatpacking community dv)",
+    "minted_entity_id": "2bf855bd-3494-2427-413f-06c3706e7dd7",
+    "minted_canonical_id": "bdp_ne_242553aef1e4a103a238",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:5f8c415cc7009fd3bd4285a8f286505faeff705ec1a14233c92944498e9ca952",
+      "sheet": "pass3_program_card",
+      "row": 794,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "402-734-4110",
+      "website": "oneworldomaha.org"
+     },
+     {
+      "uid": "corpus:d31c4473f5f8415503dbe32f2fa1d857c99a7f7cb82a51037b529affa10ae5dd",
+      "sheet": "pass3_program_card",
+      "row": 794,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "402-734-4110",
+      "website": "oneworldomaha.org"
+     }
+    ],
+    "phones": [
+     "4027344110"
+    ],
+    "websites": [
+     "oneworldomaha.org"
+    ],
+    "site_keys": [
+     "4920 s 30th st"
+    ],
+    "own_address_text": "4920 S 30th St, Omaha NE 68107"
+   }
+  ],
+  "assignment": {
+   "oneworld community health centers (omaha — immigrant/refugee fqhc)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Omaha"
+   },
+   "oneworld dv services (immigrant/meatpacking community dv)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Omaha"
+   }
+  },
+  "location_descriptors": [
+   {
+    "location_id": "0cedbeb3-7636-4559-b79f-b944fe22becb",
+    "site_key": "4920 s 30th st",
+    "has_coords": true,
+    "city": "Omaha"
+   }
+  ],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "294caf9e-48ec-14c4-0569-d67e715f8c37",
+  "bundle_canonical_id": "csp_gu_4a7131601bc503f47d33",
+  "family": "catalog_site_projection_v1",
+  "state": "GU",
+  "city": "Mangilao",
+  "jurisdiction": "GU",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-guam-ENRICHED-PASS3-2026-4",
+  "shape": "shared_site_split",
+  "n_rows_total": 4,
+  "n_attributed": 4,
+  "names": [
+   {
+    "program_name": "Guam Medicaid / MedQuam (DPHSS)",
+    "norm_name": "guam medicaid / medquam (dphss)",
+    "minted_entity_id": "6fd0262a-b236-0d55-4e8b-be42971326e2",
+    "minted_canonical_id": "bdp_gu_476dc9e9eb71aedced38",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:b1a758c7a784396e4feecb4d171b7256f9800a2bc05dde723f071c24c379bbf6",
+      "sheet": "pass3_program_card",
+      "row": 1480,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "671-735-7150 dphss.guam.gov",
+      "website": "dphss.guam.gov"
+     },
+     {
+      "uid": "corpus:f8576d9fa0b9cbd9855a87e4e01427cbae49f590b82b3f0c7785e14acba11baf",
+      "sheet": "pass3_program_card",
+      "row": 1480,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "671-735-7150 dphss.guam.gov",
+      "website": "dphss.guam.gov"
+     }
+    ],
+    "phones": [
+     "6717357150"
+    ],
+    "websites": [
+     "dphss.guam.gov"
+    ],
+    "site_keys": [
+     "123 chalan kareta"
+    ],
+    "own_address_text": "123 Chalan Kareta, Mangilao GU 96913"
+   },
+   {
+    "program_name": "Guam SNAP (DPHSS)",
+    "norm_name": "guam snap (dphss)",
+    "minted_entity_id": "b2abd462-05e3-257d-bf8b-58af2e19aa5e",
+    "minted_canonical_id": "bdp_gu_18293daa3b8361379bb9",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:57840698e30c5c27b9db350de9df75d509d30824a79907a9611f5334810c83d5",
+      "sheet": "pass3_program_card",
+      "row": 1485,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "671-735-7150 dphss.guam.gov",
+      "website": "dphss.guam.gov"
+     },
+     {
+      "uid": "corpus:ac4c1a76db1eebbff7e38325f551a649ef8dcf3c37fd8ced9d254f57c27fdfac",
+      "sheet": "pass3_program_card",
+      "row": 1485,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "671-735-7150 dphss.guam.gov",
+      "website": "dphss.guam.gov"
+     }
+    ],
+    "phones": [
+     "6717357150"
+    ],
+    "websites": [
+     "dphss.guam.gov"
+    ],
+    "site_keys": [
+     "123 chalan kareta"
+    ],
+    "own_address_text": "123 Chalan Kareta, Mangilao GU 96913"
+   }
+  ],
+  "assignment": {
+   "guam medicaid / medquam (dphss)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Mangilao"
+   },
+   "guam snap (dphss)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Mangilao"
+   }
+  },
+  "location_descriptors": [
+   {
+    "location_id": "6f38c1e1-5289-4811-8f4c-c78a5c35010e",
+    "site_key": "123 chalan kareta",
+    "has_coords": true,
+    "city": "Mangilao"
+   }
+  ],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "37312c48-9d1b-2941-15dc-6a3fd193f1f0",
+  "bundle_canonical_id": "csp_la_a59fddcb779ec6b337bb",
+  "family": "catalog_site_projection_v1",
+  "state": "LA",
+  "city": "Charenton",
+  "jurisdiction": "LA",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-louisiana-ENRICHED-PASS3-2026",
+  "shape": "shared_site_split",
+  "n_rows_total": 4,
+  "n_attributed": 4,
+  "names": [
+   {
+    "program_name": "Chitimacha Tribal Health Center (Primary Tribal Health)",
+    "norm_name": "chitimacha tribal health center (primary tribal health)",
+    "minted_entity_id": "63fcfcb9-f4ca-acad-8c32-cf3970742b1e",
+    "minted_canonical_id": "bdp_la_b691c45450ae53a71f90",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:5646e24989d5c1dde7a00677f33b3a98b98e6b4c99a58bbe3024b4c4bae3017e",
+      "sheet": "pass3_program_card",
+      "row": 508,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "337-923-4973",
+      "website": "chitimacha.gov"
+     },
+     {
+      "uid": "corpus:5edefaf522dd6cc1b06ff9692f4ed16fc581f19c3f0a3c613e91a3383b11177d",
+      "sheet": "pass3_program_card",
+      "row": 508,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "337-923-4973",
+      "website": "chitimacha.gov"
+     }
+    ],
+    "phones": [
+     "3379234973"
+    ],
+    "websites": [
+     "chitimacha.gov"
+    ],
+    "site_keys": [
+     "155 chitimacha trail charenton la 70523 st"
+    ],
+    "own_address_text": "155 Chitimacha Trail, Charenton LA 70523 (St. Mary Parish)"
+   },
+   {
+    "program_name": "Chitimacha Tribe of Louisiana (Federally Recognized)",
+    "norm_name": "chitimacha tribe of louisiana (federally recognized)",
+    "minted_entity_id": "63a4e23e-bb16-61e7-078f-34075a456a47",
+    "minted_canonical_id": "bdp_la_1659f08071acc698a831",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:5afa12eae9040710eb6c5c78889bc11bee320e3f0bc4ba71101d56c09ba5d269",
+      "sheet": "pass3_program_card",
+      "row": 531,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "337-923-4973",
+      "website": "chitimacha.gov"
+     },
+     {
+      "uid": "corpus:a4ddd12ccd6466e73c9fdb610e607d9a4c99b3da41ac9acdbddb1fde9540039c",
+      "sheet": "pass3_program_card",
+      "row": 531,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "337-923-4973",
+      "website": "chitimacha.gov"
+     }
+    ],
+    "phones": [
+     "3379234973"
+    ],
+    "websites": [
+     "chitimacha.gov"
+    ],
+    "site_keys": [
+     "155 chitimacha trail charenton la 70523 st"
+    ],
+    "own_address_text": "155 Chitimacha Trail, Charenton LA 70523 (St. Mary Parish)"
+   }
+  ],
+  "assignment": {
+   "chitimacha tribal health center (primary tribal health)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": false,
+    "city": "Charenton"
+   },
+   "chitimacha tribe of louisiana (federally recognized)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": false,
+    "city": "Charenton"
+   }
+  },
+  "location_descriptors": [
+   {
+    "location_id": "56efb654-c794-476f-a5a5-47356fa32fbc",
+    "site_key": "155 chitimacha trail",
+    "has_coords": false,
+    "city": "Charenton"
+   }
+  ],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "37d518ed-9a18-0b42-630d-f20118185323",
+  "bundle_canonical_id": "csp_ks_c7bfc333add98b72823d",
+  "family": "catalog_site_projection_v1",
+  "state": "KS",
+  "city": "Topeka",
+  "jurisdiction": "KS",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-kansas-ENRICHED-PASS3-2026",
+  "shape": "shared_site_split",
+  "n_rows_total": 4,
+  "n_attributed": 4,
+  "names": [
+   {
+    "program_name": "KanCare / Kansas Medicaid (KDHE)",
+    "norm_name": "kancare / kansas medicaid (kdhe)",
+    "minted_entity_id": "e33c52f6-d982-42e0-591f-ebbed16db1b6",
+    "minted_canonical_id": "bdp_ks_fc19a9c630a459860c1b",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:7b2d1ad49c37fd6d7d71f2cab6890d3eb0a6a4da46ab3d88a937200f4a674318",
+      "sheet": "pass3_program_card",
+      "row": 445,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "800-792-4884 · kancare.ks.gov",
+      "website": "kancare.ks.gov · accesskansas.org"
+     },
+     {
+      "uid": "corpus:9dfd09463085215e36ab96b12e68c5eef758f5bb32d8cc231e921b738694d4ba",
+      "sheet": "pass3_program_card",
+      "row": 445,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "800-792-4884 · kancare.ks.gov",
+      "website": "kancare.ks.gov · accesskansas.org"
+     }
+    ],
+    "phones": [
+     "8007924884"
+    ],
+    "websites": [
+     "kancare.ks.gov · accesskansas.org"
+    ],
+    "site_keys": [
+     "900 sw jackson st"
+    ],
+    "own_address_text": "900 SW Jackson St, Topeka KS 66612 (KDHE main)"
+   },
+   {
+    "program_name": "WIC Kansas (KDHE)",
+    "norm_name": "wic kansas (kdhe)",
+    "minted_entity_id": "952493c8-0c45-d443-00ce-0dc2f9604cc8",
+    "minted_canonical_id": "bdp_ks_058885136a5c18990e50",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:23fb92e606d9e6c97dedade77998ee434158cd0ff5a9c6016c4d4f9970aed652",
+      "sheet": "pass3_program_card",
+      "row": 454,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "785-296-1320 · Wichita WIC: 316-337-6300 · Dodge City WIC: 620-227-8244",
+      "website": "kdheks.gov/wic"
+     },
+     {
+      "uid": "corpus:7d4948876ce45f53c94c03b209c995d5b80de10967275001346a33ca2895f837",
+      "sheet": "pass3_program_card",
+      "row": 454,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "785-296-1320 · Wichita WIC: 316-337-6300 · Dodge City WIC: 620-227-8244",
+      "website": "kdheks.gov/wic"
+     }
+    ],
+    "phones": [],
+    "websites": [
+     "kdheks.gov"
+    ],
+    "site_keys": [
+     "900 sw jackson st"
+    ],
+    "own_address_text": "900 SW Jackson St, Topeka KS 66612"
+   }
+  ],
+  "assignment": {
+   "kancare / kansas medicaid (kdhe)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Topeka"
+   },
+   "wic kansas (kdhe)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Topeka"
+   }
+  },
+  "location_descriptors": [
+   {
+    "location_id": "148134bc-d166-4bf7-94d0-c53648900d00",
+    "site_key": "900 sw jackson st",
+    "has_coords": true,
+    "city": "Topeka"
+   }
+  ],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "44fa9179-885d-14f2-2f92-094b14f96635",
+  "bundle_canonical_id": "csp_dc_8ec1f0b5010ec8169def",
+  "family": "catalog_site_projection_v1",
+  "state": "DC",
+  "city": "Washington",
+  "jurisdiction": "MN",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-washington-dc-ENRICHED-PASS3-2026-1",
+  "shape": "shared_site_split",
+  "n_rows_total": 4,
+  "n_attributed": 4,
+  "names": [
+   {
+    "program_name": "DC Paid Family Leave (MOST GENEROUS IN REGISTRY)",
+    "norm_name": "dc paid family leave (most generous in registry)",
+    "minted_entity_id": "e1973fab-5f4f-25ff-04e5-c5e6551f1edb",
+    "minted_canonical_id": "bdp_dc_edea187fd8885adad964",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:7e51fcf446a790bdb0613b56148f70784947c9b321061377775a72e323b7e050",
+      "sheet": "pass3_program_card",
+      "row": 1372,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "202-899-3700 does.dc.gov/paidleave",
+      "website": "does.dc.gov/paidleave"
+     },
+     {
+      "uid": "corpus:9a0842aa7c827ae2ea07fbff6ec01732504caccd071b0b4a6f8ed08785a79291",
+      "sheet": "pass3_program_card",
+      "row": 1372,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "202-899-3700 does.dc.gov/paidleave",
+      "website": "does.dc.gov/paidleave"
+     }
+    ],
+    "phones": [
+     "2028993700"
+    ],
+    "websites": [
+     "does.dc.gov"
+    ],
+    "site_keys": [
+     "4058 minnesota ave"
+    ],
+    "own_address_text": "4058 Minnesota Ave NE, Washington DC 20019"
+   },
+   {
+    "program_name": "DC UI -- DOES (10-Day Appeal!)",
+    "norm_name": "dc ui -- does (10-day appeal!)",
+    "minted_entity_id": "8c6747af-0e7c-5006-388d-fbe366f321cb",
+    "minted_canonical_id": "bdp_dc_a45817b9b97a08f0049e",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:0586660e6bd8c0c2d22db8bbe268e74637ae0b316158ae4363eee9219a28afff",
+      "sheet": "pass3_program_card",
+      "row": 1371,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "202-724-7000 does.dc.gov",
+      "website": "does.dc.gov"
+     },
+     {
+      "uid": "corpus:7ac8fed357edf492365384daf7b21b3f39f0b174dee558fbe5fc4ec04cbaf04e",
+      "sheet": "pass3_program_card",
+      "row": 1371,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "202-724-7000 does.dc.gov",
+      "website": "does.dc.gov"
+     }
+    ],
+    "phones": [
+     "2027247000"
+    ],
+    "websites": [
+     "does.dc.gov"
+    ],
+    "site_keys": [
+     "4058 minnesota ave"
+    ],
+    "own_address_text": "4058 Minnesota Ave NE, Washington DC 20019"
+   }
+  ],
+  "assignment": {
+   "dc paid family leave (most generous in registry)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Washington"
+   },
+   "dc ui -- does (10-day appeal!)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Washington"
+   }
+  },
+  "location_descriptors": [
+   {
+    "location_id": "f73ab944-225b-488e-8252-01b9529457bb",
+    "site_key": "4058 minnesota ave",
+    "has_coords": true,
+    "city": "Washington"
+   }
+  ],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "4e06b48c-318b-2ac5-f4d6-8969bab24fb2",
+  "bundle_canonical_id": "csp_as_d2fdf49539cac2a9c41e",
+  "family": "catalog_site_projection_v1",
+  "state": "AS",
+  "city": "Pago Pago",
+  "jurisdiction": "AS",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-american-samoa-ENRICHED-PASS3-2026-1",
+  "shape": "shared_site_split",
+  "n_rows_total": 4,
+  "n_attributed": 4,
+  "names": [
+   {
+    "program_name": "AS Medicaid (ASDHSS)",
+    "norm_name": "as medicaid (asdhss)",
+    "minted_entity_id": "30d2172b-ec1b-1664-0911-23049cddcc04",
+    "minted_canonical_id": "bdp_as_0cba676eaf54b97538d7",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:346bdf14a14b924984b9d2ecaa733dc97035f9ad9454a360321d6eaa67222eb9",
+      "sheet": "pass3_program_card",
+      "row": 63,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "684-633-1222 dhss.as.gov",
+      "website": "dhss.as.gov"
+     },
+     {
+      "uid": "corpus:86bb36ba0dccb175ec56e4a03b6f97165ad93c439a822b7d828556ecba52ccd1",
+      "sheet": "pass3_program_card",
+      "row": 63,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "684-633-1222 dhss.as.gov",
+      "website": "dhss.as.gov"
+     }
+    ],
+    "phones": [
+     "6846331222"
+    ],
+    "websites": [
+     "dhss.as.gov"
+    ],
+    "site_keys": [
+     "po box 996537"
+    ],
+    "own_address_text": "PO Box 996537, Pago Pago AS 96799"
+   },
+   {
+    "program_name": "AS SNAP / Nutrition Assistance (ASDHSS)",
+    "norm_name": "as snap / nutrition assistance (asdhss)",
+    "minted_entity_id": "69d2e259-7878-3d4f-34a2-615b5e521008",
+    "minted_canonical_id": "bdp_as_a8f9ee23ffec48f4e20f",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:4593316470464f0e59b14493d7b552823610611192aed37f56ab165532b283a4",
+      "sheet": "pass3_program_card",
+      "row": 65,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "684-633-1187 dhss.as.gov",
+      "website": "dhss.as.gov"
+     },
+     {
+      "uid": "corpus:8df0e176e87374125d7390447216e3934deb4a3e2b1ca9d565db77efe06f4ea7",
+      "sheet": "pass3_program_card",
+      "row": 65,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "684-633-1187 dhss.as.gov",
+      "website": "dhss.as.gov"
+     }
+    ],
+    "phones": [
+     "6846331187"
+    ],
+    "websites": [
+     "dhss.as.gov"
+    ],
+    "site_keys": [
+     "po box 996537"
+    ],
+    "own_address_text": "PO Box 996537, Pago Pago AS 96799"
+   }
+  ],
+  "assignment": {
+   "as medicaid (asdhss)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": false,
+    "city": "Pago Pago"
+   },
+   "as snap / nutrition assistance (asdhss)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": false,
+    "city": "Pago Pago"
+   }
+  },
+  "location_descriptors": [
+   {
+    "location_id": "bed3b399-1d7b-4617-8f34-be95f129eacc",
+    "site_key": "po box 996537",
+    "has_coords": false,
+    "city": "Pago Pago"
+   }
+  ],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "4fa0036a-14a0-10b1-e5f7-0c6c5f9dbb7d",
+  "bundle_canonical_id": "csp_la_cd149848b9b55511d2bc",
+  "family": "catalog_site_projection_v1",
+  "state": "LA",
+  "city": "Baton Rouge",
+  "jurisdiction": "LA",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-louisiana-ENRICHED-PASS3-2026",
+  "shape": "shared_site_split",
+  "n_rows_total": 4,
+  "n_attributed": 4,
+  "names": [
+   {
+    "program_name": "Louisiana Medicaid (LDH — Managed Care)",
+    "norm_name": "louisiana medicaid (ldh — managed care)",
+    "minted_entity_id": "3e6ffc6f-37ac-2c11-d1bd-f282ee885c01",
+    "minted_canonical_id": "bdp_la_ea60aa67b366c6588b9f",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:c5ce1e74bf5e5d6e336685d3f525a894aece821ec86538f4de5727afd185ce8d",
+      "sheet": "pass3_program_card",
+      "row": 504,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "888-342-6207 · benefitsgov.la.gov",
+      "website": "ldh.la.gov/medicaid · benefitsgov.la.gov"
+     },
+     {
+      "uid": "corpus:e106bceb8c53d8f5ef8933240ca6517d4fed842cbea2f050f6643d30ca704c1d",
+      "sheet": "pass3_program_card",
+      "row": 504,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "888-342-6207 · benefitsgov.la.gov",
+      "website": "ldh.la.gov/medicaid · benefitsgov.la.gov"
+     }
+    ],
+    "phones": [
+     "8883426207"
+    ],
+    "websites": [
+     "ldh.la.gov"
+    ],
+    "site_keys": [
+     "628 n 4th st"
+    ],
+    "own_address_text": "628 N 4th St, Baton Rouge LA 70802 (LDH main)"
+   },
+   {
+    "program_name": "WIC Louisiana (LDH)",
+    "norm_name": "wic louisiana (ldh)",
+    "minted_entity_id": "338a2d36-7e75-8ab4-b6e5-6099d1ff5231",
+    "minted_canonical_id": "bdp_la_e2264e5fa45c59d286af",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:ad7fa20d1d937f30d7b717d59bc0b970f7ed4ff86d4b1d6dc7f301271a04bead",
+      "sheet": "pass3_program_card",
+      "row": 511,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "877-455-9942 · New Orleans WIC: 504-568-7500 · Baton Rouge WIC: 225-354-8530",
+      "website": "ldh.la.gov/wic"
+     },
+     {
+      "uid": "corpus:f4edfe4cde520f0dcb04494fefbc8669ce94e80685dc69a77a2ae7807bbbd94a",
+      "sheet": "pass3_program_card",
+      "row": 511,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "877-455-9942 · New Orleans WIC: 504-568-7500 · Baton Rouge WIC: 225-354-8530",
+      "website": "ldh.la.gov/wic"
+     }
+    ],
+    "phones": [],
+    "websites": [
+     "ldh.la.gov"
+    ],
+    "site_keys": [
+     "628 n 4th st"
+    ],
+    "own_address_text": "628 N 4th St, Baton Rouge LA 70802 (LDH)"
+   }
+  ],
+  "assignment": {
+   "louisiana medicaid (ldh — managed care)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Baton Rouge"
+   },
+   "wic louisiana (ldh)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Baton Rouge"
+   }
+  },
+  "location_descriptors": [
+   {
+    "location_id": "672089ac-53eb-46a7-a0b7-636bf40d6cee",
+    "site_key": "628 n 4th st",
+    "has_coords": true,
+    "city": "Baton Rouge"
+   }
+  ],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "58bd886f-e83c-e7bf-0423-72b5ae64ccb5",
+  "bundle_canonical_id": "csp_in_d0f02fa2b1db01e97021",
+  "family": "catalog_site_projection_v1",
+  "state": "IN",
+  "city": "Indianapolis",
+  "jurisdiction": "IN",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-indiana-ENRICHED-PASS3-2026-1",
+  "shape": "shared_site_split",
+  "n_rows_total": 4,
+  "n_attributed": 4,
+  "names": [
+   {
+    "program_name": "Indiana Legal Services (ILS — Statewide)",
+    "norm_name": "indiana legal services (ils — statewide)",
+    "minted_entity_id": "97ef1730-1c21-0780-a7dd-5da94f74824b",
+    "minted_canonical_id": "bdp_in_b7ecd12a878f3d02b600",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:12d698cfa5ceb17775222c868e665a78716c3b3a9b70ad3eae82d8a2eafea54c",
+      "sheet": "pass3_program_card",
+      "row": 402,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "844-243-8570 · South Bend: 574-234-8121 · Fort Wayne: 260-407-0840 · Evansville: 812-424-6055 · Muncie: 765-747-9107",
+      "website": "indianalegalservices.org"
+     },
+     {
+      "uid": "corpus:bc6bdb21333dafd160a1ba3175c219e2b7fc634ba7a267657c74a6b29dff7735",
+      "sheet": "pass3_program_card",
+      "row": 402,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "844-243-8570 · South Bend: 574-234-8121 · Fort Wayne: 260-407-0840 · Evansville: 812-424-6055 · Muncie: 765-747-9107",
+      "website": "indianalegalservices.org"
+     }
+    ],
+    "phones": [],
+    "websites": [
+     "indianalegalservices.org"
+    ],
+    "site_keys": [
+     "1 n capitol ave"
+    ],
+    "own_address_text": "1 N Capitol Ave Ste 800, Indianapolis, IN 46204"
+   },
+   {
+    "program_name": "Indiana Legal Services (Statewide — 92 Counties)",
+    "norm_name": "indiana legal services (statewide — 92 counties)",
+    "minted_entity_id": "46f13f0f-be1b-af79-4dfe-981e94bb882e",
+    "minted_canonical_id": "bdp_in_0c72c10cd9193ca56b10",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:7d0e54f1a965c19909a946152a3040388ccb22b3698f9bb7bf9fa1134a407d9b",
+      "sheet": "pass3_program_card",
+      "row": 410,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "844-243-8570",
+      "website": "indianalegalservices.org"
+     },
+     {
+      "uid": "corpus:8ff3bb796b23b1a04aafadafaba82ed66aaf4a8fb5290e61635213d3a62537d7",
+      "sheet": "pass3_program_card",
+      "row": 410,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "844-243-8570",
+      "website": "indianalegalservices.org"
+     }
+    ],
+    "phones": [
+     "8442438570"
+    ],
+    "websites": [
+     "indianalegalservices.org"
+    ],
+    "site_keys": [
+     "1 n capitol ave"
+    ],
+    "own_address_text": "1 N Capitol Ave Ste 800, Indianapolis, IN 46204"
+   }
+  ],
+  "assignment": {
+   "indiana legal services (ils — statewide)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Indianapolis"
+   },
+   "indiana legal services (statewide — 92 counties)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Indianapolis"
+   }
+  },
+  "location_descriptors": [
+   {
+    "location_id": "60d2ae06-c7d1-4652-b4c6-ef9f240281e9",
+    "site_key": "1 n capitol ave",
+    "has_coords": true,
+    "city": "Indianapolis"
+   }
+  ],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "61ac9e0d-ddcf-4e2d-459e-13a8ddd66ef7",
+  "bundle_canonical_id": "crp_vt_8bcf79ec3c89c38ae0a6",
+  "family": "catalog_remainder_projection_v1",
+  "state": "VT",
+  "city": null,
+  "jurisdiction": "VT",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-vermont-ENRICHED-PASS3-2026",
+  "shape": "shared_site_split",
+  "n_rows_total": 8,
+  "n_attributed": 8,
+  "names": [
+   {
+    "program_name": "3SquaresVT / Vermont SNAP (DCF)",
+    "norm_name": "3squaresvt / vermont snap (dcf)",
+    "minted_entity_id": "f89e285b-a71d-9c4e-0247-c246765e7ed3",
+    "minted_canonical_id": "bdp_vt_e5a4000d0c11eef51ad4",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:0903190f43035e1083f1bf87d4f2999e6f5562f47e37c45ee726c34461a3356f",
+      "sheet": "pass3_program_card",
+      "row": 1311,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "800-287-0589 Chittenden Co: 802-863-7605 dcf.vermont.gov/snap",
+      "website": "dcf.vermont.gov/snap myvermont.vermont.gov"
+     },
+     {
+      "uid": "corpus:803c0c2f5ab56aa8a9574e500815906b1f6d163474d76db65f8a658ddd837c1b",
+      "sheet": "pass3_program_card",
+      "row": 1311,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "800-287-0589 Chittenden Co: 802-863-7605 dcf.vermont.gov/snap",
+      "website": "dcf.vermont.gov/snap myvermont.vermont.gov"
+     }
+    ],
+    "phones": [],
+    "websites": [
+     "dcf.vermont.gov"
+    ],
+    "site_keys": [
+     "103 s main st"
+    ],
+    "own_address_text": "103 S Main St, Waterbury VT 05671 (DCF) District offices statewide"
+   },
+   {
+    "program_name": "Vermont LIHEAP / HEAP (Life-Critical)",
+    "norm_name": "vermont liheap / heap (life-critical)",
+    "minted_entity_id": "504d7f39-9c28-3686-e262-6b8a75c1f764",
+    "minted_canonical_id": "bdp_vt_dc988e3f4b69b41cea51",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:3099fe43326a4c0a1ef86cdc8e8ef810fded3088b03f8b5bb9556fab2708ac02",
+      "sheet": "pass3_program_card",
+      "row": 1318,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "800-287-0589 211 CVOEO Burlington: 802-651-1620 NEKCA: 802-748-3181",
+      "website": "dcf.vermont.gov/heap 211vt.org"
+     },
+     {
+      "uid": "corpus:e488b58c79f984b25fa69355f026e191721a51de47314728616629e905533f53",
+      "sheet": "pass3_program_card",
+      "row": 1318,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "800-287-0589 211 CVOEO Burlington: 802-651-1620 NEKCA: 802-748-3181",
+      "website": "dcf.vermont.gov/heap 211vt.org"
+     }
+    ],
+    "phones": [],
+    "websites": [
+     "dcf.vermont.gov"
+    ],
+    "site_keys": [
+     "103 s main st"
+    ],
+    "own_address_text": "103 S Main St, Waterbury VT 05671 Community Action agencies"
+   },
+   {
+    "program_name": "Vermont Medicaid / Green Mountain Care (DVHA)",
+    "norm_name": "vermont medicaid / green mountain care (dvha)",
+    "minted_entity_id": "9383399f-bf44-0bd0-986e-5bcda9c1ad4f",
+    "minted_canonical_id": "bdp_vt_03344541fb11df959a33",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:3b0a932c1e4cf012435a0d7b0236e2e5849b57d6795fb5261b16d8ccce6f46ba",
+      "sheet": "pass3_program_card",
+      "row": 1306,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "800-250-8427 dvha.vermont.gov myvermont.vermont.gov",
+      "website": "dvha.vermont.gov myvermont.vermont.gov"
+     },
+     {
+      "uid": "corpus:9840a0bcea5bd4bbdc0d4803f1fc4b0f80606ef62b034d7973b64b7fecd551f7",
+      "sheet": "pass3_program_card",
+      "row": 1306,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "800-250-8427 dvha.vermont.gov myvermont.vermont.gov",
+      "website": "dvha.vermont.gov myvermont.vermont.gov"
+     }
+    ],
+    "phones": [
+     "8002508427"
+    ],
+    "websites": [
+     "dvha.vermont.gov myvermont.vermont.gov"
+    ],
+    "site_keys": [
+     "280 state dr"
+    ],
+    "own_address_text": "280 State Dr, Waterbury VT 05671 (DVHA) DCF offices statewide"
+   },
+   {
+    "program_name": "Vermont Reach Up / TANF (DCF -- $1027/mo HIGHEST IN REGISTRY)",
+    "norm_name": "vermont reach up / tanf (dcf -- $1027/mo highest in registry)",
+    "minted_entity_id": "00d01a52-5999-104f-3528-af3e4342158a",
+    "minted_canonical_id": "bdp_vt_87a376c2deedbe530425",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:1eb34e25a708fda4ca0d9b8b489a24ab589fe001b729aabeb311050a8bb86ab2",
+      "sheet": "pass3_program_card",
+      "row": 1316,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "800-287-0589",
+      "website": "dcf.vermont.gov/reachup myvermont.vermont.gov"
+     },
+     {
+      "uid": "corpus:fe3c13a1039367b0c6482592b76a918d41b34dabc52155bb92bc3f217723f47f",
+      "sheet": "pass3_program_card",
+      "row": 1316,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "800-287-0589",
+      "website": "dcf.vermont.gov/reachup myvermont.vermont.gov"
+     }
+    ],
+    "phones": [
+     "8002870589"
+    ],
+    "websites": [
+     "dcf.vermont.gov"
+    ],
+    "site_keys": [
+     "103 s main st"
+    ],
+    "own_address_text": "103 S Main St, Waterbury VT 05671 DCF district offices"
+   }
+  ],
+  "assignment": {
+   "3squaresvt / vermont snap (dcf)": {
+    "clones": [],
+    "fresh": {
+     "street": "103 S Main St",
+     "city": "Waterbury",
+     "state": "VT",
+     "zip5": "05671"
+    },
+    "has_coords": false,
+    "city": "Waterbury"
+   },
+   "vermont liheap / heap (life-critical)": {
+    "clones": [],
+    "fresh": {
+     "street": "103 S Main St",
+     "city": "Waterbury",
+     "state": "VT",
+     "zip5": "05671"
+    },
+    "has_coords": false,
+    "city": "Waterbury"
+   },
+   "vermont medicaid / green mountain care (dvha)": {
+    "clones": [],
+    "fresh": {
+     "street": "280 State Dr",
+     "city": "Waterbury",
+     "state": "VT",
+     "zip5": "05671"
+    },
+    "has_coords": false,
+    "city": "Waterbury"
+   },
+   "vermont reach up / tanf (dcf -- $1027/mo highest in registry)": {
+    "clones": [],
+    "fresh": {
+     "street": "103 S Main St",
+     "city": "Waterbury",
+     "state": "VT",
+     "zip5": "05671"
+    },
+    "has_coords": false,
+    "city": "Waterbury"
+   }
+  },
+  "location_descriptors": [],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "640553bc-dbe2-bc02-f55b-18b4f7fb67a3",
+  "bundle_canonical_id": "crp_me_831acbd64751636bf990",
+  "family": "catalog_remainder_projection_v1",
+  "state": "ME",
+  "city": null,
+  "jurisdiction": "ME",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-maine-ENRICHED-PASS3-2026-1",
+  "shape": "shared_site_split",
+  "n_rows_total": 10,
+  "n_attributed": 10,
+  "names": [
+   {
+    "program_name": "Maine ASPIRE-TANF (DHHS)",
+    "norm_name": "maine aspire-tanf (dhhs)",
+    "minted_entity_id": "6dec5985-a365-b034-8594-15fc59072fb9",
+    "minted_canonical_id": "bdp_me_0c726e1e678b1f558db8",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:191ff38350c09628fcd38806c9a53ba0b4b79bad752ddfe04c643b27a19ef213",
+      "sheet": "pass3_program_card",
+      "row": 547,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "855-797-4357",
+      "website": "maine.gov/mymaineconnection"
+     },
+     {
+      "uid": "corpus:34594c200bda7438303c4bd4126d2b1e3b0f7269fade2c2c8c53d6dc25760ced",
+      "sheet": "pass3_program_card",
+      "row": 547,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "855-797-4357",
+      "website": "maine.gov/mymaineconnection"
+     }
+    ],
+    "phones": [
+     "8557974357"
+    ],
+    "websites": [
+     "maine.gov"
+    ],
+    "site_keys": [
+     "109 capitol st"
+    ],
+    "own_address_text": "109 Capitol St, Augusta ME 04333 County DHHS offices"
+   },
+   {
+    "program_name": "Maine HEAP / LIHEAP (LIFE-CRITICAL -- Apply October 1)",
+    "norm_name": "maine heap / liheap (life-critical -- apply october 1)",
+    "minted_entity_id": "ff766086-a8ab-9e29-366c-b7955ee79a17",
+    "minted_canonical_id": "bdp_me_3c7f9a2ee2c5cc99fec0",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:4fd46acca17d19fe36af7f6b209ab611d1346e3480f18b8f826e5efe69c824b8",
+      "sheet": "pass3_program_card",
+      "row": 549,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "207-624-7965 PROP Portland: 207-874-1140 KVCAP Augusta: 207-623-3571 ACAP Presque Isle: 207-764-3721",
+      "website": "maine.gov/dhhs/ofi/programs-services/heap 211maine.org"
+     },
+     {
+      "uid": "corpus:844a311fbc1dc0f606126a26d0602ff06d48d15211deb80a682939176e9064c5",
+      "sheet": "pass3_program_card",
+      "row": 549,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "207-624-7965 PROP Portland: 207-874-1140 KVCAP Augusta: 207-623-3571 ACAP Presque Isle: 207-764-3721",
+      "website": "maine.gov/dhhs/ofi/programs-services/heap 211maine.org"
+     }
+    ],
+    "phones": [],
+    "websites": [
+     "maine.gov"
+    ],
+    "site_keys": [
+     "109 capitol st"
+    ],
+    "own_address_text": "109 Capitol St, Augusta ME 04333 Community Action Programs statewide"
+   },
+   {
+    "program_name": "Maine SNAP (DHHS)",
+    "norm_name": "maine snap (dhhs)",
+    "minted_entity_id": "e2777e3b-871b-75e3-1896-31026d688008",
+    "minted_canonical_id": "bdp_me_aac6f94d8adcb238196e",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:5cd005b76c9be6144ce4a523f60220686dcda6a3ccf5c2b8795e5997b1493af8",
+      "sheet": "pass3_program_card",
+      "row": 542,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "855-797-4357 Cumberland: 207-822-2000 Penobscot: 207-941-3000 Androscoggin: 207-753-9000 Aroostook: 207-764-0431 maine.gov/mymaineconnection",
+      "website": "maine.gov/mymaineconnection"
+     },
+     {
+      "uid": "corpus:93d5a8a371826b665fab887232a1b3d5e41df3977fa33cf1759a06dd9f1097e3",
+      "sheet": "pass3_program_card",
+      "row": 542,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "855-797-4357 Cumberland: 207-822-2000 Penobscot: 207-941-3000 Androscoggin: 207-753-9000 Aroostook: 207-764-0431 maine.gov/mymaineconnection",
+      "website": "maine.gov/mymaineconnection"
+     }
+    ],
+    "phones": [],
+    "websites": [
+     "maine.gov"
+    ],
+    "site_keys": [
+     "109 capitol st"
+    ],
+    "own_address_text": "109 Capitol St, Augusta ME 04333 County offices"
+   },
+   {
+    "program_name": "MaineCare / Maine Medicaid (DHHS)",
+    "norm_name": "mainecare / maine medicaid (dhhs)",
+    "minted_entity_id": "624a4189-265d-86ba-d9ee-8756ca0d1db4",
+    "minted_canonical_id": "bdp_me_372a12a7f5adf59ecb46",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:66dfe92f7f129d3c65dd31a6978e550ecb7d2f3fe9bc341fb0010b1dcc41810b",
+      "sheet": "pass3_program_card",
+      "row": 537,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "855-797-4357 maine.gov/mymaineconnection",
+      "website": "maine.gov/mymaineconnection"
+     },
+     {
+      "uid": "corpus:d4b631be67361aab0ee4034c1031508a28e29ae97d513d4360765becc365ac65",
+      "sheet": "pass3_program_card",
+      "row": 537,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "855-797-4357 maine.gov/mymaineconnection",
+      "website": "maine.gov/mymaineconnection"
+     }
+    ],
+    "phones": [
+     "8557974357"
+    ],
+    "websites": [
+     "maine.gov"
+    ],
+    "site_keys": [
+     "109 capitol st"
+    ],
+    "own_address_text": "109 Capitol St, Augusta ME 04333 County DHHS offices statewide"
+   },
+   {
+    "program_name": "Wabanaki Tribal Health Programs (4 Nations)",
+    "norm_name": "wabanaki tribal health programs (4 nations)",
+    "minted_entity_id": "50684b16-b64d-f5c4-b017-414ebe3ad8ac",
+    "minted_canonical_id": "bdp_me_9b6b85970a79e8b1e604",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:994e5ffac50994161be8da990781d08e912da821cfba81c8a03958666a9e42a5",
+      "sheet": "pass3_program_card",
+      "row": 541,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "Penobscot: 207-817-7400 Passamaquoddy: 207-853-2600 Micmacs: 207-532-6873 IHS Boston: 617-565-1000",
+      "website": "ihs.gov/boston"
+     },
+     {
+      "uid": "corpus:efdfafd639bb704b1a2899214df4e3dd80613131af0cedcbaff7f9bcc43b1ff4",
+      "sheet": "pass3_program_card",
+      "row": 541,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "Penobscot: 207-817-7400 Passamaquoddy: 207-853-2600 Micmacs: 207-532-6873 IHS Boston: 617-565-1000",
+      "website": "ihs.gov/boston"
+     }
+    ],
+    "phones": [],
+    "websites": [
+     "ihs.gov"
+    ],
+    "site_keys": [
+     "penobscot indian island"
+    ],
+    "own_address_text": "Penobscot: Indian Island ME 04468 Passamaquoddy: Perry ME 04667 Micmacs: Presque Isle area"
+   }
+  ],
+  "assignment": {
+   "maine aspire-tanf (dhhs)": {
+    "clones": [],
+    "fresh": {
+     "street": "109 Capitol St",
+     "city": "Augusta",
+     "state": "ME",
+     "zip5": "04333"
+    },
+    "has_coords": false,
+    "city": "Augusta"
+   },
+   "maine heap / liheap (life-critical -- apply october 1)": {
+    "clones": [],
+    "fresh": {
+     "street": "109 Capitol St",
+     "city": "Augusta",
+     "state": "ME",
+     "zip5": "04333"
+    },
+    "has_coords": false,
+    "city": "Augusta"
+   },
+   "maine snap (dhhs)": {
+    "clones": [],
+    "fresh": {
+     "street": "109 Capitol St",
+     "city": "Augusta",
+     "state": "ME",
+     "zip5": "04333"
+    },
+    "has_coords": false,
+    "city": "Augusta"
+   },
+   "mainecare / maine medicaid (dhhs)": {
+    "clones": [],
+    "fresh": {
+     "street": "109 Capitol St",
+     "city": "Augusta",
+     "state": "ME",
+     "zip5": "04333"
+    },
+    "has_coords": false,
+    "city": "Augusta"
+   },
+   "wabanaki tribal health programs (4 nations)": {
+    "clones": [],
+    "fresh": null,
+    "has_coords": false,
+    "city": null
+   }
+  },
+  "location_descriptors": [],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "65c67ce4-3d52-405f-bd45-b3e0300d75dc",
+  "bundle_canonical_id": "csp_de_b413456238afaef2d7b7",
+  "family": "catalog_site_projection_v1",
+  "state": "DE",
+  "city": "Wilmington",
+  "jurisdiction": "DE",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-delaware-ENRICHED-PASS3-2026",
+  "shape": "shared_site_split",
+  "n_rows_total": 4,
+  "n_attributed": 4,
+  "names": [
+   {
+    "program_name": "Delaware PFML (January 2026 -- New Benefit!)",
+    "norm_name": "delaware pfml (january 2026 -- new benefit!)",
+    "minted_entity_id": "340875f5-5af3-59e3-4fcc-7cfbde5ec13c",
+    "minted_canonical_id": "bdp_de_48573d76ca319fb36fb1",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:1980ed4b964a2c47b4679ed8ebda5dfb91d246087d30fc1ce0da85a3096441e2",
+      "sheet": "pass3_program_card",
+      "row": 229,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "302-761-8200 dol.delaware.gov/pfml",
+      "website": "dol.delaware.gov/pfml"
+     },
+     {
+      "uid": "corpus:90c1d359e7ff6d23b78788133cdcd716dbd49e377e3a91b8d556732870aede3a",
+      "sheet": "pass3_program_card",
+      "row": 229,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "302-761-8200 dol.delaware.gov/pfml",
+      "website": "dol.delaware.gov/pfml"
+     }
+    ],
+    "phones": [
+     "3027618200"
+    ],
+    "websites": [
+     "dol.delaware.gov"
+    ],
+    "site_keys": [
+     "4425 n market st"
+    ],
+    "own_address_text": "4425 N Market St, Wilmington DE 19802"
+   },
+   {
+    "program_name": "Delaware UI -- DDOL (10-Day Appeal!)",
+    "norm_name": "delaware ui -- ddol (10-day appeal!)",
+    "minted_entity_id": "e713bf69-feb4-72af-1891-bf41aa39b211",
+    "minted_canonical_id": "bdp_de_6612d4c91e2491413b63",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:a977b08d6ef71db260e31e206e64081e838e5d69f3f9cc403730d6481ddbfbce",
+      "sheet": "pass3_program_card",
+      "row": 227,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "302-761-8446 ui.delawareworks.com",
+      "website": "ui.delawareworks.com"
+     },
+     {
+      "uid": "corpus:d9f6ff8d247cbb9d82b381cbe7267359e376bfed3140a94a4ef477f654fd54eb",
+      "sheet": "pass3_program_card",
+      "row": 227,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "302-761-8446 ui.delawareworks.com",
+      "website": "ui.delawareworks.com"
+     }
+    ],
+    "phones": [
+     "3027618446"
+    ],
+    "websites": [
+     "ui.delawareworks.com"
+    ],
+    "site_keys": [
+     "4425 n market st"
+    ],
+    "own_address_text": "4425 N Market St, Wilmington DE 19802"
+   }
+  ],
+  "assignment": {
+   "delaware pfml (january 2026 -- new benefit!)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Wilmington"
+   },
+   "delaware ui -- ddol (10-day appeal!)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Wilmington"
+   }
+  },
+  "location_descriptors": [
+   {
+    "location_id": "55c86690-54cb-4c9e-a356-5d2e744dbc9b",
+    "site_key": "4425 n market st",
+    "has_coords": true,
+    "city": "Wilmington"
+   }
+  ],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "6d4d4083-e378-e6df-3991-e6dc34d356ab",
+  "bundle_canonical_id": "csp_or_27684798600f8131726e",
+  "family": "catalog_site_projection_v1",
+  "state": "OR",
+  "city": "Pendleton",
+  "jurisdiction": "OR",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-oregon-ENRICHED-PASS3-2026",
+  "shape": "shared_site_split",
+  "n_rows_total": 4,
+  "n_attributed": 4,
+  "names": [
+   {
+    "program_name": "Confederated Tribes of the Umatilla Indian Reservation (CTUIR)",
+    "norm_name": "confederated tribes of the umatilla indian reservation (ctuir)",
+    "minted_entity_id": "34fefda8-f806-29ef-7d33-e4a0172be119",
+    "minted_canonical_id": "bdp_or_bd08d8b6320a095dc05d",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:2abae43405f9bda48810eb4ffa33428801d441634016edc048f6e61e4698db59",
+      "sheet": "pass3_program_card",
+      "row": 1104,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "541-276-3165",
+      "website": "umatilla.nsn.us"
+     },
+     {
+      "uid": "corpus:cc283f1794d650a31e04f59cc686d23ccdeb9529fec8976c3edf7e54e11890cf",
+      "sheet": "pass3_program_card",
+      "row": 1104,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "541-276-3165",
+      "website": "umatilla.nsn.us"
+     }
+    ],
+    "phones": [
+     "5412763165"
+    ],
+    "websites": [
+     "umatilla.nsn.us"
+    ],
+    "site_keys": [
+     "46411 tim ne way"
+    ],
+    "own_address_text": "46411 Timíne Way, Pendleton OR 97801"
+   },
+   {
+    "program_name": "Umatilla Tribe — Family Violence Services (Eastern OR)",
+    "norm_name": "umatilla tribe — family violence services (eastern or)",
+    "minted_entity_id": "b12abcea-ac80-fde3-95b5-833b9a00ab45",
+    "minted_canonical_id": "bdp_or_68cd00475e939301ec3f",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:2d5111b83866247320d00f718e6f13637819051d11db4bd37b2da435b4b7ea0d",
+      "sheet": "pass3_program_card",
+      "row": 1090,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "541-276-3165",
+      "website": "umatilla.nsn.us"
+     },
+     {
+      "uid": "corpus:a622fc9ba71b5343eeca1b745cb9e802762a1a57e2140886eb8e8ecdcffd2397",
+      "sheet": "pass3_program_card",
+      "row": 1090,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "541-276-3165",
+      "website": "umatilla.nsn.us"
+     }
+    ],
+    "phones": [
+     "5412763165"
+    ],
+    "websites": [
+     "umatilla.nsn.us"
+    ],
+    "site_keys": [
+     "46411 tim ne way"
+    ],
+    "own_address_text": "46411 Timíne Way, Pendleton OR 97801"
+   }
+  ],
+  "assignment": {
+   "confederated tribes of the umatilla indian reservation (ctuir)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": false,
+    "city": "Pendleton"
+   },
+   "umatilla tribe — family violence services (eastern or)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": false,
+    "city": "Pendleton"
+   }
+  },
+  "location_descriptors": [
+   {
+    "location_id": "01461e79-2145-43bc-80a0-ebafc13e3de9",
+    "site_key": "46411 tim ne way",
+    "has_coords": false,
+    "city": "Pendleton"
+   }
+  ],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "739ddae3-ce43-4004-93c2-afcbe70c103c",
+  "bundle_canonical_id": "crp_nj_d6cbd49a126d9396368f",
+  "family": "catalog_remainder_projection_v1",
+  "state": "NJ",
+  "city": null,
+  "jurisdiction": "NJ",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-new-jersey-ENRICHED-PASS3-2026",
+  "shape": "clean_split",
+  "n_rows_total": 6,
+  "n_attributed": 6,
+  "names": [
+   {
+    "program_name": "Cooper University Hospital — Camden Safety Net",
+    "norm_name": "cooper university hospital — camden safety net",
+    "minted_entity_id": "127c1f19-6069-b7bd-8797-030d81b0ca1c",
+    "minted_canonical_id": "bdp_nj_2c90259cae5edb47d5b0",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:5761939e68a087e64857706e9c72df2abbe9829038cfa1ddc298e6fddabbdf2a",
+      "sheet": "pass3_program_card",
+      "row": 852,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "856-342-2000 · Financial assistance: 856-342-3000",
+      "website": "cooperhealth.org"
+     },
+     {
+      "uid": "corpus:6b1239d23ecd418a4c144ec20602aa387682a818b666086385bf1dd293e67617",
+      "sheet": "pass3_program_card",
+      "row": 852,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "856-342-2000 · Financial assistance: 856-342-3000",
+      "website": "cooperhealth.org"
+     }
+    ],
+    "phones": [],
+    "websites": [
+     "cooperhealth.org"
+    ],
+    "site_keys": [
+     "one cooper plaza"
+    ],
+    "own_address_text": "One Cooper Plaza, Camden NJ 08103"
+   },
+   {
+    "program_name": "NewBridge Services (Bergen County DV)",
+    "norm_name": "newbridge services (bergen county dv)",
+    "minted_entity_id": "87f11e2c-9c45-cb41-6d35-0fa4732c53a0",
+    "minted_canonical_id": "bdp_nj_e675a7359620bff98c45",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:20fe6d4d62520ee6ff9da31a6cb27d4f79338f6c583d2cba996ab06a0e709d54",
+      "sheet": "pass3_program_card",
+      "row": 866,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "201-262-4357 (crisis 24/7 — Bergen Co line)",
+      "website": "newbridge.org"
+     },
+     {
+      "uid": "corpus:373555c5c9bee4bc304b45e308a4a29604acd28fd2809d0bbcd60fdddeb50fe3",
+      "sheet": "pass3_program_card",
+      "row": 866,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "201-262-4357 (crisis 24/7 — Bergen Co line)",
+      "website": "newbridge.org"
+     }
+    ],
+    "phones": [],
+    "websites": [
+     "newbridge.org"
+    ],
+    "site_keys": [
+     "one madison ave"
+    ],
+    "own_address_text": "One Madison Ave, Morristown NJ 07960"
+   },
+   {
+    "program_name": "NJ Law Help (Statewide Self-Help)",
+    "norm_name": "nj law help (statewide self-help)",
+    "minted_entity_id": "2b8e7b81-1320-991c-cefb-458cb0473f8c",
+    "minted_canonical_id": "bdp_nj_1dfd05892d7ab987c918",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:b7496a72ef12aa3dc20cc89c4a293a7fdd9ddb954de8207b4f547023bf923f65",
+      "sheet": "pass3_program_card",
+      "row": 872,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "N/A",
+      "website": "njlawhelp.org"
+     },
+     {
+      "uid": "corpus:c70124d7329a4382239aca9034214b4773e1e98e03b7b1f0f5b38180ebc5de10",
+      "sheet": "pass3_program_card",
+      "row": 872,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "N/A",
+      "website": "njlawhelp.org"
+     }
+    ],
+    "phones": [],
+    "websites": [
+     "njlawhelp.org"
+    ],
+    "site_keys": [],
+    "own_address_text": null
+   }
+  ],
+  "assignment": {
+   "cooper university hospital — camden safety net": {
+    "clones": [],
+    "fresh": {
+     "street": "One Cooper Plaza",
+     "city": "Camden",
+     "state": "NJ",
+     "zip5": "08103"
+    },
+    "has_coords": false,
+    "city": "Camden"
+   },
+   "newbridge services (bergen county dv)": {
+    "clones": [],
+    "fresh": {
+     "street": "One Madison Ave",
+     "city": "Morristown",
+     "state": "NJ",
+     "zip5": "07960"
+    },
+    "has_coords": false,
+    "city": "Morristown"
+   },
+   "nj law help (statewide self-help)": {
+    "clones": [],
+    "fresh": null,
+    "has_coords": false,
+    "city": null
+   }
+  },
+  "location_descriptors": [],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "74d551de-dc41-fec8-a685-d1de3876aa90",
+  "bundle_canonical_id": "crp_ri_c3ed5006442c46e44445",
+  "family": "catalog_remainder_projection_v1",
+  "state": "RI",
+  "city": null,
+  "jurisdiction": "RI",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-rhode-island-ENRICHED-PASS3-2026",
+  "shape": "clean_split",
+  "n_rows_total": 6,
+  "n_attributed": 6,
+  "names": [
+   {
+    "program_name": "Rhode Island LIHEAP (RISEO)",
+    "norm_name": "rhode island liheap (riseo)",
+    "minted_entity_id": "6b127e41-5c6a-6010-5127-40a7e97b2299",
+    "minted_canonical_id": "bdp_ri_22da6ffd9f74803abea3",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:479a26eae0bad7709d7619ca7b2325c4a586fa559beda8a24928577ea5512dac",
+      "sheet": "pass3_program_card",
+      "row": 1176,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "401-574-9100 energy.ri.gov",
+      "website": "energy.ri.gov"
+     },
+     {
+      "uid": "corpus:48f72af14eaa77ebcb08387ffa56c8fdb4e3637d5f4a5caf5f71fd0e461983ab",
+      "sheet": "pass3_program_card",
+      "row": 1176,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "401-574-9100 energy.ri.gov",
+      "website": "energy.ri.gov"
+     }
+    ],
+    "phones": [
+     "4015749100"
+    ],
+    "websites": [
+     "energy.ri.gov"
+    ],
+    "site_keys": [
+     "one capitol hill"
+    ],
+    "own_address_text": "One Capitol Hill, Providence RI 02908"
+   },
+   {
+    "program_name": "Rhode Island SNAP (DHS)",
+    "norm_name": "rhode island snap (dhs)",
+    "minted_entity_id": "5937e319-cb25-6b3a-c9ca-aac9967fdef5",
+    "minted_canonical_id": "bdp_ri_c58cba5c1a74aab127d5",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:60a604e320e12c256408e25b7da295583ee09246c5f82c218c68470b6824d201",
+      "sheet": "pass3_program_card",
+      "row": 1168,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "855-697-4347 Providence: 401-462-2130 Cranston: 401-462-3000 Pawtucket: 401-462-2000 myRIbenefits.ri.gov",
+      "website": "myRIbenefits.ri.gov"
+     },
+     {
+      "uid": "corpus:97a6c072d465d159a0f0333a54fd5ad217e0921b4e7509b7c935facbeb0694a7",
+      "sheet": "pass3_program_card",
+      "row": 1168,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "855-697-4347 Providence: 401-462-2130 Cranston: 401-462-3000 Pawtucket: 401-462-2000 myRIbenefits.ri.gov",
+      "website": "myRIbenefits.ri.gov"
+     }
+    ],
+    "phones": [],
+    "websites": [
+     "myribenefits.ri.gov"
+    ],
+    "site_keys": [
+     "57 howard ave"
+    ],
+    "own_address_text": "57 Howard Ave, Cranston RI 02920 DHS offices statewide"
+   },
+   {
+    "program_name": "Thundermist Health Center (FQHC -- Latino and Multilingual)",
+    "norm_name": "thundermist health center (fqhc -- latino and multilingual)",
+    "minted_entity_id": "9161757f-e0e4-d230-3a9f-2990ca3e5e2c",
+    "minted_canonical_id": "bdp_ri_8ac7447ae61aae76916b",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:7aece326710daaa78a14ed4c4f4babaa225d5706750b3ed3e3d7b1e05b502ead",
+      "sheet": "pass3_program_card",
+      "row": 1165,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "401-767-4100",
+      "website": "thundermist.org"
+     },
+     {
+      "uid": "corpus:e717a47e210c05078a2678886fdee7f8f2e44fd73a1fe7457e19c56a75810eea",
+      "sheet": "pass3_program_card",
+      "row": 1165,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "401-767-4100",
+      "website": "thundermist.org"
+     }
+    ],
+    "phones": [
+     "4017674100"
+    ],
+    "websites": [
+     "thundermist.org"
+    ],
+    "site_keys": [
+     "186 blackstone st"
+    ],
+    "own_address_text": "186 Blackstone St, Woonsocket RI 02895 Also West Warwick"
+   }
+  ],
+  "assignment": {
+   "rhode island liheap (riseo)": {
+    "clones": [],
+    "fresh": {
+     "street": "One Capitol Hill",
+     "city": "Providence",
+     "state": "RI",
+     "zip5": "02908"
+    },
+    "has_coords": false,
+    "city": "Providence"
+   },
+   "rhode island snap (dhs)": {
+    "clones": [],
+    "fresh": {
+     "street": "57 Howard Ave",
+     "city": "Cranston",
+     "state": "RI",
+     "zip5": "02920"
+    },
+    "has_coords": false,
+    "city": "Cranston"
+   },
+   "thundermist health center (fqhc -- latino and multilingual)": {
+    "clones": [],
+    "fresh": {
+     "street": "186 Blackstone St",
+     "city": "Woonsocket",
+     "state": "RI",
+     "zip5": "02895"
+    },
+    "has_coords": false,
+    "city": "Woonsocket"
+   }
+  },
+  "location_descriptors": [],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "7e349618-bde3-9d1a-dc9a-7ee56ff431cf",
+  "bundle_canonical_id": "csp_vt_6fa7485c6f45233a77be",
+  "family": "catalog_site_projection_v1",
+  "state": "VT",
+  "city": "Montpelier",
+  "jurisdiction": "VT",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-vermont-ENRICHED-PASS3-2026",
+  "shape": "shared_site_split",
+  "n_rows_total": 4,
+  "n_attributed": 4,
+  "names": [
+   {
+    "program_name": "Vermont PFML (2024 -- Screen at Every Intake)",
+    "norm_name": "vermont pfml (2024 -- screen at every intake)",
+    "minted_entity_id": "08a7b4bd-5452-e37c-8d2c-c54edcd8a4ff",
+    "minted_canonical_id": "bdp_vt_ec191987e828d5cc9aa4",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:1048692fb89fcb772d538d645c48eaa0366df71cdece310a9d818700a9466006",
+      "sheet": "pass3_program_card",
+      "row": 1319,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "855-667-9358 pfml.vermont.gov",
+      "website": "pfml.vermont.gov"
+     },
+     {
+      "uid": "corpus:4b4591e535b9bdabbba7ba154fff1466d299b96f4c86ac9a18d6970f6715b637",
+      "sheet": "pass3_program_card",
+      "row": 1319,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "855-667-9358 pfml.vermont.gov",
+      "website": "pfml.vermont.gov"
+     }
+    ],
+    "phones": [
+     "8556679358"
+    ],
+    "websites": [
+     "pfml.vermont.gov"
+    ],
+    "site_keys": [
+     "5 green mountain dr"
+    ],
+    "own_address_text": "5 Green Mountain Dr, Montpelier VT 05602"
+   },
+   {
+    "program_name": "Vermont UI -- DOL (10-Day Appeal!)",
+    "norm_name": "vermont ui -- dol (10-day appeal!)",
+    "minted_entity_id": "8167e021-dd1c-5a57-243a-3bc68ef9bdbd",
+    "minted_canonical_id": "bdp_vt_d478291d7abcd8048c85",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:12ee1584a956370ce2d23fb78586709a6939e087c6ea218be80aa3ebad9783d5",
+      "sheet": "pass3_program_card",
+      "row": 1317,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "877-214-3332 labor.vermont.gov",
+      "website": "labor.vermont.gov"
+     },
+     {
+      "uid": "corpus:6eb1a8c187a72a38208bb0bff0cf6403da89cb16ef54a3e36f621c459ba47c7d",
+      "sheet": "pass3_program_card",
+      "row": 1317,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "877-214-3332 labor.vermont.gov",
+      "website": "labor.vermont.gov"
+     }
+    ],
+    "phones": [
+     "8772143332"
+    ],
+    "websites": [
+     "labor.vermont.gov"
+    ],
+    "site_keys": [
+     "5 green mountain dr"
+    ],
+    "own_address_text": "5 Green Mountain Dr, Montpelier VT 05602"
+   }
+  ],
+  "assignment": {
+   "vermont pfml (2024 -- screen at every intake)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Montpelier"
+   },
+   "vermont ui -- dol (10-day appeal!)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Montpelier"
+   }
+  },
+  "location_descriptors": [
+   {
+    "location_id": "c6371924-bced-4981-89c4-8efb4cda4181",
+    "site_key": "5 green mountain dr",
+    "has_coords": true,
+    "city": "Montpelier"
+   }
+  ],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "7f3daf63-f6a7-184a-ad21-79193e570cea",
+  "bundle_canonical_id": "csp_md_6166e483be3da76fcba4",
+  "family": "catalog_site_projection_v1",
+  "state": "MD",
+  "city": "Baltimore",
+  "jurisdiction": "MD",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-maryland-ENRICHED-PASS3-2026-1",
+  "shape": "shared_site_split",
+  "n_rows_total": 4,
+  "n_attributed": 4,
+  "names": [
+   {
+    "program_name": "Maryland HealthChoice / Medicaid (MDH)",
+    "norm_name": "maryland healthchoice / medicaid (mdh)",
+    "minted_entity_id": "42c5ac42-38ac-0aa3-a935-4f5e19dea4b0",
+    "minted_canonical_id": "bdp_md_1ed7744c770028dafa45",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:b0a07baf9ac84a8842b149ecf5fb7e61bb7b469a482dc4584523a22855ac2ed7",
+      "sheet": "pass3_program_card",
+      "row": 557,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "800-492-5231 · mydhhr.org",
+      "website": "mmcp.health.maryland.gov · marylandhealthconnection.gov"
+     },
+     {
+      "uid": "corpus:e008d4d38f368b9bad6a92358cf974a5134a4da36b038238b9b1bcc1e3948b63",
+      "sheet": "pass3_program_card",
+      "row": 557,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "800-492-5231 · mydhhr.org",
+      "website": "mmcp.health.maryland.gov · marylandhealthconnection.gov"
+     }
+    ],
+    "phones": [
+     "8004925231"
+    ],
+    "websites": [
+     "mmcp.health.maryland.gov · marylandhealthconnection.gov"
+    ],
+    "site_keys": [
+     "201 w preston st"
+    ],
+    "own_address_text": "201 W Preston St, Baltimore MD 21201 (MDH main)"
+   },
+   {
+    "program_name": "WIC Maryland (MDH)",
+    "norm_name": "wic maryland (mdh)",
+    "minted_entity_id": "9afa12e3-9f8b-a6fc-2851-2e9fef588e27",
+    "minted_canonical_id": "bdp_md_f2d24148885078363b86",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:b9c2c0824b4c8806ef7ff11d2282c2e86b20053ab455e9d56c56c16e8775c33c",
+      "sheet": "pass3_program_card",
+      "row": 567,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "410-767-6980 · Baltimore WIC: 410-396-1088 · Montgomery WIC: 240-777-3090",
+      "website": "phpa.health.maryland.gov/wic"
+     },
+     {
+      "uid": "corpus:bdc524c5ab69ad560f76b9757f4eb7b3a82015a719de4125a5e5e7e619c467bd",
+      "sheet": "pass3_program_card",
+      "row": 567,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "410-767-6980 · Baltimore WIC: 410-396-1088 · Montgomery WIC: 240-777-3090",
+      "website": "phpa.health.maryland.gov/wic"
+     }
+    ],
+    "phones": [],
+    "websites": [
+     "phpa.health.maryland.gov"
+    ],
+    "site_keys": [
+     "201 w preston st"
+    ],
+    "own_address_text": "201 W Preston St, Baltimore MD 21201"
+   }
+  ],
+  "assignment": {
+   "maryland healthchoice / medicaid (mdh)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Baltimore"
+   },
+   "wic maryland (mdh)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Baltimore"
+   }
+  },
+  "location_descriptors": [
+   {
+    "location_id": "bfb09073-ba81-4f71-97be-d7508d75f83c",
+    "site_key": "201 w preston st",
+    "has_coords": true,
+    "city": "Baltimore"
+   }
+  ],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "8c82cc87-cecf-41b8-c577-ac35b02ae2dd",
+  "bundle_canonical_id": "csp_as_1bbc87b4801a84c452a7",
+  "family": "catalog_site_projection_v1",
+  "state": "AS",
+  "city": "Pago Pago",
+  "jurisdiction": "AS",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-american-samoa-ENRICHED-PASS3-2026-2",
+  "shape": "shared_site_split",
+  "n_rows_total": 4,
+  "n_attributed": 4,
+  "names": [
+   {
+    "program_name": "AS Medicaid (ASDHSS)",
+    "norm_name": "as medicaid (asdhss)",
+    "minted_entity_id": "1acdfa1d-2a49-2ef0-c041-818f181d72e6",
+    "minted_canonical_id": "bdp_as_e8cd906e83a9876006a0",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:13400686a0d9049d9c33144ae1ddcd5186f03352ca7a3b8c0ab42ad109693406",
+      "sheet": "pass3_program_card",
+      "row": 1474,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "684-633-1222 dhss.as.gov",
+      "website": "dhss.as.gov"
+     },
+     {
+      "uid": "corpus:a1622cde8e1c9f81e7953057fbf33b12bc40ce91efe4ff573dd3895496b9b65c",
+      "sheet": "pass3_program_card",
+      "row": 1474,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "684-633-1222 dhss.as.gov",
+      "website": "dhss.as.gov"
+     }
+    ],
+    "phones": [
+     "6846331222"
+    ],
+    "websites": [
+     "dhss.as.gov"
+    ],
+    "site_keys": [
+     "po box 996537"
+    ],
+    "own_address_text": "PO Box 996537, Pago Pago AS 96799"
+   },
+   {
+    "program_name": "AS SNAP / Nutrition Assistance (ASDHSS)",
+    "norm_name": "as snap / nutrition assistance (asdhss)",
+    "minted_entity_id": "d42c7e8d-e264-d9dc-4098-d1e0fbdb4283",
+    "minted_canonical_id": "bdp_as_8d9d932210dfd5c282fd",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:2f370b116483682e7c909c46eacae5f70fc9bda4e83cc9a2fd3b94100a7dcf8b",
+      "sheet": "pass3_program_card",
+      "row": 1476,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "684-633-1187 dhss.as.gov",
+      "website": "dhss.as.gov"
+     },
+     {
+      "uid": "corpus:86c3443c7c87767d4a067707fd81a29546d5f7ee6bbfb68338efb77f110f582b",
+      "sheet": "pass3_program_card",
+      "row": 1476,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "684-633-1187 dhss.as.gov",
+      "website": "dhss.as.gov"
+     }
+    ],
+    "phones": [
+     "6846331187"
+    ],
+    "websites": [
+     "dhss.as.gov"
+    ],
+    "site_keys": [
+     "po box 996537"
+    ],
+    "own_address_text": "PO Box 996537, Pago Pago AS 96799"
+   }
+  ],
+  "assignment": {
+   "as medicaid (asdhss)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": false,
+    "city": "Pago Pago"
+   },
+   "as snap / nutrition assistance (asdhss)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": false,
+    "city": "Pago Pago"
+   }
+  },
+  "location_descriptors": [
+   {
+    "location_id": "0fa67d12-36e5-4496-a91d-1a560d6eacac",
+    "site_key": "po box 996537",
+    "has_coords": false,
+    "city": "Pago Pago"
+   }
+  ],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "8d2d604c-e8be-3563-a336-13056babe0e9",
+  "bundle_canonical_id": "csp_hi_5b710a642e251c61e29b",
+  "family": "catalog_site_projection_v1",
+  "state": "HI",
+  "city": "Honolulu",
+  "jurisdiction": "HI",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-hawaii-ENRICHED-PASS3-2026 (1)",
+  "shape": "shared_site_split",
+  "n_rows_total": 4,
+  "n_attributed": 4,
+  "names": [
+   {
+    "program_name": "Office of Hawaiian Affairs (OHA -- Native Hawaiian Housing Assistance)",
+    "norm_name": "office of hawaiian affairs (oha -- native hawaiian housing assistance)",
+    "minted_entity_id": "0c7d23d3-cb4b-1360-d4f7-32f91cf8e3b8",
+    "minted_canonical_id": "bdp_hi_b5ef661dcbe52ac814d2",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:6b54cd9c2ff7d55aeac18cf681611708f1413cdcda37a5359042e34f3fa9bc71",
+      "sheet": "pass3_program_card",
+      "row": 317,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "808-594-1888",
+      "website": "oha.org"
+     },
+     {
+      "uid": "corpus:72c2ef7762ced28616fd009155c4af503b6ee8b7f07463b4c36602511ae30ae1",
+      "sheet": "pass3_program_card",
+      "row": 317,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "808-594-1888",
+      "website": "oha.org"
+     }
+    ],
+    "phones": [
+     "8085941888"
+    ],
+    "websites": [
+     "oha.org"
+    ],
+    "site_keys": [
+     "560 n nimitz hwy"
+    ],
+    "own_address_text": "560 N Nimitz Hwy Ste 200, Honolulu HI 96817"
+   },
+   {
+    "program_name": "Office of Hawaiian Affairs (OHA -- Native Hawaiian Social Services + Legal Referral)",
+    "norm_name": "office of hawaiian affairs (oha -- native hawaiian social services + legal referral)",
+    "minted_entity_id": "5f115505-f95d-349e-a4e5-18f0dc253e93",
+    "minted_canonical_id": "bdp_hi_b3e1718aaba66e2f9358",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:992e080cbee1cd27fb14fd943e86c38e200696249686389af16d48be0552afc3",
+      "sheet": "pass3_program_card",
+      "row": 325,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "808-594-1888",
+      "website": "oha.org"
+     },
+     {
+      "uid": "corpus:e8153ec02f0fa25fd9ea8ef441a8d430e365f83c450050d65b5ccb9e080b2e19",
+      "sheet": "pass3_program_card",
+      "row": 325,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "808-594-1888",
+      "website": "oha.org"
+     }
+    ],
+    "phones": [
+     "8085941888"
+    ],
+    "websites": [
+     "oha.org"
+    ],
+    "site_keys": [
+     "560 n nimitz hwy"
+    ],
+    "own_address_text": "560 N Nimitz Hwy Ste 200, Honolulu HI 96817"
+   }
+  ],
+  "assignment": {
+   "office of hawaiian affairs (oha -- native hawaiian housing assistance)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Honolulu"
+   },
+   "office of hawaiian affairs (oha -- native hawaiian social services + legal referral)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Honolulu"
+   }
+  },
+  "location_descriptors": [
+   {
+    "location_id": "fed330c4-ee0a-449a-bfbb-62aa6c0ff535",
+    "site_key": "560 n nimitz hwy",
+    "has_coords": true,
+    "city": "Honolulu"
+   }
+  ],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "93645021-41a8-4f14-47e9-4c0fe63bbd9b",
+  "bundle_canonical_id": "csp_ga_1d5a5b76361e667886a3",
+  "family": "catalog_site_projection_v1",
+  "state": "GA",
+  "city": "Atlanta",
+  "jurisdiction": "GA",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-georgia-ENRICHED-PASS3-2026",
+  "shape": "shared_site_split",
+  "n_rows_total": 4,
+  "n_attributed": 4,
+  "names": [
+   {
+    "program_name": "Georgia Legal Services Program (GLSP — Rural/Statewide)",
+    "norm_name": "georgia legal services program (glsp — rural/statewide)",
+    "minted_entity_id": "dd35606c-c827-32f1-b2bd-69e6125a23b8",
+    "minted_canonical_id": "bdp_ga_41ae4f2576959da8f6ea",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:89814f5b14f9c7477a7fc6463409396bacbf737e4fe9c24c80442475af489929",
+      "sheet": "pass3_program_card",
+      "row": 287,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "404-206-5175 · Gainesville: 770-536-5469 · Macon: 478-743-8651",
+      "website": "glsp.org"
+     },
+     {
+      "uid": "corpus:b956da031bce995455bdff78698da29324bed9941c9c091731cf8815a5c9a4b8",
+      "sheet": "pass3_program_card",
+      "row": 287,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "404-206-5175 · Gainesville: 770-536-5469 · Macon: 478-743-8651",
+      "website": "glsp.org"
+     }
+    ],
+    "phones": [],
+    "websites": [
+     "glsp.org"
+    ],
+    "site_keys": [
+     "104 marietta st"
+    ],
+    "own_address_text": "104 Marietta St NW Ste 250, Atlanta, GA 30303"
+   },
+   {
+    "program_name": "Georgia Legal Services Program (GLSP — Statewide Outside Atlanta)",
+    "norm_name": "georgia legal services program (glsp — statewide outside atlanta)",
+    "minted_entity_id": "694e3eed-9443-2a3a-ad67-aa518fb078d0",
+    "minted_canonical_id": "bdp_ga_5ae51440f6506cf7cf27",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:13060d199f2d21c6d67c1228d725fd46411d5ba90f6f79c3cae9569a7ef0460c",
+      "sheet": "pass3_program_card",
+      "row": 279,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "404-206-5175 (main) · Columbus: 706-649-7493 · Augusta: 706-724-6246 · Savannah: 912-651-2180 · Gainesville: 770-536-5469",
+      "website": "glsp.org"
+     },
+     {
+      "uid": "corpus:50b25624dda29cf2e17f973e63cf1c62021b840970ee65d9c7012e9096d9bad0",
+      "sheet": "pass3_program_card",
+      "row": 279,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "404-206-5175 (main) · Columbus: 706-649-7493 · Augusta: 706-724-6246 · Savannah: 912-651-2180 · Gainesville: 770-536-5469",
+      "website": "glsp.org"
+     }
+    ],
+    "phones": [],
+    "websites": [
+     "glsp.org"
+    ],
+    "site_keys": [
+     "104 marietta st"
+    ],
+    "own_address_text": "104 Marietta St NW Ste 250, Atlanta, GA 30303 (state office)"
+   }
+  ],
+  "assignment": {
+   "georgia legal services program (glsp — rural/statewide)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Atlanta"
+   },
+   "georgia legal services program (glsp — statewide outside atlanta)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Atlanta"
+   }
+  },
+  "location_descriptors": [
+   {
+    "location_id": "0efca805-7ec2-4c30-af78-8793eaf0369b",
+    "site_key": "104 marietta st",
+    "has_coords": true,
+    "city": "Atlanta"
+   }
+  ],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "9c8cb07e-95ba-119e-a437-d6901a8823e1",
+  "bundle_canonical_id": "csp_az_1e82bd6bf271aa20f952",
+  "family": "catalog_site_projection_v1",
+  "state": "AZ",
+  "city": "Phoenix",
+  "jurisdiction": "AZ",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-arizona-ENRICHED-PASS3-2026-1",
+  "shape": "shared_site_split",
+  "n_rows_total": 4,
+  "n_attributed": 4,
+  "names": [
+   {
+    "program_name": "Community Legal Services AZ (CLS — Phoenix / Maricopa / Yavapai)",
+    "norm_name": "community legal services az (cls — phoenix / maricopa / yavapai)",
+    "minted_entity_id": "ae222a8a-a820-0077-6ed3-2620494cd187",
+    "minted_canonical_id": "bdp_az_8227149f39868f497c72",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:4a4a818051a849c0ae01d152c3c2db350c279f8250d408e265bdc95b28d960ea",
+      "sheet": "pass3_program_card",
+      "row": 96,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "602-258-3434",
+      "website": "clsaz.org"
+     },
+     {
+      "uid": "corpus:ed5a3d72ddb29ef4728039af857f68cd492d74ae15ffbc72aea913d9c01093b2",
+      "sheet": "pass3_program_card",
+      "row": 96,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "602-258-3434",
+      "website": "clsaz.org"
+     }
+    ],
+    "phones": [
+     "6022583434"
+    ],
+    "websites": [
+     "clsaz.org"
+    ],
+    "site_keys": [
+     "305 s 2nd ave"
+    ],
+    "own_address_text": "305 S 2nd Ave, Phoenix, AZ 85003"
+   },
+   {
+    "program_name": "Community Legal Services AZ — Eviction Defense (Phoenix)",
+    "norm_name": "community legal services az — eviction defense (phoenix)",
+    "minted_entity_id": "9e3e95bf-b39b-561d-835d-5f855c211f01",
+    "minted_canonical_id": "bdp_az_2ce53d24c67ba15d4721",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:b48725e247e9a3bb6969d48544520ddf7424599d2dacbf861e2aff6b51b07e1b",
+      "sheet": "pass3_program_card",
+      "row": 85,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "602-258-3434",
+      "website": "clsaz.org"
+     },
+     {
+      "uid": "corpus:dd2d737a63609903141ade388e066e2a631883aab28e2a9f80bea7d5f915d5e3",
+      "sheet": "pass3_program_card",
+      "row": 85,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "602-258-3434",
+      "website": "clsaz.org"
+     }
+    ],
+    "phones": [
+     "6022583434"
+    ],
+    "websites": [
+     "clsaz.org"
+    ],
+    "site_keys": [
+     "305 s 2nd ave"
+    ],
+    "own_address_text": "305 S 2nd Ave, Phoenix, AZ 85003"
+   }
+  ],
+  "assignment": {
+   "community legal services az (cls — phoenix / maricopa / yavapai)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Phoenix"
+   },
+   "community legal services az — eviction defense (phoenix)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Phoenix"
+   }
+  },
+  "location_descriptors": [
+   {
+    "location_id": "1206cb9d-87f1-4238-bb57-a1f109cf82b1",
+    "site_key": "305 s 2nd ave",
+    "has_coords": true,
+    "city": "Phoenix"
+   }
+  ],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "9e60c165-401e-a0b9-289f-1217ae95fc21",
+  "bundle_canonical_id": "csp_ok_258c61bbf4b37691310a",
+  "family": "catalog_site_projection_v1",
+  "state": "OK",
+  "city": "Calera",
+  "jurisdiction": "OK",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-oklahoma-ENRICHED-PASS3-2026",
+  "shape": "shared_site_split",
+  "n_rows_total": 4,
+  "n_attributed": 4,
+  "names": [
+   {
+    "program_name": "Choctaw Nation Housing Authority (SE Oklahoma)",
+    "norm_name": "choctaw nation housing authority (se oklahoma)",
+    "minted_entity_id": "baf5054b-d7a6-65df-fddd-6c699aed8e0b",
+    "minted_canonical_id": "bdp_ok_9a17b7007f08c1fc6ef7",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:4f5f69f2faec0766e005990e2a2c993236e1c9995b22c73a5fdb50c8b0e61c41",
+      "sheet": "pass3_program_card",
+      "row": 1049,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "580-920-3100",
+      "website": "choctawnation.com/services/housing"
+     },
+     {
+      "uid": "corpus:52823e223207bd9f4c0c544e72e2f35246e2c4b2fc76bb6c447d86317615eb1b",
+      "sheet": "pass3_program_card",
+      "row": 1049,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "580-920-3100",
+      "website": "choctawnation.com/services/housing"
+     }
+    ],
+    "phones": [
+     "5809203100"
+    ],
+    "websites": [
+     "choctawnation.com"
+    ],
+    "site_keys": [
+     "1802 chukka hina rd"
+    ],
+    "own_address_text": "1802 Chukka Hina Rd, Calera OK 74730 (Durant area)"
+   },
+   {
+    "program_name": "Choctaw Nation of Oklahoma — 10.5-County SE Oklahoma",
+    "norm_name": "choctaw nation of oklahoma — 10.5-county se oklahoma",
+    "minted_entity_id": "be01a581-7d0a-12ec-96cc-16a4a9827113",
+    "minted_canonical_id": "bdp_ok_d171f3f81eb6e88330ff",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:825fcf6455ba7fa6dcd70dbf8e3745f17f8e77288dd0f541803a94dad6f5230d",
+      "sheet": "pass3_program_card",
+      "row": 1061,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "800-522-6170 · Health: 800-349-7026",
+      "website": "choctawnation.com"
+     },
+     {
+      "uid": "corpus:8cc23c7e1e1700f325d92c69e4c6e041af98e8ad36c3a85d308444a38138301a",
+      "sheet": "pass3_program_card",
+      "row": 1061,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "800-522-6170 · Health: 800-349-7026",
+      "website": "choctawnation.com"
+     }
+    ],
+    "phones": [],
+    "websites": [
+     "choctawnation.com"
+    ],
+    "site_keys": [
+     "1802 chukka hina rd"
+    ],
+    "own_address_text": "1802 Chukka Hina Rd, Calera OK 74730 (Durant HQ)"
+   }
+  ],
+  "assignment": {
+   "choctaw nation housing authority (se oklahoma)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": false,
+    "city": "Calera"
+   },
+   "choctaw nation of oklahoma — 10.5-county se oklahoma": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": false,
+    "city": "Calera"
+   }
+  },
+  "location_descriptors": [
+   {
+    "location_id": "3e378b0c-fb88-4cbb-ac18-d0093a2fdb51",
+    "site_key": "1802 chukka hina rd",
+    "has_coords": false,
+    "city": "Calera"
+   }
+  ],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "9f676163-c010-d1d2-5180-13a4d963be5f",
+  "bundle_canonical_id": "csp_tn_7f5772d0285561765fea",
+  "family": "catalog_site_projection_v1",
+  "state": "TN",
+  "city": "Knoxville",
+  "jurisdiction": "TN",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-tennessee-ENRICHED-PASS3-2026",
+  "shape": "shared_site_split",
+  "n_rows_total": 4,
+  "n_attributed": 4,
+  "names": [
+   {
+    "program_name": "Legal Aid of East Tennessee (Knox and surrounding)",
+    "norm_name": "legal aid of east tennessee (knox and surrounding)",
+    "minted_entity_id": "7410df52-d7ae-ea40-2aa8-574024d99c71",
+    "minted_canonical_id": "bdp_tn_6e840c44daa514099948",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:4318f69f231c8478f17847f6f769b8593e625fb656569e776514b59face1fcdc",
+      "sheet": "pass3_program_card",
+      "row": 1228,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "865-637-0484",
+      "website": "laet.org"
+     },
+     {
+      "uid": "corpus:666493101398772409859822e612f8454a3967442d6155f494d90a1ce139234d",
+      "sheet": "pass3_program_card",
+      "row": 1228,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "865-637-0484",
+      "website": "laet.org"
+     }
+    ],
+    "phones": [
+     "8656370484"
+    ],
+    "websites": [
+     "laet.org"
+    ],
+    "site_keys": [
+     "502 s gay st"
+    ],
+    "own_address_text": "502 S Gay St Ste 404, Knoxville TN 37902"
+   },
+   {
+    "program_name": "Legal Aid of East Tennessee (LAET — Knoxville)",
+    "norm_name": "legal aid of east tennessee (laet — knoxville)",
+    "minted_entity_id": "2d0f38f4-bfb3-3e52-4a22-3a352f1cc709",
+    "minted_canonical_id": "bdp_tn_91946774fbed53b15b96",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:5434be7c904709bb50b9aea9295977a79b31ee6930216d355e18d3fc4d7aeddd",
+      "sheet": "pass3_program_card",
+      "row": 1223,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "865-637-0484",
+      "website": "laet.org"
+     },
+     {
+      "uid": "corpus:6144159ac5f80b6df578d0c0b20d762535dc2ae1246b511393f922d7c0580cf7",
+      "sheet": "pass3_program_card",
+      "row": 1223,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "865-637-0484",
+      "website": "laet.org"
+     }
+    ],
+    "phones": [
+     "8656370484"
+    ],
+    "websites": [
+     "laet.org"
+    ],
+    "site_keys": [
+     "502 s gay st"
+    ],
+    "own_address_text": "502 S Gay St Ste 404, Knoxville TN 37902"
+   }
+  ],
+  "assignment": {
+   "legal aid of east tennessee (knox and surrounding)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Knoxville"
+   },
+   "legal aid of east tennessee (laet — knoxville)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Knoxville"
+   }
+  },
+  "location_descriptors": [
+   {
+    "location_id": "0290d248-e539-406e-99a1-5ed85e31b15e",
+    "site_key": "502 s gay st",
+    "has_coords": true,
+    "city": "Knoxville"
+   }
+  ],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "a14222c2-3d09-0869-6b41-3a9d8a80e598",
+  "bundle_canonical_id": "csp_ca_f3eebbacd1605f69c589",
+  "family": "catalog_site_projection_v1",
+  "state": "CA",
+  "city": "Los Angeles",
+  "jurisdiction": "CA",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-california-ENRICHED-PASS3-2026-2",
+  "shape": "shared_site_split",
+  "n_rows_total": 4,
+  "n_attributed": 4,
+  "names": [
+   {
+    "program_name": "Legal Aid Foundation of LA (LAFLA — LA County)",
+    "norm_name": "legal aid foundation of la (lafla — la county)",
+    "minted_entity_id": "85670c3e-4c8c-893a-5ce0-afaa35d56c9d",
+    "minted_canonical_id": "bdp_ca_f25ebf589faa343b0a2f",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:3f628a0819fe47f49ec217f493556d053af3976874ce1be0dcca29e20519ab46",
+      "sheet": "pass3_program_card",
+      "row": 173,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "800-399-4529",
+      "website": "lafla.org"
+     },
+     {
+      "uid": "corpus:bb42ff4d3e1f30a853c5e1866ae098df6e36ed507b1b90979e6b78e2985a20ec",
+      "sheet": "pass3_program_card",
+      "row": 173,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "800-399-4529",
+      "website": "lafla.org"
+     }
+    ],
+    "phones": [
+     "8003994529"
+    ],
+    "websites": [
+     "lafla.org"
+    ],
+    "site_keys": [
+     "1102 s crenshaw blvd"
+    ],
+    "own_address_text": "1102 S Crenshaw Blvd, Los Angeles, CA 90019"
+   },
+   {
+    "program_name": "Legal Aid Foundation of Los Angeles (LAFLA) — Eviction Defense",
+    "norm_name": "legal aid foundation of los angeles (lafla) — eviction defense",
+    "minted_entity_id": "b406771e-868d-2819-a1cd-601c6b1bde9b",
+    "minted_canonical_id": "bdp_ca_cac0704214b5a18a3c10",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:6d7e00aee9f77646b8dd3b2d307ba3894b5472c5febb230ee5bec7374880227d",
+      "sheet": "pass3_program_card",
+      "row": 160,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "800-399-4529",
+      "website": "lafla.org"
+     },
+     {
+      "uid": "corpus:7da7362032057fb396682378c9a601798533de46b17b5b5f27ec4ff7917d6e76",
+      "sheet": "pass3_program_card",
+      "row": 160,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "800-399-4529",
+      "website": "lafla.org"
+     }
+    ],
+    "phones": [
+     "8003994529"
+    ],
+    "websites": [
+     "lafla.org"
+    ],
+    "site_keys": [
+     "1102 s crenshaw blvd"
+    ],
+    "own_address_text": "1102 S Crenshaw Blvd, Los Angeles, CA 90019"
+   }
+  ],
+  "assignment": {
+   "legal aid foundation of la (lafla — la county)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Los Angeles"
+   },
+   "legal aid foundation of los angeles (lafla) — eviction defense": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Los Angeles"
+   }
+  },
+  "location_descriptors": [
+   {
+    "location_id": "fccfd371-e024-44e8-883f-b679b90ca925",
+    "site_key": "1102 s crenshaw blvd",
+    "has_coords": true,
+    "city": "Los Angeles"
+   }
+  ],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "acef839a-6216-26d3-5deb-e4751896568c",
+  "bundle_canonical_id": "csp_ar_4648b8447838b1cf20eb",
+  "family": "catalog_site_projection_v1",
+  "state": "AR",
+  "city": "Springdale",
+  "jurisdiction": "AR",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-arkansas-ENRICHED-PASS3-2026",
+  "shape": "shared_site_split",
+  "n_rows_total": 4,
+  "n_attributed": 4,
+  "names": [
+   {
+    "program_name": "Canopy NWA (Immigrant Legal Services NW AR)",
+    "norm_name": "canopy nwa (immigrant legal services nw ar)",
+    "minted_entity_id": "3adc12cc-9f99-006b-ca34-e2fe16152b8f",
+    "minted_canonical_id": "bdp_ar_23eefe38586ee07e4228",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:714fd34a75833d200bf5ebe64086002e041c82be9d231153bb42c969816bbb05",
+      "sheet": "pass3_program_card",
+      "row": 136,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "479-527-0907",
+      "website": "canopynwa.org"
+     },
+     {
+      "uid": "corpus:e45e9ce66176dff1e3da857595117151f56633c23b6224a0975e1a328dbdc3c1",
+      "sheet": "pass3_program_card",
+      "row": 136,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "479-527-0907",
+      "website": "canopynwa.org"
+     }
+    ],
+    "phones": [
+     "4795270907"
+    ],
+    "websites": [
+     "canopynwa.org"
+    ],
+    "site_keys": [
+     "614 e emma ave"
+    ],
+    "own_address_text": "614 E Emma Ave Ste 207, Springdale AR 72764"
+   },
+   {
+    "program_name": "Canopy NWA — Immigrant Services (NW Arkansas)",
+    "norm_name": "canopy nwa — immigrant services (nw arkansas)",
+    "minted_entity_id": "84850ae9-9c74-5029-3516-9bf0c6087345",
+    "minted_canonical_id": "bdp_ar_c4c040481339df4a7eb2",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:653d1afead6d3d18339f063a5c3cd2361c952280081f920de0f464f2d7d5063e",
+      "sheet": "pass3_program_card",
+      "row": 130,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "479-527-0907",
+      "website": "canopynwa.org"
+     },
+     {
+      "uid": "corpus:97e0d3fe01d6790d32de52d9473dbfc10fabc3e917f19cec5011e67f9f195cb9",
+      "sheet": "pass3_program_card",
+      "row": 130,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "479-527-0907",
+      "website": "canopynwa.org"
+     }
+    ],
+    "phones": [
+     "4795270907"
+    ],
+    "websites": [
+     "canopynwa.org"
+    ],
+    "site_keys": [
+     "614 e emma ave"
+    ],
+    "own_address_text": "614 E Emma Ave Ste 207, Springdale AR 72764"
+   }
+  ],
+  "assignment": {
+   "canopy nwa (immigrant legal services nw ar)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Springdale"
+   },
+   "canopy nwa — immigrant services (nw arkansas)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Springdale"
+   }
+  },
+  "location_descriptors": [
+   {
+    "location_id": "d2bf9d74-2eeb-47df-b89f-53a563c90f6f",
+    "site_key": "614 e emma ave",
+    "has_coords": true,
+    "city": "Springdale"
+   }
+  ],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "b202ac62-4b73-4827-b351-fbef44708d74",
+  "bundle_canonical_id": "csp_pr_7923cc149b0cf22e44f1",
+  "family": "catalog_site_projection_v1",
+  "state": "PR",
+  "city": "San Juan",
+  "jurisdiction": "PR",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-puerto-rico-ENRICHED-PASS3-2026-1",
+  "shape": "shared_site_split",
+  "n_rows_total": 6,
+  "n_attributed": 6,
+  "names": [
+   {
+    "program_name": "LIHEAP Puerto Rico (ADSEF)",
+    "norm_name": "liheap puerto rico (adsef)",
+    "minted_entity_id": "f2463aff-9070-36c1-10b2-0d2e482fe37d",
+    "minted_canonical_id": "bdp_pr_9347a1ec987bb83b01bc",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:0c446ad00adf61aaf8efe3f79f856c048a1a9be30a84179ebc6c1610ed08a533",
+      "sheet": "pass3_program_card",
+      "row": 1161,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "787-625-2900 adsef.pr.gov",
+      "website": "adsef.pr.gov"
+     },
+     {
+      "uid": "corpus:a6de2585dfeba5ca2ca78193b6b34bf1cf19ffdfe2e50dcb24d2e5a30325737e",
+      "sheet": "pass3_program_card",
+      "row": 1161,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "787-625-2900 adsef.pr.gov",
+      "website": "adsef.pr.gov"
+     }
+    ],
+    "phones": [
+     "7876252900"
+    ],
+    "websites": [
+     "adsef.pr.gov"
+    ],
+    "site_keys": [
+     "po box 8000"
+    ],
+    "own_address_text": "PO Box 8000, San Juan PR 00910"
+   },
+   {
+    "program_name": "NAP / Programa de Asistencia Nutricional (ADSEF)",
+    "norm_name": "nap / programa de asistencia nutricional (adsef)",
+    "minted_entity_id": "8f8346b6-95c1-6301-3255-58b78840f085",
+    "minted_canonical_id": "bdp_pr_316c1b861f4d2311a360",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:a5ff8df7ad82a6fcff591c6b0b8335790cd488932585d32e718d8429776ea205",
+      "sheet": "pass3_program_card",
+      "row": 1154,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "787-625-2900 San Juan: 787-625-2900 Ponce: 787-840-0101 Mayaguez: 787-833-0700 adsef.pr.gov",
+      "website": "adsef.pr.gov"
+     },
+     {
+      "uid": "corpus:c3fa560c570230c59cb80a72991f7f5ed42dbe1ea3877d77b13494bac9543759",
+      "sheet": "pass3_program_card",
+      "row": 1154,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "787-625-2900 San Juan: 787-625-2900 Ponce: 787-840-0101 Mayaguez: 787-833-0700 adsef.pr.gov",
+      "website": "adsef.pr.gov"
+     }
+    ],
+    "phones": [],
+    "websites": [
+     "adsef.pr.gov"
+    ],
+    "site_keys": [
+     "po box 8000"
+    ],
+    "own_address_text": "PO Box 8000, San Juan PR 00910"
+   },
+   {
+    "program_name": "TANF Puerto Rico / Asistencia Economica (ADSEF)",
+    "norm_name": "tanf puerto rico / asistencia economica (adsef)",
+    "minted_entity_id": "218767b8-8930-4a00-7e75-25ba72b92948",
+    "minted_canonical_id": "bdp_pr_38d4b0b43328905897c6",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:31355721798baea65763e8e22862f34f5a69e35de4de9a8970342a1fb081c5ca",
+      "sheet": "pass3_program_card",
+      "row": 1159,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "787-625-2900 adsef.pr.gov",
+      "website": "adsef.pr.gov"
+     },
+     {
+      "uid": "corpus:3442744049832ae16b72f9d289191183a1828b829eb325ba656ad2fa4cc0bc12",
+      "sheet": "pass3_program_card",
+      "row": 1159,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "787-625-2900 adsef.pr.gov",
+      "website": "adsef.pr.gov"
+     }
+    ],
+    "phones": [
+     "7876252900"
+    ],
+    "websites": [
+     "adsef.pr.gov"
+    ],
+    "site_keys": [
+     "po box 8000"
+    ],
+    "own_address_text": "PO Box 8000, San Juan PR 00910"
+   }
+  ],
+  "assignment": {
+   "liheap puerto rico (adsef)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": false,
+    "city": "San Juan"
+   },
+   "nap / programa de asistencia nutricional (adsef)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": false,
+    "city": "San Juan"
+   },
+   "tanf puerto rico / asistencia economica (adsef)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": false,
+    "city": "San Juan"
+   }
+  },
+  "location_descriptors": [
+   {
+    "location_id": "bd36f833-ce1a-4f11-b978-0929ef44b487",
+    "site_key": "po box 8000",
+    "has_coords": false,
+    "city": "San Juan"
+   }
+  ],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "badba4e1-3df0-f64b-515f-401d5efad29f",
+  "bundle_canonical_id": "csp_co_e894d8a813b7e25f2a2c",
+  "family": "catalog_site_projection_v1",
+  "state": "CO",
+  "city": "Denver",
+  "jurisdiction": "CO",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-colorado-registry (bucket:all-registries.zip)",
+  "shape": "shared_site_split",
+  "n_rows_total": 6,
+  "n_attributed": 6,
+  "names": [
+   {
+    "program_name": "Colorado LEAP (Low-Income Energy Assistance Program)",
+    "norm_name": "colorado leap (low-income energy assistance program)",
+    "minted_entity_id": "59b90204-8016-77e3-427e-7724f9f88e6d",
+    "minted_canonical_id": "bdp_co_2b77c88c76c66f495ba3",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:1e07553fba885177c034d01ce33094ef432cd34e726a52a110378a4704fa6bb0",
+      "sheet": "pass3_program_card",
+      "row": 1798,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "866-432-8435",
+      "website": "cdhs.colorado.gov/leap"
+     },
+     {
+      "uid": "corpus:8d81604693cc3e04a907cf49c771afd8fecaefab8560a15b9677dad52d0ef06b",
+      "sheet": "pass3_program_card",
+      "row": 1798,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "866-432-8435",
+      "website": "cdhs.colorado.gov/leap"
+     }
+    ],
+    "phones": [
+     "8664328435"
+    ],
+    "websites": [
+     "cdhs.colorado.gov"
+    ],
+    "site_keys": [
+     "1575 sherman st"
+    ],
+    "own_address_text": "1575 Sherman St, Denver, CO 80203"
+   },
+   {
+    "program_name": "Colorado SNAP / Food Assistance (CDHS)",
+    "norm_name": "colorado snap / food assistance (cdhs)",
+    "minted_entity_id": "6ef3800d-2eec-72c1-5a6c-2144ffa357bd",
+    "minted_canonical_id": "bdp_co_127fc190a80e72adb19c",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:493dc50d85924115c72f37940d8b642de0163d89236f7e3654da79c7bef2a670",
+      "sheet": "pass3_program_card",
+      "row": 1779,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "303-866-5700",
+      "website": "peak.colorado.gov"
+     },
+     {
+      "uid": "corpus:6f0dd5f7b01afec6e9e8a2dfe989e43a03a706e660c84332158d583e032dbfc4",
+      "sheet": "pass3_program_card",
+      "row": 1779,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "303-866-5700",
+      "website": "peak.colorado.gov"
+     }
+    ],
+    "phones": [
+     "3038665700"
+    ],
+    "websites": [
+     "peak.colorado.gov"
+    ],
+    "site_keys": [
+     "1575 sherman st"
+    ],
+    "own_address_text": "1575 Sherman St, Denver, CO 80203"
+   },
+   {
+    "program_name": "Colorado Works (TANF — CDHS)",
+    "norm_name": "colorado works (tanf — cdhs)",
+    "minted_entity_id": "3a59fac1-5fcb-0883-ba3d-f6af73a48282",
+    "minted_canonical_id": "bdp_co_5d8d868325ba359130ac",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:273db1a5f3159eb640dfd32ae482bbb17abe622d6c86251157c88a830031b3bd",
+      "sheet": "pass3_program_card",
+      "row": 1796,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "303-866-5700",
+      "website": "colorado.gov/cdhs"
+     },
+     {
+      "uid": "corpus:54310de740f34b1c420303b00c79b1b906728cb0c02f84f10f03a0715d705cd5",
+      "sheet": "pass3_program_card",
+      "row": 1796,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "303-866-5700",
+      "website": "colorado.gov/cdhs"
+     }
+    ],
+    "phones": [
+     "3038665700"
+    ],
+    "websites": [
+     "colorado.gov"
+    ],
+    "site_keys": [
+     "1575 sherman st"
+    ],
+    "own_address_text": "1575 Sherman St, Denver, CO 80203"
+   }
+  ],
+  "assignment": {
+   "colorado leap (low-income energy assistance program)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Denver"
+   },
+   "colorado snap / food assistance (cdhs)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Denver"
+   },
+   "colorado works (tanf — cdhs)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Denver"
+   }
+  },
+  "location_descriptors": [
+   {
+    "location_id": "b2d39cff-e253-483c-8bba-82261809e519",
+    "site_key": "1575 sherman st",
+    "has_coords": true,
+    "city": "Denver"
+   }
+  ],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "bc14e064-2278-02b7-ec49-9aed21e2e112",
+  "bundle_canonical_id": "crp_de_3f40f57dac4d789f8024",
+  "family": "catalog_remainder_projection_v1",
+  "state": "DE",
+  "city": null,
+  "jurisdiction": "DE",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-delaware-ENRICHED-PASS3-2026",
+  "shape": "shared_site_split",
+  "n_rows_total": 10,
+  "n_attributed": 10,
+  "names": [
+   {
+    "program_name": "Delaware LIHEAP (DSS)",
+    "norm_name": "delaware liheap (dss)",
+    "minted_entity_id": "002f70d4-24da-8478-6a58-eae6063fff98",
+    "minted_canonical_id": "bdp_de_6fa588f02affaae77017",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:91ba527b960ff099fa706e772b3b40cea38cecb5b6ccc07b6b734291d858912b",
+      "sheet": "pass3_program_card",
+      "row": 228,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "800-464-4357 dss.delaware.gov/energy",
+      "website": "dss.delaware.gov/energy"
+     },
+     {
+      "uid": "corpus:cc3e873118d5fabc2b267d4c74b910c4c588315da3a3553020bd56f9dd23758c",
+      "sheet": "pass3_program_card",
+      "row": 228,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "800-464-4357 dss.delaware.gov/energy",
+      "website": "dss.delaware.gov/energy"
+     }
+    ],
+    "phones": [
+     "8004644357"
+    ],
+    "websites": [
+     "dss.delaware.gov"
+    ],
+    "site_keys": [
+     "1901 n dupont hwy"
+    ],
+    "own_address_text": "1901 N DuPont Hwy, New Castle DE 19720 DSS offices"
+   },
+   {
+    "program_name": "Delaware Medicaid DMAP (DHSS)",
+    "norm_name": "delaware medicaid dmap (dhss)",
+    "minted_entity_id": "460cae15-37b2-e808-019f-5de5739fa665",
+    "minted_canonical_id": "bdp_de_ba88cff65dd77a220b0b",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:0a232334b917791c5a4c227dd8e543a95f6912dc197d838152338a99b8fddb96",
+      "sheet": "pass3_program_card",
+      "row": 214,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "800-372-2022 benefits.delaware.gov",
+      "website": "benefits.delaware.gov medicaid.dhss.delaware.gov"
+     },
+     {
+      "uid": "corpus:5e2113524b80875dc3f23c897cc2be1c7c1e9afab4cc099dce48007331b2039d",
+      "sheet": "pass3_program_card",
+      "row": 214,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "800-372-2022 benefits.delaware.gov",
+      "website": "benefits.delaware.gov medicaid.dhss.delaware.gov"
+     }
+    ],
+    "phones": [
+     "8003722022"
+    ],
+    "websites": [
+     "benefits.delaware.gov medicaid.dhss.delaware.gov"
+    ],
+    "site_keys": [
+     "1901 n dupont hwy"
+    ],
+    "own_address_text": "1901 N DuPont Hwy, New Castle DE 19720 (DHSS main) New Castle, Kent, Sussex county offices"
+   },
+   {
+    "program_name": "Delaware SNAP (DSS -- benefits.delaware.gov)",
+    "norm_name": "delaware snap (dss -- benefits.delaware.gov)",
+    "minted_entity_id": "893b614c-e6ac-7da8-82cc-caf0d117c7da",
+    "minted_canonical_id": "bdp_de_7bbe18ea9f664ed38db7",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:92417008777e501d0d97e7a2b469c04928ef21891d537b0636ec54da37003a38",
+      "sheet": "pass3_program_card",
+      "row": 218,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "302-255-9500 New Castle Co: 302-255-9500 Kent Co: 302-739-8220 Sussex Co: 302-856-5380 benefits.delaware.gov",
+      "website": "benefits.delaware.gov"
+     },
+     {
+      "uid": "corpus:a867499bc1bbaf00b7250cbf4e48d135356098720cc2b1c54600e2b42984512f",
+      "sheet": "pass3_program_card",
+      "row": 218,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "302-255-9500 New Castle Co: 302-255-9500 Kent Co: 302-739-8220 Sussex Co: 302-856-5380 benefits.delaware.gov",
+      "website": "benefits.delaware.gov"
+     }
+    ],
+    "phones": [],
+    "websites": [
+     "benefits.delaware.gov"
+    ],
+    "site_keys": [
+     "1901 n dupont hwy"
+    ],
+    "own_address_text": "1901 N DuPont Hwy, New Castle DE 19720 DSS offices in all 3 counties"
+   },
+   {
+    "program_name": "Delaware TANF (DSS -- 48-Month Limit!)",
+    "norm_name": "delaware tanf (dss -- 48-month limit!)",
+    "minted_entity_id": "80d12742-b8b1-aff5-578f-ad9463d2ddb9",
+    "minted_canonical_id": "bdp_de_c2776768b35705b72978",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:9c02b68676b62d78aefa62c0a3eb953123c239ee24a72ba34520b1206bceb675",
+      "sheet": "pass3_program_card",
+      "row": 226,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "302-255-9500",
+      "website": "benefits.delaware.gov"
+     },
+     {
+      "uid": "corpus:d67766335d3d7cf8f660c511893e7d229b31cb43f30097a0c2209e3b757e08df",
+      "sheet": "pass3_program_card",
+      "row": 226,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "302-255-9500",
+      "website": "benefits.delaware.gov"
+     }
+    ],
+    "phones": [
+     "3022559500"
+    ],
+    "websites": [
+     "benefits.delaware.gov"
+    ],
+    "site_keys": [
+     "1901 n dupont hwy"
+    ],
+    "own_address_text": "1901 N DuPont Hwy, New Castle DE 19720 DSS offices statewide"
+   },
+   {
+    "program_name": "Food Bank of Delaware (Newark + Georgetown)",
+    "norm_name": "food bank of delaware (newark + georgetown)",
+    "minted_entity_id": "fbd8163d-4989-7876-5a3b-6983e6cc0baf",
+    "minted_canonical_id": "bdp_de_ae589b0e75737d8e7677",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:75f1b592013d3873f12da71a46aeeee1922e85bd7a9ce2dfb59fd6a9421c836f",
+      "sheet": "pass3_program_card",
+      "row": 219,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "302-292-1996",
+      "website": "fbd.org"
+     },
+     {
+      "uid": "corpus:b3cdd2dc1e82ee5f314842010b9be6d410edef3fd72376fec5f2177ab76081b5",
+      "sheet": "pass3_program_card",
+      "row": 219,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "302-292-1996",
+      "website": "fbd.org"
+     }
+    ],
+    "phones": [
+     "3022921996"
+    ],
+    "websites": [
+     "fbd.org"
+    ],
+    "site_keys": [
+     "222 lake dr"
+    ],
+    "own_address_text": "222 Lake Dr, Newark DE 19702 (main) Georgetown: 302-856-9560"
+   }
+  ],
+  "assignment": {
+   "delaware liheap (dss)": {
+    "clones": [],
+    "fresh": {
+     "street": "1901 N DuPont Hwy",
+     "city": "New Castle",
+     "state": "DE",
+     "zip5": "19720"
+    },
+    "has_coords": false,
+    "city": "New Castle"
+   },
+   "delaware medicaid dmap (dhss)": {
+    "clones": [],
+    "fresh": {
+     "street": "1901 N DuPont Hwy",
+     "city": "New Castle",
+     "state": "DE",
+     "zip5": "19720"
+    },
+    "has_coords": false,
+    "city": "New Castle"
+   },
+   "delaware snap (dss -- benefits.delaware.gov)": {
+    "clones": [],
+    "fresh": {
+     "street": "1901 N DuPont Hwy",
+     "city": "New Castle",
+     "state": "DE",
+     "zip5": "19720"
+    },
+    "has_coords": false,
+    "city": "New Castle"
+   },
+   "delaware tanf (dss -- 48-month limit!)": {
+    "clones": [],
+    "fresh": {
+     "street": "1901 N DuPont Hwy",
+     "city": "New Castle",
+     "state": "DE",
+     "zip5": "19720"
+    },
+    "has_coords": false,
+    "city": "New Castle"
+   },
+   "food bank of delaware (newark + georgetown)": {
+    "clones": [],
+    "fresh": {
+     "street": "222 Lake Dr",
+     "city": "Newark",
+     "state": "DE",
+     "zip5": "19702"
+    },
+    "has_coords": false,
+    "city": "Newark"
+   }
+  },
+  "location_descriptors": [],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "c4c066d4-2071-cc9f-6e46-18a409fb7af7",
+  "bundle_canonical_id": "csp_ri_1ac4c3a686189070996e",
+  "family": "catalog_site_projection_v1",
+  "state": "RI",
+  "city": "Cranston",
+  "jurisdiction": "RI",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-rhode-island-ENRICHED-PASS3-2026",
+  "shape": "shared_site_split",
+  "n_rows_total": 4,
+  "n_attributed": 4,
+  "names": [
+   {
+    "program_name": "Rhode Island TDI/TCI -- Paid Leave (SCREEN AT EVERY INTAKE)",
+    "norm_name": "rhode island tdi/tci -- paid leave (screen at every intake)",
+    "minted_entity_id": "db472a16-e116-5961-aa06-3dba43b055ff",
+    "minted_canonical_id": "bdp_ri_68298bff0bf6abd9f6bd",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:3044710f37c53b846cf8c2cfe4ed80d8db7b25b5f3981d219ebf9ef7693dd76b",
+      "sheet": "pass3_program_card",
+      "row": 1175,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "401-462-8420 dlt.ri.gov/tdi",
+      "website": "dlt.ri.gov/tdi"
+     },
+     {
+      "uid": "corpus:894a49fea36dfd399155b366ba8b78bd554e6ec5781edb7882554112dda1a69b",
+      "sheet": "pass3_program_card",
+      "row": 1175,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "401-462-8420 dlt.ri.gov/tdi",
+      "website": "dlt.ri.gov/tdi"
+     }
+    ],
+    "phones": [
+     "4014628420"
+    ],
+    "websites": [
+     "dlt.ri.gov"
+    ],
+    "site_keys": [
+     "1511 pontiac ave"
+    ],
+    "own_address_text": "1511 Pontiac Ave, Cranston RI 02920"
+   },
+   {
+    "program_name": "Rhode Island UI -- DLT ($823/week -- 15-Day Appeal!)",
+    "norm_name": "rhode island ui -- dlt ($823/week -- 15-day appeal!)",
+    "minted_entity_id": "d8c4665b-e906-ee8f-bed1-0f4bf79656bb",
+    "minted_canonical_id": "bdp_ri_e1a08584f2d7212a386d",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:22b64b829ef63cf1eec16c5544385106644eb123f1b6839e52b72a6a52e15cf6",
+      "sheet": "pass3_program_card",
+      "row": 1174,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "401-415-6772 dlt.ri.gov",
+      "website": "dlt.ri.gov"
+     },
+     {
+      "uid": "corpus:c0db4efb1fe241413b8244c43e6c5f1398761c9cc60f663429ecc42556284d87",
+      "sheet": "pass3_program_card",
+      "row": 1174,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "401-415-6772 dlt.ri.gov",
+      "website": "dlt.ri.gov"
+     }
+    ],
+    "phones": [
+     "4014156772"
+    ],
+    "websites": [
+     "dlt.ri.gov"
+    ],
+    "site_keys": [
+     "1511 pontiac ave"
+    ],
+    "own_address_text": "1511 Pontiac Ave, Cranston RI 02920"
+   }
+  ],
+  "assignment": {
+   "rhode island tdi/tci -- paid leave (screen at every intake)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Cranston"
+   },
+   "rhode island ui -- dlt ($823/week -- 15-day appeal!)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Cranston"
+   }
+  },
+  "location_descriptors": [
+   {
+    "location_id": "7c02d55d-5f7f-430b-b3e5-6534ad222748",
+    "site_key": "1511 pontiac ave",
+    "has_coords": true,
+    "city": "Cranston"
+   }
+  ],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "dea70e59-43e6-abaf-76a5-60ca76f68ac5",
+  "bundle_canonical_id": "csp_ut_68ab69855b120b41cda6",
+  "family": "catalog_site_projection_v1",
+  "state": "UT",
+  "city": "Salt Lake City",
+  "jurisdiction": "UT",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-utah-ENRICHED-PASS3-2026",
+  "shape": "shared_site_split",
+  "n_rows_total": 4,
+  "n_attributed": 4,
+  "names": [
+   {
+    "program_name": "Utah Domestic Violence Coalition (UDVC — Statewide)",
+    "norm_name": "utah domestic violence coalition (udvc — statewide)",
+    "minted_entity_id": "1dad26f5-4404-37ee-656d-ab1a0fdae08d",
+    "minted_canonical_id": "bdp_ut_aa47783e6376a66c1565",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:2bd02ba6f5e2f541749697726650813de25ca1af1951c885de470390938f26b6",
+      "sheet": "pass3_program_card",
+      "row": 1291,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "800-897-5465 (24/7 statewide)",
+      "website": "udvc.org"
+     },
+     {
+      "uid": "corpus:3170dd484c0617d8664893235875e9e32d30c898d00b880123fc2c181ef1fd4c",
+      "sheet": "pass3_program_card",
+      "row": 1291,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "800-897-5465 (24/7 statewide)",
+      "website": "udvc.org"
+     }
+    ],
+    "phones": [],
+    "websites": [
+     "udvc.org"
+    ],
+    "site_keys": [
+     "205 n 400"
+    ],
+    "own_address_text": "205 N 400 W, Salt Lake City UT 84103"
+   },
+   {
+    "program_name": "Utah Legal Services (ULS — Statewide)",
+    "norm_name": "utah legal services (uls — statewide)",
+    "minted_entity_id": "94343b88-28e2-49cd-ac51-274a1c0e7525",
+    "minted_canonical_id": "bdp_ut_99b167a0f269ecd42240",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:4a80690f5ea99c78036fc44c0ac5efc3ba569da06306b5d7cc12bf8c79115a1d",
+      "sheet": "pass3_program_card",
+      "row": 1287,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "801-328-8891 · Logan: 435-752-7405 · St. George: 435-674-9471 · Pro Bono: 801-531-9110",
+      "website": "utahlegalservices.org"
+     },
+     {
+      "uid": "corpus:c26223a6bdb8fa0dbc1f7a68b50e58db8d91162e5ed45ee3c5c862efea59f7dc",
+      "sheet": "pass3_program_card",
+      "row": 1287,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "801-328-8891 · Logan: 435-752-7405 · St. George: 435-674-9471 · Pro Bono: 801-531-9110",
+      "website": "utahlegalservices.org"
+     }
+    ],
+    "phones": [],
+    "websites": [
+     "utahlegalservices.org"
+    ],
+    "site_keys": [
+     "205 n 400"
+    ],
+    "own_address_text": "205 N 400 W, Salt Lake City UT 84103 (SLC main)"
+   }
+  ],
+  "assignment": {
+   "utah domestic violence coalition (udvc — statewide)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Salt Lake City"
+   },
+   "utah legal services (uls — statewide)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Salt Lake City"
+   }
+  },
+  "location_descriptors": [
+   {
+    "location_id": "c93f46ac-8b68-45ff-86dc-f96eea510a4e",
+    "site_key": "205 n 400",
+    "has_coords": true,
+    "city": "Salt Lake City"
+   }
+  ],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "eaca7d1e-670f-b1a5-2897-2117b9c1dc6a",
+  "bundle_canonical_id": "csp_ga_ae7e6ae87927f4b998c5",
+  "family": "catalog_site_projection_v1",
+  "state": "GA",
+  "city": "Atlanta",
+  "jurisdiction": "GA",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-georgia-ENRICHED-PASS3-2026",
+  "shape": "shared_site_split",
+  "n_rows_total": 4,
+  "n_attributed": 4,
+  "names": [
+   {
+    "program_name": "Atlanta Legal Aid Society (Metro Atlanta)",
+    "norm_name": "atlanta legal aid society (metro atlanta)",
+    "minted_entity_id": "153194ae-9c3c-6447-642c-eed3831ae875",
+    "minted_canonical_id": "bdp_ga_1b5af5275a485c6d7445",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:1ba490b97bb58f7a0b0d458ae0de2adc13f4315588dab0982595dd6e2f390256",
+      "sheet": "pass3_program_card",
+      "row": 286,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "404-524-5811",
+      "website": "atlantalegalaid.org"
+     },
+     {
+      "uid": "corpus:e8579f5eedfb93ffaa3c560a90a59e6ec7cea53a254187472dfe061d36661c3e",
+      "sheet": "pass3_program_card",
+      "row": 286,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "404-524-5811",
+      "website": "atlantalegalaid.org"
+     }
+    ],
+    "phones": [
+     "4045245811"
+    ],
+    "websites": [
+     "atlantalegalaid.org"
+    ],
+    "site_keys": [
+     "54 ellis st"
+    ],
+    "own_address_text": "54 Ellis St NE, Atlanta, GA 30303"
+   },
+   {
+    "program_name": "Atlanta Legal Aid Society — Emergency Eviction Triage",
+    "norm_name": "atlanta legal aid society — emergency eviction triage",
+    "minted_entity_id": "17051b57-d3c8-613b-9877-41ffba176a36",
+    "minted_canonical_id": "bdp_ga_50533edff699f7127796",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:e63501cf45a55053f1407b58cf6f3a28717149d855732cf7f1c6dc19b33e9a40",
+      "sheet": "pass3_program_card",
+      "row": 278,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "404-524-5811",
+      "website": "atlantalegalaid.org"
+     },
+     {
+      "uid": "corpus:f6a3e416d1863c96ea5842ee8146f0923b2bc91789b6edceacccc7938b70385e",
+      "sheet": "pass3_program_card",
+      "row": 278,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "404-524-5811",
+      "website": "atlantalegalaid.org"
+     }
+    ],
+    "phones": [
+     "4045245811"
+    ],
+    "websites": [
+     "atlantalegalaid.org"
+    ],
+    "site_keys": [
+     "54 ellis st"
+    ],
+    "own_address_text": "54 Ellis St NE, Atlanta, GA 30303"
+   }
+  ],
+  "assignment": {
+   "atlanta legal aid society (metro atlanta)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Atlanta"
+   },
+   "atlanta legal aid society — emergency eviction triage": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Atlanta"
+   }
+  },
+  "location_descriptors": [
+   {
+    "location_id": "8990b520-d9d6-4ecd-901c-ac04f8bae7e0",
+    "site_key": "54 ellis st",
+    "has_coords": true,
+    "city": "Atlanta"
+   }
+  ],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "ee7d5514-b077-0314-078f-10dfd4d2cb0a",
+  "bundle_canonical_id": "csp_ky_ab81e9f1ae988d9b6782",
+  "family": "catalog_site_projection_v1",
+  "state": "KY",
+  "city": "Louisville",
+  "jurisdiction": "KY",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-kentucky-ENRICHED-PASS3-2026",
+  "shape": "shared_site_split",
+  "n_rows_total": 4,
+  "n_attributed": 4,
+  "names": [
+   {
+    "program_name": "Kentucky Legal Aid (Louisville / Jefferson County)",
+    "norm_name": "kentucky legal aid (louisville / jefferson county)",
+    "minted_entity_id": "ab64e0c2-599a-969a-9a4b-ec8ec2a8206c",
+    "minted_canonical_id": "bdp_ky_86ca253dff968e318b5d",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:911c895ae7d80e2f6af68c3c8b892b255e79ef7098a816d1ed7788e2d6dcc2aa",
+      "sheet": "pass3_program_card",
+      "row": 483,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "502-584-1254",
+      "website": "kyjustice.org"
+     },
+     {
+      "uid": "corpus:ea7cabe0be6052f46372593a1338221c2f57b61667f7ee73baf8fd198375a4f3",
+      "sheet": "pass3_program_card",
+      "row": 483,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "502-584-1254",
+      "website": "kyjustice.org"
+     }
+    ],
+    "phones": [
+     "5025841254"
+    ],
+    "websites": [
+     "kyjustice.org"
+    ],
+    "site_keys": [
+     "325 w broadway"
+    ],
+    "own_address_text": "325 W Broadway Ste 202, Louisville, KY 40202"
+   },
+   {
+    "program_name": "Kentucky Legal Aid (Louisville Metro)",
+    "norm_name": "kentucky legal aid (louisville metro)",
+    "minted_entity_id": "46ace370-1dec-ee02-0993-c887343a317c",
+    "minted_canonical_id": "bdp_ky_0abbb1c624dd96721820",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:64bd7383cfaa2510fe73e778d01d25d449d3e5b09bded83da81ef1cada0fafb8",
+      "sheet": "pass3_program_card",
+      "row": 492,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "502-584-1254",
+      "website": "kyjustice.org"
+     },
+     {
+      "uid": "corpus:cda263af61994ac9d74ab9be7be2e83c35a29c65e27029063f9448e0fa174ae4",
+      "sheet": "pass3_program_card",
+      "row": 492,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "502-584-1254",
+      "website": "kyjustice.org"
+     }
+    ],
+    "phones": [
+     "5025841254"
+    ],
+    "websites": [
+     "kyjustice.org"
+    ],
+    "site_keys": [
+     "325 w broadway"
+    ],
+    "own_address_text": "325 W Broadway Ste 202, Louisville, KY 40202"
+   }
+  ],
+  "assignment": {
+   "kentucky legal aid (louisville / jefferson county)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Louisville"
+   },
+   "kentucky legal aid (louisville metro)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": true,
+    "city": "Louisville"
+   }
+  },
+  "location_descriptors": [
+   {
+    "location_id": "15a03ed2-57fe-484a-8cbf-6ee00862752a",
+    "site_key": "325 w broadway",
+    "has_coords": true,
+    "city": "Louisville"
+   }
+  ],
+  "held_rows": []
+ },
+ {
+  "bundle_entity_id": "fa6570f3-8ca4-9988-96b8-b3f2aae32a3f",
+  "bundle_canonical_id": "csp_oh_ef817b3c34fefc643f4f",
+  "family": "catalog_site_projection_v1",
+  "state": "OH",
+  "city": "Athens",
+  "jurisdiction": "OH",
+  "layer": "backbone_workbook",
+  "current_name": "luminari-ohio-ENRICHED-PASS3-2026",
+  "shape": "shared_site_split",
+  "n_rows_total": 4,
+  "n_attributed": 4,
+  "names": [
+   {
+    "program_name": "SE Ohio Legal Services (SEOLS — Appalachian)",
+    "norm_name": "se ohio legal services (seols — appalachian)",
+    "minted_entity_id": "610de9ef-b507-75a0-8761-690e62d39269",
+    "minted_canonical_id": "bdp_oh_3b743894c5585bc25ad9",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:dac35808d680d007212aeeb6b1cd4cc7cfcda9f272cb2e141311aec30e1cc19d",
+      "sheet": "pass3_program_card",
+      "row": 1026,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "740-374-2270",
+      "website": "seols.net"
+     },
+     {
+      "uid": "corpus:f0fb1518141f6bed38cb3ce6868d2c50bd2f57a497677ca6df7161b22eb1d833",
+      "sheet": "pass3_program_card",
+      "row": 1026,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "740-374-2270",
+      "website": "seols.net"
+     }
+    ],
+    "phones": [
+     "7403742270"
+    ],
+    "websites": [
+     "seols.net"
+    ],
+    "site_keys": [
+     "po box 1149"
+    ],
+    "own_address_text": "PO Box 1149, Athens OH 45701"
+   },
+   {
+    "program_name": "Southeast Ohio Legal Services (SEOLS — Appalachian OH)",
+    "norm_name": "southeast ohio legal services (seols — appalachian oh)",
+    "minted_entity_id": "d0914915-cb5f-fec5-b512-2469ff0a3764",
+    "minted_canonical_id": "bdp_oh_7dac57513c12cd341248",
+    "pair_decision": "split",
+    "merged_from": [],
+    "rows": [
+     {
+      "uid": "corpus:c143bda0b5f08661c9db4e15808914a2150ff4eac7b38fda8b1442ceb18f58d7",
+      "sheet": "pass3_program_card",
+      "row": 1015,
+      "gen": "(9)",
+      "via": "mirror",
+      "phone": "740-374-2270",
+      "website": "seols.net"
+     },
+     {
+      "uid": "corpus:f3dffcd7e32578561c2c556f66c851756e162df6b90c26b8e3288af9211d36f1",
+      "sheet": "pass3_program_card",
+      "row": 1015,
+      "gen": "v3_13",
+      "via": "direct",
+      "phone": "740-374-2270",
+      "website": "seols.net"
+     }
+    ],
+    "phones": [
+     "7403742270"
+    ],
+    "websites": [
+     "seols.net"
+    ],
+    "site_keys": [
+     "po box 1149"
+    ],
+    "own_address_text": "PO Box 1149, Athens OH 45701"
+   }
+  ],
+  "assignment": {
+   "se ohio legal services (seols — appalachian)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": false,
+    "city": "Athens"
+   },
+   "southeast ohio legal services (seols — appalachian oh)": {
+    "clones": [
+     0
+    ],
+    "fresh": null,
+    "has_coords": false,
+    "city": "Athens"
+   }
+  },
+  "location_descriptors": [
+   {
+    "location_id": "0f359e18-425f-4fbc-be35-ed9fed624c9a",
+    "site_key": "po box 1149",
+    "has_coords": false,
+    "city": "Athens"
+   }
+  ],
+  "held_rows": []
+ }
+]
