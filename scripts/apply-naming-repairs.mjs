@@ -110,10 +110,49 @@ export function passesPersonFacingNameTest(value) {
 // ---------------------------------------------------------------------------
 
 /**
+ * Fidelity gate (2026-11-10): Alexander doubted the v3_13 workbook's
+ * fidelity to the raw documents, and the naming apply was held until
+ * the workbook-fidelity audit measured it (workbook-fidelity/
+ * REPORT.md). Verdict: no family corrupted; failures are omission.
+ * ONLY these evidence anchors are cleared to rename:
+ *   - v3_13 program_master rows (FAITHFUL* — 99.6% traceable to lane
+ *     sheets, untraceable remainder = canonical federal titles)
+ *   - v3_13 pass3_program_card rows (FAITHFUL — 97.0%, 0 raw cards
+ *     missing)
+ *   - the single c_strong domain-corroborated row, hand-verified
+ *     2026-11-10 against its raw source document (the Florida
+ *     enriched DOCX carries the name + domain together).
+ * Rows anchored to benefits_program_master are HELD: that sheet is
+ * UNVERIFIABLE (its federal-master raw sources do not survive), so
+ * its 161 renames wait for a surviving source or Alexander's word.
+ */
+const FIDELITY_CLEARED_SHEETS = ["program_master", "pass3_program_card"];
+const FIDELITY_CLEARED_DOMAIN_ENTITY_IDS = new Set([
+  // FL Division of Workers' Compensation — evidence is the raw DOCX
+  // itself (luminari-florida-ENRICHED-PASS3-2026.docx), not the
+  // workbook; verified first-hand 2026-11-10.
+  "b38117aa-0627-4e6b-8214-ac6c621e219b",
+]);
+
+export function fidelityCleared(row) {
+  const evidence = row?.evidence ?? "";
+  if (evidence.startsWith("domain:")) {
+    return FIDELITY_CLEARED_DOMAIN_ENTITY_IDS.has(row?.entity_id ?? "");
+  }
+  // benefits_program_master is checked FIRST and held outright: its
+  // name contains "program_master" as a substring, so a naive
+  // includes() over the cleared list would wave the held sheet
+  // through (caught by this gate's own tests, 2026-11-10).
+  if (evidence.includes("benefits_program_master")) return false;
+  return FIDELITY_CLEARED_SHEETS.some((sheet) => evidence.includes(sheet));
+}
+
+/**
  * Filter raw proposal rows to the apply set. A row is approved only
- * when its tier is approved, its fields are present, the rename is
- * not a no-op, and the proposed name passes the person-facing name
- * test. Everything else is returned with its exclusion reason.
+ * when its tier is approved, its evidence anchor passed the workbook
+ * fidelity gate, its fields are present, the rename is not a no-op,
+ * and the proposed name passes the person-facing name test.
+ * Everything else is returned with its exclusion reason.
  */
 export function filterApprovedProposals(proposals) {
   const approved = [];
@@ -125,6 +164,10 @@ export function filterApprovedProposals(proposals) {
     const tier = row?.tier ?? null;
     if (!APPROVED_TIERS.includes(tier)) {
       excluded.push({ entity_id, reason: "tier_not_approved" });
+      continue;
+    }
+    if (!fidelityCleared(row)) {
+      excluded.push({ entity_id, reason: "sheet_not_fidelity_cleared" });
       continue;
     }
     if (!entity_id || !old_name || !new_name) {
