@@ -382,6 +382,18 @@ APPROVED_REPOSITORY_ONLY = {
         "20261110213000_catalog_remainder_projection_v1.sql",
         "09073c3a39cdb808abf1dd89e000916e06e8f54e",
     ),
+    # Naming repair ledger v1: creates the luminari_naming_repairs
+    # ledger the naming-repair runner writes before renaming
+    # held-for-naming catalog entities to the proven names carried
+    # by their own source rows. No document family is registered —
+    # the repair inserts no entities. Repository-only pending the
+    # separately approved production installation that follows the
+    # merge. Exact Git blob pinned; no production installation or
+    # ledger rewrite is implied by this entry.
+    "20261110220000": (
+        "20261110220000_naming_repair_ledger_v1.sql",
+        "ffbf15e4fe3dea99c1945384b353653895e4f212",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
