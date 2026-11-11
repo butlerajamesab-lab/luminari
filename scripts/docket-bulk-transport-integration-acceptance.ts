@@ -108,7 +108,7 @@ try {
   assert.equal(await count("select count(*) from public.docket_jurisdiction_activation_bill"), 1);
   assert.equal(await count("select count(*) from public.docket_bill_processing_queue"), 1);
   // The held bill is source-preserved, not silently queued for activation.
-  assert.equal(await count("select count(*) from public.docket_jurisdiction_activation_bill where bill_id=" + heldBillId), 0);
+  assert.equal(await count("select count(*) from public.docket_jurisdiction_activation_bill where source_bill_id=" + heldBillId), 0);
   assert.equal(await count("select count(*) from public.docket_bill_processing_queue where source_bill_id=" + heldBillId), 0);
 
   const held = (await pool.query(
