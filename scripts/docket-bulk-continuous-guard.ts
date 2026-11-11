@@ -5,6 +5,8 @@
  * interruption or error the marker remains, preventing repeated attempts.
  * This deliberately favors operator review over automatic retries.
  */
+import { archiveQuarantinePath } from "./docket-bulk-archive-quarantine";
+
 export const DOCKET_ACTIVE_MARKER = "_docket_intake_control/active.json";
 export const DOCKET_DONE_MARKER = "_docket_intake_control/complete.json";
 
@@ -24,6 +26,7 @@ export type DocketGuardStore = {
 export type DocketImportOutcome = {
   complete: boolean;
   deferred?: "quarantined" | "waiting_review";
+  quarantine_sha256?: string;
 };
 
 export async function runOneArchiveGuarded(
@@ -50,6 +53,16 @@ export async function runOneArchiveGuarded(
   // Do NOT wrap in finally. On any error, keep the marker and halt all later
   // scheduled runs until an operator verifies and explicitly releases it.
   const outcome = await runExactlyOne();
+  if (outcome.complete && outcome.deferred) {
+    throw new Error("docket_continuous_conflicting_completion_disposition");
+  }
+  if (outcome.deferred === "quarantined") {
+    const path = archiveQuarantinePath(outcome.quarantine_sha256 || "");
+    if (!await store.exists(path)) {
+      // Never clear the global marker on an unconfirmed quarantine outcome.
+      throw new Error("docket_continuous_quarantine_receipt_missing: " + path);
+    }
+  }
   if (outcome.complete) {
     await store.create(DOCKET_DONE_MARKER, JSON.stringify({
       status: "all_manifest_archives_complete",
