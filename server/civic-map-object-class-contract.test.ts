@@ -27,11 +27,13 @@ describe("Civic Map resource/program boundary", () => {
     expect(page).not.toContain("directory resources");
   });
 
-  it("keeps exact pins on the separately reviewed physical-site route", () => {
+  it("keeps exact pins on the unified catalog physical-site route", () => {
     const router = read("server/routes/civic-map-router.ts");
 
-    expect(router).toContain("reviewed_v3_13_exact_public_sites");
-    expect(router).toContain("getResourceDirectoryMapPoints");
+    // U3: pins are catalog locations served by the unified read; the
+    // count field name is unchanged so panel consumers keep working.
+    expect(router).toContain("unified_catalog_exact_sites");
+    expect(router).toContain("get_unified_catalog_map_points");
     expect(router).toContain("exact_mappable_resources");
   });
 });

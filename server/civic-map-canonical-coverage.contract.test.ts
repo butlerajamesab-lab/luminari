@@ -6,25 +6,34 @@ function read(relativePath: string) {
   return readFileSync(fileURLToPath(new URL(relativePath, import.meta.url)), "utf8");
 }
 
-describe("Civic Map canonical coverage contract", () => {
+// U3 cutover (2026-11-10): Civic Map coverage is the unified catalog
+// summary — the same corpus the directory searches — so the panel's
+// record total, category counts, and site counts reconcile by
+// construction instead of being stitched from three divergent reads
+// (21,647 view records vs 59,617 locator pins vs ~63 reviewed counts).
+describe("Civic Map unified coverage contract", () => {
   const router = read("./routes/civic-map-router.ts");
+  const service = read("./services/resource-directory-unified.ts");
 
-  it("uses whole-corpus breadth for jurisdiction coverage", () => {
-    expect(router).toContain("get_publishable_resource_directory_summary");
-    expect(router).toContain("breadth_preserving_resource_directory_v3");
-    expect(router).not.toContain("getResourceDirectorySummary as getStrictGeographySummary");
+  it("uses the unified catalog summary for jurisdiction coverage", () => {
+    expect(router).toContain("get_unified_catalog_summary");
+    expect(router).toContain("unified_catalog_v1");
+    expect(router).not.toContain("get_publishable_resource_directory_summary");
   });
 
-  it("keeps exact physical-site counts as a separate reviewed geography projection", () => {
-    expect(router).toContain("v_luminari_resource_locations_current_v3_13");
-    expect(router).toContain("manual_map_eligible is true");
-    expect(router).toContain("latitude is not null");
-    expect(router).toContain("longitude is not null");
+  it("derives site counts from catalog locations, not a separate reviewed projection", () => {
+    expect(service).toContain("public.luminari_resource_locations");
+    expect(service).toContain("exact_mappable_resources");
+    expect(router).not.toContain("v_luminari_resource_locations_current_v3_13");
+    expect(router).not.toContain("getReviewedMapSiteCounts");
+    expect(router).not.toContain("getGovOfficeExactSiteCount");
   });
 
   it("does not turn source-attached addresses into asserted map coordinates", () => {
-    expect(router).toContain("getResourceDirectoryMapPoints");
-    expect(router).toContain("reviewed_v3_13_exact_public_sites");
-    expect(router).not.toContain("geocode");
+    expect(router).toContain("get_unified_catalog_map_points");
+    expect(router).toContain("unified_catalog_exact_sites");
+    expect(router.toLowerCase()).not.toContain("geocode");
+    expect(service).toContain("l.latitude is not null");
+    expect(service).toContain("l.longitude is not null");
   });
 });

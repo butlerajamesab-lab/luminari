@@ -6,7 +6,6 @@ import {
   ChevronRight,
   CircleDollarSign,
   ExternalLink,
-  FileCheck2,
   Globe2,
   HandHeart,
   HeartPulse,
@@ -277,7 +276,7 @@ function titleCase(value: string | null | undefined): string {
 }
 
 function categoryLabel(category: string | null | undefined): string {
-  if (!category) return "Pending reviewed placement";
+  if (!category) return "";
   return (
     CATEGORY_CONFIG[category as keyof typeof CATEGORY_CONFIG]?.label ??
     titleCase(category)
@@ -304,6 +303,13 @@ function phoneHref(value: string): string | null {
   return digits.length >= 3 ? `tel:${digits}` : null;
 }
 
+// A contact renders as the kind of contact it claims to be: an email
+// action exists only for email-shaped values (the legacy corpus carries
+// non-email values in email fields).
+function isEmailShaped(value: string): boolean {
+  return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value.trim());
+}
+
 function formatAddress(location: ResourceLocation | undefined): string | null {
   if (!location) return null;
   const locality = [location.city, location.state, location.postal_code]
@@ -318,17 +324,11 @@ function formatAddress(location: ResourceLocation | undefined): string | null {
 }
 
 function locationLabel(resource: DirectoryResource): string {
-  const current = resource.locations[0];
-  if (current?.manual_location_kind) {
-    return titleCase(current.manual_location_kind);
-  }
-  if (resource.location_resolution?.location_kind) {
-    return titleCase(resource.location_resolution.location_kind);
-  }
-  if (resource.jurisdiction_scope) {
-    return `${titleCase(resource.jurisdiction_scope)} coverage`;
-  }
-  return "Jurisdiction coverage";
+  const stateName = resource.state
+    ? STATE_NAMES[resource.state] || resource.state
+    : null;
+  if (stateName) return `Serves ${stateName}`;
+  return "Serves communities nationwide";
 }
 
 function ContactAction({ contact }: { contact: Contact }) {
@@ -352,6 +352,7 @@ function ContactAction({ contact }: { contact: Contact }) {
   }
 
   if (type === "email") {
+    if (!isEmailShaped(contact.contact_value)) return null;
     return (
       <a
         href={`mailto:${contact.contact_value}`}
@@ -429,7 +430,7 @@ function ResourceCard({ resource }: { resource: DirectoryResource }) {
     resource.description ||
     resource.apply_notes ||
     resource.eligibility_summary ||
-    "Source-attached public service resource.";
+    "Public service resource.";
   const mapEligible = Boolean(
     currentLocation?.manual_map_eligible &&
     currentLocation.latitude != null &&
@@ -448,9 +449,11 @@ function ResourceCard({ resource }: { resource: DirectoryResource }) {
       }`}
     >
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-200">
-          {categoryLabel(resource.resource_category)}
-        </span>
+        {resource.resource_category && (
+          <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-200">
+            {categoryLabel(resource.resource_category)}
+          </span>
+        )}
         {resource.directory_categories
           ?.filter((value) => value !== resource.resource_category)
           .map((value) => (
@@ -464,14 +467,9 @@ function ResourceCard({ resource }: { resource: DirectoryResource }) {
         <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-medium text-slate-300">
           {stateName}
         </span>
-        {resource.publication_status === "inactive" ? (
+        {resource.publication_status === "inactive" && (
           <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-1 text-[11px] font-semibold text-amber-200">
             Historical · not operating
-          </span>
-        ) : (
-          <span className="inline-flex items-center gap-1 rounded-full border border-sky-400/20 bg-sky-400/10 px-2.5 py-1 text-[11px] font-medium text-sky-200">
-            <FileCheck2 className="h-3 w-3" />
-            Source attached
           </span>
         )}
       </div>
@@ -507,22 +505,15 @@ function ResourceCard({ resource }: { resource: DirectoryResource }) {
           </span>
           {!address && (
             <span className="mt-0.5 block">
-              Coverage is shown by jurisdiction; no street marker is implied.
+              Shown by area on the map; no street address is published for
+              this resource.
             </span>
           )}
-          {address && !currentLocation?.manual_review_version && (
+          {address && !mapEligible && (
             <span className="mt-0.5 block">
-              Source address context; exact map placement is not yet reviewed.
+              Address on file; shown by area on the map, not as an exact pin.
             </span>
           )}
-          {address &&
-            currentLocation?.manual_review_version &&
-            !mapEligible && (
-              <span className="mt-0.5 block">
-                Manually reviewed; no exact marker until genuine coordinates are
-                added.
-              </span>
-            )}
         </div>
       </div>
 
@@ -661,7 +652,7 @@ export default function ResourceDirectory() {
                 </h1>
               </div>
               <p className="hidden text-[11px] text-slate-500 sm:block">
-                The current governed civic resource collection
+                The public resource collection
               </p>
             </div>
           </div>
@@ -733,7 +724,7 @@ export default function ResourceDirectory() {
               {[
                 {
                   value: summary?.total_resources,
-                  label: "canonical resources",
+                  label: "resources in the directory",
                 },
                 {
                   value: summary?.jurisdiction_count,
@@ -745,7 +736,7 @@ export default function ResourceDirectory() {
                 },
                 {
                   value: summary?.resources_with_locations,
-                  label: "with source address context",
+                  label: "with a location on file",
                 },
               ].map((stat) => (
                 <div
@@ -771,7 +762,7 @@ export default function ResourceDirectory() {
                 Browse by need
               </p>
               <h2 className="mt-1 font-serif text-2xl font-semibold text-white">
-                Twelve governed resource categories
+                Resource categories
               </h2>
               {summary?.category_counts_overlap && (
                 <p className="mt-2 text-xs text-slate-400">
@@ -883,7 +874,7 @@ export default function ResourceDirectory() {
                 <div className="text-center">
                   <Loader2 className="mx-auto h-7 w-7 animate-spin text-emerald-300" />
                   <p className="mt-3 text-sm text-slate-400">
-                    Loading canonical resources
+                    Loading resources
                   </p>
                 </div>
               </div>

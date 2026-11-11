@@ -3,11 +3,10 @@ import { z } from "zod";
 import { publicProcedure, router } from "../_core/trpc";
 import { getLiveAnomalyViewfinderStates } from "../services/anomaly-viewfinder-live";
 import {
-  get_publishable_resource_directory_detail,
-  get_publishable_resource_directory_summary,
-  search_publishable_resource_directory,
-} from "../services/resource-directory-publishable";
-import { getGovOfficeDetail } from "../services/resource-directory";
+  get_unified_catalog_detail,
+  get_unified_catalog_summary,
+  search_unified_catalog,
+} from "../services/resource-directory-unified";
 
 const search_input = z
   .object({
@@ -48,11 +47,11 @@ const resource_identifier = z
 
 export const resourceDirectoryRouter = router({
   summary: publicProcedure.query(async () => {
-    return get_publishable_resource_directory_summary();
+    return get_unified_catalog_summary();
   }),
 
   search: publicProcedure.input(search_input).query(async ({ input }) => {
-    return search_publishable_resource_directory(input ?? {});
+    return search_unified_catalog(input ?? {});
   }),
 
   viewfinderStates: publicProcedure.query(async () => {
@@ -76,11 +75,11 @@ export const resourceDirectoryRouter = router({
         ),
     )
     .query(async ({ input }) => {
-      const resource = /^gof_/i.test(input.resource_entity_id!)
-        ? await getGovOfficeDetail(input.resource_entity_id!)
-        : await get_publishable_resource_directory_detail(
-            input.resource_entity_id!,
-          );
+      // One catalog, both identity shapes: entity UUIDs and the gof_
+      // office keys the U2 projection preserved as canonical_id.
+      const resource = await get_unified_catalog_detail(
+        input.resource_entity_id!,
+      );
       if (!resource) {
         throw new TRPCError({
           code: "NOT_FOUND",

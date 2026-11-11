@@ -7,7 +7,11 @@ function source(path: string): string {
 }
 
 describe("current Resource Directory source contracts", () => {
-  it("uses the current canonical resource/program catalog and no legacy publication fallback", () => {
+  // U3 cutover (2026-11-10): the person-facing directory reads the
+  // unified entity catalog (resource-directory-unified.ts). The
+  // classified-view reader remains in the tree for internal consumers
+  // (case-context), and its own contracts below still pin its shape.
+  it("uses the unified catalog for the person-facing directory and keeps the classified-view reader intact for internal consumers", () => {
     const page = source("client/src/pages/ResourceDirectory.tsx");
     const embeddedDirectory = source(
       "client/src/components/ResourceDirectory.tsx",
@@ -28,8 +32,9 @@ describe("current Resource Directory source contracts", () => {
     expect(embeddedDirectory).toContain("total_is_exact");
     expect(embeddedDirectory).not.toContain("const RESOURCES:");
 
-    expect(router).toContain("search_publishable_resource_directory");
-    expect(router).toContain("get_publishable_resource_directory_summary");
+    expect(router).toContain("search_unified_catalog");
+    expect(router).toContain("get_unified_catalog_summary");
+    expect(router).toContain("get_unified_catalog_detail");
     expect(appRouter).toContain("resourceDirectory: resourceDirectoryRouter");
     expect(shim).toContain('from "./resource-directory-fast-current"');
     expect(service).toContain("v_lighthouse_resource_program_classified_v1");
@@ -95,7 +100,7 @@ describe("directory-first Civic Map source contracts", () => {
     const map = source("client/public/civicmap.html");
 
     expect(route).toContain('civicMapRouter.get("/coverage"');
-    expect(route).toContain("getResourceDirectoryMapPoints");
+    expect(route).toContain("get_unified_catalog_map_points");
     expect(service).toContain("l.manual_map_eligible is true");
     expect(service).toContain("l.latitude is not null");
     expect(service).toContain("l.longitude is not null");

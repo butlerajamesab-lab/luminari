@@ -182,13 +182,13 @@ export function ResourceDirectory({
           {directoryQuery.isLoading && (
             <div className="flex items-center gap-2 rounded-md border border-border/40 p-3 text-xs text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin text-emerald-400" />
-              Loading canonical resources…
+              Loading resources…
             </div>
           )}
 
           {directoryQuery.error && (
             <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
-              The canonical directory could not load.
+              The directory could not load.
             </div>
           )}
 
@@ -218,7 +218,7 @@ export function ResourceDirectory({
                     <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">
                       {resource.description ||
                         resource.apply_notes ||
-                        "Source-attached public resource."}
+                        "Public service resource."}
                     </p>
                   </div>
                   {resource.state && (

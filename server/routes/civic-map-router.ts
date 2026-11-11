@@ -1,25 +1,13 @@
 import express, { Request, Response } from "express";
 import {
-  getGovOfficeDetail,
-  getGovOfficeExactSiteCount,
-  getResourceDirectoryDetail,
-  getResourceDirectoryMapPoints,
-} from "../services/resource-directory";
-import { get_publishable_resource_directory_summary } from "../services/resource-directory-publishable";
-import { getPool } from "../db";
+  get_unified_catalog_detail,
+  get_unified_catalog_map_points,
+  get_unified_catalog_summary,
+} from "../services/resource-directory-unified";
 
 export const civicMapRouter = express.Router();
 
 type QueryParam = string | undefined;
-
-type ResourceDirectoryBreadth = Record<string, unknown> & {
-  total_directory_records?: unknown;
-  total_resources?: unknown;
-  direct_resource_count?: unknown;
-  program_count?: unknown;
-  jurisdiction_count?: unknown;
-  resources_with_locations?: unknown;
-};
 
 function parseNumber(value: QueryParam, fallback: number): number {
   if (value === undefined) return fallback;
@@ -50,8 +38,10 @@ function isUuid(value: string): boolean {
   );
 }
 
-// gov_offices office_ids are hash-derived text keys ("gof_" + sha256 hex),
-// never UUIDs. The detail endpoint accepts both identity shapes.
+// Government-office office_ids are hash-derived text keys ("gof_" +
+// sha256 hex), never UUIDs. Since the U2 projection they are catalog
+// canonical_ids, so the detail endpoint accepts both identity shapes
+// and resolves them against the same unified catalog.
 function isGovOfficeId(value: string): boolean {
   return /^gof_[a-f0-9]{16,32}$/i.test(value);
 }
@@ -74,56 +64,27 @@ function parseBounds(req: Request) {
   return { north, south, east, west, valid };
 }
 
-async function getReviewedMapSiteCounts() {
-  const result = await getPool().query(`
-    select
-      count(distinct resource_entity_id) filter (
-        where manual_map_eligible is true
-      )::int as verified_physical_sites,
-      count(distinct resource_entity_id) filter (
-        where manual_map_eligible is true
-          and latitude is not null
-          and longitude is not null
-      )::int as exact_mappable_resources
-    from public.v_luminari_resource_locations_current_v3_13
-  `);
-  const counts = result.rows[0];
-  if (!counts || counts.verified_physical_sites == null || counts.exact_mappable_resources == null) {
-    throw new Error("civic_map_reviewed_site_counts_missing");
-  }
-  return counts;
+function parseCategory(req: Request): string | undefined {
+  const raw = req.query.category as QueryParam;
+  if (!raw) return undefined;
+  const cleaned = raw.trim().toLowerCase();
+  return /^[a-z0-9_]+$/.test(cleaned) ? cleaned : undefined;
 }
 
-async function loadBreadthPreservingCoverage() {
-  // The exact current-corpus summary is the expensive authoritative boundary.
-  // Do not start two more database reads while it is pending or already failed.
-  // Concurrent /health and /coverage requests must reuse the same calculation.
-  const breadth = await get_publishable_resource_directory_summary() as ResourceDirectoryBreadth;
-  const [mapSites, govOfficeExactSites] = await Promise.all([
-    getReviewedMapSiteCounts(),
-    getGovOfficeExactSiteCount(),
-  ]);
+let coverage_in_flight: ReturnType<typeof get_unified_catalog_summary> | null =
+  null;
 
-  return {
-    ...breadth,
-    verified_physical_sites: Number(mapSites.verified_physical_sites ?? 0),
-    // Genuine coordinate-backed public sites = the reviewed v3_13 lane plus official
-    // government-office coordinates from locator source feeds.
-    exact_mappable_resources:
-      Number(mapSites.exact_mappable_resources ?? 0) + govOfficeExactSites,
-    gov_office_exact_sites: govOfficeExactSites,
-    geography_source:
-      "reviewed_v3_13_locations + gov_offices_official_coordinates",
-    coverage_source: "breadth_preserving_resource_directory_v3",
-  };
-}
-
-let coverage_in_flight: ReturnType<typeof loadBreadthPreservingCoverage> | null = null;
-
-/** One in-flight coverage refresh across CivicMap health and map coverage requests. */
-export async function getBreadthPreservingCoverage() {
+/**
+ * One in-flight coverage refresh across CivicMap health and map coverage
+ * requests. The unified catalog summary is the single source for every
+ * number the map shows — coverage circles, category counts, and site
+ * totals are projections of the same corpus the directory searches — so
+ * a failed summary read fails closed here rather than falling back to a
+ * second, divergent count.
+ */
+export async function getUnifiedCoverage() {
   if (coverage_in_flight) return coverage_in_flight;
-  const request = loadBreadthPreservingCoverage();
+  const request = get_unified_catalog_summary();
   coverage_in_flight = request;
   try {
     return await request;
@@ -134,11 +95,11 @@ export async function getBreadthPreservingCoverage() {
 
 civicMapRouter.get("/health", async (_req: Request, res: Response) => {
   try {
-    const summary = await getBreadthPreservingCoverage();
+    const summary = await getUnifiedCoverage();
     res.setHeader("Cache-Control", "no-store");
     return res.json({
       ok: true,
-      source: "breadth_preserving_resource_directory_v3",
+      source: "unified_catalog_v1",
       directory_records:
         summary.total_directory_records ?? summary.total_resources ?? 0,
       direct_resources: summary.direct_resource_count ?? 0,
@@ -151,7 +112,7 @@ civicMapRouter.get("/health", async (_req: Request, res: Response) => {
       verified_physical_sites:
         summary.verified_physical_sites ?? 0,
       exact_mappable_resources: summary.exact_mappable_resources ?? 0,
-      gov_office_exact_sites: summary.gov_office_exact_sites ?? 0,
+      catalog_exact_sites: summary.exact_mappable_resources ?? 0,
     });
   } catch (error) {
     return sendError(res, error);
@@ -160,14 +121,14 @@ civicMapRouter.get("/health", async (_req: Request, res: Response) => {
 
 civicMapRouter.get("/coverage", async (_req: Request, res: Response) => {
   try {
-    const summary = await getBreadthPreservingCoverage();
+    const summary = await getUnifiedCoverage();
     res.setHeader(
       "Cache-Control",
       "public, max-age=60, stale-while-revalidate=300"
     );
     return res.json({
       ok: true,
-      source: "breadth_preserving_resource_directory_v3",
+      source: "unified_catalog_v1",
       coverage: summary,
     });
   } catch (error) {
@@ -190,9 +151,10 @@ async function sendPoints(req: Request, res: Response) {
       1200,
       2000
     );
-    const points = await getResourceDirectoryMapPoints({
+    const points = await get_unified_catalog_map_points({
       ...bounds,
       limit,
+      category: parseCategory(req),
     });
 
     res.setHeader(
@@ -201,7 +163,7 @@ async function sendPoints(req: Request, res: Response) {
     );
     return res.json({
       ok: true,
-      source: "reviewed_v3_13_exact_public_sites + gov_offices_official_coordinates",
+      source: "unified_catalog_exact_sites",
       count: points.length,
       points,
     });
@@ -219,31 +181,15 @@ civicMapRouter.get(
     try {
       const { resource_entity_id } = req.params;
 
-      if (isGovOfficeId(resource_entity_id)) {
-        const office = await getGovOfficeDetail(resource_entity_id);
-        if (!office) {
-          return res.status(404).json({
-            ok: false,
-            error: "not_found",
-            resource_entity_id,
-          });
-        }
-        res.setHeader(
-          "Cache-Control",
-          "public, max-age=60, stale-while-revalidate=300"
-        );
-        return res.json({ ok: true, resource: office });
-      }
-
-      if (!isUuid(resource_entity_id)) {
+      if (!isGovOfficeId(resource_entity_id) && !isUuid(resource_entity_id)) {
         return res.status(400).json({
           ok: false,
-          error: "invalid_uuid",
+          error: "invalid_identifier",
           resource_entity_id,
         });
       }
 
-      const resource = await getResourceDirectoryDetail(resource_entity_id);
+      const resource = await get_unified_catalog_detail(resource_entity_id);
       if (!resource) {
         return res.status(404).json({
           ok: false,
