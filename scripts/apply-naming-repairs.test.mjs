@@ -28,6 +28,13 @@ const EMBEDDED = JSON.parse(
 );
 const EXPECTED_CENSUS_MANIFEST =
   "09ea44ecc09568a4ccf08ab3f602e520cb6fc0930be780ffdde34f2455c4fa7d";
+// After the 2026-11-10 workbook-fidelity gate, the apply set is the
+// fidelity-cleared subset: 2,155 of the census's 2,316 (the 161
+// benefits_program_master-anchored rows are held — that sheet is
+// UNVERIFIABLE). The subset manifest the production dry run must
+// reproduce before --apply.
+const EXPECTED_CLEARED_MANIFEST =
+  "77423f2ac46811c5f869037abbbd705ac3e3fdb9020c29471824da465b8380c8";
 
 const row = (overrides = {}) => ({
   entity_id: "11111111-2222-3333-4444-555555555555",
@@ -185,20 +192,91 @@ describe("write builders", () => {
   });
 });
 
+describe("fidelity gate", () => {
+  it("clears program_master and pass3 anchors in every evidence form", () => {
+    const { approved, excluded } = filterApprovedProposals([
+      row({ entity_id: "a", evidence: "v3_13 program_master:row:9" }),
+      row({ entity_id: "b", evidence: "v3_13 pass3_program_card:row:9" }),
+      row({
+        entity_id: "c",
+        tier: "identity_uuid",
+        evidence: "entity UUID == benefit_uuid at v3_13 program_master",
+      }),
+      row({
+        entity_id: "d",
+        tier: "identity_mirror",
+        evidence: "(9)->v3_13 mirror program_master",
+      }),
+    ]);
+    expect(excluded).toHaveLength(0);
+    expect(approved).toHaveLength(4);
+  });
+
+  it("holds benefits_program_master anchors — the sheet is unverifiable", () => {
+    const { approved, excluded } = filterApprovedProposals([
+      row({
+        entity_id: "a",
+        tier: "identity_uuid",
+        evidence: "entity UUID == benefit_uuid at v3_13 benefits_program_master",
+      }),
+      row({
+        entity_id: "b",
+        tier: "identity_mirror",
+        evidence: "(9)->v3_13 mirror benefits_program_master",
+      }),
+      row({ entity_id: "c", evidence: "some other unverifiable source" }),
+    ]);
+    expect(approved).toHaveLength(0);
+    expect(excluded.map((e) => e.reason)).toEqual([
+      "sheet_not_fidelity_cleared",
+      "sheet_not_fidelity_cleared",
+      "sheet_not_fidelity_cleared",
+    ]);
+  });
+
+  it("clears only the hand-verified domain-corroborated entity", () => {
+    const { approved, excluded } = filterApprovedProposals([
+      row({
+        entity_id: "b38117aa-0627-4e6b-8214-ac6c621e219b",
+        tier: "c_strong",
+        new_name: "FL Division of Workers' Compensation",
+        evidence: "domain:myfloridacfo.com [luminari-florida-ENRICHED-PASS3-2026.docx]",
+      }),
+      row({
+        entity_id: "11111111-2222-3333-4444-555555555555",
+        tier: "c_strong",
+        evidence: "domain:example.org [some other docx]",
+      }),
+    ]);
+    expect(approved.map((r) => r.entity_id)).toEqual([
+      "b38117aa-0627-4e6b-8214-ac6c621e219b",
+    ]);
+    expect(excluded.map((e) => e.reason)).toEqual([
+      "sheet_not_fidelity_cleared",
+    ]);
+  });
+});
+
 describe("embedded census set", () => {
   const { approved, excluded } = filterApprovedProposals(EMBEDDED);
 
-  it("carries exactly the census-approved 2,316 rows", () => {
-    expect(excluded).toHaveLength(0);
-    expect(approved).toHaveLength(2316);
+  it("applies exactly the fidelity-cleared 2,155 rows", () => {
+    expect(approved).toHaveLength(2155);
     const byTier = {};
     for (const r of approved) byTier[r.tier] = (byTier[r.tier] ?? 0) + 1;
     expect(byTier).toEqual({
       identity_direct: 2139,
-      identity_uuid: 103,
-      identity_mirror: 73,
+      identity_uuid: 14,
+      identity_mirror: 1,
       c_strong: 1,
     });
+  });
+
+  it("holds exactly the 161 benefits-anchored rows at the fidelity gate", () => {
+    expect(excluded).toHaveLength(161);
+    for (const e of excluded) {
+      expect(e.reason).toBe("sheet_not_fidelity_cleared");
+    }
   });
 
   it("every proposed name passes the person-facing name test", () => {
@@ -213,10 +291,14 @@ describe("embedded census set", () => {
     }
   });
 
-  it("reproduces the staged census manifest regardless of row order", () => {
-    expect(manifestFor(approved)).toBe(EXPECTED_CENSUS_MANIFEST);
+  it("reproduces the cleared-subset manifest regardless of row order", () => {
+    expect(manifestFor(approved)).toBe(EXPECTED_CLEARED_MANIFEST);
     expect(manifestFor([...approved].reverse())).toBe(
-      EXPECTED_CENSUS_MANIFEST,
+      EXPECTED_CLEARED_MANIFEST,
     );
+  });
+
+  it("the raw embedded set still reproduces the census manifest", () => {
+    expect(manifestFor(EMBEDDED)).toBe(EXPECTED_CENSUS_MANIFEST);
   });
 });
