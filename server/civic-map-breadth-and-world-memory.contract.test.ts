@@ -37,12 +37,16 @@ describe("Civic Map breadth restoration and World Index memory safety", () => {
     expect(directoryMigration).toContain('No fuzzy identity merge is performed');
   });
 
-  it("uses breadth for Civic Map coverage but keeps strict reviewed geocodes", () => {
-    expect(civicMap).toContain('get_publishable_resource_directory_summary');
-    expect(civicMap).toContain('getReviewedMapSiteCounts');
-    expect(civicMap).toContain('breadth_preserving_resource_directory_v3');
-    expect(civicMap).toContain('reviewed_v3_13_exact_public_sites');
-    expect(civicMap).toContain('getResourceDirectoryMapPoints');
+  it("derives Civic Map coverage and points from the one unified catalog (U3)", () => {
+    // U3 (unification ruling, 2026-11-10): the map's coverage and points come
+    // from the unified entity catalog — the same corpus as directory search —
+    // so the numbers on the screen reconcile by construction. The pre-U3
+    // breadth/reviewed-lane functions are gone from the router.
+    expect(civicMap).toContain('get_unified_catalog_summary');
+    expect(civicMap).toContain('get_unified_catalog_map_points');
+    expect(civicMap).not.toContain('get_publishable_resource_directory_summary');
+    expect(civicMap).not.toContain('getReviewedMapSiteCounts');
+    expect(civicMap).not.toContain('getResourceDirectoryMapPoints');
   });
 
   it("removes the full in-memory World Index build from the public router", () => {
