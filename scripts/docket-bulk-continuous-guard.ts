@@ -21,12 +21,15 @@ export type DocketGuardStore = {
   create(path: string, body: string): Promise<void>;
   remove(path: string): Promise<void>;
 };
-export type DocketImportOutcome = { complete: boolean };
+export type DocketImportOutcome = {
+  complete: boolean;
+  deferred?: "quarantined" | "waiting_review";
+};
 
 export async function runOneArchiveGuarded(
   store: DocketGuardStore,
   runExactlyOne: () => Promise<DocketImportOutcome>,
-): Promise<"paused" | "complete" | "processed"> {
+): Promise<"paused" | "complete" | "processed" | "quarantined" | "waiting_review"> {
   // Check the STOP latch first, even if "complete" is present. A crash after
   // writing the done record but before removing the latch must stay visible.
   if (await store.exists(DOCKET_ACTIVE_MARKER)) return "paused";
@@ -55,5 +58,5 @@ export async function runOneArchiveGuarded(
     }) + "\n");
   }
   await store.remove(DOCKET_ACTIVE_MARKER);
-  return outcome.complete ? "complete" : "processed";
+  return outcome.complete ? "complete" : outcome.deferred ?? "processed";
 }
