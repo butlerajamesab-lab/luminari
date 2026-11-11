@@ -133,7 +133,7 @@ async function executeSourceOnlyArchive(): Promise<DocketImportOutcome> {
     }
     // The runner already created and read back the exact-hash, create-only
     // quarantine receipt before reporting this outcome.
-    return { complete: false, deferred: "quarantined" };
+    return { complete: false, deferred: "quarantined", quarantine_sha256: result.archive_sha256 };
   }
   if (result.result === "waiting_review") {
     if (s.remaining === 0 || s.selected_count !== 0 ||
