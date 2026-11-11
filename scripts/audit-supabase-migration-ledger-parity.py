@@ -408,6 +408,19 @@ APPROVED_REPOSITORY_ONLY = {
         "20261110230000_category_pass_ledger_v1.sql",
         "1669d69a537e156df0614226ea5fc77dc65bc716",
     ),
+    # Bundle decomposition v1: registers the bundle_decomposition
+    # document family and creates the decomposition link table
+    # (luminari_bundle_decomposition_source_rows) and ledger
+    # (luminari_bundle_decompositions) for splitting catalog bundle
+    # entities into one entity per constituent program name.
+    # Repository-only pending the separately approved production
+    # installation that follows the merge. Exact Git blob pinned;
+    # no production installation or ledger rewrite is implied by
+    # this entry.
+    "20261110240000": (
+        "20261110240000_bundle_decomposition_v1.sql",
+        "2ea8bffbe6d9aa6f8d928ee8217fed807a847778",
+    ),
 }
 
 SOURCE_CONTROLLED_APPLICATION_RECEIPTS = {
